@@ -53,7 +53,7 @@ the properties.
 Signing Images
 **************
 
-When :kconfig:`CONFIG_TFM_BL2` is set to ``y``, TF-M uses a secure bootloader
+When :kconfig:option:`CONFIG_TFM_BL2` is set to ``y``, TF-M uses a secure bootloader
 (BL2) and firmware images must be signed with a private key. The firmware image
 is validated by the bootloader during updates using the corresponding public
 key, which is stored inside the secure bootloader firmware image.
@@ -61,8 +61,8 @@ key, which is stored inside the secure bootloader firmware image.
 By default, ``<tfm-dir>/bl2/ext/mcuboot/root-rsa-3072.pem`` is used to sign secure
 images, and ``<tfm-dir>/bl2/ext/mcuboot/root-rsa-3072_1.pem`` is used to sign
 non-secure images. Theses default .pem keys can (and **should**) be overridden
-using the :kconfig:`CONFIG_TFM_KEY_FILE_S` and
-:kconfig:`CONFIG_TFM_KEY_FILE_NS` config flags.
+using the :kconfig:option:`CONFIG_TFM_KEY_FILE_S` and
+:kconfig:option:`CONFIG_TFM_KEY_FILE_NS` config flags.
 
 To satisfy `PSA Certified Level 1`_ requirements, **You MUST replace
 the default .pem file with a new key pair!**
@@ -76,7 +76,7 @@ To generate a new public/private key pair, run the following commands:
 
 You can then place the new .pem files in an alternate location, such as your
 Zephyr application folder, and reference them in the ``prj.conf`` file via the
-:kconfig:`CONFIG_TFM_KEY_FILE_S` and :kconfig:`CONFIG_TFM_KEY_FILE_NS` config
+:kconfig:option:`CONFIG_TFM_KEY_FILE_S` and :kconfig:option:`CONFIG_TFM_KEY_FILE_NS` config
 flags.
 
    .. warning::

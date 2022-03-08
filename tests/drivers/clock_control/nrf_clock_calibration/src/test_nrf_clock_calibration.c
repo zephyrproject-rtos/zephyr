@@ -112,6 +112,14 @@ static void test_basic_clock_calibration(void)
 /* Test checks if calibration happens just after clock is enabled. */
 static void test_calibration_after_enabling_lfclk(void)
 {
+	if (IS_ENABLED(CONFIG_SOC_NRF52832)) {
+		/* On nrf52832 LF clock cannot be stopped because it leads
+		 * to RTC COUNTER register reset and that is unexpected by
+		 * system clock which is disrupted and may hang in the test.
+		 */
+		ztest_test_skip();
+	}
+
 	const struct device *clk_dev =
 		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	struct sensor_value value = { .val1 = 0, .val2 = 0 };

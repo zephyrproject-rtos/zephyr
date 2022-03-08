@@ -80,14 +80,23 @@ void test_kobject_access_grant_error(void)
  */
 void test_kobject_access_grant_error_user(void)
 {
-	struct k_msgq *m;
+	struct k_queue *q;
 
-	m = k_object_alloc(K_OBJ_MSGQ);
-	k_object_access_grant(m, k_current_get());
+	/*
+	 * avoid using K_OBJ_PIPE, K_OBJ_MSGQ, or K_OBJ_STACK because the
+	 * k_object_alloc() returns an uninitialized kernel object and these
+	 * objects are types that can have additional memory allocations that
+	 * need to be freed. This becomes a problem on the fault handler clean
+	 * up because when it is freeing this uninitialized object the random
+	 * data in the object can cause the clean up to try to free random
+	 * data resulting in a secondary fault that fails the test.
+	 */
+	q = k_object_alloc(K_OBJ_QUEUE);
+	k_object_access_grant(q, k_current_get());
 
 	set_fault_valid(true);
 	/* a K_ERR_KERNEL_OOPS expected */
-	k_object_access_grant(m, NULL);
+	k_object_access_grant(q, NULL);
 }
 
 /**
@@ -1267,10 +1276,13 @@ void test_alloc_kobjects(void)
 	zassert_not_null(t, "alloc obj (0x%lx)\n", (uintptr_t)t);
 	p = k_object_alloc(K_OBJ_PIPE);
 	zassert_not_null(p, "alloc obj (0x%lx)\n", (uintptr_t)p);
+	k_pipe_init(p, NULL, 0);
 	s = k_object_alloc(K_OBJ_STACK);
 	zassert_not_null(s, "alloc obj (0x%lx)\n", (uintptr_t)s);
+	k_stack_init(s, NULL, 0);
 	m = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(m, "alloc obj (0x%lx)\n", (uintptr_t)m);
+	k_msgq_init(m, NULL, 0, 0);
 	q = k_object_alloc(K_OBJ_QUEUE);
 	zassert_not_null(q, "alloc obj (0x%lx)\n", (uintptr_t)q);
 

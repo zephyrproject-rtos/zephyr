@@ -110,8 +110,8 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 			const struct modem_cmd *cmd,
 			uint8_t **argv, size_t argv_len, uint16_t *argc)
 {
-	int i, count = 0;
-	size_t begin, end;
+	int count = 0;
+	size_t begin, end, i;
 
 	if (!data || !data->match_buf || !match_len || !cmd || !argv || !argc) {
 		return -EINVAL;
@@ -215,7 +215,8 @@ static int process_cmd(const struct modem_cmd *cmd, size_t match_len,
 static const struct modem_cmd *find_cmd_match(
 		struct modem_cmd_handler_data *data)
 {
-	int j, i;
+	int j;
+	size_t i;
 
 	for (j = 0; j < ARRAY_SIZE(data->cmds); j++) {
 		if (!data->cmds[j] || data->cmds_len[j] == 0U) {
@@ -238,7 +239,7 @@ static const struct modem_cmd *find_cmd_match(
 static const struct modem_cmd *find_cmd_direct_match(
 		struct modem_cmd_handler_data *data)
 {
-	int j, i;
+	size_t j, i;
 
 	for (j = 0; j < ARRAY_SIZE(data->cmds); j++) {
 		if (!data->cmds[j] || data->cmds_len[j] == 0U) {
@@ -551,7 +552,8 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 				 const struct setup_cmd *cmds, size_t cmds_len,
 				 struct k_sem *sem, k_timeout_t timeout)
 {
-	int ret = 0, i;
+	int ret = 0;
+	size_t i;
 
 	for (i = 0; i < cmds_len; i++) {
 		if (i) {
@@ -586,7 +588,8 @@ int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
 					size_t cmds_len, struct k_sem *sem,
 					k_timeout_t timeout)
 {
-	int ret = 0, i;
+	int ret = 0;
+	size_t i;
 
 	for (i = 0; i < cmds_len; i++) {
 		if (i) {

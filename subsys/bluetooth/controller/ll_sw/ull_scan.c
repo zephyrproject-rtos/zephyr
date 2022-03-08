@@ -355,13 +355,20 @@ void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
 
 uint8_t ull_scan_enable(struct ll_scan_set *scan)
 {
-	struct lll_scan *lll = &scan->lll;
 	uint32_t ticks_slot_overhead;
 	uint32_t volatile ret_cb;
 	uint32_t ticks_interval;
 	uint32_t ticks_anchor;
+	struct lll_scan *lll;
 	uint32_t ret;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* Initialize extend scan stop request */
+	scan->is_stop = 0U;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	/* Initialize LLL scan context */
+	lll = &scan->lll;
 	lll->init_addr_type = scan->own_addr_type;
 	(void)ll_addr_read(lll->init_addr_type, lll->init_addr);
 	lll->chan = 0U;
@@ -410,17 +417,18 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	if (!lll->conn) {
 		uint32_t ticks_ref = 0U;
 		uint32_t offset_us = 0U;
+		int err;
 
-		ull_sched_after_mstr_slot_get(TICKER_USER_ID_THREAD,
-					      (scan->ull.ticks_slot +
-					       ticks_slot_overhead),
-					      &ticks_ref, &offset_us);
+		err = ull_sched_after_cen_slot_get(TICKER_USER_ID_THREAD,
+						   (scan->ull.ticks_slot +
+						    ticks_slot_overhead),
+						   &ticks_ref, &offset_us);
 
 		/* Use the ticks_ref as scanner's anchor if a free time space
 		 * after any central role is available (indicated by a non-zero
 		 * offset_us value).
 		 */
-		if (offset_us) {
+		if (!err) {
 			ticks_anchor = ticks_ref +
 				       HAL_TICKER_US_TO_TICKS(offset_us);
 		}
@@ -462,12 +470,42 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 {
 	int err;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* Request Extended Scan stop */
+	scan->is_stop = 1U;
+	cpu_dmb();
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_BASE + handle,
 					scan, &scan->lll);
 	LL_ASSERT(err == 0 || err == -EALREADY);
 	if (err) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* Find and stop associated auxiliary scan contexts */
+	for (uint8_t aux_handle = 0; aux_handle < CONFIG_BT_CTLR_SCAN_AUX_SET;
+	     aux_handle++) {
+		struct lll_scan_aux *aux_scan_lll;
+		struct ll_scan_set *aux_scan;
+		struct ll_scan_aux_set *aux;
+
+		aux = ull_scan_aux_set_get(aux_handle);
+		aux_scan_lll = aux->parent;
+		if (!aux_scan_lll) {
+			continue;
+		}
+
+		aux_scan = HDR_LLL2ULL(aux_scan_lll);
+		if (aux_scan == scan) {
+			err = ull_scan_aux_stop(aux);
+			if (err && (err != -EALREADY)) {
+				return BT_HCI_ERR_CMD_DISALLOWED;
+			}
+		}
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	return 0;
 }
@@ -588,6 +626,19 @@ struct ll_scan_set *ull_scan_is_valid_get(struct ll_scan_set *scan)
 	return scan;
 }
 
+struct lll_scan *ull_scan_lll_is_valid_get(struct lll_scan *lll)
+{
+	struct ll_scan_set *scan;
+
+	scan = HDR_LLL2ULL(lll);
+	scan = ull_scan_is_valid_get(scan);
+	if (scan) {
+		return &scan->lll;
+	}
+
+	return NULL;
+}
+
 struct ll_scan_set *ull_scan_is_enabled_get(uint8_t handle)
 {
 	struct ll_scan_set *scan;
@@ -621,7 +672,7 @@ uint32_t ull_scan_is_enabled(uint8_t handle)
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		scan = ull_scan_set_get(handle);
 
-		return scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U;
+		return scan->periodic.sync ? ULL_SCAN_IS_SYNC : 0U;
 #else
 		return 0U;
 #endif
@@ -632,7 +683,7 @@ uint32_t ull_scan_is_enabled(uint8_t handle)
 		(scan->lll.conn ? ULL_SCAN_IS_INITIATOR : 0U) |
 #endif
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-		(scan->per_scan.sync ? ULL_SCAN_IS_SYNC : 0U) |
+		(scan->periodic.sync ? ULL_SCAN_IS_SYNC : 0U) |
 #endif
 		0U);
 }

@@ -1,0 +1,9 @@
+tests:
+  shell.getopt:
+    tags: getopt
+    platform_exclude: native_posix native_posix_64
+    integration_platforms:
+      - qemu_x86
+    min_flash: 64
+    min_ram: 32
+    filter: (CONFIG_GETOPT and not CONFIG_NEWLIB_LIBC)

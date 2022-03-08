@@ -260,7 +260,7 @@ static const struct sensor_driver_api sgp40_api = {
 								\
 	DEVICE_DT_INST_DEFINE(n,				\
 			      sgp40_init,			\
-			      PM_DEVICE_DT_INST_REF(n),	\
+			      PM_DEVICE_DT_INST_GET(n),	\
 			      &sgp40_data_##n,			\
 			      &sgp40_config_##n,		\
 			      POST_KERNEL,			\

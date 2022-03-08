@@ -1,7 +1,5 @@
 tests:
-  drivers.can:
-    tags: driver can
+  drivers.can.api:
+    tags: drivers can
     depends_on: can
-  drivers.can.loopback:
-    tags: driver can
-    platform_allow: native_posix native_posix_64
+    filter: dt_chosen_enabled("zephyr,canbus")

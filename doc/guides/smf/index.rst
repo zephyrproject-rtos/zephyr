@@ -9,7 +9,7 @@ Overview
 The State Machine Framework (SMF) is an application agnostic framework that
 provides an easy way for developers to integrate state machines into their
 application. The framework can be added to any project by enabling the
-:kconfig:`CONFIG_SMF` option.
+:kconfig:option:`CONFIG_SMF` option.
 
 State Creation
 ==============
@@ -35,14 +35,14 @@ use ``SMF_CTX(&user_obj)``.
 
 By default, a state can have no anscestor states, resulting in a flat state
 machine. But to enable the creation of a hierarchical state machine, the
-:kconfig:`CONFIG_SMF_ANCESTOR_SUPPORT` option must be enabled.
+:kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` option must be enabled.
 
 The following macro can be used for easy state creation:
 
 * :c:macro:`SMF_CREATE_STATE` Create a state
 
 **NOTE:** The :c:macro:`SMF_CREATE_STATE` macro takes an additional parameter
-when :kconfig:`CONFIG_SMF_ANCESTOR_SUPPORT` is enabled.
+when :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` is enabled.
 
 State Machine Creation
 ======================

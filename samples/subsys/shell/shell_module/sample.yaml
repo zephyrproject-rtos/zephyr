@@ -22,7 +22,10 @@ tests:
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal.conf"
   sample.shell.shell_module.getopt:
-    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
+    integration_platforms:
+      - qemu_x86
+    platform_exclude: native_posix native_posix_64
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart") and not CONFIG_NEWLIB_LIBC
     tags: shell
     harness: keyboard
     min_ram: 40

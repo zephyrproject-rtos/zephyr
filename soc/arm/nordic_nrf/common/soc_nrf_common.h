@@ -120,15 +120,22 @@
  *
  *     foo: my-node {
  *             tx-gpios = <&gpio0 4 ...>;
- *             rx-gpios = <&gpio1 5 ...>;
+ *             rx-gpios = <&gpio0 5 ...>, <&gpio1 5 ...>;
  *     };
  *
- *     NRF_DT_GPIOS_TO_PSEL(DT_NODELABEL(foo), tx_gpios) // 0 + 4 = 4
- *     NRF_DT_GPIOS_TO_PSEL(DT_NODELABEL(foo), rx_gpios) // 32 + 5 = 37
+ *     NRF_DT_GPIOS_TO_PSEL_BY_IDX(DT_NODELABEL(foo), tx_gpios, 0) // 0 + 4 = 4
+ *     NRF_DT_GPIOS_TO_PSEL_BY_IDX(DT_NODELABEL(foo), rx_gpios, 1) // 32 + 5 = 37
  */
-#define NRF_DT_GPIOS_TO_PSEL(node_id, prop)				\
-	(DT_GPIO_PIN(node_id, prop) +					\
-	 (DT_PROP_BY_PHANDLE(node_id, prop, port) << 5))
+#define NRF_DT_GPIOS_TO_PSEL_BY_IDX(node_id, prop, idx)			\
+	((DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx, port) << 5) |	\
+	 (DT_GPIO_PIN_BY_IDX(node_id, prop, idx) & 0x1F))
+
+
+/**
+ * @brief Equivalent to NRF_DT_GPIOS_TO_PSEL_BY_IDX(node_id, prop, 0)
+ */
+#define NRF_DT_GPIOS_TO_PSEL(node_id, prop)			\
+	NRF_DT_GPIOS_TO_PSEL_BY_IDX(node_id, prop, 0)
 
 /**
  * If the node has the property, expands to

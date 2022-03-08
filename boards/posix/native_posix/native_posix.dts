@@ -40,6 +40,16 @@
 		};
 	};
 
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "zephyr,native-posix-cpu";
+			reg = <0>;
+		};
+	};
+
 	flashcontroller0: flash-controller@0 {
 		compatible = "zephyr,sim-flash";
 		reg = <0x00000000 DT_SIZE_K(2048)>;

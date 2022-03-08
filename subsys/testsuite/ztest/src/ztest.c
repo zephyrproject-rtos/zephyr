@@ -95,7 +95,7 @@ static int cleanup_test(struct unit_test *test)
 #else
 #define NUM_CPUHOLD 0
 #endif
-#define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static struct k_thread cpuhold_threads[NUM_CPUHOLD];
 K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, NUM_CPUHOLD, CPUHOLD_STACK_SZ);
@@ -303,8 +303,8 @@ out:
 #define FAIL_FAST 0
 #endif
 
-K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
-		      CONFIG_TEST_EXTRA_STACKSIZE);
+K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE +
+		      CONFIG_TEST_EXTRA_STACK_SIZE);
 static ZTEST_BMEM int test_result;
 
 static void test_finalize(void)

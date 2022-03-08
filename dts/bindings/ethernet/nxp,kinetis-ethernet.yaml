@@ -12,3 +12,7 @@ properties:
       required: true
     interrupts:
       required: true
+    phy-addr:
+      type: int
+      description: Address of the phy controller
+      required: true

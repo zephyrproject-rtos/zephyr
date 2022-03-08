@@ -135,10 +135,12 @@ enum mdm_hl7800_network_state {
 	HL7800_UNABLE_TO_CONFIGURE = 0xf0
 };
 
-enum mdm_hl7800_sleep_state {
-	HL7800_SLEEP_STATE_UNINITIALIZED = 0,
-	HL7800_SLEEP_STATE_ASLEEP,
-	HL7800_SLEEP_STATE_AWAKE
+enum mdm_hl7800_sleep {
+	HL7800_SLEEP_UNINITIALIZED = 0,
+	HL7800_SLEEP_HIBERNATE,
+	HL7800_SLEEP_AWAKE,
+	HL7800_SLEEP_LITE_HIBERNATE,
+	HL7800_SLEEP_SLEEP,
 };
 
 enum mdm_hl7800_fota_state {
@@ -280,7 +282,11 @@ void mdm_hl7800_wakeup(bool awake);
 int32_t mdm_hl7800_send_at_cmd(const uint8_t *data);
 
 /**
- * @brief Get the signal quality of the HL7800
+ * @brief Get the signal quality of the HL7800.
+ * If CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS is non-zero, then
+ * this function returns the value from the last periodic read.
+ * If CONFIG_MODEM_HL7800_RSSI_RATE_SECONDS is 0, then this
+ * may cause the modem to be woken so that the values can be queried.
  *
  * @param rsrp Reference Signals Received Power (dBm)
  *             Range = -140 dBm to -44 dBm
@@ -454,6 +460,45 @@ int32_t mdm_hl7800_polte_locate(void);
  * @retval negative error code, 0 on success
  */
 int32_t mdm_hl7800_perform_site_survey(void);
+
+/**
+ * @brief Set desired sleep level. Requires MODEM_HL7800_LOW_POWER_MODE
+ *
+ * @param level (sleep, lite hibernate, or hibernate)
+ * @return int negative errno, 0 on success
+ */
+int mdm_hl7800_set_desired_sleep_level(enum mdm_hl7800_sleep level);
+
+/**
+ * @brief Allows mapping of WAKE_UP signal
+ * to a user accessible test point on the development board.
+ *
+ * @param func to be called when application requests modem wake/sleep.
+ * The state parameter of the callback is 1 when modem should stay awake,
+ * 0 when modem can sleep
+ */
+void mdm_hl7800_register_wake_test_point_callback(void (*func)(int state));
+
+/**
+ * @brief Allows mapping of P1.12_GPIO6 signal
+ * to a user accessible test point on the development board.
+ *
+ * @param func to be called when modem wakes/sleeps is sleep level is
+ * hibernate or lite hibernate.
+ * The state parameter of the callback follows gpio_pin_get definitions,
+ * but will default high if there is an error reading pin
+ */
+void mdm_hl7800_register_gpio6_callback(void (*func)(int state));
+
+/**
+ * @brief Allows mapping of UART1_CTS signal
+ * to a user accessible test point on the development board.
+ *
+ * @param func to be called when CTS state changes if sleep level is sleep.
+ * The state parameter of the callback follows gpio_pin_get definitions,
+ * but will default low if there is an error reading pin
+ */
+void mdm_hl7800_register_cts_callback(void (*func)(int state));
 
 #ifdef __cplusplus
 }

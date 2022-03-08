@@ -10,42 +10,30 @@
 #include <cache.h>
 
 /**
- *
  * @brief Enable d-cache
  *
  * Enable the d-cache.
- *
- * @return N/A
  */
 void cache_data_enable(void);
 
 /**
- *
  * @brief Disable d-cache
  *
  * Disable the d-cache.
- *
- * @return N/A
  */
 void cache_data_disable(void);
 
 /**
- *
  * @brief Enable i-cache
  *
  * Enable the i-cache.
- *
- * @return N/A
  */
 void cache_instr_enable(void);
 
 /**
- *
  * @brief Disable i-cache
  *
  * Disable the i-cache.
- *
- * @return N/A
  */
 void cache_instr_disable(void);
 

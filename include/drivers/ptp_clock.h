@@ -26,7 +26,7 @@ __subsystem struct ptp_clock_driver_api {
 	int (*set)(const struct device *dev, struct net_ptp_time *tm);
 	int (*get)(const struct device *dev, struct net_ptp_time *tm);
 	int (*adjust)(const struct device *dev, int increment);
-	int (*rate_adjust)(const struct device *dev, float ratio);
+	int (*rate_adjust)(const struct device *dev, double ratio);
 };
 
 /**
@@ -89,7 +89,7 @@ static inline int ptp_clock_adjust(const struct device *dev, int increment)
  *
  * @return 0 if ok, <0 if error
  */
-static inline int ptp_clock_rate_adjust(const struct device *dev, float rate)
+static inline int ptp_clock_rate_adjust(const struct device *dev, double rate)
 {
 	const struct ptp_clock_driver_api *api =
 		(const struct ptp_clock_driver_api *)dev->api;

@@ -123,6 +123,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | usb_device                          |
 +-----------+------------+-------------------------------------+
+| CAN/CANFD | on-chip    | canbus                              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -146,6 +148,7 @@ and a ST morpho connector. Board is configured as follows:
 - ADC1_INP15 : PA3
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
 - SPI1 NSS/SCK/MISO/MOSI : PD14PA5/PA6/PB5 (Arduino SPI)
+- CAN/CANFD : PD0, PD1
 
 System Clock
 ------------
@@ -159,6 +162,11 @@ Serial Port
 
 Nucleo H753ZI board has 4 UARTs and 4 USARTs. The Zephyr console output is
 assigned to UART3. Default settings are 115200 8N1.
+
+CAN, CANFD
+----------
+
+Requires an external CAN or CANFD transceiver.
 
 Programming and Debugging
 *************************

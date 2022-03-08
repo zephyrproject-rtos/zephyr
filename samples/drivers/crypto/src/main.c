@@ -11,7 +11,7 @@
 #include <device.h>
 #include <zephyr.h>
 #include <string.h>
-#include <crypto/cipher.h>
+#include <crypto/crypto.h>
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <logging/log.h>
@@ -81,7 +81,7 @@ int validate_hw_compatibility(const struct device *dev)
 {
 	uint32_t flags = 0U;
 
-	flags = cipher_query_hwcaps(dev);
+	flags = crypto_query_hwcaps(dev);
 	if ((flags & CAP_RAW_KEY) == 0U) {
 		LOG_INF("Please provision the key separately "
 			"as the module doesnt support a raw key");

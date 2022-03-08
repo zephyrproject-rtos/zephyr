@@ -6,7 +6,7 @@
 
 #include "test_queue.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 4
 #define LOOPS 32
 
@@ -67,22 +67,16 @@ static void tqueue_find_and_remove(struct k_queue *pqueue)
 /*entry of contexts*/
 static void tIsr_entry(const void *p)
 {
-	TC_PRINT("isr queue find and remove\n");
 	tqueue_find_and_remove((struct k_queue *)p);
-	TC_PRINT("isr queue get\n");
 	tqueue_get((struct k_queue *)p);
-	TC_PRINT("isr queue append ---> ");
 	tqueue_append((struct k_queue *)p);
 }
 
 static void tThread_entry(void *p1, void *p2, void *p3)
 {
-	TC_PRINT("thread queue find and remove\n");
 	tqueue_find_and_remove((struct k_queue *)p1);
-	TC_PRINT("thread queue get\n");
 	tqueue_get((struct k_queue *)p1);
 	k_sem_give(&end_sema);
-	TC_PRINT("thread queue append ---> ");
 	tqueue_append((struct k_queue *)p1);
 	k_sem_give(&end_sema);
 }
@@ -96,18 +90,14 @@ static void tqueue_read_write(struct k_queue *pqueue)
 				      tThread_entry, pqueue, NULL, NULL,
 				      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
-	TC_PRINT("main queue append ---> ");
 	tqueue_append(pqueue);
 	irq_offload(tIsr_entry, (const void *)pqueue);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_sem_take(&end_sema, K_FOREVER);
 
-	TC_PRINT("main queue find and remove\n");
 	tqueue_find_and_remove(pqueue);
-	TC_PRINT("main queue get\n");
 	tqueue_get(pqueue);
 	k_thread_abort(tid);
-	TC_PRINT("\n");
 }
 
 /*test cases*/

@@ -475,7 +475,7 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 	const struct device *dev = (struct device *)callback_arg;
 	const struct spi_mcux_config *config = dev->config;
 	SPI_Type *base = config->base;
-	struct spi_mcux_data *data = (struct spi_mcux_data *)dev->data;
+	struct spi_mcux_data *data = dev->data;
 
 	LOG_DBG("=dma call back @channel %d=", channel);
 

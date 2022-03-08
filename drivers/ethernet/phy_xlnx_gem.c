@@ -192,8 +192,8 @@ static void phy_xlnx_gem_mdio_write(
  */
 static void phy_xlnx_gem_marvell_alaska_reset(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint32_t retries = 0;
 
@@ -227,8 +227,8 @@ static void phy_xlnx_gem_marvell_alaska_reset(const struct device *dev)
  */
 static void phy_xlnx_gem_marvell_alaska_cfg(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint16_t phy_data_gbit;
 	uint32_t retries = 0;
@@ -482,8 +482,8 @@ static void phy_xlnx_gem_marvell_alaska_cfg(const struct device *dev)
  */
 static uint16_t phy_xlnx_gem_marvell_alaska_poll_sc(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint16_t phy_status = 0;
 
@@ -530,8 +530,8 @@ static uint16_t phy_xlnx_gem_marvell_alaska_poll_sc(const struct device *dev)
  */
 static uint8_t phy_xlnx_gem_marvell_alaska_poll_lsts(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 
 	/*
@@ -555,8 +555,8 @@ static uint8_t phy_xlnx_gem_marvell_alaska_poll_lsts(const struct device *dev)
 static enum eth_xlnx_link_speed phy_xlnx_gem_marvell_alaska_poll_lspd(
 	const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data  = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data  = dev->data;
 	enum eth_xlnx_link_speed link_speed;
 	uint16_t phy_data;
 
@@ -610,8 +610,8 @@ static enum eth_xlnx_link_speed phy_xlnx_gem_marvell_alaska_poll_lspd(
  */
 static void phy_xlnx_gem_ti_dp83822_reset(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint32_t retries = 0;
 
@@ -639,8 +639,8 @@ static void phy_xlnx_gem_ti_dp83822_reset(const struct device *dev)
  */
 static void phy_xlnx_gem_ti_dp83822_cfg(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data = PHY_TI_ADV_SELECTOR_802_3;
 
 	/* Configure link advertisement */
@@ -721,8 +721,8 @@ static void phy_xlnx_gem_ti_dp83822_cfg(const struct device *dev)
  */
 static uint16_t phy_xlnx_gem_ti_dp83822_poll_sc(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 	uint16_t phy_status = 0;
 
@@ -761,8 +761,8 @@ static uint16_t phy_xlnx_gem_ti_dp83822_poll_sc(const struct device *dev)
  */
 static uint8_t phy_xlnx_gem_ti_dp83822_poll_lsts(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	uint16_t phy_data;
 
 	/*
@@ -789,8 +789,8 @@ static uint8_t phy_xlnx_gem_ti_dp83822_poll_lsts(const struct device *dev)
 static enum eth_xlnx_link_speed phy_xlnx_gem_ti_dp83822_poll_lspd(
 	const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 	enum eth_xlnx_link_speed link_speed;
 	uint16_t phy_data;
 
@@ -893,8 +893,8 @@ static struct phy_xlnx_gem_supported_dev phy_xlnx_gem_supported_devs[] = {
  */
 int phy_xlnx_gem_detect(const struct device *dev)
 {
-	const struct eth_xlnx_gem_dev_cfg *dev_conf = DEV_CFG(dev);
-	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 
 	uint8_t phy_curr_addr;
 	uint8_t phy_first_addr = dev_conf->phy_mdio_addr_fix;

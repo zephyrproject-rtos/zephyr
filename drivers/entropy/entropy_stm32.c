@@ -18,6 +18,7 @@
 #include <sys/util.h>
 #include <errno.h>
 #include <soc.h>
+#include <pm/pm.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_rng.h>
@@ -86,13 +87,6 @@ struct entropy_stm32_rng_dev_data {
 	RNG_POOL_DEFINE(isr, CONFIG_ENTROPY_STM32_ISR_POOL_SIZE);
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_STM32_THR_POOL_SIZE);
 };
-
-#define DEV_DATA(dev) \
-	((struct entropy_stm32_rng_dev_data *)(dev)->data)
-
-#define DEV_CFG(dev) \
-	((const struct entropy_stm32_rng_dev_cfg *)(dev)->config)
-
 
 static const struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
 	.pclken	= { .bus = DT_INST_CLOCKS_CELL(0, bus),
@@ -250,7 +244,9 @@ static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf, uint16_t len)
 
 	len = dst - buf;
 	available = available - len;
-	if (available <= rngp->threshold) {
+	if ((available <= rngp->threshold)
+		&& !LL_RNG_IsEnabledIT(entropy_stm32_rng_data.rng)) {
+		pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
 		LL_RNG_EnableIT(entropy_stm32_rng_data.rng);
 	}
 
@@ -304,6 +300,7 @@ static void stm32_rng_isr(const void *arg)
 				byte);
 		if (ret < 0) {
 			LL_RNG_DisableIT(entropy_stm32_rng_data.rng);
+			pm_constraint_release(PM_STATE_SUSPEND_TO_IDLE);
 		}
 
 		k_sem_give(&entropy_stm32_rng_data.sem_sync);
@@ -315,7 +312,7 @@ static int entropy_stm32_rng_get_entropy(const struct device *dev,
 					 uint16_t len)
 {
 	/* Check if this API is called on correct driver instance. */
-	__ASSERT_NO_MSG(&entropy_stm32_rng_data == DEV_DATA(dev));
+	__ASSERT_NO_MSG(&entropy_stm32_rng_data == dev->data);
 
 	while (len) {
 		uint16_t bytes;
@@ -347,7 +344,7 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 	uint16_t cnt = len;
 
 	/* Check if this API is called on correct driver instance. */
-	__ASSERT_NO_MSG(&entropy_stm32_rng_data == DEV_DATA(dev));
+	__ASSERT_NO_MSG(&entropy_stm32_rng_data == dev->data);
 
 	if (likely((flags & ENTROPY_BUSYWAIT) == 0U)) {
 		return rng_pool_get(
@@ -416,8 +413,8 @@ static int entropy_stm32_rng_init(const struct device *dev)
 
 	__ASSERT_NO_MSG(dev != NULL);
 
-	dev_data = DEV_DATA(dev);
-	dev_cfg = DEV_CFG(dev);
+	dev_data = dev->data;
+	dev_cfg = dev->config;
 
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(dev_cfg != NULL);
@@ -488,16 +485,22 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	__ASSERT_NO_MSG(res == 0);
 
 
-#if DT_INST_NODE_HAS_PROP(0, health-test-config)
-#if DT_INST_NODE_HAS_PROP(0, health-test-magic)
+#if DT_INST_NODE_HAS_PROP(0, health_test_config)
+#if DT_INST_NODE_HAS_PROP(0, health_test_magic)
 	/* Write Magic number before writing configuration
 	 * Not all stm32 series have a Magic number
 	 */
-	LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health-test-magic));
+	LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health_test_magic));
 #endif
 	/* Write RNG HTCR configuration */
-	LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health-test-config));
+	LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health_test_config));
 #endif
+
+	/* Prevent the clocks to be stopped during the duration the
+	 * rng pool is being populated. The ISR will release the constraint again
+	 * when the rng pool is filled.
+	 */
+	pm_constraint_set(PM_STATE_SUSPEND_TO_IDLE);
 
 	LL_RNG_EnableIT(dev_data->rng);
 

@@ -32,7 +32,25 @@ enum dma_channel_direction {
 	MEMORY_TO_MEMORY = 0x0,
 	MEMORY_TO_PERIPHERAL,
 	PERIPHERAL_TO_MEMORY,
-	PERIPHERAL_TO_PERIPHERAL /*only supported in NXP EDMA*/
+	PERIPHERAL_TO_PERIPHERAL,
+	HOST_TO_MEMORY,
+	MEMORY_TO_HOST,
+
+	/**
+	 * Number of all common channel directions.
+	 */
+	DMA_CHANNEL_DIRECTION_COMMON_COUNT,
+
+	/**
+	 * This and higher values are dma controller or soc specific.
+	 * Refer to the specified dma driver header file.
+	 */
+	DMA_CHANNEL_DIRECTION_PRIV_START = DMA_CHANNEL_DIRECTION_COMMON_COUNT,
+
+	/**
+	 * Maximum allowed value (3 bit field!)
+	 */
+	DMA_CHANNEL_DIRECTION_MAX = 0x7
 };
 
 /** Valid values for @a source_addr_adj and @a dest_addr_adj */
@@ -135,6 +153,8 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
  *                                        001-memory to peripheral,
  *                                        010-peripheral to memory,
  *                                        011-peripheral to peripheral,
+ *                                        100-host to memory
+ *                                        101-memory to host
  *                                        ...
  * @param complete_callback_en [ 10 ]       - 0-callback invoked at completion only
  *                                        1-callback invoked at completion of
@@ -239,6 +259,10 @@ typedef int (*dma_api_start)(const struct device *dev, uint32_t channel);
 
 typedef int (*dma_api_stop)(const struct device *dev, uint32_t channel);
 
+typedef int (*dma_api_suspend)(const struct device *dev, uint32_t channel);
+
+typedef int (*dma_api_resume)(const struct device *dev, uint32_t channel);
+
 typedef int (*dma_api_get_status)(const struct device *dev, uint32_t channel,
 				  struct dma_status *status);
 
@@ -263,6 +287,8 @@ __subsystem struct dma_driver_api {
 	dma_api_reload reload;
 	dma_api_start start;
 	dma_api_stop stop;
+	dma_api_suspend suspend;
+	dma_api_resume resume;
 	dma_api_get_status get_status;
 	dma_api_chan_filter chan_filter;
 };
@@ -368,6 +394,59 @@ static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
 	return api->stop(dev, channel);
 }
 
+
+/**
+ * @brief Suspend a DMA channel transfer
+ *
+ * Implementations must check the validity of the channel state and ID passed
+ * in and return -EINVAL if either are invalid.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel to suspend
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If not implemented.
+ * @retval -EINVAL If invalid channel id or state.
+ * @retval -errno Other negative errno code failure.
+ */
+__syscall int dma_suspend(const struct device *dev, uint32_t channel);
+
+static inline int z_impl_dma_suspend(const struct device *dev, uint32_t channel)
+{
+	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+
+	if (api->suspend == NULL) {
+		return -ENOSYS;
+	}
+	return api->suspend(dev, channel);
+}
+
+/**
+ * @brief Resume a DMA channel transfer
+ *
+ * Implementations must check the validity of the channel state and ID passed
+ * in and return -EINVAL if either are invalid.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel to resume
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If not implemented
+ * @retval -EINVAL If invalid channel id or state.
+ * @retval -errno Other negative errno code failure.
+ */
+__syscall int dma_resume(const struct device *dev, uint32_t channel);
+
+static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
+{
+	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+
+	if (api->resume == NULL) {
+		return -ENOSYS;
+	}
+	return api->resume(dev, channel);
+}
+
 /**
  * @brief request DMA channel.
  *
@@ -391,7 +470,7 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->api;
 	/* dma_context shall be the first one in dev data */
-	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
+	struct dma_context *dma_ctx = dev->data;
 
 	if (dma_ctx->magic != DMA_MAGIC) {
 		return channel;
@@ -427,7 +506,7 @@ __syscall void dma_release_channel(const struct device *dev,
 static inline void z_impl_dma_release_channel(const struct device *dev,
 					      uint32_t channel)
 {
-	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
+	struct dma_context *dma_ctx = dev->data;
 
 	if (dma_ctx->magic != DMA_MAGIC) {
 		return;

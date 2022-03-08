@@ -1,4 +1,6 @@
 tests:
   drivers.can.stm32:
-    tags: driver can
+    tags: drivers can
     depends_on: can
+    filter: dt_compat_enabled("st,stm32-can") and
+            dt_chosen_enabled("zephyr,canbus")

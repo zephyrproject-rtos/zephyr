@@ -82,8 +82,6 @@ int console_putchar(char c);
  *  access to console via console_getline() function. This function
  *  supersedes, and incompatible with, callback (push-style) console
  *  handling (via console_input_fn callback, etc.).
- *
- *  @return N/A
  */
 void console_getline_init(void);
 

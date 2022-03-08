@@ -7,28 +7,9 @@
 /dts-v1/;
 #include <gigadevice/gd32vf103Xb.dtsi>
 #include "longan_nano-pinctrl.dtsi"
+#include "longan_nano-common.dtsi"
 
 / {
 	model = "Sipeed Longan Nano";
 	compatible = "sipeed,longan_nano";
-
-	chosen {
-		zephyr,console = &usart0;
-		zephyr,shell-uart = &usart0;
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-	};
-};
-
-&usart0 {
-	status = "okay";
-	current-speed = <115200>;
-	pinctrl-0 = <&usart0_default>;
-	pinctrl-names = "default";
-};
-
-&dac {
-	status = "okay";
-	pinctrl-0 = <&dac_default>;
-	pinctrl-names = "default";
 };

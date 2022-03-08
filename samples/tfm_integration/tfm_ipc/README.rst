@@ -135,7 +135,7 @@ Run them in the following order to flash the board:
    .. code-block:: bash
 
       $ ./build/tfm/regression.sh
-      $ west flash --hex-file build/tfm_merged.hex
+      $ west flash
 
  .. note::
       Note that ``arm-none-eabi-gcc`` should be available in the PATH variable and that ``STM32_Programmer_CLI`` is required to run ``regression.sh`` (see https://www.st.com/en/development-tools/stm32cubeprog.html). If you are still having trouble running these scripts, check the Programming and Debugging section of the :ref:`nucleo_l552ze_q_board` or :ref:`stm32l562e_dk_board` documentation.

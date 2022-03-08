@@ -28,8 +28,11 @@
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 
+#include "isoal.h"
+
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
+#include "ull_iso_types.h"
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
@@ -268,7 +271,11 @@ struct ll_sync_iso_set *ull_sync_iso_by_stream_get(uint16_t handle)
 
 struct lll_sync_iso_stream *ull_sync_iso_stream_get(uint16_t handle)
 {
-	if (handle >= CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT) {
+	struct ll_sync_iso_set *sync_iso;
+
+	/* Get the BIG Sync context and check for not being terminated */
+	sync_iso = ull_sync_iso_by_stream_get(handle);
+	if (!sync_iso || !sync_iso->sync) {
 		return NULL;
 	}
 
@@ -287,9 +294,12 @@ void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 
 		handle = lll->stream_handle[lll->stream_count];
 		stream = ull_sync_iso_stream_get(handle);
+		LL_ASSERT(stream);
 
 		dp = stream->dp;
 		if (dp) {
+			stream->dp = NULL;
+			isoal_sink_destroy(dp->sink_hdl);
 			ull_iso_datapath_release(dp);
 		}
 
@@ -378,7 +388,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	}
 
 	lll->iso_interval = sys_le16_to_cpu(bi->iso_interval);
-	interval_us = lll->iso_interval * CONN_INT_UNIT_US;
+	interval_us = lll->iso_interval * PERIODIC_INT_UNIT_US;
 
 	sync_iso->timeout_reload =
 		RADIO_SYNC_EVENTS((sync_iso->timeout * 10U * USEC_PER_MSEC),

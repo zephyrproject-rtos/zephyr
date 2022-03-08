@@ -1,12 +1,12 @@
 # Copyright (c) 2021 Google Inc
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ST_BBRAM_IT8XXX2 := ite,it8xxx2-bbram
+DT_COMPAT_ITE_IT8XXX2_BBRAM := ite,it8xxx2-bbram
 
 config BBRAM_IT8XXX2
 	bool "ITE IT81202 Battery-backed RAM drivers"
 	depends on SOC_FAMILY_RISCV_ITE
-	default $(dt_compat_enabled,${DT_COMPAT_ST_BBRAM_IT8XXX2})
+	default $(dt_compat_enabled,$(DT_COMPAT_ITE_IT8XXX2_BBRAM))
 	help
 	  This option enables the BBRAM driver for RISCV_ITE family of
 	  processors.

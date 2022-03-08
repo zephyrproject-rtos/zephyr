@@ -203,3 +203,12 @@ gpio_misc: mps2_fpgaio@30204c {
 	ngpios = <10>;
 	label = "FPGA_MISC";
 };
+
+eth0: eth@2000000 {
+	/* Linux has "smsc,lan9115" */
+	compatible = "smsc,lan9220";
+	/* Actual reg range is ~0x200 */
+	reg = <0x2000000 0x100000>;
+	label = "eth0";
+	interrupts = <48 3>;
+};

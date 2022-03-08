@@ -14,19 +14,23 @@
 
 #include <drivers/pinctrl.h>
 
+#include <stm32_ll_usart.h>
+
 /* device config */
 struct uart_stm32_config {
-	struct uart_device_config uconf;
+	/* USART instance */
+	USART_TypeDef *usart;
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
 	/* initial hardware flow control, 1 for RTS/CTS */
 	bool hw_flow_control;
 	/* initial parity, 0 for none, 1 for odd, 2 for even */
 	int  parity;
+	/* switch to enable single wire / half duplex feature */
+	bool single_wire;
 	const struct pinctrl_dev_config *pcfg;
-#if defined(CONFIG_PM) \
-	&& !defined(CONFIG_UART_INTERRUPT_DRIVEN) \
-	&& !defined(CONFIG_UART_ASYNC_API)
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
+	defined(CONFIG_PM)
 	uart_irq_config_func_t irq_config_func;
 #endif
 };

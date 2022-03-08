@@ -165,8 +165,8 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_M  |                    | LT  |
@@ -190,7 +190,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_accept(void)
+void test_conn_update_central_loc_accept(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -279,8 +279,8 @@ void test_conn_update_mas_loc_accept(void)
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host rejects.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host rejects.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_M  |                    | LT  |
@@ -299,7 +299,7 @@ void test_conn_update_mas_loc_accept(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_reject(void)
+void test_conn_update_central_loc_reject(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -349,8 +349,8 @@ void test_conn_update_mas_loc_reject(void)
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host is legacy.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host is legacy.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_M  |                    | LT  |
@@ -374,7 +374,7 @@ void test_conn_update_mas_loc_reject(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_remote_legacy(void)
+void test_conn_update_central_loc_remote_legacy(void)
 {
 	bool feature_bit_param_req;
 	uint8_t err;
@@ -472,8 +472,8 @@ void test_conn_update_mas_loc_remote_legacy(void)
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Controller do not
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Controller do not
  * support Connection Parameters Request procedure, features not exchanged.
  *
  * +-----+                    +-------+                    +-----+
@@ -498,7 +498,7 @@ void test_conn_update_mas_loc_remote_legacy(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
+void test_conn_update_central_loc_unsupp_wo_feat_exch(void)
 {
 	bool feature_bit_param_req;
 	uint8_t err;
@@ -595,8 +595,8 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Controller do not
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Controller do not
  * support Connection Parameters Request procedure, features exchanged.
  *
  * +-----+                    +-------+                    +-----+
@@ -615,7 +615,7 @@ void test_conn_update_mas_loc_unsupp_wo_feat_exch(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
+void test_conn_update_central_loc_unsupp_w_feat_exch(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -695,13 +695,13 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
 
 /*
  * (A)
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * and
  *
  * (B)
- * Slave-initiated Connection Parameters Request procedure.
+ * Peripheral-initiated Connection Parameters Request procedure.
  * Procedure collides and is rejected.
  *
  * +-----+                    +-------+                    +-----+
@@ -736,7 +736,7 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_collision(void)
+void test_conn_update_central_loc_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -859,8 +859,8 @@ void test_conn_update_mas_loc_collision(void)
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host accepts.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_M  |                    | LT  |
@@ -887,7 +887,7 @@ void test_conn_update_mas_loc_collision(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_rem_accept(void)
+void test_conn_update_central_rem_accept(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -979,8 +979,8 @@ void test_conn_update_mas_rem_accept(void)
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host rejects.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host rejects.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_M  |                    | LT  |
@@ -1001,7 +1001,7 @@ void test_conn_update_mas_rem_accept(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_mas_rem_reject(void)
+void test_conn_update_central_rem_reject(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1055,8 +1055,8 @@ void test_conn_update_mas_rem_reject(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
-/* Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Controller do not
+/* Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Controller do not
  * support Connection Parameters Request procedure.
  *
  * +-----+                    +-------+                    +-----+
@@ -1070,7 +1070,7 @@ void test_conn_update_mas_rem_reject(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_mas_rem_unsupp_feat(void)
+void test_conn_update_central_rem_unsupp_feat(void)
 {
 	/* TODO(thoh): Implement when Remote Request machine has feature
 	 * checking
@@ -1079,19 +1079,19 @@ void test_conn_update_mas_rem_unsupp_feat(void)
 
 /*
  * (A)
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host accepts.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
  *
  * and
  *
  * (B)
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * NOTE:
- * Master-initiated Connection Parameters Request procedure is paused.
- * Slave-initiated Connection Parameters Request procedure is finished.
- * Master-initiated Connection Parameters Request procedure is resumed.
+ * Central-initiated Connection Parameters Request procedure is paused.
+ * Peripheral-initiated Connection Parameters Request procedure is finished.
+ * Central-initiated Connection Parameters Request procedure is resumed.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_M  |                    | LT  |
@@ -1144,7 +1144,7 @@ void test_conn_update_mas_rem_unsupp_feat(void)
  *    |<--------------------------|                           | (B)
  *    |                           |                           |
  */
-void test_conn_update_mas_rem_collision(void)
+void test_conn_update_central_rem_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1319,8 +1319,8 @@ void test_conn_update_mas_rem_collision(void)
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host accepts.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_S  |                    | LT  |
@@ -1341,7 +1341,7 @@ void test_conn_update_mas_rem_collision(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_accept(void)
+void test_conn_update_periph_loc_accept(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1421,8 +1421,8 @@ void test_conn_update_sla_loc_accept(void)
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host rejects.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host rejects.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_S  |                    | LT  |
@@ -1441,7 +1441,7 @@ void test_conn_update_sla_loc_accept(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_reject(void)
+void test_conn_update_periph_loc_reject(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1500,8 +1500,8 @@ void test_conn_update_sla_loc_reject(void)
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Controller do not
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Controller do not
  * support Connection Parameters Request procedure, features not exchanged.
  *
  * +-----+                    +-------+                    +-----+
@@ -1521,7 +1521,7 @@ void test_conn_update_sla_loc_reject(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
+void test_conn_update_periph_loc_unsupp_feat_wo_feat_exch(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1579,8 +1579,8 @@ void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
 }
 
 /*
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Controller do not
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Controller do not
  * support Connection Parameters Request procedure, features exchanged.
  *
  * +-----+                    +-------+                    +-----+
@@ -1593,7 +1593,7 @@ void test_conn_update_sla_loc_unsupp_feat_wo_feat_exch(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
+void test_conn_update_periph_loc_unsupp_feat_w_feat_exch(void)
 {
 	uint8_t err;
 
@@ -1628,14 +1628,14 @@ void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
 
 /*
  * (A)
- * Slave-initiated Connection Parameters Request procedure.
+ * Peripheral-initiated Connection Parameters Request procedure.
  * Procedure collides and is rejected.
  *
  * and
  *
  * (B)
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_S  |                    | LT  |
@@ -1678,7 +1678,7 @@ void test_conn_update_sla_loc_unsupp_feat_w_feat_exch(void)
  *    |                  Complete |                           |
  *    |<--------------------------|                           | (B)
  */
-void test_conn_update_sla_loc_collision(void)
+void test_conn_update_periph_loc_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -1805,8 +1805,8 @@ void test_conn_update_sla_loc_collision(void)
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_S  |                    | LT  |
@@ -1836,7 +1836,7 @@ void test_conn_update_sla_loc_collision(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_rem_accept(void)
+void test_conn_update_periph_rem_accept(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1935,8 +1935,8 @@ void test_conn_update_sla_rem_accept(void)
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host rejects.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host rejects.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_S  |                    | LT  |
@@ -1957,7 +1957,7 @@ void test_conn_update_sla_rem_accept(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_sla_rem_reject(void)
+void test_conn_update_periph_rem_reject(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -2015,8 +2015,8 @@ void test_conn_update_sla_rem_reject(void)
 }
 
 /*
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Controller do not
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Controller do not
  * support Connection Parameters Request procedure.
  *
  * +-----+                    +-------+                    +-----+
@@ -2030,7 +2030,7 @@ void test_conn_update_sla_rem_reject(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  */
-void test_conn_update_sla_rem_unsupp_feat(void)
+void test_conn_update_periph_rem_unsupp_feat(void)
 {
 	/* TODO(thoh): Implement when Remote Request machine has feature
 	 * checking
@@ -2039,19 +2039,19 @@ void test_conn_update_sla_rem_unsupp_feat(void)
 
 /*
  * (A)
- * Master-initiated Connection Parameters Request procedure.
- * Master requests change in LE connection parameters, slave’s Host accepts.
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
  *
  * and
  *
  * (B)
- * Slave-initiated Connection Parameters Request procedure.
- * Slave requests change in LE connection parameters, master’s Host accepts.
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
  *
  * NOTE:
- * Slave-initiated Connection Parameters Request procedure is paused.
- * Master-initiated Connection Parameters Request procedure is finished.
- * Slave-initiated Connection Parameters Request procedure is resumed.
+ * Peripheral-initiated Connection Parameters Request procedure is paused.
+ * Central-initiated Connection Parameters Request procedure is finished.
+ * Peripheral-initiated Connection Parameters Request procedure is resumed.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_S  |                    | LT  |
@@ -2104,7 +2104,7 @@ void test_conn_update_sla_rem_unsupp_feat(void)
  *    |<--------------------------|                           | (B)
  *    |                           |                           |
  */
-void test_conn_update_sla_rem_collision(void)
+void test_conn_update_periph_rem_collision(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -2268,8 +2268,8 @@ void test_conn_update_sla_rem_collision(void)
 
 /*
  * Parameter Request Procedure not supported.
- * Master-initiated Connection Update procedure.
- * Master requests update of LE connection.
+ * Central-initiated Connection Update procedure.
+ * Central requests update of LE connection.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_M  |                    | LT  |
@@ -2291,7 +2291,7 @@ void test_conn_update_sla_rem_collision(void)
  *    |  not receive a ntf.)      |                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_loc_accept_no_param_req(void)
+void test_conn_update_central_loc_accept_no_param_req(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -2379,8 +2379,8 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 
 /*
  * Parameter Request Procedure not supported.
- * Slave-initiated Connection Update procedure.
- * Master receives Connection Update parameters.
+ * Peripheral-initiated Connection Update procedure.
+ * Central receives Connection Update parameters.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_M  |                    | LT  |
@@ -2394,7 +2394,7 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
  *    |                           |                           |
  *    |                           |                           |
  */
-void test_conn_update_mas_rem_accept_no_param_req(void)
+void test_conn_update_central_rem_accept_no_param_req(void)
 {
 	struct node_tx *tx;
 
@@ -2436,8 +2436,8 @@ void test_conn_update_mas_rem_accept_no_param_req(void)
 
 /*
  * Parameter Request Procedure not supported.
- * Master-initiated Connection Update procedure.
- * Slave receives Connection Update parameters.
+ * Central-initiated Connection Update procedure.
+ * Peripheral receives Connection Update parameters.
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_S  |                    | LT  |
@@ -2457,7 +2457,7 @@ void test_conn_update_mas_rem_accept_no_param_req(void)
  *    |  not receive a ntf.)      |                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_rem_accept_no_param_req(void)
+void test_conn_update_periph_rem_accept_no_param_req(void)
 {
 	struct node_rx_pdu *ntf;
 	uint16_t instant;
@@ -2527,7 +2527,7 @@ void test_conn_update_sla_rem_accept_no_param_req(void)
 
 /*
  * Parameter Request Procedure not supported.
- * Slave-initiated Connection Update procedure (not allowed).
+ * Peripheral-initiated Connection Update procedure (not allowed).
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_S  |                    | LT  |
@@ -2540,7 +2540,7 @@ void test_conn_update_sla_rem_accept_no_param_req(void)
  *    |<--------------------------|                           |
  *    |                           |                           |
  */
-void test_conn_update_sla_loc_disallowed_no_param_req(void)
+void test_conn_update_periph_loc_disallowed_no_param_req(void)
 {
 	uint8_t err;
 
@@ -2574,81 +2574,81 @@ void test_main(void)
 {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	ztest_test_suite(
-		mas_loc,
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_accept, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_reject, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_remote_legacy, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_unsupp_wo_feat_exch, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_unsupp_w_feat_exch, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_mas_loc_collision, setup,
-					       unit_test_noop));
+		central_loc,
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_accept,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_reject,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_remote_legacy,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_unsupp_wo_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_unsupp_w_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_central_loc_collision,
+					       setup, unit_test_noop));
 
-	ztest_test_suite(mas_rem,
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_accept, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_reject, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_unsupp_feat, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_mas_rem_collision, setup,
-							unit_test_noop));
+	ztest_test_suite(central_rem,
+			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_accept,
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_reject,
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_unsupp_feat,
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_collision,
+							setup, unit_test_noop));
 
 	ztest_test_suite(
-		sla_loc,
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_accept, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_reject, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_unsupp_feat_wo_feat_exch,
+		periph_loc,
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_accept,
 					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_unsupp_feat_w_feat_exch,
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_reject,
 					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_collision, setup,
-					       unit_test_noop));
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_unsupp_feat_wo_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_unsupp_feat_w_feat_exch,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_collision,
+					       setup, unit_test_noop));
 
-	ztest_test_suite(sla_rem,
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_accept, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_reject, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_unsupp_feat, setup,
-							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_collision, setup,
-							unit_test_noop));
+	ztest_test_suite(periph_rem,
+			 ztest_unit_test_setup_teardown(test_conn_update_periph_rem_accept,
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_periph_rem_reject,
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_periph_rem_unsupp_feat,
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_conn_update_periph_rem_collision,
+							setup, unit_test_noop));
 
-	ztest_run_test_suite(mas_loc);
-	ztest_run_test_suite(mas_rem);
-	ztest_run_test_suite(sla_loc);
-	ztest_run_test_suite(sla_rem);
+	ztest_run_test_suite(central_loc);
+	ztest_run_test_suite(central_rem);
+	ztest_run_test_suite(periph_loc);
+	ztest_run_test_suite(periph_rem);
 
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-	ztest_test_suite(mas_loc_no_param_req, ztest_unit_test_setup_teardown(
-				 test_conn_update_mas_loc_accept_no_param_req,
+	ztest_test_suite(central_loc_no_param_req, ztest_unit_test_setup_teardown(
+				 test_conn_update_central_loc_accept_no_param_req,
 				 setup, unit_test_noop));
 
-	ztest_test_suite(mas_rem_no_param_req, ztest_unit_test_setup_teardown(
-				 test_conn_update_mas_rem_accept_no_param_req,
+	ztest_test_suite(central_rem_no_param_req, ztest_unit_test_setup_teardown(
+				 test_conn_update_central_rem_accept_no_param_req,
 				 setup, unit_test_noop));
 
 	ztest_test_suite(
-		sla_loc_no_param_req,
-		ztest_unit_test_setup_teardown(test_conn_update_sla_loc_disallowed_no_param_req,
+		periph_loc_no_param_req,
+		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_disallowed_no_param_req,
 					       setup, unit_test_noop));
 
-	ztest_test_suite(sla_rem_no_param_req, ztest_unit_test_setup_teardown(
-				 test_conn_update_sla_rem_accept_no_param_req,
+	ztest_test_suite(periph_rem_no_param_req, ztest_unit_test_setup_teardown(
+				 test_conn_update_periph_rem_accept_no_param_req,
 				 setup, unit_test_noop));
 
-	ztest_run_test_suite(mas_loc_no_param_req);
-	ztest_run_test_suite(mas_rem_no_param_req);
-	ztest_run_test_suite(sla_loc_no_param_req);
-	ztest_run_test_suite(sla_rem_no_param_req);
+	ztest_run_test_suite(central_loc_no_param_req);
+	ztest_run_test_suite(central_rem_no_param_req);
+	ztest_run_test_suite(periph_loc_no_param_req);
+	ztest_run_test_suite(periph_rem_no_param_req);
 
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }

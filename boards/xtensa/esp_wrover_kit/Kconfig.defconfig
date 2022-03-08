@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD
-	default "esp32"
+	default "esp_wrover_kit"
 	depends on BOARD_ESP_WROVER_KIT
 
 config ENTROPY_ESP32_RNG

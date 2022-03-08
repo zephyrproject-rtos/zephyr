@@ -13,7 +13,7 @@ common:
 tests:
   sample.drivers.eeprom:
     tags: eeprom
-    platform_allow: native_posix
+    platform_allow: native_posix gd32f450i_eval
   sample.drivers.eeprom.shield.x_nucleo_eeprma2:
     tags: eeprom shield
     depends_on: arduino_gpio arduino_i2c arduino_spi

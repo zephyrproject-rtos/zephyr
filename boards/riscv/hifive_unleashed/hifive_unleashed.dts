@@ -20,6 +20,25 @@
 		reg = <0x80000000 0xf0000000>;
 		reg-names = "mem";
 	};
+
+	lscon_96b: connector {
+		compatible = "linaro,96b-lscon-1v8";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <22 0 &gpio0 0 0>,	/* GPIO-A */
+			   <23 0 &gpio0 1 0>,	/* GPIO-B */
+			   <24 0 &gpio0 2 0>,	/* GPIO-C */
+			   <25 0 &gpio0 3 0>,	/* GPIO-D */
+			   <26 0 &gpio0 4 0>,	/* GPIO-E */
+			   <27 0 &gpio0 5 0>,	/* GPIO-F */
+			   <38 0 &gpio0 6 0>,	/* GPIO-G */
+			   <39 0 &gpio0 7 0>,	/* GPIO-H */
+			   <30 0 &gpio0 8 0>,	/* GPIO-I */
+			   <31 0 &gpio0 9 0>,	/* GPIO-J */
+			   <32 0 &gpio0 15 0>;	/* GPIO-K */
+			   /* GPIO-L not connected */
+	};
 };
 
 &uart0 {
@@ -51,4 +70,8 @@
 &spi2 {
 	status = "okay";
 	clock-frequency = <500000000>;
+};
+
+&gpio0 {
+	status = "okay";
 };

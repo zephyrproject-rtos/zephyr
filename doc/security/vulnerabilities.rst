@@ -832,12 +832,15 @@ CVE-2021-3323
 
 Integer Underflow in 6LoWPAN IPHC Header Uncompression
 
+This has been fixed in main for v2.5.0
+
 - `CVE-2020-3323 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3323>`_
 
-- `Zephyr project bug tracker ZEPSEC-116
-  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-116>`_
+- `Zephyr project bug tracker GHSA-89j6-qpxf-pfpc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-89j6-qpxf-pfpc>`_
 
-- This issue has not been fixed.
+- `PR 31971 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/31971>`_
 
 CVE-2021-3430
 -------------
@@ -1104,3 +1107,52 @@ This has been fixed in main for v2.6.0
 
 - `PR 36694 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/36694>`_
+
+CVE-2021-3835
+-------------
+
+Buffer overflow in Zephyr USB device class
+
+This has been fixed in main for v3.0.0
+
+- `CVE-2021-3835 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3835>`_
+
+- `Zephyr project bug tracker GHSA-fm6v-8625-99jf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fm6v-8625-99jf>`_
+
+- `PR 42093 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42093>`_
+
+- `PR 42167 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42167>`_
+
+CVE-2021-3861
+-------------
+
+Buffer overflow in the RNDIS USB device class
+
+This has been fixed in main for v3.0.0
+
+- `CVE-2021-3861 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3861>`_
+
+- `Zephyr project bug tracker GHSA-hvfp-w4h8-gxvj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hvfp-w4h8-gxvj>`_
+
+- `PR 39725 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/39725>`_
+
+CVE-2021-3966
+-------------
+
+Usb bluetooth device ACL read cb buffer overflow
+
+This has been fixed in main for v3.0.0
+
+- `Zephyr project bug tracker GHSA-hfxq-3w6x-fv2m
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hfxq-3w6x-fv2m>`_
+
+- `PR 42093 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42093>`_
+
+- `PR 42167 fix for v2.7.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42167>`_

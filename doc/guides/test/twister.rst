@@ -369,10 +369,13 @@ harness_config: <harness configuration options>
 
         Only one fixture can be defined per testcase.
 
-    pytest_root: <pytest dirctory> (default pytest)
+    pytest_root: <pytest directory> (default pytest)
         Specify a pytest directory which need to excute when test case begin to running,
         default pytest directory name is pytest, after pytest finished, twister will
         check if this case pass or fail according the pytest report.
+
+    pytest_args: <list of arguments> (default empty)
+        Specify a list of additional arguments to pass to ``pytest``.
 
     The following is an example yaml file with a few harness_config options.
 
@@ -617,6 +620,11 @@ and these tests will be executed on the boards that provide this fixture.
 
 .. figure:: fixtures.svg
    :figclass: align-center
+
+Fixtures can also be provided via twister command option ``--fixture``, this option
+can be used multiple times and all given fixtures will be appended as a list. And the
+given fixtures will be assigned to all boards, this means that all boards set by
+current twister command can run those testcases which request the same fixtures.
 
 Notes
 +++++

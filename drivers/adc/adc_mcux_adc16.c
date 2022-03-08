@@ -67,10 +67,6 @@ struct mcux_adc16_data {
 	uint8_t channel_id;
 };
 
-#define DEV_CFG(dev) ((const struct mcux_adc16_config *const)dev->config)
-#define DEV_DATA(dev) ((struct mcux_adc16_data *)dev->data)
-#define DEV_BASE(dev) ((ADC_Type *)DEV_CFG(dev)->base)
-
 #ifdef CONFIG_ADC_MCUX_ADC16_HW_TRIGGER
 #define SIM_SOPT7_ADCSET(x, shifts, mask)                                      \
 	(((uint32_t)(((uint32_t)(x)) << shifts)) & mask)
@@ -81,7 +77,7 @@ static void adc_dma_callback(const struct device *dma_dev, void *callback_arg,
 			     uint32_t channel, int error_code)
 {
 	struct device *dev = (struct device *)callback_arg;
-	struct mcux_adc16_data *data = DEV_DATA(dev);
+	struct mcux_adc16_data *data = dev->data;
 
 	LOG_DBG("DMA done");
 	adc_context_on_sampling_done(&data->ctx, dev);

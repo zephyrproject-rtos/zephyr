@@ -87,13 +87,13 @@ void bt_mesh_net_keys_reset(void);
 
 /** @brief Call cb on every valid Subnet until it returns a non-zero value.
  *
- *  @param cb Callback to call, or NULL to return first valid subnet.
+ *  @param cb Callback to call, or NULL to return first valid subnet. If the callback returns true,
+ *            iteration stops, and the passed subnet is returned.
  *  @param cb_data Callback data to pass to callback.
  *
  *  @return Subnet that returned non-zero value.
  */
-struct bt_mesh_subnet *bt_mesh_subnet_find(int (*cb)(struct bt_mesh_subnet *sub,
-						     void *cb_data),
+struct bt_mesh_subnet *bt_mesh_subnet_find(bool (*cb)(struct bt_mesh_subnet *sub, void *cb_data),
 					   void *cb_data);
 
 /** @brief Iterate through all valid Subnets.

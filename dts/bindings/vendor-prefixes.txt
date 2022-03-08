@@ -258,6 +258,7 @@ hugsun	Shenzhen Hugsun Technology Co. Ltd.
 hwacom	HwaCom Systems Inc.
 hycon	Hycon Technology Corp.
 hydis	Hydis Technologies
+hynitron	Hynitron
 hyundai	Hyundai Technology
 i2se	I2SE GmbH
 ibm	International Business Machines (IBM)
@@ -513,6 +514,7 @@ sancloud	Sancloud Ltd
 sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
+sc	Space Cubics, LLC
 schindler	Schindler
 seagate	Seagate Technology PLC
 segger	SEGGER Microcontroller GmbH

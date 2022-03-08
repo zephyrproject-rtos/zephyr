@@ -462,6 +462,7 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0xada52840" if SOC_NRF52840_QIAA
 	default "0x4fb2d5bd" if SOC_SERIES_IMX_RT
 	default "0x2abc77ec" if SOC_SERIES_LPC55XXX
+	default "0xe48bff56" if SOC_SERIES_RP2XXX
 	default "0x68ed2b88" if SOC_SERIES_SAMD21
 	default "0x55114460" if SOC_SERIES_SAMD51
 	default "0x647824b6" if SOC_SERIES_STM32F0X
@@ -486,6 +487,14 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	  name string. If the SoC in use is known by UF2, the Family ID will
 	  be pre-filled with the known value.
 
+config BUILD_OUTPUT_UF2_USE_FLASH_BASE
+	bool
+	default n
+
+config BUILD_OUTPUT_UF2_USE_FLASH_OFFSET
+	bool
+	default n
+
 endif # BUILD_OUTPUT_UF2
 
 config BUILD_OUTPUT_STRIPPED
@@ -493,6 +502,41 @@ config BUILD_OUTPUT_STRIPPED
 	help
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_ADJUST_LMA
+	string
+	help
+	  This will adjust the LMA address in the final ELF and hex files with
+	  the value provided.
+	  This will not affect the internal address symbols inside the image but
+	  can be useful when adjusting the LMA address for flash tools or multi
+	  stage loaders where a pre-loader may copy image to a second location
+	  before booting a second core.
+	  The value will be evaluated as a math expression, this means that
+	  following are valid expression
+	  - 1024
+	  - 0x1000
+	  - -0x1000
+	  - 0x20000000 - 0x10000000
+	  Note: negative numbers are valid.
+	  To adjust according to a chosen flash partition one can specify a
+	  default as:
+	  DT_CHOSEN_IMAGE_<name> := <name>,<name>-partition
+	  DT_CHOSEN_Z_FLASH := zephyr,flash
+	  config BUILD_OUTPUT_ADJUST_LMA
+	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4))-\
+	             $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))"
+
+config BUILD_OUTPUT_INFO_HEADER
+	bool "Create a image information header"
+	help
+	  Create an image information header which will contain image
+	  information from the Zephyr binary.
+	  Example of information contained in the header file:
+	  - Number of segments in the image
+	  - LMA address of each segment
+	  - VMA address of each segment
+	  - Size of each segment
 
 config APPLICATION_DEFINED_SYSCALL
 	bool "Scan application folder for any syscall definition"

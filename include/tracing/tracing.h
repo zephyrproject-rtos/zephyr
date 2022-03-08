@@ -37,30 +37,6 @@
  * @{
  */
 
-#if defined(CONFIG_PERCEPIO_TRACERECORDER)
-#include "tracing_tracerecorder.h"
-#else
-/**
- * @brief Called when entering an ISR
- */
-void sys_trace_isr_enter(void);
-
-/**
- * @brief Called when exiting an ISR
- */
-void sys_trace_isr_exit(void);
-
-/**
- * @brief Called when exiting an ISR and switching to scheduler
- */
-void sys_trace_isr_exit_to_scheduler(void);
-
-/**
- * @brief Called when the cpu enters the idle state
- */
-void sys_trace_idle(void);
-#endif /* CONFIG_PERCEPIO_TRACERECORDER */
-
 /**
  * @brief Thread Tracing APIs
  * @defgroup subsys_tracing_apis_thread Thread Tracing APIs
@@ -1590,6 +1566,30 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_pipe_alloc_init_exit(pipe, ret)
 
 /**
+ * @brief Trace Pipe flush entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_flush_enter(pipe)
+
+/**
+ * @brief Trace Pipe flush exit
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_flush_exit(pipe)
+
+/**
+ * @brief Trace Pipe buffer flush entry
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_buffer_flush_enter(pipe)
+
+/**
+ * @brief Trace Pipe buffer flush exit
+ * @param pipe Pipe object
+ */
+#define sys_port_trace_k_pipe_buffer_flush_exit(pipe)
+
+/**
  * @brief Trace Pipe put attempt entry
  * @param pipe Pipe object
  * @param timeout Timeout period
@@ -2003,6 +2003,30 @@ void sys_trace_idle(void);
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
 /** @} */ /* end of subsys_tracing_apis_pm_device_runtime */
+
+#if defined(CONFIG_PERCEPIO_TRACERECORDER)
+#include "tracing_tracerecorder.h"
+#else
+/**
+ * @brief Called when entering an ISR
+ */
+void sys_trace_isr_enter(void);
+
+/**
+ * @brief Called when exiting an ISR
+ */
+void sys_trace_isr_exit(void);
+
+/**
+ * @brief Called when exiting an ISR and switching to scheduler
+ */
+void sys_trace_isr_exit_to_scheduler(void);
+
+/**
+ * @brief Called when the cpu enters the idle state
+ */
+void sys_trace_idle(void);
+#endif /* CONFIG_PERCEPIO_TRACERECORDER */
 
 /** @} */ /* end of subsys_tracing_apis */
 

@@ -1,0 +1,10 @@
+# MAX31875 temperature sensor configuration options
+
+# Copyright (c) 2021 Pete Dietl
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX31875
+	bool "MAX31875 Temperature Sensor"
+	depends on I2C
+	help
+	  Enable the driver for Maxim MAX31875 Low-Power I2C Temperature Sensors.

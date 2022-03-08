@@ -13,8 +13,6 @@
 
 #include <zephyr/types.h>
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #if defined(CONFIG_SOC_PART_NUMBER_SAME53J18A)
 #include <same53j18a.h>
@@ -35,6 +33,7 @@
 #include "sercom_fixup_samd5x.h"
 #include "tc_fixup_samd5x.h"
 #include "gmac_fixup_samd5x.h"
+#include "adc_fixup_sam0.h"
 #include "../common/soc_port.h"
 #include "../common/atmel_sam0_dt.h"
 

@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <sys/__assert.h>
-#include <crypto/cipher.h>
+#include <crypto/crypto.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <sys/byteorder.h>
@@ -469,9 +469,9 @@ static int crypto_stm32_init(const struct device *dev)
 }
 
 static struct crypto_driver_api crypto_enc_funcs = {
-	.begin_session = crypto_stm32_session_setup,
-	.free_session = crypto_stm32_session_free,
-	.crypto_async_callback_set = NULL,
+	.cipher_begin_session = crypto_stm32_session_setup,
+	.cipher_free_session = crypto_stm32_session_free,
+	.cipher_async_callback_set = NULL,
 	.query_hw_caps = crypto_stm32_query_caps,
 };
 

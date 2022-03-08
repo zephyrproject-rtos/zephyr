@@ -74,7 +74,7 @@ static int device_a_pm_action(const struct device *dev,
 PM_DEVICE_DT_DEFINE(DT_INST(0, test_device_pm), device_a_pm_action);
 
 DEVICE_DT_DEFINE(DT_INST(0, test_device_pm), device_init,
-		PM_DEVICE_DT_REF(DT_INST(0, test_device_pm)), NULL, NULL,
+		PM_DEVICE_DT_GET(DT_INST(0, test_device_pm)), NULL, NULL,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 
@@ -119,7 +119,7 @@ static int device_b_pm_action(const struct device *dev,
 PM_DEVICE_DT_DEFINE(DT_INST(1, test_device_pm), device_b_pm_action);
 
 DEVICE_DT_DEFINE(DT_INST(1, test_device_pm), device_init,
-		PM_DEVICE_DT_REF(DT_INST(1, test_device_pm)), NULL, NULL,
+		PM_DEVICE_DT_GET(DT_INST(1, test_device_pm)), NULL, NULL,
 		PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 
@@ -135,14 +135,17 @@ static int device_c_pm_action(const struct device *dev,
 PM_DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_c_pm_action);
 
 DEVICE_DT_DEFINE(DT_INST(2, test_device_pm), device_init,
-		PM_DEVICE_DT_REF(DT_INST(2, test_device_pm)), NULL, NULL,
+		PM_DEVICE_DT_GET(DT_INST(2, test_device_pm)), NULL, NULL,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		NULL);
 
 
 
-void pm_power_state_set(struct pm_state_info info)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(substate_id);
+	ARG_UNUSED(state);
+
 	enum pm_device_state device_power_state;
 
 	/* If testing device order this function does not need to anything */
@@ -185,12 +188,15 @@ void pm_power_state_set(struct pm_state_info info)
 	/* this function is called when system entering low power state, so
 	 * parameter state should not be PM_STATE_ACTIVE
 	 */
-	zassert_false(info.state == PM_STATE_ACTIVE,
+	zassert_false(state == PM_STATE_ACTIVE,
 		      "Entering low power state with a wrong parameter");
 }
 
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
 	/* pm_system_suspend is entered with irq locked
 	 * unlock irq before leave pm_system_suspend
 	 */
@@ -198,9 +204,9 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 }
 
 /* Our PM policy handler */
-struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
-	struct pm_state_info info = {};
+	static struct pm_state_info info;
 
 	ARG_UNUSED(cpu);
 
@@ -219,7 +225,7 @@ struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
 		 */
 		info.state = PM_STATE_ACTIVE;
 	}
-	return info;
+	return &info;
 }
 
 /* implement in application, called by idle thread */

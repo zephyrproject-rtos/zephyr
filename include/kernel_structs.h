@@ -28,6 +28,7 @@
 #include <sys/util.h>
 #include <sys/sys_heap.h>
 #include <arch/structs.h>
+#include <kernel/stats.h>
 #endif
 
 #ifdef __cplusplus
@@ -131,7 +132,17 @@ struct _cpu {
 #endif
 
 #ifdef CONFIG_SCHED_THREAD_USAGE
+	/*
+	 * [usage0] is used as a timestamp to mark the beginning of an
+	 * execution window. [0] is a special value indicating that it
+	 * has been stopped (but not disabled).
+	 */
+
 	uint32_t usage0;
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+	struct k_cycle_stats usage;
+#endif
 #endif
 
 	/* Per CPU architecture specifics */
@@ -171,11 +182,6 @@ struct z_kernel {
 
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *threads; /* singly linked list of ALL threads */
-#endif
-
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	uint64_t all_thread_usage;
-	uint64_t idle_thread_usage;
 #endif
 };
 

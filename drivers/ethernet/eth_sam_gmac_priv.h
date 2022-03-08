@@ -281,9 +281,4 @@ struct eth_sam_dev_data {
 	struct gmac_queue queue_list[GMAC_QUEUE_NUM];
 };
 
-#define DEV_CFG(dev) \
-	((const struct eth_sam_dev_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct eth_sam_dev_data *const)(dev)->data)
-
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_SAM_GMAC_PRIV_H_ */

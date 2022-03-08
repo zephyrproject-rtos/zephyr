@@ -124,9 +124,28 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
 {
+	/*
+	 * When returning from this function we will have the current thread
+	 * onto the stack to be popped in x1 and the next thread in x0 returned
+	 * from z_get_next_switch_handle() (see isr_wrapper.S)
+	 */
 	*old_thread =  _current;
 
+#ifdef CONFIG_SMP
+	/*
+	 * XXX: see thread in #41840 and #40795
+	 *
+	 * The scheduler API requires a complete switch handle here, but arm64
+	 * optimizes things such that the callee-save registers are still
+	 * unsaved here (they get written out in z_arm64_context_switch()
+	 * below).  So pass a NULL instead, which the scheduler will store into
+	 * the thread switch_handle field.  The resulting thread won't be
+	 * switched into until we write that ourselves.
+	 */
+	return z_get_next_switch_handle(NULL);
+#else
 	return z_get_next_switch_handle(*old_thread);
+#endif
 }
 
 #ifdef CONFIG_USERSPACE

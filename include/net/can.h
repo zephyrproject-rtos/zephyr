@@ -101,11 +101,11 @@ struct net_can_api {
 	/** Send a single CAN frame */
 	int (*send)(const struct device *dev, const struct zcan_frame *frame,
 		    can_tx_callback_t cb, void *cb_arg, k_timeout_t timeout);
-	/** Attach a filter with it's callback */
-	int (*attach_filter)(const struct device *dev, can_rx_callback_t cb,
+	/** Add a filter with its callback */
+	int (*add_rx_filter)(const struct device *dev, can_rx_callback_t cb,
 			     void *cb_arg, const struct zcan_filter *filter);
-	/** Detach a filter */
-	void (*detach_filter)(const struct device *dev, int filter_id);
+	/** Remove a filter */
+	void (*remove_rx_filter)(const struct device *dev, int filter_id);
 	/** Enable or disable the reception of frames for net CAN */
 	int (*enable)(const struct device *dev, bool enable);
 };

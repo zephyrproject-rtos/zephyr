@@ -7,6 +7,16 @@
 #include "skeleton.dtsi"
 
 / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "gaisler,leon3";
+			reg = <0>;
+		};
+	};
+
 	ram0: memory@40000000 {
 		compatible = "mmio-sram";
 		reg = <0x40000000 0x40000000>;

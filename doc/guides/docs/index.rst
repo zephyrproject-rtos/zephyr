@@ -117,7 +117,8 @@ as described below:
 
       .. code-block:: console
 
-         sudo pacman -S graphviz doxygen librsvg texlive-core texlive-bin
+         sudo pacman -S graphviz doxygen librsvg texlive-core texlive-bin \
+         texlive-latexextra texlive-fontsextra
 
    .. group-tab:: macOS
 
@@ -244,15 +245,13 @@ declarations. This warning may be caused by different Sphinx/Breathe issues:
 Developer-mode Document Building
 ********************************
 
-Building the documentation for all the Kconfig options significantly
-adds to the total doc build time.  When making and testing major changes
-to the documentation, we provide an option to temporarily stub-out
-the auto-generated configuration documentation so the doc build process
-runs much faster.
+When making and testing major changes to the documentation, we provide an option
+to temporarily stub-out the auto-generated Devicetree bindings documentation so
+the doc build process runs faster.
 
 To enable this mode, set the following option when invoking cmake::
 
-   -DKCONFIG_TURBO_MODE=1
+   -DDT_TURBO_MODE=1
 
 or invoke make with the following target::
 
@@ -261,7 +260,21 @@ or invoke make with the following target::
    # To generate HTML output without detailed Kconfig
    make html-fast
 
+Linking external Doxygen projects against Zephyr
+************************************************
+
+External projects that build upon Zephyr functionality and wish to refer to
+Zephyr documentation in Doxygen (through the use of @ref), can utilize the
+tag file exported at `zephyr.tag </doxygen/html/zephyr.tag>`_
+
+Once downloaded, the tag file can be used in a custom ``doxyfile.in`` as follows::
+
+   TAGFILES = "/path/to/zephyr.tag=https://docs.zephyrproject.org/latest/doxygen/html/"
+
+For additional information refer to `Doxygen External Documentation`_.
+
 
 .. _reStructuredText: http://sphinx-doc.org/rest.html
 .. _Sphinx: http://sphinx-doc.org/
 .. _Windows Python Path: https://docs.python.org/3/using/windows.html#finding-the-python-executable
+.. _Doxygen External Documentation: https://www.doxygen.nl/manual/external.html

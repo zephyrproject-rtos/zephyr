@@ -70,58 +70,46 @@
 #define __imr __in_section_unique(imr)
 #define __imrdata __in_section_unique(imrdata)
 
+extern void soc_trace_init(void);
+extern void z_soc_irq_init(void);
 extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
 
-/* Legacy SOC-level API still used in a few drivers */
+extern void z_soc_mp_asm_entry(void);
+extern void soc_mp_startup(uint32_t cpu);
+extern void soc_start_core(int cpu_num);
+
+extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
+
+/* Legacy cache APIs still used in a few places */
 #define SOC_DCACHE_FLUSH(addr, size)		\
 	z_xtensa_cache_flush((addr), (size))
 #define SOC_DCACHE_INVALIDATE(addr, size)	\
 	z_xtensa_cache_inv((addr), (size))
+#define z_soc_cached_ptr(p) arch_xtensa_cached_ptr(p)
+#define z_soc_uncached_ptr(p) arch_xtensa_uncached_ptr(p)
 
 /**
- * @brief Return uncached pointer to a RAM address
+ * @brief Halts and offlines a running CPU
  *
- * The Intel ADSP architecture maps all addressable RAM (of all types)
- * twice, in two different 512MB segments regions whose L1 cache
- * settings can be controlled independently.  So for any given
- * pointer, it is possible to convert it to and from a cached version.
+ * Enables power gating on the specified CPU, which cannot be the
+ * current CPU or CPU 0.  The CPU must be idle; no application threads
+ * may be runnable on it when this function is called (or at least the
+ * CPU must be guaranteed to reach idle in finite time without
+ * deadlock).  Actual CPU shutdown can only happen in the context of
+ * the idle thread, and synchronization is an application
+ * responsibility.  This function will hang if the other CPU fails to
+ * reach idle.
  *
- * This function takes a pointer to any addressible object (either in
- * cacheable memory or not) and returns a pointer that can be used to
- * refer to the same memory while bypassing the L1 data cache.  Data
- * in the L1 cache will not be inspected nor modified by the access.
+ * @note On older cAVS hardware, core power is controlled by the host.
+ * This function must still be called for OS bookeeping, but it is
+ * insufficient without application coordination (and careful
+ * synchronization!) with the host x86 environment.
  *
- * @see z_soc_cached_ptr()
- *
- * @param p A pointer to a valid C object
- * @return A pointer to the same object bypassing the L1 dcache
+ * @param id CPU to halt, not current cpu or cpu 0
+ * @return 0 on success, -EINVAL on error
  */
-static inline void *z_soc_uncached_ptr(void *p)
-{
-	return ((void *)(((size_t)p) & ~0x20000000));
-}
-
-/**
- * @brief Return cached pointer to a RAM address
- *
- * This function takes a pointer to any addressible object (either in
- * cacheable memory or not) and returns a pointer that can be used to
- * refer to the same memory through the L1 data cache.  Data read
- * through the resulting pointer will reflect locally cached values on
- * the current CPU if they exist, and writes will go first into the
- * cache and be written back later.
- *
- * @see z_soc_uncached_ptr()
- *
- * @param p A pointer to a valid C object
- * @return A pointer to the same object via the L1 dcache
-
- */
-static inline void *z_soc_cached_ptr(void *p)
-{
-	return ((void *)(((size_t)p) | 0x20000000));
-}
+int soc_adsp_halt_cpu(int id);
 
 #endif /* __INC_SOC_H */

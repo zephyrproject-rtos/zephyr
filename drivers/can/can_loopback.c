@@ -147,9 +147,8 @@ static inline int get_free_filter(struct can_loopback_filter *filters)
 	return -ENOSPC;
 }
 
-int can_loopback_attach_isr(const struct device *dev, can_rx_callback_t isr,
-			    void *cb_arg,
-			    const struct zcan_filter *filter)
+int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
+			       void *cb_arg, const struct zcan_filter *filter)
 {
 	struct can_loopback_data *data = dev->data;
 	struct can_loopback_filter *loopback_filter;
@@ -175,21 +174,21 @@ int can_loopback_attach_isr(const struct device *dev, can_rx_callback_t isr,
 
 	loopback_filter = &data->filters[filter_id];
 
-	loopback_filter->rx_cb = isr;
+	loopback_filter->rx_cb = cb;
 	loopback_filter->cb_arg = cb_arg;
 	loopback_filter->filter = *filter;
 	k_mutex_unlock(&data->mtx);
 
-	LOG_DBG("Filter attached. ID: %d", filter_id);
+	LOG_DBG("Filter added. ID: %d", filter_id);
 
 	return filter_id;
 }
 
-void can_loopback_detach(const struct device *dev, int filter_id)
+void can_loopback_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct can_loopback_data *data = dev->data;
 
-	LOG_DBG("Detach filter ID: %d", filter_id);
+	LOG_DBG("Remove filter ID: %d", filter_id);
 	k_mutex_lock(&data->mtx, K_FOREVER);
 	data->filters[filter_id].rx_cb = NULL;
 	k_mutex_unlock(&data->mtx);
@@ -213,17 +212,21 @@ int can_loopback_set_timing(const struct device *dev,
 	return 0;
 }
 
-static enum can_state can_loopback_get_state(const struct device *dev,
-					     struct can_bus_err_cnt *err_cnt)
+static int can_loopback_get_state(const struct device *dev, enum can_state *state,
+				  struct can_bus_err_cnt *err_cnt)
 {
 	ARG_UNUSED(dev);
+
+	if (state != NULL) {
+		*state = CAN_ERROR_ACTIVE;
+	}
 
 	if (err_cnt) {
 		err_cnt->tx_err_cnt = 0;
 		err_cnt->rx_err_cnt = 0;
 	}
 
-	return CAN_ERROR_ACTIVE;
+	return 0;
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
@@ -236,11 +239,13 @@ int can_loopback_recover(const struct device *dev, k_timeout_t timeout)
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
-static void can_loopback_register_state_change_isr(const struct device *dev,
-						   can_state_change_isr_t isr)
+static void can_loopback_set_state_change_callback(const struct device *dev,
+						   can_state_change_callback_t cb,
+						   void *user_data)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(isr);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
 }
 
 int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -261,13 +266,13 @@ static const struct can_driver_api can_loopback_driver_api = {
 	.set_mode = can_loopback_set_mode,
 	.set_timing = can_loopback_set_timing,
 	.send = can_loopback_send,
-	.attach_isr = can_loopback_attach_isr,
-	.detach = can_loopback_detach,
+	.add_rx_filter = can_loopback_add_rx_filter,
+	.remove_rx_filter = can_loopback_remove_rx_filter,
 	.get_state = can_loopback_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = can_loopback_recover,
 #endif
-	.register_state_change_isr = can_loopback_register_state_change_isr,
+	.set_state_change_callback = can_loopback_set_state_change_callback,
 	.get_core_clock = can_loopback_get_core_clock,
 	.get_max_filters = can_loopback_get_max_filters,
 	.timing_min = {

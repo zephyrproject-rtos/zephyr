@@ -504,6 +504,7 @@
 			interrupt-names = "TX", "RX", "ERR";
 			status = "disabled";
 			label = "ETH_0";
+			phy-addr = <0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0 0>;
 			ptp {
 				compatible = "nxp,kinetis-ptp";

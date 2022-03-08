@@ -221,7 +221,7 @@ int bt_mesh_adv_gatt_send(void)
 		}
 	} else if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
 		BT_DBG("PB-GATT Advertising");
-		return bt_mesh_pb_gatt_adv_start();
+		return bt_mesh_pb_gatt_srv_adv_start();
 	}
 
 	return -ENOTSUP;

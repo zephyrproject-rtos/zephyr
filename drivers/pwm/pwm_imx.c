@@ -18,12 +18,8 @@ LOG_MODULE_REGISTER(pwm_imx);
 #define PWM_PWMCR_SWR(x) (((uint32_t)(((uint32_t)(x)) \
 				<<PWM_PWMCR_SWR_SHIFT))&PWM_PWMCR_SWR_MASK)
 
-#define DEV_CFG(dev) \
-	((const struct imx_pwm_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct imx_pwm_data * const)(dev)->data)
 #define DEV_BASE(dev) \
-	((PWM_Type *)(DEV_CFG(dev))->base)
+	((PWM_Type *)((const struct imx_pwm_config * const)(dev)->config)->base)
 
 struct imx_pwm_config {
 	PWM_Type *base;
@@ -44,7 +40,7 @@ static int imx_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 				       uint64_t *cycles)
 {
 	PWM_Type *base = DEV_BASE(dev);
-	const struct imx_pwm_config *config = DEV_CFG(dev);
+	const struct imx_pwm_config *config = dev->config;
 
 	*cycles = get_pwm_clock_freq(base) >> config->prescaler;
 
@@ -56,8 +52,8 @@ static int imx_pwm_pin_set(const struct device *dev, uint32_t pwm,
 			   pwm_flags_t flags)
 {
 	PWM_Type *base = DEV_BASE(dev);
-	const struct imx_pwm_config *config = DEV_CFG(dev);
-	struct imx_pwm_data *data = DEV_DATA(dev);
+	const struct imx_pwm_config *config = dev->config;
+	struct imx_pwm_data *data = dev->data;
 	unsigned int period_ms;
 	bool enabled = imx_pwm_is_enabled(base);
 	int wait_count = 0, fifoav;
@@ -145,7 +141,7 @@ static int imx_pwm_pin_set(const struct device *dev, uint32_t pwm,
 
 static int imx_pwm_init(const struct device *dev)
 {
-	struct imx_pwm_data *data = DEV_DATA(dev);
+	struct imx_pwm_data *data = dev->data;
 	PWM_Type *base = DEV_BASE(dev);
 
 	PWM_PWMPR_REG(base) = data->period_cycles;

@@ -34,6 +34,15 @@ as follows:
    :shield: x_nucleo_eeprma2
    :compact:
 
+For :ref:`gd32f450i_eval` board. First bridge the JP5 to USART with the jumper cap,
+Then the sample can be built and executed for the  as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/eeprom
+   :board: gd32f450i_eval
+   :goals: build flash
+   :compact:
+
 Sample Output
 =============
 

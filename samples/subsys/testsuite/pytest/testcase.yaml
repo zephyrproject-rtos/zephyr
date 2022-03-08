@@ -2,4 +2,6 @@ tests:
   sample.twister.pytest:
     platform_allow: native_posix
     harness: pytest
+    harness_config:
+      pytest_args: [ "--custom-pytest-arg", "foo" ]
     tags: testing pytest

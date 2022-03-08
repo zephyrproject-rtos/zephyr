@@ -181,6 +181,24 @@ extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
  */
 extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
 
+/**
+ * @brief Dynamically connect a PCIe endpoint IRQ to an ISR handler
+ *
+ * @param bdf the PCI endpoint to examine
+ * @param irq the IRQ to connect (see pcie_alloc_irq())
+ * @param priority priority of the IRQ
+ * @param routine the ISR handler to connect to the IRQ
+ * @param parameter the parameter to provide to the handler
+ * @param flags IRQ connection flags
+ * @return true if connected, false otherwise
+ */
+extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
+				     unsigned int irq,
+				     unsigned int priority,
+				     void (*routine)(const void *parameter),
+				     const void *parameter,
+				     uint32_t flags);
+
 /*
  * Configuration word 13 contains the head of the capabilities list.
  */
@@ -280,6 +298,67 @@ extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
 	 (((w) & 0x00000006U) == 0x00000002U))
 
 /*
+ * Type 1 Header has files related to bus management
+ */
+#define PCIE_BUS_NUMBER         6U
+
+#define PCIE_BUS_PRIMARY_NUMBER(w)      ((w) & 0xffUL)
+#define PCIE_BUS_SECONDARY_NUMBER(w)    (((w) >> 8) & 0xffUL)
+#define PCIE_BUS_SUBORDINATE_NUMBER(w)  (((w) >> 16) & 0xffUL)
+#define PCIE_SECONDARY_LATENCY_TIMER(w) (((w) >> 24) & 0xffUL)
+
+#define PCIE_BUS_NUMBER_VAL(prim, sec, sub, lat) \
+	(((prim) & 0xffUL) |			 \
+	 (((sec) & 0xffUL) << 8) |		 \
+	 (((sub) & 0xffUL) << 16) |		 \
+	 (((lat) & 0xffUL) << 24))
+
+/*
+ * Type 1 words 7 to 12 setups Bridge Memory base and limits
+ */
+#define PCIE_IO_SEC_STATUS      7U
+
+#define PCIE_IO_BASE(w)         ((w) & 0xffUL)
+#define PCIE_IO_LIMIT(w)        (((w) >> 8) & 0xffUL)
+#define PCIE_SEC_STATUS(w)      (((w) >> 16) & 0xffffUL)
+
+#define PCIE_IO_SEC_STATUS_VAL(iob, iol, sec_status) \
+	(((iob) & 0xffUL) |			     \
+	 (((iol) & 0xffUL) << 8) |		     \
+	 (((sec_status) & 0xffffUL) << 16))
+
+#define PCIE_MEM_BASE_LIMIT     8U
+
+#define PCIE_MEM_BASE(w)        ((w) & 0xffffUL)
+#define PCIE_MEM_LIMIT(w)       (((w) >> 16) & 0xffffUL)
+
+#define PCIE_MEM_BASE_LIMIT_VAL(memb, meml) \
+	(((memb) & 0xffffUL) |		    \
+	 (((meml) & 0xffffUL) << 16))
+
+#define PCIE_PREFETCH_BASE_LIMIT        9U
+
+#define PCIE_PREFETCH_BASE(w)   ((w) & 0xffffUL)
+#define PCIE_PREFETCH_LIMIT(w)  (((w) >> 16) & 0xffffUL)
+
+#define PCIE_PREFETCH_BASE_LIMIT_VAL(pmemb, pmeml) \
+	(((pmemb) & 0xffffUL) |			   \
+	 (((pmeml) & 0xffffUL) << 16))
+
+#define PCIE_PREFETCH_BASE_UPPER        10U
+
+#define PCIE_PREFETCH_LIMIT_UPPER       11U
+
+#define PCIE_IO_BASE_LIMIT_UPPER        12U
+
+#define PCIE_IO_BASE_UPPER(w)   ((w) & 0xffffUL)
+#define PCIE_IO_LIMIT_UPPER(w)  (((w) >> 16) & 0xffffUL)
+
+#define PCIE_IO_BASE_LIMIT_UPPER_VAL(iobu, iolu) \
+	(((iobu) & 0xffffUL) |			 \
+	 (((iolu) & 0xffffUL) << 16))
+
+/*
  * Word 15 contains information related to interrupts.
  *
  * We're only interested in the low byte, which is [supposed to be] set by
@@ -294,6 +373,25 @@ extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
 #define PCIE_MAX_BUS  (0xFFFFFFFF & PCIE_BDF_BUS_MASK)
 #define PCIE_MAX_DEV  (0xFFFFFFFF & PCIE_BDF_DEV_MASK)
 #define PCIE_MAX_FUNC (0xFFFFFFFF & PCIE_BDF_FUNC_MASK)
+
+/**
+ * @brief Initialize an interrupt handler for a PCIe endpoint IRQ
+ *
+ * This routine is only meant to be used by drivers using PCIe bus and having
+ * fixed or MSI based IRQ (so no runtime detection of the IRQ). In case
+ * of runtime detection see pcie_connect_dynamic_irq()
+ *
+ * @param bdf_p PCIe endpoint BDF
+ * @param irq_p IRQ line number.
+ * @param priority_p Interrupt priority.
+ * @param isr_p Address of interrupt service routine.
+ * @param isr_param_p Parameter passed to interrupt service routine.
+ * @param flags_p Architecture-specific IRQ configuration flags..
+ */
+#define PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
+			 isr_p, isr_param_p, flags_p)			\
+	ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
+			      isr_p, isr_param_p, flags_p)
 
 #ifdef __cplusplus
 }

@@ -6,10 +6,6 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(littlefs)
 
 add_subdirectory(../src littlefs_test_bindir)
-target_link_libraries(app PRIVATE settings_littlefs_test)
-
-# The code is in the library common to several tests.
-target_sources(app PRIVATE placeholder.c)
 
 if(TEST)
 	target_compile_definitions(app PRIVATE

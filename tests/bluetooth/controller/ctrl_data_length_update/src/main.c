@@ -71,7 +71,7 @@ static void setup(void)
  *    |                            |                              |
  */
 
-void test_data_length_update_mas_loc(void)
+void test_data_length_update_central_loc(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -146,7 +146,7 @@ void test_data_length_update_mas_loc(void)
  *    |                            |<-----------------------------|
  *    |                            |                              |
  */
-void test_data_length_update_mas_loc_no_eff_change(void)
+void test_data_length_update_central_loc_no_eff_change(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -218,7 +218,7 @@ void test_data_length_update_mas_loc_no_eff_change(void)
  *    |                            |                              |
  */
 
-void test_data_length_update_mas_loc_no_eff_change2(void)
+void test_data_length_update_central_loc_no_eff_change2(void)
 {
 	uint8_t err;
 	struct node_tx *tx;
@@ -286,7 +286,7 @@ void test_data_length_update_mas_loc_no_eff_change2(void)
 				  conn.lll.event_counter);
 }
 
-void test_data_length_update_sla_loc(void)
+void test_data_length_update_periph_loc(void)
 {
 	uint64_t err;
 	struct node_tx *tx;
@@ -347,7 +347,7 @@ void test_data_length_update_sla_loc(void)
  *    |                            |                              |
  */
 
-void test_data_length_update_mas_rem(void)
+void test_data_length_update_central_rem(void)
 {
 	struct node_tx *tx;
 
@@ -406,7 +406,7 @@ void test_data_length_update_mas_rem(void)
  *    |                            |                              |
  */
 
-void test_data_length_update_sla_rem(void)
+void test_data_length_update_periph_rem(void)
 {
 	struct node_tx *tx;
 
@@ -481,7 +481,7 @@ void test_data_length_update_sla_rem(void)
  *    |                            |                              |
  */
 
-void test_data_length_update_sla_rem_and_loc(void)
+void test_data_length_update_periph_rem_and_loc(void)
 {
 	uint64_t err;
 	struct node_tx *tx;
@@ -645,22 +645,22 @@ void test_data_length_update_dle_max_time_get(void)
 void test_main(void)
 {
 	ztest_test_suite(
-		data_length_update_master,
-		ztest_unit_test_setup_teardown(test_data_length_update_mas_loc, setup,
+		data_length_update_central,
+		ztest_unit_test_setup_teardown(test_data_length_update_central_loc, setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_data_length_update_mas_loc_no_eff_change, setup,
-					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_data_length_update_mas_loc_no_eff_change2,
+		ztest_unit_test_setup_teardown(test_data_length_update_central_loc_no_eff_change,
 					       setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_data_length_update_mas_rem, setup,
+		ztest_unit_test_setup_teardown(test_data_length_update_central_loc_no_eff_change2,
+					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_data_length_update_central_rem, setup,
 					       unit_test_noop));
 
-	ztest_test_suite(data_length_update_slave,
-			 ztest_unit_test_setup_teardown(test_data_length_update_sla_loc, setup,
+	ztest_test_suite(data_length_update_peripheral,
+			 ztest_unit_test_setup_teardown(test_data_length_update_periph_loc, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem, setup,
+			 ztest_unit_test_setup_teardown(test_data_length_update_periph_rem, setup,
 							unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_data_length_update_sla_rem_and_loc,
+			 ztest_unit_test_setup_teardown(test_data_length_update_periph_rem_and_loc,
 							setup, unit_test_noop)
 						    );
 
@@ -668,7 +668,7 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_data_length_update_dle_max_time_get,
 							setup, unit_test_noop));
 
-	ztest_run_test_suite(data_length_update_master);
-	ztest_run_test_suite(data_length_update_slave);
+	ztest_run_test_suite(data_length_update_central);
+	ztest_run_test_suite(data_length_update_peripheral);
 	ztest_run_test_suite(data_length_update_util);
 }

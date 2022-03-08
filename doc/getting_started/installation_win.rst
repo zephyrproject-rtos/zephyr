@@ -16,7 +16,7 @@ command-prompt. This allows you to use software such as the :ref:`Zephyr SDK
 .. warning::
       Windows 10 version 1803 has an issue that will cause CMake to not work
       properly and is fixed in version 1809 (and later).
-      More information can be found in `Zephyr Issue 10420`_
+      More information can be found in :github:`Zephyr Issue 10420 <10420>`.
 
 #. `Install the Windows Subsystem for Linux (WSL)`_.
 
@@ -33,4 +33,3 @@ command-prompt. This allows you to use software such as the :ref:`Zephyr SDK
    the documentation itself here.
 
 .. _Install the Windows Subsystem for Linux (WSL): https://msdn.microsoft.com/en-us/commandline/wsl/install_guide
-.. _Zephyr Issue 10420: https://github.com/zephyrproject-rtos/zephyr/issues/10420

@@ -55,7 +55,6 @@ static void teensy4_usdhc_pinmux(uint16_t nusdhc, bool init, uint32_t speed,
 	}
 
 	if (init) {
-		IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_35_GPIO3_IO21, 0U);
 		IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_41_USDHC1_VSELECT, 0U);
 		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_00_USDHC1_CMD, 0U);
 		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_01_USDHC1_CLK, 0U);
@@ -63,9 +62,6 @@ static void teensy4_usdhc_pinmux(uint16_t nusdhc, bool init, uint32_t speed,
 		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_03_USDHC1_DATA1, 0U);
 		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_04_USDHC1_DATA2, 0U);
 		IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B0_05_USDHC1_DATA3, 0U);
-
-		/* SD0_CD_SW */
-		IOMUXC_SetPinConfig(IOMUXC_GPIO_EMC_35_GPIO3_IO21, 0x017089u);
 
 		/* SD0_VSELECT */
 		IOMUXC_SetPinConfig(IOMUXC_GPIO_EMC_41_USDHC1_VSELECT,
@@ -78,6 +74,25 @@ static void teensy4_usdhc_pinmux(uint16_t nusdhc, bool init, uint32_t speed,
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_03_USDHC1_DATA1, cmd_data);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_04_USDHC1_DATA2, cmd_data);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_05_USDHC1_DATA3, cmd_data);
+}
+
+static void teensy4_usdhc_dat3_pull(bool pullup)
+{
+	if (pullup) {
+		/* Set pin config to pull up (47k Ohm) */
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_05_USDHC1_DATA3,
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(1) | IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_PKE_MASK | IOMUXC_SW_PAD_CTL_PAD_PUE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_HYS_MASK | IOMUXC_SW_PAD_CTL_PAD_PUS(1) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(1));
+	} else {
+		/* pull down (100k Ohm) */
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_05_USDHC1_DATA3,
+			IOMUXC_SW_PAD_CTL_PAD_SPEED(1) | IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_PKE_MASK | IOMUXC_SW_PAD_CTL_PAD_PUE_MASK |
+			IOMUXC_SW_PAD_CTL_PAD_HYS_MASK | IOMUXC_SW_PAD_CTL_PAD_PUS(0) |
+			IOMUXC_SW_PAD_CTL_PAD_DSE(1));
+	}
 }
 #endif
 
@@ -393,6 +408,7 @@ static int teensy4_init(const struct device *dev)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
 	teensy4_usdhc_pinmux(0, true, 2, 1);
 	imxrt_usdhc_pinmux_cb_register(teensy4_usdhc_pinmux);
+	imxrt_usdhc_dat3_cb_register(teensy4_usdhc_dat3_pull);
 #endif
 
 	return 0;

@@ -60,8 +60,8 @@ application:
    CONFIG_BT_DEBUG_MONITOR_UART=y
    CONFIG_UART_CONSOLE=n
 
-Setting :kconfig:`CONFIG_BT_DEBUG_MONITOR_UART` to ``y`` replaces the
-:kconfig:`CONFIG_BT_DEBUG_LOG` option, and setting :kconfig:`CONFIG_UART_CONSOLE`
+Setting :kconfig:option:`CONFIG_BT_DEBUG_MONITOR_UART` to ``y`` replaces the
+:kconfig:option:`CONFIG_BT_DEBUG_LOG` option, and setting :kconfig:option:`CONFIG_UART_CONSOLE`
 to ``n`` disables the default ``printk``/``printf`` hooks.
 
 To decode the binary protocol that will now be sent to the console UART you need
@@ -97,7 +97,7 @@ which is comprised of the following devices:
      <wrn> bt_hci_core: opcode 0x0c33 status 0x12
 
    when booting your sample of choice (make sure you have enabled
-   :kconfig:`CONFIG_BT_DEBUG_LOG` in your :file:`prj.conf` before running the
+   :kconfig:option:`CONFIG_BT_DEBUG_LOG` in your :file:`prj.conf` before running the
    sample), or if there is no data flowing from the Controller to the Host, then
    you need to disable Host to Controller flow control. To do so, set
    ``CONFIG_BT_HCI_ACL_FLOW_CONTROL=n`` in your :file:`prj.conf`.

@@ -76,24 +76,54 @@ extern void idle(void *unused1, void *unused2, void *unused3);
  */
 
 /**
+ * @brief equivalent of memset() for early boot usage
  *
+ * Architectures that can't safely use the regular (optimized) memset very
+ * early during boot because e.g. hardware isn't yet sufficiently initialized
+ * may override this with their own safe implementation.
+ */
+__boot_func
+void __weak z_early_memset(void *dst, int c, size_t n)
+{
+	(void) memset(dst, c, n);
+}
+
+/**
+ * @brief equivalent of memcpy() for early boot usage
+ *
+ * Architectures that can't safely use the regular (optimized) memcpy very
+ * early during boot because e.g. hardware isn't yet sufficiently initialized
+ * may override this with their own safe implementation.
+ */
+__boot_func
+void __weak z_early_memcpy(void *dst, const void *src, size_t n)
+{
+	(void) memcpy(dst, src, n);
+}
+
+/**
  * @brief Clear BSS
  *
  * This routine clears the BSS region, so all bytes are 0.
- *
- * @return N/A
  */
 __boot_func
 void z_bss_zero(void)
 {
-	(void)memset(__bss_start, 0, __bss_end - __bss_start);
+	z_early_memset(__bss_start, 0, __bss_end - __bss_start);
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
-	(void)memset(&__ccm_bss_start, 0,
-		     ((uint32_t) &__ccm_bss_end - (uint32_t) &__ccm_bss_start));
+	z_early_memset(&__ccm_bss_start, 0,
+		       (uintptr_t) &__ccm_bss_end
+		       - (uintptr_t) &__ccm_bss_start);
 #endif
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
-	(void)memset(&__dtcm_bss_start, 0,
-		     ((uint32_t) &__dtcm_bss_end - (uint32_t) &__dtcm_bss_start));
+	z_early_memset(&__dtcm_bss_start, 0,
+		       (uintptr_t) &__dtcm_bss_end
+		       - (uintptr_t) &__dtcm_bss_start);
+#endif
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay)
+	z_early_memset(&__ocm_bss_start, 0,
+		       (uintptr_t) &__ocm_bss_end
+		       - (uintptr_t) &__ocm_bss_start);
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void bss_zeroing_relocation(void);
@@ -101,8 +131,8 @@ void z_bss_zero(void)
 	bss_zeroing_relocation();
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_COVERAGE_GCOV
-	(void)memset(&__gcov_bss_start, 0,
-		 ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
+	z_early_memset(&__gcov_bss_start, 0,
+		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
 #endif
 }
 
@@ -118,9 +148,9 @@ void z_bss_zero(void)
 __boot_func
 void z_bss_zero_boot(void)
 {
-	(void)memset(&lnkr_boot_bss_start, 0,
-		     (uintptr_t)&lnkr_boot_bss_end
-		     - (uintptr_t)&lnkr_boot_bss_start);
+	z_early_memset(&lnkr_boot_bss_start, 0,
+		       (uintptr_t)&lnkr_boot_bss_end
+		       - (uintptr_t)&lnkr_boot_bss_start);
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
@@ -140,9 +170,9 @@ __pinned_func
 #endif
 void z_bss_zero_pinned(void)
 {
-	(void)memset(&lnkr_pinned_bss_start, 0,
-		(uintptr_t)&lnkr_pinned_bss_end
-		- (uintptr_t)&lnkr_pinned_bss_start);
+	z_early_memset(&lnkr_pinned_bss_start, 0,
+		       (uintptr_t)&lnkr_pinned_bss_end
+		       - (uintptr_t)&lnkr_pinned_bss_start);
 }
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
@@ -158,13 +188,10 @@ bool z_sys_post_kernel;
 extern void boot_banner(void);
 
 /**
- *
  * @brief Mainline for kernel's background thread
  *
  * This routine completes kernel initialization by invoking the remaining
  * init functions, then invokes application's main() routine.
- *
- * @return N/A
  */
 __boot_func
 static void bg_thread_main(void *unused1, void *unused2, void *unused3)
@@ -204,7 +231,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 
 #ifdef CONFIG_SMP
-	z_smp_init();
+	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
+		z_smp_init();
+	}
 	z_sys_init_run_level(_SYS_INIT_LEVEL_SMP);
 #endif
 
@@ -251,9 +280,18 @@ static void init_idle_thread(int i)
 #endif
 }
 
-void z_reinit_idle_thread(int i)
+void z_init_cpu(int id)
 {
-	init_idle_thread(i);
+	init_idle_thread(id);
+	_kernel.cpus[id].idle_thread = &z_idle_threads[id];
+	_kernel.cpus[id].id = id;
+	_kernel.cpus[id].irq_stack =
+		(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
+		 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[id]));
+#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+	_kernel.cpus[id].usage.track_usage =
+		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
+#endif
 }
 
 /**
@@ -296,14 +334,7 @@ static char *prepare_multithreading(void)
 	z_mark_thread_as_started(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		init_idle_thread(i);
-		_kernel.cpus[i].idle_thread = &z_idle_threads[i];
-		_kernel.cpus[i].id = i;
-		_kernel.cpus[i].irq_stack =
-			(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]) +
-			 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));
-	}
+	z_init_cpu(0);
 
 	return stack_ptr;
 }
@@ -402,10 +433,10 @@ FUNC_NORETURN void z_cstart(void)
 	/* gcov hook needed to get the coverage report.*/
 	gcov_static_init();
 
-	LOG_CORE_INIT();
-
 	/* perform any architecture-specific initialization */
 	arch_kernel_init();
+
+	LOG_CORE_INIT();
 
 #if defined(CONFIG_MULTITHREADING)
 	/* Note: The z_ready_thread() call in prepare_multithreading() requires

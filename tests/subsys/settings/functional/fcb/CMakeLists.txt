@@ -8,7 +8,6 @@ project(functional_fcb)
 target_sources(app PRIVATE placeholder.c)
 
 add_subdirectory(../src func_test_bindir)
-target_link_libraries(app PRIVATE settings_func_test)
 
 if(TEST)
 	target_compile_definitions(app PRIVATE

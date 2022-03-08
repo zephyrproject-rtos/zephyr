@@ -86,17 +86,13 @@ void isr_handler(const void *param)
  * Other arch will be add later.
  */
 #if defined(CONFIG_X86)
-#define IV_IRQS 32
 #define TEST_IRQ_DYN_LINE 17
-#define TRIGGER_IRQ_DYN_LINE (TEST_IRQ_DYN_LINE + IV_IRQS)
 
 #elif defined(CONFIG_ARCH_POSIX)
 #define TEST_IRQ_DYN_LINE 5
-#define TRIGGER_IRQ_DYN_LINE 5
 
 #else
 #define TEST_IRQ_DYN_LINE 0
-#define TRIGGER_IRQ_DYN_LINE 0
 #endif
 
 #endif
@@ -114,7 +110,7 @@ static void init_dyn_interrupt(void)
 					isr_handler, (void *)&irq_param, 0);
 	}
 
-	TC_PRINT("irq(%d)\n", vector_num);
+	TC_PRINT("vector(%d)\n", vector_num);
 	zassert_true(vector_num > 0, "no vector can be used");
 	irq_enable(TEST_IRQ_DYN_LINE);
 }
@@ -124,7 +120,7 @@ static void trigger_offload_interrupt(const bool real_irq, void *work)
 	irq_param.work = work;
 
 	if (real_irq) {
-		trigger_irq(TRIGGER_IRQ_DYN_LINE);
+		trigger_irq(vector_num);
 	} else {
 		irq_offload((irq_offload_routine_t)&isr_handler, &irq_param);
 	}

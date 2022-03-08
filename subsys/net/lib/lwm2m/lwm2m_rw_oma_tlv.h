@@ -49,6 +49,14 @@
 extern const struct lwm2m_writer oma_tlv_writer;
 extern const struct lwm2m_reader oma_tlv_reader;
 
+struct tlv_out_formatter_data {
+	/* offset position storage */
+	uint16_t mark_pos;
+	uint16_t mark_pos_oi;
+	uint16_t mark_pos_ri;
+	uint8_t writer_flags;
+};
+
 int do_read_op_tlv(struct lwm2m_message *msg, int content_format);
 int do_write_op_tlv(struct lwm2m_message *msg);
 

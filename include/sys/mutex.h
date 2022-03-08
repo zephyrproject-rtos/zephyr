@@ -64,8 +64,6 @@ struct sys_mutex {
  * and the mutex was not created with SYS_MUTEX_DEFINE().
  *
  * @param mutex Address of the mutex.
- *
- * @return N/A
  */
 static inline void sys_mutex_init(struct sys_mutex *mutex)
 {

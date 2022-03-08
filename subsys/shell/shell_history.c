@@ -116,7 +116,7 @@ static bool remove_from_tail(struct shell_history *history)
 
 	total_len = offsetof(struct shell_history_item, data) +
 			h_item->len + h_item->padding;
-	ring_buf_get_finish(history->ring_buf, total_len);
+	ring_buf_get(history->ring_buf, NULL, total_len);
 
 	return true;
 }
@@ -171,9 +171,8 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 				ring_buf_put_claim(history->ring_buf,
 						   (uint8_t **)&h_item, total_len);
 			if (claim2_len == total_len) {
-				ring_buf_put_finish(history->ring_buf,
-						    claim_len);
 				padding += claim_len;
+				total_len += claim_len;
 				claim_len = total_len;
 			}
 		}

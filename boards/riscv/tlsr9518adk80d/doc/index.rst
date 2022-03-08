@@ -57,7 +57,7 @@ The Zephyr TLSR9518ADK80D board configuration supports the following hardware fe
 | RISC-V Machine | on-chip    | timer                        |
 | Timer (32 KHz) |            |                              |
 +----------------+------------+------------------------------+
-| PINMUX         | on-chip    | pinmux                       |
+| PINCTRL        | on-chip    | pinctrl                      |
 +----------------+------------+------------------------------+
 | GPIO           | on-chip    | gpio                         |
 +----------------+------------+------------------------------+
@@ -168,8 +168,13 @@ Programming and debugging
 Building
 ========
 
-You can build applications in the usual way. Here is an example for
-the "hello_world" application.
+.. important::
+
+   These instructions assume you've set up a development environment as
+   described in the `Zephyr Getting Started Guide`_.
+
+To build applications using the default RISC-V toolchain from Zephyr SDK, just run the west build command.
+Here is an example for the "hello_world" application.
 
 .. code-block:: console
 
@@ -177,7 +182,8 @@ the "hello_world" application.
    west build -b tlsr9518adk80d samples/hello_world
 
 To use `Telink RISC-V Linux Toolchain`_, ``ZEPHYR_TOOLCHAIN_VARIANT`` and ``CROSS_COMPILE`` variables need to be set.
-In addition ``CONFIG_FPU=y`` must be selected in ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d_defconfig`` file.
+In addition ``CONFIG_FPU=y`` must be selected in ``boards/riscv/tlsr9518adk80d/tlsr9518adk80d_defconfig`` file since this
+toolchain is compatible only with the float point unit usage.
 
 .. code-block:: console
 
@@ -209,20 +215,42 @@ serial port:
 Flashing
 ========
 
-Use west flash command in order to flash the TLSR9518ADK80D board:
+To flash the TLSR9518ADK80D board see the sources below:
+
+- `Burning and Debugging Tools for all Series`_
+- `Burning and Debugging Tools for TLSR9 Series`_
+- `Burning and Debugging Tools for TLSR9 Series in Linux`_
+
+It is also possible to use the west flash command, but additional steps are required to set it up:
+
+- Download `Telink RISC-V Linux Toolchain`_. The toolchain contains tools for the board flashing as well.
+- Since the ICEman tool is created for the 32-bit OS version it is necessary to install additional packages in case of the 64-bit OS version.
+
+.. code-block:: console
+
+   sudo dpkg --add-architecture i386
+   sudo apt-get update
+   sudo apt-get install -y libc6:i386 libncurses5:i386 libstdc++6:i386
+
+-  Run the "ICEman.sh" script.
+
+.. code-block:: console
+
+   # From the root of the {path to the Telink RISC-V Linux Toolchain}/ice repository
+   sudo ./ICEman.sh
+
+- Now you should be able to run the west flash command with the toolchain path specified (TELINK_TOOLCHAIN_PATH).
 
 .. code-block:: console
 
    west flash --telink-tools-path=$TELINK_TOOLCHAIN_PATH
 
-Here, TELINK_TOOLCHAIN_PATH is a path to `Telink RISC-V Linux Toolchain`_.
-The toolchain contains tools for the board flashing as well.
+- You can also run the west flash command without toolchain path specification if add SPI_burn and ICEman to PATH.
 
-Refer for the following resources for more information about the board flashing:
+.. code-block:: console
 
-- `Burning and Debugging Tools for all Series`_
-- `Burning and Debugging Tools for TLSR9 Series`_
-- `Burning and Debugging Tools for TLSR9 Series in Linux`_
+    export PATH=$TELINK_TOOLCHAIN_PATH/flash/bin:"$PATH"
+    export PATH=$TELINK_TOOLCHAIN_PATH/ice:"$PATH"
 
 Debugging
 =========
@@ -240,3 +268,4 @@ References
 .. _Burning and Debugging Tools for all Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
 .. _Burning and Debugging Tools for TLSR9 Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-TLSR9-Series/
 .. _Burning and Debugging Tools for TLSR9 Series in Linux: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/BDT_for_TLSR9_Series_in_Linux/
+.. _Zephyr Getting Started Guide: https://docs.zephyrproject.org/latest/getting_started/index.html

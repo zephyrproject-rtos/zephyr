@@ -3,6 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Public interface for spinlocks
+ */
+
 #ifndef ZEPHYR_INCLUDE_SPINLOCK_H_
 #define ZEPHYR_INCLUDE_SPINLOCK_H_
 
@@ -14,6 +20,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Spinlock APIs
+ * @defgroup spinlock_apis Spinlock APIs
+ * @ingroup kernel_apis
+ * @{
+ */
 
 struct z_spinlock_key {
 	int key;
@@ -198,6 +211,8 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 	atomic_clear(&l->locked);
 #endif
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

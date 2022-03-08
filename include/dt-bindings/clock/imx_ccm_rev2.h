@@ -78,5 +78,11 @@
 #define IMX_CCM_GPT5_CLK		0x1004UL
 #define IMX_CCM_GPT6_CLK		0x1005UL
 
+/* SAI */
+#define IMX_CCM_SAI1_CLK        0x2000UL
+#define IMX_CCM_SAI2_CLK        0x2001UL
+#define IMX_CCM_SAI3_CLK        0x2002UL
+#define IMX_CCM_SAI4_CLK        0x2003UL
+
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_REV2_H_ */

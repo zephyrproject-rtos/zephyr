@@ -63,8 +63,6 @@ int send_conn_cte_req_enable(uint16_t conn_handle,
 	struct bt_hci_cp_le_conn_cte_req_enable *cp;
 	struct net_buf *buf;
 
-	zassert_not_equal(data, NULL, "Unexpected data pointer with null value.");
-
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
@@ -74,9 +72,11 @@ int send_conn_cte_req_enable(uint16_t conn_handle,
 	(void)memset(cp, 0, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn_handle);
 	cp->enable = enable ? 1 : 0;
-	cp->cte_request_interval = data->cte_request_interval;
-	cp->requested_cte_length = data->requested_cte_length;
-	cp->requested_cte_type = data->requested_cte_type;
+	if (data != NULL) {
+		cp->cte_request_interval = data->cte_request_interval;
+		cp->requested_cte_length = data->requested_cte_length;
+		cp->requested_cte_type = data->requested_cte_type;
+	}
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE, buf, NULL);
 }
@@ -146,11 +146,31 @@ void test_set_conn_cte_req_enable_with_invalid_cte_type(void)
 		      "Unexpected error value for CTE request enable with invalid CTE type");
 }
 
-static void connection_setup(void)
+void test_set_conn_cte_req_enable(void)
+{
+	int err;
+
+	err = send_conn_cte_req_enable(g_conn_handle, &g_data, true);
+	zassert_equal(err, 0, "Unexpected error value for CTE request enable");
+}
+
+void test_set_conn_cte_req_disable(void)
+{
+	int err;
+
+	err = send_conn_cte_req_enable(g_conn_handle, NULL, false);
+	zassert_equal(err, 0, "Unexpected error value for CTE request disable");
+}
+static void cte_req_params_set(void)
 {
 	g_data.cte_request_interval = REQUEST_INTERVAL_OK;
 	g_data.requested_cte_length = BT_HCI_LE_CTE_LEN_MAX;
 	g_data.requested_cte_type = BT_HCI_LE_AOD_CTE_2US;
+}
+
+static void connection_setup(void)
+{
+	cte_req_params_set();
 
 	g_conn_handle = ut_bt_create_connection();
 }
@@ -172,10 +192,19 @@ static void cte_rx_param_setup(void)
 		.ant_ids = ant_ids
 	};
 
+	cte_req_params_set();
+
 	ut_bt_create_connection();
-	ut_bt_set_periph_latency(g_conn_handle, REQUEST_INTERVAL_TOO_LOW);
+	ut_bt_set_periph_latency(g_conn_handle, CONN_PERIPH_LATENCY);
 
 	send_set_conn_cte_rx_params(g_conn_handle, &cte_rx_params, true);
+}
+
+static void cte_req_setup(void)
+{
+	cte_rx_param_setup();
+
+	send_conn_cte_req_enable(g_conn_handle, &g_data, true);
 }
 
 static void cte_rx_param_teardown(void)
@@ -183,6 +212,13 @@ static void cte_rx_param_teardown(void)
 	connection_teardown();
 
 	send_set_conn_cte_rx_params(g_conn_handle, NULL, false);
+}
+
+static void cte_req_teardown(void)
+{
+	send_conn_cte_req_enable(g_conn_handle, NULL, false);
+
+	cte_rx_param_teardown();
 }
 
 void run_cte_request_enable_tests(void)
@@ -199,7 +235,11 @@ void run_cte_request_enable_tests(void)
 			cte_rx_param_setup, cte_rx_param_teardown),
 		ztest_unit_test_setup_teardown(
 			test_set_conn_cte_req_enable_with_too_long_requested_length,
-			cte_rx_param_setup, cte_rx_param_teardown));
+			cte_rx_param_setup, cte_rx_param_teardown),
+		ztest_unit_test_setup_teardown(test_set_conn_cte_req_enable, cte_rx_param_setup,
+					       cte_rx_param_teardown),
+		ztest_unit_test_setup_teardown(test_set_conn_cte_req_disable, cte_req_setup,
+					       cte_req_teardown));
 	ztest_run_test_suite(test_hci_set_conn_cte_rx_params);
 
 	/* TODO: Add tests cases that verify positive behavior of the function

@@ -32,18 +32,13 @@ struct gpio_sam_runtime {
 	sys_slist_t cb;
 };
 
-#define DEV_CFG(dev) \
-	((const struct gpio_sam_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct gpio_sam_runtime * const)(dev)->data)
-
 #define GPIO_SAM_ALL_PINS    0xFFFFFFFF
 
 static int gpio_sam_port_configure(const struct device *dev,
 				   uint32_t mask,
 				   gpio_flags_t flags)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	const struct gpio_sam_config * const cfg = dev->config;
 	Gpio * const gpio = cfg->regs;
 
 	/* No hardware support */
@@ -104,7 +99,7 @@ static int gpio_sam_config(const struct device *dev,
 static int gpio_sam_port_get_raw(const struct device *dev,
 				 uint32_t *value)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	const struct gpio_sam_config * const cfg = dev->config;
 	Gpio * const gpio = cfg->regs;
 
 	*value = gpio->PVR;
@@ -116,7 +111,7 @@ static int gpio_sam_port_set_masked_raw(const struct device *dev,
 					uint32_t mask,
 					uint32_t value)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	const struct gpio_sam_config * const cfg = dev->config;
 	Gpio * const gpio = cfg->regs;
 
 	gpio->OVR = (gpio->PVR & ~mask) | (mask & value);
@@ -127,7 +122,7 @@ static int gpio_sam_port_set_masked_raw(const struct device *dev,
 static int gpio_sam_port_set_bits_raw(const struct device *dev,
 				      uint32_t mask)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	const struct gpio_sam_config * const cfg = dev->config;
 	Gpio * const gpio = cfg->regs;
 
 	gpio->OVRS = mask;
@@ -138,7 +133,7 @@ static int gpio_sam_port_set_bits_raw(const struct device *dev,
 static int gpio_sam_port_clear_bits_raw(const struct device *dev,
 					uint32_t mask)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	const struct gpio_sam_config * const cfg = dev->config;
 	Gpio * const gpio = cfg->regs;
 
 	gpio->OVRC = mask;
@@ -149,7 +144,7 @@ static int gpio_sam_port_clear_bits_raw(const struct device *dev,
 static int gpio_sam_port_toggle_bits(const struct device *dev,
 				     uint32_t mask)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	const struct gpio_sam_config * const cfg = dev->config;
 	Gpio * const gpio = cfg->regs;
 
 	gpio->OVRT = mask;
@@ -162,7 +157,7 @@ static int gpio_sam_port_interrupt_configure(const struct device *dev,
 					     enum gpio_int_mode mode,
 					     enum gpio_int_trig trig)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	const struct gpio_sam_config * const cfg = dev->config;
 	Gpio * const gpio = cfg->regs;
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
@@ -199,7 +194,7 @@ static int gpio_sam_pin_interrupt_configure(const struct device *dev,
 
 static void gpio_sam_isr(const struct device *dev)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	const struct gpio_sam_config * const cfg = dev->config;
 	Gpio * const gpio = cfg->regs;
 	struct gpio_sam_runtime *context = dev->data;
 	uint32_t int_stat;
@@ -232,7 +227,7 @@ static const struct gpio_driver_api gpio_sam_api = {
 
 int gpio_sam_init(const struct device *dev)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	const struct gpio_sam_config * const cfg = dev->config;
 
 	soc_pmc_peripheral_enable(cfg->periph_id);
 

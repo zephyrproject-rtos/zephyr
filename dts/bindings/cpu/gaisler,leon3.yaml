@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: A representation for Gaisler LEON3 CPU.
+
+compatible: "gaisler,leon3"
+
+include: cpu.yaml

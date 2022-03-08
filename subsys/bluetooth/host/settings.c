@@ -119,6 +119,16 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	ssize_t len;
 	const char *next;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		/* The Bluetooth settings loader needs to communicate with the Bluetooth
+		 * controller to setup identities. This will not work before
+		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
+		 * tree to be loaded after @ref bt_enable is completed, so this handler
+		 * will be called again later.
+		 */
+		return 0;
+	}
+
 	if (!name) {
 		BT_ERR("Insufficient number of arguments");
 		return -ENOENT;
@@ -234,6 +244,16 @@ static int commit(void)
 	int err;
 
 	BT_DBG("");
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+		/* The Bluetooth settings loader needs to communicate with the Bluetooth
+		 * controller to setup identities. This will not work before
+		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
+		 * tree to be loaded after @ref bt_enable is completed, so this handler
+		 * will be called again later.
+		 */
+		return 0;
+	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if (bt_dev.name[0] == '\0') {

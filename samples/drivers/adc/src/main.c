@@ -33,6 +33,12 @@
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 
+#ifdef CONFIG_ADC_NRFX_SAADC
+#define ADC_INPUT_POS_OFFSET SAADC_CH_PSELP_PSELP_AnalogInput0
+#else
+#define ADC_INPUT_POS_OFFSET 0
+#endif
+
 /* Get the numbers of up to two channels */
 static uint8_t channel_ids[ADC_NUM_CHANNELS] = {
 	DT_IO_CHANNELS_INPUT_BY_IDX(DT_PATH(zephyr_user), 0),
@@ -76,9 +82,8 @@ void main(void)
 	 */
 	for (uint8_t i = 0; i < ADC_NUM_CHANNELS; i++) {
 		channel_cfg.channel_id = channel_ids[i];
-#ifdef CONFIG_ADC_NRFX_SAADC
-		channel_cfg.input_positive = SAADC_CH_PSELP_PSELP_AnalogInput0
-					     + channel_ids[i];
+#ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
+		channel_cfg.input_positive = ADC_INPUT_POS_OFFSET + channel_ids[i];
 #endif
 
 		adc_channel_setup(dev_adc, &channel_cfg);

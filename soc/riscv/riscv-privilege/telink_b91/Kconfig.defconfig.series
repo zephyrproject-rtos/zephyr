@@ -31,6 +31,9 @@ config NUM_IRQS
 	int
 	default 64
 
+config PINCTRL
+	default y
+
 config XIP
 	bool
 	default n
@@ -43,7 +46,7 @@ config IDLE_STACK_SIZE
 	int
 	default 1536
 
-config TEST_EXTRA_STACKSIZE
+config TEST_EXTRA_STACK_SIZE
 	int
 	default 1024
 

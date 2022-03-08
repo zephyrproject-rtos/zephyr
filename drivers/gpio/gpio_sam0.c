@@ -38,11 +38,6 @@ struct gpio_sam0_data {
 #endif
 };
 
-#define DEV_CFG(dev) \
-	((const struct gpio_sam0_config *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct gpio_sam0_data *const)(dev)->data)
-
 #ifdef CONFIG_SAM0_EIC
 static void gpio_sam0_isr(uint32_t pins, void *arg)
 {
@@ -55,7 +50,8 @@ static void gpio_sam0_isr(uint32_t pins, void *arg)
 static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
 			    gpio_flags_t flags)
 {
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
+	const struct gpio_sam0_config *config = dev->config;
+	struct gpio_sam0_data *data = dev->data;
 	PortGroup *regs = config->regs;
 	PORT_PINCFG_Type pincfg = {
 		.reg = 0,
@@ -97,7 +93,7 @@ static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
 	}
 
 	/* Preserve debounce flag for interrupt configuration. */
-	WRITE_BIT(DEV_DATA(dev)->debounce, pin,
+	WRITE_BIT(data->debounce, pin,
 		  ((flags & GPIO_INT_DEBOUNCE) != 0)
 		  && (pincfg.bit.INEN != 0));
 
@@ -110,7 +106,7 @@ static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
 static int gpio_sam0_port_get_raw(const struct device *dev,
 				  gpio_port_value_t *value)
 {
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
+	const struct gpio_sam0_config *config = dev->config;
 
 	*value = config->regs->IN.reg;
 
@@ -121,7 +117,7 @@ static int gpio_sam0_port_set_masked_raw(const struct device *dev,
 					 gpio_port_pins_t mask,
 					 gpio_port_value_t value)
 {
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
+	const struct gpio_sam0_config *config = dev->config;
 	uint32_t out = config->regs->OUT.reg;
 
 	config->regs->OUT.reg = (out & ~mask) | (value & mask);
@@ -132,7 +128,7 @@ static int gpio_sam0_port_set_masked_raw(const struct device *dev,
 static int gpio_sam0_port_set_bits_raw(const struct device *dev,
 				       gpio_port_pins_t pins)
 {
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
+	const struct gpio_sam0_config *config = dev->config;
 
 	config->regs->OUTSET.reg = pins;
 
@@ -142,7 +138,7 @@ static int gpio_sam0_port_set_bits_raw(const struct device *dev,
 static int gpio_sam0_port_clear_bits_raw(const struct device *dev,
 					 gpio_port_pins_t pins)
 {
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
+	const struct gpio_sam0_config *config = dev->config;
 
 	config->regs->OUTCLR.reg = pins;
 
@@ -152,7 +148,7 @@ static int gpio_sam0_port_clear_bits_raw(const struct device *dev,
 static int gpio_sam0_port_toggle_bits(const struct device *dev,
 				      gpio_port_pins_t pins)
 {
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
+	const struct gpio_sam0_config *config = dev->config;
 
 	config->regs->OUTTGL.reg = pins;
 
@@ -166,8 +162,8 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_mode mode,
 					     enum gpio_int_trig trig)
 {
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
-	struct gpio_sam0_data *const data = DEV_DATA(dev);
+	const struct gpio_sam0_config *config = dev->config;
+	struct gpio_sam0_data *const data = dev->data;
 	PortGroup *regs = config->regs;
 	PORT_PINCFG_Type pincfg = {
 		.reg = regs->PINCFG[pin].reg,
@@ -233,7 +229,7 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 
 		if (rc == 0) {
 			rc = sam0_eic_acquire(config->id, pin, trigger,
-					      (DEV_DATA(dev)->debounce & BIT(pin)) != 0,
+					      (data->debounce & BIT(pin)) != 0,
 					      gpio_sam0_isr, data);
 		}
 		if (rc == 0) {
@@ -258,14 +254,14 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 static int gpio_sam0_manage_callback(const struct device *dev,
 				     struct gpio_callback *callback, bool set)
 {
-	struct gpio_sam0_data *const data = DEV_DATA(dev);
+	struct gpio_sam0_data *const data = dev->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static uint32_t gpio_sam0_get_pending_int(const struct device *dev)
 {
-	const struct gpio_sam0_config *config = DEV_CFG(dev);
+	const struct gpio_sam0_config *config = dev->config;
 
 	return sam0_eic_interrupt_pending(config->id);
 }

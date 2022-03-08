@@ -95,8 +95,6 @@ struct zephyr_smp_transport {
  * @param get_mtu_func          The transport's get-MTU function.
  * @param ud_copy_func          The transport buffer user_data copy function.
  * @param ud_free_func          The transport buffer user_data free function.
- *
- * @return                      0 on success, MGMT_ERR_[...] code on failure.
  */
 void zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 			       zephyr_smp_transport_out_fn *output_func,

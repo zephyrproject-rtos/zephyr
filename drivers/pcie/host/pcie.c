@@ -178,12 +178,12 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 
 #ifdef CONFIG_PCIE_CONTROLLER
 	/* Translate to physical memory address from bus address */
-	if (!pcie_ctrl_region_xlate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
-				    PCIE_CONF_BAR_64(phys_addr),
-				    PCIE_CONF_BAR_MEM(phys_addr) ?
-					  PCIE_CONF_BAR_IO_ADDR(phys_addr)
-					: PCIE_CONF_BAR_ADDR(phys_addr),
-				    &mbar->phys_addr)) {
+	if (!pcie_ctrl_region_translate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
+					PCIE_CONF_BAR_64(phys_addr),
+					PCIE_CONF_BAR_MEM(phys_addr) ?
+						PCIE_CONF_BAR_IO_ADDR(phys_addr)
+						: PCIE_CONF_BAR_ADDR(phys_addr),
+					&mbar->phys_addr)) {
 		return false;
 	}
 #else
@@ -250,6 +250,35 @@ unsigned int pcie_get_irq(pcie_bdf_t bdf)
 	uint32_t data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 
 	return PCIE_CONF_INTR_IRQ(data);
+}
+
+bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
+			      unsigned int irq,
+			      unsigned int priority,
+			      void (*routine)(const void *parameter),
+			      const void *parameter,
+			      uint32_t flags)
+{
+#if defined(CONFIG_PCIE_MSI) && defined(CONFIG_PCIE_MSI_MULTI_VECTOR)
+	if (pcie_is_msi(bdf)) {
+		msi_vector_t vector;
+
+		if ((pcie_msi_vectors_allocate(bdf, priority,
+					       &vector, 1) == 0) ||
+		    !pcie_msi_vector_connect(bdf, &vector,
+					     routine, parameter, flags)) {
+			return false;
+		}
+	} else
+#endif /* CONFIG_PCIE_MSI && CONFIG_PCIE_MSI_MULTI_VECTOR */
+	{
+		if (irq_connect_dynamic(irq, priority, routine,
+					parameter, flags) < 0) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)

@@ -28,14 +28,48 @@ void heap_listener_unregister(struct heap_listener *listener)
 	k_spin_unlock(&heap_listener_lock, key);
 }
 
+void heap_listener_notify_alloc(uintptr_t heap_id, void *mem, size_t bytes)
+{
+	struct heap_listener *listener;
+	k_spinlock_key_t key = k_spin_lock(&heap_listener_lock);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&heap_listener_list, listener, node) {
+		if (listener->heap_id == heap_id
+		    && listener->alloc_cb != NULL
+		    && listener->event == HEAP_ALLOC) {
+			listener->alloc_cb(heap_id, mem, bytes);
+		}
+	}
+
+	k_spin_unlock(&heap_listener_lock, key);
+}
+
+void heap_listener_notify_free(uintptr_t heap_id, void *mem, size_t bytes)
+{
+	struct heap_listener *listener;
+	k_spinlock_key_t key = k_spin_lock(&heap_listener_lock);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&heap_listener_list, listener, node) {
+		if (listener->heap_id == heap_id
+		    && listener->free_cb != NULL
+		    && listener->event == HEAP_FREE) {
+			listener->free_cb(heap_id, mem, bytes);
+		}
+	}
+
+	k_spin_unlock(&heap_listener_lock, key);
+}
+
 void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *new_heap_end)
 {
 	struct heap_listener *listener;
 	k_spinlock_key_t key = k_spin_lock(&heap_listener_lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&heap_listener_list, listener, node) {
-		if (listener->heap_id == heap_id && listener->resize_cb != NULL) {
-			listener->resize_cb(old_heap_end, new_heap_end);
+		if (listener->heap_id == heap_id
+		    && listener->resize_cb != NULL
+		    && listener->event == HEAP_RESIZE) {
+			listener->resize_cb(heap_id, old_heap_end, new_heap_end);
 		}
 	}
 

@@ -3,7 +3,7 @@
 
 description: RISC-V Machine timer
 
-compatible: "nuclei,machine-timer"
+compatible: "riscv,machine-timer"
 
 include: base.yaml
 

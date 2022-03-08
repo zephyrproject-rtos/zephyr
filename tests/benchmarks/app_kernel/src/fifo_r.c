@@ -16,7 +16,6 @@
  *
  * @brief Data receive task
  *
- * @return N/A
  */
 void dequtask(void)
 {

@@ -160,6 +160,19 @@ static void backend_filter_set(struct log_backend const *const backend,
 	}
 }
 
+const struct log_backend *log_backend_get_by_name(const char *backend_name)
+{
+	const struct log_backend *ptr = __log_backends_start;
+
+	while (ptr < __log_backends_end) {
+		if (strcmp(backend_name, ptr->name) == 0) {
+			return ptr;
+		}
+		ptr++;
+	}
+	return NULL;
+}
+
 void log_backend_enable(struct log_backend const *const backend,
 			void *ctx,
 			uint32_t level)
@@ -168,6 +181,10 @@ void log_backend_enable(struct log_backend const *const backend,
 	uint32_t id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
 
 	id += backend - log_backend_get(0);
+
+	if (!IS_ENABLED(CONFIG_LOG1)) {
+		__ASSERT(backend->api->process, "Backend does not support v2 API");
+	}
 
 	log_backend_id_set(backend, id);
 	backend_filter_set(backend, level);

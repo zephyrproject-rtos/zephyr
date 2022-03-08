@@ -91,7 +91,13 @@ void main(void)
 	 * controlled delay.  Here we need to override that, then
 	 * force entry to deep sleep on any delay.
 	 */
-	pm_power_state_force(0u, (struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+	pm_state_force(0u, &(struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+
+	/* Now we need to go sleep. This will let the idle thread runs and
+	 * the pm subsystem will use the forced state. To confirm that the
+	 * forced state is used, lets set the same timeout used previously.
+	 */
+	k_sleep(K_SECONDS(SLEEP_S));
 
 	printk("ERROR: System off failed\n");
 	while (true) {

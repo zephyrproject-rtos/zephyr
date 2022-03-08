@@ -1,7 +1,9 @@
 #ifndef _KERNEL_VERSION_H_
 #define _KERNEL_VERSION_H_
 
-/* @templates@ values come from cmake/version.cmake */
+/* KERNEL and ZEPHYR_VERSION @templates@ values come from cmake/version.cmake
+ * BUILD_VERSION @template@ will be 'git describe', alternatively user defined BUILD_VERSION.
+ */
 
 #cmakedefine ZEPHYR_VERSION_CODE @ZEPHYR_VERSION_CODE@
 #define ZEPHYR_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
@@ -12,5 +14,7 @@
 #define KERNEL_VERSION_MINOR   @KERNEL_VERSION_MINOR@
 #define KERNEL_PATCHLEVEL      @KERNEL_PATCHLEVEL@
 #define KERNEL_VERSION_STRING  @KERNEL_VERSION_STRING@
+
+#define BUILD_VERSION          @BUILD_VERSION@
 
 #endif /* _KERNEL_VERSION_H_ */

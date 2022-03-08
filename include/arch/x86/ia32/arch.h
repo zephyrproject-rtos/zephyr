@@ -115,9 +115,6 @@ typedef struct s_isrList {
  * @param p IRQ priority
  * @param v Interrupt Vector
  * @param d Descriptor Privilege Level
- *
- * @return N/A
- *
  */
 
 #define NANO_CPU_INT_REGISTER(r, n, p, v, d) \
@@ -224,6 +221,14 @@ typedef struct s_isrList {
 	z_irq_controller_irq_config(Z_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
 				   (flags_p)); \
 }
+
+#ifdef CONFIG_PCIE
+
+#define ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
+			      isr_p, isr_param_p, flags_p)		\
+	ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
+
+#endif /* CONFIG_PCIE */
 
 /* Direct interrupts won't work as expected with KPTI turned on, because
  * all non-user accessible pages in the page table are marked non-present.
@@ -427,13 +432,13 @@ extern struct task_state_segment _main_tss;
  */
 #if defined(CONFIG_EAGER_FPU_SHARING) || defined(CONFIG_LAZY_FPU_SHARING)
 #ifdef CONFIG_SSE
-#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	16
+#define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	16
 #else
-#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
+#define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
 #endif
 #else
 /* No special alignment requirements, simply align on pointer size. */
-#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
+#define ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT	(sizeof(void *))
 #endif /* CONFIG_*_FP_SHARING */
 
 

@@ -36,10 +36,12 @@
 #include "ull_sync_types.h"
 #include "ull_sync_internal.h"
 #include "ull_adv_types.h"
+#include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 #include "ull_conn_internal.h"
 #include "ull_df_types.h"
 #include "ull_df_internal.h"
+#include "ull_llcp.h"
 
 #include "ull_adv_internal.h"
 #include "ull_internal.h"
@@ -51,7 +53,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 
 #define CTE_LEN_MAX_US 160U
 
@@ -74,7 +76,7 @@ static MFIFO_DEFINE(iq_report_free, sizeof(void *), IQ_REPORT_CNT);
 
 /* Number of available instance of linked list to be used for node_rx_iq_reports. */
 static uint8_t mem_link_iq_report_quota_pdu;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX*/
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX*/
 
 /* ToDo:
  * - Add release of df_adv_cfg when adv_sync is released.
@@ -166,7 +168,7 @@ static int init_reset(void)
 		 &df_adv_cfg_free);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	/* Re-initialize the free IQ report mfifo */
 	MFIFO_INIT(iq_report_free);
 
@@ -178,7 +180,7 @@ static int init_reset(void)
 	/* Allocate free IQ report node rx */
 	mem_link_iq_report_quota_pdu = IQ_REPORT_CNT;
 	ull_df_rx_iq_report_alloc(UINT8_MAX);
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 	return 0;
 }
 
@@ -497,7 +499,7 @@ bool ull_df_sync_cfg_is_not_enabled(struct lll_df_sync *df_cfg)
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 void *ull_df_iq_report_alloc_peek(uint8_t count)
 {
 	if (count > MFIFO_AVAIL_COUNT_GET(iq_report_free)) {
@@ -558,9 +560,9 @@ void ull_df_rx_iq_report_alloc(uint8_t max)
 		ull_iq_report_link_inc_quota(-1);
 	}
 }
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 bool ull_df_conn_cfg_is_not_enabled(struct lll_df_conn_rx_cfg *rx_cfg)
 {
 	struct lll_df_conn_rx_params *rx_params;
@@ -580,7 +582,7 @@ bool ull_df_conn_cfg_is_not_enabled(struct lll_df_conn_rx_cfg *rx_cfg)
 
 	return !rx_params->is_enabled;
 }
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 /* @brief Function releases unused memory for DF advertising configuration.
@@ -1041,13 +1043,13 @@ uint8_t ll_df_set_conn_cte_tx_params(uint16_t handle, uint8_t cte_types, uint8_t
 	df_tx_cfg->ant_sw_len = switch_pattern_len;
 
 	df_tx_cfg->cte_types_allowed = cte_types;
-	df_tx_cfg->state = DF_CTE_CONN_TX_PARAMS_SET;
+	df_tx_cfg->is_initialized = 1U;
 
 	return BT_HCI_ERR_SUCCESS;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
-#if defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 /**
  * @brief Function sets CTE reception parameters for a connection.
  *
@@ -1085,7 +1087,7 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 	/* This is an information for HCI_LE_Connection_CTE_Request_Enable that
 	 * HCI_LE_Set_Connection_CTE_Receive_Parameters was called at least once.
 	 */
-	cfg_rx->is_initialized = true;
+	cfg_rx->is_initialized = 1U;
 	params_buf_hdr = &cfg_rx->hdr;
 
 	params_rx = dbuf_alloc(params_buf_hdr, &params_idx);
@@ -1116,7 +1118,14 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 
 	return BT_HCI_ERR_SUCCESS;
 }
-#endif /* CONFIG_BT_CTRL_DF_CONN_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+static void df_conn_cte_req_disable(void *param)
+{
+	k_sem_give(param);
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ || CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /* @brief Function enables or disables CTE request control procedure for a connection.
@@ -1139,8 +1148,9 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
  *
  * @return HCI Status of command completion.
  */
-uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t cte_request_interval,
-				      uint8_t requested_cte_length, uint8_t requested_cte_type)
+uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
+				      uint16_t cte_request_interval, uint8_t requested_cte_length,
+				      uint8_t requested_cte_type)
 {
 	struct ll_conn *conn;
 
@@ -1150,23 +1160,33 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t c
 	}
 
 	if (!enable) {
-		/* There is no parameter validation for disable operation. */
+		ull_cp_cte_req_set_disable(conn);
 
-		/* TODO: Add missing implementation of disable CTE reques.
-		 * Requires refactored LLCPs.
-		 */
+		if (conn->llcp.cte_req.is_active) {
+			struct k_sem sem;
+
+			k_sem_init(&sem, 0U, 1U);
+			conn->llcp.cte_req.disable_param = &sem;
+			conn->llcp.cte_req.disable_cb = df_conn_cte_req_disable;
+
+			if (!conn->llcp.cte_req.is_active) {
+				k_sem_take(&sem, K_FOREVER);
+			}
+		}
+
+		return BT_HCI_ERR_SUCCESS;
 	} else {
-		if (!conn->df_rx_params.is_enabled) {
+		if (!conn->lll.df_rx_cfg.is_initialized) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		/* TODO: check if CTE_REQ LLCP is active. Add when merged with refactored LLCPs */
+		if (conn->llcp.cte_req.is_enabled) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		/* Phy may be changed to CODED only if PHY update procedure is supproted. In other
-		 * case the mandatory PHY1M is used (that supports CTE).
-		 */
-		if (conn->lll.phy_tx == PHY_CODED) {
+		/* CTE request may be enabled only in case the receiver PHY is not CODED */
+		if (conn->lll.phy_rx == PHY_CODED) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -1189,21 +1209,77 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t c
 		/* If controller is aware of features supported by peer device then check
 		 * whether required features are enabled.
 		 */
-		if (conn->common.fex_valid &&
-		    (!(conn->llcp_feature.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)) ||
+		if (conn->llcp.fex.valid &&
+		    (!(conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)) ||
 		     ((requested_cte_type == BT_HCI_LE_AOD_CTE_1US ||
 		       requested_cte_type == BT_HCI_LE_AOD_CTE_2US) &&
-		      !(conn->llcp_feature.features_peer &
+		      !(conn->llcp.fex.features_peer &
 			BIT64(BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD))))) {
 			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		}
+
+		conn->llcp.cte_req.is_enabled = 1U;
+		conn->llcp.cte_req.req_interval = cte_request_interval;
+		conn->llcp.cte_req.cte_type = requested_cte_type;
+		conn->llcp.cte_req.min_cte_len = requested_cte_length;
 	}
 
-	/* TODO: implement disable of the CTE if PHY is changed to coded */
-
-	return BT_HCI_ERR_CMD_DISALLOWED;
+	return ull_cp_cte_req(conn, requested_cte_length, requested_cte_type);
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+/**
+ * @brief Function enables or disables CTE response control procedure for a connection.
+ *
+ * @param handle Connection handle.
+ * @param enable Enable or disable CTE response.
+ *
+ * @return HCI Status of command completion.
+ */
+uint8_t ll_df_set_conn_cte_rsp_enable(uint16_t handle, uint8_t enable)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (enable) {
+		if (!conn->lll.df_tx_cfg.is_initialized) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		/* CTE may not be send over CODED PHY */
+		if (conn->lll.phy_tx == PHY_CODED) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+#endif /* CONFIG_BT_CTLR_PHY */
+		conn->lll.df_tx_cfg.cte_rsp_en = 1U;
+
+		ull_cp_cte_rsp_enable(conn, enable, LLL_DF_MAX_CTE_LEN,
+				conn->lll.df_tx_cfg.cte_types_allowed);
+	} else {
+		conn->lll.df_tx_cfg.cte_rsp_en = false;
+
+		if (conn->llcp.cte_rsp.is_active) {
+			struct k_sem sem;
+
+			k_sem_init(&sem, 0U, 1U);
+			conn->llcp.cte_rsp.disable_param = &sem;
+			conn->llcp.cte_rsp.disable_cb = df_conn_cte_req_disable;
+
+			if (!conn->llcp.cte_rsp.is_active) {
+				k_sem_take(&sem, K_FOREVER);
+			}
+		}
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 /* @brief Function provides information about Direction Finding
  *        antennas switching and sampling related settings.

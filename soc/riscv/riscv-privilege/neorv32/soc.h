@@ -8,7 +8,6 @@
 #define RISCV_NEORV32_SOC_H
 
 #include <soc_common.h>
-#include <devicetree.h>
 
 /* Machine System Timer (MTIME) registers */
 #define RISCV_MTIME_BASE    0xffffff90U

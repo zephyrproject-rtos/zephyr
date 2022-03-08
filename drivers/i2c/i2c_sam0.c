@@ -56,12 +56,6 @@ struct i2c_sam0_dev_data {
 	uint8_t num_msgs;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct i2c_sam0_dev_config *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2c_sam0_dev_data *const)(dev)->data)
-
 static void wait_synchronization(SercomI2cm *regs)
 {
 #if defined(SERCOM_I2CM_SYNCBUSY_MASK)
@@ -79,8 +73,8 @@ static void wait_synchronization(SercomI2cm *regs)
 
 static bool i2c_sam0_terminate_on_error(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	if (!(i2c->STATUS.reg & (SERCOM_I2CM_STATUS_ARBLOST |
@@ -126,8 +120,8 @@ static bool i2c_sam0_terminate_on_error(const struct device *dev)
 
 static void i2c_sam0_isr(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	/* Get present interrupts and clear them */
@@ -198,8 +192,8 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 				    uint32_t id, int error_code)
 {
 	const struct device *dev = arg;
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	ARG_UNUSED(dma_dev);
@@ -213,7 +207,7 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 	}
 
 	if (error_code < 0) {
-		LOG_ERR("DMA write error on %s: %d", DEV_NAME(dev), error_code);
+		LOG_ERR("DMA write error on %s: %d", dev->name, error_code);
 		i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 		irq_unlock(key);
 
@@ -235,8 +229,8 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 
 static bool i2c_sam0_dma_write_start(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -271,14 +265,14 @@ static bool i2c_sam0_dma_write_start(const struct device *dev)
 	retval = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (retval != 0) {
 		LOG_ERR("Write DMA configure on %s failed: %d",
-			DEV_NAME(dev), retval);
+			dev->name, retval);
 		return false;
 	}
 
 	retval = dma_start(cfg->dma_dev, cfg->dma_channel);
 	if (retval != 0) {
 		LOG_ERR("Write DMA start on %s failed: %d",
-			DEV_NAME(dev), retval);
+			dev->name, retval);
 		return false;
 	}
 
@@ -289,8 +283,8 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 				   uint32_t id, int error_code)
 {
 	const struct device *dev = arg;
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 
 	ARG_UNUSED(dma_dev);
@@ -304,7 +298,7 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 	}
 
 	if (error_code < 0) {
-		LOG_ERR("DMA read error on %s: %d", DEV_NAME(dev), error_code);
+		LOG_ERR("DMA read error on %s: %d", dev->name, error_code);
 		i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 		irq_unlock(key);
 
@@ -327,8 +321,8 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 
 static bool i2c_sam0_dma_read_start(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -364,14 +358,14 @@ static bool i2c_sam0_dma_read_start(const struct device *dev)
 	retval = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (retval != 0) {
 		LOG_ERR("Read DMA configure on %s failed: %d",
-			DEV_NAME(dev), retval);
+			dev->name, retval);
 		return false;
 	}
 
 	retval = dma_start(cfg->dma_dev, cfg->dma_channel);
 	if (retval != 0) {
 		LOG_ERR("Read DMA start on %s failed: %d",
-			DEV_NAME(dev), retval);
+			dev->name, retval);
 		return false;
 	}
 
@@ -383,8 +377,8 @@ static bool i2c_sam0_dma_read_start(const struct device *dev)
 static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			     uint8_t num_msgs, uint16_t addr)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t addr_reg;
 
@@ -481,29 +475,34 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->msg.status) {
+			/* return the bus to idle */
+			i2c->CTRLB.bit.CMD = 3;
+
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
-					DEV_NAME(dev));
+					dev->name);
 				return -EAGAIN;
 			}
 
 			LOG_ERR("Transaction error on %s: %08X",
-				DEV_NAME(dev), data->msg.status);
+				dev->name, data->msg.status);
 			return -EIO;
 		}
 
-		if (data->msgs->flags & I2C_MSG_STOP) {
-			i2c->CTRLB.bit.CMD = 3;
-		} else if ((data->msgs->flags & I2C_MSG_RESTART) && data->num_msgs > 1) {
-			/*
-			 * No action, since we do this automatically if we
-			 * don't send an explicit stop
-			 */
-		} else {
-			/*
-			 * Neither present, so assume we want to release
-			 * the bus (by sending a stop)
-			 */
+		/*
+		 * Only send a stop if after this message:
+		 *   - it is explicitly requested that we send a stop, or
+		 *   - we are not conducting a restart, with more messages to follow
+		 *
+		 * Note: nothing validates the flags, so default to a stop if a stop is
+		 * requested... do not let a restart request override it
+		 */
+		bool send_stop = (data->msgs->flags & I2C_MSG_STOP)
+			|| !((data->msgs->flags & I2C_MSG_RESTART) && (data->num_msgs > 1));
+
+		if (send_stop) {
+			while (!i2c->STATUS.bit.CLKHOLD) {
+			}
 			i2c->CTRLB.bit.CMD = 3;
 		}
 
@@ -517,7 +516,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 				      uint32_t config)
 {
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t baud;
 	uint32_t baud_low;
@@ -546,7 +545,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		}
 
 		LOG_DBG("Setting %s to standard mode with divisor %u",
-			DEV_NAME(dev), baud);
+			dev->name, baud);
 
 		i2c->BAUD.reg = SERCOM_I2CM_BAUD_BAUD(baud);
 		break;
@@ -563,7 +562,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		}
 
 		LOG_DBG("Setting %s to fast mode with divisor %u",
-			DEV_NAME(dev), baud);
+			dev->name, baud);
 
 		i2c->BAUD.reg = SERCOM_I2CM_BAUD_BAUD(baud);
 		break;
@@ -594,7 +593,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		}
 
 		LOG_DBG("Setting %s to fast mode plus with divisors %u/%u",
-			DEV_NAME(dev), baud_high, baud_low);
+			dev->name, baud_high, baud_low);
 
 		i2c->BAUD.reg = SERCOM_I2CM_BAUD_BAUD(baud_high) |
 				SERCOM_I2CM_BAUD_BAUDLOW(baud_low);
@@ -626,7 +625,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 
 #ifdef SERCOM_I2CM_BAUD_HSBAUD
 		LOG_DBG("Setting %s to high speed with divisors %u/%u",
-			DEV_NAME(dev), baud_high, baud_low);
+			dev->name, baud_high, baud_low);
 
 		/*
 		 * 48 is just from the app notes, but the datasheet says
@@ -651,7 +650,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 
 static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 {
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
@@ -678,8 +677,8 @@ static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 
 static int i2c_sam0_initialize(const struct device *dev)
 {
-	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
-	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
+	struct i2c_sam0_dev_data *data = dev->data;
+	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 

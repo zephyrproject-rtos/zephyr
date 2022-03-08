@@ -170,8 +170,138 @@ static int test_loop(void)
 	return TC_PASS;
 }
 
+static int test_loop_suspend_resume(void)
+{
+	const struct device *dma;
+	static int chan_id;
+	int res = 0;
+
+	TC_PRINT("DMA memory to memory transfer started on %s\n",
+	       DMA_DEVICE_NAME);
+	TC_PRINT("Preparing DMA Controller\n");
+
+#if CONFIG_NOCACHE_MEMORY
+	memset(tx_data, 0, sizeof(tx_data));
+	memcpy(tx_data, TX_DATA, sizeof(TX_DATA));
+#endif
+
+	memset(rx_data, 0, sizeof(rx_data));
+
+	dma = device_get_binding(DMA_DEVICE_NAME);
+	if (!dma) {
+		TC_PRINT("Cannot get dma controller\n");
+		return TC_FAIL;
+	}
+
+	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
+	dma_cfg.source_data_size = 1U;
+	dma_cfg.dest_data_size = 1U;
+	dma_cfg.source_burst_length = 1U;
+	dma_cfg.dest_burst_length = 1U;
+#ifdef CONFIG_DMAMUX_STM32
+	dma_cfg.user_data = (struct device *)dma;
+#else
+	dma_cfg.user_data = NULL;
+#endif /* CONFIG_DMAMUX_STM32 */
+	dma_cfg.dma_callback = dma_user_callback;
+	dma_cfg.block_count = 1U;
+	dma_cfg.head_block = &dma_block_cfg;
+
+#ifdef CONFIG_DMA_MCUX_TEST_SLOT_START
+	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
+#endif
+
+	chan_id = dma_request_channel(dma, NULL);
+	if (chan_id < 0) {
+		TC_PRINT("this platform do not support the dma channel\n");
+		chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
+	}
+	transfer_count = 0;
+	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
+	dma_block_cfg.block_size = strlen(tx_data);
+	dma_block_cfg.source_address = (uint32_t)tx_data;
+	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+
+	if (dma_config(dma, chan_id, &dma_cfg)) {
+		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
+		return TC_FAIL;
+	}
+
+	if (dma_start(dma, chan_id)) {
+		TC_PRINT("ERROR: transfer start (%d)\n", chan_id);
+		return TC_FAIL;
+	}
+
+	while (transfer_count == 0) {
+	}
+
+	res = dma_suspend(dma, chan_id);
+	TC_PRINT("Suspended transfers\n");
+	if (res == -ENOSYS) {
+		TC_PRINT("dma suspend not supported\n");
+		dma_stop(dma, chan_id);
+		return TC_PASS;
+	} else if (res != 0) {
+		TC_PRINT("ERROR: suspend failed, channel %d, result %d\n", chan_id, res);
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Sleeping while suspended\n");
+	k_sleep(K_MSEC(SLEEPTIME));
+
+	if (transfer_count == TRANSFER_LOOPS) {
+		TC_PRINT("ERROR: failed to suspend transfers\n");
+		if (dma_stop(dma, chan_id)) {
+			TC_PRINT("ERROR: transfer stop\n");
+		}
+		return TC_FAIL;
+	}
+	TC_PRINT("Suspended after %d transfers occurred\n", transfer_count);
+
+	res = dma_resume(dma, chan_id);
+	TC_PRINT("Resumed transfers\n");
+	if (res != 0) {
+		TC_PRINT("ERROR: resume failed, channel %d, result %d", chan_id, res);
+		if (dma_stop(dma, chan_id)) {
+			TC_PRINT("ERROR: transfer stop\n");
+		}
+		return TC_FAIL;
+	}
+
+	k_sleep(K_MSEC(SLEEPTIME));
+
+	TC_PRINT("Transfer count %d\n", transfer_count);
+	if (transfer_count < TRANSFER_LOOPS) {
+		transfer_count = TRANSFER_LOOPS;
+		TC_PRINT("ERROR: unfinished transfer\n");
+		if (dma_stop(dma, chan_id)) {
+			TC_PRINT("ERROR: transfer stop\n");
+		}
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
+
+	for (int i = 0; i < TRANSFER_LOOPS; i++) {
+		TC_PRINT("RX data Loop %d: %s\n", i, rx_data[i]);
+		if (strncmp(tx_data, rx_data[i], sizeof(rx_data[i])) != 0) {
+			return TC_FAIL;
+		}
+	}
+
+	TC_PRINT("Finished: DMA\n");
+	return TC_PASS;
+}
+
+
 /* export test cases */
 void test_dma_m2m_loop(void)
 {
 	zassert_true((test_loop() == TC_PASS), NULL);
+}
+
+/* export test cases */
+void test_dma_m2m_loop_suspend_resume(void)
+{
+	zassert_true((test_loop_suspend_resume() == TC_PASS), NULL);
 }

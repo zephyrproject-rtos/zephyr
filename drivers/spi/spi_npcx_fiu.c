@@ -29,9 +29,8 @@ struct npcx_spi_fiu_data {
 };
 
 /* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct npcx_spi_fiu_config *)(dev)->config)
-#define DRV_DATA(dev) ((struct npcx_spi_fiu_data *)(dev)->data)
-#define HAL_INSTANCE(dev) (struct fiu_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev)                                                                          \
+	((struct fiu_reg *)((const struct npcx_spi_fiu_config *)(dev)->config)->base)
 
 static inline void spi_npcx_fiu_cs_level(const struct device *dev, int level)
 {
@@ -50,7 +49,7 @@ static inline void spi_npcx_fiu_exec_cmd(const struct device *dev, uint8_t code,
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
 
 #ifdef CONFIG_ASSERT
-	struct npcx_spi_fiu_data *data = DRV_DATA(dev);
+	struct npcx_spi_fiu_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
 	/* Flash mutex must be held while executing UMA commands */
@@ -70,7 +69,7 @@ static int spi_npcx_fiu_transceive(const struct device *dev,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs)
 {
-	struct npcx_spi_fiu_data *data = DRV_DATA(dev);
+	struct npcx_spi_fiu_data *data = dev->data;
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
 	struct spi_context *ctx = &data->ctx;
 	size_t cur_xfer_len;
@@ -129,7 +128,7 @@ static int spi_npcx_fiu_transceive(const struct device *dev,
 int spi_npcx_fiu_release(const struct device *dev,
 			 const struct spi_config *config)
 {
-	struct npcx_spi_fiu_data *data = DRV_DATA(dev);
+	struct npcx_spi_fiu_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
 	if (!spi_context_configured(ctx, config)) {
@@ -142,7 +141,7 @@ int spi_npcx_fiu_release(const struct device *dev,
 
 static int spi_npcx_fiu_init(const struct device *dev)
 {
-	const struct npcx_spi_fiu_config *const config = DRV_CONFIG(dev);
+	const struct npcx_spi_fiu_config *const config = dev->config;
 	const struct device *clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
 
@@ -160,7 +159,7 @@ static int spi_npcx_fiu_init(const struct device *dev)
 	}
 
 	/* Make sure the context is unlocked */
-	spi_context_unlock_unconditionally(&DRV_DATA(dev)->ctx);
+	spi_context_unlock_unconditionally(&((struct npcx_spi_fiu_data *)dev->data)->ctx);
 
 	return 0;
 }

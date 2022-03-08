@@ -126,6 +126,8 @@ config MDNS_RESPONDER
 	bool "mDNS responder"
 	select NET_IPV4_IGMP if NET_IPV4
 	select NET_IPV6_MLD if NET_IPV6
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the mDNS responder support for Zephyr.
@@ -189,6 +191,8 @@ config LLMNR_RESPONDER
 	bool "LLMNR responder"
 	select NET_IPV4_IGMP if NET_IPV4
 	select NET_IPV6_MLD if NET_IPV6
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the LLMNR responder support for Zephyr.

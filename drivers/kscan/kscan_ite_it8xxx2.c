@@ -492,16 +492,16 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	/* Enable keyboard scan loop */
 	atomic_set(&data->enable_scan, 1);
 
+	irq_connect_dynamic(DT_INST_IRQN(0), 0,
+			    (void (*)(const void *))keyboard_raw_interrupt,
+			    (const void *)dev, 0);
+
 	/* Create keyboard scan task */
 	k_thread_create(&data->thread, data->thread_stack,
 			TASK_STACK_SIZE,
 			(void (*)(void *, void *, void *))polling_task,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(4), 0, K_NO_WAIT);
-
-	irq_connect_dynamic(DT_INST_IRQN(0), 0,
-			    (void (*)(const void *))keyboard_raw_interrupt,
-			    (const void *)dev, 0);
 
 	return 0;
 }

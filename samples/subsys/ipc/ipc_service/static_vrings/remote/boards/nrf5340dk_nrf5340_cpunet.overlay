@@ -9,6 +9,10 @@
 		/delete-property/ zephyr,ipc_shm;
 	};
 
+	soc {
+		/delete-node/ ipc0;
+	};
+
 	reserved-memory {
 		/delete-node/ memory@20070000;
 
@@ -18,20 +22,6 @@
 
 		sram_ipc1: memory@20078000 {
 			reg = <0x20078000 0x8000>;
-		};
-	};
-
-	soc {
-		/delete-node/ ipc@41012000;
-
-		mbox: mbox@41012000 {
-			compatible = "nordic,mbox-nrf-ipc";
-			reg = <0x41012000 0x1000>;
-			tx-mask = <0x0000ffff>;
-			rx-mask = <0x0000ffff>;
-			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "okay";
 		};
 	};
 

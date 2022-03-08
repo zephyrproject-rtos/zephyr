@@ -23,88 +23,6 @@ extern "C" {
  */
 
 /**
- * @brief Get a label property from the node referenced by a dmas
- *        property at an index
- *
- * It's an error if the DMA controller node referenced by the phandle
- * in node_id's dmas property at index "idx" has no label property.
- *
- * Example devicetree fragment:
- *
- *     dma1: dma@... {
- *             label = "DMA_1";
- *     };
- *
- *     dma2: dma@... {
- *             label = "DMA_2";
- *     };
- *
- *     n: node {
- *		dmas = <&dma1 1 2 0x400 0x3>,
- *			<&dma2 6 3 0x404 0x5>;
- *     };
- *
- * Example usage:
- *
- *     DT_DMAS_LABEL_BY_IDX(DT_NODELABEL(n), 1) // "DMA_2"
- *
- * @param node_id node identifier for a node with a dmas property
- * @param idx logical index into dmas property
- * @return the label property of the node referenced at index "idx"
- */
-#define DT_DMAS_LABEL_BY_IDX(node_id, idx) \
-	__DEPRECATED_MACRO \
-	DT_PROP_BY_PHANDLE_IDX(node_id, dmas, idx, label)
-
-/**
- * @brief Get a label property from a DT_DRV_COMPAT instance's dmas
- *        property at an index
- * @param inst DT_DRV_COMPAT instance number
- * @param idx logical index into dmas property
- * @return the label property of the node referenced at index "idx"
- * @see DT_DMAS_LABEL_BY_IDX()
- */
-#define DT_INST_DMAS_LABEL_BY_IDX(inst, idx) \
-	__DEPRECATED_MACRO \
-	DT_DMAS_LABEL_BY_IDX(DT_DRV_INST(inst), idx)
-
-/**
- * @brief Get a label property from a dmas property by name
- *
- * It's an error if the DMA controller node referenced by the phandle
- * in node_id's dmas property at the element named "name" has no label
- * property.
- *
- * Example devicetree fragment:
- *
- *     dma1: dma@... {
- *             label = "DMA_1";
- *     };
- *
- *     dma2: dma@... {
- *             label = "DMA_2";
- *     };
- *
- *     n: node {
- *		dmas = <&dma1 1 2 0x400 0x3>,
- *			<&dma2 6 3 0x404 0x5>;
- *		dma-names = "tx", "rx";
- *     };
- *
- * Example usage:
- *
- *     DT_DMAS_LABEL_BY_NAME(DT_NODELABEL(n), rx) // "DMA_2"
- *
- * @param node_id node identifier for a node with a dmas property
- * @param name lowercase-and-underscores name of a dmas element
- *             as defined by the node's dma-names property
- * @return the label property of the node referenced at the named element
- */
-#define DT_DMAS_LABEL_BY_NAME(node_id, name) \
-	__DEPRECATED_MACRO \
-	DT_PROP(DT_PHANDLE_BY_NAME(node_id, dmas, name), label)
-
-/**
  * @brief Get the node identifier for the DMA controller from a
  *        dmas property at an index
  *
@@ -170,19 +88,6 @@ extern "C" {
  * @see DT_DMAS_CTLR_BY_IDX()
  */
 #define DT_DMAS_CTLR(node_id) DT_DMAS_CTLR_BY_IDX(node_id, 0)
-
-/**
- * @brief Get a label property from a DT_DRV_COMPAT instance's dmas
- *        property by name
- * @param inst DT_DRV_COMPAT instance number
- * @param name lowercase-and-underscores name of a dmas element
- *             as defined by the node's dma-names property
- * @return the label property of the node referenced at the named element
- * @see DT_DMAS_LABEL_BY_NAME()
- */
-#define DT_INST_DMAS_LABEL_BY_NAME(inst, name) \
-	__DEPRECATED_MACRO \
-	DT_DMAS_LABEL_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
  * @brief Get the node identifier for the DMA controller from a

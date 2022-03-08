@@ -173,7 +173,6 @@ extern FUNC_NORETURN void z_cstart(void);
  *
  * This routine prepares for the execution of and runs C code.
  *
- * @return N/A
  */
 void z_arm_prep_c(void)
 {

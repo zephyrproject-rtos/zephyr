@@ -265,6 +265,10 @@ The MIMXRT1060 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_15 | SAI1_TX_SYNC    | I2S                       |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_02 | 1588_EVENT2_OUT | 1588                      |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_03 | 1588_EVENT2_IN  | 1588                      |
++---------------+-----------------+---------------------------+
 
 .. note::
         In order to use the SPI peripheral on this board, resistors R278, R279,
@@ -370,7 +374,7 @@ Troubleshooting
 
 If the debug probe fails to connect with the following error, it's possible
 that the boot header in QSPI flash is invalid or corrupted. The boot header is
-configured by :kconfig:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
+configured by :kconfig:option:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
 
 .. code-block:: console
 

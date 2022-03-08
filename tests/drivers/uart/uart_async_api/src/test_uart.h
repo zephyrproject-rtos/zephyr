@@ -35,6 +35,7 @@
 	defined(CONFIG_BOARD_NUCLEO_WL55JC)
 #define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(usart1))
 #elif defined(CONFIG_BOARD_NUCLEO_H723ZG) || \
+	defined(CONFIG_BOARD_NUCLEO_H743ZI) || \
 	defined(CONFIG_BOARD_STM32F3_DISCO)
 #define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(usart2))
 #elif defined(CONFIG_BOARD_NUCLEO_L4R5ZI) || \
@@ -54,6 +55,7 @@
 void init_test(void);
 
 void test_single_read(void);
+void test_multiple_rx_enable(void);
 void test_chained_read(void);
 void test_double_buffer(void);
 void test_read_abort(void);
@@ -63,6 +65,7 @@ void test_long_buffers(void);
 void test_chained_write(void);
 
 void test_single_read_setup(void);
+void test_multiple_rx_enable_setup(void);
 void test_chained_read_setup(void);
 void test_double_buffer_setup(void);
 void test_read_abort_setup(void);

@@ -284,4 +284,4 @@ static int flash_mcux_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, flash_mcux_init, NULL,
 			&flash_data, NULL, POST_KERNEL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_mcux_api);
+			CONFIG_FLASH_INIT_PRIORITY, &flash_mcux_api);

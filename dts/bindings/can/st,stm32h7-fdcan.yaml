@@ -1,0 +1,9 @@
+description: Bosch m_can CAN-FD controller for STM32H7 series
+
+compatible: "st,stm32h7-fdcan"
+
+include: ["bosch,m-can.yaml", "pinctrl-device.yaml"]
+
+properties:
+    clocks:
+      required: true

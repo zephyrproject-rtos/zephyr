@@ -25,7 +25,7 @@ const struct img_mgmt_dfu_callbacks_t *img_mgmt_dfu_callbacks_fn;
 
 struct img_mgmt_state g_img_mgmt_state;
 
-#if IMG_MGMT_VERBOSE_ERR
+#if CONFIG_IMG_MGMT_VERBOSE_ERR
 const char *img_mgmt_err_str_app_reject = "app reject";
 const char *img_mgmt_err_str_hdr_malformed = "header malformed";
 const char *img_mgmt_err_str_magic_mismatch = "magic mismatch";
@@ -72,7 +72,7 @@ img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 				   uint32_t *flags)
 {
 
-#if IMG_MGMT_DUMMY_HDR
+#if CONFIG_IMG_MGMT_DUMMY_HDR
 	uint8_t dummy_hash[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x00, 0x11, 0x22,
 				0x33, 0x44, 0x55, 0x66, 0x77};
 
@@ -203,7 +203,7 @@ img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash)
 	int i;
 	struct image_version ver;
 
-	for (i = 0; i < 2 * IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, &ver, hash, NULL) != 0) {
 			continue;
 		}
@@ -224,7 +224,7 @@ img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 	int i;
 	uint8_t hash[IMAGE_HASH_LEN];
 
-	for (i = 0; i < 2 * IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (i = 0; i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, ver, hash, NULL) != 0) {
 			continue;
 		}
@@ -235,7 +235,7 @@ img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 	return -1;
 }
 
-#if IMG_MGMT_VERBOSE_ERR
+#if CONFIG_IMG_MGMT_VERBOSE_ERR
 int
 img_mgmt_error_rsp(struct mgmt_ctxt *ctxt, int rc, const char *rsn)
 {
@@ -459,7 +459,7 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 		memset(&g_img_mgmt_state.data_sha[req.data_sha_len], 0,
 			   IMG_MGMT_DATA_SHA_LEN - req.data_sha_len);
 
-#if IMG_MGMT_LAZY_ERASE
+#if CONFIG_IMG_ERASE_PROGRESSIVELY
 		/* setup for lazy sector by sector erase */
 		g_img_mgmt_state.sector_id = -1;
 		g_img_mgmt_state.sector_end = 0;
@@ -480,7 +480,7 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 
 	/* Write the image data to flash. */
 	if (req.data_len != 0) {
-#if IMG_MGMT_LAZY_ERASE
+#if CONFIG_IMG_ERASE_PROGRESSIVELY
 		/* erase as we cross sector boundaries */
 		if (img_mgmt_impl_erase_if_needed(req.off, action.write_bytes) != 0) {
 			rc = MGMT_ERR_EUNKNOWN;

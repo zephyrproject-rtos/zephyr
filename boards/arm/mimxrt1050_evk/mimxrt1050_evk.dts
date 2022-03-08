@@ -156,6 +156,17 @@ arduino_serial: &lpuart3 {};
 
 &lcdif {
 	status = "okay";
+	width = <480>;
+	height = <272>;
+	hsync = <41>;
+	hfp = <4>;
+	hbp = <8>;
+	vsync = <10>;
+	vfp = <4>;
+	vbp = <2>;
+	polarity = <3>;
+	pixel-format = "bgr-565";
+	data-buswidth = "16-bit";
 	port {
 		lcd_panel_out: endpoint {
 			remote-endpoint = <&lcd_panel_in>;

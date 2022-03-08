@@ -17,18 +17,17 @@
 #include <drivers/interrupt_controller/intc_esp32c3.h>
 
 #include <kernel_structs.h>
+#include <kernel_internal.h>
 #include <string.h>
 #include <toolchain/gcc.h>
 #include <soc.h>
-
-extern void _PrepC(void);
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
  * is already set up.
  */
-void __attribute__((section(".iram1"))) __start(void)
+void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
@@ -47,27 +46,11 @@ void __attribute__((section(".iram1"))) __start(void)
 	__asm__ __volatile__("la t0, _esp32c3_vector_table\n"
 						"csrw mtvec, t0\n");
 
+	z_bss_zero();
+
 	/* Disable normal interrupts. */
 	csr_read_clear(mstatus, MSTATUS_MIE);
 
-#if !CONFIG_BOOTLOADER_ESP_IDF
-	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.
-	 * We're done booting, so disable it.
-	 * If 2nd stage bootloader from IDF is enabled, then that will take
-	 * care of this.
-	 */
-	volatile uint32_t *wdt_timg_protect = (uint32_t *)TIMG_WDTWPROTECT_REG(0);
-	volatile uint32_t *wdt_timg_reg = (uint32_t *)TIMG_WDTCONFIG0_REG(0);
-
-	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
-	*wdt_rtc_reg &= ~RTC_CNTL_WDT_FLASHBOOT_MOD_EN;
-	*wdt_rtc_protect = 0;
-	*wdt_timg_protect = TIMG_WDT_WKEY_VALUE;
-	*wdt_timg_reg &= ~TIMG_WDT_FLASHBOOT_MOD_EN;
-	*wdt_timg_protect = 0;
-#endif
-
-#if CONFIG_BOOTLOADER_ESP_IDF
 	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
 	 * Zephyr environment.
@@ -75,7 +58,6 @@ void __attribute__((section(".iram1"))) __start(void)
 	*wdt_rtc_protect = RTC_CNTL_WDT_WKEY_VALUE;
 	*wdt_rtc_reg &= ~RTC_CNTL_WDT_EN;
 	*wdt_rtc_protect = 0;
-#endif
 
 	/* Configure the Cache MMU size for instruction and rodata in flash. */
 	extern uint32_t esp_rom_cache_set_idrom_mmu_size(uint32_t irom_size,
@@ -105,7 +87,7 @@ void __attribute__((section(".iram1"))) __start(void)
 	esp_intr_initialize();
 
 	/* Start Zephyr */
-	_PrepC();
+	z_cstart();
 
 	CODE_UNREACHABLE;
 }

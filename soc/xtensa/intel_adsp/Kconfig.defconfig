@@ -4,3 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "soc/xtensa/intel_adsp/*/Kconfig.defconfig.series"
+
+# Lower priority defaults come AFTER the series-specific ones set above
+
+config XTENSA_CACHED_REGION
+	default 5
+
+config XTENSA_UNCACHED_REGION
+	default 4

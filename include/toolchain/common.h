@@ -82,7 +82,7 @@
     #define PERFOPT_ALIGN .align  4
 
   #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || \
-	  defined(CONFIG_XTENSA)
+	  defined(CONFIG_XTENSA) || defined(CONFIG_MIPS)
     #define PERFOPT_ALIGN .balign 4
 
   #elif defined(CONFIG_ARCH_POSIX)
@@ -211,10 +211,6 @@
 	Z_DECL_ALIGN(struct struct_type) name \
 	__in_section(_##struct_type, static, name) __used
 
-#define Z_STRUCT_SECTION_ITERABLE(struct_type, name) \
-	__DEPRECATED_MACRO \
-	STRUCT_SECTION_ITERABLE(struct_type, name)
-
 /**
  * @brief Defines an alternate data type iterable section.
  *
@@ -226,10 +222,6 @@
 #define STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name) \
 	Z_DECL_ALIGN(struct struct_type) name \
 	__in_section(_##out_type, static, name) __used
-
-#define Z_STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name) \
-	__DEPRECATED_MACRO \
-	STRUCT_SECTION_ITERABLE_ALTERNATE(out_type, struct_type, name)
 
 /**
  * @brief Iterate over a specified iterable section.
@@ -250,10 +242,6 @@
 			 "unexpected list end location"); \
 		iterator < _CONCAT(_##struct_type, _list_end); }); \
 	     iterator++)
-
-#define Z_STRUCT_SECTION_FOREACH(struct_type, iterator) \
-	__DEPRECATED_MACRO \
-	STRUCT_SECTION_FOREACH(struct_type, iterator)
 
 /**
  * @}

@@ -142,6 +142,14 @@ config USB_DC_NXP_LPCIP3511
 
 endchoice
 
+config USB_DC_MSG_QUEUE_LEN
+	int
+	default 10
+	help
+	  Maximum number of messages USB device controller interrupt can queue
+	  for callback thread
+
+
 endif # USB_MCUX
 
 config USB_NATIVE_POSIX

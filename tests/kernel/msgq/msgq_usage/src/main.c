@@ -10,7 +10,7 @@
 #include <limits.h>
 
 #define MSGQ_LEN (2)
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define NUM_SERVICES 2
 #define TIMEOUT K_MSEC(100)
 

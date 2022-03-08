@@ -9,23 +9,24 @@
 #include "pwm.h"
 #include "clock.h"
 #include <drivers/pwm.h>
-#include <drivers/pinmux.h>
-#include <dt-bindings/pinctrl/b91-pinctrl.h>
+#include <drivers/pinctrl.h>
 
 
 #define PWM_PCLK_SPEED      DT_INST_PROP(0, clock_frequency)
 #define NUM_OF_CHANNELS     DT_INST_PROP(0, channels)
 
-static const uint32_t pwm_pins[] = B91_PINMUX_DT_INST_GET_ARRAY(0, 0);
+PINCTRL_DT_INST_DEFINE(0);
+
+static const struct pinctrl_dev_config *pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 /* API implementation: init */
 static int pwm_b91_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	uint32_t status = 0;
 	uint8_t clk_32k_en = 0;
 	uint32_t pwm_clk_div = 0;
-	const struct device *pinmux;
 
 	/* Calculate and check PWM clock divider */
 	pwm_clk_div = sys_clk.pclk * 1000 * 1000 / PWM_PCLK_SPEED - 1;
@@ -45,16 +46,10 @@ static int pwm_b91_init(const struct device *dev)
 	clk_32k_en |= DT_INST_PROP(0, clk32k_ch5_enable) ? PWM_CLOCK_32K_CHN_PWM5 : 0;
 	pwm_32k_chn_en(clk_32k_en);
 
-	/* Get PinMux driver */
-	pinmux = DEVICE_DT_GET(DT_NODELABEL(pinmux));
-	if (!device_is_ready(pinmux)) {
-		return -ENODEV;
-	}
-
 	/* Config PWM pins */
-	for (int i = 0; i < ARRAY_SIZE(pwm_pins); i++) {
-		pinmux_pin_set(pinmux, B91_PINMUX_GET_PIN(pwm_pins[i]),
-			       B91_PINMUX_GET_FUNC(pwm_pins[i]));
+	status = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		return status;
 	}
 
 	return 0;

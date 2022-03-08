@@ -7,4 +7,6 @@ Device Management
     :maxdepth: 1
 
     mcumgr.rst
+    mcumgr_backporting.rst
     dfu.rst
+    ota.rst

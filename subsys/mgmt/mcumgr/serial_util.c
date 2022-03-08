@@ -26,7 +26,7 @@ static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 
 static uint16_t mcumgr_serial_calc_crc(const uint8_t *data, int len)
 {
-	return crc16(data, len, 0x1021, 0, true);
+	return crc16_itu_t(0x0000, data, len);
 }
 
 static int mcumgr_serial_extract_len(struct mcumgr_serial_rx_ctxt *rx_ctxt)

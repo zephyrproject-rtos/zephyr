@@ -98,6 +98,14 @@ enum {
 	BT_ISO_DISCONNECT,
 };
 
+
+enum bt_iso_chan_type {
+	BT_ISO_CHAN_TYPE_NONE,
+	BT_ISO_CHAN_TYPE_CONNECTED,
+	BT_ISO_CHAN_TYPE_BROADCASTER,
+	BT_ISO_CHAN_TYPE_SYNC_RECEIVER
+};
+
 /** @brief ISO Channel structure. */
 struct bt_iso_chan {
 	/** Channel connection reference */
@@ -416,7 +424,7 @@ struct bt_iso_chan_ops {
 	 *  rejected.
 	 *
 	 *  @param chan   The channel that has been Disconnected
-	 *  @param reason HCI reason for the disconnection.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
 	void (*disconnected)(struct bt_iso_chan *chan, uint8_t reason);
 
@@ -598,6 +606,31 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf);
+
+/** ISO channel Info Structure */
+struct bt_iso_info {
+	/** Channel Type. */
+	enum bt_iso_chan_type type;
+};
+
+/** @brief Get ISO channel info
+ *
+ *  @param chan Channel object.
+ *  @param info Channel info object.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_iso_chan_get_info(const struct bt_iso_chan *chan,
+			 struct bt_iso_info *info);
+
+/** @brief Get the type of an ISO channel
+ *
+ * @param chan Channel object.
+ *
+ * @return enum bt_iso_chan_type The type of the channel. If @p is NULL this
+ *                               will be BT_ISO_CHAN_TYPE_NONE.
+ */
+enum bt_iso_chan_type bt_iso_chan_get_type(const struct bt_iso_chan *chan);
 
 /** @brief Creates a BIG as a broadcaster
  *

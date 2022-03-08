@@ -4,36 +4,18 @@
 choice LOG_MODE
 	prompt "Mode"
 	default LOG_MODE_MINIMAL if LOG_DEFAULT_MINIMAL
+	default LOG_MODE_IMMEDIATE if LOG2_MODE_IMMEDIATE
 	default LOG_MODE_DEFERRED
 
 config LOG_MODE_DEFERRED
 	bool "Deferred logging"
-	select MPSC_PBUF
 	help
 	  Log messages are buffered and processed later. This mode has the
 	  least impact on the application. Time consuming processing is
 	  deferred to the known context.
 
-config LOG2_MODE_DEFERRED
-	bool "Deferred logging v2"
-	select MPSC_PBUF
-	select LOG2
-
-config LOG2_MODE_IMMEDIATE
-	bool "Synchronous v2"
-	select LOG2
-	select MPSC_PBUF
-	help
-	  When enabled log is processed in the context of the call. It impacts
-	  performance of the system since time consuming operations are
-	  performed in the context of the log entry (e.g. high priority
-	  interrupt).Logger backends must support exclusive access to work
-	  flawlessly in that mode because one log operation can be interrupted
-	  by another one in the higher priority context.
-
 config LOG_MODE_IMMEDIATE
 	bool "Synchronous"
-	select MPSC_PBUF
 	help
 	  When enabled log is processed in the context of the call. It impacts
 	  performance of the system since time consuming operations are
@@ -41,7 +23,6 @@ config LOG_MODE_IMMEDIATE
 	  interrupt).Logger backends must support exclusive access to work
 	  flawlessly in that mode because one log operation can be interrupted
 	  by another one in the higher priority context.
-
 
 config LOG_MODE_MINIMAL
 	bool "Minimal-footprint"
@@ -64,13 +45,43 @@ config LOG_FRONTEND
 
 endchoice
 
+config LOG2_MODE_DEFERRED
+	bool "Deferred v2 (DEPRECATED)"
+	help
+	  Option has been deprecated. Use LOG_MODE_DEFERRED which defaults now
+	  to v2.
+
+config LOG2_MODE_IMMEDIATE
+	bool "Synchronous v2 (DEPRECATED)"
+	help
+	  Option has been deprecated. Use LOG_MODE_IMMEDIATE which defaults now
+	  to v2.
+
+config LOG1
+	bool "Use v1 (DEPRECATED)"
+	help
+	  Deprecated.
+
 config LOG2
 	bool
+	select MPSC_PBUF
+	default y if !LOG1
 
-config LOG_IMMEDIATE
+config LOG1_IMMEDIATE
 	bool
-	default y if LOG_MODE_IMMEDIATE
-	default y if LOG2_MODE_IMMEDIATE
+	default y if LOG1 && LOG_MODE_IMMEDIATE
+
+config LOG1_DEFERRED
+	bool
+	default y if LOG1 && LOG_MODE_DEFERRED
+
+config LOG2_IMMEDIATE
+	bool
+	default y if !LOG1 && LOG_MODE_IMMEDIATE
+
+config LOG2_DEFERRED
+	bool
+	default y if !LOG1 && LOG_MODE_DEFERRED
 
 config LOG_DEFAULT_MINIMAL
 	bool

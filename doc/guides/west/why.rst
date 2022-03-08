@@ -117,7 +117,4 @@ West is:
   interoperability with third party tools, and means Zephyr developers
   can always find out what is happening "under the hood" when using west.
 
-See `Zephyr issue #6205`_ and for more details and discussion.
-
-.. _Zephyr issue #6205:
-   https://github.com/zephyrproject-rtos/zephyr/issues/6205
+See :github:`Zephyr issue #6205 <6205>` and for more details and discussion.

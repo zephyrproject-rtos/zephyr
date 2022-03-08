@@ -5,6 +5,25 @@
 
 if SOC_ESP32C3
 
+if BOOTLOADER_MCUBOOT
+
+config HAS_FLASH_LOAD_OFFSET
+	default y
+
+config XIP
+	default y
+
+config MCUBOOT_GENERATE_UNSIGNED_IMAGE
+	default y
+
+config MCUBOOT_GENERATE_CONFIRMED_IMAGE
+	default y
+
+config ROM_START_OFFSET
+	default 0x20
+
+endif
+
 config SOC
 	default "esp32c3"
 
@@ -22,9 +41,6 @@ config GEN_IRQ_VECTOR_TABLE
 
 config DYNAMIC_INTERRUPTS
 	default y
-
-config XIP
-	default n
 
 config ISR_STACK_SIZE
 	default 2048

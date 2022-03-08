@@ -6,6 +6,7 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default "qemu_riscv32" if BOARD_QEMU_RISCV32
 	default "qemu_riscv32_xip" if BOARD_QEMU_RISCV32_XIP
+	default "qemu_riscv32_smp" if BOARD_QEMU_RISCV32_SMP
 
 config COMPRESSED_ISA
 	default y

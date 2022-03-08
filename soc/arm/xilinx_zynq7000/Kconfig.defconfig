@@ -3,10 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_XILINX_ZYNQ7000 || SOC_XILINX_ZYNQ7000S
+source "soc/arm/xilinx_zynq7000/*/Kconfig.defconfig.series"
 
-config SOC
-	default "xilinx_zynq7000"
+if SOC_FAMILY_XILINX_ZYNQ7000
 
 config NUM_IRQS
 	int
@@ -22,4 +21,4 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
-endif
+endif # SOC_FAMILY_XILINX_ZYNQ7000

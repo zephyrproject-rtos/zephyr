@@ -20,7 +20,7 @@
 #define VTD_RTADDR_REG		0x020 /* Root Table Address */
 #define VTD_CCMD_REG		0x028 /* Context Command */
 #define VTD_FSTS_REG		0x034 /* Fault Status */
-#define VTD_FECTL_REG		0x038 /* Fault Event Control Register*/
+#define VTD_FECTL_REG		0x038 /* Fault Event Control */
 #define VTD_FEDATA_REG		0x03C /* Fault Event Data */
 #define VTD_FEADDR_REG		0x040 /* Fault Event Address */
 #define VTD_FEUADDR_REG		0x044 /* Fault Event Upper Address */
@@ -85,6 +85,20 @@
 #define VTD_VCMD		0xE10 /* Virtual Command */
 #define VTD_VCRSP		0xE20 /* Virtual Command Response */
 
+/* Capability Register details */
+#define VTD_CAP_NFR_POS		40
+#define VTD_CAP_NFR_MASK	((uint64_t)0xFFUL << VTD_CAP_NFR_POS)
+#define VTD_CAP_NFR(cap)					\
+	(((uint64_t)cap & VTD_CAP_NFR_MASK) >> VTD_CAP_NFR_POS)
+
+#define VTD_CAP_FRO_POS		24
+#define VTD_CAP_FRO_MASK	((uint64_t)0x3FFUL << VTD_CAP_FRO_POS)
+#define VTD_CAP_FRO(cap)					\
+	(((uint64_t)cap & VTD_CAP_FRO_MASK) >> VTD_CAP_FRO_POS)
+
+/* Extended Capability Register details */
+#define VTD_ECAP_C		BIT(0)
+
 /* Global Command Register details */
 #define VTD_GCMD_CFI		23
 #define VTD_GCMD_SIRTP		24
@@ -108,14 +122,81 @@
 #define VTD_GSTS_TES		31
 
 /* Interrupt Remapping Table Address Register details */
-#define VTD_IRTA_SIZE_MASK	0x00000000000000FF
-#define VTD_IRTA_EIME		11
-#define VTD_IRTA_ADDR_SHIFT	12
+#define VTD_IRTA_SIZE_MASK	0x000000000000000FUL
+#define VTD_IRTA_EIME		BIT(11)
 
-#define VTD_IRTA_REG_GEN_CONTENT(addr, size, mode) \
-	(0 |					   \
-	 (addr << VTD_IRTA_ADDR_SHIFT) |	   \
-	 (mode) | (size & VTD_IRTA_SIZE_MASK))
+#define VTD_IRTA_REG_GEN_CONTENT(addr, size, mode)		\
+	((uint64_t)(addr) | (mode) | (size & VTD_IRTA_SIZE_MASK))
+
+/* Fault event control register details */
+#define VTD_FECTL_REG_IP	30
+#define VTD_FECTL_REG_IM	31
+
+/* Fault event status register details */
+#define VTD_FSTS_PFO		BIT(0)
+#define VTD_FSTS_PPF		BIT(1)
+#define VTD_FSTS_AFO		BIT(2)
+#define VTD_FSTS_APF		BIT(3)
+#define VTD_FSTS_IQE		BIT(4)
+#define VTD_FSTS_ICE		BIT(5)
+#define VTD_FSTS_ITE		BIT(6)
+
+#define VTD_FSTS_FRI_POS	8
+#define VTD_FSTS_FRI_MASK	(0xF << VTD_FSTS_FRI_POS)
+#define VTD_FSTS_FRI(status)					\
+	((status & VTD_FSTS_FRI_MASK) >> VTD_FSTS_FRI_POS)
+
+#define VTD_FSTS_CLEAR_STATUS				\
+	(VTD_FSTS_PFO | VTD_FSTS_AFO | VTD_FSTS_APF |	\
+	 VTD_FSTS_IQE | VTD_FSTS_ICE | VTD_FSTS_ITE)
+
+#define VTD_FSTS_CLEAR(status)			\
+	(status & VTD_FSTS_CLEAR_STATUS)
+
+/* Fault recording register(s) details
+ * Note: parts of the register are split into highest and lowest 64bits
+ * so bit positions are depending on it and are not based on 128bits reg.
+ */
+#define VTD_FRCD_REG_SIZE	16
+
+/* Highest 64bits info */
+#define VTD_FRCD_F		BIT(63)
+#define VTD_FRCD_T		BIT(62)
+
+#define VTD_FRCD_FR_POS		32
+#define VTD_FRCD_FR_MASK	((uint64_t)0xFF << VTD_FRCD_FR_POS)
+#define VTD_FRCD_FR(fault)					\
+	((uint8_t)((fault & VTD_FRCD_FR_MASK) >> VTD_FRCD_FR_POS))
+
+#define VTD_FRCD_SID_MASK	0xFFFF
+#define VTD_FRCD_SID(fault)			\
+	((uint16_t)(fault & VTD_FRCD_SID_MASK))
+
+/* Lowest 64bits info */
+#define VTD_FRCD_FI_POS		12
+#define VTD_FRCD_FI_MASK	((uint64_t)0xFFFFFFFFFFFFF << VTD_FRCD_FI_POS)
+#define VTD_FRCD_FI(fault)				\
+	((fault & VTD_FRCD_FI_MASK) >> VTD_FRCD_FI_POS)
+
+#define VTD_FRCD_FI_IR_POS	48
+#define VTD_FRCD_FI_IR_MASK	((uint64_t)0xFFFF << VTD_FRCD_FI_IR_POS)
+#define VTD_FRCD_FI_IR(fault)					\
+	((fault & VTD_FRCD_FI_IR_MASK) >> VTD_FRCD_FI_IR_POS)
+
+/* Invalidation Queue Address register details */
+#define VTD_IQA_SIZE_MASK	0x7
+#define VTD_IQA_WIDTH_128_BIT	0
+#define VTD_IQA_WIDTH_256_BIT	BIT(11)
+#define VTD_IQA_REG_GEN_CONTENT(addr, width, size)			\
+	((uint64_t)0 | (addr) | (width) | (size & VTD_IQA_SIZE_MASK))
+
+/* Invalidation Queue Head register details */
+#define VTD_IQH_QH_POS_128	4
+#define VTD_IQH_QH_MASK		((uint64_t)0xEF << VTD_IQH_QH_POS_128)
+
+/* Invalidation Queue Tail register details */
+#define VTD_IQT_QT_POS_128	4
+#define VTD_IQT_QT_MASK		((uint64_t)0xEF << VTD_IQT_QT_POS_128)
 
 #endif /* _ASMLANGUAGE */
 

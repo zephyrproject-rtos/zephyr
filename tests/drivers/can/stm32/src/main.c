@@ -15,19 +15,19 @@
  * @details
  * - Test Steps
  *   -# Set driver to loopback mode
- *   -# Attach a extended and masked filter (1 bank/filter)
- *   -# Attach a standard none masked filter (1/4 bank/filter)
- *   -# Detach the first filter (first bank gets free) an attach
+ *   -# Add a extended and masked filter (1 bank/filter)
+ *   -# Add a standard none masked filter (1/4 bank/filter)
+ *   -# Remove the first filter (first bank gets free) and add
  *      a different standard none masked filter (1/4 bank/filter).
  *      Bank 0 is extended to 4 filters/bank which leads to a left shift
  *      of the first filter by 3 and tests the corner case of the last filter
  *      is used.
  *   -# Test message sending and receiving
- *   -# Detach first fillter (gets free) and attach an extended filter.
+ *   -# Remove first fillter (gets free) and add an extended filter.
  *      This shrinks bank 0 to 2 filters/bank which leads to a right shift
  *      of the first buffer by two.
  *   -# Test message sending and receiving.
- *   -# Detach both filters.
+ *   -# Remove both filters.
  * - Expected Results
  *   -# Message reception should work in any case
  * @}
@@ -42,7 +42,7 @@
 #define TEST_CAN_EXT_ID      0x15555555
 #define TEST_CAN_EXT_MASK    0x1FFFFFF0
 
-CAN_DEFINE_MSGQ(can_msgq, 5);
+CAN_MSGQ_DEFINE(can_msgq, 5);
 
 struct zcan_frame test_std_msg = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
@@ -115,7 +115,7 @@ static void send_test_msg(const struct device *can_dev,
 }
 
 /*
- * Test a more adcvanced filter handling. Attach more than one filter at
+ * Test a more adcvanced filter handling. Add more than one filter at
  * the same time, remove and change the filters before the message.
  * This tests the internals filter handling of the driver itself.
  */
@@ -130,18 +130,18 @@ static void test_filter_handling(void)
 
 	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 
-	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_ext_masked_filter);
+	filter_id_1 = can_add_rx_filter_msgq(can_dev, &can_msgq, &test_ext_masked_filter);
 	zassert_not_equal(filter_id_1, -ENOSPC,
 			  "Filter full even for a single one");
 	zassert_true((filter_id_1 >= 0), "Negative filter number");
 
-	filter_id_2 = can_attach_msgq(can_dev, &can_msgq, &test_std_filter);
+	filter_id_2 = can_add_rx_filter_msgq(can_dev, &can_msgq, &test_std_filter);
 	zassert_not_equal(filter_id_2, -ENOSPC,
-			  "Filter full when attaching the second one");
+			  "Filter full when adding the second one");
 	zassert_true((filter_id_2 >= 0), "Negative filter number");
 
-	can_detach(can_dev, filter_id_1);
-	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_std_some_filter);
+	can_remove_rx_filter(can_dev, filter_id_1);
+	filter_id_1 = can_add_rx_filter_msgq(can_dev, &can_msgq, &test_std_some_filter);
 	zassert_not_equal(filter_id_1, -ENOSPC,
 			  "Filter full when overriding the first one");
 	zassert_true((filter_id_1 >= 0), "Negative filter number");
@@ -155,8 +155,8 @@ static void test_filter_handling(void)
 	ret = k_msgq_get(&can_msgq, &msg_buffer, TEST_RECEIVE_TIMEOUT);
 	zassert_equal(ret, -EAGAIN, "There is more than one msg in the queue");
 
-	can_detach(can_dev, filter_id_1);
-	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_ext_filter);
+	can_remove_rx_filter(can_dev, filter_id_1);
+	filter_id_1 = can_add_rx_filter_msgq(can_dev, &can_msgq, &test_ext_filter);
 	zassert_not_equal(filter_id_1, -ENOSPC,
 			  "Filter full when overriding the first one");
 	zassert_true((filter_id_1 >= 0), "Negative filter number");
@@ -167,8 +167,8 @@ static void test_filter_handling(void)
 	zassert_equal(ret, 0, "Receiving timeout");
 	check_msg(&test_std_msg, &msg_buffer);
 
-	can_detach(can_dev, filter_id_1);
-	can_detach(can_dev, filter_id_2);
+	can_remove_rx_filter(can_dev, filter_id_1);
+	can_remove_rx_filter(can_dev, filter_id_2);
 }
 
 void test_main(void)

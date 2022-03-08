@@ -1,0 +1,5 @@
+common:
+  tags: bluetooth
+tests:
+  bluetooth.isoal.test:
+    platform_allow: native_posix

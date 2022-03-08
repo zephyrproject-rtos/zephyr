@@ -17,7 +17,7 @@
 #define N_THR_E 3
 #define N_THR_T 4
 #define BOUNCES 64
-#define STACKS (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKS (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_PRIORITY 3
 #define ONE_SECOND 1
 
@@ -97,7 +97,7 @@ void *thread_top_exec(void *p1)
 		 * scheduled and wait on cvar0.
 		 */
 		if (!(id == 0 && i == 0)) {
-			pthread_cond_wait(&cvar0, &lock);
+			zassert_equal(0, pthread_cond_wait(&cvar0, &lock), "");
 		} else {
 			pthread_mutex_unlock(&lock);
 			usleep(USEC_PER_MSEC * 500U);

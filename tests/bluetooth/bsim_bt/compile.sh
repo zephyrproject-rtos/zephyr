@@ -20,6 +20,8 @@ mkdir -p ${WORK_DIR}
 
 source ${ZEPHYR_BASE}/tests/bluetooth/bsim_bt/compile.source
 
+app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_encryption.conf compile
+app=tests/bluetooth/bsim_bt/bsim_test_eatt conf_file=prj_collision.conf compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split.conf \
 	compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_privacy.conf \
@@ -28,6 +30,8 @@ app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_low_lat.conf \
   compile
 app=tests/bluetooth/bsim_bt/bsim_test_multiple compile
 app=tests/bluetooth/bsim_bt/bsim_test_advx compile
+app=tests/bluetooth/bsim_bt/bsim_test_gatt compile
+app=tests/bluetooth/bsim_bt/bsim_test_l2cap compile
 app=tests/bluetooth/bsim_bt/bsim_test_iso compile
 app=tests/bluetooth/bsim_bt/bsim_test_audio compile
 app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app \

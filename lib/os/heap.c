@@ -5,6 +5,7 @@
  */
 #include <sys/sys_heap.h>
 #include <sys/util.h>
+#include <sys/heap_listener.h>
 #include <kernel.h>
 #include <string.h>
 #include "heap.h"
@@ -176,6 +177,12 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->allocated_bytes -= chunksz_to_bytes(h, chunk_size(h, c));
 #endif
+
+#ifdef CONFIG_SYS_HEAP_LISTENER
+	heap_listener_notify_free(HEAP_ID_FROM_POINTER(heap), mem,
+				  chunksz_to_bytes(h, chunk_size(h, c)));
+#endif
+
 	free_chunk(h, c);
 }
 
@@ -245,6 +252,7 @@ static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
+	void *mem;
 
 	if (bytes == 0U || size_too_big(h, bytes)) {
 		return NULL;
@@ -263,10 +271,19 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	}
 
 	set_chunk_used(h, c, true);
+
+	mem = chunk_mem(h, c);
+
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
 #endif
-	return chunk_mem(h, c);
+
+#ifdef CONFIG_SYS_HEAP_LISTENER
+	heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(heap), mem,
+				   chunksz_to_bytes(h, chunk_size(h, c)));
+#endif
+
+	return mem;
 }
 
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
@@ -336,6 +353,12 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->allocated_bytes += chunksz_to_bytes(h, chunk_size(h, c));
 #endif
+
+#ifdef CONFIG_SYS_HEAP_LISTENER
+	heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(heap), mem,
+				   chunksz_to_bytes(h, chunk_size(h, c)));
+#endif
+
 	return mem;
 }
 
@@ -371,18 +394,35 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 		return ptr;
 	} else if (chunk_size(h, c) > chunks_need) {
 		/* Shrink in place, split off and free unused suffix */
+#ifdef CONFIG_SYS_HEAP_LISTENER
+		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
+#endif
+
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 		h->allocated_bytes -=
 			(chunk_size(h, c) - chunks_need) * CHUNK_UNIT;
 #endif
+
 		split_chunks(h, c, c + chunks_need);
 		set_chunk_used(h, c, true);
 		free_chunk(h, c + chunks_need);
+
+#ifdef CONFIG_SYS_HEAP_LISTENER
+		heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(heap), ptr,
+					   chunksz_to_bytes(h, chunk_size(h, c)));
+		heap_listener_notify_free(HEAP_ID_FROM_POINTER(heap), ptr,
+					  bytes_freed);
+#endif
+
 		return ptr;
 	} else if (!chunk_used(h, rc) &&
 		   (chunk_size(h, c) + chunk_size(h, rc) >= chunks_need)) {
 		/* Expand: split the right chunk and append */
 		chunksz_t split_size = chunks_need - chunk_size(h, c);
+
+#ifdef CONFIG_SYS_HEAP_LISTENER
+		size_t bytes_freed = chunksz_to_bytes(h, chunk_size(h, c));
+#endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 		h->allocated_bytes += split_size * CHUNK_UNIT;
@@ -397,12 +437,26 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 
 		merge_chunks(h, c, rc);
 		set_chunk_used(h, c, true);
+
+#ifdef CONFIG_SYS_HEAP_LISTENER
+		heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(heap), ptr,
+					   chunksz_to_bytes(h, chunk_size(h, c)));
+		heap_listener_notify_free(HEAP_ID_FROM_POINTER(heap), ptr,
+					  bytes_freed);
+#endif
+
 		return ptr;
 	} else {
 		;
 	}
 
-	/* Fallback: allocate and copy */
+	/*
+	 * Fallback: allocate and copy
+	 *
+	 * Note for heap listener notification:
+	 * The calls to allocation and free functions generate
+	 * notification already, so there is no need to those here.
+	 */
 	void *ptr2 = sys_heap_aligned_alloc(heap, align, bytes);
 
 	if (ptr2 != NULL) {

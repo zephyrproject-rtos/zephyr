@@ -26,8 +26,6 @@ extern "C" {
  *  @param lines k_fifo queue of entered lines which to be processed
  *         in the application code.
  *  @param completion callback for tab completion of entered commands
- *
- *  @return N/A
  */
 void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
 			 uint8_t (*completion)(char *str, uint8_t len));

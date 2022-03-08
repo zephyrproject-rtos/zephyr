@@ -42,13 +42,13 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg5, uintptr_t arg6,
 					     uintptr_t call_id)
 {
-	register uint32_t a0 __asm__ ("a0") = arg1;
-	register uint32_t a1 __asm__ ("a1") = arg2;
-	register uint32_t a2 __asm__ ("a2") = arg3;
-	register uint32_t a3 __asm__ ("a3") = arg4;
-	register uint32_t a4 __asm__ ("a4") = arg5;
-	register uint32_t a5 __asm__ ("a5") = arg6;
-	register uint32_t a7 __asm__ ("a7") = call_id;
+	register ulong_t a0 __asm__ ("a0") = arg1;
+	register ulong_t a1 __asm__ ("a1") = arg2;
+	register ulong_t a2 __asm__ ("a2") = arg3;
+	register ulong_t a3 __asm__ ("a3") = arg4;
+	register ulong_t a4 __asm__ ("a4") = arg5;
+	register ulong_t a5 __asm__ ("a5") = arg6;
+	register ulong_t a7 __asm__ ("a7") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
@@ -63,12 +63,12 @@ static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg5,
 					     uintptr_t call_id)
 {
-	register uint32_t a0 __asm__ ("a0") = arg1;
-	register uint32_t a1 __asm__ ("a1") = arg2;
-	register uint32_t a2 __asm__ ("a2") = arg3;
-	register uint32_t a3 __asm__ ("a3") = arg4;
-	register uint32_t a4 __asm__ ("a4") = arg5;
-	register uint32_t a7 __asm__ ("a7") = call_id;
+	register ulong_t a0 __asm__ ("a0") = arg1;
+	register ulong_t a1 __asm__ ("a1") = arg2;
+	register ulong_t a2 __asm__ ("a2") = arg3;
+	register ulong_t a3 __asm__ ("a3") = arg4;
+	register ulong_t a4 __asm__ ("a4") = arg5;
+	register ulong_t a7 __asm__ ("a7") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
@@ -81,11 +81,11 @@ static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3, uintptr_t arg4,
 					     uintptr_t call_id)
 {
-	register uint32_t a0 __asm__ ("a0") = arg1;
-	register uint32_t a1 __asm__ ("a1") = arg2;
-	register uint32_t a2 __asm__ ("a2") = arg3;
-	register uint32_t a3 __asm__ ("a3") = arg4;
-	register uint32_t a7 __asm__ ("a7") = call_id;
+	register ulong_t a0 __asm__ ("a0") = arg1;
+	register ulong_t a1 __asm__ ("a1") = arg2;
+	register ulong_t a2 __asm__ ("a2") = arg3;
+	register ulong_t a3 __asm__ ("a3") = arg4;
+	register ulong_t a7 __asm__ ("a7") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
@@ -98,10 +98,10 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3,
 					     uintptr_t call_id)
 {
-	register uint32_t a0 __asm__ ("a0") = arg1;
-	register uint32_t a1 __asm__ ("a1") = arg2;
-	register uint32_t a2 __asm__ ("a2") = arg3;
-	register uint32_t a7 __asm__ ("a7") = call_id;
+	register ulong_t a0 __asm__ ("a0") = arg1;
+	register ulong_t a1 __asm__ ("a1") = arg2;
+	register ulong_t a2 __asm__ ("a2") = arg3;
+	register ulong_t a7 __asm__ ("a7") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
@@ -113,9 +113,9 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t call_id)
 {
-	register uint32_t a0 __asm__ ("a0") = arg1;
-	register uint32_t a1 __asm__ ("a1") = arg2;
-	register uint32_t a7 __asm__ ("a7") = call_id;
+	register ulong_t a0 __asm__ ("a0") = arg1;
+	register ulong_t a1 __asm__ ("a1") = arg2;
+	register ulong_t a7 __asm__ ("a7") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
@@ -126,8 +126,8 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 
 static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1, uintptr_t call_id)
 {
-	register uint32_t a0 __asm__ ("a0") = arg1;
-	register uint32_t a7 __asm__ ("a7") = call_id;
+	register ulong_t a0 __asm__ ("a0") = arg1;
+	register ulong_t a7 __asm__ ("a7") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
@@ -138,8 +138,8 @@ static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1, uintptr_t call_id)
 
 static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 {
-	register uint32_t a0 __asm__ ("a0");
-	register uint32_t a7 __asm__ ("a7") = call_id;
+	register ulong_t a0 __asm__ ("a0");
+	register ulong_t a7 __asm__ ("a7") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
@@ -151,7 +151,7 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 static inline bool arch_is_user_context(void)
 {
 	/* Defined in arch/riscv/core/thread.c */
-	extern ulong_t is_user_mode;
+	extern uint32_t is_user_mode;
 	return is_user_mode;
 }
 

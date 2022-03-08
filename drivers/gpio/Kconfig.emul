@@ -3,8 +3,12 @@
 # Copyright (c) 2020 Friedt Professional Engineering Services, Inc
 # SPDX-License-Identifier: Apache-2.0
 
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_ZEPHYR_GPIO_EMUL := zephyr,gpio-emul
+
 config GPIO_EMUL
 	bool "Emulated GPIO driver"
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_GPIO_EMUL))
 	help
 	  Enable the emulated GPIO driver. Mainly used for testing, this
 	  driver allows for an arbitrary number of emulated GPIO controllers

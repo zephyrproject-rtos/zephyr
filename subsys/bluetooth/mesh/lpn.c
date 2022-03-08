@@ -240,9 +240,11 @@ static void clear_friendship(bool force, bool disable)
 		lpn->old_friend = lpn->frnd;
 	}
 
-	STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
-		if (cb->terminated && lpn->frnd != BT_MESH_ADDR_UNASSIGNED) {
-			cb->terminated(lpn->sub->net_idx, lpn->frnd);
+	if (lpn->established) {
+		STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
+			if (cb->terminated) {
+				cb->terminated(lpn->sub->net_idx, lpn->frnd);
+			}
 		}
 	}
 
@@ -278,6 +280,10 @@ static void clear_friendship(bool force, bool disable)
 static void friend_req_sent(uint16_t duration, int err, void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+	if (lpn->state != BT_MESH_LPN_ENABLED) {
+		return;
+	}
 
 	if (err) {
 		BT_ERR("Sending Friend Request failed (err %d)", err);
@@ -343,6 +349,10 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 static void req_sent(uint16_t duration, int err, void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+	if (lpn->state == BT_MESH_LPN_DISABLED) {
+		return;
+	}
 
 #if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 	BT_DBG("req 0x%02x duration %u err %d state %s",

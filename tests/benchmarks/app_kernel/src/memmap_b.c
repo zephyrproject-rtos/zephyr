@@ -16,7 +16,6 @@
  *
  * @brief Memory map get/free test
  *
- * @return N/A
  */
 void memorymap_test(void)
 {

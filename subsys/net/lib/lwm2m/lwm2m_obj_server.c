@@ -85,12 +85,7 @@ static char  transport_binding[MAX_INSTANCE_COUNT][TRANSPORT_BINDING_LEN];
 
 static struct lwm2m_engine_obj server;
 static struct lwm2m_engine_obj_field fields[] = {
-	/*
-	 * LwM2M TS "E.2 LwM2M Object: LwM2M Server" page 107, describes
-	 * Short Server ID as READ-ONLY, but BOOTSTRAP server will attempt
-	 * to write it, so it needs to be RW
-	 */
-	OBJ_FIELD_DATA(SERVER_SHORT_SERVER_ID, RW, U16),
+	OBJ_FIELD_DATA(SERVER_SHORT_SERVER_ID, R, U16),
 	OBJ_FIELD_DATA(SERVER_LIFETIME_ID, RW, U32),
 	OBJ_FIELD_DATA(SERVER_DEFAULT_MIN_PERIOD_ID, RW_OPT, U32),
 	OBJ_FIELD_DATA(SERVER_DEFAULT_MAX_PERIOD_ID, RW_OPT, U32),

@@ -84,7 +84,7 @@ The rak5010_nrf52840 board configuration supports the following hardware feature
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================

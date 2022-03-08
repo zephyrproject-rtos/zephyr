@@ -37,7 +37,7 @@ void *ull_conn_ack_dequeue(void);
 void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx);
 uint8_t ull_conn_llcp_req(void *conn);
 
-void ull_pdu_data_init(struct pdu_data *pdu_tx);
+void ull_pdu_data_init(struct pdu_data *pdu);
 
 #if !defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 

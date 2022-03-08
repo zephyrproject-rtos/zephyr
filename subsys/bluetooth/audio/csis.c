@@ -327,7 +327,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 			BT_HEXDUMP_DBG(enc_sirk.value, sizeof(enc_sirk.value),
 				       "Encrypted Set SIRK");
 		} else if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_REJECT) {
-			return BT_GATT_ERR(BT_CSIS_ERROR_SIRK_ACCESS_REJECTED);
+			return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
 		} else if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_OOB_ONLY) {
 			return BT_GATT_ERR(BT_CSIS_ERROR_SIRK_OOB_ONLY);
 		}

@@ -152,9 +152,5 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
 	pinctrl-names = "default";
 	bus-speed = <125000>;
-	sjw = <1>;
-	prop-seg = <0>;
-	phase-seg1 = <5>;
-	phase-seg2 = <6>;
 	status = "okay";
 };

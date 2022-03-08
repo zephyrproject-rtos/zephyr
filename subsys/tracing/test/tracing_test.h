@@ -345,6 +345,15 @@
 #define sys_port_trace_k_pipe_alloc_init_enter(pipe) sys_trace_k_pipe_alloc_init_enter(pipe, size)
 #define sys_port_trace_k_pipe_alloc_init_exit(pipe, ret)                                           \
 	sys_trace_k_pipe_alloc_init_exit(pipe, size, ret)
+#define sys_port_trace_k_pipe_flush_enter(pipe)  \
+	sys_trace_k_pipe_flush_enter(pipe)
+#define sys_port_trace_k_pipe_flush_exit(pipe)   \
+	sys_trace_k_pipe_flush_exit(pipe)
+#define sys_port_trace_k_pipe_buffer_flush_enter(pipe)  \
+	sys_trace_k_pipe_buffer_flush_enter(pipe)
+#define sys_port_trace_k_pipe_buffer_flush_exit(pipe)   \
+	sys_trace_k_pipe_buffer_flush_exit(pipe)
+
 #define sys_port_trace_k_pipe_put_enter(pipe, timeout)                                             \
 	sys_trace_k_pipe_put_enter(pipe, data, bytes_to_write, bytes_written, min_xfer, timeout)
 #define sys_port_trace_k_pipe_put_blocking(pipe, timeout)                                          \
@@ -607,6 +616,10 @@ void sys_trace_k_pipe_cleanup_enter(struct k_pipe *pipe);
 void sys_trace_k_pipe_cleanup_exit(struct k_pipe *pipe, int ret);
 void sys_trace_k_pipe_alloc_init_enter(struct k_pipe *pipe, size_t size);
 void sys_trace_k_pipe_alloc_init_exit(struct k_pipe *pipe, size_t size, int ret);
+void sys_trace_k_pipe_flush_enter(struct k_pipe *pipe);
+void sys_trace_k_pipe_flush_exit(struct k_pipe *pipe);
+void sys_trace_k_pipe_buffer_flush_enter(struct k_pipe *pipe);
+void sys_trace_k_pipe_buffer_flush_exit(struct k_pipe *pipe);
 void sys_trace_k_pipe_put_enter(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 				size_t *bytes_written, size_t min_xfer, k_timeout_t timeout);
 void sys_trace_k_pipe_put_blocking(struct k_pipe *pipe, void *data, size_t bytes_to_write,

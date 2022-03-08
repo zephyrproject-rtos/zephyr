@@ -354,6 +354,7 @@
 			#gpio-cells=<2>;
 		};
 		wdog: watchdog@40000400 {
+			compatible = "microchip,xec-watchdog";
 			reg = <0x40000400 0x400>;
 			interrupts = <171 0>;
 			girqs = <21 2>;
@@ -507,9 +508,11 @@
 			label = "WEEKTMR_0";
 			status = "disabled";
 		};
-		vbm0: vbm@4000a800 {
+		bbram: bb-ram@4000a800 {
+			compatible = "microchip,xec-bbram";
 			reg = <0x4000a800 0x100>;
-			label = "VBM_0";
+			reg-names = "memory";
+			label = "BBRAM";
 		};
 		vci0: vci@4000ae00 {
 			reg = <0x4000ae00 0x40>;
@@ -735,6 +738,7 @@
 			#io-channel-cells = <1>;
 		};
 		kscan0: kscan@40009c00 {
+			compatible = "microchip,xec-kscan";
 			reg = <0x40009c00 0x18>;
 			interrupts = <135 0>;
 			girqs = <21 25>;

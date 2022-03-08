@@ -2756,6 +2756,7 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 	if (!priv->detect_gpio) {
 		LOG_INF("USDHC detection other than GPIO");
 		if (config->detect_dat3) {
+			LOG_INF("USDHC detection using DAT3 pull");
 			base->PROT_CTRL |= USDHC_PROT_CTRL_D3CD_MASK;
 			/* Pull down DAT3 */
 			usdhc_dat3_pull(USDHC_DAT3_PULL_DOWN, priv);

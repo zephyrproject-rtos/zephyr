@@ -511,8 +511,8 @@ started.
 
 See :ref:`setting_configuration_values` for detailed documentation on setting
 Kconfig configuration values. The :ref:`initial-conf` section on the same page
-explains how the initial configuration is derived. See
-:ref:`configuration_options` for a complete list of configuration options.
+explains how the initial configuration is derived. See :ref:`kconfig-search`
+for a complete list of configuration options.
 See :ref:`hardening` for security information related with Kconfig options.
 
 The other pages in the :ref:`Kconfig section of the manual <kconfig>` are also
@@ -526,20 +526,20 @@ Zephyr is a project under constant development and thus there are features that
 are still in early stages of their development cycle. Such features will be
 marked ``[EXPERIMENTAL]`` in their Kconfig title.
 
-The :kconfig:`CONFIG_WARN_EXPERIMENTAL` setting can be used to enable warnings
+The :kconfig:option:`CONFIG_WARN_EXPERIMENTAL` setting can be used to enable warnings
 at CMake configure time if any experimental feature is enabled.
 
 .. code-block:: none
 
    CONFIG_WARN_EXPERIMENTAL=y
 
-For example, enabling experimental warnings and building a sample which enables
-:kconfig:`CONFIG_BT_EXT_ADV` will print the following warning at CMake
-configure time.
+For example, if option ``CONFIG_FOO`` is experimental, then enabling it and
+:kconfig:option:`CONIG_WARN_EXPERIMENTAL` will print the following warning at
+CMake configure time when you build an application:
 
-.. code-block:: shell
+.. code-block:: none
 
-   warning: Experimental symbol BT_EXT_ADV is enabled.
+   warning: Experimental symbol FOO is enabled.
 
 Devicetree Overlays
 ===================

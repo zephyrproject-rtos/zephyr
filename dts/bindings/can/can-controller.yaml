@@ -2,11 +2,7 @@
 
 include: base.yaml
 
-bus: can
-
 properties:
-    label:
-      required: true
     bus-speed:
       type: int
       required: true

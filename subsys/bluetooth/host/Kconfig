@@ -84,7 +84,9 @@ config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 512 if BT_HCI_RAW
+	default 3092 if BT_MESH_GATT_CLIENT
 	default 2048 if BT_MESH
+	default 2048 if BT_AUDIO
 	default 2200 if BT_SETTINGS
 	default 1024
 	help
@@ -485,6 +487,17 @@ config BT_BACKGROUND_SCAN_WINDOW
 	int "Scan window used for background scanning in 0.625 ms units"
 	default 18
 	range 4 16384
+
+config BT_EXT_SCAN_BUF_SIZE
+	int "Maximum advertisement report size"
+	depends on BT_EXT_ADV
+	range 1 1650
+	default 229
+	help
+	  Maximum size of an advertisement report in octets. If the advertisement
+	  provided by the controller is larger than this buffer size,
+	  the remaining data will be discarded.
+
 endif # BT_OBSERVER
 
 config BT_SCAN_WITH_IDENTITY
@@ -554,6 +567,12 @@ config BT_DF_CONNECTIONLESS_CTE_RX
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
 
+config BT_DF_CONNECTIONLESS_CTE_TX
+	bool "Enable support for transmission of CTE in connectionless mode"
+	help
+	  Enable support for transmission of Constant Tone Extension in
+	  connectionless mode.
+
 config BT_DF_CONNECTION_CTE_RX
 	bool "Enable support for receive of CTE in connection mode"
 	help
@@ -579,6 +598,22 @@ config BT_DF_CONNECTION_CTE_RSP
 	help
 	  Enable support for request of Constant Tone Extension in connection
 	  mode.
+
+config BT_DF_CTE_RX_AOA
+	bool "Enable antenna switching during CTE reception (AoA) feature"
+	depends on BT_DF_CONNECTIONLESS_CTE_RX || BT_DF_CONNECTION_CTE_RX
+	default y
+	help
+	  Enable support for antenna switching during CTE reception.
+	  Also known as Angle of Arrival mode.
+
+config BT_DF_CTE_TX_AOD
+	bool "Enable antenna switching during CTE transmission (AoD) feature"
+	depends on BT_DF_CONNECTIONLESS_CTE_TX || BT_DF_CONNECTION_CTE_TX
+	default y
+	help
+	  Enable support for antenna switching during CTE transmission.
+	  Also known as Angle of Departure mode.
 
 config BT_DEBUG_DF
 	bool "Bluetooth Direction Finding debug"

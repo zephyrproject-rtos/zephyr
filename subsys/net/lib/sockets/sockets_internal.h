@@ -51,6 +51,7 @@ static inline bool net_socket_is_tls(void *obj)
 
 struct socket_op_vtable {
 	struct fd_op_vtable fd_vtable;
+	int (*shutdown)(void *obj, int how);
 	int (*bind)(void *obj, const struct sockaddr *addr, socklen_t addrlen);
 	int (*connect)(void *obj, const struct sockaddr *addr,
 		       socklen_t addrlen);

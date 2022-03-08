@@ -9,7 +9,7 @@
 #include <cmsis_os.h>
 
 #ifdef CONFIG_COVERAGE
-#define STACKSZ		(512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSZ		(512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #else
 #define STACKSZ		(512U)
 #endif

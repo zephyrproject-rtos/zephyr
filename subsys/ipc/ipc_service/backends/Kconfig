@@ -4,13 +4,6 @@
 choice IPC_SERVICE_BACKEND
 	prompt "IPC service backend"
 
-config IPC_SERVICE_BACKEND_RPMSG_MI
-	bool "RPMSG backend - static VRINGs (multi-instance)"
-	select IPC_SERVICE_RPMSG
-	select IPC_SERVICE_STATIC_VRINGS
-	select OPENAMP
-	select IPM
-
 config IPC_SERVICE_BACKEND_RPMSG
 	bool "OpenAMP RPMSG backend with static VRINGs"
 	depends on MBOX
@@ -53,5 +46,4 @@ config IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
 	help
 	  Static VRINGs alignment
 
-rsource "Kconfig.rpmsg_mi"
 rsource "Kconfig.rpmsg"

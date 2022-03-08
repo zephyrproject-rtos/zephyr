@@ -6,12 +6,14 @@ config MODEM_GSM_PPP
 	select MODEM_CONTEXT
 	select MODEM_CMD_HANDLER
 	select MODEM_IFACE_UART
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	help
 	  Enable GSM modems that support standard AT commands and PPP.
 
 if MODEM_GSM_PPP
 
-choice
+choice MODEM_GSM_TYPE
 	prompt "Modem type"
 	default MODEM_GSM_GENERIC
 	help

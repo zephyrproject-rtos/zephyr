@@ -442,6 +442,11 @@ SECTIONS
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
     *(.rodata1)
+
+    . = ALIGN(4);
+    #include <snippets-rodata.ld>
+    . = ALIGN(4);
+
     __XT_EXCEPTION_TABLE__ = ABSOLUTE(.);
     KEEP (*(.xt_except_table))
     KEEP (*(.gcc_except_table .gcc_except_table.*))
@@ -514,6 +519,8 @@ SECTIONS
     *(.noinit.*)
   } >sram0_seg :sram0_phdr
 
+#include <snippets-sections.ld>
+
   .data : ALIGN(4)
   {
     _data_start = ABSOLUTE(.);
@@ -529,8 +536,15 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     KEEP(*(.jcr))
+
+    . = ALIGN(4);
+    #include <snippets-rwdata.ld>
+    . = ALIGN(4);
+
     _data_end = ABSOLUTE(.);
   } >sram0_seg :sram0_phdr
+
+#include <snippets-data-sections.ld>
 
 #include <linker/common-ram.ld>
 
@@ -538,6 +552,8 @@ SECTIONS
   {
     *(.tm_clone_table)
   } >sram0_seg :sram0_phdr
+
+#include <snippets-ram-sections.ld>
 
   .bss (NOLOAD) : ALIGN(8)
   {

@@ -203,8 +203,6 @@ static inline uint32_t dmic_build_channel_map(uint8_t channel, uint8_t pdm,
  * @param channel The logical channel number
  * @param pdm Pointer to the PDM hardware controller number
  * @param lr Pointer to the LEFT/RIGHT channel within the PDM controller
- *
- * @return none
  */
 static inline void dmic_parse_channel_map(uint32_t channel_map_lo,
 		uint32_t channel_map_hi, uint8_t channel, uint8_t *pdm, enum pdm_lr *lr)

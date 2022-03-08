@@ -19,8 +19,10 @@
  * all available CPU cores and provides a synchronized timer under SMP.
  */
 
-#define TIMER		0
-#define TIMER_IRQ	DSP_WCT_IRQ(TIMER)
+#define COMPARATOR_IDX  0 /* 0 or 1 */
+
+#define TIMER_IRQ	DSP_WCT_IRQ(COMPARATOR_IDX)
+
 #define CYC_PER_TICK	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC	\
 			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MAX_CYC		0xFFFFFFFFUL
@@ -28,7 +30,13 @@
 #define MIN_DELAY	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 100000)
 
 BUILD_ASSERT(MIN_DELAY < CYC_PER_TICK);
-BUILD_ASSERT(TIMER >= 0 && TIMER <= 1);
+BUILD_ASSERT(COMPARATOR_IDX >= 0 && COMPARATOR_IDX <= 1);
+
+#define WCTCS      (&CAVS_SHIM.dspwctcs)
+#define COUNTER_HI (&CAVS_SHIM.dspwc_hi)
+#define COUNTER_LO (&CAVS_SHIM.dspwc_lo)
+#define COMPARE_HI (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, COMPARATOR_IDX), c_hi))
+#define COMPARE_LO (&CAVS_SHIM.UTIL_CAT(UTIL_CAT(dspwct, COMPARATOR_IDX), c_lo))
 
 static struct k_spinlock lock;
 static uint64_t last_count;
@@ -36,18 +44,13 @@ static uint64_t last_count;
 static void set_compare(uint64_t time)
 {
 	/* Disarm the comparator to prevent spurious triggers */
-	CAVS_SHIM.dspwctcs &= ~DSP_WCT_CS_TA(TIMER);
+	*WCTCS &= ~DSP_WCT_CS_TA(COMPARATOR_IDX);
 
-	if (TIMER == 0) {
-		CAVS_SHIM.dspwct0c_lo = (uint32_t)time;
-		CAVS_SHIM.dspwct0c_hi = (uint32_t)(time >> 32);
-	} else {
-		CAVS_SHIM.dspwct1c_lo = (uint32_t)time;
-		CAVS_SHIM.dspwct1c_hi = (uint32_t)(time >> 32);
-	}
+	*COMPARE_LO = (uint32_t)time;
+	*COMPARE_HI = (uint32_t)(time >> 32);
 
 	/* Arm the timer */
-	CAVS_SHIM.dspwctcs |= DSP_WCT_CS_TA(TIMER);
+	*WCTCS |= DSP_WCT_CS_TA(COMPARATOR_IDX);
 }
 
 static uint64_t count(void)
@@ -61,9 +64,9 @@ static uint64_t count(void)
 	uint32_t hi0, hi1, lo;
 
 	do {
-		hi0 = CAVS_SHIM.dspwc_hi;
-		lo = CAVS_SHIM.dspwc_lo;
-		hi1 = CAVS_SHIM.dspwc_hi;
+		hi0 = *COUNTER_HI;
+		lo = *COUNTER_LO;
+		hi1 = *COUNTER_HI;
 	} while (hi0 != hi1);
 
 	return (((uint64_t)hi0) << 32) | lo;
@@ -71,7 +74,7 @@ static uint64_t count(void)
 
 static uint32_t count32(void)
 {
-	return CAVS_SHIM.dspwc_lo;
+	return *COUNTER_LO;
 }
 
 static void compare_isr(const void *arg)
@@ -83,24 +86,10 @@ static void compare_isr(const void *arg)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	curr = count();
-
-#ifdef CONFIG_SMP
-	/* If we are too soon since last_count,
-	 * this interrupt is likely the same interrupt
-	 * event but being processed by another CPU.
-	 * Since it has already been processed and
-	 * ticks announced, skip it.
-	 */
-	if ((count32() - (uint32_t)last_count) < MIN_DELAY) {
-		k_spin_unlock(&lock, key);
-		return;
-	}
-#endif
-
 	dticks = (uint32_t)((curr - last_count) / CYC_PER_TICK);
 
 	/* Clear the triggered bit */
-	CAVS_SHIM.dspwctcs |= DSP_WCT_CS_TT(TIMER);
+	*WCTCS |= DSP_WCT_CS_TT(COMPARATOR_IDX);
 
 	last_count += dticks * CYC_PER_TICK;
 
@@ -172,16 +161,22 @@ uint64_t sys_clock_cycle_get_64(void)
 	return count();
 }
 
-/* Runs on secondary cores */
+/* Interrupt setup is partially-cpu-local state, so needs to be
+ * repeated for each core when it starts.  Note that this conforms to
+ * the Zephyr convention of sending timer interrupts to all cpus (for
+ * the benefit of timeslicing).
+ */
+static void irq_init(void)
+{
+	int cpu = arch_curr_cpu()->id;
+
+	CAVS_INTCTRL[cpu].l2.clear = CAVS_L2_DWCT0;
+	irq_enable(TIMER_IRQ);
+}
+
 void smp_timer_init(void)
 {
-	/* This enables the Timer 0 (or 1) interrupt for CPU n.
-	 *
-	 * FIXME: Done in this way because we don't have an API
-	 * to enable interrupts per CPU.
-	 */
-	CAVS_INTCTRL[arch_curr_cpu()->id].l2.clear = CAVS_L2_DWCT0;
-	irq_enable(TIMER_IRQ);
+	irq_init();
 }
 
 /* Runs on core 0 only */
@@ -192,7 +187,7 @@ static int sys_clock_driver_init(const struct device *dev)
 	IRQ_CONNECT(TIMER_IRQ, 0, compare_isr, 0, 0);
 	set_compare(curr + CYC_PER_TICK);
 	last_count = curr;
-	irq_enable(TIMER_IRQ);
+	irq_init();
 	return 0;
 }
 

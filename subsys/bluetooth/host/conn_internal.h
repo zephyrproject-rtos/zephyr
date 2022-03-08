@@ -4,9 +4,12 @@
 
 /*
  * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <bluetooth/iso.h>
 
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
@@ -29,19 +32,13 @@ enum {
 	BT_CONN_BR_NOBOND,		/* SSP no bond pairing tracker */
 	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
 	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
-	BT_CONN_AUTO_PHY_UPDATE,        /* Auto-update PHY */
 	BT_CONN_PERIPHERAL_PARAM_UPDATE,/* If periph param update timer fired */
 	BT_CONN_PERIPHERAL_PARAM_SET,	/* If periph param were set from app */
 	BT_CONN_PERIPHERAL_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,             /* Pairing even with existing keys. */
 
-	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
 	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
 	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
-
-	/* Auto-initiated Data Length done. Auto-initiated Data Length Update
-	 * is only needed for controllers with BT_QUIRK_NO_AUTO_DLE. */
-	BT_CONN_AUTO_DATA_LEN_COMPLETE,
 
 	BT_CONN_CTE_RX_ENABLED,          /* CTE receive and sampling is enabled */
 	BT_CONN_CTE_RX_PARAMS_SET,       /* CTE parameters are set */
@@ -125,8 +122,13 @@ struct bt_conn_iso {
 		uint8_t			bis_id;
 	};
 
-	/** If true, this is a ISO for a BIS, else it is a ISO for a CIS */
-	bool is_bis;
+#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
+	/** 16-bit sequence number that shall be incremented per SDU interval */
+	uint16_t seq_num;
+#endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
+
+	/** Type of the ISO channel */
+	enum bt_iso_chan_type type;
 };
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);

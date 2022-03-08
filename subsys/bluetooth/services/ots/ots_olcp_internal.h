@@ -47,6 +47,9 @@ struct bt_gatt_ots_olcp_proc {
 	};
 };
 
+/* Size of Object List Control Point goto procedure */
+#define BT_GATT_OTS_OLCP_GOTO_PARAMS_SIZE 6
+
 /* The return codes obtained from doing OLCP procedures. */
 enum bt_gatt_ots_olcp_res_code {
 	/* Response for successful operation. */

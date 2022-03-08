@@ -3,7 +3,10 @@
 
 zephyr_library()
 zephyr_library_sources(common.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_TELINK_B91 pinctrl_b91.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_GD32_AF pinctrl_gd32_af.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_GD32_AFIO pinctrl_gd32_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_NRF pinctrl_nrf.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_RCAR_PFC pfc_rcar.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_RPI_PICO pinctrl_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_STM32 pinctrl_stm32.c)

@@ -249,6 +249,10 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_SD_B0_05 | USDHC1_DATA3    | SD Card                   |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_02 | 1588_EVENT2_OUT | 1588                      |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_03 | 1588_EVENT2_IN  | 1588                      |
++---------------+-----------------+---------------------------+
 
 .. note::
         In order to use the SPI peripheral on this board, resistors R278,
@@ -299,6 +303,10 @@ Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
 the `OpenSDA J-Link MIMXRT1050-EVK-Hyperflash Firmware`_. Check that jumpers
 J32 and J33 are **on** (they are on by default when boards ship from the
 factory) to ensure SWD signals are connected to the OpenSDA microcontroller.
+
+Follow the instructions in `Enable QSPI flash support in SEGGER JLink`_
+in order to support your EVK if you have modified it to boot from QSPI NOR
+flash as specified by NXP AN12108.
 
 Option 2: :ref:`jlink-external-debug-probe`
 -------------------------------------------
@@ -369,7 +377,7 @@ Troubleshooting
 
 If the debug probe fails to connect with the following error, it's possible
 that the boot header in HyperFlash is invalid or corrupted. The boot header is
-configured by :kconfig:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
+configured by :kconfig:option:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
 
 .. code-block:: console
 
@@ -432,3 +440,6 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
 
 .. _NXP i.MXRT1050 A0 to A1 Migration Guide:
    https://www.nxp.com/docs/en/nxp/application-notes/AN12146.pdf
+
+.. _Enable QSPI flash support in SEGGER JLink:
+   https://wiki.segger.com/i.MXRT1050#QSPI_flash

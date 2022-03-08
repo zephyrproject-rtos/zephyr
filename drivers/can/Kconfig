@@ -31,6 +31,12 @@ config CAN_SHELL
 	help
 	  Enable CAN Shell for testing.
 
+config CAN_STATS
+	bool "Enable CAN controller device statistics"
+	depends on STATS
+	help
+	  Enable CAN controller device statistics.
+
 config CAN_HAS_CANFD
 	bool
 	help
@@ -69,13 +75,6 @@ config CAN_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
-config CAN_WORKQ_FRAMES_BUF_CNT
-	int "Work queue buffer frame count (DEPRECATED)"
-	default 4
-	range 1 65534
-	help
-	  Number of frames in the buffer of a zcan_work.
-
 config CAN_RX_TIMESTAMP
 	bool "Enable receiving timestamps"
 	depends on CAN_HAS_RX_TIMESTAMP
@@ -93,8 +92,10 @@ config CAN_AUTO_BUS_OFF_RECOVERY
 	  recessive bits). When this option is enabled, the recovery API is not
 	  available.
 
+source "drivers/can/Kconfig.sam"
 source "drivers/can/Kconfig.stm32"
 source "drivers/can/Kconfig.stm32fd"
+source "drivers/can/Kconfig.stm32h7"
 source "drivers/can/Kconfig.mcux"
 source "drivers/can/Kconfig.mcp2515"
 source "drivers/can/Kconfig.mcan"

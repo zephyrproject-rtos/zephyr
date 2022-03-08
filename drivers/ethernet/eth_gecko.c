@@ -65,7 +65,7 @@ static void link_configure(ETH_TypeDef *eth, uint32_t flags)
 
 static void eth_gecko_setup_mac(const struct device *dev)
 {
-	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
+	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
 	uint32_t link_status;
 	int result;
@@ -136,8 +136,8 @@ static void rx_error_handler(ETH_TypeDef *eth)
 
 static struct net_pkt *frame_get(const struct device *dev)
 {
-	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
-	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
+	struct eth_gecko_dev_data *const dev_data = dev->data;
+	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
 	struct net_pkt *rx_frame = NULL;
 	uint16_t frag_len, total_len;
@@ -236,7 +236,7 @@ static struct net_pkt *frame_get(const struct device *dev)
 
 static void eth_rx(const struct device *dev)
 {
-	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
+	struct eth_gecko_dev_data *const dev_data = dev->data;
 	struct net_pkt *rx_frame;
 	int res = 0;
 
@@ -262,8 +262,8 @@ static void eth_rx(const struct device *dev)
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
-	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
+	struct eth_gecko_dev_data *const dev_data = dev->data;
+	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
 	uint16_t total_len;
 	uint8_t *dma_buffer;
@@ -325,8 +325,8 @@ error:
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
-	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
-	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
+	struct eth_gecko_dev_data *const dev_data = dev->data;
+	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	int res;
 
 	__ASSERT_NO_MSG(arg1 != NULL);
@@ -369,8 +369,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 
 static void eth_isr(const struct device *dev)
 {
-	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
-	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
+	struct eth_gecko_dev_data *const dev_data = dev->data;
+	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
 	uint32_t int_clr = 0;
 	uint32_t int_stat = eth->IFCR;
@@ -429,7 +429,7 @@ static void eth_init_clocks(const struct device *dev)
 
 static void eth_init_pins(const struct device *dev)
 {
-	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
+	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
 	uint32_t idx;
 
@@ -461,7 +461,7 @@ static void eth_init_pins(const struct device *dev)
 
 static int eth_init(const struct device *dev)
 {
-	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
+	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -503,8 +503,8 @@ static void generate_mac(uint8_t mac_addr[6])
 static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
-	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
+	struct eth_gecko_dev_data *const dev_data = dev->data;
+	const struct eth_gecko_dev_cfg *const cfg = dev->config;
 	ETH_TypeDef *eth = cfg->regs;
 	int result;
 

@@ -455,48 +455,6 @@ int lis2dh_init(const struct device *dev)
 #define DISC_PULL_UP(inst) \
 	DT_INST_PROP(inst, disconnect_sdo_sa0_pull_up)
 
-/*
- * Instantiation macros used when a device is on a SPI bus.
- */
-
-#define LIS2DH_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
-
-#define LIS2DH_DATA_SPI_CS(inst)					\
-	{ .cs_ctrl = {							\
-		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
-		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
-		},							\
-	}
-
-#define LIS2DH_DATA_SPI(inst)						\
-	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
-		    (LIS2DH_DATA_SPI_CS(inst)),				\
-		    ({}))
-
-#define LIS2DH_SPI_CS_PTR(inst)						\
-	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
-		    (&(lis2dh_data_##inst.cs_ctrl)),			\
-		    (NULL))
-
-#define LIS2DH_SPI_CS_LABEL(inst)					\
-	COND_CODE_1(LIS2DH_HAS_CS(inst),				\
-		    (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
-
-#define LIS2DH_SPI_CFG(inst)						\
-	(&(struct lis2dh_spi_cfg) {					\
-		.spi_conf = {						\
-			.frequency =					\
-				DT_INST_PROP(inst, spi_max_frequency),	\
-			.operation = (SPI_WORD_SET(8) |			\
-				      SPI_OP_MODE_MASTER |		\
-				      SPI_MODE_CPOL |			\
-				      SPI_MODE_CPHA),			\
-			.slave = DT_INST_REG_ADDR(inst),		\
-			.cs = LIS2DH_SPI_CS_PTR(inst),			\
-		},							\
-		.cs_gpios_label = LIS2DH_SPI_CS_LABEL(inst),		\
-	})
-
 #ifdef CONFIG_LIS2DH_TRIGGER
 #define GPIO_DT_SPEC_INST_GET_BY_IDX_COND(id, prop, idx)		\
 	COND_CODE_1(DT_INST_PROP_HAS_IDX(id, prop, idx),		\
@@ -540,7 +498,12 @@ int lis2dh_init(const struct device *dev)
 	{								\
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_spi_init,				\
-		.bus_cfg = { .spi_cfg = LIS2DH_SPI_CFG(inst)	},	\
+		.bus_cfg = { .spi = SPI_DT_SPEC_INST_GET(inst,		\
+					SPI_WORD_SET(8) |		\
+					SPI_OP_MODE_MASTER |		\
+					SPI_MODE_CPOL |			\
+					SPI_MODE_CPHA,			\
+					0) },				\
 		.is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
 		.disc_pull_up = DISC_PULL_UP(inst),			\
 		LIS2DH_CFG_TEMPERATURE(inst)				\
@@ -548,8 +511,7 @@ int lis2dh_init(const struct device *dev)
 	}
 
 #define LIS2DH_DEFINE_SPI(inst)						\
-	static struct lis2dh_data lis2dh_data_##inst =			\
-		LIS2DH_DATA_SPI(inst);					\
+	static struct lis2dh_data lis2dh_data_##inst;			\
 	static const struct lis2dh_config lis2dh_config_##inst =	\
 		LIS2DH_CONFIG_SPI(inst);				\
 	LIS2DH_DEVICE_INIT(inst)

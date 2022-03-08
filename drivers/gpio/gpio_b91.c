@@ -18,9 +18,6 @@
 #define GET_GPIO(dev)           ((volatile struct gpio_b91_t *)	\
 				 ((const struct gpio_b91_config *)dev->config)->gpio_base)
 
-/* Get GPIO configuration */
-#define GET_CFG(dev)            ((const struct gpio_b91_config *)dev->config)
-
 /* Get GPIO IRQ number defined in dts */
 #define GET_IRQ_NUM(dev)        (((const struct gpio_b91_config *)dev->config)->irq_num)
 
@@ -298,7 +295,7 @@ static void gpio_b91_config_in_out(volatile struct gpio_b91_t *gpio,
 /* GPIO driver initialization */
 static int gpio_b91_init(const struct device *dev)
 {
-	const struct gpio_b91_config *cfg = GET_CFG(dev);
+	const struct gpio_b91_config *cfg = dev->config;
 
 	cfg->pirq_connect();
 

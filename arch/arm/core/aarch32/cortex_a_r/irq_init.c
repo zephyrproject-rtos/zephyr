@@ -16,7 +16,6 @@
  *
  * @brief Initialize interrupts
  *
- * @return N/A
  */
 void z_arm_interrupt_init(void)
 {

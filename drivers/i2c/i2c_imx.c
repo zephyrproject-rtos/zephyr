@@ -17,12 +17,8 @@ LOG_MODULE_REGISTER(i2c_imx);
 
 #include "i2c-priv.h"
 
-#define DEV_CFG(dev) \
-	((const struct i2c_imx_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2c_imx_data * const)(dev)->data)
 #define DEV_BASE(dev) \
-	((I2C_Type *)(DEV_CFG(dev))->base)
+	((I2C_Type *)((const struct i2c_imx_config * const)(dev)->config)->base)
 
 struct i2c_imx_config {
 	I2C_Type *base;
@@ -51,7 +47,7 @@ static bool i2c_imx_write(const struct device *dev, uint8_t *txBuffer,
 			  uint32_t txSize)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_imx_data *data = DEV_DATA(dev);
+	struct i2c_imx_data *data = dev->data;
 	struct i2c_master_transfer *transfer = &data->transfer;
 
 	transfer->isBusy = true;
@@ -85,7 +81,7 @@ static void i2c_imx_read(const struct device *dev, uint8_t *rxBuffer,
 			 uint32_t rxSize)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_imx_data *data = DEV_DATA(dev);
+	struct i2c_imx_data *data = dev->data;
 	struct i2c_master_transfer *transfer = &data->transfer;
 
 	transfer->isBusy = true;
@@ -125,7 +121,7 @@ static int i2c_imx_configure(const struct device *dev,
 			     uint32_t dev_config_raw)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_imx_data *data = DEV_DATA(dev);
+	struct i2c_imx_data *data = dev->data;
 	struct i2c_master_transfer *transfer = &data->transfer;
 	uint32_t baudrate;
 
@@ -189,7 +185,7 @@ static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
 			    uint8_t num_msgs, uint16_t addr)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_imx_data *data = DEV_DATA(dev);
+	struct i2c_imx_data *data = dev->data;
 	struct i2c_master_transfer *transfer = &data->transfer;
 	uint16_t timeout = UINT16_MAX;
 	int result = -EIO;
@@ -271,7 +267,7 @@ finish:
 static void i2c_imx_isr(const struct device *dev)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_imx_data *data = DEV_DATA(dev);
+	struct i2c_imx_data *data = dev->data;
 	struct i2c_master_transfer *transfer = &data->transfer;
 
 	/* Clear interrupt flag. */
@@ -336,8 +332,8 @@ static void i2c_imx_isr(const struct device *dev)
 
 static int i2c_imx_init(const struct device *dev)
 {
-	const struct i2c_imx_config *config = DEV_CFG(dev);
-	struct i2c_imx_data *data = DEV_DATA(dev);
+	const struct i2c_imx_config *config = dev->config;
+	struct i2c_imx_data *data = dev->data;
 	uint32_t bitrate_cfg;
 	int error;
 

@@ -25,6 +25,7 @@ def test_discard_report(class_testsuite, platforms_list, all_testcases_dict, cap
     Test 2: Test if the generated report is not empty
     Test 3: Test if the gerenrated report contains the expected columns"""
     class_testsuite.platforms = platforms_list
+    class_testsuite.platform_names = [p.name for p in platforms_list]
     class_testsuite.testcases = all_testcases_dict
     filename = tmpdir.mkdir("test_discard").join("discard_report.csv")
     with pytest.raises(SystemExit):
@@ -88,6 +89,7 @@ def test_xunit_report(class_testsuite, test_data,
     Test 2: Assert on fails, passes, skips, errors values
     Test 3: Assert on the tree structure of twister.xml file"""
     class_testsuite.platforms = platforms_list
+    class_testsuite.platform_names = [p.name for p in platforms_list]
     class_testsuite.testcases = all_testcases_dict
     kwargs = {"exclude_tag" : ['test_a'], "exclude_platform" : ['demo_board_1'],
               "platform" : ['demo_board_2']}

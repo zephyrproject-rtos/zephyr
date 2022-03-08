@@ -22,8 +22,7 @@ struct dummy_display_data {
 
 static int dummy_display_init(const struct device *dev)
 {
-	struct dummy_display_data *disp_data =
-	    (struct dummy_display_data *)dev->data;
+	struct dummy_display_data *disp_data = dev->data;
 
 	disp_data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 

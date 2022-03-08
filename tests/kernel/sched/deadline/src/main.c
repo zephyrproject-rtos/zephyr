@@ -11,7 +11,7 @@
 /* this should be large enough for us
  * to print a failing assert if necessary
  */
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 struct k_thread worker_threads[NUM_THREADS];
 k_tid_t worker_tids[NUM_THREADS];

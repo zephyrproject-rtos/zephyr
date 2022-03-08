@@ -11,4 +11,7 @@ config SOC_SERIES
 config NUM_IRQS
 	default 512
 
+config PINCTRL
+	default y
+
 endif # SOC_SERIES_RCAR_GEN3

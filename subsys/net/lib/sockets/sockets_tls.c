@@ -2176,8 +2176,6 @@ static int ztls_socket_data_check(struct tls_context *ctx)
 
 		/* Treat any other error as fatal. */
 		return -EIO;
-	} else if (ret == 0 && ctx->type == SOCK_STREAM) {
-		return -ENOTCONN;
 	}
 
 	return mbedtls_ssl_get_bytes_avail(&ctx->ssl);
@@ -2206,7 +2204,7 @@ static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
 	}
 
 	ret = ztls_socket_data_check(ctx);
-	if (ret == -ENOTCONN) {
+	if (ret == -ENOTCONN || (pfd->revents & ZSOCK_POLLHUP)) {
 		/* Datagram does not return 0 on consecutive recv, but an error
 		 * code, hence clear POLLIN.
 		 */
@@ -2671,6 +2669,13 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	}
 }
 
+static int tls_sock_shutdown_vmeth(void *obj, int how)
+{
+	struct tls_context *ctx = obj;
+
+	return zsock_shutdown(ctx->sock, how);
+}
+
 static int tls_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
 			       socklen_t addrlen)
 {
@@ -2754,6 +2759,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 		.close = tls_sock_close_vmeth,
 		.ioctl = tls_sock_ioctl_vmeth,
 	},
+	.shutdown = tls_sock_shutdown_vmeth,
 	.bind = tls_sock_bind_vmeth,
 	.connect = tls_sock_connect_vmeth,
 	.listen = tls_sock_listen_vmeth,

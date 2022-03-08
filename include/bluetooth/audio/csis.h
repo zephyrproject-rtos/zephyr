@@ -18,7 +18,6 @@
  * [Experimental] Users should note that the APIs can change as a part of ongoing development.
  */
 
-
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <bluetooth/conn.h>
@@ -27,8 +26,8 @@
 extern "C" {
 #endif
 
-/* Recommended timer for member discovery */
-#define CSIS_CLIENT_DISCOVER_TIMER_VALUE               K_SECONDS(10)
+/** Recommended timer for member discovery */
+#define CSIS_CLIENT_DISCOVER_TIMER_VALUE        K_SECONDS(10)
 
 #if defined(CONFIG_BT_CSIS_CLIENT)
 #define BT_CSIS_CLIENT_MAX_CSIS_INSTANCES CONFIG_BT_CSIS_CLIENT_MAX_CSIS_INSTANCES
@@ -36,8 +35,8 @@ extern "C" {
 #define BT_CSIS_CLIENT_MAX_CSIS_INSTANCES 0
 #endif /* CONFIG_BT_CSIS_CLIENT */
 
+/** Minimum size of a set */
 #define BT_CSIS_MINIMUM_SET_SIZE                2
-#define BT_CSIS_PSRI_SIZE                       6
 
 /** Accept the request to read the SIRK as plaintext */
 #define BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT        0x00
@@ -48,24 +47,25 @@ extern "C" {
 /** SIRK is available only via an OOB procedure */
 #define BT_CSIS_READ_SIRK_REQ_RSP_OOB_ONLY      0x03
 
+/** Size of the Set Identification Resolving Key (SIRK) */
 #define BT_CSIS_SET_SIRK_SIZE 16
 
+/* Coordinate Set Identification Service Error codes */
+/** Service is already locked */
 #define BT_CSIS_ERROR_LOCK_DENIED               0x80
+/** Service is not locked */
 #define BT_CSIS_ERROR_LOCK_RELEASE_DENIED       0x81
+/** Invalid lock value */
 #define BT_CSIS_ERROR_LOCK_INVAL_VALUE          0x82
-#define BT_CSIS_ERROR_SIRK_ACCESS_REJECTED      0x83
-#define BT_CSIS_ERROR_SIRK_OOB_ONLY             0x84
-#define BT_CSIS_ERROR_LOCK_ALREADY_GRANTED      0x85
-
-#define BT_CSIS_RELEASE_VALUE                   0x01
-#define BT_CSIS_LOCK_VALUE                      0x02
-
-#define BT_CSIS_SIRK_TYPE_ENCRYPTED             0x00
-#define BT_CSIS_SIRK_TYPE_PLAIN                 0x01
+/** SIRK only available out-of-band */
+#define BT_CSIS_ERROR_SIRK_OOB_ONLY             0x83
+/** Client is already owner of the lock */
+#define BT_CSIS_ERROR_LOCK_ALREADY_GRANTED      0x84
 
 /** @brief Opaque Coordinated Set Identification Service instance. */
 struct bt_csis;
 
+/** Callback structure for the Coordinated Set Identification Service */
 struct bt_csis_cb {
 	/**
 	 * @brief Callback whenever the lock changes on the server.
@@ -145,14 +145,14 @@ struct bt_csis_register_param {
 void *bt_csis_svc_decl_get(const struct bt_csis *csis);
 
 /**
- * @brief Register the Coordinated Set Identification Service.
+ * @brief Register a Coordinated Set Identification Service instance.
  *
  * This will register and enable the service and make it discoverable by
  * clients.
  *
  * This shall only be done as a server.
  *
- * @param param      Coordinated Set Identification Service register parameters.
+ * @param      param Coordinated Set Identification Service register parameters.
  * @param[out] csis  Pointer to the registered Coordinated Set Identification
  *                   Service.
  *
@@ -162,26 +162,26 @@ int bt_csis_register(const struct bt_csis_register_param *param,
 		     struct bt_csis **csis);
 
 /**
- * @brief Print the sirk to the debug output
+ * @brief Print the SIRK to the debug output
  *
  * @param csis   Pointer to the Coordinated Set Identification Service.
  */
 void bt_csis_print_sirk(const struct bt_csis *csis);
 
 /**
- * @brief Starts advertising the PRSI value.
+ * @brief Starts advertising the Resolveable Set Identifier value.
  *
  * This cannot be used with other connectable advertising sets.
  *
  * @param csis          Pointer to the Coordinated Set Identification Service.
  * @param enable	If true start advertising, if false stop advertising
  *
- * @return int		0 if on success, ERRNO on error.
+ * @return int		0 if on success, errno on error.
  */
 int bt_csis_advertise(struct bt_csis *csis, bool enable);
 
 /**
- * @brief Locks the sets on the server.
+ * @brief Locks a specific Coordinated Set Identification Service instance on the server.
  *
  * @param csis    Pointer to the Coordinated Set Identification Service.
  * @param lock    If true lock the set, if false release the set.
@@ -193,121 +193,119 @@ int bt_csis_advertise(struct bt_csis *csis, bool enable);
  */
 int bt_csis_lock(struct bt_csis *csis, bool lock, bool force);
 
-struct bt_csis_set_sirk {
-	uint8_t type;
-	uint8_t value[BT_CSIS_SET_SIRK_SIZE];
-} __packed;
+/** Information about a specific set */
+struct bt_csis_client_set_info {
+	/**
+	 * @brief The 16 octet set Set Identity Resolving Key (SIRK)
+	 *
+	 * The Set SIRK may not be exposed by the server over Bluetooth, and
+	 * may require an out-of-band solution.
+	 */
+	uint8_t set_sirk[BT_CSIS_SET_SIRK_SIZE];
 
-struct bt_csis_client_set {
-	struct bt_csis_set_sirk set_sirk;
+	/**
+	 * @brief The size of the set
+	 *
+	 * Will be 0 if not exposed by the server.
+	 */
 	uint8_t set_size;
+
+	/**
+	 * @brief The rank of the set on on the remote device
+	 *
+	 * Will be 0 if not exposed by the server.
+	 */
 	uint8_t rank;
 };
 
-struct bt_csis_client_set_member {
-	struct bt_conn *conn;
-	bt_addr_le_t addr;
-	struct bt_csis_client_set sets[BT_CSIS_CLIENT_MAX_CSIS_INSTANCES];
+/**
+ * @brief Struct representing a coordinated set instance on a remote device
+ *
+ * The values in this struct will be populated during discovery of sets
+ * (bt_csis_client_discover()).
+ */
+struct bt_csis_client_csis_inst {
+	struct bt_csis_client_set_info info;
+
+	/** Internally used pointer value */
+	struct bt_csis *csis;
 };
 
-typedef void (*bt_csis_client_discover_cb)(struct bt_conn *conn, int err,
-					   uint8_t set_count);
+/** Struct representing a remote device as a set member */
+struct bt_csis_client_set_member {
+	/** Connection pointer to the remote device, populated by the user */
+	struct bt_conn *conn;
+	/** Array of Coordinated Set Identification Service instances for the remote device */
+	struct bt_csis_client_csis_inst insts[BT_CSIS_CLIENT_MAX_CSIS_INSTANCES];
+};
+
+/**
+ * @typedef bt_csis_client_discover_cb
+ * @brief Callback for discovering Coordinated Set Identification Services.
+ *
+ * @param member    Pointer to the set member.
+ * @param err       0 on success, or an errno value on error.
+ * @param set_count Number of sets on the member.
+ */
+typedef void (*bt_csis_client_discover_cb)(struct bt_csis_client_set_member *member,
+					   int err, uint8_t set_count);
 
 /**
  * @brief Initialise the csis_client instance for a connection. This will do a
  * discovery on the device and prepare the instance for following commands.
  *
- * @param member Pointer to a set member struct to store discovery results in
+ * @param member Pointer to a set member struct to store discovery results in.
  *
  * @return int Return 0 on success, or an errno value on error.
  */
 int bt_csis_client_discover(struct bt_csis_client_set_member *member);
 
-typedef void (*bt_csis_client_discover_sets_cb)(struct bt_conn *conn,
-						int err, uint8_t set_count,
-						struct bt_csis_client_set *sets);
-
 /**
- * @brief Reads CSIS characteristics from a device, to find more information
- * about the set(s) that the device is part of.
+ * @typedef bt_csis_client_lock_set_cb
+ * @brief Callback for locking a set across one or more devices
  *
- * @param conn The connection to the device to read CSIS characteristics
- *
- * @return int Return 0 on success, or an errno value on error.
+ * @param err       0 on success, or an errno value on error.
  */
-int bt_csis_client_discover_sets(struct bt_conn *conn);
-
-typedef void (*bt_csis_client_discover_members_cb)(int err, uint8_t set_size,
-						   uint8_t members_found);
-
-/**
- * @brief Start scanning for all devices that are part of a set.
- *
- * @param set The set to find devices for
- *
- * @return int Return 0 on success, or an errno value on error.
- */
-int bt_csis_client_discover_members(struct bt_csis_client_set *set);
-
 typedef void (*bt_csis_client_lock_set_cb)(int err);
 
 /**
+ * @typedef bt_csis_client_lock_changed_cb
  * @brief Callback when the lock value on a set of a connected device changes.
  *
- * @param conn    Connection of the CSIS server.
- * @param set     The set that was changed.
+ * @param inst    The Coordinated Set Identification Service instance that was
+ *                changed.
  * @param locked  Whether the lock is locked or release.
  *
  * @return int Return 0 on success, or an errno value on error.
  */
-typedef void (*bt_csis_client_lock_changed_cb)(struct bt_conn *conn,
-					       struct bt_csis_client_set *set,
+typedef void (*bt_csis_client_lock_changed_cb)(struct bt_csis_client_csis_inst *inst,
 					       bool locked);
 
 /**
- * @brief Callback when the lock value is read on a device.
+ * @typedef bt_csis_client_lock_state_read_cb
+ * @brief Callback for bt_csis_client_get_lock_state()
  *
- * @param conn      Connection of the CSIS server.
+ * If any of the set members supplied to bt_csis_client_get_lock_state() is
+ * in the locked state, this will be called with @p locked true. If any
+ * set member is in the locked state, the remaining (if any) won't be read.
+ * Likewise, if any error occurs, the procedure will also be aborted.
+ *
+ * @param set_info  Pointer to the a specific set_info struct.
  * @param err       Error value. 0 on success, GATT error or errno on fail.
- * @param inst_idx  The index of the CSIS service.
  * @param locked    Whether the lock is locked or release.
  */
-typedef void (*bt_csis_client_lock_read_cb)(struct bt_conn *conn, int err,
-					    uint8_t inst_idx, bool locked);
-
-/**
- * @brief Callback when the lock value is written to a device.
- *
- * @param conn      Connection of the CSIS server.
- * @param err       Error value. 0 on success, GATT error or errno on fail.
- * @param inst_idx  The index of the CSIS service.
- */
-typedef void (*bt_csis_client_lock_cb)(struct bt_conn *conn, int err,
-				       uint8_t inst_idx);
-
-/**
- * @brief Callback when the release value is written to a device.
- *
- * @param conn      Connection of the CSIS server.
- * @param err       Error value. 0 on success, GATT error or errno on fail.
- * @param inst_idx  The index of the CSIS service.
- */
-typedef void (*bt_csis_client_release_cb)(struct bt_conn *conn, int err,
-					  uint8_t inst_idx);
+typedef void (*bt_csis_client_lock_state_read_cb)(const struct bt_csis_client_set_info *set_info,
+						  int err, bool locked);
 
 struct bt_csis_client_cb {
 	/* Set callbacks */
 	bt_csis_client_lock_set_cb             lock_set;
 	bt_csis_client_lock_set_cb             release_set;
-	bt_csis_client_discover_members_cb     members;
-	bt_csis_client_discover_sets_cb        sets;
 	bt_csis_client_lock_changed_cb         lock_changed;
 
 	/* Device specific callbacks */
 	bt_csis_client_discover_cb             discover;
-	bt_csis_client_lock_read_cb            lock_read;
-	bt_csis_client_lock_cb                 lock;
-	bt_csis_client_release_cb              release;
+	bt_csis_client_lock_state_read_cb      lock_state_read;
 };
 
 /**
@@ -322,22 +320,6 @@ bool bt_csis_client_is_set_member(uint8_t set_sirk[BT_CSIS_SET_SIRK_SIZE],
 				  struct bt_data *data);
 
 /**
- * @brief Lock the set
- *
- * Connect to and set the lock for all devices in a set.
- *
- * @return Return 0 on success, or an errno value on error.
- */
-int bt_csis_client_lock_set(void);
-
-/**
- * @brief Connect to and release the lock for all devices in a set
- *
- * @return int Return 0 on success, or an errno value on error.
- */
-int bt_csis_client_release_set(void);
-
-/**
  * @brief Registers callbacks for csis_client.
  *
  * @param cb   Pointer to the callback structure.
@@ -345,15 +327,21 @@ int bt_csis_client_release_set(void);
 void bt_csis_client_register_cb(struct bt_csis_client_cb *cb);
 
 /**
- * @brief Read the lock value of a specific device and instance.
+ * @brief Check if an array of set members are unlocked
  *
- * @param conn      Pointer to the connection to the device.
- * @param inst_idx  Index of the CSIS index of the peer device (as it may have
- *                  multiple CSIS instances).
+ * This will read the set lock value on all members and respond with a single
+ * state.
+ *
+ * @param members   Array of set members to check lock state for.
+ * @param count     Number of set members in @p members.
+ * @param set_info  Pointer to the a specific set_info struct, as a member may
+ *                  be part of multiple sets.
  *
  * @return Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_lock_get(struct bt_conn *conn, uint8_t inst_idx);
+int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **members,
+				  uint8_t count,
+				  const struct bt_csis_client_set_info *set_info);
 
 /**
  * @brief Lock an array of set members
@@ -364,13 +352,14 @@ int bt_csis_client_lock_get(struct bt_conn *conn, uint8_t inst_idx);
  *
  * @param members   Array of set members to lock.
  * @param count     Number of set members in @p members.
- * @param set       Pointer to the specified set, as a member may be part of
- *                  multiple sets.
+ * @param set_info  Pointer to the a specific set_info struct, as a member may
+ *                  be part of multiple sets.
  *
  * @return Return 0 on success, or an errno value on error.
  */
 int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
-			uint8_t count, const struct bt_csis_client_set *set);
+			uint8_t count,
+			const struct bt_csis_client_set_info *set_info);
 
 /**
  * @brief Release an array of set members
@@ -379,13 +368,14 @@ int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
  *
  * @param members   Array of set members to lock.
  * @param count     Number of set members in @p members.
- * @param set       Pointer to the specified set, as a member may be part of
- *                  multiple sets.
+ * @param set_info  Pointer to the a specific set_info struct, as a member may
+ *                  be part of multiple sets.
  *
  * @return Return 0 on success, or an errno value on error.
  */
 int bt_csis_client_release(const struct bt_csis_client_set_member **members,
-			   uint8_t count, const struct bt_csis_client_set *set);
+			   uint8_t count,
+			   const struct bt_csis_client_set_info *set_info);
 
 
 #ifdef __cplusplus

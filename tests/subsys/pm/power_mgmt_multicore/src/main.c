@@ -30,21 +30,23 @@ BUILD_ASSERT(CONFIG_MP_NUM_CPUS == 2, "Invalid number of cpus");
 
 static enum pm_state state_testing[2];
 
-void pm_power_state_set(struct pm_state_info info)
+void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(substate_id);
+
 	switch (state_testing[_current_cpu->id]) {
 	case PM_STATE_ACTIVE:
-		zassert_equal(PM_STATE_ACTIVE, info.state, NULL);
+		zassert_equal(PM_STATE_ACTIVE, state, NULL);
 		break;
 	case  PM_STATE_RUNTIME_IDLE:
-		zassert_equal(PM_STATE_RUNTIME_IDLE, info.state, NULL);
+		zassert_equal(PM_STATE_RUNTIME_IDLE, state, NULL);
 		break;
 	case  PM_STATE_SUSPEND_TO_IDLE:
-		zassert_equal(PM_STATE_SUSPEND_TO_IDLE, info.state, NULL);
+		zassert_equal(PM_STATE_SUSPEND_TO_IDLE, state, NULL);
 		break;
 	case  PM_STATE_STANDBY:
 		zassert_equal(_current_cpu->id, 1U, NULL);
-		zassert_equal(PM_STATE_STANDBY, info.state, NULL);
+		zassert_equal(PM_STATE_STANDBY, state, NULL);
 		break;
 	default:
 		zassert_unreachable(NULL);
@@ -52,17 +54,20 @@ void pm_power_state_set(struct pm_state_info info)
 	}
 }
 
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
 	/* pm_system_suspend is entered with irq locked
 	 * unlock irq before leave pm_system_suspend
 	 */
 	irq_unlock(0);
 }
 
-struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
+const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
 {
-	struct pm_state_info info = {};
+	static struct pm_state_info info = {};
 	int32_t msecs = k_ticks_to_ms_floor64(ticks);
 
 	if (msecs < ACTIVE_MSEC) {
@@ -79,9 +84,9 @@ struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
 		}
 	}
 
-	state_testing[_current_cpu->id] = info.state;
+	state_testing[cpu] = info.state;
 
-	return info;
+	return &info;
 }
 
 /*
@@ -94,7 +99,7 @@ struct pm_state_info pm_policy_next_state(uint8_t cpu, int ticks)
  *  - Iterate a number of times to stress it.
  *
  * @see pm_policy_next_state()
- * @see pm_power_state_set()
+ * @see pm_state_set()
  *
  * @ingroup power_tests
  */

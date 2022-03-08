@@ -37,25 +37,25 @@
  */
 
 #if defined(CONFIG_SOC_SERIES_INTEL_CAVS_V25)
-#define PLATFORM_RESET_MHE_AT_BOOT
-#define PLATFORM_MEM_INIT_AT_BOOT
+#define PLATFORM_INIT_HPSRAM
+#define PLATFORM_INIT_LPSRAM
 #define PLATFORM_HPSRAM_EBB_COUNT 30
 #define EBB_SEGMENT_SIZE          32
 
 #elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V20)
-#define PLATFORM_RESET_MHE_AT_BOOT
-#define PLATFORM_MEM_INIT_AT_BOOT
+#define PLATFORM_INIT_HPSRAM
+#define PLATFORM_INIT_LPSRAM
 #define PLATFORM_HPSRAM_EBB_COUNT 47
 #define EBB_SEGMENT_SIZE          32
 
 #elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V18)
-#define PLATFORM_RESET_MHE_AT_BOOT
-#define PLATFORM_MEM_INIT_AT_BOOT
+#define PLATFORM_INIT_HPSRAM
+#define PLATFORM_INIT_LPSRAM
 #define PLATFORM_HPSRAM_EBB_COUNT 47
 #define EBB_SEGMENT_SIZE          32
 
 #elif defined(CONFIG_SOC_SERIES_INTEL_CAVS_V15)
-#define PLATFORM_RESET_MHE_AT_BOOT
+#define PLATFORM_INIT_LPSRAM
 #define PLATFORM_DISABLE_L2CACHE_AT_BOOT
 
 #endif
@@ -65,6 +65,8 @@
 #define HOST_PAGE_SIZE 4096
 
 #define MANIFEST_SEGMENT_COUNT 3
+
+extern void soc_trace_init(void);
 
 /* Initial/true entry point.  Does nothing but jump to
  * z_boot_asm_entry (which cannot be here, because it needs to be able
@@ -161,7 +163,7 @@ static __imr void parse_module(struct sof_man_fw_header *hdr,
 #define MAN_SKIP_ENTRIES 1
 
 /* parse FW manifest and copy modules */
-static __imr void parse_manifest(void)
+__imr void parse_manifest(void)
 {
 	struct sof_man_fw_desc *desc =
 		(struct sof_man_fw_desc *)CONFIG_IMR_MANIFEST_ADDR;
@@ -185,7 +187,7 @@ static __imr void parse_manifest(void)
  */
 static __imr void hp_sram_pm_banks(uint32_t banks)
 {
-#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+#ifdef PLATFORM_INIT_HPSRAM
 	int delay_count = 256;
 	uint32_t status;
 	uint32_t ebb_mask0, ebb_mask1, ebb_avail_mask0, ebb_avail_mask1;
@@ -249,7 +251,7 @@ static __imr void hp_sram_pm_banks(uint32_t banks)
 #endif
 }
 
-static __imr void hp_sram_init(uint32_t memory_size)
+__imr void hp_sram_init(uint32_t memory_size)
 {
 	uint32_t ebb_in_use;
 
@@ -263,8 +265,9 @@ static __imr void hp_sram_init(uint32_t memory_size)
 	bbzero((void *)L2_SRAM_BASE, L2_SRAM_SIZE);
 }
 
-static __imr void lp_sram_init(void)
+__imr void lp_sram_init(void)
 {
+#ifdef PLATFORM_INIT_LPRSRAM
 	uint32_t timeout_counter, delay_count = 256;
 
 	timeout_counter = delay_count;
@@ -288,9 +291,10 @@ static __imr void lp_sram_init(void)
 
 	CAVS_SHIM.ldoctl = SHIM_LDOCTL_LPSRAM_LDO_BYPASS;
 	bbzero((void *)LP_SRAM_BASE, LP_SRAM_SIZE);
+#endif
 }
 
-static __imr void win_setup(void)
+__imr void win_setup(void)
 {
 	uint32_t *win0 = z_soc_uncached_ptr((void *)HP_SRAM_WIN0_BASE);
 
@@ -306,14 +310,15 @@ static __imr void win_setup(void)
 			     | CAVS_DMWBA_ENABLE);
 }
 
+#ifdef CONFIG_INTEL_ADSP_CAVS
 __imr void boot_core0(void)
 {
 	cpu_early_init();
 
-	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
+#ifdef PLATFORM_DISABLE_L2CACHE_AT_BOOT
 		/* FIXME: L2 cache control PCFG register */
 		*(uint32_t *)0x1508 = 0;
-	}
+#endif
 
 	/* reset memory hole */
 	CAVS_SHIM.l2mecs = 0;
@@ -322,9 +327,11 @@ __imr void boot_core0(void)
 	win_setup();
 	lp_sram_init();
 	parse_manifest();
+	soc_trace_init();
 	z_xtensa_cache_flush_all();
 
 	/* Zephyr! */
 	extern FUNC_NORETURN void z_cstart(void);
 	z_cstart();
 }
+#endif

@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_XILINX_XC7ZXXX
+
+rsource "Kconfig.defconfig.xc7z*"
+
+config SOC_SERIES
+	default "xc7zxxx"
+
+config MP_NUM_CPUS
+	default 2
+
+endif # SOC_SERIES_XILINX_XC7ZXXX

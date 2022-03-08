@@ -105,8 +105,6 @@ static inline int pcie_ep_conf_read(const struct device *dev,
  * @param dev    Pointer to the device structure for the driver instance
  * @param offset Offset within configuration space
  * @param data   Data to be written at the offset
- *
- * @return N/A
  */
 
 static inline void pcie_ep_conf_write(const struct device *dev,
@@ -163,8 +161,6 @@ static inline int pcie_ep_map_addr(const struct device *dev,
  *
  * @param dev         Pointer to the device structure for the driver instance
  * @param mapped_addr PCIe outbound region address
- *
- * @return      N/A
  */
 
 static inline void pcie_ep_unmap_addr(const struct device *dev,

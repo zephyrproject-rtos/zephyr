@@ -184,7 +184,7 @@ the next time the FPGA is configured.
 
 The steps to persist the application within the FPGA bitstream are covered by
 the ARM Cortex-M1/M3 DesignStart FPGA Xilinx edition user guide. If the
-:kconfig:`CONFIG_BUILD_OUTPUT_BIN` is enabled and the `SiFive elf2hex`_ package
+:kconfig:option:`CONFIG_BUILD_OUTPUT_BIN` is enabled and the `SiFive elf2hex`_ package
 is available, the build system will automatically generate a Verilog memory hex
 dump :file:`zephyr.mem` file suitable for initialising the block RAM using
 `Xilinx Vivado`_.

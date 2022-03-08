@@ -35,14 +35,11 @@ struct ps2_npcx_ch_config {
 	const struct device *ps2_ctrl;
 };
 
-/* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct ps2_npcx_ch_config *)(dev)->config)
-
 /* PS/2 api functions */
 static int ps2_npcx_ch_configure(const struct device *dev,
 				 ps2_callback_t callback_isr)
 {
-	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
+	const struct ps2_npcx_ch_config *const config = dev->config;
 	int ret;
 
 	ret = ps2_npcx_ctrl_configure(config->ps2_ctrl, config->channel_id,
@@ -56,14 +53,14 @@ static int ps2_npcx_ch_configure(const struct device *dev,
 
 static int ps2_npcx_ch_write(const struct device *dev, uint8_t value)
 {
-	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
+	const struct ps2_npcx_ch_config *const config = dev->config;
 
 	return ps2_npcx_ctrl_write(config->ps2_ctrl, config->channel_id, value);
 }
 
 static int ps2_npcx_ch_enable_interface(const struct device *dev)
 {
-	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
+	const struct ps2_npcx_ch_config *const config = dev->config;
 
 	return ps2_npcx_ctrl_enable_interface(config->ps2_ctrl,
 					      config->channel_id, 1);
@@ -71,7 +68,7 @@ static int ps2_npcx_ch_enable_interface(const struct device *dev)
 
 static int ps2_npcx_ch_inhibit_interface(const struct device *dev)
 {
-	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
+	const struct ps2_npcx_ch_config *const config = dev->config;
 
 	return ps2_npcx_ctrl_enable_interface(config->ps2_ctrl,
 					      config->channel_id, 0);
@@ -80,7 +77,7 @@ static int ps2_npcx_ch_inhibit_interface(const struct device *dev)
 /* PS/2 driver registration */
 static int ps2_npcx_channel_init(const struct device *dev)
 {
-	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
+	const struct ps2_npcx_ch_config *const config = dev->config;
 
 	if (!device_is_ready(config->ps2_ctrl)) {
 		LOG_ERR("%s device not ready", config->ps2_ctrl->name);

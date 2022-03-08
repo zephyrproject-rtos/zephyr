@@ -1,8 +1,0 @@
-#!/bin/bash
-# Copyright (c) 2020 Linaro Limited
-#
-# SPDX-License-Identifier: Apache-2.0
-
-# report disk usage:
-echo "--- $0 disk usage"
-df -h

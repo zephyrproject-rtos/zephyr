@@ -296,16 +296,31 @@ static inline int z_vrfy_zsock_close(int sock)
 
 int z_impl_zsock_shutdown(int sock, int how)
 {
-	/* shutdown() is described by POSIX as just disabling recv() and/or
-	 * send() operations on socket. Of course, real-world software mostly
-	 * calls it for side effects. We treat it as null operation so far.
-	 */
-	ARG_UNUSED(sock);
-	ARG_UNUSED(how);
+	const struct socket_op_vtable *vtable;
+	struct k_mutex *lock;
+	void *ctx;
+	int ret;
 
-	LOG_WRN("shutdown() not implemented");
+	ctx = get_sock_vtable(sock, &vtable, &lock);
+	if (ctx == NULL) {
+		errno = EBADF;
+		return -1;
+	}
 
-	return 0;
+	if (!vtable->shutdown) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	(void)k_mutex_lock(lock, K_FOREVER);
+
+	NET_DBG("shutdown: ctx=%p, fd=%d, how=%d", ctx, sock, how);
+
+	ret = vtable->shutdown(ctx, how);
+
+	k_mutex_unlock(lock);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -331,6 +346,15 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 		k_condvar_init(&new_ctx->cond.recv);
 
 		k_fifo_put(&parent->accept_q, new_ctx);
+
+		/* TCP context is effectively owned by both application
+		 * and the stack: stack may detect that peer closed/aborted
+		 * connection, but it must not dispose of the context behind
+		 * the application back. Likewise, when application "closes"
+		 * context, it's not disposed of immediately - there's yet
+		 * closing handshake for stack to perform.
+		 */
+		net_context_ref(new_ctx);
 	}
 }
 
@@ -371,10 +395,6 @@ static void zsock_received_cb(struct net_context *ctx,
 	/* Normal packet */
 	net_pkt_set_eof(pkt, false);
 
-	if (net_context_get_type(ctx) == SOCK_STREAM) {
-		net_context_update_recv_wnd(ctx, -net_pkt_remaining_data(pkt));
-	}
-
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
 	k_fifo_put(&ctx->recv_q, pkt);
@@ -386,6 +406,30 @@ unlock:
 
 	/* Let reader to wake if it was sleeping */
 	(void)k_condvar_signal(&ctx->cond.recv);
+}
+
+int zsock_shutdown_ctx(struct net_context *ctx, int how)
+{
+	if (how == ZSOCK_SHUT_RD) {
+		if (net_context_get_state(ctx) == NET_CONTEXT_LISTENING) {
+			SET_ERRNO(net_context_accept(ctx, NULL, K_NO_WAIT, NULL));
+		} else {
+			SET_ERRNO(net_context_recv(ctx, NULL, K_NO_WAIT, NULL));
+		}
+
+		sock_set_eof(ctx);
+
+		zsock_flush_queue(ctx);
+
+		/* Let reader to wake if it was sleeping */
+		(void)k_condvar_signal(&ctx->cond.recv);
+	} else if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
+		SET_ERRNO(-ENOTSUP);
+	} else {
+		SET_ERRNO(-EINVAL);
+	}
+
+	return 0;
 }
 
 int zsock_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
@@ -530,6 +574,8 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		if (net_pkt_eof(last_pkt)) {
 			sock_set_eof(ctx);
 			z_free_fd(fd);
+			zsock_flush_queue(ctx);
+			net_context_unref(ctx);
 			errno = ECONNABORTED;
 			return -1;
 		}
@@ -538,6 +584,8 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	if (net_context_is_closing(ctx)) {
 		errno = ECONNABORTED;
 		z_free_fd(fd);
+		zsock_flush_queue(ctx);
+		net_context_unref(ctx);
 		return -1;
 	}
 
@@ -558,18 +606,11 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		} else {
 			z_free_fd(fd);
 			errno = ENOTSUP;
+			zsock_flush_queue(ctx);
+			net_context_unref(ctx);
 			return -1;
 		}
 	}
-
-	/* TCP context is effectively owned by both application
-	 * and the stack: stack may detect that peer closed/aborted
-	 * connection, but it must not dispose of the context behind
-	 * the application back. Likewise, when application "closes"
-	 * context, it's not disposed of immediately - there's yet
-	 * closing handshake for stack to perform.
-	 */
-	net_context_ref(ctx);
 
 	NET_DBG("accept: ctx=%p, fd=%d", ctx, fd);
 
@@ -1364,6 +1405,10 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 		(*pev)++;
 	}
 
+	if (sock_is_eof(ctx)) {
+		pfd->revents |= ZSOCK_POLLHUP;
+	}
+
 	return 0;
 }
 
@@ -2102,6 +2147,11 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	}
 }
 
+static int sock_shutdown_vmeth(void *obj, int how)
+{
+	return zsock_shutdown_ctx(obj, how);
+}
+
 static int sock_bind_vmeth(void *obj, const struct sockaddr *addr,
 			   socklen_t addrlen)
 {
@@ -2176,6 +2226,7 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 		.close = sock_close_vmeth,
 		.ioctl = sock_ioctl_vmeth,
 	},
+	.shutdown = sock_shutdown_vmeth,
 	.bind = sock_bind_vmeth,
 	.connect = sock_connect_vmeth,
 	.listen = sock_listen_vmeth,

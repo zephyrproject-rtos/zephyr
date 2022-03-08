@@ -39,35 +39,36 @@ static inline int log_translate(otLogLevel aLogLevel)
 	return -1;
 }
 
-void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
-	       const char *aFormat, ...)
+#if defined(CONFIG_LOG)
+static uint32_t count_args(const char *fmt)
 {
-	/*
-	 * The following speed optimization have been used:
-	 * - arguments are counted at compile time
-	 * - for none arguments aFormat is not checked for %s
-	 * - for up to three arguments program uses fast path
-	 * - time consuming string formatting is posponed to idle time
-	 * TODO : add support for ll (problem for 32 bit processors)
-	 */
+	uint32_t args = 0U;
+	bool prev = false; /* if previous char was a modificator. */
 
+	while (*fmt != '\0') {
+		if (*fmt == '%') {
+			prev = !prev;
+		} else if (prev) {
+			args++;
+			prev = false;
+		} else {
+			; /* standard character, continue walk */
+		}
+		fmt++;
+	}
 
-#ifdef OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS
-	/* The arguments number has been counted by macro at compile time,
-	 * and the value has been passed in unused (now) aLogRegion.
-	 * If LogRegion value from OT is needed, rewrite macro
-	 * OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS and use higher
-	 * bits to pass args_num.
-	 */
-	uint32_t args_num = (uint32_t) aLogRegion;
-#else
-	ARG_UNUSED(aLogRegion);
-
-	uint32_t args_num = log_count_args(aFormat);
+	return args;
+}
 #endif
 
-	va_list param_list;
+void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat, ...)
+{
+	ARG_UNUSED(aLogRegion);
+
+#if defined(CONFIG_LOG)
 	int level = log_translate(aLogLevel);
+	uint32_t args_num = count_args(aFormat);
+	va_list param_list;
 
 	if (level < 0) {
 		return;
@@ -82,4 +83,9 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
 	 */
 	Z_LOG_VA(level, aFormat, param_list, args_num, LOG_STRDUP_EXEC);
 	va_end(param_list);
+#else
+	ARG_UNUSED(aLogLevel);
+	ARG_UNUSED(aFormat);
+#endif
+
 }

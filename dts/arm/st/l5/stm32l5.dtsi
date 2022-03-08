@@ -609,6 +609,19 @@
 		#phy-cells = <0>;
 		label = "USB_FS_PHY";
 	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp-cal";
+		ts-cal1-addr = <0x0BFA05A8>;
+		ts-cal2-addr = <0x0BFA05CA>;
+		ts-cal1-temp = <30>;
+		ts-cal2-temp = <110>;
+		ts-cal-vrefanalog = <3000>;
+		ts-cal-offset = <30>;
+		io-channels = <&adc1 17>;
+		status = "disabled";
+		label = "DIE_TEMP";
+	};
 };
 
 &nvic {

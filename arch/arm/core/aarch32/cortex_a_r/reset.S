@@ -43,7 +43,6 @@ GTEXT(z_arm_platform_init)
  * When these steps are completed, jump to z_arm_prep_c(), which will finish
  * setting up the system for running C code.
  *
- * @return N/A
  */
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, z_arm_reset)
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)

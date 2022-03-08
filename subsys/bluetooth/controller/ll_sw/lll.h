@@ -21,9 +21,10 @@
 #define EVENT_DONE_LINK_CNT 1
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
-#define ADV_INT_UNIT_US  625U
-#define SCAN_INT_UNIT_US 625U
-#define CONN_INT_UNIT_US 1250U
+#define ADV_INT_UNIT_US      625U
+#define SCAN_INT_UNIT_US     625U
+#define CONN_INT_UNIT_US     1250U
+#define PERIODIC_INT_UNIT_US 1250U
 
 /* Intervals after which connection or sync establishment is considered lost */
 #define CONN_ESTAB_COUNTDOWN 6U
@@ -163,6 +164,21 @@ enum {
 #define BT_CTLR_SYNC_ISO_STREAM_MAX 0
 #endif /* !CONFIG_BT_CTLR_SYNC_ISO */
 
+/* Define the ISO Connections Stream Handle base value */
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+#define BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE \
+	(BT_CTLR_SYNC_ISO_STREAM_HANDLE_BASE + \
+	 CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT)
+#elif defined(CONFIG_BT_CTLR_ADV_ISO)
+#define BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE \
+	(BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE + \
+	 CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT)
+#else /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_SYNC_ISO */
+#define BT_CTLR_CONN_ISO_STREAM_HANDLE_BASE (CONFIG_BT_MAX_CONN)
+#endif /* !CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_CTLR_SYNC_ISO */
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
 
 enum done_result {
@@ -206,6 +222,7 @@ struct lll_hdr {
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint8_t score;
 	uint8_t latency;
+	int8_t  prio;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 };
 
@@ -266,6 +283,7 @@ enum node_rx_type {
 	NODE_RX_TYPE_SYNC_ISO_LOST,
 	NODE_RX_TYPE_EXT_ADV_TERMINATE,
 	NODE_RX_TYPE_BIG_COMPLETE,
+	NODE_RX_TYPE_BIG_CHM_COMPLETE,
 	NODE_RX_TYPE_BIG_TERMINATE,
 	NODE_RX_TYPE_SCAN_REQ,
 	NODE_RX_TYPE_CONNECTION,
@@ -327,21 +345,24 @@ struct node_rx_ftr {
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+	uint8_t  phy_flags:1;
+	uint8_t  scan_req:1;
+	uint8_t  scan_rsp:1;
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	uint8_t  direct_resolved:1;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	uint8_t  aux_lll_sched:1;
-	uint8_t  aux_w4next:1;
-	uint8_t  aux_failed:1;
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	uint8_t  sync_status:2;
 	uint8_t  sync_rx_enabled:1;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
-	uint8_t  phy_flags:1;
-	uint8_t  scan_req:1;
-	uint8_t  scan_rsp:1;
+	uint8_t  aux_sched:1;
+	uint8_t  aux_lll_sched:1;
+	uint8_t  aux_failed:1;
+
+	uint16_t aux_data_len;
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
@@ -498,6 +519,15 @@ static inline void lll_hdr_init(void *lll, void *parent)
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 }
 
+/* If ISO vendor data path is not used, queue directly to ll_iso_rx */
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+#define iso_rx_put(link, rx) ull_iso_rx_put(link, rx)
+#define iso_rx_sched() ull_iso_rx_sched()
+#else
+#define iso_rx_put(link, rx) ll_iso_rx_put(link, rx)
+#define iso_rx_sched() ll_rx_sched()
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
+
 void lll_done_score(void *param, uint8_t result);
 
 int lll_init(void);
@@ -529,12 +559,13 @@ void *ull_pdu_rx_alloc_peek(uint8_t count);
 void *ull_pdu_rx_alloc_peek_iter(uint8_t *idx);
 void *ull_pdu_rx_alloc(void);
 void *ull_iso_pdu_rx_alloc_peek(uint8_t count);
-void *ull_iso_pdu_rx_alloc_peek_iter(uint8_t *idx);
 void *ull_iso_pdu_rx_alloc(void);
 void ull_rx_put(memq_link_t *link, void *rx);
 void ull_rx_put_done(memq_link_t *link, void *done);
 void ull_rx_sched(void);
 void ull_rx_sched_done(void);
+void ull_iso_rx_put(memq_link_t *link, void *rx);
+void ull_iso_rx_sched(void);
 struct event_done_extra *ull_event_done_extra_get(void);
 struct event_done_extra *ull_done_extra_type_set(uint8_t type);
 void *ull_event_done(void *param);

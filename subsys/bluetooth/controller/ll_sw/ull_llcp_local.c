@@ -112,6 +112,26 @@ struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 	return ctx;
 }
 
+void llcp_lr_pause(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
+	if (ctx) {
+		ctx->pause = 1;
+	}
+}
+
+void llcp_lr_resume(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
+	if (ctx) {
+		ctx->pause = 0;
+	}
+}
+
 void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
@@ -325,6 +345,12 @@ static void lr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 	case LR_EVT_DISCONNECT:
 		lr_act_disconnect(conn);
 		lr_set_state(conn, LR_STATE_DISCONNECT);
+		break;
+	case LR_EVT_COMPLETE:
+		/* Some procedures like CTE request may be completed without actual run due to
+		 * change in conditions while the procedure was waiting in a queue.
+		 */
+		lr_act_complete(conn);
 		break;
 	default:
 		/* Ignore other evts */

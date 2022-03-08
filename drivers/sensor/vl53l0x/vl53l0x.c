@@ -70,7 +70,7 @@ static int vl53l0x_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct vl53l0x_data *drv_data = (struct vl53l0x_data *)dev->data;
+	struct vl53l0x_data *drv_data = dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_DISTANCE
 			|| chan == SENSOR_CHAN_PROX);

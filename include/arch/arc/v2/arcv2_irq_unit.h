@@ -37,12 +37,10 @@ extern "C" {
  *
  */
 
-/*
+/**
  * @brief Enable/disable interrupt
  *
  * Enables or disables the specified interrupt
- *
- * @return N/A
  */
 
 static ALWAYS_INLINE
@@ -59,12 +57,10 @@ void z_arc_v2_irq_unit_irq_enable_set(
 	arch_irq_unlock(key);
 }
 
-/*
+/**
  * @brief Enable interrupt
  *
  * Enables the specified interrupt
- *
- * @return N/A
  */
 
 static ALWAYS_INLINE
@@ -73,12 +69,10 @@ void z_arc_v2_irq_unit_int_enable(int irq)
 	z_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_ENABLE);
 }
 
-/*
+/**
  * @brief Disable interrupt
  *
  * Disables the specified interrupt
- *
- * @return N/A
  */
 
 static ALWAYS_INLINE
@@ -87,7 +81,7 @@ void z_arc_v2_irq_unit_int_disable(int irq)
 	z_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_DISABLE);
 }
 
-/*
+/**
  * @brief Poll the enable status of interrupt
  *
  * Polls the enable status of the specified interrupt
@@ -110,12 +104,10 @@ bool z_arc_v2_irq_unit_int_enabled(int irq)
 }
 
 
-/*
+/**
  * @brief Set interrupt priority
  *
  * Set the priority of the specified interrupt
- *
- * @return N/A
  */
 
 static ALWAYS_INLINE
@@ -136,12 +128,10 @@ void z_arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
 }
 
 #if defined(CONFIG_ARC_SECURE_FIRMWARE)
-/*
+/**
  * @brief Configure the secure state of interrupt
  *
  * Configure the secure state of the specified interrupt
- *
- * @return N/A
  */
 static ALWAYS_INLINE
 void z_arc_v2_irq_uinit_secure_set(int irq, bool secure)
@@ -164,15 +154,13 @@ void z_arc_v2_irq_uinit_secure_set(int irq, bool secure)
 }
 #endif
 
-/*
+/**
  * @brief Set interrupt sensitivity
  *
  * Set the sensitivity of the specified interrupt to either
  * _ARC_V2_INT_LEVEL or _ARC_V2_INT_PULSE. Level interrupts will remain
  * asserted until the interrupt handler clears the interrupt at the peripheral.
  * Pulse interrupts self-clear as the interrupt handler is entered.
- *
- * @return N/A
  */
 
 static ALWAYS_INLINE
@@ -206,14 +194,12 @@ bool z_arc_v2_irq_unit_is_in_isr(void)
 	return ((act & 0xffff) != 0U);
 }
 
-/*
+/**
  * @brief Sets an IRQ line to level/pulse trigger
  *
  * Sets the IRQ line <irq> to trigger an interrupt based on the level or the
  * edge of the signal. Valid values for <trigger> are _ARC_V2_INT_LEVEL and
  * _ARC_V2_INT_PULSE.
- *
- * @return N/A
  */
 static ALWAYS_INLINE
 void z_arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)
@@ -226,7 +212,7 @@ void z_arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)
 	arch_irq_unlock(key);
 }
 
-/*
+/**
  * @brief Returns an IRQ line trigger type
  *
  * Gets the IRQ line <irq> trigger type.
@@ -248,13 +234,11 @@ unsigned int z_arc_v2_irq_unit_trigger_get(int irq)
 	return ret;
 }
 
-/*
+/**
  * @brief Send EOI signal to interrupt unit
  *
  * This routine sends an EOI (End Of Interrupt) signal to the interrupt unit
  * to clear a pulse-triggered interrupt.
- *
- * @return N/A
  */
 static ALWAYS_INLINE
 void z_arc_v2_irq_unit_int_eoi(int irq)

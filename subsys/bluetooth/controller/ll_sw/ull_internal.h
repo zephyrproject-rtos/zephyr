@@ -32,7 +32,7 @@ static inline void ull_hdr_init(struct ull_hdr *hdr)
 }
 
 void *ll_rx_link_alloc(void);
-void ll_rx_link_release(void *link);
+void ll_rx_link_release(memq_link_t *link);
 void *ll_rx_alloc(void);
 void ll_rx_release(void *node_rx);
 void *ll_pdu_rx_alloc_peek(uint8_t count);

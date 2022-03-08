@@ -26,6 +26,9 @@ extern "C" {
 
 /* Early boot functions */
 
+void z_early_memset(void *dst, int c, size_t n);
+void z_early_memcpy(void *dst, const void *src, size_t n);
+
 void z_bss_zero(void);
 #ifdef CONFIG_XIP
 void z_data_copy(void);
@@ -159,6 +162,9 @@ K_KERNEL_PINNED_STACK_ARRAY_EXTERN(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 #ifdef CONFIG_GEN_PRIV_STACKS
 extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 #endif
+
+/* Calculate stack usage. */
+int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
 
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack);

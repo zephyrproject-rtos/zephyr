@@ -399,7 +399,7 @@ struct usb_cdc_ecm_mac_descr {
 	uint8_t bString[USB_BSTRING_LENGTH(CONFIG_USB_DEVICE_NETWORK_ECM_MAC)];
 } __packed;
 
-USBD_STRING_DESCR_DEFINE(primary) struct usb_cdc_ecm_mac_descr utf16le_mac = {
+USBD_STRING_DESCR_USER_DEFINE(primary) struct usb_cdc_ecm_mac_descr utf16le_mac = {
 	.bLength = USB_STRING_DESCRIPTOR_LENGTH(
 			CONFIG_USB_DEVICE_NETWORK_ECM_MAC),
 	.bDescriptorType = USB_DESC_STRING,

@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <shell/shell.h>
 
 #include <net/net_mgmt.h>

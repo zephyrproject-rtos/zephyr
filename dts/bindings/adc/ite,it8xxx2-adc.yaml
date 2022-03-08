@@ -14,3 +14,6 @@ properties:
     pinctrl-0:
       type: phandles
       required: true
+
+io-channel-cells:
+    - input

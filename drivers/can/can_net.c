@@ -140,8 +140,8 @@ drop:
 	}
 }
 
-static inline int attach_mcast_filter(struct net_can_context *ctx,
-				      const struct in6_addr *addr)
+static inline int add_mcast_filter(struct net_can_context *ctx,
+				   const struct in6_addr *addr)
 {
 	static struct zcan_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
@@ -158,13 +158,13 @@ static inline int attach_mcast_filter(struct net_can_context *ctx,
 			((group & CAN_NET_IF_ADDR_MASK) <<
 			 CAN_NET_IF_ADDR_DEST_POS);
 
-	filter_id = can_attach_isr(ctx->can_dev, net_can_recv,
-				   ctx, &filter);
+	filter_id = can_add_rx_filter(ctx->can_dev, net_can_recv,
+				      ctx, &filter);
 	if (filter_id == CAN_NET_FILTER_NOT_SET) {
 		return CAN_NET_FILTER_NOT_SET;
 	}
 
-	NET_DBG("Attached mcast filter. Group 0x%04x. Filter:%d",
+	NET_DBG("Added mcast filter. Group 0x%04x. Filter:%d",
 		group, filter_id);
 
 	return filter_id;
@@ -188,9 +188,9 @@ static void mcast_cb(struct net_if *iface, const struct net_addr *addr,
 			NET_ERR("Can't get a free filter_mapping");
 		}
 
-		filter_id = attach_mcast_filter(ctx, &addr->in6_addr);
+		filter_id = add_mcast_filter(ctx, &addr->in6_addr);
 		if (filter_id < 0) {
-			NET_ERR("Can't attach mcast filter");
+			NET_ERR("Can't add mcast filter");
 			return;
 		}
 
@@ -203,7 +203,7 @@ static void mcast_cb(struct net_if *iface, const struct net_addr *addr,
 			return;
 		}
 
-		can_detach(ctx->can_dev, filter_mapping->filter_id);
+		can_remove_rx_filter(ctx->can_dev, filter_mapping->filter_id);
 		filter_mapping->addr = NULL;
 	}
 }
@@ -222,25 +222,24 @@ static void net_can_iface_init(struct net_if *iface)
 	net_if_mcast_mon_register(&mcast_monitor, iface, mcast_cb);
 }
 
-static int can_attach_filter(const struct device *dev, can_rx_callback_t cb,
-			     void *cb_arg,
-			     const struct zcan_filter *filter)
+static int net_can_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
+				 void *cb_arg, const struct zcan_filter *filter)
 {
 	struct net_can_context *ctx = dev->data;
 
-	return can_attach_isr(ctx->can_dev, cb, cb_arg, filter);
+	return can_add_rx_filter(ctx->can_dev, cb, cb_arg, filter);
 }
 
-static void can_detach_filter(const struct device *dev, int filter_id)
+static void net_can_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct net_can_context *ctx = dev->data;
 
 	if (filter_id >= 0) {
-		can_detach(ctx->can_dev, filter_id);
+		can_remove_rx_filter(ctx->can_dev, filter_id);
 	}
 }
 
-static inline int can_attach_unicast_filter(struct net_can_context *ctx)
+static inline int can_add_unicast_filter(struct net_can_context *ctx)
 {
 	struct zcan_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
@@ -254,20 +253,20 @@ static inline int can_attach_unicast_filter(struct net_can_context *ctx)
 
 	filter.id = (dest << CAN_NET_IF_ADDR_DEST_POS);
 
-	filter_id = can_attach_isr(ctx->can_dev, net_can_recv,
-				   ctx, &filter);
+	filter_id = can_add_rx_filter(ctx->can_dev, net_can_recv,
+				      ctx, &filter);
 	if (filter_id == CAN_NET_FILTER_NOT_SET) {
-		NET_ERR("Can't attach FF filter");
+		NET_ERR("Can't add FF filter");
 		return CAN_NET_FILTER_NOT_SET;
 	}
 
-	NET_DBG("Attached FF filter %d", filter_id);
+	NET_DBG("Added FF filter %d", filter_id);
 
 	return filter_id;
 }
 
 #ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
-static inline int can_attach_eth_bridge_filter(struct net_can_context *ctx)
+static inline int can_add_eth_bridge_filter(struct net_can_context *ctx)
 {
 	const struct zcan_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
@@ -280,19 +279,19 @@ static inline int can_attach_eth_bridge_filter(struct net_can_context *ctx)
 
 	int filter_id;
 
-	filter_id = can_attach_isr(ctx->can_dev, net_can_recv,
-				   ctx, &filter);
+	filter_id = can_add_rx_filter(ctx->can_dev, net_can_recv,
+				      ctx, &filter);
 	if (filter_id == CAN_NET_FILTER_NOT_SET) {
-		NET_ERR("Can't attach ETH bridge filter");
+		NET_ERR("Can't add ETH bridge filter");
 		return CAN_NET_FILTER_NOT_SET;
 	}
 
-	NET_DBG("Attached ETH bridge filter %d", filter_id);
+	NET_DBG("Added ETH bridge filter %d", filter_id);
 
 	return filter_id;
 }
 
-static inline int can_attach_all_mcast_filter(struct net_can_context *ctx)
+static inline int can_add_all_mcast_filter(struct net_can_context *ctx)
 {
 	const struct zcan_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
@@ -304,14 +303,14 @@ static inline int can_attach_all_mcast_filter(struct net_can_context *ctx)
 
 	int filter_id;
 
-	filter_id = can_attach_isr(ctx->can_dev, net_can_recv,
-				   ctx, &filter);
+	filter_id = can_add_rx_filter(ctx->can_dev, net_can_recv,
+				      ctx, &filter);
 	if (filter_id == CAN_NET_FILTER_NOT_SET) {
-		NET_ERR("Can't attach all mcast filter");
+		NET_ERR("Can't add all mcast filter");
 		return CAN_NET_FILTER_NOT_SET;
 	}
 
-	NET_DBG("Attached all mcast filter %d", filter_id);
+	NET_DBG("Added all mcast filter %d", filter_id);
 
 	return filter_id;
 }
@@ -323,7 +322,7 @@ static int can_enable(const struct device *dev, bool enable)
 
 	if (enable) {
 		if (ctx->recv_filter_id == CAN_NET_FILTER_NOT_SET) {
-			ctx->recv_filter_id = can_attach_unicast_filter(ctx);
+			ctx->recv_filter_id = can_add_unicast_filter(ctx);
 			if (ctx->recv_filter_id < 0) {
 				return -EIO;
 			}
@@ -331,34 +330,34 @@ static int can_enable(const struct device *dev, bool enable)
 
 #ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
 		if (ctx->eth_bridge_filter_id == CAN_NET_FILTER_NOT_SET) {
-			ctx->eth_bridge_filter_id = can_attach_eth_bridge_filter(ctx);
+			ctx->eth_bridge_filter_id = can_add_eth_bridge_filter(ctx);
 			if (ctx->eth_bridge_filter_id < 0) {
-				can_detach(ctx->can_dev, ctx->recv_filter_id);
+				can_remove_rx_filter(ctx->can_dev, ctx->recv_filter_id);
 				return -EIO;
 			}
 		}
 
 		if (ctx->all_mcast_filter_id == CAN_NET_FILTER_NOT_SET) {
-			ctx->all_mcast_filter_id = can_attach_all_mcast_filter(ctx);
+			ctx->all_mcast_filter_id = can_add_all_mcast_filter(ctx);
 			if (ctx->all_mcast_filter_id < 0) {
-				can_detach(ctx->can_dev, ctx->recv_filter_id);
-				can_detach(ctx->can_dev, ctx->eth_bridge_filter_id);
+				can_remove_rx_filter(ctx->can_dev, ctx->recv_filter_id);
+				can_remove_rx_filter(ctx->can_dev, ctx->eth_bridge_filter_id);
 				return -EIO;
 			}
 		}
 #endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 	} else {
 		if (ctx->recv_filter_id != CAN_NET_FILTER_NOT_SET) {
-			can_detach(ctx->can_dev, ctx->recv_filter_id);
+			can_remove_rx_filter(ctx->can_dev, ctx->recv_filter_id);
 		}
 
 #ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
 		if (ctx->eth_bridge_filter_id != CAN_NET_FILTER_NOT_SET) {
-			can_detach(ctx->can_dev, ctx->eth_bridge_filter_id);
+			can_remove_rx_filter(ctx->can_dev, ctx->eth_bridge_filter_id);
 		}
 
 		if (ctx->all_mcast_filter_id != CAN_NET_FILTER_NOT_SET) {
-			can_detach(ctx->can_dev, ctx->all_mcast_filter_id);
+			can_remove_rx_filter(ctx->can_dev, ctx->all_mcast_filter_id);
 		}
 #endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 	}
@@ -370,8 +369,8 @@ static struct net_can_api net_can_api_inst = {
 	.iface_api.init = net_can_iface_init,
 
 	.send = net_can_send,
-	.attach_filter = can_attach_filter,
-	.detach_filter = can_detach_filter,
+	.add_rx_filter = net_can_add_rx_filter,
+	.remove_rx_filter = net_can_remove_rx_filter,
 	.enable = can_enable,
 };
 

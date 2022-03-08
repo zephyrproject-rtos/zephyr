@@ -5,10 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LL_ADV_CMDS_ANY    0 /* Any advertising cmd/evt allowed */
-#define LL_ADV_CMDS_LEGACY 1 /* Only legacy advertising cmd/evt allowed */
-#define LL_ADV_CMDS_EXT    2 /* Only extended advertising cmd/evt allowed */
-
 int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
 
@@ -62,16 +58,6 @@ static inline uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle,
 #endif
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#if defined(CONFIG_BT_HCI_RAW)
-int ll_adv_cmds_set(uint8_t adv_cmds);
-int ll_adv_cmds_is_ext(void);
-#else
-static inline int ll_adv_cmds_is_ext(void)
-{
-	return 1;
-}
-#endif /* CONFIG_BT_HCI_RAW */
-
 uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 		       uint8_t adv_type, uint8_t own_addr_type,
 		       uint8_t direct_addr_type, uint8_t const *const direct_addr,
@@ -303,8 +289,11 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 				     uint8_t slot_durations, uint8_t switch_pattern_len,
 				     const uint8_t *ant_ids);
 /* Enables or disables CTE request control procedure in direction fingin connected mode. */
-uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable, uint8_t cte_request_interval,
-				      uint8_t requested_cte_length, uint8_t requested_cte_type);
+uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
+				      uint16_t cte_request_interval, uint8_t requested_cte_length,
+				      uint8_t requested_cte_type);
+/* Enables or disables CTE response control procedure in direction fingin connected mode. */
+uint8_t ll_df_set_conn_cte_rsp_enable(uint16_t handle, uint8_t enable);
 /* Enables or disables CTE sampling in periodic advertising scan */
 uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 					uint8_t sampling_enable,
@@ -327,6 +316,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *node_tx);
 uint8_t ll_rx_get(void **node_rx, uint16_t *handle);
 void ll_rx_dequeue(void);
 void ll_rx_mem_release(void **node_rx);
+void ll_iso_rx_mem_release(void **node_rx);
 
 /* Downstream - ISO Data */
 void *ll_iso_tx_mem_acquire(void);

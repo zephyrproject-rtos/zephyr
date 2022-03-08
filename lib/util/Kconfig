@@ -6,6 +6,4 @@ menu "Util libraries"
 
 source "lib/util/fnmatch/Kconfig"
 
-source "lib/util/getopt/Kconfig"
-
 endmenu

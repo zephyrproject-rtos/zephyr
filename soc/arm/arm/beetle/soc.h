@@ -95,8 +95,6 @@
 
 #ifndef _ASMLANGUAGE
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #include "soc_pins.h"
 #include "soc_power.h"

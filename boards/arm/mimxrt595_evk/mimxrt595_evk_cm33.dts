@@ -1,0 +1,196 @@
+/*
+ * Copyright (c) 2022, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt5xx.dtsi>
+
+/ {
+	model = "NXP MIMXRT595-EVK board";
+	compatible = "nxp,mimxrt595";
+
+	aliases {
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		usart-0 = &flexcomm0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		};
+		user_button_2: button_1 {
+			label = "User SW2";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpio1 0 0>;
+			label = "User LED_GREEN";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio3 17 0>;
+			label = "User LED_BLUE";
+		};
+		red_led: led_3 {
+			gpios = <&gpio0 14 0>;
+			label = "User LED_RED";
+		};
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio0 5 0>,	/* A0 */
+				<1 0 &gpio0 6 0>,	/* A1 */
+				<2 0 &gpio0 19 0>,	/* A2 */
+				<3 0 &gpio0 13 0>,	/* A3 */
+				<4 0 &gpio4 22 0>,	/* A4 */
+				<5 0 &gpio4 21 0>,	/* A5 */
+				<6 0 &gpio4 31 0>,	/* D0 */
+				<7 0 &gpio4 30 0>,	/* D1 */
+				<8 0 &gpio4 20 0>,	/* D2 */
+				<9 0 &gpio4 23 0>,	/* D3 */
+				<10 0 &gpio4 24 0>,	/* D4 */
+				<11 0 &gpio4 25 0>,	/* D5 */
+				<12 0 &gpio4 26 0>,	/* D6 */
+				<13 0 &gpio4 27 0>,	/* D7 */
+				<14 0 &gpio4 28 0>,	/* D8 */
+				<15 0 &gpio4 29 0>,	/* D9 */
+				<16 0 &gpio5 0 0>,	/* D10 */
+				<17 0 &gpio5 1 0>,	/* D11 */
+				<18 0 &gpio5 2 0>,	/* D12 */
+				<19 0 &gpio5 3 0>,	/* D13 */
+				<20 0 &gpio4 22 0>,	/* D14 */
+				<21 0 &gpio4 21 0>;	/* D15 */
+	};
+};
+
+/*
+ * RT595 EVK board uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer {
+	status = "okay";
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+};
+
+arduino_serial: &flexcomm12 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&user_button_1 {
+	status = "okay";
+};
+
+&user_button_2 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&blue_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&flexspi {
+	mx25um51345g: mx25um51345g@2 {
+		compatible = "nxp,imx-flexspi-mx25um51345g";
+		size = <DT_SIZE_M(64)>;
+		label = "MX25UM51345G";
+		reg = <2>;
+		spi-max-frequency = <200000000>;
+		status = "okay";
+		jedec-id = [c2 81 3a];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(64)>;
+			};
+			slot0_partition: partition@10000 {
+				label = "image-0";
+				reg = <0x00010000 DT_SIZE_M(24)>;
+			};
+			slot1_partition: partition@1810000 {
+				label = "image-1";
+				reg = <0x01810000 DT_SIZE_M(24)>;
+			};
+			scratch_partition: partition@3010000 {
+				label = "image-scratch";
+				reg = <0x03010000 DT_SIZE_K(8128)>;
+			};
+			storage_partition: partition@3f00000 {
+				label = "storage";
+				reg = <0x03f00000 DT_SIZE_M(1)>;
+			};
+		};
+	};
+};

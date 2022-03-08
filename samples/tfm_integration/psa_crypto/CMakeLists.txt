@@ -16,7 +16,7 @@ target_sources(app PRIVATE src/util_app_log.c)
 target_sources(app PRIVATE src/util_sformat.c)
 
 target_include_directories(app PRIVATE
-  ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/interface/include
+  $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
 )
 
 # In TF-M, default value of CRYPTO_ENGINE_BUF_SIZE is 0x2080. It causes

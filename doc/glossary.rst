@@ -53,7 +53,7 @@ Glossary of Terms
       Device Runtime Power Management (PM) refers the capability of devices to
       save energy independently of the the system power state. Devices will keep
       reference of their usage and will automatically be suspended or resumed.
-      This feature is enabled via the :kconfig:`CONFIG_PM_DEVICE_RUNTIME`
+      This feature is enabled via the :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`
       Kconfig option.
 
    idle thread
@@ -74,6 +74,11 @@ Glossary of Terms
    kernel
       The set of Zephyr-supplied files that implement the Zephyr kernel,
       including its core services, device drivers, network stack, and so on.
+
+   power domain
+      A power domain is a collection of devices for which power is
+      applied and removed collectively in a single action. Power
+      domains are represented by :c:struct:`device`.
 
    power gating
       Power gating reduces power consumption by shutting off areas of an

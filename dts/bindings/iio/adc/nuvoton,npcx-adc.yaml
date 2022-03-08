@@ -18,6 +18,10 @@ properties:
         type: phandles
         required: true
         description: configurations of pinmux controllers
+    threshold-reg-offset:
+        type: int
+        required: true
+        description: the offset of threshold detector register address
 
 io-channel-cells:
     - input

@@ -27,16 +27,16 @@ Support
 *******
 
 Zephyr supports both version: plain and doorbell. Ivshmem driver can be build
-by enabling :kconfig:`CONFIG_IVSHMEM`. By default, this will expose the plain
-version. :kconfig:`CONFIG_IVSHMEM_DOORBELL` needs to be enabled to get the
+by enabling :kconfig:option:`CONFIG_IVSHMEM`. By default, this will expose the plain
+version. :kconfig:option:`CONFIG_IVSHMEM_DOORBELL` needs to be enabled to get the
 doorbell version.
 
 Because the doorbell version uses MSI-X vectors to support notification vectors,
-the :kconfig:`CONFIG_IVSHMEM_MSI_X_VECTORS` has to be tweaked to the amount of
+the :kconfig:option:`CONFIG_IVSHMEM_MSI_X_VECTORS` has to be tweaked to the amount of
 vectors that will be needed.
 
 Note that a tiny shell module can be exposed to test the ivshmem feature by
-enabling :kconfig:`CONFIG_IVSHMEM_SHELL`.
+enabling :kconfig:option:`CONFIG_IVSHMEM_SHELL`.
 
 API Reference
 *************

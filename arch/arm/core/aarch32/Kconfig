@@ -25,7 +25,7 @@ config CPU_CORTEX_M
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
 
-config CPU_CORTEX_R
+config CPU_AARCH32_CORTEX_R
 	bool
 	select CPU_CORTEX
 	select HAS_CMSIS_CORE

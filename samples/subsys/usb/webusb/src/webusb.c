@@ -127,8 +127,6 @@ int webusb_vendor_handle_req(struct usb_setup_packet *pSetup,
  * for handling the device requests.
  *
  * @param [in] handlers Pointer to WebUSB request handlers structure
- *
- * @return N/A
  */
 void webusb_register_request_handlers(struct webusb_req_handlers *handlers)
 {
@@ -161,8 +159,6 @@ done:
  * @brief Callback used to know the USB connection status
  *
  * @param status USB device status code.
- *
- * @return  N/A.
  */
 static void webusb_dev_status_cb(struct usb_cfg_data *cfg,
 				 enum usb_dc_status_code status,

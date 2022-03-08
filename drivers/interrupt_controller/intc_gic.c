@@ -219,16 +219,13 @@ static void gic_cpu_init(void)
 	sys_write32(val, GICC_CTLR);
 }
 
-/**
- *
- * @brief Initialize the GIC device driver
- *
- *
- * @return N/A
- */
 #define GIC_PARENT_IRQ 0
 #define GIC_PARENT_IRQ_PRI 0
 #define GIC_PARENT_IRQ_FLAGS 0
+
+/**
+ * @brief Initialize the GIC device driver
+ */
 int arm_gic_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);

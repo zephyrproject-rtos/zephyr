@@ -12,7 +12,6 @@
 #define __RISCV_SIFIVE_FREEDOM_SOC_H_
 
 #include <soc_common.h>
-#include <devicetree.h>
 
 #if defined(CONFIG_SOC_RISCV_SIFIVE_FREEDOM)
 
@@ -39,6 +38,9 @@
 
 /* Clock controller. */
 #define PRCI_BASE_ADDR               0x10000000
+
+/* PINMUX MAX PINS */
+#define SIFIVE_PINMUX_PINS           16
 
 #endif
 

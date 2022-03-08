@@ -322,18 +322,18 @@ int ztress_execute(struct ztress_context_data *timer_data,
 	ztress_init(thread_data);
 
 	context_cnt = cnt + (timer_data ? 1 : 0);
-	priority = K_LOWEST_THREAD_PRIO - cnt - 1;
+	priority = K_LOWEST_APPLICATION_THREAD_PRIO - cnt - 1;
 
 	k_thread_priority_set(k_current_get(), priority);
 	priority++;
 
 	tmr_data = timer_data;
+
 	if (timer_data != NULL) {
 		active_cnt_init(timer_data);
 		backoff[ztress_prio] = timer_data->t;
 		init_backoff[ztress_prio] = timer_data->t;
 		k_timer_user_data_set(&ztress_timer, timer_data);
-		k_timer_start(&ztress_timer, backoff[ztress_prio], K_NO_WAIT);
 		ztress_prio++;
 	}
 
@@ -348,6 +348,10 @@ int ztress_execute(struct ztress_context_data *timer_data,
 		(void)k_thread_name_set(tids[i], thread_names[i]);
 		priority++;
 		ztress_prio++;
+	}
+
+	if (timer_data != NULL) {
+		k_timer_start(&ztress_timer, backoff[0], K_NO_WAIT);
 	}
 
 	/* Wait until all threads complete. */

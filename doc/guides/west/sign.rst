@@ -44,13 +44,13 @@ Notes on the above commands:
 
 For more information on these and other related configuration options, see:
 
-- :kconfig:`CONFIG_BOOTLOADER_MCUBOOT`: build the application for loading by
+- :kconfig:option:`CONFIG_BOOTLOADER_MCUBOOT`: build the application for loading by
   MCUboot
-- :kconfig:`CONFIG_MCUBOOT_SIGNATURE_KEY_FILE`: the key file to use with ``west
+- :kconfig:option:`CONFIG_MCUBOOT_SIGNATURE_KEY_FILE`: the key file to use with ``west
   sign``. If you have your own key, change this appropriately
-- :kconfig:`CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS`: optional additional command line
+- :kconfig:option:`CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS`: optional additional command line
   arguments for ``imgtool``
-- :kconfig:`CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE`: also generate a confirmed
+- :kconfig:option:`CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE`: also generate a confirmed
   image, which may be more useful for flashing in production environments than
   the OTA-able default image
 - On Windows, if you get "Access denied" issues, the recommended fix is

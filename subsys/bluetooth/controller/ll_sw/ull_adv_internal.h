@@ -9,6 +9,14 @@
 /* Bitmask value returned by ull_adv_is_enabled() */
 #define ULL_ADV_ENABLED_BITMASK_ENABLED  BIT(0)
 
+/* Helper defined to check if Extended Advertising HCI commands used */
+#define LL_ADV_CMDS_ANY    0 /* Any advertising cmd/evt allowed */
+#define LL_ADV_CMDS_LEGACY 1 /* Only legacy advertising cmd/evt allowed */
+#define LL_ADV_CMDS_EXT    2 /* Only extended advertising cmd/evt allowed */
+
+/* Helper function to check if Extended Advertising HCI commands used */
+int ll_adv_cmds_is_ext(void);
+
 /* Helper functions to initialise and reset ull_adv module */
 int ull_adv_init(void);
 int ull_adv_reset(void);
@@ -48,7 +56,10 @@ const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 			    struct pdu_adv *pdu_scan);
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+/* helper function to handle adv done events */
+void ull_adv_done(struct node_rx_event_done *done);
+#endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 /* Enumeration provides flags for management of memory for extra_data
  * related with advertising PDUs.
@@ -61,9 +72,6 @@ enum ull_adv_pdu_extra_data_flag {
 	/* Never allocate new memory for extra_data */
 	ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER
 };
-
-/* helper function to handle adv done events */
-void ull_adv_done(struct node_rx_event_done *done);
 
 /* Helper functions to initialise and reset ull_adv_aux module */
 int ull_adv_aux_init(void);
@@ -83,7 +91,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   uint32_t ticks_slot_overhead);
 
 /* helper function to stop auxiliary advertising */
-uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux);
+int ull_adv_aux_stop(struct ll_adv_aux_set *aux);
 
 /* helper function to acquire and initialize auxiliary advertising instance */
 struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll);
@@ -130,6 +138,7 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags);
 /* helper to add cte_info field to extended advertising header */
 uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 /* helper to get information whether ADI field is avaialbe in extended advertising PDU */
 static inline bool ull_adv_sync_pdu_had_adi(const struct pdu_adv *pdu)
 {
@@ -161,8 +170,8 @@ static inline void
 ull_adv_aux_hdr_len_fill(struct pdu_adv_com_ext_adv *com_hdr, uint8_t len)
 {
 	com_hdr->ext_hdr_len = len - PDU_AC_EXT_HEADER_SIZE_MIN;
-
 }
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 /* helper function to get next unique DID value */
 uint16_t ull_adv_aux_did_next_unique_get(uint8_t sid);
@@ -178,8 +187,15 @@ int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 int ull_adv_sync_reset_finalize(void);
 
+/* Return ll_adv_sync_set context (unconditional) */
+struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle);
+
 /* helper function to release periodic advertising instance */
 void ull_adv_sync_release(struct ll_adv_sync_set *sync);
+
+/* helper function to return event time reservation */
+uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
+			       uint8_t pdu_len);
 
 /* helper function to start periodic advertising */
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
@@ -228,6 +244,12 @@ void ull_adv_sync_offset_get(struct ll_adv_set *adv);
 int ull_adv_iso_init(void);
 int ull_adv_iso_reset(void);
 
+/* helper function to initial channel map update indications */
+uint8_t ull_adv_iso_chm_update(void);
+
+/* helper function to cleanup after channel map update complete */
+void ull_adv_iso_chm_complete(struct node_rx_hdr *rx);
+
 /* helper function to schedule a mayfly to get BIG offset */
 void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync);
 
@@ -240,6 +262,9 @@ void ull_adv_iso_done_terminate(struct node_rx_event_done *done);
 /* helper function to return adv_iso instance */
 struct ll_adv_iso_set *ull_adv_iso_by_stream_get(uint16_t handle);
 
+/* helper function to return adv_iso stream instance */
+struct lll_adv_iso_stream *ull_adv_iso_stream_get(uint16_t handle);
+
 /* helper function to release stream instances */
 void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso);
 
@@ -247,5 +272,3 @@ void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso);
 /* helper function to release unused DF configuration memory */
 void ull_df_adv_cfg_release(struct lll_df_adv_cfg *df_adv_cfg);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-#endif /* CONFIG_BT_CTLR_ADV_EXT */

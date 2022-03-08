@@ -17,9 +17,11 @@
 #endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
 
 /* Determine if _Generic is supported.
- * In general it's a C11 feature but it was added also in:
+ * In general it's a C11 feature but it is supported in releases after:
  * - GCC 4.9.0 https://gcc.gnu.org/gcc-4.9/changes.html
- * - Clang 3.0 https://releases.llvm.org/3.0/docs/ClangReleaseNotes.html
+ * - Clang 3.8 Introduced in 3.0 (https://releases.llvm.org/3.0/docs/ClangReleaseNotes.html)
+ *   but with bug (http://www.open-std.org/jtc1/sc22/wg14/www/docs/summary.htm#dr_481)
+ *   that was fixed in 3.8.
  *
  * @note Z_C_GENERIC is also set for C++ where functionality is implemented
  * using overloading and templates.
@@ -27,7 +29,7 @@
 #ifndef Z_C_GENERIC
 #if defined(__cplusplus) || (((__STDC_VERSION__ >= 201112L) || \
 	((__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40900) || \
-	((__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__) >= 30000)))
+	((__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__) >= 30800)))
 #define Z_C_GENERIC 1
 #else
 #define Z_C_GENERIC 0
@@ -108,6 +110,27 @@ extern "C" {
  * cbprintf().
  */
 typedef int (*cbprintf_cb)(/* int c, void *ctx */);
+
+/** @brief Signature for a external formatter function identical to cbvprintf.
+ *
+ * This function expects the following parameters:
+ *
+ * @param out the function used to emit each generated character.
+ *
+ * @param ctx a pointer to an object that provides context for the
+ * external formatter.
+ *
+ * @param fmt a standard ISO C format string with characters and
+ * conversion specifications.
+ *
+ * @param ap captured stack arguments corresponding to the conversion
+ * specifications found within @p fmt.
+ *
+ * @return vprintf like return values: the number of characters printed,
+ * or a negative error value returned from external formatter.
+ */
+typedef int (*cbvprintf_exteral_formatter_func)(cbprintf_cb out, void *ctx,
+						const char *fmt, va_list ap);
 
 /** @brief Determine if string must be packaged in run time.
  *
@@ -286,11 +309,14 @@ int cbprintf_fsc_package(void *in_packaged,
 			 size_t len);
 
 /** @brief Generate the output for a previously captured format
- * operation.
+ * operation using an external formatter.
  *
  * @param out the function used to emit each generated character.
  *
- * @param ctx context provided when invoking out
+ * @param formatter external formatter function.
+ *
+ * @param ctx a pointer to an object that provides context for the
+ * external formatter.
  *
  * @param packaged the data required to generate the formatted output, as
  * captured by cbprintf_package() or cbvprintf_package(). The alignment
@@ -299,12 +325,13 @@ int cbprintf_fsc_package(void *in_packaged,
  * @note Memory indicated by @p packaged will be modified in a non-destructive
  * way, meaning that it could still be reused with this function again.
  *
- * @return the number of characters printed, or a negative error value
- * returned from invoking @p out.
+ * @return printf like return values: the number of characters printed,
+ * or a negative error value returned from external formatter.
  */
-int cbpprintf(cbprintf_cb out,
-	      void *ctx,
-	      void *packaged);
+int cbpprintf_external(cbprintf_cb out,
+		       cbvprintf_exteral_formatter_func formatter,
+		       void *ctx,
+		       void *packaged);
 
 /** @brief *printf-like output through a callback.
  *
@@ -361,6 +388,29 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
  * returned from invoking @p out.
  */
 int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
+
+/** @brief Generate the output for a previously captured format
+ * operation.
+ *
+ * @param out the function used to emit each generated character.
+ *
+ * @param ctx context provided when invoking out
+ *
+ * @param packaged the data required to generate the formatted output, as
+ * captured by cbprintf_package() or cbvprintf_package(). The alignment
+ * requirement on this data is the same as when it was initially created.
+ *
+ * @note Memory indicated by @p packaged will be modified in a non-destructive
+ * way, meaning that it could still be reused with this function again.
+ *
+ * @return the number of characters printed, or a negative error value
+ * returned from invoking @p out.
+ */
+static inline
+int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
+{
+	return cbpprintf_external(out, cbvprintf, ctx, packaged);
+}
 
 #ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
 

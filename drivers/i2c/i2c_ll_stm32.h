@@ -90,8 +90,4 @@ int i2c_stm32_slave_unregister(const struct device *dev,
 			       struct i2c_slave_config *config);
 #endif
 
-#define DEV_DATA(dev) ((struct i2c_stm32_data * const)(dev)->data)
-#define DEV_CFG(dev)	\
-((const struct i2c_stm32_config * const)(dev)->config)
-
 #endif	/* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */

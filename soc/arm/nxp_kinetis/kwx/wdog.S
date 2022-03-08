@@ -33,7 +33,6 @@ GTEXT(z_arm_watchdog_init)
  *
  * This routine will disable the watchdog timer.
  *
- * @return N/A
  */
 
 SECTION_FUNC(TEXT,z_arm_watchdog_init)

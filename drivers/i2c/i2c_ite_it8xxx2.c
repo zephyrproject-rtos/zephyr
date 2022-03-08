@@ -17,11 +17,6 @@
 #include <soc_dt.h>
 #include <sys/util.h>
 
-#define DEV_CFG(dev) \
-		((const struct i2c_it8xxx2_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-		((struct i2c_it8xxx2_data * const)(dev)->data)
-
 #define I2C_STANDARD_PORT_COUNT 3
 /* Default PLL frequency. */
 #define PLL_CLOCK 48000000
@@ -73,6 +68,8 @@ struct i2c_it8xxx2_data {
 	size_t widx;
 	/* Index into input data */
 	size_t ridx;
+	/* operation freq of i2c */
+	uint32_t bus_freq;
 	/* Error code, if any */
 	uint32_t err;
 	/* address of device */
@@ -148,26 +145,10 @@ enum i2c_reset_cause {
 #define I2C_LINE_SDA_HIGH BIT(1)
 #define I2C_LINE_IDLE (I2C_LINE_SCL_HIGH | I2C_LINE_SDA_HIGH)
 
-struct i2c_pin {
-	volatile uint8_t *mirror_clk;
-	volatile uint8_t *mirror_data;
-	uint8_t clk_mask;
-	uint8_t data_mask;
-};
-
-static const struct i2c_pin i2c_pin_regs[] = {
-	{ &GPDMRB, &GPDMRB,	0x08, 0x10},
-	{ &GPDMRC, &GPDMRC,	0x02, 0x04},
-	{ &GPDMRF, &GPDMRF,	0x40, 0x80},
-	{ &GPDMRH, &GPDMRH,	0x02, 0x04},
-	{ &GPDMRE, &GPDMRE,	0x01, 0x80},
-	{ &GPDMRA, &GPDMRA,	0x10, 0x20},
-};
-
 static int i2c_parsing_return_value(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 
 	if (!data->err)
 		return 0;
@@ -193,7 +174,7 @@ static int i2c_parsing_return_value(const struct device *dev)
 
 static int i2c_get_line_levels(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	int pin_sts = 0;
 
@@ -201,12 +182,11 @@ static int i2c_get_line_levels(const struct device *dev)
 		return IT83XX_SMB_SMBPCTL(base) & 0x03;
 	}
 
-	if (*i2c_pin_regs[config->port].mirror_clk &
-					i2c_pin_regs[config->port].clk_mask) {
+	if (IT83XX_I2C_TOS(base) & IT8XXX2_I2C_SCL_IN) {
 		pin_sts |= I2C_LINE_SCL_HIGH;
 	}
-	if (*i2c_pin_regs[config->port].mirror_data &
-					i2c_pin_regs[config->port].data_mask) {
+
+	if (IT83XX_I2C_TOS(base) & IT8XXX2_I2C_SDA_IN) {
 		pin_sts |= I2C_LINE_SDA_HIGH;
 	}
 
@@ -215,7 +195,7 @@ static int i2c_get_line_levels(const struct device *dev)
 
 static int i2c_is_busy(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (config->port < I2C_STANDARD_PORT_COUNT) {
@@ -238,7 +218,7 @@ static int i2c_bus_not_available(const struct device *dev)
 
 static void i2c_reset(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (config->port < I2C_STANDARD_PORT_COUNT) {
@@ -275,7 +255,7 @@ static void i2c_standard_port_timing_regs_400khz(uint8_t port)
 static void i2c_standard_port_set_frequency(const struct device *dev,
 					int freq_khz, int freq_set)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 
 	/*
 	 * If port's clock frequency is 400kHz, we use timing registers
@@ -296,8 +276,8 @@ static void i2c_standard_port_set_frequency(const struct device *dev,
 static void i2c_enhanced_port_set_frequency(const struct device *dev,
 				int freq_khz)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint32_t clk_div, psr;
 	uint8_t *base = config->base;
 
@@ -334,7 +314,8 @@ static void i2c_enhanced_port_set_frequency(const struct device *dev,
 static int i2c_it8xxx2_configure(const struct device *dev,
 				uint32_t dev_config_raw)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
+	struct i2c_it8xxx2_data *const data = dev->data;
 	uint32_t freq, freq_set;
 
 	if (!(I2C_MODE_MASTER & dev_config_raw)) {
@@ -345,7 +326,9 @@ static int i2c_it8xxx2_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	switch (I2C_SPEED_GET(dev_config_raw)) {
+	data->bus_freq = I2C_SPEED_GET(dev_config_raw);
+
+	switch (data->bus_freq) {
 	case I2C_SPEED_STANDARD:
 		freq = 100;
 		freq_set = 2;
@@ -371,10 +354,40 @@ static int i2c_it8xxx2_configure(const struct device *dev,
 	return 0;
 }
 
+static int i2c_it8xxx2_get_config(const struct device *dev,
+				  uint32_t *dev_config)
+{
+	struct i2c_it8xxx2_data *const data = dev->data;
+	uint32_t speed;
+
+	if (!data->bus_freq) {
+		LOG_ERR("The bus frequency is not initially configured.");
+		return -EIO;
+	}
+
+	switch (data->bus_freq) {
+	case I2C_SPEED_STANDARD:
+		speed = I2C_SPEED_SET(I2C_SPEED_STANDARD);
+		break;
+	case I2C_SPEED_FAST:
+		speed = I2C_SPEED_SET(I2C_SPEED_FAST);
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		speed = I2C_SPEED_SET(I2C_SPEED_FAST_PLUS);
+		break;
+	default:
+		return -ERANGE;
+	}
+
+	*dev_config = (I2C_MODE_MASTER | speed);
+
+	return 0;
+}
+
 static int enhanced_i2c_error(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint32_t i2c_str = IT83XX_I2C_STR(base);
 
@@ -391,8 +404,8 @@ static int enhanced_i2c_error(const struct device *dev)
 
 static void enhanced_i2c_start(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	/* State reset and hardware reset */
@@ -413,8 +426,8 @@ static void i2c_pio_trans_data(const struct device *dev,
 				enum enhanced_i2c_transfer_direct direct,
 				uint16_t trans_data, int first_byte)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint32_t nack = 0;
 
@@ -446,8 +459,8 @@ static void i2c_pio_trans_data(const struct device *dev,
 
 static int enhanced_i2c_tran_read(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint8_t in_data = 0;
 
@@ -505,8 +518,8 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 
 static int enhanced_i2c_tran_write(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint8_t out_data;
 
@@ -547,8 +560,8 @@ static int enhanced_i2c_tran_write(const struct device *dev)
 
 static void i2c_r_last_byte(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	/*
@@ -563,7 +576,7 @@ static void i2c_r_last_byte(const struct device *dev)
 
 static void i2c_w2r_change_direction(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	/* I2C switch direction */
@@ -584,8 +597,8 @@ static void i2c_w2r_change_direction(const struct device *dev)
 
 static int i2c_tran_read(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (data->msgs->flags & I2C_MSG_START) {
@@ -659,8 +672,8 @@ static int i2c_tran_read(const struct device *dev)
 
 static int i2c_tran_write(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (data->msgs->flags & I2C_MSG_START) {
@@ -722,8 +735,8 @@ static int i2c_tran_write(const struct device *dev)
 
 static int i2c_transaction(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
 	if (config->port < I2C_STANDARD_PORT_COUNT) {
@@ -786,8 +799,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		return -EINVAL;
 	}
 
-	data = DEV_DATA(dev);
-	config = DEV_CFG(dev);
+	data = dev->data;
+	config = dev->config;
 
 	/* Lock mutex of i2c controller */
 	k_mutex_lock(&data->mutex, K_FOREVER);
@@ -871,8 +884,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 static void i2c_it8xxx2_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 
 	/* If done doing work, wake up the task waiting for the transfer */
 	if (!i2c_transaction(dev)) {
@@ -883,11 +896,18 @@ static void i2c_it8xxx2_isr(void *arg)
 
 static int i2c_it8xxx2_init(const struct device *dev)
 {
-	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint32_t bitrate_cfg, offset = 0;
 	int error;
+
+	/*
+	 * This register is a pre-define hardware slave A and can
+	 * be accessed through I2C0. It is not currently used, so
+	 * it can be disabled to avoid illegal access.
+	 */
+	IT8XXX2_SMB_SFFCTL &= ~IT8XXX2_SMB_HSAPE;
 
 	/* Initialize mutex and semaphore */
 	k_mutex_init(&data->mutex);
@@ -905,8 +925,6 @@ static int i2c_it8xxx2_init(const struct device *dev)
 		break;
 	case DT_REG_ADDR(DT_NODELABEL(i2c3)):
 		offset = CGC_OFFSET_SMBD;
-		/* Enable SMBus D channel */
-		GCR2 |= SMB3E;
 		break;
 	case DT_REG_ADDR(DT_NODELABEL(i2c4)):
 		offset = CGC_OFFSET_SMBE;
@@ -980,7 +998,7 @@ static int i2c_it8xxx2_init(const struct device *dev)
 
 static int i2c_it8xxx2_recover_bus(const struct device *dev)
 {
-	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	const struct i2c_it8xxx2_config *config = dev->config;
 	int i;
 
 	/* Set SCL of I2C as GPIO pin */
@@ -1043,6 +1061,7 @@ static int i2c_it8xxx2_recover_bus(const struct device *dev)
 
 static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 	.configure = i2c_it8xxx2_configure,
+	.get_config = i2c_it8xxx2_get_config,
 	.transfer = i2c_it8xxx2_transfer,
 	.recover_bus = i2c_it8xxx2_recover_bus,
 };

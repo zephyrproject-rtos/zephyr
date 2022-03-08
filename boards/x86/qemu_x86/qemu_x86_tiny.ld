@@ -228,6 +228,13 @@ MEMORY
 	*(.text.sys_memcpy_swap)					\
 	*(.text.z_*)
 
+/* For logging subsys */
+#define LIB_SUBSYS_LOGGING_IN_SECT(lsect)				\
+	*log_*.c.obj(.##lsect)						\
+	*log_*.c.obj(.##lsect.*)					\
+	*mpsc_pbuf.c.obj(.##lsect)					\
+	*mpsc_pbuf.c.obj(.##lsect.*)
+
 epoint = Z_MEM_PHYS_ADDR(CONFIG_KERNEL_ENTRY);
 ENTRY(epoint)
 
@@ -363,6 +370,7 @@ SECTIONS
 		LIB_ZEPHYR_IN_SECT(text)
 		LIB_C_IN_SECT(text)
 		LIB_DRIVERS_IN_SECT(text)
+		LIB_SUBSYS_LOGGING_IN_SECT(text)
 
 		*_divdi3.o(.text)
 		*_udivdi3.o(.text)
@@ -409,6 +417,7 @@ SECTIONS
 		LIB_ZEPHYR_IN_SECT(rodata)
 		LIB_C_IN_SECT(rodata)
 		LIB_DRIVERS_IN_SECT(rodata)
+		LIB_SUBSYS_LOGGING_IN_SECT(rodata)
 
 		/* Static strings */
 		*(.rodata.str*.*)
@@ -448,6 +457,7 @@ SECTIONS
 		LIB_ZEPHYR_IN_SECT(data)
 		LIB_C_IN_SECT(data)
 		LIB_DRIVERS_IN_SECT(data)
+		LIB_SUBSYS_LOGGING_IN_SECT(data)
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -472,6 +482,7 @@ SECTIONS
 		LIB_ZEPHYR_IN_SECT(bss)
 		LIB_C_IN_SECT(bss)
 		LIB_DRIVERS_IN_SECT(bss)
+		LIB_SUBSYS_LOGGING_IN_SECT(bss)
 
 		lnkr_pinned_bss_end = .;
 	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -499,6 +510,7 @@ SECTIONS
 		LIB_ZEPHYR_IN_SECT(noinit)
 		LIB_C_IN_SECT(noinit)
 		LIB_DRIVERS_IN_SECT(noinit)
+		LIB_SUBSYS_LOGGING_IN_SECT(noinit)
 
 #ifdef CONFIG_ZTEST
 		/* For tests/kernel/mem_slab/ tests */

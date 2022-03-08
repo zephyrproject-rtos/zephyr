@@ -33,7 +33,7 @@ enum df_switch_sample_support {
 #define SYNC_IQ_REPORT_CNT 0U
 #endif
 
-#if defined(CONFIG_BT_MAX_CONN) && defined(CONFIG_BT_CTRL_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_MAX_CONN) && defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 #define CONN_IQ_REPORT_CNT (CONFIG_BT_MAX_CONN * 2)
 #else
 #define CONN_IQ_REPORT_CNT 0U

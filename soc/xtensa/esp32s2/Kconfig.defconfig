@@ -23,9 +23,6 @@ config ISR_STACK_SIZE
 config HEAP_MEM_POOL_SIZE
 	default 32768
 
-config IRQ_OFFLOAD_INTNUM
-	default 7
-
 config MP_NUM_CPUS
 	default 1
 

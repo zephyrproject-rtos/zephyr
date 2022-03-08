@@ -16,8 +16,8 @@ extern "C" {
 
 void sys_trace_thread_switched_in_user(struct k_thread *thread);
 void sys_trace_thread_switched_out_user(struct k_thread *thread);
-void sys_trace_isr_enter_user(void);
-void sys_trace_isr_exit_user(void);
+void sys_trace_isr_enter_user(int nested_interrupts);
+void sys_trace_isr_exit_user(int nested_interrupts);
 void sys_trace_idle_user(void);
 
 void sys_trace_k_thread_switched_in(void);
@@ -80,6 +80,7 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_work_cancel_sync_blocking(work, sync)
 #define sys_port_trace_k_work_cancel_sync_exit(work, sync, ret)
 
+#define sys_port_trace_k_work_queue_init(queue)
 #define sys_port_trace_k_work_queue_start_enter(queue)
 #define sys_port_trace_k_work_queue_start_exit(queue)
 #define sys_port_trace_k_work_queue_drain_enter(queue)
@@ -251,6 +252,10 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_pipe_cleanup_exit(pipe, ret)
 #define sys_port_trace_k_pipe_alloc_init_enter(pipe)
 #define sys_port_trace_k_pipe_alloc_init_exit(pipe, ret)
+#define sys_port_trace_k_pipe_flush_enter(pipe)
+#define sys_port_trace_k_pipe_flush_exit(pipe)
+#define sys_port_trace_k_pipe_buffer_flush_enter(pipe)
+#define sys_port_trace_k_pipe_buffer_flush_exit(pipe)
 #define sys_port_trace_k_pipe_put_enter(pipe, timeout)
 #define sys_port_trace_k_pipe_put_blocking(pipe, timeout)
 #define sys_port_trace_k_pipe_put_exit(pipe, timeout, ret)
@@ -300,6 +305,20 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_thread_abort_exit(thread)
 #define sys_port_trace_k_thread_abort_enter(thread)
 #define sys_port_trace_k_thread_resume_exit(thread)
+
+#define sys_port_trace_pm_system_suspend_enter(ticks)
+#define sys_port_trace_pm_system_suspend_exit(ticks, state)
+
+#define sys_port_trace_pm_device_runtime_get_enter(dev)
+#define sys_port_trace_pm_device_runtime_get_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_put_enter(dev)
+#define sys_port_trace_pm_device_runtime_put_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_put_async_enter(dev)
+#define sys_port_trace_pm_device_runtime_put_async_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_enable_enter(dev)
+#define sys_port_trace_pm_device_runtime_enable_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_disable_enter(dev)
+#define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
 #ifdef __cplusplus
 }

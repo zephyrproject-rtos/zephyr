@@ -89,6 +89,7 @@
 			interrupts = <UART0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART0_MODULE>;
+			peripheral = <0>;
 		};
 
 		uart1: uart@3f410000 {
@@ -100,6 +101,7 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
+			peripheral = <1>;
 		};
 
 		pinmux: pinmux@3f409000 {
@@ -221,6 +223,7 @@
 			reg = <0x3f41f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG0_MODULE>;
 			label = "WDT_0";
 			status = "disabled";
 		};
@@ -230,6 +233,7 @@
 			reg = <0x3f42f048 0x20>;
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TIMG1_MODULE>;
 			label = "WDT_1";
 			status = "disabled";
 		};

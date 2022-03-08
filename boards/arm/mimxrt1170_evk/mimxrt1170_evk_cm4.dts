@@ -91,3 +91,7 @@
 &gpt_hw_timer {
 	status = "okay";
 };
+
+&sai1 {
+	status = "okay";
+};

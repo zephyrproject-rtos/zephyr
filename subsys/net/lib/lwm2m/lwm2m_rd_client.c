@@ -67,8 +67,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define CLIENT_EP_LEN		CONFIG_LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
 
-/* Up to 3 characters + NULL */
-#define CLIENT_BINDING_LEN sizeof("UQS")
+#define CLIENT_BINDING_LEN sizeof("U")
+#define CLIENT_QUEUE_LEN sizeof("Q")
 
 /* The states for the RD client state machine */
 /*
@@ -311,7 +311,6 @@ static int do_bootstrap_reply_cb(const struct coap_packet *response,
 		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
 		code2str(code));
 
-	lwm2m_engine_context_close(client.ctx);
 	sm_handle_failure_state(ENGINE_IDLE);
 
 	return 0;
@@ -394,7 +393,6 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
 		code2str(code));
 
-	lwm2m_engine_context_close(client.ctx);
 	sm_handle_failure_state(ENGINE_IDLE);
 
 	return 0;
@@ -466,7 +464,6 @@ static int do_deregister_reply_cb(const struct coap_packet *response,
 		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
 		code2str(code));
 
-	lwm2m_engine_context_close(client.ctx);
 	sm_handle_failure_state(ENGINE_IDLE);
 
 	return 0;
@@ -715,6 +712,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	struct lwm2m_message *msg;
 	int ret;
 	char binding[CLIENT_BINDING_LEN];
+	char queue[CLIENT_QUEUE_LEN];
 
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
@@ -796,8 +794,9 @@ static int sm_send_registration(bool send_obj_support_data,
 	}
 
 	lwm2m_engine_get_binding(binding);
-	/* UDP is a default binding, no need to add option if UDP is used. */
-	if ((!sm_is_registered() && strcmp(binding, "U") != 0)) {
+	lwm2m_engine_get_queue_mode(queue);
+	/* UDP is a default binding, no need to add option if UDP without queue is used. */
+	if ((!sm_is_registered() && (strcmp(binding, "U") != 0 || strcmp(queue, "Q") == 0))) {
 		snprintk(query_buffer, sizeof(query_buffer) - 1,
 			 "b=%s", binding);
 
@@ -807,6 +806,20 @@ static int sm_send_registration(bool send_obj_support_data,
 		if (ret < 0) {
 			goto cleanup;
 		}
+
+#if CONFIG_LWM2M_VERSION_1_1
+		/* In LwM2M 1.1, queue mode is a separate parameter */
+		uint16_t len = strlen(queue);
+
+		if (len) {
+			ret = coap_packet_append_option(
+				&msg->cpkt, COAP_OPTION_URI_QUERY,
+				queue, len);
+			if (ret < 0) {
+				goto cleanup;
+			}
+		}
+#endif
 	}
 
 	if (send_obj_support_data) {
@@ -833,6 +846,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	return 0;
 
 cleanup:
+	LOG_ERR("error %d when sending registration message", ret);
 	lwm2m_reset_message(msg, true);
 	return ret;
 }
@@ -1004,6 +1018,9 @@ static void lwm2m_rd_client_service(struct k_work *work)
 	if (client.ctx) {
 		switch (get_sm_state()) {
 		case ENGINE_IDLE:
+			if (client.ctx->sock_fd > -1) {
+				lwm2m_engine_context_close(client.ctx);
+			}
 			break;
 
 		case ENGINE_INIT:
@@ -1111,9 +1128,6 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 	if (sm_is_registered() && deregister) {
 		set_sm_state(ENGINE_DEREGISTER);
 	} else {
-		if (client.ctx->sock_fd > -1) {
-			lwm2m_engine_context_close(client.ctx);
-		}
 		set_sm_state(ENGINE_IDLE);
 	}
 

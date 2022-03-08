@@ -33,5 +33,10 @@ def test_case(cmdopt):
     print("run test cases in:")
     print(cmdopt)
 
+def test_custom_arg(custom_pytest_arg):
+    ''' Test passing of custom command line arguments to pytest.
+    '''
+    assert custom_pytest_arg == "foo"
+
 if __name__ == "__main__":
     pytest.main()

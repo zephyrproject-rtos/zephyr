@@ -1084,7 +1084,7 @@
 
 /* Rx FIFO 0 Fill Level */
 #define CAN_MCAN_RXF0S_F0FL_POS      (0U)
-#define CAN_MCAN_RXF0S_F0FL_MSK      (0x3FUL << CAN_MCAN_RXF0S_F0FL_POS)
+#define CAN_MCAN_RXF0S_F0FL_MSK      (0x7FUL << CAN_MCAN_RXF0S_F0FL_POS)
 #define CAN_MCAN_RXF0S_F0FL          CAN_MCAN_RXF0S_F0FL_MSK
 /* Rx FIFO 0 Get Index */
 #define CAN_MCAN_RXF0S_F0GI_POS      (8U)
@@ -1381,7 +1381,7 @@
 
 /***************  Bit definition for CAN_MCAN_TXEFC register  *****************/
 /* Event FIFO Watermark */
-#define CAN_MCAN_TXEFC_EFSA_POS      (0U)
+#define CAN_MCAN_TXEFC_EFSA_POS      (2U)
 #define CAN_MCAN_TXEFC_EFSA_MSK      (0x3FFFUL << CAN_MCAN_TXEFC_EFSA_POS)
 #define CAN_MCAN_TXEFC_EFSA          CAN_MCAN_TXEFC_EFSA_MSK
 /* Event FIFO Size */
@@ -1452,6 +1452,14 @@
 #define CAN_MCAN_TXEFA_EFAI_MSK      (0x1FUL << CAN_MCAN_TXEFA_EFAI_POS)
 #define CAN_MCAN_TXEFA_EFAI          CAN_MCAN_TXEFA_EFAI_MSK
 #endif /* CONFIG_CAN_STM32FD */
+
+/***************  Bit definition for CAN_MCAN_MRBA register  *****************/
+#ifdef CONFIG_CAN_MCUX_MCAN
+/* Event FIFO Acknowledge Index */
+#define CAN_MCAN_MRBA_BA_POS         (16U)
+#define CAN_MCAN_MRBA_BA_MSK         (0xFFFFUL << CAN_MCAN_MRBA_BA_POS)
+#define CAN_MCAN_MRBA_BA             CAN_MCAN_MRBA_BA_MSK
+#endif /* CONFIG_CAN_MCUX_MCAN */
 
 #ifdef CONFIG_CAN_STM32FD
 struct can_mcan_reg {
@@ -1553,6 +1561,10 @@ struct can_mcan_reg {
 	volatile uint32_t txefc;    /* Tx Event FIFO Configuration */
 	volatile uint32_t txefs;    /* Tx Event FIFO Status */
 	volatile uint32_t txefa;    /* Tx Event FIFO Acknowledge */
+#ifdef CONFIG_CAN_MCUX_MCAN
+	volatile uint32_t res6[65]; /* Reserved (65) */
+	volatile uint32_t mrba;     /* Message RAM Base Address */
+#endif /* CONFIG_CAN_MCUX_MCAN */
 };
 
 #endif /* CONFIG_CAN_STM32FD */

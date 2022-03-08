@@ -34,8 +34,8 @@
 #include <soc.h>
 #endif
 
-#define THREAD_STACKSIZE    (512 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define THREAD_STACKSIZE2   (384 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define THREAD_STACKSIZE    (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define THREAD_STACKSIZE2   (384 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_PRIORITY     4
 
 #define THREAD_SELF_CMD    0
@@ -83,6 +83,7 @@
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
 #elif defined(CONFIG_SPARC)
+#elif defined(CONFIG_MIPS)
 #elif defined(CONFIG_ARCH_POSIX)
 #if  defined(CONFIG_BOARD_NATIVE_POSIX)
 #define TICK_IRQ TIMER_TICK_IRQ
@@ -219,8 +220,6 @@ static void test_kernel_cpu_idle_atomic(void);
  *
  * This routine is the ISR handler for isr_handler_trigger(). It performs
  * the command requested in <isr_info.command>.
- *
- * @return N/A
  */
 static void isr_handler(const void *data)
 {
@@ -285,8 +284,6 @@ int irq_lock_wrapper(int unused)
 
 /**
  * @brief A wrapper for irq_unlock()
- *
- * @return N/A
  */
 void irq_unlock_wrapper(int imask)
 {
@@ -306,8 +303,6 @@ int irq_disable_wrapper(int irq)
 
 /**
  * @brief A wrapper for irq_enable()
- *
- * @return N/A
  */
 void irq_enable_wrapper(int irq)
 {
@@ -562,7 +557,7 @@ static void test_kernel_interrupts(void)
 {
 	/* IRQ locks don't prevent ticks from advancing in tickless mode */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
+		ztest_test_skip();
 	}
 
 	_test_kernel_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
@@ -625,7 +620,7 @@ static void test_kernel_interrupts(void)
  */
 static void test_kernel_timer_interrupts(void)
 {
-#ifdef TICK_IRQ
+#if (defined(TICK_IRQ) && defined(CONFIG_TICKLESS_KERNEL))
 	/* Disable interrupts coming from the timer. */
 	_test_kernel_interrupts(irq_disable_wrapper, irq_enable_wrapper, TICK_IRQ);
 #else
@@ -760,7 +755,6 @@ static void _test_kernel_thread(k_tid_t _thread_id)
  * @param arg2    unused
  * @param arg3    unused
  *
- * @return N/A
  */
 
 static void thread_helper(void *arg1, void *arg2, void *arg3)

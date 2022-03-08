@@ -130,7 +130,7 @@ directory.
 .. note::
 
     When using UpdateHub Cloud server it is necessary update your own
-    ``overlay-prj.conf`` with option :kconfig:`CONFIG_UPDATEHUB_CE` equal ``n``.
+    ``overlay-prj.conf`` with option :kconfig:option:`CONFIG_UPDATEHUB_CE` equal ``n``.
 
 
 Step 3: Configure UpdateHub Sample
@@ -139,18 +139,18 @@ Step 3: Configure UpdateHub Sample
 The updatehub have several Kconfig options that are necessary configure to
 make it work or tune communication.
 
-Set :kconfig:`CONFIG_UPDATEHUB_CE` select between UpdateHub edition.  The ``y``
+Set :kconfig:option:`CONFIG_UPDATEHUB_CE` select between UpdateHub edition.  The ``y``
 value will select UpdateHub-CE otherwise ``n`` selects UpdateHub Cloud.
 
-Set :kconfig:`CONFIG_UPDATEHUB_SERVER` with your local IP address that runs the
+Set :kconfig:option:`CONFIG_UPDATEHUB_SERVER` with your local IP address that runs the
 UpdateHub-CE server edition.  If your are using a service provider a DNS name
 is a valid option too.  This option is only valid when using UpdateHub-CE.
 
-Set :kconfig:`CONFIG_UPDATEHUB_POLL_INTERVAL` with the polling period of your
+Set :kconfig:option:`CONFIG_UPDATEHUB_POLL_INTERVAL` with the polling period of your
 preference, remembering that the limit is between 0 and 43200 minutes
 (30 days).  The default value is 1440 minutes (24h).
 
-Set :kconfig:`CONFIG_UPDATEHUB_PRODUCT_UID` with your product ID.  When using
+Set :kconfig:option:`CONFIG_UPDATEHUB_PRODUCT_UID` with your product ID.  When using
 UpdateHub-CE the valid is available at ``overlay-prj.conf.example`` file.
 
 
@@ -406,7 +406,7 @@ following command:
 If everything is alright, it will print on the screen ``No update available``.
 
 For ``Polling`` mode, the system will automatically register your device after
-:kconfig:`CONFIG_UPDATEHUB_POLL_INTERVAL` minutes.  The ``updatehub run`` can
+:kconfig:option:`CONFIG_UPDATEHUB_POLL_INTERVAL` minutes.  The ``updatehub run`` can
 be used to speed-up.
 
 .. note::

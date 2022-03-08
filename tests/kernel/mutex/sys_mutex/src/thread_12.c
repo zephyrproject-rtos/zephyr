@@ -27,7 +27,6 @@ extern struct sys_mutex private_mutex;
  *
  * thread_12 - thread that participates in recursive locking tests
  *
- * @return  N/A
  */
 
 void thread_12(void)

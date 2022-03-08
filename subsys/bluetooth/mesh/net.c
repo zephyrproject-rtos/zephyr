@@ -29,6 +29,7 @@
 #include "lpn.h"
 #include "friend.h"
 #include "proxy.h"
+#include "proxy_cli.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
@@ -274,7 +275,8 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 
 		if ((iv_index > bt_mesh.iv_index + 1) ||
 		    (iv_index == bt_mesh.iv_index + 1 && !iv_update)) {
-			if (ivi_was_recovered) {
+			if (ivi_was_recovered &&
+			    (bt_mesh.ivu_duration < (2 * BT_MESH_IVU_MIN_HOURS))) {
 				BT_ERR("IV Index Recovery before minimum delay");
 				return false;
 			}
@@ -559,6 +561,11 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 
 		err = 0;
 		goto done;
+	}
+
+	/* Deliver to GATT Proxy Servers if necessary. */
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_CLIENT)) {
+		(void)bt_mesh_proxy_cli_relay(buf);
 	}
 
 	bt_mesh_adv_send(buf, cb, cb_data);
@@ -882,8 +889,7 @@ static void ivu_refresh(struct k_work *work)
 			store_iv(true);
 		}
 
-		k_work_reschedule(&bt_mesh.ivu_timer, BT_MESH_IVU_TIMEOUT);
-		return;
+		goto end;
 	}
 
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS)) {
@@ -892,6 +898,9 @@ static void ivu_refresh(struct k_work *work)
 	} else if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		store_iv(true);
 	}
+
+end:
+	k_work_reschedule(&bt_mesh.ivu_timer, BT_MESH_IVU_TIMEOUT);
 }
 
 void bt_mesh_net_init(void)

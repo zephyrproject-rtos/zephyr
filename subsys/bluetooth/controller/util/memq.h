@@ -31,4 +31,6 @@ memq_link_t *memq_init(memq_link_t *link, memq_link_t **head,
 memq_link_t *memq_deinit(memq_link_t **head, memq_link_t **tail);
 memq_link_t *memq_enqueue(memq_link_t *link, void *mem, memq_link_t **tail);
 memq_link_t *memq_peek(memq_link_t *head, memq_link_t *tail, void **mem);
+memq_link_t *memq_peek_n(memq_link_t *head, memq_link_t *tail, uint8_t n,
+			 void **mem);
 memq_link_t *memq_dequeue(memq_link_t *tail, memq_link_t **head, void **mem);

@@ -7,6 +7,12 @@
 #ifndef _NUVOTON_NPCX_SOC_HOST_H_
 #define _NUVOTON_NPCX_SOC_HOST_H_
 
+#include <stdint.h>
+
+#include <device.h>
+#include <drivers/espi.h>
+#include <sys/slist.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

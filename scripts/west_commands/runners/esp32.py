@@ -116,5 +116,4 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
         self.logger.info("Flashing esp32 chip on {} ({}bps)".
                          format(self.device, self.baud))
-        print(cmd_flash)
         self.check_call(cmd_flash)

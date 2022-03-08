@@ -21,7 +21,7 @@ static void set_update_result(uint16_t obj_inst_id, int error_code)
 	int result;
 
 	if (!error_code) {
-		lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
+		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADED);
 		return;
 	}
 
@@ -65,7 +65,7 @@ int lwm2m_firmware_cancel_transfer(void)
 	return 0;
 }
 
-int lwm2m_firmware_start_transfer(char *package_uri)
+int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri)
 {
 	int error_code;
 
@@ -78,7 +78,7 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 		return error_code;
 	}
 
-	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
+	lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
 
 	return 0;
 }

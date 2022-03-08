@@ -28,7 +28,7 @@ struct lll_sync_iso {
 	uint64_t cssn_curr:3;
 	uint64_t cssn_next:3;
 
-	uint8_t data_chan_map[5];
+	uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t data_chan_count:6;
 	uint8_t num_bis:5;
 	uint8_t bn:3;
@@ -50,6 +50,9 @@ struct lll_sync_iso {
 
 	uint8_t bn_curr:3;
 	uint8_t bis_curr:5;
+
+	uint8_t chm_chan_map[PDU_CHANNEL_MAP_SIZE];
+	uint8_t chm_chan_count:6;
 
 	uint8_t term_reason;
 
@@ -78,3 +81,5 @@ void lll_sync_iso_create_prepare(void *param);
 void lll_sync_iso_prepare(void *param);
 
 extern uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll);
+extern void ll_iso_rx_put(memq_link_t *link, void *rx);
+extern void ll_rx_sched(void);

@@ -14,3 +14,4 @@ advantage of the power saving features of SOCs.
    system
    device
    device_runtime
+   power_domain

@@ -364,7 +364,7 @@ static void firmware_transfer(void)
 	server_addr = context.uri;
 #endif
 
-	ret = lwm2m_parse_peerinfo(server_addr, &context.firmware_ctx, &context.is_firmware_uri);
+	ret = lwm2m_parse_peerinfo(server_addr, &context.firmware_ctx, context.is_firmware_uri);
 	if (ret < 0) {
 		LOG_ERR("Failed to parse server URI.");
 		goto error;

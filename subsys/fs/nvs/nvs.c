@@ -623,7 +623,7 @@ static int nvs_startup(struct nvs_fs *fs)
 	struct nvs_ate last_ate;
 	size_t ate_size, empty_len;
 	/* Initialize addr to 0 for the case fs->sector_count == 0. This
-	 * should never happen as this is verified in nvs_init() but both
+	 * should never happen as this is verified in nvs_mount() but both
 	 * Coverity and GCC believe the contrary.
 	 */
 	uint32_t addr = 0U;
@@ -847,7 +847,7 @@ int nvs_clear(struct nvs_fs *fs)
 	return 0;
 }
 
-int nvs_init(struct nvs_fs *fs, const char *dev_name)
+int nvs_mount(struct nvs_fs *fs)
 {
 
 	int rc;
@@ -855,12 +855,6 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 	size_t write_block_size;
 
 	k_mutex_init(&fs->nvs_lock);
-
-	fs->flash_device = device_get_binding(dev_name);
-	if (!fs->flash_device) {
-		LOG_ERR("No valid flash device found");
-		return -ENXIO;
-	}
 
 	fs->flash_parameters = flash_get_parameters(fs->flash_device);
 	if (fs->flash_parameters == NULL) {

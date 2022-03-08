@@ -400,6 +400,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
 			label = "CAN_1";
+			sjw = <1>;
+			sample-point = <875>;
 		};
 
 		timers1: timers@40010000 {
@@ -737,7 +739,7 @@
 		};
 
 		backup_sram: memory@40024000 {
-			compatible = "st,stm32-backup-sram";
+			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x40024000 DT_SIZE_K(4)>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 			label = "BACKUP_SRAM";

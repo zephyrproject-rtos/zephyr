@@ -74,8 +74,8 @@
 			compatible = "arm,pl011";
 			reg = <0x9c090000 0x1000>;
 			status = "disabled";
-			interrupts = <GIC_SPI 1 0 IRQ_TYPE_LEVEL>;
-			interrupt-names = "irq_0";
+			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_5";
 			label = "UART_0";
 			clocks = <&uartclk>;
 		};

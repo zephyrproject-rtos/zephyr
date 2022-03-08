@@ -21,89 +21,6 @@ config BASE64
 	help
 	  Enable base64 encoding and decoding functionality
 
-config SYS_HEAP_VALIDATE
-	bool "Enable internal heap validity checking"
-	help
-	  The sys_heap implementation is instrumented for extensive
-	  internal validation.  Leave this off by default, unless
-	  modifying the heap code or (maybe) when running in
-	  environments that require sensitive detection of memory
-	  corruption.
-
-config SYS_HEAP_ALLOC_LOOPS
-	int "Number of tries in the inner heap allocation loop"
-	default 3
-	help
-	  The sys_heap allocator bounds the number of tries from the
-	  smallest chunk level (the one that might not fit the
-	  requested allocation) to maintain constant time performance.
-	  Setting this to a high level will cause the heap to return
-	  more successful allocations in situations of high
-	  fragmentation, at the cost of potentially significant
-	  (linear time) searching of the free list.  The default is
-	  three, which results in an allocator with good statistical
-	  properties ("most" allocations that fit will succeed) but
-	  keeps the maximum runtime at a tight bound so that the heap
-	  is useful in locked or ISR contexts.
-
-config SYS_HEAP_RUNTIME_STATS
-	bool "System heap runtime statistics"
-	help
-	  Gather system heap runtime statistics.
-
-config HEAP_LISTENER
-	bool "Enable heap listener"
-	help
-	  Enable API for registering and notifying listeners of certain
-	  events related to a heap usage, such as the heap resize.
-
-choice
-	prompt "Supported heap sizes"
-	depends on !64BIT
-	default SYS_HEAP_SMALL_ONLY if (SRAM_SIZE <= 256)
-	default SYS_HEAP_AUTO
-	help
-	  Heaps using reduced-size chunk headers can accommodate so called
-	  "small" heaps with a total size of 262136 bytes or less.
-
-	  Heaps using full-size chunk headers can have a total size up to
-	  16383 megabytes. The overhead is of course bigger.
-
-	  On 32-bit system the tradeoff is selectable between:
-
-	  - "small" heaps with low memory and runtime overhead;
-
-	  - "big" heaps with bigger memory overhead even for small heaps;
-
-	  - "auto" providing optimal memory overhead in all cases but with
-	    a higher runtime overhead and somewhat bigger code footprint.
-
-	  On 64-bit systems the "big" chunk header size conveniently provides
-	  the needed alignment on returned memory allocations. Small chunk
-	  headers would require alignment padding up to the big header size
-	  anyway so "big" heap is the only option in that case.
-
-config SYS_HEAP_SMALL_ONLY
-	bool "Support for small heaps only"
-	help
-	  Select this to optimize the code and memory usage if all your
-	  heaps are 262136 bytes or less.
-
-config SYS_HEAP_BIG_ONLY
-	bool "Support for big heaps only"
-	help
-	  Select this to optimize the code for big heaps only. This can
-	  accommodate any heap size but memory usage won't be as
-	  efficient with small sized heaps.
-
-config SYS_HEAP_AUTO
-	bool "Support for both small and big heaps at run time"
-	help
-	  This option optimizes memory usage for each heap according to
-	  their size albeit with some overhead in code size and execution.
-
-endchoice
-
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
 	default y if SMP && MP_NUM_CPUS > 1
@@ -129,6 +46,23 @@ config SHARED_MULTI_HEAP
 	  different capabilities / attributes (cacheable, non-cacheable,
 	  etc...) defined in the DT.
 
+config WINSTREAM
+	bool "Lockless shared memory window byte stream"
+	help
+	  Winstream is a byte stream IPC for use in shared memory
+	  "windows", generally for transmit to non-Zephyr contexts that
+	  can't share Zephyr APIs or data structures.
+
+if WINSTREAM
+config WINSTREAM_STDLIB_MEMCOPY
+	bool "Use standard memcpy() in winstream"
+	help
+	  The sys_winstream utility is sometimes used in early boot
+	  environments before the standard library is usable.  By
+	  default it uses a simple internal bytewise memcpy().  Set
+	  this to use the one from the standard library.
+endif
+
 if MPSC_PBUF
 config MPSC_CLEAR_ALLOCATED
 	bool "Clear allocated packet"
@@ -143,6 +77,14 @@ config REBOOT
 	  needed to perform a "safe" reboot (e.g. to stop the system clock before
 	  issuing a reset).
 
+config UTF8
+	bool "UTF-8 string operation supported"
+	help
+	  Enable the utf8 API. The API implements functions to specifically
+	  handle UTF-8 encoded strings.
+
 rsource "Kconfig.cbprintf"
+
+rsource "Kconfig.heap"
 
 endmenu

@@ -926,7 +926,7 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
        terminology is confirmed by a public announcement or updated
        specification.
 
-       See `Zephyr issue 27033`_.
+       See :github:`Zephyr issue 27033 <27033>`.
 
    * - :ref:`i2s_api`
      - * ``master / slave`` => TBD
@@ -951,7 +951,6 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
 .. _I2C Specification: https://www.nxp.com/docs/en/user-guide/UM10204.pdf
 .. _Bluetooth Appropriate Language Mapping Tables: https://btprodspecificationrefs.blob.core.windows.net/language-mapping/Appropriate_Language_Mapping_Table.pdf
 .. _OSHWA Resolution to Redefine SPI Signal Names: https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
-.. _Zephyr issue 27033: https://github.com/zephyrproject-rtos/zephyr/issues/27033
 
 Parasoft Codescan Tool
 **********************

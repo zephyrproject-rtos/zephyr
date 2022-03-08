@@ -11,7 +11,7 @@
 #define SHORT_TIMEOUT  K_MSEC(100)
 #define LONG_TIMEOUT   K_MSEC(1000)
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static struct k_thread treceiver;
 static struct k_thread textra1;
@@ -56,7 +56,7 @@ static void entry_extra2(void *p1, void *p2, void *p3)
 
 void test_k_event_init(void)
 {
-	struct k_event  event;
+	static struct k_event  event;
 	struct k_thread *thread;
 
 	k_event_init(&event);
@@ -338,7 +338,7 @@ void test_wake_multiple_threads(void)
 
 void test_event_deliver(void)
 {
-	struct k_event  event;
+	static struct k_event  event;
 	uint32_t  events;
 
 	k_event_init(&event);

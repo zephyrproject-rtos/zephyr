@@ -92,7 +92,7 @@ struct va_val {
 
 static struct seg_tx {
 	struct bt_mesh_subnet *sub;
-	void                  *seg[CONFIG_BT_MESH_TX_SEG_MAX];
+	void                  *seg[BT_MESH_TX_SEG_MAX];
 	uint64_t              seq_auth;
 	uint16_t              src;
 	uint16_t              dst;
@@ -118,7 +118,7 @@ static struct seg_tx {
 
 static struct seg_rx {
 	struct bt_mesh_subnet   *sub;
-	void                    *seg[CONFIG_BT_MESH_RX_SEG_MAX];
+	void                    *seg[BT_MESH_RX_SEG_MAX];
 	uint64_t                    seq_auth;
 	uint16_t                    src;
 	uint16_t                    dst;
@@ -449,7 +449,8 @@ end:
 
 static void seg_retransmit(struct k_work *work)
 {
-	struct seg_tx *tx = CONTAINER_OF(work, struct seg_tx, retransmit);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct seg_tx *tx = CONTAINER_OF(dwork, struct seg_tx, retransmit);
 
 	seg_tx_send_unacked(tx);
 }
@@ -1129,7 +1130,8 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 
 static void seg_ack(struct k_work *work)
 {
-	struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, ack);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct seg_rx *rx = CONTAINER_OF(dwork, struct seg_rx, ack);
 	int32_t timeout;
 
 	if (!rx->in_use || rx->block == BLOCK_COMPLETE(rx->seg_n)) {
@@ -1164,7 +1166,7 @@ static void seg_ack(struct k_work *work)
 
 static inline bool sdu_len_is_ok(bool ctl, uint8_t seg_n)
 {
-	return (seg_n < CONFIG_BT_MESH_RX_SEG_MAX);
+	return (seg_n < BT_MESH_RX_SEG_MAX);
 }
 
 static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,

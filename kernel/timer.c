@@ -19,8 +19,6 @@ static struct k_spinlock lock;
  * @brief Handle expiration of a kernel timer object.
  *
  * @param t  Timeout used by the timer.
- *
- * @return N/A
  */
 void z_timer_expiration_handler(struct _timeout *t)
 {

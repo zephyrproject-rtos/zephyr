@@ -54,8 +54,6 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 static uint8_t sync_chm_update(uint8_t handle);
-static uint32_t sync_time_get(struct ll_adv_sync_set *sync,
-			      struct pdu_adv *pdu);
 
 static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
@@ -637,14 +635,24 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		ull_adv_sync_info_fill(sync, sync_info);
 
 		if (lll_aux) {
-			/* FIXME: Find absolute ticks until after auxiliary PDU
-			 *        on air to place the periodic advertising PDU.
+			/* Auxiliary set already active (due to other fields
+			 * being already present or being started prior).
 			 */
+			aux = NULL;
 			ticks_anchor_aux = 0U; /* unused in this path */
 			ticks_slot_overhead_aux = 0U; /* unused in this path */
+
+			/* TODO: Find the anchor after the group of active
+			 *       auxiliary sets such that Periodic Advertising
+			 *       events are placed in non-overlapping timeline
+			 *       when auxiliary and Periodic Advertising have
+			 *       similar event interval.
+			 */
 			ticks_anchor_sync = ticker_ticks_now_get();
-			aux = NULL;
 		} else {
+			/* Auxiliary set will be started due to inclusion of
+			 * sync info field.
+			 */
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
 			ticks_anchor_aux = ticker_ticks_now_get();
@@ -758,6 +766,15 @@ int ull_adv_sync_reset_finalize(void)
 	return 0;
 }
 
+struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_ADV_SYNC_SET) {
+		return NULL;
+	}
+
+	return &ll_adv_sync_pool[handle];
+}
+
 uint16_t ull_adv_sync_lll_handle_get(struct lll_adv_sync *lll)
 {
 	return sync_handle_get((void *)lll->hdr.parent);
@@ -767,6 +784,35 @@ void ull_adv_sync_release(struct ll_adv_sync_set *sync)
 {
 	lll_adv_sync_data_release(&sync->lll);
 	sync_release(sync);
+}
+
+uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
+			       uint8_t pdu_len)
+{
+	const struct lll_adv_sync *lll_sync = &sync->lll;
+	const struct lll_adv *lll = lll_sync->adv;
+	uint32_t time_us;
+
+	/* NOTE: 16-bit values are sufficient for minimum radio event time
+	 *       reservation, 32-bit are used here so that reservations for
+	 *       whole back-to-back chaining of PDUs can be accomodated where
+	 *       the required microseconds could overflow 16-bits, example,
+	 *       back-to-back chained Coded PHY PDUs.
+	 */
+
+	time_us = PDU_AC_US(pdu_len, lll->phy_s, lll->phy_flags) +
+		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct ll_adv_set *adv = HDR_LLL2ULL(lll);
+	struct lll_df_adv_cfg *df_cfg = adv->df_cfg;
+
+	if (df_cfg && df_cfg->is_enabled) {
+		time_us += CTE_LEN_US(df_cfg->cte_length);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+	return time_us;
 }
 
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
@@ -789,7 +835,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
 
 	/* Calculate the PDU Tx Time and hence the radio event length */
-	time_us = sync_time_get(sync, ter_pdu);
+	time_us = ull_adv_sync_time_get(sync, ter_pdu->len);
 
 	/* TODO: active_to_start feature port */
 	sync->ull.ticks_active_to_start = 0U;
@@ -806,16 +852,15 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	} else {
 		ticks_slot_overhead = 0U;
 	}
-	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
-	interval_us = (uint32_t)sync->interval * CONN_INT_UNIT_US;
+	interval_us = (uint32_t)sync->interval * PERIODIC_INT_UNIT_US;
 
 	sync_handle = sync_handle_get(sync);
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_SYNC_BASE + sync_handle),
-			   (ticks_anchor - ticks_slot_offset), 0U,
+			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
@@ -836,7 +881,7 @@ uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
 	uint32_t time_us;
 	uint32_t ret;
 
-	time_us = sync_time_get(sync, pdu);
+	time_us = ull_adv_sync_time_get(sync, pdu->len);
 	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
 	if (sync->ull.ticks_slot > time_ticks) {
 		ticks_minus = sync->ull.ticks_slot - time_ticks;
@@ -940,11 +985,12 @@ void ull_adv_sync_chm_complete(struct node_rx_hdr *rx)
 
 		ad_len += 1U;
 
-		LL_ASSERT(ad_len < len);
+		LL_ASSERT(ad_len <= len);
 
 		ad += ad_len;
 		len -= ad_len;
 	} while (len);
+	LL_ASSERT(len);
 
 	/* Remove Channel Map Update Indication by moving other AD types that
 	 * are after it.
@@ -1229,6 +1275,12 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	/* Add/Retain/Remove ACAD */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ACAD) {
 		acad_len = *(uint8_t *)hdr_data;
+		/* If zero length ACAD then do not reduce ACAD but return
+		 * return previous ACAD length.
+		 */
+		if (!acad_len) {
+			acad_len = acad_len_prev;
+		}
 		/* return prev ACAD length */
 		*(uint8_t *)hdr_data = acad_len_prev;
 		hdr_data = (uint8_t *)hdr_data + 1;
@@ -1572,37 +1624,6 @@ static uint8_t sync_chm_update(uint8_t handle)
 	return 0;
 }
 
-static uint32_t sync_time_get(struct ll_adv_sync_set *sync,
-			      struct pdu_adv *pdu)
-{
-	struct lll_adv_sync *lll_sync;
-	struct lll_adv *lll;
-	uint32_t time_us;
-
-	/* NOTE: 16-bit values are sufficient for minimum radio event time
-	 *       reservation, 32-bit are used here so that reservations for
-	 *       whole back-to-back chaining of PDUs can be accomodated where
-	 *       the required microseconds could overflow 16-bits, example,
-	 *       back-to-back chained Coded PHY PDUs.
-	 */
-
-	lll_sync = &sync->lll;
-	lll = lll_sync->adv;
-	time_us = PDU_AC_US(pdu->len, lll->phy_s, lll->phy_flags) +
-		  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	struct ll_adv_set *adv = HDR_LLL2ULL(lll);
-	struct lll_df_adv_cfg *df_cfg = adv->df_cfg;
-
-	if (df_cfg && df_cfg->is_enabled) {
-		time_us += CTE_LEN_US(df_cfg->cte_length);
-	}
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-	return time_us;
-}
-
 static void mfy_sync_offset_get(void *param)
 {
 	struct ll_adv_set *adv = param;
@@ -1734,6 +1755,12 @@ static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 	uint32_t offs;
 
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
+
+	if (offs >= OFFS_ADJUST_US) {
+		offs -= OFFS_ADJUST_US;
+		si->offs_adjust = 1U;
+	}
+
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
 		si->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US /

@@ -99,8 +99,10 @@
 #define EVENT_MAFS_US           300
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + EVENT_CLOCK_JITTER_US)
-/* Controller defined back to back transmit MAFS */
+/* Controller defined back to back transmit MAFS for extended advertising */
 #define EVENT_B2B_MAFS_US       (CONFIG_BT_CTLR_ADV_PDU_BACK2BACK_AFS)
+/* Controller defined back to back transmit MAFS for periodic advertising */
+#define EVENT_SYNC_B2B_MAFS_US  (CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS)
 /* Minimum Subevent Space timings */
 #define EVENT_MSS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
@@ -124,7 +126,7 @@
 #define OFFS_UNIT_VALUE_30_US  0
 #define OFFS_UNIT_VALUE_300_US 1
 /* Value specified in BT Spec. Vol 6, Part B, section 2.3.4.6 */
-#define OFFS_ADJUST_US         245760
+#define OFFS_ADJUST_US         2457600UL
 
 /* Advertiser's Sleep Clock Accuracy Value */
 #define SCA_500_PPM       500 /* 51 ppm to 500 ppm */
@@ -809,11 +811,19 @@ struct pdu_data {
 	uint8_t nesn:1;
 	uint8_t sn:1;
 	uint8_t md:1;
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	uint8_t cp:1;
 	uint8_t rfu:2;
+#else
+	uint8_t rfu:3;
+#endif
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	uint8_t rfu:2;
 	uint8_t cp:1;
+#else
+	uint8_t rfu:3;
+#endif
 	uint8_t md:1;
 	uint8_t sn:1;
 	uint8_t nesn:1;

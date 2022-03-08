@@ -63,7 +63,7 @@ config BT_MESH_PB_ADV_RETRANS_TIMEOUT
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
 	depends on BT_MESH_PROV
-	depends on BT_MESH_PB_ADV
+	depends on BT_MESH_PB_ADV || BT_MESH_PB_GATT_CLIENT
 	help
 	  Enable this option to have support for provisioning remote devices.
 
@@ -115,15 +115,35 @@ config BT_MESH_PROXY_MSG_LEN
 	default 66 if BT_MESH_PB_GATT
 	default 33 if BT_MESH_GATT_PROXY
 
+config BT_MESH_GATT_CLIENT
+	bool
+	select BT_MESH_GATT
+
 config BT_MESH_GATT_SERVER
 	bool
 	select BT_MESH_GATT
 	select BT_GATT_DYNAMIC_DB
 
+config BT_MESH_PB_GATT_COMMON
+	bool
+
+config BT_MESH_PB_GATT_CLIENT
+	bool "Provisioner support using GATT (PB-GATT)"
+	select BT_MESH_PROV
+	select BT_GATT_CLIENT
+	select BT_MESH_GATT_CLIENT
+	select BT_MESH_PB_GATT_COMMON
+	select BT_MESH_PROVISIONER
+	depends on BT_CENTRAL
+	help
+	  Enable this option to allow the provisioner provisioning the
+	  device over GATT.
+
 config BT_MESH_PB_GATT
 	bool "Provisioning support using GATT (PB-GATT)"
 	select BT_MESH_GATT_SERVER
 	select BT_MESH_PROV
+	select BT_MESH_PB_GATT_COMMON
 	help
 	  Enable this option to allow the device to be provisioned over
 	  GATT.
@@ -135,6 +155,16 @@ config BT_MESH_PB_GATT_USE_DEVICE_NAME
 	help
 	  This option includes GAP device name in scan response when
 	  the PB-GATT is enabled.
+
+config BT_MESH_PROXY_CLIENT
+	bool "Proxy client support"
+	select BT_GATT_CLIENT
+	select BT_MESH_GATT_CLIENT
+	depends on BT_CENTRAL
+	help
+	  This option enables support for the Mesh GATT Proxy Client,
+	  i.e. the ability to act as a proxy between a Mesh GATT Service
+	  and a Mesh network.
 
 config BT_MESH_GATT_PROXY
 	bool "GATT Proxy Service support"
@@ -379,18 +409,26 @@ config BT_MESH_IVU_DIVIDER
 config BT_MESH_TX_SEG_MSG_COUNT
 	int "Maximum number of simultaneous outgoing segmented messages"
 	default 1
-	range 1 255
+	range 0 255
 	help
 	  Maximum number of simultaneous outgoing multi-segment and/or
 	  reliable messages.
 
+	  Note that: Since Mesh Segmentation/reassemblying is a mandatory
+	  feature of specification, set to zero will not allow send any
+	  Mesh Segment message.
+
 config BT_MESH_RX_SEG_MSG_COUNT
 	int "Maximum number of simultaneous incoming segmented messages"
 	default 1
-	range 1 255
+	range 0 255
 	help
 	  Maximum number of simultaneous incoming multi-segment and/or
 	  reliable messages.
+
+	  Note that: Since Mesh Segmentation/reassemblying is a mandatory
+	  feature of specification, set to zero will not allow receive any
+	  Mesh Segment message.
 
 config BT_MESH_SEG_BUFS
 	int "Number of segment buffers available"
@@ -412,7 +450,8 @@ config BT_MESH_SEG_BUFS
 config BT_MESH_RX_SEG_MAX
 	int "Maximum number of segments in incoming messages"
 	default 3
-	range 2 32
+	range 1 32
+	depends on BT_MESH_RX_SEG_MSG_COUNT > 0
 	help
 	  Maximum number of segments supported for incoming messages.
 	  This value should typically be fine-tuned based on what
@@ -431,7 +470,8 @@ config BT_MESH_RX_SEG_MAX
 config BT_MESH_TX_SEG_MAX
 	int "Maximum number of segments in outgoing messages"
 	default 3
-	range 2 32
+	range 1 32
+	depends on BT_MESH_TX_SEG_MSG_COUNT > 0
 	help
 	  Maximum number of segments supported for outgoing messages.
 	  This value should typically be fine-tuned based on what

@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2021, YuLong Yao <feilongphone@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gd32e103v(b-8)xx-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <USART0_TX_PA9_NORMP>, <USART0_RX_PA10_NORMP>;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <TIMER0_CH0_PA8_OUT_NORMP>;
+		};
+	};
+
+	dac_default: dac_default {
+		group1 {
+			pinmux = <DAC_OUT0_PA4>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SCL_PB6_NORMP>, <I2C0_SDA_PB7_NORMP>;
+			drive-open-drain;
+		};
+	};
+};

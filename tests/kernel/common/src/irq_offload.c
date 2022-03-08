@@ -142,13 +142,6 @@ __no_optimization void test_nop(void)
 	 */
 	ztest_test_skip();
 #endif
-#elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
-	defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	/* do 4 nop instructions more to cost cycles */
-	arch_nop();
-	arch_nop();
-	arch_nop();
-	arch_nop();
 #elif defined(CONFIG_ARC)
 	/* do 7 nop instructions more to cost cycles */
 	arch_nop();
@@ -169,10 +162,10 @@ __no_optimization void test_nop(void)
 	arch_nop();
 	arch_nop();
 	arch_nop();
-
-#elif defined(CONFIG_ARMV8_A) || defined(CONFIG_BOARD_EHL_CRB)	\
-	|| (CONFIG_BOARD_UP_SQUARED) || (CONFIG_SOC_FAMILY_INTEL_ADSP)
-	/* the ARMv8-A ARM states the following:
+#elif defined(CONFIG_ARM) || defined(CONFIG_ARM64)			\
+	|| defined(CONFIG_BOARD_EHL_CRB) || (CONFIG_BOARD_UP_SQUARED)	\
+	|| (CONFIG_SOC_FAMILY_INTEL_ADSP)
+	/* ARM states the following:
 	 * No Operation does nothing, other than advance the value of
 	 * the program counter by 4. This instruction can be used for
 	 * instruction alignment purposes.
@@ -198,4 +191,47 @@ __no_optimization void test_nop(void)
 	/* An arch_nop() call should spend actual cpu cycles */
 	zassert_true(diff > 0,
 			"arch_nop() takes %d cpu cycles", diff);
+}
+
+static struct k_timer nestoff_timer;
+static bool timer_executed, nested_executed;
+
+void nestoff_offload(const void *parameter)
+{
+	nested_executed = true;
+}
+
+
+static void nestoff_timer_fn(struct k_timer *timer)
+{
+	zassert_false(nested_executed, "nested irq_offload ran too soon");
+	irq_offload(nestoff_offload, NULL);
+	zassert_true(nested_executed, "nested irq_offload did not run");
+
+	/* Set this last, to be sure we return to this context and not
+	 * the enclosing interrupt
+	 */
+	timer_executed = true;
+}
+
+
+/* Invoke irq_offload() from an interrupt and verify that the
+ * resulting nested interrupt doesn't explode
+ */
+void test_nested_irq_offload(void)
+{
+	if (!IS_ENABLED(CONFIG_IRQ_OFFLOAD_NESTED)) {
+		ztest_test_skip();
+	}
+
+	k_timer_init(&nestoff_timer, nestoff_timer_fn, NULL);
+
+	zassert_false(timer_executed, "timer ran too soon");
+	zassert_false(nested_executed, "nested irq_offload ran too soon");
+
+	k_timer_start(&nestoff_timer, K_TICKS(1), K_FOREVER);
+	k_timer_status_sync(&nestoff_timer);
+
+	zassert_true(timer_executed, "timer did not run");
+	zassert_true(nested_executed, "nested irq_offload did not run");
 }

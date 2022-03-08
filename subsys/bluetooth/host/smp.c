@@ -1022,7 +1022,8 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 
 static void smp_br_timeout(struct k_work *work)
 {
-	struct bt_smp_br *smp = CONTAINER_OF(work, struct bt_smp_br, work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_smp_br *smp = CONTAINER_OF(dwork, struct bt_smp_br, work);
 
 	BT_ERR("SMP Timeout");
 

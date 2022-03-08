@@ -73,7 +73,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `EVK-NINA-B4 product page`_ and `NINA-B40 Data Sheet`_
 for a complete list of EVK NINA-B4 hardware features.
 

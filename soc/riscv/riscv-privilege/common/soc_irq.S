@@ -31,7 +31,7 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 	csrrc t1, mip, t0
 
 	/* Return */
-	jalr x0, ra
+	ret
 
 /*
  * __soc_is_irq is defined as .weak to allow re-implementation by
@@ -58,4 +58,4 @@ SECTION_FUNC(exception.other, __soc_is_irq)
 
 not_interrupt:
 	/* return */
-	jalr x0, ra
+	ret

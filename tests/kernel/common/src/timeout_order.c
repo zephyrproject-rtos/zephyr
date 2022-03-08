@@ -30,7 +30,7 @@ static void thread(void *p1, void *p2, void *p3)
 	k_sem_give(&sem[id]);
 }
 
-#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_ARRAY_DEFINE(stacks, NUM_TIMEOUTS, STACKSIZE);
 static struct k_thread threads[NUM_TIMEOUTS];

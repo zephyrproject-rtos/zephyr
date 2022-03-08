@@ -33,8 +33,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #ifdef CONFIG_IEEE802154_CC2520_CRYPTO
 
+#include <crypto/crypto.h>
 #include <crypto/cipher.h>
-#include <crypto/cipher_structs.h>
 
 #endif /* CONFIG_IEEE802154_CC2520_CRYPTO */
 
@@ -1383,9 +1383,9 @@ static int cc2520_crypto_init(const struct device *dev)
 
 struct crypto_driver_api cc2520_crypto_api = {
 	.query_hw_caps			= cc2520_crypto_hw_caps,
-	.begin_session			= cc2520_crypto_begin_session,
-	.free_session			= cc2520_crypto_free_session,
-	.crypto_async_callback_set	= NULL
+	.cipher_begin_session			= cc2520_crypto_begin_session,
+	.cipher_free_session			= cc2520_crypto_free_session,
+	.cipher_async_callback_set	= NULL
 };
 
 DEVICE_DEFINE(cc2520_crypto, CONFIG_IEEE802154_CC2520_CRYPTO_DRV_NAME,

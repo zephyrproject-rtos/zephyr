@@ -27,7 +27,7 @@
 #define PWM_FLAGS	0
 #endif
 
-#define MIN_PERIOD_USEC	(USEC_PER_SEC / 64U)
+#define MIN_PERIOD_USEC	(USEC_PER_SEC / 128U)
 #define MAX_PERIOD_USEC	USEC_PER_SEC
 
 void main(void)

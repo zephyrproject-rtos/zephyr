@@ -243,6 +243,15 @@ Provisioning
 	* ``addr``: First unicast address to assign to the unprovisioned device. The device will occupy as many addresses as it has elements, and all must be available.
 	* ``AttentionDuration``: The duration in seconds the unprovisioned device will identify itself for, if supported. See :ref:`bluetooth_mesh_models_health_srv_attention` for details.
 
+``mesh provision-gatt <UUID> <NetKeyIndex> <addr> <AttentionDuration>``
+-----------------------------------------------------------------------
+
+	Provision a nearby device into the mesh. The mesh node starts scanning for connectable advertising for PB-GATT with the given UUID. Once found, the unprovisioned device will be added to the mesh network with the given unicast address, and given the network key indicated by ``NetKeyIndex``.
+
+	* ``UUID``: UUID of the unprovisioned device.
+	* ``NetKeyIndex``: Index of the network key to pass to the device.
+	* ``addr``: First unicast address to assign to the unprovisioned device. The device will occupy as many addresses as it has elements, and all must be available.
+	* ``AttentionDuration``: The duration in seconds the unprovisioned device will identify itself for, if supported. See :ref:`bluetooth_mesh_models_health_srv_attention` for details.
 
 ``mesh uuid <UUID: 1-16 hex values>``
 -------------------------------------
@@ -293,12 +302,32 @@ Provisioning
 
 	* ``val``: Whether to enable the unprovisioned beacon printing.
 
+Proxy Client
+============
+
+The Proxy Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_PROXY_CLIENT` configuration option.
+
+``mesh proxy-connect <NetKeyIndex>``
+------------------------------------
+
+	Auto-Connect a nearby proxy server into the mesh.
+
+	* ``NetKeyIndex``: Index of the network key to conenct.
+
+
+``mesh proxy-disconnect <NetKeyIndex>``
+---------------------------------------
+
+	Disconnect the existing proxy connection.
+
+	* ``NetKeyIndex``: Index of the network key to disconnect.
+
 .. _bluetooth_mesh_shell_cfg_cli:
 
 Configuration Client model
 ==========================
 
-The Configuration Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_CFG_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
+The Configuration Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_CFG_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
 
 The Configuration Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Configuration Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Configuration Client model targets the new node. The Configuration Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
@@ -668,7 +697,7 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 Health Client model
 ===================
 
-The Health Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_HEALTH_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
+The Health Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_HEALTH_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
 
 The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
@@ -780,7 +809,7 @@ Health Server model
 Configuration database
 ======================
 
-The Configuration database is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_CDB` configuration option. The Configuration database is only available on provisioner devices, and allows them to store all information about the mesh network. To avoid conflicts, there should only be one mesh node in the network with the Configuration database enabled. This node is the Configurator, and is responsible for adding new nodes to the network and configuring them.
+The Configuration database is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_CDB` configuration option. The Configuration database is only available on provisioner devices, and allows them to store all information about the mesh network. To avoid conflicts, there should only be one mesh node in the network with the Configuration database enabled. This node is the Configurator, and is responsible for adding new nodes to the network and configuring them.
 
 ``mesh cdb-create [NetKey]``
 ----------------------------

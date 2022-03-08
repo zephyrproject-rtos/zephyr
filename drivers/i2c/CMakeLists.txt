@@ -36,6 +36,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_DW		i2c_dw.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RCAR		i2c_rcar.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TCA954X		i2c_tca954x.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_XEC_V2		i2c_mchp_xec_v2.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_GD32		i2c_gd32.c)
 
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1
 	i2c_ll_stm32_v1.c

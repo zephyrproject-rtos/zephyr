@@ -39,11 +39,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
 			label = "CAN_1";
-			bus-speed = <250000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		can2: can@40006800 {
@@ -54,11 +51,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
 			status = "disabled";
 			label = "CAN_2";
-			bus-speed = <250000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		uart4: serial@40004c00 {

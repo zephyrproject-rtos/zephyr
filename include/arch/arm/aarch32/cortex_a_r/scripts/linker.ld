@@ -62,7 +62,7 @@ _region_min_align = CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE;
 #elif defined(CONFIG_ARM_AARCH32_MMU)
 _region_min_align = CONFIG_MMU_PAGE_SIZE;
 #else
-/* If building without MPU support, use default 4-byte alignment. */
+/* If building without MPU/MMU support, use default 4-byte alignment. */
 _region_min_align = 4;
 #endif
 
@@ -81,7 +81,7 @@ MEMORY
 {
     FLASH    (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     SRAM     (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
-    LINKER_DT_REGION_FROM_NODE(DT_CHOSEN(zephyr_ocm), rw)
+    LINKER_DT_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -151,10 +151,9 @@ SECTIONS
          */
         *(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
 
+        __text_region_end = .;
+        . = ALIGN(_region_min_align);
     } GROUP_LINK_IN(ROMABLE_REGION)
-
-    __text_region_end = .;
-    . = ALIGN(_region_min_align);
 
 #if defined (CONFIG_CPLUSPLUS)
     SECTION_PROLOGUE(.ARM.extab,,)
@@ -181,8 +180,11 @@ SECTIONS
         __exidx_end = .;
     } GROUP_LINK_IN(ROMABLE_REGION)
 
-    . = ALIGN(_region_min_align);
-    __rodata_region_start = .;
+    SECTION_PROLOGUE(rodata_start,,)
+    {
+        . = ALIGN(_region_min_align);
+        __rodata_region_start = .;
+    } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -352,7 +354,7 @@ GROUP_START(OCM)
 		*(.ocm_bss)
 		*(".ocm_bss.*")
 		__ocm_bss_end = .;
-	} GROUP_LINK_IN(OCM)
+	} GROUP_LINK_IN(LINKER_DT_NODE_REGION_NAME(DT_CHOSEN(zephyr_ocm)))
 
 	SECTION_PROLOGUE(_OCM_DATA_SECTION_NAME,,SUBALIGN(4))
 	{
@@ -360,7 +362,7 @@ GROUP_START(OCM)
 		*(.ocm_data)
 		*(".ocm_data.*")
 		__ocm_data_end = .;
-	} GROUP_LINK_IN(OCM)
+	} GROUP_LINK_IN(LINKER_DT_NODE_REGION_NAME(DT_CHOSEN(zephyr_ocm)))
 
   __ocm_end = .;
   __ocm_size = __ocm_end - __ocm_start;

@@ -367,5 +367,5 @@ static struct vcnl4040_data vcnl4040_data;
 PM_DEVICE_DT_INST_DEFINE(0, vcnl4040_pm_action);
 
 DEVICE_DT_INST_DEFINE(0, vcnl4040_init,
-	      PM_DEVICE_DT_INST_REF(0), &vcnl4040_data, &vcnl4040_config,
+	      PM_DEVICE_DT_INST_GET(0), &vcnl4040_data, &vcnl4040_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);

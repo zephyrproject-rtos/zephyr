@@ -2,7 +2,7 @@
  * Common functions and helpers for BSIM audio tests
  *
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include <stddef.h>
 #include <errno.h>
 #include <zephyr.h>
+#include <sys_clock.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -28,13 +29,15 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#define WAIT_TIME (30 * 1e6) /*seconds*/
+#define WAIT_SECONDS 30                         /* seconds */
+#define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
 #define WAIT_FOR(cond) while (!(cond)) { k_sleep(K_MSEC(1)); }
 
 #define CREATE_FLAG(flag) static atomic_t flag = (atomic_t)false
 #define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
 #define UNSET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)false)
+#define TEST_FLAG(flag) (atomic_get(&flag) == (atomic_t)true)
 #define WAIT_FOR_FLAG(flag) \
 	while (!(bool)atomic_get(&flag)) { \
 		(void)k_sleep(K_MSEC(1)); \

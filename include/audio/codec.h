@@ -156,8 +156,6 @@ static inline int audio_codec_configure(const struct device *dev,
  * Setup the audio codec device to start the audio playback
  *
  * @param dev Pointer to the device structure for codec driver instance.
- *
- * @return none
  */
 static inline void audio_codec_start_output(const struct device *dev)
 {
@@ -173,8 +171,6 @@ static inline void audio_codec_start_output(const struct device *dev)
  * Setup the audio codec device to stop the audio playback
  *
  * @param dev Pointer to the device structure for codec driver instance.
- *
- * @return none
  */
 static inline void audio_codec_stop_output(const struct device *dev)
 {

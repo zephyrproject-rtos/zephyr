@@ -36,7 +36,7 @@ except ImportError:
 # -- Project --------------------------------------------------------------
 
 project = "Zephyr Project"
-copyright = "2015-2021 Zephyr Project members and individual contributors"
+copyright = "2015-2022 Zephyr Project members and individual contributors"
 author = "The Zephyr Project Contributors"
 
 # parse version from 'VERSION' file
@@ -74,7 +74,7 @@ extensions = [
     "sphinx.ext.graphviz",
     "zephyr.application",
     "zephyr.html_redirects",
-    "zephyr.kconfig-role",
+    "zephyr.kconfig",
     "zephyr.dtcompatible-role",
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
@@ -139,6 +139,7 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("3.0.0", "/3.0.0/"),
         ("2.7.0", "/2.7.0/"),
         ("2.6.0", "/2.6.0/"),
         ("2.5.0", "/2.5.0/"),
@@ -149,7 +150,7 @@ html_context = {
     "display_vcs_link": True,
     "reference_links": {
         "API": f"{reference_prefix}/doxygen/html/index.html",
-        "Kconfig Options": f"{reference_prefix}/reference/kconfig/index.html",
+        "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/reference/devicetree/bindings.html",
     }
 }
@@ -185,6 +186,7 @@ doxyrunner_doxyfile = ZEPHYR_BASE / "doc" / "zephyr.doxyfile.in"
 doxyrunner_outdir = ZEPHYR_BUILD / "doxygen"
 doxyrunner_fmt = True
 doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
+doxyrunner_outdir_var = "DOXY_OUT"
 
 # -- Options for Breathe plugin -------------------------------------------
 
@@ -208,6 +210,7 @@ cpp_id_attributes = [
     "__DEPRECATED_MACRO",
     "FUNC_NORETURN",
     "__subsystem",
+    "ALWAYS_INLINE",
 ]
 c_id_attributes = cpp_id_attributes
 
@@ -218,7 +221,6 @@ html_redirect_pages = redirects.REDIRECTS
 # -- Options for zephyr.warnings_filter -----------------------------------
 
 warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
-warnings_filter_silent = False
 
 # -- Options for notfound.extension ---------------------------------------
 
@@ -238,6 +240,11 @@ vcs_link_exclude = [
     "reference/devicetree/bindings.*",
     "reference/devicetree/compatibles.*",
 ]
+
+# -- Options for zephyr.kconfig -------------------------------------------
+
+kconfig_generate_db = True
+kconfig_ext_paths = [ZEPHYR_BASE]
 
 # -- Options for zephyr.external_content ----------------------------------
 

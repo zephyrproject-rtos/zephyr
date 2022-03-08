@@ -47,16 +47,12 @@ struct dac_sam_dev_data {
 };
 
 #define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct dac_sam_dev_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct dac_sam_dev_data *const)(dev)->data)
 
 static void dac_sam_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
-	const struct dac_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct dac_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct dac_sam_dev_cfg *const dev_cfg = dev->config;
+	struct dac_sam_dev_data *const dev_data = dev->data;
 	Dacc *const dac = dev_cfg->regs;
 	uint32_t int_stat;
 
@@ -78,7 +74,7 @@ static void dac_sam_isr(void *arg)
 static int dac_sam_channel_setup(const struct device *dev,
 				 const struct dac_channel_cfg *channel_cfg)
 {
-	const struct dac_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	const struct dac_sam_dev_cfg *const dev_cfg = dev->config;
 	Dacc *const dac = dev_cfg->regs;
 
 	if (channel_cfg->channel_id >= DAC_CHANNEL_NO) {
@@ -97,8 +93,8 @@ static int dac_sam_channel_setup(const struct device *dev,
 static int dac_sam_write_value(const struct device *dev, uint8_t channel,
 			       uint32_t value)
 {
-	struct dac_sam_dev_data *const dev_data = DEV_DATA(dev);
-	const struct dac_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
+	struct dac_sam_dev_data *const dev_data = dev->data;
+	const struct dac_sam_dev_cfg *const dev_cfg = dev->config;
 	Dacc *const dac = dev_cfg->regs;
 
 	if (channel >= DAC_CHANNEL_NO) {
@@ -123,8 +119,8 @@ static int dac_sam_write_value(const struct device *dev, uint8_t channel,
 
 static int dac_sam_init(const struct device *dev)
 {
-	const struct dac_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct dac_sam_dev_data *const dev_data = DEV_DATA(dev);
+	const struct dac_sam_dev_cfg *const dev_cfg = dev->config;
+	struct dac_sam_dev_data *const dev_data = dev->data;
 	Dacc *const dac = dev_cfg->regs;
 
 	/* Configure interrupts */

@@ -42,7 +42,7 @@ config LOG_DICTIONARY_SUPPORT
 
 config LOG_IMMEDIATE_CLEAN_OUTPUT
 	bool "Clean log output"
-	depends on LOG_IMMEDIATE
+	depends on LOG_MODE_IMMEDIATE
 	help
 	  If enabled, interrupts are locked during whole log message processing.
 	  As a result, processing on one log message cannot be interrupted by

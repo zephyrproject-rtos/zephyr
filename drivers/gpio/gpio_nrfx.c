@@ -111,6 +111,8 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 				   gpio_flags_t flags)
 {
 	nrfx_err_t err;
+	uint8_t ch;
+	bool free_ch;
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
 	nrfx_gpiote_pin_t abs_pin = NRF_GPIO_PIN_MAP(cfg->port_num, pin);
 
@@ -122,10 +124,17 @@ static int gpio_nrfx_pin_configure(const struct device *port, gpio_pin_t pin,
 		.trigger = NRFX_GPIOTE_TRIGGER_NONE
 	};
 
+	err = nrfx_gpiote_channel_get(pin, &ch);
+	free_ch = (err == NRFX_SUCCESS);
+
 	/* Remove previously configured trigger when pin is reconfigured. */
 	err = nrfx_gpiote_input_configure(abs_pin, NULL, &trigger_config, NULL);
 	if (err != NRFX_SUCCESS) {
 		return -EINVAL;
+	}
+
+	if (free_ch) {
+		err = nrfx_gpiote_channel_free(ch);
 	}
 
 	if (flags & GPIO_OUTPUT) {

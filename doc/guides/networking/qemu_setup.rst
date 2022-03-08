@@ -154,8 +154,8 @@ board is connected to a dedicated router, it should not be needed.
 To access the internet from a Zephyr application using IPv4,
 a gateway should be set via DHCP or configured manually.
 For applications using the "Settings" facility (with the config option
-:kconfig:`CONFIG_NET_CONFIG_SETTINGS` enabled),
-set the :kconfig:`CONFIG_NET_CONFIG_MY_IPV4_GW` option to the IP address
+:kconfig:option:`CONFIG_NET_CONFIG_SETTINGS` enabled),
+set the :kconfig:option:`CONFIG_NET_CONFIG_MY_IPV4_GW` option to the IP address
 of the gateway. For apps not using the "Settings" facility, set up the
 gateway by calling the :c:func:`net_if_ipv4_set_gw` at runtime.
 
@@ -188,7 +188,7 @@ on Debian-based systems:
 
 An alternative to relying on the host's DNS server is to use one in the
 network. For example, 8.8.8.8 is a publicly available DNS server. You can
-configure it using :kconfig:`CONFIG_DNS_SERVER1` option.
+configure it using :kconfig:option:`CONFIG_DNS_SERVER1` option.
 
 
 Network connection between two QEMU VMs

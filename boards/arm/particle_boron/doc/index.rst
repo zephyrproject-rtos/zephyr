@@ -71,7 +71,7 @@ hardware features:
 | RADIO     | on-chip    | Bluetooth            |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================

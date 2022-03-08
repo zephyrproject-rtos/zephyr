@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2021 Marius Scholtz, RIC Electronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -216,11 +217,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
 			label = "CAN_1";
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		can2: can@40006800 {
@@ -232,11 +230,8 @@
 			master-can-reg = <0x40006400>;
 			status = "disabled";
 			label = "CAN_2";
-			bus-speed = <125000>;
 			sjw = <1>;
-			prop-seg = <0>;
-			phase-seg1 = <5>;
-			phase-seg2 = <6>;
+			sample-point = <875>;
 		};
 
 		rng: rng@50060800 {
@@ -249,12 +244,32 @@
 		};
 
 		backup_sram: memory@40024000 {
-			compatible = "st,stm32-backup-sram";
+			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x40024000 DT_SIZE_K(4)>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 			label = "BACKUP_SRAM";
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
+		};
+
+		adc2: adc@40012100 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012100 0x050>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_2";
+			#io-channel-cells = <1>;
+		};
+
+		adc3: adc@40012200 {
+			compatible = "st,stm32-adc";
+			reg = <0x40012200 0x050>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_3";
+			#io-channel-cells = <1>;
 		};
 
 		dac1: dac@40007400 {

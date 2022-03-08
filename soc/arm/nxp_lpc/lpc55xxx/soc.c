@@ -54,8 +54,6 @@ const pll_setup_t pll0Setup = {
  *
  * @brief Initialize the system clock
  *
- * @return N/A
- *
  */
 
 static ALWAYS_INLINE void clock_init(void)
@@ -175,6 +173,12 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	CLOCK_AttachClk(kPLL0_DIV_to_FLEXCOMM7);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can0), nxp_lpc_mcan, okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCanClk, 1U, false);
+	CLOCK_AttachClk(kMCAN_DIV_to_MCAN);
+	RESET_PeripheralReset(kMCAN_RST_SHIFT_RSTn);
+#endif
+
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */
 }
 
@@ -228,7 +232,9 @@ SYS_INIT(nxp_lpc55xxx_init, PRE_KERNEL_1, 0);
  * @brief Second Core Init
  *
  * This routine boots the secondary core
- * @return N/A
+ *
+ * @retval 0 on success.
+ *
  */
 /* This function is also called at deep sleep resume. */
 int _second_core_init(const struct device *arg)

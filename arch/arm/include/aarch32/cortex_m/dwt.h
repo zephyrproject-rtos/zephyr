@@ -125,8 +125,6 @@ static inline uint32_t z_arm_dwt_get_cycles(void)
  * @brief Reset and start the DWT cycle counter
  *
  * This routine starts the cycle counter and resets its value to zero.
- *
- * @return N/A
  */
 static inline void z_arm_dwt_cycle_count_start(void)
 {
@@ -140,8 +138,6 @@ static inline void z_arm_dwt_cycle_count_start(void)
  * This routine enables the DebugMonitor handler to service
  * data watchpoint events coming from DWT. The routine sets
  * the DebugMonitor exception priority to highest possible.
- *
- * @return N/A
  */
 static inline void z_arm_dwt_enable_debug_monitor(void)
 {

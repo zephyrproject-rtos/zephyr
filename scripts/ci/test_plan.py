@@ -6,13 +6,13 @@
 
 import re, os
 import argparse
-import glob
 import yaml
 import json
 import fnmatch
 import subprocess
 import csv
 import logging
+import sys
 from git import Repo
 
 if "ZEPHYR_BASE" not in os.environ:
@@ -20,6 +20,9 @@ if "ZEPHYR_BASE" not in os.environ:
 
 repository_path = os.environ['ZEPHYR_BASE']
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+
+sys.path.append(os.path.join(repository_path, 'scripts'))
+import list_boards
 
 def _get_match_fn(globs, regexes):
     # Constructs a single regex that tests for matches against the globs in
@@ -159,12 +162,14 @@ class Filters:
             if p and p.groups():
                 boards.add(p.group(1))
 
+        # Limit search to $ZEPHYR_BASE since this is where the changed files are
+        lb_args = argparse.Namespace(**{ 'arch_roots': [], 'board_roots': [] })
+        known_boards = list_boards.find_boards(lb_args)
         for b in boards:
-            suboards = glob.glob("boards/*/%s/*.yaml" %(b))
-            for subboard in suboards:
-                name = os.path.splitext(os.path.basename(subboard))[0]
-                if name:
-                    all_boards.add(name)
+            name_re = re.compile(b)
+            for kb in known_boards:
+                if name_re.search(kb.name):
+                    all_boards.add(kb.name)
 
         _options = []
         for board in all_boards:
@@ -295,6 +300,7 @@ def parse_args():
 if __name__ == "__main__":
 
     args = parse_args()
+    files = []
     if args.commits:
         repo = Repo(repository_path)
         commit = repo.git.diff("--name-only", args.commits)
@@ -303,9 +309,10 @@ if __name__ == "__main__":
         with open(args.modified_files, "r") as fp:
             files = json.load(fp)
 
-    print("Changed files:\n=========")
-    print("\n".join(files))
-    print("=========")
+    if files:
+        print("Changed files:\n=========")
+        print("\n".join(files))
+        print("=========")
 
     f = Filters(files, args.pull_request, args.platform)
     f.process()
@@ -331,11 +338,12 @@ if __name__ == "__main__":
         if total_tests % args.tests_per_builder != total_tests:
             nodes = nodes + 1
 
-        if nodes > 5:
+        if args.default_matrix > nodes > 5:
             nodes = args.default_matrix
 
         tp.write(f"TWISTER_TESTS={total_tests}\n")
         tp.write(f"TWISTER_NODES={nodes}\n")
+        tp.write(f"TWISTER_FULL={f.full_twister}\n")
         logging.info(f'Total nodes to launch: {nodes}')
 
     header = ['test', 'arch', 'platform', 'status', 'extra_args', 'handler',

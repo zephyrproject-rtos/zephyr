@@ -150,11 +150,11 @@ Modified in this release
   * ``s_*`` structure members are now ``p_*``
 
 * The ``CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY`` Kconfig option is now
-  :kconfig:`CONFIG_BT_PERIPHERAL_PREF_LATENCY`
+  :kconfig:option:`CONFIG_BT_PERIPHERAL_PREF_LATENCY`
 * The ``CONFIG_BT_CTLR_SLAVE_FEAT_REQ_SUPPORT`` Kconfig option is now
-  :kconfig:`CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT`
+  :kconfig:option:`CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT`
 * The ``CONFIG_BT_CTLR_SLAVE_FEAT_REQ`` Kconfig option is now
-  :kconfig:`CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG`
+  :kconfig:option:`CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG`
 
 Changes in this release
 ==========================
@@ -892,7 +892,7 @@ Build and Infrastructure
 * West (extensions)
 
     * openocd runner: Zephyr thread awareness is now available in GDB by default
-      for application builds with :kconfig:`CONFIG_DEBUG_THREAD_INFO` set to ``y``
+      for application builds with :kconfig:option:`CONFIG_DEBUG_THREAD_INFO` set to ``y``
       in :ref:`kconfig`. This applies to ``west debug``, ``west debugserver``,
       and ``west attach``. OpenOCD version later than 0.11.0 must be installed
       on the host system.
@@ -1004,7 +1004,7 @@ Trusted Firmware-m
 Documentation
 *************
 
-* Kconfig options need to be referenced using the ``:kconfig:`` Sphinx role.
+* Kconfig options need to be referenced using the ``:kconfig:option:`` Sphinx role.
   Previous to this change, ``:option:`` was used for this purpose.
 * Doxygen alias ``@config{}`` has been deprecated in favor of ``@kconfig{}``.
 

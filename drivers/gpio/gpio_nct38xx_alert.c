@@ -37,10 +37,6 @@ struct nct38xx_alert_data {
 	struct k_work alert_worker;
 };
 
-/* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct nct38xx_alert_config *)(dev)->config)
-#define DRV_DATA(dev) ((struct nct38xx_alert_data *)(dev)->data)
-
 static void nct38xx_alert_callback(const struct device *dev, struct gpio_callback *cb,
 				   uint32_t pins)
 {
@@ -54,7 +50,7 @@ static void nct38xx_alert_worker(struct k_work *work)
 {
 	struct nct38xx_alert_data *const data =
 		CONTAINER_OF(work, struct nct38xx_alert_data, alert_worker);
-	const struct nct38xx_alert_config *const config = DRV_CONFIG(data->alert_dev);
+	const struct nct38xx_alert_config *const config = data->alert_dev->config;
 	uint16_t alert, mask;
 
 	do {
@@ -91,8 +87,8 @@ static void nct38xx_alert_worker(struct k_work *work)
 
 static int nct38xx_alert_init(const struct device *dev)
 {
-	const struct nct38xx_alert_config *const config = DRV_CONFIG(dev);
-	struct nct38xx_alert_data *const data = DRV_DATA(dev);
+	const struct nct38xx_alert_config *const config = dev->config;
+	struct nct38xx_alert_data *const data = dev->data;
 	int ret;
 
 	/* Check NCT38XX devices are all ready. */

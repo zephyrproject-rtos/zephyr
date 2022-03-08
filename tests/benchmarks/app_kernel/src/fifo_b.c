@@ -14,7 +14,6 @@
  *
  * @brief Queue transfer speed test
  *
- * @return N/A
  */
 void queue_test(void)
 {

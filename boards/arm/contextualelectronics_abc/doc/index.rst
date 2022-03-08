@@ -76,7 +76,7 @@ hardware features:
 | Modem     | on-board   | quectel_bg9x         |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `ABC Board website`_ for more details on this board, and
 `Nordic Semiconductor Infocenter`_ for a complete list of SoC
 features.

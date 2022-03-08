@@ -8,7 +8,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <devicetree.h>
 #include <gd32f3x0.h>
 
 #endif /* _ASMLANGUAGE */

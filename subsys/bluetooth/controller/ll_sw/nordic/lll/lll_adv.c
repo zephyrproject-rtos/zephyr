@@ -472,8 +472,7 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 			 * switch attempt (on next event).
 			 */
 			if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &free_idx)) {
-				pdu->pdu[pdu_idx] = p;
-				return NULL;
+				break;
 			}
 
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
@@ -488,16 +487,19 @@ struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 			p = next;
 		} while (p);
 
-		pdu->pdu[pdu_idx] = NULL;
+		/* If not all PDUs where released into mfifo, keep the list in
+		 * current data index, to be released on the next switch
+		 * attempt.
+		 */
+		pdu->pdu[pdu_idx] = p;
 
+		/* Progress to next data index */
 		first += 1U;
 		if (first == DOUBLE_BUFFER_SIZE) {
 			first = 0U;
 		}
 		pdu->first = first;
 		*is_modified = 1U;
-
-		pdu->pdu[pdu_idx] = NULL;
 	}
 
 	return (void *)pdu->pdu[first];

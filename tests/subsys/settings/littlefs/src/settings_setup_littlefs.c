@@ -18,7 +18,7 @@ static struct fs_mount_t littlefs_mnt = {
 	.mnt_point = TEST_FS_MPTR,
 };
 
-void config_setup_littlefs(void)
+void test_config_setup_littlefs(void)
 {
 	int rc;
 	const struct flash_area *fap;

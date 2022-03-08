@@ -91,9 +91,9 @@ int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx);
 		.log_output = &_name##_log_output, \
 		.control_block = &_name##_control_block, \
 		.timeout = _timeout, \
-		.mpsc_buffer_config = IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED) ? \
+		.mpsc_buffer_config = IS_ENABLED(CONFIG_LOG2_DEFERRED) ? \
 			&_name##_mpsc_buffer_config : NULL, \
-		.mpsc_buffer = IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED) ? \
+		.mpsc_buffer = IS_ENABLED(CONFIG_LOG2_DEFERRED) ? \
 			&_name##_mpsc_buffer : NULL, \
 	}
 

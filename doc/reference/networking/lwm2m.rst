@@ -367,7 +367,7 @@ Using LwM2M library with DTLS
 *****************************
 
 The Zephyr LwM2M library can be used with DTLS transport for secure
-communication by selecting :kconfig:`CONFIG_LWM2M_DTLS_SUPPORT`.  In the client
+communication by selecting :kconfig:option:`CONFIG_LWM2M_DTLS_SUPPORT`.  In the client
 initialization we need to create a PSK and identity.  These need to match
 the security information loaded onto the LwM2M server.  Normally, the
 endpoint name is used to lookup the related security information:

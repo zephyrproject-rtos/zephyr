@@ -202,7 +202,7 @@ extern "C" {
 #define Z_LOG_INTERNAL2(is_user_context, _src_level, ...) do { \
 	if (is_user_context) { \
 		log_from_user(_src_level, __VA_ARGS__); \
-	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) { \
+	} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) { \
 		log_string_sync(_src_level, __VA_ARGS__); \
 	} else { \
 		Z_LOG_INTERNAL_X(Z_LOG_NARGS_POSTFIX(__VA_ARGS__), \
@@ -442,7 +442,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	if (is_user_context) { \
 		log_hexdump_from_user(src_level, _str, \
 				      (const char *)_data, _len); \
-	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) { \
+	} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) { \
 		log_hexdump_sync(src_level, _str, (const char *)_data, _len); \
 	} else { \
 		log_hexdump(_str, (const char *)_data, _len, src_level); \
@@ -860,7 +860,7 @@ static inline log_arg_t z_log_do_strdup(uint32_t msk, uint32_t idx,
 do {									       \
 	if (is_user_context) {						       \
 		log_generic_from_user(_src_level, _str, _valist);	       \
-	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {			       \
+	} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {		       \
 		log_generic(_src_level, _str, _valist, _strdup_action);        \
 	} else if (_argnum == 0) {					       \
 		_LOG_INTERNAL_0(_src_level, _str);			       \

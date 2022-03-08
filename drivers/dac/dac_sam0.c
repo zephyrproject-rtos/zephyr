@@ -28,13 +28,11 @@ struct dac_sam0_cfg {
 	uint8_t refsel;
 };
 
-#define DEV_CFG(dev) ((const struct dac_sam0_cfg *const)(dev)->config)
-
 /* Write to the DAC. */
 static int dac_sam0_write_value(const struct device *dev, uint8_t channel,
 				uint32_t value)
 {
-	const struct dac_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct dac_sam0_cfg *const cfg = dev->config;
 	Dac *regs = cfg->regs;
 
 	regs->DATA.reg = (uint16_t)value;
@@ -62,7 +60,7 @@ static int dac_sam0_channel_setup(const struct device *dev,
 /* Initialise and enable the DAC. */
 static int dac_sam0_init(const struct device *dev)
 {
-	const struct dac_sam0_cfg *const cfg = DEV_CFG(dev);
+	const struct dac_sam0_cfg *const cfg = dev->config;
 	Dac *regs = cfg->regs;
 
 	/* Enable the GCLK */

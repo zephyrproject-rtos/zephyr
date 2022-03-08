@@ -59,6 +59,8 @@ elseif("${ARCH}" STREQUAL "x86")
   include(${CMAKE_CURRENT_LIST_DIR}/target_x86.cmake)
 elseif("${ARCH}" STREQUAL "sparc")
   include(${CMAKE_CURRENT_LIST_DIR}/target_sparc.cmake)
+elseif("${ARCH}" STREQUAL "mips")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_mips.cmake)
 endif()
 
 # This libgcc code is partially duplicated in compiler/*/target.cmake

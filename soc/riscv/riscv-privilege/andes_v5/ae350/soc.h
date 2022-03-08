@@ -12,7 +12,6 @@
 #define __RISCV_ANDES_AE350_SOC_H_
 
 #include <soc_common.h>
-#include <devicetree.h>
 
 /* Machine timer memory-mapped registers */
 #define RISCV_MTIME_BASE             0xE6000000

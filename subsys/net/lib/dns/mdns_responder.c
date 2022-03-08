@@ -39,10 +39,13 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 
 #if defined(CONFIG_NET_IPV4)
 static struct net_context *ipv4;
+static struct sockaddr_in local_addr4;
 #endif
 #if defined(CONFIG_NET_IPV6)
 static struct net_context *ipv6;
 #endif
+
+static struct net_mgmt_event_callback mgmt_cb;
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
@@ -77,6 +80,22 @@ static void create_ipv4_addr(struct sockaddr_in *addr)
 
 	/* Well known IPv4 224.0.0.251 address */
 	addr->sin_addr.s_addr = htonl(0xE00000FB);
+}
+
+static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
+				     uint32_t mgmt_event, struct net_if *iface)
+
+{
+	if (mgmt_event == NET_EVENT_IF_UP) {
+#if defined(CONFIG_NET_IPV4)
+		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr);
+
+		if (ret < 0) {
+			NET_DBG("Cannot add IPv4 multicast address to iface %p",
+				iface);
+		}
+#endif /* defined(CONFIG_NET_IPV4) */
+	}
 }
 
 int setup_dst_addr(struct net_context *ctx, struct net_pkt *pkt,
@@ -631,14 +650,12 @@ ipv6_out:
 
 #if defined(CONFIG_NET_IPV4)
 	do {
-		static struct sockaddr_in local_addr;
-
-		setup_ipv4_addr(&local_addr);
+		setup_ipv4_addr(&local_addr4);
 
 		ipv4 = get_ctx(AF_INET);
 
-		ret = bind_ctx(ipv4, (struct sockaddr *)&local_addr,
-			       sizeof(local_addr));
+		ret = bind_ctx(ipv4, (struct sockaddr *)&local_addr4,
+			       sizeof(local_addr4));
 		if (ret < 0) {
 			net_context_put(ipv4);
 			goto ipv4_out;
@@ -665,6 +682,11 @@ ipv4_out:
 static int mdns_responder_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	net_mgmt_init_event_callback(&mgmt_cb, mdns_iface_event_handler,
+				     NET_EVENT_IF_UP);
+
+	net_mgmt_add_event_callback(&mgmt_cb);
 
 	return init_listener();
 }

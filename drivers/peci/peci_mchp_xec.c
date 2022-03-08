@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(peci_mchp_xec, CONFIG_PECI_LOG_LEVEL);
 #define MAX_PECI_CORE_CLOCK 48000u
 /* 1 ms */
 #define PECI_RESET_DELAY    1000u
+#define PECI_RESET_DELAY_MS 1u
 /* 100 us */
 #define PECI_IDLE_DELAY     100u
 /* 5 ms */
@@ -135,7 +136,13 @@ static void peci_xec_bus_recovery(const struct device *dev, bool full_reset)
 	LOG_WRN("%s full_reset:%d", __func__, full_reset);
 	if (full_reset) {
 		base->CONTROL = MCHP_PECI_CTRL_PD | MCHP_PECI_CTRL_RST;
-		k_busy_wait(PECI_RESET_DELAY);
+
+		if (k_is_in_isr()) {
+			k_busy_wait(PECI_RESET_DELAY_MS);
+		} else {
+			k_msleep(PECI_RESET_DELAY);
+		}
+
 		base->CONTROL &= ~MCHP_PECI_CTRL_RST;
 
 		peci_xec_configure(dev, peci_data.bitrate);
@@ -374,7 +381,7 @@ static int peci_xec_init(const struct device *dev)
 
 	/* Reset PECI interface */
 	base->CONTROL |= MCHP_PECI_CTRL_RST;
-	k_busy_wait(PECI_RESET_DELAY);
+	k_msleep(PECI_RESET_DELAY_MS);
 	base->CONTROL &= ~MCHP_PECI_CTRL_RST;
 
 #ifdef CONFIG_PECI_INTERRUPT_DRIVEN

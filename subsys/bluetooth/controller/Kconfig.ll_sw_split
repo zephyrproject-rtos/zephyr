@@ -534,8 +534,9 @@ config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
 
 config BT_CTLR_LLCP_PROC_CTX_BUF_NUM
 	int "Number of control procedure contexts to be available across all connections"
-	default BT_CTLR_LLCP_CONN
-	range 1 255
+	default 2 if BT_CTLR_LLCP_CONN = 1
+	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
+	range 2 255
 	help
 	  Set the number control procedure contexts that is to be available.
 	  This defines the size of the pool of control procedure contexts available

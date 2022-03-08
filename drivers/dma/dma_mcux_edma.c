@@ -53,15 +53,14 @@ struct dma_mcux_edma_data {
 	struct k_mutex dma_mutex;
 };
 
-#define DEV_CFG(dev)                                                           \
-	((const struct dma_mcux_edma_config *const)dev->config)
-#define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->data)
-#define DEV_BASE(dev) ((DMA_Type *)DEV_CFG(dev)->base)
+#define DEV_BASE(dev) \
+	((DMA_Type *)((const struct dma_mcux_edma_config *const)dev->config)->base)
 
-#define DEV_DMAMUX_BASE(dev) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base)
+#define DEV_DMAMUX_BASE(dev) \
+	((DMAMUX_Type *)((const struct dma_mcux_edma_config *const)dev->config)->dmamux_base)
 
 #define DEV_CHANNEL_DATA(dev, ch)                                              \
-	((struct call_back *)(&(DEV_DATA(dev)->data_cb[ch])))
+	((struct call_back *)(&(((struct dma_mcux_edma_data *)dev->data)->data_cb[ch])))
 
 #define DEV_EDMA_HANDLE(dev, ch)                                               \
 	((edma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->edma_handle)))
@@ -184,16 +183,17 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 				   struct dma_config *config)
 {
+	/* Check for invalid parameters before dereferencing them. */
+	if (NULL == dev || NULL == config) {
+		return -EINVAL;
+	}
+
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 	struct dma_block_config *block_config = config->head_block;
 	uint32_t slot = config->dma_slot;
 	edma_transfer_type_t transfer_type;
 	int key;
-
-	if (NULL == dev || NULL == config) {
-		return -EINVAL;
-	}
 
 	if (slot > DT_INST_PROP(0, dma_requests)) {
 		LOG_ERR("source number is outof scope %d", slot);
@@ -349,7 +349,7 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 {
-	struct dma_mcux_edma_data *data = DEV_DATA(dev);
+	struct dma_mcux_edma_data *data = dev->data;
 
 	if (!data->data_cb[channel].busy) {
 		return 0;
@@ -362,6 +362,29 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 	data->data_cb[channel].busy = false;
 	return 0;
 }
+
+static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+
+	if (!data->busy) {
+		return -EINVAL;
+	}
+	EDMA_StopTransfer(DEV_EDMA_HANDLE(dev, channel));
+	return 0;
+}
+
+static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+
+	if (!data->busy) {
+		return -EINVAL;
+	}
+	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
+	return 0;
+}
+
 
 static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 				uint32_t src, uint32_t dst, size_t size)
@@ -419,25 +442,30 @@ static const struct dma_driver_api dma_mcux_edma_api = {
 	.config = dma_mcux_edma_configure,
 	.start = dma_mcux_edma_start,
 	.stop = dma_mcux_edma_stop,
+	.suspend = dma_mcux_edma_suspend,
+	.resume = dma_mcux_edma_resume,
 	.get_status = dma_mcux_edma_get_status,
 	.chan_filter = dma_mcux_edma_channel_filter,
 };
 
 static int dma_mcux_edma_init(const struct device *dev)
 {
+	const struct dma_mcux_edma_config *config = dev->config;
+	struct dma_mcux_edma_data *data = dev->data;
+
 	edma_config_t userConfig = { 0 };
 
 	LOG_DBG("INIT NXP EDMA");
 	DMAMUX_Init(DEV_DMAMUX_BASE(dev));
 	EDMA_GetDefaultConfig(&userConfig);
 	EDMA_Init(DEV_BASE(dev), &userConfig);
-	DEV_CFG(dev)->irq_config_func(dev);
-	memset(DEV_DATA(dev), 0, sizeof(struct dma_mcux_edma_data));
+	config->irq_config_func(dev);
+	memset(dev->data, 0, sizeof(struct dma_mcux_edma_data));
 	memset(tcdpool, 0, sizeof(tcdpool));
-	k_mutex_init(&DEV_DATA(dev)->dma_mutex);
-	DEV_DATA(dev)->dma_ctx.magic = DMA_MAGIC;
-	DEV_DATA(dev)->dma_ctx.dma_channels = DEV_CFG(dev)->dma_channels;
-	DEV_DATA(dev)->dma_ctx.atomic = DEV_DATA(dev)->channels_atomic;
+	k_mutex_init(&data->dma_mutex);
+	data->dma_ctx.magic = DMA_MAGIC;
+	data->dma_ctx.dma_channels = config->dma_channels;
+	data->dma_ctx.atomic = data->channels_atomic;
 	return 0;
 }
 

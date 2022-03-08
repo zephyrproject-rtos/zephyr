@@ -48,8 +48,6 @@ struct irq_next_level_api {
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param irq IRQ to be enabled.
- *
- * @return N/A
  */
 static inline void irq_enable_next_level(const struct device *dev,
 					 uint32_t irq)
@@ -67,8 +65,6 @@ static inline void irq_enable_next_level(const struct device *dev,
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param irq IRQ to be disabled.
- *
- * @return N/A
  */
 static inline void irq_disable_next_level(const struct device *dev,
 					  uint32_t irq)
@@ -107,8 +103,6 @@ static inline unsigned int irq_is_enabled_next_level(const struct device *dev)
  * @param irq IRQ to be disabled.
  * @param prio priority for irq in the interrupt controller.
  * @param flags controller specific flags.
- *
- * @return N/A
  */
 static inline void irq_set_priority_next_level(const struct device *dev,
 				               uint32_t irq,

@@ -192,8 +192,6 @@ typedef struct _dnode sys_dnode_t;
  * @brief initialize list to its empty state
  *
  * @param list the doubly-linked list
- *
- * @return N/A
  */
 
 static inline void sys_dlist_init(sys_dlist_t *list)
@@ -208,8 +206,6 @@ static inline void sys_dlist_init(sys_dlist_t *list)
  * @brief initialize node to its state when not in a list
  *
  * @param node the node
- *
- * @return N/A
  */
 
 static inline void sys_dnode_init(sys_dnode_t *node)
@@ -403,8 +399,6 @@ static inline sys_dnode_t *sys_dlist_peek_tail(sys_dlist_t *list)
  *
  * @param list the doubly-linked list to operate on
  * @param node the element to append
- *
- * @return N/A
  */
 
 static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
@@ -425,8 +419,6 @@ static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
  *
  * @param list the doubly-linked list to operate on
  * @param node the element to append
- *
- * @return N/A
  */
 
 static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
@@ -471,8 +463,6 @@ static inline void sys_dlist_insert(sys_dnode_t *successor, sys_dnode_t *node)
  * @param cond a function that determines if the current node is the correct
  *             insert point
  * @param data parameter to cond()
- *
- * @return N/A
  */
 
 static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
@@ -501,8 +491,6 @@ static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
  * This and other sys_dlist_*() functions are not thread safe.
  *
  * @param node the node to remove
- *
- * @return N/A
  */
 
 static inline void sys_dlist_remove(sys_dnode_t *node)

@@ -125,6 +125,8 @@ features:
 +-------------+------------+-------------------------------------+
 | USB         | on-chip    | usb_device                          |
 +-------------+------------+-------------------------------------+
+| CAN/CANFD   | on-chip    | canbus                              |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -148,6 +150,7 @@ and a ST morpho connector. Board is configured as follows:
 - ADC1_INP15 : PA3
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
 - SPI1 NSS/SCK/MISO/MOSI : PD14/PA5/PA6/PB5 (Arduino SPI)
+- CAN/CANFD : PD0, PD1
 
 System Clock
 ------------
@@ -167,6 +170,11 @@ Backup SRAM
 
 In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
 do it by removing ``SB156`` jumper on the back side of the board.
+
+CAN, CANFD
+----------
+
+Requires an external CAN or CANFD transceiver.
 
 Programming and Debugging
 *************************

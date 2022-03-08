@@ -26,12 +26,14 @@ static uintptr_t current_heap_end(void)
 
 static ptrdiff_t heap_difference;
 
-static void heap_resized(void *old_heap_end, void *new_heap_end)
+static void heap_resized(uintptr_t heap_id, void *old_heap_end, void *new_heap_end)
 {
+	ARG_UNUSED(heap_id);
+
 	heap_difference += ((char *)new_heap_end - (char *)old_heap_end);
 }
 
-static HEAP_LISTENER_DEFINE(listener, HEAP_ID_LIBC, heap_resized);
+static HEAP_LISTENER_RESIZE_DEFINE(listener, HEAP_ID_LIBC, heap_resized);
 
 /**
  * @brief Test that heap listener is notified when libc heap size changes.

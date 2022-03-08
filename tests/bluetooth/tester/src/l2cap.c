@@ -441,17 +441,17 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
 {
 	struct channel *chan;
 
+	if (bt_conn_enc_key_size(conn) < req_keysize) {
+		return -EPERM;
+	}
+
+	if (authorize_flag) {
+		return -EACCES;
+	}
+
 	chan = get_free_channel();
 	if (!chan) {
 		return -ENOMEM;
-	}
-
-	if (bt_conn_enc_key_size(conn) < req_keysize) {
-		req_keysize = 0;
-		return -EPERM;
-	} else if (authorize_flag) {
-		authorize_flag = false;
-		return -EACCES;
 	}
 
 	chan->le.chan.ops = &l2cap_ops;

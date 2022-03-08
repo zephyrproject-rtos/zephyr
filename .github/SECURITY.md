@@ -8,12 +8,12 @@ updates:
   - The most recent release, and the release prior to that.
   - Active LTS releases.
 
-At this time, with the latest release of v2.5.0, the supported
+At this time, with the latest release of v3.0.0, the supported
 versions are:
 
-  - 1.14.2: Current LTS
-  - v2.5.0: Prior release
-  - v2.6.0: Current release
+  - v2.7.0: Current LTS
+  - v2.7.0: Prior release
+  - v3.0.0: Current release
 
 ## Reporting process
 

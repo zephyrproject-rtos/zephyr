@@ -154,6 +154,11 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_type);
 
 /**
+ * @brief Set a CTE Request Procedure disabled.
+ */
+void ull_cp_cte_req_set_disable(struct ll_conn *conn);
+
+/**
  * @brief Enable or disable response to CTE Request Procedure.
  */
 void ull_cp_cte_rsp_enable(struct ll_conn *conn, bool enable, uint8_t max_cte_len,

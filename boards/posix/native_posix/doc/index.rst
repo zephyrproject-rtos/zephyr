@@ -182,7 +182,7 @@ Application tests using the ``ztest`` framework will exit after all
 tests have completed.
 
 If you want your application to gracefully finish when it reaches some point,
-you may add a conditionally compiled (:kconfig:`CONFIG_ARCH_POSIX`) call to
+you may add a conditionally compiled (:kconfig:option:`CONFIG_ARCH_POSIX`) call to
 ``posix_exit(int status)`` at that point.
 
 Debugging
@@ -199,13 +199,13 @@ code multiple times and get the exact same result. Instrumenting the
 code does not affect its execution.
 
 To ease debugging you may want to compile your code without optimizations
-(e.g., -O0) by setting :kconfig:`CONFIG_NO_OPTIMIZATIONS`.
+(e.g., -O0) by setting :kconfig:option:`CONFIG_NO_OPTIMIZATIONS`.
 
 Address Sanitizer (ASan)
 ========================
 
 You can also build Zephyr with `Address Sanitizer`_. To do this, set
-:kconfig:`CONFIG_ASAN`, for example, in the application project file, or in the
+:kconfig:option:`CONFIG_ASAN`, for example, in the application project file, or in the
 ``west build`` or ``cmake`` command line invocation.
 
 Note that you will need the ASan library installed in your system.
@@ -239,7 +239,7 @@ LP64 ABI (x86-64 in x86 systems), where pointers and longs are 64 bits.
 You can use this target if you cannot compile or run 32 bit binaries.
 
 If you are using another 32 bit POSIX arch target you may also override its ABI
-target and pointer bit width by setting :kconfig:`CONFIG_64BIT`.
+target and pointer bit width by setting :kconfig:option:`CONFIG_64BIT`.
 
 
 Rationale for this port
@@ -414,7 +414,7 @@ This model can be configured to slow down the execution of native_posix to
 real time.
 You can do this with the ``--rt`` and ``--no-rt`` options from the command line.
 The default behavior is set with
-:kconfig:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME`.
+:kconfig:option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME`.
 Note that all this model does is wait before raising the
 next system tick interrupt until the corresponding real/host time.
 If, for some reason, native_posix runs slower than real time, all this
@@ -469,7 +469,7 @@ The following peripherals are currently provided with this board:
 
 **Clock, timer and system tick model**
   This model provides the system tick timer. By default
-  :kconfig:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` configures it to tick every 10ms.
+  :kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` configures it to tick every 10ms.
 
   This peripheral driver also provides the needed functionality for this
   architecture-specific :c:func:`k_busy_wait`.
@@ -526,7 +526,7 @@ The following peripherals are currently provided with this board:
   Zephyr via this network interface. Multiple TAP based network interfaces can
   be created if needed. The IP address configuration can be specified for each
   network interface instance.
-  See :kconfig:`CONFIG_ETH_NATIVE_POSIX_SETUP_SCRIPT` option for more details.
+  See :kconfig:option:`CONFIG_ETH_NATIVE_POSIX_SETUP_SCRIPT` option for more details.
   The :ref:`eth-native-posix-sample` sample app provides
   some use examples and more information about this driver configuration.
 
@@ -570,7 +570,7 @@ The following peripherals are currently provided with this board:
   A flash driver is provided that accesses all flash data through a binary file
   on the host file system. The behavior of the flash device can be configured
   through the native POSIX board devicetree or Kconfig settings under
-  :kconfig:`CONFIG_FLASH_SIMULATOR`.
+  :kconfig:option:`CONFIG_FLASH_SIMULATOR`.
 
   By default the binary data is located in the file *flash.bin* in the current
   working directory. The location of this file can be changed through the
@@ -585,24 +585,24 @@ The following peripherals are currently provided with this board:
 UART
 ****
 
-This driver can be configured with :kconfig:`CONFIG_UART_NATIVE_POSIX`
+This driver can be configured with :kconfig:option:`CONFIG_UART_NATIVE_POSIX`
 to instantiate up to two UARTs. By default only one UART is enabled.
-With :kconfig:`CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE`
+With :kconfig:option:`CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE`
 you can enable the second one.
 
 For the first UART, it can link it to a new
 pseudoterminal (i.e. ``/dev/pts<nbr>``), or map the UART input and
 output to the executable's ``stdin`` and ``stdout``.
 This is chosen by selecting either
-:kconfig:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
-:kconfig:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
+:kconfig:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
+:kconfig:option:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
 For interactive use with the :ref:`shell_api`, choose the first (OWN_PTY) option.
 The second (STDINOUT) option can be used with the shell for automated
 testing, such as when piping other processes' output to control it.
 This is because the shell subsystem expects access to a raw terminal,
 which (by default) a normal Linux terminal is not.
 
-When :kconfig:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` is chosen, the name of the
+When :kconfig:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` is chosen, the name of the
 newly created UART pseudo-terminal will be displayed in the console.
 If you want to interact with it manually, you should attach a terminal emulator
 to it. This can be done, for example with the command::
@@ -615,7 +615,7 @@ You may also chose to automatically attach a terminal emulator to the first UART
 by passing the command line option ``-attach_uart`` to the executable.
 The command used for attaching to the new shell can be set with the command line
 option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
-:kconfig:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
+:kconfig:option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are
 installed in the system.
 
@@ -632,21 +632,21 @@ development by integrating more seamlessly with the host operating system:
   ``stdout``.
 
   This driver is selected by default if the `UART`_ is not compiled in.
-  Otherwise :kconfig:`CONFIG_UART_CONSOLE` will be set to select the UART as
+  Otherwise :kconfig:option:`CONFIG_UART_CONSOLE` will be set to select the UART as
   console backend.
 
 **Logger backend**:
   A backend which prints all logger output to the process ``stdout``.
   It supports timestamping, which can be enabled with
-  :kconfig:`CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP`; and colored output which can
-  be enabled with :kconfig:`CONFIG_LOG_BACKEND_SHOW_COLOR` and controlled
+  :kconfig:option:`CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP`; and colored output which can
+  be enabled with :kconfig:option:`CONFIG_LOG_BACKEND_SHOW_COLOR` and controlled
   with the command line options ``--color``, ``--no-color`` and
   ``--force-color``.
 
   In native_posix, by default, the logger is configured with
-  :kconfig:`CONFIG_LOG_IMMEDIATE`.
+  :kconfig:option:`CONFIG_LOG_MODE_IMMEDIATE`.
 
-  This backend can be selected with :kconfig:`CONFIG_LOG_BACKEND_NATIVE_POSIX`
+  This backend can be selected with :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`
   and is enabled by default unless the native_posix UART is compiled in.
   In this later case, by default, the logger is set to output to the `UART`_.
 
@@ -660,7 +660,7 @@ Host based flash access
 
 If a flash device is present, the file system partitions on the flash
 device can be exposed through the host file system by enabling
-:kconfig:`CONFIG_FUSE_FS_ACCESS`. This option enables a FUSE
+:kconfig:option:`CONFIG_FUSE_FS_ACCESS`. This option enables a FUSE
 (File system in User space) layer that maps the Zephyr file system calls to
 the required UNIX file system calls, and provides access to the flash file
 system partitions with normal operating system commands such as ``cd``,

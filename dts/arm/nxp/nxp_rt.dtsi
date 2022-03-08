@@ -50,13 +50,13 @@
 			#size-cells = <1>;
 
 			itcm: itcm@0 {
-				compatible = "nxp,imx-itcm";
+				compatible = "zephyr,memory-region", "nxp,imx-itcm";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 				zephyr,memory-region = "ITCM";
 			};
 
 			dtcm: dtcm@20000000 {
-				compatible = "nxp,imx-dtcm";
+				compatible = "zephyr,memory-region", "nxp,imx-dtcm";
 				reg = <0x20000000 DT_SIZE_K(128)>;
 				zephyr,memory-region = "DTCM";
 			};
@@ -237,7 +237,7 @@
 		};
 
 		lcdif: display-controller@402b8000 {
-			compatible = "fsl,imx6sx-lcdif";
+			compatible = "nxp,imx-elcdif";
 			reg = <0x402b8000 0x4000>;
 			interrupts = <42 0>;
 			label = "ELCDIF_1";
@@ -573,6 +573,7 @@
 			interrupt-names = "COMMON";
 			status = "disabled";
 			label = "ETH_0";
+			phy-addr = <0>;
 			ptp {
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";

@@ -94,11 +94,11 @@ void _Fault(z_arch_esf_t *esf)
 	 * treated as recoverable.
 	 */
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
-		uint32_t start = (uint32_t)exceptions[i].start;
-		uint32_t end = (uint32_t)exceptions[i].end;
+		ulong_t start = (ulong_t)exceptions[i].start;
+		ulong_t end = (ulong_t)exceptions[i].end;
 
 		if (esf->mepc >= start && esf->mepc < end) {
-			esf->mepc = (uint32_t)exceptions[i].fixup;
+			esf->mepc = (ulong_t)exceptions[i].fixup;
 			return;
 		}
 	}

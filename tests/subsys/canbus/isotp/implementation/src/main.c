@@ -12,8 +12,6 @@
 #define NUMBER_OF_REPETITIONS 5
 #define DATA_SIZE_SF          7
 
-#define CAN_DEVICE_NAME DT_LABEL(DT_CHOSEN(zephyr_canbus))
-
 /*
  * @addtogroup t_can
  * @{
@@ -27,7 +25,7 @@
  * @}
  */
 
-const struct device *can_dev;
+const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 const struct isotp_fc_opts fc_opts = {
 	.bs = 8,
@@ -417,8 +415,8 @@ void test_main(void)
 	zassert_true(sizeof(random_data) >= sizeof(data_buf) * 2 + 10,
 		     "Test data size to small");
 
-	can_dev = device_get_binding(CAN_DEVICE_NAME);
-	zassert_not_null(can_dev, "CAN device not not found");
+	zassert_true(device_is_ready(can_dev), "CAN device not ready");
+
 	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 	zassert_equal(ret, 0, "Configuring loopback mode failed (%d)", ret);
 

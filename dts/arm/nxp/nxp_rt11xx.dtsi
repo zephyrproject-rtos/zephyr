@@ -9,13 +9,14 @@
 #include <dt-bindings/clock/imx_ccm_rev2.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pm/imx_spc.h>
 
 / {
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
@@ -29,7 +30,7 @@
 				arm,num-mpu-regions = <16>;
 			};
 		};
-		cpu@1 {
+		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <1>;
@@ -42,6 +43,34 @@
 				reg = <0xe000ed90 0x40>;
 				arm,num-mpu-regions = <16>;
 			};
+		};
+	};
+
+	power-states {
+		/*
+		 * Power states are managed with set points (see page 30-35 of RT1170
+		 * datasheet). These set points correspond to various power
+		 * savings, and associated transition (residency) times.
+		 *
+		 * Set points 1 and 10 were chosen as sane defaults to offer
+		 * limited power savings and quick transitions when entering idle for
+		 * short periods, and better power savings with longer transition
+		 * times for long idle periods
+		 */
+		idle: set_point_1_wait {
+			/* idle corresponds to set point 1 (wait) for RT1170 */
+			compatible = "zephyr,power-state";
+			power-state-name="runtime-idle";
+			substate-id = <IMX_SPC_SET_POINT_1_WAIT>;
+			min-residency-us = <10>;
+		};
+
+		suspend: set_point_10_suspend {
+			/*  suspend corresponds to set point 10 for RT1170 */
+			compatible = "zephyr,power-state";
+			power-state-name="suspend-to-idle";
+			substate-id = <IMX_SPC_SET_POINT_10_SUSPEND>;
+			min-residency-us = <5000>;
 		};
 	};
 
@@ -289,7 +318,7 @@
 		};
 
 		lcdif: display-controller@40804000 {
-			compatible = "fsl,imx6sx-lcdif";
+			compatible = "nxp,imx-elcdif";
 			reg = <0x40804000 0x4000>;
 			interrupts = <54 0>;
 			label = "ELCDIF_1";
@@ -661,6 +690,7 @@
 			interrupt-names = "COMMON";
 			status = "disabled";
 			label = "ETH_0";
+			phy-addr = <2>;
 			ptp {
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";
@@ -809,6 +839,147 @@
 			offset-value-a = <10>;
 			offset-value-b = <10>;
 			#io-channel-cells = <1>;
+		};
+
+		anatop: anatop@40c84000 {
+			compatible = "nxp,imx-anatop";
+			reg = <0x40c84000 0x4000>;
+			label = "CCM_ANA";
+			#clock-cells = <4>;
+			#pll-clock-cells = <3>;
+		};
+
+		edma0: dma-controller@40070000 {
+			#dma-cells = <2>;
+			compatible = "nxp,mcux-edma";
+			dma-channels = <32>;
+			dma-requests = <208>;
+			nxp,mem2mem;
+			nxp,a_on;
+			reg = <0x40070000 0x4000>,
+				<0x40074000 0x4000>;
+			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7C 0x000000C0>;
+				status = "disabled";
+			label = "DMA_0";
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
+				<4 0>, <5 0>, <6 0>, <7 0>,
+				<8 0>, <9 0>, <10 0>, <11 0>,
+				<12 0>, <13 0>, <14 0>, <15 0>,
+				<16 0>;
+		};
+
+		edma_lpsr0: dma-controller@40c14000 {
+			#dma-cells = <2>;
+			compatible = "nxp,mcux-edma";
+			dma-channels = <32>;
+			dma-requests = <208>;
+			nxp,mem2mem;
+			nxp,a_on;
+			reg = <0x40c14000 0x4000>,
+				<0x40c18000 0x4000>;
+			clocks = <&ccm IMX_CCM_EDMA_LPSR_CLK 0x7C 0x000000C0>;
+			status = "disabled";
+			label = "DMA_0";
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
+				<4 0>, <5 0>, <6 0>, <7 0>,
+				<8 0>, <9 0>, <10 0>, <11 0>,
+				<12 0>, <13 0>, <14 0>, <15 0>,
+				<16 0>;
+		};
+
+		iomuxcgpr: iomuxcgpr@400e4000 {
+			compatible = "nxp,imx-pinmux";
+			reg = <0x400E4000 0x4000>;
+			label = "IOMUX_GPR";
+			#pinmux-cells = <2>;
+		};
+
+		sai1: sai@40404000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#pinmux-cells = <2>;
+			reg = <0x40404000 0x4000>;
+			clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+			pre-div = <0>;
+			podf = <4>;
+			pll-clocks = <&anatop 0 0 0>,
+					<&anatop 0 0 30>,
+					<&anatop 0 0 1>,
+					<&anatop 0 0 77>,
+					<&anatop 0 0 100>;
+			pll-clock-names = "src", "lp", "pd", "num", "den";
+			pinmuxes = <&iomuxcgpr 0x0 0x100>;
+			interrupts = <76 0>;
+			nxp,tx-channel = <1>;
+			status = "disabled";
+			label = "I2S_0";
+		};
+
+		sai2: sai@40408000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#pinmux-cells = <2>;
+			reg = <0x40408000 0x4000>;
+			clocks = <&ccm IMX_CCM_SAI2_CLK 0x2084 4>;
+			pre-div = <0>;
+			podf = <63>;
+			pll-clocks = <&anatop 0 0 0>,
+					<&anatop 0 0 30>,
+					<&anatop 0 0 1>,
+					<&anatop 0 0 77>,
+					<&anatop 0 0 100>;
+			pll-clock-names = "src", "lp", "pd", "num", "den";
+			pinmuxes = <&iomuxcgpr 0x4 0x100>;
+			interrupts = <77 0>;
+			nxp,tx-channel = <1>;
+			status = "disabled";
+			label = "I2S_1";
+		};
+
+		sai3: sai@4040c000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#pinmux-cells = <2>;
+			reg = <0x4040c000 0x4000>;
+			clocks = <&ccm IMX_CCM_SAI3_CLK 0x2104 4>;
+			pre-div = <0>;
+			podf = <63>;
+			pll-clocks = <&anatop 0 0 0>,
+					<&anatop 0 0 30>,
+					<&anatop 0 0 1>,
+					<&anatop 0 0 77>,
+					<&anatop 0 0 100>;
+			pll-clock-names = "src", "lp", "pd", "num", "den";
+			pinmuxes = <&iomuxcgpr 0x8 0x100>;
+			interrupts = <78 0>, <79 0>;
+			nxp,tx-channel = <1>;
+			status = "disabled";
+			label = "I2S_2";
+		};
+
+		sai4: sai@40c40000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#pinmux-cells = <2>;
+			reg = <0x40c40000 0x4000>;
+			clocks = <&ccm IMX_CCM_SAI4_CLK 0x2184 6>;
+			pre-div = <0>;
+			podf = <63>;
+			pll-clocks = <&anatop 0 0 0>,
+					<&anatop 0 0 30>,
+					<&anatop 0 0 1>,
+					<&anatop 0 0 77>,
+					<&anatop 0 0 100>;
+			pll-clock-names = "src", "lp", "pd", "num", "den";
+			pinmuxes = <&iomuxcgpr 0x8 0x200>;
+			interrupts = <80 0>, <81 0>;
+			nxp,tx-channel = <1>;
+			status = "disabled";
+			label = "I2S_3";
 		};
 
 	};

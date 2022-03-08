@@ -435,15 +435,18 @@ static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 #endif
 		llcp_lr_complete(conn);
 		ctx->state = LP_PU_STATE_IDLE;
+		llcp_rr_set_paused_cmd(conn, PROC_NONE);
 	}
 }
 
 static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (llcp_rr_get_collision(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (ctx->pause || llcp_rr_get_collision(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
+	    (llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_REQ;
 	} else {
 		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
+		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		lp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_REQ);
 		llcp_tx_pause_data(conn);
 		ctx->state = LP_PU_STATE_WAIT_TX_ACK_PHY_REQ;
@@ -454,7 +457,7 @@ static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_peek(conn, ctx)) {
+	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		ctx->data.pu.instant = pu_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
@@ -832,6 +835,7 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 			pu_dle_ntf(conn, ctx);
 		}
 #endif
+		llcp_rr_set_paused_cmd(conn, PROC_NONE);
 		llcp_rr_complete(conn);
 		ctx->state = RP_PU_STATE_IDLE;
 	}
@@ -841,9 +845,11 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (!llcp_tx_alloc_peek(conn, ctx)) {
+	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx) ||
+	(llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
+		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		ctx->data.pu.instant = pu_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
 		rp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
@@ -855,9 +861,11 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 #if defined(CONFIG_BT_PERIPHERAL)
 static void rp_pu_send_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!llcp_tx_alloc_peek(conn, ctx)) {
+	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx) ||
+	    (llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_RSP;
 	} else {
+		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		rp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_RSP);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
 		ctx->state = RP_PU_STATE_WAIT_TX_ACK_PHY_RSP;

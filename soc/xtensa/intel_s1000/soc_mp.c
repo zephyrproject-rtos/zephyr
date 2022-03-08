@@ -66,7 +66,7 @@ static void mp_entry2(void)
 	_cpu_t *cpu = &_kernel.cpus[start_rec.cpu];
 
 	__asm__ volatile(
-		"wsr." CONFIG_XTENSA_KERNEL_CPU_PTR_SR " %0" : : "r"(cpu));
+		"wsr." ZSR_CPU_STR " %0" : : "r"(cpu));
 
 #ifdef CONFIG_IPM_CAVS_IDC
 	/* Interrupt must be enabled while running on current core */
