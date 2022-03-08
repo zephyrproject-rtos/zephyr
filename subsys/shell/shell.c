@@ -539,7 +539,7 @@ static int exec_cmd(const struct shell *shell, size_t argc, const char **argv,
 		uint8_t opt8 = shell->ctx->active_cmd.args.optional;
 		uint32_t opt = (opt8 == SHELL_OPT_ARG_CHECK_SKIP) ?
 				UINT16_MAX : opt8;
-		bool in_range = (argc >= mand) && (argc <= (mand + opt));
+		const bool in_range = IN_RANGE(argc, mand, mand + opt);
 
 		/* Check if argc is within allowed range */
 		ret_val = cmd_precheck(shell, in_range);
