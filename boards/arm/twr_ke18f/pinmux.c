@@ -39,10 +39,6 @@ static int twr_ke18f_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay) && CONFIG_DAC
-	pinmux_pin_set(porte, 9, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
-#endif
-
 #ifdef CONFIG_BOARD_TWR_KE18F_FLEXIO_CLKOUT
 	int err;
 
