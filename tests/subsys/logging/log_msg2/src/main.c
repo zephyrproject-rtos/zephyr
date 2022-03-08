@@ -19,15 +19,6 @@
 #include <ztest.h>
 #include <sys/cbprintf.h>
 
-#if defined(CONFIG_ARCH_POSIX)
-/* On some platforms all strings are considered RW, that impacts size of the
- * package.
- */
-#define TEST_LOG_MSG2_RW_STRINGS 1
-#else
-#define TEST_LOG_MSG2_RW_STRINGS 0
-#endif
-
 #if CONFIG_NO_OPTIMIZATIONS
 #define EXP_MODE(name) Z_LOG_MSG2_MODE_RUNTIME
 #else
@@ -372,9 +363,6 @@ void test_mode_size_plain_string(void)
 	 */
 	exp_len = sizeof(struct log_msg2_hdr) +
 			 /* package */2 * sizeof(const char *);
-	if (mode == Z_LOG_MSG2_MODE_RUNTIME && TEST_LOG_MSG2_RW_STRINGS) {
-		exp_len += 2 + strlen("test str");
-	}
 
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 	get_msg_validate_length(exp_len);
@@ -434,9 +422,6 @@ void test_mode_size_plain_str_data(void)
 	 */
 	exp_len = sizeof(struct log_msg2_hdr) + sizeof(data) +
 		  /* package */2 * sizeof(char *);
-	if (mode == Z_LOG_MSG2_MODE_RUNTIME && TEST_LOG_MSG2_RW_STRINGS) {
-		exp_len += 2 + strlen("test str");
-	}
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 	get_msg_validate_length(exp_len);
 }
@@ -488,32 +473,30 @@ void test_mode_size_str_with_2strings(void)
 	uint32_t exp_len;
 	int mode;
 	static const char *prefix = "prefix";
+	char sufix[] = "sufix";
 
 	Z_LOG_MSG2_CREATE3(1, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
-			   NULL, 0, TEST_STR, prefix, "sufix");
-	zassert_equal(mode, EXP_MODE(RUNTIME),
+			   NULL, 0, TEST_STR, prefix, sufix);
+	zassert_equal(mode, EXP_MODE(FROM_STACK),
 			"Unexpected creation mode");
 	Z_LOG_MSG2_CREATE3(0, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
-			   NULL, 0, TEST_STR, prefix, "sufix");
-	zassert_equal(mode, EXP_MODE(RUNTIME),
+			   NULL, 0, TEST_STR, prefix, sufix);
+	zassert_equal(mode, EXP_MODE(FROM_STACK),
 			"Unexpected creation mode");
 
 	/* Calculate expected message length. Message consists of:
 	 * - header
-	 * - package: header + fmt pointer + 2 pointers (on some platforms
-	 *   strings are included in the package)
+	 * - package: header + fmt pointer + 2 pointers
+	 * - index location of read only string
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
 	exp_len = sizeof(struct log_msg2_hdr) +
-			 /* package */4 * sizeof(const char *);
-	if (TEST_LOG_MSG2_RW_STRINGS) {
-		exp_len += strlen("sufix") + 2; /* null + header */
-	}
+			 /* package */4 * sizeof(const char *) + 2 + strlen(sufix);
 
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 
