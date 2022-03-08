@@ -1254,7 +1254,7 @@ int bt_le_scan_stop(void)
 		return -EALREADY;
 	}
 
-	bt_scan_reset();
+	scan_dev_found_cb = NULL;
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
