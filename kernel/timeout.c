@@ -40,14 +40,14 @@ static struct _timeout *first(void)
 {
 	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
 
-	return t == NULL ? NULL : CONTAINER_OF(t, struct _timeout, node);
+	return (t == NULL) ? NULL : CONTAINER_OF(t, struct _timeout, node);
 }
 
 static struct _timeout *next(struct _timeout *t)
 {
 	sys_dnode_t *n = sys_dlist_peek_next(&timeout_list, &t->node);
 
-	return n == NULL ? NULL : CONTAINER_OF(n, struct _timeout, node);
+	return (n == NULL) ? NULL : CONTAINER_OF(n, struct _timeout, node);
 }
 
 static void remove_timeout(struct _timeout *t)
@@ -61,14 +61,14 @@ static void remove_timeout(struct _timeout *t)
 
 static k_ticks_t elapsed(void)
 {
-	return announce_remaining == 0 ? (k_ticks_t)sys_clock_elapsed() : 0;
+	return (announce_remaining == 0) ? (k_ticks_t)sys_clock_elapsed() : 0;
 }
 
 static int32_t next_timeout(void)
 {
 	struct _timeout *to = first();
 	k_ticks_t ticks_elapsed = elapsed();
-	int32_t ret = (int32_t)(to == NULL ? MAX_WAIT
+	int32_t ret = (int32_t)((to == NULL) ? MAX_WAIT
 		: CLAMP(to->dticks - ticks_elapsed, 0, MAX_WAIT));
 
 #ifdef CONFIG_TIMESLICING
@@ -97,7 +97,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		struct _timeout *t;
 
 		if ((IS_ENABLED(CONFIG_TIMEOUT_64BIT)) &&
-		    Z_TICK_ABS(timeout.ticks) >= 0) {
+		    (Z_TICK_ABS(timeout.ticks) >= 0)) {
 		    /*? What is the intention here? int64_t = int64_t - uint64_t */
 			k_ticks_t ticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 
@@ -131,8 +131,8 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 			 */
 			int32_t next_time = next_timeout();
 
-			if (next_time == 0 ||
-			    _current_cpu->slice_ticks != next_time) {
+			if ((next_time == 0) ||
+			    (_current_cpu->slice_ticks != next_time)) {
 				sys_clock_set_timeout(next_time, false);
 			}
 #else
@@ -242,7 +242,7 @@ void sys_clock_announce(int32_t ticks)
 
 	announce_remaining = ticks;
 
-	while (first() != NULL && first()->dticks <= announce_remaining) {
+	while ((first() != NULL) && (first()->dticks <= announce_remaining)) {
 		struct _timeout *t = first();
 		/*? What is the intention here? int = int64_t */
 		int dt = t->dticks;
@@ -360,7 +360,7 @@ uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 
 		dt = timeout.ticks;
 
-		if ((IS_ENABLED(CONFIG_TIMEOUT_64BIT)) && Z_TICK_ABS(dt) >= 0) {
+		if ((IS_ENABLED(CONFIG_TIMEOUT_64BIT)) && (Z_TICK_ABS(dt) >= 0)) {
 			/*? What is the intention here? uint64_t = int64_t */
 			return Z_TICK_ABS(dt);
 		}

@@ -92,7 +92,7 @@ void z_smp_init(void)
 {
 	(void)atomic_clear(&start_flag);
 
-#if CONFIG_MP_NUM_CPUS > 1 && !defined(CONFIG_SMP_BOOT_DELAY)
+#if (CONFIG_MP_NUM_CPUS > 1) && !defined(CONFIG_SMP_BOOT_DELAY)
 	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
 		arch_start_cpu(i, z_interrupt_stacks[i], CONFIG_ISR_STACK_SIZE,
 			       smp_init_top, &start_flag);

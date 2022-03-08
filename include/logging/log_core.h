@@ -107,7 +107,7 @@ extern "C" {
  *  @param _addr Address of the element.
  */
 #define LOG_CONST_ID_GET(_addr) \
-	COND_CODE_1(CONFIG_LOG, ((__log_level != 0 ? log_const_source_id(_addr) : 0U)), (0U))
+	COND_CODE_1(CONFIG_LOG, (((__log_level != 0) ? log_const_source_id(_addr) : 0U)), (0U))
 
 /**
  * @def LOG_CURRENT_MODULE_ID
@@ -128,7 +128,7 @@ extern "C" {
  *  @param _addr Address of the element.
  */
 #define LOG_DYNAMIC_ID_GET(_addr) \
-	COND_CODE_1(CONFIG_LOG, ((__log_level != 0 ? log_dynamic_source_id(_addr) : 0U)), (0U))
+	COND_CODE_1(CONFIG_LOG, (((__log_level != 0) ? log_dynamic_source_id(_addr) : 0U)), (0U))
 
 /* Set of defines that are set to 1 if function name prefix is enabled for given level. */
 #define Z_LOG_FUNC_PREFIX_0U 0
@@ -305,7 +305,7 @@ static inline char z_log_minimal_level_to_char(unsigned int level)
 	uint32_t filters = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
 						(_dsource)->filters : 0U;\
 	if ((IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) && !is_user_context && \
-	    (_level) > Z_LOG_RUNTIME_FILTER(filters)) { \
+	    ((_level) > Z_LOG_RUNTIME_FILTER(filters))) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
@@ -357,7 +357,7 @@ static inline char z_log_minimal_level_to_char(unsigned int level)
 		break; \
 	} \
 	if ((IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) && !is_user_context && \
-	    (_level) > Z_LOG_RUNTIME_FILTER(filters)) { \
+	    ((_level) > Z_LOG_RUNTIME_FILTER(filters))) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
@@ -872,7 +872,7 @@ static inline log_arg_t z_log_do_strdup(uint32_t msk, uint32_t idx,
 		 * Hence, we will do only optional check
 		 * if already not duplicated.
 		 */
-		if (action == LOG_STRDUP_EXEC || !log_is_strdup(str)) {
+		if ((action == LOG_STRDUP_EXEC) || !log_is_strdup(str)) {
 			param = (log_arg_t)z_log_strdup(str);
 		}
 	}

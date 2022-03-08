@@ -33,7 +33,7 @@
 static inline uint32_t k_array_index_sanitize(uint32_t index, uint32_t array_size)
 {
 #ifdef CONFIG_BOUNDS_CHECK_BYPASS_MITIGATION
-	return index < array_size ? index : 0U;
+	return (index < array_size) ? index : 0U;
 #else
 	ARG_UNUSED(array_size);
 

@@ -29,25 +29,25 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 		return -1;
 	}
 
-	if (rqtp->tv_sec < 0 || rqtp->tv_nsec < 0
-		|| rqtp->tv_nsec >= (long)NSEC_PER_SEC) {
+	if ((rqtp->tv_sec < 0) || (rqtp->tv_nsec < 0)
+		|| (rqtp->tv_nsec >= (long)NSEC_PER_SEC)) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (rqtp->tv_sec == 0 && rqtp->tv_nsec == 0) {
+	if ((rqtp->tv_sec == 0) && (rqtp->tv_nsec == 0)) {
 		goto do_rmtp_update;
 	}
 
-	if (unlikely((unsigned long long)rqtp->tv_sec >= ULLONG_MAX / NSEC_PER_SEC)) {
+	if (unlikely((unsigned long long)rqtp->tv_sec >= (ULLONG_MAX / NSEC_PER_SEC))) {
 		/* If a user passes this in, we could be here a while, but
 		 * at least it's technically correct-ish
 		 */
 		ns = (uint64_t)rqtp->tv_nsec + NSEC_PER_SEC
-			+ (uint64_t)k_sleep(K_SECONDS(((uint64_t)rqtp->tv_sec - 1)))
-				* NSEC_PER_MSEC;
+			+ ((uint64_t)k_sleep(K_SECONDS(((uint64_t)rqtp->tv_sec - 1)))
+				* NSEC_PER_MSEC);
 	} else {
-		ns = (uint64_t)rqtp->tv_sec * NSEC_PER_SEC + (uint64_t)rqtp->tv_nsec;
+		ns = ((uint64_t)rqtp->tv_sec * NSEC_PER_SEC) + (uint64_t)rqtp->tv_nsec;
 	}
 
 	/* TODO: improve upper bound when hr timers are available */

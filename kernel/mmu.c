@@ -490,7 +490,7 @@ void *k_mem_map(size_t size, uint32_t flags)
 	/* Need extra for the guard pages (before and after) which we
 	 * won't map.
 	 */
-	total_size = size + CONFIG_MMU_PAGE_SIZE * 2U;
+	total_size = size + (CONFIG_MMU_PAGE_SIZE * 2U);
 
 	dst = virt_region_alloc(total_size);
 	if (dst == NULL) {
@@ -609,7 +609,7 @@ void k_mem_unmap(void *addr, size_t size)
 	 * region. So we also need to free them from the bitmap.
 	 */
 	pos = (uint8_t *)addr - CONFIG_MMU_PAGE_SIZE;
-	total_size = size + CONFIG_MMU_PAGE_SIZE * 2;
+	total_size = size + (CONFIG_MMU_PAGE_SIZE * 2);
 	virt_region_free(pos, total_size);
 
 out:

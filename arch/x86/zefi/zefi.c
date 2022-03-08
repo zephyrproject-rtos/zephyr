@@ -36,7 +36,7 @@ static void efi_putchar(int c)
 	efibuf[n] = (uint16_t)c;
 	++n;
 
-	if (c == (int)'\n' || n == PUTCHAR_BUFSZ) {
+	if ((c == (int)'\n') || (n == PUTCHAR_BUFSZ)) {
 		efibuf[n] = 0U;
 		efi->ConOut->OutputString(efi->ConOut, efibuf);
 		n = 0;
@@ -72,7 +72,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 	z_putchar = efi_putchar;
 	printf("*** Zephyr EFI Loader ***\n");
 
-	for (size_t i = 0; i < sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0]); i++) {
+	for (size_t i = 0; i < (sizeof(zefi_zsegs)/sizeof(zefi_zsegs[0])); i++) {
 		uint32_t bytes = zefi_zsegs[i].sz;
 		uint8_t *dst = (uint8_t *)zefi_zsegs[i].addr;
 
@@ -82,7 +82,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 		}
 	}
 
-	for (size_t i = 0; i < sizeof(zefi_dsegs)/sizeof(zefi_dsegs[0]); i++) {
+	for (size_t i = 0; i < (sizeof(zefi_dsegs)/sizeof(zefi_dsegs[0])); i++) {
 		uint32_t bytes = zefi_dsegs[i].sz;
 		uint32_t off = zefi_dsegs[i].off;
 		uint8_t *dst = (uint8_t *)zefi_dsegs[i].addr;
@@ -102,7 +102,7 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 		 * starts, because the very first thing it does is
 		 * install its own page table that disallows writes.
 		 */
-		if (((uintptr_t)dst & 0xfff) == 0 && (uintptr_t)dst < 0x100000ULL) {
+		if ((((uintptr_t)dst & 0xfff) == 0) && ((uintptr_t)dst < 0x100000ULL)) {
 			for (int i = 0; i < 8; i++) {
 				dst[i] = 0x90; /* 0x90 == 1-byte NOP */
 			}

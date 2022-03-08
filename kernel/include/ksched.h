@@ -222,7 +222,7 @@ int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct k_thread *thread_2);
 
 static inline bool _is_valid_prio(int prio, void *entry_point)
 {
-	if (prio == K_IDLE_PRIO && z_is_idle_thread_entry(entry_point)) {
+	if ((prio == K_IDLE_PRIO) && z_is_idle_thread_entry(entry_point)) {
 		return true;
 	}
 

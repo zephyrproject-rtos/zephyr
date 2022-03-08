@@ -17,7 +17,7 @@ static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 	struct z_object *obj;
 
 	obj = z_object_find(futex);
-	if (obj == NULL || obj->type != (uint8_t)K_OBJ_FUTEX) {
+	if ((obj == NULL) || (obj->type != (uint8_t)K_OBJ_FUTEX)) {
 		return NULL;
 	}
 
@@ -45,7 +45,7 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 			arch_thread_return_value_set(thread, 0);
 			z_ready_thread(thread);
 		}
-	} while (thread != NULL && wake_all);
+	} while ((thread != NULL) && wake_all);
 
 	z_reschedule(&futex_data->lock, key);
 

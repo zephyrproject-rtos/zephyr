@@ -415,7 +415,7 @@ static inline const char *log_strdup(const char *str)
 									      \
 	static const struct log_source_const_data *			      \
 		__log_current_const_data __unused =			      \
-			(_LOG_LEVEL_RESOLVE(__VA_ARGS__)) != 0 ?		      \
+			((_LOG_LEVEL_RESOLVE(__VA_ARGS__)) != 0) ?		      \
 			&LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__)) :     \
 			NULL;						      \
 									      \

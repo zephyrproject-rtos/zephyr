@@ -246,7 +246,7 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, append_list, queue);
 
 	/* invalid head or tail of list */
-	CHECKIF(head == NULL || tail == NULL) {
+	CHECKIF((head == NULL) || (tail == NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append_list, queue, -EINVAL);
 
 		return -EINVAL;

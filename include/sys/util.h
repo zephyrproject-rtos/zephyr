@@ -210,7 +210,7 @@ static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
 	uint64_t uvalue = (uint64_t)value;
 
 	/* Ensure to preserve sign bit */
-	uvalue = value < 0 ? ~(~uvalue >> shift) : uvalue >> shift;
+	uvalue = (value < 0) ? ~(~uvalue >> shift) : (uvalue >> shift);
 	return (int64_t) uvalue;
 }
 

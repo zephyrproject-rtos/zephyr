@@ -232,12 +232,12 @@ struct str_context {
 
 static int str_out(int c, struct str_context *ctx)
 {
-	if (ctx->str == NULL || ctx->count >= ctx->max) {
+	if ((ctx->str == NULL) || (ctx->count >= ctx->max)) {
 		++ctx->count;
 		return c;
 	}
 
-	if (ctx->count == ctx->max - 1) {
+	if (ctx->count == (ctx->max - 1)) {
 		ctx->str[ctx->count] = '\0';
 	} else {
 		ctx->str[ctx->count] = (char)c;

@@ -268,7 +268,7 @@ do { \
 			Z_CBPRINTF_IS_LONGDOUBLE(_arg) && \
 			!(IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE))),\
 			"Packaging of long double not enabled in Kconfig."); \
-	while ((_align_offset) % Z_CBPRINTF_ALIGNMENT(_arg) != 0UL) { \
+	while (((_align_offset) % Z_CBPRINTF_ALIGNMENT(_arg)) != 0UL) { \
 		(_idx) += sizeof(int); \
 		(_align_offset) += sizeof(int); \
 	} \
@@ -277,7 +277,7 @@ do { \
 		(_s_buf)[(_s_idx)] = (uint16_t)((_idx) / sizeof(int)); \
 		++(_s_idx); \
 	} \
-	if ((_buf) != NULL && (_idx) < (_max)) { \
+	if (((_buf) != NULL) && ((_idx) < (_max))) { \
 		Z_CBPRINTF_STORE_ARG(&(_buf)[(_idx)], _arg); \
 	} \
 	(_idx) += (_arg_size); \
@@ -347,7 +347,7 @@ do { \
 	Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
 	BUILD_ASSERT(!(IS_ENABLED(CONFIG_XTENSA)) || \
 		     ((IS_ENABLED(CONFIG_XTENSA)) && \
-		      ((_align_offset) % CBPRINTF_PACKAGE_ALIGNMENT) == 0U), \
+		      (((_align_offset) % CBPRINTF_PACKAGE_ALIGNMENT) == 0U)), \
 			"Xtensa requires aligned package."); \
 	BUILD_ASSERT(((_align_offset) % sizeof(int)) == 0, \
 			"Alignment offset must be multiply of a word."); \

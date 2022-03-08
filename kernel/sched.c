@@ -198,7 +198,7 @@ static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq,
  */
 static inline bool should_queue_thread(struct k_thread *th)
 {
-	return !(IS_ENABLED(CONFIG_SMP)) || th != _current;
+	return !(IS_ENABLED(CONFIG_SMP)) || (th != _current);
 }
 
 static ALWAYS_INLINE void queue_thread(void *pq,
@@ -313,7 +313,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	}
 
 	/* Put _current back into the queue */
-	if (thread != _current && active &&
+	if ((thread != _current) && active &&
 		!z_is_idle_thread_object(_current) && !queued) {
 		queue_thread(&_kernel.ready_q.runq, _current);
 	}
@@ -368,7 +368,7 @@ void k_sched_time_slice_set(uint32_t slice, int prio)
 	LOCKED(&sched_spinlock) {
 		_current_cpu->slice_ticks = 0;
 		slice_time = (int32_t)k_ms_to_ticks_ceil32(slice);
-		if ((IS_ENABLED(CONFIG_TICKLESS_KERNEL)) && slice > 0) {
+		if ((IS_ENABLED(CONFIG_TICKLESS_KERNEL)) && (slice > 0)) {
 			/* It's not possible to reliably set a 1-tick
 			 * timeout if ticks aren't regular.
 			 */
@@ -408,7 +408,7 @@ void z_time_slice(int ticks)
 	pending_current = NULL;
 #endif
 
-	if (slice_time != 0 && sliceable(_current)) {
+	if ((slice_time != 0) && sliceable(_current)) {
 		if (ticks >= _current_cpu->slice_ticks) {
 			move_thread_to_end_of_prio_q(_current);
 			z_reset_time_slice();
@@ -794,7 +794,7 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 	arch_sched_ipi();
 #endif
 
-	if (need_sched && _current->base.sched_locked == 0U) {
+	if (need_sched && (_current->base.sched_locked == 0U)) {
 		z_reschedule_unlocked();
 	}
 }
@@ -1531,7 +1531,7 @@ void z_thread_abort(struct k_thread *thread)
 	}
 
 #ifdef CONFIG_SMP
-	if (is_aborting(thread) && thread == _current && arch_is_in_isr()) {
+	if (is_aborting(thread) && (thread == _current) && arch_is_in_isr()) {
 		/* Another CPU is spinning for us, don't deadlock */
 		end_thread(thread);
 	}
@@ -1547,7 +1547,7 @@ void z_thread_abort(struct k_thread *thread)
 #endif
 	}
 
-	if (is_aborting(thread) && thread != _current) {
+	if (is_aborting(thread) && (thread != _current)) {
 		if (arch_is_in_isr()) {
 			/* ISRs can only spin waiting another CPU */
 			k_spin_unlock(&sched_spinlock, key);
@@ -1562,7 +1562,7 @@ void z_thread_abort(struct k_thread *thread)
 	}
 #endif
 	end_thread(thread);
-	if (thread == _current && !arch_is_in_isr()) {
+	if ((thread == _current) && !arch_is_in_isr()) {
 		z_swap(&sched_spinlock, key);
 		__ASSERT(false, "aborted _current back from dead");
 	}

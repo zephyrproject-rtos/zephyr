@@ -62,9 +62,9 @@ static void find_rsdp(void)
 		search_length = 1024;
 		z_phys_map((uint8_t **)&search, search_phys, search_length, 0);
 
-		for (size_t i = 0; i < 1024/8; i++) {
+		for (size_t i = 0; i < (1024/8); i++) {
 			if (search[i] == ACPI_RSDP_SIGNATURE) {
-				rsdp_phys = search_phys + i * 8;
+				rsdp_phys = search_phys + (i * 8);
 				rsdp = (void *)&search[i];
 				goto found;
 			}
@@ -81,9 +81,9 @@ static void find_rsdp(void)
 	z_phys_map((uint8_t **)&search, search_phys, search_length, 0);
 
 	rsdp_phys = 0U;
-	for (size_t i = 0; i < 128*1024/8; i++) {
+	for (size_t i = 0; i < ((128*1024)/8); i++) {
 		if (search[i] == ACPI_RSDP_SIGNATURE) {
-			rsdp_phys = search_phys + i * 8;
+			rsdp_phys = search_phys + (i * 8);
 			rsdp = (void *)&search[i];
 			goto found;
 		}
@@ -154,7 +154,7 @@ void *z_acpi_find_table(uint32_t signature)
 				z_phys_map(&mapped_tbl, t_phys, sizeof(*t), 0);
 				t = (void *)mapped_tbl;
 
-				if (t->signature == signature && check_sum(t)) {
+				if ((t->signature == signature) && check_sum(t)) {
 					tbl_found = true;
 					break;
 				}
@@ -191,7 +191,7 @@ void *z_acpi_find_table(uint32_t signature)
 				z_phys_map(&mapped_tbl, t_phys, sizeof(*t), 0);
 				t = (void *)mapped_tbl;
 
-				if (t->signature == signature && check_sum(t)) {
+				if ((t->signature == signature) && check_sum(t)) {
 					tbl_found = true;
 					break;
 				}

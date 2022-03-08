@@ -66,15 +66,15 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 		c = *s++;
 	}
 
-	if ((base == 0 || base == 16) &&
-	    c == '0' && (*s == 'x' || *s == 'X')) {
+	if (((base == 0) || (base == 16)) &&
+	    (c == '0') && ((*s == 'x') || (*s == 'X'))) {
 		c = s[1];
 		s += 2;
 		base = 16;
 	}
 
 	if (base == 0) {
-		base = c == '0' ? 8 : 10;
+		base = (c == '0') ? 8 : 10;
 	}
 
 	cutoff = ULONG_MAX / (unsigned long)base;
@@ -92,7 +92,7 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 		if (digit >= base) {
 			break;
 		}
-		if (any < 0 || acc > cutoff || (acc == cutoff && digit > cutlim)) {
+		if ((any < 0) || (acc > cutoff) || ((acc == cutoff) && (digit > cutlim))) {
 			any = -1;
 		} else {
 			any = 1;
@@ -101,7 +101,7 @@ unsigned long strtoul(const char *nptr, char **endptr, register int base)
 		}
 	}
 	if (endptr != NULL) {
-		*endptr = (char *)(any != 0 ? s - 1 : nptr);
+		*endptr = (char *)((any != 0) ? (s - 1) : nptr);
 	}
 	if (any < 0) {
 		errno = ERANGE;

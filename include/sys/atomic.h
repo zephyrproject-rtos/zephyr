@@ -90,7 +90,7 @@ typedef atomic_ptr_t atomic_ptr_val_t;
  *
  * @param num_bits Number of bits.
  */
-#define ATOMIC_BITMAP_SIZE(num_bits) (1 + ((num_bits) - 1) / ATOMIC_BITS)
+#define ATOMIC_BITMAP_SIZE(num_bits) (1 + (((num_bits) - 1) / ATOMIC_BITS))
 
 /**
  * @brief Define an array of atomic variables.

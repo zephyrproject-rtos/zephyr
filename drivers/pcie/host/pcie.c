@@ -127,8 +127,8 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 		reg++;
 		phys_addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
 
-		if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL64 ||
-		    PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
+		if ((PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL64) ||
+		    (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE)) {
 			/* Discard on invalid address */
 			return false;
 		}
@@ -136,8 +136,8 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 		pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
 		size |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
 		pcie_conf_write(bdf, reg, (uint32_t)((uint64_t)phys_addr >> 32));
-	} else if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL ||
-		   PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
+	} else if ((PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL) ||
+		   (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE)) {
 		/* Discard on invalid address */
 		return false;
 	}
@@ -161,7 +161,7 @@ bool pcie_probe_mbar(pcie_bdf_t bdf,
 	uint32_t reg;
 
 	for (reg = PCIE_CONF_BAR0;
-	     index > 0 && reg <= PCIE_CONF_BAR5; reg++, index--) {
+	     (index > 0) && (reg <= PCIE_CONF_BAR5); reg++, index--) {
 		uintptr_t addr = pcie_conf_read(bdf, reg);
 
 		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
@@ -233,7 +233,7 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
 	irq = PCIE_CONF_INTR_IRQ(data);
 
-	if (irq == PCIE_CONF_INTR_IRQ_NONE || irq >= (unsigned int)CONFIG_MAX_IRQ_LINES ||
+	if ((irq == PCIE_CONF_INTR_IRQ_NONE) || (irq >= (unsigned int)CONFIG_MAX_IRQ_LINES) ||
 	    irq_is_reserved(irq)) {
 
 		irq = irq_alloc();

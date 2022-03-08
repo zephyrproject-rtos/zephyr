@@ -43,7 +43,7 @@ char *strncpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s, size_t n)
 {
 	char *dest = d;
 
-	while ((n > 0) && *s != '\0') {
+	while ((n > 0) && (*s != '\0')) {
 		*d = *s;
 		s++;
 		d++;
@@ -127,7 +127,7 @@ size_t strnlen(const char *s, size_t maxlen)
 {
 	size_t n = 0;
 
-	while (*s != '\0' && n < maxlen) {
+	while ((*s != '\0') && (n < maxlen)) {
 		s++;
 		n++;
 	}
@@ -181,10 +181,10 @@ char *strtok_r(char *str, const char *sep, char **state)
 {
 	char *start, *end;
 
-	start = str != NULL ? str : *state;
+	start = (str != NULL) ? str : *state;
 
 	/* skip leading delimiters */
-	while (*start != '\0' && strchr(sep, *start) != NULL) {
+	while ((*start != '\0') && (strchr(sep, *start) != NULL)) {
 		start++;
 	}
 
@@ -195,7 +195,7 @@ char *strtok_r(char *str, const char *sep, char **state)
 
 	/* look for token chars */
 	end = start;
-	while (*end != '\0' && strchr(sep, *end) == NULL) {
+	while ((*end != '\0') && (strchr(sep, *end) == NULL)) {
 		end++;
 	}
 

@@ -141,8 +141,8 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, cleanup, pipe);
 
-	CHECKIF(z_waitq_head(&pipe->wait_q.readers) != NULL ||
-			z_waitq_head(&pipe->wait_q.writers) != NULL) {
+	CHECKIF((z_waitq_head(&pipe->wait_q.readers) != NULL) ||
+			(z_waitq_head(&pipe->wait_q.writers) != NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, -EAGAIN);
 
 		return -EAGAIN;
@@ -305,7 +305,7 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 			}
 		}
 
-		if (num_bytes + pipe_space < min_xfer) {
+		if ((num_bytes + pipe_space) < min_xfer) {
 			return false;
 		}
 	}
@@ -366,7 +366,7 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 static int pipe_return_code(size_t min_xfer, size_t bytes_remaining,
 			     size_t bytes_requested)
 {
-	if (bytes_requested - bytes_remaining >= min_xfer) {
+	if ((bytes_requested - bytes_remaining) >= min_xfer) {
 		/*
 		 * At least the minimum number of requested
 		 * bytes have been transferred.
@@ -416,7 +416,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, put, pipe, timeout);
 
-	CHECKIF((min_xfer > bytes_to_write) || bytes_written == NULL) {
+	CHECKIF((min_xfer > bytes_to_write) || (bytes_written == NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, -EINVAL);
 
 		return -EINVAL;
@@ -509,8 +509,8 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	}
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)
-	    && num_bytes_written >= min_xfer
-	    && min_xfer > 0U) {
+	    && (num_bytes_written >= min_xfer)
+	    && (min_xfer > 0U)) {
 		*bytes_written = num_bytes_written;
 		k_sched_unlock();
 
@@ -559,7 +559,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, get, pipe, timeout);
 
-	CHECKIF((min_xfer > bytes_to_read) || bytes_read == NULL) {
+	CHECKIF((min_xfer > bytes_to_read) || (bytes_read == NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, -EINVAL);
 
 		return -EINVAL;
@@ -679,8 +679,8 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	}
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)
-	    && num_bytes_read >= min_xfer
-	    && min_xfer > 0U) {
+	    && (num_bytes_read >= min_xfer)
+	    && (min_xfer > 0U)) {
 		k_sched_unlock();
 
 		*bytes_read = num_bytes_read;
@@ -762,7 +762,7 @@ size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
 	k_spinlock_key_t key;
 
 	/* Buffer and size are fixed. No need to spin. */
-	if (pipe->buffer == NULL || pipe->size == 0U) {
+	if ((pipe->buffer == NULL) || (pipe->size == 0U)) {
 		res = 0;
 		goto out;
 	}
@@ -799,7 +799,7 @@ size_t z_impl_k_pipe_write_avail(struct k_pipe *pipe)
 	k_spinlock_key_t key;
 
 	/* Buffer and size are fixed. No need to spin. */
-	if (pipe->buffer == NULL || pipe->size == 0U) {
+	if ((pipe->buffer == NULL) || (pipe->size == 0U)) {
 		res = 0;
 		goto out;
 	}

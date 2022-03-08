@@ -371,7 +371,7 @@ static inline void pentry_get(unsigned int *paging_level, pentry_t *val,
 	for (unsigned int level = 0; level < NUM_LEVELS; level++) {
 		pentry_t entry = get_entry(table, virt, level);
 
-		if ((entry & MMU_P) == 0 || is_leaf(level, entry)) {
+		if (((entry & MMU_P) == 0) || is_leaf(level, entry)) {
 			*val = entry;
 			if (paging_level != NULL) {
 				*paging_level = level;
@@ -398,7 +398,7 @@ static inline void tlb_flush_page(void *addr)
 __pinned_func
 static inline bool is_flipped_pte(pentry_t pte)
 {
-	return (pte & MMU_P) == 0 && (pte & PTE_ZERO) != 0;
+	return ((pte & MMU_P) == 0) && ((pte & PTE_ZERO) != 0);
 }
 #endif
 
@@ -546,7 +546,7 @@ static void print_entries(pentry_t entries_array[], uint8_t *base, unsigned int 
 				if (phys == virt) {
 					/* Identity mappings */
 					COLOR(YELLOW);
-				} else if (phys + Z_MEM_VM_OFFSET == virt) {
+				} else if ((phys + Z_MEM_VM_OFFSET) == virt) {
 					/* Permanent RAM mappings */
 					COLOR(GREEN);
 				} else {
@@ -634,8 +634,8 @@ static void dump_ptables(pentry_t *table, uint8_t *base, unsigned int level)
 		pentry_t entry = table[j];
 		pentry_t *next;
 
-		if ((entry & MMU_P) == 0U ||
-			(entry & MMU_PS) != 0U) {
+		if (((entry & MMU_P) == 0U) ||
+			((entry & MMU_PS) != 0U)) {
 			/* Not present or big page, skip */
 			continue;
 		}
@@ -784,8 +784,8 @@ static inline pentry_t pte_finalize_value(pentry_t val, bool user_table,
 	static const uintptr_t shared_phys_addr =
 		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_shared_kernel_page_start));
 
-	if (user_table && (val & MMU_US) == 0 && (val & MMU_P) != 0 &&
-	    get_entry_phys(val, level) != shared_phys_addr) {
+	if (user_table && ((val & MMU_US) == 0) && ((val & MMU_P) != 0) &&
+	    (get_entry_phys(val, level) != shared_phys_addr)) {
 		val = ~val;
 	}
 #endif

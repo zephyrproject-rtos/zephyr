@@ -301,15 +301,15 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
 	 */
-	if (thread == NULL || ko->type != (uint8_t)K_OBJ_THREAD ||
-	    (ko->flags & K_OBJ_FLAG_INITIALIZED) == 0) {
+	if ((thread == NULL) || (ko->type != (uint8_t)K_OBJ_THREAD) ||
+	    ((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0)) {
 		return -EINVAL;
 	}
 	if (Z_SYSCALL_MEMORY_WRITE(buf, size)) {
 		return -EFAULT;
 	}
 	len = strlen(thread->name);
-	if (len + 1U > size) {
+	if ((len + 1U) > size) {
 		return -ENOSPC;
 	}
 

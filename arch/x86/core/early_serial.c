@@ -21,8 +21,8 @@
  * together.
  */
 static mm_reg_t mmio;
-#define IN(reg)       (sys_read32(mmio + (reg) * 4U) & 0xffU)
-#define OUT(reg, val) sys_write32((uint32_t)(val) & 0xffU, mmio + (reg) * 4U)
+#define IN(reg)       (sys_read32(mmio + ((reg) * 4U)) & 0xffU)
+#define OUT(reg, val) sys_write32((uint32_t)(val) & 0xffU, mmio + ((reg) * 4U))
 #elif defined(X86_SOC_EARLY_SERIAL_MMIO8_ADDR)
 /* Still other devices use a MMIO region containing packed byte
  * registers

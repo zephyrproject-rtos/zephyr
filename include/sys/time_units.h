@@ -37,7 +37,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 }
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
-#if defined(__cplusplus) && __cplusplus >= 201402L
+#if defined(__cplusplus) && (__cplusplus >= 201402L)
   #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
     #define TIME_CONSTEXPR
   #else
@@ -125,7 +125,7 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 			return t * ((uint64_t)to_hz / from_hz);
 		}
 	} else {
-		t = (t * to_hz + off) / from_hz;
+		t = ((t * to_hz) + off) / from_hz;
 		if (result32) {
 			return (uint32_t)t;
 		} else {

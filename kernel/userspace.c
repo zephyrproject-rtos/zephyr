@@ -333,7 +333,7 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	struct z_object *zo;
 	uintptr_t tidx = 0;
 
-	if (otype <= K_OBJ_ANY || otype >= K_OBJ_LAST) {
+	if ((otype <= K_OBJ_ANY) || (otype >= K_OBJ_LAST)) {
 		LOG_ERR("bad object type %d requested", otype);
 		return NULL;
 	}
@@ -511,8 +511,8 @@ static void wordlist_cb(struct z_object *ko, void *ctx_ptr)
 {
 	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
 
-	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, (unsigned int)ctx->parent_id) != 0 &&
-				  (struct k_thread *)ko->name != ctx->parent) {
+	if ((sys_bitfield_test_bit((mem_addr_t)&ko->perms, (unsigned int)ctx->parent_id) != 0) &&
+				  ((struct k_thread *)ko->name != ctx->parent)) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms, (unsigned int)ctx->child_id);
 	}
 }
@@ -653,7 +653,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
 	if (unlikely((ko == NULL) ||
-		(otype != K_OBJ_ANY && ko->type != (uint8_t)otype))) {
+		((otype != K_OBJ_ANY) && (ko->type != (uint8_t)otype)))) {
 		return -EBADF;
 	}
 

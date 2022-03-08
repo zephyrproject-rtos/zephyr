@@ -29,8 +29,8 @@ void *bsearch(const void *key, const void *array, size_t count, size_t size,
 	const char *pivot;
 
 	while (low < high) {
-		index = low + (high - low) / 2;
-		pivot = (const char *)array + index * size;
+		index = low + ((high - low) / 2);
+		pivot = (const char *)array + (index * size);
 		result = cmp(key, pivot);
 
 		if (result == 0) {

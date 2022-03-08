@@ -120,7 +120,7 @@ static int cbprintf_via_va_list(cbprintf_cb out, void *ctx,
 	u.__ap.overflow_arg_area = buf;
 	u.__ap.reg_save_area = NULL;
 	u.__ap.gp_offset = (6 * 8);
-	u.__ap.fp_offset = (6 * 8 + 16 * 16);
+	u.__ap.fp_offset = ((6 * 8) + (16 * 16));
 
 	return cbvprintf(out, ctx, fmt, u.ap);
 }
@@ -246,7 +246,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 * Otherwise we must ensure we can store at least
 	 * thepointer to the format string itself.
 	 */
-	if ((buf0 != NULL) && ((size_t)(buf - buf0) + sizeof(char *) > len)) {
+	if ((buf0 != NULL) && (((size_t)(buf - buf0) + sizeof(char *)) > len)) {
 		return -ENOSPC;
 	}
 
@@ -370,7 +370,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			buf = (void *) ROUND_UP(buf, align);
 			if (buf0 != NULL) {
 				/* make sure it fits */
-				if ((size_t)(buf - buf0) + size > len) {
+				if (((size_t)(buf - buf0) + size) > len) {
 					return -ENOSPC;
 				}
 				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
@@ -395,7 +395,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		buf = (void *) ROUND_UP(buf, align);
 
 		/* make sure the data fits */
-		if ((buf0 != NULL) && ((size_t)(buf - buf0) + size > len)) {
+		if ((buf0 != NULL) && (((size_t)(buf - buf0) + size) > len)) {
 			return -ENOSPC;
 		}
 
@@ -499,7 +499,7 @@ process_string:
 	 * worth of va_list, or about 127 arguments on a 64-bit system
 	 * (twice that on 32-bit systems). That ought to be good enough.
 	 */
-	if ((size_t)(buf - buf0) / sizeof(int) > 255) {
+	if (((size_t)(buf - buf0) / sizeof(int)) > 255) {
 		__ASSERT(false, "too many format args");
 		return -EINVAL;
 	}
@@ -531,7 +531,7 @@ process_string:
 			uint8_t pos = str_ptr_pos[i] & CBPRINTF_STR_POS_MASK;
 
 			/* make sure it fits */
-			if ((size_t)(buf - buf0) + 1 > len) {
+			if (((size_t)(buf - buf0) + 1) > len) {
 				return -ENOSPC;
 			}
 			/* store the pointer position prefix */
@@ -548,13 +548,13 @@ process_string:
 		}
 
 		/* retrieve the string pointer */
-		s = *(char **)(buf0 + str_ptr_pos[i] * sizeof(int));
+		s = *(char **)(buf0 + (str_ptr_pos[i] * sizeof(int)));
 		/* clear the in-buffer pointer (less entropy if compressed) */
-		*(char **)(buf0 + str_ptr_pos[i] * sizeof(int)) = NULL;
+		*(char **)(buf0 + (str_ptr_pos[i] * sizeof(int))) = NULL;
 		/* find the string length including terminating '\0' */
 		size = strlen(s) + 1;
 		/* make sure it fits */
-		if ((size_t)(buf - buf0) + 1 + size > len) {
+		if (((size_t)(buf - buf0) + 1 + size) > len) {
 			return -ENOSPC;
 		}
 		/* store the pointer position prefix */
@@ -613,7 +613,7 @@ int cbpprintf(cbprintf_cb out, void *ctx, void *packaged)
 		/* Locate pointer location for this string */
 		s_idx = *(uint8_t *)s;
 		++s;
-		ps = (char **)(buf + s_idx * sizeof(int));
+		ps = (char **)(buf + (s_idx * sizeof(int)));
 		/* update the pointer with current string location */
 		*ps = s;
 		/* move to next string */
@@ -673,7 +673,7 @@ int cbprintf_fsc_package(void *in_packaged,
 	for (uint8_t i = 0; i < ros_nbr; i++) {
 		/* Get string address location */
 		s_idx = buf[args_size + i];
-		ps = (char **)(buf + s_idx * sizeof(int));
+		ps = (char **)(buf + (s_idx * sizeof(int)));
 
 		/* Get string length */
 		slen = strlen(*ps) + 1;
