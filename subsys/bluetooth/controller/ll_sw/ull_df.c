@@ -1185,8 +1185,10 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 		}
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		/* CTE request may be enabled only in case the receiver PHY is not CODED */
-		if (conn->lll.phy_rx == PHY_CODED) {
+		/* Phy may be changed to CODED only if PHY update procedure is supproted. In other
+		 * case the mandatory PHY1M is used (that supports CTE).
+		 */
+		if (conn->lll.phy_tx == PHY_CODED) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 #endif /* CONFIG_BT_CTLR_PHY */
