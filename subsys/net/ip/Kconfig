@@ -717,6 +717,9 @@ choice
 config NET_DEFAULT_IF_FIRST
 	bool "First available interface"
 
+config NET_DEFAULT_IF_UP
+	bool "First interface which is up"
+
 config NET_DEFAULT_IF_ETHERNET
 	bool "Ethernet"
 	depends on NET_L2_ETHERNET
