@@ -97,7 +97,7 @@ static inline int uart_it8xxx2_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Enable UART WUI */
 		ret = gpio_pin_interrupt_configure_dt(&config->gpio_wui,
-						      GPIO_INT_TRIG_LOW);
+						      GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
 		if (ret < 0) {
 			LOG_ERR("Failed to configure UART%d WUI (ret %d)",
 				config->port, ret);
