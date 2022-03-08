@@ -850,7 +850,7 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		break;
 	}
 
-	return -ENOTSUP;
+	return ret;
 }
 
 static const struct ethernet_api eth_api = {
