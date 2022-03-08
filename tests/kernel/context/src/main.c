@@ -77,6 +77,8 @@
 #define TICK_IRQ DT_IRQN(DT_INST(0, xlnx_ttcps))
 #elif defined(CONFIG_RCAR_CMT_TIMER)
 #define TICK_IRQ DT_IRQN(DT_INST(0, renesas_rcar_cmt))
+#elif defined(CONFIG_ESP32C3_SYS_TIMER)
+#define TICK_IRQ DT_IRQN(DT_NODELABEL(systimer0))
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
  * The Cortex-M use the SYSTICK exception for the system timer, which is
