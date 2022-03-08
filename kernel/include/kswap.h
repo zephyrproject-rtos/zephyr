@@ -96,10 +96,10 @@ static ALWAYS_INLINE int do_swap(unsigned int key,
 	 * have it.  We "release" other spinlocks here.  But we never
 	 * drop the interrupt lock.
 	 */
-	if (is_spinlock && lock != NULL && lock != &sched_spinlock) {
+	if (is_spinlock && (lock != NULL) && (lock != &sched_spinlock)) {
 		k_spin_release(lock);
 	}
-	if (!is_spinlock || lock != &sched_spinlock) {
+	if (!is_spinlock || (lock != &sched_spinlock)) {
 		(void) k_spin_lock(&sched_spinlock);
 	}
 

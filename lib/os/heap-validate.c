@@ -30,7 +30,7 @@ static bool in_bounds(struct z_heap *h, chunkid_t c)
 static bool valid_chunk(struct z_heap *h, chunkid_t c)
 {
 	VALIDATE(chunk_size(h, c) > 0);
-	VALIDATE(c + chunk_size(h, c) <= h->end_chunk);
+	VALIDATE((c + chunk_size(h, c)) <= h->end_chunk);
 	VALIDATE(in_bounds(h, c));
 	VALIDATE(right_chunk(h, left_chunk(h, c)) == c);
 	VALIDATE(left_chunk(h, right_chunk(h, c)) == c);
@@ -94,7 +94,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 
 		check_nexts(h, b);
 
-		for (c = c0; c != 0 && (n == 0 || c != c0); n++) {
+		for (c = c0; (c != 0) && ((n == 0) || (c != c0)); n++) {
 			if (!valid_chunk(h, c)) {
 				return false;
 			}
@@ -109,7 +109,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 			return false;
 		}
 
-		if (empty && h->buckets[b].next != 0) {
+		if (empty && (h->buckets[b].next != 0)) {
 			return false;
 		}
 	}
@@ -148,7 +148,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 			continue;
 		}
 
-		for (c = c0; n == 0 || c != c0; n++) {
+		for (c = c0; (n == 0) || (c != c0); n++) {
 			if (chunk_used(h, c)) {
 				return false;
 			}
@@ -191,7 +191,7 @@ static uint32_t rand32(void)
 {
 	static uint64_t state = 123456789; /* seed */
 
-	state = state * 2862933555777941757UL + 3037000493UL;
+	state = (state * 2862933555777941757UL) + 3037000493UL;
 
 	return (uint32_t)(state >> 32);
 }
@@ -222,7 +222,7 @@ static bool rand_alloc_choice(struct z_heap_stress_rec *sr)
 		 */
 		__ASSERT(sr->total_bytes < 0xffffffffU / 100, "too big for u32!");
 		uint32_t full_pct = (uint32_t)((100 * sr->bytes_alloced) / sr->total_bytes);
-		uint32_t target = sr->target_percent != 0 ? sr->target_percent : 1U;
+		uint32_t target = (sr->target_percent != 0) ? sr->target_percent : 1U;
 		uint32_t free_chance = 0xffffffffU;
 
 		if (full_pct < sr->target_percent) {
@@ -376,12 +376,12 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 	}
 
 	/* The end marker chunk has a header. It is part of the overhead. */
-	total = h->end_chunk * (size_t)CHUNK_UNIT + chunk_header_bytes(h);
+	total = (h->end_chunk * (size_t)CHUNK_UNIT) + chunk_header_bytes(h);
 	overhead = total - free_bytes - allocated_bytes;
 	printk("\n%zd free bytes, %zd allocated bytes, overhead = %zd bytes (%zd.%zd%%)\n",
 	       free_bytes, allocated_bytes, overhead,
-	       (1000 * overhead + total/2) / total / 10,
-	       (1000 * overhead + total/2) / total % 10);
+	       ((1000 * overhead) + (total/2)) / total / 10,
+	       ((1000 * overhead) + (total/2)) / total % 10);
 }
 
 void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks)

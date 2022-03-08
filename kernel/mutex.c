@@ -148,7 +148,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	LOG_DBG("on mutex %p got_mutex value: %d", mutex, got_mutex);
 
 	LOG_DBG("%p got mutex %p (y/n): %c", _current, mutex,
-		got_mutex != 0 ? 'y' : 'n');
+		(got_mutex != 0) ? 'y' : 'n');
 
 	if (got_mutex == 0) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, 0);
@@ -245,7 +245,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	mutex->owner = new_owner;
 
 	LOG_DBG("new owner of mutex %p: %p (prio: %d)",
-		mutex, new_owner, new_owner != NULL ? new_owner->base.prio : -1000);
+		mutex, new_owner, (new_owner != NULL) ? new_owner->base.prio : -1000);
 
 	if (new_owner != NULL) {
 		/*

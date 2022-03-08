@@ -38,7 +38,7 @@ typedef uint32_t uint_value_type;
 /* The maximum buffer size required is for octal formatting: one character for
  * every 3 bits.  Neither EOS nor alternate forms are required.
  */
-#define CONVERTED_INT_BUFLEN ((CHAR_BIT * sizeof(uint_value_type) + 2) / 3)
+#define CONVERTED_INT_BUFLEN (((CHAR_BIT * sizeof(uint_value_type)) + 2) / 3)
 
 /* The float code may extract up to 16 digits, plus a prefix, a
  * leading 0, a dot, and an exponent in the form e+xxx for a total of
@@ -323,7 +323,7 @@ static size_t extract_decimal(const char **str)
 	while (isdigit((int)(unsigned char)*sp)) {
 		int digit = *sp++ - '0';
 
-		val = 10U * val + (size_t)digit;
+		val = (10U * val) + (size_t)digit;
 	}
 	*str = sp;
 	return val;
@@ -986,7 +986,7 @@ static char *encode_float(double value,
 			precision = FRACTION_HEX;
 		} else if ((fract != 0)
 			   && (precision < FRACTION_HEX)) {
-			unsigned int pos = 4U * (FRACTION_HEX - precision) - 1;
+			unsigned int pos = (4U * (FRACTION_HEX - precision)) - 1;
 			uint64_t mask = BIT64(pos);
 
 			/* Round only if the bit that would round is
@@ -1077,7 +1077,7 @@ static char *encode_float(double value,
 	fract &= ~SIGN_MASK;
 
 	/* Non-zero values need normalization. */
-	if (expo != 0 || fract != 0) {
+	if ((expo != 0) || (fract != 0)) {
 		if (is_subnormal) {
 			/* Fraction is subnormal.  Normalize it and correct
 			 * the exponent.
@@ -1154,7 +1154,7 @@ static char *encode_float(double value,
 		 * representation and correct the precision and zero-pruning
 		 * in accordance with the ISO C rule.
 		 */
-		if (decexp < (-4 + 1) || decexp > precision) {
+		if ((decexp < (-4 + 1)) || (decexp > precision)) {
 			c += 'e' - 'g';  /* e or E */
 			if (precision > 0) {
 				precision--;
@@ -1199,7 +1199,7 @@ static char *encode_float(double value,
 	if (c == 'f') {
 		if (decexp > 0) {
 			/* Emit the digits above the decimal point. */
-			while (decexp > 0 && digit_count > 0) {
+			while ((decexp > 0) && (digit_count > 0)) {
 				*buf = _get_digit(&fract, &digit_count);
 				++buf;
 				decexp--;
@@ -1221,7 +1221,7 @@ static char *encode_float(double value,
 			++buf;
 		}
 
-		if (decexp < 0 && precision > 0) {
+		if ((decexp < 0) && (precision > 0)) {
 			conv->pad0_value = -decexp;
 			if (conv->pad0_value > precision) {
 				conv->pad0_value = precision;
@@ -1248,7 +1248,7 @@ static char *encode_float(double value,
 		}
 	}
 
-	while (precision > 0 && digit_count > 0) {
+	while ((precision > 0) && (digit_count > 0)) {
 		*buf = _get_digit(&fract, &digit_count);
 		++buf;
 		precision--;

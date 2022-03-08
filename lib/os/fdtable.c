@@ -106,7 +106,7 @@ static int _find_fd_entry(void)
 
 static int _check_fd(int fd)
 {
-	if (fd < 0 || fd >= (int)ARRAY_SIZE(fdtable)) {
+	if ((fd < 0) || (fd >= (int)ARRAY_SIZE(fdtable))) {
 		errno = EBADF;
 		return -1;
 	}
@@ -132,7 +132,7 @@ void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 
 	entry = &fdtable[fd];
 
-	if (vtable != NULL && entry->vtable != vtable) {
+	if ((vtable != NULL) && (entry->vtable != vtable)) {
 		errno = err;
 		return NULL;
 	}

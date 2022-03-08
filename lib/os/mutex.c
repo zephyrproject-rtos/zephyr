@@ -14,7 +14,7 @@ static struct k_mutex *get_k_mutex(struct sys_mutex *mutex)
 	struct z_object *obj;
 
 	obj = z_object_find(mutex);
-	if (obj == NULL || obj->type != (uint8_t)K_OBJ_SYS_MUTEX) {
+	if ((obj == NULL) || (obj->type != (uint8_t)K_OBJ_SYS_MUTEX)) {
 		return NULL;
 	}
 
@@ -56,7 +56,7 @@ int z_impl_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 {
 	struct k_mutex *kernel_mutex = get_k_mutex(mutex);
 
-	if (kernel_mutex == NULL || kernel_mutex->lock_count == 0) {
+	if ((kernel_mutex == NULL) || (kernel_mutex->lock_count == 0)) {
 		return -EINVAL;
 	}
 

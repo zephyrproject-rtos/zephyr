@@ -11,11 +11,11 @@
 
 int char2hex(char c, uint8_t *x)
 {
-	if (c >= '0' && c <= '9') {
+	if ((c >= '0') && (c <= '9')) {
 		*x = (uint8_t)(int)(c - '0');
-	} else if (c >= 'a' && c <= 'f') {
+	} else if ((c >= 'a') && (c <= 'f')) {
 		*x = (uint8_t)(int)(c - 'a' + 10);
-	} else if (c >= 'A' && c <= 'F') {
+	} else if ((c >= 'A') && (c <= 'F')) {
 		*x = (uint8_t)(int)(c - 'A' + 10);
 	} else {
 		return -EINVAL;
@@ -39,7 +39,7 @@ int hex2char(uint8_t x, char *c)
 
 size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 {
-	if ((hexlen + 1) < buflen * 2) {
+	if ((hexlen + 1) < (buflen * 2)) {
 		return 0;
 	}
 
@@ -47,7 +47,7 @@ size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 		if (hex2char(buf[i] >> 4, &hex[2 * i]) < 0) {
 			return 0;
 		}
-		if (hex2char(buf[i] & 0x0FU, &hex[2 * i + 1]) < 0) {
+		if (hex2char(buf[i] & 0x0FU, &hex[(2 * i) + 1]) < 0) {
 			return 0;
 		}
 	}
@@ -60,7 +60,7 @@ size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen)
 {
 	uint8_t dec;
 
-	if (buflen < hexlen / 2 + hexlen % 2) {
+	if (buflen < ((hexlen / 2) + (hexlen % 2))) {
 		return 0;
 	}
 
@@ -75,17 +75,17 @@ size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen)
 	}
 
 	/* regular hex conversion */
-	for (size_t i = 0; i < hexlen / 2; i++) {
+	for (size_t i = 0; i < (hexlen / 2); i++) {
 		if (char2hex(hex[2 * i], &dec) < 0) {
 			return 0;
 		}
 		buf[i] = dec << 4;
 
-		if (char2hex(hex[2 * i + 1], &dec) < 0) {
+		if (char2hex(hex[(2 * i) + 1], &dec) < 0) {
 			return 0;
 		}
 		buf[i] += dec;
 	}
 
-	return hexlen / 2 + hexlen % 2;
+	return (hexlen / 2) + (hexlen % 2);
 }

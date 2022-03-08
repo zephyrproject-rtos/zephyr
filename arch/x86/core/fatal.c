@@ -57,7 +57,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 {
 	uintptr_t start, end;
 
-	if (_current == NULL || arch_is_in_isr()) {
+	if ((_current == NULL) || arch_is_in_isr()) {
 		/* We were servicing an interrupt or in early boot environment
 		 * and are supposed to be on the interrupt stack */
 		uint8_t cpu_id;
@@ -71,8 +71,8 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 		    z_interrupt_stacks[cpu_id]);
 		end = start + CONFIG_ISR_STACK_SIZE;
 #ifdef CONFIG_USERSPACE
-	} else if ((cs & 0x3U) == 0U &&
-		   (_current->base.user_options & K_USER) != 0) {
+	} else if (((cs & 0x3U) == 0U) &&
+		   ((_current->base.user_options & K_USER) != 0)) {
 		/* The low two bits of the CS register is the privilege
 		 * level. It will be 0 in supervisor mode and 3 in user mode
 		 * corresponding to ring 0 / ring 3.
@@ -90,7 +90,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 					_current->stack_info.size);
 	}
 
-	return (addr <= start) || (addr + size > end);
+	return (addr <= start) || ((addr + size) > end);
 }
 #endif
 
@@ -307,8 +307,8 @@ static void dump_page_fault(z_arch_esf_t *esf)
 			LOG_ERR("Linear address not present in page tables");
 		}
 		LOG_ERR("Access violation: %s thread not allowed to %s",
-			(err & PF_US) != 0U ? "user" : "supervisor",
-			(err & PF_ID) != 0U ? "execute" : ((err & PF_WR) != 0U ?
+			((err & PF_US) != 0U) ? "user" : "supervisor",
+			((err & PF_ID) != 0U) ? "execute" : (((err & PF_WR) != 0U) ?
 							   "write" :
 							   "read"));
 		if ((err & PF_PK) != 0) {
@@ -415,14 +415,14 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 #ifdef CONFIG_USERSPACE
 	for (size_t i = 0; i < ARRAY_SIZE(exceptions); i++) {
 #ifdef CONFIG_X86_64
-		if ((void *)esf->rip >= exceptions[i].start &&
-		    (void *)esf->rip < exceptions[i].end) {
+		if (((void *)esf->rip >= exceptions[i].start) &&
+		    ((void *)esf->rip < exceptions[i].end)) {
 			esf->rip = (uint64_t)(exceptions[i].fixup);
 			return;
 		}
 #else
-		if ((void *)esf->eip >= exceptions[i].start &&
-		    (void *)esf->eip < exceptions[i].end) {
+		if (((void *)esf->eip >= exceptions[i].start) &&
+		    ((void *)esf->eip < exceptions[i].end)) {
 			esf->eip = (unsigned int)(exceptions[i].fixup);
 			return;
 		}
@@ -458,8 +458,8 @@ void z_x86_do_kernel_oops(const z_arch_esf_t *esf)
 	/* User mode is only allowed to induce oopses and stack check
 	 * failures via this software interrupt
 	 */
-	if ((esf->cs & 0x3U) != 0 && !(reason == (unsigned int)K_ERR_KERNEL_OOPS ||
-				      reason == (unsigned int)K_ERR_STACK_CHK_FAIL)) {
+	if (((esf->cs & 0x3U) != 0) && !((reason == (unsigned int)K_ERR_KERNEL_OOPS) ||
+				      (reason == (unsigned int)K_ERR_STACK_CHK_FAIL))) {
 		reason = (unsigned int)K_ERR_KERNEL_OOPS;
 	}
 #endif

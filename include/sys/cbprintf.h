@@ -26,8 +26,8 @@
  */
 #ifndef Z_C_GENERIC
 #if defined(__cplusplus) || (((__STDC_VERSION__ >= 201112L) || \
-	((__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40900) || \
-	((__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__) >= 30000)))
+	(((__GNUC__ * 10000) + (__GNUC_MINOR__ * 100) + __GNUC_PATCHLEVEL__) >= 40900) || \
+	(((__clang_major__ * 10000) + (__clang_minor__ * 100) + __clang_patchlevel__) >= 30000)))
 #define Z_C_GENERIC 1
 #else
 #define Z_C_GENERIC 0

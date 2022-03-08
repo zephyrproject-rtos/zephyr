@@ -54,7 +54,7 @@ static inline bool z_is_in_user_syscall(void)
 	 * calls from supervisor mode bypass everything directly to
 	 * the implementation function.
 	 */
-	return !k_is_in_isr() && _current->syscall_frame != NULL;
+	return !k_is_in_isr() && (_current->syscall_frame != NULL);
 }
 
 /**

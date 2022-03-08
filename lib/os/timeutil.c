@@ -35,12 +35,12 @@ static int64_t time_days_from_civil(int64_t y,
 		--y;
 	}
 
-	int64_t era = (y >= 0 ? y : y - 399) / 400;
-	unsigned int yoe = (unsigned int)(int64_t)(y - era * 400);
-	unsigned int doy = (153U * (m > 2 ? m - 3 : m + 9) + 2U) / 5U + d;
-	unsigned int doe = yoe * 365U + yoe / 4U - yoe / 100U + doy;
+	int64_t era = ((y >= 0) ? y : (y - 399)) / 400;
+	unsigned int yoe = (unsigned int)(int64_t)(y - (era * 400));
+	unsigned int doy = (((153U * ((m > 2) ? (m - 3) : (m + 9))) + 2U) / 5U) + d;
+	unsigned int doe = (yoe * 365U) + (yoe / 4U) - (yoe / 100U) + doy;
 
-	return era * 146097 + (time_t)doe - 719468;
+	return (era * 146097) + (time_t)doe - 719468;
 }
 
 int64_t timeutil_timegm64(const struct tm *tm)
@@ -51,7 +51,7 @@ int64_t timeutil_timegm64(const struct tm *tm)
 	int64_t ndays = time_days_from_civil(y, m, d);
 	int64_t time = tm->tm_sec;
 
-	time += 60LL * (tm->tm_min + 60LL * tm->tm_hour);
+	time += 60LL * (tm->tm_min + (60LL * tm->tm_hour));
 	time += 86400LL * ndays;
 
 	return time;

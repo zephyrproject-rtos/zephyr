@@ -123,7 +123,7 @@ void k_heap_free(struct k_heap *h, void *mem)
 	sys_heap_free(&h->heap, mem);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_heap, free, h);
-	if ((IS_ENABLED(CONFIG_MULTITHREADING)) && z_unpend_all(&h->wait_q) != 0) {
+	if ((IS_ENABLED(CONFIG_MULTITHREADING)) && (z_unpend_all(&h->wait_q) != 0)) {
 		z_reschedule(&h->lock, key);
 	} else {
 		k_spin_unlock(&h->lock, key);

@@ -67,15 +67,15 @@ long strtol(const char *nptr, char **endptr, register int base)
 		c = *s++;
 	}
 
-	if ((base == 0 || base == 16) &&
-	    c == '0' && (*s == 'x' || *s == 'X')) {
+	if (((base == 0) || (base == 16)) &&
+	    (c == '0') && ((*s == 'x') || (*s == 'X'))) {
 		c = s[1];
 		s += 2;
 		base = 16;
 	}
 
 	if (base == 0) {
-		base = c == '0' ? 8 : 10;
+		base = (c == '0') ? 8 : 10;
 	}
 
 	/*
@@ -95,7 +95,7 @@ long strtol(const char *nptr, char **endptr, register int base)
 	 * Set any if any `digits' consumed; make it negative to indicate
 	 * overflow.
 	 */
-	cutoff = neg ? (unsigned long)(-(LONG_MIN + 1L)) + 1UL : (unsigned long)LONG_MAX;
+	cutoff = neg ? ((unsigned long)(-(LONG_MIN + 1L)) + 1UL) : (unsigned long)LONG_MAX;
 	cutlim = (int)(unsigned long)(cutoff % (unsigned long)base);
 	cutoff /= (unsigned long)base;
 	for (acc = 0, any = 0;; c = *s++) {
@@ -111,7 +111,7 @@ long strtol(const char *nptr, char **endptr, register int base)
 		if (digit >= base) {
 			break;
 		}
-		if (any < 0 || acc > cutoff || (acc == cutoff && digit > cutlim)) {
+		if ((any < 0) || (acc > cutoff) || ((acc == cutoff) && (digit > cutlim))) {
 			any = -1;
 		} else {
 			any = 1;
@@ -121,7 +121,7 @@ long strtol(const char *nptr, char **endptr, register int base)
 	}
 
 	if (endptr != NULL) {
-		*endptr = (char *)(any != 0 ? s - 1 : nptr);
+		*endptr = (char *)((any != 0) ? (s - 1) : nptr);
 	}
 	if (any < 0) {
 		errno = ERANGE;

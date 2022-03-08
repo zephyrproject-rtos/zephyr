@@ -74,7 +74,7 @@ struct z_heap {
 
 static inline bool big_heap_chunks(chunksz_t chunks)
 {
-	return sizeof(void *) > 4U || chunks > 0x7fffU;
+	return (sizeof(void *) > 4U) || (chunks > 0x7fffU);
 }
 
 static inline bool big_heap_bytes(size_t bytes)
@@ -203,7 +203,7 @@ static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
 
 static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
 {
-	return big_heap(h) && chunk_size(h, c) == 1U;
+	return big_heap(h) && (chunk_size(h, c) == 1U);
 }
 
 static inline size_t chunk_header_bytes(struct z_heap *h)
@@ -233,7 +233,7 @@ static inline chunksz_t min_chunk_size(struct z_heap *h)
 
 static inline size_t chunksz_to_bytes(struct z_heap *h, chunksz_t chunksz_in)
 {
-	return chunksz_in * (size_t)CHUNK_UNIT - chunk_header_bytes(h);
+	return (chunksz_in * (size_t)CHUNK_UNIT) - chunk_header_bytes(h);
 }
 
 static inline unsigned int bucket_idx(struct z_heap *h, chunksz_t sz)

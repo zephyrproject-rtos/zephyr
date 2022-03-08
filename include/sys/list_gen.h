@@ -72,8 +72,8 @@
 	static inline sys_ ## __nname ## _t *				     \
 	sys_ ## __lname ## _peek_next(sys_ ## __nname ## _t *node)	     \
 	{								     \
-		return node != NULL ?                                        \
-			sys_ ## __lname ## _peek_next_no_check(node) :       \
+		return (node != NULL) ?                                        \
+			(sys_ ## __lname ## _peek_next_no_check(node)) :       \
 			      NULL;					     \
 	}
 

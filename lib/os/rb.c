@@ -47,7 +47,7 @@ static void set_child(struct rbnode *n, uint8_t side, void *val)
 static enum rb_color get_color(struct rbnode *n)
 {
 	CHECK(n);
-	return (((uintptr_t)n->children[0]) & 1U) == 0U ? RED : BLACK;
+	return ((((uintptr_t)n->children[0]) & 1U) == 0U) ? RED : BLACK;
 }
 
 static bool is_black(struct rbnode *n)
