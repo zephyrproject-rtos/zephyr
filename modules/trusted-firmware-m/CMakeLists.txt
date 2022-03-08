@@ -322,7 +322,7 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   target_include_directories(tfm_api PRIVATE
-    ${TFM_BINARY_DIR}/install/interface/include
+    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/interface/include
     )
 
   zephyr_library_link_libraries(
