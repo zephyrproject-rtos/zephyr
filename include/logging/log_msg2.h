@@ -195,19 +195,19 @@ enum z_log_msg2_mode {
 #define Z_LOG_MSG2_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
 do { \
 	int _plen; \
+	uint32_t flags = CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt) | \
+			 CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
 	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
 		_plen = 0; \
 	} else { \
-		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-					CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, flags, \
 					__VA_ARGS__); \
 	} \
 	struct log_msg2 *_msg; \
 	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, 0)); \
 	if (_plen) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
-					_plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-					CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+					_plen, Z_LOG_MSG2_ALIGN_OFFSET, flags, \
 					__VA_ARGS__);\
 	} \
 	struct log_msg2_desc _desc = \
@@ -346,15 +346,10 @@ do {\
 			  _level, _data, _dlen, ...) \
 do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
-	if (CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
-					   __VA_ARGS__)) { \
-		LOG_MSG2_DBG("create runtime message\n");\
-		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
-					  _level, (uint8_t *)_data, _dlen,\
-					  CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
-					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
-		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
-	} else if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0)) {\
+	bool has_rw_str = CBPRINTF_MUST_RUNTIME_PACKAGE( \
+					CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+					__VA_ARGS__); \
+	if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0) && !has_rw_str) {\
 		LOG_MSG2_DBG("create zero-copy message\n");\
 		Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, \
 					_level, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
