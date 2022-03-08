@@ -2233,6 +2233,10 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 		info->le.data_len = &conn->le.data_len;
 #endif
+#if defined(CONFIG_BT_SMP)
+		info->le.bonded = bt_addr_le_is_bonded(conn->id, &conn->le.dst);
+#endif /* CONFIG_BT_SMP */
+
 		return 0;
 #if defined(CONFIG_BT_BREDR)
 	case BT_CONN_TYPE_BR:

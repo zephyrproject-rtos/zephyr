@@ -297,6 +297,10 @@ struct bt_conn_le_info {
 	/* Connection maximum single fragment parameters */
 	const struct bt_conn_le_data_len_info *data_len;
 #endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
+#if defined(CONFIG_BT_SMP)
+	/** Whether or not the connection is bonded */
+	bool bonded;
+#endif /* CONFIG_BT_SMP */
 };
 
 /* Multiply bt 1.25 to get MS */
