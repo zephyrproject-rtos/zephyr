@@ -431,12 +431,47 @@ endif()
 
 if(DEFINED BUILD_VERSION)
   set(build_version_argument "-DBUILD_VERSION=${BUILD_VERSION}")
-elseif(EXISTS ${ZEPHYR_BASE}/.git/index)
-  set(git_dependency ${ZEPHYR_BASE}/.git/index)
-else()
-  message(WARNING "ZEPHYR_BASE=${ZEPHYR_BASE} doesn't appear to be a git "
-    "repository, please specify '-DBUILD_VERSION=<version>'")
+elseif(NOT ZEPHYR_GIT_INDEX)
+  set(ZEPHYR_GIT_INDEX ZEPHYR_GIT_INDEX-NOTFOUND CACHE PATH
+    "Path to Zephyr git repository index file")
+  if(EXISTS ${ZEPHYR_BASE}/.git/index)
+    set(ZEPHYR_GIT_DIR ${ZEPHYR_BASE}/.git/index CACHE PATH
+      "Path to Zephyr git repository index file" FORCE)
+  elseif(EXISTS ${ZEPHYR_BASE}/.git)
+    # Likely a git-submodule. Let's ask git where the real database is located.
+    find_package(Git QUIET)
+    if(GIT_FOUND)
+      execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --absolute-git-dir
+        WORKING_DIRECTORY ${ZEPHYR_BASE}
+        OUTPUT_VARIABLE zephyr_git_dir
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+        ERROR_VARIABLE stderr
+        RESULT_VARIABLE return_code)
+      if(return_code)
+        message(WARNING "BUILD_VERSION: git rev-parse failed: ${stderr}")
+      else()
+        if(NOT "${stderr}" STREQUAL "")
+          message(WARNING "BUILD_VERSION: git rev-parse warned: ${stderr}")
+        endif()
+        set(ZEPHYR_GIT_INDEX ${zephyr_git_dir}/index CACHE PATH
+          "Path to Zephyr git repository index file" FORCE)
+      endif()
+    else()
+      message(WARNING "Could not find git installation, "
+        "please specify '-DBUILD_VERSION=<version>'")
+    endif()
+  else()
+    message(WARNING "ZEPHYR_BASE=${ZEPHYR_BASE} doesn't appear to be a git "
+      "repository, please specify '-DBUILD_VERSION=<version>'")
+  endif()
 endif()
+
+if(ZEPHYR_GIT_INDEX)
+  set(git_dependency ${ZEPHYR_GIT_INDEX})
+endif()
+
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/include/generated/version.h
   COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
