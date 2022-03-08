@@ -62,6 +62,19 @@ struct csis_notify_foreach {
 	struct bt_csis *csis;
 };
 
+static bool is_bonded(const struct bt_conn *conn)
+{
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		return false;
+	}
+
+	return info.le.bonded;
+}
+
 static bool is_last_client_to_write(const struct bt_csis *csis,
 				    const struct bt_conn *conn)
 {
@@ -500,7 +513,7 @@ static void csis_security_changed(struct bt_conn *conn, bt_security_t level,
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (!is_bonded(conn)) {
 		return;
 	}
 
@@ -606,7 +619,7 @@ static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 	 * If lock was taken by non-bonded device, set lock to released value,
 	 * and notify other connections.
 	 */
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	if (!is_bonded(conn)) {
 		return;
 	}
 
