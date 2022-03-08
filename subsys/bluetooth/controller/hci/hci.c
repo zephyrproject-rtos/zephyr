@@ -5619,9 +5619,6 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	uint8_t rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	uint8_t direct_report;
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_EXT_ADVERTISING_REPORT)) {
@@ -5634,10 +5631,6 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	rl_idx = node_rx->hdr.rx_ftr.rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	direct_report = node_rx->hdr.rx_ftr.direct;
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (adv->tx_addr) {
@@ -5691,15 +5684,14 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	adv_info->rssi = rssi;
 	adv_info->interval = 0U;
 
-	adv_info->direct_addr.type = adv->rx_addr;
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	if (direct_report) {
-		memcpy(&adv_info->direct_addr.a.val[0],
-		       &adv->direct_ind.tgt_addr[0], sizeof(bt_addr_t));
-	} else
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-	{
-		memset(&adv_info->direct_addr.a.val[0], 0, sizeof(bt_addr_t));
+	if (adv->type == PDU_ADV_TYPE_DIRECT_IND) {
+		adv_info->direct_addr.type = adv->rx_addr;
+		bt_addr_copy(&adv_info->direct_addr.a,
+			     (void *)adv->direct_ind.tgt_addr);
+	} else {
+		adv_info->direct_addr.type = 0U;
+		(void)memset(adv_info->direct_addr.a.val, 0U,
+			     sizeof(adv_info->direct_addr.a.val));
 	}
 
 	adv_info->length = data_len;
