@@ -44,6 +44,12 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
+#define ADV_SYNC_PDU_B2B_AFS (CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS)
+#else
+#define ADV_SYNC_PDU_B2B_AFS 0
+#endif
+
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -198,7 +204,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->last_pdu = pdu;
 
 		radio_isr_set(isr_tx, lll);
-		radio_tmr_tifs_set(EVENT_SYNC_B2B_MAFS_US);
+		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS);
 		switch_radio_complete_and_b2b_tx(lll, phy_s);
 	} else
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
@@ -344,7 +350,7 @@ static void isr_tx(void *param)
 
 	/* setup tIFS switching */
 	if (pdu->adv_ext_ind.ext_hdr_len && pdu->adv_ext_ind.ext_hdr.aux_ptr) {
-		radio_tmr_tifs_set(EVENT_SYNC_B2B_MAFS_US);
+		radio_tmr_tifs_set(ADV_SYNC_PDU_B2B_AFS);
 		radio_isr_set(isr_tx, lll_sync);
 		switch_radio_complete_and_b2b_tx(lll_sync, lll->phy_s);
 	} else {
@@ -375,9 +381,7 @@ static void isr_tx(void *param)
 	}
 
 	radio_gpio_lna_setup();
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
-				 EVENT_SYNC_B2B_MAFS_US -
-				 (EVENT_CLOCK_JITTER_US << 1) + cte_len_us -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + ADV_SYNC_PDU_B2B_AFS - 4 + cte_len_us -
 				 radio_tx_chain_delay_get(lll->phy_s, 0) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
@@ -392,7 +396,7 @@ static void pdu_b2b_update(struct lll_adv_sync *lll, struct pdu_adv *pdu, uint32
 	while (pdu) {
 		/* FIXME: Use implementation defined channel index */
 		pdu_b2b_aux_ptr_update(pdu, lll->adv->phy_s, lll->adv->phy_flags, 0,
-				       EVENT_SYNC_B2B_MAFS_US, cte_len_us);
+				       ADV_SYNC_PDU_B2B_AFS, cte_len_us);
 		pdu = lll_adv_pdu_linked_next_get(pdu);
 	}
 }
