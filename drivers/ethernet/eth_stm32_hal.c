@@ -1057,7 +1057,7 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 		break;
 	}
 
-	return -ENOTSUP;
+	return ret;
 }
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
