@@ -1160,7 +1160,8 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 	}
 
 	if (!enable) {
-		ull_cp_cte_req_set_disable(conn);
+		conn->llcp.cte_req.is_enabled = false;
+		conn->llcp.cte_req.req_interval = 0U;
 
 		if (conn->llcp.cte_req.is_active) {
 			struct k_sem sem;
