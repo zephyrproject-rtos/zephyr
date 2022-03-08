@@ -149,10 +149,13 @@ extern "C" {
 #ifdef __cplusplus
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
-#define Z_CONSTIFY(v) (_Generic((v), char * : (const char *)(uintptr_t)(v), default : (v)))
+#define Z_CONSTIFY(v) (_Generic((v), char * : (const char *)(v), default : (v)))
 #define Z_PROMOTE(v) ((__typeof__((v) + 0))(v))
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wint-to-pointer-cast\"")	\
 	__auto_type _v = Z_PROMOTE(Z_CONSTIFY(v)); \
+	_Pragma("GCC diagnostic pop") \
 	size_t _arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
@@ -172,7 +175,10 @@ extern "C" {
 #define Z_CBPRINTF_STORE_ARG(buf, arg) z_cbprintf_cxx_store_arg(buf, arg)
 #else
 #define Z_CBPRINTF_STORE_ARG(buf, arg) do { \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wint-to-pointer-cast\"")	\
 	__auto_type _v = Z_PROMOTE(Z_CONSTIFY(arg)); \
+	_Pragma("GCC diagnostic pop") \
 	if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) { \
 		/* If required, copy arguments by word to avoid unaligned access.*/ \
 		double _d = _Generic(_v, \
