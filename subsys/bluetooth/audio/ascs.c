@@ -24,7 +24,6 @@
 #define LOG_MODULE_NAME bt_ascs
 #include "common/log.h"
 
-#include "../host/hci_core.h"
 #include "../host/conn_internal.h"
 
 #include "endpoint.h"
@@ -550,6 +549,19 @@ static void ascs_detach(struct bt_ascs *ascs)
 	ascs->conn = NULL;
 }
 
+static bool is_bonded(const struct bt_conn *conn)
+{
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		return false;
+	}
+
+	return info.le.bonded;
+}
+
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	int i;
@@ -562,7 +574,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 
 		/* Release existing ASEs if not bonded */
-		if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		if (!is_bonded(conn)) {
 			ascs_clear(&sessions[i]);
 		} else {
 			ascs_detach(&sessions[i]);
