@@ -605,6 +605,10 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 							 lll->phy_flags,
 							 lll->phy_s,
 							 lll->phy_flags);
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+			radio_tmr_end_capture();
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
+
 #endif /* CONFIG_BT_CTLR_ADV_PDU_BACK2BACK */
 
 		} else {
