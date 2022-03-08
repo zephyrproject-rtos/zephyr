@@ -145,7 +145,8 @@ void test_cbprintf_package(void)
 
 		TEST_PACKAGING(0, "test double %x %f %x", 0xb1b2b3b4, d, 0xe4e3e2e1);
 		TEST_PACKAGING(0, "test %f %a", (double)f, d);
-#if CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
+#if CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE && !(defined(CONFIG_RISCV) && !defined(CONFIG_64BIT))
+		/* Excluding riscv32 which does not handle long double correctly. */
 		long double ld = 1.2333;
 
 		TEST_PACKAGING(0, "test %Lf", ld);
