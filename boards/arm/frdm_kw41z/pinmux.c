@@ -28,18 +28,6 @@ static int frdm_kw41z_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(portc));
 #endif
 
-	/* Red, green, blue LEDs. Note the red LED and accel INT1 are both
-	 * wired to PTC1.
-	 */
-#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm0), okay)
-	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAlt5));
-#endif
-
-#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
-	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAlt5));
-	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAlt5));
-#endif
-
 	return 0;
 }
 
