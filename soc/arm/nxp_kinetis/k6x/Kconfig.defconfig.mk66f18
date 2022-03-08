@@ -34,10 +34,6 @@ config CLOCK_CONTROL_MCUX_MCG
 
 endif # CLOCK_CONTROL
 
-config PINMUX_MCUX
-	default y
-	depends on PINMUX
-
 config GPIO
 	default y
 
