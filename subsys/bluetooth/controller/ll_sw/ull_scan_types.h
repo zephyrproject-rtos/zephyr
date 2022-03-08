@@ -44,6 +44,4 @@ struct ll_scan_aux_set {
 
 	struct node_rx_hdr *rx_head;
 	struct node_rx_hdr *rx_last;
-
-	uint16_t data_len;
 };
