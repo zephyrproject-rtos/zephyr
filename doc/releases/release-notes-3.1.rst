@@ -33,6 +33,11 @@ Stable API changes in this release
 New APIs in this release
 ========================
 
+* Util
+
+  * Added :c:macro:`IN_RANGE` for checking if a value is in the range of two
+    other values.
+
 Kernel
 ******
 
