@@ -154,3 +154,17 @@ config ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
 	  to callback.
 
 endif #ESPI_XEC_V2
+
+if ESPI_PERIPHERAL_8042_KBC
+
+config ESPI_PERIPHERAL_KBC_IBF_EVT_DATA
+	bool "KBC event data format in IBF"
+	help
+	  Enable espi_evt_data_kbc format for encoding event in KBC IBF ISR
+
+config ESPI_PERIPHERAL_KBC_OBE_CBK
+	bool "KBC OBE Callback"
+	help
+	  Enable KBC OBE callback from OBE ISR
+
+endif #ESPI_PERIPHERAL_8042_KBC

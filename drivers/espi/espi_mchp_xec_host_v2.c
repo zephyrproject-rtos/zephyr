@@ -191,7 +191,27 @@ static void kbc0_ibf_isr(const struct device *dev)
 	struct espi_xec_data *const data =
 		(struct espi_xec_data *const)dev->data;
 
-
+#ifdef CONFIG_ESPI_PERIPHERAL_KBC_IBF_EVT_DATA
+	/* Chrome solution */
+	struct espi_event evt = {
+		ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		ESPI_PERIPHERAL_8042_KBC,
+		ESPI_PERIPHERAL_NODATA,
+	};
+	struct espi_evt_data_kbc *kbc_evt =
+				(struct espi_evt_data_kbc *)&evt.evt_data;
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	kbc_evt->type = kbc_hw->EC_KBC_STS & MCHP_KBC_STS_CD ? 1 : 0;
+	/* The data in KBC Input Buffer */
+	kbc_evt->data = kbc_hw->EC_DATA;
+	/* KBC Input Buffer Full event */
+	kbc_evt->evt = HOST_KBC_EVT_IBF;
+#else
+	/* Windows solution */
 	/* The high byte contains information from the host,
 	 * and the lower byte speficies if the host sent
 	 * a command or data. 1 = Command.
@@ -205,7 +225,7 @@ static void kbc0_ibf_isr(const struct device *dev)
 		.evt_details = ESPI_PERIPHERAL_8042_KBC,
 		.evt_data = isr_data
 	};
-
+#endif
 	espi_send_callbacks(&data->callbacks, dev, evt);
 
 	mchp_xec_ecia_info_girq_src_clr(xec_kbc0_cfg.ibf_ecia_info);
@@ -213,8 +233,37 @@ static void kbc0_ibf_isr(const struct device *dev)
 
 static void kbc0_obe_isr(const struct device *dev)
 {
+#ifdef CONFIG_ESPI_PERIPHERAL_KBC_OBE_CBK
+	/* Chrome solution */
+	struct espi_xec_data *const data =
+		(struct espi_xec_data *const)dev->data;
+
+	struct espi_event evt = {
+		ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		ESPI_PERIPHERAL_8042_KBC,
+		ESPI_PERIPHERAL_NODATA,
+	};
+	struct espi_evt_data_kbc *kbc_evt =
+				(struct espi_evt_data_kbc *)&evt.evt_data;
+
+	/* Disable KBC OBE interrupt first */
+	mchp_xec_ecia_info_girq_src_dis(xec_kbc0_cfg.obe_ecia_info);
+
+	/*
+	 * Notify application that host already read out data. The application
+	 * might need to clear status register via espi_api_lpc_write_request()
+	 * with E8042_CLEAR_FLAG opcode in callback.
+	 */
+	kbc_evt->evt = HOST_KBC_EVT_OBE;
+	kbc_evt->data = 0;
+	kbc_evt->type = 0;
+
+	espi_send_callbacks(&data->callbacks, dev, evt);
+#else
+	/* Windows solution */
 	/* disable and clear GIRQ interrupt and status */
 	mchp_xec_ecia_info_girq_src_dis(xec_kbc0_cfg.obe_ecia_info);
+#endif
 	mchp_xec_ecia_info_girq_src_clr(xec_kbc0_cfg.obe_ecia_info);
 }
 
