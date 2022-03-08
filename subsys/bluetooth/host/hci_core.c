@@ -1652,8 +1652,17 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 	bt_gatt_clear(id, addr);
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+	struct bt_conn_auth_info_cb *listener, *next;
+
 	if (bt_auth && bt_auth->bond_deleted) {
 		bt_auth->bond_deleted(id, addr);
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+					  next, node) {
+		if (listener->bond_deleted) {
+			listener->bond_deleted(id, addr);
+		}
 	}
 #endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
 }
