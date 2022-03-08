@@ -41,7 +41,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->a3 = (ulong_t)p3;
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-	stack_init->tp = (ulong_t)thread->tls;
+	thread->callee_saved.tp = (ulong_t)thread->tls;
 #endif
 
 	/*

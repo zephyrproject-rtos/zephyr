@@ -20,6 +20,9 @@
 #define _thread_offset_to_sp \
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_sp_OFFSET)
 
+#define _thread_offset_to_tp \
+	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_tp_OFFSET)
+
 #define _thread_offset_to_s0 \
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_s0_OFFSET)
 

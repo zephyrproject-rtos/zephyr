@@ -31,8 +31,9 @@ GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
 #endif
 
-/* struct coop member offsets */
+/* struct _callee_saved member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);
+GEN_OFFSET_SYM(_callee_saved_t, tp);
 GEN_OFFSET_SYM(_callee_saved_t, s0);
 GEN_OFFSET_SYM(_callee_saved_t, s1);
 GEN_OFFSET_SYM(_callee_saved_t, s2);
@@ -64,7 +65,6 @@ GEN_OFFSET_SYM(_callee_saved_t, fs11);
 
 /* esf member offsets */
 GEN_OFFSET_SYM(z_arch_esf_t, ra);
-GEN_OFFSET_SYM(z_arch_esf_t, tp);
 GEN_OFFSET_SYM(z_arch_esf_t, t0);
 GEN_OFFSET_SYM(z_arch_esf_t, t1);
 GEN_OFFSET_SYM(z_arch_esf_t, t2);
