@@ -221,6 +221,20 @@ extern "C" {
 #endif
 
 /**
+ * @brief Checks if a value is within range.
+ *
+ * @note @p val is evaluated twice.
+ *
+ * @param val Value to be checked.
+ * @param min Lower bound (inclusive).
+ * @param max Upper bound (inclusive).
+ *
+ * @retval true If value is within range
+ * @retval false If the value is not within range
+ */
+#define IN_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
+
+/**
  * @brief Is @p x a power of two?
  * @param x value to check
  * @return true if @p x is a power of two, false otherwise
