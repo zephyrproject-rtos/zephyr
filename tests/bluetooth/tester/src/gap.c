@@ -957,6 +957,11 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 #endif
 }
 
+static struct bt_conn_auth_info_cb auth_info_cb = {
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
+};
+
 static void set_io_cap(const uint8_t *data, uint16_t len)
 {
 	const struct gap_set_io_cap_cmd *cmd = (void *) data;
@@ -998,8 +1003,6 @@ static void set_io_cap(const uint8_t *data, uint16_t len)
 	}
 
 	cb.pairing_accept = auth_pairing_accept;
-	cb.pairing_failed = auth_pairing_failed;
-	cb.pairing_complete = auth_pairing_complete;
 
 	if (bt_conn_auth_cb_register(&cb)) {
 		status = BTP_STATUS_FAILED;
@@ -1362,6 +1365,7 @@ uint8_t tester_init_gap(void)
 	if (bt_conn_auth_cb_register(&cb)) {
 		return BTP_STATUS_FAILED;
 	}
+	bt_conn_auth_info_cb_register(&auth_info_cb);
 
 	err = bt_enable(tester_init_gap_cb);
 	if (err < 0) {

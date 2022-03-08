@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <sys/atomic.h>
 #include <sys/byteorder.h>
+#include <sys/check.h>
 #include <sys/util.h>
 #include <sys/slist.h>
 #include <debug/stack.h>
@@ -78,6 +79,7 @@ NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT,
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 const struct bt_conn_auth_cb *bt_auth;
+sys_slist_t bt_auth_info_cbs = SYS_SLIST_STATIC_INIT(&bt_auth_info_cbs);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 static struct bt_conn_cb *callback_list;
@@ -2803,6 +2805,30 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 	}
 
 	bt_auth = cb;
+	return 0;
+}
+
+int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	sys_slist_append(&bt_auth_info_cbs, &cb->node);
+
+	return 0;
+}
+
+int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&bt_auth_info_cbs, &cb->node)) {
+		return -EALREADY;
+	}
+
 	return 0;
 }
 
