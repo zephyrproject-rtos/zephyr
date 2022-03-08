@@ -13,6 +13,7 @@ config DAC_MCUX_DAC
 config DAC_MCUX_DAC32
 	bool "NXP Kinetis MCUX DAC32 driver"
 	depends on HAS_MCUX_DAC32
+	select PINCTRL
 	help
 	  Enable the driver for the NXP Kinetis MCUX DAC32.
 
