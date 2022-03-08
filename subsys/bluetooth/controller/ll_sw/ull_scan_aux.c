@@ -117,11 +117,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	is_scan_req = false;
 	ftr = &rx->rx_ftr;
 
+	sync_lll = NULL;
+
 	switch (rx->type) {
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 		lll_aux = NULL;
 		aux = NULL;
-		sync_lll = NULL;
 		sync_iso = NULL;
 		lll = ftr->param;
 		scan = HDR_LLL2ULL(lll);
@@ -131,7 +132,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		lll_aux = NULL;
 		aux = NULL;
-		sync_lll = NULL;
 		sync_iso = NULL;
 		lll = ftr->param;
 		scan = HDR_LLL2ULL(lll);
@@ -141,8 +141,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 		sync_iso = NULL;
 		if (ull_scan_aux_is_valid_get(HDR_LLL2ULL(ftr->param))) {
-			sync_lll = NULL;
-
 			/* Node has valid aux context so its scan was scheduled
 			 * from ULL.
 			 */
@@ -151,10 +149,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 			/* aux parent will be NULL for periodic sync */
 			lll = aux->parent;
-
 		} else if (ull_scan_is_valid_get(HDR_LLL2ULL(ftr->param))) {
-			sync_lll = NULL;
-
 			/* Node that does not have valid aux context but has
 			 * valid scan set was scheduled from LLL. We can
 			 * retrieve aux context from lll_scan as it was stored
@@ -167,12 +162,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 			aux = HDR_LLL2ULL(lll_aux);
 			LL_ASSERT(lll == aux->parent);
-
 		} else {
-			lll = NULL;
-
 			/* If none of the above, node is part of sync scanning
 			 */
+			lll = NULL;
 			sync_lll = ftr->param;
 
 			lll_aux = sync_lll->lll_aux;
@@ -641,27 +634,23 @@ void ull_scan_aux_done(struct node_rx_event_done *done)
 
 uint8_t ull_scan_aux_lll_handle_get(struct lll_scan_aux *lll)
 {
-	struct ll_scan_aux_set *aux;
-
-	aux = HDR_LLL2ULL(lll);
-
-	return aux_handle_get(aux);
+	return aux_handle_get((void *)lll->hdr.parent);
 }
 
 void *ull_scan_aux_lll_parent_get(struct lll_scan_aux *lll,
 				  uint8_t *is_lll_scan)
 {
-	struct ll_scan_aux_set *aux;
-	struct ll_scan_set *scan;
+	struct ll_scan_aux_set *aux_set;
+	struct ll_scan_set *scan_set;
 
-	aux = HDR_LLL2ULL(lll);
-	scan = HDR_LLL2ULL(aux->parent);
+	aux_set = HDR_LLL2ULL(lll);
+	scan_set = HDR_LLL2ULL(aux_set->parent);
 
 	if (is_lll_scan) {
-		*is_lll_scan = !!ull_scan_is_valid_get(scan);
+		*is_lll_scan = !!ull_scan_is_valid_get(scan_set);
 	}
 
-	return aux->parent;
+	return aux_set->parent;
 }
 
 struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux)
