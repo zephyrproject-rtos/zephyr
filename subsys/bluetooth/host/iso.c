@@ -261,9 +261,8 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 	int err;
 	struct bt_iso_chan *chan;
 	struct bt_iso_chan_path default_hci_path = { .pid = BT_ISO_DATA_PATH_HCI };
-	struct bt_iso_chan_path disabled_path = { .pid = BT_ISO_DATA_PATH_DISABLED };
-	struct bt_iso_chan_path *out_path;
-	struct bt_iso_chan_path *in_path;
+	struct bt_iso_chan_path *out_path = NULL;
+	struct bt_iso_chan_path *in_path = NULL;
 	struct bt_iso_chan_io_qos *tx_qos;
 	struct bt_iso_chan_io_qos *rx_qos;
 	uint8_t dir;
@@ -291,9 +290,6 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 		} else { /* else fallback to HCI path */
 			in_path = &default_hci_path;
 		}
-	} else {
-		/* Disable TX */
-		in_path = &disabled_path;
 	}
 
 	if (rx_qos != NULL) {
@@ -302,30 +298,37 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 		} else { /* else fallback to HCI path */
 			out_path = &default_hci_path;
 		}
-	} else {
-		/* Disable RX */
-		out_path = &disabled_path;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
-	    iso->iso.type == BT_ISO_CHAN_TYPE_BROADCASTER && tx_qos) {
+	    iso->iso.type == BT_ISO_CHAN_TYPE_BROADCASTER && in_path) {
 		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
 		return hci_le_setup_iso_data_path(iso, dir, in_path);
 	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
-		   iso->iso.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
+		   iso->iso.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER && out_path) {
 		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
 		return hci_le_setup_iso_data_path(iso, dir, out_path);
 	} else if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
 		   iso->iso.type == BT_ISO_CHAN_TYPE_CONNECTED) {
-		/* Setup both directions for CIS*/
-		dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
-		err = hci_le_setup_iso_data_path(iso, dir, in_path);
-		if (err) {
-			return err;
+		if (in_path != NULL) {
+			/* Enable TX */
+			dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+			err = hci_le_setup_iso_data_path(iso, dir, in_path);
+			if (err) {
+				return err;
+			}
 		}
 
-		dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
-		return hci_le_setup_iso_data_path(iso, dir, out_path);
+		if (out_path != NULL) {
+			/* Enable RX */
+			dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+			err = hci_le_setup_iso_data_path(iso, dir, out_path);
+			if (err) {
+				return err;
+			}
+		}
+
+		return 0;
 	} else {
 		__ASSERT(false, "Invalid iso.type: %u", iso->iso.type);
 		return -EINVAL;

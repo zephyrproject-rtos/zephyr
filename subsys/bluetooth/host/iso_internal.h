@@ -11,8 +11,6 @@
 
 #include <bluetooth/iso.h>
 
-#define BT_ISO_DATA_PATH_DISABLED			0xFF
-
 struct iso_data {
 	/** BT_BUF_ISO_IN */
 	uint8_t  type;
