@@ -9,8 +9,8 @@
 #include <drivers/eeprom.h>
 #include <device.h>
 
-#define EERPOM_SAMPLE_OFFSET 0
-#define EERPOM_SAMPLE_MAGIC  0xEE9703
+#define EEPROM_SAMPLE_OFFSET 0
+#define EEPROM_SAMPLE_MAGIC  0xEE9703
 
 struct perisistant_values {
 	uint32_t magic;
@@ -49,21 +49,21 @@ void main(void)
 	eeprom_size = eeprom_get_size(eeprom);
 	printk("Using eeprom with size of: %d.\n", eeprom_size);
 
-	rc = eeprom_read(eeprom, EERPOM_SAMPLE_OFFSET, &values, sizeof(values));
+	rc = eeprom_read(eeprom, EEPROM_SAMPLE_OFFSET, &values, sizeof(values));
 	if (rc < 0) {
 		printk("Error: Couldn't read eeprom: err: %d.\n", rc);
 		return;
 	}
 
-	if (values.magic != EERPOM_SAMPLE_MAGIC) {
-		values.magic = EERPOM_SAMPLE_MAGIC;
+	if (values.magic != EEPROM_SAMPLE_MAGIC) {
+		values.magic = EEPROM_SAMPLE_MAGIC;
 		values.boot_count = 0;
 	}
 
 	values.boot_count++;
 	printk("Device booted %d times.\n", values.boot_count);
 
-	rc = eeprom_write(eeprom, EERPOM_SAMPLE_OFFSET, &values, sizeof(values));
+	rc = eeprom_write(eeprom, EEPROM_SAMPLE_OFFSET, &values, sizeof(values));
 	if (rc < 0) {
 		printk("Error: Couldn't write eeprom: err:%d.\n", rc);
 		return;
