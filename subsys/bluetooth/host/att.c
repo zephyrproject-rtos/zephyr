@@ -2622,6 +2622,8 @@ static void att_reset(struct bt_att *att)
 		net_buf_unref(buf);
 	}
 
+	att->conn = NULL;
+
 	/* Notify pending requests */
 	while (!sys_slist_is_empty(&att->reqs)) {
 		struct bt_att_req *req;
@@ -2630,17 +2632,13 @@ static void att_reset(struct bt_att *att)
 		node = sys_slist_get_not_empty(&att->reqs);
 		req = CONTAINER_OF(node, struct bt_att_req, node);
 		if (req->func) {
-			req->func(att->conn, BT_ATT_ERR_UNLIKELY, NULL, 0,
+			req->func(NULL, BT_ATT_ERR_UNLIKELY, NULL, 0,
 				  req->user_data);
 		}
 
 		bt_att_req_free(req);
 	}
 
-	/* FIXME: `att->conn` is not reference counted. Consider using `bt_conn_ref`
-	 * and `bt_conn_unref` to follow convention.
-	 */
-	att->conn = NULL;
 	k_mem_slab_free(&att_slab, (void **)&att);
 }
 

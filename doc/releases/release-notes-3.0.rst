@@ -44,13 +44,7 @@ Changes in this release
 Changes in this release
 =======================
 
-* GATT callbacks ``bt_gatt_..._func_t`` would previously be called with argument
-  ``conn = NULL`` in the event of a disconnect. This was not documented as part
-  of the API. This behavior is changed so the ``conn`` argument is provided as
-  normal when a disconnect occurs.
-
-Removed APIs in this release
-============================
+Removed APIs in this release:
 
 * The following Kconfig options related to radio front-end modules (FEMs) were
   removed:
