@@ -32,7 +32,6 @@ tests:
 
   libraries.cbprintf_package_long_double:
     filter: CONFIG_CPU_HAS_FPU
-    platform_exclude: qemu_riscv32 qemu_riscv32_smp
     extra_configs:
       - CONFIG_CBPRINTF_FP_SUPPORT=y
       - CONFIG_CBPRINTF_COMPLETE=y
@@ -41,7 +40,6 @@ tests:
 
   libraries.cbprintf_package_long_double_align_offset:
     filter: CONFIG_CPU_HAS_FPU
-    platform_exclude: qemu_riscv32 qemu_riscv32_smp
     extra_configs:
       - CONFIG_CBPRINTF_FP_SUPPORT=y
       - CONFIG_CBPRINTF_COMPLETE=y
@@ -84,7 +82,6 @@ tests:
 
   libraries.cbprintf_package_long_double_cpp:
     filter: CONFIG_CPU_HAS_FPU
-    platform_exclude: qemu_riscv32
     extra_configs:
       - CONFIG_CPLUSPLUS=y
       - CONFIG_CBPRINTF_FP_SUPPORT=y
@@ -94,7 +91,6 @@ tests:
 
   libraries.cbprintf_package_long_double_align_offset_cpp:
     filter: CONFIG_CPU_HAS_FPU
-    platform_exclude: qemu_riscv32
     extra_configs:
       - CONFIG_CPLUSPLUS=y
       - CONFIG_CBPRINTF_FP_SUPPORT=y
