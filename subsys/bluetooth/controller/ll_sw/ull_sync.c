@@ -190,7 +190,6 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		       1U : 0U;
 #endif
 	sync->skip = skip;
-	sync->is_stop = 0U;
 
 	/* NOTE: Use timeout not zero to represent sync context used for sync
 	 * create.
@@ -224,7 +223,6 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Initialize sync LLL context */
 	lll_sync = &sync->lll;
-	lll_sync->lll_aux = NULL;
 	lll_sync->is_rx_enabled = sync->rx_enable;
 	lll_sync->skip_prepare = 0U;
 	lll_sync->skip_event = 0U;
@@ -346,11 +344,6 @@ uint8_t ll_sync_terminate(uint16_t handle)
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	/* Request terminate, no new ULL scheduling to be setup */
-	sync->is_stop = 1U;
-	cpu_dmb();
-
-	/* Stop periodic sync ticker timeouts */
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_BASE + handle,
 					sync, &sync->lll);
 	LL_ASSERT(err == 0 || err == -EALREADY);
@@ -358,7 +351,6 @@ uint8_t ll_sync_terminate(uint16_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* Check and stop any auxiliary PDU receptions */
 	lll_aux = sync->lll.lll_aux;
 	if (lll_aux) {
 		struct ll_scan_aux_set *aux;
@@ -853,17 +845,14 @@ void ull_sync_done(struct node_rx_event_done *done)
 	uint32_t ticks_drift_plus;
 	struct ll_sync_set *sync;
 	uint16_t elapsed_event;
+	struct lll_sync *lll;
 	uint16_t skip_event;
 	uint16_t lazy;
 	uint8_t force;
 
 	/* Get reference to ULL context */
 	sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
-
-	/* Do nothing if local terminate requested */
-	if (unlikely(sync->is_stop)) {
-		return;
-	}
+	lll = &sync->lll;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 #if defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
@@ -876,10 +865,6 @@ void ull_sync_done(struct node_rx_event_done *done)
 	} else
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 	{
-		struct lll_sync *lll;
-
-		lll = &sync->lll;
-
 		/* Events elapsed used in timeout checks below */
 		skip_event = lll->skip_event;
 		elapsed_event = skip_event + 1;
@@ -1217,14 +1202,7 @@ static void ticker_stop_sync_lost_op_cb(uint32_t status, void *param)
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, sync_lost};
 
-	/* When in race between terminate requested in thread context and
-	 * sync lost scenario, do not generate the sync lost node rx from here
-	 */
-	if (status != TICKER_STATUS_SUCCESS) {
-		LL_ASSERT(param == ull_disable_mark_get());
-
-		return;
-	}
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
 	mfy.param = param;
 
