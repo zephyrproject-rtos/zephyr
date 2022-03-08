@@ -231,6 +231,24 @@ static void test_CLAMP(void)
 		      0xffffffffaULL, "Unexpected clamp result");
 }
 
+static void test_IN_RANGE(void)
+{
+	zassert_true(IN_RANGE(0, 0, 0), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(1, 0, 1), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(1, 0, 2), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(-1, -2, 2), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(-3, -5, -1), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(0, 0, UINT64_MAX), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(UINT64_MAX, 0, UINT64_MAX), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(0, INT64_MIN, INT64_MAX), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(INT64_MIN, INT64_MIN, INT64_MAX), "Unexpected IN_RANGE result");
+	zassert_true(IN_RANGE(INT64_MAX, INT64_MIN, INT64_MAX), "Unexpected IN_RANGE result");
+
+	zassert_false(IN_RANGE(5, 0, 2), "Unexpected IN_RANGE result");
+	zassert_false(IN_RANGE(5, 10, 0), "Unexpected IN_RANGE result");
+	zassert_false(IN_RANGE(-1, 0, 1), "Unexpected IN_RANGE result");
+}
+
 static void test_FOR_EACH(void)
 {
 	#define FOR_EACH_MACRO_TEST(arg) *buf++ = arg
@@ -453,6 +471,7 @@ void test_cc(void)
 			 ztest_unit_test(test_MACRO_MAP_CAT),
 			 ztest_unit_test(test_z_max_z_min_z_clamp),
 			 ztest_unit_test(test_CLAMP),
+			 ztest_unit_test(test_IN_RANGE),
 			 ztest_unit_test(test_FOR_EACH),
 			 ztest_unit_test(test_FOR_EACH_NONEMPTY_TERM),
 			 ztest_unit_test(test_FOR_EACH_FIXED_ARG),
