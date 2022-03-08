@@ -120,6 +120,9 @@ typedef atomic_ptr_t atomic_ptr_val_t;
  * This routine tests whether bit number @a bit of @a target is set or not.
  * The target may be a single atomic variable or an array of them.
  *
+ * @note As for all atomic APIs, includes a
+ * full/sequentially-consistent memory barrier (where applicable).
+ *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  *
@@ -137,6 +140,9 @@ static inline bool atomic_test_bit(const atomic_t *target, int bit)
  *
  * Atomically clear bit number @a bit of @a target and return its old value.
  * The target may be a single atomic variable or an array of them.
+ *
+ * @note As for all atomic APIs, includes a
+ * full/sequentially-consistent memory barrier (where applicable).
  *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
@@ -159,6 +165,9 @@ static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
  * Atomically set bit number @a bit of @a target and return its old value.
  * The target may be a single atomic variable or an array of them.
  *
+ * @note As for all atomic APIs, includes a
+ * full/sequentially-consistent memory barrier (where applicable).
+ *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  *
@@ -180,6 +189,9 @@ static inline bool atomic_test_and_set_bit(atomic_t *target, int bit)
  * Atomically clear bit number @a bit of @a target.
  * The target may be a single atomic variable or an array of them.
  *
+ * @note As for all atomic APIs, includes a
+ * full/sequentially-consistent memory barrier (where applicable).
+ *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  */
@@ -196,6 +208,9 @@ static inline void atomic_clear_bit(atomic_t *target, int bit)
  * Atomically set bit number @a bit of @a target.
  * The target may be a single atomic variable or an array of them.
  *
+ * @note As for all atomic APIs, includes a
+ * full/sequentially-consistent memory barrier (where applicable).
+ *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  */
@@ -211,6 +226,9 @@ static inline void atomic_set_bit(atomic_t *target, int bit)
  *
  * Atomically set bit number @a bit of @a target to value @a val.
  * The target may be a single atomic variable or an array of them.
+ *
+ * @note As for all atomic APIs, includes a
+ * full/sequentially-consistent memory barrier (where applicable).
  *
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
