@@ -581,6 +581,9 @@ struct net_if *net_if_get_default(void)
 #if defined(CONFIG_NET_DEFAULT_IF_PPP)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
 #endif
+#if defined(CONFIG_NET_DEFAULT_IF_UP)
+	iface = net_if_get_first_up();
+#endif
 
 	return iface ? iface : _net_if_list_start;
 }
@@ -594,6 +597,17 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 		}
 
 		if (net_if_l2(iface) == l2) {
+			return iface;
+		}
+	}
+
+	return NULL;
+}
+
+struct net_if *net_if_get_first_up(void)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (net_if_flag_is_set(iface, NET_IF_UP)) {
 			return iface;
 		}
 	}
