@@ -57,6 +57,8 @@ source "drivers/dac/Kconfig"
 
 source "drivers/watchdog/Kconfig"
 
+source "drivers/w1/Kconfig"
+
 source "drivers/clock_control/Kconfig"
 
 source "drivers/ptp_clock/Kconfig"
