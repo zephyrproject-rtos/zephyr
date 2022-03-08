@@ -138,12 +138,20 @@ struct zsock_pollfd {
  */
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MIN 8
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MAX 9
-
 /** Socket option for preventing certificates from being copied to the mbedTLS
  *  heap if possible. The option is only effective for DER certificates and is
  *  ignored for PEM certificates.
  */
 #define TLS_CERT_NOCOPY	       10
+/** Socket option to control TLS session caching on a socket. Accepted values:
+ *  - 0 - Disabled.
+ *  - 1 - Enabled.
+ */
+#define TLS_SESSION_CACHE 11
+/** Write-only socket option to purge session cache immediately.
+ *  This option accepts any value.
+ */
+#define TLS_SESSION_CACHE_PURGE 12
 
 /** TLS socket option to use with offloading. The option instructs the network
  *  stack only to offload underlying TCP/UDP communication. The TLS/DTLS
@@ -171,6 +179,10 @@ struct zsock_pollfd {
 /* Valid values for TLS_CERT_NOCOPY option */
 #define TLS_CERT_NOCOPY_NONE 0     /**< Cert duplicated in heap */
 #define TLS_CERT_NOCOPY_OPTIONAL 1 /**< Cert not copied in heap if DER */
+
+/* Valid values for TLS_SESSION_CACHE option */
+#define TLS_SESSION_CACHE_DISABLED 0 /**< Disable TLS session caching. */
+#define TLS_SESSION_CACHE_ENABLED 1 /**< Enable TLS session caching. */
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
