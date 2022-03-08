@@ -39,11 +39,6 @@ static int twr_ke18f_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwt), okay) && CONFIG_PWM_CAPTURE
-	/* PWM capture input on J20 pin 8 */
-	pinmux_pin_set(porte, 11, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay) && CONFIG_ADC
 	/* Thermistor A, B */
 	pinmux_pin_set(porta, 0, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
