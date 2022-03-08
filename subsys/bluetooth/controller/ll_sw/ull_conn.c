@@ -2052,17 +2052,20 @@ uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll)
 
 /**
  * @brief Initialize pdu_data members that are read only in lower link layer.
- *        Fields that are modified after static initialization are only
- *        re-initialized.
  *
  * @param pdu_tx Pointer to pdu_data object to be initialized
  */
 void ull_pdu_data_init(struct pdu_data *pdu_tx)
 {
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
-	pdu_tx->cp = 0U;
+	LL_ASSERT(pdu_tx);
+
+	pdu_tx->cp = false;
+	pdu_tx->rfu = 0U;
+#if !defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
+#if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
 	pdu_tx->resv = 0U;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
+#endif /* !CONFIG_SOC_OPENISA_RV32M1_RISCV32 */
 }
 
 static int init_reset(void)
