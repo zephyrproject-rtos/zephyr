@@ -38,8 +38,10 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_node_reg_size_hex,<node path>[,<index>,<unit>])
    $(dt_compat_enabled,<compatible string>)
    $(dt_chosen_enabled,<property in /chosen>)
-   $(dt_node_has_bool_prop,<node path>,<prop>)
+   $(dt_node_bool_prop,<node path>,<prop>)
+   $(dt_nodelabel_bool_prop,<node label>,<prop>)
    $(dt_node_has_prop,<node path>,<prop>)
+   $(dt_nodelabel_has_prop,<node label>,<prop>)
 
 
 Example Usage

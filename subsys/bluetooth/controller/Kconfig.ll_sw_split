@@ -6,7 +6,7 @@
 if BT_LL_SW_SPLIT
 
 DT_PATH_NORDIC_RADIO := $(dt_nodelabel_path,radio)
-DT_NORDIC_RADIO_DFE_SUPPORTED := $(dt_node_has_bool_prop,$(DT_PATH_NORDIC_RADIO),dfe-supported)
+DT_NORDIC_RADIO_DFE_SUPPORTED := $(dt_node_bool_prop,$(DT_PATH_NORDIC_RADIO),dfe-supported)
 
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
