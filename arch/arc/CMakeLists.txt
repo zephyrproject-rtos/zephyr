@@ -19,6 +19,14 @@ if(CONFIG_ISA_ARCV2)
   zephyr_cc_option_ifdef(CONFIG_THREAD_LOCAL_STORAGE -mtp-regno=26)
 endif()
 
+if(CONFIG_ISA_ARCV3)
+  if(CONFIG_64BIT)
+    set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf64-littlearc64)
+  else()
+    set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-littlearc64)
+  endif()
+endif()
+
 add_subdirectory(core)
 
 if(COMPILER STREQUAL arcmwdt)
