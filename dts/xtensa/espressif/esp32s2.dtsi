@@ -105,11 +105,6 @@
 			peripheral = <1>;
 		};
 
-		pinmux: pinmux@3f409000 {
-			compatible = "espressif,esp32-pinmux";
-			reg = <0x3f409000 0x94>;
-		};
-
 		pinctrl: pin-controller {
 			compatible = "espressif,esp32-pinctrl";
 			status = "okay";

@@ -41,11 +41,6 @@
 			reg = <0x3fc7c000 0x50000>;
 		};
 
-		pinmux: pinmux@60009000 {
-			compatible = "espressif,esp32-pinmux";
-			reg = <0x60009000 0x800>;
-		};
-
 		pinctrl: pin-controller {
 			compatible = "espressif,esp32-pinctrl";
 			status = "okay";
