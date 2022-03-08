@@ -579,15 +579,9 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn,
  */
 void llcp_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
-
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
-/*
- * Constant Tone Response Procedure Helper
- */
 void llcp_pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
 void llcp_pdu_encode_cte_rsp(struct ll_conn *conn, struct pdu_data *pdu);
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ll_conn *conn);

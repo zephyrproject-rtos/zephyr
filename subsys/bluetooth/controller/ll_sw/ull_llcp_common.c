@@ -692,11 +692,11 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		llcp_tx_pause_data(conn);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
 		llcp_pdu_decode_cte_req(conn, pdu);
 		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		/* Unknown opcode */
 		LL_ASSERT(0);
@@ -737,14 +737,13 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ: {
 		uint8_t err_code = 0;
 
 		if (conn->llcp.cte_rsp.is_enabled == 0) {
 			err_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL;
 		}
-
 #if defined(CONFIG_BT_PHY_UPDATE)
 		/* If the PHY update is not possible, then PHY1M is used.
 		 * CTE is supported for PHY1M.
@@ -767,7 +766,7 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		}
 		break;
 	}
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -921,7 +920,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
 		if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
@@ -931,7 +930,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = RP_COMMON_STATE_IDLE;
 		}
 		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);

@@ -219,11 +219,11 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -304,11 +304,11 @@ static void rr_act_run(struct ll_conn *conn)
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
