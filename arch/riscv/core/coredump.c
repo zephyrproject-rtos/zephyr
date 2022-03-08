@@ -59,7 +59,6 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 	 * registers not presented in coredump.
 	 */
 	arch_blk.r.ra = esf->ra;
-	arch_blk.r.tp = esf->tp;
 	arch_blk.r.t0 = esf->t0;
 	arch_blk.r.t1 = esf->t1;
 	arch_blk.r.t2 = esf->t2;
