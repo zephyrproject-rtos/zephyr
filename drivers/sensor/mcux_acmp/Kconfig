@@ -6,6 +6,7 @@
 config MCUX_ACMP
 	bool "NXP MCUX Analog Comparator (ACMP)"
 	depends on HAS_MCUX_ACMP
+	select PINCTRL
 	help
 	  Enable driver for the NXP MCUX Analog Comparator (ACMP).
 

@@ -11,6 +11,7 @@
 #include <drivers/sensor/mcux_acmp.h>
 #include <logging/log.h>
 #include <fsl_acmp.h>
+#include <drivers/pinctrl.h>
 
 LOG_MODULE_REGISTER(mcux_acmp, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -58,6 +59,7 @@ BUILD_ASSERT(kACMP_PortInputFromMux == 1);
 struct mcux_acmp_config {
 	CMP_Type *base;
 	acmp_filter_config_t filter;
+	const struct pinctrl_dev_config *pincfg;
 #ifdef CONFIG_MCUX_ACMP_TRIGGER
 	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_MCUX_ACMP_TRIGGER */
@@ -351,6 +353,12 @@ static int mcux_acmp_init(const struct device *dev)
 {
 	const struct mcux_acmp_config *config = dev->config;
 	struct mcux_acmp_data *data = dev->data;
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	ACMP_GetDefaultConfig(&data->config);
 	data->config.enableHighSpeed = config->high_speed;
@@ -402,6 +410,7 @@ static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 	.unfiltered = DT_INST_PROP(n, nxp_use_unfiltered_output),	\
 	.output = DT_INST_PROP(n, nxp_enable_output_pin),		\
 	.window = DT_INST_PROP(n, nxp_window_mode),			\
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	config_func_init						\
 }
 
@@ -430,6 +439,8 @@ static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 	static struct mcux_acmp_data mcux_acmp_data_##n;		\
 									\
 	static const struct mcux_acmp_config mcux_acmp_config_##n;	\
+									\
+	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init,			\
 			      NULL,					\
