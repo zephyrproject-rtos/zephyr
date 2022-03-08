@@ -526,6 +526,9 @@ void esp_close_work(struct k_work *work)
 		}
 		k_mutex_unlock(&sock->lock);
 	}
+
+	/* Mark socket as free to use again */
+	esp_socket_flags_clear(sock, ESP_SOCK_IN_USE);
 }
 
 static int esp_recv(struct net_context *context,
