@@ -55,6 +55,10 @@ static struct bt_le_oob oob_remote;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_SMP)
+static struct bt_conn_auth_info_cb auth_info_cb;
+#endif /* CONFIG_BT_SMP */
+
 #define NAME_LEN 30
 
 #define KEY_STR_LEN 33
@@ -628,6 +632,10 @@ static void bt_ready(int err)
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 	bt_le_per_adv_sync_cb_register(&per_adv_sync_cb);
 #endif /* CONFIG_BT_PER_ADV_SYNC */
+
+#if defined(CONFIG_BT_SMP)
+	bt_conn_auth_info_cb_register(&auth_info_cb);
+#endif /* CONFIG_BT_SMP */
 }
 
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
@@ -2869,12 +2877,9 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_display_yes_no = {
@@ -2887,12 +2892,9 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_input = {
@@ -2905,12 +2907,9 @@ static struct bt_conn_auth_cb auth_cb_input = {
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_confirm = {
@@ -2920,12 +2919,9 @@ static struct bt_conn_auth_cb auth_cb_confirm = {
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_all = {
@@ -2938,12 +2934,9 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.oob_data_request = auth_pairing_oob_data_request,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_oob = {
@@ -2956,20 +2949,21 @@ static struct bt_conn_auth_cb auth_cb_oob = {
 	.oob_data_request = auth_pairing_oob_data_request,
 	.cancel = auth_cancel,
 	.pairing_confirm = NULL,
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
-	.bond_deleted = bond_deleted,
 };
 
 static struct bt_conn_auth_cb auth_cb_status = {
-	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
+};
+
+static struct bt_conn_auth_info_cb auth_info_cb = {
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
+	.bond_deleted = bond_deleted,
 };
 
 static int cmd_auth(const struct shell *sh, size_t argc, char *argv[])

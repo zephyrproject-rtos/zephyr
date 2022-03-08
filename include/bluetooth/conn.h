@@ -1320,6 +1320,41 @@ struct bt_conn_auth_cb {
 	 *  @param bonded Bond information has been distributed during the
 	 *                pairing procedure.
 	 */
+	__deprecated
+	void (*pairing_complete)(struct bt_conn *conn, bool bonded);
+
+	/** @brief notify that pairing process has failed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param reason Pairing failed reason
+	 */
+	__deprecated
+	void (*pairing_failed)(struct bt_conn *conn,
+			       enum bt_security_err reason);
+
+	/** @brief Notify that bond has been deleted.
+	 *
+	 *  This callback notifies the application that the bond information
+	 *  for the remote peer has been deleted
+	 *
+	 *  @param id   Which local identity had the bond.
+	 *  @param peer Remote address.
+	 */
+	__deprecated
+	void (*bond_deleted)(uint8_t id, const bt_addr_le_t *peer);
+};
+
+/** Authenticated pairing information callback structure */
+struct bt_conn_auth_info_cb {
+	/** @brief notify that pairing procedure was complete.
+	 *
+	 *  This callback notifies the application that the pairing procedure
+	 *  has been completed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param bonded Bond information has been distributed during the
+	 *                pairing procedure.
+	 */
 	void (*pairing_complete)(struct bt_conn *conn, bool bonded);
 
 	/** @brief notify that pairing process has failed.
@@ -1339,6 +1374,9 @@ struct bt_conn_auth_cb {
 	 *  @param peer Remote address.
 	 */
 	void (*bond_deleted)(uint8_t id, const bt_addr_le_t *peer);
+
+	/** Internally used field for list handling */
+	sys_snode_t node;
 };
 
 /** @brief Register authentication callbacks.
@@ -1351,6 +1389,27 @@ struct bt_conn_auth_cb {
  *  @return Zero on success or negative error code otherwise
  */
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb);
+
+/** @brief Register authentication information callbacks.
+ *
+ *  Register callbacks to get authenticated pairing information. Multiple
+ *  registrations can be done.
+ *
+ *  @param cb Callback struct.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb);
+
+/** @brief Unregister authentication information callbacks.
+ *
+ *  Unregister callbacks to stop getting authenticated pairing information.
+ *
+ *  @param cb Callback struct.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb);
 
 /** @brief Reply with entered passkey.
  *
