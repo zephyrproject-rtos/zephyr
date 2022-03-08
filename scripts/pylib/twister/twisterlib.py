@@ -3904,7 +3904,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         significant during building by CMake on Windows OS.
         """
 
-        os.makedirs(instance.build_dir, exist_ok=True)
+        os.makedirs(instance.build_dir)
 
         link_name = f"test_{self.link_dir_counter}"
         link_path = os.path.join(links_dir_path, link_name)
