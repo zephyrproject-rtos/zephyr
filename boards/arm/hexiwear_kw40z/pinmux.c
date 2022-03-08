@@ -23,12 +23,6 @@ static int hexiwear_kw40z_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(portc));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay) && CONFIG_SERIAL
-	/* UART0 RX, TX */
-	pinmux_pin_set(portc,  6, PORT_PCR_MUX(kPORT_MuxAlt4));
-	pinmux_pin_set(portc,  7, PORT_PCR_MUX(kPORT_MuxAlt4));
-#endif
-
 	return 0;
 }
 
