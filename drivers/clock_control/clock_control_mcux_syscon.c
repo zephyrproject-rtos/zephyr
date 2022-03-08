@@ -133,6 +133,10 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetCTimerClkFreq(4);
 		break;
 #endif
+
+	case MCUX_BUS_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
+		break;
 	}
 
 	return 0;
