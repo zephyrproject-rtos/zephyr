@@ -191,15 +191,10 @@ void test_encryption_start_central_loc(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -354,15 +349,10 @@ void test_encryption_start_central_loc_limited_memory(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -570,15 +560,10 @@ void test_encryption_start_central_loc_no_ltk(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	struct pdu_data_llctrl_reject_ind reject_ind = { .error_code =
 								 BT_HCI_ERR_PIN_OR_KEY_MISSING };
@@ -686,15 +671,10 @@ void test_encryption_start_central_loc_no_ltk_2(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	struct pdu_data_llctrl_reject_ind reject_ind = { .error_code =
 								 BT_HCI_ERR_PIN_OR_KEY_MISSING };
@@ -812,15 +792,10 @@ void test_encryption_start_periph_rem(void)
 		.ivs = { IVS },
 	};
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
-	/* Second call for IVs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -1034,15 +1009,10 @@ void test_encryption_start_periph_rem_limited_memory(void)
 		.ivs = { IVS },
 	};
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
-	/* Second call for IVs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -1317,15 +1287,10 @@ void test_encryption_start_periph_rem_no_ltk(void)
 		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
 	};
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
-	/* Second call for IVs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
@@ -1443,15 +1408,10 @@ void test_encryption_pause_central_loc(void)
 	/* Prepare LL_ENC_RSP */
 	struct pdu_data_llctrl_enc_rsp enc_rsp = { .skds = { SKDS }, .ivs = { IVS } };
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
-	/* Second call for IVm */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm) + sizeof(exp_enc_req.ivm));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
@@ -1593,15 +1553,10 @@ void test_encryption_pause_periph_rem(void)
 		.ivs = { IVS },
 	};
 
-	/* Prepare mocked call(s) to lll_csrand_get */
-	/* First call for SKDs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds));
+	/* Prepare mocked call to lll_csrand_get */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.skds);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds));
-	/* Second call for IVs */
-	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_rsp.ivs));
-	ztest_return_data(lll_csrand_get, buf, exp_enc_rsp.ivs);
-	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.ivs));
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_rsp.skds) + sizeof(exp_enc_rsp.ivs));
 
 	/* Prepare mocked call to ecb_encrypt */
 	ztest_expect_data(ecb_encrypt, key_le, ltk);
