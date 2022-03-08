@@ -29,9 +29,15 @@
 #include "lll.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "ull_tx_queue.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 #include "ull_conn_types.h"
+
 #include "ull_llcp.h"
 #include "ull_conn_internal.h"
 #include "ull_llcp_internal.h"
@@ -131,16 +137,15 @@ void test_hci_feature_exchange_wrong_handle(void)
 
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Wrong reply for wrong handle\n");
 
+	/* Use up all local procedure contexts */
 	ctx_counter = 0;
 	do {
 		ctx = llcp_create_local_procedure(PROC_FEATURE_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, test_ctx_buffers_cnt() + 1,
-				  "Error in setup of test\n");
 
 	err = ll_feature_req_send(conn_handle);
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for no-resource condition\n");
 }
 
 void test_hci_version_ind(void)
@@ -196,18 +201,16 @@ void test_hci_version_ind_wrong_handle(void)
 
 	err = ll_version_ind_send(conn_handle + 1);
 
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");
+	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Wrong reply for wrong handle\n");
 
 	ctx_counter = 0;
 	do {
 		ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, test_ctx_buffers_cnt() + 1,
-				  "Error in setup of test\n");
 
 	err = ll_version_ind_send(conn_handle);
-	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for wrong handle\n");
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, "Wrong reply for no-resource condition\n");
 }
 
 void test_hci_apto(void)
@@ -352,7 +355,11 @@ void test_hci_terminate(void)
 	err = ll_terminate_ind_send(conn_handle + 1, reason);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 	err = ll_terminate_ind_send(conn_handle, reason);
+	zassert_equal(err, BT_HCI_ERR_INVALID_PARAM, "Errorcode %d", err);
+	reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+	err = ll_terminate_ind_send(conn_handle, reason);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
+
 }
 
 void test_hci_conn_update(void)
@@ -415,18 +422,24 @@ void test_hci_conn_update(void)
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 }
 
+/* 'Define' out Central API tests because ull_central.c is mock'ed, so API is not supported */
+#define ULL_CENTRAL_MOCKED
+
 void test_hci_chmap(void)
 {
+#ifndef ULL_CENTRAL_MOCKED
 	uint16_t conn_handle;
 	uint64_t err;
-	uint8_t chmap[5];
-	uint8_t chmap_zero[5] = {};
+	uint8_t chmap[5] = {0};
+	uint8_t chmap_default[5] = { 0x12, 0x34, 0x56, 0x78, 0x9a };
 	uint8_t chmap_test[5] = { 0x42, 0x00, 0x42, 0x00, 0x00 };
 
-	err = ll_chm_update(chmap_zero);
+	err = ll_chm_update(chmap);
 	zassert_equal(err, BT_HCI_ERR_INVALID_PARAM, "Errorcode %d", err);
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
+	memcpy(conn_from_pool->lll.data_chan_map, chmap_default,
+	       sizeof(conn_from_pool->lll.data_chan_map));
 
 	test_set_role(conn_from_pool, BT_HCI_ROLE_PERIPHERAL);
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
@@ -436,15 +449,13 @@ void test_hci_chmap(void)
 
 	err = ll_chm_get(conn_handle, chmap);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
-	/* TODO test should initialize conn with default map */
-	zassert_mem_equal(chmap, chmap_zero, sizeof(chmap), "Channel map invalid");
+	zassert_mem_equal(chmap, chmap_default, sizeof(chmap), "Channel map invalid");
 
 	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 
 	err = ll_chm_get(conn_handle, chmap);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
-	/* TODO test should initialize conn with default map */
-	zassert_mem_equal(chmap, chmap_zero, sizeof(chmap), "Channel map invalid");
+	zassert_mem_equal(chmap, chmap_default, sizeof(chmap), "Channel map invalid");
 
 	err = ll_chm_update(chmap_test);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
@@ -452,6 +463,7 @@ void test_hci_chmap(void)
 	err = ll_chm_get(conn_handle, chmap);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 	zassert_mem_equal(chmap, chmap_test, sizeof(chmap), "Channel map invalid");
+#endif /* !defined(ULL_CENTRAL_MOCKED) */
 }
 
 void test_hci_rssi(void)
@@ -463,23 +475,23 @@ void test_hci_rssi(void)
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
+	conn_from_pool->lll.rssi_latest = 0xcd;
+
 	test_set_role(conn_from_pool, BT_HCI_ROLE_CENTRAL);
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
-
-	/*
-	 * TODO: add ll_chm_update
-	 */
 
 	err = ll_rssi_get(conn_handle + 1, &rssi);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 
 	err = ll_rssi_get(conn_handle, &rssi);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD, "Errorcode %d", err);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
+	zassert_equal(rssi, 0xcd, "RSSI %d", err);
 }
 
 void test_hci_enc(void)
 {
+#ifndef ULL_CENTRAL_MOCKED
 	uint16_t conn_handle;
 	uint64_t err;
 
@@ -506,6 +518,7 @@ void test_hci_enc(void)
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 	err = ll_start_enc_req_send(conn_handle, error_code, &ltk[0]);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
+#endif /* !defined(ULL_CENTRAL_MOCKED) */
 }
 
 void test_main(void)
@@ -516,14 +529,16 @@ void test_main(void)
 		ztest_unit_test_setup_teardown(test_hci_feature_exchange_wrong_handle, setup,
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_hci_version_ind, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_version_ind_wrong_handle, setup,
+					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_hci_apto, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_hci_phy, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_hci_dle, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_hci_terminate, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_hci_conn_update, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_hci_chmap, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_rssi, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_hci_enc, setup, unit_test_noop)
+		ztest_unit_test_setup_teardown(test_hci_enc, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_hci_rssi, setup, unit_test_noop)
 
 	);
 
