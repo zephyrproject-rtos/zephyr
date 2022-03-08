@@ -169,6 +169,15 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 		return;
 	}
 
+#ifdef CONFIG_NET_SOCKETS
+	/* We need to claim the net_context mutex here so that the ordering of
+	 * net_context and socket mutex claims matches the TX code path. Failure
+	 * to do so can lead to deadlocks.
+	 */
+	if (sock->context->cond.lock) {
+		k_mutex_lock(sock->context->cond.lock, K_FOREVER);
+	}
+#endif /* CONFIG_NET_SOCKETS */
 	k_mutex_lock(&sock->lock, K_FOREVER);
 	if (sock->recv_cb) {
 		sock->recv_cb(sock->context, pkt, NULL, NULL,
@@ -179,6 +188,11 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 		net_pkt_unref(pkt);
 	}
 	k_mutex_unlock(&sock->lock);
+#ifdef CONFIG_NET_SOCKETS
+	if (sock->context->cond.lock) {
+		k_mutex_unlock(sock->context->cond.lock);
+	}
+#endif /* CONFIG_NET_SOCKETS */
 }
 
 void esp_socket_close(struct esp_socket *sock)
