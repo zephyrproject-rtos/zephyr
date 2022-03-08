@@ -40,6 +40,8 @@ config W1_SHELL_BUFFER_SIZE
 	  sure to also increase SHELL_ARGC_MAX accordingly.
 
 rsource "Kconfig.ds2484"
+rsource "Kconfig.ds2477_85"
+rsource "Kconfig.ds2485"
 rsource "Kconfig.test"
 rsource "Kconfig.zephyr_serial"
 
