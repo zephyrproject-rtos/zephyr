@@ -54,9 +54,6 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 	}
 }
 
-#define IN_RANGE(_min, _max, _value) \
-	(_value >= _min && _value <= _max)
-
 static int bt_audio_stream_iso_accept(const struct bt_iso_accept_info *info,
 				      struct bt_iso_chan **iso_chan)
 {
@@ -190,7 +187,7 @@ bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
 		return false;
 	}
 
-	if (!IN_RANGE(qos_pref->pd_min, qos_pref->pd_max, qos->pd)) {
+	if (!IN_RANGE(qos->pd, qos_pref->pd_min, qos_pref->pd_max)) {
 		BT_DBG("Presentation Delay not within range: min %u max %u pd %u",
 			qos_pref->pd_min, qos_pref->pd_max, qos->pd);
 		return false;
