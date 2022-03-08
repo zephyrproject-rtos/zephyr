@@ -297,14 +297,12 @@ int bt_mesh_test_recv(uint16_t len, uint16_t dst, k_timeout_t timeout)
 	}
 
 	if (len != msg->len) {
-		FAIL("Recv: Invalid message length (%u, expected %u)", msg->len,
-		     len);
+		LOG_ERR("Recv: Invalid message length (%u, expected %u)", msg->len, len);
 		return -EINVAL;
 	}
 
 	if (dst != BT_MESH_ADDR_UNASSIGNED && dst != msg->ctx.recv_dst) {
-		FAIL("Recv: Invalid dst 0x%04x, expected 0x%04x",
-		     msg->ctx.recv_dst, dst);
+		LOG_ERR("Recv: Invalid dst 0x%04x, expected 0x%04x", msg->ctx.recv_dst, dst);
 		return -EINVAL;
 	}
 
