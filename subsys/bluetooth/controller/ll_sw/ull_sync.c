@@ -106,13 +106,6 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-		scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-		if (!scan_coded || scan_coded->periodic.sync) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-	}
-
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
 	/* Do not sync twice to the same peer and same SID */
 	if (((options & BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST) == 0U) &&
@@ -120,6 +113,15 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		return BT_HCI_ERR_CONN_ALREADY_EXISTS;
 	}
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC */
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
+		if (!scan_coded || scan_coded->periodic.sync) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+	}
+
+	/* FIXME: Check for already synchronized to same peer */
 
 	link_sync_estab = ll_rx_link_alloc();
 	if (!link_sync_estab) {
