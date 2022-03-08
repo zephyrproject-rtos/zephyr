@@ -1,4 +1,0 @@
-tests:
-  bluetooth.host_long_adv_recv:
-    platform_allow: native_posix native_posix_64
-    tags: bluetooth host
