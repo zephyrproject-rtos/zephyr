@@ -118,19 +118,6 @@ GEN_OFFSET_SYM(z_arch_esf_t, soc_context);
 GEN_SOC_OFFSET_SYMS();
 #endif
 
-/*
- * RISC-V requires the stack to be 16-bytes aligned, hence SP needs to grow or
- * shrink by a size, which follows the RISC-V stack alignment requirements
- * Hence, ensure that __z_arch_esf_t_SIZEOF and _K_THREAD_NO_FLOAT_SIZEOF sizes
- * are aligned accordingly.
- */
-GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, STACK_ROUND_UP(sizeof(z_arch_esf_t)));
-
-/*
- * size of the struct k_thread structure sans save area for floating
- * point regs
- */
-GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
-		 STACK_ROUND_UP(sizeof(struct k_thread)));
+GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, sizeof(z_arch_esf_t));
 
 GEN_ABS_SYM_END

@@ -103,7 +103,7 @@ struct __esf {
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	struct soc_esf soc_context;
 #endif
-};
+} __aligned(16);
 
 typedef struct __esf z_arch_esf_t;
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
