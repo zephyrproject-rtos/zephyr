@@ -326,7 +326,7 @@ config SW_VECTOR_RELAY_CLIENT
 	  initialization.
 
 config CORTEX_M_DWT
-	bool "And use the DWT"
+	bool "Data Watchpoint and Trace (DWT)"
 	depends on CPU_CORTEX_M_HAS_DWT
 	default y if TIMING_FUNCTIONS
 	help
@@ -345,7 +345,7 @@ endmenu
 # Trace Unit and the Debug Monitor Exception, or the Memory Protection Unit.
 
 choice NULL_POINTER_EXCEPTION_DETECTION
-	bool "And use null-pointer exception"
+	bool "Null-pointer exception"
 	# Disable this until https://github.com/zephyrproject-rtos/zephyr/issues/32984 is fixed
 	# default NULL_POINTER_EXCEPTION_DETECTION_DWT if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && CPU_CORTEX_M_HAS_DWT
 	default NULL_POINTER_EXCEPTION_DETECTION_MPU if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && ARM_MPU && !CPU_CORTEX_M_HAS_DWT
@@ -358,7 +358,7 @@ choice NULL_POINTER_EXCEPTION_DETECTION
 	  is enabled and the DWT-based solution is preferred.
 
 config NULL_POINTER_EXCEPTION_DETECTION_NONE
-	bool "Do not enable null pointer exception detection"
+	bool "No null pointer exception detection"
 	help
 	  Null pointer exception detection feature is not
 	  enabled.
