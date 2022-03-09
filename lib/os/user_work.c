@@ -7,7 +7,7 @@
 
 #include <kernel.h>
 
-static void z_work_user_q_main(void *work_q_ptr, void *p2, void *p3)
+static FUNC_NORETURN void z_work_user_q_main(void *work_q_ptr, void *p2, void *p3)
 {
 	struct k_work_user_q *work_q = work_q_ptr;
 
