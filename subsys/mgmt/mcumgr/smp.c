@@ -201,8 +201,7 @@ zephyr_smp_tx_rsp(struct smp_streamer *ns, void *rsp, void *arg)
 }
 
 static int
-zephyr_smp_init_reader(struct cbor_decoder_reader *reader, void *buf,
-		       void *arg)
+zephyr_smp_init_reader(struct cbor_decoder_reader *reader, void *buf)
 {
 	struct cbor_nb_reader *czr;
 
