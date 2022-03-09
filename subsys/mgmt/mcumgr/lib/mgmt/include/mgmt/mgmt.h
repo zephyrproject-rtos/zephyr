@@ -169,11 +169,10 @@ typedef int (*mgmt_init_reader_fn)(struct cbor_decoder_reader *reader, void *buf
  *
  * @param writer	The writer to initialize.
  * @param buf		The buffer to configure the writer with.
- * @param arg		Optional streamer argument.
  *
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */
-typedef int (*mgmt_init_writer_fn)(struct cbor_encoder_writer *writer, void *buf, void *arg);
+typedef int (*mgmt_init_writer_fn)(struct cbor_encoder_writer *writer, void *buf);
 
 /** @typedef mgmt_init_writer_fn
  * @brief Frees the specified buffer.
