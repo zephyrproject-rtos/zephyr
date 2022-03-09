@@ -31,10 +31,25 @@ const size_t min_block_size = 512;
 /** Declare a reference to the application logging interface. */
 LOG_MODULE_DECLARE(app, CONFIG_LOG_DEFAULT_LEVEL);
 
-bool fwu_query_ver_active(psa_image_info_t *info)
+bool fwu_query_ver_active(psa_image_id_t image_id, psa_image_info_t *info)
 {
 	psa_status_t status;
 
+	/* Query the active image. */
+	status = psa_fwu_query(image_id, info);
+
+	/* Get the active image version. State can be one of: */
+	/*   PSA_IMAGE_UNDEFINED */
+	/*   PSA_IMAGE_CANDIDATE */
+	/*   PSA_IMAGE_INSTALLED */
+	/*   PSA_IMAGE_REJECTED */
+	/*   PSA_IMAGE_PENDING_INSTALL */
+	/*   PSA_IMAGE_REBOOT_NEEDED */
+	return info->state == PSA_IMAGE_INSTALLED && status == PSA_SUCCESS;
+}
+
+void fwu_disp_ver_active(void)
+{
 	/* Image type can be one of: */
 	/*   FWU_IMAGE_TYPE_NONSECURE */
 	/*   FWU_IMAGE_TYPE_SECURE */
@@ -54,26 +69,25 @@ bool fwu_query_ver_active(psa_image_info_t *info)
 	/* If this mode is not enabled, then the application should use the */
 	/* “FWU_IMAGE_TYPE_NONSECURE” or “FWU_IMAGE_TYPE_SECURE” type. */
 	psa_image_id_t image_id = FWU_CALCULATE_IMAGE_ID(FWU_IMAGE_ID_SLOT_ACTIVE,
+							 FWU_IMAGE_TYPE_SECURE,
+							 0);
+	psa_image_info_t info = { 0 };
+	bool status = fwu_query_ver_active(image_id, &info);
+
+	if (status) {
+		printk("Active S image version: %d.%d.%d-%d\n",
+		       info.version.iv_major,
+		       info.version.iv_minor,
+		       info.version.iv_revision,
+		       info.version.iv_build_num);
+	} else {
+		printk("\nUnable to query active secure image version!\n");
+	}
+
+	image_id = FWU_CALCULATE_IMAGE_ID(FWU_IMAGE_ID_SLOT_ACTIVE,
 							 FWU_IMAGE_TYPE_NONSECURE,
 							 0);
-
-	/* Query the active image. */
-	status = psa_fwu_query(image_id, info);
-
-	/* Get the active image version. State can be one of: */
-	/*   PSA_IMAGE_UNDEFINED */
-	/*   PSA_IMAGE_CANDIDATE */
-	/*   PSA_IMAGE_INSTALLED */
-	/*   PSA_IMAGE_REJECTED */
-	/*   PSA_IMAGE_PENDING_INSTALL */
-	/*   PSA_IMAGE_REBOOT_NEEDED */
-	return info->state == PSA_IMAGE_INSTALLED && status == PSA_SUCCESS;
-}
-
-void fwu_disp_ver_active(void)
-{
-	psa_image_info_t info = { 0 };
-	bool status = fwu_query_ver_active(&info);
+	status = fwu_query_ver_active(image_id, &info);
 
 	if (status) {
 		printk("Active NS image version: %d.%d.%d-%d\n",
@@ -82,7 +96,7 @@ void fwu_disp_ver_active(void)
 		       info.version.iv_revision,
 		       info.version.iv_build_num);
 	} else {
-		printk("\nUnable to query active image version!\n");
+		printk("\nUnable to query active nonsecure image version!\n");
 	}
 }
 
