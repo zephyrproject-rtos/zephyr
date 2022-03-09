@@ -159,7 +159,16 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 
 	/* missing arguments */
 	if (*argc < cmd->arg_count_min) {
-		return -EAGAIN;
+		/* Do not return -EAGAIN here as there is no way new argument
+		 * can be parsed later because match_len is computed to be
+		 * the minimum of the distance to the first CRLF and the size
+		 * of the buffer.
+		 * Therefore, waiting more data on the interface won't change
+		 * match_len value, which mean there is no point in waiting
+		 * for more arguments, this will just end in a infinite loop
+		 * parsing data and finding that some arguments are missing.
+		 */
+		return -EINVAL;
 	}
 
 	/*
@@ -370,9 +379,13 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 			LOG_DBG("match cmd [%s] (len:%zu)",
 				log_strdup(cmd->cmd), match_len);
 
-			if (process_cmd(cmd, match_len, data) == -EAGAIN) {
+			ret = process_cmd(cmd, match_len, data);
+			if (ret == -EAGAIN) {
 				k_sem_give(&data->sem_parse_lock);
 				break;
+			} else if (ret < 0) {
+				LOG_ERR("process cmd [%s] (len:%zu, ret:%d)",
+					log_strdup(cmd->cmd), match_len, ret);
 			}
 
 			/*
