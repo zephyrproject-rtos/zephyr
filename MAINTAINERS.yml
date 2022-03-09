@@ -1346,6 +1346,7 @@ RISCV arch:
         - mgielda
         - katsuster
         - henrikbrixandersen
+        - edersondisouza
     files:
         - arch/riscv/
         - boards/riscv/
