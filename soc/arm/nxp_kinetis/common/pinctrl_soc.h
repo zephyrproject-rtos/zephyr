@@ -23,8 +23,12 @@ extern "C" {
 
 typedef uint32_t pinctrl_soc_pin_t;
 
-/* Kinetis KW/KL/KE series does not support open drain. Define macros to have no effect */
-#if defined(CONFIG_SOC_SERIES_KINETIS_KWX) ||		\
+/* Kinetis KW/KL/KE series does not support open drain. Define macros to have no effect
+ * Note: KW22 and KW24 do support open drain, rest of KW series does not
+ */
+#if (defined(CONFIG_SOC_SERIES_KINETIS_KWX) &&		\
+	!(defined(CONFIG_SOC_MKW24D5) ||		\
+	defined(CONFIG_SOC_MKW22D5))) ||		\
 	defined(CONFIG_SOC_SERIES_KINETIS_KL2X) ||	\
 	defined(CONFIG_SOC_SERIES_KINETIS_KE1XF)
 #define PORT_PCR_ODE(x) 0x0
