@@ -19,3 +19,4 @@ supported:
   - dac
   - pwm
   - dma
+  - watchdog
