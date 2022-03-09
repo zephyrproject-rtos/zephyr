@@ -10,23 +10,48 @@
 #include <arch/cpu.h>
 
 /* exports */
-GTEXT(arch_switch)
+GTEXT(arch_swap)
 GTEXT(z_thread_entry_wrapper)
 
 /* Use ABI name of registers for the sake of simplicity */
 
 /*
- * void arch_switch(void *switch_to, void **switched_from);
+ * unsigned int arch_swap(unsigned int key)
  *
  * Always called with interrupts locked
- *
- * a0 = (struct k_thread *) switch_to
- * a1 = (struct k_thread **) address of output thread switch_handle field
+ * key is stored in a0 register
  */
-SECTION_FUNC(exception.other, arch_switch)
+SECTION_FUNC(exception.other, arch_swap)
 
 	/* Make a system call to perform context switch */
 	ecall
+
+	/*
+	 * when thread is rescheduled, unlock irq and return.
+	 * Restored register a0 contains IRQ lock state of thread.
+	 *
+	 * Prior to unlocking irq, load return value of
+	 * arch_swap to temp register t2 (from
+	 * _thread_offset_to_swap_return_value). Normally, it should be -EAGAIN,
+	 * unless someone has previously called arch_thread_return_value_set(..).
+	 */
+	la t0, _kernel
+
+	/* Get pointer to _kernel.current */
+	RV_OP_LOADREG t1, _kernel_offset_to_current(t0)
+
+	/* Load return value of arch_swap function in temp register t2 */
+	lw t2, _thread_offset_to_swap_return_value(t1)
+
+	/*
+	 * Unlock irq, following IRQ lock state in a0 register.
+	 * Use atomic instruction csrrs to do so.
+	 */
+	andi a0, a0, MSTATUS_IEN
+	csrrs t0, mstatus, a0
+
+	/* Set value of return register a0 to value of register t2 */
+	addi a0, t2, 0
 
 	/* Return */
 	ret
@@ -38,7 +63,7 @@ SECTION_FUNC(exception.other, arch_switch)
 SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	/*
 	 * z_thread_entry_wrapper is called for every new thread upon the return
-	 * of arch_switch or ISR. Its address, as well as its input function
+	 * of arch_swap or ISR. Its address, as well as its input function
 	 * arguments thread_entry_t, void *, void *, void * are restored from
 	 * the thread stack (initialized via function _thread).
 	 * In this case, thread_entry_t, * void *, void * and void * are stored
