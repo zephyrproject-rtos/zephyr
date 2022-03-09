@@ -30,25 +30,6 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 # GPIO Driver
 CONFIG_GPIO=y
 
-# PWM Driver
-CONFIG_PWM=y
-
-# ADC Driver
-CONFIG_ADC=y
-
-# WDT Driver
-CONFIG_WATCHDOG=y
-
-# ESPI Driver
-CONFIG_ESPI=y
-
-# I2C Driver
-CONFIG_I2C=y
-
 # Console Driver
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# Power Management
-CONFIG_PM=y
-CONFIG_PM_DEVICE=y
