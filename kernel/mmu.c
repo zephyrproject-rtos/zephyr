@@ -208,12 +208,12 @@ static void virt_region_init(void)
 	 * already allocated so they will never be used.
 	 */
 
-	if (Z_VM_RESERVED > 0) {
-		/* Mark reserved region at end of virtual address space */
-		num_bits = Z_VM_RESERVED / CONFIG_MMU_PAGE_SIZE;
-		(void)sys_bitarray_set_region(&virt_region_bitmap,
+#if (Z_VM_RESERVED > 0)
+	/* Mark reserved region at end of virtual address space */
+	num_bits = Z_VM_RESERVED / CONFIG_MMU_PAGE_SIZE;
+	(void)sys_bitarray_set_region(&virt_region_bitmap,
 					      num_bits, 0);
-	}
+#endif
 
 	/* Mark all bits up to Z_FREE_VM_START as allocated */
 	num_bits = POINTER_TO_UINT(Z_FREE_VM_START)
