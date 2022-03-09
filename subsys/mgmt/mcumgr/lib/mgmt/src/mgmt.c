@@ -41,7 +41,7 @@ mgmt_streamer_write_hdr(struct mgmt_streamer *streamer, const struct mgmt_hdr *h
 int
 mgmt_streamer_init_reader(struct mgmt_streamer *streamer, void *buf)
 {
-	return streamer->cfg->init_reader(streamer->reader, buf, streamer->cb_arg);
+	return streamer->cfg->init_reader(streamer->reader, buf);
 }
 
 int
