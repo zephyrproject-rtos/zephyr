@@ -145,11 +145,11 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 	 * context switching.  Platforms with atomic swap can never
 	 * hit this.
 	 */
-	if ((IS_ENABLED(CONFIG_SWAP_NONATOMIC))
-	    && z_is_thread_timeout_active(thread)) {
+#ifdef CONFIG_SWAP_NONATOMIC
+	if (z_is_thread_timeout_active(thread)) {
 		return true;
 	}
-
+#endif
 	/* Otherwise we have to be running a preemptible thread or
 	 * switching to a metairq
 	 */
@@ -902,9 +902,9 @@ void *z_get_next_switch_handle(void *interrupted)
 	LOCKED(&sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
 
-		if ((IS_ENABLED(CONFIG_SMP))) {
-			old_thread->switch_handle = NULL;
-		}
+#ifdef CONFIG_SMP
+		old_thread->switch_handle = NULL;
+#endif
 		new_thread = next_up();
 
 		if (old_thread != new_thread) {
@@ -940,10 +940,10 @@ void *z_get_next_switch_handle(void *interrupted)
 		}
 		old_thread->switch_handle = interrupted;
 		ret = new_thread->switch_handle;
-		if ((IS_ENABLED(CONFIG_SMP))) {
-			/* Active threads MUST have a null here */
-			new_thread->switch_handle = NULL;
-		}
+#ifdef CONFIG_SMP
+		/* Active threads MUST have a null here */
+		new_thread->switch_handle = NULL;
+#endif
 	}
 	return ret;
 #else
