@@ -135,6 +135,10 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
 	DO_CALLER_SAVED(sr)		;
 
+	/* Save s0 in the esf and load it with &_current_cpu. */
+	sr s0, __z_arch_esf_t_s0_OFFSET(sp)
+	la s0, _kernel + ___kernel_t_cpus_OFFSET
+
 #ifdef CONFIG_USERSPACE
 	/*
 	 * The scratch register now contains either the user mode stack
@@ -280,16 +284,15 @@ do_irq_offload:
 	lr a1, __z_arch_esf_t_a0_OFFSET(sp)
 	lr a0, __z_arch_esf_t_a1_OFFSET(sp)
 
-	/* Increment _kernel.cpus[0].nested variable */
-	la t2, _kernel
-	lw t3, _kernel_offset_to_nested(t2)
+	/* Increment _current_cpu->nested */
+	lw t3, ___cpu_t_nested_OFFSET(s0)
 	addi t4, t3, 1
-	sw t4, _kernel_offset_to_nested(t2)
+	sw t4, ___cpu_t_nested_OFFSET(s0)
 	bnez t3, 1f
 
 	/* Switch to interrupt stack */
 	mv t0, sp
-	lr sp, _kernel_offset_to_irq_stack(t2)
+	lr sp, ___cpu_t_irq_stack_OFFSET(s0)
 
 	/* Save thread stack pointer on interrupt stack */
 	addi sp, sp, -16
@@ -349,20 +352,19 @@ valid_syscall_id:
 
 	/* Disable IRQs again before leaving */
 	csrc mstatus, MSTATUS_IEN
-	j no_reschedule
+	j might_have_rescheduled
 #endif /* CONFIG_USERSPACE */
 
 is_interrupt:
-	/* Increment _kernel.cpus[0].nested variable */
-	la t2, _kernel
-	lw t3, _kernel_offset_to_nested(t2)
+	/* Increment _current_cpu->nested */
+	lw t3, ___cpu_t_nested_OFFSET(s0)
 	addi t4, t3, 1
-	sw t4, _kernel_offset_to_nested(t2)
+	sw t4, ___cpu_t_nested_OFFSET(s0)
 	bnez t3, on_irq_stack
 
 	/* Switch to interrupt stack */
 	mv t0, sp
-	lr sp, _kernel_offset_to_irq_stack(t2)
+	lr sp, ___cpu_t_irq_stack_OFFSET(s0)
 
 	/*
 	 * Save thread stack pointer on interrupt stack
@@ -406,11 +408,10 @@ on_irq_stack:
 	jalr ra, t1, 0
 
 irq_done:
-	/* Decrement _kernel.cpus[0].nested variable */
-	la t1, _kernel
-	lw t2, _kernel_offset_to_nested(t1)
+	/* Decrement _current_cpu->nested */
+	lw t2, ___cpu_t_nested_OFFSET(s0)
 	addi t2, t2, -1
-	sw t2, _kernel_offset_to_nested(t1)
+	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t2, no_reschedule
 
 	/* nested count is back to 0: Return to thread stack */
@@ -422,9 +423,8 @@ irq_done:
 
 reschedule:
 
-	/* Get pointer to _kernel.current */
-	la t0, _kernel
-	lr a1, _kernel_offset_to_current(t0)
+	/* Get pointer to current thread on this CPU */
+	lr a1, ___cpu_t_current_OFFSET(s0)
 
 	/*
 	 * Get next thread to schedule with z_get_next_switch_handle().
@@ -447,6 +447,10 @@ reschedule:
 	call z_riscv_switch
 
 z_riscv_thread_start:
+might_have_rescheduled:
+
+	/* SMP note: reload s0 with &_current_cpu as it might have changed */
+
 no_reschedule:
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -502,6 +506,9 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	csrw mscratch, t0
 1:
 #endif
+
+	/* Restore s0 (it is no longer ours) */
+	lr s0, __z_arch_esf_t_s0_OFFSET(sp)
 
 	/* Restore caller-saved registers from thread stack */
 	DO_CALLER_SAVED(lr)

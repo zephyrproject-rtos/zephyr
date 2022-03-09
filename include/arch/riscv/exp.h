@@ -72,6 +72,8 @@ struct __esf {
 	ulong_t mepc;		/* machine exception program counter */
 	ulong_t mstatus;	/* machine status register */
 
+	ulong_t s0;		/* callee-saved s0 */
+
 #ifdef CONFIG_USERSPACE
 	ulong_t sp;		/* preserved (user or kernel) stack pointer */
 #endif
