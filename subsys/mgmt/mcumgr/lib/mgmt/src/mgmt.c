@@ -47,7 +47,7 @@ mgmt_streamer_init_reader(struct mgmt_streamer *streamer, void *buf)
 int
 mgmt_streamer_init_writer(struct mgmt_streamer *streamer, void *buf)
 {
-	return streamer->cfg->init_writer(streamer->writer, buf, streamer->cb_arg);
+	return streamer->cfg->init_writer(streamer->writer, buf);
 }
 
 void
