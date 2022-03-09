@@ -13,6 +13,7 @@
 #include <zephyr/types.h>
 #include <errno.h>
 #include <stddef.h>
+#include <toolchain.h>
 #include <sys/timeutil.h>
 
 /** Convert a civil (proleptic Gregorian) date to days relative to
@@ -63,11 +64,12 @@ time_t timeutil_timegm(const struct tm *tm)
 	time_t rv = (time_t)time;
 
 	errno = 0;
-	if ((sizeof(rv) == sizeof(int32_t))
-	    && ((time < (int64_t)INT32_MIN)
-		|| (time > (int64_t)INT32_MAX))) {
-		errno = ERANGE;
-		rv = -1;
+	if (CONSTEXPR(sizeof(rv) == sizeof(int32_t))) {
+		if ((time < (int64_t)INT32_MIN)
+			|| (time > (int64_t)INT32_MAX)) {
+			errno = ERANGE;
+			rv = -1;
+		}
 	}
 
 	return rv;
