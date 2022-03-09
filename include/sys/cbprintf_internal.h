@@ -273,7 +273,7 @@ do { \
 		(_align_offset) += sizeof(int); \
 	} \
 	size_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
-	if (Z_CBPRINTF_IS_PCHAR(_arg) != 0) { \
+	if (CONSTEXPR(Z_CBPRINTF_IS_PCHAR(_arg) != 0)) { \
 		(_s_buf)[(_s_idx)] = (uint16_t)((_idx) / sizeof(int)); \
 		++(_s_idx); \
 	} \
@@ -358,7 +358,7 @@ do { \
 	uint8_t *_pbuf = (buf); \
 	uint8_t _s_cnt = 0; \
 	uint16_t _s_buffer[16]; \
-	size_t _pmax = ((buf) != NULL) ? (size_t)(_inlen) : (size_t)INT32_MAX; \
+	size_t _pmax = CONSTEXPR((buf) != NULL) ? (size_t)(_inlen) : (size_t)INT32_MAX; \
 	size_t _pkg_len = 0; \
 	size_t _total_len = 0; \
 	size_t _pkg_offset = (_align_offset); \
