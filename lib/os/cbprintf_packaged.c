@@ -373,13 +373,15 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 				if (((size_t)(buf - buf0) + size) > len) {
 					return -ENOSPC;
 				}
-				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-					memcpy(buf, (uint8_t *)&v, size);
-				} else if (format[-1] == 'L') {
+#if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY)
+				memcpy(buf, (uint8_t *)&v, size);
+#else
+				if (format[-1] == 'L') {
 					*(long double *)buf = v.ld;
 				} else {
 					*(double *)buf = v.d;
 				}
+#endif
 			}
 			buf += size;
 			parsing = false;
@@ -480,11 +482,11 @@ process_string:
 			long long v = va_arg(ap, long long);
 
 			if (buf0 != NULL) {
-				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-					memcpy(buf, (uint8_t *)&v, sizeof(long long));
-				} else {
-					*(long long *)buf = v;
-				}
+#if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY)
+				memcpy(buf, (uint8_t *)&v, sizeof(long long));
+#else
+				*(long long *)buf = v;
+#endif
 			}
 			buf += sizeof(long long);
 		} else {
