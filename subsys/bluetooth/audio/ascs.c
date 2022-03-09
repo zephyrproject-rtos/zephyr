@@ -74,6 +74,7 @@ static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 
 void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 {
+	struct bt_audio_stream *stream;
 	uint8_t old_state;
 
 	if (!ep) {
@@ -89,11 +90,53 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 	       bt_audio_ep_state_str(old_state),
 	       bt_audio_ep_state_str(state));
 
-	/* Notify callbacks */
+	/* Notify clients*/
 	ase_status_changed(ep, old_state, state);
 
 	if (ep->stream == NULL || old_state == state) {
 		return;
+	}
+
+	stream = ep->stream;
+
+	if (stream->ops != NULL) {
+		const struct bt_audio_stream_ops *ops = stream->ops;
+
+		switch (state) {
+		case BT_AUDIO_EP_STATE_IDLE:
+			if (ops->released != NULL) {
+				ops->released(stream);
+			}
+			break;
+		case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+			if (ops->configured != NULL) {
+				ops->configured(stream, &ep->qos_pref);
+			}
+			break;
+		case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+			if (ops->qos_set != NULL) {
+				ops->qos_set(stream);
+			}
+			break;
+		case BT_AUDIO_EP_STATE_ENABLING:
+			if (ops->enabled != NULL) {
+				ops->enabled(stream);
+			}
+			break;
+		case BT_AUDIO_EP_STATE_STREAMING:
+			if (ops->started != NULL) {
+				ops->started(stream);
+			}
+			break;
+		case BT_AUDIO_EP_STATE_DISABLING:
+			if (ops->disabled != NULL) {
+				ops->disabled(stream);
+			}
+			break;
+		default:
+			BT_ERR("Invalid state: %u", state);
+			break;
+		}
 	}
 
 	if (state == BT_AUDIO_EP_STATE_IDLE) {
