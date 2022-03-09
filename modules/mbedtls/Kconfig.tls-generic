@@ -396,4 +396,19 @@ config MBEDTLS_PKCS5_C
 	help
 	  Enable PKCS5 functions
 
+config MBEDTLS_SSL_CACHE_C
+	bool "SSL session cache support"
+	help
+	  "This option enables simple SSL cache implementation (server side)."
+
+config MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT
+	int "Default timeout for SSL cache entires"
+	depends on MBEDTLS_SSL_CACHE_C
+	default 86400
+
+config MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
+	int "Maximum number of SSL cache entires"
+	depends on MBEDTLS_SSL_CACHE_C
+	default 5
+
 endmenu
