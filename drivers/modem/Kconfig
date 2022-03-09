@@ -126,7 +126,7 @@ config MODEM_SHELL
 	  sending a command to the modem UART.
 
 config MODEM_SIM_NUMBERS
-	bool "Querying the SIM for IMSI and ICCID"
+	bool "Query the SIM for IMSI and ICCID"
 	depends on MODEM_SHELL
 	default y
 	help
@@ -134,7 +134,7 @@ config MODEM_SIM_NUMBERS
 	  can be disabled if the application does not use a SIM.
 
 config MODEM_CELL_INFO
-	bool "Querying for operator and cell info"
+	bool "Query for operator and cell info"
 	depends on MODEM_SHELL
 	help
 	  Query for numerical operator id, location area code and cell id.

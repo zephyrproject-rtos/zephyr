@@ -325,7 +325,7 @@ menu "ARC MPU Options"
 depends on CPU_HAS_MPU
 
 config ARC_MPU_ENABLE
-	bool "MPU"
+	bool "Memory Protection Unit (MPU)"
 	select ARC_MPU
 	help
 	  Enable MPU
