@@ -201,6 +201,14 @@ do {                                                                    \
 #define __must_check __attribute__((warn_unused_result))
 #endif
 #define ARG_UNUSED(x) (void)(x)
+/* Ensure that expression validity is checked by the compiler */
+#ifdef __cplusplus
+#define UNEVALUATED(expr) (void)__builtin_constant_p((expr, 0))
+#else
+#define UNEVALUATED(expr) (void)_Generic(0, int : 0, default : (expr))
+#endif
+/* Mark expression as possibly constant at compile time */
+#define CONSTEXPR(x) (x)
 
 #define likely(x)   (__builtin_expect((x) ? 1 : 0, 1) != 0)
 #define unlikely(x) (__builtin_expect((x) ? 1 : 0, 0) != 0)
