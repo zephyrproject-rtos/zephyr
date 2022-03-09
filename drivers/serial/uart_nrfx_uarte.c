@@ -60,6 +60,13 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_ANY_NONE_ASYNC 1
 #endif
 
+#if	(defined(CONFIG_UART_0_NRF_UARTE) && defined(CONFIG_UART_0_ASYNC)) || \
+	(defined(CONFIG_UART_1_NRF_UARTE) && defined(CONFIG_UART_1_ASYNC)) || \
+	(defined(CONFIG_UART_2_NRF_UARTE) && defined(CONFIG_UART_2_ASYNC)) || \
+	(defined(CONFIG_UART_3_NRF_UARTE) && defined(CONFIG_UART_3_ASYNC))
+#define UARTE_ANY_ASYNC 1
+#endif
+
 /*
  * RX timeout is divided into time slabs, this define tells how many divisions
  * should be made. More divisions - higher timeout accuracy and processor usage.
@@ -69,7 +76,7 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 /* Size of hardware fifo in RX path. */
 #define UARTE_HW_RX_FIFO_SIZE 5
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 struct uarte_async_cb {
 	uart_callback_t user_callback;
 	void *user_data;
@@ -110,7 +117,7 @@ struct uarte_async_cb {
 	/* Flag to ensure that RX timeout won't be executed during ENDRX ISR */
 	volatile bool is_in_irq;
 };
-#endif
+#endif /* UARTE_ANY_ASYNC */
 
 #ifdef UARTE_INTERRUPT_DRIVEN
 struct uarte_nrfx_int_driven {
@@ -133,7 +140,7 @@ struct uarte_nrfx_data {
 #ifdef UARTE_INTERRUPT_DRIVEN
 	struct uarte_nrfx_int_driven *int_driven;
 #endif
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 	struct uarte_async_cb *async;
 #endif
 	atomic_val_t poll_out_lock;
@@ -173,7 +180,7 @@ struct uarte_nrfx_config {
 	bool rx_pull_up;
 	bool cts_pull_up;
 #endif /* CONFIG_PINCTRL */
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 	nrfx_timer_t timer;
 #endif
 };
@@ -543,7 +550,7 @@ static int wait_tx_ready(const struct device *dev)
 	return key;
 }
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 
 /* Using Macro instead of static inline function to handle NO_OPTIMIZATIONS case
  * where static inline fails on linking.
@@ -551,11 +558,11 @@ static int wait_tx_ready(const struct device *dev)
 #define HW_RX_COUNTING_ENABLED(data) \
 	(IS_ENABLED(CONFIG_UARTE_NRF_HW_ASYNC) ? data->async->hw_rx_counting : false)
 
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* UARTE_ANY_ASYNC */
 
 static void uarte_enable(const struct device *dev, uint32_t mask)
 {
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 	const struct uarte_nrfx_config *config = dev->config;
 	struct uarte_nrfx_data *data = dev->data;
 
@@ -605,10 +612,10 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
 }
 
-#if defined(CONFIG_UART_ASYNC_API) || defined(CONFIG_PM_DEVICE)
+#if defined(UARTE_ANY_ASYNC) || defined(CONFIG_PM_DEVICE)
 static void uart_disable(const struct device *dev)
 {
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 	const struct uarte_nrfx_config *config = dev->config;
 	struct uarte_nrfx_data *data = dev->data;
 
@@ -624,7 +631,7 @@ static void uart_disable(const struct device *dev)
 }
 #endif
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 
 static void timer_handler(nrf_timer_event_t event_type, void *p_context) { }
 static void rx_timeout(struct k_timer *timer);
@@ -1484,7 +1491,7 @@ static void uarte_nrfx_isr_async(const struct device *dev)
 	}
 }
 
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* UARTE_ANY_ASYNC */
 
 /**
  * @brief Poll the device for input.
@@ -1500,7 +1507,7 @@ static int uarte_nrfx_poll_in(const struct device *dev, unsigned char *c)
 	const struct uarte_nrfx_data *data = dev->data;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 	if (data->async) {
 		return -ENOTSUP;
 	}
@@ -1535,7 +1542,7 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 		while (1) {
 			key = irq_lock();
 			if (is_tx_ready(dev)) {
-#if CONFIG_UART_ASYNC_API
+#if UARTE_ANY_ASYNC
 				if (data->async && data->async->tx_size &&
 					data->async->tx_amount < 0) {
 					data->async->tx_amount =
@@ -1736,14 +1743,14 @@ static const struct uart_driver_api uart_nrfx_uarte_driver_api = {
 	.configure              = uarte_nrfx_configure,
 	.config_get             = uarte_nrfx_config_get,
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 	.callback_set		= uarte_nrfx_callback_set,
 	.tx			= uarte_nrfx_tx,
 	.tx_abort		= uarte_nrfx_tx_abort,
 	.rx_enable		= uarte_nrfx_rx_enable,
 	.rx_buf_rsp		= uarte_nrfx_rx_buf_rsp,
 	.rx_disable		= uarte_nrfx_rx_disable,
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* UARTE_ANY_ASYNC */
 #ifdef UARTE_INTERRUPT_DRIVEN
 	.fifo_fill		= uarte_nrfx_fifo_fill,
 	.fifo_read		= uarte_nrfx_fifo_read,
@@ -1816,7 +1823,7 @@ static int uarte_instance_init(const struct device *dev,
 	}
 
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 	if (data->async) {
 		err = uarte_nrfx_init(dev);
 		if (err < 0) {
@@ -1898,7 +1905,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 				enum pm_device_action action)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-#if defined(CONFIG_UART_ASYNC_API) || defined(UARTE_INTERRUPT_DRIVEN)
+#if defined(UARTE_ANY_ASYNC) || defined(UARTE_INTERRUPT_DRIVEN)
 	struct uarte_nrfx_data *data = dev->data;
 #endif
 	const struct uarte_nrfx_config *cfg = dev->config;
@@ -1922,7 +1929,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 
 		nrf_uarte_enable(uarte);
 
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 		if (HW_RX_COUNTING_ENABLED(data)) {
 			nrfx_timer_enable(&cfg->timer);
 		}
@@ -1947,7 +1954,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		/* Disabling UART requires stopping RX, but stop RX event is
 		 * only sent after each RX if async UART API is used.
 		 */
-#ifdef CONFIG_UART_ASYNC_API
+#ifdef UARTE_ANY_ASYNC
 		if (data->async) {
 			/* Entering inactive state requires device to be no
 			 * active asynchronous calls.
