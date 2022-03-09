@@ -54,13 +54,25 @@ extern "C" {
 /* sizeof(long double) is 12 on x86-32, which is not power of 2.
  * So set it manually.
  */
-#define CBPRINTF_PACKAGE_ALIGNMENT \
-	((IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)) ? \
-		16 : MAX(sizeof(double), sizeof(long long)))
+#ifdef CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
+#define CBPRINTF_PACKAGE_ALIGNMENT 16
 #else
-#define CBPRINTF_PACKAGE_ALIGNMENT \
-	((unsigned int)((IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE)) ? \
-		sizeof(long double) : MAX(sizeof(double), sizeof(long long))))
+#if __SIZEOF_DOUBLE__ >= __SIZEOF_LONG_LONG__
+#define CBPRINTF_PACKAGE_ALIGNMENT __SIZEOF_DOUBLE__
+#else
+#define CBPRINTF_PACKAGE_ALIGNMENT __SIZEOF_LONG_LONG__
+#endif
+#endif
+#else
+#ifdef CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
+#define CBPRINTF_PACKAGE_ALIGNMENT __SIZEOF_LONG_DOUBLE__
+#else
+#if __SIZEOF_DOUBLE__ >= __SIZEOF_LONG_LONG__
+#define CBPRINTF_PACKAGE_ALIGNMENT __SIZEOF_DOUBLE__
+#else
+#define CBPRINTF_PACKAGE_ALIGNMENT __SIZEOF_LONG_LONG__
+#endif
+#endif
 #endif
 
 /**@defgroup CBPRINTF_PACKAGE_FLAGS Package flags.
