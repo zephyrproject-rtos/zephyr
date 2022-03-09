@@ -577,7 +577,7 @@ bool k_work_cancel_sync(struct k_work *work,
  *
  * @param workq_ptr pointer to the work queue structure
  */
-static void work_queue_main(void *workq_ptr, void *p2, void *p3)
+static FUNC_NORETURN void work_queue_main(void *workq_ptr, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
