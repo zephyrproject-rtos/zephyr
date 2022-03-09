@@ -23,9 +23,9 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  * Sets the kernel data structure idle field to either a positive value or
  * K_FOREVER.
  */
+#ifdef CONFIG_PM
 static void pm_save_idle(void)
 {
-#ifdef CONFIG_PM
 	int32_t ticks = z_get_next_timeout_expiry();
 	_kernel.idle = ticks;
 
@@ -45,8 +45,8 @@ static void pm_save_idle(void)
 	if (pm_system_suspend(ticks) == PM_STATE_ACTIVE) {
 		k_cpu_idle();
 	}
-#endif
 }
+#endif
 
 void z_pm_save_idle_exit(int32_t ticks)
 {
@@ -61,7 +61,7 @@ void z_pm_save_idle_exit(int32_t ticks)
 	sys_clock_idle_exit();
 }
 
-void idle(void *unused1, void *unused2, void *unused3)
+FUNC_NORETURN void idle(void *unused1, void *unused2, void *unused3)
 {
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
@@ -78,12 +78,10 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 * a fallback configuration for new platform
 		 * bringup.
 		 */
-		if ((IS_ENABLED(CONFIG_SMP)) &&
-		    !(IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED))) {
-			k_busy_wait(100);
-			k_yield();
-			continue;
-		}
+#if defined(CONFIG_SMP) && !defined(CONFIG_SCHED_IPI_SUPPORTED)
+		k_busy_wait(100);
+		k_yield();
+#else
 
 		/* Note weird API: k_cpu_idle() is called with local
 		 * CPU interrupts masked, and returns with them
@@ -92,11 +90,11 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 */
 		(void) arch_irq_lock();
 
-		if (IS_ENABLED(CONFIG_PM)) {
-			pm_save_idle();
-		} else {
-			k_cpu_idle();
-		}
+#ifdef CONFIG_PM
+		pm_save_idle();
+#else
+		k_cpu_idle();
+#endif
 
 #if !defined(CONFIG_PREEMPT_ENABLED)
 # if !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC)
@@ -112,7 +110,8 @@ void idle(void *unused1, void *unused2, void *unused3)
 		if (_kernel.ready_q.cache != _current) {
 			z_swap_unlocked();
 		}
-# endif
+#endif
+#endif
 #endif
 	}
 }
