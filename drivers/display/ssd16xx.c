@@ -66,11 +66,15 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 				    uint8_t *data, size_t len)
 {
 	const struct ssd16xx_config *config = dev->config;
-	int err;
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
+	int err;
 
-	gpio_pin_set_dt(&config->dc_gpio, 1);
+	err = gpio_pin_set_dt(&config->dc_gpio, 1);
+	if (err < 0) {
+		return err;
+	}
+
 	err = spi_write_dt(&config->bus, &buf_set);
 	if (err < 0) {
 		return err;
@@ -79,7 +83,12 @@ static inline int ssd16xx_write_cmd(const struct device *dev, uint8_t cmd,
 	if (data != NULL) {
 		buf.buf = data;
 		buf.len = len;
-		gpio_pin_set_dt(&config->dc_gpio, 0);
+
+		err = gpio_pin_set_dt(&config->dc_gpio, 0);
+		if (err < 0) {
+			return err;
+		}
+
 		err = spi_write_dt(&config->bus, &buf_set);
 		if (err < 0) {
 			return err;
@@ -550,9 +559,17 @@ static int ssd16xx_controller_init(const struct device *dev)
 
 	LOG_DBG("");
 
-	gpio_pin_set_dt(&config->reset_gpio, 1);
+	err = gpio_pin_set_dt(&config->reset_gpio, 1);
+	if (err < 0) {
+		return err;
+	}
+
 	k_msleep(SSD16XX_RESET_DELAY);
-	gpio_pin_set_dt(&config->reset_gpio, 0);
+	err = gpio_pin_set_dt(&config->reset_gpio, 0);
+	if (err < 0) {
+		return err;
+	}
+
 	k_msleep(SSD16XX_RESET_DELAY);
 	ssd16xx_busy_wait(dev);
 
@@ -626,8 +643,9 @@ static int ssd16xx_controller_init(const struct device *dev)
 			      SSD16XX_CTRL2_DISABLE_ANALOG |
 			      SSD16XX_CTRL2_DISABLE_CLK);
 
-	if (ssd16xx_load_ws_initial(dev)) {
-		return -EIO;
+	err = ssd16xx_load_ws_initial(dev);
+	if (err < 0) {
+		return err;
 	}
 
 	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
@@ -645,8 +663,9 @@ static int ssd16xx_controller_init(const struct device *dev)
 
 	ssd16xx_busy_wait(dev);
 
-	if (ssd16xx_load_ws_default(dev)) {
-		return -EIO;
+	err = ssd16xx_load_ws_default(dev);
+	if (err < 0) {
+		return err;
 	}
 
 	return ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
@@ -655,6 +674,7 @@ static int ssd16xx_controller_init(const struct device *dev)
 static int ssd16xx_init(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
+	int err;
 
 	LOG_DBG("");
 
@@ -668,21 +688,33 @@ static int ssd16xx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	err = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	if (err < 0) {
+		LOG_ERR("Failed to configure reset GPIO");
+		return err;
+	}
 
 	if (!device_is_ready(config->dc_gpio.port)) {
 		LOG_ERR("DC GPIO device not ready");
 		return -ENODEV;
 	}
 
-	gpio_pin_configure_dt(&config->dc_gpio, GPIO_OUTPUT_INACTIVE);
+	err = gpio_pin_configure_dt(&config->dc_gpio, GPIO_OUTPUT_INACTIVE);
+	if (err < 0) {
+		LOG_ERR("Failed to configure DC GPIO");
+		return err;
+	}
 
 	if (!device_is_ready(config->busy_gpio.port)) {
 		LOG_ERR("Busy GPIO device not ready");
 		return -ENODEV;
 	}
 
-	gpio_pin_configure_dt(&config->busy_gpio, GPIO_INPUT);
+	err = gpio_pin_configure_dt(&config->busy_gpio, GPIO_INPUT);
+	if (err < 0) {
+		LOG_ERR("Failed to configure busy GPIO");
+		return err;
+	}
 
 	return ssd16xx_controller_init(dev);
 }
