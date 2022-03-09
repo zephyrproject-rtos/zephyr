@@ -25,7 +25,7 @@ config CONSOLE_HAS_DRIVER
 	  that some kind of console exists.
 
 config CONSOLE_HANDLER
-	bool "Enable console input handler"
+	bool "Console input handler"
 	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
 	help
@@ -58,7 +58,7 @@ config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	  code handle them if they are of no special significance to it.
 
 config UART_CONSOLE_MCUMGR
-	bool "Enable UART console mcumgr passthrough"
+	bool "UART console mcumgr passthrough"
 	depends on UART_CONSOLE
 	help
 	  Enables the UART console to receive mcumgr frames for image upgrade
@@ -67,7 +67,7 @@ config UART_CONSOLE_MCUMGR
 	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
 
 config UART_CONSOLE_INPUT_EXPIRED
-	bool "Enable support for UART console input expired mechanism"
+	bool "Support for UART console input expired mechanism"
 	default y
 	depends on UART_CONSOLE && PM
 	help
@@ -190,7 +190,7 @@ config IPM_CONSOLE_LINE_BUF_LEN
 	  where characters are stored before sending the whole line.
 
 config UART_PIPE
-	bool "Enable pipe UART driver"
+	bool "Pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable pipe UART driver. This driver allows application to communicate
@@ -211,7 +211,7 @@ config UART_PIPE_ON_DEV_NAME
 	  for pipe UART.
 
 config UART_MCUMGR
-	bool "Enable mcumgr UART driver"
+	bool "Mcumgr UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable the mcumgr UART driver. This driver allows the application to
@@ -307,7 +307,7 @@ source "subsys/logging/Kconfig.template.log_config"
 source "drivers/console/Kconfig.gsm_mux"
 
 config UART_MUX
-	bool "Enable UART muxing (GSM 07.10) support [EXPERIMENTAL]"
+	bool "UART muxing (GSM 07.10) support [EXPERIMENTAL]"
 	depends on SERIAL_SUPPORT_INTERRUPT && GSM_MUX
 	select UART_INTERRUPT_DRIVEN
 	select EXPERIMENTAL

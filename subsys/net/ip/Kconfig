@@ -7,7 +7,7 @@
 menu "IP stack"
 
 config NET_NATIVE
-	bool "Enable native IP stack"
+	bool "Native IP stack"
 	default y
 	help
 	  Enables Zephyr native IP stack. If you disable this, then
@@ -117,14 +117,14 @@ source "subsys/net/ip/Kconfig.ipv6"
 source "subsys/net/ip/Kconfig.ipv4"
 
 config NET_SHELL
-	bool "Enable network shell utilities"
+	bool "Network shell utilities"
 	select SHELL
 	help
 	  Activate shell module that provides network commands like
 	  ping to the console.
 
 config NET_SHELL_DYN_CMD_COMPLETION
-	bool "Enable network shell dynamic command completion"
+	bool "Network shell dynamic command completion"
 	depends on NET_SHELL
 	default y
 	help
@@ -320,7 +320,7 @@ config NET_MAX_NEXTHOPS
 	  This determines how many entries can be stored in nexthop table.
 
 config NET_ROUTE_MCAST
-	bool "Enable Multicast Routing / Forwarding"
+	bool "Multicast Routing / Forwarding"
 	depends on NET_ROUTE
 	help
 	  Activates multicast routing/forwarding
@@ -334,7 +334,7 @@ config NET_MAX_MCAST_ROUTES
 	  routing table.
 
 config NET_TCP
-	bool "Enable TCP"
+	bool "TCP"
 	help
 	  The value depends on your network needs.
 
@@ -480,12 +480,12 @@ config NET_TCP_ISN_RFC6528
 	  If this is not set, then sys_rand32_get() is used for ISN value.
 
 config NET_TEST_PROTOCOL
-	bool "Enable JSON based test protocol (UDP)"
+	bool "JSON based test protocol (UDP)"
 	help
 	  Enable JSON based test protocol (UDP).
 
 config NET_UDP
-	bool "Enable UDP"
+	bool "UDP"
 	default y
 	help
 	  The value depends on your network needs.
@@ -533,7 +533,7 @@ config NET_MAX_CONTEXTS
 	  similar as one could call a network socket in some other systems.
 
 config NET_CONTEXT_NET_PKT_POOL
-	bool "Enable net_buf TX pool / context"
+	bool "Net_buf TX pool / context"
 	default y if NET_TCP && NET_6LO
 	help
 	  If enabled, then it is possible to fine-tune network packet pool
@@ -609,7 +609,7 @@ config NET_SLIP_TAP
 	  https://github.com/zephyrproject-rtos/net-tools for more details.
 
 config NET_TRICKLE
-	bool "Enable Trickle library"
+	bool "Trickle library"
 	help
 	  Normally this is enabled automatically if needed,
 	  so say 'n' if unsure.
@@ -752,7 +752,7 @@ config NET_DEFAULT_IF_PPP
 endchoice
 
 config NET_PKT_TIMESTAMP
-	bool "Enable network packet timestamp support"
+	bool "Network packet timestamp support"
 	help
 	  Enable network packet timestamp support. This is needed for
 	  example in gPTP which needs to know how long it takes to send
@@ -779,14 +779,14 @@ config NET_PKT_TIMESTAMP_STACK_SIZE
 	  callbacks.
 
 config NET_PKT_TXTIME
-	bool "Enable network packet TX time support"
+	bool "Network packet TX time support"
 	help
 	  Enable network packet TX time support. This is needed for
 	  when the application wants to set the exact time when the network
 	  packet should be sent.
 
 config NET_PKT_RXTIME_STATS
-	bool "Enable network packet RX time statistics"
+	bool "Network packet RX time statistics"
 	select NET_PKT_TIMESTAMP
 	select NET_STATISTICS
 	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && NET_NATIVE
@@ -809,7 +809,7 @@ config NET_PKT_RXTIME_STATS_DETAIL
 	  command.
 
 config NET_PKT_TXTIME_STATS
-	bool "Enable network packet TX time statistics"
+	bool "Network packet TX time statistics"
 	select NET_PKT_TIMESTAMP
 	select NET_STATISTICS
 	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && NET_NATIVE
@@ -834,7 +834,7 @@ config NET_PKT_TXTIME_STATS_DETAIL
 	  command.
 
 config NET_PROMISCUOUS_MODE
-	bool "Enable promiscuous mode support"
+	bool "Promiscuous mode support"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_L2_ETHERNET_MGMT if NET_L2_ETHERNET

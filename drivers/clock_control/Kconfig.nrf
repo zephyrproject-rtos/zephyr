@@ -55,7 +55,7 @@ config CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
 endchoice
 
 config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
-	bool "Enable LF clock calibration"
+	bool "LF clock calibration"
 	depends on !SOC_SERIES_NRF91X && CLOCK_CONTROL_NRF_K32SRC_RC
 	default y
 	help

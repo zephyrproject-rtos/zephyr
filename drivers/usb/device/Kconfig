@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USB_DEVICE_DRIVER
-	bool "Enable USB device controller drivers"
+	bool "USB device controller drivers"
 	help
 	  Enable USB device controller drivers.
 
@@ -16,7 +16,7 @@ config USB_DC_HAS_HS_SUPPORT
 	  USB device controller supports high speed.
 
 config USB_DEVICE_REMOTE_WAKEUP
-	bool "Enable remote wakeup support"
+	bool "Remote wakeup support"
 	help
 	  USB device controller supports remote wakeup feature.
 

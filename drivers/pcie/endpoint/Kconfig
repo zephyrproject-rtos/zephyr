@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PCIE_ENDPOINT
-	bool "Enable PCIe Endpoint support"
+	bool "PCIe Endpoint support"
 	help
 	  This option enables PCIe Endpoint support.
 

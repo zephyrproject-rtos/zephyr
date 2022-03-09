@@ -122,7 +122,7 @@ endif # NEWLIB_LIBC
 if MINIMAL_LIBC
 
 config MINIMAL_LIBC_MALLOC
-	bool "Enable minimal libc malloc implementation"
+	bool "Minimal libc malloc implementation"
 	default y
 	help
 	  Enable the minimal libc's implementation of malloc, free, and realloc.
@@ -137,14 +137,14 @@ config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 	  minimal libc's malloc() implementation.
 
 config MINIMAL_LIBC_CALLOC
-	bool "Enable minimal libc trivial calloc implementation"
+	bool "Minimal libc trivial calloc implementation"
 	default y
 	help
 	  Enable the minimal libc's trivial implementation of calloc, which
 	  forwards to malloc and memset.
 
 config MINIMAL_LIBC_REALLOCARRAY
-	bool "Enable minimal libc trivial reallocarray implementation"
+	bool "Minimal libc trivial reallocarray implementation"
 	default y
 	help
 	  Enable the minimal libc's trivial implementation of reallocarray, which
@@ -165,7 +165,7 @@ config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	  memset. On the Cortex-M0+ this reduces the total code size by 120 bytes.
 
 config MINIMAL_LIBC_RAND
-	bool "Enables rand and srand functions"
+	bool "Rand and srand functions"
 	select NEED_LIBC_MEM_PARTITION
 	help
 	  Enable rand() and srand() for the minimal libc. The

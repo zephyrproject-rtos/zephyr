@@ -191,14 +191,14 @@ config BT_CTLR_ADV_SYNC_SET
 	  Maximum supported periodic advertising sets.
 
 config BT_CTLR_ADV_PDU_LINK
-	bool "Enable linking of advertising PDU trains"
+	bool "Linking of advertising PDU trains"
 	help
 	  Enables extra space in each advertising PDU to allow linking PDUs. This
 	  is required to enable advertising data trains (i.e. transmission of
 	  AUX_CHAIN_IND).
 
 config BT_CTLR_ADV_PDU_BACK2BACK
-	bool "Enable back-to-back transmission of extended advertising trains"
+	bool "Back-to-back transmission of extended advertising trains"
 	depends on BT_CTLR_ADV_EXT && BT_BROADCASTER
 	select BT_CTLR_ADV_PDU_LINK
 	help
@@ -214,7 +214,7 @@ config BT_CTLR_ADV_PDU_BACK2BACK_AFS
 	  extended advertising trains. Time specified in microseconds.
 
 config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
-	bool "Enable back-to-back transmission of periodic advertising trains"
+	bool "Back-to-back transmission of periodic advertising trains"
 	depends on BT_CTLR_ADV_PERIODIC
 	select BT_CTLR_ADV_PDU_LINK
 	help
@@ -431,14 +431,14 @@ config BT_CTLR_LOW_LAT_ULL_DONE
 	  Done events be processed and dequeued in ULL context.
 
 config BT_CTLR_CONN_META
-	prompt "Enable connection meta data extension"
+	prompt "Connection meta data extension"
 	bool
 	help
 	  Enables vendor specific per-connection meta data as part of the
 	  LLL connection object.
 
 config BT_CTLR_RX_PDU_META
-	prompt "Enable RX pdu meta data"
+	prompt "RX pdu meta data"
 	bool
 
 config BT_CTLR_RADIO_ENABLE_FAST
@@ -472,7 +472,7 @@ config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	  less left for other uses
 
 config BT_CTLR_PARAM_CHECK
-	bool "Enable HCI Command Parameter checking"
+	bool "HCI Command Parameter checking"
 	default y if BT_HCI_RAW
 	help
 	  Enable code checking HCI Command Parameters. This is not needed in
@@ -599,7 +599,7 @@ config BT_CTLR_FORCE_MD_AUTO
 	  data throughput.
 
 config BT_CTLR_CONN_RANDOM_FORCE
-	bool "Enable random forced scheduling for peripheral on missed anchor point"
+	bool "Random forced scheduling for peripheral on missed anchor point"
 	depends on BT_PERIPHERAL
 	default y
 	help
@@ -725,7 +725,7 @@ config BT_CTLR_JIT_SCHEDULING
 	  the link layer.
 
 config BT_CTLR_USER_EXT
-	prompt "Enable proprietary extensions in Controller"
+	prompt "Proprietary extensions in Controller"
 	bool
 	help
 	  Catch-all for enabling proprietary event types in Controller behavior.
@@ -759,7 +759,7 @@ config BT_RX_USER_PDU_LEN
 	  PDUs are assumed to not go across HCI.
 
 config BT_CTLR_USER_CPR_INTERVAL_MIN
-	bool "Enable proprietary Connection Parameter Request minimum interval"
+	bool "Proprietary Connection Parameter Request minimum interval"
 	depends on BT_CTLR_USER_EXT
 	help
 	  When enabled, controller will accept Connection Parameter Request

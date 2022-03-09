@@ -75,7 +75,7 @@ config SOC_MEC1501_VCI_PINS_AS_GPIOS
 	  design.
 
 config SOC_MEC1501_TEST_CLK_OUT
-	bool "Enable test clock out pin"
+	bool "Test clock out pin"
 	help
 	  Enables a test clock out pin
 

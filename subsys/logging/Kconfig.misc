@@ -12,7 +12,7 @@ config LOG_DOMAIN_ID
 	  In multicore system each application/core must have unique domain ID.
 
 config LOG_CMDS
-	bool "Enable shell commands"
+	bool "Shell commands"
 	depends on SHELL
 	depends on !LOG_FRONTEND && !LOG_MODE_MINIMAL
 	default y if SHELL
@@ -57,7 +57,7 @@ config LOG2_FMT_SECTION
 	  logging.
 
 config LOG_MEM_UTILIZATION
-	bool "Enable tracking maximum memory utilization"
+	bool "Tracking maximum memory utilization"
 	depends on LOG_MODE_DEFERRED
 	default y if LOG_CMDS
 	select MEM_SLAB_TRACE_MAX_UTILIZATION if LOG1

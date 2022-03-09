@@ -127,7 +127,7 @@ config MBEDTLS_INSTALL_PATH
 	  is enabled otherwise the build will fail.
 
 config MBEDTLS_ENABLE_HEAP
-	bool "Enable global heap for mbed TLS"
+	bool "Global heap for mbed TLS"
 	help
 	  This option enables the mbedtls to use the heap. This setting must
 	  be global so that various applications and libraries in Zephyr do not

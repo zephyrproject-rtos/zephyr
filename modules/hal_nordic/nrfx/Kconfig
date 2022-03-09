@@ -8,62 +8,62 @@ menu "nrfx drivers"
 	depends on HAS_NRFX
 
 config NRFX_ADC
-	bool "Enable ADC driver"
+	bool "ADC driver"
 	depends on HAS_HW_NRF_ADC
 
 config NRFX_CLOCK
-	bool "Enable CLOCK driver"
+	bool "CLOCK driver"
 	depends on HAS_HW_NRF_CLOCK
 
 config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
-	bool "Enable two stage start sequence of the low frequency clock"
+	bool "Two stage start sequence of the low frequency clock"
 	depends on NRFX_CLOCK
 
 config NRFX_COMP
-	bool "Enable COMP driver"
+	bool "COMP driver"
 	depends on HAS_HW_NRF_COMP
 
 config NRFX_DPPI
-	bool "Enable DPPI allocator"
+	bool "DPPI allocator"
 	depends on HAS_HW_NRF_DPPIC
 
 config NRFX_EGU
-	bool "Enable EGU driver"
+	bool "EGU driver"
 	depends on HAS_HW_NRF_EGU0 || HAS_HW_NRF_EGU1 || HAS_HW_NRF_EGU2 || \
 		   HAS_HW_NRF_EGU3 || HAS_HW_NRF_EGU4 || HAS_HW_NRF_EGU5
 
 config NRFX_EGU0
-	bool "Enable EGU0 instance"
+	bool "EGU0 instance"
 	depends on HAS_HW_NRF_EGU0
 	select NRFX_EGU
 
 config NRFX_EGU1
-	bool "Enable EGU1 instance"
+	bool "EGU1 instance"
 	depends on HAS_HW_NRF_EGU1
 	select NRFX_EGU
 
 config NRFX_EGU2
-	bool "Enable EGU2 instance"
+	bool "EGU2 instance"
 	depends on HAS_HW_NRF_EGU2
 	select NRFX_EGU
 
 config NRFX_EGU3
-	bool "Enable EGU3 instance"
+	bool "EGU3 instance"
 	depends on HAS_HW_NRF_EGU3
 	select NRFX_EGU
 
 config NRFX_EGU4
-	bool "Enable EGU4 instance"
+	bool "EGU4 instance"
 	depends on HAS_HW_NRF_EGU4
 	select NRFX_EGU
 
 config NRFX_EGU5
-	bool "Enable EGU5 instance"
+	bool "EGU5 instance"
 	depends on HAS_HW_NRF_EGU5
 	select NRFX_EGU
 
 config NRFX_GPIOTE
-	bool "Enable GPIOTE driver"
+	bool "GPIOTE driver"
 	depends on HAS_HW_NRF_GPIOTE
 
 config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
@@ -75,356 +75,356 @@ config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	  by the user.
 
 config NRFX_I2S
-	bool "Enable I2S driver"
+	bool "I2S driver"
 	depends on HAS_HW_NRF_I2S
 
 config NRFX_IPC
-	bool "Enable IPC driver"
+	bool "IPC driver"
 	depends on HAS_HW_NRF_IPC
 
 config NRFX_LPCOMP
-	bool "Enable LPCOMP driver"
+	bool "LPCOMP driver"
 	depends on HAS_HW_NRF_LPCOMP
 
 config NRFX_NFCT
-	bool "Enable NFCT driver"
+	bool "NFCT driver"
 	depends on HAS_HW_NRF_NFCT
 	select NRFX_TIMER4 if SOC_SERIES_NRF52X
 	select NRFX_TIMER2 if SOC_SERIES_NRF53X
 
 config NRFX_NVMC
-	bool "Enable NVMC driver"
+	bool "NVMC driver"
 
 config NRFX_PDM
-	bool "Enable PDM driver"
+	bool "PDM driver"
 	depends on HAS_HW_NRF_PDM
 
 config NRFX_POWER
-	bool "Enable POWER driver"
+	bool "POWER driver"
 	depends on HAS_HW_NRF_POWER
 	# On SoCs featuring the USBREG peripheral, the POWER driver uses
 	# internally the USBREG driver.
 	select NRFX_USBREG if HAS_HW_NRF_USBREG
 
 config NRFX_PPI
-	bool "Enable PPI allocator"
+	bool "PPI allocator"
 	depends on HAS_HW_NRF_PPI
 
 config NRFX_PWM
-	bool "Enable PWM driver"
+	bool "PWM driver"
 	depends on HAS_HW_NRF_PWM0 || HAS_HW_NRF_PWM1 || \
 		   HAS_HW_NRF_PWM2 || HAS_HW_NRF_PWM3
 
 config NRFX_PWM0
-	bool "Enable PWM0 instance"
+	bool "PWM0 instance"
 	depends on HAS_HW_NRF_PWM0
 	select NRFX_PWM
 
 config NRFX_PWM1
-	bool "Enable PWM1 instance"
+	bool "PWM1 instance"
 	depends on HAS_HW_NRF_PWM1
 	select NRFX_PWM
 
 config NRFX_PWM2
-	bool "Enable PWM2 instance"
+	bool "PWM2 instance"
 	depends on HAS_HW_NRF_PWM2
 	select NRFX_PWM
 
 config NRFX_PWM3
-	bool "Enable PWM3 instance"
+	bool "PWM3 instance"
 	depends on HAS_HW_NRF_PWM3
 	select NRFX_PWM
 
 config NRFX_QDEC
-	bool "Enable QDEC driver"
+	bool "QDEC driver"
 	depends on HAS_HW_NRF_QDEC || HAS_HW_NRF_QDEC0
 
 config NRFX_QSPI
-	bool "Enable QSPI driver"
+	bool "QSPI driver"
 	depends on HAS_HW_NRF_QSPI
 
 config NRFX_RNG
-	bool "Enable RNG driver"
+	bool "RNG driver"
 	depends on HAS_HW_NRF_RNG
 
 config NRFX_RTC
-	bool "Enable RTC driver"
+	bool "RTC driver"
 	depends on HAS_HW_NRF_RTC0 || HAS_HW_NRF_RTC1 || HAS_HW_NRF_RTC2
 
 config NRFX_RTC0
-	bool "Enable RTC0 instance"
+	bool "RTC0 instance"
 	depends on HAS_HW_NRF_RTC0
 	select NRFX_RTC
 
 config NRFX_RTC1
-	bool "Enable RTC1 instance"
+	bool "RTC1 instance"
 	depends on HAS_HW_NRF_RTC1
 	select NRFX_RTC
 
 config NRFX_RTC2
-	bool "Enable RTC2 instance"
+	bool "RTC2 instance"
 	depends on HAS_HW_NRF_RTC2
 	select NRFX_RTC
 
 config NRFX_SAADC
-	bool "Enable SAADC driver"
+	bool "SAADC driver"
 	depends on HAS_HW_NRF_SAADC
 
 config NRFX_SPI
-	bool "Enable SPI driver"
+	bool "SPI driver"
 	depends on HAS_HW_NRF_SPI0 || HAS_HW_NRF_SPI1 || HAS_HW_NRF_SPI2
 
 config NRFX_SPI0
-	bool "Enable SPI0 instance"
+	bool "SPI0 instance"
 	depends on HAS_HW_NRF_SPI0
 	select NRFX_SPI
 
 config NRFX_SPI1
-	bool "Enable SPI1 instance"
+	bool "SPI1 instance"
 	depends on HAS_HW_NRF_SPI1
 	select NRFX_SPI
 
 config NRFX_SPI2
-	bool "Enable SPI2 instance"
+	bool "SPI2 instance"
 	depends on HAS_HW_NRF_SPI2
 	select NRFX_SPI
 
 config NRFX_SPIM
-	bool "Enable SPIM driver"
+	bool "SPIM driver"
 	depends on HAS_HW_NRF_SPIM0 || HAS_HW_NRF_SPIM1 || \
 		   HAS_HW_NRF_SPIM2 || HAS_HW_NRF_SPIM3 || HAS_HW_NRF_SPIM4
 
 config NRFX_SPIM0
-	bool "Enable SPIM0 instance"
+	bool "SPIM0 instance"
 	depends on HAS_HW_NRF_SPIM0
 	select NRFX_SPIM
 
 config NRFX_SPIM1
-	bool "Enable SPIM1 instance"
+	bool "SPIM1 instance"
 	depends on HAS_HW_NRF_SPIM1
 	select NRFX_SPIM
 
 config NRFX_SPIM2
-	bool "Enable SPIM2 instance"
+	bool "SPIM2 instance"
 	depends on HAS_HW_NRF_SPIM2
 	select NRFX_SPIM
 
 config NRFX_SPIM3
-	bool "Enable SPIM3 instance"
+	bool "SPIM3 instance"
 	depends on HAS_HW_NRF_SPIM3
 	select NRFX_SPIM
 
 config NRFX_SPIM4
-	bool "Enable SPIM4 instance"
+	bool "SPIM4 instance"
 	depends on HAS_HW_NRF_SPIM4
 	select NRFX_SPIM
 
 config NRFX_SPIS
-	bool "Enable SPIS driver"
+	bool "SPIS driver"
 	depends on HAS_HW_NRF_SPIS0 || HAS_HW_NRF_SPIS1 || \
 		   HAS_HW_NRF_SPIS2 || HAS_HW_NRF_SPIS3
 
 config NRFX_SPIS0
-	bool "Enable SPIS0 instance"
+	bool "SPIS0 instance"
 	depends on HAS_HW_NRF_SPIS0
 	select NRFX_SPIS
 
 config NRFX_SPIS1
-	bool "Enable SPIS1 instance"
+	bool "SPIS1 instance"
 	depends on HAS_HW_NRF_SPIS1
 	select NRFX_SPIS
 
 config NRFX_SPIS2
-	bool "Enable SPIS2 instance"
+	bool "SPIS2 instance"
 	depends on HAS_HW_NRF_SPIS2
 	select NRFX_SPIS
 
 config NRFX_SPIS3
-	bool "Enable SPIS3 instance"
+	bool "SPIS3 instance"
 	depends on HAS_HW_NRF_SPIS3
 	select NRFX_SPIS
 
 config NRFX_SYSTICK
-	bool "Enable SYSTICK driver"
+	bool "SYSTICK driver"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
 
 config NRFX_TEMP
-	bool "Enable TEMP driver"
+	bool "TEMP driver"
 	depends on HAS_HW_NRF_TEMP
 
 config NRFX_TIMER
-	bool "Enable TIMER driver"
+	bool "TIMER driver"
 	depends on HAS_HW_NRF_TIMER0 || HAS_HW_NRF_TIMER1 || \
 		   HAS_HW_NRF_TIMER2 || HAS_HW_NRF_TIMER3 || \
 		   HAS_HW_NRF_TIMER4
 
 config NRFX_TIMER0
-	bool "Enable TIMER0 instance"
+	bool "TIMER0 instance"
 	depends on HAS_HW_NRF_TIMER0
 	select NRFX_TIMER
 
 config NRFX_TIMER1
-	bool "Enable TIMER1 instance"
+	bool "TIMER1 instance"
 	depends on HAS_HW_NRF_TIMER1
 	select NRFX_TIMER
 
 config NRFX_TIMER2
-	bool "Enable TIMER2 instance"
+	bool "TIMER2 instance"
 	depends on HAS_HW_NRF_TIMER2
 	select NRFX_TIMER
 
 config NRFX_TIMER3
-	bool "Enable TIMER3 instance"
+	bool "TIMER3 instance"
 	depends on HAS_HW_NRF_TIMER3
 	select NRFX_TIMER
 
 config NRFX_TIMER4
-	bool "Enable TIMER4 instance"
+	bool "TIMER4 instance"
 	depends on HAS_HW_NRF_TIMER4
 	select NRFX_TIMER
 
 config NRFX_TWI
-	bool "Enable TWI driver"
+	bool "TWI driver"
 	depends on HAS_HW_NRF_TWI0 || HAS_HW_NRF_TWI1
 
 config NRFX_TWI0
-	bool "Enable TWI0 instance"
+	bool "TWI0 instance"
 	depends on HAS_HW_NRF_TWI0
 	select NRFX_TWI
 
 config NRFX_TWI1
-	bool "Enable TWI1 instance"
+	bool "TWI1 instance"
 	depends on HAS_HW_NRF_TWI1
 	select NRFX_TWI
 
 config NRFX_TWIM
-	bool "Enable TWIM driver"
+	bool "TWIM driver"
 	depends on HAS_HW_NRF_TWIM0 || HAS_HW_NRF_TWIM1 || \
 		   HAS_HW_NRF_TWIM2 || HAS_HW_NRF_TWIM3
 
 config NRFX_TWIM0
-	bool "Enable TWIM0 instance"
+	bool "TWIM0 instance"
 	depends on HAS_HW_NRF_TWIM0
 	select NRFX_TWIM
 
 config NRFX_TWIM1
-	bool "Enable TWIM1 instance"
+	bool "TWIM1 instance"
 	depends on HAS_HW_NRF_TWIM1
 	select NRFX_TWIM
 
 config NRFX_TWIM2
-	bool "Enable TWIM2 instance"
+	bool "TWIM2 instance"
 	depends on HAS_HW_NRF_TWIM2
 	select NRFX_TWIM
 
 config NRFX_TWIM3
-	bool "Enable TWIM3 instance"
+	bool "TWIM3 instance"
 	depends on HAS_HW_NRF_TWIM3
 	select NRFX_TWIM
 
 config NRFX_TWIS
-	bool "Enable TWIS driver"
+	bool "TWIS driver"
 	depends on HAS_HW_NRF_TWIS0 || HAS_HW_NRF_TWIS1 || \
 		   HAS_HW_NRF_TWIS2 || HAS_HW_NRF_TWIS3
 
 config NRFX_TWIS0
-	bool "Enable TWIS0 instance"
+	bool "TWIS0 instance"
 	depends on HAS_HW_NRF_TWIS0
 	select NRFX_TWIS
 
 config NRFX_TWIS1
-	bool "Enable TWIS1 instance"
+	bool "TWIS1 instance"
 	depends on HAS_HW_NRF_TWIS1
 	select NRFX_TWIS
 
 config NRFX_TWIS2
-	bool "Enable TWIS2 instance"
+	bool "TWIS2 instance"
 	depends on HAS_HW_NRF_TWIS2
 	select NRFX_TWIS
 
 config NRFX_TWIS3
-	bool "Enable TWIS3 instance"
+	bool "TWIS3 instance"
 	depends on HAS_HW_NRF_TWIS3
 	select NRFX_TWIS
 
 config NRFX_UART
-	bool "Enable UART driver"
+	bool "UART driver"
 	depends on HAS_HW_NRF_UART0
 
 config NRFX_UART0
-	bool "Enable UART0 instance"
+	bool "UART0 instance"
 	depends on HAS_HW_NRF_UART0
 	select NRFX_UART
 
 config NRFX_UARTE
-	bool "Enable UARTE driver"
+	bool "UARTE driver"
 	depends on HAS_HW_NRF_UARTE0 || HAS_HW_NRF_UARTE1 || \
 		   HAS_HW_NRF_UARTE2 || HAS_HW_NRF_UARTE3
 
 config NRFX_UARTE0
-	bool "Enable UARTE0 instance"
+	bool "UARTE0 instance"
 	depends on HAS_HW_NRF_UARTE0
 	select NRFX_UARTE
 
 config NRFX_UARTE1
-	bool "Enable UARTE1 instance"
+	bool "UARTE1 instance"
 	depends on HAS_HW_NRF_UARTE1
 	select NRFX_UARTE
 
 config NRFX_UARTE2
-	bool "Enable UARTE2 instance"
+	bool "UARTE2 instance"
 	depends on HAS_HW_NRF_UARTE2
 	select NRFX_UARTE
 
 config NRFX_UARTE3
-	bool "Enable UARTE3 instance"
+	bool "UARTE3 instance"
 	depends on HAS_HW_NRF_UARTE3
 	select NRFX_UARTE
 
 config NRFX_USBD
-	bool "Enable USBD driver"
+	bool "USBD driver"
 	depends on HAS_HW_NRF_USBD
 	select NRFX_SYSTICK
 
 config NRFX_USBREG
-	bool "Enable USBREG driver"
+	bool "USBREG driver"
 	depends on HAS_HW_NRF_USBREG
 
 config NRFX_WDT
-	bool "Enable WDT driver"
+	bool "WDT driver"
 	depends on HAS_HW_NRF_WDT || HAS_HW_NRF_WDT0 || HAS_HW_NRF_WDT1
 
 config NRFX_WDT0
-	bool "Enable WDT0 instance"
+	bool "WDT0 instance"
 	depends on HAS_HW_NRF_WDT || HAS_HW_NRF_WDT0
 	select NRFX_WDT
 
 config NRFX_WDT1
-	bool "Enable WDT1 instance"
+	bool "WDT1 instance"
 	depends on HAS_HW_NRF_WDT1
 	select NRFX_WDT
 
 config NRFX_PRS
-	bool "Enable Peripheral Resource Sharing module"
+	bool "Peripheral Resource Sharing module"
 
 config NRFX_PRS_BOX_0
-	bool "Enable PRS box 0"
+	bool "PRS box 0"
 	select NRFX_PRS
 
 config NRFX_PRS_BOX_1
-	bool "Enable PRS box 1"
+	bool "PRS box 1"
 	select NRFX_PRS
 
 config NRFX_PRS_BOX_2
-	bool "Enable PRS box 2"
+	bool "PRS box 2"
 	select NRFX_PRS
 
 config NRFX_PRS_BOX_3
-	bool "Enable PRS box 3"
+	bool "PRS box 3"
 	select NRFX_PRS
 
 config NRFX_PRS_BOX_4
-	bool "Enable PRS box 4"
+	bool "PRS box 4"
 	select NRFX_PRS
 
 endmenu

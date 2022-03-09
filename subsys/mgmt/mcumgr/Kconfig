@@ -31,7 +31,7 @@ config MGMT_CBORATTR_MAX_SIZE
           The maximum size of a CBOR attribute during decoding
 
 config MGMT_CBORATTR_FLOAT_SUPPORT
-	bool "Enable support for float"
+	bool "Support for float"
 	help
 	  The option enables float processing within CBOR attributes.
 	  If your code requires processing of float numbers by CBOR,
@@ -40,7 +40,7 @@ config MGMT_CBORATTR_FLOAT_SUPPORT
 
 menu "Command Handlers"
 menuconfig MCUMGR_CMD_FS_MGMT
-	bool "Enable mcumgr handlers for file management (insecure)"
+	bool "Mcumgr handlers for file management (insecure)"
 	depends on FILE_SYSTEM
 	help
 	  Enables mcumgr handlers for file management
@@ -96,7 +96,7 @@ config FS_MGMT_UL_CHUNK_SIZE
 	  this size gets allocated on the stack during handling of a file upload command.
 
 config FS_MGMT_DL_CHUNK_SIZE_LIMIT
-	bool "Enable setting custom size of download file chunk"
+	bool "Setting custom size of download file chunk"
 	help
 	  By default file chunk, that will be read off storage and fit into
 	  mcumgr frame, is automatically calculated to fit into buffer
@@ -132,7 +132,7 @@ config FS_MGMT_PATH_SIZE
 endif
 
 config MCUMGR_CMD_SHELL_MGMT
-	bool "Enable mcumgr handlers for shell management"
+	bool "Mcumgr handlers for shell management"
 	depends on SHELL
 	select SHELL_BACKEND_DUMMY
 	help
@@ -147,7 +147,7 @@ config MCUMGR_CMD_SHELL_MGMT
 	  increase the value. Remember to set MCUMGR_BUF_SIZE accordingly.
 
 menuconfig MCUMGR_CMD_IMG_MGMT
-	bool "Enable mcumgr handlers for image management"
+	bool "Mcumgr handlers for image management"
 	select FLASH
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	select IMG_MANAGER
@@ -221,7 +221,7 @@ endif
 
 
 menuconfig MCUMGR_CMD_OS_MGMT
-	bool "Enable mcumgr handlers for OS management"
+	bool "Mcumgr handlers for OS management"
 	select REBOOT
 	help
 	  Enables mcumgr handlers for OS management
@@ -287,7 +287,7 @@ config OS_MGMT_TASKSTAT_THREAD_NAME_LEN
 	  sign.
 
 config OS_MGMT_TASKSTAT_SIGNED_PRIORITY
-	bool "Enable signed priorities"
+	bool "Signed priorities"
 	help
 	  Zephyr uses int8_t as thread priorities, but in taskstat response it encodes
 	  them as unsigned.  Enabling this option will use signed int for priorities in
@@ -327,7 +327,7 @@ endif
 
 
 menuconfig MCUMGR_CMD_STAT_MGMT
-	bool "Enable mcumgr handlers for statistics management"
+	bool "Mcumgr handlers for statistics management"
 	depends on STATS
 	help
 	  Enables mcumgr handlers for statistics management.
@@ -344,13 +344,13 @@ config STAT_MGMT_MAX_NAME_LEN
 
 
 menuconfig MCUMGR_GRP_ZEPHYR_BASIC
-	bool "Enable Zephyr specific basic group of commands"
+	bool "Zephyr specific basic group of commands"
 	help
 	  Enables mcumgr to processing of Zephyr specific groups.
 
 if MCUMGR_GRP_ZEPHYR_BASIC
 config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
-	bool "Enables storage erase command"
+	bool "Storage erase command"
 	help
 	  Enables command that allows to erase storage partition.
 

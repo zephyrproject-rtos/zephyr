@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_NET
-	bool "Enable 6loCAN network interface [EXPERIMENTAL]"
+	bool "6loCAN network interface [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enable IPv6 Networking over can (6loCAN)

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config NET_L2_CANBUS
-	bool "Enable CANBUS L2 layer [EXPERIMENTAL]"
+	bool "CANBUS L2 layer [EXPERIMENTAL]"
 	depends on CAN_NET
 	select NET_6LO
 	select EXPERIMENTAL
@@ -54,7 +54,7 @@ config NET_L2_CANBUS_BS
 	  See also: ISO 15765-2:2016
 
 config NET_L2_CANBUS_ETH_TRANSLATOR
-	bool "Enable 6LoCAN to Ethernet translator"
+	bool "6LoCAN to Ethernet translator"
 	depends on NET_L2_ETHERNET
 	help
 	  Enable a 6LoCAN Ethernet translator. With this translator it is
@@ -72,6 +72,6 @@ source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_L2_CANBUS
 
 config NET_L2_CANBUS_RAW
-	bool "Enable CANBUS RAW l2 layer"
+	bool "CANBUS RAW l2 layer"
 	help
 	  Add a CANBUS L2 layer driver. This is the layer for SOCKET CAN.

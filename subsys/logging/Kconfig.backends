@@ -4,7 +4,7 @@
 menu "Backends"
 
 config LOG_BACKEND_UART
-	bool "Enable UART backend"
+	bool "UART backend"
 	depends on UART_CONSOLE
 	default y if !SHELL_BACKEND_SERIAL
 	help
@@ -44,7 +44,7 @@ endif # LOG_BACKEND_UART_OUTPUT_DICTIONARY
 endif # LOG_BACKEND_UART
 
 config LOG_BACKEND_SWO
-	bool "Enable Serial Wire Output (SWO) backend"
+	bool "Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
 	help
 	  When enabled, backend will use SWO for logging.
@@ -73,7 +73,7 @@ source "subsys/logging/Kconfig.template.log_format_config"
 endif # LOG_BACKEND_SWO
 
 config LOG_BACKEND_RTT
-	bool "Enable Segger J-Link RTT backend"
+	bool "Segger J-Link RTT backend"
 	depends on USE_SEGGER_RTT
 	default y if !SHELL_BACKEND_RTT
 	select SEGGER_RTT_CUSTOM_LOCKING
@@ -178,7 +178,7 @@ config LOG_BACKEND_RTT_FORCE_PRINTK
 endif # LOG_BACKEND_RTT
 
 config LOG_BACKEND_SPINEL
-	bool "Enable OpenThread dedicated Spinel protocol backend"
+	bool "OpenThread dedicated Spinel protocol backend"
 	depends on !LOG_BACKEND_UART
 	depends on NET_L2_OPENTHREAD
 	help
@@ -202,7 +202,7 @@ source "subsys/logging/Kconfig.template.log_format_config"
 endif # LOG_BACKEND_SPINEL
 
 config LOG_BACKEND_NATIVE_POSIX
-	bool "Enable native backend"
+	bool "Native backend"
 	depends on ARCH_POSIX
 	help
 	  Enable backend in native_posix
@@ -216,7 +216,7 @@ source "subsys/logging/Kconfig.template.log_format_config"
 endif # LOG_BACKEND_NATIVE_POSIX
 
 config LOG_BACKEND_XTENSA_SIM
-	bool "Enable xtensa simulator backend"
+	bool "Xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_FAMILY_INTEL_ADSP
 	help
 	  Enable backend in xtensa simulator
@@ -240,7 +240,7 @@ endif # LOG_BACKEND_XTENSA_SIM
 # Immediate mode cannot be used with network backend as it would cause the sent
 # rsyslog message to be malformed.
 config LOG_BACKEND_NET
-	bool "Enable networking backend"
+	bool "Networking backend"
 	depends on NETWORKING && NET_UDP && !LOG_MODE_IMMEDIATE
 	select NET_CONTEXT_NET_PKT_POOL
 	help
@@ -301,7 +301,7 @@ source "subsys/logging/Kconfig.template.log_format_config"
 endif # LOG_BACKEND_NET
 
 config LOG_BACKEND_ADSP
-	bool "Enable Intel ADSP buffer backend"
+	bool "Intel ADSP buffer backend"
 	depends on SOC_FAMILY_INTEL_ADSP
 	help
 	  Enable backend for the host trace protocol of the Intel ADSP
@@ -316,7 +316,7 @@ source "subsys/logging/Kconfig.template.log_format_config"
 endif # LOG_BACKEND_ADSP
 
 config LOG_BACKEND_FS
-	bool "Enable file system backend"
+	bool "File system backend"
 	depends on FILE_SYSTEM
 	help
 	  When enabled, backend is using the configured file system to output logs.
@@ -331,7 +331,7 @@ backend-str = fs
 source "subsys/logging/Kconfig.template.log_format_config"
 
 config LOG_BACKEND_FS_OVERWRITE
-	bool "Enable old log files overwrite"
+	bool "Old log files overwrite"
 	default y
 	help
 	  When enabled backend overwrites oldest log files.

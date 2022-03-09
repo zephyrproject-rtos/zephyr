@@ -65,7 +65,7 @@ config NET_SOCKETS_DNS_TIMEOUT
 	  maximum timeout is 5 min.
 
 config NET_SOCKETS_SOCKOPT_TLS
-	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
+	bool "TCP TLS socket option support [EXPERIMENTAL]"
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
 	select EXPERIMENTAL
@@ -97,7 +97,7 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	  the maximum supported receive record length.
 
 config NET_SOCKETS_ENABLE_DTLS
-	bool "Enable DTLS socket support [EXPERIMENTAL]"
+	bool "DTLS socket support [EXPERIMENTAL]"
 	depends on NET_SOCKETS_SOCKOPT_TLS
 	select MBEDTLS_DTLS if NET_NATIVE
 	select EXPERIMENTAL
@@ -176,7 +176,7 @@ config NET_SOCKETS_OFFLOAD_TLS
 	  will be used, and only TCP/UDP socket calls will be offloaded.
 
 config NET_SOCKETS_PACKET
-	bool "Enable packet socket support"
+	bool "Packet socket support"
 	help
 	  This is an initial version of packet socket support (special type
 	  raw socket). Packets are passed to and from the device driver
@@ -186,7 +186,7 @@ config NET_SOCKETS_PACKET
 	  will be feed to sockets as it as from the driver.
 
 config NET_SOCKETS_PACKET_DGRAM
-	bool "Enable packet socket SOCK_DGRAM support"
+	bool "Packet socket SOCK_DGRAM support"
 	depends on NET_SOCKETS_PACKET
 	default y
 	help
@@ -197,7 +197,7 @@ config NET_SOCKETS_PACKET_DGRAM
 	  they are queued.
 
 config NET_SOCKETS_CAN
-	bool "Enable socket CAN support [EXPERIMENTAL]"
+	bool "Socket CAN support [EXPERIMENTAL]"
 	select NET_L2_CANBUS_RAW
 	select EXPERIMENTAL
 	help
@@ -228,7 +228,7 @@ config NET_SOCKETPAIR_BUFFER_SIZE
 	  Buffer size for socketpair(2)
 
 config NET_SOCKETS_NET_MGMT
-	bool "Enable network management socket support [EXPERIMENTAL]"
+	bool "Network management socket support [EXPERIMENTAL]"
 	depends on NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
 	select EXPERIMENTAL

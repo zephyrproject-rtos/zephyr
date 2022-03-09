@@ -22,7 +22,7 @@ module-str = CRYPTO
 source "subsys/logging/Kconfig.template.log_config"
 
 config CRYPTO_TINYCRYPT_SHIM
-	bool "Enable TinyCrypt shim driver [EXPERIMENTAL]"
+	bool "TinyCrypt shim driver [EXPERIMENTAL]"
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CBC
@@ -49,7 +49,7 @@ config CRYPTO_TINYCRYPT_SHIM_DRV_NAME
 	  Device name for TinyCrypt Pseudo device.
 
 config CRYPTO_MBEDTLS_SHIM
-	bool "Enable mbedTLS shim driver [EXPERIMENTAL]"
+	bool "MbedTLS shim driver [EXPERIMENTAL]"
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
 	select EXPERIMENTAL

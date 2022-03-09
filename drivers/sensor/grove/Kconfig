@@ -11,14 +11,14 @@ config GROVE_SENSORS
 if GROVE_SENSORS
 
 config GROVE_LIGHT_SENSOR
-	bool "Enable the Seeed Grove Light Sensor"
+	bool "The Seeed Grove Light Sensor"
 	depends on ADC && !MINIMAL_LIBC
 	help
 	  Setting this value will enable driver support for the Grove Light
 	  Sensor.
 
 config GROVE_TEMPERATURE_SENSOR
-	bool "Enable the Seeed Grove Temperature Sensor"
+	bool "The Seeed Grove Temperature Sensor"
 	depends on ADC && !MINIMAL_LIBC
 	help
 	  Setting this value will enable driver support for the Grove

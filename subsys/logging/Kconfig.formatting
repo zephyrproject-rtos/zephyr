@@ -22,7 +22,7 @@ config LOG_FUNC_NAME_PREFIX_DBG
 endmenu
 
 config LOG_MIPI_SYST_ENABLE
-	bool "Enable MIPI SyS-T format output"
+	bool "MIPI SyS-T format output"
 	select MIPI_SYST_LIB
 	help
 	  Enable MIPI SyS-T format output for the logger system.
@@ -51,7 +51,7 @@ config LOG_IMMEDIATE_CLEAN_OUTPUT
 	  time (up to multiple milliseconds).
 
 config LOG_BACKEND_SHOW_COLOR
-	bool "Enable colors in the backend"
+	bool "Colors in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
 	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM
 	default y
@@ -81,7 +81,7 @@ config LOG_TAG_DEFAULT
 	  Initial tag.
 
 config LOG_BACKEND_FORMAT_TIMESTAMP
-	bool "Enable timestamp formatting in the backend"
+	bool "Timestamp formatting in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
 	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || LOG_BACKEND_FS
 	default y

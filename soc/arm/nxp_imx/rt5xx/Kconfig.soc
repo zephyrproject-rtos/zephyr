@@ -69,7 +69,7 @@ config SOC_PART_NUMBER_IMX_RT5XX
 	  choice defines the default value for this string.
 
 menuconfig NXP_IMX_RT5XX_BOOT_HEADER
-	bool "Enable the boot header"
+	bool "The boot header"
 	depends on !BOOTLOADER_MCUBOOT
 	help
 	  Enable data structures required by the boot ROM to boot the

@@ -11,7 +11,7 @@ config INTC_ESP32
 	  architecture.
 
 config INTC_ESP32_DECISIONS_LOG
-	bool "Enables Espressif's interrupt allocator logging"
+	bool "Espressif's interrupt allocator logging"
 	depends on INTC_ESP32
 	select LOG
 	help

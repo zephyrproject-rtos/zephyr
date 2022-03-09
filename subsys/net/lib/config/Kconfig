@@ -178,7 +178,7 @@ config NET_CONFIG_IEEE802154_SECURITY_LEVEL
 endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
 config NET_CONFIG_BT_NODE
-	bool "Enable Bluetooth node support"
+	bool "Bluetooth node support"
 	depends on NET_L2_BT
 	select NET_L2_BT_MGMT
 	help

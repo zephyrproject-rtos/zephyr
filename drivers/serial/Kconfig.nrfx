@@ -55,21 +55,21 @@ config UART_0_ENHANCED_POLL_OUT
 	  Feature uses a PPI channel.
 
 config UART_0_INTERRUPT_DRIVEN
-	bool "Enable interrupt support on port 0"
+	bool "Interrupt support on port 0"
 	depends on UART_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 0.
 
 config UART_0_ASYNC
-	bool "Enable Asynchronous API support on port 0"
+	bool "Asynchronous API support on port 0"
 	depends on UART_ASYNC_API && !UART_0_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART Asynchronous API support on port 0.
 
 config UART_0_NRF_PARITY_BIT
-	bool "Enable parity bit"
+	bool "Parity bit"
 	help
 	  Enable parity bit.
 
@@ -107,7 +107,7 @@ config UART_0_NRF_HW_ASYNC_TIMER
 	depends on UART_0_NRF_HW_ASYNC
 
 config UART_0_GPIO_MANAGEMENT
-	bool "Enable GPIO management on port 0"
+	bool "GPIO management on port 0"
 	depends on PM_DEVICE
 	default y
 	help
@@ -127,14 +127,14 @@ config UART_1_NRF_UARTE
 if UART_1_NRF_UARTE
 
 config UART_1_INTERRUPT_DRIVEN
-	bool "Enable interrupt support on port 1"
+	bool "Interrupt support on port 1"
 	depends on UART_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 1.
 
 config UART_1_ASYNC
-	bool "Enable Asynchronous API support on port 1"
+	bool "Asynchronous API support on port 1"
 	depends on UART_ASYNC_API && !UART_1_INTERRUPT_DRIVEN
 	default y
 	help
@@ -148,7 +148,7 @@ config UART_1_ENHANCED_POLL_OUT
 	  Feature uses a PPI channel.
 
 config UART_1_NRF_PARITY_BIT
-	bool "Enable parity bit"
+	bool "Parity bit"
 	help
 	  Enable parity bit.
 
@@ -184,7 +184,7 @@ config UART_1_NRF_HW_ASYNC_TIMER
 	depends on UART_1_NRF_HW_ASYNC
 
 config UART_1_GPIO_MANAGEMENT
-	bool "Enable GPIO management on port 1"
+	bool "GPIO management on port 1"
 	depends on PM_DEVICE
 	default y
 	help
@@ -204,14 +204,14 @@ config UART_2_NRF_UARTE
 if UART_2_NRF_UARTE
 
 config UART_2_INTERRUPT_DRIVEN
-	bool "Enable interrupt support on port 2"
+	bool "Interrupt support on port 2"
 	depends on UART_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 2.
 
 config UART_2_ASYNC
-	bool "Enable Asynchronous API support on port 2"
+	bool "Asynchronous API support on port 2"
 	depends on UART_ASYNC_API && !UART_2_INTERRUPT_DRIVEN
 	default y
 	help
@@ -225,7 +225,7 @@ config UART_2_ENHANCED_POLL_OUT
 	  Feature uses a PPI channel.
 
 config UART_2_NRF_PARITY_BIT
-	bool "Enable parity bit"
+	bool "Parity bit"
 	help
 	  Enable parity bit.
 
@@ -260,7 +260,7 @@ config UART_2_NRF_HW_ASYNC_TIMER
 	depends on UART_2_NRF_HW_ASYNC
 
 config UART_2_GPIO_MANAGEMENT
-	bool "Enable GPIO management on port 2"
+	bool "GPIO management on port 2"
 	depends on PM_DEVICE
 	default y
 	help
@@ -280,14 +280,14 @@ config UART_3_NRF_UARTE
 if UART_3_NRF_UARTE
 
 config UART_3_INTERRUPT_DRIVEN
-	bool "Enable interrupt support on port 3"
+	bool "Interrupt support on port 3"
 	depends on UART_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 3.
 
 config UART_3_ASYNC
-	bool "Enable Asynchronous API support on port 3"
+	bool "Asynchronous API support on port 3"
 	depends on UART_ASYNC_API && !UART_3_INTERRUPT_DRIVEN
 	default y
 	help
@@ -301,7 +301,7 @@ config UART_3_ENHANCED_POLL_OUT
 	  Feature uses a PPI channel.
 
 config UART_3_NRF_PARITY_BIT
-	bool "Enable parity bit"
+	bool "Parity bit"
 	help
 	  Enable parity bit.
 
@@ -336,7 +336,7 @@ config UART_3_NRF_HW_ASYNC_TIMER
 	depends on UART_3_NRF_HW_ASYNC
 
 config UART_3_GPIO_MANAGEMENT
-	bool "Enable GPIO management on port 3"
+	bool "GPIO management on port 3"
 	depends on PM_DEVICE
 	default y
 	help

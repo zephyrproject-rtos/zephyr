@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_HRS
-	bool "Enable GATT Heart Rate service"
+	bool "GATT Heart Rate service"
 
 if BT_HRS
 

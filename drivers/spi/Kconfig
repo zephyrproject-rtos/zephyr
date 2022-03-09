@@ -14,20 +14,20 @@ menuconfig SPI
 if SPI
 
 config SPI_ASYNC
-	bool "Enable Asynchronous call support"
+	bool "Asynchronous call support"
 	select POLL
 	help
 	  This option enables the asynchronous API calls.
 
 config SPI_SLAVE
-	bool "Enable Slave support [EXPERIMENTAL]"
+	bool "Slave support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enables Driver SPI slave operations. Slave support depends
 	  on the driver and the hardware it runs on.
 
 config SPI_EXTENDED_MODES
-	bool "Enable extended modes [EXPERIMENTAL]"
+	bool "Extended modes [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enables extended operations in the SPI API. Currently, this

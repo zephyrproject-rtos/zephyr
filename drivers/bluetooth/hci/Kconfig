@@ -94,13 +94,13 @@ config BT_SPI_INIT_PRIORITY
 	default 75
 
 config BT_BLUENRG_ACI
-	bool "Enable ACI message with with BlueNRG-based devices"
+	bool "ACI message with with BlueNRG-based devices"
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
 config BT_SPI_BLUENRG
-	bool "Enable compatibility with BlueNRG-based devices"
+	bool "Compatibility with BlueNRG-based devices"
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.

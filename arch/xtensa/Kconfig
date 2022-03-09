@@ -44,7 +44,7 @@ config XTENSA_USE_CORE_CRT1
 	  to false.
 
 config XTENSA_ENABLE_BACKTRACE
-	bool "Enable backtrace on panic exception"
+	bool "Backtrace on panic exception"
 	default y
 	depends on SOC_ESP32
 	help
@@ -56,14 +56,14 @@ config XTENSA_CPU_IDLE_SPIN
 	  Use a spin loop instead of WAITI for the CPU idle state.
 
 config XTENSA_WAITI_BUG
-	bool "Enable workaround sequence for WAITI bug on LX6"
+	bool "Workaround sequence for WAITI bug on LX6"
 	help
 	  SOF traditionally contains this workaround on its ADSP
 	  platforms which prefixes a WAITI entry with 128 NOP
 	  instructions followed by an ISYNC and EXTW.
 
 config XTENSA_SMALL_VECTOR_TABLE_ENTRY
-	bool "Enable workaround for small vector table entries"
+	bool "Workaround for small vector table entries"
 	help
 	  This option enables a small indirection to bypass the size
 	  constraint of the vector table entry and moved the default
