@@ -3,6 +3,11 @@
 # Copyright (c) 2022, Linaro
 #
 # SPDX-License-Identifier: Apache-2.0
+"""
+Split a hex file signed by imagetool into its binary/image and
+its header. This is needed to be able to pack these two parts
+into the sample separately, saving flash space.
+"""
 import argparse
 
 from intelhex import IntelHex
