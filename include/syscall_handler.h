@@ -329,6 +329,11 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  */
 #define Z_SYSCALL_VERIFY(expr) Z_SYSCALL_VERIFY_MSG(expr, #expr)
 
+static __unused const char *read_write_msg(bool write)
+{
+	return write ? "write" : "read";
+}
+
 /**
  * @brief Runtime check that a user thread has read and/or write permission to
  *        a memory area
@@ -349,8 +354,7 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 	Z_SYSCALL_VERIFY_MSG(arch_buffer_validate((ptr), (size), (write)) \
 			     == 0, \
 			     "Memory region %p (size %zu) %s access denied", \
-			     (ptr), (size_t)(size), \
-			     (write) ? "write" : "read")
+			     (ptr), (size_t)(size), read_write_msg(write))
 
 /**
  * @brief Runtime check that a user thread has read permission to a memory area
