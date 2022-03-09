@@ -195,3 +195,8 @@ zephyr_linker_section_configure(SECTION .data ANY FLAGS "+RW")
 zephyr_linker_section_configure(SECTION .bss ANY FLAGS "+ZI")
 
 include(${COMMON_ZEPHYR_LINKER_DIR}/debug-sections.cmake)
+
+dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
+foreach(path IN LISTS paths)
+  zephyr_linker_dts_section(PATH ${path})
+endforeach()
