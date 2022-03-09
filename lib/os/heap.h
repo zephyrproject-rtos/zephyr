@@ -74,7 +74,7 @@ struct z_heap {
 
 static inline bool big_heap_chunks(chunksz_t chunks)
 {
-	return (sizeof(void *) > 4U) || (chunks > 0x7fffU);
+	return (CONSTEXPR(sizeof(void *) > 4U)) ? true : (chunks > 0x7fffU);
 }
 
 static inline bool big_heap_bytes(size_t bytes)
