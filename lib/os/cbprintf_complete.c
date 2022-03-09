@@ -79,13 +79,14 @@ enum specifier_cat_enum {
 	SPECIFIER_FP,
 };
 
-#define CHAR_IS_SIGNED (CHAR_MIN != 0)
-#if CHAR_IS_SIGNED
+#if (CHAR_MIN != 0)
 #define CASE_SINT_CHAR case 'c':
 #define CASE_UINT_CHAR
+#define CHAR_IS_SIGNED 1
 #else
 #define CASE_SINT_CHAR
 #define CASE_UINT_CHAR case 'c':
+#define CHAR_IS_SIGNED 0
 #endif
 
 /* We need two pieces of information about wchar_t:
@@ -537,7 +538,9 @@ int_conv:
 		 */
 		if (conv->specifier == 'c') {
 			unsupported = (conv->length_mod != (uint8_t)LENGTH_NONE);
-		} else if (!(IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL))) {
+		}
+#ifndef CONFIG_CBPRINTF_FULL_INTEGRAL
+		else {
 			/* Disable conversion that might produce truncated
 			 * results with buffers sized for 32 bits.
 			 */
@@ -564,28 +567,26 @@ int_conv:
 				 */
 				break;
 			}
-		} else {
-			;
 		}
+#endif
 		break;
 
 	case FP_CONV_CASES:
 		conv->specifier_cat = (uint8_t)SPECIFIER_FP;
 
 		/* Don't support if disabled */
-		if (!(IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT))) {
-			unsupported = true;
-			break;
-		}
-
+#ifndef CONFIG_CBPRINTF_FP_SUPPORT
+		unsupported = true;
+#else
 		/* When FP enabled %a support is still conditional. */
 		conv->specifier_a = (conv->specifier == 'a')
 			|| (conv->specifier == 'A');
-		if (conv->specifier_a
-		    && !(IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT))) {
+#ifndef CONFIG_CBPRINTF_FP_A_SUPPORT
+		if (conv->specifier_a) {
 			unsupported = true;
 			break;
 		}
+#endif
 
 		/* The l specifier has no effect.  Otherwise length
 		 * modifiers other than L are invalid.
@@ -598,6 +599,7 @@ int_conv:
 		} else {
 			;
 		}
+#endif
 
 		break;
 
@@ -669,6 +671,7 @@ static inline const char *extract_conversion(struct conversion *conv,
 	return sp;
 }
 
+#ifdef CONFIG_CBPRINTF_FP_SUPPORT
 #ifdef CONFIG_64BIT
 
 static void _ldiv5(uint64_t *v)
@@ -761,6 +764,7 @@ static char _get_digit(uint64_t *fr, int *digit_count)
 
 	return rval;
 }
+#endif /* CONFIG_CBPRINTF_FP_SUPPORT */
 
 static inline unsigned int conversion_radix(char specifier)
 {
@@ -868,6 +872,7 @@ static char *encode_uint(uint_value_type value,
  * return a pointer to the start of the converted value.  This may not be @p
  * bps but will be consistent with the exit value of *bpe.
  */
+#ifdef CONFIG_CBPRINTF_FP_SUPPORT
 static char *encode_float(double value,
 			  struct conversion *conv,
 			  int precision,
@@ -949,9 +954,11 @@ static char *encode_float(double value,
 	}
 
 	/* Handle converting to the hex representation. */
-	if ((IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT))
-	    && ((IS_ENABLED(CONFIG_CBPRINTF_FP_ALWAYS_A))
-		|| conv->specifier_a)) {
+#ifdef CONFIG_CBPRINTF_FP_A_SUPPORT
+#ifndef CONFIG_CBPRINTF_FP_ALWAYS_A
+	if (conv->specifier_a)
+#endif
+	{
 		buf[0] = '0';
 		buf[1] = 'x';
 		buf += 2;
@@ -1068,6 +1075,7 @@ static char *encode_float(double value,
 		*bpe = buf;
 		return bps;
 	}
+#endif /* CONFIG_CBPRINTF_FP_A_SUPPORT */
 
 	/* Remainder of code operates on a 64-bit fraction, so shift up (and
 	 * discard garbage from the exponent where the implicit 1 would be
@@ -1303,6 +1311,7 @@ static char *encode_float(double value,
 	*buf = '\0';
 	return bps;
 }
+#endif
 
 /* Store a count into the pointer provided in a %n specifier.
  *
@@ -1475,15 +1484,16 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 		conv->pad0_pre_exp = 0;
 
 		/* FP conversion requires knowing the precision. */
-		if ((IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT))
-		    && (conv->specifier_cat == (uint8_t)SPECIFIER_FP)
-		    && !conv->prec_present) {
+#ifdef CONFIG_CBPRINTF_FP_SUPPORT
+		if ((conv->specifier_cat == (uint8_t)SPECIFIER_FP)
+			&& !conv->prec_present) {
 			if (conv->specifier_a) {
 				precision = FRACTION_HEX;
 			} else {
 				precision = 6;
 			}
 		}
+#endif
 
 		/* Get the value to be converted from the args.
 		 *
@@ -1549,13 +1559,16 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 				value->uint = va_arg(ap, unsigned int);
 				break;
 			case (uint8_t)LENGTH_L:
-				if ((!WCHAR_IS_SIGNED)
-				    && (conv->specifier == 'c')) {
+#if (WCHAR_IS_SIGNED)
+				value->uint = va_arg(ap, unsigned long);
+#else
+				if (conv->specifier == 'c') {
 					value->uint = (uint_value_type)(wchar_t)
 						va_arg(ap, WINT_TYPE);
 				} else {
 					value->uint = va_arg(ap, unsigned long);
 				}
+#endif
 				break;
 			case (uint8_t)LENGTH_LL:
 				value->uint =
@@ -1643,7 +1656,8 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 			break;
 		case 'c':
 			bps = buf;
-			buf[0] = (CHAR_IS_SIGNED ? (char)value->sint : (char)value->uint);
+			buf[0] = (char)COND_CODE_1(CHAR_IS_SIGNED,
+					(value->sint), (value->uint));
 			bpe = buf + 1;
 			break;
 		case 'd':
@@ -1695,17 +1709,17 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 
 			break;
 		case 'n':
-			if (IS_ENABLED(CONFIG_CBPRINTF_N_SPECIFIER)) {
-				store_count(conv, value->ptr, count);
-			}
+#ifdef CONFIG_CBPRINTF_N_SPECIFIER
+			store_count(conv, value->ptr, count);
+#endif
 
 			break;
 
 		case FP_CONV_CASES:
-			if (IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
-				bps = encode_float(value->dbl, conv, precision,
-						   &sign, buf, &bpe);
-			}
+#ifdef CONFIG_CBPRINTF_FP_SUPPORT
+			bps = encode_float(value->dbl, conv, precision,
+						&sign, buf, &bpe);
+#endif
 			break;
 		default:
 			/* Add an empty default with break, this is a defensive
@@ -1796,7 +1810,8 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 			OUTC(sign);
 		}
 
-		if ((IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) && conv->pad_fp) {
+#ifdef CONFIG_CBPRINTF_FP_SUPPORT
+		if (conv->pad_fp) {
 			const char *cp = bps;
 
 			if (conv->specifier_a) {
@@ -1840,7 +1855,9 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 			}
 
 			OUTS(cp, bpe);
-		} else {
+		} else
+#endif
+		{
 			if (conv->altform_0c || conv->altform_0) {
 				OUTC('0');
 			}
