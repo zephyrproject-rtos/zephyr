@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define SENML_JSON_STRING_BLOCK_DATA 9
 #define SENML_JSON_UNKNOWN_ATTRIBUTE 255
 
-#define SEPARATOR(f) ((f & WRITER_OUTPUT_VALUE) ? "," : "")
+#define OBJECT_SEPARATOR(f) ((f & WRITER_OUTPUT_VALUE) ? "," : "")
 
 #define TOKEN_BUF_LEN 64
 
@@ -53,7 +53,6 @@ struct json_out_formatter_data {
 	/* base name */
 	struct lwm2m_obj_path base_name;
 	/* Add Base name */
-	bool base_name_used;
 	bool add_base_name_to_start;
 };
 
@@ -290,11 +289,8 @@ static int put_begin(struct lwm2m_output_context *out, struct lwm2m_obj_path *pa
 		return res;
 	}
 
-	/*
-	 * Enable base name add if it is enabled
-	 * Base name is only added one time at first resource data
-	 */
-	fd->add_base_name_to_start = fd->base_name_used;
+	/* Init base level state for skip first object instance compare */
+	fd->base_name.level = LWM2M_PATH_LEVEL_NONE;
 	return 1;
 }
 
@@ -308,15 +304,41 @@ static int put_end(struct lwm2m_output_context *out, struct lwm2m_obj_path *path
 		return -EINVAL;
 	}
 
-	/* Clear flag. */
-	fd->add_base_name_to_start = false;
-
 	res = buf_append(CPKT_BUF_WRITE(out->out_cpkt), "]", 1);
 	if (res < 0) {
 		return res;
 	}
 
 	return 1;
+}
+
+static int put_begin_oi(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
+{
+	struct json_out_formatter_data *fd;
+	bool update_base_name = false;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return -EINVAL;
+	}
+
+	if (fd->base_name.level == LWM2M_PATH_LEVEL_NONE) {
+		update_base_name = true;
+
+	} else if (fd->base_name.obj_id != path->obj_id ||
+		   fd->base_name.obj_inst_id != path->obj_inst_id) {
+		update_base_name = true;
+	}
+
+	if (update_base_name) {
+		fd->base_name.level = LWM2M_PATH_LEVEL_OBJECT_INST;
+		fd->base_name.obj_inst_id = path->obj_id;
+		fd->base_name.obj_inst_id = path->obj_inst_id;
+	}
+
+	fd->add_base_name_to_start = update_base_name;
+
+	return 0;
 }
 
 static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
@@ -362,93 +384,47 @@ static int put_json_prefix(struct lwm2m_output_context *out, struct lwm2m_obj_pa
 {
 	struct json_out_formatter_data *fd;
 	char *sep;
-	int len = 0;
-	int base_name_length = 0;
+	int len = 0, t_length;
 
 	fd = engine_get_out_user_data(out);
 
 	/* Add separator after first added resource */
-	sep = SEPARATOR(fd->writer_flags);
-	if (!fd->base_name_used) {
-		if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
-			len = snprintk(json_buffer, sizeof(json_buffer),
-				       "%s{\"n\":\"/%u/%u/%u/%u\",%s:", sep, path->obj_id,
-				       path->obj_inst_id, path->res_id, path->res_inst_id, format);
-		} else {
-			len = snprintk(json_buffer, sizeof(json_buffer),
-				       "%s{\"n\":\"/%u/%u/%u\",%s:", sep, path->obj_id,
-				       path->obj_inst_id, path->res_id, format);
-		}
+	sep = OBJECT_SEPARATOR(fd->writer_flags);
+
+	if (fd->add_base_name_to_start) {
+		t_length = snprintk(json_buffer, sizeof(json_buffer), "%s{\"bn\":\"/%u/%u/\",", sep,
+				  path->obj_id, path->obj_inst_id);
 	} else {
-		if (fd->add_base_name_to_start) {
-			/* Generate base name */
-			if (fd->base_name.level == LWM2M_PATH_LEVEL_NONE) {
-				base_name_length = snprintk(json_buffer, sizeof(json_buffer),
-							    "%s{\"bn\":\"/\",", sep);
-			} else if (fd->base_name.level == LWM2M_PATH_LEVEL_OBJECT) {
-				base_name_length =
-					snprintk(json_buffer, sizeof(json_buffer),
-						 "%s{\"bn\":\"/%u/\",", sep, path->obj_id);
-			} else {
-				base_name_length = snprintk(json_buffer, sizeof(json_buffer),
-							    "%s{\"bn\":\"/%u/%u/\",", sep,
-							    path->obj_id, path->obj_inst_id);
-			}
-			fd->add_base_name_to_start = false;
-		} else {
-			base_name_length = snprintk(json_buffer, sizeof(json_buffer), "%s{", sep);
-		}
-
-		if (base_name_length < 0) {
-			return base_name_length;
-		}
-
-		if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), json_buffer, base_name_length) < 0) {
-			return -ENOMEM;
-		}
-
-		if (fd->base_name.level == LWM2M_PATH_LEVEL_NONE) {
-			if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
-				len = snprintk(json_buffer, sizeof(json_buffer),
-					       "\"n\":\"%u/%u/%u/%u\",%s:", path->obj_id,
-					       path->obj_inst_id, path->res_id, path->res_inst_id,
-					       format);
-			} else {
-				len = snprintk(json_buffer, sizeof(json_buffer),
-					       "\"n\":\"%u/%u/%u\",%s:", path->obj_id,
-					       path->obj_inst_id, path->res_id, format);
-			}
-		} else if (fd->base_name.level == LWM2M_PATH_LEVEL_OBJECT) {
-			if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
-				len = snprintk(json_buffer, sizeof(json_buffer),
-					       "\"n\":\"%u/%u/%u\",%s:", path->obj_inst_id,
-					       path->res_id, path->res_inst_id, format);
-			} else {
-				len = snprintk(json_buffer, sizeof(json_buffer),
-					       "\"n\":\"%u/%u\",%s:", path->obj_inst_id,
-					       path->res_id, format);
-			}
-		} else {
-			if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
-				len = snprintk(json_buffer, sizeof(json_buffer),
-					       "\"n\":\"%u/%u\",%s:", path->res_id,
-					       path->res_inst_id, format);
-			} else {
-				len = snprintk(json_buffer, sizeof(json_buffer),
-					       "\"n\":\"%u\",%s:", path->res_id, format);
-			}
-		}
+		t_length = snprintk(json_buffer, sizeof(json_buffer), "%s{", sep);
 	}
 
-	if (len < 0) {
-		return len;
+	if (t_length < 0) {
+		return t_length;
 	}
 
+	len = t_length;
+
+	/* Add Name and value format */
+	if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
+		t_length = snprintk(json_buffer + len, sizeof(json_buffer) - len,
+				    "\"n\":\"%u/%u\",%s:", path->res_id, path->res_inst_id, format);
+	} else {
+		t_length = snprintk(json_buffer + len, sizeof(json_buffer) - len,
+				    "\"n\":\"%u\",%s:", path->res_id, format);
+	}
+
+	if (t_length < 0) {
+		return t_length;
+	}
+	len += t_length;
+
+	/* Write Json Prefix to message */
 	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), json_buffer, len)) {
 		return -ENOMEM;
 	}
+	fd->add_base_name_to_start = false;
 
-	return len + base_name_length;
+	return len;
 }
 
 static int put_json_postfix(struct lwm2m_output_context *out)
@@ -1071,6 +1047,7 @@ static int get_objlnk(struct lwm2m_input_context *in, struct lwm2m_objlnk *value
 const struct lwm2m_writer senml_json_writer = {
 	.put_begin = put_begin,
 	.put_end = put_end,
+	.put_begin_oi = put_begin_oi,
 	.put_begin_ri = put_begin_ri,
 	.put_end_ri = put_end_ri,
 	.put_s8 = put_s8,
@@ -1093,94 +1070,6 @@ const struct lwm2m_reader senml_json_reader = {
 	.get_opaque = get_opaque,
 	.get_objlnk = get_objlnk,
 };
-
-static uint8_t lwm2m_use_base_name(sys_slist_t *lwm_path_list)
-{
-	uint8_t recursive_path = 0;
-	struct lwm2m_obj_path_list *entry;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lwm_path_list, entry, node) {
-		if (entry->path.level < 3) {
-			recursive_path++;
-		}
-	}
-	return recursive_path;
-}
-
-static void lwm2m_define_longest_match_url_for_base_name(struct json_out_formatter_data *fd,
-							 sys_slist_t *lwm_path_list)
-{
-	struct lwm2m_obj_path_list *entry;
-
-	/* Set base name use to false */
-	fd->base_name_used = false;
-
-	if (!lwm2m_use_base_name(lwm_path_list)) {
-		/* do not use base at all */
-		return;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(lwm_path_list, entry, node) {
-		if (fd->base_name_used == false) {
-			/* First at list is define compare for rest */
-			fd->base_name.level = entry->path.level;
-			fd->base_name.obj_id = entry->path.obj_id;
-			fd->base_name.obj_inst_id = entry->path.obj_inst_id;
-			fd->base_name.res_id = entry->path.res_id;
-			fd->base_name.res_inst_id = entry->path.res_inst_id;
-
-			fd->base_name_used = true;
-
-			if (fd->base_name.level == LWM2M_PATH_LEVEL_NONE) {
-				return;
-			}
-			continue;
-		}
-
-		if (entry->path.level == LWM2M_PATH_LEVEL_NONE ||
-		    fd->base_name.obj_id != entry->path.obj_id) {
-			/*
-			 * Stop if Object ID is not match or compare url level is 0
-			 * Define just "/" base name
-			 */
-			fd->base_name.level = LWM2M_PATH_LEVEL_NONE;
-			return;
-		}
-
-		if (fd->base_name.level == LWM2M_PATH_LEVEL_OBJECT) {
-			continue;
-		}
-
-		if (fd->base_name.level >= entry->path.level &&
-		    fd->base_name.obj_inst_id != entry->path.obj_inst_id) {
-			/* Define just "/obj_id/" base name */
-			fd->base_name.level = LWM2M_PATH_LEVEL_OBJECT;
-			continue;
-		}
-
-		if (fd->base_name.level == LWM2M_PATH_LEVEL_OBJECT_INST) {
-			continue;
-		}
-
-		if (fd->base_name.level >= entry->path.level &&
-		    fd->base_name.res_id != entry->path.res_id) {
-			/* Do not continue deeper possible bn "/obj_id/obj_inst_id/" */
-			fd->base_name.level = LWM2M_PATH_LEVEL_OBJECT_INST;
-			continue;
-		}
-
-		if (fd->base_name.level == LWM2M_PATH_LEVEL_RESOURCE) {
-			continue;
-		}
-
-		if (fd->base_name.level >= entry->path.level &&
-		    fd->base_name.res_inst_id != entry->path.res_inst_id) {
-			/* Do not continue deeper possible bn "/obj_id/obj_inst_id/res_id/" */
-			fd->base_name.level = LWM2M_PATH_LEVEL_RESOURCE;
-			continue;
-		}
-	}
-}
 
 void lwm2m_senml_json_context_init(struct lwm2m_senml_json_context *ctx)
 {
@@ -1205,9 +1094,6 @@ int do_read_op_senml_json(struct lwm2m_message *msg)
 	temp.path = msg->path;
 	/* Add one entry to list */
 	sys_slist_append(&lwm_path_list, &temp.node);
-
-	/* Detect longest match base name to url */
-	lwm2m_define_longest_match_url_for_base_name(&fd, &lwm_path_list);
 
 	ret = lwm2m_perform_read_op(msg, LWM2M_FORMAT_APP_SEML_JSON);
 	engine_clear_out_user_data(&msg->out);
@@ -1664,9 +1550,6 @@ int do_composite_read_op_senml_json(struct lwm2m_message *msg)
 	(void)memset(&fd, 0, sizeof(fd));
 	engine_set_out_user_data(&msg->out, &fd);
 
-	/* Detect longest match base name to url */
-	lwm2m_define_longest_match_url_for_base_name(&fd, &lwm_path_list);
-
 	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SEML_JSON, &lwm_path_list);
 	engine_clear_out_user_data(&msg->out);
 
@@ -1680,9 +1563,6 @@ int do_send_op_senml_json(struct lwm2m_message *msg, sys_slist_t *lwm_path_list)
 
 	(void)memset(&fd, 0, sizeof(fd));
 	engine_set_out_user_data(&msg->out, &fd);
-
-	/* Detect longest match base name to url */
-	lwm2m_define_longest_match_url_for_base_name(&fd, lwm_path_list);
 
 	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SEML_JSON, lwm_path_list);
 	engine_clear_out_user_data(&msg->out);
