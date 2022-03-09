@@ -8,6 +8,7 @@
 #include <device.h>
 #include <init.h>
 #include <kernel.h>
+#include <kernel_arch_func.h>
 #include <soc.h>
 #include <arch/arm64/mm.h>
 #include <linker/linker-defs.h>
