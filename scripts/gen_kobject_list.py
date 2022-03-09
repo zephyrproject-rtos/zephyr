@@ -868,6 +868,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
 
     # Generate the array of already mapped thread indexes
     fp.write('\n')
+    fp.write('Z_GENERIC_DOT_SECTION(data)\n')
     fp.write('uint8_t _thread_idx_map[%d] = {' % (thread_max_bytes))
 
     for i in range(0, thread_max_bytes):
