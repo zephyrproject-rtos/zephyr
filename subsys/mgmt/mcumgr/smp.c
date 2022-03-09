@@ -212,8 +212,7 @@ zephyr_smp_init_reader(struct cbor_decoder_reader *reader, void *buf)
 }
 
 static int
-zephyr_smp_init_writer(struct cbor_encoder_writer *writer, void *buf,
-		       void *arg)
+zephyr_smp_init_writer(struct cbor_encoder_writer *writer, void *buf)
 {
 	struct cbor_nb_writer *czw;
 
