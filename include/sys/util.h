@@ -174,33 +174,49 @@ extern "C" {
 #define ceiling_fraction(numerator, divider) \
 	(((numerator) + ((divider) - 1)) / (divider))
 
-/**
- * @def MAX
- * @brief The larger value between @p a and @p b.
- * @note Arguments are evaluated twice.
- */
 #ifndef MAX
-/* Use Z_MAX for a GCC-only, single evaluation version */
+/**
+ * @brief Obtain the maximum of two values.
+ *
+ * @note Arguments are evaluated twice. Use Z_MAX for a GCC-only, single
+ * evaluation version
+ *
+ * @param a First value.
+ * @param b Second value.
+ *
+ * @returns Maximum value of @p a and @p b.
+ */
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
-/**
- * @def MIN
- * @brief The smaller value between @p a and @p b.
- * @note Arguments are evaluated twice.
- */
 #ifndef MIN
-/* Use Z_MIN for a GCC-only, single evaluation version */
+/**
+ * @brief Obtain the minimum of two values.
+ *
+ * @note Arguments are evaluated twice. Use Z_MIN for a GCC-only, single
+ * evaluation version
+ *
+ * @param a First value.
+ * @param b Second value.
+ *
+ * @returns Minimum value of @p a and @p b.
+ */
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-/**
- * @def CLAMP
- * @brief Clamp a value to a given range.
- * @note Arguments are evaluated multiple times.
- */
 #ifndef CLAMP
-/* Use Z_CLAMP for a GCC-only, single evaluation version */
+/**
+ * @brief Clamp a value to a given range.
+ *
+ * @note Arguments are evaluated multiple times. Use Z_CLAMP for a GCC-only,
+ * single evaluation version.
+ *
+ * @param val Value to be clamped.
+ * @param low Lowest allowed value (inclusive).
+ * @param high Highest allowed value (inclusive).
+ *
+ * @returns Clamped value.
+ */
 #define CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
 #endif
 
