@@ -191,7 +191,7 @@ int z_impl_k_thread_name_set(struct k_thread *thread, const char *value)
 		thread = _current;
 	}
 
-	strncpy(thread->name, value, CONFIG_THREAD_MAX_NAME_LEN);
+	strncpy(thread->name, value, CONFIG_THREAD_MAX_NAME_LEN - 1);
 	thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, name_set, thread, 0);
