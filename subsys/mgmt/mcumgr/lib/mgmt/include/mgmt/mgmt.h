@@ -142,21 +142,17 @@ typedef void (*mgmt_trim_front_fn)(void *buf, size_t len, void *arg);
 typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
 
 /** @typedef mgmt_write_at_fn
- * @brief Writes data to a CBOR encoder.
+ * @brief Writes header at the beginning of buffer
  *
- * Any existing data at the specified offset is overwritten by the new data.
- * Any new data that extends past the buffer's current length is appended.
+ * Overwrites beginning of buffer with header; moves buffer data pointer so that next
+ * non-header writes would happen after header.
  *
  * @param writer	The encoder to write to.
- * @param offset	The byte offset to write to,
- * @param data		The data to write.
- * @param len		The number of bytes to write.
- * @param arg		Optional streamer argument.
+ * @param hdr		Header to write (struct mgmt_hdr);
  *
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */
-typedef int (*mgmt_write_at_fn)(struct cbor_encoder_writer *writer, size_t offset,
-	     const void *data, size_t len, void *arg);
+typedef int (*mgmt_write_hdr_fn)(struct cbor_encoder_writer *writer, const struct mgmt_hdr *hdr);
 
 /** @typedef mgmt_init_reader_fn
  * @brief Initializes a CBOR reader with the specified buffer.
@@ -195,7 +191,7 @@ struct mgmt_streamer_cfg {
 	mgmt_alloc_rsp_fn alloc_rsp;
 	mgmt_trim_front_fn trim_front;
 	mgmt_reset_buf_fn reset_buf;
-	mgmt_write_at_fn write_at;
+	mgmt_write_hdr_fn write_hdr;
 	mgmt_init_reader_fn init_reader;
 	mgmt_init_writer_fn init_writer;
 	mgmt_free_buf_fn free_buf;
@@ -291,21 +287,18 @@ void mgmt_streamer_trim_front(struct mgmt_streamer *streamer, void *buf, size_t 
 void mgmt_streamer_reset_buf(struct mgmt_streamer *streamer, void *buf);
 
 /**
- * @brief Uses the specified streamer to write data to a CBOR encoder.
+ * @brief Uses the specified streamer to write header to buffer.
  *
- * Any existing data at the specified offset is overwritten by the new data.
+ * Any existing data at the beginning buffer will be overwritten with header.
  * Any new data that extends past the buffer's current length is appended.
  *
  * @param streamer	The streamer providing the callback.
  * @param writer	The encoder to write to.
- * @param offset	The byte offset to write to,
- * @param data		The data to write.
- * @param len		The number of bytes to write.
+ * @param hdr		The mgmt_hdr struct to write.
  *
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */
-int mgmt_streamer_write_at(struct mgmt_streamer *streamer, size_t offset, const void *data,
-			   int len);
+int mgmt_streamer_write_hdr(struct mgmt_streamer *streamer, const struct mgmt_hdr *hdr);
 
 /**
  * @brief Uses the specified streamer to initialize a CBOR reader.

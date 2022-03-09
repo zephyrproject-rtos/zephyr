@@ -55,13 +55,10 @@ smp_read_hdr(struct smp_streamer *streamer, struct mgmt_hdr *dst_hdr)
 	return 0;
 }
 
-static int
+static inline int
 smp_write_hdr(struct smp_streamer *streamer, const struct mgmt_hdr *src_hdr)
 {
-	int rc;
-
-	rc = mgmt_streamer_write_at(&streamer->mgmt_stmr, 0, src_hdr, sizeof(*src_hdr));
-	return mgmt_err_from_cbor(rc);
+	return mgmt_streamer_write_hdr(&streamer->mgmt_stmr, src_hdr);
 }
 
 static int
@@ -102,10 +99,7 @@ smp_build_err_rsp(struct smp_streamer *streamer,
 
 	rsp_hdr.nh_len = cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE;
 	mgmt_hton_hdr(&rsp_hdr);
-	rc = smp_write_hdr(streamer, &rsp_hdr);
-	if (rc != 0) {
-		return rc;
-	}
+	smp_write_hdr(streamer, &rsp_hdr);
 
 	return 0;
 }
@@ -218,10 +212,7 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_
 	/* Fix up the response header with the correct length. */
 	rsp_hdr.nh_len = cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE;
 	mgmt_hton_hdr(&rsp_hdr);
-	rc = smp_write_hdr(streamer, &rsp_hdr);
-	if (rc != 0) {
-		return rc;
-	}
+	smp_write_hdr(streamer, &rsp_hdr);
 
 	return 0;
 }
@@ -251,7 +242,6 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	}
 
 	/* Clear the partial response from the buffer, if any. */
-	mgmt_streamer_reset_buf(&streamer->mgmt_stmr, rsp);
 	mgmt_streamer_init_writer(&streamer->mgmt_stmr, rsp);
 
 	/* Build and transmit the error response. */
