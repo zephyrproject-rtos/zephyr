@@ -387,6 +387,14 @@
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
 
 /**
+ * @brief Get a DT_DRV_COMPAT child node identifier
+ * @param inst instance number
+ * @param child lowercase-and-underscores child node name
+ * @return node identifier for the node with the name referred to by 'child'
+ */
+#define DT_INST_CHILD(inst, child) DT_CHILD(DT_DRV_INST(inst), child)
+
+/**
  * @brief Get a node identifier for a status "okay" node with a compatible
  *
  * Use this if you want to get an arbitrary enabled node with a given
