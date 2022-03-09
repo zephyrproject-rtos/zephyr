@@ -28,16 +28,17 @@ smp_rsp_op(uint8_t req_op)
 }
 
 static void
-smp_init_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rsp_hdr)
+smp_make_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rsp_hdr, size_t len)
 {
 	*rsp_hdr = (struct mgmt_hdr) {
-		.nh_len = 0,
+		.nh_len = len,
 		.nh_flags = 0,
 		.nh_op = smp_rsp_op(req_hdr->nh_op),
 		.nh_group = req_hdr->nh_group,
 		.nh_seq = req_hdr->nh_seq,
 		.nh_id = req_hdr->nh_id,
 	};
+	mgmt_hton_hdr(rsp_hdr);
 }
 
 static int
@@ -76,12 +77,6 @@ smp_build_err_rsp(struct smp_streamer *streamer,
 		return rc;
 	}
 
-	smp_init_rsp_hdr(req_hdr, &rsp_hdr);
-	rc = smp_write_hdr(streamer, &rsp_hdr);
-	if (rc != 0) {
-		return rc;
-	}
-
 	rc = cbor_encoder_create_map(&cbuf.encoder, &map, CborIndefiniteLength);
 	if (rc != 0) {
 		return rc;
@@ -97,8 +92,8 @@ smp_build_err_rsp(struct smp_streamer *streamer,
 		return rc;
 	}
 
-	rsp_hdr.nh_len = cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE;
-	mgmt_hton_hdr(&rsp_hdr);
+	smp_make_rsp_hdr(req_hdr, &rsp_hdr,
+			 cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE);
 	smp_write_hdr(streamer, &rsp_hdr);
 
 	return 0;
@@ -194,24 +189,14 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_
 		return rc;
 	}
 
-	/* Write a dummy header to the beginning of the response buffer.  Some
-	 * fields will need to be fixed up later.
-	 */
-	smp_init_rsp_hdr(req_hdr, &rsp_hdr);
-	rc = smp_write_hdr(streamer, &rsp_hdr);
-	if (rc != 0) {
-		return rc;
-	}
-
 	/* Process the request and write the response payload. */
 	rc = smp_handle_single_payload(&cbuf, req_hdr, handler_found);
 	if (rc != 0) {
 		return rc;
 	}
 
-	/* Fix up the response header with the correct length. */
-	rsp_hdr.nh_len = cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE;
-	mgmt_hton_hdr(&rsp_hdr);
+	smp_make_rsp_hdr(req_hdr, &rsp_hdr,
+			 cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE);
 	smp_write_hdr(streamer, &rsp_hdr);
 
 	return 0;
