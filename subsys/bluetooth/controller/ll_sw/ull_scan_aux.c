@@ -969,7 +969,7 @@ int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
 	/* Abort LLL event if ULL scheduling not used or already in prepare */
 	if (err == -EALREADY) {
 		err = ull_disable(&aux->lll);
-		if (err) {
+		if (err && (err != -EALREADY)) {
 			return err;
 		}
 
