@@ -329,12 +329,12 @@ static inline struct log_msg *z_log_msg_std_alloc(void)
 		msg->hdr.params.raw = 0U;
 		msg->hdr.params.std.type = LOG_MSG_TYPE_STD;
 
-		if (IS_ENABLED(CONFIG_USERSPACE)) {
-			/* it may be used in msg_free() function. */
-			msg->hdr.ids.level = 0;
-			msg->hdr.ids.domain_id = 0;
-			msg->hdr.ids.source_id = 0;
-		}
+#ifdef CONFIG_USERSPACE
+		/* it may be used in msg_free() function. */
+		msg->hdr.ids.level = 0;
+		msg->hdr.ids.domain_id = 0;
+		msg->hdr.ids.source_id = 0;
+#endif
 	}
 
 	return msg;
