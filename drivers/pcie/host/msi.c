@@ -214,6 +214,7 @@ static void enable_msix(pcie_bdf_t bdf,
 #define enable_msix(...)
 #endif /* CONFIG_PCIE_MSI_X */
 
+#ifdef CONFIG_PCIE_MSI_X
 static void disable_msi(pcie_bdf_t bdf,
 			uint32_t base)
 {
@@ -223,6 +224,7 @@ static void disable_msi(pcie_bdf_t bdf,
 	mcr &= ~PCIE_MSI_MCR_EN;
 	pcie_conf_write(bdf, base + PCIE_MSI_MCR, mcr);
 }
+#endif
 
 static void enable_msi(pcie_bdf_t bdf,
 		       msi_vector_t *vectors,
@@ -268,18 +270,18 @@ bool pcie_msi_enable(pcie_bdf_t bdf,
 
 	base = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
 
-	if (IS_ENABLED(CONFIG_PCIE_MSI_X)) {
-		uint32_t base_msix;
+#ifdef CONFIG_PCIE_MSI_X
+	uint32_t base_msix;
 
-		base_msix = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
-		if ((base_msix != 0U) && (base != 0U)) {
-			disable_msi(bdf, base);
-		}
-		if ((base_msix != 0U)) {
-			msi = false;
-			base = base_msix;
-		}
+	base_msix = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
+	if ((base_msix != 0U) && (base != 0U)) {
+		disable_msi(bdf, base);
 	}
+	if ((base_msix != 0U)) {
+		msi = false;
+		base = base_msix;
+	}
+#endif
 
 	if (base == 0U) {
 		return false;
