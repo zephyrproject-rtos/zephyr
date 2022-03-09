@@ -503,6 +503,8 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 			if (err && (err != -EALREADY)) {
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
+
+			LL_ASSERT(!aux->parent);
 		}
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
