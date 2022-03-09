@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config COUNTER_NATIVE_POSIX
-    bool "Enable counter on COUNTER_0"
+    bool "Counter on COUNTER_0"
     default y
     depends on BOARD_NATIVE_POSIX
 

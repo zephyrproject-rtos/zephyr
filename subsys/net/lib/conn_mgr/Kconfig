@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_CONNECTION_MANAGER
-	bool "Enable network connection manager [EXPERIMENTAL]"
+	bool "Network connection manager [EXPERIMENTAL]"
 	depends on NET_IPV6 || NET_IPV4
 	select NET_MGMT
 	select NET_MGMT_EVENT

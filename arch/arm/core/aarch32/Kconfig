@@ -143,7 +143,7 @@ config RUNTIME_NMI
 	  needed, enable this option and attach it via _NmiHandlerSet().
 
 config PLATFORM_SPECIFIC_INIT
-	bool "Enable platform (SOC) specific startup hook"
+	bool "Platform (SOC) specific startup hook"
 	help
 	  The platform specific initialization code (z_arm_platform_init) is
 	  executed at the beginning of the startup code (__start).

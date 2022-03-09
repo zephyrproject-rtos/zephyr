@@ -378,7 +378,7 @@ config NOCACHE_MEMORY
 menu "Interrupt Configuration"
 
 config DYNAMIC_INTERRUPTS
-	bool "Enable installation of IRQs at runtime"
+	bool "Installation of IRQs at runtime"
 	help
 	  Enable installation of interrupts at runtime, which will move some
 	  interrupt-related data structures to RAM instead of ROM, and
@@ -436,7 +436,7 @@ config GEN_IRQ_START_VECTOR
 	  left alone.
 
 config IRQ_OFFLOAD
-	bool "Enable IRQ offload"
+	bool "IRQ offload"
 	depends on TEST
 	help
 	  Enable irq_offload() API which allows functions to be synchronously
@@ -618,7 +618,7 @@ config ARCH_MAPS_ALL_RAM
 	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
 
 menuconfig MPU
-	bool "Enable MPU features"
+	bool "MPU features"
 	depends on CPU_HAS_MPU
 	help
 	  This option, when enabled, indicates to the core kernel that an MPU
@@ -699,7 +699,7 @@ config SRAM_REGION_PERMISSIONS
 menu "Floating Point Options"
 
 config FPU
-	bool "Enable floating point unit (FPU)"
+	bool "Floating point unit (FPU)"
 	depends on CPU_HAS_FPU
 	help
 	  This option enables the hardware Floating Point Unit (FPU), in order to
@@ -740,7 +740,7 @@ endmenu
 menu "Cache Options"
 
 config CACHE_MANAGEMENT
-	bool "Enable cache management features"
+	bool "Cache management features"
 	help
 	  This links in the cache management functions (for d-cache and i-cache
 	  where possible).

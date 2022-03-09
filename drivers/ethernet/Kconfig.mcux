@@ -17,13 +17,13 @@ menuconfig ETH_MCUX
 if ETH_MCUX
 
 config ETH_MCUX_PROMISCUOUS_MODE
-	bool "Enable promiscuous mode"
+	bool "Promiscuous mode"
 	help
 	  Place the Ethernet receiver in promiscuous mode. This may be useful
 	  for debugging and not needed for normal work.
 
 config ETH_MCUX_RMII_EXT_CLK
-	bool "Enable RMII clock from external sources"
+	bool "RMII clock from external sources"
 	help
 	  Setting this option will configure MCUX clock block to feed RMII
 	  reference clock from external source (ENET_1588_CLKIN)
@@ -43,7 +43,7 @@ config ETH_MCUX_PHY_TICK_MS
 	  Set the PHY status polling period.
 
 config ETH_MCUX_PHY_EXTRA_DEBUG
-	bool "Enable additional detailed PHY debug"
+	bool "Additional detailed PHY debug"
 	help
 	  Enable additional PHY related debug information related to
 	  PHY status polling.
@@ -63,7 +63,7 @@ config ETH_MCUX_TX_BUFFERS
 	  Set the number of TX buffers provided to the MCUX driver.
 
 config ETH_MCUX_HW_ACCELERATION
-	bool "Enable hardware acceleration"
+	bool "Hardware acceleration"
 	help
 	  Enable hardware acceleration for the following:
 	  - IPv4, UDP and TCP checksum (both Rx and Tx)

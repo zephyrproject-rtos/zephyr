@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig UART_RTT
-	bool "Enable UART RTT driver"
+	bool "UART RTT driver"
 	depends on USE_SEGGER_RTT
 	select SEGGER_RTT_CUSTOM_LOCKING
 	help

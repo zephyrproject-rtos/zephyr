@@ -45,7 +45,7 @@ config SERIAL_SUPPORT_WIDE_DATA
 	  than 8-bit.
 
 config UART_USE_RUNTIME_CONFIGURE
-	bool "Enable runtime configuration for UART controllers"
+	bool "Runtime configuration for UART controllers"
 	default y
 	help
 	  Enable runtime configuration of UART controllers.
@@ -60,20 +60,20 @@ config UART_USE_RUNTIME_CONFIGURE
 	  applications that do not require runtime UART configuration.
 
 config UART_ASYNC_API
-	bool "Enable asynchronous UART API"
+	bool "Asynchronous UART API"
 	depends on SERIAL_SUPPORT_ASYNC
 	help
 	  This option enables asynchronous UART API.
 
 config UART_INTERRUPT_DRIVEN
-	bool "Enable UART Interrupt support"
+	bool "UART Interrupt support"
 	depends on SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables interrupt support for UART allowing console
 	  input and other UART based drivers.
 
 config UART_LINE_CTRL
-	bool "Enable Serial Line Control API"
+	bool "Serial Line Control API"
 	help
 	  This enables the API for apps to control the serial line,
 	  such as baud rate, CTS and RTS.
@@ -83,7 +83,7 @@ config UART_LINE_CTRL
 	  Says no if not sure.
 
 config UART_DRV_CMD
-	bool "Enable driver commands API"
+	bool "Driver commands API"
 	help
 	  This enables the API to send extra commands to drivers.
 	  This allows drivers to expose hardware specific functions.
@@ -91,7 +91,7 @@ config UART_DRV_CMD
 	  Says no if not sure.
 
 config UART_WIDE_DATA
-	bool "Enable API to support data longer than 8-bit"
+	bool "API to support data longer than 8-bit"
 	help
 	  This enables the API to process data longer than 8-bit.
 	  This is up to the driver to implement the necessary functions

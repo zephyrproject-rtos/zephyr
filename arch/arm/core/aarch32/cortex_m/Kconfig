@@ -280,7 +280,7 @@ config GEN_ISR_TABLES
 	default y
 
 config ZERO_LATENCY_IRQS
-	bool "Enable zero-latency interrupts"
+	bool "Zero-latency interrupts"
 	depends on CPU_CORTEX_M_HAS_BASEPRI
 	help
 	  The kernel may reserve some of the highest interrupts priorities in
@@ -296,7 +296,7 @@ config ZERO_LATENCY_IRQS
 	  kernel functionality.
 
 config DYNAMIC_DIRECT_INTERRUPTS
-	bool "Enable support for dynamic direct interrupts"
+	bool "Support for dynamic direct interrupts"
 	depends on DYNAMIC_INTERRUPTS
 	help
 	  Direct interrupts are designed for performance-critical interrupt
@@ -307,7 +307,7 @@ config DYNAMIC_DIRECT_INTERRUPTS
 	  kernel.
 
 config SW_VECTOR_RELAY
-	bool "Enable Software Vector Relay"
+	bool "Software Vector Relay"
 	help
 	  When building a bootloader firmware this option adds a
 	  vector table relay handler and a vector relay table, to
@@ -316,7 +316,7 @@ config SW_VECTOR_RELAY
 	  with no hardware vector table relocation mechanisms (e.g. VTOR).
 
 config SW_VECTOR_RELAY_CLIENT
-	bool "Enable Software Vector Relay (client)"
+	bool "Software Vector Relay (client)"
 	default y if BOOTLOADER_MCUBOOT && !CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	depends on !CPU_CORTEX_M_HAS_VTOR
 	help
@@ -326,7 +326,7 @@ config SW_VECTOR_RELAY_CLIENT
 	  initialization.
 
 config CORTEX_M_DWT
-	bool "Enable and use the DWT"
+	bool "And use the DWT"
 	depends on CPU_CORTEX_M_HAS_DWT
 	default y if TIMING_FUNCTIONS
 	help
@@ -345,7 +345,7 @@ endmenu
 # Trace Unit and the Debug Monitor Exception, or the Memory Protection Unit.
 
 choice NULL_POINTER_EXCEPTION_DETECTION
-	bool "Enable and use null-pointer exception"
+	bool "And use null-pointer exception"
 	# Disable this until https://github.com/zephyrproject-rtos/zephyr/issues/32984 is fixed
 	# default NULL_POINTER_EXCEPTION_DETECTION_DWT if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && CPU_CORTEX_M_HAS_DWT
 	default NULL_POINTER_EXCEPTION_DETECTION_MPU if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && ARM_MPU && !CPU_CORTEX_M_HAS_DWT

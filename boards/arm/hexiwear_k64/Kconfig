@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BATTERY_SENSE
-	bool "Enable the battery sense circuit"
+	bool "The battery sense circuit"
 	depends on BOARD_HEXIWEAR_K64

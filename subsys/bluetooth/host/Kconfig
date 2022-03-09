@@ -176,7 +176,7 @@ config BT_WHITELIST
 	select BT_FILTER_ACCEPT_LIST
 
 config BT_FILTER_ACCEPT_LIST
-	bool "Enable filter accept list support"
+	bool "Filter accept list support"
 	help
 	  This option enables the filter accep list API. This takes advantage of the
 	  filtering feature of a BLE controller.
@@ -245,7 +245,7 @@ config BT_AUTO_DATA_LEN_UPDATE
 	  procedure at its discretion or want to initiate manually.
 
 config BT_REMOTE_INFO
-	bool "Enable application access to remote information"
+	bool "Application access to remote information"
 	help
 	  Enable application access to the remote information available in the
 	  stack. The remote information is retrieved once a connection has been
@@ -360,7 +360,7 @@ config BT_FIXED_PASSKEY
 	  pairing_confim() callback will be called for all incoming pairings.
 
 config BT_USE_DEBUG_KEYS
-	bool "Enable Security Manager Debug Mode"
+	bool "Security Manager Debug Mode"
 	help
 	  This option places Security Manager in a Debug Mode. In this mode
 	  predefined Diffie-Hellman private/public key pair is used as described
@@ -562,7 +562,7 @@ config BT_ID_MAX
 	  products this is safe to leave as the default value (1).
 
 config BT_DF
-	bool "Enable Direction Finding support [EXPERIMENTAL]"
+	bool "Direction Finding support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding.
@@ -572,45 +572,45 @@ config BT_DF
 if BT_DF
 
 config BT_DF_CONNECTIONLESS_CTE_RX
-	bool "Enable support for receive of CTE in connectionless mode"
+	bool "Support for receive of CTE in connectionless mode"
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
 
 config BT_DF_CONNECTIONLESS_CTE_TX
-	bool "Enable support for transmission of CTE in connectionless mode"
+	bool "Support for transmission of CTE in connectionless mode"
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connectionless mode.
 
 config BT_DF_CONNECTION_CTE_RX
-	bool "Enable support for receive of CTE in connection mode"
+	bool "Support for receive of CTE in connection mode"
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connection mode.
 
 config BT_DF_CONNECTION_CTE_TX
-	bool "Enable support for transmission of CTE in connection mode"
+	bool "Support for transmission of CTE in connection mode"
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connection mode.
 
 config BT_DF_CONNECTION_CTE_REQ
-	bool "Enable support for CTE request procedure in connection mode"
+	bool "Support for CTE request procedure in connection mode"
 	depends on BT_DF_CONNECTION_CTE_RX
 	help
 	  Enable support for request of Constant Tone Extension in connection
 	  mode.
 
 config BT_DF_CONNECTION_CTE_RSP
-	bool "Enable support for CTE request procedure in connection mode"
+	bool "Support for CTE request procedure in connection mode"
 	depends on BT_DF_CONNECTION_CTE_TX
 	help
 	  Enable support for request of Constant Tone Extension in connection
 	  mode.
 
 config BT_DF_CTE_RX_AOA
-	bool "Enable antenna switching during CTE reception (AoA) feature"
+	bool "Antenna switching during CTE reception (AoA) feature"
 	depends on BT_DF_CONNECTIONLESS_CTE_RX || BT_DF_CONNECTION_CTE_RX
 	default y
 	help
@@ -618,7 +618,7 @@ config BT_DF_CTE_RX_AOA
 	  Also known as Angle of Arrival mode.
 
 config BT_DF_CTE_TX_AOD
-	bool "Enable antenna switching during CTE transmission (AoD) feature"
+	bool "Antenna switching during CTE transmission (AoD) feature"
 	depends on BT_DF_CONNECTIONLESS_CTE_TX || BT_DF_CONNECTION_CTE_TX
 	default y
 	help
@@ -634,7 +634,7 @@ endif # BT_DF
 endif # BT_HCI_HOST
 
 config BT_ECC
-	bool "Enable ECDH key generation support"
+	bool "ECDH key generation support"
 	default y if BT_MESH_PROV || (BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY)
 	help
 	  This option adds support for ECDH HCI commands.
@@ -658,7 +658,7 @@ config BT_TINYCRYPT_ECC
 	  does not have any special ECC support itself (at least not currently).
 
 config BT_HOST_CCM
-	bool "Enable host side AES-CCM module"
+	bool "Host side AES-CCM module"
 	help
 	  Enables the software based AES-CCM engine in the host. Will use the
 	  controller's AES encryption functions if available, or BT_HOST_CRYPTO

@@ -14,14 +14,14 @@ config COMPRESSED_ISA
 	default y if 64BIT
 
 config FLOAT_HARD
-	bool "Enable hard-float calling convention"
+	bool "Hard-float calling convention"
 	default y
 	depends on FPU
 	help
 	  This option enables the hard-float calling convention.
 
 config RISCV_GP
-	bool "Enable RISC-V global pointer relative addressing"
+	bool "RISC-V global pointer relative addressing"
 	default n
 	help
 	  Use global pointer relative addressing for small globals declared
@@ -50,7 +50,7 @@ config INCLUDE_RESET_VECTOR
 	  prepares for running C code.
 
 config RISCV_SOC_CONTEXT_SAVE
-	bool "Enable SOC-based context saving in IRQ handlers"
+	bool "SOC-based context saving in IRQ handlers"
 	select RISCV_SOC_OFFSETS
 	help
 	  Enable low-level SOC-specific context management, for SOCs
@@ -85,7 +85,7 @@ config RISCV_SOC_CONTEXT_SAVE
 	  pointer address is in a0, and ra contains the return address.
 
 config RISCV_SOC_OFFSETS
-	bool "Enable SOC-based offsets"
+	bool "SOC-based offsets"
 	help
 	  Enabling this option requires that the SoC provide a soc_offsets.h
 	  header which defines the following macros:
@@ -97,7 +97,7 @@ config RISCV_SOC_OFFSETS
 	    See gen_offset.h for more details.
 
 config RISCV_SOC_INTERRUPT_INIT
-	bool "Enable SOC-based interrupt initialization"
+	bool "SOC-based interrupt initialization"
 	help
 	  Enable SOC-based interrupt initialization
 	  (call soc_interrupt_init, within _IntLibInit when enabled)

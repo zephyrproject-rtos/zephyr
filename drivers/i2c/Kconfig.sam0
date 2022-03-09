@@ -9,7 +9,7 @@ menuconfig I2C_SAM0
 	  Enable the SAM0 series SERCOM I2C driver.
 
 config I2C_SAM0_DMA_DRIVEN
-	bool "Enable DMA support for SAM0 I2C devices"
+	bool "DMA support for SAM0 I2C devices"
 	depends on I2C_SAM0
 	select DMA
 	help

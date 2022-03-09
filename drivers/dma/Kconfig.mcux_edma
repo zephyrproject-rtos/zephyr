@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DMA_MCUX_EDMA
-	bool "Enable MCUX DMA driver"
+	bool "MCUX DMA driver"
 	depends on HAS_MCUX_EDMA
 	imply NOCACHE_MEMORY if HAS_MCUX_CACHE
 	help

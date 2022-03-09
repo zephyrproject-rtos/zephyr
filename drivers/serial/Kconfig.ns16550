@@ -12,7 +12,7 @@ menuconfig UART_NS16550
 if UART_NS16550
 
 config UART_NS16550_LINE_CTRL
-	bool "Enable Serial Line Control for Apps"
+	bool "Serial Line Control for Apps"
 	depends on UART_LINE_CTRL
 	help
 	  This enables the API for apps to control the serial line,
@@ -21,7 +21,7 @@ config UART_NS16550_LINE_CTRL
 	  Says n if not sure.
 
 config UART_NS16550_DRV_CMD
-	bool "Enable Driver Commands"
+	bool "Driver Commands"
 	depends on UART_DRV_CMD
 	help
 	  This enables the API for apps to send commands to driver.
@@ -29,7 +29,7 @@ config UART_NS16550_DRV_CMD
 	  Says n if not sure.
 
 config UART_NS16750
-	bool "Enable UART 16750 (64-bytes FIFO and auto flow control)"
+	bool "UART 16750 (64-bytes FIFO and auto flow control)"
 	help
 	  This enables support for 64-bytes FIFO and automatic hardware
 	  flow control if UART controller is 16750.

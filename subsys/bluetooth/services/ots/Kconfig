@@ -15,7 +15,7 @@ config BT_OTS
 if BT_OTS
 
 config BT_OTS_DIR_LIST_OBJ
-	bool "Enables the Directory Listing Object"
+	bool "The Directory Listing Object"
 	help
 	  Enables the Directory Listing Object, which is an object that contains all the metadata
 	  from all other objects, for easy exposure to a client. Enabling this will use one of the

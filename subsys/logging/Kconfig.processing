@@ -142,7 +142,7 @@ config LOG_STRDUP_BUF_COUNT
 	  some additional fixed overhead.
 
 config LOG_STRDUP_POOL_PROFILING
-	bool "Enable profiling of pool used for log_strdup()"
+	bool "Profiling of pool used for log_strdup()"
 	help
 	  When enabled, maximal utilization of the pool is tracked. It can
 	  be read out using shell command.

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_L2_VIRTUAL
-	bool "Enable virtual L2 support"
+	bool "Virtual L2 support"
 	help
 	  Add a virtual L2 layer driver. This is needed if you have a L2
 	  layer that depends on other L2 layer. Like running VPN on top of
@@ -11,7 +11,7 @@ menuconfig NET_L2_VIRTUAL
 if NET_L2_VIRTUAL
 
 config NET_L2_VIRTUAL_MGMT
-	bool "Enable virtual interface network management interface"
+	bool "Virtual interface network management interface"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	help

@@ -18,9 +18,9 @@ choice
 config ENS210_TEMPERATURE_OFF
 	bool "Disable temperature measurements"
 config ENS210_TEMPERATURE_SINGLE
-	bool "Enable temperature measurements in single shot mode"
+	bool "Temperature measurements in single shot mode"
 config ENS210_TEMPERATURE_CONTINUOUS
-	bool "Enable temperature measurements in continuous mode"
+	bool "Temperature measurements in continuous mode"
 endchoice
 
 choice
@@ -31,13 +31,13 @@ choice
 config ENS210_HUMIDITY_OFF
 	bool "Disable relative humidity measurements"
 config ENS210_HUMIDITY_SINGLE
-	bool "Enable relative humidity measurements in single shot mode"
+	bool "Relative humidity measurements in single shot mode"
 config ENS210_HUMIDITY_CONTINUOUS
-	bool "Enable relative humidity measurements in continuous mode"
+	bool "Relative humidity measurements in continuous mode"
 endchoice
 
 config ENS210_CRC_CHECK
-	bool "Enable CRC Check"
+	bool "CRC Check"
 	default y
 	help
 	  Check the crc value after data reading.

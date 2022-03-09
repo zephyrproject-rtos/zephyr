@@ -21,7 +21,7 @@ config ARM_CLOCK_CONTROL_DEV_NAME
 	  Configure Clock Config Device name
 
 config CLOCK_CONTROL_BEETLE_ENABLE_PLL
-	bool "Enable PLL on Beetle"
+	bool "PLL on Beetle"
 	depends on SOC_SERIES_BEETLE
 	help
 	  Enable PLL on Beetle.

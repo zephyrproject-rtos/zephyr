@@ -35,24 +35,24 @@ config BMC150_MAGN_PRESET_HIGH_ACCURACY
 endchoice
 
 config BMC150_MAGN_SAMPLING_RATE_RUNTIME
-	bool "Enable dynamic sampling rate"
+	bool "Dynamic sampling rate"
 	help
 	  Enable alteration of sampling rate attribute at runtime.
 
 config BMC150_MAGN_SAMPLING_REP_XY
-	bool "Enable dynamic XY oversampling"
+	bool "Dynamic XY oversampling"
 	help
 	  Enable alteration of XY oversampling at runtime.
 
 config BMC150_MAGN_SAMPLING_REP_Z
-	bool "Enable dynamic Z oversampling"
+	bool "Dynamic Z oversampling"
 	help
 	  Enable alteration of Z oversampling at runtime.
 
 endmenu
 
 config BMC150_MAGN_TRIGGER
-	bool "Enable triggers"
+	bool "Triggers"
 	depends on GPIO
 	help
 	  Enable triggers for BMC150 magnetometer
@@ -65,7 +65,7 @@ config BMC150_MAGN_TRIGGER_THREAD_STACK
 	  Specify the internal thread stack size.
 
 config BMC150_MAGN_TRIGGER_DRDY
-	bool "Enable data ready trigger"
+	bool "Data ready trigger"
 	depends on BMC150_MAGN_TRIGGER
 	help
 	  Enable data ready interrupt for BMC150 magnetometer

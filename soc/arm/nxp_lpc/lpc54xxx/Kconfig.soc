@@ -39,7 +39,7 @@ config SOC_PART_NUMBER_LPC54XXX
 	  choice defines the default value for this string.
 
 config SECOND_CORE_MCUX
-	bool "Enable LPC54114 Cortex-M0 second core"
+	bool "LPC54114 Cortex-M0 second core"
 	depends on HAS_MCUX
 	help
 	  Driver for second core startup
