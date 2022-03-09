@@ -137,16 +137,24 @@ enum z_log_msg2_mode {
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG2_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
+#ifdef CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE
+/* During test fill with 0's to simplify message comparison */
+#define Z_LOG_MSG2_CLEAR_MESSAGE_SPACE(ptr, len) \
+	memset((ptr), 0, (len))
+#else
+#define Z_LOG_MSG2_CLEAR_MESSAGE_SPACE(ptr, len) \
+	do {} while (false)
+#endif
+
 #if CONFIG_LOG2_USE_VLA
 #define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \
-	long long _ll_buf[ceiling_fraction(len, sizeof(long long))]; \
-	long double _ld_buf[ceiling_fraction(len, sizeof(long double))]; \
-	(ptr) = (sizeof(long double) == Z_LOG_MSG2_ALIGNMENT) ? \
-			(struct log_msg2 *)_ld_buf : (struct log_msg2 *)_ll_buf; \
-	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
-		/* During test fill with 0's to simplify message comparison */ \
-		memset((ptr), 0, (len)); \
-	}
+	union u_buf { \
+		long long ll; \
+		long double ld; \
+	}; \
+	union u_buf _buf[ceiling_fraction(len, sizeof(union u_buf))]; \
+	(ptr) = (struct log_msg2 *)_buf; \
+	Z_LOG_MSG2_CLEAR_MESSAGE_SPACE(ptr, len)
 #else /* Z_LOG_MSG2_USE_VLA */
 /* When VLA cannot be used we need to trick compiler a bit and create multiple
  * fixed size arrays and take the smallest one that will fit the message.
@@ -214,7 +222,7 @@ enum z_log_msg2_mode {
 #define Z_LOG_MSG2_STACK_CREATE(_domain_id, _source, _level, _data, _dlen, ...)\
 do { \
 	int _plen; \
-	if ((GET_ARG_N(1, __VA_ARGS__)) == NULL) { \
+	if (CONSTEXPR((GET_ARG_N(1, __VA_ARGS__)) == NULL)) { \
 		_plen = 0; \
 	} else { \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0U, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
