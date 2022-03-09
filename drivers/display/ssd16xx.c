@@ -378,7 +378,8 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd,
 	uint16_t panel_h = config->height / EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 	uint16_t last_gate = config->width - 1;
 	uint8_t scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
-	uint8_t clear_page[256]; /* User large array for now */
+	uint8_t clear_page[64];
+	int err;
 
 	/*
 	 * Clear unusable memory area when the resolution of the panel is not
@@ -388,28 +389,35 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd,
 		panel_h += 1;
 	}
 
-	if (ssd16xx_write_cmd(dev, SSD16XX_CMD_ENTRY_MODE, &scan_mode, 1)) {
-		return -EIO;
+	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_ENTRY_MODE, &scan_mode, 1);
+	if (err < 0) {
+		return err;
 	}
 
-	if (ssd16xx_set_ram_param(dev, SSD16XX_PANEL_FIRST_PAGE,
-				  panel_h - 1,
-				  last_gate,
-				  SSD16XX_PANEL_FIRST_GATE)) {
-		return -EIO;
+	err = ssd16xx_set_ram_param(dev, SSD16XX_PANEL_FIRST_PAGE,
+				    panel_h - 1, last_gate,
+				    SSD16XX_PANEL_FIRST_GATE);
+	if (err < 0) {
+		return err;
 	}
 
-	if (ssd16xx_set_ram_ptr(dev, SSD16XX_PANEL_FIRST_PAGE,
-				last_gate)) {
-		return -EIO;
+	err = ssd16xx_set_ram_ptr(dev, SSD16XX_PANEL_FIRST_PAGE, last_gate);
+	if (err < 0) {
+		return err;
 	}
-
 
 	memset(clear_page, 0xff, sizeof(clear_page));
-	for (int i = 0; i < panel_h; i++) {
-		if (ssd16xx_write_cmd(dev, ram_cmd, clear_page,
-				      sizeof(clear_page))) {
-			return -EIO;
+	for (int h = 0; h < panel_h; h++) {
+		size_t x = config->width;
+
+		while (x) {
+			size_t l = MIN(x, sizeof(clear_page));
+
+			x -= l;
+			err = ssd16xx_write_cmd(dev, ram_cmd, clear_page, l);
+			if (err < 0) {
+				return err;
+			}
 		}
 	}
 
