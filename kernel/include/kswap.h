@@ -138,10 +138,10 @@ static ALWAYS_INLINE int do_swap(unsigned int key,
 #endif
 		void *newsh = new_thread->switch_handle;
 
-		if (IS_ENABLED(CONFIG_SMP)) {
-			/* Active threads MUST have a null here */
-			new_thread->switch_handle = NULL;
-		}
+#ifdef CONFIG_SMP
+		/* Active threads MUST have a null here */
+		new_thread->switch_handle = NULL;
+#endif
 		k_spin_release(&sched_spinlock);
 		arch_switch(newsh, &old_thread->switch_handle);
 	} else {
