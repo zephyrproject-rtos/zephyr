@@ -18,8 +18,11 @@ static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
 
 static struct k_spinlock timeout_lock;
 
-#define MAX_WAIT ((IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE)) \
-		  ? K_TICKS_FOREVER : INT_MAX)
+#ifdef CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE
+#define MAX_WAIT K_TICKS_FOREVER
+#else
+#define MAX_WAIT INT_MAX
+#endif
 
 /* Cycles left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
