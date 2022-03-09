@@ -125,15 +125,6 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 		return MGMT_ERR_ENOTSUP;
 	}
 
-	/* Begin response payload.  Response fields are inserted into the root
-	 * map as key value pairs.
-	 */
-	rc = cbor_encoder_create_map(&cbuf->encoder, &payload_encoder, CborIndefiniteLength);
-	rc = mgmt_err_from_cbor(rc);
-	if (rc != 0) {
-		return rc;
-	}
-
 	switch (req_hdr->nh_op) {
 	case MGMT_OP_READ:
 		handler_fn = handler->mh_read;
@@ -148,21 +139,29 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 	}
 
 	if (handler_fn) {
+		int rcc;
+		/* Begin response payload.  Response fields are inserted into the root
+		 * map as key value pairs.
+		 */
+		rc = cbor_encoder_create_map(&cbuf->encoder, &payload_encoder,
+					     CborIndefiniteLength);
+		if (rc != 0) {
+			return mgmt_err_from_cbor(rc);
+		}
 		*handler_found = true;
 		mgmt_evt(MGMT_EVT_OP_CMD_RECV, req_hdr->nh_group, req_hdr->nh_id, NULL);
 
 		rc = handler_fn(cbuf);
+		/* End response payload. */
+		rcc = cbor_encoder_close_container(&cbuf->encoder, &payload_encoder);
+		if (rc == 0) {
+			rc = mgmt_err_from_cbor(rcc);
+		}
 	} else {
 		rc = MGMT_ERR_ENOTSUP;
 	}
 
-	if (rc != 0) {
-		return rc;
-	}
-
-	/* End response payload. */
-	rc = cbor_encoder_close_container(&cbuf->encoder, &payload_encoder);
-	return mgmt_err_from_cbor(rc);
+	return rc;
 }
 
 /**
