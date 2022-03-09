@@ -6,6 +6,8 @@
 #include <nrfx_pwm.h>
 #include <drivers/pwm.h>
 #include <pm/device.h>
+#include <drivers/pinctrl.h>
+#include <soc.h>
 #include <hal/nrf_gpio.h>
 #include <stdbool.h>
 
@@ -13,16 +15,18 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_nrfx);
 
-#define PWM_NRFX_CH_POLARITY_MASK       BIT(15)
-#define PWM_NRFX_CH_PULSE_CYCLES_MASK   BIT_MASK(15)
-#define PWM_NRFX_CH_VALUE_NORMAL        PWM_NRFX_CH_POLARITY_MASK
-#define PWM_NRFX_CH_VALUE_INVERTED      (0)
-#define PWM_NRFX_CH_PIN_MASK            ~NRFX_PWM_PIN_INVERTED
+#define PWM_NRFX_CH_POLARITY_MASK          BIT(15)
+#define PWM_NRFX_CH_PULSE_CYCLES_MASK      BIT_MASK(15)
+#define PWM_NRFX_CH_VALUE(value, inverted) \
+	(value | (inverted ? 0 : PWM_NRFX_CH_POLARITY_MASK))
 
 struct pwm_nrfx_config {
 	nrfx_pwm_t pwm;
 	nrfx_pwm_config_t initial_config;
 	nrf_pwm_sequence_t seq;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif
 };
 
 struct pwm_nrfx_data {
@@ -30,6 +34,7 @@ struct pwm_nrfx_data {
 	uint16_t current[NRF_PWM_CHANNEL_COUNT];
 	uint16_t countertop;
 	uint8_t  prescaler;
+	uint8_t  inverted_channels;
 };
 
 
@@ -84,14 +89,14 @@ static int pwm_period_check_and_set(const struct pwm_nrfx_config *config,
 	return -EINVAL;
 }
 
-static uint8_t pwm_channel_map(const uint8_t *output_pins, uint32_t pwm)
+static uint8_t pwm_channel_map(const struct pwm_nrfx_config *config,
+			       uint32_t pwm)
 {
 	uint8_t i;
 
 	/* Find pin, return channel number */
 	for (i = 0U; i < NRF_PWM_CHANNEL_COUNT; i++) {
-		if (output_pins[i] != NRFX_PWM_PIN_NOT_USED
-		    && (pwm == (output_pins[i] & PWM_NRFX_CH_PIN_MASK))) {
+		if (nrf_pwm_pin_get(config->pwm.p_registers, i) == pwm) {
 			return i;
 		}
 	}
@@ -146,7 +151,7 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 	 * Return its array index (channel number),
 	 * or NRF_PWM_CHANNEL_COUNT if not initialized through DTS.
 	 */
-	channel = pwm_channel_map(config->initial_config.output_pins, pwm);
+	channel = pwm_channel_map(config, pwm);
 	if (channel == NRF_PWM_CHANNEL_COUNT) {
 		LOG_ERR("PWM pin %d not enabled through DTS configuration.",
 			pwm);
@@ -211,8 +216,7 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 		 * If pulse 100% and pin not inverted, set HIGH.
 		 */
 		bool channel_inverted_state =
-			config->initial_config.output_pins[channel]
-			& NRFX_PWM_PIN_INVERTED;
+			data->inverted_channels & BIT(channel);
 
 		bool pulse_0_and_not_inverted =
 			(pulse_cycles == 0U)
@@ -274,12 +278,33 @@ static int pwm_nrfx_init(const struct device *dev)
 	const struct pwm_nrfx_config *config = dev->config;
 	struct pwm_nrfx_data *data = dev->data;
 
-	for (size_t i = 0; i < ARRAY_SIZE(data->current); i++) {
-		bool inverted = config->initial_config.output_pins[i] & NRFX_PWM_PIN_INVERTED;
-		uint16_t value = (inverted)?(PWM_NRFX_CH_VALUE_INVERTED):(PWM_NRFX_CH_VALUE_NORMAL);
+#ifdef CONFIG_PINCTRL
+	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
-		data->current[i] = value;
-	};
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->inverted_channels = 0;
+	for (size_t i = 0; i < ARRAY_SIZE(data->current); i++) {
+		uint32_t psel = nrf_pwm_pin_get(config->pwm.p_registers, i);
+		/* Mark channels as inverted according to what initial state
+		 * of their outputs has been set by pinctrl (high idle state
+		 * means that the channel is inverted).
+		 */
+		if (((psel & PWM_PSEL_OUT_CONNECT_Msk) >> PWM_PSEL_OUT_CONNECT_Pos)
+		    == PWM_PSEL_OUT_CONNECT_Connected) {
+			data->inverted_channels |=
+				nrf_gpio_pin_out_read(psel) ? BIT(i) : 0;
+		}
+	}
+#endif
+
+	for (size_t i = 0; i < ARRAY_SIZE(data->current); i++) {
+		bool inverted = data->inverted_channels & BIT(i);
+
+		data->current[i] = PWM_NRFX_CH_VALUE(0, inverted);
+	}
 
 	nrfx_err_t result = nrfx_pwm_init(&config->pwm,
 					  &config->initial_config,
@@ -306,20 +331,38 @@ static void pwm_nrfx_uninit(const struct device *dev)
 static int pwm_nrfx_pm_action(const struct device *dev,
 			      enum pm_device_action action)
 {
-	int err = 0;
+#ifdef CONFIG_PINCTRL
+	const struct pwm_nrfx_config *config = dev->config;
+#endif
+	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		err = pwm_nrfx_init(dev);
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
+		ret = pwm_nrfx_init(dev);
 		break;
+
 	case PM_DEVICE_ACTION_SUSPEND:
 		pwm_nrfx_uninit(dev);
+
+#ifdef CONFIG_PINCTRL
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
+		}
+#endif
 		break;
+
 	default:
 		return -ENOTSUP;
 	}
 
-	return err;
+	return ret;
 }
 #else
 
@@ -330,49 +373,60 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 #define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
 #define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
 
-#define PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) \
+#define PWM_CH_INVERTED(dev_idx, ch_idx) \
 	PWM_PROP(dev_idx, ch##ch_idx##_inverted)
 
-#define PWM_NRFX_CH_PIN(dev_idx, ch_idx)				      \
-	COND_CODE_1(DT_NODE_HAS_PROP(PWM(dev_idx), ch##ch_idx##_pin),	      \
-		    (PWM_PROP(dev_idx, ch##ch_idx##_pin)),		      \
-		    (NRFX_PWM_PIN_NOT_USED))
-
-#define PWM_NRFX_OUTPUT_PIN(dev_idx, ch_idx)				      \
-	(PWM_NRFX_CH_PIN(dev_idx, ch_idx) |				      \
-	 (PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) ? NRFX_PWM_PIN_INVERTED : 0))
-
-#define PWM_NRFX_COUNT_MODE(dev_idx)                                          \
-	(PWM_PROP(dev_idx, center_aligned) ?				      \
-	 NRF_PWM_MODE_UP_AND_DOWN : NRF_PWM_MODE_UP)
+#define PWM_OUTPUT_PIN(dev_idx, ch_idx)					\
+	COND_CODE_1(DT_NODE_HAS_PROP(PWM(dev_idx), ch##ch_idx##_pin),	\
+		(PWM_PROP(dev_idx, ch##ch_idx##_pin) |			\
+			(PWM_CH_INVERTED(dev_idx, ch_idx)		\
+			 ? NRFX_PWM_PIN_INVERTED : 0)),			\
+		(NRFX_PWM_PIN_NOT_USED))
 
 #define PWM_NRFX_DEVICE(idx)						      \
-	static struct pwm_nrfx_data pwm_nrfx_##idx##_data;		      \
+	NRF_DT_ENSURE_PINS_ASSIGNED(PWM(idx),				      \
+				    ch0_pin, ch1_pin, ch2_pin, ch3_pin);      \
+	static struct pwm_nrfx_data pwm_nrfx_##idx##_data = {		      \
+		COND_CODE_1(CONFIG_PINCTRL, (),				      \
+			(.inverted_channels =				      \
+				(PWM_CH_INVERTED(idx, 0) ? BIT(0) : 0) |      \
+				(PWM_CH_INVERTED(idx, 1) ? BIT(1) : 0) |      \
+				(PWM_CH_INVERTED(idx, 2) ? BIT(2) : 0) |      \
+				(PWM_CH_INVERTED(idx, 3) ? BIT(3) : 0),))     \
+	};								      \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(PWM(idx))));	      \
 	static const struct pwm_nrfx_config pwm_nrfx_##idx##config = {	      \
 		.pwm = NRFX_PWM_INSTANCE(idx),				      \
 		.initial_config = {					      \
-			.output_pins = {				      \
-				PWM_NRFX_OUTPUT_PIN(idx, 0),		      \
-				PWM_NRFX_OUTPUT_PIN(idx, 1),		      \
-				PWM_NRFX_OUTPUT_PIN(idx, 2),		      \
-				PWM_NRFX_OUTPUT_PIN(idx, 3),		      \
-			},						      \
+			COND_CODE_1(CONFIG_PINCTRL,			      \
+				(.skip_gpio_cfg = true,			      \
+				 .skip_psel_cfg = true,),		      \
+				(.output_pins = {			      \
+					PWM_OUTPUT_PIN(idx, 0),		      \
+					PWM_OUTPUT_PIN(idx, 1),		      \
+					PWM_OUTPUT_PIN(idx, 2),		      \
+					PWM_OUTPUT_PIN(idx, 3),		      \
+				 },))					      \
 			.base_clock = NRF_PWM_CLK_1MHz,			      \
-			.count_mode = PWM_NRFX_COUNT_MODE(idx),		      \
+			.count_mode = (PWM_PROP(idx, center_aligned)	      \
+				       ? NRF_PWM_MODE_UP_AND_DOWN	      \
+				       : NRF_PWM_MODE_UP),		      \
 			.top_value = 1000,				      \
 			.load_mode = NRF_PWM_LOAD_INDIVIDUAL,		      \
 			.step_mode = NRF_PWM_STEP_TRIGGERED,		      \
 		},							      \
 		.seq.values.p_raw = pwm_nrfx_##idx##_data.current,	      \
-		.seq.length = NRF_PWM_CHANNEL_COUNT			      \
+		.seq.length = NRF_PWM_CHANNEL_COUNT,			      \
+		IF_ENABLED(CONFIG_PINCTRL,				      \
+			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(PWM(idx)),))	      \
 	};								      \
 	PM_DEVICE_DT_DEFINE(PWM(idx), pwm_nrfx_pm_action);		      \
 	DEVICE_DT_DEFINE(PWM(idx),					      \
-		      pwm_nrfx_init, PM_DEVICE_DT_GET(PWM(idx)),	      \
-		      &pwm_nrfx_##idx##_data,				      \
-		      &pwm_nrfx_##idx##config,				      \
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \
-		      &pwm_nrfx_drv_api_funcs)
+			 pwm_nrfx_init, PM_DEVICE_DT_GET(PWM(idx)),	      \
+			 &pwm_nrfx_##idx##_data,			      \
+			 &pwm_nrfx_##idx##config,			      \
+			 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,     \
+			 &pwm_nrfx_drv_api_funcs)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay)
 PWM_NRFX_DEVICE(0);
