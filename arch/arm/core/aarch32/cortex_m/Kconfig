@@ -339,6 +339,13 @@ config CORTEX_M_DWT
 config TEST_EXTRA_STACK_SIZE
 	default 512 if TEST_ARM_CORTEX_M && FPU_SHARING
 
+config TRAP_UNALIGNED_ACCESS
+	bool "Unaligned access trap"
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	help
+	  If enabled, the CPU generates a UsageFault exception when executing a
+	  halfword or word access.
+
 endmenu
 
 # Implement the null pointer detection using either the Data Watchpoint and
