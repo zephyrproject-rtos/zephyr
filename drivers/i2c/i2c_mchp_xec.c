@@ -8,7 +8,6 @@
 
 #include <drivers/clock_control.h>
 #include <kernel.h>
-#include <assert.h>
 #include <soc.h>
 #include <errno.h>
 #include <drivers/gpio.h>
@@ -303,14 +302,19 @@ static bool check_lines_high(const struct device *dev)
 	gpio_port_value_t sda = 0, scl = 0;
 
 	if (gpio_port_get_raw(data->sda_gpio, &sda)) {
-		LOG_DBG("gpio_port_get_raw for %s SDA failed", dev->name);
+		LOG_ERR("gpio_port_get_raw for %s SDA failed", dev->name);
 		return false;
 	}
 
-	if (gpio_port_get_raw(data->scl_gpio, &scl)) {
-		LOG_DBG("gpio_port_get_raw for %s SCL failed",
-			dev->name);
-		return false;
+	/* both pins could be on same GPIO group */
+	if (data->sda_gpio == data->scl_gpio) {
+		scl = sda;
+	} else {
+		if (gpio_port_get_raw(data->scl_gpio, &scl)) {
+			LOG_ERR("gpio_port_get_raw for %s SCL failed",
+				dev->name);
+			return false;
+		}
 	}
 
 	return (sda & BIT(config->sda_pos)) && (scl & BIT(config->scl_pos));
@@ -898,9 +902,6 @@ static int i2c_xec_init(const struct device *dev)
 		LOG_ERR("%s configure failed to bind SCL GPIO", dev->name);
 		return -ENXIO;
 	}
-
-	__ASSERT(data->sda_gpio != data->scl_gpio,
-				"Both i2c pins on same GPIO");
 
 	/* Default configuration */
 	ret = i2c_xec_configure(dev,
