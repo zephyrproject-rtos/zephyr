@@ -33,10 +33,9 @@ mgmt_streamer_reset_buf(struct mgmt_streamer *streamer, void *buf)
 }
 
 int
-mgmt_streamer_write_at(struct mgmt_streamer *streamer, size_t offset,
-					   const void *data, int len)
+mgmt_streamer_write_hdr(struct mgmt_streamer *streamer, const struct mgmt_hdr *hdr)
 {
-	return streamer->cfg->write_at(streamer->writer, offset, data, len, streamer->cb_arg);
+	return streamer->cfg->write_hdr(streamer->writer, hdr);
 }
 
 int
