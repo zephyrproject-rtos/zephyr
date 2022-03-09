@@ -100,7 +100,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x40011c00 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000081>;
+				clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
 				label = "GPIOF";
 			};
 
@@ -109,7 +109,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x40012000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000101>;
+				clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000100>;
 				label = "GPIOG";
 			};
 		};
