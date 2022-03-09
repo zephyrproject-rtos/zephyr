@@ -89,13 +89,13 @@ typedef struct {
 
 #ifdef CONFIG_TIMEOUT_64BIT
 # define Z_TIMEOUT_MS(t) \
-	Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil64((uint64_t)MAX(t, (__typeof__(t))0)))
+	Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil64((uint64_t)Z_MAX(t, (__typeof__(t))0)))
 # define Z_TIMEOUT_US(t) \
-	Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil64((uint64_t)MAX(t, (__typeof__(t))0)))
+	Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil64((uint64_t)Z_MAX(t, (__typeof__(t))0)))
 # define Z_TIMEOUT_NS(t) \
-	Z_TIMEOUT_TICKS((k_ticks_t)k_ns_to_ticks_ceil64((uint64_t)MAX(t, (__typeof__(t))0)))
+	Z_TIMEOUT_TICKS((k_ticks_t)k_ns_to_ticks_ceil64((uint64_t)Z_MAX(t, (__typeof__(t))0)))
 # define Z_TIMEOUT_CYC(t) \
-	Z_TIMEOUT_TICKS((k_ticks_t)k_cyc_to_ticks_ceil64((uint64_t)MAX(t, (__typeof__(t))0)))
+	Z_TIMEOUT_TICKS((k_ticks_t)k_cyc_to_ticks_ceil64((uint64_t)Z_MAX(t, (__typeof__(t))0)))
 #else
 # define Z_TIMEOUT_MS(t) Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil32(MAX(t, 0)))
 # define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil32(MAX(t, 0)))
