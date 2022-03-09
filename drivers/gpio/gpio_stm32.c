@@ -703,33 +703,3 @@ GPIO_DEVICE_INIT_STM32(j, J);
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay)
 GPIO_DEVICE_INIT_STM32(k, K);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay) */
-
-
-#if defined(CONFIG_SOC_SERIES_STM32F1X) && \
-	!defined(CONFIG_GPIO_STM32_SWJ_ENABLE)
-
-static int gpio_stm32_afio_init(const struct device *dev)
-{
-	UNUSED(dev);
-
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
-
-#if defined(CONFIG_GPIO_STM32_SWJ_NONJTRST)
-	/* released PB4 */
-	__HAL_AFIO_REMAP_SWJ_NONJTRST();
-#elif defined(CONFIG_GPIO_STM32_SWJ_NOJTAG)
-	/* released PB4 PB3 PA15 */
-	__HAL_AFIO_REMAP_SWJ_NOJTAG();
-#elif defined(CONFIG_GPIO_STM32_SWJ_DISABLE)
-	/* released PB4 PB3 PA13 PA14 PA15 */
-	__HAL_AFIO_REMAP_SWJ_DISABLE();
-#endif
-
-	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_AFIO);
-
-	return 0;
-}
-
-SYS_INIT(gpio_stm32_afio_init, PRE_KERNEL_1, 0);
-
-#endif /* CONFIG_SOC_SERIES_STM32F1X && !CONFIG_GPIO_STM32_SWJ_ENABLE */
