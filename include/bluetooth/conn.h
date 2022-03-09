@@ -1310,38 +1310,6 @@ struct bt_conn_auth_cb {
 	 */
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
-
-	/** @brief notify that pairing procedure was complete.
-	 *
-	 *  This callback notifies the application that the pairing procedure
-	 *  has been completed.
-	 *
-	 *  @param conn Connection object.
-	 *  @param bonded Bond information has been distributed during the
-	 *                pairing procedure.
-	 */
-	__deprecated
-	void (*pairing_complete)(struct bt_conn *conn, bool bonded);
-
-	/** @brief notify that pairing process has failed.
-	 *
-	 *  @param conn Connection object.
-	 *  @param reason Pairing failed reason
-	 */
-	__deprecated
-	void (*pairing_failed)(struct bt_conn *conn,
-			       enum bt_security_err reason);
-
-	/** @brief Notify that bond has been deleted.
-	 *
-	 *  This callback notifies the application that the bond information
-	 *  for the remote peer has been deleted
-	 *
-	 *  @param id   Which local identity had the bond.
-	 *  @param peer Remote address.
-	 */
-	__deprecated
-	void (*bond_deleted)(uint8_t id, const bt_addr_le_t *peer);
 };
 
 /** Authenticated pairing information callback structure */
