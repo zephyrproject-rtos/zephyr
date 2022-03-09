@@ -166,6 +166,10 @@
 	status = "okay";
 };
 
+&iwdg {
+	status = "okay";
+};
+
 &subghzspi {
 	status = "okay";
 	lora: radio@0 {
