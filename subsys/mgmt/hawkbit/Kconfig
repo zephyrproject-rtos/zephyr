@@ -35,7 +35,7 @@ config HAWKBIT_POLL_INTERVAL
 	  This time interval is zero and 43200 minutes(30 days).
 
 config HAWKBIT_SHELL
-	bool "Enable Hawkbit shell utilities"
+	bool "Hawkbit shell utilities"
 	depends on SHELL
 	help
 	  Activate shell module that provides Hawkbit commands.

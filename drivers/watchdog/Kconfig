@@ -25,7 +25,7 @@ config HAS_WDT_MULTISTAGE
 	bool
 
 config WDT_MULTISTAGE
-	bool "Enable multistage timeouts"
+	bool "Multistage timeouts"
 	depends on HAS_WDT_MULTISTAGE
 	help
 	  Enable multistage operation of watchdog timeouts.

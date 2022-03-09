@@ -126,7 +126,7 @@ config SETTINGS_NVS_SECTOR_COUNT
 	  Number of sectors used for the NVS settings area
 
 config SETTINGS_SHELL
-	bool "Enable Settings shell"
+	bool "Settings shell"
 	depends on SETTINGS && SHELL
 	help
 	  Enable shell commands for listing and reading the settings. Note that

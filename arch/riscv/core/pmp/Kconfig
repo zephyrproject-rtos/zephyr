@@ -11,7 +11,7 @@ config PMP_SLOT
 	  than the Hardware allow you.
 
 config PMP_POWER_OF_TWO_ALIGNMENT
-	bool "Enable power of two alignment"
+	bool "Power of two alignment"
 	default n
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	select GEN_PRIV_STACKS

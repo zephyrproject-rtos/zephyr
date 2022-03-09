@@ -101,56 +101,56 @@ config X86_CPU_HAS_SSE4A
 if FPU || X86_64
 
 config X86_MMX
-	bool "Enable MMX Support"
+	bool "MMX Support"
 	depends on X86_CPU_HAS_MMX
 	help
 	  This option enables MMX support, and the use of MMX registers
 	  by threads.
 
 config X86_SSE
-	bool "Enable SSE Support"
+	bool "SSE Support"
 	depends on X86_CPU_HAS_SSE
 	help
 	  This option enables SSE support, and the use of SSE registers
 	  by threads.
 
 config X86_SSE2
-	bool "Enable SSE2 Support"
+	bool "SSE2 Support"
 	depends on X86_CPU_HAS_SSE2
 	select X86_SSE
 	help
 	  This option enables SSE2 support.
 
 config X86_SSE3
-	bool "Enable SSE3 Support"
+	bool "SSE3 Support"
 	depends on X86_CPU_HAS_SSE3
 	select X86_SSE
 	help
 	  This option enables SSE3 support.
 
 config X86_SSSE3
-	bool "Enable SSSE3 (Supplemental SSE3) Support"
+	bool "SSSE3 (Supplemental SSE3) Support"
 	depends on X86_CPU_HAS_SSSE3
 	select X86_SSE
 	help
 	  This option enables Supplemental SSE3 support.
 
 config X86_SSE41
-	bool "Enable SSE4.1 Support"
+	bool "SSE4.1 Support"
 	depends on X86_CPU_HAS_SSE41
 	select X86_SSE
 	help
 	  This option enables SSE4.1 support.
 
 config X86_SSE42
-	bool "Enable SSE4.2 Support"
+	bool "SSE4.2 Support"
 	depends on X86_CPU_HAS_SSE42
 	select X86_SSE
 	help
 	  This option enables SSE4.2 support.
 
 config X86_SSE4A
-	bool "Enable SSE4A Support"
+	bool "SSE4A Support"
 	depends on X86_CPU_HAS_SSE4A
 	select X86_SSE
 	help
@@ -336,7 +336,7 @@ config X86_VERY_EARLY_CONSOLE
 	  tree. This mini-driver assumes I/O to the UART is done via ports.
 
 config X86_MMU
-	bool "Enable Memory Management Unit"
+	bool "Memory Management Unit"
 	select MMU
 	help
 	  This options enables the memory management unit present in x86
@@ -450,7 +450,7 @@ config DISABLE_SSBD
 	  require this feature.
 
 config ENABLE_EXTENDED_IBRS
-	bool "Enable Extended IBRS"
+	bool "Extended IBRS"
 	depends on USERSPACE
 	default y if !X86_NO_SPECTRE_V2
 	help
@@ -469,7 +469,7 @@ config X86_BOUNDS_CHECK_BYPASS_MITIGATION
 	  to be immune to it.
 
 config X86_KPTI
-	bool "Enable kernel page table isolation"
+	bool "Kernel page table isolation"
 	default y
 	depends on USERSPACE
 	depends on !X86_NO_MELTDOWN

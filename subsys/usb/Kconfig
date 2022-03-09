@@ -51,7 +51,7 @@ config USB_DEVICE_SN
 	  Hardware Information Driver (HWINFO).
 
 config USB_COMPOSITE_DEVICE
-	bool "Enable composite device driver"
+	bool "Composite device driver"
 	help
 	  Enable composite USB device driver.
 
@@ -96,14 +96,14 @@ config USB_NUMOF_EP_WRITE_RETRIES
 	  Number of endpoint write retries.
 
 config USB_DEVICE_SOF
-	bool "Enable Start of Frame processing in events"
+	bool "Start of Frame processing in events"
 	default y if (USB_DEVICE_AUDIO && NRFX_USBD)
 
 config USB_DEVICE_BOS
-	bool "Enable USB Binary Device Object Store (BOS)"
+	bool "USB Binary Device Object Store (BOS)"
 
 config USB_DEVICE_OS_DESC
-	bool "Enable MS OS Descriptors support"
+	bool "MS OS Descriptors support"
 
 config USB_SELF_POWERED
 	bool "Set Self-powered characteristic"

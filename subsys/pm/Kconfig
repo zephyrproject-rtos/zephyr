@@ -55,7 +55,7 @@ module-str = Device Power Management
 source "subsys/logging/Kconfig.template.log_config"
 
 config PM_DEVICE_POWER_DOMAIN
-	bool "Enable power domain"
+	bool "Power domain"
 	depends on PM_DEVICE
 	default y
 	help

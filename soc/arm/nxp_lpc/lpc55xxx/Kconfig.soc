@@ -83,7 +83,7 @@ config INIT_PLL0
 	bool "Initialize PLL0"
 
 config SECOND_CORE_MCUX
-	bool "Enable LPC55xxx's second core"
+	bool "LPC55xxx's second core"
 	depends on HAS_MCUX
 	help
 	  Driver for second core startup

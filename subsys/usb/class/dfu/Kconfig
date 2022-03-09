@@ -30,7 +30,7 @@ config USB_DFU_DEFAULT_POLLTIMEOUT
 	  Default value for bwPollTimeout (in ms)
 
 config USB_DFU_ENABLE_UPLOAD
-	bool "Enable firmware uploading to the host"
+	bool "Firmware uploading to the host"
 	help
 	  Enabling this option allows to upload firmware image to the host.
 	  Be aware that upload capability can be a security risk because

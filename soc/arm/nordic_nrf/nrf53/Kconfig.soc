@@ -147,7 +147,7 @@ config SOC_DCDC_NRF53X_HV
 if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 
 config SOC_ENABLE_LFXO
-	bool "Enable LFXO"
+	bool "LFXO"
 	default y
 	help
 	  Enable the low-frequency oscillator (LFXO) functionality on XL1 and
@@ -212,7 +212,7 @@ endif # SOC_NRF5340_CPUAPP
 
 
 config NRF_ENABLE_CACHE
-	bool "Enable cache"
+	bool "Cache"
 	depends on (SOC_NRF5340_CPUAPP && (!TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM)) \
 			|| SOC_NRF5340_CPUNET
 	default y
@@ -228,7 +228,7 @@ config BUILD_WITH_TFM
 	select NRF_ENABLE_CACHE if SOC_NRF5340_CPUAPP
 
 config NRF53_SYNC_RTC
-	bool "Enable RTC clock synchronization"
+	bool "RTC clock synchronization"
 	default y if LOG && !LOG_MODE_MINIMAL
 	depends on NRF_RTC_TIMER
 	select NRFX_DPPI

@@ -61,7 +61,7 @@ endchoice
 
 # 02: 82% / 1530 B (02 / 00)
 config CBPRINTF_FP_SUPPORT
-	bool "Enable floating point formatting in cbprintf"
+	bool "Floating point formatting in cbprintf"
 	default y if FPU
 	depends on CBPRINTF_COMPLETE
 	help
@@ -71,7 +71,7 @@ config CBPRINTF_FP_SUPPORT
 
 # 04: 13% / 456 B (07 / 03)
 config CBPRINTF_FP_A_SUPPORT
-	bool "Enable floating point %a conversions"
+	bool "Floating point %a conversions"
 	depends on CBPRINTF_FULL_INTEGRAL
 	select CBPRINTF_FP_SUPPORT
 	help

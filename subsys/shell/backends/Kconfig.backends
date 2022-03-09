@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SHELL_BACKENDS
-	bool "Enable shell backends"
+	bool "Shell backends"
 	default y
 	help
 	  Enable shell backends.
@@ -15,7 +15,7 @@ if SHELL_BACKENDS
 DT_CHOSEN_Z_SHELL_UART := zephyr,shell-uart
 
 config SHELL_BACKEND_SERIAL
-	bool "Enable serial backend"
+	bool "Serial backend"
 	default "$(dt_chosen_enabled,$(DT_CHOSEN_Z_SHELL_UART))" if HAS_DTS
 	default y if !HAS_DTS
 	select SERIAL
@@ -120,7 +120,7 @@ config SHELL_BACKEND_SERIAL_LOG_LEVEL
 endif # SHELL_BACKEND_SERIAL
 
 config SHELL_BACKEND_RTT
-	bool "Enable RTT backend"
+	bool "RTT backend"
 	select CONSOLE
 	select RTT_CONSOLE
 	depends on USE_SEGGER_RTT
@@ -188,7 +188,7 @@ source "subsys/logging/Kconfig.template.log_config"
 endif # SHELL_BACKEND_RTT
 
 config SHELL_BACKEND_TELNET
-	bool "Enable TELNET backend."
+	bool "TELNET backend."
 	depends on NET_TCP
 	depends on NET_IPV4 || NET_IPV6
 	help
@@ -283,7 +283,7 @@ source "subsys/logging/Kconfig.template.log_config"
 endif # SHELL_TELNET_BACKEND
 
 config SHELL_BACKEND_DUMMY
-	bool "Enable dummy backend."
+	bool "Dummy backend."
 	help
 	  Enable dummy backend which can be used to execute commands with no
 	  need for physical transport interface.

@@ -5,7 +5,7 @@
 menu "Network Packet Filtering"
 
 config NET_PKT_FILTER
-	bool "Enable network packet filtering"
+	bool "Network packet filtering"
 	help
 	  The Network Packet Filtering facility provides the infrastructure
 	  to construct custom rules for accepting and/or denying packet

@@ -11,7 +11,7 @@ config APP_REPORT_TEMP_ALERTS
 	default n
 
 config APP_ENABLE_ONE_SHOT
-	bool "Enable one shot low power mode"
+	bool "One shot low power mode"
 	default n
 	help
 		One shot requires a callback to be invoked after the tmp108 has

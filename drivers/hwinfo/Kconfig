@@ -15,7 +15,7 @@ module-str = HWINFO
 source "subsys/logging/Kconfig.template.log_config"
 
 config HWINFO_SHELL
-	bool "Enable HWINFO Shell"
+	bool "HWINFO Shell"
 	default y
 	depends on SHELL
 	help

@@ -15,7 +15,7 @@ module-str = fpga
 source "subsys/logging/Kconfig.template.log_config"
 
 config FPGA_SHELL
-	bool "Enable FPGA Shell"
+	bool "FPGA Shell"
 	depends on SHELL && FPGA
 	help
 	  Enable FPGA Shell support.

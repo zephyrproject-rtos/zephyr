@@ -621,7 +621,7 @@ config PM_MCUX_PMU
 	bool "MCUX power management unit driver"
 
 menuconfig NXP_IMX_RT_BOOT_HEADER
-	bool "Enable the boot header"
+	bool "The boot header"
 	depends on !BOOTLOADER_MCUBOOT
 	help
 	  Enable data structures required by the boot ROM to boot the
@@ -666,7 +666,7 @@ config IMAGE_VECTOR_TABLE_OFFSET
 	  ROM requires a fixed IVT offset for each type of boot device.
 
 config DEVICE_CONFIGURATION_DATA
-	bool "Enable device configuration data"
+	bool "Device configuration data"
 	default y if HAS_MCUX_SEMC
 	help
 	  Device configuration data (DCD) provides a sequence of commands to

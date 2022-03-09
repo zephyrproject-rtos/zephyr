@@ -9,7 +9,7 @@ menuconfig USB_DEVICE_BLUETOOTH
 	  USB Bluetooth device class support
 
 config USB_DEVICE_BLUETOOTH_VS_H4
-	bool "Enable USB Bluetooth H4 vendor command"
+	bool "USB Bluetooth H4 vendor command"
 	depends on USB_DEVICE_BLUETOOTH
 	select BT_HCI_RAW_H4
 	select BT_HCI_RAW_CMD_EXT

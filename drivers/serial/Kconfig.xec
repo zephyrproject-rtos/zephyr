@@ -14,7 +14,7 @@ config UART_XEC
 if UART_XEC
 
 config UART_XEC_LINE_CTRL
-	bool "Enable Serial Line Control for Apps"
+	bool "Serial Line Control for Apps"
 	depends on UART_LINE_CTRL
 	help
 	  This enables the API for apps to control the serial line,

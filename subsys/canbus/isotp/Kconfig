@@ -59,7 +59,7 @@ config ISOTP_REQUIRE_RX_PADDING
 	  By default, received CAN frames with or without padding are accepted.
 
 config ISOTP_ENABLE_TX_PADDING
-	bool "Enable padding for transmitted messages"
+	bool "Padding for transmitted messages"
 	help
 	  Add padding bytes 0xCC (as recommended by Bosch) if the PDU payload
 	  does not fit exactly into the CAN frame.
@@ -116,7 +116,7 @@ config ISOTP_BUF_TX_DATA_POOL_SIZE
 endif # ISOTP_USE_TX_BUF
 
 config ISOTP_ENABLE_CONTEXT_BUFFERS
-	bool "Enable buffered tx contexts"
+	bool "Buffered tx contexts"
 	default y
 	help
 	  This option enables buffered sending contexts. This makes send and
