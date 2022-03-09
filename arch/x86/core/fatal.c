@@ -442,7 +442,7 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 }
 
 __pinned_func
-void z_x86_do_kernel_oops(const z_arch_esf_t *esf)
+FUNC_NORETURN void z_x86_do_kernel_oops(const z_arch_esf_t *esf)
 {
 	unsigned int reason;
 
