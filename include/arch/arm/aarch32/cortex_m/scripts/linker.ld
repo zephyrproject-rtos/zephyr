@@ -437,6 +437,9 @@ GROUP_END(DTCM)
 	KEEP(*(.gnu.attributes))
 	}
 
+    /* Sections generated from 'zephyr,memory-region' nodes */
+    LINKER_DT_SECTIONS()
+
 /* Must be last in romable region */
 SECTION_PROLOGUE(.last_section,(NOLOAD),)
 {

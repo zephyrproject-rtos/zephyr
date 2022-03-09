@@ -3334,6 +3334,53 @@ macro(zephyr_linker_memory_ifdef feature_toggle)
 endmacro()
 
 # Usage:
+#   zephyr_linker_dts_section(PATH <path>)
+#
+# Zephyr linker devicetree memory section from path.
+#
+# This function specifies an output section for the platform in use based on its
+# devicetree configuration.
+#
+# The section will only be defined if the devicetree exists and has status okay.
+#
+# PATH <path>      : Devicetree node path.
+#
+function(zephyr_linker_dts_section)
+  set(single_args "PATH")
+  cmake_parse_arguments(DTS_SECTION "" "${single_args}" "" ${ARGN})
+
+  if(DTS_SECTION_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "zephyr_linker_dts_section(${ARGV0} ...) given unknown "
+	    "arguments: ${DTS_SECTION_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  if(NOT DEFINED DTS_SECTION_PATH)
+    message(FATAL_ERROR "zephyr_linker_dts_section(${ARGV0} ...) missing "
+                        "required argument: PATH"
+    )
+  endif()
+
+  dt_node_exists(exists PATH ${DTS_SECTION_PATH})
+  if(NOT ${exists})
+    return()
+  endif()
+
+  dt_prop(name PATH ${DTS_SECTION_PATH} PROPERTY "zephyr,memory-region")
+  if(NOT DEFINED name)
+    message(FATAL_ERROR "zephyr_linker_dts_section(${ARGV0} ...) missing "
+                        "\"zephyr,memory-region\" property"
+    )
+  endif()
+  zephyr_string(SANITIZE name ${name})
+
+  dt_reg_addr(addr PATH ${DTS_SECTION_PATH})
+
+  zephyr_linker_section(NAME ${name} ADDRESS ${addr} VMA ${name} TYPE NOLOAD)
+
+endfunction()
+
+# Usage:
 #   zephyr_linker_dts_memory(PATH <path> FLAGS <flags>)
 #   zephyr_linker_dts_memory(NODELABEL <nodelabel> FLAGS <flags>)
 #   zephyr_linker_dts_memory(CHOSEN <prop> FLAGS <flags>)
