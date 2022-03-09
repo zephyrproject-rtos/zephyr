@@ -213,11 +213,11 @@ void printk(const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
-		log_printk(fmt, ap);
-	} else {
-		vprintk(fmt, ap);
-	}
+#ifdef CONFIG_LOG_PRINTK
+	log_printk(fmt, ap);
+#else
+	vprintk(fmt, ap);
+#endif
 	va_end(ap);
 }
 #endif /* defined(CONFIG_PRINTK) && \
