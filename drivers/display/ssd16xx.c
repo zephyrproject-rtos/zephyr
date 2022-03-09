@@ -195,11 +195,11 @@ static int ssd16xx_blanking_on(const struct device *dev)
 
 static int ssd16xx_update_display(const struct device *dev)
 {
-	struct ssd16xx_data *driver = dev->data;
+	struct ssd16xx_data *data = dev->data;
 	int err;
 
 	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL2,
-				&driver->update_cmd, 1);
+				&data->update_cmd, 1);
 	if (err < 0) {
 		return err;
 	}
@@ -213,7 +213,7 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 			 const void *buf)
 {
 	const struct ssd16xx_config *config = dev->config;
-	struct ssd16xx_data *driver = dev->data;
+	struct ssd16xx_data *data = dev->data;
 	int err;
 	size_t buf_len;
 	uint16_t x_start;
@@ -261,7 +261,7 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 		return -EINVAL;
 	}
 
-	switch (driver->scan_mode) {
+	switch (data->scan_mode) {
 	case SSD16XX_DATA_ENTRY_XIYDY:
 		x_start = y / SSD16XX_PIXELS_PER_BYTE;
 		x_end = (y + desc->height - 1) / SSD16XX_PIXELS_PER_BYTE;
@@ -283,7 +283,7 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 	ssd16xx_busy_wait(dev);
 
 	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_ENTRY_MODE,
-				&driver->scan_mode, sizeof(driver->scan_mode));
+				&data->scan_mode, sizeof(data->scan_mode));
 	if (err < 0) {
 		return err;
 	}
@@ -534,7 +534,7 @@ static int ssd16xx_load_ws_default(const struct device *dev)
 static int ssd16xx_controller_init(const struct device *dev)
 {
 	const struct ssd16xx_config *config = dev->config;
-	struct ssd16xx_data *driver = dev->data;
+	struct ssd16xx_data *data = dev->data;
 	uint16_t last_gate = config->width - 1;
 	int err;
 	uint8_t tmp[3];
@@ -607,12 +607,12 @@ static int ssd16xx_controller_init(const struct device *dev)
 	}
 
 	if (config->orientation == 1) {
-		driver->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
+		data->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 	} else {
-		driver->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
+		data->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
 	}
 
-	driver->update_cmd = (SSD16XX_CTRL2_ENABLE_CLK |
+	data->update_cmd = (SSD16XX_CTRL2_ENABLE_CLK |
 			      SSD16XX_CTRL2_ENABLE_ANALOG |
 			      SSD16XX_CTRL2_TO_PATTERN |
 			      SSD16XX_CTRL2_DISABLE_ANALOG |
