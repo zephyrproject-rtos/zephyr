@@ -93,6 +93,14 @@ extern "C" {
 #define _LOG_ZZZZ4  _LOG_YYYY,
 #define _LOG_ZZZZ4U _LOG_YYYY,
 
+#ifdef CONFIG_LOG_RUNTIME_FILTERING
+#define DYNAMIC_OR_CONST_SOURCE(_dsource, _source) (_dsource)
+#define LOG_DYNAMIC_OR_CONST_ID_GET(_dsource, _source) LOG_DYNAMIC_ID_GET(_dsource)
+#else
+#define DYNAMIC_OR_CONST_SOURCE(_dsource, _source) (_source)
+#define LOG_DYNAMIC_OR_CONST_ID_GET(_dsource, _source) LOG_CONST_ID_GET(_source)
+#endif
+
 /** @brief Macro for getting log level for given module.
  *
  * It is evaluated to LOG_LEVEL if defined. Otherwise CONFIG_LOG_DEFAULT_LEVEL
@@ -107,7 +115,9 @@ extern "C" {
  *  @param _addr Address of the element.
  */
 #define LOG_CONST_ID_GET(_addr) \
-	COND_CODE_1(CONFIG_LOG, (((__log_level != 0) ? log_const_source_id(_addr) : 0U)), (0U))
+	COND_CODE_1(CONFIG_LOG, \
+		((CONSTEXPR(__log_level != 0) ? log_const_source_id(_addr) : 0U)), \
+		(0U))
 
 /**
  * @def LOG_CURRENT_MODULE_ID
@@ -128,7 +138,9 @@ extern "C" {
  *  @param _addr Address of the element.
  */
 #define LOG_DYNAMIC_ID_GET(_addr) \
-	COND_CODE_1(CONFIG_LOG, (((__log_level != 0) ? log_dynamic_source_id(_addr) : 0U)), (0U))
+	COND_CODE_1(CONFIG_LOG, \
+		((CONSTEXPR(__log_level != 0) ? log_dynamic_source_id(_addr) : 0U)), \
+		(0U))
 
 /* Set of defines that are set to 1 if function name prefix is enabled for given level. */
 #define Z_LOG_FUNC_PREFIX_0U 0
@@ -196,18 +208,17 @@ extern "C" {
 #define Z_LOG_INTERNAL2(is_user_context, _src_level, ...) do { \
 	if (is_user_context) { \
 		log_from_user((_src_level), __VA_ARGS__); \
-	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) { \
-		log_string_sync((_src_level), __VA_ARGS__); \
 	} else { \
-		Z_LOG_INTERNAL_X(Z_LOG_NARGS_POSTFIX(__VA_ARGS__), \
-					_src_level, __VA_ARGS__); \
+		COND_CODE_1(CONFIG_LOG_IMMEDIATE, \
+			(log_string_sync((_src_level), __VA_ARGS__)), \
+			(Z_LOG_INTERNAL_X(Z_LOG_NARGS_POSTFIX(__VA_ARGS__), \
+					_src_level, __VA_ARGS__)) \
+		); \
 	} \
 } while (false)
 
 #define Z_LOG_INTERNAL(is_user_context, _level, _source, _dsource, ...) do { \
-	uint16_t src_id = \
-		(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-		LOG_DYNAMIC_ID_GET(_dsource) : LOG_CONST_ID_GET(_source); \
+	uint16_t src_id = LOG_DYNAMIC_OR_CONST_ID_GET(_dsource, _source); \
 	struct log_msg_ids src_level = { \
 		.level = (_level), \
 		.domain_id = CONFIG_LOG_DOMAIN_ID, \
@@ -242,15 +253,15 @@ extern "C" {
 #define Z_LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
 	((_level) <= (uint8_t)Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
 
-#define Z_LOG_CONST_LEVEL_CHECK(_level)					    \
-	((IS_ENABLED(CONFIG_LOG)) &&					    \
-	(Z_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
-	||								    \
-	(!(IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL)) &&		    \
-	((_level) <= __log_level) &&					    \
-	((_level) <= CONFIG_LOG_MAX_LEVEL)				    \
-	)								    \
-	))
+#ifdef CONFIG_LOG
+static inline bool z_log_const_level_check(unsigned int level, unsigned int log_level)
+{
+	return Z_LOG_LEVEL_CHECK(level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) ||
+		(!(IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL)) &&
+			(level <= log_level) &&
+			(level <= CONFIG_LOG_MAX_LEVEL));
+}
+#endif
 
 /*****************************************************************************/
 /****************** Defiinitions used by minimal logging *********************/
@@ -292,40 +303,58 @@ static inline char z_log_minimal_level_to_char(unsigned int level)
 /*****************************************************************************/
 /****************** Macros for standard logging ******************************/
 /*****************************************************************************/
+#ifdef CONFIG_LOG
 #define Z_LOG2(_level, _source, _dsource, ...) do { \
-	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) { \
+	if (!z_log_const_level_check((_level), __log_level)) { \
 		break; \
 	} \
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
-		Z_LOG_TO_PRINTK(_level, __VA_ARGS__); \
-		break; \
-	} \
-	\
-	bool is_user_context = k_is_user_context(); \
-	uint32_t filters = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-						(_dsource)->filters : 0U;\
-	if ((IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) && !is_user_context && \
-	    ((_level) > Z_LOG_RUNTIME_FILTER(filters))) { \
-		break; \
-	} \
-	if (IS_ENABLED(CONFIG_LOG2)) { \
-		enum z_log_msg2_mode _mode; \
-		const void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-			(const void *)(_dsource) : (const void *)(_source); \
-		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
-				  CONFIG_LOG_DOMAIN_ID, _src, _level, NULL,\
-				  0U, __VA_ARGS__); \
-	} else { \
-		Z_LOG_INTERNAL(is_user_context,	_level, \
-				_source, _dsource, __VA_ARGS__);\
-	} \
-	if (false) { \
-		/* Arguments checker present but never evaluated.*/ \
-		/* Placed here to ensure that __VA_ARGS__ are*/ \
-		/* evaluated once when log is enabled.*/ \
-		z_log_printf_arg_checker(__VA_ARGS__); \
-	} \
+	Z_LOG2_PHASE1(_level, _source, _dsource, __VA_ARGS__); \
+	/* Arguments checker present but never evaluated. */ \
+	/* Placed here to ensure that __VA_ARGS__ are */ \
+	/* evaluated once when log is enabled.*/ \
+	UNEVALUATED(z_log_printf_arg_checker(__VA_ARGS__)); \
 } while (false)
+
+#ifdef CONFIG_LOG_MINIMAL
+#define Z_LOG2_PHASE1(_level, _source, _dsource, ...) \
+	Z_LOG_TO_PRINTK(_level, __VA_ARGS__)
+#elif defined(CONFIG_LOG_RUNTIME_FILTERING) || !defined(CONFIG_LOG2)
+#define Z_LOG2_PHASE1(_level, _source, _dsource, ...) \
+	bool is_user_context = k_is_user_context(); \
+	Z_LOG2_PHASE2(_level, _source, _dsource, __VA_ARGS__)
+#else
+#define Z_LOG2_PHASE1(_level, _source, _dsource, ...) \
+	Z_LOG2_PHASE2(_level, _source, _dsource, __VA_ARGS__)
+#endif
+
+#ifdef CONFIG_LOG_RUNTIME_FILTERING
+#define Z_LOG2_PHASE2(_level, _source, _dsource, ...) \
+	if (!is_user_context && \
+	    ((_level) > Z_LOG_RUNTIME_FILTER((_dsource)->filters))) { \
+		break; \
+	} \
+	Z_LOG2_PHASE3(_level, _source, _dsource, __VA_ARGS__)
+#else
+#define Z_LOG2_PHASE2(_level, _source, _dsource, ...) \
+	Z_LOG2_PHASE3(_level, _source, _dsource, __VA_ARGS__)
+#endif
+
+#ifdef CONFIG_LOG2
+#define Z_LOG2_PHASE3(_level, _source, _dsource, ...) \
+	enum z_log_msg2_mode _mode; \
+	const void *_src = (const void *)DYNAMIC_OR_CONST_SOURCE(_dsource, _source); \
+	Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
+				CONFIG_LOG_DOMAIN_ID, _src, _level, NULL,\
+				0U, __VA_ARGS__)
+#else
+#define Z_LOG2_PHASE3(_level, _source, _dsource, ...) \
+	Z_LOG_INTERNAL(is_user_context,	_level, \
+				_source, _dsource, __VA_ARGS__)
+#endif
+#else
+#define Z_LOG2(_level, _source, _dsource, ...) \
+	UNEVALUATED(z_log_printf_arg_checker(__VA_ARGS__))
+#endif
 
 #define Z_LOG(_level, ...) \
 	Z_LOG2(_level, __log_current_const_data, __log_current_dynamic_data, __VA_ARGS__)
@@ -341,55 +370,85 @@ static inline char z_log_minimal_level_to_char(unsigned int level)
 /*****************************************************************************/
 /****************** Macros for hexdump logging *******************************/
 /*****************************************************************************/
+#ifdef CONFIG_LOG
 #define Z_LOG_HEXDUMP2(_level, _source, _dsource, _data, _len, ...) do { \
+	if (!z_log_const_level_check((_level), __log_level)) {	\
+		break; \
+	} \
+	Z_LOG_HEXDUMP2_PHASE1(_level, _source, _dsource, \
+		_data, _len, __VA_ARGS__); \
+} while (false)
+
+#ifdef CONFIG_LOG_MINIMAL
+#define Z_LOG_HEXDUMP2_PHASE1(_level, _source, _dsource, \
+		_data, _len, ...) \
 	const char *_str = (GET_ARG_N(1, __VA_ARGS__)); \
-	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) {	\
-		break; \
-	} \
+	Z_LOG_TO_PRINTK(_level, "%s", (_str)); \
+	z_log_minimal_hexdump_print((_level), \
+					(const char *)(_data), (_len))
+#elif defined(CONFIG_LOG_RUNTIME_FILTERING) || !defined(CONFIG_LOG2)
+#define Z_LOG_HEXDUMP2_PHASE1(_level, _source, _dsource, \
+		_data, _len, ...) \
 	bool is_user_context = k_is_user_context(); \
-	uint32_t filters = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-						(_dsource)->filters : 0U;\
-	\
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
-		Z_LOG_TO_PRINTK(_level, "%s", _str); \
-		z_log_minimal_hexdump_print((_level), \
-					    (const char *)(_data), (_len));\
+	Z_LOG_HEXDUMP2_PHASE2(_level, _source, _dsource, \
+		_data, _len, __VA_ARGS__)
+#else
+#define Z_LOG_HEXDUMP2_PHASE1(_level, _source, _dsource, \
+		_data, _len, ...) \
+	Z_LOG_HEXDUMP2_PHASE2(_level, _source, _dsource, \
+		_data, _len, __VA_ARGS__)
+#endif
+
+#ifdef CONFIG_LOG_RUNTIME_FILTERING
+#define Z_LOG_HEXDUMP2_PHASE2(_level, _source, _dsource, \
+		_data, _len, ...) \
+	if (!is_user_context && \
+	    ((_level) > Z_LOG_RUNTIME_FILTER((_dsource)->filters))) { \
 		break; \
 	} \
-	if ((IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) && !is_user_context && \
-	    ((_level) > Z_LOG_RUNTIME_FILTER(filters))) { \
-		break; \
-	} \
-	if (IS_ENABLED(CONFIG_LOG2)) { \
-		enum z_log_msg2_mode mode; \
-		const void *_src = (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-			(const void *)(_dsource) : (const void *)(_source); \
-		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
-				  CONFIG_LOG_DOMAIN_ID, _src, _level, \
-				  _data, _len, \
-				COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
-					(), \
-				  (COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
-					  ("%s", __VA_ARGS__), (__VA_ARGS__)))));\
-		break; \
-	} \
+	Z_LOG_HEXDUMP2_PHASE3(_level, _source, _dsource, _data, _len, __VA_ARGS__)
+#else
+#define Z_LOG_HEXDUMP2_PHASE2(_level, _source, _dsource, \
+		_data, _len, ...) \
+	Z_LOG_HEXDUMP2_PHASE3(_level, _source, _dsource, _data, _len, __VA_ARGS__)
+#endif
+
+#ifdef CONFIG_LOG2
+#define Z_LOG_HEXDUMP2_PHASE3(_level, _source, _dsource, _data, _len, ...) \
+	enum z_log_msg2_mode mode; \
+	const void *_src = (const void *)DYNAMIC_OR_CONST_SOURCE(_dsource, _source); \
+	Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
+				CONFIG_LOG_DOMAIN_ID, _src, _level, \
+				_data, _len, \
+			COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
+				(), \
+				(COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+					("%s", __VA_ARGS__), (__VA_ARGS__)))))
+#else
+#define Z_LOG_HEXDUMP2_PHASE3(_level, _source, _dsource, _data, _len, ...) \
 	uint16_t src_id = \
-		(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ? \
-		LOG_DYNAMIC_ID_GET(_dsource) : LOG_CONST_ID_GET(_source);\
+		LOG_DYNAMIC_OR_CONST_ID_GET(_dsource, _source); \
 	struct log_msg_ids src_level = { \
 		.level = (_level), \
 		.domain_id = CONFIG_LOG_DOMAIN_ID, \
 		.source_id = src_id, \
 	}; \
+	const char *_str = (GET_ARG_N(1, __VA_ARGS__)); \
 	if (is_user_context) { \
 		log_hexdump_from_user(src_level, _str, \
 				      (const char *)(_data), (uint32_t)(_len)); \
-	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) { \
-		log_hexdump_sync(src_level, _str, (const char *)(_data), (uint32_t)(_len)); \
 	} else { \
-		log_hexdump(_str, (const char *)(_data), (uint32_t)(_len), src_level); \
-	} \
-} while (false)
+		COND_CODE_1(CONFIG_LOG_IMMEDIATE, \
+			(log_hexdump_sync(src_level, _str, \
+				(const char *)(_data), (uint32_t)(_len))), \
+			(log_hexdump(_str, (const char *)(_data), (uint32_t)(_len), src_level)) \
+		); \
+	}
+#endif
+#else
+#define Z_LOG_HEXDUMP2(_level, _source, _dsource, _data, _len, ...) \
+	do { } while (false)
+#endif
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, ...) \
 	Z_LOG_HEXDUMP2(_level, \
@@ -811,8 +870,9 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 		 __log_current_dynamic_data, \
 		 _str, _valist, _argnum, _strdup_action)
 
+#ifdef CONFIG_LOG
 #define __LOG_VA(_level, _source, _dsource, _str, _valist, _argnum, _strdup_action) do { \
-	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) { \
+	if (!z_log_const_level_check((_level), __log_level)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
@@ -845,7 +905,10 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 			_str, _valist, _argnum, \
 			_strdup_action); \
 } while (false)
-
+#else
+#define __LOG_VA(_level, _source, _dsource, _str, _valist, _argnum, _strdup_action) \
+	do { } while (false)
+#endif
 /**
  * @brief Inline function to perform strdup, used in __LOG_INTERNAL_VA macro
  *
