@@ -91,6 +91,12 @@ static inline uint8_t get_cpu(void)
 #endif
 }
 
+#ifdef CONFIG_MULTITHREADING
+#define K_CURRENT_THREAD k_current_get()
+#else
+#define K_CURRENT_THREAD NULL
+#endif
+
 void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 	/* We can't allow this code to be preempted, but don't need to
@@ -98,8 +104,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * appropriate.
 	 */
 	unsigned int key = arch_irq_lock();
-	struct k_thread *thread = (IS_ENABLED(CONFIG_MULTITHREADING)) ?
-			k_current_get() : NULL;
+	struct k_thread *thread = K_CURRENT_THREAD;
 
 	/* twister looks for the "ZEPHYR FATAL ERROR" string, don't
 	 * change it without also updating twister
@@ -139,49 +144,49 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * Note that k_thread_abort() returns on some architectures but
 	 * not others; e.g. on ARC, x86_64, Xtensa with ASM2, ARM
 	 */
-	if (!(IS_ENABLED(CONFIG_TEST))) {
-		__ASSERT(reason != K_ERR_KERNEL_PANIC,
-			 "Attempted to recover from a kernel panic condition");
-		/* FIXME: #17656 */
+#ifdef CONFIG_TEST
+	/* Test mode */
 #if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
-		if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
+	if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
+		/* Abort the thread only on STACK Sentinel check fail. */
 #if defined(CONFIG_STACK_SENTINEL)
-			if (reason != K_ERR_STACK_CHK_FAIL) {
-				__ASSERT(0,
-				 "Attempted to recover from a fatal error in ISR");
-			 }
-#endif /* CONFIG_STACK_SENTINEL */
-		}
-#endif /* CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
-	} else {
-		/* Test mode */
-#if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
-		if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
-			/* Abort the thread only on STACK Sentinel check fail. */
-#if defined(CONFIG_STACK_SENTINEL)
-			if (reason != K_ERR_STACK_CHK_FAIL) {
-				arch_irq_unlock(key);
-				return;
-			}
-#else
+		if (reason != K_ERR_STACK_CHK_FAIL) {
 			arch_irq_unlock(key);
 			return;
-#endif /* CONFIG_STACK_SENTINEL */
-		} else {
-			/* Abort the thread only if the fault is not due to
-			 * a spurious ISR handler triggered.
-			 */
-			if (reason == K_ERR_SPURIOUS_IRQ) {
-				arch_irq_unlock(key);
-				return;
-			}
 		}
-#endif /*CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
+#else
+		arch_irq_unlock(key);
+		return;
+#endif /* CONFIG_STACK_SENTINEL */
+	} else {
+		/* Abort the thread only if the fault is not due to
+		 * a spurious ISR handler triggered.
+		 */
+		if (reason == K_ERR_SPURIOUS_IRQ) {
+			arch_irq_unlock(key);
+			return;
+		}
 	}
+#endif /*CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
+#else
+	__ASSERT(reason != K_ERR_KERNEL_PANIC,
+		 "Attempted to recover from a kernel panic condition");
+	/* FIXME: #17656 */
+#if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
+	if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
+#if defined(CONFIG_STACK_SENTINEL)
+		if (reason != K_ERR_STACK_CHK_FAIL) {
+			__ASSERT(0,
+			 "Attempted to recover from a fatal error in ISR");
+		}
+#endif /* CONFIG_STACK_SENTINEL */
+	}
+#endif /* CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
+#endif /* !CONFIG_TEST */
 
 	arch_irq_unlock(key);
 
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_thread_abort(thread);
-	}
+#ifdef CONFIG_MULTITHREADING
+	k_thread_abort(thread);
+#endif
 }
