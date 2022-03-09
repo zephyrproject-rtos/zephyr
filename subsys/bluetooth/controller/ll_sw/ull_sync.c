@@ -365,6 +365,8 @@ uint8_t ll_sync_terminate(uint16_t handle)
 		if (err) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
+
+		LL_ASSERT(!aux->parent);
 	}
 
 	link_sync_lost = sync->node_rx_lost.hdr.link;
