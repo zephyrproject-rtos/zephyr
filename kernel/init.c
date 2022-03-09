@@ -361,7 +361,6 @@ static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 __boot_func
 void z_early_boot_rand_get(uint8_t *buf, size_t length)
 {
-	int n = sizeof(uint32_t);
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
 	const struct device *entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	int rc;
@@ -394,25 +393,7 @@ sys_rand_fallback:
 	 * devices are available should be built, this is only a fallback for
 	 * those devices without a HWRNG entropy driver.
 	 */
-
-	while (length > 0U) {
-		uint32_t rndbits;
-		uint8_t *p_rndbits = (uint8_t *)&rndbits;
-
-		rndbits = sys_rand32_get();
-
-		if (length < sizeof(uint32_t)) {
-			n = length;
-		}
-
-		for (int i = 0; i < n; i++) {
-			*buf = *p_rndbits;
-			buf++;
-			p_rndbits++;
-		}
-
-		length -= n;
-	}
+	sys_rand_get(buf, length);
 }
 /* defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR) */
 #endif
