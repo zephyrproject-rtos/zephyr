@@ -12,7 +12,7 @@ zephyr_library_sources(
   prep_c.c
   reboot.c
   reset.S
-  switch.S
+  swap.S
   smp.c
   thread.c
 )
