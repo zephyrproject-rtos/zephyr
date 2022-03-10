@@ -50,3 +50,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_BROADCAST_SOURCE broadcast_source.c
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_BROADCAST_SINK broadcast_sink.c)
 zephyr_library_sources_ifdef(CONFIG_BT_BASS bass.c)
 zephyr_library_sources_ifdef(CONFIG_BT_BASS_CLIENT bass_client.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_HAS_CLIENT has_client.c)
+if (CONFIG_BT_HAS OR CONFIG_BT_HAS_CLIENT)
+	zephyr_library_sources(has.c)
+endif()

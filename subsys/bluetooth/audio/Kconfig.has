@@ -1,0 +1,85 @@
+# Bluetooth Audio - Hearing Access Service options
+#
+# Copyright (c) 2022 Codecoup
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_HAS
+	bool "Hearing Access Service support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select UTF8
+	help
+	  This option enables support for Hearing Access Service.
+
+config BT_HAS_CLIENT
+	bool "Hearing Access Service Client support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	help
+	  This option enables support for Hearing Access Service Client.
+
+if BT_HAS
+choice BT_HAS_HEARING_AID_TYPE
+	prompt "Hearing Aid Type selection"
+	help
+	  Select the Hearing Aid Type to compile.
+
+config BT_HAS_HEARING_AID_MONAURAL
+	bool "Monaural Hearing Aid"
+
+config BT_HAS_HEARING_AID_BINAURAL
+	bool "Binaural Hearing Aid"
+
+config BT_HAS_HEARING_AID_BANDED
+	bool "Banded Hearing Aid"
+
+endchoice # BT_HAS_HEARING_AID_TYPE
+
+config BT_HAS_PRESET_CNT
+	int "Preset record list size"
+	default 4
+	range 1 255
+	help
+	  This option sets the number of Hearing Access Service Presets
+	  that can be registered.
+
+config BT_HAS_PRESET_SYNC_SUPPORT
+	bool "Preset synchronization support"
+	depends on BT_HAS_HEARING_AID_BINAURAL && BT_HAS_IDENTICAL_PRESET_RECORDS
+	help
+	  Set if there is support for active preset changes relay to the other
+	  member in the Binaural Hearing Aid Set.
+
+config BT_HAS_IDENTICAL_PRESET_RECORDS
+	bool "Identical preset records in Binaural Hearing Aid Set"
+	depends on BT_HAS_HEARING_AID_BINAURAL
+	help
+	  Set if the list of preset records is identical to the list of preset records
+	  on the other member in the Binaural Hearing Aid Set.
+	  This option sets Independent Presets field in Hearing Aid Features to 0b0.
+
+config BT_HAS_PRESET_NAME_DYNAMIC
+	bool "Allow to set preset name on runtime"
+	help
+	  Enabling this option allows for runtime configuration of preset name.
+
+config BT_DEBUG_HAS
+	bool "Hearing Access Service debug"
+	help
+	  This option enables enables Hearing Access Service debug logs.
+endif # BT_HAS
+
+if BT_HAS_CLIENT
+config BT_HAS_CLIENT_HA_COUNT
+	int "Maximum number of connected Hearing Aid devices"
+	default 2
+	help
+	  Maximum number of simultanously connected Hearing Aid devices
+
+config BT_DEBUG_HAS_CLIENT
+	bool "Hearing Access Service Client debug"
+	help
+	  This hidden option enables enables Hearing Access Service Client debug logs.
+endif # BT_HAS_CLIENT
