@@ -47,6 +47,14 @@
 &adc0 {
 	status = "okay";
 };
+/* voltage comparator for test */
+&vcmp0 {
+	status = "okay";
+	scan-period = <IT8XXX2_VCMP_SCAN_PERIOD_600US>;
+	comparison = <IT8XXX2_VCMP_GREATER>;
+	threshold-mv = <2000>;
+	io-channels = <&adc0 3>;
+};
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
