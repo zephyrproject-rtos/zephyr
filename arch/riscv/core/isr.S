@@ -41,10 +41,11 @@
 	op fa6, __z_arch_esf_t_fa6_OFFSET(reg)	 ;\
 	op fa7, __z_arch_esf_t_fa7_OFFSET(reg)	 ;
 
-#define DO_CALLER_SAVED(op) \
-	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
+#define DO_CALLER_SAVED_T0T1(op) \
 	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
-	op t1, __z_arch_esf_t_t1_OFFSET(sp)		;\
+	op t1, __z_arch_esf_t_t1_OFFSET(sp)
+
+#define DO_CALLER_SAVED_REST(op) \
 	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
 	op t3, __z_arch_esf_t_t3_OFFSET(sp)		;\
 	op t4, __z_arch_esf_t_t4_OFFSET(sp)		;\
@@ -57,7 +58,8 @@
 	op a4, __z_arch_esf_t_a4_OFFSET(sp)		;\
 	op a5, __z_arch_esf_t_a5_OFFSET(sp)		;\
 	op a6, __z_arch_esf_t_a6_OFFSET(sp)		;\
-	op a7, __z_arch_esf_t_a7_OFFSET(sp)		;
+	op a7, __z_arch_esf_t_a7_OFFSET(sp)		;\
+	op ra, __z_arch_esf_t_ra_OFFSET(sp)
 
 #ifdef CONFIG_SMP
 #define GET_CURRENT_CPU(dst, tmp) \
@@ -138,12 +140,46 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 
 	/* restore privileged stack pointer and zero the scratch reg */
 	csrrw sp, mscratch, sp
+
+#ifdef CONFIG_SMP
+	j 2f
+
+1:	/*
+	 * We were in user space. Determine if it attempted to execute an
+	 * arch_is_user_context() based on mscratch access. We want to return
+	 * to u-mode with t0!=0 as quickly as possible if so.
+	 */
+	addi sp, sp, -__z_arch_esf_t_SIZEOF
+	DO_CALLER_SAVED_T0T1(sr)		;
+	/* First, determine if we had an illegal instruction exception. */
+	csrr t0, mcause
+	li t1, SOC_MCAUSE_EXP_MASK
+	and t0, t0, t1
+	addi t0, t0, -2  /* = 2 = illegal instruction */
+	bnez t0, 3f
+	/* Make sure it was actually a "csrr t0, mscratch" */
+	csrr t0, mepc
+	lw t0, 0(t0)
+	li t1, 0x340022f3
+	bne t0, t1, 3f
+	/* So it was: skip over it and return leaving t0 clobbered. */
+	csrr t0, mepc
+	addi t0, t0, 4
+	csrw mepc, t0
+	lr t1, __z_arch_esf_t_t1_OFFSET(sp)
+	addi sp, sp, __z_arch_esf_t_SIZEOF
+	/* restore user stack pointer and leave */
+	csrrw sp, mscratch, sp
+	mret
+2:
+#endif /* CONFIG_SMP */
 1:
-#endif
+#endif /* CONFIG_USERSPACE */
 
 	/* Save caller-saved registers on current thread stack. */
 	addi sp, sp, -__z_arch_esf_t_SIZEOF
-	DO_CALLER_SAVED(sr)		;
+	DO_CALLER_SAVED_T0T1(sr)		;
+3:	DO_CALLER_SAVED_REST(sr)		;
 
 	/* Save s0 in the esf and load it with &_current_cpu. */
 	sr s0, __z_arch_esf_t_s0_OFFSET(sp)
@@ -164,9 +200,11 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	/* save stack value to be restored later */
 	sr t0, __z_arch_esf_t_sp_OFFSET(sp)
 
+#if !defined(CONFIG_SMP)
 	/* Clear user mode variable */
 	la t0, is_user_mode
 	sw zero, 0(t0)
+#endif
 #endif
 
 	/* Save MEPC register */
@@ -508,10 +546,12 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	and t0, t4, t1
 	bnez t0, 1f
 
+#if !defined(CONFIG_SMP)
 	/* Set user mode variable */
 	li t0, 1
 	la t1, is_user_mode
 	sw t0, 0(t1)
+#endif
 
 	/* load scratch reg with stack pointer for next exception entry */
 	add t0, sp, __z_arch_esf_t_SIZEOF
@@ -523,7 +563,8 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	lr s0, __z_arch_esf_t_s0_OFFSET(sp)
 
 	/* Restore caller-saved registers from thread stack */
-	DO_CALLER_SAVED(lr)
+	DO_CALLER_SAVED_T0T1(lr)
+	DO_CALLER_SAVED_REST(lr)
 
 #ifdef CONFIG_USERSPACE
 	/* retrieve saved stack pointer */

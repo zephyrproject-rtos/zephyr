@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <core_pmp.h>
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_SMP)
 /*
  * Glogal variable used to know the current mode running.
  * Is not boolean because it must match the PMP granularity of the arch.
@@ -251,7 +251,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	z_riscv_init_user_accesses(_current);
 	z_riscv_configure_user_allowed_stack(_current);
 
+#if !defined(CONFIG_SMP)
 	is_user_mode = true;
+#endif
 
 	register void *a0 __asm__("a0") = user_entry;
 	register void *a1 __asm__("a1") = p1;
