@@ -165,7 +165,7 @@ int _slave_init(const struct device *arg)
 	 * and then detects its identity (Cortex-M0, slave) and checks
 	 * registers CPBOOT and CPSTACK and use them to continue the
 	 * boot process.
-	 * Make sure the startup code for current core (Cortex-M4) is
+	 * Make sure the startup code for the current core (Cortex-M4) is
 	 * appropriate and shareable with the Cortex-M0 core!
 	 */
 	SYSCON->CPBOOT = SYSCON_CPBOOT_BOOTADDR(
