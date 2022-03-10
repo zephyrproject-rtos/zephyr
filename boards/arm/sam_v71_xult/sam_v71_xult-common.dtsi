@@ -291,6 +291,10 @@ zephyr_udc0: &usbhs {
 	pinctrl-0 = <&pc12c_can1_rx1 &pc14c_can1_tx1>;
 	bus-speed = <125000>;
 	bus-speed-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };
 
 ext1_spi: &spi0 {
