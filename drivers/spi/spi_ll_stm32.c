@@ -724,9 +724,6 @@ static int transceive_dma(const struct device *dev,
 	/* Set buffers info */
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
-	/* This is turned off in spi_stm32_complete(). */
-	spi_stm32_cs_control(dev, true);
-
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	/* set request before enabling (else SPI CFG1 reg is write protected) */
 	LL_SPI_EnableDMAReq_RX(spi);
@@ -739,6 +736,9 @@ static int transceive_dma(const struct device *dev,
 #else
 	LL_SPI_Enable(spi);
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
+
+	/* This is turned off in spi_stm32_complete(). */
+	spi_stm32_cs_control(dev, true);
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
