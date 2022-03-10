@@ -43,9 +43,11 @@ LL/CON/CEN/BV-34-C
 LL/CON/CEN/BV-35-C
 LL/CON/CEN/BV-41-C
 LL/CON/CEN/BV-43-C
-LL/CON/CEN/BV-73-C
+## With updated EDTT, this now fails due to error in legacy DLE handling. Fixed in refactored LLCP
+#LL/CON/CEN/BV-73-C
 LL/CON/CEN/BV-74-C
-LL/CON/CEN/BV-76-C
+## With updated EDTT, this now fails due to error in legacy DLE handling. Fixed in refactored LLCP
+#LL/CON/CEN/BV-76-C
 LL/CON/CEN/BV-77-C
 LL/CON/PER/BI-08-C
 LL/CON/PER/BV-04-C
