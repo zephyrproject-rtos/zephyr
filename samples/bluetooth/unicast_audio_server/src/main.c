@@ -55,10 +55,8 @@ static uint8_t unicast_server_addata[] = {
 	0x00, /* Metadata length */
 };
 
-/* TODO: Expand with BAP data */
-static const struct bt_data ad[] = {
+static struct bt_data ad[3] = {  /* flags + service data + uuid16 */
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
 	BT_DATA(BT_DATA_SVC_DATA16, unicast_server_addata, ARRAY_SIZE(unicast_server_addata)),
 };
 
@@ -484,6 +482,7 @@ static struct bt_audio_capability caps[] = {
 
 void main(void)
 {
+	static uint8_t uuid16_buf[5 * BT_UUID_SIZE_16];
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -494,6 +493,20 @@ void main(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	/* Update UUID16 advertising data */
+	err = bt_gatt_get_svc_uuid_data(BT_DATA_UUID16_ALL, &ad[2],
+					uuid16_buf, sizeof(uuid16_buf));
+	if (err != 0) {
+		printk("Could not encode all UUID16 data: %d\n", err);
+
+		err = bt_gatt_get_svc_uuid_data(BT_DATA_UUID16_SOME, &ad[2],
+						uuid16_buf, sizeof(uuid16_buf));
+		if (err != 0) {
+			printk("Could not encode UUID16 data: %d\n", err);
+			return;
+		}
+	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(caps); i++) {
 		bt_audio_capability_register(&caps[i]);

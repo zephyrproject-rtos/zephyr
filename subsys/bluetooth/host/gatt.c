@@ -14,7 +14,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-
+#include <zephyr/sys/check.h>
 #include <zephyr/settings/settings.h>
 
 #if defined(CONFIG_BT_GATT_CACHING)
@@ -5780,4 +5780,154 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 #if defined(CONFIG_BT_GATT_CACHING)
 	remove_cf_cfg(conn);
 #endif
+}
+
+struct svc_uuid_data_state {
+	struct bt_data *data;
+	uint8_t *data_buf;
+	const size_t data_buf_size;
+	bool truncated;
+};
+
+/* This is an array of UUID values that we do not return via the
+ * bt_gatt_get_svc_uuid_data for advertisements.
+ *
+ * This list contains UUIDs that are mandatory on GATT servers.
+ */
+static uint16_t svc_uuid16_data_exclude_list[] = {
+	BT_UUID_GAP_VAL,
+	BT_UUID_GATT_VAL,
+};
+
+static bool is_valid_adv_uuid_type(const uint8_t type)
+{
+	switch (type) {
+	case BT_DATA_UUID16_SOME:
+	case BT_DATA_UUID16_ALL:
+	case BT_DATA_UUID32_SOME:
+	case BT_DATA_UUID32_ALL:
+	case BT_DATA_UUID128_SOME:
+	case BT_DATA_UUID128_ALL:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static uint8_t encode_svc_uuid_data(const struct bt_gatt_attr *attr,
+				    uint16_t handle, void *user_data)
+{
+	struct svc_uuid_data_state *data_state = (void *)user_data;
+	const size_t data_buf_size = data_state->data_buf_size;
+	uint8_t *data_buf = data_state->data_buf;
+	struct bt_data *data = data_state->data;
+	const uint8_t data_type = data->type;
+	const struct bt_uuid *service_uuid;
+	uint8_t service_uuid_type;
+
+	/* skip if attribute is not a service */
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) != 0 &&
+	    bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY) != 0) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	service_uuid = attr->user_data;
+	service_uuid_type = service_uuid->type;
+
+	if (service_uuid_type == BT_UUID_TYPE_16 &&
+	    (data_type == BT_DATA_UUID16_SOME ||
+	     data_type == BT_DATA_UUID16_ALL)) {
+		const uint16_t uuid_val = BT_UUID_16(service_uuid)->val;
+		const size_t len = BT_UUID_SIZE_16;
+
+		/* We don't want to advertise some specific UUID16s */
+		for (size_t i = 0; i < ARRAY_SIZE(svc_uuid16_data_exclude_list); i++) {
+			if (uuid_val == svc_uuid16_data_exclude_list[i]) {
+				BT_DBG("Skipping UUID16 0x%04X", uuid_val);
+				return BT_GATT_ITER_CONTINUE;
+			}
+		}
+
+		if (data->data_len + len > data_buf_size) {
+			data_state->truncated = true;
+			return BT_GATT_ITER_STOP;
+		}
+
+		BT_DBG("Adding UUID16 0x%04X", uuid_val);
+		sys_put_le16(uuid_val, &data_buf[data->data_len]);
+		data->data_len += len;
+	} else if (service_uuid_type == BT_UUID_TYPE_32 &&
+		   (data_type == BT_DATA_UUID32_SOME ||
+		    data_type == BT_DATA_UUID32_ALL)) {
+		const uint32_t uuid_val = BT_UUID_32(service_uuid)->val;
+		const size_t len = BT_UUID_SIZE_32;
+
+		if (data->data_len + len > data_buf_size) {
+			data_state->truncated = true;
+			return BT_GATT_ITER_STOP;
+		}
+
+		BT_DBG("Adding UUID32 0x%08X", uuid_val);
+		sys_put_le32(uuid_val, &data_buf[data->data_len]);
+		data->data_len += len;
+	} else if (service_uuid_type == BT_UUID_TYPE_128 &&
+		   (data_type == BT_DATA_UUID128_SOME ||
+		    data_type == BT_DATA_UUID128_ALL)) {
+		const uint8_t *uuid_val = BT_UUID_128(service_uuid)->val;
+		const size_t len = BT_UUID_SIZE_128;
+
+		if (data->data_len + len > data_buf_size) {
+			data_state->truncated = true;
+			return BT_GATT_ITER_STOP;
+		}
+
+		BT_DBG("Adding UUID128 %s", bt_hex(uuid_val, len));
+		(void)memcpy(&data_buf[data->data_len], uuid_val, len);
+		data->data_len += len;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+int bt_gatt_get_svc_uuid_data(uint8_t type, struct bt_data *data,
+			      uint8_t data_buf[], size_t data_buf_size)
+{
+	struct svc_uuid_data_state data_state = {
+		.data = data,
+		.data_buf = data_buf,
+		.data_buf_size = data_buf_size
+	};
+
+	CHECKIF(!is_valid_adv_uuid_type(type)) {
+		BT_DBG("Invalid type: %u", type);
+		return -EINVAL;
+	}
+
+	CHECKIF(data == NULL) {
+		BT_DBG("data is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(data_buf == NULL) {
+		BT_DBG("data_buf is NULL");
+		return -EINVAL;
+	}
+
+	data->type = type;
+	data->data_len = 0U;
+	data->data = data_buf;
+
+	bt_gatt_foreach_attr(BT_ATT_FIRST_ATTRIBUTE_HANDLE,
+			     BT_ATT_LAST_ATTRIBUTE_HANDLE,
+			     encode_svc_uuid_data, &data_state);
+
+	if (data_state.truncated &&
+	    (type == BT_DATA_UUID16_ALL ||
+	     type == BT_DATA_UUID32_ALL ||
+	     type == BT_DATA_UUID128_ALL)) {
+		(void)memset(data, 0, sizeof(*data));
+		return -ENOMEM;
+	}
+
+	return 0;
 }
