@@ -150,6 +150,7 @@ additional configuration information:
    tls_config->sec_tag_list = m_sec_tags;
    tls_config->sec_tag_count = ARRAY_SIZE(m_sec_tags);
    tls_config->hostname = MQTT_BROKER_HOSTNAME;
+   tls_config->set_native_tls = true;
 
 In this sample code, the ``m_sec_tags`` array holds a list of tags, referencing TLS
 credentials that the MQTT library should use for authentication. We do not specify
@@ -161,6 +162,8 @@ the ``peer_verify`` field.
 Note, that TLS credentials referenced by the ``m_sec_tags`` array must be
 registered in the system first. For more information on how to do that, refer
 to :ref:`secure sockets documentation <secure_sockets_interface>`.
+
+Finally, ``set_native_tls`` can be optionally set to enable native TLS support instead of offloading TLS operations to the modem.
 
 An example of how to use TLS with MQTT is also present in
 :zephyr:code-sample:`mqtt-publisher` sample application.
