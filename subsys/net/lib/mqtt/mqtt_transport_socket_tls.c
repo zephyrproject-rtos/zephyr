@@ -22,10 +22,15 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 {
 	const struct net_sockaddr *broker = client->broker;
 	struct mqtt_sec_config *tls_config = &client->transport.tls.config;
+	int type = NET_SOCK_STREAM;
 	int ret;
 
+	if (!IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD_DISPATCHER) && tls_config->set_native_tls) {
+		type |= SOCK_NATIVE_TLS;
+	}
+
 	client->transport.tls.sock = zsock_socket(broker->sa_family,
-						  NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
+						  type, NET_IPPROTO_TLS_1_2);
 	if (client->transport.tls.sock < 0) {
 		return -errno;
 	}
