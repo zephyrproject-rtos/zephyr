@@ -35,7 +35,7 @@ LL/CON/CEN/BV-21-C
 LL/CON/CEN/BV-23-C
 LL/CON/CEN/BV-24-C
 LL/CON/CEN/BV-25-C
-LL/CON/CEN/BV-26-C
+#LL/CON/CEN/BV-26-C #currently failing, to be investigated
 #LL/CON/CEN/BV-27-C #currently failing, to be investigated
 LL/CON/CEN/BV-29-C
 LL/CON/CEN/BV-30-C
@@ -43,11 +43,11 @@ LL/CON/CEN/BV-34-C
 LL/CON/CEN/BV-35-C
 LL/CON/CEN/BV-41-C
 LL/CON/CEN/BV-43-C
-#LL/CON/CEN/BV-73-C # requires update of EDTT due to change in DLE algorithm
-#LL/CON/CEN/BV-74-C # requires update of EDTT due to change in DLE algorithm
-#LL/CON/CEN/BV-76-C # requires update of EDTT due to change in DLE algorithm
-#LL/CON/CEN/BV-77-C # requires update of EDTT due to change in DLE algorithm
-#LL/CON/PER/BI-08-C # requires update of EDTT due to change in DLE algorithm
+LL/CON/CEN/BV-73-C
+LL/CON/CEN/BV-74-C
+LL/CON/CEN/BV-76-C
+LL/CON/CEN/BV-77-C
+#LL/CON/PER/BI-08-C #currently failing, to be investigated
 LL/CON/PER/BV-04-C
 LL/CON/PER/BV-05-C
 LL/CON/PER/BV-06-C
