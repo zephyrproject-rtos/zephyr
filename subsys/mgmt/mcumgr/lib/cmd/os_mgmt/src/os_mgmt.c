@@ -46,7 +46,7 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 
 	err = cbor_read_object(&ctxt->it, attrs);
 	if (err != 0) {
-		return MGMT_ERR_EINVAL;
+		return mgmt_err_from_cbor(err);
 	}
 
 	echo_buf[sizeof(echo_buf) - 1] = '\0';
