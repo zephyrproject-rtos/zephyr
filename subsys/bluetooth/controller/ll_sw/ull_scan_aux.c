@@ -120,6 +120,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	uint8_t acad_len;
 	uint8_t data_len;
 	uint8_t hdr_len;
+	uint8_t is_stop;
 	uint8_t *ptr;
 	uint8_t phy;
 
@@ -302,6 +303,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	ftr->extra = NULL;
 
 	ftr->aux_sched = 0U;
+	is_stop = 0U;
 
 	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
 	p = (void *)&pdu->adv_ext_ind;
@@ -564,6 +566,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || lll) {
 		/* Do not ULL schedule if scan disable requested */
 		if (unlikely(scan->is_stop)) {
+			is_stop = scan->is_stop;
+
 			goto ull_scan_aux_rx_flush;
 		}
 
@@ -580,6 +584,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		/* Do not ULL schedule if sync terminate requested */
 		sync = HDR_LLL2ULL(sync_lll);
 		if (unlikely(sync->is_stop)) {
+			is_stop = sync->is_stop;
+
 			goto ull_scan_aux_rx_flush;
 		}
 
@@ -704,6 +710,13 @@ ull_scan_aux_rx_flush:
 
 			ll_rx_put(link, rx);
 			ll_rx_sched();
+		}
+
+		/* scanning or sync terminate requested, auxiliary context
+		 * release will be done in ull_scan_aux_stop()
+		 */
+		if (unlikely(is_stop)) {
+			return;
 		}
 
 		/* ref == 0
