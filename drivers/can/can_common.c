@@ -176,3 +176,49 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 
 	return core_clock % (ts * timing->prescaler);
 }
+
+int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data)
+{
+	struct can_timing timing;
+#ifdef CONFIG_CAN_FD_MODE
+	struct can_timing timing_data;
+#endif
+	uint32_t max_bitrate;
+	int ret;
+
+	ret = can_get_max_bitrate(dev, &max_bitrate);
+	if (ret == -ENOSYS) {
+		/* Maximum bitrate unknown */
+		max_bitrate = 0;
+	} else if (ret < 0) {
+		return ret;
+	}
+
+	if ((max_bitrate > 0) && (bitrate > max_bitrate)) {
+		return -ENOTSUP;
+	}
+
+	ret = can_calc_timing(dev, &timing, bitrate, 875);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	timing.sjw = CAN_SJW_NO_CHANGE;
+
+#ifdef CONFIG_CAN_FD_MODE
+	if ((max_bitrate > 0) && (bitrate_data > max_bitrate)) {
+		return -ENOTSUP;
+	}
+
+	ret = can_calc_timing_data(dev, &timing_data, bitrate_data, 875);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	timing_data.sjw = CAN_SJW_NO_CHANGE;
+
+	return can_set_timing(dev, &timing, &timing_data);
+#else /* CONFIG_CAN_FD_MODE */
+	return can_set_timing(dev, &timing, NULL);
+#endif /* !CONFIG_CAN_FD_MODE */
+}
