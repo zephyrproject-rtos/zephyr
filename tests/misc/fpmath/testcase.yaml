@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Google Inc
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  timeout: 15
+  tags: util fpmath
+  integration_platforms:
+    - native_posix
+    - qemu_cortex_a53
+    - qemu_riscv32
+    - nsim_hs_mpuv6
+    - frdm_k64f
+    - qemu_x86_64
+tests:
+  math.fp.c: {}
+  math.fp.cpp:
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y

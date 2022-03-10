@@ -431,6 +431,18 @@ _heap_sentry = 0x3ffe3f20;
   {
     *(.xtensa.info)
   }
+  .xt.prop 0 :
+  {
+    KEEP (*(.xt.prop))
+    KEEP (*(.xt.prop.*))
+    KEEP (*(.gnu.linkonce.prop.*))
+  }
+  .xt.lit 0 :
+  {
+    KEEP (*(.xt.lit))
+    KEEP (*(.xt.lit.*))
+    KEEP (*(.gnu.linkonce.p.*))
+  }
 
 }
 
