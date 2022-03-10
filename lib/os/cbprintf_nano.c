@@ -59,12 +59,12 @@ static inline int convert_value(uint_value_type num, unsigned int base,
  * @brief Printk internals
  *
  * See printk() for description.
- * @param fmt Format string
+ * @param format Format string
  * @param ap Variable parameters
  *
  * @return printed byte count if CONFIG_CBPRINTF_LIBC_SUBSTS is set
  */
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
+int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 {
 	size_t count = 0;
 	char buf[DIGITS_BUFLEN];
@@ -73,14 +73,14 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
 	char padding_mode, length_mod, special;
 
 	/* we pre-increment in the loop  afterwards */
-	fmt--;
+	format--;
 
 start:
-	while (*++fmt != '%') {
-		if (*fmt == '\0') {
+	while (*++format != '%') {
+		if (*format == '\0') {
 			return count;
 		}
-		OUTC(*fmt);
+		OUTC(*format);
 	}
 
 	min_width = -1;
@@ -90,8 +90,8 @@ start:
 	length_mod = 0;
 	special = 0;
 
-	for (fmt++ ; ; fmt++) {
-		switch (*fmt) {
+	for (format++ ; ; format++) {
+		switch (*format) {
 		case 0:
 			return count;
 
@@ -125,12 +125,12 @@ start:
 		case '8':
 		case '9':
 			if (precision >= 0) {
-				precision = 10 * precision + *fmt - '0';
+				precision = 10 * precision + *format - '0';
 			} else {
 				if (min_width < 0) {
 					min_width = 0;
 				}
-				min_width = 10 * min_width + *fmt - '0';
+				min_width = 10 * min_width + *format - '0';
 			}
 			continue;
 
@@ -149,21 +149,21 @@ start:
 		case '+':
 		case ' ':
 		case '#':
-			special = *fmt;
+			special = *format;
 			continue;
 
 		case 'h':
 		case 'l':
 		case 'z':
-			if (*fmt == 'h' && length_mod == 'h') {
+			if (*format == 'h' && length_mod == 'h') {
 				length_mod = 'H';
-			} else if (*fmt == 'l' && length_mod == 'l') {
+			} else if (*format == 'l' && length_mod == 'l') {
 				length_mod = 'L';
 			} else if (length_mod == '\0') {
-				length_mod = *fmt;
+				length_mod = *format;
 			} else {
 				OUTC('%');
-				OUTC(*fmt);
+				OUTC(*format);
 				goto start;
 			}
 			continue;
@@ -174,19 +174,19 @@ start:
 			uint_value_type d;
 
 			if (length_mod == 'z') {
-				if (*fmt == 'u') {
+				if (*format == 'u') {
 					d = va_arg(ap, size_t);
 				} else {
 					d = va_arg(ap, ssize_t);
 				}
 			} else if (length_mod == 'l') {
-				if (*fmt == 'u') {
+				if (*format == 'u') {
 					d = va_arg(ap, unsigned long);
 				} else {
 					d = va_arg(ap, long);
 				}
 			} else if (length_mod == 'L') {
-				if (*fmt == 'u') {
+				if (*format == 'u') {
 					unsigned long long llu =
 						va_arg(ap, unsigned long long);
 
@@ -208,13 +208,13 @@ start:
 					}
 					d = (int_value_type) lld;
 				}
-			} else if (*fmt == 'u') {
+			} else if (*format == 'u') {
 				d = va_arg(ap, unsigned int);
 			} else {
 				d = va_arg(ap, int);
 			}
 
-			if (*fmt != 'u' && (int_value_type)d < 0) {
+			if (*format != 'u' && (int_value_type)d < 0) {
 				d = -d;
 				prefix = "-";
 				min_width--;
@@ -237,7 +237,7 @@ start:
 		case 'X': {
 			uint_value_type x;
 
-			if (*fmt == 'p') {
+			if (*format == 'p') {
 				x = (uintptr_t)va_arg(ap, void *);
 				if (x == (uint_value_type)0) {
 					data = "(nil)";
@@ -263,10 +263,10 @@ start:
 				x = va_arg(ap, unsigned int);
 			}
 			if (special == '#') {
-				prefix = (*fmt & 0x20) ? "0x" : "0X";
+				prefix = (*format & 0x20) ? "0x" : "0X";
 				min_width -= 2;
 			}
-			data_len = convert_value(x, 16, ALPHA(*fmt),
+			data_len = convert_value(x, 16, ALPHA(*format),
 						 buf + sizeof(buf));
 			data = buf + sizeof(buf) - data_len;
 			break;
@@ -294,7 +294,7 @@ start:
 
 		default:
 			OUTC('%');
-			OUTC(*fmt);
+			OUTC(*format);
 			goto start;
 		}
 
