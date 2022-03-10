@@ -67,7 +67,7 @@ struct riscv_pmp_region {
 	enum pmp_region_mode mode;
 };
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_SMP)
 extern uint32_t is_user_mode;
 #endif
 
@@ -635,6 +635,7 @@ void z_riscv_pmp_clear_config(void)
 void z_riscv_init_user_accesses(struct k_thread *thread)
 {
 	struct riscv_pmp_region dynamic_regions[] = {
+#if !defined(CONFIG_SMP)
 		{
 			/* MCU state */
 			.start = (ulong_t) &is_user_mode,
@@ -642,6 +643,7 @@ void z_riscv_init_user_accesses(struct k_thread *thread)
 			.perm = PMP_R,
 			.mode = PMP_MODE_NA4,
 		},
+#endif
 		{
 			/* User-mode thread stack */
 			.start = thread->stack_info.start,
