@@ -291,7 +291,7 @@ cbor_internal_read_object(CborValue *root_value,
 				err |= CborErrorIllegalType;
 			}
 		}
-		err = cbor_value_advance(&cur_value);
+		err |= cbor_value_advance(&cur_value);
 	}
 	if (!err) {
 		/* that should be it for this container */
