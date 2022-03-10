@@ -290,15 +290,15 @@ int arch_irq_is_enabled(unsigned int irq);
  *
  * @param irq IRQ line number
  * @param priority Interrupt priority
- * @param routine Interrupt service routine
- * @param parameter ISR parameter
+ * @param func Interrupt service routine
+ * @param arg ISR parameter
  * @param flags Arch-specific IRQ configuration flag
  *
  * @return The vector assigned to this interrupt
  */
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(const void *parameter),
-			     const void *parameter, uint32_t flags);
+			     void (*func)(const void *arg),
+			     const void *arg, uint32_t flags);
 
 /**
  * @def ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
@@ -680,11 +680,11 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
  * we want the oops to appear to come from where the system call was invoked
  * and not inside the validation function.
  *
- * @param ssf System call stack frame pointer. This gets passed as an argument
+ * @param ssf_ptr System call stack frame pointer. This gets passed as an argument
  *            to _k_syscall_handler_t functions and its contents are completely
  *            architecture specific.
  */
-FUNC_NORETURN void arch_syscall_oops(void *ssf);
+FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr);
 
 /**
  * @brief Safely take the length of a potentially bad string

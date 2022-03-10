@@ -16,7 +16,7 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
+uint8_t _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 
 /*
  * The low-level interrupt code consults these arrays to dispatch IRQs, so

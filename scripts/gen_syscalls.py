@@ -113,15 +113,14 @@ extern "C" {
 
 handler_template = """
 extern uintptr_t z_hdlr_%s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
-                uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);
+                uintptr_t arg4, uintptr_t arg5, uintptr_t %s, void *ssf);
 """
 
 weak_template = """
 __weak ALIAS_OF(handler_no_syscall)
 uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
-         uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);
+         uintptr_t arg4, uintptr_t arg5, uintptr_t %s, void *ssf);
 """
-
 
 typename_regex = re.compile(r'(.*?)([A-Za-z0-9_]+)$')
 
@@ -234,13 +233,13 @@ def wrapper_defs(func_name, func_type, args):
 
     return wrap
 
-# Returns an expression for the specified (zero-indexed!) marshalled
-# parameter to a syscall, with handling for a final "more" parameter.
+# Returns an expression for the specified marshalled parameter
+# to a syscall, with handling for a final "more" parameter.
 def mrsh_rval(mrsh_num, total):
-    if mrsh_num < 5 or total <= 6:
+    if mrsh_num < 6 or total <= 6:
         return "arg%d" % mrsh_num
     else:
-        return "(((uintptr_t *)more)[%d])" % (mrsh_num - 5)
+        return "(((const uintptr_t *)more)[%d])" % (mrsh_num - 6)
 
 def marshall_defs(func_name, func_type, args):
     mrsh_name = "z_mrsh_" + func_name
@@ -250,13 +249,12 @@ def marshall_defs(func_name, func_type, args):
     split_parms = [] # list of a (arg_num, mrsh_num) for each split
     for i, (argtype, _) in enumerate(args):
         if need_split(argtype):
-            vrfy_parms.append((i, len(split_parms), True))
-            split_parms.append((i, nmrsh))
+            vrfy_parms.append((i, len(split_parms) + 1, True))
+            split_parms.append((i, nmrsh + 1))
             nmrsh += 2
         else:
-            vrfy_parms.append((i, nmrsh, False))
+            vrfy_parms.append((i, nmrsh + 1, False))
             nmrsh += 1
-
     # Final argument for a 64 bit return value?
     if need_split(func_type):
         nmrsh += 1
@@ -264,19 +262,19 @@ def marshall_defs(func_name, func_type, args):
     decl_arglist = ", ".join([" ".join(argrec) for argrec in args])
     mrsh = "extern %s z_vrfy_%s(%s);\n" % (func_type, func_name, decl_arglist)
 
-    mrsh += "uintptr_t %s(uintptr_t arg0, uintptr_t arg1, uintptr_t arg2,\n" % mrsh_name
+    mrsh += "uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,\n" % mrsh_name
     if nmrsh <= 6:
-        mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, void *ssf)\n"
+        mrsh += "\t\t" + "uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf)\n"
     else:
-        mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, void *more, void *ssf)\n"
+        mrsh += "\t\t" + "uintptr_t arg4, uintptr_t arg5, uintptr_t more, void *ssf)\n"
     mrsh += "{\n"
     mrsh += "\t" + "_current->syscall_frame = ssf;\n"
 
-    for unused_arg in range(nmrsh, 6):
+    for unused_arg in range(nmrsh + 1, 7):
         mrsh += "\t(void) arg%d;\t/* unused */\n" % unused_arg
 
     if nmrsh > 6:
-        mrsh += ("\tZ_OOPS(Z_SYSCALL_MEMORY_READ(more, "
+        mrsh += ("\tZ_OOPS(Z_SYSCALL_MEMORY_READ((const uintptr_t *)more, "
                  + str(nmrsh - 6) + " * sizeof(uintptr_t)));\n")
 
     for i, split_rec in enumerate(split_parms):
@@ -291,7 +289,7 @@ def marshall_defs(func_name, func_type, args):
     out_args = []
     for i, argn, is_split in vrfy_parms:
         if is_split:
-            out_args.append("parm%d.val" % argn)
+            out_args.append("parm%d.val" % i)
         else:
             out_args.append("*(%s*)&%s" % (args[i][0], mrsh_rval(argn, nmrsh)))
 
@@ -315,8 +313,7 @@ def marshall_defs(func_name, func_type, args):
             mrsh += "\t" + "return (uintptr_t) ret;\n"
 
     mrsh += "}\n"
-
-    return mrsh, mrsh_name
+    return mrsh, mrsh_name, nmrsh
 
 def analyze_fn(match_group):
     func, args = match_group
@@ -335,13 +332,13 @@ def analyze_fn(match_group):
     sys_id = "K_SYSCALL_" + func_name.upper()
 
     marshaller = None
-    marshaller, handler = marshall_defs(func_name, func_type, args)
+    marshaller, handler, nmrsh = marshall_defs(func_name, func_type, args)
     invocation = wrapper_defs(func_name, func_type, args)
 
     # Entry in _k_syscall_table
     table_entry = "[%s] = %s" % (sys_id, handler)
 
-    return (handler, invocation, marshaller, sys_id, table_entry)
+    return (handler, invocation, marshaller, sys_id, table_entry, nmrsh)
 
 def parse_args():
     global args
@@ -380,9 +377,10 @@ def main():
     ids = []
     table_entries = []
     handlers = []
+    arg_numbers = []
 
     for match_group, fn in syscalls:
-        handler, inv, mrsh, sys_id, entry = analyze_fn(match_group)
+        handler, inv, mrsh, sys_id, entry, nmrsh = analyze_fn(match_group)
 
         if fn not in invocations:
             invocations[fn] = []
@@ -391,6 +389,7 @@ def main():
         ids.append(sys_id)
         table_entries.append(entry)
         handlers.append(handler)
+        arg_numbers.append(nmrsh)
 
         if mrsh:
             syscall = typename_split(match_group[0])[1]
@@ -399,10 +398,11 @@ def main():
 
     with open(args.syscall_dispatch, "w") as fp:
         table_entries.append("[K_SYSCALL_BAD] = handler_bad_syscall")
-
-        weak_defines = "".join([weak_template % name
-                                for name in handlers
-                                if not name in noweak])
+        weak_defines = "".join([weak_template % (name,
+                                "arg6" if nmrsh <= 6 else "more")
+                                for (name, nmrsh) in zip(handlers, arg_numbers)
+                                if not name in noweak
+                                ])
 
         # The "noweak" ones just get a regular declaration
         weak_defines += "\n".join(["extern uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);"

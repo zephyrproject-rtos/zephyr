@@ -1368,7 +1368,7 @@ static int outs(cbprintf_cb out,
 	return count;
 }
 
-int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
+int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 {
 	char buf[CONVERTED_BUFLEN];
 	int count = 0;
@@ -1401,10 +1401,10 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 	count += rc; \
 } while (false)
 
-	while (*fp != '\0') {
-		if (*fp != '%') {
-			OUTC(*fp);
-			++fp;
+	while (*format != '\0') {
+		if (*format != '%') {
+			OUTC(*format);
+			++format;
 			continue;
 		}
 
@@ -1421,14 +1421,14 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		};
 		struct conversion *const conv = &state.conv;
 		union argument_value *const value = &state.value;
-		const char *sp = fp;
+		const char *sp = format;
 		int width = -1;
 		int precision = -1;
 		const char *bps = NULL;
 		const char *bpe = buf + sizeof(buf);
 		char sign = '\0';
 
-		fp = extract_conversion(conv, sp);
+		format = extract_conversion(conv, sp);
 
 		/* If dynamic width is specified, process it,
 		 * otherwise set width if present.
@@ -1590,7 +1590,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		 * specification and move on.
 		 */
 		if (conv->invalid || conv->unsupported) {
-			OUTS(sp, fp);
+			OUTS(sp, format);
 			continue;
 		}
 
