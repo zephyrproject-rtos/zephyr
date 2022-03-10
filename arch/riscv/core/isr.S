@@ -59,6 +59,16 @@
 	op a6, __z_arch_esf_t_a6_OFFSET(sp)		;\
 	op a7, __z_arch_esf_t_a7_OFFSET(sp)		;
 
+#ifdef CONFIG_SMP
+#define GET_CURRENT_CPU(dst, tmp) \
+	csrr tmp, mhartid				;\
+	la dst, _kernel + ___kernel_t_cpus_OFFSET	;\
+	shiftmul_add dst, tmp, ___cpu_t_SIZEOF
+#else
+#define GET_CURRENT_CPU(dst, tmp) \
+	la dst, _kernel + ___kernel_t_cpus_OFFSET
+#endif
+
 #define ASSUME_EQUAL(x, y)	.if x != y; .err; .endif
 
 /* imports */
@@ -137,7 +147,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 
 	/* Save s0 in the esf and load it with &_current_cpu. */
 	sr s0, __z_arch_esf_t_s0_OFFSET(sp)
-	la s0, _kernel + ___kernel_t_cpus_OFFSET
+	GET_CURRENT_CPU(s0, t0)
 
 #ifdef CONFIG_USERSPACE
 	/*
@@ -448,8 +458,10 @@ reschedule:
 
 z_riscv_thread_start:
 might_have_rescheduled:
-
-	/* SMP note: reload s0 with &_current_cpu as it might have changed */
+#ifdef CONFIG_SMP
+	/* reload s0 with &_current_cpu as it might have changed */
+	GET_CURRENT_CPU(s0, t0)
+#endif
 
 no_reschedule:
 
