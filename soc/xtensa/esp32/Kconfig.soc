@@ -10,6 +10,7 @@ config SOC_ESP32
 	select ARCH_HAS_GDBSTUB
 	select ARCH_SUPPORTS_COREDUMP
 	select PINCTRL
+	select XIP
 
 if SOC_ESP32
 
