@@ -833,6 +833,9 @@ config BT_MESH_RPL_STORE_TIMEOUT
 	  stored by @ref BT_MESH_STORE_TIMEOUT. Finding the right balance
 	  between this timeout and calling @ref bt_mesh_rpl_pending_store
 	  may reduce a risk of security vulnerability and flash wear out.
+	  Failure to store the RPL and becoming vulnerable after reboot
+	  will cause the device to not perform the replay protection
+	  required by the spec.
 
 endif # BT_SETTINGS
 
