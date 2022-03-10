@@ -19,4 +19,4 @@ static int serialization_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(serialization_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(serialization_init, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
