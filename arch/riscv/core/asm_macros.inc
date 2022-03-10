@@ -51,3 +51,28 @@
 	.endm
 
 #endif
+
+	/*
+	 * Perform rd += rs * mult using only shifts and adds.
+	 * Useful when the mul instruction isn't available.
+	 * mult must be a constant. rs will be clobbered.
+	 */
+	.macro shiftmul_add rd, rs, mult
+
+	beqz \rs, 999f
+
+	.set _bitpos, 0
+	.set _lastbitpos, 0
+
+	.rept 32
+	.if ((\mult) & (1 << _bitpos))
+	.if (_bitpos - _lastbitpos) != 0
+	slli \rs, \rs, (_bitpos - _lastbitpos)
+	.set _lastbitpos, _bitpos
+	.endif
+	add \rd, \rd, \rs
+	.endif
+	.set _bitpos, _bitpos + 1
+	.endr
+999:
+	.endm
