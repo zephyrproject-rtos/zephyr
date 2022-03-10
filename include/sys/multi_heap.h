@@ -133,6 +133,20 @@ void *sys_multi_heap_aligned_alloc(struct sys_multi_heap *mheap,
 				   void *cfg, size_t align, size_t bytes);
 
 /**
+ * @brief Get a specific heap for provided address
+ *
+ * Finds a single system heap (with user_data)
+ * controlling the provided pointer
+ *
+ * @param mheap Multi heap pointer
+ * @param addr address to be found, must be a pointer to a block allocated by sys_multi_heap_alloc
+ * @return 0 multi_heap_rec pointer to a structure to be filled with return data
+ *			 or NULL if the heap has not been found
+ */
+const struct sys_multi_heap_rec *sys_multi_heap_get_heap(const struct sys_multi_heap *mheap,
+							 void *addr);
+
+/**
  * @brief Free memory allocated from multi heap
  *
  * Returns the specified block, which must be the return value of a
