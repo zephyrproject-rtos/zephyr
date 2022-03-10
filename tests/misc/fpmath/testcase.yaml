@@ -1,0 +1,48 @@
+# Copyright (c) 2022 Google Inc
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  integration_platforms:
+    - native_posix
+    - qemu_cortex_a53
+    - qemu_riscv32
+    - nsim_hs_mpuv6
+    - frdm_k64f
+    - qemu_x86_64
+tests:
+  math.fp.fixed.8:
+    tags: util fpmath
+    extra_configs:
+      - CONFIG_MATH_UTIL_FLOAT=n
+      - CONFIG_MATH_UTIL_FP_BITS=8
+  math.fp.fixed.16:
+    tags: util fpmath
+    extra_configs:
+      - CONFIG_MATH_UTIL_FLOAT=n
+      - CONFIG_MATH_UTIL_FP_BITS=16
+  math.fp.fixed.24:
+    tags: util fpmath
+    extra_configs:
+      - CONFIG_MATH_UTIL_FLOAT=n
+      - CONFIG_MATH_UTIL_FP_BITS=24
+  math.fp.float.8:
+    tags: util fpmath
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_MATH_UTIL_FLOAT=y
+      - CONFIG_MATH_UTIL_FP_BITS=8
+  math.fp.float.16:
+    tags: util fpmath
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_MATH_UTIL_FLOAT=y
+      - CONFIG_MATH_UTIL_FP_BITS=16
+  math.fp.float.24:
+    tags: util fpmath
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_MATH_UTIL_FLOAT=y
+      - CONFIG_MATH_UTIL_FP_BITS=24

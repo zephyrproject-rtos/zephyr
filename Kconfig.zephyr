@@ -40,6 +40,7 @@ source "modules/Kconfig"
 
 endmenu
 
+source "Kconfig.headers"
 source "boards/Kconfig"
 source "soc/Kconfig"
 source "arch/Kconfig"

@@ -1,0 +1,36 @@
+# Configurations for headers
+# This file can't be added like other Kconfig files since putting it under include/ will make
+# it visibile to IDEs when writing 'include' statements.
+
+# Copyright (c) 2022 Google Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config MATH_UTIL_FLOAT
+	bool "Enable the math utility library to use floating point values"
+	depends on FPU
+	help
+	  When enabled, 'fp_t' type will be mapped to 'float'. Otherwise, it will use int32_t and
+	  represent fixed point math.
+
+config MATH_UTIL_FP_BITS
+	int "The number of bits that will be used for the floating component of fp_t"
+	range 0 31
+	default 16
+	depends on !MATH_UTIL_FLOAT
+	help
+	  Determines what portion of the int32_t will be used for the floating component of the
+	  fixed point number. The valid range is 0-31 where 31 means that fp_t can represent values
+	  with a resolution of 1/INT32_MAX (bounds are roughly -0.99.. to 0.99..). And 0 meaning
+	  fp_t is just an int32_t with no decimal representation. Default is 16 having an int range
+	  of INT16_MIN to INT16_MAX and decimal resolution of 1/INT16_MAX.
+
+config MATH_UTIL_PRIf_PRECISION
+	int "The number of decimal points to print when using PRIf and PRIf_ARG()"
+	range 0 10
+	default 6 if MATH_UTIL_FLOAT
+	default 10 if MATH_UTIL_FP_BITS >= 30
+	default 9 if MATH_UTIL_FP_BITS >= 28
+	default 8 if MATH_UTIL_FP_BITS >= 24
+	default 7 if MATH_UTIL_FP_BITS >= 20
+	default MATH_UTIL_FP_BITS if MATH_UTIL_FP_BITS < 6
+	default 6
