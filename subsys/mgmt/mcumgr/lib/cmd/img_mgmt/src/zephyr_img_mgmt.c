@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME mcumgr_flash_mgmt
-#define LOG_LEVEL CONFIG_IMG_MANAGER_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 
 #include <assert.h>
 #include <drivers/flash.h>
