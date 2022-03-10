@@ -51,9 +51,10 @@ void *sys_multi_heap_aligned_alloc(struct sys_multi_heap *mheap,
 	return mheap->choice(mheap, cfg, align, bytes);
 }
 
-void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block)
+const struct sys_multi_heap_rec *sys_multi_heap_get_heap(const struct sys_multi_heap *mheap,
+							 void *addr)
 {
-	uintptr_t haddr, baddr = (uintptr_t) block;
+	uintptr_t haddr, baddr = (uintptr_t) addr;
 	int i;
 
 	/* Search the heaps array to find the correct heap
@@ -73,6 +74,18 @@ void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block)
 
 	/* Now i stores the index of the heap after our target (even
 	 * if it's invalid and our target is the last!)
+	 * FIXME: return -ENOENT when a proper heap is not found
 	 */
-	sys_heap_free(mheap->heaps[i-1].heap, block);
+	return &mheap->heaps[i-1];
+}
+
+
+void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block)
+{
+	const struct sys_multi_heap_rec *heap;
+
+	heap = sys_multi_heap_get_heap(mheap, block);
+
+	if (heap != NULL)
+		sys_heap_free(heap->heap, block);
 }
