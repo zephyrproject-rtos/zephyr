@@ -68,6 +68,7 @@ if CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 config CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
 	bool
 	depends on !CLOCK_CONTROL_NRF_FORCE_ALT
+	depends on MULTITHREADING
 	default y
 	help
 	  Enabling indicates that calibration is perfomed by the clock control driver.
