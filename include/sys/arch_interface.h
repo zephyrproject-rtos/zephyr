@@ -680,11 +680,11 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
  * we want the oops to appear to come from where the system call was invoked
  * and not inside the validation function.
  *
- * @param ssf System call stack frame pointer. This gets passed as an argument
+ * @param ssf_ptr System call stack frame pointer. This gets passed as an argument
  *            to _k_syscall_handler_t functions and its contents are completely
  *            architecture specific.
  */
-FUNC_NORETURN void arch_syscall_oops(void *ssf);
+FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr);
 
 /**
  * @brief Safely take the length of a potentially bad string

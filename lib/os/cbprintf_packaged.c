@@ -186,7 +186,7 @@ static int cbprintf_via_va_list(cbprintf_cb out, void *ctx,
 #endif
 
 int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
-		      const char *fmt, va_list ap)
+		      const char *format, va_list ap)
 {
 /* Internally, byte is used to store location of a string argument within a
  * package. MSB bit is set if string is read-only so effectively 7 bits are
@@ -254,26 +254,26 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 * Then process the format string itself.
 	 * Here we branch directly into the code processing strings
 	 * which is in the middle of the following while() loop. That's the
-	 * reason for the post-decrement on fmt as it will be incremented
+	 * reason for the post-decrement on format as it will be incremented
 	 * prior to the next (actually first) round of that loop.
 	 */
-	s = fmt;
-	--fmt;
+	s = format;
+	--format;
 	align = VA_STACK_ALIGN(char *);
 	size = sizeof(char *);
 	goto process_string;
 
 	/* Scan the format string */
-	while (*++fmt != '\0') {
+	while (*++format != '\0') {
 		if (!parsing) {
-			if (*fmt == '%') {
+			if (*format == '%') {
 				parsing = true;
 				align = VA_STACK_ALIGN(int);
 				size = sizeof(int);
 			}
 			continue;
 		}
-		switch (*fmt) {
+		switch (*format) {
 		case '%':
 			parsing = false;
 			continue;
@@ -323,8 +323,8 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		case 'u':
 		case 'x':
 		case 'X':
-			if (fmt[-1] == 'l') {
-				if (fmt[-2] == 'l') {
+			if (format[-1] == 'l') {
+				if (format[-2] == 'l') {
 					align = VA_STACK_ALIGN(long long);
 					size = sizeof(long long);
 				} else {
@@ -357,7 +357,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			 */
 			union { double d; long double ld; } v;
 
-			if (fmt[-1] == 'L') {
+			if (format[-1] == 'L') {
 				v.ld = va_arg(ap, long double);
 				align = VA_STACK_ALIGN(long double);
 				size = sizeof(long double);
@@ -375,7 +375,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 				}
 				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
 					memcpy(buf, &v, size);
-				} else if (fmt[-1] == 'L') {
+				} else if (format[-1] == 'L') {
 					*(long double *)buf = v.ld;
 				} else {
 					*(double *)buf = v.d;
@@ -400,7 +400,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		}
 
 		/* copy va_list data over to our buffer */
-		if (*fmt == 's') {
+		if (*format == 's') {
 			s = va_arg(ap, char *);
 process_string:
 			if (buf0 != NULL) {

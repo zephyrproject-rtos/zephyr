@@ -24,6 +24,7 @@
 #if !defined(_ASMLANGUAGE)
 #include <arch/cpu.h>
 #include <sys/util.h>
+#include <sys/arch_interface.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,8 +115,10 @@ static inline char *z_stack_ptr_align(char *ptr)
  * elsewhere into scope.
  *
  * @param sym Thread stack symbol name
+ * @param size Thread stack size
  */
-#define K_KERNEL_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
+#define K_KERNEL_STACK_EXTERN(sym, size) \
+	extern k_thread_stack_t sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
 
 /**
  * @addtogroup thread_stack_api
@@ -173,7 +176,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param lsect Linker section for this stack
  */
 #define Z_KERNEL_STACK_DEFINE_IN(sym, size, lsect) \
-	struct z_thread_stack_element lsect \
+	k_thread_stack_t lsect \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
 		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
 
@@ -402,8 +405,10 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * elsewhere into scope.
  *
  * @param sym Thread stack symbol name
+ * @param size Thread stack size
  */
-#define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
+#define K_THREAD_STACK_EXTERN(sym, size) \
+	extern k_thread_stack_t sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
 
 /**
  * @brief Obtain an extern reference to a thread stack array

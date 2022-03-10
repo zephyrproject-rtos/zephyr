@@ -181,13 +181,13 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *data,
  *
  * Normal CCITT variant of CRC 8 is using 0x07.
  *
- * @param initial_value Initial value for the CRC computation
+ * @param val Initial value for the CRC computation
  * @param buf Input bytes for the computation
- * @param len Length of the input in bytes
+ * @param cnt Length of the input in bytes
  *
  * @return The computed CRC8 value
  */
-uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
+uint8_t crc8_ccitt(uint8_t val, const void *buf, size_t cnt);
 
 /**
  * @brief Compute the CRC-7 checksum of a buffer.
