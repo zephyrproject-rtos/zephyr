@@ -4,6 +4,13 @@
  * @brief Public APIs for the sensor driver.
  */
 
+#ifdef CONFIG_SENSOR_VERSION_2
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_
+#endif /* !ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_ */
+#include "drivers/sensor_v2.h"
+#endif /* CONFIG_SENSOR_VERSION_2 */
+
 /*
  * Copyright (c) 2016 Intel Corporation
  *

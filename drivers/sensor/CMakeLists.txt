@@ -112,6 +112,12 @@ add_subdirectory_ifdef(CONFIG_TACH_IT8XXX2	ite_tach_it8xxx2)
 add_subdirectory_ifdef(CONFIG_VCMP_IT8XXX2	ite_vcmp_it8xxx2)
 add_subdirectory_ifdef(CONFIG_PCNT_ESP32	pcnt_esp32)
 
+if(CONFIG_SENSOR_VERSION_2 AND CONFIG_SENSOR_STREAMING_MODE)
+  # The above if() is needed otherwise CMake would complain about an empty library
+  zephyr_library_named(sensor_v2)
+  zephyr_library_sources_ifdef(CONFIG_SENSOR_STREAMING_MODE sensor_streaming.c)
+endif()
+
 if(CONFIG_USERSPACE OR CONFIG_SENSOR_SHELL OR CONFIG_SENSOR_SHELL_BATTERY)
 # The above if() is needed or else CMake would complain about
 # empty library.

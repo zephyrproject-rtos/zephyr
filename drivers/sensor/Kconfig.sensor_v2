@@ -1,0 +1,36 @@
+# Sensor V2 configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice SENSOR_VERSION
+	prompt "Select the version of the sensor API to use"
+	default SENSOR_VERSION_1
+
+config SENSOR_VERSION_1
+	bool "V1 of the Sensor API"
+
+config SENSOR_VERSION_2
+	bool "V2 of the Sensor API"
+	help
+	  This sensor API is derived from Android's CHRE's sensor API and is required for the Zephyr
+	  sensor subsystem (WIP).
+
+endchoice # SENSOR_VERSION
+
+if SENSOR_VERSION_2
+
+config SENSOR_STREAMING_MODE
+	bool "Implement the sensor APIs needed for streaming sensor events"
+	default y
+	help
+	  This enables the various sample rate functionalities of the sensor API as well as FIFO
+	  control.
+
+config SENSOR_HW_CALIBRATION
+	bool "Implement hardware calibration APIs when available"
+	help
+	  This enables the sensor_perform_calibration() API for sensors that support live
+	  calibration.
+
+endif # SENSOR_VERSION_2

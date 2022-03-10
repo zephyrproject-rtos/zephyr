@@ -74,6 +74,11 @@ static void bmi160_handle_interrupts(const struct device *dev)
 	if (buf.int_status[1] & BMI160_INT_STATUS1_DRDY) {
 		bmi160_handle_drdy(dev, buf.status);
 	}
+#ifdef CONFIG_SENSOR_STREAMING
+	if (buf.int_status[1] & (BMI160_INT_STATUS1_FWM | BMI160_INT_STATUS1_FFULL)) {
+
+	}
+#endif
 
 }
 
@@ -109,6 +114,8 @@ static void bmi160_gpio_callback(const struct device *port,
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pin);
+
+	data->interrupt_timestamp_ticks = k_uptime_get();
 
 #if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->sem);

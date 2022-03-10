@@ -296,9 +296,15 @@ enum bmi160_odr {
 #define BMI160_GYR_RANGE_250DPS		3
 #define BMI160_GYR_RANGE_125DPS		4
 
-#define BMI160_ACC_SCALE(range_g)	((2 * range_g * SENSOR_G) / 65536LL)
-#define BMI160_GYR_SCALE(range_dps)\
-				((2 * range_dps * SENSOR_PI) / 180LL / 65536LL)
+#ifdef CONFIG_SENSOR_VERSION_2
+#define BMI160_ACC_SCALE(range_g)                                                                  \
+	fp_div(fp_mul(INT_TO_FP(range_g), SENSOR_G), INT_TO_FP(INT16_MAX))
+#define BMI160_GYR_SCALE(range_dps)                                                                \
+	fp_div(sensor_degrees_to_rad(INT_TO_FP(range_dps)), INT_TO_FP(INT16_MAX))
+#else
+#define BMI160_ACC_SCALE(range_g) ((2 * range_g * SENSOR_G) / 65536LL)
+#define BMI160_GYR_SCALE(range_dps) ((2 * range_dps * SENSOR_PI) / 180LL / 65536LL)
+#endif
 
 /* default settings, based on menuconfig options */
 
@@ -478,8 +484,13 @@ union bmi160_sample {
 };
 
 struct bmi160_scale {
+#ifdef CONFIG_SENSOR_VERSION_1
 	uint16_t acc; /* micro m/s^2/lsb */
 	uint16_t gyr; /* micro radians/s/lsb */
+#else
+	fp_t acc;
+	fp_t gyr;
+#endif
 };
 
 struct bmi160_data {
@@ -488,6 +499,13 @@ struct bmi160_data {
 	const struct device *dev;
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
+	int64_t interrupt_timestamp_ticks;
+#endif
+#ifdef CONFIG_SENSOR_VERSION_2
+	uint8_t current_accel_range;
+	uint8_t current_gyro_range;
+	struct sensor_raw_data *raw_data_buffer;
+	sensor_data_callback_t process_data_callback;
 #endif
 	union bmi160_pmu_status pmu_sts;
 	union bmi160_sample sample;
@@ -512,12 +530,15 @@ struct bmi160_data {
 #endif /* CONFIG_BMI160_TRIGGER */
 };
 
+int bmi160_init(const struct device *dev);
 int bmi160_read(const struct device *dev, uint8_t reg_addr,
 		void *data, uint8_t len);
 int bmi160_byte_read(const struct device *dev, uint8_t reg_addr,
 		     uint8_t *byte);
 int bmi160_byte_write(const struct device *dev, uint8_t reg_addr,
 		      uint8_t byte);
+int bmi160_word_read(const struct device *dev, uint8_t reg_addr,
+		     uint16_t *word);
 int bmi160_word_write(const struct device *dev, uint8_t reg_addr,
 		      uint16_t word);
 int bmi160_reg_field_update(const struct device *dev, uint8_t reg_addr,
@@ -529,13 +550,35 @@ static inline int bmi160_reg_update(const struct device *dev,
 	return bmi160_reg_field_update(dev, reg_addr, 0, mask, val);
 }
 int bmi160_trigger_mode_init(const struct device *dev);
+#ifdef CONFIG_SENSOR_VERSION_1
 int bmi160_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 int bmi160_acc_slope_config(const struct device *dev,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val);
-int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
-int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);
+#endif
+int32_t bmi160_range_to_reg_val(uint16_t range,
+				const struct bmi160_range *range_map,
+				uint16_t range_map_size);
+int32_t bmi160_reg_val_to_range(uint8_t reg_val,
+				const struct bmi160_range *range_map,
+				uint16_t range_map_size);
+uint8_t bmi160_acc_reg_val_to_range_index(uint8_t reg_val);
+uint8_t bmi160_gyr_reg_val_to_range_index(uint8_t reg_val);
+
+extern const struct bmi160_bus_io bmi160_bus_spi_io;
+extern const struct bmi160_bus_io bmi160_bus_i2c_io;
+
+int bmi160_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli);
+
+int bmi160_do_calibration(const struct device *dev, uint8_t foc_conf);
+
+int bmi160_acc_range_set(const struct device *dev, int32_t range);
+int bmi160_acc_odr_set(const struct device *dev, uint16_t freq_int, uint16_t freq_milli);
+int bmi160_gyr_range_set(const struct device *dev, uint16_t range);
+int bmi160_gyr_odr_set(const struct device *dev, uint16_t freq_int, uint16_t freq_milli);
+
+int bmi160_sample_fetch(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_ */

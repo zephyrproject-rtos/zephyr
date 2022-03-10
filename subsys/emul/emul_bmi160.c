@@ -13,20 +13,28 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bosch_bmi160);
 
-#include <zephyr/sys/byteorder.h>
-#include <bmi160.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi_emul.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/emul/bmi160.h>
+
+#include <bmi160.h>
 
 /** Run-time data used by the emulator */
 struct bmi160_emul_data {
 	uint8_t pmu_status;
 	/** Current register to read (address) */
 	uint32_t cur_reg;
+	/** Bias values for accelerometer */
+	int8_t accel_bias[3];
+	/** Interrupt status register */
+	uint8_t int_status[3];
+	/** watermark register */
+	uint8_t watermark;
 };
 
 /** Static configuration for the emulator */
@@ -40,6 +48,74 @@ struct bmi160_emul_cfg {
 		uint16_t addr;
 	};
 };
+
+int bmi160_emul_get_bias(const struct emul *sensor, uint32_t sensor_type, int8_t *bias_x,
+			 int8_t *bias_y, int8_t *bias_z)
+{
+	struct bmi160_emul_data *data = sensor->data;
+
+	switch (sensor_type) {
+	case SENSOR_TYPE_ACCELEROMETER:
+		*bias_x = data->accel_bias[0];
+		*bias_y = data->accel_bias[1];
+		*bias_z = data->accel_bias[2];
+		return 0;
+	}
+	return -ENOSYS;
+}
+
+int bmi160_emul_set_bias(const struct emul *sensor, uint32_t sensor_type, int8_t bias_x,
+			 int8_t bias_y, int8_t bias_z)
+{
+	struct bmi160_emul_data *data = sensor->data;
+
+	switch (sensor_type) {
+	case SENSOR_TYPE_ACCELEROMETER:
+		data->accel_bias[0] = bias_x;
+		data->accel_bias[1] = bias_y;
+		data->accel_bias[2] = bias_z;
+		return 0;
+	}
+	return -ENOSYS;
+}
+
+int bmi160_emul_set_int_status_reg(const struct emul *sensor, int offset, uint8_t value)
+{
+	struct bmi160_emul_data *data = sensor->data;
+
+	if (offset < 0 || offset > 2) {
+		return -ENOSYS;
+	}
+	data->int_status[offset] = value;
+	return 0;
+}
+
+int bmi160_emul_get_int_status_reg(const struct emul *sensor, int offset, uint8_t *value)
+{
+	struct bmi160_emul_data *data = sensor->data;
+
+	if (offset < 0 || offset > 2) {
+		return -ENOSYS;
+	}
+	*value = data->int_status[offset];
+	return 0;
+}
+
+int bmi160_emul_get_watermark_reg(const struct emul *sensor, uint8_t *watermark_val)
+{
+	struct bmi160_emul_data *data = sensor->data;
+
+	*watermark_val = data->watermark;
+	return 0;
+}
+
+int bmi160_emul_set_watermark_reg(const struct emul *sensor, uint8_t watermark_val)
+{
+	struct bmi160_emul_data *data = sensor->data;
+
+	data->watermark = watermark_val;
+	return 0;
+}
 
 /* Names for the PMU components */
 static const char *const pmu_name[] = { "acc", "gyr", "mag", "INV" };
@@ -82,6 +158,34 @@ static void reg_write(const struct emul *target, int regn, int val)
 		break;
 	case BMI160_REG_GYR_RANGE:
 		LOG_INF("   * gyr range");
+		break;
+	case BMI160_REG_OFFSET_ACC_X:
+		LOG_INF("    * acc_x offset = %d", (int8_t)val);
+		data->accel_bias[0] = (uint8_t)val;
+		break;
+	case BMI160_REG_OFFSET_ACC_Y:
+		LOG_INF("    * acc_y offset = %d", (int8_t)val);
+		data->accel_bias[1] = (uint8_t)val;
+		break;
+	case BMI160_REG_OFFSET_ACC_Z:
+		LOG_INF("    * acc_z offset = %d", (int8_t)val);
+		data->accel_bias[2] = (uint8_t)val;
+		break;
+	case BMI160_REG_INT_STATUS0:
+		LOG_INF("    * int_status0 = %x", (uint8_t)val);
+		data->int_status[0] = (uint8_t)val;
+		break;
+	case BMI160_REG_INT_STATUS1:
+		LOG_INF("    * int_status1 = %x", (uint8_t)val);
+		data->int_status[1] = (uint8_t)val;
+		break;
+	case BMI160_REG_INT_STATUS2:
+		LOG_INF("    * int_status2 = %x", (uint8_t)val);
+		data->int_status[2] = (uint8_t)val;
+		break;
+	case BMI160_REG_FIFO_CONFIG0:
+		LOG_INF("    * fifo_config0 = %x", (uint8_t)val);
+		data->watermark = (uint8_t)val;
 		break;
 	case BMI160_REG_CMD:
 		switch (val) {
@@ -155,6 +259,34 @@ static int reg_read(const struct emul *target, int regn)
 		break;
 	case BMI160_REG_GYR_RANGE:
 		LOG_INF("   * gyr range");
+		break;
+	case BMI160_REG_OFFSET_ACC_X:
+		LOG_INF("    * acc_x offset");
+		val = data->accel_bias[0];
+		break;
+	case BMI160_REG_OFFSET_ACC_Y:
+		LOG_INF("    * acc_y offset");
+		val = data->accel_bias[1];
+		break;
+	case BMI160_REG_OFFSET_ACC_Z:
+		LOG_INF("    * acc_z offset");
+		val = data->accel_bias[2];
+		break;
+	case BMI160_REG_INT_STATUS0:
+		LOG_INF("    * int_status0");
+		val = data->int_status[0];
+		break;
+	case BMI160_REG_INT_STATUS1:
+		LOG_INF("    * int_status1");
+		val = data->int_status[1];
+		break;
+	case BMI160_REG_INT_STATUS2:
+		LOG_INF("    * int_status2");
+		val = data->int_status[2];
+		break;
+	case BMI160_REG_FIFO_CONFIG0:
+		LOG_INF("    * fifo_config0");
+		val = data->watermark;
 		break;
 	default:
 		LOG_INF("Unknown read %x", regn);
@@ -313,6 +445,7 @@ static int emul_bosch_bmi160_init(const struct emul *target, const struct device
 
 	return 0;
 }
+
 
 #define BMI160_EMUL_DATA(n)                                                                        \
 	static uint8_t bmi160_emul_reg_##n[BMI160_REG_COUNT];                                      \
