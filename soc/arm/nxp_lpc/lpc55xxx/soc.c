@@ -142,7 +142,7 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Put PHY powerdown under software control */
 	*((uint32_t *)(USBHSH_BASE + 0x50)) = USBHSH_PORTMODE_SW_PDCOM_MASK;
 	/*
-	 * According to reference mannual, device mode setting has to be set by
+	 * According to reference manual, device mode setting has to be set by
 	 * access usb host register
 	 */
 	*((uint32_t *)(USBHSH_BASE + 0x50)) |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
@@ -248,7 +248,7 @@ int _second_core_init(const struct device *arg)
 	 * The second core first boots from flash (address 0x00000000)
 	 * and then detects its identity (Core no. 1, second) and checks
 	 * registers CPBOOT and use them to continue the boot process.
-	 * Make sure the startup code for first core is
+	 * Make sure the startup code for the first core is
 	 * appropriate and shareable with the second core!
 	 */
 	SYSCON->CPUCFG |= SYSCON_CPUCFG_CPU1ENABLE_MASK;
