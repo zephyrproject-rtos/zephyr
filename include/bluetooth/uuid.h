@@ -527,6 +527,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_BROADCAST_AUDIO \
 	BT_UUID_DECLARE_16(BT_UUID_BROADCAST_AUDIO_VAL)
+/** @def BT_UUID_HAS_VAL
+ *  @brief Hearing Access Service value
+ */
+#define BT_UUID_HAS_VAL 0x1854
+/** @def BT_UUID_HAS
+ *  @brief Hearing Access Service
+ */
+#define BT_UUID_HAS \
+	BT_UUID_DECLARE_16(BT_UUID_HAS_VAL)
 /** @def BT_UUID_GATT_PRIMARY_VAL
  *  @brief GATT Primary Service UUID value
  */
@@ -1934,6 +1943,33 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_PACS_SUPPORTED_CONTEXT \
 	BT_UUID_DECLARE_16(BT_UUID_PACS_SUPPORTED_CONTEXT_VAL)
+/** @def BT_UUID_HAS_HEARING_AID_FEATURES_VAL
+ *  @brief Hearing Aid Features Characteristic value
+ */
+#define BT_UUID_HAS_HEARING_AID_FEATURES_VAL 0x2BDA
+/** @def BT_UUID_HAS_HEARING_AID_FEATURES
+ *  @brief Hearing Aid Features Characteristic
+ */
+#define BT_UUID_HAS_HEARING_AID_FEATURES \
+	BT_UUID_DECLARE_16(BT_UUID_HAS_HEARING_AID_FEATURES_VAL)
+/** @def BT_UUID_HAS_PRESET_CONTROL_POINT_VAL
+ *  @brief Hearing Aid Preset Control Point Characteristic value
+ */
+#define BT_UUID_HAS_PRESET_CONTROL_POINT_VAL 0x2BDB
+/** @def BT_UUID_HAS_PRESET_CONTROL_POINT
+ *  @brief Hearing Aid Preset Control Point Characteristic
+ */
+#define BT_UUID_HAS_PRESET_CONTROL_POINT \
+	BT_UUID_DECLARE_16(BT_UUID_HAS_PRESET_CONTROL_POINT_VAL)
+/** @def BT_UUID_HAS_ACTIVE_PRESET_INDEX_VAL
+ *  @brief Active Preset Index Characteristic value
+ */
+#define BT_UUID_HAS_ACTIVE_PRESET_INDEX_VAL 0x2BDC
+/** @def BT_UUID_HAS_ACTIVE_PRESET_INDEX
+ *  @brief Active Preset Index Characteristic
+ */
+#define BT_UUID_HAS_ACTIVE_PRESET_INDEX \
+	BT_UUID_DECLARE_16(BT_UUID_HAS_ACTIVE_PRESET_INDEX_VAL)
 /*
  * Protocol UUIDs
  */
