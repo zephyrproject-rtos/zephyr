@@ -135,6 +135,11 @@ enum z_log_msg2_mode {
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG2_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
+#define Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) \
+	(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt) | \
+	 (IS_ENABLED(CONFIG_LOG2_MSG_PKG_ALWAYS_ADD_RO_STRING_IDXS) ? \
+	  CBPRINTF_PACKAGE_ADD_STRING_IDXS : 0))
+
 #ifdef CONFIG_LOG2_USE_VLA
 #define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \
 	long long _ll_buf[ceiling_fraction(len, sizeof(long long))]; \
@@ -195,7 +200,7 @@ enum z_log_msg2_mode {
 #define Z_LOG_MSG2_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
 do { \
 	int _plen; \
-	uint32_t flags = CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt) | \
+	uint32_t flags = Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) | \
 			 CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
 	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
 		_plen = 0; \
@@ -222,7 +227,7 @@ do { \
 #define Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, _level, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-				CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+				Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
 				__VA_ARGS__); \
 	size_t _msg_wlen = Z_LOG_MSG2_ALIGNED_WLEN(_plen, 0); \
 	struct log_msg2 *_msg = z_log_msg2_alloc(_msg_wlen); \
@@ -233,7 +238,7 @@ do { \
 	if (_msg) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, _plen, \
 					Z_LOG_MSG2_ALIGN_OFFSET, \
-					CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+					Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
 					__VA_ARGS__); \
 	} \
 	z_log_msg2_finalize(_msg, (void *)_source, _desc, NULL); \
@@ -337,7 +342,7 @@ do {\
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__) \
 	z_log_msg2_runtime_create(_domain_id, (void *)_source, \
 				  _level, (uint8_t *)_data, _dlen,\
-				  CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+				  Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (0)
@@ -347,7 +352,7 @@ do {\
 do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
 	bool has_rw_str = CBPRINTF_MUST_RUNTIME_PACKAGE( \
-					CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+					Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
 					__VA_ARGS__); \
 	if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0) && !has_rw_str) {\
 		LOG_MSG2_DBG("create zero-copy message\n");\
