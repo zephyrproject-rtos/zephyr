@@ -2,10 +2,6 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-if (NOT TFM_IMAGE_VERSION_NS)
-   set(TFM_IMAGE_VERSION_NS 0.0.1+0)
-endif()
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(tfm_psa_firmware)
