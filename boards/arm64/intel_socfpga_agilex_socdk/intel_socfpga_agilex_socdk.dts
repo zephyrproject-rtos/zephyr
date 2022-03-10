@@ -35,3 +35,7 @@
 &smc {
 	status = "okay";
 };
+
+&qspi {
+	status = "okay";
+};
