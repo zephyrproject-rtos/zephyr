@@ -76,8 +76,6 @@ struct json_in_formatter_data {
 /* some temporary buffer space for format conversions */
 static char json_buffer[TOKEN_BUF_LEN];
 
-static int parse_path(const uint8_t *buf, uint16_t buflen, struct lwm2m_obj_path *path);
-
 static void json_add_char(struct lwm2m_input_context *in, struct json_in_formatter_data *fd)
 {
 	if ((fd->json_flags & T_VALUE) ||
@@ -1101,50 +1099,6 @@ int do_read_op_senml_json(struct lwm2m_message *msg)
 	return ret;
 }
 
-static int parse_path(const uint8_t *buf, uint16_t buflen, struct lwm2m_obj_path *path)
-{
-	int ret = 0;
-	int pos = 0;
-	uint16_t val;
-	uint8_t c = 0U;
-
-	(void)memset(path, 0, sizeof(*path));
-	do {
-		val = 0U;
-		c = buf[pos];
-		/* we should get a value first - consume all numbers */
-		while (pos < buflen && isdigit(c)) {
-			val = val * 10U + (c - '0');
-			c = buf[++pos];
-		}
-
-		/* slash will mote thing forward */
-		if (pos == 0 && c == '/') {
-			/* skip leading slashes */
-			pos++;
-		} else if (c == '/' || pos == buflen) {
-			LOG_DBG("Setting %u = %u", ret, val);
-			if (ret == LWM2M_PATH_LEVEL_NONE) {
-				path->obj_id = val;
-			} else if (ret == LWM2M_PATH_LEVEL_OBJECT) {
-				path->obj_inst_id = val;
-			} else if (ret == LWM2M_PATH_LEVEL_OBJECT_INST) {
-				path->res_id = val;
-			} else if (ret == LWM2M_PATH_LEVEL_RESOURCE) {
-				path->res_inst_id = val;
-			}
-
-			ret++;
-			pos++;
-		} else {
-			LOG_ERR("Error: illegal char '%c' at pos:%d", c, pos);
-			return -1;
-		}
-	} while (pos < buflen);
-
-	return ret;
-}
-
 static int lwm2m_senml_write_operation(struct lwm2m_message *msg, struct json_in_formatter_data *fd)
 {
 	struct lwm2m_engine_obj_field *obj_field = NULL;
@@ -1210,32 +1164,6 @@ static int lwm2m_senml_write_operation(struct lwm2m_message *msg, struct json_in
 	return ret;
 }
 
-static int senml_json_path_to_string(uint8_t *buf, size_t buf_len, struct lwm2m_obj_path *path,
-				     uint8_t path_level)
-{
-	int name_length;
-
-	if (path_level == LWM2M_PATH_LEVEL_NONE) {
-		name_length = snprintk(buf, buf_len, "/");
-	} else if (path_level == LWM2M_PATH_LEVEL_OBJECT) {
-		name_length = snprintk(buf, buf_len, "/%u/", path->obj_id);
-	} else if (path_level == LWM2M_PATH_LEVEL_OBJECT_INST) {
-		name_length = snprintk(buf, buf_len, "/%u/%u/", path->obj_id, path->obj_inst_id);
-	} else if (path_level == LWM2M_PATH_LEVEL_RESOURCE) {
-		name_length = snprintk(buf, buf_len, "/%u/%u/%u", path->obj_id, path->obj_inst_id,
-				       path->res_id);
-	} else {
-		name_length = snprintk(buf, buf_len, "/%u/%u/%u/%u", path->obj_id,
-				       path->obj_inst_id, path->res_id, path->res_inst_id);
-	}
-
-	if (name_length > 0) {
-		buf[name_length] = '\0';
-	}
-
-	return name_length;
-}
-
 int do_write_op_senml_json(struct lwm2m_message *msg)
 {
 	struct json_in_formatter_data fd;
@@ -1259,7 +1187,7 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 		/* Re-load Base name and Name data from context block */
 		if (block_ctx->base_name_stored) {
 			/* base name path generate to string */
-			name_length = senml_json_path_to_string(base_name, sizeof(base_name),
+			name_length = lwm2m_path_to_string(base_name, sizeof(base_name),
 								&block_ctx->base_name_path,
 								block_ctx->base_name_path.level);
 
@@ -1271,19 +1199,18 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 			if (block_ctx->base_name_path.level >= LWM2M_PATH_LEVEL_RESOURCE &&
 			    !block_ctx->full_name_true) {
 				memcpy(full_name, base_name, MAX_RESOURCE_LEN + 1);
-				ret = parse_path(full_name, strlen(full_name), &resource_path);
+				ret = lwm2m_string_to_path(full_name, &resource_path, '/');
 				if (ret < 0) {
 					ret = -EINVAL;
 					goto end_of_operation;
 				}
-				resource_path.level = ret;
 				path_valid = true;
 			}
 		}
 
 		if (block_ctx->full_name_true) {
 			/* full name path generate to string */
-			name_length = senml_json_path_to_string(full_name, sizeof(full_name),
+			name_length = lwm2m_path_to_string(full_name, sizeof(full_name),
 								&block_ctx->base_name_path,
 								block_ctx->resource_path_level);
 
@@ -1292,12 +1219,11 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 				goto end_of_operation;
 			}
 
-			ret = parse_path(full_name, strlen(full_name), &resource_path);
+			ret = lwm2m_string_to_path(full_name, &resource_path, '/');
 			if (ret < 0) {
 				ret = -EINVAL;
 				goto end_of_operation;
 			}
-			resource_path.level = ret;
 			path_valid = true;
 		}
 	}
@@ -1328,13 +1254,12 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 			base_name[fd.value_len] = '\0';
 			/* Relative name is optional - preinitialize full name with base name */
 			snprintk(full_name, sizeof(full_name), "%s", base_name);
-			ret = parse_path(full_name, strlen(full_name), &resource_path);
+			ret = lwm2m_string_to_path(full_name, &resource_path, '/');
 			if (ret < 0) {
 				LOG_ERR("Relative name too long");
 				ret = -EINVAL;
 				goto end_of_operation;
 			}
-			resource_path.level = ret;
 
 			if (resource_path.level) {
 				path_valid = true;
@@ -1367,13 +1292,12 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 
 			/* combine base_name + name */
 			snprintk(full_name, sizeof(full_name), "%s%s", base_name, name);
-			ret = parse_path(full_name, strlen(full_name), &resource_path);
+			ret = lwm2m_string_to_path(full_name, &resource_path, '/');
 			if (ret < 0) {
 				LOG_ERR("Relative name too long");
 				ret = -EINVAL;
 				goto end_of_operation;
 			}
-			resource_path.level = ret;
 
 			if (block_ctx) {
 				/* Store Resource data Path to base name path but
@@ -1511,11 +1435,10 @@ static uint8_t json_parse_composite_read_paths(struct lwm2m_message *msg,
 		}
 
 		if (path_valid) {
-			ret = parse_path(full_name, strlen(full_name), &path);
-			if (ret >= 0) {
-				path.level = ret;
-				if (lwm2m_engine_add_path_to_list(lwm_path_list, lwm_path_free_list,
-								  &path) == 0) {
+			ret = lwm2m_string_to_path(full_name, &path, '/');
+			if (ret == 0) {
+				if (lwm2m_engine_add_path_to_list(
+					    lwm2m_path_list, lwm2m_path_free_list, &path) == 0) {
 					valid_path_cnt++;
 				}
 			}
