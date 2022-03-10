@@ -225,6 +225,16 @@ Hardware specific APIs
 The following APIs can also be used by including ``<devicetree.h>``;
 no additional include is needed.
 
+.. _devicetree-can-api:
+
+CAN
+===
+
+These conveniences may be used for nodes which describe CAN
+controllers/transceivers, and properties related to them.
+
+.. doxygengroup:: devicetree-can
+
 Clocks
 ======
 

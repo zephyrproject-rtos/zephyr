@@ -499,6 +499,7 @@ Documentation:
         - subsys/net/l2/canbus/
         - tests/subsys/canbus/
         - dts/bindings/can/
+        - include/devicetree/can.h
         - include/drivers/can.h
         - samples/drivers/can/
         - tests/drivers/can/
