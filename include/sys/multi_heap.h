@@ -51,10 +51,16 @@ struct sys_multi_heap;
 typedef void *(*sys_multi_heap_fn_t)(struct sys_multi_heap *mheap, void *cfg,
 				     size_t align, size_t size);
 
+
+struct sys_multi_heap_rec {
+	struct sys_heap *heap;
+	void *user_data;
+};
+
 struct sys_multi_heap {
 	int nheaps;
 	sys_multi_heap_fn_t choice;
-	struct sys_heap *heaps[MAX_MULTI_HEAPS];
+	struct sys_multi_heap_rec heaps[MAX_MULTI_HEAPS];
 };
 
 /**
@@ -91,8 +97,9 @@ void sys_multi_heap_init(struct sys_multi_heap *heap,
  *
  * @param mheap A sys_multi_heap to which to add a heap
  * @param heap The heap to add
+ * @param user_data pointer to any data for the heap
  */
-void sys_multi_heap_add_heap(struct sys_multi_heap *mheap, struct sys_heap *heap);
+void sys_multi_heap_add_heap(struct sys_multi_heap *mheap, struct sys_heap *heap, void *user_data);
 
 /**
  * @brief Allocate memory from multi heap
@@ -137,7 +144,7 @@ void *sys_multi_heap_aligned_alloc(struct sys_multi_heap *mheap,
  * effect.
  *
  * @param mheap Multi heap pointer
- * @param block Block to free
+ * @param block Block to free, must be a pointer to a block allocated by sys_multi_heap_alloc
  */
 void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block);
 
