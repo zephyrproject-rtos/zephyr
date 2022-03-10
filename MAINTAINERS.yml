@@ -1900,3 +1900,13 @@ ZTest:
         - tests/unit/util/
     labels:
         - "area: Testsuite"
+
+Random:
+    status: orphaned
+    collaborators:
+         - ceolin
+    files:
+        - subsys/random/
+        - include/random/
+    labels:
+        - "area: Random"
