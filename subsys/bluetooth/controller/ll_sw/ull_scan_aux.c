@@ -929,10 +929,10 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 				hdr->disabled_param = aux;
 				hdr->disabled_cb = done_disabled_cb;
 			}
-		} else {
-			/* Sync terminate requested, enqueue node rx that will
-			 * be flushed by the disabled_cb setup by the
-			 * terminate.
+
+		} else if (!scan) {
+			/* Sync terminate requested, enqueue node rx so that it
+			 * be flushed by ull_scan_aux_stop().
 			 */
 			rx->link = link;
 			if (aux->rx_last) {
