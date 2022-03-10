@@ -382,6 +382,9 @@ struct mqtt_sec_config {
 
 	/** Indicates the preference for copying certificates to the heap. */
 	int cert_nocopy;
+
+	/** Set socket to native TLS */
+	bool set_native_tls;
 };
 
 /** @brief MQTT transport type. */
