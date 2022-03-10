@@ -12,12 +12,24 @@
 #include <debug/object_tracing.h>
 #include <kernel_structs.h>
 #include <util/mcumgr_util.h>
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
 
 #include "tinycbor/cbor.h"
 #include "cborattr/cborattr.h"
 #include "mgmt/mgmt.h"
+#include <mgmt/mcumgr/buf.h>
 #include "os_mgmt/os_mgmt.h"
 #include "os_mgmt/os_mgmt_impl.h"
+
+/* This is passed to zcbor_map_start/end_endcode as a number of
+ * expected "columns" (tid, priority, and so on)
+ * The value here does not affect memory allocation is is used
+ * to predict how big the map may be. If you increase number
+ * of "columns" the taskstat sends you may need to increase the
+ * value otherwise zcbor_map_end_encode may return with error.
+ */
+#define TASKSTAT_COLUMNS_MAX	20
 
 /**
  * Command handler: os echo
@@ -28,6 +40,8 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 {
 	char echo_buf[CONFIG_OS_MGMT_ECHO_LENGTH + 1];
 	CborError err;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	bool ok;
 
 	const struct cbor_attr_t attrs[2] = {
 		[0] = {
@@ -51,18 +65,18 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 
 	echo_buf[sizeof(echo_buf) - 1] = '\0';
 
-	err = cbor_encode_text_stringz(&ctxt->encoder, "r")				||
-	      cbor_encode_text_stringz(&ctxt->encoder, echo_buf);
+	ok = zcbor_tstr_put_lit(zse, "r")		&&
+	     zcbor_tstr_put_term(zse, echo_buf);
 
-	return (err == 0) ? 0 : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
 #endif
 
 #if CONFIG_OS_MGMT_TASKSTAT
 
 #if defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_NAME_FOR_NAME)
-static inline CborError
-os_mgmt_taskstat_encode_thread_name(struct CborEncoder *encoder, int idx,
+static inline bool
+os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 				    const struct k_thread *thread)
 {
 	size_t name_len = strlen(thread->name);
@@ -73,15 +87,14 @@ os_mgmt_taskstat_encode_thread_name(struct CborEncoder *encoder, int idx,
 		name_len = CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN;
 	}
 
-	return cbor_encode_text_string(encoder, thread->name, name_len);
+	return zcbor_tstr_encode_ptr(zse, thread->name, name_len);
 }
 
 #else
-static inline CborError
-os_mgmt_taskstat_encode_thread_name(struct CborEncoder *encoder, int idx,
+static inline bool
+os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 				    const struct k_thread *thread)
 {
-	CborError err = 0;
 	char thread_name[CONFIG_OS_MGMT_TASKSTAT_THREAD_NAME_LEN + 1];
 
 #if defined(CONFIG_OS_MGMT_TASKSTAT_USE_THREAD_PRIO_FOR_NAME)
@@ -95,20 +108,19 @@ os_mgmt_taskstat_encode_thread_name(struct CborEncoder *encoder, int idx,
 	ll_to_s(idx, sizeof(thread_name) - 1, thread_name);
 	thread_name[sizeof(thread_name) - 1] = 0;
 
-	err = cbor_encode_text_stringz(encoder, thread_name);
-	return err;
+	return zcbor_tstr_put_term(zse, thread_name);
 }
 
 #endif
 
-static inline int
-os_mgmt_taskstat_encode_stack_info(struct CborEncoder *thread_map,
+static inline bool
+os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 				   const struct k_thread *thread)
 {
 #ifdef CONFIG_OS_MGMT_TASKSTAT_STACK_INFO
-	ssize_t stack_size = 0;
-	ssize_t stack_used = 0;
-	int err = 0;
+	size_t stack_size = 0;
+	size_t stack_used = 0;
+	bool ok = true;
 
 #ifdef CONFIG_THREAD_STACK_INFO
 	stack_size = thread->stack_info.size / 4;
@@ -121,73 +133,67 @@ os_mgmt_taskstat_encode_stack_info(struct CborEncoder *thread_map,
 	}
 #endif /* CONFIG_INIT_STACKS */
 #endif /* CONFIG_THREAD_STACK_INFO */
+	ok = zcbor_tstr_put_lit(zse, "stksiz")		&&
+	     zcbor_uint64_put(zse, stack_size)		&&
+	     zcbor_tstr_put_lit(zse, "stkuse")		&&
+	     zcbor_uint64_put(zse, stack_unused);
 
-	err = cbor_encode_text_stringz(thread_map, "stksiz")	||
-	      cbor_encode_uint(thread_map, stack_size)		||
-	      cbor_encode_text_stringz(thread_map, "stkuse")	||
-	      cbor_encode_uint(thread_map, stack_used);
-
-	return err;
+	return ok;
 #else
-	return 0;
+	return true;
 #endif /* CONFIG_OS_MGMT_TASKSTAT_STACK_INFO */
 }
 
-static inline int
-os_mgmt_taskstat_encode_unsupported(struct CborEncoder *thread_map)
+static inline bool
+os_mgmt_taskstat_encode_unsupported(zcbor_state_t *zse)
 {
-	int err = 0;
+	bool ok = true;
 
 	if (!IS_ENABLED(CONFIG_OS_MGMT_TASKSTAT_ONLY_SUPPORTED_STATS)) {
-		err = cbor_encode_text_stringz(thread_map, "runtime")		||
-		      cbor_encode_uint(thread_map, 0)				||
-		      cbor_encode_text_stringz(thread_map, "cswcnt")		||
-		      cbor_encode_uint(thread_map, 0)				||
-		      cbor_encode_text_stringz(thread_map, "last_checkin")	||
-		      cbor_encode_uint(thread_map, 0)				||
-		      cbor_encode_text_stringz(thread_map, "next_checkin")	||
-		      cbor_encode_uint(thread_map, 0);
+		ok = zcbor_tstr_put_lit(zse, "runtime")		&&
+		     zcbor_uint32_put(zse, 0)			&&
+		     zcbor_tstr_put_lit(zse, "cswcnt")		&&
+		     zcbor_uint32_put(zse, 0)			&&
+		     zcbor_tstr_put_lit(zse, "last_checkin")	&&
+		     zcbor_uint32_put(zse, 0)			&&
+		     zcbor_tstr_put_lit(zse, "next_checkin")	&&
+		     zcbor_uint32_put(zse, 0);
 	} else {
-		ARG_UNUSED(thread_map);
+		ARG_UNUSED(zse);
 	}
 
-	return err;
+	return ok;
 }
 
-static inline int
-os_mgmt_taskstat_encode_priority(struct CborEncoder *thread_map, const struct k_thread *thread)
+static inline bool
+os_mgmt_taskstat_encode_priority(zcbor_state_t *zse, const struct k_thread *thread)
 {
-	return IS_ENABLED(CONFIG_OS_MGMT_TASKSTAT_SIGNED_PRIORITY) ?
-		cbor_encode_int(thread_map, (int)thread->base.prio) :
-		cbor_encode_uint(thread_map, (unsigned int)thread->base.prio & 0xff);
+	return (zcbor_tstr_put_lit(zse, "prio")					&&
+		IS_ENABLED(CONFIG_OS_MGMT_TASKSTAT_SIGNED_PRIORITY) ?
+		zcbor_int32_put(zse, (int)thread->base.prio) :
+		zcbor_uint32_put(zse, (unsigned int)thread->base.prio) & 0xff);
 }
 
 /**
  * Encodes a single taskstat entry.
  */
-static int
-os_mgmt_taskstat_encode_one(struct CborEncoder *encoder, int idx, const struct k_thread *thread)
+static bool
+os_mgmt_taskstat_encode_one(zcbor_state_t *zse, int idx, const struct k_thread *thread)
 {
-	CborEncoder thread_map;
-	CborError err;
-
 	/*
 	 * Threads are sent as map where thread name is key and value is map
 	 * of thread parameters
 	 */
-	err = os_mgmt_taskstat_encode_thread_name(encoder, idx, thread)			||
-	      cbor_encoder_create_map(encoder, &thread_map, CborIndefiniteLength)	||
-	      cbor_encode_text_stringz(&thread_map, "prio")				||
-	      os_mgmt_taskstat_encode_priority(&thread_map, thread)			||
-	      cbor_encode_text_stringz(&thread_map, "tid")				||
-	      cbor_encode_uint(&thread_map, idx)					||
-	      cbor_encode_text_stringz(&thread_map, "state")				||
-	      cbor_encode_uint(&thread_map, thread->base.thread_state)			||
-	      os_mgmt_taskstat_encode_stack_info(&thread_map, thread)			||
-	      os_mgmt_taskstat_encode_unsupported(&thread_map)				||
-	      cbor_encoder_close_container(encoder, &thread_map);
-
-	return err;
+	return os_mgmt_taskstat_encode_thread_name(zse, idx, thread)	&&
+	       zcbor_map_start_encode(zse, TASKSTAT_COLUMNS_MAX)	&&
+	       os_mgmt_taskstat_encode_priority(zse, thread)		&&
+	       zcbor_tstr_put_lit(zse, "tid")				&&
+	       zcbor_uint32_put(zse, idx)				&&
+	       zcbor_tstr_put_lit(zse, "state")				&&
+	       zcbor_uint32_put(zse, thread->base.thread_state)		&&
+	       os_mgmt_taskstat_encode_stack_info(zse, thread)		&&
+	       os_mgmt_taskstat_encode_unsupported(zse)			&&
+	       zcbor_map_end_encode(zse, TASKSTAT_COLUMNS_MAX);
 }
 
 /**
@@ -195,35 +201,29 @@ os_mgmt_taskstat_encode_one(struct CborEncoder *encoder, int idx, const struct k
  */
 static int os_mgmt_taskstat_read(struct mgmt_ctxt *ctxt)
 {
-	struct CborEncoder tasks_map;
-	const struct k_thread *thread;
-	int err;
-	int thread_idx;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	const struct k_thread *thread = SYS_THREAD_MONITOR_HEAD;
+	bool ok = true;
+	int thread_idx = 0;
 
-	err = cbor_encode_text_stringz(&ctxt->encoder, "tasks")				||
-	      cbor_encoder_create_map(&ctxt->encoder, &tasks_map, CborIndefiniteLength);
-
-	/* If could not create map just exit here */
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
+	zcbor_tstr_put_lit(zse, "tasks");
+	zcbor_map_start_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS);
 
 	/* Iterate the list of tasks, encoding each. */
-	thread = SYS_THREAD_MONITOR_HEAD;
-	thread_idx = 0;
 	while (thread != NULL) {
-		err = os_mgmt_taskstat_encode_one(&tasks_map, thread_idx, thread);
-		if (err != 0) {
+		ok = os_mgmt_taskstat_encode_one(zse, thread_idx, thread);
+		if (!ok) {
 			break;
 		}
-
 		thread = SYS_THREAD_MONITOR_NEXT(thread);
 		++thread_idx;
 	}
 
-	err |= cbor_encoder_close_container(&ctxt->encoder, &tasks_map);
+	if (!ok || !zcbor_map_end_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS)) {
+		return MGMT_ERR_ENOMEM;
+	}
 
-	return (err != 0) ? MGMT_ERR_ENOMEM : 0;
+	return 0;
 }
 #endif /* CONFIG_OS_MGMT_TASKSTAT */
 
