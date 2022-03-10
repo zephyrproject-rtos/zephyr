@@ -9,6 +9,7 @@ config SOC_ESP32S2
 	select CLOCK_CONTROL
 	select CLOCK_CONTROL_ESP32
 	select PINCTRL
+	select XIP
 
 if SOC_ESP32S2
 
