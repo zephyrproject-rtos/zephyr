@@ -36,4 +36,8 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 endif # RTOS_TIMER
 
+config TACH_XEC
+	default y
+	depends on SENSOR
+
 endif # BOARD_MEC172XEVB_ASSY6906
