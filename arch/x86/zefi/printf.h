@@ -129,8 +129,9 @@ static size_t vpf(struct _pfr *r, const char *f, va_list ap)
 				if (d != 0) {
 					sig = true;
 				}
-				if (sig || (i == 0))
+				if (sig || (i == 0)) {
 					pc(r, "0123456789abcdef"[d]);
+				}
 			}
 			break;
 		}
