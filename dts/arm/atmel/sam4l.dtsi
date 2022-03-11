@@ -177,7 +177,7 @@
 			pinctrl-0 = <&pa25a_usbc_dm &pa26a_usbc_dp>;
 		};
 
-		pinctrl@400e1000 {
+		pinctrl: pinctrl@400e1000 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;

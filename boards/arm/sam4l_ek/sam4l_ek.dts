@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <atmel/sam4lx4.dtsi>
+#include "sam4l_ek-pinctrl.dtsi"
 
 / {
 	model = "Atmel SAM4L-EK Board with an Atmel SAM4LC4C SoC";
@@ -46,9 +47,11 @@
 };
 
 &usart2 {
-	current-speed = <115200>;
-	pinctrl-0 = <&pc11b_usart2_rxd2 &pc12b_usart2_txd2>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
 };
 
 &spi0 {

@@ -3,6 +3,7 @@
 /dts-v1/;
 
 #include <atmel/sam3x.dtsi>
+#include "arduino_due-pinctrl.dtsi"
 
 / {
 	model = "Arduino Due with an Atmel SAM3X8E SoC";
@@ -51,10 +52,9 @@
 &uart {
 	status = "okay";
 	current-speed = <115200>;
-};
 
-&pa8a_uart_urxd {
-	bias-pull-up;
+	pinctrl-0 = <&uart_default>;
+	pinctrl-names = "default";
 };
 
 arduino_i2c: &twi1 { };
