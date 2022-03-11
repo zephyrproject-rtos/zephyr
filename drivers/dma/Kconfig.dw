@@ -7,3 +7,9 @@ config DMA_DW
 	bool "DesignWare DMA driver"
 	help
 	  DesignWare DMA driver.
+
+if DMA_DW
+
+source "drivers/dma/Kconfig.dw_common"
+
+endif # DMA_DW
