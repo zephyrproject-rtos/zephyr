@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/samd21.dtsi>
+#include "arduino_nano_33_iot-pinctrl.dtsi"
 
 / {
 	model = "Arduino Nano 33 IOT";
@@ -83,7 +84,8 @@
 	rxpo = <1>;
 	txpo = <0>;
 
-	pinctrl-0 = <&pa23c_sercom3_pad1 &pa22c_sercom3_pad0>;
+	pinctrl-0 = <&sercom3_uart_default>;
+	pinctrl-names = "default";
 
 	nina_prog {
 		compatible = "espressif,esp-at";
@@ -119,7 +121,8 @@
 	rxpo = <3>;
 	txpo = <1>;
 
-	pinctrl-0 = <&pb23d_sercom5_pad3 &pb22d_sercom5_pad2>;
+	pinctrl-0 = <&sercom5_uart_default>;
+	pinctrl-names = "default";
 };
 
 &tcc2 {

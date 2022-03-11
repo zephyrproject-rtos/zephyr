@@ -31,7 +31,7 @@
 			#dma-cells = <2>;
 		};
 
-		pinctrl@41004400 {
+		pinctrl: pinctrl@41004400 {
 			ranges = <0x41004400 0x41004400 0x180>;
 
 			portc: gpio@41004500 {

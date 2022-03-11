@@ -163,7 +163,7 @@
 			label = "TIMER_4";
 		};
 
-		pinctrl@41004400 {
+		pinctrl: pinctrl@41004400 {
 			compatible = "atmel,sam0-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
