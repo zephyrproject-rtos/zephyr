@@ -129,6 +129,11 @@ config FS_MGMT_PATH_SIZE
 	  Limits the maximum path length for file operations, in bytes.  A buffer
 	  of this size gets allocated on the stack during handling of file upload
 	  and download commands.
+
+module = MCUMGR_FS_MGMT
+module-str = mcumgr_fs_mgmt
+source "subsys/logging/Kconfig.template.log_config"
+
 endif
 
 config MCUMGR_CMD_SHELL_MGMT
@@ -145,6 +150,14 @@ config MCUMGR_CMD_SHELL_MGMT
 	  The SHELL_BACKEND_DUMMY_BUF_SIZE will affect how many characters
 	  will be returned from command output, if your output gets cut, then
 	  increase the value. Remember to set MCUMGR_BUF_SIZE accordingly.
+
+if MCUMGR_CMD_SHELL_MGMT
+
+module = MCUMGR_SHELL_MGMT
+module-str = mcumgr_shell_mgmt
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
 
 menuconfig MCUMGR_CMD_IMG_MGMT
 	bool "Mcumgr handlers for image management"
@@ -323,6 +336,10 @@ config OS_MGMT_ECHO_LENGTH
 
 endif
 
+module = MCUMGR_OS_MGMT
+module-str = mcumgr_os_mgmt
+source "subsys/logging/Kconfig.template.log_config"
+
 endif
 
 
@@ -331,6 +348,8 @@ menuconfig MCUMGR_CMD_STAT_MGMT
 	depends on STATS
 	help
 	  Enables mcumgr handlers for statistics management.
+
+if MCUMGR_CMD_STAT_MGMT
 
 config STAT_MGMT_MAX_NAME_LEN
 	int "Maximum stat group name length"
@@ -342,6 +361,11 @@ config STAT_MGMT_MAX_NAME_LEN
 	  stat read commands.  If a stat group's name exceeds this limit, it will
 	  be impossible to retrieve its values with a stat show command.
 
+module=MCUMGR_STAT_MGMT
+module-str=mcumgr_stat_mgmt
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif
 
 menuconfig MCUMGR_GRP_ZEPHYR_BASIC
 	bool "Zephyr specific basic group of commands"
