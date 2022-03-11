@@ -13,6 +13,9 @@
 #include <drivers/clock_control/mchp_xec_clock_control.h>
 #include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #endif
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#endif
 #include <drivers/sensor.h>
 #include <soc.h>
 #include <sys/sys_io.h>
@@ -26,6 +29,9 @@ struct tach_xec_config {
 	uint8_t girq_pos;
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif
 };
 
 struct tach_xec_data {
@@ -118,6 +124,15 @@ static int tach_xec_init(const struct device *dev)
 	const struct tach_xec_config * const cfg = dev->config;
 	struct tach_regs * const tach = cfg->regs;
 
+#ifdef CONFIG_PINCTRL
+	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+
+	if (ret != 0) {
+		LOG_ERR("XEC TACH pinctrl init failed (%d)", ret);
+		return ret;
+	}
+#endif
+
 	tach_xec_sleep_clr(dev);
 
 	tach->CONTROL = MCHP_TACH_CTRL_READ_MODE_100K_CLOCK	|
@@ -133,6 +148,19 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 	.channel_get = tach_xec_channel_get,
 };
 
+#ifdef CONFIG_PINCTRL
+#define XEC_TACH_PINCTRL_DEF(inst) PINCTRL_DT_INST_DEFINE(inst)
+#define XEC_TACH_CONFIG(inst)						\
+	static const struct tach_xec_config tach_xec_config_##inst = {	\
+		.regs = (struct tach_regs * const)DT_INST_REG_ADDR(inst),	\
+		.girq = DT_INST_PROP_BY_IDX(inst, girqs, 0),		\
+		.girq_pos = DT_INST_PROP_BY_IDX(inst, girqs, 1),	\
+		.pcr_idx = DT_INST_PROP_BY_IDX(inst, pcrs, 0),		\
+		.pcr_pos = DT_INST_PROP_BY_IDX(inst, pcrs, 1),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
+	}
+#else
+#define XEC_TACH_PINCTRL_DEF(inst)
 #define XEC_TACH_CONFIG(inst)						\
 	static const struct tach_xec_config tach_xec_config_##inst = {	\
 		.regs = (struct tach_regs * const)DT_INST_REG_ADDR(inst),	\
@@ -141,9 +169,12 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 		.pcr_idx = DT_INST_PROP_BY_IDX(inst, pcrs, 0),		\
 		.pcr_pos = DT_INST_PROP_BY_IDX(inst, pcrs, 1),		\
 	}
+#endif
 
 #define TACH_XEC_DEVICE(id)						\
 	static struct tach_xec_data tach_xec_data_##id;			\
+									\
+	XEC_TACH_PINCTRL_DEF(id);					\
 									\
 	XEC_TACH_CONFIG(id);						\
 									\

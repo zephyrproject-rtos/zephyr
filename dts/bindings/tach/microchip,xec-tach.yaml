@@ -5,7 +5,7 @@ description: Microchip XEC tachometer controller
 
 compatible: "microchip,xec-tach"
 
-include: tach.yaml
+include: [tach.yaml, pinctrl-device.yaml]
 
 properties:
     "#address-cells":
