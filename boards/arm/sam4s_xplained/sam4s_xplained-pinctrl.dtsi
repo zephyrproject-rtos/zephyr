@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/sam4sXc-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <PA9A_UART0_RXD>,
+				 <PA10A_UART0_TXD>;
+		};
+	};
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <PB2A_UART1_RXD>,
+				 <PB3A_UART1_TXD>;
+		};
+	};
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <PA21A_USART1_RXD>,
+				 <PA22A_USART1_TXD>;
+		};
+	};
+};

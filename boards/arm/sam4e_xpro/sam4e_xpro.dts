@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <atmel/sam4e16e.dtsi>
+#include "sam4e_xpro-pinctrl.dtsi"
 
 / {
 	model = "Atmel SAM4E Xplained Pro Board with an Atmel SAM4E16E SoC";
@@ -135,14 +136,24 @@
 };
 
 &uart0 {
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
 };
 
 &usart1 {
-	pinctrl-0 = <&pa21a_usart1_rxd1 &pa22a_usart1_txd1>;
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
 };
 
 &gmac {

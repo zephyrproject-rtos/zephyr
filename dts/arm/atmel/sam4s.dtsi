@@ -116,7 +116,6 @@
 			peripheral-id = <8>;
 			status = "disabled";
 			label = "UART_0";
-			pinctrl-0 = <&pa9a_uart0_urxd0 &pa10a_uart0_utxd0>;
 		};
 
 		uart1: uart@400e0800 {
@@ -126,7 +125,6 @@
 			peripheral-id = <9>;
 			status = "disabled";
 			label = "UART_1";
-			pinctrl-0 = <&pb2a_uart1_urxd1 &pb3a_uart1_utxd1>;
 		};
 
 		usart0: usart@40024000 {
@@ -147,11 +145,13 @@
 			label = "USART_1";
 		};
 
-		pinctrl@400e0e00 {
+		pinctrl: pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x400e0e00 0x400e0e00 0x600>;
+			status = "okay";
+			label = "PINCTRL";
 
 			pioa: gpio@400e0e00 {
 				compatible = "atmel,sam-gpio";
