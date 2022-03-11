@@ -460,6 +460,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006000 0x10>;
 			interrupts = <71 4>;
+			girqs = <17 1>;
+			pcrs = <1 2>;
 			label = "TACH_0";
 			status = "disabled";
 			#address-cells = <1>;
@@ -469,6 +471,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006010 0x10>;
 			interrupts = <72 4>;
+			girqs = <17 2>;
+			pcrs = <1 11>;
 			label = "TACH_1";
 			status = "disabled";
 			#address-cells = <1>;
@@ -478,6 +482,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006020 0x10>;
 			interrupts = <73 4>;
+			girqs = <17 3>;
+			pcrs = <1 12>;
 			label = "TACH_2";
 			status = "disabled";
 			#address-cells = <1>;
@@ -487,6 +493,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006030 0x10>;
 			interrupts = <159 4>;
+			girqs = <17 4>;
+			pcrs = <1 13>;
 			label = "TACH_3";
 			status = "disabled";
 			#address-cells = <1>;
