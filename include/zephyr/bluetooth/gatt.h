@@ -1216,7 +1216,8 @@ struct bt_gatt_exchange_params {
  *  @note Shall only be used once per connection.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread. @p params must remain valid until start of callback.
+ *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  @p params must remain valid until start of callback.
  *
  *  This function will block while the ATT request queue is full, except when
  *  called from the BT RX thread, as this would cause a deadlock.
@@ -1457,7 +1458,8 @@ struct bt_gatt_read_params {
  *  offset.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread. @p params must remain valid until start of callback.
+ *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  @p params must remain valid until start of callback.
  *
  *  This function will block while the ATT request queue is full, except when
  *  called from the BT RX thread, as this would cause a deadlock.
@@ -1504,7 +1506,8 @@ struct bt_gatt_write_params {
 /** @brief Write Attribute Value by handle
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread. @p params must remain valid until start of callback.
+ *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  @p params must remain valid until start of callback.
  *
  *  This function will block while the ATT request queue is full, except when
  *  called from Bluetooth event context. When called from Bluetooth context,
@@ -1693,7 +1696,8 @@ struct bt_gatt_subscribe_params {
  *  subscription was removed by this method.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread. @p params must remain valid until start of callback.
+ *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  @p params must remain valid until start of callback.
  *  The Notification callback @p params->notify is also called from the BT RX
  *  thread.
  *
