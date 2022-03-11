@@ -96,7 +96,6 @@
 			peripheral-id = <8>;
 			status = "disabled";
 			label = "UART_0";
-			pinctrl-0 = <&pa8a_uart_urxd &pa9a_uart_utxd>;
 		};
 
 		usart0: usart@40098000 {
@@ -135,7 +134,7 @@
 			label = "USART_3";
 		};
 
-		pinctrl@400e0e00 {
+		pinctrl: pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;

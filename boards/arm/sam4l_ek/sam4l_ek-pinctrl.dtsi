@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/sam4lcXc-pinctrl.h>
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <PC2C_USART0_RXD>,
+				 <PA7B_USART0_TXD>;
+		};
+	};
+	usart0_hw_ctrl_flow: usart0_hw_ctrl_flow {
+		group1 {
+			pinmux = <PC2C_USART0_RXD>,
+				 <PC7B_USART2_RTS>;
+			bias-pull-up;
+		};
+		group1 {
+			pinmux = <PA7B_USART0_TXD>,
+				 <PC8E_USART2_CTS>;
+		};
+	};
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <PC11B_USART2_RXD>,
+				 <PC12B_USART2_TXD>;
+		};
+	};
+};

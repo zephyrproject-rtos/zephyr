@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sam_e70_xplained-pinctrl.dtsi"
+
 / {
 	aliases {
 		i2c-0 = &twihs0;
@@ -76,8 +78,11 @@
 };
 
 &usart1 {
-	current-speed = <115200>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
 };
 
 &wdt {
