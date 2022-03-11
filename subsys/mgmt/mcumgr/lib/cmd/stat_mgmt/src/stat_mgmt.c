@@ -55,25 +55,6 @@ stat_mgmt_walk_cb(struct stats_hdr *hdr, void *arg, const char *name, uint16_t o
 }
 
 static int
-stat_mgmt_get_group(int idx, const char **out_name)
-{
-	const struct stats_hdr *cur;
-	int i;
-
-	cur = NULL;
-	for (i = 0; i <= idx; i++) {
-		cur = stats_group_get_next(cur);
-		if (cur == NULL) {
-			return MGMT_ERR_ENOENT;
-		}
-	}
-
-	*out_name = cur->s_name;
-	return 0;
-}
-
-
-static int
 stat_mgmt_foreach_entry(const char *group_name, stat_mgmt_foreach_entry_fn *cb, CborEncoder *enc)
 {
 	struct stat_mgmt_walk_arg walk_arg;
@@ -159,11 +140,9 @@ stat_mgmt_show(struct mgmt_ctxt *ctxt)
 static int
 stat_mgmt_list(struct mgmt_ctxt *ctxt)
 {
-	const char *group_name;
+	const struct stats_hdr *cur;
 	CborEncoder arr_enc;
 	CborError err;
-	int rc;
-	int i;
 
 	err = CborNoError;
 	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
@@ -174,24 +153,18 @@ stat_mgmt_list(struct mgmt_ctxt *ctxt)
 	/* Iterate the list of stat groups, encoding each group's name in the CBOR
 	 * array.
 	 */
-	for (i = 0; ; i++) {
-		rc = stat_mgmt_get_group(i, &group_name);
-		if (rc == MGMT_ERR_ENOENT) {
-			/* No more stat groups. */
-			break;
-		} else if (rc != 0) {
-			/* Error. */
-			cbor_encoder_close_container(&ctxt->encoder, &arr_enc);
-			return rc;
+	cur = NULL;
+	do {
+		cur = stats_group_get_next(cur);
+		if (cur != NULL) {
+			err |= cbor_encode_text_stringz(&ctxt->encoder, cur->s_name);
 		}
+	} while (err == 0 && cur != NULL);
 
-		err |= cbor_encode_text_stringz(&ctxt->encoder, group_name);
-	}
-	err |= cbor_encoder_close_container(&ctxt->encoder, &arr_enc);
-
-	if (err != 0) {
+	if (err || cbor_encoder_close_container(&ctxt->encoder, &arr_enc) != 0) {
 		return MGMT_ERR_ENOMEM;
 	}
+
 	return 0;
 }
 
