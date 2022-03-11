@@ -1551,14 +1551,14 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf);
  *  unicast client. Streams in a unicast group shall share the same interval,
  *  framing and latency (see @ref bt_codec_qos).
  *
- *  @param[in]  streams        Array of stream objects being used for the
- *                             group.
+ *  @param[in]  streams        Array of stream object pointers being used for
+ *                             the group.
  *  @param[in]  num_stream     Number of streams in @p streams.
  *  @param[out] unicast_group  Pointer to the unicast group created
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
+int bt_audio_unicast_group_create(struct bt_audio_stream *streams[],
 				  size_t num_stream,
 				  struct bt_audio_unicast_group **unicast_group);
 
@@ -1573,13 +1573,14 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
  *  (see bt_audio_stream_ops.stopped()).
  *
  *  @param unicast_group  Pointer to the unicast group
- *  @param streams        Array of stream objects being added to the group.
+ *  @param streams        Array of stream object pointers being added to the
+ *                        group.
  *  @param num_stream     Number of streams in @p streams.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
-				       struct bt_audio_stream *streams,
+				       struct bt_audio_stream *streams[],
 				       size_t num_stream);
 
 /** @brief Remove streams from a unicast group as a unicast client
@@ -1592,13 +1593,14 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
  *  (see bt_audio_stream_ops.stopped()).
  *
  *  @param unicast_group  Pointer to the unicast group
- *  @param streams        Array of stream objects removed from the group.
+ *  @param streams        Array of stream object pointers removed from the
+ *                        group.
  *  @param num_stream     Number of streams in @p streams.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast_group,
-					  struct bt_audio_stream *streams,
+					  struct bt_audio_stream *streams[],
 					  size_t num_stream);
 
 /** @brief Delete audio unicast group.
