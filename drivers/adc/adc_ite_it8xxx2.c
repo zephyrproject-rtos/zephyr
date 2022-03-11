@@ -246,11 +246,8 @@ static void adc_enable_measurement(uint32_t ch)
 	} else {
 		/* Enable adc interrupt */
 		irq_enable(DT_INST_IRQN(0));
-		/* Wait for an interrupt to read data valid. */
-		if (k_sem_take(&data->sem, K_MSEC(1))) {
-			LOG_ERR("ADC interrupt is not fired.");
-			return;
-		}
+		/* Wait for an interrupt to read valid data. */
+		k_sem_take(&data->sem, K_FOREVER);
 	}
 }
 
