@@ -52,6 +52,14 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+/* Check that timeout_reload member is at safe offset when ll_sync_set is
+ * allocated using mem interface. timeout_reload being non-zero is used to
+ * indicate that a sync is established. And is used to check for sync being
+ * terminated under race conditions between HCI Tx and Rx thread when
+ * Periodic Advertising Reports are generated.
+ */
+MEM_FREE_MEMBER_ACCESS_BUILD_ASSERT(struct ll_sync_set, timeout_reload);
+
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
 static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_op_cb);
