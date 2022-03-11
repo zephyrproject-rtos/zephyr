@@ -1,0 +1,8 @@
+# TTGO TWACH series configuration
+
+# Copyright (c) 2022 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TWATCH_V3
+	bool "TTGO TWATCH V3 Development Board"
+	depends on SOC_ESP32

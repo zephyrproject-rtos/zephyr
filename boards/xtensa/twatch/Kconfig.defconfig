@@ -1,0 +1,40 @@
+# TTGO TWACTH series configuration
+
+# Copyright (c) 2022 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TWATCH_V3
+
+config BOARD
+	default "twach_v3" if BOARD_TWATCH_V3
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR
+
+config KSCAN_FT5336
+	default y if KSCAN
+
+config ST7789V
+	default y if DISPLAY
+
+config REGULATOR_PMIC
+	default y if REGULATOR
+
+config PWM_LED_ESP32
+	default y if PWM
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+config ENTROPY_GENERATOR
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT
+
+endif # BOARD_TWATCH_V3
