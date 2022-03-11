@@ -45,6 +45,12 @@ config LEON_IRQMP
 	help
 	  GRLIB IRQMP and IRQAMP
 
+config INTC_INIT_PRIORITY
+	int "Interrupt controller init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Interrupt controller device initialization priority.
+
 source "drivers/interrupt_controller/Kconfig.multilevel"
 
 source "drivers/interrupt_controller/Kconfig.loapic"
