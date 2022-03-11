@@ -749,19 +749,10 @@ class DeviceHandler(Handler):
         ser_pty_process = None
         if serial_pty:
             master, slave = pty.openpty()
-            serial_cmd = re.split(',| ', serial_pty)
-
-            # We also pass the build directory to the --device-serial-pty.
-            # Like what we pass to --west-flash script, the pty script will
-            # have build directory as its first parameter by default, in
-            # order to get more flexibility. That help the pty script can
-            # use artifacts made by the build process.
-            serial_cmd.append(self.build_dir)
-
             try:
-                ser_pty_process = subprocess.Popen(serial_cmd, stdout=master, stdin=master, stderr=master)
+                ser_pty_process = subprocess.Popen(re.split(',| ', serial_pty), stdout=master, stdin=master, stderr=master)
             except subprocess.CalledProcessError as error:
-                logger.error("Failed to run subprocess {}, error {}".format(serial_cmd, error.output))
+                logger.error("Failed to run subprocess {}, error {}".format(serial_pty, error.output))
                 return
 
             serial_device = os.ttyname(slave)
