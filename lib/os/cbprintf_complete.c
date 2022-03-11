@@ -1617,6 +1617,26 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 
 			break;
 		}
+		case 'p':
+			/* Implementation-defined: null is "(nil)", non-null
+			 * has 0x prefix followed by significant address hex
+			 * digits, no leading zeros.
+			 */
+			if (value->ptr != NULL) {
+				bps = encode_uint((uintptr_t)value->ptr, conv,
+						  buf, bpe);
+
+				/* Use 0x prefix */
+				conv->altform_0c = true;
+				conv->specifier = 'x';
+
+				goto prec_int_pad0;
+			}
+
+			bps = "(nil)";
+			bpe = bps + 5;
+
+			break;
 		case 'c':
 			bps = buf;
 			buf[0] = (CHAR_IS_SIGNED ? (char)value->sint : (char)value->uint);
@@ -1668,26 +1688,6 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 					conv->pad0_value = precision - (int)len;
 				}
 			}
-
-			break;
-		case 'p':
-			/* Implementation-defined: null is "(nil)", non-null
-			 * has 0x prefix followed by significant address hex
-			 * digits, no leading zeros.
-			 */
-			if (value->ptr != NULL) {
-				bps = encode_uint((uintptr_t)value->ptr, conv,
-						  buf, bpe);
-
-				/* Use 0x prefix */
-				conv->altform_0c = true;
-				conv->specifier = 'x';
-
-				goto prec_int_pad0;
-			}
-
-			bps = "(nil)";
-			bpe = bps + 5;
 
 			break;
 		case 'n':
