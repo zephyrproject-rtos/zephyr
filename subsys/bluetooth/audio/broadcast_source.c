@@ -372,7 +372,11 @@ static int bt_audio_set_base(const struct bt_audio_broadcast_source *source,
 static void broadcast_source_cleanup(struct bt_audio_broadcast_source *source)
 {
 	for (size_t i = 0; i < source->stream_count; i++) {
-		struct bt_audio_stream *stream = &source->streams[i];
+		struct bt_audio_stream *stream = source->streams[i];
+
+		if (stream == NULL) {
+			continue;
+		}
 
 		stream->ep->stream = NULL;
 		stream->ep = NULL;
@@ -385,7 +389,7 @@ static void broadcast_source_cleanup(struct bt_audio_broadcast_source *source)
 	(void)memset(source, 0, sizeof(*source));
 }
 
-int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
+int bt_audio_broadcast_source_create(struct bt_audio_stream *streams[],
 				     size_t num_stream,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
@@ -437,6 +441,13 @@ int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
 		return -EINVAL;
 	}
 
+	for (size_t i = 0; i < num_stream; i++) {
+		CHECKIF(streams[i] == NULL) {
+			BT_DBG("streams[%zu] is NULL", i);
+			return -EINVAL;
+		}
+	}
+
 	source = NULL;
 	for (index = 0; index < ARRAY_SIZE(broadcast_sources); index++) {
 		if (broadcast_sources[index].bis[0] == NULL) { /* Find free entry */
@@ -453,7 +464,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
 	source->streams = streams;
 	source->stream_count = num_stream;
 	for (size_t i = 0; i < num_stream; i++) {
-		struct bt_audio_stream *stream = &streams[i];
+		struct bt_audio_stream *stream = streams[i];
 
 		err = bt_audio_broadcast_source_setup_stream(index, stream,
 							     codec, qos);
@@ -534,7 +545,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
 	}
 
 	for (size_t i = 0; i < source->stream_count; i++) {
-		struct bt_audio_ep *ep = streams[i].ep;
+		struct bt_audio_ep *ep = streams[i]->ep;
 
 		ep->broadcast_source = source;
 		broadcast_source_set_ep_state(ep,
@@ -562,7 +573,7 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 		return -EINVAL;
 	}
 
-	stream = &source->streams[0];
+	stream = source->streams[0];
 
 	if (stream == NULL) {
 		BT_DBG("stream is NULL");
@@ -581,7 +592,12 @@ int bt_audio_broadcast_source_reconfig(struct bt_audio_broadcast_source *source,
 	}
 
 	for (size_t i = 0; i < source->stream_count; i++) {
-		stream = &source->streams[i];
+		stream = source->streams[i];
+
+		if (stream == NULL) {
+			BT_DBG("streams[i] is NULL");
+			return -EINVAL;
+		}
 
 		bt_audio_stream_attach(NULL, stream, stream->ep, codec);
 	}
@@ -608,7 +624,7 @@ int bt_audio_broadcast_source_start(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	stream = &source->streams[0];
+	stream = source->streams[0];
 
 	if (stream == NULL) {
 		BT_DBG("stream is NULL");
@@ -653,7 +669,7 @@ int bt_audio_broadcast_source_stop(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	stream = &source->streams[0];
+	stream = source->streams[0];
 
 	if (stream == NULL) {
 		BT_DBG("stream is NULL");
@@ -698,7 +714,7 @@ int bt_audio_broadcast_source_delete(struct bt_audio_broadcast_source *source)
 		return -EINVAL;
 	}
 
-	stream = &source->streams[0];
+	stream = source->streams[0];
 
 	if (stream != NULL) {
 		if (stream->ep == NULL) {

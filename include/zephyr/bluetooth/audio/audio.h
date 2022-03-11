@@ -1634,7 +1634,7 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
  *  called and no audio information (BIGInfo) will be visible to scanners
  *  (see bt_le_per_adv_sync_cb).
  *
- *  @param[in]  streams     Array of stream objects being used for the
+ *  @param[in]  streams     Array of stream object pointers being used for the
  *                          broadcaster. This array shall remain valid for the
  *                          duration of the broadcast source.
  *  @param[in]  num_stream  Number of streams in @p streams.
@@ -1644,7 +1644,7 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
+int bt_audio_broadcast_source_create(struct bt_audio_stream *streams[],
 				     size_t num_stream,
 				     struct bt_codec *codec,
 				     struct bt_codec_qos *qos,
