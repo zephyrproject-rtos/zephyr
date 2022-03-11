@@ -234,3 +234,9 @@
 		      &kso13_gpio126 >;
 	pinctrl-names = "default";
 };
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_gpio053>;
+	pinctrl-names = "default";
+};
