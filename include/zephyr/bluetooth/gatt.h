@@ -393,6 +393,17 @@ enum {
 /** @typedef bt_gatt_attr_func_t
  *  @brief Attribute iterator callback.
  *
+ * To be able to read the user_data of the @p attr the user_data
+ * must be cast to an appropriate type.
+ *   - @ref bt_uuid when UUID is @ref BT_UUID_GATT_PRIMARY or
+ *     @ref BT_UUID_GATT_SECONDARY.
+ *   - @ref bt_gatt_attr when UUID is @ref BT_UUID_GATT_INCLUDE.
+ *   - @ref bt_gatt_chrc when UUID is @ref BT_UUID_GATT_CHRC.
+ *   - _bt_gatt_ccc when UUID is @ref BT_UUID_GATT_CCC.
+ *   - @ref bt_gatt_cep when UUID is @ref BT_UUID_GATT_CEP.
+ *   - char * when UUID is @ref BT_UUID_GATT_CUD
+ *   - @ref bt_gatt_cpf when UUID is @ref BT_UUID_GATT_CPF
+ *
  *  @param attr Attribute found.
  *  @param handle Attribute handle found.
  *  @param user_data Data given.
