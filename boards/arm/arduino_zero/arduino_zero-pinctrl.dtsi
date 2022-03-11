@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/samd21-da1gXabcd-pinctrl.h>
+
+&pinctrl {
+	sercom0_uart_default: sercom0_uart_default {
+		group1 {
+			pinmux = <PA11C_SERCOM0_PAD3>,
+				 <PA10C_SERCOM0_PAD2>;
+		};
+	};
+	sercom5_uart_default: sercom5_uart_default {
+		group1 {
+			pinmux = <PB23D_SERCOM5_PAD3>,
+				 <PB22D_SERCOM5_PAD2>;
+		};
+	};
+};
