@@ -193,6 +193,11 @@ static inline struct z_page_frame *z_phys_to_page_frame(uintptr_t phys)
 
 static inline void z_mem_assert_virtual_region(uint8_t *addr, size_t size)
 {
+#ifndef __ASSERT_ON
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
+#endif
+
 	__ASSERT((uintptr_t)addr % CONFIG_MMU_PAGE_SIZE == 0U,
 		 "unaligned addr %p", addr);
 	__ASSERT(size % CONFIG_MMU_PAGE_SIZE == 0U,
