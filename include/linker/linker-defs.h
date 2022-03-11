@@ -258,7 +258,7 @@ extern char __rodata_region_size[];
 extern char _vector_start[];
 extern char _vector_end[];
 
-#if DT_NODE_HAS_STATUS(_NODE_RESERVED, okay)
+#if (DT_NODE_HAS_STATUS(_NODE_RESERVED, okay))
 LINKER_DT_RESERVED_MEM_SYMBOLS()
 #endif
 
@@ -275,7 +275,7 @@ extern char __gcov_bss_size[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
+#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay))
 extern char __ccm_data_rom_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
@@ -287,14 +287,14 @@ extern char __ccm_noinit_end[];
 extern char __ccm_end[];
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay))
 extern char __itcm_start[];
 extern char __itcm_end[];
 extern char __itcm_size[];
 extern char __itcm_load_start[];
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay))
 extern char __dtcm_data_start[];
 extern char __dtcm_data_end[];
 extern char __dtcm_bss_start[];

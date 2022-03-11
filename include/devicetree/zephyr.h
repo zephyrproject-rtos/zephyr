@@ -55,16 +55,16 @@
 
 #endif /* DT_DOXYGEN */
 
-#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_entropy), label)
+#if (DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_entropy), label))
 #define DT_CHOSEN_ZEPHYR_ENTROPY_LABEL DT_LABEL(DT_CHOSEN(zephyr_entropy))
 #endif
 
-#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_flash_controller), label)
+#if (DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_flash_controller), label))
 #define DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL \
 	DT_LABEL(DT_CHOSEN(zephyr_flash_controller))
 #endif
 
-#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_can_primary), label)
+#if (DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_can_primary), label))
 #define DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL \
 	DT_LABEL(DT_CHOSEN(zephyr_can_primary))
 #endif
