@@ -1081,7 +1081,11 @@ int z_unpend_all(_wait_q_t *wait_q)
 	int need_sched = 0;
 	struct k_thread *thread;
 
-	while ((thread = z_waitq_head(wait_q)) != NULL) {
+	for (;;) {
+		thread = z_waitq_head(wait_q);
+		if (thread == NULL) {
+			break;
+		}
 		z_unpend_thread(thread);
 		z_ready_thread(thread);
 		need_sched = 1;
@@ -1466,7 +1470,11 @@ static inline void unpend_all(_wait_q_t *wait_q)
 {
 	struct k_thread *thread;
 
-	while ((thread = z_waitq_head(wait_q)) != NULL) {
+	for (;;) {
+		thread = z_waitq_head(wait_q);
+		if (thread == NULL) {
+			break;
+		}
 		unpend_thread_no_timeout(thread);
 		(void)z_abort_thread_timeout(thread);
 		arch_thread_return_value_set(thread, 0);
