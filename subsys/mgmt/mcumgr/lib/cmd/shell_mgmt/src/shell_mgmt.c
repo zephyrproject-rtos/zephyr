@@ -7,7 +7,10 @@
 #include <sys/util.h>
 #include <string.h>
 #include <stdio.h>
+#include <mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
 #include "cborattr/cborattr.h"
 #include "shell_mgmt/shell_mgmt.h"
 #include "shell_mgmt/shell_mgmt_config.h"
@@ -23,13 +26,11 @@ shell_exec(const char *line)
 }
 
 const char *
-shell_get_output()
+shell_get_output(size_t *len)
 {
-	size_t len;
-
 	return shell_backend_dummy_get_output(
 		shell_backend_dummy_get_ptr(),
-		&len
+		len
 	);
 }
 
@@ -37,14 +38,16 @@ shell_get_output()
  * Command handler: shell exec
  */
 static int
-shell_mgmt_exec(struct mgmt_ctxt *cb)
+shell_mgmt_exec(struct mgmt_ctxt *ctxt)
 {
 	char line[SHELL_MGMT_MAX_LINE_LEN + 1];
-	CborEncoder str_encoder;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
 	CborError err;
 	int rc;
 	char *argv[SHELL_MGMT_MAX_ARGC];
 	int argc;
+	bool ok;
+	struct zcbor_string cmd_out;
 
 	const struct cbor_attr_t attrs[] = {
 		{
@@ -64,32 +67,24 @@ shell_mgmt_exec(struct mgmt_ctxt *cb)
 
 	line[0] = 0;
 
-	err = cbor_read_object(&cb->it, attrs);
+	err = cbor_read_object(&ctxt->it, attrs);
 	if (err != 0) {
 		return MGMT_ERR_EINVAL;
 	}
 
 	line[ARRAY_SIZE(line) - 1] = 0;
 
-	/* Key="o"; value=<command-output> */
-	err |= cbor_encode_text_stringz(&cb->encoder, "o");
-	err |= cbor_encoder_create_indef_text_string(&cb->encoder, &str_encoder);
-
 	rc = shell_exec(line);
+	cmd_out.value = shell_get_output(&cmd_out.len);
 
-	err |= cbor_encode_text_stringz(&str_encoder, shell_get_output());
-
-	err |= cbor_encoder_close_container(&cb->encoder, &str_encoder);
-
+	/* Key="o"; value=<command-output> */
 	/* Key="rc"; value=<status> */
-	err |= cbor_encode_text_stringz(&cb->encoder, "rc");
-	err |= cbor_encode_int(&cb->encoder, rc);
+	ok = zcbor_tstr_put_lit(zse, "o")		&&
+	     zcbor_tstr_encode(zse, &cmd_out)		&&
+	     zcbor_tstr_put_lit(zse, "rc")		&&
+	     zcbor_int32_put(zse, rc);
 
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
-
-	return 0;
+	return ok ? 0 : MGMT_ERR_ENOMEM;
 }
 
 static struct mgmt_handler shell_mgmt_handlers[] = {
