@@ -5,6 +5,7 @@ common:
   platform_exclude: qemu_arc_hs6x
   integration_platforms:
     - native_posix
+  min_flash: 48
 tests:
   libraries.cbprintf_package:
     extra_configs:
