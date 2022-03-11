@@ -79,6 +79,7 @@
 /* Data channel minimum payload size and time */
 #define PDU_DC_PAYLOAD_SIZE_MIN 27
 #define PDU_DC_PAYLOAD_TIME_MIN 328
+#define PDU_DC_PAYLOAD_TIME_MIN_CODED 2704
 
 /* Link Layer header size of Data PDU. Assumes pdu_data is packed */
 #define PDU_DC_LL_HEADER_SIZE  (offsetof(struct pdu_data, lldata))
