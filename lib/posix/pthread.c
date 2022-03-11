@@ -334,13 +334,13 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
 	pthread_mutex_lock(&pthread_key_lock);
 
-	if (*once == PTHREAD_ONCE_INIT) {
+	if (*once != PTHREAD_ONCE_INIT) {
 		pthread_mutex_unlock(&pthread_key_lock);
 		return 0;
 	}
 
 	init_func();
-	*once = PTHREAD_ONCE_INIT;
+	*once = 0;
 
 	pthread_mutex_unlock(&pthread_key_lock);
 
