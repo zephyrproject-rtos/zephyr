@@ -68,6 +68,8 @@ static inline bool is_metairq(struct k_thread *thread)
 	return (thread->base.prio - K_HIGHEST_THREAD_PRIO)
 		< CONFIG_NUM_METAIRQ_PRIORITIES;
 #else
+	ARG_UNUSED(thread);
+
 	return false;
 #endif
 }
@@ -437,6 +439,8 @@ static void update_metairq_preempt(struct k_thread *thread)
 		/* Returning from existing preemption */
 		_current_cpu->metairq_preempted = NULL;
 	}
+#else
+	ARG_UNUSED(thread);
 #endif
 }
 

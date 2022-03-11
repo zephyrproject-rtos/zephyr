@@ -223,10 +223,27 @@ bool pm_device_is_any_busy(void);
  */
 bool pm_device_is_busy(const struct device *dev);
 #else
-static inline void pm_device_busy_set(const struct device *dev) {}
-static inline void pm_device_busy_clear(const struct device *dev) {}
-static inline bool pm_device_is_any_busy(void) { return false; }
-static inline bool pm_device_is_busy(const struct device *dev) { return false; }
+static inline void pm_device_busy_set(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline void pm_device_busy_clear(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline bool pm_device_is_any_busy(void)
+{
+	return false;
+}
+
+static inline bool pm_device_is_busy(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return false;
+}
 #endif
 
 __deprecated static inline void device_busy_set(const struct device *dev)
