@@ -54,6 +54,7 @@ config SPI_NRFX_SPIS
 
 config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	depends on SOC_NRF52832
+	select NRFX_PPI
 	bool "Allow enabling the SPIM driver despite PAN 58"
 	help
 	  Allow enabling the nRF SPI Master with EasyDMA, despite
