@@ -718,10 +718,10 @@ static int transceive_dma(const struct device *dev,
 	/* Set buffers info */
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
+	LL_SPI_Enable(spi);
+
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
-
-	LL_SPI_Enable(spi);
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
