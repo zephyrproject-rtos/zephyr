@@ -61,9 +61,6 @@ stat_mgmt_show(struct mgmt_ctxt *ctxt)
 		return MGMT_ERR_EINVAL;
 	}
 
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, MGMT_ERR_EOK);
-
 	err |= cbor_encode_text_stringz(&ctxt->encoder, "name");
 	err |= cbor_encode_text_stringz(&ctxt->encoder, stat_name);
 
@@ -94,8 +91,7 @@ stat_mgmt_list(struct mgmt_ctxt *ctxt)
 	int i;
 
 	err = CborNoError;
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, MGMT_ERR_EOK);
+
 	err |= cbor_encode_text_stringz(&ctxt->encoder, "stat_list");
 	err |= cbor_encoder_create_array(&ctxt->encoder, &arr_enc, CborIndefiniteLength);
 
