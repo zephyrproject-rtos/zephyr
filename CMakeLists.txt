@@ -877,10 +877,10 @@ if(CONFIG_USERSPACE)
   set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
 
   if(CONFIG_NEWLIB_LIBC)
-    set(NEWLIB_PART -l libc.a z_libc_partition)
+    set(NEWLIB_PART -l libc.a z_libc_partition -l libm.a z_libc_partition)
   endif()
   if(CONFIG_NEWLIB_LIBC_NANO)
-    set(NEWLIB_PART -l libc_nano.a z_libc_partition)
+    set(NEWLIB_PART -l libc_nano.a z_libc_partition -l libm_nano.a z_libc_partition)
   endif()
 
   add_custom_command(
