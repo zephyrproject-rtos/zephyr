@@ -422,7 +422,7 @@ static int loapic_pm_action(const struct device *dev,
 PM_DEVICE_DEFINE(loapic, loapic_pm_action);
 
 DEVICE_DEFINE(loapic, "loapic", loapic_init, PM_DEVICE_GET(loapic), NULL, NULL,
-	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+	      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR
 extern void z_loapic_spurious_handler(void);

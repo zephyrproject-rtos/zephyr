@@ -423,7 +423,7 @@ static struct stm32_exti_data exti_data;
 DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
 		 NULL,
 		 &exti_data, NULL,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 NULL);
 
 /**

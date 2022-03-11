@@ -135,4 +135,4 @@ static int vexriscv_litex_irq_init(const struct device *dev)
 }
 
 SYS_INIT(vexriscv_litex_irq_init, PRE_KERNEL_2,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+		CONFIG_INTC_INIT_PRIORITY);
