@@ -26,6 +26,7 @@ config MCTL_LOCAL_PLAYER_CONTROL
 
 config MCTL_LOCAL_PLAYER_LOCAL_CONTROL
 	bool "Support for local control of local media player"
+	default y
 	depends on MCTL_LOCAL_PLAYER_CONTROL
 	help
 	  This option enables support for local application control of local
