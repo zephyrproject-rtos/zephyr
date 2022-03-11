@@ -313,7 +313,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 		int err;
 
 		if (default_unicast_group == NULL) {
-			err = bt_audio_unicast_group_create(default_stream, 1,
+			err = bt_audio_unicast_group_create(&default_stream, 1,
 							    &default_unicast_group);
 			if (err != 0) {
 				shell_error(ctx_shell,
@@ -733,7 +733,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (default_unicast_group == NULL) {
-		err = bt_audio_unicast_group_create(default_stream, 1, &default_unicast_group);
+		err = bt_audio_unicast_group_create(&default_stream, 1, &default_unicast_group);
 		if (err != 0) {
 			shell_error(sh, "Unable to create default unicast group: %d", err);
 			return -ENOEXEC;

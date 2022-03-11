@@ -642,7 +642,7 @@ static int create_group(struct bt_audio_stream *stream)
 {
 	int err;
 
-	err = bt_audio_unicast_group_create(stream, 1, &unicast_group);
+	err = bt_audio_unicast_group_create(&stream, 1, &unicast_group);
 	if (err != 0) {
 		printk("Could not create unicast group (err %d)\n", err);
 		return err;

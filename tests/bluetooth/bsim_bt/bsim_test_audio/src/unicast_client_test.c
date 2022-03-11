@@ -266,14 +266,14 @@ static size_t configure_streams(void)
 	size_t stream_cnt;
 
 	for (stream_cnt = 0; stream_cnt < ARRAY_SIZE(g_sinks); stream_cnt++) {
+		struct bt_audio_stream *stream = &g_streams[stream_cnt];
 		int err;
 
 		if (g_sinks[stream_cnt] == NULL) {
 			break;
 		}
 
-		err = configure_stream(&g_streams[stream_cnt],
-				       g_sinks[stream_cnt]);
+		err = configure_stream(stream, g_sinks[stream_cnt]);
 		if (err != 0) {
 			FAIL("Unable to configure stream[%zu]: %d",
 			     stream_cnt, err);
@@ -310,9 +310,15 @@ static size_t release_streams(size_t stream_cnt)
 static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 				 size_t stream_cnt)
 {
+	struct bt_audio_stream *streams[ARRAY_SIZE(g_streams)];
 	int err;
 
-	err = bt_audio_unicast_group_create(g_streams, 1, unicast_group);
+	for (size_t i = 0U; i < stream_cnt; i++) {
+		streams[i] = &g_streams[i];
+	}
+
+	printk("Creating unicast group\n");
+	err = bt_audio_unicast_group_create(streams, 1, unicast_group);
 	if (err != 0) {
 		FAIL("Unable to create unicast group: %d", err);
 		return;
@@ -320,9 +326,11 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 
 	/* Test removing streams from group before adding them */
 	if (stream_cnt > 1) {
+		const size_t remaining_streams = stream_cnt - 1;
+
 		err = bt_audio_unicast_group_remove_streams(*unicast_group,
-							    g_streams + 1,
-							    stream_cnt - 1);
+							    &streams[1],
+							    remaining_streams);
 		if (err == 0) {
 			FAIL("Able to remove stream not in group");
 			return;
@@ -330,8 +338,8 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 
 		/* Test adding streams to group after creation */
 		err = bt_audio_unicast_group_add_streams(*unicast_group,
-							 g_streams + 1,
-							 stream_cnt - 1);
+							 &streams[1],
+							 remaining_streams);
 		if (err != 0) {
 			FAIL("Unable to add streams to unicast group: %d", err);
 			return;
@@ -342,12 +350,19 @@ static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group,
 				 size_t stream_cnt)
 {
+	struct bt_audio_stream *streams[ARRAY_SIZE(g_streams)];
 	int err;
 
+	for (size_t i = 0U; i < stream_cnt; i++) {
+		streams[i] = &g_streams[i];
+	}
+
 	if (stream_cnt > 1) {
+		const size_t remove_streams_cnt = stream_cnt - 1;
+
 		err = bt_audio_unicast_group_remove_streams(unicast_group,
-							    g_streams + 1,
-							    stream_cnt - 1);
+							    &streams[1],
+							    remove_streams_cnt);
 		if (err != 0) {
 			FAIL("Unable to remove streams from unicast group: %d",
 			     err);
