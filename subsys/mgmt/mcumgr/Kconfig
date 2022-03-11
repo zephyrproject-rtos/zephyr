@@ -233,6 +233,10 @@ config IMG_MGMT_FRUGAL_LIST
 	  a device but requires support in client software, which has to default omitted values.
 	  Works correctly with mcumgr-cli.
 
+module = MCUMGR_IMG_MGMT
+module-str = mcumgr_img_mgmt
+source "subsys/logging/Kconfig.template.log_config"
+
 endif
 
 
