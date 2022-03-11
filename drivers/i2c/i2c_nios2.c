@@ -191,5 +191,5 @@ static int i2c_nios2_init(const struct device *dev)
 
 I2C_DEVICE_DT_INST_DEFINE(0, i2c_nios2_init, NULL,
 		    &i2c_nios2_dev_data, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &i2c_nios2_driver_api);

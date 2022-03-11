@@ -346,7 +346,7 @@ static struct i2c_stm32_data i2c_stm32_dev_data_##name;			\
 I2C_DEVICE_DT_DEFINE(DT_NODELABEL(name), i2c_stm32_init,		\
 		    NULL, &i2c_stm32_dev_data_##name,			\
 		    &i2c_stm32_cfg_##name,				\
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,		\
 		    &api_funcs);					\
 									\
 STM32_I2C_IRQ_HANDLER(name)

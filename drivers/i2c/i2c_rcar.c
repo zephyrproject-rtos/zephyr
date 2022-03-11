@@ -366,7 +366,7 @@ static const struct i2c_driver_api i2c_rcar_driver_api = {
 			      NULL,					       \
 			      &i2c_rcar_data_##n,			       \
 			      &i2c_rcar_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	       \
 			      &i2c_rcar_driver_api			       \
 			      );					       \
 	static void i2c_rcar_##n##_init(const struct device *dev)	       \
