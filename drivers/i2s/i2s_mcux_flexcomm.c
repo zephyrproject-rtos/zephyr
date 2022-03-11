@@ -908,7 +908,7 @@ static int i2s_mcux_init(const struct device *dev)
 			    &i2s_mcux_data_##id,			\
 			    &i2s_mcux_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_I2S_INIT_PRIORITY,			\
 			    &i2s_mcux_driver_api);			\
 	static void i2s_mcux_config_func_##id(const struct device *dev)	\
 	{								\
