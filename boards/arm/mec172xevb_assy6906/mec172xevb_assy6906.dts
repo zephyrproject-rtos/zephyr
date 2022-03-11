@@ -240,3 +240,9 @@
 	pinctrl-0 = <&pwm0_gpio053>;
 	pinctrl-names = "default";
 };
+
+&tach0 {
+	status = "okay";
+	pinctrl-0 = <&tach0_gpio050>;
+	pinctrl-names = "default";
+};
