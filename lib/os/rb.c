@@ -545,7 +545,11 @@ static inline struct rbnode *stack_left_limb(struct rbnode *n,
 	f->stack[f->top] = n;
 	f->is_left[f->top] = 0U;
 
-	while ((n = get_child(n, 0U)) != NULL) {
+	for (;;) {
+		n = get_child(n, 0U);
+		if (n == NULL) {
+			break;
+		}
 		f->top++;
 		f->stack[f->top] = n;
 		f->is_left[f->top] = 1;

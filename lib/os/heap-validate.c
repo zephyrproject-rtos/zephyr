@@ -347,7 +347,8 @@ void heap_print_info(struct z_heap *h, bool dump_chunks)
 	if (dump_chunks) {
 		printk("\nChunk dump:\n");
 	}
-	free_bytes = allocated_bytes = 0;
+	free_bytes = 0;
+	allocated_bytes = 0;
 	for (chunkid_t c = 0; ; c = right_chunk(h, c)) {
 		if (chunk_used(h, c)) {
 			if ((c != 0) && (c != h->end_chunk)) {

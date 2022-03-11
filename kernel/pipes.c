@@ -318,7 +318,11 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 	sys_dlist_init(xfer_list);
 	num_bytes = 0;
 
-	while ((thread = z_waitq_head(wait_q)) != NULL) {
+	for (;;) {
+		thread = z_waitq_head(wait_q);
+		if (thread == NULL) {
+			break;
+		}
 		desc = (struct k_pipe_desc *)thread->base.swap_data;
 		num_bytes += desc->bytes_to_xfer;
 

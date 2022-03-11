@@ -1082,7 +1082,11 @@ static char *encode_float(double value,
 			/* Fraction is subnormal.  Normalize it and correct
 			 * the exponent.
 			 */
-			while (((fract <<= 1) & BIT_63) == 0) {
+			for (;;) {
+				fract <<= 1;
+				if ((fract & BIT_63) != 0) {
+					break;
+				}
 				expo--;
 			}
 		}
