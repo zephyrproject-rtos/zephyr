@@ -1260,6 +1260,7 @@ static int cmd_accept_broadcast(const struct shell *sh, size_t argc,
 
 static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
+	static struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 	uint32_t bis_bitfield;
 	int err;
 
@@ -1278,8 +1279,13 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	(void)memset(streams, 0, sizeof(streams));
+	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+		streams[i] = &broadcast_sink_streams[i];
+	}
+
 	err = bt_audio_broadcast_sink_sync(default_sink, bis_bitfield,
-					   broadcast_sink_streams,
+					   streams,
 					   &default_preset->preset.codec,
 					   NULL);
 	if (err != 0) {
