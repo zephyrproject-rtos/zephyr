@@ -284,6 +284,17 @@ config BT_CTRL_ADV_ADI_IN_SCAN_RSP
 	help
 	  Enable ADI field in AUX_SCAN_RSP PDU
 
+config BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN
+	bool "Use minimal Scan Auxiliary and Periodic Sync PDU time reservation"
+	depends on (BT_OBSERVER && BT_CTLR_ADV_EXT) || BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Use minimal time reservation for Auxiliary and Periodic Sync PDU
+	  reception. A peer device could scheduling multiple advertising sets
+	  in a short duration with small PDUs hence using the minimal time
+	  reservation would avoid skipping closely scheduled reception of
+	  multiple Auxiliary or Periodic Sync PDUs.
+
 config BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX
 	bool "Skip Periodic Sync event on overlap with Extended Scan Event"
 	depends on BT_CTLR_SYNC_PERIODIC
