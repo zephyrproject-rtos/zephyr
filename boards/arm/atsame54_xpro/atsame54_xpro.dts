@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/same5xx20.dtsi>
+#include "atsame54_xpro-pinctrl.dtsi"
 
 / {
 	model = "SAM E54 Xplained Pro";
@@ -67,7 +68,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	pinctrl-0 = <&pb25d_sercom2_pad1 &pb24d_sercom2_pad0>;
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
 };
 
 &sercom4 {

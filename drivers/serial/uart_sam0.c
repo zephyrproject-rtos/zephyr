@@ -13,6 +13,7 @@
 #include <soc.h>
 #include <drivers/uart.h>
 #include <drivers/dma.h>
+#include <drivers/pinctrl.h>
 #include <string.h>
 
 #ifndef SERCOM_USART_CTRLA_MODE_USART_INT_CLK
@@ -51,8 +52,7 @@ struct uart_sam0_dev_cfg {
 	uint8_t rx_dma_request;
 	uint8_t rx_dma_channel;
 #endif
-	uint32_t num_pins;
-	struct soc_port_pin pins[];
+	const struct pinctrl_dev_config *pcfg;
 };
 
 /* Device run time data */
@@ -541,7 +541,10 @@ static int uart_sam0_init(const struct device *dev)
 	wait_synchronization(usart);
 
 	/* Enable PINMUX based on PINCTRL */
-	soc_port_list_configure(cfg->pins, cfg->num_pins);
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	dev_data->config_cache.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 	dev_data->config_cache.parity = UART_CFG_PARITY_NONE;
@@ -1255,8 +1258,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
 	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
-	.num_pins = ATMEL_SAM0_DT_INST_NUM_PINS(n),			\
-	.pins = ATMEL_SAM0_DT_INST_PINS(n),				\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
 }
@@ -1269,14 +1271,14 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
 	.pads = UART_SAM0_SERCOM_PADS(n),				\
 	.collision_detect = UART_SAM0_SERCOM_PADS(n),			\
-	.num_pins = ATMEL_SAM0_DT_INST_NUM_PINS(n),			\
-	.pins = ATMEL_SAM0_DT_INST_PINS(n),				\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
 }
 #endif
 
 #define UART_SAM0_DEVICE_INIT(n)					\
+PINCTRL_DT_INST_DEFINE(n);						\
 static struct uart_sam0_dev_data uart_sam0_data_##n;			\
 UART_SAM0_IRQ_HANDLER_DECL(n);						\
 UART_SAM0_CONFIG_DEFN(n);						\
