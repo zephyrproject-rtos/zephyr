@@ -849,7 +849,10 @@ static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 	for (size_t i = 0; i < sink->stream_count; i++) {
 		struct bt_audio_stream *stream;
 
-		stream = &sink->streams[i];
+		stream = sink->streams[i];
+		if (stream == NULL) {
+			continue;
+		}
 
 		if (stream->ep != NULL) {
 			stream->ep->stream = NULL;
@@ -871,7 +874,7 @@ static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
 
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 uint32_t indexes_bitfield,
-				 struct bt_audio_stream *streams,
+				 struct bt_audio_stream *streams[],
 				 struct bt_codec *codec,
 				 const uint8_t broadcast_code[16])
 {
@@ -926,13 +929,20 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		}
 	}
 
+	for (size_t i = 0; i < stream_count; i++) {
+		CHECKIF(streams[i] == NULL) {
+			BT_DBG("streams[%zu] is NULL", i);
+			return -EINVAL;
+		}
+	}
+
 	sink->stream_count = stream_count;
 	sink->streams = streams;
 	sink->codec = codec;
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_audio_stream *stream;
 
-		stream = &streams[i];
+		stream = streams[i];
 
 		err = bt_audio_broadcast_sink_setup_stream(sink->index, stream,
 							   sink->codec);
@@ -964,7 +974,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	}
 
 	for (size_t i = 0; i < stream_count; i++) {
-		struct bt_audio_ep *ep = streams[i].ep;
+		struct bt_audio_ep *ep = streams[i]->ep;
 
 		ep->broadcast_sink = sink;
 		broadcast_sink_set_ep_state(ep,
@@ -984,7 +994,7 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 		return -EINVAL;
 	}
 
-	stream = &sink->streams[0];
+	stream = sink->streams[0];
 
 	if (stream == NULL) {
 		BT_DBG("stream is NULL");
@@ -1011,6 +1021,7 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 
 	sink->big = NULL;
 	sink->stream_count = 0;
+	sink->streams = NULL;
 	/* Channel states will be updated in the ep_iso_disconnected function */
 
 	return 0;
@@ -1018,7 +1029,7 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 
 int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 {
-	struct bt_audio_stream *stream;
+	struct bt_audio_stream **streams;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -1026,9 +1037,8 @@ int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 		return -EINVAL;
 	}
 
-	stream = &sink->streams[0];
-
-	if (stream != NULL && stream->ep != NULL) {
+	streams = sink->streams;
+	if (streams != NULL && streams[0] != NULL && streams[0]->ep != NULL) {
 		BT_DBG("Sink is not stopped");
 		return -EBADMSG;
 	}
