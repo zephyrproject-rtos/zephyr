@@ -7877,14 +7877,24 @@ uint8_t ull_dle_update_eff(struct ll_conn *conn)
 	uint8_t dle_changed = 0;
 
 	const uint16_t eff_tx_octets =
-		MIN(conn->lll.dle.local.max_tx_octets, conn->lll.dle.remote.max_rx_octets);
+		MAX(MIN(conn->lll.dle.local.max_tx_octets, conn->lll.dle.remote.max_rx_octets),
+		    PDU_DC_PAYLOAD_SIZE_MIN);
 	const uint16_t eff_rx_octets =
-		MIN(conn->lll.dle.local.max_rx_octets, conn->lll.dle.remote.max_tx_octets);
+		MAX(MIN(conn->lll.dle.local.max_rx_octets, conn->lll.dle.remote.max_tx_octets),
+		    PDU_DC_PAYLOAD_SIZE_MIN);
+
 #if defined(CONFIG_BT_CTLR_PHY)
+	unsigned int min_eff_tx_time = (conn->lll.phy_tx == PHY_CODED) ?
+			PDU_DC_PAYLOAD_TIME_MIN_CODED : PDU_DC_PAYLOAD_TIME_MIN;
+	unsigned int min_eff_rx_time = (conn->lll.phy_rx == PHY_CODED) ?
+			PDU_DC_PAYLOAD_TIME_MIN_CODED : PDU_DC_PAYLOAD_TIME_MIN;
+
 	const uint16_t eff_tx_time =
-		MIN(conn->lll.dle.local.max_tx_time, conn->lll.dle.remote.max_rx_time);
+		MAX(MIN(conn->lll.dle.local.max_tx_time, conn->lll.dle.remote.max_rx_time),
+		    min_eff_tx_time);
 	const uint16_t eff_rx_time =
-		MIN(conn->lll.dle.local.max_rx_time, conn->lll.dle.remote.max_tx_time);
+		MAX(MIN(conn->lll.dle.local.max_rx_time, conn->lll.dle.remote.max_tx_time),
+		    min_eff_rx_time);
 
 	if (eff_tx_time != conn->lll.dle.eff.max_tx_time) {
 		conn->lll.dle.eff.max_tx_time = eff_tx_time;
