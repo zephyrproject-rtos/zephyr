@@ -9,6 +9,5 @@ target_include_directories(MCUMGR INTERFACE
 )
 
 zephyr_library_sources(
-    src/zephyr_stat_mgmt.c
     src/stat_mgmt.c
 )
