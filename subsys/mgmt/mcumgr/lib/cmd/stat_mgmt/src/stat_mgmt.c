@@ -98,7 +98,7 @@ stat_mgmt_show(struct mgmt_ctxt *ctxt)
 	char stat_name[STAT_MGMT_MAX_NAME_LEN];
 	CborEncoder map_enc;
 	CborError err;
-	int rc;
+	int rc = MGMT_ERR_EOK;
 
 	struct cbor_attr_t attrs[] = {
 		{
@@ -124,14 +124,16 @@ stat_mgmt_show(struct mgmt_ctxt *ctxt)
 	err |= cbor_encode_text_stringz(&ctxt->encoder, "fields");
 	err |= cbor_encoder_create_map(&ctxt->encoder, &map_enc, CborIndefiniteLength);
 
-	rc = stat_mgmt_foreach_entry(stat_name, stat_mgmt_cb_encode, &map_enc);
-
-	err |= cbor_encoder_close_container(&ctxt->encoder, &map_enc);
-	if (err != 0) {
-		rc = MGMT_ERR_ENOMEM;
+	if (err == 0) {
+		rc = stat_mgmt_foreach_entry(stat_name, stat_mgmt_cb_encode, &map_enc);
 	}
 
-	return rc;
+	err |= cbor_encoder_close_container(&ctxt->encoder, &map_enc);
+	if (rc || err != 0) {
+		return MGMT_ERR_ENOMEM;
+	}
+
+	return 0;
 }
 
 /**
