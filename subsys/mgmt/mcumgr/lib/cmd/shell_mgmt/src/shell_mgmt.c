@@ -10,8 +10,28 @@
 #include "mgmt/mgmt.h"
 #include "cborattr/cborattr.h"
 #include "shell_mgmt/shell_mgmt.h"
-#include "shell_mgmt/shell_mgmt_impl.h"
 #include "shell_mgmt/shell_mgmt_config.h"
+#include <shell/shell_dummy.h>
+
+static int
+shell_exec(const char *line)
+{
+	const struct shell *shell = shell_backend_dummy_get_ptr();
+
+	shell_backend_dummy_clear_output(shell);
+	return shell_execute_cmd(shell, line);
+}
+
+const char *
+shell_get_output()
+{
+	size_t len;
+
+	return shell_backend_dummy_get_output(
+		shell_backend_dummy_get_ptr(),
+		&len
+	);
+}
 
 /**
  * Command handler: shell exec
@@ -51,10 +71,9 @@ shell_mgmt_exec(struct mgmt_ctxt *cb)
 	err |= cbor_encode_text_stringz(&cb->encoder, "o");
 	err |= cbor_encoder_create_indef_text_string(&cb->encoder, &str_encoder);
 
-	rc = shell_mgmt_impl_exec(line);
+	rc = shell_exec(line);
 
-	err |= cbor_encode_text_stringz(&str_encoder,
-		shell_mgmt_impl_get_output());
+	err |= cbor_encode_text_stringz(&str_encoder, shell_get_output());
 
 	err |= cbor_encoder_close_container(&cb->encoder, &str_encoder);
 
