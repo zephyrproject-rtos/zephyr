@@ -49,8 +49,6 @@ static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink);
 static void broadcast_sink_clear_big(struct bt_audio_broadcast_sink *sink)
 {
 	sink->big = NULL;
-	sink->stream_count = 0;
-	sink->streams = NULL;
 }
 
 static struct bt_audio_broadcast_sink *broadcast_sink_lookup_iso_chan(

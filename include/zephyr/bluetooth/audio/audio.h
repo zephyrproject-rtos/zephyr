@@ -2096,8 +2096,7 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
  *  (see bt_le_per_adv_sync_cb).
  *
  *  @param[in]  streams     Array of stream object pointers being used for the
- *                          broadcaster. This array shall remain valid for the
- *                          duration of the broadcast source.
+ *                          broadcaster.
  *  @param[in]  num_stream  Number of streams in @p streams.
  *  @param[in]  codec       Codec configuration.
  *  @param[in]  qos         Quality of Service configuration
@@ -2198,7 +2197,7 @@ int bt_audio_broadcast_sink_scan_stop(void);
  *  @param indexes_bitfield   Bitfield of the BIS index to sync to. To sync to
  *                            e.g. BIS index 1 and 2, this should have the value
  *                            of BIT(1) | BIT(2).
- *  @param streams            Stream objects pointers to be used for the
+ *  @param streams            Stream object pointers to be used for the
  *                            receiver. If multiple BIS indexes shall be
  *                            synchronized, multiple streams shall be provided.
  *  @param broadcast_code     The 16-octet broadcast code. Shall be supplied if

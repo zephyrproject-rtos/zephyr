@@ -1154,7 +1154,7 @@ static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	static struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
+	struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
 	struct named_lc3_preset *named_preset;
 	int err;
 
