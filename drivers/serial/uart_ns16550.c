@@ -38,10 +38,10 @@
 
 #include "uart_ns16550.h"
 
-#define INST_HAS_PCP_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, pcp) ||
-#define INST_HAS_DLF_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, dlf) ||
+#define INST_HAS_PCP_HELPER(inst) (DT_INST_NODE_HAS_PROP(inst, pcp)) ||
+#define INST_HAS_DLF_HELPER(inst) (DT_INST_NODE_HAS_PROP(inst, dlf)) ||
 #define INST_HAS_REG_SHIFT_HELPER(inst) \
-	DT_INST_NODE_HAS_PROP(inst, reg_shift) ||
+	(DT_INST_NODE_HAS_PROP(inst, reg_shift)) ||
 
 #define UART_NS16550_PCP_ENABLED \
 	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_PCP_HELPER) 0)
@@ -50,7 +50,7 @@
 #define UART_NS16550_REG_INTERVAL_ENABLED \
 	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_REG_SHIFT_HELPER) 0)
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
+#if (DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie))
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #include <drivers/pcie/pcie.h>
 #endif
@@ -248,7 +248,7 @@ struct uart_ns16550_device_config {
 #if UART_NS16550_REG_INTERVAL_ENABLED
 	uint8_t reg_interval;
 #endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
+#if (DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie))
 	bool pcie;
 	pcie_bdf_t pcie_bdf;
 	pcie_id_t pcie_id;
@@ -350,7 +350,7 @@ static int uart_ns16550_configure(const struct device *dev,
 	ARG_UNUSED(dev_cfg);
 
 #ifndef UART_NS16550_ACCESS_IOPORT
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
+#if (DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie))
 	if (dev_cfg->pcie) {
 		struct pcie_mbar mbar;
 

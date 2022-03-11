@@ -87,11 +87,11 @@ __boot_func
 void z_bss_zero(void)
 {
 	(void)memset(__bss_start, 0, (size_t)(__bss_end - __bss_start));
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
+#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay))
 	(void)memset(&__ccm_bss_start, 0,
 		     ((uint32_t) &__ccm_bss_end - (uint32_t) &__ccm_bss_start));
 #endif
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay))
 	(void)memset(&__dtcm_bss_start, 0,
 		     ((uint32_t) &__dtcm_bss_end - (uint32_t) &__dtcm_bss_start));
 #endif
