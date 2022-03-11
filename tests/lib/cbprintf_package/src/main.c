@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include <sys/cbprintf.h>
+#include <linker/utils.h>
 
 #define CBPRINTF_DEBUG 1
 
@@ -295,6 +296,454 @@ static void test_cbprintf_fsc_package(void)
 	zassert_equal(strcmp(test_str1, addr), 0, NULL);
 }
 
+static void check_package(void *package, size_t len, const char *exp_str)
+{
+	char out_str[128];
+
+	strcpy(compare_buf, exp_str);
+
+	struct out_buffer out_buf = {
+		.buf = out_str,
+		.idx = 0,
+		.size = sizeof(out_str)
+	};
+
+	unpack(NULL, &out_buf, (uint8_t *)package, len);
+}
+
+static void test_cbprintf_ro_loc(void)
+{
+	static const char *test_str = "test %d";
+	uint32_t flags = CBPRINTF_PACKAGE_ADD_RO_STR_POS;
+
+#define TEST_FMT test_str, 100
+	char exp_str[256];
+
+	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
+
+	int len = cbprintf_package(NULL, 0, flags, TEST_FMT);
+
+	int slen;
+
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, slen, ALIGN_OFFSET, flags, TEST_FMT);
+
+	zassert_true(len > 0, NULL);
+	zassert_equal(len, slen, "Runtime length: %d, static length: %d", len, slen);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[slen];
+
+	len = cbprintf_package(package, sizeof(package), flags, TEST_FMT);
+	CBPRINTF_STATIC_PACKAGE(spackage, sizeof(spackage), slen, ALIGN_OFFSET, flags, TEST_FMT);
+
+	zassert_true(len > 0, NULL);
+	zassert_equal(len, slen, "Runtime length: %d, static length: %d", len, slen);
+
+	zassert_equal(memcmp(package, spackage, len), 0, NULL);
+
+	uint8_t *hdr = package;
+
+	/* Check that only read-only string location array size is non zero */
+	zassert_equal(hdr[1], 0, NULL);
+	zassert_equal(hdr[2], 1, NULL);
+	zassert_equal(hdr[3], 0, NULL);
+
+	int clen;
+
+	/* Calculate size needed for package with appended read-only strings. */
+	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
+				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+
+	/* Length will be increased by string length + null terminator. */
+	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
+
+	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
+				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+
+	zassert_equal(clen, clen2, NULL);
+
+	/* Length will be increased by string length + null terminator. */
+	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
+
+	uint8_t *chdr = cpackage;
+
+	/* Check that only package after copying has no locations but has
+	 * appended string.
+	 */
+	zassert_equal(chdr[1], 1, NULL);
+	zassert_equal(chdr[2], 0, NULL);
+	zassert_equal(chdr[3], 0, NULL);
+
+	check_package(package, len, exp_str);
+	check_package(cpackage, clen, exp_str);
+
+#undef TEST_FMT
+}
+
+/* Store read-only string by index when read-write string is appended. This
+ * is supported only by runtime packaging.
+ */
+static void test_cbprintf_ro_loc_rw_present(void)
+{
+	static const char *test_str = "test %d %s";
+	char test_str1[] = "test str1";
+	uint32_t flags = CBPRINTF_PACKAGE_ADD_RO_STR_POS;
+
+#define TEST_FMT test_str, 100, test_str1
+	char exp_str[256];
+
+	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
+
+	int len = cbprintf_package(NULL, 0, flags, TEST_FMT);
+
+	zassert_true(len > 0, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
+
+	len = cbprintf_package(package, sizeof(package), flags, TEST_FMT);
+	zassert_true(len > 0, NULL);
+
+	uint8_t *hdr = package;
+
+	/* Check that only read-only string location array size is non zero */
+	zassert_equal(hdr[1], 1, NULL);
+	zassert_equal(hdr[2], 1, NULL);
+	zassert_equal(hdr[3], 0, NULL);
+
+	int clen;
+
+	/* Calculate size needed for package with appended read-only strings. */
+	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
+				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+
+	/* Length will be increased by string length + null terminator. */
+	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
+
+	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
+				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+
+	zassert_equal(clen, clen2, NULL);
+
+	/* Length will be increased by string length + null terminator. */
+	zassert_equal(clen, len + (int)strlen(test_str) + 1, NULL);
+
+	uint8_t *chdr = cpackage;
+
+	/* Check that only package after copying has no locations but has
+	 * appended string.
+	 */
+	zassert_equal(chdr[1], 2, NULL);
+	zassert_equal(chdr[2], 0, NULL);
+	zassert_equal(chdr[3], 0, NULL);
+
+	check_package(package, clen, exp_str);
+	check_package(cpackage, clen, exp_str);
+
+#undef TEST_FMT
+}
+
+static void test_cbprintf_ro_rw_loc(void)
+{
+	/* Strings does not need to be in read-only memory section, flag indicates
+	 * that n first strings are read only.
+	 */
+	char test_str[] = "test %s %s %d %s";
+	char cstr[] = "const";
+
+	char test_str1[] = "test str1";
+	char test_str2[] = "test str2";
+
+#define TEST_FMT test_str, cstr, test_str1, 100, test_str2
+	char exp_str[256];
+
+	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
+
+	uint32_t flags = CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(1) |
+			 CBPRINTF_PACKAGE_ADD_RO_STR_POS |
+			 CBPRINTF_PACKAGE_ADD_RW_STR_POS;
+
+	int len = cbprintf_package(NULL, 0, flags, TEST_FMT);
+	int slen;
+
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, slen, ALIGN_OFFSET, flags, TEST_FMT);
+	zassert_true(len > 0, NULL);
+	zassert_equal(len, slen, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[len];
+
+	memset(package, 0, len);
+	memset(spackage, 0, len);
+
+	int len2 = cbprintf_package(package, sizeof(package), flags, TEST_FMT);
+
+	CBPRINTF_STATIC_PACKAGE(spackage, sizeof(spackage), slen, ALIGN_OFFSET, flags, TEST_FMT);
+	zassert_equal(len, len2, NULL);
+	zassert_equal(slen, len2, NULL);
+	zassert_equal(memcmp(package, spackage, len), 0, NULL);
+
+	uint8_t *hdr = package;
+
+	/* Check that expected number of ro and rw locations are present and no
+	 * strings appended.
+	 */
+	zassert_equal(hdr[1], 0, NULL);
+	zassert_equal(hdr[2], 2, NULL);
+	zassert_equal(hdr[3], 2, NULL);
+
+	int clen;
+
+	uint16_t strl[2] = {0};
+
+	/* Calculate size needed for package with appended read-only strings. */
+	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
+				     CBPRINTF_PACKAGE_COPY_RO_STR, strl, ARRAY_SIZE(strl));
+
+	/* Length will be increased by 2 string lengths + null terminators. */
+	zassert_equal(clen, len + (int)strlen(test_str) + (int)strlen(cstr) + 2, NULL);
+	zassert_equal(strl[0], strlen(test_str) + 1, NULL);
+	zassert_equal(strl[1], strlen(cstr) + 1, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
+
+	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
+				     CBPRINTF_PACKAGE_COPY_RO_STR, strl, ARRAY_SIZE(strl));
+
+	zassert_equal(clen, clen2, NULL);
+
+	uint8_t *chdr = cpackage;
+
+	/* Check that read only strings have been appended. */
+	zassert_equal(chdr[1], 2, NULL);
+	zassert_equal(chdr[2], 0, NULL);
+	zassert_equal(chdr[3], 2, NULL);
+
+	check_package(package, len, exp_str);
+	check_package(cpackage, clen, exp_str);
+
+	/* Calculate size needed for package with appended read-write strings. */
+	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
+				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+
+	/* Length will be increased by 2 string lengths + null terminators. */
+	zassert_equal(clen, len + (int)strlen(test_str1) + (int)strlen(test_str2) + 2, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage2[clen];
+
+	clen2 = cbprintf_package_copy(package, sizeof(package), cpackage2, sizeof(cpackage2),
+				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+
+	zassert_equal(clen, clen2, NULL);
+
+	chdr = cpackage2;
+
+	/* Check that read write strings have been appended. */
+	zassert_equal(chdr[1], 2, NULL);
+	zassert_equal(chdr[2], 2, NULL);
+	zassert_equal(chdr[3], 0, NULL);
+
+	check_package(package, len, exp_str);
+	check_package(cpackage2, clen, exp_str);
+
+#undef TEST_FMT
+}
+
+static void test_cbprintf_ro_rw_loc_const_char_ptr(void)
+{
+	/* Strings does not need to be in read-only memory section, flag indicates
+	 * that n first strings are read only.
+	 */
+	char test_str[] = "test %s %s %d %s";
+	static const char cstr[] = "const";
+
+	char test_str1[] = "test str1";
+	static const char test_str2[] = "test str2";
+
+	/* Test skipped for cases where static const data is not located in
+	 * read-only section.
+	 */
+	if (!linker_is_in_rodata(test_str)) {
+		ztest_test_skip();
+	}
+
+#define TEST_FMT test_str, cstr, test_str1, 100, test_str2
+	char exp_str[256];
+
+	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
+
+
+	/* Use flag which is causing all const char pointers to be considered as
+	 * read only strings.
+	 */
+	uint32_t flags = CBPRINTF_PACKAGE_CONST_CHAR_RO |
+			 CBPRINTF_PACKAGE_ADD_RO_STR_POS |
+			 CBPRINTF_PACKAGE_ADD_RW_STR_POS;
+
+	int len = cbprintf_package(NULL, 0, flags, TEST_FMT);
+	int slen;
+
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, slen, ALIGN_OFFSET, flags, TEST_FMT);
+	zassert_true(len > 0, NULL);
+	zassert_equal(len, slen, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) package[len];
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[len];
+
+	memset(package, 0, len);
+	memset(spackage, 0, len);
+
+	int len2 = cbprintf_package(package, sizeof(package), flags, TEST_FMT);
+
+	CBPRINTF_STATIC_PACKAGE(spackage, sizeof(spackage), slen, ALIGN_OFFSET, flags, TEST_FMT);
+	zassert_equal(len, len2, NULL);
+	zassert_equal(slen, len2, NULL);
+	zassert_equal(memcmp(package, spackage, len), 0, NULL);
+
+	uint8_t *hdr = package;
+
+	/* Check that expected number of ro and rw locations are present and no
+	 * strings appended.
+	 */
+	zassert_equal(hdr[1], 0, NULL);
+	zassert_equal(hdr[2], 3, NULL);
+	zassert_equal(hdr[3], 1, NULL);
+
+	int clen;
+
+	/* Calculate size needed for package with appended read-only strings. */
+	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
+				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+
+	/* Length will be increased by 2 string lengths + null terminators. */
+	size_t str_append_len = (int)strlen(test_str) +
+				(int)strlen(cstr) +
+				(int)strlen(test_str2) + 3;
+	zassert_equal(clen, len + (int)str_append_len, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
+
+	int clen2 = cbprintf_package_copy(package, sizeof(package), cpackage, sizeof(cpackage),
+				     CBPRINTF_PACKAGE_COPY_RO_STR, NULL, 0);
+
+	zassert_equal(clen, clen2, NULL);
+
+	uint8_t *chdr = cpackage;
+
+	/* Check that read only strings have been appended. */
+	zassert_equal(chdr[1], 3, NULL);
+	zassert_equal(chdr[2], 0, NULL);
+	zassert_equal(chdr[3], 1, NULL);
+
+	check_package(package, len, exp_str);
+	check_package(cpackage, clen, exp_str);
+
+	/* Calculate size needed for package with appended read-write strings. */
+	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
+				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+
+	/* Length will be increased by 1 string length + null terminator. */
+	zassert_equal(clen, len + (int)strlen(test_str1) + 1, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage2[clen];
+
+	clen2 = cbprintf_package_copy(package, sizeof(package), cpackage2, sizeof(cpackage2),
+				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+
+	zassert_equal(clen, clen2, NULL);
+
+	chdr = cpackage2;
+
+	/* Check that read write strings have been appended. */
+	zassert_equal(chdr[1], 1, NULL);
+	zassert_equal(chdr[2], 3, NULL);
+	zassert_equal(chdr[3], 0, NULL);
+
+	check_package(package, len, exp_str);
+	check_package(cpackage2, clen, exp_str);
+#undef TEST_FMT
+}
+
+static void test_cbprintf_rw_loc_const_char_ptr(void)
+{
+	/* Test requires that static packaging is applied. Runtime packaging
+	 * cannot be tricked because it checks pointers against read only
+	 * section.
+	 */
+	if (Z_C_GENERIC == 0) {
+		ztest_test_skip();
+	}
+
+	int slen, slen2;
+	int clen, clen2;
+	static const char test_str[] = "test %s %d %s";
+	char test_str1[] = "test str1";
+	static const char test_str2[] = "test str2";
+	/* Store indexes of rw strings. */
+	uint32_t flags = CBPRINTF_PACKAGE_ADD_RW_STR_POS;
+	uint8_t *hdr;
+
+	/* Test skipped for cases where static const data is not located in
+	 * read-only section.
+	 */
+	if (!linker_is_in_rodata(test_str)) {
+		ztest_test_skip();
+	}
+
+#define TEST_FMT test_str, test_str1, 100, test_str2
+	char exp_str[256];
+
+	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
+
+	CBPRINTF_STATIC_PACKAGE(NULL, 0, slen, ALIGN_OFFSET, flags, TEST_FMT);
+	zassert_true(slen > 0, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[slen];
+
+	memset(spackage, 0, slen);
+
+	CBPRINTF_STATIC_PACKAGE(spackage, sizeof(spackage), slen2, ALIGN_OFFSET, flags, TEST_FMT);
+	zassert_equal(slen, slen2, NULL);
+
+	hdr = spackage;
+
+	/* Check that expected number of ro and rw locations are present and no
+	 * strings appended.
+	 */
+	zassert_equal(hdr[1], 0, NULL);
+	zassert_equal(hdr[2], 0, NULL);
+	zassert_equal(hdr[3], 2, NULL);
+
+	/* Calculate size needed for package with appended read-only strings. */
+	clen = cbprintf_package_copy(spackage, sizeof(spackage), NULL, 0,
+				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+
+	/* Length will be increased by 2 string lengths + null terminators. */
+	zassert_equal(clen, slen + (int)strlen(test_str1) + 1, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
+
+	clen2 = cbprintf_package_copy(spackage, sizeof(spackage), cpackage, sizeof(cpackage),
+				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+
+	zassert_equal(clen, clen2, NULL);
+
+	hdr = cpackage;
+
+	/* Check that one string has been appended. */
+	zassert_equal(hdr[1], 1, NULL);
+	zassert_equal(hdr[2], 0, NULL);
+	zassert_equal(hdr[3], 1, NULL);
+
+	check_package(spackage, slen, exp_str);
+	test_str1[0] = '\0';
+	check_package(cpackage, clen, exp_str);
+#undef TEST_FMT
+}
+
 void test_main(void)
 {
 #ifdef __cplusplus
@@ -312,7 +761,12 @@ void test_main(void)
 	ztest_test_suite(cbprintf_package,
 			 ztest_unit_test(test_cbprintf_package),
 			 ztest_unit_test(test_cbprintf_rw_str_indexes),
-			 ztest_unit_test(test_cbprintf_fsc_package)
+			 ztest_unit_test(test_cbprintf_fsc_package),
+			 ztest_unit_test(test_cbprintf_ro_loc),
+			 ztest_unit_test(test_cbprintf_ro_loc_rw_present),
+			 ztest_unit_test(test_cbprintf_ro_rw_loc),
+			 ztest_unit_test(test_cbprintf_ro_rw_loc_const_char_ptr),
+			 ztest_unit_test(test_cbprintf_rw_loc_const_char_ptr)
 			 );
 
 	ztest_run_test_suite(cbprintf_package);
