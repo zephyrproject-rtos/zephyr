@@ -6643,6 +6643,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	struct pdu_adv_aux_ptr *aux_ptr = NULL;
 	const struct pdu_adv_adi *adi = NULL;
 	uint8_t cte_type = BT_HCI_LE_NO_CTE;
+	const struct ll_sync_set *sync;
 	struct pdu_adv_com_ext_adv *p;
 	struct pdu_adv_ext_hdr *h;
 	uint16_t data_len_total;
@@ -6661,6 +6662,22 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    (!(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) &&
 	     !(le_event_mask & BT_EVT_MASK_LE_BIGINFO_ADV_REPORT))) {
+		return;
+	}
+
+	/* NOTE: The timeout_reload field in the sync context is checked under
+	 *       race condition between HCI Tx and Rx thread wherein a sync
+	 *       terminate was performed which resets the timeout_reload field
+	 *       before releasing the sync context back into its memory pool.
+	 *       It is important that timeout_reload field is at safe offset
+	 *       inside the sync context such that it is not corrupt while being
+	 *       in the memory pool.
+	 *
+	 *       This check ensures reports are not sent out after sync
+	 *       terminate.
+	 */
+	sync = HDR_LLL2ULL(ftr->param);
+	if (unlikely(!sync->timeout_reload)) {
 		return;
 	}
 
@@ -6787,14 +6804,13 @@ no_ext_hdr:
 	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT) &&
 		   adi) {
-		const struct ll_sync_set *sync = HDR_LLL2ULL(ftr->param);
 		uint8_t data_status;
 
 		data_status = (aux_ptr) ?
 			      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL :
 			      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
 
-		accept = ftr->sync_rx_enabled &&
+		accept = sync->rx_enable && ftr->sync_rx_enabled &&
 			 (!sync->nodups ||
 			  !dup_found(PDU_ADV_TYPE_EXT_IND,
 				     sync->peer_id_addr_type,
@@ -6806,7 +6822,7 @@ no_ext_hdr:
 	*/
 
 	} else {
-		accept = ftr->sync_rx_enabled;
+		accept = sync->rx_enable && ftr->sync_rx_enabled;
 	}
 
 	data_len_max = CONFIG_BT_BUF_EVT_RX_SIZE -
