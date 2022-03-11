@@ -382,7 +382,7 @@ int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 			    NULL,					       \
 			    NULL, &miwu_config_##inst,                         \
 			    PRE_KERNEL_1,                                      \
-			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS, NULL);        \
+			    CONFIG_INTC_INIT_PRIORITY, NULL);                  \
 									       \
 	NPCX_MIWU_ISR_FUNC_IMPL(inst)                                          \
 									       \

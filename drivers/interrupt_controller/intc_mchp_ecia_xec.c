@@ -568,7 +568,7 @@ static int xec_ecia_init(const struct device *dev)
 									\
 	DEVICE_DT_DEFINE(n, xec_girq_init_##n,				\
 		 NULL, &xec_data_girq_##n, &xec_config_girq_##n,	\
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,		\
 		 NULL);							\
 									\
 	static int xec_girq_init_##n(const struct device *dev)		\
@@ -606,7 +606,7 @@ static const struct xec_ecia_config xec_config_ecia = {
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ecia), xec_ecia_init,
 		 NULL, NULL, &xec_config_ecia,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 NULL);
 
 /* look up GIRQ node handle from ECIA configuration */

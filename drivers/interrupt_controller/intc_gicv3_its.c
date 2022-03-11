@@ -667,7 +667,7 @@ struct its_driver_api gicv3_its_api = {
 			      &gicv3_its_data##n,			       \
 			      &gicv3_its_config##n,			       \
 			      POST_KERNEL,				       \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+			      CONFIG_INTC_INIT_PRIORITY,		       \
 			      &gicv3_its_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GICV3_ITS_INIT)
