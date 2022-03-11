@@ -41,6 +41,14 @@
 
 /* Advertisement channel maximum payload size */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+
+/* Extended Scan and Periodic Sync Rx PDU time reservation */
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
+#define PDU_AC_EXT_PAYLOAD_RX_SIZE 0U
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+#define PDU_AC_EXT_PAYLOAD_RX_SIZE PDU_AC_EXT_PAYLOAD_SIZE_MAX
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
+
 #define PDU_AC_EXT_HEADER_SIZE_MIN  offsetof(struct pdu_adv_com_ext_adv, \
 					     ext_hdr_adv_data)
 #define PDU_AC_EXT_HEADER_SIZE_MAX  63
