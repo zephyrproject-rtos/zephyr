@@ -17,9 +17,8 @@
 #include <soc.h>
 #include "dma_dw_common.h"
 
-#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(dma_dw);
+LOG_MODULE_REGISTER(dma_dw, CONFIG_DMA_LOG_LEVEL);
 
 /* Device constant configuration parameters */
 struct dw_dma_cfg {
@@ -32,21 +31,26 @@ static int dw_dma_init(const struct device *dev)
 	const struct dw_dma_cfg *const dev_cfg = dev->config;
 
 	/* Disable all channels and Channel interrupts */
-	dw_dma_setup(dev);
+	int ret = dw_dma_setup(dev);
+
+	if (ret != 0) {
+		LOG_ERR("failed to initialize DW DMA %s", dev->name);
+		goto out;
+	}
 
 	/* Configure interrupts */
 	dev_cfg->irq_config();
 
 	LOG_INF("Device %s initialized", dev->name);
 
-	return 0;
+out:
+	return ret;
 }
 
 static const struct dma_driver_api dw_dma_driver_api = {
 	.config = dw_dma_config,
-	.reload = dw_dma_reload,
-	.start = dw_dma_transfer_start,
-	.stop = dw_dma_transfer_stop,
+	.start = dw_dma_start,
+	.stop = dw_dma_stop,
 };
 
 #define DW_DMAC_INIT(inst)						\
