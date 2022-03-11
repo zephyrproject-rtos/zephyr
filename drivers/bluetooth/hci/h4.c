@@ -340,7 +340,8 @@ static inline void read_payload(void)
 
 	reset_rx();
 
-	if (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) {
+	if (IS_ENABLED(CONFIG_BT_RECV_BLOCKING) &&
+	    (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO)) {
 		BT_DBG("Calling bt_recv_prio(%p)", buf);
 		bt_recv_prio(buf);
 	}

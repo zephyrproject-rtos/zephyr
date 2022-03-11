@@ -49,7 +49,7 @@ enum {
  * Helper for the HCI driver to get HCI event flags that describes rules that.
  * must be followed.
  *
- * When CONFIG_BT_RECV_IS_RX_THREAD is enabled the flags
+ * When @kconfig{CONFIG_BT_RECV_BLOCKING} is enabled the flags
  * BT_HCI_EVT_FLAG_RECV and BT_HCI_EVT_FLAG_RECV_PRIO indicates if the event
  * should be given to bt_recv or bt_recv_prio.
  *
@@ -85,7 +85,7 @@ static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
  * host with data from the controller. The buffer needs to have its type
  * set with the help of bt_buf_set_type() before calling this API.
  *
- * When CONFIG_BT_RECV_IS_RX_THREAD is defined then this API should not be used
+ * When @kconfig{CONFIG_BT_RECV_BLOCKING} is defined then this API should not be used
  * for so-called high priority HCI events, which should instead be delivered to
  * the host stack through bt_recv_prio().
  *
@@ -165,7 +165,7 @@ struct bt_hci_driver {
 	 * is safe to start calling the send() handler.
 	 *
 	 * If the driver uses its own RX thread, i.e.
-	 * CONFIG_BT_RECV_IS_RX_THREAD is set, then this
+	 * @kconfig{CONFIG_BT_RECV_BLOCKING} is set, then this
 	 * function is expected to start that thread.
 	 *
 	 * @return 0 on success or negative error number on failure.
@@ -179,7 +179,7 @@ struct bt_hci_driver {
 	 * transport is closed.
 	 *
 	 * If the driver uses its own RX thread, i.e.
-	 * CONFIG_BT_RECV_IS_RX_THREAD is set, then this
+	 * @kconfig{CONFIG_BT_RECV_BLOCKING} is set, then this
 	 * function is expected to abort that thread.
 	 * @return 0 on success or negative error number on failure.
 	 */

@@ -15,7 +15,6 @@ config BT_H4
 	bool "H:4 UART"
 	select UART_INTERRUPT_DRIVEN
 	select BT_UART
-	select BT_RECV_IS_RX_THREAD
 	depends on SERIAL
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
