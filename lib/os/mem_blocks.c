@@ -11,7 +11,7 @@
 #include <sys/mem_blocks.h>
 #include <sys/util.h>
 
-static void *alloc_one(sys_mem_blocks_t *mem_block)
+static void *alloc_blocks(sys_mem_blocks_t *mem_block, size_t num_blocks)
 {
 	size_t offset;
 	int r;
@@ -19,7 +19,7 @@ static void *alloc_one(sys_mem_blocks_t *mem_block)
 	void *ret = NULL;
 
 	/* Find an unallocated block */
-	r = sys_bitarray_alloc(mem_block->bitmap, 1, &offset);
+	r = sys_bitarray_alloc(mem_block->bitmap, num_blocks, &offset);
 	if (r != 0) {
 		goto out;
 	}
@@ -33,7 +33,7 @@ out:
 	return ret;
 }
 
-static int free_one(sys_mem_blocks_t *mem_block, void *ptr)
+static int free_blocks(sys_mem_blocks_t *mem_block, void *ptr, size_t num_blocks)
 {
 	size_t offset;
 	uint8_t *blk = ptr;
@@ -51,7 +51,7 @@ static int free_one(sys_mem_blocks_t *mem_block, void *ptr)
 		goto out;
 	}
 
-	ret = sys_bitarray_free(mem_block->bitmap, 1, offset);
+	ret = sys_bitarray_free(mem_block->bitmap, num_blocks, offset);
 
 out:
 	return ret;
@@ -85,7 +85,7 @@ int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
 	}
 
 	for (i = 0; i < count; i++) {
-		void *ptr = alloc_one(mem_block);
+		void *ptr = alloc_blocks(mem_block, 1);
 
 		if (ptr == NULL) {
 			break;
@@ -138,7 +138,7 @@ int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 	for (i = 0; i < count; i++) {
 		void *ptr = in_blocks[i];
 
-		int r = free_one(mem_block, ptr);
+		int r = free_blocks(mem_block, ptr, 1);
 
 		if (r != 0) {
 			ret = r;
