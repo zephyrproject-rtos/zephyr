@@ -1003,7 +1003,7 @@ int bt_audio_stream_connect(struct bt_audio_stream *stream)
 	}
 }
 
-int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
+int bt_audio_unicast_group_create(struct bt_audio_stream *streams[],
 				  size_t num_stream,
 				  struct bt_audio_unicast_group **out_unicast_group)
 {
@@ -1029,6 +1029,18 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
 		return -EINVAL;
 	}
 
+	for (size_t i = 0; i < num_stream; i++) {
+		CHECKIF(streams[i] == NULL) {
+			return -EINVAL;
+		}
+
+		if (streams[i]->group != NULL) {
+			BT_DBG("Channel[%u] (%p) already part of group %p",
+			       i, streams[i], streams[i]->group);
+			return -EALREADY;
+		}
+	}
+
 	unicast_group = NULL;
 	for (index = 0; index < ARRAY_SIZE(unicast_groups); index++) {
 		/* Find free entry */
@@ -1047,23 +1059,7 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
 		sys_slist_t *group_streams = &unicast_group->streams;
 		struct bt_audio_stream *stream;
 
-		stream = &streams[i];
-
-		if (stream->group != NULL) {
-			BT_DBG("Channel[%u] (%p) already part of group %p",
-			       i, stream, stream->group);
-
-			/* Cleanup */
-			for (size_t j = 0; j < i; j++) {
-				stream = &streams[j];
-
-				(void)sys_slist_find_and_remove(group_streams,
-								&stream->node);
-				stream->unicast_group = NULL;
-			}
-			return -EALREADY;
-		}
-
+		stream = streams[i];
 		stream->unicast_group = unicast_group;
 		sys_slist_append(group_streams, &stream->node);
 	}
@@ -1074,7 +1070,7 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
 }
 
 int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
-				       struct bt_audio_stream *streams,
+				       struct bt_audio_stream *streams[],
 				       size_t num_stream)
 {
 	struct bt_audio_stream *tmp_stream;
@@ -1096,6 +1092,12 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 		return -EINVAL;
 	}
 
+	for (size_t i = 0; i < num_stream; i++) {
+		CHECKIF(streams[i] == NULL) {
+			return -EINVAL;
+		}
+	}
+
 	total_stream_cnt = num_stream;
 	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, tmp_stream, node) {
 		total_stream_cnt++;
@@ -1110,9 +1112,9 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 
 	/* Validate input */
 	for (size_t i = 0; i < num_stream; i++) {
-		if (streams[i].group != NULL) {
+		if (streams[i]->group != NULL) {
 			BT_DBG("stream[%zu] is already part of group %p",
-			       i, streams[i].group);
+			       i, streams[i]->group);
 			return -EINVAL;
 		}
 	}
@@ -1128,7 +1130,7 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 
 	for (size_t i = 0; i < num_stream; i++) {
 		sys_slist_t *group_streams = &unicast_group->streams;
-		struct bt_audio_stream *stream = &streams[i];
+		struct bt_audio_stream *stream = streams[i];
 
 		stream->unicast_group = unicast_group;
 		sys_slist_append(group_streams, &stream->node);
@@ -1138,7 +1140,7 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 }
 
 int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast_group,
-					  struct bt_audio_stream *streams,
+					  struct bt_audio_stream *streams[],
 					  size_t num_stream)
 {
 	struct bt_iso_cig *cig;
@@ -1160,9 +1162,13 @@ int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast
 
 	/* Validate input */
 	for (size_t i = 0; i < num_stream; i++) {
-		if (streams[i].group != unicast_group) {
+		CHECKIF(streams[i] == NULL) {
+			return -EINVAL;
+		}
+
+		if (streams[i]->group != unicast_group) {
 			BT_DBG("stream[%zu] group %p is not group %p",
-			       i, streams[i].group, unicast_group);
+			       i, streams[i]->group, unicast_group);
 			return -EINVAL;
 		}
 	}
@@ -1178,11 +1184,11 @@ int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast
 
 	for (size_t i = 0; i < num_stream; i++) {
 		sys_slist_t *group_streams = &unicast_group->streams;
-		struct bt_audio_stream *stream = &streams[i];
+		struct bt_audio_stream *stream = streams[i];
 
 		stream->unicast_group = NULL;
 		(void)sys_slist_find_and_remove(group_streams,
-						&streams->node);
+						&stream->node);
 	}
 
 	return 0;
