@@ -410,7 +410,7 @@ void test_posix_pthread_error_condition(void)
 	void *stackaddr;
 	size_t stacksize;
 	int policy, detach;
-	static pthread_once_t key = 1;
+	static pthread_once_t key;
 
 	/* TESTPOINT: invoke pthread APIs with NULL */
 	zassert_equal(pthread_attr_destroy(NULL), EINVAL,
