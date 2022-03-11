@@ -967,7 +967,7 @@ static int i2c_ctrl_init(const struct device *dev)
 			    NPCX_I2C_CTRL_INIT_FUNC(inst),                     \
 			    NULL,                                              \
 			    &i2c_ctrl_data_##inst, &i2c_ctrl_cfg_##inst,       \
-			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
+			    PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY,            \
 			    NULL);                                             \
 									       \
 	NPCX_I2C_CTRL_INIT_FUNC_IMPL(inst)

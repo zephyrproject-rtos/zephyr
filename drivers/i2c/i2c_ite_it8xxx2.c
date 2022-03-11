@@ -1088,7 +1088,7 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 			i2c_it8xxx2_init, NULL,				       \
 			&i2c_it8xxx2_data_##idx,	                       \
 			&i2c_it8xxx2_cfg_##idx, POST_KERNEL,		       \
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                    \
+			CONFIG_I2C_INIT_PRIORITY,			       \
 			&i2c_it8xxx2_driver_api);                              \
 	\
 	static void i2c_it8xxx2_config_func_##idx(void)                        \

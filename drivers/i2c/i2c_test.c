@@ -40,7 +40,7 @@ static int vnd_i2c_init(const struct device *dev)
 #define VND_I2C_INIT(n)						\
 	I2C_DEVICE_DT_INST_DEFINE(n, vnd_i2c_init, NULL,			\
 			      NULL, NULL, POST_KERNEL,			\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      CONFIG_I2C_INIT_PRIORITY,	\
 			      &vnd_i2c_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_I2C_INIT)

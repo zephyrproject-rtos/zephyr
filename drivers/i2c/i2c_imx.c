@@ -372,7 +372,7 @@ static const struct i2c_driver_api i2c_imx_driver_api = {
 				NULL,					\
 				&i2c_imx_data_##n, &i2c_imx_config_##n,	\
 				POST_KERNEL,				\
-				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+				CONFIG_I2C_INIT_PRIORITY,		\
 				&i2c_imx_driver_api);			\
 									\
 	static void i2c_imx_config_func_##n(const struct device *dev)	\

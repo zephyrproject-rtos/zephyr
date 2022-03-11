@@ -225,7 +225,7 @@ static struct i2c_gecko_data i2c_gecko_data_##idx; \
 I2C_DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, \
 		 NULL, \
 		 &i2c_gecko_data_##idx, &i2c_gecko_config_##idx, \
-		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		 POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
 		 &i2c_gecko_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_INIT)
