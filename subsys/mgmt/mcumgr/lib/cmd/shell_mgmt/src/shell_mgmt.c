@@ -39,7 +39,7 @@ shell_get_output()
 static int
 shell_mgmt_exec(struct mgmt_ctxt *cb)
 {
-	static char line[SHELL_MGMT_MAX_LINE_LEN + 1] = {0};
+	char line[SHELL_MGMT_MAX_LINE_LEN + 1];
 	CborEncoder str_encoder;
 	CborError err;
 	int rc;
@@ -62,10 +62,14 @@ shell_mgmt_exec(struct mgmt_ctxt *cb)
 		{ 0 },
 	};
 
+	line[0] = 0;
+
 	err = cbor_read_object(&cb->it, attrs);
 	if (err != 0) {
 		return MGMT_ERR_EINVAL;
 	}
+
+	line[ARRAY_SIZE(line) - 1] = 0;
 
 	/* Key="o"; value=<command-output> */
 	err |= cbor_encode_text_stringz(&cb->encoder, "o");
