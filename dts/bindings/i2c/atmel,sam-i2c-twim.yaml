@@ -37,7 +37,9 @@ description: |
 
 compatible: "atmel,sam-i2c-twim"
 
-include: i2c-controller.yaml
+include:
+    - name: i2c-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -201,15 +203,3 @@ properties:
         - 5   # 101
         - 6   # 110
         - 7   # 111
-
-    pinctrl-0:
-      type: phandles
-      required: true
-      description: |
-        GPIO pin configuration for TWCK & TWD signals. We expect that
-        the phandles will reference pinctrl nodes. These nodes will
-        have a nodelabel that matches the Atmel SoC HAL defines and
-        be of the form p<port><pin><periph>_<inst>_<signal>.
-
-        For example the I2C on SAM4L would be
-           pinctrl-0 = <&pb0a_twi1_twd1 &pb1a_twi1_twck1>;

@@ -13,6 +13,7 @@
 	compatible = "atmel,sam4l_ek";
 
 	aliases {
+		i2c-0 = &twim0;
 		led0 = &user_led;
 		sw0 = &sw0_dfu;
 	};
@@ -71,6 +72,9 @@
 
 &twim0 {
 	status = "okay";
+
+	pinctrl-0 = <&twi0_default>;
+	pinctrl-names = "default";
 
 	std-clk-slew-lim = <0>;
 	std-clk-strength-low = "0.5";

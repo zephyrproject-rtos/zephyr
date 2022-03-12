@@ -122,6 +122,9 @@
 
 &twi0 {
 	status = "okay";
+
+	pinctrl-0 = <&twi0_default>;
+	pinctrl-names = "default";
 };
 
 &spi0 {

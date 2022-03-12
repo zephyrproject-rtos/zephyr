@@ -16,6 +16,13 @@
 		};
 	};
 
+	twi0_default: twi0_default {
+		group1 {
+			pinmux = <PA4A_TWI0_TWCK>,
+				 <PA3A_TWI0_TWD>;
+		};
+	};
+
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <PA9A_UART0_RXD>,

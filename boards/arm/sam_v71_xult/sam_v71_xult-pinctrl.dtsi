@@ -16,6 +16,19 @@
 		};
 	};
 
+	twihs0_default: twihs0_default {
+		group1 {
+			pinmux = <PA4A_TWI0_TWCK>,
+				 <PA3A_TWI0_TWD>;
+		};
+	};
+	twihs2_default: twihs2_default {
+		group1 {
+			pinmux = <PD28C_TWI2_TWCK>,
+				 <PD27C_TWI2_TWD>;
+		};
+	};
+
 	uart3_default: uart3_default {
 		group1 {
 			pinmux = <PD28A_UART3_RXD>,
