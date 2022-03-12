@@ -9,8 +9,6 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 
-#include "same70-pinctrl.dtsi"
-
 / {
 	aliases {
 		watchdog0 = &wdt;
