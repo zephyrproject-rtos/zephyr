@@ -81,7 +81,6 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pa4a_twi0_twck0 &pa3a_twi0_twd0>;
 		};
 
 		twi1: i2c@4001c000 {
@@ -94,7 +93,6 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pb5a_twi1_twck1 &pb4a_twi1_twd1>;
 		};
 
 		spi0: spi@40008000 {
