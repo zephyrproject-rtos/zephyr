@@ -242,6 +242,17 @@ int pm_device_runtime_put_async(const struct device *dev)
 	return ret;
 }
 
+int pm_device_runtime_auto_enable(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	/* No action needed if PM_DEVICE_FLAG_RUNTIME_AUTO is not enabled */
+	if (!pm || !atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_AUTO)) {
+		return 0;
+	}
+	return pm_device_runtime_enable(dev);
+}
+
 int pm_device_runtime_enable(const struct device *dev)
 {
 	int ret = 0;
