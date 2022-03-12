@@ -8,8 +8,6 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 
-#include "sam4l-pinctrl.dtsi"
-
 / {
 	chosen {
 		zephyr,flash-controller = &flashcalw;
