@@ -6,6 +6,20 @@
 #include <dt-bindings/pinctrl/same70q-pinctrl.h>
 
 &pinctrl {
+	afec0_default: afec0_default {	/* ADCL - J502 */
+		group1 {
+			pinmux = <PD30X_AFE0_AD0>,
+				 <PA19X_AFE0_AD8>,
+				 <PA17X_AFE0_AD6>;
+		};
+	};
+
+	afec1_default: afec1_default {	/* ADCH - J504 */
+		group1 {
+			pinmux = <PC31X_AFE1_AD6>;
+		};
+	};
+
 	spi0_default: spi0_default {
 		group1 {
 			pinmux = <PD20B_SPI0_MISO>,
