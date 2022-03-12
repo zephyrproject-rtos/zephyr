@@ -35,12 +35,11 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	/* ++_current_cpu->nested to be checked by arch_is_in_isr() */
 	get_cpu	x0
 	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
-	add	w1, w1, #1
-	str	w1, [x0, #___cpu_t_nested_OFFSET]
+	add	w2, w1, #1
+	str	w2, [x0, #___cpu_t_nested_OFFSET]
 
 	/* If not nested: switch to IRQ stack and save current sp on it. */
-	cmp	w1, #1
-	bne	1f
+	cbnz	w1, 1f
 	ldr	x1, [x0, #___cpu_t_irq_stack_OFFSET]
 	mov	x2, sp
 	mov	sp, x1
