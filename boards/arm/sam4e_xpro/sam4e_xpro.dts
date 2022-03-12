@@ -126,10 +126,10 @@
 
 &spi0 {
 	status = "okay";
-	pinctrl-0 = <&pa12a_spi_miso
-		     &pa13a_spi_mosi
-		     &pa14a_spi_spck
-		     &pb14a_spi_npcs1>;
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
 	cs-gpios = <&piob 14 GPIO_ACTIVE_LOW>,
 		   <&piod 23 GPIO_ACTIVE_LOW>,
 		   <&piod 30 GPIO_ACTIVE_LOW>;
