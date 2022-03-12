@@ -73,7 +73,6 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pa18a_twi0_twck0 &pa17a_twi0_twd0>;
 		};
 
 		twi1: i2c@40090000 {
@@ -86,7 +85,6 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pb13a_twi1_twck1 &pb12a_twi1_twd1>;
 		};
 
 		uart: uart@400e0800 {

@@ -20,6 +20,7 @@
 #include <init.h>
 #include <soc.h>
 #include <drivers/i2c.h>
+#include <drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
@@ -41,8 +42,7 @@ struct i2c_sam_twihs_dev_cfg {
 	Twihs *regs;
 	void (*irq_config)(void);
 	uint32_t bitrate;
-	const struct soc_gpio_pin *pin_list;
-	uint8_t pin_list_size;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t periph_id;
 	uint8_t irq_id;
 };
@@ -290,7 +290,10 @@ static int i2c_sam_twihs_initialize(const struct device *dev)
 	k_sem_init(&dev_data->sem, 0, 1);
 
 	/* Connect pins to the peripheral */
-	soc_gpio_list_configure(dev_cfg->pin_list, dev_cfg->pin_list_size);
+	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Enable module's clock */
 	soc_pmc_peripheral_enable(dev_cfg->periph_id);
@@ -320,6 +323,7 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 };
 
 #define I2C_TWIHS_SAM_INIT(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static void i2c##n##_sam_irq_config(void)			\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
@@ -327,15 +331,12 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 			    DEVICE_DT_INST_GET(n), 0);			\
 	}								\
 									\
-	static const struct soc_gpio_pin pins_twihs##n[] = ATMEL_SAM_DT_INST_PINS(n); \
-									\
 	static const struct i2c_sam_twihs_dev_cfg i2c##n##_sam_config = {\
 		.regs = (Twihs *)DT_INST_REG_ADDR(n),			\
 		.irq_config = i2c##n##_sam_irq_config,			\
 		.periph_id = DT_INST_PROP(n, peripheral_id),		\
 		.irq_id = DT_INST_IRQN(n),				\
-		.pin_list = pins_twihs##n,				\
-		.pin_list_size = ARRAY_SIZE(pins_twihs##n),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 	};								\
 									\

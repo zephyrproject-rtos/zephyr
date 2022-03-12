@@ -12,8 +12,7 @@
 / {
 	aliases {
 		i2c-0 = &twihs0;
-		i2c-1 = &twihs1;
-		i2c-2 = &twihs2;
+		i2c-1 = &twihs2;
 		led0 = &green_led;
 		sw0 = &sw0_user_button;
 	};
@@ -66,10 +65,16 @@
 
 &twihs0 {
 	status = "okay";
+
+	pinctrl-0 = <&twihs0_default>;
+	pinctrl-names = "default";
 };
 
 &twihs2 {
 	status = "okay";
+
+	pinctrl-0 = <&twihs2_default>;
+	pinctrl-names = "default";
 };
 
 &spi0 {
