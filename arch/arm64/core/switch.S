@@ -154,16 +154,19 @@ offload:
 	 */
 	ldp	x1, x0, [sp, ___esf_t_x0_x1_OFFSET]
 
-	/* _current_cpu->nested=1, to be checked by arch_is_in_isr() */
-	get_cpu x2
-	mov	w3, #1
-	str	w3, [x2, #___cpu_t_nested_OFFSET]
-	/* switch to IRQ stack and save current sp on it. */
+	/* ++_current_cpu->nested to be checked by arch_is_in_isr() */
+	get_cpu	x2
+	ldr	w3, [x2, #___cpu_t_nested_OFFSET]
+	add	w4, w3, #1
+	str	w4, [x2, #___cpu_t_nested_OFFSET]
+
+	/* If not nested: switch to IRQ stack and save current sp on it. */
+	cbnz	w3, 1f
 	ldr	x3, [x2, #___cpu_t_irq_stack_OFFSET]
 	mov	x4, sp
 	mov	sp, x3
 	str	x4, [sp, #-16]!
-
+1:
 	/* Execute provided routine (argument is in x0 already). */
 	blr	x1
 

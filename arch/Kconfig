@@ -46,6 +46,7 @@ config ARM64
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	help
 	  ARM64 (AArch64) architecture
 
