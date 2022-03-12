@@ -215,7 +215,6 @@
 			status = "disabled";
 			label = "ADC_0";
 			#io-channel-cells = <1>;
-			pinctrl-0 = <&pa8b_afec0_adtrg>;
 		};
 
 		afec1: adc@40064000 {
@@ -226,7 +225,6 @@
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;
-			pinctrl-0 = <&pd9c_afec1_adtrg>;
 		};
 
 		dacc: dacc@40040000 {
