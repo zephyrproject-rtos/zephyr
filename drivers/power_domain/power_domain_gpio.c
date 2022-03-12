@@ -25,14 +25,6 @@ struct pd_gpio_data {
 	k_timeout_t last_boot;
 };
 
-const char *actions[] = {
-	[PM_DEVICE_ACTION_RESUME] = "RESUME",
-	[PM_DEVICE_ACTION_SUSPEND] = "SUSPEND",
-	[PM_DEVICE_ACTION_TURN_ON] = "TURN ON",
-	[PM_DEVICE_ACTION_TURN_OFF] = "TURN OFF"
-};
-
-
 static int pd_gpio_pm_action(const struct device *dev,
 			     enum pm_device_action action)
 {
