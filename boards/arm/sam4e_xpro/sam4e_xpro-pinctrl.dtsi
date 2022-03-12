@@ -6,6 +6,17 @@
 #include <dt-bindings/pinctrl/sam4eXe-pinctrl.h>
 
 &pinctrl {
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PA12A_SPI_MISO>,
+				 <PA13A_SPI_MOSI>,
+				 <PA14A_SPI_SPCK>,
+				 <PB14A_SPI_NPCS1>,
+				 <PD23_GPIO>,
+				 <PD30_GPIO>;
+		};
+	};
+
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <PA9A_UART0_RXD>,

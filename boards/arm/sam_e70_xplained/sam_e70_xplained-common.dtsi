@@ -74,7 +74,12 @@
 
 &spi0 {
 	status = "okay";
-	pinctrl-0 = <&pc26c_spi1_miso &pc27c_spi1_mosi &pc24c_spi1_spck &pd27b_spi0_npcs3>;
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&piod 25 GPIO_ACTIVE_LOW>,
+		   <&piod 27 GPIO_ACTIVE_LOW>;
 };
 
 &usart1 {

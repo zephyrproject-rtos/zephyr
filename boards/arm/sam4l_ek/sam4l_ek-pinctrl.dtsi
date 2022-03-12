@@ -6,6 +6,16 @@
 #include <dt-bindings/pinctrl/sam4lcXc-pinctrl.h>
 
 &pinctrl {
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PC4A_SPI_MISO>,
+				 <PC5A_SPI_MOSI>,
+				 <PC6A_SPI_SCK>,
+				 <PA2B_SPI_NPCS0>,
+				 <PC0A_SPI_NPCS2>;
+		};
+	};
+
 	usart0_default: usart0_default {
 		group1 {
 			pinmux = <PC2C_USART0_RXD>,

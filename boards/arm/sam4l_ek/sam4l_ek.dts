@@ -56,11 +56,10 @@
 
 &spi0 {
 	status = "okay";
-	pinctrl-0 = <&pc4a_spi_miso
-		     &pc5a_spi_mosi
-		     &pc6a_spi_sck
-		     &pa2b_spi_npcs0
-		     &pc0a_spi_npcs2>;
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
 	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>,
 		   <&gpioc 0 GPIO_ACTIVE_LOW>;
 };
