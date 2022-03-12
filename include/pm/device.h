@@ -362,6 +362,44 @@ void pm_device_children_action_run(const struct device *dev,
 
 #if defined(CONFIG_PM_DEVICE) || defined(__DOXYGEN__)
 /**
+ * @brief Initialize a device state to #PM_DEVICE_STATE_SUSPENDED.
+ *
+ * By default device state is initialized to #PM_DEVICE_STATE_ACTIVE. However
+ * in order to save power some drivers may choose to only initialize the device
+ * to the suspended state, or actively put the device into the suspended state.
+ * This function can therefore be used to notify the PM subsystem that the
+ * device is in #PM_DEVICE_STATE_SUSPENDED instead of the default.
+ *
+ * @param dev Device instance.
+ */
+static inline void pm_device_init_suspended(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	pm->state = PM_DEVICE_STATE_SUSPENDED;
+}
+
+/**
+ * @brief Initialize a device state to #PM_DEVICE_STATE_OFF.
+ *
+ * By default device state is initialized to #PM_DEVICE_STATE_ACTIVE. In
+ * general, this makes sense because the device initialization function will
+ * resume and configure a device, leaving it operational. However, when power
+ * domains are enabled, the device may be connected to a switchable power
+ * source, in which case it won't be powered at boot. This function can
+ * therefore be used to notify the PM subsystem that the device is in
+ * #PM_DEVICE_STATE_OFF instead of the default.
+ *
+ * @param dev Device instance.
+ */
+static inline void pm_device_init_off(const struct device *dev)
+{
+	struct pm_device *pm = dev->pm;
+
+	pm->state = PM_DEVICE_STATE_OFF;
+}
+
+/**
  * @brief Mark a device as busy.
  *
  * Devices marked as busy will not be suspended when the system goes into
@@ -484,6 +522,14 @@ bool pm_device_state_is_locked(const struct device *dev);
 bool pm_device_on_power_domain(const struct device *dev);
 
 #else
+static inline void pm_device_init_suspended(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+static inline void pm_device_init_off(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
 static inline void pm_device_busy_set(const struct device *dev)
 {
 	ARG_UNUSED(dev);

@@ -83,10 +83,10 @@ static int pd_gpio_init(const struct device *dev)
 
 	if (pm_device_on_power_domain(dev)) {
 		/* Device is unpowered */
-		pm_device_runtime_init_off(dev);
+		pm_device_init_off(dev);
 		rc = gpio_pin_configure_dt(&cfg->enable, GPIO_DISCONNECTED);
 	} else {
-		pm_device_runtime_init_suspended(dev);
+		pm_device_init_suspended(dev);
 		rc = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
 	}
 
