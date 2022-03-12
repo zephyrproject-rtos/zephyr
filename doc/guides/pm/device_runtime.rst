@@ -145,7 +145,7 @@ To enable device runtime power management on a device, the driver needs to call
 function will suspend the device if its state is
 :c:enumerator:`PM_DEVICE_STATE_ACTIVE`. In case the device is physically
 suspended, the init function should call
-:c:func:`pm_device_runtime_init_suspended` before calling
+:c:func:`pm_device_init_suspended` before calling
 :c:func:`pm_device_runtime_enable`.
 
 .. code-block:: c
@@ -157,7 +157,7 @@ suspended, the init function should call
         ...
 
         /* OPTIONAL: mark device as suspended if it is physically suspended */
-        pm_device_runtime_init_suspended(dev);
+        pm_device_init_suspended(dev);
 
         /* enable device runtime power management */
         ret = pm_device_runtime_enable(dev);
