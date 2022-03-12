@@ -147,25 +147,28 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 	beq	offload
 	b	inv
 offload:
+	/*
+	 * Retrieve provided routine and argument from the stack.
+	 * Routine pointer is in saved x0, argument in saved x1
+	 * so we load them with x1/x0 (reversed).
+	 */
+	ldp	x1, x0, [sp, ___esf_t_x0_x1_OFFSET]
+
 	/* _current_cpu->nested=1, to be checked by arch_is_in_isr() */
-	get_cpu x0
-	mov	w1, #1
-	str	w1, [x0, #___cpu_t_nested_OFFSET]
+	get_cpu x2
+	mov	w3, #1
+	str	w3, [x2, #___cpu_t_nested_OFFSET]
 	/* switch to IRQ stack and save current sp on it. */
-	ldr	x1, [x0, #___cpu_t_irq_stack_OFFSET]
-	mov	x2, sp
-	mov	sp, x1
-	str	x2, [sp, #-16]!
+	ldr	x3, [x2, #___cpu_t_irq_stack_OFFSET]
+	mov	x4, sp
+	mov	sp, x3
+	str	x4, [sp, #-16]!
 
-	bl	z_irq_do_offload
+	/* Execute provided routine (argument is in x0 already). */
+	blr	x1
 
-	/* _current_cpu->nested=0 */
-	get_cpu x0
-	str	wzr, [x0, #___cpu_t_nested_OFFSET]
-	/* restore original stack pointer. */
-	ldr	x1, [sp]
-	mov	sp, x1
-	b	z_arm64_exit_exc
+	/* Exit through regular IRQ exit path */
+	b	z_arm64_irq_done
 #endif
 	b	inv
 
@@ -201,11 +204,3 @@ GTEXT(z_arm64_call_svc)
 SECTION_FUNC(TEXT, z_arm64_call_svc)
 	svc	#_SVC_CALL_CONTEXT_SWITCH
 	ret
-
-#ifdef CONFIG_IRQ_OFFLOAD
-GTEXT(z_arm64_offload)
-SECTION_FUNC(TEXT, z_arm64_offload)
-	svc	#_SVC_CALL_IRQ_OFFLOAD
-	ret
-#endif
-

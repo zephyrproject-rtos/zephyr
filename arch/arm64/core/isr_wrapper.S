@@ -107,6 +107,8 @@ spurious_continue:
 	bl	sys_trace_isr_exit
 #endif
 
+GTEXT(z_arm64_irq_done)
+z_arm64_irq_done:
 	/* if (--_current_cpu->nested != 0) exit */
 	get_cpu	x0
 	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
