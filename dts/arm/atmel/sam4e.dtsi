@@ -242,7 +242,6 @@
 			peripheral-id = <21 22 23>;
 			status = "disabled";
 			label = "TC0";
-			pinctrl-0 = <>;
 		};
 
 		tc1: tc@40094000 {
@@ -254,7 +253,6 @@
 			peripheral-id = <24 25 26>;
 			status = "disabled";
 			label = "TC1";
-			pinctrl-0 = <>;
 		};
 
 		tc2: tc@40098000 {
@@ -266,7 +264,6 @@
 			peripheral-id = <27 28 29>;
 			status = "disabled";
 			label = "TC2";
-			pinctrl-0 = <>;
 		};
 	};
 };

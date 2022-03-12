@@ -220,7 +220,6 @@
 			peripheral-id = <2>;
 			status = "disabled";
 			label = "TC0";
-			pinctrl-0 = <>;
 		};
 
 		tc1: tc@40014000 {
@@ -232,7 +231,6 @@
 			peripheral-id = <3>;
 			status = "disabled";
 			label = "TC1";
-			pinctrl-0 = <>;
 		};
 
 		trng: random@40068000 {
