@@ -11,5 +11,6 @@ if POWER_DOMAIN
 config POWER_DOMAIN_GPIO
 	bool "GPIO controlled power domain"
 	depends on GPIO
+	depends on TIMEOUT_64BIT
 
 endif
