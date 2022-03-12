@@ -174,11 +174,8 @@
 &spi0 {
 	status = "okay";
 
-	pinctrl-0 = <&pd20b_spi0_miso
-		     &pd21b_spi0_mosi
-		     &pd22b_spi0_spck
-		     &pd25b_spi0_npcs1
-		     &pd27b_spi0_npcs3>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
 
 	cs-gpios = <&piod 25 GPIO_ACTIVE_LOW>,
 		   <&piod 27 GPIO_ACTIVE_LOW>;

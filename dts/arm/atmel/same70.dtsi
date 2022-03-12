@@ -125,7 +125,6 @@
 			peripheral-id = <21>;
 			label = "SPI_0";
 			status = "disabled";
-			pinctrl-0 = <&pd20b_spi0_miso &pd21b_spi0_mosi &pd22b_spi0_spck>;
 		};
 
 		spi1: spi@40058000 {
@@ -137,7 +136,6 @@
 			peripheral-id = <42>;
 			label = "SPI_1";
 			status = "disabled";
-			pinctrl-0 = <&pc26c_spi1_miso &pc27c_spi1_mosi &pc24c_spi1_spck>;
 		};
 
 		uart0: uart@400e0800 {

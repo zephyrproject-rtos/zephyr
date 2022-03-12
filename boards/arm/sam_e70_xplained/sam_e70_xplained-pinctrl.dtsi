@@ -6,6 +6,16 @@
 #include <dt-bindings/pinctrl/same70q-pinctrl.h>
 
 &pinctrl {
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PD20B_SPI0_MISO>,
+				 <PD21B_SPI0_MOSI>,
+				 <PD22B_SPI0_SPCK>,
+				 <PD25B_SPI0_NPCS1>,
+				 <PD27B_SPI0_NPCS3>;
+		};
+	};
+
 	uart3_default: uart3_default {
 		group1 {
 			pinmux = <PD28A_UART3_RXD>,
