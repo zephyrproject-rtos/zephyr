@@ -92,4 +92,7 @@
 
 zephyr_udc0: &usbc {
 	status = "okay";
+
+	pinctrl-0 = <&usbc_default>;
+	pinctrl-names = "default";
 };

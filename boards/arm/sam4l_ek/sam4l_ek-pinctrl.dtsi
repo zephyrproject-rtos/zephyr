@@ -46,4 +46,11 @@
 				 <PC12B_USART2_TXD>;
 		};
 	};
+
+	usbc_default: usbc_default {
+		group1 {
+			pinmux = <PA25A_USBC_DM>,
+				 <PA26A_USBC_DP>;
+		};
+	};
 };
