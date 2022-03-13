@@ -30,12 +30,6 @@ static int board_pinmux_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-#ifdef CONFIG_USB_DC_SAM0
-	/* USB DP on PA25, USB DM on PA24 */
-	pinmux_pin_set(muxa, 25, PINMUX_FUNC_H);
-	pinmux_pin_set(muxa, 24, PINMUX_FUNC_H);
-#endif
-
 #if (DT_NODE_HAS_STATUS(DT_NODELABEL(gmac), okay) && CONFIG_ETH_SAM_GMAC)
 	pinmux_pin_set(muxa, 14, PINMUX_FUNC_L);	/* PA14 = GTXCK */
 	pinmux_pin_set(muxa, 17, PINMUX_FUNC_L);	/* PA17 = GTXEN */
