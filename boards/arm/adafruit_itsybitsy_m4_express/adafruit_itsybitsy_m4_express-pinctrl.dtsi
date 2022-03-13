@@ -6,6 +6,18 @@
 #include <dt-bindings/pinctrl/same51g-pinctrl.h>
 
 &pinctrl {
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <PA22G_TCC0_WO2>;
+		};
+	};
+	pwm1_default: pwm1_default {
+		group1 {
+			pinmux = <PA18F_TCC1_WO2>,
+				 <PA19F_TCC1_WO3>;
+		};
+	};
+
 	sercom1_spi_default: sercom1_spi_default {
 		group1 {
 			pinmux = <PA0D_SERCOM1_PAD0>,

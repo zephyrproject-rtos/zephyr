@@ -95,8 +95,10 @@
 	compatible = "atmel,sam0-tcc-pwm";
 	/* Gives a maximum period of 1.4 s */
 	prescaler = <1024>;
-
 	#pwm-cells = <1>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
 };
 
 &dac0 {

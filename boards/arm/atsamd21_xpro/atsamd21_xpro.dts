@@ -61,6 +61,9 @@
 	/* Gives a maximum period of 1.4s */
 	prescaler = <4>;
 	#pwm-cells = <1>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
 };
 
 &sercom0 {
