@@ -103,6 +103,9 @@
 
 &dac0 {
 	status = "okay";
+
+	pinctrl-0 = <&dac_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
