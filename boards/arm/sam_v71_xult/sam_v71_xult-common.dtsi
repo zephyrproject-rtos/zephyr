@@ -220,6 +220,9 @@ zephyr_udc0: &usbhs {
 &gmac {
 	status = "okay";
 
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
 	phy: phy {
 		compatible = "ethernet-phy";
 		status = "okay";
@@ -230,6 +233,9 @@ zephyr_udc0: &usbhs {
 
 &mdio {
 	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
 };
 
 &pwm0 {
