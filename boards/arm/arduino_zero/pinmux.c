@@ -22,10 +22,6 @@ static int board_pinmux_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay) && defined(CONFIG_DAC_SAM0)
-	/* DAC on PA02 */
-	pinmux_pin_set(muxa, 2, PINMUX_FUNC_B);
-#endif
 	return 0;
 }
 

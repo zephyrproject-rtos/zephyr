@@ -6,6 +6,12 @@
 #include <dt-bindings/pinctrl/samd21-da1gXabcd-pinctrl.h>
 
 &pinctrl {
+	dac_default: dac_default {
+		group1 {
+			pinmux = <PA2B_DAC_VOUT>;
+		};
+	};
+
 	pwm_default: pwm_default {
 		group1 {
 			pinmux = <PA17E_TCC2_WO1>;
