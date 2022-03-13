@@ -33,4 +33,11 @@
 				 <PB24D_SERCOM2_PAD1>;
 		};
 	};
+
+	usb_dc_default: usb_dc_default {
+		group1 {
+			pinmux = <PA25H_USB_DP>,
+				 <PA24H_USB_DM>;
+		};
+	};
 };
