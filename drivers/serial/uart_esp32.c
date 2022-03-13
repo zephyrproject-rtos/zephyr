@@ -56,7 +56,6 @@ struct uart_esp32_config {
 
 	const clock_control_subsys_t clock_subsys;
 
-	uint8_t uart_num;
 	int irq_source;
 };
 
@@ -471,7 +470,6 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 PINCTRL_DT_INST_DEFINE(idx);							\
 										\
 static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
-	.uart_num = DT_INST_PROP(idx, peripheral),	\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		       \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),				\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
