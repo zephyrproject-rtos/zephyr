@@ -22,11 +22,6 @@ static int board_pinmux_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-#if (ATMEL_SAM0_DT_TCC_CHECK(0, atmel_sam0_tcc_pwm) && CONFIG_PWM_SAM0_TCC)
-	/* TCC0 on WO0=PB30 */
-	pinmux_pin_set(muxb, 30, PINMUX_FUNC_E);
-#endif
-
 #ifdef CONFIG_USB_DC_SAM0
 	/* USB DP on PA25, USB DM on PA24 */
 	pinmux_pin_set(muxa, 25, PINMUX_FUNC_G);

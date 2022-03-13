@@ -6,6 +6,12 @@
 #include <dt-bindings/pinctrl/same54p-pinctrl.h>
 
 &pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PC18F_TCC0_WO2>;
+		};
+	};
+
 	sercom7_i2c_default: sercom7_i2c_default {
 		group1 {
 			pinmux = <PD8C_SERCOM7_PAD0>,
