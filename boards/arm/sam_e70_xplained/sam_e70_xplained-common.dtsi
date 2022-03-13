@@ -177,7 +177,10 @@ zephyr_udc0: &usbhs {
 
 &can0 {
 	status = "okay";
-	pinctrl-0 = <&pb3a_can0_rx0 &pb2a_can0_tx0>;
+
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
+
 	bus-speed = <125000>;
 	bus-speed-data = <1000000>;
 

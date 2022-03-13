@@ -20,6 +20,13 @@
 		};
 	};
 
+	can1_default: can1_default {
+		group1 {
+			pinmux = <PC12C_CAN1_RX>,
+				 <PC14C_CAN1_TX>;
+		};
+	};
+
 	spi0_default: spi0_default {
 		group1 {
 			pinmux = <PD20B_SPI0_MISO>,
