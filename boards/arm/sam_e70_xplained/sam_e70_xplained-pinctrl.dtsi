@@ -20,6 +20,13 @@
 		};
 	};
 
+	can0_default: can0_default {
+		group1 {
+			pinmux = <PB3A_CAN0_RX>,
+				 <PB2A_CAN0_TX>;
+		};
+	};
+
 	spi0_default: spi0_default {
 		group1 {
 			pinmux = <PD20B_SPI0_MISO>,
