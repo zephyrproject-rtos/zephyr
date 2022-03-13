@@ -329,9 +329,8 @@ int can_gd32_get_core_clock(const struct device *dev, uint32_t *rate)
 
 int can_gd32_get_max_filters(const struct device *dev, enum can_ide id_type)
 {
-	ARG_UNUSED(id_type);
-
-	return CONFIG_CAN_MAX_FILTER;
+	const struct can_gd32_config *cfg = dev->config;
+	return can_gd32_filter_getsize(cfg->filter, id_type);
 }
 
 int can_gd32_add_rx_filter(const struct device *dev, can_rx_callback_t cb, void *cb_arg,
@@ -843,15 +842,8 @@ static void can_gd32_rx0_isr(const struct device *dev)
 
 static void can_gd32_rx1_isr(const struct device *dev)
 {
-	__ASSERT(0, "todo");
-	while (1)
-		;
-
-	/* read mailbox to fifo and release message */
-
-	/* invoke callback */
-
-	/* check fifo overflow */
+	__ASSERT(0, "fifo1 not used yet");
+	can_gd32_rxn_isr(dev, 1);
 }
 
 static inline void can_gd32_set_state_change(const struct device *dev)

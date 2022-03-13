@@ -27,5 +27,6 @@ struct can_gd32_filter {
 };
 
 int can_gd32_filter_initial(const struct can_gd32_filter *filter);
+int can_gd32_filter_getsize(const struct can_gd32_filter *filter, enum can_ide id_type);
 
 #endif /* ZEPHYR_DRIVERS_CAN_GD32_FILTER_H_ */

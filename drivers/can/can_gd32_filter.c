@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(can_gd32_filter, CONFIG_CAN_LOG_LEVEL);
 
 int can_gd32_filter_initial(const struct can_gd32_filter *filter)
 {
+	__ASSERT(filter != NULL, "empty ptr");
 	if (filter->data->initialed) {
 		return -EALREADY;
 	}
@@ -30,6 +31,22 @@ int can_gd32_filter_initial(const struct can_gd32_filter *filter)
 	rcu_periph_clock_enable(filter->cfg->rcu_periph_clock);
 
 	return 0;
+}
+
+int can_gd32_filter_getsize(const struct can_gd32_filter *filter, enum can_ide id_type)
+{
+	__ASSERT(filter != NULL, "empty ptr");
+
+	switch (id_type) {
+	case CAN_STANDARD_IDENTIFIER:
+		return filter->cfg->size * 2;
+
+	case CAN_EXTENDED_IDENTIFIER:
+		return filter->cfg->size;
+
+	default:
+		return -EINVAL;
+	}
 }
 
 #define DT_INST_PARENT_REG_ADDR(inst) DT_REG_ADDR_BY_IDX(DT_INST_PARENT(inst), 0)
