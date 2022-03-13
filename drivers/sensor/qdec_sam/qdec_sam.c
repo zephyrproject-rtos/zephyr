@@ -17,6 +17,7 @@
 #include <init.h>
 #include <soc.h>
 #include <drivers/sensor.h>
+#include <drivers/pinctrl.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(qdec_sam, CONFIG_SENSOR_LOG_LEVEL);
@@ -24,8 +25,7 @@ LOG_MODULE_REGISTER(qdec_sam, CONFIG_SENSOR_LOG_LEVEL);
 /* Device constant configuration parameters */
 struct qdec_sam_dev_cfg {
 	Tc *regs;
-	const struct soc_gpio_pin *pin_list;
-	uint8_t pin_list_size;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t periph_id[TCCHANNEL_NUMBER];
 };
 
@@ -95,9 +95,13 @@ static int qdec_sam_initialize(const struct device *dev)
 {
 	__ASSERT_NO_MSG(dev != NULL);
 	const struct qdec_sam_dev_cfg *const dev_cfg = dev->config;
+	int retval;
 
 	/* Connect pins to the peripheral */
-	soc_gpio_list_configure(dev_cfg->pin_list, dev_cfg->pin_list_size);
+	retval = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	for (int i = 0; i < ARRAY_SIZE(dev_cfg->periph_id); i++) {
 		/* Enable module's clock */
@@ -117,12 +121,10 @@ static const struct sensor_driver_api qdec_sam_driver_api = {
 };
 
 #define QDEC_SAM_INIT(n)						\
-	static const struct soc_gpio_pin pins_tc##n[] = ATMEL_SAM_DT_INST_PINS(n); \
-									\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static const struct qdec_sam_dev_cfg qdec##n##_sam_config = {	\
 		.regs = (Tc *)DT_INST_REG_ADDR(n),			\
-		.pin_list = pins_tc##n,					\
-		.pin_list_size = ARRAY_SIZE(pins_tc##n),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.periph_id = DT_INST_PROP(n, peripheral_id),		\
 	};								\
 									\
