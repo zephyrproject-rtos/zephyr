@@ -54,6 +54,9 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	cs-gpios = <&porta 5 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&sercom0_spi_default>;
+	pinctrl-names = "default";
 };
 
 &sercom2 {

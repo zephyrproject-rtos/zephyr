@@ -141,6 +141,9 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	pinctrl-0 = <&sercom4_spi_default>;
+	pinctrl-names = "default";
+
 	cs-gpios = <&portb 31 GPIO_ACTIVE_LOW>;
 
 	rf2xx@0 {
@@ -164,6 +167,9 @@
 	label = "SPI_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom5_spi_default>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usb0 {

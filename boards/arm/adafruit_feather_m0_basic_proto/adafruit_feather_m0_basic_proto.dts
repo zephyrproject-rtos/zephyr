@@ -67,6 +67,9 @@
 	#size-cells = <0>;
 	dipo = <0>;
 	dopo = <1>;
+
+	pinctrl-0 = <&sercom4_spi_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {

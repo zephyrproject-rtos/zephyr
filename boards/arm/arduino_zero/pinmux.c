@@ -22,29 +22,6 @@ static int board_pinmux_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_spi) && CONFIG_SPI_SAM0)
-	/* SPI SERCOM4 on MISO=PA12/pad 0, MOSI=PB10/pad 2, SCK=PB11/pad 3 */
-	pinmux_pin_set(muxa, 12, PINMUX_FUNC_D);
-	pinmux_pin_set(muxb, 10, PINMUX_FUNC_D);
-	pinmux_pin_set(muxb, 11, PINMUX_FUNC_D);
-#endif
-
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_spi) && CONFIG_SPI_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_spi) && CONFIG_SPI_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_spi) && CONFIG_SPI_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_spi) && CONFIG_SPI_SAM0)
-#warning Pin mapping may not be configured
-#endif
-#if (ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_spi) && CONFIG_SPI_SAM0)
-#warning Pin mapping may not be configured
-#endif
-
 #if ATMEL_SAM0_DT_TCC_CHECK(2, atmel_sam0_tcc_pwm) &&                          \
 	defined(CONFIG_PWM_SAM0_TCC)
 	/* LED0 on PA17/TCC2/WO[1] */

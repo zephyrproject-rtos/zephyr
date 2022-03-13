@@ -66,6 +66,9 @@
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom1_spi_default>;
+	pinctrl-names = "default";
 };
 
 &tcc0 {

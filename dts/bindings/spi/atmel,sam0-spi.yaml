@@ -5,7 +5,9 @@ description: Atmel SAM0 SERCOM SPI controller
 
 compatible: "atmel,sam0-spi"
 
-include: spi-controller.yaml
+include:
+    - name: spi-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:

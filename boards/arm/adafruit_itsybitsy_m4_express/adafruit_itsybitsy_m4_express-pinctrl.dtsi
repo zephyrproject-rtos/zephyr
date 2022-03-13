@@ -6,6 +6,14 @@
 #include <dt-bindings/pinctrl/same51g-pinctrl.h>
 
 &pinctrl {
+	sercom1_spi_default: sercom1_spi_default {
+		group1 {
+			pinmux = <PA0D_SERCOM1_PAD0>,
+				 <PA1D_SERCOM1_PAD1>,
+				 <PB23C_SERCOM1_PAD3>;
+		};
+	};
+
 	sercom3_uart_default: sercom3_uart_default {
 		group1 {
 			pinmux = <PA16D_SERCOM3_PAD1>,
