@@ -78,6 +78,9 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	pinctrl-0 = <&sercom1_spi_default>;
+	pinctrl-names = "default";
+
 	led1: apa102@0 {
 		compatible = "apa,apa102";
 		reg = <0>;

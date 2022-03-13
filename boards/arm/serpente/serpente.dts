@@ -95,6 +95,9 @@
 	dopo = <1>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom3_spi_default>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usb0 {

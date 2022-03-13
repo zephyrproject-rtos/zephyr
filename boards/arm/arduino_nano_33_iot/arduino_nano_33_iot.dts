@@ -53,6 +53,9 @@
 	dopo = <1>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom1_spi_default>;
+	pinctrl-names = "default";
 };
 
 &sercom2 {
@@ -63,6 +66,9 @@
 	dopo = <3>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom2_spi_default>;
+	pinctrl-names = "default";
 
 	cs-gpios = <&porta 14 GPIO_ACTIVE_LOW>;
 
