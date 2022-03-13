@@ -22,12 +22,6 @@ static int board_pinmux_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-#ifdef CONFIG_USB_DC_SAM0
-	/* USB DP on PA25, USB DM on PA24 */
-	pinmux_pin_set(muxa, 25, PINMUX_FUNC_G);
-	pinmux_pin_set(muxa, 24, PINMUX_FUNC_G);
-#endif
-
 	return 0;
 }
 
