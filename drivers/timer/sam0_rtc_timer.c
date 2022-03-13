@@ -20,6 +20,7 @@
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <drivers/timer/system_timer.h>
+#include <drivers/pinctrl.h>
 #include <sys_clock.h>
 
 /* RTC registers. */
@@ -77,6 +78,9 @@ static volatile uint32_t rtc_counter;
 
 /* Tick value of the next timeout. */
 static volatile uint32_t rtc_timeout;
+
+PINCTRL_DT_INST_DEFINE(0);
+static const struct pinctrl_dev_config *pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 #endif /* CONFIG_TICKLESS_KERNEL */
 
@@ -242,6 +246,8 @@ uint32_t sys_clock_cycle_get_32(void)
 
 static int sys_clock_driver_init(const struct device *dev)
 {
+	int retval;
+
 	ARG_UNUSED(dev);
 
 #ifdef MCLK
@@ -257,6 +263,11 @@ static int sys_clock_driver_init(const struct device *dev)
 	while (GCLK->STATUS.bit.SYNCBUSY) {
 	}
 #endif
+
+	retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	/* Reset module to hardware defaults. */
 	rtc_reset();
