@@ -30,6 +30,17 @@
 		};
 	};
 
+	ssc_default: ssc_default {
+		group1 {
+			pinmux = <PD24B_SSC_RF>,
+				 <PA22A_SSC_RK>,
+				 <PA10C_SSC_RD>,
+				 <PB0D_SSC_TF>,
+				 <PB1D_SSC_TK>,
+				 <PB5D_SSC_TD>;
+		};
+	};
+
 	twihs0_default: twihs0_default {
 		group1 {
 			pinmux = <PA4A_TWI0_TWCK>,
