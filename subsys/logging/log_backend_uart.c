@@ -87,7 +87,7 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-static uint8_t uart_output_buf[IS_ENABLED(CONFIG_LOG_BACKEND_UART_ASYNC) ? 32 : 1];
+static uint8_t uart_output_buf[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE];
 LOG_OUTPUT_DEFINE(log_output_uart, char_out, uart_output_buf, sizeof(uart_output_buf));
 
 static void put(const struct log_backend *const backend,

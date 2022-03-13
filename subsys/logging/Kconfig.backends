@@ -17,6 +17,14 @@ config LOG_BACKEND_UART_ASYNC
 	depends on UART_ASYNC_API
 	depends on !LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
 
+config LOG_BACKEND_UART_BUFFER_SIZE
+	int "Number of bytes to buffer in RAM before flushing"
+	default 32 if LOG_BACKEND_UART_ASYNC
+	default 1
+	help
+	  Sets the number of bytes which can be buffered in RAM before log_output_flush
+	  is automatically called on the backend.
+
 backend = UART
 backend-str = uart
 source "subsys/logging/Kconfig.template.log_format_config"
