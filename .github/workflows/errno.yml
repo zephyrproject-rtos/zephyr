@@ -2,13 +2,17 @@ name: Error numbers
 on:
   pull_request:
     paths:
+      - '.github/workflows/errno.yml'
       - 'lib/libc/minimal/include/errno.h'
+      - 'scripts/ci/errno.py'
 
 jobs:
   check-errno:
     runs-on: ubuntu-latest
     container:
       image: zephyrprojectrtos/ci:v0.21.0
+    env:
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
 
     steps:
       - name: checkout

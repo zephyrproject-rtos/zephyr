@@ -16,7 +16,7 @@
 #include <soc.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(uart_ite_it8xxx2, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(uart_ite_it8xxx2, CONFIG_UART_LOG_LEVEL);
 
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
 static struct uart_it8xxx2_data *uart_console_data;
@@ -97,7 +97,7 @@ static inline int uart_it8xxx2_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Enable UART WUI */
 		ret = gpio_pin_interrupt_configure_dt(&config->gpio_wui,
-						      GPIO_INT_TRIG_LOW);
+						      GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
 		if (ret < 0) {
 			LOG_ERR("Failed to configure UART%d WUI (ret %d)",
 				config->port, ret);

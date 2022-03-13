@@ -174,35 +174,65 @@ extern "C" {
 #define ceiling_fraction(numerator, divider) \
 	(((numerator) + ((divider) - 1)) / (divider))
 
-/**
- * @def MAX
- * @brief The larger value between @p a and @p b.
- * @note Arguments are evaluated twice.
- */
 #ifndef MAX
-/* Use Z_MAX for a GCC-only, single evaluation version */
+/**
+ * @brief Obtain the maximum of two values.
+ *
+ * @note Arguments are evaluated twice. Use Z_MAX for a GCC-only, single
+ * evaluation version
+ *
+ * @param a First value.
+ * @param b Second value.
+ *
+ * @returns Maximum value of @p a and @p b.
+ */
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
-/**
- * @def MIN
- * @brief The smaller value between @p a and @p b.
- * @note Arguments are evaluated twice.
- */
 #ifndef MIN
-/* Use Z_MIN for a GCC-only, single evaluation version */
+/**
+ * @brief Obtain the minimum of two values.
+ *
+ * @note Arguments are evaluated twice. Use Z_MIN for a GCC-only, single
+ * evaluation version
+ *
+ * @param a First value.
+ * @param b Second value.
+ *
+ * @returns Minimum value of @p a and @p b.
+ */
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-/**
- * @def CLAMP
- * @brief Clamp a value to a given range.
- * @note Arguments are evaluated multiple times.
- */
 #ifndef CLAMP
-/* Use Z_CLAMP for a GCC-only, single evaluation version */
+/**
+ * @brief Clamp a value to a given range.
+ *
+ * @note Arguments are evaluated multiple times. Use Z_CLAMP for a GCC-only,
+ * single evaluation version.
+ *
+ * @param val Value to be clamped.
+ * @param low Lowest allowed value (inclusive).
+ * @param high Highest allowed value (inclusive).
+ *
+ * @returns Clamped value.
+ */
 #define CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
 #endif
+
+/**
+ * @brief Checks if a value is within range.
+ *
+ * @note @p val is evaluated twice.
+ *
+ * @param val Value to be checked.
+ * @param min Lower bound (inclusive).
+ * @param max Upper bound (inclusive).
+ *
+ * @retval true If value is within range
+ * @retval false If the value is not within range
+ */
+#define IN_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
 /**
  * @brief Is @p x a power of two?
@@ -425,6 +455,31 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
 #define KHZ(x) ((x) * 1000)
 /** @brief Number of Hz in @p x MHz */
 #define MHZ(x) (KHZ(x) * 1000)
+
+/**
+ * @brief Wait for an expression to return true with a timeout
+ *
+ * Spin on an expression with a timeout and optional delay between iterations
+ *
+ * Commonly needed when waiting on hardware to complete an asynchronous
+ * request to read/write/initialize/reset, but useful for any expression.
+ *
+ * @param expr Truth expression upon which to poll, e.g.: XYZREG & XYZREG_EN
+ * @param timeout Timeout to wait for in microseconds, e.g.: 1000 (1ms)
+ * @param delay_stmt Delay statement to perform each poll iteration
+ *                   e.g.: NULL, k_yield(), k_msleep(1) or k_busy_wait(1)
+ *
+ * @retval expr As a boolean return, if false then it has timed out.
+ */
+#define wait_for(expr, timeout, delay_stmt)                                                        \
+	({                                                                                         \
+		uint32_t cycle_count = (sys_clock_hw_cycles_per_sec() / USEC_PER_SEC) * (timeout); \
+		uint32_t start = k_cycle_get_32();                                                 \
+		while (!(expr) && (cycle_count > (k_cycle_get_32() - start))) {                    \
+			delay_stmt;                                                                \
+		}                                                                                  \
+		(expr);                                                                            \
+	})
 
 /**
  * @}

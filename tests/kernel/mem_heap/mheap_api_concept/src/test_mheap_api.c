@@ -260,7 +260,7 @@ void test_multi_heap(void)
 	sys_multi_heap_init(&multi_heap, multi_heap_choice);
 	for (int i = 0; i < N_MULTI_HEAPS; i++) {
 		sys_heap_init(&mheaps[i], &heap_mem[i][0], MHEAP_BYTES);
-		sys_multi_heap_add_heap(&multi_heap, &mheaps[i]);
+		sys_multi_heap_add_heap(&multi_heap, &mheaps[i], NULL);
 	}
 
 	/* Allocate half the buffer from each heap, make sure it works

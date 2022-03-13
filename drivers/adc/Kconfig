@@ -16,7 +16,7 @@ menuconfig ADC
 if ADC
 
 config ADC_SHELL
-	bool "Enable ADC Shell"
+	bool "ADC Shell"
 	default y
 	depends on SHELL
 	help
@@ -29,7 +29,7 @@ config ADC_CONFIGURABLE_INPUTS
 	bool
 
 config ADC_ASYNC
-	bool "Enable asynchronous call support"
+	bool "Asynchronous call support"
 	select POLL
 	help
 	  This option enables the asynchronous API calls.

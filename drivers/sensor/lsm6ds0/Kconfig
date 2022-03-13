@@ -14,49 +14,49 @@ menuconfig LSM6DS0
 if LSM6DS0
 
 config LSM6DS0_ACCEL_ENABLE_X_AXIS
-	bool "Enable accelerometer X axis"
+	bool "Accelerometer X axis"
 	default y
 	help
 	  Enable/disable accelerometer X axis totally by stripping everything
 	  related in driver.
 
 config LSM6DS0_ACCEL_ENABLE_Y_AXIS
-	bool "Enable accelerometer Y axis"
+	bool "Accelerometer Y axis"
 	default y
 	help
 	  Enable/disable accelerometer Y axis totally by stripping everything
 	  related in driver.
 
 config LSM6DS0_ACCEL_ENABLE_Z_AXIS
-	bool "Enable accelerometer Z axis"
+	bool "Accelerometer Z axis"
 	default y
 	help
 	  Enable/disable accelerometer Z axis totally by stripping everything
 	  related in driver.
 
 config LSM6DS0_GYRO_ENABLE_X_AXIS
-	bool "Enable gyroscope X axis"
+	bool "Gyroscope X axis"
 	default y
 	help
 	  Enable/disable gyroscope X axis totally by stripping everything
 	  related in driver.
 
 config LSM6DS0_GYRO_ENABLE_Y_AXIS
-	bool "Enable gyroscope Y axis"
+	bool "Gyroscope Y axis"
 	default y
 	help
 	  Enable/disable gyroscope Y axis totally by stripping everything
 	  related in driver.
 
 config LSM6DS0_GYRO_ENABLE_Z_AXIS
-	bool "Enable gyroscope Z axis"
+	bool "Gyroscope Z axis"
 	default y
 	help
 	  Enable/disable gyroscope Z axis totally by stripping everything
 	  related in driver.
 
 config LSM6DS0_ENABLE_TEMP
-	bool "Enable temperature"
+	bool "Temperature"
 	help
 	  Enable/disable temperature totally by stripping everything related in
 	  driver.

@@ -33,7 +33,7 @@ config LWM2M_VERSION_1_1
 endchoice
 
 config LWM2M_DTLS_SUPPORT
-	bool "Enable DTLS support in the LwM2M client"
+	bool "DTLS support in the LwM2M client"
 	select TLS_CREDENTIALS
 	select NET_SOCKETS_SOCKOPT_TLS
 	select NET_SOCKETS_ENABLE_DTLS
@@ -71,7 +71,7 @@ config LWM2M_SERVER_OBJECT_VERSION_1_1
 endchoice
 
 config LWM2M_DNS_SUPPORT
-	bool "Enable DNS support in the LWM2M client"
+	bool "DNS support in the LWM2M client"
 	default y if DNS_RESOLVER
 
 config LWM2M_ENGINE_STACK_SIZE
@@ -168,7 +168,7 @@ config LWM2M_SECONDS_TO_UPDATE_EARLY
 	  higher, in order to allow the response to arrive before timeout.
 
 config LWM2M_QUEUE_MODE_ENABLED
-	bool "Enable Queue Mode UDP binding"
+	bool "Queue Mode UDP binding"
 	help
 	  Set the transport binding to UDP with Queue Mode (UQ).
 
@@ -190,7 +190,7 @@ config LWM2M_RD_CLIENT_SUPPORT
 	  LWM2M servers (including bootstrap server support)
 
 config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
-	bool "Enable bootstrap support"
+	bool "Bootstrap support"
 	help
 	  Enabling this setting allows the RD client to support bootstrap mode.
 
@@ -459,7 +459,7 @@ config LWM2M_LOCATION_OBJ_SUPPORT
 	  Include support for LWM2M Location Object (ID 6)
 
 config LWM2M_GATEWAY_OBJ_SUPPORT
-	bool "Enable LwM2M Gateway Object (25) [EXPERIMENTAL]"
+	bool "LwM2M Gateway Object (25) [EXPERIMENTAL]"
 
 if LWM2M_GATEWAY_OBJ_SUPPORT
 

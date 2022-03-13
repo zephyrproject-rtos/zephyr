@@ -771,6 +771,7 @@ static void broadcast_sink_ep_init(struct bt_audio_ep *ep)
 	ep->iso.qos = &ep->iso_qos;
 	ep->iso.qos->rx = &ep->iso_rx;
 	ep->iso.qos->tx = &ep->iso_tx;
+	ep->dir = BT_AUDIO_SINK;
 }
 
 static struct bt_audio_ep *broadcast_sink_new_ep(uint8_t index)
@@ -823,9 +824,8 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 	 */
 	stream->iso->qos->rx = &sink_chan_io_qos;
 	stream->iso->qos->tx = NULL;
-	codec_qos.dir = BT_CODEC_QOS_IN;
 	stream->qos = &codec_qos;
-	err = bt_audio_codec_qos_to_iso_qos(stream->iso->qos, &codec_qos);
+	err = bt_audio_codec_qos_to_iso_qos(stream->iso->qos->rx, &codec_qos);
 	if (err) {
 		BT_ERR("Unable to convert codec QoS to ISO QoS");
 		return err;

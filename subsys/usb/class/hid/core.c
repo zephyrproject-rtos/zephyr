@@ -117,7 +117,7 @@ struct usb_hid_config {
 		INITIALIZER_IF_EP(AUTO_EP_OUT,				\
 				  USB_DC_EP_INTERRUPT,			\
 				  CONFIG_HID_INTERRUPT_EP_MPS),		\
-	};
+	}
 #else
 #define DEFINE_HID_DESCR(x, _)						\
 	USBD_CLASS_DESCR_DEFINE(primary, x)				\
@@ -129,7 +129,7 @@ struct usb_hid_config {
 		INITIALIZER_IF_EP(AUTO_EP_IN,				\
 				  USB_DC_EP_INTERRUPT,			\
 				  CONFIG_HID_INTERRUPT_EP_MPS),		\
-	};
+	}
 #endif
 
 struct hid_device_info {
@@ -599,12 +599,12 @@ static void hid_int_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	static struct usb_ep_cfg_data hid_ep_data_##x[] = {		\
 		INITIALIZER_EP_DATA(hid_int_in, AUTO_EP_IN),		\
 		INITIALIZER_EP_DATA(hid_int_out, AUTO_EP_OUT),		\
-	};
+	}
 #else
 #define DEFINE_HID_EP(x, _)						\
 	static struct usb_ep_cfg_data hid_ep_data_##x[] = {		\
 		INITIALIZER_EP_DATA(hid_int_in, AUTO_EP_IN),		\
-	};
+	}
 #endif
 
 static void hid_interface_config(struct usb_desc_header *head,
@@ -634,7 +634,7 @@ static void hid_interface_config(struct usb_desc_header *head,
 		},							\
 		.num_endpoints = ARRAY_SIZE(hid_ep_data_##x),		\
 		.endpoint = hid_ep_data_##x,				\
-	};
+	}
 
 int usb_hid_set_proto_code(const struct device *dev, uint8_t proto_code)
 {
@@ -722,7 +722,7 @@ static int usb_hid_device_init(const struct device *dev)
 }
 
 #define DEFINE_HID_DEV_DATA(x, _)					\
-	struct hid_device_info usb_hid_dev_data_##x;
+	struct hid_device_info usb_hid_dev_data_##x
 
 #define DEFINE_HID_DEVICE(x, _)						\
 	DEVICE_DEFINE(usb_hid_device_##x,				\
@@ -732,10 +732,10 @@ static int usb_hid_device_init(const struct device *dev)
 			    &usb_hid_dev_data_##x,			\
 			    &hid_config_##x, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &hid_api);
+			    &hid_api)
 
-UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DESCR, _)
-UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_EP, _)
-UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_CFG_DATA, _)
-UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DEV_DATA, _)
-UTIL_LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DEVICE, _)
+LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DESCR, (;), _);
+LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_EP, (;), _);
+LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_CFG_DATA, (;), _);
+LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DEV_DATA, (;), _);
+LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DEVICE, (;), _);

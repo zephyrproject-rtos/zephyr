@@ -12,14 +12,14 @@ config WDT_NRFX
 	  Enable support for nrfx WDT driver for nRF MCU series.
 
 config NRFX_WDT0
-	bool "Enable WDT0 instance"
+	bool "WDT0 instance"
 	depends on HAS_HW_NRF_WDT || HAS_HW_NRF_WDT0
 	default y
 	help
 	  Enable support for nrfx WDT instance 0.
 
 config NRFX_WDT1
-	bool "Enable WDT1 instance"
+	bool "WDT1 instance"
 	depends on HAS_HW_NRF_WDT1
 	help
 	  Enable support for nrfx WDT instance 1.

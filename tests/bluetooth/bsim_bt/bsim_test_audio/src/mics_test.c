@@ -30,7 +30,6 @@ static volatile uint8_t g_aics_gain_min;
 static volatile bool g_aics_active = true;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
-static struct bt_conn *g_conn;
 static bool g_is_connected;
 
 static void mics_mute_cb(struct bt_mics *mics, int err, uint8_t mute)
@@ -133,7 +132,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	printk("Connected to %s\n", addr);
-	g_conn = conn;
+	default_conn = bt_conn_ref(conn);
 	g_is_connected = true;
 }
 

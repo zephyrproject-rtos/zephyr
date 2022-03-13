@@ -656,7 +656,7 @@ int bt_vocs_client_conn_get(const struct bt_vocs *vocs, struct bt_conn **conn)
 	return 0;
 }
 
-static void vocs_client_reset(struct bt_vocs *inst, struct bt_conn *conn)
+static void vocs_client_reset(struct bt_vocs *inst)
 {
 	memset(&inst->cli.state, 0, sizeof(inst->cli.state));
 	inst->cli.location_writable = 0;
@@ -669,10 +669,22 @@ static void vocs_client_reset(struct bt_vocs *inst, struct bt_conn *conn)
 	inst->cli.control_handle = 0;
 	inst->cli.desc_handle = 0;
 
-	/* It's okay if these fail */
-	(void)bt_gatt_unsubscribe(conn, &inst->cli.state_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &inst->cli.location_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &inst->cli.desc_sub_params);
+	if (inst->cli.conn != NULL) {
+		struct bt_conn *conn = inst->cli.conn;
+
+		/* It's okay if these fail. In case of disconnect, we can't
+		 * unsubscribe and they will just fail.
+		 * In case that we reset due to another call of the discover
+		 * function, we will unsubscribe (regardless of bonding state)
+		 * to accommodate the new discovery values.
+		 */
+		(void)bt_gatt_unsubscribe(conn, &inst->cli.state_sub_params);
+		(void)bt_gatt_unsubscribe(conn, &inst->cli.location_sub_params);
+		(void)bt_gatt_unsubscribe(conn, &inst->cli.desc_sub_params);
+
+		bt_conn_unref(conn);
+		inst->cli.conn = NULL;
+	}
 }
 
 int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *inst,
@@ -702,9 +714,9 @@ int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *inst,
 		return -EBUSY;
 	}
 
-	vocs_client_reset(inst, conn);
+	vocs_client_reset(inst);
 
-	inst->cli.conn = conn;
+	inst->cli.conn = bt_conn_ref(conn);
 	inst->cli.discover_params.start_handle = param->start_handle;
 	inst->cli.discover_params.end_handle = param->end_handle;
 	inst->cli.discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;

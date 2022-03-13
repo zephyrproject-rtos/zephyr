@@ -113,7 +113,7 @@ endchoice
 comment "BLE Controller configuration"
 
 config BT_CTLR_CRYPTO
-	bool "Enable crypto functions in Controller"
+	bool "Crypto functions in Controller"
 	default y
 	select ENTROPY_GENERATOR
 	help
@@ -132,7 +132,7 @@ config BT_CTLR_HCI_VS_BUILD_INFO
 	  already included information.
 
 config BT_CTLR_AD_DATA_BACKUP
-	bool "Enable Legacy AD Data backup"
+	bool "Legacy AD Data backup"
 	depends on BT_PERIPHERAL || BT_CTLR_ADV_EXT
 	default y
 	help
@@ -143,7 +143,7 @@ config BT_CTLR_AD_DATA_BACKUP
 	  Advertising or switch between Legacy and Extended Advertising.
 
 config BT_CTLR_HCI_ADV_HANDLE_MAPPING
-	bool "Enable advertising set handle mapping between HCI and LL"
+	bool "Advertising set handle mapping between HCI and LL"
 	depends on BT_CTLR_ADV_EXT
 	default y if BT_HCI_RAW
 	help
@@ -231,7 +231,7 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	  Read Buffer Size V2 command response.
 
 config BT_CTLR_ISO_VENDOR_DATA_PATH
-	bool "Enable vendor-specific ISO data path"
+	bool "Vendor-specific ISO data path"
 	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
 
 choice BT_CTLR_TX_PWR

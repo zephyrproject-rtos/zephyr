@@ -1804,7 +1804,7 @@ static void espi_it8xxx2_enable_reset(void)
 	gpio_add_callback(ESPI_IT8XXX2_ESPI_RESET_PORT, &espi_reset_cb);
 	gpio_pin_interrupt_configure(ESPI_IT8XXX2_ESPI_RESET_PORT,
 					ESPI_IT8XXX2_ESPI_RESET_PIN,
-					GPIO_INT_TRIG_BOTH);
+					GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_BOTH);
 }
 
 static struct espi_it8xxx2_data espi_it8xxx2_data_0;

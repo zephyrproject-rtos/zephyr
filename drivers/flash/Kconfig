@@ -44,7 +44,7 @@ module-str = flash
 source "subsys/logging/Kconfig.template.log_config"
 
 config FLASH_SHELL
-	bool "Enable Flash shell"
+	bool "Flash shell"
 	depends on SHELL && FLASH_PAGE_LAYOUT
 	default y
 	help

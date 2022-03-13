@@ -78,8 +78,6 @@ struct gatt_sub {
 static struct gatt_sub subscriptions[SUB_MAX];
 static sys_slist_t callback_list;
 
-static const uint16_t gap_appearance = CONFIG_BT_DEVICE_APPEARANCE;
-
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static sys_slist_t db;
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
@@ -125,11 +123,56 @@ static ssize_t read_appearance(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
-	uint16_t appearance = sys_cpu_to_le16(gap_appearance);
+	uint16_t appearance = sys_cpu_to_le16(bt_get_appearance());
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &appearance,
 				 sizeof(appearance));
 }
+
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE)
+
+static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 const void *buf, uint16_t len, uint16_t offset,
+			 uint8_t flags)
+{
+	uint16_t appearance_le = sys_cpu_to_le16(bt_get_appearance());
+	char * const appearance_le_bytes = (char *)&appearance_le;
+	uint16_t appearance;
+	int err;
+
+	if (offset >= sizeof(appearance_le)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	if ((offset + len) > sizeof(appearance_le)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	memcpy(&appearance_le_bytes[offset], buf, len);
+	appearance = sys_le16_to_cpu(appearance_le);
+
+	err = bt_set_appearance(appearance);
+
+	if (err) {
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
+
+	return len;
+}
+
+#else /* CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE */
+static ssize_t (* const write_appearance)(struct bt_conn *conn,
+			const struct bt_gatt_attr *attr, const void *buf, uint16_t len,
+			uint16_t offset, uint8_t flags) = NULL;
+#endif /* CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE */
+
+#if CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE
+	#define GAP_APPEARANCE_PROPS (BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE)
+	#define GAP_APPEARANCE_PERMS (BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_AUTHEN)
+#else
+	#define GAP_APPEARANCE_PROPS BT_GATT_CHRC_READ
+	#define GAP_APPEARANCE_PERMS BT_GATT_PERM_READ
+#endif
 
 #if defined (CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
 /* This checks if the range entered is valid */
@@ -197,8 +240,8 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_name, NULL, NULL),
 #endif /* CONFIG_BT_DEVICE_NAME_GATT_WRITABLE */
-	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ,
-			       BT_GATT_PERM_READ, read_appearance, NULL, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, GAP_APPEARANCE_PROPS,
+			       GAP_APPEARANCE_PERMS, read_appearance, write_appearance, NULL),
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
 	BT_GATT_CHARACTERISTIC(BT_UUID_CENTRAL_ADDR_RES,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,

@@ -14,7 +14,7 @@ config GPIO_DW_SHARED_IRQ
 	bool
 
 config GPIO_DW_CLOCK_GATE
-	bool "Enable clock gating"
+	bool "Clock gating"
 	select CLOCK_CONTROL
 
 config GPIO_DW_CLOCK_GATE_DRV_NAME

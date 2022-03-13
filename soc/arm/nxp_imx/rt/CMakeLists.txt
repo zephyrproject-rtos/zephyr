@@ -22,8 +22,21 @@ if(CONFIG_DEVICE_CONFIGURATION_DATA)
 endif()
 
 if(CONFIG_PM)
-zephyr_sources_ifdef(CONFIG_SOC_SERIES_IMX_RT11XX power_rt11xx.c)
+  zephyr_sources_ifdef(CONFIG_SOC_SERIES_IMX_RT11XX power_rt11xx.c)
 endif()
+
+if (CONFIG_PM AND CONFIG_SOC_SERIES_IMX_RT10XX)
+  zephyr_sources(power_rt10xx.c)
+  zephyr_code_relocate(power_rt10xx.c ITCM_TEXT)
+  if (CONFIG_SOC_MIMXRT1064)
+    zephyr_sources(lpm_rt1064.c)
+    zephyr_code_relocate(lpm_rt1064.c ITCM_TEXT)
+  endif()
+endif()
+
+zephyr_compile_definitions(
+  XIP_EXTERNAL_FLASH
+)
 
 zephyr_linker_section_configure(
   SECTION .rom_start

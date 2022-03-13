@@ -6,7 +6,7 @@
 menu "IPM Message Channel [$(nrfx_ipc_num)] configuration"
 
 config IPM_MSG_CH_$(nrfx_ipc_num)_ENABLE
-	bool "Enable IPM Message Channel $(nrfx_ipc_num)"
+	bool "IPM Message Channel $(nrfx_ipc_num)"
 
 config IPM_MSG_CH_$(nrfx_ipc_num)_RX
 	bool "IPM Message RX Channel"

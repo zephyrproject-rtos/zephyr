@@ -93,18 +93,20 @@ static void print_codec(const struct bt_codec *codec)
 
 static void print_qos(struct bt_codec_qos *qos)
 {
-	printk("QoS: dir 0x%02x interval %u framing 0x%02x phy 0x%02x sdu %u "
+	printk("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
 	       "rtn %u latency %u pd %u\n",
-	       qos->dir, qos->interval, qos->framing, qos->phy, qos->sdu,
+	       qos->interval, qos->framing, qos->phy, qos->sdu,
 	       qos->rtn, qos->latency, qos->pd);
 }
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
+					  enum bt_audio_pac_type type,
 					  struct bt_audio_capability *cap,
 					  struct bt_codec *codec)
 {
-	printk("ASE Codec Config: conn %p ep %p cap %p\n", conn, ep, cap);
+	printk("ASE Codec Config: conn %p ep %p type %u, cap %p\n",
+	       conn, ep, type, cap);
 
 	print_codec(codec);
 
@@ -143,8 +145,9 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 	return 0;
 }
 
-static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
-		      struct bt_codec_data *meta)
+static int lc3_enable(struct bt_audio_stream *stream,
+		      struct bt_codec_data *meta,
+		      size_t meta_count)
 {
 	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
 
@@ -158,8 +161,9 @@ static int lc3_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
-static int lc3_metadata(struct bt_audio_stream *stream, uint8_t meta_count,
-			struct bt_codec_data *meta)
+static int lc3_metadata(struct bt_audio_stream *stream,
+			struct bt_codec_data *meta,
+			size_t meta_count)
 {
 	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
 
@@ -222,7 +226,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	printk("Connected: %s\n", addr);
-	default_conn = conn;
+	default_conn = bt_conn_ref(conn);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

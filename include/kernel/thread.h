@@ -117,6 +117,12 @@ struct _thread_base {
 	struct _timeout timeout;
 #endif
 
+#ifdef CONFIG_TIMESLICE_PER_THREAD
+	int32_t slice_ticks;
+	k_thread_timeslice_fn_t slice_expired;
+	void *slice_data;
+#endif
+
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	struct k_cycle_stats  usage;   /* Track thread usage statistics */
 #endif

@@ -1143,7 +1143,7 @@ gpio_dt_spec``, then use it like this:
    gpio_pin_configure_dt(&signal, GPIO_OUTPUT_INACTIVE);
 
    /* Set the pin to its active level */
-   gpio_pin_set(signal.port, signal.pin, 1);
+   gpio_pin_set_dt(&signal, 1);
 
 (See :c:struct:`gpio_dt_spec`, :c:macro:`GPIO_DT_SPEC_GET`, and
 :c:func:`gpio_pin_configure_dt` for details on these APIs.)

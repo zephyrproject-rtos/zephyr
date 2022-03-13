@@ -165,7 +165,7 @@ struct lpc11u6x_uartx_regs {
 	volatile uint32_t brg;               /* Baud rate generator */
 	volatile const uint32_t int_stat;    /* Interrupt status */
 	volatile uint32_t osr;               /* Oversample selection */
-	volatile uint32_t addr;              /* Address regiser*/
+	volatile uint32_t addr;              /* Address register*/
 };
 
 struct lpc11u6x_uartx_config {
@@ -195,7 +195,7 @@ struct lpc11u6x_uartx_data {
 
 /* Since UART1 and UART4 share the same IRQ (as well as UART2 and UART3),
  * we need to give the ISR a way to know all the devices that should be
- * notified when said IRQ is raied
+ * notified when said IRQ is raised
  */
 struct lpc11u6x_uartx_shared_irq {
 	const struct device *devices[LPC11U6X_UARTX_DEVICE_PER_IRQ];

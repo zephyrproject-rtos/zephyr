@@ -71,7 +71,7 @@ config IMG_ERASE_PROGRESSIVELY
 	  times at the beginning of the DFU process.
 
 config IMG_ENABLE_IMAGE_CHECK
-	bool "Enable image check functions"
+	bool "Image check functions"
 	depends on MCUBOOT_IMG_MANAGER
 	select FLASH_AREA_CHECK_INTEGRITY
 	help

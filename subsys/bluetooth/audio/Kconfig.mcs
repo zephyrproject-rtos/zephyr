@@ -53,7 +53,7 @@ if BT_MCC
 
 config BT_MCC_OTS
 	bool "Media Control Client support for Object Transfer Service"
-	depends on BT_OTC
+	depends on BT_OTS_CLIENT
 	help
 	  Use this option to configure support in the Media Control Client for
 	  an included Object Transfer Service in the Media Control Service.

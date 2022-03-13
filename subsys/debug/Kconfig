@@ -7,7 +7,7 @@
 menu "System Monitoring Options"
 
 menuconfig THREAD_ANALYZER
-	bool "Enable Thread analyzer"
+	bool "Thread analyzer"
 	select INIT_STACKS
 	select THREAD_MONITOR
 	select THREAD_STACK_INFO
@@ -142,7 +142,7 @@ config STACK_USAGE
 	  on a per-function basis.
 
 config STACK_SENTINEL
-	bool "Enable stack sentinel"
+	bool "Stack sentinel"
 	select THREAD_STACK_INFO
 	depends on MULTITHREADING
 	depends on !USERSPACE
@@ -195,7 +195,7 @@ config EARLY_CONSOLE
 	  sent through the console at the earliest stage possible.
 
 config ASSERT
-	bool "Enable __ASSERT() macro"
+	bool "__ASSERT() macro"
 	default y if TEST
 	help
 	  This enables the __ASSERT() macro in the kernel code. If an assertion
@@ -220,7 +220,7 @@ config ASSERT_LEVEL
 	  Level 2: on + no warning
 
 config SPIN_VALIDATE
-	bool "Enable spinlock validation"
+	bool "Spinlock validation"
 	depends on ASSERT
 	depends on MULTITHREADING
 	depends on MP_NUM_CPUS <= 4
@@ -239,7 +239,7 @@ config FORCE_NO_ASSERT
 	  around compiler bugs for specific tests.
 
 config ASSERT_VERBOSE
-	bool "Enable verbose assertions"
+	bool "Verbose assertions"
 	default y
 	help
 	  This option enables printing an assert message with information about
@@ -307,7 +307,7 @@ config OMIT_FRAME_POINTER
 # Generic Debugging Options
 #
 config DEBUG_INFO
-	bool "Enable system debugging information"
+	bool "System debugging information"
 	help
 	  This option enables the addition of various information that can be
 	  used by debuggers in debugging the system, or enable additional

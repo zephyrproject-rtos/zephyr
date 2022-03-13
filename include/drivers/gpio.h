@@ -35,15 +35,39 @@ extern "C" {
  */
 
 /**
+ * @deprecated Use the GPIO controller/SoC specific `*_GPIO_DEBOUNCE` flag instead.
+ */
+#define GPIO_INT_DEBOUNCE (1U << 8) __DEPRECATED_MACRO
+
+/**
+ * @deprecated Use the GPIO controller/SoC specific `*_GPIO_DS_*` flags instead.
+ * @{
+ */
+/** @cond INTERNAL_HIDDEN */
+#define GPIO_DS_LOW_POS   9                                      __DEPRECATED_MACRO
+#define GPIO_DS_LOW_MASK  (0x1U << GPIO_DS_LOW_POS)              __DEPRECATED_MACRO
+#define GPIO_DS_HIGH_POS  10                                     __DEPRECATED_MACRO
+#define GPIO_DS_HIGH_MASK (0x1U << GPIO_DS_HIGH_POS)             __DEPRECATED_MACRO
+#define GPIO_DS_MASK      (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK) __DEPRECATED_MACRO
+/** @endcond */
+#define GPIO_DS_DFLT_LOW  (0x0U << GPIO_DS_LOW_POS)              __DEPRECATED_MACRO
+#define GPIO_DS_ALT_LOW   (0x1U << GPIO_DS_LOW_POS)              __DEPRECATED_MACRO
+#define GPIO_DS_DFLT_HIGH (0x0U << GPIO_DS_HIGH_POS)             __DEPRECATED_MACRO
+#define GPIO_DS_ALT_HIGH  (0x1U << GPIO_DS_HIGH_POS)             __DEPRECATED_MACRO
+#define GPIO_DS_DFLT      (GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH) __DEPRECATED_MACRO
+#define GPIO_DS_ALT       (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)   __DEPRECATED_MACRO
+/** @} */
+
+/**
  * @name GPIO input/output configuration flags
  * @{
  */
 
 /** Enables pin as input. */
-#define GPIO_INPUT              (1U << 8)
+#define GPIO_INPUT              (1U << 16)
 
 /** Enables pin as output, no change to the output state. */
-#define GPIO_OUTPUT             (1U << 9)
+#define GPIO_OUTPUT             (1U << 17)
 
 /** Disables pin for both input and output. */
 #define GPIO_DISCONNECTED	0
@@ -51,13 +75,13 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /* Initializes output to a low state. */
-#define GPIO_OUTPUT_INIT_LOW    (1U << 10)
+#define GPIO_OUTPUT_INIT_LOW    (1U << 18)
 
 /* Initializes output to a high state. */
-#define GPIO_OUTPUT_INIT_HIGH   (1U << 11)
+#define GPIO_OUTPUT_INIT_HIGH   (1U << 19)
 
 /* Initializes output based on logic level */
-#define GPIO_OUTPUT_INIT_LOGICAL (1U << 12)
+#define GPIO_OUTPUT_INIT_LOGICAL (1U << 20)
 
 /** @endcond */
 
@@ -88,19 +112,19 @@ extern "C" {
  */
 
 /** Disables GPIO pin interrupt. */
-#define GPIO_INT_DISABLE               (1U << 13)
+#define GPIO_INT_DISABLE               (1U << 21)
 
 /** @cond INTERNAL_HIDDEN */
 
 /* Enables GPIO pin interrupt. */
-#define GPIO_INT_ENABLE                (1U << 14)
+#define GPIO_INT_ENABLE                (1U << 22)
 
 /* GPIO interrupt is sensitive to logical levels.
  *
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_LEVELS_LOGICAL        (1U << 15)
+#define GPIO_INT_LEVELS_LOGICAL        (1U << 23)
 
 /* GPIO interrupt is edge sensitive.
  *
@@ -109,7 +133,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_EDGE                  (1U << 16)
+#define GPIO_INT_EDGE                  (1U << 24)
 
 /* Trigger detection when input state is (or transitions to) physical low or
  * logical 0 level.
@@ -117,7 +141,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_LOW_0                 (1U << 17)
+#define GPIO_INT_LOW_0                 (1U << 25)
 
 /* Trigger detection on input state is (or transitions to) physical high or
  * logical 1 level.
@@ -125,7 +149,7 @@ extern "C" {
  * This is a component flag that should be combined with other
  * `GPIO_INT_*` flags to produce a meaningful configuration.
  */
-#define GPIO_INT_HIGH_1                (1U << 18)
+#define GPIO_INT_HIGH_1                (1U << 26)
 
 #define GPIO_INT_MASK                  (GPIO_INT_DISABLE | \
 					GPIO_INT_ENABLE | \
@@ -201,79 +225,6 @@ extern "C" {
 
 /** @} */
 
-/** Enable GPIO pin debounce.
- *
- * @note Drivers that do not support a debounce feature should ignore
- * this flag rather than rejecting the configuration with -ENOTSUP.
- */
-#define GPIO_INT_DEBOUNCE              (1U << 19)
-
-/**
- * @name GPIO drive strength flags
- * The `GPIO_DS_*` flags are used with `gpio_pin_configure` to specify the drive
- * strength configuration of a GPIO pin.
- *
- * The drive strength of individual pins can be configured
- * independently for when the pin output is low and high.
- *
- * The `GPIO_DS_*_LOW` enumerations define the drive strength of a pin
- * when output is low.
-
- * The `GPIO_DS_*_HIGH` enumerations define the drive strength of a pin
- * when output is high.
- *
- * The interface supports two different drive strengths:
- * `DFLT` - The lowest drive strength supported by the HW
- * `ALT` - The highest drive strength supported by the HW
- *
- * On hardware that supports only one standard drive strength, both
- * `DFLT` and `ALT` have the same behavior.
- * @{
- */
-/** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_LOW_POS 20
-#define GPIO_DS_LOW_MASK (0x3U << GPIO_DS_LOW_POS)
-/** @endcond */
-
-/** Default drive strength standard when GPIO pin output is low.
- */
-#define GPIO_DS_DFLT_LOW (0x0U << GPIO_DS_LOW_POS)
-
-/** Alternative drive strength when GPIO pin output is low.
- * For hardware that does not support configurable drive strength
- * use the default drive strength.
- */
-#define GPIO_DS_ALT_LOW (0x1U << GPIO_DS_LOW_POS)
-
-/** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_HIGH_POS 22
-#define GPIO_DS_HIGH_MASK (0x3U << GPIO_DS_HIGH_POS)
-/** @endcond */
-
-/** Default drive strength when GPIO pin output is high.
- */
-#define GPIO_DS_DFLT_HIGH (0x0U << GPIO_DS_HIGH_POS)
-
-/** Alternative drive strength when GPIO pin output is high.
- * For hardware that does not support configurable drive strengths
- * use the default drive strength.
- */
-#define GPIO_DS_ALT_HIGH (0x1U << GPIO_DS_HIGH_POS)
-
-/** Combined default drive strength.
- */
-#define GPIO_DS_DFLT (GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH)
-
-/** Combined alternative drive strength.
- */
-#define GPIO_DS_ALT (GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH)
-
-/** @cond INTERNAL_HIDDEN */
-#define GPIO_DS_MASK (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK)
-/** @endcond */
-
-/** @} */
-
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_DIR_MASK		(GPIO_INPUT | GPIO_OUTPUT)
 /** @endcond */
@@ -310,11 +261,14 @@ typedef uint8_t gpio_pin_t;
 /**
  * @brief Provides a type to hold GPIO devicetree flags.
  *
- * All GPIO flags that can be expressed in devicetree fit in the low 8
+ * All GPIO flags that can be expressed in devicetree fit in the low 16
  * bits of the full flags field, so use a reduced-size type to record
  * that part of a GPIOS property.
+ *
+ * The lower 8 bits are used for standard flags. The upper 8 bits are reserved
+ * for SoC specific flags.
  */
-typedef uint8_t gpio_dt_flags_t;
+typedef uint16_t gpio_dt_flags_t;
 
 /**
  * @brief Provides a type to hold GPIO configuration flags.
@@ -652,8 +606,6 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 	enum gpio_int_trig trig;
 	enum gpio_int_mode mode;
 
-	__ASSERT_NO_MSG((flags & GPIO_INT_DEBOUNCE) == 0);
-
 	__ASSERT((flags & (GPIO_INT_DISABLE | GPIO_INT_ENABLE))
 		 != (GPIO_INT_DISABLE | GPIO_INT_ENABLE),
 		 "Cannot both enable and disable interrupts");
@@ -714,8 +666,7 @@ static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec *spe
  * @param port Pointer to device structure for the driver instance.
  * @param pin Pin number to configure.
  * @param flags Flags for pin configuration: 'GPIO input/output configuration
- *        flags', 'GPIO drive strength flags', 'GPIO pin drive flags', 'GPIO pin
- *        bias flags', GPIO_INT_DEBOUNCE.
+ *        flags', 'GPIO pin drive flags', 'GPIO pin bias flags'.
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP if any of the configuration options is not supported

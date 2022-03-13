@@ -15,7 +15,7 @@ module-str = modem
 source "subsys/logging/Kconfig.template.log_config"
 
 config MODEM_RECEIVER
-	bool "Enable modem receiver helper driver"
+	bool "Modem receiver helper driver"
 	depends on SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
 	select RING_BUFFER
@@ -119,14 +119,14 @@ config MODEM_SOCKET_PACKET_COUNT
 endif # MODEM_CONTEXT
 
 config MODEM_SHELL
-	bool "Enable modem shell utilities"
+	bool "Modem shell utilities"
 	select SHELL
 	help
 	  Activate shell module that provides modem utilities like
 	  sending a command to the modem UART.
 
 config MODEM_SIM_NUMBERS
-	bool "Enable querying the SIM for IMSI and ICCID"
+	bool "Query the SIM for IMSI and ICCID"
 	depends on MODEM_SHELL
 	default y
 	help
@@ -134,7 +134,7 @@ config MODEM_SIM_NUMBERS
 	  can be disabled if the application does not use a SIM.
 
 config MODEM_CELL_INFO
-	bool "Enable querying for operator and cell info"
+	bool "Query for operator and cell info"
 	depends on MODEM_SHELL
 	help
 	  Query for numerical operator id, location area code and cell id.

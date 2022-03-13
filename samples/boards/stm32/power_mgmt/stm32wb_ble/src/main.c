@@ -98,6 +98,14 @@ static void bt_ready(int err)
 	}
 
 	printk("Beacon started\n");
+
+	err = bt_le_adv_stop();
+	if (err != 0) {
+		printk("Advertising failed to stop: %d", err);
+		return;
+	}
+
+	printk("Beacon stopped\n");
 }
 
 void main(void)
@@ -105,18 +113,39 @@ void main(void)
 	int err;
 
 	printk("Starting Beacon Demo\n");
-
-	k_sleep(K_MSEC(500));
-
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
 
+	/* Give time to bt_ready sequence */
 	k_sleep(K_SECONDS(6));
 
-	printk("Device shutdown\n");
+	printk("BLE disable\n");
+	err = bt_disable();
+	if (err) {
+		printk("Bluetooth disable failed (err %d)\n", err);
+	}
 
+	k_sleep(K_SECONDS(2));
+
+	printk("BLE restart\n");
+	/* Initialize the Bluetooth Subsystem */
+	err = bt_enable(bt_ready);
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+	}
+
+	/* Give time to bt_ready sequence */
+	k_sleep(K_SECONDS(6));
+
+	printk("BLE disable\n");
+	err = bt_disable();
+	if (err) {
+		printk("Bluetooth disable failed (err %d)\n", err);
+	}
+
+	printk("Shutdown\n");
 	pm_state_force(0u, &(struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
 }

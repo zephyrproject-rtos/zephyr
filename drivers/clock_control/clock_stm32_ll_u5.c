@@ -30,8 +30,8 @@
 #define z_apb3_prescaler(v) LL_RCC_APB3_DIV_ ## v
 #define apb3_prescaler(v) z_apb3_prescaler(v)
 
-#if STM32_SYSCLK_SRC_PLL
 
+#ifdef STM32_SYSCLK_SRC_PLL
 /**
  * @brief fill in pll configuration structure
  */
@@ -51,29 +51,29 @@ void config_enable_default_clocks(void)
 	/* Enable the power interface clock */
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
 
-#if STM32_LSE_CLOCK
-	if (!LL_PWR_IsEnabledBkUpAccess()) {
-		/* Enable write access to Backup domain */
-		LL_PWR_EnableBkUpAccess();
-		while (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Wait for Backup domain access */
+	if (IS_ENABLED(STM32_LSE_ENABLED)) {
+		if (!LL_PWR_IsEnabledBkUpAccess()) {
+			/* Enable write access to Backup domain */
+			LL_PWR_EnableBkUpAccess();
+			while (!LL_PWR_IsEnabledBkUpAccess()) {
+				/* Wait for Backup domain access */
+			}
 		}
-	}
 
-	/* Enable LSE Oscillator */
-	LL_RCC_LSE_Enable();
-	/* Wait for LSE ready */
-	while (!LL_RCC_LSE_IsReady()) {
-	}
+		/* Enable LSE Oscillator */
+		LL_RCC_LSE_Enable();
+		/* Wait for LSE ready */
+		while (!LL_RCC_LSE_IsReady()) {
+		}
 
-	/* Enable LSESYS additionnally */
-	SET_BIT(RCC->BDCR, RCC_BDCR_LSESYSEN);
-	/* Wait till LSESYS is ready */
-	while (READ_BIT(RCC->BDCR, RCC_BDCR_LSESYSRDY) == 0U) {
-	}
+		/* Enable LSESYS additionnally */
+		LL_RCC_LSE_EnablePropagation();
+		/* Wait till LSESYS is ready */
+		while (!LL_RCC_LSESYS_IsReady()) {
+		}
 
-	LL_PWR_DisableBkUpAccess();
-#endif	/* STM32_LSE_CLOCK */
+		LL_PWR_DisableBkUpAccess();
+	}
 }
 
 /**
@@ -248,23 +248,20 @@ static void clock_switch_to_hsi(uint32_t ahb_prescaler)
 	}
 }
 
-#if STM32_SYSCLK_SRC_MSIS || STM32_PLL_SRC_MSIS
-__unused
 static void set_up_clk_msis(void)
 {
+#if defined(STM32_SYSCLK_SRC_MSIS) || defined(STM32_PLL_SRC_MSIS)
 	/* Set MSIS Range */
 	LL_RCC_MSI_EnableRangeSelection();
 
 	LL_RCC_MSIS_SetRange(STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
 
-#if STM32_MSIS_PLL_MODE
-
-#if !STM32_LSE_CLOCK
-#error "MSI Hardware auto calibration requires LSE clock activation"
-#endif
-	/* Enable MSI hardware auto calibration */
-	LL_RCC_MSI_EnablePLLMode();
-#endif
+	if (IS_ENABLED(STM32_MSIS_PLL_MODE)) {
+		BUILD_ASSERT(STM32_LSE_ENABLED,
+			"MSI Hardware auto calibration needs LSE clock activation");
+		/* Enable MSI hardware auto calibration */
+		LL_RCC_MSI_EnablePLLMode();
+	}
 
 	/* Set MSIS Range */
 	LL_RCC_MSIS_Enable();
@@ -272,15 +269,16 @@ static void set_up_clk_msis(void)
 	/* Wait till MSIS is ready */
 	while (LL_RCC_MSIS_IsReady() != 1) {
 	}
-}
-#endif /* STM32_SYSCLK_SRC_MSIS || STM32_PLL_SRC_MSIS */
 
-#if STM32_SYSCLK_SRC_PLL
+#endif /* STM32_SYSCLK_SRC_MSIS || STM32_PLL_SRC_MSIS */
+}
+
 /*
  * Configure PLL as source of SYSCLK
  */
 void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 {
+#ifdef STM32_SYSCLK_SRC_PLL
 	LL_UTILS_PLLInitTypeDef s_PLLInitStruct;
 
 	/* configure PLL input settings */
@@ -299,59 +297,61 @@ void config_src_sysclk_pll(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
 	LL_RCC_PLL1_Disable();
 
-#if STM32_PLL_Q_DIVISOR
-	LL_RCC_PLL1_SetQ(STM32_PLL_Q_DIVISOR);
-#endif /* STM32_PLL_Q_DIVISOR */
+	if (IS_ENABLED(STM32_PLL_Q_DIVISOR)) {
+		LL_RCC_PLL1_SetQ(STM32_PLL_Q_DIVISOR);
+	}
 
 	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
-#if STM32_PLL_SRC_MSIS
-	set_up_clk_msis();
+	if (IS_ENABLED(STM32_PLL_SRC_MSIS)) {
+		set_up_clk_msis();
 
-	/* Switch to PLL with MSI as clock source */
-	LL_PLL_ConfigSystemClock_MSI(&s_PLLInitStruct, &s_ClkInitStruct);
+		/* Switch to PLL with MSI as clock source */
+		LL_PLL_ConfigSystemClock_MSI(&s_PLLInitStruct, &s_ClkInitStruct);
 
-	/* Disable other clocks */
-	LL_RCC_HSI_Disable();
-	LL_RCC_HSE_Disable();
+		/* Disable other clocks */
+		LL_RCC_HSI_Disable();
+		LL_RCC_HSE_Disable();
 
-#elif STM32_PLL_SRC_HSI
-	/* Switch to PLL with HSI as clock source */
-	LL_PLL_ConfigSystemClock_HSI(&s_PLLInitStruct, &s_ClkInitStruct);
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		/* Switch to PLL with HSI as clock source */
+		LL_PLL_ConfigSystemClock_HSI(&s_PLLInitStruct, &s_ClkInitStruct);
 
-	/* Disable other clocks */
-	LL_RCC_HSE_Disable();
-	LL_RCC_MSIS_Disable();
+		/* Disable other clocks */
+		LL_RCC_HSE_Disable();
+		LL_RCC_MSIS_Disable();
 
-#elif STM32_PLL_SRC_HSE
-	int hse_bypass;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		int hse_bypass;
 
-	if (IS_ENABLED(STM32_HSE_BYPASS)) {
-		hse_bypass = LL_UTILS_HSEBYPASS_ON;
-	} else {
-		hse_bypass = LL_UTILS_HSEBYPASS_OFF;
+		if (IS_ENABLED(STM32_HSE_BYPASS)) {
+			hse_bypass = LL_UTILS_HSEBYPASS_ON;
+		} else {
+			hse_bypass = LL_UTILS_HSEBYPASS_OFF;
+		}
+
+		/* Switch to PLL with HSE as clock source */
+		LL_PLL1_ConfigSystemClock_HSE(CONFIG_CLOCK_STM32_HSE_CLOCK,
+					      hse_bypass,
+					      &s_PLLInitStruct,
+					      &s_ClkInitStruct);
+
+		/* Disable other clocks */
+		LL_RCC_HSI_Disable();
+		LL_RCC_MSIS_Disable();
 	}
 
-	/* Switch to PLL with HSE as clock source */
-	LL_PLL1_ConfigSystemClock_HSE(CONFIG_CLOCK_STM32_HSE_CLOCK,
-				      hse_bypass,
-				      &s_PLLInitStruct,
-				      &s_ClkInitStruct);
-
-	/* Disable other clocks */
-	LL_RCC_HSI_Disable();
-	LL_RCC_MSIS_Disable();
-
-#endif /* STM32_PLL_SRC_* */
-}
 #endif /* STM32_SYSCLK_SRC_PLL */
+}
 
-#if STM32_SYSCLK_SRC_HSE
+
 /*
  * Configure HSE as source of SYSCLK
  */
 void config_src_sysclk_hse(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 {
+#ifdef STM32_SYSCLK_SRC_HSE
+
 	uint32_t old_hclk_freq;
 	uint32_t new_hclk_freq;
 
@@ -409,15 +409,17 @@ void config_src_sysclk_hse(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	LL_RCC_HSI_Disable();
 	LL_RCC_MSIS_Disable();
 	LL_RCC_PLL1_Disable();
-}
-#endif	/* STM32_SYSCLK_SRC_HSE */
 
-#if STM32_SYSCLK_SRC_MSIS
+#endif	/* STM32_SYSCLK_SRC_HSE */
+}
+
 /*
  * Configure MSI as source of SYSCLK
  */
 void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 {
+#ifdef STM32_SYSCLK_SRC_MSIS
+
 	uint32_t old_hclk_freq;
 	uint32_t new_hclk_freq;
 
@@ -465,15 +467,17 @@ void config_src_sysclk_msis(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	LL_RCC_HSE_Disable();
 	LL_RCC_HSI_Disable();
 	LL_RCC_PLL1_Disable();
-}
-#endif	/* STM32_SYSCLK_SRC_MSIS */
 
-#if STM32_SYSCLK_SRC_HSI
+#endif	/* STM32_SYSCLK_SRC_MSIS */
+}
+
 /*
  * Configure HSI as source of SYSCLK
  */
 void config_src_sysclk_hsi(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 {
+#ifdef STM32_SYSCLK_SRC_HSI
+
 	clock_switch_to_hsi(s_ClkInitStruct.AHBCLKDivider);
 
 	/* Update SystemCoreClock variable */
@@ -493,8 +497,9 @@ void config_src_sysclk_hsi(LL_UTILS_ClkInitTypeDef s_ClkInitStruct)
 	LL_RCC_HSE_Disable();
 	LL_RCC_MSIS_Disable();
 	LL_RCC_PLL1_Disable();
-}
+
 #endif	/* STM32_SYSCLK_SRC_HSI */
+}
 
 int stm32_clock_control_init(const struct device *dev)
 {
@@ -508,19 +513,21 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
 
-#if STM32_SYSCLK_SRC_PLL
-	/* Configure PLL as source of SYSCLK */
-	config_src_sysclk_pll(s_ClkInitStruct);
-#elif STM32_SYSCLK_SRC_HSE
-	/* Configure HSE as source of SYSCLK */
-	config_src_sysclk_hse(s_ClkInitStruct);
-#elif STM32_SYSCLK_SRC_MSIS
-	/* Configure MSIS as source of SYSCLK */
-	config_src_sysclk_msis(s_ClkInitStruct);
-#elif STM32_SYSCLK_SRC_HSI
-	/* Configure HSI as source of SYSCLK */
-	config_src_sysclk_hsi(s_ClkInitStruct);
-#endif /* STM32_SYSCLK_SRC_PLL... */
+	if (IS_ENABLED(STM32_SYSCLK_SRC_PLL)) {
+		/* Configure PLL as source of SYSCLK */
+		config_src_sysclk_pll(s_ClkInitStruct);
+	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSE)) {
+		/* Configure HSE as source of SYSCLK */
+		config_src_sysclk_hse(s_ClkInitStruct);
+	} else if (IS_ENABLED(STM32_SYSCLK_SRC_MSIS)) {
+		/* Configure MSIS as source of SYSCLK */
+		config_src_sysclk_msis(s_ClkInitStruct);
+	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSI)) {
+		/* Configure HSI as source of SYSCLK */
+		config_src_sysclk_hsi(s_ClkInitStruct);
+	} else {
+		return -ENOTSUP;
+	}
 
 	return 0;
 }

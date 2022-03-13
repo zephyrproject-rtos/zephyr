@@ -41,9 +41,9 @@ static inline uint32_t rotl(const uint32_t x, int k)
 
 static int xoshiro128_initialize(const struct device *dev)
 {
-	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-	if (!dev) {
-		return -EINVAL;
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
 	}
 
 	int32_t rc = entropy_get_entropy_isr(dev, (uint8_t *)&state,

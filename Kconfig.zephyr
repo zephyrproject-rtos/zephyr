@@ -221,7 +221,7 @@ config SRAM_OFFSET
 menu "Linker Sections"
 
 config LINKER_USE_BOOT_SECTION
-	bool "Enable Usage of Boot Linker Section"
+	bool "Use Boot Linker Section"
 	help
 	  If enabled, the symbols which are needed for the boot process
 	  will be put into another linker section reserved for these
@@ -231,7 +231,7 @@ config LINKER_USE_BOOT_SECTION
 	  board or custom linker script.
 
 config LINKER_USE_PINNED_SECTION
-	bool "Enable Usage of Pinned Linker Section"
+	bool "Use Pinned Linker Section"
 	help
 	  If enabled, the symbols which need to be pinned in memory
 	  will be put into another linker section reserved for pinned
@@ -309,7 +309,7 @@ config NO_OPTIMIZATIONS
 endchoice
 
 config COMPILER_COLOR_DIAGNOSTICS
-	bool "Enable colored diagnostics"
+	bool "Colored diagnostics"
 	default y
 	help
 	  Compiler diagnostic messages are colorized.
@@ -349,7 +349,7 @@ config NO_RUNTIME_CHECKS
 	  Do not do any runtime checks or asserts when using the CHECK macro.
 
 config RUNTIME_ERROR_CHECKS
-	bool "Enable runtime error checks"
+	bool "Runtime error checks"
 	help
 	  Always perform runtime checks covered with the CHECK macro. This
 	  option is the default and the only option used during testing.

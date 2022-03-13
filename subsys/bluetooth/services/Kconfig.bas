@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_BAS
-	bool "Enable GATT Battery service"
+	bool "GATT Battery service"
 	select SENSOR
 
 if BT_BAS

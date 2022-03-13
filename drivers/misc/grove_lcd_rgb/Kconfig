@@ -6,7 +6,7 @@ module-str = grove_lcd_rgb
 source "subsys/logging/Kconfig.template.log_config"
 
 config GROVE_LCD_RGB
-	bool "Enable the Seeed Grove LCD RGB Backlight"
+	bool "Seeed Grove LCD RGB Backlight"
 	help
 	  Setting this value will enable driver support for the Groove-LCD RGB
 	  Backlight.

@@ -7,6 +7,17 @@ choice
 	prompt "LPC5500 Series MCU Selection"
 	depends on SOC_SERIES_LPC55XXX
 
+config SOC_LPC55S06
+	bool "SOC_LPC55S06 M33"
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select CLOCK_CONTROL
+	select HAS_MCUX_IAP if !TRUSTED_EXECUTION_NONSECURE
+
 config SOC_LPC55S16
 	bool "SOC_LPC55S16 M33"
 	select CPU_CORTEX_M33
@@ -55,6 +66,9 @@ endchoice
 
 if SOC_SERIES_LPC55XXX
 
+config SOC_PART_NUMBER_LPC55S06JBD64
+	bool
+
 config SOC_PART_NUMBER_LPC55S16JBD100
 	bool
 
@@ -69,6 +83,7 @@ config SOC_PART_NUMBER_LPC55S69JET98
 
 config SOC_PART_NUMBER_LPC55XXX
 	string
+	default "LPC55S06JBD64"  if SOC_PART_NUMBER_LPC55S06JBD64
 	default "LPC55S16JBD100" if SOC_PART_NUMBER_LPC55S16JBD100
 	default "LPC55S28JBD100" if SOC_PART_NUMBER_LPC55S28JBD100
 	default "LPC55S69JBD100" if SOC_PART_NUMBER_LPC55S69JBD100
@@ -83,7 +98,7 @@ config INIT_PLL0
 	bool "Initialize PLL0"
 
 config SECOND_CORE_MCUX
-	bool "Enable LPC55xxx's second core"
+	bool "LPC55xxx's second core"
 	depends on HAS_MCUX
 	help
 	  Driver for second core startup

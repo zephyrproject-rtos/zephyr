@@ -19,44 +19,6 @@ config BT_PAC_SNK
 	  This option enables support for Sink PAC Characteristic.
 
 if BT_PAC_SNK
-config BT_PAC_SNK_LOC
-	hex "Sink PAC Locations Characteristic Support"
-	default 0x00000000
-	range 0x00000000 0x0ffffff
-	help
-	  This option enables support for Sink PAC Locations Characteristic.
-	  Bitmap of Audio Location values for PAC records where the server acts
-	  as an Audio Sink:
-	  0x00000000: Mono/Unespecified
-	  0x00000001: Front Left
-	  0x00000002: Front Right
-	  0x00000004: Front Center
-	  0x00000008: Low Frequency Effects 1
-	  0x00000010: Back Left
-	  0x00000020: Back Right
-	  0x00000040: Front Left of Center
-	  0x00000080: Front Right of Center
-	  0x00000100: Back Center
-	  0x00000200: Low Frequency Effects 2
-	  0x00000400: Side Left
-	  0x00000800: Side Right
-	  0x00001000: Top Front Left
-	  0x00002000: Top Front Right
-	  0x00004000: Top Front Center
-	  0x00008000: Top Center
-	  0x00010000: Top Back Left
-	  0x00020000: Top Back Right
-	  0x00040000: Top Side Left
-	  0x00080000: Top Side Right
-	  0x00100000: Top Back Center
-	  0x00200000: Bottom Front Center
-	  0x00400000: Bottom Front Left
-	  0x00800000: Bottom Front Right
-	  0x01000000: Front Left Wide
-	  0x02000000: Front Right Wide
-	  0x01000000: Left Surround
-	  0x02000000: Right Surround
-
 config BT_PACS_SNK_CONTEXT
 	hex "Supported Sink Contexts"
 	default 0x03ff
@@ -85,44 +47,6 @@ config BT_PAC_SRC
 	  This option enables support for Source PAC Characteristic.
 
 if BT_PAC_SRC
-config BT_PAC_SRC_LOC
-	hex "Source PAC Locations Characteristic Support"
-	default 0x00000000
-	range 0x00000000 0x0ffffff
-	help
-	  This option enables support for Source PAC Locations Characteristic.
-	  Bitmap of Audio Location values for PAC records where the server acts
-	  as an Audio Source:
-	  0x00000000: Mono/Unespecified
-	  0x00000001: Front Left
-	  0x00000002: Front Right
-	  0x00000004: Front Center
-	  0x00000008: Low Frequency Effects 1
-	  0x00000010: Back Left
-	  0x00000020: Back Right
-	  0x00000040: Front Left of Center
-	  0x00000080: Front Right of Center
-	  0x00000100: Back Center
-	  0x00000200: Low Frequency Effects 2
-	  0x00000400: Side Left
-	  0x00000800: Side Right
-	  0x00001000: Top Front Left
-	  0x00002000: Top Front Right
-	  0x00004000: Top Front Center
-	  0x00008000: Top Center
-	  0x00010000: Top Back Left
-	  0x00020000: Top Back Right
-	  0x00040000: Top Side Left
-	  0x00080000: Top Side Right
-	  0x00100000: Top Back Center
-	  0x00200000: Bottom Front Center
-	  0x00400000: Bottom Front Left
-	  0x00800000: Bottom Front Right
-	  0x01000000: Front Left Wide
-	  0x02000000: Front Right Wide
-	  0x01000000: Left Surround
-	  0x02000000: Right Surround
-
 config BT_PACS_SRC_CONTEXT
 	hex "Supported Source Contexts"
 	default 0x03ff

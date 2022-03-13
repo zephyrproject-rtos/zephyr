@@ -30,9 +30,9 @@ static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
  * ACTIVE_STATE is 0
  */
 #define CPU_PM_STATE_INIT(_, __)		\
-	{ .state = PM_STATE_ACTIVE },
+	{ .state = PM_STATE_ACTIVE }
 static struct pm_state_info z_cpus_pm_state[] = {
-	UTIL_LISTIFY(CONFIG_MP_NUM_CPUS, CPU_PM_STATE_INIT)
+	LISTIFY(CONFIG_MP_NUM_CPUS, CPU_PM_STATE_INIT, (,))
 };
 
 /* bitmask to check if a power state was forced. */

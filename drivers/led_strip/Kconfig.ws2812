@@ -8,7 +8,7 @@
 # https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
 
 menuconfig WS2812_STRIP
-	bool "Enable WS2812 (and compatible) LED strip driver"
+	bool "WS2812 (and compatible) LED strip driver"
 	select LED_STRIP_RGB_SCRATCH
 	help
 	  Enable LED strip driver for daisy chains of WS2812-ish (or WS2812B,
@@ -20,14 +20,14 @@ choice WS2812_STRIP_DRIVER
 	depends on WS2812_STRIP
 
 config WS2812_STRIP_SPI
-	bool "Enable the SPI driver"
+	bool "SPI driver"
 	depends on SPI
 	help
 	  The SPI driver is portable, but requires significantly more
 	  memory (1 byte of overhead per bit of pixel data).
 
 config WS2812_STRIP_GPIO
-	bool "Enable the GPIO driver"
+	bool "GPIO driver"
 	# Only an Cortex-M0 inline assembly implementation for the nRF51
 	# is supported currently.
 	depends on SOC_SERIES_NRF51X

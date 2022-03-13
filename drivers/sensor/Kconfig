@@ -21,7 +21,7 @@ config SENSOR_INIT_PRIORITY
 	  Sensor initialization priority.
 
 config SENSOR_SHELL
-	bool "Enable sensor shell"
+	bool "Sensor shell"
 	depends on SHELL
 	select CBPRINTF_FP_SUPPORT
 	default y if !SHELL_MINIMAL
@@ -29,7 +29,7 @@ config SENSOR_SHELL
 	  This shell provides access to basic sensor data.
 
 config SENSOR_SHELL_BATTERY
-	bool "Enable sensor shell 'battery' command"
+	bool "Sensor shell 'battery' command"
 	depends on SHELL
 	help
 	  This enables the 'battery' command which reports charging information

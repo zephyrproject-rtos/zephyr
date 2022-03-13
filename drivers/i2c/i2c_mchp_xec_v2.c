@@ -14,7 +14,7 @@
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
 #include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#include <drivers/pinmux.h>
+#include <drivers/pinctrl.h>
 #include <sys/printk.h>
 #include <sys/sys_io.h>
 #include <logging/log.h>
@@ -46,8 +46,8 @@ LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 #define I2C_RECOVER_SCL_DELAY_US	50
 
 /* I2C SCL and SDA lines(signals) */
-#define I2C_LINES_SCL_HI	BIT(0)
-#define I2C_LINES_SDA_HI	BIT(1)
+#define I2C_LINES_SCL_HI	BIT(SOC_I2C_SCL_POS)
+#define I2C_LINES_SDA_HI	BIT(SOC_I2C_SDA_POS)
 #define I2C_LINES_BOTH_HI	(I2C_LINES_SCL_HI | I2C_LINES_SDA_HI)
 
 #define I2C_START		0U
@@ -86,6 +86,7 @@ struct i2c_xec_config {
 	uint8_t girq_pos;
 	uint8_t pcr_idx;
 	uint8_t pcr_bitpos;
+	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config_func)(void);
 };
 
@@ -131,90 +132,6 @@ static const struct xec_speed_cfg xec_cfg_params[] = {
 		.timeout_scale      = 0x089CC2C7,
 	},
 };
-
-struct xec_i2c_port {
-	uint8_t scl_pin;
-	uint8_t scl_func;
-	uint8_t sda_pin;
-	uint8_t sda_func;
-};
-
-/* Indexed by port number */
-static const struct xec_i2c_port xec_i2c_ports[] = {
-	{ 0004, 1, 0003, 1 },
-	{ 0131, 1, 0130, 1 },
-	{ 0155, 1, 0154, 1 },
-	{ 0010, 1, 0007, 1 },
-	{ 0144, 1, 0143, 1 },
-	{ 0142, 1, 0141, 1 },
-	{ 0140, 1, 0132, 1 },
-	{ 0013, 1, 0012, 1 },
-#ifdef CONFIG_SOC_SERIES_MEC172X
-	{ 0230, 1, 0231, 1 },
-#else
-	{ 0212, 1, 0211, 1 },
-#endif
-	{ 0146, 1, 0145, 1 },
-	{ 0107, 3, 0030, 2 },
-	{ 0062, 2, 0000, 3 },
-	{ 0027, 3, 0026, 3 },
-	{ 0065, 2, 0066, 2 },
-	{ 0071, 2, 0070, 2 },
-	{ 0150, 1, 0147, 1 },
-};
-
-/* returns b[0]=SCL pin state, b[1]=SDA pin state */
-static uint32_t xec_i2c_port_lines(uint8_t port)
-{
-	uintptr_t base = (uintptr_t)XEC_GPIO_CTRL_BASE;
-	uint32_t lines = 0;
-
-	if (port < ARRAY_SIZE(xec_i2c_ports)) {
-		const struct xec_i2c_port *p = &xec_i2c_ports[port];
-		uintptr_t ctrl_addr = base + p->scl_pin * 4;
-
-		lines = (sys_read32(ctrl_addr) >> 24) & BIT(0);
-		ctrl_addr = base + p->scl_pin * 4;
-		lines |= ((sys_read32(ctrl_addr) >> 23) & BIT(1));
-	}
-
-	return lines;
-}
-
-#define XEC_I2C_PIN_PRE_CFG1						\
-	(MCHP_GPIO_CTRL_OUTV_HI | MCHP_GPIO_CTRL_MUX_GPIO |		\
-	 MCHP_GPIO_CTRL_DIR_OUTPUT | MCHP_GPIO_CTRL_BUFT_OPENDRAIN |	\
-	 MCHP_GPIO_CTRL_IDET_DISABLE | MCHP_GPIO_CTRL_PUD_NONE)
-
-static int xec_i2c_port_cfg(uint8_t port, uint8_t enable)
-{
-	if (port >= ARRAY_SIZE(xec_i2c_ports)) {
-		return -EINVAL;
-	}
-
-	const struct xec_i2c_port *p = &xec_i2c_ports[port];
-	uintptr_t scl_addr = (uintptr_t)XEC_GPIO_CTRL_BASE + p->scl_pin * 4;
-	uintptr_t sda_addr = (uintptr_t)XEC_GPIO_CTRL_BASE + p->sda_pin * 4;
-
-	if (enable) {
-		sys_write32(XEC_I2C_PIN_PRE_CFG1, sda_addr);
-		sys_write32(XEC_I2C_PIN_PRE_CFG1, scl_addr);
-
-		k_busy_wait(PIN_CFG_WAIT);
-
-		sys_write32(sys_read32(sda_addr) |
-			    ((uint32_t)(p->sda_func) << MCHP_GPIO_CTRL_MUX_POS),
-			    sda_addr);
-		sys_write32(sys_read32(scl_addr) |
-			    ((uint32_t)(p->scl_func) << MCHP_GPIO_CTRL_MUX_POS),
-			    scl_addr);
-	} else {
-		sys_write32(MCHP_GPIO_CTRL_DIS_PIN, scl_addr);
-		sys_write32(MCHP_GPIO_CTRL_DIS_PIN, sda_addr);
-	}
-
-	return 0;
-}
 
 static void i2c_ctl_wr(const struct device *dev, uint8_t ctrl)
 {
@@ -272,6 +189,11 @@ static int wait_bus_free(const struct device *dev, uint32_t nwait)
 /*
  * returns state of I2C SCL and SDA lines.
  * b[0] = SCL, b[1] = SDA
+ * Call soc specific routine to read GPIO pad input.
+ * Why? We can get the pins from our PINCTRL info but
+ * we do not know which pin is I2C clock and which pin
+ * is I2C data. There's no ordering in PINCTRL DT unless
+ * we impose an order.
  */
 static uint32_t get_lines(const struct device *dev)
 {
@@ -279,8 +201,11 @@ static uint32_t get_lines(const struct device *dev)
 		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_smb_regs *regs = (struct i2c_smb_regs *)cfg->base_addr;
 	uint8_t port = regs->CFG & MCHP_I2C_SMB_CFG_PORT_SEL_MASK;
+	uint32_t lines = 0u;
 
-	return xec_i2c_port_lines(port);
+	soc_i2c_port_lines_get(port, &lines);
+
+	return lines;
 }
 
 static int i2c_xec_reset_config(const struct device *dev)
@@ -883,12 +808,10 @@ static void i2c_xec_bus_isr(void *arg)
 	const struct i2c_slave_callbacks *target_cb =
 		data->target_cfg->callbacks;
 	struct i2c_smb_regs *regs = (struct i2c_smb_regs *)cfg->base_addr;
-
 	int ret;
 	uint32_t status;
 	uint32_t compl_status;
 	uint8_t val;
-
 	uint8_t dummy = 0U;
 
 	/* Get current status */
@@ -1127,8 +1050,9 @@ static int i2c_xec_init(const struct device *dev)
 	data->target_cfg = NULL;
 	data->target_attached = false;
 
-	ret = xec_i2c_port_cfg(cfg->port_sel, 1);
-	if (ret) {
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		LOG_ERR("XEC I2C pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
@@ -1150,6 +1074,9 @@ static int i2c_xec_init(const struct device *dev)
 }
 
 #define I2C_XEC_DEVICE(n)						\
+									\
+	PINCTRL_DT_INST_DEFINE(n);					\
+									\
 	static void i2c_xec_irq_config_func_##n(void);			\
 									\
 	static struct i2c_xec_data i2c_xec_data_##n;			\
@@ -1162,6 +1089,7 @@ static int i2c_xec_init(const struct device *dev)
 		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),		\
 		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),		\
 		.irq_config_func = i2c_xec_irq_config_func_##n,		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_init, NULL,		\
 		&i2c_xec_data_##n, &i2c_xec_config_##n,			\
@@ -1169,7 +1097,7 @@ static int i2c_xec_init(const struct device *dev)
 		&i2c_xec_driver_api);					\
 									\
 	static void i2c_xec_irq_config_func_##n(void)			\
-	{                                                               \
+	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\
 			    i2c_xec_bus_isr,				\

@@ -155,7 +155,7 @@ config BT_HCI_ACL_FLOW_CONTROL
 	  not run out of incoming ACL buffers.
 
 config BT_REMOTE_VERSION
-	bool "Enable fetching of remote version"
+	bool "Allow fetching of remote version"
 	# Enable if building a Controller-only build
 	default y if BT_HCI_RAW
 	help

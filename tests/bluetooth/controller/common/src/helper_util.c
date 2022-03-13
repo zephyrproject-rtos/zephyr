@@ -8,7 +8,6 @@
 #include "zephyr/types.h"
 #include "ztest.h"
 #include <stdlib.h>
-#include "kconfig.h"
 
 #include <bluetooth/hci.h>
 #include <sys/slist.h>
@@ -323,6 +322,17 @@ void lt_tx_real(const char *file, uint32_t line, enum helper_pdu_opcode opcode,
 	sys_slist_append(&lt_tx_q, (sys_snode_t *)rx);
 }
 
+void lt_tx_real_no_encode(const char *file, uint32_t line, struct pdu_data *pdu,
+			  struct ll_conn *conn, void *param)
+{
+	struct node_rx_pdu *rx;
+
+	rx = malloc(PDU_RX_NODE_SIZE);
+	zassert_not_null(rx, "Out of memory.\nCalled at %s:%d\n", file, line);
+	memcpy((struct pdu_data *)rx->pdu, pdu, sizeof(struct pdu_data));
+	sys_slist_append(&lt_tx_q, (sys_snode_t *)rx);
+}
+
 void lt_rx_real(const char *file, uint32_t line, enum helper_pdu_opcode opcode,
 		struct ll_conn *conn, struct node_tx **tx_ref, void *param)
 {
@@ -395,4 +405,10 @@ void ut_rx_q_is_empty_real(const char *file, uint32_t line)
 
 	ntf = (struct node_rx_pdu *)sys_slist_get(&ut_rx_q);
 	zassert_is_null(ntf, "Ntf Q not empty.\nCalled at %s:%d\n", file, line);
+}
+
+void encode_pdu(enum helper_pdu_opcode opcode, struct pdu_data *pdu, void *param)
+{
+	zassert_not_null(helper_pdu_encode[opcode], "PDU encode function cannot be NULL\n");
+	helper_pdu_encode[opcode](pdu, param);
 }

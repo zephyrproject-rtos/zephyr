@@ -120,7 +120,7 @@ config NRF_SECURE_APPROTECT_USER_HANDLING
 endchoice
 
 config NRF_TRACE_PORT
-	bool "Enable nRF TPIU"
+	bool "nRF TPIU"
 	depends on !SOC_SERIES_NRF51X
 	help
 	  Enable this option to initialize the TPIU (Trace Port Interface

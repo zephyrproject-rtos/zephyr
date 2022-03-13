@@ -73,7 +73,7 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: cc85acbd635f02122c54df11fa55458269ce1bdd
+      revision: 63a72ca90b7e0d7257211ddc5c79e8c0b940371b
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -149,7 +149,7 @@ manifest:
       groups:
         - hal
     - name: libmetal
-      revision: f237c9d420a51cc43bc37d744e41191ad613f348
+      revision: c6efe091dfe02704097586a522969b5a4cc197bd
       path: modules/hal/libmetal
       groups:
         - hal
@@ -162,7 +162,7 @@ manifest:
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: aae1c11102138cf596687e662c0d54b72f72bf9b
+      revision: a2e17073e5208c221e24e3c2b3b6c473e878bd1e
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d

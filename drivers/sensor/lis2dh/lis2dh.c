@@ -11,6 +11,7 @@
 #include <sys/byteorder.h>
 #include <sys/__assert.h>
 #include <logging/log.h>
+#include <pm/device.h>
 
 LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
@@ -352,14 +353,14 @@ int lis2dh_init(const struct device *dev)
 	}
 
 	/* Fix LSM303AGR_ACCEL device scale values */
-	if (cfg->is_lsm303agr_dev) {
+	if (cfg->hw.is_lsm303agr_dev) {
 		lis2dh_reg_val_to_scale[0] = ACCEL_SCALE(1563);
 		lis2dh_reg_val_to_scale[1] = ACCEL_SCALE(3126);
 		lis2dh_reg_val_to_scale[2] = ACCEL_SCALE(6252);
 		lis2dh_reg_val_to_scale[3] = ACCEL_SCALE(18758);
 	}
 
-	if (cfg->disc_pull_up) {
+	if (cfg->hw.disc_pull_up) {
 		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL0,
 						   LIS2DH_SDO_PU_DISC_MASK,
 						   LIS2DH_SDO_PU_DISC_MASK);
@@ -430,6 +431,46 @@ int lis2dh_init(const struct device *dev)
 					LIS2DH_ODR_BITS);
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int lis2dh_pm_action(const struct device *dev,
+			    enum pm_device_action action)
+{
+	int status;
+	struct lis2dh_data *lis2dh = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Resume previous mode. */
+		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
+						  lis2dh->reg_ctrl1_active_val);
+		if (status < 0) {
+			LOG_ERR("failed to write reg_crtl1");
+			return status;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Store current mode, suspend. */
+		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1,
+						 &lis2dh->reg_ctrl1_active_val);
+		if (status < 0) {
+			LOG_ERR("failed to read reg_crtl1");
+			return status;
+		}
+		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
+						  LIS2DH_SUSPEND);
+		if (status < 0) {
+			LOG_ERR("failed to write reg_crtl1");
+			return status;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "LIS2DH driver enabled without any devices"
 #endif
@@ -440,9 +481,10 @@ int lis2dh_init(const struct device *dev)
  */
 
 #define LIS2DH_DEVICE_INIT(inst)					\
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2dh_pm_action);		\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    lis2dh_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(inst),		\
 			    &lis2dh_data_##inst,			\
 			    &lis2dh_config_##inst,			\
 			    POST_KERNEL,				\
@@ -455,17 +497,24 @@ int lis2dh_init(const struct device *dev)
 #define DISC_PULL_UP(inst) \
 	DT_INST_PROP(inst, disconnect_sdo_sa0_pull_up)
 
+#define ANYM_ON_INT1(inst) \
+	DT_INST_PROP(inst, anym_on_int1)
+
 #ifdef CONFIG_LIS2DH_TRIGGER
 #define GPIO_DT_SPEC_INST_GET_BY_IDX_COND(id, prop, idx)		\
 	COND_CODE_1(DT_INST_PROP_HAS_IDX(id, prop, idx),		\
 		    (GPIO_DT_SPEC_INST_GET_BY_IDX(id, prop, idx)),	\
 		    ({.port = NULL, .pin = 0, .dt_flags = 0}))
 
-#define LIS2DH_CFG_INT(inst) \
+#define LIS2DH_CFG_INT(inst)				\
 	.gpio_drdy =							\
-	    GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0),	\
-	.gpio_int =							\
-	    GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 1),
+	    COND_CODE_1(ANYM_ON_INT1(inst),		\
+		({.port = NULL, .pin = 0, .dt_flags = 0}),                  \
+		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0))),	\
+	.gpio_int =								\
+	    COND_CODE_1(ANYM_ON_INT1(inst),		\
+		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0)),	\
+		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 1))),
 #else
 #define LIS2DH_CFG_INT(inst)
 #endif /* CONFIG_LIS2DH_TRIGGER */
@@ -504,8 +553,9 @@ int lis2dh_init(const struct device *dev)
 					SPI_MODE_CPOL |			\
 					SPI_MODE_CPHA,			\
 					0) },				\
-		.is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
-		.disc_pull_up = DISC_PULL_UP(inst),			\
+		.hw = { .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
+				.disc_pull_up = DISC_PULL_UP(inst),				\
+				.anym_on_int1 = ANYM_ON_INT1(inst), },			\
 		LIS2DH_CFG_TEMPERATURE(inst)				\
 		LIS2DH_CFG_INT(inst)					\
 	}
@@ -525,8 +575,9 @@ int lis2dh_init(const struct device *dev)
 		.bus_name = DT_INST_BUS_LABEL(inst),			\
 		.bus_init = lis2dh_i2c_init,				\
 		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
-		.is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
-		.disc_pull_up = DISC_PULL_UP(inst),			\
+		.hw = { .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),		\
+				.disc_pull_up = DISC_PULL_UP(inst),			\
+				.anym_on_int1 = ANYM_ON_INT1(inst), },		\
 		LIS2DH_CFG_TEMPERATURE(inst)				\
 		LIS2DH_CFG_INT(inst)					\
 	}

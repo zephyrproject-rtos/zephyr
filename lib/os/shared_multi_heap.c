@@ -76,7 +76,8 @@ static void smh_init_with_attr(enum smh_reg_attr attr)
 			}
 
 			sys_heap_init(&heap_pool[attr][slot], mapped, size);
-			sys_multi_heap_add_heap(&shared_multi_heap, &heap_pool[attr][slot]);
+			sys_multi_heap_add_heap(&shared_multi_heap,
+				&heap_pool[attr][slot], &dt_region[reg]);
 
 			slot++;
 		}

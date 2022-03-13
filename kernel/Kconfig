@@ -110,7 +110,7 @@ config NUM_METAIRQ_PRIORITIES
 	  from application code.
 
 config SCHED_DEADLINE
-	bool "Enable earliest-deadline-first scheduling"
+	bool "Earliest-deadline-first scheduling"
 	help
 	  This enables a simple "earliest deadline first" scheduling
 	  mode where threads can set "deadline" deltas measured in
@@ -119,7 +119,7 @@ config SCHED_DEADLINE
 	  not simply the least recently added thread.
 
 config SCHED_CPU_MASK
-	bool "Enable CPU mask affinity/pinning API"
+	bool "CPU mask affinity/pinning API"
 	depends on SCHED_DUMB
 	help
 	  When true, the application will have access to the
@@ -203,7 +203,7 @@ config THREAD_USERSPACE_LOCAL_DATA
 	default y if ERRNO && !ERRNO_IN_TLS
 
 config ERRNO
-	bool "Enable errno support"
+	bool "Errno support"
 	default y
 	help
 	  Enable per-thread errno in the kernel. Application and library code must
@@ -500,6 +500,14 @@ config TIMESLICE_PRIORITY
 	  takes effect; threads having a higher priority than this ceiling are
 	  not subject to time slicing.
 
+config TIMESLICE_PER_THREAD
+	bool "Support per-thread timeslice values"
+	depends on TIMESLICING
+	help
+	  When set, this enables an API for setting timeslice values on
+	  a per-thread basis, with an application callback invoked when
+	  a thread reaches the end of its timeslice.
+
 config POLL
 	bool "Async I/O Framework"
 	help
@@ -513,7 +521,7 @@ endmenu
 menu "Other Kernel Object Options"
 
 config MEM_SLAB_TRACE_MAX_UTILIZATION
-	bool "Enable getting maximum slab utilization"
+	bool "Getting maximum slab utilization"
 	help
 	  This adds variable to the k_mem_slab structure to hold
 	  maximum utilization of the slab.
@@ -530,7 +538,7 @@ config NUM_MBOX_ASYNC_MSGS
 	  mailbox messages.
 
 config EVENTS
-	bool "Enable event objects"
+	bool "Event objects"
 	help
 	  This option enables event objects. Threads may wait on event
 	  objects for specific events, but both threads and ISRs may deliver
@@ -718,7 +726,7 @@ config STACK_CANARIES
 	  will occur at build time.
 
 config EXECUTE_XOR_WRITE
-	bool "Enable W^X for memory partitions"
+	bool "W^X for memory partitions"
 	depends on USERSPACE
 	depends on ARCH_HAS_EXECUTABLE_PAGE_BIT
 	default y
@@ -752,7 +760,7 @@ config STACK_POINTER_RANDOM
 	  grow towards lower memory addresses.
 
 config BOUNDS_CHECK_BYPASS_MITIGATION
-	bool "Enable bounds check bypass mitigations for speculative execution"
+	bool "Bounds check bypass mitigations for speculative execution"
 	depends on USERSPACE
 	help
 	  Untrusted parameters from user mode may be used in system calls to
@@ -834,7 +842,7 @@ config USE_SWITCH_SUPPORTED
 	  platforms that implement it.
 
 config SMP
-	bool "Enable symmetric multithreading support"
+	bool "Symmetric multithreading support"
 	depends on USE_SWITCH
 	help
 	  When true, kernel will be built with SMP support, allowing
@@ -868,7 +876,7 @@ config SCHED_IPI_SUPPORTED
 	  future).
 
 config TRACE_SCHED_IPI
-	bool "Enable Test IPI"
+	bool "Test IPI"
 	help
 	  When true, it will add a hook into z_sched_ipi(), in order
 	  to check if schedule IPI has called or not, for testing

@@ -57,7 +57,7 @@ config FS_FATFS_MAX_ROOT_ENTRIES
 endif # FS_FATFS_MOUNT_MKFS
 
 config FS_FATFS_EXFAT
-	bool "Enable exFAT support"
+	bool "ExFAT support"
 	select FS_FATFS_LFN
 	help
 	  Enable the exFAT format support for FatFs.
@@ -71,7 +71,7 @@ config FS_FATFS_NUM_DIRS
 	default 4
 
 config FS_FATFS_LFN
-	bool "Enable long filenames (LFN)"
+	bool "Long filenames (LFN)"
 	help
 	  Without long filenames enabled, file names are limited to 8.3 format.
 	  This option increases working buffer size.

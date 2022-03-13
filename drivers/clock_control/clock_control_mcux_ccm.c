@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_imx_ccm
 #include <errno.h>
 #include <soc.h>
+#include <sys/util.h>
 #include <drivers/clock_control.h>
 #include <dt-bindings/clock/imx_ccm.h>
 #include <fsl_clock.h>
@@ -40,7 +41,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				    clock_control_subsys_t sub_system,
 				    uint32_t *rate)
 {
+#ifdef CONFIG_ARM64
+	uint32_t clock_name = (uint32_t)(uint64_t) sub_system;
+#else
 	uint32_t clock_name = (uint32_t) sub_system;
+#endif
+	uint32_t mux __unused;
 
 	switch (clock_name) {
 
@@ -109,11 +115,53 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_UART_MCUX_IUART
-	case IMX_CCM_UART_CLK:
-		*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
-				(CLOCK_GetRootPreDivider(kCLOCK_RootUart4)) /
-				(CLOCK_GetRootPostDivider(kCLOCK_RootUart4)) /
+	case IMX_CCM_UART1_CLK:
+		mux = CLOCK_GetRootMux(kCLOCK_RootUart1);
+
+		if (mux == 0) {
+			*rate = MHZ(24);
+		} else if (mux == 1) {
+			*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+				(CLOCK_GetRootPreDivider(kCLOCK_RootUart1)) /
+				(CLOCK_GetRootPostDivider(kCLOCK_RootUart1)) /
 				10;
+		}
+		break;
+	case IMX_CCM_UART2_CLK:
+		mux = CLOCK_GetRootMux(kCLOCK_RootUart2);
+
+		if (mux == 0) {
+			*rate = MHZ(24);
+		} else if (mux == 1) {
+			*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+				(CLOCK_GetRootPreDivider(kCLOCK_RootUart2)) /
+				(CLOCK_GetRootPostDivider(kCLOCK_RootUart2)) /
+				10;
+		}
+		break;
+	case IMX_CCM_UART3_CLK:
+		mux = CLOCK_GetRootMux(kCLOCK_RootUart3);
+
+		if (mux == 0) {
+			*rate = MHZ(24);
+		} else if (mux == 1) {
+			*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+				(CLOCK_GetRootPreDivider(kCLOCK_RootUart3)) /
+				(CLOCK_GetRootPostDivider(kCLOCK_RootUart3)) /
+				10;
+		}
+		break;
+	case IMX_CCM_UART4_CLK:
+		mux = CLOCK_GetRootMux(kCLOCK_RootUart4);
+
+		if (mux == 0) {
+			*rate = MHZ(24);
+		} else if (mux == 1) {
+			*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
+					(CLOCK_GetRootPreDivider(kCLOCK_RootUart4)) /
+					(CLOCK_GetRootPostDivider(kCLOCK_RootUart4)) /
+					10;
+		}
 		break;
 #endif
 

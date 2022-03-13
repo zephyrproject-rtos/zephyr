@@ -27,6 +27,9 @@ config SOC_MIMXRT1011
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
 
 config SOC_MIMXRT1015
 	bool "SOC_MIMXRT1015"
@@ -49,6 +52,9 @@ config SOC_MIMXRT1015
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_EDMA
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
 
 config SOC_MIMXRT1021
 	bool "SOC_MIMXRT1021"
@@ -75,6 +81,9 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_PWM
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
 
 config SOC_MIMXRT1024
 	bool "SOC_MIMXRT1024"
@@ -101,6 +110,9 @@ config SOC_MIMXRT1024
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_SRC
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
 
 config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
@@ -127,6 +139,9 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -157,6 +172,9 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_PWM
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -183,6 +201,9 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
 
 config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
@@ -214,6 +235,9 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
 	select HAS_MCUX_I2S
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
@@ -246,6 +270,9 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_CSI
 	select HAS_MCUX_EDMA
 	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_GPC
+	select HAS_MCUX_DCDC
+	select HAS_MCUX_PMU
 
 config SOC_MIMXRT1176_CM7
 	bool "SOC_MIMXRT1176_CM7"
@@ -279,6 +306,7 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_ENET
 	select HAS_MCUX_GPC
 	select HAS_MCUX_I2S
+	select HAS_MCUX_USB_EHCI
 
 config SOC_MIMXRT1176_CM4
 	bool "SOC_MIMXRT1176_CM4"
@@ -337,6 +365,7 @@ config SOC_MIMXRT1166_CM7
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_ENET
 	select HAS_MCUX_GPC
+	select HAS_MCUX_USB_EHCI
 
 
 config SOC_MIMXRT1166_CM4
@@ -587,8 +616,14 @@ config ADJUST_LDO
 config PM_MCUX_GPC
 	bool "MCUX general power controller driver"
 
+config PM_MCUX_DCDC
+	bool "MCUX dcdc converter module driver"
+
+config PM_MCUX_PMU
+	bool "MCUX power management unit driver"
+
 menuconfig NXP_IMX_RT_BOOT_HEADER
-	bool "Enable the boot header"
+	bool "Boot header"
 	depends on !BOOTLOADER_MCUBOOT
 	help
 	  Enable data structures required by the boot ROM to boot the
@@ -633,7 +668,7 @@ config IMAGE_VECTOR_TABLE_OFFSET
 	  ROM requires a fixed IVT offset for each type of boot device.
 
 config DEVICE_CONFIGURATION_DATA
-	bool "Enable device configuration data"
+	bool "Device configuration data"
 	default y if HAS_MCUX_SEMC
 	help
 	  Device configuration data (DCD) provides a sequence of commands to

@@ -609,6 +609,37 @@
 	IS_ENABLED(DT_CAT6(node_id, _P_, prop, _IDX_, idx, _EXISTS))
 
 /**
+ * @brief Is name "name" available in a foo-names property?
+ *
+ * This property is handled as special case:
+ *
+ * - interrupts property: use DT_IRQ_HAS_NAME(node_id, idx) instead
+ *
+ * It is an error to use this macro with the interrupts property.
+ *
+ * Example devicetree fragment:
+ *
+ *	nx: node-x {
+ *		foos = <&bar xx yy>, <&baz xx zz>;
+ *		foo-names = "event", "error";
+ *		status = "okay";
+ *	};
+ *
+ * Example usage:
+ *
+ *     DT_PROP_HAS_NAME(nx, foos, event)    // 1
+ *     DT_PROP_HAS_NAME(nx, foos, failure)  // 0
+ *
+ * @param node_id node identifier
+ * @param prop a lowercase-and-underscores "prop-names" type property
+ * @param name a lowercase-and-underscores name to check
+ * @return An expression which evaluates to 1 if "name" is an available
+ *         name into the given property, and 0 otherwise.
+ */
+#define DT_PROP_HAS_NAME(node_id, prop, name) \
+	IS_ENABLED(DT_CAT6(node_id, _P_, prop, _NAME_, name, _EXISTS))
+
+/**
  * @brief Get the value at index "idx" in an array type property
  *
  * It might help to read the argument order as being similar to
@@ -767,6 +798,23 @@
  */
 #define DT_STRING_TOKEN(node_id, prop) \
 	DT_CAT4(node_id, _P_, prop, _STRING_TOKEN)
+
+/**
+ * @brief Like DT_STRING_TOKEN(), but with a fallback to default_value
+ *
+ * If the value exists, this expands to DT_STRING_TOKEN(node_id, prop).
+ * The default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's value or default_value
+ */
+#define DT_STRING_TOKEN_OR(node_id, prop, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_TOKEN(node_id, prop)), (default_value))
 
 /**
  * @brief Like DT_STRING_TOKEN(), but uppercased.
@@ -2386,6 +2434,17 @@
 	DT_PROP_HAS_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
+ * @brief Is name "name" available in a foo-names property?
+ * @param inst instance number
+ * @param prop a lowercase-and-underscores "prop-names" type property
+ * @param name a lowercase-and-underscores name to check
+ * @return An expression which evaluates to 1 if "name" is an available
+ *         name into the given property, and 0 otherwise.
+ */
+#define DT_INST_PROP_HAS_NAME(inst, prop, name) \
+	DT_PROP_HAS_NAME(DT_DRV_INST(inst), prop, name)
+
+/**
  * @brief Get a DT_DRV_COMPAT element value in an array property
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
@@ -2653,6 +2712,17 @@
  *         0 otherwise
  */
 #define DT_INST_ON_BUS(inst, bus) DT_ON_BUS(DT_DRV_INST(inst), bus)
+
+/**
+ * @brief Tests if DT_DRV_COMPAT's has string property, returns string token if
+ *        found, otherwise returns default_value.
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's value or default_value
+ */
+#define DT_INST_STRING_TOKEN_OR(inst, name, default_value) \
+	DT_STRING_TOKEN_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
  * @brief Test if any DT_DRV_COMPAT node is on a bus of a given type

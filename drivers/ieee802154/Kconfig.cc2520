@@ -71,7 +71,7 @@ config IEEE802154_CC2520_MAC7
 endif # IEEE802154_CC2520_RANDOM_MAC
 
 config IEEE802154_CC2520_CRYPTO
-	bool "Enable hardware crypto helper on cc2520"
+	bool "Hardware crypto helper on cc2520"
 	depends on NET_L2_IEEE802154_SECURITY
 	help
 	  This option will expose the hardware AES encryption from CC2520.

@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DMA_CAVS_GPDMA
-	bool "Enable cAVS GPDMA DMA driver"
+	bool "CAVS GPDMA DMA driver"
 	help
 	  Intel cAVS GPDMA DMA driver.

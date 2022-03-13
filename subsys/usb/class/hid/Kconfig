@@ -27,7 +27,7 @@ module-str = usb hid
 source "subsys/logging/Kconfig.template.log_config"
 
 config ENABLE_HID_INT_OUT_EP
-	bool "Enable USB HID Device Interrupt OUT Endpoint"
+	bool "USB HID Device Interrupt OUT Endpoint"
 	help
 	  Enable USB HID Device Interrupt OUT Endpoint.
 
@@ -58,7 +58,7 @@ config USB_HID_REPORTS
 	  idle rate must be supported.
 
 config USB_HID_BOOT_PROTOCOL
-	bool "Enable USB HID Boot Protocol handling"
+	bool "USB HID Boot Protocol handling"
 	help
 	  Sets bInterfaceSubClass to 1 and enables Set_Protocol and Get_Protocol
 	  requests handling.

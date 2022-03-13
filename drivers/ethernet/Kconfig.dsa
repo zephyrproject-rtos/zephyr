@@ -17,25 +17,25 @@ config DSA_KSZ8XXX
 	bool
 
 config DSA_KSZ8794
-	bool "Enable support for KSZ8794"
+	bool "Support for KSZ8794"
 	select DSA_KSZ8XXX
 	help
 	  Add support for KSZ8794 DSA device driver.
 
 config DSA_KSZ8863
-	bool "Enable support for KSZ8863"
+	bool "Support for KSZ8863"
 	select DSA_KSZ8XXX
 	help
 	  Add support for KSZ8863 DSA device driver.
 
 config DSA_KSZ_TAIL_TAGGING
-	bool "Enable support for tail tagging"
+	bool "Support for tail tagging"
 	depends on DSA_KSZ8794 || DSA_KSZ8863
 	help
 	  Add support for tail tagging on DSA device.
 
 config DSA_SPI
-	bool "Enable support for PHY SPI interface"
+	bool "Support for PHY SPI interface"
 	depends on SPI && (DSA_KSZ8794 || DSA_KSZ8863)
 	help
 	  Use SPI bus to communicate with PHY

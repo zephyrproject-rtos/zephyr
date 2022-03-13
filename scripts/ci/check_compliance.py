@@ -232,6 +232,7 @@ class KconfigCheck(ComplianceTest):
         self.check_no_pointless_menuconfigs(kconf)
         self.check_no_undef_within_kconfig(kconf)
         self.check_no_redefined_in_defconfig(kconf)
+        self.check_no_enable_in_boolean_prompt(kconf)
         if full:
             self.check_no_undef_outside_kconfig(kconf)
 
@@ -353,6 +354,31 @@ entries, then bump the 'max_top_items' variable in {}.
                 self.add_failure(f"""
 Kconfig node '{node.item.name}' found with prompt or help in {node.filename}.
 Options must not be defined in defconfig files.
+""")
+                continue
+
+    def check_no_enable_in_boolean_prompt(self, kconf):
+        # Checks that boolean's prompt does not start with "Enable...".
+
+        for node in kconf.node_iter():
+            # skip Kconfig nodes not in-tree (will present an absolute path)
+            if os.path.isabs(node.filename):
+                continue
+
+            # 'kconfiglib' is global
+            # pylint: disable=undefined-variable
+
+            # only process boolean symbols with a prompt
+            if (not isinstance(node.item, kconfiglib.Symbol) or
+                node.item.type != kconfiglib.BOOL or
+                not node.prompt or
+                not node.prompt[0]):
+                continue
+
+            if re.match(r"^[Ee]nable.*", node.prompt[0]):
+                self.add_failure(f"""
+Boolean option '{node.item.name}' prompt must not start with 'Enable...'. Please
+check Kconfig guidelines.
 """)
                 continue
 

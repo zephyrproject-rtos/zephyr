@@ -44,7 +44,7 @@ config IEEE802154_NRF5_EXT_IRQ_MGMT
 	  a radio arbiter used in dynamic multiprotocol applications.
 
 config IEEE802154_NRF5_UICR_EUI64_ENABLE
-	bool "Enables using EUI64 value stored in UICR registers"
+	bool "Support usage of EUI64 value stored in UICR registers"
 	depends on !IEEE802154_VENDOR_OUI_ENABLE
 	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X
 	help

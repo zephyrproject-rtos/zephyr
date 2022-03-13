@@ -88,6 +88,17 @@ using an array of atomic variables.
         return (int)atomic_set_bit(flag_bits, bit_position);
     }
 
+Memory Ordering
+===============
+
+For consistency and correctness, all Zephyr atomic APIs are expected
+to include a full memory barrier (in the sense of e.g. "serializing"
+instructions on x86, "DMB" on ARM, or a "sequentially consistent"
+operation as defined by the C++ memory model) where needed by hardware
+to guarantee a reliable picture across contexts.  Any
+architecture-specific implementations are responsible for ensuring
+this behavior.
+
 Suggested Uses
 **************
 

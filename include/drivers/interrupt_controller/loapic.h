@@ -39,6 +39,7 @@
 #define LOAPIC_TIMER_ICR 0x380    /* Timer Initial Count Reg */
 #define LOAPIC_TIMER_CCR 0x390    /* Timer Current Count Reg */
 #define LOAPIC_TIMER_CONFIG 0x3e0 /* Timer Divide Config Reg */
+#define LOAPIC_SELF_IPI 0x3f0	/* Self IPI Reg, only support in X2APIC mode */
 
 #define LOAPIC_ICR_BUSY		0x00001000	/* delivery status: 1 = busy */
 

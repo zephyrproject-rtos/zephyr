@@ -79,7 +79,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (default_conn == NULL) {
-		default_conn = conn;
+		default_conn = bt_conn_ref(conn);
 	}
 
 	if (conn != default_conn) {

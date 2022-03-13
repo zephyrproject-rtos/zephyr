@@ -263,7 +263,7 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL,		\
 			    &mcux_lpi2c_data_##n,			\
 			    &mcux_lpi2c_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_I2C_INIT_PRIORITY,			\
 			    &mcux_lpi2c_driver_api);			\
 									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev) \

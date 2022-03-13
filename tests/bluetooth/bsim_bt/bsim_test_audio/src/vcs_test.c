@@ -41,7 +41,6 @@ static volatile uint8_t g_aics_gain_min;
 static volatile bool g_aics_active = 1;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
-static struct bt_conn *g_conn;
 static bool g_is_connected;
 
 static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume,
@@ -197,7 +196,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 	printk("Connected to %s\n", addr);
-	g_conn = conn;
+	default_conn = bt_conn_ref(conn);
 	g_is_connected = true;
 }
 

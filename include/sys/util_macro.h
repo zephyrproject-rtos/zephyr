@@ -335,7 +335,37 @@ extern "C" {
 #define UTIL_AND(a, b) COND_CODE_1(UTIL_BOOL(a), (b), (0))
 
 /**
- * @brief Generates a sequence of code.
+ * @brief Generates a sequence of code with configurable separator.
+ *
+ * Example:
+ *
+ *     #define FOO(i, _) MY_PWM ## i
+ *     { LISTIFY(PWM_COUNT, FOO, (,)) }
+ *
+ * The above two lines expand to:
+ *
+ *    { MY_PWM0 , MY_PWM1 }
+ *
+ * @param LEN The length of the sequence. Must be an integer literal less
+ *            than 255.
+ * @param F A macro function that accepts at least two arguments:
+ *          <tt>F(i, ...)</tt>. @p F is called repeatedly in the expansion.
+ *          Its first argument @p i is the index in the sequence, and
+ *          the variable list of arguments passed to LISTIFY are passed
+ *          through to @p F.
+ *
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ *
+ * @note Calling LISTIFY with undefined arguments has undefined
+ * behavior.
+ */
+#define LISTIFY(LEN, F, sep, ...) UTIL_CAT(Z_UTIL_LISTIFY_, LEN)(F, sep, __VA_ARGS__)
+
+/**
+ * @brief Generates a sequence of code. Deprecated, use @ref LISTIFY.
+ *
+ * @deprecated Use @ref LISTIFY instead.
  *
  * Example:
  *
@@ -357,7 +387,7 @@ extern "C" {
  * @note Calling UTIL_LISTIFY with undefined arguments has undefined
  * behavior.
  */
-#define UTIL_LISTIFY(LEN, F, ...) UTIL_CAT(Z_UTIL_LISTIFY_, LEN)(F, __VA_ARGS__)
+#define UTIL_LISTIFY(LEN, F, ...) LISTIFY(LEN, F, (), __VA_ARGS__) __DEPRECATED_MACRO
 
 /**
  * @brief Call a macro @p F on each provided argument with a given

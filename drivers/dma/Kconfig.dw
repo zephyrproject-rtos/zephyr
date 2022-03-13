@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DMA_DW
-	bool "Enable DesignWare DMA driver"
+	bool "DesignWare DMA driver"
 	help
 	  DesignWare DMA driver.

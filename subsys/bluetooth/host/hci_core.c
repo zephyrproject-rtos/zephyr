@@ -85,6 +85,9 @@ struct bt_dev bt_dev = {
 #if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
 	.rx_queue      = Z_FIFO_INITIALIZER(bt_dev.rx_queue),
 #endif
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	.appearance = CONFIG_BT_DEVICE_APPEARANCE,
+#endif
 };
 
 static bt_ready_cb_t ready_cb;
@@ -3571,6 +3574,8 @@ int bt_enable(bt_ready_cb_t cb)
 		return -ENODEV;
 	}
 
+	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
+
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_ENABLE)) {
 		return -EALREADY;
 	}
@@ -3627,6 +3632,57 @@ int bt_enable(bt_ready_cb_t cb)
 	return 0;
 }
 
+int bt_disable(void)
+{
+	int err;
+
+	if (!bt_dev.drv) {
+		BT_ERR("No HCI driver registered");
+		return -ENODEV;
+	}
+
+	if (!bt_dev.drv->close) {
+		return -ENOTSUP;
+	}
+
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLE)) {
+		return -EALREADY;
+	}
+
+	/* Clear BT_DEV_READY before disabling HCI link */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
+
+	err = bt_dev.drv->close();
+	if (err) {
+		BT_ERR("HCI driver close failed (%d)", err);
+
+		/* Re-enable BT_DEV_READY to avoid inconsistent stack state */
+		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+
+		return err;
+	}
+
+	/* Abort TX thread */
+	k_thread_abort(&tx_thread_data);
+
+#if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
+	/* Abort RX thread */
+	k_thread_abort(&rx_thread_data);
+#endif
+
+	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+		bt_hci_ecc_deinit();
+	}
+
+	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
+
+	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLE);
+
+	return 0;
+}
+
+
 #define DEVICE_NAME_LEN (sizeof(CONFIG_BT_DEVICE_NAME) - 1)
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 BUILD_ASSERT(DEVICE_NAME_LEN < CONFIG_BT_DEVICE_NAME_MAX);
@@ -3672,6 +3728,33 @@ const char *bt_get_name(void)
 	return CONFIG_BT_DEVICE_NAME;
 #endif
 }
+
+uint16_t bt_get_appearance(void)
+{
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+	return bt_dev.appearance;
+#else
+	return CONFIG_BT_DEVICE_APPEARANCE;
+#endif
+}
+
+#if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
+int bt_set_appearance(uint16_t appearance)
+{
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		int err = settings_save_one("bt/appearance", &appearance, sizeof(appearance));
+
+		if (err) {
+			BT_ERR("Unable to save setting 'bt/appearance' (err %d).", err);
+			return err;
+		}
+	}
+
+	bt_dev.appearance = appearance;
+
+	return 0;
+}
+#endif
 
 bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr)
 {

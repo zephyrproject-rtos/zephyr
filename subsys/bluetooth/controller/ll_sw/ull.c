@@ -223,13 +223,12 @@
 /* Note: Need node for PDU and CTE sample */
 #define BT_CTLR_ADV_EXT_RX_CNT  (CONFIG_BT_CTLR_SCAN_AUX_SET * \
 				 CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX * 2)
-#else
-/* Note: Assume up to 7 PDUs per advertising train (max data length) */
-#define BT_CTLR_ADV_EXT_RX_CNT  (CONFIG_BT_CTLR_SCAN_AUX_SET * 7)
-#endif /* CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX */
-#else
+#else /* !CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX */
+#define BT_CTLR_ADV_EXT_RX_CNT  1
+#endif /* !CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX */
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 #define BT_CTLR_ADV_EXT_RX_CNT  0
-#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_OBSERVER */
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 
 #if !defined(TICKER_USER_LLL_VENDOR_OPS)
 #define TICKER_USER_LLL_VENDOR_OPS 0
@@ -1456,7 +1455,7 @@ void ll_rx_mem_release(void **node_rx)
 				 */
 				sync = scan->periodic.sync;
 
-				ull_sync_setup_complete(scan);
+				ull_sync_setup_reset(scan);
 
 				if (status != BT_HCI_ERR_SUCCESS) {
 					memq_link_t *link_sync_lost;

@@ -96,6 +96,7 @@ static struct seg_tx {
 	uint64_t              seq_auth;
 	uint16_t              src;
 	uint16_t              dst;
+	uint16_t              ack_src;
 	uint16_t              len;
 	uint8_t               hdr;
 	uint8_t               xmit;
@@ -263,6 +264,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 	tx->sub = NULL;
 	tx->src = BT_MESH_ADDR_UNASSIGNED;
 	tx->dst = BT_MESH_ADDR_UNASSIGNED;
+	tx->ack_src = BT_MESH_ADDR_UNASSIGNED;
 	tx->blocked = false;
 
 	for (i = 0; i <= tx->seg_n && tx->nack_count; i++) {
@@ -439,6 +441,11 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 	tx->attempts--;
 
 end:
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
+	    bt_mesh_lpn_established()) {
+		bt_mesh_lpn_poll();
+	}
+
 	if (!tx->seg_pending) {
 		k_work_reschedule(&tx->retransmit,
 				  K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
@@ -593,11 +600,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	}
 
 	seg_tx_send_unacked(tx);
-
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    bt_mesh_lpn_established()) {
-		bt_mesh_lpn_poll();
-	}
 
 	return 0;
 }
@@ -798,8 +800,8 @@ static struct seg_tx *seg_tx_lookup(uint16_t seq_zero, uint8_t obo, uint16_t add
 		 * acknowledgement, assume it's a Friend that's
 		 * responding and therefore accept the message.
 		 */
-		if (obo && tx->nack_count == tx->seg_n + 1) {
-			tx->dst = addr;
+		if (obo && (tx->nack_count == tx->seg_n + 1 || tx->ack_src == addr)) {
+			tx->ack_src = addr;
 			return tx;
 		}
 	}

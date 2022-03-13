@@ -10,6 +10,8 @@
 
 #include <bluetooth/audio/audio.h>
 
+#include "pacs_internal.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_UNICAST_SERVER)
 #define LOG_MODULE_NAME bt_unicast_server
 #include "common/log.h"
@@ -48,4 +50,9 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
 	unicast_server_cb = NULL;
 
 	return 0;
+}
+
+int bt_audio_unicast_server_location_changed(enum bt_audio_pac_type type)
+{
+	return bt_pacs_location_changed(type);
 }

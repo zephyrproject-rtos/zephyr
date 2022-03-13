@@ -16,6 +16,7 @@
 #include <init.h>
 #include <drivers/gpio.h>
 #include <drivers/gpio/gpio_sx1509b.h>
+#include <dt-bindings/gpio/semtech-sx1509b.h>
 #include <drivers/i2c.h>
 #include <sys/byteorder.h>
 #include <sys/util.h>
@@ -289,21 +290,6 @@ static int sx1509b_config(const struct device *dev,
 		return -EWOULDBLOCK;
 	}
 
-	/* Zephyr currently defines drive strength support based on
-	 * the behavior and capabilities of the Nordic GPIO
-	 * peripheral: strength defaults to low but can be set high,
-	 * and is controlled independently for output levels.
-	 *
-	 * SX150x defaults to high strength, and does not support
-	 * different strengths for different levels.
-	 *
-	 * Until something more general is available reject any
-	 * attempt to set a non-default drive strength.
-	 */
-	if ((flags & GPIO_DS_ALT) != 0) {
-		return -ENOTSUP;
-	}
-
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
 	if (drv_data->led_drv_enable & BIT(pin)) {
@@ -359,7 +345,7 @@ static int sx1509b_config(const struct device *dev,
 		pins->dir |= BIT(pin);
 	}
 
-	if ((flags & GPIO_INT_DEBOUNCE) != 0) {
+	if ((flags & SX1509B_GPIO_DEBOUNCE) != 0) {
 		debounce->debounce_enable |= BIT(pin);
 	} else {
 		debounce->debounce_enable &= ~BIT(pin);

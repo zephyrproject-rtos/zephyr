@@ -34,10 +34,12 @@ CREATE_FLAG(flag_stream_configured);
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
+					enum bt_audio_pac_type type,
 					struct bt_audio_capability *cap,
 					struct bt_codec *codec)
 {
-	printk("ASE Codec Config: conn %p ep %p cap %p\n", conn, ep, cap);
+	printk("ASE Codec Config: conn %p ep %p type %u, cap %p\n",
+	       conn, ep, type, cap);
 
 	print_codec(codec);
 
@@ -77,10 +79,11 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 	return 0;
 }
 
-static int lc3_enable(struct bt_audio_stream *stream, uint8_t meta_count,
-		      struct bt_codec_data *meta)
+static int lc3_enable(struct bt_audio_stream *stream,
+		      struct bt_codec_data *meta,
+		      size_t meta_count)
 {
-	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
+	printk("Enable: stream %p meta_count %zu\n", stream, meta_count);
 
 	return 0;
 }
@@ -92,10 +95,11 @@ static int lc3_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
-static int lc3_metadata(struct bt_audio_stream *stream, uint8_t meta_count,
-			struct bt_codec_data *meta)
+static int lc3_metadata(struct bt_audio_stream *stream,
+			struct bt_codec_data *meta,
+			size_t meta_count)
 {
-	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
+	printk("Metadata: stream %p meta_count %zu\n", stream, meta_count);
 
 	return 0;
 }
@@ -201,9 +205,37 @@ static void init(void)
 	}
 }
 
+static void set_location(void)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_SINK,
+						       BT_AUDIO_LOCATION_FRONT_CENTER);
+		if (err != 0) {
+			FAIL("Failed to set sink location (err %d)\n", err);
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		err = bt_audio_capability_set_location(BT_AUDIO_SINK,
+						       (BT_AUDIO_LOCATION_FRONT_LEFT |
+							BT_AUDIO_LOCATION_FRONT_RIGHT));
+		if (err != 0) {
+			FAIL("Failed to set source location (err %d)\n", err);
+			return;
+		}
+	}
+
+	printk("Location successfully set\n");
+}
+
 static void test_main(void)
 {
 	init();
+
+	set_location();
 
 	/* TODO: When babblesim supports ISO, wait for audio stream to pass */
 

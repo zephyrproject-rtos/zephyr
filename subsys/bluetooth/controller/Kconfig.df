@@ -43,7 +43,7 @@ if BT_CTLR_DF
 # Bluetooth v5.1 Direction Finding
 
 config BT_CTLR_DF_CTE_TX
-	bool "Enable transmission of Constant Tone Extension"
+	bool "Transmission of Constant Tone Extension"
 	depends on BT_CTLR_DF_CTE_TX_SUPPORT
 	default y
 	help
@@ -51,7 +51,7 @@ config BT_CTLR_DF_CTE_TX
 	  controller.
 
 config BT_CTLR_DF_CTE_RX_SAMPLE_1US
-	bool "Enable reception of CTE with 1us sampling slots"
+	bool "Reception of CTE with 1us sampling slots"
 	depends on BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
 	default y
 	help
@@ -61,7 +61,7 @@ config BT_CTLR_DF_CTE_RX_SAMPLE_1US
 	  Bluetooth v5.1.
 
 config BT_CTLR_DF_ANT_SWITCH_1US
-	bool "Enable support for 1us antenna switch slots"
+	bool "Support for 1us antenna switch slots"
 	depends on BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
 	default y
 	help
@@ -72,7 +72,7 @@ config BT_CTLR_DF_ANT_SWITCH_1US
 # BT Core spec 5.1, Vol 6, Part B, sec. 4.6 Feature Support
 
 config BT_CTLR_DF_ANT_SWITCH_TX
-	bool "Enable antenna switching during CTE transmission (AoD) feature"
+	bool "Antenna switching during CTE transmission (AoD) feature"
 	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 	default y
 	help
@@ -80,7 +80,7 @@ config BT_CTLR_DF_ANT_SWITCH_TX
 	  Also known as Angle of Departure mode.
 
 config BT_CTLR_DF_ANT_SWITCH_RX
-	bool "Enable antenna switching during CTE reception (AoA) feature"
+	bool "Antenna switching during CTE reception (AoA) feature"
 	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 	default y
 	help
@@ -88,7 +88,7 @@ config BT_CTLR_DF_ANT_SWITCH_RX
 	  Also known as Angle of Arrival mode.
 
 config BT_CTLR_DF_CTE_RX
-	bool "Enable reception of Constant Tone Extension feature"
+	bool "Reception of Constant Tone Extension feature"
 	depends on BT_CTLR_DF_CTE_RX_SUPPORT
 	select BT_CTLR_CONN_RSSI if BT_CONN
 	default y
@@ -96,21 +96,21 @@ config BT_CTLR_DF_CTE_RX
 	  Enable support for reception of Constant Tone Extension in controller.
 
 config BT_CTLR_DF_CONN_CTE_REQ
-	bool "Enable Connection CTE Request feature"
+	bool "Connection CTE Request feature"
 	depends on BT_CTLR_DF_CONN_CTE_RX
 	help
 	  Enable support for Bluetooth v5.1 Connection CTE Request feature
 	  in controller.
 
 config BT_CTLR_DF_CONN_CTE_RSP
-	bool "Enable Connection CTE Response feature"
+	bool "Connection CTE Response feature"
 	depends on BT_CTLR_DF_CONN_CTE_TX
 	help
 	  Enable support for Bluetooth v5.1 Connection CTE Response feature
 	  in controller.
 
 config BT_CTLR_DF_ADV_CTE_TX
-	bool "Enable Connectionless CTE Transmitter feature"
+	bool "Connectionless CTE Transmitter feature"
 	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_ADV_PERIODIC
 	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	default y
@@ -119,7 +119,7 @@ config BT_CTLR_DF_ADV_CTE_TX
 	  feature in controller.
 
 config BT_CTLR_DF_SCAN_CTE_RX
-	bool "Enable Connectionless CTE Receiver"
+	bool "Connectionless CTE Receiver"
 	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_SYNC_PERIODIC
 	default y
 	help
@@ -127,7 +127,7 @@ config BT_CTLR_DF_SCAN_CTE_RX
 	  in controller.
 
 config BT_CTLR_DF_CONN_CTE_TX
-	bool "Enable Connection based CTE Transmitter"
+	bool "Connection based CTE Transmitter"
 	depends on BT_CTLR_DF_CTE_TX && BT_CONN
 	default y
 	help
@@ -135,7 +135,7 @@ config BT_CTLR_DF_CONN_CTE_TX
 	  direction finding connected mode.
 
 config BT_CTLR_DF_CONN_CTE_RX
-	bool "Enable Connection based CTE Receiver"
+	bool "Connection based CTE Receiver"
 	depends on BT_CTLR_DF_CTE_RX && BT_CONN
 	default y
 	help
@@ -143,7 +143,7 @@ config BT_CTLR_DF_CONN_CTE_RX
 	  finding connected mode.
 
 config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
-	bool "Enable sampling of CTE for PDUs with bad CRC"
+	bool "Sampling of CTE for PDUs with bad CRC"
 	depends on BT_CTLR_DF_SCAN_CTE_RX
 	default y
 	help
@@ -164,7 +164,7 @@ config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
 	  to be within range 2 up to 75.
 
 config BT_CTLR_DF_INIT_ANT_SEL_GPIOS
-	bool "Enable initialization of GPIOs responsible for antenna switching"
+	bool "Initialization of GPIOs responsible for antenna switching"
 	depends on BT_CTLR_DF_ANT_SWITCH_TX || BT_CTLR_DF_ANT_SWITCH_RX
 	default y
 	help

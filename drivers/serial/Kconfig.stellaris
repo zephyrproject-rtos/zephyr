@@ -15,7 +15,7 @@ if UART_STELLARIS
 # ---------- Port 0 ----------
 
 config UART_STELLARIS_PORT_0
-	bool "Enable Stellaris UART Port 0"
+	bool "Stellaris UART Port 0"
 	help
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
@@ -23,7 +23,7 @@ config UART_STELLARIS_PORT_0
 # ---------- Port 1 ----------
 
 config UART_STELLARIS_PORT_1
-	bool "Enable Stellaris UART Port 1"
+	bool "Stellaris UART Port 1"
 	help
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
@@ -31,7 +31,7 @@ config UART_STELLARIS_PORT_1
 # ---------- Port 2 ----------
 
 config UART_STELLARIS_PORT_2
-	bool "Enable Stellaris UART Port 2"
+	bool "Stellaris UART Port 2"
 	help
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.

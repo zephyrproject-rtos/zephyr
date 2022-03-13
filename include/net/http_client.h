@@ -124,15 +124,19 @@ struct http_response {
 	 * did not set the response callback. If the callback
 	 * is set, then the HTTP client API will call response
 	 * callback many times so that all the data is
-	 * delivered to the user.
+	 * delivered to the user. Will be zero in the event of
+	 * a null response.
 	 */
 	size_t data_len;
 
-	/** HTTP Content-Length field value */
+	/** HTTP Content-Length field value. Will be set to zero
+	 * in the event of a null response.
+	 */
 	size_t content_length;
 
 	/** Content length parsed. This should be the same as
-	 * the content_length field if parsing was ok.
+	 * the content_length field if parsing was ok. Will be
+	 * zero if a null response is given.
 	 */
 	size_t processed;
 
@@ -143,11 +147,15 @@ struct http_response {
 	 * purpose of providing a textual description
 	 * associated with the numeric status code. A client
 	 * SHOULD ignore the reason-phrase content.
+	 *
+	 * Will be blank if a null HTTP response is given.
 	 */
 	char http_status[HTTP_STATUS_STR_SIZE];
 
 	/** Numeric HTTP status code which corresponds to the
-	 * textual description.
+	 * textual description. Set to zero if null response is
+	 * given. Otherwise, will be a 3-digit integer code if
+	 * valid HTTP response is given.
 	 */
 	uint16_t http_status_code;
 

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_TPS
-	bool "Enable GATT TX Power service"
+	bool "GATT TX Power service"
 
 if BT_TPS
 

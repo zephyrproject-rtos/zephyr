@@ -14,9 +14,11 @@
 #include <nrfx_timer.h>
 #include <sys/util.h>
 #include <kernel.h>
-#include <logging/log.h>
+#include <soc.h>
 #include <helpers/nrfx_gppi.h>
-LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
 #ifdef CONFIG_PINCTRL
 #include <drivers/pinctrl.h>
@@ -1077,7 +1079,7 @@ static void rx_timeout(struct k_timer *timer)
 	}
 
 	/* Check for current buffer being full.
-	 * if the UART receives characters before the the ENDRX is handled
+	 * if the UART receives characters before the ENDRX is handled
 	 * and the 'next' buffer is set up, then the SHORT between ENDRX and
 	 * STARTRX will mean that data will be going into to the 'next' buffer
 	 * until the ENDRX event gets a chance to be handled.
@@ -1102,7 +1104,7 @@ static void rx_timeout(struct k_timer *timer)
 				data->async->rx_timeout_slab;
 		}
 
-		/* If theres nothing left to report until the buffers are
+		/* If there's nothing left to report until the buffers are
 		 * switched then the timer can be stopped
 		 */
 		if (clipped) {
@@ -2047,6 +2049,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 #endif /* CONFIG_PINCTRL */
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
+	NRF_DT_ENSURE_PINS_ASSIGNED(UARTE(idx), tx_pin, rx_pin);	       \
 	UARTE_INT_DRIVEN(idx);						       \
 	UARTE_ASYNC(idx);						       \
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(UARTE(idx));))	       \

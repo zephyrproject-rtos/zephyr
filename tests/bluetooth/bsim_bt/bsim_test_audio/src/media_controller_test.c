@@ -23,7 +23,7 @@
 #include <bluetooth/audio/mcc.h>
 
 #include <bluetooth/audio/media_proxy.h>
-#include "../../../../../subsys/bluetooth/audio/otc.h"
+#include <bluetooth/services/ots.h>
 
 #include "common.h"
 
@@ -78,8 +78,6 @@ static struct media_proxy_ctrl_cbs cbs;
 static struct media_player *local_player;
 static struct media_player *remote_player;
 static struct media_player *current_player;
-
-static struct bt_conn *default_conn;
 
 static void local_player_instance_cb(struct media_player *player, int err)
 {
@@ -588,7 +586,6 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	default_conn = conn;
 	printk("Connected: %s\n", addr);
 	SET_FLAG(ble_link_is_ready);
 }

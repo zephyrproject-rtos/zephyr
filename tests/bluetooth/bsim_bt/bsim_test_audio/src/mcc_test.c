@@ -23,13 +23,12 @@
 #include <bluetooth/audio/mcc.h>
 
 #include <bluetooth/audio/media_proxy.h>
-#include "../../../../../subsys/bluetooth/audio/otc.h"
+#include <bluetooth/services/ots.h>
 
 #include "common.h"
 
 extern enum bst_result_t bst_result;
 
-static struct bt_conn *default_conn;
 static struct bt_mcc_cb mcc_cb;
 
 static uint64_t g_icon_object_id;
@@ -570,11 +569,12 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
 		FAIL("Failed to connect to %s (%u)\n", addr, err);
 		return;
 	}
 
-	default_conn = conn;
 	SET_FLAG(ble_link_is_ready);
 }
 
@@ -592,7 +592,7 @@ static void select_read_meta(int64_t id)
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
 	UNSET_FLAG(object_selected);
-	err = bt_otc_select_id(default_conn, bt_mcc_otc_inst(), id);
+	err = bt_ots_client_select_id(bt_mcc_otc_inst(), default_conn, id);
 	if (err) {
 		FAIL("Failed to select object\n");
 		return;
@@ -603,8 +603,8 @@ static void select_read_meta(int64_t id)
 
 	/* TODO: Fix the instance pointer - it is neither valid nor used */
 	UNSET_FLAG(metadata_read);
-	err = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(),
-				       BT_OTC_METADATA_REQ_ALL);
+	err = bt_ots_client_read_object_metadata(bt_mcc_otc_inst(), default_conn,
+						 BT_OTS_METADATA_REQ_ALL);
 	if (err) {
 		FAIL("Failed to read object metadata\n");
 		return;

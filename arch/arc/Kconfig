@@ -168,7 +168,7 @@ config ARC_FIRQ
 	  from the performance point of view.
 
 config ARC_FIRQ_STACK
-	bool "Enable separate firq stack"
+	bool "Separate firq stack"
 	depends on ARC_FIRQ && RGF_NUM_BANKS > 1
 	help
 	  Use separate stack for FIRQ handing. When the fast irq is also a direct
@@ -220,7 +220,7 @@ config ARC_STACK_PROTECTION
 	  prioritized over the MPU-based stack guard.
 
 config ARC_USE_UNALIGNED_MEM_ACCESS
-	bool "Enable unaligned access in HW"
+	bool "Unaligned access in HW"
 	default y if CPU_ARCHS
 	depends on (CPU_ARCEM && !ARC_HAS_SECURE) || CPU_ARCHS
 	help
@@ -325,7 +325,7 @@ menu "ARC MPU Options"
 depends on CPU_HAS_MPU
 
 config ARC_MPU_ENABLE
-	bool "Enable MPU"
+	bool "Memory Protection Unit (MPU)"
 	select ARC_MPU
 	help
 	  Enable MPU

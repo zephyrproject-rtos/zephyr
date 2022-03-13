@@ -13,7 +13,7 @@ menuconfig IEEE802154
 if IEEE802154
 
 config IEEE802154_NET_IF_NO_AUTO_START
-	bool "Disable 802.15.4 interface auto-start"
+	bool "IEEE 802.15.4 interface without auto-start"
 	help
 	  This option allows user to set any configuration and/or filter before
 	  the radio becomes operational. For instance, the EUI-64 value can be
@@ -26,7 +26,7 @@ config IEEE802154_NET_IF_NO_AUTO_START
 	  have any doubt about this option leave it as default value.
 
 config IEEE802154_RAW_MODE
-	bool "Use IEEE 802.15.4 driver without the MAC stack"
+	bool "IEEE 802.15.4 driver without the MAC stack"
 	select NET_RAW_MODE
 	help
 	  This option enables using the drivers in a so-called "raw" mode,
@@ -40,7 +40,7 @@ config IEEE802154_RDEV
 	  PHY is a ranging-capable device (RDEV)
 
 config IEEE802154_VENDOR_OUI_ENABLE
-	bool "Enables setting Vendor Organizationally Unique Identifier"
+	bool "Support setting Vendor Organizationally Unique Identifier"
 	help
 	  This option enables setting custom vendor
 	  OUI using IEEE802154_VENDOR_OUI. After enabling,
@@ -133,7 +133,7 @@ endif # IEEE802154_UPIPE_RANDOM_MAC
 endif # IEEE802154_UPIPE
 
 config IEEE802154_2015
-	bool "Enable support for IEEE 802.15.4-2015 frames"
+	bool "Support for IEEE 802.15.4-2015 frames"
 	help
 	  Enable radio driver support for IEEE 802.15.4-2015 frames, including security handling of frames and ACKs.
 
@@ -145,7 +145,7 @@ config IEEE802154_DELAY_TRX_ACC
 	  or delayed reception), in ppm.
 
 config IEEE802154_CSL_ENDPOINT
-	bool "Enable support for CSL Endpoint"
+	bool "Support for CSL Endpoint"
 	help
 	  Enable support for CSL Endpoint with delayed reception handling and CSL IE injection.
 

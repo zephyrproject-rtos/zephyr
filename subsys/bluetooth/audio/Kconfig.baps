@@ -200,7 +200,7 @@ config BT_AUDIO_DEBUG_STREAM
 
 config BT_AUDIO_DEBUG_CAPABILITIES
 	bool "Bluetooth Audio Capabilities debug"
-	depends on BT_AUDIO_CAPABILITIES
+	depends on BT_AUDIO_CAPABILITY
 	help
 	  Use this option to enable Bluetooth Audio Capabilities debug logs for
 	  the Bluetooth Audio functionality.
@@ -247,7 +247,7 @@ config BT_AUDIO_STREAM
 	default y if BT_ASCS || BT_AUDIO_UNICAST_CLIENT || \
 			BT_AUDIO_BROADCAST_SOURCE || BT_AUDIO_BROADCAST_SINK
 
-config BT_AUDIO_CAPABILITIES
+config BT_AUDIO_CAPABILITY
 	# Virtual/hidden option
 	bool
 	default y if BT_ASCS || BT_AUDIO_BROADCAST_SINK

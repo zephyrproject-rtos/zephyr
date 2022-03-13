@@ -242,8 +242,8 @@ static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 #define DUMMY_INCLUDE(i, _) BT_GATT_INCLUDE_SERVICE(NULL),
-#define VOCS_INCLUDES(cnt) UTIL_LISTIFY(cnt, DUMMY_INCLUDE)
-#define AICS_INCLUDES(cnt) UTIL_LISTIFY(cnt, DUMMY_INCLUDE)
+#define VOCS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
+#define AICS_INCLUDES(cnt) LISTIFY(cnt, DUMMY_INCLUDE, ())
 
 #define BT_VCS_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_VCS), \

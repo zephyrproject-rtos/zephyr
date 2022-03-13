@@ -14,6 +14,7 @@
 #include <device.h>
 #include <soc.h>
 #include <drivers/gpio.h>
+#include <dt-bindings/gpio/andestech-atcgpio100.h>
 #include <sys/util.h>
 #include <sys/sys_io.h>
 
@@ -140,7 +141,7 @@ static int gpio_atcgpio100_config(const struct device *port,
 		key = k_spin_lock(&data->lock);
 
 		/* Set de-bounce */
-		if (flags & GPIO_INT_DEBOUNCE) {
+		if (flags & ATCGPIO100_GPIO_DEBOUNCE) {
 			/* Default settings: Filter out pulses which are
 			 *  less than 4 de-bounce clock period
 			 */

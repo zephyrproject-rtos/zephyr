@@ -93,7 +93,7 @@ valid_attr_type(CborType ct, enum CborAttrType at)
  */
 static char *
 cbor_target_address(const struct cbor_attr_t *cursor,
-			const struct cbor_array_t *parent, int offset)
+		    const struct cbor_array_t *parent, int offset)
 {
 	char *targetaddr = NULL;
 
@@ -144,9 +144,9 @@ cbor_target_address(const struct cbor_attr_t *cursor,
 
 static int
 cbor_internal_read_object(CborValue *root_value,
-						  const struct cbor_attr_t *attrs,
-						  const struct cbor_array_t *parent,
-						  int offset)
+			  const struct cbor_attr_t *attrs,
+			  const struct cbor_array_t *parent,
+			  int offset)
 {
 	const struct cbor_attr_t *cursor, *best_match;
 	char attrbuf[CBORATTR_MAX_SIZE + 1];
@@ -291,7 +291,7 @@ cbor_internal_read_object(CborValue *root_value,
 				err |= CborErrorIllegalType;
 			}
 		}
-		err = cbor_value_advance(&cur_value);
+		err |= cbor_value_advance(&cur_value);
 	}
 	if (!err) {
 		/* that should be it for this container */
@@ -394,7 +394,7 @@ cbor_read_object(struct CborValue *value, const struct cbor_attr_t *attrs)
  */
 int
 cbor_read_flat_attrs(const uint8_t *data, int len,
-					 const struct cbor_attr_t *attrs)
+		     const struct cbor_attr_t *attrs)
 {
 	struct cbor_buf_reader reader;
 	struct CborParser parser;

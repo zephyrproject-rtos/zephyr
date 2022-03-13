@@ -40,7 +40,11 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 {
 	BT_DBG("conn %p stream %p ep %p codec %p", conn, stream, ep, codec);
 
-	stream->conn = conn;
+	if (conn != NULL) {
+		__ASSERT(stream->conn == NULL || stream->conn == conn,
+			 "stream->conn already attached");
+		stream->conn = bt_conn_ref(conn);
+	}
 	stream->codec = codec;
 	stream->ep = ep;
 	ep->stream = stream;
@@ -49,9 +53,6 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 		stream->iso = &ep->iso;
 	}
 }
-
-#define IN_RANGE(_min, _max, _value) \
-	(_value >= _min && _value <= _max)
 
 static int bt_audio_stream_iso_accept(const struct bt_iso_accept_info *info,
 				      struct bt_iso_chan **iso_chan)
@@ -122,25 +123,9 @@ done:
 	return -ENOSPC;
 }
 
-int bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_qos *qos,
-				  struct bt_codec_qos *codec)
+int bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
+				  const struct bt_codec_qos *codec)
 {
-	struct bt_iso_chan_io_qos *io;
-
-	switch (codec->dir) {
-	case BT_CODEC_QOS_IN:
-		io = qos->rx;
-		break;
-	case BT_CODEC_QOS_OUT:
-		io = qos->tx;
-		break;
-	case BT_CODEC_QOS_INOUT:
-		io = qos->rx = qos->tx;
-		break;
-	default:
-		return -EINVAL;
-	}
-
 	io->sdu = codec->sdu;
 	io->phy = codec->phy;
 	io->rtn = codec->rtn;
@@ -202,7 +187,7 @@ bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
 		return false;
 	}
 
-	if (!IN_RANGE(qos_pref->pd_min, qos_pref->pd_max, qos->pd)) {
+	if (!IN_RANGE(qos->pd, qos_pref->pd_min, qos_pref->pd_max)) {
 		BT_DBG("Presentation Delay not within range: min %u max %u pd %u",
 			qos_pref->pd_min, qos_pref->pd_max, qos->pd);
 		return false;
@@ -217,7 +202,10 @@ void bt_audio_stream_detach(struct bt_audio_stream *stream)
 
 	BT_DBG("stream %p", stream);
 
-	stream->conn = NULL;
+	if (stream->conn != NULL) {
+		bt_conn_unref(stream->conn);
+		stream->conn = NULL;
+	}
 	stream->codec = NULL;
 	stream->ep->stream = NULL;
 	stream->ep = NULL;
@@ -506,6 +494,9 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 	/* Validate streams before starting the QoS execution */
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
+		struct bt_iso_chan_io_qos *io;
+		struct bt_iso_chan_qos *iso_qos;
+
 		if (stream->ep == NULL) {
 			BT_DBG("stream->ep is NULL");
 			return -EINVAL;
@@ -539,7 +530,26 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		err = bt_audio_codec_qos_to_iso_qos(stream->iso->qos, qos);
+		iso_qos = stream->iso->qos;
+		if (stream->ep->dir == BT_AUDIO_SINK) {
+			/* If the endpoint is a sink, then we need to
+			 * configure our TX parameters
+			 */
+			io = iso_qos->tx;
+			iso_qos->rx = NULL;
+		} else if (stream->ep->dir == BT_AUDIO_SOURCE) {
+			/* If the endpoint is a source, then we need to
+			 * configure our RX parameters
+			 */
+			io = iso_qos->rx;
+			iso_qos->tx = NULL;
+		} else {
+			__ASSERT(false, "invalid endpoint dir: %u",
+				 stream->ep->dir);
+			return -EINVAL;
+		}
+
+		err = bt_audio_codec_qos_to_iso_qos(io, qos);
 		if (err) {
 			BT_DBG("Unable to convert codec QoS to ISO QoS: %d",
 			       err);
@@ -629,7 +639,8 @@ static bool bt_audio_stream_enabling(struct bt_audio_stream *stream)
 }
 
 int bt_audio_stream_enable(struct bt_audio_stream *stream,
-			   uint8_t meta_count, struct bt_codec_data *meta)
+			   struct bt_codec_data *meta,
+			   size_t meta_count)
 {
 	uint8_t role;
 	int err;
@@ -654,7 +665,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 		return -EBADMSG;
 	}
 
-	err = bt_unicast_client_enable(stream, meta_count, meta);
+	err = bt_unicast_client_enable(stream, meta, meta_count);
 	if (err != 0) {
 		BT_DBG("Failed to enable stream: %d", err);
 		return err;
@@ -670,7 +681,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 		return 0;
 	}
 
-	if (bt_unicast_client_ep_is_src(stream->ep)) {
+	if (stream->ep->dir == BT_AUDIO_SOURCE) {
 		return 0;
 	}
 
@@ -684,7 +695,8 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 }
 
 int bt_audio_stream_metadata(struct bt_audio_stream *stream,
-			     uint8_t meta_count, struct bt_codec_data *meta)
+			     struct bt_codec_data *meta,
+			     size_t meta_count)
 {
 	uint8_t role;
 	int err;
@@ -714,7 +726,7 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 		return -EBADMSG;
 	}
 
-	err = bt_unicast_client_metadata(stream, meta_count, meta);
+	err = bt_unicast_client_metadata(stream, meta, meta_count);
 	if (err != 0) {
 		BT_DBG("Updating metadata failed: %d", err);
 		return err;
@@ -772,7 +784,7 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 
 	bt_unicast_client_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_DISABLING);
 
-	if (bt_unicast_client_ep_is_src(stream->ep)) {
+	if (stream->ep->dir == BT_AUDIO_SOURCE) {
 		return 0;
 	}
 
@@ -1001,7 +1013,7 @@ int bt_audio_stream_connect(struct bt_audio_stream *stream)
 }
 
 int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
-				  uint8_t num_stream,
+				  size_t num_stream,
 				  struct bt_audio_unicast_group **out_unicast_group)
 {
 
@@ -1040,7 +1052,7 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
 		return -ENOMEM;
 	}
 
-	for (uint8_t i = 0; i < num_stream; i++) {
+	for (size_t i = 0; i < num_stream; i++) {
 		sys_slist_t *group_streams = &unicast_group->streams;
 		struct bt_audio_stream *stream;
 
@@ -1051,7 +1063,7 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
 			       i, stream, stream->group);
 
 			/* Cleanup */
-			for (uint8_t j = 0; j < i; j++) {
+			for (size_t j = 0; j < i; j++) {
 				stream = &streams[j];
 
 				(void)sys_slist_find_and_remove(group_streams,
@@ -1070,21 +1082,141 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams,
 	return 0;
 }
 
-int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
+int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_group,
+				       struct bt_audio_stream *streams,
+				       size_t num_stream)
 {
-	struct bt_audio_stream *stream;
+	struct bt_audio_stream *tmp_stream;
+	size_t total_stream_cnt;
+	struct bt_iso_cig *cig;
 
 	CHECKIF(unicast_group == NULL) {
 		BT_DBG("unicast_group is NULL");
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, stream, node) {
-		if (stream->group == NULL) {
-			BT_DBG("stream %p not in a group", stream);
+	CHECKIF(streams == NULL) {
+		BT_DBG("streams is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(num_stream == 0) {
+		BT_DBG("num_stream is 0");
+		return -EINVAL;
+	}
+
+	total_stream_cnt = num_stream;
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, tmp_stream, node) {
+		total_stream_cnt++;
+	}
+
+	if (total_stream_cnt > UNICAST_GROUP_STREAM_CNT) {
+		BT_DBG("Too many streams provided: %u/%u",
+		       total_stream_cnt, UNICAST_GROUP_STREAM_CNT);
+		return -EINVAL;
+
+	}
+
+	/* Validate input */
+	for (size_t i = 0; i < num_stream; i++) {
+		if (streams[i].group != NULL) {
+			BT_DBG("stream[%zu] is already part of group %p",
+			       i, streams[i].group);
 			return -EINVAL;
 		}
+	}
 
+	/* We can just check the CIG state to see if any streams have started as
+	 * that would start the ISO connection procedure
+	 */
+	cig = unicast_group->cig;
+	if (cig != NULL && cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
+		BT_DBG("At least one unicast group stream is started");
+		return -EBADMSG;
+	}
+
+	for (size_t i = 0; i < num_stream; i++) {
+		sys_slist_t *group_streams = &unicast_group->streams;
+		struct bt_audio_stream *stream = &streams[i];
+
+		stream->unicast_group = unicast_group;
+		sys_slist_append(group_streams, &stream->node);
+	}
+
+	return 0;
+}
+
+int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast_group,
+					  struct bt_audio_stream *streams,
+					  size_t num_stream)
+{
+	struct bt_iso_cig *cig;
+
+	CHECKIF(unicast_group == NULL) {
+		BT_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(streams == NULL) {
+		BT_DBG("streams is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(num_stream == 0) {
+		BT_DBG("num_stream is 0");
+		return -EINVAL;
+	}
+
+	/* Validate input */
+	for (size_t i = 0; i < num_stream; i++) {
+		if (streams[i].group != unicast_group) {
+			BT_DBG("stream[%zu] group %p is not group %p",
+			       i, streams[i].group, unicast_group);
+			return -EINVAL;
+		}
+	}
+
+	/* We can just check the CIG state to see if any streams have started as
+	 * that would start the ISO connection procedure
+	 */
+	cig = unicast_group->cig;
+	if (cig != NULL && cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
+		BT_DBG("At least one unicast group stream is started");
+		return -EBADMSG;
+	}
+
+	for (size_t i = 0; i < num_stream; i++) {
+		sys_slist_t *group_streams = &unicast_group->streams;
+		struct bt_audio_stream *stream = &streams[i];
+
+		stream->unicast_group = NULL;
+		(void)sys_slist_find_and_remove(group_streams,
+						&streams->node);
+	}
+
+	return 0;
+}
+
+int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
+{
+	struct bt_audio_stream *stream;
+	struct bt_iso_cig *cig;
+
+	CHECKIF(unicast_group == NULL) {
+		BT_DBG("unicast_group is NULL");
+		return -EINVAL;
+	}
+
+	/* We can just check the CIG state to see if any streams have started as
+	 * that would start the ISO connection procedure
+	 */
+	cig = unicast_group->cig;
+	if (cig != NULL && cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
+		BT_DBG("At least one unicast group stream is started");
+		return -EBADMSG;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, stream, node) {
 		stream->unicast_group = NULL;
 	}
 

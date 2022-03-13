@@ -4,14 +4,14 @@
 menu "Link layer options"
 
 config NET_L2_DUMMY
-	bool "Enable dummy l2 layer"
+	bool "Dummy l2 layer"
 	default y if !NET_L2_ETHERNET && NET_TEST
 	help
 	  Add a dummy L2 layer driver. This is usually only needed when
 	  simulating a network interface when running network stack inside QEMU.
 
 config NET_L2_BT
-	bool "Enable Bluetooth support"
+	bool "Bluetooth support"
 	depends on NET_IPV6
 	depends on BT
 	depends on BT_PERIPHERAL
@@ -53,13 +53,13 @@ source "subsys/net/Kconfig.template.log_config.net"
 endif
 
 config NET_L2_BT_MGMT
-	bool "Enable Bluetooth Network Management support"
+	bool "Bluetooth Network Management support"
 	depends on NET_L2_BT
 	select NET_MGMT
 	select NET_MGMT_EVENT
 
 config NET_L2_BT_SHELL
-	bool "Enable Bluetooth shell module"
+	bool "Bluetooth shell module"
 	select SHELL
 	select NET_L2_BT_MGMT
 	help
@@ -82,7 +82,7 @@ source "subsys/net/l2/ieee802154/Kconfig"
 source "subsys/net/l2/openthread/Kconfig"
 
 config NET_L2_CUSTOM_IEEE802154
-	bool "Enable custom IEEE802154 L2"
+	bool "Custom IEEE802154 L2"
 	select NET_L2_PHY_IEEE802154
 	help
 	  Enable custom IEEE802154 based L2. Zephyr does not provide
@@ -97,7 +97,7 @@ config NET_L2_CUSTOM_IEEE802154_MTU
 source "subsys/net/l2/canbus/Kconfig"
 
 config NET_L2_WIFI_MGMT
-	bool "Enable Wi-Fi Management support"
+	bool "Wi-Fi Management support"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
@@ -113,14 +113,14 @@ source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_L2_WIFI_MGMT
 
 config NET_L2_WIFI_SHELL
-	bool "Enable Wi-Fi shell module"
+	bool "Wi-Fi shell module"
 	select NET_L2_WIFI_MGMT
 	help
 	  This can be used for controlling Wi-Fi through the console via
 	  exposing a shell module named "wifi".
 
 config NET_L2_PTP
-	bool "Enable PTP L2 support"
+	bool "PTP L2 support"
 	select NET_PKT_TIMESTAMP
 	select PTP_CLOCK
 	help

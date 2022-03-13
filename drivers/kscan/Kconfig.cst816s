@@ -20,7 +20,7 @@ config KSCAN_CST816S_PERIOD
 	  Sample period in milliseconds when in polling mode.
 
 config KSCAN_CST816S_INTERRUPT
-	bool "Enable interrupt support"
+	bool "Interrupt support"
 	default y
 	depends on GPIO
 	help

@@ -22,9 +22,9 @@ Images Created by the TF-M Build
 
 The TF-M build system creates the following executable files:
 
-* tfm_s - the secure firmware
-* tfm_ns - a nonsecure app which is discarded in favor of the Zephyr app
-* bl2 - mcuboot, if enabled
+* tfm_s - TF-M secure firmware
+* tfm_ns - TF-M non-secure app (only used by regression tests).
+* bl2 - TF-M MCUboot, if enabled
 
 For each of these, it creates .bin, .hex, .elf, and .axf files.
 
@@ -37,7 +37,10 @@ file which combines them:
 
 For each of these, only .bin files are created.
 
-The Zephyr build system usually signs both tfm_s and the Zephyr ns app itself.
+The TF-M non-secure app is discarded in favor of Zephyr non-secure app except
+when running the TF-M regression test suite.
+
+The Zephyr build system usually signs both tfm_s and the Zephyr non-secure app itself.
 See below for details.
 
 The 'tfm' target contains properties for all these paths.
@@ -118,3 +121,42 @@ following CMake snippet in your CMakeLists.txt file.
    The ``TFM_CMAKE_OPTIONS`` is a list so it is possible to append multiple
    options. Also CMake generator expressions are supported, such as
    ``$<1:-DFOO=bar>``
+
+Footprint and Memory Usage
+**************************
+
+The build system offers targets to view and analyse RAM and ROM usage in generated images.
+The tools run on the final images and give information about size of symbols and code being used in both RAM and ROM.
+For more information on these tools look here: :ref:`footprint_tools`
+
+Use the ``tfm_ram_report`` to get the RAM report for TF-M secure firmware (tfm_s).
+
+.. zephyr-app-commands::
+    :tool: all
+    :app: samples/hello_world
+    :board: mps2_an521_ns
+    :goals: tfm_ram_report
+
+Use the ``tfm_rom_report`` to get the ROM report for TF-M secure firmware (tfm_s).
+
+.. zephyr-app-commands::
+    :tool: all
+    :app: samples/hello_world
+    :board: mps2_an521_ns
+    :goals: tfm_rom_report
+
+Use the ``bl2_ram_report`` to get the RAM report for TF-M MCUboot, if enabled.
+
+.. zephyr-app-commands::
+    :tool: all
+    :app: samples/hello_world
+    :board: mps2_an521_ns
+    :goals: bl2_ram_report
+
+Use the ``bl2_rom_report`` to get the ROM report for TF-M MCUboot, if enabled.
+
+.. zephyr-app-commands::
+    :tool: all
+    :app: samples/hello_world
+    :board: mps2_an521_ns
+    :goals: bl2_rom_report

@@ -15,7 +15,7 @@ module-str = pwm
 source "subsys/logging/Kconfig.template.log_config"
 
 config PWM_SHELL
-	bool "Enable PWM shell"
+	bool "PWM shell"
 	default y
 	depends on SHELL
 	help

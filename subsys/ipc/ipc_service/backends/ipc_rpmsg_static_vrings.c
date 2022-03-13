@@ -271,9 +271,6 @@ static int mbox_init(const struct device *instance)
 	struct backend_data_t *data = instance->data;
 	int err;
 
-	k_work_queue_start(&mbox_wq, mbox_stack, K_KERNEL_STACK_SIZEOF(mbox_stack),
-			   WQ_PRIORITY, NULL);
-
 	k_work_init(&data->mbox_work, mbox_callback_process);
 
 	err = mbox_register_callback(&conf->mbox_rx, mbox_callback, data);
@@ -471,11 +468,18 @@ static int backend_init(const struct device *instance)
 {
 	const struct backend_config_t *conf = instance->config;
 	struct backend_data_t *data = instance->data;
+	static bool wq_started;
 
 	data->role = conf->role;
 
 	k_mutex_init(&data->rpmsg_inst.mtx);
 	atomic_set(&data->state, STATE_READY);
+
+	if (!wq_started) {
+		k_work_queue_start(&mbox_wq, mbox_stack, K_KERNEL_STACK_SIZEOF(mbox_stack),
+				   WQ_PRIORITY, NULL);
+		wq_started = true;
+	}
 
 	return 0;
 }

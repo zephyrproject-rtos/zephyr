@@ -41,10 +41,10 @@ static k_timeout_t init_backoff[CONFIG_ZTRESS_MAX_THREADS];
 K_THREAD_STACK_ARRAY_DEFINE(stacks, CONFIG_ZTRESS_MAX_THREADS, CONFIG_ZTRESS_STACK_SIZE);
 static k_tid_t idle_tid;
 
-#define THREAD_NAME(i, _) STRINGIFY(ztress_##i),
+#define THREAD_NAME(i, _) STRINGIFY(ztress_##i)
 
 static const char * const thread_names[] = {
-	UTIL_LISTIFY(CONFIG_ZTRESS_MAX_THREADS, THREAD_NAME, _)
+	LISTIFY(CONFIG_ZTRESS_MAX_THREADS, THREAD_NAME, (,))
 };
 
 struct ztress_runtime {

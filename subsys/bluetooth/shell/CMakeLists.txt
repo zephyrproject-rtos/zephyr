@@ -68,6 +68,15 @@ zephyr_library_sources_ifdef(
   audio.c
   )
 
+zephyr_library_sources_ifdef(
+  CONFIG_BT_BASS
+  bass.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_BASS_CLIENT
+  bass_client.c
+  )
+
 if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
   zephyr_library_sources(
     ll.c

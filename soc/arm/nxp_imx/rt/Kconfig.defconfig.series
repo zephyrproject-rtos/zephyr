@@ -72,7 +72,6 @@ endif
 # set the tick per sec as a divider of the GPT clock source
 config SYS_CLOCK_TICKS_PER_SEC
 	default 4096 if MCUX_GPT_TIMER
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768 if MCUX_GPT_TIMER
 
@@ -98,6 +97,26 @@ config WDT_MCUX_IMX_WDOG
 config PM_MCUX_GPC
 	default y if HAS_MCUX_GPC
 	depends on SOC_SERIES_IMX_RT11XX && PM
+
+# Don't allow SOC to sleep after tests complete when PM is enabled
+config ZTEST_NO_YIELD
+	default y if (ZTEST && PM)
+
+if SOC_SERIES_IMX_RT10XX && PM
+
+config CODE_DATA_RELOCATION
+	default y
+
+config PM_MCUX_GPC
+	default y if HAS_MCUX_GPC
+
+config PM_MCUX_DCDC
+	default y if HAS_MCUX_DCDC
+
+config PM_MCUX_PMU
+	default y if HAS_MCUX_PMU
+
+endif # SOC_SERIES_IMX_RT10XX && PM
 
 if CODE_SEMC
 

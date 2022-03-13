@@ -4726,6 +4726,13 @@ sub process {
 						$ok = 1;
 					}
 
+					# some macros require a separator
+					# argument to be in parentheses,
+					# e.g. (||).
+					if ($ca =~ /\($/ || $cc =~ /^\)/) {
+						$ok = 1;
+					}
+
 					# messages are ERROR, but ?: are CHK
 					if ($ok == 0) {
 						my $msg_level = \&ERROR;

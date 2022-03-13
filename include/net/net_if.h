@@ -874,6 +874,14 @@ struct net_if *net_if_get_default(void);
  */
 struct net_if *net_if_get_first_by_type(const struct net_l2 *l2);
 
+/**
+ * @brief Get the first network interface which is up.
+ *
+ * @return First network interface which is up or NULL if all
+ * interfaces are down.
+ */
+struct net_if *net_if_get_first_up(void);
+
 #if defined(CONFIG_NET_L2_IEEE802154)
 /**
  * @brief Get the first IEEE 802.15.4 network interface.

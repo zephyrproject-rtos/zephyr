@@ -1355,8 +1355,8 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 	struct json_in_formatter_data fd;
 	int ret = 0;
 	uint8_t name[MAX_RESOURCE_LEN + 1];
-	uint8_t base_name[MAX_RESOURCE_LEN + 1];
-	uint8_t full_name[MAX_RESOURCE_LEN + 1];
+	uint8_t base_name[MAX_RESOURCE_LEN + 1] = {0};
+	uint8_t full_name[MAX_RESOURCE_LEN + 1] = {0};
 	struct lwm2m_obj_path resource_path;
 	bool path_valid = false;
 	bool data_value = false;
@@ -1565,8 +1565,8 @@ static uint8_t json_parse_composite_read_paths(struct lwm2m_message *msg,
 	bool path_valid;
 	int ret;
 	uint8_t name[MAX_RESOURCE_LEN];
-	uint8_t base_name[MAX_RESOURCE_LEN];
-	uint8_t full_name[MAX_RESOURCE_LEN];
+	uint8_t base_name[MAX_RESOURCE_LEN + 1] = {0};
+	uint8_t full_name[MAX_RESOURCE_LEN + 1] = {0};
 	uint8_t valid_path_cnt = 0;
 
 	while (json_next_token(&msg->in, &fd)) {

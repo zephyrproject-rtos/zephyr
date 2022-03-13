@@ -69,6 +69,6 @@ config SOC_NRF9160_SICA
 endchoice
 
 config NRF_ENABLE_ICACHE
-	bool "Enable the instruction cache (I-Cache)"
+	bool "Instruction cache (I-Cache)"
 	depends on SOC_NRF9160
 	default y

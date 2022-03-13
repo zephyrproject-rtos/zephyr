@@ -672,7 +672,7 @@ if(CONFIG_64BIT)
 endif()
 
 if(CONFIG_TIMEOUT_64BIT)
-  set(SYSCALL_SPLIT_TIMEOUT_ARG --split-type k_timeout_t)
+  set(SYSCALL_SPLIT_TIMEOUT_ARG --split-type k_timeout_t --split-type k_ticks_t)
 endif()
 
 add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
@@ -877,10 +877,10 @@ if(CONFIG_USERSPACE)
   set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
 
   if(CONFIG_NEWLIB_LIBC)
-    set(NEWLIB_PART -l libc.a z_libc_partition)
+    set(NEWLIB_PART -l libc.a z_libc_partition -l libm.a z_libc_partition)
   endif()
   if(CONFIG_NEWLIB_LIBC_NANO)
-    set(NEWLIB_PART -l libc_nano.a z_libc_partition)
+    set(NEWLIB_PART -l libc_nano.a z_libc_partition -l libm_nano.a z_libc_partition)
   endif()
 
   add_custom_command(
@@ -1417,6 +1417,17 @@ if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
     )
 endif()
 
+if(NOT CONFIG_EXCEPTIONS)
+  set(eh_frame_section ".eh_frame")
+else()
+  set(eh_frame_section "")
+endif()
+set(remove_sections_argument_list "")
+foreach(section .comment COMMON ${eh_frame_section})
+  list(APPEND remove_sections_argument_list
+    $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>${section})
+endforeach()
+
 if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(ihex IN_LIST elfconvert_formats)
@@ -1426,9 +1437,7 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
               ${GAP_FILL}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>ihex
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.comment
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>COMMON
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.eh_frame
+              ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_HEX_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
@@ -1450,9 +1459,7 @@ if(CONFIG_BUILD_OUTPUT_BIN)
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
               ${GAP_FILL}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.comment
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>COMMON
-              $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.eh_frame
+              ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_BIN_NAME}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
