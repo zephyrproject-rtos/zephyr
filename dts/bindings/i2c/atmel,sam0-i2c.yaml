@@ -5,7 +5,9 @@ description: Atmel SAM0 series SERCOM I2C node
 
 compatible: "atmel,sam0-i2c"
 
-include: i2c-controller.yaml
+include:
+    - name: i2c-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:

@@ -6,6 +6,13 @@
 #include <dt-bindings/pinctrl/samd21-da1jXabcd-pinctrl.h>
 
 &pinctrl {
+	sercom2_i2c_default: sercom2_i2c_default {
+		group1 {
+			pinmux = <PA8D_SERCOM2_PAD0>,
+				 <PA9D_SERCOM2_PAD1>;
+		};
+	};
+
 	sercom5_spi_default: sercom5_spi_default {
 		group1 {
 			pinmux = <PB2D_SERCOM5_PAD0>,

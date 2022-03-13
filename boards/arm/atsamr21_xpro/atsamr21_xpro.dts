@@ -126,6 +126,9 @@
 	label = "I2C_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom1_i2c_default>;
+	pinctrl-names = "default";
 };
 
 &sercom4 {
