@@ -10,8 +10,24 @@
 
 #include <kernel.h>
 
+enum can_fifo { CAN_FIFO_0, CAN_FIFO_1 };
+
+enum can_filter_status {
+	CAN_FILTER_EMPTY,
+	CAN_FILTER_16BIT_1,
+	CAN_FILTER_16BIT_2,
+	CAN_FILTER_32BIT
+};
+
+struct can_gd32_filter_unit {
+	enum can_filter_status status;
+
+	can_rx_callback_t callback;
+	void *callback_arg;
+};
+
 struct can_gd32_filter_data {
-	struct k_mutex inst_mutex;
+	struct k_mutex mutex;
 	bool initialed;
 };
 
@@ -19,6 +35,7 @@ struct can_gd32_filter_cfg {
 	uint32_t reg;
 	uint32_t rcu_periph_clock;
 	uint8_t size;
+	struct can_gd32_filter_unit *unit;
 };
 
 struct can_gd32_filter {
@@ -27,6 +44,12 @@ struct can_gd32_filter {
 };
 
 int can_gd32_filter_initial(const struct can_gd32_filter *filter);
-int can_gd32_filter_getsize(const struct can_gd32_filter *filter, enum can_ide id_type);
-
+int can_gd32_filter_getmaxsize(const struct can_gd32_filter *filter, enum can_ide id_type,
+			       bool is_main_controller);
+int can_gd32_filter_add(const struct can_gd32_filter *filter, bool is_main_controller,
+			enum can_fifo fifo, can_rx_callback_t cb, void *cb_arg,
+			const struct zcan_filter *zfilter);
+void can_gd32_filter_remove(const struct can_gd32_filter *filter, int filter_id);
+can_rx_callback_t can_gd32_filter_getcb(const struct can_gd32_filter *filter, int index);
+void *can_gd32_filter_getcbarg(const struct can_gd32_filter *filter, int index);
 #endif /* ZEPHYR_DRIVERS_CAN_GD32_FILTER_H_ */

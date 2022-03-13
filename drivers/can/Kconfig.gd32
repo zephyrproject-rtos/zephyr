@@ -15,19 +15,28 @@ config CAN_GD32
 	help
 	  Enable GD32 CAN Driver.
 
+if CAN_GD32
+
 config CAN_MAX_FILTER
 	int "Maximum number of concurrent active filters"
-	depends on CAN_GD32
 	default 5
 	range 1 28
 	help
 	  Defines the array size of the callback/msgq pointers.
 	  Must be at least the size of concurrent reads.
 
+config CAN_FILTER_SPLIT_DEFAULT
+	int "Maximum number of concurrent active filters"
+	default 14
+	range 1 28
+	help
+	  Default split location between main controller and secondary controller.
+
 config CAN_GD32_DEBUG_FREEZE
 	bool "CAN Debug freeze"
-	depends on CAN_GD32
 	#todo: select CAN_GD32_DBG_CTL_CANx_HOLD
 	default n
 	help
 	  Freeze CAN when debug enable.
+
+endif # CAN_GD32

@@ -84,7 +84,7 @@ struct can_gd32_config {
 	bool esimode;
 
 	bool one_shot;
-	// bool is_main_controller;
+	bool is_main_controller;
 };
 
 struct can_mailbox {
@@ -100,9 +100,6 @@ struct can_gd32_data {
 	struct can_mailbox mb0;
 	struct can_mailbox mb1;
 	struct can_mailbox mb2;
-	uint64_t filter_usage;
-	can_rx_callback_t rx_cb[CONFIG_CAN_MAX_FILTER];
-	void *cb_arg[CONFIG_CAN_MAX_FILTER];
 	can_state_change_callback_t state_change_cb;
 	void *state_change_cb_data;
 };
@@ -330,29 +327,23 @@ int can_gd32_get_core_clock(const struct device *dev, uint32_t *rate)
 int can_gd32_get_max_filters(const struct device *dev, enum can_ide id_type)
 {
 	const struct can_gd32_config *cfg = dev->config;
-	return can_gd32_filter_getsize(cfg->filter, id_type);
+	int max_size = can_gd32_filter_getmaxsize(cfg->filter, id_type, cfg->is_main_controller);
+	LOG_DBG("Max filter size %d", max_size);
+	return max_size;
 }
 
 int can_gd32_add_rx_filter(const struct device *dev, can_rx_callback_t cb, void *cb_arg,
 			   const struct zcan_filter *filter)
 {
-	/* todo: add filter. */
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(cb_arg);
-	ARG_UNUSED(filter);
-
-	__ASSERT(0, "todo");
-	return 0;
+	const struct can_gd32_config *cfg = dev->config;
+	return can_gd32_filter_add(cfg->filter, cfg->is_main_controller, CAN_FIFO_0, cb, cb_arg,
+				   filter);
 }
 
 void can_gd32_remove_rx_filter(const struct device *dev, int filter_id)
 {
-	/* todo: add filter. */
-	ARG_UNUSED(dev);
-	ARG_UNUSED(filter_id);
-
-	__ASSERT(0, "todo");
+	const struct can_gd32_config *cfg = dev->config;
+	can_gd32_filter_remove(cfg->filter, filter_id);
 }
 
 int can_gd32_send(const struct device *dev, const struct zcan_frame *frame, k_timeout_t timeout,
@@ -537,10 +528,6 @@ static void can_gd32_init_data(struct can_gd32_data *data)
 	data->mb2.tx_callback = NULL;
 	data->state_change_cb = NULL;
 	data->state_change_cb_data = NULL;
-
-	/* todo: data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTERS) - 1ULL; */
-	(void)memset(data->rx_cb, 0, sizeof(data->rx_cb));
-	(void)memset(data->cb_arg, 0, sizeof(data->cb_arg));
 }
 
 static int can_gd32_init(const struct device *dev)
@@ -797,7 +784,6 @@ static void can_gd32_get_msg_fifo(const struct device *dev, uint32_t fifo_num,
 
 static void can_gd32_rxn_isr(const struct device *dev, uint32_t fifo_num)
 {
-	struct can_gd32_data *data = dev->data;
 	const struct can_gd32_config *cfg = dev->config;
 	uint32_t can_periph = cfg->reg;
 
@@ -822,9 +808,9 @@ static void can_gd32_rxn_isr(const struct device *dev, uint32_t fifo_num)
 		CAN_RFIFO(can_periph, fifo_num) |= CAN_RFIFO_RFD;
 
 		/* invoke callback */
-		callback = data->rx_cb[filter_match_index];
+		callback = can_gd32_filter_getcb(cfg->filter, filter_match_index);
 		if (callback) {
-			callback(&frame, data->cb_arg[filter_match_index]);
+			callback(&frame, can_gd32_filter_getcbarg(cfg->filter, filter_match_index));
 		}
 	}
 
