@@ -126,6 +126,9 @@ zephyr_udc0: &usbhs {
 
 &pwm0 {
 	status = "okay";
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
