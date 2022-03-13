@@ -139,6 +139,9 @@
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <1024>;
 	#pwm-cells = <1>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {

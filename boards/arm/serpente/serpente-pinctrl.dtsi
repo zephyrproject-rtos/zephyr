@@ -6,6 +6,14 @@
 #include <dt-bindings/pinctrl/samd21-da1eXabcd-pinctrl.h>
 
 &pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PA22F_TCC0_WO4>,
+				 <PA19F_TCC0_WO3>,
+				 <PA23F_TCC0_WO5>;
+		};
+	};
+
 	sercom0_i2c_default: sercom0_i2c_default {
 		group1 {
 			pinmux = <PA4D_SERCOM0_PAD0>,
