@@ -1,0 +1,18 @@
+identifier: nrf52840_mdk_m2_module
+name: nRF52840-MDK-M2-Module
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - usb_device
+  - usb_cdc
+  - ble
+  - ieee802154
+  - pwm
+  - watchdog
+  - counter
