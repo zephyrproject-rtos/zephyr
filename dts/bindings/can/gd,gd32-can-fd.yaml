@@ -3,7 +3,7 @@
 
 description: GigaDevice GD32 series CAN-FD module
 
-compatible: "gd,gd32-fdcan"
+compatible: "gd,gd32-can-fd"
 
 include: ["gd,gd32-can.yaml", can-fd-controller.yaml]
 

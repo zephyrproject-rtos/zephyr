@@ -76,4 +76,10 @@
 			pinmux = <CAN0_TX_PD1_FRMP>, <CAN0_RX_PD0_FRMP>;
 		};
 	};
+
+	can1_default: can1_default {
+		group1 {
+			pinmux = <CAN1_TX_PB6_RMP>, <CAN1_RX_PB5_RMP>;
+		};
+	};
 };

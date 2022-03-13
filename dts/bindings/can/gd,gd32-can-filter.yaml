@@ -1,0 +1,14 @@
+# Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigaDevice GD32 series CAN module
+
+compatible: "gd,gd32-can-filter"
+
+include: ["base.yaml"]
+
+properties:
+  size:
+    required: true
+    type: int
+    description: Filter Size

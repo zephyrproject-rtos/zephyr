@@ -30,6 +30,12 @@ properties:
   pinctrl-names:
     required: true
 
+  filter-size:
+    required: false
+    type: int
+    default: 5
+    description: Filter Size
+
   one-shot:
     type: boolean
     required: false
@@ -37,3 +43,7 @@ properties:
       Disable automatic retransmissions. A CAN frame will only be transmitted
       once, independently of the transmission result (successful, error, or
       arbitration lost).
+
+  main-controller:
+    type: phandles
+    required: false
