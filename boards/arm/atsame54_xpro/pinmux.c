@@ -30,19 +30,6 @@ static int board_pinmux_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(gmac), okay) && CONFIG_ETH_SAM_GMAC)
-	pinmux_pin_set(muxa, 14, PINMUX_FUNC_L);	/* PA14 = GTXCK */
-	pinmux_pin_set(muxa, 17, PINMUX_FUNC_L);	/* PA17 = GTXEN */
-	pinmux_pin_set(muxa, 18, PINMUX_FUNC_L);	/* PA18 = GTX0 */
-	pinmux_pin_set(muxa, 19, PINMUX_FUNC_L);	/* PA19 = GTX1 */
-	pinmux_pin_set(muxc, 20, PINMUX_FUNC_L);	/* PC20 = GRXDV */
-	pinmux_pin_set(muxa, 13, PINMUX_FUNC_L);	/* PA13 = GRX0 */
-	pinmux_pin_set(muxa, 12, PINMUX_FUNC_L);	/* PA12 = GRX1 */
-	pinmux_pin_set(muxa, 15, PINMUX_FUNC_L);	/* PA15 = GRXER */
-	pinmux_pin_set(muxc, 11, PINMUX_FUNC_L);	/* PC11 = GMDC */
-	pinmux_pin_set(muxc, 12, PINMUX_FUNC_L);	/* PC12 = GMDIO */
-#endif
-
 	return 0;
 }
 

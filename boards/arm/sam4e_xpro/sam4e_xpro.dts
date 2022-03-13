@@ -165,6 +165,10 @@
 
 &gmac {
 	status = "okay";
+
+	pinctrl-0 = <&gmac_mii>;
+	pinctrl-names = "default";
+
 	zephyr,random-mac-address;
 
 	phy: phy {
@@ -177,6 +181,9 @@
 
 &mdio {
 	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
 };
 
 &wdt {

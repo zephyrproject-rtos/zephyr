@@ -6,6 +6,33 @@
 #include <dt-bindings/pinctrl/sam4eXe-pinctrl.h>
 
 &pinctrl {
+	gmac_mii: gmac_mii {
+		group1 {
+			pinmux = <PD0A_GMAC_GTXCK>,
+				 <PD1A_GMAC_GTXEN>,
+				 <PD2A_GMAC_GTX0>,
+				 <PD3A_GMAC_GTX1>,
+				 <PD15A_GMAC_GTX2>,
+				 <PD16A_GMAC_GTX3>,
+				 <PD4A_GMAC_GRXDV>,
+				 <PD5A_GMAC_GRX0>,
+				 <PD6A_GMAC_GRX1>,
+				 <PD11A_GMAC_GRX2>,
+				 <PD12A_GMAC_GRX3>,
+				 <PD7A_GMAC_GRXER>,
+				 <PD14A_GMAC_GRXCK>,
+				 <PD13A_GMAC_GCOL>,
+				 <PD10A_GMAC_GCRS>;
+		};
+	};
+
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <PD8A_GMAC_GMDC>,
+				 <PD9A_GMAC_GMDIO>;
+		};
+	};
+
 	spi0_default: spi0_default {
 		group1 {
 			pinmux = <PA12A_SPI_MISO>,
