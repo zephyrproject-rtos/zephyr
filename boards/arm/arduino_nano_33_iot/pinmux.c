@@ -22,29 +22,6 @@ static int board_pinmux_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-#if defined(CONFIG_I2C_SAM0)
-#if ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_i2c)
-	/* SDA on PB8/pad 0 SCL on PB9/pad 1 */
-	pinmux_pin_set(muxb, 8, PINMUX_FUNC_D);
-	pinmux_pin_set(muxb, 9, PINMUX_FUNC_D);
-#endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_i2c)
-#warning Pin mapping may not be configured
-#endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_i2c)
-#warning Pin mapping may not be configured
-#endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_i2c)
-#warning Pin mapping may not be configured
-#endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_i2c)
-#warning Pin mapping may not be configured
-#endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_i2c)
-#warning Pin mapping may not be configured
-#endif
-#endif
-
 #if defined(CONFIG_PWM_SAM0_TCC)
 #if ATMEL_SAM0_DT_TCC_CHECK(2, atmel_sam0_tcc_pwm)
 	/* LED0 on PA17/TCC2/WO[1] */

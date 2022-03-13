@@ -107,6 +107,9 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	pinctrl-0 = <&sercom4_i2c_default>;
+	pinctrl-names = "default";
+
 	lsm6ds3@6a {
 		compatible = "st,lsm6ds3";
 		reg = <0x6a>;
