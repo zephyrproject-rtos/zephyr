@@ -16,9 +16,3 @@ properties:
 
     pinctrl-names:
       required: true
-
-    peripheral:
-      type: int
-      required: true
-      description: |
-        The UART peripheral number
