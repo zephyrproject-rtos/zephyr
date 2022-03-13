@@ -261,10 +261,9 @@ struct gmac_queue {
 /* Device constant configuration parameters */
 struct eth_sam_dev_cfg {
 	Gmac *regs;
+	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_SOC_FAMILY_SAM
 	uint32_t periph_id;
-	const struct soc_gpio_pin *pin_list;
-	uint32_t pin_list_size;
 #endif
 	void (*config_func)(void);
 	const struct device *phy_dev;

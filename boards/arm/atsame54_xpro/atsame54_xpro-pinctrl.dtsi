@@ -12,6 +12,26 @@
 		};
 	};
 
+	gmac_rmii: gmac_rmii {
+		group1 {
+			pinmux = <PA14L_GMAC_GTXCK>,
+				 <PA17L_GMAC_GTXEN>,
+				 <PA18L_GMAC_GTX0>,
+				 <PA19L_GMAC_GTX1>,
+				 <PC20L_GMAC_GRXDV>,
+				 <PA13L_GMAC_GRX0>,
+				 <PA12L_GMAC_GRX1>,
+				 <PA15L_GMAC_GRXER>;
+		};
+	};
+
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <PC11L_GMAC_GMDC>,
+				 <PC12L_GMAC_GMDIO>;
+		};
+	};
+
 	sercom7_i2c_default: sercom7_i2c_default {
 		group1 {
 			pinmux = <PD8C_SERCOM7_PAD0>,

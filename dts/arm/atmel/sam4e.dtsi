@@ -151,16 +151,6 @@
 			phy-connection-type = "mii";
 			label = "GMAC";
 			status = "disabled";
-			/* Default to MII config */
-			pinctrl-0 = <&pd0a_gmac_gtxck &pd1a_gmac_gtxen
-				     &pd2a_gmac_gtx0 &pd3a_gmac_gtx1
-				     &pd15a_gmac_gtx2 &pd16a_gmac_gtx3
-				     &pd4a_gmac_grxdv &pd7a_gmac_grxer
-				     &pd14a_gmac_grxck &pd5a_gmac_grx0
-				     &pd6a_gmac_grx1 &pd11a_gmac_grx2
-				     &pd12a_gmac_grx3 &pd13a_gmac_gcol
-				     &pd10a_gmac_gcrs &pd8a_gmac_gmdc
-				     &pd9a_gmac_gmdio>;
 
 			mdio: mdio {
 				compatible = "atmel,sam-mdio";

@@ -2,7 +2,9 @@
 # Copyright (c) 2020-2021 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-include: ethernet.yaml
+include:
+    - name: ethernet.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -50,24 +52,3 @@ properties:
         represents Reduced Media-Independent Interface (RMII) mode.
 
         This property must be used with pinctrl-0.
-
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        PIO pin configuration for the various GMAC signals that include GTXCK,
-        GTXEN, GTX[3..0], GTXER, GRXCK, GRXDV, GRX[3..0], GRXER, GCRS, GCOL,
-        GMDC, and GMDIO.  Which signals are used vary based on if the PHY
-        connection is MII or RMII (see datasheet for more details).  We expect
-        that the phandles will reference pinctrl nodes.  These nodes will have
-        a nodelabel that matches the Atmel SoC HAL defines and be of the form
-        p<port><pin><periph>_<inst>_<signal>.
-
-        For example the GMAC on SAME7x would be for RMII
-          pinctrl-0 = <&pd0a_gmac_gtxck &pd1a_gmac_gtxen
-                       &pd2a_gmac_gtx0 &pd3a_gmac_gtx1
-                       &pd4a_gmac_grxdv &pd5a_gmac_grx0
-                       &pd6a_gmac_grx1 &pd7a_gmac_grxer
-                       &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
-
-        This property must be used with phy-connection-type.
