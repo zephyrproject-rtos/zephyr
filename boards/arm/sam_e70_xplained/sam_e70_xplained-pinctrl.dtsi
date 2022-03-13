@@ -56,6 +56,13 @@
 		};
 	};
 
+	tc0_qdec_default: tc0_qdec_default {
+		group1 {
+			pinmux = <PA0B_TC0_TIOA0>,
+				 <PA1B_TC0_TIOB0>;
+		};
+	};
+
 	twihs0_default: twihs0_default {
 		group1 {
 			pinmux = <PA4A_TWI0_TWCK>,
