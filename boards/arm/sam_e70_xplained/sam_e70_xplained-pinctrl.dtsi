@@ -27,6 +27,14 @@
 		};
 	};
 
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PA0A_PWMC0_PWMH0>,
+				 <PC19B_PWMC0_PWMH2>,
+				 <PD26A_PWMC0_PWML2>;
+		};
+	};
+
 	spi0_default: spi0_default {
 		group1 {
 			pinmux = <PD20B_SPI0_MISO>,

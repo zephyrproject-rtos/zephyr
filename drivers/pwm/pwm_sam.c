@@ -9,6 +9,7 @@
 #include <device.h>
 #include <errno.h>
 #include <drivers/pwm.h>
+#include <drivers/pinctrl.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
@@ -17,6 +18,7 @@ LOG_MODULE_REGISTER(pwm_sam);
 
 struct sam_pwm_config {
 	Pwm *regs;
+	const struct pinctrl_dev_config *pcfg;
 	uint32_t id;
 	uint8_t prescaler;
 	uint8_t divider;
@@ -83,11 +85,17 @@ static int sam_pwm_init(const struct device *dev)
 	uint32_t id = config->id;
 	uint8_t prescaler = config->prescaler;
 	uint8_t divider = config->divider;
+	int retval;
 
 	/* FIXME: way to validate prescaler & divider */
 
 	/* Enable the PWM peripheral */
 	soc_pmc_peripheral_enable(id);
+
+	retval = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	/* Configure the clock A that will be used by all 4 channels */
 	pwm->PWM_CLK = PWM_CLK_PREA(prescaler) | PWM_CLK_DIVA(divider);
@@ -101,8 +109,10 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 };
 
 #define SAM_INST_INIT(inst)						\
+	PINCTRL_DT_INST_DEFINE(inst);					\
 	static const struct sam_pwm_config sam_pwm_config_##inst = {	\
 		.regs = (Pwm *)DT_INST_REG_ADDR(inst),			\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
 		.id = DT_INST_PROP(inst, peripheral_id),		\
 		.prescaler = DT_INST_PROP(inst, prescaler),		\
 		.divider = DT_INST_PROP(inst, divider),			\
