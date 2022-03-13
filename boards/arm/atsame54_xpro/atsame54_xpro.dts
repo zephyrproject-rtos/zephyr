@@ -80,6 +80,9 @@
 	label = "SPI_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom4_spi_default>;
+	pinctrl-names = "default";
 };
 
 &sercom7 {

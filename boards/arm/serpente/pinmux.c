@@ -18,19 +18,6 @@ static int board_pinmux_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-	/* sercom 3 is always spi - it is the onboard flash */
-	/* SPI SERCOM3 on MISO=PA18, MOSI=PA16, SCK=PA17, CS=PA15*/
-	pinmux_pin_set(muxa, 18, PINMUX_FUNC_D);
-	pinmux_pin_set(muxa, 16, PINMUX_FUNC_D);
-	pinmux_pin_set(muxa, 17, PINMUX_FUNC_D);
-
-#if ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_spi) && defined(CONFIG_SPI_SAM0)
-	/* SPI SERCOM0 on MISO=PA6, MOSI=PA4, SCK=PA5 */
-	pinmux_pin_set(muxa, 6, PINMUX_FUNC_D);
-	pinmux_pin_set(muxa, 4, PINMUX_FUNC_D);
-	pinmux_pin_set(muxa, 5, PINMUX_FUNC_D);
-#endif
-
 #if ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_i2c) && defined(CONFIG_I2C_SAM0)
 	/* SERCOM2 on SDA=PA08, SCL=PA09 */
 	pinmux_pin_set(muxa, 4, PINMUX_FUNC_D);
