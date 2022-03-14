@@ -122,6 +122,7 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 
 			ret = sys_bitarray_test_bit(mem_block->bitmap,
 						    i, &val);
+			zassert_equal(ret, 0, "API failure");
 			zassert_equal(val, 1,
 				      "sys_mem_blockss_alloc bitmap failed");
 
@@ -156,6 +157,7 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 
 			ret = sys_bitarray_test_bit(mem_block->bitmap,
 						    i, &val);
+			zassert_equal(ret, 0, "API failure");
 			zassert_equal(val, 0,
 				      "sys_mem_blocks_free bitmap failed");
 
@@ -203,6 +205,187 @@ static void test_mem_block_multi_alloc_free(void)
 static void test_mem_block_multi_alloc_free_alt_buf(void)
 {
 	alloc_free(&mem_block_02, NUM_BLOCKS, 10);
+}
+
+static void test_mem_block_get(void)
+{
+	int i, ret, val;
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	listener_idx = 0;
+	heap_listener_register(&mem_block_01_alloc);
+	heap_listener_register(&mem_block_01_free);
+#endif
+
+	/* get a 2 entiries memory block starting from 0 */
+	ret = sys_mem_blocks_get(&mem_block_01, mem_block_01.buffer, 2);
+	zassert_equal(ret, 0,
+		      "sys_mem_blocks_get failed (%d)", ret);
+
+	/* blocks 0 and 1 should be taken */
+	for (i = 0; i < NUM_BLOCKS; i++) {
+		ret = sys_bitarray_test_bit(mem_block_01.bitmap,
+					    i, &val);
+		zassert_equal(ret, 0, "API failure");
+		switch (i) {
+		case 0:
+		case 1:
+			zassert_equal(val, 1,
+			      "sys_mem_blocks_get bitmap failed, bit %i should be set", i);
+			break;
+		default:
+			zassert_equal(val, 0,
+			     "sys_mem_blocks_get bitmap failed, bit %i should be cleared", i);
+			break;
+
+		}
+	}
+
+	/* get a 2 entiries memory block starting from 1 - should fail  */
+	ret = sys_mem_blocks_get(&mem_block_01, mem_block_01.buffer + BLK_SZ, 2);
+	zassert_equal(ret, -ENOMEM,
+		      "sys_mem_blocks_get failed (%d), memory block taken twice", ret);
+
+	/* blocks 0 and 1 should be taken */
+	for (i = 0; i < NUM_BLOCKS; i++) {
+		ret = sys_bitarray_test_bit(mem_block_01.bitmap,
+					    i, &val);
+		zassert_equal(ret, 0, "API failure");
+		switch (i) {
+		case 0:
+		case 1:
+			zassert_equal(val, 1,
+			     "sys_mem_blocks_get bitmap failed, bit %i should be set", i);
+			break;
+		default:
+			zassert_equal(val, 0,
+			     "sys_mem_blocks_get bitmap failed, bit %i should be cleared", i);
+			break;
+
+		}
+	}
+
+	/* get a 2 slots block starting from the last one - should fail */
+	ret = sys_mem_blocks_get(&mem_block_01, mem_block_01.buffer + (BLK_SZ* (NUM_BLOCKS-1)), 2);
+	zassert_equal(ret, -ENOMEM,
+		      "sys_mem_blocks_get failed - out of bounds (%d)", ret);
+
+	/* blocks 0 and 1 should be taken */
+	for (i = 0; i < NUM_BLOCKS; i++) {
+		ret = sys_bitarray_test_bit(mem_block_01.bitmap,
+					    i, &val);
+		zassert_equal(ret, 0, "API failure");
+		switch (i) {
+		case 0:
+		case 1:
+			zassert_equal(val, 1,
+			     "sys_mem_blocks_get bitmap failed, bit %i should be set", i);
+			break;
+		default:
+			zassert_equal(val, 0,
+			     "sys_mem_blocks_get bitmap failed, bit %i should be cleared", i);
+			break;
+
+		}
+	}
+
+	/* get a 1 slots block starting from 3 */
+	ret = sys_mem_blocks_get(&mem_block_01, mem_block_01.buffer + (BLK_SZ * 3), 1);
+	zassert_equal(ret, 0,
+		      "sys_mem_blocks_get failed (%d)", ret);
+
+	/* blocks 0,1,3 should be taken */
+	for (i = 0; i < NUM_BLOCKS; i++) {
+		ret = sys_bitarray_test_bit(mem_block_01.bitmap,
+					    i, &val);
+		zassert_equal(ret, 0, "API failure");
+		switch (i) {
+		case 0:
+		case 1:
+		case 3:
+			zassert_equal(val, 1,
+			     "sys_mem_blocks_get bitmap failed, bit %i should be set", i);
+			break;
+		default:
+			zassert_equal(val, 0,
+			     "sys_mem_blocks_get bitmap failed, bit %i should be cleared", i);
+			break;
+		}
+	}
+
+	/* get a 1 slots block starting from 2 */
+	ret = sys_mem_blocks_get(&mem_block_01, mem_block_01.buffer + (BLK_SZ * 2), 1);
+	zassert_equal(ret, 0,
+		      "sys_mem_blocks_get failed (%d)", ret);
+
+	/* blocks 0,1,2, 3 should be taken */
+	for (i = 0; i < NUM_BLOCKS; i++) {
+		ret = sys_bitarray_test_bit(mem_block_01.bitmap,
+					    i, &val);
+		zassert_equal(ret, 0, "API failure");
+		switch (i) {
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+			zassert_equal(val, 1,
+			     "sys_mem_blocks_get bitmap failed, bit %i should be set", i);
+			break;
+		default:
+			zassert_equal(val, 0,
+			     "sys_mem_blocks_get bitmap failed, bit %i should be cleared", i);
+			break;
+		}
+	}
+
+	/* cleanup - free all blocks */
+	ret = sys_mem_blocks_free_contiguous(&mem_block_01, mem_block_01.buffer, 4);
+	zassert_equal(ret, 0,
+		      "sys_mem_blocks_get failed (%d)", ret);
+
+	/* all blocks should be cleared */
+	for (i = 0; i < NUM_BLOCKS; i++) {
+		ret = sys_bitarray_test_bit(mem_block_01.bitmap,
+					    i, &val);
+		zassert_equal(ret, 0, "API failure");
+		zassert_equal(val, 0,
+		     "sys_mem_blocks_get bitmap failed, bit %i should be cleared", i);
+	}
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	heap_listener_unregister(&mem_block_01_alloc);
+	heap_listener_unregister(&mem_block_01_free);
+
+	/* verify alloc/free log */
+	zassert_equal(listener_mem[0], mem_block_01.buffer,
+			"sys_mem_blocks_get bitmap failed, %p != %p",
+			listener_mem[0], mem_block_01.buffer);
+	zassert_equal(listener_size[0], BLK_SZ*2,
+			"sys_mem_blocks_get bitmap failed, %u != %u",
+			listener_size[0], BLK_SZ*2);
+
+	zassert_equal(listener_mem[1], mem_block_01.buffer + BLK_SZ*3,
+			"sys_mem_blocks_get bitmap failed, %p != %p",
+			listener_mem[1], mem_block_01.buffer + BLK_SZ*2);
+	zassert_equal(listener_size[1], BLK_SZ,
+			"sys_mem_blocks_get bitmap failed, %u != %u",
+			listener_size[1], BLK_SZ);
+
+	zassert_equal(listener_mem[2], mem_block_01.buffer + BLK_SZ*2,
+			"sys_mem_blocks_get bitmap failed, %p != %p",
+			listener_mem[2], mem_block_01.buffer + BLK_SZ);
+	zassert_equal(listener_size[2], BLK_SZ,
+			"sys_mem_blocks_get bitmap failed, %u != %u",
+			listener_size[2], BLK_SZ);
+
+	zassert_equal(listener_mem[3], mem_block_01.buffer,
+			"sys_mem_blocks_get bitmap failed, %p != %p",
+			listener_mem[3], mem_block_01.buffer);
+	zassert_equal(listener_size[3], BLK_SZ*4,
+			"sys_mem_blocks_get bitmap failed, %u != %u",
+			listener_size[3], BLK_SZ*4);
+
+#endif
 }
 
 static void test_multi_mem_block_alloc_free(void)
@@ -375,7 +558,8 @@ void test_main(void)
 			 ztest_unit_test(test_mem_block_multi_alloc_free_alt_buf),
 			 ztest_unit_test(test_multi_mem_block_alloc_free),
 			 ztest_unit_test(test_mem_block_invalid_params),
-			 ztest_unit_test(test_multi_mem_block_invalid_params)
+			 ztest_unit_test(test_multi_mem_block_invalid_params),
+			 ztest_unit_test(test_mem_block_get)
 			 );
 
 	ztest_run_test_suite(lib_mem_block_test);
