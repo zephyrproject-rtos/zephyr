@@ -310,7 +310,7 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 		return hci_le_setup_iso_data_path(iso, dir, out_path);
 	} else if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
 		   iso->iso.type == BT_ISO_CHAN_TYPE_CONNECTED) {
-		if (in_path != NULL) {
+		if (in_path != NULL && tx_qos->sdu > 0) {
 			/* Enable TX */
 			dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
 			err = hci_le_setup_iso_data_path(iso, dir, in_path);
@@ -319,7 +319,7 @@ static int bt_iso_setup_data_path(struct bt_conn *iso)
 			}
 		}
 
-		if (out_path != NULL) {
+		if (out_path != NULL && rx_qos->sdu > 0) {
 			/* Enable RX */
 			dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
 			err = hci_le_setup_iso_data_path(iso, dir, out_path);
