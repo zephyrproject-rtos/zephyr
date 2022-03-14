@@ -36,7 +36,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
-		button1: button_1 {
+		button0: button_0 {
 			gpios = <&gpio1 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1 (SW1)";
 		};
@@ -79,7 +79,7 @@
 	aliases {
 		led0 = &led1a;
 		led1 = &led1b;
-		sw0 = &button1;
+		sw0 = &button0;
 	};
 };
 
