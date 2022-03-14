@@ -333,6 +333,8 @@
 			reg = <0x40184000 0x4000>;
 			interrupts = <20 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x7c 24>;
+			dmas = <&edma0 1 2>, <&edma0 2 3>;
+			dma-names = "tx", "rx";
 			label = "UART_1";
 			status = "disabled";
 		};
@@ -342,6 +344,8 @@
 			reg = <0x40188000 0x4000>;
 			interrupts = <21 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x68 28>;
+			dmas = <&edma0 3 66>, <&edma0 4 67>;
+			dma-names = "tx", "rx";
 			label = "UART_2";
 			status = "disabled";
 		};
@@ -351,6 +355,8 @@
 			reg = <0x4018c000 0x4000>;
 			interrupts = <22 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x68 12>;
+			dmas = <&edma0 5 4>, <&edma0 6 5>;
+			dma-names = "tx", "rx";
 			label = "UART_3";
 			status = "disabled";
 		};
@@ -360,6 +366,8 @@
 			reg = <0x40190000 0x4000>;
 			interrupts = <23 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
+			dmas = <&edma0 7 68>, <&edma0 8 69>;
+			dma-names = "tx", "rx";
 			label = "UART_4";
 			status = "disabled";
 		};
@@ -369,6 +377,8 @@
 			reg = <0x40194000 0x4000>;
 			interrupts = <24 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x74 2>;
+			dmas = <&edma0 9 6>, <&edma0 10 7>;
+			dma-names = "tx", "rx";
 			label = "UART_5";
 			status = "disabled";
 		};
@@ -378,6 +388,8 @@
 			reg = <0x40198000 0x4000>;
 			interrupts = <25 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x74 6>;
+			dmas = <&edma0 11 70>, <&edma0 12 71>;
+			dma-names = "tx", "rx";
 			label = "UART_6";
 			status = "disabled";
 		};
@@ -387,6 +399,8 @@
 			reg = <0x4019c000 0x4000>;
 			interrupts = <26 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x7c 26>;
+			dmas = <&edma0 13 8>, <&edma0 14 9>;
+			dma-names = "tx", "rx";
 			label = "UART_7";
 			status = "disabled";
 		};
@@ -396,6 +410,8 @@
 			reg = <0x401a0000 0x4000>;
 			interrupts = <27 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x80 14>;
+			dmas = <&edma0 15 72>, <&edma0 16 73>;
+			dma-names = "tx", "rx";
 			label = "UART_8";
 			status = "disabled";
 		};
