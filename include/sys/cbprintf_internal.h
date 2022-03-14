@@ -13,10 +13,7 @@
 #include <stdint.h>
 #include <toolchain.h>
 #include <sys/util.h>
-
-#ifdef CONFIG_CBPRINTF_STATIC_PACKAGE_CHECK_ALIGNMENT
 #include <sys/__assert.h>
-#endif
 
 /*
  * Special alignment cases
@@ -357,6 +354,22 @@ union z_cbprintf_hdr {
 #define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY
 #endif
 
+/* Allocation to avoid using VLA and alloca. Alloc frees space when leaving
+ * a function which can lead to increased stack usage if logging is used
+ * multiple times. VLA is not always available.
+ */
+#define Z_CBPRINTF_ON_STACK_ALLOC(_name, _len) \
+	uint8_t _name##_buf4[4]; \
+	uint8_t _name##_buf8[8]; \
+	uint8_t _name##_buf12[12]; \
+	uint8_t _name##_buf16[16]; \
+	uint8_t _name##_buf32[32]; \
+	_name = (_len) <= 4 ? _name##_buf4 : \
+		((_len) <= 8 ? _name##_buf8 : \
+		((_len) <= 12 ? _name##_buf12 : \
+		((_len) <= 16 ? _name##_buf16 : \
+		 _name##_buf32)))
+
 /** @brief Statically package a formatted string with arguments.
  *
  * @param buf buffer. If null then only length is calculated.
@@ -400,9 +413,11 @@ do { \
 	/* Variable holds count of non const string pointers. */ \
 	uint8_t _rws_cnt = _cros_en ? \
 		Z_CBPRINTF_PCHAR_COUNT(_flags, __VA_ARGS__) : _alls_cnt - _fros_cnt; \
-	uint8_t _ros_cnt = 1 + _alls_cnt - _rws_cnt; \
-	uint8_t _ros_pos_buf[_ros_pos_en ? _ros_cnt : 0]; \
-	uint8_t _rws_buffer[_rws_cnt]; \
+	uint8_t _ros_cnt = _ros_pos_en ? (1 + _alls_cnt - _rws_cnt) : 0; \
+	uint8_t *_ros_pos_buf; \
+	Z_CBPRINTF_ON_STACK_ALLOC(_ros_pos_buf, _ros_cnt); \
+	uint8_t *_rws_buffer; \
+	Z_CBPRINTF_ON_STACK_ALLOC(_rws_buffer, _rws_cnt); \
 	size_t _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
 	int _pkg_len = 0; \
 	int _total_len = 0; \
@@ -425,17 +440,15 @@ do { \
 	FOR_EACH_IDX(Z_CBPRINTF_PACK_ARG, (;), __VA_ARGS__);\
 	_total_len = _pkg_len; \
 	/* Append string indexes to the package. */ \
-	if (_ros_pos_en) { \
-		_total_len += sizeof(_ros_pos_buf); \
-	} \
-	_total_len += sizeof(_rws_buffer); \
+	_total_len += _ros_cnt; \
+	_total_len += _rws_cnt; \
 	if (_pbuf) { \
 		/* Append string locations. */ \
 		uint8_t *_pbuf_loc = &_pbuf[_pkg_len]; \
-		for (size_t i = 0; i < sizeof(_ros_pos_buf); i++) { \
+		for (size_t i = 0; i < _ros_cnt; i++) { \
 			*_pbuf_loc++ = _ros_pos_buf[i]; \
 		} \
-		for (size_t i = 0; i < sizeof(_rws_buffer); i++) { \
+		for (size_t i = 0; i < _rws_cnt; i++) { \
 			*_pbuf_loc++ = _rws_buffer[i]; \
 		} \
 	} \
@@ -447,8 +460,8 @@ do { \
 			.desc = { \
 				.len = (uint8_t)(_pkg_len / sizeof(int)), \
 				.str_cnt = 0, \
-				.ro_str_cnt = (uint8_t)sizeof(_ros_pos_buf), \
-				.rw_str_cnt = (uint8_t)sizeof(_rws_buffer), \
+				.ro_str_cnt = _ros_cnt, \
+				.rw_str_cnt = _rws_cnt, \
 			} \
 		}; \
 		*_len_loc = hdr; \
