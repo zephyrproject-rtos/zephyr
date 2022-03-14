@@ -82,6 +82,66 @@
 			nxp,tx-dma-channel = <7>;
 			nxp,rx-dma-channel = <8>;
 		};
+
+		lpuart1: uart@4007c000 {
+			dmas = <&edma_lpsr0 1 8>, <&edma_lpsr0 2 9>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart2: uart@40080000 {
+			dmas = <&edma_lpsr0 3 10>, <&edma_lpsr0 4 11>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart3: uart@40084000 {
+			dmas = <&edma_lpsr0 5 12>, <&edma_lpsr0 6 13>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart4: uart@40088000 {
+			dmas = <&edma_lpsr0 7 14>, <&edma_lpsr0 8 15>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart5: uart@4008c000 {
+			dmas = <&edma_lpsr0 9 16>, <&edma_lpsr0 10 17>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart6: uart@40090000 {
+			dmas = <&edma_lpsr0 11 18>, <&edma_lpsr0 12 19>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart7: uart@40094000 {
+			dmas = <&edma_lpsr0 13 20>, <&edma_lpsr0 14 21>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart8: uart@40098000 {
+			dmas = <&edma_lpsr0 15 22>, <&edma_lpsr0 16 23>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart9: uart@4009c000 {
+			dmas = <&edma_lpsr0 17 24>, <&edma_lpsr0 18 25>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart10: uart@400a0000 {
+			dmas = <&edma_lpsr0 19 26>, <&edma_lpsr0 20 27>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart11: uart@40c24000 {
+			dmas = <&edma_lpsr0 21 28>, <&edma_lpsr0 22 29>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart12: uart@40098000 {
+			dmas = <&edma_lpsr0 23 30>, <&edma_lpsr0 24 31>;
+			dma-names = "tx", "rx";
+		};
 	};
 };
 

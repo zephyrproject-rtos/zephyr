@@ -545,7 +545,7 @@
 			reg = <0x40098000 0x4000>;
 			interrupts = <31 0>;
 			clocks = <&ccm IMX_CCM_LPUART12_CLK 0x80 14>;
-			label = "UART_8";
+			label = "UART_12";
 			status = "disabled";
 		};
 
