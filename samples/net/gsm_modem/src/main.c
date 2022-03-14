@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(sample_gsm_ppp, LOG_LEVEL_DBG);
 static const struct device *gsm_dev;
 static struct net_mgmt_event_callback mgmt_cb;
 static bool connected;
-static bool starting = true;
+static bool starting = IS_ENABLED(CONFIG_GSM_PPP_AUTOSTART);
 
 static int cmd_sample_modem_suspend(const struct shell *shell,
 				    size_t argc, char *argv[])
