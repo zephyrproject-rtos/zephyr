@@ -57,13 +57,8 @@ fs_mgmt_impl_read(const char *path, size_t offset, size_t len,
 done:
 	fs_close(&file);
 
-	if (rc != 0) {
+	if (rc < 0) {
 		return MGMT_ERR_EUNKNOWN;
-	} else {
-		return 0;
-	}
-}
-
 static int
 zephyr_fs_mgmt_truncate(const char *path)
 {
@@ -126,14 +121,12 @@ fs_mgmt_impl_write(const char *path, size_t offset, const void *data,
 		goto done;
 	}
 
-	rc = 0;
-
 done:
 	fs_close(&file);
 
-	if (rc != 0) {
+	if (rc < 0) {
 		return MGMT_ERR_EUNKNOWN;
-	} else {
-		return 0;
 	}
+
+	return 0;
 }
