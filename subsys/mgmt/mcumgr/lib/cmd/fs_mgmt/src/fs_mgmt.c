@@ -26,6 +26,25 @@ static struct {
 
 static const struct mgmt_handler fs_mgmt_handlers[];
 
+/**
+ * Encodes a file upload response.
+ */
+static int
+fs_mgmt_file_rsp(struct mgmt_ctxt *ctxt, int rc, unsigned long long off)
+{
+	CborError err;
+
+	err = cbor_encode_text_stringz(&ctxt->encoder, "rc");
+	err |= cbor_encode_int(&ctxt->encoder, rc);
+	err |= cbor_encode_text_stringz(&ctxt->encoder, "off");
+	err |= cbor_encode_uint(&ctxt->encoder, off);
+
+	if (err != 0) {
+		return MGMT_ERR_ENOMEM;
+	}
+
+	return 0;
+}
 
 /**
  * Command handler: fs file (read)
@@ -80,38 +99,13 @@ fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
 	}
 
 	/* Encode the response. */
-	err = 0;
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "off");
-	err |= cbor_encode_uint(&ctxt->encoder, off);
+	err = fs_mgmt_file_rsp(ctxt, MGMT_ERR_EOK, off);
 	err |= cbor_encode_text_stringz(&ctxt->encoder, "data");
 	err |= cbor_encode_byte_string(&ctxt->encoder, file_data, bytes_read);
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, MGMT_ERR_EOK);
 	if (off == 0) {
 		err |= cbor_encode_text_stringz(&ctxt->encoder, "len");
 		err |= cbor_encode_uint(&ctxt->encoder, file_len);
 	}
-
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
-
-	return 0;
-}
-
-/**
- * Encodes a file upload response.
- */
-static int
-fs_mgmt_file_upload_rsp(struct mgmt_ctxt *ctxt, int rc, unsigned long long off)
-{
-	CborError err;
-
-	err = 0;
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, rc);
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "off");
-	err |= cbor_encode_uint(&ctxt->encoder, off);
 
 	if (err != 0) {
 		return MGMT_ERR_ENOMEM;
@@ -186,7 +180,7 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 
 		if (off != fs_mgmt_ctxt.off) {
 			/* Invalid offset.  Drop the data and send the expected offset. */
-			return fs_mgmt_file_upload_rsp(ctxt, MGMT_ERR_EINVAL, fs_mgmt_ctxt.off);
+			return fs_mgmt_file_rsp(ctxt, MGMT_ERR_EINVAL, fs_mgmt_ctxt.off);
 		}
 	}
 
@@ -211,7 +205,7 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 	}
 
 	/* Send the response. */
-	return fs_mgmt_file_upload_rsp(ctxt, 0, fs_mgmt_ctxt.off);
+	return fs_mgmt_file_rsp(ctxt, MGMT_ERR_EOK, fs_mgmt_ctxt.off);
 }
 
 static const struct mgmt_handler fs_mgmt_handlers[] = {
