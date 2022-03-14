@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 64KB of storage at the end of 1MB flash */
+		storage_partition: partition@2f0000 {
+			label = "storage";
+			reg = <0x002f0000 0x00010000>;
+		};
+	};
+};
