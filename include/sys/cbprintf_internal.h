@@ -359,6 +359,7 @@ union z_cbprintf_hdr {
  * multiple times. VLA is not always available.
  */
 #define Z_CBPRINTF_ON_STACK_ALLOC(_name, _len) \
+	__ASSERT(_len <= 32, "Too many string arguments."); \
 	uint8_t _name##_buf4[4]; \
 	uint8_t _name##_buf8[8]; \
 	uint8_t _name##_buf12[12]; \
