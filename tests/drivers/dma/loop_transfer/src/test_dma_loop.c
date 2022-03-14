@@ -51,9 +51,12 @@ static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
 volatile uint8_t transfer_count;
 static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
+static int test_case_id;
 
 static void test_transfer(const struct device *dev, uint32_t id)
 {
+	int res = 0;
+
 	transfer_count++;
 	if (transfer_count < TRANSFER_LOOPS) {
 		dma_block_cfg.block_size = strlen(tx_data);
@@ -66,6 +69,16 @@ static void test_transfer(const struct device *dev, uint32_t id)
 		zassert_false(dma_start(dev, id),
 					"Not able to start next transfer %d",
 					transfer_count + 1);
+		if (test_case_id == 1) {
+			res = dma_suspend(dev, id);
+			if (res == -ENOSYS) {
+				TC_PRINT("dma suspend not supported\n");
+				dma_stop(dev, id);
+			} else if (res != 0) {
+				TC_PRINT("ERROR: suspend failed, channel %d, result %d\n", id, res);
+			}
+			test_case_id = 2;
+		}
 	}
 }
 
@@ -90,6 +103,7 @@ static int test_loop(void)
 	const struct device *dma;
 	static int chan_id;
 
+	test_case_id = 0;
 	TC_PRINT("DMA memory to memory transfer started on %s\n",
 	       DMA_DEVICE_NAME);
 	TC_PRINT("Preparing DMA Controller\n");
@@ -176,6 +190,7 @@ static int test_loop_suspend_resume(void)
 	static int chan_id;
 	int res = 0;
 
+	test_case_id = 1;
 	TC_PRINT("DMA memory to memory transfer started on %s\n",
 	       DMA_DEVICE_NAME);
 	TC_PRINT("Preparing DMA Controller\n");
@@ -233,17 +248,6 @@ static int test_loop_suspend_resume(void)
 	}
 
 	while (transfer_count == 0) {
-	}
-
-	res = dma_suspend(dma, chan_id);
-	TC_PRINT("Suspended transfers\n");
-	if (res == -ENOSYS) {
-		TC_PRINT("dma suspend not supported\n");
-		dma_stop(dma, chan_id);
-		return TC_PASS;
-	} else if (res != 0) {
-		TC_PRINT("ERROR: suspend failed, channel %d, result %d\n", chan_id, res);
-		return TC_FAIL;
 	}
 
 	TC_PRINT("Sleeping while suspended\n");
