@@ -100,7 +100,7 @@
 };
 
 &uart0 {
-	compatible = "nordic,nrf-uart";
+	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";
 	tx-pin = <6>;
@@ -108,7 +108,7 @@
 };
 
 &i2c0 {
-	compatible = "nordic,nrf-twi";
+	compatible = "nordic,nrf-twim";
 	status = "okay";
 	sda-pin = <26>;
 	scl-pin = <27>;
