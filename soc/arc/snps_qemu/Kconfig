@@ -12,6 +12,9 @@ config SOC_QEMU_ARC_EM
 config SOC_QEMU_ARC_HS
 	bool "Synopsys ARC HS in QEMU"
 
+config SOC_QEMU_ARC_HS5X
+	bool "Synopsys ARC HS in QEMU"
+
 config SOC_QEMU_ARC_HS6X
 	bool "Synopsys ARC HS in QEMU"
 
