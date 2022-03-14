@@ -7,12 +7,33 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
-
 /* Convenience macros to represent the ARMv8-M-specific
  * configuration for memory access permission and
  * cache-ability attribution.
  */
+#if defined(CONFIG_AARCH32_ARMV8_R)
+#define MPU_IR_REGION_Msk       (0xFFU)
+#define MPU_IR_REGION_Pos       8U
+/* MPU RBAR Register attribute msk Definitions */
+#define MPU_RBAR_BASE_Pos       6U
+#define MPU_RBAR_BASE_Msk       (0x3FFFFFFFFFFFFFFUL << MPU_RBAR_BASE_Pos)
+#define MPU_RBAR_SH_Pos         3U
+#define MPU_RBAR_SH_Msk         (0x3UL << MPU_RBAR_SH_Pos)
+#define MPU_RBAR_AP_Pos         1U
+#define MPU_RBAR_AP_Msk         (0x3UL << MPU_RBAR_AP_Pos)
+/* RBAR XN */
+#define MPU_RBAR_XN_Pos         0U
+#define MPU_RBAR_XN_Msk         (0x1UL << MPU_RBAR_XN_Pos)
+
+/* MPU PLBAR Register Definitions */
+#define MPU_RLAR_LIMIT_Pos      6U
+#define MPU_RLAR_LIMIT_Msk      (0x3FFFFFFFFFFFFFFUL << MPU_RLAR_LIMIT_Pos)
+#define MPU_RLAR_AttrIndx_Pos   1U
+#define MPU_RLAR_AttrIndx_Msk   (0x7UL << MPU_RLAR_AttrIndx_Pos)
+#define MPU_RLAR_EN_Msk         (0x1UL)
+#else
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#endif
 
 /* Privileged No Access, Unprivileged No Access */
 /*#define NO_ACCESS       0x0 */
@@ -60,8 +81,31 @@
 #define REGION_LIMIT_ADDR(base, size) \
 	(((base & MPU_RBAR_BASE_Msk) + size - 1) & MPU_RLAR_LIMIT_Msk)
 
-
 /* Attribute flags for cache-ability */
+#if defined(CONFIG_AARCH32_ARMV8_R)
+/* Memory Attributes for Device Memory
+ * 1.Gathering (G/nG)
+ *   Determines whether multiple accesses can be merged into a single
+ *   bus transaction.
+ *   nG: Number/size of accesses on the bus = number/size of accesses
+ *   in code.
+ *
+ * 2.Reordering (R/nR)
+ *   Determines whether accesses to the same device can be reordered.
+ *   nR: Accesses to the same IMPLEMENTATION DEFINED block size will
+ *   appear on the bus in program order.
+ *
+ * 3 Early Write Acknowledgment (E/nE)
+ *   Indicates to the memory system whether a buffer can send
+ *   acknowledgements.
+ *   nE: The response should come from the end slave, not buffering in
+ *   the interconnect.
+ */
+#define DEVICE_nGnRnE	0x0U
+#define DEVICE_nGnRE	0x4U
+#define DEVICE_nGRE	0x8U
+#define DEVICE_GRE	0xCU
+#endif
 
 /* Read/Write Allocation Configurations for Cacheable Memory */
 #define R_NON_W_NON     0x0 /* Do not allocate Read/Write */
@@ -109,15 +153,98 @@
 #define MPU_MAIR_ATTR_SRAM_NOCACHE  MPU_CACHE_ATTRIBUTES_SRAM_NOCACHE
 #define MPU_MAIR_INDEX_SRAM_NOCACHE 2
 
+#if defined(CONFIG_AARCH32_ARMV8_R)
+#define MPU_MAIR_ATTR_DEVICE        DEVICE_nGnRnE
+#define MPU_MAIR_INDEX_DEVICE       3
+/* Flash region(s): Attribute-0
+ * SRAM region(s): Attribute-1
+ * SRAM no cache-able regions(s): Attribute-2
+ * DEVICE no cache-able regions(s): Attribute-3
+ */
+#define MPU_MAIR_ATTRS							     \
+	((MPU_MAIR_ATTR_FLASH << (MPU_MAIR_INDEX_FLASH * 8)) |		     \
+	 (MPU_MAIR_ATTR_SRAM << (MPU_MAIR_INDEX_SRAM * 8)) |		     \
+	 (MPU_MAIR_ATTR_SRAM_NOCACHE << (MPU_MAIR_INDEX_SRAM_NOCACHE * 8)) | \
+	 (MPU_MAIR_ATTR_DEVICE << (MPU_MAIR_INDEX_DEVICE * 8)))
+#else
+/* Flash region(s): Attribute-0
+ * SRAM region(s): Attribute-1
+ * SRAM no cache-able regions(s): Attribute-2
+ */
+#define MPU_MAIR_ATTRS								\
+	(((MPU_MAIR_ATTR_FLASH << MPU_MAIR0_Attr0_Pos) & MPU_MAIR0_Attr0_Msk) |	\
+	 ((MPU_MAIR_ATTR_SRAM << MPU_MAIR0_Attr1_Pos) & MPU_MAIR0_Attr1_Msk)  |	\
+	 ((MPU_MAIR_ATTR_SRAM_NOCACHE << MPU_MAIR0_Attr2_Pos) &			\
+	  MPU_MAIR0_Attr2_Msk))
+#endif
+
 /* Some helper defines for common regions.
  *
- * Note that the ARMv8-M MPU architecture requires that the
+ * Note that the ARMv8-M/R MPU architecture requires that the
  * enabled MPU regions are non-overlapping. Therefore, it is
  * recommended to use these helper defines only for configuring
  * fixed MPU regions at build-time (i.e. regions that are not
  * expected to be re-programmed or re-adjusted at run-time so
  * that they do not overlap with other MPU regions).
  */
+#if defined(CONFIG_AARCH32_ARMV8_R)
+#define REGION_RAM_ATTR(limit)						    \
+	{								    \
+		.rbar = NOT_EXEC |					    \
+			P_RW_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */ \
+		/* Cache-ability */					    \
+		.mair_idx = MPU_MAIR_INDEX_SRAM,			    \
+		.r_limit = limit - 1,  /* Region Limit */		    \
+	}
+
+#define REGION_RAM_TEXT_ATTR(limit)					    \
+	{								    \
+		.rbar = P_RO_U_RO_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */ \
+		/* Cache-ability */					    \
+		.mair_idx = MPU_MAIR_INDEX_SRAM,			    \
+		.r_limit = limit - 1,  /* Region Limit */		    \
+	}
+
+#define REGION_RAM_RO_ATTR(limit)					    \
+	{								    \
+		.rbar = NOT_EXEC |					    \
+			P_RO_U_RO_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */ \
+		/* Cache-ability */					    \
+		.mair_idx = MPU_MAIR_INDEX_SRAM,			    \
+		.r_limit = limit - 1,  /* Region Limit */		    \
+	}
+
+#if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
+/* Note that the access permissions allow for un-privileged writes, contrary
+ * to ARMv7-M where un-privileged code has Read-Only permissions.
+ */
+#define REGION_FLASH_ATTR(limit)					    \
+	{								    \
+		.rbar = P_RW_U_RW_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */ \
+		/* Cache-ability */					    \
+		.mair_idx = MPU_MAIR_INDEX_FLASH,			    \
+		.r_limit = limit - 1,  /* Region Limit */		    \
+	}
+#else /* CONFIG_MPU_ALLOW_FLASH_WRITE */
+#define REGION_FLASH_ATTR(limit)				     \
+	{							     \
+		.rbar = RO_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */ \
+		/* Cache-ability */				     \
+		.mair_idx = MPU_MAIR_INDEX_FLASH,		     \
+		.r_limit = limit - 1,  /* Region Limit */	     \
+	}
+#endif /* CONFIG_MPU_ALLOW_FLASH_WRITE */
+
+#define REGION_DEVICE_ATTR(limit)				      \
+	{							      \
+		/* AP, XN, SH */				      \
+		.rbar = NOT_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk, \
+		/* Cache-ability */				      \
+		.mair_idx = MPU_MAIR_INDEX_DEVICE,		      \
+		/* Region Limit */				      \
+		.r_limit = limit - 1,				      \
+	}
+#else
 #define REGION_RAM_ATTR(base, size) \
 	{\
 		.rbar = NOT_EXEC | \
@@ -157,6 +284,7 @@
 	}
 #endif /* CONFIG_MPU_ALLOW_FLASH_WRITE */
 
+#endif
 
 struct arm_mpu_region_attr {
 	/* Attributes belonging to RBAR */

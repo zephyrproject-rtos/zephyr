@@ -155,6 +155,8 @@ void z_arm_configure_static_mpu_regions(void)
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 }
 
+extern void arm_core_mpu_enable(void);
+extern void arm_core_mpu_disable(void);
 /**
  * @brief Use the HW-specific MPU driver to program
  *        the dynamic MPU regions.
@@ -303,8 +305,14 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 	/* Configure the dynamic MPU regions */
+#ifdef CONFIG_AARCH32_ARMV8_R
+	arm_core_mpu_disable();
+#endif
 	arm_core_mpu_configure_dynamic_mpu_regions(dynamic_regions,
 						   region_num);
+#ifdef CONFIG_AARCH32_ARMV8_R
+	arm_core_mpu_enable();
+#endif
 }
 
 #if defined(CONFIG_USERSPACE)
