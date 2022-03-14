@@ -7,7 +7,10 @@
 #include <limits.h>
 #include <string.h>
 #include <sys/util.h>
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
 #include "cborattr/cborattr.h"
+#include <mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include "fs_mgmt/fs_mgmt.h"
 #include "fs_mgmt/fs_mgmt_impl.h"
@@ -29,21 +32,17 @@ static const struct mgmt_handler fs_mgmt_handlers[];
 /**
  * Encodes a file upload response.
  */
-static int
-fs_mgmt_file_rsp(struct mgmt_ctxt *ctxt, int rc, unsigned long long off)
+static bool
+fs_mgmt_file_rsp(zcbor_state_t *zse, int rc, uint64_t off)
 {
-	CborError err;
+	bool ok;
 
-	err = cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, rc);
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "off");
-	err |= cbor_encode_uint(&ctxt->encoder, off);
+	ok = zcbor_tstr_put_lit(zse, "rc")	&&
+	     zcbor_int32_put(zse, rc)		&&
+	     zcbor_tstr_put_lit(zse, "off")	&&
+	     zcbor_uint64_put(zse, off);
 
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
-
-	return 0;
+	return ok;
 }
 
 /**
@@ -55,10 +54,11 @@ fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
 	uint8_t file_data[FS_MGMT_DL_CHUNK_SIZE];
 	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
 	unsigned long long off;
-	CborError err;
 	size_t bytes_read;
 	size_t file_len;
 	int rc;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	bool ok;
 
 	const struct cbor_attr_t dload_attr[] = {
 		{
@@ -99,19 +99,13 @@ fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
 	}
 
 	/* Encode the response. */
-	err = fs_mgmt_file_rsp(ctxt, MGMT_ERR_EOK, off);
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "data");
-	err |= cbor_encode_byte_string(&ctxt->encoder, file_data, bytes_read);
-	if (off == 0) {
-		err |= cbor_encode_text_stringz(&ctxt->encoder, "len");
-		err |= cbor_encode_uint(&ctxt->encoder, file_len);
-	}
+	ok = fs_mgmt_file_rsp(zse, MGMT_ERR_EOK, off)				&&
+	     zcbor_tstr_put_lit(zse, "data")					&&
+	     zcbor_bstr_encode_ptr(zse, file_data, bytes_read)			&&
+	     ((off != 0)							||
+		(zcbor_tstr_put_lit(zse, "len") && zcbor_uint64_put(zse, file_len)));
 
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
-
-	return 0;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
 
 /**
@@ -127,6 +121,7 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 	size_t data_len;
 	size_t new_off;
 	int rc;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
 
 	const struct cbor_attr_t uload_attr[5] = {
 		[0] = {
@@ -180,7 +175,7 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 
 		if (off != fs_mgmt_ctxt.off) {
 			/* Invalid offset.  Drop the data and send the expected offset. */
-			return fs_mgmt_file_rsp(ctxt, MGMT_ERR_EINVAL, fs_mgmt_ctxt.off);
+			return fs_mgmt_file_rsp(zse, MGMT_ERR_EINVAL, fs_mgmt_ctxt.off);
 		}
 	}
 
@@ -205,7 +200,8 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 	}
 
 	/* Send the response. */
-	return fs_mgmt_file_rsp(ctxt, MGMT_ERR_EOK, fs_mgmt_ctxt.off);
+	return fs_mgmt_file_rsp(zse, MGMT_ERR_EOK, fs_mgmt_ctxt.off) ?
+			MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
 
 static const struct mgmt_handler fs_mgmt_handlers[] = {
