@@ -5,6 +5,7 @@
  */
 
 #include <fs/fs.h>
+#include <errno.h>
 #include <mgmt/mgmt.h>
 #include <fs_mgmt/fs_mgmt_impl.h>
 
@@ -59,30 +60,6 @@ done:
 
 	if (rc < 0) {
 		return MGMT_ERR_EUNKNOWN;
-static int
-zephyr_fs_mgmt_truncate(const char *path)
-{
-	size_t len;
-	int rc;
-
-	/* Attempt to get the length of the file at the specified path.  This is a
-	 * quick way to determine if there is already a file there.
-	 */
-	rc = fs_mgmt_impl_filelen(path, &len);
-	if (rc == 0) {
-		/* There is already a file with the specified path.  Unlink it to
-		 * simulate a truncate operation.
-		 *
-		 * XXX: This isn't perfect - if the file is currently open, the unlink
-		 * operation won't actually delete the file.  Consequently, the file
-		 * will get partially overwritten rather than truncated.  The NFFS port
-		 * doesn't support the truncate operation, so this is an imperfect
-		 * workaround.
-		 */
-		rc = fs_unlink(path);
-		if (rc != 0) {
-			return MGMT_ERR_EUNKNOWN;
-		}
 	}
 
 	return 0;
@@ -99,8 +76,12 @@ fs_mgmt_impl_write(const char *path, size_t offset, const void *data,
 	 * properly handle an overwrite of an existing file
 	 */
 	if (offset == 0) {
-		rc = zephyr_fs_mgmt_truncate(path);
-		if (rc != 0) {
+		/* Try to truncate file; this will return -ENOENT if file
+		 * does not exist so ignore it. Fs may log error -2 here,
+		 * just ignore it.
+		 */
+		rc = fs_unlink(path);
+		if (rc < 0 && rc != -ENOENT) {
 			return rc;
 		}
 	}
