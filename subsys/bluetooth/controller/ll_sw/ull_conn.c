@@ -1387,7 +1387,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 		if (lll->enc_rx || conn->llcp_enc.pause_rx) {
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-		if (lll->enc_rx || ull_cp_encryption_paused(conn)) {
+		if (lll->enc_rx && lll->enc_tx) {
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 			uint16_t appto_reload_new;
 
