@@ -11,6 +11,14 @@ config IPC_SERVICE_BACKEND_RPMSG
 	select IPC_SERVICE_STATIC_VRINGS
 	select OPENAMP
 
+config IPC_SERVICE_BACKEND_ICMSG
+	bool "ICMSG backend with ICMsg buffer"
+	depends on MBOX
+	select IPC_SERVICE_ICMSG_BUF
+	help
+	  Chosing this backend results in single endpoint implementation based
+	  on ringbuf.
+
 config IPC_SERVICE_BACKEND_ZTEST
 	depends on ZTEST
 	bool "IPC service backend test"
@@ -46,4 +54,10 @@ config IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
 	help
 	  Static VRINGs alignment
 
+config IPC_SERVICE_ICMSG_BUF
+	bool "Inter core messaging buffer support library"
+	help
+	  Inter core messaging buffer library
+
+rsource "Kconfig.icmsg"
 rsource "Kconfig.rpmsg"
