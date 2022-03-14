@@ -165,6 +165,9 @@ switch_el:
 	/* EL1 init */
 	bl	z_arm64_el1_init
 
+	/* We want to use SP_ELx from now on */
+	msr	SPSel, #1
+
 	/* Enable SError interrupts */
 	msr	DAIFClr, #(DAIFCLR_ABT_BIT)
 	isb
