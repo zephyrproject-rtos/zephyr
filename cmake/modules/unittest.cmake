@@ -8,11 +8,11 @@ enable_language(C CXX ASM)
 #   SOURCES: list of source files, default main.c
 #   INCLUDE: list of additional include paths relative to ZEPHYR_BASE
 
-separate_arguments(  EXTRA_CFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CFLAGS})
-separate_arguments(  EXTRA_AFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_AFLAGS})
-separate_arguments(EXTRA_CPPFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CPPFLAGS})
-separate_arguments(EXTRA_CXXFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CXXFLAGS})
-separate_arguments(EXTRA_LDFLAGS_AS_LIST UNIX_COMMAND  ${EXTRA_LDFLAGS})
+string(REPLACE " " ";" EXTRA_CFLAGS_AS_LIST   "${EXTRA_CFLAGS}")
+string(REPLACE " " ";" EXTRA_AFLAGS_AS_LIST   "${EXTRA_AFLAGS}")
+string(REPLACE " " ";" EXTRA_CPPFLAGS_AS_LIST "${EXTRA_CPPFLAGS}")
+string(REPLACE " " ";" EXTRA_CXXFLAGS_AS_LIST "${EXTRA_CXXFLAGS}")
+string(REPLACE " " ";" EXTRA_LDFLAGS_AS_LIST  "${EXTRA_LDFLAGS}")
 
 set(ENV_ZEPHYR_BASE $ENV{ZEPHYR_BASE})
 # This add support for old style boilerplate include.
