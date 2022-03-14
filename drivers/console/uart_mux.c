@@ -71,7 +71,7 @@ struct uart_mux {
 			.rx_ringbuf = &uart_rx_ringbuf_##x,		\
 	}
 
-LISTIFY(CONFIG_UART_MUX_REAL_DEVICE_COUNT, DEFINE_UART_MUX, (;), _)
+LISTIFY(CONFIG_UART_MUX_REAL_DEVICE_COUNT, DEFINE_UART_MUX, (;), _);
 
 extern struct uart_mux __uart_mux_start[];
 extern struct uart_mux __uart_mux_end[];
@@ -890,9 +890,9 @@ void uart_mux_foreach(uart_mux_cb_t cb, void *user_data)
 			    CONFIG_CONSOLE_INIT_PRIORITY,		  \
 			    &uart_mux_driver_api)
 
-LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, (;),  _)
-LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEV_DATA, (;), _)
-LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEVICE, (;), _)
+LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, (;),  _);
+LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEV_DATA, (;), _);
+LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEVICE, (;), _);
 
 static int init_uart_mux(const struct device *dev)
 {
