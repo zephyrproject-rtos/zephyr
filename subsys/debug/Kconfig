@@ -206,11 +206,20 @@ config ASSERT
 	  Disabling this option will cause assertions to compile to nothing,
 	  improving performance and system footprint.
 
+config FORCE_NO_ASSERT
+	bool "Force-disable no assertions"
+	help
+	  This boolean option disables Zephyr assertion testing even
+	  in circumstances (twister) where it is enabled via
+	  CFLAGS and not Kconfig.  Added solely to be able to work
+	  around compiler bugs for specific tests.
+
+if ASSERT
+
 config ASSERT_LEVEL
 	int "__ASSERT() level"
 	default 2
 	range 0 2
-	depends on ASSERT
 	help
 	  This option specifies the assertion level used by the __ASSERT()
 	  macro. It can be set to one of three possible values:
@@ -221,7 +230,6 @@ config ASSERT_LEVEL
 
 config SPIN_VALIDATE
 	bool "Spinlock validation"
-	depends on ASSERT
 	depends on MULTITHREADING
 	depends on MP_NUM_CPUS <= 4
 	default y if !FLASH || FLASH_SIZE > 32
@@ -229,14 +237,6 @@ config SPIN_VALIDATE
 	  There's a spinlock validation framework available when asserts are
 	  enabled. It adds a relatively hefty overhead (about 3k or so) to
 	  kernel code size, don't use on platforms known to be small.
-
-config FORCE_NO_ASSERT
-	bool "Force-disable no assertions"
-	help
-	  This boolean option disables Zephyr assertion testing even
-	  in circumstances (twister) where it is enabled via
-	  CFLAGS and not Kconfig.  Added solely to be able to work
-	  around compiler bugs for specific tests.
 
 config ASSERT_VERBOSE
 	bool "Verbose assertions"
@@ -271,6 +271,8 @@ config ASSERT_NO_MSG_INFO
 	  necessary for tiny targets. It is recommended to disable message
 	  before disabling file info since the message can be found in the
 	  source using file info.
+
+endif # ASSERT
 
 config OVERRIDE_FRAME_POINTER_DEFAULT
 	bool "Override compiler defaults for -fomit-frame-pointer"
