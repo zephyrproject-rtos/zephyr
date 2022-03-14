@@ -119,6 +119,7 @@
 		irq-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>,
 				<&gpio1 12 GPIO_ACTIVE_HIGH>;
 		label = "LIS2DH12";
+		disconnect-sdo-sa0-pull-up;
 	};
 
 	si7055@40 {
