@@ -30,7 +30,6 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   endif()
 
   zephyr_get_include_directories_for_lang(C current_includes)
-  get_filename_component(base_name ${CMAKE_CURRENT_BINARY_DIR} NAME)
   get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
 # the command to generate linker file from template
@@ -46,7 +45,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -x c
     ${NOSYSDEF_CFLAG}
     -Hnocopyr
-    -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
+    -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
     -D_LINKER
     -D_ASMLANGUAGE
     -imacros ${AUTOCONF_H}
