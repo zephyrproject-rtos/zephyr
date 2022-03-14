@@ -180,6 +180,10 @@ struct qspi_cmd {
 static int qspi_nor_write_protection_set(const struct device *dev,
 					 bool write_protect);
 
+#ifdef CONFIG_PM_DEVICE
+static int exit_dpd(const struct device *const dev);
+#endif
+
 /**
  * @brief Test whether offset is aligned.
  */
@@ -577,6 +581,19 @@ static int qspi_nrfx_configure(const struct device *dev)
 #if DT_INST_NODE_HAS_PROP(0, rx_delay)
 	if (!nrf53_errata_121()) {
 		nrf_qspi_iftiming_set(NRF_QSPI, DT_INST_PROP(0, rx_delay));
+	}
+#endif
+
+#ifdef CONFIG_PM_DEVICE
+	/* It may happen that after the flash chip was previously put into
+	 * the DPD mode, the system was reset but the flash chip was not.
+	 * Consequently, the flash chip can be in the DPD mode at this point.
+	 * Some flash chips will just exit the DPD mode on the first CS pulse,
+	 * but some need to receive the dedicated command to do it, so send it.
+	 */
+	ret = exit_dpd(dev);
+	if (ret < 0) {
+		return ret;
 	}
 #endif
 
