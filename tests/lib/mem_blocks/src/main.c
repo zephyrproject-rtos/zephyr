@@ -52,9 +52,11 @@ static bool check_buffer_bound(sys_mem_blocks_t *mem_block, void *ptr)
 }
 
 #ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
-static uintptr_t listener_heap_id[NUM_BLOCKS];
-static void *listener_mem[NUM_BLOCKS];
-static size_t listener_size[NUM_BLOCKS];
+#define HEAP_LISTENER_LOG_SIZE 64
+
+static uintptr_t listener_heap_id[HEAP_LISTENER_LOG_SIZE];
+static void *listener_mem[HEAP_LISTENER_LOG_SIZE];
+static size_t listener_size[HEAP_LISTENER_LOG_SIZE];
 static uint8_t listener_idx;
 
 static void mem_block_alloc_free_cb(uintptr_t heap_id, void *mem, size_t bytes)
