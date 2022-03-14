@@ -101,6 +101,7 @@
 /boards/arm/bl65*/                        @lairdjm
 /boards/arm/blackpill_f401ce/             @coderkalyan
 /boards/arm/blackpill_f411ce/             @coderkalyan
+/boards/arm/bt*10/                        @greg-leach
 /boards/arm/cc1352r1_launchxl/            @bwitherspoon
 /boards/arm/cc26x2r1_launchxl/            @bwitherspoon
 /boards/arm/cc3220sf_launchxl/            @vanti
