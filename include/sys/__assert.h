@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_SYS___ASSERT_H_
 
 #include <stdbool.h>
-#include <sys/printk.h>
+#include <toolchain.h>
 
 #ifdef CONFIG_ASSERT
 #ifndef __ASSERT_ON
@@ -21,8 +21,19 @@
 #define __ASSERT_ON 0
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Wrapper around printk to avoid including printk.h in assert.h */
+void assert_print(const char *fmt, ...);
+
+#ifdef __cplusplus
+}
+#endif
+
 #if defined(CONFIG_ASSERT_VERBOSE)
-#define __ASSERT_PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#define __ASSERT_PRINT(fmt, ...) assert_print(fmt, ##__VA_ARGS__)
 #else /* CONFIG_ASSERT_VERBOSE */
 #define __ASSERT_PRINT(fmt, ...)
 #endif /* CONFIG_ASSERT_VERBOSE */
@@ -63,8 +74,6 @@
 #endif
 
 #if __ASSERT_ON
-
-#include <sys/printk.h>
 
 #ifdef __cplusplus
 extern "C" {
