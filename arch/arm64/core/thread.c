@@ -70,6 +70,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
+	extern void z_arm64_exit_exc(void);
 	z_arch_esf_t *pInitCtx;
 
 	/*
@@ -118,6 +119,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * z_arm64_userspace_enter() (see comments there)
 	 */
 	thread->callee_saved.sp_elx = (uint64_t)pInitCtx;
+	thread->callee_saved.lr = (uint64_t)z_arm64_exit_exc;
 
 	thread->switch_handle = thread;
 }

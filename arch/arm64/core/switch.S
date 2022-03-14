@@ -24,7 +24,9 @@ _ASM_FILE_PROLOGUE
  * Routine to handle context switches
  *
  * This function is directly called either by _isr_wrapper() in case of
- * preemption, or z_arm64_sync_exc() in case of cooperative switching.
+ * preemption, or arch_switch() in case of cooperative switching.
+ *
+ * void z_arm64_context_switch(struct k_thread *new, struct k_thread *old);
  */
 
 GTEXT(z_arm64_context_switch)
@@ -40,9 +42,9 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	stp	x27, x28, [x1, #_thread_offset_to_callee_saved_x27_x28]
 	stp	x29, x4,  [x1, #_thread_offset_to_callee_saved_x29_sp_el0]
 
-	/* Save the current SP_ELx */
+	/* Save the current SP_ELx and return address */
 	mov	x4, sp
-	str	x4, [x1, #_thread_offset_to_callee_saved_sp_elx]
+	stp	x4, lr, [x1, #_thread_offset_to_callee_saved_sp_elx_lr]
 
 	/* save current thread's exception depth */
 	mrs	x4, tpidrro_el0
@@ -54,6 +56,17 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	bic	x4, x4, #TPIDRROEL0_EXC_DEPTH
 	orr	x4, x4, x2, lsl #TPIDRROEL0_EXC_SHIFT
 	msr	tpidrro_el0, x4
+
+#ifdef CONFIG_FPU_SHARING
+	/*
+	 * Do this after tpidrro_el0 is updated with the new exception
+	 * depth value, and before old->switch_handle is updated (making
+	 * it available for grab by another CPU) as we still use its stack.
+	 */
+	stp	x0, x1, [sp, #-16]!
+	bl	z_arm64_fpu_thread_context_switch
+	ldp	x0, x1, [sp], #16
+#endif
 
 #ifdef CONFIG_SMP
 	/* save old thread into switch handle which is required by
@@ -83,8 +96,8 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	/* Restore SP_EL0 */
 	msr	sp_el0, x4
 
-	/* Restore SP_EL1 */
-	ldr	x4, [x0, #_thread_offset_to_callee_saved_sp_elx]
+	/* Restore SP_EL1 and return address */
+	ldp	x4, lr, [x0, #_thread_offset_to_callee_saved_sp_elx_lr]
 	mov	sp, x4
 
 #ifdef CONFIG_USERSPACE
@@ -99,7 +112,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	xzr, x30, [sp], #16
 #endif
 
-	/* Return to z_arm64_sync_exc() or _isr_wrapper() */
+	/* Return to arch_switch() or _isr_wrapper() */
 	ret
 
 /*
@@ -130,9 +143,6 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 
 	/* Demux the SVC call */
 	and	x1, x0, #0xff
-
-	cmp	x1, #_SVC_CALL_CONTEXT_SWITCH
-	beq	context_switch
 
 	cmp	x1, #_SVC_CALL_RUNTIME_EXCEPT
 	beq	oops
@@ -179,22 +189,6 @@ oops:
 	mov	x0, sp
 	b	z_arm64_do_kernel_oops
 
-context_switch:
-	/*
-	 * Retrieve x0 and x1 from the stack:
-	 *
-	 *  - x0 = new_thread->switch_handle = switch_to thread
-	 *  - x1 = &old_thread->switch_handle = current thread
-	 */
-	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
-
-	/* Get old thread from x1 */
-	sub	x1, x1, ___thread_t_switch_handle_OFFSET
-
-	/* Switch thread */
-	bl	z_arm64_context_switch
-	b	z_arm64_exit_exc
-
 inv:
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
 	mov	x1, sp
@@ -202,8 +196,3 @@ inv:
 
 	/* Return here only in case of recoverable error */
 	b	z_arm64_exit_exc
-
-GTEXT(z_arm64_call_svc)
-SECTION_FUNC(TEXT, z_arm64_call_svc)
-	svc	#_SVC_CALL_CONTEXT_SWITCH
-	ret
