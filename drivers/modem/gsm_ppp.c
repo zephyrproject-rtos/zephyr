@@ -34,8 +34,6 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
  * otherwise the gsm_ppp_stop might fail to lock tx.
  */
 #define GSM_CMD_LOCK_TIMEOUT            K_SECONDS(10)
-#define GSM_RX_STACK_SIZE               CONFIG_MODEM_GSM_RX_STACK_SIZE
-#define GSM_WORKQ_STACK_SIZE            CONFIG_MODEM_GSM_WORKQ_STACK_SIZE
 #define GSM_RECV_MAX_BUF                30
 #define GSM_RECV_BUF_SIZE               128
 #define GSM_ATTACH_RETRY_DELAY_MSEC     1000
@@ -120,8 +118,8 @@ static struct gsm_modem {
 } gsm;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE, 0, NULL);
-K_KERNEL_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
-K_KERNEL_STACK_DEFINE(gsm_workq_stack, GSM_WORKQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(gsm_rx_stack, CONFIG_MODEM_GSM_RX_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(gsm_workq_stack, CONFIG_MODEM_GSM_WORKQ_STACK_SIZE);
 
 static inline int gsm_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
