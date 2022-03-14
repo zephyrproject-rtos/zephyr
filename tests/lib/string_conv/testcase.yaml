@@ -1,0 +1,12 @@
+tests:
+  libraries.string_conv:
+    tags: string to numeric conversion
+    integration_platforms:
+      - native_posix
+  libraries.string_conv_double:
+    tags: string to double numeric conversion
+    integration_platforms:
+      - native_posix
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
