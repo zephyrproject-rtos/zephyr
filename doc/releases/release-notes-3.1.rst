@@ -26,6 +26,16 @@ Changes in this release
 Removed APIs in this release
 ============================
 
+* STM32F1 Serial wire JTAG configuration (SWJ CFG) configuration choice
+  was moved from Kconfig to :ref:`devicetree <dt-guide>`.
+  See the :dtcompatible:`st,stm32f1-pinctrl` devicetree binding for more information.
+  As a consequence, the following Kconfig symbols were removed:
+
+  * ``CONFIG_GPIO_STM32_SWJ_ENABLE``
+  * ``CONFIG_GPIO_STM32_SWJ_NONJTRST``
+  * ``CONFIG_GPIO_STM32_SWJ_NOJTAG``
+  * ``CONFIG_GPIO_STM32_SWJ_DISABLE``
+
 Deprecated in this release
 ==========================
 
