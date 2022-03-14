@@ -71,13 +71,95 @@ int can_gd32_filter_getmaxsize(const struct can_gd32_filter *filter, enum can_id
 	}
 }
 
+static int can_gd32_filter_getemptyunit(bool is_main_controller, enum can_fifo fifo,
+					enum can_filter_type type)
+{
+	__ASSERT(fifo == CAN_FIFO_0, "FIFO1 Not SUPPORT at this time")
+
+	ARG_UNUSED(type);
+
+	static int filter_main_id = 0;
+	static int filter_secondary_id = 0;
+
+	//todo: check unit and split location
+
+	return is_main_controller ? filter_main_id++ : filter_secondary_id++;
+}
+
+static int can_gd32_filter_add_mask32(const struct can_gd32_filter *filter, bool is_main_controller,
+				      enum can_fifo fifo, can_rx_callback_t cb, void *cb_arg,
+				      const struct zcan_filter *zfilter)
+{
+	__ASSERT(0, "todo");
+	return -EINVAL;
+}
+
+static int can_gd32_filter_add_mask16(const struct can_gd32_filter *filter, bool is_main_controller,
+				      enum can_fifo fifo, can_rx_callback_t cb, void *cb_arg,
+				      const struct zcan_filter *zfilter)
+{
+	__ASSERT(0, "todo");
+	return -EINVAL;
+}
+
+static int can_gd32_filter_add_list32(const struct can_gd32_filter *filter, bool is_main_controller,
+				      enum can_fifo fifo, can_rx_callback_t cb, void *cb_arg,
+				      const struct zcan_filter *zfilter)
+{
+	int filter_unit =
+		can_gd32_filter_getemptyunit(is_main_controller, fifo, CAN_FILTER_32BIT_LIST);
+	if (filter_unit == -ENOSPC) {
+		return ENOSPC;
+	}
+
+	__ASSERT(0, "todo");
+	return -EINVAL;
+}
+
+static int can_gd32_filter_add_list16(const struct can_gd32_filter *filter, bool is_main_controller,
+				      enum can_fifo fifo, can_rx_callback_t cb, void *cb_arg,
+				      const struct zcan_filter *zfilter)
+{
+	int filter_unit =
+		can_gd32_filter_getemptyunit(is_main_controller, fifo, CAN_FILTER_16BIT_LIST);
+	if (filter_unit == -ENOSPC) {
+		// if filter full and no list mode filter empty check 16 bit mask mode
+		return can_gd32_filter_add_mask16(filter, is_main_controller, fifo, cb, cb_arg,
+						  zfilter);
+	}
+
+	__ASSERT(0, "todo");
+	return -EINVAL;
+}
+
 int can_gd32_filter_add(const struct can_gd32_filter *filter, bool is_main_controller,
 			enum can_fifo fifo, can_rx_callback_t cb, void *cb_arg,
 			const struct zcan_filter *zfilter)
 {
+	int ret = -EINVAL;
 	CAN_GD32_FILTER_LOCK();
 	/* todo */
-	__ASSERT(0, "todo");
+
+	if (zfilter->id_type == CAN_STANDARD_IDENTIFIER && zfilter->id_mask == CAN_STD_ID_MASK) {
+		// 16 bit list mode or 16 bit mask mode if filter full and no list mode filter empty
+		can_gd32_filter_add_list16(filter, is_main_controller, fifo, cb, cb_arg, zfilter);
+	} else if (zfilter->id_type == CAN_EXTENDED_IDENTIFIER &&
+		   zfilter->id_mask == CAN_EXT_ID_MASK) {
+		// 32 bit list mode
+		can_gd32_filter_add_list32(filter, is_main_controller, fifo, cb, cb_arg, zfilter);
+	} else if (zfilter->id_type == CAN_STANDARD_IDENTIFIER) {
+		// 16 bit mask mode
+		can_gd32_filter_add_mask16(filter, is_main_controller, fifo, cb, cb_arg, zfilter);
+	} else if (zfilter->id_type == CAN_EXTENDED_IDENTIFIER &&
+		   (0x7FFF & zfilter->id_mask) == 0) {
+		// 16 bit list mode or 16 bit mask mode if filter full and no list mode filter empty
+		can_gd32_filter_add_list16(filter, is_main_controller, fifo, cb, cb_arg, zfilter);
+	} else if (zfilter->id_type == CAN_EXTENDED_IDENTIFIER) {
+		// 32 bit mask mode
+		can_gd32_filter_add_mask32(filter, is_main_controller, fifo, cb, cb_arg, zfilter);
+	} else {
+		__ASSERT(0, "filter mode select failed.");
+	}
 
 	CAN_GD32_FILTER_UNLOCK();
 	return 0;

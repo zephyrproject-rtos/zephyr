@@ -16,11 +16,21 @@ enum can_filter_status {
 	CAN_FILTER_EMPTY,
 	CAN_FILTER_16BIT_1,
 	CAN_FILTER_16BIT_2,
-	CAN_FILTER_32BIT
+	CAN_FILTER_16BIT_3,
+	CAN_FILTER_16BIT_4,
+	CAN_FILTER_32BIT,
+};
+
+enum can_filter_type {
+	CAN_FILTER_16BIT_LIST,
+	CAN_FILTER_16BIT_MASK,
+	CAN_FILTER_32BIT_LIST,
+	CAN_FILTER_32BIT_MASK,
 };
 
 struct can_gd32_filter_unit {
 	enum can_filter_status status;
+	enum can_filter_type type;
 
 	can_rx_callback_t callback;
 	void *callback_arg;
