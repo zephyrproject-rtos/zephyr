@@ -90,6 +90,66 @@
 			nxp,tx-dma-channel = <7>;
 			nxp,rx-dma-channel = <8>;
 		};
+
+		lpuart1: uart@4007c000 {
+			dmas = <&edma0 1 8>, <&edma0 2 9>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart2: uart@40080000 {
+			dmas = <&edma0 3 10>, <&edma0 4 11>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart3: uart@40084000 {
+			dmas = <&edma0 5 12>, <&edma0 6 13>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart4: uart@40088000 {
+			dmas = <&edma0 7 14>, <&edma0 8 15>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart5: uart@4008c000 {
+			dmas = <&edma0 9 16>, <&edma0 10 17>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart6: uart@40090000 {
+			dmas = <&edma0 11 18>, <&edma0 12 19>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart7: uart@40094000 {
+			dmas = <&edma0 13 20>, <&edma0 14 21>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart8: uart@40098000 {
+			dmas = <&edma0 15 22>, <&edma0 16 23>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart9: uart@4009c000 {
+			dmas = <&edma0 17 24>, <&edma0 18 25>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart10: uart@400a0000 {
+			dmas = <&edma0 19 26>, <&edma0 20 27>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart11: uart@40c24000 {
+			dmas = <&edma0 21 28>, <&edma0 22 29>;
+			dma-names = "tx", "rx";
+		};
+
+		lpuart12: uart@40098000 {
+			dmas = <&edma0 23 30>, <&edma0 24 31>;
+			dma-names = "tx", "rx";
+		};
 	};
 };
 

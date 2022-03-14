@@ -389,7 +389,7 @@
 			reg = <0x400ac000 0x88>;
 			interrupts = <65 3>;
 			label = "SPI_2";
-			dmas = <&edma0 0 17>, <&edma0 0 17>;
+			dmas = <&edma0 0 38>, <&edma0 0 39>;
 			dma-names = "rx", "tx";
 			rx-fifo-size = <1>;
 			tx-fifo-size = <1>;
