@@ -326,19 +326,21 @@ do_irq_offload:
 	lr a1, __z_arch_esf_t_a0_OFFSET(sp)
 	lr a0, __z_arch_esf_t_a1_OFFSET(sp)
 
-	/* Set _kernel.cpus[0].nested variable to 1 */
-	la t1, _kernel
-	li t0, 1
-	sw t0, _kernel_offset_to_nested(t1)
+	/* Increment _kernel.cpus[0].nested variable */
+	la t2, _kernel
+	lw t3, _kernel_offset_to_nested(t2)
+	addi t4, t3, 1
+	sw t4, _kernel_offset_to_nested(t2)
+	bnez t3, 1f
 
 	/* Switch to interrupt stack */
 	mv t0, sp
-	lr sp, _kernel_offset_to_irq_stack(t1)
+	lr sp, _kernel_offset_to_irq_stack(t2)
 
-	/* Save original sp on the interrupt stack */
+	/* Save thread stack pointer on interrupt stack */
 	addi sp, sp, -16
 	sr t0, 0(sp)
-
+1:
 	/* Execute provided routine (argument is in a0 already). */
 	jalr ra, a1, 0
 
