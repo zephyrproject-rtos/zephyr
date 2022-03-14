@@ -376,8 +376,16 @@ class LogParserV1(LogParser):
         # Extra data after packaged log
         extra_data = logdata[(offset + pkg_len):next_msg_offset]
 
-        # Number of packaged strings
+        # Number of appended strings in package
         num_packed_strings = struct.unpack_from("B", logdata, offset+1)[0]
+
+        # Number of read-only string indexes
+        num_ro_str_indexes = struct.unpack_from("B", logdata, offset+2)[0]
+        offset_end_of_args += num_ro_str_indexes
+
+        # Number of read-write string indexes
+        num_rw_str_indexes = struct.unpack_from("B", logdata, offset+3)[0]
+        offset_end_of_args += num_rw_str_indexes
 
         # Extract the string table in the packaged log message
         string_tbl = self.extract_string_table(logdata[offset_end_of_args:(offset + pkg_len)])
