@@ -67,6 +67,32 @@ build directory; ``west build`` can figure out the board from the CMake cache.
 For new builds, the ``--board`` option, :envvar:`BOARD` environment variable,
 or ``build.board`` configuration option are checked (in that order).
 
+.. _west-multi-domain-builds:
+
+Sysbuild (multi-domain builds)
+==============================
+
+:ref:`sysbuild` can be used to create a multi-domain build system combining
+multiple images for a single or multiple boards.
+
+Use ``--sysbuild`` to select the :ref:`sysbuild` build infrastructure with
+``west build`` to build multiple domains.
+
+More detailed information regarding the use of sysbuild can be found in the
+:ref:`sysbuild` guide.
+
+.. tip::
+
+   The ``build.sysbuild`` configuration option can be enabled to tell
+   ``west build`` to default build using sysbuild.
+   ``--no-sysbuild`` can be used to disable sysbuild for a specific build.
+
+``west build`` will build all domains through the top-level build folder of the
+domains specified by sysbuild.
+
+A single domain from a multi-domain project can be built by using ``--domain``
+argument.
+
 Examples
 ========
 
@@ -311,6 +337,19 @@ For example, to build with 4 cores::
 
 The ``-o`` option is described further in the previous section.
 
+Build a single domain
+---------------------
+
+In a multi-domain build with :ref:`hello_world` and `MCUboot`_, you can use
+``--domain hello_world`` to only build this domain::
+
+  west build --sysbuild --domain hello_world
+
+The ``--domain`` argument can be combined with the ``--target`` argument to
+build the specific target for the target, for example::
+
+  west build --sysbuild --domain hello_world --target help
+
 .. _west-building-config:
 
 Configuration Options
@@ -374,6 +413,9 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
            directory).
          - ``always``: Always make the build folder pristine before building, if
            a build system is present.
+   * - ``build.sysbuild``
+     - Boolean, default ``false``. If ``true``, build application using the
+       sysbuild infrastructure.
 
 .. _west-flashing:
 
@@ -476,6 +518,23 @@ For example, to print usage information about the ``jlink`` runner::
 
   west flash -H -r jlink
 
+.. _west-multi-domain-flashing:
+
+Multi-domain flashing
+=====================
+
+When a :ref:`west-multi-domain-builds` folder is detected, then ``west flash``
+will flash all domains in the order defined by sysbuild.
+
+It is possible to flash the image from a single domain in a multi-domain project
+by using ``--domain``.
+
+For example, in a multi-domain build with :ref:`hello_world` and
+`MCUboot`_, you can use the ``--domain hello_world`` domain to only flash
+only the image from this domain::
+
+  west flash --domain hello_world
+
 .. _west-debugging:
 
 Debugging: ``west debug``, ``west debugserver``
@@ -576,6 +635,38 @@ For example, to print usage information about the ``jlink`` runner::
 
   west debug -H -r jlink
 
+.. _west-multi-domain-debugging:
+
+Multi-domain debugging
+======================
+
+``west debug`` can only debug a single domain at a time. When a
+:ref:`west-multi-domain-builds` folder is detected, ``west debug``
+will debug the ``default`` domain specified by sysbuild.
+
+The default domain will be the application given as the source directory.
+See the following example::
+
+  west build --sysbuild path/to/source/directory
+
+For example, when building ``hello_world`` with `MCUboot`_ using sysbuild,
+``hello_world`` becomes the default domain::
+
+  west build --sysbuild samples/hello_world
+
+So to debug ``hello_world`` you can do::
+
+  west debug
+
+or::
+
+  west debug --domain hello_world
+
+If you wish to debug MCUboot, you must explicitly specify MCUboot as the domain
+to debug::
+
+  west debug --domain mcuboot
+
 .. _west-runner:
 
 Flash and debug runners
@@ -648,3 +739,5 @@ commands do it).
 
 .. _CMake Generator:
    https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html
+
+.. _MCUboot: https://mcuboot.com/
