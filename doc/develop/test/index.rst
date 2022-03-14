@@ -9,3 +9,4 @@ Testing
    ztest
    twister
    coverage
+   sparse

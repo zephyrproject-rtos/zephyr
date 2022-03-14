@@ -267,6 +267,10 @@ if(CONFIG_COMPILER_COLOR_DIAGNOSTICS)
 zephyr_compile_options($<TARGET_PROPERTY:compiler,diagnostic>)
 endif()
 
+if("${SPARSE}" STREQUAL "y")
+  list(APPEND TOOLCHAIN_C_FLAGS -D__CHECKER__)
+endif()
+
 zephyr_compile_options(
   ${TOOLCHAIN_C_FLAGS}
 )
