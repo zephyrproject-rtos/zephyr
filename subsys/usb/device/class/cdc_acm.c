@@ -243,6 +243,8 @@ static void tx_work_handler(struct k_work *work)
 		return;
 	}
 
+	dev_data->tx_ready = false;
+
 	/*
 	 * Transfer less data to avoid zero-length packet. The application
 	 * running on the host may conclude that there is no more data to be
