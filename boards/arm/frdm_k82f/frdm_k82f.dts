@@ -188,6 +188,11 @@
 	current-speed = <115200>;
 };
 
+&lpuart0 {
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+};
+
 &ftm3 {
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";

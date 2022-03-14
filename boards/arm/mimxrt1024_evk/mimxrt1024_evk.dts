@@ -104,6 +104,12 @@
 	pinctrl-names = "default", "sleep";
 };
 
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &flexcan1 {
 	status = "okay";
 	bus-speed = <125000>;
