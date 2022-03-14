@@ -34,9 +34,13 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 
 static inline void arch_switch(void *switch_to, void **switched_from)
 {
-	z_arm64_call_svc(switch_to, switched_from);
+	extern void z_arm64_context_switch(struct k_thread *new,
+					   struct k_thread *old);
+	struct k_thread *new = switch_to;
+	struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
+					    switch_handle);
 
-	return;
+	z_arm64_context_switch(new, old);
 }
 
 extern void z_arm64_fatal_error(z_arch_esf_t *esf, unsigned int reason);
