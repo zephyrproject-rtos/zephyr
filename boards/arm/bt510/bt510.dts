@@ -37,7 +37,7 @@
 	buttons {
 		compatible = "gpio-keys";
 		button1: button_1 {
-			gpios = <&gpio1 10 GPIO_PULL_UP>;
+			gpios = <&gpio1 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1 (SW1)";
 		};
 	};
@@ -45,15 +45,15 @@
 	ids {
 		compatible = "gpio-keys";
 		id0: id_0 {
-			gpios = <&gpio1 2 GPIO_PULL_UP>;
+			gpios = <&gpio1 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "ID 0";
 		};
 		id1: id_1 {
-			gpios = <&gpio1 1 GPIO_PULL_UP>;
+			gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "ID 1";
 		};
 		id2: id_2 {
-			gpios = <&gpio0 25 GPIO_PULL_UP>;
+			gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "ID 2";
 		};
 	};
@@ -61,7 +61,7 @@
 	tm {
 		compatible = "gpio-keys";
 		tm0: tm_0 {
-			gpios = <&gpio0 3 GPIO_PULL_UP>;
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Test mode (TM)";
 		};
 	};
