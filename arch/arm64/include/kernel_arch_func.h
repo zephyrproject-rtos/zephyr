@@ -44,7 +44,6 @@ static inline void arch_switch(void *switch_to, void **switched_from)
 }
 
 extern void z_arm64_fatal_error(z_arch_esf_t *esf, unsigned int reason);
-extern void z_arm64_userspace_enter(z_arch_esf_t *esf, uintptr_t sp_el0);
 extern void z_arm64_set_ttbr0(uintptr_t ttbr0);
 extern void z_arm64_mem_cfg_ipi(void);
 
