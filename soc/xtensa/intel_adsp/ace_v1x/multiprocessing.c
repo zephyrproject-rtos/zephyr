@@ -9,6 +9,7 @@
 #include <ace_v1x-regs.h>
 #include <ace-ipc-regs.h>
 #include <cavs-mem.h>
+#include <sys/check.h>
 
 #define CORE_POWER_CHECK_NUM 32
 #define CORE_POWER_CHECK_DELAY 256
@@ -86,4 +87,34 @@ void arch_sched_ipi(void)
 			MTL_P2P_IPC[core].agents[1].ipc.idr = CAVS_IPC_BUSY;
 		}
 	}
+}
+
+int soc_adsp_halt_cpu(int id)
+{
+	int retry = CORE_POWER_CHECK_NUM;
+
+	CHECKIF(arch_proc_id() != 0) {
+		return -EINVAL;
+	}
+
+	CHECKIF(id <= 0 || id >= CONFIG_MP_NUM_CPUS) {
+		return -EINVAL;
+	}
+
+	CHECKIF(soc_cpus_active[id]) {
+		return -EINVAL;
+	}
+
+	MTL_PWRBOOT.capctl[id].ctl &= ~MTL_PWRBOOT_CTL_SPA;
+
+	/* Waiting for power off */
+	while (MTL_PWRBOOT.capctl[id].ctl & MTL_PWRBOOT_CTL_CPA && --retry)
+		k_busy_wait(CORE_POWER_CHECK_DELAY);
+
+	if (!retry) {
+		__ASSERT(false, "%s secondary core has not powered down", __func__);
+		return -EINVAL;
+	}
+
+	return 0;
 }
