@@ -2,7 +2,7 @@
 
 Digi CC8MNANO DVK
 ##################
-Digi ConnectCore® 8M Nano specifications			
+Digi ConnectCore® 8M Nano specifications
 
 Processor:
 			NXP® i.MX8 Nano, 4x Cortex®-A53 cores @ 1.4 GHz, 1x Cortex-M7 core
@@ -33,6 +33,6 @@ Bluetooth:
 
 Microcontroller Assist:
 			Digi Microcontroller Assist™, Independent Cortex-M0+ microcontroller subsystem
-			
+
 SoM dimensions:
 			118 castellated vias, LGA-474, 1.27 mm pitch, 40 mm x 45 mm x 3.5 mm

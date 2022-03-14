@@ -98,11 +98,11 @@
 			#gpio-cells = <2>;
 			status = "disabled";
 		};
-		
+
 		/*
-		* For now only GPIO and UART are support. MUB and GPT are added
-		* as reference only.
-		*/
+		 * For now only GPIO and UART are support. MUB and GPT are added
+		 * as reference only.
+		 */
 		mub: mu@30ab0000 {
 			compatible = "nxp,imx-mcux-mu";
 			reg = <0x30ab0000 DT_SIZE_K(64)>;

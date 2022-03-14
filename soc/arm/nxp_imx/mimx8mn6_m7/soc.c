@@ -34,7 +34,7 @@ static void SOC_RdcInit(void)
 	CLOCK_EnableClock(kCLOCK_Ipmux2);
 	CLOCK_EnableClock(kCLOCK_Ipmux3);
 	CLOCK_EnableClock(kCLOCK_Ipmux4);
-	
+
 	/* Needed for static partioning of resource between M7 and A53 cores */
 	rdc_periph_access_config_t periphConfig;
 
@@ -203,7 +203,7 @@ void SoC_InitMemory(void)
 	 #define GPV5_BASE_ADDR      (0x32500000)
 	 #define FORCE_INCR_BIT_MASK (0x2)
 	 #define FORCE_INCR_OFFSET   (0x4044)
-	 
+
 	*(uint32_t *)(GPV5_BASE_ADDR + FORCE_INCR_OFFSET) = *(uint32_t *)(GPV5_BASE_ADDR + FORCE_INCR_OFFSET) | FORCE_INCR_BIT_MASK;
 }
 

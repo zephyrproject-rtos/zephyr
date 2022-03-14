@@ -40,7 +40,7 @@
 			label = "User SW2";
 		};
 	};
-			
+
 };
 
 &uart4 {
