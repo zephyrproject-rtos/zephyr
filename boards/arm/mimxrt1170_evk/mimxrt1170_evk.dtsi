@@ -65,6 +65,12 @@
 	current-speed = <115200>;
 };
 
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &user_button {
 	status = "okay";
 };
