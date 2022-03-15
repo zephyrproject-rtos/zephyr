@@ -9,7 +9,7 @@
 #include <limits.h>
 #include <errno.h>
 /* required for struct timespec */
-#include <posix/time.h>
+#include <time.h>
 #include <sys/util.h>
 #include <sys_clock.h>
 

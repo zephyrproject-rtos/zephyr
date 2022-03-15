@@ -658,7 +658,7 @@ int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 		      char *host, socklen_t hostlen,
 		      char *serv, socklen_t servlen, int flags);
 
-#if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
+#if (defined(CONFIG_NET_SOCKETS_POSIX_NAMES) || defined(CONFIG_POSIX_API)) && !defined(CONFIG_ARCH_POSIX)
 
 #define pollfd zsock_pollfd
 
@@ -846,7 +846,7 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define EAI_SERVICE DNS_EAI_SERVICE
 #define EAI_SOCKTYPE DNS_EAI_SOCKTYPE
 #define EAI_FAMILY DNS_EAI_FAMILY
-#endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
+#endif /* (defined(CONFIG_NET_SOCKETS_POSIX_NAMES) || defined(CONFIG_POSIX_API)) && !defined(CONFIG_ARCH_POSIX) */
 
 #define IFNAMSIZ Z_DEVICE_MAX_NAME_LEN
 

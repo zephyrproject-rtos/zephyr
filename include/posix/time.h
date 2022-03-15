@@ -59,7 +59,8 @@ struct itimerspec {
 #include <kernel.h>
 #include <errno.h>
 #include "posix_types.h"
-#include <posix/signal.h>
+#include <signal.h>
+#include "sys_clock.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,8 +73,6 @@ extern "C" {
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 4
 #endif
-
-#define NSEC_PER_MSEC (NSEC_PER_USEC * USEC_PER_MSEC)
 
 #ifndef TIMER_ABSTIME
 #define TIMER_ABSTIME 4

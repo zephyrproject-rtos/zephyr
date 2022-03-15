@@ -11,9 +11,9 @@
 #ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 #include <net/socket.h>
 #else
-#include <posix/sys/socket.h>
-#include <posix/unistd.h>
-#include <posix/poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <poll.h>
 #endif
 
 #ifdef __cplusplus

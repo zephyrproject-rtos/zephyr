@@ -8,9 +8,9 @@
 	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
 
 #include <net/socket.h>
-#include <posix/pthread.h>
+#include <pthread.h>
 #include <sys/util.h>
-#include <posix/unistd.h>
+#include <unistd.h>
 
 #else
 

@@ -9,7 +9,7 @@ LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
 #include <errno.h>
 #include <net/sntp.h>
-#include <posix/time.h>
+#include <time.h>
 
 int net_init_clock_via_sntp(void)
 {

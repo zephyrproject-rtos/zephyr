@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <posix/pthread.h>
+#include <pthread.h>
 #include <data/json.h>
 
 #include "civetweb.h"

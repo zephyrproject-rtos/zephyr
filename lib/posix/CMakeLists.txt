@@ -3,12 +3,14 @@
 
 zephyr_interface_library_named(posix_subsys)
 
-if(CONFIG_POSIX_API)
-  target_include_directories(posix_subsys INTERFACE ${ZEPHYR_BASE}/include/posix)
+if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_CLOCK
+    OR CONFIG_POSIX_MQUEUE OR CONFIG_POSIX_FS OR CONFIG_EVENTFD
+    OR CONFIG_GETOPT OR CONFIG_NET_SOCKETS_POSIX_NAMES)
+  zephyr_include_directories(${ZEPHYR_BASE}/include/posix)
 endif()
 
 zephyr_library()
-zephyr_library_sources(pthread_common.c)
+zephyr_library_sources(pthread_common.c nanosleep.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_cond.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_mutex.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC pthread_barrier.c)
@@ -24,10 +26,6 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
 add_subdirectory_ifdef(CONFIG_GETOPT getopt)
-
-if(NOT (CONFIG_BOARD_NATIVE_POSIX OR CONFIG_BOARD_NATIVE_POSIX_64BIT))
-zephyr_library_sources(nanosleep.c)
-endif()
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include

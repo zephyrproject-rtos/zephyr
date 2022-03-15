@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <posix/unistd.h>
+#include <unistd.h>
 
 /**
  * @brief Sleep for a specified number of seconds.

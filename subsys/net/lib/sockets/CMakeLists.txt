@@ -32,6 +32,8 @@ if(CONFIG_SOCKS)
   zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/lib/socks)
 endif()
 
+if(NOT CONFIG_ARCH_POSIX)
 zephyr_sources_ifdef(CONFIG_NET_SOCKETPAIR socketpair.c)
+endif()
 
 zephyr_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

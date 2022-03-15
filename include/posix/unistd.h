@@ -34,13 +34,6 @@ extern int unlink(const char *path);
 extern int stat(const char *path, struct stat *buf);
 extern int mkdir(const char *path, mode_t mode);
 
-#ifdef CONFIG_NETWORKING
-static inline int gethostname(char *buf, size_t len)
-{
-	return zsock_gethostname(buf, len);
-}
-#endif /* CONFIG_NETWORKING */
-
 #endif /* CONFIG_POSIX_API */
 
 unsigned sleep(unsigned int seconds);

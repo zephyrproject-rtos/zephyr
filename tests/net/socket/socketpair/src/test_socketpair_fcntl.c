@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <string.h>
 #include <net/socket.h>
 #include <sys/util.h>
-#include <posix/unistd.h>
+#include <unistd.h>
 
 #include <ztest_assert.h>
 

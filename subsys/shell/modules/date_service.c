@@ -8,7 +8,7 @@
 #include <shell/shell.h>
 #include <init.h>
 #include <string.h>
-#include <posix/time.h>
+#include <time.h>
 #include <sys/timeutil.h>
 
 #define HELP_NONE      "[none]"

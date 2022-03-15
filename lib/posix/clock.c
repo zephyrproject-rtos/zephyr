@@ -5,8 +5,8 @@
  */
 #include <kernel.h>
 #include <errno.h>
-#include <posix/time.h>
-#include <posix/sys/time.h>
+#include <time.h>
+#include <sys/time.h>
 #include <syscall_handler.h>
 #include <spinlock.h>
 

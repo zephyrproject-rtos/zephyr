@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
-#include <posix/pthread.h>
+#include <pthread.h>
 
 #include "civetweb.h"
 
