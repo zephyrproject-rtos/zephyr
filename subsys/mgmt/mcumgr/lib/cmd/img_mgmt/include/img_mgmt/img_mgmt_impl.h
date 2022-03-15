@@ -131,7 +131,7 @@ int img_mgmt_impl_erase_if_needed(uint32_t off, uint32_t len);
  * @return 0 if processing should occur;A MGMT_ERR code if an error response should be sent instead.
  */
 int img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
-				 struct img_mgmt_upload_action *action, const char **errstr);
+				 struct img_mgmt_upload_action *action);
 
 #define ERASED_VAL_32(x) (((x) << 24) | ((x) << 16) | ((x) << 8) | (x))
 int img_mgmt_impl_erased_val(int slot, uint8_t *erased_val);
