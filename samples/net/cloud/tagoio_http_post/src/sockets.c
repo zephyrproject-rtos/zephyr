@@ -7,6 +7,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(tagoio_http_post, CONFIG_TAGOIO_HTTP_POST_LOG_LEVEL);
 
+#include <unistd.h>
 #include <net/net_ip.h>
 #include <net/socket.h>
 #include <net/socketutils.h>

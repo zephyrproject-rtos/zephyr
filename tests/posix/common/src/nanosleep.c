@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <errno.h>
-#include <posix/time.h>
+#include <time.h>
 #include <stdint.h>
 #include <sys_clock.h>
 

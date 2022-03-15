@@ -29,7 +29,7 @@ manifest:
       revision: 53d3415c14d60f8f4bfca54bfbc5d5a667d7e724
       path: modules/lib/canopennode
     - name: civetweb
-      revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
+      revision: pull/10/head
       path: modules/lib/civetweb
     - name: cmsis
       revision: ed63b704bbfaceb71220557b658304c5ea3d5b88
@@ -134,12 +134,12 @@ manifest:
       groups:
         - hal
     - name: hal_telink
-      revision: ffcfd6282aa213f1dc0848dbca6279b098f6b143
+      revision: c75d096e3dcf7a98fdd876b07108bb3adc3c4819
       path: modules/hal/telink
       groups:
         - hal
     - name: hal_ti
-      revision: 2a5891d874cae92fcac04f9822957ac0785fe835
+      revision: pull/32/head
       path: modules/hal/ti
       groups:
         - hal

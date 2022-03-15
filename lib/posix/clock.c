@@ -5,9 +5,10 @@
  */
 #include <kernel.h>
 #include <errno.h>
-#include <posix/time.h>
-#include <posix/sys/time.h>
+#include <time.h>
+#include <sys/time.h>
 #include <syscall_handler.h>
+#include <posix/time_calls.h>
 #include <spinlock.h>
 
 /*
@@ -25,7 +26,7 @@ static struct k_spinlock rt_clock_base_lock;
  *
  * See IEEE 1003.1
  */
-int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
+int z_impl_zephyr_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
 	struct timespec base;
 	k_spinlock_key_t key;
@@ -66,13 +67,18 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_clock_gettime(clockid_t clock_id, struct timespec *ts)
+static int z_vrfy_zephyr_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ts, sizeof(*ts)));
-	return z_impl_clock_gettime(clock_id, ts);
+	return z_impl_zephyr_clock_gettime(clock_id, ts);
 }
-#include <syscalls/clock_gettime_mrsh.c>
+#include <syscalls/zephyr_clock_gettime_mrsh.c>
 #endif
+
+int clock_gettime(clockid_t clock_id, struct timespec *ts)
+{
+	return zephyr_clock_gettime(clock_id, ts);
+}
 
 /**
  * @brief Set the time of the specified clock.

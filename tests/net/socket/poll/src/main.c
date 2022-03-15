@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
+#include <unistd.h>
 #include <ztest_assert.h>
 
 #include <net/socket.h>

@@ -7,6 +7,7 @@
 #include <zephyr.h>
 #include <device.h>
 
+#include <unistd.h>
 #include <net/socket.h>
 
 #include <drivers/video.h>

@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <ztest_assert.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <net/socket.h>
 #include <net/tls_credentials.h>
 

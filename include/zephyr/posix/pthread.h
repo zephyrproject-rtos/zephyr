@@ -9,13 +9,14 @@
 
 #include <kernel.h>
 #include <wait_q.h>
-#include <posix/time.h>
-#include <posix/unistd.h>
+#include <time.h>
+#include <unistd.h>
 #include "posix_types.h"
-#include "posix_sched.h"
-#include <posix/pthread_key.h>
+#include "pthread_key.h"
+#include <sched.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {

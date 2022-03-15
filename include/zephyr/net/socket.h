@@ -658,196 +658,6 @@ int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 		      char *host, socklen_t hostlen,
 		      char *serv, socklen_t servlen, int flags);
 
-#if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
-
-#define pollfd zsock_pollfd
-
-static inline int socket(int family, int type, int proto)
-{
-	return zsock_socket(family, type, proto);
-}
-
-static inline int socketpair(int family, int type, int proto, int sv[2])
-{
-	return zsock_socketpair(family, type, proto, sv);
-}
-
-static inline int close(int sock)
-{
-	return zsock_close(sock);
-}
-
-static inline int shutdown(int sock, int how)
-{
-	return zsock_shutdown(sock, how);
-}
-
-static inline int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
-{
-	return zsock_bind(sock, addr, addrlen);
-}
-
-static inline int connect(int sock, const struct sockaddr *addr,
-			  socklen_t addrlen)
-{
-	return zsock_connect(sock, addr, addrlen);
-}
-
-static inline int listen(int sock, int backlog)
-{
-	return zsock_listen(sock, backlog);
-}
-
-static inline int accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
-{
-	return zsock_accept(sock, addr, addrlen);
-}
-
-static inline ssize_t send(int sock, const void *buf, size_t len, int flags)
-{
-	return zsock_send(sock, buf, len, flags);
-}
-
-static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
-{
-	return zsock_recv(sock, buf, max_len, flags);
-}
-
-/*
- * Need this wrapper because newer GCC versions got too smart and "typecheck"
- * even macros, so '#define fcntl zsock_fcntl' leads to error.
- */
-static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
-{
-	va_list args;
-	int flags;
-
-	va_start(args, cmd);
-	flags = va_arg(args, int);
-	va_end(args);
-	return zsock_fcntl(sock, cmd, flags);
-}
-
-#define fcntl zsock_fcntl_wrapper
-
-static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
-			     const struct sockaddr *dest_addr,
-			     socklen_t addrlen)
-{
-	return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
-}
-
-static inline ssize_t sendmsg(int sock, const struct msghdr *message,
-			      int flags)
-{
-	return zsock_sendmsg(sock, message, flags);
-}
-
-static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,
-			       struct sockaddr *src_addr, socklen_t *addrlen)
-{
-	return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
-}
-
-static inline int poll(struct zsock_pollfd *fds, int nfds, int timeout)
-{
-	return zsock_poll(fds, nfds, timeout);
-}
-
-static inline int getsockopt(int sock, int level, int optname,
-			     void *optval, socklen_t *optlen)
-{
-	return zsock_getsockopt(sock, level, optname, optval, optlen);
-}
-
-static inline int setsockopt(int sock, int level, int optname,
-			     const void *optval, socklen_t optlen)
-{
-	return zsock_setsockopt(sock, level, optname, optval, optlen);
-}
-
-static inline int getpeername(int sock, struct sockaddr *addr,
-			      socklen_t *addrlen)
-{
-	return zsock_getpeername(sock, addr, addrlen);
-}
-
-static inline int getsockname(int sock, struct sockaddr *addr,
-			      socklen_t *addrlen)
-{
-	return zsock_getsockname(sock, addr, addrlen);
-}
-
-static inline int getaddrinfo(const char *host, const char *service,
-			      const struct zsock_addrinfo *hints,
-			      struct zsock_addrinfo **res)
-{
-	return zsock_getaddrinfo(host, service, hints, res);
-}
-
-static inline void freeaddrinfo(struct zsock_addrinfo *ai)
-{
-	zsock_freeaddrinfo(ai);
-}
-
-static inline const char *gai_strerror(int errcode)
-{
-	return zsock_gai_strerror(errcode);
-}
-
-static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
-			      char *host, socklen_t hostlen,
-			      char *serv, socklen_t servlen, int flags)
-{
-	return zsock_getnameinfo(addr, addrlen, host, hostlen,
-				 serv, servlen, flags);
-}
-
-#define addrinfo zsock_addrinfo
-
-static inline int gethostname(char *buf, size_t len)
-{
-	return zsock_gethostname(buf, len);
-}
-
-static inline int inet_pton(sa_family_t family, const char *src, void *dst)
-{
-	return zsock_inet_pton(family, src, dst);
-}
-
-static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
-			      size_t size)
-{
-	return zsock_inet_ntop(family, src, dst, size);
-}
-
-#define POLLIN ZSOCK_POLLIN
-#define POLLOUT ZSOCK_POLLOUT
-#define POLLERR ZSOCK_POLLERR
-#define POLLHUP ZSOCK_POLLHUP
-#define POLLNVAL ZSOCK_POLLNVAL
-
-#define MSG_PEEK ZSOCK_MSG_PEEK
-#define MSG_TRUNC ZSOCK_MSG_TRUNC
-#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
-#define MSG_WAITALL ZSOCK_MSG_WAITALL
-
-#define SHUT_RD ZSOCK_SHUT_RD
-#define SHUT_WR ZSOCK_SHUT_WR
-#define SHUT_RDWR ZSOCK_SHUT_RDWR
-
-#define EAI_BADFLAGS DNS_EAI_BADFLAGS
-#define EAI_NONAME DNS_EAI_NONAME
-#define EAI_AGAIN DNS_EAI_AGAIN
-#define EAI_FAIL DNS_EAI_FAIL
-#define EAI_NODATA DNS_EAI_NODATA
-#define EAI_MEMORY DNS_EAI_MEMORY
-#define EAI_SYSTEM DNS_EAI_SYSTEM
-#define EAI_SERVICE DNS_EAI_SERVICE
-#define EAI_SOCKTYPE DNS_EAI_SOCKTYPE
-#define EAI_FAMILY DNS_EAI_FAMILY
-#endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
-
 #define IFNAMSIZ Z_DEVICE_MAX_NAME_LEN
 
 /** Interface description structure */
@@ -958,6 +768,14 @@ struct net_socket_register {
 #endif
 
 #include <syscalls/socket.h>
+
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+/* These prefixed with posix as they can be used without CONFIG_POSIX_API */
+#include <posix/arpa/inet.h>
+#include <posix/netdb.h>
+#include <posix/poll.h>
+#include <posix/sys/socket.h>
+#endif
 
 /**
  * @}

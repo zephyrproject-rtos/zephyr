@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(net_socket_can_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 
+#include <unistd.h>
 #include <net/socket.h>
 #include <net/socket_can.h>
 

@@ -12,6 +12,8 @@
 #include <ztest.h>
 #include <random/rand32.h>
 
+#include <unistd.h>
+
 #include <net/ethernet.h>
 #include <net/dummy.h>
 #include <net/net_if.h>

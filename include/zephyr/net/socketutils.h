@@ -7,7 +7,7 @@
 #ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 #include <net/socket.h>
 #else
-#include <posix/netdb.h>
+#include <netdb.h>
 #endif
 
 /**

@@ -7,6 +7,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_http_client_sample, LOG_LEVEL_DBG);
 
+#include <unistd.h>
 #include <net/net_ip.h>
 #include <net/socket.h>
 #include <net/tls_credentials.h>

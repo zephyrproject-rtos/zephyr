@@ -9,6 +9,7 @@
 #include <sys/util.h>
 #include <modbus/modbus.h>
 #include <net/socket.h>
+#include <unistd.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(tcp_gateway, LOG_LEVEL_INF);

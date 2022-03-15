@@ -5,6 +5,7 @@
  */
 
 #include <ztest.h>
+#include <signal.h>
 #include <time.h>
 #include <unistd.h>
 

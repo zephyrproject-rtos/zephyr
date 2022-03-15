@@ -9,7 +9,7 @@
 #include <sys/atomic.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <posix/pthread.h>
+#include <pthread.h>
 #include <sys/slist.h>
 
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE

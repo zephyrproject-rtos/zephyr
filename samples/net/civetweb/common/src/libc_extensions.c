@@ -16,14 +16,6 @@ LOG_MODULE_REGISTER(lib_extensions, LOG_LEVEL_DBG);
 
 #define FN_MISSING() LOG_DBG("[IMPLEMENTATION MISSING : %s]\n", __func__)
 
-int iscntrl(int c)
-{
-	/* All the characters placed before the space on the ASCII table
-	 * and the 0x7F character (DEL) are control characters.
-	 */
-	return (int)(c < ' ' || c == 0x7F);
-}
-
 size_t strftime(char *dst, size_t dst_size,
 		const char *fmt,
 		const struct tm *tm)
@@ -158,82 +150,3 @@ double atof(const char *str)
  * but they are available only if CONFIG_NET_SOCKETS_POSIX_NAMES is enabled
  * which is impossible here.
  */
-
-int getsockname(int sock, struct sockaddr *addr,
-		socklen_t *addrlen)
-{
-	return zsock_getsockname(sock, addr, addrlen);
-}
-
-int poll(struct zsock_pollfd *fds, int nfds, int timeout)
-{
-	return zsock_poll(fds, nfds, timeout);
-}
-
-int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
-		char *host, socklen_t hostlen,
-		char *serv, socklen_t servlen, int flags)
-{
-	return zsock_getnameinfo(addr, addrlen, host, hostlen,
-				 serv, servlen, flags);
-}
-
-ssize_t send(int sock, const void *buf, size_t len, int flags)
-{
-	return zsock_send(sock, buf, len, flags);
-}
-
-ssize_t recv(int sock, void *buf, size_t max_len, int flags)
-{
-	return zsock_recv(sock, buf, max_len, flags);
-}
-
-int socket(int family, int type, int proto)
-{
-	return zsock_socket(family, type, proto);
-}
-
-int getaddrinfo(const char *host, const char *service,
-		const struct zsock_addrinfo *hints,
-		struct zsock_addrinfo **res)
-{
-	return zsock_getaddrinfo(host, service, hints, res);
-}
-
-void freeaddrinfo(struct zsock_addrinfo *ai)
-{
-	zsock_freeaddrinfo(ai);
-}
-
-int connect(int sock, const struct sockaddr *addr,
-	    socklen_t addrlen)
-{
-	return zsock_connect(sock, addr, addrlen);
-}
-
-int getsockopt(int sock, int level, int optname,
-	       void *optval, socklen_t *optlen)
-{
-	return zsock_getsockopt(sock, level, optname, optval, optlen);
-}
-
-int setsockopt(int sock, int level, int optname,
-	       const void *optval, socklen_t optlen)
-{
-	return zsock_setsockopt(sock, level, optname, optval, optlen);
-}
-
-int listen(int sock, int backlog)
-{
-	return zsock_listen(sock, backlog);
-}
-
-int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
-{
-	return zsock_bind(sock, addr, addrlen);
-}
-
-int accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
-{
-	return zsock_accept(sock, addr, addrlen);
-}

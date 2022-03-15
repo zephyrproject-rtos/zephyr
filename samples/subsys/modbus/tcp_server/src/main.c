@@ -10,6 +10,7 @@
 #include <drivers/gpio.h>
 #include <modbus/modbus.h>
 
+#include <unistd.h>
 #include <net/socket.h>
 
 #include <logging/log.h>

@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <posix/posix_sched.h>
+#include <sched.h>
 
 static bool valid_posix_policy(int policy)
 {

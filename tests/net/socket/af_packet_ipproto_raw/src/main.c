@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <random/rand32.h>
 
 #include <fcntl.h>
+#include <unistd.h>
 
 #include <net/ethernet.h>
 #include <net/dummy.h>

@@ -52,3 +52,7 @@ foreach(inc_file
 endforeach()
 
 include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
+
+zephyr_compile_options(
+  -include ${common_include_dir}/libc_extensions.h
+)

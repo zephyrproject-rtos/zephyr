@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #include <zephyr.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <fs/nvs.h>
 #include <data/json.h>
 #include <net/net_ip.h>

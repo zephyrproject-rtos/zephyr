@@ -7,10 +7,11 @@
 #include <errno.h>
 #include <net/dns_sd.h>
 #include <net/socket.h>
-#include <posix/netinet/in.h>
+#include <netinet/in.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <zephyr.h>
 
 #include <logging/log.h>

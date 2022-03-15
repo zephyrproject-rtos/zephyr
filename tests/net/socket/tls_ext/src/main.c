@@ -9,7 +9,7 @@
 #include <net/net_ip.h>
 #include <net/socket.h>
 #include <net/tls_credentials.h>
-#include <posix/unistd.h>
+#include <unistd.h>
 #include <sys/util.h>
 #include <ztest.h>
 

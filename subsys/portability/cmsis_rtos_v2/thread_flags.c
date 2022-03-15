@@ -8,7 +8,6 @@
 #include "wrapper.h"
 
 #define DONT_CARE               (0)
-#define NSEC_PER_MSEC           (NSEC_PER_USEC * USEC_PER_MSEC)
 
 /**
  * @brief Set the specified Thread Flags of a thread.

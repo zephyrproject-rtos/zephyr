@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <posix/pthread.h>
+#include <pthread.h>
 
 struct k_spinlock z_pthread_spinlock;
 

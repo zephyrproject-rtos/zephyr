@@ -120,8 +120,14 @@ extern void z_enable_sys_clock(void);
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
 #endif
 
+/* number of usec per msec */
+#define USEC_PER_MSEC 1000U
+
 /* number of nsec per usec */
 #define NSEC_PER_USEC 1000U
+
+/* number of nsec per msec */
+#define NSEC_PER_MSEC 1000000U
 
 /* number of microseconds per millisecond */
 #define USEC_PER_MSEC 1000U

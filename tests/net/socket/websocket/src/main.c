@@ -9,6 +9,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 
 #include <ztest_assert.h>
 
+#include <unistd.h>
+
 #include <net/net_ip.h>
 #include <net/socket.h>
 #include <net/websocket.h>

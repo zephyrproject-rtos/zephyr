@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <wait_q.h>
-#include <posix/sys/eventfd.h>
+#include <sys/eventfd.h>
 #include <net/socket.h>
 #include <ksched.h>
 

@@ -7,8 +7,8 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/atomic.h>
-#include <posix/time.h>
-#include <posix/mqueue.h>
+#include <time.h>
+#include <mqueue.h>
 
 typedef struct mqueue_object {
 	sys_snode_t snode;

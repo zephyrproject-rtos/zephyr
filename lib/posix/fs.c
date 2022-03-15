@@ -7,8 +7,8 @@
 #include <errno.h>
 #include <kernel.h>
 #include <limits.h>
-#include <posix/unistd.h>
-#include <posix/dirent.h>
+#include <unistd.h>
+#include <dirent.h>
 #include <string.h>
 #include <sys/fdtable.h>
 #include <sys/stat.h>

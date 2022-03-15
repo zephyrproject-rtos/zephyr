@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include <zephyr.h>
 
 #include <logging/log_ctrl.h>
+#include <unistd.h>
 #include <net/socket.h>
 #include <net/net_mgmt.h>
 #include <net/net_ip.h>

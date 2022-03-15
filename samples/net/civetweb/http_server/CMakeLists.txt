@@ -21,3 +21,7 @@ target_sources(app PRIVATE
 	src/main.c
 	${common_src_dir}/libc_extensions.c
 )
+
+zephyr_compile_options(
+  -include ${common_include_dir}/libc_extensions.h
+)

@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <sys/printk.h>
 #include <sys/byteorder.h>
+#include <unistd.h>
 #include <zephyr.h>
 
 #include <net/socket.h>
