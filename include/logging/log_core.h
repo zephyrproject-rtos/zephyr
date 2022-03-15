@@ -802,7 +802,9 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
-		z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, _source, \
+		void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
+			(void *)_dsource : (void *)_source; \
+		z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, _src, \
 					   _level, NULL, 0, 0, _str, _valist); \
 		break; \
 	} \
