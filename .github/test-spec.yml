@@ -1,0 +1,106 @@
+# This is the Jenkins ci variant of the .github/labler.yaml
+"CI-iot-samples-test":
+  - "boards/arm/nrf9160dk_nrf9160/**/*"
+  - "dts/arm/nordic/nrf9160*"
+  - "include/net/**/*"
+  - "subsys/net/lib/**/*"
+
+"CI-iot-libraries-test":
+  - "boards/arm/nrf9160dk_nrf9160/**/*"
+  - "dts/arm/nordic/nrf9160*"
+  - "include/net/socket_ncs.h"
+  - "subsys/testsuite/ztest/**/*"
+
+"CI-lwm2m-test":
+  - "**/*"
+
+"CI-boot-dfu-test":
+  - "subsys/mgmt/mcumgr/**/*"
+  - "subsys/dfu/**/*"
+  - "include/mgmt/mcumgr/**/*"
+  - "include/dfu/**/*"
+  - "samples/subsys/mgmt/mcumgr/smp_svr/**/*"
+
+"CI-tfm-test":
+  - "**/*"
+
+"CI-ble-test":
+  - "**/*"
+
+"CI-mesh-test":
+  - "subsys/bluetooth/mesh/**/*"
+  - "include/bluetooth/mesh/**/*"
+  - "samples/bluetooth/mesh/**/*"
+  - "samples/bluetooth/mesh_demo/**/*"
+  - "samples/bluetooth/mesh_provisioner/**/*"
+  - "tests/bluetooth/mesh/**/*"
+  - "tests/bluetooth/mesh_shell/**/*"
+
+"CI-zigbee-test":
+  - "subsys/mgmt/mcumgr/**/*"
+  - "subsys/dfu/**/*"
+  - "include/mgmt/mcumgr/**/*"
+  - "include/dfu/**/*"
+
+"CI-thingy91-test":
+  - "**/*"
+
+"CI-desktop-test":
+  - "**/*"
+
+"CI-crypto-test":
+  - "**/*"
+
+"CI-rs-test":
+  - "**/*"
+
+"CI-homekit-test":
+  - "include/dfu/**/*"
+  - "include/mgmt/mcumgr/**/*"
+  - "soc/arm/nordic_nrf/**/*"
+  - "subsys/dfu/**/*"
+  - "subsys/settings/**/*"
+  - "subsys/net/lib/openthread/**/*"
+  - "subsys/mgmt/mcumgr/**/*"
+  - "samples/hci_rpmsg/**/*"
+  - "samples/subsys/mgmt/mcumgr/smp_svr/**/*"
+  - any:
+    - "subsys/bluetooth/**/*"
+    - "!subsys/bluetooth/mesh/**/*"
+
+"CI-thread-test":
+  - "**/*"
+
+"CI-nfc-test":
+  - "**/*"
+
+"CI-matter-test":
+  - "**/*"
+
+"CI-find-my-test":
+  - "**/*"
+
+"CI-gazell-test":
+  - "**/*"
+
+"CI-rpc-test":
+  - "**/*"
+
+"CI-modemshell-test":
+  - "include/net/**/*"
+  - "include/posix/**/*"
+  - "include/shell/**/*"
+  - "drivers/net/**/*"
+  - "drivers/serial/**/*"
+  - "drivers/wifi/**/*"
+  - "subsys/shell/**/*"
+  - "subsys/net/**/*"
+  - "subsys/settings/**/*"
+
+"CI-positioning-test":
+  - "include/net/**/*"
+  - "include/posix/**/*"
+  - "drivers/net/**/*"
+  - "drivers/wifi/**/*"
+  - "subsys/net/**/*"
+  - "subsys/settings/**/*"
