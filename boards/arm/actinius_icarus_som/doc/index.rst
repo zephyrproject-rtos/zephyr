@@ -90,6 +90,11 @@ hardware features:
 | ACCEL     | st         | lis2dh               |
 +-----------+------------+----------------------+
 
+SIM selection
+*************
+
+The sim choice (eSIM or nano-SIM) can be configured in Devicetree by adjusting
+the ``sim`` property in the ``sim_select`` node.
 
 Security components
 ===================
