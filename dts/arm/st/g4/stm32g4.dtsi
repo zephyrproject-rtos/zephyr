@@ -81,8 +81,6 @@
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;
-			has-temp-channel;
-			has-vref-channel;
 		};
 
 		adc2: adc@50000100 {
