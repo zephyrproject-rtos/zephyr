@@ -228,6 +228,31 @@ int sys_bitarray_set_region(sys_bitarray_t *bitarray, size_t num_bits,
 			    size_t offset);
 
 /**
+ * Test if all bits in a region are cleared/set and set/clear them
+ * in a single atomic operation
+ *
+ * This checks if all the bits (@p num_bits) in region starting
+ * from @p offset are in required state. If even one bit is not,
+ * -EEXIST is returned.  If the whole region is set/cleared
+ * it is set to opposite state. The check and set is performed as a single
+ * atomic operation.
+ *
+ * @param bitarray Bitarray struct
+ * @param num_bits Number of bits to test and set
+ * @param offset   Starting bit position to test and set
+ * @param to_set   if true the region will be set if all bits are cleared
+ *		   if false the region will be cleard if all bits are set
+ *
+ * @retval 0	   Operation successful
+ * @retval -EINVAL Invalid argument (e.g. bit to set exceeds
+ *		   the number of bits in bit array, etc.)
+ * @retval -EEXIST at least one bit in the region is set/cleared,
+ *		   operation cancelled
+ */
+int sys_bitarray_test_and_set_region(sys_bitarray_t *bitarray, size_t num_bits,
+				     size_t offset, bool to_set);
+
+/**
  * Clear all bits in a region.
  *
  * This clears the number of bits (@p num_bits) in region starting
