@@ -39,8 +39,6 @@ struct counter_gecko_data {
 	void *top_user_data;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
 #define ERRATA_RTCC_E201_MESSAGE \
 	"Errata RTCC_E201: In case RTCC prescaler != 1 the module does not " \
@@ -302,7 +300,7 @@ static int counter_gecko_init(const struct device *dev)
 	/* Configure & enable module interrupts */
 	dev_cfg->irq_config();
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

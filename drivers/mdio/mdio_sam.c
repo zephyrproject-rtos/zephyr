@@ -31,8 +31,6 @@ struct mdio_sam_dev_config {
 	int protocol;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 			 uint8_t rw, uint16_t data_in, uint16_t *data_out)
 {
@@ -65,7 +63,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 	/* Wait until done */
 	while (!(cfg->regs->GMAC_NSR & GMAC_NSR_IDLE)) {
 		if (timeout-- == 0U) {
-			LOG_ERR("transfer timedout %s", DEV_NAME(dev));
+			LOG_ERR("transfer timedout %s", dev->name);
 			k_sem_give(&data->sem);
 
 			return -ETIMEDOUT;
