@@ -1421,6 +1421,12 @@ cleanup:
 int lwm2m_send_message_async(struct lwm2m_message *msg)
 {
 	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
+
+	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
+	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
+		engine_update_tx_time();
+	}
+
 	return 0;
 }
 
@@ -1450,11 +1456,6 @@ static int lwm2m_send_message(struct lwm2m_message *msg)
 
 	if (msg->type != COAP_TYPE_CON) {
 		lwm2m_reset_message(msg, true);
-	}
-
-	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
-	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		engine_update_tx_time();
 	}
 
 	return 0;
