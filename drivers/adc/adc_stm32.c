@@ -259,8 +259,10 @@ struct adc_stm32_cfg {
 	void (*irq_cfg_func)(void);
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
+	uint16_t vref_mv;
 	bool has_temp_channel;
 	bool has_vref_channel;
+	bool has_vbat_channel;
 };
 
 #ifdef CONFIG_ADC_STM32_SHARED_IRQS
@@ -871,6 +873,14 @@ static void adc_stm32_setup_channels(const struct device *dev, uint8_t channel_i
 		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VREFINT) == channel_id) {
 		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
 	}
+#if defined(CONFIG_STM32_VBAT)
+	/* Enable the bridge divider only when needed for ADC conversion. */
+	if (config->has_vbat_channel &&
+		__LL_ADC_CHANNEL_TO_DECIMAL_NB(LL_ADC_CHANNEL_VBAT) == channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VBAT);
+	}
+
+#endif /* CONFIG_STM32_VBAT */
 }
 
 static int adc_stm32_channel_setup(const struct device *dev,
@@ -1186,8 +1196,10 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),		\
-	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),		\
+	.vref_mv = DT_INST_PROP(index, vref_mv),			\
+	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
+	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
+	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
 };
 #else
 #define ADC_STM32_CONFIG(index)						\
@@ -1207,8 +1219,10 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
 	},								\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),		\
-	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),		\
+	.vref_mv = DT_INST_PROP(index, vref_mv),			\
+	.has_temp_channel = DT_INST_PROP(index, has_temp_channel),	\
+	.has_vref_channel = DT_INST_PROP(index, has_vref_channel),	\
+	.has_vbat_channel = DT_INST_PROP(index, has_vbat_channel),	\
 };
 #endif /* CONFIG_ADC_STM32_SHARED_IRQS */
 
