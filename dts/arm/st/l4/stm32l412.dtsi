@@ -32,6 +32,11 @@
 			status = "disabled";
 			label = "SPI_2";
 		};
+
+		adc1: adc@50040000 {
+			has-temp-channel;
+			has-vref-channel;
+		};
 	};
 
 	usb_fs_phy: usbphy {
