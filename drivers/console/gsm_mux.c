@@ -218,7 +218,7 @@ static void hexdump_packet(const char *header, uint8_t address, bool cmd_rsp,
 	ret = snprintk(out, sizeof(out), "%s: DLCI %d %s ",
 		       header, address, cmd_rsp ? "cmd" : "resp");
 	if (ret >= sizeof(out)) {
-		LOG_DBG("%d: Too long msg (%d)", __LINE__, ret - sizeof(out));
+		LOG_DBG("%d: Too long msg (%ld)", __LINE__, (long)(ret - sizeof(out)));
 		goto print;
 	}
 
@@ -244,14 +244,14 @@ static void hexdump_packet(const char *header, uint8_t address, bool cmd_rsp,
 	}
 
 	if (ret >= sizeof(out)) {
-		LOG_DBG("%d: Too long msg (%d)", __LINE__, ret - sizeof(out));
+		LOG_DBG("%d: Too long msg (%ld)", __LINE__, (long)(ret - sizeof(out)));
 		goto print;
 	}
 
 	ret += snprintk(out + ret, sizeof(out) - ret, "%s",
 			(control & PF) ? "(P)" : "(F)");
 	if (ret >= sizeof(out)) {
-		LOG_DBG("%d: Too long msg (%d)", __LINE__, ret - sizeof(out));
+		LOG_DBG("%d: Too long msg (%ld)", __LINE__, (long)(ret - sizeof(out)));
 		goto print;
 	}
 
