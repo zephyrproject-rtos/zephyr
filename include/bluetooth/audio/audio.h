@@ -1316,8 +1316,8 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
 int bt_audio_unicast_server_location_changed(enum bt_audio_pac_type type);
 
 /**
- * @defgroup bt_audio_client Audio Client APIs
- * @ingroup bt_audio
+ * @name Audio Client APIs
+ * @anchor bt_audio_client
  * @{
  */
 
@@ -1581,6 +1581,13 @@ int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast
  */
 int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
 
+/** @} */ /* End of group bt_audio_client */
+/**
+ * @name Audio Broadcast APIs
+ * @anchor bt_audio_broadcast
+ * @{
+ */
+
 /** @brief Create audio broadcast source.
  *
  *  Create a new audio broadcast source with one or more audio streams.
@@ -1736,14 +1743,13 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink);
  */
 int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink);
 
-/** @} */
+/** @} */ /* End of group bt_audio_broadcast */
 
 #ifdef __cplusplus
 }
 #endif
 
-/**
- * @}
- */
+/** @} */ /* end of bt_audio */
+
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_H_ */

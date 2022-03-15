@@ -6,6 +6,7 @@ Bluetooth
 .. toctree::
    :maxdepth: 1
 
+   audio.rst
    connection_mgmt.rst
    controller.rst
    crypto.rst
