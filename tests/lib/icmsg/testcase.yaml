@@ -1,0 +1,5 @@
+tests:
+  libraries.icmsg:
+    integration_platforms:
+      - nrf5340dk_nrf5340_cpuapp
+    platform_exclude: qemu_xtensa qemu_malta
