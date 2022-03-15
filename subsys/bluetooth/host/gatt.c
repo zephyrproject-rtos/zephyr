@@ -3155,6 +3155,8 @@ static int gatt_exchange_mtu_encode(struct net_buf *buf, size_t len,
 int bt_gatt_exchange_mtu(struct bt_conn *conn,
 			 struct bt_gatt_exchange_params *params)
 {
+	int err;
+
 	__ASSERT(conn, "invalid parameter\n");
 	__ASSERT(params && params->func, "invalid parameters\n");
 
@@ -3162,9 +3164,19 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 		return -ENOTCONN;
 	}
 
-	return gatt_req_send(conn, gatt_mtu_rsp, params,
-			     gatt_exchange_mtu_encode, BT_ATT_OP_MTU_REQ,
-			     sizeof(struct bt_att_exchange_mtu_req));
+	/* This request shall only be sent once during a connection by the client. */
+	if (atomic_test_and_set_bit(conn->flags, BT_CONN_ATT_MTU_EXCHANGED)) {
+		return -EALREADY;
+	}
+
+	err = gatt_req_send(conn, gatt_mtu_rsp, params,
+			    gatt_exchange_mtu_encode, BT_ATT_OP_MTU_REQ,
+			    sizeof(struct bt_att_exchange_mtu_req));
+	if (err) {
+		atomic_clear_bit(conn->flags, BT_CONN_ATT_MTU_EXCHANGED);
+	}
+
+	return err;
 }
 
 static void gatt_discover_next(struct bt_conn *conn, uint16_t last_handle,
