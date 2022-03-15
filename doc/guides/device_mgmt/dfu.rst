@@ -36,7 +36,7 @@ In order to use MCUboot with Zephyr you need to take the following into account:
 
 1. You will need to define the flash partitions required by MCUboot; see
    :ref:`flash_map_api` for details.
-2. You will have to specify your flash parition as the chosen code partition
+2. You will have to specify your flash partition as the chosen code partition
 
 .. code-block:: devicetree
 
