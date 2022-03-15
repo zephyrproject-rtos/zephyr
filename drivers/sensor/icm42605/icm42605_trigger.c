@@ -89,16 +89,16 @@ static void icm42605_thread_cb(const struct device *dev)
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void icm42605_thread(int dev_ptr, int unused)
+static void icm42605_thread(void *p1, void *p2, void *p3)
 {
-	const struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct icm42605_data *drv_data = dev->data;
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
-	ARG_UNUSED(unused);
+	struct icm42605_data *drv_data = p1;
 
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		icm42605_thread_cb(dev);
+		icm42605_thread_cb(drv_data->dev);
 	}
 }
 
@@ -127,10 +127,8 @@ int icm42605_init_interrupt(const struct device *dev)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_ICM42605_THREAD_STACK_SIZE,
-			(k_thread_entry_t)icm42605_thread, drv_data,
-			0, NULL, K_PRIO_COOP(CONFIG_ICM42605_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+			CONFIG_ICM42605_THREAD_STACK_SIZE, icm42605_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ICM42605_THREAD_PRIORITY), 0, K_NO_WAIT);
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_INACTIVE);
 
