@@ -18,6 +18,7 @@
 # component or code. This file is going to be deprecated and currently only had
 # entries that are not covered by the MAINTAINERS file.
 
+/.github/test-spec.yml                    @nrfconnect/ncs-test-leads
 /soc/arm/aspeed/                          @aspeeddylan
 /soc/arm/atmel_sam/common/*_sam4l_*.c     @nandojve
 /soc/arm/atmel_sam/sam3x/                 @ioannisg
