@@ -141,6 +141,13 @@ config BT_GATT_AUTO_DISCOVER_CCC
 	  This option enables support for GATT to initiate discovery for CCC
 	  handles if the CCC handle is unknown by the application.
 
+config BT_GATT_AUTO_UPDATE_MTU
+	bool "Automatically send ATT MTU exchange request on connect"
+	depends on BT_GATT_CLIENT
+	help
+	  This option if enabled allows automatically sending request for ATT
+	  MTU exchange.
+
 config BT_GAP_AUTO_UPDATE_CONN_PARAMS
 	bool "Automatic Update of Connection Parameters"
 	default y
