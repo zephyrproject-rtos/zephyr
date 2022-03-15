@@ -28,14 +28,14 @@
 	};
 
 	soc {
-		flash0: flash@0 {
+		flash0: flash@88000000 {
 			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_K(64)>;
+			reg = <0x88000000 DT_SIZE_M(64)>;
 		};
 
-		dram0: memory@10000000 {
+		dram0: memory@0 {
 			compatible = "mmio-dram";
-			reg = <0x10000000 DT_SIZE_K(2048)>;
+			reg = <0x0 DT_SIZE_M(128)>;
 		};
 	};
 };
