@@ -823,6 +823,13 @@ config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 
 menu "SMP Options"
 
+config SMP
+	bool "Symmetric multiprocessing support"
+	depends on USE_SWITCH
+	help
+	  When true, kernel will be built with SMP support, allowing
+	  more than one CPU to schedule Zephyr tasks at a time.
+
 config USE_SWITCH
 	bool "Use new-style _arch_switch instead of arch_swap"
 	depends on USE_SWITCH_SUPPORTED
@@ -840,13 +847,6 @@ config USE_SWITCH_SUPPORTED
 	  Indicates whether _arch_switch() API is supported by the
 	  currently enabled platform. This option should be selected by
 	  platforms that implement it.
-
-config SMP
-	bool "Symmetric multithreading support"
-	depends on USE_SWITCH
-	help
-	  When true, kernel will be built with SMP support, allowing
-	  more than one CPU to schedule Zephyr tasks at a time.
 
 config SMP_BOOT_DELAY
 	bool "Delay booting secondary cores"
