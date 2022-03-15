@@ -547,6 +547,39 @@ out:
 	return ret;
 }
 
+int sys_bitarray_test_and_set_region(sys_bitarray_t *bitarray, size_t num_bits,
+				     size_t offset, bool to_set)
+{
+	int ret;
+	bool region_clear;
+	struct bundle_data bd;
+
+	size_t off_end = offset + num_bits - 1;
+	k_spinlock_key_t key = k_spin_lock(&bitarray->lock);
+
+	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	if ((num_bits == 0)
+	    || (num_bits > bitarray->num_bits)
+	    || (offset >= bitarray->num_bits)
+	    || (off_end >= bitarray->num_bits)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	region_clear = match_region(bitarray, offset, num_bits, !to_set, &bd, NULL);
+	if (region_clear) {
+		set_region(bitarray, offset, num_bits, to_set, &bd);
+		ret = 0;
+	} else {
+		ret = -EEXIST;
+	}
+
+out:
+	k_spin_unlock(&bitarray->lock, key);
+	return ret;
+}
+
 int sys_bitarray_set_region(sys_bitarray_t *bitarray, size_t num_bits,
 			    size_t offset)
 {
