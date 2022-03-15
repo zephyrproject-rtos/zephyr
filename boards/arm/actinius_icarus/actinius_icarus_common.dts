@@ -82,6 +82,12 @@
 		output-ohms = <10000000>;
 		full-ohms = <(10000000 + 4700000)>;
 	};
+
+	sim_select: sim-select {
+		compatible = "sim-select";
+		sim-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		sim = "esim";
+	};
 };
 
 &adc {
