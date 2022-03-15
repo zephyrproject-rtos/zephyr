@@ -58,6 +58,14 @@
 			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
 		};
 	};
+
+	en_bat_sens: enable-battery-sense {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "en_bat_sens";
+		regulator-name = "en_bat_sens";
+		enable-gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
 };
 
 &sim {
