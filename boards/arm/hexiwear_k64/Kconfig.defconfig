@@ -21,6 +21,6 @@ config MCG_FCRDIV
 	default 1
 
 config REGULATOR
-	default y if ADC
+	default y if ADC || SENSOR
 
 endif # BOARD_HEXIWEAR_K64
