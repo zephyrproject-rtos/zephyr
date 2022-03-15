@@ -218,6 +218,22 @@ struct sys_multi_mem_blocks {
 int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
 			 void **out_blocks);
 
+/**
+ * @brief Allocate a contiguous set of memory blocks
+ *
+ * Allocate multiple memory blocks, and place their pointers into
+ * the output array.
+ *
+ * @param[in]  mem_block Pointer to memory block object.
+ * @param[in]  count     Number of blocks to allocate.
+ * @param[out] out_block Output pointer to the start of the allocated block set
+ *
+ * @retval 0       Successful
+ * @retval -EINVAL Invalid argument supplied.
+ * @retval -ENOMEM Not enough contiguous blocks for allocation.
+ */
+int sys_mem_blocks_alloc_contiguous(sys_mem_blocks_t *mem_block, size_t count,
+				   void **out_block);
 
 /**
  * @brief Force allocation of a specified blocks in a memory block object
@@ -253,6 +269,21 @@ int sys_mem_blocks_get(sys_mem_blocks_t *mem_block, void *in_block, size_t count
  */
 int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 			void **in_blocks);
+
+/**
+ * @brief Free contiguous multiple memory blocks
+ *
+ * Free contiguous multiple memory blocks
+ *
+ * @param[in] mem_block Pointer to memory block object.
+ * @param[in] block     Pointer to the first memory block
+ * @param[in] count     Number of blocks to free.
+ *
+ * @retval 0       Successful
+ * @retval -EINVAL Invalid argument supplied.
+ * @retval -EFAULT Invalid pointer supplied.
+ */
+int sys_mem_blocks_free_contiguous(sys_mem_blocks_t *mem_block, void *block, size_t count);
 
 /**
  * @brief Initialize multi memory blocks allocator group
