@@ -466,7 +466,7 @@ def analyze_die_array(die):
 def analyze_typedef(die):
     type_offset = die_get_type_offset(die)
 
-    if type_offset not in type_env.keys():
+    if type_offset not in type_env:
         return
 
     type_env[die.offset] = type_env[type_offset]
