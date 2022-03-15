@@ -1271,7 +1271,7 @@ def main():
     pipeline = manager.LifoQueue()
     done_queue = manager.LifoQueue()
 
-    suite.update_counting(results, initial=True)
+    suite.update_counting(results)
     suite.start_time = start_time
 
     while True:
@@ -1282,7 +1282,6 @@ def main():
             time.sleep(options.retry_interval)  # waiting for the system to settle down
             results.done = results.total - results.failed
             results.failed = results.error
-
         results = suite.execute(pipeline, done_queue, results)
 
         while True:
@@ -1304,6 +1303,7 @@ def main():
         if retries == 0 or results.failed == results.error:
             break
 
+
     # figure out which report to use for size comparison
     if options.compare_report:
         report_to_use = options.compare_report
@@ -1319,7 +1319,8 @@ def main():
                             options.last_metrics)
 
     suite.duration = time.time() - start_time
-    suite.update_counting(results)
+
+    results.summary()
 
     suite.summary(results, options.disable_unrecognized_section_test)
 
