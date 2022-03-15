@@ -1418,6 +1418,7 @@ static uint32_t pal_add(const bt_addr_le_t *const id_addr, const uint8_t sid)
 
 	pal[i].id_addr_type = id_addr->type & 0x1;
 	bt_addr_copy(&pal[i].id_addr, &id_addr->a);
+	pal[i].sid = sid;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* Get index to Resolving List if applicable */
