@@ -4908,6 +4908,20 @@ static void add_subscriptions(struct bt_conn *conn)
 		}
 	}
 }
+
+#if defined(CONFIG_BT_GATT_AUTO_UPDATE_MTU)
+static void gatt_exchange_mtu_func(struct bt_conn *conn, uint8_t err,
+				   struct bt_gatt_exchange_params *params)
+{
+	if (err) {
+		BT_WARN("conn %p err 0x%02x", conn, err);
+	}
+}
+
+static struct bt_gatt_exchange_params gatt_exchange_params = {
+	.func = gatt_exchange_mtu_func,
+};
+#endif /* CONFIG_BT_GATT_AUTO_UPDATE_MTU */
 #endif /* CONFIG_BT_GATT_CLIENT */
 
 #define CCC_STORE_MAX 48
@@ -5170,7 +5184,14 @@ void bt_gatt_connected(struct bt_conn *conn)
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 	add_subscriptions(conn);
+#if defined(CONFIG_BT_GATT_AUTO_UPDATE_MTU)
+	int err;
 
+	err = bt_gatt_exchange_mtu(conn, &gatt_exchange_params);
+	if (err) {
+		BT_WARN("MTU Exchange failed (err %d)", err);
+	}
+#endif /* CONFIG_BT_GATT_AUTO_UPDATE_MTU */
 #endif /* CONFIG_BT_GATT_CLIENT */
 }
 
