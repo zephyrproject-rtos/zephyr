@@ -1346,7 +1346,6 @@ RISCV arch:
         - fkokosinski
         - mgielda
         - katsuster
-        - henrikbrixandersen
         - edersondisouza
     files:
         - arch/riscv/
