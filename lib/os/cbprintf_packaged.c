@@ -34,6 +34,20 @@ static inline bool ptr_in_rodata(const char *addr)
 #endif
 }
 
+#if defined(CONFIG_LOG2_FMT_SECTION)
+static inline bool ptr_in_string_section(const char *addr)
+{
+#if defined(CBPRINTF_VIA_UNIT_TEST)
+	/* Unit test is X86 (or other host) but not using Zephyr
+	 * linker scripts.
+	 */
+	return false;
+#else
+	return linker_in_log_string_section(addr);
+#endif
+}
+#endif
+
 /*
  * va_list creation
  */
@@ -480,8 +494,15 @@ process_string:
 
 			bool is_ro = (fros_cnt-- > 0) ? true : ptr_in_rodata(s);
 			bool do_ro = !!(flags & CBPRINTF_PACKAGE_ADD_RO_STR_POS);
+#if defined(CONFIG_LOG2_FMT_SECTION)
+			bool is_string = ptr_in_string_section(s);
+#endif
 
+#if defined(CONFIG_LOG2_FMT_SECTION)
+			if (is_ro || is_string) && !do_ro) {
+#else
 			if (is_ro && !do_ro) {
+#endif
 				/* nothing to do */
 			} else {
 				uint32_t s_ptr_idx = BUF_OFFSET / sizeof(int);
