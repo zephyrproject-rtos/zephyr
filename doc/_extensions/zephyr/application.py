@@ -378,8 +378,8 @@ class ZephyrAppCommandsDirective(Directive):
             tool_build_dir = ''
         else:
             source_dir = ' {}'.format(app) if app else ' .'
-            cmake_build_dir = ' -B {}'.format(build_dir)
-            tool_build_dir = ' -C {}'.format(build_dir)
+            cmake_build_dir = ' -B{}'.format(build_dir)
+            tool_build_dir = ' -C{}'.format(build_dir)
 
         # Now generate the actual cmake and make/ninja commands
         gen_arg = ' -GNinja' if generator == 'ninja' else ''
