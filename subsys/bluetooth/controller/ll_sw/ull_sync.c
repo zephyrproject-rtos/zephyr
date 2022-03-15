@@ -250,8 +250,16 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Enable scanner to create sync */
 	scan->periodic.sync = sync;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	scan->lll.is_sync = 1U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->periodic.sync = sync;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		scan_coded->lll.is_sync = 1U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 	}
 
 	return 0;
@@ -749,18 +757,26 @@ void ull_sync_setup_reset(struct ll_scan_set *scan)
 {
 	/* Remove the sync context from being associated with scan contexts */
 	scan->periodic.sync = NULL;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	scan->lll.is_sync = 0U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		struct ll_scan_set *scan_1m;
 
 		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
 		if (scan == scan_1m) {
-			struct ll_scan_set *scan_coded;
-
-			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-			scan_coded->periodic.sync = NULL;
+			scan = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
 		} else {
-			scan_1m->periodic.sync = NULL;
+			scan = scan_1m;
 		}
+
+		scan->periodic.sync = NULL;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		scan->lll.is_sync = 0U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 	}
 }
 

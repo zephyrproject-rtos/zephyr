@@ -804,11 +804,22 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	if (has_adva &&
-	    !lll_scan_isr_rx_check(lll, irkmatch_ok, devmatch_ok, rl_idx)) {
-		err = -EINVAL;
+	if (has_adva) {
+		bool allow;
 
-		goto isr_rx_do_close;
+		allow = lll_scan_isr_rx_check(lll, irkmatch_ok, devmatch_ok,
+					      rl_idx);
+		if (false) {
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		} else if (allow || lll->is_sync) {
+			devmatch_ok = allow ? 1U : 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+		} else if (!allow) {
+			err = -EINVAL;
+
+			goto isr_rx_do_close;
+		}
 	}
 
 	err = isr_rx_pdu(lll, lll_aux, node_rx, pdu, phy_aux, phy_aux_flags_rx,
@@ -1188,6 +1199,11 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		ftr->direct = dir_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		ftr->devmatch = devmatch_ok;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+
 		ftr->aux_lll_sched = 0U;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
@@ -1255,6 +1271,11 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 		ftr->direct = dir_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		ftr->devmatch = devmatch_ok;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 		ftr->aux_lll_sched = lll_scan_aux_setup(pdu, phy_aux,
 							phy_aux_flags_rx,

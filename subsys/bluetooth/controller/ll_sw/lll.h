@@ -357,6 +357,9 @@ struct node_rx_ftr {
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	uint8_t  sync_status:2;
 	uint8_t  sync_rx_enabled:1;
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	uint8_t  devmatch:1;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	uint8_t  aux_sched:1;
