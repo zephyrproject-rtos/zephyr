@@ -1,0 +1,81 @@
+# This is the Jenkins ci variant of the .github/labler.yaml
+"CI-iot-samples-test":
+  - "**/*"
+
+"CI-iot-libraries-test":
+  - "**/*"
+
+"CI-lwm2m-test":
+  - "**/*"
+
+"CI-boot-dfu-test":
+  - "subsys/mgmt/mcumgr/**/*"
+  - "subsys/dfu/**/*"
+  - "include/mgmt/mcumgr/**/*"
+  - "include/dfu/**/*"
+  - "samples/subsys/mgmt/mcumgr/smp_svr/**/*"
+
+"CI-tfm-test":
+  - "**/*"
+
+"CI-ble-test":
+  - "**/*"
+
+"CI-mesh-test":
+  - "**/*"
+
+"CI-zigbee-test":
+  - "subsys/mgmt/mcumgr/**/*"
+  - "subsys/dfu/**/*"
+  - "include/mgmt/mcumgr/**/*"
+  - "include/dfu/**/*"
+
+"CI-thingy91-test":
+  - "**/*"
+
+"CI-desktop-test":
+  - "**/*"
+
+"CI-crypto-test":
+  - "**/*"
+
+"CI-rs-test":
+  - "**/*"
+
+"CI-homekit-test":
+  - "include/dfu/**/*"
+  - "include/mgmt/mcumgr/**/*"
+  - "soc/arm/nordic_nrf/**/*"
+  - "subsys/dfu/**/*"
+  - "subsys/settings/**/*"
+  - "subsys/net/lib/openthread/**/*"
+  - "subsys/mgmt/mcumgr/**/*"
+  - "samples/hci_rpmsg/**/*"
+  - "samples/subsys/mgmt/mcumgr/smp_svr/**/*"
+  - any:
+    - "subsys/bluetooth/**/*"
+    - "!subsys/bluetooth/mesh/**/*"
+
+"CI-thread-test":
+  - "**/*"
+
+"CI-nfc-test":
+  - "**/*"
+
+"CI-matter-test":
+  - "**/*"
+
+"CI-find-my-test":
+  - "**/*"
+
+"CI-gazell-test":
+  - "**/*"
+
+"CI-rpc-test":
+  - "**/*"
+
+"CI-modemshell-test":
+  - "**/*"
+
+"CI-positioning-test":
+  - "**/*"
