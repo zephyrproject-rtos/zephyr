@@ -213,7 +213,18 @@ struct mgmt_ctxt {
 	struct CborEncoder encoder;
 	struct CborParser parser;
 	struct CborValue it;
+#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+	const char *rc_rsn;
+#endif
 };
+
+#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+#define MGMT_CTXT_SET_RC_RSN(mc, rsn) ((mc->rc_rsn) = (rsn))
+#define MGMT_CTXT_RC_RSN(mc) ((mc)->rc_rsn)
+#else
+#define MGMT_CTXT_SET_RC_RSN(mc, rsn)
+#define MGMT_CTXT_RC_RSN(mc) NULL
+#endif
 
 /** @typedef mgmt_handler_fn
  * @brief Processes a request and writes the corresponding response.

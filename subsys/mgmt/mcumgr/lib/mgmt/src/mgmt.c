@@ -153,6 +153,20 @@ mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
 		return rc;
 	}
 
+#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+	if (MGMT_CTXT_RC_RSN(ctxt) != NULL) {
+		rc = cbor_encode_text_stringz(&ctxt->encoder, "rsn");
+		if (rc != 0) {
+			return rc;
+		}
+
+		rc = cbor_encode_text_stringz(&ctxt->encoder, MGMT_CTXT_RC_RSN(ctxt));
+		if (rc != 0) {
+			return rc;
+		}
+	}
+#endif
+
 	return 0;
 }
 

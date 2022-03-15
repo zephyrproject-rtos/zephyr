@@ -38,6 +38,16 @@ config MGMT_CBORATTR_FLOAT_SUPPORT
 	  the option needs to be enabled.
 	  Disabling the option slightly reduces code footprint.
 
+config MGMT_VERBOSE_ERR_RESPONSE
+	bool "Support verbose error response"
+	help
+	  Support for encoding "rc" code explanation in form of "rsn"
+	  text string.  This is useful, when returning MGMT_ERR_EUNKNOWN,
+	  to add additional information on the source of an error.
+	  Note that the "rsn" is string additional to "rc" code,
+	  so MCUMGR_BUF_SIZE should be large enough to be able to encode
+	  both.
+
 menu "Command Handlers"
 menuconfig MCUMGR_CMD_FS_MGMT
 	bool "Mcumgr handlers for file management (insecure)"
