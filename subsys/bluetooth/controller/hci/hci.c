@@ -6120,6 +6120,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
 	struct net_buf *evt_buf;
+	bool devmatch = false;
 	uint8_t data_len = 0U;
 	uint8_t evt_type = 0U;
 	uint8_t sec_phy = 0U;
@@ -6173,6 +6174,11 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 		direct_resolved_curr = node_rx_curr->hdr.rx_ftr.direct_resolved;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		const bool devmatch_curr = node_rx_curr->hdr.rx_ftr.devmatch;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 		/* The Link Layer currently returns RSSI as an absolute value */
 		rssi = -(node_rx_curr->hdr.rx_ftr.rssi);
@@ -6336,12 +6342,20 @@ no_ext_hdr:
 			data = data_curr;
 			scan_data_len_total = 0U;
 			tx_pwr = tx_pwr_curr;
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 			rl_idx = rl_idx_curr;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 			direct_report = direct_report_curr;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+			devmatch = devmatch_curr;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+
 		} else {
 			/* TODO: Validate current value with previous */
 
@@ -6391,6 +6405,13 @@ no_ext_hdr:
 				direct_report = direct_report_curr;
 			}
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+			if (!devmatch) {
+				devmatch = devmatch_curr;
+			}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 		}
 
 		if (!node_rx_next) {
@@ -6413,6 +6434,13 @@ no_ext_hdr:
 		node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
 		adv = (void *)node_rx_curr->pdu;
 	} while (1);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
+	    !devmatch) {
+		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+		return;
+	}
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	if (adv_addr) {
