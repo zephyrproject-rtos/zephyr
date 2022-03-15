@@ -57,6 +57,45 @@ out:
 	return ret;
 }
 
+int sys_mem_blocks_alloc_contiguous(sys_mem_blocks_t *mem_block, size_t count,
+				   void **out_block)
+{
+	int ret = 0;
+
+	if ((mem_block == NULL) || (out_block == NULL)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (count == 0) {
+		/* Nothing to allocate */
+		*out_block = NULL;
+		goto out;
+	}
+
+	if (count > mem_block->num_blocks) {
+		/* Definitely not enough blocks to be allocated */
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	void *ptr = alloc_blocks(mem_block, count);
+
+	if (ptr == NULL) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	*out_block = ptr;
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(mem_block),
+				   ptr, count << mem_block->blk_sz_shift);
+#endif
+
+out:
+		return ret;
+}
+
 int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
 			 void **out_blocks)
 {
@@ -199,6 +238,44 @@ int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 		}
 #endif
 	}
+
+out:
+	return ret;
+}
+
+int sys_mem_blocks_free_contiguous(sys_mem_blocks_t *mem_block, void *block, size_t count)
+{
+	int ret = 0;
+
+	if (mem_block == NULL) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	CHECKIF((mem_block->bitmap == NULL) || (mem_block->buffer == NULL)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (count == 0) {
+		/* Nothing to be freed. */
+		goto out;
+	}
+
+	if (count > mem_block->num_blocks) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = free_blocks(mem_block, block, count);
+
+	if (ret != 0) {
+		goto out;
+	}
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	heap_listener_notify_free(HEAP_ID_FROM_POINTER(mem_block),
+			block, count << mem_block->blk_sz_shift);
+#endif
 
 out:
 	return ret;
