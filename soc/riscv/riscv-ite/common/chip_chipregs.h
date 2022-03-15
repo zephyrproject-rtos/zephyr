@@ -863,6 +863,10 @@ struct wdt_it8xxx2_regs {
 
 /* External Timer register fields */
 /* External Timer 3~8 control */
+#define IT8XXX2_EXT_ETX_COMB_RST_EN	(IT8XXX2_EXT_ETXCOMB | \
+					 IT8XXX2_EXT_ETXRST | \
+					 IT8XXX2_EXT_ETXEN)
+#define IT8XXX2_EXT_ETXCOMB		BIT(3)
 #define IT8XXX2_EXT_ETXRST		BIT(1)
 #define IT8XXX2_EXT_ETXEN		BIT(0)
 
@@ -897,8 +901,8 @@ enum ext_clk_src_sel {
 enum ext_timer_idx {
 	EXT_TIMER_3 = 0,	/* Event timer */
 	EXT_TIMER_4,		/* Free run timer */
-	EXT_TIMER_5,
-	EXT_TIMER_6,
+	EXT_TIMER_5,		/* Busy wait low timer */
+	EXT_TIMER_6,		/* Busy wait high timer */
 	EXT_TIMER_7,
 	EXT_TIMER_8,
 };
