@@ -24,8 +24,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_iproc_pax_v2);
 
-#define PAX_DMA_DEV_NAME(dev)	((dev)->name)
-
 /* Driver runtime data for PAX DMA and RM */
 static struct dma_iproc_pax_data pax_dma_data;
 
@@ -756,10 +754,9 @@ static int dma_iproc_pax_init(const struct device *dev)
 		    0);
 	irq_enable(DT_INST_IRQN(0));
 #else
-	LOG_INF("%s PAX DMA rings in poll mode!\n", PAX_DMA_DEV_NAME(dev));
+	LOG_INF("%s PAX DMA rings in poll mode!\n", dev->name);
 #endif
-	LOG_INF("%s RM setup %d rings\n", PAX_DMA_DEV_NAME(dev),
-		pd->used_rings);
+	LOG_INF("%s RM setup %d rings\n", dev->name, pd->used_rings);
 
 	return 0;
 }

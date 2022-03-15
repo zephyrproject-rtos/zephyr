@@ -27,8 +27,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(neural_net);
 
-#define DEV_NAME(dev) ((dev)->name)
-
 #if LOG_LEVEL >= LOG_LEVEL_DBG
 static void intel_gna_regs_dump(const struct device *dev);
 static void intel_gna_config_desc_dump(const struct device *dev);
@@ -188,25 +186,25 @@ static int intel_gna_initialize(const struct device *dev)
 			GNA_PG_DIR_ENTRY(&gna_page_table[page]) : (uint32_t)-1;
 		gna_config_desc.pagedir[page] = page_dir_entry;
 		LOG_DBG("%s: page %u pagetable %08x",
-			DEV_NAME(dev), page, gna_config_desc.pagedir[page]);
+			dev->name, page, gna_config_desc.pagedir[page]);
 	}
 	gna_config_desc.vamaxaddr = GNA_ADDRESSABLE_MEM_SIZE;
 	LOG_DBG("%s: max virtual address %08x",
-			DEV_NAME(dev), gna_config_desc.vamaxaddr);
+			dev->name, gna_config_desc.vamaxaddr);
 
 	/* flush cache */
 	SOC_DCACHE_FLUSH((void *)&gna_config_desc, sizeof(gna_config_desc));
 
 	LOG_INF("%s: initialized (max %u models & max %u pending requests)",
-			DEV_NAME(dev), GNA_MAX_NUM_MODELS,
+			dev->name, GNA_MAX_NUM_MODELS,
 			GNA_REQUEST_QUEUE_LEN);
 	LOG_INF("%s: max addressable memory %u MB",
-			DEV_NAME(dev), GNA_ADDRESSABLE_MEM_SIZE >> 20);
+			dev->name, GNA_ADDRESSABLE_MEM_SIZE >> 20);
 	LOG_INF("%s: %u page table(s) at %p and %u bytes",
-			DEV_NAME(dev), (uint32_t)GNA_NUM_PG_TABLES_NEEDED,
+			dev->name, (uint32_t)GNA_NUM_PG_TABLES_NEEDED,
 			gna_page_table, sizeof(gna_page_table));
 	LOG_INF("%s: configuration descriptor at %p",
-			DEV_NAME(dev), &gna_config_desc);
+			dev->name, &gna_config_desc);
 
 	/* register interrupt handler */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
@@ -266,7 +264,7 @@ static int intel_gna_configure(const struct device *dev,
 	INTEL_GNA_CONFIG_DESC_DUMP(dev);
 
 	LOG_INF("Device %s (version %u.%u) configured with power mode %u",
-			DEV_NAME(dev), regs->gnaversion >> 1,
+			dev->name, regs->gnaversion >> 1,
 			(uint32_t)(regs->gnaversion & BIT(0)),
 			CONFIG_INTEL_GNA_POWER_MODE);
 

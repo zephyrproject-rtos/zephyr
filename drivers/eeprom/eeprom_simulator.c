@@ -35,8 +35,6 @@ struct eeprom_sim_config {
 	bool readonly;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 #define EEPROM(addr) (mock_eeprom + (addr))
 
 #if defined(CONFIG_MULTITHREADING)
