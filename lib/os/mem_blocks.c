@@ -109,6 +109,50 @@ out:
 	return ret;
 }
 
+int sys_mem_blocks_get(sys_mem_blocks_t *mem_block, void *in_block, size_t count)
+{
+	int ret = 0;
+	int offset;
+
+	if (mem_block == NULL) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	CHECKIF((mem_block->bitmap == NULL) || (mem_block->buffer == NULL)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (count == 0) {
+		/* Nothing to allocate */
+		goto out;
+	}
+
+	offset = ((uint8_t *)in_block - mem_block->buffer) >> mem_block->blk_sz_shift;
+
+	if (offset + count > mem_block->num_blocks) {
+		/* Definitely not enough blocks to be allocated */
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = sys_bitarray_test_and_set_region(mem_block->bitmap, count, offset, true);
+	if (ret != 0) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+#ifdef CONFIG_SYS_MEM_BLOCKS_LISTENER
+	heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(mem_block),
+			in_block, count << mem_block->blk_sz_shift);
+#endif
+
+out:
+	return ret;
+}
+
+
 int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 			void **in_blocks)
 {
