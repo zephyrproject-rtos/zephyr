@@ -12,7 +12,7 @@
 #include <sys/util.h>
 
 #define BLK_SZ     64
-#define NUM_BLOCKS 4
+#define NUM_BLOCKS 8
 
 SYS_MEM_BLOCKS_DEFINE(mem_block_01, BLK_SZ, NUM_BLOCKS, 4);
 
