@@ -46,8 +46,6 @@ struct dac_sam_dev_data {
 	struct dac_channel dac_channels[DAC_CHANNEL_NO];
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static void dac_sam_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
@@ -140,7 +138,7 @@ static int dac_sam_init(const struct device *dev)
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

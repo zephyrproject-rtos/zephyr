@@ -85,8 +85,6 @@ struct i2s_cavs_dev_data {
 	struct stream rx;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static void i2s_dma_tx_callback(const struct device *, void *, uint32_t, int);
 static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *,
 		volatile struct i2s_cavs_ssp *const, const struct device *);
@@ -791,7 +789,7 @@ static int i2s_cavs_initialize(const struct device *dev)
 	dev_data->tx.state = I2S_STATE_NOT_READY;
 	dev_data->rx.state = I2S_STATE_NOT_READY;
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

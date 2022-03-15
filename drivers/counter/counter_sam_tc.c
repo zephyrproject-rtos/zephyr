@@ -70,8 +70,6 @@ struct counter_sam_dev_data {
 	struct counter_sam_alarm_data alarm[MAX_ALARMS_PER_TC_CHANNEL];
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static const uint32_t sam_tc_input_freq_table[] = {
 #if defined(CONFIG_SOC_SERIES_SAME70) || defined(CONFIG_SOC_SERIES_SAMV71)
 	USEC_PER_SEC,
@@ -332,7 +330,7 @@ static int counter_sam_initialize(const struct device *dev)
 #endif
 	dev_cfg->irq_config_func(dev);
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

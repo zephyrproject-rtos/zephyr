@@ -481,7 +481,7 @@ static int eth_init(const struct device *dev)
 	/* Connect and enable IRQ */
 	cfg->config_func();
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

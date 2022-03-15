@@ -105,8 +105,6 @@ struct flash_stm32_qspi_data {
 	bool flag_quad_io_en: 1;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static inline void qspi_lock_thread(const struct device *dev)
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
@@ -1110,7 +1108,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

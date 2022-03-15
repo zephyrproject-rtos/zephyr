@@ -31,8 +31,6 @@ struct nios2_msgdma_dev_data {
 	dma_callback_t dma_callback;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static void nios2_msgdma_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
