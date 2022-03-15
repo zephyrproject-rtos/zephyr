@@ -1231,6 +1231,7 @@ struct bt_gatt_exchange_params {
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
  *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  @retval -EALREADY The MTU exchange request has been already sent.
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn,
 			 struct bt_gatt_exchange_params *params);
