@@ -137,6 +137,11 @@ The K64F SoC has five pairs of pinmux/gpio controllers.
 | PTE25 | UART4_TX        | UART BT HCI               |
 +-------+-----------------+---------------------------+
 
+.. note::
+
+   To enable battery sensing, you will need to enable the ``en_bat_sens``
+   regulator in Devicetree.
+
 System Clock
 ============
 

@@ -25,13 +25,6 @@ static int hexiwear_k64_pinmux_init(const struct device *dev)
 	gpio_pin_configure(gpioa, 29, GPIO_OUTPUT_HIGH);
 #endif
 
-#ifdef CONFIG_BATTERY_SENSE
-	const struct device *gpioc =
-	       device_get_binding(DT_LABEL(DT_NODELABEL(gpioc)));
-
-	gpio_pin_configure(gpioc, 14, GPIO_OUTPUT_LOW);
-#endif
-
 	return 0;
 }
 
