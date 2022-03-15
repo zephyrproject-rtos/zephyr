@@ -80,7 +80,7 @@ config IPM_CONSOLE_STACK_SIZE
 
 config AARCH64_IMAGE_HEADER
 	bool "Add image header"
-	default y if ARM_MMU
+	default y if ARM_MMU || ARM_MPU
 	help
 	  This option enables standard ARM64 boot image header used by Linux
 	  and understood by loaders such as u-boot on Xen xl tool.

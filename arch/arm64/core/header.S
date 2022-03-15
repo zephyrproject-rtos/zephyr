@@ -8,7 +8,7 @@
 #include <arch/cpu.h>
 #include "mmu.h"
 
-#if CONFIG_MMU_PAGE_SIZE == 4096
+#if CONFIG_MMU_PAGE_SIZE == 4096 || defined(CONFIG_ARM_MPU)
 #define HEADER_PGSIZE	1
 #elif CONFIG_MMU_PAGE_SIZE == 16384
 #define HEADER_PGSIZE	2
