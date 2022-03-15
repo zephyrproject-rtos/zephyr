@@ -218,6 +218,25 @@ struct sys_multi_mem_blocks {
 int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
 			 void **out_blocks);
 
+
+/**
+ * @brief Force allocation of a specified blocks in a memory block object
+ *
+ * Allocate a specified blocks in a memory block object.
+ * Note: use caution when mixing sys_mem_blocks_get and sys_mem_blocks_alloc,
+ * allocation may take any of the free memory space
+ *
+ *
+ * @param[in]  mem_block  Pointer to memory block object.
+ * @param[in]  in_block   Address of the first required block to allocate
+ * @param[in]  count      Number of blocks to allocate.
+ *
+ * @retval 0       Successful
+ * @retval -EINVAL Invalid argument supplied.
+ * @retval -ENOMEM Some of blocks are taken and cannot be allocated
+ */
+int sys_mem_blocks_get(sys_mem_blocks_t *mem_block, void *in_block, size_t count);
+
 /**
  * @brief Free multiple memory blocks
  *
