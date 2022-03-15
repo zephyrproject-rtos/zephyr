@@ -36,6 +36,9 @@ LOG_MODULE_REGISTER(adc_stm32);
 #endif
 #endif
 
+/* reference voltage for the ADC */
+#define STM32_ADC_VREF_MV DT_INST_PROP(0, vref_mv)
+
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
@@ -980,6 +983,7 @@ static const struct adc_driver_api api_stm32_driver_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = adc_stm32_read_async,
 #endif
+	.ref_internal = STM32_ADC_VREF_MV, /* VREF is usually connected to VDD */
 };
 
 #define STM32_ADC_INIT(index)						\
