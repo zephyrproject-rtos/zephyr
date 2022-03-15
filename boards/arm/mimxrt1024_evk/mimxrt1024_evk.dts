@@ -134,3 +134,7 @@
 &gpt_hw_timer {
 	status = "okay";
 };
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
