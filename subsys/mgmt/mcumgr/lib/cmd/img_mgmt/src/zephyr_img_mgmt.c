@@ -542,7 +542,7 @@ img_mgmt_impl_swap_type(int slot)
  */
 int
 img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
-				 struct img_mgmt_upload_action *action, const char **errstr)
+				 struct img_mgmt_upload_action *action)
 {
 	const struct image_header *hdr;
 	struct image_version cur_ver;
@@ -553,7 +553,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 
 	if (req->off == -1) {
 		/* Request did not include an `off` field. */
-		*errstr = img_mgmt_err_str_hdr_malformed;
+		IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
 		return MGMT_ERR_EINVAL;
 	}
 
@@ -561,20 +561,20 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		/* First upload chunk. */
 		if (req->data_len < sizeof(struct image_header)) {
 			/*  Image header is the first thing in the image */
-			*errstr = img_mgmt_err_str_hdr_malformed;
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
 			return MGMT_ERR_EINVAL;
 		}
 
 		if (req->size == -1) {
 			/* Request did not include a `len` field. */
-			*errstr = img_mgmt_err_str_hdr_malformed;
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
 			return MGMT_ERR_EINVAL;
 		}
 		action->size = req->size;
 
 		hdr = (struct image_header *)req->img_data;
 		if (hdr->ih_magic != IMAGE_MAGIC) {
-			*errstr = img_mgmt_err_str_magic_mismatch;
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_magic_mismatch);
 			return MGMT_ERR_EINVAL;
 		}
 
@@ -598,7 +598,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		action->area_id = img_mgmt_get_unused_slot_area_id(req->image);
 		if (action->area_id < 0) {
 			/* No slot where to upload! */
-			*errstr = img_mgmt_err_str_no_slot;
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_no_slot);
 			return MGMT_ERR_ENOENT;
 		}
 
@@ -606,12 +606,14 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		if (hdr->ih_flags & IMAGE_F_ROM_FIXED_ADDR) {
 			rc = flash_area_open_ex(action->area_id, &fa);
 			if (rc) {
-				*errstr = img_mgmt_err_str_flash_open_failed;
+				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
+					img_mgmt_err_str_flash_open_failed);
 				return MGMT_ERR_EUNKNOWN;
 			}
 
 			if (fa->fa_off != hdr->ih_load_addr) {
-				*errstr = img_mgmt_err_str_image_bad_flash_addr;
+				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(aciton,
+					img_mgmt_err_str_image_bad_flash_addr);
 				flash_area_close(fa);
 				return MGMT_ERR_EINVAL;
 			}
@@ -631,7 +633,8 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 			}
 
 			if (img_mgmt_vercmp(&cur_ver, &hdr->ih_ver) >= 0) {
-				*errstr = img_mgmt_err_str_downgrade;
+				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
+					img_mgmt_err_str_downgrade);
 				return MGMT_ERR_EBADSTATE;
 			}
 		}
@@ -662,6 +665,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 
 	action->write_bytes = req->data_len;
 	action->proceed = true;
+	IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, NULL);
 
 	return 0;
 }

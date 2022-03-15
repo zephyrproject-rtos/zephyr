@@ -188,6 +188,7 @@ config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
 
 config IMG_MGMT_VERBOSE_ERR
 	bool "Verbose logging when uploading a new image"
+	select MGMT_VERBOSE_ERR_RESPONSE
 	help
 	  Enable verbose logging during a firmware upgrade.
 
