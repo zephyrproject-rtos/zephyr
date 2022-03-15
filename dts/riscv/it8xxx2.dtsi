@@ -478,8 +478,8 @@
 			label = "TIMER";
 			interrupts = <IT8XXX2_IRQ_TIMER3 IRQ_TYPE_EDGE_RISING   /* Event timer */
 				      IT8XXX2_IRQ_TIMER4 IRQ_TYPE_EDGE_RISING   /* Free run timer */
-				      IT8XXX2_IRQ_TIMER5 IRQ_TYPE_EDGE_RISING
-				      IT8XXX2_IRQ_TIMER6 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_TIMER5 IRQ_TYPE_EDGE_RISING   /* Busy wait low */
+				      IT8XXX2_IRQ_TIMER6 IRQ_TYPE_EDGE_RISING   /* Busy wait high */
 				      IT8XXX2_IRQ_TIMER7 IRQ_TYPE_EDGE_RISING
 				      IT8XXX2_IRQ_TIMER8 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
