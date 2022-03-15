@@ -368,6 +368,8 @@
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;
+			has-temp-channel;
+			has-vref-channel;
 		};
 
 		adc4: adc@46021000 {
@@ -378,6 +380,8 @@
 			status = "disabled";
 			label = "ADC_4";
 			#io-channel-cells = <1>;
+			has-temp-channel;
+			has-vref-channel;
 		};
 
 		ucpd1: ucpd@4000dc00 {

@@ -27,5 +27,13 @@ properties:
     pinctrl-names:
       required: true
 
+    has-temp-channel:
+      type: boolean
+      description: Indicates if the ADC has a dedicated internal temperature sensor channel.
+
+    has-vref-channel:
+      type: boolean
+      description: Indicates if the ADC has a dedicated internal voltage reference channel.
+
 io-channel-cells:
     - input
