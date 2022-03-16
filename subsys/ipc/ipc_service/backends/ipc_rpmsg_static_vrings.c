@@ -352,14 +352,9 @@ static int register_ept(const struct device *instance, void **token,
 	struct ipc_rpmsg_instance *rpmsg_inst;
 	struct ipc_rpmsg_ept *rpmsg_ept;
 
-	/* Instance is still being initialized */
-	if (data->state == STATE_BUSY) {
+	/* Instance is not ready */
+	if (atomic_get(&data->state) != STATE_INITED) {
 		return -EBUSY;
-	}
-
-	/* Instance is not initialized */
-	if (data->state == STATE_READY) {
-		return -EINVAL;
 	}
 
 	/* Empty name is not valid */
@@ -387,14 +382,9 @@ static int send(const struct device *instance, void *token,
 	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_ept *rpmsg_ept;
 
-	/* Instance is still being initialized */
-	if (data->state == STATE_BUSY) {
+	/* Instance is not ready */
+	if (atomic_get(&data->state) != STATE_INITED) {
 		return -EBUSY;
-	}
-
-	/* Instance is not initialized */
-	if (data->state == STATE_READY) {
-		return -EINVAL;
 	}
 
 	/* Empty message is not allowed */
