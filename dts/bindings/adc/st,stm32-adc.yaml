@@ -27,6 +27,31 @@ properties:
     pinctrl-names:
       required: true
 
+    st,prescaler:
+      type: int
+      required: false
+      default: 0
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+      description: |
+        Clock prescaler at the input of the adc
+        Could be in range [0 .. 0xF] ; default reset value is 0 (not divided)
+
     vref_mv:
       type: int
       required: false
