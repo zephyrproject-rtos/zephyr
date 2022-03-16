@@ -120,12 +120,12 @@ config SHELL_BACKEND_SERIAL_LOG_LEVEL
 endif # SHELL_BACKEND_SERIAL
 
 config SHELL_BACKEND_ESP32_HW_CDC
-	bool "Enable ESP32 HW CDC backend"
+	bool "ESP32 HW CDC backend"
 	select CONSOLE
 	select ESP32_CDC_CONSOLE
 	depends on SOC_ESP32C3
 	help
-	  Enable shell backend over ESP32 hardware CDC.
+		Enables shell backend over ESP32 hardware CDC.
 
 if SHELL_BACKEND_ESP32_HW_CDC
 

@@ -230,6 +230,7 @@
 /drivers/clock_control/*rcar*             @aaillet
 /drivers/counter/                         @nordic-krch
 /drivers/console/ipm_console.c            @finikorg
+/drivers/console/esp32_hw_cdc_console.c   @uLipe
 /drivers/console/semihost_console.c       @luozhongyao
 /drivers/console/jailhouse_debug_console.c @MrVan
 /drivers/counter/counter_cmos.c           @dcpleung
