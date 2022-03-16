@@ -12,6 +12,12 @@
 		};
 	};
 
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <ADC012_IN13_PC3>;
+		};
+	};
+
 	dac_default: dac_default {
 		group1 {
 			pinmux = <DAC_OUT0_PA4>;

@@ -62,6 +62,9 @@ The board configuration supports the following hardware features:
    * - PINMUX
      - :kconfig:option:`CONFIG_PINCTRL`
      - :dtcompatible:`gd,gd32-pinctrl-af`
+   * - ADC
+     - :kconfig:option:`CONFIG_ADC`
+     - :dtcompatible:`gd,gd32-adc`
 
 Serial Port
 ===========
