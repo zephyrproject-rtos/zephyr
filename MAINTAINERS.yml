@@ -1555,6 +1555,7 @@ GD32 Platforms:
         - gmarull
     collaborators:
         - soburi
+        - cameled
     files:
         - boards/arm/gd32*/
         - boards/riscv/gd32*/
