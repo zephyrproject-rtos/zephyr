@@ -22,8 +22,9 @@
 			zephyr,memory-region = "SRAM_REGION";
 		};
 		test_sram2: sram@20001000 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = < 0x20001000 0x1000 >;
+			zephyr,memory-region = "SRAM@REGION#2";
 		};
 	};
 };
