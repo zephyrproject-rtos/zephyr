@@ -6,9 +6,12 @@
 
 #include <string.h>
 
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
 #include "tinycbor/cbor.h"
 #include "mgmt/endian.h"
 #include "mgmt/mgmt.h"
+#include <mgmt/mcumgr/buf.h>
 
 static mgmt_on_evt_cb evt_cb;
 static struct mgmt_group *mgmt_group_list;
@@ -141,33 +144,20 @@ mgmt_find_handler(uint16_t group_id, uint16_t command_id)
 int
 mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
 {
-	int rc;
+	bool ok;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
 
-	rc = cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	if (rc != 0) {
-		return rc;
-	}
-
-	rc = cbor_encode_int(&ctxt->encoder, errcode);
-	if (rc != 0) {
-		return rc;
-	}
+	zcbor_tstr_put_lit(zse, "rc");
+	ok = zcbor_int32_put(zse, errcode);
 
 #ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
-	if (MGMT_CTXT_RC_RSN(ctxt) != NULL) {
-		rc = cbor_encode_text_stringz(&ctxt->encoder, "rsn");
-		if (rc != 0) {
-			return rc;
-		}
-
-		rc = cbor_encode_text_stringz(&ctxt->encoder, MGMT_CTXT_RC_RSN(ctxt));
-		if (rc != 0) {
-			return rc;
-		}
+	if (ok && MGMT_CTXT_RC_RSN(ctxt) != NULL) {
+		ok = zcbor_tstr_put_lit(zse, "rsn")			&&
+		     zcbor_tstr_put_term(zse, MGMT_CTXT_RC_RSN(ctxt));
 	}
 #endif
 
-	return 0;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
 
 int
@@ -191,8 +181,6 @@ mgmt_ctxt_init(struct mgmt_ctxt *ctxt, struct mgmt_streamer *streamer)
 	if (rc != CborNoError) {
 		return mgmt_err_from_cbor(rc);
 	}
-
-	cbor_encoder_init(&ctxt->encoder, streamer->writer, 0);
 
 	return 0;
 }
