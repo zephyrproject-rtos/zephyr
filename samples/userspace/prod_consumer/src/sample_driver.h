@@ -72,7 +72,7 @@ static inline int z_impl_sample_driver_state_set(const struct device *dev,
  * This callback runs in interrupt context. The provided data
  * blob will be of size SAMPLE_DRIVER_MSG_SIZE.
  *
- * @param dev Sample driver device to install callabck
+ * @param dev Sample driver device to install callback
  * @param cb Callback function pointer
  * @param context Context passed to callback function, or NULL if not needed
  * @return 0 Success, nonzero if an error occurred

@@ -26,7 +26,7 @@ is being placed in the memory, and its counterpart
 Separate Virtual Address Space from Physical Address Space
 ==========================================================
 
-On 32-bit x86, it is possible to have separate phyiscal and virtual
+On 32-bit x86, it is possible to have separate physical and virtual
 address space. Code and data are linked in virtual address space,
 but are still loaded in physical memory. However, during boot, code
 and data must be available and also addressable in physical address
@@ -92,7 +92,7 @@ in the board configuration file. Here is an example:
        --map 0x80000000,0x400000,LWUX,0xB0000000)
 
 The argument ``--map`` takes the following value:
-``<physical address>,<size>[,<flags:LUWX>[,<virtual adderss>]]``, where:
+``<physical address>,<size>[,<flags:LUWX>[,<virtual address>]]``, where:
 
 - ``<physical address>`` is the physical address of the mapping. (Required)
 

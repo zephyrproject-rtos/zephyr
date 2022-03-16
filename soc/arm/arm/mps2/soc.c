@@ -45,7 +45,7 @@ FPGAIO_INIT(2);
 #define CPU1_FLASH_OFFSET       (0x10000000)
 
 /**
- * @brief Wake up CPU 1 from another CPU, this is plaform specific.
+ * @brief Wake up CPU 1 from another CPU, this is platform specific.
  */
 void wakeup_cpu1(void)
 {
@@ -60,7 +60,7 @@ void wakeup_cpu1(void)
 }
 
 /**
- * @brief Get the current CPU ID, this is plaform specific.
+ * @brief Get the current CPU ID, this is platform specific.
  *
  * @return Current CPU ID
  */

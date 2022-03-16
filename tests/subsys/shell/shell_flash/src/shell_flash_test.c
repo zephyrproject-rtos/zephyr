@@ -71,7 +71,7 @@ static void test_flash_read(void)
 
 void test_main(void)
 {
-	/* Let the shell backend intialize. */
+	/* Let the shell backend initialize. */
 	k_usleep(10);
 
 	ztest_test_suite(shell_flash_test_suite,

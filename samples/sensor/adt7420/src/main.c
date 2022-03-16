@@ -104,7 +104,7 @@ static void process(const struct device *dev)
 	int ret;
 	bool reset_window = false;
 
-	/* Set upddate rate to 240 mHz */
+	/* Set update rate to 240 mHz */
 	sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
 			     SENSOR_ATTR_SAMPLING_FREQUENCY, 240 * 1000);
 

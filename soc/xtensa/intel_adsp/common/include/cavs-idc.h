@@ -42,7 +42,7 @@
  *     IDC[src].core[dst].itc = BIT(31) | message;
  *     while (IDC[src].core[dst].itc & BIT(31)) {}
  *
- * And the other side (on cpu "dst", generally in the IDC interruupt
+ * And the other side (on cpu "dst", generally in the IDC interrupt
  * handler) will read and acknowledge those same values via:
  *
  *     uint32_t my_msg = IDC[dst].core[src].tfc & 0x7fffffff;

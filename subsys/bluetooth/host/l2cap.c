@@ -2548,7 +2548,7 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 	       BT_L2CAP_LE_CHAN(chan)->rx.cid);
 
 	/* Cancel RTX work on signal channel.
-	 * Disconnected callback is always called from system worqueue
+	 * Disconnected callback is always called from system workqueue
 	 * so this should always succeed.
 	 */
 	(void)k_work_cancel_delayable(&chan->rtx_work);

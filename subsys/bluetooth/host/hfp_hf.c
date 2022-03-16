@@ -47,7 +47,7 @@ static const struct {
 	{"call", 0, 1}, /* HF_CALL_IND */
 	{"callsetup", 0, 3}, /* HF_CALL_SETUP_IND */
 	{"callheld", 0, 2}, /* HF_CALL_HELD_IND */
-	{"signal", 0, 5}, /* HF_SINGNAL_IND */
+	{"signal", 0, 5}, /* HF_SIGNAL_IND */
 	{"roam", 0, 1}, /* HF_ROAM_IND */
 	{"battchg", 0, 5} /* HF_BATTERY_IND */
 };

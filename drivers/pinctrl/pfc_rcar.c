@@ -120,7 +120,7 @@ static const struct pfc_bias_reg *pfc_rcar_get_bias_reg(uint16_t pin,
 {
 	const struct pfc_bias_reg *bias_regs = pfc_rcar_get_bias_regs();
 
-	/* Loop arround all the registers to find the bit for a given pin */
+	/* Loop around all the registers to find the bit for a given pin */
 	while (bias_regs->puen && bias_regs->pud) {
 		for (size_t i = 0U; i < ARRAY_SIZE(bias_regs->pins); i++) {
 			if (bias_regs->pins[i] == pin) {

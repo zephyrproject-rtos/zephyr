@@ -45,7 +45,7 @@ static char *updatehub_response(enum updatehub_response response)
 	case UPDATEHUB_INSTALL_ERROR:
 		return "Fail while installing the update package";
 	case UPDATEHUB_FLASH_INIT_ERROR:
-		return "Fail to initilialize the flash";
+		return "Fail to initialize the flash";
 	case UPDATEHUB_NO_UPDATE:
 		return "No update available";
 	default:

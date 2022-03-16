@@ -172,7 +172,7 @@ config NET_SOCKETS_OFFLOAD_TLS
 	default y
 	help
 	  If enabled, the offloading engine is expected to handle TLS/DTLS
-	  socket calls. Othwerwise, Zephyrs native TLS socket implementation
+	  socket calls. Otherwise, Zephyrs native TLS socket implementation
 	  will be used, and only TCP/UDP socket calls will be offloaded.
 
 config NET_SOCKETS_PACKET

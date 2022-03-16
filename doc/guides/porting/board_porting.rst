@@ -502,7 +502,7 @@ Verbose mode prints any host tool commands the runner uses.
 
 The order of the ``include()`` calls in your :file:`board.cmake` matters. The
 first ``include`` sets the default runner if it's not already set. For example,
-including ``nrfjprog.board.cmake`` first means that ``nrjfprog`` is the default
+including ``nrfjprog.board.cmake`` first means that ``nrfjprog`` is the default
 flash runner for this board. Since ``nrfjprog`` does not support debugging,
 ``jlink`` is the default debug runner.
 

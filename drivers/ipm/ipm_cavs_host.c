@@ -18,7 +18,7 @@
  *
  * + Buffer addresses are 4k-aligned (this is a hardware requirement)
  * + Inbuf must be 4k after outbuf, with no use of the intervening memory
- * + Oubuf must be 4k after the start of win0 (this is where the host driver looks)
+ * + Outbuf must be 4k after the start of win0 (this is where the host driver looks)
  *
  * One side effect is that the word "before" MSG_INBUF is owned by our
  * code too, and can be used for a nice trick below.
@@ -70,7 +70,7 @@ static int send(const struct device *ipmdev, int wait, uint32_t id,
 	bool ok = cavs_ipc_send_message(CAVS_HOST_DEV, id, ext_data);
 
 	/* The IPM docs call for "busy waiting" here, but in fact
-	 * there's a blocking synchrnous call available that might be
+	 * there's a blocking synchronous call available that might be
 	 * better.  But then we'd have to check whether we're in
 	 * interrupt context, and it's not clear to me that SOF would
 	 * benefit anyway as all its usage is async.  This is OK for

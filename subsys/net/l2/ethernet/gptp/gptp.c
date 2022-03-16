@@ -521,7 +521,7 @@ static void gptp_state_machine(void)
 	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
 		struct gptp_port_ds *port_ds = GPTP_PORT_DS(port);
 
-		/* If interface is down, don't move foward */
+		/* If interface is down, don't move forward */
 		if (net_if_flag_is_set(GPTP_PORT_IFACE(port), NET_IF_UP)) {
 			switch (GPTP_GLOBAL_DS()->selected_role[port]) {
 			case GPTP_PORT_DISABLED:

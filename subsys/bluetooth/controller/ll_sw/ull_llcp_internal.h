@@ -26,7 +26,7 @@ enum llcp_proc {
 	PROC_CHAN_MAP_UPDATE,
 	PROC_DATA_LENGTH_UPDATE,
 	PROC_CTE_REQ,
-	/* A helper enum entry, to use in pause prcedure context */
+	/* A helper enum entry, to use in pause procedure context */
 	PROC_NONE = 0x0,
 };
 #if ((CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM <\

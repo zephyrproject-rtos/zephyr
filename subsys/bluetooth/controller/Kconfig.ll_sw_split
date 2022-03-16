@@ -249,7 +249,7 @@ config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	help
 	  Add additional memory to advertising PDU storage. The memory is a
 	  general purpose storage for data that should be send from ULL to LLL.
-	  The data stored in the memory are in synchoronization with content
+	  The data stored in the memory are in synchronization with content
 	  of PDU memory.
 
 	  For example, the extra data memory is used for storage for parameters
@@ -371,7 +371,7 @@ config BT_CTLR_SCHED_ADVANCED_CENTRAL_CONN_SPACING
 	  of the established central role connections.
 	  The precision is determined by the resolution of the platform dependent
 	  ticker clock.
-	  When spefifying values above 6.25 ms, the spacing may be unobtainable if
+	  When specifying values above 6.25 ms, the spacing may be unobtainable if
 	  the connection interval becomes smaller than the total spacing. In that
 	  case, modulo is applied and a total spacing of 15 ms on a 10 ms connection
 	  interval yields 5 ms spacing.

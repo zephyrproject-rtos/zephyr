@@ -1284,7 +1284,7 @@ int bt_mesh_cfg_node_identity_get(uint16_t net_idx, uint16_t addr,
  *  @param net_idx Network index to encrypt with.
  *  @param addr    Target node address.
  *  @param unicast_addr LPN unicast address.
- *  @param polltimeout Poltimeout response parameter.
+ *  @param polltimeout Poll timeout response parameter.
  *
  *  @return 0 on success, or (negative) error code on failure.
  */

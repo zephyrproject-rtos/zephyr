@@ -373,7 +373,7 @@ static const struct ov2640_reg uxga_regs[] = {
 
 	{ RESET,   RESET_DVP },
 	{ HSIZE8,  (UXGA_HSIZE>>3)}, /* Image Horizontal Size HSIZE[10:3] */
-	{ VSIZE8,  (UXGA_VSIZE>>3)}, /* Image Vertiacl Size VSIZE[10:3] */
+	{ VSIZE8,  (UXGA_VSIZE>>3)}, /* Image Vertical Size VSIZE[10:3] */
 
 	/* {HSIZE[11], HSIZE[2:0], VSIZE[2:0]} */
 	{ SIZEL,   ((UXGA_HSIZE>>6)&0x40) | ((UXGA_HSIZE&0x7)<<3) | (UXGA_VSIZE&0x7)},
@@ -392,7 +392,7 @@ static const struct ov2640_reg uxga_regs[] = {
 
 	/* H_DIVIDER/V_DIVIDER */
 	{ CTRLI,   CTRLI_LP_DP | 0x00},
-	/* DVP prescalar */
+	/* DVP prescaler */
 	{ R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
 	{ R_BYPASS, R_BYPASS_DSP_EN },

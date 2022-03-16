@@ -425,7 +425,7 @@ static int lis2mdl_init(const struct device *dev)
 		rc = lis2mdl_operating_mode_set(ctx,
 						LIS2MDL_CONTINUOUS_MODE);
 		if (rc) {
-			LOG_ERR("set continuos mode failed");
+			LOG_ERR("set continuous mode failed");
 			return rc;
 		}
 	}

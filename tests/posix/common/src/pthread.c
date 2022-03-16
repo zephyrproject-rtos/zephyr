@@ -428,7 +428,7 @@ void test_posix_pthread_error_condition(void)
 	zassert_equal(pthread_attr_setdetachstate(NULL, 0),
 		      EINVAL, "pthread set detach state with NULL error");
 	zassert_equal(pthread_attr_getdetachstate(NULL, &detach),
-		      EINVAL, "get datach state error");
+		      EINVAL, "get detach state error");
 	zassert_equal(pthread_detach(NULL), ESRCH, "detach with NULL error");
 	zassert_equal(pthread_attr_init(NULL), ENOMEM,
 		      "init with NULL error");
@@ -447,7 +447,7 @@ void test_posix_pthread_error_condition(void)
 
 	attr.initialized = 0U;
 	zassert_equal(pthread_attr_getdetachstate(&attr, &detach),
-		      EINVAL, "get datach state error");
+		      EINVAL, "get detach state error");
 
 	/* Initialise thread attribute to ensure won't be return with init error */
 	zassert_false(pthread_attr_init(&attr),
@@ -465,7 +465,7 @@ void test_posix_pthread_error_condition(void)
 	zassert_equal(pthread_attr_setdetachstate(&attr, 3),
 		      EINVAL, "set detach state error");
 	zassert_false(pthread_attr_getdetachstate(&attr, &detach),
-		      "get datach state error");
+		      "get detach state error");
 }
 
 void test_posix_pthread_termination(void)

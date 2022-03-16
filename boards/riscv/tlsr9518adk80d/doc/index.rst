@@ -65,7 +65,7 @@ The Zephyr TLSR9518ADK80D board configuration supports the following hardware fe
 +----------------+------------+------------------------------+
 | PWM            | on-chip    | pwm                          |
 +----------------+------------+------------------------------+
-| TRNG           | on-chip    | entopy                       |
+| TRNG           | on-chip    | entropy                      |
 +----------------+------------+------------------------------+
 | FLASH (MSPI)   | on-chip    | flash                        |
 +----------------+------------+------------------------------+

@@ -10,7 +10,7 @@
 #define WIFI_MAC_INTR_SOURCE                0   /* WiFi MAC, level */
 #define WIFI_MAC_NMI_SOURCE                 1   /* WiFi MAC, NMI, use if MAC needs fix in NMI */
 #define WIFI_PWR_INTR_SOURCE                2
-#define WIFI_BB_INTR_SOURCE                 3   /* WiFi BB, level, we can do some calibartion */
+#define WIFI_BB_INTR_SOURCE                 3   /* WiFi BB, level, we can do some calibration */
 #define BT_MAC_INTR_SOURCE                  4   /* will be cancelled */
 #define BT_BB_INTR_SOURCE                   5   /* BB, level */
 #define BT_BB_NMI_SOURCE                    6   /* BT BB, NMI, use if BB have bug to fix in NMI */

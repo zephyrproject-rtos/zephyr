@@ -150,7 +150,7 @@ static void tracing_backend_usb_output(const struct tracing_backend *backend,
 		transfer_state = USB_TRANSFER_ONGOING;
 
 		/*
-		 * make sure every USB tansfer no need ZLP at all
+		 * make sure every USB transfer no need ZLP at all
 		 * because we are in lowest priority thread content
 		 * there are no deterministic time between real USB
 		 * packet and ZLP

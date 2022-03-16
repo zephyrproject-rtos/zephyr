@@ -245,7 +245,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     mov r0, lr
 
 #if defined(CONFIG_ARMV7_R)
-    /* change processor mode to unprivileged, with all interrrupts enabled. */
+    /* change processor mode to unprivileged, with all interrupts enabled. */
     msr CPSR_c, #MODE_USR
 #else
     /* change processor mode to unprivileged */

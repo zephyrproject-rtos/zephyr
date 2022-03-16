@@ -48,7 +48,7 @@
 #define IPV4_AUTOCONF_START_DELAY 3
 
 /**
- * @brief Start IPv4 autocofiguration RFC 3927: IPv4 Link Local
+ * @brief Start IPv4 autoconfiguration RFC 3927: IPv4 Link Local
  *
  * @details Start IPv4 IP autoconfiguration
  *

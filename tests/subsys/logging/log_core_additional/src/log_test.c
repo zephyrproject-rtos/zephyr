@@ -184,7 +184,7 @@ struct backend_cb backend2_cb;
 /* The logging system support user customize timestamping in log messages
  * by register a timestamp function, in timestamp_get() below, just return
  * a counter as timestamp for different messages.
- * when install this timestamp function, timestamping frequence is set to
+ * when install this timestamp function, timestamping frequency is set to
  * 2000000, means 2 timestamp/us
  */
 static uint32_t stamp;
@@ -263,7 +263,7 @@ void test_log_domain_id(void)
 
 void test_log_sync(void)
 {
-	TC_PRINT("Logging synchronousely\n");
+	TC_PRINT("Logging synchronously\n");
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		log_setup(false);

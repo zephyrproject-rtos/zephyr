@@ -257,7 +257,7 @@ to the target architecture (e.g. CPU registers)
      - Description
    * - ID
      - ``char``
-     - ``A`` to indiciate this is a architecture-specific block.
+     - ``A`` to indicate this is a architecture-specific block.
    * - Header version
      - ``uint16_t``
      - Identify the version of this block. To be interpreted by the target
@@ -286,7 +286,7 @@ the memory region.
      - Description
    * - ID
      - ``char``
-     - ``M`` to indiciate this is a memory block.
+     - ``M`` to indicate this is a memory block.
    * - Header version
      - ``uint16_t``
      - Identify the version of the header. This needs to be incremented
@@ -313,7 +313,7 @@ the following needs to be done:
 #. Add a new target code to the ``enum coredump_tgt_code`` in
    :zephyr_file:`include/debug/coredump.h`.
 #. Implement :c:func:`arch_coredump_tgt_code_get` simply to return
-   the newly introducted target code.
+   the newly introduced target code.
 #. Implement :c:func:`arch_coredump_info_dump` to construct
    a target architecture block and call :c:func:`coredump_buffer_output`
    to output the block to core dump backend.

@@ -9,7 +9,7 @@
  *  Basic example of userspace thread protected memory
  *
  *  NOTE: The encryption algorithm is unverified and
- *  based on a 1930's erra piece of hardware.
+ *  based on a 1930's era piece of hardware.
  *  DO NOT USE THIS CODE FOR SECURITY
  *
  */
@@ -26,7 +26,7 @@
  * the definition of variables.  A possible alternative
  * is using one source file per thread and implementing
  * a objcopy to rename the data and bss section for the
- * thread to the partiotion name.
+ * thread to the partition name.
  */
 
 /* prepare the memory partition structures  */
@@ -278,7 +278,7 @@ void ct(void)
 	while (1) {
 		k_sem_take(&allforone, K_FOREVER);
 		if (fBUFOUT == 1) {
-			printk("CT Thread Receivedd Message\n");
+			printk("CT Thread Received Message\n");
 			memset((void *)&tbuf, 0, sizeof(tbuf));
 			memcpy((void *)&tbuf, (void *)BUFOUT, SAMP_BLOCKSIZE);
 			fBUFOUT = 0;

@@ -853,7 +853,7 @@ int can_mcan_add_rx_filter_std(struct can_mcan_data *data,
 		return -ENOSPC;
 	}
 
-	/* TODO propper fifo balancing */
+	/* TODO proper fifo balancing */
 	filter_element.sfce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
@@ -915,7 +915,7 @@ static int can_mcan_add_rx_filter_ext(struct can_mcan_data *data,
 		return -ENOSPC;
 	}
 
-	/* TODO propper fifo balancing */
+	/* TODO proper fifo balancing */
 	filter_element.efce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 

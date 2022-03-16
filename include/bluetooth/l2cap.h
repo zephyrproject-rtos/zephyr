@@ -489,7 +489,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  The application should use the BT_L2CAP_BUF_SIZE() helper to correctly
  *  size the buffers for the for the outgoing buffer pool.
  *
- *  When sending L2CAP data over an LE connection the applicatios is sending
+ *  When sending L2CAP data over an LE connection the application is sending
  *  L2CAP SDUs. The application can optionally reserve
  *  @ref BT_L2CAP_SDU_CHAN_SEND_RESERVE bytes in the buffer before sending.
  *  By reserving bytes in the buffer the stack can use this buffer as a segment

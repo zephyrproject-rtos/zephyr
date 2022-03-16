@@ -957,7 +957,7 @@ static void schedule_next_retransmission(void)
 	int32_t remaining;
 	uint32_t now = k_uptime_get_32();
 
-	/* Get the first pending retansmission to expire after cycling. */
+	/* Get the first pending retransmission to expire after cycling. */
 	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
 	if (!pending) {
 		return;
@@ -1110,7 +1110,7 @@ static int send_notification_packet(const struct sockaddr *addr,
 
 	r = send_coap_reply(&response, addr, addr_len);
 
-	/* On succesfull creation of pending request, do not free memory */
+	/* On successful creation of pending request, do not free memory */
 	if (type == COAP_TYPE_CON) {
 		return r;
 	}

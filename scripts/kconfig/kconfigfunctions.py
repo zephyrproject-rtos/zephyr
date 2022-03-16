@@ -197,7 +197,7 @@ def _dt_chosen_reg_addr(kconf, chosen, index=0, unit=None):
     """
     This function takes a 'chosen' property and treats that property as a path
     to an EDT node.  If it finds an EDT node, it will look to see if that
-    nodnode has a register at the given 'index' and return the address value of
+    node has a register at the given 'index' and return the address value of
     that reg, if not we return 0.
 
     The function will divide the value based on 'unit':

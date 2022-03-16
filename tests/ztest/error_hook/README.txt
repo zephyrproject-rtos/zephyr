@@ -65,11 +65,11 @@ test_catch_assert_fail
     then catch it by the assert handler.
 
 test_catch_fatal_error
-  - start a thread to test triggerring a null address dereferencing, then catch
+  - start a thread to test triggering a null address dereferencing, then catch
     the (expected) fatal error.
-  - start a thread to test triggerring an illegal instruction, then catch
+  - start a thread to test triggering an illegal instruction, then catch
     the (expected) fatal error.
-  - start a thread to test triggerring a divide-by-zero error, then catch
+  - start a thread to test triggering a divide-by-zero error, then catch
     the (expected) fatal error.
   - start a thread to call k_oops() then catch the (expected) fatal error.
   - start a thread to call k_panel() then catch the (expected) fatal error.

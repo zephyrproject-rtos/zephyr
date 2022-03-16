@@ -316,7 +316,7 @@ config BT_CTLR_ECDH
 	depends on BT_CTLR_ECDH_SUPPORT
 	default y
 	help
-	  Enable support for Bluetoooth v4.2 Elliptic Curve Diffie-Hellman
+	  Enable support for Bluetooth v4.2 Elliptic Curve Diffie-Hellman
 	  feature in the controller.
 
 config BT_CTLR_CONN_PARAM_REQ

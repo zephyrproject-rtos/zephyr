@@ -50,7 +50,7 @@ packet priority. This is typically done in Ethernet networks when virtual LANs
 lower priority packets. The traffic class setup can be configured by
 :kconfig:option:`CONFIG_NET_TC_TX_COUNT` and :kconfig:option:`CONFIG_NET_TC_RX_COUNT` options.
 
-If the :kconfig:option:`CONFIG_NET_PROMISCUOUS_MODE` is enabled and if the underlaying
+If the :kconfig:option:`CONFIG_NET_PROMISCUOUS_MODE` is enabled and if the underlying
 network technology supports promiscuous mode, then it is possible to receive
 all the network packets that the network device driver is able to receive.
 See :ref:`promiscuous_interface` API for more details.

@@ -358,7 +358,7 @@ void ctr_mode(const struct device *dev)
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
 		LOG_ERR("CTR mode DECRYPT - Mismatch between plaintext "
-			    "and decypted cipher text");
+			    "and decrypted cipher text");
 		print_buffer_comparison(plaintext,
 					decrypt.out_buf, sizeof(plaintext));
 		goto out;

@@ -20,7 +20,7 @@
 #define BL2_HEADER_SIZE		(0x400)
 
 /**
- * @brief Wake up CPU 1 from another CPU, this is plaform specific.
+ * @brief Wake up CPU 1 from another CPU, this is platform specific.
  *
  */
 void wakeup_cpu1(void)
@@ -36,7 +36,7 @@ void wakeup_cpu1(void)
 }
 
 /**
- * @brief Get the current CPU ID, this is plaform specific.
+ * @brief Get the current CPU ID, this is platform specific.
  *
  * @return Current CPU ID
  */

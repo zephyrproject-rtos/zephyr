@@ -268,7 +268,7 @@ static int json_next_token(struct lwm2m_input_context *in, struct json_in_format
 		}
 	}
 
-	/* OK if cont == 0 othewise we failed */
+	/* OK if cont == 0 otherwise we failed */
 	return (cont == 0U);
 }
 
@@ -1025,7 +1025,7 @@ static int get_objlnk(struct lwm2m_input_context *in, struct lwm2m_objlnk *value
 	total_len = len;
 	value->obj_id = (uint16_t)tmp;
 
-	len++;  /* +1 for ':' delimeter. */
+	len++;  /* +1 for ':' delimiter. */
 	fd->value_offset += len;
 
 	len = read_int(in, &tmp, false);

@@ -85,7 +85,7 @@ int pthread_mutex_timedlock(pthread_mutex_t *m,
 }
 
 /**
- * @brief Intialize POSIX mutex.
+ * @brief Initialize POSIX mutex.
  *
  * See IEEE 1003.1
  */

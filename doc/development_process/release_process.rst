@@ -116,7 +116,7 @@ gate the final release. The following counts shall be used:
 
 .. note::
 
-   The "low" bug count target of <50 will be a phased appoach starting with 150
+   The "low" bug count target of <50 will be a phased approach starting with 150
    for release 2.4.0, 100 for release 2.5.0, and 50 for release 2.6.0
 
 
@@ -174,7 +174,7 @@ security fixes.
 
 An LTS includes both mature and new features. API and feature maturity is
 documented and tracked. The footprint and scope of mature and stable APIs expands
-as we move from one LTS to the next giving users access to bleading edge features
+as we move from one LTS to the next giving users access to bleeding edge features
 and new hardware while keeping a stable foundation that evolves over time.
 
 Extended Stabilisation Period
@@ -228,7 +228,7 @@ providing a quality oriented releases. This is achieved by providing the
 following products to track progress, integrity and quality of the software
 components provided by the project:
 
-- Compliance with pubished coding guidelines, style guides and naming
+- Compliance with published coding guidelines, style guides and naming
   conventions and documentation of deviations.
 - Regular static analysis on the complete tree using available commercial and
   open-source tools and documentation of deviations and false positives.

@@ -23,7 +23,7 @@
  *      of the first filter by 3 and tests the corner case of the last filter
  *      is used.
  *   -# Test message sending and receiving
- *   -# Remove first fillter (gets free) and add an extended filter.
+ *   -# Remove first filter (gets free) and add an extended filter.
  *      This shrinks bank 0 to 2 filters/bank which leads to a right shift
  *      of the first buffer by two.
  *   -# Test message sending and receiving.
@@ -115,7 +115,7 @@ static void send_test_msg(const struct device *can_dev,
 }
 
 /*
- * Test a more adcvanced filter handling. Add more than one filter at
+ * Test a more advanced filter handling. Add more than one filter at
  * the same time, remove and change the filters before the message.
  * This tests the internals filter handling of the driver itself.
  */

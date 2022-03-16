@@ -100,7 +100,7 @@ static inline uint32_t vtd_remap_msi(const struct device *dev,
  * @brief Remap the given vector
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param irte_idx A previoulsy allocated irte entry index number
+ * @param irte_idx A previously allocated irte entry index number
  * @param vector An allocated interrupt vector
  * @param flags interrupt flags
  * @param src_id a valid source ID or USHRT_MAX if none
@@ -123,7 +123,7 @@ static inline int vtd_remap(const struct device *dev,
  * @brief Set the vector on the allocated irte
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param irte_idx A previoulsy allocated irte entry index number
+ * @param irte_idx A previously allocated irte entry index number
  * @param vector An allocated interrupt vector
  *
  * @return 0, a negative errno otherwise
@@ -159,7 +159,7 @@ static inline int vtd_get_irte_by_vector(const struct device *dev,
  * @brief Get the vector given to the IRTE
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param irte_idx A previoulsy allocated irte entry index number
+ * @param irte_idx A previously allocated irte entry index number
  *
  * @return the vector set to this IRTE
  */
@@ -176,7 +176,7 @@ static inline uint16_t vtd_get_irte_vector(const struct device *dev,
  * @brief Set the irq on the allocated irte
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param irte_idx A previoulsy allocated irte entry index number
+ * @param irte_idx A previously allocated irte entry index number
  * @param irq A valid IRQ number
  *
  * @return 0, a negative errno otherwise

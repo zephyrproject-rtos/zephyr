@@ -263,7 +263,7 @@ static int verify_echo_reply_with_opts(struct net_pkt *pkt)
 	payload_len = sizeof(icmpv4_echo_req_opt) -
 		      NET_IPV4H_LEN - NET_ICMPH_LEN - opts_len;
 	if (payload_len != net_pkt_remaining_data(pkt)) {
-		zassert_true(false, "echo_reply_opts invalid paylaod len");
+		zassert_true(false, "echo_reply_opts invalid payload len");
 	}
 
 	ret = net_pkt_read(pkt, buf, payload_len);

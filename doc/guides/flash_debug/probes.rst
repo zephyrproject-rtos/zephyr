@@ -198,7 +198,7 @@ the ST-LINK/V2-1 compatible with J-LinkOB, allowing users to take advantage of
 most J-Link features like the ultra fast flash download and debugging speed or
 the free-to-use GDBServer.
 
-More informations about upgrading ST-LINK/V2-1 to JLink or restore ST-Link/V2-1
+More information about upgrading ST-LINK/V2-1 to JLink or restore ST-Link/V2-1
 firmware please visit: `Segger over ST-Link`_
 
 Flash and debug with ST-Link
@@ -266,7 +266,7 @@ Flash and debug with ST-Link
 
         If you get no RTT output you might need to disable other consoles which conflict
         with the RTT one if they are enabled by default in the particular sample or
-        application you are running, such as disable UART_CONSOLE in menucon
+        application you are running, such as disable UART_CONSOLE in menuconfig
 
 Updating or restoring ST-Link firmware
 ======================================

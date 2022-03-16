@@ -655,7 +655,7 @@ config FLEXSPI_CONFIG_BLOCK_OFFSET
 	help
 	  FlexSPI configuration block consists of parameters regarding specific
 	  flash devices including read command sequence, quad mode enablement
-	  sequence (optional), etc. The boot ROM expectes FlexSPI configuration
+	  sequence (optional), etc. The boot ROM expects FlexSPI configuration
 	  parameter to be presented in serial nor flash.
 
 config IMAGE_VECTOR_TABLE_OFFSET

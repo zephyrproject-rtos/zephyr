@@ -507,7 +507,7 @@ bool bt_id_scan_random_addr_check(void)
 	 * valid and only updated on RPA timeout.
 	 */
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		/* Cannot start scannor or initiator if the random address is
+		/* Cannot start scanner or initiator if the random address is
 		 * used by the advertiser for an RPA with a different identity
 		 * or for a random static identity address.
 		 */

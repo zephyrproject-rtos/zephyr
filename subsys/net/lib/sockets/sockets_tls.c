@@ -2356,7 +2356,7 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 	int remaining;
 	uint32_t entry = k_uptime_get_32();
 
-	/* Overwrite TLS file decriptors with underlying ones. */
+	/* Overwrite TLS file descriptors with underlying ones. */
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
 

@@ -869,7 +869,7 @@ static void mass_storage_status_cb(struct usb_cfg_data *cfg,
 		LOG_DBG("USB device disconnected");
 		break;
 	case USB_DC_SUSPEND:
-		LOG_DBG("USB device supended");
+		LOG_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:
 		LOG_DBG("USB device resumed");
@@ -977,7 +977,7 @@ static int mass_storage_init(const struct device *dev)
 
 	if (block_size != BLOCK_SIZE) {
 		LOG_ERR("Block Size reported by the storage side is "
-			"different from Mass Storgae Class page Buffer - "
+			"different from Mass Storage Class page Buffer - "
 			"Aborting");
 		return 0;
 	}

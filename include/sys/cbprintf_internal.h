@@ -344,7 +344,7 @@ union z_cbprintf_hdr {
 
 /* When using clang additional warning needs to be suppressed since each
  * argument of fmt string is used for sizeof() which results in the warning
- * if argument is a stirng literal. Suppression is added here instead of
+ * if argument is a string literal. Suppression is added here instead of
  * the macro which generates the warning to not slow down the compiler.
  */
 #ifdef __clang__

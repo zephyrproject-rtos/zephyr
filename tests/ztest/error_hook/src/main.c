@@ -49,7 +49,7 @@ __no_optimization static void trigger_fault_illegal_instruction(void)
 {
 	void *a = NULL;
 
-	/* execute an illeagal instruction */
+	/* execute an illegal instruction */
 	((void(*)(void))&a)();
 }
 
@@ -162,7 +162,7 @@ void ztest_post_fatal_error_hook(unsigned int reason,
 		break;
 
 	/* Unfortunately, the case of trigger a fatal error
-	 * inside ISR context still cannot be dealed with,
+	 * inside ISR context still cannot be dealt with,
 	 * So please don't use it this way.
 	 */
 	case ZTEST_CATCH_FATAL_IN_ISR:
@@ -256,7 +256,7 @@ static int run_trigger_thread(int i)
 }
 
 /**
- * @brief Test if a fatal error can be catched
+ * @brief Test if a fatal error can be caught
  *
  * @details Valid a fatal error we triggered in thread context works.
  * If the fatal error happened and the program enter assert_post_handler,

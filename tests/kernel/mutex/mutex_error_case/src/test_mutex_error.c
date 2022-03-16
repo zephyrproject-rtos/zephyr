@@ -52,7 +52,7 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 	TC_PRINT("current case is %d\n", choice);
 
 	/* Set up the fault or assert are expected before we call
-	 * the target tested funciton.
+	 * the target tested function.
 	 */
 	switch (choice) {
 	case MUTEX_INIT_NULL:

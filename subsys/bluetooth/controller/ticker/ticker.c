@@ -142,7 +142,7 @@ struct ticker_user_op_start {
  */
 struct ticker_user_op_update {
 	uint32_t ticks_drift_plus;	/* Requested positive drift in ticks */
-	uint32_t ticks_drift_minus;	/* Requested negatice drift in ticks */
+	uint32_t ticks_drift_minus;	/* Requested negative drift in ticks */
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	uint32_t ticks_slot_plus;	/* Number of ticks to add to slot
 					 * reservation (air-time)
@@ -832,7 +832,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
  * @brief Ticker worker
  *
  * @details Runs as upper half of ticker operation, triggered by a compare
- * match from the underlaying counter HAL, via the ticker_trigger function.
+ * match from the underlying counter HAL, via the ticker_trigger function.
  * Traverses ticker nodes to find tickers expired since last job
  * execution. Expired (requested) ticker nodes have their timeout callback
  * functions called. Finally, a ticker job is enqueued. Invoked from the
@@ -1455,7 +1455,7 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 						       user_op, ticks_elapsed,
 						       insert_head);
 			} else {
-				/* Update on expired node requested, defering
+				/* Update on expired node requested, deferring
 				 * update until bottom half finishes.
 				 */
 				/* sched job to run after worker bottom half.
@@ -1601,7 +1601,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 					ticker->req = ticker->ack;
 				}
 
-				/* Reload ticks_to_expire with atleast one
+				/* Reload ticks_to_expire with at least one
 				 * period.
 				 */
 				ticks_to_expire = 0U;
@@ -2643,7 +2643,7 @@ void ticker_trigger(uint8_t instance_index)
  * @param ticks_anchor	     Absolute tick count as anchor point for
  *			     ticks_first
  * @param ticks_first	     Initial number of ticks before first timeout
- * @param ticks_periodic     Number of ticks for a peridic ticker node. If 0,
+ * @param ticks_periodic     Number of ticks for a periodic ticker node. If 0,
  *			     ticker node is treated as one-shot
  * @param remainder_periodic Periodic ticks fraction
  * @param lazy		     Number of periods to skip (latency). A value of 1
@@ -3220,7 +3220,7 @@ uint32_t ticker_ticks_now_get(void)
 }
 
 /**
- * @brief Get diffence between two tick counts
+ * @brief Get difference between two tick counts
  *
  * @details Subtract two counts and truncate to correct HW dependent counter
  * bit width

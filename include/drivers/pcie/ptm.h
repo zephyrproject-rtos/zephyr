@@ -19,7 +19,7 @@ extern "C" {
  * @brief Enable PTM on endpoint
  *
  * @param bdf the PCI(e) endpoint
- * @return true if that was sucessful, false otherwise
+ * @return true if that was successful, false otherwise
  */
 bool pcie_ptm_enable(pcie_bdf_t bdf);
 

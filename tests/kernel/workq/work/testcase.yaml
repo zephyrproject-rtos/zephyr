@@ -2,7 +2,7 @@ tests:
   kernel.work.api:
     min_flash: 34
     tags: kernel
-    # this patform fails to run due to #40376, all
+    # this platform fails to run due to #40376, all
     # the related CI checks got blocked, so exclude it.
     platform_exclude: hifive1
     timeout: 70

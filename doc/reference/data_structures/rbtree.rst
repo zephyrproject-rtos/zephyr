@@ -106,7 +106,7 @@ modification, however, routinely requires the ability to iterate
 "upwards" from a node as well.  It is very common for red/black trees
 in the industry to store a third "parent" pointer for this purpose.
 Zephyr avoids this requirement by building a "stack" of node pointers
-locally as it traverses downward thorugh the tree and updating it
+locally as it traverses downward through the tree and updating it
 appropriately as modifications are made.  So a Zephyr rbtree can be
 implemented with no more runtime storage overhead than a dlist.
 

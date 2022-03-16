@@ -115,7 +115,7 @@ should merely describe what has been fixed.
 
 The security subcommittee will maintain information mapping embargoed
 CVEs to these PRs (this information is within the Github security
-adivisories), and produce regular reports of the state of security
+advisories), and produce regular reports of the state of security
 issues.
 
 Each issue that is considered a security vulnerability shall be
@@ -139,7 +139,7 @@ This list will be seeded initially with a contact from each project
 member.  Additional parties can request to join this list by filling
 out the form at the `Vulnerability Registry`_.  These parties will be
 vetted by the project director to determine that they have a
-legimitate interest in knowing about security vulnerabilities during
+legitimate interest in knowing about security vulnerabilities during
 the embargo period.
 
 .. _Vulnerability Registry: https://www.zephyrproject.org/vulnerability-registry/ 

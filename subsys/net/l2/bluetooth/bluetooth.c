@@ -111,7 +111,7 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 
 	net_capture_pkt(iface, pkt);
 
-	/* Dettach data fragments for packet */
+	/* Detach data fragments for packet */
 	buffer = pkt->buffer;
 	pkt->buffer = NULL;
 

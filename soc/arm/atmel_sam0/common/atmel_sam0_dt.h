@@ -58,7 +58,7 @@
 #define ATMEL_SAM0_PIN_TO_PORT_REG_ADDR(node_id, i) \
 	DT_REG_ADDR(DT_PHANDLE(DT_PINCTRL_0(node_id, i), atmel_pins))
 
-/* Get peripheral cfg associated wiith pinctrl-0 pin at index 'i' */
+/* Get peripheral cfg associated with pinctrl-0 pin at index 'i' */
 #define ATMEL_SAM0_PIN_PERIPH(node_id, i) \
 	DT_PHA(DT_PINCTRL_0(node_id, i), atmel_pins, peripheral)
 
@@ -92,7 +92,7 @@
 /* internal macro to structure things for use with UTIL_LISTIFY */
 #define ATMEL_SAM0_DT_PIN_ELEM(idx, node_id) ATMEL_SAM0_DT_PORT(node_id, idx)
 
-/* Construct an array intializer for soc_port_pin for a device instance */
+/* Construct an array initializer for soc_port_pin for a device instance */
 #define ATMEL_SAM0_DT_PINS(node_id)				\
 	{ LISTIFY(ATMEL_SAM0_DT_NUM_PINS(node_id),		\
 		  ATMEL_SAM0_DT_PIN_ELEM, (,), node_id)		\

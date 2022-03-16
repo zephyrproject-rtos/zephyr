@@ -312,7 +312,7 @@ void pi_lcd_home(const struct device *gpio_dev)
 	k_sleep(K_MSEC(2));			/* wait for 2ms */
 }
 
-/** Set curson position */
+/** Set cursor position */
 void pi_lcd_set_cursor(const struct device *gpio_dev, uint8_t col,
 		       uint8_t row)
 {

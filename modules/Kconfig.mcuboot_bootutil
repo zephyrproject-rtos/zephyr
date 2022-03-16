@@ -9,7 +9,7 @@ menuconfig MCUBOOT_BOOTUTIL_LIB
 
 if MCUBOOT_BOOTUTIL_LIB
 
-# hiden option for disabling module-own log configuration
+# hidden option for disabling module-own log configuration
 # while building MCUboot bootloader
 config MCUBOOT_BOOTUTIL_LIB_OWN_LOG
 	bool

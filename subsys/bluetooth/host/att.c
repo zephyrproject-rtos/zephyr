@@ -189,7 +189,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 		}
 
 		/* bt_l2cap_chan_send does actually return the number of bytes
-		 * that could be sent immediatelly.
+		 * that could be sent immediately.
 		 */
 		err = bt_l2cap_chan_send(&chan->chan.chan, buf);
 		if (err < 0) {
@@ -1134,7 +1134,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	 */
 	data->err = 0x00;
 
-	/* Fast foward to next item position */
+	/* Fast forward to next item position */
 	data->item = net_buf_add(net_buf_frag_last(data->buf),
 				 sizeof(*data->item));
 	data->item->handle = sys_cpu_to_le16(handle);

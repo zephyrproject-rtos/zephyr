@@ -874,7 +874,7 @@ static int prov_link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 	link.cb = cb;
 	link.cb_data = cb_data;
 
-	/* Make sure we're scanning for provisioning inviations */
+	/* Make sure we're scanning for provisioning invitations */
 	bt_mesh_scan_enable();
 	/* Enable unprovisioned beacon sending */
 	bt_mesh_beacon_enable();

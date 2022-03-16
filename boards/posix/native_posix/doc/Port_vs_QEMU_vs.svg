@@ -184,12 +184,12 @@
 			<text x="6.95" y="302.06" class="st4" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>&#60;1/1000x</text>		</g>
 		<g id="shape54-79" v:mID="54" v:groupContext="shape" transform="translate(63.0709,-2.83465)">
 			<title>Sheet.54</title>
-			<desc>ISS: Instruction Set Simulator Dev. boad: Development board H...</desc>
+			<desc>ISS: Instruction Set Simulator Dev. board: Development board H...</desc>
 			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
 			<v:textRect cx="160.866" cy="280.63" width="321.74" height="51.0236"/>
 			<rect x="0" y="255.118" width="321.732" height="51.0236" class="st3"/>
 			<text x="4" y="264.13" class="st13" v:langID="6153"><v:paragraph/><v:tabList/>ISS: Instruction Set Simulator<v:newlineChar/><tspan
-						x="4" dy="1.2em" class="st6">Dev</tspan>. boad: Development board<v:newlineChar/><tspan x="4" dy="1.2em"
+						x="4" dy="1.2em" class="st6">Dev</tspan>. board: Development board<v:newlineChar/><tspan x="4" dy="1.2em"
 						class="st6">HW emu</tspan>. : Hardware emulator, e.g. Cadence Palladium<v:newlineChar/><tspan x="4"
 						dy="1.2em" class="st6">RTL  sim</tspan>. : HW RTL simulations</text>		</g>
 		<g id="shape56-85" v:mID="56" v:groupContext="shape" transform="translate(206.362,-124.724)">

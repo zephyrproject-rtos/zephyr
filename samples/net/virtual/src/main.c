@@ -396,7 +396,7 @@ void main(void)
 	net_virtual_interface_attach(ud.ip_tunnel_1, ud.ethernet);
 
 	/* Attach our example virtual interface on top of the IPv4 one.
-	 * This is just an exaple how to stack the interface on top of
+	 * This is just an example how to stack the interface on top of
 	 * each other.
 	 */
 	net_virtual_interface_attach(ud.my_iface, ud.ip_tunnel_1);

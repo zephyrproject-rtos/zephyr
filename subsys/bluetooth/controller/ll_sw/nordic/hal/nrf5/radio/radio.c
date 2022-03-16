@@ -587,7 +587,7 @@ static uint8_t sw_tifs_toggle;
  * @param dir_curr         Current direction the Radio is working: SW_SWITCH_TX or SW_SWITCH_RX
  * @param dir_next         Next direction the Radio is preparing for: SW_SWITCH_TX or SW_SWITCH_RX
  * @param phy_curr         PHY the Radio is working on.
- * @param flags_curr       Flags related with current PHY, the Radio is workingo on.
+ * @param flags_curr       Flags related with current PHY, the Radio is working on.
  * @param phy_next         Next PHY the Radio is preparing for.
  * @param flags_next       Flags related with next PHY, the Radio is preparing for.
  * @param end_evt_delay_en Enable end event delay compensation for TIFS after switch from current
@@ -1011,7 +1011,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	SW_SWITCH_TIMER->MODE = 0;
 	SW_SWITCH_TIMER->PRESCALER = 4;
 	SW_SWITCH_TIMER->BITMODE = 0; /* 16 bit */
-	/* FIXME: start alongwith EVENT_TIMER, to save power */
+	/* FIXME: start along with EVENT_TIMER, to save power */
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_START);
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 

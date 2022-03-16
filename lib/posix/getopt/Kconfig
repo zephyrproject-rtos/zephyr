@@ -3,7 +3,7 @@
 
 
 menuconfig GETOPT
-	bool "Geopt library support"
+	bool "Getopt library support"
 	help
 	  This option adds support of getopt.
 	  Different shell backends are use their own instance of getopt to

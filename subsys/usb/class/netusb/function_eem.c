@@ -258,7 +258,7 @@ static void eem_status_cb(struct usb_cfg_data *cfg,
 	case USB_DC_CONFIGURED:
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
-		LOG_DBG("USB unhandlded state: %d", status);
+		LOG_DBG("USB unhandled state: %d", status);
 		break;
 
 	case USB_DC_SOF:

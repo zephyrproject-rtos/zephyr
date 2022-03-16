@@ -275,7 +275,7 @@ static void lis2dh_gpio_int1_callback(const struct device *dev,
 
 	atomic_set_bit(&lis2dh->trig_flags, TRIGGED_INT1);
 
-	/* int is level trigged so disable until we clear it */
+	/* int is level triggered so disable until we clear it */
 	setup_int1(lis2dh->dev, false);
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
@@ -295,7 +295,7 @@ static void lis2dh_gpio_int2_callback(const struct device *dev,
 
 	atomic_set_bit(&lis2dh->trig_flags, TRIGGED_INT2);
 
-	/* int is level trigged so disable until we clear it */
+	/* int is level triggered so disable until we clear it */
 	setup_int2(lis2dh->dev, false);
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)

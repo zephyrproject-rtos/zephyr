@@ -167,7 +167,7 @@ config DEMAND_PAGING_TIMING_HISTOGRAM
 	  Should say N in production system as this is not without cost.
 
 config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
-	int "Number of bins (buckets) in Demand Paging Timing Histogrm"
+	int "Number of bins (buckets) in Demand Paging Timing Histogram"
 	depends on DEMAND_PAGING_TIMING_HISTOGRAM
 	default 10
 	help

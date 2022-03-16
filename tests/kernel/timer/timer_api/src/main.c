@@ -197,7 +197,7 @@ void test_timer_duration_period(void)
 
 	k_timer_start(&duration_timer, K_FOREVER, K_MSEC(PERIOD));
 	TIMER_ASSERT(tdata.stop_cnt == 1, &duration_timer);
-	/* cleanup environemtn */
+	/* cleanup environment */
 	k_timer_stop(&duration_timer);
 }
 
@@ -267,7 +267,7 @@ void test_timer_period_0(void)
 			 && (tdata.expire_cnt == 0)), &period0_timer);
 	TIMER_ASSERT(tdata.stop_cnt == 0, &period0_timer);
 
-	/* cleanup environemtn */
+	/* cleanup environment */
 	k_timer_stop(&period0_timer);
 }
 
@@ -306,7 +306,7 @@ void test_timer_period_k_forever(void)
 		     &period0_timer);
 	TIMER_ASSERT(tdata.stop_cnt == 0, &period0_timer);
 
-	/* cleanup environemtn */
+	/* cleanup environment */
 	k_timer_stop(&period0_timer);
 }
 
@@ -406,7 +406,7 @@ void test_timer_periodicity(void)
 		 *
 		 * Please note, that expected firing time is not the
 		 * one requested, as the kernel uses the ticks to manage
-		 * time. The actual perioid will be equal to [tick time]
+		 * time. The actual period will be equal to [tick time]
 		 * multiplied by k_ms_to_ticks_ceil32(PERIOD).
 		 *
 		 * In the case of inexact conversion the delta will
@@ -614,7 +614,7 @@ static void user_data_timer_handler(struct k_timer *timer)
  * Validate user-specific data associated with timer
  *
  * It creates prototype of K_TIMER_DEFINE and starts the timer using
- * k_timer_start() with specific initial duration, alongwith associated
+ * k_timer_start() with specific initial duration, along with associated
  * user data using k_timer_user_data_set and k_timer_user_data_get().
  * Stops the timer using k_timer_stop() and checks for correct data
  * retrieval after timer completion.
@@ -719,7 +719,7 @@ void test_timer_remaining(void)
 		     "tick/busy slew %d larger than test threshold %u",
 		     delta_ticks, slew_ticks);
 
-	/* Note +1 tick precision: even though we're calcluating in
+	/* Note +1 tick precision: even though we're calculating in
 	 * ticks, we're waiting in k_busy_wait(), not for a timer
 	 * interrupt, so it's possible for that to take 1 tick longer
 	 * than expected on systems where the requested microsecond

@@ -56,7 +56,7 @@ zephyr_smp_trim_front(void *buf, size_t len, void *arg)
 
 /**
  * Splits an appropriately-sized fragment from the front of a net_buf, as
- * neeeded.  If the length of the net_buf is greater than specified maximum
+ * needed.  If the length of the net_buf is greater than specified maximum
  * fragment size, a new net_buf is allocated, and data is moved from the source
  * net_buf to the new net_buf.  If the net_buf is small enough to fit in a
  * single fragment, the source net_buf is returned unmodified, and the supplied

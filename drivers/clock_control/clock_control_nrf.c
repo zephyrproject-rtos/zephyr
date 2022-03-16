@@ -762,5 +762,5 @@ SHELL_STATIC_SUBCMD_SET_CREATE(subcmds,
 
 SHELL_COND_CMD_REGISTER(CONFIG_CLOCK_CONTROL_NRF_SHELL,
 			nrf_clock_control, &subcmds,
-			"Clock control commmands",
+			"Clock control commands",
 			cmd_status);

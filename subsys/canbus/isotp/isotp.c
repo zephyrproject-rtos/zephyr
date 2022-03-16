@@ -487,7 +487,7 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 		      K_MSEC(ISOTP_CR));
 
 	if ((frame->data[index++] & ISOTP_PCI_SN_MASK) != ctx->sn_expected++) {
-		LOG_ERR("Sequence number missmatch");
+		LOG_ERR("Sequence number mismatch");
 		receive_report_error(ctx, ISOTP_N_WRONG_SN);
 		k_work_submit(&ctx->work);
 		return;
@@ -923,7 +923,7 @@ static inline int send_ff(struct isotp_send_ctx *ctx)
 	}
 
 	/* According to ISO FF has sn 0 and is incremented to one
-	 * alltough it's not part of the FF frame
+	 * although it's not part of the FF frame
 	 */
 	ctx->sn = 1;
 	data = get_data_ctx(ctx);

@@ -196,7 +196,7 @@ size_t sys_heap_usable_size(struct sys_heap *heap, void *mem);
  * Note: this cannot catch every possible error, but if it returns
  * true then the heap is in a consistent state and can correctly
  * handle any sys_heap_alloc() request and free any live pointer
- * returned from a previou allocation.
+ * returned from a previous allocation.
  *
  * @param heap Heap to validate
  * @return true, if the heap is valid, otherwise false

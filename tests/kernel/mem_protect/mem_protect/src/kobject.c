@@ -138,7 +138,7 @@ static void syscall_invalid_kobject_user_part(void *p1, void *p2, void *p3)
 {
 	k_sem_give(&kobject_sem);
 
-	/* should causdde a fault */
+	/* should cause a fault */
 	set_fault_valid(true);
 
 	/* should cause fault. typecasting to override compiler warning */
@@ -362,7 +362,7 @@ void test_kobject_release_from_user(void)
 }
 
 /**
- * @brief Test release and access grant an invaild kobject
+ * @brief Test release and access grant an invalid kobject
  *
  * @details Validate release and access grant an invalid kernel object.
  *
@@ -631,7 +631,7 @@ static void new_thread_from_user_child(void *p1, void *p2, void *p3)
  * - Test user thread can create new thread.
  * - Verify that given thread and thread stack permissions to the user thread,
  *   allow to create new user thread.
- * - Veify that new created user thread have access to its own thread object
+ * - Verify that new created user thread have access to its own thread object
  *   by aborting itself.
  *
  * @ingroup kernel_memprotect_tests
@@ -679,7 +679,7 @@ static void new_user_thrd_child_with_in_use_stack(void *p1, void *p2, void *p3)
 /**
  * @brief Test create new user thread from a user thread with in-use stack obj
  *
- * @details The kernel must prevent new user threads to use initiliazed (in-use)
+ * @details The kernel must prevent new user threads to use initialized (in-use)
  * stack objects. In that case extra_thread is going to be create with in-use
  * stack object child_stack. That will generate error, showing that kernel
  * memory protection is working correctly.
@@ -965,7 +965,7 @@ static void higher_prio_from_user_child(void *p1, void *p2, void *p3)
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 /**
- * @brief Thread creation with prority is higher than current thread
+ * @brief Thread creation with priority is higher than current thread
  *
  * @details  _handler_k_thread_create validation.
  *
@@ -1012,7 +1012,7 @@ static void invalid_prio_from_user_child(void *p1, void *p2, void *p3)
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 /**
- * @brief Create a new thread whose prority is invalid.
+ * @brief Create a new thread whose priority is invalid.
  *
  * @details _handler_k_thread_create validation.
  *
@@ -1093,7 +1093,7 @@ void test_mark_thread_exit_uninitialized(void)
 }
 
 /****************************************************************************/
-/* object validatoin checks */
+/* object validation checks */
 
 static void tThread_object_free_error(void *p1, void *p2, void *p3)
 {
@@ -1131,7 +1131,7 @@ void test_kobject_free_error(void)
 /**
  * @brief Test alloc an invalid kernel object
  *
- * @details Allocate invalid kernel objects, then no alloction
+ * @details Allocate invalid kernel objects, then no allocation
  * will be returned.
  *
  * @ingroup kernel_memprotect_tests
@@ -1140,7 +1140,7 @@ void test_kobject_free_error(void)
  */
 void test_kobject_init_error(void)
 {
-	/* invalid kernel object alloction */
+	/* invalid kernel object allocation */
 	zassert_is_null(k_object_alloc(K_OBJ_ANY-1),
 			"expected got NULL kobject");
 	zassert_is_null(k_object_alloc(K_OBJ_LAST),

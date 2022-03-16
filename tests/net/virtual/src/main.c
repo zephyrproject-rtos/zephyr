@@ -405,7 +405,7 @@ static void test_address_setup(void)
 		zassert_not_null(ifaddr, "eth addr");
 	}
 
-	/* For testing purposes we need to set the adddresses preferred */
+	/* For testing purposes we need to set the addresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv4_addr_add(eth, &my_addr, NET_ADDR_MANUAL, 0);

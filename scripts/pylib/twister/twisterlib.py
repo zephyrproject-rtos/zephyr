@@ -964,7 +964,7 @@ class QEMUHandler(Handler):
 
         The guest virtual time in QEMU icount mode isn't host time and
         it's maintained by counting guest instructions, so we use QEMU
-        process exection time to mostly simulate the time of guest OS.
+        process execution time to mostly simulate the time of guest OS.
         """
         proc = psutil.Process(pid)
         cpu_time = proc.cpu_times()
@@ -1747,7 +1747,7 @@ Tests should reference the category and subsystem with a dot as a separator.
             br"^\s*void\s+test_main\(void\)",
             re.MULTILINE)
         stc_regex = re.compile(
-            br"""^\s*  # empy space at the beginning is ok
+            br"""^\s*  # empty space at the beginning is ok
             # catch the case where it is declared in the same sentence, e.g:
             #
             # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
@@ -1758,7 +1758,7 @@ Tests should reference the category and subsystem with a dot as a separator.
             )?
             # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
             ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?
-            # Consume the argument that becomes the extra testcse
+            # Consume the argument that becomes the extra testcase
             \(\s*(?P<stc_name>[a-zA-Z0-9_]+)
             # _setup_teardown() variant has two extra arguments that we ignore
             (?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?
@@ -3486,7 +3486,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
                                       if p.status != "skipped" )
 
-        # Remove from discards configururations that must not be discarded (e.g. integration_platforms when --integration was used)
+        # Remove from discards configurations that must not be discarded (e.g. integration_platforms when --integration was used)
         for instance in remove_from_discards:
             del self.discards[instance]
 

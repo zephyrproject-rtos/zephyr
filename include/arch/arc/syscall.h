@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief ARC specific sycall header
+ * @brief ARC specific syscall header
  *
- * This header contains the ARC specific sycall interface.  It is
+ * This header contains the ARC specific syscall interface.  It is
  * included by the syscall interface architecture-abstraction header
  * (include/arch/syscall.h)
  */

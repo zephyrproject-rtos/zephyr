@@ -335,7 +335,7 @@
 #endif
 
 /* Invalid value that is not supposed to be written by the driver. It is used
- * to mark the sample buffer entries as empty. If needed, it can be overriden
+ * to mark the sample buffer entries as empty. If needed, it can be overridden
  * for a particular board by providing a specific definition above.
  */
 #if !defined(INVALID_ADC_VALUE)

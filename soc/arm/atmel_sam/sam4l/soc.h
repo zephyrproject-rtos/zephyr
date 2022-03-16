@@ -103,7 +103,7 @@
 #define PM_CLOCK_MASK(bus, per) ((bus << 5) + per)
 
 /** Bus index of maskable module clocks. Peripheral ids are defined out of
- * order.  It start from PBA up to PBD, then move to HSB, and finaly CPU.
+ * order.  It start from PBA up to PBD, then move to HSB, and finally CPU.
  */
 #define PM_CLK_GRP_CPU          5
 #define PM_CLK_GRP_HSB          4

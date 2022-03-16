@@ -439,7 +439,7 @@ config NET_TCP_MAX_RECV_WINDOW_SIZE
 	help
 	  This value defines the maximum TCP receive window size. Increasing
 	  this value can improve connection throughput, but requires more
-	  receive buffers avaialble in the system for efficient operation.
+	  receive buffers available in the system for efficient operation.
 	  The default value 0 lets the TCP stack select the value
 	  according to amount of network buffers configured in the system.
 
@@ -452,7 +452,7 @@ config NET_TCP_RECV_QUEUE_TIMEOUT
 	  If we receive out-of-order TCP data, we queue it. This value tells
 	  how long the data is kept before it is discarded if we have not been
 	  able to pass the data to the application. If set to 0, then receive
-	  queing is not enabled. The value is in milliseconds.
+	  queueing is not enabled. The value is in milliseconds.
 	  Note that we only queue data sequentially in current version i.e.,
 	  there should be no holes in the queue. For example, if we receive
 	  SEQs 5,4,3,6 and are waiting SEQ 2, the data in segments 3,4,5,6 is

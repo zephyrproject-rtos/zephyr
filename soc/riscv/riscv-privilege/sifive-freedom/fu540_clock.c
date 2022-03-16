@@ -8,7 +8,7 @@
 #include "fu540_prci.h"
 
 /*
- * Switch the clock source to 1GHz PLL from 33.333MHz oscilator on the HiFive
+ * Switch the clock source to 1GHz PLL from 33.333MHz oscillator on the HiFive
  * Unleashed board.
  */
 static int fu540_clock_init(const struct device *dev)

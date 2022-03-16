@@ -7,7 +7,7 @@
 /*
  * This test is designed to be run using flash-simulator which provide
  * functionality for flash property customization and emulating errors in
- * flash opperation in parallel to regular flash API.
+ * flash operation in parallel to regular flash API.
  * Test should be run on qemu_x86 target.
  */
 

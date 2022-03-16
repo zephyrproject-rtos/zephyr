@@ -76,7 +76,7 @@ extern void z_arm_int_exit(void);
 
 extern void z_arm_interrupt_init(void);
 
-/* macros convert value of it's argument to a string */
+/* macros convert value of its argument to a string */
 #define DO_TOSTR(s) #s
 #define TOSTR(s) DO_TOSTR(s)
 

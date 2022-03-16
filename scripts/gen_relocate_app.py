@@ -42,7 +42,7 @@ import glob
 import warnings
 from elftools.elf.elffile import ELFFile
 
-# This script will create linker comands for text,rodata data, bss section relocation
+# This script will create linker commands for text,rodata data, bss section relocation
 
 PRINT_TEMPLATE = """
                 KEEP(*({0}))
@@ -344,7 +344,7 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
             code_generation["extern"] += EXTERN_LINKER_VAR_DECLARATION.format(
                 memory_type.lower(), mtype)
 
-    # add for all the bss data that needs to be zeored on boot up
+    # add for all the bss data that needs to be zeroed on boot up
     if full_list_of_sections["bss"] and generate_section["bss"] and memory_type != "SRAM":
         code_generation["zero_code"] += MEMSET_TEMPLATE.format(memory_type.lower())
         code_generation["extern"] += EXTERN_LINKER_VAR_DECLARATION.format(
@@ -450,7 +450,7 @@ def main():
     rel_dict = create_dict_wrt_mem()
     complete_list_of_sections = {}
 
-    # Create/or trucate file contents if it already exists
+    # Create/or truncate file contents if it already exists
     # raw = open(linker_file, "w")
 
     # for each memory_type, create text/rodata/data/bss sections for all obj files

@@ -47,7 +47,7 @@ struct cfg_data {
 psa_status_t cfg_create_data(void);
 
 /**
- * @brief Attempts to loac the config record from secure storage. If the
+ * @brief Attempts to load the config record from secure storage. If the
  *        record is not found in secure storage, a new record will be created
  *        using default config settings.
  *

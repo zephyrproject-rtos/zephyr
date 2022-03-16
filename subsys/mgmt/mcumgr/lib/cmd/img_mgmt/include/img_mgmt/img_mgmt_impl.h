@@ -55,7 +55,7 @@ int img_mgmt_impl_write_confirmed(void);
  * @param slot		The index of the slot to read from.
  * @param offset	The offset within the slot to read from.
  * @param dst		On success, the read data gets written here.
- * @param num_bytes	The number of byets to read.
+ * @param num_bytes	The number of bytes to read.
  *
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */

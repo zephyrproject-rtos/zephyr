@@ -304,7 +304,7 @@ static inline void *mfifo_dequeue_iter_get(uint8_t *fifo, uint8_t size, uint8_t 
 /**
  * @brief Dequeue head-buffer from queue of buffers
  *
- * @param fifo[in]      Contigous memory holding the circular queue
+ * @param fifo[in]      Contiguous memory holding the circular queue
  * @param size[in]      Size of each buffer in circular queue
  * @param count[in]     Number of buffers in circular queue
  * @param last[in]      Tail index, Span: [0 .. count-1]

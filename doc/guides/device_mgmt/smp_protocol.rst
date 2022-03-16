@@ -67,7 +67,7 @@ Where meaning of fields is:
     +-------------------+---------------------------------------------------+
     | ``Group ID``      | :ref:`mcumgr_smp_protocol_group_ids`              |
     +-------------------+---------------------------------------------------+
-    | ``Seqence Num``   | This is a frame sequence number.                  |
+    | ``Sequence Num``  | This is a frame sequence number.                  |
     |                   | The number is increased by one with each request  |
     |                   | frame.                                            |
     |                   | The Sequence Num of a response should match       |

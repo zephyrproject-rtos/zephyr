@@ -5,7 +5,7 @@ Introduction
 ************
 
 The device runtime power management (PM) framework is an active power management
-mechanism which reduces the overall system power consumtion by suspending the
+mechanism which reduces the overall system power consumption by suspending the
 devices which are idle or not used independently of the system state. It can be
 enabled by setting :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`. In this model the device
 driver is responsible to indicate when it needs the device and when it does not.
@@ -20,7 +20,7 @@ state until it is no longer used. At this point, the device will be suspended
 until the next device request. If the suspension is performed synchronously the
 device will be immediately put into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDED` state, whereas if it is performed
-asynchonously, it will be put into the
+asynchronously, it will be put into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDING` state first and then into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDED` state when the action is run.
 

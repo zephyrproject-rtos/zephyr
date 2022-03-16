@@ -120,7 +120,7 @@ static int settings_custom_load(struct settings_store *cs, const struct settings
 	return fclose(fp);
 }
 
-/* Entries are saved to optimize redability of the settings file for test development and
+/* Entries are saved to optimize readability of the settings file for test development and
  * debugging purposes. Format:
  * <entry-key>=<entry-value-hex-str>\n
  */
@@ -171,7 +171,7 @@ static int settings_custom_save(struct settings_store *cs, const char *name,
 					   (uint8_t)value[valcnt / 2]);
 		};
 
-		/* helps in making settings file redable */
+		/* helps in making settings file readable */
 		bufval[valcnt++] = '\n';
 		bufval[valcnt] = 0;
 

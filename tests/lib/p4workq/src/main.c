@@ -244,7 +244,7 @@ void simple_handler(struct k_p4wq_work *work)
 	has_run = true;
 }
 
-/* Simple test that submited items run, and at the correct priority */
+/* Simple test that submitted items run, and at the correct priority */
 static void test_p4wq_simple(void)
 {
 	int prio = 2;

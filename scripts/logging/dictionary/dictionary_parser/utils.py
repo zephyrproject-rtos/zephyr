@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Utilities for Dictionary-based Logingg Parser
+Utilities for Dictionary-based Logging Parser
 """
 
 import binascii

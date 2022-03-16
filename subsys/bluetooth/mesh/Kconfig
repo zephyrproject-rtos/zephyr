@@ -215,7 +215,7 @@ endif # BT_CONN
 config BT_MESH_ACCESS_LAYER_MSG
 	bool "Direct Bluetooth message access layer messages"
 	help
-	  This option allows the applicaiton to directly access
+	  This option allows the application to directly access
 	  Bluetooth access layer messages without the need to
 	  instantiate Bluetooth mesh models.
 
@@ -413,7 +413,7 @@ config BT_MESH_TX_SEG_MSG_COUNT
 	  Maximum number of simultaneous outgoing multi-segment and/or
 	  reliable messages.
 
-	  Note that: Since Mesh Segmentation/reassemblying is a mandatory
+	  Note that: Since Mesh Segmentation/reassembling is a mandatory
 	  feature of specification, set to zero will not allow send any
 	  Mesh Segment message.
 

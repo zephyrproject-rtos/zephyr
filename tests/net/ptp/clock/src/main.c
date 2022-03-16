@@ -337,11 +337,11 @@ static void test_check_interfaces(void)
 	net_if_foreach(iface_cb, &ud);
 
 	zassert_equal(ud.eth_if_count, MAX_NUM_INTERFACES,
-		      "Invalid numer of ethernet interfaces %d vs %d\n",
+		      "Invalid number of ethernet interfaces %d vs %d\n",
 		      ud.eth_if_count, MAX_NUM_INTERFACES);
 
 	zassert_equal(ud.total_if_count, ud.eth_if_count,
-		      "Invalid numer of interfaces %d vs %d\n",
+		      "Invalid number of interfaces %d vs %d\n",
 		      ud.total_if_count, ud.eth_if_count);
 }
 
@@ -370,7 +370,7 @@ static void test_address_setup(void)
 		zassert_not_null(ifaddr, "addr1\n");
 	}
 
-	/* For testing purposes we need to set the adddresses preferred */
+	/* For testing purposes we need to set the addresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &ll_addr,

@@ -78,7 +78,7 @@ The ``net-capture.py`` has following command line options:
    Listen captured network data from Zephyr and save it optionally to pcap file.
    ./net-capture.py \
 	-i | --interface <network interface>
-		Listen this inferface for the data
+		Listen this interface for the data
 	[-p | --port <UDP port>]
 		UDP port (default is 4242) where the capture data is received
 	[-q | --quiet]

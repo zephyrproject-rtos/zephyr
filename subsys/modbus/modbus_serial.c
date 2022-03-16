@@ -366,7 +366,7 @@ static void cb_handler_tx(struct modbus_context *ctx)
 	}
 
 	/* Must wait till the transmission is complete or
-	 * RS-485 tranceiver could be disabled before all data has
+	 * RS-485 transceiver could be disabled before all data has
 	 * been transmitted and message will be corrupted.
 	 */
 	if (uart_irq_tx_complete(cfg->dev)) {

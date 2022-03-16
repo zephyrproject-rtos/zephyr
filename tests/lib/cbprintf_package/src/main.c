@@ -113,7 +113,7 @@ void test_cbprintf_package(void)
 	char *pstr = (char *)str;
 	int rv;
 
-	/* tests to exercize different element alignments */
+	/* tests to exercise different element alignments */
 	TEST_PACKAGING(0, "test long %x %lx %x", 0xb1b2b3b4, li, 0xe4e3e2e1);
 	TEST_PACKAGING(0, "test long long %x %llx %x", 0xb1b2b3b4, lli, 0xe4e3e2e1);
 

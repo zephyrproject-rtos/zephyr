@@ -23,7 +23,7 @@ that has implied:
 An application can use one of the existing formats or define a custom format by
 overriding the macros declared in :zephyr_file:`include/tracing/tracing.h`.
 
-Different formats, transports and host tools are avialable and supported in
+Different formats, transports and host tools are available and supported in
 Zephyr.
 
 In fact, I/O varies greatly from system to system.  Therefore, it is

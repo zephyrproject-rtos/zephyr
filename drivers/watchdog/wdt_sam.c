@@ -213,7 +213,7 @@ static int wdt_sam_feed(const struct device *dev, int channel_id)
 
 	/*
 	 * On watchdog restart the Watchdog counter is immediately
-	 * reloaded/feeded with the 12-bit watchdog counter
+	 * reloaded/fed with the 12-bit watchdog counter
 	 * value from WDT_MR and restarted
 	 */
 	Wdt * const wdt = config->regs;

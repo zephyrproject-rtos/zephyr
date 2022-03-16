@@ -59,7 +59,7 @@ static void test_timeout(struct k_timer *timer)
 	ztress_abort();
 }
 
-/* Ratio is 1/16, e.g using ratio 14 reduces all timeouts by multipling it by 14/16.
+/* Ratio is 1/16, e.g using ratio 14 reduces all timeouts by multiplying it by 14/16.
  * 16 fraction is used to avoid dividing which may take more time on certain platforms.
  */
 static void adjust_load(uint8_t ratio)
@@ -375,7 +375,7 @@ int ztress_execute(struct ztress_context_data *timer_data,
 		(void)k_timer_status_sync(&ztress_timer);
 	}
 
-	/* print raport */
+	/* print report */
 	ztress_report();
 
 	ztress_end(old_prio);
@@ -403,7 +403,7 @@ void ztress_report(void)
 			(uint32_t)init_backoff[i].ticks, (uint32_t)backoff[i].ticks);
 	}
 
-	printk("\tAvarage CPU load:%u%%, measurements:%u\n",
+	printk("\tAverage CPU load:%u%%, measurements:%u\n",
 			rt.cpu_load / 10, rt.cpu_load_measurements);
 }
 

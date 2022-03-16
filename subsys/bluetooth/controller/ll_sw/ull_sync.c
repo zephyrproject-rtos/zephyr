@@ -831,7 +831,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	if (1) {
 #endif /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
-		/* Switch sync event prepare function to one reposnsible for regular PDUs receive */
+		/* Switch sync event prepare function to one responsible for regular PDUs receive */
 		sync->lll_sync_prepare = lll_sync_prepare;
 
 		/* Change node type to appropriately handle periodic

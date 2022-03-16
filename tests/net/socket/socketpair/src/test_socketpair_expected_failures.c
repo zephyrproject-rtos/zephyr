@@ -37,7 +37,7 @@ void test_socketpair_expected_failures(void)
 	}
 	zassert_equal(res, -1, "socketpair with fail with bad address family");
 	zassert_equal(errno, EAFNOSUPPORT,
-				  "errno should be EAFNOSUPPORT with bad adddress family");
+				  "errno should be EAFNOSUPPORT with bad address family");
 
 	res = socketpair(AF_UNIX, 42, 0, sv);
 	if (res != -1) {

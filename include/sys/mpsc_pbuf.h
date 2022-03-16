@@ -149,7 +149,7 @@ void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
 /** @brief Allocate a packet.
  *
  * If a buffer is configured to overwrite mode then if there is no space to
- * allocated a new buffer, oldest packets are dropped. Otherwise allocation
+ * allocate a new buffer, oldest packets are dropped. Otherwise allocation
  * fails and null pointer is returned.
  *
  * @param buffer Buffer.

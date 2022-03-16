@@ -202,7 +202,7 @@ Above:
   #. ``a-third-command`` with class ``ThirdCommand``
 
 See the file :file:`west-commands-schema.yml` in the `west repository`_ for a
-schema describing the contents of a :file:`west-comands.yml`.
+schema describing the contents of a :file:`west-commands.yml`.
 
 Step 3: Update Your Manifest
 ============================

@@ -132,7 +132,7 @@ Relevant Time Scales
 
 `International Atomic Time
 <https://en.wikipedia.org/wiki/International_Atomic_Time>`__ (TAI) is a time
-scale based on averaging clocks that count in SI seconds. TAI is a montonic
+scale based on averaging clocks that count in SI seconds. TAI is a monotonic
 and continuous time scale.
 
 `Universal Time <https://en.wikipedia.org/wiki/Universal_Time>`__ (UT) is a

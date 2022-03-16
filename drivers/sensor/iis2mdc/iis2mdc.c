@@ -306,7 +306,7 @@ static int iis2mdc_init(const struct device *dev)
 
 	/* Set device in continuous mode */
 	if (iis2mdc_operating_mode_set(iis2mdc->ctx, IIS2MDC_CONTINUOUS_MODE)) {
-		LOG_DBG("set continuos mode failed\n");
+		LOG_DBG("set continuous mode failed\n");
 		return -EIO;
 	}
 

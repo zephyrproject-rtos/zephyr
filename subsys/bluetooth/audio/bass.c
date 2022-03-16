@@ -164,7 +164,7 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bass_subgroup *subgroup = &state->subgroups[i];
 
-		BT_DBG("\tSubsgroup[%d]: BIS sync %u (requested %u), metadata_len %u, metadata: %s",
+		BT_DBG("\tSubgroup[%d]: BIS sync %u (requested %u), metadata_len %u, metadata: %s",
 		       i, subgroup->bis_sync, subgroup->requested_bis_sync,
 		       subgroup->metadata_len,
 		       bt_hex(subgroup->metadata, subgroup->metadata_len));
@@ -1001,7 +1001,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	state_changed |= old_pa_sync_state != state->pa_sync_state;
 
-	BT_DBG("Index %u: Source modifed: ID 0x%02x",
+	BT_DBG("Index %u: Source modified: ID 0x%02x",
 	       internal_state->index, state->src_id);
 	bt_debug_dump_recv_state(internal_state);
 

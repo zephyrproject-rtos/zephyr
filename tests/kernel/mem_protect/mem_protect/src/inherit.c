@@ -90,7 +90,7 @@ static void test_thread_1_for_SU(void *p1, void *p2, void *p3)
  * - Then check child thread can't access to the parent thread object using API
  *   command k_thread_priority_get()
  * - At the same moment that test verifies that child thread was granted
- *   permission on a kernel objects. That meanis child user thread caller
+ *   permission on a kernel objects. That means child user thread caller
  *   already has permission on the thread objects being granted.
 
  * @ingroup kernel_memprotect_tests

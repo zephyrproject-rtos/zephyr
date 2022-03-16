@@ -103,7 +103,7 @@ extern bool soc_cpus_active[CONFIG_MP_NUM_CPUS];
  * reach idle.
  *
  * @note On older cAVS hardware, core power is controlled by the host.
- * This function must still be called for OS bookeeping, but it is
+ * This function must still be called for OS bookkeeping, but it is
  * insufficient without application coordination (and careful
  * synchronization!) with the host x86 environment.
  *

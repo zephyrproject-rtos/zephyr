@@ -245,7 +245,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 	icmp = get_icmp_hdr(pkt);
 
-	/* Reply with RA messge */
+	/* Reply with RA message */
 	if (icmp->type == NET_ICMPV6_RS) {
 		if (expecting_ra) {
 			prepare_ra_message(pkt);

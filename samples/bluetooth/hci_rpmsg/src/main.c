@@ -46,7 +46,7 @@ static struct net_buf *hci_rpmsg_cmd_recv(uint8_t *data, size_t remaining)
 	struct net_buf *buf;
 
 	if (remaining < sizeof(*hdr)) {
-		LOG_ERR("Not enought data for command header");
+		LOG_ERR("Not enough data for command header");
 		return NULL;
 	}
 
@@ -77,7 +77,7 @@ static struct net_buf *hci_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 	struct net_buf *buf;
 
 	if (remaining < sizeof(*hdr)) {
-		LOG_ERR("Not enought data for ACL header");
+		LOG_ERR("Not enough data for ACL header");
 		return NULL;
 	}
 

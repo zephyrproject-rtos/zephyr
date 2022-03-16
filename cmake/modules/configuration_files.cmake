@@ -81,7 +81,7 @@ set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE INTERNAL "The applica
 set(CACHED_CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
 These settings will override the settings in the application’s .config file or its default .conf file.\
-Multiple files may be listed, e.g. CONF_FILE=\"prj1.confi;prj2.conf\" \
+Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf;prj2.conf\" \
 The CACHED_CONF_FILE is internal Zephyr variable used between CMake runs. \
 To change CONF_FILE, use the CONF_FILE variable.")
 unset(CONF_FILE CACHE)

@@ -168,7 +168,7 @@ void validate_base_message_set(const struct log_source_const_data *source,
 
 	int rv = memcmp(msg0, msg1, sizeof(int) * len0);
 
-	zassert_equal(rv, 0, "Unxecpted memcmp result: %d", rv);
+	zassert_equal(rv, 0, "Unexpected memcmp result: %d", rv);
 
 	/* msg1 is not validated because it should be the same as msg0. */
 	basic_validate(&msg0->log, source, domain, level,

@@ -263,7 +263,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 
 	zassert_equal_ptr(dev1, current_dev, "invalid interface used");
 
-	/* Server socket should now receive data from iterface 1 as well. */
+	/* Server socket should now receive data from interface 1 as well. */
 
 	k_msleep(10);
 

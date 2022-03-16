@@ -793,7 +793,7 @@ uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
 
 	/* NOTE: 16-bit values are sufficient for minimum radio event time
 	 *       reservation, 32-bit are used here so that reservations for
-	 *       whole back-to-back chaining of PDUs can be accomodated where
+	 *       whole back-to-back chaining of PDUs can be accommodated where
 	 *       the required microseconds could overflow 16-bits, example,
 	 *       back-to-back chained Coded PHY PDUs.
 	 */
@@ -1110,7 +1110,7 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
  *
  * @param[in]  lll_sync         Reference to periodic advertising sync.
  * @param[in]  ter_pdu_prev     Pointer to previous PDU.
- * @param[in]  ter_pdu_         Pointer to PDU to fill fileds.
+ * @param[in]  ter_pdu_         Pointer to PDU to fill fields.
  * @param[in]  hdr_add_fields   Flag with information which fields add.
  * @param[in]  hdr_rem_fields   Flag with information which fields remove.
  * @param[in]  hdr_data         Pointer to data to be added to header. Content
@@ -1171,7 +1171,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	ter_pdu->rx_addr = ter_pdu_prev->rx_addr;
 
 	/* Get common pointers from current tertiary PDU data.
-	 * It is possbile that the current tertiary is the same as
+	 * It is possible that the current tertiary is the same as
 	 * previous one. It may happen if update periodic advertising
 	 * chain in place.
 	 */

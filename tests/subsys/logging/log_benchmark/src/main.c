@@ -164,7 +164,7 @@ void test_log_message_store_time_no_overwrite(void)
 
 	uint32_t total_us = k_cyc_to_us_ceil32(total_cyc);
 
-	PRINT("%sAvarage logging a message:  %u cycles (%u us)\n",
+	PRINT("%sAverage logging a message:  %u cycles (%u us)\n",
 		k_is_user_context() ? "USERSPACE: " : "",
 		total_cyc / total_msg, total_us / total_msg);
 }
@@ -204,7 +204,7 @@ void test_log_message_store_time_overwrite(void)
 
 	uint32_t total_us = k_cyc_to_us_ceil32(total_cyc);
 
-	PRINT("Avarage overwrite logging a message:  %u cycles (%u us)\n",
+	PRINT("Average overwrite logging a message:  %u cycles (%u us)\n",
 		total_cyc / total_msg, total_us / total_msg);
 }
 

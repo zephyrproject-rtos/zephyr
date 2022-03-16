@@ -356,7 +356,7 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  *
- * When direction finding is enabled a PDU may include Constant Tone Extensio at its end. For PDU
+ * When direction finding is enabled a PDU may include Constant Tone Extension at its end. For PDU
  * including CTE EVENTS_PHYEND event is generated at very end of a PDU. In case there is no CTE in
  * a PDU the EVENTS_PHYEND event is generated in the same instant as EVENTS_END event.
  */

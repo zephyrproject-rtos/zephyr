@@ -72,7 +72,7 @@ struct bt_audio_capability_pref {
 	/** Preferred Transport Latency in ms */
 	uint16_t latency;
 
-	/** @brief Minimun Presentation Delay in us
+	/** @brief Minimum Presentation Delay in us
 	 *
 	 *  Unlike the other fields, this is not a preference but a minimum
 	 *  requirement.
@@ -86,7 +86,7 @@ struct bt_audio_capability_pref {
 	 */
 	uint32_t pd_max;
 
-	/** @brief Preferred minimun Presentation Delay in us*/
+	/** @brief Preferred minimum Presentation Delay in us*/
 	uint32_t pref_pd_min;
 
 	/** @brief Preferred maximum Presentation Delay	in us */

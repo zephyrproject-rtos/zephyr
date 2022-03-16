@@ -20,7 +20,7 @@
 #define BT_HFP_AG_FEATURE_REJECT_CALL   0x00000020 /* Ability to reject call */
 #define BT_HFP_AG_FEATURE_ECS           0x00000040 /* Enhanced call status */
 #define BT_HFP_AG_FEATURE_ECC           0x00000080 /* Enhanced call control */
-#define BT_HFP_AG_FEATURE_EXT_ERR       0x00000100 /* Extented error codes */
+#define BT_HFP_AG_FEATURE_EXT_ERR       0x00000100 /* Extended error codes */
 #define BT_HFP_AG_FEATURE_CODEC_NEG     0x00000200 /* Codec negotiation */
 #define BT_HFP_AG_FEATURE_HF_IND        0x00000400 /* HF Indicators */
 #define BT_HFP_AG_FEARTURE_ESCO_S4      0x00000800 /* eSCO S4 Settings */

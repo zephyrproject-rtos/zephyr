@@ -346,7 +346,7 @@ static inline bool tcpc_check_vbus_level(const struct device *dev,
  * This function uses the TCPC to measure VBUS if possible or calls the
  * callback function set by tcpc_set_vbus_measure_callback. In the event that
  * the TCPC can measure VBUS and the VBUS callback measuring function is
- * set, this function usess the callback function.
+ * set, this function uses the callback function.
  *
  * @param dev        Runtime device structure
  * @param vbus_meas  pointer where the measured VBUS voltage is stored

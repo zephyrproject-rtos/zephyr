@@ -664,7 +664,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	} else if (IS_ENABLED(CONFIG_NET_LLDP) && net_pkt_is_lldp(pkt)) {
 		ptype = htons(NET_ETH_PTYPE_LLDP);
 	} else if (IS_ENABLED(CONFIG_NET_ARP)) {
-		/* Unktown type: Unqueued pkt is an ARP reply.
+		/* Unknown type: Unqueued pkt is an ARP reply.
 		 */
 		ptype = htons(NET_ETH_PTYPE_ARP);
 		net_pkt_set_family(pkt, AF_INET);

@@ -191,9 +191,9 @@ config LOG_BACKEND_SPINEL
 	depends on NET_L2_OPENTHREAD
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
-	  This protocol is byte oriented and wrapps given messages into serial frames.
+	  This protocol is byte oriented and wraps given messages into serial frames.
 	  Backend should be enabled only to OpenThread purposes and when UART backend is disabled
-	  or works on antoher UART device to avoid interference.
+	  or works on another UART device to avoid interference.
 
 if LOG_BACKEND_SPINEL
 

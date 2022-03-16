@@ -267,7 +267,7 @@ void test_msgq_usage(void)
 	/* waiting to continue */
 	k_sem_take(&test_continue, K_FOREVER);
 
-	/* rather than schedule this thread by k_msleep(), use semaphor with
+	/* rather than schedule this thread by k_msleep(), use semaphore with
 	 * a timeout value, so there is no give operation over service_sema
 	 */
 	TC_PRINT("try to kill service1\n");
