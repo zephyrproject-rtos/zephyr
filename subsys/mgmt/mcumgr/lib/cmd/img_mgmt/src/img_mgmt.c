@@ -9,6 +9,9 @@
 #include <assert.h>
 #include <string.h>
 
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
+#include <mgmt/mcumgr/buf.h>
 #include "cborattr/cborattr.h"
 #include "mgmt/mgmt.h"
 
@@ -242,8 +245,9 @@ static int
 img_mgmt_erase(struct mgmt_ctxt *ctxt)
 {
 	struct image_version ver;
-	CborError err;
 	int rc;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	bool ok;
 
 	/*
 	 * First check if image info is valid.
@@ -265,32 +269,24 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 		img_mgmt_dfu_stopped();
 	}
 
-	err = 0;
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, rc);
+	ok = zcbor_tstr_put_lit(zse, "rc")	&&
+	     zcbor_int32_put(zse, rc);
 
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
-
-	return 0;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
 
 static int
 img_mgmt_upload_good_rsp(struct mgmt_ctxt *ctxt)
 {
-	CborError err = CborNoError;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	bool ok;
 
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "rc");
-	err |= cbor_encode_int(&ctxt->encoder, MGMT_ERR_EOK);
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "off");
-	err |= cbor_encode_int(&ctxt->encoder, g_img_mgmt_state.off);
+	ok = zcbor_tstr_put_lit(zse, "rc")			&&
+	     zcbor_int32_put(zse, MGMT_ERR_EOK)			&&
+	     zcbor_tstr_put_lit(zse, "off")			&&
+	     zcbor_int32_put(zse,  g_img_mgmt_state.off);
 
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
-
-	return 0;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
 
 /**
