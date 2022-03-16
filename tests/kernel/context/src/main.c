@@ -143,7 +143,7 @@ static ISR_INFO isr_info;
  * @brief Test cpu idle function
  *
  * @details
- * Test Objectve:
+ * Test Objective:
  * - The kernel architecture provide an idle function to be run when the system
  *   has no work for the current CPU
  * - This routine tests the k_cpu_idle() routine
@@ -182,7 +182,7 @@ static void test_kernel_cpu_idle(void);
  * @brief Test cpu idle function
  *
  * @details
- * Test Objectve:
+ * Test Objective:
  * - The kernel architecture provide an idle function to be run when the system
  *   has no work for the current CPU
  * - This routine tests the k_cpu_atomic_idle() routine
@@ -198,7 +198,7 @@ static void test_kernel_cpu_idle(void);
  * - N/A
  *
  * Test Procedure:
- * -# Record system time befor cpu enters idle state
+ * -# Record system time before cpu enters idle state
  * -# Enter cpu idle state by k_cpu_atomic_idle()
  * -# Record system time after cpu idle state is interrupted
  * -# Compare the two system time values.
@@ -573,7 +573,7 @@ static void test_kernel_interrupts(void)
  * @details
  * Test Objective:
  * - To verify the kernel architecture layer shall provide a mechanism to
- *   simultenously mask all local CPU interrupts and return the previous mask
+ *   simultaneously mask all local CPU interrupts and return the previous mask
  *   state for restoration.
  * - This routine tests the routines for disabling and enabling interrupts.
  *   These include irq_disable() and irq_enable().
@@ -634,7 +634,7 @@ static void test_kernel_timer_interrupts(void)
  * @brief Test some context routines
  *
  * @details
- * Test Objectve:
+ * Test Objective:
  * - Thread context handles derived from context switches must be able to be
  *   restored upon interrupt exit
  *
@@ -967,7 +967,7 @@ static void delayed_thread(void *num, void *arg2, void *arg3)
 }
 
 /**
- * @brief Test timouts
+ * @brief Test timeouts
  *
  * @ingroup kernel_context_tests
  *
@@ -991,7 +991,7 @@ static void test_busy_wait(void)
 }
 
 /**
- * @brief Test timouts
+ * @brief Test timeouts
  *
  * @ingroup kernel_context_tests
  *

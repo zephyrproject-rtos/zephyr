@@ -31,7 +31,7 @@ struct scontroller {
 	struct media_proxy_sctrl_cbs *cbs;
 };
 
-/* Aynchronous controller - controller using the asynchronous API */
+/* Asynchronous controller - controller using the asynchronous API */
 struct controller {
 	struct media_proxy_ctrl_cbs *cbs;
 };

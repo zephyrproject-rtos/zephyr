@@ -402,7 +402,7 @@ int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics)
 	 * 1) Primary discover for the MICS
 	 * 2) Characteristic discover of the MICS
 	 * 3) Discover services included in MICS (AICS)
-	 * 4) For each included service found; discovery of the characteristiscs
+	 * 4) For each included service found; discovery of the characteristics
 	 * 5) When everything above have been discovered, the callback is called
 	 */
 

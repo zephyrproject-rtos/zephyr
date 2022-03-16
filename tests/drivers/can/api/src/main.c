@@ -409,7 +409,7 @@ static void test_set_loopback(void)
 
 /*
  * Sending a message to the wild should work because we are in loopback mode
- * and therfor ACK the frame ourselves
+ * and therefore ACK the frame ourselves
  */
 static void test_send_and_forget(void)
 {

@@ -782,7 +782,7 @@ static enum security_result rfcomm_dlc_security(struct bt_rfcomm_dlc *dlc)
 
 	/* If current security level is greater than or equal to required
 	 * security level  then return SUCCESS.
-	 * For SSP devices the current security will be atleast MEDIUM
+	 * For SSP devices the current security will be at least MEDIUM
 	 * since L2CAP is enforcing it
 	 */
 	if (conn->sec_level >= dlc->required_sec_level) {

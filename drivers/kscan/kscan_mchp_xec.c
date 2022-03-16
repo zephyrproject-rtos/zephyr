@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(kscan_mchp_xec);
 #define KEYBOARD_COLUMN_DRIVE_ALL       -2
 #define KEYBOARD_COLUMN_DRIVE_NONE      -1
 
-/* Poll period/debouncing rely onthe 32KHz clock with 30 usec clock cycles */
+/* Poll period/debouncing rely on the 32KHz clock with 30 usec clock cycles */
 #define CLOCK_32K_HW_CYCLES_TO_US(X) \
 	(uint32_t)((((uint64_t)(X) * 1000000U) / sys_clock_hw_cycles_per_sec()))
 /* Milliseconds in microseconds */

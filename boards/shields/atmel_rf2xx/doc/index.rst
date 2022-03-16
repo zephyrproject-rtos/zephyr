@@ -131,7 +131,7 @@ Arduino Shields
 ===============
 
 Arduino Uno R3 header is available without advanced features.  It is enabled
-selecting `atmel_rf2xx_arduino`_ variante option.
+selecting `atmel_rf2xx_arduino`_ variant option.
 
 Pins Assignment of the Arduino Shield Modules
 =============================================
@@ -182,7 +182,7 @@ MikroBus Shields
 ================
 
 MikroBus header is available available without advanced features.  It is
-enabled selecting `atmel_rf2xx_mikrobus`_ variante option.
+enabled selecting `atmel_rf2xx_mikrobus`_ variant option.
 
 Pins Assignment of the MikroBus Shield Modules
 ==============================================

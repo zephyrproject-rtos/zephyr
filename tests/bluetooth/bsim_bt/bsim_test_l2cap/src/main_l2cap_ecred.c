@@ -84,7 +84,7 @@ static int chan_recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
 	const uint32_t received_iterration = net_buf_pull_le32(buf);
 
-	LOG_DBG("received_iterration %i sdus_receied %i, chan_id: %d, data_length: %d",
+	LOG_DBG("received_iterration %i sdus_received %i, chan_id: %d, data_length: %d",
 		received_iterration, chan->sdus_received, chan->chan_id, buf->len);
 	if (!TEST_FLAG(unsequenced_data) && received_iterration != chan->sdus_received) {
 		FAIL("Received out of sequence data.");
@@ -97,7 +97,7 @@ static int chan_recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 		FAIL("Payload received didn't match expected value memcmp returned %i", retval);
 	}
 
-	/*By the time we rx on long msg channel we should have alrady rx on short msg channel*/
+	/*By the time we rx on long msg channel we should have already rx on short msg channel*/
 	if (chan->chan_id == 0) {
 		if (channels[SHORT_MSG_CHAN_IDX].sdus_received !=
 			(channels[LONG_MSG_CHAN_IDX].sdus_received + 1)) {
@@ -239,7 +239,7 @@ static void disconnect_all_channels(void)
 			const int err = bt_l2cap_chan_disconnect(&channels[i].le.chan);
 
 			if (err) {
-				LOG_DBG("can't disconnnect channel (err: %d)", err);
+				LOG_DBG("can't disconnect channel (err: %d)", err);
 			}
 
 			channels[i].in_use = false;
@@ -346,7 +346,7 @@ static void send_sdu(int iteration, int chan_idx, int bytes)
 	sys_put_le32(iteration, channels[chan_idx].payload);
 
 	if (channels[chan_idx].buf != 0) {
-		FAIL("Buf should have been dealocated by now");
+		FAIL("Buf should have been deallocated by now");
 		return;
 	}
 
@@ -395,7 +395,7 @@ static void send_sdu_concurrently(void)
 								&channels[k].work);
 
 			if (err < 0) {
-				FAIL("Failed to submit work to the queque, error: %d", err);
+				FAIL("Failed to submit work to the queue, error: %d", err);
 			}
 		}
 

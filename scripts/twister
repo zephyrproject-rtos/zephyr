@@ -539,7 +539,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument(
         "-j", "--jobs", type=int,
         help="Number of jobs for building, defaults to number of CPU threads, "
-             "overcommited by factor 2 when --build-only.")
+             "overcommitted by factor 2 when --build-only.")
 
     parser.add_argument(
         "--json-report", action="store_true",
@@ -1112,7 +1112,7 @@ def main():
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.test_only:
         # Get list of connected hardware and filter tests to only be run on connected hardware
-        # in cases where no platform was specified when runn the tests.
+        # in cases where no platform was specified when running the tests.
         # If the platform does not exist in the hardware map, just skip it.
         connected_list = []
         if not options.platform:

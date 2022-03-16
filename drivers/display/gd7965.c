@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(gd7965, CONFIG_DISPLAY_LOG_LEVEL);
 /**
  * GD7965 compatible EPD controller driver.
  *
- * Currently only the black/white pannels are supported (KW mode),
+ * Currently only the black/white panels are supported (KW mode),
  * also first gate/source should be 0.
  */
 
@@ -105,7 +105,7 @@ static int gd7965_update_display(const struct device *dev)
 static int gd7965_blanking_off(const struct device *dev)
 {
 	if (blanking_on) {
-		/* Update EPD pannel in normal mode */
+		/* Update EPD panel in normal mode */
 		gd7965_busy_wait(dev);
 		if (gd7965_update_display(dev)) {
 			return -EIO;
@@ -318,7 +318,7 @@ static int gd7965_controller_init(const struct device *dev)
 	k_sleep(K_MSEC(GD7965_PON_DELAY));
 	gd7965_busy_wait(dev);
 
-	/* Pannel settings, KW mode */
+	/* Panel settings, KW mode */
 	tmp[0] = GD7965_PSR_KW_R |
 		 GD7965_PSR_UD |
 		 GD7965_PSR_SHL |

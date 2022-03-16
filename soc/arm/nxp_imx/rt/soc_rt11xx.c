@@ -23,7 +23,7 @@
 #include "usb_dc_mcux.h"
 #endif
 
-#if CONFIG_USB_DC_NXP_EHCI /* USB PHY condfiguration */
+#if CONFIG_USB_DC_NXP_EHCI /* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL (0x07U)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)

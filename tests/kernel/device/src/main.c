@@ -235,7 +235,7 @@ static void test_device_list(void)
 	zassert_false((devcount == 0), NULL);
 }
 
-/* this is for storing sequence during initializtion */
+/* this is for storing sequence during initialization */
 extern int init_level_sequence[4];
 extern int init_priority_sequence[4];
 extern unsigned int seq_level_cnt;

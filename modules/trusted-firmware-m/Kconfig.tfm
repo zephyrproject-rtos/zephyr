@@ -206,7 +206,7 @@ config TFM_MCUBOOT_PATH_LOCAL
 config TFM_MCUBOOT_PATH_DOWNLOAD
 	bool "TF-M to automatically download MCUboot during build"
 	help
-	  TF-M bulds with BL2 will let the TF-M build to automatically
+	  TF-M builds with BL2 will let the TF-M build to automatically
 	  fetch and check-out the MCUboot version to use in the build.
 
 endchoice

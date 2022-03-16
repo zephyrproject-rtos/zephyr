@@ -113,7 +113,7 @@ stack pointer manipulation* during thread context switching, without affecting t
 handler mode.
 
 In Arm Cortex-M builds a single interrupt stack memory is shared among exceptions and interrupts. The size of the interrupt stack needs
-to be selected taking into consideration nested interrupts, each pushing an additional stack frame. Deverlopers can modify the interrupt
+to be selected taking into consideration nested interrupts, each pushing an additional stack frame. Developers can modify the interrupt
 stack size using :kconfig:option:`CONFIG_ISR_STACK_SIZE`.
 
 The interrupt stack is also used during early boot so the kernel can initialize the main thread's stack before switching to the main thread.
@@ -141,7 +141,7 @@ Typically a thread context-switch will perform the following operations
    * the thread's current operation *mode*
 
         * user or privileged execution mode
-        * presense of an active floating point context
+        * presence of an active floating point context
         * the EXC_RETURN value of the current handler context (PendSV)
 
    * the floating point callee-saved registers (S16 - S31) in the thread's container for FP
@@ -233,7 +233,7 @@ this rule is described below). As a result, processor faults occurring in regula
 ISRs will be handled by the corresponding fault handler and will not escalate to
 a HardFault, *similar to processor faults occurring in thread mode*.
 
-SVC exception is normally configured with the highest conigurable priority level
+SVC exception is normally configured with the highest configurable priority level
 (an exception to this rule will be described below).
 SVCs are used by the Zephyr kernel to dispatch system calls, trigger runtime
 system errors (e.g. Kernel oops or panic), or implement IRQ offloading.
@@ -469,7 +469,7 @@ Certain thread-specific MPU regions may be re-programmed dynamically, at each th
 
 * an unprivileged RW region for the current thread's stack area (for user threads)
 * a read-only region for the MPU stack guard
-* unprivileged RW regions for the partitions of the currentl thread's application memory
+* unprivileged RW regions for the partitions of the current thread's application memory
   domain.
 
 
@@ -489,7 +489,7 @@ overlap. :kconfig:option:`CONFIG_MPU_GAP_FILLING` controls whether the fixed MPU
 covering the entire SRAM is programmed. When it does, a full SRAM area partitioning
 is required, in order to program the  static and the dynamic MPU regions. This increases
 the total number of required MPU regions. When :kconfig:option:`CONFIG_MPU_GAP_FILLING` is not
-enabled the fixed MPU region convering the entire SRAM is not programmed, thus, the static
+enabled the fixed MPU region covering the entire SRAM is not programmed, thus, the static
 and dynamic regions are simply programmed on top of the always-existing background region
 (full-SRAM partitioning is not required).
 Note, however, that the background SRAM region allows execution from SRAM, so when
@@ -562,7 +562,7 @@ of the image vector table.
 
 Baseline Cortex-M platforms without VTOR register might not be able to relocate their
 vector table which remains at a fixed location. Therefore, a chain-loadable image will
-require an alternative way to route HW interrupts and system exeptions to its own vector
+require an alternative way to route HW interrupts and system exceptions to its own vector
 table; this is achieved with software vector relaying.
 
 When a bootloader image enables :kconfig:option:`CONFIG_SW_VECTOR_RELAY`

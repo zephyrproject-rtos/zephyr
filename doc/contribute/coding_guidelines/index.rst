@@ -38,7 +38,7 @@ Main rules
 
 The coding guideline rules are based on MISRA-C 2012 and are a subset of MISRA-C.
 The subset is listed in the table below with a summary of the rules, its
-severity and the equivlent rules from other standards for reference.
+severity and the equivalent rules from other standards for reference.
 
 .. note::
 
@@ -368,7 +368,7 @@ severity and the equivlent rules from other standards for reference.
       -  `Rule 10.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_02.c>`_
     * -  Rule 10.3
       -  Required
-      -  The value of an expression shall not be assigned to an object with a narrower essential type or of a dierent essential type category
+      -  The value of an expression shall not be assigned to an object with a narrower essential type or of a different essential type category
       -  `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
       -  `Rule 10.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_03.c>`_
     * -  Rule 10.4

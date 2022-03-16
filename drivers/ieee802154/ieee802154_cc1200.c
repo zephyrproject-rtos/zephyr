@@ -159,7 +159,7 @@ static uint8_t get_status(const struct device *dev)
 		return val & CC1200_STATUS_MASK;
 	}
 
-	/* We cannot get the status, so let's assume about readyness */
+	/* We cannot get the status, so let's assume about readiness */
 	return CC1200_STATUS_CHIP_NOT_READY;
 }
 

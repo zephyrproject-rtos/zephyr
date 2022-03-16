@@ -117,7 +117,7 @@ static ALWAYS_INLINE uint32_t z_xtrpoflip(uint32_t addr, uint32_t rto, uint32_t 
  * controlled independently.  So for any given pointer, it is possible
  * to convert it to and from a cached version.
  *
- * This function takes a pointer to any addressible object (either in
+ * This function takes a pointer to any addressable object (either in
  * cacheable memory or not) and returns a pointer that can be used to
  * refer to the same memory through the L1 data cache.  Data read
  * through the resulting pointer will reflect locally cached values on
@@ -144,7 +144,7 @@ static inline void *arch_xtensa_cached_ptr(void *ptr)
  * controlled independently.  So for any given pointer, it is possible
  * to convert it to and from a cached version.
  *
- * This function takes a pointer to any addressible object (either in
+ * This function takes a pointer to any addressable object (either in
  * cacheable memory or not) and returns a pointer that can be used to
  * refer to the same memory while bypassing the L1 data cache.  Data
  * in the L1 cache will not be inspected nor modified by the access.

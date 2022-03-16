@@ -128,7 +128,7 @@ static void log_setup(bool backend2_enable)
 }
 
 /**
- * @brief Process and validate that backends got exepcted content.
+ * @brief Process and validate that backends got expected content.
  *
  * @param backend2_enable If true backend2 is also validated.
  * @param panic True means that logging is in panic mode, flushing is skipped.

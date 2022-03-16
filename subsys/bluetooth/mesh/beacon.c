@@ -229,7 +229,7 @@ static void update_beacon_observation(void)
 
 	/* Observation period is 20 seconds, whereas the beacon timer
 	 * runs every 10 seconds. We process what's happened during the
-	 * window only after the seconnd half.
+	 * window only after the second half.
 	 */
 	first_half = !first_half;
 	if (first_half) {

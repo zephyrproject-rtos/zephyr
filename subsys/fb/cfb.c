@@ -57,7 +57,7 @@ struct char_framebuffer {
 	/** Font kerning */
 	int8_t kerning;
 
-	/** Invertedj*/
+	/** Inverted */
 	bool inverted;
 };
 

@@ -202,7 +202,7 @@ error:
  * First we signal the module that we want to send data over a socket.
  * This is done by sending AT+CASEND=<sockfd>,<nbytes>\r\n.
  * If The module is ready to send data it will send back
- * an UNTERMINATED promt '> '. After that data can be sent to the modem.
+ * an UNTERMINATED prompt '> '. After that data can be sent to the modem.
  * As terminating byte a STRG+Z (0x1A) is sent. The module will
  * then send a OK or ERROR.
  */

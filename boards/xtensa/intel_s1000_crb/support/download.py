@@ -33,7 +33,7 @@ def calc_firmware_sha(file):
     """
     Open firmware image file and calculate file size
     Pad file size to a multiple of 64 bytes
-    Caculate SHA256 hash of the padded contents
+    Calculate SHA256 hash of the padded contents
     """
     with open(file, 'rb') as firmware:
         firmware.seek(0, 2)

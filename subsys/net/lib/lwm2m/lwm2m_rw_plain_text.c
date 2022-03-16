@@ -381,7 +381,7 @@ static int get_objlnk(struct lwm2m_input_context *in,
 	total_len = len;
 	value->obj_id = (uint16_t)tmp;
 
-	/* Skip ':' delimeter. */
+	/* Skip ':' delimiter. */
 	total_len++;
 	in->offset++;
 

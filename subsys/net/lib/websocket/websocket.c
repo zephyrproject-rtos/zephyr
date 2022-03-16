@@ -282,7 +282,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 					sizeof("Sec-Websocket-Key: "),
 			    &olen, sec_accept_key,
 			    /* We are only interested in 16 first bytes so
-			     * substract 4 from the SHA-1 length
+			     * subtract 4 from the SHA-1 length
 			     */
 			    sizeof(sec_accept_key) - 4);
 	if (ret) {
@@ -443,7 +443,7 @@ static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 	int ret = 0;
 	int i;
 
-	/* Overwrite websocket file decriptors with underlying ones. */
+	/* Overwrite websocket file descriptors with underlying ones. */
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
 

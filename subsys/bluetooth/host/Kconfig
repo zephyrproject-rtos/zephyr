@@ -181,7 +181,7 @@ config BT_WHITELIST
 config BT_FILTER_ACCEPT_LIST
 	bool "Filter accept list support"
 	help
-	  This option enables the filter accep list API. This takes advantage of the
+	  This option enables the filter accept list API. This takes advantage of the
 	  filtering feature of a BLE controller.
 	  The filter accept list is a global list and the same list is used
 	  by both scanner and advertiser. The filter accept list cannot be modified while
@@ -194,7 +194,7 @@ config BT_FILTER_ACCEPT_LIST
 	  Connections can be established automatically for accepted peers.
 
 	  This options deprecates the bt_le_set_auto_conn API in favor of the
-	  bt_conn_create_aute_le API.
+	  bt_conn_create_auto_le API.
 
 config BT_LIM_ADV_TIMEOUT
 	int "Timeout for limited advertising in 1s units"
@@ -371,7 +371,7 @@ config BT_FIXED_PASSKEY
 	help
 	  With this option enabled, the application will be able to call the
 	  bt_passkey_set() API to set a fixed passkey. If set, the
-	  pairing_confim() callback will be called for all incoming pairings.
+	  pairing_confirm() callback will be called for all incoming pairings.
 
 config BT_USE_DEBUG_KEYS
 	bool "Security Manager Debug Mode"

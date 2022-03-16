@@ -75,7 +75,7 @@ struct gcov_ctr_info {
 struct gcov_fn_info {
 	const struct gcov_info *key;     /* comdat key */
 	unsigned int ident;              /* unique ident of function */
-	unsigned int lineno_checksum;    /* function lineo_checksum */
+	unsigned int lineno_checksum;    /* function lineno_checksum */
 	unsigned int cfg_checksum;       /* function cfg checksum */
 	struct gcov_ctr_info ctrs[0];    /* instrumented counters */
 };

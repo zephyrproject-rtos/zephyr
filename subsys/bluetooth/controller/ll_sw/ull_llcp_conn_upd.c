@@ -702,7 +702,7 @@ static void rp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 			ctx->state = RP_CU_STATE_WAIT_RX_CONN_UPDATE_IND;
 			break;
 		default:
-			/* Unknown proceduce */
+			/* Unknown procedure */
 			LL_ASSERT(0);
 			break;
 		}

@@ -295,7 +295,7 @@ config OMIT_FRAME_POINTER
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
 	  Choose Y for best performance. On some architectures (including x86)
-	  this will favor code size and performance over debugability.
+	  this will favor code size and performance over debuggability.
 
 	  Choose N in you wish to retain the frame pointer. This option may
 	  be useful if your application uses runtime backtracing and does not

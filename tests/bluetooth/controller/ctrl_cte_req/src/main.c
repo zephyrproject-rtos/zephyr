@@ -50,7 +50,7 @@ static void setup(void)
  * +-----+                     +-------+            +-----+
  *    |                            |                   |
  *    | Start initiation           |                   |
- *    | CTE Reqest Proc.           |                   |
+ *    | CTE Request Proc.          |                   |
  *    |--------------------------->|                   |
  *    |                            |                   |
  *    |                            | LL_LE_CTE_REQ     |
@@ -119,7 +119,7 @@ void test_cte_req_central_local(void)
  * +-----+                     +-------+            +-----+
  *    |                            |                   |
  *    | Start initiator            |                   |
- *    | CTE Reqest Proc.           |                   |
+ *    | CTE Request Proc.          |                   |
  *    |--------------------------->|                   |
  *    |                            |                   |
  *    |                            | LL_LE_CTE_REQ     |
@@ -189,7 +189,7 @@ void test_cte_req_peripheral_local(void)
  * +-----+                     +-------+            +-----+
  *    |                            |                   |
  *    | Start responder            |                   |
- *    | CTE Reqest Proc.           |                   |
+ *    | CTE Request Proc.          |                   |
  *    |--------------------------->|                   |
  *    |                            |                   |
  *    |                            | LL_LE_CTE_REQ     |
@@ -258,7 +258,7 @@ void test_cte_req_central_remote(void)
  * +-----+                     +-------+            +-----+
  *    |                            |                   |
  *    | Start responder            |                   |
- *    | CTE Reqest Proc   .        |                   |
+ *    | CTE Request Proc.          |                   |
  *    |--------------------------->|                   |
  *    |                            |                   |
  *    |                            | LL_LE_CTE_REQ     |
@@ -329,7 +329,7 @@ void test_cte_req_peripheral_remote(void)
  * +-----+                     +-------+                         +-----+
  *    |                            |                                |
  *    | Start initiation           |                                |
- *    | CTE Reqest Proc.           |                                |
+ *    | CTE Request Proc.          |                                |
  *    |--------------------------->|                                |
  *    |                            |                                |
  *    |                            | LL_LE_CTE_REQ                  |
@@ -403,7 +403,7 @@ void test_cte_req_rejected_inv_ll_param_central_local(void)
  * +-----+                     +-------+                         +-----+
  *    |                            |                                |
  *    | Start initiation           |                                |
- *    | CTE Reqest Proc.           |                                |
+ *    | CTE Request Proc.          |                                |
  *    |--------------------------->|                                |
  *    |                            |                                |
  *    |                            | LL_LE_CTE_REQ                  |
@@ -653,7 +653,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 {
 	/* Check if instant is in the past.
 	 *
-	 * NOTE: If conn_event > instant then subtract operation will result in value greather than
+	 * NOTE: If conn_event > instant then subtract operation will result in value greater than
 	 *       0x7FFF for uint16_t type. This is based on modulo 65536 math. The 0x7FFF is
 	 *       maximum positive difference between actual value of connection event counter and
 	 *       instant.
@@ -768,7 +768,7 @@ void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl
 	event_prepare(&conn);
 
 	if (!is_local && cte_req != NULL) {
-		/* Handle remote PHY update request completion and local CTE reques in the same
+		/* Handle remote PHY update request completion and local CTE request in the same
 		 * event.
 		 */
 
@@ -830,7 +830,7 @@ void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl
  * @param is_local        Flag informing if PHY request is local or remote.
  * @param cte_req         Parameters of CTE request procedure. If it is NULL there were no CTE
  *                        request.
- * @param phy_req         Parameters of PHY update reques.
+ * @param phy_req         Parameters of PHY update request.
  * @param events_at_start Number of connection events at function start.
  * @param ctx_num_at_end  Expected number of free procedure contexts at function end.
  */
@@ -885,7 +885,7 @@ static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_cte_req
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
 
-	/* Check that data tx is no lonnger paused */
+	/* Check that data tx is no longer paused */
 	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
@@ -914,7 +914,7 @@ static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_cte_req
  * @param is_local        Flag informing if PHY request is local or remote.
  * @param cte_req         Parameters of CTE request procedure. If it is NULL there were no CTE
  *                        request.
- * @param phy_req         Parameters of PHY update reques.
+ * @param phy_req         Parameters of PHY update request.
  * @param events_at_start Number of connection events at function start.
  * @param ctx_num_at_end  Expected number of free procedure contexts at function end.
  */

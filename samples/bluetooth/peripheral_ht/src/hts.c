@@ -118,7 +118,7 @@ gatt_indicate:
 		mantissa = (uint32_t)(temperature * 100);
 		exponent = (uint8_t)-2;
 
-		htm[0] = 0; /* temperature in celcius */
+		htm[0] = 0; /* temperature in celsius */
 		sys_put_le24(mantissa, (uint8_t *)&htm[1]);
 		htm[4] = exponent;
 

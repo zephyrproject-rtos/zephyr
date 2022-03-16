@@ -256,7 +256,7 @@ static void b91_rf_rx_isr(void)
 	uint8_t *payload;
 	struct net_pkt *pkt;
 
-	/* disable DMA and clread IRQ flag */
+	/* disable DMA and clear IRQ flag */
 	dma_chn_dis(DMA1);
 	rf_clr_irq_status(FLD_RF_IRQ_RX);
 

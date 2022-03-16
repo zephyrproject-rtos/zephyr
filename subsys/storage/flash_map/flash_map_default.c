@@ -18,9 +18,9 @@
 
 #define FOREACH_PARTITION(n) DT_FOREACH_CHILD(DT_DRV_INST(n), FLASH_AREA_FOO)
 
-/* We iterate over all compatible 'fixed-partions' nodes and
+/* We iterate over all compatible 'fixed-partitions' nodes and
  * use DT_FOREACH_CHILD to iterate over all the partitions for that
- * 'fixed-partions' node.  This way we build a global partition map
+ * 'fixed-partitions' node.  This way we build a global partition map
  */
 const struct flash_area default_flash_map[] = {
 	DT_INST_FOREACH_STATUS_OKAY(FOREACH_PARTITION)

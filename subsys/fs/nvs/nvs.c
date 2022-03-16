@@ -353,7 +353,7 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 /* end of flash routines */
 
 /* If the closing ate is invalid, its offset cannot be trusted and
- * the last valod ate of the sector should instead try to be recovered by going
+ * the last valid ate of the sector should instead try to be recovered by going
  * through all ate's.
  *
  * addr should point to the faulty closing ate and will be updated to the last
@@ -714,7 +714,7 @@ static int nvs_startup(struct nvs_fs *fs)
 			 */
 			fs->data_wra += nvs_al_size(fs, last_ate.offset + last_ate.len);
 
-			/* ate on the last possition within the sector is
+			/* ate on the last position within the sector is
 			 * reserved for deletion an entry
 			 */
 			if (fs->ate_wra == fs->data_wra && last_ate.len) {

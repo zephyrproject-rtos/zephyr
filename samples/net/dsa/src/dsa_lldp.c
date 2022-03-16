@@ -58,7 +58,7 @@ int dsa_lldp_send(struct net_if *iface, struct instance_data *pd,
 	eth_hdr->type = htons(LLDP_ETHER_TYPE);
 
 	/* LLDP packet data */
-	/* Chasis ID */
+	/* Chassis ID */
 	dsa_buf_write_be16((LLDP_TLV_CHASSIS_ID << 9) | (ETH_ALEN + 1), &p);
 	*p++ = 4; /* subtype */
 	memcpy(p, net_if_get_link_addr(iface)->addr, ETH_ALEN);
@@ -125,7 +125,7 @@ void dsa_lldp_print_info(uint8_t *lldp_p, uint8_t lanid)
 		case LLDP_TLV_END_LLDPDU:
 			return;
 		case LLDP_TLV_CHASSIS_ID:
-			LOG_INF("\tCHASIS ID:\t%02x:%02x:%02x:%02x:%02x:%02x",
+			LOG_INF("\tCHASSIS ID:\t%02x:%02x:%02x:%02x:%02x:%02x",
 				p[0], p[1], p[2], p[3], p[4], p[5]);
 			break;
 		case LLDP_TLV_PORT_ID:

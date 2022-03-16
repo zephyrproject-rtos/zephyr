@@ -150,11 +150,11 @@ the secure MCU, etc.).
 All images in TF-M are hashed and signed, with the hash and signature verified
 by MCUBoot during the firmware update process.
 
-Some key features of MCUBooot as used in TF-M are:
+Some key features of MCUBoot as used in TF-M are:
 
 * Public signing key(s) are baked into the bootloader
 * S and NS images can be signed using different keys
-* Firmware images can optionally be encyrpted
+* Firmware images can optionally be encrypted
 * Client software is responsible for writing a new image to the secondary slot
 * By default, uses static flash layout of two identically-sized memory regions
 * Optional security counter for rollback protection

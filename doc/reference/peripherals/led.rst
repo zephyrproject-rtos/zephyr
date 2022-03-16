@@ -7,7 +7,7 @@ Overview
 ********
 
 The LED API provides access to Light Emitting Diodes, both in individual and
-stip form.
+strip form.
 
 Configuration Options
 *********************

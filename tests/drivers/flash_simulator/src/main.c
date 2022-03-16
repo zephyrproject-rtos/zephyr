@@ -263,7 +263,7 @@ static void test_double_write(void)
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 &data, sizeof(data));
-	zassert_equal(0, rc, "flash_write should succedd");
+	zassert_equal(0, rc, "flash_write should succeed");
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 &data, sizeof(data));

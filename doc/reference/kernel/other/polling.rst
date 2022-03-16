@@ -264,7 +264,7 @@ no longer be equal to :c:macro:`K_POLL_STATE_SIGNALED`, and a (naive)
 application will miss events.  Best practice is always to reset the
 signal only from within the thread invoking the k_poll() loop, or else
 to use some other event type which tracks event counts: semaphores and
-FIFOs more more error-proof in thise sense because they can't "miss"
+FIFOs more more error-proof in this sense because they can't "miss"
 events, architecturally.
 
 Suggested Uses

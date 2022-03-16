@@ -481,7 +481,7 @@ void futex_wake(void *p1, void *p2, void *p3)
 	zassert_equal(ret_value, 0, NULL);
 
 	/* Test user can write to the futex value
-	 * Use assertion to verify substraction correctness
+	 * Use assertion to verify subtraction correctness
 	 * Initial value was 13, after atomic_sub() must be 12
 	 */
 	atomic_sub(&simple_futex.val, 1);

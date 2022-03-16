@@ -50,9 +50,9 @@ config OPENTHREAD_MANUAL_START
 	help
 	  If enabled, OpenThread stack will have to be configured and
 	  started manually, with respective API calls or CLI/NCP commands.
-	  Otherwise, OpenThread will configure the network parametrs and try to
+	  Otherwise, OpenThread will configure the network parameters and try to
 	  join the Thread network automatically during initialization (using
-	  credentials stored in persistend storage, obtained during
+	  credentials stored in persistent storage, obtained during
 	  commissioning or pre-commissioned with other Kconfig options,
 	  depending on configuration used).
 

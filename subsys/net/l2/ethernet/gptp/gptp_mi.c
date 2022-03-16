@@ -1527,7 +1527,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 	case GPTP_PA_INFO_SUPERIOR_MASTER_PORT:
 		/* We copy directly the content of the message to the port
 		 * priority vector without using an intermediate
-		 * messagePrioriry structure.
+		 * messagePriority structure.
 		 */
 
 		if (!bmca_data->rcvd_announce_ptr) {

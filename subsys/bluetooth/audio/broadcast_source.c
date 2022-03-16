@@ -277,7 +277,7 @@ static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 					sizeof(codec_data->type));
 
 	}
-	/* Calcute length of codec config data */
+	/* Calculate length of codec config data */
 	len = net_buf_simple_tail(buf) - start - sizeof(len);
 	/* Update the length field */
 	*start = len;
@@ -293,7 +293,7 @@ static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 				       metadata->data_len -
 					sizeof(metadata->type));
 	}
-	/* Calcute length of codec config data */
+	/* Calculate length of codec config data */
 	len = net_buf_simple_tail(buf) - start - sizeof(len);
 	/* Update the length field */
 	*start = len;

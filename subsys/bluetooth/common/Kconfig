@@ -78,7 +78,7 @@ config BT_BUF_ACL_RX_SIZE
 	  This means the maximum L2CAP PDU MTU is restricted by the maximum ACL
 	  size subtracting the 4 byte header of an L2CAP PDU.
 	  When using L2CAP Connection oriented Channels without segmentation
-	  then the L2CAP SDU MTU is also restricetd by the maximum ACL size
+	  then the L2CAP SDU MTU is also restricted by the maximum ACL size
 	  subtracting the 4 Byte header of an L2CAP PDU plus the 2 byte header
 	  of an L2CAP SDU.
 

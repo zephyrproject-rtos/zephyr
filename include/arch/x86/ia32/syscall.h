@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief x86 (IA32) specific sycall header
+ * @brief x86 (IA32) specific syscall header
  *
- * This header contains the x86 specific sycall interface.  It is
+ * This header contains the x86 specific syscall interface.  It is
  * included by the syscall interface architecture-abstraction header
  * (include/arch/syscall.h)
  */

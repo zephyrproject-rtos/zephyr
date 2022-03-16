@@ -117,5 +117,5 @@ static int cmd_uart_release(const struct shell *shell, size_t argc, char **argv)
 
 SHELL_CMD_REGISTER(shell_uart_release, NULL,
 		"Uninitialize shell instance and release uart, start loopback "
-		"on uart. Shell instance is renitialized when 'x' is pressed",
+		"on uart. Shell instance is reinitialized when 'x' is pressed",
 		cmd_uart_release);

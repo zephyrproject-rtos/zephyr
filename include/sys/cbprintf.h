@@ -69,7 +69,7 @@ extern "C" {
  * @{
  */
 
-/** @brief Assume that const char pointer a pointing to read only (constant) strings.
+/** @brief Assume that const char pointer is pointing to read only (constant) strings.
  *
  * Flag is valid only for @ref CBPRINTF_STATIC_PACKAGE.
  */
@@ -89,7 +89,7 @@ extern "C" {
 #define Z_CBPRINTF_PACKAGE_FIRST_RO_STR_MASK BIT_MASK(Z_CBPRINTF_PACKAGE_FIRST_RO_STR_BITS)
 
 /** @brief Indicate that @p n first string format arguments are char pointers to
- * read-honly location.
+ * read-only location.
  *
  * Runtime algorithm (address analysis) is skipped for those strings.
  *
@@ -324,7 +324,7 @@ int cbvprintf_package(void *packaged,
 
 /** @brief Copy package with optional appending of strings.
  *
- * Copying may including appending strings used in the package to the package body.
+ * Copying may include appending strings used in the package to the package body.
  * If input package was created with @ref CBPRINTF_PACKAGE_ADD_RO_STR_POS or
  * @ref CBPRINTF_PACKAGE_ADD_RW_STR_POS, it contains information where strings
  * are located within the package. This information can be used to copy strings
@@ -345,9 +345,9 @@ int cbvprintf_package(void *packaged,
  *
  * @param[in, out] strl if @p packaged is null, it is a pointer to the array where
  * @p strl_len first string lengths will is stored. If @p packaged is not null,
- * it contains legths of first @p strl_len strings. It can be used to optimize
+ * it contains lengths of first @p strl_len strings. It can be used to optimize
  * copying so that string length is calculated only once (at length calculation
- * phase when @p packaged is null.
+ * phase when @p packaged is null.)
  *
  * @param strl_len Number of elements in @p strl array.
  *

@@ -321,7 +321,7 @@ then build and flash tester elf again.
 
 - Check if board sends ready event after restart (hex 00 00 80 ff 00 00). Open serial connection to board with e.g. PuTTy with proper COM and baud rate. After board reset you should see some strings in console.
 
-- Check if socat.exe creates tunel to board. Run in console
+- Check if socat.exe creates tunnel to board. Run in console
 
 .. code-block::
 

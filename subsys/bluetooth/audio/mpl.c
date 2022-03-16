@@ -25,7 +25,7 @@
 
 #define PLAYBACK_SPEED_PARAM_DEFAULT BT_MCS_PLAYBACK_SPEED_UNITY
 
-/* Temporary hardcoded setup for groups, tracks and segements */
+/* Temporary hardcoded setup for groups, tracks and segments */
 /* There is one parent group, which is the parent of a number of groups. */
 /* The groups have a number of tracks.  */
 /* (There is only one level of groups, there are no groups of groups.) */
@@ -1663,7 +1663,7 @@ void playing_state_command_handler(struct mpl_cmd command,
 				media_proxy_pl_track_position_cb(pl.track_pos);
 			}
 			/* If the argument to "goto segment" is zero, */
-			/* the segment shal stay the same, and the */
+			/* the segment shall stay the same, and the */
 			/* track position shall not change. */
 			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
@@ -1889,7 +1889,7 @@ void paused_state_command_handler(struct mpl_cmd command,
 				media_proxy_pl_track_position_cb(pl.track_pos);
 			}
 			/* If the argument to "goto segment" is zero, */
-			/* the segment shal stay the same, and the */
+			/* the segment shall stay the same, and the */
 			/* track position shall not change. */
 			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
@@ -2038,7 +2038,7 @@ void seeking_state_command_handler(struct mpl_cmd command,
 		break;
 	case BT_MCS_OPC_FAST_REWIND:
 		/* TODO: Here, and for FAST_FORWARD */
-		/* Decide on algorithm for muliple presses - add step (as */
+		/* Decide on algorithm for multiple presses - add step (as */
 		/* now) or double/half? */
 		/* What about FR followed by FF? */
 		/* Currently, the seeking speed may also become	 zero */
@@ -2130,7 +2130,7 @@ void seeking_state_command_handler(struct mpl_cmd command,
 				media_proxy_pl_track_position_cb(pl.track_pos);
 			}
 			/* If the argument to "goto segment" is zero, */
-			/* the segment shal stay the same, and the */
+			/* the segment shall stay the same, and the */
 			/* track position shall not change. */
 			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {

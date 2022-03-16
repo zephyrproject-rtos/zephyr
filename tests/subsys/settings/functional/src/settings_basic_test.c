@@ -335,7 +335,7 @@ static void test_register_and_loading(void)
 	err = (!data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
 
-	/* clean up by deregisterring settings_handler */
+	/* clean up by deregistering settings_handler */
 	rc = settings_deregister(&val1_settings);
 	zassert_true(rc, "deregistering val1_settings failed");
 

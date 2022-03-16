@@ -296,7 +296,7 @@ def fmt_states(device: str, indent: str) -> str:
 
     Args:
         device: Device name.
-        indent: Intentation.
+        indent: Indentation.
 
     Returns:
         State entries to be appended to the device.

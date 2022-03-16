@@ -152,7 +152,7 @@
 /* internal macro to structure things for use with UTIL_LISTIFY */
 #define CY_PSOC6_PIN_ELEM(idx, inst) CY_PSOC6_DT_INST_PIN(inst, idx)
 
-/* Construct an array intializer for soc_gpio_pin for a device instance */
+/* Construct an array initializer for soc_gpio_pin for a device instance */
 #define CY_PSOC6_DT_INST_PINS(inst)			\
 	{ LISTIFY(CY_PSOC6_DT_INST_NUM_PINS(inst),	\
 		  CY_PSOC6_PIN_ELEM, (,), inst)	\

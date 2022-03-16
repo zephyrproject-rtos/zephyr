@@ -134,7 +134,7 @@ int sys_mm_drv_map_array(void *virt, uintptr_t *phys,
  *
  * This unmaps one page from the virtual address space.
  *
- * When this completes, the relevant translation table entrie will be
+ * When this completes, the relevant translation table entries will be
  * updated as if no mapping was ever made for that memory page. No previous
  * context needs to be preserved. This function must update mapping in
  * all active translation tables.
@@ -209,7 +209,7 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys);
  * thread as this does not deal with memory domains.
  *
  * Note that overlapping of old and new virtual memory regions
- * is usually not supported for simplier implementation. Refer to
+ * is usually not supported for simpler implementation. Refer to
  * the actual driver to make sure if overlapping is allowed.
  *
  * @param virt_old Page-aligned base virtual address of existing memory
@@ -240,7 +240,7 @@ int sys_mm_drv_remap_region(void *virt_old, size_t size, void *virt_new);
  * thread as this does not deal with memory domains.
  *
  * Note that overlapping of old and new virtual memory regions
- * is usually not supported for simplier implementation. Refer to
+ * is usually not supported for simpler implementation. Refer to
  * the actual driver to make sure if overlapping is allowed.
  *
  * @param virt_old Page-aligned base virtual address of existing memory
@@ -274,7 +274,7 @@ int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
  * thread as this does not deal with memory domains.
  *
  * Note that overlapping of old and new virtual memory regions
- * is usually not supported for simplier implementation. Refer to
+ * is usually not supported for simpler implementation. Refer to
  * the actual driver to make sure if overlapping is allowed.
  *
  * @param virt_old Page-aligned base virtual address of existing memory

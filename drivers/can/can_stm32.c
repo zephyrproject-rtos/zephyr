@@ -1141,7 +1141,7 @@ void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	filter_index = can_calc_filter_index(filter_id, mode_reg, scale_reg);
 	type = can_stm32_get_filter_type(bank_nr, mode_reg, scale_reg);
 
-	LOG_DBG("Detatch filter number %d (index %d), type %d", filter_id,
+	LOG_DBG("Detach filter number %d (index %d), type %d", filter_id,
 		    filter_index,
 		    type);
 

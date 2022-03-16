@@ -101,7 +101,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	/* op param definitions:
 	 * 0x00 - Intermediate fragment of fragmented extended advertising data
 	 * 0x01 - First fragment of fragmented extended advertising data
-	 * 0x02 - Last fragemnt of fragemented extended advertising data
+	 * 0x02 - Last fragment of fragmented extended advertising data
 	 * 0x03 - Complete extended advertising data
 	 * 0x04 - Unchanged data (just update the advertising data)
 	 * All other values, Reserved for future use

@@ -192,7 +192,7 @@ enum {
 /** @brief ISO Meta Data structure for received ISO packets. */
 struct bt_iso_recv_info {
 	/** ISO timestamp - valid only if the Bluetooth controller includes it
-	 *  If time stamp is not pressent this value will be 0 on all iso packets
+	 *  If time stamp is not present this value will be 0 on all iso packets
 	 */
 	uint32_t ts;
 
@@ -480,7 +480,7 @@ struct bt_iso_accept_info {
 
 /** @brief ISO Server structure. */
 struct bt_iso_server {
-	/** Required minimim security level */
+	/** Required minimum security level */
 	bt_security_t		sec_level;
 
 	/** @brief Server accept callback

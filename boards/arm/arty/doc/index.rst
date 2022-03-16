@@ -33,7 +33,7 @@ DesignStart FPGA`_ Xilinx edition reference designs from ARM. Zephyr supports
 both the Cortex-M1 and the Cortex-M3 reference designs. The Cortex-M1 design
 targets either the Spartan-7 or Artix-7 based Arty boards, whereas the Cortex-M3
 design only targets the Artix-7 based boards. Zephyr only supports the Artix-7
-targetted designs for now.
+targeted designs for now.
 
 For more information about the ARM Cortex-M1/M3 DesignStart FPGA, see the
 following websites:

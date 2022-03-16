@@ -302,7 +302,7 @@ static void display_pdo(int idx, uint32_t pdo_value)
 		LOG_INF("\tVoltage:           %d",
 		       PD_CONVERT_FIXED_PDO_VOLTAGE_TO_MV(pdo.voltage));
 		LOG_INF("\tPeak Current:      %d", pdo.peak_current);
-		LOG_INF("\tUchunked Support:  %d",
+		LOG_INF("\tUnchunked Support: %d",
 		       pdo.unchunked_ext_msg_supported);
 		LOG_INF("\tDual Role Data:    %d",
 		       pdo.dual_role_data);
@@ -310,7 +310,7 @@ static void display_pdo(int idx, uint32_t pdo_value)
 		       pdo.usb_comms_capable);
 		LOG_INF("\tUnconstrained Pwr: %d",
 		       pdo.unconstrained_power);
-		LOG_INF("\tUSB Susspend:      %d",
+		LOG_INF("\tUSB Suspend:       %d",
 		       pdo.usb_suspend_supported);
 		LOG_INF("\tDual Role Power:   %d",
 		       pdo.dual_role_power);
@@ -413,7 +413,7 @@ static void tc_attached_snk_run(void *tc_obj)
 
 	/* Check if Hard Reset was received */
 	if (tc->flag & FLAG_HARD_RESET_RECEIVED) {
-		/* Flag is cleard in snk_startup function */
+		/* Flag is cleared in snk_startup function */
 		snk_startup(tc);
 	}
 
@@ -580,7 +580,7 @@ static void tc_attached_snk_run(void *tc_obj)
 		}
 		break;
 	case SNK_TRANSITION_SINK:
-		/* Display Soruce Caps Received form Source */
+		/* Display Source Caps Received from Source */
 		display_source_caps(tc);
 		tc->sub_state = SUB_STATE0;
 		tc->pd_state = SNK_READY;
@@ -632,7 +632,7 @@ static void tc_attached_snk_run(void *tc_obj)
 		break;
 	}
 
-	/* Only the sink pwer sub states when we are not in a pd contract */
+	/* Only the sink power sub states when we are not in a pd contract */
 	if (!tc->pd_connected) {
 		/* Run Sink Power Sub-State */
 		sink_power_sub_states();

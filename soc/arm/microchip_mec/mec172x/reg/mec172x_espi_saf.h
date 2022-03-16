@@ -93,7 +93,7 @@
 #define MCHP_SAF_ECP_INTEN_MASK		0x01u
 #define MCHP_SAF_ECP_INTEN_DONE		BIT(0)
 
-/* SAF Flash Configuratin Size Limit register */
+/* SAF Flash Configuration Size Limit register */
 #define MCHP_SAF_FL_CFG_SIZE_LIM_OFS	0x30u
 #define MCHP_SAF_FL_CFG_SIZE_LIM_MASK	0xffffffffu
 

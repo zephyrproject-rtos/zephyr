@@ -110,14 +110,14 @@ struct lpc11u6x_syscon_regs {
 	volatile uint32_t sys_tck_cal;          /* System tick calibration */
 	volatile const uint32_t reserved12[6];
 	volatile uint32_t irq_latency;          /* IRQ latency */
-	volatile uint32_t nmi_src;              /* NMI source contorl */
+	volatile uint32_t nmi_src;              /* NMI source control */
 	volatile uint32_t pint_sel[8];          /* GPIO pin interrupt select */
 	volatile uint32_t usb_clk_ctrl;         /* USB clock control */
 	volatile const uint32_t usb_clk_stat;   /* USB clock status */
 	volatile uint32_t reserved13[25];
-	volatile uint32_t starterp0;            /* Sart logic 0 int wake-up */
+	volatile uint32_t starterp0;            /* Start logic 0 int wake-up */
 	volatile const uint32_t reserved14[3];
-	volatile uint32_t starterp1;            /* Sart logic 1 int wake-up */
+	volatile uint32_t starterp1;            /* Start logic 1 int wake-up */
 	volatile const uint32_t reserved15[6];
 	volatile uint32_t pd_sleep_cfg;         /* Deep-sleep power-down
 						 * states

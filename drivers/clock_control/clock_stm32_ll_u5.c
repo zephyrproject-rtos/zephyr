@@ -66,7 +66,7 @@ void config_enable_default_clocks(void)
 		while (!LL_RCC_LSE_IsReady()) {
 		}
 
-		/* Enable LSESYS additionnally */
+		/* Enable LSESYS additionally */
 		LL_RCC_LSE_EnablePropagation();
 		/* Wait till LSESYS is ready */
 		while (!LL_RCC_LSESYS_IsReady()) {

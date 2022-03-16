@@ -59,7 +59,7 @@ static struct k_spinlock tlb_lock;
 /**
  * Calculate the index to the TLB table.
  *
- * @param vaddr Page-aligned virutal address.
+ * @param vaddr Page-aligned virtual address.
  * @return Index to the TLB table.
  */
 static uint32_t get_tlb_entry_idx(uintptr_t vaddr)

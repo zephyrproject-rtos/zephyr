@@ -145,7 +145,7 @@
 			INA230_AVG_MODE_1)>;
 		/* Set current LSB to 1mA */
 		current-lsb = <1>;
-		/* Set shunt resistror value to 15 milliohms */
+		/* Set shunt resistor value to 15 milliohms */
 		rshunt = <15>;
 	};
 };

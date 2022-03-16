@@ -106,7 +106,7 @@ def _parse_args():
         "maintainer",
         metavar="MAINTAINER",
         nargs="?",
-        help="List all areas maintained by maintaier.")
+        help="List all areas maintained by maintainer.")
 
     areas_parser.set_defaults(cmd_fn=Maintainers._areas_cmd)
 

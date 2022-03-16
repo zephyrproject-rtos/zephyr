@@ -71,11 +71,11 @@ Connections and IOs
 The `schematic`_ will tell you everything
 you need to know about the pins.
 
-A convinience header mapping the Arduino pin names to their
+A convenience header mapping the Arduino pin names to their
 Zephyr pin numbers can be found in :code:`arduino_nano_33_ble_pins.h`,
 if you link against the :code:`arduino_nano_33_ble_pins` CMake library.
 
-For your convience, two Kconfig options are added:
+For your convenience, two Kconfig options are added:
 
 #. :code:`BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS`:
     This configuration option enables the internal I2C sensors.

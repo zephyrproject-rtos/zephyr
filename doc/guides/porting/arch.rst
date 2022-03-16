@@ -489,7 +489,7 @@ Two types of thread stacks exist:
   APIs, which can host kernel threads running in supervisor mode or
   used as the stack for interrupt/exception handling. These have significantly
   relaxed alignment requirements and use less reserved data. No memory is
-  reserved for prvilege elevation stacks.
+  reserved for privilege elevation stacks.
 
 - "thread" stacks which typically use more memory, but are capable of hosting
   thread running in user mode, as well as any use-cases for kernel stacks.
@@ -593,7 +593,7 @@ possible.
 
 Stack overflows in user mode are recoverable (from the kernel's perspective)
 and require no special configuration; :kconfig:option:`CONFIG_HW_STACK_PROTECTION`
-only applies to catching overflows when the CPU is in sueprvisor mode.
+only applies to catching overflows when the CPU is in supervisor mode.
 
 CPU-based stack overflow detection
 ----------------------------------
@@ -871,7 +871,7 @@ To enable GDB stub for remote debugging on a new architecture:
    * Before calling :c:func:`z_gdb_main_loop`, :c:member:`gdb_ctx.exception`
      must be set to specify the exception reason.
 
-#. Implementat necessary functions to support GDB stub functionality:
+#. Implement necessary functions to support GDB stub functionality:
 
    * :c:func:`arch_gdb_init`
 
@@ -959,7 +959,7 @@ To enable GDB stub for remote debugging on a new architecture:
    * :c:member:`gdb_mem_region.end` specifies the end of a memory
      region.
 
-   * :c:member:`gdb_mem_region.attribites` specifies the permission
+   * :c:member:`gdb_mem_region.attributes` specifies the permission
      of a memory region.
 
      * :c:macro:`GDB_MEM_REGION_RO`: region is read-only.

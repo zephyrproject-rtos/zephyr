@@ -4,7 +4,7 @@
  *
  * Author: Vineet Gupta <vgupta@synopsys.com>
  *
- * Top level include file provding ISA pseudo-mnemonics for use in assemmler
+ * Top level include file providing ISA pseudo-mnemonics for use in assembler
  * and inline assembly.
  *
  *  - Helps code reuse across ARC64/ARC32/ARCv2
@@ -14,7 +14,7 @@
  *    e.g. "DBNZ" implemented using 'SUB' and 'BRNE'
  *
  *  - Looks more complex than it really is: mainly because Kconfig defines
- *    are not "honored" in inline assembly. So each varaint is unconditional
+ *    are not "honored" in inline assembly. So each variant is unconditional
  *    code in a standalone file with Kconfig based #ifdef'ry here. During the
  *    build process, the "C" preprocessor runs through this file, leaving
  *    just the final variant include in code fed to compiler/assembler.

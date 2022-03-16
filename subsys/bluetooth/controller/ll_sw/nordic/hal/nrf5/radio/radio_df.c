@@ -310,7 +310,7 @@ void radio_df_cte_tx_aod_2us_set(uint8_t cte_len)
 	 * that is in DFECTRL1 register after reset. That is done instead of
 	 * adding conditions on the value and masking of the field before
 	 * storing configuration in the register. Also values in DFECTRL2,
-	 * that depend on PHY, are irrelevand for AoD Tx, hence use of
+	 * that depend on PHY, are irrelevant for AoD Tx, hence use of
 	 * PHY_LEGACY here.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_2us,
@@ -323,7 +323,7 @@ void radio_df_cte_tx_aod_4us_set(uint8_t cte_len)
 	 * that is in DFECTRL1 register after reset. That is done instead of
 	 * adding conditions on the value and masking of the field before
 	 * storing configuration in the register. Also values in DFECTRL2,
-	 * that depend on PHY, are irrelevand for AoD Tx, hence use of
+	 * that depend on PHY, are irrelevant for AoD Tx, hence use of
 	 * PHY_LEGACY here.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
@@ -336,7 +336,7 @@ void radio_df_cte_tx_aoa_set(uint8_t cte_len)
 	 * value that is in DFECTRL1 register after reset. That is done instead
 	 * of adding conditions on the value and masking of the field before
 	 * storing configuration in the register. Also values in DFECTRL2,
-	 * that depend on PHY, are irrelevand for AoA Tx, hence use of
+	 * that depend on PHY, are irrelevant for AoA Tx, hence use of
 	 * PHY_LEGACY here.
 	 */
 	radio_df_ctrl_set(cte_len, RADIO_DFECTRL1_TSWITCHSPACING_4us,
@@ -347,7 +347,7 @@ void radio_df_cte_rx_2us_switching(bool cte_info_in_s1, uint8_t phy)
 {
 	/* BT spec requires single sample for a single switching slot, so
 	 * spacing for slot and samples is the same.
-	 * CTE duation is used only when CTEINLINE config is disabled.
+	 * CTE duration is used only when CTEINLINE config is disabled.
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_2us,
 			  RADIO_DFECTRL1_TSAMPLESPACING_2us, phy);
@@ -358,7 +358,7 @@ void radio_df_cte_rx_4us_switching(bool cte_info_in_s1, uint8_t phy)
 {
 	/* BT spec requires single sample for a single switching slot, so
 	 * spacing for slot and samples is the same.
-	 * CTE duation is used only when CTEINLINE config is disabled.
+	 * CTE duration is used only when CTEINLINE config is disabled.
 	 */
 	radio_df_ctrl_set(0, RADIO_DFECTRL1_TSWITCHSPACING_4us,
 			  RADIO_DFECTRL1_TSAMPLESPACING_4us, phy);

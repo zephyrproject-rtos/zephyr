@@ -223,7 +223,7 @@ char *c2_var_find(char *name)
 	idx = strtoul(&name[6], &eptr, 10);
 	zassert_true(*eptr == '\0', "EOF");
 	zassert_true(idx < c2_var_count,
-		     "var index greather than any exporter");
+		     "var index greater than any exporter");
 
 	return val_string[idx];
 }

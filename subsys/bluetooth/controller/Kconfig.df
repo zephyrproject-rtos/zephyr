@@ -212,7 +212,7 @@ config BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_1US
 	default 1
 	help
 	  Offset of sampling start from beginning of sampling slot. The value is a signed number
-	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duarion
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
 	  is 1 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
 	  no effect.
 
@@ -223,7 +223,7 @@ config BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_1US
 	default 15
 	help
 	  Offset of sampling start from beginning of sampling slot. The value is a signed number
-	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duarion
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
 	  is 1 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
 	  no effect.
 
@@ -235,7 +235,7 @@ config BT_CTLR_DF_SAMPLE_OFFSET_PHY_1M_SAMPLING_2US
 	default 6
 	help
 	  Offset of sampling start from beginning of sampling slot. The value is a signed number
-	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duarion
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
 	  is 2 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
 	  no effect.
 
@@ -246,7 +246,7 @@ config BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_2US
 	default 20
 	help
 	  Offset of sampling start from beginning of sampling slot. The value is a signed number
-	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duarion
+	  of 16M cycles relative. It is used when PHY is set to PHY 1M and sampling slot duration
 	  is 2 us. Decreasing the offset beyond the trigger of the AoA/AoD procedure will have
 	  no effect.
 

@@ -157,7 +157,7 @@ following command:
    hawkbit run
 
 And then wait. The board will ping the server, check if there are any new
-updates, and then download the update you've just created. If everyting goes
+updates, and then download the update you've just created. If everything goes
 fine the message ``Image flashed successfully, you can reboot now`` will be
 printed on the terminal.
 

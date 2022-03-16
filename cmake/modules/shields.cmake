@@ -112,7 +112,7 @@ foreach(root ${BOARD_ROOT})
 endforeach()
 
 # Prepare shield usage command printing.
-# This command prints all ishield in the system in the following cases:
+# This command prints all shields in the system in the following cases:
 # - User specifies an invalid SHIELD
 # - User invokes '<build-command> shields' target
 list(SORT SHIELD_LIST)

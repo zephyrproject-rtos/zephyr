@@ -27,7 +27,7 @@
 
 /* Tracking of what storage changes are pending for App Keys. We track this in
  * a separate array here instead of within the respective bt_mesh_app_key
- * struct itselve, since once a key gets deleted its struct becomes invalid
+ * struct itself, since once a key gets deleted its struct becomes invalid
  * and may be reused for other keys.
  */
 struct app_key_update {

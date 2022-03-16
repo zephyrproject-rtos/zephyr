@@ -1266,7 +1266,7 @@ int usb_deconfig(void)
 	/* unregister descriptors */
 	usb_register_descriptors(NULL);
 
-	/* unegister standard request handler */
+	/* unregister standard request handler */
 	usb_register_request_handler(USB_REQTYPE_TYPE_STANDARD, NULL);
 
 	/* unregister class request handlers for each interface*/
@@ -1376,7 +1376,7 @@ int usb_wakeup_request(void)
  * Note, a USB function can have more than one interface and the
  * request does not have to be directed to the first interface (unlikely).
  * These functions can be simplified and moved to usb_handle_request()
- * when legacy initialization throgh the usb_set_config() and
+ * when legacy initialization through the usb_set_config() and
  * usb_enable() is no longer needed.
  */
 
@@ -1522,7 +1522,7 @@ int usb_enable(usb_dc_status_callback status_cb)
 	int ret;
 	struct usb_dc_ep_cfg_data ep0_cfg;
 
-	/* Prevent from calling usb_enable form different contex.
+	/* Prevent from calling usb_enable form different context.
 	 * This should only be called once.
 	 */
 	LOG_DBG("lock usb_enable_lock mutex");

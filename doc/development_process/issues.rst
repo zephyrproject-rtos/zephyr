@@ -30,7 +30,7 @@ For this, `git bisect`_ is the recommended tool.
 Recommendations on the process:
 
 * Run ``west update`` on each bisection step.
-* Once the bisection is over and a culprit identifed, verify manually the result.
+* Once the bisection is over and a culprit identified, verify manually the result.
 
 .. _git bisect:
    https://git-scm.com/docs/git-bisect

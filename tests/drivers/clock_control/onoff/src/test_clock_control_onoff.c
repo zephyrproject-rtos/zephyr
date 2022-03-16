@@ -88,7 +88,7 @@ static void request_cb(struct onoff_manager *mgr, struct onoff_client *cli,
 	zassert_true(err >= 0, "err: %d", err);
 }
 
-/* Test checks if premature clock release works ok. If clock is released befure
+/* Test checks if premature clock release works ok. If clock is released before
  * it is started it is the best to do that release from the callback to avoid
  * waiting until clock is started in the release context.
  */

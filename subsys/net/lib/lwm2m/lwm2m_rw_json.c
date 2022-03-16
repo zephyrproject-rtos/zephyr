@@ -141,7 +141,7 @@ static void json_add_char(struct lwm2m_input_context *in,
 	}
 }
 
-/* Simlified JSON style reader for reading in values from a LWM2M JSON string */
+/* Simplified JSON style reader for reading in values from a LWM2M JSON string */
 static int json_next_token(struct lwm2m_input_context *in,
 			   struct json_in_formatter_data *fd)
 {
@@ -248,7 +248,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 		}
 	}
 
-	/* OK if cont == 0 othewise we failed */
+	/* OK if cont == 0 otherwise we failed */
 	return (cont == 0U);
 }
 
@@ -799,7 +799,7 @@ static int get_objlnk(struct lwm2m_input_context *in,
 	total_len = len;
 	value->obj_id = (uint16_t)tmp;
 
-	len++;  /* +1 for ':' delimeter. */
+	len++;  /* +1 for ':' delimiter. */
 	fd->value_offset += len;
 
 	len = read_int(in, &tmp, false);

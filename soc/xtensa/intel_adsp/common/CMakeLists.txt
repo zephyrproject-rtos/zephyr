@@ -45,7 +45,7 @@ endif()
 # warning squashing on the objcopy steps.  Binutils has a misfeature
 # where if the copy removes all the sections from an input ELF program
 # header (our link generates lots of phdrs because of the disjoint
-# cachability addresses), it will warn about an "empty" segment even
+# cacheability addresses), it will warn about an "empty" segment even
 # though it was TOLD to drop the contents!
 #
 # Also note that rimage is picky with section flags: it will try to

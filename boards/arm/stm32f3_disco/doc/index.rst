@@ -33,7 +33,7 @@ started quickly. Here are some highlights of the STM32F3DISCOVERY board:
   acceleration sensor and a 3D digital magnetic sensor;
 
 .. HINT::
-   Recent PCB revisions (E and newer) are shiped with I3G4250D and LSM303AGR.
+   Recent PCB revisions (E and newer) are shipped with I3G4250D and LSM303AGR.
 
 .. image:: img/stm32f3_disco.jpg
      :width: 350px
@@ -194,7 +194,7 @@ CAN
 ===
 The STM32F3DISCOVERY does not have an onboard CAN transceiver. In
 order to use the CAN bus on the this board, an external CAN bus
-tranceiver must be connected to ``PD0`` (``CAN1_RX``) and ``PD1``
+transceiver must be connected to ``PD0`` (``CAN1_RX``) and ``PD1``
 (``CAN1_TX``).
 
 Programming and Debugging

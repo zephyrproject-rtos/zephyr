@@ -250,7 +250,7 @@ struct usb_audio_ops {
 size_t usb_audio_get_in_frame_size(const struct device *dev);
 
 /**
- * @brief Register the USB Audio device and make it useable.
+ * @brief Register the USB Audio device and make it usable.
  *	  This must be called in order to make the device work
  *	  and respond to all relevant requests.
  *

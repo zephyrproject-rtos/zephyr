@@ -12,7 +12,7 @@
  * The i2s_cavs driver is being used.
  *
  * In this test app, I2S transmission and reception are tested as follows:
- * I2S port #3 of Intel S1000 is configured for birectional mode
+ * I2S port #3 of Intel S1000 is configured for bidirectional mode
  *     i.e., I2S_DIR_TX and I2S_DIR_RX
  * After each frame is received, it is sent/looped back on the same I2S
  * The transmit direction is started after 2 frames are queued. This is done to

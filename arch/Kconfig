@@ -799,7 +799,7 @@ choice CACHE_TYPE
 config HAS_ARCH_CACHE
 	bool "Integrated cache controller"
 	help
-	  "Integrade on-core cache controller"
+	  "Integrated on-core cache controller"
 
 config HAS_EXTERNAL_CACHE
 	bool "External cache controller"

@@ -321,7 +321,7 @@ static int request_name(const bt_addr_t *addr, uint8_t pscan, uint16_t offset)
 
 	bt_addr_copy(&cp->bdaddr, addr);
 	cp->pscan_rep_mode = pscan;
-	cp->reserved = 0x00; /* reserver, should be set to 0x00 */
+	cp->reserved = 0x00; /* reserved, should be set to 0x00 */
 	cp->clock_offset = offset;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_REQUEST, buf, NULL);

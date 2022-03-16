@@ -80,7 +80,7 @@ void test_posix_rw_lock(void)
 	zassert_false(pthread_rwlock_timedwrlock(&rwlock, &time),
 		      "Failed to acquire write lock");
 
-	/* Creating N premptive threads in increasing order of priority */
+	/* Creating N preemptive threads in increasing order of priority */
 	for (i = 0; i < N_THR; i++) {
 		zassert_equal(pthread_attr_init(&attr[i]), 0,
 			      "Unable to create pthread object attrib");

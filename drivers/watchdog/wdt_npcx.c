@@ -280,7 +280,7 @@ static int wdt_npcx_disable(const struct device *dev)
 	npcx_miwu_irq_disable(&config->t0out);
 	data->timeout_installed = false;
 
-	/* Wait for watchdof is stopped. */
+	/* Wait until watchdog is stopped. */
 	return wdt_wait_stopped(dev);
 }
 

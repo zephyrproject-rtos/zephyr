@@ -551,7 +551,7 @@ void test_mem_part_add_error_zerosize(void)
 /**
  * @brief Test error case of memory partition address wraparound
  *
- * @details Try to add a partition whose adddress is wraparound.
+ * @details Try to add a partition whose address is wraparound.
  * k_mem_domain_add_partition() should return error.
  *
  * @ingroup kernel_memprotect_tests

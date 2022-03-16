@@ -28,7 +28,7 @@
 	DT_PROP_BY_PHANDLE(DT_PINCTRL_0(node_id, i),\
 			   atmel_pins, peripheral_id)
 
-/* Get peripheral cfg associated wiith pinctrl-0 pin at index 'i' */
+/* Get peripheral cfg associated with pinctrl-0 pin at index 'i' */
 #define ATMEL_SAM_PIN_PERIPH(node_id, i) \
 	DT_PHA(DT_PINCTRL_0(node_id, i), atmel_pins, peripheral)
 
@@ -85,7 +85,7 @@
 /* internal macro to structure things for use with UTIL_LISTIFY */
 #define ATMEL_SAM_DT_PIN_ELEM(idx, node_id) ATMEL_SAM_DT_PIN(node_id, idx)
 
-/* Construct an array intializer for soc_gpio_pin for a device instance */
+/* Construct an array initializer for soc_gpio_pin for a device instance */
 #define ATMEL_SAM_DT_PINS(node_id)				\
 	{ LISTIFY(ATMEL_SAM_DT_NUM_PINS(node_id),		\
 		  ATMEL_SAM_DT_PIN_ELEM, (,), node_id)		\

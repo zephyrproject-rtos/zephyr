@@ -58,7 +58,7 @@ void test_add_number_of_cte_to_sigle_pdu_chain(void)
 
 	err = ll_df_set_cl_cte_tx_enable(handle, true);
 	zassert_equal(err, 0,
-		      "Unexpected error while enabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while enabling CTE for periodic advertising chain, err: %d",
 		      err);
 
 	/* Validate result */
@@ -84,7 +84,7 @@ void test_add_cte_for_each_pdu_in_chain(void)
 
 	err = ll_df_set_cl_cte_tx_enable(handle, true);
 	zassert_equal(err, 0,
-		      "Unexpected error while enabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while enabling CTE for periodic advertising chain, err: %d",
 		      err);
 
 	/* Validate result */
@@ -110,7 +110,7 @@ void test_add_cte_for_not_all_pdu_in_chain(void)
 
 	err = ll_df_set_cl_cte_tx_enable(handle, true);
 	zassert_equal(err, 0,
-		      "Unexpected error while enabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while enabling CTE for periodic advertising chain, err: %d",
 		      err);
 
 	/* Validate result */
@@ -147,7 +147,7 @@ void test_add_cte_to_not_all_pdus_in_chain_enqueued_to_lll(void)
 
 	err = ll_df_set_cl_cte_tx_enable(handle, true);
 	zassert_equal(err, 0,
-		      "Unexpected error while enabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while enabling CTE for periodic advertising chain, err: %d",
 		      err);
 
 	/* Validate result */
@@ -173,7 +173,7 @@ void test_add_cte_for_single_pdu_chain(void)
 
 	err = ll_df_set_cl_cte_tx_enable(handle, true);
 	zassert_equal(err, 0,
-		      "Unexpected error while enabling CTE for periodic avertising chain, err: %d",
+		      "Unexpected error while enabling CTE for periodic advertising chain, err: %d",
 		      err);
 
 	/* Validate result */

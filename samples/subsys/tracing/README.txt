@@ -1,9 +1,9 @@
-Title: Send Tracing Formated Packet To The Host With Supported Backends
+Title: Send Tracing Formatted Packet To The Host With Supported Backends
 
 Description:
 
 This application can be used to demonstrate the tracing feature. The tracing
-formated packet will be sent to the host with the currently supported tracing
+formatted packet will be sent to the host with the currently supported tracing
 backend under tracing generic infrastructure.
 
 --------------------------------------------------------------------------------

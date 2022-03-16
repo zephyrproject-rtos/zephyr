@@ -141,7 +141,7 @@ static int sock_nfds;
 
 static struct lwm2m_block_context block1_contexts[NUM_BLOCK1_CONTEXT];
 
-/* write-attribute related definitons */
+/* write-attribute related definitions */
 static const char * const LWM2M_ATTR_STR[] = { "pmin", "pmax",
 					       "gt", "lt", "st" };
 static const uint8_t LWM2M_ATTR_LEN[] = { 4, 4, 2, 2, 2 };
@@ -351,7 +351,7 @@ static int update_attrs(void *ref, struct notification_attrs *out)
 			out->st = write_attr_pool[i].float_val;
 			break;
 		default:
-			LOG_ERR("Unrecognize attr: %d",
+			LOG_ERR("Unrecognized attr: %d",
 				write_attr_pool[i].type);
 			return -EINVAL;
 		}
@@ -2387,12 +2387,12 @@ static int lwm2m_engine_observer_timestamp_update(sys_slist_t *observer,
 			/* Resource Update on going skip this*/
 			continue;
 		}
-		/* Compare Obervation node path to updated one */
+		/* Compare Observation node path to updated one */
 		if (!lwm2m_notify_observer_list(&obs->path_list, path)) {
 			continue;
 		}
 
-		/* Read Atributes after validation Path */
+		/* Read Attributes after validation Path */
 		ret = engine_observe_attribute_list_get(&obs->path_list, &nattrs, srv_obj_inst);
 		if (ret < 0) {
 			return ret;
@@ -4714,7 +4714,7 @@ static int handle_request(struct coap_packet *request,
 				}
 
 				if ((code & COAP_REQUEST_MASK) == COAP_METHOD_GET) {
-					/* Normal Obeservation Request or Cancel */
+					/* Normal Observation Request or Cancel */
 					r = lwm2m_engine_observation_handler(msg, observe, accept,
 									     false);
 					if (r < 0) {
@@ -4985,7 +4985,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		if (msg->acknowledged) {
 			r = lwm2m_response_promote_to_con(msg);
 			if (r < 0) {
-				LOG_ERR("Failed to promote reponse to CON: %d",
+				LOG_ERR("Failed to promote response to CON: %d",
 					r);
 				lwm2m_reset_message(msg, true);
 				return;
@@ -5952,7 +5952,7 @@ int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm
 					   entry->path.obj_inst_id == path->obj_inst_id &&
 					   entry->path.res_id > path->res_id) {
 					/*
-					 * Object ID and Object Intance id same
+					 * Object ID and Object Instance id same
 					 * but Resource ID is smaller
 					 */
 					add_before_current = true;
@@ -5961,7 +5961,7 @@ int lwm2m_engine_add_path_to_list(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm
 					   entry->path.res_id == path->res_id &&
 					   entry->path.res_inst_id > path->res_inst_id) {
 					/*
-					 * Object ID, Object Intance id & Resource ID same
+					 * Object ID, Object Instance id & Resource ID same
 					 * but Resource instance ID is smaller
 					 */
 					add_before_current = true;
@@ -6096,7 +6096,7 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 			/* find first obj_inst with path's obj_id */
 			obj_inst = next_engine_obj_inst(msg->path.obj_id, -1);
 		} else {
-			/* Read rooth Path */
+			/* Read root Path */
 			ret = lwm2m_perform_composite_read_root(msg, &num_read);
 			if (ret == -ENOMEM) {
 				LOG_ERR("Supported message size is too small for read root");

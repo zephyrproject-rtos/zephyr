@@ -67,7 +67,7 @@ static void osc32k_init(void)
 			      SYSCTRL_OSC32K_STARTUP(0x6u) |
 			      SYSCTRL_OSC32K_EN32K | SYSCTRL_OSC32K_ENABLE;
 
-	/* Wait for the oscillator to stabalise. */
+	/* Wait for the oscillator to stabilise. */
 	while (!SYSCTRL->PCLKSR.bit.OSC32KRDY) {
 	}
 }

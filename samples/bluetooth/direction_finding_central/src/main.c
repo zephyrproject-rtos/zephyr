@@ -22,7 +22,7 @@
 #define CONN_LATENCY 0U
 /* Arbitrary selected timeout value */
 #define CONN_TIMEOUT 400U
-/* Inteval used to run CTE request procedure periodically.
+/* Interval used to run CTE request procedure periodically.
  * Value is a number of connection events.
  */
 #define CTE_REQ_INTERVAL (CONN_LATENCY + 10U)

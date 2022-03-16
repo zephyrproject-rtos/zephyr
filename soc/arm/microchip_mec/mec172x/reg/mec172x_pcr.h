@@ -114,7 +114,7 @@
 #define MCHP_PCR_PROC_CLK_CTRL_2MHZ	48
 #define MCHP_PCR_PROC_CLK_CTRL_DFLT	MCHP_PCR_PROC_CLK_CTRL_24MHZ
 
-/* PCR Slow Clock Control. Clock divicder for 100KHz clock domain */
+/* PCR Slow Clock Control. Clock divider for 100KHz clock domain */
 #define MCHP_PCR_SLOW_CLK_CTRL_MASK	GENMASK(9, 0)
 #define MCHP_PCR_SLOW_CLK_CTRL_100KHZ	0x1e0u
 

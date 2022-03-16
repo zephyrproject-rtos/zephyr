@@ -109,7 +109,7 @@ void posix_change_cpu_state_and_wait(bool halted)
 void posix_interrupt_raised(void)
 {
 	/* We change the CPU to running state (we awake it), and block this
-	 * thread until the CPU is hateld again
+	 * thread until the CPU is halted again
 	 */
 	posix_change_cpu_state_and_wait(false);
 
@@ -149,7 +149,7 @@ void posix_halt_cpu(void)
 	posix_irq_handler();
 
 	/*
-	 * And we go back to whatever Zephyr thread calleed us.
+	 * And we go back to whatever Zephyr thread called us.
 	 */
 }
 

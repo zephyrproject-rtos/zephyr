@@ -345,7 +345,7 @@ static void test_energy_scan_immediate_test(void)
 /**
  * @brief Test for delayed energy scan
  * Tests for case when radio returns not being able to start energy scan and
- * the scan should be sheduled for later.
+ * the scan should be scheduled for later.
  *
  */
 static void test_energy_scan_delayed_test(void)
@@ -701,7 +701,7 @@ static void test_get_rssi_test(void)
 
 	ztest_returns_value(rssi_scan_mock, rssi);
 	zassert_equal(otPlatRadioGetRssi(ot), rssi,
-		      "Invalid RSSI value reveiced.");
+		      "Invalid RSSI value received.");
 
 	rapi.ed_scan = scan_mock;
 }
@@ -724,7 +724,7 @@ static void test_radio_state_test(void)
 	zassert_false(otPlatRadioIsEnabled(ot), "Radio reports as enabled.");
 
 	zassert_equal(otPlatRadioSleep(ot), OT_ERROR_INVALID_STATE,
-		      "Changed to sleep regardles being disabled.");
+		      "Changed to sleep regardless being disabled.");
 
 	zassert_equal(otPlatRadioEnable(ot), OT_ERROR_NONE,
 		      "Enabling radio failed.");

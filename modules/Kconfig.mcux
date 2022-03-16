@@ -103,7 +103,7 @@ config HAS_MCUX_IAP
 config HAS_MCUX_IAP_LEGACY
 	bool
 	help
-	  Set if the flash memory In Applcation Programming is present in
+	  Set if the flash memory In Application Programming is present in
 	  the older LPC family SoCs (LPC54xxx, LPC11xxx).
 
 config HAS_MCUX_IGPIO

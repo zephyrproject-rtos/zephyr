@@ -342,10 +342,10 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	}
 
 	/* We already use frame keeping with len, warn here about
-	 * receiving frame delimeter
+	 * receiving frame delimiter
 	 */
 	if (len == 1U && !buffer[0]) {
-		LOG_DBG("Got frame delimeter, skip");
+		LOG_DBG("Got frame delimiter, skip");
 		return;
 	}
 
@@ -513,7 +513,7 @@ static int rndis_init_handle(uint8_t *data, uint32_t len)
 
 	rndis_queue_rsp(buf);
 
-	/* Nofity about ready reply */
+	/* Notify about ready reply */
 	rndis_notify_rsp();
 
 	return 0;
@@ -669,7 +669,7 @@ static int rndis_query_handle(uint8_t *data, uint32_t len)
 
 	rndis_queue_rsp(buf);
 
-	/* Nofity about ready reply */
+	/* Notify about ready reply */
 	rndis_notify_rsp();
 
 	return 0;
@@ -742,7 +742,7 @@ static int rndis_set_handle(uint8_t *data, uint32_t len)
 
 	rndis_queue_rsp(buf);
 
-	/* Nofity about ready reply */
+	/* Notify about ready reply */
 	rndis_notify_rsp();
 
 	return 0;
@@ -769,7 +769,7 @@ static int rndis_reset_handle(uint8_t *data, uint32_t len)
 
 	rndis_queue_rsp(buf);
 
-	/* Nofity about ready reply */
+	/* Notify about ready reply */
 	rndis_notify_rsp();
 
 	return 0;
@@ -797,7 +797,7 @@ static int rndis_keepalive_handle(uint8_t *data, uint32_t len)
 
 	rndis_queue_rsp(buf);
 
-	/* Nofity about ready reply */
+	/* Notify about ready reply */
 	rndis_notify_rsp();
 
 	return 0;
@@ -1133,7 +1133,7 @@ static void rndis_status_cb(struct usb_cfg_data *cfg,
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
 	case USB_DC_INTERFACE:
-		LOG_DBG("USB unhandlded state: %d", status);
+		LOG_DBG("USB unhandled state: %d", status);
 		break;
 
 	case USB_DC_SOF:

@@ -691,7 +691,7 @@
 		};
 		rpmfan0: rpmfan@4000a000 {
 			reg = <0x4000a000 0x80>;
-			interrrupts = <74 1>, <75 1>;
+			interrupts = <74 1>, <75 1>;
 			girqs = <17 20>, <17 21>;
 			pcrs = <3 12>;
 			label = "RPMFAN_0";
@@ -699,7 +699,7 @@
 		};
 		rpmfan1: rpmfan@4000a080 {
 			reg = <0x4000a080 0x80>;
-			interrrupts = <76 1>, <77 1>;
+			interrupts = <76 1>, <77 1>;
 			girqs = <17 22>, <17 23>;
 			pcrs = <4 7>;
 			label = "RPMFAN_1";

@@ -337,7 +337,7 @@ struct media_proxy_ctrl_cbs {
 	 * @brief Track Duration receive callback
 	 *
 	 * Called when the Track Duration is read or changed
-	 * Seel also media_proxy_ctrl_get_track_duration()
+	 * See also media_proxy_ctrl_get_track_duration()
 	 *
 	 * @param player     Media player instance pointer
 	 * @param err        Error value. 0 on success, GATT error on positive value

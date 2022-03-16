@@ -204,7 +204,7 @@ static struct modbus_context *modbus_init_iface(const uint8_t iface)
 	ctx = &mb_ctx_tbl[iface];
 
 	if (atomic_test_and_set_bit(&ctx->state, MODBUS_STATE_CONFIGURED)) {
-		LOG_ERR("Interface allready used");
+		LOG_ERR("Interface already used");
 		return NULL;
 	}
 

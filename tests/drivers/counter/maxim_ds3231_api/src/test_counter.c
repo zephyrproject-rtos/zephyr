@@ -554,10 +554,10 @@ void test_late_alarm_instance(const char *dev_name)
 
 	err = counter_set_guard_period(dev, guard,
 				       COUNTER_GUARD_PERIOD_LATE_TO_SET);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	k_sleep(K_USEC(2 * tick_us));
 
@@ -604,10 +604,10 @@ void test_late_alarm_error_instance(const char *dev_name)
 
 	err = counter_set_guard_period(dev, guard,
 				       COUNTER_GUARD_PERIOD_LATE_TO_SET);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	k_sleep(K_USEC(2 * tick_us));
 
@@ -666,7 +666,7 @@ static void test_short_relative_alarm_instance(const char *dev_name)
 	};
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	alarm_cfg.ticks = 1;
 
@@ -761,7 +761,7 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 	};
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 
 	for (int i = 0; i < us / 2; ++i) {

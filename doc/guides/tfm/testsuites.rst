@@ -25,7 +25,7 @@ PSA Arch Tests
 The PSA Arch Test suite, available via :ref:`tfm_psa_test`, contains a number of
 test suites that can be used to validate that PSA API specifications are
 being followed by the secure application, TF-M being an implementation of
-the Platform Securtity Architecture (PSA).
+the Platform Security Architecture (PSA).
 
 Only one of these suites can be run at a time, with the available test suites
 described via ``CONFIG_TFM_PSA_TEST_*`` KConfig flags:

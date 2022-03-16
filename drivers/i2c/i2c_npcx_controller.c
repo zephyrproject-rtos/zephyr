@@ -298,7 +298,7 @@ static inline void i2c_ctrl_fifo_clear_status(const struct device *dev)
 /*
  * I2C local functions which touch the registers in 'Normal' bank. These
  * utilities will change bank back to FIFO mode when leaving themselves in case
- * the other utilities acces the registers in 'FIFO' bank.
+ * the other utilities access the registers in 'FIFO' bank.
  */
 static void i2c_ctrl_hold_bus(const struct device *dev, int stall)
 {

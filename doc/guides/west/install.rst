@@ -36,7 +36,7 @@ This distribution includes a launcher executable, which is also named
 When west is installed, the launcher is placed by :file:`pip3` somewhere in
 the user's filesystem (exactly where depends on the operating system, but
 should be on the ``PATH`` :ref:`environment variable <env_vars>`). This
-launcher is the command-line entry point to running both built-in commmands
+launcher is the command-line entry point to running both built-in commands
 like ``west init``, ``west update``, along with any extensions discovered
 in the workspace.
 

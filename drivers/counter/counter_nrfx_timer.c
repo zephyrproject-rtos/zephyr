@@ -154,7 +154,7 @@ static int set_cc(const struct device *dev, uint8_t id, uint32_t val,
 				"Expected that CC interrupt is disabled.");
 
 	/* First take care of a risk of an event coming from CC being set to
-	 * next tick. Reconfigure CC to future (now tick is the furtherest
+	 * next tick. Reconfigure CC to future (now tick is the furthest
 	 * future).
 	 */
 	now = read(dev);

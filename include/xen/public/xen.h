@@ -317,7 +317,7 @@ struct shared_info {
 	 * are delivered by this mechanism:
 	 *  1. Bi-directional inter- and intra-domain connections. Domains must
 	 *     arrange out-of-band to set up a connection (usually by allocating
-	 *     an unbound 'listener' port and avertising that via a storage service
+	 *     an unbound 'listener' port and advertising that via a storage service
 	 *     such as xenstore).
 	 *  2. Physical interrupts. A domain with suitable hardware-access
 	 *     privileges can bind an event-channel port to a physical interrupt

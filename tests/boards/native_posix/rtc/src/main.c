@@ -161,7 +161,7 @@ static void test_rtc_offset(void)
 
 	diff = native_rtc_gettime_us(RTC_CLOCK_REALTIME) - start_rtc_time[0];
 
-	zassert_true(diff == offset, "Offseting RTC failed\n");
+	zassert_true(diff == offset, "Offsetting RTC failed\n");
 }
 
 void test_main(void)

@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(tls_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
  * @brief Application-dependent TLS credential identifiers
  *
  * Since both the server and client exist in the same test
- * application in this case, both the server and client credendtials
+ * application in this case, both the server and client credentials
  * are loaded together.
  *
  * The server would normally need
