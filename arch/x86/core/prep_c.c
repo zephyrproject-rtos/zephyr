@@ -36,10 +36,6 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 	z_loapic_enable(0);
 #endif
 
-#ifdef CONFIG_X86_VERY_EARLY_CONSOLE
-	z_x86_early_serial_init();
-#endif
-
 #ifdef CONFIG_X86_64
 	x86_64_irq_init();
 #endif
@@ -53,6 +49,10 @@ if (IS_ENABLED(CONFIG_MULTIBOOT_INFO) &&
 } else {
 	ARG_UNUSED(cpu_arg);
 }
+
+#ifdef CONFIG_X86_VERY_EARLY_CONSOLE
+	z_x86_early_serial_init();
+#endif
 
 #if CONFIG_X86_STACK_PROTECTION
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
