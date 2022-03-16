@@ -216,6 +216,7 @@
 			reg = <0x400e1400 0x10>;
 			peripheral-id = <1>;
 			label = "RSTC";
+			user-nrst;
 		};
 	};
 };
