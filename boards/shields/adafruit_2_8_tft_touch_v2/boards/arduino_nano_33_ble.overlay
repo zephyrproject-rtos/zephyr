@@ -1,0 +1,22 @@
+/*
+ * Copyright (C) 2022 Huawei Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/*
+	 * Arduino Nano form factor doesn't really have a Rev3 Arduino header
+	 * so this is just a "virtual" mapping for the pins used by the
+	 * Adafruit display.
+	 */
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <10 0 &gpio1 15 0>, // D4
+			   <15 0 &gpio1 2 0>,  // D10
+			   <16 0 &gpio0 27 0>; // D9
+	};
+};
