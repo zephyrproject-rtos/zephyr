@@ -701,9 +701,9 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 #endif /* CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_SYNC_RECEIVER */
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
-int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
+int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
+		     uint32_t sn, uint32_t ts)
 {
-	struct bt_hci_iso_data_hdr *hdr;
 	struct bt_conn *iso_conn;
 
 	CHECKIF(!chan || !buf) {
@@ -724,13 +724,39 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->sn = sys_cpu_to_le16(iso_conn->iso.seq_num);
-	hdr->slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(net_buf_frags_len(buf)
-							- sizeof(*hdr),
-							BT_ISO_DATA_VALID));
+	/* Once the stored seq_num reaches the maximum value sendable to the
+	 * controller (BT_ISO_MAX_SEQ_NUM) we will allow the application to wrap
+	 * it. This ensures that up to 2^32-1 SDUs can be sent without wrapping
+	 * the sequence number which should provide ample room to handle
+	 * applications that does not send an SDU every interval.
+	 */
+	if (sn <= iso_conn->iso.seq_num &&
+	    iso_conn->iso.seq_num < BT_ISO_MAX_SEQ_NUM) {
+		BT_DBG("Invalid sn %u - Shall be > than %u",
+		       sn, iso_conn->iso.seq_num);
+		return -EINVAL;
+	}
 
-	iso_conn->iso.seq_num++;
+	iso_conn->iso.seq_num = sn;
+
+	if (ts == BT_ISO_TIMESTAMP_NONE) {
+		struct bt_hci_iso_data_hdr *hdr;
+
+		hdr = net_buf_push(buf, sizeof(*hdr));
+		hdr->sn = sys_cpu_to_le16((uint16_t)sn);
+		hdr->slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(net_buf_frags_len(buf)
+								- sizeof(*hdr),
+								BT_ISO_DATA_VALID));
+	} else {
+		struct bt_hci_iso_ts_data_hdr *hdr;
+
+		hdr = net_buf_push(buf, sizeof(*hdr));
+		hdr->ts = ts;
+		hdr->data.sn = sys_cpu_to_le16((uint16_t)sn);
+		hdr->data.slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(net_buf_frags_len(buf)
+								     - sizeof(*hdr),
+								     BT_ISO_DATA_VALID));
+	}
 
 	return bt_conn_send_cb(iso_conn, buf, bt_iso_send_cb, NULL);
 }
@@ -849,7 +875,7 @@ void hci_le_cis_established(struct net_buf *buf)
 		__ASSERT(chan != NULL && chan->qos != NULL, "Invalid ISO chan");
 
 		/* Reset sequence number */
-		iso->iso.seq_num = 0;
+		iso->iso.seq_num = BT_ISO_MAX_SEQ_NUM;
 
 		tx = chan->qos->tx;
 		rx = chan->qos->rx;
@@ -2283,7 +2309,8 @@ void hci_le_big_complete(struct net_buf *buf)
 		const uint16_t handle = evt->handle[i++];
 		struct bt_conn *iso_conn = bis->iso;
 
-		iso_conn->iso.seq_num = 0;
+		/* Reset sequence number */
+		iso_conn->iso.seq_num = BT_ISO_MAX_SEQ_NUM;
 		iso_conn->handle = sys_le16_to_cpu(handle);
 		store_bis_broadcaster_info(evt, &iso_conn->iso.info);
 		bt_conn_set_state(iso_conn, BT_CONN_CONNECTED);
