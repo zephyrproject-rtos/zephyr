@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "bl654_usb-pinctrl.dtsi"
 
 / {
 	model = "Laird Connectivity BL654 USB adapter";
@@ -54,7 +55,9 @@
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <13>;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
