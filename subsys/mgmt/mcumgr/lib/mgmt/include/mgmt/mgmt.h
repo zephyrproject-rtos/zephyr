@@ -210,7 +210,7 @@ struct mgmt_streamer {
  *		responses.
  */
 struct mgmt_ctxt {
-	struct CborEncoder encoder;
+	struct cbor_nb_writer *cnbe;
 	struct CborParser parser;
 	struct CborValue it;
 #ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
