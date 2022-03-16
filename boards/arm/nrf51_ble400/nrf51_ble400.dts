@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf51822_qfaa.dtsi>
+#include "nrf51_ble400-pinctrl.dtsi"
 
 / {
 	model = "Waveshare BLE400";
@@ -81,25 +82,25 @@
 
 &i2c0 {
 	status = "okay";
-	sda-pin = <0>;
-	scl-pin = <1>;
 	/* smba-pin = <2>; */
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <25>;
-	mosi-pin = <24>;
-	miso-pin = <23>;
 	cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <9>;
-	rx-pin = <11>;
-	rts-pin = <8>;
-	cts-pin = <10>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
