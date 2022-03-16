@@ -143,9 +143,6 @@ void z_loapic_enable(unsigned char cpu_number)
 
 	/* program Local Vector Table for the Virtual Wire Mode */
 
-	/* skip LINT0/LINT1 for Jailhouse guest case, because we won't
-	 * ever be waiting for interrupts on those
-	 */
 	/* set LINT0: extInt, high-polarity, edge-trigger, not-masked */
 
 	x86_write_loapic(LOAPIC_LINT0, (x86_read_loapic(LOAPIC_LINT0) &
