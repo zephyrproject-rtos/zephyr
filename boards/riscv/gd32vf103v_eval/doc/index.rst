@@ -67,6 +67,9 @@ The board configuration supports the following hardware features:
    * - USART
      - :kconfig:option:`CONFIG_SERIAL`
      - :dtcompatible:`gd,gd32-usart`
+   * - ADC
+     - :kconfig:option:`CONFIG_ADC`
+     - :dtcompatible:`gd,gd32-adc`
 
 Serial Port
 ===========
