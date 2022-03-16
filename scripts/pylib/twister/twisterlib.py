@@ -2848,6 +2848,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.warnings_as_errors = True
         self.overflow_as_errors = False
         self.quarantine_verify = False
+        self.retry_build_errors = False
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -3519,21 +3520,22 @@ class TestSuite(DisablePyTestCollectionMixin):
         for instance in instance_list:
             self.instances[instance.name] = instance
 
-    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False):
+    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
         for instance in self.instances.values():
             if build_only:
                 instance.run = False
 
-            if instance.status not in ['passed', 'skipped', 'error']:
+            no_retry_statuses = ['passed', 'skipped']
+            if not retry_build_errors:
+                no_retry_statuses.append("error")
+
+            if instance.status not in no_retry_statuses:
                 logger.debug(f"adding {instance.name}")
                 instance.status = None
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})
                 else:
                     pipeline.put({"op": "cmake", "test": instance})
-            # If the instance got 'error' status before, proceed to the report stage
-            if instance.status == "error":
-                pipeline.put({"op": "report", "test": instance})
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         while True:
@@ -3568,7 +3570,8 @@ class TestSuite(DisablePyTestCollectionMixin):
     def execute(self, pipeline, done, results):
         lock = Lock()
         logger.info("Adding tasks to the queue...")
-        self.add_tasks_to_queue(pipeline, self.build_only, self.test_only)
+        self.add_tasks_to_queue(pipeline, self.build_only, self.test_only,
+                                retry_build_errors=self.retry_build_errors)
         logger.info("Added initial list of jobs to queue")
 
         processes = []
