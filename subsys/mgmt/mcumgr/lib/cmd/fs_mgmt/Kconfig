@@ -89,6 +89,13 @@ config FS_MGMT_DL_CHUNK_SIZE
 
 endif
 
+config FS_MGMT_FILE_STATUS
+	bool "File status command"
+	default y
+	help
+	  This command allows a remote device to retrieve the status of a file,
+	  at present only the size of the file is returned (if it exists).
+
 config FS_MGMT_PATH_SIZE
 	int "Maximum file path length"
 	default 64
@@ -96,4 +103,5 @@ config FS_MGMT_PATH_SIZE
 	  Limits the maximum path length for file operations, in bytes.  A buffer
 	  of this size gets allocated on the stack during handling of file upload
 	  and download commands.
+
 endif
