@@ -9,6 +9,10 @@ zephyr_sources_ifdef(CONFIG_SOC_SERIES_IMX_RT10XX soc_rt10xx.c)
 zephyr_linker_sources_ifdef(CONFIG_NXP_IMX_RT_BOOT_HEADER
   ROM_START SORT_KEY 0 boot_header.ld)
 
+# Enable custom OCRAM noncacheable region
+zephyr_linker_sources_ifdef(CONFIG_OCRAM_NOCACHE SECTIONS sections.ld)
+zephyr_sources_ifdef(CONFIG_OCRAM_NOCACHE mpu_regions.c)
+
 zephyr_linker_section_configure(
   SECTION .rom_start
   INPUT ".boot_hdr.conf"
