@@ -4,7 +4,7 @@
 config ZEPHYR_FFF_MODULE
 	bool
 
-config FFF_TEST
+menuconfig FFF_TEST
 	bool "FFF Test suite"
 	help
 	  Enable the FFF test suite. This should really only be called from the tests for FFF under
@@ -12,15 +12,15 @@ config FFF_TEST
 
 if FFF_TEST
 
-choice FFF_TEST
+choice FFF_TEST_TYPE
 	prompt "The type of FFF test to bring in"
 
-config FFF_TEST_C
+config FFF_TEST_TYPE_C
 	bool "Compile the FFF default C test suite as a zephyr library"
 
-config FFF_TEST_GLOBAL_C
+config FFF_TEST_TYPE_GLOBAL_C
 	bool "Compile the FFF global C test suite as a zephyr library"
 
-endchoice # FFF_TEST
+endchoice # FFF_TEST_TYPE
 
 endif # FFF_TEST
