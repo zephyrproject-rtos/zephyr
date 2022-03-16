@@ -372,3 +372,19 @@ bool pm_device_on_power_domain(const struct device *dev)
 	return false;
 #endif
 }
+
+bool pm_device_is_powered(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+	struct pm_device *pm = dev->pm;
+
+	/* If a device doesn't support PM or is not under a PM domain,
+	 * assume it is always powered on.
+	 */
+	return (pm == NULL) ||
+	       (pm->domain == NULL) ||
+	       (pm->domain->pm->state == PM_DEVICE_STATE_ACTIVE);
+#else
+	return true;
+#endif
+}
