@@ -434,9 +434,7 @@ static const struct sensor_driver_api icm42605_driver_api = {
 					    SPI_WORD_SET(8) |		\
 					    SPI_TRANSFER_MSB,		\
 					    0U),			\
-		.int_label = DT_INST_GPIO_LABEL(index, int_gpios),	\
-		.int_pin =  DT_INST_GPIO_PIN(index, int_gpios),		\
-		.int_flags = DT_INST_GPIO_FLAGS(index, int_gpios),	\
+		.gpio_int = GPIO_DT_SPEC_INST_GET(index, int_gpios),    \
 		.accel_hz = DT_INST_PROP(index, accel_hz),		\
 		.gyro_hz = DT_INST_PROP(index, gyro_hz),		\
 		.accel_fs = DT_INST_ENUM_IDX(index, accel_fs),		\
