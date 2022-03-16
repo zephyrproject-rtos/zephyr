@@ -6,7 +6,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 set(common_dir ${CMAKE_CURRENT_SOURCE_DIR}/../common)
-set(common_src_dir ${common_dir}/src)
 set(common_include_dir ${common_dir}/include)
 
 include_directories(
@@ -19,5 +18,4 @@ project(civetweb_http_server)
 
 target_sources(app PRIVATE
 	src/main.c
-	${common_src_dir}/libc_extensions.c
 )

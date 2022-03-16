@@ -5,7 +5,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 set(common_dir ${CMAKE_CURRENT_SOURCE_DIR}/../common)
-set(common_src_dir ${common_dir}/src)
 set(common_include_dir ${common_dir}/include)
 
 set(inc_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -23,7 +22,6 @@ project(civetweb_websocket_server)
 
 target_sources(app PRIVATE
 		${src_dir}/main.c
-		${common_src_dir}/libc_extensions.c
 		${src_dir}/http_server_handlers.c
 		${src_dir}/websocket_server_handlers.c)
 
