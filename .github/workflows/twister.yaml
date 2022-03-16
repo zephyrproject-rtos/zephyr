@@ -65,6 +65,7 @@ jobs:
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
+          west config manifest.group-filter -- +ci
           west init -l . || true
           # no need for west update here
 
