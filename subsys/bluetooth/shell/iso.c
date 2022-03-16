@@ -24,6 +24,42 @@
 
 #include "bt.h"
 
+static uint32_t cis_sn_last;
+static uint32_t bis_sn_last;
+static int64_t cis_sn_last_updated_ticks;
+static int64_t bis_sn_last_updated_ticks;
+
+/**
+ * @brief Get the next sequence number based on the last used values
+ *
+ * @param last_sn     The last sequence number sent.
+ * @param last_ticks  The uptime ticks since the last sequence number increment.
+ * @param interval_us The SDU interval in microseconds.
+ *
+ * @return The next sequence number to use
+ */
+static uint32_t get_next_sn(uint32_t last_sn, int64_t *last_ticks,
+			    uint32_t interval_us)
+{
+	int64_t uptime_ticks, delta_ticks;
+	uint64_t delta_us;
+	uint64_t sn_incr;
+	uint64_t next_sn;
+
+	/* Note: This does not handle wrapping of ticks when they go above
+	 * 2^(62-1)
+	 */
+	uptime_ticks = k_uptime_ticks();
+	delta_ticks = uptime_ticks - *last_ticks;
+	*last_ticks = uptime_ticks;
+
+	delta_us = k_ticks_to_us_near64((uint64_t)delta_ticks);
+	sn_incr = delta_us / interval_us;
+	next_sn = (sn_incr + last_sn);
+
+	return (uint32_t)next_sn;
+}
+
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
@@ -33,7 +69,25 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	struct bt_iso_info iso_info;
+	int err;
+
 	shell_print(ctx_shell, "ISO Channel %p connected", chan);
+
+
+	err = bt_iso_chan_get_info(chan, &iso_info);
+	if (err != 0) {
+		printk("Failed to get ISO info: %d", err);
+		return;
+	}
+
+	if (iso_info.type == BT_ISO_CHAN_TYPE_CONNECTED) {
+		cis_sn_last = 0U;
+		cis_sn_last_updated_ticks = k_uptime_ticks();
+	} else {
+		bis_sn_last = 0U;
+		bis_sn_last_updated_ticks = k_uptime_ticks();
+	}
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -64,6 +118,8 @@ static struct bt_iso_chan_qos iso_qos = {
 };
 
 #if defined(CONFIG_BT_ISO_UNICAST)
+static uint32_t cis_sdu_interval_us;
+
 #define CIS_ISO_CHAN_COUNT 1
 
 struct bt_iso_chan iso_chan = {
@@ -108,6 +164,7 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 	} else {
 		param.interval = 10000;
 	}
+	cis_sdu_interval_us = param.interval;
 
 	if (argc > 3) {
 		param.packing = strtol(argv[3], NULL, 0);
@@ -239,6 +296,16 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 
 	*chan = &iso_chan;
 
+	/* As the peripheral host we do not know the SDU interval, and thus we
+	 * cannot find the proper interval of incrementing the packet
+	 * sequence number (PSN). The only way to ensure that we correctly
+	 * increment the PSN, is by incrementing once per the minimum SDU
+	 * interval. This should be okay as the spec does not specify how much
+	 * the PSN may be incremented, and it is thus OK for us to increment
+	 * it faster than the SDU interval.
+	 */
+	cis_sdu_interval_us = BT_ISO_INTERVAL_MIN;
+
 	return 0;
 }
 
@@ -311,6 +378,8 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	len = MIN(iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
+	cis_sn_last = get_next_sn(cis_sn_last, &cis_sn_last_updated_ticks,
+				  cis_sdu_interval_us);
 
 	while (count--) {
 		buf = net_buf_alloc(&tx_pool, K_FOREVER);
@@ -318,7 +387,8 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 
 		net_buf_add_mem(buf, buf_data, len);
 		shell_info(sh, "send: %d bytes of data", len);
-		ret = bt_iso_chan_send(&iso_chan, buf);
+		ret = bt_iso_chan_send(&iso_chan, buf, cis_sn_last,
+				       BT_ISO_TIMESTAMP_NONE);
 		if (ret < 0) {
 			shell_print(sh, "Unable to send: %d", -ret);
 			net_buf_unref(buf);
@@ -362,6 +432,8 @@ static struct bt_iso_chan bis_iso_chan = {
 static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
 
 #if defined(CONFIG_BT_ISO_BROADCASTER)
+static uint32_t bis_sdu_interval_us;
+
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
@@ -389,13 +461,17 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 
 	len = MIN(iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
 
+	bis_sn_last = get_next_sn(bis_sn_last, &bis_sn_last_updated_ticks,
+				  bis_sdu_interval_us);
+
 	while (count--) {
 		for (int i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
 			buf = net_buf_alloc(&bis_tx_pool, K_FOREVER);
 			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 			net_buf_add_mem(buf, buf_data, len);
-			ret = bt_iso_chan_send(&bis_iso_chan, buf);
+			ret = bt_iso_chan_send(&bis_iso_chan, buf, bis_sn_last,
+					       BT_ISO_TIMESTAMP_NONE);
 			if (ret < 0) {
 				shell_print(sh, "[%i]: Unable to broadcast: %d", i, -ret);
 				net_buf_unref(buf);
@@ -426,7 +502,7 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 	bis_iso_qos.tx->rtn = 2;
 	bis_iso_qos.tx->sdu = CONFIG_BT_ISO_TX_MTU;
 
-	param.interval = 10000;      /* us */
+	bis_sdu_interval_us = param.interval = 10000;      /* us */
 	param.latency = 20;          /* ms */
 	param.bis_channels = bis_channels;
 	param.num_bis = BIS_ISO_CHAN_COUNT;

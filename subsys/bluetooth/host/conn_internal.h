@@ -126,8 +126,13 @@ struct bt_conn_iso {
 	};
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
-	/** 16-bit sequence number that shall be incremented per SDU interval */
-	uint16_t seq_num;
+	/** @brief 16-bit sequence number that shall be incremented per SDU interval
+	 *
+	 *  Stored as 32-bit to handle wrapping: Only once the value has
+	 *  become greater than 0xFFFF will values less than the
+	 *  current are allowed again.
+	 */
+	uint32_t seq_num;
 #endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
 
 	/** Stored information about the ISO stream */

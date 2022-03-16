@@ -17,9 +17,14 @@ NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 static K_SEM_DEFINE(sem_big_cmplt, 0, 1);
 static K_SEM_DEFINE(sem_big_term, 0, 1);
 
+static uint32_t sn;
+
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
+
+	sn = 0U;
+
 	k_sem_give(&sem_big_cmplt);
 }
 
@@ -127,13 +132,14 @@ void main(void)
 		static uint8_t timeout = BIG_TERMINATE_TIMEOUT;
 		int ret;
 
-		k_sleep(K_SECONDS(1));
+		k_sleep(K_USEC(big_create_param.interval));
 
 		buf = net_buf_alloc(&bis_tx_pool, K_FOREVER);
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 		sys_put_le32(++iso_send_count, iso_data);
 		net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-		ret = bt_iso_chan_send(&bis_iso_chan, buf);
+		ret = bt_iso_chan_send(&bis_iso_chan, buf, sn++,
+				       BT_ISO_TIMESTAMP_NONE);
 		if (ret < 0) {
 			printk("Unable to broadcast data: %d", ret);
 			net_buf_unref(buf);
