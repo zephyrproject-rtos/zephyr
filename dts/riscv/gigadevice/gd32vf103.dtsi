@@ -99,6 +99,30 @@
 			label = "UART_2";
 		};
 
+		adc0: adc@40012400 {
+			compatible = "gd,gd32-adc";
+			reg = <0x40012400 0x400>;
+			interrupts = <37 0>;
+			interrupt-parent = <&eclic>;
+			rcu-periph-clock = <0x609>;
+			channels = <16>;
+			status = "disabled";
+			label = "ADC_0";
+			#io-channel-cells = <1>;
+		};
+
+		adc1: adc@40012800 {
+			compatible = "gd,gd32-adc";
+			reg = <0x40012800 0x400>;
+			interrupts = <37 0>;
+			interrupt-parent = <&eclic>;
+			rcu-periph-clock = <0x60A>;
+			channels = <16>;
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
+		};
+
 		dac: dac@40007400 {
 			compatible = "gd,gd32-dac";
 			reg = <0x40007400 0x400>;
