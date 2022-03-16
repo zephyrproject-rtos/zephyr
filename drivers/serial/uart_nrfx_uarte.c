@@ -2027,7 +2027,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
  * kconfig option is enabled.
  */
 #define USE_LOW_POWER(idx) \
-	((!UARTE_HAS_PROP(idx, disable_rx) &&				       \
+	((!UARTE_PROP(idx, disable_rx) &&				       \
 	COND_CODE_1(CONFIG_UART_##idx##_ASYNC,				       \
 		(!IS_ENABLED(CONFIG_UART_##idx##_NRF_ASYNC_LOW_POWER)),	       \
 		(1))) ? 0 : UARTE_CFG_FLAG_LOW_POWER)
