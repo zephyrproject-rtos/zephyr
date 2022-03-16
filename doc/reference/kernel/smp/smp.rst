@@ -283,15 +283,33 @@ exactly two arguments.  The first is an opaque (architecture defined)
 handle to the context to which it should switch, and the second is a
 pointer to such a handle into which it should store the handle
 resulting from the thread that is being switched out.
-
 The kernel then implements a portable :c:func:`z_swap` implementation on top
 of this primitive which includes the relevant scheduler logic in a
 location where the architecture doesn't need to understand it.
+
 Similarly, on interrupt exit, switch-based architectures are expected
 to call :c:func:`z_get_next_switch_handle` to retrieve the next thread to
-run from the scheduler, passing in an "interrupted" handle reflecting
-the same opaque type used by switch, which the kernel will then save
-in the interrupted thread struct.
+run from the scheduler. The argument to :c:func:`z_get_next_switch_handle`
+is either the interrupted thread's "handle" reflecting the same opaque type
+used by :c:func:`arch_switch`, or NULL if that thread cannot be released
+to the scheduler just yet. The choice between a handle value or NULL
+depends on the way CPU interrupt mode is implemented.
+
+Architectures with a large CPU register file would typically preserve only
+the caller-saved registers on the current thread's stack when interrupted
+in order to minimize interrupt latency, and preserve the callee-saved
+registers only when :c:func:`arch_switch` is called to minimize context
+switching latency. Such architectures must use NULL as the argument to
+:c:func:`z_get_next_switch_handle` to determine if there is a new thread
+to schedule, and follow through with their own :c:func:`arch_switch` or
+derrivative if so, or directly leave interrupt mode otherwise.
+In the former case it is up to that switch code to store the handle
+resulting from the thread that is being switched out in that thread's
+"switch_handle" field after its context has fully been saved.
+
+Architectures whose entry in interrupt mode already preserves the entire
+thread state may pass that thread's handle directly to
+:c:func:`z_get_next_switch_handle` and be done in one step.
 
 Note that while SMP requires :kconfig:option:`CONFIG_USE_SWITCH`, the reverse is not
 true.  A uniprocessor architecture built with :kconfig:option:`CONFIG_SMP` set to No might
