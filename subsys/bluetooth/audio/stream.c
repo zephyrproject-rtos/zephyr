@@ -59,19 +59,25 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
 int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf)
 {
+	struct bt_audio_ep *ep;
+
 	if (stream == NULL || stream->ep == NULL) {
 		return -EINVAL;
 	}
 
-	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
+	ep = stream->ep;
+
+	if (ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
 		BT_DBG("Channel %p not ready for streaming (state: %s)",
-		       stream, bt_audio_ep_state_str(stream->ep->status.state));
+		       stream, bt_audio_ep_state_str(ep->status.state));
 		return -EBADMSG;
 	}
 
 	/* TODO: Add checks for broadcast sink */
 
-	return bt_iso_chan_send(stream->iso, buf);
+	/* TODO: Ensure that the sequence number is incremented per SDU interval */
+	return bt_iso_chan_send(stream->iso, buf, ep->sn++,
+				BT_ISO_TIMESTAMP_NONE);
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
