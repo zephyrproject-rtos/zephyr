@@ -35,6 +35,8 @@ static uint8_t connected_bis;
 
 static struct bt_iso_chan bis_iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_iso_chan *bis[CONFIG_BT_ISO_MAX_CHAN];
+/* We use a single SN for all the BIS as they share the same SDU interval */
+static uint32_t sn;
 static struct bt_iso_big_create_param big_create_param = {
 	.num_bis = DEFAULT_BIS_COUNT,
 	.bis_channels = bis,
@@ -50,6 +52,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 
 	connected_bis++;
 	if (connected_bis == big_create_param.num_bis) {
+		sn = 0U;
 		k_sem_give(&sem_big_complete);
 	}
 }
@@ -375,7 +378,8 @@ static void iso_timer_timeout(struct k_work *work)
 
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 		net_buf_add_mem(buf, iso_data, iso_tx_qos.sdu);
-		ret = bt_iso_chan_send(&bis_iso_chans[i], buf);
+		ret = bt_iso_chan_send(&bis_iso_chans[i], buf, sn,
+				       BT_ISO_TIMESTAMP_NONE);
 		if (ret < 0) {
 			LOG_ERR("Unable to broadcast data: %d", ret);
 			net_buf_unref(buf);
@@ -387,6 +391,8 @@ static void iso_timer_timeout(struct k_work *work)
 			LOG_INF("Sent %u packets", iso_send_count);
 		}
 	}
+
+	sn++;
 }
 
 static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
