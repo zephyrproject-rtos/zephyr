@@ -984,6 +984,37 @@ static inline void set_current(struct k_thread *new_thread)
 	_current_cpu->current = new_thread;
 }
 
+/**
+ * @brief Determine next thread to execute upon completion of an interrupt
+ *
+ * Thread preemption is performed by context switching after the completion
+ * of a non-recursed interrupt. This function determines which thread to
+ * switch to if any. This function accepts as @p interrupted either:
+ *
+ * - The handle for the interrupted thread in which case the thread's context
+ *   must already be fully saved and ready to be picked up by a different CPU.
+ *
+ * - NULL if more work is required to fully save the thread's state after
+ *   it is known that a new thread is to be scheduled. It is up to the caller
+ *   to store the handle resulting from the thread that is being switched out
+ *   in that thread's "switch_handle" field after its
+ *   context has fully been saved, following the same requirements as with
+ *   the @ref arch_switch() function.
+ *
+ * If a new thread needs to be scheduled then its handle is returned.
+ * Otherwise the same value provided as @p interrupted is returned back.
+ * Those handles are the same opaque types used by the @ref arch_switch()
+ * function.
+ *
+ * @warning
+ * The @ref _current value may have changed after this call and not refer
+ * to the interrupted thread anymore. It might be necessary to make a local
+ * copy before calling this function.
+ *
+ * @param interrupted Handle for the thread that was interrupted or NULL.
+ * @retval Handle for the next thread to execute, or @p interrupted when
+ *         no new thread is to be scheduled.
+ */
 void *z_get_next_switch_handle(void *interrupted)
 {
 	z_check_stack_sentinel();
