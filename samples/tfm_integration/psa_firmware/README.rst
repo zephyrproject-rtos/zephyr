@@ -49,35 +49,15 @@ On MPS3 AN547:
 ===============
 
 1. Build Zephyr with a non-secure configuration
-   (``-DBOARD=mps2_an521_ns``).
-
+   (``-DBOARD=mps3_an547_ns``).
    Using ``west``
 
-   .. code-block:: bash
-
-      cd <ZEPHYR_ROOT>
-      west build -p -b mps3_an547_ns samples/tfm_integration/psa_firmware
-
-
-   Using ``cmake`` and ``ninja``
-
-   .. code-block:: bash
-
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_firmware/
-      rm -rf build
-      mkdir build && cd build
-      cmake -GNinja -DBOARD=mps2_an521_ns ..
-      ninja
-
-   Using ``cmake`` and ``make``
-
-   .. code-block:: bash
-
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_firmware/
-      rm -rf build
-      mkdir build && cd build
-      cmake -DBOARD=mps3_an547_ns ..
-      make
+.. zephyr-app-commands::
+  :zephyr-app: samples/tfm_integration/psa_firmware
+  :host-os: unix
+  :board: mps3_an547_ns
+  :goals: run
+  :compact:
 
 2. Copy application binary files (mcuboot.bin and tfm_sign.bin) to
    ``<MPS3 device name>/SOFTWARE/``.
@@ -106,32 +86,14 @@ On QEMU:
 Build Zephyr with a non-secure configuration (``-DBOARD=mps3_an547_ns``)
 and run it in qemu via the ``run`` command.
 
-   Using ``west``
+Using ``west``
 
-   .. code-block:: bash
-
-      cd <ZEPHYR_ROOT>
-      west build -p -b mps3_an547_ns samples/tfm_integration/psa_firmware -t run
-
-   Using ``cmake`` and ``ninja``
-
-   .. code-block:: bash
-
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_firmware/
-      rm -rf build
-      mkdir build && cd build
-      cmake -GNinja -DBOARD=mps3_an547_ns ..
-      ninja run
-
-   Using ``cmake`` and ``make``
-
-   .. code-block:: bash
-
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_firmware/
-      rm -rf build
-      mkdir build && cd build
-      cmake -DBOARD=mps3_an547_ns ..
-      make run
+.. zephyr-app-commands::
+  :zephyr-app: samples/tfm_integration/psa_firmware
+  :host-os: unix
+  :board: mps3_an547_ns
+  :goals: run
+  :compact:
 
 On LPCxpresso55S69:
 ======================
