@@ -27,6 +27,27 @@ properties:
     pinctrl-names:
       required: true
 
+    st,prescaler:
+      type: string
+      required: no
+      enum:
+        - "1" # not divided
+        - "2"
+        - "4"
+        - "6"
+        - "8"
+        - "10"
+        - "12"
+        - "16"
+        - "32"
+        - "64"
+        - "128"
+        - "256"
+      description: |
+        Clock prescaler at the input of the adc:
+        can be LL_ADC_CLOCK_SYNC_PCLK_DIVx or LL_ADC_CLOCK_ASYNC_DIVx
+        depending on the stm32 serie. Refer to the RefMan
+
     vref-mv:
       type: int
       required: false
