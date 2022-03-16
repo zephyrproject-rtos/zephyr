@@ -9,6 +9,8 @@
 #include "net/buf.h"
 #include "mgmt/mcumgr/buf.h"
 #include <mgmt/mgmt.h>
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
 
 NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_BUF_COUNT, CONFIG_MCUMGR_BUF_SIZE,
 		    CONFIG_MCUMGR_BUF_USER_DATA_SIZE, NULL);
@@ -147,8 +149,10 @@ cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
 {
 	net_buf_reset(nb);
 	cnw->nb = nb;
-	/* Reserve header space */
 	cnw->nb->len = sizeof(struct mgmt_hdr);
+	zcbor_new_encode_state(cnw->zs, 2, nb->data + sizeof(struct mgmt_hdr),
+			       net_buf_tailroom(nb), 0);
+	/* Reserve header space */
 	cnw->enc.bytes_written = sizeof(struct mgmt_hdr);
 	cnw->enc.write = &cbor_nb_write;
 }

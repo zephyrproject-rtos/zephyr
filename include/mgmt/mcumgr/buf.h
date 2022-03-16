@@ -8,6 +8,8 @@
 #define ZEPHYR_INCLUDE_MGMT_BUF_H_
 
 #include <inttypes.h>
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
 #include "tinycbor/cbor.h"
 #include "tinycbor/cbor_buf_writer.h"
 struct net_buf;
@@ -20,6 +22,7 @@ struct cbor_nb_reader {
 struct cbor_nb_writer {
 	struct cbor_encoder_writer enc;
 	struct net_buf *nb;
+	zcbor_state_t zs[2];
 };
 
 /**
