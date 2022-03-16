@@ -2796,7 +2796,7 @@ static int le_init_iso(void)
 	int err;
 	struct net_buf *rsp;
 
-	/* Set Isochronus Channels - Host support */
+	/* Set Isochronous Channels - Host support */
 	err = le_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
 	if (err) {
 		return err;

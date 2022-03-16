@@ -301,7 +301,7 @@ static int check_rename(struct fs_mount_t *mp)
 
 	while (cp != to_end_bcmd) {
 		if (cp->name) {
-			zassert_true(cp->matched, "foriegn file retained");
+			zassert_true(cp->matched, "foreign file retained");
 		}
 		++cp;
 	}

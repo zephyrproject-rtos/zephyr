@@ -429,7 +429,7 @@ static int i2c_gd32_transfer(const struct device *dev,
 
 	current = msgs;
 
-	/* First message flags implict contain I2C_MSG_RESTART flag. */
+	/* First message flags implicitly contain I2C_MSG_RESTART flag. */
 	current->flags |= I2C_MSG_RESTART;
 
 	for (uint8_t i = 1; i <= num_msgs; i++) {
@@ -453,7 +453,7 @@ static int i2c_gd32_transfer(const struct device *dev,
 				return -EINVAL;
 			}
 		} else {
-			/* Last message flags implict contain I2C_MSG_STOP flag. */
+			/* Last message flags implicitly contain I2C_MSG_STOP flag. */
 			current->flags |= I2C_MSG_STOP;
 		}
 

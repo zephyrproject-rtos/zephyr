@@ -24,7 +24,7 @@ otError otPlatDiagProcess(otInstance *aInstance,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(aInstance);
 
-	/* Add more plarform specific diagnostics features here. */
+	/* Add more platform specific diagnostics features here. */
 	snprintk(aOutput, aOutputMaxLen,
 		 "diag feature '%s' is not supported\r\n", argv[0]);
 

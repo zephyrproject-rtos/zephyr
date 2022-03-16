@@ -165,7 +165,7 @@ void test_phy_update_central_loc(void)
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
 
-	/* Check that data tx is no lonnger paused */
+	/* Check that data tx is no longer paused */
 	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */

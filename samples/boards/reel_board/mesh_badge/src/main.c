@@ -208,7 +208,7 @@ void main(void)
 
 	err = periphs_init();
 	if (err) {
-		printk("perpherals initialization failed (err %d)\n", err);
+		printk("peripherals initialization failed (err %d)\n", err);
 		return;
 	}
 }

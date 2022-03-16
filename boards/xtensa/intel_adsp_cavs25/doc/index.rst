@@ -95,7 +95,7 @@ Next you disable the validation step:
 
 **THIS COMMAND WILL FAIL**, give you an error that you are changing
 the setting for the entire running system, and suggest an alternative
-"--paritions X" argument to use that modifies only the currently used
+"--partitions X" argument to use that modifies only the currently used
 partition.  Run that modified command, then reboot.
 
 After rebooting, you will notice that your chromebook boots with the
@@ -110,7 +110,7 @@ verity configuration in place though, it just doesn't try to mount the
 resulting (now-invalid!) partition.
 
 Metanote: The astute will note that we're probably going to throw this
-kernel out, and that we could probably have just editted the command
+kernel out, and that we could probably have just edited the command
 line of the new kernel instead of flashing and rebooting into this
 modified one.  But that's too many balls to juggle at once for me.
 

@@ -24,8 +24,8 @@ int stmemsc_spi_read(const struct spi_dt_spec *stmemsc,
 	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
 
 	/*
-	 *   trensactions #1: dummy read to skip first byte
-	 *   trensactions #2: read "len" byte of data
+	 *   transaction #1: dummy read to skip first byte
+	 *   transaction #2: read "len" byte of data
 	 */
 	const struct spi_buf rx_buf[2] = {
 		{ .buf = NULL, .len = 1, },
@@ -45,8 +45,8 @@ int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
 	uint8_t buffer_tx[1] = { reg_addr & ~SPI_READ };
 
 	/*
-	 *   trensactions #1: write 1 byte with reg addr (msb at 0)
-	 *   trensactions #2: write "len" byte of data
+	 *   transaction #1: write 1 byte with reg addr (msb at 0)
+	 *   transaction #2: write "len" byte of data
 	 */
 	const struct spi_buf tx_buf[2] = {
 		{ .buf = buffer_tx, .len = 1, },

@@ -843,7 +843,7 @@ static void test_cfg_save(void)
 					   current_stack_cfg->net_transmit,
 					   &transmit);
 	if (err || transmit != current_stack_cfg->net_transmit) {
-		FAIL("Net transmit set failed (err %d, trasmit %x)", err, transmit);
+		FAIL("Net transmit set failed (err %d, transmit %x)", err, transmit);
 	}
 
 	err = bt_mesh_cfg_relay_set(test_netkey_idx, TEST_ADDR,

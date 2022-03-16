@@ -246,10 +246,10 @@ are only possible after rework the board and using the revision 1.0.0.
       :goals: build
       :compact:
 
-#. The diferences from version 0.0.0 to 1.0.0:
+#. The differences from version 0.0.0 to 1.0.0:
 
 +-------------+------------+------------+
-| Connecion   | 0.0.0      | 1.0.0      |
+| Connection  | 0.0.0      | 1.0.0      |
 +=============+============+============+
 | CDC-COM RX  | P5_0       | P9_0       |
 +-------------+------------+------------+

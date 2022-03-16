@@ -13,7 +13,7 @@ low power state.
 Power domains are optional on Zephyr, to enable this feature the
 option :kconfig:option:`CONFIG_PM_DEVICE_POWER_DOMAIN` has to be set.
 
-When a power domain turns itself on or off, it is the responsibilty of the
+When a power domain turns itself on or off, it is the responsibility of the
 power domain to notify all devices using it through their power management
 callback called with
 :c:enumerator:`PM_DEVICE_ACTION_TURN_ON` or

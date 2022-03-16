@@ -227,7 +227,7 @@ Zephyr.)
       target_sources(app PRIVATE src/main.c)
 
    ``cmake_minimum_required()`` is required to be in your
-   :file:`CMakeListst.txt` by CMake. It is also invoked by the Zephyr
+   :file:`CMakeLists.txt` by CMake. It is also invoked by the Zephyr
    package. The most recent of the two versions will be enforced by CMake.
 
    ``find_package(Zephyr)`` pulls in the Zephyr build system, which creates a
@@ -534,7 +534,7 @@ at CMake configure time if any experimental feature is enabled.
    CONFIG_WARN_EXPERIMENTAL=y
 
 For example, if option ``CONFIG_FOO`` is experimental, then enabling it and
-:kconfig:option:`CONIG_WARN_EXPERIMENTAL` will print the following warning at
+:kconfig:option:`CONFIG_WARN_EXPERIMENTAL` will print the following warning at
 CMake configure time when you build an application:
 
 .. code-block:: none

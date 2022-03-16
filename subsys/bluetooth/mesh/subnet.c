@@ -41,7 +41,7 @@
 
 /* Tracking of what storage changes are pending for Net Keys. We track this in
  * a separate array here instead of within the respective bt_mesh_subnet
- * struct itselve, since once a key gets deleted its struct becomes invalid
+ * struct itself, since once a key gets deleted its struct becomes invalid
  * and may be reused for other keys.
  */
 struct net_key_update {

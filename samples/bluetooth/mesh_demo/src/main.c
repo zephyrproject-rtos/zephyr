@@ -199,7 +199,7 @@ static void bt_ready(int err)
 	}
 
 #if NODE_ADDR != PUBLISHER_ADDR
-	/* Heartbeat subcscription is a temporary state (due to there
+	/* Heartbeat subscription is a temporary state (due to there
 	 * not being an "indefinite" value for the period, so it never
 	 * gets stored persistently. Therefore, we always have to configure
 	 * it explicitly.

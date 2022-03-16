@@ -69,8 +69,8 @@ static inline void tracing_backend_init(
  * @brief Output tracing packet with tracing backend.
  *
  * @param backend Pointer to tracing_backend instance.
- * @param data    Address of outputing buffer.
- * @param length  Length of outputing buffer.
+ * @param data    Address of outputting buffer.
+ * @param length  Length of outputting buffer.
  */
 static inline void tracing_backend_output(
 		const struct tracing_backend *backend,

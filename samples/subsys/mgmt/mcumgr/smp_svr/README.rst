@@ -194,7 +194,7 @@ the image.
 
     west flash --bin-file build/zephyr/zephyr.signed.bin
 
-We need to explicity specify the *signed* image file, otherwise the non-signed version
+We need to explicitly specify the *signed* image file, otherwise the non-signed version
 will be used and the image wont be runnable.
 
 Sample image: hello world!

@@ -36,7 +36,7 @@
 #define BMA_CONTROLS_OFFSET 6
 #define FU_FIXED_ELEMS_SIZE 7
 
-/* Macros for maitaining features of feature unit entity */
+/* Macros for maintaining features of feature unit entity */
 #define FEATURE_MUTE_SIZE			0x01
 #define FEATURE_VOLUME_SIZE			0x02
 #define FEATURE_BASS_SIZE			0x01
@@ -104,7 +104,7 @@
 | IF_USB_AUDIO_PROP(dev, i, channel_t,   BIT(11))\
 )
 
-/* Macro for getting the number of configured channles for given device.
+/* Macro for getting the number of configured channels for given device.
  * Master channel (0) excluded.
  */
 #define CH_CNT(dev, i) (0		   \
@@ -199,7 +199,7 @@ struct usb_audio_entity {
 };
 
 /**
- * @warning Size of baInterface is 2 just to make it useable
+ * @warning Size of baInterface is 2 just to make it usable
  * for all kind of devices: headphones, microphone and headset.
  * Actual size of the struct should be checked by reading
  * .bLength.

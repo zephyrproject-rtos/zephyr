@@ -68,7 +68,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 		 */
 		k_sem_give(rx.dev_owns);
 
-		/* Wait until and RX messages is received on host interace */
+		/* Wait until and RX messages is received on host interface */
 		if (k_sem_take(rx.handler_owns, K_FOREVER) < 0) {
 			/* This code path should never occur due to the nature of
 			 * k_sem_take with K_FOREVER

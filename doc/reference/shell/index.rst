@@ -486,7 +486,7 @@ Getopt Feature
 
 Some shell users apart from subcommands might need to use options as well.
 the arguments string, looking for supported options. Typically, this task
-is accomplished by the ``getopt`` familly functions.
+is accomplished by the ``getopt`` family functions.
 
 For this purpose shell supports the getopt and getopt_long libraries available
 in the FreeBSD project. This feature is activated by:

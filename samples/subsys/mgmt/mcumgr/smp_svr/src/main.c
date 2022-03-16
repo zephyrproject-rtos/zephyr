@@ -108,7 +108,7 @@ void main(void)
 		}
 	}
 	/* using __TIME__ ensure that a new binary will be built on every
-	 * compile which is convient when testing firmware upgrade.
+	 * compile which is convenient when testing firmware upgrade.
 	 */
 	LOG_INF("build time: " __DATE__ " " __TIME__);
 

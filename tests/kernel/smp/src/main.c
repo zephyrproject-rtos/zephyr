@@ -498,8 +498,8 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
  * Test Objective:
  * - To verify architecture layer provides a mechanism to return a pointer to the
  *   current kernel CPU record of the running CPU.
- *   We call arch_curr_cpu() and get it's member, both in main and spwaned thread
- *   speratively, and compare them. They shall be different in SMP enviornment.
+ *   We call arch_curr_cpu() and get its member, both in main and spawned thread
+ *   separately, and compare them. They shall be different in SMP environment.
  *
  * Testing techniques:
  * - Interface testing, function and block box testing,
@@ -756,7 +756,7 @@ static void t2_mutex_lock(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test scenairo that a thread release the global lock
+ * @brief Test scenario that a thread release the global lock
  *
  * @ingroup kernel_smp_tests
  *
@@ -927,11 +927,11 @@ static int run_concurrency(int type, void *func)
  * @ingroup kernel_smp_tests
  *
  * @details Validate the global lock and unlock API of SMP are thread-safe.
- * We make 3 thread to increase the global count in differenet cpu and
+ * We make 3 thread to increase the global count in different cpu and
  * they both do locking then unlocking for LOOP_COUNT times. It shall be no
  * deadlock happened and total global count shall be 3 * LOOP COUNT.
  *
- * We show the 4 kinds of scenairo:
+ * We show the 4 kinds of scenario:
  * - No any lock used
  * - Use global irq lock
  * - Use semaphore

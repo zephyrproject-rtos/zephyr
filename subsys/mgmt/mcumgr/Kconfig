@@ -196,7 +196,7 @@ config IMG_MGMT_DIRECT_IMAGE_UPLOAD
 	  (two DTS images for Zephyr); this allows to treat every DTS defined image as direct
 	  target for upload, and more than two may be used (4 at this time).
 	  NOTE: When direct upload is used the image numbers are shifted by + 1, and the default
-	  behaviour is, when image is not selected, to upload to image that represents secndary
+	  behaviour is, when image is not selected, to upload to image that represents secondary
 	  slot in normal operation.
 
 config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT

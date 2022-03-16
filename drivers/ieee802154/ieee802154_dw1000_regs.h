@@ -650,7 +650,7 @@
 
 /*
  * Acknowledge (31:24 preamble symbol delay before auto ACK is sent) and
- * respose (19:0 - unit 1us) timer
+ * response (19:0 - unit 1us) timer
  */
 /* Acknowledgement Time and Response Time */
 #define DWT_ACK_RESP_T_ID           0x1A
@@ -1398,7 +1398,7 @@
 #define DWT_AON_WCFG_LEN            2
 /* Access mask to AON_WCFG register */
 #define DWT_AON_WCFG_MASK           0x09CB
-/* On Wake-up Run the (temperature and voltage) Analog-to-Digital Convertors */
+/* On Wake-up Run the (temperature and voltage) Analog-to-Digital Converters */
 #define DWT_AON_WCFG_ONW_RADC       0x0001
 /* On Wake-up turn on the Receiver */
 #define DWT_AON_WCFG_ONW_RX         0x0002

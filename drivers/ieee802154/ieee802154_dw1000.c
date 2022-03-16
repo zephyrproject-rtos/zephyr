@@ -140,7 +140,7 @@ static struct dwt_context dwt_0_context = {
 	},
 };
 
-/* This structer is used to read all additional RX frame info at one push */
+/* This struct is used to read all additional RX frame info at one push */
 struct dwt_rx_info_regs {
 	uint8_t rx_fqual[DWT_RX_FQUAL_LEN];
 	uint8_t rx_ttcki[DWT_RX_TTCKI_LEN];

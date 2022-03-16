@@ -92,7 +92,7 @@ static void prov_invite(const uint8_t *data)
 	/* Number of Elements supported */
 	net_buf_simple_add_u8(&buf, bt_mesh_elem_count());
 
-	/* Supported algorithms - FIPS P-256 Eliptic Curve */
+	/* Supported algorithms - FIPS P-256 Elliptic Curve */
 	net_buf_simple_add_be16(&buf, BIT(PROV_ALG_P256));
 
 	/* Public Key Type */

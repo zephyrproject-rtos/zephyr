@@ -14,7 +14,7 @@ config ZTEST_NEW_API
 	bool "Use the new Ztest API"
 	help
 	  Enables the new Ztest APIs for creating suites and unit tests in
-	  separate compilational units as well as the new 'rules' API.
+	  separate compilation units as well as the new 'rules' API.
 
 config ZTEST_STACK_SIZE
 	int "Test function thread stack size"

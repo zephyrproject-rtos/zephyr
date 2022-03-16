@@ -61,7 +61,7 @@ Allocation
 
 Using pairs for read and write indexes, available space is determined. If
 space can be allocated, temporary write index is moved and pointer to a space
-witing buffer is returned. Packet header is reset. If allocation required
+within buffer is returned. Packet header is reset. If allocation required
 wrapping of the write index, a skip packet is added to the end of buffer. If
 space cannot be allocated and overwrite is disabled then ``NULL`` pointer is
 returned or context blocks if allocation was with timeout.

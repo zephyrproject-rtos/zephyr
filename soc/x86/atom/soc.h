@@ -32,7 +32,7 @@
 /* FIXME: The values below copied from generic ia32 soc, we need to get the
  * correct numbers for Atom and the minnowboard
  *
- * This is added now to get basic enumartion of devices and verify that PCI
+ * This is added now to get basic enumeration of devices and verify that PCI
  * driver is functional.
  */
 #define PCI_BUS_NUMBERS 1

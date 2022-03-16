@@ -335,7 +335,7 @@ void common_validate_per_adv_pdu(struct pdu_adv *pdu, enum test_pdu_ext_adv_type
 }
 
 /*
- * @brief Helper function to prepre CTE configuration for a given advertising set.
+ * @brief Helper function to prepare CTE configuration for a given advertising set.
  *
  * Note: There is a single instance of CTE configuration. In case there is a need
  * to use multiple advertising sets at once, all will use the same CTE configuration.

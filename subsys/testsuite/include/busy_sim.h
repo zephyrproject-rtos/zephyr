@@ -17,13 +17,13 @@ typedef void (*busy_sim_cb_t)(void);
  * is used for getting random numbers. System work queue is used to get random
  * values and keep them in a ring buffer.
  *
- * @param active_avg Avarage time of busy looping in the counter callback (in microseconds).
+ * @param active_avg Average time of busy looping in the counter callback (in microseconds).
  *
- * @param active_delta Specifies deviation from avarage time of busy looping (in microseconds).
+ * @param active_delta Specifies deviation from average time of busy looping (in microseconds).
  *
- * @param idle_avg Avarage time of counter alarm timeout (in microseconds).
+ * @param idle_avg Average time of counter alarm timeout (in microseconds).
  *
- * @param idle_delta Specifies deviation from avarage time of counter alarm (in microseconds).
+ * @param idle_delta Specifies deviation from average time of counter alarm (in microseconds).
  *
  * @param cb Callback called from the context of the busy simulator timeout. If ZLI interrupt
  * is used for busy simulator counter then kernel API cannot be used from that callback.

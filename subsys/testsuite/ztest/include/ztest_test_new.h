@@ -214,7 +214,7 @@ static inline void unit_test_noop(void)
  * @brief Create and register a new unit test.
  *
  * Calling this macro will create a new unit test and attach it to the declared `suite`. The `suite`
- * does not need to be defined in the same compilational unit.
+ * does not need to be defined in the same compilation unit.
  *
  * @param suite The name of the test suite to attach this test
  * @param fn The test function to call.
@@ -278,7 +278,7 @@ struct ztest_test_rule {
  * provides a mechanism for tests to perform custom operations depending on the specific test or
  * the data (for example logging may use the test's name).
  *
- * @param name The name for the test rule (must be unique within the compilational unit)
+ * @param name The name for the test rule (must be unique within the compilation unit)
  * @param before_each_fn The callback function to call before each test (may be NULL)
  * @param after_each_fn The callback function to call after each test (may be NULL)
  */

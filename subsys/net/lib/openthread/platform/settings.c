@@ -142,7 +142,7 @@ struct ot_setting_read_ctx {
 	 */
 	int index;
 
-	/* Target instnace to read. */
+	/* Target instance to read. */
 	int target_index;
 
 	/* Operation result. */

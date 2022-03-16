@@ -98,7 +98,7 @@ struct zsock_pollfd {
 /** Socket option to select ciphersuites to use. It accepts and returns an array
  *  of integers with IANA assigned ciphersuite identifiers.
  *  If not set, socket will allow all ciphersuites available in the system
- *  (mebdTLS default behavior).
+ *  (mbedTLS default behavior).
  */
 #define TLS_CIPHERSUITE_LIST 3
 /** Read-only socket option to read a ciphersuite chosen during TLS handshake.

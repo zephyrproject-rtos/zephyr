@@ -199,7 +199,7 @@ config LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
 	depends on LWM2M_RD_CLIENT_SUPPORT
 	default 33
 	help
-	  Default: room for 32 hexadeciaml digits (UUID) + NULL
+	  Default: room for 32 hexadecimal digits (UUID) + NULL
 
 config LWM2M_RD_CLIENT_MAX_RETRIES
 	int "Specify maximum number of registration retries"
@@ -333,7 +333,7 @@ config LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT_MULTIPLE
 	depends on LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
 	select EXPERIMENTAL
 	help
-	  Support multiple instances of LWM2M Firwmare Update Object (ID 5)
+	  Support multiple instances of LWM2M Firmware Update Object (ID 5)
 
 config LWM2M_FIRMWARE_UPDATE_OBJ_INSTANCE_COUNT
 	int "Maximum # of LWM2M Firmware update object instances"

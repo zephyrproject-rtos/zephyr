@@ -43,7 +43,7 @@
 
 	ASSERT(z_priv_stacks_ram_used <= KOBJECT_PRIV_STACKS_SZ,
 "scripts/gen_kobject_placeholders.py did not reserve enough space \
-for priviledged stacks."
+for privileged stacks."
 	);
 
 	/* Padding is needed to preserve kobject addresses

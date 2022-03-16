@@ -8,7 +8,7 @@
 #include <smf.h>
 
 /*
- * Hierarchical 5 Ancestor State Test Transistion:
+ * Hierarchical 5 Ancestor State Test Transition:
  *
  *	P05_ENTRY --> P04_ENTRY --> P03_ENTRY --> P02_ENTRY ---------|
  *                                                                   |

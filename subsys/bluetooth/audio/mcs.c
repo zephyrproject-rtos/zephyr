@@ -33,7 +33,7 @@
  * (Number found by experiment.)
  *
  * Either find a better way of setting up the Kconfig, or serialize the
- * notfications.
+ * notifications.
  */
 BUILD_ASSERT(CONFIG_BT_L2CAP_TX_BUF_COUNT >= 10, "Too few L2CAP buffers");
 
@@ -41,7 +41,7 @@ static struct media_proxy_sctrl_cbs cbs;
 
 /* Functions for reading and writing attributes, and for keeping track
  * of attribute configuration changes.
- * Functions for notifications are placed after the service defition.
+ * Functions for notifications are placed after the service definition.
  */
 static ssize_t read_player_name(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,

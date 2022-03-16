@@ -30,7 +30,7 @@ TESTDATA_1 = [
 def test_check_build_or_run(class_testsuite, monkeypatch, all_testcases_dict, platforms_list, build_only, slow, harness, platform_type, platform_sim, device_testing, fixture, expected):
     """" Test to check the conditions for build_only and run scenarios
     Scenario 1: Test when different parameters are passed, build_only and run are set correctly
-    Sceanrio 2: Test if build_only is enabled when the OS is Windows"""
+    Scenario 2: Test if build_only is enabled when the OS is Windows"""
 
     class_testsuite.testcases = all_testcases_dict
     testcase = class_testsuite.testcases.get('scripts/tests/twister/test_data/testcases/tests/test_a/test_a.check_1')

@@ -310,7 +310,7 @@ void test_pending_fifo(void)
 	k_work_submit_to_queue(&offload_work_q, &offload1.work_item);
 
 	/*
-	 * Verify that preemiptible threads 'task_high' and 'task_low' do not
+	 * Verify that preemptible threads 'task_high' and 'task_low' do not
 	 * busy-wait. If they are not busy-waiting, then they must be pending.
 	 */
 

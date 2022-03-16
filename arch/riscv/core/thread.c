@@ -55,7 +55,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * Following the RISC-V architecture,
 	 * the MSTATUS register (used to globally enable/disable interrupt),
 	 * as well as the MEPC register (used to by the core to save the
-	 * value of the program counter at which an interrupt/exception occcurs)
+	 * value of the program counter at which an interrupt/exception occurs)
 	 * need to be saved on the stack, upon an interrupt/exception
 	 * and restored prior to returning from the interrupt/exception.
 	 * This shall allow to handle nested interrupts.

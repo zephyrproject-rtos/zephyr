@@ -898,7 +898,7 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
  * Flag indicating that the buffer's associated data pointer, points to
  * externally allocated memory. Therefore once ref goes down to zero, the
  * pointed data will not need to be deallocated. This never needs to be
- * explicitly set or unet by the net_buf API user. Such net_buf is
+ * explicitly set or unset by the net_buf API user. Such net_buf is
  * exclusively instantiated via net_buf_alloc_with_data() function.
  * Reference count mechanism however will behave the same way, and ref
  * count going to 0 will free the net_buf but no the data pointer in it.

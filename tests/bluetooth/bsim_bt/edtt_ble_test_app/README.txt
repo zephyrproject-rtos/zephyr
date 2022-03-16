@@ -31,7 +31,7 @@ How to use it
 Assuming you have already
 `installed BabbleSim <https://babblesim.github.io/fetching.html>`_.
 
-Add to your environment the variable EDTT_PATH poitining to the
+Add to your environment the variable EDTT_PATH pointing to the
 EDTT folder. You can do this by adding it to your `~/.bashrc`, `~/.zephyrrc`,
 or similar something like:
 ```

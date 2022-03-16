@@ -15,7 +15,7 @@
 #define ZEPHYR_INCLUDE_ISOTP_H_
 
 /**
- * @brief CAN ISO-TP Interf
+ * @brief CAN ISO-TP Interface
  * @defgroup can_isotp CAN ISO-TP Interface
  * @ingroup CAN
  * @{

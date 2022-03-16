@@ -182,7 +182,7 @@
 /**
  * @brief Helper macro for NRF_DT_CHECK_PIN_ASSIGNMENTS
  *
- * This macro is neeeded only because the order of parameters taken by
+ * This macro is needed only because the order of parameters taken by
  * DT_NODE_HAS_PROP is different than that required for a macro to be
  * invoked by FOR_EACH_FIXED_ARG.
  *

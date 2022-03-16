@@ -37,7 +37,7 @@
 
 /*
  * This driver need to take into account all STM32 family:
- *  - simple rng without harware fifo and no DMA.
+ *  - simple rng without hardware fifo and no DMA.
  *  - Variable delay between two consecutive random numbers
  *    (depending on family and clock settings)
  *

@@ -387,7 +387,7 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	config |= ADS1X1X_CONFIG(DR, dr);
 
 	if (ads_config->pga) {
-		/* programable gain amplifier support */
+		/* programmable gain amplifier support */
 		switch (channel_cfg->gain) {
 		case ADC_GAIN_2_3:
 			config |= ADS1X1X_CONFIG(PGA, ADS1X1X_CONFIG_PGA_6144);
@@ -412,7 +412,7 @@ static int ads1x1x_channel_setup(const struct device *dev,
 			return -ENOTSUP;
 		}
 	} else {
-		/* no programable gain ampilier, so only allow ADC_GAIN_1 */
+		/* no programmable gain amplifier, so only allow ADC_GAIN_1 */
 		if (channel_cfg->gain != ADC_GAIN_1) {
 			LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
 			return -ENOTSUP;
@@ -625,7 +625,7 @@ static const struct adc_driver_api ads1x1x_api = {
 			 &ads##t##_config_##n, POST_KERNEL, CONFIG_ADC_ADS1X1X_INIT_PRIORITY, \
 			 &ads1x1x_api);
 
-/* The ADS111X provides 16 bits of data in binary two's complment format
+/* The ADS111X provides 16 bits of data in binary two's complement format
  * A positive full-scale (+FS) input produces an output code of 7FFFh and a
  * negative full-scale (–FS) input produces an output code of 8000h. Single
  * ended signal measurements only only use the positive code range from
@@ -644,7 +644,7 @@ static const struct adc_driver_api ads1x1x_api = {
 	}
 
 /*
- * ADS1115: 16 bit, multiplexer, programmable gain ampilier
+ * ADS1115: 16 bit, multiplexer, programmable gain amplifier
  */
 #define ADS1115_INIT(n) ADS1X1X_INIT(1115, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, true, true)
 #undef DT_DRV_COMPAT
@@ -652,7 +652,7 @@ static const struct adc_driver_api ads1x1x_api = {
 DT_INST_FOREACH_STATUS_OKAY(ADS1115_INIT)
 
 /*
- * ADS1114: 16 bit, no multiplexer, programmable gain ampilier
+ * ADS1114: 16 bit, no multiplexer, programmable gain amplifier
  */
 #define ADS1114_INIT(n) ADS1X1X_INIT(1114, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, false, true)
 #undef DT_DRV_COMPAT
@@ -660,7 +660,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1115_INIT)
 DT_INST_FOREACH_STATUS_OKAY(ADS1114_INIT)
 
 /*
- * ADS1113: 16 bit, no multiplexer, no programmable gain ampilier
+ * ADS1113: 16 bit, no multiplexer, no programmable gain amplifier
  */
 #define ADS1113_INIT(n) \
 	ADS1X1X_INIT(1113, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, false, false)
@@ -668,7 +668,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1114_INIT)
 #define DT_DRV_COMPAT ti_ads1113
 DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
 
-/* The ADS101X provides 12 bits of data in binary two's complment format
+/* The ADS101X provides 12 bits of data in binary two's complement format
  * A positive full-scale (+FS) input produces an output code of 7FFh and a
  * negative full-scale (–FS) input produces an output code of 800h. Single
  * ended signal measurements only only use the positive code range from
@@ -687,7 +687,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
 	}
 
 /*
- * ADS1015: 12 bit, multiplexer, programmable gain ampilier
+ * ADS1015: 12 bit, multiplexer, programmable gain amplifier
  */
 #define ADS1015_INIT(n) ADS1X1X_INIT(1015, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, true, true)
 #undef DT_DRV_COMPAT
@@ -695,7 +695,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
 DT_INST_FOREACH_STATUS_OKAY(ADS1015_INIT)
 
 /*
- * ADS1014: 12 bit, no multiplexer, programmable gain ampilier
+ * ADS1014: 12 bit, no multiplexer, programmable gain amplifier
  */
 #define ADS1014_INIT(n) ADS1X1X_INIT(1014, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, false, true)
 #undef DT_DRV_COMPAT
@@ -703,7 +703,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1015_INIT)
 DT_INST_FOREACH_STATUS_OKAY(ADS1014_INIT)
 
 /*
- * ADS1013: 12 bit, no multiplexer, no programmable gain ampilier
+ * ADS1013: 12 bit, no multiplexer, no programmable gain amplifier
  */
 #define ADS1013_INIT(n) \
 	ADS1X1X_INIT(1013, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, false, false)

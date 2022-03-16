@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 static struct lwm2m_engine_obj portfolio;
 static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(PORTFOLIO_IDENTITY_ID, RW, STRING), /* Mandatory, multi-instance */
-	OBJ_FIELD_EXECUTE(PORTFOLIO_GET_AUTH_DATA_ID), /* Optional, ingle-instance */
+	OBJ_FIELD_EXECUTE(PORTFOLIO_GET_AUTH_DATA_ID), /* Optional, single-instance */
 	OBJ_FIELD_DATA(PORTFOLIO_AUTH_DATA_ID, R_OPT, OPAQUE), /* Optional, multi-instance */
 	OBJ_FIELD_DATA(PORTFOLIO_AUTH_STATUS_ID, R_OPT, U8) /* Optional, single-instance*/
 };

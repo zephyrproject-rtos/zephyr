@@ -23,7 +23,7 @@
 
 
 /**
- * @brief Internal: Get a node indentifier for an element in a
+ * @brief Internal: Get a node identifier for an element in a
  *        pinctrl-x property for a given device instance inst
  *
  * @param inst device instance number
@@ -35,7 +35,7 @@
 	DT_INST_PINCTRL_BY_IDX(inst, x, i)
 
 /**
- * @brief Internal: Get a node indentifier for an element in a
+ * @brief Internal: Get a node identifier for an element in a
  *        pinctrl-x property for a given device
  *
  * @param name device node label identifier
@@ -47,7 +47,7 @@
 	DT_PINCTRL_BY_IDX(DT_NODELABEL(name), x, i)
 
 /**
- * @brief Internal: Get pinmux property of a node indentifier for an element
+ * @brief Internal: Get pinmux property of a node identifier for an element
  *        in a pinctrl-x property for a given device instance inst
  *
  * @param inst device instance number
@@ -59,7 +59,7 @@
 	DT_PROP(ST_STM32_DT_INST_NODE_ID_FROM_PINCTRL(inst, x, i), pinmux)
 
 /**
- * @brief Internal: Get pinmux property of a node indentifier for an element
+ * @brief Internal: Get pinmux property of a node identifier for an element
  *        in a pinctrl-x property for a given device
  *
  * @param name device node label identifier
@@ -71,7 +71,7 @@
 	DT_PROP(ST_STM32_DT_NODE_ID_FROM_PINCTRL(name, x, i), pinmux)
 
 /**
- * @brief Internal: Get <function> property of a node indentifier for an element
+ * @brief Internal: Get <function> property of a node identifier for an element
  *        in a pinctrl-x property for a given device instance inst
  *
  * @param inst device instance number
@@ -84,7 +84,7 @@
 	DT_PROP(ST_STM32_DT_INST_NODE_ID_FROM_PINCTRL(inst, x, i), function)
 
 /**
- * @brief Internal: Get <function> property of a node indentifier for an element
+ * @brief Internal: Get <function> property of a node identifier for an element
  *        in a pinctrl-x property for a given device
  *
  * @param inst device instance number
@@ -122,7 +122,7 @@
 	DT_ENUM_IDX(ST_STM32_DT_NODE_ID_FROM_PINCTRL(name, x, i), slew_rate)
 
 /**
- * @brief Internal: Contruct a pincfg field of a soc_gpio_pinctrl element
+ * @brief Internal: Construct a pincfg field of a soc_gpio_pinctrl element
  *        with index i of a pinctrl-x property for a given device instance inst
  *
  * @param i index of soc_gpio_pinctrl element
@@ -161,7 +161,7 @@
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 /**
- * @brief Internal: Contruct a pincfg field of a soc_gpio_pinctrl element
+ * @brief Internal: Construct a pincfg field of a soc_gpio_pinctrl element
  *        with index i of a pinctrl-x property for a given device
  *
  * @param i index of soc_gpio_pinctrl element
@@ -198,7 +198,7 @@
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 /**
- * @brief Internal: Contruct a soc_gpio_pinctrl element index i of
+ * @brief Internal: Construct a soc_gpio_pinctrl element index i of
  *        a pinctrl-x property for a given device instance inst
  *
  * @param i element index
@@ -213,7 +213,7 @@
 	}
 
 /**
- * @brief Internal: Contruct a soc_gpio_pinctrl element index i of
+ * @brief Internal: Construct a soc_gpio_pinctrl element index i of
  *        a pinctrl-x property for a given device
  *
  * @param i element index
@@ -259,7 +259,7 @@
  *        for a given device instance
  *
  * This macro returns an array of soc_gpio_pinctrl, each line matching a pinctrl
- * configuration provived in property pcintrl-<x> of device instance <inst>
+ * configuration provided in property pcintrl-<x> of device instance <inst>
  *
  * @param inst device instance number
  * @param x index of targeted pinctrl- property (eg: pinctrl-<x>)
@@ -279,7 +279,7 @@
  *        for a given device name
  *
  * This macro returns an array of soc_gpio_pinctrl, each line matching a pinctrl
- * configuration provived in property pcintrl-<x> of a device referenced by
+ * configuration provided in property pcintrl-<x> of a device referenced by
  * its node label identifier.
  *
  * @param name device node label identifier

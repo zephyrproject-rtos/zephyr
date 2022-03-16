@@ -86,7 +86,7 @@ void main(void)
 			223 /* degree symbol */);
 		glcd_print(glcd, row, strlen(row));
 
-		/* display himidity on LCD */
+		/* display humidity on LCD */
 		glcd_cursor_pos_set(glcd, 17 - strlen(row), 0);
 		sprintf(row, "RH:%.0f%c", sensor_value_to_double(val + 1),
 			37 /* percent symbol */);

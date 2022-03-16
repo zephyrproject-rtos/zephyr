@@ -706,7 +706,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	/* The Maximum payload can fit into each packet after IPv6 header,
-	 * Extenstion headers and Fragmentation header.
+	 * Extension headers and Fragmentation header.
 	 */
 	fit_len = NET_IPV6_MTU - NET_IPV6_FRAGH_LEN -
 		(net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));

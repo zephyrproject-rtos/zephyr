@@ -859,7 +859,7 @@ struct pdu_data {
 } __packed;
 
 /* Generic ISO pdu, could be CIS or BIS
- * To be used when reffering to component withouth knowing CIS or BIS type
+ * To be used when referring to component without knowing CIS or BIS type
  */
 struct pdu_iso {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__

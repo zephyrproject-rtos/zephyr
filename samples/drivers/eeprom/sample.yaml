@@ -8,7 +8,7 @@ common:
     harness_config:
       type: one_line
       regex:
-        - "Reset the MCU to see the inceasing boot counter."
+        - "Reset the MCU to see the increasing boot counter."
 
 tests:
   sample.drivers.eeprom:

@@ -108,7 +108,7 @@ TSPC_L2CAP_3_7  False    Support of bi-directional quality of service (QoS) opti
 TSPC_L2CAP_3_8  False    Negotiate QoS service type (C.5)
 TSPC_L2CAP_3_9  False    Negotiate and support service type 'No Traffic' (C.2)
 TSPC_L2CAP_3_10 False    Negotiate and support service type 'Best effort' (C.3)
-TSPC_L2CAP_3_11 False    Negotiate and support service type 'Gauranteed' (C.2)
+TSPC_L2CAP_3_11 False    Negotiate and support service type 'Guaranteed' (C.2)
 TSPC_L2CAP_3_12 True     Support minimum MTU size 23 octets (C.6)
 TSPC_L2CAP_3_13 False    Negotiate and support service type ‘No traffic’ for Extended Flow Specification (C.7)
 TSPC_L2CAP_3_14 False    Negotiate and support service type ‘Best Effort’ for Extended Flow Specification (C.8)

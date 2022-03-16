@@ -406,7 +406,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 		 * the "data" pointers between the two nodes, but we
 		 * have a few special cases to check.  In principle
 		 * this works by swapping the child pointers between
-		 * the nodes and retargetting the nodes pointing to
+		 * the nodes and retargeting the nodes pointing to
 		 * them from their parents, but: (1) the upper node
 		 * may be the root of the tree and not have a parent,
 		 * and (2) the lower node may be a direct child of the

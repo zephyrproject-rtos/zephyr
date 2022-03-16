@@ -28,7 +28,7 @@ Be careful:
 The build system includes this generated file early on, so
 devicetree values can be used at CMake processing time.
 
-Accss is not done directly, but with Zephyr CMake extension APIs,
+Access is not done directly, but with Zephyr CMake extension APIs,
 like this:
 
   # sets 'compat' to "vnd,soc" in CMake

@@ -1325,12 +1325,12 @@ int espi_test(void)
 	}
 
 #ifndef CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE
-	/* When automatic acknowledge is disabled to perform lenghty operations
+	/* When automatic acknowledge is disabled to perform lengthy operations
 	 * in the eSPI slave, need to explicitly send slave boot
 	 */
 	bool vw_ch_sts;
 
-	/* Simulate lenghty operation during boot */
+	/* Simulate lengthy operation during boot */
 	k_sleep(K_SECONDS(2));
 
 	do {

@@ -39,7 +39,7 @@
 #define z_apb4_prescaler(v) LL_RCC_APB4_DIV_ ## v
 #define apb4_prescaler(v) z_apb4_prescaler(v)
 
-/* Macro to check for clock feasability */
+/* Macro to check for clock feasibility */
 /* It is Cortex M7's responsibility to setup clock tree */
 /* This check should only be performed for the M7 core code */
 #ifdef CONFIG_CPU_CORTEX_M7

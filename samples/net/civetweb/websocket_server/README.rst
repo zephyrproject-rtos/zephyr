@@ -43,7 +43,7 @@ The port number can be changed in :zephyr_file:`samples/net/civetweb/websocket_s
 This sample application consists of two main parts:
 
 - **HTTP Server** - ``http://192.0.2.1:8080`` or ``http://192.0.2.1:8080/index.html`` It is needed to serve application's main page and its dependencies.
-- **WebSocket Server** - ``ws://192.0.2.1:8080/ws``. It is an echo server, which sends recived data enclosed in **board name** and a string **too!** back.
+- **WebSocket Server** - ``ws://192.0.2.1:8080/ws``. It is an echo server, which sends received data enclosed in **board name** and a string **too!** back.
 
 The **HTTP Server*** serves following statically allocated files
 (*no file system is present*):

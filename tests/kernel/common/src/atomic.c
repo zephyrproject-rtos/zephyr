@@ -306,7 +306,7 @@ void atomic_handler(void *p1, void *p2, void *p3)
  * @brief Verify atomic operation with threads
  *
  * @details Creat two preempt threads with equal priority to
- * atomiclly access the same atomic value. Because these preempt
+ * atomically access the same atomic value. Because these preempt
  * threads are of equal priority, so enable time slice to make
  * them scheduled. The thread will execute for some time.
  * In this time, the two sub threads will be scheduled separately

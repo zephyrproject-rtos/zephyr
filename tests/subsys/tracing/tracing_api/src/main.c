@@ -199,7 +199,7 @@ void test_tracing_sys_api(void)
 	tracing_format_string("tracing_format_string_testing");
 	k_sleep(K_MSEC(100));
 
-	zassert_true(sync_string_format_found == true, "Failded to check output from backend");
+	zassert_true(sync_string_format_found == true, "Failed to check output from backend");
 }
 #endif /* CONFIG_TRACING_ASYNC */
 
@@ -225,11 +225,11 @@ void test_tracing_data_format(void)
 
 	tracing_format_data(&tracing_data, 1);
 	k_sleep(K_MSEC(100));
-	zassert_true(data_format_found == true, "Failded to check output from backend");
+	zassert_true(data_format_found == true, "Failed to check output from backend");
 
 	tracing_format_raw_data(tracing_raw_data.data, tracing_raw_data.length);
 	k_sleep(K_MSEC(100));
-	zassert_true(raw_data_format_found == true, "Failded to check output from backend");
+	zassert_true(raw_data_format_found == true, "Failed to check output from backend");
 }
 
 /**

@@ -1,5 +1,5 @@
 // Copyright (c) 2020 Nordic Semiconductor ASA
-// SPDX-License-Identifer: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 // Enforce preservation of const qualifier on config_info casts
 //

@@ -41,7 +41,7 @@ static sys_slist_t routes;
 /* Track currently active route lifetime timers */
 static sys_slist_t active_route_lifetime_timers;
 
-/* Timer that manages expired route entires. */
+/* Timer that manages expired route entries. */
 static struct k_work_delayable route_lifetime_timer;
 
 static K_MUTEX_DEFINE(lock);

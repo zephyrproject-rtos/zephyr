@@ -46,7 +46,7 @@ Building and Running for FRDM-K64F
 ==================================
 The :ref:`frdm_k64f` board does not come with an onboard CAN
 transceiver. In order to use the CAN bus on the FRDM-K64F board, an
-external CAN bus tranceiver must be connected to ``PTB18``
+external CAN bus transceiver must be connected to ``PTB18``
 (``CAN0_TX``) and ``PTB19`` (``CAN0_RX``). This board supports CANopen
 LED indicators (red and green LEDs)
 
@@ -65,7 +65,7 @@ Building and Running for STM32F072RB Discovery
 ==============================================
 The :ref:`stm32f072b_disco_board` board does not come with an onboard CAN
 transceiver. In order to use the CAN bus on the STM32F072RB Discovery board, an
-external CAN bus tranceiver must be connected to ``PB8`` (``CAN_RX``) and
+external CAN bus transceiver must be connected to ``PB8`` (``CAN_RX``) and
 ``PB9`` (``CAN_TX``). This board supports CANopen LED indicators (red and green
 LEDs)
 
@@ -84,7 +84,7 @@ Building and Running for STM32F3 Discovery
 ==========================================
 The :ref:`stm32f3_disco_board` board does not come with an onboard CAN
 transceiver. In order to use the CAN bus on the STM32F3 Discovery board, an
-external CAN bus tranceiver must be connected to ``PD1`` (``CAN_TX``) and
+external CAN bus transceiver must be connected to ``PD1`` (``CAN_TX``) and
 ``PD0`` (``CAN_RX``). This board supports CANopen LED indicators (red and green
 LEDs)
 

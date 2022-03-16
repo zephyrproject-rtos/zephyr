@@ -2618,7 +2618,7 @@ function(dt_node_exists var)
   cmake_parse_arguments(DT_NODE "" "${req_single_args}" "" ${ARGN})
 
   if(${ARGV0} IN_LIST req_single_args)
-    message(FATAL_ERROR "dt_node_existsl(${ARGV0} ...) missing return parameter.")
+    message(FATAL_ERROR "dt_node_exists(${ARGV0} ...) missing return parameter.")
   endif()
 
   foreach(arg ${req_single_args})

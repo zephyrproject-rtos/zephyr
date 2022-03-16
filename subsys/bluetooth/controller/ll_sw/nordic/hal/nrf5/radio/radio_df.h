@@ -40,7 +40,7 @@ void radio_df_cte_rx_4us_switching(bool cte_info_in_s1, uint8_t phy);
 
 /* Clears antenna switch pattern. */
 void radio_df_ant_switch_pattern_clear(void);
-/* Set antenna switch pattern. Pay attention, paterns are added to
+/* Set antenna switch pattern. Pay attention, patterns are added to
  * Radio internal list. Before start of new patterns clear the list
  * by call to @ref radio_df_ant_switch_pattern_clear.
  */

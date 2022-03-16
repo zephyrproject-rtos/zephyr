@@ -63,7 +63,7 @@ enum pm_state {
 	 * non-boot CPUs are powered off. It should allow more energy to be
 	 * saved relative to suspend to idle, but the resume latency will
 	 * generally be greater than for that state. But it should be the same
-	 * state with suspend to idle state on uniprocesser system.
+	 * state with suspend to idle state on uniprocessor system.
 	 *
 	 * @note This state is correlated with ACPI S2 state
 	 */

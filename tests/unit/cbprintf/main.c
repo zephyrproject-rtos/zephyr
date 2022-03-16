@@ -1299,7 +1299,7 @@ static int fsc_package_cb(int c, void *ctx)
 	return c;
 }
 
-/* Test for validating convesion to fully self-contained package. */
+/* Test for validating conversion to fully self-contained package. */
 static void test_cbprintf_fsc_package(void)
 {
 	if (!ENABLED_USE_PACKAGED) {

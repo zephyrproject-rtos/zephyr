@@ -39,7 +39,7 @@
 	((uint8_t)((((flags) >> RADIO_PKT_CONF_PHY_POS)) & RADIO_PKT_CONF_PHY_MSK))
 /* Helper macro to create bitfield with CTE type only */
 #define RADIO_PKT_CONF_CTE(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_CTE_POS))
-/* Helper macro to get CTE enable field value from radion packet configuration bitfield */
+/* Helper macro to get CTE enable field value from radio packet configuration bitfield */
 #define RADIO_PKT_CONF_CTE_GET(flags)                                                              \
 	((uint8_t)((((flags) >> RADIO_PKT_CONF_CTE_POS)) & RADIO_PKT_CONF_CTE_MSK))
 /* Helper macro to create a radio packet configure bitfield */

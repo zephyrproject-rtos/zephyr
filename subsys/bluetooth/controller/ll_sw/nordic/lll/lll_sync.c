@@ -611,7 +611,7 @@ static void isr_aux_setup(void *param)
 }
 
 /**
- * @brief Common part of ISR responsbile for handling PDU receive.
+ * @brief Common part of ISR responsible for handling PDU receive.
  *
  * @param lll        Pointer to LLL sync object.
  * @param node_type  Type of a receive node to be set for handling by ULL.
@@ -831,7 +831,7 @@ static void isr_rx_adv_sync(void *param)
 	radio_tmr_ready_save(radio_tmr_ready_get());
 
 	/* When periodic advertisement is synchronized, the CTEType may change. It should not
-	 * affect sychronization even when new CTE type is not allowed by sync parameters.
+	 * affect synchronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
 	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, rssi_ready,
@@ -891,7 +891,7 @@ static void isr_rx_aux_chain(void *param)
 	}
 
 	/* When periodic advertisement is synchronized, the CTEType may change. It should not
-	 * affect sychronization even when new CTE type is not allowed by sync parameters.
+	 * affect synchronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
 	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, rssi_ready,

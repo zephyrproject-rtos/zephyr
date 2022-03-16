@@ -271,7 +271,7 @@ static void csr_write_enum(int pmp_csr_enum, ulong_t value)
  *
  * Configure a memory region to be secured by one of the 16 PMP entries.
  *
- * @param index		Number of the targeted PMP entrie (0 to 15 only).
+ * @param index		Number of the targeted PMP entry (0 to 15 only).
  * @param cfg_val	Configuration value (cf datasheet or defined flags)
  * @param addr_val	Address register value
  *

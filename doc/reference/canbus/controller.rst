@@ -132,7 +132,7 @@ You can read more about CAN bus in this
 
 Zephyr supports following CAN features:
 
-* Standard and Extended Identifers
+* Standard and Extended Identifiers
 * Filters with Masking
 * Loopback and Silent mode
 * Remote Request
@@ -180,7 +180,7 @@ occurred. It does not block until the message is sent like the example above.
           char *sender = (char *)arg;
 
           if (error != 0) {
-                  LOG_ERR("Sendig failed [%d]\nSender: %s\n", error, sender);
+                  LOG_ERR("Sending failed [%d]\nSender: %s\n", error, sender);
           }
   }
 

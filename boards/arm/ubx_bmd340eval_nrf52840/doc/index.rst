@@ -42,7 +42,7 @@ All of the Nordic Semiconductor examples for the nRF52840 DK
 (nrf52840dk_nrf52840) may be used without modification.
 
 ..note::
-	The BMD-340 and BMD-341 are identical except for the antennna.
+	The BMD-340 and BMD-341 are identical except for the antenna.
 	Throughout this board support package, the filenames utilize
 	the ubx_bmd340eval_nrf52840.
 

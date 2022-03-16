@@ -271,7 +271,7 @@ zephyr_compile_options(
 # ToDo: Remember to get feedback from Oticon on this, as they might use the `ASM_BASE_FLAG` since this is done this way.
 zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,required>>)
 
-# @Intent: Enforce standard integer type correspondance to match Zephyr usage.
+# @Intent: Enforce standard integer type correspondence to match Zephyr usage.
 # (must be after compiler specific flags)
 if(NOT CONFIG_ARCH_POSIX)
   # `zephyr_stdint.h` is not included for the POSIX (native) arch because it

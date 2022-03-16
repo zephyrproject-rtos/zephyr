@@ -247,7 +247,7 @@ static int dns_msg_pack_query_header(uint8_t *buf, uint16_t size, uint16_t id)
 	 */
 
 	offset = DNS_HEADER_ID_LEN;
-	/* Split the following assignements just in case we need to alter
+	/* Split the following assignments just in case we need to alter
 	 * the flags in future releases
 	 */
 	*(buf + offset) = DNS_FLAGS1;		/* QR, Opcode, AA, TC and RD */

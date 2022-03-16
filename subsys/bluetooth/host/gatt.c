@@ -1932,7 +1932,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	if (!cfg) {
 		/* If there's no existing entry, but the new value is zero,
 		 * we don't need to do anything, since a disabled CCC is
-		 * behavioraly the same as no written CCC.
+		 * behaviorally the same as no written CCC.
 		 */
 		if (!value) {
 			return len;

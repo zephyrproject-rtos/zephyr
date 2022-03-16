@@ -27,7 +27,7 @@
  * LFCLK - Low-Frequency Clock. Its frequency is fixed to 32kHz.
  * HFCLK - High-Frequency (PLL) Clock. Its frequency is configured to OFMCLK.
  *
- * Based on the follwoing criteria:
+ * Based on the following criteria:
  *
  * - A delay of 'Instant' wake-up from 'Deep Sleep' is 20 us.
  * - A delay of 'Standard' wake-up from 'Deep Sleep' is 3.43 ms.
@@ -124,7 +124,7 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	NPCX_ENTER_SYSTEM_SLEEP();
 
 	/*
-	 * Compensate system timer by the elasped time of low-freq timer during
+	 * Compensate system timer by the elapsed time of low-freq timer during
 	 * system sleep mode.
 	 */
 	npcx_clock_compensate_system_timer();

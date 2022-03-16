@@ -12,7 +12,7 @@
  *
  * This file contains the driver of SMBus/I2C buses (ports) which provides
  * pin-muxing for each i2c io-pads. In order to support "SMBus Multi-Bus"
- * feature, please refer the diagram below, the driver alsp provides connection
+ * feature, please refer the diagram below, the driver also provides connection
  * between Zephyr i2c api functions and i2c controller driver which provides
  * full support for SMBus/I2C transactions.
  *

@@ -515,7 +515,7 @@ void radio_setup(void)
 	 */
 	GENFSK->PB_PARTITION = GENFSK_PB_PARTITION_PB_PARTITION(PB_RX);
 
-	/* Get warmpup times. They are used in TIFS calculations */
+	/* Get warmup times. They are used in TIFS calculations */
 	rx_wu = (XCVR_TSM->END_OF_SEQ & XCVR_TSM_END_OF_SEQ_END_OF_RX_WU_MASK)
 				>> XCVR_TSM_END_OF_SEQ_END_OF_RX_WU_SHIFT;
 	tx_wu = (XCVR_TSM->END_OF_SEQ & XCVR_TSM_END_OF_SEQ_END_OF_TX_WU_MASK)
@@ -740,7 +740,7 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	GENFSK->H1_CFG |= GENFSK_H1_CFG_H1_MASK(0) |
 			  GENFSK_H1_CFG_H1_MATCH(0);
 
-	/* set Rx watermak to AA + PDU header */
+	/* set Rx watermark to AA + PDU header */
 	GENFSK->RX_WATERMARK = GENFSK_RX_WATERMARK_RX_WATERMARK(RX_WTMRK);
 }
 

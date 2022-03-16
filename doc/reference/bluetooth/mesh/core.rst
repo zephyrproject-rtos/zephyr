@@ -50,7 +50,7 @@ is called until all RPL entries are written to the flash.
 
 Finding the right balance between @ref CONFIG_BT_MESH_RPL_STORE_TIMEOUT and
 calling @ref bt_mesh_rpl_pending_store may reduce a risk of security
-volnurability and flash wear out.
+vulnerability and flash wear out.
 
 API reference
 **************

@@ -9,7 +9,7 @@
 
 /*
  * Switch the clock source
- *   - core: to 1GHz PLL (CORE_PLL) from 26MHz oscilator (HFCLK)
+ *   - core: to 1GHz PLL (CORE_PLL) from 26MHz oscillator (HFCLK)
  *   - peri: to 250MHz PLL (HFPCLKPLL) from HFCLK
  * on the HiFive Unmatched board.
  *

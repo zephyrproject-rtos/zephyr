@@ -55,7 +55,7 @@ struct bt_l2cap_conn_req {
 	uint16_t scid;
 } __packed;
 
-/* command statuses in reposnse */
+/* command statuses in response */
 #define BT_L2CAP_CS_NO_INFO             0x0000
 #define BT_L2CAP_CS_AUTHEN_PEND         0x0001
 

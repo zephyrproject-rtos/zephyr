@@ -428,7 +428,7 @@ struct bt_codec_qos_pref {
 	/** Preferred Transport Latency */
 	uint16_t latency;
 
-	/** @brief Minimun Presentation Delay
+	/** @brief Minimum Presentation Delay
 	 *
 	 *  Unlike the other fields, this is not a preference but a minimum
 	 *  requirement.
@@ -442,7 +442,7 @@ struct bt_codec_qos_pref {
 	 */
 	uint32_t pd_max;
 
-	/** @brief Preferred minimun Presentation Delay */
+	/** @brief Preferred minimum Presentation Delay */
 	uint32_t pref_pd_min;
 
 	/** @brief Preferred maximum Presentation Delay	*/
@@ -1044,7 +1044,7 @@ struct bt_audio_unicast_server_cb {
 	 *
 	 *  @param conn   The connection that requests the capabilities.
 	 *                Will be NULL if the capabilities is requested for
-	 *                sending a notification, as a result of callling
+	 *                sending a notification, as a result of calling
 	 *                bt_audio_capability_register() or
 	 *                bt_audio_capability_unregister().
 	 *  @param type   Type of the endpoint.
@@ -1068,7 +1068,7 @@ struct bt_audio_unicast_server_cb {
 	 *  @param[in]  conn      The connection that requests the location.
 	 *                        Will be NULL if the location is requested
 	 *                        for sending a notification, as a result of
-	 *                        callling
+	 *                        calling
 	 *                        bt_audio_unicast_server_location_changed().
 	 *  @param[in]  type      Type of the endpoint.
 	 *  @param[out] location  Pointer to the location that needs to be set.

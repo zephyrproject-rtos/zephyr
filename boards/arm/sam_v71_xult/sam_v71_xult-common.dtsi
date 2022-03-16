@@ -52,7 +52,7 @@
 		compatible = "gpio-keys";
 
 		/* The switch is labeled SW300/301 in the schematic, and
-		 * labeled SW0 on the board, and labeld ERASE User Button
+		 * labeled SW0 on the board, and labeled ERASE User Button
 		 * on docs
 		 */
 		sw0_user_button: button_1 {

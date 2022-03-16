@@ -57,7 +57,7 @@ static void validate_output_string(const char *exp)
 
 	zassert_equal(len, mock_len, "Unexpected string length");
 	zassert_equal(0, memcmp(exp, mock_buffer, mock_len),
-			"Unxpected string");
+			"Unexpected string");
 }
 
 static void log_output_string_varg(const struct log_output *log_output,

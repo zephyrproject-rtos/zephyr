@@ -17,7 +17,7 @@ config IVSHMEM
 	depends on PCIE
 	help
 	  This will enable support of qemu's ivshmem device, which is also
-	  present in ACRN hypervizor, and lets VM sharing memory with each
+	  present in ACRN hypervisor, and lets VM sharing memory with each
 	  other.
 
 if IVSHMEM

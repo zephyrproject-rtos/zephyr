@@ -76,7 +76,7 @@ FUNC_NORETURN void cpu1_fn(void *arg)
  * -# Enter a while loop and wait for cpu_running equals to 1.
  * -# In target function, check if the address is &cpu_arg and its content
  *  equal to 12345.
- * -# Set the global flag varible cpu_running to 1.
+ * -# Set the global flag variable cpu_running to 1.
  * -# In main thread, check if the cpu_running equals to 1.
  *
  * Expected Test Result:

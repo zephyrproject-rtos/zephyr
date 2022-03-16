@@ -116,7 +116,7 @@ uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
          uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);
 """
 
-# defines a macro wrapper which supercedes the syscall when used
+# defines a macro wrapper which supersedes the syscall when used
 # and provides tracing enter/exit hooks while allowing per compilation unit
 # enable/disable of syscall tracing. Used for returning functions
 # Note that the last argument to the exit macro is the return value.
@@ -135,7 +135,7 @@ syscall_tracer_with_return_template = """
 #endif
 """
 
-# defines a macro wrapper which supercedes the syscall when used
+# defines a macro wrapper which supersedes the syscall when used
 # and provides tracing enter/exit hooks while allowing per compilation unit
 # enable/disable of syscall tracing. Used for non-returning (void) functions
 syscall_tracer_void_template = """

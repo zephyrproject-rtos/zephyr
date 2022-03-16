@@ -269,7 +269,7 @@ isoal_status_t sink_sdu_emit_test(const struct isoal_sink         *sink_ctx,
 	zassert_equal(res, 0, "len=%u buf[0]=0x%x ref[0]=0x%0x",
 		      sink_ctx->sdu_production.sdu_written, buf[0], pdu_ref[0]);
 
-	/* Advnace reference pointer, this will be needed when a PDU is split over multiple SDUs */
+	/* Advance reference pointer, this will be needed when a PDU is split over multiple SDUs */
 	pdu_ref += sink_ctx->sdu_production.sdu_written;
 	zassert_true(sdu_emit_expected, "");
 	clear_sdu_buf();
@@ -629,7 +629,7 @@ void test_unframed_single_pdu_err(void)
 	/* Test recombine */
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written but with error status */
+	/* Expecting 0 data to be written but with error status */
 	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_ERRORS, "sdu_status=0x%x",
@@ -655,7 +655,7 @@ void test_unframed_seq_err(void)
 	/* Test recombine, should now trigger emit since this is last PDU in SDU */
 	pdu_ref = &testdata[0];
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
-	/* Expectig data to be written but with error status */
+	/* Expecting data to be written but with error status */
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
 	zassert_equal(sink->sdu_production.sdu_written, 3+7, "written=%u",
 		      sink->sdu_production.sdu_written);
@@ -684,7 +684,7 @@ void test_unframed_seq_pdu_err(void)
 	/* Test recombine, should now trigger emit since this is last PDU in SDU */
 	pdu_ref = &testdata[0];
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
-	/* Expectig no new data to be written but with error status */
+	/* Expecting no new data to be written but with error status */
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
 	zassert_equal(sink->sdu_production.sdu_written, 3, "written=%u",
 		      sink->sdu_production.sdu_written);
@@ -694,7 +694,7 @@ void test_unframed_seq_pdu_err(void)
 
 
 /**
- * @brief   Excercise padding pdu path
+ * @brief   Exercise padding pdu path
  */
 void test_unframed_padding(void)
 {
@@ -727,7 +727,7 @@ void test_unframed_padding(void)
 			       payload_number++, 923749, 0);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written, with no error status */
+	/* Expecting 0 data to be written, with no error status */
 	zassert_equal(sink->sdu_production.sdu_written, 5+7+0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_VALID, "sdu_status=0x%x",
@@ -739,7 +739,7 @@ void test_unframed_padding(void)
 			       payload_number++, 923750, 0);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written but with error status */
+	/* Expecting 0 data to be written but with error status */
 	zassert_equal(sink->sdu_production.sdu_written, 5+7+0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_VALID, "sdu_status=0x%x",
@@ -761,7 +761,7 @@ void test_unframed_padding_no_end(void)
 			       payload_number++, 923749, 0);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written, with no error status */
+	/* Expecting 0 data to be written, with no error status */
 	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_VALID, "sdu_status=0x%x",
@@ -773,7 +773,7 @@ void test_unframed_padding_no_end(void)
 			       payload_number++, 923750, 0);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written, with no error status */
+	/* Expecting 0 data to be written, with no error status */
 	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_VALID, "sdu_status=0x%x",
@@ -785,7 +785,7 @@ void test_unframed_padding_no_end(void)
 			       payload_number++, 923751, 0);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written but with error status */
+	/* Expecting 0 data to be written but with error status */
 	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_ERRORS, "sdu_status=0x%x",
@@ -822,7 +822,7 @@ void test_unframed_padding_error1(void)
 			       payload_number++, 923750, 0);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written, with no error status */
+	/* Expecting 0 data to be written, with no error status */
 	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_ERRORS, "sdu_status=0x%x",
@@ -834,7 +834,7 @@ void test_unframed_padding_error1(void)
 			       payload_number++, 923751, 0);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written but with error status */
+	/* Expecting 0 data to be written but with error status */
 	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_ERRORS, "sdu_status=0x%x",
@@ -883,7 +883,7 @@ void test_unframed_padding_error2(void)
 			       payload_number++, 923751, 0);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written but with error status */
+	/* Expecting 0 data to be written but with error status */
 	zassert_equal(sink->sdu_production.sdu_written, 5, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_ERRORS, "sdu_status=0x%x",
@@ -952,7 +952,7 @@ void test_unframed_zero_len_packet(void)
 			       payload_number++, 923751, 0);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written but with error status */
+	/* Expecting 0 data to be written but with error status */
 	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_VALID, "sdu_status=0x%x",
@@ -964,7 +964,7 @@ void test_unframed_zero_len_packet(void)
  */
 void test_unframed_dbl_packet_no_end(void)
 {
-	/* Test assumes two PDUs per SDU intyerval */
+	/* Test assumes two PDUs per SDU interval */
 	clear_sdu_buf();
 
 	construct_pdu_unframed(PDU_BIS_LLID_START_CONTINUE, &testdata[2], 5,
@@ -1178,7 +1178,7 @@ void test_framed_single_pdu_err(void)
 	construct_pdu_framed_start(0, 1, pdu_ref, 10, payload_number++, 1000, 1 /* error */);
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	/* Expectig 0 data to be written but with error status */
+	/* Expecting 0 data to be written but with error status */
 	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		     sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_ERRORS, "sdu_status=0x%x",

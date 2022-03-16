@@ -172,7 +172,7 @@ macro(toolchain_ld_base)
   )
 endmacro()
 
-# generate linker script snippts from configure files
+# generate linker script snippets from configure files
 macro(toolchain_ld_configure_files)
   configure_file(
        $ENV{ZEPHYR_BASE}/include/arch/common/app_data_alignment.ld

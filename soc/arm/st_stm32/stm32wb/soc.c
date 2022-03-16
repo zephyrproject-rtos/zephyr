@@ -46,7 +46,7 @@ static int stm32wb_init(const struct device *arg)
 	SystemCoreClock = 4000000;
 
 	/* Set C2 Power Mode to shutdown */
-	/* It will be udated by C2 when required */
+	/* It will be updated by C2 when required */
 	LL_C2_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
 
 	return 0;

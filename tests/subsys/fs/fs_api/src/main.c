@@ -59,7 +59,7 @@ static void fs_teardown(void)
  *            - unlink
  *            - unmount
  *            - unregister file system
- *          the order of test cases is critical, one case depend on ther
+ *          the order of test cases is critical, one case depend on the
  *          case before it.
  *
  * @ingroup filesystem

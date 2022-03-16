@@ -153,7 +153,7 @@ static int nios2_msgdma_transfer_start(const struct device *dev,
 	struct nios2_msgdma_dev_data *cfg = (struct nios2_msgdma_dev_data *)dev->data;
 	int status;
 
-	/* Nios-II mSGDMA supports only one channel per DMA core */
+	/* Nios-II MSGDMA supports only one channel per DMA core */
 	if (channel != 0U) {
 		LOG_ERR("Invalid channel number");
 		return -EINVAL;

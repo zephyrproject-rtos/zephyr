@@ -168,7 +168,7 @@ The Pull Request must include the following:
 
 Once the steps above have been completed, the outcome of the proposal will
 depend on the approval of the actual Pull Request by the maintainer of the
-corresponding subystem. As with any other Pull Request, the author can request
+corresponding subsystem. As with any other Pull Request, the author can request
 for it to be discussed and ultimately even voted on in the `Zephyr TSC meeting`_.
 
 If the Pull Request is merged then an email must be sent to the ``devel`` and

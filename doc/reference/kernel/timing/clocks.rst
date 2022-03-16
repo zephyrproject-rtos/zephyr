@@ -267,7 +267,7 @@ acceptable.
 
 One complexity is :c:macro:`K_FOREVER`.  Subsystems that might have
 been able to accept this value to their millisecond API in the past no
-longer can, because it is no longer an intergral type.  Such code
+longer can, because it is no longer an integral type.  Such code
 will need to use a different, integer-valued token to represent
 "forever".  :c:macro:`K_NO_WAIT` has the same typesafety concern too,
 of course, but as it is (and has always been) simply a numerical zero,

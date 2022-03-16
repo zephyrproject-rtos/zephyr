@@ -602,7 +602,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	/* TODO: Make core part of networing subsystem less dependent on
+	/* TODO: Make core part of networking subsystem less dependent on
 	 * UDP, TCP, IPv4 or IPv6. So that we can add new features with
 	 * less cross-module changes.
 	 */

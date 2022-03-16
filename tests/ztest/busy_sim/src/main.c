@@ -27,7 +27,7 @@ static void test_busy_sim(void)
 	busy_ms = (3 * ms) / 2;
 
 	busy_sim_stop();
-	/* due to clock imprecision, randomness and addtional cpu load overhead
+	/* due to clock imprecision, randomness and additional cpu load overhead
 	 * expected time range is increased.
 	 */
 	zassert_true((t > (busy_ms - 2 * delta)) && (t < (busy_ms + 4 * delta)),

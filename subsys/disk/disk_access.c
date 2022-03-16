@@ -139,7 +139,7 @@ int disk_access_register(struct disk_info *disk)
 
 	/*  append to the disk list */
 	sys_dlist_append(&disk_access_list, &disk->node);
-	LOG_DBG("disk interface(%s) registred", disk->name);
+	LOG_DBG("disk interface(%s) registered", disk->name);
 reg_err:
 	k_mutex_unlock(&mutex);
 	return rc;
@@ -163,7 +163,7 @@ int disk_access_unregister(struct disk_info *disk)
 	}
 	/* remove disk node from the list */
 	sys_dlist_remove(&disk->node);
-	LOG_DBG("disk interface(%s) unregistred", disk->name);
+	LOG_DBG("disk interface(%s) unregistered", disk->name);
 unreg_err:
 	k_mutex_unlock(&mutex);
 	return rc;

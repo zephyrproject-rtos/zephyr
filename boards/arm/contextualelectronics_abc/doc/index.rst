@@ -1,12 +1,12 @@
 .. _contextualelectronics_abc:
 
-Contextual Eletronics Advanced BLE Cell
-#######################################
+Contextual Electronics Advanced BLE Cell
+########################################
 
 Overview
 ********
 
-The Contextual Eletronics ABC (PCA10056) hardware provides support for the
+The Contextual Electronics ABC (PCA10056) hardware provides support for the
 Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 
 * CLOCK

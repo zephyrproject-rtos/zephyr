@@ -30,7 +30,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PECI_INTERRUPT_DRIVEN),
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "Unsupported PECI Instance");
 
-/* The following constants decribes the bitrate of it8xxx2 PECI,
+/* The following constants describes the bitrate of it8xxx2 PECI,
  * for the frequency are 2000KHz, 1000KHz, and 1600KHz. (Unit: KHz)
  */
 #define	PECI_IT8XXX2_BITRATE_2MHZ		2000

@@ -658,7 +658,7 @@ static void dhcpv4_timeout(struct k_work *work)
 	}
 }
 
-/* Parse DHCPv4 options and retrieve relavant information
+/* Parse DHCPv4 options and retrieve relevant information
  * as per RFC 2132.
  */
 static bool dhcpv4_parse_options(struct net_pkt *pkt,

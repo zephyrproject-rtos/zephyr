@@ -345,7 +345,7 @@ UpdateHub Might Dereference An Uninitialized Pointer
 In updatehub_probe, right after JSON parsing is complete, objects\[1]
 is accessed from the output structure in two different places. If the
 JSON contained less than two elements, this access would reference
-unitialized stack memory. This could result in a crash, denial of
+uninitialized stack memory. This could result in a crash, denial of
 service, or possibly an information leak.
 
 Recommend disabling updatehub until such a time as a fix can be made

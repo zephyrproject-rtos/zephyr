@@ -180,7 +180,7 @@ void test_k_thread_foreach_unlocked(void)
 /**
  * @brief Test k_thread_foreach API with null callback
  *
- * @details Call k_thread_foreach() with null callback will triger __ASSERT()
+ * @details Call k_thread_foreach() with null callback will trigger __ASSERT()
  * and this test thread will be aborted by z_fatal_error()
  * @see k_thread_foreach()
  * @ingroup kernel_thread_tests
@@ -194,7 +194,7 @@ void test_k_thread_foreach_null_cb(void)
 /**
  * @brief Test k_thread_foreach_unlocked API with null callback
  *
- * @details Call k_thread_foreach_unlocked() with null callback will triger
+ * @details Call k_thread_foreach_unlocked() with null callback will trigger
  * __ASSERT() and this test thread will be aborted by z_fatal_error()
  *
  * @see k_thread_foreach_unlocked()
@@ -210,7 +210,7 @@ void test_k_thread_foreach_unlocked_null_cb(void)
  * @brief Test k_thread_state_str API with null callback
  *
  * @details It's impossible to sched a thread step by step manually to
- * experence each state from _THREAD_PRESTART to _THREAD_DEAD. To cover each
+ * experience each state from _THREAD_PRESTART to _THREAD_DEAD. To cover each
  * line of function k_thread_state_str(), set thread_state of tdata1 and check
  * the string this function returns
  *

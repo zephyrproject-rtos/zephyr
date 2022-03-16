@@ -1413,7 +1413,7 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 		cur_mcs_inst->start_handle = attr->handle + 1;
 		cur_mcs_inst->end_handle = prim_service->end_handle;
 
-		/* Start discovery of characeristics */
+		/* Start discovery of characteristics */
 		discover_params.uuid = NULL;
 		discover_params.start_handle = cur_mcs_inst->start_handle;
 		discover_params.end_handle = cur_mcs_inst->end_handle;

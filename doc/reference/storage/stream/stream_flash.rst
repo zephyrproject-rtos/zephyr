@@ -13,7 +13,7 @@ image to be used in a DFU operation.
 
 There are several reasons why one might want to use buffered writes instead of
 writing the data directly as it is made available. Some devices have hardware
-limitations which does not allow flash writes to be performed in parallell with
+limitations which does not allow flash writes to be performed in parallel with
 other operations, such as radio RX and TX. Also, fewer write operations result
 in faster response times seen from the application.
 

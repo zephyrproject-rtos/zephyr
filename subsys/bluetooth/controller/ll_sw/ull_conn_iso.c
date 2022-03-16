@@ -279,10 +279,10 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
  * has completed and the stream is released and callback is provided, the
  * cis_released_cb callback is invoked.
  *
- * @param cis		 Pointer to connected ISO stream to stop
- * @param cis_relased_cb Callback to invoke when the CIS has been released.
- *                       NULL to ignore.
- * @param reason         Termination reason
+ * @param cis		  Pointer to connected ISO stream to stop
+ * @param cis_released_cb Callback to invoke when the CIS has been released.
+ *                        NULL to ignore.
+ * @param reason          Termination reason
  */
 void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 			   ll_iso_stream_released_cb_t cis_released_cb,

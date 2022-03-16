@@ -312,7 +312,7 @@ The Proxy Client model is an optional mesh subsystem that can be enabled through
 
 	Auto-Connect a nearby proxy server into the mesh.
 
-	* ``NetKeyIndex``: Index of the network key to conenct.
+	* ``NetKeyIndex``: Index of the network key to connect.
 
 
 ``mesh proxy-disconnect <NetKeyIndex>``
@@ -602,14 +602,14 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 	Unsubscribe a model from a virtual address.
 
 	* ``elem addr``: Address of the element the model is on.
-	* ``Label UUID``: 128-bit label UUID of the virtual address to remove the subscribtion of. Any omitted bytes will be zero.
+	* ``Label UUID``: 128-bit label UUID of the virtual address to remove the subscription of. Any omitted bytes will be zero.
 	* ``Model ID``: The model ID of the model to add the subscription to.
 	* ``Company ID``: If present, determines the Company ID of the model. If omitted, the model is a Bluetooth SIG defined model.
 
 ``mesh mod-sub-ow <elem addr> <sub addr> <Model ID> [Company ID]``
 -------------------------------------------------------------------
 
-	Overwrite all model subscriptios with a single new group address.
+	Overwrite all model subscriptions with a single new group address.
 
 	* ``elem addr``: Address of the element the model is on.
 	* ``sub addr``: 16-bit group address the model should added to the subscription list (``0xc000`` to ``0xFEFF``).

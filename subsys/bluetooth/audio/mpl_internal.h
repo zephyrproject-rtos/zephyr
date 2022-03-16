@@ -131,7 +131,7 @@ void mpl_test_current_group_id_changed_cb(void);
 /* Trigger parent group id changed callback */
 void mpl_test_parent_group_id_changed_cb(void);
 
-/* Trigger playinge order changed callback */
+/* Trigger playing order changed callback */
 void mpl_test_playing_order_changed_cb(void);
 
 /* Trigger media state changed callback */

@@ -475,7 +475,7 @@ uint8_t ieee802154_compute_header_size(struct net_if *iface,
 		&((struct ieee802154_context *)net_if_l2_data(iface))->sec_ctx;
 #endif
 
-	/** if dst is NULL, we'll consider it as a brodcast header */
+	/** if dst is NULL, we'll consider it as a broadcast header */
 	if (!dst ||
 	    net_ipv6_is_addr_mcast(dst) ||
 	    net_ipv6_is_addr_unspecified(dst)) {

@@ -868,7 +868,7 @@ static inline int z_impl_can_send(const struct device *dev, const struct zcan_fr
 /**
  * @brief Add a callback function for a given CAN filter
  *
- * Add a callback to CAN identifiers specified by a filter. When a recevied CAN
+ * Add a callback to CAN identifiers specified by a filter. When a received CAN
  * frame matching the filter is received by the CAN controller, the callback
  * function is called in interrupt context.
  *

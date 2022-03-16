@@ -296,7 +296,7 @@ static uint8_t MALIGN(4) ticker_users[MAYFLY_CALLER_COUNT][TICKER_USER_T_SIZE];
 /* Memory for user/context simultaneous API operations */
 static uint8_t MALIGN(4) ticker_user_ops[TICKER_USER_OPS][TICKER_USER_OP_T_SIZE];
 
-/* Semaphire to wakeup thread on ticker API callback */
+/* Semaphore to wakeup thread on ticker API callback */
 static struct k_sem sem_ticker_api_cb;
 
 /* Semaphore to wakeup thread on Rx-ed objects */

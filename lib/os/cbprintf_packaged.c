@@ -316,7 +316,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 
 	/*
 	 * Otherwise we must ensure we can store at least
-	 * thepointer to the format string itself.
+	 * the pointer to the format string itself.
 	 */
 	if (buf0 != NULL && BUF_OFFSET + sizeof(char *) > len) {
 		return -ENOSPC;
