@@ -23,6 +23,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			d-cache-line-size = <32>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
@@ -34,6 +35,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <1>;
+			d-cache-line-size = <32>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;

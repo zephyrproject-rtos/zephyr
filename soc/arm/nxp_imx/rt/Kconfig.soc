@@ -698,4 +698,13 @@ config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
 endchoice
 
+config OCRAM_NOCACHE
+	bool "Create noncacheable OCRAM region"
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	select PLATFORM_SPECIFIC_INIT
+	help
+	  Creates linker section and MPU region for OCRAM region with
+	  noncacheable attribute. OCRAM memory is useful for fast DMA transfers.
+
+
 endif # SOC_SERIES_IMX_RT
