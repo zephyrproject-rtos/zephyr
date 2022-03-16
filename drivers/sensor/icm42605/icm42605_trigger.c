@@ -28,8 +28,7 @@ int icm42605_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
 
 	if (handler == NULL) {
 		icm42605_turn_off_sensor(dev);
@@ -51,8 +50,7 @@ int icm42605_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 
 	icm42605_turn_on_sensor(dev);
 
@@ -68,8 +66,7 @@ static void icm42605_gpio_callback(const struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
 
 	k_sem_give(&drv_data->gpio_sem);
 }
@@ -89,8 +86,7 @@ static void icm42605_thread_cb(const struct device *dev)
 		icm42605_tap_fetch(dev);
 	}
 
-	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void icm42605_thread(int dev_ptr, int unused)
@@ -112,24 +108,17 @@ int icm42605_init_interrupt(const struct device *dev)
 	const struct icm42605_config *cfg = dev->config;
 	int result = 0;
 
-	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(cfg->int_label);
-	if (drv_data->gpio == NULL) {
-		LOG_ERR("Failed to get pointer to %s device",
-			cfg->int_label);
+	if (!device_is_ready(cfg->gpio_int.port)) {
+		LOG_ERR("gpio_int gpio not ready");
 		return -ENODEV;
 	}
 
 	drv_data->dev = dev;
 
-	gpio_pin_configure(drv_data->gpio, cfg->int_pin,
-			   GPIO_INPUT | cfg->int_flags);
+	gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT);
+	gpio_init_callback(&drv_data->gpio_cb, icm42605_gpio_callback, BIT(cfg->gpio_int.pin));
+	result = gpio_add_callback(cfg->gpio_int.port, &drv_data->gpio_cb);
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   icm42605_gpio_callback,
-			   BIT(cfg->int_pin));
-
-	result = gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb);
 	if (result < 0) {
 		LOG_ERR("Failed to set gpio callback");
 		return result;
@@ -143,8 +132,7 @@ int icm42605_init_interrupt(const struct device *dev)
 			0, NULL, K_PRIO_COOP(CONFIG_ICM42605_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 
-	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin,
-				     GPIO_INT_EDGE_TO_INACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_INACTIVE);
 
 	return 0;
 }
