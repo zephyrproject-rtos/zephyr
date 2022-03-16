@@ -7,6 +7,11 @@ if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_CLOCK
     OR CONFIG_POSIX_MQUEUE OR CONFIG_POSIX_FS OR CONFIG_EVENTFD
     OR CONFIG_GETOPT OR CONFIG_NET_SOCKETS_POSIX_NAMES)
   zephyr_include_directories(${ZEPHYR_BASE}/include/posix)
+  if(CONFIG_NEWLIB_LIBC)
+    # Avoid "error: conflicting types for.. sys/_pthreadtypes.h .. previous declaration was here"
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-D_SYS__PTHREADTYPES_H_>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:-D_SYS__PTHREADTYPES_H_>)
+  endif()
 endif()
 
 zephyr_library()
