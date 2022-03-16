@@ -44,7 +44,7 @@ struct __esf {
 	uint64_t x16;
 	uint64_t x17;
 	uint64_t x18;
-	uint64_t x30;
+	uint64_t lr;
 	uint64_t spsr;
 	uint64_t elr;
 } __aligned(16);
