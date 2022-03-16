@@ -14,7 +14,7 @@ jobs:
     runs-on: zephyr_runner
     needs: clang-build-prep
     container:
-      image: zephyrprojectrtos/ci:v0.21.0
+      image: zephyrprojectrtos/ci:v0.22.0
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -23,7 +23,7 @@ jobs:
       matrix:
         platform: ["native_posix"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.0
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
