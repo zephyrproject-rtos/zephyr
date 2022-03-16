@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for creating vbat sensor device instance
+ */
+
+/ {
+	stm-vbat {
+		compatible = "st,stm32-vbat";
+		ratio = <3>;
+		io-channels = <&adc1 14>;
+		status = "okay";
+		label = "VBAT";
+	};
+};
