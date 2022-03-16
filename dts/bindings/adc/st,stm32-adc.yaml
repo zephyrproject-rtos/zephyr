@@ -27,11 +27,11 @@ properties:
     pinctrl-names:
       required: true
 
-    vref_mv:
+    vref-mv:
       type: int
       required: false
       default: 3300
-      description: Indicates the reference voltage of the ADC in mV.
+      description: Indicates the reference voltage of the ADC in mV (on the target board).
 
     has-temp-channel:
       type: boolean
@@ -40,6 +40,10 @@ properties:
     has-vref-channel:
       type: boolean
       description: Indicates if the ADC has a dedicated internal voltage reference channel.
+
+    has-vbat-channel:
+      type: boolean
+      description: Indicates if the ADC has a dedicated internal vbat monitoring channel.
 
 io-channel-cells:
     - input
