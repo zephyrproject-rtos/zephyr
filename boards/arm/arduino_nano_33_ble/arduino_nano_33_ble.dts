@@ -96,7 +96,7 @@
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
 };
-&i2c0 {
+arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
@@ -111,7 +111,7 @@
 	pinctrl-names = "default", "sleep";
 };
 // we use SPI2 because SPI1/0 shares conflicts with I2C1/0
-&spi2 {
+arduino_spi: &spi2 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	pinctrl-0 = <&spi2_default>;
