@@ -555,6 +555,16 @@ int pm_device_power_domain_add(const struct device *dev,
  */
 int pm_device_power_domain_remove(const struct device *dev,
 				  const struct device *domain);
+
+/**
+ * @brief Check if the device is currently powered.
+ *
+ * @param dev Device instance.
+ *
+ * @retval true If device is currently powered
+ * @retval false If device is not currently powered
+ */
+bool pm_device_is_powered(const struct device *dev);
 #else
 static inline void pm_device_init_suspended(const struct device *dev)
 {
@@ -626,6 +636,11 @@ static inline int pm_device_power_domain_remove(const struct device *dev,
 	return -ENOSYS;
 }
 
+static inline bool pm_device_is_powered(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return true;
+}
 #endif /* CONFIG_PM_DEVICE */
 
 /** @} */
