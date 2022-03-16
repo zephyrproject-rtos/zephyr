@@ -33,7 +33,7 @@ static ALWAYS_INLINE uint32_t sys_read32(mm_reg_t addr)
 
 static ALWAYS_INLINE void sys_write8(uint8_t data, mm_reg_t addr)
 {
-	sys_write32(data, addr);
+	__builtin_stbio((void *)addr, data);
 }
 
 static ALWAYS_INLINE uint8_t sys_read8(mm_reg_t addr)
@@ -43,7 +43,7 @@ static ALWAYS_INLINE uint8_t sys_read8(mm_reg_t addr)
 
 static ALWAYS_INLINE void sys_write16(uint16_t data, mm_reg_t addr)
 {
-	sys_write32(data, addr);
+	__builtin_sthio((void *)addr, data);
 }
 
 static ALWAYS_INLINE uint16_t sys_read16(mm_reg_t addr)
