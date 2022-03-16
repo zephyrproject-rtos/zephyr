@@ -5,6 +5,7 @@
  */
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "arduino_nano_33_ble-pinctrl.dtsi"
 
 / {
 	model = "Arduino Nano 33 BLE (Sense)";
@@ -91,28 +92,31 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <35>; //P1.03
-	rx-pin = <42>; //P1.10
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <31>; //P0.31
-	scl-pin = <2>; //P0.02
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <14>; //P0.14
-	scl-pin = <15>; //P0.15
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 // we use SPI2 because SPI1/0 shares conflicts with I2C1/0
 &spi2 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
-	sck-pin = <13>; //P0.13
-	mosi-pin = <33>; //P1.01
-	miso-pin = <40>; //P1.08
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 &gpio0 {
 	status = "okay";
