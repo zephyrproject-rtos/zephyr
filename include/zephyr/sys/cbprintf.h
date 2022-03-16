@@ -155,7 +155,11 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
  * int, or a negative error code that will be returned from
  * cbprintf().
  */
+#ifdef __CHECKER__
+typedef int (*cbprintf_cb)(int c, void *ctx);
+#else
 typedef int (*cbprintf_cb)(/* int c, void *ctx */);
+#endif
 
 /** @brief Signature for a external formatter function identical to cbvprintf.
  *
