@@ -27,6 +27,21 @@ config APP_LINK_WITH_MCUMGR
 
 rsource "lib/Kconfig"
 
+config MGMT_MAX_MAIN_MAP_ENTRIES
+	int "Number of predicted maximum entries to main response map"
+	default 15
+	help
+	  This is number of predicted entries in main response map,
+	  the one that encapsulates everything within response.
+	  This value is used by zcbor to predict needed map encoding,
+	  and does not affect memory allocation or usage.
+	  Builtin command processors rarely add large amounts of
+	  data directly to main map, creating sub-maps instead so
+	  the default value works fine with them.
+	  If your app directly adds fields to main map, without
+	  encapsulating them, you may want to increase this value
+	  in case when encoding starts to fail.
+
 menu "Command Handlers"
 
 rsource "lib/cmd/Kconfig"

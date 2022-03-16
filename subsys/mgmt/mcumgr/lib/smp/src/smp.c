@@ -9,9 +9,13 @@
 #include <assert.h>
 #include <string.h>
 
+#include <net/buf.h>
 #include "tinycbor/cbor.h"
 #include "mgmt/endian.h"
 #include "mgmt/mgmt.h"
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
+#include <mgmt/mcumgr/buf.h>
 #include "smp/smp.h"
 
 /**
@@ -66,33 +70,23 @@ static int
 smp_build_err_rsp(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr, int status,
 		  const char *rc_rsn)
 {
-	struct CborEncoder map;
-	struct mgmt_ctxt cbuf;
 	struct mgmt_hdr rsp_hdr;
-	int rc;
+	struct cbor_nb_writer *nbw = (struct cbor_nb_writer *)streamer->mgmt_stmr.writer;
+	zcbor_state_t *zsp = nbw->zs;
+	bool ok;
 
-	rc = mgmt_ctxt_init(&cbuf, &streamer->mgmt_stmr);
-	if (rc != 0) {
-		return rc;
-	}
+	ok = zcbor_map_start_encode(zsp, 1)		&&
+	     zcbor_tstr_put_lit(zsp, "rc")		&&
+	     zcbor_int32_put(zsp, status)		&&
+	     zcbor_map_end_encode(zsp, 1);
 
-	rc = cbor_encoder_create_map(&cbuf.encoder, &map, CborIndefiniteLength);
-	if (rc != 0) {
-		return rc;
-	}
-
-	rc = mgmt_write_rsp_status(&cbuf, status);
-	if (rc != 0) {
-		return rc;
-	}
-
-	rc = cbor_encoder_close_container(&cbuf.encoder, &map);
-	if (rc != 0) {
-		return rc;
+	if (!ok) {
+		return MGMT_ERR_ENOMEM;
 	}
 
 	smp_make_rsp_hdr(req_hdr, &rsp_hdr,
-			 cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE);
+			 zsp->payload_mut - nbw->nb->data - MGMT_HDR_SIZE);
+	nbw->nb->len = zsp->payload_mut - nbw->nb->data;
 	smp_write_hdr(streamer, &rsp_hdr);
 
 	return 0;
@@ -116,7 +110,6 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 {
 	const struct mgmt_handler *handler;
 	mgmt_handler_fn handler_fn;
-	struct CborEncoder payload_encoder;
 	int rc;
 
 	handler = mgmt_find_handler(req_hdr->nh_group, req_hdr->nh_id);
@@ -138,24 +131,17 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 	}
 
 	if (handler_fn) {
-		int rcc;
-		/* Begin response payload.  Response fields are inserted into the root
-		 * map as key value pairs.
-		 */
-		rc = cbor_encoder_create_map(&cbuf->encoder, &payload_encoder,
-					     CborIndefiniteLength);
-		if (rc != 0) {
-			return mgmt_err_from_cbor(rc);
-		}
 		*handler_found = true;
+		zcbor_map_start_encode(cbuf->cnbe->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES);
 		mgmt_evt(MGMT_EVT_OP_CMD_RECV, req_hdr->nh_group, req_hdr->nh_id, NULL);
 
 		MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
 		rc = handler_fn(cbuf);
+
 		/* End response payload. */
-		rcc = cbor_encoder_close_container(&cbuf->encoder, &payload_encoder);
-		if (rc == 0) {
-			rc = mgmt_err_from_cbor(rcc);
+		if (!zcbor_map_end_encode(cbuf->cnbe->zs, CONFIG_MGMT_MAX_MAIN_MAP_ENTRIES) &&
+		    rc == 0) {
+			rc = MGMT_ERR_ENOMEM;
 		}
 	} else {
 		rc = MGMT_ERR_ENOTSUP;
@@ -181,12 +167,15 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_
 {
 	struct mgmt_ctxt cbuf;
 	struct mgmt_hdr rsp_hdr;
+	struct cbor_nb_writer *nbw = (struct cbor_nb_writer *)streamer->mgmt_stmr.writer;
+	zcbor_state_t *zsp = nbw->zs;
 	int rc;
 
 	rc = mgmt_ctxt_init(&cbuf, &streamer->mgmt_stmr);
 	if (rc != 0) {
 		return rc;
 	}
+	cbuf.cnbe = nbw;
 
 	/* Process the request and write the response payload. */
 	rc = smp_handle_single_payload(&cbuf, req_hdr, handler_found);
@@ -196,7 +185,8 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_
 	}
 
 	smp_make_rsp_hdr(req_hdr, &rsp_hdr,
-			 cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE);
+			 zsp->payload_mut - nbw->nb->data - MGMT_HDR_SIZE);
+	nbw->nb->len = zsp->payload_mut - nbw->nb->data;
 	smp_write_hdr(streamer, &rsp_hdr);
 
 	return 0;
