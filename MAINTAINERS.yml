@@ -1337,6 +1337,7 @@ POSIX API layer:
         - pfalcon
         - enjiamai
         - KangJianX
+        - cfriedt
     files:
         - include/posix/
         - lib/posix/
