@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "nrf5340_cpuapp_common-pinctrl.dtsi"
 
 / {
 
@@ -143,31 +144,31 @@
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <34>;
-	scl-pin = <35>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <20>;
-	rx-pin = <22>;
-	rx-pull-up;
-	rts-pin = <19>;
-	cts-pin = <21>;
-	cts-pull-up;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <28>;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &qspi {
 	status = "okay";
-	sck-pin = <17>;
-	io-pins = <13>, <14>, <15>, <16>;
-	csn-pins = <18>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
@@ -206,19 +207,19 @@
 arduino_serial: &uart1 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	tx-pin = <33>;
-	rx-pin = <32>;
-	rx-pull-up;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 arduino_i2c: &i2c1 {};
 
 arduino_spi: &spi4 {
 	compatible = "nordic,nrf-spim";
-	sck-pin = <47>;
-	miso-pin = <46>;
-	mosi-pin = <45>;
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-1 = <&spi4_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {
