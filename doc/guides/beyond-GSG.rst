@@ -64,22 +64,20 @@ a cross-compiler and related tools which are different than the compiler
 and tools used for developing software that runs
 natively on your operating system.
 
-On Linux systems, you can install the :ref:`Zephyr SDK <zephyr_sdk>` to
-get toolchains for all supported architectures.  Otherwise, you can
-install other toolchains in the usual way for your operating system: with
-installer programs or system package managers, by downloading and
-extracting a zip archive, etc.
+You can install the :ref:`Zephyr SDK <zephyr_sdk>` to get toolchains for all
+supported architectures.  Otherwise, you can install other toolchains in the
+usual way for your operating system: with installer programs or system package
+managers, by downloading and extracting a zip archive, and so on.
 
 You configure the Zephyr build system to use a specific toolchain by
 setting :ref:`environment variables <env_vars>` such as
 :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to a supported value, along with
 additional variable(s) specific to the toolchain variant.
 
-While the Zephyr SDK includes standard tool chains for all supported
+While the Zephyr SDK includes standard toolchains for all supported
 architectures, there are also customized alternatives as described in
 these documents. (If you're not sure which to use, check your specific
-:ref:`board-level documentation <boards>`. If you're targeting an Arm
-Cortex-M board, for example, :ref:`toolchain_gnuarmemb` is a safe bet.)
+:ref:`board-level documentation <boards>`.)
 
 .. toctree::
    :maxdepth: 2
