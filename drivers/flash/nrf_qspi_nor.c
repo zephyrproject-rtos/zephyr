@@ -389,12 +389,13 @@ static void anomaly_122_uninit(const struct device *dev)
 			}
 		}
 
+		nrfx_qspi_uninit();
+
 #ifndef CONFIG_PINCTRL
 		nrf_gpio_cfg_output(QSPI_PROP_AT(csn_pins, 0));
 		nrf_gpio_pin_set(QSPI_PROP_AT(csn_pins, 0));
 #endif
 
-		nrfx_qspi_uninit();
 		qspi_initialized = false;
 	}
 
