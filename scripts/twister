@@ -808,6 +808,38 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     return parser.parse_args()
 
+def setup_logging(outdir, log_file, verbose, timestamps):
+   # create file handler which logs even debug messages
+    if log_file:
+        fh = logging.FileHandler(log_file)
+    else:
+        fh = logging.FileHandler(os.path.join(outdir, "twister.log"))
+
+    fh.setLevel(logging.DEBUG)
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+
+    VERBOSE = verbose
+    if verbose > 1:
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.INFO)
+
+    # create formatter and add it to the handlers
+    if timestamps:
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    else:
+        formatter = logging.Formatter('%(levelname)-7s - %(message)s')
+
+    formatter_file = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    fh.setFormatter(formatter_file)
+
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+
 
 def main():
     start_time = time.time()
@@ -844,36 +876,8 @@ def main():
         with open(previous_results_file, "w") as fp:
             fp.write(previous_results)
 
-    # create file handler which logs even debug messages
-    if options.log_file:
-        fh = logging.FileHandler(options.log_file)
-    else:
-        fh = logging.FileHandler(os.path.join(options.outdir, "twister.log"))
-
-    fh.setLevel(logging.DEBUG)
-
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-
     VERBOSE = options.verbose
-    if VERBOSE > 1:
-        ch.setLevel(logging.DEBUG)
-    else:
-        ch.setLevel(logging.INFO)
-
-    # create formatter and add it to the handlers
-    if options.timestamps:
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    else:
-        formatter = logging.Formatter('%(levelname)-7s - %(message)s')
-
-    formatter_file = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter_file)
-
-    # add the handlers to logger
-    logger.addHandler(ch)
-    logger.addHandler(fh)
+    setup_logging(options.outdir, options.log_file, VERBOSE, options.timestamps)
 
     hwm = HardwareMap()
     if options.generate_hardware_map:
