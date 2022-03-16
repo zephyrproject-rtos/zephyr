@@ -14,7 +14,8 @@ extern "C" {
 /**
  * Command IDs for file system management group.
  */
-#define FS_MGMT_ID_FILE	 0
+#define FS_MGMT_ID_FILE		 0
+#define FS_MGMT_ID_STAT		 1
 
 /**
  * @brief Registers the file system management command handler group.

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
+ * Copyright (c) 2022 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -187,11 +188,70 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 			MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
 
+#if defined(CONFIG_FS_MGMT_FILE_STATUS)
+/**
+ * Command handler: fs stat (read)
+ */
+static int
+fs_mgmt_file_status(struct mgmt_ctxt *ctxt)
+{
+	char path[CONFIG_FS_MGMT_PATH_SIZE + 1];
+	size_t file_len;
+	int rc;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	bool ok;
+	struct zcbor_string name = { 0 };
+	size_t decoded;
+
+	struct zcbor_map_decode_key_val fs_status_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_VAL(name, zcbor_tstr_decode, &name),
+	};
+
+	ok = zcbor_map_decode_bulk(zsd, fs_status_decode,
+		ARRAY_SIZE(fs_status_decode), &decoded) == 0;
+
+	if (!ok || name.len == 0 || name.len > (sizeof(path) - 1)) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	/* Copy path and ensure it is null-teminated */
+	memcpy(path, name.value, name.len);
+	path[name.len] = '\0';
+
+	/* Retrieve file size */
+	rc = fs_mgmt_impl_filelen(path, &file_len);
+
+	/* Encode the response. */
+	if (rc == 0) {
+		/* No error, only encode file status (length) */
+		ok = zcbor_tstr_put_lit(zse, "len")	&&
+		     zcbor_uint64_put(zse, file_len);
+	} else {
+		/* Error, only encode error result code */
+		ok = zcbor_tstr_put_lit(zse, "rc")	&&
+		     zcbor_int32_put(zse, rc);
+	}
+
+	if (!ok) {
+		return MGMT_ERR_ENOMEM;
+	}
+
+	return 0;
+}
+#endif
+
 static const struct mgmt_handler fs_mgmt_handlers[] = {
 	[FS_MGMT_ID_FILE] = {
 		.mh_read = fs_mgmt_file_download,
 		.mh_write = fs_mgmt_file_upload,
 	},
+#if defined(CONFIG_FS_MGMT_FILE_STATUS)
+	[FS_MGMT_ID_STAT] = {
+		.mh_read = fs_mgmt_file_status,
+		.mh_write = NULL,
+	},
+#endif
 };
 
 #define FS_MGMT_HANDLER_CNT ARRAY_SIZE(fs_mgmt_handlers)
