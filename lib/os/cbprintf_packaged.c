@@ -38,7 +38,15 @@ static inline bool ptr_in_rodata(const char *addr)
  * va_list creation
  */
 
-#if defined(__aarch64__)
+#if defined(__CHECKER__)
+static int cbprintf_via_va_list(cbprintf_cb out,
+				cbvprintf_exteral_formatter_func formatter,
+				void *ctx,
+				const char *fmt, void *buf)
+{
+	return 0;
+}
+#elif defined(__aarch64__)
 /*
  * Reference:
  *
