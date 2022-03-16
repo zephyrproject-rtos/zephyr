@@ -28,3 +28,5 @@ CONFIG_GPIO_AS_PINRESET=y
 # Bluetooth not enabled by default on nRF52811 due to RAM limitations when
 # running the default set of kernel tests.
 # Enable this on your prj.conf to include Bluetooth support
+
+CONFIG_PINCTRL=y
