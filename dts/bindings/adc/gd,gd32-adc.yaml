@@ -1,0 +1,56 @@
+# Copyright (c) 2022 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigaDevice GD32 ADC
+
+# gd32 adc irq have some special cases as below:
+#   1. adc number no larger than 3.
+#   2. adc0 and adc1 share the same irq number.
+#   3. For gd32f4xx, adc2 share the same irq number with adc0 and adc1.
+#
+# To cover this cases, adc_gd32 driver use node-label 'adc0', 'adc1' and
+# 'adc2' to handle gd32 adc irq config directly.
+#
+# Sorry for the restriction, But new added gd32 adc node-label must be 'adc0',
+# 'adc1' and 'adc2'.
+
+compatible: "gd,gd32-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      required: true
+
+    rcu-periph-clock:
+      type: int
+      description: Reset Control Unit Peripheral Clock ID
+      required: true
+
+    rcu-clock-source:
+      type: int
+      required: false
+      description: |
+        Some GD32 ADC have additional clock source, like IRC14M or IRC28M.
+        This property used to select the clock and related prescaler, valid
+        values defined at 'dts-bindings/adc/gd32xxx.h' headers.
+
+    channels:
+      type: int
+      description: Number of external channels
+      required: true
+
+    interrupts:
+      required: true
+
+    "#io-channel-cells":
+      const: 1
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
+
+io-channel-cells:
+    - input
