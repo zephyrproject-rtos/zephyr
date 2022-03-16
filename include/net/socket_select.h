@@ -106,7 +106,7 @@ void ZSOCK_FD_CLR(int fd, zsock_fd_set *set);
  */
 void ZSOCK_FD_SET(int fd, zsock_fd_set *set);
 
-#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+#if defined(CONFIG_NET_SOCKETS_POSIX_NAMES) || defined(CONFIG_POSIX_API)
 
 #define fd_set zsock_fd_set
 #define FD_SETSIZE ZSOCK_FD_SETSIZE
@@ -138,7 +138,7 @@ static inline void FD_SET(int fd, zsock_fd_set *set)
 	ZSOCK_FD_SET(fd, set);
 }
 
-#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
+#endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) || defined(CONFIG_POSIX_API) */
 
 #ifdef __cplusplus
 }
