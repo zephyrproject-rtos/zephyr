@@ -67,6 +67,7 @@
 			status = "disabled";
 			label = "ADC_3";
 			#io-channel-cells = <1>;
+			has-vref-channel;
 		};
 
 		adc4: adc@50000500 {
@@ -87,6 +88,7 @@
 			status = "disabled";
 			label = "ADC_5";
 			#io-channel-cells = <1>;
+			has-temp-channel;
 		};
 	};
 };
