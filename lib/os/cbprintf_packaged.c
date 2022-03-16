@@ -374,7 +374,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 					return -ENOSPC;
 				}
 				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-					memcpy(buf, &v, size);
+					memcpy(buf, (uint8_t *)&v, size);
 				} else if (format[-1] == 'L') {
 					*(long double *)buf = v.ld;
 				} else {
@@ -481,7 +481,7 @@ process_string:
 
 			if (buf0 != NULL) {
 				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-					memcpy(buf, &v, sizeof(long long));
+					memcpy(buf, (uint8_t *)&v, sizeof(long long));
 				} else {
 					*(long long *)buf = v;
 				}
@@ -561,7 +561,7 @@ process_string:
 		*buf = str_ptr_pos[i];
 		++buf;
 		/* copy the string with its terminating '\0' */
-		memcpy(buf, s, size);
+		memcpy(buf, (uint8_t *)s, size);
 		buf += size;
 	}
 
@@ -686,7 +686,7 @@ int cbprintf_fsc_package(void *in_packaged,
 			}
 			*out = s_idx;
 			++out;
-			memcpy(out, *ps, slen);
+			memcpy(out, (uint8_t *)*ps, slen);
 			out += slen;
 		}
 	}
