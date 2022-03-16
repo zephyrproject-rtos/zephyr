@@ -7,13 +7,36 @@
 #include <assert.h>
 #include <sys/util_macro.h>
 
-#include "tinycbor/cbor.h"
+#include <string.h>
+#include <zcbor_common.h>
+#include <zcbor_encode.h>
+#include <mgmt/mcumgr/buf.h>
 #include "cborattr/cborattr.h"
 #include "mgmt/mgmt.h"
 #include "img_mgmt/img_mgmt.h"
 #include "img_mgmt/image.h"
 #include "img_mgmt_priv.h"
 #include "img_mgmt/img_mgmt_impl.h"
+
+/* The value here sets how many "characteristics" that describe image is
+ * encoded into a map per each image (like bootable flags, and so on).
+ * This value is only used for zcbor to predict map size and map encoding
+ * and does not affect memory allocation.
+ * In case when more "characteristics" are added to image map then
+ * zcbor_map_end_encode may fail it this value does not get updated.
+ */
+#define MAX_IMG_CHARACTERISTICS 15
+
+#ifndef CONFIG_IMG_MGMT_FRUGAL_LIST
+#define ZCBOR_ENCODE_FLAG(zse, label, value)					\
+		(zcbor_tstr_put_lit(zse, label) && zcbor_bool_put(zse, value))
+#else
+/* In "frugal" lists flags are added to response only when they evaluate to true */
+/* Note that value is evaluated twice! */
+#define ZCBOR_ENCODE_FLAG(zse, label, value)					\
+		(!(value) ||							\
+		 (zcbor_tstr_put_lit(zse, label) && zcbor_bool_put(zse, (value))))
+#endif
 
 /**
  * Collects information about the specified image slot.
@@ -164,7 +187,7 @@ img_mgmt_state_confirm(void)
 		rc = MGMT_ERR_EUNKNOWN;
 	}
 
-	 img_mgmt_dfu_confirmed();
+	img_mgmt_dfu_confirmed();
 err:
 	return img_mgmt_impl_log_confirm(rc, NULL);
 }
@@ -178,90 +201,61 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 	char vers_str[IMG_MGMT_VER_MAX_STR_LEN];
 	uint8_t hash[IMAGE_HASH_LEN]; /* SHA256 hash */
 	struct image_version ver;
-	CborEncoder images;
-	CborEncoder image;
-	CborError err;
 	uint32_t flags;
 	uint8_t state_flags;
-	int rc;
 	int i;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	bool ok;
+	struct zcbor_string zhash = { .value = hash, .len = IMAGE_HASH_LEN };
 
-	err = 0;
-	err |= cbor_encode_text_stringz(&ctxt->encoder, "images");
+	ok = zcbor_tstr_put_lit(zse, "images") &&
+	     zcbor_list_start_encode(zse, 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER);
 
-	err |= cbor_encoder_create_array(&ctxt->encoder, &images, CborIndefiniteLength);
-
-	for (i = 0; i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
-		rc = img_mgmt_read_info(i, &ver, hash, &flags);
+	for (i = 0; ok && i < 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
+		int rc = img_mgmt_read_info(i, &ver, hash, &flags);
 		if (rc != 0) {
 			continue;
 		}
 
 		state_flags = img_mgmt_state_flags(i);
 
-		err |= cbor_encoder_create_map(&images, &image, CborIndefiniteLength);
+		ok = zcbor_map_start_encode(zse, MAX_IMG_CHARACTERISTICS)	&&
+		     (CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1	||
+		      (zcbor_tstr_put_lit(zse, "image")			&&
+		       zcbor_int32_put(zse, i >> 1)))				&&
+		     zcbor_tstr_put_lit(zse, "slot")				&&
+		     zcbor_int32_put(zse, i % 2)				&&
+		     zcbor_tstr_put_lit(zse, "version");
 
-#if CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER > 1
-		err |= cbor_encode_text_stringz(&image, "image");
-		err |= cbor_encode_int(&image, i >> 1);
-#endif
-		err |= cbor_encode_text_stringz(&image, "slot");
-		err |= cbor_encode_int(&image, i % 2);
-
-		err |= cbor_encode_text_stringz(&image, "version");
-		img_mgmt_ver_str(&ver, vers_str);
-		err |= cbor_encode_text_stringz(&image, vers_str);
-
-		err |= cbor_encode_text_stringz(&image, "hash");
-		err |= cbor_encode_byte_string(&image, hash, IMAGE_HASH_LEN);
-
-		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) || !(flags & IMAGE_F_NON_BOOTABLE)) {
-			err |= cbor_encode_text_stringz(&image, "bootable");
-			err |= cbor_encode_boolean(&image, !(flags & IMAGE_F_NON_BOOTABLE));
+		if (ok) {
+			img_mgmt_ver_str(&ver, vers_str);
+		} else {
+			break;
 		}
 
-		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) ||
-		    (state_flags & IMG_MGMT_STATE_F_PENDING)) {
-			err |= cbor_encode_text_stringz(&image, "pending");
-			err |= cbor_encode_boolean(&image, state_flags & IMG_MGMT_STATE_F_PENDING);
-		}
-
-		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) ||
-		    (state_flags & IMG_MGMT_STATE_F_CONFIRMED)) {
-			err |= cbor_encode_text_stringz(&image, "confirmed");
-			err |= cbor_encode_boolean(&image,
-						   state_flags & IMG_MGMT_STATE_F_CONFIRMED);
-		}
-
-		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) ||
-		    (state_flags & IMG_MGMT_STATE_F_ACTIVE)) {
-			err |= cbor_encode_text_stringz(&image, "active");
-			err |= cbor_encode_boolean(&image, state_flags & IMG_MGMT_STATE_F_ACTIVE);
-		}
-
-		if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) ||
-		    (state_flags & IMG_MGMT_STATE_F_PERMANENT)) {
-			err |= cbor_encode_text_stringz(&image, "permanent");
-			err |= cbor_encode_boolean(&image,
-						   state_flags & IMG_MGMT_STATE_F_PERMANENT);
-		}
-
-		err |= cbor_encoder_close_container(&images, &image);
+		ok = zcbor_tstr_put_term(zse, vers_str)						&&
+		     zcbor_tstr_put_term(zse, "hash")						&&
+		     zcbor_bstr_encode(zse, &zhash)						&&
+		     ZCBOR_ENCODE_FLAG(zse, "bootable", !(flags & IMAGE_F_NON_BOOTABLE))	&&
+		     ZCBOR_ENCODE_FLAG(zse, "pending",
+				       state_flags & IMG_MGMT_STATE_F_PENDING)			&&
+		     ZCBOR_ENCODE_FLAG(zse, "confirmed",
+				       state_flags & IMG_MGMT_STATE_F_CONFIRMED)		&&
+		     ZCBOR_ENCODE_FLAG(zse, "active",
+				       state_flags & IMG_MGMT_STATE_F_ACTIVE)			&&
+		     ZCBOR_ENCODE_FLAG(zse, "permanent",
+				       state_flags & IMG_MGMT_STATE_F_PERMANENT)		&&
+		     zcbor_map_end_encode(zse, MAX_IMG_CHARACTERISTICS);
 	}
 
-	err |= cbor_encoder_close_container(&ctxt->encoder, &images);
-
+	ok = ok && zcbor_list_end_encode(zse, 2 * CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER);
 	/* splitStatus is always 0 so in frugal list it is not present at all */
-	if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST)) {
-		err |= cbor_encode_text_stringz(&ctxt->encoder, "splitStatus");
-		err |= cbor_encode_int(&ctxt->encoder, 0);
+	if (!IS_ENABLED(CONFIG_IMG_MGMT_FRUGAL_LIST) && ok) {
+		ok = zcbor_tstr_put_lit(zse, "splitStatus") &&
+		     zcbor_int32_put(zse, 0);
 	}
 
-	if (err != 0) {
-		return MGMT_ERR_ENOMEM;
-	}
-
-	return 0;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
 
 /**
