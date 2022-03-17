@@ -18,8 +18,39 @@
 
 /* Get/Set Feature Address Definition */
 #define SPI_NAND_FEA_ADDR_BLOCK_PROT 0xA0
-#define SPI_NAND_FEA_ADDR_SECURE_OTP 0xB0
+#define SPI_NAND_FEA_ADDR_CONF_B0    0xB0
 #define SPI_NAND_FEA_ADDR_STATUS     0xC0
+
+// Status Register Bits 0xC0
+#define SPINAND_STATUS_BIT_WIP             0x1  // Write In Progress
+#define SPINAND_STATUS_BIT_WEL             0x2  // Write Enable Latch
+#define SPINAND_STATUS_BIT_ERASE_FAIL      0x4  // Erase failed 
+#define SPINAND_STATUS_BIT_PROGRAM_FAIL    0x8  // Program failed
+#define SPINAND_STATUS_BIT_ECC_STATUS_MASK 0x30 // ECC status
+#define SPINAND_STATUS_ECC_STATUS_NO_ERR     0x00
+#define SPINAND_STATUS_ECC_STATUS_ERR_COR    0x10
+#define SPINAND_STATUS_ECC_STATUS_ERR_NO_COR 0x20
+
+// Secure OTP Register Bits  0xB0
+#define SPINAND_SECURE_BIT_QE          0x01  // Quad enable
+#define SPINAND_SECURE_BIT_CONT        0x04  // continuous read enable
+#define SPINAND_SECURE_BIT_ECC_EN      0x10  // On-die ECC enable
+#define SPINAND_SECURE_BIT_OTP_EN      0x40  // 
+#define SPINAND_SECURE_BIT_OTP_PROT    0x80  // 
+
+// Block Protection Register Bits 0xA0
+#define  SPINAND_BLOCK_PROT_BIT_SP      0x01
+#define  SPINAND_BLOCK_PROT_BIT_COMPLE  0x02
+#define  SPINAND_BLOCK_PROT_BIT_INVERT  0x04
+#define  SPINAND_BLOCK_PROT_BIT_BP0     0x08
+#define  SPINAND_BLOCK_PROT_BIT_BP1     0x10
+#define  SPINAND_BLOCK_PROT_BIT_BP2     0x20
+#define  SPINAND_BLOCK_PROT_BIT_BPRWD   0x80
+#define  SPINAND_BLOCK_PROT_BIT_BP_MASK 0x38
+
+#define  SPINAND_BLOCK_PROT_BP_OFFSET     3
+#define  SPINAND_BLOCK_PROT_COMPLE_OFFSET 1
+
 
 /* Flash opcodes */
 #define SPI_NAND_CMD_RDSR            0x05    /* Read status register */
@@ -47,16 +78,13 @@
 #define SPI_NAND_CMD_ECC_STAT_READ   0x7C  
 
 /* Page, sector, and block size are standard, not configurable. */
-#define SPI_NAND_PAGE_SIZE    0x0100U
-#define SPI_NAND_SECTOR_SIZE  0x1000U
-#define SPI_NAND_BLOCK_SIZE   0x10000U
+#define SPI_NAND_PAGE_SIZE    2048
+//#define SPI_NAND_SECTOR_SIZE  0x1000U
+//#define SPI_NAND_BLOCK_SIZE   0x20000U
 
 #define SPI_NAND_BLOCK_OFFSET  0x40000
 #define SPI_NAND_PAGE_OFFSET   0x1000
+#define SPI_NAND_BLOCK_MASK    0x3FFFF
 #define SPI_NAND_PAGE_MASK     0xFFF
-
-/* Test whether offset is aligned to a given number of bits. */
-#define SPI_NAND_IS_ALIGNED(_ofs, _bits) (((_ofs) & BIT_MASK(_bits)) == 0)
-#define SPI_NAND_IS_SECTOR_ALIGNED(_ofs) SPI_NAND_IS_ALIGNED(_ofs, 12)
 
 #endif /*__SPI_NAND_H__*/

@@ -9,6 +9,7 @@
 #include <device.h>
 #include <devicetree.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_qspi_nand), okay)
@@ -31,13 +32,13 @@
 #else
 #define FLASH_TEST_REGION_OFFSET 0xff000
 #endif
-#define FLASH_SECTOR_SIZE        4096
+#define FLASH_BLOCK_SIZE        0x20000U
 
 void main(void)
 {
-	const uint8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
+	static uint8_t expected[2048] = { 0 };
 	const size_t len = sizeof(expected);
-	uint8_t buf[sizeof(expected)];
+	static uint8_t buf[sizeof(expected)];
 	const struct device *flash_dev;
 	int rc;
 
@@ -60,7 +61,7 @@ void main(void)
 	printf("\nTest 1: Flash erase\n");
 
 	rc = flash_erase(flash_dev, FLASH_TEST_REGION_OFFSET,
-			 FLASH_SECTOR_SIZE);
+			 FLASH_BLOCK_SIZE);
 	if (rc != 0) {
 		printf("Flash erase failed! %d\n", rc);
 	} else {
@@ -69,6 +70,9 @@ void main(void)
 
 	printf("\nTest 2: Flash write\n");
 
+	for (int i = 0; i < sizeof(expected); i++) {
+		expected[i] = (i % 0xFF);
+	}
 	printf("Attempting to write %u bytes\n", len);
 	rc = flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, expected, len);
 	if (rc != 0) {
@@ -76,6 +80,7 @@ void main(void)
 		return;
 	}
 
+	printf("\nTest 3: Flash read\n");
 	memset(buf, 0, len);
 	rc = flash_read(flash_dev, FLASH_TEST_REGION_OFFSET, buf, len);
 	if (rc != 0) {

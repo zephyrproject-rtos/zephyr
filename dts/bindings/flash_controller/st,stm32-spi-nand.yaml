@@ -42,3 +42,6 @@ properties:
     id:
       type: uint8-array
       required: true
+    support_conti_read:
+      type: int
+      required: true

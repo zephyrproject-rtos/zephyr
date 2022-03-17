@@ -17,7 +17,8 @@
 		size = <4194304>;
 		block-size = <2048>;
 		page-size = <2048>;
-                id = [c2 22];
+                id = [c2 1E];
 		status = "okay";
+		support_conti_read = <1>;
 	};
 };
