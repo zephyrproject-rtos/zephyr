@@ -117,49 +117,28 @@ z_arm64_irq_done:
 	bne	exit
 
 	/* No more nested: retrieve the task's stack. */
-	ldr	x0, [sp]
-	mov	sp, x0
+	ldr	x1, [sp]
+	mov	sp, x1
+
+	/* retrieve pointer to the current thread */
+	ldr	x1, [x0, #___cpu_t_current_OFFSET]
 
 	/*
-	 * z_arch_get_next_switch_handle() is returning:
-	 *
-	 * - The next thread to schedule in x0
-	 * - The current thread in x1. This value is returned using the
-	 *   **old_thread parameter, so we need to make space on the stack for
-	 *   that.
+	 * Get next thread to schedule with z_get_next_switch_handle().
+	 * We pass it a NULL as we didn't save the whole thread context yet.
+	 * If no scheduling is necessary then NULL will be returned.
 	 */
-	sub	sp, sp, #16
-	mov	x0, sp
-	bl	z_arch_get_next_switch_handle
-	ldp	x1, xzr, [sp], #16
+	str	x1, [sp, #-16]!
+	mov	x0, xzr
+	bl	z_get_next_switch_handle
+	ldr	x1, [sp], #16
+	cbz	x0, exit
 
 	/*
-	 * x0: 1st thread in the ready queue
-	 * x1: _current thread
+	 * Switch thread
+	 * x0: new thread
+	 * x1: old thread
 	 */
-
-#ifdef CONFIG_SMP
-	/*
-	 * 2 possibilities here:
-	 *  - x0 != NULL (implies x0 != x1): we need to context switch and set
-	 *    the switch_handle in the context switch code
-	 *  - x0 == NULL: no context switch
-	 */
-	cmp	x0, #0x0
-	bne	switch
-
-	/*
-	 * No context switch. Restore x0 from x1 (they are the same thread).
-	 * See also comments to z_arch_get_next_switch_handle()
-	 */
-	mov	x0, x1
-	b	exit
-switch:
-#else
-	cmp	x0, x1
-	beq	exit
-#endif
-	/* Switch thread */
 	bl	z_arm64_context_switch
 
 exit:
