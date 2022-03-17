@@ -414,7 +414,7 @@ static void create_rx_handler(struct eth_context *ctx)
 	}
 }
 
-static void eth_iface_init(struct net_if *iface)
+static int eth_iface_init(struct net_if *iface)
 {
 	struct eth_context *ctx = net_if_get_device(iface)->data;
 	struct net_linkaddr *ll_addr = eth_get_mac(ctx);
@@ -429,7 +429,7 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	if (ctx->init_done) {
-		return;
+		return 0;
 	}
 
 	net_lldp_set_lldpdu(iface);
@@ -489,6 +489,7 @@ static void eth_iface_init(struct net_if *iface)
 
 		eth_start_script(ctx->if_name);
 	}
+	return 0;
 }
 
 static

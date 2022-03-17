@@ -196,7 +196,7 @@ static const struct eth_liteeth_config eth_config = {
 	.config_func = eth_irq_config,
 };
 
-static void eth_iface_init(struct net_if *iface)
+static int eth_iface_init(struct net_if *iface)
 {
 	const struct device *port = net_if_get_device(iface);
 	struct eth_liteeth_dev_data *context = port->data;
@@ -204,7 +204,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	/* initialize only once */
 	if (init_done) {
-		return;
+		return 0;
 	}
 
 	/* set interface */
@@ -222,7 +222,7 @@ static void eth_iface_init(struct net_if *iface)
 	if (net_if_set_link_addr(iface, context->mac_addr, sizeof(context->mac_addr),
 			     NET_LINK_ETHERNET) < 0) {
 		LOG_ERR("setting mac failed");
-		return;
+		return -EIO;
 	}
 
 	/* clear pending events */
@@ -240,6 +240,8 @@ static void eth_iface_init(struct net_if *iface)
 	context->rx_buf[1] = (uint8_t *)LITEETH_SLOT_RX1;
 
 	init_done = true;
+
+	return 0;
 }
 
 static enum ethernet_hw_caps eth_caps(const struct device *dev)

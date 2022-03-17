@@ -63,7 +63,7 @@ static inline uint8_t *modem_get_mac(const struct device *dev)
 }
 
 /* Setup the Modem NET Interface. */
-static void modem_net_iface_init(struct net_if *iface)
+static int modem_net_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct sim7080_data *data = dev->data;
@@ -73,6 +73,8 @@ static void modem_net_iface_init(struct net_if *iface)
 	data->netif = iface;
 
 	socket_offload_dns_register(&offload_dns_ops);
+
+	return 0;
 }
 
 /**

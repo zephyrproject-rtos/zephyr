@@ -50,12 +50,12 @@ static enum net_l2_flags custom_l2_flags(struct net_if *iface)
 NET_L2_INIT(CUSTOM_IEEE802154_L2, custom_l2_recv, custom_l2_send,
 	    custom_l2_enable, custom_l2_flags);
 
-static void dummy_iface_init(struct net_if *iface)
+static int dummy_iface_init(struct net_if *iface)
 {
 	static uint8_t mac[8] = { 0x00, 0x11, 0x22, 0x33,
 				  0x44, 0x55, 0x66, 0x77 };
 
-	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
+	return net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 }
 
 static int dummy_init(const struct device *dev)

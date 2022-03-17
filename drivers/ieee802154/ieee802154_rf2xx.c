@@ -887,7 +887,7 @@ static int rf2xx_init(const struct device *dev)
 	return 0;
 }
 
-static void rf2xx_iface_init(struct net_if *iface)
+static int rf2xx_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct rf2xx_context *ctx = dev->data;
@@ -898,6 +898,7 @@ static void rf2xx_iface_init(struct net_if *iface)
 	ctx->iface = iface;
 
 	ieee802154_init(iface);
+	return 0;
 }
 
 static struct ieee802154_radio_api rf2xx_radio_api = {

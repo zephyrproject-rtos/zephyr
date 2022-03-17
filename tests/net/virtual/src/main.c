@@ -98,7 +98,7 @@ static uint8_t expecting_outer;
 static uint8_t expecting_inner;
 static int header_len;
 
-static void eth_iface_init(struct net_if *iface)
+static int eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->data;
@@ -108,6 +108,8 @@ static void eth_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
+
+	return 0;
 }
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
@@ -223,12 +225,12 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 	return data->mac_addr;
 }
 
-static void net_iface_init(struct net_if *iface)
+static int net_iface_init(struct net_if *iface)
 {
 	uint8_t *mac = net_iface_get_mac(net_if_get_device(iface));
 
-	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
-			     NET_LINK_ETHERNET);
+	return net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
+				    NET_LINK_ETHERNET);
 }
 
 static int sender_iface(const struct device *dev, struct net_pkt *pkt)

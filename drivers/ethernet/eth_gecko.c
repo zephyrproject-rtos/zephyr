@@ -500,7 +500,7 @@ static void generate_mac(uint8_t mac_addr[6])
 #endif
 }
 
-static void eth_iface_init(struct net_if *iface)
+static int eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_gecko_dev_data *const dev_data = dev->data;
@@ -607,7 +607,7 @@ static void eth_iface_init(struct net_if *iface)
 	result = phy_gecko_init(&cfg->phy);
 	if (result < 0) {
 		LOG_ERR("ETH PHY Initialization Error");
-		return;
+		return result;
 	}
 
 	/* Initialise TX/RX semaphores */
@@ -620,6 +620,7 @@ static void eth_iface_init(struct net_if *iface)
 			rx_thread, (void *) dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_GECKO_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
+	return 0;
 }
 
 static enum ethernet_hw_caps eth_gecko_get_capabilities(const struct device *dev)

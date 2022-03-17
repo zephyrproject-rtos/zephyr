@@ -285,7 +285,7 @@ int e1000_probe(const struct device *ddev)
 	return 0;
 }
 
-static void e1000_iface_init(struct net_if *iface)
+static int e1000_iface_init(struct net_if *iface)
 {
 	struct e1000_dev *dev = net_if_get_device(iface)->data;
 
@@ -313,6 +313,7 @@ static void e1000_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	LOG_DBG("done");
+	return 0;
 }
 
 static struct e1000_dev e1000_dev;

@@ -390,7 +390,7 @@ static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 	return &slip->ll_addr;
 }
 
-static void slip_iface_init(struct net_if *iface)
+static int slip_iface_init(struct net_if *iface)
 {
 	struct slip_context *slip = net_if_get_device(iface)->data;
 	struct net_linkaddr *ll_addr;
@@ -404,7 +404,7 @@ static void slip_iface_init(struct net_if *iface)
 #endif
 
 	if (slip->init_done) {
-		return;
+		return 0;
 	}
 
 	ll_addr = slip_get_mac(slip);
@@ -429,6 +429,8 @@ use_random_mac:
 	}
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
+
+	return 0;
 }
 
 static struct slip_context slip_context_data;

@@ -170,11 +170,11 @@ static uint8_t *net_tcp_get_mac(const struct device *dev)
 	return context->mac_addr;
 }
 
-static void net_tcp_iface_init(struct net_if *iface)
+static int net_tcp_iface_init(struct net_if *iface)
 {
 	uint8_t *mac = net_tcp_get_mac(net_if_get_device(iface));
 
-	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
+	return net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
 struct net_tcp_context net_tcp_context_data;

@@ -56,12 +56,12 @@ static int ipip_init(const struct device *dev)
 	return 0;
 }
 
-static void iface_init(struct net_if *iface)
+static int iface_init(struct net_if *iface)
 {
 	struct ipip_context *ctx = net_if_get_device(iface)->data;
 
 	if (ctx->init_done) {
-		return;
+		return 0;
 	}
 
 	ctx->iface = iface;
@@ -71,6 +71,7 @@ static void iface_init(struct net_if *iface)
 	(void)net_virtual_set_flags(iface, NET_L2_POINT_TO_POINT);
 
 	ctx->init_done = true;
+	return 0;
 }
 
 static enum virtual_interface_caps get_capabilities(struct net_if *iface)

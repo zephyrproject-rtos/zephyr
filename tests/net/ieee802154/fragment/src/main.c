@@ -164,11 +164,11 @@ int net_fragment_dev_init(const struct device *dev)
 	return 0;
 }
 
-static void net_fragment_iface_init(struct net_if *iface)
+static int net_fragment_iface_init(struct net_if *iface)
 {
 	static uint8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb};
 
-	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
+	return net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 }
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)

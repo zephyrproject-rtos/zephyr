@@ -104,14 +104,14 @@ struct eth_context {
 
 static struct eth_context eth_context;
 
-static void eth_iface_init(struct net_if *iface)
+static int eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->data;
 
-	net_if_set_link_addr(iface, context->mac_addr,
-			     sizeof(context->mac_addr),
-			     NET_LINK_ETHERNET);
+	return net_if_set_link_addr(iface, context->mac_addr,
+				    sizeof(context->mac_addr),
+				    NET_LINK_ETHERNET);
 }
 
 static bool check_higher_priority_pkt_sent(int tc, struct net_pkt *pkt)

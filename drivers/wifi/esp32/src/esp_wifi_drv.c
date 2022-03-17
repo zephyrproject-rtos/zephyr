@@ -152,7 +152,7 @@ static void esp_wifi_event_task(void)
 	}
 }
 
-static void eth_esp32_init(struct net_if *iface)
+static int eth_esp32_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct esp32_wifi_runtime *dev_data = dev->data;
@@ -171,6 +171,7 @@ static void eth_esp32_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
+	return 0;
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)

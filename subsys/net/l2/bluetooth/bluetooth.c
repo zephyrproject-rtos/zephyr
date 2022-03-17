@@ -277,7 +277,7 @@ static struct bt_context bt_context_data = {
 	}
 };
 
-static void bt_iface_init(struct net_if *iface)
+static int bt_iface_init(struct net_if *iface)
 {
 	struct bt_context *ctxt = net_if_get_device(iface)->data;
 	struct bt_if_conn *conn = NULL;
@@ -296,7 +296,7 @@ static void bt_iface_init(struct net_if *iface)
 
 	if (!conn) {
 		NET_ERR("Unable to allocate iface");
-		return;
+		return -EINVAL;
 	}
 
 	conn->iface = iface;
@@ -309,6 +309,7 @@ static void bt_iface_init(struct net_if *iface)
 	 */
 	net_if_flag_set(iface, NET_IF_POINTOPOINT);
 #endif
+	return 0;
 }
 
 static struct net_if_api bt_if_api = {

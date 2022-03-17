@@ -122,12 +122,12 @@ static uint8_t *net_route_get_mac(const struct device *dev)
 	return route->mac_addr;
 }
 
-static void net_route_iface_init(struct net_if *iface)
+static int net_route_iface_init(struct net_if *iface)
 {
 	uint8_t *mac = net_route_get_mac(net_if_get_device(iface));
 
-	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
-			     NET_LINK_ETHERNET);
+	return net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
+				    NET_LINK_ETHERNET);
 }
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)

@@ -1012,7 +1012,7 @@ static int cc2520_init(const struct device *dev)
 	return 0;
 }
 
-static void cc2520_iface_init(struct net_if *iface)
+static int cc2520_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct cc2520_context *cc2520 = dev->data;
@@ -1023,6 +1023,8 @@ static void cc2520_iface_init(struct net_if *iface)
 	cc2520->iface = iface;
 
 	ieee802154_init(iface);
+
+	return 0;
 }
 
 static const struct cc2520_config cc2520_config = {

@@ -552,7 +552,7 @@ static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *de
 	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
 }
 
-static void enc424j600_iface_init(struct net_if *iface)
+static int enc424j600_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct enc424j600_runtime *context = dev->data;
@@ -565,6 +565,7 @@ static void enc424j600_iface_init(struct net_if *iface)
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	context->iface_initialized = true;
+	return 0;
 }
 
 static int enc424j600_start_device(const struct device *dev)

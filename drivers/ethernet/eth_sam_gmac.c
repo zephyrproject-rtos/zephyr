@@ -1849,7 +1849,7 @@ static void phy_link_state_changed(const struct device *pdev,
 	}
 }
 
-static void eth0_iface_init(struct net_if *iface)
+static int eth0_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_sam_dev_data *const dev_data = dev->data;
@@ -1871,7 +1871,7 @@ static void eth0_iface_init(struct net_if *iface)
 
 	/* The rest of initialization should only be done once */
 	if (init_done) {
-		return;
+		return 0;
 	}
 
 	/* Check the status of data caches */
@@ -1887,7 +1887,7 @@ static void eth0_iface_init(struct net_if *iface)
 	result = gmac_init(cfg->regs, gmac_ncfgr_val);
 	if (result < 0) {
 		LOG_ERR("Unable to initialize ETH driver");
-		return;
+		return result;
 	}
 
 	generate_mac(dev_data->mac_addr);
@@ -1910,7 +1910,7 @@ static void eth0_iface_init(struct net_if *iface)
 		result = queue_init(cfg->regs, &dev_data->queue_list[i]);
 		if (result < 0) {
 			LOG_ERR("Unable to initialize ETH queue%d", i);
-			return;
+			return result;
 		}
 	}
 
@@ -1966,6 +1966,8 @@ static void eth0_iface_init(struct net_if *iface)
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	init_done = true;
+
+	return 0;
 }
 
 static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *dev)

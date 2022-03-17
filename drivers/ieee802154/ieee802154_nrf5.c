@@ -684,7 +684,7 @@ static int nrf5_init(const struct device *dev)
 	return 0;
 }
 
-static void nrf5_iface_init(struct net_if *iface)
+static int nrf5_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
@@ -696,6 +696,8 @@ static void nrf5_iface_init(struct net_if *iface)
 	nrf5_radio->iface = iface;
 
 	ieee802154_init(iface);
+
+	return 0;
 }
 
 #if defined(CONFIG_IEEE802154_2015)

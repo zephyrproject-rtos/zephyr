@@ -912,7 +912,7 @@ static inline struct net_linkaddr *ppp_get_mac(struct ppp_driver_context *ppp)
 	return &ppp->ll_addr;
 }
 
-static void ppp_iface_init(struct net_if *iface)
+static int ppp_iface_init(struct net_if *iface)
 {
 	struct ppp_driver_context *ppp = net_if_get_device(iface)->data;
 	struct net_linkaddr *ll_addr;
@@ -922,7 +922,7 @@ static void ppp_iface_init(struct net_if *iface)
 	net_ppp_init(iface);
 
 	if (ppp->init_done) {
-		return;
+		return 0;
 	}
 
 	ppp->init_done = true;
@@ -962,6 +962,7 @@ use_random_mac:
 	    IS_ENABLED(CONFIG_PPP_NET_IF_NO_AUTO_START)) {
 		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	}
+	return 0;
 }
 
 #if defined(CONFIG_NET_STATISTICS_PPP)

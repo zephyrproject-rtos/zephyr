@@ -378,23 +378,26 @@ static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, uint8_t addr[6])
 	return 0;
 }
 
-static void eswifi_iface_init(struct net_if *iface)
+static int eswifi_iface_init(struct net_if *iface)
 {
 	struct eswifi_dev *eswifi = &eswifi0;
 	uint8_t mac[6];
+	int result;
 
 	LOG_DBG("");
 
 	eswifi_lock(eswifi);
 
-	if (eswifi_reset(eswifi) < 0) {
+	result = eswifi_reset(eswifi);
+	if (result < 0) {
 		LOG_ERR("Unable to reset device");
-		return;
+		return result;
 	}
 
-	if (eswifi_get_mac_addr(eswifi, mac) < 0) {
+	result = eswifi_get_mac_addr(eswifi, mac);
+	if (result < 0) {
 		LOG_ERR("Unable to read MAC address");
-		return;
+		return result;
 	}
 
 	LOG_DBG("MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
@@ -412,7 +415,7 @@ static void eswifi_iface_init(struct net_if *iface)
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
 	eswifi_socket_offload_init(eswifi);
 #endif
-
+	return 0;
 }
 
 static int eswifi_mgmt_scan(const struct device *dev, scan_result_cb_t cb)

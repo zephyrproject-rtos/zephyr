@@ -122,7 +122,7 @@ bool netusb_enabled(void)
 	return !!netusb.func;
 }
 
-static void netusb_init(struct net_if *iface)
+static int netusb_init(struct net_if *iface)
 {
 	static uint8_t mac[6] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x00 };
 
@@ -136,6 +136,7 @@ static void netusb_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
 
 	LOG_INF("netusb initialized");
+	return 0;
 }
 
 static const struct ethernet_api netusb_api_funcs = {

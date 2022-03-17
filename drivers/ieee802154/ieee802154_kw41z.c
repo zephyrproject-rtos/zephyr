@@ -1061,7 +1061,7 @@ static int kw41z_init(const struct device *dev)
 	return 0;
 }
 
-static void kw41z_iface_init(struct net_if *iface)
+static int kw41z_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct kw41z_context *kw41z = dev->data;
@@ -1074,6 +1074,7 @@ static void kw41z_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 	kw41z->iface = iface;
 	ieee802154_init(iface);
+	return 0;
 }
 
 static int kw41z_configure(const struct device *dev,

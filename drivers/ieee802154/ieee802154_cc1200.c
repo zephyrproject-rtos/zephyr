@@ -766,7 +766,7 @@ static int cc1200_init(const struct device *dev)
 	return 0;
 }
 
-static void cc1200_iface_init(struct net_if *iface)
+static int cc1200_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct cc1200_context *cc1200 = dev->data;
@@ -779,6 +779,8 @@ static void cc1200_iface_init(struct net_if *iface)
 	cc1200->iface = iface;
 
 	ieee802154_init(iface);
+
+	return 0;
 }
 
 static const struct cc1200_config cc1200_config = {

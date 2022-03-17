@@ -1085,7 +1085,7 @@ static int winc1500_mgmt_ap_disable(const struct device *dev)
 	return 0;
 }
 
-static void winc1500_iface_init(struct net_if *iface)
+static int winc1500_iface_init(struct net_if *iface)
 {
 	LOG_DBG("eth_init:net_if_set_link_addr:"
 		"MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
@@ -1098,6 +1098,8 @@ static void winc1500_iface_init(struct net_if *iface)
 	iface->if_dev->offload = &winc1500_offload;
 
 	w1500_data.iface = iface;
+
+	return 0;
 }
 
 static const struct net_wifi_mgmt_offload winc1500_api = {

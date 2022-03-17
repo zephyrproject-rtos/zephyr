@@ -508,7 +508,7 @@ static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 	k_mutex_init(&drv_data->tx_mutex);
 }
 
-static void ieee802154_cc13xx_cc26xx_iface_init(struct net_if *iface)
+static int ieee802154_cc13xx_cc26xx_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
@@ -519,6 +519,8 @@ static void ieee802154_cc13xx_cc26xx_iface_init(struct net_if *iface)
 	drv_data->iface = iface;
 
 	ieee802154_init(iface);
+
+	return 0;
 }
 
 static struct ieee802154_radio_api ieee802154_cc13xx_cc26xx_radio_api = {

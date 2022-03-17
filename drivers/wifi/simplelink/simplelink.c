@@ -212,7 +212,7 @@ static struct net_offload simplelink_offload = {
 	.put	       = NULL,
 };
 
-static void simplelink_iface_init(struct net_if *iface)
+static int simplelink_iface_init(struct net_if *iface)
 {
 	int ret;
 
@@ -231,7 +231,7 @@ static void simplelink_iface_init(struct net_if *iface)
 	ret = z_simplelink_init(simplelink_wifi_cb);
 	if (ret) {
 		LOG_ERR("z_simplelink_init failed!");
-		return;
+		return ret;
 	}
 
 	ret = k_sem_take(&ip_acquired, FC_TIMEOUT);
@@ -259,7 +259,7 @@ static void simplelink_iface_init(struct net_if *iface)
 	socket_offload_dns_register(&simplelink_dns_ops);
 	simplelink_sockets_init();
 #endif
-
+	return 0;
 }
 
 static const struct net_wifi_mgmt_offload simplelink_api = {

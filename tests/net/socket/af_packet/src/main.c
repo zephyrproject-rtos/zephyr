@@ -57,7 +57,7 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static void eth_fake_iface_init(struct net_if *iface)
+static int eth_fake_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->data;
@@ -67,6 +67,8 @@ static void eth_fake_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ctx->mac_address, 6, NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
+
+	return 0;
 }
 
 static struct ethernet_api eth_fake_api_funcs = {

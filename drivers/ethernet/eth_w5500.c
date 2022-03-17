@@ -311,7 +311,7 @@ done:
 	}
 }
 
-static void w5500_iface_init(struct net_if *iface)
+static int w5500_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct w5500_runtime *ctx = dev->data;
@@ -325,6 +325,8 @@ static void w5500_iface_init(struct net_if *iface)
 	}
 
 	ethernet_init(iface);
+
+	return 0;
 }
 
 static enum ethernet_hw_caps w5500_get_capabilities(const struct device *dev)

@@ -24,7 +24,7 @@ static uint8_t small_buffer[512];
  * FAKE ETHERNET DEVICE *
 \************************/
 
-static void fake_dev_iface_init(struct net_if *iface)
+static int fake_dev_iface_init(struct net_if *iface)
 {
 	if (mac_addr[2] == 0U) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -35,10 +35,9 @@ static void fake_dev_iface_init(struct net_if *iface)
 		mac_addr[4] = 0x53;
 		mac_addr[5] = sys_rand32_get();
 	}
-
-	net_if_set_link_addr(iface, mac_addr, 6, NET_LINK_ETHERNET);
-
 	eth_if = iface;
+
+	return net_if_set_link_addr(iface, mac_addr, 6, NET_LINK_ETHERNET);
 }
 
 static int fake_dev_send(const struct device *dev, struct net_pkt *pkt)

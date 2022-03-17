@@ -267,7 +267,7 @@ static void eth_stellaris_isr(const struct device *dev)
 	irq_unlock(lock);
 }
 
-static void eth_stellaris_init(struct net_if *iface)
+static int eth_stellaris_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct eth_stellaris_config *dev_conf = dev->config;
@@ -286,6 +286,7 @@ static void eth_stellaris_init(struct net_if *iface)
 
 	/* Initialize Interrupts. */
 	dev_conf->config_func(dev);
+	return 0;
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)

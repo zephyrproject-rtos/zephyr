@@ -73,11 +73,11 @@ int fake_dev_init(const struct device *dev)
 	return 0;
 }
 
-static void fake_iface_init(struct net_if *iface)
+static int fake_iface_init(struct net_if *iface)
 {
 	static uint8_t mac[8] = { 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0b, 0x0c, 0x0d};
 
-	net_if_set_link_addr(iface, mac, 8, NET_LINK_DUMMY);
+	return net_if_set_link_addr(iface, mac, 8, NET_LINK_DUMMY);
 }
 
 static int fake_iface_send(const struct device *dev, struct net_pkt *pkt)

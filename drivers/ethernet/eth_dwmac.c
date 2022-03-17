@@ -508,7 +508,7 @@ static int dwmac_set_config(const struct device *dev,
 	return ret;
 }
 
-static void dwmac_iface_init(struct net_if *iface)
+static int dwmac_iface_init(struct net_if *iface)
 {
 	struct dwmac_priv *p = net_if_get_device(iface)->data;
 	uint32_t reg_val;
@@ -558,6 +558,7 @@ static void dwmac_iface_init(struct net_if *iface)
 		  DMA_CHn_IRQ_ENABLE_AIE);
 
 	LOG_DBG("done");
+	return 0;
 }
 
 int dwmac_probe(const struct device *dev)

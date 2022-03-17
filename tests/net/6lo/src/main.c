@@ -254,9 +254,9 @@ int net_6lo_dev_init(const struct device *dev)
 	return 0;
 }
 
-static void net_6lo_iface_init(struct net_if *iface)
+static int net_6lo_iface_init(struct net_if *iface)
 {
-	net_if_set_link_addr(iface, src_mac, 8, NET_LINK_IEEE802154);
+	return net_if_set_link_addr(iface, src_mac, 8, NET_LINK_IEEE802154);
 }
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)

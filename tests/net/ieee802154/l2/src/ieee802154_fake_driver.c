@@ -92,7 +92,7 @@ static int fake_stop(const struct device *dev)
 	return 0;
 }
 
-static void fake_iface_init(struct net_if *iface)
+static int fake_iface_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	static uint8_t mac[8] = { 0x00, 0x12, 0x4b, 0x00,
@@ -107,6 +107,7 @@ static void fake_iface_init(struct net_if *iface)
 	ctx->sequence = 62U;
 
 	NET_INFO("FAKE ieee802154 iface initialized\n");
+	return 0;
 }
 
 static int fake_init(const struct device *dev)

@@ -1605,7 +1605,7 @@ static inline uint8_t *get_mac(const struct device *dev)
 	return dw1000->mac_addr;
 }
 
-static void dwt_iface_api_init(struct net_if *iface)
+static int dwt_iface_api_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct dwt_context *dw1000 = dev->data;
@@ -1618,6 +1618,7 @@ static void dwt_iface_api_init(struct net_if *iface)
 	ieee802154_init(iface);
 
 	LOG_INF("Iface initialized");
+	return 0;
 }
 
 static struct ieee802154_radio_api dwt_radio_api = {

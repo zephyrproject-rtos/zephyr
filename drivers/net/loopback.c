@@ -31,7 +31,7 @@ int loopback_dev_init(const struct device *dev)
 	return 0;
 }
 
-static void loopback_init(struct net_if *iface)
+static int loopback_init(struct net_if *iface)
 {
 	struct net_if_addr *ifaddr;
 
@@ -58,6 +58,7 @@ static void loopback_init(struct net_if *iface)
 			LOG_ERR("Failed to register IPv6 loopback address");
 		}
 	}
+	return 0;
 }
 
 static int loopback_send(const struct device *dev, struct net_pkt *pkt)

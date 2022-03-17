@@ -1026,7 +1026,7 @@ static void esp_init_work(struct k_work *work)
 	net_if_up(dev->net_iface);
 }
 
-static void esp_reset(struct esp_data *dev)
+static int esp_reset(struct esp_data *dev)
 {
 	if (net_if_is_up(dev->net_iface)) {
 		net_if_down(dev->net_iface);
@@ -1055,12 +1055,13 @@ static void esp_reset(struct esp_data *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Failed to reset device: %d", ret);
-		return;
+		return -EAGAIN;
 	}
 #endif
+	return 0;
 }
 
-static void esp_iface_init(struct net_if *iface)
+static int esp_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct esp_data *data = dev->data;
@@ -1068,7 +1069,7 @@ static void esp_iface_init(struct net_if *iface)
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	data->net_iface = iface;
 	esp_offload_init(iface);
-	esp_reset(data);
+	return esp_reset(data);
 }
 
 static const struct net_wifi_mgmt_offload esp_api = {

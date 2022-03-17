@@ -53,7 +53,7 @@ struct eth_fake_context {
 
 static struct eth_fake_context eth_fake_data;
 
-static void eth_fake_iface_init(struct net_if *iface)
+static int eth_fake_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->data;
@@ -65,6 +65,8 @@ static void eth_fake_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
+
+	return 0;
 }
 
 static int eth_fake_send(const struct device *dev,

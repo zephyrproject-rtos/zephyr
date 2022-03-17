@@ -1832,7 +1832,7 @@ static inline uint8_t *wncm14a2a_get_mac(const struct device *dev)
 	return ctx->mac_addr;
 }
 
-static void offload_iface_init(struct net_if *iface)
+static int offload_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct wncm14a2a_iface_ctx *ctx = dev->data;
@@ -1842,6 +1842,7 @@ static void offload_iface_init(struct net_if *iface)
 			     sizeof(ctx->mac_addr),
 			     NET_LINK_ETHERNET);
 	ctx->iface = iface;
+	return 0;
 }
 
 static struct net_if_api api_funcs = {

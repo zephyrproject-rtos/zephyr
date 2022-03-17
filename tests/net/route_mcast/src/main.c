@@ -188,22 +188,25 @@ static void net_route_mcast_add_addresses(struct net_if *iface,
 	zassert_not_null(maddr, "Cannot add multicast IPv6 address");
 }
 
-static void net_route_mcast_iface_init1(struct net_if *iface)
+static int net_route_mcast_iface_init1(struct net_if *iface)
 {
 	iface_1 = iface;
 	net_route_mcast_add_addresses(iface, &iface_1_addr, &ll_addr_1);
+	return 0;
 }
 
-static void net_route_mcast_iface_init2(struct net_if *iface)
+static int net_route_mcast_iface_init2(struct net_if *iface)
 {
 	iface_2 = iface;
 	net_route_mcast_add_addresses(iface, &iface_2_addr, &ll_addr_2);
+	return 0;
 }
 
-static void net_route_mcast_iface_init3(struct net_if *iface)
+static int net_route_mcast_iface_init3(struct net_if *iface)
 {
 	iface_3 = iface;
 	net_route_mcast_add_addresses(iface, &iface_3_addr, &ll_addr_3);
+	return 0;
 }
 
 static bool check_packet_addresses(struct net_pkt *pkt)

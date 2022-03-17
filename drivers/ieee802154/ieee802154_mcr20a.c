@@ -1402,7 +1402,7 @@ static int mcr20a_init(const struct device *dev)
 	return 0;
 }
 
-static void mcr20a_iface_init(struct net_if *iface)
+static int mcr20a_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct mcr20a_context *mcr20a = dev->data;
@@ -1415,6 +1415,7 @@ static void mcr20a_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 
 	LOG_DBG("done");
+	return 0;
 }
 
 static const struct mcr20a_config mcr20a_config = {

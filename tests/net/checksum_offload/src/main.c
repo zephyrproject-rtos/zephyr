@@ -94,7 +94,7 @@ struct eth_context {
 static struct eth_context eth_context_offloading_disabled;
 static struct eth_context eth_context_offloading_enabled;
 
-static void eth_iface_init(struct net_if *iface)
+static int eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->data;
@@ -107,6 +107,8 @@ static void eth_iface_init(struct net_if *iface)
 	    net_sprint_ll_addr(context->mac_addr, sizeof(context->mac_addr)));
 
 	ethernet_init(iface);
+
+	return 0;
 }
 
 static uint16_t get_udp_chksum(struct net_pkt *pkt)

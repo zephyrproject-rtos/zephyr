@@ -35,7 +35,7 @@ struct socket_can_context {
 	struct k_thread rx_thread_data;
 };
 
-static inline void socket_can_iface_init(struct net_if *iface)
+static inline int socket_can_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct socket_can_context *socket_context = dev->data;
@@ -43,6 +43,8 @@ static inline void socket_can_iface_init(struct net_if *iface)
 	socket_context->iface = iface;
 
 	LOG_DBG("Init CAN interface %p dev %p", iface, dev);
+
+	return 0;
 }
 
 static inline void tx_irq_callback(int error, void *arg)

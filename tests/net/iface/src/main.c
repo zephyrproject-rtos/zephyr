@@ -100,12 +100,12 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 	return data->mac_addr;
 }
 
-static void net_iface_init(struct net_if *iface)
+static int net_iface_init(struct net_if *iface)
 {
 	uint8_t *mac = net_iface_get_mac(net_if_get_device(iface));
 
-	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
-			     NET_LINK_ETHERNET);
+	return net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
+				    NET_LINK_ETHERNET);
 }
 
 static int sender_iface(const struct device *dev, struct net_pkt *pkt)
@@ -193,7 +193,7 @@ struct eth_fake_context {
 
 static struct eth_fake_context eth_fake_data;
 
-static void eth_fake_iface_init(struct net_if *iface)
+static int eth_fake_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->data;
@@ -205,6 +205,8 @@ static void eth_fake_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
+
+	return 0;
 }
 
 static int eth_fake_send(const struct device *dev,

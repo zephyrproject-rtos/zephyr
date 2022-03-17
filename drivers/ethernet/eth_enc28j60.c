@@ -701,7 +701,7 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *
 		;
 }
 
-static void eth_enc28j60_iface_init(struct net_if *iface)
+static int eth_enc28j60_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -719,6 +719,7 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 	}
 
 	ethernet_init(iface);
+	return 0;
 }
 
 static const struct ethernet_api api_funcs = {

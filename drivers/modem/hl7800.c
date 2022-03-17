@@ -6188,7 +6188,7 @@ static int hl7800_init(const struct device *dev)
 	return ret;
 }
 
-static void offload_iface_init(struct net_if *iface)
+static int offload_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct hl7800_iface_ctx *ctx = dev->data;
@@ -6202,6 +6202,7 @@ static void offload_iface_init(struct net_if *iface)
 				     NET_LINK_ETHERNET);
 		ictx.initialized = true;
 	}
+	return 0;
 }
 
 static struct net_if_api api_funcs = {

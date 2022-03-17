@@ -427,7 +427,7 @@ static struct net_stats_eth *get_stats(const struct device *dev)
 }
 #endif
 
-static void eth_initialize(struct net_if *iface)
+static int eth_initialize(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->data;
@@ -444,6 +444,8 @@ static void eth_initialize(struct net_if *iface)
 	context->iface = iface;
 
 	ethernet_init(iface);
+
+	return 0;
 }
 
 static int smsc_write_tx_fifo(const uint8_t *buf, uint32_t len, bool is_last)

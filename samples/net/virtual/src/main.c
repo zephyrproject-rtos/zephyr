@@ -41,14 +41,14 @@ struct virtual_test_context {
 	bool init_done;
 };
 
-static void virtual_test_iface_init(struct net_if *iface)
+static int virtual_test_iface_init(struct net_if *iface)
 {
 	struct virtual_test_context *ctx = net_if_get_device(iface)->data;
 	char name[16];
 	static int count;
 
 	if (ctx->init_done) {
-		return;
+		return 0;
 	}
 
 	ctx->iface = iface;
@@ -60,6 +60,7 @@ static void virtual_test_iface_init(struct net_if *iface)
 	(void)net_virtual_set_flags(iface, NET_L2_POINT_TO_POINT);
 
 	ctx->init_done = true;
+	return 0;
 }
 
 static struct virtual_test_context virtual_test_context_data1 = {

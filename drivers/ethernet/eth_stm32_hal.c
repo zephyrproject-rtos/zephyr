@@ -916,7 +916,7 @@ static int eth_initialize(const struct device *dev)
 	return 0;
 }
 
-static void eth_iface_init(struct net_if *iface)
+static int eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
@@ -954,6 +954,8 @@ static void eth_iface_init(struct net_if *iface)
 		__ASSERT_NO_MSG(cfg->config_func != NULL);
 		cfg->config_func();
 	}
+
+	return 0;
 }
 
 static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev)

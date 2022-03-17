@@ -110,7 +110,7 @@ static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static void dummy_iface_init(struct net_if *iface)
+static int dummy_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct dummy_context *ctx = dev->data;
@@ -131,6 +131,8 @@ static void dummy_iface_init(struct net_if *iface)
 	if (!ifaddr) {
 		zassert_not_null(ifaddr, "ipv4 addr");
 	}
+
+	return 0;
 }
 
 static struct dummy_api dummy_api_funcs = {

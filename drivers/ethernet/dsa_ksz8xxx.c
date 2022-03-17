@@ -954,7 +954,7 @@ static struct net_if *dsa_ksz8xxx_get_iface(struct net_if *iface,
 }
 #endif
 
-static void dsa_iface_init(struct net_if *iface)
+static int dsa_iface_init(struct net_if *iface)
 {
 	struct dsa_slave_config *cfg = (struct dsa_slave_config *)
 		net_if_get_device(iface)->config;
@@ -971,7 +971,7 @@ static void dsa_iface_init(struct net_if *iface)
 		context->iface_master = net_if_lookup_by_dev(dm);
 		if (context->iface_master == NULL) {
 			LOG_ERR("DSA: Master iface NOT found!");
-			return;
+			return -EINVAL;
 		}
 
 		/*
@@ -1009,6 +1009,7 @@ static void dsa_iface_init(struct net_if *iface)
 		k_work_init_delayable(&context->dsa_work, dsa_delayed_work);
 		k_work_reschedule(&context->dsa_work, DSA_STATUS_PERIOD_MS);
 	}
+	return 0;
 }
 
 static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)

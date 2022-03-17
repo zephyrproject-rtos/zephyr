@@ -62,15 +62,15 @@ static uint8_t *fake_dev_get_mac(struct fake_dev_context *ctx)
 	return ctx->mac_addr;
 }
 
-static void fake_dev_iface_init(struct net_if *iface)
+static int fake_dev_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct fake_dev_context *ctx = dev->data;
 	uint8_t *mac = fake_dev_get_mac(ctx);
 
-	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
-
 	ctx->iface = iface;
+
+	return net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
 int fake_dev_init(const struct device *dev)

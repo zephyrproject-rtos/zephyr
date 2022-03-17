@@ -384,7 +384,7 @@ static int b91_init(const struct device *dev)
 }
 
 /* API implementation: iface_init */
-static void b91_iface_init(struct net_if *iface)
+static int b91_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct b91_data *b91 = dev->data;
@@ -395,6 +395,8 @@ static void b91_iface_init(struct net_if *iface)
 	b91->iface = iface;
 
 	ieee802154_init(iface);
+
+	return 0;
 }
 
 /* API implementation: get_capabilities */

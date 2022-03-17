@@ -2087,7 +2087,7 @@ static inline uint8_t *modem_get_mac(const struct device *dev)
 	return data->mac_addr;
 }
 
-static void modem_net_iface_init(struct net_if *iface)
+static int modem_net_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct modem_data *data = dev->data;
@@ -2101,6 +2101,7 @@ static void modem_net_iface_init(struct net_if *iface)
 #ifdef CONFIG_DNS_RESOLVER
 	socket_offload_dns_register(&offload_dns_ops);
 #endif
+	return 0;
 }
 
 static struct net_if_api api_funcs = {

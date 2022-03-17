@@ -1165,7 +1165,7 @@ static void net_if_mcast_cb(struct net_if *iface,
 }
 #endif /* CONFIG_NET_IPV6 */
 
-static void eth_iface_init(struct net_if *iface)
+static int eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->data;
@@ -1195,6 +1195,7 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	context->config_func();
+	return 0;
 }
 
 static enum ethernet_hw_caps eth_mcux_get_capabilities(const struct device *dev)

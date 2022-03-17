@@ -362,7 +362,7 @@ static inline uint8_t *get_mac(const struct device *dev)
 	return upipe->mac_addr;
 }
 
-static void upipe_iface_init(struct net_if *iface)
+static int upipe_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct upipe_context *upipe = dev->data;
@@ -374,6 +374,7 @@ static void upipe_iface_init(struct net_if *iface)
 	upipe->iface = iface;
 
 	ieee802154_init(iface);
+	return 0;
 }
 
 static struct upipe_context upipe_context_data;

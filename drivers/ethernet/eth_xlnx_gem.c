@@ -38,7 +38,7 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static int  eth_xlnx_gem_dev_init(const struct device *dev);
-static void eth_xlnx_gem_iface_init(struct net_if *iface);
+static int eth_xlnx_gem_iface_init(struct net_if *iface);
 static void eth_xlnx_gem_isr(const struct device *dev);
 static int  eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt);
 static int  eth_xlnx_gem_start_device(const struct device *dev);
@@ -216,7 +216,7 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
  *
  * @param iface Pointer to the associated interface data struct
  */
-static void eth_xlnx_gem_iface_init(struct net_if *iface)
+static int eth_xlnx_gem_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
@@ -252,6 +252,7 @@ static void eth_xlnx_gem_iface_init(struct net_if *iface)
 
 	/* Submit initial PHY status polling delayed work */
 	k_work_reschedule(&dev_data->phy_poll_delayed_work, K_NO_WAIT);
+	return 0;
 }
 
 /**

@@ -84,11 +84,11 @@ static uint8_t *net_udp_get_mac(const struct device *dev)
 	return context->mac_addr;
 }
 
-static void net_udp_iface_init(struct net_if *iface)
+static int net_udp_iface_init(struct net_if *iface)
 {
 	uint8_t *mac = net_udp_get_mac(net_if_get_device(iface));
 
-	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
+	return net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
 static int send_status = -EINVAL;
