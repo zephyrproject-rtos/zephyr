@@ -82,6 +82,10 @@ extern "C" {
 #define BT_ISO_BROADCAST_RTN_MAX    0x1E
 /** Broadcast code size */
 #define BT_ISO_BROADCAST_CODE_SIZE  16
+/** Lowest BIS index */
+#define BT_ISO_BIS_INDEX_MIN        0x01
+/** Highest BIS index */
+#define BT_ISO_BIS_INDEX_MAX        0x1F
 
 /** @brief Life-span states of ISO channel. Used only by internal APIs
  *  dealing with setting channel to proper state depending on operational
