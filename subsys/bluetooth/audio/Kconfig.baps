@@ -36,8 +36,6 @@ config BT_AUDIO_UNICAST_CLIENT
 	  This option enables support for Bluetooth Unicast Audio Client
 	  using Isochronous channels.
 
-if BT_AUDIO_UNICAST
-
 config BT_CODEC_MAX_DATA_COUNT
 	int "Codec Capabilities Data Count"
 	default 5
@@ -115,7 +113,6 @@ config BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT
 	  instances for Basic Audio Profile on a per connection basis.
 
 endif # BT_AUDIO_UNICAST_CLIENT
-endif # BT_AUDIO_UNICAST
 
 config BT_AUDIO_BROADCAST_SOURCE
 	bool "Bluetooth Broadcast Source Audio Support [EXPERIMENTAL]"
