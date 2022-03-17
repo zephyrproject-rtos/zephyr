@@ -48,7 +48,11 @@ BUILD_ASSERT(((NRF_DRIVE_S0S1 == NRF_GPIO_PIN_S0S1) &&
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spis) */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twi)
+#if !defined(TWI_PSEL_SCL_CONNECT_Pos)
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWI_Type *)reg)->PSEL##line
+#else
+#define NRF_PSEL_TWIM(reg, line) ((NRF_TWI_Type *)reg)->PSEL.line
+#endif
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twim)
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWIM_Type *)reg)->PSEL.line
 #endif
