@@ -856,8 +856,8 @@ static int app_shmem_bss_zero(const struct device *unused)
 
 	ARG_UNUSED(unused);
 
-	end = (struct z_app_region *)&__app_shmem_regions_end;
-	region = (struct z_app_region *)&__app_shmem_regions_start;
+	end = (struct z_app_region *)&__app_shmem_regions_end[0];
+	region = (struct z_app_region *)&__app_shmem_regions_start[0];
 
 	for ( ; region < end; region++) {
 #if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
