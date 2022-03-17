@@ -371,11 +371,6 @@ static int pwm_stm32_pin_configure_capture(const struct device *dev,
 		return -EBUSY;
 	}
 
-	if (cb == NULL) {
-		LOG_ERR("No PWM capture callback specified");
-		return -EINVAL;
-	}
-
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
 		LOG_ERR("No PWM capture type specified");
 		return -EINVAL;
@@ -386,7 +381,7 @@ static int pwm_stm32_pin_configure_capture(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	cpt->callback = cb;
+	cpt->callback = cb; /* even if the cb is reset, this is not an error */
 	cpt->user_data = user_data;
 	cpt->capture_period = (flags & PWM_CAPTURE_TYPE_PERIOD) ? true : false;
 	cpt->capture_pulse = (flags & PWM_CAPTURE_TYPE_PULSE) ? true : false;
@@ -437,6 +432,11 @@ static int pwm_stm32_pin_enable_capture(const struct device *dev, uint32_t pwm)
 			|| LL_TIM_IsEnabledIT_CC2(cfg->timer)) {
 		LOG_ERR("PWM capture already active");
 		return -EBUSY;
+	}
+
+	if (!data->capture.callback) {
+		LOG_ERR("PWM capture not configured");
+		return -EINVAL;
 	}
 
 	data->capture.skip_irq = SKIPPED_PWM_CAPTURES;
@@ -527,10 +527,12 @@ static void pwm_stm32_isr(const struct device *dev)
 				cpt->overflows = 0u;
 			}
 
-			cpt->callback(dev, in_ch,
+			if (cpt->callback != NULL) {
+				cpt->callback(dev, in_ch,
 					cpt->capture_period ? cpt->period : 0u,
 					cpt->capture_pulse ? cpt->pulse : 0u,
 					status, cpt->user_data);
+			}
 		}
 	} else {
 		if (LL_TIM_IsActiveFlag_UPDATE(cfg->timer)) {
