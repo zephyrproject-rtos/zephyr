@@ -768,6 +768,7 @@ Documentation:
         - Mani-Sadhasivam
     collaborators:
         - mniestroj
+        - JordanYates
     files:
         - drivers/lora/
         - include/drivers/lora.h
