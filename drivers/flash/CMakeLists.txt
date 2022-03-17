@@ -59,6 +59,13 @@ if(CONFIG_SOC_FLASH_STM32)
   endif()
 endif()
 
+if(CONFIG_SOC_FLASH_GD32)
+  zephyr_library_sources(flash_gd32.c)
+
+  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_GD32F4XX flash_gd32f4xx.c)
+  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_GD32F3X0 flash_gd32f3x0.c)
+endif()
+
 zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_NOR
   ${ZEPHYR_BASE}/drivers/memc
