@@ -122,7 +122,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-	if (((regs->OPTR & FLASH_OPTR_DBANK) == FLASH_OPTR_DBANK) &&
+	if (((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) &&
 			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
 		/*
 		 * In case of bank1/2 discontinuity, the range should not
@@ -149,7 +149,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	int rc;
 
 	/* if the non-secure control register is locked,do not fail silently */
-	if (regs->NSCR & FLASH_NSCR_NSLOCK) {
+	if (regs->NSCR & FLASH_STM32_NSLOCK) {
 		LOG_ERR("NSCR locked\n");
 		return -EIO;
 	}
@@ -167,7 +167,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	}
 
 	/* Set the NSPG bit */
-	regs->NSCR |= FLASH_NSCR_NSPG;
+	regs->NSCR |= FLASH_STM32_NSPG;
 
 	/* Flush the register write */
 	tmp = regs->NSCR;
@@ -180,7 +180,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	rc = flash_stm32_wait_flash_idle(dev);
 
 	/* Clear the NSPG bit */
-	regs->NSCR &= (~FLASH_NSCR_NSPG);
+	regs->NSCR &= (~FLASH_STM32_NSPG);
 
 	return rc;
 }
@@ -193,7 +193,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	int page;
 
 	/* if the non-secure control register is locked,do not fail silently */
-	if (regs->NSCR & FLASH_NSCR_NSLOCK) {
+	if (regs->NSCR & FLASH_STM32_NSLOCK) {
 		LOG_ERR("NSCR locked\n");
 		return -EIO;
 	}
@@ -204,7 +204,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 		return rc;
 	}
 
-	if ((regs->OPTR & FLASH_OPTR_DBANK) == FLASH_OPTR_DBANK) {
+	if ((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) {
 		bool bank_swap;
 		/* Check whether bank1/2 are swapped */
 		bank_swap =
@@ -212,22 +212,22 @@ static int erase_page(const struct device *dev, unsigned int offset)
 
 		if ((offset < (FLASH_SIZE / 2)) && !bank_swap) {
 			/* The pages to be erased is in bank 1 */
-			regs->NSCR &= ~FLASH_NSCR_NSBKER_Msk;
+			regs->NSCR &= ~FLASH_STM32_NSBKER_MSK;
 			page = offset / FLASH_PAGE_SIZE;
 			LOG_DBG("Erase page %d on bank 1", page);
 		} else if ((offset >= BANK2_OFFSET) && bank_swap) {
 			/* The pages to be erased is in bank 1 */
-			regs->NSCR &= ~FLASH_NSCR_NSBKER_Msk;
+			regs->NSCR &= ~FLASH_STM32_NSBKER_MSK;
 			page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
 			LOG_DBG("Erase page %d on bank 1", page);
 		} else if ((offset < (FLASH_SIZE / 2)) && bank_swap) {
 			/* The pages to be erased is in bank 2 */
-			regs->NSCR |= FLASH_NSCR_NSBKER;
+			regs->NSCR |= FLASH_STM32_NSBKER;
 			page = offset / FLASH_PAGE_SIZE;
 			LOG_DBG("Erase page %d on bank 2", page);
 		} else if ((offset >= BANK2_OFFSET) && !bank_swap) {
 			/* The pages to be erased is in bank 2 */
-			regs->NSCR |= FLASH_NSCR_NSBKER;
+			regs->NSCR |= FLASH_STM32_NSBKER;
 			page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
 			LOG_DBG("Erase page %d on bank 2", page);
 		} else {
@@ -240,12 +240,12 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	}
 
 	/* Set the NSPER bit and select the page you wish to erase */
-	regs->NSCR |= FLASH_NSCR_NSPER;
-	regs->NSCR &= ~FLASH_NSCR_NSPNB_Msk;
-	regs->NSCR |= (page << FLASH_NSCR_NSPNB_Pos);
+	regs->NSCR |= FLASH_STM32_NSPER;
+	regs->NSCR &= ~FLASH_STM32_NSPNB_MSK;
+	regs->NSCR |= (page << FLASH_STM32_NSPNB_POS);
 
 	/* Set the NSSTRT bit */
-	regs->NSCR |= FLASH_NSCR_NSSTRT;
+	regs->NSCR |= FLASH_STM32_NSSTRT;
 
 	/* flush the register write */
 	tmp = regs->NSCR;
@@ -253,10 +253,10 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	/* Wait for the NSBSY bit */
 	rc = flash_stm32_wait_flash_idle(dev);
 
-	if ((regs->OPTR & FLASH_OPTR_DBANK) == FLASH_OPTR_DBANK) {
-		regs->NSCR &= ~(FLASH_NSCR_NSPER | FLASH_NSCR_NSBKER);
+	if ((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) {
+		regs->NSCR &= ~(FLASH_STM32_NSPER | FLASH_STM32_NSBKER);
 	} else {
-		regs->NSCR &= ~(FLASH_NSCR_NSPER);
+		regs->NSCR &= ~(FLASH_STM32_NSPER);
 	}
 
 	return rc;
@@ -352,7 +352,7 @@ void flash_stm32_page_layout(const struct device *dev,
 	static struct flash_pages_layout stm32_flash_layout[3];
 #define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
 
-	if (((regs->OPTR & FLASH_OPTR_DBANK) == FLASH_OPTR_DBANK) &&
+	if (((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) &&
 			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
 		/*
 		 * For stm32l552xx with 256 KB flash
@@ -379,7 +379,7 @@ void flash_stm32_page_layout(const struct device *dev,
 		 */
 
 		if (stm32_flash_layout[0].pages_count == 0) {
-			if ((regs->OPTR & FLASH_OPTR_DBANK) == FLASH_OPTR_DBANK) {
+			if ((regs->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) {
 				/* flash with dualbank has 2k pages */
 				stm32_flash_layout[0].pages_count = FLASH_PAGE_NB;
 				stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
