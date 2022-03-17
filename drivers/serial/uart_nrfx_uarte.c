@@ -2049,7 +2049,8 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 #endif /* CONFIG_PINCTRL */
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
-	NRF_DT_ENSURE_PINS_ASSIGNED(UARTE(idx), tx_pin, rx_pin);	       \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(UARTE(idx), 1,			       \
+				     tx_pin, rx_pin, rts_pin, cts_pin);        \
 	UARTE_INT_DRIVEN(idx);						       \
 	UARTE_ASYNC(idx);						       \
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(UARTE(idx));))	       \

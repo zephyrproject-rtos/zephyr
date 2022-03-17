@@ -1307,7 +1307,7 @@ static struct qspi_nor_data qspi_nor_dev_data = {
 #endif /* CONFIG_MULTITHREADING */
 };
 
-NRF_DT_ENSURE_PINS_ASSIGNED(QSPI_NODE, sck_pin);
+NRF_DT_CHECK_PIN_ASSIGNMENTS(QSPI_NODE, 1, sck_pin, csn_pins, io_pins);
 
 IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(QSPI_NODE)));
 
