@@ -10,6 +10,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "pinetime_devkit0-pinctrl.dtsi"
 
 / {
 	model = "Pine64 PineTime DevKit0";
@@ -81,18 +82,20 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <11>;
-	rx-pin = <30>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <6>;
-	scl-pin = <7>;
 	clock-frequency = <I2C_BITRATE_FAST>; /* 400KHz */
 
 	/* BOSCH BMA421 Triaxial Acceleration Sensor (1000KHz) */
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 	bma421: bma421@18 {
 		compatible = "bosch,bma4xx";
 		reg = <0x18>;
@@ -120,12 +123,12 @@
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <2>;
-	mosi-pin = <3>;
-	miso-pin = <4>;
 
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>, <&gpio0 25 GPIO_ACTIVE_LOW>;
 
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 	xt25fb32: xt25fb32@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
