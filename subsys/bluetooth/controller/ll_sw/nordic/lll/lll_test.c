@@ -117,7 +117,11 @@ static void isr_tx(void *param)
 	if (transmit_time < sampled_time){
 		transmit_time+=((((sampled_time - transmit_time) / SCAN_INT_UNIT_US) + 1) * SCAN_INT_UNIT_US);
 	}
-	/* Handle rollover case here, timer is configured to 24-bits */
+	else{
+		/* Handle rollover case here, timer is configured to 24-bits */
+		transmit_time += ((((BIT(24) - transmit_time + sampled_time) / SCAN_INT_UNIT_US) + 1) * SCAN_INT_UNIT_US);	
+	}
+	
 	transmit_time=transmit_time&0xffffff;
 
 	/* Setup next Tx */
