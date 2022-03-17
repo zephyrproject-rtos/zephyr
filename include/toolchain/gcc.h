@@ -591,9 +591,9 @@ do {                                                                    \
 		1UL << (63U - __builtin_clzl(x) + 1U) : \
 		1UL << (63U - __builtin_clzl(x)))
 #else
-#define Z_POW2_CEIL(x) ((1UL << (31U - __builtin_clzl(x))) < x ?  \
-		1UL << (31U - __builtin_clzl(x) + 1U) : \
-		1UL << (31U - __builtin_clzl(x)))
+#define Z_POW2_CEIL(x) ((1UL << (31U - __builtin_clz(x))) < x ?  \
+		1UL << (31U - __builtin_clz(x) + 1U) : \
+		1UL << (31U - __builtin_clz(x)))
 #endif
 
 #endif /* !_LINKER */
