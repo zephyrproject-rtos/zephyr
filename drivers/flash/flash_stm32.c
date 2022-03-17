@@ -257,9 +257,9 @@ static int flash_stm32_write_protection(const struct device *dev, bool enable)
 
 #if defined(FLASH_SECURITY_NS)
 	if (enable) {
-		regs->NSCR |= FLASH_NSCR_NSLOCK;
+		regs->NSCR |= FLASH_STM32_NSLOCK;
 	} else {
-		if (regs->NSCR & FLASH_NSCR_NSLOCK) {
+		if (regs->NSCR & FLASH_STM32_NSLOCK) {
 			regs->NSKEYR = FLASH_KEY1;
 			regs->NSKEYR = FLASH_KEY2;
 		}
