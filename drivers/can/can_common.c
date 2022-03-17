@@ -14,16 +14,18 @@ LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 /* CAN sync segment is always one time quantum */
 #define CAN_SYNC_SEG 1
 
-static void can_msgq_put(struct zcan_frame *frame, void *arg)
+static void can_msgq_put(const struct device *dev, struct zcan_frame *frame, void *user_data)
 {
-	struct k_msgq *msgq = (struct k_msgq *)arg;
+	struct k_msgq *msgq = (struct k_msgq *)user_data;
 	int ret;
+
+	ARG_UNUSED(dev);
 
 	__ASSERT_NO_MSG(msgq);
 
 	ret = k_msgq_put(msgq, frame, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Msgq %p overflowed. Frame ID: 0x%x", arg, frame->id);
+		LOG_ERR("Msgq %p overflowed. Frame ID: 0x%x", msgq, frame->id);
 	}
 }
 

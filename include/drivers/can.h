@@ -257,30 +257,35 @@ struct can_timing {
  * @typedef can_tx_callback_t
  * @brief Defines the application callback handler function signature
  *
+ * @param dev       Pointer to the device structure for the driver instance.
  * @param error     Status of the performed send operation. See the list of
  *                  return values for @a can_send() for value descriptions.
  * @param user_data User data provided when the frame was sent.
  */
-typedef void (*can_tx_callback_t)(int error, void *user_data);
+typedef void (*can_tx_callback_t)(const struct device *dev, int error, void *user_data);
 
 /**
  * @typedef can_rx_callback_t
  * @brief Defines the application callback handler function signature for receiving.
  *
+ * @param dev       Pointer to the device structure for the driver instance.
  * @param frame     Received frame.
  * @param user_data User data provided when the filter was added.
  */
-typedef void (*can_rx_callback_t)(struct zcan_frame *frame, void *user_data);
+typedef void (*can_rx_callback_t)(const struct device *dev, struct zcan_frame *frame,
+				  void *user_data);
 
 /**
  * @typedef can_state_change_callback_t
  * @brief Defines the state change callback handler function signature
  *
+ * @param dev       Pointer to the device structure for the driver instance.
  * @param state     State of the CAN controller.
  * @param err_cnt   CAN controller error counter values.
  * @param user_data User data provided the callback was set.
  */
-typedef void (*can_state_change_callback_t)(enum can_state state,
+typedef void (*can_state_change_callback_t)(const struct device *dev,
+					    enum can_state state,
 					    struct can_bus_err_cnt err_cnt,
 					    void *user_data);
 

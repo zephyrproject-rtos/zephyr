@@ -76,9 +76,11 @@ static inline void receive_report_error(struct isotp_recv_ctx *ctx, int err)
 	ctx->error_nr = err;
 }
 
-static void receive_can_tx(int error, void *arg)
+static void receive_can_tx(const struct device *dev, int error, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
+
+	ARG_UNUSED(dev);
 
 	if (error != 0) {
 		LOG_ERR("Error sending FC frame (%d)", error);
@@ -525,9 +527,11 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 	}
 }
 
-static void receive_can_rx(struct zcan_frame *frame, void *arg)
+static void receive_can_rx(const struct device *dev, struct zcan_frame *frame, void *arg)
 {
 	struct isotp_recv_ctx *ctx = (struct isotp_recv_ctx *)arg;
+
+	ARG_UNUSED(dev);
 
 	switch (ctx->state) {
 	case ISOTP_RX_STATE_WAIT_FF_SF:
@@ -723,9 +727,11 @@ static inline void send_report_error(struct isotp_send_ctx *ctx, uint32_t err)
 	ctx->error_nr = err;
 }
 
-static void send_can_tx_cb(int error, void *arg)
+static void send_can_tx_cb(const struct device *dev, int error, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
+
+	ARG_UNUSED(dev);
 
 	ctx->tx_backlog--;
 	k_sem_give(&ctx->tx_sem);
@@ -816,9 +822,11 @@ static void send_process_fc(struct isotp_send_ctx *ctx,
 	}
 }
 
-static void send_can_rx_cb(struct zcan_frame *frame, void *arg)
+static void send_can_rx_cb(const struct device *dev, struct zcan_frame *frame, void *arg)
 {
 	struct isotp_send_ctx *ctx = (struct isotp_send_ctx *)arg;
+
+	ARG_UNUSED(dev);
 
 	if (ctx->state == ISOTP_TX_WAIT_FC) {
 		z_abort_timeout(&ctx->timeout);

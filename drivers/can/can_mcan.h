@@ -166,6 +166,7 @@ struct can_mcan_msg_sram {
 } __packed __aligned(4);
 
 struct can_mcan_data {
+	const struct device *dev;
 	struct k_mutex inst_mutex;
 	struct k_sem tx_sem;
 	struct k_mutex tx_mtx;

@@ -45,9 +45,12 @@ static inline void socket_can_iface_init(struct net_if *iface)
 	LOG_DBG("Init CAN interface %p dev %p", iface, dev);
 }
 
-static inline void tx_irq_callback(int error, void *arg)
+static inline void tx_irq_callback(const struct device *dev, int error, void *arg)
 {
 	char *caller_str = (char *)arg;
+
+	ARG_UNUSED(dev);
+
 	if (error != 0) {
 		LOG_DBG("TX error from %s! error-code: %d",
 			caller_str, error);

@@ -288,9 +288,11 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 #endif
 	int ret;
 
+	data->dev = dev;
 	k_mutex_init(&data->inst_mutex);
 	k_mutex_init(&data->tx_mtx);
 	k_sem_init(&data->tx_sem, NUM_TX_BUF_ELEMENTS, NUM_TX_BUF_ELEMENTS);
+
 	for (int i = 0; i < ARRAY_SIZE(data->tx_fin_sem); ++i) {
 		k_sem_init(&data->tx_fin_sem[i], 0, 1);
 	}
@@ -502,7 +504,7 @@ static void can_mcan_state_change_handler(const struct can_mcan_config *cfg,
 	(void)can_mcan_get_state(cfg, &state, &err_cnt);
 
 	if (cb != NULL) {
-		cb(state, err_cnt, cb_data);
+		cb(data->dev, state, err_cnt, cb_data);
 	}
 }
 
@@ -530,7 +532,7 @@ static void can_mcan_tc_event_handler(struct can_mcan_reg *can,
 		if (tx_cb == NULL) {
 			k_sem_give(&data->tx_fin_sem[tx_idx]);
 		} else {
-			tx_cb(0, data->tx_fin_cb_arg[tx_idx]);
+			tx_cb(data->dev, 0, data->tx_fin_cb_arg[tx_idx]);
 		}
 	}
 }
@@ -643,7 +645,7 @@ static void can_mcan_get_message(struct can_mcan_data *data,
 			}
 
 			if (cb) {
-				cb(&frame, cb_arg);
+				cb(data->dev, &frame, cb_arg);
 			} else {
 				LOG_DBG("cb missing");
 			}

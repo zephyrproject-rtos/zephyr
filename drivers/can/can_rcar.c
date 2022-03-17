@@ -233,7 +233,7 @@ static void can_rcar_tx_done(const struct device *dev)
 
 	data->tx_unsent--;
 	if (tx_cb->cb != NULL) {
-		tx_cb->cb(0, tx_cb->cb_arg);
+		tx_cb->cb(dev, 0, tx_cb->cb_arg);
 	} else {
 		k_sem_give(&tx_cb->sem);
 	}
@@ -267,7 +267,7 @@ static void can_rcar_state_change(const struct device *dev, uint32_t newstate)
 		return;
 	}
 	can_rcar_get_error_count(config, &err_cnt);
-	cb(newstate, err_cnt, state_change_cb_data);
+	cb(dev, newstate, err_cnt, state_change_cb_data);
 }
 
 static void can_rcar_error(const struct device *dev)
@@ -366,7 +366,8 @@ static void can_rcar_error(const struct device *dev)
 	}
 }
 
-static void can_rcar_rx_filter_isr(struct can_rcar_data *data,
+static void can_rcar_rx_filter_isr(const struct device *dev,
+				   struct can_rcar_data *data,
 				   const struct zcan_frame *frame)
 {
 	struct zcan_frame tmp_frame;
@@ -385,7 +386,7 @@ static void can_rcar_rx_filter_isr(struct can_rcar_data *data,
 		 * modifies the message.
 		 */
 		tmp_frame = *frame;
-		data->rx_callback[i](&tmp_frame, data->rx_callback_arg[i]);
+		data->rx_callback[i](dev, &tmp_frame, data->rx_callback_arg[i]);
 	}
 }
 
@@ -437,7 +438,7 @@ static void can_rcar_rx_isr(const struct device *dev)
 	/* Increment CPU side pointer */
 	sys_write8(0xff, config->reg_addr + RCAR_CAN_RFPCR);
 
-	can_rcar_rx_filter_isr(data, &frame);
+	can_rcar_rx_filter_isr(dev, data, &frame);
 }
 
 static void can_rcar_isr(const struct device *dev)

@@ -78,10 +78,12 @@ static void canopen_detach_all_rx_filters(CO_CANmodule_t *CANmodule)
 	}
 }
 
-static void canopen_rx_callback(struct zcan_frame *msg, void *arg)
+static void canopen_rx_callback(const struct device *dev, struct zcan_frame *msg, void *arg)
 {
 	CO_CANrx_t *buffer = (CO_CANrx_t *)arg;
 	CO_CANrxMsg_t rxMsg;
+
+	ARG_UNUSED(dev);
 
 	if (!buffer || !buffer->pFunct) {
 		LOG_ERR("failed to process CAN rx callback");
@@ -94,9 +96,11 @@ static void canopen_rx_callback(struct zcan_frame *msg, void *arg)
 	buffer->pFunct(buffer->object, &rxMsg);
 }
 
-static void canopen_tx_callback(int error, void *arg)
+static void canopen_tx_callback(const struct device *dev, int error, void *arg)
 {
 	CO_CANmodule_t *CANmodule = arg;
+
+	ARG_UNUSED(dev);
 
 	if (!CANmodule) {
 		LOG_ERR("failed to process CAN tx callback");
