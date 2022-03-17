@@ -51,8 +51,8 @@ static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx);
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
-static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t rssi_ready,
-		  enum sync_status status);
+static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t cte_ready,
+		  uint8_t rssi_ready, enum sync_status status);
 static void isr_rx_adv_sync_estab(void *param);
 static void isr_rx_adv_sync(void *param);
 static void isr_rx_aux_chain(void *param);
@@ -616,6 +616,7 @@ static void isr_aux_setup(void *param)
  * @param lll        Pointer to LLL sync object.
  * @param node_type  Type of a receive node to be set for handling by ULL.
  * @param crc_ok     Informs if received PDU has correct CRC.
+ * @param cte_ready  Informs if received PDU has CTEInfo present and IQ samples were collected.
  * @param rssi_ready Informs if RSSI for received PDU is ready.
  * @param status     Informs about periodic advertisement synchronization status.
  *
@@ -623,8 +624,8 @@ static void isr_aux_setup(void *param)
  *         to schedule its reception by ULL.
  * @return -EBUSY in case there is a chained PDU scheduled by LLL due to short spacing.
  */
-static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t rssi_ready,
-		  enum sync_status status)
+static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8_t cte_ready,
+		  uint8_t rssi_ready, enum sync_status status)
 {
 	bool sched = false;
 	int err;
@@ -690,15 +691,24 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok, uint8
 		}
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-		(void)create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
-		sched = true;
+		if (cte_ready) {
+			/* Retunred value is not checked because it does not matter if there
+			 * is a IQ report to be send towards ULL. There is always periodic sync
+			 * report to be send.
+			 */
+			(void)create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
+			sched = true;
+		}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 	} else {
 #if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
-		err = create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
-		if (!err) {
-			sched = true;
+		if (cte_ready) {
+			err = create_iq_report(lll, rssi_ready,
+					       BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
+			if (!err) {
+				sched = true;
+			}
 		}
 #endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 
@@ -717,6 +727,7 @@ static void isr_rx_adv_sync_estab(void *param)
 	enum sync_status sync_ok;
 	struct lll_sync *lll;
 	uint8_t rssi_ready;
+	uint8_t cte_ready;
 	uint8_t trx_done;
 	uint8_t crc_ok;
 	int err;
@@ -730,8 +741,14 @@ static void isr_rx_adv_sync_estab(void *param)
 		rssi_ready = radio_rssi_is_ready();
 		sync_ok = sync_filtrate_by_cte_type(lll->cte_type, lll->filter_policy);
 		trx_cnt = 1U;
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)) {
+			cte_ready = radio_df_cte_ready();
+		} else {
+			cte_ready = 0U;
+		}
 	} else {
-		crc_ok = rssi_ready = 0U;
+		crc_ok = rssi_ready = cte_ready = 0U;
 		/* Initiated as allowed, crc_ok takes precended during handling of PDU
 		 * reception in the situation.
 		 */
@@ -756,7 +773,8 @@ static void isr_rx_adv_sync_estab(void *param)
 
 	/* Handle regular PDU reception if CTE type is acceptable */
 	if (sync_ok == SYNC_STAT_ALLOWED) {
-		err = isr_rx(lll, NODE_RX_TYPE_SYNC, crc_ok, rssi_ready, SYNC_STAT_ALLOWED);
+		err = isr_rx(lll, NODE_RX_TYPE_SYNC, crc_ok, cte_ready, rssi_ready,
+			     SYNC_STAT_ALLOWED);
 		if (err == -EBUSY) {
 			return;
 		}
@@ -798,6 +816,7 @@ static void isr_rx_adv_sync(void *param)
 {
 	struct lll_sync *lll;
 	uint8_t rssi_ready;
+	uint8_t cte_ready;
 	uint8_t trx_done;
 	uint8_t crc_ok;
 	int err;
@@ -810,8 +829,14 @@ static void isr_rx_adv_sync(void *param)
 		crc_ok = radio_crc_is_valid();
 		rssi_ready = radio_rssi_is_ready();
 		trx_cnt = 1U;
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)) {
+			cte_ready = radio_df_cte_ready();
+		} else {
+			cte_ready = 0U;
+		}
 	} else {
-		crc_ok = rssi_ready = 0U;
+		crc_ok = rssi_ready = cte_ready = 0U;
 	}
 
 	/* Clear radio rx status and events */
@@ -834,7 +859,7 @@ static void isr_rx_adv_sync(void *param)
 	 * affect synchronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
-	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, rssi_ready,
+	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, cte_ready, rssi_ready,
 		     SYNC_STAT_READY_OR_CONT_SCAN);
 	if (err == -EBUSY) {
 		return;
@@ -849,6 +874,7 @@ static void isr_rx_aux_chain(void *param)
 	struct lll_scan_aux *lll_aux;
 	struct lll_sync *lll;
 	uint8_t rssi_ready;
+	uint8_t cte_ready;
 	uint8_t trx_done;
 	uint8_t crc_ok;
 	int err;
@@ -873,8 +899,14 @@ static void isr_rx_aux_chain(void *param)
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		rssi_ready = radio_rssi_is_ready();
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)) {
+			cte_ready = radio_df_cte_ready();
+		} else {
+			cte_ready = 0U;
+		}
 	} else {
-		crc_ok = rssi_ready = 0U;
+		crc_ok = rssi_ready = cte_ready = 0U;
 	}
 
 	/* Clear radio rx status and events */
@@ -894,7 +926,7 @@ static void isr_rx_aux_chain(void *param)
 	 * affect synchronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
-	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, rssi_ready,
+	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, cte_ready, rssi_ready,
 		     SYNC_STAT_READY_OR_CONT_SCAN);
 
 	if (err == -EBUSY) {
@@ -1007,37 +1039,32 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 
 	if (cfg->is_enabled) {
 		if (is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
-			/* If the CTEPRESENT event didn't fire, the CTEInfo was
-			 * not detected and sampling was not started.
-			 */
-			if (radio_df_cte_ready()) {
-				cte_info = radio_df_cte_status_get();
-				ant = radio_df_pdu_antenna_switch_pattern_get();
-				iq_report = ull_df_iq_report_alloc();
-				LL_ASSERT(iq_report);
+			cte_info = radio_df_cte_status_get();
+			ant = radio_df_pdu_antenna_switch_pattern_get();
+			iq_report = ull_df_iq_report_alloc();
+			LL_ASSERT(iq_report);
 
-				iq_report->hdr.type = NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT;
-				iq_report->sample_count = radio_df_iq_samples_amount_get();
-				iq_report->packet_status = packet_status;
-				iq_report->rssi_ant_id = ant;
-				iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
-				iq_report->local_slot_durations = cfg->slot_durations;
+			iq_report->hdr.type = NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT;
+			iq_report->sample_count = radio_df_iq_samples_amount_get();
+			iq_report->packet_status = packet_status;
+			iq_report->rssi_ant_id = ant;
+			iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
+			iq_report->local_slot_durations = cfg->slot_durations;
 
-				ftr = &iq_report->hdr.rx_ftr;
-				ftr->param = lll;
-				ftr->rssi = ((rssi_ready) ? radio_rssi_get() :
-					     BT_HCI_LE_RSSI_NOT_AVAILABLE);
+			ftr = &iq_report->hdr.rx_ftr;
+			ftr->param = lll;
+			ftr->rssi =
+				((rssi_ready) ? radio_rssi_get() : BT_HCI_LE_RSSI_NOT_AVAILABLE);
 
-				cfg->cte_count += 1U;
+			cfg->cte_count += 1U;
 
-				ull_rx_put(iq_report->hdr.link, iq_report);
-			} else {
-				return -ENODATA;
-			}
+			ull_rx_put(iq_report->hdr.link, iq_report);
+
+			return 0;
 		}
 	}
 
-	return 0;
+	return -ENODATA;
 }
 
 static bool is_max_cte_reached(uint8_t max_cte_count, uint8_t cte_count)
