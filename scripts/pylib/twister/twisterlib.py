@@ -2266,7 +2266,8 @@ class TestInstance(DisablePyTestCollectionMixin):
         status_to_verdict = {
             'skipped': 'SKIP',
             'error': 'BLOCK',
-            'failure': 'FAILED'
+            'failure': 'FAILED',
+            'filtered': 'FILTERED'
         }
 
         for k in self.results:
@@ -3110,10 +3111,9 @@ class TestSuite(DisablePyTestCollectionMixin):
     def update_counting(self, results=None):
         for instance in self.instances.values():
             results.cases += len(instance.testcase.cases)
-            if instance.status == 'skipped':
+            if instance.status == 'filtered':
                 results.skipped_filter += 1
                 results.skipped_configs += 1
-                results.skipped_cases += len(instance.testcase.cases)
 
     def compare_metrics(self, filename):
         # name, datatype, lower results better
@@ -3232,7 +3232,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
 {Fore.RED}{results.total - run - results.skipped_configs}{Fore.RESET} test configurations were only built.")
 
-    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed, platform_reports, json_report, report_skipped):
+    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed, platform_reports, json_report):
         if not self.instances:
             return
 
@@ -3255,9 +3255,9 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         if not no_update:
             self.xunit_report(filename + ".xml", full_report=False,
-                              append=only_failed, version=self.version, report_skipped=report_skipped)
+                              append=only_failed, version=self.version)
             self.xunit_report(filename + "_report.xml", full_report=True,
-                              append=only_failed, version=self.version, report_skipped=report_skipped)
+                              append=only_failed, version=self.version)
             self.csv_report(filename + ".csv")
 
             if json_report:
@@ -3713,8 +3713,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 # Such configuration has to be removed from discards to make sure it won't get skipped
                 remove_from_discards.append(instance)
             else:
-
-                instance.status = "skipped"
+                instance.status = "filtered"
                 instance.fill_results_by_status()
 
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
@@ -3822,7 +3821,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                            "reason": reason}
                 cw.writerow(rowdict)
 
-    def target_report(self, outdir, suffix, append=False, report_skipped=True):
+    def target_report(self, outdir, suffix, append=False):
         platforms = {inst.platform.name for _, inst in self.instances.items()}
         for platform in platforms:
             if suffix:
@@ -3830,7 +3829,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             else:
                 filename = os.path.join(outdir,"{}.xml".format(platform))
             self.xunit_report(filename, platform, full_report=True,
-                              append=append, version=self.version, report_skipped=report_skipped)
+                              append=append, version=self.version)
 
 
     @staticmethod
@@ -3844,7 +3843,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         return filtered_string
 
 
-    def xunit_report(self, filename, platform=None, full_report=False, append=False, version="NA", report_skipped=True):
+    def xunit_report(self, filename, platform=None, full_report=False, append=False, version="NA"):
         total = 0
         fails = passes = errors = skips = 0
         if platform:
@@ -3888,21 +3887,23 @@ class TestSuite(DisablePyTestCollectionMixin):
                         elif instance.results[k] == 'SKIP' or instance.status in ['skipped']:
                             if not eleTestsuite or not eleTestsuite.findall(f'testcase/[@name="{k}"]'):
                                 skips += 1
-                        else:
+                        elif instance.results[k] == 'FAIL':
                             fails += 1
+                        elif instance.results[k] == 'FILTERED':
+                            skips += 1
                 else:
                     if instance.status in ["error", "failed", "timeout", "flash_error"]:
                         if instance.reason in ['build_error', 'handler_crash']:
                             errors += 1
                         else:
                             fails += 1
-                    elif instance.status == 'skipped':
+                    elif instance.status in ['skipped', 'filtered']:
                         skips += 1
                     elif instance.status == 'passed':
                         passes += 1
                     else:
                         if instance.status:
-                            logger.error(f"{instance.name}: Unknown status {instance.status}")
+                            logger.error(f"{instance.name}: Unknown status '{instance.status}'")
                         else:
                             logger.error(f"{instance.name}: No status")
 
@@ -3912,7 +3913,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 continue
 
             run = p
-            if not report_skipped and total == skips:
+            if total == skips:
                 continue
 
             # When we re-run the tests, we re-use the results and update only with
@@ -3934,8 +3935,6 @@ class TestSuite(DisablePyTestCollectionMixin):
             ET.SubElement(eleTSPropetries, 'property', name="version", value=version)
 
             for _, instance in inst.items():
-                if instance.status == 'skipped' and not report_skipped:
-                    continue
                 if full_report:
                     tname = os.path.basename(instance.testcase.name)
                 else:
@@ -3972,10 +3971,13 @@ class TestSuite(DisablePyTestCollectionMixin):
                             el.text = self.process_log(log_file)
 
                         elif instance.results[k] == 'PASS' \
-                            or (not instance.run and instance.status in ["passed"]):
-                            pass
-                        elif instance.results[k] == 'SKIP' or (instance.status in ["skipped"]):
+                            or (not instance.run and instance.status == "passed"):
+                            if not instance.run:
+                                el = ET.SubElement(eleTestcase, 'skipped', type="build", message="built only")
+                        elif instance.results[k] == 'SKIP' or instance.status == "skipped":
                             el = ET.SubElement(eleTestcase, 'skipped', type="skipped", message=instance.reason)
+                        elif instance.results[k] == 'FILTERED' or instance.status == 'filtered':
+                            el = ET.SubElement(eleTestcase, 'skipped', type="filtered", message=instance.reason)
                         else:
                             el = ET.SubElement(
                                 eleTestcase,
@@ -4015,9 +4017,12 @@ class TestSuite(DisablePyTestCollectionMixin):
                                 log_file = bl
 
                         failure.text = self.process_log(log_file)
-
                     elif instance.status == "skipped":
-                        ET.SubElement(eleTestcase, 'skipped', type="skipped", message="Skipped")
+                        ET.SubElement(eleTestcase, 'skipped', type="skipped", message=instance.reason)
+                    elif instance.status == "filtered":
+                        ET.SubElement(eleTestcase, 'skipped', type="filtered", message=instance.reason)
+                    elif instance.status == "passed" and not instance.run:
+                        ET.SubElement(eleTestcase, 'skipped', type="built", message="Build only")
 
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
@@ -4100,6 +4105,9 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                     if instance.results[k] in ["SKIP"] or instance.status == 'skipped':
                         testcase["status"] = "skipped"
+                        testcase["reason"] = instance.reason
+                    elif instance.status == 'filtered':
+                        testcase["status"] = "filtered"
                         testcase["reason"] = instance.reason
                     elif instance.results[k] in ["PASS"] or instance.status == 'passed':
                         testcase["status"] = "passed"
