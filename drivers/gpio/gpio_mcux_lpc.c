@@ -236,14 +236,20 @@ static uint32_t attach_pin_to_isr(uint32_t port, uint32_t pin, uint32_t isr_no)
 	/* Connect trigger sources to PINT */
 	INPUTMUX_Init(INPUTMUX);
 
-	/* Code assumes PIN_INT values are grouped [0..3] and [4..7].
+	/* Code asumes PIN_INT values are grouped [0..3] and [4..7].
 	 * This scenario is true in LPC54xxx/LPC55xxx.
 	 */
+#if (FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS > 8)
+	#error having more than 8 PINT IRQs not supported in driver
+#elif (FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS > 4)
 	if (isr_no < PIN_INT4_IRQn) {
 		pint_idx = isr_no - PIN_INT0_IRQn;
 	} else {
 		pint_idx = isr_no - PIN_INT4_IRQn + 4;
 	}
+#else
+	pint_idx = isr_no - PIN_INT0_IRQn;
+#endif
 
 	INPUTMUX_AttachSignal(INPUTMUX, pint_idx,
 			      PIN_TO_INPUT_MUX_CONNECTION(port, pin));
