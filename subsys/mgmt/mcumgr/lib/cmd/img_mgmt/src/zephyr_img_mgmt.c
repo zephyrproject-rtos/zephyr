@@ -28,6 +28,22 @@ BUILD_ASSERT(CONFIG_IMG_MGMT_UPDATABLE_IMAGE_NUMBER == 1 ||
 	      FLASH_AREA_LABEL_EXISTS(image_3)),
 	     "Missing partitions?");
 
+static int flash_area_open_ex(uint8_t id, const struct flash_area **fa)
+{
+	const struct flash_area *lfa;
+	int rc = flash_area_open(id, &lfa);
+
+	if (rc == 0) {
+		if (flash_area_get_device(lfa) != NULL) {
+			*fa = lfa;
+		} else {
+			rc = -ENODEV;
+		}
+	}
+
+	return rc;
+}
+
 static int
 zephyr_img_mgmt_slot_to_image(int slot)
 {
@@ -61,7 +77,7 @@ zephyr_img_mgmt_flash_check_empty(uint8_t fa_id, bool *out_empty)
 	uint8_t erased_val;
 	uint32_t erased_val_32;
 
-	rc = flash_area_open(fa_id, &fa);
+	rc = flash_area_open_ex(fa_id, &fa);
 	if (rc != 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
@@ -314,7 +330,7 @@ img_mgmt_impl_read(int slot, unsigned int offset, void *dst,
 		return MGMT_ERR_EUNKNOWN;
 	}
 
-	rc = flash_area_open(area_id, &fa);
+	rc = flash_area_open_ex(area_id, &fa);
 	if (rc != 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
@@ -420,7 +436,7 @@ img_mgmt_impl_erase_image_data(unsigned int off, unsigned int num_bytes)
 		goto end;
 	}
 
-	rc = flash_area_open(g_img_mgmt_state.area_id, &fa);
+	rc = flash_area_open_ex(g_img_mgmt_state.area_id, &fa);
 	if (rc != 0) {
 		LOG_ERR("Can't bind to the flash area (err %d)", rc);
 		rc = MGMT_ERR_EUNKNOWN;
@@ -429,6 +445,10 @@ img_mgmt_impl_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 	/* align requested erase size to the erase-block-size */
 	const struct device *dev = flash_area_get_device(fa);
+	if (dev == NULL) {
+		rc = MGMT_ERR_EUNKNOWN;
+		goto end_fa;
+	}
 	struct flash_pages_info page;
 	off_t page_offset = fa->fa_off + num_bytes - 1;
 
@@ -584,7 +604,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 
 #if defined(CONFIG_IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT)
 		if (hdr->ih_flags & IMAGE_F_ROM_FIXED_ADDR) {
-			rc = flash_area_open(action->area_id, &fa);
+			rc = flash_area_open_ex(action->area_id, &fa);
 			if (rc) {
 				*errstr = img_mgmt_err_str_flash_open_failed;
 				return MGMT_ERR_EUNKNOWN;
@@ -657,7 +677,7 @@ img_mgmt_impl_erased_val(int slot, uint8_t *erased_val)
 		return MGMT_ERR_EUNKNOWN;
 	}
 
-	rc = flash_area_open(area_id, &fa);
+	rc = flash_area_open_ex(area_id, &fa);
 	if (rc != 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
