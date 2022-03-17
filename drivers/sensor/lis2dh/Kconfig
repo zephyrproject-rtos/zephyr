@@ -35,6 +35,15 @@ endchoice
 config LIS2DH_TRIGGER
 	bool
 
+config LIS2DH_FIFO_MODE
+	bool "Use accelerometers internal FIFO"
+	select RING_BUFFER
+	help
+	  Configures the device to not trigger DRDY interrupts until internal
+	  hw FIFO is filled with 32 xyz samples. When this is enabled, the
+	  application should call sensor_sample_fetch() once and
+	  sensor_channel_get() thirty-two times to fetch all buffered data.
+
 config LIS2DH_THREAD_PRIORITY
 	int "Thread priority"
 	depends on LIS2DH_TRIGGER_OWN_THREAD

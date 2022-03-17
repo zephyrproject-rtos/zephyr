@@ -98,6 +98,15 @@ static int lis2dh_channel_get(const struct device *dev,
 	int ofs_end;
 	int i;
 
+#if defined(CONFIG_LIS2DH_FIFO_MODE)
+	int ret;
+
+	ret = ring_buf_get(&lis2dh->fifo_rb, lis2dh->sample.xyz, 6);
+	if (ret != 6) {
+		return -ENODATA;
+	}
+#endif
+
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 		ofs_start = ofs_end = 0;
@@ -134,6 +143,38 @@ static int lis2dh_fetch_xyz(const struct device *dev,
 	struct lis2dh_data *lis2dh = dev->data;
 	int status = -ENODATA;
 	size_t i;
+
+#if defined(CONFIG_LIS2DH_FIFO_MODE)
+	static uint8_t buf[LIS2DH_FIFO_SZ];
+	uint8_t fifo_src, bytes_in_fifo;
+
+	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_FIFO_SRC_REG, &fifo_src);
+	if (status < 0) {
+		LOG_WRN("Could not read FIFO_SRC reg");
+		return status;
+	}
+
+	if (fifo_src & LIS2DH_FIFO_SRC_EMPTY) {
+		return -ENODATA;
+	}
+
+	bytes_in_fifo = ((fifo_src & LIS2DH_FIFO_SRC_N_MASK) + 1) * 6;
+	status = lis2dh->hw_tf->read_data(dev, LIS2DH_REG_ACCEL_X_LSB,
+					  buf, bytes_in_fifo);
+	if (status < 0) {
+		LOG_WRN("Could not read accel axis data");
+		return status;
+	}
+
+	status = ring_buf_put(&lis2dh->fifo_rb, buf, bytes_in_fifo);
+	if (status < bytes_in_fifo) {
+		LOG_ERR("Couldn't fit data in ring buf");
+		return -ENOSPC;
+	}
+
+	return 0;
+#else
+
 	/*
 	 * since status and all accel data register addresses are consecutive,
 	 * a burst read can be used to read all the samples
@@ -158,6 +199,7 @@ static int lis2dh_fetch_xyz(const struct device *dev,
 	}
 
 	return status;
+#endif /* CONFIG_LIS2DH_FIFO_MODE */
 }
 
 static int lis2dh_sample_fetch(const struct device *dev,
