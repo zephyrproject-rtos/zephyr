@@ -1410,8 +1410,7 @@ def main():
                        options.release,
                        options.only_failed,
                        options.platform_reports,
-                       options.json_report,
-                       not options.no_skipped_report
+                       options.json_report
                        )
 
     logger.info("Run completed")
