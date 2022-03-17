@@ -18,7 +18,7 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
-    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_no_rx_pin.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_rx_disable.overlay"
 
   drivers.uart_enhanced_poll:
     tags: drivers
