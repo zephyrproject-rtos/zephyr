@@ -554,7 +554,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	struct k_thread    *writer;
 	struct k_pipe_desc *desc;
 	sys_dlist_t    xfer_list;
-	size_t         num_bytes_read = 0;
+	size_t         num_bytes_read;
 	size_t         bytes_copied;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, get, pipe, timeout);

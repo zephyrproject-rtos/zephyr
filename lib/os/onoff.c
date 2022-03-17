@@ -301,7 +301,7 @@ static void process_event(struct onoff_manager *mgr,
 {
 	sys_slist_t clients;
 	uint16_t state = mgr->flags & ONOFF_STATE_MASK;
-	int res = 0;
+	int res;
 	bool processing = ((mgr->flags & ONOFF_FLAG_PROCESSING) != 0);
 
 	__ASSERT_NO_MSG(evt != EVT_NOP);
@@ -396,7 +396,6 @@ static void process_event(struct onoff_manager *mgr,
 
 			key = k_spin_lock(&mgr->lock);
 			mgr->flags &= (uint16_t)~ONOFF_FLAG_PROCESSING;
-			state = mgr->flags & ONOFF_STATE_MASK;
 		}
 
 		/* Process deferred events.  Completion takes priority

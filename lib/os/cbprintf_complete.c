@@ -1742,7 +1742,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 		 *   * the converted value
 		 */
 		size_t nj_len = (size_t)(bpe - bps);
-		int pad_len = 0;
+		int pad_len;
 
 		if (sign != '\0') {
 			nj_len += 1U;

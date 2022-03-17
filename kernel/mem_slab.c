@@ -75,7 +75,7 @@ SYS_INIT(init_mem_slab_module, PRE_KERNEL_1,
 int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 		    size_t block_size, uint32_t num_blocks)
 {
-	int rc = 0;
+	int rc;
 
 	slab->num_blocks = num_blocks;
 	slab->block_size = block_size;

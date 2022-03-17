@@ -1587,7 +1587,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
-	int ret = 0;
+	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
 
