@@ -39,7 +39,6 @@
 			compatible = "gd,gd32-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;
-			peripheral-id = <6>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
