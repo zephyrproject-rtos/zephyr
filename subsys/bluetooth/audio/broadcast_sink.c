@@ -463,6 +463,14 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 
 	codec_qos.pd = net_buf_simple_pull_le24(&net_buf);
 	sink->subgroup_count = net_buf_simple_pull_u8(&net_buf);
+
+	if (sink->subgroup_count > ARRAY_SIZE(base.subgroups)) {
+		BT_DBG("Cannot decode BASE with %u subgroups (max supported is %ld)",
+		       sink->subgroup_count, ARRAY_SIZE(base.subgroups));
+
+		return false;
+	}
+
 	base.subgroup_count = sink->subgroup_count;
 	for (int i = 0; i < base.subgroup_count; i++) {
 		if (!net_buf_decode_subgroup(&net_buf, &base.subgroups[i])) {
