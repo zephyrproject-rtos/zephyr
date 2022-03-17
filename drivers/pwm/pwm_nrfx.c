@@ -384,8 +384,8 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 		(NRFX_PWM_PIN_NOT_USED))
 
 #define PWM_NRFX_DEVICE(idx)						      \
-	NRF_DT_ENSURE_PINS_ASSIGNED(PWM(idx),				      \
-				    ch0_pin, ch1_pin, ch2_pin, ch3_pin);      \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(PWM(idx), 1,			      \
+				     ch0_pin, ch1_pin, ch2_pin, ch3_pin);     \
 	static struct pwm_nrfx_data pwm_nrfx_##idx##_data = {		      \
 		COND_CODE_1(CONFIG_PINCTRL, (),				      \
 			(.inverted_channels =				      \
