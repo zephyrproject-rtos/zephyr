@@ -1830,6 +1830,8 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_LRSIWR		BIT(2)
 #define IT8XXX2_GCTRL_LRSIPWRSWTR	BIT(1)
 #define IT8XXX2_GCTRL_LRSIPGWR		BIT(0)
+/* 0x37: Eflash Protect Lock */
+#define IT8XXX2_GCTRL_EPLR_ENABLE	BIT(0)
 /* 0x46: Pin Multi-function Enable 3 */
 #define IT8XXX2_GCTRL_SMB3PSEL		BIT(6)
 /* 0x4B: ETWD and UART Control */
