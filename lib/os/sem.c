@@ -81,7 +81,7 @@ int sys_sem_give(struct sys_sem *sem)
 
 int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 {
-	int ret = 0;
+	int ret;
 	atomic_t old_value;
 
 	do {
@@ -122,9 +122,8 @@ int sys_sem_give(struct sys_sem *sem)
 
 int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 {
-	int ret_value = 0;
+	int ret_value = k_sem_take(&sem->kernel_sem, timeout);
 
-	ret_value = k_sem_take(&sem->kernel_sem, timeout);
 	if ((ret_value == -EAGAIN) || (ret_value == -EBUSY)) {
 		ret_value = -ETIMEDOUT;
 	}
