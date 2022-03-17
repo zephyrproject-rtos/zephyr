@@ -428,7 +428,9 @@ static inline void init_iface(struct net_if *iface)
 	z_object_init(iface);
 #endif
 
-	api->init(iface);
+	if (api->init(iface) == 0) {
+		net_if_flag_set(iface, NET_IF_INITIALISED);
+	}
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
