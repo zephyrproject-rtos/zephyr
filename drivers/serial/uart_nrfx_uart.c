@@ -33,11 +33,11 @@
 #define BAUDRATE	PROP(current_speed)
 
 #ifdef CONFIG_PINCTRL
-#define DISABLE_RX	HAS_PROP(disable_rx)
+#define DISABLE_RX	PROP(disable_rx)
 #else
 #define DISABLE_RX	!HAS_PROP(rx_pin)
 #endif /* CONFIG_PINCTRL */
-#define HW_FLOW_CONTROL_AVAILABLE	HAS_PROP(hw_flow_control)
+#define HW_FLOW_CONTROL_AVAILABLE	PROP(hw_flow_control)
 
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
