@@ -70,7 +70,7 @@ static void tbs_client_discover_cb(struct bt_conn *conn, int err,
 	discovery_complete = true;
 }
 
-static struct bt_tbs_client_cb tbs_client_cbs = {
+static const struct bt_tbs_client_cb tbs_client_cbs = {
 	.discover = tbs_client_discover_cb,
 	.originate_call = NULL,
 	.terminate_call = NULL,

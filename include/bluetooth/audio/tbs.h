@@ -733,6 +733,6 @@ int bt_tbs_client_read_optional_opcodes(struct bt_conn *conn,
  *
  * @param cbs Pointer to the callback structure.
  */
-void bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs);
+void bt_tbs_client_register_cb(const struct bt_tbs_client_cb *cbs);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TBS_H_ */
