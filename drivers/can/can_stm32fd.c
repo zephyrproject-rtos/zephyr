@@ -158,7 +158,7 @@ int can_stm32fd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 
-	*max_bitrate = cfg->mcan.max_bitrate;
+	*max_bitrate = cfg->mcan_cfg.max_bitrate;
 
 	return 0;
 }
@@ -178,6 +178,7 @@ static void can_stm32fd_line_1_isr(const struct device *dev)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
+	struct can_stm32fd_data *data = dev->data;
 	struct can_mcan_data *mcan_data = &data->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
