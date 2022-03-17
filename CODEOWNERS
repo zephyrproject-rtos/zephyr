@@ -173,7 +173,6 @@
 /boards/x86/acrn/                         @enjiamai
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
-/boards/xtensa/odroid_go/                 @ydamigos
 /boards/xtensa/nxp_adsp_imx8/             @iuliana-prodan @dbaluta
 /boards/sparc/                            @martin-aberg
 /boards/arm64/qemu_cortex_a53/            @carlocaione
