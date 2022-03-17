@@ -143,10 +143,10 @@ extern "C" {
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 #define BROADCAST_SNK_STREAM_CNT CONFIG_BT_AUDIO_BROADCAST_SNK_STREAM_COUNT
-#define BROADCAST_SUBGROUP_CNT CONFIG_BT_AUDIO_BROADCAST_SUBGROUP_COUNT
+#define BROADCAST_SNK_SUBGROUP_CNT CONFIG_BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
 #else /* !CONFIG_BT_AUDIO_BROADCAST_SINK */
 #define BROADCAST_SNK_STREAM_CNT 0
-#define BROADCAST_SUBGROUP_CNT 0
+#define BROADCAST_SNK_SUBGROUP_CNT 0
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK*/
 
 /** @brief Abstract Audio Unicast Group structure. */
@@ -291,7 +291,7 @@ struct bt_audio_base {
 	/* Number of subgroups in the BASE */
 	size_t subgroup_count;
 	/* Array of subgroups in the BASE */
-	struct bt_audio_base_subgroup subgroups[BROADCAST_SUBGROUP_CNT];
+	struct bt_audio_base_subgroup subgroups[BROADCAST_SNK_SUBGROUP_CNT];
 };
 
 /** @brief Audio Capability type */

@@ -123,6 +123,10 @@ config BT_AUDIO_BROADCAST_SOURCE
 	  Isochronous channels.
 if BT_AUDIO_BROADCAST_SOURCE
 
+config BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT
+	int # hidden: TODO: Update once the API supports it
+	default 1
+
 config BT_AUDIO_BROADCAST_SRC_COUNT
 	int "Basic Audio Broadcaster source count"
 	default 1
@@ -153,7 +157,7 @@ config BT_AUDIO_BROADCAST_SINK
 
 if BT_AUDIO_BROADCAST_SINK
 
-config BT_AUDIO_BROADCAST_SUBGROUP_COUNT
+config BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
 	int # hidden: TODO: Update once the API supports it
 	default 1
 

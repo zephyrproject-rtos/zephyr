@@ -55,7 +55,7 @@ struct bt_audio_base_ad_subgroup {
 
 struct bt_audio_base_ad {
 	uint16_t uuid_val;
-	struct bt_audio_base_ad_subgroup subgroups[BROADCAST_SUBGROUP_CNT];
+	struct bt_audio_base_ad_subgroup subgroups[CONFIG_BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT];
 } __packed;
 
 static struct bt_audio_ep broadcast_source_eps
@@ -251,8 +251,9 @@ static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 	uint8_t *start;
 	uint8_t len;
 
-	__ASSERT(source->subgroup_count == BROADCAST_SUBGROUP_CNT,
-		 "Cannot encode BASE with more than a single subgroup");
+	__ASSERT(source->subgroup_count == CONFIG_BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT,
+		 "Cannot encode BASE with more than a %u subgroups",
+		 CONFIG_BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT);
 
 	net_buf_simple_add_le16(buf, BT_UUID_BASIC_AUDIO_VAL);
 	net_buf_simple_add_le24(buf, source->pd);
@@ -505,7 +506,7 @@ int bt_audio_broadcast_source_create(struct bt_audio_stream *streams,
 		return err;
 	}
 
-	source->subgroup_count = BROADCAST_SUBGROUP_CNT;
+	source->subgroup_count = CONFIG_BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT;
 	source->pd = qos->pd;
 	err = bt_audio_set_base(source, codec);
 	if (err != 0) {
