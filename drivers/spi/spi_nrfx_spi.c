@@ -288,8 +288,10 @@ static int spi_nrfx_pm_control(const struct device *dev,
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		nrfx_spi_uninit(&config->spi);
-		data->initialized = false;
+		if (data->initialized) {
+			nrfx_spi_uninit(&config->spi);
+			data->initialized = false;
+		}
 		break;
 
 	default:
