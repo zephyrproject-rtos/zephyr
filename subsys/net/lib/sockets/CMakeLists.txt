@@ -15,9 +15,10 @@ zephyr_sources(
   )
 endif()
 
-zephyr_sources_ifdef(CONFIG_NET_SOCKETS_CAN         sockets_can.c)
-zephyr_sources_ifdef(CONFIG_NET_SOCKETS_PACKET      sockets_packet.c)
-zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD     socket_offload.c)
+zephyr_sources_ifdef(CONFIG_NET_SOCKETS_CAN                sockets_can.c)
+zephyr_sources_ifdef(CONFIG_NET_SOCKETS_PACKET             sockets_packet.c)
+zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD            socket_offload.c)
+zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD_DISPATCHER socket_dispatcher.c)
 
 if (CONFIG_NET_SOCKETS_SOCKOPT_TLS AND NOT CONFIG_NET_SOCKETS_OFFLOAD_TLS)
 zephyr_sources(sockets_tls.c)
