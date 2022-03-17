@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_http, CONFIG_NET_HTTP_LOG_LEVEL);
 #define HTTP_CONTENT_LEN_SIZE 6
 #define MAX_SEND_BUF_LEN 192
 
-static ssize_t sendall(int sock, const void *buf, size_t len)
+static int sendall(int sock, const void *buf, size_t len)
 {
 	while (len) {
 		ssize_t out_len = zsock_send(sock, buf, len, 0);
@@ -53,6 +53,7 @@ static int http_send_data(int sock, char *send_buf,
 	va_list va;
 	int ret, end_of_send = *send_buf_pos;
 	int end_of_data, remaining_len;
+	int sent = 0;
 
 	va_start(va, send_buf_pos);
 
@@ -85,7 +86,7 @@ static int http_send_data(int sock, char *send_buf,
 						end_of_send, ret);
 					goto err;
 				}
-
+				sent += end_of_send;
 				end_of_send = 0;
 				continue;
 			} else {
@@ -110,7 +111,7 @@ static int http_send_data(int sock, char *send_buf,
 
 	*send_buf_pos = end_of_send;
 
-	return end_of_send;
+	return sent;
 
 err:
 	va_end(va);
@@ -120,9 +121,16 @@ err:
 
 static int http_flush_data(int sock, const char *send_buf, size_t send_buf_len)
 {
+	int ret;
+
 	LOG_HEXDUMP_DBG(send_buf, send_buf_len, "Data to send");
 
-	return sendall(sock, send_buf, send_buf_len);
+	ret = sendall(sock, send_buf, send_buf_len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return (int)send_buf_len;
 }
 
 static void print_header_field(size_t len, const char *str)
@@ -664,6 +672,8 @@ int http_client_req(int sock, struct http_request *req,
 		if (ret < 0) {
 			goto out;
 		}
+
+		total_sent += ret;
 	}
 
 	if (send_buf_pos > 0) {
