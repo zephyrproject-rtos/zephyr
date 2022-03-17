@@ -21,8 +21,8 @@ static int storage_erase(void)
 	if (rc < 0) {
 		LOG_ERR("failed to open flash area");
 	} else {
-		rc = flash_area_erase(fa, 0, FLASH_AREA_SIZE(storage));
-		if (rc < 0) {
+		if (flash_area_get_device(fa) == NULL ||
+		    flash_area_erase(fa, 0, FLASH_AREA_SIZE(storage) < 0)) {
 			LOG_ERR("failed to erase flash area");
 		}
 		flash_area_close(fa);
