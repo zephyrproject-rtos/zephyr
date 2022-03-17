@@ -29,5 +29,11 @@ properties:
     "#io-channel-cells":
       const: 1
 
+    vref_mv:
+      type: int
+      required: false
+      default: 3300
+      description: Indicates the reference voltage of the ADC in mV.
+
 io-channel-cells:
     - input
