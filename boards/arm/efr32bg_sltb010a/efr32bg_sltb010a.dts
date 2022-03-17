@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <silabs/efr32bg22c224f512im40.dtsi>
+#include <silabs/efr32bg22-pinctrl.dtsi>
 
 / {
 	model = "Silicon Labs EFR32BG SLTB010A (aka Thunderboard BG22)";
@@ -52,6 +53,8 @@
 	location-rx = <GECKO_LOCATION(0) GECKO_PORT_E GECKO_PIN(11)>;
 	location-tx = <GECKO_LOCATION(0) GECKO_PORT_E GECKO_PIN(10)>;
 	status = "okay";
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
 };
 
 &usart1 {
@@ -59,6 +62,8 @@
 	location-rx = <GECKO_LOCATION(1) GECKO_PORT_A GECKO_PIN(6)>;
 	location-tx = <GECKO_LOCATION(1) GECKO_PORT_A GECKO_PIN(5)>;
 	status = "okay";
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
 };
 
 &wdog0 {

@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2022 Silicon Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/gecko-pinctrl.h>
+
+&pinctrl {
+	/* configuration for uart0 device, default state */
+	usart0_default: usart0_default {
+		group1 {
+			/* configure PE.11 as UART_RX and PE.10 as UART_TX */
+			psels = <GECKO_PSEL(UART_TX, GECKO_PORT_E, GECKO_PIN(10))>,
+				<GECKO_PSEL(UART_RX, GECKO_PORT_E, GECKO_PIN(11))>,
+				<GECKO_LOC(UART_LOC, GECKO_LOCATION(0))>;
+		};
+	};
+
+	/* configuration for uart1 device, default state */
+	usart1_default: usart1_default {
+		group1 {
+			/* configure PA.6 as UART_RX and PA.5 as UART_TX */
+			psels = <GECKO_PSEL(UART_TX, GECKO_PORT_A, GECKO_PIN(5))>,
+				<GECKO_PSEL(UART_RX, GECKO_PORT_A, GECKO_PIN(6))>,
+				<GECKO_LOC(UART_LOC, GECKO_LOCATION(1))>;
+		};
+	};
+};

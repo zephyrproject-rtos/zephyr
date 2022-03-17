@@ -50,11 +50,12 @@ static void sli_os_schedule_wakeup(uint32_t expected_idletime_in_os_ticks);
 	/* __WEAK is defined to avoid compilation issue for test application
 	 * (tests/subsys/power/power_mgmt)
 	 */
-__WEAK struct pm_state_info pm_policy_next_state(int32_t ticks);
+__WEAK struct pm_state_info *pm_policy_next_state(uint8_t id, int32_t ticks);
 
 
 static const struct pm_state_info pm_min_residency[] =
-	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
+	PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
+struct pm_state_info pm_state_active = {PM_STATE_ACTIVE, 0, 0, 0};
 
 #endif
 
@@ -86,7 +87,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	BasePRI = __get_BASEPRI();
 	__set_BASEPRI(0);
 
-	switch (info.state) {
+	switch (state) {
 
 	case PM_STATE_RUNTIME_IDLE:
 	case PM_STATE_SUSPEND_TO_IDLE:
@@ -111,11 +112,11 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		break;
 
 	default:
-		LOG_DBG("Unsupported power state %u", info.state);
+		LOG_DBG("Unsupported power state %u", state);
 		break;
 	}
 
-	LOG_DBG("SoC leaving power state %d", info.state);
+	LOG_DBG("SoC leaving power state %d", state);
 
 	__set_BASEPRI(BasePRI);
 
@@ -270,14 +271,11 @@ bool sl_power_manager_is_ok_to_sleep(void)
  * checking whether the ticks is meeting the minimum criteria to enter
  * into SOC specific power policy or not
  */
-__WEAK struct pm_state_info pm_policy_next_state(int ticks)
+__WEAK struct pm_state_info *pm_policy_next_state(uint8_t id, int32_t ticks)
 {
 	int i;
 
 	for (i = ARRAY_SIZE(pm_min_residency) - 1; i >= 0; i--) {
-		if (!pm_constraint_get(pm_min_residency[i].state)) {
-			continue;
-		}
 
 		if ((ticks == K_TICKS_FOREVER) ||
 		    (ticks >= k_us_to_ticks_ceil32(
@@ -291,9 +289,9 @@ __WEAK struct pm_state_info pm_policy_next_state(int ticks)
 			k_busy_wait(k_ticks_to_us_floor32(1));
 			IdleTicks = ticks - 1;
 
-			return pm_min_residency[i];
+			return ((struct pm_state_info *) &pm_min_residency[i]);
 		}
 	}
-	return (struct pm_state_info){ PM_STATE_ACTIVE, 0, 0 };
+	return (struct pm_state_info *)(&pm_state_active);
 }
 #endif

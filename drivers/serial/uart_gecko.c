@@ -12,6 +12,12 @@
 #include <em_cmu.h>
 #include <soc.h>
 
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#else
+#include <em_gpio.h>
+#endif /* CONFIG_PINCTRL */
+
 #define USART_PREFIX cmuClock_USART
 #define UART_PREFIX cmuClock_UART
 #define CLOCK_USART(id) _CONCAT(USART_PREFIX, id)
@@ -60,31 +66,39 @@ but not supported by this SOC"
 /**
  * @brief Config struct for UART
  */
+
 struct uart_gecko_config {
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif /* CONFIG_PINCTRL */
 	USART_TypeDef *base;
 	CMU_Clock_TypeDef clock;
 	uint32_t baud_rate;
+#ifndef CONFIG_PINCTRL
 #ifdef UART_GECKO_HW_FLOW_CONTROL
 	bool hw_flowcontrol;
+#endif /* UART_GECKO_HW_FLOW_CONTROL */
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
-#endif
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#ifndef CONFIG_PINCTRL
 	struct soc_gpio_pin pin_rx;
 	struct soc_gpio_pin pin_tx;
 #ifdef UART_GECKO_HW_FLOW_CONTROL
 	struct soc_gpio_pin pin_rts;
 	struct soc_gpio_pin pin_cts;
-#endif
+#endif /* UART_GECKO_HW_FLOW_CONTROL */
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 	uint8_t loc_rx;
 	uint8_t loc_tx;
 #ifdef UART_GECKO_HW_FLOW_CONTROL
 	uint8_t loc_rts;
 	uint8_t loc_cts;
-#endif
-#else
+#endif /* UART_GECKO_HW_FLOW_CONTROL */
+#else /* CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION */
 	uint8_t loc;
+#endif /* CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION */
 #endif
 };
 
@@ -291,6 +305,7 @@ static void uart_gecko_isr(const struct device *dev)
  *
  * @param dev UART device to configure
  */
+ #ifndef CONFIG_PINCTRL
 static void uart_gecko_init_pins(const struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config;
@@ -354,6 +369,7 @@ static void uart_gecko_init_pins(const struct device *dev)
 	}
 #endif /* UART_GECKO_HW_FLOW_CONTROL */
 }
+#endif /* !CONFIG_PINCTRL */
 
 /**
  * @brief Main initializer for UART
@@ -363,7 +379,11 @@ static void uart_gecko_init_pins(const struct device *dev)
  */
 static int uart_gecko_init(const struct device *dev)
 {
+#ifdef CONFIG_PINCTRL
+	int err;
+#endif /* CONFIG_PINCTRL */
 	const struct uart_gecko_config *config = dev->config;
+
 	USART_InitAsync_TypeDef usartInit = USART_INITASYNC_DEFAULT;
 
 	/* The peripheral and gpio clock are already enabled from soc and gpio
@@ -381,8 +401,15 @@ static int uart_gecko_init(const struct device *dev)
 #endif
 	USART_InitAsync(config->base, &usartInit);
 
+#ifdef CONFIG_PINCTRL
+		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+#else
 	/* Initialize USART pins */
 	uart_gecko_init_pins(dev);
+#endif /* CONFIG_PINCTRL */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -585,6 +612,29 @@ DT_INST_FOREACH_STATUS_OKAY(GECKO_UART_INIT)
 #define GECKO_USART_IRQ_HANDLER(idx)
 #endif
 
+#ifdef CONFIG_PINCTRL
+#define GECKO_USART_INIT(idx)						       \
+	PINCTRL_DT_INST_DEFINE(idx);   \
+	GECKO_USART_IRQ_HANDLER_DECL(idx);				       \
+									       \
+	static const struct uart_gecko_config usart_gecko_cfg_##idx = {	       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),		       \
+		.base = (USART_TypeDef *)DT_INST_REG_ADDR(idx),		       \
+		.clock = CLOCK_USART(DT_INST_PROP(idx, peripheral_id)),        \
+		.baud_rate = DT_INST_PROP(idx, current_speed), \
+		GECKO_USART_IRQ_HANDLER_FUNC(idx)			       \
+		};							       \
+								\
+	static struct uart_gecko_data usart_gecko_data_##idx;		       \
+									       \
+	DEVICE_DT_INST_DEFINE(idx, &uart_gecko_init, NULL,		       \
+			    &usart_gecko_data_##idx,			       \
+			    &usart_gecko_cfg_##idx, PRE_KERNEL_1,	       \
+			    CONFIG_SERIAL_INIT_PRIORITY,		       \
+			    &uart_gecko_driver_api);			       \
+									       \
+	GECKO_USART_IRQ_HANDLER(idx)
+#else
 #define GECKO_USART_INIT(idx)						       \
 	VALIDATE_GECKO_UART_RX_TX_PIN_LOCATIONS(idx);			       \
 	VALIDATE_GECKO_UART_RTS_CTS_PIN_LOCATIONS(idx);			       \
@@ -612,5 +662,6 @@ DT_INST_FOREACH_STATUS_OKAY(GECKO_UART_INIT)
 			    &uart_gecko_driver_api);			       \
 									       \
 	GECKO_USART_IRQ_HANDLER(idx)
+#endif
 
 DT_INST_FOREACH_STATUS_OKAY(GECKO_USART_INIT)

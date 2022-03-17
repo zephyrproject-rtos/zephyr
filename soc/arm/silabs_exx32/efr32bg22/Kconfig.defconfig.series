@@ -20,7 +20,7 @@ config PM
 	select COUNTER
 
 choice PM_POLICY
-	default PM_POLICY_APP
+	default PM_POLICY_CUSTOM
 	depends on PM
 endchoice
 
