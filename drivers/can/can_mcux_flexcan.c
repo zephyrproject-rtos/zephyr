@@ -547,7 +547,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 		data->state = state;
 
 		if (cb != NULL) {
-			cb(state, err_cnt, cb_data);
+			cb(dev, state, err_cnt, cb_data);
 		}
 	}
 
@@ -562,7 +562,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 				FLEXCAN_TransferAbortSend(config->base, &data->handle,
 							  ALLOC_IDX_TO_TXMB_IDX(alloc));
 				if (function != NULL) {
-					function(-ENETDOWN, arg);
+					function(dev, -ENETDOWN, arg);
 				} else {
 					data->tx_cbs[alloc].status = -ENETDOWN;
 					k_sem_give(&data->tx_cbs[alloc].done);
@@ -590,7 +590,7 @@ static inline void mcux_flexcan_transfer_tx_idle(const struct device *dev,
 
 	if (atomic_test_and_clear_bit(data->tx_allocs, alloc)) {
 		if (function != NULL) {
-			function(0, arg);
+			function(dev, 0, arg);
 		} else {
 			data->tx_cbs[alloc].status = 0;
 			k_sem_give(&data->tx_cbs[alloc].done);
@@ -618,7 +618,7 @@ static inline void mcux_flexcan_transfer_rx_idle(const struct device *dev,
 	if (atomic_test_bit(data->rx_allocs, alloc)) {
 		mcux_flexcan_copy_frame_to_zframe(&data->rx_cbs[alloc].frame,
 						  &frame);
-		function(&frame, arg);
+		function(dev, &frame, arg);
 
 		/* Setup RX message buffer to receive next message */
 		FLEXCAN_SetRxMbConfig(config->base, mb,

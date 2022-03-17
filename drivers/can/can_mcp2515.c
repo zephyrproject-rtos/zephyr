@@ -635,7 +635,7 @@ static void mcp2515_rx_filter(const struct device *dev,
 		/*Make a temporary copy in case the user modifies the message*/
 		tmp_frame = *frame;
 
-		callback(&tmp_frame, dev_data->cb_arg[filter_id]);
+		callback(dev, &tmp_frame, dev_data->cb_arg[filter_id]);
 	}
 
 	k_mutex_unlock(&dev_data->mutex);
@@ -665,7 +665,7 @@ static void mcp2515_tx_done(const struct device *dev, uint8_t tx_idx)
 	if (dev_data->tx_cb[tx_idx].cb == NULL) {
 		k_sem_give(&dev_data->tx_cb[tx_idx].sem);
 	} else {
-		dev_data->tx_cb[tx_idx].cb(0, dev_data->tx_cb[tx_idx].cb_arg);
+		dev_data->tx_cb[tx_idx].cb(dev, 0, dev_data->tx_cb[tx_idx].cb_arg);
 	}
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
@@ -731,7 +731,7 @@ static void mcp2515_handle_errors(const struct device *dev)
 
 	if (state_change_cb && dev_data->old_state != state) {
 		dev_data->old_state = state;
-		state_change_cb(state, err_cnt, state_change_cb_data);
+		state_change_cb(dev, state, err_cnt, state_change_cb_data);
 	}
 }
 

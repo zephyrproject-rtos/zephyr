@@ -175,9 +175,9 @@ occurred. It does not block until the message is sent like the example above.
 
 .. code-block:: C
 
-  void tx_irq_callback(int error, void *arg)
+  void tx_callback(const struct device *dev, int error, void *user_data)
   {
-          char *sender = (char *)arg;
+          char *sender = (char *)user_data;
 
           if (error != 0) {
                   LOG_ERR("Sending failed [%d]\nSender: %s\n", error, sender);
@@ -211,7 +211,7 @@ added.
 
 .. code-block:: C
 
-  void rx_callback_function(struct zcan_frame *frame, void *user_data)
+  void rx_callback_function(const struct device *dev, struct zcan_frame *frame, void *user_data)
   {
           ... do something with the frame ...
   }
