@@ -173,7 +173,7 @@ static void qdec_nrfx_gpio_ctrl(bool enable)
 #endif
 }
 
-NRF_DT_ENSURE_PINS_ASSIGNED(DT_DRV_INST(0), a_pin);
+NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(0), 1, a_pin, b_pin, led_pin);
 
 static int qdec_nrfx_init(const struct device *dev)
 {

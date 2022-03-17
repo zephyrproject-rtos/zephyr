@@ -1193,7 +1193,8 @@ static int uart_nrfx_pm_action(const struct device *dev,
 PINCTRL_DT_INST_DEFINE(0);
 #endif /* CONFIG_PINCTRL */
 
-NRF_DT_ENSURE_PINS_ASSIGNED(DT_DRV_INST(0), tx_pin, rx_pin);
+NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(0), 1,
+			     tx_pin, rx_pin, rts_pin, cts_pin);
 
 static const struct uart_nrfx_config uart_nrfx_uart0_config = {
 #ifdef CONFIG_PINCTRL

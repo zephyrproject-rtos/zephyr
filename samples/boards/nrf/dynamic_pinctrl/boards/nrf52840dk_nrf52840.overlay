@@ -12,6 +12,10 @@
 
 /* TODO: move to board dts once all boards enable pinctrl by default */
 &uart0 {
+	/delete-property/ tx-pin;
+	/delete-property/ rx-pin;
+	/delete-property/ rts-pin;
+	/delete-property/ cts-pin;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";

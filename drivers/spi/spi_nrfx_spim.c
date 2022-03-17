@@ -515,7 +515,8 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		 .miso_pull = SPIM_NRFX_MISO_PULL(idx),))
 
 #define SPI_NRFX_SPIM_DEVICE(idx)					       \
-	NRF_DT_ENSURE_PINS_ASSIGNED(SPIM(idx), sck_pin);		       \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPIM(idx), 1,			       \
+				     sck_pin, mosi_pin, miso_pin);	       \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			       \
 		     !(SPIM_PROP(idx, miso_pull_up) &&			       \
 		       SPIM_PROP(idx, miso_pull_down)),			       \
