@@ -96,7 +96,7 @@ struct bt_tbs_server_inst {
 	bool subscribe_all;
 };
 
-static struct bt_tbs_client_cb *tbs_client_cbs;
+static const struct bt_tbs_client_cb *tbs_client_cbs;
 
 static struct bt_tbs_server_inst srv_insts[CONFIG_BT_MAX_CONN];
 static const struct bt_uuid *tbs_uuid = BT_UUID_TBS;
@@ -2174,7 +2174,7 @@ int bt_tbs_client_discover(struct bt_conn *conn, bool subscribe)
 	return bt_gatt_discover(conn, &srv_inst->discover_params);
 }
 
-void bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs)
+void bt_tbs_client_register_cb(const struct bt_tbs_client_cb *cbs)
 {
 	tbs_client_cbs = cbs;
 }
