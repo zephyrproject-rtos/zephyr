@@ -79,14 +79,6 @@
 	status = "okay";
 };
 
-&i2c0 {
-	status = "disabled";
-};
-
-&spi0 {
-	status = "disabled";
-};
-
 &uart0 {
 	compatible = "nordic,nrf-uarte";
 	status = "disabled";
