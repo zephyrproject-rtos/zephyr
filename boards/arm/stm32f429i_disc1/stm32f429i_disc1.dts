@@ -53,6 +53,7 @@
 	aliases {
 		led0 = &green_led_4;
 		sw0 = &user_button;
+		kscan0 = &touch_controller;
 	};
 };
 
@@ -108,6 +109,12 @@
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	touch_controller: stmpe811@41 {
+		compatible = "st,stmpe811";
+		reg = <0x41>;
+		label = "STMPE811";
+		int-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &spi5 {
