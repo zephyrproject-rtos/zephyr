@@ -55,10 +55,10 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 static const uint8_t filter_in_bank[] = {2, 4, 1, 2};
 static const uint8_t reg_demand[] = {2, 1, 4, 2};
 
-static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
+static void can_stm32_signal_tx_complete(const struct device *dev, struct can_mailbox *mb)
 {
 	if (mb->tx_callback) {
-		mb->tx_callback(mb->error, mb->callback_arg);
+		mb->tx_callback(dev, mb->error, mb->callback_arg);
 	} else  {
 		k_sem_give(&mb->tx_int_sem);
 	}
@@ -85,8 +85,11 @@ static void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
 }
 
 static inline
-void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
+void can_stm32_rx_isr_handler(const struct device *dev)
 {
+	struct can_stm32_data *data = dev->data;
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
 	CAN_FIFOMailBox_TypeDef *mbox;
 	int filter_match_index;
 	struct zcan_frame frame;
@@ -107,7 +110,7 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 		callback = data->rx_cb[filter_match_index];
 
 		if (callback) {
-			callback(&frame, data->cb_arg[filter_match_index]);
+			callback(dev, &frame, data->cb_arg[filter_match_index]);
 		}
 
 		/* Release message */
@@ -192,14 +195,17 @@ static inline void can_stm32_bus_state_change_isr(const struct device *dev)
 		data->state = state;
 
 		if (cb != NULL) {
-			cb(state, err_cnt, state_change_cb_data);
+			cb(dev, state, err_cnt, state_change_cb_data);
 		}
 	}
 }
 
 static inline
-void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
+void can_stm32_tx_isr_handler(const struct device *dev)
 {
+	struct can_stm32_data *data = dev->data;
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
 	uint32_t bus_off;
 
 	bus_off = can->ESR & CAN_ESR_BOFF;
@@ -213,7 +219,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 							   -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP0;
-		can_stm32_signal_tx_complete(&data->mb0);
+		can_stm32_signal_tx_complete(dev, &data->mb0);
 	}
 
 	if ((can->TSR & CAN_TSR_RQCP1) | bus_off) {
@@ -225,7 +231,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 							   -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP1;
-		can_stm32_signal_tx_complete(&data->mb1);
+		can_stm32_signal_tx_complete(dev, &data->mb1);
 	}
 
 	if ((can->TSR & CAN_TSR_RQCP2) | bus_off) {
@@ -237,7 +243,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 							   -EIO;
 		/* clear the request. */
 		can->TSR |= CAN_TSR_RQCP2;
-		can_stm32_signal_tx_complete(&data->mb2);
+		can_stm32_signal_tx_complete(dev, &data->mb2);
 	}
 
 	if (can->TSR & CAN_TSR_TME) {
@@ -249,16 +255,12 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 
 static void can_stm32_isr(const struct device *dev)
 {
-	struct can_stm32_data *data;
-	const struct can_stm32_config *cfg;
-	CAN_TypeDef *can;
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
 
-	data = dev->data;
-	cfg = dev->config;
-	can = cfg->can;
+	can_stm32_tx_isr_handler(dev);
+	can_stm32_rx_isr_handler(dev);
 
-	can_stm32_tx_isr_handler(can, data);
-	can_stm32_rx_isr_handler(can, data);
 	if (can->MSR & CAN_MSR_ERRI) {
 		can_stm32_bus_state_change_isr(dev);
 		can->MSR |= CAN_MSR_ERRI;
@@ -269,44 +271,22 @@ static void can_stm32_isr(const struct device *dev)
 
 static void can_stm32_rx_isr(const struct device *dev)
 {
-	struct can_stm32_data *data;
-	const struct can_stm32_config *cfg;
-	CAN_TypeDef *can;
-
-	data = dev->data;
-	cfg = dev->config;
-	can = cfg->can;
-
-	can_stm32_rx_isr_handler(can, data);
+	can_stm32_rx_isr_handler(dev);
 }
 
 static void can_stm32_tx_isr(const struct device *dev)
 {
-	struct can_stm32_data *data;
-	const struct can_stm32_config *cfg;
-	CAN_TypeDef *can;
-
-	data = dev->data;
-	cfg = dev->config;
-	can = cfg->can;
-
-	can_stm32_tx_isr_handler(can, data);
+	can_stm32_tx_isr_handler(dev);
 }
 
 static void can_stm32_state_change_isr(const struct device *dev)
 {
-	struct can_stm32_data *data;
-	const struct can_stm32_config *cfg;
-	CAN_TypeDef *can;
+	const struct can_stm32_config *cfg = dev->config;
+	CAN_TypeDef *can = cfg->can;
 
-	data = dev->data;
-	cfg = dev->config;
-	can = cfg->can;
-
-
-	/*Signal bus-off to waiting tx*/
+	/* Signal bus-off to waiting tx */
 	if (can->MSR & CAN_MSR_ERRI) {
-		can_stm32_tx_isr_handler(can, data);
+		can_stm32_tx_isr_handler(dev);
 		can_stm32_bus_state_change_isr(dev);
 		can->MSR |= CAN_MSR_ERRI;
 	}

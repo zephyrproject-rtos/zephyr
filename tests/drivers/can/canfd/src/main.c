@@ -112,48 +112,54 @@ static inline void check_msg(const struct zcan_frame *msg1,
 	zassert_equal(cmp_res, 0, "Received data differ");
 }
 
-static void tx_std_isr_1(int error, void *arg)
+static void tx_std_isr_1(const struct device *dev, int error, void *arg)
 {
 	const struct zcan_frame *msg = (const struct zcan_frame *)arg;
 
 	k_sem_give(&tx_cb_sem);
 
+	zassert_equal(dev, can_dev, "CAN device does not match");
 	zassert_equal(msg->id, TEST_CAN_STD_ID_1, "Arg does not match");
 }
 
-static void tx_std_isr_2(int error, void *arg)
+static void tx_std_isr_2(const struct device *dev, int error, void *arg)
 {
 	const struct zcan_frame *msg = (const struct zcan_frame *)arg;
 
 	k_sem_give(&tx_cb_sem);
 
+	zassert_equal(dev, can_dev, "CAN device does not match");
 	zassert_equal(msg->id, TEST_CAN_STD_ID_2, "Arg does not match");
 }
 
-static void rx_std_isr_1(struct zcan_frame *msg, void *arg)
+static void rx_std_isr_1(const struct device *dev, struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_std_msg_1);
+	zassert_equal(dev, can_dev, "CAN device does not match");
 	zassert_equal_ptr(arg, &test_std_filter_1, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_std_isr_2(struct zcan_frame *msg, void *arg)
+static void rx_std_isr_2(const struct device *dev, struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_std_msg_2);
+	zassert_equal(dev, can_dev, "CAN device does not match");
 	zassert_equal_ptr(arg, &test_std_filter_2, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_std_isr_fd_1(struct zcan_frame *msg, void *arg)
+static void rx_std_isr_fd_1(const struct device *dev, struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_std_msg_fd_1);
+	zassert_equal(dev, can_dev, "CAN device does not match");
 	zassert_equal_ptr(arg, &test_std_filter_1, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_std_isr_fd_2(struct zcan_frame *msg, void *arg)
+static void rx_std_isr_fd_2(const struct device *dev, struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_std_msg_fd_2);
+	zassert_equal(dev, can_dev, "CAN device does not match");
 	zassert_equal_ptr(arg, &test_std_filter_2, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }

@@ -41,7 +41,8 @@ struct can_loopback_data {
 		      CONFIG_CAN_LOOPBACK_TX_THREAD_STACK_SIZE);
 };
 
-static void dispatch_frame(const struct zcan_frame *frame,
+static void dispatch_frame(const struct device *dev,
+			   const struct zcan_frame *frame,
 			   struct can_loopback_filter *filter)
 {
 	struct zcan_frame frame_tmp = *frame;
@@ -52,7 +53,7 @@ static void dispatch_frame(const struct zcan_frame *frame,
 				  "standard" : "extended",
 		frame->rtr == CAN_DATAFRAME ? "" : ", RTR frame");
 
-	filter->rx_cb(&frame_tmp, filter->cb_arg);
+	filter->rx_cb(dev, &frame_tmp, filter->cb_arg);
 }
 
 static inline int check_filter_match(const struct zcan_frame *frame,
@@ -62,13 +63,15 @@ static inline int check_filter_match(const struct zcan_frame *frame,
 		(frame->id & filter->id_mask));
 }
 
-void tx_thread(void *data_arg, void *arg2, void *arg3)
+void tx_thread(void *arg1, void *arg2, void *arg3)
 {
-	ARG_UNUSED(arg2);
-	ARG_UNUSED(arg3);
+	const struct device *dev = arg1;
+	struct can_loopback_data *data = dev->data;
 	struct can_loopback_frame frame;
 	struct can_loopback_filter *filter;
-	struct can_loopback_data *data = (struct can_loopback_data *)data_arg;
+
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
 	while (1) {
 		k_msgq_get(&data->tx_msgq, &frame, K_FOREVER);
@@ -78,7 +81,7 @@ void tx_thread(void *data_arg, void *arg2, void *arg3)
 			filter = &data->filters[i];
 			if (filter->rx_cb &&
 			    check_filter_match(&frame.frame, &filter->filter)) {
-				dispatch_frame(&frame.frame, filter);
+				dispatch_frame(dev, &frame.frame, filter);
 			}
 		}
 
@@ -87,7 +90,7 @@ void tx_thread(void *data_arg, void *arg2, void *arg3)
 		if (!frame.cb) {
 			k_sem_give(frame.tx_compl);
 		} else {
-			frame.cb(0, frame.cb_arg);
+			frame.cb(dev, 0, frame.cb_arg);
 		}
 	}
 }
@@ -307,7 +310,7 @@ static int can_loopback_init(const struct device *dev)
 
 	tx_tid = k_thread_create(&data->tx_thread_data, data->tx_thread_stack,
 				 K_KERNEL_STACK_SIZEOF(data->tx_thread_stack),
-				 tx_thread, data, NULL, NULL,
+				 tx_thread, (void *)dev, NULL, NULL,
 				 CONFIG_CAN_LOOPBACK_TX_THREAD_PRIORITY,
 				 0, K_NO_WAIT);
 	if (!tx_tid) {
