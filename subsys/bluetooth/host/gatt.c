@@ -130,7 +130,6 @@ static ssize_t read_appearance(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE)
-
 static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, uint16_t len, uint16_t offset,
 			 uint8_t flags)
@@ -159,19 +158,16 @@ static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr 
 
 	return len;
 }
-
-#else /* CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE */
-static ssize_t (* const write_appearance)(struct bt_conn *conn,
-			const struct bt_gatt_attr *attr, const void *buf, uint16_t len,
-			uint16_t offset, uint8_t flags) = NULL;
 #endif /* CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE */
 
 #if CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE
 	#define GAP_APPEARANCE_PROPS (BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE)
 	#define GAP_APPEARANCE_PERMS (BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_AUTHEN)
+	#define GAP_APPEARANCE_WRITE_HANDLER write_appearance
 #else
 	#define GAP_APPEARANCE_PROPS BT_GATT_CHRC_READ
 	#define GAP_APPEARANCE_PERMS BT_GATT_PERM_READ
+	#define GAP_APPEARANCE_WRITE_HANDLER NULL
 #endif
 
 #if defined (CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
@@ -241,7 +237,8 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 			       BT_GATT_PERM_READ, read_name, NULL, NULL),
 #endif /* CONFIG_BT_DEVICE_NAME_GATT_WRITABLE */
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, GAP_APPEARANCE_PROPS,
-			       GAP_APPEARANCE_PERMS, read_appearance, write_appearance, NULL),
+			       GAP_APPEARANCE_PERMS, read_appearance,
+			       GAP_APPEARANCE_WRITE_HANDLER, NULL),
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
 	BT_GATT_CHARACTERISTIC(BT_UUID_CENTRAL_ADDR_RES,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
