@@ -1,14 +1,53 @@
+&pinctrl {
+	spi1_default_alt: spi1_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 16)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 17)>;
+		};
+		group2 {
+			psels = <NRF_PSEL(SPIM_MISO, 0, 18)>;
+			bias-pull-down;
+		};
+	};
+
+	spi1_sleep_alt: spi1_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 16)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 17)>,
+				<NRF_PSEL(SPIM_MISO, 0, 18)>;
+			low-power-enable;
+		};
+	};
+
+	spi2_default_alt: spi2_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 13)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 12)>;
+		};
+		group2 {
+			psels = <NRF_PSEL(SPIM_MISO, 0, 11)>;
+			bias-pull-down;
+		};
+	};
+
+	uart2_default_alt: uart2_default_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 9)>,
+				<NRF_PSEL(UART_RX, 0, 8)>;
+		};
+	};
+};
+
 /* This node corresponds to the SPIM1 peripheral that is to be used via
  * the Zephyr driver, so it must have the status set to "okay".
  */
 &spi1 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
-	sck-pin = <16>;
-	mosi-pin = <17>;
-	miso-pin = <18>;
 	cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
-	miso-pull-down;
+	pinctrl-0 = <&spi1_default_alt>;
+	pinctrl-1 = <&spi1_sleep_alt>;
+	pinctrl-names = "default", "sleep";
 };
 
 /* The UARTE1 peripheral share the same ID with SPIM1, hence these two
@@ -27,16 +66,17 @@
 &spi2 {
 	compatible = "nordic,nrf-spim";
 	status = "disabled";
-	sck-pin = <13>;
-	mosi-pin = <12>;
-	miso-pin = <11>;
 	cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi2_default_alt>;
+	/delete-property/ pinctrl-1;
+	pinctrl-names = "default";
 };
 
 &uart2 {
 	status = "disabled";
-	tx-pin = <9>;
-	rx-pin = <8>;
+	pinctrl-0 = <&uart2_default_alt>;
+	/delete-property/ pinctrl-1;
+	pinctrl-names = "default";
 };
 
 /* This node also needs to be disabled, as in the default nrf9160dk_nrf9160
