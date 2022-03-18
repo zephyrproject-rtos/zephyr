@@ -236,6 +236,22 @@ static int lis2dw12_set_power_mode(const struct device *dev,
 	return lis2dw12_write_reg(ctx, LIS2DW12_CTRL1, &regval, 1);
 }
 
+static int lis2dw12_set_low_noise(const struct device *dev,
+				  bool low_noise)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lis2dw12_ctrl6_t ctrl6;
+	int ret;
+
+	ret = lis2dw12_read_reg(ctx, LIS2DW12_CTRL6, (uint8_t *)&ctrl6, 1);
+	if (ret < 0) {
+		return ret;
+	}
+	ctrl6.low_noise = low_noise;
+	return lis2dw12_write_reg(ctx, LIS2DW12_CTRL6, (uint8_t *)&ctrl6, 1);
+}
+
 static int lis2dw12_init(const struct device *dev)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
@@ -271,8 +287,16 @@ static int lis2dw12_init(const struct device *dev)
 
 	/* set power mode */
 	LOG_DBG("power-mode is %d", cfg->pm);
-	if (lis2dw12_set_power_mode(dev, cfg->pm)) {
-		return -EIO;
+	ret = lis2dw12_set_power_mode(dev, cfg->pm);
+	if (ret < 0) {
+		return ret;
+	}
+
+	LOG_DBG("low noise is %d", cfg->low_noise);
+	ret = lis2dw12_set_low_noise(dev, cfg->low_noise);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure low_noise");
+		return ret;
 	}
 
 	/* set default odr to 12.5Hz acc */
@@ -293,9 +317,10 @@ static int lis2dw12_init(const struct device *dev)
 	lis2dw12_filter_bandwidth_set(ctx, cfg->bw_filt);
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
-	if (lis2dw12_init_interrupt(dev) < 0) {
+	ret = lis2dw12_init_interrupt(dev);
+	if (ret < 0) {
 		LOG_ERR("Failed to initialize interrupts");
-		return -EIO;
+		return ret;
 	}
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 
@@ -367,6 +392,7 @@ static int lis2dw12_init(const struct device *dev)
 		.pm = DT_INST_PROP(inst, power_mode),			\
 		.range = DT_INST_PROP(inst, range),			\
 		.bw_filt = DT_INST_PROP(inst, bw_filt),      \
+		.low_noise = DT_INST_PROP(inst, low_noise),      \
 		LIS2DW12_CONFIG_TAP(inst)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\
@@ -392,6 +418,7 @@ static int lis2dw12_init(const struct device *dev)
 		.pm = DT_INST_PROP(inst, power_mode),			\
 		.range = DT_INST_PROP(inst, range),			\
 		.bw_filt = DT_INST_PROP(inst, bw_filt),      \
+		.low_noise = DT_INST_PROP(inst, low_noise),      \
 		LIS2DW12_CONFIG_TAP(inst)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\
