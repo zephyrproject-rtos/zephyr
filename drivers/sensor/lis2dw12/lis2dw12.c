@@ -324,6 +324,22 @@ static int lis2dw12_init(const struct device *dev)
 	}
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 
+	LOG_DBG("high pass reference mode is %d", (int)cfg->hp_ref_mode);
+	ret = lis2dw12_reference_mode_set(ctx, cfg->hp_ref_mode);
+	if (ret < 0) {
+		LOG_ERR("high pass reference mode config error %d", (int)cfg->hp_ref_mode);
+		return ret;
+	}
+
+	LOG_DBG("high pass filter path is %d", (int)cfg->hp_filter_path);
+	lis2dw12_fds_t fds = cfg->hp_filter_path ?
+		LIS2DW12_HIGH_PASS_ON_OUT : LIS2DW12_LPF_ON_OUT;
+	ret = lis2dw12_filter_path_set(ctx, fds);
+	if (ret < 0) {
+		LOG_ERR("filter path config error %d", (int)cfg->hp_filter_path);
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -393,6 +409,8 @@ static int lis2dw12_init(const struct device *dev)
 		.range = DT_INST_PROP(inst, range),			\
 		.bw_filt = DT_INST_PROP(inst, bw_filt),      \
 		.low_noise = DT_INST_PROP(inst, low_noise),      \
+		.hp_filter_path = DT_INST_PROP(inst, hp_filter_path),      \
+		.hp_ref_mode = DT_INST_PROP(inst, hp_ref_mode), \
 		LIS2DW12_CONFIG_TAP(inst)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\
@@ -419,6 +437,8 @@ static int lis2dw12_init(const struct device *dev)
 		.range = DT_INST_PROP(inst, range),			\
 		.bw_filt = DT_INST_PROP(inst, bw_filt),      \
 		.low_noise = DT_INST_PROP(inst, low_noise),      \
+		.hp_filter_path = DT_INST_PROP(inst, hp_filter_path),      \
+		.hp_ref_mode = DT_INST_PROP(inst, hp_ref_mode), \
 		LIS2DW12_CONFIG_TAP(inst)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\
