@@ -1271,7 +1271,7 @@ function(zephyr_code_relocate file location)
   endif()
   set_property(TARGET code_data_relocation_target
     APPEND PROPERTY COMPILE_DEFINITIONS
-    "${location}:${file}:${copy_flag}")
+    "${location}:${copy_flag}:${file}")
 endfunction()
 
 # Usage:
