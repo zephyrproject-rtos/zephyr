@@ -289,6 +289,9 @@ static int lis2dw12_init(const struct device *dev)
 		return ret;
 	}
 
+	LOG_DBG("bandwidth filter is %u", (int)cfg->bw_filt);
+	lis2dw12_filter_bandwidth_set(ctx, cfg->bw_filt);
+
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	if (lis2dw12_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupts");
@@ -363,6 +366,7 @@ static int lis2dw12_init(const struct device *dev)
 		},							\
 		.pm = DT_INST_PROP(inst, power_mode),			\
 		.range = DT_INST_PROP(inst, range),			\
+		.bw_filt = DT_INST_PROP(inst, bw_filt),      \
 		LIS2DW12_CONFIG_TAP(inst)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\
@@ -387,6 +391,7 @@ static int lis2dw12_init(const struct device *dev)
 		},							\
 		.pm = DT_INST_PROP(inst, power_mode),			\
 		.range = DT_INST_PROP(inst, range),			\
+		.bw_filt = DT_INST_PROP(inst, bw_filt),      \
 		LIS2DW12_CONFIG_TAP(inst)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\
