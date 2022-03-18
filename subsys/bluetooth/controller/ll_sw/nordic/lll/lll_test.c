@@ -261,10 +261,10 @@ static void isr_rx(void *param)
 	LL_ASSERT(node_rx);
 
 	radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
+#endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
 	/* Setup next Rx */
 	radio_switch_complete_and_rx(test_phy);
-#endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
 	/* Count Rx-ed packets */
 	if (crc_ok) {
