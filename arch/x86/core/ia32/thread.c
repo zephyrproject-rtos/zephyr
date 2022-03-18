@@ -79,7 +79,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	void *swap_entry;
 	struct _x86_initial_frame *initial_frame;
 
-#if CONFIG_X86_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 	z_x86_set_stack_guard(stack);
 #endif
 

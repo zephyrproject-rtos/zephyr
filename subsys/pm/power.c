@@ -172,7 +172,7 @@ void pm_power_state_force(struct pm_state_info info)
 	k_sched_unlock();
 }
 
-#if CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE
 static enum pm_state _handle_device_abort(struct pm_state_info info)
 {
 	LOG_DBG("Some devices didn't enter suspend state!");
@@ -211,7 +211,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 		     k_us_to_ticks_ceil32(z_power_state.exit_latency_us), true);
 	}
 
-#if CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE
 
 	bool should_resume_devices = true;
 
@@ -259,7 +259,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	pm_debug_stop_timer();
 
 	/* Wake up sequence starts here */
-#if CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE
 	if (should_resume_devices) {
 		/* Turn on peripherals and restore device states as necessary */
 		pm_resume_devices();
