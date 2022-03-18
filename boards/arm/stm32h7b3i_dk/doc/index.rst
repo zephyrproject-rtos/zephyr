@@ -62,6 +62,8 @@ The current Zephyr stm32h7b3i_dk board configuration supports the following hard
 +-----------+------------+-------------------------------------+
 | FMC       | on-chip    | memc (SDRAM)                        |
 +-----------+------------+-------------------------------------+
+| LTDC      | on-chip    | display                             |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features have not been enabled yet for this board.
@@ -92,6 +94,11 @@ Default Zephyr Peripheral Mapping:
     - SDNRAS/SDNCAS : PF11/PG15
     - NBL0/NBL1 : PE0/PE1
     - SDCLK/SDNWE/SDCKE1/SDNE1 : PG8/PH5/PH7/PH6
+- LTDC :
+    - R0-R7 : PI15/PJ0/PJ1/PJ2/PJ3/PJ4/PJ5/PJ6
+    - G0-G7 : PJ7/PJ8/PJ9/PJ10/PJ11/PK0/PK1/PK2
+    - B0-B7 : PJ12/PK13/PJ14/PJ15/PK3/PK4/PK5/PK6
+    - DE/CLK/HSYNC/VSYNC : PK7/PI14/PI12/PI13
 
 
 System Clock

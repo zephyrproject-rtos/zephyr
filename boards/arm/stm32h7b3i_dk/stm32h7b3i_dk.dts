@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/h7/stm32h7b3Xi.dtsi>
 #include <st/h7/stm32h7b3lihxq-pinctrl.dtsi>
+#include <dt-bindings/display/stm32_ltdc.h>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -18,6 +19,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,display = &ltdc;
 	};
 
 	leds {
@@ -169,4 +171,35 @@
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
+};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r0_pi15 &ltdc_r1_pj0 &ltdc_r2_pj1 &ltdc_r3_pj2
+		     &ltdc_r4_pj3 &ltdc_r5_pj4 &ltdc_r6_pj5 &ltdc_r7_pj6
+		     &ltdc_g0_pj7 &ltdc_g1_pj8 &ltdc_g2_pj9 &ltdc_g3_pj10
+		     &ltdc_g4_pj11 &ltdc_g5_pk0 &ltdc_g6_pk1 &ltdc_g7_pk2
+		     &ltdc_b0_pj12 &ltdc_b1_pj13 &ltdc_b2_pj14 &ltdc_b3_pj15
+		     &ltdc_b4_pk3 &ltdc_b5_pk4 &ltdc_b6_pk5 &ltdc_b7_pk6
+		     &ltdc_de_pk7 &ltdc_clk_pi14 &ltdc_hsync_pi12 &ltdc_vsync_pi13>;
+	pinctrl-names = "default";
+	disp-on-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+	ext-sdram = <&sdram2>;
+	status = "okay";
+
+	width = <480>;
+	height = <272>;
+	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
+	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
+	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
+	pclk-pol = <STM32_LTDC_PCPOL_ACTIVE_LOW>;
+	hsync-duration = <1>;
+	vsync-duration = <10>;
+	hbp-duration = <43>;
+	vbp-duration = <12>;
+	hfp-duration = <8>;
+	vfp-duration = <4>;
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
 };
