@@ -64,8 +64,12 @@ extern "C" {
 
 /**
  * @brief Provides a type to hold PWM configuration flags.
+ *
+ * The lower 8 bits are used for standard flags.
+ * The upper 8 bits are reserved for SoC specific flags.
  */
-typedef uint8_t pwm_flags_t;
+
+typedef uint16_t pwm_flags_t;
 
 /**
  * @typedef pwm_pin_set_t
