@@ -117,6 +117,20 @@ K_MEM_SLAB_DEFINE(chan_slab, sizeof(struct bt_att_chan),
 		  __alignof__(struct bt_att_chan));
 static struct bt_att_req cancel;
 
+/** The thread ATT response handlers likely run on.
+ *
+ *  Blocking this thread while waiting for an ATT request to resolve can cause a
+ *  deadlock.
+ *
+ *  This can happen if the application queues ATT requests in the context of a
+ *  callback from the Bluetooth stack. This is because queuing an ATT request
+ *  will block until a request-resource is available, and the callbacks run on
+ *  the same thread as the ATT response handler that frees request-resources.
+ *
+ *  The intended use of this value is to detect the above situation.
+ */
+static k_tid_t att_handle_rsp_thread;
+
 typedef void (*bt_att_chan_sent_t)(struct bt_att_chan *chan);
 
 static bt_att_chan_sent_t chan_cb(struct net_buf *buf);
@@ -2999,6 +3013,8 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 		return -ENOMEM;
 	}
 
+	att_handle_rsp_thread = k_current_get();
+
 	(void)memset(att, 0, sizeof(*att));
 	att->conn = conn;
 	sys_slist_init(&att->reqs);
@@ -3296,7 +3312,7 @@ struct bt_att_req *bt_att_req_alloc(k_timeout_t timeout)
 {
 	struct bt_att_req *req = NULL;
 
-	if (k_current_get() == bt_recv_thread_id) {
+	if (k_current_get() == att_handle_rsp_thread) {
 		/* No req will be fulfilled while blocking on the bt_recv thread.
 		 * Blocking would cause deadlock.
 		 */
