@@ -4074,58 +4074,57 @@ class TestSuite(DisablePyTestCollectionMixin):
                 json_data = json.load(json_file)
 
         suites = json_data.get("testsuites", [])
-        if suites:
-            suite = suites[0]
-            testcases = suite.get("testcases", [])
-        else:
+
+        for instance in self.instances.values():
             suite = {}
+            handler_log = os.path.join(instance.build_dir, "handler.log")
+            build_log = os.path.join(instance.build_dir, "build.log")
+            device_log = os.path.join(instance.build_dir, "device.log")
+
+            handler_time = instance.metrics.get('handler_time', 0)
+            ram_size = instance.metrics.get ("ram_size", 0)
+            rom_size  = instance.metrics.get("rom_size",0)
+            suite = {
+                "testcase": instance.testcase.name,
+                "arch": instance.platform.arch,
+                "platform": instance.platform.name,
+            }
+            if ram_size:
+                suite["ram_size"] = ram_size
+            if rom_size:
+                suite["rom_size"] = rom_size
+
+            if instance.status in ["error", "failed", "timeout", "flash_error"]:
+                suite["status"] = "failed"
+                suite["reason"] = instance.reason
+                suite["execution_time"] =  handler_time
+                if os.path.exists(handler_log):
+                    suite["test_output"] = self.process_log(handler_log)
+                elif os.path.exists(device_log):
+                    suite["device_log"] = self.process_log(device_log)
+                else:
+                    suite["build_log"] = self.process_log(build_log)
+
             testcases = []
-
-        for p in selected:
-            inst = self.get_platform_instances(p)
-            for _, instance in inst.items():
+            for k in instance.results.keys():
                 testcase = {}
-                handler_log = os.path.join(instance.build_dir, "handler.log")
-                build_log = os.path.join(instance.build_dir, "build.log")
-                device_log = os.path.join(instance.build_dir, "device.log")
+                testcase['identifier'] = k
+                if instance.results[k] in ["SKIP"]:
+                    testcase["status"] = "skipped"
+                    testcase["reason"] = instance.reason
+                elif instance.status == 'filtered':
+                    testcase["status"] = "filtered"
+                    testcase["reason"] = instance.reason
+                elif instance.results[k] in ["PASS"] or instance.status == 'passed':
+                    testcase["status"] = "passed"
+                elif instance.results[k] in ['FAIL', 'BLOCK'] or instance.status in ["error", "failed", "timeout", "flash_error"]:
+                    testcase["status"] = "failed"
+                    testcase["reason"] = instance.reason
 
-                handler_time = instance.metrics.get('handler_time', 0)
-                ram_size = instance.metrics.get ("ram_size", 0)
-                rom_size  = instance.metrics.get("rom_size",0)
-                for k in instance.results.keys():
-                    testcases = list(filter(lambda d: not (d.get('testcase') == k and d.get('platform') == p), testcases ))
-                    testcase = {"testcase": k,
-                                "arch": instance.platform.arch,
-                                "platform": p,
-                                }
-                    if ram_size:
-                        testcase["ram_size"] = ram_size
-                    if rom_size:
-                        testcase["rom_size"] = rom_size
+                testcases.append(testcase)
+            suite['testcases'] = testcases
+            suites.append(suite)
 
-                    if instance.results[k] in ["SKIP"] or instance.status == 'skipped':
-                        testcase["status"] = "skipped"
-                        testcase["reason"] = instance.reason
-                    elif instance.status == 'filtered':
-                        testcase["status"] = "filtered"
-                        testcase["reason"] = instance.reason
-                    elif instance.results[k] in ["PASS"] or instance.status == 'passed':
-                        testcase["status"] = "passed"
-                        if instance.handler:
-                            testcase["execution_time"] =  handler_time
-                    elif instance.results[k] in ['FAIL', 'BLOCK'] or instance.status in ["error", "failed", "timeout", "flash_error"]:
-                        testcase["status"] = "failed"
-                        testcase["reason"] = instance.reason
-                        testcase["execution_time"] =  handler_time
-                        if os.path.exists(handler_log):
-                            testcase["test_output"] = self.process_log(handler_log)
-                        elif os.path.exists(device_log):
-                            testcase["device_log"] = self.process_log(device_log)
-                        else:
-                            testcase["build_log"] = self.process_log(build_log)
-                    testcases.append(testcase)
-
-        suites = [ {"testcases": testcases} ]
         report["testsuites"] = suites
 
         with open(filename, "wt") as json_file:
