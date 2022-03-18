@@ -32,7 +32,7 @@
                 __device_states_end = .;
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#if CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE
 	SECTION_DATA_PROLOGUE(pm_device_slots, (NOLOAD),)
 	{
 		__pm_device_slots_start = .;

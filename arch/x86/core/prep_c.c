@@ -45,7 +45,7 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 	ARG_UNUSED(info);
 #endif
 
-#if CONFIG_X86_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		z_x86_set_stack_guard(z_interrupt_stacks[i]);
 	}

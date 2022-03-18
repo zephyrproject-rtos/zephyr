@@ -398,7 +398,7 @@ static void schedule_new_thread(struct k_thread *thread, k_timeout_t delay)
 }
 #endif
 
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 int z_stack_adjust_initialized;
 
 static size_t random_offset(size_t stack_size)
@@ -484,7 +484,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	new_thread->userspace_local_data =
 		(struct _thread_userspace_local_data *)(stack_ptr - delta);
 #endif
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	delta += random_offset(stack_buf_size);
 #endif
 	delta = ROUND_UP(delta, ARCH_STACK_PTR_ALIGN);

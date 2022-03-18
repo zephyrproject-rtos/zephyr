@@ -669,7 +669,7 @@ static inline bool device_is_ready(const struct device *dev)
  * actual devices list. This is used internally by the device PM subsystem to
  * keep track of suspended devices during system power transitions.
  */
-#if CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE
 #define Z_DEVICE_DEFINE_PM_SLOT(dev_name)				\
 	static const Z_DECL_ALIGN(struct device *)			\
 	_CONCAT(__pm_device_slot_, DEVICE_NAME_GET(dev_name)) __used	\
