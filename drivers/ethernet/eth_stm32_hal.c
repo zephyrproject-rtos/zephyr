@@ -563,6 +563,10 @@ release_desc:
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
+	if (!pkt) {
+		goto out;
+	}
+
 #if defined(CONFIG_NET_VLAN)
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
@@ -595,6 +599,7 @@ release_desc:
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
+out:
 	if (!pkt) {
 		eth_stats_update_errors_rx(get_iface(dev_data, *vlan_tag));
 	}
