@@ -180,7 +180,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	 * a memory barrier when used like this, and we don't have a
 	 * Zephyr framework for that.
 	 */
-	atomic_clear(&l->locked);
+	(void)atomic_clear(&l->locked);
 #endif
 	arch_irq_unlock(key.key);
 }
@@ -195,7 +195,7 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 #endif
 #ifdef CONFIG_SMP
-	atomic_clear(&l->locked);
+	(void)atomic_clear(&l->locked);
 #endif
 }
 

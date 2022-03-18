@@ -52,7 +52,7 @@ int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
 		return -EINVAL;
 	}
 
-	atomic_set(&sem->futex.val, (int)initial_count);
+	(void)atomic_set(&sem->futex.val, (int)initial_count);
 	sem->limit = (int)limit;
 
 	return 0;

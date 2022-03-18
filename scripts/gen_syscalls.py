@@ -210,7 +210,7 @@ def wrapper_defs(func_name, func_type, args):
         wrap += "\t\t" + "(void)%s;\n" % invoke
         wrap += "\t\t" + "return (%s)ret64;\n" % func_type
     elif func_type == "void":
-        wrap += "\t\t" + "%s;\n" % invoke
+        wrap += "\t\t" + "(void)%s;\n" % invoke
         wrap += "\t\t" + "return;\n"
     elif func_type == "bool":
         wrap += "\t\t" + "return %s != 0U;\n" % (invoke)
