@@ -100,6 +100,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	uint32_t ticks_slot_overhead;
 	struct lll_scan_aux *lll_aux;
 	struct ll_scan_aux_set *aux;
+	uint8_t ticker_yield_handle;
 	uint32_t window_widening_us;
 	uint32_t ticks_slot_offset;
 	uint32_t ticks_aux_offset;
@@ -141,7 +142,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_1M;
+
+		ticker_yield_handle = TICKER_ID_SCAN_BASE +
+				      ull_scan_handle_get(scan);
 		break;
+
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 		lll_aux = NULL;
 		aux = NULL;
@@ -155,7 +160,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		scan = HDR_LLL2ULL(lll);
 		sync = sync_create_get(scan);
 		phy = BT_HCI_LE_EXT_SCAN_PHY_CODED;
+
+		ticker_yield_handle = TICKER_ID_SCAN_BASE +
+				      ull_scan_handle_get(scan);
 		break;
+
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 		sync_iso = NULL;
 		rx_incomplete = NULL;
@@ -171,6 +180,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			/* aux parent will be NULL for periodic sync */
 			lll = aux->parent;
 			LL_ASSERT(lll);
+
+			ticker_yield_handle = TICKER_ID_SCAN_AUX_BASE +
+					      aux_handle_get(aux);
 
 		} else if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) ||
 			   ull_scan_is_valid_get(HDR_LLL2ULL(ftr->param))) {
@@ -189,6 +201,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			aux = HDR_LLL2ULL(lll_aux);
 			LL_ASSERT(lll == aux->parent);
 
+			ticker_yield_handle = TICKER_NULL;
+
 		} else {
 			lll = NULL;
 
@@ -201,6 +215,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 			aux = HDR_LLL2ULL(lll_aux);
 			LL_ASSERT(sync_lll == aux->parent);
+
+			ticker_yield_handle = TICKER_NULL;
 		}
 
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || lll) {
@@ -290,6 +306,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 			 * incomplete report
 			 */
 			rx_incomplete = ftr->extra;
+
+			ticker_yield_handle = TICKER_ID_SCAN_SYNC_BASE +
+					      ull_sync_handle_get(ull_sync);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 		}
@@ -640,7 +659,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	aux->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
-				       PDU_AC_MAX_US(0U, lll_aux->phy) +
+				       PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
+						     lll_aux->phy) +
 				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,
@@ -654,15 +674,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	ticks_aux_offset = HAL_TICKER_US_TO_TICKS(aux_offset_us);
 
-	/* Yield the primary scan window ticks in ticker */
-	if (scan) {
-		uint8_t handle;
-
-		handle = ull_scan_handle_get(scan);
-
+	/* Yield the primary scan window or auxiliary or periodic sync event
+	 * in ticker.
+	 */
+	if (ticker_yield_handle != TICKER_NULL) {
 		ticker_status = ticker_yield_abs(TICKER_INSTANCE_ID_CTLR,
 						 TICKER_USER_ID_ULL_HIGH,
-						 (TICKER_ID_SCAN_BASE + handle),
+						 ticker_yield_handle,
 						 (ftr->ticks_anchor +
 						  ticks_aux_offset -
 						  ticks_slot_offset),
@@ -672,7 +690,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 
 	aux_handle = aux_handle_get(aux);
-
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
 				     TICKER_ID_SCAN_AUX_BASE + aux_handle,
