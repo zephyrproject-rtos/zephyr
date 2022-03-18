@@ -58,13 +58,9 @@ struct pwm_stm32_data {
 
 /** PWM configuration. */
 struct pwm_stm32_config {
-	/** Timer instance. */
 	TIM_TypeDef *timer;
-	/** Prescaler. */
 	uint32_t prescaler;
-	/** Clock configuration. */
 	struct stm32_pclken pclken;
-	/** pinctrl configurations. */
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_PWM_CAPTURE
 	void (*irq_config_func)(const struct device *dev);
