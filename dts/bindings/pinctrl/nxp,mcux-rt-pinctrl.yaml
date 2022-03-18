@@ -17,8 +17,6 @@ description: |
     nxp,speed = "100-mhz";
   };
 
-  Note that the mux, mode, input, daisy, and cfg values must be aligned for
-  correct configuration
   This will select GPIO_AD_B0_12 as LPUART1 TX, and GPIO_AD_B0_13 as LPUART1 RX.
   Both pins will be configured with a weak latch, drive strength of "r0-6",
   slow slew rate, and 100 MHZ speed.

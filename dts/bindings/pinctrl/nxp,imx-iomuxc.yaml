@@ -44,3 +44,40 @@ child-binding:
         gpr_reg: GPR register address to write to
         gpr_shift: shift to apply to value before writing
         gpr_val: value to write
+    # Note: the below properties should ideally be an enum. However, the pinctrl driver
+    # will need to initialize the pin configuration register differently based on
+    # the type of register provided, and it does so using the IF_ENABLED macro. This
+    # macro cannot work using preprocessor equality statements (like DT_ENUM_IDX(prop) == val),
+    # so we cannot use an enum and instead must use individual properties.
+    pin-pue:
+      required: false
+      type: boolean
+      description: |
+          RT11xx parts have multiple types of IOMUXC registers defined, with
+          different register layouts. This property can be set to indicate
+          to the pinctrl driver the type of register this pinmux represents,
+          and should not be modified by the user.
+    pin-pdrv:
+      required: false
+      type: boolean
+      description: |
+          RT11xx parts have multiple types of IOMUXC registers defined, with
+          different register layouts. This property can be set to indicate
+          to the pinctrl driver the type of register this pinmux represents,
+          and should not be modified by the user.
+    pin-lpsr:
+      required: false
+      type: boolean
+      description: |
+          RT11xx parts have multiple types of IOMUXC registers defined, with
+          different register layouts. This property can be set to indicate
+          to the pinctrl driver the type of register this pinmux represents,
+          and should not be modified by the user.
+    pin-snvs:
+      required: false
+      type: boolean
+      description: |
+          RT11xx parts have multiple types of IOMUXC registers defined, with
+          different register layouts. This property can be set to indicate
+          to the pinctrl driver the type of register this pinmux represents,
+          and should not be modified by the user.
