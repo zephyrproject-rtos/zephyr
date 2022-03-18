@@ -32,6 +32,7 @@
 #define STM32_AF14    0xe
 #define STM32_AF15    0xf
 #define STM32_ANALOG  0x10
+#define STM32_GPIO    0x11
 
 /**
  * @brief Macro to generate pinmux int using port, pin number and mode arguments
@@ -74,6 +75,7 @@
  *    GPIO Output type    [ 6 ]
  *    GPIO Speed          [ 7 : 8 ]
  *    GPIO PUPD config    [ 9 : 10 ]
+ *    GPIO Output data     [ 11 ]
  *
  * Applicable to STM32F3, STM32F4, STM32L4 series
  */
@@ -106,5 +108,11 @@
 #define STM32_PUPDR_PULL_DOWN		(0x2<<STM32_PUPDR_SHIFT)
 #define STM32_PUPDR_MASK		0x3
 #define STM32_PUPDR_SHIFT		9
+
+/* GPIO plain output value */
+#define STM32_ODR_0			(0x0<<STM32_ODR_SHIFT)
+#define STM32_ODR_1			(0x1<<STM32_ODR_SHIFT)
+#define STM32_ODR_MASK			0x1
+#define STM32_ODR_SHIFT			11
 
 #endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_H_ */

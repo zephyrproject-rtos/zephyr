@@ -55,6 +55,7 @@
 #define ALTERNATE	0x0  /* Alternate function output */
 #define GPIO_IN		0x1  /* Input */
 #define ANALOG		0x2  /* Analog */
+#define GPIO_OUT	0x3  /* Output */
 
 /**
  * @brief PIN configuration bitfield
@@ -67,6 +68,7 @@
  *    GPIO Output PP/OD   [ 5 ]
  *    GPIO Output AF/GP   [ 6 ]
  *    GPIO PUPD Config    [ 7 : 8 ]
+ *    GPIO ODR            [ 9 ]
  *
  * Applicable to STM32F1 series
  */
@@ -107,5 +109,11 @@
 #define STM32_PUPD_PULL_DOWN		(0x2<<STM32_PUPD_SHIFT)
 #define STM32_PUPD_MASK			0x3
 #define STM32_PUPD_SHIFT		7
+
+/* GPIO plain output value */
+#define STM32_ODR_0			(0x0<<STM32_ODR_SHIFT)
+#define STM32_ODR_1			(0x1<<STM32_ODR_SHIFT)
+#define STM32_ODR_MASK			0x1
+#define STM32_ODR_SHIFT			9
 
 #endif	/* ZEPHYR_STM32_PINCTRLF1_H_ */
