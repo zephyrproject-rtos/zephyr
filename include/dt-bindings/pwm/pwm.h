@@ -11,6 +11,7 @@
  * The `PWM_POLARITY_*` flags are used with pwm_pin_set_cycles(),
  * pwm_pin_set_usec(), pwm_pin_set_nsec() or pwm_pin_configure_capture() to
  * specify the polarity of a PWM pin.
+ * The flags are on the lower 8bits of the pwm_flags_t
  * @{
  */
 /** PWM pin normal polarity (active-high pulse). */
