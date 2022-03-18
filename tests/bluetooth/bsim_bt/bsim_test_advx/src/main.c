@@ -38,7 +38,7 @@
 #define ADV_PHY_1M      BIT(0)
 #define ADV_PHY_2M      BIT(1)
 #define ADV_PHY_CODED   BIT(2)
-#define ADV_SID         0
+#define ADV_SID         0x0a
 #define SCAN_REQ_NOT    0
 
 #define AD_OP           0x03
