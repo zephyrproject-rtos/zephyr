@@ -77,6 +77,23 @@ static uint32_t count32(void)
 	return *COUNTER_LO;
 }
 
+#define PERF_ISR_TIMING 1
+#ifdef PERF_ISR_TIMING
+
+/* perf measurement windows size 2^x */
+#define PERF_WINDOW_SIZE	10
+
+struct perf_timer {
+	unsigned int runs;
+	unsigned int sum;
+	unsigned int max;
+	unsigned int last;
+};
+
+static struct perf_timer _d[4] = { { 0 } };
+
+#endif
+
 static void compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
@@ -84,6 +101,31 @@ static void compare_isr(const void *arg)
 	uint32_t dticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
+
+#ifdef PERF_ISR_TIMING
+	unsigned int now, diff;
+	int core = arch_curr_cpu()->id;
+	now = k_cycle_get_32();
+	if (_d[core].last) {
+		if (now > _d[core].last)
+			diff = now - _d[core].last;
+		else
+			diff = UINT32_MAX - _d[core].last + now;
+
+		_d[core].sum += diff;
+		_d[core].max = diff > _d[core].max ? diff : _d[core].max;
+
+		if (++_d[core].runs == 1 << PERF_WINDOW_SIZE) {
+			_d[core].sum >>= PERF_WINDOW_SIZE;
+			printk("core%d compare_isr avg %u, max %u\n",
+				core, _d[core].sum, _d[core].max);
+			_d[core].sum = 0;
+			_d[core].max = 0;
+			_d[core].runs = 0;
+		}
+	}
+	_d[core].last = now;
+#endif
 
 	curr = count();
 	dticks = (uint32_t)((curr - last_count) / CYC_PER_TICK);
