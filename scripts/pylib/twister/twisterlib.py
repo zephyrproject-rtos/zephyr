@@ -726,7 +726,7 @@ class DeviceHandler(Handler):
         for d in self.suite.duts:
             if fixture and fixture not in d.fixtures:
                 continue
-            if d.platform != device or not (d.serial or d.serial_pty):
+            if d.platform != device or (d.serial is None and d.serial_pty is None):
                 continue
             d.lock.acquire()
             avail = False
