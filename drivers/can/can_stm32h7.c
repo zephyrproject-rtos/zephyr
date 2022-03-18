@@ -49,18 +49,6 @@ static int can_stm32h7_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
-static int can_stm32h7_get_max_filters(const struct device *dev,
-				       enum can_ide id_type)
-{
-	ARG_UNUSED(dev);
-
-	if (id_type == CAN_STANDARD_IDENTIFIER) {
-		return NUM_STD_FILTER_DATA;
-	} else {
-		return NUM_EXT_FILTER_DATA;
-	}
-}
-
 static int can_stm32h7_clock_enable(const struct device *dev)
 {
 	int ret;
@@ -216,7 +204,7 @@ static const struct can_driver_api can_api_funcs = {
 #endif
 	.get_core_clock = can_stm32h7_get_core_clock,
 	.get_max_bitrate = can_stm32h7_get_max_bitrate,
-	.get_max_filters = can_stm32h7_get_max_filters,
+	.get_max_filters = can_mcan_get_max_filters,
 	.set_state_change_callback = can_stm32h7_set_state_change_cb,
 	/* Timing limits are per the STM32H7 Reference Manual (RM0433 Rev 7),
 	 * section 56.5.7, FDCAN nominal bit timing and prescaler register

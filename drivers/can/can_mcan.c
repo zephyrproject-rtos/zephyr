@@ -828,6 +828,17 @@ static int can_mcan_get_free_std(volatile struct can_mcan_std_filter *filters)
 	return -ENOSPC;
 }
 
+int can_mcan_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	ARG_UNUSED(dev);
+
+	if (id_type == CAN_STANDARD_IDENTIFIER) {
+		return NUM_STD_FILTER_DATA;
+	} else {
+		return NUM_EXT_FILTER_DATA;
+	}
+}
+
 /* Use masked configuration only for simplicity. If someone needs more than
  * 28 standard filters, dual mode needs to be implemented.
  * Dual mode gets tricky, because we can only activate both filters.

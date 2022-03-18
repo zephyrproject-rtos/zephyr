@@ -172,6 +172,7 @@ static const struct can_driver_api can_api_funcs = {
 	.recover = can_mcan_recover,
 #endif
 	.get_core_clock = can_sam_get_core_clock,
+	.get_max_filters = can_mcan_get_max_filters,
 	.get_max_bitrate = can_sam_get_max_bitrate,
 	.set_state_change_callback =  can_sam_set_state_change_callback,
 	.timing_min = {
