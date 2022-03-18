@@ -48,6 +48,24 @@ properties:
         -  4
         -  2
 
+    bw-filt:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Digital filtering cutoff bandwidth. Default is power-up configuration.
+
+           3 # ODR/20 (HP/LP)
+           2 # ODR/10 (HP/LP)
+           1 # ODR/ 4 (HP/LP)
+           0 # ODR/ 2 (up to ODR = 800 Hz, 400 Hz when ODR = 1600 Hz)
+
+      enum:
+        - 3
+        - 2
+        - 1
+        - 0
+
     power-mode:
       type: int
       required: false
