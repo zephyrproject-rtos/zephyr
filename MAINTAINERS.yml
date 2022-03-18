@@ -1356,7 +1356,7 @@ Power management:
         - gmarull
         - teburd
     files:
-        - include/pm/pm.h
+        - include/pm/
         - samples/subsys/pm/
         - subsys/pm/
         - tests/subsys/pm/
