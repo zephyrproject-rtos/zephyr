@@ -1,5 +1,5 @@
 tests:
-  bluetooth.df.conectionless_cte_tx:
+  bluetooth.df.connectionless_cte_chains:
     platform_allow: nrf52_bsim
     integration_platforms:
       - nrf52_bsim
