@@ -85,7 +85,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 	int sp_err;
 	struct can_timing tmp_res;
 
-	if (sp >= 1000 ||
+	if (bitrate == 0 || sp >= 1000 ||
 	    (!IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 1000000) ||
 	     (IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 8000000)) {
 		return -EINVAL;
