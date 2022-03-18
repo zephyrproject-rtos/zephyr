@@ -89,6 +89,7 @@ static void broadcast_source_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 			BT_DBG("Invalid broadcast sync endpoint state transition");
 			return;
 		}
+		break;
 	case BT_AUDIO_EP_STATE_STREAMING:
 		if (state != BT_AUDIO_EP_STATE_QOS_CONFIGURED) {
 			BT_DBG("Invalid broadcast sync endpoint state transition");
