@@ -13,7 +13,7 @@
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
 
-/.github/				  @nashif
+/.github/				  @nashif @stephanosio
 /.github/workflows/                       @galak @nashif
 /MAINTAINERS.yml                          @MaureenHelm
 /arch/arc/                                @abrodkin @ruuddw @evgeniy-paltsev
