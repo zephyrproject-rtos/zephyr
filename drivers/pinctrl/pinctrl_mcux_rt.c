@@ -38,10 +38,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		IOMUXC_SetPinMux(mux_register, mux_mode, input_register,
 			input_daisy, config_register,
 			MCUX_RT_INPUT_ENABLE(pin_ctrl_flags));
-
-		IOMUXC_SetPinConfig(mux_register, mux_mode, input_register,
-			input_daisy, config_register,
-			pin_ctrl_flags & (~(0x1 << MCUX_RT_INPUT_ENABLE_SHIFT)));
+		if (config_register) {
+			IOMUXC_SetPinConfig(mux_register, mux_mode, input_register,
+				input_daisy, config_register,
+				pin_ctrl_flags & (~(0x1 << MCUX_RT_INPUT_ENABLE_SHIFT)));
+		}
 
 
 	}
@@ -53,8 +54,12 @@ static int mcux_pinctrl_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	CLOCK_EnableClock(kCLOCK_Iomuxc);
+#ifdef CONFIG_SOC_SERIES_IMX_RT10XX
 	CLOCK_EnableClock(kCLOCK_IomuxcSnvs);
 	CLOCK_EnableClock(kCLOCK_IomuxcGpr);
+#elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
+	CLOCK_EnableClock(kCLOCK_Iomuxc_Lpsr);
+#endif
 
 	return 0;
 }
