@@ -1882,6 +1882,7 @@ CI:
     maintainers:
         - nashif
         - galak
+        - stephanosio
     files:
         - .github/
         - scripts/ci/
