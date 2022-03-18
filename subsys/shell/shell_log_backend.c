@@ -320,7 +320,9 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
 	const struct shell_log_backend *log_backend = shell->log_backend;
 
-	atomic_add(&shell->stats->log_lost_cnt, cnt);
+	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
+		atomic_add(&shell->stats->log_lost_cnt, cnt);
+	}
 	atomic_add(&log_backend->control_block->dropped_cnt, cnt);
 }
 
