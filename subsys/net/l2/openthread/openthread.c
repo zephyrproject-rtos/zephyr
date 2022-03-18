@@ -31,7 +31,6 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/dataset.h>
 #include <openthread/joiner.h>
 #include <openthread-system.h>
-#include <openthread-config-generic.h>
 #include <utils/uart.h>
 
 #include <platform-zephyr.h>

@@ -21,27 +21,32 @@
 #include <toolchain/gcc.h>
 #include <soc.h>
 
-#define ESP32C3_INTC_DEFAULT_PRIO			15
 #define ESP32C3_INTSTATUS_SLOT1_THRESHOLD	32
 
 void arch_irq_enable(unsigned int irq)
 {
-	uint32_t key = irq_lock();
-
-	esprv_intc_int_set_priority(irq, ESP32C3_INTC_DEFAULT_PRIO);
-	esprv_intc_int_set_type(irq, INTR_TYPE_LEVEL);
-	esprv_intc_int_enable(1 << irq);
-	irq_unlock(key);
+	esp_intr_enable(irq);
 }
 
 void arch_irq_disable(unsigned int irq)
 {
-	esprv_intc_int_disable(1 << irq);
+	esp_intr_disable(irq);
 }
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	return (REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG) & (1 << irq));
+	bool res = false;
+	uint32_t key = irq_lock();
+
+	if (irq < 32) {
+		res = esp_intr_get_enabled_intmask(0) & BIT(irq);
+	} else {
+		res = esp_intr_get_enabled_intmask(1) & BIT(irq - 32);
+	}
+
+	irq_unlock(key);
+
+	return res;
 }
 
 uint32_t soc_intr_get_next_source(void)

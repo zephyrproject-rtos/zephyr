@@ -705,113 +705,6 @@ struct pwm_it8xxx2_regs {
 
 /**
  *
- * (1Cxxh) SMBus Interface (SMB)
- *
- */
-#define HOSTA_A			ECREG(EC_REG_BASE_ADDR + 0x1C40)
-#define HOSTA_B			ECREG(EC_REG_BASE_ADDR + 0x1C80)
-#define HOSTA_C			ECREG(EC_REG_BASE_ADDR + 0x1CC0)
-#define HOSTA_BDS		BIT(7)
-#define HOSTA_TMOE		BIT(6)
-#define HOSTA_NACK		BIT(5)
-#define HOSTA_FAIL		BIT(4)
-#define HOSTA_BSER		BIT(3)
-#define HOSTA_DVER		BIT(2)
-#define HOSTA_FINTR		BIT(1)
-#define HOSTA_HOBY		BIT(0)
-#define HOSTA_ANY_ERROR		(HOSTA_DVER | HOSTA_BSER | \
-				HOSTA_FAIL | HOSTA_NACK | HOSTA_TMOE)
-#define HOSTA_NEXT_BYTE		HOSTA_BDS
-#define HOSTA_ALL_WC_BIT		(HOSTA_FINTR | \
-				HOSTA_ANY_ERROR | HOSTA_BDS)
-
-#define HOCTL_A			ECREG(EC_REG_BASE_ADDR + 0x1C41)
-#define HOCTL_B			ECREG(EC_REG_BASE_ADDR + 0x1C81)
-#define HOCTL_C			ECREG(EC_REG_BASE_ADDR + 0x1CC1)
-#define HOCTL_PEC_EN		BIT(7)
-#define HOCTL_SRT		BIT(6)
-#define HOCTL_LABY		BIT(5)
-#define HOCTL_SMCD2		BIT(4)
-#define HOCTL_SMCD1		BIT(3)
-#define HOCTL_SMCD0		BIT(2)
-#define HOCTL_KILL		BIT(1)
-#define HOCTL_INTREN		BIT(0)
-
-#define HOCMD_A			ECREG(EC_REG_BASE_ADDR + 0x1C42)
-#define HOCMD_B			ECREG(EC_REG_BASE_ADDR + 0x1C82)
-#define HOCMD_C			ECREG(EC_REG_BASE_ADDR + 0x1CC2)
-#define TRASLA_A		ECREG(EC_REG_BASE_ADDR + 0x1C43)
-#define TRASLA_B		ECREG(EC_REG_BASE_ADDR + 0x1C83)
-#define TRASLA_C		ECREG(EC_REG_BASE_ADDR + 0x1CC3)
-#define D0REG_A			ECREG(EC_REG_BASE_ADDR + 0x1C44)
-#define D0REG_B			ECREG(EC_REG_BASE_ADDR + 0x1C84)
-#define D0REG_C			ECREG(EC_REG_BASE_ADDR + 0x1CC4)
-#define D1REG_A			ECREG(EC_REG_BASE_ADDR + 0x1C45)
-#define D1REG_B			ECREG(EC_REG_BASE_ADDR + 0x1C85)
-#define D1REG_C			ECREG(EC_REG_BASE_ADDR + 0x1CC5)
-#define HOBDB_A			ECREG(EC_REG_BASE_ADDR + 0x1C46)
-#define HOBDB_B			ECREG(EC_REG_BASE_ADDR + 0x1C86)
-#define HOBDB_C			ECREG(EC_REG_BASE_ADDR + 0x1CC6)
-#define PECERC_A		ECREG(EC_REG_BASE_ADDR + 0x1C47)
-#define PECERC_B		ECREG(EC_REG_BASE_ADDR + 0x1C87)
-#define PECERC_C		ECREG(EC_REG_BASE_ADDR + 0x1CC7)
-#define RESLADR_A		ECREG(EC_REG_BASE_ADDR + 0x1C48)
-#define RESLADR_B		ECREG(EC_REG_BASE_ADDR + 0x1C88)
-#define RESLADR_2_A		ECREG(EC_REG_BASE_ADDR + 0x1C51)
-#define RESLADR_2_B		ECREG(EC_REG_BASE_ADDR + 0x1C91)
-#define SLDA_A			ECREG(EC_REG_BASE_ADDR + 0x1C49)
-#define SLDA_B			ECREG(EC_REG_BASE_ADDR + 0x1C89)
-#define SMBPCTL_A		ECREG(EC_REG_BASE_ADDR + 0x1C4A)
-#define SMBPCTL_B		ECREG(EC_REG_BASE_ADDR + 0x1C8A)
-#define SMBPCTL_C		ECREG(EC_REG_BASE_ADDR + 0x1CCA)
-#define SLSTA_A			ECREG(EC_REG_BASE_ADDR + 0x1C4B)
-#define SLSTA_B			ECREG(EC_REG_BASE_ADDR + 0x1C8B)
-#define INT81			BIT(7)
-#define BIS			BIT(6)
-#define SPDS			BIT(5)
-#define MSLA2			BIT(4)
-#define RCS			BIT(3)
-#define STS			BIT(2)
-#define SDS			BIT(1)
-#define HONOST			BIT(0)
-
-#define SICR_A			ECREG(EC_REG_BASE_ADDR + 0x1C4C)
-#define SICR_B			ECREG(EC_REG_BASE_ADDR + 0x1C8C)
-#define NDADR_A			ECREG(EC_REG_BASE_ADDR + 0x1C4D)
-#define NDADR_B			ECREG(EC_REG_BASE_ADDR + 0x1C8D)
-#define NDLB_A			ECREG(EC_REG_BASE_ADDR + 0x1C4E)
-#define NDLB_B			ECREG(EC_REG_BASE_ADDR + 0x1C8E)
-#define NDHB_A			ECREG(EC_REG_BASE_ADDR + 0x1C4F)
-#define NDHB_B			ECREG(EC_REG_BASE_ADDR + 0x1C8F)
-#define HOCTL2_A		ECREG(EC_REG_BASE_ADDR + 0x1C50)
-#define HOCTL2_B		ECREG(EC_REG_BASE_ADDR + 0x1C90)
-#define HOCTL2_C		ECREG(EC_REG_BASE_ADDR + 0x1CD0)
-#define SMB4P7USL		ECREG(EC_REG_BASE_ADDR + 0x1C00)
-#define SMB4P0USH		ECREG(EC_REG_BASE_ADDR + 0x1C01)
-#define SMB300NS		ECREG(EC_REG_BASE_ADDR + 0x1C02)
-#define SMB250NS		ECREG(EC_REG_BASE_ADDR + 0x1C03)
-#define SMB25MS			ECREG(EC_REG_BASE_ADDR + 0x1C04)
-#define SMB45P3USL		ECREG(EC_REG_BASE_ADDR + 0x1C05)
-#define SMB45P3USH		ECREG(EC_REG_BASE_ADDR + 0x1C06)
-#define SMB4P7A4P0H		ECREG(EC_REG_BASE_ADDR + 0x1C07)
-#define SLVISEL			ECREG(EC_REG_BASE_ADDR + 0x1C08)
-#define SCLKTS_A		ECREG(EC_REG_BASE_ADDR + 0x1C09)
-#define SCLKTS_B		ECREG(EC_REG_BASE_ADDR + 0x1C0A)
-#define SCLKTS_C		ECREG(EC_REG_BASE_ADDR + 0x1C0B)
-#define SMBFFCTRL1		ECREG(EC_REG_BASE_ADDR + 0x1C0D)
-#define SMBFFSTS1		ECREG(EC_REG_BASE_ADDR + 0x1C0E)
-#define SMBFFCTRL2		ECREG(EC_REG_BASE_ADDR + 0x1C0F)
-#define SMBFFSTS2		ECREG(EC_REG_BASE_ADDR + 0x1C10)
-#define CHSEF			ECREG(EC_REG_BASE_ADDR + 0x1C11)
-#define HOCTL3_A		ECREG(EC_REG_BASE_ADDR + 0x1C52)
-#define HOCTL3_B		ECREG(EC_REG_BASE_ADDR + 0x1C92)
-#define HOCTL3_C		ECREG(EC_REG_BASE_ADDR + 0x1CD2)
-#define MCODE_A			ECREG(EC_REG_BASE_ADDR + 0x1C53)
-#define MCODE_B			ECREG(EC_REG_BASE_ADDR + 0x1C93)
-#define MCODE_C			ECREG(EC_REG_BASE_ADDR + 0x1CD3)
-
-/**
- *
  * (1Dxxh) Keyboard Matrix Scan control (KSCAN)
  *
  */
@@ -1618,22 +1511,13 @@ struct adc_it8xxx2_regs {
 /* Automatic hardware calibration enable */
 #define IT8XXX2_ADC_AHCE			BIT(7)
 
-/*
- * Clock and Power Management (ECPM)
+/**
+ *
+ * (1Exxh) Clock and Power Management (ECPM) registers
+ *
  */
-#define IT83XX_ECPM_BASE  0x00F01E00
+#define IT8XXX2_ECPM_BASE  0x00F01E00
 
-#define IT83XX_ECPM_CGCTRL4R_OFF 0x09
-
-#define CGC_OFFSET_SMBF		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x80)
-#define CGC_OFFSET_SMBE		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x40)
-#define CGC_OFFSET_SMBD		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x20)
-#define CGC_OFFSET_SMBC		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x10)
-#define CGC_OFFSET_SMBB		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x08)
-#define CGC_OFFSET_SMBA		((IT83XX_ECPM_CGCTRL4R_OFF << 8) | 0x04)
-
-/* TODO: rename IT83XX_ECPM_BASE to IT8XXX2_ECPM_BASE */
-#define IT8XXX2_ECPM_PLLCTRL    ECREG(IT83XX_ECPM_BASE + 0x03)
 #ifndef __ASSEMBLER__
 enum chip_pll_mode {
 	CHIP_PLL_DOZE = 0,
@@ -1641,15 +1525,16 @@ enum chip_pll_mode {
 	CHIP_PLL_DEEP_DOZE = 3,
 };
 #endif
-#define IT8XXX2_ECPM_AUTOCG     ECREG(IT83XX_ECPM_BASE + 0x04)
-#define IT8XXX2_ECPM_CGCTRL3R   ECREG(IT83XX_ECPM_BASE + 0x05)
-#define IT8XXX2_ECPM_PLLFREQR   ECREG(IT83XX_ECPM_BASE + 0x06)
-#define IT8XXX2_ECPM_PLLCSS     ECREG(IT83XX_ECPM_BASE + 0x08)
-#define IT8XXX2_ECPM_SCDCR0     ECREG(IT83XX_ECPM_BASE + 0x0c)
-#define IT8XXX2_ECPM_SCDCR1     ECREG(IT83XX_ECPM_BASE + 0x0d)
-#define IT8XXX2_ECPM_SCDCR2     ECREG(IT83XX_ECPM_BASE + 0x0e)
-#define IT8XXX2_ECPM_SCDCR3     ECREG(IT83XX_ECPM_BASE + 0x0f)
-#define IT8XXX2_ECPM_SCDCR4     ECREG(IT83XX_ECPM_BASE + 0x10)
+#define IT8XXX2_ECPM_PLLCTRL    ECREG(IT8XXX2_ECPM_BASE + 0x03)
+#define IT8XXX2_ECPM_AUTOCG     ECREG(IT8XXX2_ECPM_BASE + 0x04)
+#define IT8XXX2_ECPM_CGCTRL3R   ECREG(IT8XXX2_ECPM_BASE + 0x05)
+#define IT8XXX2_ECPM_PLLFREQR   ECREG(IT8XXX2_ECPM_BASE + 0x06)
+#define IT8XXX2_ECPM_PLLCSS     ECREG(IT8XXX2_ECPM_BASE + 0x08)
+#define IT8XXX2_ECPM_SCDCR0     ECREG(IT8XXX2_ECPM_BASE + 0x0c)
+#define IT8XXX2_ECPM_SCDCR1     ECREG(IT8XXX2_ECPM_BASE + 0x0d)
+#define IT8XXX2_ECPM_SCDCR2     ECREG(IT8XXX2_ECPM_BASE + 0x0e)
+#define IT8XXX2_ECPM_SCDCR3     ECREG(IT8XXX2_ECPM_BASE + 0x0f)
+#define IT8XXX2_ECPM_SCDCR4     ECREG(IT8XXX2_ECPM_BASE + 0x10)
 
 /*
  * The count number of the counter for 25 ms register.
@@ -1658,67 +1543,97 @@ enum chip_pll_mode {
 
 #define I2C_CLK_LOW_TIMEOUT		255 /* ~=249 ms */
 
-/* SMBus/I2C Interface (SMB/I2C) */
-#define IT83XX_SMB_BASE		0x00F01C00
-#define IT83XX_SMB_4P7USL		ECREG(IT83XX_SMB_BASE+0x00)
-#define IT83XX_SMB_4P0USL		ECREG(IT83XX_SMB_BASE+0x01)
-#define IT83XX_SMB_300NS		ECREG(IT83XX_SMB_BASE+0x02)
-#define IT83XX_SMB_250NS		ECREG(IT83XX_SMB_BASE+0x03)
-#define IT83XX_SMB_25MS			ECREG(IT83XX_SMB_BASE+0x04)
-#define IT83XX_SMB_45P3USL		ECREG(IT83XX_SMB_BASE+0x05)
-#define IT83XX_SMB_45P3USH		ECREG(IT83XX_SMB_BASE+0x06)
-#define IT83XX_SMB_4P7A4P0H		ECREG(IT83XX_SMB_BASE+0x07)
-#define IT83XX_SMB_SLVISELR		ECREG(IT83XX_SMB_BASE+0x08)
-#define IT83XX_SMB_SCLKTS(ch)	ECREG(IT83XX_SMB_BASE+0x09+ch)
-#define IT83XX_SMB_CHSEF		ECREG(IT83XX_SMB_BASE+0x11)
-#define IT83XX_SMB_CHSAB		ECREG(IT83XX_SMB_BASE+0x20)
-#define IT83XX_SMB_CHSCD		ECREG(IT83XX_SMB_BASE+0x21)
-#define IT8XXX2_SMB_SFFCTL		ECREG(IT83XX_SMB_BASE+0x55)
-#define IT83XX_SMB_HOSTA(base)	ECREG(base+0x00)
-#define IT83XX_SMB_HOCTL(base)	ECREG(base+0x01)
-#define IT83XX_SMB_HOCMD(base)	ECREG(base+0x02)
-#define IT83XX_SMB_TRASLA(base)	ECREG(base+0x03)
-#define IT83XX_SMB_D0REG(base)	ECREG(base+0x04)
-#define IT83XX_SMB_D1REG(base)	ECREG(base+0x05)
-#define IT83XX_SMB_HOBDB(base)	ECREG(base+0x06)
-#define IT83XX_SMB_PECERC(base)	ECREG(base+0x07)
-#define IT83XX_SMB_SMBPCTL(base)	ECREG(base+0x0A)
-#define IT83XX_SMB_HOCTL2(base)	ECREG(base+0x10)
+/**
+ *
+ * (1Cxxh) SMBus Interface (SMB) registers
+ *
+ */
+#define IT8XXX2_SMB_BASE            0x00F01C00
+#define IT8XXX2_SMB_4P7USL          ECREG(IT8XXX2_SMB_BASE + 0x00)
+#define IT8XXX2_SMB_4P0USL          ECREG(IT8XXX2_SMB_BASE + 0x01)
+#define IT8XXX2_SMB_300NS           ECREG(IT8XXX2_SMB_BASE + 0x02)
+#define IT8XXX2_SMB_250NS           ECREG(IT8XXX2_SMB_BASE + 0x03)
+#define IT8XXX2_SMB_25MS            ECREG(IT8XXX2_SMB_BASE + 0x04)
+#define IT8XXX2_SMB_45P3USL         ECREG(IT8XXX2_SMB_BASE + 0x05)
+#define IT8XXX2_SMB_45P3USH         ECREG(IT8XXX2_SMB_BASE + 0x06)
+#define IT8XXX2_SMB_4P7A4P0H        ECREG(IT8XXX2_SMB_BASE + 0x07)
+#define IT8XXX2_SMB_SLVISELR        ECREG(IT8XXX2_SMB_BASE + 0x08)
+#define IT8XXX2_SMB_SCLKTS(ch)      ECREG(IT8XXX2_SMB_BASE + 0x09 + ch)
+#define IT8XXX2_SMB_CHSEF           ECREG(IT8XXX2_SMB_BASE + 0x11)
+#define IT8XXX2_SMB_CHSAB           ECREG(IT8XXX2_SMB_BASE + 0x20)
+#define IT8XXX2_SMB_CHSCD           ECREG(IT8XXX2_SMB_BASE + 0x21)
+#define IT8XXX2_SMB_SFFCTL          ECREG(IT8XXX2_SMB_BASE + 0x55)
+#define IT8XXX2_SMB_HOSTA(base)     ECREG(base + 0x00)
+#define IT8XXX2_SMB_HOCTL(base)     ECREG(base + 0x01)
+#define IT8XXX2_SMB_HOCMD(base)     ECREG(base + 0x02)
+#define IT8XXX2_SMB_TRASLA(base)    ECREG(base + 0x03)
+#define IT8XXX2_SMB_D0REG(base)     ECREG(base + 0x04)
+#define IT8XXX2_SMB_D1REG(base)     ECREG(base + 0x05)
+#define IT8XXX2_SMB_HOBDB(base)     ECREG(base + 0x06)
+#define IT8XXX2_SMB_PECERC(base)    ECREG(base + 0x07)
+#define IT8XXX2_SMB_SMBPCTL(base)   ECREG(base + 0x0A)
+#define IT8XXX2_SMB_HOCTL2(base)    ECREG(base + 0x10)
 
 /**
  * Enhanced SMBus/I2C Interface
  * Ch_D: 0x00F03680, Ch_E: 0x00F03500, Ch_F: 0x00F03580
  * Ch_D: ch = 0x03, Ch_E: ch = 0x00, Ch_F: ch = 0x01
  */
-#define IT83XX_I2C_DRR(base)		ECREG(base+0x00)
-#define IT83XX_I2C_PSR(base)		ECREG(base+0x01)
-#define IT83XX_I2C_HSPR(base)		ECREG(base+0x02)
-#define IT83XX_I2C_STR(base)		ECREG(base+0x03)
-#define IT83XX_I2C_DHTR(base)		ECREG(base+0x04)
-#define IT83XX_I2C_TOR(base)		ECREG(base+0x05)
-#define IT83XX_I2C_DTR(base)		ECREG(base+0x08)
-#define IT83XX_I2C_CTR(base)		ECREG(base+0x09)
-#define IT83XX_I2C_CTR1(base)		ECREG(base+0x0A)
-#define IT83XX_I2C_BYTE_CNT_L(base)	ECREG(base+0x0C)
-#define IT83XX_I2C_IRQ_ST(base)		ECREG(base+0x0D)
-#define IT83XX_I2C_IDR(base)		ECREG(base+0x06)
-#define IT83XX_I2C_TOS(base)		ECREG(base+0x07)
-#define IT83XX_I2C_IDR2(base)		ECREG(base+0x1F)
-#define IT83XX_I2C_RAMHA(base)		ECREG(base+0x23)
-#define IT83XX_I2C_RAMLA(base)		ECREG(base+0x24)
-#define IT83XX_I2C_RAMHA2(base)		ECREG(base+0x2B)
-#define IT83XX_I2C_RAMLA2(base)		ECREG(base+0x2C)
-#define IT83XX_I2C_CMD_ADDH(base)	ECREG(base+0x25)
-#define IT83XX_I2C_CMD_ADDL(base)	ECREG(base+0x26)
-#define IT83XX_I2C_RAMH2A(base)		ECREG(base+0x50)
-#define IT83XX_I2C_CMD_ADDH2(base)	ECREG(base+0x52)
+#define IT8XXX2_I2C_DRR(base)         ECREG(base + 0x00)
+#define IT8XXX2_I2C_PSR(base)         ECREG(base + 0x01)
+#define IT8XXX2_I2C_HSPR(base)        ECREG(base + 0x02)
+#define IT8XXX2_I2C_STR(base)         ECREG(base + 0x03)
+#define IT8XXX2_I2C_DHTR(base)        ECREG(base + 0x04)
+#define IT8XXX2_I2C_TOR(base)         ECREG(base + 0x05)
+#define IT8XXX2_I2C_DTR(base)         ECREG(base + 0x08)
+#define IT8XXX2_I2C_CTR(base)         ECREG(base + 0x09)
+#define IT8XXX2_I2C_CTR1(base)        ECREG(base + 0x0A)
+#define IT8XXX2_I2C_BYTE_CNT_L(base)  ECREG(base + 0x0C)
+#define IT8XXX2_I2C_IRQ_ST(base)      ECREG(base + 0x0D)
+#define IT8XXX2_I2C_IDR(base)         ECREG(base + 0x06)
+#define IT8XXX2_I2C_TOS(base)         ECREG(base + 0x07)
+#define IT8XXX2_I2C_IDR2(base)        ECREG(base + 0x1F)
+#define IT8XXX2_I2C_RAMHA(base)       ECREG(base + 0x23)
+#define IT8XXX2_I2C_RAMLA(base)       ECREG(base + 0x24)
+#define IT8XXX2_I2C_RAMHA2(base)      ECREG(base + 0x2B)
+#define IT8XXX2_I2C_RAMLA2(base)      ECREG(base + 0x2C)
+#define IT8XXX2_I2C_CMD_ADDH(base)    ECREG(base + 0x25)
+#define IT8XXX2_I2C_CMD_ADDL(base)    ECREG(base + 0x26)
+#define IT8XXX2_I2C_RAMH2A(base)      ECREG(base + 0x50)
+#define IT8XXX2_I2C_CMD_ADDH2(base)   ECREG(base + 0x52)
 
 /* SMBus/I2C register fields */
+/* 0x09-0xB: SMCLK Timing Setting */
+#define IT8XXX2_SMB_SMCLKS_1M         4
+#define IT8XXX2_SMB_SMCLKS_400K       3
+#define IT8XXX2_SMB_SMCLKS_100K       2
+#define IT8XXX2_SMB_SMCLKS_50K        1
+/* 0x41 0x81 0xC1: Host Control */
+#define IT8XXX2_SMB_SRT               BIT(6)
+#define IT8XXX2_SMB_LABY              BIT(5)
+#define IT8XXX2_SMB_SMCD_EXTND        BIT(4) | BIT(3) | BIT(2)
+#define IT8XXX2_SMB_KILL              BIT(1)
+#define IT8XXX2_SMB_INTREN            BIT(0)
+/* 0x43 0x83 0xC3: Transmit Slave Address */
+#define IT8XXX2_SMB_DIR               BIT(0)
+/* 0x4A 0x8A 0xCA: SMBus Pin Control */
+#define IT8XXX2_SMB_SMBDCS            BIT(1)
+#define IT8XXX2_SMB_SMBCS             BIT(0)
+/* 0x50 0x90 0xD0: Host Control 2 */
+#define IT8XXX2_SMB_SMD_TO_EN         BIT(4)
+#define IT8XXX2_SMB_I2C_SW_EN         BIT(3)
+#define IT8XXX2_SMB_I2C_SW_WAIT       BIT(2)
+#define IT8XXX2_SMB_I2C_EN            BIT(1)
+#define IT8XXX2_SMB_SMHEN             BIT(0)
 /* 0x55: Slave A FIFO Control */
-#define IT8XXX2_SMB_HSAPE		BIT(1)
+#define IT8XXX2_SMB_HSAPE             BIT(1)
+/* 0x04: Data Hold Time */
+#define IT8XXX2_I2C_SOFT_RST          BIT(7)
 /* 0x07: Time Out Status */
-#define IT8XXX2_I2C_SCL_IN		BIT(2)
-#define IT8XXX2_I2C_SDA_IN		BIT(0)
+#define IT8XXX2_I2C_SCL_IN            BIT(2)
+#define IT8XXX2_I2C_SDA_IN            BIT(0)
+/* 0x0A: Control 1 */
+#define IT8XXX2_I2C_MDL_EN            BIT(1)
 
 /* --- General Control (GCTRL) --- */
 #define IT83XX_GCTRL_BASE 0x00F02000
@@ -1915,6 +1830,8 @@ struct gctrl_it8xxx2_regs {
 #define IT8XXX2_GCTRL_LRSIWR		BIT(2)
 #define IT8XXX2_GCTRL_LRSIPWRSWTR	BIT(1)
 #define IT8XXX2_GCTRL_LRSIPGWR		BIT(0)
+/* 0x37: Eflash Protect Lock */
+#define IT8XXX2_GCTRL_EPLR_ENABLE	BIT(0)
 /* 0x46: Pin Multi-function Enable 3 */
 #define IT8XXX2_GCTRL_SMB3PSEL		BIT(6)
 /* 0x4B: ETWD and UART Control */

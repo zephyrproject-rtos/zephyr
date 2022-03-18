@@ -34,4 +34,11 @@ config UART_MCUX_IUART
 
 endif # SERIAL
 
+if GPIO
+
+config GPIO_MCUX_IGPIO
+	default y
+
+endif # GPIO
+
 endif # SOC_MIMX8MM6

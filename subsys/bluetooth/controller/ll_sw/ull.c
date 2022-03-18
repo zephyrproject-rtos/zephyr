@@ -1232,6 +1232,10 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
+#if defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
+	case NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT:
+#endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
+
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
 	 */
@@ -1511,9 +1515,11 @@ void ll_rx_mem_release(void **node_rx)
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) || \
+	defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 		case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 		case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
+		case NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT:
 		{
 			const uint8_t report_cnt = 1U;
 
@@ -2519,9 +2525,11 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) || \
+	defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 	case NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT:
+	case NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT:
 	{
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 		ll_rx_put(link, rx);

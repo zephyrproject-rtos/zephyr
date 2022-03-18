@@ -584,8 +584,10 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		 * done event.
 		 */
 		radio_isr_set(isr_done_cleanup, lll);
-	} else if (lll->is_aux_sched) {
-		/* Do not abort LLL scheduled auxiliary PDU scan */
+	} else if (lll->state || lll->is_aux_sched) {
+		/* Do not abort scan response reception or LLL scheduled
+		 * auxiliary PDU scan.
+		 */
 		return 0;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	} else {

@@ -5,31 +5,4 @@ description: ITE it8xxx2 I2C
 
 compatible: "ite,it8xxx2-i2c"
 
-include: i2c-controller.yaml
-
-properties:
-    reg:
-      required: true
-
-    label:
-      required: true
-
-    interrupts:
-      required: true
-
-    port-num:
-      type: int
-      required: true
-      description: Ordinal identifying the port
-
-    gpio-dev:
-        type: phandle
-        required: true
-        description: Get the handle of the GPIO device
-
-    pinctrl-0:
-      type: phandles
-      required: true
-      description: Configuration of I2C SCL and SDA pinmux controller.
-                   The SCL pin must be specified first and the SDA pin
-                   second in the pinctrl-0 array.
+include: ite,common-i2c.yaml

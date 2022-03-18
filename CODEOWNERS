@@ -278,6 +278,7 @@
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
+/drivers/i2c/i2c_ite_enhance.c            @GTLin08
 /drivers/i2c/i2c_ite_it8xxx2.c            @GTLin08
 /drivers/i2c/i2c_shell.c                  @nashif
 /drivers/i2c/Kconfig.i2c_emul             @sjg20

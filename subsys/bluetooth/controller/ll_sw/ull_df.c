@@ -53,7 +53,8 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) || \
+	defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 
 #define CTE_LEN_MAX_US 160U
 
@@ -168,7 +169,8 @@ static int init_reset(void)
 		 &df_adv_cfg_free);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) || \
+	defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 	/* Re-initialize the free IQ report mfifo */
 	MFIFO_INIT(iq_report_free);
 
@@ -499,7 +501,8 @@ bool ull_df_sync_cfg_is_not_enabled(struct lll_df_sync *df_cfg)
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) || \
+	defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 void *ull_df_iq_report_alloc_peek(uint8_t count)
 {
 	if (count > MFIFO_AVAIL_COUNT_GET(iq_report_free)) {
