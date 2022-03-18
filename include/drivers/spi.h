@@ -251,7 +251,9 @@ struct spi_cs_control {
  */
 #define SPI_CS_CONTROL_PTR_DT(node_id, delay_)			  \
 	(&(struct spi_cs_control) {				  \
-		.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id), \
+		{						  \
+			.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),\
+		},						  \
 		.delay = (delay_),				  \
 	})
 
