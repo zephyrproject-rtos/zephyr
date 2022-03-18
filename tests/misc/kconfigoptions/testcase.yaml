@@ -1,0 +1,4 @@
+tests:
+  misc.kconfigoptions:
+    tags: kconfigoptions
+    platform_allow: native_posix

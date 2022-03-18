@@ -211,6 +211,32 @@ def _node_int_prop(node, prop, unit=None):
     return node.props[prop].val >> _dt_units_to_scale(unit)
 
 
+def _node_array_prop(node, prop, index=0, unit=None):
+    """
+    This function takes a 'node' and  will look to see if that 'node' has a
+    property called 'prop' and if that 'prop' is an array type will return
+    the value of the property 'prop' at the given 'index' as either a string int
+    or string hex value. If the property 'prop' is not found or the given 'index'
+    is out of range it will return 0.
+
+    The function will divide the value based on 'unit':
+        None        No division
+        'k' or 'K'  divide by 1024 (1 << 10)
+        'm' or 'M'  divide by 1,048,576 (1 << 20)
+        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+    """
+    if not node:
+        return 0
+
+    if prop not in node.props:
+        return 0
+    if node.props[prop].type != "array":
+        return 0
+    if int(index) >= len(node.props[prop].val):
+        return 0
+    return node.props[prop].val[int(index)] >> _dt_units_to_scale(unit)
+
+
 def _dt_chosen_reg_addr(kconf, chosen, index=0, unit=None):
     """
     This function takes a 'chosen' property and treats that property as a path
@@ -448,6 +474,34 @@ def dt_node_int_prop(kconf, name, path, prop, unit=None):
     if name == "dt_node_int_prop_hex":
         return hex(_node_int_prop(node, prop, unit))
 
+
+def dt_node_array_prop(kconf, name, path, prop, index, unit=None):
+    """
+    This function takes a 'path', property name ('prop') and index ('index')
+    and looks for an EDT node at that path. If it finds an EDT node, it will
+    look to see if that node has a property called 'prop' and if that 'prop'
+    is an array type will return the value of the property 'prop' at the given
+    'index' as either a string int or string hex value. If not found we return 0.
+
+    The function will divide the value based on 'unit':
+        None        No division
+        'k' or 'K'  divide by 1024 (1 << 10)
+        'm' or 'M'  divide by 1,048,576 (1 << 20)
+        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return "0"
+    if name == "dt_node_array_prop_int":
+        return str(_node_array_prop(node, prop, index, unit))
+    if name == "dt_node_array_prop_hex":
+        return hex(_node_array_prop(node, prop, index, unit))
+
+
 def dt_node_str_prop_equals(kconf, _, path, prop, val):
     """
     This function takes a 'path' and property name ('prop') looks for an EDT
@@ -611,6 +665,8 @@ functions = {
         "dt_nodelabel_has_prop": (dt_nodelabel_has_prop, 2, 2),
         "dt_node_int_prop_int": (dt_node_int_prop, 2, 3),
         "dt_node_int_prop_hex": (dt_node_int_prop, 2, 3),
+        "dt_node_array_prop_int": (dt_node_array_prop, 3, 4),
+        "dt_node_array_prop_hex": (dt_node_array_prop, 3, 4),
         "dt_node_str_prop_equals": (dt_node_str_prop_equals, 3, 3),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
