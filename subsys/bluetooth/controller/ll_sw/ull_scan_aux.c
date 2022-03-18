@@ -1185,6 +1185,7 @@ static void aux_sync_incomplete(void *param)
 		/* prepare sync report with failure */
 		rx->type = NODE_RX_TYPE_SYNC_REPORT;
 		rx->handle = ull_sync_handle_get(sync);
+		rx->rx_ftr.param = lll;
 
 		/* flag chain reception failure */
 		rx->rx_ftr.aux_failed = 1U;
