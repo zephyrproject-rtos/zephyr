@@ -69,6 +69,7 @@ struct lis2dw12_device_config {
 	lis2dw12_mode_t pm;
 	uint8_t range;
 	uint8_t bw_filt;
+	bool low_noise;
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	struct gpio_dt_spec gpio_int;
 	uint8_t int_pin;
