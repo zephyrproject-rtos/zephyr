@@ -225,6 +225,24 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	  Size of the Isochronous Tx buffers and the value returned in HCI LE
 	  Read Buffer Size V2 command response.
 
+config BT_CTLR_ISOAL_SOURCES
+	int "Number of Isochronous Adaptation Layer sinks"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	range 1 64
+	default 1
+	help
+	  Set the number of concurrently active sources supported by the
+	  ISO AL.
+
+config BT_CTLR_ISOAL_SINKS
+	int "Number of Isochronous Adaptation Layer sinks"
+	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
+	range 1 64
+	default 1
+	help
+	  Set the number of concurrently active sinks supported by the
+	  ISO AL.
+
 config BT_CTLR_ISO_VENDOR_DATA_PATH
 	bool "Vendor-specific ISO data path"
 	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO

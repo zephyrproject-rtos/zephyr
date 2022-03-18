@@ -515,7 +515,7 @@ void test_unframed_long_pdu_short_sdu(void)
  */
 void test_sink_create_destroy(void)
 {
-	isoal_sink_handle_t hdl[ISOAL_SINKS_MAX];
+	isoal_sink_handle_t hdl[CONFIG_BT_CTLR_ISOAL_SINKS];
 	struct isoal_sink_config *config_ptr;
 
 	err = isoal_init();
@@ -526,7 +526,7 @@ void test_sink_create_destroy(void)
 
 	uint8_t dummy_role = BT_CONN_ROLE_CENTRAL;
 
-	for (int i = 0; i < ISOAL_SINKS_MAX; i++) {
+	for (int i = 0; i < CONFIG_BT_CTLR_ISOAL_SINKS; i++) {
 		/* Create a sink based on global parameters */
 		err = isoal_sink_create(handle, dummy_role,
 					burst_number, flush_timeout,
@@ -545,7 +545,7 @@ void test_sink_create_destroy(void)
 		dummy_role = (dummy_role + 1) % (BT_ROLE_BROADCAST + 1);
 	}
 
-	for (int i = 0; i < ISOAL_SINKS_MAX; i++) {
+	for (int i = 0; i < CONFIG_BT_CTLR_ISOAL_SINKS; i++) {
 		/* Destroy sink */
 		isoal_sink_destroy(hdl[i]);
 	}
@@ -564,7 +564,7 @@ void test_sink_create_err(void)
 
 	isoal_sink_handle_t hdl;
 
-	for (int i = 0; i < ISOAL_SINKS_MAX; i++) {
+	for (int i = 0; i < CONFIG_BT_CTLR_ISOAL_SINKS; i++) {
 		/* Create a sink based on global parameters */
 		err = isoal_sink_create(handle, role,
 					burst_number, flush_timeout,
