@@ -115,7 +115,7 @@ static inline uint32_t stm32_pinval_get(int pin)
  * @brief Configure the hardware.
  */
 static void gpio_stm32_configure_raw(const struct device *dev, int pin,
-				     int conf, int altf)
+				     int conf, int func)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -224,7 +224,7 @@ static void gpio_stm32_configure_raw(const struct device *dev, int pin,
 
 }
 
-int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
+int gpio_stm32_configure(const struct device *dev, int pin, int conf, int func)
 {
 	int ret;
 
@@ -233,7 +233,7 @@ int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
 		return ret;
 	}
 
-	gpio_stm32_configure_raw(dev, pin, conf, altf);
+	gpio_stm32_configure_raw(dev, pin, conf, func);
 
 	return pm_device_runtime_put(dev);
 }

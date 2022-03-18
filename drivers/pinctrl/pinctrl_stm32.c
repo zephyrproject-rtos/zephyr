@@ -173,7 +173,7 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
-static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
+static int stm32_pin_configure(uint32_t pin, uint32_t pin_cgf, uint32_t pin_func)
 {
 	const struct device *port_device;
 
@@ -187,14 +187,14 @@ static int stm32_pin_configure(uint32_t pin, uint32_t func, uint32_t altf)
 		return -ENODEV;
 	}
 
-	return gpio_stm32_configure(port_device, STM32_PIN(pin), func, altf);
+	return gpio_stm32_configure(port_device, STM32_PIN(pin), pin_cgf, pin_func);
 }
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
 	uint32_t pin, mux;
-	uint32_t func = 0;
+	uint32_t pin_cgf = 0;
 	int ret = 0;
 
 	ARG_UNUSED(reg);
@@ -213,16 +213,16 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		uint32_t pupd;
 
 		if (STM32_DT_PINMUX_FUNC(mux) == ALTERNATE) {
-			func = pins[i].pincfg | STM32_MODE_OUTPUT | STM32_CNF_ALT_FUNC;
+			pin_cgf = pins[i].pincfg | STM32_MODE_OUTPUT | STM32_CNF_ALT_FUNC;
 		} else if (STM32_DT_PINMUX_FUNC(mux) == ANALOG) {
-			func = pins[i].pincfg | STM32_MODE_INPUT | STM32_CNF_IN_ANALOG;
+			pin_cgf = pins[i].pincfg | STM32_MODE_INPUT | STM32_CNF_IN_ANALOG;
 		} else if (STM32_DT_PINMUX_FUNC(mux) == GPIO_IN) {
-			func = pins[i].pincfg | STM32_MODE_INPUT;
-			pupd = func & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
+			pin_cgf = pins[i].pincfg | STM32_MODE_INPUT;
+			pupd = pin_cgf & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
 			if (pupd == STM32_PUPD_NO_PULL) {
-				func = func | STM32_CNF_IN_FLOAT;
+				pin_cgf = pin_cgf | STM32_CNF_IN_FLOAT;
 			} else {
-				func = func | STM32_CNF_IN_PUPD;
+				pin_cgf = pin_cgf | STM32_CNF_IN_PUPD;
 			}
 		} else {
 			/* Not supported */
@@ -230,9 +230,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		}
 #else
 		if (STM32_DT_PINMUX_FUNC(mux) < STM32_ANALOG) {
-			func = pins[i].pincfg | STM32_MODER_ALT_MODE;
+			pin_cgf = pins[i].pincfg | STM32_MODER_ALT_MODE;
 		} else if (STM32_DT_PINMUX_FUNC(mux) == STM32_ANALOG) {
-			func = STM32_MODER_ANALOG_MODE;
+			pin_cgf = STM32_MODER_ANALOG_MODE;
 		} else {
 			/* Not supported */
 			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
@@ -242,7 +242,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		pin = STM32PIN(STM32_DT_PINMUX_PORT(mux),
 			       STM32_DT_PINMUX_LINE(mux));
 
-		ret = stm32_pin_configure(pin, func, STM32_DT_PINMUX_FUNC(mux));
+		ret = stm32_pin_configure(pin, pin_cgf, STM32_DT_PINMUX_FUNC(mux));
 		if (ret < 0) {
 			return ret;
 		}
