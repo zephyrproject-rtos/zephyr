@@ -232,6 +232,8 @@ int can_mcan_send(const struct can_mcan_config *cfg, struct can_mcan_data *data,
 		  k_timeout_t timeout, can_tx_callback_t callback,
 		  void *user_data);
 
+int can_mcan_get_max_filters(const struct device *dev, enum can_ide id_type);
+
 int can_mcan_add_rx_filter(struct can_mcan_data *data,
 			   struct can_mcan_msg_sram *msg_ram,
 			   can_rx_callback_t callback, void *user_data,
