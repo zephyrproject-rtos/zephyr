@@ -10,6 +10,7 @@
 #include <device.h>
 #include <nrfx_qspi.h>
 #include <hal/nrf_clock.h>
+#include <drivers/pinctrl.h>
 
 #define QSPI_STD_CMD_WRSR  0x01
 #define QSPI_STD_CMD_WRDI  0x04
@@ -38,21 +39,15 @@ static inline int qspi_get_zephyr_ret_code(nrfx_err_t res)
 
 static int qspi_ext_mem_init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-
 	int ret;
+
+	PINCTRL_DT_DEFINE(QSPI_NODE);
+
+	ARG_UNUSED(dev);
 
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_1);
 
 	static nrfx_qspi_config_t qspi_config = {
-		.pins = {
-			.sck_pin = DT_PROP(QSPI_NODE, sck_pin),
-			.csn_pin = QSPI_PROP_AT(csn_pins, 0),
-			.io0_pin = QSPI_PROP_AT(io_pins, 0),
-			.io1_pin = QSPI_PROP_AT(io_pins, 1),
-			.io2_pin = QSPI_PROP_AT(io_pins, 2),
-			.io3_pin = QSPI_PROP_AT(io_pins, 3),
-		},
 		.irq_priority = NRFX_QSPI_DEFAULT_CONFIG_IRQ_PRIORITY,
 		.prot_if = {
 			.readoc    = NRF_QSPI_READOC_READ4IO,
@@ -65,8 +60,16 @@ static int qspi_ext_mem_init(const struct device *dev)
 			.sck_delay = 0x05,
 			.spi_mode  = NRF_QSPI_MODE_0,
 			.dpmen     = false
-		}
+		},
+		.skip_gpio_cfg = true,
+		.skip_psel_cfg = true,
 	};
+
+	ret = pinctrl_apply_state(PINCTRL_DT_DEV_CONFIG_GET(QSPI_NODE),
+				  PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	nrfx_err_t res = nrfx_qspi_init(&qspi_config, NULL, NULL);
 
