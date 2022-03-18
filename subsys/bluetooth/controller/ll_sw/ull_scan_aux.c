@@ -721,8 +721,16 @@ ull_scan_aux_rx_flush:
 		 * immediately since we are in sync context.
 		 */
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || aux->rx_last) {
-			aux->rx_last->rx_ftr.extra = rx;
-			aux->rx_last = rx;
+			/* If scan is being disabled, rx has already been
+			 * enqueued before coming here, ull_scan_aux_rx_flush.
+			 * Do not add it, to avoid duplicate report generation,
+			 * release and probable infinite loop processing the
+			 * list.
+			 */
+			if (likely(!is_stop)) {
+				aux->rx_last->rx_ftr.extra = rx;
+				aux->rx_last = rx;
+			}
 		} else {
 			LL_ASSERT(sync_lll);
 
