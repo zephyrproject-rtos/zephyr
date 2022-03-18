@@ -167,8 +167,15 @@ config TFM_ITS_MAX_ASSET_SIZE
 	  Maximum size (in bytes) of a single asset to be stored in Internal Trusted
 	  Storage (ITS).
 
+config TFM_BL2_NOT_SUPPORTED
+	bool
+	help
+	  Hidden option to mark the BL2, the MCUBoot included in TF-M, as not supported.
+	  Platforms that don't use BL2 should select this option.
+
 config TFM_BL2
 	bool "Add MCUboot to TFM"
+	depends on !TFM_BL2_NOT_SUPPORTED
 	default y
 	help
 	  TFM is designed to run with MCUboot in a certain configuration.
