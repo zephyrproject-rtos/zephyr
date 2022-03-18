@@ -21,6 +21,8 @@ include:
           - bias-pull-up
           - drive-push-pull
           - drive-open-drain
+          - output-low
+          - output-high
 
 properties:
     reg:
@@ -68,6 +70,10 @@ child-binding:
             * 0 : Alternate function output
             * 1 : Input
             * 2 : Analog
+            * 3 : GPIO output
+            In case selected pin function is GPIO output, pin is statically configured as
+            a plain output GPIO, which configuration can be set by adding 'ouptut-low' or
+            'output-high' properties to the pinctrl configuration. Default is output-low.
             - remap: The pin remapping configuration. It allows to assign the pin
             function to a different peripheral. Remain configuration can be:
             * 0 : No remap
@@ -90,6 +96,11 @@ child-binding:
                GPIO A9 set as input
             ... {
                      pinmux = <STM32F1_PINMUX('A', 9, GPIO_IN, REMAP_NO)>;
+            };
+               GPIO A9 set as output-high
+            ... {
+                     pinmux = <STM32F1_PINMUX('A', 9, GPIO_OUT, REMAP_NO)>;
+                     output-high;
             };
 
         slew-rate:
