@@ -235,6 +235,9 @@ static int i2c_it8xxx2_configure(const struct device *dev,
 	data->bus_freq = I2C_SPEED_GET(dev_config_raw);
 
 	switch (data->bus_freq) {
+	case I2C_SPEED_DT:
+		freq_set = IT8XXX2_SMB_SMCLKS_50K;
+		break;
 	case I2C_SPEED_STANDARD:
 		freq_set = IT8XXX2_SMB_SMCLKS_100K;
 		break;
@@ -265,14 +268,11 @@ static int i2c_it8xxx2_get_config(const struct device *dev,
 	}
 
 	switch (data->bus_freq) {
+	case I2C_SPEED_DT:
 	case I2C_SPEED_STANDARD:
-		speed = I2C_SPEED_SET(I2C_SPEED_STANDARD);
-		break;
 	case I2C_SPEED_FAST:
-		speed = I2C_SPEED_SET(I2C_SPEED_FAST);
-		break;
 	case I2C_SPEED_FAST_PLUS:
-		speed = I2C_SPEED_SET(I2C_SPEED_FAST_PLUS);
+		speed = I2C_SPEED_SET(data->bus_freq);
 		break;
 	default:
 		return -ERANGE;
@@ -649,7 +649,15 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	IT8XXX2_SMB_HOCTL2(base) = 0x00;
 
 	/* Set clock frequency for I2C ports */
-	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
+	if (config->bitrate == I2C_BITRATE_STANDARD ||
+		config->bitrate == I2C_BITRATE_FAST ||
+		config->bitrate == I2C_BITRATE_FAST_PLUS) {
+		bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
+	} else {
+		/* Device tree specified speed */
+		bitrate_cfg = I2C_SPEED_DT << I2C_SPEED_SHIFT;
+	}
+
 	error = i2c_it8xxx2_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	data->i2ccs = I2C_CH_NORMAL;
 
@@ -746,6 +754,14 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 };
 
 #define I2C_ITE_IT8XXX2_INIT(inst)                                              \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) ==                    \
+		     50000) ||                                                  \
+		     (DT_INST_PROP(inst, clock_frequency) ==                    \
+		     I2C_BITRATE_STANDARD) ||                                   \
+		     (DT_INST_PROP(inst, clock_frequency) ==                    \
+		     I2C_BITRATE_FAST) ||                                       \
+		     (DT_INST_PROP(inst, clock_frequency) ==                    \
+		     I2C_BITRATE_FAST_PLUS), "Not support I2C bit rate value"); \
 	static void i2c_it8xxx2_config_func_##inst(void);                       \
 	static const struct i2c_alts_cfg                                        \
 		i2c_alts_##inst[DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0)] =         \
