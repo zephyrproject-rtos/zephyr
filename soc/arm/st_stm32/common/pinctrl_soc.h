@@ -43,6 +43,15 @@ typedef struct pinctrl_soc_pin {
  */
 #define Z_PINCTRL_STM32_PINMUX_INIT(node_id) DT_PROP(node_id, pinmux)
 
+/**
+ * @brief Definitions used to initialize fields in #pinctrl_pin_t
+ */
+#define STM32_NO_PULL     0x0
+#define STM32_PULL_UP     0x1
+#define STM32_PULL_DOWN   0x2
+#define STM32_PUSH_PULL   0x0
+#define STM32_OPEN_DRAIN  0x1
+
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 /**
  * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t (F1).
