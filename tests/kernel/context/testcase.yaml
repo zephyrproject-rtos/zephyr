@@ -1,7 +1,7 @@
 tests:
-  kernel.common:
+  kernel.context:
     tags: kernel
-  kernel.common.linker_generator:
+  kernel.context.linker_generator:
     platform_allow: qemu_cortex_m3
     tags: kernel linker_generator
     extra_configs:

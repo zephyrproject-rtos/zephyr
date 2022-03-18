@@ -1,5 +1,5 @@
 tests:
-  libraries.devicetree:
+  libraries.devicetree.api:
     tags: devicetree
     # We only need this to run on one platform so use native_posix as it
     # will mostly likely be the fastest.

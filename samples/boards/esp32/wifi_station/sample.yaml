@@ -1,6 +1,6 @@
 sample:
   name: Espressif ESP32 WiFi Station
 tests:
-  sample.board.esp32:
+  sample.board.esp32.wifi_station:
     platform_allow: esp32 esp32s2_saola
     tags: esp32
