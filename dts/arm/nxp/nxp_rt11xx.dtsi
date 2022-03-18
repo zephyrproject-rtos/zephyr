@@ -350,7 +350,7 @@
 			status = "okay";
 			pinctrl: pinctrl {
 				status = "okay";
-				compatible = "nxp,mcux-rt-pinctrl";
+				compatible = "nxp,mcux-rt11xx-pinctrl";
 			};
 		};
 
