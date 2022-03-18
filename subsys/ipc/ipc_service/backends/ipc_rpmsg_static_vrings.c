@@ -508,3 +508,24 @@ static int backend_init(const struct device *instance)
 			 &backend_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)
+
+#define BACKEND_CONFIG_INIT(n) &backend_config_##n,
+
+#if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET)
+static int shared_memory_prepare(const struct device *arg)
+{
+	static const struct backend_config_t *config[] = {
+		DT_INST_FOREACH_STATUS_OKAY(BACKEND_CONFIG_INIT)
+	};
+
+	for (int i = 0; i < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); i++) {
+		if (config[i]->role == ROLE_HOST) {
+			memset((void *) config[i]->shm_addr, 0, VDEV_STATUS_SIZE);
+		}
+	}
+
+	return 0;
+}
+
+SYS_INIT(shared_memory_prepare, PRE_KERNEL_1, 1);
+#endif /* CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET */
