@@ -1,11 +1,11 @@
 tests:
-  drivers.counter:
+  drivers.counter.basic_api:
     tags: drivers
     depends_on: counter
     min_ram: 16
     platform_exclude: nucleo_f302r8
     timeout: 600
-  drivers.counter_nrf_zli:
+  drivers.counter.basic_api.nrf_zli:
     tags: drivers
     depends_on: counter
     platform_allow: nrf52840dk_nrf52840
