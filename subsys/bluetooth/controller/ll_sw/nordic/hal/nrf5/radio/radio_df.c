@@ -207,6 +207,9 @@ void radio_df_ant_switching_gpios_cfg(void)
  *
  * The number of antennas is hardware defined. It is provided via devicetree.
  *
+ * If antenna switching is not enabled then there must be a single antenna
+ * responsible for PDU reception and transmission.
+ *
  * @return	Number of available antennas.
  */
 uint8_t radio_df_ant_num_get(void)
@@ -215,7 +218,7 @@ uint8_t radio_df_ant_num_get(void)
 	defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
 	return ant_cfg.ant_num;
 #else
-	return 0;
+	return 1U;
 #endif
 }
 
