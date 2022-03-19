@@ -72,6 +72,7 @@ struct lis2dw12_device_config {
 	bool low_noise;
 	bool hp_filter_path;
 	bool hp_ref_mode;
+	bool drdy_pulsed;
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	struct gpio_dt_spec gpio_int;
 	uint8_t int_pin;
