@@ -3127,12 +3127,14 @@ class TestSuite(DisablePyTestCollectionMixin):
         results = []
         saved_metrics = {}
         with open(filename) as fp:
-            cr = csv.DictReader(fp)
-            for row in cr:
+            jt = json.load(fp)
+            for ts in jt.get("testsuites", []):
                 d = {}
                 for m, _, _ in interesting_metrics:
-                    d[m] = row[m]
-                saved_metrics[(row["test"], row["platform"])] = d
+                    d[m] = ts.get(m, 0)
+                ts_name = ts.get('name')
+                ts_platform = ts.get('platform')
+                saved_metrics[(ts_name, ts_platform)] = d
 
         for instance in self.instances.values():
             mkey = (instance.testcase.name, instance.platform.name)
@@ -3258,18 +3260,12 @@ class TestSuite(DisablePyTestCollectionMixin):
                               append=only_failed, version=self.version)
             self.xunit_report(filename + "_report.xml", full_report=True,
                               append=only_failed, version=self.version)
-            self.csv_report(filename + ".csv")
 
             if json_report:
                 self.json_report(filename + ".json", append=only_failed, version=self.version)
 
             if platform_reports:
                 self.target_report(outdir, suffix, append=only_failed)
-            if self.discards:
-                self.discard_report(filename + "_discard.csv")
-
-        if release:
-            self.csv_report(self.RELEASE_DATA)
 
     def add_configurations(self):
 
@@ -3433,20 +3429,21 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     def load_from_file(self, file, filter_status=[], filter_platform=[]):
         try:
-            with open(file, "r") as fp:
-                cr = csv.DictReader(fp)
+            with open(file, "r") as json_test_plan:
+                jtp = json.load(json_test_plan)
                 instance_list = []
-                for row in cr:
-                    if row["status"] in filter_status:
-                        continue
-                    test = row["test"]
+                for ts in jtp.get("testsuites", []):
+                    logger.debug(f"loading {ts['name']}...")
+                    #if ts["status"] in filter_status:
+                    #    continue
+                    testsuite = ts["name"]
 
-                    platform = self.get_platform(row["platform"])
+                    platform = self.get_platform(ts["platform"])
                     if filter_platform and platform.name not in filter_platform:
                         continue
-                    instance = TestInstance(self.testcases[test], platform, self.outdir)
-                    if "run_id" in row and row["run_id"] != "na":
-                        instance.run_id = row["run_id"]
+                    instance = TestInstance(self.testcases[testsuite], platform, self.outdir)
+                    if ts.get("run_id"):
+                        instance.run_id = ts.get("run_id")
                     if self.device_testing:
                         tfilter = 'runnable'
                     else:
@@ -3456,6 +3453,13 @@ class TestSuite(DisablePyTestCollectionMixin):
                         tfilter,
                         self.fixtures
                     )
+                    instance.status = ts['status']
+                    instance.reason = ts.get("reason", "Unknown")
+                    for t in ts.get('testcases', []):
+                        identifier = t['identifier']
+                        status = ts.get('status', None)
+                        if status:
+                            instance.results[identifier] = status
                     instance.create_overlay(platform, self.enable_asan, self.enable_ubsan, self.enable_coverage, self.coverage_platform)
                     instance_list.append(instance)
                 self.add_instances(instance_list)
@@ -3802,25 +3806,6 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         return results
 
-    def discard_report(self, filename):
-
-        try:
-            if not self.discards:
-                raise TwisterRuntimeError("apply_filters() hasn't been run!")
-        except Exception as e:
-            logger.error(str(e))
-            sys.exit(2)
-        with open(filename, "wt") as csvfile:
-            fieldnames = ["test", "arch", "platform", "reason"]
-            cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
-            cw.writeheader()
-            for instance, reason in sorted(self.discards.items()):
-                rowdict = {"test": instance.testcase.name,
-                           "arch": instance.platform.arch,
-                           "platform": instance.platform.name,
-                           "reason": reason}
-                cw.writerow(rowdict)
-
     def target_report(self, outdir, suffix, append=False):
         platforms = {inst.platform.name for _, inst in self.instances.items()}
         for platform in platforms:
@@ -3878,7 +3863,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             for _, instance in inst.items():
                 handler_time = instance.metrics.get('handler_time', 0)
                 duration += handler_time
-                if full_report and instance.run:
+                if full_report: # and instance.run:
                     for k in instance.results.keys():
                         if instance.results[k] == 'PASS':
                             passes += 1
@@ -4030,50 +4015,24 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         return fails, passes, errors, skips
 
-    def csv_report(self, filename):
-        with open(filename, "wt") as csvfile:
-            fieldnames = ["test", "arch", "platform", "status",
-                          "extra_args", "handler", "handler_time", "ram_size",
-                          "rom_size", "run_id"]
-            cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
-            cw.writeheader()
-            for instance in self.instances.values():
-                rowdict = {"test": instance.testcase.name,
-                           "arch": instance.platform.arch,
-                           "platform": instance.platform.name,
-                           "extra_args": " ".join(instance.testcase.extra_args),
-                           "handler": instance.platform.simulation}
-
-                rowdict["status"] = instance.status
-                if instance.status not in ["error", "failed", "timeout"]:
-                    if instance.handler:
-                        rowdict["handler_time"] = instance.metrics.get("handler_time", 0)
-                    ram_size = instance.metrics.get("ram_size", 0)
-                    rom_size = instance.metrics.get("rom_size", 0)
-                    rowdict["ram_size"] = ram_size
-                    rowdict["rom_size"] = rom_size
-                    try:
-                        rowdict["run_id"] = instance.run_id
-                    except AttributeError:
-                        # No run_id available
-                        rowdict["run_id"] = "na"
-
-                cw.writerow(rowdict)
-
     def json_report(self, filename, append=False, version="NA"):
         logger.info(f"Writing JSON report {filename}")
         report = {}
-        selected = self.selected_platforms
         report["environment"] = {"os": os.name,
                                  "zephyr_version": version,
                                  "toolchain": self.get_toolchain()
                                  }
         json_data = {}
         if os.path.exists(filename) and append:
+            logger.debug(f"Loading previous data from {filename}")
             with open(filename, 'r') as json_file:
                 json_data = json.load(json_file)
 
         suites = json_data.get("testsuites", [])
+
+        # remove existing testcases that were re-run
+        for instance in self.instances.values():
+            suites = list(filter(lambda d: d['name'] != instance.testcase.name, suites))
 
         for instance in self.instances.values():
             suite = {}
@@ -4085,7 +4044,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             ram_size = instance.metrics.get ("ram_size", 0)
             rom_size  = instance.metrics.get("rom_size",0)
             suite = {
-                "testcase": instance.testcase.name,
+                "name": instance.testcase.name,
                 "arch": instance.platform.arch,
                 "platform": instance.platform.name,
             }
@@ -4093,17 +4052,22 @@ class TestSuite(DisablePyTestCollectionMixin):
                 suite["ram_size"] = ram_size
             if rom_size:
                 suite["rom_size"] = rom_size
+            suite["execution_time"] =  handler_time
 
             if instance.status in ["error", "failed", "timeout", "flash_error"]:
                 suite["status"] = "failed"
                 suite["reason"] = instance.reason
-                suite["execution_time"] =  handler_time
                 if os.path.exists(handler_log):
                     suite["test_output"] = self.process_log(handler_log)
                 elif os.path.exists(device_log):
                     suite["device_log"] = self.process_log(device_log)
                 else:
                     suite["build_log"] = self.process_log(build_log)
+            elif instance.status == 'filtered':
+                suite["status"] = "filtered"
+                suite["reason"] = instance.reason
+            else:
+                suite["status"] = instance.status
 
             testcases = []
             for k in instance.results.keys():
@@ -4112,12 +4076,10 @@ class TestSuite(DisablePyTestCollectionMixin):
                 if instance.results[k] in ["SKIP"]:
                     testcase["status"] = "skipped"
                     testcase["reason"] = instance.reason
-                elif instance.status == 'filtered':
-                    testcase["status"] = "filtered"
-                    testcase["reason"] = instance.reason
                 elif instance.results[k] in ["PASS"] or instance.status == 'passed':
                     testcase["status"] = "passed"
-                elif instance.results[k] in ['FAIL', 'BLOCK'] or instance.status in ["error", "failed", "timeout", "flash_error"]:
+                elif instance.results[k] in ['FAIL', 'BLOCK'] or \
+                    instance.status in ["error", "failed", "timeout", "flash_error"]:
                     testcase["status"] = "failed"
                     testcase["reason"] = instance.reason
 
@@ -4126,7 +4088,6 @@ class TestSuite(DisablePyTestCollectionMixin):
             suites.append(suite)
 
         report["testsuites"] = suites
-
         with open(filename, "wt") as json_file:
             json.dump(report, json_file, indent=4, separators=(',',':'))
 
