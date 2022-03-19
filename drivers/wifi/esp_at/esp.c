@@ -1026,7 +1026,7 @@ static void esp_init_work(struct k_work *work)
 	net_if_up(dev->net_iface);
 }
 
-static void esp_reset(struct esp_data *dev)
+static int esp_reset(struct esp_data *dev)
 {
 	if (net_if_is_up(dev->net_iface)) {
 		net_if_down(dev->net_iface);
@@ -1055,9 +1055,10 @@ static void esp_reset(struct esp_data *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Failed to reset device: %d", ret);
-		return;
+		return -EAGAIN;
 	}
 #endif
+	return 0;
 }
 
 static void esp_iface_init(struct net_if *iface)
