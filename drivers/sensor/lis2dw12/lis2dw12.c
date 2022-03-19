@@ -503,6 +503,7 @@ static int lis2dw12_init(const struct device *dev)
 		.low_noise = DT_INST_PROP(inst, low_noise),      \
 		.hp_filter_path = DT_INST_PROP(inst, hp_filter_path),      \
 		.hp_ref_mode = DT_INST_PROP(inst, hp_ref_mode), \
+		.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),      \
 		LIS2DW12_CONFIG_TAP(inst)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\
@@ -531,6 +532,7 @@ static int lis2dw12_init(const struct device *dev)
 		.low_noise = DT_INST_PROP(inst, low_noise),      \
 		.hp_filter_path = DT_INST_PROP(inst, hp_filter_path),      \
 		.hp_ref_mode = DT_INST_PROP(inst, hp_ref_mode), \
+		.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),      \
 		LIS2DW12_CONFIG_TAP(inst)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\

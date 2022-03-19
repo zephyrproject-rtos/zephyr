@@ -422,9 +422,14 @@ int lis2dw12_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	/* enable interrupt on int1/int2 in pulse mode */
-	if (lis2dw12_int_notification_set(ctx, LIS2DW12_INT_PULSED)) {
-		return -EIO;
+	/* set interrupt notification mode on int1/int2 */
+	LOG_DBG("drdy_pulsed is %d", (int)cfg->drdy_pulsed);
+	lis2dw12_lir_t mode = cfg->drdy_pulsed ? LIS2DW12_INT_PULSED : LIS2DW12_INT_LATCHED;
+
+	ret = lis2dw12_int_notification_set(ctx, mode);
+	if (ret < 0) {
+		LOG_ERR("drdy_pulsed config error %d", (int)cfg->drdy_pulsed);
+		return ret;
 	}
 
 #ifdef CONFIG_LIS2DW12_TAP
