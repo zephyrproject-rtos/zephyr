@@ -152,8 +152,8 @@ pairs:
     Would match it.
 
 The set of test cases that actually run depends on directives in the testcase
-filed and options passed in on the command line. If there is any confusion,
-running with -v or examining the discard report (twister_discard.csv)
+files and options passed in on the command line. If there is any confusion,
+running with -v or examining the test plan report (testplan.json)
 can help show why particular test cases were skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
@@ -173,12 +173,10 @@ import argparse
 import sys
 import logging
 import time
-import itertools
 import shutil
 from collections import OrderedDict
 import multiprocessing
 from itertools import islice
-import csv
 from colorama import Fore
 from pathlib import Path
 from multiprocessing.managers import BaseManager
@@ -552,11 +550,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "overcommitted by factor 2 when --build-only.")
 
     parser.add_argument(
-        "--json-report", action="store_true",
-        help="""Generate a JSON file with all test results. [Experimental]
-        """)
-
-    parser.add_argument(
         "-K", "--force-platform", action="store_true",
         help="""Force testing on selected platforms,
         even if they are excluded in the test configuration (testcase.yaml)."""
@@ -604,8 +597,8 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-o", "--report-dir",
         help="""Output reports containing results of the test run into the
         specified directory.
-        The output will be both in CSV and JUNIT format
-        (twister.csv and twister.xml).
+        The output will be both in JSON and JUNIT format
+        (twister.json and twister.xml).
         """)
 
     parser.add_argument("--overflow-as-errors", action="store_true",
@@ -795,9 +788,9 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument(
         "-y", "--dry-run", action="store_true",
         help="""Create the filtered list of test cases, but don't actually
-        run them. Useful if you're just interested in the discard report
+        run them. Useful if you're just interested in the test plan
         generated for every run and saved in the specified output
-        directory (twister_discard.csv).
+        directory (testplan.json).
         """)
 
     parser.add_argument(
@@ -879,7 +872,7 @@ def main():
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif options.last_metrics:
-        ls = os.path.join(options.outdir, "twister.csv")
+        ls = os.path.join(options.outdir, "twister.json")
         if os.path.exists(ls):
             with open(ls, "r") as fp:
                 previous_results = fp.read()
@@ -900,7 +893,7 @@ def main():
     previous_results_file = None
     os.makedirs(options.outdir, exist_ok=True)
     if options.last_metrics and previous_results:
-        previous_results_file = os.path.join(options.outdir, "baseline.csv")
+        previous_results_file = os.path.join(options.outdir, "baseline.json")
         with open(previous_results_file, "w") as fp:
             fp.write(previous_results)
 
@@ -1132,9 +1125,9 @@ def main():
     discards = []
 
     if options.report_suffix:
-        last_run = os.path.join(options.outdir, "twister_{}.csv".format(options.report_suffix))
+        last_run = os.path.join(options.outdir, "twister_{}.json".format(options.report_suffix))
     else:
-        last_run = os.path.join(options.outdir, "twister.csv")
+        last_run = os.path.join(options.outdir, "twister.json")
 
     if options.quarantine_list:
         suite.load_quarantine(options.quarantine_list)
@@ -1146,10 +1139,10 @@ def main():
         suite.quarantine_verify = options.quarantine_verify
 
     if options.only_failed:
-        suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
+        suite.load_from_file(last_run, filter_status=['skipped', 'passed', 'filtered'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.load_tests:
-        suite.load_from_file(options.load_tests, filter_status=['skipped', 'error'])
+        suite.load_from_file(options.load_tests, filter_status=['skipped', 'error', 'filtered'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.test_only:
         # Get list of connected hardware and filter tests to only be run on connected hardware
@@ -1280,8 +1273,11 @@ def main():
             suite.instances.update(skipped)
             suite.instances.update(errors)
 
+
+    suite.json_report(os.path.join(options.outdir, "testplan.json"))
+
     if options.save_tests:
-        suite.csv_report(options.save_tests)
+        suite.json_report(options.save_tests)
         return
 
     logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
