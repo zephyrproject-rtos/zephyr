@@ -1080,6 +1080,17 @@ static const struct net_wifi_mgmt_offload esp_api = {
 	.ap_disable	= esp_mgmt_ap_disable,
 };
 
+static int esp_init(const struct device *dev);
+
+/* The network device must be instantiated above the init function in order
+ * for the struct net_if that the macro declares to be visible inside the
+ * function. An `extern` declaration does not work as the struct is static.
+ */
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, NULL,
+				  &esp_driver_data, NULL,
+				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
+				  ESP_MTU);
+
 static int esp_init(const struct device *dev)
 {
 	struct esp_data *data = dev->data;
@@ -1157,8 +1168,3 @@ static int esp_init(const struct device *dev)
 error:
 	return ret;
 }
-
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, NULL,
-				  &esp_driver_data, NULL,
-				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
-				  ESP_MTU);
