@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD
-	default "odroid-go"
+	default "odroid_go"
 	depends on BOARD_ODROID_GO
 
 config ENTROPY_ESP32_RNG
