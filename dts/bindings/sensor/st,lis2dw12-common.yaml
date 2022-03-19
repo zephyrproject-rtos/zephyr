@@ -187,3 +187,11 @@ properties:
         of the LIS2DW12.
         Note that this influences both the OUT_REG / FIFO values,
         as well as the Wakeup function.
+
+    drdy-pulsed:
+      type: boolean
+      required: false
+      description: |
+        Selects the pulsed mode for data-ready interrupt when enabled,
+        and the latched mode when disabled.
+        Sets the corresponding DRDY_PULSED bit in the CTRL7 register.
