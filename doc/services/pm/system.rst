@@ -1,3 +1,5 @@
+.. _pm-system:
+
 System Power Management
 #######################
 
