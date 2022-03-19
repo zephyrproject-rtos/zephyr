@@ -1063,13 +1063,8 @@ static int esp_reset(struct esp_data *dev)
 
 static void esp_iface_init(struct net_if *iface)
 {
-	const struct device *dev = net_if_get_device(iface);
-	struct esp_data *data = dev->data;
-
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
-	data->net_iface = iface;
 	esp_offload_init(iface);
-	esp_reset(data);
 }
 
 static const struct net_wifi_mgmt_offload esp_api = {
@@ -1165,6 +1160,12 @@ static int esp_init(const struct device *dev)
 			K_PRIO_COOP(CONFIG_WIFI_ESP_AT_RX_THREAD_PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_name_set(&esp_rx_thread, "esp_rx");
+
+	/* Retrieve associated network interface so asynchronous messages can be processed early */
+	data->net_iface = NET_IF_GET(Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(0)), 0);
+
+	/* Reset the modem */
+	ret = esp_reset(data);
 
 error:
 	return ret;
