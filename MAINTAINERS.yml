@@ -485,9 +485,9 @@ Documentation:
 "Drivers: CAN":
     status: maintained
     maintainers:
-        - alexanderwachter
-    collaborators:
         - henrikbrixandersen
+    collaborators:
+        - alexanderwachter
         - karstenkoenig
         - nixward
         - martinjaeger
