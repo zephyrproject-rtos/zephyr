@@ -9,3 +9,6 @@ config BOARD
 
 config ENTROPY_ESP32_RNG
 	default y if ENTROPY_GENERATOR
+
+config SPI
+	default y if DISPLAY
