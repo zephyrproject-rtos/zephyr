@@ -225,26 +225,6 @@ def size_report(sc):
                 (sc.rom_size, sc.ram_size))
     logger.info("")
 
-
-def export_tests(filename, tests):
-    with open(filename, "wt") as csvfile:
-        fieldnames = ['section', 'subsection', 'title', 'reference']
-        cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
-        for test in tests:
-            data = test.split(".")
-            if len(data) > 1:
-                subsec = " ".join(data[1].split("_")).title()
-                rowdict = {
-                    "section": data[0].capitalize(),
-                    "subsection": subsec,
-                    "title": test,
-                    "reference": test
-                }
-                cw.writerow(rowdict)
-            else:
-                logger.error("{} can't be exported: ".format(test))
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -508,13 +488,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument("--enable-size-report", action="store_true",
                         help="Enable expensive computation of RAM/ROM segment sizes.")
-
-    parser.add_argument("--export-tests", action="store",
-                        metavar="FILENAME",
-                        help="Export tests case meta-data to a file in CSV format."
-                             "Test instances can be exported per target by supplying "
-                             "the platform name using --platform option. (tests for only "
-                             " one platform can be exported at a time)")
 
     parser.add_argument(
         "--filter", choices=['buildable', 'runnable'],
@@ -1048,13 +1021,9 @@ def main():
         return
 
     if not options.platform and (options.list_tests or options.test_tree or options.list_test_duplicates \
-        or options.sub_test or options.export_tests):
+        or options.sub_test):
         cnt = 0
         all_tests = suite.get_all_tests()
-
-        if options.export_tests:
-            export_tests(options.export_tests, all_tests)
-            return
 
         if options.list_test_duplicates:
             import collections
@@ -1173,7 +1142,7 @@ def main():
             force_platform=options.force_platform
         )
 
-    if (options.export_tests or options.list_tests) and options.platform:
+    if options.list_tests and options.platform:
         if len(options.platform) > 1:
             logger.error("When exporting tests, only one platform "
                          "should be specified.")
@@ -1181,11 +1150,6 @@ def main():
 
         for p in options.platform:
             inst = suite.get_platform_instances(p)
-            if options.export_tests:
-                tests = [x.testcase.cases for x in inst.values()]
-                merged = list(itertools.chain(*tests))
-                export_tests(options.export_tests, merged)
-                return
 
             count = 0
             for i in inst.values():
