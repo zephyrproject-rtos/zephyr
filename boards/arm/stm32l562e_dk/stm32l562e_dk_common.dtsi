@@ -49,6 +49,16 @@
 			min-residency-us = <900>;
 		};
 	};
+
+	/* Voltage regulator needs to be enabled for LCD/Touch usage */
+	vdd_lcd_reg: vdd_lcd_reg {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "vdd_lcd_reg";
+		regulator-name = "vdd_lcd_reg";
+		enable-gpios = <&gpioh 0 GPIO_ACTIVE_LOW>;
+		status = "okay";
+		regulator-boot-on;
+	};
 };
 
 &clk_msi {
@@ -104,6 +114,14 @@
 		reg = <0x6a>;
 		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
 		label = "LSM6DSO";
+	};
+
+	/* Display touch panel controller FT6236 is compatible with FT5336*/
+	touch_controller: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "FT5336";
+		int-gpios = <&gpiof 1 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -201,4 +219,56 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dp_pa12 &usb_dm_pa11>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+/ {
+	st7789h2: st7789h2 {
+		compatible = "sitronix,st7789h2-gpio";
+		label = "DISPLAY";
+		status = "okay";
+
+		data-gpios = < &gpiod 14 GPIO_ACTIVE_HIGH
+			     &gpiod 15 GPIO_ACTIVE_HIGH
+			     &gpiod 0 GPIO_ACTIVE_HIGH
+			     &gpiod 1 GPIO_ACTIVE_HIGH
+			     &gpioe 7 GPIO_ACTIVE_HIGH
+			     &gpioe 8 GPIO_ACTIVE_HIGH
+			     &gpioe 9 GPIO_ACTIVE_HIGH
+			     &gpioe 10 GPIO_ACTIVE_HIGH
+			     &gpioe 11 GPIO_ACTIVE_HIGH
+			     &gpioe 12 GPIO_ACTIVE_HIGH
+			     &gpioe 13 GPIO_ACTIVE_HIGH
+			     &gpioe 14 GPIO_ACTIVE_HIGH
+			     &gpioe 15 GPIO_ACTIVE_HIGH
+			     &gpiod 8 GPIO_ACTIVE_HIGH
+			     &gpiod 9 GPIO_ACTIVE_HIGH
+			     &gpiod 10 GPIO_ACTIVE_HIGH >;
+
+		cmd-data-gpio = <&gpiof 0 GPIO_ACTIVE_LOW>;
+		cs-gpio = <&gpiod 7 GPIO_ACTIVE_LOW>;
+		wrn-gpio = <&gpiod 5 GPIO_ACTIVE_LOW>;
+		rdn-gpio = <&gpiod 4 GPIO_ACTIVE_LOW>;
+		backlight-gpio = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+		reset-gpio = <&gpiof 14 GPIO_ACTIVE_LOW>;
+		te-gpio = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+		height = <240>;
+		width = <240>;
+		x-offset = <0>;
+		y-offset = <0>;
+		vcom = <0x1f>;
+		gctrl = <0x35>;
+		vrhs = <0x12>;
+		vdvs = <0x20>;
+		mdac = <0>;
+		lcm = <0x2c>;
+		colmod = <0x55>;
+		gamma = <0x1>;
+		porch-param = [0C 0C 00 33 33];
+		cmd2en-param = [5a 69 02 01];
+		pwctrl1-param = [a4 a1];
+		pvgam-param = [D0 08 11 08 0C 15 39 33 50 36 13 14 29 2D];
+		nvgam-param = [D0 07 10 08 06 06 39 44 51 0B 16 14 2F 31];
+		ram-param = [00 F0];
+		rgb-param = [CD 08 14];
+	};
 };

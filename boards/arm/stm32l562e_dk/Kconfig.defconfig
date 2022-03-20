@@ -1,6 +1,7 @@
 # STM32L562E-DK Discovery board configuration
 
 # Copyright (c) 2020 Yestin Sun
+# Copyright (c) 2021 Jeremy LOCHE
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_STM32L562E_DK
@@ -44,5 +45,60 @@ config USE_DT_CODE_PARTITION
 	default y
 
 endif # TRUSTED_EXECUTION_NONSECURE
+
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	default 16
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config KSCAN
+	default y
+
+config LV_Z_POINTER_KSCAN
+	default y
+
+config LV_Z_POINTER_KSCAN_DEV_NAME
+	default "FT5336"
+
+# Original orientation of the display needs to invert Y only
+
+config LV_Z_POINTER_KSCAN_INVERT_Y
+	default y
+
+endif # LVGL
+
+
+if KSCAN
+
+config I2C
+	default y
+
+config KSCAN_FT5336
+	default y
+
+config KSCAN_FT5336_INTERRUPT
+	default y
+
+config REGULATOR
+	default y
+
+endif # KSCAN
+
+
+if DISPLAY
+
+config REGULATOR
+	default y
+
+endif #DISPLAY
+
 
 endif # BOARD_STM32L562E_DK
