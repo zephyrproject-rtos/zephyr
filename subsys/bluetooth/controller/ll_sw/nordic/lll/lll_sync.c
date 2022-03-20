@@ -645,7 +645,12 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 		 * - a buffer for receiving data in a connection
 		 * - a buffer for receiving empty PDU
 		 */
-		node_rx = ull_pdu_rx_alloc_peek(4);
+		if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
+			node_rx = ull_pdu_rx_alloc_peek(4);
+		} else {
+			node_rx = ull_pdu_rx_alloc_peek(3);
+		}
+
 		if (node_rx) {
 			struct node_rx_ftr *ftr;
 			struct pdu_adv *pdu;
