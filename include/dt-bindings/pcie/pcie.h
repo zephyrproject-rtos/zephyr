@@ -26,9 +26,15 @@
 #define PCIE_ID_DEV_SHIFT	16U
 #define PCIE_ID_DEV_MASK		0xFFFFU
 
+#ifdef __DTS__
+#define CAST(type, v) (v)
+#else
+#define CAST(type, v) ((type)(v))
+#endif
+
 #define PCIE_ID(vend, dev) \
 	((((vend) & PCIE_ID_VEND_MASK) << PCIE_ID_VEND_SHIFT) | \
-	 (((dev) & PCIE_ID_DEV_MASK) << PCIE_ID_DEV_SHIFT))
+	 (CAST(uint32_t, (dev) & PCIE_ID_DEV_MASK) << PCIE_ID_DEV_SHIFT))
 
 #define PCIE_ID_TO_VEND(id) (((id) >> PCIE_ID_VEND_SHIFT) & PCIE_ID_VEND_MASK)
 #define PCIE_ID_TO_DEV(id)  (((id) >> PCIE_ID_DEV_SHIFT) & PCIE_ID_DEV_MASK)
