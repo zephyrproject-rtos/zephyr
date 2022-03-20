@@ -644,8 +644,17 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 		 * - allocating an extra node_rx for periodic report incomplete
 		 * - a buffer for receiving data in a connection
 		 * - a buffer for receiving empty PDU
+		 *
+		 * If this is a reception of chained PDU, node_type is
+		 * NODE_RX_TYPE_EXT_AUX_REPORT, then there is no need to reserve
+		 * again a node_rx for periodic report incomplete.
 		 */
-		node_rx = ull_pdu_rx_alloc_peek(4);
+		if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
+			node_rx = ull_pdu_rx_alloc_peek(4);
+		} else {
+			node_rx = ull_pdu_rx_alloc_peek(3);
+		}
+
 		if (node_rx) {
 			struct node_rx_ftr *ftr;
 			struct pdu_adv *pdu;
