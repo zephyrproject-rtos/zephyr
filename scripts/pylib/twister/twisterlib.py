@@ -3010,9 +3010,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "seed": {"type": "int", "default": 0}
                        }
 
-    RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "release",
-                            "twister_last_release.csv")
-
     SAMPLE_FILENAME = 'sample.yaml'
     TESTCASE_FILENAME = 'testcase.yaml'
 
@@ -3181,6 +3178,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 warnings += 1
 
         if warnings:
+            # FIXME
             logger.warning("Deltas based on metrics from last %s" %
                            ("release" if not last_metrics else "run"))
 
@@ -3234,7 +3232,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
 {Fore.RED}{results.total - run - results.skipped_configs}{Fore.RESET} test configurations were only built.")
 
-    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed, platform_reports, json_report):
+    def save_reports(self, name, suffix, report_dir, no_update, only_failed, platform_reports, json_report):
         if not self.instances:
             return
 
