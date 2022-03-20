@@ -16,6 +16,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
+		zephyr,display = &ili9341;
 	};
 
 	leds {
@@ -54,6 +55,14 @@
 		};
 	};
 
+	lcd_backlight_en {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "lcd_backlight_enable";
+		regulator-name = "lcd_backlight_enable";
+		enable-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
 	aliases {
 		uart-0 = &uart0;
 		led0 = &blue_led;
@@ -89,6 +98,28 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <4>;
 	scl-pin = <15>;
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	miso-pin = <19>;
+	mosi-pin = <23>;
+	sclk-pin = <18>;
+	csel-pin = <5>;
+
+	ili9341: ili9341@0 {
+		compatible = "ilitek,ili9341";
+		label = "DISPLAY";
+		spi-max-frequency = <25000000>;
+		reg = <0>;
+		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		pixel-format = <0>;
+		rotation = <270>;
+		width = <320>;
+		height = <240>;
+	};
 };
 
 &timer0 {
