@@ -16,6 +16,10 @@ File management group defines following commands:
     +===================+===============================================+
     | ``0``             | File download/upload                          |
     +-------------------+-----------------------------------------------+
+    | ``1``             | File status                                   |
+    +-------------------+-----------------------------------------------+
+    | ``2``             | File hash/checksum                            |
+    +-------------------+-----------------------------------------------+
 
 File download
 *************
@@ -216,3 +220,212 @@ where:
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`           |
     +-----------------------+---------------------------------------------------+
+
+File status
+***********
+
+Command allows to retrieve status of an existing file from specified path
+of a target device.
+
+File status request
+===================
+
+File status request header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``0``  | ``8``        |  ``1``         |
+    +--------+--------------+----------------+
+
+CBOR data of request:
+
+.. code-block:: none
+
+    {
+        (str)"name" : (str)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +-----------------------+---------------------------------------------------+
+    | "name"                | absolute path to a file                           |
+    +-----------------------+---------------------------------------------------+
+
+File status response
+====================
+
+File status response header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``1``  | ``8``        |  ``1``         |
+    +--------+--------------+----------------+
+
+CBOR data of successful response:
+
+.. code-block:: none
+
+    {
+        (str)"len"      : (uint)
+    }
+
+In case of error the CBOR data takes form:
+
+.. code-block:: none
+
+    {
+        (str)"rc"       : (int)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +-----------------------+---------------------------------------------------+
+    | "len"                 | length of file (in bytes)                         |
+    +-----------------------+---------------------------------------------------+
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes` (only     |
+    |                       | present if an error occurred)                     |
+    +-----------------------+---------------------------------------------------+
+
+In case when "rc" is not 0, success, the other fields will not appear.
+
+File hash/checksum
+******************
+
+Command allows to generate a hash/checksum of an existing file at a specified
+path on a target device. Note that kernel heap memory is required for buffers to
+be allocated for this to function, and large stack memory buffers are required
+for generation of the output hash/checksum.
+
+File hash/checksum request
+==========================
+
+File hash/checksum request header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``0``  | ``8``        |  ``2``         |
+    +--------+--------------+----------------+
+
+CBOR data of request:
+
+.. code-block:: none
+
+    {
+        (str)"name"     : (str)
+        (str,opt)"type" : (str)
+        (str,opt)"off"  : (uint)
+        (str,opt)"len"  : (uint)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +-----------------------+---------------------------------------------------+
+    | "name"                | absolute path to a file                           |
+    +-----------------------+---------------------------------------------------+
+    | "type"                | type of hash/checksum to perform                  |
+    |                       | :ref:`mcumgr_group_8_hash_checksum_types` or omit |
+    |                       | to use default                                    |
+    +-----------------------+---------------------------------------------------+
+    | "off"                 | offset to start hash/checksum calculation at      |
+    |                       | (optional, 0 if not provided)                     |
+    +-----------------------+---------------------------------------------------+
+    | "len"                 | maximum length of data to read from file to       |
+    |                       | generate hash/checksum with (optional, full file  |
+    |                       | size if not provided)                             |
+    +-----------------------+---------------------------------------------------+
+
+.. _mcumgr_group_8_hash_checksum_types:
+
+Hash/checksum types
+===================
+
+.. table::
+    :align: center
+
+    +-------------+--------------------------------------+-------------+--------------+
+    | String name | Hash/checksum                        | Byte string | Size (bytes) |
+    +=============+======================================+=============+==============+
+    | ``crc32``   | IEEE CRC32 checksum                  | No          | 4            |
+    +-------------+--------------------------------------+-------------+--------------+
+    | ``sha256``  | SHA256 (Secure Hash Algorithm)       | Yes         | 32           |
+    +-------------+--------------------------------------+-------------+--------------+
+
+Note that the default type will be crc32 if it is enabled, or sha256 if crc32 is
+not enabled.
+
+File hash/checksum response
+===========================
+
+File hash/checksum response header:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``1``  | ``8``        |  ``2``         |
+    +--------+--------------+----------------+
+
+CBOR data of successful response:
+
+.. code-block:: none
+
+    {
+        (str)"type"     : (str)
+        (str,opt)"off"  : (uint)
+        (str)"len"      : (uint)
+        (str)"output"   : (uint or bstr)
+    }
+
+In case of error the CBOR data takes form:
+
+.. code-block:: none
+
+    {
+        (str)"rc"       : (int)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +-----------------------+---------------------------------------------------+
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes` (only     |
+    |                       | present if an error occurred)                     |
+    +-----------------------+---------------------------------------------------+
+    | "type"                | type of hash/checksum that was performed          |
+    |                       | :ref:`mcumgr_group_8_hash_checksum_types`         |
+    +-----------------------+---------------------------------------------------+
+    | "off"                 | offset that hash/checksum calculation started at  |
+    |                       | (only present if off is not 0)                    |
+    +-----------------------+---------------------------------------------------+
+    | "len"                 | length of input data used for hash/checksum       |
+    |                       | generation (in bytes)                             |
+    +-----------------------+---------------------------------------------------+
+    | "output"              | output hash/checksum                              |
+    +-----------------------+---------------------------------------------------+
+
+In case when "rc" is not 0, success, the other fields will not appear.
