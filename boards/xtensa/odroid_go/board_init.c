@@ -25,4 +25,4 @@ static int board_odroid_go_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(board_odroid_go_init, PRE_KERNEL_2, CONFIG_PINMUX_INIT_PRIORITY);
+SYS_INIT(board_odroid_go_init, APPLICATION, CONFIG_GPIO_INIT_PRIORITY);
