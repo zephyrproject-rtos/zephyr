@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_imx_elcdif
 
 #include <drivers/display.h>
+#include <drivers/pinctrl.h>
 #include <fsl_elcdif.h>
 
 #ifdef CONFIG_HAS_MCUX_CACHE
@@ -30,6 +31,7 @@ struct mcux_elcdif_config {
 	void (*irq_config_func)(const struct device *dev);
 	elcdif_rgb_mode_config_t rgb_mode;
 	uint8_t pixel_format;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct mcux_mem_block {
@@ -187,7 +189,12 @@ static int mcux_elcdif_init(const struct device *dev)
 {
 	const struct mcux_elcdif_config *config = dev->config;
 	struct mcux_elcdif_data *dev_data = dev->data;
-	int i;
+	int i, err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	elcdif_rgb_mode_config_t rgb_mode = config->rgb_mode;
 
@@ -246,6 +253,7 @@ static const struct display_driver_api mcux_elcdif_api = {
 };
 
 #define MCUX_ELDCIF_DEVICE(id)							\
+	PINCTRL_DT_INST_DEFINE(id);						\
 	static void mcux_elcdif_config_func_##id(const struct device *dev);	\
 	static const struct mcux_elcdif_config mcux_elcdif_config_##id = {	\
 		.base = (LCDIF_Type *) DT_INST_REG_ADDR(id),			\
@@ -264,6 +272,7 @@ static const struct display_driver_api mcux_elcdif_api = {
 					DT_INST_ENUM_IDX(id, data_buswidth)),	\
 		},								\
 		.pixel_format = DT_INST_ENUM_IDX(id, pixel_format),		\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 	};									\
 	static struct mcux_elcdif_data mcux_elcdif_data_##id;			\
 	DEVICE_DT_INST_DEFINE(id,						\
