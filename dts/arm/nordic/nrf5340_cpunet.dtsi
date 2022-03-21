@@ -142,23 +142,12 @@
 			label = "RTC_0";
 		};
 
-		ipc0: ipc0 {
-			compatible = "zephyr,ipc-openamp-static-vrings";
-			memory-region = <&sram0_shared>;
-			mboxes = <&mbox 0>, <&mbox 1>;
-			mbox-names = "rx", "tx";
-			role = "remote";
-			status = "okay";
-		};
-
-		mbox: mbox@41012000 {
-			compatible = "nordic,mbox-nrf-ipc";
+		ipc: ipc@41012000 {
+			compatible = "nordic,nrf-ipc";
 			reg = <0x41012000 0x1000>;
-			tx-mask = <0x0000ffff>;
-			rx-mask = <0x0000ffff>;
 			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
-			#mbox-cells = <1>;
 			status = "okay";
+			label = "IPC";
 		};
 
 		i2c0: i2c@41013000 {

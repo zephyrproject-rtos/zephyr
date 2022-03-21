@@ -11,9 +11,6 @@
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
 
-#include <device.h>
-#include <ipc/ipc_service.h>
-
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_hci_driver
 #include "common/log.h"
@@ -24,10 +21,9 @@
 #define RPMSG_EVT 0x04
 #define RPMSG_ISO 0x05
 
-#define IPC_BOUND_TIMEOUT_IN_MS K_MSEC(1000)
-
-static struct ipc_ept hci_ept;
-static K_SEM_DEFINE(ipc_bound_sem, 0, 1);
+int bt_rpmsg_platform_init(void);
+int bt_rpmsg_platform_send(struct net_buf *buf);
+int bt_rpmsg_platform_endpoint_is_bound(void);
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
 {
@@ -54,7 +50,7 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 	}
 }
 
-static struct net_buf *bt_rpmsg_evt_recv(const uint8_t *data, size_t remaining)
+static struct net_buf *bt_rpmsg_evt_recv(uint8_t *data, size_t remaining)
 {
 	bool discardable;
 	struct bt_hci_evt_hdr hdr;
@@ -103,7 +99,7 @@ static struct net_buf *bt_rpmsg_evt_recv(const uint8_t *data, size_t remaining)
 	return buf;
 }
 
-static struct net_buf *bt_rpmsg_acl_recv(const uint8_t *data, size_t remaining)
+static struct net_buf *bt_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
@@ -146,7 +142,7 @@ static struct net_buf *bt_rpmsg_acl_recv(const uint8_t *data, size_t remaining)
 	return buf;
 }
 
-static struct net_buf *bt_rpmsg_iso_recv(const uint8_t *data, size_t remaining)
+static struct net_buf *bt_rpmsg_iso_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_iso_hdr hdr;
 	struct net_buf *buf;
@@ -189,7 +185,7 @@ static struct net_buf *bt_rpmsg_iso_recv(const uint8_t *data, size_t remaining)
 	return buf;
 }
 
-static void bt_rpmsg_rx(const uint8_t *data, size_t len)
+void bt_rpmsg_rx(uint8_t *data, size_t len)
 {
 	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
@@ -251,7 +247,7 @@ static int bt_rpmsg_send(struct net_buf *buf)
 	net_buf_push_u8(buf, pkt_indicator);
 
 	BT_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
-	err = ipc_service_send(&hci_ept, buf->data, buf->len);
+	err = bt_rpmsg_platform_send(buf);
 	if (err < 0) {
 		BT_ERR("Failed to send (err %d)", err);
 	}
@@ -261,49 +257,13 @@ done:
 	return 0;
 }
 
-static void hci_ept_bound(void *priv)
-{
-	k_sem_give(&ipc_bound_sem);
-}
-
-static void hci_ept_recv(const void *data, size_t len, void *priv)
-{
-	bt_rpmsg_rx(data, len);
-}
-
-static struct ipc_ept_cfg hci_ept_cfg = {
-	.name = "nrf_bt_hci",
-	.cb = {
-		.bound    = hci_ept_bound,
-		.received = hci_ept_recv,
-	},
-};
-
 static int bt_rpmsg_open(void)
 {
-	int err;
-	const struct device *hci_ipc_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
-
 	BT_DBG("");
 
-	err = ipc_service_open_instance(hci_ipc_instance);
-	if (err && (err != -EALREADY)) {
-		BT_ERR("IPC service instance initialization failed: %d\n", err);
-		return err;
+	while (!bt_rpmsg_platform_endpoint_is_bound()) {
+		k_sleep(K_MSEC(1));
 	}
-
-	err = ipc_service_register_endpoint(hci_ipc_instance, &hci_ept, &hci_ept_cfg);
-	if (err) {
-		BT_ERR("Registering endpoint failed with %d", err);
-		return err;
-	}
-
-	err = k_sem_take(&ipc_bound_sem, IPC_BOUND_TIMEOUT_IN_MS);
-	if (err) {
-		BT_ERR("Endpoint binding failed with %d", err);
-		return err;
-	}
-
 	return 0;
 }
 
@@ -323,6 +283,12 @@ static int bt_rpmsg_init(const struct device *unused)
 
 	int err;
 
+	err = bt_rpmsg_platform_init();
+	if (err < 0) {
+		BT_ERR("Failed to initialize BT RPMSG (err %d)", err);
+		return err;
+	}
+
 	err = bt_hci_driver_register(&drv);
 	if (err < 0) {
 		BT_ERR("Failed to register BT HIC driver (err %d)", err);
@@ -331,4 +297,4 @@ static int bt_rpmsg_init(const struct device *unused)
 	return err;
 }
 
-SYS_INIT(bt_rpmsg_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_rpmsg_init, POST_KERNEL, CONFIG_RPMSG_SERVICE_EP_REG_PRIORITY);
