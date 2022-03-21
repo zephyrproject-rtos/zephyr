@@ -52,6 +52,7 @@ volatile uint8_t transfer_count;
 static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
 static int test_case_id;
+static bool dma_suspend_supported = true;
 
 static void test_transfer(const struct device *dev, uint32_t id)
 {
@@ -73,6 +74,7 @@ static void test_transfer(const struct device *dev, uint32_t id)
 			res = dma_suspend(dev, id);
 			if (res == -ENOSYS) {
 				TC_PRINT("dma suspend not supported\n");
+				dma_suspend_supported = false;
 				dma_stop(dev, id);
 			} else if (res != 0) {
 				TC_PRINT("ERROR: suspend failed, channel %d, result %d\n", id, res);
@@ -248,6 +250,10 @@ static int test_loop_suspend_resume(void)
 	}
 
 	while (transfer_count == 0) {
+	}
+
+	if (!dma_suspend_supported) {
+		return TC_PASS;
 	}
 
 	TC_PRINT("Sleeping while suspended\n");
