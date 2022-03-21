@@ -32,6 +32,7 @@ else()
   src/test_scanner.c
   src/test_heartbeat.c
   src/test_access.c
+  src/test_iv_index.c
  )
 endif()
 
