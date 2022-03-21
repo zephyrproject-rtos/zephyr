@@ -995,36 +995,119 @@ void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 
 void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
+	struct proc_ctx *ctx_l;
+	struct proc_ctx *ctx_r;
 	struct pdu_data *pdu;
-	struct proc_ctx *ctx;
+	bool unexpected_l;
+	bool unexpected_r;
 
 	pdu = (struct pdu_data *)rx->pdu;
 
-	if (!pdu_is_terminate(pdu)) {
-		/*
-		 * Process non LL_TERMINATE_IND PDU's as responses to active
-		 * procedures
-		 */
-
-		ctx = llcp_lr_peek(conn);
-		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) ||
-			    pdu_is_reject(pdu, ctx))) {
-			/* Response on local procedure */
-			llcp_lr_rx(conn, ctx, rx);
-			return;
-		}
-
-		ctx = llcp_rr_peek(conn);
-		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) ||
-			    pdu_is_reject(pdu, ctx))) {
-			/* Response on remote procedure */
-			llcp_rr_rx(conn, ctx, rx);
-			return;
-		}
+	if (pdu_is_terminate(pdu)) {
+		/*  Process LL_TERMINATE_IND PDU's as new procedure */
+		ctx_l = NULL;
+		ctx_r = NULL;
+	} else {
+		/* Query local and remote activity */
+		ctx_l = llcp_lr_peek(conn);
+		ctx_r = llcp_rr_peek(conn);
 	}
 
-	/* New remote request */
-	llcp_rr_new(conn, rx);
+	if (ctx_l) {
+		/* Local active procedure */
+
+		if (ctx_r) {
+			/* Local active procedure
+			 * Remote active procedure
+			 */
+
+			unexpected_l = !(pdu_is_expected(pdu, ctx_l) ||
+					 pdu_is_unknown(pdu, ctx_l) ||
+					 pdu_is_reject(pdu, ctx_l));
+
+			unexpected_r = !(pdu_is_expected(pdu, ctx_r) ||
+					 pdu_is_unknown(pdu, ctx_r) ||
+					 pdu_is_reject(pdu, ctx_r));
+
+			if (unexpected_l && unexpected_r) {
+				/* Local active procedure
+				 * Unexpected local procedure PDU
+				 * Remote active procedure
+				 * Unexpected remote procedure PDU
+				 */
+
+				/* Invalid Behaviour */
+				conn->llcp_terminate.reason_final = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+			} else if (unexpected_l) {
+				/* Local active procedure
+				 * Unexpected local procedure PDU
+				 * Remote active procedure
+				 * Expected remote procedure PDU
+				 */
+
+				/* Process PDU in remote procedure */
+				llcp_rr_rx(conn, ctx_r, rx);
+			} else if (unexpected_r) {
+				/* Local active procedure
+				 * Expected local procedure PDU
+				 * Remote active procedure
+				 * Unexpected remote procedure PDU
+				 */
+
+				/* Process PDU in local procedure */
+				llcp_lr_rx(conn, ctx_l, rx);
+			} else {
+				/* Local active procedure
+				 * Expected local procedure PDU
+				 * Remote active procedure
+				 * Expected remote procedure PDU
+				 */
+
+				/* This cannot happen */
+				LL_ASSERT(0);
+			}
+		} else {
+			/* Local active procedure
+			 * No remote active procedure
+			 */
+
+			unexpected_l = !(pdu_is_expected(pdu, ctx_l) ||
+					 pdu_is_unknown(pdu, ctx_l) ||
+					 pdu_is_reject(pdu, ctx_l));
+
+			if (unexpected_l) {
+				/* Local active procedure
+				 * Unexpected local procedure PDU
+				 * No remote active procedure
+				 */
+
+				/* Process PDU as a new remote request */
+				llcp_rr_new(conn, rx);
+			} else {
+				/* Local active procedure
+				 * Expected local procedure PDU
+				 * No remote active procedure
+				 */
+
+				/* Process PDU in local procedure */
+				llcp_lr_rx(conn, ctx_l, rx);
+			}
+		}
+	} else if (ctx_r) {
+		/* No local active procedure
+		 * Remote active procedure
+		 */
+
+		/* Process PDU in remote procedure */
+		llcp_rr_rx(conn, ctx_r, rx);
+	} else {
+		/* No local active procedure
+		 * No remote active procedure
+		 */
+
+		/* Process PDU as a new remote request */
+		llcp_rr_new(conn, rx);
+	}
 }
 
 #ifdef ZTEST_UNITTEST
