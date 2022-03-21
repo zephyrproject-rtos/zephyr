@@ -27,13 +27,6 @@ static int board_internal_sensors_init(const struct device *dev)
 	CoreDebug->DEMCR = 0;
 	NRF_CLOCK->TRACECONFIG = 0;
 
-	/*
-	 * Arduino uses software to disable RTC1,
-	 * but I disabled it using DeviceTree
-	 */
-	/* nrf_rtc_event_disable(NRF_RTC1, NRF_RTC_INT_COMPARE0_MASK); */
-	/* nrf_rtc_int_disable(NRF_RTC1, NRF_RTC_INT_COMPARE0_MASK); */
-
 	NRF_PWM_Type * PWM[] = {
 		NRF_PWM0, NRF_PWM1, NRF_PWM2, NRF_PWM3
 	};
