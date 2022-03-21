@@ -849,8 +849,11 @@ static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 
 		stream = &sink->streams[i];
 
-		stream->ep->stream = NULL;
-		stream->ep = NULL;
+		if (stream->ep != NULL) {
+			stream->ep->stream = NULL;
+			stream->ep = NULL;
+		}
+
 		stream->qos = NULL;
 		stream->codec = NULL;
 		stream->iso = NULL;
