@@ -30,6 +30,8 @@ config LWM2M_VERSION_1_0
 config LWM2M_VERSION_1_1
 	bool "LwM2M version 1.1 [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	imply LWM2M_RW_CBOR_SUPPORT
+	imply ZCBOR
 
 endchoice
 
@@ -435,9 +437,8 @@ config LWM2M_COMPOSITE_PATH_LIST_SIZE
 	  Define path list size for Composite Read and send operation.
 
 config LWM2M_RW_CBOR_SUPPORT
-	bool "support for CBOR writer [EXPERIMENTAL]"
-	select ZCBOR
-	select EXPERIMENTAL
+	bool "support for CBOR writer"
+	depends on ZCBOR
 	help
 	  Include support for writing CBOR data
 
