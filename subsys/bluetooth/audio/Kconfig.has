@@ -55,6 +55,41 @@ config BT_HAS_HEARING_AID_TYPE
 	help
 	  The value shall be one of 3 defined by the HAS 1.0 specification table 3.2
 
+config BT_HAS_PRESET_COUNT
+	int "Preset record list size"
+	default 2
+	range 0 255
+	help
+	  This option sets the number of Hearing Access Service Presets
+	  that can be registered. Setting this value to 0 disables Presets support.
+
+if BT_HAS_PRESET_COUNT > 0
+
+if BT_HAS_HEARING_AID_BINAURAL
+
+config BT_HAS_IDENTICAL_PRESET_RECORDS
+	bool "Identical preset records in Binaural Hearing Aid Set"
+	help
+	  Set if the list of preset records is identical to the list of preset records
+	  on the other member in the Binaural Hearing Aid Set.
+	  This option sets Independent Presets field in Hearing Aid Features to 0b0.
+
+config BT_HAS_PRESET_SYNC_SUPPORT
+	bool "Preset synchronization support"
+	depends on BT_HAS_IDENTICAL_PRESET_RECORDS
+	help
+	  Set if the hearing aid has support for relaying active preset changes to the other
+	  member in the Binaural Hearing Aid Set.
+
+endif # BT_HAS_HEARING_AID_BINAURAL
+
+config BT_HAS_PRESET_NAME_DYNAMIC
+	bool "Allow to set preset name on runtime"
+	help
+	  Enabling this option allows for runtime configuration of preset name.
+
+endif # BT_HAS_PRESET_COUNT > 0
+
 config BT_DEBUG_HAS
 	bool "Hearing Access Service debug"
 	help
