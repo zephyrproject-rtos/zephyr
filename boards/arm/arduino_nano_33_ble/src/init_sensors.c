@@ -21,13 +21,7 @@ static int board_internal_sensors_init(const struct device *dev)
 
 	arduino_gpio_init(&gpios);
 
-	/*
-	 * the PCB designers decided to use GPIO's
-	 * as power pins for the internal sensors
-	 */
-	arduino_gpio_pinMode(&gpios, ARDUINO_INTERNAL_VDD_ENV_ENABLE, GPIO_OUTPUT);
 	arduino_gpio_pinMode(&gpios, ARDUINO_INTERNAL_I2C_PULLUP, GPIO_OUTPUT);
-	arduino_gpio_digitalWrite(&gpios, ARDUINO_INTERNAL_VDD_ENV_ENABLE, 1);
 	arduino_gpio_digitalWrite(&gpios, ARDUINO_INTERNAL_I2C_PULLUP, 1);
 	return 0;
 }

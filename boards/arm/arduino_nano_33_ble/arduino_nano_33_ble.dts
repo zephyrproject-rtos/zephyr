@@ -42,6 +42,14 @@
 		};
 	};
 
+	vdd_env: vdd-env {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "vdd_env";
+		regulator-name = "vdd_env";
+		enable-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;

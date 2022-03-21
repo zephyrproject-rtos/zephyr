@@ -8,6 +8,9 @@ config BOARD
 config BT_CTLR
 	default BT
 
+config REGULATOR
+	default y if SENSOR
+
 if I2C
 config I2C_NRFX
 	default y
