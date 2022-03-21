@@ -706,10 +706,18 @@ struct _bt_gatt_ccc {
 	/** Highest value of all connected peer's subscriptions */
 	uint16_t value;
 
-	/** @brief CCC attribute changed callback
+	/** @brief React to presence of subscribers
 	 *
-	 *  @param attr   The attribute that's changed value
-	 *  @param value  New value
+	 *  This event signals whether the Bluetooth stack has recipients for
+	 *  bt_gatt_indicate() or bt_gatt_notify() for @p attr with @p conn set to
+	 *  @c NULL.
+	 *
+	 *  This signal starts out as "not present" after boot.
+	 *
+	 *  Note: This event is not sequenced in relation to connection events.
+	 *
+	 *  @param attr The attribute the presence information belongs to.
+	 *  @param value If 0, then "not present". Otherwise "present".
 	 */
 	void (*cfg_changed)(const struct bt_gatt_attr *attr, uint16_t value);
 
