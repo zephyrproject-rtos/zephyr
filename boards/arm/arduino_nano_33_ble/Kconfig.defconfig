@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_ARDUINO_NANO_33_BLE
+
 config BOARD
 	default "arduino_nano_33_ble"
 
@@ -11,20 +12,4 @@ config BT_CTLR
 config REGULATOR
 	default y if SENSOR
 
-if I2C
-config I2C_NRFX
-	default y
-config NRFX_TWIM
-	default y
-endif #I2C
-
-if SPI
-config SPI_NRFX
-	default y
-config NRFX_SPIM
-	default y
-config SPI_2_NRF_SPIM
-	default y
-endif #SPI
-
-endif #board
+endif # BOARD_ARDUINO_NANO_33_BLE
