@@ -274,8 +274,8 @@ static bool net_buf_decode_bis_data(struct net_buf_simple *buf,
 	}
 
 	bis->index = net_buf_simple_pull_u8(buf);
-	if (bis->index == 0) {
-		BT_DBG("BIS index was 0");
+	if (!IN_RANGE(bis->index, BT_ISO_BIS_INDEX_MIN, BT_ISO_BIS_INDEX_MAX)) {
+		BT_DBG("Invalid BIS index %u", bis->index);
 		return false;
 	}
 
