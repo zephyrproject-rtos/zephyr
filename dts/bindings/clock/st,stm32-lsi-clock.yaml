@@ -1,0 +1,17 @@
+# Copyright (c) 2022, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 LSI Clock
+
+compatible: "st,stm32-lsi-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+    max-clock-frequency:
+      type: int
+      required: false
+      description: |
+        LSI RC oscillator max frequency as stated by the stm32 datasheet
+        This characteristic in Hz is higher than <clock-frequency> and maybe
+        used by any driver when the (typical) LSI <clock-frequency> is too low.
