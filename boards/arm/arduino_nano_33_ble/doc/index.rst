@@ -75,13 +75,10 @@ A convenience header mapping the Arduino pin names to their
 Zephyr pin numbers can be found in :code:`arduino_nano_33_ble_pins.h`,
 if you link against the :code:`arduino_nano_33_ble_pins` CMake library.
 
-For your convenience, two Kconfig options are added:
+For your convenience, one Kconfig option is added:
 
 #. :code:`BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS`:
     This configuration option enables the internal I2C sensors.
-#. :code:`BOARD_ARDUINO_NANO_33_BLE_EN_USB_CONSOLE`:
-    This configuration option enables the USB CDC subsystem and
-    the console, so that printk works.
 
 Programming and Debugging
 *************************
