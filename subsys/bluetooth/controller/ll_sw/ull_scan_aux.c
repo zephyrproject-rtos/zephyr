@@ -51,6 +51,7 @@ static inline struct ll_sync_set *sync_create_get(struct ll_scan_set *scan);
 static inline struct ll_sync_iso_set *
 	sync_iso_create_get(struct ll_sync_set *sync);
 static void done_disabled_cb(void *param);
+static void flush_safe(void *param);
 static void flush(void *param);
 static void rx_release_put(struct node_rx_hdr *rx);
 static void aux_sync_incomplete(void *param);
@@ -714,9 +715,6 @@ ull_scan_aux_rx_flush:
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
 	if (aux) {
-		struct ull_hdr *hdr;
-		uint8_t ref;
-
 		/* Enqueue last rx in aux context if possible, otherwise send
 		 * immediately since we are in sync context.
 		 */
@@ -745,30 +743,7 @@ ull_scan_aux_rx_flush:
 			return;
 		}
 
-		/* ref == 0
-		 * All PDUs were scheduled from LLL and there is no pending done
-		 * event, we can flush here.
-		 *
-		 * ref == 1
-		 * There is pending done event so we need to flush from disabled
-		 * callback. Flushing here would release aux context and thus
-		 * ull_hdr before done event was processed.
-		 */
-		hdr = &aux->ull;
-		ref = ull_ref_get(hdr);
-		if (ref == 0) {
-			flush(aux);
-		} else {
-			/* A specific single shot scheduled aux context cannot
-			 * overlap, i.e. ULL reference count shall be less than
-			 * 2.
-			 */
-			LL_ASSERT(ref < 2);
-
-			LL_ASSERT(!hdr->disabled_cb);
-			hdr->disabled_param = aux;
-			hdr->disabled_cb = done_disabled_cb;
-		}
+		flush_safe(aux);
 
 		return;
 	}
@@ -927,7 +902,6 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 		struct ll_scan_aux_set *aux;
 		struct ll_scan_set *scan;
 		struct lll_scan *lll;
-		struct ull_hdr *hdr;
 		uint8_t is_stop;
 
 		aux = HDR_LLL2ULL(lll_aux);
@@ -948,26 +922,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx)
 		}
 
 		if (!is_stop) {
-			uint8_t ref;
-
-			/* Flush from here or from done event, if one is
-			 * pending.
-			 */
-			hdr = &aux->ull;
-			ref = ull_ref_get(hdr);
-			if (ref == 0) {
-				flush(aux);
-			} else {
-				/* A specific single shot scheduled aux context
-				 * cannot overlap, i.e. ULL reference count
-				 * shall be less than 2.
-				 */
-				LL_ASSERT(ref < 2);
-
-				LL_ASSERT(!hdr->disabled_cb);
-				hdr->disabled_param = aux;
-				hdr->disabled_cb = done_disabled_cb;
-			}
+			flush_safe(aux);
 
 		} else if (!scan) {
 			/* Sync terminate requested, enqueue node rx so that it
@@ -1105,6 +1060,39 @@ static inline struct ll_sync_iso_set *
 static void done_disabled_cb(void *param)
 {
 	flush(param);
+}
+
+static void flush_safe(void *param)
+{
+	struct ll_scan_aux_set *aux;
+	struct ull_hdr *hdr;
+	uint8_t ref;
+
+	/* ref == 0
+	 * All PDUs were scheduled from LLL and there is no pending done
+	 * event, we can flush here.
+	 *
+	 * ref == 1
+	 * There is pending done event so we need to flush from disabled
+	 * callback. Flushing here would release aux context and thus
+	 * ull_hdr before done event was processed.
+	 */
+	aux = param;
+	hdr = &aux->ull;
+	ref = ull_ref_get(hdr);
+	if (ref == 0U) {
+		flush(aux);
+	} else {
+		/* A specific single shot scheduled aux context
+		 * cannot overlap, i.e. ULL reference count
+		 * shall be less than 2.
+		 */
+		LL_ASSERT(ref < 2U);
+
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = aux;
+		hdr->disabled_cb = done_disabled_cb;
+	}
 }
 
 static void flush(void *param)
@@ -1294,7 +1282,7 @@ static void ticker_op_cb(uint32_t status, void *param)
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync) {
 			mfy.fp = aux_sync_incomplete;
 		} else {
-			mfy.fp = flush;
+			mfy.fp = flush_safe;
 		}
 	}
 
