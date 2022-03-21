@@ -88,4 +88,13 @@ config LOG_BACKEND_FORMAT_TIMESTAMP
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
 
+config LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP
+	bool "Format timestamp in Linux format"
+	default n
+	help
+	  This formatting is something in the middle between the pure raw format
+	  and the hh:mm:ss:ms,us one. It resembles the Linux's kernel format in
+	  which timestamps are printed as fixed point values with seconds on the
+	  left side of the point and microseconds on the right side.
+
 endmenu
