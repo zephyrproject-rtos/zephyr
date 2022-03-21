@@ -151,7 +151,7 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 
 	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
 
-	broadcast_source_set_ep_state(ep, BT_AUDIO_EP_STATE_IDLE);
+	broadcast_source_set_ep_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream);
