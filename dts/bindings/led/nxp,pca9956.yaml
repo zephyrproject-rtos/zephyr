@@ -1,0 +1,25 @@
+# Copyright (c) 2022 Esco Medical ApS
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCA9956 LED
+
+compatible: "nxp,pca9956"
+
+include: i2c-device.yaml
+
+properties:
+    output-enable-gpios:
+      type: phandle-array
+      description: Output Enable pin
+
+    reset-gpios:
+      type: phandle-array
+      description: Reset pin
+
+    default-iref:
+      type: int
+      default: 255
+      description: |
+        The default output current value for all LED outputs.
+        Valid range 0 - 255 where 0 and 255 are minimum and maximum output current
+        settings respectively.

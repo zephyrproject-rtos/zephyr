@@ -1,0 +1,11 @@
+# Copyright (c) 2022 Esco Medical Aps
+# SPDX-License-Identifier: Apache-2.0
+
+config PCA9956
+	bool "PCA9956 LED driver"
+	depends on I2C
+	help
+	  Enable LED driver for PCA9956.
+
+	  PCA9956 LED driver has 24 channels each with multi-programmable
+	  states. Each channel can drive up to 57 mA per LED.
