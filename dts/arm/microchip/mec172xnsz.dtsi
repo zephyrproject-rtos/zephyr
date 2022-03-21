@@ -908,7 +908,7 @@
 				interrupts = <58 3>, <59 3>;
 				interrupt-names = "kbc_obe", "kbc_ibf";
 				girqs = < MCHP_XEC_ECIA(15, 18, 7, 58)
-					  MCHP_XEC_ECIA(15, 19, 7, 58) >;
+					  MCHP_XEC_ECIA(15, 19, 7, 59) >;
 				ldn = <1>;
 				label = "KBC_0";
 				status = "disabled";
