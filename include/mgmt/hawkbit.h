@@ -5,8 +5,8 @@
  */
 
 /**
- * @brief Hawkbit Firmware Over-the-Air for Zephyr Project.
- * @defgroup hawkbit Hawkbit Firmware Over-the-Air
+ * @brief hawkBit Firmware Over-the-Air for Zephyr Project.
+ * @defgroup hawkbit hawkBit Firmware Over-the-Air
  * @ingroup lib
  * @{
  */
@@ -16,10 +16,10 @@
 #define HAWKBIT_JSON_URL "/default/controller/v1"
 
 /**
- * @brief Response message from Hawkbit.
+ * @brief Response message from hawkBit.
  *
  * @details These messages are used to inform the server and the
- * user about the process status of the Hawkbit and also
+ * user about the process status of the hawkBit and also
  * used to standardize the errors that may occur.
  *
  */
@@ -43,7 +43,7 @@ enum hawkbit_response {
 int hawkbit_init(void);
 
 /**
- * @brief Runs Hawkbit probe and Hawkbit update automatically
+ * @brief Runs hawkBit probe and hawkBit update automatically
  *
  * @details The hawkbit_autohandler handles the whole process
  * in pre-determined time intervals.
@@ -51,14 +51,14 @@ int hawkbit_init(void);
 void hawkbit_autohandler(void);
 
 /**
- * @brief The Hawkbit probe verify if there is some update to be performed.
+ * @brief The hawkBit probe verify if there is some update to be performed.
  *
  * @return HAWKBIT_UPDATE_INSTALLED has an update available.
  * @return HAWKBIT_NO_UPDATE no update available.
- * @return HAWKBIT_NETWORKING_ERROR fail to connect to the Hawkbit server.
+ * @return HAWKBIT_NETWORKING_ERROR fail to connect to the hawkBit server.
  * @return HAWKBIT_METADATA_ERROR fail to parse or to encode the metadata.
  * @return HAWKBIT_OK if success.
- * @return HAWKBIT_DOWNLOAD_ERROR faile while downloading the update package.
+ * @return HAWKBIT_DOWNLOAD_ERROR fail while downloading the update package.
  */
 enum hawkbit_response hawkbit_probe(void);
 
