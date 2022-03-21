@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <soc.h>
+#include <pm/pm.h>
 #include <ace_v1x-regs.h>
 #include <ace-ipc-regs.h>
 #include <cavs-mem.h>
@@ -13,6 +14,26 @@
 
 #define CORE_POWER_CHECK_NUM 32
 #define CORE_POWER_CHECK_DELAY 256
+
+/**
+ * @brief Power down procedure.
+ *
+ * Locks its code in L1 cache and shuts down memories.
+ * NOTE: there's no return from this function.
+ *
+ * @param disable_lpsram        flag if LPSRAM is to be disabled (whole)
+ * @param hpsram_pg_mask pointer to memory segments power gating mask
+ * (each bit corresponds to one ebb)
+ * @param response_to_ipc       flag if ipc response should be send during power down
+ */
+extern void ace_power_down(bool disable_lpsram, uint32_t *hpsram_pg_mask, bool response_to_ipc);
+
+#define SRAM_ALIAS_BASE         0xA0000000
+#define SRAM_ALIAS_MASK         0xF0000000
+
+#define uncache_to_cache(address) \
+				((__typeof__(address))(((uint32_t)(address) &  \
+				~SRAM_ALIAS_MASK) | SRAM_ALIAS_BASE))
 
 static void ipc_isr(void *arg)
 {
@@ -118,3 +139,38 @@ int soc_adsp_halt_cpu(int id)
 
 	return 0;
 }
+
+#if defined(CONFIG_PM)
+/* Invoke Low Power/System Off specific Tasks */
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(substate_id);
+	uint32_t cpu = arch_proc_id();
+
+	switch (state) {
+	case PM_STATE_SOFT_OFF:/* D3 */
+		MTL_PWRBOOT.bootctl[cpu].bctl &= ~MTL_PWRBOOT_BCTL_WAITIPCG;
+		soc_cpus_active[cpu] = false;
+		z_xtensa_cache_flush_inv_all();
+		if (cpu == 0) {
+			/* FIXME: this value should come from MM */
+			uint32_t hpsram_mask[1] = { 0x3FFFFF };
+
+			ace_power_down(true, uncache_to_cache(&hpsram_mask[0]), true);
+		} else {
+			k_cpu_idle();
+		}
+
+		break;
+	case PM_STATE_SUSPEND_TO_IDLE: /* D0ix */
+		__fallthrough;
+	case PM_STATE_RUNTIME_IDLE:/* D0 */
+		k_cpu_idle();
+		break;
+	default:
+		__ASSERT(false, "invalid argument - unsupported power state");
+		break;
+	}
+}
+
+#endif /* CONFIG_PM */
