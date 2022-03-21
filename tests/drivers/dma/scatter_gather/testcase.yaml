@@ -1,0 +1,5 @@
+tests:
+  drivers.dma.scatter_gather:
+    depends_on: dma
+    tags: drivers dma
+    skip: True
