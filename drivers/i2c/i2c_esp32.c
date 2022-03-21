@@ -50,12 +50,14 @@ enum i2c_status_t {
 	I2C_STATUS_TIMEOUT,	/* I2C bus status error, and operation timeout */
 };
 
+#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 struct i2c_esp32_pin {
 	const char *gpio_name;
 	int sig_out;
 	int sig_in;
 	gpio_pin_t pin;
 };
+#endif
 
 struct i2c_esp32_data {
 	i2c_hal_context_t hal;
@@ -65,9 +67,10 @@ struct i2c_esp32_data {
 	uint32_t dev_config;
 	int cmd_idx;
 	int irq_line;
-
+#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 	const struct device *scl_gpio;
 	const struct device *sda_gpio;
+#endif
 };
 
 typedef void (*irq_connect_cb)(void);
@@ -76,10 +79,10 @@ struct i2c_esp32_config {
 	int index;
 
 	const struct device *clock_dev;
-
+#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 	const struct i2c_esp32_pin scl;
 	const struct i2c_esp32_pin sda;
-
+#endif
 	const struct pinctrl_dev_config *pcfg;
 
 	const clock_control_subsys_t clock_subsys;
@@ -122,6 +125,7 @@ static i2c_sclk_t i2c_get_clk_src(uint32_t clk_freq)
 	return I2C_SCLK_MAX;	/* flag invalid */
 }
 
+#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 static int i2c_esp32_config_pin(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
@@ -147,6 +151,7 @@ static int i2c_esp32_config_pin(const struct device *dev)
 
 	return ret;
 }
+#endif
 
 /* Some slave device will die by accident and keep the SDA in low level,
  * in this case, master should send several clock to make the slave release the bus.
@@ -619,8 +624,6 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 	k_sem_give(&data->cmd_sem);
 }
 
-static int i2c_esp32_init(const struct device *dev);
-
 static const struct i2c_driver_api i2c_esp32_driver_api = {
 	.configure = i2c_esp32_configure,
 	.transfer = i2c_esp32_transfer,
@@ -630,6 +633,7 @@ static const struct i2c_driver_api i2c_esp32_driver_api = {
 static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
+#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
 	if (config->scl.gpio_name == NULL || config->sda.gpio_name == NULL) {
@@ -648,7 +652,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		LOG_ERR("Failed to get SDA GPIO device");
 		return -EINVAL;
 	}
-
+#endif
 	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
@@ -663,6 +667,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	return i2c_esp32_configure(dev, config->default_config);
 }
 
+#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 #define GPIO0_NAME COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay), \
 			     (DT_LABEL(DT_INST(0, espressif_esp32_gpio))), (NULL))
 #define GPIO1_NAME COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay), \
@@ -670,6 +675,23 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 #define DT_I2C_ESP32_GPIO_NAME(idx, pin) ( \
 	DT_INST_PROP(idx, pin) < 32 ? GPIO0_NAME : GPIO1_NAME)
+
+#define I2C_ESP32_GET_PIN_INFO(idx)					\
+	.scl = {							\
+		.gpio_name = DT_I2C_ESP32_GPIO_NAME(idx, scl_pin),	\
+		.sig_out = I2CEXT##idx##_SCL_OUT_IDX,			\
+		.sig_in = I2CEXT##idx##_SCL_IN_IDX,			\
+		.pin = DT_INST_PROP(idx, scl_pin),			\
+	},								\
+	.sda = {							\
+		.gpio_name = DT_I2C_ESP32_GPIO_NAME(idx, sda_pin),	\
+		.sig_out = I2CEXT##idx##_SDA_OUT_IDX,			\
+		.sig_in = I2CEXT##idx##_SDA_IN_IDX,			\
+		.pin = DT_INST_PROP(idx, sda_pin),			\
+	},
+#else
+#define I2C_ESP32_GET_PIN_INFO(idx)
+#endif /* SOC_I2C_SUPPORT_HW_CLR_BUS */
 
 #define I2C_ESP32_FREQUENCY(bitrate)				       \
 	 (bitrate == I2C_BITRATE_STANDARD ? KHZ(100)	       \
@@ -697,18 +719,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
-	.scl = {	\
-		.gpio_name = DT_I2C_ESP32_GPIO_NAME(idx, scl_pin),	\
-		.sig_out = I2CEXT##idx##_SCL_OUT_IDX,	\
-		.sig_in = I2CEXT##idx##_SCL_IN_IDX,	\
-		.pin = DT_INST_PROP(idx, scl_pin), \
-	},	\
-	.sda = {	\
-		.gpio_name = DT_I2C_ESP32_GPIO_NAME(idx, sda_pin),	\
-		.sig_out = I2CEXT##idx##_SDA_OUT_IDX,	\
-		.sig_in = I2CEXT##idx##_SDA_IN_IDX,	\
-		.pin = DT_INST_PROP(idx, sda_pin), \
-	},	\
+	I2C_ESP32_GET_PIN_INFO(idx)	\
 	.mode = { \
 		.tx_lsb_first = DT_INST_PROP(idx, tx_lsb), \
 		.rx_lsb_first = DT_INST_PROP(idx, rx_lsb), \
@@ -727,9 +738,31 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		      &i2c_esp32_driver_api); \
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay)
+#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
+#if !DT_PROP(DT_INST(0, espressif_esp32_i2c), sda_pin) || \
+	!DT_PROP(DT_INST(0, espressif_esp32_i2c), scl_pin)
+#error "Missing <sda-pin> and <scl-pin> properties to build for this target."
+#endif
+#else
+#if DT_PROP(DT_INST(0, espressif_esp32_i2c), sda_pin) || \
+	DT_PROP(DT_INST(0, espressif_esp32_i2c), scl_pin)
+#error "Properties <sda-pin> and <scl-pin> are not required for this target."
+#endif
+#endif
 ESP32_I2C_INIT(0);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
+#if !DT_PROP(DT_INST(1, espressif_esp32_i2c), sda_pin) || \
+	!DT_PROP(DT_INST(1, espressif_esp32_i2c), scl_pin)
+#error "Missing <sda-pin> and <scl-pin> properties to build for this target."
+#endif
+#else
+#if DT_PROP(DT_INST(1, espressif_esp32_i2c), sda_pin) || \
+	DT_PROP(DT_INST(1, espressif_esp32_i2c), scl_pin)
+#error "Properties <sda-pin> and <scl-pin> are not required for this target."
+#endif
+#endif
 ESP32_I2C_INIT(1);
 #endif
