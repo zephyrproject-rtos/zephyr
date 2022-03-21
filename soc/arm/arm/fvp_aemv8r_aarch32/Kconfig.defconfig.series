@@ -26,6 +26,9 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
+config MAX_DOMAIN_PARTITIONS
+	default 24 if USERSPACE
+
 endif # SOC_FVP_AEMV8R_AARCH32
 
 endif # SOC_SERIES_FVP_AEMV8R_AARCH32
