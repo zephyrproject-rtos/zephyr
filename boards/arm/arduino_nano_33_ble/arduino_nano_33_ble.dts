@@ -36,6 +36,10 @@
 			gpios = <&gpio0 6 0>;
 			label = "Blue LED";
 		};
+		led4: led_4 {
+			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -43,6 +47,7 @@
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
+		led4 = &led4;
 		spi = &spi2;
 	};
 };
