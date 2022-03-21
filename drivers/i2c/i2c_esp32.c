@@ -18,6 +18,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <drivers/gpio.h>
+#include <drivers/pinctrl.h>
 #include <drivers/i2c.h>
 #include <drivers/interrupt_controller/intc_esp32.h>
 #include <drivers/clock_control.h>
@@ -78,6 +79,8 @@ struct i2c_esp32_config {
 
 	const struct i2c_esp32_pin scl;
 	const struct i2c_esp32_pin sda;
+
+	const struct pinctrl_dev_config *pcfg;
 
 	const clock_control_subsys_t clock_subsys;
 
@@ -646,7 +649,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	int ret = i2c_esp32_config_pin(dev);
+	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
 		LOG_ERR("Failed to configure I2C pins");
@@ -676,6 +679,9 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	I2C_ESP32_FREQUENCY(DT_INST_PROP(idx, clock_frequency))
 
 #define ESP32_I2C_INIT(idx)		\
+					\
+	PINCTRL_DT_INST_DEFINE(idx);	\
+					\
 	static struct i2c_esp32_data i2c_esp32_data_##idx = {		  \
 		.hal = {	\
 			.dev = (i2c_dev_t *) DT_REG_ADDR(DT_NODELABEL(i2c##idx)),	\
@@ -689,6 +695,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	static const struct i2c_esp32_config i2c_esp32_config_##idx = {	       \
 	.index = idx, \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
 	.scl = {	\
 		.gpio_name = DT_I2C_ESP32_GPIO_NAME(idx, scl_pin),	\
