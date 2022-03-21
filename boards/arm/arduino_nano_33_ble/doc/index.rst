@@ -75,10 +75,9 @@ A convenience header mapping the Arduino pin names to their
 Zephyr pin numbers can be found in :code:`arduino_nano_33_ble_pins.h`,
 if you link against the :code:`arduino_nano_33_ble_pins` CMake library.
 
-For your convenience, one Kconfig option is added:
-
-#. :code:`BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS`:
-    This configuration option enables the internal I2C sensors.
+The I2C pull-ups are enabled by setting pin P1.00 high. This is automatically
+done at system init. The pin is specified in the ``zephyr,user`` Devicetree node
+as ``pull-up-gpios``.
 
 Programming and Debugging
 *************************
