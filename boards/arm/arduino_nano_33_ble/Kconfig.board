@@ -4,7 +4,3 @@
 config BOARD_ARDUINO_NANO_33_BLE
 	bool "Arduino Nano 33 BLE board"
 	depends on SOC_NRF52840_QIAA
-
-config BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS
-	bool "Initializes the internal I2C sensors on the board"
-	depends on BOARD_ARDUINO_NANO_33_BLE

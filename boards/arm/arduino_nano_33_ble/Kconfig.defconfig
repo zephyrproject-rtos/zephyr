@@ -16,8 +16,6 @@ config I2C_NRFX
 	default y
 config NRFX_TWIM
 	default y
-config BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS
-	default y
 endif #I2C
 
 if SPI
