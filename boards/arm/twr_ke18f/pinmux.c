@@ -6,6 +6,7 @@
 
 #include <init.h>
 #include <drivers/pinmux.h>
+#include <drivers/pinctrl.h>
 #include <fsl_port.h>
 
 static int twr_ke18f_pinmux_init(const struct device *dev)
@@ -69,11 +70,6 @@ static int twr_ke18f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(porta, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#ifdef CONFIG_BOARD_TWR_KE18F_FLEXIO_CLKOUT
-	/* CLKOUT */
-	pinmux_pin_set(porte, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay) && CONFIG_ADC
 	/* Thermistor A, B */
 	pinmux_pin_set(porta, 0, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
@@ -89,6 +85,21 @@ static int twr_ke18f_pinmux_init(const struct device *dev)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay) && CONFIG_DAC
 	pinmux_pin_set(porte, 9, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
+
+#ifdef CONFIG_BOARD_TWR_KE18F_FLEXIO_CLKOUT
+	int err;
+
+	/* Declare pin configuration state for flexio pin here */
+	PINCTRL_DT_DEFINE(DT_NODELABEL(flexio));
+
+	/* Apply pinctrl state directly, since there is no flexio device driver */
+	err = pinctrl_apply_state(PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(flexio)),
+		PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+
+#endif /* CONFIG_BOARD_TWR_KE18F_FLEXIO_CLOCKOUT */
 
 	return 0;
 }
