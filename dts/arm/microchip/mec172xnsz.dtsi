@@ -929,8 +929,8 @@
 				reg = <0x400f0c00 0x400>;
 				interrupts = <47 3>, <48 3>;
 				interrupt-names = "acpi_ibf", "acpi_obe";
-				girqs = < MCHP_XEC_ECIA(15, 7, 7, 58)
-					  MCHP_XEC_ECIA(15, 8, 7, 58) >;
+				girqs = < MCHP_XEC_ECIA(15, 7, 7, 47)
+					  MCHP_XEC_ECIA(15, 8, 7, 48) >;
 				ldn = <3>;
 				label = "ACPI_EC_1";
 				status = "disabled";
@@ -940,8 +940,8 @@
 				reg = <0x400f1000 0x400>;
 				interrupts = <49 3>, <50 3>;
 				interrupt-names = "acpi_ibf", "acpi_obe";
-				girqs = < MCHP_XEC_ECIA(15, 9, 7, 58)
-					  MCHP_XEC_ECIA(15, 10, 7, 58) >;
+				girqs = < MCHP_XEC_ECIA(15, 9, 7, 49)
+					  MCHP_XEC_ECIA(15, 10, 7, 50) >;
 				ldn = <4>;
 				label = "ACPI_EC_2";
 				status = "disabled";
@@ -951,8 +951,8 @@
 				reg = <0x400f1400 0x400>;
 				interrupts = <51 3>, <52 3>;
 				interrupt-names = "acpi_ibf", "acpi_obe";
-				girqs = < MCHP_XEC_ECIA(15, 11, 7, 58)
-					  MCHP_XEC_ECIA(15, 12, 7, 58) >;
+				girqs = < MCHP_XEC_ECIA(15, 11, 7, 51)
+					  MCHP_XEC_ECIA(15, 12, 7, 52) >;
 				ldn = <5>;
 				label = "ACPI_EC_3";
 				status = "disabled";
@@ -962,8 +962,8 @@
 				reg = <0x400f1800 0x400>;
 				interrupts = <53 3>, <54 3>;
 				interrupt-names = "acpi_ibf", "acpi_obe";
-				girqs = < MCHP_XEC_ECIA(15, 13, 7, 58)
-					  MCHP_XEC_ECIA(15, 14, 7, 58) >;
+				girqs = < MCHP_XEC_ECIA(15, 13, 7, 53)
+					  MCHP_XEC_ECIA(15, 14, 7, 54) >;
 				ldn = <6>;
 				label = "ACPI_EC_4";
 				status = "disabled";
@@ -973,9 +973,9 @@
 				reg = <0x400f1c00 0x400>;
 				interrupts = <55 3>, <56 3>, <57 3>;
 				interrupt-names = "pm1_ctl", "pm1_en", "pm1_sts";
-				girqs = < MCHP_XEC_ECIA(15, 15, 7, 58)
-					  MCHP_XEC_ECIA(15, 16, 7, 58)
-					  MCHP_XEC_ECIA(15, 17, 7, 58) >;
+				girqs = < MCHP_XEC_ECIA(15, 15, 7, 55)
+					  MCHP_XEC_ECIA(15, 16, 7, 56)
+					  MCHP_XEC_ECIA(15, 17, 7, 57) >;
 				ldn = <7>;
 				label = "ACPI_PM1";
 				status = "disabled";
