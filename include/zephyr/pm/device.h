@@ -41,6 +41,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_RUNTIME_ENABLED,
 	/** Indicates if the device pm is locked.  */
 	PM_DEVICE_FLAG_STATE_LOCKED,
+	/** Indicateds if the device is used as a power domain */
+	PM_DEVICE_FLAG_PD,
 };
 
 /** @endcond */
@@ -176,8 +178,10 @@ struct pm_device {
 		.state = PM_DEVICE_STATE_ACTIVE,			\
 		.flags = ATOMIC_INIT(COND_CODE_1(			\
 				DT_NODE_EXISTS(node_id),		\
-				(DT_PROP_OR(node_id, wakeup_source, 0)),\
-				(0)) << PM_DEVICE_FLAG_WS_CAPABLE),	\
+				((DT_PROP_OR(node_id, wakeup_source, 0) \
+				  << PM_DEVICE_FLAG_WS_CAPABLE) |	\
+				 (DT_NODE_HAS_COMPAT(node_id, power_domain) << \
+				  PM_DEVICE_FLAG_PD)), (0))),		\
 		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			\
 	}
 
