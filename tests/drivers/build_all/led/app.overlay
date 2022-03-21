@@ -31,5 +31,23 @@
 				label = "Test GPIO LED";
 			};
 		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			label = "TEST_I2C_CTLR";
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_pca9956: pca9956@0 {
+				compatible = "nxp,pca9956";
+				label = "PCA9956B";
+				reg = <0x0>;
+				output-enable-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+		};
 	};
 };
