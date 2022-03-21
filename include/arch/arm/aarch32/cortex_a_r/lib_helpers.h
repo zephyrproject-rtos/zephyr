@@ -30,7 +30,7 @@
 
 #define read_sysreg64(op1, CRm)						\
 ({									\
-	uint32_t val;							\
+	uint64_t val;							\
 	__asm__ volatile ("mrrc p15, " #op1 ", %Q0, %R0, c"		\
 			  #CRm : "=r" (val) :: "memory");		\
 	val;								\
