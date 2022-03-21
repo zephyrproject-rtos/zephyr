@@ -1,0 +1,18 @@
+description: ESP32 UART
+
+compatible: "espressif,esp32-usb-serial"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: false
+
+  peripheral:
+    type: int
+    required: true
+    description: |
+      The UART peripheral number
