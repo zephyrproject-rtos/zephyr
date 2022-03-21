@@ -20,7 +20,7 @@
 
 #define DT_DRV_COMPAT	zephyr_ipc_openamp_static_vrings
 
-#define WQ_PRIORITY	(0)
+#define WQ_PRIORITY		K_HIGHEST_APPLICATION_THREAD_PRIO
 #define WQ_STACK_SIZE	CONFIG_IPC_SERVICE_BACKEND_RPMSG_WQ_STACK_SIZE
 
 #define STATE_READY	(0)
