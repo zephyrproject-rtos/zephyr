@@ -146,12 +146,3 @@ zephyr_udc0: &usbd {
  * nordic DTSI file.
  * You'll need to use the nordic-specific PDM libraries.
  */
-
-/*
- * the following sets up the peripherals according to this file:
- * https://github.com/arduino/ArduinoCore-nRF528x-mbedos/blob/19ddd214d255ca20b233eefa76662b360595c146/variants/ARDUINO_NANO33BLE/variant.cpp#L136
- * The bootloader will conflict with RTC1
- */
-&rtc1 {
-	status = "disabled";
-};
