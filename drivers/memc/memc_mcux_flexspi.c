@@ -8,6 +8,7 @@
 
 #include <logging/log.h>
 #include <sys/util.h>
+#include <drivers/pinctrl.h>
 
 #include "memc_mcux_flexspi.h"
 
@@ -37,6 +38,7 @@ struct memc_flexspi_data {
 	bool combination_mode;
 	bool sck_differential_clock;
 	flexspi_read_sample_clock_t rx_sample_clock;
+	const struct pinctrl_dev_config *pincfg;
 	size_t size[kFLEXSPI_PortCount];
 };
 
@@ -130,11 +132,18 @@ static int memc_flexspi_init(const struct device *dev)
 {
 	struct memc_flexspi_data *data = dev->data;
 	flexspi_config_t flexspi_config;
+	int ret;
 
 	/* we should not configure the device we are running on */
 	if (memc_flexspi_is_running_xip(dev)) {
 		LOG_DBG("XIP active on %s, skipping init", dev->name);
 		return 0;
+	}
+
+	/* Apply pinctrl state */
+	ret = pinctrl_apply_state(data->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
 	}
 
 	FLEXSPI_GetDefaultConfig(&flexspi_config);
@@ -166,6 +175,7 @@ static int memc_flexspi_init(const struct device *dev)
 #endif
 
 #define MEMC_FLEXSPI(n)							\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static struct memc_flexspi_data					\
 		memc_flexspi_data_##n = {				\
 		.base = (FLEXSPI_Type *) DT_INST_REG_ADDR(n),		\
@@ -178,6 +188,7 @@ static int memc_flexspi_init(const struct device *dev)
 		.combination_mode = DT_INST_PROP(n, combination_mode),	\
 		.sck_differential_clock = DT_INST_PROP(n, sck_differential_clock),	\
 		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),	\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
