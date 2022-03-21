@@ -50,6 +50,11 @@
 		regulator-boot-on;
 	};
 
+	zephyr,user {
+		/* I2C pull-ups are connected to VDD via pin voltage level */
+		pull-up-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
