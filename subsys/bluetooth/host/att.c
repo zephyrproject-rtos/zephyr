@@ -2738,6 +2738,8 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 	att_chan_mtu_updated(att_chan);
 
 	k_work_init_delayable(&att_chan->timeout_work, att_timeout);
+
+	bt_gatt_connected(ch->chan.conn);
 }
 
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)

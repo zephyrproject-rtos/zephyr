@@ -37,7 +37,6 @@
 #include "smp.h"
 #include "ssp.h"
 #include "att_internal.h"
-#include "gatt_internal.h"
 #include "iso_internal.h"
 #include "direction_internal.h"
 
@@ -1298,10 +1297,6 @@ static void notify_connected(struct bt_conn *conn)
 		if (cb->connected) {
 			cb->connected(conn, conn->err);
 		}
-	}
-
-	if (!conn->err) {
-		bt_gatt_connected(conn);
 	}
 }
 
