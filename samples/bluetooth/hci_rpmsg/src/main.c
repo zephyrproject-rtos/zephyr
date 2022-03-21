@@ -191,9 +191,11 @@ static void tx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int hci_rpmsg_send(struct net_buf *buf)
+static void hci_rpmsg_send(struct net_buf *buf)
 {
 	uint8_t pkt_indicator;
+	uint8_t retries = 0;
+	int ret;
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		buf->len);
@@ -213,16 +215,28 @@ static int hci_rpmsg_send(struct net_buf *buf)
 	default:
 		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
 		net_buf_unref(buf);
-		return -EINVAL;
+		return;
 	}
 	net_buf_push_u8(buf, pkt_indicator);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
-	ipc_service_send(&hci_ept, buf->data, buf->len);
+
+	do {
+		ret = ipc_service_send(&hci_ept, buf->data, buf->len);
+		if (ret < 0) {
+			retries++;
+			if (retries > 10) {
+				/* Default backend (rpmsg_virtio) has a timeout of 150ms. */
+				LOG_WRN("IPC send has been blocked for 1.5 seconds.");
+				retries = 0;
+			}
+			k_yield();
+		}
+	} while (ret < 0);
+
+	LOG_INF("Sent message of %d bytes.", ret);
 
 	net_buf_unref(buf);
-
-	return 0;
 }
 
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
@@ -289,9 +303,6 @@ void main(void)
 		struct net_buf *buf;
 
 		buf = net_buf_get(&rx_queue, K_FOREVER);
-		err = hci_rpmsg_send(buf);
-		if (err) {
-			LOG_ERR("Failed to send (err %d)", err);
-		}
+		hci_rpmsg_send(buf);
 	}
 }
