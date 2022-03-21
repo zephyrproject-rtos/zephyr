@@ -24,9 +24,6 @@ static int board_internal_sensors_init(const struct device *dev)
 	arduino_gpio_pinMode(&gpios, ARDUINO_LEDPWR, GPIO_OUTPUT);
 	arduino_gpio_digitalWrite(&gpios, ARDUINO_LEDPWR, 1);
 
-	CoreDebug->DEMCR = 0;
-	NRF_CLOCK->TRACECONFIG = 0;
-
 	/*
 	 * the PCB designers decided to use GPIO's
 	 * as power pins for the internal sensors
