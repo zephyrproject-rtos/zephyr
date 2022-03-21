@@ -192,6 +192,21 @@ Libraries / Subsystems
   * Added support for MCUMGR Parameters command, which can be used to obtain
     MCUMGR parameters; :kconfig:option:`CONFIG_OS_MGMT_MCUMGR_PARAMS` enables
     the command.
+  * Added mcumgr fs handler for getting file status which returns file size;
+    controlled with :kconfig:option:`CONFIG_FS_MGMT_FILE_STATUS`
+  * Added mcumgr fs handler for getting file hash/checksum, with support for
+    IEEE CRC32 and SHA256, the following Kconfig options have been added to
+    control the addition:
+
+    * :kconfig:option:`CONFIG_FS_MGMT_CHECKSUM_HASH` to enable the command;
+    * :kconfig:option:`CONFIG_FS_MGMT_CHECKSUM_HASH_CHUNK_SIZE` that sets size
+      of buffer (stack memory) used for calculation:
+
+      * :kconfig:option:`CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32` enables support for
+        IEEE CRC32.
+      * :kconfig:option:`CONFIG_FS_MGMT_HASH_SHA256` enables SHA256 hash support.
+      * When hash/checksum query to mcumgr does not specify a type, then the order
+        of preference (most priority) is CRC32 followed by SHA256.
 
 HALs
 ****
