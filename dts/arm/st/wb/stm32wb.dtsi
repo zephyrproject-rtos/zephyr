@@ -75,9 +75,9 @@
 			status = "disabled";
 		};
 
-		clk_lsi1: clk-lsi1 {
+		clk_lsi: clk_lsi1: clk-lsi1 {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
+			compatible = "st,stm32-lsi-clock";
 			clock-frequency = <DT_FREQ_K(32)>;
 			status = "disabled";
 		};
