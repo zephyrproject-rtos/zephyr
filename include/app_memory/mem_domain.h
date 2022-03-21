@@ -65,7 +65,7 @@ struct k_mem_partition {
  * @brief Memory Domain
  *
  * A memory domain is a collection of memory partitions, used to represent
- * a user thread's access policy for the linear addresss space. A thread
+ * a user thread's access policy for the linear address space. A thread
  * may be a member of only one memory domain, but any memory domain may
  * have multiple threads that are members.
  *
