@@ -59,7 +59,7 @@ hardware features:
      - :dtcompatible:`rpi,pico-gpio`
    * - I2C
      - :kconfig:option:`CONFIG_I2C`
-     - :dtcompatible:`rpi,pico-i2c`
+     - :dtcompatible:`snps,designware-i2c`
    * - HWINFO
      - :kconfig:option:`CONFIG_HWINFO`
      - N/A
