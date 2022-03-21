@@ -79,12 +79,6 @@
 	};
 };
 
-/*
- * guide specifying pin numbers: https://docs.zephyrproject.org/latest/boards/arm/nrf52840dk_nrf52840/doc/index.html
- * Given Pin PB.A:
- * pin_no = B*32 + A
- * ex. P1.0 => 32
- */
 &adc {
 	status = "okay";
 };
@@ -141,8 +135,3 @@ zephyr_udc0: &usbd {
 &pwm3 {
 	status = "okay";
 };
-/*
- * NOTE: curiously, there is no PDM (microphone) interface in the
- * nordic DTSI file.
- * You'll need to use the nordic-specific PDM libraries.
- */
