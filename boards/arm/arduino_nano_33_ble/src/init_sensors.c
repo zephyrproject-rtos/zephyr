@@ -27,15 +27,6 @@ static int board_internal_sensors_init(const struct device *dev)
 	CoreDebug->DEMCR = 0;
 	NRF_CLOCK->TRACECONFIG = 0;
 
-	NRF_PWM_Type * PWM[] = {
-		NRF_PWM0, NRF_PWM1, NRF_PWM2, NRF_PWM3
-	};
-
-	for (unsigned int i = 0; i < (ARRAY_SIZE(PWM)); i++) {
-		PWM[i]->ENABLE = 0;
-		PWM[i]->PSEL.OUT[0] = 0xFFFFFFFFUL;
-	}
-
 	/*
 	 * the PCB designers decided to use GPIO's
 	 * as power pins for the internal sensors
