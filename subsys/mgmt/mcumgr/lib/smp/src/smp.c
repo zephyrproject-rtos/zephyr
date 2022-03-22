@@ -263,7 +263,8 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 	struct mgmt_hdr req_hdr;
 	struct mgmt_evt_op_cmd_done_arg cmd_done_arg;
 	void *rsp;
-	bool valid_hdr, handler_found;
+	bool valid_hdr = false;
+	bool handler_found = false;
 	int rc = 0;
 	const char *rsn = NULL;
 
