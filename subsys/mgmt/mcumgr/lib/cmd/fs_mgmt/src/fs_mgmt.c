@@ -68,6 +68,10 @@ static struct {
 
 static const struct mgmt_handler fs_mgmt_handlers[];
 
+#ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
+static fs_mgmt_on_evt_cb fs_evt_cb;
+#endif
+
 /**
  * Encodes a file upload response.
  */
@@ -116,6 +120,17 @@ fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
 
 	memcpy(path, name.value, name.len);
 	path[name.len] = '\0';
+
+#ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
+	if (fs_evt_cb != NULL) {
+		/* Send request to application to check if access should be allowed or not */
+		rc = fs_evt_cb(false, path);
+
+		if (rc != 0) {
+			return rc;
+		}
+	}
+#endif
 
 	/* Only the response to the first download request contains the total file
 	 * length.
@@ -179,6 +194,17 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 
 	memcpy(file_name, name.value, name.len);
 	file_name[name.len] = '\0';
+
+#ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
+	if (fs_evt_cb != NULL) {
+		/* Send request to application to check if access should be allowed or not */
+		rc = fs_evt_cb(true, file_name);
+
+		if (rc != 0) {
+			return rc;
+		}
+	}
+#endif
 
 	if (off == 0) {
 		/* Total file length is a required field in the first chunk request. */
@@ -462,3 +488,10 @@ fs_mgmt_register_group(void)
 #endif
 #endif
 }
+
+#ifdef CONFIG_FS_MGMT_FILE_ACCESS_HOOK
+void fs_mgmt_register_evt_cb(fs_mgmt_on_evt_cb cb)
+{
+	fs_evt_cb = cb;
+}
+#endif
