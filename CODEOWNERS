@@ -273,6 +273,7 @@
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*stm32_qspi*               @lmajewski
 /drivers/flash/*b91*                      @andy-liu-telink
+/drivers/flash/*cadence*                  @ngboonkhai
 /drivers/flash/*cc13xx_cc26xx*            @pepe2k
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*esp32*                    @glaubermaroto
