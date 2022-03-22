@@ -76,11 +76,3 @@ void config_enable_default_clocks(void)
 #endif
 #endif /* !CONFIG_SOC_SERIES_STM32F3X */
 }
-
-/**
- * @brief Function kept for driver genericity
- */
-void LL_RCC_MSI_Disable(void)
-{
-	/* Do nothing */
-}
