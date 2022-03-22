@@ -37,6 +37,14 @@ belonging to specified download session. This means that the file is not
 locked in any way or exclusively owned by mcumgr, for the time of download
 session, and may change between requests or even be removed.
 
+.. note::
+    By default, all file upload requests are unconditionally allowed. However,
+    if the Kconfig option :kconfig:option:`FS_MGMT_FILE_ACCESS_HOOK` is enabled,
+    then an application can register a callback handler for ``fs_mgmt_on_evt_cb``
+    by calling ``fs_mgmt_register_evt_cb()`` with the handler supplied. This can
+    be used to allow or decline access to reading from or writing to a
+    particular file, or for rewriting the path supplied by the client.
+
 File download request
 =====================
 
@@ -143,6 +151,14 @@ session, and may change between requests or even be removed.
     single upload context, holding information on ongoing upload, that consists
     of bool flag indicating in-progress upload, last successfully uploaded offset
     and total length only.
+
+.. note::
+    By default, all file upload requests are unconditionally allowed. However,
+    if the Kconfig option :kconfig:option:`FS_MGMT_FILE_ACCESS_HOOK` is enabled,
+    then an application can register a callback handler for ``fs_mgmt_on_evt_cb``
+    by calling ``fs_mgmt_register_evt_cb()`` with the handler supplied. This can
+    be used to allow or decline access to reading from or writing to a
+    particular file, or for rewriting the path supplied by the client.
 
 File upload request
 ===================
