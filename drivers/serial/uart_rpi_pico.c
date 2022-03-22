@@ -6,6 +6,7 @@
  */
 
 #include <drivers/uart.h>
+#include <drivers/reset.h>
 #include <drivers/pinctrl.h>
 
 /* pico-sdk includes */
@@ -17,6 +18,7 @@ struct uart_rpi_config {
 	uart_inst_t *const uart_dev;
 	uart_hw_t *const uart_regs;
 	const struct pinctrl_dev_config *pcfg;
+	const struct reset_dt_spec reset;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t irq_config_func;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -70,7 +72,7 @@ static int uart_rpi_init(const struct device *dev)
 
 	/*
 	 * uart_init() may be replaced by register based API once rpi-pico platform
-	 * has a clock controller driver and a reset controller driver
+	 * has a clock controller driver
 	 */
 	baudrate = uart_init(uart_inst, data->baudrate);
 	/* Check if baudrate adjustment returned by 'uart_init' function is a positive value */
@@ -302,6 +304,7 @@ static const struct uart_driver_api uart_rpi_driver_api = {
 		.uart_dev = uart##idx,						\
 		.uart_regs = (uart_hw_t *)uart##idx,				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),			\
+		.reset = RESET_DT_SPEC_INST_GET(idx),				\
 		RPI_UART_IRQ_CONFIG_INIT(idx),					\
 	};									\
 										\
