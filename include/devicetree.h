@@ -3001,5 +3001,6 @@
 #include <devicetree/ordinals.h>
 #include <devicetree/pinctrl.h>
 #include <devicetree/can.h>
+#include <devicetree/reset.h>
 
 #endif /* DEVICETREE_H */
