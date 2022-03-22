@@ -574,6 +574,8 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 		};
 
 		bt_le_per_adv_sync_cb_register(&cb);
+
+		pa_cb_registered = true;
 	}
 
 	sink = broadcast_sink_free_get();
