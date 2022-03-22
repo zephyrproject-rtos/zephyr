@@ -1,0 +1,11 @@
+# RISCV64_MIV implementation
+
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RISCV64_MIV
+	bool "Microchip RV64 implementation"
+	select RISCV
+	select SOC_FAMILY_RISCV_PRIVILEGE
+	help
+	  Enable support for Microchip RISCV 64bit
