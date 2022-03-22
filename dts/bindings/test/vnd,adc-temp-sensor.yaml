@@ -5,7 +5,7 @@ description: Test ADC-based temperature sensor
 
 compatible: "vnd,adc-temp-sensor"
 
-include: base.yaml
+include: [base.yaml, reset-device.yaml]
 
 properties:
     label:
