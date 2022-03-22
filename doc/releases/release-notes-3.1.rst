@@ -246,6 +246,9 @@ Libraries / Subsystems
 
   * Added mcumgr os hook to allow an application to accept or decline a reset
     request; :kconfig:option:`CONFIG_OS_MGMT_RESET_HOOK` enables the callback.
+  * Added mcumgr fs hook to allow an application to accept or decline a file
+    read/write request; :kconfig:option:`CONFIG_FS_MGMT_FILE_ACCESS_HOOK`
+    enables the feature which then needs to be registered by the application.
 
 * SD Subsystem
 
