@@ -27,7 +27,7 @@ extern "C" {
 struct ipc_service_backend {
 	/** @brief Pointer to the function that will be used to open an instance
 	 *
-	 *  @param instance Instance pointer.
+	 *  @param[in] instance Instance pointer.
 	 *
 	 *  @retval -EALREADY when the instance is already opened.
 	 *
@@ -39,10 +39,10 @@ struct ipc_service_backend {
 
 	/** @brief Pointer to the function that will be used to send data to the endpoint.
 	 *
-	 *  @param instance Instance pointer.
-	 *  @param token Backend-specific token.
-	 *  @param data Pointer to the buffer to send.
-	 *  @param len Number of bytes to send.
+	 *  @param[in] instance Instance pointer.
+	 *  @param[in] token Backend-specific token.
+	 *  @param[in] data Pointer to the buffer to send.
+	 *  @param[in] len Number of bytes to send.
 	 *
 	 *  @retval -EINVAL when instance is invalid.
 	 *  @retval -EBADMSG when the message is invalid.
@@ -57,9 +57,9 @@ struct ipc_service_backend {
 
 	/** @brief Pointer to the function that will be used to register endpoints.
 	 *
-	 *  @param instance Instance to register the endpoint onto.
-	 *  @param token Backend-specific token.
-	 *  @param cfg Endpoint configuration.
+	 *  @param[in] instance Instance to register the endpoint onto.
+	 *  @param[out] token Backend-specific token.
+	 *  @param[in] cfg Endpoint configuration.
 	 *
 	 *  @retval -EINVAL when the endpoint configuration or instance is invalid.
 	 *  @retval -EBUSY when the instance is busy or not ready.
