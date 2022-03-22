@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <riscv32-fe310.dtsi>
+#include "qemu_riscv32_xip-pinctrl.dtsi"
 
 / {
 	model = "SiFive HiFive 1";
@@ -29,6 +30,8 @@
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <16000000>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
 };
 
 &uart1 {
