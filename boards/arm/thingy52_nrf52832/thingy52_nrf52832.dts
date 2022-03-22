@@ -27,6 +27,8 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
 		sw0 = &button0;
 	};
 
