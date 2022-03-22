@@ -1125,6 +1125,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		conn->pause_rx_data = 0U;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 		/* Re-initialize the Tx Q */
 		ull_tx_q_init(&conn->tx_q);
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
