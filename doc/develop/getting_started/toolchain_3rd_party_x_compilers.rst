@@ -11,17 +11,15 @@ external organization. Several of these are available.
 GNU Arm Embedded
 ****************
 
-   .. warning::
-
-      Do not install the toolchain into a path with spaces.
-
 #. Download and install a `GNU Arm Embedded`_ build for your operating system
    and extract it on your file system.
 
    .. note::
 
-      On Windows, we'll assume you install into the directory
-      :file:`C:\\gnu_arm_embedded`.
+      On Windows, we'll assume for this guide that you install into the directory
+      :file:`C:\\gnu_arm_embedded`. You can also choose the default installation
+      path used by the ARM GCC installer, in which case you will need to adjust the path
+      accordingly in the guide below.
 
    .. warning::
 
