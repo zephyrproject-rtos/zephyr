@@ -981,6 +981,7 @@ extern void k_sched_lock(void);
  */
 extern void k_sched_unlock(void);
 
+#ifdef CONFIG_THREAD_CUSTOM_DATA
 /**
  * @brief Set current thread's custom data.
  *
@@ -1005,6 +1006,7 @@ __syscall void k_thread_custom_data_set(void *value);
  * @return Current custom data value.
  */
 __syscall void *k_thread_custom_data_get(void);
+#endif
 
 /**
  * @brief Set current thread name
@@ -3953,6 +3955,7 @@ static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
 	return ret;
 }
 
+#ifdef CONFIG_USERSPACE
 /**
  * @brief Start a workqueue in user mode
  *
@@ -3978,6 +3981,7 @@ extern void k_work_user_queue_start(struct k_work_user_q *work_q,
 				    k_thread_stack_t *stack,
 				    size_t stack_size, int prio,
 				    const char *name);
+#endif
 
 /** @} */
 
@@ -4033,6 +4037,7 @@ struct k_work_poll {
 #define K_DELAYED_WORK_DEFINE(work, work_handler) __DEPRECATED_MACRO \
 	struct k_delayed_work work = Z_DELAYED_WORK_INITIALIZER(work_handler)
 
+#ifdef CONFIG_POLL
 /**
  * @brief Initialize a triggered work item.
  *
@@ -4138,6 +4143,7 @@ extern int k_work_poll_submit(struct k_work_poll *work,
  * @retval -EINVAL Work item is being processed or has completed its work.
  */
 extern int k_work_poll_cancel(struct k_work_poll *work);
+#endif
 
 /** @} */
 
@@ -5347,6 +5353,7 @@ struct k_poll_event {
 	}, \
 	}
 
+#ifdef CONFIG_POOL
 /**
  * @brief Initialize one struct k_poll_event instance
  *
@@ -5367,6 +5374,13 @@ struct k_poll_event {
 extern void k_poll_event_init(struct k_poll_event *event, uint32_t type,
 			      int mode, void *obj);
 
+/**
+ * @internal
+ */
+extern void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
+#endif
+
+#ifdef CONFIG_POLL
 /**
  * @brief Wait for one or many of multiple poll events to occur
  *
@@ -5470,11 +5484,7 @@ __syscall void k_poll_signal_check(struct k_poll_signal *sig,
  */
 
 __syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
-
-/**
- * @internal
- */
-extern void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
+#endif
 
 /** @} */
 
@@ -5607,7 +5617,7 @@ extern void z_init_static_threads(void);
  */
 extern bool z_is_thread_essential(void);
 
-#ifdef CONFIG_SMP
+#if CONFIG_MP_NUM_CPUS > 1
 void z_smp_thread_init(void *arg, struct k_thread *thread);
 void z_smp_thread_swap(void);
 #endif

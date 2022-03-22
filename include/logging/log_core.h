@@ -558,11 +558,13 @@ static inline uint16_t log_dynamic_source_id(struct log_source_dynamic_data *dat
 			sizeof(struct log_source_dynamic_data));
 }
 
+#if !defined(CONFIG_LOG_MINIMAL)
 /* Initialize runtime filters */
 void z_log_runtime_filters_init(void);
 
 /* Notify log_core that a backend was enabled. */
 void z_log_notify_backend_enabled(void);
+#endif
 
 /** @brief Dummy function to trigger log messages arguments type checking. */
 static inline __printf_like(1, 2)
@@ -571,6 +573,7 @@ void z_log_printf_arg_checker(const char *fmt, ...)
 	ARG_UNUSED(fmt);
 }
 
+#if !defined(CONFIG_LOG_MINIMAL)
 /** @brief Standard log with no arguments.
  *
  * @param str           String.
@@ -798,6 +801,7 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 				       const char *metadata,
 				       const uint8_t *data, uint32_t len);
+#endif
 
 /******************************************************************************/
 /********** Mocros _VA operate on var-args parameters.          ***************/

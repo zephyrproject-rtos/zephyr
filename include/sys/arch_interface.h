@@ -217,12 +217,15 @@ typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg);
 
+#if	(defined(CONFIG_SOC_INTEL_S1000) && defined(CONFIG_SMP)) || \
+	defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 /**
  * @brief Return CPU power status
  *
  * @param cpu_num Integer number of the CPU
  */
 bool arch_cpu_active(int cpu_num);
+#endif
 
 /** @} */
 
@@ -278,12 +281,16 @@ void arch_irq_disable(unsigned int irq);
  */
 void arch_irq_enable(unsigned int irq);
 
+#if 0
+/*? This should be moved to arch specific header files
+    for architectures where this function is present */
 /**
  * Test if an interrupt line is enabled
  *
  * @see irq_is_enabled()
  */
 int arch_irq_is_enabled(unsigned int irq);
+#endif
 
 /**
  * Arch-specific hook to install a dynamic interrupt.
@@ -685,6 +692,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
  *            architecture specific.
  */
 FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr);
+#endif /* CONFIG_USERSPACE */
 
 /**
  * @brief Safely take the length of a potentially bad string
@@ -699,7 +707,6 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr);
  * @return Length of the string, not counting NULL byte, up to maxsize
  */
 size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
-#endif /* CONFIG_USERSPACE */
 
 /**
  * @brief Detect memory coherence type

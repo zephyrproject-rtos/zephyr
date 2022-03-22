@@ -106,6 +106,7 @@ struct k_mem_domain;
 struct k_mem_partition;
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_USERSPACE
 /**
  * @brief Initialize a memory domain.
  *
@@ -174,6 +175,7 @@ extern void k_mem_domain_remove_partition(struct k_mem_domain *domain,
  */
 extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
 				    k_tid_t thread);
+#endif
 
 #ifdef __cplusplus
 }

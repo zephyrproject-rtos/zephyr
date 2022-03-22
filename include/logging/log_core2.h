@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+#if !defined(CONFIG_LOG_MINIMAL)
 /** @brief Initialize module for handling logging message. */
 void z_log_msg2_init(void);
 
@@ -49,6 +50,7 @@ void z_log_msg2_free(union log_msg2_generic *msg);
  * @retval false if no message is pending.
  */
 bool z_log_msg2_pending(void);
+#endif
 
 #ifdef __cplusplus
 }

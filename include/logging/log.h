@@ -252,6 +252,7 @@ extern "C" {
 #define LOG_INST_HEXDUMP_DBG(_log_inst, _data, _length, _str)	\
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
 
+#if !defined(CONFIG_LOG_MINIMAL)
 /**
  * @brief Writes an formatted string to the log.
  *
@@ -264,11 +265,14 @@ extern "C" {
  * @param ap  Variable parameters.
  */
 void z_log_printk(const char *fmt, va_list ap);
+
 static inline void log_printk(const char *fmt, va_list ap)
 {
 	z_log_printk(fmt, ap);
 }
+#endif
 
+#if !defined(CONFIG_LOG_MINIMAL)
 /** @brief Copy transient string to a buffer from internal, logger pool.
  *
  * Function should be used when transient string is intended to be logged.
@@ -287,6 +291,8 @@ static inline void log_printk(const char *fmt, va_list ap)
  *	   some configurations, the original string pointer is returned.
  */
 const char *z_log_strdup(const char *str);
+#endif
+
 static inline const char *log_strdup(const char *str)
 {
 	if ((IS_ENABLED(CONFIG_LOG_MINIMAL)) || (IS_ENABLED(CONFIG_LOG2))) {
@@ -410,8 +416,9 @@ static inline const char *log_strdup(const char *str)
 #define LOG_MODULE_DECLARE(...)						      \
 	extern const struct log_source_const_data			      \
 			LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__));	      \
-	extern struct log_source_dynamic_data				      \
-			LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__));     \
+	IF_ENABLED(CONFIG_LOG_RUNTIME_FILTERING, \
+		(extern struct log_source_dynamic_data				      \
+			LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__));))     \
 									      \
 	static const struct log_source_const_data *			      \
 		__log_current_const_data __unused =			      \
@@ -419,12 +426,12 @@ static inline const char *log_strdup(const char *str)
 			&LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__)) :     \
 			NULL;						      \
 									      \
-	static struct log_source_dynamic_data *				      \
+	IF_ENABLED(CONFIG_LOG_RUNTIME_FILTERING, \
+		(static struct log_source_dynamic_data *				      \
 		__log_current_dynamic_data __unused =			      \
-			(((_LOG_LEVEL_RESOLVE(__VA_ARGS__)) != 0) &&		      \
-			(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING))) ?	      \
+			((_LOG_LEVEL_RESOLVE(__VA_ARGS__)) != 0) ?	      \
 			&LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__)) :   \
-			NULL;						      \
+			NULL;))						      \
 									      \
 	static const uint32_t __log_level __unused =			      \
 					(_LOG_LEVEL_RESOLVE(__VA_ARGS__))

@@ -375,6 +375,7 @@ size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
  * @{
  */
 
+#ifdef CONFIG_DEMAND_PAGING
 /**
  * Evict a page-aligned virtual memory region to the backing store
  *
@@ -441,7 +442,9 @@ void k_mem_pin(void *addr, size_t size);
  * @param size Page-aligned data region size
  */
 void k_mem_unpin(void *addr, size_t size);
+#endif
 
+#ifdef CONFIG_DEMAND_PAGING_STATS
 /**
  * Get the paging statistics since system startup
  *
@@ -465,7 +468,9 @@ struct k_thread;
 __syscall
 void k_mem_paging_thread_stats_get(struct k_thread *thread,
 				   struct k_mem_paging_stats_t *stats);
+#endif
 
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
 /**
  * Get the eviction timing histogram
  *
@@ -498,6 +503,7 @@ __syscall void k_mem_paging_histogram_backing_store_page_in_get(
  */
 __syscall void k_mem_paging_histogram_backing_store_page_out_get(
 	struct k_mem_paging_histogram_t *hist);
+#endif
 
 #include <syscalls/mem_manage.h>
 
@@ -510,6 +516,7 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  * @{
  */
 
+#ifdef CONFIG_EVICTION_NRU
 /**
  * Select a page frame for eviction
  *
@@ -534,6 +541,7 @@ struct z_page_frame *k_mem_paging_eviction_select(bool *dirty);
  * called until this has returned, and this will only be called once.
  */
 void k_mem_paging_eviction_init(void);
+#endif
 
 /** @} */
 
@@ -544,6 +552,7 @@ void k_mem_paging_eviction_init(void);
  * @{
  */
 
+#if defined(CONFIG_BACKING_STORE_RAM) || defined(CONFIG_BACKING_STORE_QEMU_X86_TINY_FLASH)
 /**
  * Reserve or fetch a storage location for a data page loaded into a page frame
  *
@@ -658,6 +667,7 @@ void k_mem_paging_backing_store_page_finalize(struct z_page_frame *pf,
  *   associated page frames, and any internal accounting set up appropriately.
  */
 void k_mem_paging_backing_store_init(void);
+#endif
 
 /** @} */
 

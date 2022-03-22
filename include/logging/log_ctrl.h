@@ -31,6 +31,7 @@ extern "C" {
 
 typedef log_timestamp_t (*log_timestamp_get_t)(void);
 
+#if !defined(CONFIG_LOG_MINIMAL)
 /** @brief Function system initialization of the logger.
  *
  * Function is called during start up to allow logging before user can
@@ -65,6 +66,7 @@ void log_thread_set(k_tid_t process_tid);
  */
 int log_set_timestamp_func(log_timestamp_get_t timestamp_getter,
 			   uint32_t freq);
+#endif
 
 /**
  * @brief Switch the logger subsystem to the panic mode.
@@ -95,6 +97,7 @@ __syscall bool log_process(bool bypass);
  */
 __syscall uint32_t log_buffered_cnt(void);
 
+#if !defined(CONFIG_LOG_MINIMAL)
 /** @brief Get number of independent logger sources (modules and instances)
  *
  * @param domain_id Domain ID.
@@ -168,6 +171,7 @@ void log_backend_enable(struct log_backend const *const backend,
  * @param backend	Backend instance.
  */
 void log_backend_disable(struct log_backend const *const backend);
+#endif
 
 #if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()

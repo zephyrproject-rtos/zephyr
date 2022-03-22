@@ -576,6 +576,7 @@ static inline void arch_nop(void);
  * @{
  */
 
+#ifdef CONFIG_DEBUG_COREDUMP
 /**
  * @brief Architecture-specific handling during coredump
  *
@@ -589,6 +590,7 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf);
  * @brief Get the target code specified by the architecture.
  */
 uint16_t arch_coredump_tgt_code_get(void);
+#endif
 
 /** @} */
 
@@ -598,6 +600,7 @@ uint16_t arch_coredump_tgt_code_get(void);
  * @{
  */
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
 /**
  * @brief Setup Architecture-specific TLS area in stack
  *
@@ -609,6 +612,7 @@ uint16_t arch_coredump_tgt_code_get(void);
  * @return Number of bytes taken by the TLS area
  */
 size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr);
+#endif
 
 /** @} */
 

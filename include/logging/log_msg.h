@@ -161,6 +161,7 @@ union log_msg_chunk {
 	struct log_msg_cont cont;
 };
 
+#if !defined(CONFIG_LOG_MINIMAL)
 /** @brief Function for initialization of the log message pool. */
 void log_msg_pool_init(void);
 
@@ -188,6 +189,8 @@ void log_msg_put(struct log_msg *msg);
  *
  * @return Domain ID.
  */
+#endif
+
 static inline uint32_t log_msg_domain_id_get(struct log_msg *msg)
 {
 	return msg->hdr.ids.domain_id;
@@ -238,6 +241,7 @@ static inline bool log_msg_is_std(struct log_msg *msg)
 	return  (msg->hdr.params.generic.type == LOG_MSG_TYPE_STD);
 }
 
+#if !defined(CONFIG_LOG_MINIMAL)
 /** @brief Returns number of arguments in standard log message.
  *
  * @param msg Standard log message.
@@ -463,6 +467,7 @@ static inline struct log_msg *log_msg_create_3(const char *str,
  *
  *  @return Pointer to allocated head of the message or NULL.
  */
+
 struct log_msg *log_msg_create_n(const char *str,
 				 log_arg_t *args,
 				 uint32_t nargs);
@@ -481,6 +486,7 @@ uint32_t log_msg_mem_get_used(void);
  * @brief Get max used blocks from the log mem pool
  */
 uint32_t log_msg_mem_get_max_used(void);
+#endif
 
 
 /**

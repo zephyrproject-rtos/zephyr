@@ -231,6 +231,7 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
 	*zdp = (struct fs_dir_t){ 0 };
 }
 
+#ifdef CONFIG_POSIX_FS
 /**
  * @brief Open or create file
  *
@@ -591,6 +592,7 @@ int fs_register(int type, const struct fs_file_system_t *fs);
  * @retval <0 negative errno code on error.
  */
 int fs_unregister(int type, const struct fs_file_system_t *fs);
+#endif
 
 /**
  * @}

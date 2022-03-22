@@ -141,7 +141,9 @@ extern void z_smp_init(void);
 extern void smp_timer_init(void);
 #endif
 
+#if defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR)
 extern void z_early_boot_rand_get(uint8_t *buf, size_t length);
+#endif
 
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 extern int z_stack_adjust_initialized;

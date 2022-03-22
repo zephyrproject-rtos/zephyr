@@ -90,13 +90,17 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts);
 #else
 __syscall int clock_gettime(clockid_t clock_id, struct timespec *ts);
 #endif /* CONFIG_ARCH_POSIX */
+#ifdef CONFIG_POSIX_CLOCK
 int clock_settime(clockid_t clock_id, const struct timespec *ts);
+#endif
 /* Timer APIs */
+#ifdef CONFIG_POSIX_CLOCK
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
 int timer_delete(timer_t timerid);
 int timer_gettime(timer_t timerid, struct itimerspec *its);
 int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue);
+#endif
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 
 #ifdef __cplusplus

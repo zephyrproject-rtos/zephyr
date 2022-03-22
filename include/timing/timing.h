@@ -10,6 +10,11 @@
 #include <sys/arch_interface.h>
 #include <timing/types.h>
 
+#ifdef CONFIG_TIMING_FUNCTIONS
+#if !defined(CONFIG_ARM) || \
+	(!defined(CONFIG_BOARD_HAS_TIMING_FUNCTIONS) && \
+	defined(CONFIG_TIMING_FUNCTIONS) && \
+	!defined(CONFIG_CORTEX_M_DWT))
 void soc_timing_init(void);
 void soc_timing_start(void);
 void soc_timing_stop(void);
@@ -31,6 +36,8 @@ uint64_t board_timing_freq_get(void);
 uint64_t board_timing_cycles_to_ns(uint64_t cycles);
 uint64_t board_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count);
 uint32_t board_timing_freq_get_mhz(void);
+#endif
+#endif
 
 
 /**

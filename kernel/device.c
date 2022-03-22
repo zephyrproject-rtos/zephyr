@@ -23,7 +23,9 @@ extern const struct init_entry __init_SMP_start[];
 extern const struct device __device_start[];
 extern const struct device __device_end[];
 
+#if 0
 extern uint32_t __device_init_status_start[];
+#endif
 
 /**
  * @brief Initialize state for all static devices.

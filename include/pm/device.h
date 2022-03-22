@@ -139,6 +139,7 @@ struct pm_device {
 typedef int (*pm_device_control_callback_t)(const struct device *dev,
 					    enum pm_device_action action);
 
+#ifdef CONFIG_PM_DEVICE
 /**
  * @brief Get name of device PM state
  *
@@ -179,7 +180,6 @@ int pm_device_state_set(const struct device *dev,
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state);
 
-#ifdef CONFIG_PM_DEVICE
 /**
  * @brief Indicate that the device is in the middle of a transaction
  *
@@ -269,6 +269,7 @@ __deprecated static inline int device_busy_check(const struct device *dev)
 /** Alias for legacy use of device_pm_control_nop */
 #define device_pm_control_nop __DEPRECATED_MACRO NULL
 
+#ifdef CONFIG_PM_DEVICE
 /**
  * @brief Enable a power management wakeup source
  *
@@ -304,6 +305,7 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
  * @retval false if the device is not wake up capable.
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
+#endif
 
 /** @} */
 

@@ -38,6 +38,7 @@ extern "C" {
  */
 extern int sys_clock_driver_init(const struct device *dev);
 
+#if 0
 /**
  * @brief Initialize system clock driver
  *
@@ -48,6 +49,7 @@ extern int sys_clock_driver_init(const struct device *dev);
  */
 extern int clock_device_ctrl(const struct device *dev,
 			     enum pm_device_state state);
+#endif
 
 /**
  * @brief Set system clock timeout

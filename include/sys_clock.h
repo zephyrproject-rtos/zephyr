@@ -115,10 +115,6 @@ typedef struct {
 
 /** @} */
 
-#ifdef CONFIG_TICKLESS_KERNEL
-extern void z_enable_sys_clock(void);
-#endif
-
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"

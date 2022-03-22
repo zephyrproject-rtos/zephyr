@@ -21,7 +21,9 @@ enum x86_memmap_source {
 	X86_MEMMAP_SOURCE_MANUAL
 };
 
+#ifdef CONFIG_X86_MEMMAP
 extern enum x86_memmap_source x86_memmap_source;
+#endif
 
 /*
  * For simplicity, we maintain a fixed-sized array of memory regions.
@@ -53,7 +55,9 @@ struct x86_memmap_entry {
 	enum x86_memmap_entry_type type;
 };
 
+#ifdef CONFIG_X86_MEMMAP
 extern struct x86_memmap_entry x86_memmap[];
+#endif
 
 /*
  * We keep track of kernel memory areas (text, data, etc.) in a table for
@@ -67,8 +71,10 @@ struct x86_memmap_exclusion {
 	void *end;		/* one byte past end of exclusion */
 };
 
+#ifdef CONFIG_X86_MEMMAP
 extern struct x86_memmap_exclusion x86_memmap_exclusions[];
 extern int x86_nr_memmap_exclusions;
+#endif
 
 #endif /* _ASMLANGUAGE */
 

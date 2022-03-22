@@ -34,9 +34,11 @@ struct multiboot_info {
 	uint8_t  fb_color_info[6];
 };
 
+#ifdef CONFIG_MULTIBOOT_INFO
 extern struct multiboot_info multiboot_info;
 
 extern void z_multiboot_init(struct multiboot_info *info_pa);
+#endif
 
 /*
  * the mmap_addr field points to a series of entries of the following form.

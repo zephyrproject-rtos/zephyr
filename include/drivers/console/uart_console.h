@@ -15,6 +15,7 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_CONSOLE_HANDLER
 /** @brief Register uart input processing
  *
  *  Input processing is started when string is typed in the console.
@@ -31,6 +32,7 @@ extern "C" {
  */
 void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
 			 uint8_t (*completion)(char *str, uint8_t len));
+#endif
 
 /*
  * Allows having debug hooks in the console driver for handling incoming

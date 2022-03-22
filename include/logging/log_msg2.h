@@ -403,6 +403,7 @@ do { \
 			   _domain_id, _source, _level, _data, _dlen, \
 			   Z_LOG_STR(_level, __VA_ARGS__))
 
+#ifdef CONFIG_LOG2
 /** @brief Finalize message.
  *
  * Finalization includes setting source, copying data and timestamp in the
@@ -429,6 +430,7 @@ void z_log_msg2_finalize(struct log_msg2 *msg, const void *source,
  *
  * @oaram data Data.
  */
+
 __syscall void z_log_msg2_static_create(const void *source,
 					const struct log_msg2_desc desc,
 					uint8_t *package, const void *data);
@@ -488,6 +490,7 @@ static inline void z_log_msg2_runtime_create(uint8_t domain_id,
 				   data, dlen, fmt, ap);
 	va_end(ap);
 }
+#endif
 
 static inline bool z_log_item_is_msg(const union log_msg2_generic *msg)
 {

@@ -669,6 +669,7 @@ static inline const char *extract_conversion(struct conversion *conv,
 	return sp;
 }
 
+#ifdef CONFIG_CBPRINTF_FP_SUPPORT
 #ifdef CONFIG_64BIT
 
 static void _ldiv5(uint64_t *v)
@@ -761,6 +762,7 @@ static char _get_digit(uint64_t *fr, int *digit_count)
 
 	return rval;
 }
+#endif /* CONFIG_CBPRINTF_FP_SUPPORT */
 
 static inline unsigned int conversion_radix(char specifier)
 {
