@@ -240,9 +240,9 @@ static int bme280_channel_get(const struct device *dev,
 		 * fractional.  Output value of 24674867 represents
 		 * 24674867/256 = 96386.2 Pa = 963.862 hPa
 		 */
-		val->val1 = (data->comp_press >> 8) / 1000U;
-		val->val2 = (data->comp_press >> 8) % 1000 * 1000U +
-			(((data->comp_press & 0xff) * 1000U) >> 8);
+		val->val1 = (data->comp_press >> 8) / 100U;
+		val->val2 = (data->comp_press >> 8) % 100 * 10000U +
+			(((data->comp_press & 0xff) * 10000U) >> 8);
 		break;
 	case SENSOR_CHAN_HUMIDITY:
 		/*
