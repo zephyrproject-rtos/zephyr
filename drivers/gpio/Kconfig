@@ -117,6 +117,8 @@ source "drivers/gpio/Kconfig.ifx_cat1"
 
 source "drivers/gpio/Kconfig.intel"
 
+source "drivers/gpio/Kconfig.intel_socfpga"
+
 source "drivers/gpio/Kconfig.xec"
 
 source "drivers/gpio/Kconfig.stellaris"
