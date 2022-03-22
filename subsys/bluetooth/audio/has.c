@@ -24,7 +24,7 @@ static struct bt_has has;
 static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	BT_DBG("conn %p attr %p offset %d", conn, attr, offset);
+	BT_DBG("conn %p attr %p offset %d", (void *)conn, attr, offset);
 
 	if (offset > sizeof(has.features)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
