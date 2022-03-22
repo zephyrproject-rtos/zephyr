@@ -463,17 +463,9 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Switch to PLL with MSI as clock source */
 	LL_PLL_ConfigSystemClock_MSI(&s_PLLInitStruct, &s_ClkInitStruct);
 
-	/* Disable other clocks */
-	LL_RCC_HSI_Disable();
-	LL_RCC_HSE_Disable();
-
 #elif STM32_PLL_SRC_HSI
 	/* Switch to PLL with HSI as clock source */
 	LL_PLL_ConfigSystemClock_HSI(&s_PLLInitStruct, &s_ClkInitStruct);
-
-	/* Disable other clocks */
-	LL_RCC_HSE_Disable();
-	LL_RCC_MSI_Disable();
 
 #elif STM32_PLL_SRC_HSE
 
@@ -503,10 +495,6 @@ int stm32_clock_control_init(const struct device *dev)
 #endif
 		&s_PLLInitStruct,
 		&s_ClkInitStruct);
-
-	/* Disable other clocks */
-	LL_RCC_HSI_Disable();
-	LL_RCC_MSI_Disable();
 
 #endif /* STM32_PLL_SRC_* */
 
@@ -594,11 +582,6 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_SetFlashLatency(new_flash_freq);
 	}
 
-	/* Disable other clocks */
-	LL_RCC_HSI_Disable();
-	LL_RCC_MSI_Disable();
-	LL_RCC_PLL_Disable();
-
 #elif STM32_SYSCLK_SRC_MSI
 
 	old_flash_freq = RCC_CALC_FLASH_FREQ(HAL_RCC_GetSysClockFreq(),
@@ -677,11 +660,6 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_SetFlashLatency(new_flash_freq);
 	}
 
-	/* Disable other clocks */
-	LL_RCC_HSE_Disable();
-	LL_RCC_HSI_Disable();
-	LL_RCC_PLL_Disable();
-
 #elif STM32_SYSCLK_SRC_HSI
 
 	stm32_clock_switch_to_hsi(hclk_prescaler);
@@ -710,10 +688,6 @@ int stm32_clock_control_init(const struct device *dev)
 	/* HSI used as SYSCLK, set latency to 0 */
 	LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
 
-	/* Disable other clocks */
-	LL_RCC_HSE_Disable();
-	LL_RCC_MSI_Disable();
-	LL_RCC_PLL_Disable();
 
 #endif /* STM32_SYSCLK_SRC_... */
 

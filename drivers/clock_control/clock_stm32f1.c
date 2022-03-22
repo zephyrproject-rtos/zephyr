@@ -98,11 +98,3 @@ void config_enable_default_clocks(void)
 {
 	/* Nothing for now */
 }
-
-/**
- * @brief Function kept for driver genericity
- */
-void LL_RCC_MSI_Disable(void)
-{
-	/* Do nothing */
-}

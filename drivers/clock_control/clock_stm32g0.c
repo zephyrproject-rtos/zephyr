@@ -45,11 +45,3 @@ void config_enable_default_clocks(void)
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 }
-
-/**
- * @brief Function kept for driver genericity
- */
-void LL_RCC_MSI_Disable(void)
-{
-	/* Do nothing */
-}

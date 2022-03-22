@@ -37,9 +37,6 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit);
 #endif /* STM32_SYSCLK_SRC_PLL */
 void config_enable_default_clocks(void);
 
-/* Section for functions not available in every Cube packages */
-void LL_RCC_MSI_Disable(void);
-
 /* function exported to the soc power.c */
 int stm32_clock_control_init(const struct device *dev);
 

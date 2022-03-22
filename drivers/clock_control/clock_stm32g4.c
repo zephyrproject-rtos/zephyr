@@ -67,11 +67,3 @@ void config_enable_default_clocks(void)
 	LL_PWR_DisableBkUpAccess();
 #endif
 }
-
-/**
- * @brief Function kept for driver genericity
- */
-void LL_RCC_MSI_Disable(void)
-{
-	/* Do nothing */
-}
