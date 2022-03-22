@@ -38,5 +38,6 @@ source "drivers/pinctrl/Kconfig.stm32"
 source "drivers/pinctrl/Kconfig.kinetis"
 source "drivers/pinctrl/Kconfig.xec"
 source "drivers/pinctrl/Kconfig.mcux"
+source "drivers/pinctrl/Kconfig.sifive"
 
 endif # PINCTRL
