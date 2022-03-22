@@ -558,25 +558,6 @@ int stm32_clock_control_init(const struct device *dev)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
 	}
 
-	/* Update SystemCoreClock variable */
-	LL_SetSystemCoreClock(new_hclk_freq);
-
-	/* Set APB1 & APB2 prescaler*/
-	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined (CONFIG_SOC_SERIES_STM32G0X)
-	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-#endif
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(STM32WL_DUAL_CORE)
-	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
-#endif
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	LL_RCC_SetAHB4Prescaler(s_ClkInitStruct.AHB4CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-#ifdef CONFIG_SOC_SERIES_STM32WLX
-	LL_RCC_SetAHB3Prescaler(s_ClkInitStruct.AHB3CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32WLX */
-
 	/* If freq not increased, set flash latency after all clock setting */
 	if (new_flash_freq <= old_flash_freq) {
 		LL_SetFlashLatency(new_flash_freq);
@@ -640,21 +621,6 @@ int stm32_clock_control_init(const struct device *dev)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
 	}
 
-	/* Update SystemCoreClock variable */
-	LL_SetSystemCoreClock(new_hclk_freq);
-
-	/* Set APB1 & APB2 prescaler*/
-	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(STM32WL_DUAL_CORE)
-	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
-#endif
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	LL_RCC_SetAHB4Prescaler(s_ClkInitStruct.AHB4CLKDivider);
-#endif
-#ifdef CONFIG_SOC_SERIES_STM32WLX
-	LL_RCC_SetAHB3Prescaler(s_ClkInitStruct.AHB3CLKDivider);
-#endif
 	/* If freq not increased, set flash latency after all clock setting */
 	if (new_flash_freq <= old_flash_freq) {
 		LL_SetFlashLatency(new_flash_freq);
@@ -664,16 +630,21 @@ int stm32_clock_control_init(const struct device *dev)
 
 	stm32_clock_switch_to_hsi(hclk_prescaler);
 
-	/* Update SystemCoreClock variable */
-	LL_SetSystemCoreClock(__LL_RCC_CALC_HCLK_FREQ(HSI_VALUE,
-						      hclk_prescaler));
+	/* Set flash latency */
+	/* HSI used as SYSCLK, set latency to 0 */
+	LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
+
+
+#endif /* STM32_SYSCLK_SRC_... */
+
+	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
 #if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
+#endif
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(STM32WL_DUAL_CORE)
 	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
 #endif
@@ -683,13 +654,6 @@ int stm32_clock_control_init(const struct device *dev)
 #ifdef CONFIG_SOC_SERIES_STM32WLX
 	LL_RCC_SetAHB3Prescaler(s_ClkInitStruct.AHB3CLKDivider);
 #endif /* CONFIG_SOC_SERIES_STM32WLX */
-
-	/* Set flash latency */
-	/* HSI used as SYSCLK, set latency to 0 */
-	LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
-
-
-#endif /* STM32_SYSCLK_SRC_... */
 
 	/* configure MCO1/MCO2 based on Kconfig */
 	stm32_clock_control_mco_init();
