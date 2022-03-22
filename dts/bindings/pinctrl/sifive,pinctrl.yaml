@@ -1,0 +1,46 @@
+# Copyright (c) 2022 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFive FE310 IO Function (iof) binding covers the IOF_EN/IOF_SEL registers
+  that are a subset of the GPIO controller. You can use this node to set the
+  value of IOF_EN/IOF_SEL registers to control pin settings.
+
+  Device pin configuration should be placed in the child nodes of this node.
+  Populate the 'pinmux' field with a pair consisting of a pin number and its IO
+  function. The available IO functions are:
+    - SIFIVE_PINMUX_IOF0
+    - SIFIVE_PINMUX_IOF1
+
+  For example, setting pins 16 and 17 both to IOF0 would look like this:
+
+    #include <dt-bindings/pinctrl/sifive-pinctrl.h>
+
+    &pinctrl {
+      uart0_rx_default: uart0_rx_default {
+        pinmux = <16 SIFIVE_PINMUX_IOF0>;
+      };
+      uart0_tx_default: uart0_tx_default {
+        pinmux = <17 SIFIVE_PINMUX_IOF0>;
+      };
+    };
+
+compatible: "sifive,pinctrl"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+child-binding:
+  description: |
+    This binding gives a base representation of the SiFive FE310 pins
+    configuration.
+
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        SiFive FE310 pin's configuration (pin, IO function).
