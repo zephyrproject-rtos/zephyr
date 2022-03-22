@@ -61,7 +61,6 @@ static int stm32_temp_sample_fetch(const struct device *dev, enum sensor_channel
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	rc = adc_read(data->adc, sp);
-	sp->calibrate = false;
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
@@ -135,7 +134,6 @@ static int stm32_temp_init(const struct device *dev)
 		.buffer = &data->sample_buffer,
 		.buffer_size = sizeof(data->sample_buffer),
 		.resolution = 12,
-		.calibrate = true,
 	};
 
 	return 0;
