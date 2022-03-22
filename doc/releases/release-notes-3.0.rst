@@ -652,8 +652,9 @@ Networking
   * Added a parameter to forcefully close the LwM2M session to
     :c:func:`lwm2m_rd_client_stop` function.
   * Replaced custom ``float32_value_t`` type with double.
-  * Added :kconfig:`LWM2M_FIRMWARE_PORT_NONSECURE`/:kconfig:`LWM2M_FIRMWARE_PORT_SECURE`
-    options, which allow to specify a custom port or firmware update.
+  * Added :kconfig:option:`LWM2M_FIRMWARE_PORT_NONSECURE`/
+    :kconfig:option:`LWM2M_FIRMWARE_PORT_SECURE` options, which allow to
+    specify a custom port or firmware update.
   * Added :c:func:`lwm2m_update_device_service_period` API function.
   * Added observe callback for observe and notification events.
   * Added support for multiple LwM2M Firmware Update object instances.
