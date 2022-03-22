@@ -318,6 +318,14 @@ properties related to them.
 
 .. doxygengroup:: devicetree-pwms
 
+Reset Controller
+================
+
+These conveniences may be used for nodes which describe reset controllers and
+properties related to them.
+
+.. doxygengroup:: devicetree-reset-controller
+
 SPI
 ===
 
