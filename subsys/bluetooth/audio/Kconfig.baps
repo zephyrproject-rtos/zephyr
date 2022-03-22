@@ -32,6 +32,7 @@ config BT_AUDIO_UNICAST_CLIENT
 	select BT_CENTRAL
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
+	select BT_GATT_AUTO_UPDATE_MTU
 	help
 	  This option enables support for Bluetooth Unicast Audio Client
 	  using Isochronous channels.
