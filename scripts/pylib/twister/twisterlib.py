@@ -582,7 +582,8 @@ class BinaryHandler(Handler):
             command = ["valgrind", "--error-exitcode=2",
                        "--leak-check=full",
                        "--suppressions=" + ZEPHYR_BASE + "/scripts/valgrind.supp",
-                       "--log-file=" + self.build_dir + "/valgrind.log"
+                       "--log-file=" + self.build_dir + "/valgrind.log",
+                       "--track-origins=yes",
                        ] + command
             run_valgrind = True
 
