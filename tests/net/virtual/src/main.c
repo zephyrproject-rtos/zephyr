@@ -368,17 +368,17 @@ static void test_virtual_setup(void)
 
 	zassert_equal(ud.virtual_if_count, ARRAY_SIZE(virtual_interfaces),
 		      "Invalid number of virtual interfaces, "
-		      "was %d should be %d",
+		      "was %d should be %zu",
 		      ud.virtual_if_count, ARRAY_SIZE(virtual_interfaces));
 
 	zassert_true(ud.eth_if_count <= ARRAY_SIZE(eth_interfaces),
 		      "Invalid number of eth interfaces, "
-		      "was %d should be %d",
+		      "was %d should be %zu",
 		      ud.eth_if_count, ARRAY_SIZE(eth_interfaces));
 
 	zassert_equal(ud.dummy_if_count, ARRAY_SIZE(dummy_interfaces),
 		      "Invalid number of dummy interfaces, "
-		      "was %d should be %d",
+		      "was %d should be %zu",
 		      ud.dummy_if_count, ARRAY_SIZE(dummy_interfaces));
 }
 
