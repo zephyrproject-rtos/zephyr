@@ -261,10 +261,11 @@ static void isr_rx(void *param)
 	LL_ASSERT(node_rx);
 
 	radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
+#endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
 	/* Setup next Rx */
-	radio_switch_complete_and_rx(test_phy);
-#endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
+	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_switch_complete_and_b2b_rx(test_phy, test_phy_flags, test_phy, test_phy_flags);
 
 	/* Count Rx-ed packets */
 	if (crc_ok) {
@@ -517,7 +518,7 @@ static uint8_t init(uint8_t chan, uint8_t phy, int8_t tx_power,
 	/* Setup Radio in Tx/Rx */
 	/* NOTE: No whitening in test mode. */
 	radio_phy_set(test_phy, test_phy_flags);
-	radio_tmr_tifs_set(150);
+	radio_tmr_tifs_set(EVENT_IFS_US);
 
 	ret = tx_power_set(tx_power);
 
@@ -695,7 +696,7 @@ uint8_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx, uint8_t expected_
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
 	radio_pkt_rx_set(radio_pkt_scratch_get());
-	radio_switch_complete_and_rx(test_phy);
+	radio_switch_complete_and_b2b_rx(test_phy, test_phy_flags, test_phy, test_phy_flags);
 	radio_tmr_start(0, cntr_cnt_get() + CNTR_MIN_DELTA, 0);
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
