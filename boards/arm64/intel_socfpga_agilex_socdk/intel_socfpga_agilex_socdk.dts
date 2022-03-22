@@ -23,6 +23,14 @@
 
 };
 
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
