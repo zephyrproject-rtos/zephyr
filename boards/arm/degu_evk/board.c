@@ -15,11 +15,6 @@ static int board_degu_evk_init(const struct device *dev)
 		device_get_binding(DT_LABEL(DT_NODELABEL(gpio1)));
 
 	/*
-	 * We must enable GPIO1_2 to use Secure Element.
-	 */
-	gpio_pin_configure(gpio1, 2, GPIO_OUTPUT_HIGH);
-
-	/*
 	 * We must enable GPIO1_6 to read Vin voltage.
 	 */
 	gpio_pin_configure(gpio1, 6, GPIO_OUTPUT_HIGH);
