@@ -2250,6 +2250,80 @@ static void test_string_token(void)
 	}
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+static void test_reset(void)
+{
+	/* DT_RESET_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_RESET_CTLR_BY_IDX(TEST_TEMP, 1),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_RESET_CTLR */
+	zassert_true(DT_SAME_NODE(DT_RESET_CTLR(TEST_TEMP),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_RESET_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_RESET_CTLR_BY_NAME(TEST_TEMP, reset_b),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_RESET_CELL_BY_IDX */
+	zassert_equal(DT_RESET_CELL_BY_IDX(TEST_TEMP, 1, id), 20, "");
+	zassert_equal(DT_RESET_CELL_BY_IDX(TEST_TEMP, 0, id), 10, "");
+
+	/* DT_RESET_CELL_BY_NAME */
+	zassert_equal(DT_RESET_CELL_BY_NAME(TEST_TEMP, reset_a, id), 10, "");
+	zassert_equal(DT_RESET_CELL_BY_NAME(TEST_TEMP, reset_b, id), 20, "");
+
+	/* DT_RESET_CELL */
+	zassert_equal(DT_RESET_CELL(TEST_TEMP, id), 10, "");
+
+	/* reg-width on reset */
+	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_TEMP, resets, 1, reg_width), 4, "");
+
+	/* DT_INST */
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
+
+	/* DT_INST_RESET_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_INST_RESET_CTLR_BY_IDX(0, 1),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_INST_RESET_CTLR */
+	zassert_true(DT_SAME_NODE(DT_INST_RESET_CTLR(0),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_INST_RESET_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_INST_RESET_CTLR_BY_NAME(0, reset_b),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_INST_RESET_CELL_BY_IDX */
+	zassert_equal(DT_INST_RESET_CELL_BY_IDX(0, 1, id), 20, "");
+	zassert_equal(DT_INST_RESET_CELL_BY_IDX(0, 0, id), 10, "");
+
+	/* DT_INST_RESET_CELL_BY_NAME */
+	zassert_equal(DT_INST_RESET_CELL_BY_NAME(0, reset_a, id), 10, "");
+	zassert_equal(DT_INST_RESET_CELL_BY_NAME(0, reset_b, id), 20, "");
+
+	/* DT_INST_RESET_CELL */
+	zassert_equal(DT_INST_RESET_CELL(0, id), 10, "");
+
+	/* reg-width on reset */
+	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, resets, 1, reg_width), 4, "");
+
+	/* DT_RESET_ID_BY_IDX */
+	zassert_equal(DT_RESET_ID_BY_IDX(TEST_TEMP, 0), 10, "");
+	zassert_equal(DT_RESET_ID_BY_IDX(TEST_TEMP, 1), 20, "");
+
+	/* DT_RESET_ID */
+	zassert_equal(DT_RESET_ID(TEST_TEMP), 10, "");
+
+	/* DT_INST_RESET_ID_BY_IDX */
+	zassert_equal(DT_INST_RESET_ID_BY_IDX(0, 0), 10, "");
+	zassert_equal(DT_INST_RESET_ID_BY_IDX(0, 1), 20, "");
+
+	/* DT_INST_RESET_ID */
+	zassert_equal(DT_INST_RESET_ID(0), 10, "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -2298,7 +2372,8 @@ void test_main(void)
 			 ztest_unit_test(test_same_node),
 			 ztest_unit_test(test_pinctrl),
 			 ztest_unit_test(test_mbox),
-			 ztest_unit_test(test_string_token)
+			 ztest_unit_test(test_string_token),
+			 ztest_unit_test(test_reset)
 		);
 	ztest_run_test_suite(devicetree_api);
 }
