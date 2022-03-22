@@ -73,6 +73,8 @@ source "drivers/gpio/Kconfig.it8xxx2"
 
 source "drivers/gpio/Kconfig.intel"
 
+source "drivers/gpio/Kconfig.intel_socfpga"
+
 source "drivers/gpio/Kconfig.xec"
 
 source "drivers/gpio/Kconfig.stellaris"
