@@ -226,17 +226,6 @@ static struct bt_bass_client_cb bass_cbs = {
 	.rem_src = bass_client_rem_src_cb,
 };
 
-static void mtu_cb(struct bt_conn *conn, uint8_t err,
-		   struct bt_gatt_exchange_params *params)
-{
-	if (err != 0) {
-		FAIL("Failed to exchange MTU (%u)\n", err);
-		return;
-	}
-
-	g_mtu_exchanged = true;
-}
-
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -256,6 +245,15 @@ static void connected(struct bt_conn *conn, uint8_t err)
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
+};
+
+static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	g_mtu_exchanged = true;
+}
+
+static struct bt_gatt_cb gatt_callbacks = {
+	.att_mtu_updated = att_mtu_updated,
 };
 
 static void sync_cb(struct bt_le_per_adv_sync *sync,
@@ -310,18 +308,6 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 
 static void test_exchange_mtu(void)
 {
-	static struct bt_gatt_exchange_params mtu_params =  {
-		.func = mtu_cb,
-	};
-	int err;
-
-	printk("Exchanging MTU\n");
-	err = bt_gatt_exchange_mtu(g_conn, &mtu_params);
-	if (err != 0) {
-		FAIL("Failed to exchange MTU %d\n", err);
-		return;
-	}
-
 	WAIT_FOR(g_mtu_exchanged);
 	printk("MTU exchanged\n");
 }
@@ -495,6 +481,7 @@ static void test_main(void)
 	}
 
 	bt_conn_cb_register(&conn_callbacks);
+	bt_gatt_cb_register(&gatt_callbacks);
 	bt_bass_client_register_cb(&bass_cbs);
 	bt_le_per_adv_sync_cb_register(&sync_callbacks);
 
