@@ -377,11 +377,9 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
 	uint32_t hclk_prescaler;
 	uint32_t flash_prescaler;
-#if STM32_SYSCLK_SRC_HSE || STM32_SYSCLK_SRC_MSI
 	uint32_t new_hclk_freq;
 	uint32_t old_flash_freq;
 	uint32_t new_flash_freq;
-#endif
 
 	ARG_UNUSED(dev);
 
@@ -402,6 +400,19 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
+
+	old_flash_freq = RCC_CALC_FLASH_FREQ(HAL_RCC_GetSysClockFreq(),
+					       GET_CURRENT_FLASH_PRESCALER());
+
+	new_hclk_freq = get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+				      STM32_CORE_PRESCALER);
+
+	new_flash_freq = RCC_CALC_FLASH_FREQ(new_hclk_freq, flash_prescaler);
+
+	/* If freq increases, set flash latency before any clock setting */
+	if (new_flash_freq > old_flash_freq) {
+		LL_SetFlashLatency(new_flash_freq);
+	}
 
 #if STM32_SYSCLK_SRC_PLL
 	LL_UTILS_PLLInitTypeDef s_PLLInitStruct;
@@ -500,36 +511,6 @@ int stm32_clock_control_init(const struct device *dev)
 
 #elif STM32_SYSCLK_SRC_HSE
 
-	old_flash_freq = RCC_CALC_FLASH_FREQ(HAL_RCC_GetSysClockFreq(),
-					       GET_CURRENT_FLASH_PRESCALER());
-
-	/* Calculate new SystemCoreClock variable based on HSE freq */
-	uint32_t hse_freq;
-	if (IS_ENABLED(STM32_HSE_DIV2)) {
-		hse_freq = CONFIG_CLOCK_STM32_HSE_CLOCK / 2;
-	} else {
-		hse_freq = CONFIG_CLOCK_STM32_HSE_CLOCK;
-	}
-	new_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(hse_freq, hclk_prescaler);
-
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
-	new_flash_freq = RCC_CALC_FLASH_FREQ(CONFIG_CLOCK_STM32_HSE_CLOCK,
-					       flash_prescaler);
-#else
-	new_flash_freq = new_hclk_freq;
-#endif
-
-#if defined(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
-	__ASSERT(new_hclk_freq == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-			 "Config mismatch HCLK frequency %u %u",
-			 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, new_hclk_freq);
-#endif
-
-	/* If freq increases, set flash latency before any clock setting */
-	if (new_flash_freq > old_flash_freq) {
-		LL_SetFlashLatency(new_flash_freq);
-	}
-
 	/* Enable HSE if not enabled */
 	if (LL_RCC_HSE_IsReady() != 1) {
 #ifdef CONFIG_SOC_SERIES_STM32WLX
@@ -558,37 +539,7 @@ int stm32_clock_control_init(const struct device *dev)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
 	}
 
-	/* If freq not increased, set flash latency after all clock setting */
-	if (new_flash_freq <= old_flash_freq) {
-		LL_SetFlashLatency(new_flash_freq);
-	}
-
 #elif STM32_SYSCLK_SRC_MSI
-
-	old_flash_freq = RCC_CALC_FLASH_FREQ(HAL_RCC_GetSysClockFreq(),
-					       GET_CURRENT_FLASH_PRESCALER());
-
-	new_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(
-				RCC_CALC_MSI_RUN_FREQ(),
-				hclk_prescaler);
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
-	new_flash_freq = RCC_CALC_FLASH_FREQ(
-				RCC_CALC_MSI_RUN_FREQ(),
-				flash_prescaler);
-#else
-	new_flash_freq = new_hclk_freq;
-#endif
-
-#if defined(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
-	__ASSERT(new_hclk_freq == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-			 "Config mismatch HCLK frequency %u %u",
-			 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, new_hclk_freq);
-#endif
-
-	/* If freq increases, set flash latency before any clock setting */
-	if (new_flash_freq > old_flash_freq) {
-		LL_SetFlashLatency(new_flash_freq);
-	}
 
 	/* Set MSI Range */
 #if defined(RCC_CR_MSIRGSEL)
@@ -621,21 +572,16 @@ int stm32_clock_control_init(const struct device *dev)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
 	}
 
-	/* If freq not increased, set flash latency after all clock setting */
-	if (new_flash_freq <= old_flash_freq) {
-		LL_SetFlashLatency(new_flash_freq);
-	}
-
 #elif STM32_SYSCLK_SRC_HSI
 
 	stm32_clock_switch_to_hsi(hclk_prescaler);
 
-	/* Set flash latency */
-	/* HSI used as SYSCLK, set latency to 0 */
-	LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
-
-
 #endif /* STM32_SYSCLK_SRC_... */
+
+	/* If freq not increased, set flash latency after all clock setting */
+	if (old_flash_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
+		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	}
 
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
