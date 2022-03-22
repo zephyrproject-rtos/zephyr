@@ -64,6 +64,14 @@
 		regulator-boot-on;
 	};
 
+	en-vin1-moni {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "en_vin1_moni";
+		regulator-name = "en_vin1_moni";
+		enable-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
