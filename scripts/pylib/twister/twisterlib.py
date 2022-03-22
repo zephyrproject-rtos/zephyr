@@ -95,6 +95,7 @@ class ExecutionCounter(object):
         self._passed = Value('i', 0)
         self._skipped_configs = Value('i', 0)
         self._skipped_runtime = Value('i', 0)
+        self._skipped_filter = Value('i', 0)
         self._skipped_cases = Value('i', 0)
         self._error = Value('i', 0)
         self._failed = Value('i', 0)
@@ -103,6 +104,21 @@ class ExecutionCounter(object):
 
 
         self.lock = Lock()
+
+
+    def summary(self):
+        logger.debug("--------------------------------")
+        logger.debug(f"Total Test suites: {self.total}")
+        logger.debug(f"Total Test cases: {self.cases}")
+        logger.debug(f"Skipped test cases: {self.skipped_cases}")
+        logger.debug(f"Completed Testsuites: {self.done}")
+        logger.debug(f"Passing Testsuites: {self.passed}")
+        logger.debug(f"Failing Testsuites: {self.failed}")
+        logger.debug(f"Skipped Testsuites: {self.skipped_configs}")
+        logger.debug(f"Skipped Testsuites (runtime): {self.skipped_runtime}")
+        logger.debug(f"Skipped Testsuites (filter): {self.skipped_filter}")
+        logger.debug(f"Errors: {self.error}")
+        logger.debug("--------------------------------")
 
     @property
     def cases(self):
@@ -163,6 +179,16 @@ class ExecutionCounter(object):
     def skipped_configs(self, value):
         with self._skipped_configs.get_lock():
             self._skipped_configs.value = value
+
+    @property
+    def skipped_filter(self):
+        with self._skipped_filter.get_lock():
+            return self._skipped_filter.value
+
+    @skipped_filter.setter
+    def skipped_filter(self, value):
+        with self._skipped_filter.get_lock():
+            self._skipped_filter.value = value
 
     @property
     def skipped_runtime(self):
@@ -2596,7 +2622,7 @@ class ProjectBuilder(FilterBuilder):
                 fin.write(data)
 
     def report_out(self, results):
-        total_to_do = results.total - results.skipped_configs
+        total_to_do = results.total
         total_tests_width = len(str(total_to_do))
         results.done += 1
         instance = self.instance
@@ -2620,8 +2646,14 @@ class ProjectBuilder(FilterBuilder):
                 self.log_info_file(self.inline_logs)
         elif instance.status == "skipped":
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
+            results.skipped_configs += 1
+            results.skipped_cases += len(instance.testcase.cases)
         elif instance.status == "passed":
             status = Fore.GREEN + "PASSED" + Fore.RESET
+            results.passed += 1
+            for res in instance.results.values():
+                if res == 'SKIP':
+                    results.skipped_cases += 1
         else:
             logger.debug(f"Unknown status = {instance.status}")
             status = Fore.YELLOW + "UNKNOWN" + Fore.RESET
@@ -2641,7 +2673,7 @@ class ProjectBuilder(FilterBuilder):
                     more_info = "build"
 
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
-                results.done, total_tests_width, total_to_do, instance.platform.name,
+                results.done + results.skipped_filter, total_tests_width, total_to_do , instance.platform.name,
                 instance.testcase.name, status, more_info))
 
             if instance.status in ["error", "failed", "timeout"]:
@@ -2649,17 +2681,16 @@ class ProjectBuilder(FilterBuilder):
         else:
             completed_perc = 0
             if total_to_do > 0:
-                completed_perc = int((float(results.done) / total_to_do) * 100)
+                completed_perc = int((float(results.done + results.skipped_filter) / total_to_do) * 100)
 
-            skipped = results.skipped_configs + results.skipped_runtime
             sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                 Fore.GREEN,
-                results.done,
+                results.done + results.skipped_filter,
                 total_to_do,
                 Fore.RESET,
                 completed_perc,
-                Fore.YELLOW if skipped > 0 else Fore.RESET,
-                skipped,
+                Fore.YELLOW if results.skipped_configs > 0 else Fore.RESET,
+                results.skipped_filter + results.skipped_runtime,
                 Fore.RESET,
                 Fore.RED if results.failed > 0 else Fore.RESET,
                 results.failed,
@@ -2817,6 +2848,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.warnings_as_errors = True
         self.overflow_as_errors = False
         self.quarantine_verify = False
+        self.retry_build_errors = False
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -2873,20 +2905,13 @@ class TestSuite(DisablePyTestCollectionMixin):
         sys.stdout.write(what + "\n")
         sys.stdout.flush()
 
-    def update_counting(self, results=None, initial=False):
-        results.skipped_configs = 0
-        results.skipped_cases = 0
+    def update_counting(self, results=None):
         for instance in self.instances.values():
-            if initial:
-                results.cases += len(instance.testcase.cases)
+            results.cases += len(instance.testcase.cases)
             if instance.status == 'skipped':
+                results.skipped_filter += 1
                 results.skipped_configs += 1
                 results.skipped_cases += len(instance.testcase.cases)
-            elif instance.status == "passed":
-                results.passed += 1
-                for res in instance.results.values():
-                    if res == 'SKIP':
-                        results.skipped_cases += 1
 
     def compare_metrics(self, filename):
         # name, datatype, lower results better
@@ -2979,7 +3004,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             "{}{} of {}{} test configurations passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
                 Fore.RED if failed else Fore.GREEN,
                 results.passed,
-                results.total - results.skipped_configs,
+                results.total,
                 Fore.RESET,
                 pass_rate,
                 Fore.RED if results.failed else Fore.RESET,
@@ -3452,8 +3477,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                 instances = list(filter(lambda item:  item.platform.name in tc.integration_platforms, instance_list))
                 self.add_instances(instances)
 
-
-
             elif emulation_platforms:
                 self.add_instances(instance_list)
                 for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
@@ -3480,6 +3503,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 # Such configuration has to be removed from discards to make sure it won't get skipped
                 remove_from_discards.append(instance)
             else:
+
                 instance.status = "skipped"
                 instance.fill_results_by_status()
 
@@ -3496,21 +3520,22 @@ class TestSuite(DisablePyTestCollectionMixin):
         for instance in instance_list:
             self.instances[instance.name] = instance
 
-    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False):
+    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
         for instance in self.instances.values():
             if build_only:
                 instance.run = False
 
-            if instance.status not in ['passed', 'skipped', 'error']:
+            no_retry_statuses = ['passed', 'skipped']
+            if not retry_build_errors:
+                no_retry_statuses.append("error")
+
+            if instance.status not in no_retry_statuses:
                 logger.debug(f"adding {instance.name}")
                 instance.status = None
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})
                 else:
                     pipeline.put({"op": "cmake", "test": instance})
-            # If the instance got 'error' status before, proceed to the report stage
-            if instance.status == "error":
-                pipeline.put({"op": "report", "test": instance})
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         while True:
@@ -3545,7 +3570,8 @@ class TestSuite(DisablePyTestCollectionMixin):
     def execute(self, pipeline, done, results):
         lock = Lock()
         logger.info("Adding tasks to the queue...")
-        self.add_tasks_to_queue(pipeline, self.build_only, self.test_only)
+        self.add_tasks_to_queue(pipeline, self.build_only, self.test_only,
+                                retry_build_errors=self.retry_build_errors)
         logger.info("Added initial list of jobs to queue")
 
         processes = []

@@ -686,6 +686,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="Retry failing tests after specified period of time.")
 
     parser.add_argument(
+        "--retry-build-errors", action="store_true",
+        help="Retry build errors as well.")
+
+    parser.add_argument(
         "-S", "--enable-slow", action="store_true",
         help="Execute time-consuming test cases that have been marked "
              "as 'slow' in testcase.yaml. Normally these are only built.")
@@ -918,6 +922,7 @@ def main():
     suite.cmake_only = options.cmake_only
     suite.cleanup = options.runtime_artifact_cleanup
     suite.test_only = options.test_only
+    suite.retry_build_errors = options.retry_build_errors
     suite.enable_slow = options.enable_slow
     suite.device_testing = options.device_testing
     suite.fixtures = options.fixture
@@ -1271,7 +1276,7 @@ def main():
     pipeline = manager.LifoQueue()
     done_queue = manager.LifoQueue()
 
-    suite.update_counting(results, initial=True)
+    suite.update_counting(results)
     suite.start_time = start_time
 
     while True:
@@ -1281,7 +1286,11 @@ def main():
             logger.info("%d Iteration:" % (completed))
             time.sleep(options.retry_interval)  # waiting for the system to settle down
             results.done = results.total - results.failed
-            results.failed = results.error
+            if options.retry_build_errors:
+                results.failed = 0
+                results.error = 0
+            else:
+                results.failed = results.error
 
         results = suite.execute(pipeline, done_queue, results)
 
@@ -1301,8 +1310,9 @@ def main():
         retries = retries - 1
         # There are cases where failed == error (only build failures),
         # we do not try build failures.
-        if retries == 0 or results.failed == results.error:
+        if retries == 0 or (results.failed == results.error and not options.retry_build_errors):
             break
+
 
     # figure out which report to use for size comparison
     if options.compare_report:
@@ -1319,7 +1329,8 @@ def main():
                             options.last_metrics)
 
     suite.duration = time.time() - start_time
-    suite.update_counting(results)
+
+    results.summary()
 
     suite.summary(results, options.disable_unrecognized_section_test)
 
@@ -1367,9 +1378,6 @@ def main():
                        options.json_report,
                        not options.no_skipped_report
                        )
-
-    # FIXME: remove later
-    #logger.info(f"failed: {results.failed}, cases: {results.cases}, skipped configurations: {results.skipped_configs}, skipped_cases: {results.skipped_cases}, skipped(runtime): {results.skipped_runtime}, passed: {results.passed}, total: {results.total}, done: {results.done}")
 
     logger.info("Run completed")
     if results.failed or (suite.warnings and options.warnings_as_errors):
