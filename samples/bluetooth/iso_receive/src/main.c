@@ -8,6 +8,7 @@
 #include <devicetree.h>
 #include <drivers/gpio.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 #include <bluetooth/iso.h>
 #include <sys/byteorder.h>
 
@@ -19,7 +20,6 @@
 					   BT_GAP_SCAN_FAST_INTERVAL, \
 					   BT_GAP_SCAN_FAST_WINDOW)
 
-#define BT_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
 #define PA_RETRY_COUNT 6
 
 static bool         per_adv_found;
@@ -112,13 +112,13 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
 	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
-	       info->interval, BT_INTERVAL_TO_MS(info->interval), info->sid);
+	       info->interval, BT_CONN_INTERVAL_TO_MS(info->interval), info->sid);
 
 	if (!per_adv_found && info->interval) {
 		per_adv_found = true;
 
 		per_sid = info->sid;
-		per_interval_ms = BT_INTERVAL_TO_MS(info->interval);
+		per_interval_ms = BT_CONN_INTERVAL_TO_MS(info->interval);
 		bt_addr_le_copy(&per_addr, info->addr);
 
 		k_sem_give(&sem_per_adv);
