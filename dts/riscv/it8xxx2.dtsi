@@ -146,9 +146,9 @@
 					 NO_FUNC NO_FUNC 0xf016f1 0xf016f1>;
 			func3_en_mask = <0       0       0x02     0x02
 					 0       0       0x10     0x10    >;
-			func4_gcr =     <NO_FUNC NO_FUNC 0xf016f1 0xf016f1
+			func4_gcr =     <NO_FUNC NO_FUNC 0xf02046 0xf02046
 					 NO_FUNC NO_FUNC NO_FUNC  NO_FUNC >;
-			func4_en_mask = <0       0       0x20     0x20
+			func4_en_mask = <0       0       0x40     0x40
 					 0       0       0        0       >;
 			#pinctrl-cells = <2>;
 		};
