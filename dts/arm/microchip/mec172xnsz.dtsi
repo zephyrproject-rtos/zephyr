@@ -1054,7 +1054,7 @@
 				compatible = "microchip,xec-espi-host-dev";
 				reg = <0x400f8000 0x400>;
 				interrupts = <62 0>;
-				girqs = < MCHP_XEC_ECIA(15, 22, 7, 58) >;
+				girqs = < MCHP_XEC_ECIA(15, 22, 7, 62) >;
 				pcrs = <2 25>;
 				ldn = <32>;
 				label = "P80BD_0";
