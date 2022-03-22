@@ -343,9 +343,11 @@ static void adv_sent(struct bt_le_ext_adv *instance,
 	BT_DBG("Advertising stopped after %u ms", (uint32_t)duration);
 
 	atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
+	atomic_clear_bit(adv->flags, ADV_FLAG_PROXY);
 
-	if (!atomic_test_and_clear_bit(adv->flags, ADV_FLAG_PROXY)) {
+	if (adv->buf) {
 		net_buf_unref(adv->buf);
+		adv->buf = NULL;
 	}
 
 	(void)schedule_send(adv);
