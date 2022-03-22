@@ -1,0 +1,13 @@
+&pinctrl {
+	led0_default: led0_default {
+		group1 {
+			pinmux = <PIO0_P25>;
+		};
+	};
+};
+
+&pio0 {
+	status = "okay";
+	pinctrl-0 = <&led0_default>;
+	pinctrl-names = "default";
+};

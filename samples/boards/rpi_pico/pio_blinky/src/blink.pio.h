@@ -43,7 +43,6 @@ static inline pio_sm_config blink_program_get_default_config(uint offset) {
 
 // this is a raw helper function for use by the user which sets up the GPIO output, and configures the SM to output on a particular pin
 void blink_program_init(PIO pio, uint sm, uint offset, uint pin) {
-   pio_gpio_init(pio, pin);
    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
    pio_sm_config c = blink_program_get_default_config(offset);
    sm_config_set_set_pins(&c, pin, 1);

@@ -2,3 +2,4 @@
 
 add_subdirectory_ifdef(CONFIG_FT800 ft8xx)
 add_subdirectory_ifdef(CONFIG_GROVE_LCD_RGB grove_lcd_rgb)
+add_subdirectory_ifdef(CONFIG_RPI_PICO_PIO pico_pio)
