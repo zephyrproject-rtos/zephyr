@@ -578,7 +578,7 @@ class BinaryHandler(Handler):
             command = [self.binary]
 
         run_valgrind = False
-        if self.valgrind and shutil.which("valgrind"):
+        if self.valgrind:
             command = ["valgrind", "--error-exitcode=2",
                        "--leak-check=full",
                        "--suppressions=" + ZEPHYR_BASE + "/scripts/valgrind.supp",
