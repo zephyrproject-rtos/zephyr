@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config BT_HAS
+menuconfig BT_HAS
 	bool "Hearing Access Service support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
