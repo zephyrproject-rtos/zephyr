@@ -882,6 +882,10 @@ def main():
         logger.error("west-flash requires device-testing to be enabled")
         sys.exit(1)
 
+    if options.enable_valgrind and not shutil.which("valgrind"):
+        logger.error("valgrind enabled but valgrind executable not found")
+        sys.exit(1)
+
     if options.coverage:
         options.enable_coverage = True
 
