@@ -159,6 +159,9 @@ void spi_sifive_xfer(const struct device *dev, const bool hw_cs_control)
 int spi_sifive_init(const struct device *dev)
 {
 	int err;
+#ifdef CONFIG_PINCTRL
+	struct spi_sifive_cfg *cfg = (struct spi_sifive_cfg *)dev->config;
+#endif
 	/* Disable SPI Flash mode */
 	sys_clear_bit(SPI_REG(dev, REG_FCTRL), SF_FCTRL_EN);
 
@@ -166,6 +169,13 @@ int spi_sifive_init(const struct device *dev)
 	if (err < 0) {
 		return err;
 	}
+
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+#endif
 
 	/* Make sure the context is unlocked */
 	spi_context_unlock_unconditionally(&SPI_DATA(dev)->ctx);
@@ -252,6 +262,7 @@ static struct spi_driver_api spi_sifive_api = {
 };
 
 #define SPI_INIT(n)	\
+	PINCTRL_DT_INST_DEFINE(n); \
 	static struct spi_sifive_data spi_sifive_data_##n = { \
 		SPI_CONTEXT_INIT_LOCK(spi_sifive_data_##n, ctx), \
 		SPI_CONTEXT_INIT_SYNC(spi_sifive_data_##n, ctx), \
@@ -260,6 +271,7 @@ static struct spi_driver_api spi_sifive_api = {
 	static struct spi_sifive_cfg spi_sifive_cfg_##n = { \
 		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \
 		.f_sys = DT_INST_PROP(n, clock_frequency), \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 	}; \
 	DEVICE_DT_INST_DEFINE(n, \
 			spi_sifive_init, \
