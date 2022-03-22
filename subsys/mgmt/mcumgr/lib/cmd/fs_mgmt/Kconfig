@@ -136,4 +136,14 @@ config FS_MGMT_PATH_SIZE
 	  of this size gets allocated on the stack during handling of file upload
 	  and download commands.
 
+config FS_MGMT_FILE_ACCESS_HOOK
+	bool "File read/write access hook"
+	help
+	  Allows applications to control file read and write access by
+	  registering for a callback which is then triggered whenever a file
+	  read or write attempt is made. This also, optionally, allows
+	  re-writing or changing of supplied file paths.
+	  Note that this will be called multiple times for each file read and
+	  write due to mcumgr's method of stateless operation.
+
 endif
