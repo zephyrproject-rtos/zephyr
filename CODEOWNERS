@@ -300,7 +300,8 @@
 /drivers/flash/*esp32*                    @sylvioalves
 /drivers/fpga/                            @tgorochowik @kgugala
 /drivers/gpio/                            @mnkp
-/drivers/gpio/*b91*                       @andy-liu-telink
+/drivers/gpio/*b91*                       @yurvyn @andy-liu-telink
+/drivers/gpio/*intel_socfpga*             @alifzakuan
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*nct38xx*                   @MulinChao @ChiHuaL
 /drivers/gpio/*stm32*                     @erwango
@@ -547,6 +548,7 @@
 /dts/sparc/                               @julius-barendt
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter @henrikbrixandersen
+/dts/bindings/gpio/*intel,socfpga-gpio*.yaml @alifzakuan
 /dts/bindings/i2c/zephyr*i2c-emul*.yaml   @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/modem/*hl7800.yaml          @rerickson1
