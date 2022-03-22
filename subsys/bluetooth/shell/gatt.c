@@ -329,7 +329,7 @@ static int cmd_mread(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if ((argc - 1) >  ARRAY_SIZE(h)) {
-		shell_print(sh, "Enter max %lu handle items to read",
+		shell_print(sh, "Enter max %zu handle items to read",
 			    ARRAY_SIZE(h));
 		return -EINVAL;
 	}

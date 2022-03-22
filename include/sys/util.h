@@ -106,7 +106,7 @@ extern "C" {
  * In C, passing a pointer as @p array causes a compile error.
  */
 #define ARRAY_SIZE(array) \
-	((long) (IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
+	((size_t) (IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
 
 #endif /* __cplusplus */
 

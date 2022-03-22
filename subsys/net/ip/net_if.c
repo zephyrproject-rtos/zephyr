@@ -2795,7 +2795,7 @@ static void iface_ipv6_init(int if_count)
 	k_work_init_delayable(&prefix_lifetime_timer, prefix_lifetime_timeout);
 
 	if (if_count > ARRAY_SIZE(ipv6_addresses)) {
-		NET_WARN("You have %lu IPv6 net_if addresses but %d "
+		NET_WARN("You have %zu IPv6 net_if addresses but %d "
 			 "network interfaces", ARRAY_SIZE(ipv6_addresses),
 			 if_count);
 		NET_WARN("Consider increasing CONFIG_NET_IF_MAX_IPV6_COUNT "
@@ -3791,7 +3791,7 @@ static void iface_ipv4_init(int if_count)
 	int i;
 
 	if (if_count > ARRAY_SIZE(ipv4_addresses)) {
-		NET_WARN("You have %lu IPv4 net_if addresses but %d "
+		NET_WARN("You have %zu IPv4 net_if addresses but %d "
 			 "network interfaces", ARRAY_SIZE(ipv4_addresses),
 			 if_count);
 		NET_WARN("Consider increasing CONFIG_NET_IF_MAX_IPV4_COUNT "

@@ -133,7 +133,7 @@ static int test_task(uint32_t chan_id, uint32_t blen, uint32_t block_count)
 	};
 
 	if (block_count > ARRAY_SIZE(transfer_blocks)) {
-		printk("block_count %u is greater than %ld\n", block_count,
+		printk("block_count %u is greater than %zu\n", block_count,
 			ARRAY_SIZE(transfer_blocks));
 		return -1;
 	}
