@@ -267,6 +267,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.4
      - 2.4
 
+   * - :ref:`reset_api`
+     - Experimental
+     - 3.1
+     - 3.1
+
    * - :ref:`spi_api`
      - Stable
      - 1.0
