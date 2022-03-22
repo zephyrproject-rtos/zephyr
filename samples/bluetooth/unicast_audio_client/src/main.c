@@ -31,7 +31,6 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1,
 static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
 
 static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
 static K_SEM_DEFINE(sem_sink_discovered, 0, 1);
 static K_SEM_DEFINE(sem_stream_configured, 0, 1);
 static K_SEM_DEFINE(sem_stream_qos, 0, 1);
@@ -334,17 +333,6 @@ static void discover_sink_cb(struct bt_conn *conn,
 	k_sem_give(&sem_sink_discovered);
 }
 
-static void gatt_mtu_cb(struct bt_conn *conn, uint8_t err,
-		   struct bt_gatt_exchange_params *params)
-{
-	if (err != 0) {
-		printk("Failed to exchange MTU (%u)\n", err);
-		return;
-	}
-
-	k_sem_give(&sem_mtu_exchanged);
-}
-
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -418,28 +406,6 @@ static int scan_and_connect(void)
 	err = k_sem_take(&sem_connected, K_FOREVER);
 	if (err != 0) {
 		printk("failed to take sem_connected (err %d)\n", err);
-		return err;
-	}
-
-	return 0;
-}
-
-static int exchange_mtu(void)
-{
-	struct bt_gatt_exchange_params mtu_params = {
-		.func = gatt_mtu_cb
-	};
-	int err;
-
-	err = bt_gatt_exchange_mtu(default_conn, &mtu_params);
-	if (err != 0) {
-		printk("Failed to exchange MTU %d\n", err);
-		return err;
-	}
-
-	err = k_sem_take(&sem_mtu_exchanged, K_FOREVER);
-	if (err != 0) {
-		printk("failed to take sem_mtu_exchanged (err %d)\n", err);
 		return err;
 	}
 
@@ -578,13 +544,6 @@ void main(void)
 		return;
 	}
 	printk("Connected\n");
-
-	printk("Initiating MTU exchange\n");
-	err = exchange_mtu();
-	if (err != 0) {
-		return;
-	}
-	printk("MTU exchanged\n");
 
 	printk("Discovering sink\n");
 	err = discover_sink();
