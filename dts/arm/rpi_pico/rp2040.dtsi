@@ -51,6 +51,15 @@
 			#clock-cells = <0>;
 		};
 
+		reset: reset-controller@4000c000 {
+			compatible = "raspberrypi,pico-reset";
+			reg = <0x4000c000 DT_SIZE_K(4)>;
+			reg-width = <4>;
+			active-low = <0>;
+			#reset-cells = <1>;
+			label = "RESET";
+		};
+
 		pinctrl: pin-controller@40014000 {
 			compatible = "raspberrypi,pico-pinctrl";
 			reg = <0x40014000 DT_SIZE_K(4)>;
