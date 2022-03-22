@@ -98,6 +98,13 @@ in plain text even if two-factor authentication is disabled.)
 If you don't want to store any credentials on the file system, you can store
 them in memory temporarily using `git-credential-cache`_ instead.
 
+If you setup fetching via SSH, you can use Git URL rewrite feature. The following
+command instructs Git to use SSH URLs for GitHub instead of HTTPS ones:
+
+.. code-block:: shell
+
+   git config --global url."git@github.com:".insteadOf "https://github.com/"
+
 .. _git-credential-store:
    https://git-scm.com/docs/git-credential-store#_examples
 .. _git-credential-cache:
