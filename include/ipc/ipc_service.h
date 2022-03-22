@@ -56,6 +56,27 @@ extern "C" {
  *            The API doesn't mandate a way for the backend to create the
  *            instances but itis strongly recommended to use the DT to retrieve
  *            the configuration parameters for the instance.
+ *
+ * Common API usage from the application prospective:
+ *
+ *   HOST                                         REMOTE
+ *   -----------------------------------------------------------------------------
+ *   # Open the (same) instance on host and remote
+ *   ipc_service_open()                           ipc_service_open()
+ *
+ *   # Register the endpoints
+ *   ipc_service_register_endpoint()              ipc_service_register_endpoint()
+ *   .bound()                                     .bound()
+ *
+ *   # After the .bound() callbacks are received the communication channel
+ *   # is ready to be used
+ *
+ *   # Start sending and receiving data
+ *   ipc_service_send()
+ *                                                .receive()
+ *                                                ipc_service_send()
+ *   .receive()
+ *
  */
 
 /** @brief Event callback structure.
@@ -66,22 +87,29 @@ extern "C" {
 struct ipc_service_cb {
 	/** @brief Bind was successful.
 	 *
-	 *  @param priv Private user data.
+	 *  This callback is called when the endpoint binding is successful.
+	 *
+	 *  @param[in] priv Private user data.
 	 */
 	void (*bound)(void *priv);
 
 	/** @brief New packet arrived.
 	 *
-	 *  @param data Pointer to data buffer.
-	 *  @param len Length of @a data.
-	 *  @param priv Private user data.
+	 *  This callback is called when new data is received.
+	 *
+	 *  @note The data buffer is to be considered released and available
+	 *        again only when this callback returs.
+	 *
+	 *  @param[in] data Pointer to data buffer.
+	 *  @param[in] len Length of @a data.
+	 *  @param[in] priv Private user data.
 	 */
 	void (*received)(const void *data, size_t len, void *priv);
 
 	/** @brief An error occurred.
 	 *
-	 *  @param message Error message.
-	 *  @param priv Private user data.
+	 *  @param[in] message Error message.
+	 *  @param[in] priv Private user data.
 	 */
 	void (*error)(const char *message, void *priv);
 };
@@ -121,6 +149,8 @@ struct ipc_ept_cfg {
  *  Function to be used to open an instance before being able to register a new
  *  endpoint on it.
  *
+ *  @param[in] instance Instance to open.
+ *
  *  @retval -EINVAL when instance configuration is invalid.
  *  @retval -EIO when no backend is registered.
  *  @retval -EALREADY when the instance is already opened (or being opened).
@@ -138,9 +168,9 @@ int ipc_service_open_instance(const struct device *instance);
  *
  *  The same function registers endpoints for both host and remote devices.
  *
- *  @param instance Instance to register the endpoint onto.
- *  @param ept Endpoint object.
- *  @param cfg Endpoint configuration.
+ *  @param[in] instance Instance to register the endpoint onto.
+ *  @param[in] ept Endpoint object.
+ *  @param[in] cfg Endpoint configuration.
  *
  *  @note Keep the variable pointed by @p cfg alive when endpoint is in use.
  *
@@ -157,14 +187,15 @@ int ipc_service_register_endpoint(const struct device *instance,
 
 /** @brief Send data using given IPC endpoint.
  *
- *  @param ept Registered endpoint by @ref ipc_service_register_endpoint.
- *  @param data Pointer to the buffer to send.
- *  @param len Number of bytes to send.
+ *  @param[in] ept Registered endpoint by @ref ipc_service_register_endpoint.
+ *  @param[in] data Pointer to the buffer to send.
+ *  @param[in] len Number of bytes to send.
  *
  *  @retval -EIO when no backend is registered or send hook is missing from
- *	    backend.
+ *               backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
- *  @retval -EBADMSG when the message is invalid.
+ *  @retval -EBADMSG when the data is invalid (i.e. invalid data format,
+ *		     invalid length, ...)
  *  @retval -EBUSY when the instance is busy.
  *
  *  @retval bytes number of bytes sent.
