@@ -1922,7 +1922,7 @@ static void test_dep_ord(void)
 	};
 	zassert_equal(ARRAY_SIZE(children_combined_ords),
 		      ARRAY_SIZE(children_combined_ords_expected),
-		      "%u", ARRAY_SIZE(children_combined_ords));
+		      "%zu", ARRAY_SIZE(children_combined_ords));
 	for (i = 0; i < ARRAY_SIZE(children_combined_ords); i++) {
 		zassert_equal(children_combined_ords[i],
 			      children_combined_ords_expected[i],
@@ -1949,7 +1949,7 @@ static void test_dep_ord(void)
 	};
 	zassert_equal(ARRAY_SIZE(child_a_combined_ords),
 		      ARRAY_SIZE(child_a_combined_ords_expected),
-		      "%u", ARRAY_SIZE(child_a_combined_ords));
+		      "%zu", ARRAY_SIZE(child_a_combined_ords));
 	for (i = 0; i < ARRAY_SIZE(child_a_combined_ords); i++) {
 		zassert_equal(child_a_combined_ords[i],
 			      child_a_combined_ords_expected[i],

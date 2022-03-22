@@ -230,7 +230,7 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 	BT_DBG("Index :%u, Value :%u", index, value);
 
 	if (index >= ARRAY_SIZE(ag_ind)) {
-		BT_ERR("Max only %lu indicators are supported",
+		BT_ERR("Max only %zu indicators are supported",
 		       ARRAY_SIZE(ag_ind));
 		return;
 	}
