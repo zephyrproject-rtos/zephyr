@@ -174,10 +174,18 @@ static int cmd_gpio_blink(const struct shell *sh,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
-			       SHELL_CMD_ARG(conf, NULL, "Configure GPIO", cmd_gpio_conf, 4, 0),
-			       SHELL_CMD_ARG(get, NULL, "Get GPIO value", cmd_gpio_get, 3, 0),
-			       SHELL_CMD_ARG(set, NULL, "Set GPIO", cmd_gpio_set, 4, 0),
-			       SHELL_CMD_ARG(blink, NULL, "Blink GPIO", cmd_gpio_blink, 3, 0),
+			       SHELL_CMD_ARG(conf, NULL,
+					"Configure GPIO: conf <port> <pin> <mode(in/out)>",
+					cmd_gpio_conf, 4, 0),
+			       SHELL_CMD_ARG(get, NULL,
+					"Get GPIO value: get <port> <pin>",
+					cmd_gpio_get, 3, 0),
+			       SHELL_CMD_ARG(set, NULL,
+					"Set GPIO: set <port> <pin> <value(0/1)>",
+					cmd_gpio_set, 4, 0),
+			       SHELL_CMD_ARG(blink, NULL,
+					"Blink GPIO: blink <port> <pin>",
+					cmd_gpio_blink, 3, 0),
 			       SHELL_SUBCMD_SET_END /* Array terminated. */
 			       );
 
