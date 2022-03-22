@@ -115,6 +115,17 @@ extern "C" {
 #define HID_COLLECTION_PHYSICAL		0x00
 /** Application collection type */
 #define HID_COLLECTION_APPLICATION	0x01
+/** Logical collection type */
+#define HID_COLLECTION_LOGICAL		0x02
+/** Report collection type */
+#define HID_COLLECTION_REPORT		0x03
+/** Named Array collection type */
+#define HID_COLLECTION_NAMED_ARRAY	0x04
+/** Usage Switch collection type */
+#define HID_COLLECTION_USAGE_SWITCH	0x05
+/** Modifier collection type */
+#define HID_COLLECTION_MODIFIER		0x06
+
 
 /* Usage page and IDs from Universal Serial Bus HID Usage Tables */
 
