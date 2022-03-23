@@ -219,7 +219,7 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	}
 
 	/* Clear the partial response from the buffer, if any. */
-	mgmt_streamer_init_writer(&streamer->mgmt_stmr, rsp);
+	cbor_nb_writer_init(streamer->mgmt_stmr.writer, rsp);
 
 	/* Build and transmit the error response. */
 	rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
@@ -290,7 +290,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 			break;
 		}
 
-		mgmt_streamer_init_writer(&streamer->mgmt_stmr, rsp);
+		cbor_nb_writer_init(streamer->mgmt_stmr.writer, rsp);
 
 		/* Process the request payload and build the response. */
 		rc = smp_handle_single_req(streamer, &req_hdr, &handler_found, &rsn);

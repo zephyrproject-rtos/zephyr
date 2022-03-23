@@ -165,16 +165,6 @@ typedef int (*mgmt_write_hdr_fn)(struct cbor_nb_writer *writer, const struct mgm
 typedef int (*mgmt_init_reader_fn)(struct cbor_decoder_reader *reader, void *buf);
 
 /** @typedef mgmt_init_writer_fn
- * @brief Initializes a CBOR writer with the specified buffer.
- *
- * @param writer	The writer to initialize.
- * @param buf		The buffer to configure the writer with.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-typedef int (*mgmt_init_writer_fn)(struct cbor_nb_writer *writer, void *buf);
-
-/** @typedef mgmt_init_writer_fn
  * @brief Frees the specified buffer.
  *
  * @param buf	The buffer to free.
@@ -191,7 +181,6 @@ struct mgmt_streamer_cfg {
 	mgmt_reset_buf_fn reset_buf;
 	mgmt_write_hdr_fn write_hdr;
 	mgmt_init_reader_fn init_reader;
-	mgmt_init_writer_fn init_writer;
 	mgmt_free_buf_fn free_buf;
 };
 
@@ -319,17 +308,6 @@ int mgmt_streamer_write_hdr(struct mgmt_streamer *streamer, const struct mgmt_hd
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */
 int mgmt_streamer_init_reader(struct mgmt_streamer *streamer, void *buf);
-
-/**
- * @brief Uses the specified streamer to initializes a CBOR writer.
- *
- * @param streamer	The streamer providing the callback.
- * @param writer	The writer to initialize.
- * @param buf		The buffer to configure the writer with.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-int mgmt_streamer_init_writer(struct mgmt_streamer *streamer, void *buf);
 
 /**
  * @brief Uses the specified streamer to free a buffer.
