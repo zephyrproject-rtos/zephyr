@@ -208,6 +208,9 @@ Libraries / Subsystems
       * When hash/checksum query to mcumgr does not specify a type, then the order
         of preference (most priority) is CRC32 followed by SHA256.
 
+  * Added mcumgr os hook to allow an application to accept or decline a reset
+    request; :kconfig:option:`CONFIG_OS_MGMT_RESET_HOOK` enables the callback.
+
 HALs
 ****
 
