@@ -190,7 +190,7 @@ struct mgmt_streamer_cfg {
 struct mgmt_streamer {
 	const struct mgmt_streamer_cfg *cfg;
 	void *cb_arg;
-	struct cbor_decoder_reader *reader;
+	struct cbor_nb_reader *reader;
 	struct cbor_nb_writer *writer;
 };
 

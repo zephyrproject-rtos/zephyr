@@ -48,15 +48,15 @@ smp_make_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rsp_hdr, size_
 static int
 smp_read_hdr(struct smp_streamer *streamer, struct mgmt_hdr *dst_hdr)
 {
-	struct cbor_decoder_reader *reader;
+	struct cbor_nb_reader *reader;
 
 	reader = streamer->mgmt_stmr.reader;
 
-	if (reader->message_size < sizeof(*dst_hdr)) {
+	if (reader->nb->len < sizeof(*dst_hdr)) {
 		return MGMT_ERR_EINVAL;
 	}
 
-	reader->cpy(reader, (char *)dst_hdr, 0, sizeof(*dst_hdr));
+	memcpy(dst_hdr, reader->nb->data, sizeof(*dst_hdr));
 	return 0;
 }
 
@@ -262,7 +262,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 
 	mgmt_streamer_init_reader(&streamer->mgmt_stmr, req);
 
-	while (streamer->mgmt_stmr.reader->message_size > 0) {
+	while (streamer->mgmt_stmr.reader->nb->len > 0) {
 		handler_found = false;
 		valid_hdr = false;
 
@@ -276,13 +276,12 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 		}
 		mgmt_ntoh_hdr(&req_hdr);
 		/* Does buffer contain whole message? */
-		if (streamer->mgmt_stmr.reader->message_size < (req_hdr.nh_len + MGMT_HDR_SIZE)) {
+		if (streamer->mgmt_stmr.reader->nb->len < (req_hdr.nh_len + MGMT_HDR_SIZE)) {
 			rc = MGMT_ERR_ECORRUPT;
 			break;
 		}
 
-		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, MGMT_HDR_SIZE);
-		streamer->mgmt_stmr.reader->message_size -= MGMT_HDR_SIZE;
+		net_buf_pull(streamer->mgmt_stmr.reader->nb, MGMT_HDR_SIZE);
 
 		rsp = mgmt_streamer_alloc_rsp(&streamer->mgmt_stmr, req);
 		if (rsp == NULL) {
@@ -306,8 +305,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 		}
 
 		/* Trim processed request to free up space for subsequent responses. */
-		mgmt_streamer_trim_front(&streamer->mgmt_stmr, req, req_hdr.nh_len);
-		streamer->mgmt_stmr.reader->message_size -= req_hdr.nh_len;
+		net_buf_pull(streamer->mgmt_stmr.reader->nb, req_hdr.nh_len);
 
 		cmd_done_arg.err = MGMT_ERR_EOK;
 		mgmt_evt(MGMT_EVT_OP_CMD_DONE, req_hdr.nh_group, req_hdr.nh_id,
