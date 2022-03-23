@@ -12,10 +12,10 @@
 #include <net/buf.h>
 #include "tinycbor/cbor.h"
 #include "mgmt/endian.h"
+#include <mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
-#include <mgmt/mcumgr/buf.h>
 #include "smp/smp.h"
 
 /**

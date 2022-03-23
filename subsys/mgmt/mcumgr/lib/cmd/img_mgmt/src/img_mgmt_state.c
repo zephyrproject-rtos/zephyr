@@ -11,8 +11,8 @@
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <mgmt/mcumgr/buf.h>
+#include <mgmt/mgmt.h>
 #include "cborattr/cborattr.h"
-#include "mgmt/mgmt.h"
 #include "img_mgmt/img_mgmt.h"
 #include "img_mgmt/image.h"
 #include "img_mgmt_priv.h"
