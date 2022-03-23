@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <zephyr.h>
+#include <devicetree.h>
 #include <sys/printk.h>
 #include <logging/log.h>
 #include <shell/shell.h>
@@ -25,13 +26,6 @@ LOG_MODULE_REGISTER(app);
 	shell_fprintf(shell, SHELL_INFO, fmt, ##__VA_ARGS__)
 #define PR_WARNING(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_WARNING, fmt, ##__VA_ARGS__)
-/*
- * When DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL is available, we use it here.
- * Otherwise the device can be set at runtime with the set_device command.
- */
-#ifndef DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
-#define DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL ""
-#endif
 
 /* Command usage info. */
 #define WRITE_BLOCK_SIZE_HELP \
@@ -92,7 +86,8 @@ LOG_MODULE_REGISTER(app);
 #error Please increase CONFIG_SHELL_ARGC_MAX parameter.
 #endif
 
-static const struct device *flash_device;
+static const struct device *flash_device =
+	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_flash_controller));
 
 static int check_flash_device(const struct shell *shell)
 {
@@ -734,14 +729,12 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 
 void main(void)
 {
-	flash_device =
-		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	if (flash_device) {
-		printk("Found flash controller %s.\n",
-			DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	if (device_is_ready(flash_device)) {
+		printk("Found flash controller %s.\n", flash_device->name);
 		printk("Flash I/O commands can be run.\n");
 	} else {
-		printk("**No flash controller found!**\n");
+		flash_device = NULL;
+		printk("**Flash controller not ready or not found!**\n");
 		printk("Run set_device <name> to specify one "
 		       "before using other commands.\n");
 	}
