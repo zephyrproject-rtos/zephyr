@@ -102,3 +102,9 @@ properties:
         - "24-bit"
       description:
         LCD data bus width. The default is set to the reset value of 16-bit
+
+    backlight-gpios:
+      type: phandle-array
+      required: true
+      description:
+        LCB backlight control gpio. Driver will initialize this GPIO to active high
