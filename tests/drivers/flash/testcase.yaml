@@ -11,7 +11,7 @@ tests:
     extra_args:
       OVERLAY_CONFIG=boards/nrf52840_flash_qspi.conf
       DTC_OVERLAY_FILE=boards/nrf52840_size_in_bytes.overlay
-      integration_platforms:
+    integration_platforms:
       - nrf52840dk_nrf52840
   drivers.flash.nrf_qspi_nor_4B_addr:
     platform_allow: nrf52840dk_nrf52840
