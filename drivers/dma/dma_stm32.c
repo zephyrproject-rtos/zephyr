@@ -93,6 +93,10 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 
 	stream = &config->streams[id];
 
+	if (stream->busy == false) {
+		dma_stm32_clear_stream_irq(dev, id);
+		return;
+	}
 #ifdef CONFIG_DMAMUX_STM32
 	callback_arg = stream->mux_channel;
 #else
@@ -102,7 +106,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		stream->busy = false;
 	}
 
-	/* the dma stream id is in range from STM32_DMA_STREAM_OFFSET..<dma-requests> */
+	/* The dma stream id is in range from STM32_DMA_STREAM_OFFSET..<dma-requests> */
 	if (stm32_dma_is_ht_irq_active(dma, id)) {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
@@ -269,7 +273,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 
 	LL_DMA_StructInit(&DMA_InitStruct);
 
-	/* give channel from index 0 */
+	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= dev_config->max_streams) {
@@ -317,7 +321,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	}
 #endif /* CONFIG_DMA_STM32_V1 */
 
-	/* support only the same data width for source and dest */
+	/* Support only the same data width for source and dest */
 	if ((config->dest_data_size != config->source_data_size)) {
 		LOG_ERR("source and dest data size differ.");
 		return -EINVAL;
@@ -349,7 +353,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	stream->src_size	= config->source_data_size;
 	stream->dst_size	= config->dest_data_size;
 
-	/* check dest or source memory address, warn if 0 */
+	/* Check dest or source memory address, warn if 0 */
 	if ((config->head_block->source_address == 0)) {
 		LOG_WRN("source_buffer address is null.");
 	}
@@ -406,11 +410,18 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	if (ret < 0) {
 		return ret;
 	}
+
+	LOG_DBG("Channel (%d) memory inc (%x).",
+				id, DMA_InitStruct.MemoryOrM2MDstIncMode);
+
 	ret = dma_stm32_get_periph_increment(periph_addr_adj,
 					&DMA_InitStruct.PeriphOrM2MSrcIncMode);
 	if (ret < 0) {
 		return ret;
 	}
+
+	LOG_DBG("Channel (%d) peripheral inc (%x).",
+				id, DMA_InitStruct.PeriphOrM2MSrcIncMode);
 
 	if (config->head_block->source_reload_en) {
 		DMA_InitStruct.Mode = LL_DMA_MODE_CIRCULAR;
@@ -466,10 +477,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dmamux)
-	/*
-	 * the with dma V2 and dma mux,
-	 * the request ID is stored in the dma_slot
-	 */
+	/* With dma V2 and dmamux,the request ID is stored in the dma_slot */
 	DMA_InitStruct.PeriphRequest = config->dma_slot;
 #endif
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
@@ -501,7 +509,7 @@ DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
 
-	/* give channel from index 0 */
+	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= config->max_streams) {
@@ -546,7 +554,7 @@ DMA_STM32_EXPORT_API int dma_stm32_start(const struct device *dev, uint32_t id)
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
-	/* give channel from index 0 */
+	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
 
 	/* Only M2P or M2M mode can be started manually. */
@@ -567,12 +575,16 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 	struct dma_stm32_stream *stream = &config->streams[id - STM32_DMA_STREAM_OFFSET];
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
-	/* give channel from index 0 */
+	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
+
+	dma_stm32_clear_stream_irq(dev, id);
+
+	dma_stm32_disable_stream(dma, id);
 
 #if !defined(CONFIG_DMAMUX_STM32) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
@@ -581,8 +593,6 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 #if defined(CONFIG_DMA_STM32_V1)
 	stm32_dma_disable_fifo_irq(dma, id);
 #endif
-	dma_stm32_disable_stream(dma, id);
-	dma_stm32_clear_stream_irq(dev, id);
 
 	/* Finally, flag stream as free */
 	stream->busy = false;
@@ -606,7 +616,7 @@ static int dma_stm32_init(const struct device *dev)
 	for (uint32_t i = 0; i < config->max_streams; i++) {
 		config->streams[i].busy = false;
 #ifdef CONFIG_DMAMUX_STM32
-		/* each further stream->mux_channel is fixed here */
+		/* Each further stream->mux_channel is fixed here */
 		config->streams[i].mux_channel = i + config->offset;
 #endif /* CONFIG_DMAMUX_STM32 */
 	}
@@ -625,7 +635,7 @@ DMA_STM32_EXPORT_API int dma_stm32_get_status(const struct device *dev,
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
 
-	/* give channel from index 0 */
+	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
 	if (id >= config->max_streams) {
 		return -EINVAL;
