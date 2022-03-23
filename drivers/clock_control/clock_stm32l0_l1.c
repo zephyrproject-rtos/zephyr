@@ -26,12 +26,27 @@
 #define pll_div(v) z_pll_div(v)
 
 /**
- * @brief Fill PLL configuration structure
+ * @brief Set up pll configuration
  */
-void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
+int config_pll_sysclock(void)
 {
-	pllinit->PLLMul = pll_mul(STM32_PLL_MULTIPLIER);
-	pllinit->PLLDiv = pll_div(STM32_PLL_DIVISOR);
+	uint32_t pll_source, pll_mul, pll_div;
+
+	pll_mul = pll_mul(STM32_PLL_MULTIPLIER);
+	pll_div = pll_div(STM32_PLL_DIVISOR);
+
+	/* Configure PLL source */
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		pll_source = LL_RCC_PLLSOURCE_HSI;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		pll_source = LL_RCC_PLLSOURCE_HSE;
+	} else {
+		return -ENOTSUP;
+	}
+
+	LL_RCC_PLL_ConfigDomain_SYS(pll_source, pll_mul, pll_div);
+
+	return 0;
 }
 
 #endif /* STM32_SYSCLK_SRC_PLL */

@@ -32,9 +32,9 @@
 	#define MCO2_SOURCE		LL_RCC_MCO2SOURCE_PLLCLK
 #endif
 
-#if STM32_SYSCLK_SRC_PLL
-void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit);
-#endif /* STM32_SYSCLK_SRC_PLL */
+#ifdef STM32_SYSCLK_SRC_PLL
+int config_pll_sysclock(void);
+#endif
 void config_enable_default_clocks(void);
 
 /* function exported to the soc power.c */
