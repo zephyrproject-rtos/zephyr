@@ -761,7 +761,7 @@ int media_proxy_ctrl_get_player_name(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_icon_id(struct media_player *player)
@@ -796,7 +796,7 @@ int media_proxy_ctrl_get_icon_id(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_icon_url(struct media_player *player)
@@ -831,7 +831,7 @@ int media_proxy_ctrl_get_icon_url(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_track_title(struct media_player *player)
@@ -866,7 +866,7 @@ int media_proxy_ctrl_get_track_title(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_track_duration(struct media_player *player)
@@ -901,7 +901,7 @@ int media_proxy_ctrl_get_track_duration(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_track_position(struct media_player *player)
@@ -936,7 +936,7 @@ int media_proxy_ctrl_get_track_position(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_set_track_position(struct media_player *player, int32_t position)
@@ -971,7 +971,7 @@ int media_proxy_ctrl_set_track_position(struct media_player *player, int32_t pos
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_playback_speed(struct media_player *player)
@@ -1006,7 +1006,7 @@ int media_proxy_ctrl_get_playback_speed(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_set_playback_speed(struct media_player *player, int8_t speed)
@@ -1041,7 +1041,7 @@ int media_proxy_ctrl_set_playback_speed(struct media_player *player, int8_t spee
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_seeking_speed(struct media_player *player)
@@ -1076,7 +1076,7 @@ int media_proxy_ctrl_get_seeking_speed(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_track_segments_id(struct media_player *player)
@@ -1111,7 +1111,7 @@ int media_proxy_ctrl_get_track_segments_id(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_current_track_id(struct media_player *player)
@@ -1146,7 +1146,7 @@ int media_proxy_ctrl_get_current_track_id(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t id)
@@ -1187,7 +1187,7 @@ int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t 
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_next_track_id(struct media_player *player)
@@ -1222,7 +1222,7 @@ int media_proxy_ctrl_get_next_track_id(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id)
@@ -1263,7 +1263,7 @@ int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_parent_group_id(struct media_player *player)
@@ -1298,7 +1298,7 @@ int media_proxy_ctrl_get_parent_group_id(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_current_group_id(struct media_player *player)
@@ -1333,7 +1333,7 @@ int media_proxy_ctrl_get_current_group_id(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t id)
@@ -1374,7 +1374,7 @@ int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t 
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_playing_order(struct media_player *player)
@@ -1410,7 +1410,7 @@ int media_proxy_ctrl_get_playing_order(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_set_playing_order(struct media_player *player, uint8_t order)
@@ -1445,7 +1445,7 @@ int media_proxy_ctrl_set_playing_order(struct media_player *player, uint8_t orde
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player)
@@ -1480,7 +1480,7 @@ int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_media_state(struct media_player *player)
@@ -1515,7 +1515,7 @@ int media_proxy_ctrl_get_media_state(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_send_command(struct media_player *player, struct mpl_cmd cmd)
@@ -1550,7 +1550,7 @@ int media_proxy_ctrl_send_command(struct media_player *player, struct mpl_cmd cm
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_commands_supported(struct media_player *player)
@@ -1585,7 +1585,7 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_send_search(struct media_player *player, struct mpl_search search)
@@ -1620,7 +1620,7 @@ int media_proxy_ctrl_send_search(struct media_player *player, struct mpl_search 
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 int media_proxy_ctrl_get_search_results_id(struct media_player *player)
@@ -1655,7 +1655,7 @@ int media_proxy_ctrl_get_search_results_id(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 
 uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player)
@@ -1690,7 +1690,7 @@ uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player)
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
-	return -EOPNOTSUPP;
+	return -EINVAL;
 }
 #endif /* CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL || CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
