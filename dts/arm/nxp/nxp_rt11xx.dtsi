@@ -215,17 +215,17 @@
 			#gpio-cells = <2>;
 		};
 
-		gpio7: gpio@40C5C000 {
+		gpio7: gpio@40c5c000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x40C5C000 0x4000>;
+			reg = <0x40c5c000 0x4000>;
 			label = "GPIO_7";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
 
-		gpio8: gpio@40C60000 {
+		gpio8: gpio@40c60000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x40C60000 0x4000>;
+			reg = <0x40c60000 0x4000>;
 			label = "GPIO_8";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -255,9 +255,9 @@
 			#gpio-cells = <2>;
 		};
 
-		gpio12: gpio@40C70000 {
+		gpio12: gpio@40c70000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x40C70000 0x4000>;
+			reg = <0x40c70000 0x4000>;
 			label = "GPIO_12";
 			gpio-controller;
 			#gpio-cells = <2>;
