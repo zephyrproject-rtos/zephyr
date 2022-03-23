@@ -898,7 +898,7 @@ int bmi160_init(const struct device *dev)
 		return -EIO;
 	}
 
-	k_busy_wait(100);
+	k_busy_wait(150);
 
 	if (bmi160_byte_read(dev, BMI160_REG_CHIPID, &val) < 0) {
 		LOG_DBG("Failed to read chip id.");
