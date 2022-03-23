@@ -131,9 +131,18 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
  * is set, list of read-write strings is examined and if they are not determined
  * to be read-only, they are copied into the destination package.
  * If @ref CBPRINTF_PACKAGE_COPY_RO_STR is not set, remaining string locations
- * are considered as pointing to read-only location.
+ * are considered as pointing to read-only location and they are copy to the
+ * package if @ref CBPRINTF_PACKAGE_COPY_KEEP_RO_STR is set.
  */
 #define CBPRINTF_PACKAGE_COPY_RW_STR BIT(1)
+
+/** @brief Keep read-only location indexes in the package.
+ *
+ * If it is set read-only string pointers are kept in the package after copy. If
+ * not set they are discarded.
+ */
+#define CBPRINTF_PACKAGE_COPY_KEEP_RO_STR BIT(2)
+
 /**@} */
 
 /** @brief Signature for a cbprintf callback function.
