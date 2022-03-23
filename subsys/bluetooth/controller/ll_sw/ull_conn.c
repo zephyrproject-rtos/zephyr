@@ -648,20 +648,11 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets,
 {
 	struct ll_conn *conn;
 
-#if defined(CONFIG_BT_CTLR_PARAM_CHECK)
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	uint16_t tx_time_max =
-			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_CODED);
-#else /* !CONFIG_BT_CTLR_PHY_CODED */
-	uint16_t tx_time_max =
-			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_1M);
-#endif /* !CONFIG_BT_CTLR_PHY_CODED */
-
-	if ((tx_octets > LL_LENGTH_OCTETS_TX_MAX) ||
-	    (tx_time > tx_time_max)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
+	    ((tx_octets > LL_LENGTH_OCTETS_TX_MAX) ||
+	     (tx_time > PDU_DC_PAYLOAD_TIME_MAX_CODED))) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
-#endif /* CONFIG_BT_CTLR_PARAM_CHECK */
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -674,6 +665,20 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets,
 	     !(conn->llcp_feature.features_conn & BIT64(BT_LE_FEAT_BIT_DLE)))) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
+
+#if defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	const uint16_t tx_time_max =
+		PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_CODED);
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+	const uint16_t tx_time_max =
+		PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
+	if (tx_time > tx_time_max) {
+		tx_time = tx_time_max;
+	}
+#endif /* CONFIG_BT_CTLR_PHY */
 
 	if (conn->llcp_length.req != conn->llcp_length.ack) {
 		switch (conn->llcp_length.state) {
