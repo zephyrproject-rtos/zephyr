@@ -40,10 +40,10 @@ class Harness:
         self.run_id_exists = False
 
     def configure(self, instance):
-        config = instance.testcase.harness_config
-        self.id = instance.testcase.id
+        config = instance.testsuite.harness_config
+        self.id = instance.testsuite.id
         self.run_id = instance.run_id
-        if "ignore_faults" in instance.testcase.tags:
+        if "ignore_faults" in instance.testsuite.tags:
             self.fail_on_fault = False
 
         if config:
@@ -143,11 +143,11 @@ class Pytest(Harness):
     def configure(self, instance):
         super(Pytest, self).configure(instance)
         self.running_dir = instance.build_dir
-        self.source_dir = instance.testcase.source_dir
+        self.source_dir = instance.testsuite.source_dir
         self.pytest_root = 'pytest'
         self.pytest_args = []
         self.is_pytest = True
-        config = instance.testcase.harness_config
+        config = instance.testsuite.harness_config
 
         if config:
             self.pytest_root = config.get('pytest_root', 'pytest')
