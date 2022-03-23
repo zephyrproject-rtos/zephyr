@@ -724,7 +724,7 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 
 	return 0;
 }
-#endif /* CONIG_MCTL_REMOTE_PLAYER_CONTROL	*/
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL	*/
 
 
 #if defined(CONFIG_MCTL_LOCAL_PLAYER_CONTROL)
