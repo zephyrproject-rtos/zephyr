@@ -1887,7 +1887,8 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 		 size_t length);
 
 /**
- * @brief Clone pkt and its buffer.
+ * @brief Clone pkt and its buffer. The cloned packet will be allocated on
+ *        the same pool as the original one.
  *
  * @param pkt Original pkt to be cloned
  * @param timeout Timeout to wait for free buffer
@@ -1895,6 +1896,17 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
  * @return NULL if error, cloned packet otherwise.
  */
 struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout);
+
+/**
+ * @brief Clone pkt and its buffer. The cloned packet will be allocated on
+ *        the RX packet poll.
+ *
+ * @param pkt Original pkt to be cloned
+ * @param timeout Timeout to wait for free buffer
+ *
+ * @return NULL if error, cloned packet otherwise.
+ */
+struct net_pkt *net_pkt_rx_clone(struct net_pkt *pkt, k_timeout_t timeout);
 
 /**
  * @brief Clone pkt and increase the refcount of its buffer.
