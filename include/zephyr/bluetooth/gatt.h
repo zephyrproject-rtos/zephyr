@@ -753,10 +753,20 @@ struct _bt_gatt_ccc {
 	/** Bitwise-or of all connected peer's CCC values */
 	uint16_t value;
 
-	/** @brief CCC attribute changed callback
+	/** @brief React to changes to the @c value field of this struct
 	 *
-	 *  @param attr   The attribute that's changed value
-	 *  @param value  New value
+	 *  Use this event to optimize when to broadcast using bt_gatt_indicate()
+	 *  and bt_gatt_notify().
+	 *
+	 *  This event will not trigger if only the @c cfg field changes but the
+	 *  @c value field remains the same. Combine the use of this event and
+	 *  @c cfg_write to catch all changes to the @c cfg field.
+	 *
+	 *  Note: This event may come before the connection event when CCC values
+	 *  are restored from bond information.
+	 *
+	 *  @param attr   The attribute this CCC refers to
+	 *  @param value  New value of the @c value field
 	 */
 	void (*cfg_changed)(const struct bt_gatt_attr *attr, uint16_t value);
 
