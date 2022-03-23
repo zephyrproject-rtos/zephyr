@@ -322,6 +322,9 @@ def _dt_node_bool_prop_generic(node_search_function, search_arg, prop):
     except edtlib.EDTError:
         return "n"
 
+    if node is None:
+        return "n"
+
     if prop not in node.props:
         return "n"
 
