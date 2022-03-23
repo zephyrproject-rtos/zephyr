@@ -4673,6 +4673,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct lll_conn *lll = &conn->lll;
 		struct node_rx_pdu *rx;
 		uint8_t old_tx, old_rx;
+		uint8_t phy_bitmask;
 
 		/* Acquire additional rx node for Data length notification as
 		 * a peripheral.
@@ -4702,6 +4703,15 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 			conn->llcp_ack = conn->llcp_req;
 		}
 
+		/* supported PHYs mask */
+		phy_bitmask = PHY_1M;
+		if (IS_ENABLED(CONFIG_BT_CTLR_PHY_2M)) {
+			phy_bitmask |= PHY_2M;
+		}
+		if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+			phy_bitmask |= PHY_CODED;
+		}
+
 		/* apply new phy */
 		old_tx = lll->phy_tx;
 		old_rx = lll->phy_rx;
@@ -4715,7 +4725,10 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 		if (conn->llcp.phy_upd_ind.tx) {
-			lll->phy_tx = conn->llcp.phy_upd_ind.tx;
+			if (conn->llcp.phy_upd_ind.tx & phy_bitmask) {
+				lll->phy_tx = conn->llcp.phy_upd_ind.tx &
+					      phy_bitmask;
+			}
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 			eff_tx_time = calc_eff_time(lll->max_tx_octets,
@@ -4725,7 +4738,10 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
 		if (conn->llcp.phy_upd_ind.rx) {
-			lll->phy_rx = conn->llcp.phy_upd_ind.rx;
+			if (conn->llcp.phy_upd_ind.rx & phy_bitmask) {
+				lll->phy_rx = conn->llcp.phy_upd_ind.rx &
+					      phy_bitmask;
+			}
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 			eff_rx_time =
