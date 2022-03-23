@@ -25,11 +25,7 @@
 #define STACKSIZE 1024
 #define PRIORITY 7
 
-#ifndef DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
-#define DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL ""
-#endif
-
-static const struct device *flash_dev;
+static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static struct flash_pages_info page_info;
 static int *mem;
 uint8_t flash_fill_buff[FLASH_READBACK_LEN];
@@ -245,9 +241,8 @@ void flash_test(void)
 
 void flash_init(void)
 {
-	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	if (!flash_dev) {
-		TC_ERROR("flash controller initialization failed\n");
+	if (!device_is_ready(flash_dev)) {
+		TC_ERROR("flash controller not ready\n");
 	}
 	flash_test();
 }
