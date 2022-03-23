@@ -205,14 +205,6 @@ zephyr_smp_init_reader(struct cbor_decoder_reader *reader, void *buf)
 	return 0;
 }
 
-static int
-zephyr_smp_init_writer(struct cbor_nb_writer *cnbw, void *buf)
-{
-	cbor_nb_writer_init(cnbw, buf);
-
-	return 0;
-}
-
 /**
  * Processes a single SMP packet and sends the corresponding response(s).
  */
@@ -261,7 +253,6 @@ static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg = {
 	.reset_buf = zephyr_smp_reset_buf,
 	.write_hdr = zephyr_smp_write_hdr,
 	.init_reader = zephyr_smp_init_reader,
-	.init_writer = zephyr_smp_init_writer,
 	.free_buf = zephyr_smp_free_buf,
 };
 
