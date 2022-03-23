@@ -727,7 +727,7 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL	*/
 
 
-#if defined(CONFIG_MCTL_LOCAL_PLAYER_CONTROL)
+#if defined(CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL) || defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
 int media_proxy_ctrl_get_player_name(struct media_player *player)
 {
 	CHECKIF(player == NULL) {
@@ -1693,7 +1693,7 @@ uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player)
 
 	return -EOPNOTSUPP;
 }
-#endif /* CONFIG_MCTL_LOCAL_PLAYER_CONTROL */
+#endif /* CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL || CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 
 
