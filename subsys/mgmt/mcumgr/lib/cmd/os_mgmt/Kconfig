@@ -17,6 +17,17 @@ config OS_MGMT_RESET_MS
 	  before performing the reset.  This delay allows time for the mcumgr
 	  response to be delivered.
 
+config OS_MGMT_RESET_HOOK
+	bool "Reset hook"
+	help
+	  Allows applications to control and get notifications of when a reset
+	  command has been issued via an mcumgr command. With this option
+	  disabled, modules will reboot when the command is received without
+	  notification, when this is enabled and a handler is registered, the
+	  application will be notified that a reset command has been received
+	  and will allow the application to perform any required operations
+	  before accepting or declining the reset request.
+
 config OS_MGMT_TASKSTAT
 	bool "Support for taskstat command"
 	depends on THREAD_MONITOR

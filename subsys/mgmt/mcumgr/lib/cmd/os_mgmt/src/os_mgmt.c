@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
  * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2022 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +30,10 @@
  * value otherwise zcbor_map_end_encode may return with error.
  */
 #define TASKSTAT_COLUMNS_MAX	20
+
+#ifdef CONFIG_OS_MGMT_RESET_HOOK
+static os_mgmt_on_reset_evt_cb os_reset_evt_cb;
+#endif
 
 /**
  * Command handler: os echo
@@ -232,6 +237,19 @@ static int os_mgmt_taskstat_read(struct mgmt_ctxt *ctxt)
 static int
 os_mgmt_reset(struct mgmt_ctxt *ctxt)
 {
+#ifdef CONFIG_OS_MGMT_RESET_HOOK
+	int rc;
+
+	if (os_reset_evt_cb != NULL) {
+		/* Check with application prior to accepting reset */
+		rc = os_reset_evt_cb();
+
+		if (rc != 0) {
+			return rc;
+		}
+	}
+#endif
+
 	return os_mgmt_impl_reset(CONFIG_OS_MGMT_RESET_MS);
 }
 
@@ -280,7 +298,6 @@ static struct mgmt_group os_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_OS,
 };
 
-
 void
 os_mgmt_register_group(void)
 {
@@ -292,3 +309,10 @@ os_mgmt_module_init(void)
 {
 	os_mgmt_register_group();
 }
+
+#ifdef CONFIG_OS_MGMT_RESET_HOOK
+void os_mgmt_register_reset_evt_cb(os_mgmt_on_reset_evt_cb cb)
+{
+	os_reset_evt_cb = cb;
+}
+#endif
