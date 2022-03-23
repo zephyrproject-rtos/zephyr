@@ -15,21 +15,6 @@
 extern "C" {
 #endif
 
-struct pinctrl_soc_pinmux {
-	uint32_t mux_register;
-	uint32_t mux_mode;
-	uint32_t input_register;
-	uint32_t input_daisy;
-	uint32_t config_register;
-};
-
-struct pinctrl_soc_pin {
-	struct pinctrl_soc_pinmux pinmux;
-	uint32_t pin_ctrl_flags;
-};
-
-typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
-
 #define MCUX_RT_INPUT_SCHMITT_ENABLE_SHIFT IOMUXC_SW_PAD_CTL_PAD_HYS_SHIFT
 #define MCUX_RT_BIAS_PULL_DOWN_SHIFT IOMUXC_SW_PAD_CTL_PAD_PUS_SHIFT
 #define MCUX_RT_BIAS_PULL_UP_SHIFT IOMUXC_SW_PAD_CTL_PAD_PUS_SHIFT
@@ -58,16 +43,49 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 	 (DT_PROP(node_id, input_enable) << MCUX_RT_INPUT_ENABLE_SHIFT))
 
 
-#define Z_PINCTRL_PINMUX(group_id, pin_prop, idx, pinmux_idx)			\
-	DT_PROP_BY_IDX(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx), pinmux, pinmux_idx)
+/* This struct must be present. It is used by the mcux gpio driver */
+struct pinctrl_soc_pinmux {
+	uint32_t mux_register; /* IOMUXC SW_PAD_MUX register */
+	uint32_t config_register; /* IOMUXC SW_PAD_CTL register */
+	uint32_t input_register; /* IOMUXC SELECT_INPUT DAISY register */
+	uint32_t gpr_register; /* IOMUXC GPR register */
+	uint8_t gpr_shift: 5; /* bitshift  for GPR register write */
+	uint8_t mux_mode: 4; /* Mux value for SW_PAD_MUX register */
+	uint32_t input_daisy:4; /* Mux value for SELECT_INPUT_DAISY register */
+	uint8_t pinmux_type: 4; /* Type of pinmux register */
+	uint8_t gpr_val: 1; /* value to write to GPR register */
+};
+
+struct pinctrl_soc_pin {
+	struct pinctrl_soc_pinmux pinmux;
+	uint32_t pin_ctrl_flags; /* value to write to IOMUXC_SW_PAD_CTL register */
+};
+
+typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
+
+/* This definition must be present. It is used by the mcux gpio driver */
+#define MCUX_RT_PINMUX(node_id)							\
+	{									\
+	  .mux_register = DT_PROP_BY_IDX(node_id, pinmux, 0),			\
+	  .config_register = DT_PROP_BY_IDX(node_id, pinmux, 4),		\
+	  .input_register = DT_PROP_BY_IDX(node_id, pinmux, 2),			\
+	  .mux_mode = DT_PROP_BY_IDX(node_id, pinmux, 1),			\
+	  .input_daisy = DT_PROP_BY_IDX(node_id, pinmux, 3),			\
+	  .pinmux_type = DT_ENUM_IDX_OR(node_id, pin_type, 0),			\
+	  IF_ENABLED(DT_PROP_HAS_IDX(node_id, gpr, 0),				\
+	    (.gpr_register = DT_PROP_BY_IDX(node_id, gpr, 0),))			\
+	  IF_ENABLED(DT_PROP_HAS_IDX(node_id, gpr, 1),				\
+	    (.gpr_shift = DT_PROP_BY_IDX(node_id, gpr, 1),))			\
+	  IF_ENABLED(DT_PROP_HAS_IDX(node_id, gpr, 2),				\
+	    (.gpr_val = DT_PROP_BY_IDX(node_id, gpr, 2),))			\
+	}
+
+#define Z_PINCTRL_PINMUX(group_id, pin_prop, idx)				\
+	MCUX_RT_PINMUX(DT_PHANDLE_BY_IDX(group_id, pin_prop, idx))
 
 #define Z_PINCTRL_STATE_PIN_INIT(group_id, pin_prop, idx)				\
 	{										\
-	  .pinmux.mux_register = Z_PINCTRL_PINMUX(group_id, pin_prop, idx, 0),		\
-	  .pinmux.mux_mode = Z_PINCTRL_PINMUX(group_id, pin_prop, idx, 1),		\
-	  .pinmux.input_register = Z_PINCTRL_PINMUX(group_id, pin_prop, idx, 2),	\
-	  .pinmux.input_daisy = Z_PINCTRL_PINMUX(group_id, pin_prop, idx, 3),		\
-	  .pinmux.config_register = Z_PINCTRL_PINMUX(group_id, pin_prop, idx, 4),	\
+	  .pinmux = Z_PINCTRL_PINMUX(group_id, pin_prop, idx),				\
 	  .pin_ctrl_flags = Z_PINCTRL_MCUX_RT_PINCFG_INIT(group_id),			\
 	},
 
