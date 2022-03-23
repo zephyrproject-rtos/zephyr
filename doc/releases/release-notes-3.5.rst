@@ -75,6 +75,10 @@ Bluetooth
 
 * Host
 
+  * :c:member:`_bt_gatt_ccc.value` is now a bitwise-or reduction of the
+    individual CCC values of connected clients instead of the arithmetic
+    maximum.
+
 * Mesh
 
 * Controller

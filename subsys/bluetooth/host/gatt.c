@@ -2129,9 +2129,7 @@ static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
 		struct bt_conn *conn = bt_conn_lookup_addr_le(ccc->cfg[i].id, &ccc->cfg[i].peer);
 
 		if (conn) {
-			if (ccc->cfg[i].value > value) {
-				value = ccc->cfg[i].value;
-			}
+			value |= ccc->cfg[i].value;
 
 			bt_conn_unref(conn);
 			conn = NULL;

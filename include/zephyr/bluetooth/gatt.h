@@ -750,7 +750,7 @@ struct _bt_gatt_ccc {
 	/** Configuration for each connection */
 	struct bt_gatt_ccc_cfg cfg[BT_GATT_CCC_MAX];
 
-	/** Highest value of all connected peer's subscriptions */
+	/** Bitwise-or of all connected peer's CCC values */
 	uint16_t value;
 
 	/** @brief CCC attribute changed callback
