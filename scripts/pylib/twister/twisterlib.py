@@ -1787,7 +1787,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.platform_allow = None
         self.toolchain_exclude = None
         self.toolchain_allow = None
-        self.tc_filter = None
+        self.ts_filter = None
         self.timeout = 60
         self.harness = ""
         self.harness_config = {}
@@ -2520,14 +2520,14 @@ class FilterBuilder(CMake):
         filter_data.update(self.cmake_cache)
 
         edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
-        if self.testsuite and self.testsuite.tc_filter:
+        if self.testsuite and self.testsuite.ts_filter:
             try:
                 if os.path.exists(edt_pickle):
                     with open(edt_pickle, 'rb') as f:
                         edt = pickle.load(f)
                 else:
                     edt = None
-                res = expr_parser.parse(self.testsuite.tc_filter, filter_data, edt)
+                res = expr_parser.parse(self.testsuite.ts_filter, filter_data, edt)
 
             except (ValueError, SyntaxError) as se:
                 sys.stderr.write(
@@ -2977,7 +2977,7 @@ class TestPlan(DisablePyTestCollectionMixin):
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    tc_schema = scl.yaml_load(
+    ts_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "testsuite-schema.yaml"))
     quarantine_schema = scl.yaml_load(
@@ -3303,8 +3303,8 @@ class TestPlan(DisablePyTestCollectionMixin):
 
     def get_all_tests(self):
         tests = []
-        for _, tc in self.testsuites.items():
-            for case in tc.cases:
+        for _, ts in self.testsuites.items():
+            for case in ts.cases:
                 tests.append(case)
 
         return tests
@@ -3341,61 +3341,61 @@ class TestPlan(DisablePyTestCollectionMixin):
 
                 logger.debug("Found possible test case in " + dirpath)
 
-                tc_path = os.path.join(dirpath, filename)
+                ts_path = os.path.join(dirpath, filename)
 
                 try:
-                    parsed_data = TwisterConfigParser(tc_path, self.tc_schema)
+                    parsed_data = TwisterConfigParser(ts_path, self.ts_schema)
                     parsed_data.load()
 
-                    tc_path = os.path.dirname(tc_path)
-                    workdir = os.path.relpath(tc_path, root)
+                    ts_path = os.path.dirname(ts_path)
+                    workdir = os.path.relpath(ts_path, root)
 
                     for name in parsed_data.tests.keys():
-                        tc = TestSuite(root, workdir, name)
+                        ts = TestSuite(root, workdir, name)
 
-                        tc_dict = parsed_data.get_test(name, self.testsuite_valid_keys)
+                        ts_dict = parsed_data.get_test(name, self.testsuite_valid_keys)
 
-                        tc.source_dir = tc_path
-                        tc.yamlfile = tc_path
+                        ts.source_dir = ts_path
+                        ts.yamlfile = ts_path
 
-                        tc.type = tc_dict["type"]
-                        tc.tags = tc_dict["tags"]
-                        tc.extra_args = tc_dict["extra_args"]
-                        tc.extra_configs = tc_dict["extra_configs"]
-                        tc.arch_allow = tc_dict["arch_allow"]
-                        tc.arch_exclude = tc_dict["arch_exclude"]
-                        tc.skip = tc_dict["skip"]
-                        tc.platform_exclude = tc_dict["platform_exclude"]
-                        tc.platform_allow = tc_dict["platform_allow"]
-                        tc.toolchain_exclude = tc_dict["toolchain_exclude"]
-                        tc.toolchain_allow = tc_dict["toolchain_allow"]
-                        tc.tc_filter = tc_dict["filter"]
-                        tc.timeout = tc_dict["timeout"]
-                        tc.harness = tc_dict["harness"]
-                        tc.harness_config = tc_dict["harness_config"]
-                        if tc.harness == 'console' and not tc.harness_config:
+                        ts.type = ts_dict["type"]
+                        ts.tags = ts_dict["tags"]
+                        ts.extra_args = ts_dict["extra_args"]
+                        ts.extra_configs = ts_dict["extra_configs"]
+                        ts.arch_allow = ts_dict["arch_allow"]
+                        ts.arch_exclude = ts_dict["arch_exclude"]
+                        ts.skip = ts_dict["skip"]
+                        ts.platform_exclude = ts_dict["platform_exclude"]
+                        ts.platform_allow = ts_dict["platform_allow"]
+                        ts.toolchain_exclude = ts_dict["toolchain_exclude"]
+                        ts.toolchain_allow = ts_dict["toolchain_allow"]
+                        ts.ts_filter = ts_dict["filter"]
+                        ts.timeout = ts_dict["timeout"]
+                        ts.harness = ts_dict["harness"]
+                        ts.harness_config = ts_dict["harness_config"]
+                        if ts.harness == 'console' and not ts.harness_config:
                             raise Exception('Harness config error: console harness defined without a configuration.')
-                        tc.build_only = tc_dict["build_only"]
-                        tc.build_on_all = tc_dict["build_on_all"]
-                        tc.slow = tc_dict["slow"]
-                        tc.min_ram = tc_dict["min_ram"]
-                        tc.modules = tc_dict["modules"]
-                        tc.depends_on = tc_dict["depends_on"]
-                        tc.min_flash = tc_dict["min_flash"]
-                        tc.extra_sections = tc_dict["extra_sections"]
-                        tc.integration_platforms = tc_dict["integration_platforms"]
-                        tc.seed = tc_dict["seed"]
+                        ts.build_only = ts_dict["build_only"]
+                        ts.build_on_all = ts_dict["build_on_all"]
+                        ts.slow = ts_dict["slow"]
+                        ts.min_ram = ts_dict["min_ram"]
+                        ts.modules = ts_dict["modules"]
+                        ts.depends_on = ts_dict["depends_on"]
+                        ts.min_flash = ts_dict["min_flash"]
+                        ts.extra_sections = ts_dict["extra_sections"]
+                        ts.integration_platforms = ts_dict["integration_platforms"]
+                        ts.seed = ts_dict["seed"]
 
-                        tc.parse_subcases(tc_path)
+                        ts.parse_subcases(ts_path)
 
                         if testsuite_filter:
-                            if tc.name and tc.name in testsuite_filter:
-                                self.testsuites[tc.name] = tc
+                            if ts.name and ts.name in testsuite_filter:
+                                self.testsuites[ts.name] = ts
                         else:
-                            self.testsuites[tc.name] = tc
+                            self.testsuites[ts.name] = ts
 
                 except Exception as e:
-                    logger.error("%s: can't load (skipping): %s" % (tc_path, e))
+                    logger.error("%s: can't load (skipping): %s" % (ts_path, e))
                     self.load_errors += 1
         return len(self.testsuites)
 
@@ -3528,36 +3528,36 @@ class TestPlan(DisablePyTestCollectionMixin):
 
         logger.info("Building initial testsuite list...")
 
-        for tc_name, tc in self.testsuites.items():
+        for ts_name, ts in self.testsuites.items():
 
-            if tc.build_on_all and not platform_filter:
+            if ts.build_on_all and not platform_filter:
                 platform_scope = self.platforms
-            elif tc.integration_platforms and self.integration:
+            elif ts.integration_platforms and self.integration:
                 self.verify_platforms_existence(
-                    tc.integration_platforms, f"{tc_name} - integration_platforms")
-                platform_scope = list(filter(lambda item: item.name in tc.integration_platforms, \
+                    ts.integration_platforms, f"{ts_name} - integration_platforms")
+                platform_scope = list(filter(lambda item: item.name in ts.integration_platforms, \
                                          self.platforms))
             else:
                 platform_scope = platforms
 
-            integration = self.integration and tc.integration_platforms
+            integration = self.integration and ts.integration_platforms
 
             # If there isn't any overlap between the platform_allow list and the platform_scope
             # we set the scope to the platform_allow list
-            if tc.platform_allow and not platform_filter and not integration:
+            if ts.platform_allow and not platform_filter and not integration:
                 self.verify_platforms_existence(
-                    tc.platform_allow, f"{tc_name} - platform_allow")
+                    ts.platform_allow, f"{ts_name} - platform_allow")
                 a = set(platform_scope)
-                b = set(filter(lambda item: item.name in tc.platform_allow, self.platforms))
+                b = set(filter(lambda item: item.name in ts.platform_allow, self.platforms))
                 c = a.intersection(b)
                 if not c:
-                    platform_scope = list(filter(lambda item: item.name in tc.platform_allow, \
+                    platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
                                              self.platforms))
 
             # list of instances per testsuite, aka configurations.
             instance_list = []
             for plat in platform_scope:
-                instance = TestInstance(tc, plat, self.outdir)
+                instance = TestInstance(ts, plat, self.outdir)
                 if runnable:
                     tfilter = 'runnable'
                 else:
@@ -3569,42 +3569,42 @@ class TestPlan(DisablePyTestCollectionMixin):
                     self.fixtures
                 )
 
-                for t in tc.cases:
+                for t in ts.cases:
                     instance.results[t] = None
 
                 if runnable and self.duts:
                     for h in self.duts:
                         if h.platform == plat.name:
-                            if tc.harness_config.get('fixture') in h.fixtures:
+                            if ts.harness_config.get('fixture') in h.fixtures:
                                 instance.run = True
 
                 if not force_platform and plat.name in exclude_platform:
                     discards[instance] = discards.get(instance, "Platform is excluded on command line.")
 
-                if (plat.arch == "unit") != (tc.type == "unit"):
+                if (plat.arch == "unit") != (ts.type == "unit"):
                     # Discard silently
                     continue
 
-                if tc.modules and self.modules:
-                    if not set(tc.modules).issubset(set(self.modules)):
-                        discards[instance] = discards.get(instance, f"one or more required module not available: {','.join(tc.modules)}")
+                if ts.modules and self.modules:
+                    if not set(ts.modules).issubset(set(self.modules)):
+                        discards[instance] = discards.get(instance, f"one or more required module not available: {','.join(ts.modules)}")
 
                 if runnable and not instance.run:
                     discards[instance] = discards.get(instance, "Not runnable on device")
 
-                if self.integration and tc.integration_platforms and plat.name not in tc.integration_platforms:
+                if self.integration and ts.integration_platforms and plat.name not in ts.integration_platforms:
                     discards[instance] = discards.get(instance, "Not part of integration platforms")
 
-                if tc.skip:
+                if ts.skip:
                     discards[instance] = discards.get(instance, "Skip filter")
 
-                if tag_filter and not tc.tags.intersection(tag_filter):
+                if tag_filter and not ts.tags.intersection(tag_filter):
                     discards[instance] = discards.get(instance, "Command line testsuite tag filter")
 
-                if exclude_tag and tc.tags.intersection(exclude_tag):
+                if exclude_tag and ts.tags.intersection(exclude_tag):
                     discards[instance] = discards.get(instance, "Command line testsuite exclude filter")
 
-                if testsuite_filter and tc_name not in testsuite_filter:
+                if testsuite_filter and ts_name not in testsuite_filter:
                     discards[instance] = discards.get(instance, "TestSuite name filter")
 
                 if arch_filter and plat.arch not in arch_filter:
@@ -3612,25 +3612,25 @@ class TestPlan(DisablePyTestCollectionMixin):
 
                 if not force_platform:
 
-                    if tc.arch_allow and plat.arch not in tc.arch_allow:
+                    if ts.arch_allow and plat.arch not in ts.arch_allow:
                         discards[instance] = discards.get(instance, "Not in test case arch allow list")
 
-                    if tc.arch_exclude and plat.arch in tc.arch_exclude:
+                    if ts.arch_exclude and plat.arch in ts.arch_exclude:
                         discards[instance] = discards.get(instance, "In test case arch exclude")
 
-                    if tc.platform_exclude and plat.name in tc.platform_exclude:
+                    if ts.platform_exclude and plat.name in ts.platform_exclude:
                         discards[instance] = discards.get(instance, "In test case platform exclude")
 
-                if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
+                if ts.toolchain_exclude and toolchain in ts.toolchain_exclude:
                     discards[instance] = discards.get(instance, "In test case toolchain exclude")
 
                 if platform_filter and plat.name not in platform_filter:
                     discards[instance] = discards.get(instance, "Command line platform filter")
 
-                if tc.platform_allow and plat.name not in tc.platform_allow:
+                if ts.platform_allow and plat.name not in ts.platform_allow:
                     discards[instance] = discards.get(instance, "Not in testsuite platform allow list")
 
-                if tc.toolchain_allow and toolchain not in tc.toolchain_allow:
+                if ts.toolchain_allow and toolchain not in ts.toolchain_allow:
                     discards[instance] = discards.get(instance, "Not in testsuite toolchain allow list")
 
                 if not plat.env_satisfied:
@@ -3639,24 +3639,24 @@ class TestPlan(DisablePyTestCollectionMixin):
                 if not force_toolchain \
                         and toolchain and (toolchain not in plat.supported_toolchains) \
                         and "host" not in plat.supported_toolchains \
-                        and tc.type != 'unit':
+                        and ts.type != 'unit':
                     discards[instance] = discards.get(instance, "Not supported by the toolchain")
 
-                if plat.ram < tc.min_ram:
+                if plat.ram < ts.min_ram:
                     discards[instance] = discards.get(instance, "Not enough RAM")
 
-                if tc.depends_on:
-                    dep_intersection = tc.depends_on.intersection(set(plat.supported))
-                    if dep_intersection != set(tc.depends_on):
+                if ts.depends_on:
+                    dep_intersection = ts.depends_on.intersection(set(plat.supported))
+                    if dep_intersection != set(ts.depends_on):
                         discards[instance] = discards.get(instance, "No hardware support")
 
-                if plat.flash < tc.min_flash:
+                if plat.flash < ts.min_flash:
                     discards[instance] = discards.get(instance, "Not enough FLASH")
 
-                if set(plat.ignore_tags) & tc.tags:
+                if set(plat.ignore_tags) & ts.tags:
                     discards[instance] = discards.get(instance, "Excluded tags per platform (exclude_tags)")
 
-                if plat.only_tags and not set(plat.only_tags) & tc.tags:
+                if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     discards[instance] = discards.get(instance, "Excluded tags per platform (only_tags)")
 
                 test_configuration = ".".join([instance.platform.name,
@@ -3679,21 +3679,21 @@ class TestPlan(DisablePyTestCollectionMixin):
 
             # if twister was launched with no platform options at all, we
             # take all default platforms
-            if default_platforms and not tc.build_on_all and not integration:
-                if tc.platform_allow:
+            if default_platforms and not ts.build_on_all and not integration:
+                if ts.platform_allow:
                     a = set(self.default_platforms)
-                    b = set(tc.platform_allow)
+                    b = set(ts.platform_allow)
                     c = a.intersection(b)
                     if c:
-                        aa = list(filter(lambda tc: tc.platform.name in c, instance_list))
+                        aa = list(filter(lambda ts: ts.platform.name in c, instance_list))
                         self.add_instances(aa)
                     else:
                         self.add_instances(instance_list)
                 else:
-                    instances = list(filter(lambda tc: tc.platform.default, instance_list))
+                    instances = list(filter(lambda ts: ts.platform.default, instance_list))
                     self.add_instances(instances)
             elif integration:
-                instances = list(filter(lambda item:  item.platform.name in tc.integration_platforms, instance_list))
+                instances = list(filter(lambda item:  item.platform.name in ts.integration_platforms, instance_list))
                 self.add_instances(instances)
 
             elif emulation_platforms:
@@ -4022,10 +4022,10 @@ class TestPlan(DisablePyTestCollectionMixin):
 
     def get_testsuite(self, identifier):
         results = []
-        for _, tc in self.testsuites.items():
-            for case in tc.cases:
+        for _, ts in self.testsuites.items():
+            for case in ts.cases:
                 if case == identifier:
-                    results.append(tc)
+                    results.append(ts)
         return results
 
     def verify_platforms_existence(self, platform_names_to_verify, log_info=""):
