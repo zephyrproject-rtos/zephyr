@@ -23,14 +23,14 @@ static struct k_spinlock latency_lock;
 /** List of maximum latency requests. */
 static sys_slist_t latency_reqs;
 /** Maximum CPU latency in ticks */
-static int32_t max_latency_ticks = K_TICKS_FOREVER;
+static k_ticks_t max_latency_ticks = K_TICKS_FOREVER;
 /** Callback to notify when maximum latency changes. */
 static pm_policy_latency_changed_cb_t latency_changed_cb;
 
 /** @brief Update maximum allowed latency. */
 static void update_max_latency(void)
 {
-	int32_t new_max_latency_ticks = K_TICKS_FOREVER;
+	k_ticks_t new_max_latency_ticks = K_TICKS_FOREVER;
 	struct pm_policy_latency_request *req;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&latency_reqs, req, node) {
