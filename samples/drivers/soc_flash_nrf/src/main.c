@@ -9,6 +9,7 @@
 #include <drivers/flash.h>
 #include <storage/flash_map.h>
 #include <device.h>
+#include <devicetree.h>
 #include <stdio.h>
 
 
@@ -44,11 +45,9 @@ void main(void)
 	printf("\nNordic nRF5 Flash Testing\n");
 	printf("=========================\n");
 
-	flash_dev =
-		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-
-	if (!flash_dev) {
-		printf("Nordic nRF5 flash driver was not found!\n");
+	flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+	if (!device_is_ready(flash_dev)) {
+		printf("Flash device not ready\n");
 		return;
 	}
 
