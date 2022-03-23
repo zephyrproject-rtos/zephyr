@@ -13,7 +13,7 @@
 #include "../common_defs.h"
 #include "../test_utils.h"
 
-#include "testlib/connect.h"
+#include <testlib/conn.h>
 #include "testlib/scan.h"
 #include "testlib/security.h"
 

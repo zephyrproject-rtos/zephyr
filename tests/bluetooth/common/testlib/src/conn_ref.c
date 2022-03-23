@@ -2,11 +2,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_REF_H_
-#define ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_REF_H_
-
+#include <stddef.h>
+#include <testlib/conn.h>
 #include <zephyr/sys/atomic_builtin.h>
-#include <zephyr/bluetooth/conn.h>
 
 /**
  * @file
@@ -38,5 +36,3 @@ void bt_testlib_conn_unref(struct bt_conn **connp)
 	__ASSERT_NO_MSG(conn);
 	bt_conn_unref(conn);
 }
-
-#endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_REF_H_ */
