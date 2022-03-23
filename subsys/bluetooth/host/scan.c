@@ -941,6 +941,12 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		/* Now we know which address and SID we synchronized to. */
 		bt_addr_le_copy(&pending_per_adv_sync->addr, &evt->adv_addr);
 		pending_per_adv_sync->sid = evt->sid;
+
+		/* Translate "enhanced" identity address type to normal one */
+		if (pending_per_adv_sync->addr.type == BT_ADDR_LE_PUBLIC_ID ||
+		    pending_per_adv_sync->addr.type == BT_ADDR_LE_RANDOM_ID) {
+			pending_per_adv_sync->addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		}
 	}
 
 	sync_info.addr = &pending_per_adv_sync->addr;
