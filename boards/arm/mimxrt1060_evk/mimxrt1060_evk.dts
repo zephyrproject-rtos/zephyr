@@ -163,6 +163,7 @@ arduino_serial: &lpuart3 {
 	data-buswidth = "16-bit";
 	pinctrl-0 = <&pinmux_lcdif>;
 	pinctrl-names = "default";
+	backlight-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
 	port {
 		lcd_panel_out: endpoint {
 			remote-endpoint = <&lcd_panel_in>;
