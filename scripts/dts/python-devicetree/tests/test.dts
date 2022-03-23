@@ -310,7 +310,7 @@
 	};
 
 	//
-	// For testing Node.parent and Node.children
+	// For testing hierarchy.
 	//
 
 	parent {
