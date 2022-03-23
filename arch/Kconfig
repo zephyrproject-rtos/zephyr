@@ -846,6 +846,12 @@ config BOARD
 	  if not found we look for the linker file in
 	  soc/<arch>/<family>/<series>
 
+config BOARD_REVISION
+	string
+	help
+	  This option holds the revision of the board (if a board revision was
+	  used)
+
 config TOOLCHAIN_HAS_BUILTIN_FFS
 	bool
 	default y if !(64BIT && RISCV)

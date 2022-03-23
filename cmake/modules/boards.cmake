@@ -128,6 +128,9 @@ if(DEFINED BOARD_REVISION)
     set(BOARD_REVISION ${ACTIVE_BOARD_REVISION})
   endif()
 
+  # Add board revision to build variables
+  add_definitions(-DCONFIG_BOARD_REVISION="${BOARD_REVISION}")
+
   string(REPLACE "." "_" BOARD_REVISION_STRING ${BOARD_REVISION})
 endif()
 
