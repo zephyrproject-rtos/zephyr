@@ -304,7 +304,7 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 	 * the PSN may be incremented, and it is thus OK for us to increment
 	 * it faster than the SDU interval.
 	 */
-	cis_sdu_interval_us = BT_ISO_INTERVAL_MIN;
+	cis_sdu_interval_us = BT_ISO_SDU_INTERVAL_MIN;
 
 	return 0;
 }
