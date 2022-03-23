@@ -220,7 +220,6 @@ static uint32_t gpio_xlnx_axi_get_pending_int(const struct device *dev)
 
 static int gpio_xlnx_axi_init(const struct device *dev)
 {
-	
 	struct gpio_xlnx_axi_data *data = dev->data;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -243,111 +242,111 @@ static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
 	.get_pending_int = gpio_xlnx_axi_get_pending_int,
 };
 
-#define GPIO_XLNX_AXI_GPIO2_HAS_COMPAT_STATUS_OKAY(n)			\
-	UTIL_AND(							\
-		DT_NODE_HAS_COMPAT(DT_CHILD(DT_DRV_INST(n), gpio2),	\
-				   xlnx_xps_gpio_1_00_a_gpio2),		\
-		DT_NODE_HAS_STATUS(DT_CHILD(DT_DRV_INST(n), gpio2),	\
-				   okay)				\
+#define GPIO_XLNX_AXI_GPIO2_HAS_COMPAT_STATUS_OKAY(n)		    \
+	UTIL_AND(						    \
+		DT_NODE_HAS_COMPAT(DT_CHILD(DT_DRV_INST(n), gpio2), \
+				   xlnx_xps_gpio_1_00_a_gpio2),	    \
+		DT_NODE_HAS_STATUS(DT_CHILD(DT_DRV_INST(n), gpio2), \
+				   okay)			    \
 		)
 
-#define GPIO_XLNX_AXI_GPIO2_COND_INIT(n)				\
-	IF_ENABLED(UTIL_AND(						\
-			DT_INST_PROP_OR(n, xlnx_is_dual, 1),		\
-			GPIO_XLNX_AXI_GPIO2_HAS_COMPAT_STATUS_OKAY(n)	\
-			),						\
-		(GPIO_XLNX_AXI_GPIO2_INIT(n)));
+#define GPIO_XLNX_AXI_GPIO2_COND_INIT(n)				 \
+	IF_ENABLED(UTIL_AND(						 \
+			   DT_INST_PROP_OR(n, xlnx_is_dual, 1),		 \
+			   GPIO_XLNX_AXI_GPIO2_HAS_COMPAT_STATUS_OKAY(n) \
+			   ),						 \
+		   (GPIO_XLNX_AXI_GPIO2_INIT(n)));
 
 #ifdef CONFIG_MMU
-#define GPIO_XLNX_AXI_GPIO2_INIT(n)					\
-	static struct gpio_xlnx_axi_data gpio_xlnx_axi_##n##_2_data = {	\
-		.dout = DT_INST_PROP_OR(n, xlnx_dout_default_2, 0),	\
-		.tri = DT_INST_PROP_OR(n, xlnx_tri_default_2,		\
-				       GENMASK(MAX_GPIOS - 1, 0)),	\
-	};								\
-									\
-	static const struct gpio_xlnx_axi_config			\
-		gpio_xlnx_axi_##n##_2_config = {			\
-		._mmio = { \
+#define GPIO_XLNX_AXI_GPIO2_INIT(n)					      \
+	static struct gpio_xlnx_axi_data gpio_xlnx_axi_##n##_2_data = {	      \
+		.dout = DT_INST_PROP_OR(n, xlnx_dout_default_2, 0),	      \
+		.tri = DT_INST_PROP_OR(n, xlnx_tri_default_2,		      \
+				       GENMASK(MAX_GPIOS - 1, 0)),	      \
+	};								      \
+									      \
+	static const struct gpio_xlnx_axi_config			      \
+			    gpio_xlnx_axi_##n##_2_config = {		      \
+		._mmio = {						      \
 			.phys_addr = DT_INST_REG_ADDR(n) + GPIO2_DATA_OFFSET, \
-			.size = DT_INST_REG_SIZE \
-		}, \
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(\
-				DT_INST_PROP_OR(n, xlnx_gpio2_width,	\
-						MAX_GPIOS)),		\
-		},							\
-		.all_inputs = DT_INST_PROP_OR(n, xlnx_all_inputs2, 0),	\
-		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs2, 0),\
-	};								\
-									\
-	DEVICE_DT_DEFINE(DT_CHILD(DT_DRV_INST(n), gpio2),		\
-			&gpio_xlnx_axi_init,				\
-			NULL,						\
-			&gpio_xlnx_axi_##n##_2_data,			\
-			&gpio_xlnx_axi_##n##_2_config,			\
-			PRE_KERNEL_1,					\
-			CONFIG_GPIO_INIT_PRIORITY,			\
-			&gpio_xlnx_axi_driver_api);
+			.size = DT_INST_REG_SIZE			      \
+		},							      \
+		.common = {						      \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(      \
+				DT_INST_PROP_OR(n, xlnx_gpio2_width,	      \
+						MAX_GPIOS)),		      \
+		},							      \
+		.all_inputs = DT_INST_PROP_OR(n, xlnx_all_inputs2, 0),	      \
+		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs2, 0),      \
+	};								      \
+									      \
+	DEVICE_DT_DEFINE(DT_CHILD(DT_DRV_INST(n), gpio2),		      \
+			 &gpio_xlnx_axi_init,				      \
+			 NULL,						      \
+			 &gpio_xlnx_axi_##n##_2_data,			      \
+			 &gpio_xlnx_axi_##n##_2_config,			      \
+			 PRE_KERNEL_1,					      \
+			 CONFIG_GPIO_INIT_PRIORITY,			      \
+			 &gpio_xlnx_axi_driver_api);
 #else
-#define GPIO_XLNX_AXI_GPIO2_INIT(n)					\
-	static struct gpio_xlnx_axi_data gpio_xlnx_axi_##n##_2_data = {	\
-		.dout = DT_INST_PROP_OR(n, xlnx_dout_default_2, 0),	\
-		.tri = DT_INST_PROP_OR(n, xlnx_tri_default_2,		\
-				       GENMASK(MAX_GPIOS - 1, 0)),	\
-	};								\
-									\
-	static const struct gpio_xlnx_axi_config			\
-		gpio_xlnx_axi_##n##_2_config = {			\
-		._mmio = { \
+#define GPIO_XLNX_AXI_GPIO2_INIT(n)					     \
+	static struct gpio_xlnx_axi_data gpio_xlnx_axi_##n##_2_data = {	     \
+		.dout = DT_INST_PROP_OR(n, xlnx_dout_default_2, 0),	     \
+		.tri = DT_INST_PROP_OR(n, xlnx_tri_default_2,		     \
+				       GENMASK(MAX_GPIOS - 1, 0)),	     \
+	};								     \
+									     \
+	static const struct gpio_xlnx_axi_config			     \
+			    gpio_xlnx_axi_##n##_2_config = {		     \
+		._mmio = {						     \
 			.phys_addr = DT_INST_REG_ADDR(n) + GPIO2_DATA_OFFSET \
-		}, \
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(\
-				DT_INST_PROP_OR(n, xlnx_gpio2_width,	\
-						MAX_GPIOS)),		\
-		},							\
-		.all_inputs = DT_INST_PROP_OR(n, xlnx_all_inputs2, 0),	\
-		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs2, 0),\
-	};								\
-									\
-	DEVICE_DT_DEFINE(DT_CHILD(DT_DRV_INST(n), gpio2),		\
-			&gpio_xlnx_axi_init,				\
-			NULL,						\
-			&gpio_xlnx_axi_##n##_2_data,			\
-			&gpio_xlnx_axi_##n##_2_config,			\
-			PRE_KERNEL_1,					\
-			CONFIG_GPIO_INIT_PRIORITY,			\
-			&gpio_xlnx_axi_driver_api);
+		},							     \
+		.common = {						     \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(     \
+				DT_INST_PROP_OR(n, xlnx_gpio2_width,	     \
+						MAX_GPIOS)),		     \
+		},							     \
+		.all_inputs = DT_INST_PROP_OR(n, xlnx_all_inputs2, 0),	     \
+		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs2, 0),     \
+	};								     \
+									     \
+	DEVICE_DT_DEFINE(DT_CHILD(DT_DRV_INST(n), gpio2),		     \
+			 &gpio_xlnx_axi_init,				     \
+			 NULL,						     \
+			 &gpio_xlnx_axi_##n##_2_data,			     \
+			 &gpio_xlnx_axi_##n##_2_config,			     \
+			 PRE_KERNEL_1,					     \
+			 CONFIG_GPIO_INIT_PRIORITY,			     \
+			 &gpio_xlnx_axi_driver_api);
 #endif
 
-#define GPIO_XLNX_AXI_INIT(n)						\
-	static struct gpio_xlnx_axi_data gpio_xlnx_axi_##n##_data = {	\
-		.dout = DT_INST_PROP_OR(n, xlnx_dout_default, 0),	\
-		.tri = DT_INST_PROP_OR(n, xlnx_tri_default,		\
-				       GENMASK(MAX_GPIOS - 1, 0)),	\
-	};								\
-									\
-	static const struct gpio_xlnx_axi_config			\
-		gpio_xlnx_axi_##n##_config = {				\
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)), \
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(\
-				DT_INST_PROP_OR(n, xlnx_gpio_width,	\
-						MAX_GPIOS)),		\
-		},	\
-		.all_inputs = DT_INST_PROP_OR(n, xlnx_all_inputs, 0),	\
-		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs, 0),	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			&gpio_xlnx_axi_init,				\
-			NULL,						\
-			&gpio_xlnx_axi_##n##_data,			\
-			&gpio_xlnx_axi_##n##_config,			\
-			PRE_KERNEL_1,					\
-			CONFIG_GPIO_INIT_PRIORITY,			\
-			&gpio_xlnx_axi_driver_api);			\
+#define GPIO_XLNX_AXI_INIT(n)						 \
+	static struct gpio_xlnx_axi_data gpio_xlnx_axi_##n##_data = {	 \
+		.dout = DT_INST_PROP_OR(n, xlnx_dout_default, 0),	 \
+		.tri = DT_INST_PROP_OR(n, xlnx_tri_default,		 \
+				       GENMASK(MAX_GPIOS - 1, 0)),	 \
+	};								 \
+									 \
+	static const struct gpio_xlnx_axi_config			 \
+			    gpio_xlnx_axi_##n##_config = {		 \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),			 \
+		.common = {						 \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS( \
+				DT_INST_PROP_OR(n, xlnx_gpio_width,	 \
+						MAX_GPIOS)),		 \
+		},							 \
+		.all_inputs = DT_INST_PROP_OR(n, xlnx_all_inputs, 0),	 \
+		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs, 0),	 \
+	};								 \
+									 \
+	DEVICE_DT_INST_DEFINE(n,					 \
+			      &gpio_xlnx_axi_init,			 \
+			      NULL,					 \
+			      &gpio_xlnx_axi_##n##_data,		 \
+			      &gpio_xlnx_axi_##n##_config,		 \
+			      PRE_KERNEL_1,				 \
+			      CONFIG_GPIO_INIT_PRIORITY,		 \
+			      &gpio_xlnx_axi_driver_api);		 \
 	GPIO_XLNX_AXI_GPIO2_COND_INIT(n);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_XLNX_AXI_INIT)
