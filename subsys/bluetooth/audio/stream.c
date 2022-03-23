@@ -161,10 +161,10 @@ done:
 
 bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 {
-	if (qos->interval < BT_ISO_INTERVAL_MIN ||
-	    qos->interval > BT_ISO_INTERVAL_MAX) {
+	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
+	    qos->interval > BT_ISO_SDU_INTERVAL_MAX) {
 		BT_DBG("Interval not within allowed range: %u (%u-%u)",
-		       qos->interval, BT_ISO_INTERVAL_MIN, BT_ISO_INTERVAL_MAX);
+		       qos->interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX);
 		return false;
 	}
 
