@@ -372,6 +372,9 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
+	/* Set ENET_REF_CLK as an output driven by ENET1_CLK_ROOT */
+	IOMUXC_GPR->GPR4 |= (IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U) |
+		IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U));
 #endif
 
 #ifdef CONFIG_PTP_CLOCK_MCUX

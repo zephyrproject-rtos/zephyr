@@ -15,6 +15,7 @@
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <fsl_flexspi_nor_boot.h>
 #include <dt-bindings/clock/imx_ccm.h>
+#include <fsl_iomuxc.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
 #include "usb_dc_mcux.h"
@@ -162,6 +163,12 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetMux(kCLOCK_LcdifPreMux, 2);
 	CLOCK_SetDiv(kCLOCK_LcdifPreDiv, 4);
 	CLOCK_SetDiv(kCLOCK_LcdifDiv, 1);
+#endif
+
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
+	/* Enable clock output for ENET1 */
+	IOMUXC_EnableMode(IOMUXC_GPR, kIOMUXC_GPR_ENET1TxClkOutputDir, true);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
