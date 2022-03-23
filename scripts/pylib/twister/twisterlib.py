@@ -717,7 +717,7 @@ class DeviceHandler(Handler):
         """
         super().__init__(instance, type_str)
 
-        self.suite = None
+        self.testplan = None
 
     def monitor_serial(self, ser, halt_fileno, harness):
         if harness.is_pytest:
@@ -776,7 +776,7 @@ class DeviceHandler(Handler):
     def device_is_available(self, instance):
         device = instance.platform.name
         fixture = instance.testcase.harness_config.get("fixture")
-        for d in self.suite.duts:
+        for d in self.testplan.duts:
             if fixture and fixture not in d.fixtures:
                 continue
             if d.platform != device or (d.serial is None and d.serial_pty is None):
@@ -794,7 +794,7 @@ class DeviceHandler(Handler):
         return None
 
     def make_device_available(self, serial):
-        for d in self.suite.duts:
+        for d in self.testplan.duts:
             if serial in [d.serial_pty, d.serial]:
                 d.available = 1
 
@@ -822,7 +822,7 @@ class DeviceHandler(Handler):
             time.sleep(1)
             hardware = self.device_is_available(self.instance)
 
-        runner = hardware.runner or self.suite.west_runner
+        runner = hardware.runner or self.testplan.west_runner
         serial_pty = hardware.serial_pty
 
         ser_pty_process = None
@@ -840,7 +840,7 @@ class DeviceHandler(Handler):
 
         logger.debug(f"Using serial device {serial_device} @ {hardware.baud} baud")
 
-        if (self.suite.west_flash is not None) or runner:
+        if (self.testplan.west_flash is not None) or runner:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             command_extra_args = []
 
@@ -851,8 +851,8 @@ class DeviceHandler(Handler):
             #    This results in options.west_flash == "--board-id=42"
             # 3) Multiple values: --west-flash="--board-id=42,--erase"
             #    This results in options.west_flash == "--board-id=42 --erase"
-            if self.suite.west_flash and self.suite.west_flash != []:
-                command_extra_args.extend(self.suite.west_flash.split(','))
+            if self.testplan.west_flash and self.testplan.west_flash != []:
+                command_extra_args.extend(self.testplan.west_flash.split(','))
 
             if runner:
                 command.append("--runner")
@@ -883,7 +883,7 @@ class DeviceHandler(Handler):
 
                     # Receive parameters from an runner_params field
                     # of the specified hardware map file.
-                    for d in self.suite.duts:
+                    for d in self.testplan.duts:
                         if (d.platform == self.instance.platform.name) and d.runner_params:
                             for param in d.runner_params:
                                 command.append(param)
@@ -1751,7 +1751,7 @@ class TestCase(DisablePyTestCollectionMixin):
     def __init__(self, testcase_root, workdir, name):
         """TestCase constructor.
 
-        This gets called by TestSuite as it finds and reads test yaml files.
+        This gets called by TestPlan as it finds and reads test yaml files.
         Multiple TestCase instances may be generated from a single testcase.yaml,
         each one corresponds to an entry within that file.
 
@@ -2545,12 +2545,12 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, suite, instance, **kwargs):
+    def __init__(self, tplan, instance, **kwargs):
         super().__init__(instance.testcase, instance.platform, instance.testcase.source_dir, instance.build_dir)
 
         self.log = "build.log"
         self.instance = instance
-        self.suite = suite
+        self.testplan = tplan
         self.filtered_tests = 0
 
         self.lsan = kwargs.get('lsan', False)
@@ -2726,7 +2726,7 @@ class ProjectBuilder(FilterBuilder):
 
             # to make it work with pickle
             self.instance.handler.thread = None
-            self.instance.handler.suite = None
+            self.instance.handler.testplan = None
             pipeline.put({
                 "op": "report",
                 "test": self.instance,
@@ -2938,7 +2938,7 @@ class ProjectBuilder(FilterBuilder):
 
         if instance.handler:
             if instance.handler.type_str == "device":
-                instance.handler.suite = self.suite
+                instance.handler.testplan = self.testplan
 
             if(self.seed is not None and instance.platform.name.startswith("native_posix")):
                 self.parse_generated()
@@ -2951,7 +2951,7 @@ class ProjectBuilder(FilterBuilder):
         sys.stdout.flush()
 
     def gather_metrics(self, instance):
-        if self.suite.enable_size_report and not self.suite.cmake_only:
+        if self.testplan.enable_size_report and not self.testplan.cmake_only:
             self.calc_one_elf_size(instance)
         else:
             instance.metrics["ram_size"] = 0
@@ -2973,7 +2973,7 @@ class ProjectBuilder(FilterBuilder):
 
             instance.metrics["handler_time"] = instance.handler.duration if instance.handler else 0
 
-class TestSuite(DisablePyTestCollectionMixin):
+class TestPlan(DisablePyTestCollectionMixin):
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
@@ -3022,7 +3022,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         else:
             self.board_roots = board_root_list
 
-        # Testsuite Options
+        # Test Plan Options
         self.coverage_platform = []
         self.build_only = False
         self.cmake_only = False
