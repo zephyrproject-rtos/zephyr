@@ -15,9 +15,7 @@
 #include "testlib/att_write.h"
 #include "bs_macro.h"
 #include "bs_sync.h"
-#include "testlib/conn_ref.h"
-#include "testlib/conn_wait.h"
-#include "testlib/connect.h"
+#include <testlib/conn.h>
 #include "testlib/log_utils.h"
 #include "testlib/scan.h"
 #include "testlib/security.h"

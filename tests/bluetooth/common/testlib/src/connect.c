@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include <testlib/connect.h>
+#include <testlib/conn.h>
 
 LOG_MODULE_REGISTER(bt_testlib_connect, LOG_LEVEL_INF);
 
