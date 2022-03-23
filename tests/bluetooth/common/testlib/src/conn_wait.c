@@ -13,6 +13,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 
+#include <testlib/conn.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_testlib_conn_wait, LOG_LEVEL_DBG);
 
