@@ -11,3 +11,11 @@ USB device support
    uds_testing.rst
    hid.rst
    uds_cdc_acm.rst
+
+New USB device support
+######################
+
+.. toctree::
+   :maxdepth: 1
+
+   uds_next.rst
