@@ -355,6 +355,70 @@ static inline void stm32_clock_control_mco_init(void)
 }
 
 
+static void set_up_fixed_clock_sources(void)
+{
+
+#if STM32_HSE_ENABLED
+#ifdef CONFIG_SOC_SERIES_STM32WLX
+	if (IS_ENABLED(STM32_HSE_TCXO)) {
+		LL_RCC_HSE_EnableTcxo();
+	}
+#elif !defined(CONFIG_SOC_SERIES_STM32WBX)
+	/* Check if need to enable HSE bypass feature or not */
+	if (IS_ENABLED(STM32_HSE_BYPASS)) {
+		LL_RCC_HSE_EnableBypass();
+	} else {
+		LL_RCC_HSE_DisableBypass();
+	}
+#endif
+	/* Enable HSE */
+	LL_RCC_HSE_Enable();
+	while (LL_RCC_HSE_IsReady() != 1) {
+	/* Wait for HSE ready */
+	}
+#endif /* STM32_HSE_ENABLED */
+
+#if STM32_HSI_ENABLED
+	/* Enable HSI if not enabled */
+	if (LL_RCC_HSI_IsReady() != 1) {
+		/* Enable HSI */
+		LL_RCC_HSI_Enable();
+		while (LL_RCC_HSI_IsReady() != 1) {
+		/* Wait for HSI ready */
+		}
+	}
+#endif /* STM32_HSI_ENABLED */
+
+#if STM32_MSI_ENABLED
+	/* Set MSI Range */
+#if defined(RCC_CR_MSIRGSEL)
+	LL_RCC_MSI_EnableRangeSelection();
+#endif /* RCC_CR_MSIRGSEL */
+
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X)
+	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_ICSCR_MSIRANGE_Pos);
+#else
+	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
+#endif /* CONFIG_SOC_SERIES_STM32L0X || CONFIG_SOC_SERIES_STM32L1X */
+
+#if STM32_MSI_PLL_MODE
+	/* Enable MSI hardware auto calibration */
+	LL_RCC_MSI_EnablePLLMode();
+#endif
+	LL_RCC_MSI_SetCalibTrimming(0);
+
+	/* Enable MSI if not enabled */
+	if (LL_RCC_MSI_IsReady() != 1) {
+		/* Enable MSI */
+		LL_RCC_MSI_Enable();
+		while (LL_RCC_MSI_IsReady() != 1) {
+			/* Wait for MSI ready */
+		}
+	}
+#endif /* STM32_MSI_ENABLED */
+
+}
+
 /**
  * @brief Initialize clocks for the stm32
  *
@@ -396,24 +460,29 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_SetFlashLatency(new_flash_freq);
 	}
 
+	set_up_fixed_clock_sources();
+
 #if STM32_SYSCLK_SRC_PLL
 	LL_UTILS_PLLInitTypeDef s_PLLInitStruct;
 
 	/* configure PLL input settings */
 	config_pll_init(&s_PLLInitStruct);
 
-	/*
-	 * Switch to HSI and disable the PLL before configuration.
-	 * (Switching to HSI makes sure we have a SYSCLK source in
-	 * case we're currently running from the PLL we're about to
-	 * turn off and reconfigure.)
-	 *
-	 * Don't use s_ClkInitStruct.AHBCLKDivider as the AHB
-	 * prescaler here. In this configuration, that's the value to
-	 * use when the SYSCLK source is the PLL, not HSI.
-	 */
-	stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
-	LL_RCC_PLL_Disable();
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
+		/*
+		 * Case of chain-loaded applications
+		 * Switch to HSI and disable the PLL before configuration.
+		 * (Switching to HSI makes sure we have a SYSCLK source in
+		 * case we're currently running from the PLL we're about to
+		 * turn off and reconfigure.)
+		 *
+		 * Don't use s_ClkInitStruct.AHBCLKDivider as the AHB
+		 * prescaler here. In this configuration, that's the value to
+		 * use when the SYSCLK source is the PLL, not HSI.
+		 */
+		stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
+		LL_RCC_PLL_Disable();
+	}
 
 #ifdef CONFIG_SOC_SERIES_STM32F7X
 	 /* Assuming we stay on Power Scale default value: Power Scale 1 */
@@ -493,28 +562,6 @@ int stm32_clock_control_init(const struct device *dev)
 
 #elif STM32_SYSCLK_SRC_HSE
 
-	/* Enable HSE if not enabled */
-	if (LL_RCC_HSE_IsReady() != 1) {
-#ifdef CONFIG_SOC_SERIES_STM32WLX
-		if (IS_ENABLED(STM32_HSE_TCXO)) {
-			LL_RCC_HSE_EnableTcxo();
-		}
-#elif !defined(CONFIG_SOC_SERIES_STM32WBX)
-		/* Check if need to enable HSE bypass feature or not */
-		if (IS_ENABLED(STM32_HSE_BYPASS)) {
-			LL_RCC_HSE_EnableBypass();
-		} else {
-			LL_RCC_HSE_DisableBypass();
-		}
-#endif
-
-		/* Enable HSE */
-		LL_RCC_HSE_Enable();
-		while (LL_RCC_HSE_IsReady() != 1) {
-		/* Wait for HSE ready */
-		}
-	}
-
 	/* Set HSE as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
 	LL_RCC_SetAHBPrescaler(STM32_CORE_PRESCALER);
@@ -522,31 +569,6 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 
 #elif STM32_SYSCLK_SRC_MSI
-
-	/* Set MSI Range */
-#if defined(RCC_CR_MSIRGSEL)
-	LL_RCC_MSI_EnableRangeSelection();
-#endif /* RCC_CR_MSIRGSEL */
-
-#if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X)
-	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_ICSCR_MSIRANGE_Pos);
-#else
-	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
-#endif /* CONFIG_SOC_SERIES_STM32L0X || CONFIG_SOC_SERIES_STM32L1X */
-
-#if STM32_MSI_PLL_MODE
-	/* Enable MSI hardware auto calibration */
-	LL_RCC_MSI_EnablePLLMode();
-#endif
-
-	/* Enable MSI if not enabled */
-	if (LL_RCC_MSI_IsReady() != 1) {
-		/* Enable MSI */
-		LL_RCC_MSI_Enable();
-		while (LL_RCC_MSI_IsReady() != 1) {
-		/* Wait for HSI ready */
-		}
-	}
 
 	/* Set MSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSI);
