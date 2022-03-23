@@ -8,6 +8,7 @@
 
 #include <drivers/display.h>
 #include <drivers/pinctrl.h>
+#include <drivers/gpio.h>
 #include <fsl_elcdif.h>
 
 #ifdef CONFIG_HAS_MCUX_CACHE
@@ -32,6 +33,7 @@ struct mcux_elcdif_config {
 	elcdif_rgb_mode_config_t rgb_mode;
 	uint8_t pixel_format;
 	const struct pinctrl_dev_config *pincfg;
+	const struct gpio_dt_spec backlight_gpio;
 };
 
 struct mcux_mem_block {
@@ -196,6 +198,11 @@ static int mcux_elcdif_init(const struct device *dev)
 		return err;
 	}
 
+	err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
+	if (err) {
+		return err;
+	}
+
 	elcdif_rgb_mode_config_t rgb_mode = config->rgb_mode;
 
 	/* Shift the polarity bits to the appropriate location in the register */
@@ -273,6 +280,7 @@ static const struct display_driver_api mcux_elcdif_api = {
 		},								\
 		.pixel_format = DT_INST_ENUM_IDX(id, pixel_format),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
+		.backlight_gpio = GPIO_DT_SPEC_INST_GET(id, backlight_gpios),	\
 	};									\
 	static struct mcux_elcdif_data mcux_elcdif_data_##id;			\
 	DEVICE_DT_INST_DEFINE(id,						\
