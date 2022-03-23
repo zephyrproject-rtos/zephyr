@@ -257,6 +257,7 @@ struct media_proxy_ctrl_cbs {
 	 */
 	void (*local_player_instance)(struct media_player *player, int err);
 
+#ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 	/**
 	 * @brief Discover Player Instance callback
 	 *
@@ -269,6 +270,7 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 */
 	void (*discover_player)(struct media_player *player, int err);
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	/**
 	 * @brief Media Player Name receive callback
