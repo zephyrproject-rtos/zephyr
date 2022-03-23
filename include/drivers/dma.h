@@ -214,12 +214,14 @@ struct dma_config {
  * dir				- DMA transfer direction
  * pending_length 		- data length pending to be transferred in bytes
  * 					or platform dependent.
+ * free             - free buffer space
  *
  */
 struct dma_status {
 	bool busy;
 	enum dma_channel_direction dir;
 	uint32_t pending_length;
+	uint32_t free;
 };
 
 /**
