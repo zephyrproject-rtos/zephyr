@@ -8,10 +8,10 @@
 
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
+#include <mgmt/mcumgr/buf.h>
 #include "tinycbor/cbor.h"
 #include "mgmt/endian.h"
 #include "mgmt/mgmt.h"
-#include <mgmt/mcumgr/buf.h>
 
 static mgmt_on_evt_cb evt_cb;
 static struct mgmt_group *mgmt_group_list;

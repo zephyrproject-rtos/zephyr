@@ -152,7 +152,7 @@ typedef void (*mgmt_reset_buf_fn)(void *buf, void *arg);
  *
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */
-typedef int (*mgmt_write_hdr_fn)(struct cbor_encoder_writer *writer, const struct mgmt_hdr *hdr);
+typedef int (*mgmt_write_hdr_fn)(struct cbor_nb_writer *writer, const struct mgmt_hdr *hdr);
 
 /** @typedef mgmt_init_reader_fn
  * @brief Initializes a CBOR reader with the specified buffer.
@@ -172,7 +172,7 @@ typedef int (*mgmt_init_reader_fn)(struct cbor_decoder_reader *reader, void *buf
  *
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */
-typedef int (*mgmt_init_writer_fn)(struct cbor_encoder_writer *writer, void *buf);
+typedef int (*mgmt_init_writer_fn)(struct cbor_nb_writer *writer, void *buf);
 
 /** @typedef mgmt_init_writer_fn
  * @brief Frees the specified buffer.
@@ -202,7 +202,7 @@ struct mgmt_streamer {
 	const struct mgmt_streamer_cfg *cfg;
 	void *cb_arg;
 	struct cbor_decoder_reader *reader;
-	struct cbor_encoder_writer *writer;
+	struct cbor_nb_writer *writer;
 };
 
 /**

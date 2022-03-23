@@ -128,22 +128,6 @@ cbor_nb_reader_init(struct cbor_nb_reader *cnr,
 	cnr->r.message_size = nb->len;
 }
 
-static int
-cbor_nb_write(struct cbor_encoder_writer *writer, const char *data, int len)
-{
-	struct cbor_nb_writer *cnw;
-
-	cnw = (struct cbor_nb_writer *) writer;
-	if (len > net_buf_tailroom(cnw->nb)) {
-		return CborErrorOutOfMemory;
-	}
-
-	net_buf_add_mem(cnw->nb, data, len);
-	cnw->enc.bytes_written += len;
-
-	return CborNoError;
-}
-
 void
 cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
 {
@@ -152,7 +136,4 @@ cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
 	cnw->nb->len = sizeof(struct mgmt_hdr);
 	zcbor_new_encode_state(cnw->zs, 2, nb->data + sizeof(struct mgmt_hdr),
 			       net_buf_tailroom(nb), 0);
-	/* Reserve header space */
-	cnw->enc.bytes_written = sizeof(struct mgmt_hdr);
-	cnw->enc.write = &cbor_nb_write;
 }
