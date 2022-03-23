@@ -775,7 +775,7 @@ int media_proxy_ctrl_get_icon_id(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_icon_id) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->icon_id_recv) {
-				uint64_t id = mprx.local_player.calls->get_icon_id();
+				const uint64_t id = mprx.local_player.calls->get_icon_id();
 
 				mprx.ctrlr.cbs->icon_id_recv(&mprx.local_player, 0, id);
 			} else {
@@ -880,7 +880,8 @@ int media_proxy_ctrl_get_track_duration(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_track_duration) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_duration_recv) {
-				int32_t duration = mprx.local_player.calls->get_track_duration();
+				const int32_t duration =
+					mprx.local_player.calls->get_track_duration();
 
 				mprx.ctrlr.cbs->track_duration_recv(player, 0, duration);
 			} else {
@@ -915,7 +916,8 @@ int media_proxy_ctrl_get_track_position(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_track_position) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position_recv) {
-				int32_t position = mprx.local_player.calls->get_track_position();
+				const int32_t position =
+					mprx.local_player.calls->get_track_position();
 
 				mprx.ctrlr.cbs->track_position_recv(player, 0, position);
 			} else {
@@ -985,7 +987,7 @@ int media_proxy_ctrl_get_playback_speed(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_playback_speed) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed_recv) {
-				int8_t speed = mprx.local_player.calls->get_playback_speed();
+				const int8_t speed = mprx.local_player.calls->get_playback_speed();
 
 				mprx.ctrlr.cbs->playback_speed_recv(player, 0, speed);
 			} else {
@@ -1055,7 +1057,7 @@ int media_proxy_ctrl_get_seeking_speed(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_seeking_speed) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->seeking_speed_recv) {
-				int8_t speed = mprx.local_player.calls->get_seeking_speed();
+				const int8_t speed = mprx.local_player.calls->get_seeking_speed();
 
 				mprx.ctrlr.cbs->seeking_speed_recv(player, 0, speed);
 			} else {
@@ -1090,7 +1092,8 @@ int media_proxy_ctrl_get_track_segments_id(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_track_segments_id) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_segments_id_recv) {
-				uint64_t id = mprx.local_player.calls->get_track_segments_id();
+				const uint64_t id =
+					mprx.local_player.calls->get_track_segments_id();
 
 				mprx.ctrlr.cbs->track_segments_id_recv(player, 0, id);
 			} else {
@@ -1125,7 +1128,7 @@ int media_proxy_ctrl_get_current_track_id(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_current_track_id) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_track_id_recv) {
-				uint64_t id = mprx.local_player.calls->get_current_track_id();
+				const uint64_t id = mprx.local_player.calls->get_current_track_id();
 
 				mprx.ctrlr.cbs->current_track_id_recv(player, 0, id);
 			} else {
@@ -1201,7 +1204,7 @@ int media_proxy_ctrl_get_next_track_id(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_next_track_id) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->next_track_id_recv) {
-				uint64_t id = mprx.local_player.calls->get_next_track_id();
+				const uint64_t id = mprx.local_player.calls->get_next_track_id();
 
 				mprx.ctrlr.cbs->next_track_id_recv(player, 0, id);
 			} else {
@@ -1277,7 +1280,7 @@ int media_proxy_ctrl_get_parent_group_id(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_parent_group_id) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->parent_group_id_recv) {
-				uint64_t id = mprx.local_player.calls->get_parent_group_id();
+				const uint64_t id = mprx.local_player.calls->get_parent_group_id();
 
 				mprx.ctrlr.cbs->parent_group_id_recv(player, 0, id);
 			} else {
@@ -1312,7 +1315,7 @@ int media_proxy_ctrl_get_current_group_id(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_current_group_id) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_group_id_recv) {
-				uint64_t id = mprx.local_player.calls->get_current_group_id();
+				const uint64_t id = mprx.local_player.calls->get_current_group_id();
 
 				mprx.ctrlr.cbs->current_group_id_recv(player, 0, id);
 			} else {
@@ -1388,7 +1391,7 @@ int media_proxy_ctrl_get_playing_order(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_playing_order) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order_recv) {
-				uint8_t order = mprx.local_player.calls->get_playing_order();
+				const uint8_t order = mprx.local_player.calls->get_playing_order();
 
 				mprx.ctrlr.cbs->playing_order_recv(player, 0, order);
 			} else {
@@ -1459,7 +1462,7 @@ int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_playing_orders_supported) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_orders_supported_recv) {
-				uint16_t orders =
+				const uint16_t orders =
 					mprx.local_player.calls->get_playing_orders_supported();
 
 				mprx.ctrlr.cbs->playing_orders_supported_recv(player, 0, orders);
@@ -1495,7 +1498,7 @@ int media_proxy_ctrl_get_media_state(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_media_state) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->media_state_recv) {
-				uint8_t state = mprx.local_player.calls->get_media_state();
+				const uint8_t state = mprx.local_player.calls->get_media_state();
 
 				mprx.ctrlr.cbs->media_state_recv(player, 0, state);
 			} else {
@@ -1565,7 +1568,7 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_commands_supported) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->commands_supported_recv) {
-				uint32_t opcodes =
+				const uint32_t opcodes =
 					mprx.local_player.calls->get_commands_supported();
 
 				mprx.ctrlr.cbs->commands_supported_recv(player, 0, opcodes);
@@ -1636,7 +1639,8 @@ int media_proxy_ctrl_get_search_results_id(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_search_results_id) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_results_id_recv) {
-				uint64_t id = mprx.local_player.calls->get_search_results_id();
+				const uint64_t id =
+					mprx.local_player.calls->get_search_results_id();
 
 				mprx.ctrlr.cbs->search_results_id_recv(player, 0, id);
 			} else {
@@ -1671,7 +1675,7 @@ uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player)
 	if (mprx.local_player.registered && player == &mprx.local_player) {
 		if (mprx.local_player.calls->get_content_ctrl_id) {
 			if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->content_ctrl_id_recv) {
-				uint8_t ccid = mprx.local_player.calls->get_content_ctrl_id();
+				const uint8_t ccid = mprx.local_player.calls->get_content_ctrl_id();
 
 				mprx.ctrlr.cbs->content_ctrl_id_recv(player, 0, ccid);
 			} else {
