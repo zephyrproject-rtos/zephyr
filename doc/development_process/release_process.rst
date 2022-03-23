@@ -119,6 +119,7 @@ gate the final release. The following counts shall be used:
    The "low" bug count target of <50 will be a phased approach starting with 150
    for release 2.4.0, 100 for release 2.5.0, and 50 for release 2.6.0
 
+.. _releases:
 
 Releases
 *********
@@ -284,6 +285,20 @@ governing board.
 Processes to achieve selected certification will be determined by the Security and
 Safety Working Groups and coordinated with the TSC.
 
+Point releases
+==============
+
+As described :ref:`above <releases>`, the Zephyr Project may create follow-up
+releases from a minor release in the format [Major].[Minor].[Patch Level]. For
+example, following the v3.0 release, the project may create a v3.0.1 release
+with additional patches.
+
+No formal process exists for when these releases are created. They may be
+created on the initiative of the release manager for that minor release, or
+upon request by the community. To request a point release, feel free to send
+email to the developer mailing list or ask in the ``#release`` chat channel on
+Discord. See :ref:`project-resources` for information on mailing lists and
+chat.
 
 Release Procedure
 ******************
