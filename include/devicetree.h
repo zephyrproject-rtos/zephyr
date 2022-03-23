@@ -475,6 +475,30 @@
 #define DT_NODE_FULL_NAME(node_id) DT_CAT(node_id, _FULL_NAME)
 
 /**
+ * @brief Get a devicetree node's index into its parent's list of children
+ *
+ * Indexes are zero-based.
+ *
+ * It is an error to use this macro with the root node.
+ *
+ * Example devicetree fragment:
+ *
+ *     parent {
+ *             c1: child-1 {};
+ *             c2: child-2 {};
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_NODE_CHILD_IDX(DT_NODELABEL(c1)) // 0
+ *     DT_NODE_CHILD_IDX(DT_NODELABEL(c2)) // 1
+ *
+ * @param node_id node identifier
+ * @return the node's index in its parent node's list of children
+ */
+#define DT_NODE_CHILD_IDX(node_id) DT_CAT(node_id, _CHILD_IDX)
+
+/**
  * @brief Do node_id1 and node_id2 refer to the same node?
  *
  * Both "node_id1" and "node_id2" must be node identifiers for nodes

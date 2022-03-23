@@ -1996,6 +1996,13 @@ static void test_node_name(void)
 			     "reg-holder"), "");
 }
 
+static void test_node_child_idx(void)
+{
+	zassert_equal(DT_NODE_CHILD_IDX(DT_NODELABEL(test_child_a)), 0, "");
+	zassert_equal(DT_NODE_CHILD_IDX(DT_NODELABEL(test_child_b)), 1, "");
+	zassert_equal(DT_NODE_CHILD_IDX(DT_NODELABEL(test_child_c)), 2, "");
+}
+
 static void test_same_node(void)
 {
 	zassert_true(DT_SAME_NODE(TEST_DEADBEEF, TEST_DEADBEEF), "");
@@ -2369,6 +2376,7 @@ void test_main(void)
 			 ztest_unit_test(test_dep_ord),
 			 ztest_unit_test(test_path),
 			 ztest_unit_test(test_node_name),
+			 ztest_unit_test(test_node_child_idx),
 			 ztest_unit_test(test_same_node),
 			 ztest_unit_test(test_pinctrl),
 			 ztest_unit_test(test_mbox),
