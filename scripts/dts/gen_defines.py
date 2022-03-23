@@ -132,6 +132,10 @@ def main():
                 out_dt_define(f"{node.z_path_id}_PARENT",
                               f"DT_{node.parent.z_path_id}")
 
+                out_comment(f"Node's index in its parent's list of children:")
+                out_dt_define(f"{node.z_path_id}_CHILD_IDX",
+                              node.parent.child_index(node))
+
             write_children(node)
             write_dep_info(node)
             write_idents_and_existence(node)
