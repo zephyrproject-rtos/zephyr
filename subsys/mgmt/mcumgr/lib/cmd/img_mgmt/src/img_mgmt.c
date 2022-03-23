@@ -22,7 +22,6 @@
 #include "img_mgmt_priv.h"
 #include "img_mgmt/img_mgmt_config.h"
 
-static void *img_mgmt_upload_arg;
 static img_mgmt_upload_fn img_mgmt_upload_cb;
 
 const struct img_mgmt_dfu_callbacks_t *img_mgmt_dfu_callbacks_fn;
@@ -385,7 +384,8 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 	 * request.
 	 */
 	if (img_mgmt_upload_cb != NULL) {
-		rc = img_mgmt_upload_cb(req.off, action.size, img_mgmt_upload_arg);
+		rc = img_mgmt_upload_cb(req, action);
+
 		if (rc != 0) {
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action, img_mgmt_err_str_app_reject);
 			goto end;
@@ -515,10 +515,9 @@ img_mgmt_dfu_confirmed(void)
 }
 
 void
-img_mgmt_set_upload_cb(img_mgmt_upload_fn cb, void *arg)
+img_mgmt_set_upload_cb(img_mgmt_upload_fn cb)
 {
 	img_mgmt_upload_cb = cb;
-	img_mgmt_upload_arg = arg;
 }
 
 void
