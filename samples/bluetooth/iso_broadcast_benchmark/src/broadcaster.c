@@ -140,7 +140,7 @@ static int parse_interval_arg(void)
 	}
 
 	interval = strtoul(buffer, NULL, 0);
-	if (interval < BT_ISO_INTERVAL_MIN || interval > BT_ISO_INTERVAL_MAX) {
+	if (interval < BT_ISO_SDU_INTERVAL_MIN || interval > BT_ISO_SDU_INTERVAL_MAX) {
 		printk("Invalid interval %llu", interval);
 		return -EINVAL;
 	}

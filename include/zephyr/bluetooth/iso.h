@@ -47,9 +47,9 @@ extern "C" {
 #define BT_ISO_DATA_PATH_HCI        0x00
 
 /** Minimum interval value in microseconds */
-#define BT_ISO_INTERVAL_MIN         0x0000FF
+#define BT_ISO_SDU_INTERVAL_MIN     0x0000FFU
 /** Maximum interval value in microseconds */
-#define BT_ISO_INTERVAL_MAX         0x0FFFFF
+#define BT_ISO_SDU_INTERVAL_MAX     0x0FFFFFU
 /** Minimum latency value in milliseconds */
 #define BT_ISO_LATENCY_MIN          0x0005
 /** Maximum latency value in milliseconds */
@@ -251,7 +251,7 @@ struct bt_iso_cig_param {
 
 	/** @brief Channel interval in us.
 	 *
-	 *  Value range BT_ISO_INTERVAL_MIN - BT_ISO_INTERVAL_MAX.
+	 *  Value range BT_ISO_SDU_INTERVAL_MIN - BT_ISO_SDU_INTERVAL_MAX.
 	 */
 	uint32_t interval;
 
@@ -308,7 +308,7 @@ struct bt_iso_big_create_param {
 
 	/** @brief Channel interval in us.
 	 *
-	 *  Value range BT_ISO_INTERVAL_MIN - BT_ISO_INTERVAL_MAX.
+	 *  Value range BT_ISO_SDU_INTERVAL_MIN - BT_ISO_SDU_INTERVAL_MAX.
 	 */
 	uint32_t interval;
 

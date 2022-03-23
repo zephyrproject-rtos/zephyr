@@ -1483,8 +1483,8 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param)
 		return false;
 	}
 
-	if (param->interval < BT_ISO_INTERVAL_MIN ||
-	    param->interval > BT_ISO_INTERVAL_MAX) {
+	if (param->interval < BT_ISO_SDU_INTERVAL_MIN ||
+	    param->interval > BT_ISO_SDU_INTERVAL_MAX) {
 		BT_DBG("Invalid interval: %u", param->interval);
 		return false;
 	}
@@ -2211,8 +2211,8 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 		return -EINVAL;
 	}
 
-	CHECKIF(param->interval < BT_ISO_INTERVAL_MIN ||
-		param->interval > BT_ISO_INTERVAL_MAX) {
+	CHECKIF(param->interval < BT_ISO_SDU_INTERVAL_MIN ||
+		param->interval > BT_ISO_SDU_INTERVAL_MAX) {
 		BT_DBG("Invalid interval: %u", param->interval);
 		return -EINVAL;
 	}
