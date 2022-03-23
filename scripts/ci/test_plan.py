@@ -7,7 +7,6 @@
 import re, os
 import argparse
 import yaml
-import json
 import fnmatch
 import subprocess
 import json
@@ -290,7 +289,7 @@ def parse_args():
             help="Commit range in the form: a..b")
     parser.add_argument('-m', '--modified-files', default=None,
             help="File with information about changed/deleted/added files.")
-    parser.add_argument('-o', '--output-file', default="testplan.json",
+    parser.add_argument('-o', '--output-file', default="testplan.csv",
             help="JSON file with the test plan to be passed to twister")
     parser.add_argument('-P', '--pull-request', action="store_true",
             help="This is a pull request")
