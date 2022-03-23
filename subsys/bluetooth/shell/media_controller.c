@@ -50,6 +50,7 @@ static void local_player_instance_cb(struct media_player *plr, int err)
 	}
 }
 
+#ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 static void discover_player_cb(struct media_player *plr, int err)
 {
 	if (err) {
@@ -63,6 +64,7 @@ static void discover_player_cb(struct media_player *plr, int err)
 	/* Assuming that since discovery was called, the remote player is wanted */
 	current_player = remote_player;
 }
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 static void player_name_cb(struct media_player *plr, int err, const char *name)
 {
@@ -386,7 +388,9 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	/* Set up the callback structure */
+#ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 	cbs.discover_player               = discover_player_cb;
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 	cbs.local_player_instance         = local_player_instance_cb;
 	cbs.player_name_recv              = player_name_cb;
 	cbs.icon_id_recv                  = icon_id_cb;
@@ -478,7 +482,7 @@ static int cmd_media_show_players(const struct shell *sh, size_t argc, char *arg
 	return 0;
 }
 
-#ifdef CONFIG_BT_MCC
+#ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_ctrl_discover_player(default_conn);
@@ -489,7 +493,7 @@ static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *
 
 	return err;
 }
-#endif /* CONFIG_BT_MCC */
+#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 static int cmd_media_read_player_name(const struct shell *sh, size_t argc, char *argv[])
 {
