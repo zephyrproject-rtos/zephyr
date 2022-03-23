@@ -61,16 +61,15 @@ Sample Output
 
     ...
 
-The modified sample prints 50 generated-x-and-predicted-y pairs.
+The modified sample prints 10 generated-x-and-predicted-y pairs. To see
+the full period of the sine curve, increase the number of loops in :file:`main.c`.
 
 Modifying Sample for Your Own Project
 *************************************
 
 It is recommended that you copy and modify one of the two TensorFlow
 samples when creating your own TensorFlow project. To build with
-TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`.
-
-:file:`prj.conf`:
+TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 
 .. code-block:: console
 
