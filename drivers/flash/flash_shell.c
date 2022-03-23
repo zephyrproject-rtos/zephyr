@@ -6,6 +6,7 @@
  */
 
 #include <zephyr.h>
+#include <devicetree.h>
 
 #include <shell/shell.h>
 #include <sys/util.h>
@@ -18,11 +19,8 @@
 #define BUF_ARRAY_CNT 16
 #define TEST_ARR_SIZE 0x1000
 
-#ifdef DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
-#define FLASH_DEV_NAME DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
-#else
-#define FLASH_DEV_NAME ""
-#endif
+static const struct device *zephyr_flash_controller =
+	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_flash_controller));
 
 static uint8_t __aligned(4) test_arr[TEST_ARR_SIZE];
 
@@ -33,12 +31,27 @@ static int parse_helper(const struct shell *shell, size_t *argc,
 	char *endptr;
 
 	*addr = strtoul((*argv)[1], &endptr, 16);
-	*flash_dev = device_get_binding((*endptr != '\0') ? (*argv)[1] :
-			FLASH_DEV_NAME);
-	if (!*flash_dev) {
-		shell_error(shell, "Flash driver was not found!");
+
+	if (*endptr != '\0') {
+		/* flash controller from user input */
+		*flash_dev = device_get_binding((*argv)[1]);
+		if (!*flash_dev) {
+			shell_error(shell, "Given flash device was not found");
+			return -ENODEV;
+		}
+	} else if (zephyr_flash_controller != NULL) {
+		/* default to zephyr,flash-controller */
+		if (!device_is_ready(zephyr_flash_controller)) {
+			shell_error(shell, "Default flash driver not ready");
+			return -ENODEV;
+		}
+		*flash_dev = zephyr_flash_controller;
+	} else {
+		/* no flash controller given, no default available */
+		shell_error(shell, "No flash device specified (required)");
 		return -ENODEV;
 	}
+
 	if (*endptr == '\0') {
 		return 0;
 	}
