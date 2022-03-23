@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt1050.dtsi>
 #include "mimxrt1050_evk-pinctrl.dtsi"
 
 / {
