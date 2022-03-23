@@ -24,10 +24,10 @@
 #define fn_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
 #define apb1_prescaler(v) fn_apb1_prescaler(v)
 
-#ifndef CONFIG_SOC_SERIES_STM32F0X
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
 #define fn_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
 #define apb2_prescaler(v) fn_apb2_prescaler(v)
-#endif /* CONFIG_SOC_SERIES_STM32F0X  */
+#endif
 
 #define fn_mco1_prescaler(v) LL_RCC_MCO1_DIV_ ## v
 #define mco1_prescaler(v) fn_mco1_prescaler(v)
@@ -45,14 +45,10 @@
 			LL_RCC_MSIRANGESEL_RUN, LL_RCC_MSI_GetRange())
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
-#define __LL_RCC_CALC_HCLK_FREQ __LL_RCC_CALC_HCLK1_FREQ
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32WBX)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
 #define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK4_FREQ
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHB4Prescaler
-#elif defined(CONFIG_SOC_SERIES_STM32WLX)
+#elif DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
 #define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK3_FREQ
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHB3Prescaler
 #else
@@ -253,11 +249,10 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	 */
 	uint32_t ahb_clock = SystemCoreClock;
 	uint32_t apb1_clock = get_bus_clock(ahb_clock, STM32_APB1_PRESCALER);
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined (CONFIG_SOC_SERIES_STM32G0X)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
 	uint32_t apb2_clock = get_bus_clock(ahb_clock, STM32_APB2_PRESCALER);
 #endif
-#if defined(CONFIG_SOC_SERIES_STM32WLX)
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
 	uint32_t ahb3_clock = get_bus_clock(ahb_clock * STM32_CPU1_PRESCALER,
 					    STM32_AHB3_PRESCALER);
 #endif
@@ -375,8 +370,6 @@ static inline void stm32_clock_control_mco_init(void)
 int stm32_clock_control_init(const struct device *dev)
 {
 	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
-	uint32_t hclk_prescaler;
-	uint32_t flash_prescaler;
 	uint32_t new_hclk_freq;
 	uint32_t old_flash_freq;
 	uint32_t new_flash_freq;
@@ -385,18 +378,6 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* configure clock for AHB/APB buses */
 	config_bus_clk_init((LL_UTILS_ClkInitTypeDef *)&s_ClkInitStruct);
-
-	/* update local hclk and flash-clk prescaler variable */
-#if defined(CONFIG_SOC_SERIES_STM32WBX)
-	hclk_prescaler = s_ClkInitStruct.CPU1CLKDivider;
-	flash_prescaler = s_ClkInitStruct.AHB4CLKDivider;
-#elif defined(CONFIG_SOC_SERIES_STM32WLX)
-	hclk_prescaler = s_ClkInitStruct.CPU1CLKDivider;
-	flash_prescaler = s_ClkInitStruct.AHB3CLKDivider;
-#else
-	hclk_prescaler = s_ClkInitStruct.AHBCLKDivider;
-	flash_prescaler = hclk_prescaler;
-#endif
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
@@ -407,7 +388,8 @@ int stm32_clock_control_init(const struct device *dev)
 	new_hclk_freq = get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 				      STM32_CORE_PRESCALER);
 
-	new_flash_freq = RCC_CALC_FLASH_FREQ(new_hclk_freq, flash_prescaler);
+	new_flash_freq = RCC_CALC_FLASH_FREQ(new_hclk_freq,
+				      STM32_FLASH_PRESCALER);
 
 	/* If freq increases, set flash latency before any clock setting */
 	if (new_flash_freq > old_flash_freq) {
@@ -535,7 +517,7 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Set HSE as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
-	LL_RCC_SetAHBPrescaler(hclk_prescaler);
+	LL_RCC_SetAHBPrescaler(STM32_CORE_PRESCALER);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
 	}
 
@@ -568,13 +550,13 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Set MSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSI);
-	LL_RCC_SetAHBPrescaler(hclk_prescaler);
+	LL_RCC_SetAHBPrescaler(STM32_CORE_PRESCALER);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
 	}
 
 #elif STM32_SYSCLK_SRC_HSI
 
-	stm32_clock_switch_to_hsi(hclk_prescaler);
+	stm32_clock_switch_to_hsi(STM32_CORE_PRESCALER);
 
 #endif /* STM32_SYSCLK_SRC_... */
 
@@ -585,21 +567,20 @@ int stm32_clock_control_init(const struct device *dev)
 
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
-	/* Set APB1 & APB2 prescaler*/
-	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined (CONFIG_SOC_SERIES_STM32G0X)
-	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
+	/* Set bus prescalers prescaler */
+	LL_RCC_SetAPB1Prescaler(apb1_prescaler(STM32_APB1_PRESCALER));
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
+	LL_RCC_SetAPB2Prescaler(apb2_prescaler(STM32_APB2_PRESCALER));
 #endif
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(STM32WL_DUAL_CORE)
-	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), cpu2_prescaler)
+	LL_C2_RCC_SetAHBPrescaler(ahb_prescaler(STM32_CPU2_PRESCALER));
 #endif
-#ifdef CONFIG_SOC_SERIES_STM32WBX
-	LL_RCC_SetAHB4Prescaler(s_ClkInitStruct.AHB4CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-#ifdef CONFIG_SOC_SERIES_STM32WLX
-	LL_RCC_SetAHB3Prescaler(s_ClkInitStruct.AHB3CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32WLX */
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
+	LL_RCC_SetAHB3Prescaler(ahb_prescaler(STM32_AHB3_PRESCALER));
+#endif
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
+	LL_RCC_SetAHB4Prescaler(ahb_prescaler(STM32_AHB4_PRESCALER));
+#endif
 
 	/* configure MCO1/MCO2 based on Kconfig */
 	stm32_clock_control_mco_init();
