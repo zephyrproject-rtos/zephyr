@@ -35,7 +35,7 @@ static void test_flash_read(void)
 		"00000020: 61 62 63                                         |abc              |",
 	};
 	const struct shell *shell = shell_backend_dummy_get_ptr();
-	static const struct device *flash_dev;
+	const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	const char *buf;
 	const int test_base = FLASH_SIMULATOR_BASE_OFFSET;
 	const int test_size = 0x24;  /* 32-alignment required */
@@ -47,10 +47,9 @@ static void test_flash_read(void)
 	for (i = 0; i < test_size; i++) {
 		data[i] = 'A' + i;
 	}
-	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
-	zassert_true(flash_dev != NULL,
-		     "Simulated flash driver was not found!");
+	zassert_true(device_is_ready(flash_dev),
+		     "Simulated flash driver not ready");
 
 	ret = flash_write(flash_dev, test_base, data, test_size);
 	zassert_equal(0, ret, "flash_write() failed: %d", ret);
