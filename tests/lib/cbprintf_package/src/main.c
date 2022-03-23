@@ -525,9 +525,12 @@ static void test_cbprintf_ro_rw_loc(void)
 	check_package(package, len, exp_str);
 	check_package(cpackage, clen, exp_str);
 
+	uint32_t cpy_flags = CBPRINTF_PACKAGE_COPY_RW_STR |
+			     CBPRINTF_PACKAGE_COPY_KEEP_RO_STR;
+
 	/* Calculate size needed for package with appended read-write strings. */
 	clen = cbprintf_package_copy(package, sizeof(package), NULL, 0,
-				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+				     cpy_flags, NULL, 0);
 
 	/* Length will be increased by 2 string lengths + null terminators. */
 	zassert_equal(clen, len + (int)strlen(test_str1) + (int)strlen(test_str2) + 2, NULL);
@@ -535,7 +538,7 @@ static void test_cbprintf_ro_rw_loc(void)
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage2[clen];
 
 	clen2 = cbprintf_package_copy(package, sizeof(package), cpackage2, sizeof(cpackage2),
-				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+				      cpy_flags, NULL, 0);
 
 	zassert_equal(clen, clen2, NULL);
 
@@ -717,9 +720,12 @@ static void test_cbprintf_rw_loc_const_char_ptr(void)
 	zassert_equal(hdr[2], 0, NULL);
 	zassert_equal(hdr[3], 2, NULL);
 
+	uint32_t cpy_flags = CBPRINTF_PACKAGE_COPY_RW_STR |
+			     CBPRINTF_PACKAGE_COPY_KEEP_RO_STR;
+
 	/* Calculate size needed for package with appended read-only strings. */
 	clen = cbprintf_package_copy(spackage, sizeof(spackage), NULL, 0,
-				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+				     cpy_flags, NULL, 0);
 
 	/* Length will be increased by 2 string lengths + null terminators. */
 	zassert_equal(clen, slen + (int)strlen(test_str1) + 1, NULL);
@@ -727,7 +733,7 @@ static void test_cbprintf_rw_loc_const_char_ptr(void)
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	clen2 = cbprintf_package_copy(spackage, sizeof(spackage), cpackage, sizeof(cpackage),
-				     CBPRINTF_PACKAGE_COPY_RW_STR, NULL, 0);
+				     cpy_flags, NULL, 0);
 
 	zassert_equal(clen, clen2, NULL);
 
@@ -735,8 +741,8 @@ static void test_cbprintf_rw_loc_const_char_ptr(void)
 
 	/* Check that one string has been appended. */
 	zassert_equal(hdr[1], 1, NULL);
-	zassert_equal(hdr[2], 0, NULL);
-	zassert_equal(hdr[3], 1, NULL);
+	zassert_equal(hdr[2], 1, NULL);
+	zassert_equal(hdr[3], 0, NULL);
 
 	check_package(spackage, slen, exp_str);
 	test_str1[0] = '\0';
