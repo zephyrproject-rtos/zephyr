@@ -33,3 +33,14 @@ child-binding:
         input_reg: peripheral register that will direct peripheral signal to pin
         daisy_val: value to write to input_reg
         cfg_reg: register that will configure pin pull, drive strength, and open drain
+    gpr:
+      required: false
+      type: array
+      description: |
+        An array of values defining the GPR bit write required, if one exists.
+        Some IOMUXC options require writing to an IOMUXC_GPR register to select
+        them. This array has the following elements:
+        <gpr_reg, gpr_shift, gpr_val>
+        gpr_reg: GPR register address to write to
+        gpr_shift: shift to apply to value before writing
+        gpr_val: value to write
