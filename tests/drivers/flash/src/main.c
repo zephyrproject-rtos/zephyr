@@ -12,7 +12,7 @@
 
 #if (CONFIG_NORDIC_QSPI_NOR - 0)
 #define NORDIC_QSPI_NOR_NODE DT_INST(0, nordic_qspi_nor)
-#define FLASH_DEVICE DT_LABEL(NORDIC_QSPI_NOR_NODE)
+#define FLASH_NODEID NORDIC_QSPI_NOR_NODE
 #define FLASH_TEST_REGION_OFFSET 0xff000
 
 #if DT_NODE_HAS_PROP(NORDIC_QSPI_NOR_NODE, size_in_bytes)
@@ -23,18 +23,18 @@
 
 #elif defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR)
 
-#define FLASH_DEVICE DT_LABEL(DT_INST(0, nxp_imx_flexspi_nor))
+#define FLASH_NODEID DT_INST(0, nxp_imx_flexspi_nor)
 #define FLASH_TEST_REGION_OFFSET FLASH_AREA_OFFSET(storage)
 #define TEST_AREA_MAX ((FLASH_AREA_SIZE(storage)) + (FLASH_TEST_REGION_OFFSET))
 #elif defined(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G)
 
-#define FLASH_DEVICE DT_LABEL(DT_INST(0, nxp_imx_flexspi_mx25um51345g))
+#define FLASH_NODEID DT_INST(0, nxp_imx_flexspi_mx25um51345g)
 #define FLASH_TEST_REGION_OFFSET FLASH_AREA_OFFSET(storage)
 #define TEST_AREA_MAX ((FLASH_AREA_SIZE(storage)) + (FLASH_TEST_REGION_OFFSET))
 #else
 
 /* SoC embedded NVM */
-#define FLASH_DEVICE DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
+#define FLASH_NODEID DT_CHOSEN(zephyr_flash_controller)
 
 #ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
 #define FLASH_TEST_REGION_OFFSET FLASH_AREA_OFFSET(image_1_nonsecure)
@@ -50,7 +50,7 @@
 #define EXPECTED_SIZE	256
 #define CANARY		0xff
 
-static const struct device *flash_dev;
+static const struct device *flash_dev = DEVICE_DT_GET(FLASH_NODEID);
 static struct flash_pages_info page_info;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 
@@ -58,7 +58,8 @@ static void test_setup(void)
 {
 	int rc;
 
-	flash_dev = device_get_binding(FLASH_DEVICE);
+	zassert_true(device_is_ready(flash_dev), NULL);
+
 	const struct flash_parameters *flash_params =
 			flash_get_parameters(flash_dev);
 
