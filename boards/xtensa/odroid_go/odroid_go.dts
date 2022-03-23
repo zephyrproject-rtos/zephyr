@@ -30,19 +30,23 @@
 		compatible = "gpio-keys";
 		menu_button: menu_button {
 			label = "Menu";
-			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+		volume_button: volume_button {
+			label = "Volume";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};
 		select_button: select_button {
 			label = "Select";
-			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 		a_button: a_button {
 			label = "A";
-			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 		b_button: b_button {
 			label = "B";
-			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 		start_button: start_button {
 			label = "Start";
