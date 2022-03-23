@@ -670,7 +670,7 @@ static void test_cbprintf_ro_rw_loc_const_char_ptr(void)
 #undef TEST_FMT
 }
 
-static void test_cbprintf_rw_loc_const_char_ptr(void)
+static void cbprintf_rw_loc_const_char_ptr(bool keep_ro_str)
 {
 	/* Test requires that static packaging is applied. Runtime packaging
 	 * cannot be tricked because it checks pointers against read only
@@ -720,34 +720,42 @@ static void test_cbprintf_rw_loc_const_char_ptr(void)
 	zassert_equal(hdr[2], 0, NULL);
 	zassert_equal(hdr[3], 2, NULL);
 
-	uint32_t cpy_flags = CBPRINTF_PACKAGE_COPY_RW_STR |
-			     CBPRINTF_PACKAGE_COPY_KEEP_RO_STR;
+	uint32_t copy_flags = CBPRINTF_PACKAGE_COPY_RW_STR |
+			 (keep_ro_str ? CBPRINTF_PACKAGE_COPY_KEEP_RO_STR : 0);
 
 	/* Calculate size needed for package with appended read-only strings. */
 	clen = cbprintf_package_copy(spackage, sizeof(spackage), NULL, 0,
-				     cpy_flags, NULL, 0);
+				     copy_flags, NULL, 0);
 
-	/* Length will be increased by 2 string lengths + null terminators. */
-	zassert_equal(clen, slen + (int)strlen(test_str1) + 1, NULL);
+	int exp_len = slen + (int)strlen(test_str1) + 1 - (keep_ro_str ? 0 : 1);
+
+	/* Length will be increased by string length + null terminator. */
+	zassert_equal(clen, exp_len, NULL);
 
 	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) cpackage[clen];
 
 	clen2 = cbprintf_package_copy(spackage, sizeof(spackage), cpackage, sizeof(cpackage),
-				     cpy_flags, NULL, 0);
+				      copy_flags, NULL, 0);
 
 	zassert_equal(clen, clen2, NULL);
 
 	hdr = cpackage;
 
-	/* Check that one string has been appended. */
+	/* Check that one string has been appended. Second is detected to be RO */
 	zassert_equal(hdr[1], 1, NULL);
-	zassert_equal(hdr[2], 1, NULL);
+	zassert_equal(hdr[2], keep_ro_str ? 1 : 0, NULL);
 	zassert_equal(hdr[3], 0, NULL);
 
 	check_package(spackage, slen, exp_str);
 	test_str1[0] = '\0';
 	check_package(cpackage, clen, exp_str);
 #undef TEST_FMT
+}
+
+static void test_cbprintf_rw_loc_const_char_ptr(void)
+{
+	cbprintf_rw_loc_const_char_ptr(true);
+	cbprintf_rw_loc_const_char_ptr(false);
 }
 
 static void test_cbprintf_must_runtime_package(void)
