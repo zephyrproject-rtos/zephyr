@@ -19,10 +19,12 @@
 #if STM32_SYSCLK_SRC_PLL
 
 /**
- * @brief fill in pll configuration structure
+ * @brief Set up pll configuration
  */
-void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
+int config_pll_sysclock(void)
 {
+	uint32_t pll_source, pll_mul, pll_div;
+
 	/*
 	 * PLL MUL
 	 * 2  -> LL_RCC_PLL_MUL_2  -> 0x00000000
@@ -31,8 +33,7 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 * ...
 	 * 16 -> LL_RCC_PLL_MUL_16 -> 0x00380000
 	 */
-	pllinit->PLLMul = ((STM32_PLL_MULTIPLIER - 2)
-					<< RCC_CFGR_PLLMUL_Pos);
+	pll_mul = ((STM32_PLL_MULTIPLIER - 2) << RCC_CFGR_PLLMUL_Pos);
 
 	/*
 	 * PLL PREDIV
@@ -42,6 +43,8 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 * ...
 	 * 16 -> LL_RCC_PREDIV_DIV_16 -> 0x0000000F
 	 */
+	pll_div = STM32_PLL_PREDIV - 1;
+
 #if defined(RCC_PLLSRC_PREDIV1_SUPPORT)
 	/*
 	 * PREDIV1 support is a specific RCC configuration present on
@@ -49,10 +52,31 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 * STM32F030xC, STM32F302xE, STM32F303xE and STM32F39xx
 	 * cf Reference manual for more details
 	 */
-	pllinit->PLLDiv = STM32_PLL_PREDIV - 1;
+
+	/* Configure PLL source */
+	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		pll_source = LL_RCC_PLLSOURCE_HSE;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		pll_source = LL_RCC_PLLSOURCE_HSI;
+	} else {
+		return -ENOTSUP;
+	}
+
+	LL_RCC_PLL_ConfigDomain_SYS(pll_source, pll_mul, pll_div);
 #else
-	pllinit->Prediv = STM32_PLL_PREDIV - 1;
+	/* Configure PLL source */
+	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		pll_source = LL_RCC_PLLSOURCE_HSE | pll_div;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		pll_source = LL_RCC_PLLSOURCE_HSI_DIV_2;
+	} else {
+		return -ENOTSUP;
+	}
+
+	LL_RCC_PLL_ConfigDomain_SYS(pll_source, pll_mul);
 #endif /* RCC_PLLSRC_PREDIV1_SUPPORT */
+
+	return 0;
 }
 
 #endif /* STM32_SYSCLK_SRC_PLL */

@@ -61,32 +61,6 @@
 #define STM32WL_DUAL_CORE
 #endif
 
-/**
- * @brief fill in AHB/APB buses configuration structure
- */
-static void config_bus_clk_init(LL_UTILS_ClkInitTypeDef *clk_init)
-{
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(STM32WL_DUAL_CORE)
-	clk_init->CPU2CLKDivider = ahb_prescaler(STM32_CPU2_PRESCALER);
-#endif
-#if defined(CONFIG_SOC_SERIES_STM32WBX)
-	clk_init->CPU1CLKDivider = ahb_prescaler(STM32_CPU1_PRESCALER);
-	clk_init->AHB4CLKDivider = ahb_prescaler(STM32_AHB4_PRESCALER);
-#elif defined(CONFIG_SOC_SERIES_STM32WLX)
-	clk_init->CPU1CLKDivider = ahb_prescaler(STM32_CPU1_PRESCALER);
-	clk_init->AHB3CLKDivider = ahb_prescaler(STM32_AHB3_PRESCALER);
-#else
-	clk_init->AHBCLKDivider = ahb_prescaler(STM32_AHB_PRESCALER);
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
-
-	clk_init->APB1CLKDivider = apb1_prescaler(STM32_APB1_PRESCALER);
-
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined (CONFIG_SOC_SERIES_STM32G0X)
-	clk_init->APB2CLKDivider = apb2_prescaler(STM32_APB2_PRESCALER);
-#endif
-}
-
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
@@ -354,6 +328,60 @@ static inline void stm32_clock_control_mco_init(void)
 #endif /* CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK */
 }
 
+__unused
+static int set_up_plls(void)
+{
+#if defined(STM32_PLL_ENABLED)
+	int r;
+
+	/*
+	 * Case of chain-loaded applications:
+	 * Switch to HSI and disable the PLL before configuration.
+	 * (Switching to HSI makes sure we have a SYSCLK source in
+	 * case we're currently running from the PLL we're about to
+	 * turn off and reconfigure.)
+	 *
+	 */
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
+		stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
+	}
+	LL_RCC_PLL_Disable();
+
+#ifdef CONFIG_SOC_SERIES_STM32F7X
+	/* Assuming we stay on Power Scale default value: Power Scale 1 */
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+		LL_PWR_EnableOverDriveMode();
+		while (LL_PWR_IsActiveFlag_OD() != 1) {
+		/* Wait for OverDrive mode ready */
+		}
+		LL_PWR_EnableOverDriveSwitching();
+		while (LL_PWR_IsActiveFlag_ODSW() != 1) {
+		/* Wait for OverDrive switch ready */
+		}
+	}
+#endif
+
+#if STM32_PLL_Q_DIVISOR
+	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
+		   STM32_PLL_Q_DIVISOR
+		   << RCC_PLLCFGR_PLLQ_Pos);
+#endif
+
+	r = config_pll_sysclock();
+	if (r < 0) {
+		return -ENOTSUP;
+	}
+
+	/* Enable PLL */
+	LL_RCC_PLL_Enable();
+	while (LL_RCC_PLL_IsReady() != 1U) {
+	/* Wait for PLL ready */
+	}
+
+#endif /* STM32_PLL_ENABLED */
+
+	return 0;
+}
 
 static void set_up_fixed_clock_sources(void)
 {
@@ -433,15 +461,13 @@ static void set_up_fixed_clock_sources(void)
  */
 int stm32_clock_control_init(const struct device *dev)
 {
-	LL_UTILS_ClkInitTypeDef s_ClkInitStruct;
 	uint32_t new_hclk_freq;
 	uint32_t old_flash_freq;
 	uint32_t new_flash_freq;
+	int r;
 
 	ARG_UNUSED(dev);
 
-	/* configure clock for AHB/APB buses */
-	config_bus_clk_init((LL_UTILS_ClkInitTypeDef *)&s_ClkInitStruct);
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
@@ -460,126 +486,34 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_SetFlashLatency(new_flash_freq);
 	}
 
+	/* Set up indiviual enabled clocks */
 	set_up_fixed_clock_sources();
 
+	/* Set up PLLs */
+	r = set_up_plls();
+	if (r < 0) {
+		return r;
+	}
+
 #if STM32_SYSCLK_SRC_PLL
-	LL_UTILS_PLLInitTypeDef s_PLLInitStruct;
-
-	/* configure PLL input settings */
-	config_pll_init(&s_PLLInitStruct);
-
-	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
-		/*
-		 * Case of chain-loaded applications
-		 * Switch to HSI and disable the PLL before configuration.
-		 * (Switching to HSI makes sure we have a SYSCLK source in
-		 * case we're currently running from the PLL we're about to
-		 * turn off and reconfigure.)
-		 *
-		 * Don't use s_ClkInitStruct.AHBCLKDivider as the AHB
-		 * prescaler here. In this configuration, that's the value to
-		 * use when the SYSCLK source is the PLL, not HSI.
-		 */
-		stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
-		LL_RCC_PLL_Disable();
+	/* Set PLL as System Clock Source */
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
 	}
-
-#ifdef CONFIG_SOC_SERIES_STM32F7X
-	 /* Assuming we stay on Power Scale default value: Power Scale 1 */
-	 if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
-		 LL_PWR_EnableOverDriveMode();
-		 while (LL_PWR_IsActiveFlag_OD() != 1) {
-		 /* Wait for OverDrive mode ready */
-		 }
-		 LL_PWR_EnableOverDriveSwitching();
-		 while (LL_PWR_IsActiveFlag_ODSW() != 1) {
-		 /* Wait for OverDrive switch ready */
-		 }
-	 }
-#endif
-
-#if STM32_PLL_Q_DIVISOR
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ,
-		   STM32_PLL_Q_DIVISOR
-		   << RCC_PLLCFGR_PLLQ_Pos);
-#endif /* STM32_PLL_Q_DIVISOR */
-
-#if STM32_PLL_SRC_MSI
-
-	/* Set MSI Range */
-#if defined(RCC_CR_MSIRGSEL)
-	LL_RCC_MSI_EnableRangeSelection();
-#endif /* RCC_CR_MSIRGSEL */
-	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
-	LL_RCC_MSI_SetCalibTrimming(0);
-
-#if STM32_MSI_PLL_MODE
-
-#ifndef STM32_LSE_ENABLED
-#error "MSI Hardware auto calibration requires LSE clock activation"
-#endif
-	/* Enable MSI hardware auto calibration */
-	LL_RCC_MSI_EnablePLLMode();
-#endif
-
-	/* Switch to PLL with MSI as clock source */
-	LL_PLL_ConfigSystemClock_MSI(&s_PLLInitStruct, &s_ClkInitStruct);
-
-#elif STM32_PLL_SRC_HSI
-	/* Switch to PLL with HSI as clock source */
-	LL_PLL_ConfigSystemClock_HSI(&s_PLLInitStruct, &s_ClkInitStruct);
-
-#elif STM32_PLL_SRC_HSE
-
-#ifndef CONFIG_SOC_SERIES_STM32WLX
-	int hse_bypass;
-	if (IS_ENABLED(STM32_HSE_BYPASS)) {
-		hse_bypass = LL_UTILS_HSEBYPASS_ON;
-	} else {
-		hse_bypass = LL_UTILS_HSEBYPASS_OFF;
-	}
-#else
-	if (IS_ENABLED(STM32_HSE_TCXO)) {
-		LL_RCC_HSE_EnableTcxo();
-	}
-	if (IS_ENABLED(STM32_HSE_DIV2)) {
-		LL_RCC_HSE_EnableDiv2();
-	}
-#endif
-
-	/* Switch to PLL with HSE as clock source */
-	LL_PLL_ConfigSystemClock_HSE(
-#if !defined(CONFIG_SOC_SERIES_STM32WBX) && !defined(CONFIG_SOC_SERIES_STM32WLX)
-		CONFIG_CLOCK_STM32_HSE_CLOCK,
-#endif
-#ifndef CONFIG_SOC_SERIES_STM32WLX
-		hse_bypass,
-#endif
-		&s_PLLInitStruct,
-		&s_ClkInitStruct);
-
-#endif /* STM32_PLL_SRC_* */
-
 #elif STM32_SYSCLK_SRC_HSE
-
 	/* Set HSE as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
 	LL_RCC_SetAHBPrescaler(STM32_CORE_PRESCALER);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
 	}
-
 #elif STM32_SYSCLK_SRC_MSI
-
 	/* Set MSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSI);
 	LL_RCC_SetAHBPrescaler(STM32_CORE_PRESCALER);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
 	}
-
 #elif STM32_SYSCLK_SRC_HSI
-
 	stm32_clock_switch_to_hsi(STM32_CORE_PRESCALER);
-
 #endif /* STM32_SYSCLK_SRC_... */
 
 	/* If freq not increased, set flash latency after all clock setting */
