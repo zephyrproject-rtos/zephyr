@@ -10,23 +10,32 @@ config ILI9XXX
 	help
 	  Hidden configuration entry for all ILI9XXX drivers.
 
+DT_COMPAT_ILITEK_ILI9340 := ilitek,ili9340
+
 config ILI9340
 	bool "ILI9340 display driver"
 	depends on SPI
 	select ILI9XXX
+	default $(dt_compat_enabled,$(DT_COMPAT_ILITEK_ILI9340))
 	help
 	  Enable driver for ILI9340 display driver.
+
+DT_COMPAT_ILITEK_ILI9341 := ilitek,ili9341
 
 config ILI9341
 	bool "ILI9341 display driver"
 	depends on SPI
 	select ILI9XXX
+	default $(dt_compat_enabled,$(DT_COMPAT_ILITEK_ILI9341))
 	help
 	  Enable driver for ILI9341 display driver.
+
+DT_COMPAT_ILITEK_ILI9488 := ilitek,ili9488
 
 config ILI9488
 	bool "ILI9488 display driver"
 	depends on SPI
 	select ILI9XXX
+	default $(dt_compat_enabled,$(DT_COMPAT_ILITEK_ILI9488))
 	help
 	  Enable driver for ILI9488 display driver.
