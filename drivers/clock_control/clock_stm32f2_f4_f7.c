@@ -26,13 +26,28 @@
 #define pllp(v) z_pllp(v)
 
 /**
- * @brief fill in pll configuration structure
+ * @brief Set up pll configuration
  */
-void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
+int config_pll_sysclock(void)
 {
-	pllinit->PLLM = pllm(STM32_PLL_M_DIVISOR);
-	pllinit->PLLN = STM32_PLL_N_MULTIPLIER;
-	pllinit->PLLP = pllp(STM32_PLL_P_DIVISOR);
+	uint32_t pll_source, pll_m, pll_n, pll_p;
+
+	pll_n = STM32_PLL_N_MULTIPLIER;
+	pll_m = pllm(STM32_PLL_M_DIVISOR);
+	pll_p = pllp(STM32_PLL_P_DIVISOR);
+
+	/* Configure PLL source */
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		pll_source = LL_RCC_PLLSOURCE_HSI;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		pll_source = LL_RCC_PLLSOURCE_HSE;
+	} else {
+		return -ENOTSUP;
+	}
+
+	LL_RCC_PLL_ConfigDomain_SYS(pll_source, pll_m, pll_n, pll_p);
+
+	return 0;
 }
 #endif /* STM32_SYSCLK_SRC_PLL */
 
