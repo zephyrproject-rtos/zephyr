@@ -52,6 +52,8 @@ Bluetooth
   * The enum bt_l2cap_chan_state values BT_L2CAP_CONNECT and BT_L2CAP_DISCONNECT
     has been renamed to BT_L2CAP_CONNECTING and BT_L2CAP_DISCONNECTING.
 
+  * :c:member:`_bt_gatt_ccc.value` is now a bitwise-or reduction of the
+    individual CCC values of connected clients instead of the maximum.
 
 New APIs in this release
 ========================
