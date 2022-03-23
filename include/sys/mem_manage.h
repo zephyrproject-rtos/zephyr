@@ -9,6 +9,9 @@
 
 #include <sys/util.h>
 #include <toolchain.h>
+#if defined(CONFIG_ARM_MMU) && defined(CONFIG_ARM64)
+#include <arch/arm64/arm_mem.h>
+#endif
 
 /*
  * Caching mode definitions. These are mutually exclusive.
@@ -22,6 +25,11 @@
 
 /** Full write-back caching. Any RAM mapped wants this. */
 #define K_MEM_CACHE_WB		0
+
+/*
+ * ARM64 Specific flags are defined in arch/arm64/arm_mem.h,
+ * pay attention to be not conflicted when updating these flags.
+ */
 
 /** Reserved bits for cache modes in k_map() flags argument */
 #define K_MEM_CACHE_MASK	(BIT(3) - 1)

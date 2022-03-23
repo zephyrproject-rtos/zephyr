@@ -870,15 +870,27 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	/* Translate flags argument into HW-recognized entry flags. */
 	switch (flags & K_MEM_CACHE_MASK) {
 	/*
-	 * K_MEM_CACHE_NONE => MT_DEVICE_nGnRnE
+	 * K_MEM_CACHE_NONE, K_MEM_ARM_DEVICE_nGnRnE => MT_DEVICE_nGnRnE
 	 *			(Device memory nGnRnE)
+	 * K_MEM_ARM_DEVICE_nGnRE => MT_DEVICE_nGnRE
+	 *			(Device memory nGnRE)
+	 * K_MEM_ARM_DEVICE_GRE => MT_DEVICE_GRE
+	 *			(Device memory GRE)
 	 * K_MEM_CACHE_WB   => MT_NORMAL
 	 *			(Normal memory Outer WB + Inner WB)
 	 * K_MEM_CACHE_WT   => MT_NORMAL_WT
 	 *			(Normal memory Outer WT + Inner WT)
 	 */
 	case K_MEM_CACHE_NONE:
+	/* K_MEM_CACHE_NONE equal to K_MEM_ARM_DEVICE_nGnRnE */
+	/* case K_MEM_ARM_DEVICE_nGnRnE: */
 		entry_flags |= MT_DEVICE_nGnRnE;
+		break;
+	case K_MEM_ARM_DEVICE_nGnRE:
+		entry_flags |= MT_DEVICE_nGnRE;
+		break;
+	case K_MEM_ARM_DEVICE_GRE:
+		entry_flags |= MT_DEVICE_GRE;
 		break;
 	case K_MEM_CACHE_WT:
 		entry_flags |= MT_NORMAL_WT;
