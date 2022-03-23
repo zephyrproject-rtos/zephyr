@@ -46,6 +46,10 @@
 /**
  * @def DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
  *
+ * @deprecated Use @c DT_LABEL(DT_CHOSEN(zephyr_flash_controller)) instead. If
+ * used to to obtain a device instance with device_get_binding(), consider using
+ * @c DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller)).
+ *
  * @brief If there is a chosen node zephyr,flash-controller property which has
  *        a label property, that property's value. Undefined otherwise.
  */
@@ -60,7 +64,7 @@
 
 #if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_flash_controller), label)
 #define DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL \
-	DT_LABEL(DT_CHOSEN(zephyr_flash_controller))
+	__DEPRECATED_MACRO DT_LABEL(DT_CHOSEN(zephyr_flash_controller))
 #endif
 
 /**
