@@ -20,7 +20,6 @@ struct cbor_nb_reader {
 };
 
 struct cbor_nb_writer {
-	struct cbor_encoder_writer enc;
 	struct net_buf *nb;
 	zcbor_state_t zs[2];
 };

@@ -6,9 +6,9 @@
  */
 
 #include <zephyr.h>
-#include "net/buf.h"
+#include <net/buf.h>
+#include <mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
-#include "mgmt/mcumgr/buf.h"
 #include "smp/smp.h"
 #include "mgmt/mcumgr/smp.h"
 #include "smp_reassembly.h"
@@ -135,15 +135,9 @@ zephyr_smp_reset_buf(void *buf, void *arg)
 }
 
 static int
-zephyr_smp_write_hdr(struct cbor_encoder_writer *writer, const struct mgmt_hdr *hdr)
+zephyr_smp_write_hdr(struct cbor_nb_writer *cnw, const struct mgmt_hdr *hdr)
 {
-	struct cbor_nb_writer *czw;
-	struct net_buf *nb;
-
-	czw = (struct cbor_nb_writer *)writer;
-	nb = czw->nb;
-
-	memcpy(nb->data, hdr, sizeof(*hdr));
+	memcpy(cnw->nb->data, hdr, sizeof(*hdr));
 
 	return 0;
 }
@@ -212,12 +206,9 @@ zephyr_smp_init_reader(struct cbor_decoder_reader *reader, void *buf)
 }
 
 static int
-zephyr_smp_init_writer(struct cbor_encoder_writer *writer, void *buf)
+zephyr_smp_init_writer(struct cbor_nb_writer *cnbw, void *buf)
 {
-	struct cbor_nb_writer *czw;
-
-	czw = (struct cbor_nb_writer *)writer;
-	cbor_nb_writer_init(czw, buf);
+	cbor_nb_writer_init(cnbw, buf);
 
 	return 0;
 }
@@ -238,7 +229,7 @@ zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
 		.mgmt_stmr = {
 			.cfg = &zephyr_smp_cbor_cfg,
 			.reader = &reader.r,
-			.writer = &writer.enc,
+			.writer = &writer,
 			.cb_arg = zst,
 		},
 		.tx_rsp_cb = zephyr_smp_tx_rsp,

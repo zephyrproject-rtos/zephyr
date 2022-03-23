@@ -9,7 +9,6 @@
 
 #include <inttypes.h>
 #include "img_mgmt_config.h"
-#include "mgmt/mgmt.h"
 
 struct image_version;
 

@@ -14,11 +14,11 @@
 #include <util/mcumgr_util.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
+#include <mgmt/mcumgr/buf.h>
 
 #include "tinycbor/cbor.h"
 #include "cborattr/cborattr.h"
 #include "mgmt/mgmt.h"
-#include <mgmt/mcumgr/buf.h>
 #include "os_mgmt/os_mgmt.h"
 #include "os_mgmt/os_mgmt_impl.h"
 

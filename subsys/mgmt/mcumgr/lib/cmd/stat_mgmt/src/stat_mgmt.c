@@ -9,8 +9,8 @@
 #include <stdio.h>
 
 #include <stats/stats.h>
-#include <mgmt/mgmt.h>
 #include <mgmt/mcumgr/buf.h>
+#include <mgmt/mgmt.h>
 #include <stat_mgmt/stat_mgmt_config.h>
 #include <stat_mgmt/stat_mgmt.h>
 #include "cborattr/cborattr.h"
