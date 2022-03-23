@@ -249,6 +249,11 @@ Libraries / Subsystems
   * Added mcumgr fs hook to allow an application to accept or decline a file
     read/write request; :kconfig:option:`CONFIG_FS_MGMT_FILE_ACCESS_HOOK`
     enables the feature which then needs to be registered by the application.
+  * Added supplied image header to mcumgr img upload callback parameter list
+    which allows the application to inspect it to determine if it should be
+    allowed or declined.
+  * Made the img mgmt ``img_mgmt_vercmp`` function public to allow application-
+    level comparison of image versions.
 
 * SD Subsystem
 
