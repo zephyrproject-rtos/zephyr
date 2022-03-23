@@ -6,7 +6,7 @@
 
 menuconfig NET_DSA
 	bool "Distributed Switch Architecture support"
-	depends on ETH_MCUX || ETH_SAM_GMAC
+	depends on ETH_MCUX || ETH_SAM_GMAC || ETH_STM32_HAL
 	help
 	  Enable Distributed Switch Architecture support. For now it
 	  only supports Kinetics ENET driver.
@@ -39,6 +39,14 @@ config DSA_SPI
 	depends on SPI && (DSA_KSZ8794 || DSA_KSZ8863)
 	help
 	  Use SPI bus to communicate with PHY
+
+
+config DSA_I2C
+	bool "Enable support for PHY I2C interface"
+	depends on I2C && (DSA_KSZ8794 || DSA_KSZ8863)
+	help
+	  Use I2C bus to communicate with PHY
+
 
 module = NET_DSA
 module-dep = NET_LOG

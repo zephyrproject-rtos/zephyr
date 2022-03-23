@@ -1,0 +1,34 @@
+# Copyright (c) 2022 EEIC - Eaton European Innovation Center
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    DSA Device
+
+include: [i2c-device.yaml]
+properties:
+    dsa-master-port:
+       type: phandle
+       required: false
+       description: Phandle to master port.
+    dsa-slave-ports:
+       type: int
+       required: false
+       description: Number of slave ports on the switch
+
+    reset-gpios:
+        type: phandle-array
+        required: false
+        description: |
+          The pin is asserted for 10ms during boot to reset the KSZ8794.
+
+child-binding:
+    description: Properties of slave port
+    properties:
+        label:
+            type: string
+            required: true
+        local-mac-address:
+            type: uint8-array
+            required: false
+            description: |
+              Specifies the MAC address that was assigned to the port

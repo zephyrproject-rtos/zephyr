@@ -8,8 +8,8 @@
 #define __DSA_KSZ8863_H__
 
 /* SPI commands */
-#define KSZ8863_SPI_CMD_WR (BIT(6))
-#define KSZ8863_SPI_CMD_RD (BIT(6) | BIT(5))
+#define KSZ8863_SPI_CMD_WR (BIT(1))
+#define KSZ8863_SPI_CMD_RD (BIT(1) | BIT(0))
 
 /* PHY registers */
 #define KSZ8863_BMCR                                 0x00
