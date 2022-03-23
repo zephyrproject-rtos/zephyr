@@ -16,19 +16,19 @@ Test cases are detected by the presence of a 'testcase.yaml' or a sample.yaml
 files in the application's project directory. This file may contain one or more
 blocks, each identifying a test scenario. The title of the block is a name for
 the test case, which only needs to be unique for the test cases specified in
-that testcase meta-data. The full canonical name for each test case is <path to
+that testsuite meta-data. The full canonical name for each test case is <path to
 test case>/<block>.
 
-Each test block in the testcase meta data can define the following key/value
+Each test block in the testsuite meta data can define the following key/value
 pairs:
 
   tags: <list of tags> (required)
-    A set of string tags for the testcase. Usually pertains to
+    A set of string tags for the testsuite. Usually pertains to
     functional domains but can be anything. Command line invocations
     of this script can filter the set of tests to run based on tag.
 
   skip: <True|False> (default False)
-    skip testcase unconditionally. This can be used for broken tests.
+    skip testsuite unconditionally. This can be used for broken tests.
 
   slow: <True|False> (default False)
     Don't build or run this test case unless --enable-slow was passed
@@ -88,7 +88,7 @@ pairs:
     here. They will not be included in the size calculation.
 
   filter: <expression>
-    Filter whether the testcase should be run by evaluating an expression
+    Filter whether the testsuite should be run by evaluating an expression
     against an environment containing the following values:
 
     { ARCH : <architecture>,
@@ -151,7 +151,7 @@ pairs:
 
     Would match it.
 
-The set of test cases that actually run depends on directives in the testcase
+The set of test cases that actually run depends on directives in the testsuite
 files and options passed in on the command line. If there is any confusion,
 running with -v or examining the test plan report (testplan.json)
 can help show why particular test cases were skipped.
@@ -269,7 +269,7 @@ Artificially long but functional example:
         help="Load list of tests and platforms to be run from file.")
 
     case_select.add_argument(
-        "-T", "--testcase-root", action="append", default=[],
+        "-T", "--testsuite-root", action="append", default=[],
         help="Base directory to recursively search for test cases. All "
              "testcase.yaml files under here will be processed. May be "
              "called multiple times. Defaults to the 'samples/' and "
@@ -588,7 +588,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument(
         "-p", "--platform", action="append",
         help="Platform filter for testing. This option may be used multiple "
-             "times. Testcases will only be built/run on the platforms "
+             "times. Test suites will only be built/run on the platforms "
              "specified. If this option is not used, then platforms marked "
              "as default in the platform metadata file will be chosen "
              "to build and test. ")
@@ -775,8 +775,8 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         logger.error("west-flash requires device-testing to be enabled")
         sys.exit(1)
 
-    if not options.testcase_root:
-        options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
+    if not options.testsuite_root:
+        options.testsuite_root = [os.path.join(ZEPHYR_BASE, "tests"),
                                  os.path.join(ZEPHYR_BASE, "samples")]
 
     if options.show_footprint or options.compare_report:
@@ -891,7 +891,7 @@ def main():
             logger.error("You have provided a wrong subset value: %s." % options.subset)
             return
 
-    tplan = TestPlan(options.board_root, options.testcase_root, options.outdir)
+    tplan = TestPlan(options.board_root, options.testsuite_root, options.outdir)
 
     # Check version of zephyr repo
     tplan.check_zephyr_version()
@@ -953,7 +953,7 @@ def main():
     if options.test:
         run_individual_tests = options.test
 
-    num = tplan.add_testcases(testcase_filter=run_individual_tests)
+    num = tplan.add_testsuites(testsuite_filter=run_individual_tests)
     if num == 0:
         logger.error("No test cases found at the specified location...")
         sys.exit(1)
@@ -1000,7 +1000,7 @@ def main():
 
     if options.list_tags:
         tags = set()
-        for _, tc in tplan.testcases.items():
+        for _, tc in tplan.testsuites.items():
             tags = tags.union(tc.tags)
 
         for t in tags:
@@ -1020,7 +1020,7 @@ def main():
                 print("Tests with duplicate identifiers:")
                 for dupe in dupes:
                     print("- {}".format(dupe))
-                    for dc in tplan.get_testcase(dupe):
+                    for dc in tplan.get_testsuite(dupe):
                         print("  - {}".format(dc))
             else:
                 print("No duplicates found.")
@@ -1141,7 +1141,7 @@ def main():
 
             count = 0
             for i in inst.values():
-                for c in i.testcase.cases:
+                for c in i.testsuite.cases:
                     print(f"- {c}")
                     count += 1
 
@@ -1160,7 +1160,7 @@ def main():
             logger.debug(
                 "{:<25} {:<50} {}SKIPPED{}: {}".format(
                     i.platform.name,
-                    i.testcase.name,
+                    i.testsuite.name,
                     Fore.YELLOW,
                     Fore.RESET,
                     reason))
@@ -1169,7 +1169,7 @@ def main():
         all_tests = tplan.get_all_tests()
         to_be_run = set()
         for i, p in tplan.instances.items():
-            to_be_run.update(p.testcase.cases)
+            to_be_run.update(p.testsuite.cases)
 
         if all_tests - to_be_run:
             print("Tests that never build or run:")
@@ -1233,7 +1233,7 @@ def main():
         return
 
     logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
-                (len(tplan.testcases), len(tplan.instances), len(discards)))
+                (len(tplan.testsuites), len(tplan.instances), len(discards)))
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
