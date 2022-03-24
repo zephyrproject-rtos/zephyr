@@ -410,6 +410,27 @@ static int send(const struct device *instance, void *token,
 	return rpmsg_send(&rpmsg_ept->ep, msg, len);
 }
 
+static int send_nocopy(const struct device *instance, void *token,
+		       const void *msg, size_t len)
+{
+	struct backend_data_t *data = instance->data;
+	struct ipc_rpmsg_ept *rpmsg_ept;
+
+	/* Instance is not ready */
+	if (atomic_get(&data->state) != STATE_INITED) {
+		return -EBUSY;
+	}
+
+	/* Empty message is not allowed */
+	if (len == 0) {
+		return -EBADMSG;
+	}
+
+	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	return rpmsg_send_nocopy(&rpmsg_ept->ep, msg, len);
+}
+
 static int open(const struct device *instance)
 {
 	const struct backend_config_t *conf = instance->config;
@@ -461,10 +482,107 @@ error:
 
 }
 
+static int get_tx_buffer_size(const struct device *instance, void *token)
+{
+	struct backend_data_t *data = instance->data;
+	struct ipc_rpmsg_instance *rpmsg_inst;
+	struct rpmsg_device *rdev;
+	int size;
+
+	rpmsg_inst = &data->rpmsg_inst;
+	rdev = rpmsg_virtio_get_rpmsg_device(&rpmsg_inst->rvdev);
+
+	size = rpmsg_virtio_get_buffer_size(rdev);
+	if (size < 0) {
+		return -EIO;
+	}
+
+	return size;
+}
+
+static int get_tx_buffer(const struct device *instance, void *token,
+			 void **r_data, uint32_t *size, k_timeout_t wait)
+{
+	struct ipc_rpmsg_ept *rpmsg_ept;
+	void *payload;
+	int buf_size;
+
+	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	if (!r_data || !size) {
+		return -EINVAL;
+	}
+
+	/* OpenAMP only supports a binary wait / no-wait */
+	if (!K_TIMEOUT_EQ(wait, K_FOREVER) && !K_TIMEOUT_EQ(wait, K_NO_WAIT)) {
+		return -ENOTSUP;
+	}
+
+	/* The user requested a specific size */
+	if (*size) {
+		buf_size = get_tx_buffer_size(instance, token);
+		if (buf_size < 0) {
+			return -EIO;
+		}
+
+		/* Too big to fit */
+		if (*size > buf_size) {
+			*size = buf_size;
+			return -ENOMEM;
+		}
+	}
+
+	payload = rpmsg_get_tx_payload_buffer(&rpmsg_ept->ep, size, K_TIMEOUT_EQ(wait, K_FOREVER));
+	if (!payload) {
+		return -EIO;
+	}
+
+	(*r_data) = payload;
+
+	return 0;
+}
+
+static int hold_rx_buffer(const struct device *instance, void *token,
+			  void *data)
+{
+	struct ipc_rpmsg_ept *rpmsg_ept;
+
+	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	rpmsg_hold_rx_buffer(&rpmsg_ept->ep, data);
+
+	return 0;
+}
+
+static int release_rx_buffer(const struct device *instance, void *token,
+			     void *data)
+{
+	struct ipc_rpmsg_ept *rpmsg_ept;
+
+	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
+
+	rpmsg_release_rx_buffer(&rpmsg_ept->ep, data);
+
+	return 0;
+}
+
+static int drop_tx_buffer(const struct device *instance, void *token,
+			  const void *data)
+{
+	/* Not yet supported by OpenAMP */
+	return -ENOTSUP;
+}
+
 const static struct ipc_service_backend backend_ops = {
 	.open_instance = open,
 	.register_endpoint = register_ept,
 	.send = send,
+	.send_nocopy = send_nocopy,
+	.drop_tx_buffer = drop_tx_buffer,
+	.get_tx_buffer = get_tx_buffer,
+	.get_tx_buffer_size = get_tx_buffer_size,
+	.hold_rx_buffer = hold_rx_buffer,
+	.release_rx_buffer = release_rx_buffer,
 };
 
 static int backend_init(const struct device *instance)
