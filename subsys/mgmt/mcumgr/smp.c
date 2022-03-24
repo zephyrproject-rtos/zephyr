@@ -194,17 +194,6 @@ zephyr_smp_tx_rsp(struct smp_streamer *ns, void *rsp, void *arg)
 	return 0;
 }
 
-static int
-zephyr_smp_init_reader(struct cbor_decoder_reader *reader, void *buf)
-{
-	struct cbor_nb_reader *czr;
-
-	czr = (struct cbor_nb_reader *)reader;
-	cbor_nb_reader_init(czr, buf);
-
-	return 0;
-}
-
 /**
  * Processes a single SMP packet and sends the corresponding response(s).
  */
@@ -220,7 +209,7 @@ zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
 	streamer = (struct smp_streamer) {
 		.mgmt_stmr = {
 			.cfg = &zephyr_smp_cbor_cfg,
-			.reader = &reader.r,
+			.reader = &reader,
 			.writer = &writer,
 			.cb_arg = zst,
 		},
@@ -252,7 +241,6 @@ static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg = {
 	.trim_front = zephyr_smp_trim_front,
 	.reset_buf = zephyr_smp_reset_buf,
 	.write_hdr = zephyr_smp_write_hdr,
-	.init_reader = zephyr_smp_init_reader,
 	.free_buf = zephyr_smp_free_buf,
 };
 
