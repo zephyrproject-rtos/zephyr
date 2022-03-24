@@ -57,12 +57,12 @@ config FUSE_FS_ACCESS
 	help
 	  Expose file system partitions to the host system through FUSE.
 
-source "subsys/fs/Kconfig.fatfs"
-source "subsys/fs/Kconfig.littlefs"
+rsource "Kconfig.fatfs"
+rsource "Kconfig.littlefs"
 
 endif # FILE_SYSTEM
 
-source "subsys/fs/fcb/Kconfig"
-source "subsys/fs/nvs/Kconfig"
+rsource "fcb/Kconfig"
+rsource "nvs/Kconfig"
 
 endmenu
