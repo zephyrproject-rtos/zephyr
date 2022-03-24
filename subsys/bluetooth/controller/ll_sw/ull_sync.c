@@ -1080,8 +1080,8 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 int ull_sync_slot_update(struct ll_sync_set *sync, uint32_t slot_plus_us,
 			 uint32_t slot_minus_us)
 {
+	uint32_t volatile ret_cb;
 	uint32_t ret;
-	uint32_t ret_cb;
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
@@ -1089,8 +1089,8 @@ int ull_sync_slot_update(struct ll_sync_set *sync, uint32_t slot_plus_us,
 			    (TICKER_ID_SCAN_SYNC_BASE +
 			    ull_sync_handle_get(sync)),
 			    0, 0,
-			    slot_plus_us,
-			    slot_minus_us,
+			    HAL_TICKER_US_TO_TICKS(slot_plus_us),
+			    HAL_TICKER_US_TO_TICKS(slot_minus_us),
 			    0, 0,
 			    ticker_update_op_status_give,
 			    (void *)&ret_cb);
