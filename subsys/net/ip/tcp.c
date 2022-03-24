@@ -2193,6 +2193,10 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	if (tcp_window_full(conn)) {
+		if (conn->send_win == 0) {
+			tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
+		}
+
 		/* Trigger resend if the timer is not active */
 		/* TODO: use k_work_delayable for send_data_timer so we don't
 		 * have to directly access the internals of the legacy object.
