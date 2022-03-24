@@ -13,6 +13,9 @@
 #include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #endif
 #include <drivers/peci.h>
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#endif
 #include <soc.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(peci_mchp_xec, CONFIG_PECI_LOG_LEVEL);
@@ -45,23 +48,15 @@ struct peci_xec_config {
 	uint8_t girq_pos;
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pcfg;
+#endif
 };
 
 struct peci_xec_data {
 	struct k_sem tx_lock;
 	uint32_t  bitrate;
 	int    timeout_retries;
-};
-
-static struct peci_xec_data peci_data;
-
-static const struct peci_xec_config peci_xec_config = {
-	.regs = (struct peci_regs * const)(DT_INST_REG_ADDR(0)),
-	.irq_num = DT_INST_IRQN(0),
-	.girq = DT_INST_PROP_BY_IDX(0, girqs, 0),
-	.girq_pos = DT_INST_PROP_BY_IDX(0, girqs, 1),
-	.pcr_idx = DT_INST_PROP_BY_IDX(0, pcrs, 0),
-	.pcr_pos = DT_INST_PROP_BY_IDX(0, pcrs, 1),
 };
 
 #ifdef CONFIG_SOC_SERIES_MEC172X
@@ -441,6 +436,15 @@ static int peci_xec_init(const struct device *dev)
 	const struct peci_xec_config * const cfg = dev->config;
 	struct peci_regs * const regs = cfg->regs;
 
+#ifdef CONFIG_PINCTRL
+	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+
+	if (ret != 0) {
+		LOG_ERR("XEC PECI pinctrl init failed (%d)", ret);
+		return ret;
+	}
+#endif
+
 #ifdef CONFIG_PECI_INTERRUPT_DRIVEN
 	k_sem_init(&data->tx_lock, 0, 1);
 #endif
@@ -470,6 +474,24 @@ static int peci_xec_init(const struct device *dev)
 #endif
 	return 0;
 }
+
+static struct peci_xec_data peci_data;
+
+#ifdef CONFIG_PINCTRL
+PINCTRL_DT_INST_DEFINE(0);
+#endif
+
+static const struct peci_xec_config peci_xec_config = {
+	.regs = (struct peci_regs * const)(DT_INST_REG_ADDR(0)),
+	.irq_num = DT_INST_IRQN(0),
+	.girq = DT_INST_PROP_BY_IDX(0, girqs, 0),
+	.girq_pos = DT_INST_PROP_BY_IDX(0, girqs, 1),
+	.pcr_idx = DT_INST_PROP_BY_IDX(0, pcrs, 0),
+	.pcr_pos = DT_INST_PROP_BY_IDX(0, pcrs, 1),
+#ifdef CONFIG_PINCTRL
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+#endif
+};
 
 DEVICE_DT_INST_DEFINE(0,
 		    &peci_xec_init,
