@@ -39,6 +39,42 @@ static inline int z_vrfy_can_get_max_bitrate(const struct device *dev,
 }
 #include <syscalls/can_get_max_bitrate_mrsh.c>
 
+static inline const struct can_timing *z_vrfy_can_get_timing_min(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_get_timing_min(dev);
+}
+#include <syscalls/can_get_timing_min_mrsh.c>
+
+static inline const struct can_timing *z_vrfy_can_get_timing_max(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_get_timing_max(dev);
+}
+#include <syscalls/can_get_timing_max_mrsh.c>
+
+#ifdef CONFIG_CAN_FD_MODE
+
+static inline const struct can_timing *z_vrfy_can_get_timing_min_data(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_get_timing_min_data(dev);
+}
+#include <syscalls/can_get_timing_min_data_mrsh.c>
+
+static inline const struct can_timing *z_vrfy_can_get_timing_max_data(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+
+	return z_impl_can_get_timing_max_data(dev);
+}
+#include <syscalls/can_get_timing_max_data_mrsh.c>
+
+#endif /* CONFIG_CAN_FD_MODE */
+
 static inline int z_vrfy_can_send(const struct device *dev,
 				  const struct zcan_frame *frame,
 				  k_timeout_t timeout,
