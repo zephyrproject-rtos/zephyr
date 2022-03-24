@@ -699,8 +699,8 @@ static inline const struct can_timing *z_impl_can_get_timing_max(const struct de
  * @retval -EINVAL if there is no solution for the desired values.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
-int can_calc_timing(const struct device *dev, struct can_timing *res,
-		    uint32_t bitrate, uint16_t sample_pnt);
+__syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
+			      uint32_t bitrate, uint16_t sample_pnt);
 
 #if defined(CONFIG_CAN_FD_MODE) || defined(__DOXYGEN__)
 
@@ -766,8 +766,9 @@ static inline const struct can_timing *z_impl_can_get_timing_max_data(const stru
  * @retval -EINVAL if there is no solution for the desired values.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
-int can_calc_timing_data(const struct device *dev, struct can_timing *res,
-			 uint32_t bitrate, uint16_t sample_pnt);
+__syscall int can_calc_timing_data(const struct device *dev, struct can_timing *res,
+				   uint32_t bitrate, uint16_t sample_pnt);
+
 #endif /* CONFIG_CAN_FD_MODE */
 
 /**
