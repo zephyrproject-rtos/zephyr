@@ -8,6 +8,10 @@
 
 #include <errno.h>
 #include <device.h>
+#ifdef CONFIG_SOC_SERIES_MEC172X
+#include <drivers/clock_control/mchp_xec_clock_control.h>
+#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#endif
 #include <drivers/peci.h>
 #include <soc.h>
 #include <logging/log.h>
@@ -60,6 +64,28 @@ static const struct peci_xec_config peci_xec_config = {
 	.pcr_pos = DT_INST_PROP_BY_IDX(0, pcrs, 1),
 };
 
+#ifdef CONFIG_SOC_SERIES_MEC172X
+static inline void peci_girq_enable(const struct device *dev)
+{
+	const struct peci_xec_config * const cfg = dev->config;
+
+	mchp_xec_ecia_girq_src_en(cfg->girq, cfg->girq_pos);
+}
+
+static inline void peci_girq_status_clear(const struct device *dev)
+{
+	const struct peci_xec_config * const cfg = dev->config;
+
+	mchp_soc_ecia_girq_src_clr(cfg->girq, cfg->girq_pos);
+}
+
+static inline void peci_clr_slp_en(const struct device *dev)
+{
+	const struct peci_xec_config * const cfg = dev->config;
+
+	z_mchp_xec_pcr_periph_sleep(cfg->pcr_idx, cfg->pcr_pos, 0);
+}
+#else
 static inline void peci_girq_enable(const struct device *dev)
 {
 	const struct peci_xec_config * const cfg = dev->config;
@@ -80,6 +106,7 @@ static inline void peci_clr_slp_en(const struct device *dev)
 
 	mchp_pcr_periph_slp_ctrl(PCR_PECI, 0);
 }
+#endif
 
 static int check_bus_idle(struct peci_regs * const regs)
 {

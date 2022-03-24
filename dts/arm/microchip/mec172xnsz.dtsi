@@ -740,6 +740,7 @@
 			#size-cells = <0>;
 		};
 		peci0: peci@40006400 {
+			compatible = "microchip,xec-peci";
 			reg = <0x40006400 0x80>;
 			interrupts = <70 4>;
 			girqs = <17 0>;
