@@ -220,7 +220,7 @@ struct can_bus_err_cnt {
  * controllers only have a register for the sum of those two. The sync segment
  * always has a length of 1 time quantum (see below).
  *
- * @code{.unparsed}
+ * @code{.text}
  *
  * +---------+----------+------------+------------+
  * |sync_seg | prop_seg | phase_seg1 | phase_seg2 |
@@ -1108,7 +1108,7 @@ static inline uint8_t can_bytes_to_dlc(uint8_t num_bytes)
  *
  * The fields in this type are:
  *
- * @code{.unparsed}
+ * @code{.text}
  *
  * +------+--------------------------------------------------------------+
  * | Bits | Description                                                  |
