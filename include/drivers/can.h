@@ -254,7 +254,6 @@ struct can_timing {
 };
 
 /**
- * @typedef can_tx_callback_t
  * @brief Defines the application callback handler function signature
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -265,7 +264,6 @@ struct can_timing {
 typedef void (*can_tx_callback_t)(const struct device *dev, int error, void *user_data);
 
 /**
- * @typedef can_rx_callback_t
  * @brief Defines the application callback handler function signature for receiving.
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -276,7 +274,6 @@ typedef void (*can_rx_callback_t)(const struct device *dev, struct zcan_frame *f
 				  void *user_data);
 
 /**
- * @typedef can_state_change_callback_t
  * @brief Defines the state change callback handler function signature
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -296,7 +293,6 @@ typedef void (*can_state_change_callback_t)(const struct device *dev,
  */
 
 /**
- * @typedef can_set_timing_t
  * @brief Callback API upon setting CAN bus timing
  * See @a can_set_timing() for argument description
  */
@@ -305,14 +301,12 @@ typedef int (*can_set_timing_t)(const struct device *dev,
 				const struct can_timing *timing_data);
 
 /**
- * @typedef can_set_mode_t
  * @brief Callback API upon setting CAN controller mode
  * See @a can_set_mode() for argument description
  */
 typedef int (*can_set_mode_t)(const struct device *dev, enum can_mode mode);
 
 /**
- * @typedef can_send_t
  * @brief Callback API upon sending a CAN frame
  * See @a can_send() for argument description
  */
@@ -322,7 +316,6 @@ typedef int (*can_send_t)(const struct device *dev,
 			  void *user_data);
 
 /**
- * @typedef can_add_rx_filter_t
  * @brief Callback API upon adding an RX filter
  * See @a can_add_rx_callback() for argument description
  */
@@ -332,21 +325,18 @@ typedef int (*can_add_rx_filter_t)(const struct device *dev,
 				   const struct zcan_filter *filter);
 
 /**
- * @typedef can_remove_rx_filter_t
  * @brief Callback API upon removing an RX filter
  * See @a can_remove_rx_filter() for argument description
  */
 typedef void (*can_remove_rx_filter_t)(const struct device *dev, int filter_id);
 
 /**
- * @typedef can_recover_t
  * @brief Callback API upon recovering the CAN bus
  * See @a can_recover() for argument description
  */
 typedef int (*can_recover_t)(const struct device *dev, k_timeout_t timeout);
 
 /**
- * @typedef can_get_state_t
  * @brief Callback API upon getting the CAN controller state
  * See @a can_get_state() for argument description
  */
@@ -354,7 +344,6 @@ typedef int (*can_get_state_t)(const struct device *dev, enum can_state *state,
 			       struct can_bus_err_cnt *err_cnt);
 
 /**
- * @typedef can_set_state_change_callback_t
  * @brief Callback API upon setting a state change callback
  * See @a can_set_state_change_callback() for argument description
  */
@@ -363,21 +352,18 @@ typedef void(*can_set_state_change_callback_t)(const struct device *dev,
 					       void *user_data);
 
 /**
- * @typedef can_get_core_clock_t
  * @brief Callback API upon getting the CAN core clock rate
  * See @a can_get_core_clock() for argument description
  */
 typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
 
 /**
- * @typedef can_get_max_filters_t
  * @brief Callback API upon getting the maximum number of concurrent CAN RX filters
  * See @a can_get_max_filters() for argument description
  */
 typedef int (*can_get_max_filters_t)(const struct device *dev, enum can_ide id_type);
 
 /**
- * @typedef can_get_max_bitrate_t
  * @brief Callback API upon getting the maximum supported bitrate
  * See @a can_get_max_bitrate() for argument description
  */

@@ -27,14 +27,12 @@ extern "C" {
  */
 
 /**
- * @typedef can_transceiver_enable_t
  * @brief Callback API upon enabling CAN transceiver
  * See @a can_transceiver_enable() for argument description
  */
 typedef int (*can_transceiver_enable_t)(const struct device *dev);
 
 /**
- * @typedef can_transceiver_disable_t
  * @brief Callback API upon disabling CAN transceiver
  * See @a can_transceiver_disable() for argument description
  */
