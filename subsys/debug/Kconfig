@@ -21,7 +21,7 @@ menuconfig THREAD_ANALYZER
 if THREAD_ANALYZER
 module = THREAD_ANALYZER
 module-str = thread analyzer
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 choice
 	prompt "Thread analysis print mode"
