@@ -701,6 +701,11 @@ static int mcux_flexcan_init(const struct device *dev)
 		}
 	}
 
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock device not ready");
+		return -ENODEV;
+	}
+
 	k_mutex_init(&data->rx_mutex);
 	k_sem_init(&data->tx_allocs_sem, MCUX_FLEXCAN_MAX_TX,
 		   MCUX_FLEXCAN_MAX_TX);
