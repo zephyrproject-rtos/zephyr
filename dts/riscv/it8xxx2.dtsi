@@ -1176,10 +1176,9 @@
 			status = "disabled";
 			label = "I2C_0";
 			port-num = <0>;
-			gpio-dev = <&gpiob>;
+			scl-gpios = <&gpiob 3 0>;
+			sda-gpios = <&gpiob 4 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBA>;
-			pinctrl-0 = <&pinctrl_i2c_clk0    /* GPB3 */
-				     &pinctrl_i2c_data0>; /* GPB4 */
 		};
 
 		i2c1: i2c@f01c80 {
@@ -1192,10 +1191,9 @@
 			status = "disabled";
 			label = "I2C_1";
 			port-num = <1>;
-			gpio-dev = <&gpioc>;
+			scl-gpios = <&gpioc 1 0>;
+			sda-gpios = <&gpioc 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBB>;
-			pinctrl-0 = <&pinctrl_i2c_clk1    /* GPC1 */
-				     &pinctrl_i2c_data1>; /* GPC2 */
 		};
 
 		i2c2: i2c@f01cc0 {
@@ -1208,10 +1206,9 @@
 			status = "disabled";
 			label = "I2C_2";
 			port-num = <2>;
-			gpio-dev = <&gpiof>;
+			scl-gpios = <&gpiof 6 0>;
+			sda-gpios = <&gpiof 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBC>;
-			pinctrl-0 = <&pinctrl_i2c_clk2    /* GPF6 */
-				     &pinctrl_i2c_data2>; /* GPF7 */
 		};
 
 		i2c3: i2c@f03680 {
@@ -1224,10 +1221,9 @@
 			status = "disabled";
 			label = "I2C_3";
 			port-num = <3>;
-			gpio-dev = <&gpioh>;
+			scl-gpios = <&gpioh 1 0>;
+			sda-gpios = <&gpioh 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBD>;
-			pinctrl-0 = <&pinctrl_i2c_clk3_gph1    /* GPH1 */
-				     &pinctrl_i2c_data3_gph2>; /* GPH2 */
 		};
 
 		i2c4: i2c@f03500 {
@@ -1240,10 +1236,9 @@
 			status = "disabled";
 			label = "I2C_4";
 			port-num = <4>;
-			gpio-dev = <&gpioe>;
+			scl-gpios = <&gpioe 0 0>;
+			sda-gpios = <&gpioe 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBE>;
-			pinctrl-0 = <&pinctrl_i2c_clk4    /* GPE0 */
-				     &pinctrl_i2c_data4>; /* GPE7 */
 		};
 
 		i2c5: i2c@f03580 {
@@ -1256,10 +1251,9 @@
 			status = "disabled";
 			label = "I2C_5";
 			port-num = <5>;
-			gpio-dev = <&gpioa>;
+			scl-gpios = <&gpioa 4 0>;
+			sda-gpios = <&gpioa 5 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBF>;
-			pinctrl-0 = <&pinctrl_i2c_clk5    /* GPA4 */
-				     &pinctrl_i2c_data5>; /* GPA5 */
 		};
 
 		ecpm: clock-controller@f01e00 {

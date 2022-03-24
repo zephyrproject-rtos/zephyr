@@ -45,6 +45,50 @@
 		pinmuxs = <&pinctrll 3 IT8XXX2_ALT_FUNC_1>;
 	};
 
+	/* I2C alternate function */
+	i2c0_clk_gpb3_default: i2c0_clk_gpb3_default {
+		pinmuxs = <&pinctrlb 3 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c0_data_gpb4_default: i2c0_data_gpb4_default {
+		pinmuxs = <&pinctrlb 4 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c1_clk_gpc1_default: i2c1_clk_gpc1_default {
+		pinmuxs = <&pinctrlc 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c1_data_gpc2_default: i2c1_data_gpc2_default {
+		pinmuxs = <&pinctrlc 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c2_clk_gpf6_default: i2c2_clk_gpf6_default {
+		pinmuxs = <&pinctrlf 6 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c2_data_gpf7_default: i2c2_data_gpf7_default {
+		pinmuxs = <&pinctrlf 7 IT8XXX2_ALT_FUNC_1>;
+	};
+	i2c3_clk_gph1_default: i2c3_clk_gph1_default {
+		pinmuxs = <&pinctrlh 1 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c3_data_gph2_default: i2c3_data_gph2_default {
+		pinmuxs = <&pinctrlh 2 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c3_clk_gpf2_default: i2c3_clk_gpf2_default {
+		pinmuxs = <&pinctrlf 2 IT8XXX2_ALT_FUNC_4>;
+	};
+	i2c3_data_gpf3_default: i2c3_data_gpf3_default {
+		pinmuxs = <&pinctrlf 3 IT8XXX2_ALT_FUNC_4>;
+	};
+	i2c4_clk_gpe0_default: i2c4_clk_gpe0_default {
+		pinmuxs = <&pinctrle 0 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c4_data_gpe7_default: i2c4_data_gpe7_default {
+		pinmuxs = <&pinctrle 7 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c5_clk_gpa4_default: i2c5_clk_gpa4_default {
+		pinmuxs = <&pinctrla 4 IT8XXX2_ALT_FUNC_3>;
+	};
+	i2c5_data_gpa5_default: i2c5_data_gpa5_default {
+		pinmuxs = <&pinctrla 5 IT8XXX2_ALT_FUNC_3>;
+	};
+
 	/* UART alternate function */
 	uart1_rx_gpb0_default: uart1_rx_gpb0_default {
 		pinmuxs = <&pinctrlb 0 IT8XXX2_ALT_FUNC_3>;
