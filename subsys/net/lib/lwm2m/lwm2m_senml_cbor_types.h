@@ -1,17 +1,22 @@
 /*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * Generated using zcbor version 0.3.99
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
  */
 
-#ifndef LWM2M_SENML_CBOR_DECODE_TYPES_H__
-#define LWM2M_SENML_CBOR_DECODE_TYPES_H__
+#ifndef LWM2M_SENML_CBOR_TYPES_H__
+#define LWM2M_SENML_CBOR_TYPES_H__
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "zcbor_decode.h"
+#include "zcbor_common.h"
 
 /** Which value for --default-max-qty this file was created with.
  *
@@ -20,7 +25,7 @@
  *
  *  See `zcbor --help` for more information about --default-max-qty
  */
-#define DEFAULT_MAX_QTY 99
+#define DEFAULT_MAX_QTY CONFIG_LWM2M_RW_SENML_CBOR_RECORDS
 
 struct record_bn {
 	struct zcbor_string _record_bn;
@@ -97,8 +102,8 @@ struct record {
 };
 
 struct lwm2m_senml {
-	struct record _lwm2m_senml__record[99];
+	struct record _lwm2m_senml__record[DEFAULT_MAX_QTY];
 	uint_fast32_t _lwm2m_senml__record_count;
 };
 
-#endif /* LWM2M_SENML_CBOR_DECODE_TYPES_H__ */
+#endif /* LWM2M_SENML_CBOR_TYPES_H__ */
