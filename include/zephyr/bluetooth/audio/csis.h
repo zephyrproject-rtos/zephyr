@@ -351,7 +351,7 @@ void bt_csis_client_register_cb(struct bt_csis_client_cb *cb);
  *
  * @return Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **members,
+int bt_csis_client_get_lock_state(struct bt_csis_client_set_member **members,
 				  uint8_t count,
 				  const struct bt_csis_client_set_info *set_info);
 
@@ -369,7 +369,7 @@ int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **membe
  *
  * @return Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
+int bt_csis_client_lock(struct bt_csis_client_set_member **members,
 			uint8_t count,
 			const struct bt_csis_client_set_info *set_info);
 
@@ -385,7 +385,7 @@ int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
  *
  * @return Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_release(const struct bt_csis_client_set_member **members,
+int bt_csis_client_release(struct bt_csis_client_set_member **members,
 			   uint8_t count,
 			   const struct bt_csis_client_set_info *set_info);
 
