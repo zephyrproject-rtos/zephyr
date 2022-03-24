@@ -140,7 +140,7 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 	LL_IWDG_SetReloadCounter(iwdg, reload);
 
 	/* Wait for the update operation completed */
-	while (LL_IWDG_IsReady(iwdg) != 0) {
+	while (LL_IWDG_IsReady(iwdg) == 0) {
 		if ((k_uptime_get_32() - tickstart) > IWDG_SR_UPDATE_TIMEOUT) {
 			return -ENODEV;
 		}
