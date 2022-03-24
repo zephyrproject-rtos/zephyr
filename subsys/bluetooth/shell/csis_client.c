@@ -27,7 +27,7 @@ static struct k_work_delayable discover_members_timer;
 static struct bt_csis_client_set_member set_members[CONFIG_BT_MAX_CONN];
 struct bt_csis_client_csis_inst *cur_inst;
 static bt_addr_le_t addr_found[CONFIG_BT_MAX_CONN];
-const struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
+static struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
 
 static bool is_discovered(const bt_addr_le_t *addr)
 {
@@ -362,7 +362,7 @@ static int cmd_csis_client_lock_get(const struct shell *sh, size_t argc,
 	int err;
 	long idx = 0;
 	long member_index = 0;
-	const struct bt_csis_client_set_member *lock_member[1];
+	struct bt_csis_client_set_member *lock_member[1];
 
 	if (argc > 1) {
 		member_index = strtol(argv[1], NULL, 0);
@@ -400,7 +400,7 @@ static int cmd_csis_client_lock(const struct shell *sh, size_t argc,
 {
 	int err;
 	long member_index = 0;
-	const struct bt_csis_client_set_member *lock_member[1];
+	struct bt_csis_client_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");
@@ -432,7 +432,7 @@ static int cmd_csis_client_release(const struct shell *sh, size_t argc,
 {
 	int err;
 	long member_index = 0;
-	const struct bt_csis_client_set_member *lock_member[1];
+	struct bt_csis_client_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");
