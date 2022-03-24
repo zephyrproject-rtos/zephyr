@@ -18,7 +18,7 @@
 #if DT_NODE_HAS_PROP(NORDIC_QSPI_NOR_NODE, size_in_bytes)
 #define TEST_AREA_MAX (DT_PROP(DT_INST(0, nordic_qspi_nor), size_in_bytes))
 #else
-#define TEST_AREA_MAX DT_PROP(DT_INST(0, nordic_qspi_nor), size / 8)
+#define TEST_AREA_MAX (DT_PROP(DT_INST(0, nordic_qspi_nor), size) / 8)
 #endif
 
 #elif defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR)
