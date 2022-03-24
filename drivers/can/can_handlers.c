@@ -39,7 +39,7 @@ static inline int z_vrfy_can_get_core_clock(const struct device *dev,
 					    uint32_t *rate)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_core_clock));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(rate, sizeof(rate)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(rate, sizeof(*rate)));
 
 	return z_impl_can_get_core_clock(dev, rate);
 }
