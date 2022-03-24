@@ -109,6 +109,20 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display);
 int cfb_framebuffer_invert(const struct device *dev);
 
 /**
+ * @brief Invert Pixels in selected area.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param x Position in X direction of the beginning of area
+ * @param y Position in Y direction of the beginning of area
+ * @param width Width of area in pixels
+ * @param height Height of area in pixels
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
+		    uint16_t width, uint16_t height);
+
+/**
  * @brief Finalize framebuffer and write it to display RAM,
  * invert or reorder pixels if necessary.
  *
