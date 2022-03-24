@@ -3816,8 +3816,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         return filtered_string
 
 
-    def xunit_testcase(self, eleTestsuite, name, classname, status, reason, duration, runnable, stats):
-
+    @staticmethod
+    def xunit_testcase(eleTestsuite, name, classname, status, reason, duration, runnable, stats):
         fails, passes, errors, skips = stats
 
         if status in ['skipped', 'filtered']:
@@ -3839,7 +3839,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             ET.SubElement(eleTestcase, 'error', type="failure", message=f"{reason}")
         elif status == 'passed':
             if not runnable:
-                el = ET.SubElement(eleTestcase, 'skipped', type="build", message="built only")
+                ET.SubElement(eleTestcase, 'skipped', type="build", message="built only")
                 skips += 1
             else:
                 passes += 1
@@ -3946,8 +3946,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         suites = json_data.get("testsuites", [])
 
         # remove existing testcases that were re-run
-        for instance in self.instances.values():
-            suites = list(filter(lambda d: d['name'] != instance.testcase.name, suites))
+        for i in self.instances.values():
+            suites = list(filter(lambda d: d['name'] != i.testcase.name, suites))
 
         for instance in self.instances.values():
             suite = {}
