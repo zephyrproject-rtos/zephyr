@@ -237,14 +237,21 @@ void llcp_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 	ull_tx_q_enqueue_ctrl(&conn->tx_q, tx);
 }
 
-void llcp_tx_pause_data(struct ll_conn *conn)
+void llcp_tx_pause_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask pause_mask)
 {
-	ull_tx_q_pause_data(&conn->tx_q);
+	if ((conn->llcp.tx_q_pause_data_mask & pause_mask) == 0) {
+		conn->llcp.tx_q_pause_data_mask |= pause_mask;
+		ull_tx_q_pause_data(&conn->tx_q);
+	}
 }
 
-void llcp_tx_resume_data(struct ll_conn *conn)
+void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask resume_mask)
 {
-	ull_tx_q_resume_data(&conn->tx_q);
+	conn->llcp.tx_q_pause_data_mask &= ~resume_mask;
+
+	if (conn->llcp.tx_q_pause_data_mask == 0) {
+		ull_tx_q_resume_data(&conn->tx_q);
+	}
 }
 
 void llcp_tx_flush(struct ll_conn *conn)
@@ -494,6 +501,7 @@ void ull_llcp_init(struct ll_conn *conn)
 #endif /* (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) */
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
+	conn->llcp.tx_q_pause_data_mask = 0;
 	conn->lll.event_counter = 0;
 
 	llcp_lr_init(conn);

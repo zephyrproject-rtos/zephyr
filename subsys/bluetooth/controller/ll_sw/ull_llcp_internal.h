@@ -29,6 +29,12 @@ enum llcp_proc {
 	/* A helper enum entry, to use in pause procedure context */
 	PROC_NONE = 0x0,
 };
+enum llcp_tx_q_pause_data_mask {
+	LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION = 0x01,
+	LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE = 0x02,
+	LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH = 0x04,
+};
+
 #if ((CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM <\
 			(CONFIG_BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX *\
 			CONFIG_BT_CTLR_LLCP_CONN)) &&\
@@ -344,8 +350,8 @@ void llcp_proc_ctx_release(struct proc_ctx *ctx);
  * ULL -> LLL Interface
  */
 void llcp_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
-void llcp_tx_pause_data(struct ll_conn *conn);
-void llcp_tx_resume_data(struct ll_conn *conn);
+void llcp_tx_pause_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask pause_mask);
+void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask resume_mask);
 void llcp_tx_flush(struct ll_conn *conn);
 
 /*
