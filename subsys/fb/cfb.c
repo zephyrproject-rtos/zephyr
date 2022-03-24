@@ -150,6 +150,41 @@ int cfb_print(const struct device *dev, char *str, uint16_t x, uint16_t y)
 	return -EINVAL;
 }
 
+int cfb_invert_area(const struct device *dev, uint16_t x, uint16_t y,
+		    uint16_t width, uint16_t height)
+{
+	const struct char_framebuffer *fb = &char_fb;
+
+	if (x >= fb->x_res || y >= fb->y_res) {
+		LOG_ERR("Coordinates outside of framebuffer");
+
+		return -EINVAL;
+	}
+
+	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) && !(y % 8)) {
+		if (x + width > fb->x_res) {
+			width = fb->x_res - x;
+		}
+
+		if (y + height > fb->y_res) {
+			height = fb->y_res - y;
+		}
+
+		for (size_t i = x; i < x + width; i++) {
+			for (size_t j = y / 8U; j < (y + height) / 8U; j++) {
+				size_t index = (j * fb->x_res) + i;
+
+				fb->buf[index] = ~fb->buf[index];
+			}
+		}
+
+		return 0;
+	}
+
+	LOG_ERR("Unsupported framebuffer configuration");
+	return -EINVAL;
+}
+
 static int cfb_invert(const struct char_framebuffer *fb)
 {
 	for (size_t i = 0; i < fb->x_res * fb->y_res / 8U; i++) {
