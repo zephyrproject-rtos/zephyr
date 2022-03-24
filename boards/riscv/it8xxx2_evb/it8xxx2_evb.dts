@@ -47,6 +47,8 @@
 };
 &adc0 {
 	status = "okay";
+	pinctrl-0 = <&adc0_ch3_gpi3_default>;
+	pinctrl-names = "default";
 };
 /* voltage comparator for test */
 &vcmp0 {

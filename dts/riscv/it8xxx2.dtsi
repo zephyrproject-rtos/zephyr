@@ -1074,18 +1074,6 @@
 			status = "disabled";
 			label = "ADC_0";
 			#io-channel-cells = <1>;
-			pinctrl-0 = <&pinctrl_adc0   /* ADC0*/
-				     &pinctrl_adc1   /* ADC1*/
-				     &pinctrl_adc2   /* ADC2*/
-				     &pinctrl_adc3   /* ADC3*/
-				     &pinctrl_adc4   /* ADC4*/
-				     &pinctrl_adc5   /* ADC5*/
-				     &pinctrl_adc6   /* ADC6*/
-				     &pinctrl_adc7   /* ADC7*/
-				     &pinctrl_adc13  /* ADC13*/
-				     &pinctrl_adc14  /* ADC14*/
-				     &pinctrl_adc15  /* ADC15*/
-				     &pinctrl_adc16>;/* ADC16*/
 		};
 		vcmp0: vcmp@f01946 {
 			compatible = "ite,it8xxx2-vcmp";
