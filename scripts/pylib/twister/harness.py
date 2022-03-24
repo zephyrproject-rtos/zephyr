@@ -1,9 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
+from asyncio.log import logger
 import re
 import os
 import subprocess
 from collections import OrderedDict
 import xml.etree.ElementTree as ET
+import logging
+
+logger = logging.getLogger('twister')
+logger.setLevel(logging.DEBUG)
+
 
 result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*) in")
 
@@ -16,6 +22,13 @@ class Harness:
     run_id_pattern = r"RunID: (?P<run_id>.*)"
 
 
+    ztest_to_status = {
+        'PASS': 'passed',
+        'SKIP': 'skipped',
+        'BLOCK': 'blocked',
+        'FAIL': 'failure'
+        }
+
     def __init__(self):
         self.state = None
         self.type = None
@@ -23,7 +36,7 @@ class Harness:
         self.matches = OrderedDict()
         self.ordered = True
         self.repeat = 1
-        self.tests = {}
+        self.testcases = []
         self.id = None
         self.fail_on_fault = True
         self.fault = False
@@ -38,8 +51,10 @@ class Harness:
         self.run_id = None
         self.matched_run_id = False
         self.run_id_exists = False
+        self.instance = None
 
     def configure(self, instance):
+        self.instance = instance
         config = instance.testsuite.harness_config
         self.id = instance.testsuite.id
         self.run_id = instance.run_id
@@ -134,10 +149,11 @@ class Console(Harness):
 
         self.process_test(line)
 
+        tc = self.instance.get_case_or_create(self.id)
         if self.state == "passed":
-            self.tests[self.id] = "PASS"
+            tc.status = "passed"
         else:
-            self.tests[self.id] = "FAIL"
+            tc.status = "failed"
 
 class Pytest(Harness):
     def configure(self, instance):
@@ -160,7 +176,8 @@ class Pytest(Harness):
             is writen into handler.log
         '''
         self.state = "passed"
-        self.tests[self.id] = "PASS"
+        tc = self.instance.get_case_or_create(self.id)
+        tc.status = "passed"
 
     def pytest_run(self, log_file):
         ''' To keep artifacts of pytest in self.running_dir, pass this directory
@@ -213,15 +230,16 @@ class Pytest(Harness):
                 log.write("Can't access report.xml\n")
                 self.state = "failed"
 
+        tc = self.instance.get_case_or_create(self.id)
         if self.state == "passed":
-            self.tests[self.id] = "PASS"
+            tc.status = "passed"
             log.write("Pytest cases passed\n")
         elif self.state == "skipped":
-            self.tests[self.id] = "SKIP"
+            tc.status = "skipped"
             log.write("Pytest cases skipped\n")
             log.write("Please refer report.xml for detail")
         else:
-            self.tests[self.id] = "FAIL"
+            tc.status = "failed"
             log.write("Pytest cases failed\n")
 
         log.write("\nOutput from pytest:\n")
@@ -233,7 +251,7 @@ class Pytest(Harness):
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
-    test_suite_start_pattern = r"Running test suite (?P<suite_name>.*)"
+    test_suite_start_pattern = r"Running TESTSUITE (?P<suite_name>.*)"
 
     def handle(self, line):
         test_suite_match = re.search(self.test_suite_start_pattern, line)
@@ -242,19 +260,25 @@ class Test(Harness):
             self.detected_suite_names.append(suite_name)
 
         match = result_re.match(line)
+
         if match and match.group(2):
             name = "{}.{}".format(self.id, match.group(3))
-            self.tests[name] = match.group(1)
+            tc = self.instance.get_case_or_create(name)
+
+            matched_status = match.group(1)
+            tc.status = self.ztest_to_status[matched_status]
+            if tc.status == "skipped":
+                tc.reason = "ztest skip"
             self.ztest = True
 
         self.process_test(line)
 
         if not self.ztest and self.state:
+            tc = self.instance.get_case_or_create(self.id)
             if self.state == "passed":
-                self.tests[self.id] = "PASS"
+                tc.status = "passed"
             else:
-                self.tests[self.id] = "FAIL"
-
+                tc.status = "failed"
 
 class Ztest(Test):
     pass
