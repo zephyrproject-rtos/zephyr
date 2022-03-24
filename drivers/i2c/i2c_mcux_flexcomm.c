@@ -11,6 +11,9 @@
 #include <drivers/i2c.h>
 #include <drivers/clock_control.h>
 #include <fsl_i2c.h>
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#endif
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mcux_flexcomm);
@@ -23,6 +26,9 @@ struct mcux_flexcomm_config {
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 struct mcux_flexcomm_data {
@@ -183,6 +189,13 @@ static int mcux_flexcomm_init(const struct device *dev)
 	i2c_master_config_t master_config;
 	int error;
 
+#ifdef CONFIG_PINCTRL
+	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (error) {
+		return error;
+	}
+#endif
+
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Get the clock frequency */
@@ -214,7 +227,17 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 	.transfer = mcux_flexcomm_transfer,
 };
 
+#ifdef CONFIG_PINCTRL
+#define I2C_MCUX_FLEXCOMM_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#define I2C_MCUX_FLEXCOMM_PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define I2C_MCUX_FLEXCOMM_PINCTRL_DEFINE(n)
+#define I2C_MCUX_FLEXCOMM_PINCTRL_INIT(n)
+#endif
+
+
 #define I2C_MCUX_FLEXCOMM_DEVICE(id)					\
+	I2C_MCUX_FLEXCOMM_PINCTRL_DEFINE(id)				\
 	static void mcux_flexcomm_config_func_##id(const struct device *dev); \
 	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {	\
 		.base = (I2C_Type *) DT_INST_REG_ADDR(id),		\
@@ -223,6 +246,7 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
 		.irq_config_func = mcux_flexcomm_config_func_##id,	\
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
+		I2C_MCUX_FLEXCOMM_PINCTRL_INIT(id)			\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
 	I2C_DEVICE_DT_INST_DEFINE(id,					\
