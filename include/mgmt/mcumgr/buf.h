@@ -10,13 +10,14 @@
 #include <inttypes.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
-#include "tinycbor/cbor.h"
-#include "tinycbor/cbor_buf_writer.h"
 struct net_buf;
 
 struct cbor_nb_reader {
-	struct cbor_decoder_reader r;
 	struct net_buf *nb;
+	/* CONFIG_MGMT_MAX_DECODING_LEVELS + 2 translates to minimal
+	 * zcbor backup states.
+	 */
+	zcbor_state_t zs[CONFIG_MGMT_MAX_DECODING_LEVELS + 2];
 };
 
 struct cbor_nb_writer {

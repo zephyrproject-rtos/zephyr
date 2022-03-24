@@ -42,6 +42,55 @@ config MGMT_MAX_MAIN_MAP_ENTRIES
 	  encapsulating them, you may want to increase this value
 	  in case when encoding starts to fail.
 
+config MGMT_MIN_DECODING_LEVELS
+	int
+	help
+	  Minimal decoding levels, map/list encapsulation, required
+	  to be supported by zcbor decoding of SMP responses
+	  is auto genereated from MGMT_MIN_DECODING_LEVEL_? options.
+	  A group or command that adds additional maps/lists above the
+	  base map, which is already taken into account, should
+	  select one of the MGMT_MIN_DECODING_LEVEL_?.
+	default 5 if MGMT_MIN_DECODING_LEVEL_5
+	default 4 if MGMT_MIN_DECODING_LEVEL_4
+	default 3 if MGMT_MIN_DECODING_LEVEL_3
+	default 2 if MGMT_MIN_DECODING_LEVEL_2
+	default 1 if MGMT_MIN_DECODING_LEVEL_1
+	default 0
+
+
+config MGMT_MIN_DECODING_LEVEL_1
+	bool
+
+config MGMT_MIN_DECODING_LEVEL_2
+	bool
+
+config MGMT_MIN_DECODING_LEVEL_3
+	bool
+
+config MGMT_MIN_DECODING_LEVEL_4
+	bool
+
+config MGMT_MIN_DECODING_LEVEL_5
+	bool
+
+config MGMT_MAX_DECODING_LEVELS
+	int "Number of map/list encapsulations allowed by SMP encoding"
+	range MGMT_MIN_DECODING_LEVELS 15
+	default MGMT_MIN_DECODING_LEVELS
+	help
+	  This is a maximum number of levels of maps/lists that will
+	  be expected to be decoded within different command groups.
+	  SMP commands/groups that provide no CBOR encoded payload
+	  have no requirements.
+	  Commands that provide CBOR payload require at least 1 level,
+	  and additional levels for each map/list encapsulation.
+	  For example if command accepts payload of map of parameters
+	  it will need 2 levels.
+	  This number translates to zcbor backup states, it increases
+	  size of cbor_nb_reader structure by zcbor_state_t size per
+	  one unit selected here.
+
 menu "Command Handlers"
 
 rsource "lib/cmd/Kconfig"

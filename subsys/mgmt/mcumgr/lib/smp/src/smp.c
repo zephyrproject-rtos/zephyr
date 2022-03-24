@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include <net/buf.h>
-#include "tinycbor/cbor.h"
 #include "mgmt/endian.h"
 #include <mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
@@ -281,8 +280,6 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 			break;
 		}
 
-		net_buf_pull(streamer->mgmt_stmr.reader->nb, MGMT_HDR_SIZE);
-
 		rsp = mgmt_streamer_alloc_rsp(&streamer->mgmt_stmr, req);
 		if (rsp == NULL) {
 			rc = MGMT_ERR_ENOMEM;
@@ -290,6 +287,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 		}
 
 		cbor_nb_writer_init(streamer->mgmt_stmr.writer, rsp);
+		cbor_nb_reader_init(streamer->mgmt_stmr.reader, req);
 
 		/* Process the request payload and build the response. */
 		rc = smp_handle_single_req(streamer, &req_hdr, &handler_found, &rsn);
