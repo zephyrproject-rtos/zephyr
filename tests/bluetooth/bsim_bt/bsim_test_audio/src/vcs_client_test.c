@@ -21,7 +21,6 @@ static struct bt_vcs *vcs;
 static struct bt_vcs_included vcs_included;
 static volatile bool g_bt_init;
 static volatile bool g_is_connected;
-static volatile bool g_mtu_exchanged;
 static volatile bool g_discovery_complete;
 static volatile bool g_write_complete;
 
@@ -256,17 +255,6 @@ static struct bt_vcs_cb vcs_cbs = {
 		.set_auto_mode = aics_write_cb,
 	}
 };
-
-static void mtu_cb(struct bt_conn *conn, uint8_t err,
-		   struct bt_gatt_exchange_params *params)
-{
-	if (err) {
-		FAIL("Failed to exchange MTU (%u)\n", err);
-		return;
-	}
-
-	g_mtu_exchanged = true;
-}
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -547,9 +535,6 @@ static void test_main(void)
 	uint8_t expected_volume;
 	uint8_t previous_volume;
 	uint8_t expected_mute;
-	static struct bt_gatt_exchange_params mtu_params =  {
-		.func = mtu_cb,
-	};
 	struct bt_conn *cached_conn;
 
 	err = bt_enable(bt_ready);
@@ -576,13 +561,6 @@ static void test_main(void)
 	printk("Scanning successfully started\n");
 
 	WAIT_FOR(g_is_connected);
-
-	err = bt_gatt_exchange_mtu(default_conn, &mtu_params);
-	if (err) {
-		FAIL("Failed to exchange MTU %d", err);
-	}
-
-	WAIT_FOR(g_mtu_exchanged);
 
 	err = bt_vcs_discover(default_conn, &vcs);
 	if (err) {
