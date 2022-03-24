@@ -923,6 +923,7 @@ def main():
     suite.overflow_as_errors = options.overflow_as_errors
     suite.suite_name_check = not options.disable_suite_name_check
     suite.seed = options.seed
+    suite.no_skipped_report = options.no_skipped_report
 
     # get all enabled west projects
     west_proj = west_projects()

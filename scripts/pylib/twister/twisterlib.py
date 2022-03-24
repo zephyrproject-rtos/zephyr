@@ -2679,10 +2679,11 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.status = "passed"
                 pipeline.put({"op": "report", "test": self.instance})
             else:
+                # Here we check the runtime filter results coming from running cmake
                 if self.instance.name in res['filter'] and res['filter'][self.instance.name]:
                     logger.debug("filtering %s" % self.instance.name)
-                    self.instance.status = "skipped"
-                    self.instance.reason = "filter"
+                    self.instance.status = "filtered"
+                    self.instance.reason = "runtime filter"
                     results.skipped_runtime += 1
                     for case in self.instance.testcase.cases:
                         self.instance.results.update({case: 'SKIP'})
@@ -2830,7 +2831,7 @@ class ProjectBuilder(FilterBuilder):
                         instance.reason))
             if not self.verbose:
                 self.log_info_file(self.inline_logs)
-        elif instance.status == "skipped":
+        elif instance.status in ["skipped", "filtered"]:
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
             results.skipped_configs += 1
             results.skipped_cases += len(instance.testcase.cases)
@@ -2847,7 +2848,7 @@ class ProjectBuilder(FilterBuilder):
         if self.verbose:
             if self.cmake_only:
                 more_info = "cmake"
-            elif instance.status == "skipped":
+            elif instance.status in ["skipped", "filtered"]:
                 more_info = instance.reason
             else:
                 if instance.handler and instance.run:
@@ -3033,6 +3034,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.enable_ubsan = False
         self.enable_lsan = False
         self.enable_asan = False
+        self.no_skipped_report = False
         self.enable_valgrind = False
         self.extra_args = []
         self.inline_logs = False
@@ -3892,9 +3894,13 @@ class TestSuite(DisablePyTestCollectionMixin):
                 runnable = ts.get('runnable', 0)
                 duration += handler_time
 
+                ts_status = ts.get('status')
+                # Do not report filtered testcases
+                if ts_status == 'filtered' and self.no_skipped_report:
+                    continue
                 if full_report:
                     for tc in ts.get("testcases", []):
-                        status = tc.get('status', ts.get('status'))
+                        status = tc.get('status', ts_status)
                         reason = tc.get('reason', ts.get('reason'))
                         name = tc.get("identifier")
                         classname = ".".join(name.split(".")[:2])
@@ -3990,8 +3996,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                 testcase = {}
                 testcase['identifier'] = k
                 if instance.results[k] in ["SKIP"]:
-                    testcase["status"] = "skipped"
-                    testcase["reason"] = instance.reason
+                    if instance.status != "filtered":
+                        testcase["status"] = "skipped"
+                        testcase["reason"] = instance.reason
                 elif instance.results[k] in ["PASS"] or instance.status == 'passed':
                     testcase["status"] = "passed"
                 elif instance.results[k] in ['FAIL', 'BLOCK'] or \
