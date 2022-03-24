@@ -7,6 +7,44 @@
 #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 
 &pinctrl {
+	/* ADC alternate function */
+	adc0_ch0_gpi0_default: adc0_ch0_gpi0_default {
+		pinmuxs = <&pinctrli 0 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch1_gpi1_default: adc0_ch1_gpi1_default {
+		pinmuxs = <&pinctrli 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch2_gpi2_default: adc0_ch2_gpi2_default {
+		pinmuxs = <&pinctrli 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch3_gpi3_default: adc0_ch3_gpi3_default {
+		pinmuxs = <&pinctrli 3 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch4_gpi4_default: adc0_ch4_gpi4_default {
+		pinmuxs = <&pinctrli 4 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch5_gpi5_default: adc0_ch5_gpi5_default {
+		pinmuxs = <&pinctrli 5 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch6_gpi6_default: adc0_ch6_gpi6_default {
+		pinmuxs = <&pinctrli 6 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch7_gpi7_default: adc0_ch7_gpi7_default {
+		pinmuxs = <&pinctrli 7 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch13_gpl0_default: adc0_ch13_gpl0_default {
+		pinmuxs = <&pinctrll 0 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch14_gpl1_default: adc0_ch14_gpl1_default {
+		pinmuxs = <&pinctrll 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch15_gpl2_default: adc0_ch15_gpl2_default {
+		pinmuxs = <&pinctrll 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	adc0_ch16_gpl3_default: adc0_ch16_gpl3_default {
+		pinmuxs = <&pinctrll 3 IT8XXX2_ALT_FUNC_1>;
+	};
+
 	/* UART alternate function */
 	uart1_rx_gpb0_default: uart1_rx_gpb0_default {
 		pinmuxs = <&pinctrlb 0 IT8XXX2_ALT_FUNC_3>;
