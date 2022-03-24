@@ -19,7 +19,17 @@ config SPI
 config ST7789V
 	default y
 
+config LED
+	default y
+
 endif # DISPLAY
+
+if LED
+
+config LED_GPIO
+	default y
+
+endif # LED
 
 if FLASH
 
