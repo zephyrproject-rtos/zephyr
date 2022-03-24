@@ -8,7 +8,7 @@
 
 #include <drivers/gpio.h>
 #include <drivers/i2c.h>
-#include <drivers/pinmux.h>
+#include <drivers/pinctrl.h>
 #include <errno.h>
 #include <soc.h>
 #include <soc_dt.h>
@@ -26,30 +26,18 @@ LOG_MODULE_REGISTER(i2c_ite_enhance, CONFIG_I2C_LOG_LEVEL);
 #define I2C_LINE_SDA_HIGH BIT(1)
 #define I2C_LINE_IDLE (I2C_LINE_SCL_HIGH | I2C_LINE_SDA_HIGH)
 
-/*
- * Structure i2c_alts_cfg is about the alternate function
- * setting of i2c, this config will be used at initial
- * time and recover bus.
- */
-struct i2c_alts_cfg {
-	/* Pinmux control group */
-	const struct device *pinctrls;
-	/* GPIO pin */
-	uint8_t pin;
-	/* Alternate function */
-	uint8_t alt_fun;
-};
-
 struct i2c_enhance_config {
 	void (*irq_config_func)(void);
 	uint32_t bitrate;
 	uint8_t *base;
 	uint8_t i2c_irq_base;
 	uint8_t port;
+	/* SCL GPIO cells */
+	struct gpio_dt_spec scl_gpios;
+	/* SDA GPIO cells */
+	struct gpio_dt_spec sda_gpios;
 	/* I2C alternate configuration */
-	const struct i2c_alts_cfg *alts_list;
-	/* GPIO handle */
-	const struct device *gpio_dev;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t prescale_scl_low;
 	uint32_t clock_gate_offset;
 };
@@ -598,7 +586,7 @@ static int i2c_enhance_init(const struct device *dev)
 	const struct i2c_enhance_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint32_t bitrate_cfg;
-	int error;
+	int error, status;
 
 	/* Initialize mutex and semaphore */
 	k_mutex_init(&data->mutex);
@@ -637,14 +625,13 @@ static int i2c_enhance_init(const struct device *dev)
 		return error;
 	}
 
-	/* The pin is set to I2C alternate function of SCL */
-	pinmux_pin_set(config->alts_list[SCL].pinctrls,
-		       config->alts_list[SCL].pin,
-		       config->alts_list[SCL].alt_fun);
-	/* The pin is set to I2C alternate function of SDA */
-	pinmux_pin_set(config->alts_list[SDA].pinctrls,
-		       config->alts_list[SDA].pin,
-		       config->alts_list[SDA].alt_fun);
+	/* Set the pin to I2C alternate function. */
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure I2C pins");
+		return status;
+	}
+
 
 	return 0;
 }
@@ -652,16 +639,12 @@ static int i2c_enhance_init(const struct device *dev)
 static int i2c_enhance_recover_bus(const struct device *dev)
 {
 	const struct i2c_enhance_config *config = dev->config;
-	int i;
+	int i, status;
 
 	/* Set SCL of I2C as GPIO pin */
-	pinmux_pin_input_enable(config->alts_list[SCL].pinctrls,
-				config->alts_list[SCL].pin,
-				PINMUX_OUTPUT_ENABLED);
+	gpio_pin_configure_dt(&config->scl_gpios, GPIO_OUTPUT);
 	/* Set SDA of I2C as GPIO pin */
-	pinmux_pin_input_enable(config->alts_list[SDA].pinctrls,
-				config->alts_list[SDA].pin,
-				PINMUX_OUTPUT_ENABLED);
+	gpio_pin_configure_dt(&config->sda_gpios, GPIO_OUTPUT);
 
 	/*
 	 * In I2C recovery bus, 1ms sleep interval for bitbanging i2c
@@ -669,45 +652,43 @@ static int i2c_enhance_recover_bus(const struct device *dev)
 	 * low to high or high to low.
 	 */
 	/* Pull SCL and SDA pin to high */
-	gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 1);
-	gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 1);
+	gpio_pin_set_dt(&config->scl_gpios, 1);
+	gpio_pin_set_dt(&config->sda_gpios, 1);
 	k_msleep(1);
 
 	/* Start condition */
-	gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 0);
+	gpio_pin_set_dt(&config->sda_gpios, 0);
 	k_msleep(1);
-	gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 0);
+	gpio_pin_set_dt(&config->scl_gpios, 0);
 	k_msleep(1);
 
 	/* 9 cycles of SCL with SDA held high */
 	for (i = 0; i < 9; i++) {
 		/* SDA */
-		gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 1);
+		gpio_pin_set_dt(&config->sda_gpios, 1);
 		/* SCL */
-		gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 1);
+		gpio_pin_set_dt(&config->scl_gpios, 1);
 		k_msleep(1);
 		/* SCL */
-		gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 0);
+		gpio_pin_set_dt(&config->scl_gpios, 0);
 		k_msleep(1);
 	}
 	/* SDA */
-	gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 0);
+	gpio_pin_set_dt(&config->sda_gpios, 0);
 	k_msleep(1);
 
 	/* Stop condition */
-	gpio_pin_set(config->gpio_dev, config->alts_list[SCL].pin, 1);
+	gpio_pin_set_dt(&config->scl_gpios, 1);
 	k_msleep(1);
-	gpio_pin_set(config->gpio_dev, config->alts_list[SDA].pin, 1);
+	gpio_pin_set_dt(&config->sda_gpios, 1);
 	k_msleep(1);
 
-	/* Set GPIO back to I2C alternate function of SCL */
-	pinmux_pin_set(config->alts_list[SCL].pinctrls,
-		       config->alts_list[SCL].pin,
-		       config->alts_list[SCL].alt_fun);
-	/* Set GPIO back to I2C alternate function of SDA */
-	pinmux_pin_set(config->alts_list[SDA].pinctrls,
-		       config->alts_list[SDA].pin,
-		       config->alts_list[SDA].alt_fun);
+	/* Set GPIO back to I2C alternate function */
+	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure I2C pins");
+		return status;
+	}
 
 	/* reset i2c port */
 	i2c_reset(dev);
@@ -725,6 +706,7 @@ static const struct i2c_driver_api i2c_enhance_driver_api = {
 };
 
 #define I2C_ITE_ENHANCE_INIT(inst)                                              \
+	PINCTRL_DT_INST_DEFINE(inst);                                           \
 	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) ==                    \
 		     50000) ||                                                  \
 		     (DT_INST_PROP(inst, clock_frequency) ==                    \
@@ -734,9 +716,6 @@ static const struct i2c_driver_api i2c_enhance_driver_api = {
 		     (DT_INST_PROP(inst, clock_frequency) ==                    \
 		     I2C_BITRATE_FAST_PLUS), "Not support I2C bit rate value"); \
 	static void i2c_enhance_config_func_##inst(void);                       \
-	static const struct i2c_alts_cfg                                        \
-		i2c_alts_##inst[DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0)] =         \
-			IT8XXX2_DT_ALT_ITEMS_LIST(inst);                        \
 										\
 	static const struct i2c_enhance_config i2c_enhance_cfg_##inst = {       \
 		.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),                    \
@@ -744,10 +723,11 @@ static const struct i2c_driver_api i2c_enhance_driver_api = {
 		.bitrate = DT_INST_PROP(inst, clock_frequency),                 \
 		.i2c_irq_base = DT_INST_IRQN(inst),                             \
 		.port = DT_INST_PROP(inst, port_num),                           \
-		.alts_list = i2c_alts_##inst,                                   \
-		.gpio_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, gpio_dev)),     \
+		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),            \
+		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),            \
 		.prescale_scl_low = DT_INST_PROP_OR(inst, prescale_scl_low, 0), \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 	};                                                                      \
 										\
 	static struct i2c_enhance_data i2c_enhance_data_##inst;                 \
