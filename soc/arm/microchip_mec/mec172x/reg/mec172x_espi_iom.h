@@ -16,7 +16,7 @@
 #define MCHP_ESPI_IO_LTR_OFS		0x0220u
 #define MCHP_ESPI_IO_OOB_OFS		0x0240u
 #define MCHP_ESPI_IO_FC_OFS		0x0280u
-#define MCHP_ESPI_IO_CAP_OFS		0x02b0u
+#define MCHP_ESPI_IO_CAP_OFS		0x02e0u
 #define MCHP_ESPI_IO_SIRQ_OFS		0x03a0u
 
 /* eSPI Global Capabilities 0 */
