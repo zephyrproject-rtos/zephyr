@@ -22,7 +22,7 @@ extern "C" {
  */
 
 /** Number of endpoints. */
-#define NUM_ENDPOINTS	CONFIG_IPC_SERVICE_NUM_ENDPOINTS_PER_INSTANCE
+#define NUM_ENDPOINTS	CONFIG_IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
 
 struct ipc_rpmsg_ept;
 
