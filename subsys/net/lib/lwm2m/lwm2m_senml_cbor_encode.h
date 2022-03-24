@@ -1,4 +1,9 @@
 /*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * Generated using zcbor version 0.3.99
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
@@ -12,11 +17,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "zcbor_encode.h"
-#include "lwm2m_senml_cbor_encode_types.h"
-
-#if DEFAULT_MAX_QTY != 99
-#error "The type file was generated with a different default_max_qty than this file"
-#endif
+#include "lwm2m_senml_cbor_types.h"
 
 uint_fast8_t cbor_encode_lwm2m_senml(uint8_t *payload, size_t payload_len,
 				     const struct lwm2m_senml *input, size_t *payload_len_out);
