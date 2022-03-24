@@ -39,14 +39,6 @@ config BT_RPMSG
 	  Bluetooth HCI driver for communication with another CPU
 	  using RPMsg framework.
 
-if BT_RPMSG
-
-choice IPC_SERVICE_BACKEND
-	default IPC_SERVICE_BACKEND_RPMSG
-endchoice
-
-endif # BT_RPMSG
-
 config BT_SPI
 	bool "SPI HCI"
 	depends on SPI

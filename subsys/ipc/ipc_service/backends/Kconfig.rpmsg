@@ -21,4 +21,11 @@ config IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
 	  When this parameter is set to 'y' the status region of the shared
 	  memory is reset on kernel initialization.
 
-endif # IP_SERVICE_BACKEND_RPMSG
+config IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
+	int "Max number of registered endpoints per instance"
+	default 2
+	help
+	  Maximal number of endpoints that can be registered for one instance
+	  for RPMSG backend.
+
+endif # IPC_SERVICE_BACKEND_RPMSG
