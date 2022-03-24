@@ -366,9 +366,11 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
 		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_CTE_RSP) {
-			if (ctx->data.cte_remote_rsp.has_cte &&
-			    conn->llcp.cte_req.req_interval != 0U) {
-				conn->llcp.cte_req.req_expire = conn->llcp.cte_req.req_interval;
+			if (ctx->data.cte_remote_rsp.has_cte) {
+				if (conn->llcp.cte_req.req_interval != 0U) {
+					conn->llcp.cte_req.req_expire =
+						conn->llcp.cte_req.req_interval;
+				}
 				ctx->state = LP_COMMON_STATE_IDLE;
 			} else if (llcp_ntf_alloc_is_available()) {
 				lp_comm_ntf(conn, ctx);
