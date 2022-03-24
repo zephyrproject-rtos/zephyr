@@ -14,6 +14,7 @@
 #include "util/dbuf.h"
 
 #include "hal/cpu.h"
+#include "hal/ccm.h"
 #include "hal/radio_df.h"
 
 #include "pdu.h"
