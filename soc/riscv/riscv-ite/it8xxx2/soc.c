@@ -176,36 +176,40 @@ BUILD_ASSERT(CONFIG_FLASH_INIT_PRIORITY < CONFIG_IT8XXX2_PLL_SEQUENCE_PRIORITY,
 	"CONFIG_FLASH_INIT_PRIORITY must be less than CONFIG_IT8XXX2_PLL_SEQUENCE_PRIORITY");
 #endif /* CONFIG_SOC_IT8XXX2_PLL_FLASH_48M */
 
-extern volatile int wait_interrupt_fired;
-
+/* The routine must be called with interrupts locked */
 void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 {
-	/* Disable M-mode external interrupt */
+	/*
+	 * The routine is called with interrupts locked (in kernel/idle()).
+	 * But on kernel/context test_kernel_cpu_idle test, the routine will be
+	 * called without interrupts locked. Hence we disable M-mode external
+	 * interrupt here to protect the below content.
+	 */
 	csr_clear(mie, MIP_MEIP);
-
 	sys_trace_idle();
 	/* Chip doze after wfi instruction */
 	chip_pll_ctrl(mode);
-	/* Set flag before entering low power mode. */
-	wait_interrupt_fired = 1;
-	/* unlock interrupts */
-	irq_unlock(key);
-	/* Wait for interrupt */
-	__asm__ volatile ("wfi");
 
-	/* Enable M-mode external interrupt */
-	csr_set(mie, MIP_MEIP);
-	/*
-	 * Sometimes wfi instruction may fail due to CPU's MTIP@mip
-	 * register is non-zero.
-	 * If the wait_interrupt_fired flag is true at this point,
-	 * it means that EC waked-up by the above issue not an
-	 * interrupt. Hence we loop running wfi instruction here until
-	 * wfi success.
-	 */
-	while (wait_interrupt_fired) {
+	do {
+		/* Wait for interrupt */
 		__asm__ volatile ("wfi");
-	}
+		/*
+		 * Sometimes wfi instruction may fail due to CPU's MTIP@mip
+		 * register is non-zero.
+		 * If the ite_intc_no_irq() is true at this point,
+		 * it means that EC waked-up by the above issue not an
+		 * interrupt. Hence we loop running wfi instruction here until
+		 * wfi success.
+		 */
+	} while (ite_intc_no_irq());
+
+	/*
+	 * Enable M-mode external interrupt
+	 * An interrupt can not be fired yet until we enable global interrupt
+	 */
+	csr_set(mie, MIP_MEIP);
+	/* Restore global interrupt lockout state */
+	irq_unlock(key);
 }
 
 void arch_cpu_idle(void)

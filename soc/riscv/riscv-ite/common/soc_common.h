@@ -46,6 +46,7 @@ extern int ite_intc_irq_is_enable(unsigned int irq);
 extern void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags);
 extern void ite_intc_isr_clear(unsigned int irq);
 void ite_intc_init(void);
+bool ite_intc_no_irq(void);
 #endif /* CONFIG_ITE_IT8XXX2_INTC */
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
