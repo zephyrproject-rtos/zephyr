@@ -15,6 +15,7 @@
 #include <init.h>
 #include <stdio.h>
 #include <zephyr/types.h>
+#include <sys/util.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
@@ -794,7 +795,7 @@ struct bt_ots *bt_mcs_get_ots(void)
 /* Callback functions from the media player, notifying attributes */
 /* Placed here, after the service definition, because they reference it. */
 
-/* Helper function to shorten functions that notify */
+/* Helper function to notify non-string values */
 static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 {
 	int err = bt_gatt_notify_uuid(NULL, uuid, mcs.attrs, data, len);
@@ -808,6 +809,37 @@ static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 	}
 }
 
+/* Helper function to notify UTF8 string values
+ * Will truncate string to fit within notification if required.
+ * The string must be null-terminated.
+ */
+static void notify_string(const struct bt_uuid *uuid, const char *str)
+{
+	/* TODO:
+	 * This function will need to get the ATT_MTU to know what length to
+	 * truncate the string to.  But the ATT_MTU is per connection, and MCS
+	 * is not connection-aware yet.
+	 * For now: Truncate according to the default ATT_MTU, so that
+	 * notifications will go through
+	 */
+
+	/* TODO: Use bt_gatt_get_mtu() to find the ATT_MTU */
+	const uint16_t att_mtu = 23;
+	const uint16_t maxlen = att_mtu - 1 - 2; /* Subtract opcode and handle */
+	const uint16_t len = strlen(str);
+
+	if (len > maxlen) {
+		/* Truncation requires, and gives, a null-terminated string. */
+		char trunc_str[maxlen + 1];
+
+		utf8_lcpy(trunc_str, str, sizeof(trunc_str));
+		/* Null-termination is not sent on air */
+		notify(uuid, (void *)trunc_str, strlen(trunc_str));
+	} else {
+		notify(uuid, (void *)str, len);
+	}
+}
+
 void media_proxy_sctrl_track_changed_cb(void)
 {
 	BT_DBG("Notifying track change");
@@ -817,7 +849,7 @@ void media_proxy_sctrl_track_changed_cb(void)
 void media_proxy_sctrl_track_title_cb(const char *title)
 {
 	BT_DBG("Notifying track title: %s", log_strdup(title));
-	notify(BT_UUID_MCS_TRACK_TITLE, title, strlen(title));
+	notify_string(BT_UUID_MCS_TRACK_TITLE, title);
 }
 
 void media_proxy_sctrl_track_position_cb(int32_t position)
