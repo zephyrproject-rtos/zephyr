@@ -185,7 +185,7 @@ static void discover_members_timer_handler(struct k_work *work)
 	     members_found, inst->info.set_size);
 }
 
-static void read_set_lock_state(const struct bt_csis_client_set_member **members,
+static void read_set_lock_state(struct bt_csis_client_set_member **members,
 				uint8_t count, bool expect_locked)
 {
 	int err;
@@ -216,7 +216,7 @@ static void test_main(void)
 {
 	int err;
 	char addr[BT_ADDR_LE_STR_LEN];
-	const struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
+	struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
 	uint8_t connected_member_count = 0;
 
 	err = bt_enable(NULL);

@@ -47,7 +47,7 @@ static struct bt_csis *cur_inst;
 static bool busy;
 
 static struct active_members {
-	const struct bt_csis_client_set_member **members;
+	struct bt_csis_client_set_member **members;
 	const struct bt_csis_client_set_info *info;
 	uint8_t members_count;
 	uint8_t members_handled;
@@ -119,7 +119,7 @@ static struct bt_csis *lookup_instance_by_index(struct bt_conn *conn,
 	return &client->csis_insts[idx];
 }
 
-static struct bt_csis *lookup_instance_by_set_info(const struct bt_csis_client_set_member *member,
+static struct bt_csis *lookup_instance_by_set_info(struct bt_csis_client_set_member *member,
 						   const struct bt_csis_client_set_info *set_info)
 {
 	for (int i = 0; i < ARRAY_SIZE(member->insts); i++) {
@@ -1332,7 +1332,7 @@ int bt_csis_client_discover(struct bt_csis_client_set_member *member)
 	return err;
 }
 
-static int verify_members_and_get_inst(const struct bt_csis_client_set_member **members,
+static int verify_members_and_get_inst(struct bt_csis_client_set_member **members,
 				       uint8_t count,
 				       const struct bt_csis_client_set_info *set_info,
 				       bool lowest_rank,
@@ -1341,7 +1341,7 @@ static int verify_members_and_get_inst(const struct bt_csis_client_set_member **
 	*out_inst = NULL;
 
 	for (int i = 0; i < count; i++) {
-		const struct bt_csis_client_set_member *member = members[i];
+		struct bt_csis_client_set_member *member = members[i];
 		struct bt_csis *inst;
 		struct bt_conn *conn;
 
@@ -1379,9 +1379,9 @@ static int verify_members_and_get_inst(const struct bt_csis_client_set_member **
 	return 0;
 }
 
-int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **members,
-				   uint8_t count,
-				   const struct bt_csis_client_set_info *set_info)
+int bt_csis_client_get_lock_state(struct bt_csis_client_set_member **members,
+				  uint8_t count,
+				  const struct bt_csis_client_set_info *set_info)
 {
 	int err;
 
@@ -1410,7 +1410,7 @@ int bt_csis_client_get_lock_state(const struct bt_csis_client_set_member **membe
 	return err;
 }
 
-int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
+int bt_csis_client_lock(struct bt_csis_client_set_member **members,
 			uint8_t count,
 			const struct bt_csis_client_set_info *set_info)
 {
@@ -1440,7 +1440,7 @@ int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
 	return err;
 }
 
-int bt_csis_client_release(const struct bt_csis_client_set_member **members,
+int bt_csis_client_release(struct bt_csis_client_set_member **members,
 			   uint8_t count,
 			   const struct bt_csis_client_set_info *set_info)
 {
