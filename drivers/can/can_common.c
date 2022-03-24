@@ -127,10 +127,12 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 	return sp_err_min == UINT16_MAX ? -EINVAL : (int)sp_err_min;
 }
 
-int can_calc_timing(const struct device *dev, struct can_timing *res,
-		    uint32_t bitrate, uint16_t sample_pnt)
+
+int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
+			   uint32_t bitrate, uint16_t sample_pnt)
 {
-	const struct can_driver_api *api = dev->api;
+	const struct can_timing *min = can_get_timing_min(dev);
+	const struct can_timing *max = can_get_timing_max(dev);
 	uint32_t core_clock;
 	int ret;
 
@@ -139,15 +141,15 @@ int can_calc_timing(const struct device *dev, struct can_timing *res,
 		return ret;
 	}
 
-	return can_calc_timing_int(core_clock, res, &api->timing_min,
-				   &api->timing_max, bitrate, sample_pnt);
+	return can_calc_timing_int(core_clock, res, min, max, bitrate, sample_pnt);
 }
 
 #ifdef CONFIG_CAN_FD_MODE
-int can_calc_timing_data(const struct device *dev, struct can_timing *res,
-			 uint32_t bitrate, uint16_t sample_pnt)
+int z_impl_can_calc_timing_data(const struct device *dev, struct can_timing *res,
+				uint32_t bitrate, uint16_t sample_pnt)
 {
-	const struct can_driver_api *api = dev->api;
+	const struct can_timing *min = can_get_timing_min_data(dev);
+	const struct can_timing *max = can_get_timing_max_data(dev);
 	uint32_t core_clock;
 	int ret;
 
@@ -156,10 +158,9 @@ int can_calc_timing_data(const struct device *dev, struct can_timing *res,
 		return ret;
 	}
 
-	return can_calc_timing_int(core_clock, res, &api->timing_min_data,
-				   &api->timing_max_data, bitrate, sample_pnt);
+	return can_calc_timing_int(core_clock, res, min, max, bitrate, sample_pnt);
 }
-#endif
+#endif /* CONFIG_CAN_FD_MODE */
 
 int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 		       uint32_t bitrate)
@@ -184,7 +185,7 @@ int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate
 	struct can_timing timing;
 #ifdef CONFIG_CAN_FD_MODE
 	struct can_timing timing_data;
-#endif
+#endif /* CONFIG_CAN_FD_MODE */
 	uint32_t max_bitrate;
 	int ret;
 
