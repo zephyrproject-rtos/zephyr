@@ -70,28 +70,11 @@ struct can_timing_tests_fixture {
 /**
  * @brief CAN timing test fixture instance common to all test cases
  */
-static struct can_timing_tests_fixture test_fixture = {
+ZTEST_DMEM static struct can_timing_tests_fixture test_fixture = {
 	.dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus)),
 	.tests = can_timing_tests,
 	.test_count = ARRAY_SIZE(can_timing_tests),
 };
-
-/**
- * @brief CAN timing test setup function
- *
- * Asserts that the CAN device is ready before starting tests.
- *
- * @return Pointer to CAN timing test fixture instance
- */
-static void *can_timing_test_setup(void)
-{
-	zassert_true(device_is_ready(test_fixture.dev), "CAN device not ready");
-	printk("testing on device %s\n", test_fixture.dev->name);
-
-	return &test_fixture;
-}
-
-ZTEST_SUITE(can_timing_tests, NULL, can_timing_test_setup, NULL, NULL, NULL);
 
 /**
  * @brief Assert that a CAN timing struct matches the specified bitrate
@@ -131,9 +114,8 @@ static void assert_bitrate_correct(const struct device *dev, struct can_timing *
  */
 static void assert_timing_within_bounds(const struct device *dev, struct can_timing *timing)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-	const struct can_timing *max = &api->timing_max;
-	const struct can_timing *min = &api->timing_min;
+	const struct can_timing *max = can_get_timing_max(dev);
+	const struct can_timing *min = can_get_timing_min(dev);
 
 	zassert_true(timing->prop_seg <= max->prop_seg, "prop_seg exceeds max");
 	zassert_true(timing->phase_seg1 <= max->phase_seg1, "phase_seg1 exceeds max");
@@ -199,14 +181,24 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 
 /**
  * @brief Test all CAN timing values
- *
- * @param this Pointer to a CAN timing test fixture
  */
-ZTEST_F(can_timing_tests, test_timing)
+void test_timing(void)
 {
 	int i;
 
-	for (i = 0; i < this->test_count; i++) {
-		test_timing_values(this->dev, &this->tests[i]);
+	for (i = 0; i < test_fixture.test_count; i++) {
+		test_timing_values(test_fixture.dev, &test_fixture.tests[i]);
 	}
+}
+
+void test_main(void)
+{
+	zassert_true(device_is_ready(test_fixture.dev), "CAN device not ready");
+	printk("testing on device %s\n", test_fixture.dev->name);
+
+	k_object_access_grant(test_fixture.dev, k_current_get());
+
+	ztest_test_suite(can_timing_tests,
+			 ztest_user_unit_test(test_timing));
+	ztest_run_test_suite(can_timing_tests);
 }
