@@ -1,4 +1,9 @@
 /*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  * Generated using zcbor version 0.3.99
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
@@ -10,10 +15,7 @@
 #include <string.h>
 #include "zcbor_decode.h"
 #include "lwm2m_senml_cbor_decode.h"
-
-#if DEFAULT_MAX_QTY != 99
-#error "The type file was generated with a different default_max_qty than this file"
-#endif
+#include "lwm2m_senml_cbor_types.h"
 
 static bool decode_repeated_record_bn(zcbor_state_t *state, struct record_bn *result)
 {
@@ -155,7 +157,8 @@ static bool decode_record(zcbor_state_t *state, struct record *result)
 		     zcbor_present_decode(&((*result)._record_union_present),
 					  (zcbor_decoder_t *)decode_repeated_record_union, state,
 					  (&(*result)._record_union)) &&
-		     zcbor_multi_decode(0, 3, &(*result)._record__key_value_pair_count,
+		     zcbor_multi_decode(0, ARRAY_SIZE(result->_record__key_value_pair),
+					&(*result)._record__key_value_pair_count,
 					(zcbor_decoder_t *)decode_repeated_record__key_value_pair,
 					state, (&(*result)._record__key_value_pair),
 					sizeof(struct record__key_value_pair))) ||
@@ -174,7 +177,8 @@ static bool decode_lwm2m_senml(zcbor_state_t *state, struct lwm2m_senml *result)
 
 	bool tmp_result = ((
 		(zcbor_list_start_decode(state) &&
-		 ((zcbor_multi_decode(1, 99, &(*result)._lwm2m_senml__record_count,
+		 ((zcbor_multi_decode(1, ARRAY_SIZE(result->_lwm2m_senml__record),
+				      &(*result)._lwm2m_senml__record_count,
 				      (zcbor_decoder_t *)decode_record, state,
 				      (&(*result)._lwm2m_senml__record), sizeof(struct record))) ||
 		  (zcbor_list_map_end_force_decode(state), false)) &&
@@ -201,6 +205,7 @@ uint_fast8_t cbor_decode_lwm2m_senml(const uint8_t *payload, size_t payload_len,
 
 	if (!ret) {
 		uint_fast8_t ret = zcbor_pop_error(states);
+
 		return (ret == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : ret;
 	}
 	return ZCBOR_SUCCESS;
