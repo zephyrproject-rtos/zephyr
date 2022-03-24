@@ -96,3 +96,18 @@ config BT_DEBUG_HAS
 	  This option enables enables Hearing Access Service debug logs.
 
 endif # BT_HAS
+
+config BT_HAS_CLIENT
+	bool "Hearing Access Service Client support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_GATT_CLIENT
+	select BT_GATT_AUTO_DISCOVER_CCC
+	select BT_GATT_AUTO_UPDATE_MTU
+	help
+	  This option enables support for Hearing Access Service Client.
+
+config BT_DEBUG_HAS_CLIENT
+	bool "Hearing Access Service Client debug"
+	depends on BT_HAS_CLIENT
+	help
+	  This option enables enables Hearing Access Service Client debug logs.
