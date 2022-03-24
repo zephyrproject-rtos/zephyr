@@ -121,6 +121,6 @@ config RPMSG_SERVICE_EP_REG_PRIORITY
 
 module = RPMSG_SERVICE
 module-str = RPMsg service and backend
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # RPMSG_SERVICE

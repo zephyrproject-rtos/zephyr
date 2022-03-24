@@ -377,7 +377,7 @@ config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
 module=MGMT_SETTINGS
 module-dep=LOG
 module-str=SETTINGS
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif
 
