@@ -385,6 +385,71 @@ void test_ctrl_and_data_5(void)
 	zassert_equal_ptr(node, NULL, "");
 }
 
+/*
+ * (1) Enqueue data nodes.
+ * Pause Tx Queue TWICE.
+ * (2) Enqueue data nodes.
+ * Dequeue and verify order of data nodes from (1).
+ * Verify Tx Queue is empty.
+ * Resume Tx Queue.
+ * Verify Tx Queue is empty.
+ * Resume Tx Queue.
+ * Dequeue and verify order of data nodes from (2).
+ */
+void test_multiple_pause_resume(void)
+{
+	struct ull_tx_q tx_q;
+	struct node_tx *node;
+	struct node_tx data_nodes1[SIZE] = { 0 };
+	struct node_tx data_nodes2[SIZE] = { 0 };
+
+	ull_tx_q_init(&tx_q);
+
+	/* Enqueue data 1 nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		ull_tx_q_enqueue_data(&tx_q, &data_nodes1[i]);
+	}
+
+	/* Pause Tx Queue Twice */
+	ull_tx_q_pause_data(&tx_q);
+	ull_tx_q_pause_data(&tx_q);
+
+	/* Enqueue data 2 nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		ull_tx_q_enqueue_data(&tx_q, &data_nodes2[i]);
+	}
+
+	/* Dequeue data 1 nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		node = ull_tx_q_dequeue(&tx_q);
+		zassert_equal_ptr(node, &data_nodes1[i], NULL);
+	}
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Resume Tx Queue */
+	ull_tx_q_resume_data(&tx_q);
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&tx_q);
+	zassert_equal_ptr(node, NULL, "");
+
+	/* Resume Tx Queue */
+	ull_tx_q_resume_data(&tx_q);
+
+	/* Dequeue data 2 nodes */
+	for (int i = 0U; i < SIZE; i++) {
+		node = ull_tx_q_dequeue(&tx_q);
+		zassert_equal_ptr(node, &data_nodes2[i], NULL);
+	}
+
+	/* Tx Queue shall be empty */
+	node = ull_tx_q_dequeue(&tx_q);
+	zassert_equal_ptr(node, NULL, "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test, ztest_unit_test(test_init), ztest_unit_test(test_ctrl),
@@ -392,6 +457,7 @@ void test_main(void)
 			 ztest_unit_test(test_ctrl_and_data_2),
 			 ztest_unit_test(test_ctrl_and_data_3),
 			 ztest_unit_test(test_ctrl_and_data_4),
-			 ztest_unit_test(test_ctrl_and_data_5));
+			 ztest_unit_test(test_ctrl_and_data_5),
+			 ztest_unit_test(test_multiple_pause_resume));
 	ztest_run_test_suite(test);
 }

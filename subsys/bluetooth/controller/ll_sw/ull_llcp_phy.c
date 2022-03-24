@@ -446,7 +446,7 @@ static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		lp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_REQ);
-		llcp_tx_pause_data(conn);
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		ctx->state = LP_PU_STATE_WAIT_TX_ACK_PHY_REQ;
 	}
 }
@@ -504,7 +504,7 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 
 		llcp_pdu_decode_phy_rsp(ctx, (struct pdu_data *)param);
 		/* Pause data tx */
-		llcp_tx_pause_data(conn);
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		/* Combine with the 'Preferred' phys */
 		pu_combine_phys(conn, ctx, tx_pref, rx_pref);
 		lp_pu_send_phy_update_ind(conn, ctx, evt, param);
@@ -551,7 +551,7 @@ static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *
 			/* Unknown role */
 			LL_ASSERT(0);
 		}
-		llcp_tx_resume_data(conn);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		break;
 	default:
 		/* Ignore other evts */
@@ -597,7 +597,7 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 			ctx->data.pu.ntf_pu = ctx->data.pu.host_initiated;
 			lp_pu_complete(conn, ctx, evt, param);
 		}
-		llcp_tx_resume_data(conn);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		break;
 	default:
 		/* Ignore other evts */
@@ -901,7 +901,7 @@ static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx,
 	llcp_pdu_decode_phy_req(ctx, (struct pdu_data *)param);
 	/* Combine with the 'Preferred' the phys in conn->phy_pref_?x */
 	pu_combine_phys(conn, ctx, conn->phy_pref_tx, conn->phy_pref_rx);
-	llcp_tx_pause_data(conn);
+	llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 	switch (evt) {
 	case RP_PU_EVT_PHY_REQ:
 		switch (conn->lll.role) {
@@ -976,7 +976,7 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 		} else {
 			/* empty clause */
 		}
-		llcp_tx_resume_data(conn);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		break;
 	default:
 		/* Ignore other evts */

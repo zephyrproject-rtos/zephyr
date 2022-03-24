@@ -449,6 +449,7 @@ struct llcp_struct {
 
 	uint8_t tx_buffer_alloc;
 #endif /* (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) */
+	uint8_t tx_q_pause_data_mask;
 
 }; /* struct llcp_struct */
 
