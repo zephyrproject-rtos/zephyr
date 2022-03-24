@@ -117,13 +117,17 @@ static void assert_timing_within_bounds(const struct device *dev, struct can_tim
 	const struct can_timing *max = can_get_timing_max(dev);
 	const struct can_timing *min = can_get_timing_min(dev);
 
+	zassert_true(timing->sjw == CAN_SJW_NO_CHANGE, "sjw does not equal CAN_SJW_NO_CHANGE");
+
 	zassert_true(timing->prop_seg <= max->prop_seg, "prop_seg exceeds max");
 	zassert_true(timing->phase_seg1 <= max->phase_seg1, "phase_seg1 exceeds max");
 	zassert_true(timing->phase_seg2 <= max->phase_seg2, "phase_seg2 exceeds max");
+	zassert_true(timing->prescaler <= max->prescaler, "prescaler exceeds max");
 
 	zassert_true(timing->prop_seg >= min->prop_seg, "prop_seg lower than min");
 	zassert_true(timing->phase_seg1 >= min->phase_seg1, "phase_seg1 lower than min");
 	zassert_true(timing->phase_seg2 >= min->phase_seg2, "phase_seg2 lower than min");
+	zassert_true(timing->prescaler >= min->prescaler, "prescaler lower than min");
 }
 
 /**
@@ -163,7 +167,9 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 	printk("testing bitrate %u, sample point %u.%u%% (%s): ",
 		test->bitrate, test->sp / 10, test->sp % 10, test->invalid ? "invalid" : "valid");
 
+	timing.sjw = CAN_SJW_NO_CHANGE;
 	err = can_calc_timing(dev, &timing, test->bitrate, test->sp);
+
 	if (test->invalid) {
 		zassert_equal(err, -EINVAL, "err %d, expected -EINVAL", err);
 		printk("OK\n");
