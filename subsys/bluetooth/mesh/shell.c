@@ -2225,7 +2225,7 @@ static int hb_pub_set(const struct shell *shell, size_t argc, char *argv[])
 	pub.period = strtoul(argv[3], NULL, 0);
 	pub.ttl = strtoul(argv[4], NULL, 0);
 	pub.feat = strtoul(argv[5], NULL, 0);
-	pub.net_idx = strtoul(argv[5], NULL, 0);
+	pub.net_idx = strtoul(argv[6], NULL, 0);
 
 	err = bt_mesh_cfg_hb_pub_set(net.net_idx, net.dst, &pub, &status);
 	if (err) {
