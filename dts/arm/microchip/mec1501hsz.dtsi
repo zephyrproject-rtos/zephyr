@@ -434,6 +434,8 @@
 			compatible = "microchip,xec-peci";
 			reg = <0x40006400 0x80>;
 			interrupts = <70 4>;
+			girqs = <17 0>;
+			pcrs = <1 1>;
 			label = "PECI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
