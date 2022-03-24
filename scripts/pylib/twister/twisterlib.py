@@ -471,30 +471,18 @@ class Handler:
         proc.kill()
         self.terminated = True
 
-    def add_missing_testscases(self, harness):
+    def add_missing_testscases(self, reason=None):
         """
         If testsuite was broken by some error (e.g. timeout) it is necessary to
         add information about next testcases, which were not be
         performed due to this error.
         """
-        for c in self.instance.testsuite.cases:
-            if c not in harness.tests:
-                harness.tests[c] = "BLOCK"
 
-    def _set_skip_reason(self, harness_state):
-        """
-        If testcase written in ztest framework is skipped by "ztest_test_skip()"
-        function, then such testcase is marked in instance.results dict as
-        "SKIP", but reason of this sipping still "Unknown". This method pick up
-        this situation and complete the instance.reason properly.
-        """
-        harness_state_pass = "passed"
-        harness_testcase_result_skip = "SKIP"
-        instance_reason_unknown = "Unknown"
-        if harness_state == harness_state_pass and \
-                self.instance.reason == instance_reason_unknown and \
-                harness_testcase_result_skip in self.instance.results.values():
-            self.instance.reason = "ztest skip"
+        for case in self.instance.testcases:
+            if not case.status:
+                case.status = "blocked"
+                if reason:
+                    case.reason = reason
 
     def _verify_ztest_suite_name(self, harness_state, detected_suite_names, handler_time):
         """
@@ -502,7 +490,7 @@ class Handler:
         detected suite names from output correspond to expected suite names
         (and not in reverse).
         """
-        expected_suite_names = self.instance.testcase.ztest_suite_names
+        expected_suite_names = self.instance.testsuite.ztest_suite_names
         if not expected_suite_names or \
                 not harness_state == "passed":
             return
@@ -519,15 +507,14 @@ class Handler:
         suite name was occurred.
         """
         self.set_state("failed", handler_time)
-        for k in self.instance.testcase.cases:
-            self.instance.results[k] = "FAIL"
+        for tc in self.instance.testcases:
+            tc.status = "failed"
         self.instance.reason = f"Testsuite mismatch"
         logger.debug("Test suite names were not printed or some of them in " \
                      "output do not correspond with expected: %s",
                      str(expected_suite_names))
 
     def _final_handle_actions(self, harness, handler_time):
-        self._set_skip_reason(harness.state)
 
         # only for Ztest tests:
         harness_class_name = type(harness).__name__
@@ -537,8 +524,8 @@ class Handler:
             if not harness.matched_run_id and harness.run_id_exists:
                 self.set_state("failed", handler_time)
                 self.instance.reason = "RunID mismatch"
-                for k in self.instance.testcase.cases:
-                    self.instance.results[k] = "FAIL"
+                for tc in self.instance.testcases:
+                    tc.status = "failed"
 
         self.record(harness)
 
@@ -685,7 +672,6 @@ class BinaryHandler(Handler):
 
         if harness.is_pytest:
             harness.pytest_run(self.log)
-        self.instance.results = harness.tests
 
         if not self.terminated and self.returncode != 0:
             if run_valgrind and self.returncode == 2:
@@ -703,7 +689,7 @@ class BinaryHandler(Handler):
         else:
             self.set_state("timeout", handler_time)
             self.instance.reason = "Timeout"
-            self.add_missing_testscases(harness)
+            self.add_missing_testscases("Timeout")
 
         self._final_handle_actions(harness, handler_time)
 
@@ -997,14 +983,13 @@ class DeviceHandler(Handler):
 
         if harness.is_pytest:
             harness.pytest_run(self.log)
-        self.instance.results = harness.tests
 
         # sometimes a test instance hasn't been executed successfully with an
         # empty dictionary results, in order to include it into final report,
-        # so fill the results as BLOCK
-        if self.instance.results == {}:
-            for k in self.instance.testsuite.cases:
-                self.instance.results[k] = 'BLOCK'
+        # so fill the results as blocked
+
+        for case in self.instance.testcases:
+            case.status = 'blocked'
 
         if harness.state:
             self.set_state(harness.state, handler_time)
@@ -1226,7 +1211,6 @@ class QEMUHandler(Handler):
                                              self.pid_fn, self.results, harness,
                                              self.ignore_unexpected_eof))
 
-        self.instance.results = harness.tests
         self.thread.daemon = True
         logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
@@ -1743,6 +1727,19 @@ class ScanPathResult:
                 (sorted(self.ztest_suite_names) ==
                  sorted(other.ztest_suite_names)))
 
+class TestCase(DisablePyTestCollectionMixin):
+    def __init__(self, name=None, testsuite=None):
+        self.duration = 0
+        self.name = name
+        self.status = None
+        self.reason = None
+        self.testsuite = testsuite
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<TestCase %s with %s>" % (self.name, self.status)
 
 class TestSuite(DisablePyTestCollectionMixin):
     """Class representing a test application
@@ -1772,7 +1769,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         self.source_dir = ""
         self.yamlfile = ""
-        self.cases = []
+        self.testcases = []
         self.name = self.get_unique(testsuite_root, workdir, name)
         self.id = name
 
@@ -1800,6 +1797,11 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.extra_sections = None
         self.integration_platforms = []
         self.ztest_suite_names = []
+
+
+    def add_testcase(self, name):
+        tc = TestCase(name=name, testsuite=self)
+        self.testcases.append(tc)
 
     @staticmethod
     def get_unique(testsuite_root, workdir, name):
@@ -2068,10 +2070,10 @@ Tests should reference the category and subsystem with a dot as a separator.
         subcases, ztest_suite_names = self.scan_path(test_path)
         for sub in subcases:
             name = "{}.{}".format(self.id, sub)
-            self.cases.append(name)
+            self.add_testcase(name)
 
         if not subcases:
-            self.cases.append(self.id)
+            self.add_testcase(self.id)
 
         self.ztest_suite_names = ztest_suite_names
 
@@ -2119,8 +2121,13 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
 
         self.run = False
+        self.testcases = []
+        self.init_cases()
 
-        self.results = {}
+    # Fix an issue with copying objects from testsuite, need better solution.
+    def init_cases(self):
+        for c in self.testsuite.testcases:
+            self.add_testcase(c.name)
 
     def _get_run_id(self):
         """ generate run id from instance unique identifier and a random
@@ -2142,6 +2149,33 @@ class TestInstance(DisablePyTestCollectionMixin):
     def __lt__(self, other):
         return self.name < other.name
 
+    def set_status_by_name(self, name, status, reason=None):
+        for case in self.testcases:
+            if case.name == name:
+                case.status = status
+                if reason:
+                    case.reason = reason
+
+    def add_testcase(self, name):
+        tc = TestCase(name=name)
+        self.testcases.append(tc)
+        return tc
+
+    def get_case_by_name(self, name):
+        for c in self.testcases:
+            if c.name == name:
+                return c
+        return None
+
+    def get_case_or_create(self, name):
+        for c in self.testcases:
+            if c.name == name:
+                return c
+
+        logger.warning(f"Could not find a matching testcase for {name}")
+        tc = TestCase(name=name)
+        self.testcases.append(tc)
+        return tc
 
     @staticmethod
     def testsuite_runnable(testsuite, fixtures):
@@ -2254,28 +2288,8 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         return SizeCalculator(fns[0], self.testsuite.extra_sections)
 
-    def fill_results_by_status(self):
-        """Fills results according to self.status
-
-        The method is used to propagate the instance level status
-        to the test cases inside. Useful when the whole instance is skipped
-        and the info is required also at the test cases level for reporting.
-        Should be used with caution, e.g. should not be used
-        to fill all results with passes
-        """
-        status_to_verdict = {
-            'skipped': 'SKIP',
-            'error': 'BLOCK',
-            'failure': 'FAILED',
-            'filtered': 'FILTERED'
-        }
-
-        for k in self.results:
-            self.results[k] = status_to_verdict[self.status]
-
     def __repr__(self):
         return "<TestSuite %s on %s>" % (self.testsuite.name, self.platform.name)
-
 
 class CMake():
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -2419,7 +2433,10 @@ class CMake():
         else:
             self.instance.status = "error"
             self.instance.reason = "Cmake build failure"
-            self.instance.fill_results_by_status()
+
+            for tc in self.instance.testcases:
+                tc.status = self.instance.status
+
             logger.error("Cmake build failure: %s for %s" % (self.source_dir, self.platform.name))
             results = {"returncode": p.returncode}
 
@@ -2685,8 +2702,8 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.status = "filtered"
                     self.instance.reason = "runtime filter"
                     results.skipped_runtime += 1
-                    for case in self.instance.testsuite.cases:
-                        self.instance.results.update({case: 'SKIP'})
+                    for case in self.instance.testcases:
+                        case.status = "skipped"
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2834,12 +2851,12 @@ class ProjectBuilder(FilterBuilder):
         elif instance.status in ["skipped", "filtered"]:
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
             results.skipped_configs += 1
-            results.skipped_cases += len(instance.testsuite.cases)
+            results.skipped_cases += len(instance.testsuite.testcases)
         elif instance.status == "passed":
             status = Fore.GREEN + "PASSED" + Fore.RESET
             results.passed += 1
-            for res in instance.results.values():
-                if res == 'SKIP':
+            for case in instance.testcases:
+                if case.status == 'skipped':
                     results.skipped_cases += 1
         else:
             logger.debug(f"Unknown status = {instance.status}")
@@ -3109,10 +3126,13 @@ class TestPlan(DisablePyTestCollectionMixin):
 
     def update_counting(self, results=None):
         for instance in self.instances.values():
-            results.cases += len(instance.testsuite.cases)
+            results.cases += len(instance.testsuite.testcases)
             if instance.status == 'filtered':
                 results.skipped_filter += 1
                 results.skipped_configs += 1
+            elif instance.status == 'passed':
+                results.passed += 1
+                results.done += 1
 
     def compare_metrics(self, filename):
         # name, datatype, lower results better
@@ -3180,7 +3200,6 @@ class TestPlan(DisablePyTestCollectionMixin):
                 warnings += 1
 
         if warnings:
-            # FIXME
             logger.warning("Deltas based on metrics from last %s" %
                            ("release" if not last_metrics else "run"))
 
@@ -3257,7 +3276,7 @@ class TestPlan(DisablePyTestCollectionMixin):
 
         if not no_update:
             json_file = filename + ".json"
-            self.json_report(json_file, append=only_failed, version=self.version)
+            self.json_report(json_file, version=self.version)
             self.xunit_report(json_file, filename + ".xml", full_report=False)
             self.xunit_report(json_file, filename + "_report.xml", full_report=True)
 
@@ -3302,12 +3321,12 @@ class TestPlan(DisablePyTestCollectionMixin):
         self.platform_names = [p.name for p in self.platforms]
 
     def get_all_tests(self):
-        tests = []
+        testcases = []
         for _, ts in self.testsuites.items():
-            for case in ts.cases:
-                tests.append(case)
+            for case in ts.testcases:
+                testcases.append(case)
 
-        return tests
+        return testcases
 
     @staticmethod
     def get_toolchain():
@@ -3435,6 +3454,7 @@ class TestPlan(DisablePyTestCollectionMixin):
         for d in quarantine_list:
             self.quarantine.update(d)
 
+    # FIXME
     def load_from_file(self, file, filter_status=[], filter_platform=[]):
         with open(file, "r") as json_test_plan:
             jtp = json.load(json_test_plan)
@@ -3459,6 +3479,10 @@ class TestPlan(DisablePyTestCollectionMixin):
                     self.fixtures
                 )
 
+                instance.metrics['handler_time'] = ts.get('execution_time', 0)
+                instance.metrics['ram_size'] = ts.get("ram_size", 0)
+                instance.metrics['rom_size']  = ts.get("rom_size",0)
+
                 status = ts.get('status', None)
                 reason = ts.get("reason", "Unknown")
                 if status in ["error", "failed"]:
@@ -3470,8 +3494,9 @@ class TestPlan(DisablePyTestCollectionMixin):
                 for tc in ts.get('testcases', []):
                     identifier = tc['identifier']
                     tc_status = tc.get('status', None)
+                    tc_reason = tc.get('reason')
                     if tc_status:
-                        instance.results[identifier] = tc_status
+                        instance.set_status_by_name(identifier, tc_status, tc_reason)
 
                 instance.create_overlay(platform, self.enable_asan, self.enable_ubsan, self.enable_coverage, self.coverage_platform)
                 instance_list.append(instance)
@@ -3569,8 +3594,8 @@ class TestPlan(DisablePyTestCollectionMixin):
                     self.fixtures
                 )
 
-                for t in ts.cases:
-                    instance.results[t] = None
+                for tc in instance.testcases:
+                    tc.status = None
 
                 if runnable and self.duts:
                     for h in self.duts:
@@ -3717,13 +3742,14 @@ class TestPlan(DisablePyTestCollectionMixin):
                 and "Quarantine" not in instance.reason:
                 instance.status = "error"
                 instance.reason += " but is one of the integration platforms"
-                instance.fill_results_by_status()
                 self.instances[instance.name] = instance
                 # Such configuration has to be removed from discards to make sure it won't get skipped
                 remove_from_discards.append(instance)
             else:
                 instance.status = "filtered"
-                instance.fill_results_by_status()
+
+            for case in instance.testcases:
+                case = instance.status
 
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
                                       if p.status != "skipped" )
@@ -3858,8 +3884,6 @@ class TestPlan(DisablePyTestCollectionMixin):
         return (fails, passes, errors, skips)
 
     def xunit_report(self, json_file, filename, selected_platform=None, full_report=False):
-
-        # FIXME
         if selected_platform:
             selected = [selected_platform]
             logger.info(f"Writing target report for {selected_platform}...")
@@ -3936,24 +3960,14 @@ class TestPlan(DisablePyTestCollectionMixin):
 
         return fails, passes, errors, skips
 
-    def json_report(self, filename, append=False, version="NA"):
+    def json_report(self, filename, version="NA"):
         logger.info(f"Writing JSON report {filename}")
         report = {}
         report["environment"] = {"os": os.name,
                                  "zephyr_version": version,
                                  "toolchain": self.get_toolchain()
                                  }
-        json_data = {}
-        if os.path.exists(filename) and append:
-            logger.debug(f"Loading previous data from {filename}")
-            with open(filename, 'r') as json_file:
-                json_data = json.load(json_file)
-
-        suites = json_data.get("testsuites", [])
-
-        # remove existing testsuites that were re-run
-        for instance in self.instances.values():
-            suites = list(filter(lambda d: d['name'] != instance.testsuite.name, suites))
+        suites = []
 
         for instance in self.instances.values():
             suite = {}
@@ -3983,7 +3997,11 @@ class TestPlan(DisablePyTestCollectionMixin):
             suite["execution_time"] =  handler_time
 
             if instance.status in ["error", "failed", "timeout", "flash_error"]:
-                suite["status"] = "failed"
+                if instance.status == 'failed':
+                    suite['status'] = instance.status
+                else:
+                    suite['status'] = "error"
+
                 suite["reason"] = instance.reason
                 if os.path.exists(handler_log):
                     suite["test_output"] = self.process_log(handler_log)
@@ -3998,18 +4016,20 @@ class TestPlan(DisablePyTestCollectionMixin):
                 suite["status"] = instance.status
 
             testcases = []
-            for k in instance.results.keys():
+            for case in instance.testcases:
                 testcase = {}
-                testcase['identifier'] = k
-                if instance.results[k] in ["SKIP"]:
+                testcase['identifier'] = case.name
+                if case.status == "skipped":
                     if instance.status != "filtered":
                         testcase["status"] = "skipped"
-                        testcase["reason"] = instance.reason
-                elif instance.results[k] in ["PASS"] or instance.status == 'passed':
+                        testcase["reason"] = case.reason or instance.reason
+                elif case.status == 'passed':
                     testcase["status"] = "passed"
-                elif instance.results[k] in ['FAIL', 'BLOCK'] or \
-                    instance.status in ["error", "failed", "timeout", "flash_error"]:
+                elif case.status in ['failed', 'blocked', 'timeout']:
                     testcase["status"] = "failed"
+                    testcase["reason"] = instance.reason
+                elif case.status in ["error", "flash_error"]:
+                    testcase["status"] = "error"
                     testcase["reason"] = instance.reason
 
                 testcases.append(testcase)
@@ -4023,7 +4043,7 @@ class TestPlan(DisablePyTestCollectionMixin):
     def get_testsuite(self, identifier):
         results = []
         for _, ts in self.testsuites.items():
-            for case in ts.cases:
+            for case in ts.testcases:
                 if case == identifier:
                     results.append(ts)
         return results
