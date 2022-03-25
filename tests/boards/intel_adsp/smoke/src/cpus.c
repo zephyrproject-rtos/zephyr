@@ -182,7 +182,7 @@ void halt_and_restart(int cpu)
 	/* Startup can be slow */
 	k_msleep(50);
 
-	WAIT_FOR(alive_flag == true);
+	zassert_true(WAIT_FOR(alive_flag == true, 10000, k_msleep(1)), NULL);
 
 	k_thread_abort(&run_on_threads[cpu]);
 }

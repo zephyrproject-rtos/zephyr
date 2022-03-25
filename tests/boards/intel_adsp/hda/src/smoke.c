@@ -93,14 +93,14 @@ void test_hda_host_in_smoke(void)
 		cavs_hda_commit(HDA_HOST_IN_BASE, STREAM_ID, HDA_BUF_SIZE);
 		printk("dsp inc_pos: "); cavs_hda_dbg("host_in", HDA_HOST_IN_BASE, STREAM_ID);
 
-		WAIT_FOR(cavs_hda_wp_rp_eq(HDA_HOST_IN_BASE, STREAM_ID));
+		WAIT_FOR(cavs_hda_wp_rp_eq(HDA_HOST_IN_BASE, STREAM_ID), 10000, k_msleep(1));
 		printk("dsp wp_rp_eq: "); cavs_hda_dbg("host_in", HDA_HOST_IN_BASE, STREAM_ID);
 
 		last_msg_cnt = msg_cnt;
 		hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_VALIDATE, STREAM_ID,
 			    IPC_TIMEOUT);
 
-		WAIT_FOR(msg_cnt > last_msg_cnt);
+		WAIT_FOR(msg_cnt > last_msg_cnt, 10000, k_msleep(1));
 		zassert_true(msg_res == 1,
 			     "Expected data validation to be true from Host");
 	}
@@ -163,7 +163,7 @@ void test_hda_host_out_smoke(void)
 		cavs_hda_dbg("host_out", HDA_HOST_OUT_BASE, STREAM_ID);
 
 
-		WAIT_FOR(cavs_hda_buf_full(HDA_HOST_OUT_BASE, STREAM_ID));
+		WAIT_FOR(cavs_hda_buf_full(HDA_HOST_OUT_BASE, STREAM_ID), 10000, k_msleep(1));
 		printk("dsp wait for full: ");
 		cavs_hda_dbg("host_out", HDA_HOST_OUT_BASE, STREAM_ID);
 

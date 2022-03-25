@@ -206,9 +206,9 @@ static void read_set_lock_state(const struct bt_csis_client_set_member **members
 	}
 
 	if (expect_locked) {
-		WAIT_FOR(set_read_locked);
+		WAIT_FOR_COND(set_read_locked);
 	} else {
-		WAIT_FOR(set_read_unlocked);
+		WAIT_FOR_COND(set_read_unlocked);
 	}
 }
 
@@ -241,7 +241,7 @@ static void test_main(void)
 
 	printk("Scanning successfully started\n");
 
-	WAIT_FOR(members_found == 1);
+	WAIT_FOR_COND(members_found == 1);
 
 	printk("Stopping scan\n");
 	err = bt_le_scan_stop();
@@ -259,7 +259,7 @@ static void test_main(void)
 	}
 	printk("Connecting to %s\n", addr);
 
-	WAIT_FOR(is_connected);
+	WAIT_FOR_COND(is_connected);
 	connected_member_count++;
 
 	err = bt_csis_client_discover(&set_members[0]);
@@ -269,7 +269,7 @@ static void test_main(void)
 		return;
 	}
 
-	WAIT_FOR(discovered);
+	WAIT_FOR_COND(discovered);
 
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
@@ -284,7 +284,7 @@ static void test_main(void)
 		return;
 	}
 
-	WAIT_FOR(members_found == inst->info.set_size);
+	WAIT_FOR_COND(members_found == inst->info.set_size);
 
 	(void)k_work_cancel_delayable(&discover_members_timer);
 	err = bt_le_scan_stop();
@@ -308,7 +308,7 @@ static void test_main(void)
 		}
 
 		printk("Connected to %s\n", addr);
-		WAIT_FOR(is_connected);
+		WAIT_FOR_COND(is_connected);
 		connected_member_count++;
 
 		discovered = false;
@@ -320,7 +320,7 @@ static void test_main(void)
 			return;
 		}
 
-		WAIT_FOR(discovered);
+		WAIT_FOR_COND(discovered);
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
@@ -337,7 +337,7 @@ static void test_main(void)
 		return;
 	}
 
-	WAIT_FOR(set_locked);
+	WAIT_FOR_COND(set_locked);
 
 	read_set_lock_state(locked_members, connected_member_count, true);
 
@@ -351,7 +351,7 @@ static void test_main(void)
 		return;
 	}
 
-	WAIT_FOR(set_unlocked);
+	WAIT_FOR_COND(set_unlocked);
 
 	read_set_lock_state(locked_members, connected_member_count, false);
 
@@ -367,7 +367,7 @@ static void test_main(void)
 		return;
 	}
 
-	WAIT_FOR(set_locked);
+	WAIT_FOR_COND(set_locked);
 
 	k_sleep(K_MSEC(1000)); /* Simulate doing stuff */
 
@@ -379,7 +379,7 @@ static void test_main(void)
 		return;
 	}
 
-	WAIT_FOR(set_unlocked);
+	WAIT_FOR_COND(set_unlocked);
 
 	for (uint8_t i = 0; i < members_found; i++) {
 		printk("Disconnecting member[%u] (%s)", i, addr);
