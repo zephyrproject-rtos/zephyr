@@ -30,21 +30,23 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 				  uint32_t arg2, uint32_t arg3)
 {
 	int32_t result;
+	bool is_pre_kernel = k_is_pre_kernel();
 
-	/* TF-M request protected by NS lock */
-	if (k_mutex_lock(&tfm_mutex, K_FOREVER) != 0) {
-		return (int32_t)TFM_ERROR_GENERIC;
-	}
+	if (!is_pre_kernel) {
+		/* TF-M request protected by NS lock */
+		if (k_mutex_lock(&tfm_mutex, K_FOREVER) != 0) {
+			return (int32_t)TFM_ERROR_GENERIC;
+		}
 
 #if !defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
-	/*
-	 * Prevent the thread from being preempted, while executing a Secure
-	 * function. This is required to prevent system crashes that could
-	 * occur, if a thead context switch is triggered in the middle of a
-	 * Secure call.
-	 */
-	k_sched_lock();
+		/* Prevent the thread from being preempted, while executing a
+		 * Secure function. This is required to prevent system crashes
+		 * that could occur, if a thead context switch is triggered in
+		 * the middle of a Secure call.
+		 */
+		k_sched_lock();
 #endif
+	}
 
 #if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 	struct fpu_ctx_full context_buffer;
@@ -57,13 +59,14 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 #if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 	z_arm_restore_fp_context(&context_buffer);
 #endif
-
+	if (!is_pre_kernel) {
 #if !defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
-	/* Unlock the scheduler, to allow the thread to be preempted. */
-	k_sched_unlock();
+		/* Unlock the scheduler, to allow the thread to be preempted. */
+		k_sched_unlock();
 #endif
 
-	k_mutex_unlock(&tfm_mutex);
+		k_mutex_unlock(&tfm_mutex);
+	}
 
 	return result;
 }
