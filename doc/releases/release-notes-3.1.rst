@@ -56,6 +56,9 @@ Bluetooth
     :c:func:`bond_delete` from the `struct bt_auth_cb` to a newly created
     informational-only callback `struct bt_auth_info_cb`.
 
+  * The :c:macro:bt_conn_index function now takes a `const struct bt_conn`.
+
+
 New APIs in this release
 ========================
 
