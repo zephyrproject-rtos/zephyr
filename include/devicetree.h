@@ -886,8 +886,8 @@
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property string name
- * @return the value of @p prop as a token, i.e. without any quotes
- *         and with special characters converted to underscores
+ * @return the value of @p prop as an uppercased token, i.e. without
+ *         any quotes and with special characters converted to underscores
  */
 #define DT_STRING_UPPER_TOKEN(node_id, prop) \
 	DT_CAT4(node_id, _P_, prop, _STRING_UPPER_TOKEN)
