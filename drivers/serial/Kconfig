@@ -202,6 +202,8 @@ source "drivers/serial/Kconfig.neorv32"
 
 source "drivers/serial/Kconfig.xen"
 
+source "drivers/serial/Kconfig.ifx_cat1"
+
 source "drivers/serial/Kconfig.smartbond"
 
 source "drivers/serial/Kconfig.nxp_s32"
