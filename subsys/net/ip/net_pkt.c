@@ -1793,6 +1793,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	}
 
 #if defined(CONFIG_IEEE802154)
+	/* ieee802154_rssi and ieee802154_txpwr form a union, copying one of them is enough */
 	net_pkt_set_ieee802154_rssi(clone_pkt, net_pkt_ieee802154_rssi(pkt));
 	net_pkt_set_ieee802154_lqi(clone_pkt, net_pkt_ieee802154_lqi(pkt));
 	net_pkt_set_ieee802154_arb(clone_pkt, net_pkt_ieee802154_arb(pkt));
