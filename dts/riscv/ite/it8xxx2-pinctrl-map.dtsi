@@ -89,6 +89,32 @@
 		pinmuxs = <&pinctrla 5 IT8XXX2_ALT_FUNC_3>;
 	};
 
+	/* PWM alternate function */
+	pwm0_gpa0_default: pwm0_gpa0_default {
+		pinmuxs = <&pinctrla 0 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm1_gpa1_default: pwm1_gpa1_default {
+		pinmuxs = <&pinctrla 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm2_gpa2_default: pwm2_gpa2_default {
+		pinmuxs = <&pinctrla 2 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm3_gpa3_default: pwm3_gpa3_default {
+		pinmuxs = <&pinctrla 3 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm4_gpa4_default: pwm4_gpa4_default {
+		pinmuxs = <&pinctrla 4 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm5_gpa5_default: pwm5_gpa5_default {
+		pinmuxs = <&pinctrla 5 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm6_gpa6_default: pwm6_gpa6_default {
+		pinmuxs = <&pinctrla 6 IT8XXX2_ALT_FUNC_1>;
+	};
+	pwm7_gpa7_default: pwm7_gpa7_default {
+		pinmuxs = <&pinctrla 7 IT8XXX2_ALT_FUNC_1>;
+	};
+
 	/* UART alternate function */
 	uart1_rx_gpb0_default: uart1_rx_gpb0_default {
 		pinmuxs = <&pinctrlb 0 IT8XXX2_ALT_FUNC_3>;
