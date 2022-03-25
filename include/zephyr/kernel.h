@@ -465,6 +465,19 @@ __syscall int32_t k_usleep(int32_t us);
 __syscall void k_busy_wait(uint32_t usec_to_wait);
 
 /**
+ * @brief Check whether it is possible to yield in the current context.
+ *
+ * This routine checks whether the kernel is in a state where it is possible to
+ * yield or call blocking API's. It should be used by code that needs to yield
+ * to perform correctly, but can feasibly be called from contexts where that
+ * is not possible. For example in the PRE_KERNEL initialization step, or when
+ * being run from the idle thread.
+ *
+ * @return True if it is possible to yield in the current context, false otherwise.
+ */
+bool k_can_yield(void);
+
+/**
  * @brief Yield the current thread.
  *
  * This routine causes the current thread to yield execution to another
