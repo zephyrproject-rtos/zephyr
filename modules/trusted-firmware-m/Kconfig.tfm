@@ -234,6 +234,12 @@ config TFM_MCUBOOT_PATH_DOWNLOAD
 
 endchoice
 
+config TFM_MCUBOOT_DATA_SHARING
+	bool "Share app-specific data between TF-M and MCUBoot"
+	help
+	  Add sharing of application specific data using the same
+	  shared data area as for the measured boot.
+
 endif # TFM_BL2
 
 config TFM_IPC

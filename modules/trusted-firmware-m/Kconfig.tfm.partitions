@@ -76,6 +76,7 @@ config TFM_PARTITION_AUDIT_LOG
 
 config TFM_PARTITION_FIRMWARE_UPDATE
 	bool "Include the secure parition 'Firmware Update'"
+	select TFM_MCUBOOT_DATA_SHARING
 	default n
 	help
 	  Setting this option will cause '-DTFM_PARTITION_FIRMWARE_UPDATE'
