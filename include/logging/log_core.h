@@ -201,7 +201,9 @@ extern "C" {
 
 #define Z_LOG_INTERNAL2(is_user_context, _src_level, ...) do { \
 	if (is_user_context) { \
-		log_from_user(_src_level, __VA_ARGS__); \
+		if (!IS_ENABLED(CONFIG_LOG_FRONTEND)) { \
+			log_from_user(_src_level, __VA_ARGS__); \
+		} \
 	} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) { \
 		log_string_sync(_src_level, __VA_ARGS__); \
 	} else { \
@@ -334,8 +336,8 @@ static inline char z_log_minimal_level_to_char(int level)
 	bool is_user_context = k_is_user_context(); \
 	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 						(_dsource)->filters : 0;\
-	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
-	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
+	if (!IS_ENABLED(CONFIG_LOG_FRONTEND) && IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
+	    !is_user_context && _level > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
@@ -414,8 +416,8 @@ static inline char z_log_minimal_level_to_char(int level)
 					    (const char *)_data, _len);\
 		break; \
 	} \
-	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
-	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
+	if (!IS_ENABLED(CONFIG_LOG_FRONTEND) && IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
+	    !is_user_context && _level > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
@@ -440,8 +442,9 @@ static inline char z_log_minimal_level_to_char(int level)
 		.source_id = src_id, \
 	}; \
 	if (is_user_context) { \
-		log_hexdump_from_user(src_level, _str, \
-				      (const char *)_data, _len); \
+		if (!IS_ENABLED(CONFIG_LOG_FRONTEND)) { \
+			log_hexdump_from_user(src_level, _str, (const char *)_data, _len); \
+		} \
 	} else if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) { \
 		log_hexdump_sync(src_level, _str, (const char *)_data, _len); \
 	} else { \
@@ -675,7 +678,7 @@ void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
  *
  * @param src_level      Log identification.
  * @param fmt            String to format.
- * @param ap             Poiner to arguments list.
+ * @param ap             Pointer to arguments list.
  * @param strdup_action  Manages strdup activity.
  */
 void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
@@ -688,12 +691,12 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
  *
  * @param level          Log level..
  * @param fmt            String to format.
- * @param ap             Poiner to arguments list.
+ * @param ap             Pointer to arguments list.
  */
 static inline void log2_generic(uint8_t level, const char *fmt, va_list ap)
 {
 	z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL, level,
-				   NULL, 0, fmt, ap);
+				   NULL, 0, 0, fmt, ap);
 }
 
 /**
@@ -740,7 +743,7 @@ void __printf_like(2, 3) log_from_user(struct log_msg_ids src_level,
 __syscall void z_log_string_from_user(uint32_t src_level_val, const char *str);
 
 /**
- * @brief Create mask with occurences of a string format specifiers (%s).
+ * @brief Create mask with occurrences of a string format specifiers (%s).
  *
  * Result is stored as the mask (argument n is n'th bit). Bit is set if string
  * format specifier was found.
@@ -771,7 +774,7 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 				       const uint8_t *data, uint32_t len);
 
 /******************************************************************************/
-/********** Mocros _VA operate on var-args parameters.          ***************/
+/********** Macros _VA operate on var-args parameters.          ***************/
 /*********  Intended to be used when porting other log systems. ***************/
 /*********  Shall be used in the log entry interface function.  ***************/
 /*********  Speed optimized for up to three arguments number.   ***************/
@@ -799,8 +802,10 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
-		z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, _source, \
-					   _level, NULL, 0, _str, _valist); \
+		void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
+			(void *)_dsource : (void *)_source; \
+		z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, _src, \
+					   _level, NULL, 0, 0, _str, _valist); \
 		break; \
 	} \
 	uint16_t _id = \

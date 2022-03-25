@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  */
 #define TX_AVAIL_WAIT K_MSEC(1)
 
-/* descriptor index itterators */
+/* descriptor index iterators */
 #define INC_WRAP(idx, size) ({ idx = (idx + 1) % size; })
 #define DEC_WRAP(idx, size) ({ idx = (idx + size - 1) % size; })
 

@@ -220,7 +220,7 @@ struct can_bus_err_cnt {
  * controllers only have a register for the sum of those two. The sync segment
  * always has a length of 1 time quantum (see below).
  *
- * @code{.unparsed}
+ * @code{.text}
  *
  * +---------+----------+------------+------------+
  * |sync_seg | prop_seg | phase_seg1 | phase_seg2 |
@@ -254,33 +254,35 @@ struct can_timing {
 };
 
 /**
- * @typedef can_tx_callback_t
  * @brief Defines the application callback handler function signature
  *
+ * @param dev       Pointer to the device structure for the driver instance.
  * @param error     Status of the performed send operation. See the list of
  *                  return values for @a can_send() for value descriptions.
  * @param user_data User data provided when the frame was sent.
  */
-typedef void (*can_tx_callback_t)(int error, void *user_data);
+typedef void (*can_tx_callback_t)(const struct device *dev, int error, void *user_data);
 
 /**
- * @typedef can_rx_callback_t
  * @brief Defines the application callback handler function signature for receiving.
  *
+ * @param dev       Pointer to the device structure for the driver instance.
  * @param frame     Received frame.
  * @param user_data User data provided when the filter was added.
  */
-typedef void (*can_rx_callback_t)(struct zcan_frame *frame, void *user_data);
+typedef void (*can_rx_callback_t)(const struct device *dev, struct zcan_frame *frame,
+				  void *user_data);
 
 /**
- * @typedef can_state_change_callback_t
  * @brief Defines the state change callback handler function signature
  *
+ * @param dev       Pointer to the device structure for the driver instance.
  * @param state     State of the CAN controller.
  * @param err_cnt   CAN controller error counter values.
  * @param user_data User data provided the callback was set.
  */
-typedef void (*can_state_change_callback_t)(enum can_state state,
+typedef void (*can_state_change_callback_t)(const struct device *dev,
+					    enum can_state state,
 					    struct can_bus_err_cnt err_cnt,
 					    void *user_data);
 
@@ -291,7 +293,6 @@ typedef void (*can_state_change_callback_t)(enum can_state state,
  */
 
 /**
- * @typedef can_set_timing_t
  * @brief Callback API upon setting CAN bus timing
  * See @a can_set_timing() for argument description
  */
@@ -300,14 +301,12 @@ typedef int (*can_set_timing_t)(const struct device *dev,
 				const struct can_timing *timing_data);
 
 /**
- * @typedef can_set_mode_t
  * @brief Callback API upon setting CAN controller mode
  * See @a can_set_mode() for argument description
  */
 typedef int (*can_set_mode_t)(const struct device *dev, enum can_mode mode);
 
 /**
- * @typedef can_send_t
  * @brief Callback API upon sending a CAN frame
  * See @a can_send() for argument description
  */
@@ -317,7 +316,6 @@ typedef int (*can_send_t)(const struct device *dev,
 			  void *user_data);
 
 /**
- * @typedef can_add_rx_filter_t
  * @brief Callback API upon adding an RX filter
  * See @a can_add_rx_callback() for argument description
  */
@@ -327,21 +325,18 @@ typedef int (*can_add_rx_filter_t)(const struct device *dev,
 				   const struct zcan_filter *filter);
 
 /**
- * @typedef can_remove_rx_filter_t
  * @brief Callback API upon removing an RX filter
  * See @a can_remove_rx_filter() for argument description
  */
 typedef void (*can_remove_rx_filter_t)(const struct device *dev, int filter_id);
 
 /**
- * @typedef can_recover_t
  * @brief Callback API upon recovering the CAN bus
  * See @a can_recover() for argument description
  */
 typedef int (*can_recover_t)(const struct device *dev, k_timeout_t timeout);
 
 /**
- * @typedef can_get_state_t
  * @brief Callback API upon getting the CAN controller state
  * See @a can_get_state() for argument description
  */
@@ -349,7 +344,6 @@ typedef int (*can_get_state_t)(const struct device *dev, enum can_state *state,
 			       struct can_bus_err_cnt *err_cnt);
 
 /**
- * @typedef can_set_state_change_callback_t
  * @brief Callback API upon setting a state change callback
  * See @a can_set_state_change_callback() for argument description
  */
@@ -358,18 +352,22 @@ typedef void(*can_set_state_change_callback_t)(const struct device *dev,
 					       void *user_data);
 
 /**
- * @typedef can_get_core_clock_t
  * @brief Callback API upon getting the CAN core clock rate
  * See @a can_get_core_clock() for argument description
  */
 typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
 
 /**
- * @typedef can_get_max_filters_t
  * @brief Callback API upon getting the maximum number of concurrent CAN RX filters
  * See @a can_get_max_filters() for argument description
  */
 typedef int (*can_get_max_filters_t)(const struct device *dev, enum can_ide id_type);
+
+/**
+ * @brief Callback API upon getting the maximum supported bitrate
+ * See @a can_get_max_bitrate() for argument description
+ */
+typedef int (*can_get_max_bitrate_t)(const struct device *dev, uint32_t *max_bitrate);
 
 __subsystem struct can_driver_api {
 	can_set_mode_t set_mode;
@@ -384,6 +382,7 @@ __subsystem struct can_driver_api {
 	can_set_state_change_callback_t set_state_change_callback;
 	can_get_core_clock_t get_core_clock;
 	can_get_max_filters_t get_max_filters;
+	can_get_max_bitrate_t get_max_bitrate;
 	/* Min values for the timing registers */
 	struct can_timing timing_min;
 	/* Max values for the timing registers */
@@ -625,11 +624,35 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
 }
 
 /**
+ * @brief Get maximum supported bitrate
+ *
+ * Get the maximum supported bitrate for the CAN controller/transceiver combination.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param[out] max_bitrate Maximum supported bitrate in bits/s
+ *
+ * @retval -EIO General input/output error.
+ * @retval -ENOSYS If this function is not implemented by the driver.
+ */
+__syscall int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
+
+static inline int z_impl_can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	if (api->get_max_bitrate == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_max_bitrate(dev, max_bitrate);
+}
+
+/**
  * @brief Calculate timing parameters from bitrate and sample point
  *
  * Calculate the timing parameters from a given bitrate in bits/s and the
  * sampling point in permill (1/1000) of the entire bit time. The bitrate must
- * alway match perfectly. If no result can be reached for the given parameters,
+ * always match perfectly. If no result can be reached for the given parameters,
  * -EINVAL is returned.
  *
  * @note The requested ``sample_pnt`` will not always be matched perfectly. The
@@ -676,7 +699,7 @@ int can_calc_timing_data(const struct device *dev, struct can_timing *res,
  * Fill the prescaler value in the timing struct. The sjw, prop_seg, phase_seg1
  * and phase_seg2 must be given.
  *
- * The returned bitrate error is reminder of the devision of the clock rate by
+ * The returned bitrate error is remainder of the division of the clock rate by
  * the bitrate times the timing segments.
  *
  * @param dev     Pointer to the device structure for the driver instance.
@@ -755,39 +778,11 @@ static inline int z_impl_can_set_mode(const struct device *dev, enum can_mode mo
  * @param bitrate_data Desired data phase bitrate.
  *
  * @retval 0 If successful.
+ * @retval -ENOTSUP bitrate not supported by CAN controller/transceiver combination
  * @retval -EINVAL bitrate cannot be met.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
-static inline int can_set_bitrate(const struct device *dev,
-				  uint32_t bitrate,
-				  uint32_t bitrate_data)
-{
-	struct can_timing timing;
-#ifdef CONFIG_CAN_FD_MODE
-	struct can_timing timing_data;
-#endif
-	int ret;
-
-	ret = can_calc_timing(dev, &timing, bitrate, 875);
-	if (ret < 0) {
-		return -EINVAL;
-	}
-
-	timing.sjw = CAN_SJW_NO_CHANGE;
-
-#ifdef CONFIG_CAN_FD_MODE
-	ret = can_calc_timing_data(dev, &timing_data, bitrate_data, 875);
-	if (ret < 0) {
-		return -EINVAL;
-	}
-
-	timing_data.sjw = CAN_SJW_NO_CHANGE;
-
-	return can_set_timing(dev, &timing, &timing_data);
-#else /* CONFIG_CAN_FD_MODE */
-	return can_set_timing(dev, &timing, NULL);
-#endif /* !CONFIG_CAN_FD_MODE */
-}
+int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data);
 
 /** @} */
 
@@ -864,7 +859,7 @@ static inline int z_impl_can_send(const struct device *dev, const struct zcan_fr
 /**
  * @brief Add a callback function for a given CAN filter
  *
- * Add a callback to CAN identifiers specified by a filter. When a recevied CAN
+ * Add a callback to CAN identifiers specified by a filter. When a received CAN
  * frame matching the filter is received by the CAN controller, the callback
  * function is called in interrupt context.
  *
@@ -1113,7 +1108,7 @@ static inline uint8_t can_bytes_to_dlc(uint8_t num_bytes)
  *
  * The fields in this type are:
  *
- * @code{.unparsed}
+ * @code{.text}
  *
  * +------+--------------------------------------------------------------+
  * | Bits | Description                                                  |

@@ -56,7 +56,7 @@ void bt_mesh_model_settings_commit(void);
 
 /** @brief Register a callback function hook for mesh model messages.
  *
- * Register a callback function to act as a hook for recieving mesh model layer messages
+ * Register a callback function to act as a hook for receiving mesh model layer messages
  * directly to the application without having instantiated the relevant models.
  *
  * @param cb A pointer to the callback function.

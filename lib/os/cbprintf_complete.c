@@ -25,7 +25,7 @@
 size_t strnlen(const char *s, size_t maxlen);
 
 /* Provide typedefs used for signed and unsigned integral types
- * capable of holding all convertable integral values.
+ * capable of holding all convertible integral values.
  */
 #ifdef CONFIG_CBPRINTF_FULL_INTEGRAL
 typedef intmax_t sint_value_type;
@@ -1013,7 +1013,7 @@ static char *encode_float(double value,
 			*--sp = '0';
 		}
 
-		/* Append the leading sigificant "digits". */
+		/* Append the leading significant "digits". */
 		while ((sp < spe) && (precision > 0)) {
 			*buf++ = *sp++;
 			--precision;
@@ -1084,7 +1084,7 @@ static char *encode_float(double value,
 
 	while (expo < -2) {
 		/*
-		 * Make roon to allow a multiplication by 5 without overflow.
+		 * Make room to allow a multiplication by 5 without overflow.
 		 * We test only the top part for faster code.
 		 */
 		do {

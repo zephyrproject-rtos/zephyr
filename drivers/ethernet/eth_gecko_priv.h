@@ -94,8 +94,6 @@ struct eth_gecko_dev_data {
 	bool link_up;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 /* PHY Management pins */
 #define PIN_PHY_MDC {DT_INST_PROP_BY_IDX(0, location_phy_mdc, 1), \
 	DT_INST_PROP_BY_IDX(0, location_phy_mdc, 2), gpioModePushPull,\

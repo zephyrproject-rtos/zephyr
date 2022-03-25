@@ -24,8 +24,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_iproc_pax_v2);
 
-#define PAX_DMA_DEV_NAME(dev)	((dev)->name)
-
 /* Driver runtime data for PAX DMA and RM */
 static struct dma_iproc_pax_data pax_dma_data;
 
@@ -65,7 +63,7 @@ static inline void rm_write_header_desc(void *desc, uint32_t toggle,
 	r->opq = opq;
 	r->bdf = 0x0;
 	r->res1 = 0x0;
-	/* DMA descriptor count init vlaue */
+	/* DMA descriptor count init value */
 	r->bdcount = bdcount;
 	r->prot = 0x0;
 	r->res2 = 0x0;
@@ -105,7 +103,7 @@ static inline void rm_write_pcie_desc(void *desc,
 }
 
 /**
- * @brief Populate src/destionation descriptor
+ * @brief Populate src/destination descriptor
  */
 static inline void rm_write_src_dst_desc(void *desc_ptr,
 				bool is_mega,
@@ -639,10 +637,9 @@ static int peek_ring_cmpl(const struct device *dev,
 	return process_cmpl_event(dev, idx, pl_len);
 }
 #else
-static void rm_isr(void *arg)
+static void rm_isr(const struct device *dev)
 {
 	uint32_t status, err_stat, idx;
-	const struct device *dev = arg;
 	struct dma_iproc_pax_data *pd = dev->data;
 
 	err_stat =
@@ -756,10 +753,9 @@ static int dma_iproc_pax_init(const struct device *dev)
 		    0);
 	irq_enable(DT_INST_IRQN(0));
 #else
-	LOG_INF("%s PAX DMA rings in poll mode!\n", PAX_DMA_DEV_NAME(dev));
+	LOG_INF("%s PAX DMA rings in poll mode!\n", dev->name);
 #endif
-	LOG_INF("%s RM setup %d rings\n", PAX_DMA_DEV_NAME(dev),
-		pd->used_rings);
+	LOG_INF("%s RM setup %d rings\n", dev->name, pd->used_rings);
 
 	return 0;
 }

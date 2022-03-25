@@ -199,7 +199,7 @@ static int simplelink_dummy_get(sa_family_t family,
 	return -1;
 }
 
-/* Placeholders, until Zepyr IP stack updated to handle a NULL net_offload */
+/* Placeholders, until Zephyr IP stack updated to handle a NULL net_offload */
 static struct net_offload simplelink_offload = {
 	.get	       = simplelink_dummy_get,
 	.bind	       = NULL,

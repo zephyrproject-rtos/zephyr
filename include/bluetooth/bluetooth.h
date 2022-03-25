@@ -157,6 +157,13 @@ int bt_enable(bt_ready_cb_t cb);
 int bt_disable(void);
 
 /**
+ * @brief Check if Bluetooth is ready
+ *
+ * @return true when Bluetooth is ready, false otherwise
+ */
+bool bt_is_ready(void);
+
+/**
  * @brief Set Bluetooth Device Name
  *
  * Set Bluetooth GAP Device Name.
@@ -1462,7 +1469,7 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync);
  * @brief Register periodic advertising sync callbacks.
  *
  * Adds the callback structure to the list of callback structures for periodic
- * adverising syncs.
+ * advertising syncs.
  *
  * This callback will be called for all periodic advertising sync activity,
  * such as synced, terminated and when data is received.

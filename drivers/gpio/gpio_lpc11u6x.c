@@ -120,7 +120,7 @@ static int gpio_lpc11u6x_pin_configure(const struct device *port,
 	/*
 	 * PIO0_4 and PIO0_5 are "true" open drain pins muxed with the I2C port
 	 * 0. They still can be configured as GPIOs but only in open drain mode
-	 * and with no pull-down or pull-up resitor enabled.
+	 * and with no pull-down or pull-up resistor enabled.
 	 */
 	if (port_num == 0 && (pin == 4 || pin == 5) &&
 		((flags & GPIO_OPEN_DRAIN) == 0 ||
@@ -330,7 +330,7 @@ static int gpio_lpc11u6x_pin_interrupt_configure(const struct device *port,
 
 	/*
 	 * Because the PINTSEL register only have 6 bits to encode a pin
-	 * number, then PIO2_8 to PIO2_23 can't be attacehd to an interrupt
+	 * number, then PIO2_8 to PIO2_23 can't be attached to an interrupt
 	 * line.
 	 */
 	if (config->port_num == 2 && pin > 7) {

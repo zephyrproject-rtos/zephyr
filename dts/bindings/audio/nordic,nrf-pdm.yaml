@@ -5,7 +5,7 @@ description: Nordic PDM (Pulse Density Modulation interface)
 
 compatible: "nordic,nrf-pdm"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -16,13 +16,32 @@ properties:
 
     clk-pin:
       type: int
-      required: true
-      description: CLK pin
+      required: false
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The CLK pin to use.
+
+        For pins P0.0 through P0.31, use the pin number. For example,
+        to use P0.16 for CLK, set:
+
+            clk-pin = <16>;
+
+        For pins P1.0 through P1.31, add 32 to the pin number. For
+        example, to use P1.2 for CLK, set:
+
+            clk-pin = <34>;  /* 32 + 2 */
 
     din-pin:
       type: int
-      required: true
-      description: DIN pin
+      required: false
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The DIN pin to use. The pin numbering scheme is the same as
+        the clk-pin property's.
 
     clock-source:
       type: string

@@ -147,7 +147,7 @@ static int soc_init(const struct device *dev)
 	 * On HW reset PCR Processor Clock Divider = 4 for 48/4 = 12 MHz.
 	 * Set clock divider = 1 for maximum speed.
 	 * NOTE1: This clock divider affects all Cortex-M4 core clocks.
-	 * If you change it you must repogram SYSTICK to maintain the
+	 * If you change it you must reprogram SYSTICK to maintain the
 	 * same absolute time interval.
 	 */
 	PCR_REGS->PROC_CLK_CTRL = CONFIG_SOC_MEC1501_PROC_CLK_DIV;

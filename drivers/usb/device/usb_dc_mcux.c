@@ -42,7 +42,7 @@ static void usb_mcux_thread_main(void *arg1, void *arg2, void *arg3);
  * MCUX EHCI USB device controller supports a specific
  * number of bidirectional endpoints. Bidirectional means
  * that an endpoint object is represented to the outside
- * as an OUT and an IN Eindpoint with its own buffers
+ * as an OUT and an IN Endpoint with its own buffers
  * and control structures.
  *
  * EP_ABS_IDX refers to the corresponding control
@@ -406,7 +406,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 		dev_data.eps[ep_abs_idx].ep_occupied = true;
 	} else {
 		/*
-		 * control enpoint just be enabled before enumeration,
+		 * control endpoint just be enabled before enumeration,
 		 * when running here, setup has been primed.
 		 */
 		dev_data.eps[ep_abs_idx].ep_occupied = true;

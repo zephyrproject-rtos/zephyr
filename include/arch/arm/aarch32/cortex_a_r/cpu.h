@@ -48,6 +48,7 @@
 #define DFSR_AXI_SLAVE_MASK	(1 << 12)
 
 /* Armv8-R AArch32 architecture profile */
+#define VBAR_MASK		(0xFFFFFFE0U)
 #define SCTLR_M_BIT		BIT(0)
 #define SCTLR_A_BIT		BIT(1)
 #define SCTLR_C_BIT		BIT(2)

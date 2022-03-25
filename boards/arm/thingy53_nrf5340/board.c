@@ -103,7 +103,7 @@ static int setup(const struct device *dev)
 		 * sensors require, 2ms and 1ms power on delay respectively. In order not to sum
 		 * delays, common delay is introduced in the board start up file. This code is
 		 * executed after sensors are powered up and before their initialization.
-		 * It's ensured by build asserts at the beggining of this file.
+		 * It's ensured by build asserts at the beginning of this file.
 		 */
 		k_msleep(2);
 	}

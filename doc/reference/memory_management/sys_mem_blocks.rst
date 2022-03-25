@@ -105,7 +105,7 @@ A memory blocks allocator is defined using a variable of type
 at compile time by calling :c:macro:`SYS_MEM_BLOCKS_DEFINE`.
 
 The following code defines and initializes a memory blocks allocator
-which has 4 blocks that are 64 bytes long, each of which is aliged
+which has 4 blocks that are 64 bytes long, each of which is aligned
 to a 4-byte boundary:
 
 .. code-block:: c
@@ -162,7 +162,7 @@ then releases them once they are no longer needed.
 Using Multi Memory Blocks Allocator Group
 =========================================
 
-The following code demostrates how to initialize an allocator group:
+The following code demonstrates how to initialize an allocator group:
 
 .. code-block:: c
 

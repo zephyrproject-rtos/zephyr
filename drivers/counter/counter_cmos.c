@@ -23,7 +23,7 @@
 /*
  * A snapshot of the RTC state, or at least the state we're
  * interested in. This struct should not be modified without
- * serious consideraton, for two reasons:
+ * serious consideration, for two reasons:
  *
  *	1. Order of the element is important, and must correlate
  *	   with addrs[] and NR_BCD_VALS (see below), and
@@ -44,7 +44,7 @@ struct state {
 
 /*
  * If the clock is in BCD mode, the first NR_BCD_VALS
- * valies in 'struct state' are BCD-encoded.
+ * values in 'struct state' are BCD-encoded.
  */
 
 #define NR_BCD_VALS 6

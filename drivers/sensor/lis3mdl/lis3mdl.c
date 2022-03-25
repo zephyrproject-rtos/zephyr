@@ -33,7 +33,7 @@ static int lis3mdl_channel_get(const struct device *dev,
 	struct lis3mdl_data *drv_data = dev->data;
 
 	if (chan == SENSOR_CHAN_MAGN_XYZ) {
-		/* magn_val = sample / mang_gain */
+		/* magn_val = sample / magn_gain */
 		lis3mdl_convert(val, drv_data->x_sample,
 				lis3mdl_magn_gain[LIS3MDL_FS_IDX]);
 		lis3mdl_convert(val + 1, drv_data->y_sample,
@@ -68,7 +68,7 @@ int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	/* fetch magnetometer sample */
 	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
 			   LIS3MDL_REG_SAMPLE_START, (uint8_t *)buf, 8) < 0) {
-		LOG_DBG("Failed to fetch megnetometer sample.");
+		LOG_DBG("Failed to fetch magnetometer sample.");
 		return -EIO;
 	}
 

@@ -79,5 +79,27 @@ void log_frontend_hexdump(const char *str,
 			  uint32_t length,
 			  struct log_msg_ids src_level);
 
+/** @brief Log message.
+ *
+ * Message details does not contain timestamp. Since function is called in the
+ * context of log message call, implementation can use its own timestamping scheme.
+ *
+ * @param source Pointer to a structure associated with given source. It points to
+ * static structure or dynamic structure if runtime filtering is enabled.
+ * @ref log_const_source_id or @ref log_dynamic_source_id can be used to determine
+ * source id.
+ *
+ * @param desc Message descriptor.
+ *
+ * @param package Cbprintf package containing logging formatted string. Length s in @p desc.
+ *
+ * @param data Hexdump data. Length is in @p desc.
+ */
+void log_frontend_msg(const void *source,
+		      const struct log_msg2_desc desc,
+		      uint8_t *package, const void *data);
+
+/** @brief Panic state notification. */
+void log_frontend_panic(void);
 
 #endif /* LOG_FRONTEND_H_ */

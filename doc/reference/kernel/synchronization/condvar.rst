@@ -105,7 +105,7 @@ The following code builds on the example above.
         k_mutex_lock(&mutex, K_FOREVER);
 
         /*
-         * Do some work and fullfill the condition
+         * Do some work and fulfill the condition
          */
         ...
         ...

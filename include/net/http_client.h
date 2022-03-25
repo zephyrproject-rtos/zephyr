@@ -106,8 +106,39 @@ struct http_response {
 	 */
 	http_response_cb_t cb;
 
-	/** Where the body starts */
-	uint8_t *body_start;
+	/**
+	 *                       recv_buffer that contains header + body
+	 *                       _______________________________________
+	 *
+	 *                                   |←-------- body_frag_len ---------→|
+	 *                |←--------------------- data len --------------------→|
+	 *            ---------------------------------------------------------------
+	 *      ..header  |      header      |               body               |  body..
+	 *            ---------------------------------------------------------------
+	 *                ↑                  ↑
+	 *             recv_buf          body_frag_start
+	 *
+	 *
+	 *                          recv_buffer that contains body only
+	 *                          ___________________________________
+	 *
+	 *                 |←------------------ body_frag_len ------------------→|
+	 *                 |←--------------------- data len --------------------→|
+	 *            ---------------------------------------------------------------
+	 *  ..header/body  |                         body                        |  body..
+	 *            ---------------------------------------------------------------
+	 *                 ↑
+	 *              recv_buf
+	 *          body_frag_start
+	 *
+	 * body_frag_start >= recv_buf
+	 * body_frag_len = data_len - (body_frag_start - recv_buf)
+	 */
+	/** Start address of the body fragment contained in the recv_buf */
+	uint8_t *body_frag_start;
+
+	/** Length of the body fragment contained in the recv_buf */
+	size_t body_frag_len;
 
 	/** Where the response is stored, this is to be
 	 * provided by the user.

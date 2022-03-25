@@ -10,7 +10,7 @@
  */
 
 /*
- * Warning: HSE is not implmeneted on available boards, hence:
+ * Warning: HSE is not implemented on available boards, hence:
  *          This configuration is only available for build
  */
 

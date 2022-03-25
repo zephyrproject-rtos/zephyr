@@ -7,7 +7,7 @@
  *
  * # LIBXL_DEBUG_DUMP_DTB=domu-libxl.dtb xl create zephyr.conf
  *
- * decompilling resulting domu-libxl.dtb and then manually aligning it
+ * decompiling resulting domu-libxl.dtb and then manually aligning it
  * with zephyr requirements.
  */
 

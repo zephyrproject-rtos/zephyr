@@ -981,7 +981,7 @@ void arch_gdb_init(void)
 	 * converting BREAK.N into BREAK which is bigger.
 	 * This is needed as the GDB stub will need to change
 	 * the program counter past this instruction to
-	 * continue working. Or else SoC would repeartedly
+	 * continue working. Or else SoC would repeatedly
 	 * raise debug exception on this instruction and
 	 * won't go forward.
 	 */

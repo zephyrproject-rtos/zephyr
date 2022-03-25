@@ -53,7 +53,7 @@ static void isr_tx_chain(void *param);
 #endif /* CONFIG_BT_CTLR_ADV_PDU_BACK2BACK */
 static void isr_tx_rx(void *param);
 static void isr_rx(void *param);
-static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
+static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rssi_ready);
@@ -286,7 +286,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
-	radio_gpio_pa_lna_enable(start_us + radio_tx_ready_delay_get(phy_s, 1) -
+	radio_gpio_pa_lna_enable(start_us +
+				 radio_tx_ready_delay_get(phy_s,
+							  lll_adv->phy_flags) -
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #else /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 	ARG_UNUSED(start_us);
@@ -447,10 +449,11 @@ static void isr_tx_rx(void *param)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	/* +/- 2us active clock jitter, +1 us hcto compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
-	hcto += radio_rx_chain_delay_get(lll->phy_s, 1);
+	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
+	       (EVENT_CLOCK_JITTER_US << 1U) + 1U;
+	hcto += radio_rx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy_s);
-	hcto -= radio_tx_chain_delay_get(lll->phy_s, 1);
+	hcto -= radio_tx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
@@ -472,8 +475,10 @@ static void isr_tx_rx(void *param)
 	}
 
 	radio_gpio_lna_setup();
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
-				 radio_tx_chain_delay_get(lll->phy_s, 1) -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US -
+				 (EVENT_CLOCK_JITTER_US << 1U) -
+				 radio_tx_chain_delay_get(lll->phy_s,
+							  PHY_FLAGS_S8) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
@@ -484,6 +489,7 @@ static void isr_tx_rx(void *param)
 
 static void isr_rx(void *param)
 {
+	uint8_t phy_flags_rx;
 	uint8_t devmatch_ok;
 	uint8_t devmatch_id;
 	uint8_t irkmatch_ok;
@@ -500,13 +506,15 @@ static void isr_rx(void *param)
 	trx_done = radio_is_done();
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
+		phy_flags_rx = radio_phy_flags_rx_get();
 		devmatch_ok = radio_filter_has_match();
 		devmatch_id = radio_filter_match_get();
 		irkmatch_ok = radio_ar_has_match();
 		irkmatch_id = radio_ar_match_get();
 		rssi_ready = radio_rssi_is_ready();
 	} else {
-		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready = 0U;
+		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready =
+			phy_flags_rx = 0U;
 		devmatch_id = irkmatch_id = 0xFF;
 	}
 
@@ -521,7 +529,7 @@ static void isr_rx(void *param)
 	if (crc_ok) {
 		int err;
 
-		err = isr_rx_pdu(param, devmatch_ok, devmatch_id,
+		err = isr_rx_pdu(param, phy_flags_rx, devmatch_ok, devmatch_id,
 				 irkmatch_ok, irkmatch_id, rssi_ready);
 		if (!err) {
 			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -537,7 +545,7 @@ isr_rx_do_close:
 	radio_disable();
 }
 
-static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
+static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rssi_ready)
@@ -605,6 +613,10 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 							 lll->phy_flags,
 							 lll->phy_s,
 							 lll->phy_flags);
+#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+			radio_tmr_end_capture();
+#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
+
 #endif /* CONFIG_BT_CTLR_ADV_PDU_BACK2BACK */
 
 		} else {
@@ -647,7 +659,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
 					 radio_rx_chain_delay_get(lll->phy_s,
-								  1) -
+								  phy_flags_rx) -
 					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 		return 0;
@@ -699,7 +711,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
 					 radio_rx_chain_delay_get(lll->phy_s,
-								  1) -
+								  phy_flags_rx) -
 					 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
@@ -713,7 +725,8 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
-				    radio_rx_chain_delay_get(lll->phy_s, 1);
+				    radio_rx_chain_delay_get(lll->phy_s,
+							     phy_flags_rx);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;

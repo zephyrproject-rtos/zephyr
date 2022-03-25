@@ -521,11 +521,11 @@
 			<text x="4.13" y="581.56" class="st10" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>Other drivers</text>		</g>
 		<g id="shape105-189" v:mID="105" v:groupContext="shape" transform="translate(51.25,-146.194)">
 			<title>Sheet.105</title>
-			<desc>Device driver retreives packet from the FIFO and sends it to ...</desc>
+			<desc>Device driver retrieves packet from the FIFO and sends it to ...</desc>
 			<v:textBlock v:margins="rect(4,4,4,4)" v:verticalAlign="0"/>
 			<v:textRect cx="56.375" cy="589.455" width="112.76" height="18.3432"/>
 			<rect x="0" y="580.283" width="112.75" height="18.3432" class="st12"/>
-			<text x="11.91" y="591.48" class="st25" v:langID="1033"><v:paragraph v:horizAlign="2"/><v:tabList/>Device driver retreives packet <tspan
+			<text x="11.91" y="591.48" class="st25" v:langID="1033"><v:paragraph v:horizAlign="2"/><v:tabList/>Device driver retrieves packet <tspan
 						x="14.24" dy="1.2em" class="st23">from the FIFO and sends it to </tspan><tspan x="66.83" dy="1.2em"
 						class="st23">the network</tspan>.</text>		</g>
 		<g id="shape107-194" v:mID="107" v:groupContext="shape" transform="translate(30.7484,-176.156)">
@@ -559,11 +559,11 @@
 		</g>
 		<g id="shape116-214" v:mID="116" v:groupContext="shape" transform="translate(50.35,-419.7)">
 			<title>Sheet.116</title>
-			<desc>Net_packet structue created, user data copied to it. Packet m...</desc>
+			<desc>Net_packet structure created, user data copied to it. Packet m...</desc>
 			<v:textBlock v:margins="rect(4,4,4,4)" v:verticalAlign="0"/>
 			<v:textRect cx="56.375" cy="589.455" width="112.76" height="18.3432"/>
 			<rect x="0" y="580.283" width="112.75" height="18.3432" class="st12"/>
-			<text x="13.72" y="591.48" class="st25" v:langID="1033"><v:paragraph v:horizAlign="2"/><v:tabList/>Net_packet structue created, <tspan
+			<text x="13.72" y="591.48" class="st25" v:langID="1033"><v:paragraph v:horizAlign="2"/><v:tabList/>Net_packet structure created, <tspan
 						x="14.16" dy="1.2em" class="st23">user data copied to it</tspan>. Packet <tspan x="21.44" dy="1.2em"
 						class="st23">marshalled to kernel space </tspan> </text>		</g>
 		<g id="shape120-219" v:mID="120" v:groupContext="shape" transform="translate(39.572,-446.792)">

@@ -181,7 +181,7 @@
 	 (((_aff1) & SGIR_AFF_MASK) << SGIR_AFF1_SHIFT) |		\
 	 ((_tgt) & SGIR_TGT_MASK))
 
-/* Implementation defined register definations */
+/* Implementation defined register definitions */
 #if defined(CONFIG_CPU_CORTEX_A72)
 
 #define CORTEX_A72_L2CTLR_EL1				S3_1_C11_C0_2

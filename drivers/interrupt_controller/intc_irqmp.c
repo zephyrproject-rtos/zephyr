@@ -122,4 +122,4 @@ static int irqmp_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(irqmp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(irqmp_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);

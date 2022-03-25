@@ -361,6 +361,9 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	zo = z_dynamic_object_aligned_create(obj_align_get(otype),
 					     obj_size_get(otype));
 	if (zo == NULL) {
+		if (otype == K_OBJ_THREAD) {
+			thread_idx_free(tidx);
+		}
 		return NULL;
 	}
 	zo->type = otype;

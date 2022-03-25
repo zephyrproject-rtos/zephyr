@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_APP_MEMPORY_MEM_DOMAIN_H
-#define INCLUDE_APP_MEMPORY_MEM_DOMAIN_H
+#ifndef INCLUDE_APP_MEMORY_MEM_DOMAIN_H
+#define INCLUDE_APP_MEMORY_MEM_DOMAIN_H
 
 #include <stdint.h>
 #include <stddef.h>

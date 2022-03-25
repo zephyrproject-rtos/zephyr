@@ -6,7 +6,7 @@ set_ifndef(region_min_align CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE)
 # to make linker section alignment comply with MPU granularity.
 set_ifndef(region_min_align CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
 
-# If building without MPU support, use default 4-byte alignment.. if not set abve.
+# If building without MPU support, use default 4-byte alignment.. if not set above.
 set_ifndef(region_min_align 4)
 
 # Note, the `+ 0` in formulas below avoids errors in cases where a Kconfig
@@ -195,3 +195,8 @@ zephyr_linker_section_configure(SECTION .data ANY FLAGS "+RW")
 zephyr_linker_section_configure(SECTION .bss ANY FLAGS "+ZI")
 
 include(${COMMON_ZEPHYR_LINKER_DIR}/debug-sections.cmake)
+
+dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
+foreach(path IN LISTS paths)
+  zephyr_linker_dts_section(PATH ${path})
+endforeach()

@@ -71,7 +71,7 @@
 	/*
 	 * All chip select pins have an on board 10k pull-up resistor to VCC,
 	 * and are connected to their respective arduino pins via a normally
-	 * closed solder brige.
+	 * closed solder bridge.
 	 *
 	 * All hold pins are connected to VCC with a 10k pull-up, and
 	 * have a connection to arduino pin A3 on CN8 via an open solder bridge.

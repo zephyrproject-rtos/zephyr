@@ -91,7 +91,7 @@ static void test_log_fs_file_content(void)
 	int rc;
 	struct fs_file_t file;
 	char log_read[MAX_PATH_LEN];
-	uint8_t to_log[] = "Corect Log 1";
+	uint8_t to_log[] = "Correct Log 1";
 	static char fname[MAX_PATH_LEN];
 
 	fs_file_t_init(&file);

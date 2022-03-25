@@ -11,7 +11,7 @@ config MBEDTLS_PROMPTLESS
 	  Symbol to disable the prompt for MBEDTLS selection.
 	  This symbol may be used internally in a Kconfig tree to hide the
 	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
-	  dependent sub-configurations and thus preven stuck symbol behavior.
+	  dependent sub-configurations and thus prevent stuck symbol behavior.
 
 
 menuconfig MBEDTLS

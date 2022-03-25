@@ -21,7 +21,7 @@
 #define GD32_EXTI_TRIG_NONE 0U
 /** Trigger on rising edge */
 #define GD32_EXTI_TRIG_RISING BIT(0)
-/** Trigger on falling endge */
+/** Trigger on falling edge */
 #define GD32_EXTI_TRIG_FALLING BIT(1)
 /** Trigger on rising and falling edge */
 #define GD32_EXTI_TRIG_BOTH (GD32_EXTI_TRIG_RISING | GD32_EXTI_TRIG_FALLING)

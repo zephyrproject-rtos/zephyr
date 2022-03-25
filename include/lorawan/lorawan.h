@@ -10,6 +10,9 @@
 /**
  * @file
  * @brief Public LoRaWAN APIs
+ * @defgroup lorawan_api LoRaWAN APIs
+ * @ingroup subsystem
+ * @{
  */
 
 #include <device.h>
@@ -60,11 +63,10 @@ enum lorawan_datarate {
 
 /**
  * @brief LoRaWAN message types.
- *
- * Note: The default message type is unconfirmed.
  */
 enum lorawan_message_type {
-	LORAWAN_MSG_CONFIRMED = BIT(0),
+	LORAWAN_MSG_UNCONFIRMED = 0,
+	LORAWAN_MSG_CONFIRMED,
 };
 
 /**
@@ -76,9 +78,20 @@ enum lorawan_message_type {
  * case the values stored in the secure element will be used instead.
  */
 struct lorawan_join_otaa {
+	/** Join EUI */
 	uint8_t *join_eui;
+	/** Network Key */
 	uint8_t *nwk_key;
+	/** Application Key */
 	uint8_t *app_key;
+	/**
+	 * Device Nonce
+	 *
+	 * Starting with LoRaWAN 1.0.4 the DevNonce must be monotonically
+	 * increasing for each OTAA join with the same EUI. The DevNonce
+	 * should be stored in non-volatile memory by the application.
+	 */
+	uint32_t dev_nonce;
 };
 
 struct lorawan_join_abp {
@@ -202,13 +215,12 @@ int lorawan_start(void);
  * @param len        Length of the buffer to be sent. Maximum length of this
  *                   buffer is 255 bytes but the actual payload size varies with
  *                   region and datarate.
- * @param flags      Flag used to determine the type of message being sent. It
- *                   could be one of the lorawan_message_type. The default
- *                   behaviour is unconfirmed message.
+ * @param type       Specifies if the message shall be confirmed or unconfirmed.
+ *                   Must be one of @ref lorawan_message_type.
  *
  * @return 0 if successful, negative errno code if failure
  */
-int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, uint8_t flags);
+int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, enum lorawan_message_type type);
 
 /**
  * @brief Set the current device class
@@ -281,5 +293,9 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_LORAWAN_LORAWAN_H_ */

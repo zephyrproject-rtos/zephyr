@@ -86,7 +86,9 @@ static void exchange_func(struct bt_conn *conn, uint8_t err,
 	(void)memset(params, 0, sizeof(*params));
 }
 
-static struct bt_gatt_exchange_params exchange_params;
+static struct bt_gatt_exchange_params exchange_params = {
+	.func = exchange_func,
+};
 
 static int cmd_exchange_mtu(const struct shell *sh,
 			     size_t argc, char *argv[])
@@ -98,15 +100,10 @@ static int cmd_exchange_mtu(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (exchange_params.func) {
-		shell_print(sh, "MTU Exchange ongoing");
-		return -ENOEXEC;
-	}
-
-	exchange_params.func = exchange_func;
-
 	err = bt_gatt_exchange_mtu(default_conn, &exchange_params);
-	if (err) {
+	if (err == -EALREADY) {
+		shell_print(sh, "Already exchanged");
+	} else if (err) {
 		shell_print(sh, "Exchange failed (err %d)", err);
 	} else {
 		shell_print(sh, "Exchange pending");
@@ -329,7 +326,7 @@ static int cmd_mread(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if ((argc - 1) >  ARRAY_SIZE(h)) {
-		shell_print(sh, "Enter max %lu handle items to read",
+		shell_print(sh, "Enter max %zu handle items to read",
 			    ARRAY_SIZE(h));
 		return -EINVAL;
 	}

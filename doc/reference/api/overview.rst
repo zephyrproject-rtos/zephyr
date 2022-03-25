@@ -197,6 +197,16 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.13
      - 1.14
 
+   * - :ref:`lora_api`
+     - Experimental
+     - 2.2
+     - 2.2
+
+   * - :ref:`lorawan_api`
+     - Experimental
+     - 2.5
+     - 2.5
+
    * - :ref:`mqtt_socket_interface`
      - Unstable
      - 1.14
@@ -256,6 +266,11 @@ current :ref:`stability level <api_lifecycle>`.
      - Experimental
      - 2.4
      - 2.4
+
+   * - :ref:`reset_api`
+     - Experimental
+     - 3.1
+     - 3.1
 
    * - :ref:`spi_api`
      - Stable

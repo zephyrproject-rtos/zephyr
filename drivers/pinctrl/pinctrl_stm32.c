@@ -87,6 +87,39 @@ SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 
+/* ignore swj-cfg reset state (default value) */
+#if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
+	(DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
+
+static int stm32f1_swj_cfg_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+	/* reset state is '000' (Full SWJ, (JTAG-DP + SW-DP)) */
+	/* only one of the 3 bits can be set */
+#if (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 1)
+	/* 001: Full SWJ (JTAG-DP + SW-DP) but without NJTRST */
+	/* releases: PB4 */
+	LL_GPIO_AF_Remap_SWJ_NONJTRST();
+#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 2)
+	/* 010: JTAG-DP Disabled and SW-DP Enabled */
+	/* releases: PB4 PB3 PA15 */
+	LL_GPIO_AF_Remap_SWJ_NOJTAG();
+#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 3)
+	/* 100: JTAG-DP Disabled and SW-DP Disabled */
+	/* releases: PB4 PB3 PA13 PA14 PA15 */
+	LL_GPIO_AF_DisableRemap_SWJ();
+#endif
+
+	return 0;
+}
+
+SYS_INIT(stm32f1_swj_cfg_init, PRE_KERNEL_1, 0);
+
+#endif /* DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg) */
+
 /**
  * @brief Helper function to check and apply provided pinctrl remap
  * configuration.
@@ -102,9 +135,7 @@ SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1,
  */
 static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 {
-	uint8_t pos;
 	uint32_t reg_val;
-	volatile uint32_t *reg;
 	uint16_t remap;
 
 	remap = (uint16_t)STM32_DT_PINMUX_REMAP(pins[0].pinmux);
@@ -125,17 +156,17 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 
 	if (STM32_REMAP_REG_GET(remap) == 0U) {
-		reg = &AFIO->MAPR;
+		/* read initial value, ignore write-only SWJ_CFG */
+		reg_val = AFIO->MAPR & ~AFIO_MAPR_SWJ_CFG;
+		reg_val |= STM32_REMAP_VAL_GET(remap) << STM32_REMAP_SHIFT_GET(remap);
+		/* apply undocumented '111' (AFIO_MAPR_SWJ_CFG) to affirm SWJ_CFG */
+		/* the pins are not remapped without that (when SWJ_CFG is not default) */
+		AFIO->MAPR = reg_val | AFIO_MAPR_SWJ_CFG;
 	} else {
-		reg = &AFIO->MAPR2;
+		reg_val = AFIO->MAPR2;
+		reg_val |= STM32_REMAP_VAL_GET(remap) << STM32_REMAP_SHIFT_GET(remap);
+		AFIO->MAPR2 = reg_val;
 	}
-
-	pos = STM32_REMAP_SHIFT_GET(remap);
-
-	reg_val = *reg;
-	reg_val &= ~(STM32_REMAP_MASK_GET(remap) << pos);
-	reg_val |= STM32_REMAP_VAL_GET(remap) << pos;
-	*reg = reg_val;
 
 	return 0;
 }

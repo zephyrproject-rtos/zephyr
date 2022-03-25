@@ -10,8 +10,28 @@
 #include "mgmt/mgmt.h"
 #include "cborattr/cborattr.h"
 #include "shell_mgmt/shell_mgmt.h"
-#include "shell_mgmt/shell_mgmt_impl.h"
 #include "shell_mgmt/shell_mgmt_config.h"
+#include <shell/shell_dummy.h>
+
+static int
+shell_exec(const char *line)
+{
+	const struct shell *shell = shell_backend_dummy_get_ptr();
+
+	shell_backend_dummy_clear_output(shell);
+	return shell_execute_cmd(shell, line);
+}
+
+const char *
+shell_get_output()
+{
+	size_t len;
+
+	return shell_backend_dummy_get_output(
+		shell_backend_dummy_get_ptr(),
+		&len
+	);
+}
 
 /**
  * Command handler: shell exec
@@ -19,7 +39,7 @@
 static int
 shell_mgmt_exec(struct mgmt_ctxt *cb)
 {
-	static char line[SHELL_MGMT_MAX_LINE_LEN + 1] = {0};
+	char line[SHELL_MGMT_MAX_LINE_LEN + 1];
 	CborEncoder str_encoder;
 	CborError err;
 	int rc;
@@ -42,19 +62,22 @@ shell_mgmt_exec(struct mgmt_ctxt *cb)
 		{ 0 },
 	};
 
+	line[0] = 0;
+
 	err = cbor_read_object(&cb->it, attrs);
 	if (err != 0) {
 		return MGMT_ERR_EINVAL;
 	}
 
+	line[ARRAY_SIZE(line) - 1] = 0;
+
 	/* Key="o"; value=<command-output> */
 	err |= cbor_encode_text_stringz(&cb->encoder, "o");
 	err |= cbor_encoder_create_indef_text_string(&cb->encoder, &str_encoder);
 
-	rc = shell_mgmt_impl_exec(line);
+	rc = shell_exec(line);
 
-	err |= cbor_encode_text_stringz(&str_encoder,
-		shell_mgmt_impl_get_output());
+	err |= cbor_encode_text_stringz(&str_encoder, shell_get_output());
 
 	err |= cbor_encoder_close_container(&cb->encoder, &str_encoder);
 

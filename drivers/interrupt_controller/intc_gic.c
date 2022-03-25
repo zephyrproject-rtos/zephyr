@@ -92,7 +92,7 @@ void arm_gic_eoi(unsigned int irq)
 	 * Ensure the write to peripheral registers are *complete* before the write
 	 * to GIC_EOIR.
 	 *
-	 * Note: The completion gurantee depends on various factors of system design
+	 * Note: The completion guarantee depends on various factors of system design
 	 * and the barrier is the best core can do by which execution of further
 	 * instructions waits till the barrier is alive.
 	 */
@@ -239,7 +239,7 @@ int arm_gic_init(const struct device *unused)
 	return 0;
 }
 
-SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
 
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)

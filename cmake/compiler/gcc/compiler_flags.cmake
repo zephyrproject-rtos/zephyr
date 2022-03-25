@@ -129,7 +129,7 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20"
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-volatile")
 
-# Disable exeptions flag in C++
+# Disable exceptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
 
 # Disable rtti in C++
@@ -159,7 +159,7 @@ endif()
 # gcc flag for a hosted (no-freestanding) application
 check_set_compiler_property(APPEND PROPERTY hosted -fno-freestanding)
 
-# gcc flag for a freestandingapplication
+# gcc flag for a freestanding application
 set_compiler_property(PROPERTY freestanding -ffreestanding)
 
 # Flag to enable debugging
@@ -189,3 +189,6 @@ set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")
 if (NOT COMPILER STREQUAL "xcc")
 set_compiler_property(PROPERTY diagnostic -fdiagnostics-color=always)
 endif()
+
+# Compiler flag for disabling pointer arithmetic warnings
+set_compiler_property(PROPERTY warning_no_pointer_arithmetic "-Wno-pointer-arith")

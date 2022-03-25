@@ -12,7 +12,7 @@
 
 #include "gpio_utils.h"
 
-/* AXI GPIO v2 register offsetd (See Xilinx PG144 for details) */
+/* AXI GPIO v2 register offsets (See Xilinx PG144 for details) */
 #define GPIO_DATA_OFFSET  0x0000
 #define GPIO_TRI_OFFSET   0x0004
 #define GPIO2_DATA_OFFSET 0x0008

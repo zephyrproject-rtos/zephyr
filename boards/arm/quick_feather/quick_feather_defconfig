@@ -14,7 +14,7 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# EOS S3 Configuartion Manager copies software from external flash to MCU
+# EOS S3 Configuration Manager copies software from external flash to MCU
 # memory using preconfigured DMA and execute it there.
 # Thus we do not use flash directly.
 

@@ -328,7 +328,7 @@ static int pll_wait_lock(struct pcr_regs *const pcr, uint32_t wait_cnt)
  *     goes off.
  * At chip reset the PLL is held in reset and the +/- 50% ring oscillator is
  * the main clock.
- * If no VBAT reset occurs the VBAT 32 KHz soure register maintains its state.
+ * If no VBAT reset occurs the VBAT 32 KHz source register maintains its state.
  */
 static int soc_clk32_init(const struct device *dev,
 			  enum clk32k_src pll_clk_src,

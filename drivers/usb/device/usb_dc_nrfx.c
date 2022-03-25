@@ -1134,7 +1134,7 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		if ((drv_setup.bRequest != USB_SREQ_SET_ADDRESS)
 		    || (USB_REQTYPE_GET_TYPE(drv_setup.bmRequestType)
 			!= USB_REQTYPE_TYPE_STANDARD)) {
-			/* SetAddress is habdled by USBD hardware.
+			/* SetAddress is handled by USBD hardware.
 			 * No software action required.
 			 */
 
@@ -1191,11 +1191,11 @@ static inline void usbd_reinit(void)
 }
 
 /**
- * @brief funciton to generate fake receive request for
+ * @brief function to generate fake receive request for
  * ISO OUT EP.
  *
  * ISO OUT endpoint does not generate irq by itself and reading
- * from ISO OUT ep is sunchronized with SOF frame. For more details
+ * from ISO OUT ep is synchronized with SOF frame. For more details
  * refer to Nordic usbd specification.
  */
 static void usbd_sof_trigger_iso_read(void)
@@ -1702,7 +1702,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	/** If writing to a Control Endpoint there might be a need to transfer
 	 * ZLP. If the Hosts asks for more data that the device may return and
 	 * the last packet is wMaxPacketSize long. The driver must send ZLP.
-	 * For consistance with the Zephyr USB stack sending ZLP must be issued
+	 * For consistence with the Zephyr USB stack sending ZLP must be issued
 	 * from the stack level. Making trans_zlp flag true results in blocking
 	 * the driver from starting setup stage without required ZLP.
 	 */

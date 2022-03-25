@@ -40,7 +40,7 @@ struct bt_mesh_subnet {
 	uint8_t  beacons_last;       /* Number of beacons during last
 				      * observation window
 				      */
-	uint8_t  beacons_cur;        /* Number of beaconds observed during
+	uint8_t  beacons_cur;        /* Number of beacons observed during
 				      * currently ongoing window.
 				      */
 

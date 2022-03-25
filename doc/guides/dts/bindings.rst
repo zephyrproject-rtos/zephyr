@@ -1007,7 +1007,7 @@ General rules
 
   This ``|`` style prevents YAML parsers from removing the newlines in
   multi-line descriptions. This in turn makes these long strings
-  display propertly in the :ref:`devicetree_binding_index`.
+  display properly in the :ref:`devicetree_binding_index`.
 
   Do not use any other style for long or multi-line strings.
 

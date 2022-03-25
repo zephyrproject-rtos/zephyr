@@ -136,7 +136,6 @@ REDIRECTS = [
     ('boards/x86/qemu_x86/doc/board', 'boards/x86/qemu_x86/doc/index'),
     ('boards/x86/tinytile/doc/board', 'boards/x86/tinytile/doc/index'),
     ('boards/x86/up_squared/doc/up_squared', 'boards/x86/up_squared/doc/index'),
-    ('boards/x86/x86_jailhouse/doc/board', 'boards/x86/x86_jailhouse/doc/index'),
     ('boards/xtensa/esp32/doc/esp32', 'boards/xtensa/esp32/doc/index'),
     ('boards/xtensa/intel_s1000_crb/doc/intel_s1000', 'boards/xtensa/intel_s1000_crb/doc/index'),
     ('boards/xtensa/qemu_xtensa/doc/board', 'boards/xtensa/qemu_xtensa/doc/index'),

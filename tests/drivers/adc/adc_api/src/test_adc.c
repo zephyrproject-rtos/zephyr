@@ -61,6 +61,8 @@
 	defined(CONFIG_BOARD_UBX_EVKNINAB1_NRF52832) || \
 	defined(CONFIG_BOARD_UBX_EVKNINAB3_NRF52840) || \
 	defined(CONFIG_BOARD_UBX_EVKNINAB4_NRF52833) || \
+	defined(CONFIG_BOARD_WE_PROTEUS2EV_NRF52832) || \
+	defined(CONFIG_BOARD_WE_PROTEUS3EV_NRF52840) || \
 	defined(CONFIG_BOARD_BT610)
 
 #include <hal/nrf_saadc.h>
@@ -335,7 +337,7 @@
 #endif
 
 /* Invalid value that is not supposed to be written by the driver. It is used
- * to mark the sample buffer entries as empty. If needed, it can be overriden
+ * to mark the sample buffer entries as empty. If needed, it can be overridden
  * for a particular board by providing a specific definition above.
  */
 #if !defined(INVALID_ADC_VALUE)

@@ -51,7 +51,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 	if (regs->ACR & FLASH_ACR_DCEN) {
 		regs->ACR &= ~FLASH_ACR_DCEN;
 		/* Datasheet: DCRST: Data cache reset
-		 * This bit can be written only when thes data cache is disabled
+		 * This bit can be written only when the data cache is disabled
 		 */
 		regs->ACR |= FLASH_ACR_DCRST;
 		regs->ACR &= ~FLASH_ACR_DCRST;

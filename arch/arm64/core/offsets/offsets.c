@@ -38,7 +38,7 @@ GEN_NAMED_OFFSET_SYM(_callee_saved_t, x23, x23_x24);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x25, x25_x26);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x27, x27_x28);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x29, x29_sp_el0);
-GEN_NAMED_OFFSET_SYM(_callee_saved_t, sp_elx, sp_elx);
+GEN_NAMED_OFFSET_SYM(_callee_saved_t, sp_elx, sp_elx_lr);
 
 GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
 

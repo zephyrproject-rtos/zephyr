@@ -165,7 +165,7 @@ void main(void)
 	data[0] = 0xAE;
 	err = write_bytes(spi, &spi_cfg, 0x00, data, 1);
 	if (err) {
-		printk("Error writing to FRAM! errro code (%d)\n", err);
+		printk("Error writing to FRAM! error code (%d)\n", err);
 		return;
 	} else {
 		printk("Wrote 0xAE to address 0x00.\n");

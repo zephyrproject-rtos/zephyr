@@ -16,14 +16,12 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_SYSCALL_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_SYSCALL_H_
 
-#define _SVC_CALL_CONTEXT_SWITCH	0
-#define _SVC_CALL_IRQ_OFFLOAD		1
-#define _SVC_CALL_RUNTIME_EXCEPT	2
-#define _SVC_CALL_SYSTEM_CALL		3
+/*
+ * Privileged mode system calls
+ */
+#define RV_ECALL_RUNTIME_EXCEPT		0
+#define RV_ECALL_IRQ_OFFLOAD		1
 
-#define FORCE_SYSCALL_ID		-1
-
-#ifdef CONFIG_USERSPACE
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
@@ -142,23 +140,48 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 	register ulong_t a7 __asm__ ("a7") = call_id;
 
 	__asm__ volatile ("ecall"
-			  : "+r" (a0)
+			  : "=r" (a0)
 			  : "r" (a7)
 			  : "memory");
 	return a0;
 }
 
+#ifdef CONFIG_USERSPACE
 static inline bool arch_is_user_context(void)
 {
+#ifdef CONFIG_SMP
+	/*
+	 * This is painful. There is no way for u-mode code to know if we're
+	 * currently executing in u-mode without generating a fault, besides
+	 * stealing a general purpose register away from the standard ABI
+	 * that is. And a global variable doesn't work on SMP as this must be
+	 * per-CPU and we could be migrated to another CPU just at the right
+	 * moment to peek at the wrong CPU variable (and u-mode can't disable
+	 * preemption either).
+	 *
+	 * So, given that we'll have to pay the price of an exception entry
+	 * anyway, let's at least make it free to privileged threads by using
+	 * the mscratch register as the non-user context indicator (it must
+	 * be zero in m-mode for exception entry to work properly). In the
+	 * case of u-mode we'll simulate a proper return value in the
+	 * exception trap code. Let's settle on the return value in t0
+	 * and omit the volatile to give the compiler a chance to cache
+	 * the result.
+	 */
+	register ulong_t is_user __asm__ ("t0");
+	__asm__ ("csrr %0, mscratch" : "=r" (is_user));
+	return is_user != 0;
+#else
 	/* Defined in arch/riscv/core/thread.c */
 	extern uint32_t is_user_mode;
 	return is_user_mode;
+#endif
 }
+#endif
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* _ASMLANGUAGE */
-#endif /* CONFIG_USERSPACE */
 #endif /* ZEPHYR_INCLUDE_ARCH_RISCV_SYSCALL_H_ */

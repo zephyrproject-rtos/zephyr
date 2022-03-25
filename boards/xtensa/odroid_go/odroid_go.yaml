@@ -1,4 +1,4 @@
-identifier: odroid-go
+identifier: odroid_go
 name: ODROID-GO
 type: mcu
 arch: xtensa
@@ -10,3 +10,4 @@ supported:
   - watchdog
   - uart
   - pinmux
+  - nvs

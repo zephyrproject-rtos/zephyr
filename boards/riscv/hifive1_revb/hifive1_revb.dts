@@ -5,6 +5,7 @@
 
 #include <riscv32-fe310.dtsi>
 #include <dt-bindings/i2c/i2c.h>
+#include "hifive1_revb-pinctrl.dtsi"
 
 / {
 	model = "SiFive HiFive 1 Rev B";
@@ -78,6 +79,8 @@
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <16000000>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
 };
 
 &uart1 {
@@ -131,4 +134,6 @@ arduino_i2c: &i2c0 {
 	label = "I2C_0";
 	input-frequency = <16000000>;
 	clock-frequency = <100000>;
+	pinctrl-0 = <&i2c0_0_default &i2c0_1_default>;
+	pinctrl-names = "default";
 };

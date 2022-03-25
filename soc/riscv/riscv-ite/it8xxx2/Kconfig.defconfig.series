@@ -56,10 +56,6 @@ config GPIO_ITE_IT8XXX2
 	default y
 	depends on GPIO
 
-config I2C_ITE_IT8XXX2
-	default y
-	depends on I2C
-
 config ADC_ITE_IT8XXX2
 	default y
 	depends on ADC

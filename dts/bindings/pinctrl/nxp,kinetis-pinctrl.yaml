@@ -66,12 +66,12 @@ child-binding:
         required: true
         type: string
         enum:
-          - "slow"
           - "fast"
+          - "slow"
         description: |
           Pin output slew rate. Sets the SRE field in the PORTx_PCRn register.
-          0 SRE_0_slow- slow slew rate when pin is configured as output
-          1 SRE_1_fast- fast slew rate when pin is configured as output
+          0 SRE_0_fast- fast slew rate when pin is configured as output
+          1 SRE_1_slow- slow slew rate when pin is configured as output
       nxp,passive-filter:
         type: boolean
         description: |

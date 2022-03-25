@@ -65,7 +65,7 @@ void test_shared_multi_heap(void)
 	reg = get_reg_addr(block);
 
 	zassert_equal(reg->addr, 0x42000000, "block in the wrong memory region");
-	zassert_equal(reg->attr, SMH_REG_ATTR_CACHEABLE, "wrong memery attribute");
+	zassert_equal(reg->attr, SMH_REG_ATTR_CACHEABLE, "wrong memory attribute");
 
 	/*
 	 * Request another small cacheable chunk. It should be allocated in the

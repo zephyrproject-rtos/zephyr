@@ -337,7 +337,7 @@ static void copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
 		return;
 	}
 
-	/* First word contains intenal mpsc packet flags and when copying
+	/* First word contains internal mpsc packet flags and when copying
 	 * those flags must be omitted.
 	 */
 	uint8_t *dst_data = (uint8_t *)dst + sizeof(struct mpsc_pbuf_hdr);

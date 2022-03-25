@@ -27,7 +27,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 {
 	if (regs->ACR & FLASH_ACR_ARTEN) {
 		regs->ACR &= ~FLASH_ACR_ARTEN;
-		/* Refernce manual:
+		/* Reference manual:
 		 * The ART cache can be flushed only if the ART accelerator
 		 * is disabled (ARTEN = 0).
 		 */

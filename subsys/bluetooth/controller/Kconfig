@@ -3,8 +3,6 @@
 # Copyright (c) 2016-2017 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-comment "BLE Controller support"
-
 # The following symbols are enabled depending if the controller actually
 # supports the respective features.
 
@@ -67,9 +65,6 @@ config BT_CTLR_CHAN_SEL_2_SUPPORT
 	bool
 
 config BT_CTLR_MIN_USED_CHAN_SUPPORT
-	bool
-
-config BT_CTLR_DTM_HCI_SUPPORT
 	bool
 
 config BT_CTLR_SMI_SUPPORT
@@ -230,6 +225,24 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	  Size of the Isochronous Tx buffers and the value returned in HCI LE
 	  Read Buffer Size V2 command response.
 
+config BT_CTLR_ISOAL_SOURCES
+	int "Number of Isochronous Adaptation Layer sinks"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	range 1 64
+	default 1
+	help
+	  Set the number of concurrently active sources supported by the
+	  ISO AL.
+
+config BT_CTLR_ISOAL_SINKS
+	int "Number of Isochronous Adaptation Layer sinks"
+	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
+	range 1 64
+	default 1
+	help
+	  Set the number of concurrently active sinks supported by the
+	  ISO AL.
+
 config BT_CTLR_ISO_VENDOR_DATA_PATH
 	bool "Vendor-specific ISO data path"
 	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
@@ -321,7 +334,7 @@ config BT_CTLR_ECDH
 	depends on BT_CTLR_ECDH_SUPPORT
 	default y
 	help
-	  Enable support for Bluetoooth v4.2 Elliptic Curve Diffie-Hellman
+	  Enable support for Bluetooth v4.2 Elliptic Curve Diffie-Hellman
 	  feature in the controller.
 
 config BT_CTLR_CONN_PARAM_REQ
@@ -738,6 +751,14 @@ config BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA
 	  This allows for applications to decide whether to
 	  forward invalid SDUs through HCI upwards.
 
+config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
+	int "LE Connected Isochronous Streams max number of subevents"
+	depends on BT_CTLR_CONN_ISO
+	range 1 31
+	default 31
+	help
+	  Maximum number of CIS subevents.
+
 config BT_CTLR_ISO
 	bool
 	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO
@@ -748,18 +769,6 @@ config BT_CTLR_READ_ISO_LINK_QUALITY
 	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
 	help
 	  Enable support for LE Read ISO Link Quality command.
-
-config BT_CTLR_DTM
-	bool
-	help
-	  Enable support for Direct Test Mode in the Controller.
-
-config BT_CTLR_DTM_HCI
-	bool "Direct Test Mode over HCI"
-	depends on BT_CTLR_DTM_HCI_SUPPORT
-	select BT_CTLR_DTM
-	help
-	  Enable support for Direct Test Mode over the HCI transport.
 
 config BT_CTLR_SMI_RX
 	bool "Stable modulation index - Receiver"
@@ -787,6 +796,7 @@ config BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 
 rsource "Kconfig.df"
 rsource "Kconfig.ll_sw_split"
+rsource "Kconfig.dtm"
 
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"

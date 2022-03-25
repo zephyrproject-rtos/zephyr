@@ -4,6 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&pinctrl {
+	uart1_default_alt: uart1_default_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 14)>,
+				<NRF_PSEL(UART_RX, 1, 13)>,
+				<NRF_PSEL(UART_RTS, 1, 12)>,
+				<NRF_PSEL(UART_CTS, 1, 15)>;
+		};
+	};
+
+	uart1_sleep_alt: uart1_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 1, 14)>,
+				<NRF_PSEL(UART_RX, 1, 13)>,
+				<NRF_PSEL(UART_RTS, 1, 12)>,
+				<NRF_PSEL(UART_CTS, 1, 15)>;
+			low-power-enable;
+		};
+	};
+};
+
 /*
  * WNC-M14A2A shield uses an odd UART available on *some* Arduino-R3-compatible
  * headers.  It needs to be defined individually.
@@ -13,10 +34,9 @@
 	hw-flow-control;
 	status = "okay";
 
-	tx-pin = <46>;
-	rx-pin = <45>;
-	rts-pin = <44>;
-	cts-pin = <47>;
+	pinctrl-0 = <&uart1_default_alt>;
+	pinctrl-1 = <&uart1_sleep_alt>;
+	pinctrl-names = "default", "sleep";
 
 	wnc_m14a2a: wncm14a2a {
 		status = "okay";

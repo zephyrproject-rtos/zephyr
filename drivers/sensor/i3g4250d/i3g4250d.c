@@ -181,7 +181,7 @@ static int i3g4250d_init(const struct device *dev)
 	}
 
 	if (wai != I3G4250D_ID) {
-		LOG_ERR("Inavild chip ID: %02x", wai);
+		LOG_ERR("Invalid chip ID: %02x", wai);
 		return -EIO;
 	}
 

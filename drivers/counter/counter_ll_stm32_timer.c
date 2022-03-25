@@ -194,7 +194,7 @@ static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
 		 "Expected that CC interrupt is disabled.");
 
 	/* First take care of a risk of an event coming from CC being set to
-	 * next tick. Reconfigure CC to future (now tick is the furtherest
+	 * next tick. Reconfigure CC to future (now tick is the furthest
 	 * future).
 	 */
 	now = counter_stm32_read(dev);

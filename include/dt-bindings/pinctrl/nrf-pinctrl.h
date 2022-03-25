@@ -11,7 +11,8 @@
  * organized as follows:
  *
  * - 31..16: Pin function.
- * - 15..13: Reserved.
+ * - 15..14: Reserved.
+ * - 13:     Pin inversion mode.
  * - 12:     Pin low power mode.
  * - 11..8:  Pin output drive configuration.
  * - 7..6:   Pin pull configuration.
@@ -27,6 +28,10 @@
 #define NRF_FUN_POS 16U
 /** Mask for the function field. */
 #define NRF_FUN_MSK 0xFFFFU
+/** Position of the invert field. */
+#define NRF_INVERT_POS 13U
+/** Mask for the invert field. */
+#define NRF_INVERT_MSK 0x1U
 /** Position of the low power field. */
 #define NRF_LP_POS 12U
 /** Mask for the low power field. */
@@ -77,6 +82,50 @@
 #define NRF_FUN_TWIM_SCL 11U
 /** TWI master SDA */
 #define NRF_FUN_TWIM_SDA 12U
+/** I2S SCK in master mode */
+#define NRF_FUN_I2S_SCK_M 13U
+/** I2S SCK in slave mode */
+#define NRF_FUN_I2S_SCK_S 14U
+/** I2S LRCK in master mode */
+#define NRF_FUN_I2S_LRCK_M 15U
+/** I2S LRCK in slave mode */
+#define NRF_FUN_I2S_LRCK_S 16U
+/** I2S SDIN */
+#define NRF_FUN_I2S_SDIN 17U
+/** I2S SDOUT */
+#define NRF_FUN_I2S_SDOUT 18U
+/** I2S MCK */
+#define NRF_FUN_I2S_MCK 19U
+/** PDM CLK */
+#define NRF_FUN_PDM_CLK 20U
+/** PDM DIN */
+#define NRF_FUN_PDM_DIN 21U
+/** PWM OUT0 */
+#define NRF_FUN_PWM_OUT0 22U
+/** PWM OUT1 */
+#define NRF_FUN_PWM_OUT1 23U
+/** PWM OUT2 */
+#define NRF_FUN_PWM_OUT2 24U
+/** PWM OUT3 */
+#define NRF_FUN_PWM_OUT3 25U
+/** QDEC A */
+#define NRF_FUN_QDEC_A 26U
+/** QDEC B */
+#define NRF_FUN_QDEC_B 27U
+/** QDEC LED */
+#define NRF_FUN_QDEC_LED 28U
+/** QSPI SCK */
+#define NRF_FUN_QSPI_SCK 29U
+/** QSPI CSN */
+#define NRF_FUN_QSPI_CSN 30U
+/** QSPI IO0 */
+#define NRF_FUN_QSPI_IO0 31U
+/** QSPI IO1 */
+#define NRF_FUN_QSPI_IO1 32U
+/** QSPI IO2 */
+#define NRF_FUN_QSPI_IO2 33U
+/** QSPI IO3 */
+#define NRF_FUN_QSPI_IO3 34U
 
 /** @} */
 

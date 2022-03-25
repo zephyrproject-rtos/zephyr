@@ -2356,7 +2356,7 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 	int remaining;
 	uint32_t entry = k_uptime_get_32();
 
-	/* Overwrite TLS file decriptors with underlying ones. */
+	/* Overwrite TLS file descriptors with underlying ones. */
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
 
@@ -2744,6 +2744,14 @@ static int tls_sock_close_vmeth(void *obj)
 	return ztls_close_ctx(obj);
 }
 
+static int tls_sock_getpeername_vmeth(void *obj, struct sockaddr *addr,
+				      socklen_t *addrlen)
+{
+	struct tls_context *ctx = obj;
+
+	return zsock_getpeername(ctx->sock, addr, addrlen);
+}
+
 static int tls_sock_getsockname_vmeth(void *obj, struct sockaddr *addr,
 				      socklen_t *addrlen)
 {
@@ -2769,6 +2777,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.recvfrom = tls_sock_recvfrom_vmeth,
 	.getsockopt = tls_sock_getsockopt_vmeth,
 	.setsockopt = tls_sock_setsockopt_vmeth,
+	.getpeername = tls_sock_getpeername_vmeth,
 	.getsockname = tls_sock_getsockname_vmeth,
 };
 

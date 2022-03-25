@@ -1835,7 +1835,7 @@ static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_
 	uint32_t ret;
 
 	/* Get pseudo-random number in the range [0..ticks_delay_window].
-	 * Please note that using modulo of 2^32 samle space has an uneven
+	 * Please note that using modulo of 2^32 sample space has an uneven
 	 * distribution, slightly favoring smaller values.
 	 */
 	lll_rand_isr_get(&random_delay, sizeof(random_delay));

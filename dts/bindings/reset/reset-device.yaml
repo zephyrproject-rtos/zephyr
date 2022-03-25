@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+description: This file needs to be included by devices that need a reset controller.
+
+properties:
+  resets:
+    type: phandle-array
+    required: false
+    description: Reset information
+
+  reset-names:
+    type: string-array
+    required: false
+    description: Name of each reset

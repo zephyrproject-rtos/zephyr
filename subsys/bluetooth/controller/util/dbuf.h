@@ -54,7 +54,7 @@ static inline void *dbuf_peek(struct dbuf_hdr *hdr)
  * @brief  Enqueue new element for buffer swap.
  *
  * @param hdr Pointer to double buffer header.
- * @param idx Intex of element to be swapped.
+ * @param idx Index of element to be swapped.
  */
 static inline void dbuf_enqueue(struct dbuf_hdr *hdr, uint8_t idx)
 {
@@ -68,17 +68,17 @@ static inline void dbuf_enqueue(struct dbuf_hdr *hdr, uint8_t idx)
  * If it points to a different index than member first, then buffer will be
  * swapped and @p is_modified will be set to true.
  *
- * Pointer to lates element is returned.
+ * Pointer to latest element is returned.
  *
  * @param[in] hdr Pointer to double buffer header.
- * @param[out] is_modifled Pointer to return information if buffer was swapped.
+ * @param[out] is_modified Pointer to return information if buffer was swapped.
  *
  * @return Pointer to latest enqueued buffer element.
  */
 void *dbuf_latest_get(struct dbuf_hdr *hdr, uint8_t *is_modified);
 
 /**
- * @brief Retruns pointer to the current element, the one after last swap operation.
+ * @brief Returns pointer to the current element, the one after last swap operation.
  *
  * The function provides access to element that is pointed by member first of dbuf_hrd.
  * Returned value always points to latest one, that was swapped after most recent call to

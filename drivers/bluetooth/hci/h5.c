@@ -335,7 +335,7 @@ static void retx_timeout(struct k_work *work)
 
 		k_fifo_init(&tmp_queue);
 
-		/* Queue to temperary queue */
+		/* Queue to temporary queue */
 		while ((buf = net_buf_get(&h5.tx_queue, K_NO_WAIT))) {
 			net_buf_put(&tmp_queue, buf);
 		}
@@ -446,7 +446,7 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 			}
 			break;
 		case HEADER:
-			/* In a case we confuse ending slip delimeter
+			/* In a case we confuse ending slip delimiter
 			 * with starting one.
 			 */
 			if (byte == SLIP_DELIMITER) {

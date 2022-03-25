@@ -49,7 +49,7 @@ void test_socketpair_write_nonblock(void)
 		/* then, try to write one more byte */
 		res = write(sv[i], "x", 1);
 		zassert_equal(res, -1, "expected write to fail");
-		zassert_equal(errno, EAGAIN, "errno: exected: EAGAIN "
+		zassert_equal(errno, EAGAIN, "errno: expected: EAGAIN "
 			"actual: %d", errno);
 	}
 
@@ -77,7 +77,7 @@ void test_socketpair_read_nonblock(void)
 		/* then, try to read one byte */
 		res = read(sv[i], &c, 1);
 		zassert_equal(res, -1, "expected read to fail");
-		zassert_equal(errno, EAGAIN, "errno: exected: EAGAIN "
+		zassert_equal(errno, EAGAIN, "errno: expected: EAGAIN "
 			"actual: %d", errno);
 	}
 

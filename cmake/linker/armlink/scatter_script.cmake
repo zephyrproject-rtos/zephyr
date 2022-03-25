@@ -333,7 +333,7 @@ function(section_to_string)
 #      endif()
 
       #if(SETTINGS_KEEP)
-      # armlink has --keep=<section_id>, but is there an scatter equivalant ?
+      # armlink has --keep=<section_id>, but is there an scatter equivalent ?
       #endif()
 
       if(first)

@@ -47,7 +47,7 @@ static const struct {
 	{"call", 0, 1}, /* HF_CALL_IND */
 	{"callsetup", 0, 3}, /* HF_CALL_SETUP_IND */
 	{"callheld", 0, 2}, /* HF_CALL_HELD_IND */
-	{"signal", 0, 5}, /* HF_SINGNAL_IND */
+	{"signal", 0, 5}, /* HF_SIGNAL_IND */
 	{"roam", 0, 1}, /* HF_ROAM_IND */
 	{"battchg", 0, 5} /* HF_BATTERY_IND */
 };
@@ -230,7 +230,7 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 	BT_DBG("Index :%u, Value :%u", index, value);
 
 	if (index >= ARRAY_SIZE(ag_ind)) {
-		BT_ERR("Max only %lu indicators are supported",
+		BT_ERR("Max only %zu indicators are supported",
 		       ARRAY_SIZE(ag_ind));
 		return;
 	}

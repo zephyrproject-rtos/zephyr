@@ -7,7 +7,7 @@
 # if CPU_CORTEX_M block so that SoCs can select which core they are using
 # without having to select all the options related to that core.  Everything
 # else is captured inside the if CPU_CORTEX_M block so they are not exposed
-# if one select a differnet ARM Cortex Family (Cortex-A or Cortex-R)
+# if one select a different ARM Cortex Family (Cortex-A or Cortex-R)
 
 config CPU_CORTEX_M0
 	bool
@@ -409,7 +409,7 @@ config NULL_POINTER_EXCEPTION_DETECTION_MPU
 	  CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE)
 	  is not unmapped (covered by an MPU region already).
 	  If it is unmapped null-pointer dereferencing may
-	  still be idirectly detected (e.g. via a precise
+	  still be indirectly detected (e.g. via a precise
 	  Bus access fault), but this is not guaranteed. A
 	  build-time message warns the user of this scenario.
 

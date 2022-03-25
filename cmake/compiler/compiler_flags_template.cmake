@@ -65,7 +65,7 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp20)
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b)
 
-# Flag for disabling exeptions in C++
+# Flag for disabling exceptions in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions)
 
 # Flag for disabling rtti in C++
@@ -108,3 +108,6 @@ set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
 
 # Required ASM flags when compiling
 set_property(TARGET asm PROPERTY required)
+
+# Compiler flag for disabling pointer arithmetic warnings
+set_compiler_property(PROPERTY warning_no_pointer_arithmetic)

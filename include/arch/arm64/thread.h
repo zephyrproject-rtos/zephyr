@@ -36,6 +36,7 @@ struct _callee_saved {
 	uint64_t x29;
 	uint64_t sp_el0;
 	uint64_t sp_elx;
+	uint64_t lr;
 };
 
 typedef struct _callee_saved _callee_saved_t;

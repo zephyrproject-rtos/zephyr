@@ -364,7 +364,7 @@ K_APP_DMEM(default_part) int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 #endif
 
 /**
- * @brief Test to read provileged stack
+ * @brief Test to read privileged stack
  *
  * @ingroup kernel_memprotect_tests
  */

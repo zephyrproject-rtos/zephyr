@@ -275,7 +275,7 @@ static int adxl372_set_bandwidth(const struct device *dev,
 }
 
 /**
- * Select the desired high-pass filter coner.
+ * Select the desired high-pass filter corner.
  * @param dev - The device structure.
  * @param bw - bandwidth.
  *		Accepted values: ADXL372_HPF_CORNER_0

@@ -40,8 +40,6 @@ struct wdt_gecko_data {
 	bool timeout_installed;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static uint32_t wdt_gecko_get_timeout_from_persel(int perSel)
 {
 	return (8 << perSel) + 1;
@@ -264,7 +262,7 @@ static int wdt_gecko_init(const struct device *dev)
 	/* Enable IRQs */
 	config->irq_cfg_func();
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

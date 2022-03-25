@@ -2,7 +2,7 @@ description: Raspberry Pi Pico UART
 
 compatible: "raspberrypi,pico-uart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
     reg:

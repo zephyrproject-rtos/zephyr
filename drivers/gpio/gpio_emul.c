@@ -486,7 +486,7 @@ static int gpio_emul_port_set_masked_raw(const struct device *port,
 	k_mutex_unlock(&drv_data->mu);
 	__ASSERT_NO_MSG(rv == 0);
 
-	/* for output-wiring, so the user can take action based on ouput */
+	/* for output-wiring, so the user can take action based on output */
 	if (prev_values ^ values) {
 		gpio_fire_callbacks(&drv_data->callbacks, port, mask & ~get_input_pins(port));
 	}
@@ -510,7 +510,7 @@ static int gpio_emul_port_set_bits_raw(const struct device *port,
 	__ASSERT_NO_MSG(rv == 0);
 
 	k_mutex_unlock(&drv_data->mu);
-	/* for output-wiring, so the user can take action based on ouput */
+	/* for output-wiring, so the user can take action based on output */
 	gpio_fire_callbacks(&drv_data->callbacks, port, pins & ~get_input_pins(port));
 
 	return 0;
@@ -530,7 +530,7 @@ static int gpio_emul_port_clear_bits_raw(const struct device *port,
 	rv = gpio_emul_input_set_masked(port, pins & get_input_pins(port), drv_data->output_vals);
 	k_mutex_unlock(&drv_data->mu);
 	__ASSERT_NO_MSG(rv == 0);
-	/* for output-wiring, so the user can take action based on ouput */
+	/* for output-wiring, so the user can take action based on output */
 	gpio_fire_callbacks(&drv_data->callbacks, port, pins & ~get_input_pins(port));
 
 	return 0;
@@ -549,7 +549,7 @@ static int gpio_emul_port_toggle_bits(const struct device *port, gpio_port_pins_
 		drv_data->output_vals, false);
 	k_mutex_unlock(&drv_data->mu);
 	__ASSERT_NO_MSG(rv == 0);
-	/* for output-wiring, so the user can take action based on ouput */
+	/* for output-wiring, so the user can take action based on output */
 	gpio_fire_callbacks(&drv_data->callbacks, port, pins);
 
 	return 0;

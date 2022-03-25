@@ -324,13 +324,13 @@ enum sd_max_current {
 
 enum sd_voltage {
 	SD_VOL_NONE = 0U,
-	/*!< indicate current voltage setting is not setting bu suser*/
+	/*!< indicate current voltage setting is not set by user*/
 	SD_VOL_3_3_V = 1U,
 	/*!< card operation voltage around 3.3v */
 	SD_VOL_3_0_V = 2U,
 	/*!< card operation voltage around 3.0v */
 	SD_VOL_1_8_V = 3U,
-	/*!< card operation voltage around 31.8v */
+	/*!< card operation voltage around 1.8v */
 };
 
 #define SDMMC_DEFAULT_BLOCK_SIZE (512U)
@@ -529,7 +529,7 @@ static inline int sdhc_map_r1_status(int status)
 	return sdhc_map_flags(sdhc_r1_flags, status);
 }
 
-/* Converts an eary stage idle mode R1 code into an error code */
+/* Converts an early stage idle mode R1 code into an error code */
 static inline int sdhc_map_r1_idle_status(int status)
 {
 	if (status < 0) {

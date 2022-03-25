@@ -67,6 +67,8 @@ node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_VARGS"
 ; over each child node with status "okay".
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY"
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD_STATUS_OKAY_VARGS"
+; The node's zero-based index in the list of it's parent's child nodes.
+node-macro =/ %s"DT_N" path-id %s"_CHILD_IDX"
 ; The node's status macro; dt-name in this case is something like "okay"
 ; or "disabled".
 node-macro =/ %s"DT_N" path-id %s"_STATUS_" dt-name

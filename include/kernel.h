@@ -2818,7 +2818,7 @@ __syscall int k_condvar_broadcast(struct k_condvar *condvar);
 /**
  * @brief Waits on the condition variable releasing the mutex lock
  *
- * Automically releases the currently owned mutex, blocks the current thread
+ * Atomically releases the currently owned mutex, blocks the current thread
  * waiting on the condition variable specified by @a condvar,
  * and finally acquires the mutex again.
  *
@@ -3392,7 +3392,7 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
  * delay.
  *
  * This is a thin wrapper around k_work_schedule_for_queue(), with all the API
- * characteristcs of that function.
+ * characteristics of that function.
  *
  * @param dwork pointer to the delayable work item.
  *
@@ -3447,7 +3447,7 @@ int k_work_reschedule_for_queue(struct k_work_q *queue,
  * delay.
  *
  * This is a thin wrapper around k_work_reschedule_for_queue(), with all the
- * API characteristcs of that function.
+ * API characteristics of that function.
  *
  * @param dwork pointer to the delayable work item.
  *
@@ -5244,7 +5244,7 @@ void k_heap_free(struct k_heap *h, void *mem);
  * @brief Define a static k_heap in uncached memory
  *
  * This macro defines and initializes a static memory region and
- * k_heap of the requested size in uncache memory.  After kernel
+ * k_heap of the requested size in uncached memory.  After kernel
  * start, &name can be used as if k_heap_init() had been called.
  *
  * Note that this macro enforces a minimum size on the memory region
@@ -5273,7 +5273,7 @@ void k_heap_free(struct k_heap *h, void *mem);
  * This routine provides semantics similar to aligned_alloc(); memory is
  * allocated from the heap with a specified alignment. However, one minor
  * difference is that k_aligned_alloc() accepts any non-zero @p size,
- * wherase aligned_alloc() only accepts a @p size that is an integral
+ * whereas aligned_alloc() only accepts a @p size that is an integral
  * multiple of @p align.
  *
  * Above, aligned_alloc() refers to:

@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2022, Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Xilinx Zynq-7000/ZynqMP MIO/EMIO GPIO controller bank node.
+
+  Each node of this type specified in the devicetree represents
+  a bank of the MIO/EMIO GPIO controller integrated in the Processor
+  System.
+
+compatible: "xlnx,ps-gpio-bank"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+    ngpios:
+      required: true
+
+gpio-cells:
+  - pin
+  - flags

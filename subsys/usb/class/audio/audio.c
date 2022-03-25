@@ -51,7 +51,7 @@ static sys_slist_t usb_audio_data_devlist;
  * @brief Fill the USB Audio descriptor
  *
  * This macro fills USB descriptor for specific type of device
- * (Heahphones or Microphone) depending on dev param.
+ * (Headphones or Microphone) depending on dev param.
  *
  * @note Feature unit has variable length and only 1st field of
  *	 .bmaControls is filled. Later its fixed in usb_fix_descriptor()
@@ -357,7 +357,7 @@ static void audio_cb_usb_status(struct usb_cfg_data *cfg,
 }
 
 /**
- * @brief Helper funciton for checking if particular entity is a part of
+ * @brief Helper function for checking if particular entity is a part of
  *	  the audio device.
  *
  * This function checks if given entity is a part of given audio device.
@@ -406,7 +406,7 @@ static bool is_entity_valid(struct usb_audio_dev_data *audio_dev_data,
 }
 
 /**
- * @brief Helper funciton for getting the audio_dev_data by the entity number.
+ * @brief Helper function for getting the audio_dev_data by the entity number.
  *
  * This function searches through all audio devices the one with given
  * entity number and return the audio_dev_data structure for this entity.
@@ -436,7 +436,7 @@ static struct usb_audio_dev_data *get_audio_dev_data_by_entity(
 }
 
 /**
- * @brief Helper funciton for checking if particular interface is a part of
+ * @brief Helper function for checking if particular interface is a part of
  *	  the audio device.
  *
  * This function checks if given interface is a part of given audio device.
@@ -467,7 +467,7 @@ static bool is_interface_valid(struct usb_audio_dev_data *audio_dev_data,
 }
 
 /**
- * @brief Helper funciton for getting the audio_dev_data by the interface
+ * @brief Helper function for getting the audio_dev_data by the interface
  *	  number.
  *
  * This function searches through all audio devices the one with given
@@ -507,7 +507,7 @@ static struct usb_audio_dev_data *get_audio_dev_data_by_iface(uint8_t interface)
  * @param device	 Device part that has been addressed. Applicable for
  *			 bidirectional device.
  *
- * @return 0 if succesfulf, negative errno otherwise.
+ * @return 0 if successful, negative errno otherwise.
  */
 static int handle_fu_mute_req(struct usb_audio_dev_data *audio_dev_data,
 			      struct usb_setup_packet *setup,
@@ -555,7 +555,7 @@ static int handle_fu_mute_req(struct usb_audio_dev_data *audio_dev_data,
  * @param len            Size of the buffer.
  * @param data           Buffer containing the request result.
  *
- * @return 0 if succesfulf, negative errno otherwise.
+ * @return 0 if successful, negative errno otherwise.
  */
 static int handle_feature_unit_req(struct usb_audio_dev_data *audio_dev_data,
 				   struct usb_setup_packet *pSetup,

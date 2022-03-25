@@ -247,7 +247,7 @@ void flash_init(void)
 {
 	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	if (!flash_dev) {
-		TC_ERROR("flash controller initialization failedi\n");
+		TC_ERROR("flash controller initialization failed\n");
 	}
 	flash_test();
 }

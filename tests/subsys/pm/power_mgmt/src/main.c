@@ -417,7 +417,7 @@ void test_busy(void)
 
 void test_device_state_lock(void)
 {
-	pm_device_state_lock((struct device *)device_a);
+	pm_device_state_lock(device_a);
 	zassert_true(pm_device_state_is_locked(device_a), NULL);
 
 	testing_device_lock = true;
@@ -425,7 +425,7 @@ void test_device_state_lock(void)
 
 	k_sleep(SLEEP_TIMEOUT);
 
-	pm_device_state_unlock((struct device *)device_a);
+	pm_device_state_unlock(device_a);
 
 	testing_device_lock = false;
 }

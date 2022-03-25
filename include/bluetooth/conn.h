@@ -1053,7 +1053,7 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
  *  configuration option has been enabled.
  *
  *  Sets a fixed passkey to be used for pairing. If set, the
- *  pairing_confim() callback will be called for all incoming pairings.
+ *  pairing_confirm() callback will be called for all incoming pairings.
  *
  *  @param passkey A valid passkey (0 - 999999) or BT_PASSKEY_INVALID
  *                 to disable a previously set fixed passkey.

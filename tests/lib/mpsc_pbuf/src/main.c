@@ -1026,7 +1026,7 @@ void start_threads(struct mpsc_pbuf_buffer *buffer)
 }
 
 /* Test creates two threads which pends on the buffer until there is a space
- * available. When engough buffers is released threads are waken up and they
+ * available. When enough buffers is released threads are woken up and they
  * allocate packets.
  */
 void test_pending_alloc(void)

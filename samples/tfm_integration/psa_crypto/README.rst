@@ -216,7 +216,7 @@ the MCUboot bootloader image binary (``bl2.hex``).
 
    .. code-block:: bash
 
-      nrfjprg -f NRF91 --program tfm/bin/bl2.hex --sectorerase
+      nrfjprog -f NRF91 --program tfm/bin/bl2.hex --sectorerase
 
 Finally, flash the concatenated TF-M + Zephyr binary.
 

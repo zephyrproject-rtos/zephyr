@@ -144,7 +144,8 @@ static void set_sm_state(uint8_t sm_state)
 	} else
 #endif
 	if (client.engine_state == ENGINE_UPDATE_SENT &&
-	    sm_state == ENGINE_REGISTRATION_DONE) {
+	    (sm_state == ENGINE_REGISTRATION_DONE ||
+	     sm_state == ENGINE_REGISTRATION_DONE_RX_OFF)) {
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;

@@ -12,9 +12,9 @@
   */
 &gpio_fwd {
 	dfe-gpio-if {
-		gpios = <&gpio0 0 0>,
-			<&gpio0 1 0>,
-			<&gpio0 2 0>,
-			<&gpio0 3 0>;
+		gpios = <&gpio0 4 0>,
+			<&gpio0 5 0>,
+			<&gpio0 6 0>,
+			<&gpio0 7 0>;
 		};
 };

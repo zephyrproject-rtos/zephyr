@@ -71,7 +71,7 @@ config CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
 	depends on MULTITHREADING
 	default y
 	help
-	  Enabling indicates that calibration is perfomed by the clock control driver.
+	  Enabling indicates that calibration is performed by the clock control driver.
 
 config CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON
 	bool "LF clock is always on"

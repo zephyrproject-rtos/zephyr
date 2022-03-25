@@ -92,7 +92,7 @@ psa_status_t att_test(void)
 {
 	psa_status_t err = PSA_SUCCESS;
 
-	/* 64-bytee nonce/challenge, encrypted using the default public key;
+	/* 64-byte nonce/challenge, encrypted using the default public key;
 	 *
 	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF
 	 * 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF

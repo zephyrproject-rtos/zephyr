@@ -9,7 +9,7 @@
 #define DT_DRV_COMPAT xlnx_xuartps
 
 /**
- * @brief Xilnx Zynq Family Serial Driver
+ * @brief Xilinx Zynq Family Serial Driver
  *
  * This is the driver for the Xilinx Zynq family cadence serial device.
  *

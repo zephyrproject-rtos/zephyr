@@ -42,6 +42,7 @@ static uint32_t event_active;
 static uint16_t lazy;
 sys_slist_t ut_rx_q;
 static sys_slist_t lt_tx_q;
+static uint32_t no_of_ctx_buffers_at_test_setup;
 
 #define PDU_DC_LL_HEADER_SIZE (offsetof(struct pdu_data, lldata))
 #define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
@@ -192,6 +193,11 @@ void test_print_conn(struct ll_conn *conn)
 	printf("--------------------->\n");
 }
 
+uint16_t test_ctx_buffers_cnt(void)
+{
+	return no_of_ctx_buffers_at_test_setup;
+}
+
 void test_setup(struct ll_conn *conn)
 {
 	ull_conn_init();
@@ -218,6 +224,8 @@ void test_setup(struct ll_conn *conn)
 	conn->lll.event_counter = 0;
 	event_active = 0;
 	lazy = 0;
+
+	no_of_ctx_buffers_at_test_setup = ctx_buffers_free();
 }
 
 

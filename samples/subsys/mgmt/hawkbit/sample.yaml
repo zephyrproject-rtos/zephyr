@@ -4,7 +4,7 @@ sample:
   description: Hawkbit Firmware Over-the-Air (FOTA)
   name: hawkbit
 tests:
-  samples.net.hawkbit:
+  sample.net.hawkbit:
     harness: net
     tags: net
     depends_on: netif

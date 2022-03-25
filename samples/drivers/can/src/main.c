@@ -44,9 +44,11 @@ static struct k_poll_event change_led_events[1] = {
 					&change_led_msgq, 0)
 };
 
-void tx_irq_callback(int error, void *arg)
+void tx_irq_callback(const struct device *dev, int error, void *arg)
 {
 	char *sender = (char *)arg;
+
+	ARG_UNUSED(dev);
 
 	if (error != 0) {
 		printk("Callback! error-code: %d\nSender: %s\n",
@@ -174,9 +176,12 @@ void state_change_work_handler(struct k_work *work)
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 }
 
-void state_change_callback(enum can_state state, struct can_bus_err_cnt err_cnt, void *user_data)
+void state_change_callback(const struct device *dev, enum can_state state,
+			   struct can_bus_err_cnt err_cnt, void *user_data)
 {
 	struct k_work *work = (struct k_work *)user_data;
+
+	ARG_UNUSED(dev);
 
 	current_state = state;
 	current_err_cnt = err_cnt;

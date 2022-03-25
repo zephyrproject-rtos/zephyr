@@ -141,7 +141,7 @@ as described below:
       .. note::
          On Windows, the Sphinx executable ``sphinx-build.exe`` is placed in
          the ``Scripts`` folder of your Python installation path.
-         Dependending on how you have installed Python, you might need to
+         Depending on how you have installed Python, you might need to
          add this folder to your ``PATH`` environment variable. Follow
          the instructions in `Windows Python Path`_ to add those if needed.
 

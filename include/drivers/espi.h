@@ -199,7 +199,7 @@ enum espi_vwire_signal {
 	ESPI_VWIRE_SIGNAL_SLP_LAN,
 	ESPI_VWIRE_SIGNAL_HOST_C10,
 	ESPI_VWIRE_SIGNAL_DNX_WARN,
-	/* Virtual wires that can only be send from slave to master */
+	/* Virtual wires that can only be sent from slave to master */
 	ESPI_VWIRE_SIGNAL_PME,
 	ESPI_VWIRE_SIGNAL_WAKE,
 	ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
@@ -757,7 +757,7 @@ static inline int z_impl_espi_receive_oob(const struct device *dev,
  * component shared between the eSPI master and eSPI slaves.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param pckt Adddress of the representation of read flash transaction.
+ * @param pckt Address of the representation of read flash transaction.
  *
  * @retval -ENOTSUP eSPI flash logical channel transactions not supported.
  * @retval -EBUSY eSPI flash channel is not ready or disabled by master.

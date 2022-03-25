@@ -1022,7 +1022,7 @@ send_rsp:
 	rsp->scid = sys_cpu_to_le16(BR_CHAN(chan)->tx.cid);
 
 	/*
-	 * TODO: If options other than MTU bacame meaningful then processing
+	 * TODO: If options other than MTU became meaningful then processing
 	 * the options chain need to be modified and taken into account when
 	 * sending back to peer.
 	 */
@@ -1135,7 +1135,7 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
 				      L2CAP_FLAG_SIG_INFO_PENDING)) {
 		/* Cancel RTX work on signal channel.
-		 * Disconnected callback is always called from system worqueue
+		 * Disconnected callback is always called from system workqueue
 		 * so this should always succeed.
 		 */
 		(void)k_work_cancel_delayable(&chan->rtx_work);

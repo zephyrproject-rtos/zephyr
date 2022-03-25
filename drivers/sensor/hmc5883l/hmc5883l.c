@@ -65,7 +65,7 @@ static int hmc5883l_sample_fetch(const struct device *dev,
 	if (i2c_burst_read(drv_data->i2c,
 			   DT_INST_REG_ADDR(0),
 			   HMC5883L_REG_DATA_START, (uint8_t *)buf, 6) < 0) {
-		LOG_ERR("Failed to fetch megnetometer sample.");
+		LOG_ERR("Failed to fetch magnetometer sample.");
 		return -EIO;
 	}
 

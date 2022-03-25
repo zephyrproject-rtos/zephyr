@@ -358,7 +358,7 @@ After a reset the output with change to::
    was enabled.
 
 The ``confirmed`` flag in the secondary slot tells that after the next reset a
-revert upgrade will be perfomed to switch back to the original layout.
+revert upgrade will be performed to switch back to the original layout.
 
 The command used to confirm that an image is OK and no revert should happen
 (no ``hash`` required) is::
@@ -380,7 +380,7 @@ directly upgraded to.
 
     The maximum size of a chunk communicated between the client and server is set
     with :kconfig:option:`CONFIG_IMG_MGMT_UL_CHUNK_SIZE`. The default is 512 but can be
-    decreased for systems with low amount of RAM downto 128. When this value is
+    decreased for systems with low amount of RAM down to 128. When this value is
     changed, the ``mtu`` of the port must be smaller than or equal to this value.
 
 .. tip::
@@ -494,7 +494,7 @@ be set (``y``). Once enabled the following sub-commands can be used::
 
 Using the ``fs`` command, requires :kconfig:option:`CONFIG_FILE_SYSTEM` to be enabled,
 and that some particular filesystem is enabled and properly mounted by the running
-application, eg for littefs this would mean enabling
+application, eg for littlefs this would mean enabling
 :kconfig:option:`CONFIG_FILE_SYSTEM_LITTLEFS`, defining a storage partition :ref:`flash_map_api`
 and mounting the filesystem in the startup (:c:func:`fs_mount`).
 
@@ -532,7 +532,7 @@ Where ``0`` is the return code, and ``9`` is the size of the file.
    enough, so increasing :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` might be
    required for correct behavior.
 
-The size of the stack allocated buffer used to store the blocks, while transffering
+The size of the stack allocated buffer used to store the blocks, while transferring
 a file can be adjusted with :kconfig:option:`CONFIG_FS_MGMT_DL_CHUNK_SIZE`; this allows
 saving RAM resources.
 

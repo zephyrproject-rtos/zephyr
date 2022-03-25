@@ -487,7 +487,7 @@ int arm_gic_init(const struct device *unused)
 
 	return 0;
 }
-SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
 
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)

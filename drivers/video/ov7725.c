@@ -269,7 +269,7 @@ static const struct ov7725_reg ov7725_init_reg_tb[] = {
 	{ OV7725_AWB_CTRL3,      0xaa },
 	{ OV7725_COM8,           0xff },
 
-	/*matrix shapness brightness contrast*/
+	/*matrix sharpness brightness contrast*/
 	{ OV7725_EDGE1,          0x08 },
 	{ OV7725_DNSOFF,         0x01 },
 	{ OV7725_EDGE2,          0x03 },

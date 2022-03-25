@@ -65,6 +65,10 @@ struct mcp2515_config {
 	uint32_t bus_speed;
 	uint32_t osc_freq;
 	uint16_t sample_point;
+
+	/* CAN transceiver */
+	const struct device *phy;
+	uint32_t max_bitrate;
 };
 
 /*

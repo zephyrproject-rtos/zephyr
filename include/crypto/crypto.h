@@ -308,7 +308,7 @@ static inline int cipher_ctr_op(struct cipher_ctx *ctx,
  * @brief Perform Counter with CBC-MAC (CCM) mode crypto operation
  *
  * @param  ctx       Pointer to the crypto context of this op.
- * @param  pkt   Structure holding the input/output, Assosciated
+ * @param  pkt   Structure holding the input/output, Associated
  *			 Data (AD) and auth tag buffer pointers.
  * @param  nonce     Nonce for the operation. Same nonce value should not
  *			 be reused across multiple operations (within a

@@ -65,6 +65,7 @@ config BT_BASS_CLIENT
 	select BT_ISO_SYNC_RECEIVER
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
+	select BT_GATT_AUTO_UPDATE_MTU
 	help
 	  This option enables support for the Broadcast Audio Scan Service
 	  client.

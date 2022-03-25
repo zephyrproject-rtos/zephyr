@@ -48,7 +48,7 @@ void test_globals(void)
 {
 	int  i;
 
-	/* Array should be filled with monotomically incrementing values */
+	/* Array should be filled with monotonically incrementing values */
 	for (i = 0; i < XIP_TEST_ARRAY_SZ; i++) {
 
 		/**TESTPOINT: Check if the array value is correct*/

@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/samd21.dtsi>
+#include "serpente-pinctrl.dtsi"
 
 / {
 	model = "Serpente";
@@ -83,7 +84,8 @@
 	rxpo = <1>;
 	txpo = <0>;
 
-	pinctrl-0 = <&pa9d_sercom2_pad1 &pa8d_sercom2_pad0>;
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
 };
 
 &sercom3 {
@@ -93,10 +95,16 @@
 	dopo = <1>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom3_spi_default>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usb0 {
 	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
 };
 
 &tcc0 {
@@ -104,6 +112,9 @@ zephyr_udc0: &usb0 {
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <4>;
 	#pwm-cells = <1>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {

@@ -12,6 +12,7 @@
 #include <soc.h>
 #include <fsl_pwt.h>
 #include <fsl_clock.h>
+#include <drivers/pinctrl.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pwm_mcux_pwt, CONFIG_PWM_LOG_LEVEL);
@@ -26,6 +27,7 @@ struct mcux_pwt_config {
 	pwt_clock_source_t pwt_clock_source;
 	pwt_clock_prescale_t prescale;
 	void (*irq_config_func)(const struct device *dev);
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct mcux_pwt_data {
@@ -279,6 +281,7 @@ static int mcux_pwt_init(const struct device *dev)
 	const struct mcux_pwt_config *config = dev->config;
 	struct mcux_pwt_data *data = dev->data;
 	pwt_config_t *pwt_config = &data->pwt_config;
+	int err;
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
@@ -291,6 +294,11 @@ static int mcux_pwt_init(const struct device *dev)
 	pwt_config->prescale = config->prescale;
 	pwt_config->enableFirstCounterLoad = true;
 	PWT_Init(config->base, pwt_config);
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	config->irq_config_func(dev);
 
@@ -310,6 +318,8 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 #define PWT_DEVICE(n) \
 	static void mcux_pwt_config_func_##n(const struct device *dev);	\
 									\
+	PINCTRL_DT_INST_DEFINE(n);					\
+									\
 	static const struct mcux_pwt_config mcux_pwt_config_##n = {	\
 		.base = (PWT_Type *)DT_INST_REG_ADDR(n),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
@@ -319,6 +329,7 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 		.prescale =						\
 		TO_PWT_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),	\
 		.irq_config_func = mcux_pwt_config_func_##n,		\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	static struct mcux_pwt_data mcux_pwt_data_##n;			\

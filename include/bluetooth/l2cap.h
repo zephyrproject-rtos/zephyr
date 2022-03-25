@@ -50,7 +50,7 @@ extern "C" {
 /** @brief Maximum Transmission Unit for an unsegmented outgoing L2CAP SDU.
  *
  *  The Maximum Transmission Unit for an outgoing L2CAP SDU when sent without
- *  segmentation, i.e a single L2CAP SDU will fit inside a single L2CAP PDU.
+ *  segmentation, i.e. a single L2CAP SDU will fit inside a single L2CAP PDU.
  *
  *  The MTU for outgoing L2CAP SDUs with segmentation is defined by the
  *  size of the application buffer pool.
@@ -60,7 +60,7 @@ extern "C" {
 /** @brief Maximum Transmission Unit for an unsegmented incoming L2CAP SDU.
  *
  *  The Maximum Transmission Unit for an incoming L2CAP SDU when sent without
- *  segmentation, i.e a single L2CAP SDU will fit inside a single L2CAP PDU.
+ *  segmentation, i.e. a single L2CAP SDU will fit inside a single L2CAP PDU.
  *
  *  The MTU for incoming L2CAP SDUs with segmentation is defined by the
  *  size of the application buffer pool. The application will have to define
@@ -489,7 +489,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  The application should use the BT_L2CAP_BUF_SIZE() helper to correctly
  *  size the buffers for the for the outgoing buffer pool.
  *
- *  When sending L2CAP data over an LE connection the applicatios is sending
+ *  When sending L2CAP data over an LE connection the application is sending
  *  L2CAP SDUs. The application can optionally reserve
  *  @ref BT_L2CAP_SDU_CHAN_SEND_RESERVE bytes in the buffer before sending.
  *  By reserving bytes in the buffer the stack can use this buffer as a segment

@@ -40,9 +40,6 @@ config UART_NATIVE_POSIX
 
 if LOG
 
-config LOG_BACKEND_NATIVE_POSIX
-	default y if !SERIAL
-
 # For native_posix we can log synchronously without any problem
 # Doing so will be nicer for debugging
 choice LOG_MODE

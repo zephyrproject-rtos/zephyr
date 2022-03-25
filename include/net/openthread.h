@@ -118,7 +118,7 @@ int openthread_start(struct openthread_context *ot_context);
  *
  * @details OpenThread API is not thread-safe, therefore before accessing any
  * API function, it's needed to lock the internal mutex, to prevent the
- * OpenThread thread from prempting the API call.
+ * OpenThread thread from preempting the API call.
  *
  * @param ot_context Context to lock.
  */

@@ -434,7 +434,7 @@ struct bt_mesh_model_pub {
 	 *  When @ref bt_mesh_model_pub.retr_update is set to 1,
 	 *  the callback will be called on every retransmission.
 	 *
-	 *  @param mod The Model the Publication Context belogs to.
+	 *  @param mod The Model the Publication Context belongs to.
 	 *
 	 *  @return Zero on success or (negative) error code otherwise.
 	 */

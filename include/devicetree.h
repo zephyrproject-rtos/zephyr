@@ -475,6 +475,30 @@
 #define DT_NODE_FULL_NAME(node_id) DT_CAT(node_id, _FULL_NAME)
 
 /**
+ * @brief Get a devicetree node's index into its parent's list of children
+ *
+ * Indexes are zero-based.
+ *
+ * It is an error to use this macro with the root node.
+ *
+ * Example devicetree fragment:
+ *
+ *     parent {
+ *             c1: child-1 {};
+ *             c2: child-2 {};
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_NODE_CHILD_IDX(DT_NODELABEL(c1)) // 0
+ *     DT_NODE_CHILD_IDX(DT_NODELABEL(c2)) // 1
+ *
+ * @param node_id node identifier
+ * @return the node's index in its parent node's list of children
+ */
+#define DT_NODE_CHILD_IDX(node_id) DT_CAT(node_id, _CHILD_IDX)
+
+/**
  * @brief Do node_id1 and node_id2 refer to the same node?
  *
  * Both "node_id1" and "node_id2" must be node identifiers for nodes
@@ -484,7 +508,7 @@
  * The expansion evaluates to 0 or 1, but may not be a literal integer
  * 0 or 1.
  *
- * @param node_id1 first node identifer
+ * @param node_id1 first node identifier
  * @param node_id2 second node identifier
  * @return an expression that evaluates to 1 if the node identifiers
  *         refer to the same node, and evaluates to 0 otherwise
@@ -738,7 +762,7 @@
  * @param prop lowercase-and-underscores property name
  * @param default_idx_value a fallback index value to expand to
  * @return zero-based index of the property's value in its enum if present,
- *         default_idx_value ohterwise
+ *         default_idx_value otherwise
  */
 #define DT_ENUM_IDX_OR(node_id, prop, default_idx_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
@@ -2400,7 +2424,7 @@
  * @param prop lowercase-and-underscores property name
  * @param default_idx_value a fallback index value to expand to
  * @return zero-based index of the property's value in its enum if present,
- *         default_idx_value ohterwise
+ *         default_idx_value otherwise
  */
 #define DT_INST_ENUM_IDX_OR(inst, prop, default_idx_value) \
 	DT_ENUM_IDX_OR(DT_DRV_INST(inst), prop, default_idx_value)
@@ -3000,5 +3024,7 @@
 #include <devicetree/zephyr.h>
 #include <devicetree/ordinals.h>
 #include <devicetree/pinctrl.h>
+#include <devicetree/can.h>
+#include <devicetree/reset.h>
 
 #endif /* DEVICETREE_H */

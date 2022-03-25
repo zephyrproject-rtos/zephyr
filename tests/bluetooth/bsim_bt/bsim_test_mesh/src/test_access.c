@@ -560,7 +560,7 @@ static void recv_jitter_check(int32_t interval, uint8_t count)
 	uint32_t jitter = 0;
 	int err;
 
-	/* The measurment starts by the first received message. */
+	/* The measurement starts by the first received message. */
 	err = k_sem_take(&publish_sem, K_SECONDS(20));
 	if (err) {
 		FAIL("Recv timed out");

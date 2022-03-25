@@ -5,7 +5,9 @@ description: Atmel SAM family DAC
 
 compatible: "atmel,sam-dac"
 
-include: dac-controller.yaml
+include:
+    - name: dac-controller.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:

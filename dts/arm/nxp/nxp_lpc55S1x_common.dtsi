@@ -57,7 +57,7 @@
 	};
 
 	sram4: memory@20010000 {
-		/* Conencted to USB bus*/
+		/* Connected to USB bus*/
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM4";

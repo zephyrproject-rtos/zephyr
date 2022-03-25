@@ -18,7 +18,7 @@ Brief description of what this software does
 
 ## Mode of integration
 
-Describe whether you'd like to integrate this exernal component in the main tree
+Describe whether you'd like to integrate this external component in the main tree
 or as a module, and why. If the mode of integration is a module, suggest a
 repository name for the module
 

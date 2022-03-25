@@ -259,7 +259,7 @@ static void test_init(void)
 	zassert_not_null(ifaddr,
 			 "Cannot add IPv6 address");
 
-	/* For testing purposes we need to set the adddresses preferred */
+	/* For testing purposes we need to set the addresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv6_addr_add(my_iface, &ll_addr,

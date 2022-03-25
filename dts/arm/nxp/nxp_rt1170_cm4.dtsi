@@ -15,7 +15,7 @@
 	 * SRAM0 & SRAM1 are available only to the M4 core. EDMA_LPSR interrupts are connected
 	 * to the M4 core alone, hence this EDMA controller has been designated M4 only.
 	 * GPIO's 9, 11 are available to both M4 and M7 cores, however the GPIO interrupts are
-	 * only accesssible to the M4.
+	 * only accessible to the M4.
 	 *
 	 * Refer to Chapter 3 of the Reference Manual
 	 */

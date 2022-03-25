@@ -7,7 +7,7 @@
 void rndis_clean(void);
 
 /*
- * RNDIS definitons
+ * RNDIS definitions
  */
 
 #define RNDIS_GEN_MAX_TOTAL_SIZE	1558

@@ -724,7 +724,7 @@ int z_gdb_main_loop(struct gdb_ctx *ctx)
 
 		/**
 		 * Write the value of the CPU registers
-		 * Fromat: G XX...
+		 * Format: G XX...
 		 */
 		case 'G':
 			pkt_len = arch_gdb_reg_writeall(ctx, ptr, pkt_len - 1);

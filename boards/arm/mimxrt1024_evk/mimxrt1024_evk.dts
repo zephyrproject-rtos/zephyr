@@ -97,6 +97,10 @@
 &flexcan1 {
 	status = "okay";
 	bus-speed = <125000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };
 
 &wdog0 {
@@ -132,5 +136,9 @@
  * to use systick, change this node from "gpt_hw_timer" to "systick"
  */
 &gpt_hw_timer {
+	status = "okay";
+};
+
+zephyr_udc0: &usb1 {
 	status = "okay";
 };

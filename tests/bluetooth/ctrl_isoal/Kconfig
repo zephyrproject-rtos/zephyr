@@ -1,0 +1,12 @@
+# Bluetooth Controller configuration options for ISO-AL Unit Tests
+
+# Copyright (c) 2022 Oticon A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_CTLR_ISOAL_SINKS
+		int "Number of Isochronous Adaptation Layer sinks (for unittest)"
+
+config BT_CTLR_ISOAL_SOURCES
+		int "Number of Isochronous Adaptation Layer sinks (for unittest)"
+
+source "Kconfig.zephyr"

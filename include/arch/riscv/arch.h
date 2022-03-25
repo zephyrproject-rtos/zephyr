@@ -188,23 +188,11 @@
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_64BIT
-#define RV_OP_LOADREG ld
-#define RV_OP_STOREREG sd
 #define RV_REGSIZE 8
 #define RV_REGSHIFT 3
 #else
-#define RV_OP_LOADREG lw
-#define RV_OP_STOREREG sw
 #define RV_REGSIZE 4
 #define RV_REGSHIFT 2
-#endif
-
-#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
-#define RV_OP_LOADFPREG fld
-#define RV_OP_STOREFPREG fsd
-#else
-#define RV_OP_LOADFPREG flw
-#define RV_OP_STOREFPREG fsw
 #endif
 
 /* Common mstatus bits. All supported cores today have the same
@@ -343,7 +331,7 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	 * to just testing that key is nonzero (because it should only
 	 * have the single bit set).  But there is a mask applied to
 	 * the argument in arch_irq_unlock() that has me worried
-	 * that something elseswhere might try to set a bit?  Do it
+	 * that something elsewhere might try to set a bit?  Do it
 	 * the safe way for now.
 	 */
 	return (key & MSTATUS_IEN) == MSTATUS_IEN;

@@ -52,10 +52,10 @@ endif()
 # Verify Zephyr SDK Toolchain.
 # There are three scenarios where Zephyr SDK should be looked up:
 # 1) Zephyr specified as toolchain (ZEPHYR_SDK_INSTALL_DIR still used if defined)
-# 2) No toolchain specified == Default to Zephyr toolchain (Linux only)
+# 2) No toolchain specified == Default to Zephyr toolchain
 # Until we completely deprecate it
 if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
-   ((NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT) AND (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)) OR
+   (NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT) OR
    (DEFINED ZEPHYR_SDK_INSTALL_DIR))
 
   # No toolchain was specified, so inform user that we will be searching.
@@ -100,7 +100,7 @@ if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
     set(error_msg "ZEPHYR_TOOLCHAIN_VARIANT not specified and no Zephyr SDK is installed.\n")
     string(APPEND error_msg "Please set ZEPHYR_TOOLCHAIN_VARIANT to the toolchain to use or install the Zephyr SDK.")
   else()
-    #  Note: When CMake mimimun version becomes >= 3.17, change this loop into:
+    #  Note: When CMake minimum version becomes >= 3.17, change this loop into:
     #    foreach(version config IN ZIP_LISTS Zephyr-sdk_CONSIDERED_VERSIONS Zephyr-sdk_CONSIDERED_CONFIGS)
     set(error_msg "The Zephyr SDK version you are using is not supported, please update your SDK.\n")
     set(missing_version "You need SDK version ${TOOLCHAIN_ZEPHYR_MINIMUM_REQUIRED_VERSION} or newer.")

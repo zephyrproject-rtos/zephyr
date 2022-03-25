@@ -204,7 +204,7 @@ int lwm2m_security_index_to_inst_id(int index)
 		return -EINVAL;
 	}
 
-	/* not instanstiated */
+	/* not instantiated */
 	if (!inst[index].obj) {
 		return -ENOENT;
 	}

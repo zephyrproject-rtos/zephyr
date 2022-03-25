@@ -63,7 +63,7 @@ enum dma_addr_adj {
 /* channel attributes */
 enum dma_channel_filter {
 	DMA_CHANNEL_NORMAL, /* normal DMA channel */
-	DMA_CHANNEL_PERIODIC, /* can be triggerred by periodic sources */
+	DMA_CHANNEL_PERIODIC, /* can be triggered by periodic sources */
 };
 
 /**

@@ -157,7 +157,7 @@ static void i2s_clear_pending_irq(uintptr_t reg)
  *
  * @param dst memory destination where fifo data will be copied to
  * @param size amount of data to be copied
- * @param sample_width width of signle sample in bits
+ * @param sample_width width of single sample in bits
  * @param channels number of received channels
  */
 static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
@@ -169,7 +169,7 @@ static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
 	if (channels == 2) {
 		for (size_t i = 0; i < size / chan_size; i += 4) {
 			/* using sys_read function, as fifo is not a csr,
-			 * but a contignous memory space
+			 * but a contiguous memory space
 			 */
 			*(dst + i) = sys_read32(I2S_RX_FIFO_ADDR);
 		}
@@ -210,7 +210,7 @@ static void i2s_copy_from_fifo(uint8_t *dst, size_t size, int sample_width,
  *
  * @param src memory from which data will be copied to fifo
  * @param size amount of data to be copied in bytes
- * @param sample_width width of signle sample in bits
+ * @param sample_width width of single sample in bits
  * @param channels number of received channels
  */
 static void i2s_copy_to_fifo(uint8_t *src, size_t size, int sample_width,
@@ -369,7 +369,7 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 		(cfg->fifo_depth * (i2s_cfg->word_size / 8)) / channel_div;
 
 	if (i2s_cfg->block_size < req_buf_s) {
-		LOG_ERR("not enough space to allocate signle buffer");
+		LOG_ERR("not enough space to allocate single buffer");
 		LOG_ERR("fifo requires at least %i bytes", req_buf_s);
 		return -EINVAL;
 	} else if (i2s_cfg->block_size != req_buf_s) {

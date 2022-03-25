@@ -33,7 +33,7 @@ type with the following macro: ``SMF_CTX(o)``
 For example instead of doing this ``(struct smf_ctx *)&user_obj``, you could
 use ``SMF_CTX(&user_obj)``.
 
-By default, a state can have no anscestor states, resulting in a flat state
+By default, a state can have no ancestor states, resulting in a flat state
 machine. But to enable the creation of a hierarchical state machine, the
 :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` option must be enabled.
 
@@ -208,7 +208,7 @@ S0 and S1 share a parent state and S0 is the initial state.
 
 
 .. graphviz::
-   :caption: Hierarchial state machine diagram
+   :caption: Hierarchical state machine diagram
 
    digraph smf_hierarchical {
       node [style = rounded];
@@ -315,4 +315,4 @@ When designing hierarchical state machines, the following should be considered:
    example, the s1_exit function is called before the parent_exit function
    is called.
  - The parent_run function only executes if the child_run function returns
-   whithout transitioning to another state, ie. calling smf_set_state.
+   without transitioning to another state, ie. calling smf_set_state.

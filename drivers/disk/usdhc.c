@@ -762,7 +762,7 @@ static int usdhc_adma2_descriptor_cfg(
 		min_entries = ((data_size /
 			USDHC_ADMA2_DESCRIPTOR_MAX_LENGTH_PER_ENTRY) + 1U);
 	}
-	/* calcucate the start entry for multiple descriptor mode,
+	/* calculate the start entry for multiple descriptor mode,
 	 * ADMA engine is not stop, so update the descriptor
 	 * data address and data size is enough
 	 */
@@ -1537,7 +1537,7 @@ int usdhc_adjust_tuning_timing(USDHC_Type *base, uint32_t delay)
 
 	/* load the delay setting */
 	base->CLK_TUNE_CTRL_STATUS = clk_tune_ctrl;
-	/* check delat setting error */
+	/* check delay setting error */
 	if (base->CLK_TUNE_CTRL_STATUS &
 		(USDHC_CLK_TUNE_CTRL_STATUS_PRE_ERR_MASK |
 		USDHC_CLK_TUNE_CTRL_STATUS_NXT_ERR_MASK))
@@ -1628,7 +1628,7 @@ static int usdhc_vol_switch(struct usdhc_priv *priv)
 
 	/*enable force clock on*/
 	usdhc_force_clk_on(base, true);
-	/* dealy 1ms,not exactly correct when use while */
+	/* delay 1ms,not exactly correct when use while */
 	usdhc_millsec_delay(20000U);
 	/*disable force clock on*/
 	usdhc_force_clk_on(base, false);
@@ -1834,7 +1834,7 @@ uint32_t usdhc_set_sd_clk(USDHC_Type *base, uint32_t src_clk_hz, uint32_t sd_clk
 				}
 			}
 		} else {
-			/* in this situation , divsior and SDCLKFS
+			/* in this situation , divisor and SDCLKFS
 			 * can generate same clock
 			 * use SDCLKFS
 			 */
@@ -1851,7 +1851,7 @@ uint32_t usdhc_set_sd_clk(USDHC_Type *base, uint32_t src_clk_hz, uint32_t sd_clk
 	} else {
 		/* in this condition , src_clk_hz = busClock_Hz, */
 		/* in DDR mode , set SDCLKFS to 0, divisor = 0, actually the
-		 * totoal divider = 2U
+		 * total divider = 2U
 		 */
 		divisor = 0U;
 		prescaler = 0U;
@@ -2676,7 +2676,7 @@ APP_SEND_OP_COND_AGAIN:
 	}
 
 	if (ret) {
-		LOG_ERR("USDHC bus device initalization failed!");
+		LOG_ERR("USDHC bus device initialization failed!");
 	}
 
 	return ret;

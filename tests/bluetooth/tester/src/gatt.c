@@ -1791,6 +1791,9 @@ static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 	subscription->value = value;
 	subscription->notify = notify_func;
 
+	/* require security level from time of subscription */
+	subscription->min_security = bt_conn_get_security(conn);
+
 	return bt_gatt_discover(conn, &discover_params);
 }
 

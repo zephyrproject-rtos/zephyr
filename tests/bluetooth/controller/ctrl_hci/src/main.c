@@ -136,7 +136,7 @@ void test_hci_feature_exchange_wrong_handle(void)
 		ctx = llcp_create_local_procedure(PROC_FEATURE_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM + 1,
+	zassert_equal(ctx_counter, test_ctx_buffers_cnt() + 1,
 				  "Error in setup of test\n");
 
 	err = ll_feature_req_send(conn_handle);
@@ -203,7 +203,7 @@ void test_hci_version_ind_wrong_handle(void)
 		ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
 		ctx_counter++;
 	} while (ctx != NULL);
-	zassert_equal(ctx_counter, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM + 1,
+	zassert_equal(ctx_counter, test_ctx_buffers_cnt() + 1,
 				  "Error in setup of test\n");
 
 	err = ll_version_ind_send(conn_handle);
@@ -390,7 +390,7 @@ void test_hci_conn_update(void)
 		zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD, "Errorcode %d", err);
 	}
 
-	/* Connection Update or Connecton Parameter Req. */
+	/* Connection Update or Connection Parameter Req. */
 	conn_from_pool->llcp.fex.features_used |= BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
 	err = ll_conn_update(conn_handle, cmd, status, interval_min, interval_max, latency,
 			     timeout);
@@ -401,14 +401,14 @@ void test_hci_conn_update(void)
 			     timeout);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
-	/* Connecton Parameter Req. Reply */
+	/* Connection Parameter Req. Reply */
 	cmd = 2U;
 	conn_from_pool->llcp.fex.features_used |= BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
 	err = ll_conn_update(conn_handle, cmd, status, interval_min, interval_max, latency,
 			     timeout);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
-	/* Connecton Parameter Req. Neg. Reply */
+	/* Connection Parameter Req. Neg. Reply */
 	status = 0x01;
 	conn_from_pool->llcp.fex.features_used |= BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
 	err = ll_conn_update(conn_handle, cmd, status, 0U, 0U, 0U, 0U);

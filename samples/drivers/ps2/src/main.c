@@ -16,9 +16,9 @@ LOG_MODULE_REGISTER();
 
 #define TASK_STACK_SIZE 1024
 #define PRIORITY 7
-/*Minimum safe time invertal between regular PS/2 calls */
+/*Minimum safe time interval between regular PS/2 calls */
 #define MS_BETWEEN_REGULAR_CALLS 8
-/*Minimum safe time invertal between BAT/Reset PS/2 calls */
+/*Minimum safe time interval between BAT/Reset PS/2 calls */
 #define MS_BETWEEN_RESET_CALLS 500
 
 static void to_port_60_thread(void *dummy1, void *dummy2, void *dummy3);
@@ -173,7 +173,7 @@ void main(void)
 	k_msleep(MS_BETWEEN_RESET_CALLS);
 
 	/* The ps2 blocks are generic, therefore, it is allowed to swap
-	 * keybaord and mouse as deired
+	 * keyboard and mouse as desired
 	 */
 #if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_ps2), okay)
 	ps2_0_dev = device_get_binding(DT_LABEL(DT_INST(0, microchip_xec_ps2)));

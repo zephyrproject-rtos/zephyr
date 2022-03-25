@@ -759,6 +759,8 @@
 			status = "disabled";
 			label = "ADC_3";
 			#io-channel-cells = <1>;
+			has-temp-channel;
+			has-vref-channel;
 		};
 
 		dac1: dac@40007400 {

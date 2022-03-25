@@ -11,6 +11,28 @@ properties:
     reg:
       required: true
 
+    swj-cfg:
+        type: string
+        required: false
+        default: "full" # reset state
+        enum:
+          - "full"
+          - "no-njtrst"
+          - "jtag-disable"
+          - "disable"
+        description: |
+          Configures number of pins assigned to the SWJ debug port.
+
+          * full         - Full SWJ (JTAG-DP + SW-DP).
+          * no-njtrst    - Full SWJ (JTAG-DP + SW-DP) but without NJTRST.
+                           Releases: PB4.
+          * jtag-disable - JTAG-DP Disabled and SW-DP Enabled.
+                           Releases: PA15 PB3 PB4.
+          * disable      - JTAG-DP Disabled and SW-DP Disabled.
+                           Releases: PA13 PA14 PA15 PB3 PB4.
+
+          If absent, then Full SWJ (JTAG-DP + SW-DP) is used (reset state).
+
 child-binding:
     description: |
         This binding gives a base representation of the STM32F1 pins

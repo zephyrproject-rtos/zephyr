@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020 Linumiz
  *
- * SPDX-License-Identiier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef __HAWKBIT_DEVICE_H__

@@ -374,7 +374,7 @@ static int eswifi_off_recv(struct net_context *context,
 
 	err = k_sem_take(&socket->read_sem, K_MSEC(timeout));
 
-	/* Unregister cakkback */
+	/* Unregister callback */
 	eswifi_lock(eswifi);
 	socket->recv_cb = NULL;
 	eswifi_unlock(eswifi);

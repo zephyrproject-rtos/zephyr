@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Emulator for the Boche BMI160 accelerometer / gyro. This supports basic
+ * Emulator for the Bosch BMI160 accelerometer / gyro. This supports basic
  * init and reading of canned samples. It supports both I2C and SPI buses.
  */
 
@@ -58,7 +58,7 @@ static void sample_read(struct bmi160_emul_data *data, union bmi160_sample *buf)
 {
 	/*
 	 * Use hard-coded scales to get values just above 0, 1, 2 and
-	 * 3, 4, 5. Values are stored in little endianess.
+	 * 3, 4, 5. Values are stored in little endianness.
 	 * gyr[x] = 0x0b01  // 3 * 1000000 / BMI160_GYR_SCALE(2000) + 1
 	 * gyr[y] = 0x0eac  // 4 * 1000000 / BMI160_GYR_SCALE(2000) + 1
 	 * gyr[z] = 0x1257  // 5 * 1000000 / BMI160_GYR_SCALE(2000) + 1

@@ -593,7 +593,7 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 
 static void IRAM_ATTR i2c_esp32_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	i2c_intr_event_t evt_type = I2C_INTR_EVENT_ERR;
 

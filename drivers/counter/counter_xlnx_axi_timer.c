@@ -292,7 +292,7 @@ static int xlnx_axi_timer_init(const struct device *dev)
 	const struct xlnx_axi_timer_config *config = dev->config;
 
 	LOG_DBG("max top value = 0x%08x", config->info.max_top_value);
-	LOG_DBG("freqency = %d", config->info.freq);
+	LOG_DBG("frequency = %d", config->info.freq);
 	LOG_DBG("channels = %d", config->info.channels);
 
 	xlnx_axi_timer_write32(dev, config->info.max_top_value, TLR0_OFFSET);

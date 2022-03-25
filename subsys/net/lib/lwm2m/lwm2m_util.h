@@ -22,4 +22,15 @@ int lwm2m_atof(const char *input, double *out);
 /* convert float to string */
 int lwm2m_ftoa(double *input, char *out, size_t outlen, int8_t dec_limit);
 
+uint16_t lwm2m_atou16(const uint8_t *buf, uint16_t buflen, uint16_t *len);
+
+/* Forms a string from the path given as a structure
+ * Level zero seems to mean NONE, not the root path.
+ *
+ * returns used buffer space with '\0'
+ */
+int lwm2m_path_to_string(char *buf, size_t buf_size, struct lwm2m_obj_path *input, int level_max);
+
+int lwm2m_string_to_path(const char *pathstr, struct lwm2m_obj_path *path, char delim);
+
 #endif /* LWM2M_UTIL_H_ */

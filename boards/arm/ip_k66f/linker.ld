@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 DENX Software Engineeering GmbH
+ * Copyright (c) 2021 DENX Software Engineering GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */

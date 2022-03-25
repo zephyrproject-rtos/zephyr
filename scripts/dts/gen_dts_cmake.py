@@ -28,7 +28,7 @@ Be careful:
 The build system includes this generated file early on, so
 devicetree values can be used at CMake processing time.
 
-Accss is not done directly, but with Zephyr CMake extension APIs,
+Access is not done directly, but with Zephyr CMake extension APIs,
 like this:
 
   # sets 'compat' to "vnd,soc" in CMake
@@ -147,6 +147,9 @@ def main():
         cmake_path = ''
         for path in compatible2paths[comp]:
             cmake_path = f'{cmake_path}{path};'
+
+        # Remove the last ';'
+        cmake_path = cmake_path[:-1]
 
         cmake_comp = f'DT_COMP|{comp}'
         cmake_props.append(f'"{cmake_comp}" "{cmake_path}"')

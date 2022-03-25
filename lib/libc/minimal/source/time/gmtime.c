@@ -13,7 +13,7 @@
 #include <time.h>
 
 /* A signed type with the representation of time_t without its
- * impliciations.
+ * implications.
  */
 typedef time_t bigint_type;
 

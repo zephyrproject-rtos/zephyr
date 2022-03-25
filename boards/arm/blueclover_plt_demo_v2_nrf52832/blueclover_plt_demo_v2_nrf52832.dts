@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "blueclover_plt_demo_v2_nrf52832-pinctrl.dtsi"
 
 / {
 	model = "Blue Clover PLT Demo Board V2";
@@ -54,16 +55,18 @@
 	status = "okay";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
-	tx-pin = <6>;
-	rx-pin = <8>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <12>;
-	scl-pin = <14>;
 
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 	sht3xd@44 {
 		compatible = "sensirion,sht3xd";
 		reg = <0x44>;
@@ -80,17 +83,18 @@
 &pwm0 {
 	/* buzzer */
 	status = "okay";
-	ch0-pin = <22>;
-	ch0-inverted;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <2>;
-	mosi-pin = <3>;
-	miso-pin = <27>; /* unused */
 
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 	apa102@0 {
 		compatible = "apa,apa102";
 		reg = <0>;
@@ -100,10 +104,6 @@
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

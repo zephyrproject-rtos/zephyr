@@ -231,7 +231,7 @@ void app_a_entry(void *p1, void *p2, void *p3)
 	 * This child thread automatically inherits the memory domain of
 	 * this thread that created it; it will be a member of app_a_domain.
 	 *
-	 * Initiailize this thread with K_FOREVER timeout so we can
+	 * Initialize this thread with K_FOREVER timeout so we can
 	 * modify its permissions and then start it.
 	 */
 	k_thread_create(&writeback_thread, writeback_stack,

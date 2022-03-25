@@ -66,7 +66,7 @@ LOG_MODULE_REGISTER(lp5562);
 /*
  * The wait command has six bits for the number of steps (max 63) with up to
  * 15.6ms per step if the prescaler is set to 1. We round the step length
- * however to 16ms for easier handliung, so the maximum blinking period is
+ * however to 16ms for easier handling, so the maximum blinking period is
  * therefore (16 * 63) = 1008ms. We round it down to 1000ms to be on the safe
  * side.
  */

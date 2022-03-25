@@ -121,7 +121,7 @@ config TRACING_BUFFER_SIZE
 	help
 	  Size of tracing buffer. If TRACING_ASYNC is enabled, tracing buffer
 	  is used as a ring buffer to buffer data packet and string packet. If
-	  TRACING_SYNC is enabled, the buffer is used to hold the formated data.
+	  TRACING_SYNC is enabled, the buffer is used to hold the formatted data.
 
 config TRACING_PACKET_MAX_SIZE
 	int "Max size of one tracing packet"

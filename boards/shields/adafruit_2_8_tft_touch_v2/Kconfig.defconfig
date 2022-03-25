@@ -11,9 +11,6 @@ if DISPLAY
 config SPI
 	default y
 
-config ILI9340
-	default y
-
 if KSCAN
 
 config I2C

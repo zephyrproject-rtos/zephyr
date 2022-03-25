@@ -46,8 +46,6 @@ struct sam_xdmac_dev_data {
 	struct sam_xdmac_channel_cfg dma_channels[DMA_CHANNELS_NO];
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static void sam_xdmac_isr(const struct device *dev)
 {
 	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
@@ -353,7 +351,7 @@ static int sam_xdmac_initialize(const struct device *dev)
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

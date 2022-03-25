@@ -5,6 +5,7 @@
  */
 
 #include <drivers/can.h>
+#include <drivers/can/transceiver.h>
 #include <drivers/pinctrl.h>
 #include <kernel.h>
 #include <soc.h>
@@ -35,15 +36,6 @@ static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 	*rate = rate_tmp / CONFIG_CAN_STM32_CLOCK_DIVISOR;
 
 	return 0;
-}
-
-static int can_stm32fd_get_max_filters(const struct device *dev, enum can_ide id_type)
-{
-	if (id_type == CAN_STANDARD_IDENTIFIER) {
-		return NUM_STD_FILTER_DATA;
-	} else {
-		return NUM_EXT_FILTER_DATA;
-	}
 }
 
 static void can_stm32fd_clock_enable(void)
@@ -153,9 +145,17 @@ static int can_stm32fd_set_timing(const struct device *dev,
 	return can_mcan_set_timing(mcan_cfg, timing, timing_data);
 }
 
-static void can_stm32fd_line_0_isr(void *arg)
+int can_stm32fd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
-	struct device *dev = (struct device *)arg;
+	const struct can_stm32fd_config *cfg = dev->config;
+
+	*max_bitrate = cfg->mcan_cfg.max_bitrate;
+
+	return 0;
+}
+
+static void can_stm32fd_line_0_isr(const struct device *dev)
+{
 	const struct can_stm32fd_config *cfg = dev->config;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
 	struct can_stm32fd_data *data = dev->data;
@@ -165,12 +165,11 @@ static void can_stm32fd_line_0_isr(void *arg)
 	can_mcan_line_0_isr(mcan_cfg, msg_ram, mcan_data);
 }
 
-static void can_stm32fd_line_1_isr(void *arg)
+static void can_stm32fd_line_1_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	const struct can_stm32fd_config *cfg = dev->config;
-	struct can_stm32fd_data *data = dev->data;
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
+	struct can_stm32fd_data *data = dev->data;
 	struct can_mcan_data *mcan_data = &data->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
 
@@ -188,7 +187,8 @@ static const struct can_driver_api can_api_funcs = {
 	.recover = can_mcan_recover,
 #endif
 	.get_core_clock = can_stm32fd_get_core_clock,
-	.get_max_filters = can_stm32fd_get_max_filters,
+	.get_max_bitrate = can_stm32fd_get_max_bitrate,
+	.get_max_filters = can_mcan_get_max_filters,
 	.set_state_change_callback = can_stm32fd_set_state_change_callback,
 	.timing_min = {
 		.sjw = 0x7f,
@@ -263,7 +263,10 @@ static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 				DT_INST_PROP_OR(inst, phase_seg1_data, 0),     \
 		.ts2_data = DT_INST_PROP_OR(inst, phase_seg2_data, 0),         \
 		.tx_delay_comp_offset =                                        \
-			DT_INST_PROP(inst, tx_delay_comp_offset)               \
+			DT_INST_PROP(inst, tx_delay_comp_offset),              \
+		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)),     \
+		.max_bitrate =                                                 \
+			DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 5000000),    \
 	},                                                                     \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                          \
 };
@@ -287,6 +290,9 @@ static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {              \
 		.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) +               \
 			    DT_INST_PROP_OR(inst, phase_seg1, 0),              \
 		.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                   \
+		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)),     \
+		.max_bitrate =                                                 \
+			DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000),    \
 	},                                                                     \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                          \
 };

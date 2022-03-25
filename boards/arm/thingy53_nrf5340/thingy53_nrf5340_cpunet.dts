@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include "thingy53_nrf5340_cpunet-pinctrl.dtsi"
 
 / {
 	model = "Nordic Thingy53 NRF5340 Network";
@@ -79,22 +80,13 @@
 	status = "okay";
 };
 
-&i2c0 {
-	status = "disabled";
-};
-
-&spi0 {
-	status = "disabled";
-};
-
 &uart0 {
 	compatible = "nordic,nrf-uarte";
 	status = "disabled";
 	current-speed = <115200>;
-	tx-pin = <12>;
-	rx-pin = <11>;
-	rts-pin = <10>;
-	cts-pin = <9>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &timer0 {

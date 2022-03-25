@@ -100,7 +100,7 @@ static int gpio_litex_configure(const struct device *dev,
 		/* Pin cannot be configured as input and output */
 		return -ENOTSUP;
 	} else if (!(flags & (GPIO_INPUT | GPIO_OUTPUT))) {
-		/* Pin has to be configuread as input or output */
+		/* Pin has to be configured as input or output */
 		return -ENOTSUP;
 	}
 

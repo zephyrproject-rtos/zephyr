@@ -495,7 +495,7 @@ endfunction()
 # Tasks:
 # - Apply missing settings, such as initial address for first section in a region.
 # - Symbol names on sections
-# - Ordered list of all sections for easier retrival on printing and configuration.
+# - Ordered list of all sections for easier retrieval on printing and configuration.
 function(process_region_common)
   cmake_parse_arguments(REGION_COMMON "" "OBJECT" "" ${ARGN})
 

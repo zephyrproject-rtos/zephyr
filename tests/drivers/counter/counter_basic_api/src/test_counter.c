@@ -215,7 +215,7 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 		counter_period_us = COUNTER_PERIOD_US_VAL;
 	} else {
 		/* if more counter drivers exist other than RTC,
-		   the test vaule set to 20000 by default */
+		   the test value set to 20000 by default */
 		counter_period_us = 20000;
 	}
 	top_cfg.ticks = counter_us_to_ticks(dev, counter_period_us);
@@ -271,7 +271,7 @@ void test_set_top_value_without_alarm_instance(const char *dev_name)
 		counter_period_us = COUNTER_PERIOD_US_VAL;
 	} else {
 		/* if more counter drivers exist other than RTC,
-		   the test vaule set to 20000 by default */
+		   the test value set to 20000 by default */
 		counter_period_us = 20000;
 	}
 	dev = device_get_binding(dev_name);
@@ -370,7 +370,7 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 		counter_period_us = COUNTER_PERIOD_US_VAL;
 	} else {
 		/* if more counter drivers exist other than RTC,
-		   the test vaule set to 20000 by default */
+		   the test value set to 20000 by default */
 		counter_period_us = 20000;
 	}
 	dev = device_get_binding(dev_name);
@@ -517,7 +517,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 		counter_period_us = COUNTER_PERIOD_US_VAL;
 	} else {
 		/* if more counter drivers exist other than RTC,
-		   the test vaule set to 20000 by default */
+		   the test value set to 20000 by default */
 		counter_period_us = 20000;
 	}
 	dev = device_get_binding(dev_name);
@@ -683,10 +683,10 @@ void test_late_alarm_instance(const char *dev_name)
 
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	k_busy_wait(2*tick_us);
 
@@ -735,10 +735,10 @@ void test_late_alarm_error_instance(const char *dev_name)
 
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	k_busy_wait(2*tick_us);
 
@@ -801,7 +801,7 @@ static void test_short_relative_alarm_instance(const char *dev_name)
 	};
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 	alarm_cfg.ticks = 1;
 
@@ -903,7 +903,7 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 	};
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	zassert_equal(0, err, "%s: Unexpected error", dev_name);
 
 
 	for (int i = 0; i < us/2; ++i) {

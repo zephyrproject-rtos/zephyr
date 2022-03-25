@@ -1474,7 +1474,7 @@ static void test_setup(void)
 			net_sprint_ipv6_addr(&ll_addr));
 		zassert_not_null(ifaddr, "ll_addr");
 	} else {
-		/* we need to set the adddresses preferred */
+		/* we need to set the addresses preferred */
 		ifaddr->addr_state = NET_ADDR_PREFERRED;
 	}
 

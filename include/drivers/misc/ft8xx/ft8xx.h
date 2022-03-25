@@ -51,7 +51,7 @@ typedef void (*ft8xx_int_callback)(void);
 /**
  * @brief Calibrate touchscreen
  *
- * Run touchscreen calibration procedure that collectw three touches from touch
+ * Run touchscreen calibration procedure that collects three touches from touch
  * screen. Computed calibration result is automatically applied to the
  * touchscreen processing and returned with @p data.
  *

@@ -142,7 +142,7 @@ int sys_bitarray_test_and_clear_bit(sys_bitarray_t *bitarray, size_t bit, int *p
  * Allocate bits in a bit array
  *
  * This finds a number of bits (@p num_bits) in a contiguous of
- * previosly unallocated region. If such a region exists, the bits are
+ * previously unallocated region. If such a region exists, the bits are
  * marked as allocated and the offset to the start of this region is
  * returned via @p offset.
  *

@@ -50,7 +50,7 @@ static void setup(void)
  * +-----+                     +-------+            +-----+
  *    |                            |                   |
  *    | Start initiation           |                   |
- *    | CTE Reqest Proc.           |                   |
+ *    | CTE Request Proc.          |                   |
  *    |--------------------------->|                   |
  *    |                            |                   |
  *    |                            | LL_LE_CTE_REQ     |
@@ -110,7 +110,7 @@ void test_cte_req_central_local(void)
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -119,7 +119,7 @@ void test_cte_req_central_local(void)
  * +-----+                     +-------+            +-----+
  *    |                            |                   |
  *    | Start initiator            |                   |
- *    | CTE Reqest Proc.           |                   |
+ *    | CTE Request Proc.          |                   |
  *    |--------------------------->|                   |
  *    |                            |                   |
  *    |                            | LL_LE_CTE_REQ     |
@@ -180,7 +180,7 @@ void test_cte_req_peripheral_local(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -189,7 +189,7 @@ void test_cte_req_peripheral_local(void)
  * +-----+                     +-------+            +-----+
  *    |                            |                   |
  *    | Start responder            |                   |
- *    | CTE Reqest Proc.           |                   |
+ *    | CTE Request Proc.          |                   |
  *    |--------------------------->|                   |
  *    |                            |                   |
  *    |                            | LL_LE_CTE_REQ     |
@@ -249,7 +249,7 @@ void test_cte_req_central_remote(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -258,7 +258,7 @@ void test_cte_req_central_remote(void)
  * +-----+                     +-------+            +-----+
  *    |                            |                   |
  *    | Start responder            |                   |
- *    | CTE Reqest Proc   .        |                   |
+ *    | CTE Request Proc.          |                   |
  *    |--------------------------->|                   |
  *    |                            |                   |
  *    |                            | LL_LE_CTE_REQ     |
@@ -318,7 +318,7 @@ void test_cte_req_peripheral_remote(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -329,7 +329,7 @@ void test_cte_req_peripheral_remote(void)
  * +-----+                     +-------+                         +-----+
  *    |                            |                                |
  *    | Start initiation           |                                |
- *    | CTE Reqest Proc.           |                                |
+ *    | CTE Request Proc.          |                                |
  *    |--------------------------->|                                |
  *    |                            |                                |
  *    |                            | LL_LE_CTE_REQ                  |
@@ -394,7 +394,7 @@ void test_cte_req_rejected_inv_ll_param_central_local(void)
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -403,7 +403,7 @@ void test_cte_req_rejected_inv_ll_param_central_local(void)
  * +-----+                     +-------+                         +-----+
  *    |                            |                                |
  *    | Start initiation           |                                |
- *    | CTE Reqest Proc.           |                                |
+ *    | CTE Request Proc.          |                                |
  *    |--------------------------->|                                |
  *    |                            |                                |
  *    |                            | LL_LE_CTE_REQ                  |
@@ -468,7 +468,7 @@ void test_cte_req_rejected_inv_ll_param_peripheral_local(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -540,7 +540,7 @@ void test_cte_req_reject_inv_ll_param_central_remote(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -612,7 +612,7 @@ void test_cte_req_reject_inv_ll_param_peripheral_remote(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -653,7 +653,7 @@ static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 {
 	/* Check if instant is in the past.
 	 *
-	 * NOTE: If conn_event > instant then subtract operation will result in value greather than
+	 * NOTE: If conn_event > instant then subtract operation will result in value greater than
 	 *       0x7FFF for uint16_t type. This is based on modulo 65536 math. The 0x7FFF is
 	 *       maximum positive difference between actual value of connection event counter and
 	 *       instant.
@@ -768,7 +768,7 @@ void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl
 	event_prepare(&conn);
 
 	if (!is_local && cte_req != NULL) {
-		/* Handle remote PHY update request completion and local CTE reques in the same
+		/* Handle remote PHY update request completion and local CTE request in the same
 		 * event.
 		 */
 
@@ -830,7 +830,7 @@ void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl
  * @param is_local        Flag informing if PHY request is local or remote.
  * @param cte_req         Parameters of CTE request procedure. If it is NULL there were no CTE
  *                        request.
- * @param phy_req         Parameters of PHY update reques.
+ * @param phy_req         Parameters of PHY update request.
  * @param events_at_start Number of connection events at function start.
  * @param ctx_num_at_end  Expected number of free procedure contexts at function end.
  */
@@ -885,7 +885,7 @@ static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_cte_req
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
 
-	/* Check that data tx is no lonnger paused */
+	/* Check that data tx is no longer paused */
 	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
@@ -914,7 +914,7 @@ static void run_phy_update_central(bool is_local, struct pdu_data_llctrl_cte_req
  * @param is_local        Flag informing if PHY request is local or remote.
  * @param cte_req         Parameters of CTE request procedure. If it is NULL there were no CTE
  *                        request.
- * @param phy_req         Parameters of PHY update reques.
+ * @param phy_req         Parameters of PHY update request.
  * @param events_at_start Number of connection events at function start.
  * @param ctx_num_at_end  Expected number of free procedure contexts at function end.
  */
@@ -1023,10 +1023,10 @@ static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t 
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, NULL, &phy_req, pu_event_counter(&conn),
-				       CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1);
+				       test_ctx_buffers_cnt() - 1);
 	} else {
 		run_phy_update_peripheral(true, NULL, &phy_req, pu_event_counter(&conn),
-					  CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1);
+					  test_ctx_buffers_cnt() - 1);
 	}
 
 	/* In this test CTE request is local procedure. Local procedures are handled after remote
@@ -1045,7 +1045,7 @@ static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1088,16 +1088,16 @@ static void test_local_cte_req_wait_for_phy_update_complete(uint8_t role)
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, &local_cte_req, &phy_req, pu_event_counter(&conn),
-				       CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1);
+				       test_ctx_buffers_cnt() - 1);
 	} else {
 		run_phy_update_peripheral(true, &local_cte_req, &phy_req, pu_event_counter(&conn),
-					  CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1);
+					  test_ctx_buffers_cnt() - 1);
 	}
 
 	/* PHY update was completed. Handle CTE request */
 	run_local_cte_req(&local_cte_req);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1139,15 +1139,15 @@ static void test_local_phy_update_wait_for_cte_req_complete(uint8_t role)
 	/* Handle CTE request */
 	run_local_cte_req(&local_cte_req);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
 		      "Free CTX buffers %d", ctx_buffers_free());
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, NULL, &phy_req, pu_event_counter(&conn),
-				       CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM);
+				       test_ctx_buffers_cnt());
 	} else {
 		run_phy_update_peripheral(true, NULL, &phy_req, pu_event_counter(&conn),
-					  CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM);
+					  test_ctx_buffers_cnt());
 	}
 }
 
@@ -1229,15 +1229,15 @@ static void test_phy_update_wait_for_remote_cte_req_complete(uint8_t role)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
 		      "Free CTX buffers %d", ctx_buffers_free());
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(true, NULL, &phy_req, pu_event_counter(&conn),
-				       CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM);
+				       test_ctx_buffers_cnt());
 	} else {
 		run_phy_update_peripheral(true, NULL, &phy_req, pu_event_counter(&conn),
-					  CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM);
+					  test_ctx_buffers_cnt());
 	}
 }
 
@@ -1284,10 +1284,10 @@ static void test_cte_req_wait_for_remote_phy_update_complete_and_disable(uint8_t
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(false, NULL, &phy_req, pu_event_counter(&conn),
-				       CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM);
+				       test_ctx_buffers_cnt());
 	} else {
 		run_phy_update_peripheral(false, NULL, &phy_req, pu_event_counter(&conn),
-					  CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM);
+					  test_ctx_buffers_cnt());
 	}
 
 	/* There is no special handling of CTE REQ completion. It is done when instant happens just
@@ -1338,10 +1338,10 @@ static void test_cte_req_wait_for_remote_phy_update_complete(uint8_t role)
 
 	if (role == BT_HCI_ROLE_CENTRAL) {
 		run_phy_update_central(false, &local_cte_req, &phy_req, pu_event_counter(&conn),
-				       CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM);
+				       test_ctx_buffers_cnt());
 	} else {
 		run_phy_update_peripheral(false, &local_cte_req, &phy_req, pu_event_counter(&conn),
-					  CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM);
+					  test_ctx_buffers_cnt());
 	}
 
 	/* There is no special handling of CTE REQ completion here. It is done when instant happens

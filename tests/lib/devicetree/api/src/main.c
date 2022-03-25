@@ -46,6 +46,9 @@
 #define TEST_PWM_CTLR_1 DT_NODELABEL(test_pwm1)
 #define TEST_PWM_CTLR_2 DT_NODELABEL(test_pwm2)
 
+#define TEST_CAN_CTRL_0 DT_NODELABEL(test_can0)
+#define TEST_CAN_CTRL_1 DT_NODELABEL(test_can1)
+
 #define TEST_DMA_CTLR_1 DT_NODELABEL(test_dma1)
 #define TEST_DMA_CTLR_2 DT_NODELABEL(test_dma2)
 
@@ -1095,6 +1098,27 @@ static void test_pwms(void)
 	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_can_controller
+static void test_can(void)
+{
+	/* DT_CAN_TRANSCEIVER_MAX_BITRATE */
+	zassert_equal(DT_CAN_TRANSCEIVER_MAX_BITRATE(TEST_CAN_CTRL_0, 1000000), 1000000, "");
+	zassert_equal(DT_CAN_TRANSCEIVER_MAX_BITRATE(TEST_CAN_CTRL_0, 5000000), 5000000, "");
+	zassert_equal(DT_CAN_TRANSCEIVER_MAX_BITRATE(TEST_CAN_CTRL_0, 8000000), 5000000, "");
+	zassert_equal(DT_CAN_TRANSCEIVER_MAX_BITRATE(TEST_CAN_CTRL_1, 1250000), 1250000, "");
+	zassert_equal(DT_CAN_TRANSCEIVER_MAX_BITRATE(TEST_CAN_CTRL_1, 2000000), 2000000, "");
+	zassert_equal(DT_CAN_TRANSCEIVER_MAX_BITRATE(TEST_CAN_CTRL_1, 5000000), 2000000, "");
+
+	/* DT_INST_CAN_TRANSCEIVER_MAX_BITRATE */
+	zassert_equal(DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(0, 1000000), 1000000, "");
+	zassert_equal(DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(0, 5000000), 5000000, "");
+	zassert_equal(DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(0, 8000000), 5000000, "");
+	zassert_equal(DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(1, 1250000), 1250000, "");
+	zassert_equal(DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(1, 2000000), 2000000, "");
+	zassert_equal(DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(1, 5000000), 2000000, "");
+}
+
 static void test_macro_names(void)
 {
 	/* white box */
@@ -1898,7 +1922,7 @@ static void test_dep_ord(void)
 	};
 	zassert_equal(ARRAY_SIZE(children_combined_ords),
 		      ARRAY_SIZE(children_combined_ords_expected),
-		      "%u", ARRAY_SIZE(children_combined_ords));
+		      "%zu", ARRAY_SIZE(children_combined_ords));
 	for (i = 0; i < ARRAY_SIZE(children_combined_ords); i++) {
 		zassert_equal(children_combined_ords[i],
 			      children_combined_ords_expected[i],
@@ -1925,7 +1949,7 @@ static void test_dep_ord(void)
 	};
 	zassert_equal(ARRAY_SIZE(child_a_combined_ords),
 		      ARRAY_SIZE(child_a_combined_ords_expected),
-		      "%u", ARRAY_SIZE(child_a_combined_ords));
+		      "%zu", ARRAY_SIZE(child_a_combined_ords));
 	for (i = 0; i < ARRAY_SIZE(child_a_combined_ords); i++) {
 		zassert_equal(child_a_combined_ords[i],
 			      child_a_combined_ords_expected[i],
@@ -1970,6 +1994,13 @@ static void test_node_name(void)
 			     "temperature-sensor"), "");
 	zassert_true(strcmp(DT_NODE_FULL_NAME(TEST_REG),
 			     "reg-holder"), "");
+}
+
+static void test_node_child_idx(void)
+{
+	zassert_equal(DT_NODE_CHILD_IDX(DT_NODELABEL(test_child_a)), 0, "");
+	zassert_equal(DT_NODE_CHILD_IDX(DT_NODELABEL(test_child_b)), 1, "");
+	zassert_equal(DT_NODE_CHILD_IDX(DT_NODELABEL(test_child_c)), 2, "");
 }
 
 static void test_same_node(void)
@@ -2226,6 +2257,80 @@ static void test_string_token(void)
 	}
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+static void test_reset(void)
+{
+	/* DT_RESET_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_RESET_CTLR_BY_IDX(TEST_TEMP, 1),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_RESET_CTLR */
+	zassert_true(DT_SAME_NODE(DT_RESET_CTLR(TEST_TEMP),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_RESET_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_RESET_CTLR_BY_NAME(TEST_TEMP, reset_b),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_RESET_CELL_BY_IDX */
+	zassert_equal(DT_RESET_CELL_BY_IDX(TEST_TEMP, 1, id), 20, "");
+	zassert_equal(DT_RESET_CELL_BY_IDX(TEST_TEMP, 0, id), 10, "");
+
+	/* DT_RESET_CELL_BY_NAME */
+	zassert_equal(DT_RESET_CELL_BY_NAME(TEST_TEMP, reset_a, id), 10, "");
+	zassert_equal(DT_RESET_CELL_BY_NAME(TEST_TEMP, reset_b, id), 20, "");
+
+	/* DT_RESET_CELL */
+	zassert_equal(DT_RESET_CELL(TEST_TEMP, id), 10, "");
+
+	/* reg-width on reset */
+	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_TEMP, resets, 1, reg_width), 4, "");
+
+	/* DT_INST */
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
+
+	/* DT_INST_RESET_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_INST_RESET_CTLR_BY_IDX(0, 1),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_INST_RESET_CTLR */
+	zassert_true(DT_SAME_NODE(DT_INST_RESET_CTLR(0),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_INST_RESET_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_INST_RESET_CTLR_BY_NAME(0, reset_b),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_INST_RESET_CELL_BY_IDX */
+	zassert_equal(DT_INST_RESET_CELL_BY_IDX(0, 1, id), 20, "");
+	zassert_equal(DT_INST_RESET_CELL_BY_IDX(0, 0, id), 10, "");
+
+	/* DT_INST_RESET_CELL_BY_NAME */
+	zassert_equal(DT_INST_RESET_CELL_BY_NAME(0, reset_a, id), 10, "");
+	zassert_equal(DT_INST_RESET_CELL_BY_NAME(0, reset_b, id), 20, "");
+
+	/* DT_INST_RESET_CELL */
+	zassert_equal(DT_INST_RESET_CELL(0, id), 10, "");
+
+	/* reg-width on reset */
+	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, resets, 1, reg_width), 4, "");
+
+	/* DT_RESET_ID_BY_IDX */
+	zassert_equal(DT_RESET_ID_BY_IDX(TEST_TEMP, 0), 10, "");
+	zassert_equal(DT_RESET_ID_BY_IDX(TEST_TEMP, 1), 20, "");
+
+	/* DT_RESET_ID */
+	zassert_equal(DT_RESET_ID(TEST_TEMP), 10, "");
+
+	/* DT_INST_RESET_ID_BY_IDX */
+	zassert_equal(DT_INST_RESET_ID_BY_IDX(0, 0), 10, "");
+	zassert_equal(DT_INST_RESET_ID_BY_IDX(0, 1), 20, "");
+
+	/* DT_INST_RESET_ID */
+	zassert_equal(DT_INST_RESET_ID(0), 10, "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -2248,6 +2353,7 @@ void test_main(void)
 			 ztest_unit_test(test_io_channels),
 			 ztest_unit_test(test_dma),
 			 ztest_unit_test(test_pwms),
+			 ztest_unit_test(test_can),
 			 ztest_unit_test(test_macro_names),
 			 ztest_unit_test(test_arrays),
 			 ztest_unit_test(test_foreach_status_okay),
@@ -2270,10 +2376,12 @@ void test_main(void)
 			 ztest_unit_test(test_dep_ord),
 			 ztest_unit_test(test_path),
 			 ztest_unit_test(test_node_name),
+			 ztest_unit_test(test_node_child_idx),
 			 ztest_unit_test(test_same_node),
 			 ztest_unit_test(test_pinctrl),
 			 ztest_unit_test(test_mbox),
-			 ztest_unit_test(test_string_token)
+			 ztest_unit_test(test_string_token),
+			 ztest_unit_test(test_reset)
 		);
 	ztest_run_test_suite(devicetree_api);
 }

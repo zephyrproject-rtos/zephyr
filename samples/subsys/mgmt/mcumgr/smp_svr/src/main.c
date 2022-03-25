@@ -90,9 +90,6 @@ void main(void)
 #ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
 	shell_mgmt_register_group();
 #endif
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-	fs_mgmt_register_group();
-#endif
 #ifdef CONFIG_MCUMGR_SMP_BT
 	start_smp_bluetooth();
 #endif
@@ -108,7 +105,7 @@ void main(void)
 		}
 	}
 	/* using __TIME__ ensure that a new binary will be built on every
-	 * compile which is convient when testing firmware upgrade.
+	 * compile which is convenient when testing firmware upgrade.
 	 */
 	LOG_INF("build time: " __DATE__ " " __TIME__);
 

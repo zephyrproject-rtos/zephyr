@@ -214,7 +214,7 @@ void validate_wakeup(int src, int target, k_tid_t last_thread)
 			zassert_false(!preempted && target_wins,
 				      "higher priority thread should have preempted");
 
-			/* The scheudler implements a 'first added to
+			/* The scheduler implements a 'first added to
 			 * queue' policy for threads within a single
 			 * priority, so the last thread woken up (the
 			 * target) must never run before the source
@@ -227,7 +227,7 @@ void validate_wakeup(int src, int target, k_tid_t last_thread)
 			 * policy OR the opposite ("run newly woken
 			 * threads first"), and long term we may want
 			 * to revisit this particular check and maybe
-			 * make the poilicy configurable.
+			 * make the policy configurable.
 			 */
 			zassert_false(preempted && tie,
 				      "tied priority should not preempt");

@@ -192,21 +192,23 @@ enum z_log_msg2_mode {
 				  Z_LOG_MSG2_ALIGNMENT), \
 			 sizeof(uint32_t))
 
-#define Z_LOG_MSG2_STACK_CREATE(_domain_id, _source, _level, _data, _dlen, ...)\
+#define Z_LOG_MSG2_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
 do { \
 	int _plen; \
 	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
 		_plen = 0; \
 	} else { \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-					0, __VA_ARGS__); \
+					CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+					__VA_ARGS__); \
 	} \
 	struct log_msg2 *_msg; \
 	Z_LOG_MSG2_ON_STACK_ALLOC(_msg, Z_LOG_MSG2_LEN(_plen, 0)); \
 	if (_plen) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, \
 					_plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-					0, __VA_ARGS__);\
+					CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+					__VA_ARGS__);\
 	} \
 	struct log_msg2_desc _desc = \
 		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
@@ -217,10 +219,11 @@ do { \
 } while (0)
 
 #ifdef CONFIG_LOG_SPEED
-#define Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, _level, ...) do { \
+#define Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, _level, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
-				0, __VA_ARGS__); \
+				CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+				__VA_ARGS__); \
 	size_t _msg_wlen = Z_LOG_MSG2_ALIGNED_WLEN(_plen, 0); \
 	struct log_msg2 *_msg = z_log_msg2_alloc(_msg_wlen); \
 	struct log_msg2_desc _desc = \
@@ -230,7 +233,8 @@ do { \
 	if (_msg) { \
 		CBPRINTF_STATIC_PACKAGE(_msg->data, _plen, _plen, \
 					Z_LOG_MSG2_ALIGN_OFFSET, \
-					0, __VA_ARGS__); \
+					CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+					__VA_ARGS__); \
 	} \
 	z_log_msg2_finalize(_msg, (void *)_source, _desc, NULL); \
 } while (0)
@@ -241,8 +245,8 @@ do { \
 #define Z_LOG_MSG2_SIMPLE_CREATE(...)
 #endif
 
-/* Macro handles case when local variable with log message string is created.It
- * replaces origing string literal with that variable.
+/* Macro handles case when local variable with log message string is created. It
+ * replaces original string literal with that variable.
  */
 #define Z_LOG_FMT_ARGS_2(_name, ...) \
 	COND_CODE_1(CONFIG_LOG2_FMT_SECTION, \
@@ -333,6 +337,7 @@ do {\
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__) \
 	z_log_msg2_runtime_create(_domain_id, (void *)_source, \
 				  _level, (uint8_t *)_data, _dlen,\
+				  CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (0)
@@ -341,20 +346,22 @@ do {\
 			  _level, _data, _dlen, ...) \
 do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
-	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, 0, __VA_ARGS__)) { \
+	if (CBPRINTF_MUST_RUNTIME_PACKAGE(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
+					   __VA_ARGS__)) { \
 		LOG_MSG2_DBG("create runtime message\n");\
 		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
 					  _level, (uint8_t *)_data, _dlen,\
+					  CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt), \
 					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 	} else if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0)) {\
 		LOG_MSG2_DBG("create zero-copy message\n");\
-		Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, \
+		Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, \
 					_level, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
 		_mode = Z_LOG_MSG2_MODE_ZERO_COPY; \
 	} else { \
 		LOG_MSG2_DBG("create on stack message\n");\
-		Z_LOG_MSG2_STACK_CREATE(_domain_id, _source, _level, _data, \
+		Z_LOG_MSG2_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, \
 					_dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
 		_mode = Z_LOG_MSG2_MODE_FROM_STACK; \
 	} \
@@ -461,7 +468,8 @@ __syscall void z_log_msg2_static_create(const void *source,
  */
 __syscall void z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 					  uint8_t level, const void *data,
-					  size_t dlen, const char *fmt,
+					  size_t dlen, uint32_t package_flags,
+					  const char *fmt,
 					  va_list ap);
 
 /** @brief Create message at runtime.
@@ -486,13 +494,14 @@ __syscall void z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 static inline void z_log_msg2_runtime_create(uint8_t domain_id,
 					     const void *source,
 					     uint8_t level, const void *data,
-					     size_t dlen, const char *fmt, ...)
+					     size_t dlen, uint32_t package_flags,
+					     const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
 	z_log_msg2_runtime_vcreate(domain_id, source, level,
-				   data, dlen, fmt, ap);
+				   data, dlen, package_flags, fmt, ap);
 	va_end(ap);
 }
 

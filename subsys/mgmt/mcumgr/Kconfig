@@ -38,6 +38,16 @@ config MGMT_CBORATTR_FLOAT_SUPPORT
 	  the option needs to be enabled.
 	  Disabling the option slightly reduces code footprint.
 
+config MGMT_VERBOSE_ERR_RESPONSE
+	bool "Support verbose error response"
+	help
+	  Support for encoding "rc" code explanation in form of "rsn"
+	  text string.  This is useful, when returning MGMT_ERR_EUNKNOWN,
+	  to add additional information on the source of an error.
+	  Note that the "rsn" is string additional to "rc" code,
+	  so MCUMGR_BUF_SIZE should be large enough to be able to encode
+	  both.
+
 menu "Command Handlers"
 menuconfig MCUMGR_CMD_FS_MGMT
 	bool "Mcumgr handlers for file management (insecure)"
@@ -145,6 +155,11 @@ config MCUMGR_CMD_SHELL_MGMT
 	  The SHELL_BACKEND_DUMMY_BUF_SIZE will affect how many characters
 	  will be returned from command output, if your output gets cut, then
 	  increase the value. Remember to set MCUMGR_BUF_SIZE accordingly.
+	  Note that maximum length of shell command accepted is regulated by
+	  the CONFIG_SHELL_CMD_BUFF_SIZE, and a buffer for a command is allocated
+	  on a stack, by the mcumgr, so enabling MCUMGR_CMD_SHELL_MGMT and
+	  changes to the CONFIG_SHELL_CMD_BUFF_SIZE may increase stack size
+	  requirements.
 
 menuconfig MCUMGR_CMD_IMG_MGMT
 	bool "Mcumgr handlers for image management"
@@ -178,6 +193,7 @@ config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
 
 config IMG_MGMT_VERBOSE_ERR
 	bool "Verbose logging when uploading a new image"
+	select MGMT_VERBOSE_ERR_RESPONSE
 	help
 	  Enable verbose logging during a firmware upgrade.
 
@@ -196,7 +212,7 @@ config IMG_MGMT_DIRECT_IMAGE_UPLOAD
 	  (two DTS images for Zephyr); this allows to treat every DTS defined image as direct
 	  target for upload, and more than two may be used (4 at this time).
 	  NOTE: When direct upload is used the image numbers are shifted by + 1, and the default
-	  behaviour is, when image is not selected, to upload to image that represents secndary
+	  behaviour is, when image is not selected, to upload to image that represents secondary
 	  slot in normal operation.
 
 config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
@@ -216,6 +232,10 @@ config IMG_MGMT_FRUGAL_LIST
 	  non-empty or true.  This option slightly reduces number of bytes transferred back from
 	  a device but requires support in client software, which has to default omitted values.
 	  Works correctly with mcumgr-cli.
+
+module = MCUMGR_IMG_MGMT
+module-str = mcumgr_img_mgmt
+source "subsys/logging/Kconfig.template.log_config"
 
 endif
 
@@ -357,11 +377,18 @@ config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
 module=MGMT_SETTINGS
 module-dep=LOG
 module-str=SETTINGS
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif
 
 endmenu
+
+config MCUMGR_SMP_REASSEMBLY_BT
+	bool "Reassemble packets in Bluetooth SMP transport"
+	select MCUMGR_SMP_REASSEMBLY
+	help
+	  When enabled, the SMP BT transport will buffer and reassemble received
+	  packet fragments before passing it for further processing.
 
 config MCUMGR_SMP_BT
 	bool "Bluetooth mcumgr SMP transport"
@@ -571,6 +598,11 @@ config MCUMGR_SMP_UDP_MTU
 
 endif # MCUMGR_SMP_UDP
 
+config MCUMGR_SMP_REASSEMBLY
+	bool
+	help
+	  Enable structures and functions needed for packet reassembly by SMP backend.
+
 config MCUMGR_BUF_COUNT
 	int "Number of mcumgr buffers"
 	default 2 if MCUMGR_SMP_UDP
@@ -601,4 +633,9 @@ config MCUMGR_BUF_USER_DATA_SIZE
 	  Different mcumgr transports impose different requirements for this
 	  setting. A value of 4 is sufficient for UART, shell, and bluetooth.
 	  For UDP, the userdata must be large enough to hold a IPv4/IPv6 address.
+
+module = MCUMGR_SMP
+module-str = mcumgr_smp
+source "subsys/logging/Kconfig.template.log_config"
+
 endif # MCUMGR

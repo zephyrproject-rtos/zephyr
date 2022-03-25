@@ -132,7 +132,7 @@ You can read more about CAN bus in this
 
 Zephyr supports following CAN features:
 
-* Standard and Extended Identifers
+* Standard and Extended Identifiers
 * Filters with Masking
 * Loopback and Silent mode
 * Remote Request
@@ -175,12 +175,12 @@ occurred. It does not block until the message is sent like the example above.
 
 .. code-block:: C
 
-  void tx_irq_callback(int error, void *arg)
+  void tx_callback(const struct device *dev, int error, void *user_data)
   {
-          char *sender = (char *)arg;
+          char *sender = (char *)user_data;
 
           if (error != 0) {
-                  LOG_ERR("Sendig failed [%d]\nSender: %s\n", error, sender);
+                  LOG_ERR("Sending failed [%d]\nSender: %s\n", error, sender);
           }
   }
 
@@ -211,7 +211,7 @@ added.
 
 .. code-block:: C
 
-  void rx_callback_function(struct zcan_frame *frame, void *user_data)
+  void rx_callback_function(const struct device *dev, struct zcan_frame *frame, void *user_data)
   {
           ... do something with the frame ...
   }
@@ -333,7 +333,13 @@ We have two ready-to-build samples demonstrating use of the Zephyr CAN API
 :ref:`SocketCAN sample <socket-can-sample>`.
 
 
-API Reference
-*************
+CAN Controller API Reference
+****************************
 
 .. doxygengroup:: can_interface
+
+
+CAN Transceiver API Reference
+*****************************
+
+.. doxygengroup:: can_transceiver

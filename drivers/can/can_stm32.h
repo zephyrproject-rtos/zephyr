@@ -77,6 +77,8 @@ struct can_stm32_config {
 	struct stm32_pclken pclken;
 	void (*config_irq)(CAN_TypeDef *can);
 	const struct pinctrl_dev_config *pcfg;
+	const struct device *phy;
+	uint32_t max_bitrate;
 };
 
 #endif /*ZEPHYR_DRIVERS_CAN_STM32_CAN_H_*/

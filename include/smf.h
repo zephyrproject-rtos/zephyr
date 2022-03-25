@@ -128,7 +128,7 @@ void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state);
 void smf_set_state(struct smf_ctx *ctx, const struct smf_state *new_state);
 
 /**
- * @brief Termate a state machine
+ * @brief Terminate a state machine
  *
  * @param ctx  State machine context
  * @param val  Non-Zero termination value that's returned by the smf_run_state
@@ -141,7 +141,7 @@ void smf_set_terminate(struct smf_ctx *ctx, int32_t val);
  *
  * @param ctx  State machine context
  * @return	   A non-zero value should terminate the state machine. This
- *			   non-zero value could represet a terminal state being reached
+ *			   non-zero value could represent a terminal state being reached
  *			   or the detection of an error that should result in the
  *			   termination of the state machine.
  */

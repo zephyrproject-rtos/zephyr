@@ -527,11 +527,15 @@ static inline uint32_t npcx_chndat_offset(uint32_t ch)
 #define NPCX_ASCADD_SADDR_FIELD               FIELD(0, 5)
 #define NPCX_ADCSTS_EOCEV                     0
 #define NPCX_ADCSTS_EOCCEV                    1
+#define NPCX_ADCCNF_ADCEN                     0
 #define NPCX_ADCCNF_ADCMD_FIELD               FIELD(1, 2)
 #define NPCX_ADCCNF_ADCRPTC                   3
-#define NPCX_ADCCNF_INTECEN                   6
 #define NPCX_ADCCNF_START                     4
-#define NPCX_ADCCNF_ADCEN                     0
+#define NPCX_ADCCNF_ADCTTE                    5
+#define NPCX_ADCCNF_INTECEN                   6
+#define NPCX_ADCCNF_INTECCEN                  7
+#define NPCX_ADCCNF_INTETCEN                  8
+#define NPCX_ADCCNF_INTOVFEN                  9
 #define NPCX_ADCCNF_STOP                      11
 #define NPCX_CHNDAT_CHDAT_FIELD               FIELD(0, 10)
 #define NPCX_CHNDAT_NEW                       15
@@ -1158,7 +1162,7 @@ struct smb_fifo_reg {
 	/* 0x01C: SMB Rx-FIFO Status */
 	volatile uint8_t SMBRXF_STS;
 	volatile uint8_t reserved12;
-	/* 0x01E: SMB Rx-FIFO Contro */
+	/* 0x01E: SMB Rx-FIFO Control */
 	volatile uint8_t SMBRXF_CTL;
 	volatile uint8_t reserved13;
 };
@@ -1305,7 +1309,7 @@ struct tach_reg {
 	/* 0x018: Compare Configuration */
 	volatile uint8_t TCPCFG;
 	volatile uint8_t reserved7;
-	/* 0x01A: Timer Wake-Up Enablen */
+	/* 0x01A: Timer Wake-Up Enable */
 	volatile uint8_t TWUEN;
 	volatile uint8_t reserved8;
 	/* 0x01C: Timer Configuration */
@@ -1373,7 +1377,7 @@ struct ps2_reg {
 	/* 0x006: PS/2 Output Signal */
 	volatile uint8_t PSOSIG;
 	volatile uint8_t reserved4;
-	/* 0x008: PS/2 Iutput Signal */
+	/* 0x008: PS/2 Input Signal */
 	volatile uint8_t PSISIG;
 	volatile uint8_t reserved5;
 	/* 0x00A: PS/2 Interrupt Enable */

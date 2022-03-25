@@ -25,15 +25,10 @@
 #include <soc_offsets.h>
 #endif
 
-/* thread_arch_t member offsets */
-GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
-#if defined(CONFIG_USERSPACE)
-GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
-GEN_OFFSET_SYM(_thread_arch_t, user_sp);
-#endif
-
-/* struct coop member offsets */
+/* struct _callee_saved member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);
+GEN_OFFSET_SYM(_callee_saved_t, ra);
+GEN_OFFSET_SYM(_callee_saved_t, tp);
 GEN_OFFSET_SYM(_callee_saved_t, s0);
 GEN_OFFSET_SYM(_callee_saved_t, s1);
 GEN_OFFSET_SYM(_callee_saved_t, s2);
@@ -65,7 +60,6 @@ GEN_OFFSET_SYM(_callee_saved_t, fs11);
 
 /* esf member offsets */
 GEN_OFFSET_SYM(z_arch_esf_t, ra);
-GEN_OFFSET_SYM(z_arch_esf_t, tp);
 GEN_OFFSET_SYM(z_arch_esf_t, t0);
 GEN_OFFSET_SYM(z_arch_esf_t, t1);
 GEN_OFFSET_SYM(z_arch_esf_t, t2);
@@ -85,8 +79,13 @@ GEN_OFFSET_SYM(z_arch_esf_t, a7);
 GEN_OFFSET_SYM(z_arch_esf_t, mepc);
 GEN_OFFSET_SYM(z_arch_esf_t, mstatus);
 
+GEN_OFFSET_SYM(z_arch_esf_t, s0);
+
+#ifdef CONFIG_USERSPACE
+GEN_OFFSET_SYM(z_arch_esf_t, sp);
+#endif
+
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-GEN_OFFSET_SYM(z_arch_esf_t, fp_state);
 GEN_OFFSET_SYM(z_arch_esf_t, ft0);
 GEN_OFFSET_SYM(z_arch_esf_t, ft1);
 GEN_OFFSET_SYM(z_arch_esf_t, ft2);
@@ -116,21 +115,6 @@ GEN_OFFSET_SYM(z_arch_esf_t, soc_context);
 GEN_SOC_OFFSET_SYMS();
 #endif
 
-/*
- * RISC-V requires the stack to be 16-bytes aligned, hence SP needs to grow or
- * shrink by a size, which follows the RISC-V stack alignment requirements
- * Hence, ensure that __z_arch_esf_t_SIZEOF and _K_THREAD_NO_FLOAT_SIZEOF sizes
- * are aligned accordingly.
- */
-GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, STACK_ROUND_UP(sizeof(z_arch_esf_t)));
-
-/*
- * size of the struct k_thread structure sans save area for floating
- * point regs
- */
-GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
-		 STACK_ROUND_UP(sizeof(struct k_thread)));
-
-GEN_ABSOLUTE_SYM(___cpu_t_SIZEOF, sizeof(_cpu_t));
+GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF, sizeof(z_arch_esf_t));
 
 GEN_ABS_SYM_END

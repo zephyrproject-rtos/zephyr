@@ -230,7 +230,7 @@ The CI infrastructure currently runs the following tests:
       IOPCTL_Type *base = config->base;
 
    Both lines produce a diagnostic regarding spaces around the ``*``
-   operator: the first is misidentifed as a pointer type declaration
+   operator: the first is misidentified as a pointer type declaration
    that would be correct as ``PAGE_SIZE *POOL_PAGES`` while the second
    is misidentified as a multiplication expression that would be correct
    as ``IOPCTL_Type * base``.

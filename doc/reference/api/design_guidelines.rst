@@ -16,7 +16,7 @@ specifying the signature of a callback:
 
 * The first parameter should be a pointer to the object most closely
   associated with the callback.  In the case of device drivers this
-  would be ``struct device *dev``.  For library functions it may be a
+  would be ``const struct device *dev``.  For library functions it may be a
   pointer to another object that was referenced when the callback was
   provided.
 
@@ -118,5 +118,5 @@ not implemented or optional:
 
 - When an API is implemented, but the particular combination of options
   requested in the call cannot be satisfied by the implementation the call shall
-  return -ENOTSUP. (For example, a request for a level-triggered GPIO interrupt on
+  return ``-ENOTSUP``. (For example, a request for a level-triggered GPIO interrupt on
   hardware that supports only edge-triggered interrupts)

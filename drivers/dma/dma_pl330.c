@@ -17,8 +17,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_pl330);
 
-#define DEV_NAME(dev) ((dev)->name)
-
 #define BYTE_WIDTH(burst_size) (1 << (burst_size))
 
 static int dma_pl330_submit(const struct device *dev, uint64_t dst,
@@ -563,7 +561,7 @@ static int dma_pl330_initialize(const struct device *dev)
 		k_mutex_init(&channel_cfg->ch_mutex);
 	}
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 	return 0;
 }
 

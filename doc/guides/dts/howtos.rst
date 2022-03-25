@@ -99,9 +99,31 @@ works best for your requirements. Here are some examples:
    /* Option 4: by path */
    #define MY_SERIAL DT_PATH(soc, serial_40002000)
 
-Once you have a node identifier there are two ways to proceed.  The
-classic way is to get the ``struct device`` by combining
-:c:func:`DT_LABEL` with :c:func:`device_get_binding`:
+Once you have a node identifier there are two ways to proceed. One way to get a
+device is to use :c:func:`DEVICE_DT_GET`:
+
+.. code-block:: c
+
+   const struct device *uart_dev = DEVICE_DT_GET(MY_SERIAL);
+
+   if (!device_is_ready(uart_dev)) {
+           /* Not ready, do not use */
+           return -ENODEV;
+   }
+
+There are variants of :c:func:`DEVICE_DT_GET` such as
+:c:func:`DEVICE_DT_GET_OR_NULL`, :c:func:`DEVICE_DT_GET_ONE` or
+:c:func:`DEVICE_DT_GET_ANY`. This idiom fetches the device pointer at
+build-time, which means there is no runtime penalty. This method is useful if
+you want to store the device pointer as configuration data. But because the
+device may not be initialized, or may have failed to initialize, you must verify
+that the device is ready to be used before passing it to any API functions.
+(This check is done for you by :c:func:`device_get_binding`.)
+
+In some situations the device cannot be known at build-time, e.g., if it depends
+on user input like in a shell application. In this case you can get the
+``struct device`` by combining :c:func:`DT_LABEL` with
+:c:func:`device_get_binding`:
 
 .. code-block:: c
 
@@ -115,23 +137,6 @@ There's no need to override the ``label`` property to something else: just make
 a node identifier and pass it to ``DT_LABEL`` to get the right string to pass
 to ``device_get_binding()``.
 
-The second way to get a device is to use :c:func:`DEVICE_DT_GET`:
-
-.. code-block:: c
-
-   const struct device *uart_dev = DEVICE_DT_GET(MY_SERIAL);
-
-   if (!device_is_ready(uart_dev)) {
-           /* Not ready, do not use */
-           return -ENODEV;
-   }
-
-This idiom fetches the device pointer at build-time, which is useful when you
-want to store the device pointer as configuration data.  But because the
-device may not be initialized, or may have failed to initialize, you must
-verify that the device is ready to be used before passing it to any API
-functions.  (This check is done for you by :c:func:`device_get_binding`.)
-
 If you're having trouble, see :ref:`dt-trouble`. The first thing to check is
 that the node has ``status = "okay"``, like this:
 
@@ -140,15 +145,33 @@ that the node has ``status = "okay"``, like this:
    #define MY_SERIAL DT_NODELABEL(my_serial)
 
    #if DT_NODE_HAS_STATUS(MY_SERIAL, okay)
-   const struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
+   const struct device *uart_dev = DEVICE_DT_GET(MY_SERIAL);
    #else
    #error "Node is disabled"
    #endif
 
 If you see the ``#error`` output, make sure to enable the node in your
-devicetree. If you don't see the ``#error`` but ``uart_dev`` is NULL, then
-there's likely either a Kconfig issue preventing the device driver from
-creating the device, or the device's initialization function failed.
+devicetree. In some situations your code will compile but it will fail to link
+with a message similar to::
+
+   ...undefined reference to `__device_dts_ord_N'
+   collect2: error: ld returned 1 exit status
+
+This likely means there's a Kconfig issue preventing the device driver from
+being built, resulting in a reference that does not exist. If your code compiles
+successfully, the last thing to check is if the device is ready, like this:
+
+.. code-block:: c
+
+   if (!device_is_ready(uart_dev)) {
+        printk("Device not ready\n");
+   }
+
+If you find that the device is not ready, it likely means that the device's
+initialization function failed. Enabling logging or debugging driver code may
+help in such situations. Note that you can also use :c:func:`device_get_binding`
+to obtain a reference at runtime. If it returns ``NULL`` it can either mean that
+device's driver failed to initialize or that it does not exist.
 
 .. _dts-find-binding:
 

@@ -269,7 +269,8 @@ static int init_spis(const struct device *dev,
 		 .miso_drive = NRF_GPIO_PIN_S0S1,))
 
 #define SPI_NRFX_SPIS_DEVICE(idx)					       \
-	NRF_DT_ENSURE_PINS_ASSIGNED(SPIS(idx), sck_pin);		       \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPIS(idx), 0,			       \
+				     sck_pin, mosi_pin, miso_pin, csn_pin);    \
 	static int spi_##idx##_init(const struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \

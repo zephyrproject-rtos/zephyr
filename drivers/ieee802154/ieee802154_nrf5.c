@@ -62,7 +62,7 @@ static struct nrf5_802154_data nrf5_data;
 #define DRX_SLOT_RX 1 /* Actual delayed reception window ID */
 #define PH_DURATION 10 /* Duration of the placeholder window, in microseconds */
 /* When scheduling the actual delayed reception window an adjustment of
- * 800 us is required to match the CSL tranmission timing for unknown
+ * 800 us is required to match the CSL transmission timing for unknown
  * reasons. This is a temporary workaround until the root cause is found.
  */
 #define DRX_ADJUST 800

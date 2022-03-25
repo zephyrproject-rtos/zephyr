@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "actinius_icarus_bee_common-pinctrl.dtsi"
 
 / {
 	model = "Actinius Icarus Bee";
@@ -92,10 +93,9 @@
 	status = "okay";
 
 	current-speed = <115200>;
-	tx-pin = <2>;
-	rx-pin = <5>;
-	cts-pin = <14>;
-	rts-pin = <18>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c2 {
@@ -103,9 +103,10 @@
 	status = "okay";
 
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <10>;
-	scl-pin = <11>;
 
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
 	lis2dh12-accel@19 {
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
@@ -119,12 +120,11 @@
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 
-	sck-pin = <6>;
-	mosi-pin = <3>;
-	miso-pin = <8>;
-
 	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
 	w25q64: w25q64jv@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -141,14 +141,9 @@
 &pwm0 {
 	status = "okay";
 
-	ch0-pin = <21>;
-	ch0-inverted;
-
-	ch1-pin = <22>;
-	ch1-inverted;
-
-	ch2-pin = <25>;
-	ch2-inverted;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &timer0 {

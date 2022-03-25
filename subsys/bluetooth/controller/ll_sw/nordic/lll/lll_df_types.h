@@ -12,7 +12,7 @@
 /* @brief Min supported length of antenna switching pattern */
 #define LLL_DF_MIN_ANT_PATTERN_LEN 3
 
-/* @brief Mactros to name constants informing where CTEInfo may be found within a PDU depending on
+/* @brief Macros to name constants informing where CTEInfo may be found within a PDU depending on
  * a PDU type.
  */
 #define CTE_INFO_IN_S1_BYTE true
@@ -70,9 +70,9 @@ struct lll_df_adv_cfg {
  * It is not defined by Bluetooth Core specification. This is the vendor specific value.
  *
  * Nordic Semiconductor Radio peripheral provides 16 bit wide IQ samples.
- * BT 5.3 Core specification Vol 4, Part E sectons 7.7.65.21 and 7.7.65.22 limit size of
+ * BT 5.3 Core specification Vol 4, Part E sections 7.7.65.21 and 7.7.65.22 limit size of
  * IQ samples to 8 bits.
- * To mitigate the limited accuratcy and losing information about saturated IQ samples a 0x80 value
+ * To mitigate the limited accuracy and losing information about saturated IQ samples a 0x80 value
  * is selected to serve the purpose.
  */
 #define IQ_SAMPLE_STATURATED_16_BIT 0x8000

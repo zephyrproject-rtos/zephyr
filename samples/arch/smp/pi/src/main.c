@@ -12,7 +12,7 @@
 
 /*
  * Amount of digits of Pi to calculate, must be a multiple of 4,
- * as used algorythm spits 4 digits on every iteration.
+ * as used algorithm spits 4 digits on every iteration.
  */
 #define DIGITS_NUM	240
 

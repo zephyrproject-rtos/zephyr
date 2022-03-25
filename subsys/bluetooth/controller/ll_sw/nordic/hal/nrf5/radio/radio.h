@@ -39,7 +39,7 @@
 	((uint8_t)((((flags) >> RADIO_PKT_CONF_PHY_POS)) & RADIO_PKT_CONF_PHY_MSK))
 /* Helper macro to create bitfield with CTE type only */
 #define RADIO_PKT_CONF_CTE(phy) ((uint8_t)((phy) << RADIO_PKT_CONF_CTE_POS))
-/* Helper macro to get CTE enable field value from radion packet configuration bitfield */
+/* Helper macro to get CTE enable field value from radio packet configuration bitfield */
 #define RADIO_PKT_CONF_CTE_GET(flags)                                                              \
 	((uint8_t)((((flags) >> RADIO_PKT_CONF_CTE_POS)) & RADIO_PKT_CONF_CTE_MSK))
 /* Helper macro to create a radio packet configure bitfield */
@@ -95,6 +95,8 @@ void radio_switch_complete_with_delay_compensation_and_tx(
 	uint8_t phy_rx, uint8_t flags_rx, uint8_t phy_tx, uint8_t flags_tx,
 	enum radio_end_evt_delay_state end_evt_delay_en);
 void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
+				      uint8_t phy_next, uint8_t flags_next);
+void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 				      uint8_t phy_next, uint8_t flags_next);
 void radio_switch_complete_and_disable(void);
 

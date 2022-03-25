@@ -29,6 +29,7 @@ Peripherals
    ps2.rst
    peci.rst
    regulators.rst
+   reset.rst
    rtc.rst
    sensor.rst
    spi.rst

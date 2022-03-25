@@ -165,7 +165,7 @@
  * On MMU systems where VMA != LMA there is an implicit ALIGN_WITH_INPUT
  * specified.
  *
- * @param name Name of the output sectio
+ * @param name Name of the output section
  * @param options Section options, such as (NOLOAD), or left blank
  * @param align Alignment directives, such as SUBALIGN(). ALIGN() itself is
  *              not allowed. May be blank.
@@ -191,7 +191,7 @@
  * This is equivalent to SECTION_PROLOGUE() on non-XIP systems.
  * On XIP systems there is an implicit ALIGN_WITH_INPUT specified.
  *
- * @param name Name of the output sectio
+ * @param name Name of the output section
  * @param options Section options, or left blank
  * @param align Alignment directives, such as SUBALIGN(). ALIGN() itself is
  *              not allowed. May be blank.

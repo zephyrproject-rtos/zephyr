@@ -10,7 +10,7 @@
 #include <device.h>
 #include <drivers/entropy.h>
 #include <irq.h>
-#include <pm/pm.h>
+#include <pm/policy.h>
 #include <pm/device.h>
 
 #include <sys/ring_buffer.h>
@@ -101,7 +101,7 @@ static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
 	unsigned int key = irq_lock();
 
 	if (!data->constrained) {
-		pm_constraint_set(PM_STATE_STANDBY);
+		pm_policy_state_lock_get(PM_STATE_STANDBY);
 		data->constrained = true;
 	}
 	irq_unlock(key);
@@ -125,9 +125,8 @@ static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
 	return 0;
 }
 
-static void entropy_cc13xx_cc26xx_isr(const void *arg)
+static void entropy_cc13xx_cc26xx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 	uint32_t src = 0;
 	uint32_t cnt;
@@ -147,7 +146,7 @@ static void entropy_cc13xx_cc26xx_isr(const void *arg)
 		if (cnt != sizeof(num)) {
 #ifdef CONFIG_PM
 			if (data->constrained) {
-				pm_constraint_release(
+				pm_policy_state_lock_put(
 					PM_STATE_STANDBY);
 				data->constrained = false;
 			}
@@ -158,8 +157,8 @@ static void entropy_cc13xx_cc26xx_isr(const void *arg)
 		k_sem_give(&data->sync);
 	}
 
-	/* Change the shutdown FROs' oscillating frequncy in an attempt to
-	 * prevent further locking on to the sampling clock frequncy.
+	/* Change the shutdown FROs' oscillating frequency in an attempt to
+	 * prevent further locking on to the sampling clock frequency.
 	 */
 	if (src & TRNG_FRO_SHUTDOWN) {
 		handle_shutdown_ovf();
@@ -291,7 +290,7 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 #if defined(CONFIG_PM)
 	Power_setDependency(PowerCC26XX_PERIPH_TRNG);
 	/* Stay out of standby until buffer is filled with entropy */
-	pm_constraint_set(PM_STATE_STANDBY);
+	pm_policy_state_lock_get(PM_STATE_STANDBY);
 	data->constrained = true;
 	/* Register notification function */
 	Power_registerNotify(&data->post_notify,

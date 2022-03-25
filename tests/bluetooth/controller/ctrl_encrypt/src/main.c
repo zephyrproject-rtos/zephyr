@@ -286,7 +286,7 @@ void test_encryption_start_central_loc(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -520,7 +520,7 @@ void test_encryption_start_central_loc_limited_memory(void)
 	/* Release dummy procedure */
 	llcp_proc_ctx_release(ctx);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -636,7 +636,7 @@ void test_encryption_start_central_loc_no_ltk(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -747,7 +747,7 @@ void test_encryption_start_central_loc_no_ltk_2(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -964,7 +964,7 @@ void test_encryption_start_periph_rem(void)
 	/* CCM Tx Direction should be S->M */
 	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1268,7 +1268,7 @@ void test_encryption_start_periph_rem_limited_memory(void)
 	/* Release dummy procedure */
 	llcp_proc_ctx_release(ctx);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1415,7 +1415,7 @@ void test_encryption_start_periph_rem_no_ltk(void)
 	ut_rx_q_is_empty();
 
 	/* Note that for this test the context is not released */
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt() - 1,
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1566,7 +1566,7 @@ void test_encryption_pause_central_loc(void)
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -1742,7 +1742,7 @@ void test_encryption_pause_periph_rem(void)
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U, NULL);
 
-	zassert_equal(ctx_buffers_free(), CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM,
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 

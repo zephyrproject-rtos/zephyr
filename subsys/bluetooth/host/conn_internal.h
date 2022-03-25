@@ -36,6 +36,9 @@ enum {
 	BT_CONN_PERIPHERAL_PARAM_SET,	/* If periph param were set from app */
 	BT_CONN_PERIPHERAL_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,             /* Pairing even with existing keys. */
+#if defined(CONFIG_BT_GATT_CLIENT)
+	BT_CONN_ATT_MTU_EXCHANGED,	/* If ATT MTU has been exchanged. */
+#endif /* CONFIG_BT_GATT_CLIENT */
 
 	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
 	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
@@ -415,7 +418,7 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve,
 /* Initialize connection management */
 int bt_conn_init(void);
 
-/* Selects based on connecton type right semaphore for ACL packets */
+/* Selects based on connection type right semaphore for ACL packets */
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 
 /* k_poll related helpers for the TX thread */

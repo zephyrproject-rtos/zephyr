@@ -227,7 +227,7 @@ static void test_desc_sections(void)
 
 	LOG_HEXDUMP_DBG((uint8_t *)_usb_cfg_data_list_start,
 			SYMBOL_SPAN(_usb_cfg_data_list_end, _usb_cfg_data_list_start),
-			"USB Configuratio structures section");
+			"USB Configuration structures section");
 
 	head = (struct usb_desc_header *)__usb_descriptor_start;
 	zassert_not_null(head, NULL);

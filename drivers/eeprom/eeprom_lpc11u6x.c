@@ -13,7 +13,7 @@
  * This driver supports the on-chip EEPROM found on NXP LPC11U6x MCUs.
  *
  * @note This driver is only a wrapper for the IAP (In-Application Programming)
- *       EEPROM funcions.
+ *       EEPROM functions.
  */
 
 #include <drivers/eeprom.h>

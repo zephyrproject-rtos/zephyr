@@ -98,7 +98,7 @@ static uint32_t full_int_lock(void)
 {
 	uint32_t mcu_critical_state;
 
-	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+	if (IS_ENABLED(CONFIG_NRF_RTC_TIMER_LOCK_ZERO_LATENCY_IRQS)) {
 		mcu_critical_state = __get_PRIMASK();
 		__disable_irq();
 	} else {
@@ -110,7 +110,7 @@ static uint32_t full_int_lock(void)
 
 static void full_int_unlock(uint32_t mcu_critical_state)
 {
-	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+	if (IS_ENABLED(CONFIG_NRF_RTC_TIMER_LOCK_ZERO_LATENCY_IRQS)) {
 		__set_PRIMASK(mcu_critical_state);
 	} else {
 		irq_unlock(mcu_critical_state);
@@ -266,7 +266,7 @@ static uint32_t set_absolute_alarm(int32_t chan, uint32_t abs_val)
 		/* Rerun the algorithm if counter progressed during execution
 		 * and cc_val is in the past or one tick from now. In such
 		 * scenario, it is possible that event will not be generated.
-		 * Reruning the algorithm will delay the alarm but ensure that
+		 * Rerunning the algorithm will delay the alarm but ensure that
 		 * event will be generated at the moment indicated by value in
 		 * CC register.
 		 */

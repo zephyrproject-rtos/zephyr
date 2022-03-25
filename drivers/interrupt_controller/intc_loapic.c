@@ -143,9 +143,6 @@ void z_loapic_enable(unsigned char cpu_number)
 
 	/* program Local Vector Table for the Virtual Wire Mode */
 
-	/* skip LINT0/LINT1 for Jailhouse guest case, because we won't
-	 * ever be waiting for interrupts on those
-	 */
 	/* set LINT0: extInt, high-polarity, edge-trigger, not-masked */
 
 	x86_write_loapic(LOAPIC_LINT0, (x86_read_loapic(LOAPIC_LINT0) &
@@ -422,7 +419,7 @@ static int loapic_pm_action(const struct device *dev,
 PM_DEVICE_DEFINE(loapic, loapic_pm_action);
 
 DEVICE_DEFINE(loapic, "loapic", loapic_init, PM_DEVICE_GET(loapic), NULL, NULL,
-	      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+	      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR
 extern void z_loapic_spurious_handler(void);

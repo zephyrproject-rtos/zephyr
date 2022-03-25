@@ -161,7 +161,7 @@ static void gpio_pca953x_work_handler(struct k_work *work)
 }
 
 /**
- * @brief ISR for intterupt pin of PCA953X
+ * @brief ISR for interrupt pin of PCA953X
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param gpio_cb Pointer to callback function struct

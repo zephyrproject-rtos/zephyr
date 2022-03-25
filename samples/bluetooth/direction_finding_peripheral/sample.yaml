@@ -11,8 +11,8 @@ tests:
       - nrf52833dk_nrf52820
       - nrf5340dk_nrf5340_cpuapp
   sample.bluetooth.direction_finding_connectionless_rx.aod:
-    extra_args: OVERLAY_CONFIG="overlay-aoa.conf"
     harness: bluetooth
+    extra_args: OVERLAY_CONFIG="overlay-aoa.conf"
     platform_allow: nrf52833dk_nrf52833 nrf52833dk_nrf52820 nrf5340dk_nrf5340_cpuapp
     tags: bluetooth
     integration_platforms:

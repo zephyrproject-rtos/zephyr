@@ -9,7 +9,7 @@
 #include <kernel.h>
 #include <drivers/i2c.h>
 #include <pm/device.h>
-#include <pm/pm.h>
+#include <pm/policy.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
@@ -197,9 +197,7 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 
 	k_sem_take(&data->lock, K_FOREVER);
 
-#ifdef CONFIG_PM
-	pm_constraint_set(PM_STATE_STANDBY);
-#endif
+	pm_policy_state_lock_get(PM_STATE_STANDBY);
 
 	for (int i = 0; i < num_msgs; i++) {
 		/* Not supported by hardware */
@@ -221,9 +219,7 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 		}
 	}
 
-#ifdef CONFIG_PM
-	pm_constraint_release(PM_STATE_STANDBY);
-#endif
+	pm_policy_state_lock_put(PM_STATE_STANDBY);
 
 	k_sem_give(&data->lock);
 
@@ -273,9 +269,8 @@ static int i2c_cc13xx_cc26xx_configure(const struct device *dev,
 	return 0;
 }
 
-static void i2c_cc13xx_cc26xx_isr(const void *arg)
+static void i2c_cc13xx_cc26xx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
 	struct i2c_cc13xx_cc26xx_data *data = dev->data;
 	const uint32_t base = config->base;

@@ -661,7 +661,7 @@ static int sdhc_spi_detect(const struct device *dev)
 		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6],
 		buf[7], buf[8], sys_get_be32(&buf[9]));
 
-	/* Initilisation complete */
+	/* Initialisation complete */
 	sdhc_spi_set_status(dev, DISK_STATUS_OK);
 
 	return 0;

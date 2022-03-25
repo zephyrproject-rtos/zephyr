@@ -45,9 +45,9 @@ enum stm32_exti_trigger {
 	STM32_EXTI_TRIG_NONE  = 0x0,
 	/* trigger on rising edge */
 	STM32_EXTI_TRIG_RISING  = 0x1,
-	/* trigger on falling endge */
+	/* trigger on falling edge */
 	STM32_EXTI_TRIG_FALLING = 0x2,
-	/* trigger on falling endge */
+	/* trigger on falling edge */
 	STM32_EXTI_TRIG_BOTH = 0x3,
 };
 

@@ -243,7 +243,7 @@ int bt_hci_transport_setup(const struct device *dev);
 /** Allocate an HCI event buffer.
  *
  * This function allocates a new buffer for an HCI event. It is given the
- * avent code and the total length of the parameters. Upon successful return
+ * event code and the total length of the parameters. Upon successful return
  * the buffer is ready to have the parameters encoded into it.
  *
  * @param evt        Event OpCode.

@@ -39,7 +39,9 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("     a5: " PR_REG "    t5: " PR_REG, esf->a5, esf->t5);
 		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
 		LOG_ERR("     a7: " PR_REG, esf->a7);
-		LOG_ERR("         " NO_REG "    tp: " PR_REG, esf->tp);
+#ifdef CONFIG_USERSPACE
+		LOG_ERR("     sp: " PR_REG, esf->sp);
+#endif
 		LOG_ERR("     ra: " PR_REG, esf->ra);
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
@@ -119,15 +121,7 @@ void _Fault(z_arch_esf_t *esf)
 	LOG_ERR("  mtval: %lx", mtval);
 #endif
 
-	unsigned int reason = K_ERR_CPU_EXCEPTION;
-
-#if !defined(CONFIG_USERSPACE)
-	if (esf->t5 == ARCH_EXCEPT_MARKER) {
-		reason = esf->t6;
-	}
-#endif
-
-	z_riscv_fatal_error(reason, esf);
+	z_riscv_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 }
 
 #ifdef CONFIG_USERSPACE

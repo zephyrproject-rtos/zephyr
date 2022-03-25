@@ -267,7 +267,7 @@ int usb_dc_set_address(const uint8_t addr)
 	/*
 	 * The device stack tries to set the address before
 	 * sending the ACK with ZLP, which is totally stupid,
-	 * as workaround the addresse will be buffered and
+	 * as workaround the address will be buffered and
 	 * placed later inside isr handler (see KINETIS_IN_TOKEN).
 	 */
 	dev_data.address = 0x80 | (addr & 0x7f);

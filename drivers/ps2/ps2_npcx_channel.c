@@ -11,7 +11,7 @@
  * @brief Nuvoton NPCX PS/2 driver
  *
  * This file contains the driver of PS/2 buses (channels) which provides the
- * connection between Zephyr PS/2 API fucntions and NPCX PS/2 controller driver
+ * connection between Zephyr PS/2 API functions and NPCX PS/2 controller driver
  * to support PS/2 transactions.
  *
  */

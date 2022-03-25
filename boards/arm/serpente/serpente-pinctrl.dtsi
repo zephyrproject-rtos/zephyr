@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/samd21-da1eXabcd-pinctrl.h>
+
+&pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PA22F_TCC0_WO4>,
+				 <PA19F_TCC0_WO3>,
+				 <PA23F_TCC0_WO5>;
+		};
+	};
+
+	sercom0_i2c_default: sercom0_i2c_default {
+		group1 {
+			pinmux = <PA4D_SERCOM0_PAD0>,
+				 <PA5D_SERCOM0_PAD1>;
+		};
+	};
+
+	sercom0_spi_default: sercom0_spi_default {
+		group1 {
+			pinmux = <PA6D_SERCOM0_PAD2>,
+				 <PA4D_SERCOM0_PAD0>,
+				 <PA5D_SERCOM0_PAD1>;
+		};
+	};
+	sercom3_spi_default: sercom3_spi_default {
+		group1 {
+			pinmux = <PA18D_SERCOM3_PAD2>,
+				 <PA16D_SERCOM3_PAD0>,
+				 <PA17D_SERCOM3_PAD1>;
+		};
+	};
+
+	sercom0_uart_default: sercom0_uart_default {
+		group1 {
+			pinmux = <PA5D_SERCOM0_PAD1>,
+				 <PA4D_SERCOM0_PAD0>;
+		};
+	};
+	sercom2_uart_default: sercom2_uart_default {
+		group1 {
+			pinmux = <PA9D_SERCOM2_PAD1>,
+				 <PA8D_SERCOM2_PAD0>;
+		};
+	};
+
+	usb_dc_default: usb_dc_default {
+		group1 {
+			pinmux = <PA25G_USB_DP>,
+				 <PA24G_USB_DM>;
+		};
+	};
+};

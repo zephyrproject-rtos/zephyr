@@ -16,7 +16,7 @@ extern "C" {
 /**
  * API template to check if the BBRAM is invalid.
  *
- * @see bbram_check_invlaid
+ * @see bbram_check_invalid
  */
 typedef int (*bbram_api_check_invalid)(const struct device *dev);
 

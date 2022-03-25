@@ -311,7 +311,7 @@ struct bt_gatt_ccc {
  */
 #define BT_GATT_SCC_BROADCAST                   0x0001
 
-/** Server Characterestic Configuration Attribute Value */
+/** Server Characteristic Configuration Attribute Value */
 struct bt_gatt_scc {
 	/** Server Characteristic Configuration flags */
 	uint16_t flags;
@@ -555,7 +555,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  *                       attribute callbacks.
  *  @param _instance_num Number of elements in instance array.
  *  @param _attrs_def    Macro provided by the user that defines attribute
- *                       array for the serivce. This macro should accept single
+ *                       array for the service. This macro should accept single
  *                       parameter which is the instance context.
  */
 #define BT_GATT_SERVICE_INSTANCE_DEFINE(				 \
@@ -1231,6 +1231,8 @@ struct bt_gatt_exchange_params {
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
  *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *
+ *  @retval -EALREADY The MTU exchange procedure has been already performed.
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn,
 			 struct bt_gatt_exchange_params *params);
@@ -1303,7 +1305,7 @@ enum {
 	BT_GATT_DISCOVER_ATTRIBUTE,
 	/** @brief Discover standard characteristic descriptor values.
 	 *
-	 *  Discover standard characterestic descriptor values and their
+	 *  Discover standard characteristic descriptor values and their
 	 *  properties.
 	 *  Supported descriptors:
 	 *   - Characteristic Extended Properties
@@ -1668,6 +1670,13 @@ struct bt_gatt_subscribe_params {
 #endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
 	/** Subscribe value */
 	uint16_t value;
+#if defined(CONFIG_BT_SMP)
+	/** Minimum required security for received notification. Notifications
+	 * and indications received over a connection with a lower security
+	 * level are silently discarded.
+	 */
+	bt_security_t min_security;
+#endif
 	/** Subscription flags */
 	ATOMIC_DEFINE(flags, BT_GATT_SUBSCRIBE_NUM_FLAGS);
 

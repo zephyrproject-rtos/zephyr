@@ -160,7 +160,7 @@ int nrf_flash_sync_init(void)
 void nrf_flash_sync_set_context(uint32_t duration)
 {
 
-	/* FLASH_SYNC_SWITCHING_TIME is delay which is allways added by
+	/* FLASH_SYNC_SWITCHING_TIME is delay which is always added by
 	 * the slot calling mechanism
 	 */
 	_ticker_sync_context.interval = duration - FLASH_SYNC_SWITCHING_TIME;

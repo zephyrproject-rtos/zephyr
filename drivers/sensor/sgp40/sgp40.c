@@ -225,7 +225,7 @@ static int sgp40_init(const struct device *dev)
 			LOG_ERR("Selftest failed!");
 			return rc;
 		}
-		LOG_DBG("Selftest succeded!");
+		LOG_DBG("Selftest succeeded!");
 	}
 
 	comp_data.val1 = SGP40_COMP_DEFAULT_T;

@@ -414,7 +414,7 @@ static void i2s_mcux_config_dma_blocks(const struct device *dev,
 static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 				uint32_t channel, int status)
 {
-	const struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct i2s_mcux_data *dev_data = dev->data;
 	struct stream *stream = &dev_data->tx;
 	void *buffer;
@@ -453,7 +453,7 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 			/*
 			 * DMA encountered an error (status != 0)
 			 * or
-			 * No bufers in input queue
+			 * No buffers in input queue
 			 */
 			LOG_DBG("DMA status %08x channel %u k_msgq_get ret %d",
 				status, channel, ret);
@@ -474,7 +474,7 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 static void i2s_mcux_dma_rx_callback(const struct device *dma_dev, void *arg,
 				uint32_t channel, int status)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct i2s_mcux_data *dev_data = dev->data;
 	struct stream *stream = &dev_data->rx;
 	void *buffer;
@@ -591,7 +591,7 @@ static int i2s_mcux_rx_stream_start(const struct device *dev)
 	num_of_bufs = k_mem_slab_num_free_get(stream->cfg.mem_slab);
 
 	/*
-	 * Need at least two bffers on the RX memory slab for
+	 * Need at least two buffers on the RX memory slab for
 	 * reliable DMA reception.
 	 */
 	if (num_of_bufs <= 1) {
@@ -908,7 +908,7 @@ static int i2s_mcux_init(const struct device *dev)
 			    &i2s_mcux_data_##id,			\
 			    &i2s_mcux_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_I2S_INIT_PRIORITY,			\
 			    &i2s_mcux_driver_api);			\
 	static void i2s_mcux_config_func_##id(const struct device *dev)	\
 	{								\

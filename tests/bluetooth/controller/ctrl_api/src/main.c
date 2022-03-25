@@ -107,13 +107,13 @@ void test_int_disconnect_loc(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM, NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
 
 	err = ull_cp_version_exchange(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM - 1, NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt() - 1, NULL);
 
 	event_prepare(&conn);
 	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
@@ -126,7 +126,7 @@ void test_int_disconnect_loc(void)
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM, NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
 
 	ut_rx_q_is_empty();
 
@@ -137,7 +137,7 @@ void test_int_disconnect_loc(void)
 	event_done(&conn);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM, NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
 
 	/*
 	 * all buffers should still be empty
@@ -165,7 +165,7 @@ void test_int_disconnect_rem(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM, NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -173,7 +173,7 @@ void test_int_disconnect_rem(void)
 	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM, NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
 
 	/* Disconnect before we reply */
 
@@ -189,7 +189,7 @@ void test_int_disconnect_rem(void)
 	event_done(&conn);
 
 	nr_free_ctx = ctx_buffers_free();
-	zassert_equal(nr_free_ctx, CONFIG_BT_CTLR_LLCP_PROC_CTX_BUF_NUM, NULL);
+	zassert_equal(nr_free_ctx, test_ctx_buffers_cnt(), NULL);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();

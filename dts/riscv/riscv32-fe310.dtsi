@@ -99,7 +99,7 @@
 			ranges;
 
 			pinctrl: pinctrl@10012038 {
-				compatible = "sifive,iof";
+				compatible = "sifive,pinctrl";
 				reg = <0x10012038 0x8>;
 			};
 		};

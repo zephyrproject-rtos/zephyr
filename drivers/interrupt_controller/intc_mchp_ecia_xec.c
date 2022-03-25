@@ -76,7 +76,7 @@ struct xec_girq_src_data {
 	((struct xec_girq_src_data *const)(girq_dev)->data)
 
 /*
- * Enable/disable specified GIRQ's aggregated output. Aggrated output is the
+ * Enable/disable specified GIRQ's aggregated output. Aggregated output is the
  * bit-wise or of all the GIRQ's result bits.
  */
 void mchp_xec_ecia_girq_aggr_en(uint8_t girq_num, uint8_t enable)
@@ -229,7 +229,7 @@ uint32_t mchp_xec_ecia_info_girq_result(int ecia_info)
 
 /*
  * Clear NVIC pending status given GIRQ source information encoded by macro
- * MCHP_XEC_ECIA. For aggregated only sources the ecoding sets direct NVIC
+ * MCHP_XEC_ECIA. For aggregated only sources the encoding sets direct NVIC
  * number equal to aggregated NVIC number.
  */
 void mchp_xec_ecia_info_nvic_clr_pend(int ecia_info)
@@ -568,7 +568,7 @@ static int xec_ecia_init(const struct device *dev)
 									\
 	DEVICE_DT_DEFINE(n, xec_girq_init_##n,				\
 		 NULL, &xec_data_girq_##n, &xec_config_girq_##n,	\
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,		\
 		 NULL);							\
 									\
 	static int xec_girq_init_##n(const struct device *dev)		\
@@ -606,7 +606,7 @@ static const struct xec_ecia_config xec_config_ecia = {
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ecia), xec_ecia_init,
 		 NULL, NULL, &xec_config_ecia,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 NULL);
 
 /* look up GIRQ node handle from ECIA configuration */

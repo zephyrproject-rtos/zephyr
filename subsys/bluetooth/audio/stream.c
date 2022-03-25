@@ -27,11 +27,15 @@
 #define LOG_MODULE_NAME bt_audio_stream
 #include "common/log.h"
 
-#if defined(CONFIG_BT_AUDIO_UNICAST)
-static struct bt_audio_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
-static struct bt_audio_unicast_group unicast_groups[UNICAST_GROUP_CNT];
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+int bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
+				  const struct bt_codec_qos *codec)
+{
+	io->sdu = codec->sdu;
+	io->phy = codec->phy;
+	io->rtn = codec->rtn;
+
+	return 0;
+}
 
 void bt_audio_stream_attach(struct bt_conn *conn,
 			    struct bt_audio_stream *stream,
@@ -53,6 +57,30 @@ void bt_audio_stream_attach(struct bt_conn *conn,
 		stream->iso = &ep->iso;
 	}
 }
+
+#if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
+int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf)
+{
+	if (stream == NULL || stream->ep == NULL) {
+		return -EINVAL;
+	}
+
+	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
+		BT_DBG("Channel not ready for streaming");
+		return -EBADMSG;
+	}
+
+	/* TODO: Add checks for broadcast sink */
+
+	return bt_iso_chan_send(stream->iso, buf);
+}
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
+
+#if defined(CONFIG_BT_AUDIO_UNICAST)
+static struct bt_audio_stream *enabling[CONFIG_BT_ISO_MAX_CHAN];
+#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
+static struct bt_audio_unicast_group unicast_groups[UNICAST_GROUP_CNT];
+#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 
 static int bt_audio_stream_iso_accept(const struct bt_iso_accept_info *info,
 				      struct bt_iso_chan **iso_chan)
@@ -123,16 +151,6 @@ done:
 	return -ENOSPC;
 }
 
-int bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
-				  const struct bt_codec_qos *codec)
-{
-	io->sdu = codec->sdu;
-	io->phy = codec->phy;
-	io->rtn = codec->rtn;
-
-	return 0;
-}
-
 bool bt_audio_valid_qos(const struct bt_codec_qos *qos)
 {
 	if (qos->interval < BT_ISO_INTERVAL_MIN ||
@@ -182,9 +200,9 @@ bool bt_audio_valid_stream_qos(const struct bt_audio_stream *stream,
 	const struct bt_codec_qos_pref *qos_pref = &stream->ep->qos_pref;
 
 	if (qos_pref->latency < qos->latency) {
+		/* Latency is a preferred value. Print debug info but do not fail. */
 		BT_DBG("Latency %u higher than preferred max %u",
 			qos->latency, qos_pref->latency);
-		return false;
 	}
 
 	if (!IN_RANGE(qos->pd, qos_pref->pd_min, qos_pref->pd_max)) {
@@ -254,22 +272,6 @@ void bt_audio_stream_reset(struct bt_audio_stream *stream)
 	if (err != 0) {
 		BT_ERR("Failed to terminate CIG: %d", err);
 	}
-}
-
-int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf)
-{
-	if (stream == NULL || stream->ep == NULL) {
-		return -EINVAL;
-	}
-
-	if (stream->ep->status.state != BT_AUDIO_EP_STATE_STREAMING) {
-		BT_DBG("Channel not ready for streaming");
-		return -EBADMSG;
-	}
-
-	/* TODO: Add checks for broadcast sink */
-
-	return bt_iso_chan_send(stream->iso, buf);
 }
 
 void bt_audio_stream_cb_register(struct bt_audio_stream *stream,

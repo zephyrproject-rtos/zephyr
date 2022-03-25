@@ -98,7 +98,7 @@ struct zsock_pollfd {
 /** Socket option to select ciphersuites to use. It accepts and returns an array
  *  of integers with IANA assigned ciphersuite identifiers.
  *  If not set, socket will allow all ciphersuites available in the system
- *  (mebdTLS default behavior).
+ *  (mbedTLS default behavior).
  */
 #define TLS_CIPHERSUITE_LIST 3
 /** Read-only socket option to read a ciphersuite chosen during TLS handshake.
@@ -481,6 +481,21 @@ __syscall int zsock_setsockopt(int sock, int level, int optname,
 			       const void *optval, socklen_t optlen);
 
 /**
+ * @brief Get peer name
+ *
+ * @details
+ * @rst
+ * See `POSIX.1-2017 article
+ * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html>`__
+ * for normative description.
+ * This function is also exposed as ``getpeername()``
+ * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * @endrst
+ */
+__syscall int zsock_getpeername(int sock, struct sockaddr *addr,
+				socklen_t *addrlen);
+
+/**
  * @brief Get socket name
  *
  * @details
@@ -749,6 +764,12 @@ static inline int setsockopt(int sock, int level, int optname,
 			     const void *optval, socklen_t optlen)
 {
 	return zsock_setsockopt(sock, level, optname, optval, optlen);
+}
+
+static inline int getpeername(int sock, struct sockaddr *addr,
+			      socklen_t *addrlen)
+{
+	return zsock_getpeername(sock, addr, addrlen);
 }
 
 static inline int getsockname(int sock, struct sockaddr *addr,

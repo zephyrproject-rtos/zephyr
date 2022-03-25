@@ -44,7 +44,7 @@
  *
  * Note that while the scheme in #1 may look like an atomic message,
  * there is no queuing in the hardware!  This is just a regular level
- * triggered interrupt with some scratch registers on which mulitple
+ * triggered interrupt with some scratch registers on which multiple
  * contexts can race.  The design intent is that the sender polls the
  * IDR.BUSY bit (or waits for a return interrupt via #2) to be sure
  * the link is available.  And even then two independent initiators

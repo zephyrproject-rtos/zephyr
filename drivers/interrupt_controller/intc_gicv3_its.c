@@ -480,7 +480,7 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 		return -EINVAL;
 	}
 
-	/* The CPU id directly maps as ICID for the currect CPU redistributor */
+	/* The CPU id directly maps as ICID for the current CPU redistributor */
 	ret = its_send_mapti_cmd(data, device_id, event_id, intid, arch_curr_cpu()->id);
 	if (ret) {
 		LOG_ERR("Failed to map eventid %d to intid %d for deviceid %x",
@@ -667,7 +667,7 @@ struct its_driver_api gicv3_its_api = {
 			      &gicv3_its_data##n,			       \
 			      &gicv3_its_config##n,			       \
 			      POST_KERNEL,				       \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
+			      CONFIG_INTC_INIT_PRIORITY,		       \
 			      &gicv3_its_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GICV3_ITS_INIT)

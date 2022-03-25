@@ -258,7 +258,7 @@ typedef void (*onoff_client_callback)(struct onoff_manager *mgr,
  *
  * Objects of this type are allocated by a client, which is
  * responsible for zero-initializing the node field and invoking the
- * approprite sys_notify init function to configure notification.
+ * appropriate sys_notify init function to configure notification.
  *
  * Control of the object content transfers to the service provider
  * when a pointer to the object is passed to any on-off manager

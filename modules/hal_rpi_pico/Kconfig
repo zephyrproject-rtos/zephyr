@@ -13,3 +13,8 @@ config PICOSDK_USE_GPIO
 	bool
 	help
 	  Use the GPIO driver from pico-sdk
+
+config PICOSDK_USE_FLASH
+	bool
+	help
+	  Use the flash driver from pico-sdk

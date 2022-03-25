@@ -109,7 +109,7 @@ where:
     | "off"                 | offset the response is for                        |
     +-----------------------+---------------------------------------------------+
     | "data"                | chunk of data read from file; it is CBOR encoded  |
-    |                       | stream of bytes with embeeded size;               |
+    |                       | stream of bytes with embedded size;               |
     |                       | "data" appears only in responses where "rc" is 0  |
     +-----------------------+---------------------------------------------------+
     | "len"                 | length of file, this field is only mandatory      |
@@ -171,10 +171,10 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "off"                 | offset to start/continue uplad  at                |
+    | "off"                 | offset to start/continue upload at                |
     +-----------------------+---------------------------------------------------+
     | "data"                | chunk of data to write to the file;               |
-    |                       | it is CBOR encoded with length embeeded           |
+    |                       | it is CBOR encoded with length embedded           |
     +-----------------------+---------------------------------------------------+
     | "name"                | absolute path to a file                           |
     +-----------------------+---------------------------------------------------+

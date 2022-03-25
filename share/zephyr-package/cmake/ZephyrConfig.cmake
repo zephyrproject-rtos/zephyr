@@ -43,11 +43,14 @@ macro(include_boilerplate location)
 
   if(NOT NO_BOILERPLATE)
     list(LENGTH Zephyr_FIND_COMPONENTS components_length)
+    # The module messages are intentionally higher than STATUS to avoid the -- prefix
+    # and make them more visible to users. This does result in them being output
+    # to stderr, but that is an implementation detail of cmake.
     if(components_length EQUAL 0)
-      message("Loading Zephyr default modules (${location}).")
+      message(NOTICE "Loading Zephyr default modules (${location}).")
       include(zephyr_default NO_POLICY_SCOPE)
     else()
-      message("Loading Zephyr module(s) (${location}): ${Zephyr_FIND_COMPONENTS}")
+      message(NOTICE "Loading Zephyr module(s) (${location}): ${Zephyr_FIND_COMPONENTS}")
       foreach(component ${Zephyr_FIND_COMPONENTS})
         if(${component} MATCHES "^\([^:]*\):\(.*\)$")
           string(REPLACE "," ";" SUB_COMPONENTS ${CMAKE_MATCH_2})
@@ -115,8 +118,8 @@ if(NOT IS_INCLUDED)
     # This check works the following way.
     # CMake finds packages will look all packages registered in the user package registry.
     # As this code is processed inside registered packages, we simply test if another package has a
-    # comon path with the current sample.
-    # and if so, we will retrun here, and let CMake call into the other registered package for real
+    # common path with the current sample.
+    # and if so, we will return here, and let CMake call into the other registered package for real
     # version checking.
     check_zephyr_package(CURRENT_WORKSPACE_DIR ${CURRENT_WORKSPACE_DIR})
 

@@ -555,7 +555,7 @@ void test_mbox_get_put_block_data(void)
  * @brief Test mailbox enhance capabilities
  *
  * @details
- * - Define and initilized a message queue and a mailbox
+ * - Define and initialized a message queue and a mailbox
  * - Verify the capability of message queue and mailbox
  * - with same data.
  *

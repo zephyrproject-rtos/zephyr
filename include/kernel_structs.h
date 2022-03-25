@@ -38,7 +38,7 @@ extern "C" {
 /*
  * Bitmask definitions for the struct k_thread.thread_state field.
  *
- * Must be before kerneL_arch_data.h because it might need them to be already
+ * Must be before kernel_arch_data.h because it might need them to be already
  * defined.
  */
 

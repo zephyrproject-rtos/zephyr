@@ -33,22 +33,21 @@ mgmt_streamer_reset_buf(struct mgmt_streamer *streamer, void *buf)
 }
 
 int
-mgmt_streamer_write_at(struct mgmt_streamer *streamer, size_t offset,
-					   const void *data, int len)
+mgmt_streamer_write_hdr(struct mgmt_streamer *streamer, const struct mgmt_hdr *hdr)
 {
-	return streamer->cfg->write_at(streamer->writer, offset, data, len, streamer->cb_arg);
+	return streamer->cfg->write_hdr(streamer->writer, hdr);
 }
 
 int
 mgmt_streamer_init_reader(struct mgmt_streamer *streamer, void *buf)
 {
-	return streamer->cfg->init_reader(streamer->reader, buf, streamer->cb_arg);
+	return streamer->cfg->init_reader(streamer->reader, buf);
 }
 
 int
 mgmt_streamer_init_writer(struct mgmt_streamer *streamer, void *buf)
 {
-	return streamer->cfg->init_writer(streamer->writer, buf, streamer->cb_arg);
+	return streamer->cfg->init_writer(streamer->writer, buf);
 }
 
 void
@@ -153,6 +152,20 @@ mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
 	if (rc != 0) {
 		return rc;
 	}
+
+#ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
+	if (MGMT_CTXT_RC_RSN(ctxt) != NULL) {
+		rc = cbor_encode_text_stringz(&ctxt->encoder, "rsn");
+		if (rc != 0) {
+			return rc;
+		}
+
+		rc = cbor_encode_text_stringz(&ctxt->encoder, MGMT_CTXT_RC_RSN(ctxt));
+		if (rc != 0) {
+			return rc;
+		}
+	}
+#endif
 
 	return 0;
 }

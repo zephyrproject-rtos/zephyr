@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_RPI_PICO_RESET := raspberrypi,pico-reset
+
+config RESET_RPI_PICO
+	bool "Raspberry Pi Reset Controller driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_RPI_PICO_RESET))

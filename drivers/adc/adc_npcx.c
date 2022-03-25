@@ -70,9 +70,8 @@ struct adc_npcx_data {
 #define HAL_INSTANCE(dev) ((struct adc_reg *)((const struct adc_npcx_config *)(dev)->config)->base)
 
 /* ADC local functions */
-static void adc_npcx_isr(void *arg)
+static void adc_npcx_isr(const struct device *dev)
 {
-	const struct device *dev = arg;
 	const struct adc_npcx_config *config = dev->config;
 	struct adc_npcx_data *const data = dev->data;
 	struct adc_reg *const inst = HAL_INSTANCE(dev);
@@ -153,8 +152,8 @@ static void adc_npcx_start_scan(const struct device *dev)
 	SET_FIELD(inst->ADCCNF, NPCX_ADCCNF_ADCMD_FIELD,
 			NPCX_ADC_SCAN_CONVERSION_MODE);
 
-	/* Select 'One-Shot' Repetitive mode */
-	inst->ADCCNF |= BIT(NPCX_ADCCNF_INTECEN);
+	/* Enable end of cyclic conversion event interrupt */
+	inst->ADCCNF |= BIT(NPCX_ADCCNF_INTECCEN);
 
 	/* Start conversion */
 	inst->ADCCNF |= BIT(NPCX_ADCCNF_START);

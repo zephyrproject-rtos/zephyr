@@ -9,27 +9,36 @@
 #include <toolchain.h>
 #include <sys/util.h>
 
+#include <zephyr.h>
+
+#include <bluetooth/bluetooth.h>
+
 #include "util/memq.h"
 #include "pdu.h"
+
+
+#include "ll.h"
 #include "lll.h"
+#include "lll_conn_iso.h"
+#include "lll_iso_tx.h"
 #include "isoal.h"
+#include "ull_iso_types.h"
 
 #define LOG_MODULE_NAME bt_ctlr_isoal
 #include "common/log.h"
 #include "hal/debug.h"
-
-/* TODO this must be taken from a Kconfig */
-#define ISOAL_SINKS_MAX   (4)
 
 /** Allocation state */
 typedef uint8_t isoal_alloc_state_t;
 #define ISOAL_ALLOC_STATE_FREE            ((isoal_alloc_state_t) 0x00)
 #define ISOAL_ALLOC_STATE_TAKEN           ((isoal_alloc_state_t) 0x01)
 
-static struct
+struct
 {
-	isoal_alloc_state_t  sink_allocated[ISOAL_SINKS_MAX];
-	struct isoal_sink    sink_state[ISOAL_SINKS_MAX];
+	isoal_alloc_state_t  sink_allocated[CONFIG_BT_CTLR_ISOAL_SINKS];
+	isoal_alloc_state_t  source_allocated[CONFIG_BT_CTLR_ISOAL_SOURCES];
+	struct isoal_sink    sink_state[CONFIG_BT_CTLR_ISOAL_SINKS];
+	struct isoal_source  source_state[CONFIG_BT_CTLR_ISOAL_SOURCES];
 } isoal_global;
 
 
@@ -77,7 +86,7 @@ static isoal_status_t isoal_sink_allocate(isoal_sink_handle_t *hdl)
 	isoal_sink_handle_t i;
 
 	/* Very small linear search to find first free */
-	for (i = 0; i < ISOAL_SINKS_MAX; i++) {
+	for (i = 0; i < CONFIG_BT_CTLR_ISOAL_SINKS; i++) {
 		if (isoal_global.sink_allocated[i] == ISOAL_ALLOC_STATE_FREE) {
 			isoal_global.sink_allocated[i] = ISOAL_ALLOC_STATE_TAKEN;
 			*hdl = i;
@@ -147,7 +156,8 @@ isoal_status_t isoal_sink_create(
 	 */
 
 	/* Note: sdu_interval unit is uS, iso_interval is a multiple of 1.25mS */
-	session->pdus_per_sdu = burst_number * (sdu_interval / (iso_interval * 1250));
+	session->pdus_per_sdu = (burst_number * sdu_interval) /
+		((uint32_t)iso_interval * CONN_INT_UNIT_US);
 
 	/* Computation of transport latency (constant part)
 	 *
@@ -213,6 +223,111 @@ isoal_status_t isoal_sink_create(
 }
 
 /**
+ * @brief Find free source from statically-sized pool and allocate it
+ * @details Implemented as linear search since pool is very small
+ *
+ * @param hdl[out]  Handle to source
+ * @return ISOAL_STATUS_OK if we could allocate; otherwise ISOAL_STATUS_ERR_SOURCE_ALLOC
+ */
+static isoal_status_t isoal_source_allocate(isoal_source_handle_t *hdl)
+{
+	isoal_source_handle_t i;
+
+	/* Very small linear search to find first free */
+	for (i = 0; i < CONFIG_BT_CTLR_ISOAL_SOURCES; i++) {
+		if (isoal_global.source_allocated[i] == ISOAL_ALLOC_STATE_FREE) {
+			isoal_global.source_allocated[i] = ISOAL_ALLOC_STATE_TAKEN;
+			*hdl = i;
+			return ISOAL_STATUS_OK;
+		}
+	}
+
+	return ISOAL_STATUS_ERR_SOURCE_ALLOC; /* All entries were taken */
+}
+
+/**
+ * @brief Mark a source as being free to allocate again
+ * @param hdl[in]  Handle to source
+ */
+static void isoal_source_deallocate(isoal_source_handle_t hdl)
+{
+	isoal_global.source_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
+}
+
+/**
+ * @brief Create a new source
+ *
+ * @param handle[in]            Connection handle
+ * @param role[in]              Peripheral, Central or Broadcast
+ * @param burst_number[in]      Burst Number
+ * @param flush_timeout[in]     Flush timeout
+ * @param max_octets[in]        Maximum PDU size (Max_PDU_C_To_P / Max_PDU_P_To_C)
+ * @param sdu_interval[in]      SDU interval
+ * @param iso_interval[in]      ISO interval
+ * @param stream_sync_delay[in] CIS sync delay
+ * @param group_sync_delay[in]  CIG sync delay
+ * @param pdu_alloc[in]         Callback of PDU allocator
+ * @param pdu_write[in]         Callback of PDU byte writer
+ * @param pdu_emit[in]          Callback of PDU emitter
+ * @param pdu_release[in]       Callback of PDU deallocator
+ * @param hdl[out]              Handle to new source
+ *
+ * @return ISOAL_STATUS_OK if we could create a new sink; otherwise ISOAL_STATUS_ERR_SOURCE_ALLOC
+ */
+isoal_status_t isoal_source_create(
+	uint16_t                    handle,
+	uint8_t                     role,
+	uint8_t                     burst_number,
+	uint8_t                     flush_timeout,
+	uint8_t                     max_octets,
+	uint32_t                    sdu_interval,
+	uint16_t                    iso_interval,
+	uint32_t                    stream_sync_delay,
+	uint32_t                    group_sync_delay,
+	isoal_source_pdu_alloc_cb   pdu_alloc,
+	isoal_source_pdu_write_cb   pdu_write,
+	isoal_source_pdu_emit_cb    pdu_emit,
+	isoal_source_pdu_release_cb pdu_release,
+	isoal_source_handle_t       *hdl)
+{
+	isoal_status_t err;
+
+	/* Allocate a new source */
+	err = isoal_source_allocate(hdl);
+	if (err) {
+		return err;
+	}
+
+	struct isoal_source_session *session = &isoal_global.source_state[*hdl].session;
+
+	session->handle = handle;
+
+	/* Todo: Next section computing various constants, should potentially be a
+	 * function in itself as a number of the dependencies could be changed while
+	 * a connection is active.
+	 */
+
+	/* Note: sdu_interval unit is uS, iso_interval is a multiple of 1.25mS */
+	session->pdus_per_sdu = (burst_number * sdu_interval) /
+		((uint32_t)iso_interval * CONN_INT_UNIT_US);
+	/* Set maximum PDU size */
+	session->max_pdu_size = max_octets;
+
+	/* Remember the platform-specific callbacks */
+	session->pdu_alloc   = pdu_alloc;
+	session->pdu_write   = pdu_write;
+	session->pdu_emit    = pdu_emit;
+	session->pdu_release = pdu_release;
+
+	/* TODO: Constant need to be updated */
+
+	/* Initialize running seq number to zero */
+	session->seqn = 0;
+
+	return err;
+}
+
+/**
  * @brief Get reference to configuration struct
  *
  * @param hdl[in]   Handle to new sink
@@ -260,6 +375,56 @@ void isoal_sink_destroy(isoal_sink_handle_t hdl)
 
 	/* Permit allocation anew */
 	isoal_sink_deallocate(hdl);
+}
+
+/**
+ * @brief Get reference to configuration struct
+ *
+ * @param hdl[in]   Handle to new source
+ * @return Reference to parameter struct, to be configured by caller
+ */
+struct isoal_source_config *isoal_get_source_param_ref(isoal_source_handle_t hdl)
+{
+	LL_ASSERT(isoal_global.source_allocated[hdl] == ISOAL_ALLOC_STATE_TAKEN);
+
+	return &isoal_global.source_state[hdl].session.param;
+}
+
+/**
+ * @brief Atomically enable latch-in of packets and PDU production
+ * @param hdl[in]  Handle of existing instance
+ */
+void isoal_source_enable(isoal_source_handle_t hdl)
+{
+	/* Reset bookkeeping state */
+	memset(&isoal_global.source_state[hdl].pdu_production, 0,
+	       sizeof(isoal_global.source_state[hdl].pdu_production));
+
+	/* Atomically enable */
+	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_ENABLED;
+}
+
+/**
+ * @brief Atomically disable latch-in of packets and PDU production
+ * @param hdl[in]  Handle of existing instance
+ */
+void isoal_source_disable(isoal_source_handle_t hdl)
+{
+	/* Atomically disable */
+	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
+}
+
+/**
+ * @brief Disable and deallocate existing source
+ * @param hdl[in]  Handle of existing instance
+ */
+void isoal_source_destroy(isoal_source_handle_t hdl)
+{
+	/* Atomic disable */
+	isoal_source_disable(hdl);
+
+	/* Permit allocation anew */
+	isoal_source_deallocate(hdl);
 }
 
 /* Obtain destination SDU */
@@ -811,4 +976,314 @@ isoal_status_t isoal_rx_pdu_recombine(isoal_sink_handle_t sink_hdl,
 	}
 
 	return err;
+}
+
+/**
+ * Queue the PDU in production in the relevant LL transmit queue. If the
+ * attmept to release the PDU fails, the buffer linked to the PDU will be released
+ * and it will not be possible to retry the emit operation on the same PDU.
+ * @param[in]  source_ctx   ISO-AL source reference for this CIS / BIS
+ * @param[in]  produced_pdu PDU in production
+ * @param[in]  pdu_ll_id    LLID to be set indicating the type of fragment
+ * @param[in]  payload_size Length of the data written to the PDU
+ * @return     Error status of the operation
+ */
+static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
+					const struct isoal_pdu_produced *produced_pdu,
+					const uint8_t pdu_ll_id,
+					const isoal_pdu_len_t payload_size)
+{
+	struct node_tx_iso *node_tx;
+	isoal_status_t status;
+	uint16_t handle;
+
+	/* Retrieve CIS / BIS handle */
+	handle = bt_iso_handle(source_ctx->session.handle);
+
+	/* Retrieve Node handle */
+	node_tx = produced_pdu->contents.handle;
+	/* Set PDU LLID */
+	produced_pdu->contents.pdu->ll_id = pdu_ll_id;
+	/* Set PDU length */
+	produced_pdu->contents.pdu->length = (uint8_t)payload_size;
+
+	/* Attempt to enqueue the node towards the LL */
+	status = source_ctx->session.pdu_emit(node_tx, handle);
+
+	if (status != ISOAL_STATUS_OK) {
+		/* If it fails, the node will be released and no further attempt
+		 * will be possible
+		 */
+		BT_ERR("Failed to enqueue node (%p)", node_tx);
+		source_ctx->session.pdu_release(node_tx, handle, status);
+	}
+
+	return status;
+}
+
+/* Allocates a new PDU only if the previous PDU was emitted */
+static isoal_status_t isoal_tx_allocate_pdu(struct isoal_source *source,
+					    const struct isoal_sdu_tx *tx_sdu)
+{
+	struct isoal_source_session *session;
+	struct isoal_pdu_production *pp;
+	struct isoal_pdu_produced *pdu;
+	isoal_status_t err;
+
+	err = ISOAL_STATUS_OK;
+	session = &source->session;
+	pp = &source->pdu_production;
+	pdu = &pp->pdu;
+
+	/* Allocate a PDU if the previous was filled (thus sent) */
+	const bool pdu_complete = (pp->pdu_available == 0);
+
+	if (pdu_complete) {
+		/* Allocate new PDU buffer */
+		err = session->pdu_alloc(
+			&pdu->contents  /* [out] Updated with pointer and size */
+		);
+
+		if (err) {
+			pdu->contents.handle = NULL;
+			pdu->contents.pdu    = NULL;
+			pdu->contents.size   = 0;
+		}
+
+		/* Get maximum buffer available */
+		const size_t available_len = MIN(
+			session->max_pdu_size,
+			pdu->contents.size
+		);
+
+		/* Nothing has been written into buffer yet */
+		pp->pdu_written   = 0;
+		pp->pdu_available = available_len;
+		LL_ASSERT(available_len > 0);
+
+		pp->pdu_cnt++;
+	}
+
+	return err;
+}
+
+/**
+ * Attempt to emit the PDU in production if it is complete.
+ * @param[in]  source     ISO-AL source reference
+ * @param[in]  end_of_sdu SDU end has been reached
+ * @param[in]  pdu_ll_id  LLID / PDU fragment type as Start, Cont, End, Single (Unframed) or Framed
+ * @return     Error status of operation
+ */
+static isoal_status_t isoal_tx_try_emit_pdu(struct isoal_source *source,
+					    bool end_of_sdu,
+					    uint8_t pdu_ll_id)
+{
+	struct isoal_pdu_production *pp;
+	struct isoal_pdu_produced *pdu;
+	isoal_status_t err;
+
+	err = ISOAL_STATUS_OK;
+	pp = &source->pdu_production;
+	pdu = &pp->pdu;
+
+	/* Emit a PDU */
+	const bool pdu_complete = (pp->pdu_available == 0) || end_of_sdu;
+
+	if (end_of_sdu) {
+		pp->pdu_available = 0;
+	}
+
+	if (pdu_complete) {
+		err = isoal_tx_pdu_emit(source, pdu, pdu_ll_id, pp->pdu_written);
+	}
+
+	return err;
+}
+
+
+/**
+ * @brief Fragment received SDU and produce unframed PDUs
+ * @details Destination source may have an already partially built PDU
+ *
+ * @param source[in,out] Destination source with bookkeeping state
+ * @param tx_sdu[in]     SDU with packet boundary information
+ *
+ * @return Status
+ */
+static isoal_status_t isoal_tx_unframed_produce(struct isoal_source *source,
+						const struct isoal_sdu_tx *tx_sdu)
+{
+	struct isoal_source_session *session;
+	isoal_sdu_len_t packet_available;
+	struct isoal_pdu_production *pp;
+	const uint8_t *sdu_payload;
+	bool zero_length_sdu;
+	isoal_status_t err;
+	bool padding_pdu;
+	uint8_t ll_id;
+
+	session     = &source->session;
+	pp          = &source->pdu_production;
+	padding_pdu = false;
+	err         = ISOAL_STATUS_OK;
+
+	packet_available = tx_sdu->size;
+	sdu_payload = tx_sdu->dbuf;
+	LL_ASSERT(sdu_payload);
+
+	zero_length_sdu = (packet_available == 0 &&
+		tx_sdu->sdu_state == BT_ISO_SINGLE);
+
+	if (tx_sdu->sdu_state == BT_ISO_START ||
+		tx_sdu->sdu_state == BT_ISO_SINGLE) {
+		/* Start of a new SDU */
+
+		/* Update sequence number for received SDU
+		 *
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		 * 2 ISOAL Features :
+		 * SDUs received by the ISOAL from the upper layer shall be
+		 * given a sequence number which is initialized to 0 when the
+		 * CIS or BIS is created.
+		 *
+		 * NOTE: The upper layer may synchronize its sequence number
+		 * with the sequence number in the ISOAL once the Datapath is
+		 * configured and the link is established.
+		 */
+		session->seqn++;
+
+		/* Reset PDU fragmentation count for this SDU */
+		pp->pdu_cnt = 0;
+	}
+
+	/* PDUs should be created until the SDU fragment has been fragmented or
+	 * if this is the last fragment of the SDU, until the required padding
+	 * PDU(s) are sent.
+	 */
+	while ((err == ISOAL_STATUS_OK) &&
+		((packet_available > 0) || padding_pdu || zero_length_sdu)) {
+		const isoal_status_t err_alloc = isoal_tx_allocate_pdu(source, tx_sdu);
+		struct isoal_pdu_produced  *pdu = &pp->pdu;
+
+		err |= err_alloc;
+
+		/*
+		 * For this PDU we can only consume of packet, bounded by:
+		 *   - What can fit in the destination PDU.
+		 *   - What remains of the packet.
+		 */
+		const size_t consume_len = MIN(
+			packet_available,
+			pp->pdu_available
+		);
+
+		if (consume_len > 0) {
+			err |= session->pdu_write(&pdu->contents,
+						  pp->pdu_written,
+						  sdu_payload,
+						  consume_len);
+			sdu_payload       += consume_len;
+			pp->pdu_written   += consume_len;
+			pp->pdu_available -= consume_len;
+			packet_available  -= consume_len;
+		}
+
+		/* End of the SDU is reached at the end of the last SDU fragment
+		 * or if this is a single fragment SDU
+		 */
+		bool end_of_sdu = (packet_available == 0) &&
+				((tx_sdu->sdu_state == BT_ISO_SINGLE) ||
+					(tx_sdu->sdu_state == BT_ISO_END));
+
+		/* Decide PDU type
+		 *
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		 * 2.1 Unframed PDU :
+		 * LLID 0b00 PDU_BIS_LLID_COMPLETE_END:
+		 * (1) When the payload of the ISO Data PDU contains the end
+		 *     fragment of an SDU.
+		 * (2) When the payload of the ISO Data PDU contains a complete
+		 *     SDU.
+		 * (3) When an SDU contains zero length data, the corresponding
+		 *     PDU shall be of zero length and the LLID field shall be
+		 *     set to 0b00.
+		 *
+		 * LLID 0b01 PDU_BIS_LLID_COMPLETE_END:
+		 * (1) When the payload of the ISO Data PDU contains a start or
+		 *     a continuation fragment of an SDU.
+		 * (2) When the ISO Data PDU is used as padding.
+		 */
+		ll_id = PDU_BIS_LLID_COMPLETE_END;
+		if (!end_of_sdu || padding_pdu) {
+			ll_id = PDU_BIS_LLID_START_CONTINUE;
+		}
+
+		const isoal_status_t err_emit = isoal_tx_try_emit_pdu(source, end_of_sdu, ll_id);
+
+		err |= err_emit;
+
+		/* Send padding PDU(s) if required
+		 *
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		 * 2.1 Unframed PDU :
+		 * Each SDU shall generate BN ÷ (ISO_Interval ÷ SDU_Interval)
+		 * fragments. If an SDU generates less than this number of
+		 * fragments, empty payloads shall be used to make up the
+		 * number.
+		 */
+		padding_pdu = (end_of_sdu && (pp->pdu_cnt < session->pdus_per_sdu));
+		zero_length_sdu = false;
+	}
+
+	return err;
+}
+
+
+/**
+ * @brief Deep copy a SDU, fragment into PDU(s)
+ * @details Fragmentation will occur individually for every enabled source
+ *
+ * @param source_hdl[in] Handle of destination source
+ * @param tx_sdu[in]     SDU along with packet boudary state
+ * @return Status
+ */
+isoal_status_t isoal_tx_sdu_fragment(isoal_source_handle_t source_hdl,
+				      const struct isoal_sdu_tx *tx_sdu)
+{
+	struct isoal_source *source = &isoal_global.source_state[source_hdl];
+	isoal_status_t err = ISOAL_STATUS_ERR_PDU_ALLOC;
+
+	if (source->pdu_production.mode != ISOAL_PRODUCTION_MODE_DISABLED) {
+		/* TODO: consider how to separate framed and unframed production
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+		 * 2 ISOAL Features :
+		 * (1) Unframed PDUs shall only be used when the ISO_Interval
+		 *     is equal to or an integer multiple of the SDU_Interval
+		 *     and a constant time offset alignment is maintained
+		 *     between the SDU generation and the timing in the
+		 *     isochronous transport.
+		 * (2) When the Host requests the use of framed PDUs, the
+		 *     Controller shall use framed PDUs.
+		 */
+		bool pdu_framed = false;
+
+		if (pdu_framed) {
+			/* TODO: add framed handling */
+		} else {
+			err = isoal_tx_unframed_produce(source, tx_sdu);
+		}
+	}
+
+	return err;
+}
+
+void isoal_tx_pdu_release(isoal_source_handle_t source_hdl,
+			  struct node_tx_iso *node_tx)
+{
+	struct isoal_source *source = &isoal_global.source_state[source_hdl];
+
+	if (source && source->session.pdu_release) {
+		source->session.pdu_release(node_tx, source->session.handle,
+					    ISOAL_STATUS_OK);
+	}
 }

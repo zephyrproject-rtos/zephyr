@@ -148,13 +148,13 @@ static int hci_df_set_cl_cte_tx_params(const struct bt_le_ext_adv *adv,
 				    buf, NULL);
 }
 
-/* @brief Function provides information about DF antennae numer and
+/* @brief Function provides information about DF antennae number and
  *	  controller capabilities related with Constant Tone Extension.
  *
  * @param[out] switch_sample_rates      Optional switching and sampling rates.
  * @param[out] num_ant                  Antennae number.
  * @param[out] max_switch_pattern_len   Maximum supported antennae switching
- *                                      paterns length.
+ *                                      patterns length.
  * @param[out] max_cte_len              Maximum length of CTE in 8[us] units.
  *
  * @return Zero in case of success, other value in case of failure.
@@ -195,7 +195,7 @@ static int hci_df_read_ant_info(uint8_t *switch_sample_rates,
 	return 0;
 }
 
-/* @brief Function handles send of HCI commnad to enable or disables CTE
+/* @brief Function handles send of HCI command to enable or disables CTE
  *        transmission for given advertising set.
  *
  * @param[in] adv               Pointer to advertising set

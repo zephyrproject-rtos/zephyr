@@ -101,7 +101,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	/* op param definitions:
 	 * 0x00 - Intermediate fragment of fragmented extended advertising data
 	 * 0x01 - First fragment of fragmented extended advertising data
-	 * 0x02 - Last fragemnt of fragemented extended advertising data
+	 * 0x02 - Last fragment of fragmented extended advertising data
 	 * 0x03 - Complete extended advertising data
 	 * 0x04 - Unchanged data (just update the advertising data)
 	 * All other values, Reserved for future use
@@ -1080,7 +1080,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
 			   ticks_anchor, 0,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
-			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
+			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,
 			   ull_ticker_status_give, (void *)&ret_cb);

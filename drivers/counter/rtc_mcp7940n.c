@@ -204,7 +204,7 @@ static int read_register(const struct device *dev, uint8_t addr, uint8_t *val)
  *
  * @param dev the MCP7940N device pointer.
  * @param unix_time pointer to time_t value that will contain unix time if
- * sucessful.
+ * successful.
  *
  * @retval return 0 on success, or a negative error code from an I2C
  * transaction.

@@ -242,7 +242,7 @@ static const struct counter_driver_api counter_api = {
 
 static void counter_esp32_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct counter_esp32_data *data = dev->data;
 	counter_esp32_cancel_alarm(dev, 0);
 	uint32_t now;

@@ -173,7 +173,7 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 	/* Disable interrupt in the EC aggregator */
 	MCHP_GIRQ_ENCLR(config->girq_id) = BIT(pin);
 
-	/* Assemble mask for level/edge triggered interrrupts */
+	/* Assemble mask for level/edge triggered interrupts */
 	mask |= MCHP_GPIO_CTRL_IDET_MASK;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {

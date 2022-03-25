@@ -122,7 +122,7 @@ struct osdp_cmd_buzzer {
 };
 
 /**
- * @brief Command to manuplate any display units that the PD supports.
+ * @brief Command to manipulate any display units that the PD supports.
  *
  * @param reader 0 = First Reader, 1 = Second Reader, etc.
  * @param control_code One of the following:

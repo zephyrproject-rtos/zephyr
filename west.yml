@@ -32,12 +32,12 @@ manifest:
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
       path: modules/lib/civetweb
     - name: cmsis
-      revision: b0612c97c1401feeb4160add6462c3627fe90fc7
+      revision: ed63b704bbfaceb71220557b658304c5ea3d5b88
       path: modules/hal/cmsis
       groups:
         - hal
     - name: edtt
-      revision: 1fc2e6f7d2a01a01074456f2ef2ccf1f3df7fac1
+      revision: 1ea61a390d2bfcf3b2ecdba8f8b0b98dfdffbd11
       path: tools/edtt
       groups:
         - tools
@@ -57,7 +57,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 7c24242679372edc81cc1f9968e02b51127d3677
+      revision: 78c5567c05b6b434dd7d98f49156319df4217bac
       path: modules/hal/atmel
       groups:
         - hal
@@ -67,7 +67,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: bcd7565ffa390d5774dc2fbe71a002faa9a7d082
+      revision: 3373bdddba3857d34c22c0d493da25bdb8630071
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -98,7 +98,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 072bf81d2ffcb764a6c63041cec876cbfb614c6a
+      revision: da6c1410490e382e69ee654a648b86a25e682679
       path: modules/hal/nxp
       groups:
         - hal
@@ -129,7 +129,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 300109f80730cb2477bfcc706a6602b9870336b3
+      revision: f1cae48438a1ababa5e27b261f9e2d172afe6cf7
       path: modules/hal/stm32
       groups:
         - hal
@@ -139,7 +139,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: ba4823f6beb8629d94aab1426bd8afa8127a1da2
+      revision: 2a5891d874cae92fcac04f9822957ac0785fe835
       path: modules/hal/ti
       groups:
         - hal
@@ -173,7 +173,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 89936c338e46f43cb177a8b928cd80b90f3ace8f
+      revision: 7b9e4eecaa2547ba34cd40a13530f10dd70c92ca
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -195,7 +195,7 @@ manifest:
       revision: cfd050ff38a9d028dc211690b2ec35971128e45e
       path: modules/lib/open-amp
     - name: openthread
-      revision: 0e141a556a11d82b1ee7fda00be9d1553375a687
+      revision: 732203ee338b4700612dada157ca3e2c15a4dd10
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -223,7 +223,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 5d32c3e64b3d589548e881eeeeb37d84944c90af
+      revision: b90420a2ffbf7d1329716508f1d3f9f880bc865b
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

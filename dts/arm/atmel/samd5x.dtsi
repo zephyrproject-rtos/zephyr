@@ -8,8 +8,6 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 
-#include "samd5x-pinctrl.dtsi"
-
 / {
 	chosen {
 		zephyr,flash-controller = &nvmctrl;
@@ -243,7 +241,7 @@
 			clock-names = "GCLK", "MCLK";
 		};
 
-		pinctrl@41008000 {
+		pinctrl: pinctrl@41008000 {
 			compatible = "atmel,sam0-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;

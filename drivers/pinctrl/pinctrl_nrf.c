@@ -48,9 +48,33 @@ BUILD_ASSERT(((NRF_DRIVE_S0S1 == NRF_GPIO_PIN_S0S1) &&
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spis) */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twi)
+#if !defined(TWI_PSEL_SCL_CONNECT_Pos)
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWI_Type *)reg)->PSEL##line
+#else
+#define NRF_PSEL_TWIM(reg, line) ((NRF_TWI_Type *)reg)->PSEL.line
+#endif
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twim)
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWIM_Type *)reg)->PSEL.line
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_i2s)
+#define NRF_PSEL_I2S(reg, line) ((NRF_I2S_Type *)reg)->PSEL.line
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pdm)
+#define NRF_PSEL_PDM(reg, line) ((NRF_PDM_Type *)reg)->PSEL.line
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwm)
+#define NRF_PSEL_PWM(reg, line) ((NRF_PWM_Type *)reg)->PSEL.line
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qdec)
+#define NRF_PSEL_QDEC(reg, line) ((NRF_QDEC_Type *)reg)->PSEL.line
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi)
+#define NRF_PSEL_QSPI(reg, line) ((NRF_QSPI_Type *)reg)->PSEL.line
 #endif
 
 /**
@@ -156,6 +180,135 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 					  NRF_GPIO_PIN_INPUT_CONNECT);
 			break;
 #endif /* defined(NRF_PSEL_TWIM) */
+#if defined(NRF_PSEL_I2S)
+		case NRF_FUN_I2S_SCK_M:
+			NRF_PSEL_I2S(reg, SCK) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]), 0);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_I2S_SCK_S:
+			NRF_PSEL_I2S(reg, SCK) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_CONNECT);
+			break;
+		case NRF_FUN_I2S_LRCK_M:
+			NRF_PSEL_I2S(reg, LRCK) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]), 0);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_I2S_LRCK_S:
+			NRF_PSEL_I2S(reg, LRCK) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_CONNECT);
+			break;
+		case NRF_FUN_I2S_SDIN:
+			NRF_PSEL_I2S(reg, SDIN) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_CONNECT);
+			break;
+		case NRF_FUN_I2S_SDOUT:
+			NRF_PSEL_I2S(reg, SDOUT) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]), 0);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_I2S_MCK:
+			NRF_PSEL_I2S(reg, MCK) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]), 0);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+#endif /* defined(NRF_PSEL_I2S) */
+#if defined(NRF_PSEL_PDM)
+		case NRF_FUN_PDM_CLK:
+			NRF_PSEL_PDM(reg, CLK) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]), 0);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_PDM_DIN:
+			NRF_PSEL_PDM(reg, DIN) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_CONNECT);
+			break;
+#endif /* defined(NRF_PSEL_PDM) */
+#if defined(NRF_PSEL_PWM)
+		case NRF_FUN_PWM_OUT0:
+			NRF_PSEL_PWM(reg, OUT[0]) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]),
+					   NRF_GET_INVERT(pins[i]));
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_PWM_OUT1:
+			NRF_PSEL_PWM(reg, OUT[1]) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]),
+					   NRF_GET_INVERT(pins[i]));
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_PWM_OUT2:
+			NRF_PSEL_PWM(reg, OUT[2]) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]),
+					   NRF_GET_INVERT(pins[i]));
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_PWM_OUT3:
+			NRF_PSEL_PWM(reg, OUT[3]) = NRF_GET_PIN(pins[i]);
+			nrf_gpio_pin_write(NRF_GET_PIN(pins[i]),
+					   NRF_GET_INVERT(pins[i]));
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_OUTPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+#endif /* defined(NRF_PSEL_PWM) */
+#if defined(NRF_PSEL_QDEC)
+		case NRF_FUN_QDEC_A:
+			NRF_PSEL_QDEC(reg, A) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_CONNECT);
+			break;
+		case NRF_FUN_QDEC_B:
+			NRF_PSEL_QDEC(reg, B) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_CONNECT);
+		case NRF_FUN_QDEC_LED:
+			NRF_PSEL_QDEC(reg, LED) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_CONNECT);
+			break;
+#endif /* defined(NRF_PSEL_QDEC) */
+#if defined(NRF_PSEL_QSPI)
+		case NRF_FUN_QSPI_SCK:
+			NRF_PSEL_QSPI(reg, SCK) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_QSPI_CSN:
+			NRF_PSEL_QSPI(reg, CSN) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+		case NRF_FUN_QSPI_IO0:
+			NRF_PSEL_QSPI(reg, IO0) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+		case NRF_FUN_QSPI_IO1:
+			NRF_PSEL_QSPI(reg, IO1) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+		case NRF_FUN_QSPI_IO2:
+			NRF_PSEL_QSPI(reg, IO2) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+		case NRF_FUN_QSPI_IO3:
+			NRF_PSEL_QSPI(reg, IO3) = NRF_GET_PIN(pins[i]);
+			nrf_pin_configure(pins[i], NRF_GPIO_PIN_DIR_INPUT,
+					  NRF_GPIO_PIN_INPUT_DISCONNECT);
+			break;
+#endif /* defined(NRF_PSEL_QSPI) */
 		default:
 			return -ENOTSUP;
 		}

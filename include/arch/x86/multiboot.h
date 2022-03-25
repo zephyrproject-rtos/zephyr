@@ -36,7 +36,18 @@ struct multiboot_info {
 
 extern struct multiboot_info multiboot_info;
 
+#ifdef CONFIG_MULTIBOOT_INFO
+
 extern void z_multiboot_init(struct multiboot_info *info_pa);
+
+#else
+
+inline void z_multiboot_init(struct multiboot_info *info_pa)
+{
+	ARG_UNUSED(info_pa);
+}
+
+#endif /* CONFIG_MULTIBOOT_INFO */
 
 /*
  * the mmap_addr field points to a series of entries of the following form.
@@ -50,6 +61,9 @@ struct multiboot_mmap {
 } __packed;
 
 #endif /* _ASMLANGUAGE */
+
+/* Boot type value (see prep_c.c) */
+#define MULTIBOOT_BOOT_TYPE 1
 
 /*
  * Possible values for multiboot_mmap.type field.

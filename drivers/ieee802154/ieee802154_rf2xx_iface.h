@@ -17,7 +17,7 @@
 void rf2xx_iface_phy_rst(const struct device *dev);
 
 /**
- * @brief Start TX transmition
+ * @brief Start TX transmission
  *
  * @param[in] dev   Transceiver device instance
  */

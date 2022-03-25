@@ -299,7 +299,7 @@ int fcb_clear(struct fcb *fcb);
 
 /**
  * @brief Flash Circular internal
- * @defgroup fcb_internall fcb non-API prototypes
+ * @defgroup fcb_internal fcb non-API prototypes
  * @ingroup fcb
  * @{
  */

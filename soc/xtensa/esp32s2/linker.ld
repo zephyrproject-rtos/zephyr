@@ -196,6 +196,9 @@ SECTIONS
     __esp_shell_root_cmds_end = .;
 
     . = ALIGN(4);
+    #include <snippets-rodata.ld>
+
+    . = ALIGN(4);
     *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.*) .rodata)
     *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.*) .rodata.*)
 
@@ -376,6 +379,8 @@ SECTIONS
     . = ALIGN(8);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
+#include <snippets-sections.ld>
+
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
@@ -417,13 +422,18 @@ SECTIONS
   #include <linker/common-rom.ld>
   #pragma pop_macro("GROUP_ROM_LINK_IN")
   #pragma pop_macro("ITERABLE_SECTION_ROM")
+
+  #include <snippets-data-sections.ld>
   #include <linker/common-ram.ld>
+  #include <snippets-ram-sections.ld>
 
   __shell_root_cmds_start = __esp_shell_root_cmds_start;
   __shell_root_cmds_end = __esp_shell_root_cmds_end;
 
   .dummy.dram.data :
   {
+    . = ALIGN(4);
+    #include <snippets-rwdata.ld>
     . = ALIGN(4);
     _data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

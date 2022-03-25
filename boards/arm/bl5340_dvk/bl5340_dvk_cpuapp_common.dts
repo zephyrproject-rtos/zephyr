@@ -4,6 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "bl5340_dvk_cpuapp_common-pinctrl.dtsi"
 
 / {
 	chosen {
@@ -65,6 +66,14 @@
 		};
 	};
 
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+		uart {
+			gpios = <&gpio1 8 0>, <&gpio1 10 0>, <&gpio1 7 0>, <&gpio1 9 0>;
+		};
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led1;
@@ -97,9 +106,10 @@
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <34>;
-	scl-pin = <35>;
 
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 	at24c256@50 {
 		compatible = "atmel,at24";
 		reg = <0x50>;
@@ -158,10 +168,10 @@
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
-	miso-pin = <26>;
-	mosi-pin = <27>;
-	sck-pin = <28>;
 
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
 	enc424j600@0 {
 		compatible = "microchip,enc424j600";
 		reg = <0>;
@@ -174,11 +184,11 @@
 &spi3 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
-	sck-pin = <46>;
-	miso-pin = <47>;
-	mosi-pin = <45>;
 	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
 	sdhc@0 {
 		compatible = "zephyr,mmc-spi-slot";
 		reg = <0>;
@@ -192,10 +202,10 @@
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
-	miso-pin = <10>;
-	mosi-pin = <9>;
-	sck-pin = <8>;
 
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-1 = <&spi4_sleep>;
+	pinctrl-names = "default", "sleep";
 	ili9340: ili9340@0 {
 		compatible = "ilitek,ili9340";
 		reg = <0>;
@@ -212,15 +222,16 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <20>;
-	rx-pin = <22>;
-	rts-pin = <19>;
-	cts-pin = <21>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &pwm0 {
 	status = "okay";
-	ch0-pin = <28>;
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &timer0 {
@@ -237,9 +248,9 @@
 
 &qspi {
 	status = "okay";
-	sck-pin = <17>;
-	io-pins = <13>, <14>, <15>, <16>;
-	csn-pins = <18>;
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;

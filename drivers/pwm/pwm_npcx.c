@@ -190,7 +190,7 @@ static int pwm_npcx_init(const struct device *dev)
 	int ret;
 
 	/*
-	 * NPCX PWM modulee mixes byte and word registers together. Make sure
+	 * NPCX PWM module mixes byte and word registers together. Make sure
 	 * word reg access via structure won't break into two byte reg accesses
 	 * unexpectedly by toolchains options or attributes. If so, stall here.
 	 */

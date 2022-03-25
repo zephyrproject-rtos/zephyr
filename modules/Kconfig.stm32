@@ -247,7 +247,7 @@ config USE_STM32_HAL_I2S
 config USE_STM32_HAL_I2S_EX
 	bool
 	help
-	  Enable STM32Cube Etxended Inter-IC sound (I2S) HAL module driver
+	  Enable STM32Cube Extended Inter-IC sound (I2S) HAL module driver
 
 config USE_STM32_HAL_IPCC
 	bool

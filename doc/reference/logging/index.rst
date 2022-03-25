@@ -11,7 +11,6 @@ The logging API provides a common interface to process messages issued by
 developers. Messages are passed through a frontend and are then
 processed by active backends.
 Custom frontend and backends can be used if needed.
-Default configuration uses built-in frontend and UART backend.
 
 Summary of the logging features:
 
@@ -19,7 +18,7 @@ Summary of the logging features:
   consuming operations to a known context instead of processing and sending
   the log message when called.
 - Multiple backends supported (up to 9 backends).
-- Custom frontend supported.
+- Custom frontend support. When enabled no backends can be active.
 - Compile time filtering on module level.
 - Run time filtering independent for each backend.
 - Additional run time filtering on module instance level.
@@ -48,7 +47,8 @@ Logging v2 introduces following changes:
 - Slightly degrade performance in normal circumstances due to the fact that
   allocation from ring buffer is more complex than from memslab.
 - No change in logging API
-- Logging backend API exteded with function for processing v2 messages.
+- Logging to frontend can be used together with backends.
+- Logging backend API extended with function for processing v2 messages.
 
 .. note::
    Logging v1 is deprecated! Version 2 supports same set of features with extensions
@@ -179,7 +179,9 @@ log_strdup().
 
 :kconfig:option:`CONFIG_LOG_DOMAIN_ID`: Domain ID. Valid in multi-domain systems.
 
-:kconfig:option:`CONFIG_LOG_FRONTEND`: Redirect logs to a custom frontend.
+:kconfig:option`CONFIG_LOG_FRONTEND`: Direct logs to a custom frontend.
+
+:kconfig:option`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
 
 :kconfig:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
 
@@ -518,11 +520,11 @@ particular source will be buffered.
 Custom Frontend
 ===============
 
-Custom frontend is enabled using :kconfig:option:`CONFIG_LOG_FRONTEND`. Logs are redirected
+Custom frontend is enabled using :kconfig:option:`CONFIG_LOG_FRONTEND`. Logs are directed
 to functions declared in :zephyr_file:`include/logging/log_frontend.h`.
-This may be required in very time-sensitive cases, but most of the logging
-features cannot be used then, which includes default frontend, core and all
-backends features.
+If option :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY` is enabled then log message is not
+created and no backend is handled. Otherwise, custom frontend can coexist with
+backends (not available in v1).
 
 .. _logging_strings:
 
@@ -555,7 +557,7 @@ increased. Buffers are freed together with the log message.
 When :kconfig:option:`CONFIG_LOG_DETECT_MISSED_STRDUP` is enabled logger will scan
 each log message and report if string format specifier is found and string
 address is not in read only memory section or does not belong to memory pool
-dedicated to string duplicates. It indictes that :c:func:`log_strdup` is
+dedicated to string duplicates. It indicates that :c:func:`log_strdup` is
 missing in a call to log a message, such as ``LOG_INF``.
 
 Logging v2
@@ -576,7 +578,7 @@ identified by source ID and domain ID. Source ID can be retrieved if source name
 is known by iterating through all registered sources.
 
 Logging supports up to 9 concurrent backends. Log message is passed to the
-each backend in processing phase. Additionally, backend is notfied when logging
+each backend in processing phase. Additionally, backend is notified when logging
 enter panic mode with :c:func:`log_backend_panic`. On that call backend should
 switch to synchronous, interrupt-less operation or shut down itself if that is
 not supported.  Occasionally, logging may inform backend about number of dropped
@@ -794,7 +796,7 @@ from userspace. It is at the cost of larger memory footprint for a log message.
 
 .. [#f3] Logging subsystem memory footprint in :zephyr_file:`samples/subsys/logging/logger`.
 
-.. [#f4] Avarage size of a log message (excluding string) with 2 arguments on ``Cortex M3``
+.. [#f4] Average size of a log message (excluding string) with 2 arguments on ``Cortex M3``
 
 Stack usage
 ***********
@@ -810,7 +812,7 @@ are used.
 :zephyr_file:`tests/subsys/logging/log_stack` test is used to characterize stack usage depending
 on mode, optimization and platform used. Test is using only the default backend.
 
-Some of the platorms characterization for log message with two ``integer`` arguments listed below:
+Some of the platforms characterization for log message with two ``integer`` arguments listed below:
 
 +---------------+----------+----------------------------+-----------+-----------------------------+
 | Platform      | Deferred | Deferred (no optimization) | Immediate | Immediate (no optimization) |

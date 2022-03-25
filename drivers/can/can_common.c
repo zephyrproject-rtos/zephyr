@@ -14,16 +14,18 @@ LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 /* CAN sync segment is always one time quantum */
 #define CAN_SYNC_SEG 1
 
-static void can_msgq_put(struct zcan_frame *frame, void *arg)
+static void can_msgq_put(const struct device *dev, struct zcan_frame *frame, void *user_data)
 {
-	struct k_msgq *msgq = (struct k_msgq *)arg;
+	struct k_msgq *msgq = (struct k_msgq *)user_data;
 	int ret;
+
+	ARG_UNUSED(dev);
 
 	__ASSERT_NO_MSG(msgq);
 
 	ret = k_msgq_put(msgq, frame, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Msgq %p overflowed. Frame ID: 0x%x", arg, frame->id);
+		LOG_ERR("Msgq %p overflowed. Frame ID: 0x%x", msgq, frame->id);
 	}
 }
 
@@ -83,7 +85,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 	int sp_err;
 	struct can_timing tmp_res;
 
-	if (sp >= 1000 ||
+	if (bitrate == 0 || sp >= 1000 ||
 	    (!IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 1000000) ||
 	     (IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 8000000)) {
 		return -EINVAL;
@@ -175,4 +177,50 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 	timing->prescaler = core_clock / (bitrate * ts);
 
 	return core_clock % (ts * timing->prescaler);
+}
+
+int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data)
+{
+	struct can_timing timing;
+#ifdef CONFIG_CAN_FD_MODE
+	struct can_timing timing_data;
+#endif
+	uint32_t max_bitrate;
+	int ret;
+
+	ret = can_get_max_bitrate(dev, &max_bitrate);
+	if (ret == -ENOSYS) {
+		/* Maximum bitrate unknown */
+		max_bitrate = 0;
+	} else if (ret < 0) {
+		return ret;
+	}
+
+	if ((max_bitrate > 0) && (bitrate > max_bitrate)) {
+		return -ENOTSUP;
+	}
+
+	ret = can_calc_timing(dev, &timing, bitrate, 875);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	timing.sjw = CAN_SJW_NO_CHANGE;
+
+#ifdef CONFIG_CAN_FD_MODE
+	if ((max_bitrate > 0) && (bitrate_data > max_bitrate)) {
+		return -ENOTSUP;
+	}
+
+	ret = can_calc_timing_data(dev, &timing_data, bitrate_data, 875);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	timing_data.sjw = CAN_SJW_NO_CHANGE;
+
+	return can_set_timing(dev, &timing, &timing_data);
+#else /* CONFIG_CAN_FD_MODE */
+	return can_set_timing(dev, &timing, NULL);
+#endif /* !CONFIG_CAN_FD_MODE */
 }

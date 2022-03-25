@@ -132,7 +132,7 @@ static inline bool _is_user_accessible_region(uint32_t r_index, int write)
 	return false;
 }
 #else /* CONFIG_ARC_NORMAL_FIRMWARE */
-/* the following functions are prepared for SECURE_FRIMWARE */
+/* the following functions are prepared for SECURE_FIRMWARE */
 static inline void _region_init(uint32_t index, uint32_t region_addr, uint32_t size,
 				uint32_t region_attr)
 {

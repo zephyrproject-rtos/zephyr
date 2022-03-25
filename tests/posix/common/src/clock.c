@@ -84,7 +84,7 @@ void test_posix_realtime(void)
 	for (int i = 1; i <= 20; i++) {
 		usleep(USEC_PER_MSEC * 90U);
 		ret = clock_gettime(CLOCK_REALTIME, &rts);
-		zassert_equal(ret, 0, "Fail to read realitime clock");
+		zassert_equal(ret, 0, "Fail to read realtime clock");
 
 		int64_t delta =
 			((int64_t)rts.tv_sec * NSEC_PER_SEC -

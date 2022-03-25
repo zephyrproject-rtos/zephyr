@@ -694,7 +694,7 @@ static void dfu_status_cb(struct usb_cfg_data *cfg,
 		LOG_DBG("USB device disconnected");
 		break;
 	case USB_DC_SUSPEND:
-		LOG_DBG("USB device supended");
+		LOG_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:
 		LOG_DBG("USB device resumed");

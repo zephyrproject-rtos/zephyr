@@ -38,7 +38,7 @@
  *   context.
  *
  * - If the WOE bit is not enabled (for example, in code written for
- *   the CALL0 ABI), this becomes a silent noop and operates compatbily.
+ *   the CALL0 ABI), this becomes a silent noop and operates compatibly.
  *
  * - In memory protection situations, this relies on the existing
  *   exception handlers (and thus their use of the L/S32E

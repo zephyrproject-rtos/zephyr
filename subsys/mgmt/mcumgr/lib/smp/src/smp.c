@@ -28,16 +28,17 @@ smp_rsp_op(uint8_t req_op)
 }
 
 static void
-smp_init_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rsp_hdr)
+smp_make_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rsp_hdr, size_t len)
 {
 	*rsp_hdr = (struct mgmt_hdr) {
-		.nh_len = 0,
+		.nh_len = len,
 		.nh_flags = 0,
 		.nh_op = smp_rsp_op(req_hdr->nh_op),
 		.nh_group = req_hdr->nh_group,
 		.nh_seq = req_hdr->nh_seq,
 		.nh_id = req_hdr->nh_id,
 	};
+	mgmt_hton_hdr(rsp_hdr);
 }
 
 static int
@@ -55,19 +56,15 @@ smp_read_hdr(struct smp_streamer *streamer, struct mgmt_hdr *dst_hdr)
 	return 0;
 }
 
-static int
+static inline int
 smp_write_hdr(struct smp_streamer *streamer, const struct mgmt_hdr *src_hdr)
 {
-	int rc;
-
-	rc = mgmt_streamer_write_at(&streamer->mgmt_stmr, 0, src_hdr, sizeof(*src_hdr));
-	return mgmt_err_from_cbor(rc);
+	return mgmt_streamer_write_hdr(&streamer->mgmt_stmr, src_hdr);
 }
 
 static int
-smp_build_err_rsp(struct smp_streamer *streamer,
-				  const struct mgmt_hdr *req_hdr,
-				  int status)
+smp_build_err_rsp(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr, int status,
+		  const char *rc_rsn)
 {
 	struct CborEncoder map;
 	struct mgmt_ctxt cbuf;
@@ -75,12 +72,6 @@ smp_build_err_rsp(struct smp_streamer *streamer,
 	int rc;
 
 	rc = mgmt_ctxt_init(&cbuf, &streamer->mgmt_stmr);
-	if (rc != 0) {
-		return rc;
-	}
-
-	smp_init_rsp_hdr(req_hdr, &rsp_hdr);
-	rc = smp_write_hdr(streamer, &rsp_hdr);
 	if (rc != 0) {
 		return rc;
 	}
@@ -100,12 +91,9 @@ smp_build_err_rsp(struct smp_streamer *streamer,
 		return rc;
 	}
 
-	rsp_hdr.nh_len = cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE;
-	mgmt_hton_hdr(&rsp_hdr);
-	rc = smp_write_hdr(streamer, &rsp_hdr);
-	if (rc != 0) {
-		return rc;
-	}
+	smp_make_rsp_hdr(req_hdr, &rsp_hdr,
+			 cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE);
+	smp_write_hdr(streamer, &rsp_hdr);
 
 	return 0;
 }
@@ -136,15 +124,6 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 		return MGMT_ERR_ENOTSUP;
 	}
 
-	/* Begin response payload.  Response fields are inserted into the root
-	 * map as key value pairs.
-	 */
-	rc = cbor_encoder_create_map(&cbuf->encoder, &payload_encoder, CborIndefiniteLength);
-	rc = mgmt_err_from_cbor(rc);
-	if (rc != 0) {
-		return rc;
-	}
-
 	switch (req_hdr->nh_op) {
 	case MGMT_OP_READ:
 		handler_fn = handler->mh_read;
@@ -159,21 +138,30 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
 	}
 
 	if (handler_fn) {
+		int rcc;
+		/* Begin response payload.  Response fields are inserted into the root
+		 * map as key value pairs.
+		 */
+		rc = cbor_encoder_create_map(&cbuf->encoder, &payload_encoder,
+					     CborIndefiniteLength);
+		if (rc != 0) {
+			return mgmt_err_from_cbor(rc);
+		}
 		*handler_found = true;
 		mgmt_evt(MGMT_EVT_OP_CMD_RECV, req_hdr->nh_group, req_hdr->nh_id, NULL);
 
+		MGMT_CTXT_SET_RC_RSN(cbuf, NULL);
 		rc = handler_fn(cbuf);
+		/* End response payload. */
+		rcc = cbor_encoder_close_container(&cbuf->encoder, &payload_encoder);
+		if (rc == 0) {
+			rc = mgmt_err_from_cbor(rcc);
+		}
 	} else {
 		rc = MGMT_ERR_ENOTSUP;
 	}
 
-	if (rc != 0) {
-		return rc;
-	}
-
-	/* End response payload. */
-	rc = cbor_encoder_close_container(&cbuf->encoder, &payload_encoder);
-	return mgmt_err_from_cbor(rc);
+	return rc;
 }
 
 /**
@@ -189,7 +177,7 @@ smp_handle_single_payload(struct mgmt_ctxt *cbuf, const struct mgmt_hdr *req_hdr
  */
 static int
 smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
-		      bool *handler_found)
+		      bool *handler_found, const char **rsn)
 {
 	struct mgmt_ctxt cbuf;
 	struct mgmt_hdr rsp_hdr;
@@ -200,28 +188,16 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_
 		return rc;
 	}
 
-	/* Write a dummy header to the beginning of the response buffer.  Some
-	 * fields will need to be fixed up later.
-	 */
-	smp_init_rsp_hdr(req_hdr, &rsp_hdr);
-	rc = smp_write_hdr(streamer, &rsp_hdr);
-	if (rc != 0) {
-		return rc;
-	}
-
 	/* Process the request and write the response payload. */
 	rc = smp_handle_single_payload(&cbuf, req_hdr, handler_found);
 	if (rc != 0) {
+		*rsn = MGMT_CTXT_RC_RSN(&cbuf);
 		return rc;
 	}
 
-	/* Fix up the response header with the correct length. */
-	rsp_hdr.nh_len = cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE;
-	mgmt_hton_hdr(&rsp_hdr);
-	rc = smp_write_hdr(streamer, &rsp_hdr);
-	if (rc != 0) {
-		return rc;
-	}
+	smp_make_rsp_hdr(req_hdr, &rsp_hdr,
+			 cbor_encode_bytes_written(&cbuf.encoder) - MGMT_HDR_SIZE);
+	smp_write_hdr(streamer, &rsp_hdr);
 
 	return 0;
 }
@@ -235,10 +211,12 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_
  * @param req		The buffer holding the request.
  * @param rsp		The buffer holding the response, or NULL if none was allocated.
  * @param status	The status to indicate in the error response.
+ * @param rsn		The text explanation to @status encoded as "rsn" into CBOR
+ *			response.
  */
 static void
 smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
-		   void *req, void *rsp, int status)
+		   void *req, void *rsp, int status, const char *rsn)
 {
 	int rc;
 
@@ -251,11 +229,10 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
 	}
 
 	/* Clear the partial response from the buffer, if any. */
-	mgmt_streamer_reset_buf(&streamer->mgmt_stmr, rsp);
 	mgmt_streamer_init_writer(&streamer->mgmt_stmr, rsp);
 
 	/* Build and transmit the error response. */
-	rc = smp_build_err_rsp(streamer, req_hdr, status);
+	rc = smp_build_err_rsp(streamer, req_hdr, status, rsn);
 	if (rc == 0) {
 		streamer->tx_rsp_cb(streamer, rsp, streamer->mgmt_stmr.cb_arg);
 		rsp = NULL;
@@ -286,8 +263,10 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 	struct mgmt_hdr req_hdr;
 	struct mgmt_evt_op_cmd_done_arg cmd_done_arg;
 	void *rsp;
-	bool valid_hdr, handler_found;
+	bool valid_hdr = false;
+	bool handler_found = false;
 	int rc = 0;
+	const char *rsn = NULL;
 
 	rsp = NULL;
 
@@ -324,7 +303,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 		mgmt_streamer_init_writer(&streamer->mgmt_stmr, rsp);
 
 		/* Process the request payload and build the response. */
-		rc = smp_handle_single_req(streamer, &req_hdr, &handler_found);
+		rc = smp_handle_single_req(streamer, &req_hdr, &handler_found, &rsn);
 		if (rc != 0) {
 			break;
 		}
@@ -346,7 +325,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 	}
 
 	if (rc != 0 && valid_hdr) {
-		smp_on_err(streamer, &req_hdr, req, rsp, rc);
+		smp_on_err(streamer, &req_hdr, req, rsp, rc, rsn);
 
 		if (handler_found) {
 			cmd_done_arg.err = rc;

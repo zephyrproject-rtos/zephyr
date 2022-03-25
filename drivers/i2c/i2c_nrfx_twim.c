@@ -393,7 +393,7 @@ static int twim_nrfx_pm_action(const struct device *dev,
 		 .sda = DT_PROP(I2C(idx), sda_pin),))
 
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
-	NRF_DT_ENSURE_PINS_ASSIGNED(I2C(idx), scl_pin);			       \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(I2C(idx), 1, scl_pin, sda_pin);	       \
 	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
 		     I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \

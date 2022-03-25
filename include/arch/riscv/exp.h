@@ -51,7 +51,6 @@ struct soc_esf {
 
 struct __esf {
 	ulong_t ra;		/* return address */
-	ulong_t tp;		/* thread pointer */
 
 	ulong_t t0;		/* Caller-saved temporary register */
 	ulong_t t1;		/* Caller-saved temporary register */
@@ -73,8 +72,13 @@ struct __esf {
 	ulong_t mepc;		/* machine exception program counter */
 	ulong_t mstatus;	/* machine status register */
 
+	ulong_t s0;		/* callee-saved s0 */
+
+#ifdef CONFIG_USERSPACE
+	ulong_t sp;		/* preserved (user or kernel) stack pointer */
+#endif
+
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	ulong_t fp_state;	/* Floating-point saved context state. */
 	RV_FP_TYPE ft0;		/* Caller-saved temporary floating register */
 	RV_FP_TYPE ft1;		/* Caller-saved temporary floating register */
 	RV_FP_TYPE ft2;		/* Caller-saved temporary floating register */
@@ -100,7 +104,7 @@ struct __esf {
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	struct soc_esf soc_context;
 #endif
-};
+} __aligned(16);
 
 typedef struct __esf z_arch_esf_t;
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE

@@ -53,7 +53,7 @@
  * privilege elevation stack is also marked read-only.
  *
  * If a thread starts in, or drops down to user mode, the privilege stack page
- * will be marked as present, supervior-only.
+ * will be marked as present, supervisor-only.
  *
  * If KPTI is not enabled, the _main_tss.esp0 field will always be updated
  * updated to point to the top of the privilege elevation stack. Otherwise

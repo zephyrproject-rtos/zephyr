@@ -256,7 +256,7 @@ static void b91_rf_rx_isr(void)
 	uint8_t *payload;
 	struct net_pkt *pkt;
 
-	/* disable DMA and clread IRQ flag */
+	/* disable DMA and clear IRQ flag */
 	dma_chn_dis(DMA1);
 	rf_clr_irq_status(FLD_RF_IRQ_RX);
 
@@ -313,7 +313,7 @@ static void b91_rf_rx_isr(void)
 			goto exit;
 		}
 
-		/* update RSSI and LQI prameters */
+		/* update RSSI and LQI parameters */
 		b91_update_rssi_and_lqi(pkt);
 
 		/* transfer data to NET stack */

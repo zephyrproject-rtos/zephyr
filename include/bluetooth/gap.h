@@ -315,11 +315,11 @@ enum {
 	(((w64) >> 0) & 0xFF)
 
 /**
- * @brief Validate wheather LE Supported Features value does not use bits that are reserved for
+ * @brief Validate whether LE Supported Features value does not use bits that are reserved for
  *        future use.
  *
  * Helper macro to check if @p w64 has zeros as bits 40-63. The macro is compliant with BT 5.3
- * Core Specifiaction where bits 0-40 has assigned values. In case of invalid value, build time
+ * Core Specification where bits 0-40 has assigned values. In case of invalid value, build time
  * error is reported.
  */
 #define BT_LE_SUPP_FEAT_VALIDATE(w64) \

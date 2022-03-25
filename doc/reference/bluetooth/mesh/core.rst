@@ -50,7 +50,15 @@ is called until all RPL entries are written to the flash.
 
 Finding the right balance between @ref CONFIG_BT_MESH_RPL_STORE_TIMEOUT and
 calling @ref bt_mesh_rpl_pending_store may reduce a risk of security
-volnurability and flash wear out.
+vulnerability and flash wear out.
+
+.. warning:
+
+   Failing to enable :kconfig:option:`CONFIG_BT_SETTINGS`, or setting
+   :kconfig:option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT` to -1 and not storing
+   the RPL between reboots, will make the device vulnerable to replay attacks
+   and not perform the replay protection required by the spec.
+
 
 API reference
 **************

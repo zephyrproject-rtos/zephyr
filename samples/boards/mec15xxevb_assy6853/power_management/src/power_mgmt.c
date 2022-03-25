@@ -265,7 +265,7 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 {
 	uint8_t iterations = cycles;
 	/* Ensure we can enter deep sleep when stopping threads
-	 * No UART output should occurr when threads are suspended
+	 * No UART output should occur when threads are suspended
 	 * Test to verify Zephyr RTOS issue #20033
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/20033
 	 */

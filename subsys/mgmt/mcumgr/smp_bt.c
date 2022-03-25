@@ -20,6 +20,10 @@
 #include <mgmt/mcumgr/buf.h>
 
 #include <mgmt/mcumgr/smp.h>
+#include "smp_reassembly.h"
+
+#include <logging/log.h>
+LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 
 #define RESTORE_TIME	COND_CODE_1(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL, \
 				(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL_RESTORE_TIME), \
@@ -165,6 +169,63 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 				const void *buf, uint16_t len, uint16_t offset,
 				uint8_t flags)
 {
+#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY_BT
+	int ret;
+	bool started;
+
+	started = (zephyr_smp_reassembly_expected(&smp_bt_transport) >= 0);
+
+	LOG_DBG("started = %s, buf len = %d", started ? "true" : "false", len);
+	LOG_HEXDUMP_DBG(buf, len, "buf = ");
+
+	ret = zephyr_smp_reassembly_collect(&smp_bt_transport, buf, len);
+	LOG_DBG("collect = %d", ret);
+
+	/*
+	 * Collection can fail only due to failing to allocate memory or by receiving
+	 * more data than expected.
+	 */
+	if (ret == -ENOMEM) {
+		/* Failed to collect the buffer */
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	} else if (ret < 0) {
+		/* Failed operation on already allocated buffer, drop the packet and report
+		 * error.
+		 */
+		struct smp_bt_user_data *ud =
+			(struct smp_bt_user_data *)zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+
+		if (ud != NULL) {
+			bt_conn_unref(ud->conn);
+			ud->conn = NULL;
+		}
+
+		zephyr_smp_reassembly_drop(&smp_bt_transport);
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+
+	if (!started) {
+		/*
+		 * Transport context is attached to the buffer after first fragment
+		 * has been collected.
+		 */
+		struct smp_bt_user_data *ud = zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+
+		if (IS_ENABLED(CONFIG_MCUMGR_SMP_BT_CONN_PARAM_CONTROL)) {
+			conn_param_smp_enable(conn);
+		}
+
+		ud->conn = bt_conn_ref(conn);
+	}
+
+	/* No more bytes are expected for this packet */
+	if (ret == 0) {
+		zephyr_smp_reassembly_complete(&smp_bt_transport, false);
+	}
+
+	/* BT expects entire len to be consumed */
+	return len;
+#else
 	struct smp_bt_user_data *ud;
 	struct net_buf *nb;
 
@@ -184,10 +245,21 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	zephyr_smp_rx_req(&smp_bt_transport, nb);
 
 	return len;
+#endif
 }
 
 static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+#ifdef CONFIG_MCUMGR_SMP_REASSEMBLY_BT
+	if (zephyr_smp_reassembly_expected(&smp_bt_transport) >= 0 && value == 0) {
+		struct smp_bt_user_data *ud = zephyr_smp_reassembly_get_ud(&smp_bt_transport);
+
+		bt_conn_unref(ud->conn);
+		ud->conn = NULL;
+
+		zephyr_smp_reassembly_drop(&smp_bt_transport);
+	}
+#endif
 }
 
 static struct bt_gatt_attr smp_bt_attrs[] = {

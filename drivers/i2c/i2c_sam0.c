@@ -12,6 +12,7 @@
 #include <soc.h>
 #include <drivers/i2c.h>
 #include <drivers/dma.h>
+#include <drivers/pinctrl.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
@@ -24,6 +25,7 @@ LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 
 struct i2c_sam0_dev_config {
 	SercomI2cm *regs;
+	const struct pinctrl_dev_config *pcfg;
 	uint32_t bitrate;
 #ifdef MCLK
 	volatile uint32_t *mclk;
@@ -50,6 +52,7 @@ struct i2c_sam0_msg {
 };
 
 struct i2c_sam0_dev_data {
+	struct k_sem lock;
 	struct k_sem sem;
 	struct i2c_sam0_msg msg;
 	struct i2c_msg *msgs;
@@ -381,6 +384,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	const struct i2c_sam0_dev_config *const cfg = dev->config;
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t addr_reg;
+	int ret;
 
 	if (!num_msgs) {
 		return 0;
@@ -388,10 +392,13 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 	data->num_msgs = num_msgs;
 	data->msgs = msgs;
 
+	k_sem_take(&data->lock, K_FOREVER);
+
 	for (; data->num_msgs > 0;) {
 		if (!data->msgs->len) {
 			if ((data->msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-				return -EINVAL;
+				ret = -EINVAL;
+				goto unlock;
 			}
 		}
 
@@ -423,7 +430,8 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 #ifdef SERCOM_I2CM_ADDR_TENBITEN
 			addr_reg |= SERCOM_I2CM_ADDR_TENBITEN;
 #else
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto unlock;
 #endif
 		}
 
@@ -481,12 +489,14 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					dev->name);
-				return -EAGAIN;
+				ret = -EAGAIN;
+				goto unlock;
 			}
 
 			LOG_ERR("Transaction error on %s: %08X",
 				dev->name, data->msg.status);
-			return -EIO;
+			ret = -EIO;
+			goto unlock;
 		}
 
 		/*
@@ -510,7 +520,11 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		data->msgs++;
 	}
 
-	return 0;
+	ret = 0;
+unlock:
+	k_sem_give(&data->lock);
+
+	return ret;
 }
 
 static int i2c_sam0_set_apply_bitrate(const struct device *dev,
@@ -699,6 +713,11 @@ static int i2c_sam0_initialize(const struct device *dev)
 	/* Disable all I2C interrupts */
 	i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
+
 	/* I2C mode, enable timeouts */
 	i2c->CTRLA.reg = SERCOM_I2CM_CTRLA_MODE_I2C_MASTER |
 #ifdef SERCOM_I2CM_CTRLA_LOWTOUTEN
@@ -717,6 +736,7 @@ static int i2c_sam0_initialize(const struct device *dev)
 		return retval;
 	}
 
+	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->sem, 0, 1);
 
 	cfg->irq_config_func(dev);
@@ -783,17 +803,19 @@ static void i2c_sam0_irq_config_##n(const struct device *dev)			\
 #define I2C_SAM0_CONFIG(n)						\
 static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),			\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	.bitrate = DT_INST_PROP(n, clock_frequency),			\
 	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
-	.irq_config_func = &i2c_sam0_irq_config_##n			\
+	.irq_config_func = &i2c_sam0_irq_config_##n,			\
 	I2C_SAM0_DMA_CHANNELS(n)					\
 }
 #else /* !MCLK */
 #define I2C_SAM0_CONFIG(n)						\
 static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),			\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	.bitrate = DT_INST_PROP(n, clock_frequency),			\
 	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
@@ -803,6 +825,7 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 #endif
 
 #define I2C_SAM0_DEVICE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static void i2c_sam0_irq_config_##n(const struct device *dev);	\
 	I2C_SAM0_CONFIG(n);						\
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		\

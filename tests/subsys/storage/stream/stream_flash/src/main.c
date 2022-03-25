@@ -240,7 +240,7 @@ static void test_stream_flash_bytes_written(void)
 
 	init_target();
 
-	/* Verify that the offset is retained across failed downolads */
+	/* Verify that the offset is retained across failed downloads */
 	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN + 128, false);
 	zassert_equal(rc, 0, "expected success");
 
@@ -338,7 +338,7 @@ static void test_stream_flash_buffered_write_callback(void)
 	fake_api.write = fake_write;
 	fake_dev.api = &fake_api;
 	bad_ctx.fdev = &fake_dev;
-	/* Triger erase attempt */
+	/* Trigger erase attempt */
 	cmp_ctx = bad_ctx;
 	/* Just flush buffer */
 	rc = stream_flash_buffered_write(&bad_ctx, write_buf, 0, true);
@@ -372,7 +372,7 @@ static void test_stream_flash_flush(void)
 
 	init_target();
 
-	/* Perform flush with NULL data pointer and 0 lentgth */
+	/* Perform flush with NULL data pointer and 0 length */
 	rc = stream_flash_buffered_write(&ctx, NULL, 0, true);
 	zassert_equal(rc, 0, "expected success");
 }

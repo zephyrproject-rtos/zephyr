@@ -233,7 +233,7 @@ static int flash_nios2_qspi_write_block(const struct device *dev,
 			}
 		}
 
-		/* Check memcpy lentgh is with in NIOS2_WRITE_BLOCK_SIZE */
+		/* Check memcpy length is within NIOS2_WRITE_BLOCK_SIZE */
 		if (padding + bytes_to_copy > NIOS2_WRITE_BLOCK_SIZE) {
 			rc = -EINVAL;
 			goto qspi_write_block_err;

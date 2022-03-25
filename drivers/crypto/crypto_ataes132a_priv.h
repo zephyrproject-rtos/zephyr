@@ -24,7 +24,7 @@
 #define ATAES_MANUFACTID_REG	0xF02B
 #define ATAES_PERMCONFIG_REG	0xF02D
 
-/* Configuarion Pre-Lock Writable Registers */
+/* Configuration Pre-Lock Writable Registers */
 #define ATAES_I2CADDR_REG	0xF040
 #define ATAES_CHIPCONFIG_REG	0xF042
 #define ATAES_FREESPACE_ADDR	0xF180

@@ -123,9 +123,9 @@ static void test_power_domain_device_runtime(void)
 	deva = DEVICE_DT_GET(TEST_DEVA);
 	devb = DEVICE_DT_GET(TEST_DEVB);
 
-	pm_device_runtime_init_suspended(domain);
-	pm_device_runtime_init_suspended(deva);
-	pm_device_runtime_init_suspended(devb);
+	pm_device_init_suspended(domain);
+	pm_device_init_suspended(deva);
+	pm_device_init_suspended(devb);
 
 	pm_device_runtime_enable(domain);
 	pm_device_runtime_enable(deva);

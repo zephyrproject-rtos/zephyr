@@ -232,7 +232,7 @@ static void spi_b91_txrx(const struct device *dev, uint32_t len)
 	while (spi_is_busy(cfg->peripheral_id)) {
 	};
 
-	/* context complate */
+	/* context complete */
 	spi_context_complete(ctx, 0);
 }
 
@@ -263,7 +263,7 @@ static bool spi_b91_is_config_supported(const struct spi_config *config,
 		return false;
 	}
 
-	/* check for CS active hich */
+	/* check for CS active high */
 	if (config->operation & SPI_CS_ACTIVE_HIGH) {
 		LOG_ERR("CS active high not supported for HW flow control");
 		return false;

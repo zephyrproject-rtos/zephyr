@@ -6,7 +6,7 @@
 if BT_LL_SW_SPLIT
 
 DT_PATH_NORDIC_RADIO := $(dt_nodelabel_path,radio)
-DT_NORDIC_RADIO_DFE_SUPPORTED := $(dt_node_has_bool_prop,$(DT_PATH_NORDIC_RADIO),dfe-supported)
+DT_NORDIC_RADIO_DFE_SUPPORTED := $(dt_node_bool_prop,$(DT_PATH_NORDIC_RADIO),dfe-supported)
 
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
@@ -249,7 +249,7 @@ config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	help
 	  Add additional memory to advertising PDU storage. The memory is a
 	  general purpose storage for data that should be send from ULL to LLL.
-	  The data stored in the memory are in synchoronization with content
+	  The data stored in the memory are in synchronization with content
 	  of PDU memory.
 
 	  For example, the extra data memory is used for storage for parameters
@@ -371,7 +371,7 @@ config BT_CTLR_SCHED_ADVANCED_CENTRAL_CONN_SPACING
 	  of the established central role connections.
 	  The precision is determined by the resolution of the platform dependent
 	  ticker clock.
-	  When spefifying values above 6.25 ms, the spacing may be unobtainable if
+	  When specifying values above 6.25 ms, the spacing may be unobtainable if
 	  the connection interval becomes smaller than the total spacing. In that
 	  case, modulo is applied and a total spacing of 15 ms on a 10 ms connection
 	  interval yields 5 ms spacing.
@@ -532,16 +532,26 @@ config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
 	  procedures/connections with allocation through a fifo queue.
 	  Configure between 0 and (4 - BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) * BT_CTLR_LLCP_CONN
 
-config BT_CTLR_LLCP_PROC_CTX_BUF_NUM
-	int "Number of control procedure contexts to be available across all connections"
+config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
+	int "Number of local control procedure contexts to be available across all connections"
 	default 2 if BT_CTLR_LLCP_CONN = 1
 	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
 	range 2 255
 	help
 	  Set the number control procedure contexts that is to be available.
 	  This defines the size of the pool of control procedure contexts available
-	  for handlign control procedures. This pool is shared across all
-	  connections (local vs remote initiate), with allocation through a queue
+	  for handling local initiated control procedures.
+	  This pool is shared across all connections, with allocation through a queue.
+
+config BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM
+	int "Number of remote control procedure contexts to be available across all connections"
+	default BT_CTLR_LLCP_CONN
+	range 1 255
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handling remote initiated control procedures.
+	  This pool is shared across all connections, with allocation through a queue.
 
 endif #!BT_LL_SW_LLCP_LEGACY
 

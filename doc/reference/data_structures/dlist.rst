@@ -14,7 +14,7 @@ memory space needs.
 A :c:struct:`sys_dlist_t` struct may be instantiated by the user in any
 accessible memory.  It must be initialized with :c:func:`sys_dlist_init`
 or :c:macro:`SYS_DLIST_STATIC_INIT` before use.  The :c:struct:`sys_dnode_t` struct
-is expected to be provided by the user for any nodes addded to the
+is expected to be provided by the user for any nodes added to the
 list (typically embedded within the struct to be tracked, as described
 above).  It must be initialized in zeroed/bss memory or with
 :c:func:`sys_dnode_init` before use.

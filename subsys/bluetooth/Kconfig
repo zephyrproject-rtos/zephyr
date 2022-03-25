@@ -96,30 +96,18 @@ config BT_CENTRAL
 	help
 	  Select this for LE Central role support.
 
-menu "Broadcaster"
-	visible if !BT_PERIPHERAL
-
 config BT_BROADCASTER
 	bool "Broadcaster Role support"
 	default y if !BT_OBSERVER
 	help
 	  Select this for LE Broadcaster role support.
 
-endmenu
-
-rsource "Kconfig.adv"
-
-menu "Observer"
-	visible if !BT_CENTRAL
-
 config BT_OBSERVER
 	bool "Observer Role support"
 	help
 	  Select this for LE Observer role support.
 
-endmenu
-
-rsource "services/Kconfig"
+rsource "Kconfig.adv"
 
 config BT_CONN
 	bool
@@ -196,8 +184,5 @@ config BT_COMPANY_ID
 	  controlled by BT_CTLR_COMPANY_ID. The full list of Bluetooth
 	  Company Identifiers can be found here:
 	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
-
-rsource "mesh/Kconfig"
-rsource "audio/Kconfig"
 
 endif # BT

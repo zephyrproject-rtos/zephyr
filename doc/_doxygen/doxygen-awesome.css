@@ -48,7 +48,7 @@ html {
     --border-radius-small: 4px;
     --border-radius-medium: 6px;
 
-    /* default spacings. Most compontest reference these values for spacing, to provide uniform spacing on the page. */
+    /* default spacings. Most components reference these values for spacing, to provide uniform spacing on the page. */
     --spacing-small: 5px;
     --spacing-medium: 10px;
     --spacing-large: 16px;

@@ -34,8 +34,6 @@ struct phy_mii_dev_data {
 	struct k_sem sem;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state);
 

@@ -2053,7 +2053,7 @@ static int net_offload_dummy_get(sa_family_t family,
 	return -ENOTSUP;
 }
 
-/* placeholders, until Zepyr IP stack updated to handle a NULL net_offload */
+/* placeholders, until Zephyr IP stack updated to handle a NULL net_offload */
 static struct net_offload modem_net_offload = {
 	.get = net_offload_dummy_get,
 };

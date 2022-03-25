@@ -18,7 +18,7 @@
  * MIWU2. Together, they support a total of over 140 internal and/or external
  * wake-up input (WUI) sources.
  *
- * This driver uses device tree files to present the relationship bewteen
+ * This driver uses device tree files to present the relationship between
  * MIWU and the other devices in different npcx series. For npcx7 series,
  * it include:
  *  1. npcxn-miwus-wui-map.dtsi: it presents relationship between wake-up inputs
@@ -143,7 +143,7 @@ static void intc_miwu_isr_pri(int wui_table, int wui_group)
 		if (mask & BIT(wui_bit)) {
 			LOG_DBG("miwu_isr %d %d %d!\n", wui_table,
 							wui_group, wui_bit);
-			/* Dispatch registed gpio and generic isrs */
+			/* Dispatch registered gpio and generic isrs */
 			intc_miwu_dispatch_gpio_isr(wui_table,
 							wui_group, wui_bit);
 			intc_miwu_dispatch_generic_isr(wui_table,
@@ -382,7 +382,7 @@ int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 			    NULL,					       \
 			    NULL, &miwu_config_##inst,                         \
 			    PRE_KERNEL_1,                                      \
-			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS, NULL);        \
+			    CONFIG_INTC_INIT_PRIORITY, NULL);                  \
 									       \
 	NPCX_MIWU_ISR_FUNC_IMPL(inst)                                          \
 									       \

@@ -714,7 +714,7 @@ static void threadstate(void *p1, void *p2, void *p3)
  * - manipulating thread state to consider case where no polling thread
  * is available during event signalling.
  * - defined a signal poll as waitable events in poll and
- * verify the result after siganl raised
+ * verify the result after signal raised
  *
  * @ingroup kernel_poll_tests
  *

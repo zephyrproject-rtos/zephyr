@@ -223,7 +223,7 @@
  */
 #define OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE_NO_DTLS (4 * sizeof(void *))
 
-/* Disable software srouce address matching. */
+/* Disable software source address matching. */
 
 /**
  * @def RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM

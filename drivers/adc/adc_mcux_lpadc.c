@@ -401,7 +401,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		"Invalid voltage reference source");	\
 	ASSERT_LPADC_CALIBRATION_AVERAGE_VALID(		\
 		DT_INST_PROP(n, calibration_average),	\
-		"Invalid converion average number for auto-calibration time");	\
+		"Invalid conversion average number for auto-calibration time");	\
 	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, power_level), 1, 4,		\
 		"Invalid power level");					\
 	static const struct mcux_lpadc_config mcux_lpadc_config_##n = {	\

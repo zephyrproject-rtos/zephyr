@@ -92,7 +92,7 @@ static void transplanted_function(bool *executed)
 }
 
 /**
- * Show that mapping with/withour K_MEM_PERM_EXEC works as expected
+ * Show that mapping with/without K_MEM_PERM_EXEC works as expected
  *
  * @ingroup kernel_memprotect_tests
  */

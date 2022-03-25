@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
 
 #include <sys/sys_io.h>
 #include <device.h>
+#include <drivers/pinctrl.h>
 #include <drivers/pwm.h>
 
 /* Macros */
@@ -52,6 +53,7 @@ struct pwm_sifive_cfg {
 	uint32_t base;
 	uint32_t f_sys;
 	uint32_t cmpwidth;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 /* Helper Functions */
@@ -71,6 +73,14 @@ static inline void sys_set_mask(mem_addr_t addr, uint32_t mask, uint32_t value)
 static int pwm_sifive_init(const struct device *dev)
 {
 	const struct pwm_sifive_cfg *config = dev->config;
+#ifdef CONFIG_PINCTRL
+	int ret;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 	/* When pwms == pwmcmp0, reset the counter */
 	sys_set_bit(PWM_REG(config, REG_PWMCFG), SF_PWMZEROCMP);
@@ -223,11 +233,13 @@ static const struct pwm_driver_api pwm_sifive_api = {
 };
 
 #define PWM_SIFIVE_INIT(n)	\
+	PINCTRL_DT_INST_DEFINE(n);	\
 	static struct pwm_sifive_data pwm_sifive_data_##n;	\
 	static const struct pwm_sifive_cfg pwm_sifive_cfg_##n = {	\
 			.base = DT_INST_REG_ADDR(n),	\
 			.f_sys = DT_INST_PROP(n, clock_frequency),  \
 			.cmpwidth = DT_INST_PROP(n, sifive_compare_width), \
+			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	\
 		};	\
 	DEVICE_DT_INST_DEFINE(n,	\
 			    pwm_sifive_init,	\

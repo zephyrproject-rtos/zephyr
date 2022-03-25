@@ -1,5 +1,5 @@
 # List of format the tool supports for converting, for example,
-# GNU tools uses objectcopyy, which supports the following: ihex, srec, binary
+# GNU tools uses objectcopy, which supports the following: ihex, srec, binary
 set_property(TARGET bintools PROPERTY elfconvert_formats ihex binary)
 
 # armclang toolchain does not support all options in a single command

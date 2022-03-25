@@ -82,6 +82,10 @@ extern "C" {
 #define BT_ISO_BROADCAST_RTN_MAX    0x1E
 /** Broadcast code size */
 #define BT_ISO_BROADCAST_CODE_SIZE  16
+/** Lowest BIS index */
+#define BT_ISO_BIS_INDEX_MIN        0x01
+/** Highest BIS index */
+#define BT_ISO_BIS_INDEX_MAX        0x1F
 
 /** @brief Life-span states of ISO channel. Used only by internal APIs
  *  dealing with setting channel to proper state depending on operational
@@ -192,7 +196,7 @@ enum {
 /** @brief ISO Meta Data structure for received ISO packets. */
 struct bt_iso_recv_info {
 	/** ISO timestamp - valid only if the Bluetooth controller includes it
-	 *  If time stamp is not pressent this value will be 0 on all iso packets
+	 *  If time stamp is not present this value will be 0 on all iso packets
 	 */
 	uint32_t ts;
 
@@ -480,7 +484,7 @@ struct bt_iso_accept_info {
 
 /** @brief ISO Server structure. */
 struct bt_iso_server {
-	/** Required minimim security level */
+	/** Required minimum security level */
 	bt_security_t		sec_level;
 
 	/** @brief Server accept callback

@@ -225,6 +225,16 @@ Hardware specific APIs
 The following APIs can also be used by including ``<devicetree.h>``;
 no additional include is needed.
 
+.. _devicetree-can-api:
+
+CAN
+===
+
+These conveniences may be used for nodes which describe CAN
+controllers/transceivers, and properties related to them.
+
+.. doxygengroup:: devicetree-can
+
 Clocks
 ======
 
@@ -307,6 +317,14 @@ These conveniences may be used for nodes which describe PWM controllers and
 properties related to them.
 
 .. doxygengroup:: devicetree-pwms
+
+Reset Controller
+================
+
+These conveniences may be used for nodes which describe reset controllers and
+properties related to them.
+
+.. doxygengroup:: devicetree-reset-controller
 
 SPI
 ===
@@ -393,6 +411,9 @@ device.
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller
      - The node corresponding to the PCIe Controller
+   * - zephyr,settings-partition
+     - Fixed partition node. If defined this selects the partition used
+       by the NVS and FCB settings backends.
    * - zephyr,shell-uart
      - Sets UART device used by serial shell backend
    * - zephyr,sram

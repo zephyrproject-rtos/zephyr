@@ -222,7 +222,7 @@
 #define sys_port_trace_k_thread_sched_lock()
 
 /**
- * @brief Called when the thread sceduler is unlocked
+ * @brief Called when the thread scheduler is unlocked
  */
 #define sys_port_trace_k_thread_sched_unlock()
 
@@ -262,7 +262,7 @@
 #define sys_port_trace_k_thread_info(thread)
 
 /**
- * @brief Trace implicit thread wakup invocation by the scheduler
+ * @brief Trace implicit thread wakeup invocation by the scheduler
  * @param thread Thread object
  */
 #define sys_port_trace_k_thread_sched_wakeup(thread)

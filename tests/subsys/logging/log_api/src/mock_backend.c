@@ -61,6 +61,14 @@ void mock_log_backend_generic_record(const struct log_backend *backend,
 				     uint8_t *data,
 				     uint32_t data_len)
 {
+	if (backend->cb == NULL) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY) && timestamp != (log_timestamp_t)UINT32_MAX) {
+		return;
+	}
+
 	struct mock_log_backend *mock = backend->cb->ctx;
 	struct mock_log_backend_msg *exp = &mock->exp_msgs[mock->msg_rec_idx];
 
@@ -91,7 +99,8 @@ void mock_log_backend_validate(const struct log_backend *backend, bool panic)
 
 	zassert_equal(mock->exp_drop_cnt, mock->drop_cnt,
 		      "Got: %u, Expected: %u", mock->drop_cnt, mock->exp_drop_cnt);
-	zassert_equal(mock->msg_rec_idx, mock->msg_proc_idx, NULL);
+	zassert_equal(mock->msg_rec_idx, mock->msg_proc_idx,
+			"%p Recored:%d, Got: %d", mock, mock->msg_rec_idx, mock->msg_proc_idx);
 	zassert_equal(mock->panic, panic, NULL);
 }
 

@@ -51,6 +51,15 @@
 			#clock-cells = <0>;
 		};
 
+		reset: reset-controller@4000c000 {
+			compatible = "raspberrypi,pico-reset";
+			reg = <0x4000c000 DT_SIZE_K(4)>;
+			reg-width = <4>;
+			active-low = <0>;
+			#reset-cells = <1>;
+			label = "RESET";
+		};
+
 		pinctrl: pin-controller@40014000 {
 			compatible = "raspberrypi,pico-pinctrl";
 			reg = <0x40014000 DT_SIZE_K(4)>;
@@ -73,6 +82,7 @@
 			compatible = "raspberrypi,pico-uart";
 			reg = <0x40034000 DT_SIZE_K(4)>;
 			clocks = <&peripheral_clk>;
+			resets = <&reset RPI_PICO_RESETS_RESET_UART0>;
 			interrupts = <20 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "uart0";
 			label = "UART_0";
@@ -83,6 +93,7 @@
 			compatible = "raspberrypi,pico-uart";
 			reg = <0x40038000 DT_SIZE_K(4)>;
 			clocks = <&peripheral_clk>;
+			resets = <&reset RPI_PICO_RESETS_RESET_UART1>;
 			interrupts = <21 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "uart1";
 			label = "UART_1";

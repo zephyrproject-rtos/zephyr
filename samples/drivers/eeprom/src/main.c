@@ -69,5 +69,5 @@ void main(void)
 		return;
 	}
 
-	printk("Reset the MCU to see the inceasing boot counter.\n\n");
+	printk("Reset the MCU to see the increasing boot counter.\n\n");
 }

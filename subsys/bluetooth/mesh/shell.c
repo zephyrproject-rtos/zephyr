@@ -1386,7 +1386,7 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 			return 0;
 		}
 	} else {
-		uint8_t new_identify = strtoul(argv[1], NULL, 0);
+		uint8_t new_identify = strtoul(argv[2], NULL, 0);
 
 		err = bt_mesh_cfg_node_identity_set(net.net_idx, net.dst,
 						    net_idx, new_identify,
@@ -2012,7 +2012,7 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va,
 	if (!is_va) {
 		pub.addr = strtoul(argv[0], NULL, 0);
 	} else {
-		len = hex2bin(argv[0], strlen(argv[1]), uuid, sizeof(uuid));
+		len = hex2bin(argv[0], strlen(argv[0]), uuid, sizeof(uuid));
 		memset(uuid + len, 0, sizeof(uuid) - len);
 		pub.uuid = (const uint8_t *)&uuid;
 	}
@@ -2225,7 +2225,7 @@ static int hb_pub_set(const struct shell *shell, size_t argc, char *argv[])
 	pub.period = strtoul(argv[3], NULL, 0);
 	pub.ttl = strtoul(argv[4], NULL, 0);
 	pub.feat = strtoul(argv[5], NULL, 0);
-	pub.net_idx = strtoul(argv[5], NULL, 0);
+	pub.net_idx = strtoul(argv[6], NULL, 0);
 
 	err = bt_mesh_cfg_hb_pub_set(net.net_idx, net.dst, &pub, &status);
 	if (err) {

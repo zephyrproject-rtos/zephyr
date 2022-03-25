@@ -215,7 +215,7 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 #define PCIE_CONF_CAP_NEXT(w)		(((w) >> 10) & 0x3FU)
 
 /*
- * The extended PCI Express capabilies lies at the end of the PCI configuration space
+ * The extended PCI Express capabilities lie at the end of the PCI configuration space
  */
 
 #define PCIE_CONF_EXT_CAPPTR	64U

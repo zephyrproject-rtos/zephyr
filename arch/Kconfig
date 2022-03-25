@@ -46,6 +46,7 @@ config ARM64
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	help
 	  ARM64 (AArch64) architecture
 
@@ -107,8 +108,9 @@ config RISCV
 	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
-	select USE_SWITCH
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
 	imply XIP
 	help
@@ -798,7 +800,7 @@ choice CACHE_TYPE
 config HAS_ARCH_CACHE
 	bool "Integrated cache controller"
 	help
-	  "Integrade on-core cache controller"
+	  "Integrated on-core cache controller"
 
 config HAS_EXTERNAL_CACHE
 	bool "External cache controller"

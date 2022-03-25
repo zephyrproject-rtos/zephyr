@@ -180,9 +180,9 @@
 /* Note: allow a trailing ";" either way */
 
 /**
- * @brief Helper macro for NRF_DT_ENSURE_PINS_ASSIGNED
+ * @brief Helper macro for NRF_DT_CHECK_PIN_ASSIGNMENTS
  *
- * This macro is neeeded only because the order of parameters taken by
+ * This macro is needed only because the order of parameters taken by
  * DT_NODE_HAS_PROP is different than that required for a macro to be
  * invoked by FOR_EACH_FIXED_ARG.
  *
@@ -190,30 +190,51 @@
  * @param node_id node identifier
  * @return 1 if the node has the property, 0 otherwise.
  */
-#define NRF_DT_ENSURE_NODE_HAS_PROP(prop, node_id) \
+#define NRF_DT_CHECK_NODE_HAS_PROP(prop, node_id) \
 	DT_NODE_HAS_PROP(node_id, prop)
 
 /**
- * Error out the build if PINCTRL is enabled and the specified node does not
- * have the required pinctrl-N properties defined (pinctrl-0 always, pinctrl-1
- * when PM_DEVICE is enabled) or if PINCTRL is not enabled and the node does
- * not have at least one of the specified legacy pin properties defined.
+ * Error out the build if PINCTRL is enabled and:
+ *   - the specified node does not have the required pinctrl properties defined
+ *    (pinctrl-0 always, pinctrl-1 when PM_DEVICE is enabled and the caller
+ *    supports sleep state)
+ *   or
+ *   - it has any of the specified legacy pin properties defined (which would
+ *     be ignored in this case, so presumably the resulting configuration would
+ *     not be as expected)
+ * or if PINCTRL is not enabled and:
+ *   - the specified node does not have at least one of the specified legacy
+ *     pin properties defined
+ *   or
+ *   - it has any pinctrl states defined (which would be ignored in this case).
  *
  * @param node_id node identifier
- * @param ... list of lowercase-and-underscores legacy pin properties from
- *            which at least one needs to be defined if PINCTRL is not enabled
+ * @param sleep_supported indicates whether the caller supports sleep state
+ *                        (so pinctrl-1 should be checked)
+ * @param ... list of lowercase-and-underscores legacy pin properties to be
+ *            checked
  */
-#define NRF_DT_ENSURE_PINS_ASSIGNED(node_id, ...)			\
+#define NRF_DT_CHECK_PIN_ASSIGNMENTS(node_id, sleep_supported, ...)	\
 	BUILD_ASSERT((IS_ENABLED(CONFIG_PINCTRL) &&			\
 		      DT_PINCTRL_HAS_IDX(node_id, 0) &&			\
 		      (DT_PINCTRL_HAS_IDX(node_id, 1) ||		\
+		       !sleep_supported	||				\
 		       !IS_ENABLED(CONFIG_PM_DEVICE)))			\
 		     ||							\
 		     (!IS_ENABLED(CONFIG_PINCTRL) &&			\
-		      (FOR_EACH_FIXED_ARG(NRF_DT_ENSURE_NODE_HAS_PROP,	\
+		      (FOR_EACH_FIXED_ARG(NRF_DT_CHECK_NODE_HAS_PROP,	\
 					  (||), node_id, __VA_ARGS__))),\
 		DT_NODE_PATH(node_id)					\
-			" defined without required pin configuration")
+			" defined without required pin configuration"); \
+	BUILD_ASSERT(!IS_ENABLED(CONFIG_PINCTRL) ||			\
+		     !(FOR_EACH_FIXED_ARG(NRF_DT_CHECK_NODE_HAS_PROP,	\
+					  (||), node_id, __VA_ARGS__)),	\
+		DT_NODE_PATH(node_id) " has legacy *-pin properties"	\
+			" defined although PINCTRL is enabled");	\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			\
+		     !DT_NUM_PINCTRL_STATES(node_id),			\
+		DT_NODE_PATH(node_id) " has pinctrl states defined"	\
+			" although PINCTRL is not enabled")
 
 #endif /* !_ASMLANGUAGE */
 

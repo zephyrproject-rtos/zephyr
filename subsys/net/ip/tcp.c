@@ -914,7 +914,7 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 	if (is_destination_local(pkt)) {
 		/* If the destination is local, we have to let the current
 		 * thread to finish with any state-machine changes before
-		 * sending the packet, or it might lead to state unconsistencies
+		 * sending the packet, or it might lead to state inconsistencies
 		 */
 		k_work_schedule_for_queue(&tcp_work_q,
 					  &conn->send_timer, K_NO_WAIT);
@@ -1825,11 +1825,13 @@ next_state:
 					      NET_CONTEXT_CONNECTED);
 
 			if (conn->accepted_conn) {
-				conn->accepted_conn->accept_cb(
-					conn->context,
-					&conn->accepted_conn->context->remote,
-					sizeof(struct sockaddr), 0,
-					conn->accepted_conn->context);
+				if (conn->accepted_conn->accept_cb) {
+					conn->accepted_conn->accept_cb(
+						conn->context,
+						&conn->accepted_conn->context->remote,
+						sizeof(struct sockaddr), 0,
+						conn->accepted_conn->context);
+				}
 
 				/* Make sure the accept_cb is only called once.
 				 */
@@ -2305,6 +2307,11 @@ int net_tcp_connect(struct net_context *context,
 		const struct in6_addr *ip6;
 
 	case AF_INET:
+		if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+			ret = -EINVAL;
+			goto out;
+		}
+
 		memset(&conn->src, 0, sizeof(struct sockaddr_in));
 		memset(&conn->dst, 0, sizeof(struct sockaddr_in));
 
@@ -2327,6 +2334,11 @@ int net_tcp_connect(struct net_context *context,
 		break;
 
 	case AF_INET6:
+		if (!IS_ENABLED(CONFIG_NET_IPV6)) {
+			ret = -EINVAL;
+			goto out;
+		}
+
 		memset(&conn->src, 0, sizeof(struct sockaddr_in6));
 		memset(&conn->dst, 0, sizeof(struct sockaddr_in6));
 
@@ -2419,6 +2431,10 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 		struct sockaddr_in6 *in6;
 
 	case AF_INET:
+		if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+			return -EINVAL;
+		}
+
 		in = (struct sockaddr_in *)&local_addr;
 
 		if (net_sin_ptr(&context->local)->sin_addr) {
@@ -2434,6 +2450,10 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 		break;
 
 	case AF_INET6:
+		if (!IS_ENABLED(CONFIG_NET_IPV6)) {
+			return -EINVAL;
+		}
+
 		in6 = (struct sockaddr_in6 *)&local_addr;
 
 		if (net_sin6_ptr(&context->local)->sin6_addr) {

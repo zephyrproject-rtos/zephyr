@@ -97,7 +97,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
 	if ((msg_queue != NULL) && (oflags & O_CREAT) != 0 &&
 	    (oflags & O_EXCL) != 0) {
-		/* Message queue has alreadey been opened and O_EXCL is set */
+		/* Message queue has already been opened and O_EXCL is set */
 		errno = EEXIST;
 		return (mqd_t)mqd;
 	}

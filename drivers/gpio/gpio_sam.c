@@ -67,7 +67,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 		return 0;
 	}
 
-	/* Setup the pin direcion. */
+	/* Setup the pin direction. */
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			/* Set the pin. */

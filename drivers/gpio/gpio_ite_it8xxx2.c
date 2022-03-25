@@ -18,7 +18,7 @@
 #define DT_DRV_COMPAT ite_it8xxx2_gpio
 
 /*
- * Strcture gpio_ite_cfg is about the setting of gpio
+ * Structure gpio_ite_cfg is about the setting of gpio
  * this config will be used at initial time
  */
 struct gpio_ite_cfg {
@@ -38,7 +38,7 @@ struct gpio_ite_cfg {
 	uint8_t gpio_irq[8];
 };
 
-/* Strcture gpio_ite_data is about callback function */
+/* Structure gpio_ite_data is about callback function */
 struct gpio_ite_data {
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;

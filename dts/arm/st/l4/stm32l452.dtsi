@@ -146,6 +146,11 @@
 			sjw = <1>;
 			sample-point = <875>;
 		};
+
+		adc1: adc@50040000 {
+			has-temp-channel;
+			has-vref-channel;
+		};
 	};
 
 	usb_fs_phy: usbphy {

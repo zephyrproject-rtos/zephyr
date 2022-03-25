@@ -23,6 +23,17 @@ config NRF_RTC_TIMER_USER_CHAN_COUNT
 	help
 	  Use nrf_rtc_timer.h API. Driver is not managing allocation of channels.
 
+config NRF_RTC_TIMER_LOCK_ZERO_LATENCY_IRQS
+	# hidden option
+	bool
+	depends on ZERO_LATENCY_IRQS
+	default y if !BT_LL_SW_SPLIT
+	help
+	  Enable use of __disable_irq() to disable Zero Latency IRQs to prevent
+	  higher priority contexts (including ZLIs) that might preempt the
+	  handler and call nrf_rtc_timer API from destroying the internal state
+	  in nrf_rtc_timer.
+
 choice
 	prompt "Clock startup policy"
 	default SYSTEM_CLOCK_WAIT_FOR_STABILITY

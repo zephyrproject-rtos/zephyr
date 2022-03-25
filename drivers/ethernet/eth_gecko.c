@@ -148,7 +148,7 @@ static struct net_pkt *frame_get(const struct device *dev)
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(cfg != NULL);
 
-	/* Preset indeces and total frame length */
+	/* Preset indices and total frame length */
 	sofIdx = UINT32_MAX;
 	eofIdx = UINT32_MAX;
 	total_len = 0;
@@ -481,7 +481,7 @@ static int eth_init(const struct device *dev)
 	/* Connect and enable IRQ */
 	cfg->config_func();
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

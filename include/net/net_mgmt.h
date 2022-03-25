@@ -130,7 +130,7 @@ struct net_mgmt_event_callback {
 		/** Actual callback function being used to notify the owner
 		 */
 		net_mgmt_event_handler_t handler;
-		/** Semaphore meant to be used internaly for the synchronous
+		/** Semaphore meant to be used internally for the synchronous
 		 * net_mgmt_event_wait() function.
 		 */
 		struct k_sem *sync_call;

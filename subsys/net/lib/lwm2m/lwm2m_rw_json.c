@@ -141,7 +141,7 @@ static void json_add_char(struct lwm2m_input_context *in,
 	}
 }
 
-/* Simlified JSON style reader for reading in values from a LWM2M JSON string */
+/* Simplified JSON style reader for reading in values from a LWM2M JSON string */
 static int json_next_token(struct lwm2m_input_context *in,
 			   struct json_in_formatter_data *fd)
 {
@@ -248,7 +248,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 		}
 	}
 
-	/* OK if cont == 0 othewise we failed */
+	/* OK if cont == 0 otherwise we failed */
 	return (cont == 0U);
 }
 
@@ -799,7 +799,7 @@ static int get_objlnk(struct lwm2m_input_context *in,
 	total_len = len;
 	value->obj_id = (uint16_t)tmp;
 
-	len++;  /* +1 for ':' delimeter. */
+	len++;  /* +1 for ':' delimiter. */
 	fd->value_offset += len;
 
 	len = read_int(in, &tmp, false);
@@ -854,52 +854,6 @@ int do_read_op_json(struct lwm2m_message *msg, int content_format)
 	fd.path_level = msg->path.level;
 	ret = lwm2m_perform_read_op(msg, content_format);
 	engine_clear_out_user_data(&msg->out);
-
-	return ret;
-}
-
-static int parse_path(const uint8_t *buf, uint16_t buflen,
-		      struct lwm2m_obj_path *path)
-{
-	int ret = 0;
-	int pos = 0;
-	uint16_t val;
-	uint8_t c = 0U;
-
-	(void)memset(path, 0, sizeof(*path));
-	do {
-		val = 0U;
-		c = buf[pos];
-		/* we should get a value first - consume all numbers */
-		while (pos < buflen && isdigit(c)) {
-			val = val * 10U + (c - '0');
-			c = buf[++pos];
-		}
-
-		/* slash will mote thing forward */
-		if (pos == 0 && c == '/') {
-			/* skip leading slashes */
-			pos++;
-		} else if (c == '/' || pos == buflen) {
-			LOG_DBG("Setting %u = %u", ret, val);
-			if (ret == 0) {
-				path->obj_id = val;
-			} else if (ret == 1) {
-				path->obj_inst_id = val;
-			} else if (ret == 2) {
-				path->res_id = val;
-			} else if (ret == 3) {
-				path->res_inst_id = val;
-			}
-
-			ret++;
-			pos++;
-		} else {
-			LOG_ERR("Error: illegal char '%c' at pos:%d",
-				c, pos);
-			return -EINVAL;
-		}
-	} while (pos < buflen);
 
 	return ret;
 }
@@ -998,14 +952,10 @@ int do_write_op_json(struct lwm2m_message *msg)
 			created = 0U;
 
 			/* parse full_name into path */
-			ret = parse_path(full_name, strlen(full_name),
-					 &msg->path);
+			ret = lwm2m_string_to_path(full_name, &msg->path, '/');
 			if (ret < 0) {
 				break;
 			}
-
-			/* if valid, use the return value as level */
-			msg->path.level = ret;
 
 			ret = lwm2m_get_or_create_engine_obj(msg, &obj_inst,
 							     &created);

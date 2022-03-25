@@ -41,7 +41,7 @@ struct spi_emul {
 	/* API provided for this device */
 	const struct spi_emul_api *api;
 
-	/* SPI chip-slect of the emulated device */
+	/* SPI chip-select of the emulated device */
 	uint16_t chipsel;
 };
 

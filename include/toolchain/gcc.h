@@ -437,7 +437,7 @@ do {                                                                    \
  * and toolchain, may restrict the range of values permitted
  * for assignment to the named symbol.
  *
- * For example, on x86, "value" is interpreated as signed
+ * For example, on x86, "value" is interpreted as signed
  * 32-bit integer. Passing in an unsigned 32-bit integer
  * with MSB set would result in a negative integer.
  * Moreover, GCC would error out if an integer larger
@@ -591,10 +591,18 @@ do {                                                                    \
 		1UL << (63U - __builtin_clzl(x) + 1U) : \
 		1UL << (63U - __builtin_clzl(x)))
 #else
-#define Z_POW2_CEIL(x) ((1UL << (31U - __builtin_clzl(x))) < x ?  \
-		1UL << (31U - __builtin_clzl(x) + 1U) : \
-		1UL << (31U - __builtin_clzl(x)))
+#define Z_POW2_CEIL(x) ((1UL << (31U - __builtin_clz(x))) < x ?  \
+		1UL << (31U - __builtin_clz(x) + 1U) : \
+		1UL << (31U - __builtin_clz(x)))
 #endif
+
+/**
+ * @brief Check whether or not a value is a power of 2
+ *
+ * @param x The value to check
+ * @return true if x is a power of 2, false otherwise
+ */
+#define Z_IS_POW2(x) (((x) != 0) && (((x) & ((x)-1)) == 0))
 
 #endif /* !_LINKER */
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

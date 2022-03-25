@@ -58,7 +58,7 @@ static int vl53l0x_sample_fetch(const struct device *dev,
 	ret = VL53L0X_PerformSingleRangingMeasurement(&drv_data->vl53l0x,
 					&drv_data->RangingMeasurementData);
 	if (ret < 0) {
-		LOG_ERR("Could not perform measurment (error=%d)", ret);
+		LOG_ERR("Could not perform measurement (error=%d)", ret);
 		return -EINVAL;
 	}
 

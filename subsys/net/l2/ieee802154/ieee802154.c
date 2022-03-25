@@ -145,7 +145,7 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface,
 	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
 		/*
 		 * d.1. A short destination address is included in the frame,
-		 * and it matches either macShortAddress orthe broadcast
+		 * and it matches either macShortAddress or the broadcast
 		 * address.
 		 */
 		if (!(dst_plain->addr.short_addr == IEEE802154_BROADCAST_ADDRESS ||

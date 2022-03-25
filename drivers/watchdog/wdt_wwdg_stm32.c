@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 #endif
 
 /*
- * additinally to the internal divider, the clock is divided by a
+ * additionally to the internal divider, the clock is divided by a
  * programmable prescaler.
  */
 #if defined(LL_WWDG_PRESCALER_128)
@@ -66,7 +66,7 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
  * The minimum timeout is calculated with:
  *  - counter = 0x40
  *  - prescaler = 1
- * The maximim timeout is calculated with:
+ * The maximum timeout is calculated with:
  *  - counter = 0x7F
  *  - prescaler = 8
  *
@@ -104,7 +104,7 @@ static uint32_t wwdg_stm32_get_pclk(const struct device *dev)
  * @brief Calculates the timeout in microseconds.
  *
  * @param dev Pointer to device structure.
- * @param prescaler_exp The prescaler exponend value(Base 2).
+ * @param prescaler_exp The prescaler exponent value(Base 2).
  * @param counter The counter value.
  * @return The timeout calculated in microseconds.
  */

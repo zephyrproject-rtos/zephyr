@@ -329,7 +329,7 @@ static inline int video_enqueue(const struct device *dev,
  * @brief Dequeue a video buffer.
  *
  * Dequeue a filled (capturing) or displayed (output) buffer from the driver’s
- * enpoint outgoing queue.
+ * endpoint outgoing queue.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param ep Endpoint ID.

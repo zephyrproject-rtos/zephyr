@@ -8,7 +8,7 @@
 #include <init.h>
 #include "fe310_prci.h"
 
-/* Selects the 16MHz oscilator on the HiFive1 board, which provides a clock
+/* Selects the 16MHz oscillator on the HiFive1 board, which provides a clock
  * that's accurate enough to actually drive serial ports off of.
  */
 static int fe310_clock_init(const struct device *dev)
@@ -22,4 +22,4 @@ static int fe310_clock_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(fe310_clock_init, PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY);
+SYS_INIT(fe310_clock_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

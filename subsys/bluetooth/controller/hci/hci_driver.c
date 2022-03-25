@@ -227,9 +227,9 @@ static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
  * @brief Handover from Controller thread to Host thread
  * @details Execution context: Controller thread
  *   Pull from memq_ll_rx and push up to Host thread recv_thread() via recv_fifo
- * @param p1  Unused. Required to conform with Zephyr thread protoype
- * @param p2  Unused. Required to conform with Zephyr thread protoype
- * @param p3  Unused. Required to conform with Zephyr thread protoype
+ * @param p1  Unused. Required to conform with Zephyr thread prototype
+ * @param p2  Unused. Required to conform with Zephyr thread prototype
+ * @param p3  Unused. Required to conform with Zephyr thread prototype
  */
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {

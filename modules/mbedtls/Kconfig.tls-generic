@@ -379,7 +379,7 @@ config MBEDTLS_SERVER_NAME_INDICATION
 	  This requires that MBEDTLS_X509_CRT_PARSE_C is also set.
 
 config MBEDTLS_PK_WRITE_C
-	bool "The generic public (asymetric) key writer"
+	bool "The generic public (asymmetric) key writer"
 	help
 	  Enable generic public key write functions.
 

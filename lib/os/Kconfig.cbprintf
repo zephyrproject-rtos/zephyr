@@ -47,7 +47,7 @@ config CBPRINTF_REDUCED_INTEGRAL
 
 	  This will decrease stack space, but affects conversion of any type
 	  with more than 32 bits.  This includes not only intmax_t but any
-	  type that can be converted to an integral represention including
+	  type that can be converted to an integral representation including
 	  size_t and pointers.
 
 	  With CBPRINTF_COMPLETE conversions that may result in value-specific

@@ -41,7 +41,7 @@
 #define STM32_DMA_CONFIG_PERIPHERAL_ADDR_INC(config)	((config >> 9) & 0x1)
 /* mem increment defined on bit 10 as true/false */
 #define STM32_DMA_CONFIG_MEMORY_ADDR_INC(config)	((config >> 10) & 0x1)
-/* perih data size defined on bits 11-12 */
+/* periph data size defined on bits 11-12 */
 /* 0 -> 1 byte, 1 -> 2 bytes, 2 -> 4 bytes */
 #define STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE(config)	\
 						(1 << ((config >> 11) & 0x3))

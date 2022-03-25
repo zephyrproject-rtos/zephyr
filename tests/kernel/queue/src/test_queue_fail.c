@@ -44,7 +44,7 @@ static void tThread_entry(void *p1, void *p2, void *p3)
 /**
  * @brief Test k_queue_append_list() failure scenario
  *
- * @details Accroding to the API k_queue_append_list to
+ * @details According to the API k_queue_append_list to
  * design some error condition to verify error branch of
  * the API.
  *	1. Verify that the list's head is empty.

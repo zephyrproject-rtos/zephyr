@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf51822_qfac.dtsi>
+#include "nrf51dk_nrf51422-pinctrl.dtsi"
 
 / {
 	model = "Nordic nRF51 DK NRF51422";
@@ -99,39 +100,40 @@
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <9>;
-	rx-pin = <11>;
-	rts-pin = <8>;
-	cts-pin = <10>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	status = "okay";
-	sda-pin = <30>;
-	scl-pin = <7>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c1 {
 	/* Cannot be used together with spi1. */
 	/* status = "okay"; */
-	sda-pin = <5>;
-	scl-pin = <6>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi0 {
 	/* Cannot be used together with i2c0. */
 	/* status = "okay"; */
-	sck-pin = <7>;
-	mosi-pin = <29>;
-	miso-pin = <30>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <6>;
-	mosi-pin = <5>;
-	miso-pin = <4>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {

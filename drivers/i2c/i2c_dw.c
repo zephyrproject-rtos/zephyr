@@ -197,9 +197,8 @@ static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint
 static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev);
 #endif
 
-static void i2c_dw_isr(void *arg)
+static void i2c_dw_isr(const struct device *port)
 {
-	const struct device *port = (const struct device *)arg;
 	struct i2c_dw_dev_config * const dw = port->data;
 	union ic_interrupt_register intr_stat;
 	uint32_t value;

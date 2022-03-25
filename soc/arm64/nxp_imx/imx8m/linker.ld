@@ -6,6 +6,4 @@
 
 #include <autoconf.h>
 
-#if defined(CONFIG_SOC_IMX8MM_A53)
-#include <linker_a53.ld>
-#endif
+#include <arch/arm64/scripts/linker.ld>

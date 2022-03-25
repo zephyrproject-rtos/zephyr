@@ -90,6 +90,14 @@ struct x86_tss64 tss3 = {
 };
 #endif
 
+
+/* We must put this in a dedicated section, or else it will land into .bss:
+ * in this case, though locore.S initalizes it relevantly, all will be
+ * lost when calling z_bss_zero() in z_x86_cpu_init prior to using it.
+ */
+Z_GENERIC_SECTION(.boot_arg)
+x86_boot_arg_t x86_cpu_boot_arg;
+
 struct x86_cpuboot x86_cpuboot[] = {
 	{
 		.tr = X86_KERNEL_CPU0_TR,
@@ -99,6 +107,7 @@ struct x86_cpuboot x86_cpuboot[] = {
 		.stack_size =
 			Z_KERNEL_STACK_SIZE_ADJUST(CONFIG_ISR_STACK_SIZE),
 		.fn = z_x86_prep_c,
+		.arg = &x86_cpu_boot_arg,
 	},
 #if CONFIG_MP_NUM_CPUS > 1
 	{

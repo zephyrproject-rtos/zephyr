@@ -8,6 +8,7 @@
 
 #include <soc.h>
 #include <drivers/adc.h>
+#include <drivers/pinctrl.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
@@ -43,6 +44,7 @@ struct adc_sam0_data {
 
 struct adc_sam0_cfg {
 	Adc *regs;
+	const struct pinctrl_dev_config *pcfg;
 
 #ifdef MCLK
 	uint32_t mclk_mask;
@@ -435,6 +437,7 @@ static int adc_sam0_init(const struct device *dev)
 	const struct adc_sam0_cfg *const cfg = dev->config;
 	struct adc_sam0_data *data = dev->data;
 	Adc *const adc = cfg->regs;
+	int retval;
 
 #ifdef MCLK
 	GCLK->PCHCTRL[cfg->gclk_id].reg = cfg->gclk_mask | GCLK_PCHCTRL_CHEN;
@@ -445,6 +448,11 @@ static int adc_sam0_init(const struct device *dev)
 
 	GCLK->CLKCTRL.reg = cfg->gclk | GCLK_CLKCTRL_CLKEN;
 #endif
+
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	ADC_PRESCALER(adc) = cfg->prescaler;
 	wait_synchronization(adc);
@@ -541,6 +549,7 @@ do {									\
 #endif
 
 #define ADC_SAM0_DEVICE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static void adc_sam0_config_##n(const struct device *dev);	\
 	static const struct adc_sam0_cfg adc_sam_cfg_##n = {		\
 		.regs = (Adc *)DT_INST_REG_ADDR(n),			\
@@ -550,6 +559,7 @@ do {									\
 					  _FREQ_HZ) /			\
 			DT_INST_PROP(n, prescaler),			\
 		.config_func = &adc_sam0_config_##n,			\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 	static struct adc_sam0_data adc_sam_data_##n = {		\
 		ADC_CONTEXT_INIT_TIMER(adc_sam_data_##n, ctx),		\

@@ -2,7 +2,7 @@
 
 # Using a config check is ok for now, but in future it would be desired if
 # linker flags themselves are not depending on actual configurations.
-# All flags should be described, and the caller should now the flag name to use.
+# All flags should be described, and the caller should know the flag name to use.
 if (NOT CONFIG_COVERAGE_GCOV)
   set_property(TARGET linker PROPERTY coverage -lgcov)
 endif()

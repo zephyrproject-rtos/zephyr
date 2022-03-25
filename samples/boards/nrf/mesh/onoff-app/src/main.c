@@ -223,7 +223,7 @@ struct bt_mesh_model *mod_cli_sw[] = {
 };
 
 /*
- * LED to Server Model Assigmnents
+ * LED to Server Model Assignments
  */
 
 struct bt_mesh_model *mod_srv_sw[] = {

@@ -144,7 +144,7 @@ void bt_keys_link_key_store(struct bt_keys_link_key *link_key)
 		err = settings_save_one(key, link_key->storage_start,
 					BT_KEYS_LINK_KEY_STORAGE_LEN);
 		if (err) {
-			BT_ERR("Failed to svae link key (err %d)", err);
+			BT_ERR("Failed to save link key (err %d)", err);
 		}
 	}
 }

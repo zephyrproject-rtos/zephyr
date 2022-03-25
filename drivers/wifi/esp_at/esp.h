@@ -107,8 +107,11 @@ extern "C" {
 #define ESP_MODE_AP		2
 #define ESP_MODE_STA_AP		3
 
-#define ESP_CMD_CWMODE(mode) \
-	"AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+#define ESP_CMD_CWMODE(mode) "AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))
+#else
+#define ESP_CMD_CWMODE(mode) "AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))",0"
+#endif
 
 #define ESP_CWDHCP_MODE_STATION		"1"
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)

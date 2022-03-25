@@ -36,7 +36,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* Enable wakeup source. Next time the system is called
 		 * to sleep, this device will still be active.
 		 */
-		(void)pm_device_wakeup_enable((struct device *)dev, true);
+		(void)pm_device_wakeup_enable(dev, true);
 		break;
 	case 2:
 		zassert_equal(state, PM_STATE_SUSPEND_TO_RAM, "Wrong system state");
@@ -86,13 +86,13 @@ void test_wakeup_device_api(void)
 	ret = pm_device_wakeup_is_capable(dev);
 	zassert_true(ret, "Device marked as capable");
 
-	ret = pm_device_wakeup_enable((struct device *)dev, true);
+	ret = pm_device_wakeup_enable(dev, true);
 	zassert_true(ret, "Could not enable wakeup source");
 
 	ret = pm_device_wakeup_is_enabled(dev);
 	zassert_true(ret, "Wakeup source not enabled");
 
-	ret = pm_device_wakeup_enable((struct device *)dev, false);
+	ret = pm_device_wakeup_enable(dev, false);
 	zassert_true(ret, "Could not disable wakeup source");
 
 	ret = pm_device_wakeup_is_enabled(dev);

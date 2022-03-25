@@ -43,7 +43,7 @@
 #define GICR_PROPBASER			0x0070
 #define GICR_PENDBASER			0x0078
 
-/* Register bit definations */
+/* Register bit definitions */
 
 /* GICD_CTLR Interrupt group definitions */
 #define GICD_CTLR_ENABLE_G0		0

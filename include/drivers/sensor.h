@@ -144,7 +144,7 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_VOLTAGE,
 	/** Average current, in amps **/
 	SENSOR_CHAN_GAUGE_AVG_CURRENT,
-	/** Standy current, in amps **/
+	/** Standby current, in amps **/
 	SENSOR_CHAN_GAUGE_STDBY_CURRENT,
 	/** Max load current, in amps **/
 	SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT,

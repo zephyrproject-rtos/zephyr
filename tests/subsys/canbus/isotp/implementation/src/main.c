@@ -144,7 +144,7 @@ static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
 			     remaining_len);
 		received_len += buf->len;
 		zassert_equal(received_len + remaining_len, len,
-			      "Length missmatch");
+			      "Length mismatch");
 
 		data_ptr = check_frag(buf, data_ptr);
 

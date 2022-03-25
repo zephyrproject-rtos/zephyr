@@ -189,7 +189,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 		}
 
 		/* bt_l2cap_chan_send does actually return the number of bytes
-		 * that could be sent immediatelly.
+		 * that could be sent immediately.
 		 */
 		err = bt_l2cap_chan_send(&chan->chan.chan, buf);
 		if (err < 0) {
@@ -562,6 +562,16 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	chan->chan.tx.mtu = chan->chan.rx.mtu;
 
 	BT_DBG("Negotiated MTU %u", chan->chan.rx.mtu);
+
+#if defined(CONFIG_BT_GATT_CLIENT)
+	/* Mark the MTU Exchange as complete.
+	 * This will skip sending ATT Exchange MTU from our side.
+	 *
+	 * Core 5.3 | Vol 3, Part F 3.4.2.2:
+	 * If MTU is exchanged in one direction, that is sufficient for both directions.
+	 */
+	atomic_set_bit(conn->flags, BT_CONN_ATT_MTU_EXCHANGED);
+#endif /* CONFIG_BT_GATT_CLIENT */
 
 	att_chan_mtu_updated(chan);
 
@@ -1134,7 +1144,7 @@ static uint8_t read_type_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	 */
 	data->err = 0x00;
 
-	/* Fast foward to next item position */
+	/* Fast forward to next item position */
 	data->item = net_buf_add(net_buf_frag_last(data->buf),
 				 sizeof(*data->item));
 	data->item->handle = sys_cpu_to_le16(handle);
@@ -2738,6 +2748,8 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 	att_chan_mtu_updated(att_chan);
 
 	k_work_init_delayable(&att_chan->timeout_work, att_timeout);
+
+	bt_gatt_connected(ch->chan.conn);
 }
 
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)

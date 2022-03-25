@@ -34,11 +34,10 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
  * otherwise the gsm_ppp_stop might fail to lock tx.
  */
 #define GSM_CMD_LOCK_TIMEOUT            K_SECONDS(10)
-#define GSM_RX_STACK_SIZE               CONFIG_MODEM_GSM_RX_STACK_SIZE
-#define GSM_WORKQ_STACK_SIZE            CONFIG_MODEM_GSM_WORKQ_STACK_SIZE
 #define GSM_RECV_MAX_BUF                30
 #define GSM_RECV_BUF_SIZE               128
 #define GSM_ATTACH_RETRY_DELAY_MSEC     1000
+#define GSM_REGISTER_DELAY_MSEC         1000
 #define GSM_RETRY_DELAY                 K_SECONDS(1)
 
 #define GSM_RSSI_RETRY_DELAY_MSEC       2000
@@ -50,6 +49,17 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #else
 	#define GSM_RSSI_MAXVAL         -51
 #endif
+
+/* Modem network registration state */
+enum network_state {
+	GSM_NET_INIT = -1,
+	GSM_NET_NOT_REGISTERED,
+	GSM_NET_HOME_NETWORK,
+	GSM_NET_SEARCHING,
+	GSM_NET_REGISTRATION_DENIED,
+	GSM_NET_UNKNOWN,
+	GSM_NET_ROAMING,
+};
 
 /* During the modem setup, we first create DLCI control channel and then
  * PPP and AT channels. Currently the modem does not create possible GNSS
@@ -91,6 +101,9 @@ static struct gsm_modem {
 	struct k_work_delayable rssi_work_handle;
 	struct gsm_ppp_modem_info minfo;
 
+	enum network_state net_state;
+
+	int register_retries;
 	int rssi_retries;
 	int attach_retries;
 	bool mux_enabled : 1;
@@ -105,8 +118,8 @@ static struct gsm_modem {
 } gsm;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE, 0, NULL);
-K_KERNEL_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
-K_KERNEL_STACK_DEFINE(gsm_workq_stack, GSM_WORKQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(gsm_rx_stack, CONFIG_MODEM_GSM_RX_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(gsm_workq_stack, CONFIG_MODEM_GSM_WORKQ_STACK_SIZE);
 
 static inline int gsm_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
@@ -321,6 +334,36 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 }
 #endif /* CONFIG_MODEM_SIM_NUMBERS */
 
+MODEM_CMD_DEFINE(on_cmd_net_reg_sts)
+{
+	gsm.net_state = (enum network_state)atoi(argv[1]);
+
+	switch (gsm.net_state) {
+	case GSM_NET_NOT_REGISTERED:
+		LOG_INF("Network %s.", "not registered");
+		break;
+	case GSM_NET_HOME_NETWORK:
+		LOG_INF("Network %s.", "registered, home network");
+		break;
+	case GSM_NET_SEARCHING:
+		LOG_INF("Searching for network...");
+		break;
+	case GSM_NET_REGISTRATION_DENIED:
+		LOG_INF("Network %s.", "registration denied");
+		break;
+	case GSM_NET_UNKNOWN:
+		LOG_INF("Network %s.", "unknown");
+		break;
+	case GSM_NET_ROAMING:
+		LOG_INF("Network %s.", "registered, roaming");
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_MODEM_CELL_INFO)
 
 /*
@@ -460,6 +503,9 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 
 static const struct modem_cmd read_cops_cmd =
 	MODEM_CMD_ARGS_MAX("+COPS:", on_cmd_atcmdinfo_cops, 1U, 4U, ",");
+
+static const struct modem_cmd check_net_reg_cmd =
+	MODEM_CMD("+CREG: ", on_cmd_net_reg_sts, 2U, ",");
 
 static const struct modem_cmd check_attached_cmd =
 	MODEM_CMD("+CGATT:", on_cmd_atcmdinfo_attached, 1U, ",");
@@ -617,6 +663,11 @@ static void gsm_finalize_connection(struct k_work *work)
 		goto attaching;
 	}
 
+	/* If modem is searching for network, we should skip the setup step */
+	if (gsm->register_retries) {
+		goto registering;
+	}
+
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
 		ret = modem_cmd_send_nolock(&gsm->context.iface,
 					    &gsm->context.cmd_handler,
@@ -667,6 +718,30 @@ static void gsm_finalize_connection(struct k_work *work)
 		(void)gsm_work_reschedule(&gsm->gsm_configure_work, GSM_RETRY_DELAY);
 		return;
 	}
+
+registering:
+	/* Wait for cell tower registration */
+	ret = modem_cmd_send_nolock(&gsm->context.iface,
+				    &gsm->context.cmd_handler,
+				    &check_net_reg_cmd, 1,
+				    "AT+CREG?",
+				    &gsm->sem_response,
+				    GSM_CMD_SETUP_TIMEOUT);
+	if ((ret < 0) || ((gsm->net_state != GSM_NET_ROAMING) &&
+			 (gsm->net_state != GSM_NET_HOME_NETWORK))) {
+		if (!gsm->register_retries) {
+			gsm->register_retries = CONFIG_MODEM_GSM_REGISTER_TIMEOUT *
+				MSEC_PER_SEC / GSM_REGISTER_DELAY_MSEC;
+		} else {
+			gsm->register_retries--;
+		}
+
+		(void)gsm_work_reschedule(&gsm->gsm_configure_work,
+					  K_MSEC(GSM_REGISTER_DELAY_MSEC));
+		return;
+	}
+
+	gsm->register_retries = 0;
 
 attaching:
 	/* Don't initialize PPP until we're attached to packet service */
@@ -1066,6 +1141,7 @@ void gsm_ppp_stop(const struct device *dev)
 	}
 
 	gsm->attached = false;
+	gsm->net_state = GSM_NET_INIT;
 }
 
 void gsm_ppp_register_modem_power_callback(const struct device *dev,
@@ -1164,6 +1240,8 @@ static int gsm_init(const struct device *dev)
 		LOG_DBG("context error %d", r);
 		return r;
 	}
+
+	gsm->net_state = GSM_NET_INIT;
 
 	LOG_DBG("iface->read %p iface->write %p",
 		gsm->context.iface.read, gsm->context.iface.write);

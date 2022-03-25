@@ -1761,7 +1761,7 @@ size_t net_pkt_available_payload_buffer(struct net_pkt *pkt,
 /**
  * @brief Trim net_pkt buffer
  *
- * @details This will basically check for unused buffers and deallocates
+ * @details This will basically check for unused buffers and deallocate
  *          them relevantly
  *
  * @param pkt The net_pkt which buffer will be trimmed

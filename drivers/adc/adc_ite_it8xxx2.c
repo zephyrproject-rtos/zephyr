@@ -64,7 +64,7 @@ struct adc_it8xxx2_data {
 };
 
 /*
- * Strcture adc_it8xxx2_cfg is about the setting of adc
+ * Structure adc_it8xxx2_cfg is about the setting of adc
  * this config will be used at initial time
  */
 struct adc_it8xxx2_cfg {
@@ -246,11 +246,8 @@ static void adc_enable_measurement(uint32_t ch)
 	} else {
 		/* Enable adc interrupt */
 		irq_enable(DT_INST_IRQN(0));
-		/* Wait for an interrupt to read data valid. */
-		if (k_sem_take(&data->sem, K_MSEC(1))) {
-			LOG_ERR("ADC interrupt is not fired.");
-			return;
-		}
+		/* Wait for an interrupt to read valid data. */
+		k_sem_take(&data->sem, K_FOREVER);
 	}
 }
 
@@ -371,9 +368,8 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-static void adc_it8xxx2_isr(const void *arg)
+static void adc_it8xxx2_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	struct adc_it8xxx2_data *data = dev->data;
 
 	LOG_DBG("ADC ISR triggered.");

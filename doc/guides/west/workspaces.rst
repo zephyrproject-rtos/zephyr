@@ -93,10 +93,17 @@ To use this helper by default on your computer, run:
 On GitHub, you can set up a `personal access token`_ to use in place of your
 account password. (This may be required if your account has two-factor
 authentication enabled, and may be preferable to storing your account password
-in plain text even if two-factor authentication is disabed.)
+in plain text even if two-factor authentication is disabled.)
 
 If you don't want to store any credentials on the file system, you can store
 them in memory temporarily using `git-credential-cache`_ instead.
+
+If you setup fetching via SSH, you can use Git URL rewrite feature. The following
+command instructs Git to use SSH URLs for GitHub instead of HTTPS ones:
+
+.. code-block:: shell
+
+   git config --global url."git@github.com:".insteadOf "https://github.com/"
 
 .. _git-credential-store:
    https://git-scm.com/docs/git-credential-store#_examples

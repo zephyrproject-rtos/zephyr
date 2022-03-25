@@ -42,7 +42,7 @@ BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
  *
  * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=<hz> must be set to 32768.
  *
- * To reduce truncation errors from accumalating due to conversion
+ * To reduce truncation errors from accumulating due to conversion
  * to/from time, ticks, and HW cycles set ticks per second equal to
  * the frequency. With tickless kernel mode enabled the kernel will not
  * program a periodic timer at this fast rate.

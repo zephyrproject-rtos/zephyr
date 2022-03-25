@@ -102,7 +102,7 @@ typedef struct {
 /* Converts between absolute timeout expiration values (packed into
  * the negative space below K_TICKS_FOREVER) and (non-negative) delta
  * timeout values.  If the result of Z_TICK_ABS(t) is >= 0, then the
- * value was an absolute timeout with the returend expiration time.
+ * value was an absolute timeout with the returned expiration time.
  * Note that this macro is bidirectional: Z_TICK_ABS(Z_TICK_ABS(t)) ==
  * t for all inputs, and that the representation of K_TICKS_FOREVER is
  * the same value in both spaces!  Clever, huh?

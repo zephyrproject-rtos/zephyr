@@ -3,7 +3,7 @@
 
 description: Microchip XEC PWM
 
-include: [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 compatible: "microchip,xec-pwm"
 
@@ -13,3 +13,12 @@ properties:
 
     label:
       required: true
+
+    pcrs:
+      type: array
+      required: true
+      description: PWM PCR register index and bit position
+
+pcr-cells:
+    - regidx
+    - bitpos

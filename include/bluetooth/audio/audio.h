@@ -32,20 +32,110 @@ extern "C" {
 
 #define BT_AUDIO_BROADCAST_ID_SIZE               3 /* octets */
 
-/* Audio Context Type, Generic Audio */
-#define BT_AUDIO_CONTEXT_TYPE_PROHIBITED         BIT(0)
-#define BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED        BIT(1)
-#define BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL     BIT(2)
-#define BT_AUDIO_CONTEXT_TYPE_MEDIA              BIT(3)
-#define BT_AUDIO_CONTEXT_TYPE_GAME               BIT(4)
-#define BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL      BIT(5)
-#define BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS   BIT(6)
-#define BT_AUDIO_CONTEXT_TYPE_LIVE               BIT(7)
-#define BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS      BIT(8)
-#define BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS      BIT(9)
-#define BT_AUDIO_CONTEXT_TYPE_RINGTONE           BIT(10)
-#define BT_AUDIO_CONTEXT_TYPE_ALERTS             BIT(11)
-#define BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM    BIT(12)
+/** @brief Audio Context Type, Generic Audio
+ *
+ *  These values are defined by the Generic Audio Assigned Numbers
+ */
+/** @def BT_AUDIO_CONTEXT_TYPE_PROHIBITED
+ *  @brief Prohibited. Excluded from usage.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_PROHIBITED         0
+/** @def BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED
+ *  @brief Unspecified type
+ *
+ *  Unspecified, matches any audio content.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED        BIT(0)
+/** @def BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL
+ *  @brief Conversational audio
+ *
+ *  Conversation between humans. as, for example, in telephony or video calls.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL     BIT(1)
+/** @def BT_AUDIO_CONTEXT_TYPE_MEDIA
+ *  @brief Media
+ *
+ *  Media as, for example, in music, public radio, podcast or video soundtrack.
+ *  Conversation between humans as, for example, in telephony or video calls.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_MEDIA              BIT(2)
+/** @def BT_AUDIO_CONTEXT_TYPE_GAME
+ *  @brief Game audio
+ *
+ *  Audio assiociated with video gaming as, for example, gaming media, gaming effects;
+ *  music and in-game voice chat between participants; or a mix of all the above.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_GAME               BIT(3)
+/** @def BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL
+ *  @brief Instructional audio
+ *
+ *  Instructional audio as, for example, in navigation, traffic announcements or user guidance.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL      BIT(4)
+/** @def BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS
+ *  @brief Voice assistant audio
+ *
+ *  Man-machine communication, for example, with voice recognition or virtual assistants.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS   BIT(5)
+/** @def BT_AUDIO_CONTEXT_TYPE_LIVE
+ *  @brief Live audio
+ *
+ *  Live audio, for example, from a microphone where audio is perceived both through
+ *  a direct acoustic path and through an LE Audio Stream.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_LIVE               BIT(6)
+/** @def BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS
+ *  @brief Sound effects
+ *
+ *  Sound effects including keyboard and touch feedback; menu and user interface sounds;
+ *  and other system sounds.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS      BIT(7)
+/** @def BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS
+ *  @brief Notification and reminder sounds
+ *
+ *  Notification and reminder sounds; attention-seeking audio, for example, in beeps signaling
+ *  the arrival of a message.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS      BIT(8)
+/** @def BT_AUDIO_CONTEXT_TYPE_RINGTONE
+ *  @brief Ringtone as in a call alert
+ *
+ * Alerts the user to an incoming call, for example, an incoming telephony or video call,
+ * including traditional cellular as well as VoIP and Push-to-Talk.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_RINGTONE           BIT(9)
+/** @def BT_AUDIO_CONTEXT_TYPE_ALERTS
+ *  @brief Alarms and timers
+ *
+ *  Alarms and timers; immediate alerts, for example, in a critical battery alarm, timer expiry or
+ *  alarm clock, toaster cooker, kettle, microwave, etc.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_ALERTS             BIT(10)
+/** @def BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM
+ *  @brief Emergency alarm
+ *
+ *  Emergency alerts as, for example, with fire alarms or other urgent alerts.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM    BIT(11)
+/* @def BT_AUDIO_CONTEXT_TYPE_ANY
+ *
+ * Any known context.
+ */
+#define BT_AUDIO_CONTEXT_TYPE_ANY	 (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
+					  BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
+					  BT_AUDIO_CONTEXT_TYPE_MEDIA | \
+					  BT_AUDIO_CONTEXT_TYPE_GAME | \
+					  BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL | \
+					  BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS | \
+					  BT_AUDIO_CONTEXT_TYPE_LIVE | \
+					  BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS | \
+					  BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS | \
+					  BT_AUDIO_CONTEXT_TYPE_RINGTONE | \
+					  BT_AUDIO_CONTEXT_TYPE_ALERTS | \
+					  BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM)
+
 
 /* Unicast Announcement Type, Generic Audio */
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00
@@ -53,10 +143,10 @@ extern "C" {
 
 #if defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 #define BROADCAST_SNK_STREAM_CNT CONFIG_BT_AUDIO_BROADCAST_SNK_STREAM_COUNT
-#define BROADCAST_SUBGROUP_CNT CONFIG_BT_AUDIO_BROADCAST_SUBGROUP_COUNT
+#define BROADCAST_SNK_SUBGROUP_CNT CONFIG_BT_AUDIO_BROADCAST_SNK_SUBGROUP_COUNT
 #else /* !CONFIG_BT_AUDIO_BROADCAST_SINK */
 #define BROADCAST_SNK_STREAM_CNT 0
-#define BROADCAST_SUBGROUP_CNT 0
+#define BROADCAST_SNK_SUBGROUP_CNT 0
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK*/
 
 /** @brief Abstract Audio Unicast Group structure. */
@@ -115,87 +205,6 @@ struct bt_codec_data {
 
 #define BT_CODEC_META_PREFER_CONTEXT     (BT_CODEC_META_BASE)
 #define BT_CODEC_META_CONTEXT            (BT_CODEC_META_BASE + 1)
-
-/* @def BT_CODEC_META_CONTEXT_NONE
- *
- * Unspecified. Matches any audio content.
- */
-#define BT_CODEC_META_CONTEXT_NONE       BIT(0)
-
-/* @def BT_CODEC_META_CONTEXT_VOICE
- *
- * Conversation between humans as, for example, in telephony or video calls.
- */
-#define BT_CODEC_META_CONTEXT_VOICE      BIT(1)
-
-/* @def BT_CODEC_META_CONTEXT_MEDIA
- *
- * Media as, for example, in music, public radio, podcast or video soundtrack.
- * Conversation between humans as, for example, in telephony or video calls.
- */
-#define BT_CODEC_META_CONTEXT_MEDIA      BIT(2)
-
-/* @def BT_CODEC_META_CONTEXT_INSTRUCTION
- *
- * Instructional audio as, for example, in navigation, traffic announcements or
- * user guidance.
- */
-#define BT_CODEC_META_CONTEXT_INSTRUCTION BIT(3)
-
-/* @def BT_CODEC_META_CONTEXT_ATTENTION
- *
- * Attention seeking audio as, for example, in beeps signalling arrival of a
- * message or keyboard clicks.
- */
-#define BT_CODEC_META_CONTEXT_ATTENTION  BIT(4)
-
-/* @def BT_CODEC_META_CONTEXT_ALERT
- *
- * Immediate alerts as, for example, in a low battery alarm, timer expiry or
- * alarm clock.
- */
-#define BT_CODEC_META_CONTEXT_ALERT      BIT(5)
-
-/* @def BT_CODEC_META_CONTEXT_MAN_MACHINE
- *
- * Man machine communication as, for example, with voice recognition or
- * virtual assistant.
- */
-#define BT_CODEC_META_CONTEXT_MAN_MACHINE BIT(6)
-
-/* @def BT_CODEC_META_CONTEXT_EMERGENCY
- *
- * Emergency alerts as, for example, with fire alarms or other urgent alerts.
- */
-#define BT_CODEC_META_CONTEXT_EMERGENCY  BIT(7)
-
-/* @def BT_CODEC_META_CONTEXT_RINGTONE
- *
- * Ringtone as in a call alert.
- */
-#define BT_CODEC_META_CONTEXT_RINGTONE   BIT(8)
-
-/* @def BT_CODEC_META_CONTEXT_TV
- *
- * Audio associated with a television program and/or with metadata conforming
- * to the Bluetooth Broadcast TV profile.
- */
-#define BT_CODEC_META_CONTEXT_TV         BIT(9)
-
-/* @def BT_CODEC_META_CONTEXT_ANY
- *
- * Any known context.
- */
-#define BT_CODEC_META_CONTEXT_ANY	 (BT_CODEC_META_CONTEXT_NONE | \
-					  BT_CODEC_META_CONTEXT_VOICE | \
-					  BT_CODEC_META_CONTEXT_MEDIA | \
-					  BT_CODEC_META_CONTEXT_INSTRUCTION | \
-					  BT_CODEC_META_CONTEXT_ATTENTION | \
-					  BT_CODEC_META_CONTEXT_ALERT | \
-					  BT_CODEC_META_CONTEXT_MAN_MACHINE | \
-					  BT_CODEC_META_CONTEXT_EMERGENCY | \
-					  BT_CODEC_META_CONTEXT_RINGTONE | \
-					  BT_CODEC_META_CONTEXT_TV)
 
 /** Location values for BT Audio.
  *
@@ -282,7 +291,7 @@ struct bt_audio_base {
 	/* Number of subgroups in the BASE */
 	size_t subgroup_count;
 	/* Array of subgroups in the BASE */
-	struct bt_audio_base_subgroup subgroups[BROADCAST_SUBGROUP_CNT];
+	struct bt_audio_base_subgroup subgroups[BROADCAST_SNK_SUBGROUP_CNT];
 };
 
 /** @brief Audio Capability type */
@@ -419,7 +428,7 @@ struct bt_codec_qos_pref {
 	/** Preferred Transport Latency */
 	uint16_t latency;
 
-	/** @brief Minimun Presentation Delay
+	/** @brief Minimum Presentation Delay
 	 *
 	 *  Unlike the other fields, this is not a preference but a minimum
 	 *  requirement.
@@ -433,7 +442,7 @@ struct bt_codec_qos_pref {
 	 */
 	uint32_t pd_max;
 
-	/** @brief Preferred minimun Presentation Delay */
+	/** @brief Preferred minimum Presentation Delay */
 	uint32_t pref_pd_min;
 
 	/** @brief Preferred maximum Presentation Delay	*/
@@ -1035,7 +1044,7 @@ struct bt_audio_unicast_server_cb {
 	 *
 	 *  @param conn   The connection that requests the capabilities.
 	 *                Will be NULL if the capabilities is requested for
-	 *                sending a notification, as a result of callling
+	 *                sending a notification, as a result of calling
 	 *                bt_audio_capability_register() or
 	 *                bt_audio_capability_unregister().
 	 *  @param type   Type of the endpoint.
@@ -1059,7 +1068,7 @@ struct bt_audio_unicast_server_cb {
 	 *  @param[in]  conn      The connection that requests the location.
 	 *                        Will be NULL if the location is requested
 	 *                        for sending a notification, as a result of
-	 *                        callling
+	 *                        calling
 	 *                        bt_audio_unicast_server_location_changed().
 	 *  @param[in]  type      Type of the endpoint.
 	 *  @param[out] location  Pointer to the location that needs to be set.

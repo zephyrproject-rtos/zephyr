@@ -151,7 +151,7 @@ static void value_v6_indicate_cb(struct bt_conn *conn,
 				 uint8_t err)
 {
 	printk("Indication for attribute 'Value V6' %s\n",
-	       (err) ? "failed" : "succeded");
+	       (err) ? "failed" : "succeeded");
 }
 
 /**

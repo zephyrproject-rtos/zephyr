@@ -212,6 +212,14 @@ static LoRaMacStatus_t lorawan_join_otaa(
 	mlme_req.Req.Join.Datarate = default_datarate;
 	mlme_req.Req.Join.NetworkActivation = ACTIVATION_TYPE_OTAA;
 
+	/* Retrieve the NVM context to store device nonce */
+	mib_req.Type = MIB_NVM_CTXS;
+	if (LoRaMacMibGetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+		LOG_ERR("Could not get NVM context");
+		return -EINVAL;
+	}
+	mib_req.Param.Contexts->Crypto.DevNonce = join_cfg->otaa.dev_nonce;
+
 	mib_req.Type = MIB_DEV_EUI;
 	mib_req.Param.DevEui = join_cfg->dev_eui;
 	LoRaMacMibSetRequestConfirm(&mib_req);
@@ -448,7 +456,7 @@ int lorawan_set_conf_msg_tries(uint8_t tries)
 	return 0;
 }
 
-int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, uint8_t flags)
+int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, enum lorawan_message_type type)
 {
 	LoRaMacStatus_t status;
 	McpsReq_t mcpsReq;
@@ -480,20 +488,18 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, uint8_t flags)
 		mcpsReq.Req.Unconfirmed.fBufferSize = 0;
 		mcpsReq.Req.Unconfirmed.Datarate = DR_0;
 	} else {
-		if (flags & LORAWAN_MSG_CONFIRMED) {
-			mcpsReq.Type = MCPS_CONFIRMED;
-			mcpsReq.Req.Confirmed.fPort = port;
-			mcpsReq.Req.Confirmed.fBuffer = data;
-			mcpsReq.Req.Confirmed.fBufferSize = len;
-			mcpsReq.Req.Confirmed.Datarate = current_datarate;
-		} else {
-			/* default message type */
+		switch (type) {
+		case LORAWAN_MSG_UNCONFIRMED:
 			mcpsReq.Type = MCPS_UNCONFIRMED;
-			mcpsReq.Req.Unconfirmed.fPort = port;
-			mcpsReq.Req.Unconfirmed.fBuffer = data;
-			mcpsReq.Req.Unconfirmed.fBufferSize = len;
-			mcpsReq.Req.Unconfirmed.Datarate = current_datarate;
+			break;
+		case LORAWAN_MSG_CONFIRMED:
+			mcpsReq.Type = MCPS_CONFIRMED;
+			break;
 		}
+		mcpsReq.Req.Unconfirmed.fPort = port;
+		mcpsReq.Req.Unconfirmed.fBuffer = data;
+		mcpsReq.Req.Unconfirmed.fBufferSize = len;
+		mcpsReq.Req.Unconfirmed.Datarate = current_datarate;
 	}
 
 	status = LoRaMacMcpsRequest(&mcpsReq);

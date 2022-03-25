@@ -66,6 +66,7 @@ jobs:
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
           west init -l . || true
+          west config manifest.group-filter -- +ci
           # no need for west update here
 
       - name: Generate Test Plan with Twister

@@ -100,7 +100,7 @@ struct bt_csis_register_param {
 	/**
 	 * @brief Size of the set.
 	 *
-	 * If set to 0, the set size characteric won't be initialized.
+	 * If set to 0, the set size characteristic won't be initialized.
 	 * Otherwise shall be set to minimum 2.
 	 */
 	uint8_t set_size;
@@ -169,7 +169,7 @@ int bt_csis_register(const struct bt_csis_register_param *param,
 void bt_csis_print_sirk(const struct bt_csis *csis);
 
 /**
- * @brief Starts advertising the Resolveable Set Identifier value.
+ * @brief Starts advertising the Resolvable Set Identifier value.
  *
  * This cannot be used with other connectable advertising sets.
  *

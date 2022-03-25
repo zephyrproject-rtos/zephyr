@@ -30,7 +30,7 @@ static const struct bt_data ad[] = {
 
 /* Latency set to zero, to enforce PDU exchange every connection event */
 #define CONN_LATENCY 0U
-/* Inteval used to run CTE request procedure periodically.
+/* Interval used to run CTE request procedure periodically.
  * Value is a number of connection events.
  */
 #define CTE_REQ_INTERVAL (CONN_LATENCY + 10U)

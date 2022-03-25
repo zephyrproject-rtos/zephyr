@@ -8,6 +8,7 @@
 #include <string.h>
 #include <kernel.h>
 #include <drivers/can.h>
+#include <drivers/can/transceiver.h>
 #include "can_mcan.h"
 #include "can_mcan_int.h"
 #include <logging/log.h>
@@ -212,9 +213,23 @@ int can_mcan_set_mode(const struct can_mcan_config *cfg, enum can_mode mode)
 	struct can_mcan_reg *can = cfg->can;
 	int ret;
 
+	if (cfg->phy != NULL) {
+		ret = can_transceiver_enable(cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			return ret;
+		}
+	}
+
 	ret = can_enter_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
+
+		if (cfg->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(cfg->phy);
+		}
+
 		return -EIO;
 	}
 
@@ -252,6 +267,11 @@ int can_mcan_set_mode(const struct can_mcan_config *cfg, enum can_mode mode)
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
+
+		if (cfg->phy != NULL) {
+			/* Attempt to disable the CAN transceiver in case of error */
+			(void)can_transceiver_disable(cfg->phy);
+		}
 	}
 
 	return 0;
@@ -268,23 +288,40 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 #endif
 	int ret;
 
+	data->dev = dev;
 	k_mutex_init(&data->inst_mutex);
 	k_mutex_init(&data->tx_mtx);
 	k_sem_init(&data->tx_sem, NUM_TX_BUF_ELEMENTS, NUM_TX_BUF_ELEMENTS);
+
 	for (int i = 0; i < ARRAY_SIZE(data->tx_fin_sem); ++i) {
 		k_sem_init(&data->tx_fin_sem[i], 0, 1);
+	}
+
+	if (cfg->phy != NULL) {
+		if (!device_is_ready(cfg->phy)) {
+			LOG_ERR("CAN transceiver not ready");
+			return -ENODEV;
+		}
+
+		ret = can_transceiver_enable(cfg->phy);
+		if (ret != 0) {
+			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			return -EIO;
+		}
 	}
 
 	ret = can_exit_sleep_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to exit sleep mode");
-		return -EIO;
+		ret = -EIO;
+		goto done;
 	}
 
 	ret = can_enter_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to enter init mode");
-		return -EIO;
+		ret = -EIO;
+		goto done;
 	}
 
 	/* Configuration Change Enable */
@@ -376,7 +413,8 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 				      cfg->sample_point);
 		if (ret == -EINVAL) {
 			LOG_ERR("Can't find timing for given param");
-			return -EIO;
+			ret = -EIO;
+			goto done;
 		}
 		LOG_DBG("Presc: %d, TS1: %d, TS2: %d",
 			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
@@ -397,7 +435,8 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 					   cfg->sample_point_data);
 		if (ret == -EINVAL) {
 			LOG_ERR("Can't find timing for given dataphase param");
-			return -EIO;
+			ret = -EIO;
+			goto done;
 		}
 
 		LOG_DBG("Sample-point err data phase: %d", ret);
@@ -441,10 +480,17 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
-		return -EIO;
+		ret = -EIO;
+		goto done;
 	}
 
-	return 0;
+done:
+	if (ret != 0 && cfg->phy != NULL) {
+		/* Attempt to disable the CAN transceiver in case of error */
+		(void)can_transceiver_disable(cfg->phy);
+	}
+
+	return ret;
 }
 
 static void can_mcan_state_change_handler(const struct can_mcan_config *cfg,
@@ -458,7 +504,7 @@ static void can_mcan_state_change_handler(const struct can_mcan_config *cfg,
 	(void)can_mcan_get_state(cfg, &state, &err_cnt);
 
 	if (cb != NULL) {
-		cb(state, err_cnt, cb_data);
+		cb(data->dev, state, err_cnt, cb_data);
 	}
 }
 
@@ -486,7 +532,7 @@ static void can_mcan_tc_event_handler(struct can_mcan_reg *can,
 		if (tx_cb == NULL) {
 			k_sem_give(&data->tx_fin_sem[tx_idx]);
 		} else {
-			tx_cb(0, data->tx_fin_cb_arg[tx_idx]);
+			tx_cb(data->dev, 0, data->tx_fin_cb_arg[tx_idx]);
 		}
 	}
 }
@@ -599,7 +645,7 @@ static void can_mcan_get_message(struct can_mcan_data *data,
 			}
 
 			if (cb) {
-				cb(&frame, cb_arg);
+				cb(data->dev, &frame, cb_arg);
 			} else {
 				LOG_DBG("cb missing");
 			}
@@ -784,6 +830,17 @@ static int can_mcan_get_free_std(volatile struct can_mcan_std_filter *filters)
 	return -ENOSPC;
 }
 
+int can_mcan_get_max_filters(const struct device *dev, enum can_ide id_type)
+{
+	ARG_UNUSED(dev);
+
+	if (id_type == CAN_STANDARD_IDENTIFIER) {
+		return NUM_STD_FILTER_DATA;
+	} else {
+		return NUM_EXT_FILTER_DATA;
+	}
+}
+
 /* Use masked configuration only for simplicity. If someone needs more than
  * 28 standard filters, dual mode needs to be implemented.
  * Dual mode gets tricky, because we can only activate both filters.
@@ -809,7 +866,7 @@ int can_mcan_add_rx_filter_std(struct can_mcan_data *data,
 		return -ENOSPC;
 	}
 
-	/* TODO propper fifo balancing */
+	/* TODO proper fifo balancing */
 	filter_element.sfce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 
@@ -871,7 +928,7 @@ static int can_mcan_add_rx_filter_ext(struct can_mcan_data *data,
 		return -ENOSPC;
 	}
 
-	/* TODO propper fifo balancing */
+	/* TODO proper fifo balancing */
 	filter_element.efce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 :
 						 CAN_MCAN_FCE_FIFO0;
 

@@ -35,8 +35,6 @@ struct eeprom_sim_config {
 	bool readonly;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-
 #define EEPROM(addr) (mock_eeprom + (addr))
 
 #if defined(CONFIG_MULTITHREADING)
@@ -51,7 +49,7 @@ static struct k_sem sem_lock;
 #define SYNC_UNLOCK()
 #endif
 
-/* simulator statistcs */
+/* simulator statistics */
 STATS_SECT_START(eeprom_sim_stats)
 STATS_SECT_ENTRY32(bytes_read)		/* total bytes read */
 STATS_SECT_ENTRY32(bytes_written)	/* total bytes written */

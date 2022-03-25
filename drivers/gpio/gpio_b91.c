@@ -166,7 +166,7 @@ void gpio_b91_irq_set(const struct device *dev, gpio_pin_t pin,
 	uint8_t irq_prioriy = GET_IRQ_PRIORITY(dev);
 	volatile struct gpio_b91_t *gpio = GET_GPIO(dev);
 
-	/* Get level and mask bsed on IRQ number */
+	/* Get level and mask based on IRQ number */
 	if (irq_num == IRQ_GPIO) {
 		irq_lvl = FLD_GPIO_IRQ_LVL_GPIO;
 		irq_mask = FLD_GPIO_IRQ_MASK_GPIO;

@@ -29,12 +29,24 @@ void z_riscv_configure_static_pmp_regions(void);
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_USERSPACE
+	csr_write(mscratch, 0);
+#endif
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_configure_static_pmp_regions();
 #endif
 }
 
-void arch_switch(void *switch_to, void **switched_from);
+static ALWAYS_INLINE void
+arch_switch(void *switch_to, void **switched_from)
+{
+	extern void z_riscv_switch(struct k_thread *new, struct k_thread *old);
+	struct k_thread *new = switch_to;
+	struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
+					    switch_handle);
+
+	z_riscv_switch(new, old);
+}
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf);
