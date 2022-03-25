@@ -1735,11 +1735,14 @@ class TestCase(DisablePyTestCollectionMixin):
         self.reason = None
         self.testsuite = testsuite
 
-    def __str__(self):
-        return self.name
+    def __lt__(self, other):
+        return self.name < other.name
 
     def __repr__(self):
         return "<TestCase %s with %s>" % (self.name, self.status)
+
+    def __str__(self):
+        return self.name
 
 class TestSuite(DisablePyTestCollectionMixin):
     """Class representing a test application
