@@ -91,6 +91,16 @@ properties:
         - 8
         - 16
 
+    undershoot-prevention:
+      type: boolean
+      required: false
+      description: |
+        On some parts, it could be required to set up highest core frequencies
+        (>80MHz) in two steps in order to prevent undershoot.
+        This is done by applying an intermediate AHB prescaler before switching
+        System Clock source to PLL. Once done, prescaler is set back to expected
+        value.
+
 clock-cells:
   - bus
   - bits
