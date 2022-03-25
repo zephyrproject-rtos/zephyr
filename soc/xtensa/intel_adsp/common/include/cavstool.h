@@ -5,19 +5,6 @@
 #ifndef ZEPHYR_INCLUDE_CAVS_TEST_H
 #define ZEPHYR_INCLUDE_CAVS_TEST_H
 
-/* Helper to escape from infinite polling loops with a test failure
- * instead of a hang.  Spins with a relaxation loop so that it works
- * in interrupt context and doesn't stress shared resources like SRAM
- */
-#define WAIT_FOR(expr) do {						\
-		int i;							\
-		for (i = 0; !(expr) && i < 10000; i++) {		\
-			for (volatile int j = 0; j < 1000; j++) {	\
-			}						\
-		}							\
-		zassert_true(i < 10000, "timeout waiting for %s", #expr); \
-	} while (0)
-
 /* The cavstool.py script that launched us listens for a very simple
  * set of IPC commands to help test.  Pass one of the following values
  * as the "data" argument to cavs_ipc_send_message(CAVS_HOST_DEV, ...):

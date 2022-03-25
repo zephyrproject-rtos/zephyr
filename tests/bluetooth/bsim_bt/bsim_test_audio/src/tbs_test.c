@@ -92,9 +92,9 @@ static void test_main(void)
 
 	printk("Scanning successfully started\n");
 
-	WAIT_FOR(is_connected);
+	WAIT_FOR_COND(is_connected);
 
-	WAIT_FOR(call_placed);
+	WAIT_FOR_COND(call_placed);
 
 	err = bt_tbs_remote_answer(call_id);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
@@ -109,7 +109,7 @@ static void test_main(void)
 	}
 	printk("Remote held %u\n", call_id);
 
-	WAIT_FOR(call_held);
+	WAIT_FOR_COND(call_held);
 
 	err = bt_tbs_remote_retrieve(call_id);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {

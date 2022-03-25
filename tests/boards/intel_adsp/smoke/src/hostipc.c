@@ -41,8 +41,8 @@ void test_host_ipc(void)
 	done_flag = false;
 	ret = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_SIGNAL_DONE, 0);
 	zassert_true(ret, "send failed");
-	WAIT_FOR(cavs_ipc_is_complete(CAVS_HOST_DEV));
-	WAIT_FOR(done_flag);
+	zassert_true(WAIT_FOR(cavs_ipc_is_complete(CAVS_HOST_DEV), 10000, k_msleep(1)), NULL);
+	zassert_true(WAIT_FOR(done_flag, 10000, k_msleep(1)), NULL);
 
 	/* Request the host to return a message which we will complete
 	 * immediately.
@@ -53,9 +53,9 @@ void test_host_ipc(void)
 	ret = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_RETURN_MSG,
 				    RETURN_MSG_SYNC_VAL);
 	zassert_true(ret, "send failed");
-	WAIT_FOR(done_flag);
-	WAIT_FOR(cavs_ipc_is_complete(CAVS_HOST_DEV));
-	WAIT_FOR(msg_flag);
+	zassert_true(WAIT_FOR(done_flag, 10000, k_msleep(1)), NULL);
+	zassert_true(WAIT_FOR(cavs_ipc_is_complete(CAVS_HOST_DEV), 10000, k_msleep(1)), NULL);
+	zassert_true(WAIT_FOR(msg_flag, 10000, k_msleep(1)), NULL);
 
 	/* Do exactly the same thing again to check for state bugs
 	 * (e.g. failing to signal done on one side or the other)
@@ -66,9 +66,9 @@ void test_host_ipc(void)
 	ret = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_RETURN_MSG,
 				    RETURN_MSG_SYNC_VAL);
 	zassert_true(ret, "send failed");
-	WAIT_FOR(done_flag);
-	WAIT_FOR(cavs_ipc_is_complete(CAVS_HOST_DEV));
-	WAIT_FOR(msg_flag);
+	zassert_true(WAIT_FOR(done_flag, 10000, k_msleep(1)), NULL);
+	zassert_true(WAIT_FOR(cavs_ipc_is_complete(CAVS_HOST_DEV), 10000, k_msleep(1)), NULL);
+	zassert_true(WAIT_FOR(msg_flag, 10000, k_msleep(1)), NULL);
 
 	/* Same, but we'll complete it asynchronously (1.8+ only) */
 	if (!IS_ENABLED(CONFIG_SOC_SERIES_INTEL_CAVS_V15)) {
@@ -78,9 +78,10 @@ void test_host_ipc(void)
 		ret = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_RETURN_MSG,
 					    RETURN_MSG_ASYNC_VAL);
 		zassert_true(ret, "send failed");
-		WAIT_FOR(done_flag);
-		WAIT_FOR(cavs_ipc_is_complete(CAVS_HOST_DEV));
-		WAIT_FOR(msg_flag);
+		zassert_true(WAIT_FOR(done_flag, 10000, k_msleep(1)), NULL);
+		zassert_true(WAIT_FOR(cavs_ipc_is_complete(CAVS_HOST_DEV), 10000, k_msleep(1)),
+			     NULL);
+		zassert_true(WAIT_FOR(msg_flag, 10000, k_msleep(1)), NULL);
 		cavs_ipc_complete(CAVS_HOST_DEV);
 	}
 
