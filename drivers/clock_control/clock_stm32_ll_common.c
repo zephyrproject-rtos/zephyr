@@ -293,7 +293,7 @@ static struct clock_control_driver_api stm32_clock_control_api = {
  * Unconditionally switch the system clock source to HSI.
  */
 __unused
-static void stm32_clock_switch_to_hsi(uint32_t new_ahb_prescaler)
+static void stm32_clock_switch_to_hsi(void)
 {
 	/* Enable HSI if not enabled */
 	if (LL_RCC_HSI_IsReady() != 1) {
@@ -306,7 +306,6 @@ static void stm32_clock_switch_to_hsi(uint32_t new_ahb_prescaler)
 
 	/* Set HSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
-	LL_RCC_SetAHBPrescaler(new_ahb_prescaler);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
 }
@@ -343,7 +342,8 @@ static int set_up_plls(void)
 	 *
 	 */
 	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
-		stm32_clock_switch_to_hsi(LL_RCC_SYSCLK_DIV_1);
+		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+		stm32_clock_switch_to_hsi();
 	}
 	LL_RCC_PLL_Disable();
 
@@ -398,6 +398,9 @@ static void set_up_fixed_clock_sources(void)
 	} else {
 		LL_RCC_HSE_DisableBypass();
 	}
+#endif
+#if STM32_HSE_DIV2
+	LL_RCC_HSE_EnableDiv2();
 #endif
 	/* Enable HSE */
 	LL_RCC_HSE_Enable();
@@ -495,6 +498,14 @@ int stm32_clock_control_init(const struct device *dev)
 		return r;
 	}
 
+	if (DT_PROP(DT_NODELABEL(rcc), undershoot_prevention) &&
+		(STM32_CORE_PRESCALER == LL_RCC_SYSCLK_DIV_1) &&
+		(MHZ(80) < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)) {
+		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_2);
+	} else {
+		LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_CORE_PRESCALER));
+	}
+
 #if STM32_SYSCLK_SRC_PLL
 	/* Set PLL as System Clock Source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
@@ -503,18 +514,22 @@ int stm32_clock_control_init(const struct device *dev)
 #elif STM32_SYSCLK_SRC_HSE
 	/* Set HSE as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
-	LL_RCC_SetAHBPrescaler(STM32_CORE_PRESCALER);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
 	}
 #elif STM32_SYSCLK_SRC_MSI
 	/* Set MSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSI);
-	LL_RCC_SetAHBPrescaler(STM32_CORE_PRESCALER);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
 	}
 #elif STM32_SYSCLK_SRC_HSI
-	stm32_clock_switch_to_hsi(STM32_CORE_PRESCALER);
+	stm32_clock_switch_to_hsi();
 #endif /* STM32_SYSCLK_SRC_... */
+
+	if (DT_PROP(DT_NODELABEL(rcc), undershoot_prevention) &&
+		(STM32_CORE_PRESCALER == LL_RCC_SYSCLK_DIV_1) &&
+		(MHZ(80) < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)) {
+		LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_CORE_PRESCALER));
+	}
 
 	/* If freq not increased, set flash latency after all clock setting */
 	if (old_flash_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
