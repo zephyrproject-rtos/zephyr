@@ -33,7 +33,10 @@ zephyr_sources_ifdef(CONFIG_JSON_LIBRARY json.c)
 
 zephyr_sources_ifdef(CONFIG_RING_BUFFER ring_buffer.c)
 
-zephyr_sources_ifdef(CONFIG_ASSERT assert.c)
+if (CONFIG_ASSERT OR CONFIG_ASSERT_VERBOSE)
+zephyr_sources(assert.c)
+endif()
+
 
 zephyr_sources_ifdef(CONFIG_USERSPACE mutex.c user_work.c)
 
