@@ -31,7 +31,7 @@ information from Thread Analyzer::
 	 thread_b            : STACK: unused 740 usage 284 / 1024 (27 %); CPU: 0 %
 	 thread_analyzer     : STACK: unused 8 usage 504 / 512 (98 %); CPU: 0 %
 	 thread_a            : STACK: unused 648 usage 376 / 1024 (36 %); CPU: 98 %
-	 idle 00             : STACK: unused 204 usage 116 / 320 (36 %); CPU: 0 %
+	 idle                : STACK: unused 204 usage 116 / 320 (36 %); CPU: 0 %
 	thread_b: Hello World from cpu 0 on qemu_x86!
 	thread_a: Hello World from cpu 0 on qemu_x86!
 	thread_b: Hello World from cpu 0 on qemu_x86!
@@ -44,7 +44,7 @@ information from Thread Analyzer::
 	 thread_b            : STACK: unused 648 usage 376 / 1024 (36 %); CPU: 7 %
 	 thread_analyzer     : STACK: unused 8 usage 504 / 512 (98 %); CPU: 0 %
 	 thread_a            : STACK: unused 648 usage 376 / 1024 (36 %); CPU: 9 %
-	 idle 00             : STACK: unused 204 usage 116 / 320 (36 %); CPU: 82 %
+	 idle                : STACK: unused 204 usage 116 / 320 (36 %); CPU: 82 %
 	thread_b: Hello World from cpu 0 on qemu_x86!
 	thread_a: Hello World from cpu 0 on qemu_x86!
 	thread_b: Hello World from cpu 0 on qemu_x86!
@@ -57,7 +57,7 @@ information from Thread Analyzer::
 	 thread_b            : STACK: unused 648 usage 376 / 1024 (36 %); CPU: 7 %
 	 thread_analyzer     : STACK: unused 8 usage 504 / 512 (98 %); CPU: 0 %
 	 thread_a            : STACK: unused 648 usage 376 / 1024 (36 %); CPU: 8 %
-	 idle 00             : STACK: unused 204 usage 116 / 320 (36 %); CPU: 83 %
+	 idle                : STACK: unused 204 usage 116 / 320 (36 %); CPU: 83 %
 	thread_b: Hello World from cpu 0 on qemu_x86!
 	thread_a: Hello World from cpu 0 on qemu_x86!
 	thread_b: Hello World from cpu 0 on qemu_x86!
