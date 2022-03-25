@@ -1353,7 +1353,8 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 }
 
-int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
+int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_conn_tx_cb_t cb,
+			     void *user_data)
 {
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
 
@@ -1361,7 +1362,12 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -EMSGSIZE;
 	}
 
-	return bt_l2cap_send_cb(br_chan->chan.conn, br_chan->tx.cid, buf, NULL, NULL);
+	return bt_l2cap_send_cb(br_chan->chan.conn, br_chan->tx.cid, buf, cb, user_data);
+}
+
+int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 }
 
 static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
