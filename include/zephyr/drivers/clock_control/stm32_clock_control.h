@@ -114,14 +114,17 @@
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f1_pll_clock, okay)
+#define STM32_PLL_ENABLED	1
 #define STM32_PLL_XTPRE		DT_PROP(DT_NODELABEL(pll), xtpre)
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
 #elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f0_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f100_pll_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32f105_pll_clock, okay)
+#define STM32_PLL_ENABLED	1
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
 #define STM32_PLL_PREDIV	DT_PROP(DT_NODELABEL(pll), prediv)
 #elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l0_pll_clock, okay)
+#define STM32_PLL_ENABLED	1
 #define STM32_PLL_DIVISOR	DT_PROP(DT_NODELABEL(pll), div)
 #define STM32_PLL_MULTIPLIER	DT_PROP(DT_NODELABEL(pll), mul)
 #endif
