@@ -892,7 +892,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			tx_notify(conn);
 
 			/* Cancel Connection Update if it is pending */
-			if (conn->type == BT_CONN_TYPE_LE) {
+			if ((conn->type == BT_CONN_TYPE_LE) &&
+			    (k_work_delayable_busy_get(&conn->deferred_work) &
+			     (K_WORK_QUEUED | K_WORK_DELAYED))) {
 				k_work_cancel_delayable(&conn->deferred_work);
 			}
 
