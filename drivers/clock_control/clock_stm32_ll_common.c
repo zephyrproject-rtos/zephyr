@@ -386,64 +386,66 @@ static int set_up_plls(void)
 static void set_up_fixed_clock_sources(void)
 {
 
-#if STM32_HSE_ENABLED
-#ifdef CONFIG_SOC_SERIES_STM32WLX
-	if (IS_ENABLED(STM32_HSE_TCXO)) {
+	if (IS_ENABLED(STM32_HSE_ENABLED)) {
+#if defined(STM32_HSE_BYPASS)
+		/* Check if need to enable HSE bypass feature or not */
+		if (IS_ENABLED(STM32_HSE_BYPASS)) {
+			LL_RCC_HSE_EnableBypass();
+		} else {
+			LL_RCC_HSE_DisableBypass();
+		}
+#endif
+#if STM32_HSE_TCXO
 		LL_RCC_HSE_EnableTcxo();
-	}
-#elif !defined(CONFIG_SOC_SERIES_STM32WBX)
-	/* Check if need to enable HSE bypass feature or not */
-	if (IS_ENABLED(STM32_HSE_BYPASS)) {
-		LL_RCC_HSE_EnableBypass();
-	} else {
-		LL_RCC_HSE_DisableBypass();
-	}
 #endif
 #if STM32_HSE_DIV2
-	LL_RCC_HSE_EnableDiv2();
+		LL_RCC_HSE_EnableDiv2();
 #endif
-	/* Enable HSE */
-	LL_RCC_HSE_Enable();
-	while (LL_RCC_HSE_IsReady() != 1) {
-	/* Wait for HSE ready */
-	}
-#endif /* STM32_HSE_ENABLED */
-
-#if STM32_HSI_ENABLED
-	/* Enable HSI if not enabled */
-	if (LL_RCC_HSI_IsReady() != 1) {
-		/* Enable HSI */
-		LL_RCC_HSI_Enable();
-		while (LL_RCC_HSI_IsReady() != 1) {
-		/* Wait for HSI ready */
+		/* Enable HSE */
+		LL_RCC_HSE_Enable();
+		while (LL_RCC_HSE_IsReady() != 1) {
+		/* Wait for HSE ready */
 		}
 	}
-#endif /* STM32_HSI_ENABLED */
 
-#if STM32_MSI_ENABLED
-	/* Set MSI Range */
+	if (IS_ENABLED(STM32_HSI_ENABLED)) {
+		/* Enable HSI if not enabled */
+		if (LL_RCC_HSI_IsReady() != 1) {
+			/* Enable HSI */
+			LL_RCC_HSI_Enable();
+			while (LL_RCC_HSI_IsReady() != 1) {
+			/* Wait for HSI ready */
+			}
+		}
+	}
+
+#if defined(STM32_MSI_ENABLED)
+	if (IS_ENABLED(STM32_MSI_ENABLED)) {
+		/* Set MSI Range */
 #if defined(RCC_CR_MSIRGSEL)
-	LL_RCC_MSI_EnableRangeSelection();
+		LL_RCC_MSI_EnableRangeSelection();
 #endif /* RCC_CR_MSIRGSEL */
 
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X)
-	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_ICSCR_MSIRANGE_Pos);
+		LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_ICSCR_MSIRANGE_Pos);
 #else
-	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
+		LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
 #endif /* CONFIG_SOC_SERIES_STM32L0X || CONFIG_SOC_SERIES_STM32L1X */
 
 #if STM32_MSI_PLL_MODE
-	/* Enable MSI hardware auto calibration */
-	LL_RCC_MSI_EnablePLLMode();
+		/* Enable MSI hardware auto calibration */
+		LL_RCC_MSI_EnablePLLMode();
 #endif
-	LL_RCC_MSI_SetCalibTrimming(0);
 
-	/* Enable MSI if not enabled */
-	if (LL_RCC_MSI_IsReady() != 1) {
-		/* Enable MSI */
-		LL_RCC_MSI_Enable();
-		while (LL_RCC_MSI_IsReady() != 1) {
-			/* Wait for MSI ready */
+		LL_RCC_MSI_SetCalibTrimming(0);
+
+		/* Enable MSI if not enabled */
+		if (LL_RCC_MSI_IsReady() != 1) {
+			/* Enable MSI */
+			LL_RCC_MSI_Enable();
+			while (LL_RCC_MSI_IsReady() != 1) {
+				/* Wait for MSI ready */
+			}
 		}
 	}
 #endif /* STM32_MSI_ENABLED */
