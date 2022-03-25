@@ -256,7 +256,7 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
  *  @return Index of the connection object.
  *          The range of the returned value is 0..CONFIG_BT_MAX_CONN-1
  */
-uint8_t bt_conn_index(struct bt_conn *conn);
+uint8_t bt_conn_index(const struct bt_conn *conn);
 
 /** Connection Type */
 enum {
