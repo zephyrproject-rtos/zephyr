@@ -19,6 +19,10 @@
 			};
 		};
 
+		rcc: rcc@40021000 {
+			undershoot-prevention;
+		};
+
 		pinctrl: pin-controller@48000000 {
 			gpiod: gpio@48000c00 {
 				compatible = "st,stm32-gpio";

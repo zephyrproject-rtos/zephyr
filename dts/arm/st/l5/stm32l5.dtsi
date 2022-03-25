@@ -115,6 +115,7 @@
 			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x40021000 0x400>;
+			undershoot-prevention;
 		};
 
 		exti: interrupt-controller@4000f400 {
