@@ -1362,6 +1362,12 @@ static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
 #endif
 #endif
 
+bool k_can_yield(void)
+{
+	return !(k_is_pre_kernel() || k_is_in_isr() ||
+		 z_is_idle_thread_object(_current));
+}
+
 void z_impl_k_yield(void)
 {
 	__ASSERT(!arch_is_in_isr(), "");
