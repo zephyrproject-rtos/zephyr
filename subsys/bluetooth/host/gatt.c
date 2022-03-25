@@ -2078,10 +2078,9 @@ static struct net_buf *nfy_mult[CONFIG_BT_MAX_CONN];
 
 static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf **buf)
 {
-	struct nfy_mult_data *data = nfy_mult_user_data(*buf);
 	int ret;
 
-	ret = bt_att_send(conn, *buf, data->func, data->user_data);
+	ret = bt_att_send(conn, *buf);
 	if (ret < 0) {
 		net_buf_unref(*buf);
 	}
@@ -2132,7 +2131,7 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 	 * the existing buffer and proceed to create a new one
 	 */
 	if (*buf && ((net_buf_tailroom(*buf) < sizeof(*nfy) + params->len) ||
-	    !nfy_mult_data_match(*buf, params->func, params->user_data))) {
+	    !bt_att_tx_meta_data_match(*buf, params->func, params->user_data))) {
 		int ret;
 
 		ret = gatt_notify_mult_send(conn, buf);
@@ -2147,9 +2146,8 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 		if (!*buf) {
 			return -ENOMEM;
 		}
-		/* Set user_data so it can be restored when sending */
-		nfy_mult_user_data(*buf)->func = params->func;
-		nfy_mult_user_data(*buf)->user_data = params->user_data;
+
+		bt_att_set_tx_meta_data(*buf, params->func, params->user_data);
 	}
 
 	BT_DBG("handle 0x%04x len %u", handle, params->len);
@@ -2212,7 +2210,8 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 	net_buf_add(buf, params->len);
 	memcpy(nfy->value, params->data, params->len);
 
-	return bt_att_send(conn, buf, params->func, params->user_data);
+	bt_att_set_tx_meta_data(buf, params->func, params->user_data);
+	return bt_att_send(conn, buf);
 }
 
 static void gatt_indicate_rsp(struct bt_conn *conn, uint8_t err,
@@ -4425,7 +4424,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
-	return bt_att_send(conn, buf, func, user_data);
+	return bt_att_send(conn, buf);
 }
 
 static int gatt_exec_encode(struct net_buf *buf, size_t len, void *user_data)
