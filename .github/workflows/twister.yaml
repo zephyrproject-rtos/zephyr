@@ -180,6 +180,7 @@ jobs:
       - name: use cache
         id: cache-ccache
         uses: nashif/action-s3-cache@master
+        continue-on-error: true
         with:
           key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-${{github.event_name}}-${{ matrix.subset }}-ccache
           path: /github/home/.ccache
