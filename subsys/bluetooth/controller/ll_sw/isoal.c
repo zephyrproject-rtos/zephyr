@@ -35,10 +35,15 @@ typedef uint8_t isoal_alloc_state_t;
 
 struct
 {
-	isoal_alloc_state_t  sink_allocated[CONFIG_BT_CTLR_ISOAL_SINKS];
-	isoal_alloc_state_t  source_allocated[CONFIG_BT_CTLR_ISOAL_SOURCES];
-	struct isoal_sink    sink_state[CONFIG_BT_CTLR_ISOAL_SINKS];
-	struct isoal_source  source_state[CONFIG_BT_CTLR_ISOAL_SOURCES];
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	isoal_alloc_state_t sink_allocated[CONFIG_BT_CTLR_ISOAL_SINKS];
+	struct isoal_sink   sink_state[CONFIG_BT_CTLR_ISOAL_SINKS];
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	isoal_alloc_state_t source_allocated[CONFIG_BT_CTLR_ISOAL_SOURCES];
+	struct isoal_source source_state[CONFIG_BT_CTLR_ISOAL_SOURCES];
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 } isoal_global;
 
 
@@ -74,6 +79,7 @@ isoal_status_t isoal_reset(void)
 	return err;
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 /**
  * @brief Find free sink from statically-sized pool and allocate it
  * @details Implemented as linear search since pool is very small
@@ -223,111 +229,6 @@ isoal_status_t isoal_sink_create(
 }
 
 /**
- * @brief Find free source from statically-sized pool and allocate it
- * @details Implemented as linear search since pool is very small
- *
- * @param hdl[out]  Handle to source
- * @return ISOAL_STATUS_OK if we could allocate; otherwise ISOAL_STATUS_ERR_SOURCE_ALLOC
- */
-static isoal_status_t isoal_source_allocate(isoal_source_handle_t *hdl)
-{
-	isoal_source_handle_t i;
-
-	/* Very small linear search to find first free */
-	for (i = 0; i < CONFIG_BT_CTLR_ISOAL_SOURCES; i++) {
-		if (isoal_global.source_allocated[i] == ISOAL_ALLOC_STATE_FREE) {
-			isoal_global.source_allocated[i] = ISOAL_ALLOC_STATE_TAKEN;
-			*hdl = i;
-			return ISOAL_STATUS_OK;
-		}
-	}
-
-	return ISOAL_STATUS_ERR_SOURCE_ALLOC; /* All entries were taken */
-}
-
-/**
- * @brief Mark a source as being free to allocate again
- * @param hdl[in]  Handle to source
- */
-static void isoal_source_deallocate(isoal_source_handle_t hdl)
-{
-	isoal_global.source_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
-}
-
-/**
- * @brief Create a new source
- *
- * @param handle[in]            Connection handle
- * @param role[in]              Peripheral, Central or Broadcast
- * @param burst_number[in]      Burst Number
- * @param flush_timeout[in]     Flush timeout
- * @param max_octets[in]        Maximum PDU size (Max_PDU_C_To_P / Max_PDU_P_To_C)
- * @param sdu_interval[in]      SDU interval
- * @param iso_interval[in]      ISO interval
- * @param stream_sync_delay[in] CIS sync delay
- * @param group_sync_delay[in]  CIG sync delay
- * @param pdu_alloc[in]         Callback of PDU allocator
- * @param pdu_write[in]         Callback of PDU byte writer
- * @param pdu_emit[in]          Callback of PDU emitter
- * @param pdu_release[in]       Callback of PDU deallocator
- * @param hdl[out]              Handle to new source
- *
- * @return ISOAL_STATUS_OK if we could create a new sink; otherwise ISOAL_STATUS_ERR_SOURCE_ALLOC
- */
-isoal_status_t isoal_source_create(
-	uint16_t                    handle,
-	uint8_t                     role,
-	uint8_t                     burst_number,
-	uint8_t                     flush_timeout,
-	uint8_t                     max_octets,
-	uint32_t                    sdu_interval,
-	uint16_t                    iso_interval,
-	uint32_t                    stream_sync_delay,
-	uint32_t                    group_sync_delay,
-	isoal_source_pdu_alloc_cb   pdu_alloc,
-	isoal_source_pdu_write_cb   pdu_write,
-	isoal_source_pdu_emit_cb    pdu_emit,
-	isoal_source_pdu_release_cb pdu_release,
-	isoal_source_handle_t       *hdl)
-{
-	isoal_status_t err;
-
-	/* Allocate a new source */
-	err = isoal_source_allocate(hdl);
-	if (err) {
-		return err;
-	}
-
-	struct isoal_source_session *session = &isoal_global.source_state[*hdl].session;
-
-	session->handle = handle;
-
-	/* Todo: Next section computing various constants, should potentially be a
-	 * function in itself as a number of the dependencies could be changed while
-	 * a connection is active.
-	 */
-
-	/* Note: sdu_interval unit is uS, iso_interval is a multiple of 1.25mS */
-	session->pdus_per_sdu = (burst_number * sdu_interval) /
-		((uint32_t)iso_interval * CONN_INT_UNIT_US);
-	/* Set maximum PDU size */
-	session->max_pdu_size = max_octets;
-
-	/* Remember the platform-specific callbacks */
-	session->pdu_alloc   = pdu_alloc;
-	session->pdu_write   = pdu_write;
-	session->pdu_emit    = pdu_emit;
-	session->pdu_release = pdu_release;
-
-	/* TODO: Constant need to be updated */
-
-	/* Initialize running seq number to zero */
-	session->seqn = 0;
-
-	return err;
-}
-
-/**
  * @brief Get reference to configuration struct
  *
  * @param hdl[in]   Handle to new sink
@@ -375,56 +276,6 @@ void isoal_sink_destroy(isoal_sink_handle_t hdl)
 
 	/* Permit allocation anew */
 	isoal_sink_deallocate(hdl);
-}
-
-/**
- * @brief Get reference to configuration struct
- *
- * @param hdl[in]   Handle to new source
- * @return Reference to parameter struct, to be configured by caller
- */
-struct isoal_source_config *isoal_get_source_param_ref(isoal_source_handle_t hdl)
-{
-	LL_ASSERT(isoal_global.source_allocated[hdl] == ISOAL_ALLOC_STATE_TAKEN);
-
-	return &isoal_global.source_state[hdl].session.param;
-}
-
-/**
- * @brief Atomically enable latch-in of packets and PDU production
- * @param hdl[in]  Handle of existing instance
- */
-void isoal_source_enable(isoal_source_handle_t hdl)
-{
-	/* Reset bookkeeping state */
-	memset(&isoal_global.source_state[hdl].pdu_production, 0,
-	       sizeof(isoal_global.source_state[hdl].pdu_production));
-
-	/* Atomically enable */
-	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_ENABLED;
-}
-
-/**
- * @brief Atomically disable latch-in of packets and PDU production
- * @param hdl[in]  Handle of existing instance
- */
-void isoal_source_disable(isoal_source_handle_t hdl)
-{
-	/* Atomically disable */
-	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
-}
-
-/**
- * @brief Disable and deallocate existing source
- * @param hdl[in]  Handle of existing instance
- */
-void isoal_source_destroy(isoal_source_handle_t hdl)
-{
-	/* Atomic disable */
-	isoal_source_disable(hdl);
-
-	/* Permit allocation anew */
-	isoal_source_deallocate(hdl);
 }
 
 /* Obtain destination SDU */
@@ -977,6 +828,163 @@ isoal_status_t isoal_rx_pdu_recombine(isoal_sink_handle_t sink_hdl,
 
 	return err;
 }
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+/**
+ * @brief Find free source from statically-sized pool and allocate it
+ * @details Implemented as linear search since pool is very small
+ *
+ * @param hdl[out]  Handle to source
+ * @return ISOAL_STATUS_OK if we could allocate; otherwise ISOAL_STATUS_ERR_SOURCE_ALLOC
+ */
+static isoal_status_t isoal_source_allocate(isoal_source_handle_t *hdl)
+{
+	isoal_source_handle_t i;
+
+	/* Very small linear search to find first free */
+	for (i = 0; i < CONFIG_BT_CTLR_ISOAL_SOURCES; i++) {
+		if (isoal_global.source_allocated[i] == ISOAL_ALLOC_STATE_FREE) {
+			isoal_global.source_allocated[i] = ISOAL_ALLOC_STATE_TAKEN;
+			*hdl = i;
+			return ISOAL_STATUS_OK;
+		}
+	}
+
+	return ISOAL_STATUS_ERR_SOURCE_ALLOC; /* All entries were taken */
+}
+
+/**
+ * @brief Mark a source as being free to allocate again
+ * @param hdl[in]  Handle to source
+ */
+static void isoal_source_deallocate(isoal_source_handle_t hdl)
+{
+	isoal_global.source_allocated[hdl] = ISOAL_ALLOC_STATE_FREE;
+}
+
+/**
+ * @brief Create a new source
+ *
+ * @param handle[in]            Connection handle
+ * @param role[in]              Peripheral, Central or Broadcast
+ * @param burst_number[in]      Burst Number
+ * @param flush_timeout[in]     Flush timeout
+ * @param max_octets[in]        Maximum PDU size (Max_PDU_C_To_P / Max_PDU_P_To_C)
+ * @param sdu_interval[in]      SDU interval
+ * @param iso_interval[in]      ISO interval
+ * @param stream_sync_delay[in] CIS sync delay
+ * @param group_sync_delay[in]  CIG sync delay
+ * @param pdu_alloc[in]         Callback of PDU allocator
+ * @param pdu_write[in]         Callback of PDU byte writer
+ * @param pdu_emit[in]          Callback of PDU emitter
+ * @param pdu_release[in]       Callback of PDU deallocator
+ * @param hdl[out]              Handle to new source
+ *
+ * @return ISOAL_STATUS_OK if we could create a new sink; otherwise ISOAL_STATUS_ERR_SOURCE_ALLOC
+ */
+isoal_status_t isoal_source_create(
+	uint16_t                    handle,
+	uint8_t                     role,
+	uint8_t                     burst_number,
+	uint8_t                     flush_timeout,
+	uint8_t                     max_octets,
+	uint32_t                    sdu_interval,
+	uint16_t                    iso_interval,
+	uint32_t                    stream_sync_delay,
+	uint32_t                    group_sync_delay,
+	isoal_source_pdu_alloc_cb   pdu_alloc,
+	isoal_source_pdu_write_cb   pdu_write,
+	isoal_source_pdu_emit_cb    pdu_emit,
+	isoal_source_pdu_release_cb pdu_release,
+	isoal_source_handle_t       *hdl)
+{
+	isoal_status_t err;
+
+	/* Allocate a new source */
+	err = isoal_source_allocate(hdl);
+	if (err) {
+		return err;
+	}
+
+	struct isoal_source_session *session = &isoal_global.source_state[*hdl].session;
+
+	session->handle = handle;
+
+	/* Todo: Next section computing various constants, should potentially be a
+	 * function in itself as a number of the dependencies could be changed while
+	 * a connection is active.
+	 */
+
+	/* Note: sdu_interval unit is uS, iso_interval is a multiple of 1.25mS */
+	session->pdus_per_sdu = (burst_number * sdu_interval) /
+		((uint32_t)iso_interval * CONN_INT_UNIT_US);
+	/* Set maximum PDU size */
+	session->max_pdu_size = max_octets;
+
+	/* Remember the platform-specific callbacks */
+	session->pdu_alloc   = pdu_alloc;
+	session->pdu_write   = pdu_write;
+	session->pdu_emit    = pdu_emit;
+	session->pdu_release = pdu_release;
+
+	/* TODO: Constant need to be updated */
+
+	/* Initialize running seq number to zero */
+	session->seqn = 0;
+
+	return err;
+}
+
+/**
+ * @brief Get reference to configuration struct
+ *
+ * @param hdl[in]   Handle to new source
+ * @return Reference to parameter struct, to be configured by caller
+ */
+struct isoal_source_config *isoal_get_source_param_ref(isoal_source_handle_t hdl)
+{
+	LL_ASSERT(isoal_global.source_allocated[hdl] == ISOAL_ALLOC_STATE_TAKEN);
+
+	return &isoal_global.source_state[hdl].session.param;
+}
+
+/**
+ * @brief Atomically enable latch-in of packets and PDU production
+ * @param hdl[in]  Handle of existing instance
+ */
+void isoal_source_enable(isoal_source_handle_t hdl)
+{
+	/* Reset bookkeeping state */
+	memset(&isoal_global.source_state[hdl].pdu_production, 0,
+	       sizeof(isoal_global.source_state[hdl].pdu_production));
+
+	/* Atomically enable */
+	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_ENABLED;
+}
+
+/**
+ * @brief Atomically disable latch-in of packets and PDU production
+ * @param hdl[in]  Handle of existing instance
+ */
+void isoal_source_disable(isoal_source_handle_t hdl)
+{
+	/* Atomically disable */
+	isoal_global.source_state[hdl].pdu_production.mode = ISOAL_PRODUCTION_MODE_DISABLED;
+}
+
+/**
+ * @brief Disable and deallocate existing source
+ * @param hdl[in]  Handle of existing instance
+ */
+void isoal_source_destroy(isoal_source_handle_t hdl)
+{
+	/* Atomic disable */
+	isoal_source_disable(hdl);
+
+	/* Permit allocation anew */
+	isoal_source_deallocate(hdl);
+}
 
 /**
  * Queue the PDU in production in the relevant LL transmit queue. If the
@@ -1287,3 +1295,4 @@ void isoal_tx_pdu_release(isoal_source_handle_t source_hdl,
 					    ISOAL_STATUS_OK);
 	}
 }
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
