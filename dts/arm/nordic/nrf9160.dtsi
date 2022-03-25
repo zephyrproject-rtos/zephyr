@@ -61,6 +61,12 @@
 			};
 		};
 
+		ctrlap: ctrlap@50006000 {
+			compatible = "nordic,nrf-ctrlapperi";
+			reg = <0x50006000 0x1000>;
+			status = "okay";
+		};
+
 		gpiote: gpiote@5000d000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x5000d000 0x1000>;
