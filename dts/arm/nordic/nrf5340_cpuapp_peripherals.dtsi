@@ -498,6 +498,7 @@ usbreg: regulator@37000 {
 flash_controller: flash-controller@39000 {
 	compatible = "nordic,nrf53-flash-controller";
 	reg = <0x39000 0x1000>;
+	partial-erase;
 
 	#address-cells = <1>;
 	#size-cells = <1>;

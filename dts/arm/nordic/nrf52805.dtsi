@@ -67,6 +67,7 @@
 			reg = <0x40001000 0x1000>;
 			interrupts = <1 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
+			ble-2mbps-supported;
 		};
 
 		uart0: uart@40002000 {
@@ -276,6 +277,7 @@
 		flash_controller: flash-controller@4001e000 {
 			compatible = "nordic,nrf52-flash-controller";
 			reg = <0x4001e000 0x1000>;
+			partial-erase;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
