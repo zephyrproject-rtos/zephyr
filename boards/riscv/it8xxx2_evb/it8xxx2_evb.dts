@@ -131,12 +131,16 @@
 	 * then we should set frequency <=324Hz.
 	 */
 	pwm-output-frequency = <324>;
+	pinctrl-0 = <&pwm0_gpa0_default>;
+	pinctrl-names = "default";
 };
 /* pwm for fan */
 &pwm7 {
 	status = "okay";
 	prescaler-cx = <PWM_PRESCALER_C4>;
 	pwm-output-frequency = <30000>;
+	pinctrl-0 = <&pwm7_gpa7_default>;
+	pinctrl-names = "default";
 };
 /* fan tachometer sensor */
 &tach0 {

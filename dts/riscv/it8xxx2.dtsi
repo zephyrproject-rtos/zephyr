@@ -1277,7 +1277,6 @@
 			label = "pwm_0";
 			status = "disabled";
 			pwmctrl = <&prs>;
-			pinctrl-0 = <&pinctrl_pwm0>; /* GPA0 */
 			#pwm-cells = <3>;
 		};
 		pwm1: pwm@f01803 {
@@ -1290,7 +1289,6 @@
 			label = "pwm_1";
 			status = "disabled";
 			pwmctrl = <&prs>;
-			pinctrl-0 = <&pinctrl_pwm1>; /* GPA1 */
 			#pwm-cells = <3>;
 		};
 		pwm2: pwm@f01804 {
@@ -1303,7 +1301,6 @@
 			label = "pwm_2";
 			status = "disabled";
 			pwmctrl = <&prs>;
-			pinctrl-0 = <&pinctrl_pwm2>; /* GPA2 */
 			#pwm-cells = <3>;
 		};
 		pwm3: pwm@f01805 {
@@ -1316,7 +1313,6 @@
 			label = "pwm_3";
 			status = "disabled";
 			pwmctrl = <&prs>;
-			pinctrl-0 = <&pinctrl_pwm3>; /* GPA3 */
 			#pwm-cells = <3>;
 		};
 		pwm4: pwm@f01806 {
@@ -1329,7 +1325,6 @@
 			label = "pwm_4";
 			status = "disabled";
 			pwmctrl = <&prs>;
-			pinctrl-0 = <&pinctrl_pwm4>; /* GPA4 */
 			#pwm-cells = <3>;
 		};
 		pwm5: pwm@f01807 {
@@ -1342,7 +1337,6 @@
 			label = "pwm_5";
 			status = "disabled";
 			pwmctrl = <&prs>;
-			pinctrl-0 = <&pinctrl_pwm5>; /* GPA5 */
 			#pwm-cells = <3>;
 		};
 		pwm6: pwm@f01808 {
@@ -1355,7 +1349,6 @@
 			label = "pwm_6";
 			status = "disabled";
 			pwmctrl = <&prs>;
-			pinctrl-0 = <&pinctrl_pwm6>; /* GPA6 */
 			#pwm-cells = <3>;
 		};
 		pwm7: pwm@f01809 {
@@ -1368,7 +1361,6 @@
 			label = "pwm_7";
 			status = "disabled";
 			pwmctrl = <&prs>;
-			pinctrl-0 = <&pinctrl_pwm7>; /* GPA7 */
 			#pwm-cells = <3>;
 		};
 		tach0: tach@f0181e {
