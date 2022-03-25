@@ -10,9 +10,11 @@ tests:
       type: one_line
       regex:
         - "SYS-T RAW DATA: "
+        - "SYST Sample Execution Completed"
     extra_configs:
       - CONFIG_LOG1=y
   sample.logger.syst.v1.immediate:
+    extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     platform_allow: mps2_an385 qemu_x86 sam_e70_xplained
     tags: logging
     harness: console
@@ -20,6 +22,7 @@ tests:
       type: one_line
       regex:
         - "SYS-T RAW DATA: "
+        - "SYST Sample Execution Completed"
     extra_configs:
       - CONFIG_LOG1=y
   sample.logger.syst.v2.deferred:
@@ -28,14 +31,26 @@ tests:
     tags: logging
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
       regex:
         - "SYS-T RAW DATA: "
+        - "SYST Sample Execution Completed"
   sample.logger.syst.v2.immediate:
+    extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     platform_allow: mps2_an385 qemu_x86 sam_e70_xplained
+    tags: logging
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "SYS-T RAW DATA: "
+        - "SYST Sample Execution Completed"
+  sample.logger.syst.adsp_cavs:
+    extra_args: OVERLAY_CONFIG=overlay_cavs.conf
+    platform_allow: intel_adsp_cavs15 intel_adsp_cavs18 intel_adsp_cavs20 intel_adsp_cavs25
     tags: logging
     harness: console
     harness_config:
       type: one_line
       regex:
-        - "SYS-T RAW DATA: "
+        - "SYST Sample Execution Completed"

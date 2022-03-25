@@ -115,14 +115,30 @@ void main(void)
 
 	uint32_t log_type = LOG_OUTPUT_TEXT;
 
-	log_backend_format_set(log_backend_get_by_name("log_backend_uart"), log_type);
+	const char *backend;
+
+#if defined(CONFIG_LOG_BACKEND_UART)
+	backend = "log_backend_uart";
+#elif defined(CONFIG_LOG_BACKEND_ADSP)
+	backend = "log_backend_adsp";
+#else
+#error "Backend not supported for dynamic switching"
+#endif
+
+	log_backend_format_set(log_backend_get_by_name(backend), log_type);
 
 	log_msgs();
 
 	log_type = LOG_OUTPUT_SYST;
-	log_backend_format_set(log_backend_get_by_name("log_backend_uart"), log_type);
+	log_backend_format_set(log_backend_get_by_name(backend), log_type);
 
 	log_msgs();
+
+	log_type = LOG_OUTPUT_TEXT;
+	log_backend_format_set(log_backend_get_by_name(backend), log_type);
+
+	/* raw string */
+	printk("SYST Sample Execution Completed\n");
 #endif
 
 }
