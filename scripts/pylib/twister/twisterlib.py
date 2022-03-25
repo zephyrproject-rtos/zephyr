@@ -3441,8 +3441,6 @@ class TestSuite(DisablePyTestCollectionMixin):
             instance_list = []
             for ts in jtp.get("testsuites", []):
                 logger.debug(f"loading {ts['name']}...")
-                #if ts["status"] in filter_status:
-                #    continue
                 testsuite = ts["name"]
 
                 platform = self.get_platform(ts["platform"])
@@ -3460,13 +3458,21 @@ class TestSuite(DisablePyTestCollectionMixin):
                     tfilter,
                     self.fixtures
                 )
-                instance.status = ts['status']
-                instance.reason = ts.get("reason", "Unknown")
-                for t in ts.get('testcases', []):
-                    identifier = t['identifier']
-                    status = ts.get('status', None)
-                    if status:
-                        instance.results[identifier] = status
+
+                status = ts.get('status', None)
+                reason = ts.get("reason", "Unknown")
+                if status in ["error", "failed"]:
+                    instance.status = None
+                else:
+                    instance.status = status
+                instance.reason = reason
+
+                for tc in ts.get('testcases', []):
+                    identifier = tc['identifier']
+                    tc_status = tc.get('status', None)
+                    if tc_status:
+                        instance.results[identifier] = tc_status
+
                 instance.create_overlay(platform, self.enable_asan, self.enable_ubsan, self.enable_coverage, self.coverage_platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
