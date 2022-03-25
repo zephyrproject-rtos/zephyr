@@ -1,0 +1,17 @@
+identifier: 833iot
+name: 833iot
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - usb_device
+  - ble
+  - gpio
+  - ieee802154
+  - pwm
+  - watchdog
+  - counter
