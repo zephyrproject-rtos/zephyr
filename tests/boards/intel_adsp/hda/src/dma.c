@@ -129,7 +129,7 @@ void test_hda_host_in_dma(void)
 		hda_ipc_msg(CAVS_HOST_DEV, IPCCMD_HDA_VALIDATE, channel,
 			    IPC_TIMEOUT);
 
-		WAIT_FOR(msg_cnt > last_msg_cnt);
+		WAIT_FOR(msg_cnt > last_msg_cnt, 10000, k_msleep(1));
 		zassert_true(msg_res == 1,
 			     "Expected data validation to be true from Host");
 	}
@@ -208,7 +208,7 @@ void test_hda_host_out_dma(void)
 		cavs_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
 
 		/* TODO add a dma_poll() style call for xfer ready/complete maybe? */
-		WAIT_FOR(cavs_hda_buf_full(HDA_HOST_OUT_BASE, channel));
+		WAIT_FOR(cavs_hda_buf_full(HDA_HOST_OUT_BASE, channel), 10000, k_msleep(1));
 		printk("dsp wait for full: ");
 		cavs_hda_dbg("host_out", HDA_HOST_OUT_BASE, channel);
 

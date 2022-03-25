@@ -308,7 +308,7 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 
 static void test_exchange_mtu(void)
 {
-	WAIT_FOR(g_mtu_exchanged);
+	WAIT_FOR_COND(g_mtu_exchanged);
 	printk("MTU exchanged\n");
 }
 
@@ -323,7 +323,7 @@ static void test_bass_discover(void)
 		return;
 	}
 
-	WAIT_FOR(g_discovery_complete);
+	WAIT_FOR_COND(g_discovery_complete);
 	printk("Discovery complete\n");
 }
 
@@ -339,7 +339,7 @@ static void test_bass_scan_start(void)
 		return;
 	}
 
-	WAIT_FOR(g_write_complete && g_broadcaster_found);
+	WAIT_FOR_COND(g_write_complete && g_broadcaster_found);
 	printk("Scan started\n");
 }
 
@@ -355,7 +355,7 @@ static void test_bass_scan_stop(void)
 		return;
 	}
 
-	WAIT_FOR(g_write_complete);
+	WAIT_FOR_COND(g_write_complete);
 	printk("Scan stopped\n");
 }
 
@@ -374,7 +374,7 @@ static void test_bass_create_pa_sync(void)
 		return;
 	}
 
-	WAIT_FOR(g_pa_synced);
+	WAIT_FOR_COND(g_pa_synced);
 	printk("PA synced\n");
 }
 
@@ -401,7 +401,7 @@ static void test_bass_add_source(void)
 		return;
 	}
 
-	WAIT_FOR(g_cb && g_write_complete);
+	WAIT_FOR_COND(g_cb && g_write_complete);
 	printk("Source added\n");
 }
 
@@ -426,9 +426,9 @@ static void test_bass_mod_source(void)
 		return;
 	}
 
-	WAIT_FOR(g_cb && g_write_complete);
+	WAIT_FOR_COND(g_cb && g_write_complete);
 	printk("Source added, waiting for server to PA sync\n");
-	WAIT_FOR(g_state_synced)
+	WAIT_FOR_COND(g_state_synced)
 	printk("Server PA synced\n");
 }
 
@@ -450,7 +450,7 @@ static void test_bass_broadcast_code(void)
 		return;
 	}
 
-	WAIT_FOR(g_write_complete);
+	WAIT_FOR_COND(g_write_complete);
 	printk("Broadcast code added\n");
 }
 
@@ -465,7 +465,7 @@ static void test_bass_remove_source(void)
 		FAIL("Could not remove source (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(g_cb && g_write_complete);
+	WAIT_FOR_COND(g_cb && g_write_complete);
 	printk("Source removed\n");
 }
 
@@ -494,7 +494,7 @@ static void test_main(void)
 
 	printk("Scanning successfully started\n");
 
-	WAIT_FOR(g_is_connected);
+	WAIT_FOR_COND(g_is_connected);
 
 	test_exchange_mtu();
 	test_bass_discover();

@@ -139,7 +139,7 @@ static void test_main(void)
 	bt_conn_cb_register(&conn_callbacks);
 	bt_tbs_client_register_cb(&tbs_client_cbs);
 
-	WAIT_FOR(bt_init);
+	WAIT_FOR_COND(bt_init);
 
 	printk("Audio Server: Bluetooth discovered\n");
 
@@ -151,14 +151,14 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR(is_connected);
+	WAIT_FOR_COND(is_connected);
 
 	tbs_client_err = bt_tbs_client_discover(default_conn, true);
 	if (tbs_client_err) {
 		FAIL("Failed to discover TBS_CLIENT for connection %d", tbs_client_err);
 	}
 
-	WAIT_FOR(discovery_complete);
+	WAIT_FOR_COND(discovery_complete);
 
 	printk("GTBS %sfound\n", is_gtbs_found ? "" : "not ");
 
@@ -175,7 +175,7 @@ static void test_main(void)
 	 * 4) Remotely Held
 	 */
 	printk("Waiting for remotely held\n");
-	WAIT_FOR(call_state == BT_TBS_CALL_STATE_REMOTELY_HELD);
+	WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_REMOTELY_HELD);
 
 	printk("Holding call\n");
 	err = bt_tbs_client_hold_call(default_conn, index, call_index);
@@ -187,7 +187,7 @@ static void test_main(void)
 	 * 1) Locally and remotely held
 	 * 2) Locally held
 	 */
-	WAIT_FOR(call_state == BT_TBS_CALL_STATE_LOCALLY_HELD);
+	WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_LOCALLY_HELD);
 
 	printk("Retrieving call\n");
 	err = bt_tbs_client_retrieve_call(default_conn, index, call_index);
@@ -195,7 +195,7 @@ static void test_main(void)
 		FAIL("Retrieve call failed (%d)\n", err);
 	}
 
-	WAIT_FOR(call_state == BT_TBS_CALL_STATE_ACTIVE);
+	WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_ACTIVE);
 
 	printk("Reading bearer provider name\n");
 	err = bt_tbs_client_read_bearer_provider_name(default_conn, index);
@@ -203,7 +203,7 @@ static void test_main(void)
 		FAIL("Read bearer provider name failed (%d)\n", err);
 	}
 
-	WAIT_FOR(read_complete);
+	WAIT_FOR_COND(read_complete);
 	PASS("TBS_CLIENT Passed\n");
 }
 

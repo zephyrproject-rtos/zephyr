@@ -158,7 +158,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not deactivate AICS (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_aics_active == g_aics_active);
+	WAIT_FOR_COND(expected_aics_active == g_aics_active);
 	printk("AICS deactivated\n");
 
 	printk("Activating AICS\n");
@@ -168,7 +168,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not activate AICS (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(expected_aics_active == g_aics_active);
+	WAIT_FOR_COND(expected_aics_active == g_aics_active);
 	printk("AICS activated\n");
 
 	printk("Getting AICS state\n");
@@ -178,7 +178,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS state get\n");
 
 	printk("Getting AICS gain setting\n");
@@ -188,7 +188,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS gain setting get\n");
 
 	printk("Getting AICS input type\n");
@@ -200,7 +200,7 @@ static int test_aics_server_only(void)
 		return err;
 	}
 	/* Expect and wait for input_type from init */
-	WAIT_FOR(g_cb && expected_input_type == g_aics_input_type);
+	WAIT_FOR_COND(g_cb && expected_input_type == g_aics_input_type);
 	printk("AICS input type get\n");
 
 	printk("Getting AICS status\n");
@@ -210,7 +210,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS status get\n");
 
 	printk("Getting AICS description\n");
@@ -220,7 +220,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("AICS description get\n");
 
 	printk("Setting AICS mute\n");
@@ -231,7 +231,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb && expected_input_mute == g_aics_input_mute);
+	WAIT_FOR_COND(g_cb && expected_input_mute == g_aics_input_mute);
 	printk("AICS mute set\n");
 
 	printk("Setting AICS unmute\n");
@@ -242,7 +242,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb && expected_input_mute == g_aics_input_mute);
+	WAIT_FOR_COND(g_cb && expected_input_mute == g_aics_input_mute);
 	printk("AICS unmute set\n");
 
 	printk("Setting AICS auto mode\n");
@@ -253,7 +253,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb && expected_mode == g_aics_mode);
+	WAIT_FOR_COND(g_cb && expected_mode == g_aics_mode);
 	printk("AICS auto mode set\n");
 
 	printk("Setting AICS manual mode\n");
@@ -264,7 +264,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb && expected_mode == g_aics_mode);
+	WAIT_FOR_COND(g_cb && expected_mode == g_aics_mode);
 	printk("AICS manual mode set\n");
 
 	printk("Setting AICS gain\n");
@@ -275,7 +275,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb && expected_gain == g_aics_gain);
+	WAIT_FOR_COND(g_cb && expected_gain == g_aics_gain);
 	printk("AICS gain set\n");
 
 	printk("Setting AICS Description\n");
@@ -288,7 +288,7 @@ static int test_aics_server_only(void)
 		FAIL("Could not set AICS Description (err %d)\n", err);
 		return err;
 	}
-	WAIT_FOR(g_cb && !strncmp(expected_aics_desc, g_aics_desc,
+	WAIT_FOR_COND(g_cb && !strncmp(expected_aics_desc, g_aics_desc,
 				  sizeof(expected_aics_desc)));
 	printk("AICS Description set\n");
 
@@ -347,7 +347,7 @@ static void test_server_only(void)
 		FAIL("Could not get MICS mute (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(g_cb);
+	WAIT_FOR_COND(g_cb);
 	printk("MICS mute get\n");
 
 	printk("Setting MICS mute\n");
@@ -357,7 +357,7 @@ static void test_server_only(void)
 		FAIL("MICS mute failed (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_mute == g_mute);
+	WAIT_FOR_COND(expected_mute == g_mute);
 	printk("MICS mute set\n");
 
 	printk("Setting MICS unmute\n");
@@ -367,7 +367,7 @@ static void test_server_only(void)
 		FAIL("MICS unmute failed (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_mute == g_mute);
+	WAIT_FOR_COND(expected_mute == g_mute);
 	printk("MICS unmute set\n");
 
 	printk("Setting MICS disable\n");
@@ -377,7 +377,7 @@ static void test_server_only(void)
 		FAIL("MICS disable failed (err %d)\n", err);
 		return;
 	}
-	WAIT_FOR(expected_mute == g_mute);
+	WAIT_FOR_COND(expected_mute == g_mute);
 	printk("MICS disable set\n");
 
 	if (CONFIG_BT_MICS_AICS_INSTANCE_COUNT > 0) {
@@ -442,7 +442,7 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR(g_is_connected);
+	WAIT_FOR_COND(g_is_connected);
 
 	PASS("MICS passed\n");
 }
