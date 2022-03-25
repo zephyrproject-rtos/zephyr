@@ -298,6 +298,7 @@
 /drivers/i2s/*nrfx*                       @anangl
 /drivers/ieee802154/                      @rlubos @tbursztyka
 /drivers/ieee802154/*b91*                 @yurvyn
+/drivers/ieee802154/ieee802154_nrf5*      @jciupis
 /drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
 /drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt
 /drivers/interrupt_controller/            @dcpleung @nashif
@@ -635,6 +636,7 @@
 /modules/canopennode/                     @henrikbrixandersen
 /modules/mbedtls/                         @ceolin @d3zd3z
 /modules/hal_gigadevice/                  @nandojve
+/modules/hal_nordic/nrf_802154/           @jciupis
 /modules/trusted-firmware-m/              @microbuilder
 /kernel/device.c                          @andyross @nashif
 /kernel/idle.c                            @andyross @nashif
