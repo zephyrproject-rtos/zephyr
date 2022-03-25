@@ -16,6 +16,7 @@ tests:
     extra_configs:
       - CONFIG_LOG1=y
   sample.logger.syst.v1.immediate:
+    extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
     harness: console
     harness_config:
@@ -25,20 +26,23 @@ tests:
     extra_configs:
       - CONFIG_LOG1=y
   sample.logger.syst.v2.deferred:
+    platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
-    platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
       regex:
         - "SYS-T RAW DATA: "
+        - "SYST Sample Execution Completed"
   sample.logger.syst.v2.immediate:
+    extra_args: OVERLAY_CONFIG=overlay_immediate.conf
     platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
       regex:
         - "SYS-T RAW DATA: "
+        - "SYST Sample Execution Completed"
   sample.logger.syst.catalog.v2.deferred:
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     platform_allow: mps2_an385 qemu_x86

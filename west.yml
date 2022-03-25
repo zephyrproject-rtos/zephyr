@@ -185,7 +185,7 @@ manifest:
       path: modules/debug/mipi-sys-t
       groups:
         - debug
-      revision: 2f51407b2ac68e2be41af322a42905063f009d75
+      revision: a5163c1800a5243f8b05d84c942da008df4cb666
     - name: nanopb
       revision: d148bd26718e4c10414f07a7eb1bd24c62e56c5d
       path: modules/lib/nanopb
