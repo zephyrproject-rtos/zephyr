@@ -5,10 +5,10 @@ name: Documentation Build
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
+  - cron: '0 */3 * * *'
   push:
     tags:
-      - v*
+    - v*
   pull_request:
     paths:
     - 'doc/**'
@@ -95,6 +95,23 @@ jobs:
       with:
         name: html-output
         path: html-output.tar.xz
+
+    - name: process-pr
+      if: github.event_name == 'pull_request'
+      run: |
+        REPO_NAME="${{ github.event.repository.name }}"
+        PR_NUM="${{ github.event.pull_request.number }}"
+        DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/"
+
+        echo "${PR_NUM}" > pr_num
+        echo "::notice:: Documentation will be available shortly at: ${DOC_URL}"
+
+    - name: upload-pr-number
+      uses: actions/upload-artifact@v2
+      if: github.event_name == 'pull_request'
+      with:
+        name: pr_num
+        path: pr_num
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
