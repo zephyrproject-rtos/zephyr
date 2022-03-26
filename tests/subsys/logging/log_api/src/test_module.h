@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 void test_func(void);
+void test_func2(void);
 
 #ifdef __cplusplus
 }

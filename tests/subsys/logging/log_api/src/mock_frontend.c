@@ -30,6 +30,16 @@ void mock_log_frontend_dummy_record(int cnt)
 	mock_log_backend_dummy_record(&backend, cnt);
 }
 
+void mock_log_frontend_check_enable(void)
+{
+	mock.do_check = true;
+}
+
+void mock_log_frontend_check_disable(void)
+{
+	mock.do_check = false;
+}
+
 void mock_log_frontend_generic_record(uint16_t source_id,
 				      uint16_t domain_id,
 				      uint8_t level,
@@ -79,6 +89,10 @@ static void log_frontend_n(struct log_msg_ids src_level, const char *fmt, ...)
 	char str[128];
 	va_list ap;
 
+	if (mock.do_check == false) {
+		return;
+	}
+
 	mock.msg_proc_idx++;
 
 	if (!exp_msg->check) {
@@ -105,6 +119,10 @@ void log_frontend_hexdump(const char *str,
 {
 	struct mock_log_backend_msg *exp_msg = &mock.exp_msgs[mock.msg_proc_idx];
 
+	if (mock.do_check == false) {
+		return;
+	}
+
 	zassert_equal(exp_msg->data_len, length, NULL);
 	if (exp_msg->data_len <= sizeof(exp_msg->data)) {
 		zassert_equal(memcmp(data, exp_msg->data, length), 0, NULL);
@@ -115,6 +133,10 @@ void log_frontend_hexdump(const char *str,
 
 void log_frontend_0(const char *str, struct log_msg_ids src_level)
 {
+	if (mock.do_check == false) {
+		return;
+	}
+
 	log_frontend_n(src_level, str);
 }
 
@@ -125,6 +147,10 @@ void log_frontend_1(const char *str, log_arg_t arg0, struct log_msg_ids src_leve
 
 void log_frontend_2(const char *str, log_arg_t arg0, log_arg_t arg1, struct log_msg_ids src_level)
 {
+	if (mock.do_check == false) {
+		return;
+	}
+
 	log_frontend_n(src_level, str, arg0, arg1);
 }
 
@@ -133,6 +159,10 @@ void log_frontend_msg(const void *source,
 		      uint8_t *package, const void *data)
 {
 	struct mock_log_backend_msg *exp_msg = &mock.exp_msgs[mock.msg_proc_idx];
+
+	if (mock.do_check == false) {
+		return;
+	}
 
 	mock.msg_proc_idx++;
 
@@ -147,7 +177,8 @@ void log_frontend_msg(const void *source,
 		log_dynamic_source_id((struct log_source_dynamic_data *)source) :
 		log_const_source_id((const struct log_source_const_data *)source);
 
-	zassert_equal(source_id, exp_msg->source_id, NULL);
+	zassert_equal(source_id, exp_msg->source_id, "got: %d, exp: %d",
+			source_id, exp_msg->source_id);
 
 	zassert_equal(exp_msg->data_len, desc.data_len, NULL);
 	if (exp_msg->data_len <= sizeof(exp_msg->data)) {
