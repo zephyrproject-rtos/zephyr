@@ -23,6 +23,10 @@ config PINMUX_XEC
 	default y
 	depends on PINMUX
 
+config PWM_XEC
+	default y
+	depends on PWM
+
 config ADC_XEC_V2
 	default y
 	depends on ADC
