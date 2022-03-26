@@ -89,6 +89,11 @@
 		pinmuxs = <&pinctrla 5 IT8XXX2_ALT_FUNC_3>;
 	};
 
+	/* PECI alternate function */
+	peci_gpf6_default: peci_gpf6_default {
+		pinmuxs = <&pinctrlf 6 IT8XXX2_ALT_FUNC_3>;
+	};
+
 	/* PWM alternate function */
 	pwm0_gpa0_default: pwm0_gpa0_default {
 		pinmuxs = <&pinctrla 0 IT8XXX2_ALT_FUNC_1>;
