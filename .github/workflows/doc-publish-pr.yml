@@ -2,14 +2,11 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-name: Documentation Publish
+name: Documentation Publish (Pull Request)
 
 on:
   workflow_run:
     workflows: ["Documentation Build"]
-    branches:
-    - main
-    - v*
     types:
     - completed
 
@@ -18,6 +15,7 @@ jobs:
     name: Publish Documentation
     runs-on: ubuntu-latest
     if: |
+      github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.repository == 'zephyrproject-rtos/zephyr'
 
@@ -28,6 +26,23 @@ jobs:
         workflow: doc-build.yml
         run_id: ${{ github.event.workflow_run.id }}
 
+    - name: Load PR number
+      run: |
+        echo "PR_NUM=$(<pr_num/pr_num)" >> $GITHUB_ENV
+
+    - name: Check PR number
+      id: check-pr
+      uses: carpentries/actions/check-valid-pr@v0.8
+      with:
+        pr: ${{ env.PR_NUM }}
+        sha: ${{ github.event.workflow_run.head_sha }}
+
+    - name: Validate PR number
+      if: steps.check-pr.outputs.VALID != 'true'
+      run: |
+        echo "ABORT: PR number validation failed!"
+        exit 1
+
     - name: Uncompress HTML docs
       run: |
         tar xf html-output/html-output.tar.xz -C html-output
@@ -35,20 +50,14 @@ jobs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-access-key-id: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
     - name: Upload to AWS S3
       env:
         HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
       run: |
-        if [ "${HEAD_BRANCH:0:1}" == "v" ]; then
-          VERSION=${HEAD_BRANCH:1}
-        else
-          VERSION="latest"
-        fi
-
-        aws s3 sync --quiet html-output/html s3://docs.zephyrproject.org/${VERSION} --delete
-        aws s3 sync --quiet html-output/html/doxygen/html s3://docs.zephyrproject.org/apidoc/${VERSION} --delete
-        aws s3 cp --quiet pdf-output/zephyr.pdf s3://docs.zephyrproject.org/${VERSION}/zephyr.pdf
+        aws s3 sync --quiet html-output/html \
+          s3://builds.zephyrproject.org/${{ github.event.repository.name }}/pr/${PR_NUM}/docs \
+          --delete
