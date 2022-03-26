@@ -340,6 +340,15 @@ static inline char *log_strdup(const char *str)
 	_LOG_MODULE_CONST_DATA_CREATE(_name, _level);		\
 	_LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)
 
+/* Determine if data for the module shall be created. It is created if logging
+ * is enabled, override level is set or module specific level is set (not off).
+ */
+#define Z_DO_LOG_MODULE_REGISTER(...) \
+	Z_LOG_EVAL(CONFIG_LOG_OVERRIDE_LEVEL, \
+		   (1), \
+		   (Z_LOG_EVAL(_LOG_LEVEL_RESOLVE(__VA_ARGS__), (1), (0))) \
+		  )
+
 /**
  * @brief Create module-specific state and register the module with Logger.
  *
@@ -371,13 +380,12 @@ static inline char *log_strdup(const char *str)
  *       In other cases, this macro has no effect.
  * @see LOG_MODULE_DECLARE
  */
-
 #define LOG_MODULE_REGISTER(...)					\
-	Z_LOG_EVAL(							\
-		_LOG_LEVEL_RESOLVE(__VA_ARGS__),			\
+	COND_CODE_1(							\
+		Z_DO_LOG_MODULE_REGISTER(__VA_ARGS__),			\
 		(_LOG_MODULE_DATA_CREATE(GET_ARG_N(1, __VA_ARGS__),	\
 				      _LOG_LEVEL_RESOLVE(__VA_ARGS__))),\
-		()/*Empty*/						\
+		() \
 	)								\
 	LOG_MODULE_DECLARE(__VA_ARGS__)
 
@@ -415,13 +423,13 @@ static inline char *log_strdup(const char *str)
 									      \
 	static const struct log_source_const_data *			      \
 		__log_current_const_data __unused =			      \
-			_LOG_LEVEL_RESOLVE(__VA_ARGS__) ?		      \
+			Z_DO_LOG_MODULE_REGISTER(__VA_ARGS__) ?		      \
 			&Z_LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__)) :   \
 			NULL;						      \
 									      \
 	static struct log_source_dynamic_data *				      \
 		__log_current_dynamic_data __unused =			      \
-			(_LOG_LEVEL_RESOLVE(__VA_ARGS__) &&		      \
+			(Z_DO_LOG_MODULE_REGISTER(__VA_ARGS__) &&	      \
 			IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ?	      \
 			&LOG_ITEM_DYNAMIC_DATA(GET_ARG_N(1, __VA_ARGS__)) :   \
 			NULL;						      \
