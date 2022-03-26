@@ -3854,6 +3854,7 @@ class TestPlan(DisablePyTestCollectionMixin):
 
         if status in ['skipped', 'filtered']:
             duration = 0
+
         eleTestcase = ET.SubElement(
             eleTestsuite, "testcase",
             classname=classname,
@@ -3932,10 +3933,11 @@ class TestPlan(DisablePyTestCollectionMixin):
                     for tc in ts.get("testcases", []):
                         status = tc.get('status', ts_status)
                         reason = tc.get('reason', ts.get('reason'))
+                        tc_duration = tc.get('execution_time', handler_time)
                         name = tc.get("identifier")
                         classname = ".".join(name.split(".")[:2])
                         fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
-                            name, classname, status, reason, duration, runnable,
+                            name, classname, status, reason, tc_duration, runnable,
                             (fails, passes, errors, skips))
                 else:
                     status = ts.get('status', 'Unknown')
@@ -4019,6 +4021,7 @@ class TestPlan(DisablePyTestCollectionMixin):
             for case in instance.testcases:
                 testcase = {}
                 testcase['identifier'] = case.name
+                testcase['execution_time'] = case.duration
                 if case.status == "skipped":
                     if instance.status != "filtered":
                         testcase["status"] = "skipped"
