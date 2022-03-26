@@ -233,6 +233,8 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return -EIO;
 	}
 
+	spi_ll_master_init(hal->hw);
+
 	ctx->config = spi_cfg;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
