@@ -10,9 +10,8 @@ import logging
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
-
-result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*) in")
-
+# pylint: disable=anomalous-backslash-in-string
+result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*) in (\d*[.,]?\d*) seconds")
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
     GCOV_END = "GCOV_COVERAGE_DUMP_END"
@@ -269,6 +268,7 @@ class Test(Harness):
             tc.status = self.ztest_to_status[matched_status]
             if tc.status == "skipped":
                 tc.reason = "ztest skip"
+            tc.duration = float(match.group(4))
             self.ztest = True
 
         self.process_test(line)
