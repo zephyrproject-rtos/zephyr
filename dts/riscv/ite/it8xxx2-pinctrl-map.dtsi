@@ -89,6 +89,16 @@
 		pinmuxs = <&pinctrla 5 IT8XXX2_ALT_FUNC_3>;
 	};
 
+	/* Keyboard alternate function */
+	kso16_gpc3_default: kso16_gpc3_default {
+		pinmuxs = <&pinctrlc 3 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+	kso17_gpc5_default: kso17_gpc5_default {
+		pinmuxs = <&pinctrlc 5 IT8XXX2_ALT_FUNC_1>;
+		bias-pull-up;
+	};
+
 	/* PECI alternate function */
 	peci_gpf6_default: peci_gpf6_default {
 		pinmuxs = <&pinctrlf 6 IT8XXX2_ALT_FUNC_3>;
