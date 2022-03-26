@@ -2068,12 +2068,14 @@ Tests should reference the category and subsystem with a dot as a separator.
 
     def parse_subcases(self, test_path):
         subcases, ztest_suite_names = self.scan_path(test_path)
-        for sub in subcases:
-            name = "{}.{}".format(self.id, sub)
-            self.add_testcase(name)
+        # if testcases are provided as part of the yaml, skip this step.
+        if not self.testcases:
+            for sub in subcases:
+                name = "{}.{}".format(self.id, sub)
+                self.add_testcase(name)
 
-        if not subcases:
-            self.add_testcase(self.id)
+            if not subcases:
+                self.add_testcase(self.id)
 
         self.ztest_suite_names = ztest_suite_names
 
@@ -3018,6 +3020,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                        "arch_exclude": {"type": "set"},
                        "extra_sections": {"type": "list", "default": []},
                        "integration_platforms": {"type": "list", "default": []},
+                       "testcases": {"type": "list", "default": []},
                        "platform_exclude": {"type": "set"},
                        "platform_allow": {"type": "set"},
                        "toolchain_exclude": {"type": "set"},
@@ -3404,6 +3407,11 @@ class TestPlan(DisablePyTestCollectionMixin):
                         ts.extra_sections = ts_dict["extra_sections"]
                         ts.integration_platforms = ts_dict["integration_platforms"]
                         ts.seed = ts_dict["seed"]
+
+                        testcases = ts_dict.get("testcases", [])
+                        if testcases:
+                            for tc in testcases:
+                                ts.add_testcase(name=f"{name}.{tc}")
 
                         ts.parse_subcases(ts_path)
 
