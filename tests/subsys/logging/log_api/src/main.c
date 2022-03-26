@@ -149,6 +149,11 @@ static void process_and_validate(bool backend2_enable, bool panic)
 	}
 }
 
+static bool dbg_enabled(void)
+{
+	return IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG) || (CONFIG_LOG_OVERRIDE_LEVEL == 4);
+}
+
 ZTEST(test_log_api, test_log_various_messages)
 {
 	char str[128];
@@ -166,7 +171,7 @@ ZTEST(test_log_api, test_log_various_messages)
 #define TEST_MSG_0_PREFIX "%s: %lld %llu %hhd"
 #define TEST_MSG_1 "%f %d %f"
 
-	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+	if (dbg_enabled()) {
 		/* If prefix is enabled, add function name prefix */
 		if (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG)) {
 			snprintk(str, sizeof(str),
@@ -201,7 +206,7 @@ ZTEST(test_log_api, test_log_various_messages)
 #define TEST_MSG_0 "%hhd"
 #define TEST_MSG_0_PREFIX "%s: %hhd"
 #define TEST_MSG_1 "%p"
-	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+	if (dbg_enabled()) {
 		/* If prefix is enabled, add function name prefix */
 		if (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG)) {
 			snprintk(str, sizeof(str),
@@ -263,7 +268,7 @@ ZTEST(test_log_api, test_log_backend_runtime_filtering)
 
 	log_setup(true);
 
-	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+	if (dbg_enabled()) {
 		char str[128];
 
 		/* If prefix is enabled, add function name prefix */
@@ -546,7 +551,7 @@ ZTEST(test_log_api, test_log_from_declared_module)
 	log_setup(false);
 
 	/* See test module for log message content. */
-	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+	if (dbg_enabled()) {
 		char str[128];
 
 		/* If prefix is enabled, add function name prefix */
@@ -570,7 +575,7 @@ ZTEST(test_log_api, test_log_from_declared_module)
 
 	test_func();
 
-	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+	if (dbg_enabled()) {
 		char str[128];
 
 		/* If prefix is enabled, add function name prefix */
@@ -754,7 +759,7 @@ ZTEST(test_log_api, test_log_arg_evaluation)
 
 	log_setup(false);
 
-	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+	if (dbg_enabled()) {
 		/* Debug message arguments are only evaluated when this level
 		 * is enabled.
 		 */
@@ -766,7 +771,7 @@ ZTEST(test_log_api, test_log_arg_evaluation)
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
 				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp++, "0 0");
-	if (IS_ENABLED(CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG)) {
+	if (dbg_enabled()) {
 		/* If prefix is enabled, add function name prefix */
 		if (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG)) {
 			snprintk(str, sizeof(str),
