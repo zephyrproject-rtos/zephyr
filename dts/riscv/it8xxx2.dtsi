@@ -16,6 +16,7 @@
 #include <dt-bindings/pwm/it8xxx2_pwm.h>
 #include <dt-bindings/sensor/it8xxx2_vcmp.h>
 #include <dt-bindings/sensor/it8xxx2_tach.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include "it8xxx2-alts-map.dtsi"
 #include "ite/it8xxx2-wuc-map.dtsi"
 
@@ -1416,9 +1417,8 @@
 				   &wuc_wu35   /* KSI[5] */
 				   &wuc_wu36   /* KSI[6] */
 				   &wuc_wu37>; /* KSI[7] */
-			gpio-dev = <&gpioc>;
-			pinctrl-0 = <&pinctrl_kso16   /* GPC3 */
-				     &pinctrl_kso17>; /* GPC5 */
+			kso16-gpios = <&gpioc 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		};
 	};
 };

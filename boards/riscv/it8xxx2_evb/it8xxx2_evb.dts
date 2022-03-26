@@ -152,6 +152,9 @@
 };
 &kscan0 {
 	status = "okay";
+	pinctrl-0 = <&kso16_gpc3_default
+		     &kso17_gpc5_default>;
+	pinctrl-names = "default";
 };
 &peci0 {
 	status = "okay";
