@@ -43,6 +43,11 @@ mapping:
         required: false
         sequence:
           - type: str
+      "testcases":
+        type: seq
+        required: false
+        sequence:
+          - type: str
       "harness":
         type: str
         required: false
@@ -153,6 +158,11 @@ mapping:
           "arch_allow":
             type: str
             required: false
+          "testcases":
+            type: seq
+            required: false
+            sequence:
+              - type: str
           "build_only":
             type: bool
             required: false
