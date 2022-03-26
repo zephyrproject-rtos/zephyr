@@ -135,6 +135,7 @@ static struct init_record {
 	bool pre_kernel;
 	bool is_in_isr;
 	bool is_pre_kernel;
+	bool could_yield;
 } init_records[4];
 
 __pinned_data
@@ -146,6 +147,7 @@ static int add_init_record(bool pre_kernel)
 	rp->pre_kernel = pre_kernel;
 	rp->is_pre_kernel = k_is_pre_kernel();
 	rp->is_in_isr = k_is_in_isr();
+	rp->could_yield = k_can_yield();
 	++rp;
 	return 0;
 }
@@ -205,6 +207,8 @@ void test_pre_kernel_detection(void)
 			      "rec %zu isr", rp - init_records);
 		zassert_equal(rp->is_pre_kernel, true,
 			      "rec %zu pre-kernel", rp - init_records);
+		zassert_equal(rp->could_yield, false,
+			      "rec %zu could-yield", rp - init_records);
 		++rp;
 	}
 	zassert_equal(rp - init_records, 2U,
@@ -215,6 +219,8 @@ void test_pre_kernel_detection(void)
 			      "rec %zu isr", rp - init_records);
 		zassert_equal(rp->is_pre_kernel, false,
 			      "rec %zu post-kernel", rp - init_records);
+		zassert_equal(rp->could_yield, true,
+			      "rec %zu could-yield", rp - init_records);
 		++rp;
 	}
 }

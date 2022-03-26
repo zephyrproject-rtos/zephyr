@@ -42,6 +42,7 @@
 #define EXEC_CTX_TYPE_CMD  1
 
 #define UNKNOWN_COMMAND    -1
+#define INVALID_BEHAVIOUR  -2
 
 /*
  * Get the timer type dependent IRQ number. If timer type
@@ -226,6 +227,10 @@ static void test_kernel_cpu_idle_atomic(void);
 static void isr_handler(const void *data)
 {
 	ARG_UNUSED(data);
+
+	if (k_can_yield()) {
+		isr_info.error = INVALID_BEHAVIOUR;
+	}
 
 	switch (isr_info.command) {
 	case THREAD_SELF_CMD:
@@ -816,6 +821,11 @@ static void k_yield_entry(void *arg0, void *arg1, void *arg2)
 
 	zassert_equal(thread_evidence, 0,
 		      "Helper created at higher priority ran prematurely.");
+
+	/*
+	 * Validate the thread is allowed to yield
+	 */
+	zassert_true(k_can_yield(), "Thread incorrectly detected it could not yield");
 
 	/*
 	 * Test that the thread will yield to the higher priority helper.

@@ -213,6 +213,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	/* make sure this is idle thread */
 	zassert_true(z_is_idle_thread_object(_current), NULL);
 	zassert_true(ticks == _kernel.idle, NULL);
+	zassert_false(k_can_yield(), NULL);
 	idle_entered = true;
 
 	if (enter_low_power) {
