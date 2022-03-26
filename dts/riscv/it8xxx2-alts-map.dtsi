@@ -10,20 +10,6 @@
 	it8xxx2_alts_map {
 		compatible = "ite,it8xxx2-pinctrl-conf";
 
-		/* Tachometer alternate function */
-		pinctrl_tach0a: tach0a {
-			pinctrls = <&pinmuxd 6 IT8XXX2_PINMUX_FUNC_1>;
-		};
-		pinctrl_tach0b: tach0b {
-			pinctrls = <&pinmuxj 2 IT8XXX2_PINMUX_FUNC_3>;
-		};
-		pinctrl_tach1a: tach1a {
-			pinctrls = <&pinmuxd 7 IT8XXX2_PINMUX_FUNC_1>;
-		};
-		pinctrl_tach1b: tach1b {
-			pinctrls = <&pinmuxj 3 IT8XXX2_PINMUX_FUNC_3>;
-		};
-
 		/* SHI alternate function */
 		pinctrl_shi_mosi: shi_mosi {
 			pinctrls = <&pinmuxm 0 IT8XXX2_PINMUX_FUNC_1>;
