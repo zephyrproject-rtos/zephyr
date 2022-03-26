@@ -650,10 +650,10 @@ static struct can_driver_api can_gd32_driver_api = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
-static void can_gd32_signal_tx_complete(struct can_mailbox *mb)
+static void can_gd32_signal_tx_complete(const struct device *dev, struct can_mailbox *mb)
 {
 	if (mb->tx_callback) {
-		mb->tx_callback(mb->error, mb->callback_arg);
+		mb->tx_callback(dev, mb->error, mb->callback_arg);
 	} else {
 		k_sem_give(&mb->tx_int_sem);
 	}
@@ -685,7 +685,7 @@ static void can_gd32_tx_isr(const struct device *dev)
 			UTIL_CAT(CAN_TSTAT_MAL, mailbox) | UTIL_CAT(CAN_TSTAT_MTFNERR, mailbox);   \
                                                                                                    \
 		/* invoke callback function or give semaphone. */                                  \
-		can_gd32_signal_tx_complete(&UTIL_CAT(data->mb, mailbox));                         \
+		can_gd32_signal_tx_complete(dev, &UTIL_CAT(data->mb, mailbox));                    \
 	}
 	FOR_EACH (CAN_GD32_CHECK_TX_COMPLETE, (;), 0, 1, 2)
 		;
@@ -810,7 +810,8 @@ static void can_gd32_rxn_isr(const struct device *dev, uint32_t fifo_num)
 		/* invoke callback */
 		callback = can_gd32_filter_getcb(cfg->filter, filter_match_index);
 		if (callback) {
-			callback(&frame, can_gd32_filter_getcbarg(cfg->filter, filter_match_index));
+			callback(dev, &frame,
+				 can_gd32_filter_getcbarg(cfg->filter, filter_match_index));
 		}
 	}
 
@@ -854,7 +855,7 @@ static inline void can_gd32_set_state_change(const struct device *dev)
 	state = can_gd32_get_bus_state(can_periph);
 
 	if (cb != NULL) {
-		cb(state, err_cnt, state_change_cb_data);
+		cb(dev, state, err_cnt, state_change_cb_data);
 	}
 }
 
