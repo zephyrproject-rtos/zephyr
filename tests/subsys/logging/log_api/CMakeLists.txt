@@ -5,7 +5,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(log_api)
 
 target_sources(app PRIVATE src/main.c src/mock_frontend.c
-               src/mock_backend.c src/test_module.c)
+               src/mock_backend.c src/test_module.c src/test_module2.c)
 
 if(CONFIG_CPLUSPLUS)
   # When testing for C++ force test file C++ compilation
