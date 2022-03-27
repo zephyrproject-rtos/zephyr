@@ -83,6 +83,9 @@ extern uint16_t ull_conn_interval_min_get(struct ll_conn *conn);
 #endif /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
 
 static int init_reset(void);
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+static void tx_demux_sched(struct ll_conn *conn);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 static void tx_demux(void *param);
 static struct node_tx *tx_ull_dequeue(struct ll_conn *conn, struct node_tx *tx);
 
@@ -308,10 +311,8 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 
 	MFIFO_ENQUEUE(conn_tx, idx);
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	if (ull_ref_get(&conn->ull)) {
-		static memq_link_t link;
-		static struct mayfly mfy = {0, 0, &link, NULL, tx_demux};
-
 #if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
 		if (tx_cnt >= CONFIG_BT_BUF_ACL_TX_COUNT) {
 			uint8_t previous, force_md_cnt;
@@ -325,16 +326,14 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 		}
 #endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
 
-		mfy.param = conn;
-
-		mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH,
-			       0, &mfy);
+		tx_demux_sched(conn);
 
 #if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
 	} else {
 		lll_conn_force_md_cnt_set(0U);
 #endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
 	}
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
 		ull_periph_latency_cancel(conn, handle);
@@ -1744,6 +1743,18 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+void ull_conn_lll_tx_demux_sched(struct lll_conn *lll)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0U, 0U, &link, NULL, tx_demux};
+
+	mfy.param = HDR_LLL2ULL(lll);
+
+	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1U, &mfy);
+}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+
 void ull_conn_tx_demux(uint8_t count)
 {
 	do {
@@ -2138,6 +2149,18 @@ static int init_reset(void)
 
 	return 0;
 }
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+static void tx_demux_sched(struct ll_conn *conn)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0U, 0U, &link, NULL, tx_demux};
+
+	mfy.param = conn;
+
+	mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH, 0U, &mfy);
+}
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 static void tx_demux(void *param)
 {
