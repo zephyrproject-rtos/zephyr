@@ -17,7 +17,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &usart0;
 		zephyr,shell-uart = &usart0;
-		zephyr,canbus = &can1;
+		zephyr,canbus = &can0;
 	};
 
 	leds {

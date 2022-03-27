@@ -798,6 +798,9 @@ static void can_gd32_rxn_isr(const struct device *dev, uint32_t fifo_num)
 		filter_match_index = CAN_RFIFOMP_FI_GET(can_periph, fifo_num);
 		if (filter_match_index >= CONFIG_CAN_MAX_FILTER) {
 			LOG_ERR("fileter %d not found", filter_match_index);
+
+			/* Release message */
+			CAN_RFIFO(can_periph, fifo_num) |= CAN_RFIFO_RFD;
 			break;
 		}
 
