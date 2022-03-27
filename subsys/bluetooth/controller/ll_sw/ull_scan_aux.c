@@ -1111,13 +1111,18 @@ static void flush(void *param)
 
 	rx = aux->rx_head;
 	if (rx) {
+		aux->rx_head = NULL;
+
 		ll_rx_put(rx->link, rx);
 		sched = true;
 	}
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	if (aux->rx_incomplete) {
-		rx_release_put(aux->rx_incomplete);
+	rx = aux->rx_incomplete;
+	if (rx) {
+		aux->rx_incomplete = NULL;
+
+		rx_release_put(rx);
 		sched = true;
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
@@ -1161,6 +1166,7 @@ static void aux_sync_partial(void *param)
 	rx = aux->rx_head;
 	aux->rx_head = NULL;
 
+	LL_ASSERT(rx);
 	rx->rx_ftr.aux_sched = 1U;
 
 	ll_rx_put(rx->link, rx);
