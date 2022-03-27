@@ -24,7 +24,8 @@
 		group1 {
 			pinmux = <SPIM3_MISO_GPIO19>,
 				 <SPIM3_SCLK_GPIO18>,
-				 <SPIM3_CSEL_GPIO5>;
+				 <SPIM3_CSEL_GPIO5>,
+				 <SPIM3_CSEL1_GPIO22>;
 		};
 		group2 {
 			pinmux = <SPIM3_MOSI_GPIO23>;
