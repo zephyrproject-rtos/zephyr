@@ -1,0 +1,16 @@
+sample:
+  name: ISM330DHCX accelerometer and gyrometer sensor
+tests:
+  sample.sensor.ism330dhcx:
+    harness: console
+    tags: sensors
+    depends_on: i2c
+    filter: dt_compat_enabled("st,ism330dhcx")
+    timeout: 15
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "accel x:[-.0-9]* m/s2 y:[-.0-9]* m/s2 z:[-.0-9]* m/s2"
+        - "gyro x:[-.0-9]* dps y:[-.0-9]* dps z:[-.0-9]* dps"
+        - "trig_cnt:[0-9]*"
