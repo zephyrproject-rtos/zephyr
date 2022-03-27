@@ -26,7 +26,7 @@ struct backend_data_t {
 	struct icmsg_buf *rx_ib;
 
 	/* Backend ops for an endpoint. */
-	const struct ipc_service_cb *ops;
+	const struct ipc_ept_cfg *cfg;
 
 	/* General */
 	struct k_work mbox_work;
@@ -62,8 +62,8 @@ static void mbox_callback_process(struct k_work *item)
 	}
 
 	if (state == ICMSG_STATE_READY) {
-		if (dev_data->ops && dev_data->ops->received) {
-			dev_data->ops->received(cb_buffer, len, NULL);
+		if (dev_data->cfg->cb.received) {
+			dev_data->cfg->cb.received(cb_buffer, len, dev_data->cfg->priv);
 		}
 
 		/* Reading with NULL buffer to know if there are data in the
@@ -80,8 +80,8 @@ static void mbox_callback_process(struct k_work *item)
 			return;
 		}
 
-		if (dev_data->ops && dev_data->ops->bound) {
-			dev_data->ops->bound(NULL);
+		if (dev_data->cfg->cb.bound) {
+			dev_data->cfg->cb.bound(dev_data->cfg->priv);
 		}
 
 		atomic_set(&dev_data->state, ICMSG_STATE_READY);
@@ -126,7 +126,7 @@ static int register_ept(const struct device *instance, void **token,
 	}
 
 	ep->instance = instance;
-	dev_data->ops = &cfg->cb;
+	dev_data->cfg = cfg;
 
 	ret = mbox_init(instance);
 	if (ret) {

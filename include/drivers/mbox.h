@@ -68,6 +68,7 @@
 
 #include <kernel.h>
 #include <device.h>
+#include <devicetree/mbox.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,76 +124,9 @@ struct mbox_channel {
  */
 #define MBOX_DT_CHANNEL_GET(node_id, name)					\
 	{									\
-		.dev = DEVICE_DT_GET(MBOX_DT_CTLR_BY_NAME(node_id, name)),	\
-		.id = MBOX_DT_CHANNEL_ID_BY_NAME(node_id, name),		\
+		.dev = DEVICE_DT_GET(DT_MBOX_CTLR_BY_NAME(node_id, name)),	\
+		.id = DT_MBOX_CHANNEL_BY_NAME(node_id, name),			\
 	}
-
-/**
- * @brief Get the node identifier for the MBOX controller from a mboxes
- *	  property by name
- *
- * Example devicetree fragment:
- *
- *     mbox1: mbox-controller@... { ... };
- *
- *     n: node {
- *             mboxes = <&mbox1 8>,
- *                      <&mbox1 9>;
- *             mbox-names = "tx", "rx";
- *     };
- *
- * Example usage:
- *
- *     MBOX_DT_CTLR_BY_NAME(DT_NODELABEL(n), tx) // DT_NODELABEL(mbox1)
- *     MBOX_DT_CTLR_BY_NAME(DT_NODELABEL(n), rx) // DT_NODELABEL(mbox1)
- *
- * @param node_id node identifier for a node with a mboxes property
- * @param name lowercase-and-underscores name of a mboxes element
- *             as defined by the node's mbox-names property
- *
- * @return the node identifier for the MBOX controller in the named element
- *
- * @see DT_PHANDLE_BY_NAME()
- */
-#define MBOX_DT_CTLR_BY_NAME(node_id, name) \
-	DT_PHANDLE_BY_NAME(node_id, mboxes, name)
-
-/**
- * @brief Get a MBOX channel value by name
- *
- * Example devicetree fragment:
- *
- *     mbox1: mbox@... {
- *             #mbox-cells = <1>;
- *     };
- *
- *     n: node {
- *		mboxes = <&mbox1 1>,
- *		         <&mbox1 6>;
- *		mbox-names = "tx", "rx";
- *     };
- *
- * Bindings fragment for the mbox compatible:
- *
- *     mbox-cells:
- *       - channel
- *
- * Example usage:
- *
- *     MBOX_DT_CHANNEL_ID_BY_NAME(DT_NODELABEL(n), tx) // 1
- *     MBOX_DT_CHANNEL_ID_BY_NAME(DT_NODELABEL(n), rx) // 6
- *
- * @param node_id node identifier for a node with a mboxes property
- * @param name lowercase-and-underscores name of a mboxes element
- *             as defined by the node's mbox-names property
- *
- * @return the channel value in the specifier at the named element or 0 if no
- *         channels are supported
- *
- * @see DT_PHA_BY_NAME_OR()
- */
-#define MBOX_DT_CHANNEL_ID_BY_NAME(node_id, name) \
-	DT_PHA_BY_NAME_OR(node_id, mboxes, name, channel, 0)
 
 /**
  * @typedef mbox_callback_t

@@ -55,6 +55,12 @@ config ETH_MCUX_RX_BUFFERS
 	help
 	  Set the number of RX buffers provided to the MCUX driver.
 
+config ETH_MCUX_PHY_RESET
+	bool "Reset the PHY at boot"
+	help
+	  Reset the ethernet PHY at boot. Requires dts properties int-gpios and
+	  reset-gpios to be present.
+
 config ETH_MCUX_TX_BUFFERS
 	int "Number of MCUX TX buffers"
 	default 1

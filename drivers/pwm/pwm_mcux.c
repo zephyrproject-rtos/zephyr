@@ -11,6 +11,7 @@
 #include <drivers/clock_control.h>
 #include <soc.h>
 #include <fsl_pwm.h>
+#include <drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <logging/log.h>
@@ -25,6 +26,7 @@ struct pwm_mcux_config {
 	clock_control_subsys_t clock_subsys;
 	pwm_clock_prescale_t prescale;
 	pwm_mode_t mode;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct pwm_mcux_data {
@@ -134,7 +136,12 @@ static int pwm_mcux_init(const struct device *dev)
 	struct pwm_mcux_data *data = dev->data;
 	pwm_config_t pwm_config;
 	status_t status;
-	int i;
+	int i, err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
 
 	PWM_GetDefaultConfig(&pwm_config);
 	pwm_config.prescale = config->prescale;
@@ -167,6 +174,7 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 
 #define PWM_DEVICE_INIT_MCUX(n)			  \
 	static struct pwm_mcux_data pwm_mcux_data_ ## n;		  \
+	PINCTRL_DT_INST_DEFINE(n);					  \
 									  \
 	static const struct pwm_mcux_config pwm_mcux_config_ ## n = {     \
 		.base = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),		  \
@@ -175,6 +183,7 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 		.prescale = kPWM_Prescale_Divide_128,			  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		  \
 	};								  \
 									  \
 	DEVICE_DT_INST_DEFINE(n,					  \

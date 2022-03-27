@@ -113,6 +113,9 @@ static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 const struct bt_conn_auth_cb auth_cb = {
 	.passkey_display = passkey_display,
 	.cancel = passkey_cancel,
+};
+
+static struct bt_conn_auth_info_cb auth_info_cb = {
 	.pairing_complete = pairing_complete,
 	.pairing_failed = pairing_failed,
 };
@@ -165,6 +168,7 @@ static void bt_ready(int err)
 	printk("Mesh initialized\n");
 
 	bt_conn_auth_cb_register(&auth_cb);
+	bt_conn_auth_info_cb_register(&auth_info_cb);
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();

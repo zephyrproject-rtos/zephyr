@@ -22,6 +22,16 @@ properties:
      required: false
      description: Set the RDC permission for this peripheral
 
+    pinmux:
+      type: phandles
+      required: false
+      description: |
+        IMX pin selection peripheral does not follow specific
+        pattern for which GPIO port uses which pinmux. Use this property to specify
+        pinctrl nodes to use for the gpio port when CONFIG_PINCTRL=y. Note that
+        the order of the nodes matters. The first node for gpio1 will be used
+        as the pinmux for gpio0, port 0.
+
     "#gpio-cells":
       const: 2
 

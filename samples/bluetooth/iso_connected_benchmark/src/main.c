@@ -310,7 +310,7 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 	LOG_INF("Incoming ISO request from %p", (void *)info->acl);
 
 	for (int i = 0; i < ARRAY_SIZE(iso_chans); i++) {
-		if (iso_chans[i].chan.state == BT_ISO_DISCONNECTED) {
+		if (iso_chans[i].chan.state == BT_ISO_STATE_DISCONNECTED) {
 			LOG_INF("Returning instance %d", i);
 			*chan = &iso_chans[i].chan;
 			cig_create_param.num_cis++;

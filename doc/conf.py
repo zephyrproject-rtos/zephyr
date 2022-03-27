@@ -82,6 +82,7 @@ extensions = [
     "zephyr.doxyrunner",
     "zephyr.vcs_link",
     "notfound.extension",
+    "sphinx_copybutton",
     "zephyr.external_content",
 ]
 

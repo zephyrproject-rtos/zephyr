@@ -379,7 +379,7 @@ void bt_iso_connected(struct bt_conn *iso)
 		return;
 	}
 
-	bt_iso_chan_set_state(chan, BT_ISO_CONNECTED);
+	bt_iso_chan_set_state(chan, BT_ISO_STATE_CONNECTED);
 
 	if (chan->ops->connected) {
 		chan->ops->connected(chan);
@@ -435,7 +435,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	__ASSERT(chan->iso != NULL, "NULL conn for iso chan %p", chan);
 
-	bt_iso_chan_set_state(chan, BT_ISO_DISCONNECTED);
+	bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
 
 	/* The peripheral does not have the concept of a CIG, so once a CIS
 	 * disconnects it is completely freed by unref'ing it
@@ -465,8 +465,8 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 			is_chan_connected = false;
 			SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis_chan, node) {
-				if (cis_chan->state == BT_ISO_CONNECTED ||
-				    cis_chan->state == BT_ISO_CONNECT) {
+				if (cis_chan->state == BT_ISO_STATE_CONNECTED ||
+				    cis_chan->state == BT_ISO_STATE_CONNECTING) {
 					is_chan_connected = true;
 					break;
 				}
@@ -509,20 +509,21 @@ void bt_iso_disconnected(struct bt_conn *iso)
 const char *bt_iso_chan_state_str(uint8_t state)
 {
 	switch (state) {
-	case BT_ISO_DISCONNECTED:
+	case BT_ISO_STATE_DISCONNECTED:
 		return "disconnected";
-	case BT_ISO_CONNECT:
-		return "connect";
-	case BT_ISO_CONNECTED:
+	case BT_ISO_STATE_CONNECTING:
+		return "connecting";
+	case BT_ISO_STATE_CONNECTED:
 		return "connected";
-	case BT_ISO_DISCONNECT:
-		return "disconnect";
+	case BT_ISO_STATE_DISCONNECTING:
+		return "disconnecting";
 	default:
 		return "unknown";
 	}
 }
 
-void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, uint8_t state,
+void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan,
+				 enum bt_iso_state state,
 				 const char *func, int line)
 {
 	BT_DBG("chan %p iso %p %s -> %s", chan, chan->iso,
@@ -531,21 +532,21 @@ void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, uint8_t state,
 
 	/* check transitions validness */
 	switch (state) {
-	case BT_ISO_DISCONNECTED:
+	case BT_ISO_STATE_DISCONNECTED:
 		/* regardless of old state always allows this states */
 		break;
-	case BT_ISO_CONNECT:
-		if (chan->state != BT_ISO_DISCONNECTED) {
+	case BT_ISO_STATE_CONNECTING:
+		if (chan->state != BT_ISO_STATE_DISCONNECTED) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
-	case BT_ISO_CONNECTED:
-		if (chan->state != BT_ISO_CONNECT) {
+	case BT_ISO_STATE_CONNECTED:
+		if (chan->state != BT_ISO_STATE_CONNECTING) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
-	case BT_ISO_DISCONNECT:
-		if (chan->state != BT_ISO_CONNECTED) {
+	case BT_ISO_STATE_DISCONNECTING:
+		if (chan->state != BT_ISO_STATE_CONNECTED) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
@@ -557,7 +558,7 @@ void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, uint8_t state,
 	chan->state = state;
 }
 #else
-void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state)
+void bt_iso_chan_set_state(struct bt_iso_chan *chan, enum bt_iso_state state)
 {
 	chan->state = state;
 }
@@ -755,7 +756,7 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf)
 
 	BT_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
-	if (chan->state != BT_ISO_CONNECTED) {
+	if (chan->state != BT_ISO_STATE_CONNECTED) {
 		BT_DBG("Not connected");
 		return -ENOTCONN;
 	}
@@ -824,7 +825,7 @@ static int iso_accept(struct bt_conn *acl, struct bt_conn *iso)
 	}
 
 	bt_iso_chan_add(iso, chan);
-	bt_iso_chan_set_state(chan, BT_ISO_CONNECT);
+	bt_iso_chan_set_state(chan, BT_ISO_STATE_CONNECTING);
 
 	return 0;
 }
@@ -1024,7 +1025,7 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	iso->handle = cis_handle;
 	iso->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(iso, BT_CONN_CONNECT);
+	bt_conn_set_state(iso, BT_CONN_CONNECTING);
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {
@@ -1574,8 +1575,8 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 			return -EINVAL;
 		}
 
-		if (param[i].iso_chan->state != BT_ISO_DISCONNECTED) {
-			BT_DBG("[%zu]: ISO is not in the BT_ISO_DISCONNECTED state: %u",
+		if (param[i].iso_chan->state != BT_ISO_STATE_DISCONNECTED) {
+			BT_DBG("[%zu]: ISO is not in the BT_ISO_STATE_DISCONNECTED state: %u",
 			       i, param[i].iso_chan->state);
 			return -EINVAL;
 		}
@@ -1593,8 +1594,8 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 		struct bt_iso_cig *cig;
 
 		iso_chan->iso->iso.acl = bt_conn_ref(param[i].acl);
-		bt_conn_set_state(iso_chan->iso, BT_CONN_CONNECT);
-		bt_iso_chan_set_state(iso_chan, BT_ISO_CONNECT);
+		bt_conn_set_state(iso_chan->iso, BT_CONN_CONNECTING);
+		bt_iso_chan_set_state(iso_chan, BT_ISO_STATE_CONNECTING);
 
 		cig = get_cig(iso_chan);
 		__ASSERT(cig != NULL, "CIG was NULL");
@@ -1803,7 +1804,7 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
-		bt_iso_chan_set_state(bis, BT_ISO_CONNECT);
+		bt_iso_chan_set_state(bis, BT_ISO_STATE_CONNECTING);
 	}
 
 	return err;
@@ -2048,7 +2049,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 		 */
 		if (!err) {
 			SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
-				bt_iso_chan_set_state(bis, BT_ISO_DISCONNECT);
+				bt_iso_chan_set_state(bis, BT_ISO_STATE_DISCONNECTING);
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER)) {
@@ -2268,7 +2269,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
-		bt_iso_chan_set_state(bis, BT_ISO_CONNECT);
+		bt_iso_chan_set_state(bis, BT_ISO_STATE_CONNECTING);
 	}
 
 	*out_big = big;

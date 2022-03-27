@@ -6,7 +6,8 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt1050.dtsi>
+#include "mm_swiftio-pinctrl.dtsi"
 
 / {
 	model = "MM MM-SWIFTIO board";
@@ -68,6 +69,9 @@
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &lpuart2 {
@@ -92,10 +96,14 @@
 
 &lpi2c1 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
 };
 
 &lpi2c3 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
 
 	ov7725@21 {
 		compatible = "ovti,ov7725";
@@ -171,11 +179,18 @@
 	status = "okay";
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 	no-1-8-v;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
 };
 
 &csi {
 	status = "okay";
 	sensor-label = "OV7725";
+	pinctrl-0 = <&pinmux_csi>;
+	pinctrl-names = "default";
 
 	port {
 		csi_ep_in: endpoint {

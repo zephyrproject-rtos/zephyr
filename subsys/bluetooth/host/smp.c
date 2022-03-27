@@ -996,24 +996,33 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 	keys = bt_keys_find_addr(conn->id, &addr);
 
 	if (status) {
+		struct bt_conn_auth_info_cb *listener, *next;
+
 		if (keys) {
 			bt_keys_clear(keys);
 		}
 
-		if (bt_auth && bt_auth->pairing_failed) {
-			bt_auth->pairing_failed(smp->chan.chan.conn,
-						security_err_get(status));
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+						  next, node) {
+			if (listener->pairing_failed) {
+				listener->pairing_failed(smp->chan.chan.conn,
+							 security_err_get(status));
+			}
 		}
 	} else {
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
+		struct bt_conn_auth_info_cb *listener, *next;
 
 		if (bond_flag && keys) {
 			bt_keys_store(keys);
 		}
 
-		if (bt_auth && bt_auth->pairing_complete) {
-			bt_auth->pairing_complete(smp->chan.chan.conn,
-						  bond_flag);
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+						  next, node) {
+			if (listener->pairing_complete) {
+				listener->pairing_complete(smp->chan.chan.conn,
+							   bond_flag);
+			}
 		}
 	}
 
@@ -1866,6 +1875,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		}
 #endif /* CONFIG_BT_BREDR */
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
+		struct bt_conn_auth_info_cb *listener, *next;
 
 		if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
 			bt_keys_show_sniffer_info(conn->le.keys, NULL);
@@ -1875,8 +1885,11 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 			bt_keys_store(conn->le.keys);
 		}
 
-		if (bt_auth && bt_auth->pairing_complete) {
-			bt_auth->pairing_complete(conn, bond_flag);
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+						  next, node) {
+			if (listener->pairing_complete) {
+				listener->pairing_complete(conn, bond_flag);
+			}
 		}
 	} else {
 		enum bt_security_err security_err = security_err_get(status);
@@ -1901,9 +1914,16 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		/* Check SMP_FLAG_PAIRING as bt_conn_security_changed may
 		 * have called the pairing_failed callback already.
 		 */
-		if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) &&
-		    bt_auth && bt_auth->pairing_failed) {
-			bt_auth->pairing_failed(conn, security_err);
+		if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
+			struct bt_conn_auth_info_cb *listener, *next;
+
+			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs,
+							  listener, next,
+							  node) {
+				if (listener->pairing_failed) {
+					listener->pairing_failed(conn, security_err);
+				}
+			}
 		}
 	}
 

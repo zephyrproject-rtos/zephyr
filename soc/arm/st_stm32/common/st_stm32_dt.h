@@ -15,11 +15,13 @@
 
 /* Devicetree related macros to construct pinctrl config data */
 
+#if !defined(CONFIG_PINCTRL_STM32)
 #define STM32_NO_PULL    0x0
 #define STM32_PULL_UP    0x1
 #define STM32_PULL_DOWN  0x2
 #define STM32_PUSH_PULL  0x0
 #define STM32_OPEN_DRAIN 0x1
+#endif /* CONFIG_PINCTRL_STM32 */
 
 
 /**

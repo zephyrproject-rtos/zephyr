@@ -15,6 +15,10 @@
 #include <zephyr/types.h>
 #include <device.h>
 
+#ifdef CONFIG_PCIE_MSI
+#include <drivers/pcie/msi.h>
+#endif
+
 /**
  * @brief PCI Express Controller Interface
  * @defgroup pcie_controller_interface PCI Express Controller Interface
@@ -117,6 +121,11 @@ typedef bool (*pcie_ctrl_region_translate_t)(const struct device *dev, pcie_bdf_
 					     bool mem, bool mem64, uintptr_t bar_bus_addr,
 					     uintptr_t *bar_addr);
 
+#ifdef CONFIG_PCIE_MSI
+typedef uint8_t (*pcie_ctrl_msi_device_setup_t)(const struct device *dev, unsigned int priority,
+						msi_vector_t *vectors, uint8_t n_vector);
+#endif
+
 /**
  * @brief Read a 32-bit word from a Memory-Mapped endpoint's configuration space.
  *
@@ -168,6 +177,9 @@ __subsystem struct pcie_ctrl_driver_api {
 	pcie_ctrl_region_allocate_t region_allocate;
 	pcie_ctrl_region_get_allocate_base_t region_get_allocate_base;
 	pcie_ctrl_region_translate_t region_translate;
+#ifdef CONFIG_PCIE_MSI
+	pcie_ctrl_msi_device_setup_t msi_device_setup;
+#endif
 };
 
 /**
@@ -295,9 +307,23 @@ static inline bool pcie_ctrl_region_translate(const struct device *dev, pcie_bdf
 	}
 }
 
+#ifdef CONFIG_PCIE_MSI
+static inline uint8_t pcie_ctrl_msi_device_setup(const struct device *dev, unsigned int priority,
+						 msi_vector_t *vectors, uint8_t n_vector)
+{
+	const struct pcie_ctrl_driver_api *api =
+		(const struct pcie_ctrl_driver_api *)dev->api;
+
+	return api->msi_device_setup(dev, priority, vectors, n_vector);
+}
+#endif
+
 /** @brief Structure describing a device that supports the PCI Express Controller API
  */
 struct pcie_ctrl_config {
+#ifdef CONFIG_PCIE_MSI
+	const struct device *msi_parent;
+#endif
 	/* Configuration space physical address */
 	uintptr_t cfg_addr;
 	/* Configuration space physical size */

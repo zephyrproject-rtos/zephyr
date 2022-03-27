@@ -7,6 +7,7 @@ sphinx-tabs
 sphinxcontrib-svg2pdfconverter
 pygments>=2.9
 sphinx-notfound-page
+sphinx-copybutton
 
 # YAML validation. Used by zephyr_module.
 PyYAML>=5.1

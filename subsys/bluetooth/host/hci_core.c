@@ -197,7 +197,7 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	}
 
 	if (conn->state != BT_CONN_CONNECTED &&
-	    conn->state != BT_CONN_DISCONNECT) {
+	    conn->state != BT_CONN_DISCONNECTING) {
 		BT_WARN("Not reporting packet for non-connected conn");
 		bt_conn_unref(conn);
 		return;
@@ -766,7 +766,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 #if defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
-		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		bt_conn_set_state(conn, BT_CONN_CONNECTING_SCAN);
 		bt_le_scan_update(false);
 	}
 #endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
@@ -899,11 +899,11 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) && role == BT_HCI_ROLE_CENTRAL) {
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, peer_addr,
-					       BT_CONN_CONNECT);
+					       BT_CONN_CONNECTING);
 		if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) && !conn) {
 			conn = bt_conn_lookup_state_le(BT_ID_DEFAULT,
 						       BT_ADDR_LE_NONE,
-						       BT_CONN_CONNECT_AUTO);
+						       BT_CONN_CONNECTING_AUTO);
 		}
 
 		return conn;
@@ -911,11 +911,11 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_PERIPHERAL) {
 		conn = bt_conn_lookup_state_le(bt_dev.adv_conn_id, peer_addr,
-					       BT_CONN_CONNECT_DIR_ADV);
+					       BT_CONN_CONNECTING_DIR_ADV);
 		if (!conn) {
 			conn = bt_conn_lookup_state_le(bt_dev.adv_conn_id,
 						       BT_ADDR_LE_NONE,
-						       BT_CONN_CONNECT_ADV);
+						       BT_CONN_CONNECTING_ADV);
 		}
 
 		return conn;
@@ -1041,7 +1041,7 @@ static void le_conn_complete_cancel(void)
 		/* Check if device is marked for autoconnect. */
 		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 			/* Restart passive scanner for device */
-			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+			bt_conn_set_state(conn, BT_CONN_CONNECTING_SCAN);
 		}
 	} else {
 		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
@@ -1652,8 +1652,13 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 	bt_gatt_clear(id, addr);
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
-	if (bt_auth && bt_auth->bond_deleted) {
-		bt_auth->bond_deleted(id, addr);
+	struct bt_conn_auth_info_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+					  next, node) {
+		if (listener->bond_deleted) {
+			listener->bond_deleted(id, addr);
+		}
 	}
 #endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
 }
