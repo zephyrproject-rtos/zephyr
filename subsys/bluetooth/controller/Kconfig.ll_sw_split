@@ -586,6 +586,7 @@ config BT_CTLR_THROUGHPUT
 
 config BT_CTLR_FORCE_MD_COUNT
 	int "Forced MD bit count" if !BT_CTLR_FORCE_MD_AUTO
+	depends on !BT_CTLR_LOW_LAT_ULL
 	range 0 255
 	default 1 if BT_CTLR_FORCE_MD_AUTO
 	default 0
@@ -599,6 +600,7 @@ config BT_CTLR_FORCE_MD_COUNT
 
 config BT_CTLR_FORCE_MD_AUTO
 	bool "Forced MD bit automatic calculation"
+	depends on !BT_CTLR_LOW_LAT_ULL
 	select BT_CTLR_THROUGHPUT
 	default y if BT_HCI_RAW
 	help
