@@ -121,6 +121,19 @@
 		width = <320>;
 		height = <240>;
 	};
+
+	sdhc0: sdhc@1 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <1>;
+		status = "okay";
+		label = "SDHC_0";
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+			label = "SDMMC_0";
+		};
+		spi-max-frequency = <20000000>;
+	};
 };
 
 &timer0 {
