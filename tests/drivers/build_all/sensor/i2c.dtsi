@@ -731,3 +731,10 @@ test_i2c_max31875: max31875@53 {
 	label = "MAX31875";
 	reg = <0x53>;
 };
+
+test_i2c_bh1745: bh1745@54 {
+	compatible = "rohm,bh1745";
+	label = "BH1745";
+	reg = <0x54>;	
+	int-gpios = <&test_gpio 0 0>;
+};
