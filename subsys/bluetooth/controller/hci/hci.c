@@ -207,6 +207,8 @@ static uint64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
 static struct net_buf *cmd_complete_status(uint8_t status);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define BUF_GET_TIMEOUT K_SECONDS(10)
+
 #if defined(CONFIG_BT_HCI_RAW)
 static uint8_t ll_adv_cmds;
 
@@ -6025,7 +6027,9 @@ static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 		*data_len -= data_len_frag;
 		*data_len_total -= data_len_frag;
 
-		*evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+		*evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
+		LL_ASSERT(*evt_buf);
+
 		net_buf_frag_add(buf, *evt_buf);
 
 		/* Continue to fragment until last partial PDU data fragment,
@@ -6539,7 +6543,9 @@ no_ext_hdr:
 	/* Allocate, append as buf fragement and construct the scan response
 	 * event.
 	 */
-	evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+	evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
+	LL_ASSERT(evt_buf);
+
 	net_buf_frag_add(buf, evt_buf);
 
 	/* If PDU data length less than total data length or PDU data length
@@ -6916,7 +6922,9 @@ no_ext_hdr:
 				/* Some data left in PDU, mark as partial data. */
 				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 
-				evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+				evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
+				LL_ASSERT(evt_buf);
+
 				net_buf_frag_add(buf, evt_buf);
 
 				tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
@@ -6962,7 +6970,8 @@ no_ext_hdr:
 		 * constructed with the caller supplied buffer.
 		 */
 		if (!evt_buf) {
-			evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+			evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
+			LL_ASSERT(evt_buf);
 
 			net_buf_frag_add(buf, evt_buf);
 		}
