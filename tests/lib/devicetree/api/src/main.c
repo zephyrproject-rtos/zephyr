@@ -2191,24 +2191,24 @@ static void test_mbox(void)
 	zassert_equal(channel_tx.id, 1, "");
 	zassert_equal(channel_rx.id, 2, "");
 
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, tx), 1, "");
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, rx), 2, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, tx), 1, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, rx), 2, "");
 
-	zassert_true(DT_SAME_NODE(MBOX_DT_CTLR_BY_NAME(TEST_TEMP, tx),
+	zassert_true(DT_SAME_NODE(DT_MBOX_CTLR_BY_NAME(TEST_TEMP, tx),
 				  DT_NODELABEL(test_mbox)), "");
-	zassert_true(DT_SAME_NODE(MBOX_DT_CTLR_BY_NAME(TEST_TEMP, rx),
+	zassert_true(DT_SAME_NODE(DT_MBOX_CTLR_BY_NAME(TEST_TEMP, rx),
 				  DT_NODELABEL(test_mbox)), "");
 
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, tx), 1, "");
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, rx), 2, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, tx), 1, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, rx), 2, "");
 
 	const struct mbox_channel channel_zero = MBOX_DT_CHANNEL_GET(TEST_TEMP, zero);
 
 	zassert_equal(channel_zero.id, 0, "");
 
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, zero), 0, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, zero), 0, "");
 
-	zassert_true(DT_SAME_NODE(MBOX_DT_CTLR_BY_NAME(TEST_TEMP, zero),
+	zassert_true(DT_SAME_NODE(DT_MBOX_CTLR_BY_NAME(TEST_TEMP, zero),
 				  DT_NODELABEL(test_mbox_zero_cell)), "");
 }
 

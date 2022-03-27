@@ -280,6 +280,16 @@ channels (e.g. ADC or DAC channels) for conversion.
 
 .. doxygengroup:: devicetree-io-channels
 
+.. _devicetree-mbox-api:
+
+MBOX
+====
+
+These conveniences may be used for nodes which describe MBOX controllers/users,
+and properties related to them.
+
+.. doxygengroup:: devicetree-mbox
+
 .. _devicetree-pinctrl-api:
 
 Pinctrl (pin control)

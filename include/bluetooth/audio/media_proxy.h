@@ -9,6 +9,11 @@
 
 /** @brief Media proxy module
  *
+ * @defgroup bt_media_proxy Media Proxy
+ *
+ * @ingroup bluetooth
+ * @{
+ *
  * The media proxy module is the connection point between media players
  * and media controllers.
  *
@@ -1612,5 +1617,7 @@ void media_proxy_pl_search_results_id_cb(uint64_t id);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */ /* End of group bt_media_proxy */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_H_ */

@@ -312,6 +312,17 @@ enum {
 	BT_CONN_ROLE_PERIPHERAL = 1,
 };
 
+enum bt_conn_state {
+	/** Channel disconnected */
+	BT_CONN_STATE_DISCONNECTED,
+	/** Channel in connecting state */
+	BT_CONN_STATE_CONNECTING,
+	/** Channel connected and ready for upper layer traffic on it */
+	BT_CONN_STATE_CONNECTED,
+	/** Channel in disconnecting state */
+	BT_CONN_STATE_DISCONNECTING,
+};
+
 /** Connection role (central or peripheral) */
 #define BT_CONN_ROLE_MASTER __DEPRECATED_MACRO BT_CONN_ROLE_CENTRAL
 #define BT_CONN_ROLE_SLAVE __DEPRECATED_MACRO BT_CONN_ROLE_PERIPHERAL
@@ -331,6 +342,8 @@ struct bt_conn_info {
 		/** BR/EDR Connection specific Info. */
 		struct bt_conn_br_info br;
 	};
+
+	enum bt_conn_state state;
 };
 
 /** LE Connection Remote Info Structure */
@@ -1297,7 +1310,10 @@ struct bt_conn_auth_cb {
 	 */
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
+};
 
+/** Authenticated pairing information callback structure */
+struct bt_conn_auth_info_cb {
 	/** @brief notify that pairing procedure was complete.
 	 *
 	 *  This callback notifies the application that the pairing procedure
@@ -1326,6 +1342,9 @@ struct bt_conn_auth_cb {
 	 *  @param peer Remote address.
 	 */
 	void (*bond_deleted)(uint8_t id, const bt_addr_le_t *peer);
+
+	/** Internally used field for list handling */
+	sys_snode_t node;
 };
 
 /** @brief Register authentication callbacks.
@@ -1338,6 +1357,27 @@ struct bt_conn_auth_cb {
  *  @return Zero on success or negative error code otherwise
  */
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb);
+
+/** @brief Register authentication information callbacks.
+ *
+ *  Register callbacks to get authenticated pairing information. Multiple
+ *  registrations can be done.
+ *
+ *  @param cb Callback struct.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb);
+
+/** @brief Unregister authentication information callbacks.
+ *
+ *  Unregister callbacks to stop getting authenticated pairing information.
+ *
+ *  @param cb Callback struct.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb);
 
 /** @brief Reply with entered passkey.
  *

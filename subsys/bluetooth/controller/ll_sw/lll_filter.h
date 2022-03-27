@@ -4,27 +4,34 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_CTLR_FAL_SIZE)
-#define FAL_SIZE CONFIG_BT_CTLR_FAL_SIZE
+#if defined(CONFIG_BT_CTLR_FAL_SIZE) && defined(CONFIG_BT_CTLR_RL_SIZE)
+#define LLL_FILTER_SIZE MAX(CONFIG_BT_CTLR_FAL_SIZE, CONFIG_BT_CTLR_RL_SIZE)
+#elif defined(CONFIG_BT_CTLR_FAL_SIZE)
+#define LLL_FILTER_SIZE CONFIG_BT_CTLR_FAL_SIZE
+#elif defined(CONFIG_BT_CTLR_RL_SIZE)
+#define LLL_FILTER_SIZE CONFIG_BT_CTLR_RL_SIZE
 #else
-#define FAL_SIZE 8
-#endif /* CONFIG_BT_CTLR_FAL_SIZE */
+#define LLL_FILTER_SIZE 8
+#endif /* CONFIG_BT_CTLR_FAL_SIZE && CONFIG_BT_CTLR_RL_SIZE */
 
 #define IRK_SIZE               16
 #define FILTER_IDX_NONE        0xFF
-#define LLL_FILTER_BITMASK_ALL (BIT(FAL_SIZE) - 1)
+#define LLL_FILTER_BITMASK_ALL (BIT_MASK(LLL_FILTER_SIZE))
+
+#define LLL_FILTER_SIZE_MAX_BITMASK8	(1 * CHAR_BIT)
+#define LLL_FILTER_SIZE_MAX_BITMASK16	(2 * CHAR_BIT)
 
 struct lll_filter {
-#if (FAL_SIZE <= 8)
+#if (LLL_FILTER_SIZE <= LLL_FILTER_SIZE_MAX_BITMASK8)
 	uint8_t  enable_bitmask;
 	uint8_t  addr_type_bitmask;
-#elif (FAL_SIZE <= 16)
+#elif (LLL_FILTER_SIZE <= LLL_FILTER_SIZE_MAX_BITMASK16)
 	uint16_t enable_bitmask;
 	uint16_t addr_type_bitmask;
 #else
-#error FAL_SIZE must be <= 16
+#error LLL_FILTER_SIZE must be <= LLL_FILTER_SIZE_MAX_BITMASK16
 #endif
-	uint8_t  bdaddr[FAL_SIZE][BDADDR_SIZE];
+	uint8_t  bdaddr[LLL_FILTER_SIZE][BDADDR_SIZE];
 };
 
 /* Filter Accept List peer list */

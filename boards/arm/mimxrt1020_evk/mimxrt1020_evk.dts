@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_rt1020.dtsi>
+#include "mimxrt1020_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP MIMXRT1020-EVK board";
@@ -80,7 +81,11 @@
 	};
 };
 
-arduino_serial: &lpuart2 {};
+arduino_serial: &lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
 
 &flexspi {
 	status = "okay";
@@ -127,15 +132,22 @@ arduino_serial: &lpuart2 {};
 
 &lpi2c1 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
 };
 
 &lpi2c4 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c4>;
+	pinctrl-names = "default";
 };
 
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &lpspi1 {
@@ -143,12 +155,20 @@ arduino_serial: &lpuart2 {};
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
 	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
 };
 
 &enet {
 	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	int-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
 	ptp {
 		status = "okay";
+		pinctrl-0 = <&pinmux_ptp>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -160,10 +180,22 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 	cd-gpios = <&gpio1 23 GPIO_ACTIVE_LOW>;
 	no-1-8-v;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
 };
 
 &adc1 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_adc1>;
+	pinctrl-names = "default";
+};
+
+&sai3 {
+	pinctrl-0 = <&pinmux_sai3>;
+	pinctrl-names = "default";
 };
 
 &edma0 {

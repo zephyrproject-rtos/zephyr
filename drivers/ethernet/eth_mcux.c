@@ -49,6 +49,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <drivers/clock_control.h>
 #endif
 #include <devicetree.h>
+#include <drivers/gpio.h>
 #if defined(CONFIG_PINCTRL)
 #include <drivers/pinctrl.h>
 #endif
@@ -214,6 +215,10 @@ struct eth_context {
 	uint8_t *rx_frame_buf; /* Max MTU + ethernet header */
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
+#endif
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+	const struct gpio_dt_spec int_gpio;
+	const struct gpio_dt_spec reset_gpio;
 #endif
 };
 
@@ -1000,6 +1005,31 @@ static void eth_tx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
+
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+static int eth_phy_reset(const struct device *dev)
+{
+	int err;
+	struct eth_context *context = dev->data;
+
+	/* pull up the ENET_INT before RESET. */
+	err =  gpio_pin_configure_dt(&context->int_gpio, GPIO_OUTPUT_ACTIVE);
+	if (err) {
+		return err;
+	}
+	return gpio_pin_configure_dt(&context->reset_gpio, GPIO_OUTPUT_INACTIVE);
+}
+
+static int eth_phy_init(const struct device *dev)
+{
+	struct eth_context *context = dev->data;
+
+	/* RESET PHY chip. */
+	k_busy_wait(USEC_PER_MSEC * 500);
+	return gpio_pin_set_dt(&context->reset_gpio, 1);
+}
+#endif
+
 static void eth_mcux_init(const struct device *dev)
 {
 	struct eth_context *context = dev->data;
@@ -1100,12 +1130,22 @@ static int eth_init(const struct device *dev)
 	struct eth_context *context = dev->data;
 #if defined(CONFIG_PINCTRL)
 	int err;
-#endif
+
+	err = pinctrl_apply_state(context->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
 
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	const uint32_t inst = ENET_GetInstance(context->base);
 
 	context->clock = enet_clocks[inst];
+#endif
+
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+	eth_phy_reset(dev);
+	eth_phy_init(dev);
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
@@ -1147,13 +1187,6 @@ static int eth_init(const struct device *dev)
 		context->mac_addr[0], context->mac_addr[1],
 		context->mac_addr[2], context->mac_addr[3],
 		context->mac_addr[4], context->mac_addr[5]);
-
-#if defined(CONFIG_PINCTRL)
-	err = pinctrl_apply_state(context->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
-		return err;
-	}
-#endif /* CONFIG_PINCTRL */
 
 	return 0;
 }
@@ -1529,6 +1562,14 @@ static void eth_mcux_err_isr(const struct device *dev)
 #define ETH_MCUX_PINCTRL_INIT(n)
 #endif
 
+#if defined(CONFIG_ETH_MCUX_PHY_RESET)
+#define ETH_MCUX_PHY_GPIOS(n)						\
+	.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),		\
+	.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),
+#else
+#define ETH_MCUX_PHY_GPIOS(n)
+#endif
+
 #define ETH_MCUX_INIT(n)						\
 	ETH_MCUX_GEN_MAC(n)                                             \
 									\
@@ -1558,6 +1599,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 		.tx_frame_buf = tx_enet_frame_##n##_buf,		\
 		.rx_frame_buf = rx_enet_frame_##n##_buf,		\
 		ETH_MCUX_PINCTRL_INIT(n)				\
+		ETH_MCUX_PHY_GPIOS(n)					\
 		ETH_MCUX_MAC_ADDR(n)					\
 		ETH_MCUX_POWER(n)					\
 	};								\

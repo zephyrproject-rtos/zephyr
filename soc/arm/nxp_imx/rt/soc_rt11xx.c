@@ -372,6 +372,9 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
+	/* Set ENET_REF_CLK as an output driven by ENET1_CLK_ROOT */
+	IOMUXC_GPR->GPR4 |= (IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U) |
+		IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U));
 #endif
 
 #ifdef CONFIG_PTP_CLOCK_MCUX
@@ -459,53 +462,6 @@ static ALWAYS_INLINE void clock_init(void)
 	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_CM7_FORCE_HCLK_EN_MASK;
 #endif
 }
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
-
-/* Usdhc driver needs to re-configure pinmux
- * Pinmux depends on board design.
- * From the perspective of Usdhc driver,
- * it can't access board specific function.
- * So SoC provides this for board to register
- * its usdhc pinmux and for usdhc to access
- * pinmux.
- */
-
-static usdhc_pin_cfg_cb g_usdhc_pin_cfg_cb;
-
-void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb)
-{
-	g_usdhc_pin_cfg_cb = cb;
-}
-
-void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
-	uint32_t speed, uint32_t strength)
-{
-	if (g_usdhc_pin_cfg_cb)
-		g_usdhc_pin_cfg_cb(nusdhc, init,
-			speed, strength);
-}
-
-/* Usdhc driver needs to reconfigure the dat3 line to a pullup in order to
- * detect an SD card on the bus. Expose a callback to do that here. The board
- * must register this callback in its init function.
- */
-static usdhc_dat3_cfg_cb g_usdhc_dat3_cfg_cb;
-
-void imxrt_usdhc_dat3_cb_register(usdhc_dat3_cfg_cb cb)
-{
-	g_usdhc_dat3_cfg_cb = cb;
-}
-
-void imxrt_usdhc_dat3_pull(bool pullup)
-{
-	if (g_usdhc_dat3_cfg_cb) {
-		g_usdhc_dat3_cfg_cb(pullup);
-	}
-}
-
-#endif
-
 
 #if CONFIG_I2S_MCUX_SAI
 void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,

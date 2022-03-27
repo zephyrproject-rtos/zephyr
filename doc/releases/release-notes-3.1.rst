@@ -52,6 +52,9 @@ Bluetooth
   * The enum bt_l2cap_chan_state values BT_L2CAP_CONNECT and BT_L2CAP_DISCONNECT
     has been renamed to BT_L2CAP_CONNECTING and BT_L2CAP_DISCONNECTING.
 
+  * Moved the callbacks :c:func:`pairing_complete`, :c:func:`pairing_failed` and
+    :c:func:`bond_delete` from the `struct bt_auth_cb` to a newly created
+    informational-only callback `struct bt_auth_info_cb`.
 
 New APIs in this release
 ========================

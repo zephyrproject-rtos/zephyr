@@ -22,12 +22,14 @@ typedef int (*its_api_setup_deviceid_t)(const struct device *dev, uint32_t devic
 typedef int (*its_api_map_intid_t)(const struct device *dev, uint32_t device_id,
 				   uint32_t event_id, unsigned int intid);
 typedef int (*its_api_send_int_t)(const struct device *dev, uint32_t device_id, uint32_t event_id);
+typedef uint32_t (*its_api_get_msi_addr_t)(const struct device *dev);
 
 __subsystem struct its_driver_api {
 	its_api_alloc_intid_t alloc_intid;
 	its_api_setup_deviceid_t setup_deviceid;
 	its_api_map_intid_t map_intid;
 	its_api_send_int_t send_int;
+	its_api_get_msi_addr_t get_msi_addr;
 };
 
 static inline int its_alloc_intid(const struct device *dev)
@@ -62,6 +64,14 @@ static inline int its_send_int(const struct device *dev, uint32_t device_id, uin
 		(const struct its_driver_api *)dev->api;
 
 	return api->send_int(dev, device_id, event_id);
+}
+
+static inline uint32_t its_get_msi_addr(const struct device *dev)
+{
+	const struct its_driver_api *api =
+		(const struct its_driver_api *)dev->api;
+
+	return api->get_msi_addr(dev);
 }
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GICV3_ITS_H_ */

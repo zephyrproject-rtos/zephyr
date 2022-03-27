@@ -94,10 +94,16 @@
 	};
 };
 
-arduino_serial: &lpuart3 {};
+arduino_serial: &lpuart3 {
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
 
 &flexspi {
 	status = "okay";
+	pinctrl-0 = <&pinmux_flexspi1>;
+	pinctrl-names = "default";
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
@@ -155,6 +161,9 @@ arduino_serial: &lpuart3 {};
 	polarity = <3>;
 	pixel-format = "bgr-565";
 	data-buswidth = "16-bit";
+	pinctrl-0 = <&pinmux_lcdif>;
+	pinctrl-names = "default";
+	backlight-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
 	port {
 		lcd_panel_out: endpoint {
 			remote-endpoint = <&lcd_panel_in>;
@@ -164,6 +173,8 @@ arduino_serial: &lpuart3 {};
 
 &lpi2c1 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
 
 	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
@@ -185,6 +196,8 @@ arduino_serial: &lpuart3 {};
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
+	int-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 	ptp {
 		pinctrl-0 = <&pinmux_ptp>;
 		pinctrl-names = "default";
@@ -194,6 +207,8 @@ arduino_serial: &lpuart3 {};
 
 &adc1 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_adc1>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usb1 {
@@ -206,6 +221,11 @@ zephyr_udc0: &usb1 {
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
 	no-1-8-v;
 	status = "okay";
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
 };
 
 &edma0 {

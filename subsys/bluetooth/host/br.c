@@ -118,7 +118,7 @@ static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 	}
 
 	sco_conn->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
+	bt_conn_set_state(sco_conn, BT_CONN_CONNECTING);
 	bt_conn_unref(sco_conn);
 }
 
@@ -143,7 +143,7 @@ void bt_hci_conn_req(struct net_buf *buf)
 
 	accept_conn(&evt->bdaddr);
 	conn->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	bt_conn_set_state(conn, BT_CONN_CONNECTING);
 	bt_conn_unref(conn);
 }
 

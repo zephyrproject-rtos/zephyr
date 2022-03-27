@@ -201,7 +201,7 @@ static void update_conn(struct bt_conn *conn, bool bonded)
 	}
 }
 
-static struct bt_conn_auth_cb auth_cb_success = {
+static struct bt_conn_auth_info_cb auth_cb_success = {
 	.pairing_complete = update_conn,
 };
 
@@ -225,7 +225,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 	if (encrypt_link) {
 		k_sleep(K_MSEC(500));
-		bt_conn_auth_cb_register(&auth_cb_success);
+		bt_conn_auth_info_cb_register(&auth_cb_success);
 		err = bt_conn_set_security(conn, BT_SECURITY_L2);
 		if (err) {
 			FAIL("bt_conn_set_security failed (err %d)\n", err);
