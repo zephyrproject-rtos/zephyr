@@ -119,6 +119,13 @@
 		reg = <0x5f>;
 		label = "HTS221";
 	};
+
+	ism330dhcx@6b {
+		compatible = "st,ism330dhcx";
+		reg = <0x6b>;
+		drdy-gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
+		label = "ISM330DHCX";
+	};
 };
 
 &rng {
