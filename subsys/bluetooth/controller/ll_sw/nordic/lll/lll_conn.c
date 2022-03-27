@@ -591,6 +591,10 @@ void lll_conn_isr_tx(void *param)
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 	radio_isr_set(lll_conn_isr_rx, param);
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+	ull_conn_lll_tx_demux_sched(lll);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 }
 
 void lll_conn_rx_pkt_set(struct lll_conn *lll)
