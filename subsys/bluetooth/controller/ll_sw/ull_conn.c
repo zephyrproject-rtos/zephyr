@@ -1581,6 +1581,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 
 	/* check procedure timeout */
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	if (conn->procedure_expire != 0U) {
 		if (conn->procedure_expire > elapsed_event) {
 			conn->procedure_expire -= elapsed_event;
@@ -1590,6 +1591,13 @@ void ull_conn_done(struct node_rx_event_done *done)
 			return;
 		}
 	}
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+	if (-ETIMEDOUT == ull_cp_prt_elapse(conn, elapsed_event)) {
+		conn_cleanup(conn, BT_HCI_ERR_LL_RESP_TIMEOUT);
+
+		return;
+	}
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* check apto */
@@ -7612,21 +7620,6 @@ void ull_conn_resume_rx_data(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-/**
- * @brief Restart procedure timeout 'timer'
- */
-void ull_conn_prt_reload(struct ll_conn *conn, uint16_t procedure_reload)
-{
-	conn->procedure_expire = procedure_reload;
-}
-
-/**
- * @brief Clear procedure timeout 'timer'
- */
-void ull_conn_prt_clear(struct ll_conn *conn)
-{
-	conn->procedure_expire = 0U;
-}
 uint16_t ull_conn_event_counter(struct ll_conn *conn)
 {
 	struct lll_conn *lll;
@@ -7667,12 +7660,6 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 	instant_latency = (event_counter - instant) & 0xFFFF;
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	if (!is_cu_proc) {
-		/* Stop procedure timeout */
-		conn->procedure_expire = 0U;
-	}
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	ticks_at_expire = conn->llcp.prep.ticks_at_expire;
 
@@ -7766,7 +7753,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	lll->latency = latency;
 
 	conn->supervision_reload = RADIO_CONN_EVENTS((timeout * 10U * 1000U), conn_interval_us);
-	conn->procedure_reload = RADIO_CONN_EVENTS((40U * 1000U * 1000U), conn_interval_us);
+	ull_cp_prt_reload_set(conn, conn_interval_us);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* APTO in no. of connection events */

@@ -175,8 +175,8 @@ static struct node_tx *llcp_lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
 
-	/* Update procedure timeout */
-	ull_conn_prt_reload(conn, conn->procedure_reload);
+	/* Restart procedure response timeout timer */
+	llcp_lr_prt_restart(conn);
 
 	return tx;
 }
@@ -666,6 +666,9 @@ static struct node_tx *llcp_rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
+
+	/* Restart procedure response timeout timer */
+	llcp_rr_prt_restart(conn);
 
 	return tx;
 }

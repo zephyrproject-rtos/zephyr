@@ -158,9 +158,8 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
 
-	/* Update procedure timeout. For TERMINATE supervision_timeout is used */
-	ull_conn_prt_reload(conn, (ctx->proc != PROC_TERMINATE) ? conn->procedure_reload :
-									conn->supervision_reload);
+	/* Restart procedure response timeout timer */
+	llcp_lr_prt_restart(conn);
 }
 
 static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *ctx,
@@ -858,6 +857,9 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
+
+	/* Restart procedure response timeout timer */
+	llcp_rr_prt_restart(conn);
 }
 
 static void rp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)

@@ -464,6 +464,11 @@ void ull_llcp_init(struct ll_conn *conn)
 	conn->llcp.remote.paused_cmd = PROC_NONE;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
+	/* Reset the Procedure Response Timeout to be disabled,
+	 * 'ull_cp_prt_reload_set' must be called to setup this value.
+	 */
+	conn->llcp.prt_reload = 0U;
+
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
 	memset(&conn->llcp.vex, 0, sizeof(conn->llcp.vex));
 
@@ -528,6 +533,44 @@ void ull_cp_release_ntf(struct node_rx_pdu *ntf)
 {
 	ntf->hdr.next = NULL;
 	ll_rx_mem_release((void **)&ntf);
+}
+
+static int prt_elapse(uint16_t *expire, uint16_t elapsed_event)
+{
+	if (*expire != 0U) {
+		if (*expire > elapsed_event) {
+			*expire -= elapsed_event;
+		} else {
+			/* Timer expired */
+			return -ETIMEDOUT;
+		}
+	}
+
+	/* Timer still running */
+	return 0;
+}
+
+int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event)
+{
+	int loc_ret;
+	int rem_ret;
+
+	loc_ret = prt_elapse(&conn->llcp.local.prt_expire, elapsed_event);
+	rem_ret = prt_elapse(&conn->llcp.remote.prt_expire, elapsed_event);
+
+	if (loc_ret == -ETIMEDOUT || rem_ret == -ETIMEDOUT) {
+		/* One of the timers expired */
+		return -ETIMEDOUT;
+	}
+
+	/* Both timers are still running */
+	return 0;
+}
+
+void ull_cp_prt_reload_set(struct ll_conn *conn, uint32_t conn_intv_us)
+{
+	/* Convert 40s Procedure Response Timeout into events */
+	conn->llcp.prt_reload = RADIO_CONN_EVENTS((40U * 1000U * 1000U), conn_intv_us);
 }
 
 void ull_cp_run(struct ll_conn *conn)

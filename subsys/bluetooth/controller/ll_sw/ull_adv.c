@@ -1039,7 +1039,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 		conn->connect_expire = 6;
 		conn->supervision_expire = 0;
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 		conn->procedure_expire = 0;
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		conn->apto_expire = 0U;

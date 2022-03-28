@@ -108,6 +108,7 @@ static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		LL_ASSERT(ctx_header == ctx);
 
 		rr_dequeue(conn);
+
 		llcp_proc_ctx_release(ctx);
 	}
 }
@@ -192,6 +193,15 @@ void llcp_rr_resume(struct ll_conn *conn)
 	conn->llcp.remote.pause = 0U;
 }
 
+void llcp_rr_prt_restart(struct ll_conn *conn)
+{
+	conn->llcp.remote.prt_expire = conn->llcp.prt_reload;
+}
+
+void llcp_rr_prt_stop(struct ll_conn *conn)
+{
+	conn->llcp.remote.prt_expire = 0U;
+}
 
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
@@ -416,10 +426,13 @@ static void rr_act_complete(struct ll_conn *conn)
 
 	rr_set_collision(conn, 0U);
 
-	/* Dequeue pending request that just completed */
 	ctx = llcp_rr_peek(conn);
 	LL_ASSERT(ctx != NULL);
 
+	/* Stop procedure response timeout timer */
+	llcp_rr_prt_stop(conn);
+
+	/* Mark the procedure as safe to delete */
 	ctx->done = 1U;
 }
 
@@ -641,6 +654,7 @@ static void rr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 void llcp_rr_init(struct ll_conn *conn)
 {
 	rr_set_state(conn, RR_STATE_DISCONNECT);
+	conn->llcp.remote.prt_expire = 0U;
 }
 
 void llcp_rr_prepare(struct ll_conn *conn, struct node_rx_pdu *rx)
@@ -803,6 +817,7 @@ static void rr_abort(struct ll_conn *conn)
 		ctx = rr_dequeue(conn);
 	}
 
+	llcp_rr_prt_stop(conn);
 	rr_set_collision(conn, 0U);
 	rr_set_state(conn, RR_STATE_IDLE);
 }
