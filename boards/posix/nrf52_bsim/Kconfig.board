@@ -10,19 +10,6 @@ config BOARD_NRF52_BSIM
 	select CONSOLE_HAS_DRIVER
 	select NRF_RTC_TIMER
 	select CLOCK_CONTROL
-	# Indicate that the nRF RNG peripheral is present (actually a model
-	# of it), so that the corresponding driver becomes available (see
-	# dependencies of the ENTROPY_NRF5_RNG option).
-	select HAS_HW_NRF_RNG
-	# Indicate that CCM supports 8 bit length field, to support full
-	# length LL PDUs.
-	select HAS_HW_NRF_CCM_LFLEN_8BIT
-	# Indicate 2M support so that Phy procedure can be enabled.
-	select HAS_HW_NRF_RADIO_BLE_2M
-	# Do the same for the CLOCK and POWER peripherals, so that the nrfx
-	# drivers for them can be used.
-	select HAS_HW_NRF_CLOCK
-	select HAS_HW_NRF_POWER
 	select HAS_NRFX
 	help
 	  Will produce a console Linux process which can be executed natively.
