@@ -94,7 +94,7 @@ int hid_int_ep_write(const struct device *dev,
  * @param[in]  data         Pointer to data buffer
  * @param[in]  max_data_len Max length of data to copy
  * @param[out] ret_bytes    Number of bytes to copy.  If data is NULL and
- *                          ret_bytes is 0 the number of bytes
+ *                          max_data_len is 0 the number of bytes
  *                          available in the buffer will be returned.
  *
  * @return 0 on success, negative errno code on fail.
