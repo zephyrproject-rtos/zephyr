@@ -498,6 +498,23 @@ def dt_compat_on_bus(kconf, _, compat, bus):
 
 def dt_nodelabel_has_compat(kconf, _, label, compat):
     """
+    This function takes a 'label' and looks for an EDT node with that label.
+    If it finds such node, it returns "y" if this node is compatible with
+    the provided 'compat'. Otherwise, it return "n" .
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    node = edt.label2node.get(label)
+
+    if node and compat in node.compats:
+        return "y"
+
+    return "n"
+
+
+def dt_nodelabel_enabled_with_compat(kconf, _, label, compat):
+    """
     This function takes a 'label' and returns "y" if an "enabled" node with
     such label can be found in the EDT and that node is compatible with the
     provided 'compat', otherwise it returns "n".
@@ -560,6 +577,7 @@ functions = {
         "dt_path_enabled": (dt_node_enabled, 1, 1),
         "dt_alias_enabled": (dt_node_enabled, 1, 1),
         "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),
+        "dt_nodelabel_enabled_with_compat": (dt_nodelabel_enabled_with_compat, 2, 2),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 3),
         "dt_chosen_reg_addr_hex": (dt_chosen_reg, 1, 3),
         "dt_chosen_reg_size_int": (dt_chosen_reg, 1, 3),
