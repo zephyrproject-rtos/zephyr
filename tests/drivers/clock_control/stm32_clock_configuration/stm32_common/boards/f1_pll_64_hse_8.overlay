@@ -25,5 +25,4 @@
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(64)>;
-	/* apb1 prescaler is kept = 2 */
 };

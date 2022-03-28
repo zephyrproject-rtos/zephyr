@@ -28,7 +28,4 @@
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(48)>;
-	cpu1-prescaler = <1>;
-	cpu2-prescaler = <2>;
-	ahb4-prescaler = <2>;
 };
