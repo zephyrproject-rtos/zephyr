@@ -41,12 +41,6 @@ mgmt_streamer_write_hdr(struct mgmt_streamer *streamer, const struct mgmt_hdr *h
 	return streamer->cfg->write_hdr(streamer->writer, hdr);
 }
 
-int
-mgmt_streamer_init_reader(struct mgmt_streamer *streamer, void *buf)
-{
-	return streamer->cfg->init_reader(streamer->reader, buf);
-}
-
 void
 mgmt_streamer_free_buf(struct mgmt_streamer *streamer, void *buf)
 {
@@ -164,19 +158,6 @@ mgmt_err_from_cbor(int cbor_status)
 		return MGMT_ERR_ENOMEM;
 	}
 	return MGMT_ERR_EUNKNOWN;
-}
-
-int
-mgmt_ctxt_init(struct mgmt_ctxt *ctxt, struct mgmt_streamer *streamer)
-{
-	int rc;
-
-	rc = cbor_parser_init(streamer->reader, 0, &ctxt->parser, &ctxt->it);
-	if (rc != CborNoError) {
-		return mgmt_err_from_cbor(rc);
-	}
-
-	return 0;
 }
 
 void
