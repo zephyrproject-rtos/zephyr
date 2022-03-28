@@ -204,8 +204,14 @@ void ull_periph_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
 	conn->supervision_reload =
 		RADIO_CONN_EVENTS((timeout * 10U * 1000U), conn_interval_us);
+
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	conn->procedure_reload =
 		RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
+#else
+	/* Setup the PRT reload */
+	ull_cp_prt_reload_set(conn, conn_interval_us);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* APTO in no. of connection events */

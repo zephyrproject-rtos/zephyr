@@ -87,14 +87,4 @@ void ull_conn_pause_rx_data(struct ll_conn *conn);
  */
 void ull_conn_resume_rx_data(struct ll_conn *conn);
 
-/**
- * @brief Restart procedure timeout timer
- */
-void ull_conn_prt_reload(struct ll_conn *conn, uint16_t procedure_reload);
-
-/**
- * @brief Clear procedure timeout timer
- */
-void ull_conn_prt_clear(struct ll_conn *conn);
-
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
