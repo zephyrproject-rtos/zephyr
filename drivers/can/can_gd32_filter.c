@@ -21,6 +21,103 @@ LOG_MODULE_REGISTER(can_gd32_filter, CONFIG_CAN_LOG_LEVEL);
 #define CAN_GD32_FILTER_LOCK() k_mutex_lock(&filter->data->mutex, K_FOREVER);
 #define CAN_GD32_FILTER_UNLOCK() k_mutex_unlock(&filter->data->mutex);
 
+struct can_gd32_filter_cb {
+	can_rx_callback_t cb;
+	void *cb_arg;
+
+	uint8_t filter_number;
+
+	struct can_gd32_filter_cb *next;
+};
+/*can main/secondary, fifo 0/1, items, too large, use linked-list*/
+static struct can_gd32_filter_cb *can_gd32_filter_cb_lut[2][2] = { NULL, NULL, NULL, NULL };
+K_HEAP_DEFINE(can_gd32_filter_cb_list,
+	      sizeof(struct can_gd32_filter_cb) * 10 /* todo add to kconfig*/);
+
+static int inline can_gd32_filter_cb_lut_append(bool is_main_controller, enum can_fifo fifo,
+						can_rx_callback_t cb, void *cb_arg,
+						uint8_t filter_number)
+{
+	struct can_gd32_filter_cb *ptr =
+		can_gd32_filter_cb_lut[(uint8_t)is_main_controller][(uint8_t)fifo];
+	struct can_gd32_filter_cb *ptr_tmp; /* for swap val */
+	/* malloc area for save data */
+	struct can_gd32_filter_cb *val = k_heap_alloc(&can_gd32_filter_cb_list,
+						      sizeof(struct can_gd32_filter_cb), K_NO_WAIT);
+	if (val == NULL)
+		return -ENOSPC;
+
+	/* copy data */
+	val->cb = cb;
+	val->cb_arg = cb_arg;
+	val->filter_number = filter_number;
+	val->next = NULL;
+
+	/* get the end of list */
+	if (ptr == NULL) {
+		/* save head to list */
+		can_gd32_filter_cb_lut[(uint8_t)is_main_controller][(uint8_t)fifo] = val;
+	} else {
+		/* save child by order of filter_number */
+		while (ptr->next != NULL && ptr->filter_number < val->filter_number)
+			ptr = ptr->next;
+
+		ptr_tmp = ptr->next;
+		ptr->next = val;
+		val->next = ptr_tmp;
+	}
+
+	return 0;
+}
+
+static inline int can_gd32_filter_get_unitsize(const struct can_gd32_filter *filter,
+					       uint8_t filter_unit)
+{
+#define CAN_GD32_FILTER_SIZE_MASK32 1
+#define CAN_GD32_FILTER_SIZE_MASK16 2
+#define CAN_GD32_FILTER_SIZE_LIST32 2
+#define CAN_GD32_FILTER_SIZE_LIST16 4
+	__ASSERT(filter_unit < CONFIG_CAN_MAX_FILTER, "filter unit index error");
+
+	if (CAN_FMCFG(filter->cfg->reg) & (1 << filter_unit)) { /* mask */
+		if (CAN_FMCFG(filter->cfg->reg) & (1 << filter_unit)) { /* 32-bit */
+			return CAN_GD32_FILTER_SIZE_MASK32;
+		} else { /* 16-bit */
+			return CAN_GD32_FILTER_SIZE_MASK16;
+		}
+	} else { /* list */
+		if (CAN_FMCFG(filter->cfg->reg) & (1 << filter_unit)) { /* 32-bit */
+			return CAN_GD32_FILTER_SIZE_LIST32;
+		} else { /* 16-bit */
+			return CAN_GD32_FILTER_SIZE_LIST16;
+		}
+	}
+}
+
+static inline uint8_t can_gd32_filter_get_number(const struct can_gd32_filter *filter,
+						 bool is_main_controller, enum can_fifo fifo,
+						 uint8_t filter_unit)
+{
+	__ASSERT(filter_unit < CONFIG_CAN_MAX_FILTER, "filter unit index error");
+	uint8_t result = 0;
+	size_t i = is_main_controller ? 0 : CONFIG_CAN_FILTER_SPLIT_DEFAULT;
+	int size = 0;
+
+	for (; i < filter_unit; i++) {
+		/* ignore dismatch fifo */
+		if (CAN_FAFIFO(filter->cfg->reg) & (1 << i))
+			continue;
+
+		size = can_gd32_filter_get_unitsize(filter, i - 1);
+		if (size <= 0)
+			return size; /* error */
+
+		result += size;
+	}
+
+	return result;
+}
+
 static inline void can_gd32_filter_enter_init_mode(const struct can_gd32_filter *filter)
 {
 	CAN_FCTL(filter->cfg->reg) |= CAN_FCTL_FLD;
@@ -181,6 +278,8 @@ static int can_gd32_filter_add_list32(const struct can_gd32_filter *filter, bool
 	LOG_DBG("[CAN FILTER]%s\n", __func__);
 	int filter_unit =
 		can_gd32_filter_getemptyunit(is_main_controller, fifo, CAN_FILTER_32BIT_LIST);
+	uint8_t filter_number = can_gd32_filter_get_number(
+		filter, is_main_controller, fifo, filter_unit) /* need add sub filter index here*/;
 	if (filter_unit == -ENOSPC) {
 		return ENOSPC;
 	}
@@ -198,7 +297,10 @@ static int can_gd32_filter_add_list32(const struct can_gd32_filter *filter, bool
 								   (zfilter->id << 3 | CAN_FF_EXTENDED));
 	CAN_FDATA0(filter->cfg->reg, filter_unit) |=
 		(zfilter->rtr_mask == 0 && zfilter->rtr) ? CAN_FT_REMOTE : CAN_FT_DATA;
-	CAN_FDATA1(filter->cfg->reg, filter_unit) = 0; /* clear unuse rule */
+	CAN_FDATA1(filter->cfg->reg, filter_unit) = 0; /* clear unused rule */
+
+	/* save cb */
+	can_gd32_filter_cb_lut_append(is_main_controller, fifo, cb, cb_arg, filter_number);
 
 	/* active */
 	can_gd32_filter_set_active(filter, filter_unit, true);
@@ -214,6 +316,8 @@ static int can_gd32_filter_add_list16(const struct can_gd32_filter *filter, bool
 	LOG_DBG("[CAN FILTER]%s\n", __func__);
 	int filter_unit =
 		can_gd32_filter_getemptyunit(is_main_controller, fifo, CAN_FILTER_16BIT_LIST);
+	uint8_t filter_number = can_gd32_filter_get_number(
+		filter, is_main_controller, fifo, filter_unit) /* need add sub filter index here*/;
 	if (filter_unit == -ENOSPC) {
 		// if filter full and no list mode filter empty try 16 bit mask mode
 		return can_gd32_filter_add_mask16(filter, is_main_controller, fifo, cb, cb_arg,
@@ -231,12 +335,15 @@ static int can_gd32_filter_add_list16(const struct can_gd32_filter *filter, bool
 	CAN_FDATA0(filter->cfg->reg, filter_unit) =
 		FDATA_MASK_HIGH(0) /* must clear unuse rule */ |
 		FDATA_MASK_LOW((zfilter->id << 5) & CAN_FILTER_MASK_16BITS);
-	CAN_FDATA1(filter->cfg->reg, filter_unit) = 0; /* must clear unuse rule */
+	CAN_FDATA1(filter->cfg->reg, filter_unit) = 0; /* clear unused rule */
+
+	/* save cb */
+	can_gd32_filter_cb_lut_append(is_main_controller, fifo, cb, cb_arg, filter_number);
 
 	/* active */
 	can_gd32_filter_set_active(filter, filter_unit, true);
 	can_gd32_filter_leave_init_mode(filter);
-	return filter_unit;
+	return filter_number;
 }
 
 int can_gd32_filter_add(const struct can_gd32_filter *filter, bool is_main_controller,
