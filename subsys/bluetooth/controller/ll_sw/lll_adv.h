@@ -14,7 +14,7 @@ struct lll_adv_iso_stream {
 	memq_link_t *link_tx_free;
 
 	/* Downstream last packet sequence number */
-	uint16_t pkt_seq_num;
+	uint64_t pkt_seq_num:39;
 };
 
 struct lll_adv_iso {
