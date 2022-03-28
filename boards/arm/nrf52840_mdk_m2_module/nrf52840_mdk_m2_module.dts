@@ -54,8 +54,8 @@
 		};
 	};
 
-    /* The button is not present on the module, though reset is typically
-     * connected on the baseboard to reset the module. */
+	/* The button is not present on the module, though reset is typically
+	 * connected on the baseboard to reset the module. */
 	buttons {
 		compatible = "gpio-keys";
 		reset_button: button_0 {
@@ -69,9 +69,9 @@
 		led0 = &led0_red;
 		led1 = &led0_green;
 		led2 = &led0_blue;
-		led0-red   = &led0_red;
+		led0-red = &led0_red;
 		led0-green = &led0_green;
-		led0-blue  = &led0_blue;
+		led0-blue = &led0_blue;
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
 		pwm-led2 = &blue_pwm_led;
@@ -94,9 +94,9 @@
 };
 
 &uart0 {
-    /* Line drivers are not present on the module, P0.16(RX) / P0.15(TX)
-     * are defined here for compatibility with the DAPLink/LPC11U35 on
-     * the M.2 Developer Kit */
+	/* Line drivers are not present on the module, P0.16(RX) / P0.15(TX)
+	 * are defined here for compatibility with the DAPLink/LPC11U35 on
+	 * the M.2 Developer Kit */
 	compatible = "nordic,nrf-uarte";
 	status = "okay";
 	current-speed = <115200>;
