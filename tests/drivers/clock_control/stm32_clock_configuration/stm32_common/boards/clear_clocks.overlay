@@ -20,14 +20,6 @@
 	/delete-property/ hsi-div;
 };
 
-&clk_lse {
-	status = "disabled";
-};
-
-&clk_lsi {
-	status = "disabled";
-};
-
 &pll {
 	/delete-property/ div-m;
 	/delete-property/ mul-n;

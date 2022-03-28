@@ -56,10 +56,10 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/msi_range6.overlay"
     platform_allow: nucleo_l152re nucleo_l073rz
   drivers.stm32_clock_configuration.common.wl.sysclksrc_pll_48_hsi_16:
-    extra_args: DTC_OVERLAY_FILE="boards/wl_clear_clocks.overlay;boards/pll_48_hsi_16.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/wx_clear_clocks.overlay;boards/pll_48_hsi_16.overlay"
     platform_allow: nucleo_wl55jc
   drivers.stm32_clock_configuration.common.wl.sysclksrc_pll_48_hse_32:
-    extra_args: DTC_OVERLAY_FILE="boards/wl_clear_clocks.overlay;boards/wl_pll_48_hse_32.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/wx_clear_clocks.overlay;boards/wl_pll_48_hse_32.overlay"
     platform_allow: nucleo_wl55jc
   drivers.stm32_clock_configuration.common.wl.sysclksrc_hse_32:
     extra_args: DTC_OVERLAY_FILE="boards/wx_clear_clocks.overlay;boards/wl_32_hse.overlay"
@@ -70,23 +70,20 @@ tests:
   drivers.stm32_clock_configuration.common.l4_l5.sysclksrc_msi_48:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_clocks_msi.overlay;boards/msi_range11.overlay"
     platform_allow: disco_l475_iot1 nucleo_l4r5zi stm32l562e_dk
-  drivers.stm32_clock_configuration.common.wb.sysclksrc_msi_48:
-    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/msi_range11.overlay"
-    platform_allow: nucleo_wb55rg
   drivers.stm32_clock_configuration.common.wb.sysclksrc_hsi_16:
-    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/hsi_16.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/wx_clear_clocks.overlay;boards/hsi_16.overlay"
     platform_allow: nucleo_wb55rg
   drivers.stm32_clock_configuration.common.wb.sysclksrc_hse_32:
-    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/hse_32.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/wx_clear_clocks.overlay;boards/hse_32.overlay"
     platform_allow: nucleo_wb55rg
   drivers.stm32_clock_configuration.common.wb.sysclksrc_pll_48_hsi_16:
-    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/wb_pll_48_hsi_16.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/wx_clear_clocks.overlay;boards/wb_pll_48_hsi_16.overlay"
     platform_allow: nucleo_wb55rg
   drivers.stm32_clock_configuration.common.wb.sysclksrc_pll_64_hse_32:
-    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/wb_pll_64_hse_32.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/wx_clear_clocks.overlay;boards/wb_pll_64_hse_32.overlay"
     platform_allow: nucleo_wb55rg
   drivers.stm32_clock_configuration.common.wb.sysclksrc_pll_48_msi_4:
-    extra_args: DTC_OVERLAY_FILE="boards/wb_clear_clocks.overlay;boards/wb_pll_48_msi_4.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/wx_clear_clocks.overlay;boards/wb_pll_48_msi_4.overlay"
     platform_allow: nucleo_wb55rg
   drivers.stm32_clock_configuration.common.l4_l5.sysclksrc_pll_48_msi_4:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_clocks_msi.overlay;boards/pll_48_msi_4.overlay"

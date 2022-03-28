@@ -6,7 +6,7 @@
 
 /*
  * Warning: This overlay performs configuration from clean sheet.
- * It is assumed that it is applied after wb_clear_clocks.overlay file.
+ * It is assumed that it is applied after wx_clear_clocks.overlay file.
  * It applies to the stm32wb where the msi is 4MHz
  */
 
