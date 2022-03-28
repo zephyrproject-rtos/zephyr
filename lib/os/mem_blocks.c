@@ -62,10 +62,8 @@ int sys_mem_blocks_alloc_contiguous(sys_mem_blocks_t *mem_block, size_t count,
 {
 	int ret = 0;
 
-	if ((mem_block == NULL) || (out_block == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(out_block != NULL);
 
 	if (count == 0) {
 		/* Nothing to allocate */
@@ -102,15 +100,10 @@ int sys_mem_blocks_alloc(sys_mem_blocks_t *mem_block, size_t count,
 	int ret = 0;
 	int i;
 
-	if ((mem_block == NULL) || (out_blocks == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	CHECKIF((mem_block->bitmap == NULL) || (mem_block->buffer == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(out_blocks != NULL);
+	__ASSERT_NO_MSG(mem_block->bitmap != NULL);
+	__ASSERT_NO_MSG(mem_block->buffer != NULL);
 
 	if (count == 0) {
 		/* Nothing to allocate */
@@ -153,15 +146,9 @@ int sys_mem_blocks_get(sys_mem_blocks_t *mem_block, void *in_block, size_t count
 	int ret = 0;
 	int offset;
 
-	if (mem_block == NULL) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	CHECKIF((mem_block->bitmap == NULL) || (mem_block->buffer == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(mem_block->bitmap != NULL);
+	__ASSERT_NO_MSG(mem_block->buffer != NULL);
 
 	if (count == 0) {
 		/* Nothing to allocate */
@@ -198,15 +185,10 @@ int sys_mem_blocks_free(sys_mem_blocks_t *mem_block, size_t count,
 	int ret = 0;
 	int i;
 
-	if ((mem_block == NULL) || (in_blocks == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	CHECKIF((mem_block->bitmap == NULL) || (mem_block->buffer == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(in_blocks != NULL);
+	__ASSERT_NO_MSG(mem_block->bitmap != NULL);
+	__ASSERT_NO_MSG(mem_block->buffer != NULL);
 
 	if (count == 0) {
 		/* Nothing to be freed. */
@@ -247,15 +229,9 @@ int sys_mem_blocks_free_contiguous(sys_mem_blocks_t *mem_block, void *block, siz
 {
 	int ret = 0;
 
-	if (mem_block == NULL) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	CHECKIF((mem_block->bitmap == NULL) || (mem_block->buffer == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(mem_block != NULL);
+	__ASSERT_NO_MSG(mem_block->bitmap != NULL);
+	__ASSERT_NO_MSG(mem_block->buffer != NULL);
 
 	if (count == 0) {
 		/* Nothing to be freed. */
@@ -304,10 +280,8 @@ int sys_multi_mem_blocks_alloc(sys_multi_mem_blocks_t *group,
 	sys_mem_blocks_t *allocator;
 	int ret = 0;
 
-	if ((group == NULL) || (out_blocks == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(group != NULL);
+	__ASSERT_NO_MSG(out_blocks != NULL);
 
 	if (count == 0) {
 		if (blk_size != NULL) {
@@ -344,10 +318,8 @@ int sys_multi_mem_blocks_free(sys_multi_mem_blocks_t *group,
 	int ret = 0;
 	sys_mem_blocks_t *allocator = NULL;
 
-	if ((group == NULL) || (in_blocks == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+	__ASSERT_NO_MSG(group != NULL);
+	__ASSERT_NO_MSG(in_blocks != NULL);
 
 	if (count == 0) {
 		goto out;
