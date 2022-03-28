@@ -138,7 +138,13 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		llcp_pdu_encode_length_req(conn, pdu);
+		if (ctx->data.dle.invalid) {
+			ctx->unknown_response.type = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+			ctx->tx_ack = tx;
+			llcp_pdu_encode_unknown_rsp(ctx, pdu);
+		} else {
+			llcp_pdu_encode_length_req(conn, pdu);
+		}
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
@@ -565,6 +571,13 @@ static void lp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 			lp_comm_complete(conn, ctx, evt, param);
 			break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		case PROC_DATA_LENGTH_UPDATE:
+			LL_ASSERT(ctx->data.dle.invalid);
+			ctx->tx_ack = NULL;
+			lp_comm_complete(conn, ctx, evt, param);
+			break;
+#endif
 		case PROC_TERMINATE:
 			ctx->tx_ack = NULL;
 			lp_comm_complete(conn, ctx, evt, param);
@@ -611,7 +624,7 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
-		llcp_pdu_decode_length_rsp(conn, pdu);
+		ctx->data.dle.invalid = !llcp_pdu_decode_length_rsp(conn, pdu);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
@@ -633,7 +646,26 @@ static void lp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	switch (evt) {
 	case LP_COMMON_EVT_RESPONSE:
 		lp_comm_rx_decode(conn, ctx, (struct pdu_data *)param);
-		lp_comm_complete(conn, ctx, evt, param);
+		switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		case PROC_DATA_LENGTH_UPDATE:
+			/* Reject response if it was invalid */
+			if (ctx->data.dle.invalid) {
+				if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+					ctx->state = LP_COMMON_STATE_WAIT_TX;
+				} else {
+					lp_comm_tx(conn, ctx);
+					ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
+				}
+			} else {
+				lp_comm_complete(conn, ctx, evt, param);
+			}
+			break;
+#endif
+		default:
+			lp_comm_complete(conn, ctx, evt, param);
+			break;
+		}
 		break;
 	default:
 		/* Ignore other evts */
@@ -756,12 +788,15 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
-		llcp_pdu_decode_length_req(conn, pdu);
+		ctx->data.dle.invalid = !llcp_pdu_decode_length_req(conn, pdu);
+
 		/* On reception of REQ mark RSP open for local piggy-back
 		 * Pause data tx, to ensure we can later (on RSP tx ack) update DLE without
 		 * conflicting with out-going LL Data PDUs
 		 * See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
 		 */
+
+		/* TODO do not pause data if DLE was invalid */
 		llcp_tx_pause_data(conn);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
@@ -805,9 +840,15 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		llcp_pdu_encode_length_rsp(conn, pdu);
+		if (ctx->data.dle.invalid) {
+			ctx->unknown_response.type = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
+			llcp_pdu_encode_unknown_rsp(ctx, pdu);
+		} else {
+			llcp_pdu_encode_length_rsp(conn, pdu);
+			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+		}
+
 		ctx->tx_ack = tx;
-		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)

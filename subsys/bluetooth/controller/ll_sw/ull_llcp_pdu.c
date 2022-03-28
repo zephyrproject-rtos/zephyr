@@ -687,24 +687,73 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn, struct pdu_data *pdu)
 	p->max_tx_time = sys_cpu_to_le16(conn->lll.dle.eff.max_tx_time);
 }
 
-void llcp_pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
+static bool llcp_pdu_validate_dle_params(struct ll_conn *conn,
+					 const struct data_pdu_length *dle)
 {
-	struct pdu_data_llctrl_length_req *p = &pdu->llctrl.length_req;
+	if (dle->max_tx_octets < PDU_DC_PAYLOAD_SIZE_MIN ||
+	    dle->max_tx_octets > PDU_DC_PAYLOAD_SIZE_MAX) {
+		return false;
+	}
 
-	conn->lll.dle.remote.max_rx_octets = sys_le16_to_cpu(p->max_rx_octets);
-	conn->lll.dle.remote.max_tx_octets = sys_le16_to_cpu(p->max_tx_octets);
-	conn->lll.dle.remote.max_rx_time = sys_le16_to_cpu(p->max_rx_time);
-	conn->lll.dle.remote.max_tx_time = sys_le16_to_cpu(p->max_tx_time);
+	if (dle->max_rx_octets < PDU_DC_PAYLOAD_SIZE_MIN ||
+	    dle->max_rx_octets > PDU_DC_PAYLOAD_SIZE_MAX) {
+		return false;
+	}
+
+	if (dle->max_tx_time < PDU_DC_PAYLOAD_TIME_MIN ||
+	    dle->max_rx_time < PDU_DC_PAYLOAD_TIME_MIN) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		if (dle->max_tx_time > PDU_DC_PAYLOAD_TIME_MAX_CODED ||
+		    dle->max_rx_time > PDU_DC_PAYLOAD_TIME_MAX_CODED) {
+			return false;
+		}
+	} else {
+		if (dle->max_tx_time > PDU_DC_PAYLOAD_TIME_MAX ||
+		    dle->max_rx_time > PDU_DC_PAYLOAD_TIME_MAX) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
-void llcp_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
+bool llcp_pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_length_req *p = &pdu->llctrl.length_req;
+	struct data_pdu_length remote;
+
+	remote.max_rx_octets = sys_le16_to_cpu(p->max_rx_octets);
+	remote.max_tx_octets = sys_le16_to_cpu(p->max_tx_octets);
+	remote.max_rx_time = sys_le16_to_cpu(p->max_rx_time);
+	remote.max_tx_time = sys_le16_to_cpu(p->max_tx_time);
+
+	if (llcp_pdu_validate_dle_params(conn, &remote)) {
+		conn->lll.dle.remote = remote;
+		return true;
+	}
+
+	return false;
+}
+
+bool llcp_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_length_rsp *p = &pdu->llctrl.length_rsp;
+	struct data_pdu_length remote;
 
-	conn->lll.dle.remote.max_rx_octets = sys_le16_to_cpu(p->max_rx_octets);
-	conn->lll.dle.remote.max_tx_octets = sys_le16_to_cpu(p->max_tx_octets);
-	conn->lll.dle.remote.max_rx_time = sys_le16_to_cpu(p->max_rx_time);
-	conn->lll.dle.remote.max_tx_time = sys_le16_to_cpu(p->max_tx_time);
+	remote.max_rx_octets = sys_le16_to_cpu(p->max_rx_octets);
+	remote.max_tx_octets = sys_le16_to_cpu(p->max_tx_octets);
+	remote.max_rx_time = sys_le16_to_cpu(p->max_rx_time);
+	remote.max_tx_time = sys_le16_to_cpu(p->max_tx_time);
+
+	if (llcp_pdu_validate_dle_params(conn, &remote)) {
+		conn->lll.dle.remote = remote;
+		return true;
+	}
+
+	return false;
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 

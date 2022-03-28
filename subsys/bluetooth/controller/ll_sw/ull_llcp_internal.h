@@ -193,6 +193,12 @@ struct proc_ctx {
 		} pu;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		struct {
+			uint8_t invalid:1;
+		} dle;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
 		/* TODO(tosk): leave out some params below if !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		/* Connection Update & Connection Parameter Request */
 		struct {
@@ -597,8 +603,8 @@ void llcp_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
  */
 void llcp_pdu_encode_length_req(struct ll_conn *conn, struct pdu_data *pdu);
 void llcp_pdu_encode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu);
-void llcp_pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu);
-void llcp_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu);
+bool llcp_pdu_decode_length_req(struct ll_conn *conn, struct pdu_data *pdu);
+bool llcp_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu);
 void llcp_ntf_encode_length_change(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
