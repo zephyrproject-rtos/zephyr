@@ -21,14 +21,6 @@
 	/delete-property/ hsi-div;
 };
 
-&clk_lse {
-	status = "disabled";
-};
-
-&clk_lsi {
-	status = "disabled";
-};
-
 &clk_msi {
 	status = "disabled";
 	/delete-property/ msi-range;
