@@ -18,6 +18,7 @@
  * 10) Unlock all members
  */
 
+#include <stdlib.h>
 #include <zephyr/zephyr.h>
 #include <zephyr/types.h>
 
@@ -47,7 +48,7 @@ static struct bt_csis *cur_inst;
 static bool busy;
 
 static struct active_members {
-	struct bt_csis_client_set_member **members;
+	struct bt_csis_client_set_member *members[CONFIG_BT_MAX_CONN];
 	const struct bt_csis_client_set_info *info;
 	uint8_t members_count;
 	uint8_t members_handled;
@@ -135,6 +136,90 @@ static struct bt_csis *lookup_instance_by_set_info(struct bt_csis_client_set_mem
 	}
 
 	return NULL;
+}
+
+static struct bt_csis *get_next_active_instance(void)
+{
+	struct bt_csis_client_set_member *member;
+	struct bt_csis *inst;
+
+	member = active.members[active.members_handled];
+
+	inst =  lookup_instance_by_set_info(member, active.info);
+	if (inst == NULL) {
+		BT_DBG("Failed to lookup instance by set_info %p", active.info);
+	}
+
+	return inst;
+}
+
+static int member_rank_compare_asc(const void *m1, const void *m2)
+{
+	struct bt_csis_client_set_member *member_1 = *(struct bt_csis_client_set_member **)m1;
+	struct bt_csis_client_set_member *member_2 = *(struct bt_csis_client_set_member **)m2;
+	struct bt_csis *inst_1;
+	struct bt_csis *inst_2;
+
+	/* TODO: lookup_instance_by_set_info should be able to work on a const
+	 * member, but it relies on `bt_conn_index` which doesn't take a const
+	 * bt_conn.
+	 */
+
+	inst_1 = lookup_instance_by_set_info(member_1, active.info);
+	inst_2 = lookup_instance_by_set_info(member_2, active.info);
+
+	if (inst_1 == NULL) {
+		BT_ERR("inst_1 was NULL for member %p", member_1);
+		return 0;
+	}
+
+	if (inst_2 == NULL) {
+		BT_ERR("inst_2 was NULL for member %p", member_2);
+		return 0;
+	}
+
+	return inst_1->cli.rank - inst_2->cli.rank;
+}
+
+static int member_rank_compare_desc(const void *m1, const void *m2)
+{
+	struct bt_csis_client_set_member *member_1 = *(struct bt_csis_client_set_member **)m1;
+	struct bt_csis_client_set_member *member_2 = *(struct bt_csis_client_set_member **)m2;
+	struct bt_csis *inst_1;
+	struct bt_csis *inst_2;
+
+	/* TODO: lookup_instance_by_set_info should be able to work on a const
+	 * member, but it relies on `bt_conn_index` which doesn't take a const
+	 * bt_conn.
+	 */
+
+	inst_1 = lookup_instance_by_set_info(member_1, active.info);
+	inst_2 = lookup_instance_by_set_info(member_2, active.info);
+
+	if (inst_1 == NULL) {
+		BT_ERR("inst_1 was NULL for member %p", member_1);
+		return 0;
+	}
+
+	if (inst_2 == NULL) {
+		BT_ERR("inst_2 was NULL for member %p", member_2);
+		return 0;
+	}
+
+	return inst_2->cli.rank - inst_1->cli.rank;
+}
+
+static void active_members_store_ordered(struct bt_csis_client_set_member *members[],
+					 size_t count,
+					 const struct bt_csis_client_set_info *info,
+					 bool ascending)
+{
+	(void)memcpy(active.members, members, count * sizeof(members[0]));
+	active.members_count = count;
+	active.info = info;
+
+	qsort(active.members, count, sizeof(members[0]),
+	      ascending ? member_rank_compare_asc : member_rank_compare_desc);
 }
 
 static int sirk_decrypt(struct bt_conn *conn,
@@ -898,54 +983,6 @@ static void discover_insts_resume(struct bt_conn *conn, uint16_t sirk_handle,
 	}
 }
 
-static struct bt_csis *get_next_inst_lower_rank(uint8_t rank,
-						const struct bt_csis_client_set_info *set_info)
-{
-	struct bt_csis *next = NULL;
-
-	for (int i = 0; i < active.members_count; i++) {
-		struct bt_csis *inst;
-
-		inst = lookup_instance_by_set_info(active.members[i], set_info);
-
-		__ASSERT(inst != NULL, "CSIS instance was NULL");
-
-		/* Find next lowest rank higher than current rank */
-		if (inst->cli.rank < rank &&
-		    (next == NULL || inst->cli.rank > next->cli.rank)) {
-			next = inst;
-		}
-	}
-
-	__ASSERT(next != NULL, "Could not get next lower rank (%u)", rank);
-
-	return next;
-}
-
-static struct bt_csis *get_next_inst_higher_rank(uint8_t rank,
-						 const struct bt_csis_client_set_info *set_info)
-{
-	struct bt_csis *next = NULL;
-
-	for (int i = 0; i < active.members_count; i++) {
-		struct bt_csis *inst;
-
-		inst = lookup_instance_by_set_info(active.members[i], set_info);
-
-		__ASSERT(inst != NULL, "CSIS instance was NULL");
-
-		/* Find next lowest rank higher than current rank */
-		if (inst->cli.rank > rank &&
-		    (next == NULL || inst->cli.rank < next->cli.rank)) {
-			next = inst;
-		}
-	}
-
-	__ASSERT(next != NULL, "Could not get next higher rank (%u)", rank);
-
-	return next;
-}
-
 static void csis_client_write_restore_cb(struct bt_conn *conn, uint8_t err,
 					 struct bt_gatt_write_params *params)
 {
@@ -968,8 +1005,16 @@ static void csis_client_write_restore_cb(struct bt_conn *conn, uint8_t err,
 	if (active.members_restored < active.members_handled) {
 		int csis_client_err;
 
-		cur_inst = get_next_inst_lower_rank(cur_inst->cli.rank,
-						    active.info);
+		cur_inst = get_next_active_instance();
+		if (cur_inst == NULL) {
+			active_members_reset();
+			if (csis_client_cbs != NULL &&
+			    csis_client_cbs->release_set != NULL) {
+				csis_client_cbs->release_set(-ENOENT);
+			}
+
+			return;
+		}
 
 		csis_client_err = csis_client_write_set_lock(cur_inst, false,
 							     csis_client_write_restore_cb);
@@ -1001,12 +1046,25 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 
 	if (err != 0) {
 		BT_DBG("Could not lock (0x%X)", err);
-		if (active.members_handled > 0) {
+		if (active.members_handled > 0 && CONFIG_BT_MAX_CONN > 1) {
+			struct bt_csis_client_set_member *member;
 			int csis_client_err;
 
 			active.members_restored = 0;
-			cur_inst = get_next_inst_lower_rank(cur_inst->cli.rank,
-							    active.info);
+
+			member = active.members[active.members_handled];
+			cur_inst = lookup_instance_by_set_info(member,
+							       active.info);
+			if (cur_inst == NULL) {
+				BT_DBG("Failed to lookup instance by set_info %p",
+				       active.info);
+
+				active_members_reset();
+				if (csis_client_cbs != NULL &&
+				csis_client_cbs->lock_set != NULL) {
+					csis_client_cbs->lock_set(-ENOENT);
+				}
+			}
 
 			csis_client_err = csis_client_write_set_lock(cur_inst,
 								     false,
@@ -1034,11 +1092,19 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 	       active.members_handled, active.members_count);
 
 	if (active.members_handled < active.members_count) {
-		int csis_client_err;
 		struct bt_csis *prev_inst = cur_inst;
+		int csis_client_err;
 
-		cur_inst = get_next_inst_higher_rank(cur_inst->cli.rank,
-						     active.info);
+		cur_inst = get_next_active_instance();
+		if (cur_inst == NULL) {
+			active_members_reset();
+			if (csis_client_cbs != NULL &&
+			    csis_client_cbs->lock_set != NULL) {
+				csis_client_cbs->lock_set(-ENOENT);
+			}
+
+			return;
+		}
 
 		csis_client_err = csis_client_write_set_lock(cur_inst, true,
 							     csis_client_write_lock_cb);
@@ -1093,8 +1159,16 @@ static void csis_client_write_release_cb(struct bt_conn *conn, uint8_t err,
 	if (active.members_handled < active.members_count) {
 		int csis_client_err;
 
-		cur_inst = get_next_inst_lower_rank(cur_inst->cli.rank,
-						    active.info);
+		cur_inst = get_next_active_instance();
+		if (cur_inst == NULL) {
+			active_members_reset();
+			if (csis_client_cbs != NULL &&
+			    csis_client_cbs->release_set != NULL) {
+				csis_client_cbs->release_set(-ENOENT);
+			}
+
+			return;
+		}
 
 		csis_client_err = csis_client_write_set_lock(cur_inst, false,
 							     csis_client_write_release_cb);
@@ -1189,8 +1263,16 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 	if (active.members_handled < active.members_count) {
 		int csis_client_err;
 
-		cur_inst = get_next_inst_higher_rank(cur_inst->cli.rank,
-						     active.info);
+		cur_inst = get_next_active_instance();
+		if (cur_inst == NULL) {
+			active_members_reset();
+			if (csis_client_cbs != NULL &&
+			    csis_client_cbs->release_set != NULL) {
+				csis_client_cbs->lock_state_read(set_info, -ENOENT, false);
+			}
+
+			return BT_GATT_ITER_STOP;
+		}
 
 		csis_client_err = csis_client_read_set_lock(cur_inst);
 		if (csis_client_err == 0) {
@@ -1332,14 +1414,14 @@ int bt_csis_client_discover(struct bt_csis_client_set_member *member)
 	return err;
 }
 
-static int verify_members_and_get_inst(struct bt_csis_client_set_member **members,
-				       uint8_t count,
-				       const struct bt_csis_client_set_info *set_info,
-				       bool lowest_rank,
-				       struct bt_csis **out_inst)
+static int verify_members(struct bt_csis_client_set_member **members,
+			  uint8_t count,
+			  const struct bt_csis_client_set_info *set_info)
 {
-	*out_inst = NULL;
+	bool zero_rank;
+	uint8_t ranks[CONFIG_BT_MAX_CONN];
 
+	zero_rank = false;
 	for (int i = 0; i < count; i++) {
 		struct bt_csis_client_set_member *member = members[i];
 		struct bt_csis *inst;
@@ -1369,10 +1451,25 @@ static int verify_members_and_get_inst(struct bt_csis_client_set_member **member
 			return -EINVAL;
 		}
 
-		if (*out_inst == NULL ||
-		    (lowest_rank && inst->cli.rank < (*out_inst)->cli.rank) ||
-		    (!lowest_rank && inst->cli.rank > (*out_inst)->cli.rank)) {
-			*out_inst = inst;
+		ranks[i] = inst->cli.rank;
+		if (ranks[i] == 0U && !zero_rank) {
+			zero_rank = true;
+		} else if (ranks[i] != 0 && zero_rank) {
+			/* all members in a set shall either use rank, or not use rank */
+			BT_DBG("Found mix of 0 and non-0 ranks");
+			return -EINVAL;
+		}
+
+		if (!zero_rank) {
+			for (size_t j = 0U; j < i; j++) {
+				if (ranks[j] == ranks[i]) {
+					/* duplicate rank */
+					BT_DBG("Duplicate rank (%u) for members[%zu] "
+					       "and members[%zu]",
+					       ranks[i], i, j);
+					return -EINVAL;
+				}
+			}
 		}
 	}
 
@@ -1390,19 +1487,25 @@ int bt_csis_client_get_lock_state(struct bt_csis_client_set_member **members,
 		return -EBUSY;
 	}
 
-	cur_inst = NULL;
-	err = verify_members_and_get_inst(members, count, set_info, true, &cur_inst);
+	err = verify_members(members, count, set_info);
 	if (err != 0) {
 		BT_DBG("Could not verify members: %d", err);
 		return err;
 	}
 
+	active_members_store_ordered(members, count, set_info, true);
+
+	cur_inst = lookup_instance_by_set_info(active.members[0], active.info);
+	if (cur_inst == NULL) {
+		BT_DBG("Failed to lookup instance by set_info %p", active.info);
+
+		active_members_reset();
+		return -ENOENT;
+	}
+
 	err = csis_client_read_set_lock(cur_inst);
 	if (err == 0) {
 		busy = true;
-		active.members = members;
-		active.members_count = count;
-		active.info = set_info;
 	} else {
 		cur_inst = NULL;
 	}
@@ -1421,20 +1524,26 @@ int bt_csis_client_lock(struct bt_csis_client_set_member **members,
 		return -EBUSY;
 	}
 
-	cur_inst = NULL;
-	err = verify_members_and_get_inst(members, count, set_info, true, &cur_inst);
+	err = verify_members(members, count, set_info);
 	if (err != 0) {
 		BT_DBG("Could not verify members: %d", err);
 		return err;
+	}
+
+	active_members_store_ordered(members, count, set_info, true);
+
+	cur_inst = lookup_instance_by_set_info(active.members[0], active.info);
+	if (cur_inst == NULL) {
+		BT_DBG("Failed to lookup instance by set_info %p", active.info);
+
+		active_members_reset();
+		return -ENOENT;
 	}
 
 	err = csis_client_write_set_lock(cur_inst, true,
 					 csis_client_write_lock_cb);
 	if (err == 0) {
 		busy = true;
-		active.members = members;
-		active.members_count = count;
-		active.info = set_info;
 	}
 
 	return err;
@@ -1451,21 +1560,26 @@ int bt_csis_client_release(struct bt_csis_client_set_member **members,
 		return -EBUSY;
 	}
 
-	cur_inst = NULL;
-	err = verify_members_and_get_inst(members, count, set_info, false,
-					  &cur_inst);
+	err = verify_members(members, count, set_info);
 	if (err != 0) {
 		BT_DBG("Could not verify members: %d", err);
 		return err;
+	}
+
+	active_members_store_ordered(members, count, set_info, false);
+
+	cur_inst = lookup_instance_by_set_info(active.members[0], active.info);
+	if (cur_inst == NULL) {
+		BT_DBG("Failed to lookup instance by set_info %p", active.info);
+
+		active_members_reset();
+		return -ENOENT;
 	}
 
 	err = csis_client_write_set_lock(cur_inst, false,
 					 csis_client_write_release_cb);
 	if (err == 0) {
 		busy = true;
-		active.members = members;
-		active.members_count = count;
-		active.info = set_info;
 	}
 
 	return err;
