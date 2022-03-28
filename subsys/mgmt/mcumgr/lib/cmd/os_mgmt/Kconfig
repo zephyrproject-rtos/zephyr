@@ -102,6 +102,7 @@ endif
 config OS_MGMT_ECHO
 	bool "Support for echo command"
 	default y
+	select MGMT_MIN_DECODING_LEVEL_2
 
 if OS_MGMT_ECHO
 

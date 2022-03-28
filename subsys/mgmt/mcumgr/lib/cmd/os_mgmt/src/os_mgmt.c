@@ -14,10 +14,9 @@
 #include <util/mcumgr_util.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
+#include <zcbor_decode.h>
 #include <mgmt/mcumgr/buf.h>
 
-#include "tinycbor/cbor.h"
-#include "cborattr/cborattr.h"
 #include "mgmt/mgmt.h"
 #include "os_mgmt/os_mgmt.h"
 #include "os_mgmt/os_mgmt_impl.h"
@@ -38,35 +37,35 @@
 static int
 os_mgmt_echo(struct mgmt_ctxt *ctxt)
 {
-	char echo_buf[CONFIG_OS_MGMT_ECHO_LENGTH + 1];
-	CborError err;
-	zcbor_state_t *zse = ctxt->cnbe->zs;
+	struct zcbor_string value = { 0 };
+	struct zcbor_string key;
 	bool ok;
+	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
 
-	const struct cbor_attr_t attrs[2] = {
-		[0] = {
-			.attribute = "d",
-			.type = CborAttrTextStringType,
-			.addr.string = echo_buf,
-			.nodefault = 1,
-			.len = CONFIG_OS_MGMT_ECHO_LENGTH,
-		},
-		[1] = {
-			.attribute = NULL
-		}
-	};
-
-	echo_buf[0] = '\0';
-
-	err = cbor_read_object(&ctxt->it, attrs);
-	if (err != 0) {
-		return mgmt_err_from_cbor(err);
+	if (!zcbor_map_start_decode(zsd)) {
+		return MGMT_ERR_EUNKNOWN;
 	}
 
-	echo_buf[sizeof(echo_buf) - 1] = '\0';
+	do {
+		ok = zcbor_tstr_decode(zsd, &key);
+
+		if (ok) {
+			if (key.len == 1 && *key.value == 'd') {
+				ok = zcbor_tstr_decode(zsd, &value);
+				break;
+			}
+
+			ok = zcbor_any_skip(zsd, NULL);
+		}
+	} while (ok);
+
+	if (!ok || !zcbor_map_end_decode(zsd)) {
+		return MGMT_ERR_EUNKNOWN;
+	}
 
 	ok = zcbor_tstr_put_lit(zse, "r")		&&
-	     zcbor_tstr_put_term(zse, echo_buf);
+	     zcbor_tstr_encode(zse, &value);
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
