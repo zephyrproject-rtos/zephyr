@@ -621,3 +621,9 @@ test_i2c_max31875: max31875@53 {
 	compatible = "maxim,max31875";
 	reg = <0x53>;
 };
+
+test_i2c_am2301b: am2301b@38 {
+	compatible = "aosong,am2301b";
+	reg = <0x38>;
+	label = "AM2301B_I2C";
+};

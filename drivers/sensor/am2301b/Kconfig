@@ -1,0 +1,22 @@
+# Copyright (c) 2022 Hisanori YAMAOKU
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_AOSONG_AM2301B := aosong,am2301b
+
+menuconfig AM2301B
+	bool "Aosong AM2301B Humidity and Temperature Module"
+	depends on I2C
+	depends on DT_HAS_AOSONG_AM2301B_ENABLED
+	default y
+	help
+	  Enable driver for Aosong AM2301B Humidity and Temperature Module.
+
+if AM2301B
+
+config AM2301B_CRC_CHECK
+	bool "Use CRC Check"
+	default y
+	help
+	  Check the crc of measument data.
+
+endif # AM2301B
