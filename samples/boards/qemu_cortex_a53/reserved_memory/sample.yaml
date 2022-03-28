@@ -1,8 +1,0 @@
-sample:
-  description: Reserved memory sample application
-  name: reserved memory
-tests:
-  sample.board.qemu_cortex_a53.reserved_memory:
-    platform_allow: qemu_cortex_a53
-    tags: sample board reserved_memory
-    build_only: true

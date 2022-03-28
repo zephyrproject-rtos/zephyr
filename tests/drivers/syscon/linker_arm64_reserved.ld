@@ -5,18 +5,19 @@
 
 #include <zephyr/linker/sections.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
 MEMORY
 {
-    LINKER_DT_RESERVED_MEM_REGIONS()
+	LINKER_DT_REGIONS()
 }
 
 SECTIONS
 {
-    LINKER_DT_RESERVED_MEM_SECTIONS()
+	LINKER_DT_SECTIONS()
 }
 
 #include <zephyr/arch/arm64/scripts/linker.ld>
