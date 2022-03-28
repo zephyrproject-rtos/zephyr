@@ -51,7 +51,7 @@ struct k_spinlock {
 	uintptr_t thread_cpu;
 #endif
 
-#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_SMP) && \
+#if !defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_SMP) && \
 	!defined(CONFIG_SPIN_VALIDATE)
 	/* If CONFIG_SMP and CONFIG_SPIN_VALIDATE are both not defined
 	 * the k_spinlock struct will have no members. The result
@@ -63,7 +63,7 @@ struct k_spinlock {
 	 * that come after the k_spinlock member.
 	 *
 	 * To prevent this we add a 1 byte dummy member to k_spinlock
-	 * when the user selects C++ support and k_spinlock would
+	 * when the user selects C support and k_spinlock would
 	 * otherwise be empty.
 	 */
 	char dummy;
