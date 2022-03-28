@@ -1,0 +1,59 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Helper variables used as a workaround for not being able to have commas
+# in macro arguments. Needed in calls to kconfigfunctions.
+
+DT_COMPAT_NORDIC_NRF_ACL		:= nordic,nrf-acl
+DT_COMPAT_NORDIC_NRF_ADC		:= nordic,nrf-adc
+DT_COMPAT_NORDIC_NRF_BPROT		:= nordic,nrf-bprot
+DT_COMPAT_NORDIC_NRF_CC310		:= nordic,nrf-cc310
+DT_COMPAT_NORDIC_NRF_CC312		:= nordic,nrf-cc312
+DT_COMPAT_NORDIC_NRF_CCM		:= nordic,nrf-ccm
+DT_COMPAT_NORDIC_NRF_CLOCK		:= nordic,nrf-clock
+DT_COMPAT_NORDIC_NRF_COMP		:= nordic,nrf-comp
+DT_COMPAT_NORDIC_NRF_CTRLAPPERI		:= nordic,nrf-ctrlapperi
+DT_COMPAT_NORDIC_NRF_DCNF		:= nordic,nrf-dcnf
+DT_COMPAT_NORDIC_NRF_DPPIC		:= nordic,nrf-dppic
+DT_COMPAT_NORDIC_NRF_ECB		:= nordic,nrf-ecb
+DT_COMPAT_NORDIC_NRF_EGU		:= nordic,nrf-egu
+DT_COMPAT_NORDIC_NRF_GPIO		:= nordic,nrf-gpio
+DT_COMPAT_NORDIC_NRF_GPIOTE		:= nordic,nrf-gpiote
+DT_COMPAT_NORDIC_NRF_I2S		:= nordic,nrf-i2s
+DT_COMPAT_NORDIC_NRF_IPC		:= nordic,nrf-ipc
+DT_COMPAT_NORDIC_NRF_LPCOMP		:= nordic,nrf-lpcomp
+DT_COMPAT_NORDIC_NRF_MPU		:= nordic,nrf-mpu
+DT_COMPAT_NORDIC_NRF_MUTEX		:= nordic,nrf-mutex
+DT_COMPAT_NORDIC_NRF_NFCT		:= nordic,nrf-nfct
+DT_COMPAT_NORDIC_NRF_OSCILLATORS	:= nordic,nrf-oscillators
+DT_COMPAT_NORDIC_NRF_PDM		:= nordic,nrf-pdm
+DT_COMPAT_NORDIC_NRF_POWER		:= nordic,nrf-power
+DT_COMPAT_NORDIC_NRF_PPI		:= nordic,nrf-ppi
+DT_COMPAT_NORDIC_NRF_PWM		:= nordic,nrf-pwm
+DT_COMPAT_NORDIC_NRF_QDEC		:= nordic,nrf-qdec
+DT_COMPAT_NORDIC_NRF_QSPI		:= nordic,nrf-qspi
+DT_COMPAT_NORDIC_NRF_REGULATORS		:= nordic,nrf-regulators
+DT_COMPAT_NORDIC_NRF_RESET		:= nordic,nrf-reset
+DT_COMPAT_NORDIC_NRF_RNG		:= nordic,nrf-rng
+DT_COMPAT_NORDIC_NRF_RTC		:= nordic,nrf-rtc
+DT_COMPAT_NORDIC_NRF_SAADC		:= nordic,nrf-saadc
+DT_COMPAT_NORDIC_NRF_SPI		:= nordic,nrf-spi
+DT_COMPAT_NORDIC_NRF_SPIM		:= nordic,nrf-spim
+DT_COMPAT_NORDIC_NRF_SPIS		:= nordic,nrf-spis
+DT_COMPAT_NORDIC_NRF_SPU		:= nordic,nrf-spu
+DT_COMPAT_NORDIC_NRF_SWI		:= nordic,nrf-swi
+DT_COMPAT_NORDIC_NRF_TEMP		:= nordic,nrf-temp
+DT_COMPAT_NORDIC_NRF_TIMER		:= nordic,nrf-timer
+DT_COMPAT_NORDIC_NRF_TWI		:= nordic,nrf-twi
+DT_COMPAT_NORDIC_NRF_TWIM		:= nordic,nrf-twim
+DT_COMPAT_NORDIC_NRF_TWIS		:= nordic,nrf-twis
+DT_COMPAT_NORDIC_NRF_UART		:= nordic,nrf-uart
+DT_COMPAT_NORDIC_NRF_UARTE		:= nordic,nrf-uarte
+DT_COMPAT_NORDIC_NRF_USBD		:= nordic,nrf-usbd
+DT_COMPAT_NORDIC_NRF_USBREG		:= nordic,nrf-usbreg
+DT_COMPAT_NORDIC_NRF_VMC		:= nordic,nrf-vmc
+DT_COMPAT_NORDIC_NRF_WDT		:= nordic,nrf-wdt
+DT_COMPAT_NORDIC_NRF51_FLASH_CONTROLLER	:= nordic,nrf51-flash-controller
+DT_COMPAT_NORDIC_NRF52_FLASH_CONTROLLER	:= nordic,nrf52-flash-controller
+DT_COMPAT_NORDIC_NRF53_FLASH_CONTROLLER	:= nordic,nrf53-flash-controller
+DT_COMPAT_NORDIC_NRF91_FLASH_CONTROLLER	:= nordic,nrf91-flash-controller
