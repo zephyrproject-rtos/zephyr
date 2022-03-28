@@ -71,6 +71,11 @@
 	};
 };
 
+&coreclk {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };
