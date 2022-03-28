@@ -13,6 +13,8 @@
 	status = "disabled";
 	/delete-property/ hse-bypass;
 	/delete-property/ clock-frequency;
+	/delete-property/ hse-tcxo;
+	/delete-property/ hse-div2;
 };
 
 &clk_hsi {
