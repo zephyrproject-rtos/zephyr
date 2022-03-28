@@ -112,9 +112,11 @@ static inline void can_gd32_filter_set_mode(const struct can_gd32_filter *filter
 	switch (type) {
 	case CAN_FILTER_16BIT_LIST:
 		CAN_FMCFG(filter->cfg->reg) |= filter_unit_bit;
-		/* Pass through */
+		break;
+
 	case CAN_FILTER_32BIT_LIST:
 		CAN_FSCFG(filter->cfg->reg) |= filter_unit_bit;
+		CAN_FMCFG(filter->cfg->reg) |= filter_unit_bit;
 		break;
 
 	case CAN_FILTER_16BIT_MASK:
@@ -191,8 +193,12 @@ static int can_gd32_filter_add_list32(const struct can_gd32_filter *filter, bool
 
 	/* set data */
 	/* todo: set other in same unit */
-	CAN_FDATA0(filter->cfg->reg, filter_unit) = zfilter->id;
-	CAN_FDATA1(filter->cfg->reg, filter_unit) = 0; /* must clear unuse rule */
+	CAN_FDATA0(filter->cfg->reg, filter_unit) = ((zfilter->id_type == CAN_STANDARD_IDENTIFIER) ?
+							     zfilter->id << 21 :
+								   (zfilter->id << 3 | CAN_FF_EXTENDED));
+	CAN_FDATA0(filter->cfg->reg, filter_unit) |=
+		(zfilter->rtr_mask == 0 && zfilter->rtr) ? CAN_FT_REMOTE : CAN_FT_DATA;
+	CAN_FDATA1(filter->cfg->reg, filter_unit) = 0; /* clear unuse rule */
 
 	/* active */
 	can_gd32_filter_set_active(filter, filter_unit, true);
@@ -224,7 +230,7 @@ static int can_gd32_filter_add_list16(const struct can_gd32_filter *filter, bool
 	/* todo: set other in same unit */
 	CAN_FDATA0(filter->cfg->reg, filter_unit) =
 		FDATA_MASK_HIGH(0) /* must clear unuse rule */ |
-		FDATA_MASK_LOW((zfilter->id) & CAN_FILTER_MASK_16BITS);
+		FDATA_MASK_LOW((zfilter->id << 5) & CAN_FILTER_MASK_16BITS);
 	CAN_FDATA1(filter->cfg->reg, filter_unit) = 0; /* must clear unuse rule */
 
 	/* active */
