@@ -220,6 +220,13 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	if (ctx->proc == PROC_CONN_PARAM_REQ) {
+		/* Restart procedure response timeout timer */
+		llcp_lr_prt_restart(conn);
+	}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }
 
 static void lp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -486,6 +493,14 @@ static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		 */
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		cu_update_conn_parameters(conn, ctx);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		if (ctx->proc == PROC_CONN_PARAM_REQ) {
+			/* Stop procedure response timeout timer */
+			llcp_lr_prt_stop(conn);
+		}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 		notify = cu_should_notify_host(ctx);
 		if (notify) {
 			ctx->data.cu.error = BT_HCI_ERR_SUCCESS;
@@ -645,6 +660,13 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	if (ctx->proc == PROC_CONN_PARAM_REQ) {
+		/* Restart procedure response timeout timer */
+		llcp_rr_prt_restart(conn);
+	}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }
 
 static void rp_cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -930,10 +952,6 @@ static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 		case BT_HCI_ROLE_PERIPHERAL:
 			llcp_pdu_decode_conn_update_ind(ctx, param);
 			/* TODO(tosk): skip/terminate if instant passed? */
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-			/* conn param req procedure, if any, is complete */
-			ull_conn_prt_clear(conn);
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 			ctx->state = RP_CU_STATE_WAIT_INSTANT;
 			break;
 		default:
@@ -958,6 +976,14 @@ static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		 * new connection event parameters have been applied.
 		 */
 		cu_update_conn_parameters(conn, ctx);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		if (ctx->proc == PROC_CONN_PARAM_REQ) {
+			/* Stop procedure response timeout timer */
+			llcp_rr_prt_stop(conn);
+		}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 		notify = cu_should_notify_host(ctx);
 		if (notify) {
 			ctx->data.cu.error = BT_HCI_ERR_SUCCESS;

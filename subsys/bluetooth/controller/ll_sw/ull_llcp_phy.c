@@ -356,8 +356,8 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
 
-	/* Update procedure timeout */
-	ull_conn_prt_reload(conn, conn->procedure_reload);
+	/* Restart procedure response timeout timer */
+	llcp_lr_prt_restart(conn);
 }
 
 static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -601,8 +601,10 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 				pu_set_timing_restrict(conn, ctx->data.pu.c_to_p_phy);
 			}
 
-			/* Since at least one phy will change we clear procedure response timeout */
-			ull_conn_prt_clear(conn);
+			/* Since at least one phy will change,
+			 * stop the procedure response timeout
+			 */
+			llcp_lr_prt_stop(conn);
 
 			/* Now we should wait for instant */
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
@@ -637,8 +639,10 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 				pu_set_timing_restrict(conn, ctx->data.pu.p_to_c_phy);
 			}
 
-			/* Since at least one phy will change we clear procedure response timeout */
-			ull_conn_prt_clear(conn);
+			/* Since at least one phy will change,
+			 * stop the procedure response timeout
+			 */
+			llcp_lr_prt_stop(conn);
 
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
@@ -819,6 +823,9 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Enqueue LL Control PDU towards LLL */
 	llcp_tx_enqueue(conn, tx);
+
+	/* Restart procedure response timeout timer */
+	llcp_rr_prt_restart(conn);
 }
 
 static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -1025,8 +1032,10 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
 
 		if (!end_procedure) {
-			/* Since at least one phy will change we clear procedure response timeout */
-			ull_conn_prt_clear(conn);
+			/* Since at least one phy will change,
+			 * stop the procedure response timeout
+			 */
+			llcp_rr_prt_stop(conn);
 
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {

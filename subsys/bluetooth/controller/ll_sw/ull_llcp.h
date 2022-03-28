@@ -36,6 +36,15 @@ void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx);
 void ull_cp_release_ntf(struct node_rx_pdu *ntf);
 
 /**
+ * @brief Procedure Response Timeout Check
+ * @param elapsed_event The number of elapsed events.
+ * @return 0 on success, -ETIMEDOUT if timer expired.
+ */
+int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event);
+
+void ull_cp_prt_reload_set(struct ll_conn *conn, uint32_t conn_intv);
+
+/**
  * @brief Run pending LL Control Procedures.
  */
 void ull_cp_run(struct ll_conn *conn);

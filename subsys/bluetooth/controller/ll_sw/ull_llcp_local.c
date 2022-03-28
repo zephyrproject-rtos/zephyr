@@ -75,10 +75,6 @@ static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 
 		lr_dequeue(conn);
 
-		if ((ctx->proc != PROC_CHAN_MAP_UPDATE) && (ctx->proc != PROC_CONN_UPDATE)) {
-			ull_conn_prt_clear(conn);
-		}
-
 		llcp_proc_ctx_release(ctx);
 	}
 }
@@ -125,6 +121,16 @@ void llcp_lr_pause(struct ll_conn *conn)
 void llcp_lr_resume(struct ll_conn *conn)
 {
 	conn->llcp.local.pause = 0U;
+}
+
+void llcp_lr_prt_restart(struct ll_conn *conn)
+{
+	conn->llcp.local.prt_expire = conn->llcp.prt_reload;
+}
+
+void llcp_lr_prt_stop(struct ll_conn *conn)
+{
+	conn->llcp.local.prt_expire = 0U;
 }
 
 void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
@@ -282,7 +288,12 @@ static void lr_act_complete(struct ll_conn *conn)
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
+	LL_ASSERT(ctx != NULL);
 
+	/* Stop procedure response timeout timer */
+	llcp_lr_prt_stop(conn);
+
+	/* Mark the procedure as safe to delete */
 	ctx->done = 1U;
 }
 
@@ -421,6 +432,7 @@ static void lr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 void llcp_lr_init(struct ll_conn *conn)
 {
 	lr_set_state(conn, LR_STATE_DISCONNECT);
+	conn->llcp.local.prt_expire = 0U;
 }
 
 void llcp_lr_run(struct ll_conn *conn)
@@ -454,7 +466,7 @@ void llcp_lr_abort(struct ll_conn *conn)
 		ctx = lr_dequeue(conn);
 	}
 
-	ull_conn_prt_clear(conn);
+	llcp_lr_prt_stop(conn);
 	llcp_rr_set_incompat(conn, 0U);
 	lr_set_state(conn, LR_STATE_IDLE);
 }
