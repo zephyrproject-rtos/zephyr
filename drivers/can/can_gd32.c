@@ -714,13 +714,8 @@ struct can_gd32_recv_mailbox {
 			uint32_t reserve0 : 1;
 			uint32_t is_remote : 1; /* frame type */
 			uint32_t is_extended : 1; /* frame format */
-			union {
-				uint32_t extended_id : 29;
-				struct {
-					uint32_t reserve1 : 18;
-					uint32_t standard_id : 11;
-				};
-			};
+			uint32_t extended_id : 29;
+#define GD32_ESFID_TO_SFID(id) ((id) >> 18)
 		};
 	};
 	union {
@@ -747,13 +742,13 @@ static void can_gd32_get_msg_fifo(const struct device *dev, uint32_t fifo_num,
 	size_t index; /* loop index */
 
 	struct can_gd32_recv_mailbox *mbox =
-		(struct can_gd32_recv_mailbox *)CAN_RFIFO_MAILBOX(can_periph, fifo_num);
+		(struct can_gd32_recv_mailbox *)&CAN_RFIFO_MAILBOX(can_periph, fifo_num);
 
 	if (mbox->is_extended) {
 		frame->id = mbox->extended_id;
 		frame->id_type = CAN_EXTENDED_IDENTIFIER;
 	} else {
-		frame->id = mbox->standard_id;
+		frame->id = GD32_ESFID_TO_SFID(mbox->extended_id);
 		frame->id_type = CAN_STANDARD_IDENTIFIER;
 	}
 
@@ -788,7 +783,7 @@ static void can_gd32_rxn_isr(const struct device *dev, uint32_t fifo_num)
 	uint32_t can_periph = cfg->reg;
 
 	int filter_match_index;
-	struct zcan_frame frame;
+	static struct zcan_frame frame; /* too big, put to stack may cause overflow */
 	can_rx_callback_t callback;
 
 	ARG_UNUSED(fifo_num); /* Fixme: debug only */
