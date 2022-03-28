@@ -378,7 +378,7 @@ uint8_t ll_sync_terminate(uint16_t handle)
 
 		aux = HDR_LLL2ULL(lll_aux);
 		err = ull_scan_aux_stop(aux);
-		if (err) {
+		if (err && (err != -EALREADY)) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
