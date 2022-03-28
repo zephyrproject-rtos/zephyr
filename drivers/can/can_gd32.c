@@ -893,6 +893,15 @@ static void can_gd32_ewmc_isr(const struct device *dev)
 					 CAN_INTEN_RFNEIE1 | CAN_INTEN_BOIE;                       \
 	}
 
+#define CAN_GD32_BUILD_ASSERT(inst)                                                                \
+	BUILD_ASSERT(UTIL_OR(DT_NODE_HAS_STATUS(DT_INST_CHILD(inst, filter), okay),                \
+			     DT_INST_NODE_HAS_PROP(inst, main_controller)),                        \
+		     "must have `filter` child or `main-controller` property in dts");             \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, main_controller),                                   \
+		   (BUILD_ASSERT(DT_NODE_HAS_STATUS(                                               \
+					 CAN_GD32_DT_INST_GET_MAIN_CONTROLLER_FILTER(inst), okay), \
+				 "status of filter in `main-controller` must be ok")));
+
 #define CAN_GD32_DATA_INST(inst) static struct can_gd32_data can_gd32_data_##inst;
 
 #define CAN_GD32_DT_INST_GET_MAIN_CONTROLLER_FILTER(inst)                                          \
@@ -910,6 +919,7 @@ static void can_gd32_ewmc_isr(const struct device *dev)
 	.reg = DT_INST_REG_ADDR(inst), .rcu_periph_clock = DT_INST_PROP(inst, rcu_periph_clock),   \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                              \
 	.irq_cfg_func = can_gd32_irq_cfg_func_##inst, .one_shot = DT_INST_PROP(inst, one_shot),    \
+	.is_main_controller = DT_NODE_HAS_STATUS(DT_INST_CHILD(inst, filter), okay),               \
 	CAN_GD32_CFG_INST_FILTER(inst),                                                            \
 	.timing_arbit = {                                                                          \
 		.bus_speed = DT_INST_PROP(inst, bus_speed),                                        \
@@ -941,15 +951,6 @@ static void can_gd32_ewmc_isr(const struct device *dev)
 		CAN_GD32_CFG_INST_CAN(inst) /* no comma here */                                    \
 	};
 #endif /*CONFIG_CAN_FD_MODE*/
-
-#define CAN_GD32_BUILD_ASSERT(inst)                                                                \
-	BUILD_ASSERT(UTIL_OR(DT_NODE_HAS_STATUS(DT_INST_CHILD(inst, filter), okay),                \
-			     DT_INST_NODE_HAS_PROP(inst, main_controller)),                        \
-		     "must have `filter` child or `main-controller` property in dts");             \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, main_controller),                                   \
-		   (BUILD_ASSERT(DT_NODE_HAS_STATUS(                                               \
-					 CAN_GD32_DT_INST_GET_MAIN_CONTROLLER_FILTER(inst), okay), \
-				 "status of filter in `main-controller` must be ok")));
 
 #define CAN_GD32_INIT(inst)                                                                        \
 	CAN_GD32_BUILD_ASSERT(inst);                                                               \
