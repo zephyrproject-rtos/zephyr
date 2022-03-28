@@ -1,14 +1,22 @@
+# Note: On most ST development boards, external clock "HSE 8MHz" is provided thanks to ST-Link
+# via its MCO line. On some boards, ST-Link MCO sloder brigde is not set out of the box.
+# To reflect this constraint on such boards, a specific fixture "mco_sb_closed" is provided.
+# To run HSE tests on these boards:
+# - add the sloder bridge
+# - add the fixture in map file
 common:
     timeout: 5
 tests:
   drivers.stm32_clock_configuration.common.sysclksrc_pll_64_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_64_hse_8.overlay"
     platform_allow: nucleo_g071rb
+    harness: ztest
     harness_config:
       fixture: mco_sb_closed
   drivers.stm32_clock_configuration.common.sysclksrc_msi_pll_64_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_clocks_msi.overlay;boards/pll_64_hse_8.overlay"
     platform_allow: nucleo_l496zg nucleo_l476rg nucleo_l452re nucleo_l432kc nucleo_l4r5zi nucleo_l552ze_q
+    harness: ztest
     harness_config:
       fixture: mco_sb_closed
   drivers.stm32_clock_configuration.common.sysclksrc_pll_64_hsi_16:
@@ -32,6 +40,7 @@ tests:
   drivers.stm32_clock_configuration.common.sysclksrc_msi_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/clear_clocks_msi.overlay;boards/hse_8.overlay"
     platform_allow: nucleo_l496zg nucleo_l476rg nucleo_l452re nucleo_l432kc nucleo_l4r5zi nucleo_l552ze_q
+    harness: ztest
     harness_config:
       fixture: mco_sb_closed
   drivers.stm32_clock_configuration.common.sysclksrc_pll_170_hse_24:
