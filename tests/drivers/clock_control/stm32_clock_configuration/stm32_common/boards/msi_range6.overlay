@@ -17,5 +17,4 @@
 &rcc {
 	clocks = <&clk_msi>;
 	clock-frequency = <4194304>;
-	ahb-prescaler = <1>;
 };
