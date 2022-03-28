@@ -48,13 +48,7 @@
 #if defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
 	SECTION_DATA_PROLOGUE(device_handles,,)
 	{
-	__device_handles_start = .;
-#ifdef LINKER_DEVICE_HANDLES_PASS1
-	KEEP(*(SORT(.__device_handles_pass1*)));
-#else
-	KEEP(*(SORT(.__device_handles_pass2*)));
-#endif /* LINKER_DEVICE_HANDLES_PASS1 */
-	__device_handles_end = .;
+#include "device-handles.ld"
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif 	/* CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */
 
