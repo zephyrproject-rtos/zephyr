@@ -40,7 +40,7 @@ config NRF_ACL_FLASH_REGION_SIZE
 
 config NFCT_PINS_AS_GPIOS
 	bool "NFCT pins as GPIOs"
-	depends on HAS_HW_NRF_NFCT
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
 	help
 	  Two pins are usually reserved for NFC in SoCs that implement the
 	  NFCT peripheral. This option switches them to normal GPIO mode.
