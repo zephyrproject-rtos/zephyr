@@ -15,3 +15,5 @@ CONFIG_GPIO=y
 
 # additional board options
 CONFIG_GPIO_AS_PINRESET=y
+
+CONFIG_PINCTRL=y
