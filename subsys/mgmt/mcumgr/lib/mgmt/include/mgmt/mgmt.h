@@ -202,6 +202,7 @@ struct mgmt_ctxt {
 	struct cbor_nb_writer *cnbe;
 	struct CborParser parser;
 	struct CborValue it;
+	struct cbor_nb_reader *cnbd;
 #ifdef CONFIG_MGMT_VERBOSE_ERR_RESPONSE
 	const char *rc_rsn;
 #endif

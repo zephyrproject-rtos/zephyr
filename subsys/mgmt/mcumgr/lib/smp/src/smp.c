@@ -45,17 +45,13 @@ smp_make_rsp_hdr(const struct mgmt_hdr *req_hdr, struct mgmt_hdr *rsp_hdr, size_
 }
 
 static int
-smp_read_hdr(struct smp_streamer *streamer, struct mgmt_hdr *dst_hdr)
+smp_read_hdr(const struct net_buf *nb, struct mgmt_hdr *dst_hdr)
 {
-	struct cbor_nb_reader *reader;
-
-	reader = streamer->mgmt_stmr.reader;
-
-	if (reader->nb->len < sizeof(*dst_hdr)) {
+	if (nb->len < sizeof(*dst_hdr)) {
 		return MGMT_ERR_EINVAL;
 	}
 
-	memcpy(dst_hdr, reader->nb->data, sizeof(*dst_hdr));
+	memcpy(dst_hdr, nb->data, sizeof(*dst_hdr));
 	return 0;
 }
 
@@ -167,14 +163,12 @@ smp_handle_single_req(struct smp_streamer *streamer, const struct mgmt_hdr *req_
 	struct mgmt_ctxt cbuf;
 	struct mgmt_hdr rsp_hdr;
 	struct cbor_nb_writer *nbw = (struct cbor_nb_writer *)streamer->mgmt_stmr.writer;
+	struct cbor_nb_reader *nbr = (struct cbor_nb_reader *)streamer->mgmt_stmr.reader;
 	zcbor_state_t *zsp = nbw->zs;
 	int rc;
 
-	rc = mgmt_ctxt_init(&cbuf, &streamer->mgmt_stmr);
-	if (rc != 0) {
-		return rc;
-	}
 	cbuf.cnbe = nbw;
+	cbuf.cnbd = nbr;
 
 	/* Process the request and write the response payload. */
 	rc = smp_handle_single_payload(&cbuf, req_hdr, handler_found);
@@ -247,11 +241,12 @@ smp_on_err(struct smp_streamer *streamer, const struct mgmt_hdr *req_hdr,
  *                       or other MGMT_ERR_[...] code on failure.
  */
 int
-smp_process_request_packet(struct smp_streamer *streamer, void *req)
+smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 {
 	struct mgmt_hdr req_hdr;
 	struct mgmt_evt_op_cmd_done_arg cmd_done_arg;
 	void *rsp;
+	struct net_buf *req = vreq;
 	bool valid_hdr = false;
 	bool handler_found = false;
 	int rc = 0;
@@ -259,14 +254,12 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 
 	rsp = NULL;
 
-	mgmt_streamer_init_reader(&streamer->mgmt_stmr, req);
-
-	while (streamer->mgmt_stmr.reader->nb->len > 0) {
+	while (req->len > 0) {
 		handler_found = false;
 		valid_hdr = false;
 
 		/* Read the management header and strip it from the request. */
-		rc = smp_read_hdr(streamer, &req_hdr);
+		rc = smp_read_hdr(req, &req_hdr);
 		if (rc != 0) {
 			rc = MGMT_ERR_ECORRUPT;
 			break;
@@ -275,7 +268,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 		}
 		mgmt_ntoh_hdr(&req_hdr);
 		/* Does buffer contain whole message? */
-		if (streamer->mgmt_stmr.reader->nb->len < (req_hdr.nh_len + MGMT_HDR_SIZE)) {
+		if (req->len < (req_hdr.nh_len + MGMT_HDR_SIZE)) {
 			rc = MGMT_ERR_ECORRUPT;
 			break;
 		}
@@ -286,8 +279,8 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 			break;
 		}
 
-		cbor_nb_writer_init(streamer->mgmt_stmr.writer, rsp);
 		cbor_nb_reader_init(streamer->mgmt_stmr.reader, req);
+		cbor_nb_writer_init(streamer->mgmt_stmr.writer, rsp);
 
 		/* Process the request payload and build the response. */
 		rc = smp_handle_single_req(streamer, &req_hdr, &handler_found, &rsn);
@@ -303,7 +296,7 @@ smp_process_request_packet(struct smp_streamer *streamer, void *req)
 		}
 
 		/* Trim processed request to free up space for subsequent responses. */
-		net_buf_pull(streamer->mgmt_stmr.reader->nb, req_hdr.nh_len);
+		net_buf_pull(req, req_hdr.nh_len);
 
 		cmd_done_arg.err = MGMT_ERR_EOK;
 		mgmt_evt(MGMT_EVT_OP_CMD_DONE, req_hdr.nh_group, req_hdr.nh_id,
