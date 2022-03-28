@@ -55,6 +55,7 @@ struct bt_csis_client_svc_inst {
 	struct bt_gatt_discover_params lock_sub_disc_params;
 
 	struct bt_conn *conn;
+	struct bt_csis_client_set_member *member;
 };
 
 /* TODO: Rename to bt_csis_svc_inst */

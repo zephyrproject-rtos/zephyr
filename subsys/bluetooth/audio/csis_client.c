@@ -53,6 +53,8 @@ static struct active_members {
 	uint8_t members_count;
 	uint8_t members_handled;
 	uint8_t members_restored;
+
+	bt_csis_client_ordered_access_t oap_cb;
 } active;
 
 struct bt_csis_client_inst {
@@ -183,30 +185,10 @@ static int member_rank_compare_asc(const void *m1, const void *m2)
 
 static int member_rank_compare_desc(const void *m1, const void *m2)
 {
-	struct bt_csis_client_set_member *member_1 = *(struct bt_csis_client_set_member **)m1;
-	struct bt_csis_client_set_member *member_2 = *(struct bt_csis_client_set_member **)m2;
-	struct bt_csis *inst_1;
-	struct bt_csis *inst_2;
-
-	/* TODO: lookup_instance_by_set_info should be able to work on a const
-	 * member, but it relies on `bt_conn_index` which doesn't take a const
-	 * bt_conn.
+	/* If we call the "compare ascending" function with the members
+	 * reversed, it will work as a descending comparison
 	 */
-
-	inst_1 = lookup_instance_by_set_info(member_1, active.info);
-	inst_2 = lookup_instance_by_set_info(member_2, active.info);
-
-	if (inst_1 == NULL) {
-		BT_ERR("inst_1 was NULL for member %p", member_1);
-		return 0;
-	}
-
-	if (inst_2 == NULL) {
-		BT_ERR("inst_2 was NULL for member %p", member_2);
-		return 0;
-	}
-
-	return inst_2->cli.rank - inst_1->cli.rank;
+	return member_rank_compare_asc(m2, m1);
 }
 
 static void active_members_store_ordered(struct bt_csis_client_set_member *members[],
@@ -214,12 +196,35 @@ static void active_members_store_ordered(struct bt_csis_client_set_member *membe
 					 const struct bt_csis_client_set_info *info,
 					 bool ascending)
 {
-	(void)memcpy(active.members, members, count * sizeof(members[0]));
+	(void)memcpy(active.members, members, count * sizeof(members[0U]));
 	active.members_count = count;
 	active.info = info;
 
-	qsort(active.members, count, sizeof(members[0]),
-	      ascending ? member_rank_compare_asc : member_rank_compare_desc);
+	if (count > 1U && CONFIG_BT_MAX_CONN > 1) {
+		qsort(active.members, count, sizeof(members[0U]),
+		ascending ? member_rank_compare_asc : member_rank_compare_desc);
+
+		if (IS_ENABLED(CONFIG_ASSERT)) {
+			for (size_t i = 1U; i < count; i++) {
+				const struct bt_csis *inst_1 =
+					lookup_instance_by_set_info(active.members[i - 1U], info);
+				const struct bt_csis *inst_2 =
+					lookup_instance_by_set_info(active.members[i], info);
+				const uint8_t rank_1 = inst_1->cli.rank;
+				const uint8_t rank_2 = inst_2->cli.rank;
+
+				if (ascending) {
+					__ASSERT(rank_1 <= rank_2,
+						"Members not sorted by ascending rank %u - %u",
+						rank_1, rank_2);
+				} else {
+					__ASSERT(rank_1 >= rank_2,
+						"Members not sorted by descending rank %u - %u",
+						rank_1, rank_2);
+				}
+			}
+		}
+	}
 }
 
 static int sirk_decrypt(struct bt_conn *conn,
@@ -1002,10 +1007,13 @@ static void csis_client_write_restore_cb(struct bt_conn *conn, uint8_t err,
 	BT_DBG("Restored %u/%u members",
 	       active.members_restored, active.members_handled);
 
-	if (active.members_restored < active.members_handled) {
+	if (active.members_restored < active.members_handled &&
+	    CONFIG_BT_MAX_CONN > 1) {
+		struct bt_csis_client_set_member *member;
 		int csis_client_err;
 
-		cur_inst = get_next_active_instance();
+		member = active.members[active.members_handled - active.members_restored - 1];
+		cur_inst = lookup_instance_by_set_info(member, active.info);
 		if (cur_inst == NULL) {
 			active_members_reset();
 			if (csis_client_cbs != NULL &&
@@ -1052,7 +1060,7 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 
 			active.members_restored = 0;
 
-			member = active.members[active.members_handled];
+			member = active.members[active.members_handled - active.members_restored];
 			cur_inst = lookup_instance_by_set_info(member,
 							       active.info);
 			if (cur_inst == NULL) {
@@ -1193,11 +1201,29 @@ static void csis_client_write_release_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
+static void csis_client_lock_state_read_cb(int err, bool locked)
+{
+	const struct bt_csis_client_set_info *info = active.info;
+	struct bt_csis_client_set_member *cur_member = NULL;
+
+	if (err || locked) {
+		cur_member = active.members[active.members_handled];
+	} else if (!active.oap_cb(info, active.members, active.members_count)) {
+		err = -ECANCELED;
+	}
+
+	active_members_reset();
+
+	if (csis_client_cbs != NULL &&
+		csis_client_cbs->ordered_access != NULL) {
+		csis_client_cbs->ordered_access(info, err, locked, cur_member);
+	}
+}
+
 static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 					struct bt_gatt_read_params *params,
 					const void *data, uint16_t length)
 {
-	const struct bt_csis_client_set_info *set_info = active.info;
 	uint8_t value = 0;
 
 	busy = false;
@@ -1205,11 +1231,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 	if (err != 0) {
 		BT_DBG("Could not read lock value (0x%X)", err);
 
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->lock_state_read != NULL) {
-			csis_client_cbs->lock_state_read(set_info, err, false);
-		}
+		csis_client_lock_state_read_cb(err, false);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -1221,12 +1243,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 	if (data == NULL || length != sizeof(cur_inst->cli.set_lock)) {
 		BT_DBG("Invalid data %p or length %u", data, length);
 
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->lock_state_read != NULL) {
-			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
-			csis_client_cbs->lock_state_read(set_info, err, false);
-		}
+		csis_client_lock_state_read_cb(err, false);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -1236,12 +1253,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("Invalid value %u read", value);
 		err = BT_ATT_ERR_UNLIKELY;
 
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->lock_state_read != NULL) {
-			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
-			csis_client_cbs->lock_state_read(set_info, err, false);
-		}
+		csis_client_lock_state_read_cb(err, false);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -1251,11 +1263,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 	if (value != BT_CSIS_RELEASE_VALUE) {
 		BT_DBG("Set member not unlocked");
 
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->lock_state_read != NULL) {
-			csis_client_cbs->lock_state_read(set_info, 0, true);
-		}
+		csis_client_lock_state_read_cb(0, true);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -1265,11 +1273,7 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 
 		cur_inst = get_next_active_instance();
 		if (cur_inst == NULL) {
-			active_members_reset();
-			if (csis_client_cbs != NULL &&
-			    csis_client_cbs->release_set != NULL) {
-				csis_client_cbs->lock_state_read(set_info, -ENOENT, false);
-			}
+			csis_client_lock_state_read_cb(-ENOENT, false);
 
 			return BT_GATT_ITER_STOP;
 		}
@@ -1281,19 +1285,10 @@ static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
 			BT_DBG("Failed to read next member[%u]: %d",
 			       active.members_handled, csis_client_err);
 
-			active_members_reset();
-			if (csis_client_cbs != NULL &&
-			    csis_client_cbs->lock_state_read != NULL) {
-				csis_client_cbs->lock_state_read(set_info, err,
-								 false);
-			}
+			csis_client_lock_state_read_cb(err, false);
 		}
 	} else {
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->lock_state_read != NULL) {
-			csis_client_cbs->lock_state_read(set_info, 0, false);
-		}
+		csis_client_lock_state_read_cb(0, false);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -1394,6 +1389,10 @@ int bt_csis_client_discover(struct bt_csis_client_set_member *member)
 	(void)memset(client, 0, sizeof(*client));
 
 	client->set_member = member;
+	for (size_t i = 0U; i < ARRAY_SIZE(client->csis_insts); i++) {
+		client->csis_insts[i].cli.member = member;
+	}
+
 	/* Discover CSIS on peer, setup handles and notify */
 	(void)memset(&discover_params, 0, sizeof(discover_params));
 	(void)memcpy(&uuid, BT_UUID_CSIS, sizeof(uuid));
@@ -1420,6 +1419,12 @@ static int verify_members(struct bt_csis_client_set_member **members,
 {
 	bool zero_rank;
 	uint8_t ranks[CONFIG_BT_MAX_CONN];
+
+	if (count > CONFIG_BT_MAX_CONN) {
+		BT_DBG("count (%u) larger than maximum support servers (%d)",
+		       count, CONFIG_BT_MAX_CONN);
+		return -EINVAL;
+	}
 
 	zero_rank = false;
 	for (int i = 0; i < count; i++) {
@@ -1476,9 +1481,9 @@ static int verify_members(struct bt_csis_client_set_member **members,
 	return 0;
 }
 
-int bt_csis_client_get_lock_state(struct bt_csis_client_set_member **members,
-				  uint8_t count,
-				  const struct bt_csis_client_set_info *set_info)
+static int bt_csis_client_get_lock_state(struct bt_csis_client_set_member **members,
+					 uint8_t count,
+					 const struct bt_csis_client_set_info *set_info)
 {
 	int err;
 
@@ -1511,6 +1516,24 @@ int bt_csis_client_get_lock_state(struct bt_csis_client_set_member **members,
 	}
 
 	return err;
+}
+
+int bt_csis_client_ordered_access(struct bt_csis_client_set_member *members[],
+				  uint8_t count,
+				  const struct bt_csis_client_set_info *set_info,
+				  bt_csis_client_ordered_access_t cb)
+{
+	int err;
+
+	err = bt_csis_client_get_lock_state(members, count, set_info);
+	if (err != 0) {
+		return err;
+	}
+
+	/* wait for the get_lock_state to finish and then call the callback */
+	active.oap_cb = cb;
+
+	return 0;
 }
 
 int bt_csis_client_lock(struct bt_csis_client_set_member **members,
