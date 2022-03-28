@@ -1,0 +1,15 @@
+sample:
+  name: AM2301B Sensor sample
+tests:
+  sample.sensor.am2301b:
+    harness: console
+    tags: sensors
+    platform_allow: stm32_min_dev_blue
+    integration_platforms:
+      - stm32_min_dev_blue
+    depends_on: i2c
+    timeout: 15
+    harness_config:
+      type: one_line
+      regex:
+        - "temp: [-.0-9]*; humidity:[-.0-9]*"

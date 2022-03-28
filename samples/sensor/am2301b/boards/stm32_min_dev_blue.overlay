@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2022 Hisanori Yamaoku
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	status = "okay";
+	am2301b@38 {
+		compatible = "aosong,am2301b";
+		reg = <0x38>;
+		label = "AM2301B_I2C";
+	};
+};
