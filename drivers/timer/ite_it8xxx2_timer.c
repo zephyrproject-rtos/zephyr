@@ -289,7 +289,7 @@ uint32_t sys_clock_elapsed(void)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	/*
-	 * Get free run observer count and transform unit to system tick
+	 * Get free run observer count
 	 *
 	 * NOTE: Timer is counting down from 0xffffffff. In not combined
 	 *       mode, the observer count value is the same as count, so after
@@ -297,8 +297,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	 *       combined mode, the observer count value is the same as NOT
 	 *       count operation.
 	 */
-	uint32_t dticks = (~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER)))
-				/ HW_CNT_PER_SYS_TICK;
+	uint32_t dticks = ~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER));
 
 	return dticks;
 }
