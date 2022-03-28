@@ -15,6 +15,9 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 
+BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
+	     "ITE RTOS timer HW frequency is fixed at 32768Hz");
+
 /* Event timer configurations */
 #define EVENT_TIMER		EXT_TIMER_3
 #define EVENT_TIMER_IRQ		DT_INST_IRQ_BY_IDX(0, 0, irq)
