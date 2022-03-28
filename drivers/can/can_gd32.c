@@ -782,7 +782,7 @@ static void can_gd32_rxn_isr(const struct device *dev, uint32_t fifo_num)
 	const struct can_gd32_config *cfg = dev->config;
 	uint32_t can_periph = cfg->reg;
 
-	int filter_match_index;
+	int filter_number;
 	static struct zcan_frame frame; /* too big, put to stack may cause overflow */
 	can_rx_callback_t callback;
 
@@ -790,26 +790,28 @@ static void can_gd32_rxn_isr(const struct device *dev, uint32_t fifo_num)
 
 	while (CAN_RFIFO(can_periph, fifo_num) & CAN_RFIFO_RFL) {
 		/* read mailbox to fifo and release message */
-		filter_match_index = CAN_RFIFOMP_FI_GET(can_periph, fifo_num);
-		if (filter_match_index >= CONFIG_CAN_MAX_FILTER) {
-			LOG_ERR("fileter %d not found", filter_match_index);
+		filter_number = CAN_RFIFOMP_FI_GET(can_periph, fifo_num);
+		if (filter_number >= CONFIG_CAN_MAX_FILTER) {
+			LOG_ERR("fileter %d not found", filter_number);
 
 			/* Release message */
 			CAN_RFIFO(can_periph, fifo_num) |= CAN_RFIFO_RFD;
 			break;
 		}
 
-		LOG_DBG("Message on filter index %d", filter_match_index);
+		LOG_DBG("Message on filter index %d", filter_number);
 		can_gd32_get_msg_fifo(dev, fifo_num, &frame);
 
 		/* Release message */
 		CAN_RFIFO(can_periph, fifo_num) |= CAN_RFIFO_RFD;
 
 		/* invoke callback */
-		callback = can_gd32_filter_getcb(cfg->filter, filter_match_index);
+		callback = can_gd32_filter_getcb(cfg->filter, cfg->is_main_controller, fifo_num,
+						 filter_number);
 		if (callback) {
 			callback(dev, &frame,
-				 can_gd32_filter_getcbarg(cfg->filter, filter_match_index));
+				 can_gd32_filter_getcbarg(cfg->filter, cfg->is_main_controller,
+							  fifo_num, filter_number));
 		}
 	}
 

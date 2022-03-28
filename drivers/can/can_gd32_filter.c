@@ -70,6 +70,23 @@ static int inline can_gd32_filter_cb_lut_append(bool is_main_controller, enum ca
 	return 0;
 }
 
+static inline struct can_gd32_filter_cb *
+can_gd32_filter_cb_lut_get(bool is_main_controller, enum can_fifo fifo, uint8_t filter_number)
+{
+	struct can_gd32_filter_cb *ptr =
+		can_gd32_filter_cb_lut[(uint8_t)is_main_controller][(uint8_t)fifo];
+
+	while (ptr != NULL) {
+		if (ptr->filter_number == filter_number) {
+			return ptr;
+		}
+
+		ptr = ptr->next;
+	}
+
+	return -ENODATA;
+}
+
 static inline int can_gd32_filter_get_unitsize(const struct can_gd32_filter *filter,
 					       uint8_t filter_unit)
 {
@@ -388,25 +405,36 @@ void can_gd32_filter_remove(const struct can_gd32_filter *filter, int filter_id)
 	CAN_GD32_FILTER_UNLOCK();
 }
 
-can_rx_callback_t can_gd32_filter_getcb(const struct can_gd32_filter *filter, int index)
+can_rx_callback_t can_gd32_filter_getcb(const struct can_gd32_filter *filter,
+					bool is_main_controller, enum can_fifo fifo,
+					uint8_t filter_number)
 {
 	can_rx_callback_t callback = NULL;
 
 	CAN_GD32_FILTER_LOCK();
-	// callback = filter->cfg->unit[index].callback;
-	__ASSERT(0, "todo");
+
+	struct can_gd32_filter_cb *cb =
+		can_gd32_filter_cb_lut_get(is_main_controller, fifo, filter_number);
+	if (cb != -ENODATA) {
+		callback = cb->cb;
+	}
+
 	CAN_GD32_FILTER_UNLOCK();
 
 	return callback;
 }
 
-void *can_gd32_filter_getcbarg(const struct can_gd32_filter *filter, int index)
+void *can_gd32_filter_getcbarg(const struct can_gd32_filter *filter, bool is_main_controller,
+			       enum can_fifo fifo, int filter_number)
 {
 	void *callback_arg = NULL;
 
 	CAN_GD32_FILTER_LOCK();
-	// callback_arg = filter->cfg->unit[index].callback_arg;
-	__ASSERT(0, "todo");
+	struct can_gd32_filter_cb *cb =
+		can_gd32_filter_cb_lut_get(is_main_controller, fifo, filter_number);
+	if (cb != -ENODATA) {
+		callback_arg = cb->cb_arg;
+	}
 	CAN_GD32_FILTER_UNLOCK();
 
 	return callback_arg;

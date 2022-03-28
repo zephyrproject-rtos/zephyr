@@ -60,6 +60,9 @@ int can_gd32_filter_add(const struct can_gd32_filter *filter, bool is_main_contr
 			enum can_fifo fifo, can_rx_callback_t cb, void *cb_arg,
 			const struct zcan_filter *zfilter);
 void can_gd32_filter_remove(const struct can_gd32_filter *filter, int filter_id);
-can_rx_callback_t can_gd32_filter_getcb(const struct can_gd32_filter *filter, int index);
-void *can_gd32_filter_getcbarg(const struct can_gd32_filter *filter, int index);
+can_rx_callback_t can_gd32_filter_getcb(const struct can_gd32_filter *filter,
+					bool is_main_controller, enum can_fifo fifo,
+					uint8_t filter_number);
+void *can_gd32_filter_getcbarg(const struct can_gd32_filter *filter, bool is_main_controller,
+			       enum can_fifo fifo, int filter_number);
 #endif /* ZEPHYR_DRIVERS_CAN_GD32_FILTER_H_ */
