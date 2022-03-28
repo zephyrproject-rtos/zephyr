@@ -125,14 +125,14 @@ int cfb_print(const struct device *dev, char *str, uint16_t x, uint16_t y)
 	const struct cfb_font *fptr;
 
 	if (!fb->fonts || !fb->buf) {
-		return -1;
+		return -ENODEV;
 	}
 
 	fptr = &(fb->fonts[fb->font_idx]);
 
 	if (fptr->height % 8) {
 		LOG_ERR("Wrong font size");
-		return -1;
+		return -EINVAL;
 	}
 
 	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) && !(y % 8)) {
@@ -147,7 +147,7 @@ int cfb_print(const struct device *dev, char *str, uint16_t x, uint16_t y)
 	}
 
 	LOG_ERR("Unsupported framebuffer configuration");
-	return -1;
+	return -EINVAL;
 }
 
 static int cfb_invert(const struct char_framebuffer *fb)
@@ -165,7 +165,7 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 	struct display_buffer_descriptor desc;
 
 	if (!fb || !fb->buf) {
-		return -1;
+		return -ENODEV;
 	}
 
 	desc.buf_size = fb->size;
@@ -183,7 +183,7 @@ int cfb_framebuffer_invert(const struct device *dev)
 	struct char_framebuffer *fb = &char_fb;
 
 	if (!fb || !fb->buf) {
-		return -1;
+		return -ENODEV;
 	}
 
 	fb->inverted = !fb->inverted;
@@ -198,7 +198,7 @@ int cfb_framebuffer_finalize(const struct device *dev)
 	struct display_buffer_descriptor desc;
 
 	if (!fb || !fb->buf) {
-		return -1;
+		return -ENODEV;
 	}
 
 	desc.buf_size = fb->size;
@@ -244,7 +244,7 @@ int cfb_framebuffer_set_font(const struct device *dev, uint8_t idx)
 	struct char_framebuffer *fb = &char_fb;
 
 	if (idx >= fb->numof_fonts) {
-		return -1;
+		return -EINVAL;
 	}
 
 	fb->font_idx = idx;
@@ -258,7 +258,7 @@ int cfb_get_font_size(const struct device *dev, uint8_t idx, uint8_t *width,
 	const struct char_framebuffer *fb = &char_fb;
 
 	if (idx >= fb->numof_fonts) {
-		return -1;
+		return -EINVAL;
 	}
 
 	if (width) {
@@ -290,7 +290,7 @@ int cfb_framebuffer_init(const struct device *dev)
 	fb->numof_fonts = __font_entry_end - __font_entry_start;
 	LOG_DBG("number of fonts %d", fb->numof_fonts);
 	if (!fb->numof_fonts) {
-		return -1;
+		return -ENODEV;
 	}
 
 	fb->x_res = cfg.x_resolution;
@@ -309,7 +309,7 @@ int cfb_framebuffer_init(const struct device *dev)
 	fb->size = fb->x_res * fb->y_res / fb->ppt;
 	fb->buf = k_malloc(fb->size);
 	if (!fb->buf) {
-		return -1;
+		return -ENOMEM;
 	}
 
 	memset(fb->buf, 0, fb->size);
