@@ -37,6 +37,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_path_enabled,<node path>)
    $(dt_alias_enabled,<node alias>)
    $(dt_nodelabel_enabled,<node label>)
+   $(dt_nodelabel_enabled_with_compat,<node label>,<compatible string>)
    $(dt_chosen_reg_addr_int,<property in /chosen>[,<index>,<unit>])
    $(dt_chosen_reg_addr_hex,<property in /chosen>[,<index>,<unit>])
    $(dt_chosen_reg_size_int,<property in /chosen>[,<index>,<unit>])
