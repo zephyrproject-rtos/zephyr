@@ -6,6 +6,7 @@ config MCUMGR_CMD_SHELL_MGMT
 	bool "Mcumgr handlers for shell management"
 	depends on SHELL
 	select SHELL_BACKEND_DUMMY
+	select MGMT_MIN_DECODING_LEVEL_2
 	help
 	  Enables mcumgr handlers for shell management. The handler will utilize
 	  the dummy backend to execute shell commands and capture the output to
