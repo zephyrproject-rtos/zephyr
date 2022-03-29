@@ -325,3 +325,15 @@ test_spi_i3g4250d: i3g4250d@3b {
 	reg = <0x3b>;
 	spi-max-frequency = <0>;
 };
+
+test_spi_icm42670: icm42670@3c {
+	compatible = "invensense,icm42670";
+	label = "ICM42670";
+	reg = <0x3c>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <800>;
+	accel-fs = <16>;
+	gyro-hz = <800>;
+	gyro-fs = <2000>;
+};
