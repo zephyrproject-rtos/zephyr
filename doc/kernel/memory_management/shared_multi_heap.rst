@@ -5,80 +5,78 @@ Shared Multi Heap
 
 The shared multi-heap memory pool manager uses the multi-heap allocator to
 manage a set of reserved memory regions with different capabilities /
-attributes (cacheable, non-cacheable, etc...) defined in the DT.
+attributes (cacheable, non-cacheable, etc...).
 
-The user can request allocation from the shared pool specifying the capability
-/ attribute of interest for the memory (cacheable / non-cacheable memory,
-etc...).
+All the different regions can be added at run-time to the shared multi-heap
+pool providing an opaque "attribute" value (an integer or enum value) that can
+be used by drivers or applications to request memory with certain capabilities.
 
-The different heaps with their attributes available in the shared pool are
-defined into the DT file leveraging the ``reserved-memory`` nodes.
+This framework is commonly used as follow:
 
-This is a DT example declaring three different memory regions with different
-cacheability attributes: ``cacheable`` and ``non-cacheable``
+1. At boot time some platform code initialize the shared multi-heap framework
+   using :c:func:`shared_multi_heap_pool_init()` and add the memory regions to
+   the pool with :c:func:`shared_multi_heap_add()`, possibly gathering the
+   needed information for the regions from the DT.
 
-.. code-block:: devicetree
+2. Each memory region encoded in a :c:type:`shared_multi_heap_region`
+   structure.  This structure is also carrying an opaque and user-defined
+   integer value that is used to define the region capabilities (for example:
+   cacheability, cpu affinity, etc...)
 
-   / {
-        reserved-memory {
-                compatible = "reserved-memory";
-                #address-cells = <1>;
-                #size-cells = <1>;
+.. code-block:: c
 
-                res0: reserved@42000000 {
-                        compatible = "shared-multi-heap";
-                        reg = <0x42000000 0x1000>;
-                        capability = "cacheable";
-                        label = "res0";
-                };
+   // Init the shared multi-heap pool
+   shared_multi_heap_pool_init()
 
-                res1: reserved@43000000 {
-                        compatible = "shared-multi-heap";
-                        reg = <0x43000000 0x2000>;
-                        capability = "non-cacheable";
-                        label = "res1";
-                };
+   // Fill the struct with the data for cacheable memory
+   struct shared_multi_heap_region cacheable_r0 = {
+        .addr = addr_r0,
+        .size = size_r0,
+        .attr = SMH_REG_ATTR_CACHEABLE,
+   };
 
-                res2: reserved2@44000000 {
-                        compatible = "shared-multi-heap";
-                        reg = <0x44000000 0x3000>;
-                        capability = "cacheable";
-                        label = "res2";
-                };
-        };
+   // Add the region to the pool
+   shared_multi_heap_add(&cacheable_r0, NULL);
 
-The user can then request 4K from heap memory ``cacheable`` or
-``non-cacheable`` using the provided APIs:
+   // Add another cacheable region
+   struct shared_multi_heap_region cacheable_r1 = {
+        .addr = addr_r1,
+        .size = size_r1,
+        .attr = SMH_REG_ATTR_CACHEABLE,
+   };
+
+   shared_multi_heap_add(&cacheable_r0, NULL);
+
+   // Add a non-cacheable region
+   struct shared_multi_heap_region non_cacheable_r2 = {
+        .addr = addr_r2,
+        .size = size_r2,
+        .attr = SMH_REG_ATTR_NON_CACHEABLE,
+   };
+
+   shared_multi_heap_add(&non_cacheable_r2, NULL);
+
+3. When a driver or application needs some dynamic memory with a certain
+   capability, it can use :c:func:`shared_multi_heap_alloc()` (or the aligned
+   version) to request the memory by using the opaque parameter to select the
+   correct set of attributes for the needed memory. The framework will take
+   care of selecting the correct heap (thus memory region) to carve memory
+   from, based on the opaque parameter and the runtime state of the heaps
+   (available memory, heap state, etc...)
 
 .. code-block:: c
 
    // Allocate 4K from cacheable memory
    shared_multi_heap_alloc(SMH_REG_ATTR_CACHEABLE, 0x1000);
 
-   // Allocate 4K from non-cacheable
+   // Allocate 4K from non-cacheable memory
    shared_multi_heap_alloc(SMH_REG_ATTR_NON_CACHEABLE, 0x1000);
-
-The backend implementation will allocate the memory region from the heap with
-the correct attribute and using the region able to accommodate the required size.
-
-Special handling for MMU/MPU
-****************************
-
-For MMU/MPU enabled platform sometimes it is required to setup and configure
-the memory regions before these are added to the managed pool. This is done at
-init time using the :c:func:`shared_multi_heap_pool_init()` function that is
-accepting a :c:type:`smh_init_reg_fn_t` callback function. This callback will
-be called for each memory region at init time and it can be used to correctly
-map the region before this is considered valid and accessible.
 
 Adding new attributes
 *********************
 
-Currently only two memory attributes are supported: ``cacheable`` and
-``non-cacheable``. To add a new attribute:
-
-1. Add the new ``enum`` for the attribute in the :c:enum:`smh_reg_attr`
-2. Add the corresponding attribute name in :file:`shared-multi-heap.yaml`
+The API does not enforce any attributes, but at least it defines the two most
+common ones: :c:enum:`SMH_REG_ATTR_CACHEABLE` and :c:enum:`SMH_REG_ATTR_NON_CACHEABLE`
 
 .. doxygengroup:: shared_multi_heap
    :project: Zephyr
