@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Linaro Limited.
+ * Copyright (c) 2017-2022 Linaro Limited.
  * Copyright (c) 2017 RnDity Sp. z o.o.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -70,69 +70,15 @@ static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	volatile uint32_t *reg;
+	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
-	switch (pclken->bus) {
-	case STM32_CLOCK_BUS_AHB1:
-		LL_AHB1_GRP1_EnableClock(pclken->enr);
-		break;
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB2_SUPPORT) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32F2X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	case STM32_CLOCK_BUS_AHB2:
-		LL_AHB2_GRP1_EnableClock(pclken->enr);
-		break;
-#endif /* CONFIG_SOC_SERIES_STM32_* */
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB3_SUPPORT) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32F2X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	case STM32_CLOCK_BUS_AHB3:
-		LL_AHB3_GRP1_EnableClock(pclken->enr);
-		break;
-#endif /* CONFIG_SOC_SERIES_STM32_* */
-	case STM32_CLOCK_BUS_APB1:
-		LL_APB1_GRP1_EnableClock(pclken->enr);
-		break;
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	case STM32_CLOCK_BUS_APB1_2:
-		LL_APB1_GRP2_EnableClock(pclken->enr);
-		break;
-#endif /* CONFIG_SOC_SERIES_STM32_* */
-#if !defined(CONFIG_SOC_SERIES_STM32F0X)
-	case STM32_CLOCK_BUS_APB2:
-		LL_APB2_GRP1_EnableClock(pclken->enr);
-		break;
-#endif
-#if defined(CONFIG_SOC_SERIES_STM32WLX)
-	case STM32_CLOCK_BUS_APB3:
-		LL_APB3_GRP1_EnableClock(pclken->enr);
-		break;
-#endif
-#if defined (CONFIG_SOC_SERIES_STM32L0X) || \
-	defined (CONFIG_SOC_SERIES_STM32G0X)
-	case STM32_CLOCK_BUS_IOP:
-		LL_IOP_GRP1_EnableClock(pclken->enr);
-		break;
-#endif
-	default:
-		return -ENOTSUP;
-	}
+	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	reg_val = *reg;
+	reg_val |= pclken->enr;
+	*reg = reg_val;
 
 	return 0;
 }
@@ -142,69 +88,20 @@ static inline int stm32_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	volatile uint32_t *reg;
+	uint32_t reg_val;
 
 	ARG_UNUSED(dev);
 
-	switch (pclken->bus) {
-	case STM32_CLOCK_BUS_AHB1:
-		LL_AHB1_GRP1_DisableClock(pclken->enr);
-		break;
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB2_SUPPORT) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32F2X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	case STM32_CLOCK_BUS_AHB2:
-		LL_AHB2_GRP1_DisableClock(pclken->enr);
-		break;
-#endif /* CONFIG_SOC_SERIES_STM32_* */
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) && defined(RCC_AHB3_SUPPORT) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32F2X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	case STM32_CLOCK_BUS_AHB3:
-		LL_AHB3_GRP1_DisableClock(pclken->enr);
-		break;
-#endif /* CONFIG_SOC_SERIES_STM32_* */
-	case STM32_CLOCK_BUS_APB1:
-		LL_APB1_GRP1_DisableClock(pclken->enr);
-		break;
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	case STM32_CLOCK_BUS_APB1_2:
-		LL_APB1_GRP2_DisableClock(pclken->enr);
-		break;
-#endif /* CONFIG_SOC_SERIES_STM32_* */
-#if !defined(CONFIG_SOC_SERIES_STM32F0X)
-	case STM32_CLOCK_BUS_APB2:
-		LL_APB2_GRP1_DisableClock(pclken->enr);
-		break;
-#endif
-#if defined(CONFIG_SOC_SERIES_STM32WLX)
-	case STM32_CLOCK_BUS_APB3:
-		LL_APB3_GRP1_DisableClock(pclken->enr);
-		break;
-#endif
-#if defined (CONFIG_SOC_SERIES_STM32L0X) || \
-	defined (CONFIG_SOC_SERIES_STM32G0X)
-	case STM32_CLOCK_BUS_IOP:
-		LL_IOP_GRP1_DisableClock(pclken->enr);
-		break;
-#endif
-	default:
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+		/* Attemp to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
+
+	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	reg_val = *reg;
+	reg_val &= ~pclken->enr;
+	*reg = reg_val;
 
 	return 0;
 }
@@ -225,54 +122,49 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	uint32_t apb1_clock = get_bus_clock(ahb_clock, STM32_APB1_PRESCALER);
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
 	uint32_t apb2_clock = get_bus_clock(ahb_clock, STM32_APB2_PRESCALER);
+#elif defined(STM32_CLOCK_BUS_APB2)
+	/* APB2 bus exists, but w/o dedicated prescaler */
+	uint32_t apb2_clock = apb1_clock;
 #endif
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
 	uint32_t ahb3_clock = get_bus_clock(ahb_clock * STM32_CPU1_PRESCALER,
 					    STM32_AHB3_PRESCALER);
+#elif defined(STM32_CLOCK_BUS_AHB3)
+	/* AHB3 bus exists, but w/o dedicated prescaler */
+	uint32_t ahb3_clock = ahb_clock;
 #endif
 
 	ARG_UNUSED(clock);
 
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB1:
+#if defined(STM32_CLOCK_BUS_AHB2)
 	case STM32_CLOCK_BUS_AHB2:
-#if !defined(CONFIG_SOC_SERIES_STM32WLX)
-	case STM32_CLOCK_BUS_AHB3:
 #endif
-#if defined (CONFIG_SOC_SERIES_STM32L0X) || \
-	defined (CONFIG_SOC_SERIES_STM32G0X)
+#if defined(STM32_CLOCK_BUS_IOP)
 	case STM32_CLOCK_BUS_IOP:
 #endif
 		*rate = ahb_clock;
 		break;
+#if defined(STM32_CLOCK_BUS_AHB3)
+	case STM32_CLOCK_BUS_AHB3:
+		*rate = ahb3_clock;
+		break;
+#endif
 	case STM32_CLOCK_BUS_APB1:
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+#if defined(STM32_CLOCK_BUS_APB1_2)
 	case STM32_CLOCK_BUS_APB1_2:
-#endif /* CONFIG_SOC_SERIES_STM32_* */
-#if defined(CONFIG_SOC_SERIES_STM32G0X)
-	case STM32_CLOCK_BUS_APB2:
-		/*
-		 * STM32G0x only has one APB, but two reset/clock enable
-		 * registers for peripherals, so return the APB1 clock rate here
-		 */
-#endif /* CONFIG_SOC_SERIES_STM32G0X */
+#endif
 		*rate = apb1_clock;
 		break;
-#if !defined (CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined (CONFIG_SOC_SERIES_STM32G0X)
+#if defined(STM32_CLOCK_BUS_APB2)
 	case STM32_CLOCK_BUS_APB2:
 		*rate = apb2_clock;
 		break;
 #endif
-#if defined(CONFIG_SOC_SERIES_STM32WLX)
-	case STM32_CLOCK_BUS_AHB3:
+#if defined(STM32_CLOCK_BUS_APB3)
 	case STM32_CLOCK_BUS_APB3:
-		/* AHB3 and APB3 share the same clock and prescaler. */
+		/* STM32WL: AHB3 and APB3 share the same clock and prescaler. */
 		*rate = ahb3_clock;
 		break;
 #endif

@@ -11,7 +11,28 @@
 
 #include <drivers/clock_control.h>
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X)
+#include <dt-bindings/clock/stm32f1_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X)
+#include <dt-bindings/clock/stm32f4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+#include <dt-bindings/clock/stm32g0_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32L0X)
+#include <dt-bindings/clock/stm32l0_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32L1X)
+#include <dt-bindings/clock/stm32l1_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX)
+#include <dt-bindings/clock/stm32l4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32WLX)
+#include <dt-bindings/clock/stm32wl_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #include <dt-bindings/clock/stm32h7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <dt-bindings/clock/stm32u5_clock.h>
