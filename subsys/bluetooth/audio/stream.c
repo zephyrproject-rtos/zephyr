@@ -283,6 +283,7 @@ int bt_audio_stream_config(struct bt_conn *conn,
 			   struct bt_codec *codec)
 {
 	uint8_t role;
+	int err;
 
 	BT_DBG("conn %p stream %p, ep %p codec %p codec id 0x%02x "
 	       "codec cid 0x%04x codec vid 0x%04x", conn, stream, ep,
@@ -316,16 +317,10 @@ int bt_audio_stream_config(struct bt_conn *conn,
 
 	bt_audio_stream_attach(conn, stream, ep, codec);
 
-	if (ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_unicast_client_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
-	} else {
-		int err;
-
-		err = bt_unicast_client_config(stream, codec);
-		if (err != 0) {
-			BT_DBG("Failed to configure stream: %d", err);
-			return err;
-		}
+	err = bt_unicast_client_config(stream, codec);
+	if (err != 0) {
+		BT_DBG("Failed to configure stream: %d", err);
+		return err;
 	}
 
 	return 0;
@@ -336,6 +331,7 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 {
 	struct bt_audio_ep *ep;
 	uint8_t role;
+	int err;
 
 	BT_DBG("stream %p codec %p", stream, codec);
 
@@ -373,18 +369,12 @@ int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
 
 	bt_audio_stream_attach(stream->conn, stream, ep, codec);
 
-	if (ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_unicast_client_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
-	} else {
-		int err;
-
-		err = bt_unicast_client_config(stream, codec);
-		if (err) {
-			return err;
-		}
-
-		stream->codec = codec;
+	err = bt_unicast_client_config(stream, codec);
+	if (err) {
+		return err;
 	}
+
+	stream->codec = codec;
 
 	return 0;
 }
@@ -643,19 +633,6 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 	return 0;
 }
 
-static bool bt_audio_stream_enabling(struct bt_audio_stream *stream)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
-		if (enabling[i] == stream) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 int bt_audio_stream_enable(struct bt_audio_stream *stream,
 			   struct bt_codec_data *meta,
 			   size_t meta_count)
@@ -689,27 +666,7 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 		return err;
 	}
 
-	if (stream->ep->type != BT_AUDIO_EP_LOCAL) {
-		return 0;
-	}
-
-	bt_unicast_client_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_ENABLING);
-
-	if (bt_audio_stream_enabling(stream)) {
-		return 0;
-	}
-
-	if (stream->ep->dir == BT_AUDIO_SOURCE) {
-		return 0;
-	}
-
-	/* After an ASE has been enabled, the Unicast Server acting as an Audio
-	 * Sink for that ASE shall autonomously initiate the Handshake
-	 * operation to transition the ASE to the Streaming state when the
-	 * Unicast Server is ready to consume audio data transmitted by the
-	 * Unicast Client.
-	 */
-	return bt_audio_stream_start(stream);
+	return 0;
 }
 
 int bt_audio_stream_metadata(struct bt_audio_stream *stream,
@@ -750,13 +707,6 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 		return err;
 	}
 
-	if (stream->ep->type != BT_AUDIO_EP_LOCAL) {
-		return 0;
-	}
-
-	/* Set the state to the same state to trigger the notifications */
-	bt_unicast_client_ep_set_state(stream->ep, stream->ep->status.state);
-
 	return 0;
 }
 
@@ -796,25 +746,7 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream)
 		return err;
 	}
 
-	if (stream->ep->type != BT_AUDIO_EP_LOCAL) {
-		return 0;
-	}
-
-	bt_unicast_client_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_DISABLING);
-
-	if (stream->ep->dir == BT_AUDIO_SOURCE) {
-		return 0;
-	}
-
-	/* If an ASE is in the Disabling state, and if the Unicast Server is in
-	 * the Audio Sink role, the Unicast Server shall autonomously initiate
-	 * the Receiver Stop Ready operation when the Unicast Server is ready
-	 * to stop consuming audio data transmitted for that ASE by the Unicast
-	 * Client. The Unicast Client in the Audio Source role should not stop
-	 * transmitting audio data until the Unicast Server transitions the ASE
-	 * to the QoS Configured state.
-	 */
-	return bt_audio_stream_stop(stream);
+	return 0;
 }
 
 int bt_audio_stream_start(struct bt_audio_stream *stream)
@@ -851,11 +783,7 @@ int bt_audio_stream_start(struct bt_audio_stream *stream)
 		return err;
 	}
 
-	if (stream->ep->type == BT_AUDIO_EP_LOCAL) {
-		bt_unicast_client_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
-	}
-
-	return err;
+	return 0;
 }
 
 int bt_audio_stream_stop(struct bt_audio_stream *stream)
@@ -893,23 +821,7 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 		return err;
 	}
 
-	if (ep->type != BT_AUDIO_EP_LOCAL) {
-		return err;
-	}
-
-	/* If the Receiver Stop Ready operation has completed successfully the
-	 * Unicast Client or the Unicast Server may terminate a CIS established
-	 * for that ASE by following the Connected Isochronous Stream Terminate
-	 * procedure defined in Volume 3, Part C, Section 9.3.15.
-	 */
-	if (!bt_audio_stream_disconnect(stream)) {
-		return err;
-	}
-
-	bt_unicast_client_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
-	bt_audio_stream_iso_listen(stream);
-
-	return err;
+	return 0;
 }
 
 int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
@@ -954,21 +866,7 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
 		return err;
 	}
 
-	if (stream->ep->type != BT_AUDIO_EP_LOCAL) {
-		return err;
-	}
-
-	/* Any previously applied codec configuration may be cached by the
-	 * server.
-	 */
-	if (!cache) {
-		bt_unicast_client_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_RELEASING);
-	} else {
-		bt_unicast_client_ep_set_state(stream->ep,
-				      BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
-	}
-
-	return err;
+	return 0;
 }
 
 int bt_audio_cig_terminate(struct bt_audio_unicast_group *group)
