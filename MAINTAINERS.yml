@@ -121,7 +121,7 @@ ARC arch:
         - IRISZZW
     files:
         - arch/arc/
-        - include/arch/arc/
+        - include/zephyr/arch/arc/
     labels:
         - "area: ARC"
 
@@ -139,8 +139,8 @@ ARM arch:
     files:
         - arch/arm/
         - arch/arm/core/offsets/
-        - include/arch/arm/aarch32/
-        - include/arch/arm/
+        - include/zephyr/arch/arm/aarch32/
+        - include/zephyr/arch/arm/
         - tests/arch/arm/
     labels:
         - "area: ARM"
@@ -154,7 +154,7 @@ ARM64 arch:
         - povergoing
     files:
         - arch/arm64/
-        - include/arch/arm64/
+        - include/zephyr/arch/arm64/
         - tests/arch/arm64/
         - soc/arm64/
         - boards/arm64/
@@ -175,8 +175,8 @@ Bluetooth:
     files:
         - doc/connectivity/bluetooth/
         - drivers/bluetooth/
-        - include/bluetooth/
-        - include/drivers/bluetooth/
+        - include/zephyr/bluetooth/
+        - include/zephyr/drivers/bluetooth/
         - samples/bluetooth/
         - subsys/bluetooth/
         - subsys/bluetooth/common/
@@ -185,12 +185,12 @@ Bluetooth:
         - subsys/bluetooth/shell/
         - tests/bluetooth/
     files-exclude:
-        - include/bluetooth/mesh/
+        - include/zephyr/bluetooth/mesh/
         - subsys/bluetooth/controller/
         - subsys/bluetooth/mesh/
         - samples/bluetooth/mesh/
         - subsys/bluetooth/audio/
-        - include/bluetooth/audio/
+        - include/zephyr/bluetooth/audio/
         - tests/bluetooth/bsim_bt/bsim_test_audio/
         - tests/bluetooth/controller/
         - tests/bluetooth/mesh_*/
@@ -227,7 +227,7 @@ Bluetooth Mesh:
         - alxelax
     files:
         - subsys/bluetooth/mesh/
-        - include/bluetooth/mesh/
+        - include/zephyr/bluetooth/mesh/
         - tests/bluetooth/mesh*/
     labels:
         - "area: Bluetooth Mesh"
@@ -246,7 +246,7 @@ Bluetooth Audio:
         - rymanluk
     files:
         - subsys/bluetooth/audio/
-        - include/bluetooth/audio/
+        - include/zephyr/bluetooth/audio/
         - tests/bluetooth/bsim_bt/bsim_test_audio/
     labels:
         - "area: Bluetooth Audio"
@@ -303,7 +303,7 @@ CMSIS API layer:
          - nashif
     files:
          - subsys/portability/cmsis_rtos_v*/
-         - include/portability/cmsis*
+         - include/zephyr/portability/cmsis*
          - samples/subsys/portability/cmsis_rtos_v*/
          - tests/subsys/portability/cmsis_rtos_v*/
     labels:
@@ -329,7 +329,7 @@ Common Architecture Interface:
         - nashif
     files:
         - arch/common/
-        - include/arch/common/
+        - include/zephyr/arch/common/
     labels:
         - "area: Architectures"
 
@@ -338,7 +338,7 @@ Console:
     maintainers:
         - pfalcon
     files:
-        - include/console/
+        - include/zephyr/console/
         - subsys/console/
     labels:
         - "area: Console"
@@ -351,7 +351,7 @@ Debug:
         - dcpleung
         - chen-png
     files:
-        - include/debug/
+        - include/zephyr/debug/
         - subsys/debug/
         - tests/subsys/debug/
     labels:
@@ -365,9 +365,9 @@ Device Driver Model:
         - dcpleung
         - nashif
     files:
-        - include/device.h
+        - include/zephyr/device.h
         - kernel/device.c
-        - include/init.h
+        - include/zephyr/init.h
         - tests/kernel/device/
         - doc/kernel/drivers/
     labels:
@@ -378,7 +378,7 @@ DFU:
     maintainers:
         - nvlsianpu
     files:
-        - include/dfu/
+        - include/zephyr/dfu/
         - subsys/dfu/
         - tests/subsys/dfu/
     labels:
@@ -397,7 +397,7 @@ Devicetree:
         - tests/lib/devicetree/
         - dts/bindings/test/
         - doc/build/dts/
-        - include/devicetree/
+        - include/zephyr/devicetree/
     labels:
         - "area: Devicetree"
 
@@ -408,8 +408,8 @@ Disk:
     collaborators:
         - danieldegrasse
     files:
-        - include/storage/disk_access.h
-        - include/drivers/disk.h
+        - include/zephyr/storage/disk_access.h
+        - include/zephyr/drivers/disk.h
         - drivers/disk/
         - subsys/disk/
     labels:
@@ -423,9 +423,9 @@ Display drivers:
     files:
         - drivers/display/
         - dts/bindings/display/
-        - include/drivers/display.h
-        - include/display/
-        - include/drivers/display.h
+        - include/zephyr/drivers/display.h
+        - include/zephyr/display/
+        - include/zephyr/drivers/display.h
         - subsys/fb/
         - samples/subsys/display/
     labels:
@@ -457,7 +457,7 @@ Documentation:
         - anangl
     files:
         - drivers/adc/
-        - include/drivers/adc.h
+        - include/zephyr/drivers/adc.h
         - tests/drivers/adc/
         - samples/drivers/adc/
     labels:
@@ -476,7 +476,7 @@ Documentation:
         - kv2019i
     files:
         - drivers/audio/
-        - include/audio/
+        - include/zephyr/audio/
         - samples/subsys/audio/
     labels:
         - "area: Audio"
@@ -495,10 +495,10 @@ Documentation:
         - doc/hardware/peripherals/canbus/
         - drivers/can/
         - dts/bindings/can/
-        - include/canbus/
-        - include/devicetree/can.h
-        - include/drivers/can.h
-        - include/drivers/can/
+        - include/zephyr/canbus/
+        - include/zephyr/devicetree/can.h
+        - include/zephyr/drivers/can.h
+        - include/zephyr/drivers/can/
         - modules/canopennode/
         - samples/drivers/can/
         - samples/modules/canopennode/
@@ -518,8 +518,8 @@ Documentation:
     files:
         - drivers/clock_control/
         - dts/bindings/clock/
-        - include/drivers/clock_control.h
-        - include/dt-bindings/clock/
+        - include/zephyr/drivers/clock_control.h
+        - include/zephyr/dt-bindings/clock/
         - tests/drivers/clock_control/
     labels:
         - "area: Clock control"
@@ -530,7 +530,7 @@ Documentation:
         - pfalcon
     files:
         - drivers/console/
-        - include/drivers/console/
+        - include/zephyr/drivers/console/
         - tests/drivers/console/
     labels:
         - "area: Console"
@@ -541,7 +541,7 @@ Documentation:
         - nordic-krch
     files:
         - drivers/counter/
-        - include/drivers/counter.h
+        - include/zephyr/drivers/counter.h
         - tests/drivers/counter/
     labels:
         - "area: Counter"
@@ -553,7 +553,7 @@ Documentation:
     files:
         - drivers/crypto/
         - dts/bindings/crypto/
-        - include/crypto/
+        - include/zephyr/crypto/
         - samples/drivers/crypto/
     labels:
         - "area: Crypto / RNG"
@@ -564,7 +564,7 @@ Documentation:
         - martinjaeger
     files:
         - drivers/dac/
-        - include/drivers/dac.h
+        - include/zephyr/drivers/dac.h
         - tests/drivers/dac/
         - samples/drivers/dac/
     labels:
@@ -587,7 +587,7 @@ Documentation:
     files:
         - drivers/eeprom/
         - dts/bindings/mtd/*eeprom*
-        - include/drivers/eeprom.h
+        - include/zephyr/drivers/eeprom.h
         - samples/drivers/eeprom/
         - tests/drivers/eeprom/
     labels:
@@ -599,7 +599,7 @@ Documentation:
         - ceolin
     files:
         - drivers/entropy/
-        - include/drivers/entropy.h
+        - include/zephyr/drivers/entropy.h
         - tests/drivers/entropy/
     labels:
         - "area: Crypto / RNG"
@@ -613,7 +613,7 @@ Documentation:
       - jvasanth1
     files:
         - drivers/espi/
-        - include/drivers/espi.h
+        - include/zephyr/drivers/espi.h
         - samples/drivers/espi/
     labels:
         - "area: eSPI"
@@ -636,7 +636,7 @@ Documentation:
     files:
         - drivers/flash/
         - dts/bindings/flash_controller/
-        - include/drivers/flash.h
+        - include/zephyr/drivers/flash.h
         - samples/drivers/flash_shell/
         - tests/drivers/flash/
     labels:
@@ -649,9 +649,9 @@ Documentation:
     files:
         - doc/hardware/peripherals/gpio.rst
         - drivers/gpio/
-        - include/drivers/gpio/
-        - include/drivers/gpio.h
-        - include/dt-bindings/gpio/
+        - include/zephyr/drivers/gpio/
+        - include/zephyr/drivers/gpio.h
+        - include/zephyr/dt-bindings/gpio/
         - tests/drivers/gpio/
     labels:
         - "area: GPIO"
@@ -663,7 +663,7 @@ Documentation:
     files:
         - drivers/hwinfo/
         - dts/bindings/hwinfo/
-        - include/drivers/hwinfo.h
+        - include/zephyr/drivers/hwinfo.h
         - tests/drivers/hwinfo/
     labels:
         - "area: HWINFO"
@@ -675,7 +675,7 @@ Documentation:
     files:
         - drivers/i2c/
         - dts/bindings/i2c/
-        - include/drivers/i2c.h
+        - include/zephyr/drivers/i2c.h
     labels:
         - "area: I2C"
 
@@ -687,7 +687,7 @@ Documentation:
         - doc/hardware/peripherals/audio/i2s.rst
         - drivers/i2s/
         - dts/bindings/i2s/
-        - include/drivers/i2s.h
+        - include/zephyr/drivers/i2s.h
         - tests/drivers/i2s/
     labels:
         - "area: I2S"
@@ -709,8 +709,8 @@ Documentation:
     files:
         - drivers/interrupt_controller/
         - dts/bindings/interrupt-controller/
-        - include/drivers/interrupt_controller/
-        - include/dt-bindings/interrupt-controller/
+        - include/zephyr/drivers/interrupt_controller/
+        - include/zephyr/dt-bindings/interrupt-controller/
     labels:
         - "area: Interrupt Controller"
 
@@ -734,7 +734,7 @@ Documentation:
       - gmarull
     files:
         - drivers/kscan/
-        - include/drivers/kscan.h
+        - include/zephyr/drivers/kscan.h
         - samples/drivers/espi/
         - tests/drivers/kscan/
     labels:
@@ -746,8 +746,8 @@ Documentation:
         - Mani-Sadhasivam
     files:
         - drivers/led/
-        - include/drivers/led/
-        - include/drivers/led.h
+        - include/zephyr/drivers/led/
+        - include/zephyr/drivers/led.h
         - samples/drivers/led_*/
     labels:
         - "area: LED"
@@ -759,7 +759,7 @@ Documentation:
     files:
         - drivers/led_strip/
         - dts/bindings/led_strip/
-        - include/drivers/led_strip.h
+        - include/zephyr/drivers/led_strip.h
     labels:
         - "area: LED"
 
@@ -772,9 +772,9 @@ Documentation:
         - JordanYates
     files:
         - drivers/lora/
-        - include/drivers/lora.h
+        - include/zephyr/drivers/lora.h
         - samples/drivers/lora/
-        - include/lorawan/
+        - include/zephyr/lorawan/
         - subsys/lorawan/
         - samples/subsys/lorawan/
     labels:
@@ -808,7 +808,7 @@ Documentation:
         - tbursztyka
     files:
         - drivers/pcie/
-        - include/drivers/pcie/
+        - include/zephyr/drivers/pcie/
     labels:
         - "area: PCI"
 
@@ -820,7 +820,7 @@ Documentation:
       - VenkatKotakonda
     files:
         - drivers/peci/
-        - include/drivers/peci.h
+        - include/zephyr/drivers/peci.h
         - samples/drivers/peci/
     labels:
         - "area: PECI"
@@ -831,8 +831,8 @@ Documentation:
         - gmarull
     files:
         - doc/hardware/pinctrl/
-        - include/drivers/pinctrl/
-        - include/drivers/pinctrl.h
+        - include/zephyr/drivers/pinctrl/
+        - include/zephyr/drivers/pinctrl.h
         - drivers/pinctrl/
     labels:
         - "area: Pinctrl"
@@ -846,7 +846,7 @@ Documentation:
     files:
         - doc/hardware/peripherals/pinmux.rst
         - drivers/pinmux/
-        - include/drivers/pinmux.h
+        - include/zephyr/drivers/pinmux.h
     labels:
         - "area: Pinmux"
 
@@ -856,7 +856,7 @@ Documentation:
         - tbursztyka
     files:
         - drivers/ptp_clock/
-        - include/drivers/ptp_clock.h
+        - include/zephyr/drivers/ptp_clock.h
     labels:
         - "area: Clocks"
 
@@ -866,9 +866,9 @@ Documentation:
         - carlocaione
     files:
         - drivers/pm_cpu_ops/
-        - include/drivers/pm_cpu_ops/
-        - include/drivers/pm_cpu_ops.h
-        - include/arch/arm64/arm-smccc.h
+        - include/zephyr/drivers/pm_cpu_ops/
+        - include/zephyr/drivers/pm_cpu_ops.h
+        - include/zephyr/arch/arm64/arm-smccc.h
     labels:
         - "area: PM CPU ops"
 
@@ -883,7 +883,7 @@ Documentation:
         - drivers/pwm/
         - dts/bindings/pwm/
         - tests/drivers/pwm/
-        - include/*/pwms.h
+        - include/zephyr/*/pwms.h
     labels:
         - "area: PWM"
 
@@ -893,8 +893,8 @@ Documentation:
         - dcpleung
     files:
         - drivers/serial/
-        - include/drivers/uart.h
-        - include/drivers/uart/
+        - include/zephyr/drivers/uart.h
+        - include/zephyr/drivers/uart/
         - dts/bindings/serial/
         - samples/drivers/uart/
         - tests/drivers/uart/
@@ -911,7 +911,7 @@ Documentation:
         - teburd
     files:
         - drivers/sensor/
-        - include/drivers/sensor.h
+        - include/zephyr/drivers/sensor.h
         - samples/sensor/
         - tests/drivers/sensor/
         - dts/bindings/sensor/
@@ -924,7 +924,7 @@ Documentation:
         - tbursztyka
     files:
         - drivers/spi/
-        - include/drivers/spi.h
+        - include/zephyr/drivers/spi.h
         - tests/drivers/spi/
     labels:
         - "area: SPI"
@@ -937,7 +937,7 @@ Documentation:
         - KangJianX
     files:
         - drivers/timer/
-        - include/drivers/timer/
+        - include/zephyr/drivers/timer/
     labels:
         - "area: Timer"
 
@@ -947,8 +947,8 @@ Documentation:
         - loicpoulain
     files:
         - drivers/video/
-        - include/drivers/video.h
-        - include/drivers/video-controls.h
+        - include/zephyr/drivers/video.h
+        - include/zephyr/drivers/video-controls.h
     labels:
         - "area: Video"
 
@@ -961,7 +961,7 @@ Documentation:
         - doc/hardware/peripherals/watchdog.rst
         - drivers/watchdog/
         - dts/bindings/watchdog/
-        - include/drivers/watchdog.h
+        - include/zephyr/drivers/watchdog.h
         - samples/drivers/watchdog/
         - tests/drivers/watchdog/
     labels:
@@ -1000,7 +1000,7 @@ Filesystems:
         - Laczen
         - nashif
     files:
-        - include/fs/
+        - include/zephyr/fs/
         - samples/subsys/fs/
         - subsys/fs/
         - tests/subsys/fs/
@@ -1012,7 +1012,7 @@ Formatted Output:
     maintainers:
       - nordic-krch
     files:
-      - include/sys/cbprintf*
+      - include/zephyr/sys/cbprintf*
       - tests/unit/cbprintf/
       - tests/lib/cbprintf_*/
       - lib/os/cbprintf*
@@ -1026,7 +1026,7 @@ IPC:
         - carlocaione
         - arnopo
     files:
-        - include/ipc/
+        - include/zephyr/ipc/
         - samples/subsys/ipc/
         - subsys/ipc/
     description: >-
@@ -1041,7 +1041,7 @@ JSON Web Token:
         - sir-branch
     files:
         - subsys/jwt/
-        - include/data/
+        - include/zephyr/data/
         - lib/os/json.c
     labels:
         - "area: JSON"
@@ -1071,10 +1071,10 @@ Kernel:
         - peter-mitsis
     files:
         - doc/kernel/
-        - include/kernel*.h
+        - include/zephyr/kernel*.h
         - kernel/
         - tests/kernel/
-        - include/sys_clock.h
+        - include/zephyr/sys_clock.h
     labels:
         - "area: Kernel"
 
@@ -1086,10 +1086,10 @@ Base OS:
         - dcpleung
         - nashif
     files:
-        - include/sys/
+        - include/zephyr/sys/
         - lib/os/
     files-exclude:
-      - include/sys/cbprintf*
+      - include/zephyr/sys/cbprintf*
       - tests/unit/cbprintf/
       - tests/lib/cbprintf_*/
       - lib/os/cbprintf*
@@ -1115,7 +1115,7 @@ Logging:
     collaborators:
         - chen-png
     files:
-        - include/logging/
+        - include/zephyr/logging/
         - samples/subsys/logging/
         - subsys/logging/
         - tests/subsys/logging/
@@ -1156,7 +1156,7 @@ MCU Manager:
         - lairdjm
     files:
         - subsys/mgmt/mcumgr/
-        - include/mgmt/mcumgr/
+        - include/zephyr/mgmt/mcumgr/
         - samples/subsys/mgmt/mcumgr/
     labels:
         - "area: mcumgr"
@@ -1167,7 +1167,7 @@ OSDP:
         - sidcha
     files:
         - subsys/mgmt/osdp/
-        - include/mgmt/osdp.h
+        - include/zephyr/mgmt/osdp.h
         - samples/subsys/mgmt/osdp/
     labels:
         - "area: OSDP"
@@ -1178,7 +1178,7 @@ hawkBit:
         - ycsin
     files:
         - subsys/mgmt/hawkbit/
-        - include/mgmt/hawkbit.h
+        - include/zephyr/mgmt/hawkbit.h
         - samples/subsys/mgmt/hawkbit/
     labels:
         - "area: hawkBit"
@@ -1205,7 +1205,7 @@ Native POSIX and POSIX arch:
         - drivers/*/*native_posix*
         - drivers/*/*/*native_posix*
         - dts/posix/
-        - include/arch/posix/
+        - include/zephyr/arch/posix/
         - scripts/valgrind.supp
         - soc/posix/
         - tests/boards/native_posix/
@@ -1224,7 +1224,7 @@ Networking:
         - mengxianglinx
     files:
         - drivers/net/
-        - include/net/
+        - include/zephyr/net/
         - samples/net/
         - subsys/net/
         - doc/connectivity/networking/
@@ -1259,7 +1259,7 @@ Networking:
         - rlubos
         - tbursztyka
     files:
-        - include/net/buf.h
+        - include/zephyr/net/buf.h
         - subsys/net/buf.c
         - tests/net/buf/
     labels:
@@ -1321,7 +1321,7 @@ NIOS-2 arch:
         - nashif
     files:
         - arch/nios2/
-        - include/arch/nios2/
+        - include/zephyr/arch/nios2/
     labels:
         - "area: NIOS2"
 
@@ -1342,7 +1342,7 @@ POSIX API layer:
         - KangJianX
         - cfriedt
     files:
-        - include/posix/
+        - include/zephyr/posix/
         - lib/posix/
         - tests/posix/
     labels:
@@ -1358,7 +1358,7 @@ Power management:
         - gmarull
         - teburd
     files:
-        - include/pm/
+        - include/zephyr/pm/
         - samples/subsys/pm/
         - subsys/pm/
         - tests/subsys/pm/
@@ -1380,7 +1380,7 @@ RISCV arch:
         - arch/riscv/
         - boards/riscv/
         - dts/bindings/riscv/
-        - include/arch/riscv/
+        - include/zephyr/arch/riscv/
         - soc/riscv/
     labels:
         - "area: RISCV"
@@ -1408,7 +1408,7 @@ Settings:
     maintainers:
         - nvlsianpu
     files:
-        - include/settings/
+        - include/zephyr/settings/
         - subsys/settings/
         - tests/subsys/settings/
     labels:
@@ -1421,7 +1421,7 @@ Shell:
     collaborators:
         - carlescufi
     files:
-        - include/shell/
+        - include/zephyr/shell/
         - samples/subsys/shell/
         - subsys/shell/
         - tests/subsys/shell/
@@ -1447,7 +1447,7 @@ SPARC arch:
         - martin-aberg
     files:
         - arch/sparc/
-        - include/arch/sparc/
+        - include/zephyr/arch/sparc/
     labels:
         - "area: SPARC"
 
@@ -1459,7 +1459,7 @@ State machine framework:
         - keith-zephyr
     files:
         - doc/services/smf/
-        - include/smf.h
+        - include/zephyr/smf.h
         - lib/smf/
         - tests/lib/smf/
     labels:
@@ -1732,7 +1732,7 @@ Storage:
         - nvlsianpu
     files:
         - subsys/storage/
-        - include/storage/
+        - include/zephyr/storage/
         - tests/subsys/storage/
     labels:
         - "area: Storage"
@@ -1742,7 +1742,7 @@ Task Watchdog:
     maintainers:
         - martinjaeger
     files:
-        - include/task_wdt/
+        - include/zephyr/task_wdt/
         - samples/subsys/task_wdt/
         - subsys/task_wdt/
     labels:
@@ -1769,7 +1769,7 @@ Tracing:
         - tleksell-pe
     files:
         - subsys/tracing/
-        - include/tracing/
+        - include/zephyr/tracing/
         - subsys/timing/
         - samples/subsys/tracing/
         - doc/services/tracing/
@@ -1784,8 +1784,8 @@ USB:
     files:
         - drivers/usb/
         - dts/bindings/usb/
-        - include/*/usb/
-        - include/usb/
+        - include/zephyr/*/usb/
+        - include/zephyr/usb/
         - samples/subsys/usb/
         - subsys/usb/
         - tests/subsys/usb/
@@ -1800,18 +1800,18 @@ Userspace:
         - enjiamai
     files:
         - doc/kernel/usermode/kernelobjects.rst
-        - include/app_memory/
-        - include/linker/app_smem*.ld
+        - include/zephyr/app_memory/
+        - include/zephyr/linker/app_smem*.ld
         - tests/kernel/mem_protect/
         - samples/userspace/
-        - include/syscall.h
+        - include/zephyr/syscall.h
         - kernel/userspace*
         - scripts/gen_app_partitions.py
         - scripts/gen_kobject_list.py
         - scripts/gen_syscalls.py
         - scripts/process_gperf.py
         - scripts/gen_relocate_app.py
-        - include/sys/kobject.h
+        - include/zephyr/sys/kobject.h
     labels:
         - "area: Userspace"
 
@@ -1851,7 +1851,7 @@ Xtensa arch:
         - nashif
     files:
         - arch/xtensa/
-        - include/arch/xtensa/
+        - include/zephyr/arch/xtensa/
         - dts/xtensa/
         - tests/arch/xtensa_asm2/
     labels:
@@ -1871,7 +1871,7 @@ x86 arch:
         - laurenmurphyx64
     files:
         - arch/x86/
-        - include/arch/x86/
+        - include/zephyr/arch/x86/
         - tests/arch/x86/
         - drivers/interrupt_controller/*intel*
         - drivers/interrupt_controller/*ioapic*
@@ -1912,6 +1912,6 @@ Random:
          - ceolin
     files:
         - subsys/random/
-        - include/random/
+        - include/zephyr/random/
     labels:
         - "area: Random"

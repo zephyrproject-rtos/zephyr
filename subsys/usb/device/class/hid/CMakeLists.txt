@@ -4,8 +4,8 @@ zephyr_library()
 
 zephyr_library_include_directories(
   # USB headers
-  #${ZEPHYR_BASE}/include/drivers/usb
-  ${ZEPHYR_BASE}/include/usb
+  #${ZEPHYR_BASE}/include/zephyr/drivers/usb
+  ${ZEPHYR_BASE}/include/zephyr/usb
   ${ZEPHYR_BASE}/subsys/usb/device
   )
 
