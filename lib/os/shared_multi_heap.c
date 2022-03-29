@@ -8,43 +8,31 @@
 #include <device.h>
 #include <sys/sys_heap.h>
 #include <sys/multi_heap.h>
-#include <linker/linker-defs.h>
 
 #include <multi_heap/shared_multi_heap.h>
 
-#define DT_DRV_COMPAT shared_multi_heap
-
-#define NUM_REGIONS DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)
-
 static struct sys_multi_heap shared_multi_heap;
-static struct sys_heap heap_pool[SMH_REG_ATTR_NUM][NUM_REGIONS];
+static struct sys_heap heap_pool[MAX_SHARED_MULTI_HEAP_ATTR][MAX_MULTI_HEAPS];
 
-static smh_init_reg_fn_t smh_init_reg;
-
-#define FOREACH_REG(n)								\
-	{ .addr = (uintptr_t) LINKER_DT_RESERVED_MEM_GET_PTR(DT_DRV_INST(n)),	\
-	  .size = LINKER_DT_RESERVED_MEM_GET_SIZE(DT_DRV_INST(n)),		\
-	  .attr = DT_ENUM_IDX(DT_DRV_INST(n), capability),			\
-	},
-
-static struct shared_multi_heap_region dt_region[NUM_REGIONS] = {
-	DT_INST_FOREACH_STATUS_OKAY(FOREACH_REG)
-};
+static unsigned int attr_cnt[MAX_SHARED_MULTI_HEAP_ATTR];
 
 static void *smh_choice(struct sys_multi_heap *mheap, void *cfg, size_t align, size_t size)
 {
-	enum smh_reg_attr attr;
 	struct sys_heap *h;
+	unsigned int attr;
 	void *block;
 
-	attr = (enum smh_reg_attr) cfg;
+	attr = (unsigned int)(long) cfg;
 
-	if (attr >= SMH_REG_ATTR_NUM || size == 0) {
+	if (attr >= MAX_SHARED_MULTI_HEAP_ATTR || size == 0) {
 		return NULL;
 	}
 
-	for (size_t reg = 0; reg < NUM_REGIONS; reg++) {
-		h = &heap_pool[attr][reg];
+	/* Set in case the user requested a non-existing attr */
+	block = NULL;
+
+	for (size_t hdx = 0; hdx < attr_cnt[attr]; hdx++) {
+		h = &heap_pool[attr][hdx];
 
 		if (h->heap == NULL) {
 			return NULL;
@@ -59,29 +47,30 @@ static void *smh_choice(struct sys_multi_heap *mheap, void *cfg, size_t align, s
 	return block;
 }
 
-static void smh_init_with_attr(enum smh_reg_attr attr)
+int shared_multi_heap_add(struct shared_multi_heap_region *region, void *user_data)
 {
-	unsigned int slot = 0;
-	uint8_t *mapped;
-	size_t size;
+	static int n_heaps;
+	struct sys_heap *h;
+	unsigned int slot;
 
-	for (size_t reg = 0; reg < NUM_REGIONS; reg++) {
-		if (dt_region[reg].attr == attr) {
-
-			if (smh_init_reg != NULL) {
-				smh_init_reg(&dt_region[reg], &mapped, &size);
-			} else {
-				mapped = (uint8_t *) dt_region[reg].addr;
-				size = dt_region[reg].size;
-			}
-
-			sys_heap_init(&heap_pool[attr][slot], mapped, size);
-			sys_multi_heap_add_heap(&shared_multi_heap,
-				&heap_pool[attr][slot], &dt_region[reg]);
-
-			slot++;
-		}
+	if (region->attr >= MAX_SHARED_MULTI_HEAP_ATTR) {
+		return -EINVAL;
 	}
+
+	/* No more heaps available */
+	if (n_heaps++ >= MAX_MULTI_HEAPS) {
+		return -ENOMEM;
+	}
+
+	slot = attr_cnt[region->attr];
+	h = &heap_pool[region->attr][slot];
+
+	sys_heap_init(h, (void *) region->addr, region->size);
+	sys_multi_heap_add_heap(&shared_multi_heap, h, user_data);
+
+	attr_cnt[region->attr]++;
+
+	return 0;
 }
 
 void shared_multi_heap_free(void *block)
@@ -89,30 +78,36 @@ void shared_multi_heap_free(void *block)
 	sys_multi_heap_free(&shared_multi_heap, block);
 }
 
-void *shared_multi_heap_alloc(enum smh_reg_attr attr, size_t bytes)
+void *shared_multi_heap_alloc(unsigned int attr, size_t bytes)
 {
-	return sys_multi_heap_alloc(&shared_multi_heap, (void *) attr, bytes);
+	if (attr >= MAX_SHARED_MULTI_HEAP_ATTR) {
+		return NULL;
+	}
+
+	return sys_multi_heap_alloc(&shared_multi_heap, (void *)(long) attr, bytes);
 }
 
-int shared_multi_heap_pool_init(smh_init_reg_fn_t smh_init_reg_fn)
+void *shared_multi_heap_aligned_alloc(unsigned int attr, size_t align, size_t bytes)
 {
-	smh_init_reg = smh_init_reg_fn;
+	if (attr >= MAX_SHARED_MULTI_HEAP_ATTR) {
+		return NULL;
+	}
+
+	return sys_multi_heap_aligned_alloc(&shared_multi_heap, (void *)(long) attr,
+					    align, bytes);
+}
+
+int shared_multi_heap_pool_init(void)
+{
+	static atomic_t state;
+
+	if (!atomic_cas(&state, 0, 1)) {
+		return -EALREADY;
+	}
 
 	sys_multi_heap_init(&shared_multi_heap, smh_choice);
 
-	for (size_t attr = 0; attr < SMH_REG_ATTR_NUM; attr++) {
-		smh_init_with_attr(attr);
-	}
+	atomic_set(&state, 1);
 
 	return 0;
 }
-
-static int shared_multi_heap_init(const struct device *dev)
-{
-	__ASSERT_NO_MSG(NUM_REGIONS <= MAX_MULTI_HEAPS);
-
-	/* Nothing to do here. */
-
-	return 0;
-}
-SYS_INIT(shared_multi_heap_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
