@@ -13,8 +13,8 @@
 #include <mgmt/mgmt.h>
 #include <stat_mgmt/stat_mgmt_config.h>
 #include <stat_mgmt/stat_mgmt.h>
-#include "cborattr/cborattr.h"
 #include <zcbor_common.h>
+#include <zcbor_decode.h>
 #include <zcbor_encode.h>
 
 static struct mgmt_handler stat_mgmt_handlers[];
@@ -115,26 +115,41 @@ stat_mgmt_cb_encode(zcbor_state_t *zse, struct stat_mgmt_entry *entry)
 static int
 stat_mgmt_show(struct mgmt_ctxt *ctxt)
 {
-	char stat_name[STAT_MGMT_MAX_NAME_LEN];
-	CborError err;
+	struct zcbor_string value = { 0 };
 	zcbor_state_t *zse = ctxt->cnbe->zs;
+	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	char stat_name[STAT_MGMT_MAX_NAME_LEN];
 	bool ok;
 	size_t counter = 0;
 
-	struct cbor_attr_t attrs[] = {
-		{
-			.attribute = "name",
-			.type = CborAttrTextStringType,
-			.addr.string = stat_name,
-			.len = sizeof(stat_name)
-		},
-		{ NULL },
-	};
+	if (!zcbor_map_start_decode(zsd)) {
+		return MGMT_ERR_EUNKNOWN;
+	}
 
-	err = cbor_read_object(&ctxt->it, attrs);
-	if (err != 0) {
+	/* Only interested in "name" keyword */
+	do {
+		struct zcbor_string key;
+		static const char name_key[] = "name";
+
+		ok = zcbor_tstr_decode(zsd, &key);
+
+		if (ok) {
+			if (key.len == (ARRAY_SIZE(name_key) - 1) &&
+			    memcmp(key.value, name_key, ARRAY_SIZE(name_key) - 1) == 0) {
+				ok = zcbor_tstr_decode(zsd, &value);
+				break;
+			}
+
+			ok = zcbor_any_skip(zsd, NULL);
+		}
+	} while (ok);
+
+	if (!ok || value.len == 0 || value.len >= ARRAY_SIZE(stat_name)) {
 		return MGMT_ERR_EINVAL;
 	}
+
+	memcpy(stat_name, value.value, value.len);
+	stat_name[value.len] = '\0';
 
 	if (stat_mgmt_count(stat_name, &counter) != 0) {
 		return MGMT_ERR_EUNKNOWN;
@@ -143,12 +158,13 @@ stat_mgmt_show(struct mgmt_ctxt *ctxt)
 	ok = zcbor_tstr_put_lit(zse, "rc")		&&
 	     zcbor_int32_put(zse, MGMT_ERR_EOK)		&&
 	     zcbor_tstr_put_lit(zse, "name")		&&
-	     zcbor_tstr_put_term(zse, stat_name)	&&
+	     zcbor_tstr_encode(zse, &value)		&&
 	     zcbor_tstr_put_lit(zse, "fields")		&&
 	     zcbor_map_start_encode(zse, counter);
 
 	if (ok) {
-		int rc = stat_mgmt_foreach_entry(zse, stat_name, stat_mgmt_cb_encode);
+		int rc = stat_mgmt_foreach_entry(zse, stat_name,
+						 stat_mgmt_cb_encode);
 
 		if (rc != MGMT_ERR_EOK) {
 			return rc;
