@@ -5642,7 +5642,7 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 			return -errno;
 		}
 
-		if (client_ctx->desthostname != NULL) {
+		if (client_ctx->hostname_verify && (client_ctx->desthostname != NULL)) {
 			/** store character at len position */
 			tmp = client_ctx->desthostname[client_ctx->desthostnamelen];
 
