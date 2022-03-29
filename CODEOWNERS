@@ -240,6 +240,9 @@
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
 /drivers/display/display_framebuf.c       @dcpleung
 /drivers/dac/                             @martinjaeger
+/drivers/dai/                             @juimonen
+/drivers/dai/intel/                       @juimonen
+/drivers/dai/intel/ssp/                   @juimonen
 /drivers/dma/*dw*                         @tbursztyka
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/dma/dma_stm32*                   @cybertale @lowlander
