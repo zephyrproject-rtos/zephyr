@@ -1,20 +1,14 @@
-/* main.c - Application main entry point */
-
 /*
  * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(can_test, LOG_LEVEL_ERR);
-
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <string.h>
 #include <drivers/can.h>
-
+#include <logging/log.h>
 #include <ztest.h>
+
+LOG_MODULE_REGISTER(can_utilities, LOG_LEVEL_ERR);
 
 static void test_can_frame_to_zcan_frame(void)
 {
@@ -137,11 +131,11 @@ static void test_zcan_filter_to_can_filter(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_can_frame,
+	ztest_test_suite(can_utilities_tests,
 			 ztest_unit_test(test_can_frame_to_zcan_frame),
 			 ztest_unit_test(test_zcan_frame_to_can_frame),
 			 ztest_unit_test(test_can_filter_to_zcan_filter),
 			 ztest_unit_test(test_zcan_filter_to_can_filter));
 
-	ztest_run_test_suite(test_can_frame);
+	ztest_run_test_suite(can_utilities_tests);
 }
