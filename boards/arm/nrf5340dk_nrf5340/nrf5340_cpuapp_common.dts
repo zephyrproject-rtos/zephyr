@@ -13,7 +13,6 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
-		zephyr,entropy = &rng_hci;
 	};
 
 	leds {
@@ -61,12 +60,6 @@
 			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 4";
 		};
-	};
-
-	rng_hci: entropy_bt_hci {
-		compatible = "zephyr,bt-hci-entropy";
-		label = "bt_hci_entropy";
-		status = "okay";
 	};
 
 	arduino_header: connector {
