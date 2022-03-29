@@ -274,7 +274,6 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 
 	ctx->proc = proc;
 	ctx->collision = 0U;
-	ctx->pause = 0U;
 	ctx->done = 0U;
 
 	/* Clear procedure data */
@@ -453,10 +452,12 @@ void ull_llcp_init(struct ll_conn *conn)
 	/* Reset local request fsm */
 	llcp_lr_init(conn);
 	sys_slist_init(&conn->llcp.local.pend_proc_list);
+	conn->llcp.local.pause = 0U;
 
 	/* Reset remote request fsm */
 	llcp_rr_init(conn);
 	sys_slist_init(&conn->llcp.remote.pend_proc_list);
+	conn->llcp.remote.pause = 0U;
 	conn->llcp.remote.incompat = INCOMPAT_NO_COLLISION;
 	conn->llcp.remote.collision = 0U;
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -1248,7 +1249,6 @@ void test_int_create_proc(void)
 
 	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE, NULL);
 	zassert_equal(ctx->collision, 0, NULL);
-	zassert_equal(ctx->pause, 0, NULL);
 
 	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
 		zassert_not_null(ctx, NULL);
@@ -1256,6 +1256,22 @@ void test_int_create_proc(void)
 	}
 
 	zassert_is_null(ctx, NULL);
+}
+
+void test_int_llcp_init(void)
+{
+	struct ll_conn conn;
+
+	ull_cp_init();
+
+	ull_llcp_init(&conn);
+
+	memset(&conn.llcp, 0xAA, sizeof(conn.llcp));
+
+	ull_llcp_init(&conn);
+
+	zassert_equal(conn.llcp.local.pause, 0, NULL);
+	zassert_equal(conn.llcp.remote.pause, 0, NULL);
 }
 
 #endif
