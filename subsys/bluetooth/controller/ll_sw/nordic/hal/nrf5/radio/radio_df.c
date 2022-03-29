@@ -282,6 +282,7 @@ static inline void radio_df_ctrl_set(uint8_t cte_len,
 		} else {
 			sample_offset = 0;
 		}
+		break;
 	case PHY_2M:
 		if (switch_spacing == RADIO_DFECTRL1_TSWITCHSPACING_2us) {
 			sample_offset = CONFIG_BT_CTLR_DF_SAMPLE_OFFSET_PHY_2M_SAMPLING_1US;
