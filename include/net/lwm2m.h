@@ -137,6 +137,7 @@ struct lwm2m_ctx {
 	 */
 	char *desthostname;
 	uint16_t desthostnamelen;
+	bool hostname_verify;
 
 	/** Client can set load_credentials function as a way of overriding
 	 *  the default behavior of load_tls_credential() in lwm2m_engine.c
