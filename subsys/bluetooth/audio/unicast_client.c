@@ -240,11 +240,16 @@ static void unicast_client_ep_idle_state(struct bt_audio_ep *ep,
 					 struct net_buf_simple *buf)
 {
 	struct bt_audio_stream *stream = ep->stream;
+	const struct bt_audio_stream_ops *ops;
+
+	if (stream == NULL) {
+		return;
+	}
 
 	/* Notify upper layer */
-	if (stream != NULL && stream->ops != NULL &&
-	    stream->ops->released != NULL) {
-		stream->ops->released(stream);
+	ops = stream->ops;
+	if (ops != NULL && ops->released != NULL) {
+		ops->released(stream);
 	} else {
 		BT_WARN("No callback for released set");
 	}
