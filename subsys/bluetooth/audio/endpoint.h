@@ -23,16 +23,12 @@
 #define BROADCAST_STREAM_CNT 0
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
-#define BT_AUDIO_EP_LOCAL	0x00
-#define BT_AUDIO_EP_REMOTE	0x01
-
 /* Temp struct declarations to handle circular dependencies */
 struct bt_audio_unicast_group;
 struct bt_audio_broadcast_source;
 struct bt_audio_broadcast_sink;
 
 struct bt_audio_ep {
-	uint8_t  type;
 	uint8_t  dir;
 	uint16_t handle;
 	uint16_t cp_handle;

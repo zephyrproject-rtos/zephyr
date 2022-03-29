@@ -314,7 +314,7 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
 
-	BT_DBG("stream %p ep %p type %u", chan, ep, ep != NULL ? ep->type : 0);
+	BT_DBG("stream %p ep %p dir %u", chan, ep, ep != NULL ? ep->dir : 0);
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		BT_DBG("endpoint not in enabling state: %s",
@@ -786,7 +786,6 @@ void ascs_ep_init(struct bt_audio_ep *ep, uint8_t id)
 	BT_DBG("ep %p id 0x%02x", ep, id);
 
 	memset(ep, 0, sizeof(*ep));
-	ep->type = BT_AUDIO_EP_LOCAL;
 	ep->status.id = id;
 	ep->iso.ops = &ascs_iso_ops;
 	ep->iso.qos = &ep->iso_qos;

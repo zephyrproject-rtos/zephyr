@@ -96,7 +96,7 @@ static void unicast_client_ep_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 
-	BT_DBG("stream %p ep %p type %u", chan, ep, ep != NULL ? ep->type : 0);
+	BT_DBG("stream %p ep %p dir %u", chan, ep, ep != NULL ? ep->dir : 0);
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		BT_DBG("endpoint not in enabling state: %s",
@@ -123,10 +123,6 @@ static void unicast_client_ep_iso_disconnected(struct bt_iso_chan *chan,
 		BT_WARN("No callback for stopped set");
 	}
 
-	if (ep->type != BT_AUDIO_EP_LOCAL) {
-		return;
-	}
-
 	bt_unicast_client_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 
 	err = bt_audio_stream_iso_listen(stream);
@@ -142,14 +138,12 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 	.disconnected	= unicast_client_ep_iso_disconnected,
 };
 
-static void unicast_client_ep_init(struct bt_audio_ep *ep, uint8_t type,
-				   uint16_t handle, uint8_t id, uint8_t dir)
+static void unicast_client_ep_init(struct bt_audio_ep *ep, uint16_t handle,
+				   uint8_t id, uint8_t dir)
 {
-	BT_DBG("ep %p type 0x%02x handle 0x%04x id 0x%02x", ep, type, handle,
-	       id);
+	BT_DBG("ep %p dir 0x%02x handle 0x%04x id 0x%02x", ep, dir, handle, id);
 
 	(void)memset(ep, 0, sizeof(*ep));
-	ep->type = type;
 	ep->handle = handle;
 	ep->status.id = id;
 	ep->iso.ops = &unicast_client_iso_ops;
@@ -214,8 +208,7 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 		struct bt_audio_ep *ep = &cache[i];
 
 		if (!ep->handle) {
-			unicast_client_ep_init(ep, BT_AUDIO_EP_REMOTE, handle,
-					       0x00, dir);
+			unicast_client_ep_init(ep, handle, 0x00, dir);
 			return ep;
 		}
 	}
