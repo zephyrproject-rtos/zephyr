@@ -1,0 +1,11 @@
+# SOF SSP configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_INTEL_SSP
+	bool "Intel I2S (SSP) Bus Driver for Dai interface"
+	select DMA
+	help
+	  Enable Inter Sound (I2S) bus driver based on
+	  Synchronous Serial Port (SSP) module.
