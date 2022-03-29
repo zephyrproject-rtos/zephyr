@@ -378,7 +378,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static struct bt_audio_capability caps[] = {
 	{
-		.dir = BT_AUDIO_SINK,
+		.dir = BT_AUDIO_DIR_SINK,
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
 				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000,

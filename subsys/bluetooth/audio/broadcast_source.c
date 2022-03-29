@@ -186,7 +186,7 @@ static void broadcast_source_ep_init(struct bt_audio_ep *ep)
 	ep->iso.qos = &ep->iso_qos;
 	ep->iso.qos->rx = &ep->iso_rx;
 	ep->iso.qos->tx = &ep->iso_tx;
-	ep->dir = BT_AUDIO_SOURCE;
+	ep->dir = BT_AUDIO_DIR_SOURCE;
 }
 
 static struct bt_audio_ep *broadcast_source_new_ep(uint8_t index)

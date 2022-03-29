@@ -546,13 +546,13 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 		}
 
 		iso_qos = stream->iso->qos;
-		if (stream->ep->dir == BT_AUDIO_SINK) {
+		if (stream->ep->dir == BT_AUDIO_DIR_SINK) {
 			/* If the endpoint is a sink, then we need to
 			 * configure our TX parameters
 			 */
 			io = iso_qos->tx;
 			iso_qos->rx = NULL;
-		} else if (stream->ep->dir == BT_AUDIO_SOURCE) {
+		} else if (stream->ep->dir == BT_AUDIO_DIR_SOURCE) {
 			/* If the endpoint is a source, then we need to
 			 * configure our RX parameters
 			 */

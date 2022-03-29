@@ -30,7 +30,7 @@
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 
-#define PAC_DIR_UNUSED(dir) ((dir) != BT_AUDIO_SINK && (dir) != BT_AUDIO_SOURCE)
+#define PAC_DIR_UNUSED(dir) ((dir) != BT_AUDIO_DIR_SINK && (dir) != BT_AUDIO_DIR_SOURCE)
 
 #define EP_ISO(_iso) CONTAINER_OF(_iso, struct bt_audio_ep, iso)
 
@@ -193,11 +193,11 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 	index = bt_conn_index(conn);
 
 	switch (dir) {
-	case BT_AUDIO_SINK:
+	case BT_AUDIO_DIR_SINK:
 		cache = snks[index];
 		size = ARRAY_SIZE(snks[index]);
 		break;
-	case BT_AUDIO_SOURCE:
+	case BT_AUDIO_DIR_SOURCE:
 		cache = srcs[index];
 		size = ARRAY_SIZE(srcs[index]);
 		break;
@@ -1420,7 +1420,7 @@ int bt_unicast_client_start(struct bt_audio_stream *stream)
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
 	 */
-	if (ep->dir == BT_AUDIO_SOURCE) {
+	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 		err = unicast_client_ep_start(ep, buf);
 		if (err) {
 			return err;
@@ -1472,7 +1472,7 @@ int bt_unicast_client_stop(struct bt_audio_stream *stream)
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
 	 */
-	if (ep->dir == BT_AUDIO_SOURCE) {
+	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 		err = unicast_client_ep_stop(ep, buf);
 		if (err) {
 			return err;
@@ -1649,9 +1649,9 @@ static int unicast_client_ase_discover(struct bt_conn *conn,
 	params->read.func = unicast_client_ase_read_func;
 	params->read.handle_count = 0u;
 
-	if (params->dir == BT_AUDIO_SINK) {
+	if (params->dir == BT_AUDIO_DIR_SINK) {
 		params->read.by_uuid.uuid = ase_snk_uuid;
-	} else if (params->dir == BT_AUDIO_SOURCE) {
+	} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
 		params->read.by_uuid.uuid = ase_src_uuid;
 	} else {
 		return -EINVAL;
@@ -1695,10 +1695,10 @@ static uint8_t unicast_client_pacs_context_read_func(struct bt_conn *conn,
 		}
 
 		switch (pac->dir) {
-		case BT_AUDIO_SINK:
+		case BT_AUDIO_DIR_SINK:
 			pac->context = sys_le16_to_cpu(context->snk);
 			break;
-		case BT_AUDIO_SOURCE:
+		case BT_AUDIO_DIR_SOURCE:
 			pac->context = sys_le16_to_cpu(context->src);
 			break;
 		default:
@@ -1909,9 +1909,9 @@ int bt_audio_discover(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	if (params->dir == BT_AUDIO_SINK) {
+	if (params->dir == BT_AUDIO_DIR_SINK) {
 		params->read.by_uuid.uuid = snk_uuid;
-	} else if (params->dir == BT_AUDIO_SOURCE) {
+	} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
 		params->read.by_uuid.uuid = src_uuid;
 	} else {
 		return -EINVAL;

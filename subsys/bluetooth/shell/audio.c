@@ -437,7 +437,7 @@ static struct bt_audio_capability_ops lc3_ops = {
 
 static struct bt_audio_capability caps[MAX_PAC] = {
 	{
-		.dir = BT_AUDIO_SOURCE,
+		.dir = BT_AUDIO_DIR_SOURCE,
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
 				BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u,
@@ -446,7 +446,7 @@ static struct bt_audio_capability caps[MAX_PAC] = {
 		.ops = &lc3_ops,
 	},
 	{
-		.dir = BT_AUDIO_SINK,
+		.dir = BT_AUDIO_DIR_SINK,
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
 				BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u,
@@ -462,13 +462,13 @@ static uint8_t stream_dir(const struct bt_audio_stream *stream)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(snks); i++) {
 		if (snks[i] != NULL && stream->ep == snks[i]) {
-			return BT_AUDIO_SINK;
+			return BT_AUDIO_DIR_SINK;
 		}
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(srcs); i++) {
 		if (srcs[i] != NULL && stream->ep == srcs[i]) {
-			return BT_AUDIO_SOURCE;
+			return BT_AUDIO_DIR_SOURCE;
 		}
 	}
 
@@ -482,7 +482,7 @@ static void add_codec(struct bt_codec *codec, uint8_t index, enum bt_audio_dir d
 
 	print_codec(codec);
 
-	if (dir != BT_AUDIO_SINK && dir != BT_AUDIO_SOURCE) {
+	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
 		return;
 	}
 
@@ -515,9 +515,9 @@ static void discover_cb(struct bt_conn *conn, struct bt_codec *codec,
 	}
 
 	if (ep) {
-		if (params->dir == BT_AUDIO_SINK) {
+		if (params->dir == BT_AUDIO_DIR_SINK) {
 			add_sink(ep, params->num_eps);
-		} else if (params->dir == BT_AUDIO_SOURCE) {
+		} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
 			add_source(ep, params->num_eps);
 		}
 
@@ -539,9 +539,9 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 	}
 
 	if (ep) {
-		if (params->dir == BT_AUDIO_SINK) {
+		if (params->dir == BT_AUDIO_DIR_SINK) {
 			add_sink(ep, params->num_eps);
-		} else if (params->dir == BT_AUDIO_SOURCE) {
+		} else if (params->dir == BT_AUDIO_DIR_SOURCE) {
 			add_source(ep, params->num_eps);
 		}
 
@@ -549,11 +549,11 @@ static void discover_all(struct bt_conn *conn, struct bt_codec *codec,
 	}
 
 	/* Sinks discovery complete, now discover sources */
-	if (params->dir == BT_AUDIO_SINK) {
+	if (params->dir == BT_AUDIO_DIR_SINK) {
 		int err;
 
 		params->func = discover_cb;
-		params->dir = BT_AUDIO_SOURCE;
+		params->dir = BT_AUDIO_DIR_SOURCE;
 
 		err = bt_audio_discover(default_conn, params);
 		if (err) {
@@ -578,14 +578,14 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	params.func = discover_all;
-	params.dir = BT_AUDIO_SINK;
+	params.dir = BT_AUDIO_DIR_SINK;
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "sink")) {
 			params.func = discover_cb;
 		} else if (!strcmp(argv[1], "source")) {
 			params.func = discover_cb;
-			params.dir = BT_AUDIO_SOURCE;
+			params.dir = BT_AUDIO_DIR_SOURCE;
 		} else {
 			shell_error(sh, "Unsupported dir: %s", argv[1]);
 			return -ENOEXEC;
@@ -636,10 +636,10 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "sink")) {
-		dir = BT_AUDIO_SINK;
+		dir = BT_AUDIO_DIR_SINK;
 		ep = snks[index];
 	} else if (!strcmp(argv[1], "source")) {
-		dir = BT_AUDIO_SOURCE;
+		dir = BT_AUDIO_DIR_SOURCE;
 		ep = srcs[index];
 	} else {
 		shell_error(sh, "Unsupported dir: %s", argv[1]);
