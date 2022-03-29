@@ -45,8 +45,8 @@
 	};
 
 	/* BC Link */
-	bcm1_dat_gpio045: bcm1_dat_gpio045 {
-		pinmux = < MCHP_XEC_PINMUX(045, MCHP_AF4) >;
+	bcm1_dat_gpio046: bcm1_dat_gpio046 {
+		pinmux = < MCHP_XEC_PINMUX(046, MCHP_AF4) >;
 	};
 
 	bcm1_clk_gpio047: bcm1_clk_gpio047 {
@@ -149,7 +149,7 @@
 	};
 
 	gptp_out3_gpio152: gptp_out3_gpio152 {
-		pinmux = < MCHP_XEC_PINMUX(0152, MCHP_AF3) >;
+		pinmux = < MCHP_XEC_PINMUX(0152, MCHP_AF2) >;
 	};
 
 	gptp_in4_gpio022: gptp_in4_gpio022 {
@@ -560,10 +560,6 @@
 	};
 
 	/* Mailbox */
-	nsmi_gpio107: nsmi_gpio107 {
-		pinmux = < MCHP_XEC_PINMUX(0107, MCHP_AF1) >;
-	};
-
 	nsmi_alt_gpio011: nsmi_alt_gpio011 {
 		pinmux = < MCHP_XEC_PINMUX(011, MCHP_AF1) >;
 	};
@@ -621,24 +617,28 @@
 		pinmux = < MCHP_XEC_PINMUX(0126, MCHP_AF1) >;
 	};
 
-	gpspi_cs_n_gpio116: gpspi_cs_n_gpio116 {
-		pinmux = < MCHP_XEC_PINMUX(0116, MCHP_AF1) >;
+	gpspi_cs_n_gpio024: gpspi_cs_n_gpio024 {
+		pinmux = < MCHP_XEC_PINMUX(024, MCHP_AF1) >;
 	};
 
-	gpspi_clk_gpio117: gpspi_clk_gpio117 {
-		pinmux = < MCHP_XEC_PINMUX(0117, MCHP_AF1) >;
+	gpspi_clk_gpio023: gpspi_clk_gpio023 {
+		pinmux = < MCHP_XEC_PINMUX(023, MCHP_AF1) >;
 	};
 
-	gpspi_io0_gpio074: gpspi_io0_gpio074 {
-		pinmux = < MCHP_XEC_PINMUX(074, MCHP_AF1) >;
+	gpspi_io0_gpio245: gpspi_io0_gpio245 {
+		pinmux = < MCHP_XEC_PINMUX(0245, MCHP_AF1) >;
 	};
 
-	gpspi_io1_gpio075: gpspi_io1_gpio075 {
-		pinmux = < MCHP_XEC_PINMUX(075, MCHP_AF1) >;
+	gpspi_io1_gpio243: gpspi_io1_gpio243 {
+		pinmux = < MCHP_XEC_PINMUX(0243, MCHP_AF1) >;
 	};
 
-	gpspi_wp_n_gpio076: gpspi_wp_n_gpio076 {
-		pinmux = < MCHP_XEC_PINMUX(076, MCHP_GPIO) >;
+	gpspi_io2_gpio034: gpspi_io2_gpio034 {
+		pinmux = < MCHP_XEC_PINMUX(034, MCHP_AF1) >;
+	};
+
+	gpspi_io3_gpio022: gpspi_io3_gpio022 {
+		pinmux = < MCHP_XEC_PINMUX(0022, MCHP_AF1) >;
 	};
 
 	/* PECI */
@@ -750,6 +750,10 @@
 		pinmux = < MCHP_XEC_PINMUX(011, MCHP_AF2) >;
 	};
 
+	pwm4_alt_gpio001: pwm3_alt_gpio001 {
+		pinmux = < MCHP_XEC_PINMUX(001, MCHP_AF1) >;
+	};
+
 	pwm5_gpio002: pwm5_gpio002 {
 		pinmux = < MCHP_XEC_PINMUX(02, MCHP_AF1) >;
 	};
@@ -779,7 +783,7 @@
 		pinmux = < MCHP_XEC_PINMUX(033, MCHP_AF2) >;
 	};
 
-	rc_id2_gpio034: rc_id2_gpio034 {
+	rc_id1_gpio034: rc_id1_gpio034 {
 		pinmux = < MCHP_XEC_PINMUX(034, MCHP_AF2) >;
 	};
 
