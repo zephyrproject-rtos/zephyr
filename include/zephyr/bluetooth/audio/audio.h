@@ -306,7 +306,7 @@ struct bt_audio_base {
 };
 
 /** @brief Audio Capability type */
-enum bt_audio_pac_type {
+enum bt_audio_dir {
 	BT_AUDIO_SINK = 0x01,
 	BT_AUDIO_SOURCE = 0x02,
 };
@@ -933,7 +933,7 @@ struct bt_audio_unicast_server_cb {
 	 */
 	int (*config)(struct bt_conn *conn,
 		      const struct bt_audio_ep *ep,
-		      enum bt_audio_pac_type type,
+		      enum bt_audio_dir type,
 		      const struct bt_codec *codec,
 		      struct bt_audio_stream **stream,
 		      struct bt_codec_qos_pref *const pref);
@@ -1088,7 +1088,7 @@ struct bt_audio_unicast_server_cb {
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
 	int (*publish_location)(struct bt_conn *conn,
-				enum bt_audio_pac_type type,
+				enum bt_audio_dir type,
 				enum bt_audio_location *location);
 
 #if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) || defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
@@ -1103,7 +1103,7 @@ struct bt_audio_unicast_server_cb {
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
-	int (*write_location)(struct bt_conn *conn, enum bt_audio_pac_type type,
+	int (*write_location)(struct bt_conn *conn, enum bt_audio_dir type,
 			      enum bt_audio_location location);
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
@@ -1342,7 +1342,7 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_audio_unicast_server_location_changed(enum bt_audio_pac_type type);
+int bt_audio_unicast_server_location_changed(enum bt_audio_dir type);
 
 /** @} */ /* End of group bt_audio_server */
 

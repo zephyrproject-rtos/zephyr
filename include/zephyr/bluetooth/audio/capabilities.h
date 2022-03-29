@@ -115,7 +115,7 @@ struct bt_audio_capability_ops {
 	 */
 	struct bt_audio_stream *(*config)(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
-					  enum bt_audio_pac_type type,
+					  enum bt_audio_dir type,
 					  struct bt_audio_capability *cap,
 					  struct bt_codec *codec);
 
@@ -267,7 +267,7 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap);
  * @param location The location to be set.
  *
  */
-int bt_audio_capability_set_location(enum bt_audio_pac_type type,
+int bt_audio_capability_set_location(enum bt_audio_dir type,
 				     enum bt_audio_location location);
 
 #ifdef __cplusplus

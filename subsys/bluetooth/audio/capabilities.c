@@ -35,7 +35,7 @@ static sys_slist_t srcs;
  */
 static int unicast_server_config_cb(struct bt_conn *conn,
 				    const struct bt_audio_ep *ep,
-				    enum bt_audio_pac_type type,
+				    enum bt_audio_dir type,
 				    const struct bt_codec *codec,
 				    struct bt_audio_stream **stream,
 				    struct bt_codec_qos_pref *const pref)
@@ -268,7 +268,7 @@ static enum bt_audio_location source_location;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 
 static int publish_location_cb(struct bt_conn *conn,
-			       enum bt_audio_pac_type type,
+			       enum bt_audio_dir type,
 			       enum bt_audio_location *location)
 {
 	if (0) {
@@ -290,7 +290,7 @@ static int publish_location_cb(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) || defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
-static int write_location_cb(struct bt_conn *conn, enum bt_audio_pac_type type,
+static int write_location_cb(struct bt_conn *conn, enum bt_audio_dir type,
 			     enum bt_audio_location location)
 {
 	return bt_audio_capability_set_location(type, location);
@@ -423,7 +423,7 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
-int bt_audio_capability_set_location(enum bt_audio_pac_type type,
+int bt_audio_capability_set_location(enum bt_audio_dir type,
 				     enum bt_audio_location location)
 {
 	int err;

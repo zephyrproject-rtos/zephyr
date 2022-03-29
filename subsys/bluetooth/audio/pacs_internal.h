@@ -52,4 +52,4 @@ struct bt_pacs_context {
 
 void bt_pacs_add_capability(uint8_t type);
 void bt_pacs_remove_capability(uint8_t type);
-int bt_pacs_location_changed(enum bt_audio_pac_type type);
+int bt_pacs_location_changed(enum bt_audio_dir type);

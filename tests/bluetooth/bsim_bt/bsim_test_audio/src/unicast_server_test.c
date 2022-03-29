@@ -34,7 +34,7 @@ CREATE_FLAG(flag_stream_configured);
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
-					enum bt_audio_pac_type type,
+					enum bt_audio_dir type,
 					struct bt_audio_capability *cap,
 					struct bt_codec *codec)
 {

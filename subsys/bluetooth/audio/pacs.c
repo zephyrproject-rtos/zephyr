@@ -173,7 +173,7 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
-static int get_pac_loc(struct bt_conn *conn, enum bt_audio_pac_type type,
+static int get_pac_loc(struct bt_conn *conn, enum bt_audio_dir type,
 		       enum bt_audio_location *location)
 {
 	int err;
@@ -492,7 +492,7 @@ static void pac_notify_loc(struct k_work *work)
 #if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
 	uint32_t location;
 	struct bt_uuid *uuid;
-	enum bt_audio_pac_type type;
+	enum bt_audio_dir type;
 	int err;
 
 #if defined(CONFIG_BT_PAC_SNK)
@@ -588,7 +588,7 @@ void bt_pacs_remove_capability(uint8_t type)
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
-int bt_pacs_location_changed(enum bt_audio_pac_type type)
+int bt_pacs_location_changed(enum bt_audio_dir type)
 {
 	struct k_work_delayable *work;
 
