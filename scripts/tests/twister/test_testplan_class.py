@@ -106,8 +106,8 @@ def test_apply_filters_part1(class_testplan, all_testsuites_dict, platforms_list
             appropriate values according to the filters
     """
     if tc_attribute is None and plat_attribute is None:
-        discards = class_testplan.apply_filters()
-        assert not discards
+        class_testplan.apply_filters()
+        assert not class_testplan.discards
 
     class_testplan.platforms = platforms_list
     class_testplan.platform_names = [p.name for p in platforms_list]
@@ -149,19 +149,19 @@ def test_apply_filters_part1(class_testplan, all_testsuites_dict, platforms_list
     if tc_attribute == "build_on_all":
         for _, testcase in class_testplan.testsuites.items():
             testcase.build_on_all = tc_value
-        discards = class_testplan.apply_filters(exclude_platform=['demo_board_1'])
+        class_testplan.apply_filters(exclude_platform=['demo_board_1'])
     elif plat_attribute == "supported_toolchains":
-        discards = class_testplan.apply_filters(force_toolchain=False,
+        class_testplan.apply_filters(force_toolchain=False,
                                                  exclude_platform=['demo_board_1'],
                                                  platform=['demo_board_2'])
     elif tc_attribute is None and plat_attribute is None:
-        discards = class_testplan.apply_filters()
+        class_testplan.apply_filters()
     else:
-        discards = class_testplan.apply_filters(exclude_platform=['demo_board_1'],
+        class_testplan.apply_filters(exclude_platform=['demo_board_1'],
                                                  platform=['demo_board_2'])
 
     for x in [expected_discards]:
-        assert x in discards.values()
+        assert x in class_testplan.discards.values()
 
 TESTDATA_PART2 = [
     ("runnable", "True", "Not runnable on device"),
@@ -192,9 +192,9 @@ def test_apply_filters_part2(class_testplan, all_testsuites_dict,
             'demo_board_2'
             ]
         }
-    discards = class_testplan.apply_filters(**kwargs)
-    assert discards
-    for d in discards.values():
+    class_testplan.apply_filters(**kwargs)
+    assert class_testplan.discards
+    for d in class_testplan.discards.values():
         assert d == expected_discards
 
 
@@ -221,9 +221,9 @@ def test_apply_filters_part3(class_testplan, all_testsuites_dict, platforms_list
     for _, testcase in class_testplan.testsuites.items():
         testcase.min_ram = tc_min_ram
         testcase.min_flash = tc_min_flash
-    discards = class_testplan.apply_filters(exclude_platform=['demo_board_1'],
+    class_testplan.apply_filters(exclude_platform=['demo_board_1'],
                                              platform=['demo_board_2'])
-    assert not discards
+    assert not class_testplan.discards
 
 def test_add_instances(test_data, class_testplan, all_testsuites_dict, platforms_list):
     """ Testing add_instances() function of TestPlan class in Twister
