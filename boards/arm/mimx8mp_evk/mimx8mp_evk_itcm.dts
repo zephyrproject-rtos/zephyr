@@ -30,3 +30,7 @@
 &gpio3 {
 	status = "okay";
 };
+
+&mailbox0 {
+	status = "okay";
+};
