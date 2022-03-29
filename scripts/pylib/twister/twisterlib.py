@@ -3860,7 +3860,7 @@ class TestPlan(DisablePyTestCollectionMixin):
 
 
     @staticmethod
-    def xunit_testcase(eleTestsuite, name, classname, status, reason, duration, runnable, stats):
+    def xunit_testcase(eleTestsuite, name, classname, status, reason, duration, runnable, stats, log):
         fails, passes, errors, skips = stats
 
         if status in ['skipped', 'filtered']:
@@ -3877,10 +3877,14 @@ class TestPlan(DisablePyTestCollectionMixin):
             ET.SubElement(eleTestcase, 'skipped', type=f"{status}", message=f"{reason}")
         elif status in ["failed", "timeout"]:
             fails += 1
-            ET.SubElement(eleTestcase, 'failure', type="failure", message=f"{reason}")
+            el = ET.SubElement(eleTestcase, 'failure', type="failure", message=f"{reason}")
+            if log:
+                el.text = log
         elif status in ["error"]:
             errors += 1
-            ET.SubElement(eleTestcase, 'error', type="failure", message=f"{reason}")
+            el = ET.SubElement(eleTestcase, 'error', type="failure", message=f"{reason}")
+            if log:
+                el.text = log
         elif status == 'passed':
             if not runnable:
                 ET.SubElement(eleTestcase, 'skipped', type="build", message="built only")
@@ -3948,20 +3952,22 @@ class TestPlan(DisablePyTestCollectionMixin):
                     for tc in ts.get("testcases", []):
                         status = tc.get('status', ts_status)
                         reason = tc.get('reason', ts.get('reason'))
+                        log = ts.get("log")
                         tc_duration = tc.get('execution_time', handler_time)
                         name = tc.get("identifier")
                         classname = ".".join(name.split(".")[:2])
                         fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
                             name, classname, status, reason, tc_duration, runnable,
-                            (fails, passes, errors, skips))
+                            (fails, passes, errors, skips), log)
                 else:
                     status = ts.get('status', 'Unknown')
                     reason = ts.get('reason', 'Unknown')
                     name = ts.get("name")
                     classname = f"{platform}:{name}"
+                    log = ts.get("log")
                     fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
                         name, classname, status, reason, duration, runnable,
-                        (fails, passes, errors, skips))
+                        (fails, passes, errors, skips), log)
 
             total = (errors + passes + fails + skips)
 
@@ -4020,12 +4026,13 @@ class TestPlan(DisablePyTestCollectionMixin):
                     suite['status'] = "error"
 
                 suite["reason"] = instance.reason
+                # FIXME
                 if os.path.exists(handler_log):
-                    suite["test_output"] = self.process_log(handler_log)
+                    suite["log"] = self.process_log(handler_log)
                 elif os.path.exists(device_log):
-                    suite["device_log"] = self.process_log(device_log)
+                    suite["log"] = self.process_log(device_log)
                 else:
-                    suite["build_log"] = self.process_log(build_log)
+                    suite["log"] = self.process_log(build_log)
             elif instance.status == 'filtered':
                 suite["status"] = "filtered"
                 suite["reason"] = instance.reason
