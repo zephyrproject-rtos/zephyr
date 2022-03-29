@@ -53,10 +53,10 @@ hardware features:
      - :dtcompatible:`arm,v6m-nvic`
    * - UART
      - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`rpi,pico-uart`
+     - :dtcompatible:`raspberrypi,pico-uart`
    * - GPIO
      - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`rpi,pico-gpio`
+     - :dtcompatible:`raspberrypi,pico-gpio`
    * - ADC
      - :kconfig:option:`CONFIG_ADC`
      - :dtcompatible:`raspberrypi,pico-adc`
