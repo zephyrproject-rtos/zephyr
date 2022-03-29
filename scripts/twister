@@ -1079,8 +1079,6 @@ def main():
                     print("%s%s" % (pre, node.name))
             return
 
-    discards = []
-
     if options.report_suffix:
         last_run = os.path.join(options.outdir, "twister_{}.json".format(options.report_suffix))
     else:
@@ -1115,7 +1113,7 @@ def main():
                              filter_platform=connected_list)
         tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
     else:
-        discards = tplan.apply_filters(
+        tplan.apply_filters(
             enable_slow=options.enable_slow,
             platform=options.platform,
             exclude_platform=options.exclude_platform,
@@ -1148,13 +1146,13 @@ def main():
             print(f"Tests found: {count}")
         return
 
-    if VERBOSE > 1 and discards:
+    if VERBOSE > 1 and tplan.discards:
         # if we are using command line platform filter, no need to list every
         # other platform as excluded, we know that already.
         # Show only the discards that apply to the selected platforms on the
         # command line
 
-        for i, reason in discards.items():
+        for i, reason in tplan.discards.items():
             if options.platform and i.platform.name not in options.platform:
                 continue
             logger.debug(
