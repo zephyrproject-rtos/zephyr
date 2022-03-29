@@ -387,8 +387,8 @@ ipc0: ipc0 {
 	status = "okay";
 };
 
-mbox: mbox@2a000 {
-	compatible = "nordic,mbox-nrf-ipc";
+mbox: ipc: mbox@2a000 {
+	compatible = "nordic,mbox-nrf-ipc", "nordic,nrf-ipc";
 	reg = <0x2a000 0x1000>;
 	tx-mask = <0x0000ffff>;
 	rx-mask = <0x0000ffff>;
