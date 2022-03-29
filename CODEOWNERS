@@ -526,97 +526,97 @@
 /dts/bindings/sensor/st*                  @avisconti
 /dts/common/                              @galak
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
-/include/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
-/include/drivers/adc.h                    @anangl
-/include/drivers/can.h                    @alexanderwachter @henrikbrixandersen
-/include/drivers/can/                     @alexanderwachter @henrikbrixandersen
-/include/drivers/counter.h                @nordic-krch
-/include/drivers/dac.h                    @martinjaeger
-/include/drivers/espi.h                   @albertofloyd @franciscomunoz @sjvasanth1
-/include/drivers/bluetooth/               @alwa-nordic @jhedberg @Vudentz
-/include/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
-/include/drivers/i2c_emul.h               @sjg20
-/include/drivers/led/ht16k33.h            @henrikbrixandersen
-/include/drivers/interrupt_controller/    @dcpleung @nashif
-/include/drivers/interrupt_controller/gic.h @stephanosio
-/include/drivers/modem/hl7800.h           @LairdCP/zephyr
-/include/drivers/pcie/                    @dcpleung
-/include/drivers/hwinfo.h                 @alexanderwachter
-/include/drivers/led.h                    @Mani-Sadhasivam
-/include/drivers/led_strip.h              @mbolivar-nordic
-/include/drivers/sensor.h                 @MaureenHelm
-/include/drivers/spi.h                    @tbursztyka
-/include/drivers/lora.h                   @Mani-Sadhasivam
-/include/drivers/peci.h                   @albertofloyd @franciscomunoz @sjvasanth1
-/include/drivers/pm_cpu_ops.h             @carlocaione
-/include/drivers/pm_cpu_ops/              @carlocaione
-/include/app_memory/                      @dcpleung
-/include/arch/arc/                        @abrodkin @ruuddw @evgeniy-paltsev
-/include/arch/arc/arch.h                  @abrodkin @ruuddw @evgeniy-paltsev
-/include/arch/arc/v2/irq.h                @abrodkin @ruuddw @evgeniy-paltsev
-/include/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
-/include/arch/arm/aarch32/cortex_a_r/     @stephanosio
-/include/arch/arm64/                      @carlocaione
-/include/arch/arm64/cortex_r/             @povergoing
-/include/arch/arm/aarch32/irq.h           @carlocaione
-/include/arch/mips/                       @frantony
-/include/arch/nios2/                      @nashif
-/include/arch/nios2/arch.h                @nashif
-/include/arch/posix/                      @aescolar @daor-oti
-/include/arch/riscv/                      @kgugala @pgielda
-/include/arch/x86/                        @jhedberg @dcpleung
-/include/arch/common/                     @andyross @nashif
-/include/arch/xtensa/                     @andyross @dcpleung
-/include/arch/sparc/                      @martin-aberg
-/include/sys/atomic.h                     @andyross
-/include/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
-/include/bluetooth/audio/                 @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
-/include/cache.h                          @carlocaione @andyross
-/include/canbus/                          @alexanderwachter @henrikbrixandersen
-/include/tracing/                         @nashif
-/include/debug/                           @nashif
-/include/debug/coredump.h                 @dcpleung
-/include/debug/gdbstub.h                  @ceolin
-/include/device.h                         @tbursztyka @nashif
-/include/devicetree.h                     @galak
-/include/devicetree/can.h                 @henrikbrixandersen
-/include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
-/include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
-/include/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
-/include/dt-bindings/pcie/                @dcpleung
-/include/dt-bindings/pwm/*it8xxx2*        @RuibinChang
-/include/dt-bindings/usb/usb.h            @galak
-/include/drivers/emul.h                   @sjg20
-/include/fs/                              @nashif @nvlsianpu @de-nordic
-/include/init.h                           @nashif @andyross
-/include/irq.h                            @dcpleung @nashif @andyross
-/include/irq_offload.h                    @dcpleung @nashif @andyross
-/include/kernel.h                         @dcpleung @nashif @andyross
-/include/kernel_version.h                 @dcpleung @nashif @andyross
-/include/linker/app_smem*.ld              @dcpleung @nashif
-/include/linker/                          @dcpleung @nashif @andyross
-/include/logging/                         @nordic-krch
-/include/lorawan/lorawan.h                @Mani-Sadhasivam
-/include/mgmt/osdp.h                      @sidcha
-/include/net/                             @rlubos @tbursztyka @pfalcon
-/include/net/buf.h                        @jhedberg @tbursztyka @pfalcon @rlubos
-/include/net/coap*.h                      @rlubos
-/include/net/lwm2m*.h                     @rlubos
-/include/net/mqtt.h                       @rlubos
-/include/net/net_pkt_filter.h             @npitre
-/include/posix/                           @pfalcon
-/include/pm/pm.h                          @nashif @ceolin
-/include/drivers/ptp_clock.h              @tbursztyka
-/include/shared_irq.h                     @dcpleung @nashif @andyross
-/include/shell/                           @jakub-uC @nordic-krch
-/include/shell/shell_mqtt.h               @ycsin
-/include/sw_isr_table.h                   @dcpleung @nashif @andyross
-/include/sys_clock.h                      @dcpleung @nashif @andyross
-/include/sys/sys_io.h                     @dcpleung @nashif @andyross
-/include/sys/kobject.h                    @dcpleung @nashif
-/include/toolchain.h                      @dcpleung @andyross @nashif
-/include/toolchain/                       @dcpleung @nashif @andyross
-/include/zephyr.h                         @dcpleung @nashif @andyross
+/include/zephyr/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
+/include/zephyr/drivers/adc.h                    @anangl
+/include/zephyr/drivers/can.h                    @alexanderwachter @henrikbrixandersen
+/include/zephyr/drivers/can/                     @alexanderwachter @henrikbrixandersen
+/include/zephyr/drivers/counter.h                @nordic-krch
+/include/zephyr/drivers/dac.h                    @martinjaeger
+/include/zephyr/drivers/espi.h                   @albertofloyd @franciscomunoz @sjvasanth1
+/include/zephyr/drivers/bluetooth/               @alwa-nordic @jhedberg @Vudentz
+/include/zephyr/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
+/include/zephyr/drivers/i2c_emul.h               @sjg20
+/include/zephyr/drivers/led/ht16k33.h            @henrikbrixandersen
+/include/zephyr/drivers/interrupt_controller/    @dcpleung @nashif
+/include/zephyr/drivers/interrupt_controller/gic.h @stephanosio
+/include/zephyr/drivers/modem/hl7800.h           @LairdCP/zephyr
+/include/zephyr/drivers/pcie/                    @dcpleung
+/include/zephyr/drivers/hwinfo.h                 @alexanderwachter
+/include/zephyr/drivers/led.h                    @Mani-Sadhasivam
+/include/zephyr/drivers/led_strip.h              @mbolivar-nordic
+/include/zephyr/drivers/sensor.h                 @MaureenHelm
+/include/zephyr/drivers/spi.h                    @tbursztyka
+/include/zephyr/drivers/lora.h                   @Mani-Sadhasivam
+/include/zephyr/drivers/peci.h                   @albertofloyd @franciscomunoz @sjvasanth1
+/include/zephyr/drivers/pm_cpu_ops.h             @carlocaione
+/include/zephyr/drivers/pm_cpu_ops/              @carlocaione
+/include/zephyr/app_memory/                      @dcpleung
+/include/zephyr/arch/arc/                        @abrodkin @ruuddw @evgeniy-paltsev
+/include/zephyr/arch/arc/arch.h                  @abrodkin @ruuddw @evgeniy-paltsev
+/include/zephyr/arch/arc/v2/irq.h                @abrodkin @ruuddw @evgeniy-paltsev
+/include/zephyr/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
+/include/zephyr/arch/arm/aarch32/cortex_a_r/     @stephanosio
+/include/zephyr/arch/arm64/                      @carlocaione
+/include/zephyr/arch/arm64/cortex_r/             @povergoing
+/include/zephyr/arch/arm/aarch32/irq.h           @carlocaione
+/include/zephyr/arch/mips/                       @frantony
+/include/zephyr/arch/nios2/                      @nashif
+/include/zephyr/arch/nios2/arch.h                @nashif
+/include/zephyr/arch/posix/                      @aescolar @daor-oti
+/include/zephyr/arch/riscv/                      @kgugala @pgielda
+/include/zephyr/arch/x86/                        @jhedberg @dcpleung
+/include/zephyr/arch/common/                     @andyross @nashif
+/include/zephyr/arch/xtensa/                     @andyross @dcpleung
+/include/zephyr/arch/sparc/                      @martin-aberg
+/include/zephyr/sys/atomic.h                     @andyross
+/include/zephyr/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
+/include/zephyr/bluetooth/audio/                 @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
+/include/zephyr/cache.h                          @carlocaione @andyross
+/include/zephyr/canbus/                          @alexanderwachter @henrikbrixandersen
+/include/zephyr/tracing/                         @nashif
+/include/zephyr/debug/                           @nashif
+/include/zephyr/debug/coredump.h                 @dcpleung
+/include/zephyr/debug/gdbstub.h                  @ceolin
+/include/zephyr/device.h                         @tbursztyka @nashif
+/include/zephyr/devicetree.h                     @galak
+/include/zephyr/devicetree/can.h                 @henrikbrixandersen
+/include/zephyr/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
+/include/zephyr/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
+/include/zephyr/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
+/include/zephyr/dt-bindings/pcie/                @dcpleung
+/include/zephyr/dt-bindings/pwm/*it8xxx2*        @RuibinChang
+/include/zephyr/dt-bindings/usb/usb.h            @galak
+/include/zephyr/drivers/emul.h                   @sjg20
+/include/zephyr/fs/                              @nashif @nvlsianpu @de-nordic
+/include/zephyr/init.h                           @nashif @andyross
+/include/zephyr/irq.h                            @dcpleung @nashif @andyross
+/include/zephyr/irq_offload.h                    @dcpleung @nashif @andyross
+/include/zephyr/kernel.h                         @dcpleung @nashif @andyross
+/include/zephyr/kernel_version.h                 @dcpleung @nashif @andyross
+/include/zephyr/linker/app_smem*.ld              @dcpleung @nashif
+/include/zephyr/linker/                          @dcpleung @nashif @andyross
+/include/zephyr/logging/                         @nordic-krch
+/include/zephyr/lorawan/lorawan.h                @Mani-Sadhasivam
+/include/zephyr/mgmt/osdp.h                      @sidcha
+/include/zephyr/net/                             @rlubos @tbursztyka @pfalcon
+/include/zephyr/net/buf.h                        @jhedberg @tbursztyka @pfalcon @rlubos
+/include/zephyr/net/coap*.h                      @rlubos
+/include/zephyr/net/lwm2m*.h                     @rlubos
+/include/zephyr/net/mqtt.h                       @rlubos
+/include/zephyr/net/net_pkt_filter.h             @npitre
+/include/zephyr/posix/                           @pfalcon
+/include/zephyr/pm/pm.h                          @nashif @ceolin
+/include/zephyr/drivers/ptp_clock.h              @tbursztyka
+/include/zephyr/shared_irq.h                     @dcpleung @nashif @andyross
+/include/zephyr/shell/                           @jakub-uC @nordic-krch
+/include/zephyr/shell/shell_mqtt.h               @ycsin
+/include/zephyr/sw_isr_table.h                   @dcpleung @nashif @andyross
+/include/zephyr/sys_clock.h                      @dcpleung @nashif @andyross
+/include/zephyr/sys/sys_io.h                     @dcpleung @nashif @andyross
+/include/zephyr/sys/kobject.h                    @dcpleung @nashif
+/include/zephyr/toolchain.h                      @dcpleung @andyross @nashif
+/include/zephyr/toolchain/                       @dcpleung @nashif @andyross
+/include/zephyr/zephyr.h                         @dcpleung @nashif @andyross
 /kernel/                                  @dcpleung @nashif @andyross
 /lib/smf/                                 @sambhurst
 /lib/util/                                @carlescufi @jakub-uC

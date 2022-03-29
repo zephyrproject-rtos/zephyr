@@ -1,4 +1,3 @@
-
 /* SPDX-License-Identifier: MIT */
 
 /* Copyright Joyent, Inc. and other Node contributors. All rights reserved.

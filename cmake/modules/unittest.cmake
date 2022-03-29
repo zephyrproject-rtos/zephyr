@@ -35,6 +35,7 @@ list(APPEND INCLUDE
   subsys/testsuite/ztest/include
   subsys/testsuite/include
   include
+  include/zephyr
   .
 )
 

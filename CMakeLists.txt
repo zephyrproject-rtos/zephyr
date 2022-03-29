@@ -106,6 +106,7 @@ zephyr_library_named(zephyr)
 
 zephyr_include_directories(
   include
+  include/zephyr
   ${PROJECT_BINARY_DIR}/include/generated
   ${USERINCLUDE}
   ${STDINCLUDE}
@@ -131,7 +132,7 @@ zephyr_compile_definitions(
   __ZEPHYR__=1
 )
 
-# Ensure that include/toolchain.h includes toolchain/other.h for all off-tree toolchains
+# Ensure that include/zephyr/toolchain.h includes toolchain/other.h for all off-tree toolchains
 if(TOOLCHAIN_USE_CUSTOM)
   zephyr_compile_definitions(__TOOLCHAIN_CUSTOM__)
 endif()
@@ -277,7 +278,7 @@ if(NOT CONFIG_ARCH_POSIX)
   # `zephyr_stdint.h` is not included for the POSIX (native) arch because it
   # compiles with the host toolchain/headers and there can be conflicts if we
   # arbitrarily redefine our own type system (see #37718).
-  zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/toolchain/zephyr_stdint.h")
+  zephyr_compile_options("SHELL: $<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/toolchain/zephyr_stdint.h")
 endif()
 
 # Common toolchain-agnostic assembly flags

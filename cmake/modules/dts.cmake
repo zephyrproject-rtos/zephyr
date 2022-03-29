@@ -107,6 +107,7 @@ if(SUPPORTS_DTS)
   foreach(dts_root ${DTS_ROOT})
     foreach(dts_root_path
         include
+        include/zephyr
         dts/common
         dts/${ARCH}
         dts
