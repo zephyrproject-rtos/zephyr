@@ -14,11 +14,11 @@ rsource "Kconfig.mode"
 
 rsource "Kconfig.filtering"
 
+rsource "Kconfig.processing"
+
 if !LOG_FRONTEND_ONLY && !LOG_MODE_MINIMAL
 
 rsource "Kconfig.formatting"
-
-rsource "Kconfig.processing"
 
 rsource "Kconfig.backends"
 

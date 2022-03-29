@@ -1700,7 +1700,7 @@ list(APPEND
   ${extra_post_build_byproducts}
   )
 
-if(CONFIG_LOG_DICTIONARY_SUPPORT)
+if(CONFIG_LOG_DICTIONARY_DB)
   set(log_dict_db_output --json=${PROJECT_BINARY_DIR}/log_dictionary.json)
 elseif(CONFIG_LOG_MIPI_SYST_USE_CATALOG)
   set(log_dict_db_output --syst=${PROJECT_BINARY_DIR}/mipi_syst_collateral.xml)
