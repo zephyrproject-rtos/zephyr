@@ -35,6 +35,24 @@
 		reg = <0xbe800000 DT_SIZE_K(128)>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <19200000>;
+		#clock-cells = <0>;
+	};
+
+	audioclk: audio-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24576000>;
+		#clock-cells = <0>;
+	};
+
+	pllclk: pll-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <96000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		shim: shim@1000 {
 			compatible = "intel,cavs-shim";
@@ -106,6 +124,102 @@
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
 			interrupt-parent = <&cavs0>;
+		};
+
+		ssp0: ssp@8000 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00008000 0x200
+			       0x00008E00 0x008>;
+			interrupts = <0x01 0 0>;
+			interrupt-parent = <&cavs3>;
+			dmas = <&lpgpdma0 2
+				&lpgpdma0 3>;
+			dma-names = "tx", "rx";
+			label = "SSP_0";
+
+			status = "okay";
+		};
+
+		ssp1: ssp@8200 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00008200 0x200
+			       0x00008E00 0x008>;
+			interrupts = <0x01 0 0>;
+			interrupt-parent = <&cavs3>;
+			dmas = <&lpgpdma0 4
+				&lpgpdma0 5>;
+			dma-names = "tx", "rx";
+			label = "SSP_1";
+
+			status = "okay";
+		};
+
+		ssp2: ssp@8400 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00008400 0x200
+			       0x00008E00 0x008>;
+			interrupts = <0x02 0 0>;
+			interrupt-parent = <&cavs3>;
+			dmas = <&lpgpdma0 6
+				&lpgpdma0 7>;
+			dma-names = "tx", "rx";
+			label = "SSP_2";
+
+			status = "okay";
+		};
+
+		ssp3: ssp@8600 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00008600 0x200
+			       0x00008E00 0x008>;
+			interrupts = <0x03 0 0>;
+			interrupt-parent = <&cavs3>;
+			dmas = <&lpgpdma0 8
+				&lpgpdma0 9>;
+			dma-names = "tx", "rx";
+			label = "SSP_3";
+
+			status = "okay";
+		};
+
+		ssp4: ssp@8800 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00008800 0x200
+			       0x00008E00 0x008>;
+			interrupts = <0x03 0 0>;
+			interrupt-parent = <&cavs3>;
+			dmas = <&lpgpdma0 10
+				&lpgpdma0 11>;
+			dma-names = "tx", "rx";
+			label = "SSP_4";
+
+			status = "okay";
+		};
+
+		ssp5: ssp@8a00 {
+			compatible = "intel,ssp-dai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00008A00 0x200
+			       0x00008E00 0x008>;
+			interrupts = <0x03 0 0>;
+			interrupt-parent = <&cavs3>;
+			dmas = <&lpgpdma0 12
+				&lpgpdma0 13>;
+			dma-names = "tx", "rx";
+			label = "SSP_5";
+
+			status = "okay";
 		};
 	};
 };
