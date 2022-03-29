@@ -3916,14 +3916,18 @@ class TestPlan(DisablePyTestCollectionMixin):
 
         for platform in selected:
             suites = list(filter(lambda d: d['platform'] == platform, all_suites))
+            # do not create entry if everything is filtered out
+            if self.no_skipped_report:
+                non_filtered = list(filter(lambda d: d['status'] != "filtered", suites))
+                if not non_filtered:
+                    continue
+
             duration = 0
             eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
                                             name=platform, time="0",
                                             tests="0",
                                             failures="0",
                                             errors="0", skipped="0")
-
-
             eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
             # Multiple 'property' can be added to 'properties'
             # differing by name and value
@@ -3967,7 +3971,7 @@ class TestPlan(DisablePyTestCollectionMixin):
             eleTestsuite.attrib['skipped'] = f"{skips}"
             eleTestsuite.attrib['tests'] = f"{total}"
 
-            result = ET.tostring(eleTestsuites)
+        result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)
 
