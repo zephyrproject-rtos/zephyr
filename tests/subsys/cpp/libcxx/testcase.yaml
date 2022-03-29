@@ -1,6 +1,3 @@
-common:
-  integration_platforms:
-    - mps2_an385
 tests:
   cpp.libcxx.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
@@ -9,9 +6,11 @@ tests:
     min_ram: 24
     tags: cpp
     extra_configs:
-        - CONFIG_NEWLIB_LIBC=y
-        - CONFIG_NEWLIB_LIBC_NANO=n
-        - CONFIG_EXCEPTIONS=y
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_NANO=n
+      - CONFIG_EXCEPTIONS=y
+    integration_platforms:
+      - mps2_an385
   cpp.libcxx.newlib_nano:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     toolchain_exclude: xcc
@@ -19,12 +18,14 @@ tests:
     tags: cpp
     timeout: 60
     extra_configs:
-        - CONFIG_NEWLIB_LIBC=y
-        - CONFIG_NEWLIB_LIBC_NANO=y
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_NANO=y
+    integration_platforms:
+      - mps2_an385
   cpp.libcxx.arcmwdtlib:
     toolchain_allow: arcmwdt
     platform_allow: nsim_hs nsim_em
     min_flash: 54
     tags: cpp
     extra_configs:
-        - CONFIG_ARCMWDT_LIBC=y
+      - CONFIG_ARCMWDT_LIBC=y
