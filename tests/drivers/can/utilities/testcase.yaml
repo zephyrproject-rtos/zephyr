@@ -1,0 +1,3 @@
+tests:
+  drivers.can.utilities:
+    tags: drivers can
