@@ -46,7 +46,7 @@ zephyr_library_sources_ifdef(CONFIG_MCTL media_proxy.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_ASCS ascs.c)
 zephyr_library_sources_ifdef(CONFIG_BT_PACS pacs.c)
-zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_STREAM stream.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_STREAM stream.c codec.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_UNICAST_SERVER unicast_server.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_CAPABILITY capabilities.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_UNICAST_CLIENT unicast_client.c)

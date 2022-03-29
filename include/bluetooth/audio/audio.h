@@ -119,7 +119,7 @@ extern "C" {
  *  Emergency alerts as, for example, with fire alarms or other urgent alerts.
  */
 #define BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM    BIT(11)
-/* @def BT_AUDIO_CONTEXT_TYPE_ANY
+/** @def BT_AUDIO_CONTEXT_TYPE_ANY
  *
  * Any known context.
  */
@@ -200,15 +200,26 @@ struct bt_codec_data {
 		.meta = _meta, \
 	}
 
-/* TODO: Remove base once LTV types are defined, are these specific to LC3? */
-#define BT_CODEC_META_BASE               0x01
 
-#define BT_CODEC_META_PREFER_CONTEXT     (BT_CODEC_META_BASE)
-#define BT_CODEC_META_CONTEXT            (BT_CODEC_META_BASE + 1)
-
-/** Location values for BT Audio.
+/** @brief Meta data type ids used for LTV encoded metadata.
  *
- * These values are defined by the Generic Audio Assigned Numbers
+ * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
+ */
+enum bt_audio_meta_type {
+	BT_CODEC_META_PREFER_CONTEXT     = 0x01,
+	BT_CODEC_META_CONTEXT            = 0x02,
+	BT_CODEC_META_PROGRAM_INFO       = 0x03,
+	BT_CODEC_META_LANGUAGE           = 0x04,
+	BT_CODEC_META_CCID_LIST          = 0x05,
+	BT_CODEC_META_PARENTAL_RATING    = 0x06,
+	BT_CODEC_META_PROGRAM_INFO_URI   = 0x07,
+	BT_CODEC_META_EXTENDED_METADATA  = 0xFE,
+	BT_CODEC_META_VENDOR_SPECIFIC    = 0xFF,
+};
+
+/** @brief Location values for BT Audio.
+ *
+ * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
  */
 enum bt_audio_location {
 	BT_AUDIO_LOCATION_FRONT_LEFT = BIT(0),
@@ -1293,6 +1304,11 @@ struct bt_audio_stream_ops {
  */
 void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
 				 struct bt_audio_stream_ops *ops);
+/**
+ * @defgroup bt_audio_server Audio Server APIs
+ * @ingroup bt_audio
+ * @{
+ */
 
 /** @brief Register unicast server callbacks.
  *
@@ -1323,6 +1339,8 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_unicast_server_location_changed(enum bt_audio_pac_type type);
+
+/** @} */ /* End of group bt_audio_server */
 
 /**
  * @defgroup bt_audio_client Audio Client APIs
@@ -1590,6 +1608,15 @@ int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast
  */
 int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group);
 
+/** @} */ /* End of group bt_audio_client */
+
+
+/**
+ * @brief Audio Broadcast APIs
+ * @defgroup bt_audio_broadcast Audio Broadcast APIs
+ * @{
+ */
+
 /** @brief Create audio broadcast source.
  *
  *  Create a new audio broadcast source with one or more audio streams.
@@ -1745,14 +1772,134 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink);
  */
 int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink);
 
-/** @} */
+/** @} */ /* End of bt_audio_broadcast */
+
+
+/**
+ * @brief Audio codec Config APIs
+ * @defgroup bt_audio_codec_cfg Codec config parsing APIs
+ *
+ * Functions to parse codec config data when formatted as LTV wrapped into @ref bt_codec.
+ *
+ * @{
+ */
+
+/**
+ * @brief Codec parser error codes for @ref bt_audio_codec_cfg.
+ */
+enum bt_audio_codec_parse_err {
+
+	/** @brief The requested type is not present in the data set. */
+	BT_AUDIO_CODEC_PARSE_ERR_SUCCESS               = 0,
+
+	/** @brief The requested type is not present in the data set. */
+	BT_AUDIO_CODEC_PARSE_ERR_TYPE_NOT_FOUND        = -1,
+
+	/** @brief The value found is invalid. */
+	BT_AUDIO_CODEC_PARSE_ERR_INVALID_VALUE_FOUND   = -2,
+
+	/** @brief The parameters specified to the function call are not valid. */
+	BT_AUDIO_CODEC_PARSE_ERR_INVALID_PARAM         = -3,
+};
+
+/**@brief Extract the frequency from a codec configuration.
+ *
+ * @param codec The codec configuration to extract data from.
+ *
+ * @return The frequency in Hz if found else a negative value of type
+ *         @ref bt_audio_codec_parse_err.
+ */
+int bt_codec_cfg_get_freq(const struct bt_codec *codec);
+
+/** @brief Extract frame duration from BT codec config
+ *
+ *  @param codec The codec configuration to extract data from.
+ *
+ *  @return Frame duration in microseconds if value is found else a negative value
+ *          of type @ref bt_audio_codec_parse_err.
+ */
+int bt_codec_cfg_get_frame_duration_us(const struct bt_codec *codec);
+
+/** @brief Extract channel allocation from BT codec config
+ *
+ *  The value returned is a bit field representing one or more audio locations as
+ *  specified by @ref bt_audio_location
+ *  Shall match one or more of the bits set in BT_PAC_SNK_LOC/BT_PAC_SRC_LOC.
+ *
+ *  Up to the configured @ref BT_CODEC_LC3_CHAN_COUNT number of channels can be present.
+ *
+ *  @param codec The codec configuration to extract data from.
+ *  @param chan_allocation Pointer to the variable to store the extracted value in.
+ *
+ *  @return BT_AUDIO_CODEC_PARSE_SUCCESS if value is found and stored in the pointer provided
+ *          else a negative value of type @ref bt_audio_codec_parse_err.
+ */
+int bt_codec_cfg_get_chan_allocation_val(const struct bt_codec *codec, uint32_t *chan_allocation);
+
+/** @brief Extract frame size in octets from BT codec config
+ *
+ * The overall SDU size will be octets_per_frame * blocks_per_sdu.
+ *
+ *  The Bluetooth specificationa are not clear about this value - it does not state that
+ *  the codec shall use this SDU size only. A codec like LC3 supports variable bit-rate
+ *  (per SDU) hence it might be allowed for an encoder to reduce the frame size below this
+ *  value.
+ *  Hence it is recommended to use the received SDU size and divide by
+ *  blocks_per_sdu rather than relying on this octets_per_sdu value to be fixed.
+ *
+ *  @param codec The codec configuration to extract data from.
+ *
+ *  @return Frame length in octets if value is found else a negative value
+ *          of type @ref bt_audio_codec_parse_err.
+ */
+int bt_codec_cfg_get_octets_per_frame(const struct bt_codec *codec);
+
+/** @brief Extract number of audio frame blockss in each SDU from BT codec config
+ *
+ *  The overall SDU size will be octets_per_frame * frame_blocks_per_sdu * number-of-channels.
+ *
+ *  If this value is not present a default value of 1 shall be used.
+ *
+ *  A frame block is one or more frames that represents data for the same period of time but
+ *  for different channels. If the stream have two audio channels and this value is two
+ *  there will be four frames in the SDU.
+ *
+ *  @param codec The codec configuration to extract data from.
+ *  @param fallback_to_default If true this function will return the default value of 1
+ *         if the type is not found. In this case the function will only fail if a NULL
+ *         pointer is provided.
+ *
+ *  @return The count of codec frames in each SDU if value is found else a negative value
+ *          of type @ref bt_audio_codec_parse_err - unless when \p fallback_to_default is true
+ *          then the value 1 is returned if frames per sdu is not found.
+ */
+int bt_codec_cfg_get_frame_blocks_per_sdu(const struct bt_codec *codec, bool fallback_to_default);
+
+/** @brief Lookup a specific value based on type
+ *
+ *  Depending on context bt_codec will be either codec capabilities, codec configuration or
+ *  meta data.
+ *
+ *  Typically types used are:
+ *  @ref bt_codec_capability_type
+ *  @ref bt_codec_config_type
+ *  @ref bt_audio_meta_type
+ *
+ *  @param codec The codec data to search in.
+ *  @param type The type id to look for
+ *  @param data Pointer to the data-pointer to update when item is found
+ *  @return True if the type is found, false otherwise.
+ */
+bool bt_codec_get_val(const struct bt_codec *codec,
+		      uint8_t type,
+		      const struct bt_codec_data **data);
+
+/** @} */ /* End of bt_audio_codec_cfg */
 
 #ifdef __cplusplus
 }
 #endif
 
-/**
- * @}
- */
+/** @} */ /* end of bt_audio */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_H_ */
