@@ -104,6 +104,8 @@ source "drivers/sensor/i3g4250d/Kconfig"
 
 source "drivers/sensor/icm42605/Kconfig"
 
+source "drivers/sensor/icm42670/Kconfig"
+
 source "drivers/sensor/iis2dh/Kconfig"
 
 source "drivers/sensor/iis2dlpc/Kconfig"
