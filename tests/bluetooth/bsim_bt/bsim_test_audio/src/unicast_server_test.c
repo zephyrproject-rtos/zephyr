@@ -169,7 +169,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static void init(void)
 {
 	static struct bt_audio_capability caps = {
-		.dir = BT_AUDIO_SINK,
+		.dir = BT_AUDIO_DIR_SINK,
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
 				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000),
@@ -210,7 +210,7 @@ static void set_location(void)
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_SINK,
+		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
 						       BT_AUDIO_LOCATION_FRONT_CENTER);
 		if (err != 0) {
 			FAIL("Failed to set sink location (err %d)\n", err);
@@ -219,7 +219,7 @@ static void set_location(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_SINK,
+		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
 						       (BT_AUDIO_LOCATION_FRONT_LEFT |
 							BT_AUDIO_LOCATION_FRONT_RIGHT));
 		if (err != 0) {

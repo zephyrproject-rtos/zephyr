@@ -43,9 +43,9 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 	struct bt_audio_capability *cap;
 	sys_slist_t *lst;
 
-	if (dir == BT_AUDIO_SINK) {
+	if (dir == BT_AUDIO_DIR_SINK) {
 		lst = &snks;
-	} else if (dir == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
 		lst = &srcs;
 	} else {
 		BT_ERR("Invalid endpoint dir: %u", dir);
@@ -97,9 +97,9 @@ static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
 	struct bt_audio_capability *cap;
 	sys_slist_t *lst;
 
-	if (dir == BT_AUDIO_SINK) {
+	if (dir == BT_AUDIO_DIR_SINK) {
 		lst = &snks;
-	} else if (dir == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
 		lst = &srcs;
 	} else {
 		BT_ERR("Invalid endpoint dir: %u", dir);
@@ -234,9 +234,9 @@ static int publish_capability_cb(struct bt_conn *conn, uint8_t dir,
 	sys_slist_t *lst;
 	uint8_t i;
 
-	if (dir == BT_AUDIO_SINK) {
+	if (dir == BT_AUDIO_DIR_SINK) {
 		lst = &snks;
-	} else if (dir == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
 		lst = &srcs;
 	} else {
 		BT_ERR("Invalid endpoint dir: %u", dir);
@@ -273,11 +273,11 @@ static int publish_location_cb(struct bt_conn *conn,
 {
 	if (0) {
 #if defined(CONFIG_BT_PAC_SNK_LOC)
-	} else if (dir == BT_AUDIO_SINK) {
+	} else if (dir == BT_AUDIO_DIR_SINK) {
 		*location = sink_location;
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-	} else if (dir == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
 		*location = source_location;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	} else {
@@ -321,9 +321,9 @@ static struct bt_audio_unicast_server_cb unicast_server_cb = {
 sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
 {
 	switch (dir) {
-	case BT_AUDIO_SINK:
+	case BT_AUDIO_DIR_SINK:
 		return &snks;
-	case BT_AUDIO_SOURCE:
+	case BT_AUDIO_DIR_SOURCE:
 		return &srcs;
 	}
 
@@ -430,11 +430,11 @@ int bt_audio_capability_set_location(enum bt_audio_dir dir,
 
 	if (0) {
 #if defined(CONFIG_BT_PAC_SNK_LOC)
-	} else if (dir == BT_AUDIO_SINK) {
+	} else if (dir == BT_AUDIO_DIR_SINK) {
 		sink_location = location;
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-	} else if (dir == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
 		source_location = location;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	} else {

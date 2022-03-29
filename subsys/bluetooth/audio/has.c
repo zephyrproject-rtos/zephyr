@@ -736,14 +736,14 @@ static int has_init(const struct device *dev)
 			 * Front Left and the Front Right bits to a value of 0b1
 			 * in the Sink Audio Locations characteristic value.
 			 */
-			bt_audio_capability_set_location(BT_AUDIO_SINK,
+			bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
 							 (BT_AUDIO_LOCATION_FRONT_LEFT |
 								BT_AUDIO_LOCATION_FRONT_RIGHT));
 		} else if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_LEFT)) {
-			bt_audio_capability_set_location(BT_AUDIO_SINK,
+			bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
 							 BT_AUDIO_LOCATION_FRONT_LEFT);
 		} else {
-			bt_audio_capability_set_location(BT_AUDIO_SINK,
+			bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
 							 BT_AUDIO_LOCATION_FRONT_RIGHT);
 		}
 	}

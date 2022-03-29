@@ -307,8 +307,8 @@ struct bt_audio_base {
 
 /** @brief Audio Capability type */
 enum bt_audio_dir {
-	BT_AUDIO_SINK = 0x01,
-	BT_AUDIO_SOURCE = 0x02,
+	BT_AUDIO_DIR_SINK = 0x01,
+	BT_AUDIO_DIR_SOURCE = 0x02,
 };
 
 /** @def BT_CODEC_QOS

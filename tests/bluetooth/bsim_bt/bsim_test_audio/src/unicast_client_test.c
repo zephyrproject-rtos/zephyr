@@ -107,7 +107,7 @@ static void add_remote_codec(struct bt_codec *codec, int index,
 
 	print_codec(codec);
 
-	if (dir != BT_AUDIO_SINK && dir != BT_AUDIO_SOURCE) {
+	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
 		return;
 	}
 
@@ -136,7 +136,7 @@ static void discover_sink_cb(struct bt_conn *conn,
 	}
 
 	if (ep != NULL) {
-		if (params->dir == BT_AUDIO_SINK) {
+		if (params->dir == BT_AUDIO_DIR_SINK) {
 			add_remote_sink(ep, params->num_eps);
 			endpoint_found = true;
 		} else {
@@ -232,7 +232,7 @@ static void discover_sink(void)
 	int err;
 
 	params.func = discover_sink_cb;
-	params.dir = BT_AUDIO_SINK;
+	params.dir = BT_AUDIO_DIR_SINK;
 
 	err = bt_audio_discover(default_conn, &params);
 	if (err != 0) {
