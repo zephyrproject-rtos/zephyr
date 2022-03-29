@@ -4,7 +4,7 @@ tests:
     filter: not CONFIG_SOC_MCIMX7_M4
     tags: libc ignore_faults
     integration_platforms:
-      - native_posix_64
+      - qemu_x86
     platform_exclude: native_posix native_posix_64 nrf52_bsim
   libraries.libc.sprintf_new:
     extra_args: CONF_FILE=prj_new.conf
