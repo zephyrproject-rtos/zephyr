@@ -42,10 +42,25 @@
 #include "hal/debug.h"
 
 /* Hardcoded instant delta +6 */
-#define CONN_UPDATE_INSTANT_DELTA 6U
+#define CONN_UPDATE_INSTANT_DELTA	6U
 
-/* TODO: Known, missing items (missing implementation):
- *	LL/CON/MAS/BV-34-C [Accepting Connection Parameter Request ? event masked]
+/* CPR parameter ranges */
+#define CONN_UPDATE_TIMEOUT_100MS	10U
+#define CONN_UPDATE_TIMEOUT_32SEC	3200U
+#define CONN_UPDATE_LATENCY_MAX		499U
+#define CONN_UPDATE_CONN_INTV_4SEC	3200U
+
+/*
+ * TODO - Known, missing items (missing implementation):
+ *
+ * If DLE procedure supported:
+ *  and current PHY is Coded PHY:
+ *  ... (5.3.6.B.5.1.1) the new connection interval shall be at least connIntervalCodedMin us.
+ *  ... (5.3.6.B.5.1.7.4) packet tx time restrictions should be in effect
+ *
+ * Inter-connection mutual exclusion on CPR
+ *
+ * LL/CON/MAS/BV-34-C [Accepting Connection Parameter Request w. event masked]
  */
 
 /* LLCP Local Procedure Connection Update FSM states */
@@ -55,6 +70,7 @@ enum {
 	LP_CU_STATE_WAIT_RX_CONN_PARAM_RSP,
 	LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND,
 	LP_CU_STATE_WAIT_RX_CONN_UPDATE_IND,
+	LP_CU_STATE_WAIT_TX_REJECT_EXT_IND,
 	LP_CU_STATE_WAIT_INSTANT,
 	LP_CU_STATE_WAIT_NTF,
 };
@@ -139,6 +155,29 @@ static void cu_update_conn_parameters(struct ll_conn *conn, struct proc_ctx *ctx
 				   ctx->data.cu.instant);
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+static bool cu_check_conn_parameters(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	const uint16_t interval_min = ctx->data.cu.interval_min;
+	const uint16_t interval_max = ctx->data.cu.interval_max; /* unit conn events (ie 1.25ms) */
+	const uint16_t timeout = ctx->data.cu.timeout; /* unit 10ms */
+	const uint16_t latency = ctx->data.cu.latency;
+	const uint16_t preferred_periodicity = ctx->data.cu.preferred_periodicity;
+
+	/* Invalid parameters */
+	const bool invalid = ((interval_min < CONN_INTERVAL_MIN(conn)) ||
+	    (interval_max > CONN_UPDATE_CONN_INTV_4SEC) ||
+	    (interval_min > interval_max) ||
+	    (latency > CONN_UPDATE_LATENCY_MAX) ||
+	    (timeout < CONN_UPDATE_TIMEOUT_100MS) || (timeout > CONN_UPDATE_TIMEOUT_32SEC) ||
+	    ((timeout * 4U) <= /* *4U re. conn events is equivalent to *2U re. ms */
+	     ((latency + 1) * interval_max)) ||
+	    (preferred_periodicity > interval_max));
+
+	return !invalid;
+}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 static bool cu_should_notify_host(struct proc_ctx *ctx)
 {
 	return (((ctx->proc == PROC_CONN_PARAM_REQ) && (ctx->data.cu.error != 0U)) ||
@@ -161,6 +200,10 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
 		llcp_pdu_encode_conn_param_req(ctx, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
+		llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP,
+					       ctx->data.cu.error);
 		break;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 #if defined(CONFIG_BT_CENTRAL)
@@ -214,6 +257,19 @@ static void lp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+static void lp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				      void *param)
+{
+	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+		ctx->state = LP_CU_STATE_WAIT_TX_REJECT_EXT_IND;
+	} else {
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+		lp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND);
+		llcp_lr_complete(conn);
+		ctx->state = LP_CU_STATE_IDLE;
+	}
+}
+
 static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
@@ -304,6 +360,20 @@ static void lp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+static void lp_cu_st_wait_tx_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+					       uint8_t evt, void *param)
+{
+	switch (evt) {
+	case LP_CU_EVT_RUN:
+		lp_cu_send_reject_ext_ind(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+
 static void lp_cu_st_wait_tx_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					    void *param)
 {
@@ -327,7 +397,14 @@ static void lp_cu_st_wait_rx_conn_param_rsp(struct ll_conn *conn, struct proc_ct
 
 	switch (evt) {
 	case LP_CU_EVT_CONN_PARAM_RSP:
+		llcp_pdu_decode_conn_param_rsp(ctx, param);
 		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
+		/* Perform Param check and possibly reject (LL_REJECT_EXT_IND) */
+		if (!cu_check_conn_parameters(conn, ctx)) {
+			ctx->data.cu.error = BT_HCI_ERR_INVALID_LL_PARAM;
+			lp_cu_send_reject_ext_ind(conn, ctx, evt, param);
+			break;
+		}
 		lp_cu_send_conn_update_ind(conn, ctx, evt, param);
 		break;
 	case LP_CU_EVT_UNKNOWN:
@@ -407,10 +484,10 @@ static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		/* Procedure is complete when the instant has passed, and the
 		 * new connection event parameters have been applied.
 		 */
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		cu_update_conn_parameters(conn, ctx);
 		notify = cu_should_notify_host(ctx);
 		if (notify) {
-			llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 			ctx->data.cu.error = BT_HCI_ERR_SUCCESS;
 			lp_cu_complete(conn, ctx, evt, param);
 		} else {
@@ -471,6 +548,11 @@ static void lp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 		lp_cu_st_wait_rx_conn_update_ind(conn, ctx, evt, param);
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	case LP_CU_STATE_WAIT_TX_REJECT_EXT_IND:
+		lp_cu_st_wait_tx_reject_ext_ind(conn, ctx, evt, param);
+		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	case LP_CU_STATE_WAIT_INSTANT:
 		lp_cu_st_wait_instant(conn, ctx, evt, param);
 		break;
@@ -719,7 +801,14 @@ static void rp_cu_st_wait_rx_conn_param_req(struct ll_conn *conn, struct proc_ct
 	case RP_CU_EVT_CONN_PARAM_REQ:
 		llcp_pdu_decode_conn_param_req(ctx, param);
 
-		bool params_changed =
+		/* Perform Param check and reject if invalid (LL_REJECT_EXT_IND) */
+		if (!cu_check_conn_parameters(conn, ctx)) {
+			ctx->data.cu.error = BT_HCI_ERR_INVALID_LL_PARAM;
+			rp_cu_send_reject_ext_ind(conn, ctx, evt, param);
+			break;
+		}
+
+		const bool params_changed =
 			cu_have_params_changed(conn, ctx->data.cu.interval_max,
 					       ctx->data.cu.latency, ctx->data.cu.timeout);
 
