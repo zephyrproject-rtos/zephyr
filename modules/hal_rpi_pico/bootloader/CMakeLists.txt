@@ -38,6 +38,7 @@ target_include_directories(boot_stage2 PUBLIC
   ${rp2040_dir}/hardware_regs/include
   ${common_dir}/pico_base/include
   ${ZEPHYR_BASE}/include
+  ${ZEPHYR_BASE}/include/zephyr
   )
 
 target_link_options(boot_stage2 PRIVATE

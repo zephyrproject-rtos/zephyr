@@ -5,6 +5,7 @@ set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
   -c ${CMAKE_C_COMPILER}
   -o ${CMAKE_OBJCOPY}
   -i ${ZEPHYR_BASE}/include
+  -i ${ZEPHYR_BASE}/include/zephyr
   -f ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.elf
   $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
