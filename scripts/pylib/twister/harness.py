@@ -25,7 +25,7 @@ class Harness:
         'PASS': 'passed',
         'SKIP': 'skipped',
         'BLOCK': 'blocked',
-        'FAIL': 'failure'
+        'FAIL': 'failed'
         }
 
     def __init__(self):
@@ -51,6 +51,8 @@ class Harness:
         self.matched_run_id = False
         self.run_id_exists = False
         self.instance = None
+        self.testcase_output = ""
+        self._match = False
 
     def configure(self, instance):
         self.instance = instance
@@ -251,12 +253,18 @@ class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     test_suite_start_pattern = r"Running TESTSUITE (?P<suite_name>.*)"
+    ZTEST_START_PATTERN = r"START - (test_)?(.*)"
 
     def handle(self, line):
         test_suite_match = re.search(self.test_suite_start_pattern, line)
         if test_suite_match:
             suite_name = test_suite_match.group("suite_name")
             self.detected_suite_names.append(suite_name)
+
+        testcase_match = re.search(self.ZTEST_START_PATTERN, line)
+        if testcase_match or self._match:
+            self.testcase_output += line + "\n"
+            self._match = True
 
         match = result_re.match(line)
 
@@ -269,6 +277,10 @@ class Test(Harness):
             if tc.status == "skipped":
                 tc.reason = "ztest skip"
             tc.duration = float(match.group(4))
+            if tc.status == "failed":
+                tc.output = self.testcase_output
+            self.testcase_output = ""
+            self._match = False
             self.ztest = True
 
         self.process_test(line)
