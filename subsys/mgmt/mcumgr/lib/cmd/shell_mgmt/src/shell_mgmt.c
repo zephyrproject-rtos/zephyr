@@ -11,7 +11,7 @@
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
-#include "cborattr/cborattr.h"
+#include <zcbor_decode.h>
 #include "shell_mgmt/shell_mgmt.h"
 #include "shell_mgmt/shell_mgmt_config.h"
 #include <shell/shell_dummy.h>
@@ -40,39 +40,68 @@ shell_get_output(size_t *len)
 static int
 shell_mgmt_exec(struct mgmt_ctxt *ctxt)
 {
-	char line[SHELL_MGMT_MAX_LINE_LEN + 1];
-	zcbor_state_t *zse = ctxt->cnbe->zs;
-	CborError err;
 	int rc;
-	char *argv[SHELL_MGMT_MAX_ARGC];
-	int argc;
 	bool ok;
+	char line[SHELL_MGMT_MAX_LINE_LEN + 1];
+	size_t len = 0;
 	struct zcbor_string cmd_out;
+	zcbor_state_t *zsd = ctxt->cnbd->zs;
+	zcbor_state_t *zse = ctxt->cnbe->zs;
 
-	const struct cbor_attr_t attrs[] = {
-		{
-			.attribute = "argv",
-			.type = CborAttrArrayType,
-			.addr.array = {
-				.element_type = CborAttrTextStringType,
-				.arr.strings.ptrs = argv,
-				.arr.strings.store = line,
-				.arr.strings.storelen = sizeof(line),
-				.count = &argc,
-				.maxlen = ARRAY_SIZE(argv),
-			},
-		},
-		{ 0 },
-	};
-
-	line[0] = 0;
-
-	err = cbor_read_object(&ctxt->it, attrs);
-	if (err != 0) {
+	if (!zcbor_map_start_decode(zsd)) {
 		return MGMT_ERR_EINVAL;
 	}
 
-	line[ARRAY_SIZE(line) - 1] = 0;
+	/* Expecting single array named "argv" */
+	do {
+		struct zcbor_string key;
+		static const char argv_keyword[] = "argv";
+
+		ok = zcbor_tstr_decode(zsd, &key);
+
+		if (ok) {
+			if (key.len == (ARRAY_SIZE(argv_keyword) - 1) &&
+			    memcmp(key.value, argv_keyword, ARRAY_SIZE(argv_keyword) - 1) == 0) {
+				break;
+			}
+
+			ok = zcbor_any_skip(zsd, NULL);
+		}
+	} while (ok);
+
+	if (!ok || !zcbor_list_start_decode(zsd)) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	/* Compose command line */
+	do {
+		struct zcbor_string value;
+
+		ok = zcbor_tstr_decode(zsd, &value);
+		if (ok) {
+			/* TODO: This is original error when failed to collect command line
+			 * to buffer, but should be rather MGMT_ERR_ENOMEM.
+			 */
+			if ((len + value.len) >= (ARRAY_SIZE(line) - 1)) {
+				return MGMT_ERR_EINVAL;
+			}
+
+			memcpy(&line[len], value.value, value.len);
+			len += value.len + 1;
+			line[len - 1] = ' ';
+		} else {
+			line[len - 1] = 0;
+			/* Implicit break by while condition */
+		}
+	} while (ok);
+
+	zcbor_list_end_decode(zsd);
+
+	/* Failed to compose command line? */
+	if (len == 0) {
+		/* We do not bother to close decoder */
+		return MGMT_ERR_EINVAL;
+	}
 
 	rc = shell_exec(line);
 	cmd_out.value = shell_get_output(&cmd_out.len);
@@ -83,6 +112,8 @@ shell_mgmt_exec(struct mgmt_ctxt *ctxt)
 	     zcbor_tstr_encode(zse, &cmd_out)		&&
 	     zcbor_tstr_put_lit(zse, "rc")		&&
 	     zcbor_int32_put(zse, rc);
+
+	zcbor_map_end_decode(zsd);
 
 	return ok ? 0 : MGMT_ERR_ENOMEM;
 }
