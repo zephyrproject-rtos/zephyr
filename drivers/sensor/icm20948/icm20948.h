@@ -7,10 +7,56 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM_20498_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM_20498_H_
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <zephyr/types.h>
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
+#include <drivers/spi.h>
+#include <drivers/i2c.h>
+
+#define DT_DRV_COMPAT invensense_icm20948
+
+#define ICM20948_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define ICM20948_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+
+struct icm20948_bus {
+	uint8_t active_bank;
+	union {
+		#if ICM20948_BUS_SPI
+			struct spi_dt_spec spi;
+		#endif
+		#if ICM20948_BUS_I2C
+			struct i2c_dt_spec i2c;
+		#endif
+	};
+};
+
+
+typedef int (*icm20948_read_data_fn)(const struct icm20948_bus *bus, uint16_t reg_bank_addr, uint8_t *value, uint8_t len);
+typedef int (*icm20948_write_data_fn)(const struct icm20948_bus *bus, uint16_t reg_bank_addr, uint8_t *value, uint8_t len);
+typedef int (*icm20948_read_reg_fn)(const struct icm20948_bus *bus, uint16_t reg_bank_addr, uint8_t *value);
+typedef int (*icm20948_write_reg_fn)(const struct icm20948_bus *bus, uint16_t reg_bank_addr, uint8_t value);
+typedef int (*icm20948_update_reg_fn)(const struct icm20948_bus *bus, uint16_t reg_bank_addr, uint8_t mask, uint8_t value);
+typedef int (*icm20948_check_fn)(const struct icm20948_bus *bus);
+
+struct icm20948_bus_io {
+	icm20948_check_fn check;
+	icm20948_read_data_fn read_data;
+	icm20948_write_data_fn write_data;
+	icm20948_read_reg_fn read_reg;
+	icm20948_write_reg_fn write_reg;
+	icm20948_update_reg_fn update_reg;
+};
+
+#if ICM20948_BUS_SPI
+extern const struct icm20948_bus_io icm20948_bus_io_spi;
+#endif
+
+#if ICM20948_BUS_I2C
+extern const struct icm20948_bus_io icm20948_bus_io_i2c;
+#endif
+
+
 
 #ifdef CONFIG_ICM20948_I2C_AD0
 #define CONFIG_ICM20948_I2C_SLAVE_ADDR 0x69
@@ -161,40 +207,5 @@ enum icm20948_gyro_fs {
 #define ICM20948_ENABLE_FSYNC BIT(7)
 #endif
 
-/* sensor data forward declaration (member definition is below) */
-struct icm20948_data;
-
-struct icm20948_tf {
-	int (*read_data)(struct icm20948_data *data, u16_t reg_bank_addr, u8_t *value, u8_t len);
-
-	int (*write_data)(struct icm20948_data *data, u16_t reg_bank_addr, u8_t *value, u8_t len);
-
-	int (*read_reg)(struct icm20948_data *data, u16_t reg_bank_addr, u8_t *value);
-
-	int (*write_reg)(struct icm20948_data *data, u16_t reg_bank_addr, u8_t value);
-
-	int (*update_reg)(struct icm20948_data *data, u16_t reg_bank_addr, u8_t mask, u8_t value);
-};
-
-struct icm20948_data {
-	struct device *bus;
-	const struct icm20948_tf *hw_tf;
-
-	s16_t acc[3];
-	s16_t gyro[3];
-
-	s16_t temp;
-
-	enum icm20948_gyro_fs gyro_fs; // gyro range
-	enum icm20948_accel_fs accel_fs; // accel range
-
-#if defined(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
-	struct spi_cs_control cs_ctrl;
-#endif
-	u8_t bank; /* selected bank for sensor bank */
-};
-
-int icm20948_i2c_init(struct device *dev);
-int icm20948_spi_init(struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_ */

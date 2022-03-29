@@ -5,30 +5,84 @@
  */
 
 #include <init.h>
-#include <sensor.h>
-#include <misc/byteorder.h>
+#include <drivers/sensor.h>
+#include <sys/byteorder.h>
 #include <kernel.h>
-#include <misc/__assert.h>
+#include <sys/__assert.h>
+
 #include <logging/log.h>
 
 #include "icm20948.h"
 
-#ifdef DT_TDK_ICM20948_BUS_I2C
-#include <i2c.h>
-#elif defined DT_TDK_ICM20948_BUS_SPI
-#include <spi.h>
+LOG_MODULE_REGISTER(ICM20948, CONFIG_SENSOR_LOG_LEVEL);
+
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "ICM20948 driver enabled without any devices"
 #endif
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(ICM20948);
+struct icm20948_config {
+	struct icm20948_bus bus;
+	const struct icm20948_bus_io *bus_io;
+};
 
-static inline int icm20948_set_accel_fs(struct device *dev, enum icm20948_accel_fs accel_fs)
+struct icm20948_data {
+	int16_t acc[3];
+	int16_t gyro[3];
+
+	int16_t temp;
+
+	enum icm20948_gyro_fs gyro_fs; // gyro range
+	enum icm20948_accel_fs accel_fs; // accel range
+};
+
+static inline int icm20948_read_data(const struct device *dev, uint16_t reg_bank_addr,
+				     uint8_t *value, uint8_t len)
 {
-	struct icm20948_data *data = (struct icm20948_data *)dev->driver_data;
+	const struct icm20948_config *cfg = dev->config;
+
+	return cfg->bus_io->read_data(&cfg->bus, reg_bank_addr, value, len);
+}
+
+static inline int icm20948_write_data(const struct device *dev, uint16_t reg_bank_addr,
+				      uint8_t *value, uint8_t len)
+{
+	const struct icm20948_config *cfg = dev->config;
+	return cfg->bus_io->write_data(&cfg->bus, reg_bank_addr, value, len);
+}
+
+static inline int icm20948_read_reg(const struct device *dev, uint16_t reg_bank_addr,
+				    uint8_t *value)
+{
+	const struct icm20948_config *cfg = dev->config;
+	return cfg->bus_io->read_reg(&cfg->bus, reg_bank_addr, value);
+}
+
+static inline int icm20948_write_reg(const struct device *dev, uint16_t reg_bank_addr,
+				     uint8_t value)
+{
+	const struct icm20948_config *cfg = dev->config;
+	return cfg->bus_io->write_reg(&cfg->bus, reg_bank_addr, value);
+}
+
+static inline int icm20948_update_reg(const struct device *dev, uint16_t reg_bank_addr,
+				      uint8_t mask, uint8_t value)
+{
+	const struct icm20948_config *cfg = dev->config;
+	return cfg->bus_io->update_reg(&cfg->bus, reg_bank_addr, mask, value);
+}
+
+static inline int icm20948_bus_check(const struct device *dev)
+{
+	const struct icm20948_config *cfg = dev->config;
+	return cfg->bus_io->check(&cfg->bus);
+}
+
+static inline int icm20948_set_accel_fs(const struct device *dev, enum icm20948_accel_fs accel_fs)
+{
+	struct icm20948_data *data = (struct icm20948_data *)dev->data;
 
 	/* set default fullscale range for gyro */
-	if (data->hw_tf->update_reg(data, ICM20948_REG_GYRO_CONFIG_1, ICM20948_ACCEL_MASK,
-				    accel_fs)) {
+	if (icm20948_update_reg(dev, ICM20948_REG_GYRO_CONFIG_1, ICM20948_ACCEL_MASK, accel_fs)) {
 		LOG_DBG("failed to set acceleromter full-scale");
 		return -EIO;
 	}
@@ -36,13 +90,12 @@ static inline int icm20948_set_accel_fs(struct device *dev, enum icm20948_accel_
 	return 0;
 }
 
-static inline int icm20948_set_gyro_fs(struct device *dev, enum icm20948_gyro_fs gyro_fs)
+static inline int icm20948_set_gyro_fs(const struct device *dev, enum icm20948_gyro_fs gyro_fs)
 {
-	struct icm20948_data *data = (struct icm20948_data *)dev->driver_data;
+	struct icm20948_data *data = (struct icm20948_data *)dev->data;
 
 	/* set default fullscale range for acc */
-	if (data->hw_tf->update_reg(data, ICM20948_REG_ACCEL_CONFIG, ICM20948_ACCEL_MASK,
-				    gyro_fs)) {
+	if (icm20948_update_reg(dev, ICM20948_REG_ACCEL_CONFIG, ICM20948_ACCEL_MASK, gyro_fs)) {
 		return -EIO;
 	}
 	data->gyro_fs = gyro_fs;
@@ -50,8 +103,8 @@ static inline int icm20948_set_gyro_fs(struct device *dev, enum icm20948_gyro_fs
 }
 
 #ifdef CONFIG_ICM20948_ACCEL_RANGE_RUNTIME
-static const u16_t icm20948_accel_fs_map[] = { 2, 4, 8, 16 };
-static int icm20948_accel_range_set(struct device *dev, s32_t range)
+static const uint16_t icm20948_accel_fs_map[] = { 2, 4, 8, 16 };
+static int icm20948_accel_range_set(const struct device *dev, int32_t range)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(icm20948_accel_fs_map); i++) {
 		if (range == icm20948_accel_fs_map[i]) {
@@ -63,8 +116,8 @@ static int icm20948_accel_range_set(struct device *dev, s32_t range)
 #endif
 
 #ifdef CONFIG_ICM20948_GYRO_RANGE_RUNTIME
-static const u16_t icm20948_gyro_fs_map[] = { 250, 500, 1000, 2000 };
-static int icm20948_gyro_range_set(struct device *dev, s32_t range)
+static const uint16_t icm20948_gyro_fs_map[] = { 250, 500, 1000, 2000 };
+static int icm20948_gyro_range_set(const struct device *dev, int32_t range)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(icm20948_gyro_fs_map); i++) {
 		if (range == icm20948_gyro_fs_map[i]) {
@@ -75,7 +128,7 @@ static int icm20948_gyro_range_set(struct device *dev, s32_t range)
 }
 #endif
 
-static int icm20948_accel_config(struct device *dev, enum sensor_channel chan,
+static int icm20948_accel_config(const struct device *dev, enum sensor_channel chan,
 				 enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
@@ -89,7 +142,7 @@ static int icm20948_accel_config(struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static int icm20948_gyro_config(struct device *dev, enum sensor_channel chan,
+static int icm20948_gyro_config(const struct device *dev, enum sensor_channel chan,
 				enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
@@ -103,7 +156,7 @@ static int icm20948_gyro_config(struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static int icm20948_attr_set(struct device *dev, enum sensor_channel chan,
+static int icm20948_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
@@ -130,8 +183,8 @@ static inline void icm20948_accel_convert(struct sensor_value *val, int raw_val,
 	/* Sensitivity is exposed in LSB/g */
 	double dval = raw_val / ((double)(16384 >> sensitivity));
 
-	val->val1 = (s32_t)dval;
-	val->val2 = (((s32_t)(dval * 1000)) % 1000) * 1000;
+	val->val1 = (int32_t)dval;
+	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
 }
 
 static inline void icm20948_gyro_convert(struct sensor_value *val, int raw_val,
@@ -140,14 +193,14 @@ static inline void icm20948_gyro_convert(struct sensor_value *val, int raw_val,
 	/* Sensitivity is exposed in LSB/dps */
 	double dval = raw_val / ((double)(131.0 / (sensitivity + 1)));
 
-	val->val1 = (s32_t)dval;
-	val->val2 = (((s32_t)(dval * 1000)) % 1000) * 1000;
+	val->val1 = (int32_t)dval;
+	val->val2 = (((int32_t)(dval * 1000)) % 1000) * 1000;
 }
 
-static int icm20948_channel_get(struct device *dev, enum sensor_channel chan,
+static int icm20948_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	struct icm20948_data *data = dev->driver_data;
+	struct icm20948_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -187,21 +240,21 @@ static int icm20948_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int icm20948_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	struct icm20948_data *data = dev->driver_data;
+	struct icm20948_data *data = dev->data;
 
 	union {
-		u8_t raw[6];
+		uint8_t raw[6];
 		struct {
-			s16_t axis[3];
+			int16_t axis[3];
 		};
 	} buf __aligned(2);
 
 	union {
-		u8_t raw[2];
+		uint8_t raw[2];
 		struct {
-			s16_t temp;
+			int16_t temp;
 		};
 	} buf2 __aligned(2);
 
@@ -210,8 +263,7 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ: {
-		if (data->hw_tf->read_data(data, ICM20948_REG_ACCEL_XOUT_H_SH, buf.raw,
-					   sizeof(buf))) {
+		if (icm20948_read_data(dev, ICM20948_REG_ACCEL_XOUT_H_SH, buf.raw, sizeof(buf))) {
 			LOG_DBG("Failed to fetch raw data samples from accel");
 			return -EIO;
 		}
@@ -223,8 +275,7 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_GYRO_XYZ: {
-		if (data->hw_tf->read_data(data, ICM20948_REG_GYRO_XOUT_H_SH, buf.raw,
-					   sizeof(buf))) {
+		if (icm20948_read_data(dev, ICM20948_REG_GYRO_XOUT_H_SH, buf.raw, sizeof(buf))) {
 			LOG_DBG("Failed to fetch raw data samples from gyro");
 			return -EIO;
 		}
@@ -253,35 +304,26 @@ static int icm20948_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-int icm20948_init(struct device *dev)
+int icm20948_chip_init(struct device *dev)
 {
-	struct icm20948_data *data = (struct icm20948_data *)dev->driver_data;
 
-	data->bus = device_get_binding(DT_TDK_ICM20948_0_BUS_NAME);
-	data->bank = 0;
-	if (!data->bus) {
-		LOG_DBG("master not found: %s", DT_TDK_ICM20948_0_BUS_NAME);
-		return -EINVAL;
+	int err = icm20948_bus_check(dev);
+	if (err < 0) {
+		LOG_DBG("bus check failed: %d", err);
+		return err;
 	}
 
-#if defined(DT_TDK_ICM20948_BUS_SPI)
-	icm20948_spi_init(dev);
-#elif defined(DT_TDK_ICM20948_BUS_I2C)
-	icm20948_i2c_init(dev);
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
 
-	u8_t tmp;
-
+	uint8_t tmp = 0;
 	/* verify chip ID */
-	if (data->hw_tf->read_reg(data, ICM20948_REG_WHO_AM_I, &tmp)) {
+	if (icm20948_read_reg(dev, ICM20948_REG_WHO_AM_I, &tmp)) {
 		LOG_ERR("Failed to read chip ID");
 		return -EIO;
 	}
 
 	if (tmp != ICM20948_WHO_AM_I) {
 		LOG_ERR("Invalid Chip ID Expects 0x%x -- 0x%x", ICM20948_WHO_AM_I, tmp);
+		return -ENOTSUP;
 	}
 
 	/* set gyro and accel config */
@@ -289,13 +331,13 @@ int icm20948_init(struct device *dev)
 	icm20948_set_accel_fs(dev, ICM20948_ACCEL_FS_DEFAULT);
 
 	/* set default fullscale range for gyro */
-	if (data->hw_tf->update_reg(data, ICM20948_REG_GYRO_CONFIG_1, ICM20948_GYRO_MASK,
-				    ICM20948_GYRO_FS_DEFAULT)) {
+	if (icm20948_update_reg(dev, ICM20948_REG_GYRO_CONFIG_1, ICM20948_GYRO_MASK,
+				ICM20948_GYRO_FS_DEFAULT)) {
 		return -EIO;
 	}
 
 	/* wake up chip */
-	if (data->hw_tf->update_reg(data, ICM20948_REG_PWR_MGMT_1, BIT(6), 0)) {
+	if (icm20948_update_reg(dev, ICM20948_REG_PWR_MGMT_1, BIT(6), 0)) {
 		LOG_ERR("Failed to wake up chip.");
 		return -EIO;
 	}
@@ -303,11 +345,49 @@ int icm20948_init(struct device *dev)
 	return 0;
 }
 
-struct icm20948_data icm20948_data;
+static const struct sensor_driver_api icm20948_api_funcs = { 
+	.attr_set = icm20948_attr_set,
+	.sample_fetch = icm20948_sample_fetch,
+	.channel_get = icm20948_channel_get 
+};
 
-static const struct sensor_driver_api icm20948_driver_api = { .attr_set = icm20948_attr_set,
-							      .sample_fetch = icm20948_sample_fetch,
-							      .channel_get = icm20948_channel_get };
 
-DEVICE_AND_API_INIT(icm20948, DT_TDK_ICM20948_0_LABEL, icm20948_init, &icm20948_data, NULL,
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &icm20948_driver_api);
+/* Initializes a struct icm20948_config for an instance on a SPI bus. */
+#define ICM20948_CONFIG_SPI(inst)                                                                  \
+	{    \
+		.bus = { \
+			.spi = SPI_DT_SPEC_INST_GET(inst,			\
+					    SPI_OP_MODE_MASTER |	\
+					    SPI_MODE_CPOL |		\
+					    SPI_MODE_CPHA |		\
+					    SPI_WORD_SET(8) |		\
+					    SPI_TRANSFER_MSB,		\
+					    0U),			\
+			.active_bank = 255 \
+		}, \
+		.bus_io = &icm20948_bus_io_spi,                            \
+	}
+
+/* Initializes a struct icm20948_config for an instance on an I2C bus. */
+#define ICM20948_CONFIG_I2C(inst)                                                                  \
+	{                                                                                          \
+		.bus = { \
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
+			.active_bank = 255,						\
+		}, \
+		.bus_io = &icm20948_bus_io_i2c,            \
+	}
+
+
+#define ICM42605_DEFINE(inst)                                                                       \
+	static struct icm20948_data icm20948_data_##inst;                                          \
+	static const struct icm20948_config icm20948_config_##inst =                               \
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi), \
+				(ICM20948_CONFIG_SPI(inst)),                \
+			    (ICM20948_CONFIG_I2C(inst)));                                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, icm20948_chip_init, PM_DEVICE_DT_INST_GET(inst),               \
+			      &icm20948_data_##inst, &icm20948_config_##inst, POST_KERNEL,         \
+			      CONFIG_SENSOR_INIT_PRIORITY, &icm20948_api_funcs);
+
+DT_INST_FOREACH_STATUS_OKAY(ICM42605_DEFINE)
