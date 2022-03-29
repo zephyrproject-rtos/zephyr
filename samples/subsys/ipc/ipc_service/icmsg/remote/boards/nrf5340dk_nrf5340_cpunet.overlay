@@ -23,20 +23,6 @@
 		};
 	};
 
-	soc {
-		/delete-node/ ipc@41012000;
-
-		mbox: mbox@41012000 {
-			compatible = "nordic,mbox-nrf-ipc";
-			reg = <0x41012000 0x1000>;
-			tx-mask = <0x0000ffff>;
-			rx-mask = <0x0000ffff>;
-			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "okay";
-		};
-	};
-
 	ipc0: ipc0 {
 		compatible = "zephyr,ipc-icmsg";
 		tx-region = <&sram_tx>;
