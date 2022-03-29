@@ -70,6 +70,7 @@ struct z_heap_stress_result {
 struct sys_heap_runtime_stats {
 	size_t free_bytes;
 	size_t allocated_bytes;
+	size_t max_allocated_bytes;
 };
 
 /**
@@ -81,6 +82,17 @@ struct sys_heap_runtime_stats {
  */
 int sys_heap_runtime_stats_get(struct sys_heap *heap,
 		struct sys_heap_runtime_stats *stats);
+
+/**
+ * @brief Reset the maximum heap usage.
+ *
+ * Set the statistic measuring the maximum number of allocated bytes to the
+ * current number of allocated bytes.
+ *
+ * @param heap Pointer to sys_heap
+ * @return -EINVAL if null pointer was passed, otherwise 0
+ */
+int sys_heap_runtime_stats_reset_max(struct sys_heap *heap);
 
 #endif
 
