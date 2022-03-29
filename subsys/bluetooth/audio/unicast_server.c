@@ -53,7 +53,7 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
-int bt_audio_unicast_server_location_changed(enum bt_audio_pac_type type)
+int bt_audio_unicast_server_location_changed(enum bt_audio_dir type)
 {
 	return bt_pacs_location_changed(type);
 }
