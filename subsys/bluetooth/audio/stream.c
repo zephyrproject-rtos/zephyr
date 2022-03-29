@@ -264,9 +264,11 @@ void bt_audio_stream_reset(struct bt_audio_stream *stream)
 
 	BT_DBG("stream %p", stream);
 
-	if (stream == NULL || stream->conn == NULL) {
+	if (stream == NULL) {
 		return;
 	}
+
+	bt_audio_stream_detach(stream);
 
 	err = bt_audio_cig_terminate(stream);
 	if (err != 0) {
