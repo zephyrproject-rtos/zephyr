@@ -5,6 +5,7 @@
 menuconfig MCUMGR_CMD_STAT_MGMT
 	bool "Mcumgr handlers for statistics management"
 	depends on STATS
+	select MGMT_MIN_DECODING_LEVEL_2
 	help
 	  Enables mcumgr handlers for statistics management.
 
