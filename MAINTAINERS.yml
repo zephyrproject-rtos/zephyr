@@ -220,12 +220,11 @@ Bluetooth controller:
 Bluetooth Mesh:
     status: maintained
     maintainers:
-        - trond-snekvik
+        - PavelVPV
     collaborators:
         - jhedberg
         - LingaoM
         - alxelax
-        - PavelVPV
     files:
         - subsys/bluetooth/mesh/
         - include/bluetooth/mesh/

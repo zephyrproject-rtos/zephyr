@@ -716,7 +716,7 @@ scripts/gen_image_info.py                 @tejlmand
 /subsys/bluetooth/                        @alwa-nordic @jhedberg @Vudentz
 /subsys/bluetooth/audio/                  @jhedberg @Vudentz @Thalley @asbjornsabo
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa
-/subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @Vudentz @LingaoM
+/subsys/bluetooth/mesh/                   @jhedberg @PavelVPV @Vudentz @LingaoM
 /subsys/canbus/                           @alexanderwachter @henrikbrixandersen
 /subsys/debug/                            @nashif
 /subsys/debug/coredump/                   @dcpleung
