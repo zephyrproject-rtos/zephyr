@@ -139,13 +139,13 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 };
 
 static void unicast_client_ep_init(struct bt_audio_ep *ep, uint16_t handle,
-				   uint8_t id, uint8_t dir)
+				   uint8_t dir)
 {
-	BT_DBG("ep %p dir 0x%02x handle 0x%04x id 0x%02x", ep, dir, handle, id);
+	BT_DBG("ep %p dir 0x%02x handle 0x%04x", ep, dir, handle);
 
 	(void)memset(ep, 0, sizeof(*ep));
 	ep->handle = handle;
-	ep->status.id = id;
+	ep->status.id = 0U;
 	ep->iso.ops = &unicast_client_iso_ops;
 	ep->iso.qos = &ep->iso_qos;
 	ep->iso.qos->rx = &ep->iso_rx;
@@ -208,7 +208,7 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 		struct bt_audio_ep *ep = &cache[i];
 
 		if (!ep->handle) {
-			unicast_client_ep_init(ep, handle, 0x00, dir);
+			unicast_client_ep_init(ep, handle, dir);
 			return ep;
 		}
 	}
