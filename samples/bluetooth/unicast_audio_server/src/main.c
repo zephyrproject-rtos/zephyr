@@ -131,12 +131,12 @@ static void print_qos(struct bt_codec_qos *qos)
 
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
-					  enum bt_audio_dir type,
+					  enum bt_audio_dir dir,
 					  struct bt_audio_capability *cap,
 					  struct bt_codec *codec)
 {
-	printk("ASE Codec Config: conn %p ep %p type %u, cap %p\n",
-	       conn, ep, type, cap);
+	printk("ASE Codec Config: conn %p ep %p dir %u, cap %p\n",
+	       conn, ep, dir, cap);
 
 	print_codec(codec);
 
@@ -378,7 +378,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static struct bt_audio_capability caps[] = {
 	{
-		.type = BT_AUDIO_SINK,
+		.dir = BT_AUDIO_SINK,
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
 				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000,

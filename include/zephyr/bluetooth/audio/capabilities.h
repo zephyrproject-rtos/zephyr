@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 /* Get list of capabilities by type */
-sys_slist_t *bt_audio_capability_get(uint8_t type);
+sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir);
 
 
 /** @brief Audio Capability type */
@@ -107,7 +107,7 @@ struct bt_audio_capability_ops {
 	 *
 	 *  @param conn Connection object
 	 *  @param ep Remote Audio Endpoint being configured
-	 *  @param type Type of the endpoint.
+	 *  @param dir Direction of the endpoint.
 	 *  @param cap Local Audio Capability being configured
 	 *  @param codec Codec configuration
 	 *
@@ -115,7 +115,7 @@ struct bt_audio_capability_ops {
 	 */
 	struct bt_audio_stream *(*config)(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
-					  enum bt_audio_dir type,
+					  enum bt_audio_dir dir,
 					  struct bt_audio_capability *cap,
 					  struct bt_codec *codec);
 
@@ -228,8 +228,8 @@ struct bt_audio_capability_ops {
  *
  */
 struct bt_audio_capability {
-	/** Capability type */
-	uint8_t  type;
+	/** Capability direction */
+	enum bt_audio_dir dir;
 	/** Supported Audio Contexts */
 	uint16_t context;
 	/** Capability codec reference */
@@ -263,11 +263,11 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap);
 
 /** @brief Set the location for an endpoint type
  *
- * @param type     Type of the endpoint.
+ * @param dir      Direction of the endpoints to change location for.
  * @param location The location to be set.
  *
  */
-int bt_audio_capability_set_location(enum bt_audio_dir type,
+int bt_audio_capability_set_location(enum bt_audio_dir dir,
 				     enum bt_audio_location location);
 
 #ifdef __cplusplus

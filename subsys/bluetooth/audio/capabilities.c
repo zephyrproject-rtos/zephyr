@@ -35,7 +35,7 @@ static sys_slist_t srcs;
  */
 static int unicast_server_config_cb(struct bt_conn *conn,
 				    const struct bt_audio_ep *ep,
-				    enum bt_audio_dir type,
+				    enum bt_audio_dir dir,
 				    const struct bt_codec *codec,
 				    struct bt_audio_stream **stream,
 				    struct bt_codec_qos_pref *const pref)
@@ -43,12 +43,12 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 	struct bt_audio_capability *cap;
 	sys_slist_t *lst;
 
-	if (type == BT_AUDIO_SINK) {
+	if (dir == BT_AUDIO_SINK) {
 		lst = &snks;
-	} else if (type == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_SOURCE) {
 		lst = &srcs;
 	} else {
-		BT_ERR("Invalid endpoint type: %u", type);
+		BT_ERR("Invalid endpoint dir: %u", dir);
 		return -EINVAL;
 	}
 
@@ -63,7 +63,7 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 		}
 
 		*stream = cap->ops->config(conn, (struct bt_audio_ep *)ep,
-					   type, cap, (struct bt_codec *)codec);
+					   dir, cap, (struct bt_codec *)codec);
 
 		if (*stream == NULL) {
 			return -ENOMEM;
@@ -84,25 +84,25 @@ static int unicast_server_config_cb(struct bt_conn *conn,
 		return 0;
 	}
 
-	BT_ERR("No capability for type %u and codec ID %u", type, codec->id);
+	BT_ERR("No capability for dir %u and codec ID %u", dir, codec->id);
 
 	return -EOPNOTSUPP;
 }
 
 static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
-				      uint8_t type,
+				      enum bt_audio_dir dir,
 				      const struct bt_codec *codec,
 				      struct bt_codec_qos_pref *const pref)
 {
 	struct bt_audio_capability *cap;
 	sys_slist_t *lst;
 
-	if (type == BT_AUDIO_SINK) {
+	if (dir == BT_AUDIO_SINK) {
 		lst = &snks;
-	} else if (type == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_SOURCE) {
 		lst = &srcs;
 	} else {
-		BT_ERR("Invalid endpoint type: %u", type);
+		BT_ERR("Invalid endpoint dir: %u", dir);
 		return -EINVAL;
 	}
 
@@ -138,7 +138,7 @@ static int unicast_server_reconfig_cb(struct bt_audio_stream *stream,
 		return 0;
 	}
 
-	BT_ERR("No capability for type %u and codec ID %u", type, codec->id);
+	BT_ERR("No capability for dir %u and codec ID %u", dir, codec->id);
 
 	return -EOPNOTSUPP;
 }
@@ -227,19 +227,19 @@ static int unicast_server_release_cb(struct bt_audio_stream *stream)
 	return cap->ops->release(stream);
 }
 
-static int publish_capability_cb(struct bt_conn *conn, uint8_t type,
+static int publish_capability_cb(struct bt_conn *conn, uint8_t dir,
 				 uint8_t index, struct bt_codec *codec)
 {
 	struct bt_audio_capability *cap;
 	sys_slist_t *lst;
 	uint8_t i;
 
-	if (type == BT_AUDIO_SINK) {
+	if (dir == BT_AUDIO_SINK) {
 		lst = &snks;
-	} else if (type == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_SOURCE) {
 		lst = &srcs;
 	} else {
-		BT_ERR("Invalid endpoint type: %u", type);
+		BT_ERR("Invalid endpoint dir: %u", dir);
 		return -EINVAL;
 	}
 
@@ -268,20 +268,20 @@ static enum bt_audio_location source_location;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 
 static int publish_location_cb(struct bt_conn *conn,
-			       enum bt_audio_dir type,
+			       enum bt_audio_dir dir,
 			       enum bt_audio_location *location)
 {
 	if (0) {
 #if defined(CONFIG_BT_PAC_SNK_LOC)
-	} else if (type == BT_AUDIO_SINK) {
+	} else if (dir == BT_AUDIO_SINK) {
 		*location = sink_location;
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-	} else if (type == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_SOURCE) {
 		*location = source_location;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	} else {
-		BT_ERR("Invalid endpoint type: %u", type);
+		BT_ERR("Invalid endpoint dir: %u", dir);
 
 		return -EINVAL;
 	}
@@ -290,10 +290,10 @@ static int publish_location_cb(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) || defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
-static int write_location_cb(struct bt_conn *conn, enum bt_audio_dir type,
+static int write_location_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			     enum bt_audio_location location)
 {
-	return bt_audio_capability_set_location(type, location);
+	return bt_audio_capability_set_location(dir, location);
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
@@ -318,9 +318,9 @@ static struct bt_audio_unicast_server_cb unicast_server_cb = {
 };
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
 
-sys_slist_t *bt_audio_capability_get(uint8_t type)
+sys_slist_t *bt_audio_capability_get(enum bt_audio_dir dir)
 {
-	switch (type) {
+	switch (dir) {
 	case BT_AUDIO_SINK:
 		return &snks;
 	case BT_AUDIO_SOURCE:
@@ -339,13 +339,13 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 		return -EINVAL;
 	}
 
-	lst = bt_audio_capability_get(cap->type);
+	lst = bt_audio_capability_get(cap->dir);
 	if (!lst) {
 		return -EINVAL;
 	}
 
-	BT_DBG("cap %p type 0x%02x codec 0x%02x codec cid 0x%04x "
-	       "codec vid 0x%04x", cap, cap->type, cap->codec->id,
+	BT_DBG("cap %p dir 0x%02x codec 0x%02x codec cid 0x%04x "
+	       "codec vid 0x%04x", cap, cap->dir, cap->codec->id,
 	       cap->codec->cid, cap->codec->vid);
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_ASCS)
@@ -373,7 +373,7 @@ int bt_audio_capability_register(struct bt_audio_capability *cap)
 	sys_slist_append(lst, &cap->node);
 
 #if defined(CONFIG_BT_PACS)
-	bt_pacs_add_capability(cap->type);
+	bt_pacs_add_capability(cap->dir);
 #endif /* CONFIG_BT_PACS */
 
 	return 0;
@@ -388,12 +388,12 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 		return -EINVAL;
 	}
 
-	lst = bt_audio_capability_get(cap->type);
+	lst = bt_audio_capability_get(cap->dir);
 	if (!lst) {
 		return -EINVAL;
 	}
 
-	BT_DBG("cap %p type 0x%02x", cap, cap->type);
+	BT_DBG("cap %p dir 0x%02x", cap, cap->dir);
 
 	if (!sys_slist_find_and_remove(lst, &cap->node)) {
 		return -ENOENT;
@@ -416,38 +416,38 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
 
 #if defined(CONFIG_BT_PACS)
-	bt_pacs_remove_capability(cap->type);
+	bt_pacs_remove_capability(cap->dir);
 #endif /* CONFIG_BT_PACS */
 
 	return 0;
 }
 
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
-int bt_audio_capability_set_location(enum bt_audio_dir type,
+int bt_audio_capability_set_location(enum bt_audio_dir dir,
 				     enum bt_audio_location location)
 {
 	int err;
 
 	if (0) {
 #if defined(CONFIG_BT_PAC_SNK_LOC)
-	} else if (type == BT_AUDIO_SINK) {
+	} else if (dir == BT_AUDIO_SINK) {
 		sink_location = location;
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #if defined(CONFIG_BT_PAC_SRC_LOC)
-	} else if (type == BT_AUDIO_SOURCE) {
+	} else if (dir == BT_AUDIO_SOURCE) {
 		source_location = location;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 	} else {
-		BT_ERR("Invalid endpoint type: %u", type);
+		BT_ERR("Invalid endpoint dir: %u", dir);
 
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER)) {
-		err = bt_audio_unicast_server_location_changed(type);
+		err = bt_audio_unicast_server_location_changed(dir);
 		if (err) {
-			BT_DBG("Location for type %d wasn't notified: %d",
-			       type, err);
+			BT_DBG("Location for dir %d wasn't notified: %d",
+			       dir, err);
 		}
 	}
 
