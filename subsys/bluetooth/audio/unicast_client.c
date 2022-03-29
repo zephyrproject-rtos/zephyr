@@ -35,7 +35,7 @@
 #define EP_ISO(_iso) CONTAINER_OF(_iso, struct bt_audio_ep, iso)
 
 static struct unicast_client_pac {
-	uint8_t type; /* type == PAC_TYPE_UNUSED means unused */
+	enum bt_audio_dir dir; /* type == PAC_TYPE_UNUSED means unused */
 	uint16_t context;
 	struct bt_codec codec;
 } cache[CONFIG_BT_MAX_CONN][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
@@ -139,7 +139,7 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 };
 
 static void unicast_client_ep_init(struct bt_audio_ep *ep, uint16_t handle,
-				   uint8_t dir)
+				   enum bt_audio_dir dir)
 {
 	BT_DBG("ep %p dir 0x%02x handle 0x%04x", ep, dir, handle);
 
@@ -183,7 +183,8 @@ static struct bt_audio_ep *unicast_client_ep_find(struct bt_conn *conn,
 }
 
 static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
-						 uint8_t dir, uint16_t handle)
+						 enum bt_audio_dir dir,
+						 uint16_t handle)
 {
 	size_t i, size;
 	uint8_t index;
@@ -217,7 +218,8 @@ static struct bt_audio_ep *unicast_client_ep_new(struct bt_conn *conn,
 }
 
 static struct bt_audio_ep *unicast_client_ep_get(struct bt_conn *conn,
-						 uint8_t dir, uint16_t handle)
+						 enum bt_audio_dir dir,
+						 uint16_t handle)
 {
 	struct bt_audio_ep *ep;
 
@@ -1610,7 +1612,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	ep = unicast_client_ep_get(conn, params->type,
+	ep = unicast_client_ep_get(conn, params->dir,
 				   read->by_uuid.start_handle);
 	if (!ep) {
 		BT_WARN("No space left to parse ASE");
@@ -1647,9 +1649,9 @@ static int unicast_client_ase_discover(struct bt_conn *conn,
 	params->read.func = unicast_client_ase_read_func;
 	params->read.handle_count = 0u;
 
-	if (params->type == BT_AUDIO_SINK) {
+	if (params->dir == BT_AUDIO_SINK) {
 		params->read.by_uuid.uuid = ase_snk_uuid;
-	} else if (params->type == BT_AUDIO_SOURCE) {
+	} else if (params->dir == BT_AUDIO_SOURCE) {
 		params->read.by_uuid.uuid = ase_src_uuid;
 	} else {
 		return -EINVAL;
@@ -1688,11 +1690,11 @@ static uint8_t unicast_client_pacs_context_read_func(struct bt_conn *conn,
 	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
 		struct unicast_client_pac *pac = &cache[index][i];
 
-		if (pac->type == PAC_TYPE_UNUSED) {
+		if (pac->dir == PAC_TYPE_UNUSED) {
 			continue;
 		}
 
-		switch (pac->type) {
+		switch (pac->dir) {
 		case BT_AUDIO_SINK:
 			pac->context = sys_le16_to_cpu(context->snk);
 			break;
@@ -1700,8 +1702,8 @@ static uint8_t unicast_client_pacs_context_read_func(struct bt_conn *conn,
 			pac->context = sys_le16_to_cpu(context->src);
 			break;
 		default:
-			BT_WARN("Cached pac with invalid type: %u",
-				pac->type);
+			BT_WARN("Cached pac with invalid dir: %u",
+				pac->dir);
 		}
 
 		BT_DBG("pac %p context 0x%04x", pac, pac->context);
@@ -1733,7 +1735,7 @@ static int unicast_client_pacs_context_discover(struct bt_conn *conn,
 }
 
 static struct unicast_client_pac *unicast_client_pac_alloc(struct bt_conn *conn,
-							   uint8_t type)
+							   enum bt_audio_dir dir)
 {
 	int i, index;
 
@@ -1742,8 +1744,8 @@ static struct unicast_client_pac *unicast_client_pac_alloc(struct bt_conn *conn,
 	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
 		struct unicast_client_pac *pac = &cache[index][i];
 
-		if (pac->type == PAC_TYPE_UNUSED) {
-			pac->type = type;
+		if (pac->dir == PAC_TYPE_UNUSED) {
+			pac->dir = dir;
 			return pac;
 		}
 	}
@@ -1805,7 +1807,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 			break;
 		}
 
-		bpac = unicast_client_pac_alloc(conn, params->type);
+		bpac = unicast_client_pac_alloc(conn, params->dir);
 		if (!bpac) {
 			BT_WARN("No space left to parse PAC");
 			break;
@@ -1873,7 +1875,7 @@ static void unicast_client_pac_reset(struct bt_conn *conn)
 	for (i = 0; i < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT; i++) {
 		struct unicast_client_pac *pac = &cache[index][i];
 
-		if (pac->type != PAC_TYPE_UNUSED) {
+		if (pac->dir != PAC_TYPE_UNUSED) {
 			(void)memset(pac, 0, sizeof(*pac));
 		}
 	}
@@ -1907,9 +1909,9 @@ int bt_audio_discover(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	if (params->type == BT_AUDIO_SINK) {
+	if (params->dir == BT_AUDIO_SINK) {
 		params->read.by_uuid.uuid = snk_uuid;
-	} else if (params->type == BT_AUDIO_SOURCE) {
+	} else if (params->dir == BT_AUDIO_SOURCE) {
 		params->read.by_uuid.uuid = src_uuid;
 	} else {
 		return -EINVAL;
