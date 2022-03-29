@@ -287,14 +287,20 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 			  struct net_buf *buf)
 {
 	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
-	struct bt_audio_stream_ops *ops = ep->stream->ops;
+	struct bt_audio_stream *stream = ep->stream;
 
-	BT_DBG("stream %p ep %p len %zu", chan, ep, net_buf_frags_len(buf));
+	if (stream != NULL) {
+		struct bt_audio_stream_ops *ops = stream->ops;
 
-	if (ops != NULL && ops->recv != NULL) {
-		ops->recv(ep->stream, info, buf);
+		BT_DBG("stream %p ep %p len %zu", chan, ep, net_buf_frags_len(buf));
+
+		if (ops != NULL && ops->recv != NULL) {
+			ops->recv(stream, info, buf);
+		} else {
+			BT_WARN("No callback for recv set");
+		}
 	} else {
-		BT_WARN("No callback for recv set");
+		BT_WARN("No stream for ep %p", ep);
 	}
 }
 
@@ -329,34 +335,39 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
 	struct bt_audio_stream *stream = ep->stream;
-	struct bt_audio_stream_ops *ops = stream->ops;
 
-	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
+	if (stream != NULL) {
+		struct bt_audio_stream_ops *ops = stream->ops;
 
-	if (ops != NULL && ops->stopped != NULL) {
-		ops->stopped(stream);
-	} else {
-		BT_WARN("No callback for stopped set");
-	}
+		BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
 
-	if (ep->status.state == BT_AUDIO_EP_STATE_RELEASING) {
-		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
-	} else {
-		int err;
-
-		/* The ASE state machine goes into different states from this operation
-		 * based on whether it is a source or a sink ASE.
-		 */
-		if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_DISABLING);
+		if (ops != NULL && ops->stopped != NULL) {
+			ops->stopped(stream);
 		} else {
-			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+			BT_WARN("No callback for stopped set");
 		}
 
-		err = bt_audio_stream_iso_listen(stream);
-		if (err != 0) {
-			BT_ERR("Could not make stream listen: %d", err);
+		if (ep->status.state == BT_AUDIO_EP_STATE_RELEASING) {
+			ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+		} else {
+			int err;
+
+			/* The ASE state machine goes into different states from this operation
+			* based on whether it is a source or a sink ASE.
+			*/
+			if (ep->dir == BT_AUDIO_DIR_SOURCE) {
+				ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_DISABLING);
+			} else {
+				ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
+			}
+
+			err = bt_audio_stream_iso_listen(stream);
+			if (err != 0) {
+				BT_ERR("Could not make stream listen: %d", err);
+			}
 		}
+	} else {
+		BT_WARN("No stream for ep %p", ep);
 	}
 }
 

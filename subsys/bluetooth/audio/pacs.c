@@ -134,9 +134,18 @@ static ssize_t context_read(struct bt_conn *conn,
 			    uint16_t len, uint16_t offset)
 {
 	struct bt_pacs_context context = {
-		/* TODO: This should reflect the ongoing channel contexts */
-		.snk = 0x0001,
-		.src = 0x0001,
+		/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
+		 * The HA should set to 0b1 at least the bits representing ‘Conversational’,
+		 * ‘Media’, and ‘Live’ Context Types in the Supported_Sink_Contexts field of
+		 * the Supported Audio Contexts characteristic in Published Audio Capabilities
+		 * Service (PACS), in addition to the ‘Unspecified’ Context Type mandated by BAP.
+		 */
+		.snk = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED |
+		       BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |
+		       BT_AUDIO_CONTEXT_TYPE_MEDIA |
+		       BT_AUDIO_CONTEXT_TYPE_LIVE,
+		.src = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED |
+		       BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL,
 	};
 
 	BT_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len,
