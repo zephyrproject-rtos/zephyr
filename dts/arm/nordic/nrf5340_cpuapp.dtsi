@@ -28,6 +28,7 @@
 	};
 
 	chosen {
+		zephyr,entropy = &rng_hci;
 		zephyr,flash-controller = &flash_controller;
 	};
 
