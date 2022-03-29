@@ -69,7 +69,7 @@ static ssize_t read_icon_id(struct bt_conn *conn,
 {
 	uint64_t icon_id = media_proxy_sctrl_get_icon_id();
 
-	BT_DBG_OBJ_ID("Icon object read: ", icon_id);
+	BT_DBG("Icon object read: 0x%llx", icon_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &icon_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
@@ -237,7 +237,7 @@ static ssize_t read_track_segments_id(struct bt_conn *conn,
 {
 	uint64_t track_segments_id = media_proxy_sctrl_get_track_segments_id();
 
-	BT_DBG_OBJ_ID("Track segments ID read: ", track_segments_id);
+	BT_DBG("Track segments ID read: 0x%llx", track_segments_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &track_segments_id, BT_OTS_OBJ_ID_SIZE);
 }
@@ -248,7 +248,7 @@ static ssize_t read_current_track_id(struct bt_conn *conn,
 {
 	uint64_t track_id = media_proxy_sctrl_get_current_track_id();
 
-	BT_DBG_OBJ_ID("Current track ID read: ", track_id);
+	BT_DBG("Current track ID read: 0x%llx", track_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &track_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
@@ -273,10 +273,8 @@ static ssize_t write_current_track_id(struct bt_conn *conn,
 	id = sys_get_le48((uint8_t *)buf);
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char str[BT_OTS_OBJ_ID_STR_LEN];
-		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		BT_DBG("Current track write: offset: %d, len: %d, track ID: %s",
-		       offset, len, log_strdup(str));
+		BT_DBG("Current track write: offset: %d, len: %d, track ID: 0x%llx",
+		       offset, len, id);
 	}
 
 	media_proxy_sctrl_set_current_track_id(id);
@@ -303,7 +301,7 @@ static ssize_t read_next_track_id(struct bt_conn *conn,
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
 	}
 
-	BT_DBG_OBJ_ID("Next track read: ", track_id);
+	BT_DBG("Next track read: 0x%llx", track_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &track_id, BT_OTS_OBJ_ID_SIZE);
 }
@@ -328,10 +326,8 @@ static ssize_t write_next_track_id(struct bt_conn *conn,
 	id = sys_get_le48((uint8_t *)buf);
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char str[BT_OTS_OBJ_ID_STR_LEN];
-		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		BT_DBG("Next  track write: offset: %d, len: %d, track ID: %s",
-		       offset, len, log_strdup(str));
+		BT_DBG("Next  track write: offset: %d, len: %d, track ID: 0x%llx",
+		       offset, len, id);
 	}
 
 	media_proxy_sctrl_set_next_track_id(id);
@@ -351,7 +347,7 @@ static ssize_t read_parent_group_id(struct bt_conn *conn,
 {
 	uint64_t group_id = media_proxy_sctrl_get_parent_group_id();
 
-	BT_DBG_OBJ_ID("Parent group read: ", group_id);
+	BT_DBG("Parent group read: 0x%llx", group_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
@@ -368,7 +364,7 @@ static ssize_t read_current_group_id(struct bt_conn *conn,
 {
 	uint64_t group_id = media_proxy_sctrl_get_current_group_id();
 
-	BT_DBG_OBJ_ID("Current group read: ", group_id);
+	BT_DBG("Current group read: 0x%llx", group_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
@@ -393,10 +389,8 @@ static ssize_t write_current_group_id(struct bt_conn *conn,
 	id = sys_get_le48((uint8_t *)buf);
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
-		char str[BT_OTS_OBJ_ID_STR_LEN];
-		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		BT_DBG("Current group ID write: offset: %d, len: %d, track ID: %s",
-		       offset, len, log_strdup(str));
+		BT_DBG("Current group ID write: offset: %d, len: %d, track ID: 0x%llx",
+		       offset, len, id);
 	}
 
 	media_proxy_sctrl_set_current_group_id(id);
@@ -578,7 +572,7 @@ static ssize_t read_search_results_id(struct bt_conn *conn,
 {
 	uint64_t search_id = media_proxy_sctrl_get_search_results_id();
 
-	BT_DBG_OBJ_ID("Search results id read: ", search_id);
+	BT_DBG("Search results id read: 0x%llx", search_id);
 
 	/* TODO: The permanent solution here should be that the call to */
 	/* mpl should fill the UUID in a pointed-to value, and return a */
@@ -878,7 +872,7 @@ void media_proxy_sctrl_seeking_speed_cb(int8_t speed)
 
 void media_proxy_sctrl_current_track_id_cb(uint64_t id)
 {
-	BT_DBG_OBJ_ID("Notifying current track ID: ", id);
+	BT_DBG("Notifying current track ID: 0x%llx", id);
 	notify(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
@@ -887,23 +881,23 @@ void media_proxy_sctrl_next_track_id_cb(uint64_t id)
 	if (id == MPL_NO_TRACK_ID) {
 		/* "If the media player has no next track, the length of the */
 		/* characteristic shall be zero." */
-		BT_DBG_OBJ_ID("Notifying EMPTY next track ID: ", id);
+		BT_DBG("Notifying EMPTY next track ID: 0x%llx", id);
 		notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, NULL, 0);
 	} else {
-		BT_DBG_OBJ_ID("Notifying next track ID: ", id);
+		BT_DBG("Notifying next track ID: 0x%llx", id);
 		notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 	}
 }
 
 void media_proxy_sctrl_parent_group_id_cb(uint64_t id)
 {
-	BT_DBG_OBJ_ID("Notifying parent group ID: ", id);
+	BT_DBG("Notifying parent group ID: 0x%llx", id);
 	notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 void media_proxy_sctrl_current_group_id_cb(uint64_t id)
 {
-	BT_DBG_OBJ_ID("Notifying current group ID: ", id);
+	BT_DBG("Notifying current group ID: 0x%llx", id);
 	notify(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
@@ -943,7 +937,7 @@ void media_proxy_sctrl_search_cb(uint8_t result_code)
 
 void media_proxy_sctrl_search_results_id_cb(uint64_t id)
 {
-	BT_DBG_OBJ_ID("Notifying search results ID: ", id);
+	BT_DBG("Notifying search results ID: 0x%llx", id);
 	notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 

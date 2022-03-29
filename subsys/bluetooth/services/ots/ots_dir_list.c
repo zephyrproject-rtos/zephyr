@@ -133,13 +133,11 @@ static int bt_ots_dir_list_search_forward(struct bt_ots_dir_list *dir_list, void
 					  off_t offset)
 {
 	int err;
-	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 	struct bt_gatt_ots_object *obj = dir_list->anchor_object;
 	size_t rec_len = dir_list_object_record_size(obj);
 
-	bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
-	LOG_DBG("Searching forward for offset %ld starting at %ld with object ID %s",
-		(long)offset, (long)dir_list->anchor_offset, log_strdup(id_str));
+	LOG_DBG("Searching forward for offset %ld starting at %ld with object ID 0x%llx",
+		(long)offset, (long)dir_list->anchor_offset, obj->id);
 
 	while (dir_list->anchor_offset + rec_len <= offset) {
 
@@ -161,12 +159,10 @@ static int bt_ots_dir_list_search_backward(struct bt_ots_dir_list *dir_list, voi
 					   off_t offset)
 {
 	int err;
-	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 	struct bt_gatt_ots_object *obj = dir_list->anchor_object;
 
-	bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
-	LOG_DBG("Searching backward for offset %ld starting at %ld with object ID %s",
-		(long)offset, (long)dir_list->anchor_offset, log_strdup(id_str));
+	LOG_DBG("Searching backward for offset %ld starting at %ld with object ID 0x%llx",
+		(long)offset, (long)dir_list->anchor_offset, obj->id);
 
 	while (dir_list->anchor_offset > offset) {
 
@@ -185,7 +181,6 @@ static int bt_ots_dir_list_search_backward(struct bt_ots_dir_list *dir_list, voi
 static int bt_ots_dir_list_search(struct bt_ots_dir_list *dir_list, void *obj_manager, off_t offset)
 {
 	int err = 0;
-	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 
 	/* decide start location and direction of movement based on offset, we can only choose
 	 * current anchor point, beginning, or end as those are the only places where we know
@@ -224,9 +219,8 @@ static int bt_ots_dir_list_search(struct bt_ots_dir_list *dir_list, void *obj_ma
 		return err;
 	}
 
-	bt_ots_obj_id_to_str(dir_list->anchor_object->id, id_str, sizeof(id_str));
-	LOG_DBG("Found offset %ld starting at %ld in object with ID %s",
-		(long)offset, (long)dir_list->anchor_offset, log_strdup(id_str));
+	LOG_DBG("Found offset %ld starting at %ld in object with ID 0x%llx",
+		(long)offset, (long)dir_list->anchor_offset, dir_list->anchor_object->id);
 
 	return 0;
 }

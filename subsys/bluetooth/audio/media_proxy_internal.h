@@ -13,19 +13,6 @@
 
 #define MPL_NO_TRACK_ID 0
 
-/* Debug output of 48 bit Object ID value */
-/* (Zephyr does not yet support debug output of more than 32 bit values.) */
-/* Takes a text and a 64-bit integer as input */
-#define BT_DBG_OBJ_ID(text, id64) \
-	do { \
-		if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) { \
-			char t[BT_OTS_OBJ_ID_STR_LEN]; \
-			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
-			BT_DBG(text "0x%s", log_strdup(t)); \
-		} \
-	} while (0)
-
-
 /* SYNCHRONOUS (CALL/RETURN) API FOR CONTROLLERS */
 
 /** @brief Callbacks to a controller, from the media proxy */

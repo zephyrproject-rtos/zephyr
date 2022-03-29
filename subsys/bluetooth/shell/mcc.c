@@ -64,15 +64,12 @@ static void mcc_read_player_name_cb(struct bt_conn *conn, int err, const char *n
 #ifdef CONFIG_BT_MCC_OTS
 static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Icon Object ID read failed (%d)", err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Icon object ID: %s", str);
+	shell_print(ctx_shell, "Icon object ID: 0x%llx", id);
 
 	obj_ids.icon_obj_id = id;
 }
@@ -175,16 +172,13 @@ static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err,
 static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err,
 					uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell,
 			    "Track Segments Object ID read failed (%d)", err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Track Segments Object ID: %s", str);
+	shell_print(ctx_shell, "Track Segments Object ID: 0x%llx", id);
 
 	obj_ids.track_segments_obj_id = id;
 }
@@ -193,16 +187,13 @@ static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err,
 static void mcc_read_current_track_obj_id_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Current Track Object ID read failed (%d)",
 			    err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Track Object ID: %s", str);
+	shell_print(ctx_shell, "Current Track Object ID: 0x%llx", id);
 
 	obj_ids.current_track_obj_id = id;
 }
@@ -211,22 +202,18 @@ static void mcc_read_current_track_obj_id_cb(struct bt_conn *conn, int err,
 static void mcc_set_current_track_obj_id_cb(struct bt_conn *conn, int err,
 					    uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Current Track Object ID set failed (%d)", err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Track Object ID written: %s", str);
+	shell_print(ctx_shell, "Current Track Object ID written: 0x%llx", id);
 }
 
 
 static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err,
 					  uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
 		shell_error(ctx_shell, "Next Track Object ID read failed (%d)",
@@ -237,8 +224,7 @@ static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err,
 	if (id == MPL_NO_TRACK_ID) {
 		shell_print(ctx_shell, "Next Track Object ID is empty");
 	} else {
-		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		shell_print(ctx_shell, "Next Track Object ID: %s", str);
+		shell_print(ctx_shell, "Next Track Object ID: 0x%llx", id);
 	}
 
 	obj_ids.next_track_obj_id = id;
@@ -248,22 +234,18 @@ static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err,
 static void mcc_set_next_track_obj_id_cb(struct bt_conn *conn, int err,
 					    uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Next Track Object ID set failed (%d)", err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Next Track Object ID written: %s", str);
+	shell_print(ctx_shell, "Next Track Object ID written: 0x%llx", id);
 }
 
 
 static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err,
 					    uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
 		shell_error(ctx_shell,
@@ -271,8 +253,7 @@ static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Parent Group Object ID: %s", str);
+	shell_print(ctx_shell, "Parent Group Object ID: 0x%llx", id);
 
 	obj_ids.parent_group_obj_id = id;
 }
@@ -281,7 +262,6 @@ static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err,
 static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err,
 					     uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
 		shell_error(ctx_shell,
@@ -289,8 +269,7 @@ static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Group Object ID: %s", str);
+	shell_print(ctx_shell, "Current Group Object ID: 0x%llx", id);
 
 	obj_ids.current_group_obj_id = id;
 }
@@ -298,15 +277,12 @@ static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err,
 static void mcc_set_current_group_obj_id_cb(struct bt_conn *conn, int err,
 					    uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Current Group Object ID set failed (%d)", err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Group Object ID written: %s", str);
+	shell_print(ctx_shell, "Current Group Object ID written: 0x%llx", id);
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
@@ -420,8 +396,6 @@ static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code
 static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err,
 					      uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell,
 			    "Search Results Object ID read failed (%d)", err);
@@ -431,8 +405,7 @@ static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err,
 	if (id == 0) {
 		shell_print(ctx_shell, "Search Results Object ID: 0x000000000000");
 	} else {
-		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		shell_print(ctx_shell, "Search Results Object ID: %s", str);
+		shell_print(ctx_shell, "Search Results Object ID: 0x%llx", id);
 	}
 
 	obj_ids.search_results_obj_id = id;

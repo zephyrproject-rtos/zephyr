@@ -798,21 +798,16 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else if (data) {
 		if (length == BT_OTS_OBJ_ID_SIZE) {
 			uint64_t obj_id = net_buf_simple_pull_le48(&net_buf);
-			char t[BT_OTS_OBJ_ID_STR_LEN];
 			struct bt_ots_obj_metadata *cur_object =
 				&inst->otc_inst->cur_object;
 
-			(void)bt_ots_obj_id_to_str(obj_id, t, sizeof(t));
-			BT_DBG("Object Id : %s", log_strdup(t));
+			BT_DBG("Object Id : 0x%llx", obj_id);
 
 			if (cur_object->id != OTS_CLIENT_UNKNOWN_ID &&
 			    cur_object->id != obj_id) {
-				char str[BT_OTS_OBJ_ID_STR_LEN];
 
-				(void)bt_ots_obj_id_to_str(cur_object->id, str,
-							   sizeof(str));
-				BT_INFO("Read Obj Id %s not selected obj Id %s",
-					log_strdup(t), log_strdup(str));
+				BT_INFO("Read Obj Id 0x%llx not selected obj Id 0x%llx",
+					obj_id, cur_object->id);
 			} else {
 				BT_INFO("Read Obj Id confirmed correct Obj Id");
 				cur_object->id = obj_id;
@@ -1294,10 +1289,7 @@ static int decode_record(struct net_buf_simple *buf,
 	rec->metadata.id = net_buf_simple_pull_le48(buf);
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG_OTS_CLIENT)) {
-		char t[BT_OTS_OBJ_ID_STR_LEN];
-
-		(void)bt_ots_obj_id_to_str(rec->metadata.id, t, sizeof(t));
-		BT_DBG("Object ID 0x%s", log_strdup(t));
+		BT_DBG("Object ID 0x%llx", rec->metadata.id);
 	}
 
 	if ((start_len - buf->len) + sizeof(uint8_t) > rec->len) {
@@ -1480,10 +1472,7 @@ void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
 	BT_INFO("--- Displaying %u metadata records ---", count);
 
 	for (int i = 0; i < count; i++) {
-		char t[BT_OTS_OBJ_ID_STR_LEN];
-
-		(void)bt_ots_obj_id_to_str(metadata->id, t, sizeof(t));
-		BT_INFO("Object ID: 0x%s", log_strdup(t));
+		BT_INFO("Object ID: 0x%llx", metadata->id);
 		BT_INFO("Object name: %s", log_strdup(metadata->name_c));
 		BT_INFO("Object Current Size: %u", metadata->size.cur);
 		BT_INFO("Object Allocate Size: %u", metadata->size.alloc);

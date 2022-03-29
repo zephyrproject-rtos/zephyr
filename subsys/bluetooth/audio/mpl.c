@@ -691,7 +691,7 @@ static int add_group_and_track_objects(struct mpl_mediaplayer *pl)
 static int on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 			   uint64_t id)
 {
-	BT_DBG_OBJ_ID("Object Id deleted: ", id);
+	BT_DBG("Object Id deleted: 0x%llx", id);
 
 	return 0;
 }
@@ -707,7 +707,7 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 	}
 	obj.busy = true;
 
-	BT_DBG_OBJ_ID("Object Id selected: ", id);
+	BT_DBG("Object Id selected: 0x%llx", id);
 
 	if (id == pl.icon_id) {
 		BT_DBG("Icon Object ID");
@@ -746,7 +746,7 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 			  const struct bt_ots_obj_add_param *add_param,
 			  struct bt_ots_obj_created_desc *created_desc)
 {
-	BT_DBG_OBJ_ID("Object Id created: ", id);
+	BT_DBG("Object Id created: 0x%llx", id);
 
 	*created_desc = *obj.desc;
 
@@ -820,9 +820,7 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 	obj.busy = true;
 
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MPL)) {
-		char t[BT_OTS_OBJ_ID_STR_LEN];
-		(void)bt_ots_obj_id_to_str(id, t, sizeof(t));
-		BT_DBG("Object Id %s, offset %lu, length %zu", log_strdup(t),
+		BT_DBG("Object Id 0x%llx, offset %lu, length %zu", id,
 		       (long)offset, len);
 	}
 
@@ -967,7 +965,7 @@ static bool do_prev_track(struct mpl_mediaplayer *pl)
 	bool track_changed = false;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	BT_DBG("Track ID before: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->prev != NULL) {
@@ -976,7 +974,7 @@ static bool do_prev_track(struct mpl_mediaplayer *pl)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	BT_DBG("Track ID after: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	return track_changed;
@@ -988,7 +986,7 @@ static bool do_next_track_normal_order(struct mpl_mediaplayer *pl)
 	bool track_changed = false;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	BT_DBG("Track ID before: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->next != NULL) {
@@ -997,7 +995,7 @@ static bool do_next_track_normal_order(struct mpl_mediaplayer *pl)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	BT_DBG("Track ID after: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	return track_changed;
@@ -1033,7 +1031,7 @@ static bool do_first_track(struct mpl_mediaplayer *pl)
 	bool track_changed = false;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	BT_DBG("Track ID before: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->prev != NULL) {
@@ -1045,7 +1043,7 @@ static bool do_first_track(struct mpl_mediaplayer *pl)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	BT_DBG("Track ID after: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	return track_changed;
@@ -1056,7 +1054,7 @@ static bool do_last_track(struct mpl_mediaplayer *pl)
 	bool track_changed = false;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	BT_DBG("Track ID before: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->next != NULL) {
@@ -1068,7 +1066,7 @@ static bool do_last_track(struct mpl_mediaplayer *pl)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	BT_DBG("Track ID after: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	return track_changed;
@@ -1080,7 +1078,7 @@ static bool do_goto_track(struct mpl_mediaplayer *pl, int32_t tracknum)
 	int32_t k;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	BT_DBG("Track ID before: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (tracknum > 0) {
@@ -1114,7 +1112,7 @@ static bool do_goto_track(struct mpl_mediaplayer *pl, int32_t tracknum)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	BT_DBG("Track ID after: 0x%llx", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	/* The track has changed if we have moved more in one direction */
@@ -1128,7 +1126,7 @@ static bool do_prev_group(struct mpl_mediaplayer *pl)
 	bool group_changed = false;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	BT_DBG("Group ID before: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->prev != NULL) {
@@ -1137,7 +1135,7 @@ static bool do_prev_group(struct mpl_mediaplayer *pl)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	BT_DBG("Group ID after: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	return group_changed;
@@ -1148,7 +1146,7 @@ static bool do_next_group(struct mpl_mediaplayer *pl)
 	bool group_changed = false;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	BT_DBG("Group ID before: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->next != NULL) {
@@ -1157,7 +1155,7 @@ static bool do_next_group(struct mpl_mediaplayer *pl)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	BT_DBG("Group ID after: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	return group_changed;
@@ -1168,7 +1166,7 @@ static bool do_first_group(struct mpl_mediaplayer *pl)
 	bool group_changed = false;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	BT_DBG("Group ID before: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->prev != NULL) {
@@ -1180,7 +1178,7 @@ static bool do_first_group(struct mpl_mediaplayer *pl)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	BT_DBG("Group ID after: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	return group_changed;
@@ -1191,7 +1189,7 @@ static bool do_last_group(struct mpl_mediaplayer *pl)
 	bool group_changed = false;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	BT_DBG("Group ID before: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->next != NULL) {
@@ -1203,7 +1201,7 @@ static bool do_last_group(struct mpl_mediaplayer *pl)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	BT_DBG("Group ID after: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	return group_changed;
@@ -1215,7 +1213,7 @@ static bool  do_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
 	int32_t k;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	BT_DBG("Group ID before: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (groupnum > 0) {
@@ -1249,7 +1247,7 @@ static bool  do_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-	BT_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	BT_DBG("Group ID after: 0x%llx", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	/* The group has changed if we have moved more in one direction */
@@ -2459,7 +2457,7 @@ void set_current_track_id(uint64_t id)
 	struct mpl_group *group;
 	struct mpl_track *track;
 
-	BT_DBG_OBJ_ID("Track ID to set: ", id);
+	BT_DBG("Track ID to set: 0x%llx", id);
 
 	if (find_track_by_id(&pl, id, &group, &track)) {
 
@@ -2506,7 +2504,7 @@ void set_next_track_id(uint64_t id)
 	struct mpl_group *group;
 	struct mpl_track *track;
 
-	BT_DBG_OBJ_ID("Next Track ID to set: ", id);
+	BT_DBG("Next Track ID to set: 0x%llx", id);
 
 	if (find_track_by_id(&pl, id, &group, &track)) {
 
@@ -2535,7 +2533,7 @@ void set_current_group_id(uint64_t id)
 	struct mpl_group *group;
 	bool track_change;
 
-	BT_DBG_OBJ_ID("Group ID to set: ", id);
+	BT_DBG("Group ID to set: 0x%llx", id);
 
 	if (find_group_by_id(&pl, id, &group)) {
 
@@ -2792,7 +2790,6 @@ int media_proxy_pl_init(void)
 void mpl_debug_dump_state(void)
 {
 #if CONFIG_BT_MPL_OBJECTS
-	char t[BT_OTS_OBJ_ID_STR_LEN];
 	struct mpl_group *group;
 	struct mpl_track *track;
 #endif /* CONFIG_BT_MPL_OBJECTS */
@@ -2800,8 +2797,7 @@ void mpl_debug_dump_state(void)
 	BT_DBG("Mediaplayer name: %s", log_strdup(pl.name));
 
 #if CONFIG_BT_MPL_OBJECTS
-	(void)bt_ots_obj_id_to_str(pl.icon_id, t, sizeof(t));
-	BT_DBG("Icon ID: %s", log_strdup(t));
+	BT_DBG("Icon ID: 0x%llx", pl.icon_id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	BT_DBG("Icon URL: %s", log_strdup(pl.icon_url));
@@ -2815,29 +2811,21 @@ void mpl_debug_dump_state(void)
 	BT_DBG("Content control ID: %d", pl.content_ctrl_id);
 
 #if CONFIG_BT_MPL_OBJECTS
-	(void)bt_ots_obj_id_to_str(pl.group->parent->id, t, sizeof(t));
-	BT_DBG("Current group's parent: %s", log_strdup(t));
+	BT_DBG("Current group's parent: 0x%llx", pl.group->parent->id);
+	BT_DBG("Current group: 0x%llx", pl.group->id);
 
-	(void)bt_ots_obj_id_to_str(pl.group->id, t, sizeof(t));
-	BT_DBG("Current group: %s", log_strdup(t));
-
-	(void)bt_ots_obj_id_to_str(pl.group->track->id, t, sizeof(t));
-	BT_DBG("Current track: %s", log_strdup(t));
+	BT_DBG("Current track: 0x%llx", pl.group->track->id);
 
 	if (pl.next_track_set) {
-		(void)bt_ots_obj_id_to_str(pl.next.track->id, t, sizeof(t));
-		BT_DBG("Next track: %s", log_strdup(t));
+		BT_DBG("Next track: 0x%llx", pl.next.track->id);
 	} else if (pl.group->track->next) {
-		(void)bt_ots_obj_id_to_str(pl.group->track->next->id, t,
-					   sizeof(t));
-		BT_DBG("Next track: %s", log_strdup(t));
+		BT_DBG("Next track: 0x%llx", pl.group->track->next->id);
 	} else {
 		BT_DBG("No next track");
 	}
 
 	if (pl.search_results_id) {
-		(void)bt_ots_obj_id_to_str(pl.search_results_id, t, sizeof(t));
-		BT_DBG("Search results: %s", log_strdup(t));
+		BT_DBG("Search results: 0x%llx", pl.search_results_id);
 	} else {
 		BT_DBG("No search results");
 	}
@@ -2850,12 +2838,10 @@ void mpl_debug_dump_state(void)
 	}
 
 	while (group) {
-		(void)bt_ots_obj_id_to_str(group->id, t, sizeof(t));
-		BT_DBG("Group: %s, %s", log_strdup(t),
+		BT_DBG("Group: 0x%llx, %s", group->id,
 		       log_strdup(group->title));
 
-		(void)bt_ots_obj_id_to_str(group->parent->id, t, sizeof(t));
-		BT_DBG("\tParent: %s, %s", log_strdup(t),
+		BT_DBG("\tParent: 0x%llx, %s", group->parent->id,
 		       log_strdup(group->parent->title));
 
 		track = group->track;
@@ -2864,8 +2850,7 @@ void mpl_debug_dump_state(void)
 		}
 
 		while (track) {
-			(void)bt_ots_obj_id_to_str(track->id, t, sizeof(t));
-			BT_DBG("\tTrack: %s, %s, duration: %d", log_strdup(t),
+			BT_DBG("\tTrack: 0x%llx, %s, duration: %d", track->id,
 			       log_strdup(track->title), track->duration);
 			track = track->next;
 		}

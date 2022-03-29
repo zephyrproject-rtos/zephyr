@@ -69,20 +69,16 @@ static int ots_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id
 			   const struct bt_ots_obj_add_param *add_param,
 			   struct bt_ots_obj_created_desc *created_desc)
 {
-	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 	uint64_t index;
-
-	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
 
 	if (obj_cnt >= ARRAY_SIZE(objects)) {
 		printk("No item from Object pool is available for Object "
-		       "with %s ID\n", id_str);
+		       "with 0x%llx ID\n", id);
 		return -ENOMEM;
 	}
 
 	if (add_param->size > OBJ_MAX_SIZE) {
-		printk("Object pool item is too small for Object with %s ID\n",
-		       id_str);
+		printk("Object pool item is too small for Object with 0x%llx ID\n", id);
 		return -ENOMEM;
 	}
 
@@ -102,7 +98,7 @@ static int ots_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id
 		BT_OTS_OBJ_SET_PROP_DELETE(created_desc->props);
 	}
 
-	printk("Object with %s ID has been created\n", id_str);
+	printk("Object with 0x%llx ID has been created\n", id);
 	obj_cnt++;
 
 	return 0;
@@ -111,11 +107,7 @@ static int ots_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id
 static int ots_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 			    uint64_t id)
 {
-	char id_str[BT_OTS_OBJ_ID_STR_LEN];
-
-	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
-
-	printk("Object with %s ID has been deleted\n", id_str);
+	printk("Object with 0x%llx ID has been deleted\n", id);
 
 	obj_cnt--;
 
@@ -125,25 +117,17 @@ static int ots_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 static void ots_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 			     uint64_t id)
 {
-	char id_str[BT_OTS_OBJ_ID_STR_LEN];
-
-	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
-
-	printk("Object with %s ID has been selected\n", id_str);
+	printk("Object with 0x%llx ID has been selected\n", id);
 }
 
 static ssize_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
 			   uint64_t id, void **data, size_t len,
 			   off_t offset)
 {
-	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 	uint32_t obj_index = (id % ARRAY_SIZE(objects));
 
-	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
-
 	if (!data) {
-		printk("Object with %s ID has been successfully read\n",
-		       id_str);
+		printk("Object with 0x%llx ID has been successfully read\n", id);
 
 		return 0;
 	}
@@ -157,9 +141,8 @@ static ssize_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
 		len = (len < 20) ? len : 20;
 	}
 
-	printk("Object with %s ID is being read\n"
-		"Offset = %lu, Length = %zu\n",
-		id_str, (long)offset, len);
+	printk("Object with 0x%llx ID is being read\n"
+		"Offset = %lu, Length = %zu\n", id, (long)offset, len);
 
 	return len;
 }
@@ -168,14 +151,11 @@ static ssize_t ots_obj_write(struct bt_ots *ots, struct bt_conn *conn,
 			     uint64_t id, const void *data, size_t len,
 			     off_t offset, size_t rem)
 {
-	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 	uint32_t obj_index = (id % ARRAY_SIZE(objects));
 
-	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
-
-	printk("Object with %s ID is being written\n"
+	printk("Object with 0x%llx ID is being written\n"
 		"Offset = %lu, Length = %zu, Remaining= %zu\n",
-		id_str, (long)offset, len, rem);
+		id, (long)offset, len, rem);
 
 	(void)memcpy(&objects[obj_index].data[offset], data, len);
 
@@ -184,11 +164,7 @@ static ssize_t ots_obj_write(struct bt_ots *ots, struct bt_conn *conn,
 
 void ots_obj_name_written(struct bt_ots *ots, struct bt_conn *conn, uint64_t id, const char *name)
 {
-	char id_str[BT_OTS_OBJ_ID_STR_LEN];
-
-	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
-
-	printk("Name for object with %s ID has been written\n", id_str);
+	printk("Name for object with 0x%llx ID has been written\n", id);
 }
 
 static struct bt_ots_cb ots_callbacks = {

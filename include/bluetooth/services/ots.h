@@ -1011,27 +1011,6 @@ typedef int (*bt_ots_client_dirlisting_cb)(struct bt_ots_obj_metadata *meta);
 int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
 				    bt_ots_client_dirlisting_cb cb);
 
-/** @brief Converts binary OTS Object ID to string.
- *
- *  @param obj_id Object ID.
- *  @param str    Address of user buffer with enough room to store
- *                formatted string containing binary Object ID.
- *  @param len    Length of data to be copied to user string buffer.
- *                Refer to BT_OTS_OBJ_ID_STR_LEN about
- *                recommended value.
- *
- *  @return Number of successfully formatted bytes from binary ID.
- */
-static inline int bt_ots_obj_id_to_str(uint64_t obj_id, char *str, size_t len)
-{
-	uint8_t id[6];
-
-	sys_put_le48(obj_id, id);
-
-	return snprintk(str, len, "0x%02X%02X%02X%02X%02X%02X",
-			id[5], id[4], id[3], id[2], id[1], id[0]);
-}
-
 /** @brief Displays one or more object metadata as text with BT_INFO.
  *
  * @param metadata Pointer to the first (or only) metadata in an array.

@@ -78,15 +78,12 @@ static void player_name_cb(struct media_player *plr, int err, const char *name)
 
 static void icon_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Icon ID failed (%d)", plr, err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Player: %p, Icon Object ID: %s", plr, str);
+	shell_print(ctx_shell, "Player: %p, Icon Object ID: 0x%llx", plr, id);
 }
 
 static void icon_url_cb(struct media_player *plr, int err, const char *url)
@@ -182,34 +179,26 @@ static void seeking_speed_cb(struct media_player *plr, int err, int8_t speed)
 #ifdef CONFIG_BT_OTS
 static void track_segments_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Track segments ID failed (%d)", plr, err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Player: %p, Track Segments Object ID: %s", plr, str);
+	shell_print(ctx_shell, "Player: %p, Track Segments Object ID: 0x%llx", plr, id);
 }
 
 static void current_track_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Current track ID failed (%d)", plr, err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Player: %p, Current Track Object ID: %s", plr, str);
+	shell_print(ctx_shell, "Player: %p, Current Track Object ID: 0x%llx", plr, id);
 }
 
 static void next_track_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Next track ID failed (%d)", plr, err);
 		return;
@@ -218,35 +207,28 @@ static void next_track_id_cb(struct media_player *plr, int err, uint64_t id)
 	if (id == MPL_NO_TRACK_ID) {
 		shell_print(ctx_shell, "Player: %p, Next Track Object ID is empty", plr);
 	} else {
-		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		shell_print(ctx_shell, "Player: %p, Next Track Object ID: %s", plr, str);
+		shell_print(ctx_shell, "Player: %p, Next Track Object ID: 0x%llx", plr, id);
 	}
 }
 
 static void current_group_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Current group ID failed (%d)", plr, err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Player: %p, Current Group Object ID: %s", plr, str);
+	shell_print(ctx_shell, "Player: %p, Current Group Object ID: 0x%llx", plr, id);
 }
 
 static void parent_group_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Parent group ID failed (%d)", plr, err);
 		return;
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Player: %p, Parent Group Object ID: %s", plr, str);
+	shell_print(ctx_shell, "Player: %p, Parent Group Object ID: 0x%llx", plr, id);
 }
 #endif /* CONFIG_BT_OTS */
 
@@ -348,8 +330,6 @@ static void search_recv_cb(struct media_player *plr, int err, uint8_t result_cod
 
 static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	char str[BT_OTS_OBJ_ID_STR_LEN];
-
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Search results ID failed (%d)", plr, err);
 		return;
@@ -359,8 +339,7 @@ static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
 		shell_print(ctx_shell, "Player: %p, Search result not avilable", plr);
 	}
 
-	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Player: %p, Search Results Object ID: %s", plr, str);
+	shell_print(ctx_shell, "Player: %p, Search Results Object ID: 0x%llx", plr, id);
 }
 #endif /* CONFIG_BT_OTS */
 

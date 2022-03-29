@@ -257,12 +257,8 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 		if (olcp_status != BT_GATT_OTS_OLCP_RES_SUCCESS) {
 			LOG_WRN("OLCP Write error status: 0x%02X", olcp_status);
 		} else if (old_obj != ots->cur_obj) {
-			char id[BT_OTS_OBJ_ID_STR_LEN];
-
-			bt_ots_obj_id_to_str(ots->cur_obj->id, id,
-						sizeof(id));
-			LOG_DBG("Selecting a new Current Object with id: %s",
-				log_strdup(id));
+			LOG_DBG("Selecting a new Current Object with id: 0x%llx",
+				ots->cur_obj->id);
 
 			if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
 				bt_ots_dir_list_selected(ots->dir_list, ots->obj_manager,
