@@ -70,18 +70,6 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-/**
- *  User CPR Interval
- */
-#if !defined(CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN)
-/* Bluetooth defined CPR Interval Minimum (7.5ms) */
-#define CONN_INTERVAL_MIN(x) (6)
-#else /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
-/* Proprietary user defined CPR Interval Minimum */
-extern uint16_t ull_conn_interval_min_get(struct ll_conn *conn);
-#define CONN_INTERVAL_MIN(x) (MAX(ull_conn_interval_min_get(x), 1))
-#endif /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
-
 static int init_reset(void);
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 static void tx_demux_sched(struct ll_conn *conn);
