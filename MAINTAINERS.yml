@@ -698,6 +698,7 @@ Documentation:
         - tbursztyka
     collaborators:
         - rlubos
+        - jciupis
     files:
         - drivers/ieee802154/
     labels:
