@@ -5657,6 +5657,7 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 			client_ctx->desthostname[client_ctx->desthostnamelen] = tmp;
 			if (ret < 0) {
 				LOG_ERR("Failed to set TLS_HOSTNAME option: %d", errno);
+				lwm2m_engine_context_close(client_ctx);
 				return -errno;
 			}
 		}
