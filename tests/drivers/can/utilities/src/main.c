@@ -10,6 +10,16 @@
 
 LOG_MODULE_REGISTER(can_utilities, LOG_LEVEL_ERR);
 
+/**
+ * @addtogroup t_driver_can
+ * @{
+ * @defgroup t_can_utilities test_can_utilities
+ * @}
+ */
+
+/**
+ * @brief Test of @a can_copy_frame_to_zframe()
+ */
 static void test_can_frame_to_zcan_frame(void)
 {
 	struct can_frame frame = { 0 };
@@ -39,6 +49,9 @@ static void test_can_frame_to_zcan_frame(void)
 	zassert_equal(msg.dlc, expected.dlc, "Msg length invalid");
 }
 
+/**
+ * @brief Test of @a can_copy_zframe_to_frame()
+ */
 static void test_zcan_frame_to_can_frame(void)
 {
 	struct can_frame frame = { 0 };
@@ -70,6 +83,9 @@ static void test_zcan_frame_to_can_frame(void)
 		      "CAN msg length not same");
 }
 
+/**
+ * @brief Test of @a can_copy_filter_to_zfilter()
+ */
 static void test_can_filter_to_zcan_filter(void)
 {
 	struct can_filter filter = { 0 };
@@ -103,6 +119,9 @@ static void test_can_filter_to_zcan_filter(void)
 		      "id mask not set");
 }
 
+/**
+ * @brief Test of @a can_copy_zfilter_to_filter()
+ */
 static void test_zcan_filter_to_can_filter(void)
 {
 	struct can_filter filter = { 0 };
