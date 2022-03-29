@@ -3763,14 +3763,14 @@ class TestPlan(DisablePyTestCollectionMixin):
             for case in instance.testcases:
                 case = instance.status
 
-        self.filtered_platforms = set(p.platform.name for p in self.instances.values()
-                                      if p.status != "skipped" )
-
-        # Remove from discards configurations that must not be discarded (e.g. integration_platforms when --integration was used)
+        # Remove from discards configurations that must not be discarded
+        # (e.g. integration_platforms when --integration was used)
         for instance in remove_from_discards:
             del self.discards[instance]
 
-        return discards
+        self.filtered_platforms = set(p.platform.name for p in self.instances.values()
+                                      if p.status != "skipped" )
+
 
     def add_instances(self, instance_list):
         for instance in instance_list:
