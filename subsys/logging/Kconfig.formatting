@@ -47,6 +47,7 @@ config LOG_MIPI_SYST_CATALOG_ARGS_BUFFER_SIZE
 config LOG_DICTIONARY_SUPPORT
 	bool
 	depends on LOG2
+	select LOG_DICTIONARY_DB
 	help
 	  Enable support for dictionary based logging.
 

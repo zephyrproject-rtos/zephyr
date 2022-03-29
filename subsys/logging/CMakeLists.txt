@@ -95,6 +95,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_backend_spinel.c
   )
 
+  zephyr_sources_ifdef(
+    CONFIG_LOG_FRONTEND_DICT_UART
+    log_frontend_dict_uart.c
+  )
+
   if(CONFIG_LOG_DICTIONARY_SUPPORT)
     zephyr_sources(log_output_dict.c)
   endif()
