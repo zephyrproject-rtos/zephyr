@@ -358,12 +358,14 @@ struct llcp_struct {
 	struct {
 		sys_slist_t pend_proc_list;
 		uint8_t state;
+		uint8_t pause;
 	} local;
 
 	/* Remote Request */
 	struct {
 		sys_slist_t pend_proc_list;
 		uint8_t state;
+		uint8_t pause;
 		uint8_t collision;
 		uint8_t incompat;
 		uint8_t reject_opcode;
