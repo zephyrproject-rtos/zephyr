@@ -177,24 +177,19 @@ struct proc_ctx *llcp_rr_peek(struct ll_conn *conn)
 	return ctx;
 }
 
+bool llcp_rr_ispaused(struct ll_conn *conn)
+{
+	return conn->llcp.remote.pause == 1U;
+}
+
 void llcp_rr_pause(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
-	if (ctx) {
-		ctx->pause = 1;
-	}
+	conn->llcp.remote.pause = 1U;
 }
 
 void llcp_rr_resume(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
-	if (ctx) {
-		ctx->pause = 0;
-	}
+	conn->llcp.remote.pause = 0U;
 }
 
 
@@ -389,7 +384,7 @@ static void rr_act_reject(struct ll_conn *conn)
 
 	LL_ASSERT(ctx != NULL);
 
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_REJECT);
 	} else {
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
@@ -405,7 +400,7 @@ static void rr_act_unsupported(struct ll_conn *conn)
 
 	LL_ASSERT(ctx != NULL);
 
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_UNSUPPORTED);
 	} else {
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP);

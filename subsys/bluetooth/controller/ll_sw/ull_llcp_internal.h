@@ -140,9 +140,6 @@ struct proc_ctx {
 	/* Instant collision */
 	int collision;
 
-	/* Procedure pause */
-	int pause;
-
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
 	/* Wait list next pointer */
 	sys_snode_t wait_node;
@@ -441,6 +438,7 @@ void llcp_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
  * LLCP Local Request
  */
 struct proc_ctx *llcp_lr_peek(struct ll_conn *conn);
+bool llcp_lr_ispaused(struct ll_conn *conn);
 void llcp_lr_pause(struct ll_conn *conn);
 void llcp_lr_resume(struct ll_conn *conn);
 void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
@@ -461,6 +459,7 @@ bool llcp_rr_get_collision(struct ll_conn *conn);
 void llcp_rr_set_paused_cmd(struct ll_conn *conn, enum llcp_proc);
 enum llcp_proc llcp_rr_get_paused_cmd(struct ll_conn *conn);
 struct proc_ctx *llcp_rr_peek(struct ll_conn *conn);
+bool llcp_rr_ispaused(struct ll_conn *conn);
 void llcp_rr_pause(struct ll_conn *conn);
 void llcp_rr_resume(struct ll_conn *conn);
 void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
