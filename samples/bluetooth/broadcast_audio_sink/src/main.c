@@ -37,7 +37,9 @@ static void stream_stopped_cb(struct bt_audio_stream *stream)
 	printk("Stream %p stopped\n", stream);
 }
 
-static void stream_recv_cb(struct bt_audio_stream *stream, struct net_buf *buf)
+static void stream_recv_cb(struct bt_audio_stream *stream,
+			   const struct bt_iso_recv_info *info,
+			   struct net_buf *buf)
 {
 	static uint32_t recv_cnt;
 

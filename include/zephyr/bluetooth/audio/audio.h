@@ -1279,9 +1279,15 @@ struct bt_audio_stream_ops {
 	 *  This callback is only used if the ISO data path is HCI.
 	 *
 	 *  @param stream Stream object.
-	 *  @param buf  Buffer containing incoming audio data.
+	 *  @param info   Pointer to the metadata for the buffer. The lifetime
+	 *                of the pointer is linked to the lifetime of the
+	 *                net_buf. Metadata such as sequence number and
+	 *                timestamp can be provided by the bluetooth controller.
+	 *  @param buf    Buffer containing incoming audio data.
 	 */
-	void (*recv)(struct bt_audio_stream *stream, struct net_buf *buf);
+	void (*recv)(struct bt_audio_stream *stream,
+		     const struct bt_iso_recv_info *info,
+		     struct net_buf *buf);
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SINK */
 
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SOURCE)
