@@ -15,3 +15,4 @@ zephyr_library_sources(
   )
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE thread.c)
+zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
