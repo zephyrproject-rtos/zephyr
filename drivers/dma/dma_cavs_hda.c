@@ -117,10 +117,15 @@ int cavs_hda_dma_status(const struct device *dev, uint32_t channel,
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
+	uint32_t unused = cavs_hda_unused(cfg->base, channel);
+	uint32_t used = *DGBS(cfg->base, channel) - unused;
+
 	stat->dir = cfg->direction;
 	stat->busy = *DGCS(cfg->base, channel) & DGCS_GBUSY;
 	stat->write_position = *DGBWP(cfg->base, channel);
 	stat->read_position = *DGBRP(cfg->base, channel);
+	stat->pending_length = used;
+	stat->free = unused;
 
 	return 0;
 }
