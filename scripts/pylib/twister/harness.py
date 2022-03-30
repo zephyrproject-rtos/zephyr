@@ -124,6 +124,8 @@ class Console(Harness):
                     self.matches[r] = line
             if len(self.matches) == len(self.regex):
                 self.state = "passed"
+        else:
+            logger.error("Unknown harness_config type")
 
         if self.fail_on_fault:
             if self.FAULT in line:
