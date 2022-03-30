@@ -3264,7 +3264,7 @@ class TestPlan(DisablePyTestCollectionMixin):
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
 {Fore.RED}{results.total - run - results.skipped_configs}{Fore.RESET} test configurations were only built.")
 
-    def save_reports(self, name, suffix, report_dir, no_update, only_failed, platform_reports, json_report):
+    def save_reports(self, name, suffix, report_dir, no_update, platform_reports):
         if not self.instances:
             return
 
@@ -3470,8 +3470,7 @@ class TestPlan(DisablePyTestCollectionMixin):
         for d in quarantine_list:
             self.quarantine.update(d)
 
-    # FIXME
-    def load_from_file(self, file, filter_status=[], filter_platform=[]):
+    def load_from_file(self, file, filter_platform=[]):
         with open(file, "r") as json_test_plan:
             jtp = json.load(json_test_plan)
             instance_list = []
