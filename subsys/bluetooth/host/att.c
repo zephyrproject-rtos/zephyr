@@ -2950,12 +2950,20 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 }
 
 #if defined(CONFIG_BT_EATT)
-#if defined(CONFIG_BT_TESTING)
 size_t bt_eatt_count(struct bt_conn *conn)
 {
-	struct bt_att *att = att_get(conn);
+	struct bt_att *att;
 	struct bt_att_chan *chan;
 	size_t eatt_count = 0;
+
+	if (!conn) {
+		return 0;
+	}
+
+	att = att_get(conn);
+	if (!att) {
+		return 0;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
 		if (atomic_test_bit(chan->flags, ATT_ENHANCED)) {
@@ -2965,7 +2973,6 @@ size_t bt_eatt_count(struct bt_conn *conn)
 
 	return eatt_count;
 }
-#endif /* CONFIG_BT_TESTING */
 
 static void att_enhanced_connection_work_handler(struct k_work *work)
 {
