@@ -721,8 +721,10 @@ int can_mcan_get_state(const struct can_mcan_config *cfg, enum can_state *state,
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int can_mcan_recover(struct can_mcan_reg *can, k_timeout_t timeout)
+int can_mcan_recover(const struct can_mcan_config *cfg, k_timeout_t timeout)
 {
+	struct can_mcan_reg *can = cfg->can;
+
 	return can_leave_init_mode(can, timeout);
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */

@@ -145,6 +145,13 @@ int can_sam_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 	return 0;
 }
 
+static int can_sam_recover(const struct device *dev, k_timeout_t timeout)
+{
+	const struct can_sam_config *cfg = dev->config;
+
+	return can_mcan_recover(&cfg->mcan_cfg, timeout);
+}
+
 static void can_sam_line_0_isr(const struct device *dev)
 {
 	const struct can_sam_config *cfg = dev->config;
@@ -175,7 +182,7 @@ static const struct can_driver_api can_api_funcs = {
 	.remove_rx_filter = can_sam_remove_rx_filter,
 	.get_state = can_sam_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_mcan_recover,
+	.recover = can_sam_recover,
 #endif
 	.get_core_clock = can_sam_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
