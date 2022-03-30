@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <it8xxx2.dtsi>
 #include <it8xxx2-alts-map.dtsi>
+#include <ite/it8xxx2-pinctrl-map.dtsi>
 
 / {
 	model = "IT8XXX2 EV-Board";
@@ -91,9 +92,15 @@
 };
 &ite_uart1_wrapper {
 	status = "okay";
+	pinctrl-0 = <&uart1_rx_gpb0_default
+		     &uart1_tx_gpb1_default>;
+	pinctrl-names = "default";
 };
 &ite_uart2_wrapper {
 	status = "okay";
+	pinctrl-0 = <&uart2_rx_gph1_default
+		     &uart2_tx_gph2_default>;
+	pinctrl-names = "default";
 };
 /* pwm for test */
 &pwm0 {

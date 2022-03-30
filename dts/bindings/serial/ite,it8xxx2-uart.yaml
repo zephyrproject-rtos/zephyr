@@ -5,7 +5,7 @@ description: ITE, IT8XXX2-UART node
 
 compatible: "ite,it8xxx2-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -24,3 +24,9 @@ properties:
       type: phandle
       required: true
       description: Get the handle of the UART device
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
