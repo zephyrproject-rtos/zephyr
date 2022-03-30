@@ -238,7 +238,7 @@
 		};
 
 		wdt: wdt0: watchdog@40010000 {
-			compatible = "nordic,nrf-watchdog";
+			compatible = "nordic,nrf-wdt";
 			reg = <0x40010000 0x1000>;
 			interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";

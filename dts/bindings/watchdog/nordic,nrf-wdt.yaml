@@ -1,17 +1,14 @@
 # Copyright (c) 2018, Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nordic Semiconductor nRF watchdog
+description: Nordic nRF family WDT (Watchdog Timer)
 
-compatible: "nordic,nrf-watchdog"
+compatible: "nordic,nrf-wdt"
 
 include: base.yaml
 
 properties:
     reg:
-      required: true
-
-    label:
       required: true
 
     interrupts:
