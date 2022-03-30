@@ -136,6 +136,7 @@ ARM arch:
         - MaureenHelm
         - stephanosio
         - bbolen
+        - povergoing
     files:
         - arch/arm/
         - arch/arm/core/offsets/
