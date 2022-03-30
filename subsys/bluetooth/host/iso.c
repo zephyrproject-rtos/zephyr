@@ -642,12 +642,13 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		pkt_seq_no = sys_le16_to_cpu(hdr->sn);
 		iso_info(buf)->sn = pkt_seq_no;
 
+		iso_info(buf)->flags = 0;
 		if (flags == BT_ISO_DATA_VALID) {
-			iso_info(buf)->flags = BT_ISO_FLAGS_VALID;
+			iso_info(buf)->flags |= BT_ISO_FLAGS_VALID;
 		} else if (flags == BT_ISO_DATA_INVALID) {
-			iso_info(buf)->flags = BT_ISO_FLAGS_ERROR;
+			iso_info(buf)->flags |= BT_ISO_FLAGS_ERROR;
 		} else if (flags == BT_ISO_DATA_NOP) {
-			iso_info(buf)->flags = BT_ISO_FLAGS_LOST;
+			iso_info(buf)->flags |= BT_ISO_FLAGS_LOST;
 		} else {
 			BT_WARN("Invalid ISO packet status flag: %u", flags);
 			iso_info(buf)->flags = 0;
