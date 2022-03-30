@@ -43,6 +43,7 @@ int cavs_hda_dma_host_in_config(const struct device *dev,
 	const struct cavs_hda_dma_cfg *const cfg = dev->config;
 	struct dma_block_config *blk_cfg;
 	uint8_t *buf;
+	int res;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 	__ASSERT(dma_cfg->block_count == 1,
@@ -54,8 +55,15 @@ int cavs_hda_dma_host_in_config(const struct device *dev,
 
 	blk_cfg = dma_cfg->head_block;
 	buf = (uint8_t *)(uintptr_t)(blk_cfg->source_address);
-	return cavs_hda_set_buffer(cfg->base, channel, buf,
+	res = cavs_hda_set_buffer(cfg->base, channel, buf,
 				  blk_cfg->block_size);
+
+	if (res == 0 && dma_cfg->source_data_size <= 3) {
+		/* set the sample container set bit to 16bits */
+		*DGCS(cfg->base, channel) |= DGCS_SCS;
+	}
+
+	return res;
 }
 
 
@@ -64,8 +72,9 @@ int cavs_hda_dma_host_out_config(const struct device *dev,
 					struct dma_config *dma_cfg)
 {
 	const struct cavs_hda_dma_cfg *const cfg = dev->config;
-	uint8_t *buf;
 	struct dma_block_config *blk_cfg;
+	uint8_t *buf;
+	int res;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 	__ASSERT(dma_cfg->block_count == 1,
@@ -78,8 +87,15 @@ int cavs_hda_dma_host_out_config(const struct device *dev,
 	blk_cfg = dma_cfg->head_block;
 	buf = (uint8_t *)(uintptr_t)(blk_cfg->dest_address);
 
-	return cavs_hda_set_buffer(cfg->base, channel, buf,
+	res = cavs_hda_set_buffer(cfg->base, channel, buf,
 				  blk_cfg->block_size);
+
+	if (res == 0 && dma_cfg->dest_data_size <= 3) {
+		/* set the sample container set bit to 16bits */
+		*DGCS(cfg->base, channel) |= DGCS_SCS;
+	}
+
+	return res;
 }
 
 int cavs_hda_dma_host_reload(const struct device *dev, uint32_t channel,
