@@ -875,6 +875,8 @@ struct ifreq {
 
 /** sockopt: Size of socket socket send buffer (ignored, for compatibility) */
 #define SO_SNDBUF 7
+/** sockopt: Size of socket recv buffer */
+#define SO_RCVBUF 8
 
 /** sockopt: Enable sending keep-alive messages on connections (ignored, for compatibility) */
 #define SO_KEEPALIVE 9
