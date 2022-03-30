@@ -406,11 +406,17 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	default:
 		mode = RADIO_MODE_MODE_Ble_1Mbit;
 
+		/* Workaround: nRF5340 Revision 1 Errata 117 */
+		*((volatile uint32_t *)0x41008588) =
+			*((volatile uint32_t *)0x01FF0080); /* non-2M mode */
 		break;
 
 	case BIT(1):
 		mode = RADIO_MODE_MODE_Ble_2Mbit;
 
+		/* Workaround: nRF5340 Revision 1 Errata 117 */
+		*((volatile uint32_t *)0x41008588) =
+			*((volatile uint32_t *)0x01FF0084); /* 2M mode */
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -421,6 +427,9 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 			mode = RADIO_MODE_MODE_Ble_LR500Kbit;
 		}
 
+		/* Workaround: nRF5340 Revision 1 Errata 117 */
+		*((volatile uint32_t *)0x41008588) =
+			*((volatile uint32_t *)0x01FF0080); /* non-2M mode */
 		break;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
