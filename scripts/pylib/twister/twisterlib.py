@@ -898,9 +898,10 @@ class DeviceHandler(Handler):
             )
         except serial.SerialException as e:
             self.set_state("failed", 0)
-            self.instance.reason = "Failed"
+            self.instance.reason = "Serial Device Error"
             logger.error("Serial device error: %s" % (str(e)))
 
+            self.add_missing_testscases("Serial Device Error")
             if serial_pty and ser_pty_process:
                 ser_pty_process.terminate()
                 outs, errs = ser_pty_process.communicate()
@@ -984,12 +985,10 @@ class DeviceHandler(Handler):
         if harness.is_pytest:
             harness.pytest_run(self.log)
 
-        # sometimes a test instance hasn't been executed successfully with an
-        # empty dictionary results, in order to include it into final report,
+        # sometimes a test instance hasn't been executed successfully with no
+        # status, in order to include it into final report,
         # so fill the results as blocked
-
-        for case in self.instance.testcases:
-            case.status = 'blocked'
+        self.add_missing_testscases(harness)
 
         if harness.state:
             self.set_state(harness.state, handler_time)
@@ -2074,7 +2073,8 @@ Tests should reference the category and subsystem with a dot as a separator.
         subcases, ztest_suite_names = self.scan_path(test_path)
         # if testcases are provided as part of the yaml, skip this step.
         if not self.testcases:
-            for sub in subcases:
+            # only add each testcase once
+            for sub in set(subcases):
                 name = "{}.{}".format(self.id, sub)
                 self.add_testcase(name)
 
@@ -2155,12 +2155,12 @@ class TestInstance(DisablePyTestCollectionMixin):
     def __lt__(self, other):
         return self.name < other.name
 
-    def set_status_by_name(self, name, status, reason=None):
-        for case in self.testcases:
-            if case.name == name:
-                case.status = status
-                if reason:
-                    case.reason = reason
+    def set_case_status_by_name(self, name, status, reason=None):
+        tc = self.get_case_or_create(name)
+        tc.status = status
+        if reason:
+            tc.reason = reason
+        return tc
 
     def add_testcase(self, name):
         tc = TestCase(name=name)
@@ -3420,8 +3420,8 @@ class TestPlan(DisablePyTestCollectionMixin):
                         if testcases:
                             for tc in testcases:
                                 ts.add_testcase(name=f"{name}.{tc}")
-
-                        ts.parse_subcases(ts_path)
+                        else:
+                            ts.parse_subcases(ts_path)
 
                         if testsuite_filter:
                             if ts.name and ts.name in testsuite_filter:
@@ -3511,7 +3511,11 @@ class TestPlan(DisablePyTestCollectionMixin):
                     tc_status = tc.get('status', None)
                     tc_reason = tc.get('reason')
                     if tc_status:
-                        instance.set_status_by_name(identifier, tc_status, tc_reason)
+                        case = instance.set_case_status_by_name(identifier, tc_status, tc_reason)
+                        case.duration = tc.get('execution_time', 0)
+                        if tc.get('log'):
+                            case.output = tc.get('log')
+
 
                 instance.create_overlay(platform, self.enable_asan, self.enable_ubsan, self.enable_coverage, self.coverage_platform)
                 instance_list.append(instance)
@@ -3608,10 +3612,6 @@ class TestPlan(DisablePyTestCollectionMixin):
                     tfilter,
                     self.fixtures
                 )
-
-                for tc in instance.testcases:
-                    tc.status = None
-
                 if runnable and self.duts:
                     for h in self.duts:
                         if h.platform == plat.name:
@@ -3764,7 +3764,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                 instance.status = "filtered"
 
             for case in instance.testcases:
-                case = instance.status
+                case.status = instance.status
 
         # Remove from discards configurations that must not be discarded
         # (e.g. integration_platforms when --integration was used)
@@ -3879,7 +3879,7 @@ class TestPlan(DisablePyTestCollectionMixin):
         if status in ['skipped', 'filtered']:
             skips += 1
             ET.SubElement(eleTestcase, 'skipped', type=f"{status}", message=f"{reason}")
-        elif status in ["failed", "timeout"]:
+        elif status in ["failed", "timeout", "blocked"]:
             fails += 1
             el = ET.SubElement(eleTestcase, 'failure', type="failure", message=f"{reason}")
             if log:
@@ -3946,7 +3946,7 @@ class TestPlan(DisablePyTestCollectionMixin):
             for ts in suites:
                 handler_time = ts.get('execution_time', 0)
                 runnable = ts.get('runnable', 0)
-                duration += handler_time
+                duration += float(handler_time)
 
                 ts_status = ts.get('status', 'Unknown')
                 # Do not report filtered testcases
@@ -4021,7 +4021,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                 suite["ram_size"] = ram_size
             if rom_size:
                 suite["rom_size"] = rom_size
-            suite["execution_time"] =  handler_time
+            suite["execution_time"] =  f"{float(handler_time):.2f}"
 
             if instance.status in ["error", "failed", "timeout", "flash_error"]:
                 if instance.status == 'failed':
@@ -4044,10 +4044,20 @@ class TestPlan(DisablePyTestCollectionMixin):
                 suite["status"] = instance.status
 
             testcases = []
+
+            if len(instance.testcases) == 1:
+                single_case_duration = f"{float(handler_time):.2f}"
+            else:
+                single_case_duration = 0
+
             for case in instance.testcases:
                 testcase = {}
                 testcase['identifier'] = case.name
-                testcase['execution_time'] = case.duration
+                if single_case_duration:
+                    testcase['execution_time'] = single_case_duration
+                else:
+                    testcase['execution_time'] = f"{float(case.duration):.2f}"
+
                 if case.output != "":
                     testcase['log'] = case.output
 
@@ -4057,6 +4067,8 @@ class TestPlan(DisablePyTestCollectionMixin):
                         testcase["reason"] = case.reason or instance.reason
                 elif case.status == 'passed':
                     testcase["status"] = "passed"
+                elif case.status == 'blocked':
+                    testcase["status"] = "blocked"
                 elif case.status in ['failed', 'blocked', 'timeout']:
                     testcase["status"] = "failed"
                     testcase["reason"] = instance.reason
