@@ -412,6 +412,14 @@ struct net_traffic_class {
 };
 
 /**
+ * @typedef net_socket_create_t
+
+ * @brief A function prototype to create an offloaded socket. The prototype is
+ *        compatible with socket() function.
+ */
+typedef int (*net_socket_create_t)(int, int, int);
+
+/**
  * @brief Network Interface Device structure
  *
  * Used to handle a network interface on top of a device driver instance.
@@ -453,8 +461,10 @@ struct net_if_dev {
 	uint16_t mtu;
 
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
-	/** Indicate whether interface is offloaded at socket level. */
-	bool offloaded;
+	/** A function pointer to create an offloaded socket.
+	 *  If non-NULL, the interface is considered offloaded at socket level.
+	 */
+	net_socket_create_t socket_offload;
 #endif /* CONFIG_NET_SOCKETS_OFFLOAD */
 };
 
@@ -662,11 +672,46 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 static inline bool net_if_is_socket_offloaded(struct net_if *iface)
 {
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
-	return iface->if_dev->offloaded;
+	return (iface->if_dev->socket_offload != NULL);
 #else
 	ARG_UNUSED(iface);
 
 	return false;
+#endif
+}
+
+/**
+ * @brief Set the function to create an offloaded socket
+ *
+ * @param iface Network interface
+ * @param socket_offload A function to create an offloaded socket
+ */
+static inline void net_if_socket_offload_set(
+		struct net_if *iface, net_socket_create_t socket_offload)
+{
+#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+	iface->if_dev->socket_offload = socket_offload;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(socket_offload);
+#endif
+}
+
+/**
+ * @brief Return the function to create an offloaded socket
+ *
+ * @param iface Network interface
+ *
+ * @return NULL if the interface is not socket offloaded, valid pointer otherwise
+ */
+static inline net_socket_create_t net_if_socket_offload(struct net_if *iface)
+{
+#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+	return iface->if_dev->socket_offload;
+#else
+	ARG_UNUSED(iface);
+
+	return NULL;
 #endif
 }
 

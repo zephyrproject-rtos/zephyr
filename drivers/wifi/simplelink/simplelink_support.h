@@ -45,6 +45,8 @@ extern int z_simplelink_init(simplelink_wifi_cb_t wifi_cb);
 extern int z_simplelink_connect(struct wifi_connect_req_params *params);
 extern int z_simplelink_disconnect(void);
 
+int simplelink_socket_create(int family, int type, int proto);
+
 #ifdef __cplusplus
 }
 #endif
