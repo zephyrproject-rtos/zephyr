@@ -18,6 +18,8 @@
  * @{
  */
 
+#include <sys/util_macro.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -137,7 +139,6 @@ enum bt_codec_capability_type {
 #define BT_CODEC_LC3_CHAN_COUNT_SUPPORT(_count)  ((uint8_t)BIT((_count) - 1))
 
 
-
 struct bt_codec_lc3_frame_len {
 	uint16_t min;
 	uint16_t max;
@@ -166,7 +167,7 @@ enum bt_codec_config_type {
 	/** @brief LC3 Frame Length configuration type. */
 	BT_CODEC_CONFIG_LC3_FRAME_LEN            = 0x04,
 
-	/** @brief Codec frames = blocks, per SDU configuration type. */
+	/** @brief Codec frame blocks, per SDU configuration type. */
 	BT_CODEC_CONFIG_LC3_FRAME_BLKS_PER_SDU   = 0x05,
 };
 
@@ -233,17 +234,26 @@ enum bt_codec_config_type {
 #define BT_CODEC_CONFIG_LC3_DURATION_10  0x01
 
 
-
 /** @def BT_CODEC_LC3_DATA
  *  @brief Helper to declare LC3 codec capability
+ *
+ *  _max_frames_per_sdu value is optional and will be included only if != 1
  */
-#define BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max) \
+/* COND_CODE_1 is used to omit an LTV entry in case the _frames_per_sdu is 1.
+ * COND_CODE_1 will evaluate to second argument if the flag parameter(first argument) is 1
+ * - removing one layer of paranteses.
+ * If the flags argument is != 1 it will evaluate to the third argument which inserts a LTV
+ * entry for the max_frames_per_sdu value.
+ */
+ #define BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, _len_max, _max_frames_per_sdu) \
 { \
 	 BT_CODEC_DATA(BT_CODEC_LC3_FREQ, (_freq) & 0xffu, (_freq) >> 8), \
 	 BT_CODEC_DATA(BT_CODEC_LC3_DURATION, _duration), \
 	 BT_CODEC_DATA(BT_CODEC_LC3_CHAN_COUNT, _chan_count), \
 	 BT_CODEC_DATA(BT_CODEC_LC3_FRAME_LEN, (_len_min) & 0xffu, (_len_min) >> 8, \
 		       (_len_max) & 0xffu, (_len_max) >> 8) \
+	 COND_CODE_1(_max_frames_per_sdu, (), \
+		     (, BT_CODEC_DATA(BT_CODEC_LC3_FRAME_COUNT, _max_frames_per_sdu))) \
 }
 
 /** @def BT_CODEC_LC3_META
@@ -260,22 +270,32 @@ enum bt_codec_config_type {
  *  @brief Helper to declare LC3 codec
  */
 #define BT_CODEC_LC3(_freq, _duration, _chan_count, _len_min, _len_max, \
-		     _frames, _prefer_context, _context) \
+		     _max_frames_per_sdu, _prefer_context, _context) \
 	BT_CODEC(BT_CODEC_LC3_ID, 0x0000, 0x0000, \
 		 BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, \
-				   _len_max), \
+				   _len_max, _max_frames_per_sdu), \
 		 BT_CODEC_LC3_META(_prefer_context, _context))
 
 /** @def BT_CODEC_LC3_CONFIG_DATA
  *  @brief Helper to declare LC3 codec data configuration
+ *
+ *  _frame_blocks_per_sdu value is optional and will be included only if != 1
  */
-#define BT_CODEC_LC3_CONFIG_DATA(_freq, _duration, _loc, _len) \
+/* COND_CODE_1 is used to omit an LTV entry in case the _frames_per_sdu is 1.
+ * COND_CODE_1 will evaluate to second argument if the flag parameter(first argument) is 1
+ * - removing one layer of paranteses.
+ * If the flags argument is != 1 it will evaluare to the third argument which inserts a LTV
+ * entry for the frames_per_sdu value.
+ */
+#define BT_CODEC_LC3_CONFIG_DATA(_freq, _duration, _loc, _len, _frame_blocks_per_sdu) \
 { \
 	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FREQ, _freq), \
 	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_DURATION, _duration), \
 	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_CHAN_ALLOC, (_loc) & 0xffu, ((_loc) >> 8) & 0xffu, \
 		       ((_loc) >> 16) & 0xffu, (_loc) >> 24), \
 	 BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_LEN, (_len) & 0xffu, (_len) >> 8) \
+	 COND_CODE_1(_frame_blocks_per_sdu, (), \
+		     (, BT_CODEC_DATA(BT_CODEC_CONFIG_LC3_FRAME_BLKS_PER_SDU, _frames_per_sdu))) \
 }
 
 /** @def BT_CODEC_LC3_CONFIG_DATA
@@ -289,16 +309,16 @@ enum bt_codec_config_type {
 /** @def BT_CODEC_LC3_CONFIG_N
  *  @brief Helper to declare LC3 codec configuration for multiple channels.
  */
-#define BT_CODEC_LC3_CONFIG_N(_freq, _duration, _loc, _len, _context) \
+#define BT_CODEC_LC3_CONFIG_N(_freq, _duration, _loc, _len, _frames_per_sdu, _context) \
 	BT_CODEC(BT_CODEC_LC3_ID, 0x0000, 0x0000, \
-		 BT_CODEC_LC3_CONFIG_DATA(_freq, _duration, _loc, _len), \
+		 BT_CODEC_LC3_CONFIG_DATA(_freq, _duration, _loc, _len, _frames_per_sdu), \
 		 BT_CODEC_LC3_CONFIG_META(_context))
 
 /** @def BT_CODEC_LC3_CONFIG
- *  @brief Helper to declare LC3 codec configuration
+ *  @brief Helper to declare LC3 codec configuration for left location and one frame per sdu
  */
 #define BT_CODEC_LC3_CONFIG(_freq, _duration, _len, _context) \
-	BT_CODEC_LC3_CONFIG_N(_freq, _duration, 0x000000000, _len, _context)
+	BT_CODEC_LC3_CONFIG_N(_freq, _duration, BT_AUDIO_LOCATION_FRONT_LEFT, _len, 1, _context)
 
 /** @def BT_CODEC_LC3_CONFIG_8_1
  *  @brief Helper to declare LC3 8.1 codec configuration
@@ -435,9 +455,6 @@ enum bt_codec_config_type {
  */
 #define BT_CODEC_LC3_QOS_10_UNFRAMED(_sdu, _rtn, _latency, _pd) \
 	BT_CODEC_QOS_UNFRAMED(10000u, _sdu, _rtn, _latency, _pd)
-
-
-
 
 #ifdef __cplusplus
 }
