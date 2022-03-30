@@ -20,6 +20,7 @@
  */
 #define TEST_SEND_TIMEOUT    K_MSEC(100)
 #define TEST_RECEIVE_TIMEOUT K_MSEC(100)
+#define TEST_RECOVER_TIMEOUT K_MSEC(100)
 
 /**
  * @brief Standard (11-bit) CAN IDs and masks used for testing.
@@ -43,7 +44,7 @@
 /**
  * @brief Global variables.
  */
-const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+ZTEST_DMEM const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 struct k_sem rx_callback_sem;
 struct k_sem tx_callback_sem;
 
@@ -770,6 +771,19 @@ static void test_send_invalid_dlc(void)
 	zassert_equal(err, -EINVAL, "sent a frame with an invalid DLC");
 }
 
+static void test_recover(void)
+{
+	int err;
+
+	/* It is not possible to provoke a bus off state, but test the API call */
+	err = can_recover(can_dev, TEST_RECOVER_TIMEOUT);
+	if (err == -ENOTSUP) {
+		ztest_test_skip();
+	}
+
+	zassert_equal(err, 0, "failed to recover (err %d)", err);
+}
+
 void test_main(void)
 {
 	k_sem_init(&rx_callback_sem, 0, 2);
@@ -777,6 +791,9 @@ void test_main(void)
 
 	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
+	k_object_access_grant(can_dev, k_current_get());
+
+	/* Tests without callbacks can run in userspace */
 	ztest_test_suite(can_api_tests,
 			 ztest_unit_test(test_set_loopback),
 			 ztest_unit_test(test_send_and_forget),
@@ -789,6 +806,7 @@ void test_main(void)
 			 ztest_unit_test(test_send_receive_ext_id_masked),
 			 ztest_unit_test(test_send_receive_msgq),
 			 ztest_unit_test(test_send_invalid_dlc),
-			 ztest_unit_test(test_send_receive_wrong_id));
+			 ztest_unit_test(test_send_receive_wrong_id),
+			 ztest_user_unit_test(test_recover));
 	ztest_run_test_suite(can_api_tests);
 }
