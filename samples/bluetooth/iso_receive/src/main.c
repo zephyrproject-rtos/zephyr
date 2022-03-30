@@ -247,7 +247,9 @@ static struct bt_iso_chan_ops iso_ops = {
 	.disconnected	= iso_disconnected,
 };
 
-static struct bt_iso_chan_io_qos iso_rx_qos;
+static struct bt_iso_chan_io_qos iso_rx_qos = {
+	.phy = BT_GAP_LE_PHY_CODED,
+};
 
 static struct bt_iso_chan_qos bis_iso_qos = {
 	.rx = &iso_rx_qos,

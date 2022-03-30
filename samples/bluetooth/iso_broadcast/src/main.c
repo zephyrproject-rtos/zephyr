@@ -38,7 +38,7 @@ static struct bt_iso_chan_ops iso_ops = {
 static struct bt_iso_chan_io_qos iso_tx_qos = {
 	.sdu = sizeof(uint32_t), /* bytes */
 	.rtn = 2,
-	.phy = BT_GAP_LE_PHY_2M,
+	.phy = BT_GAP_LE_PHY_CODED,
 };
 
 static struct bt_iso_chan_qos bis_iso_qos = {
