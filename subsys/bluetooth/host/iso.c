@@ -620,6 +620,8 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 	switch (pb) {
 	case BT_ISO_START:
 	case BT_ISO_SINGLE:
+		iso_info(buf)->flags = 0;
+
 		/* The ISO_Data_Load field contains either the first fragment
 		 * of an SDU or a complete SDU.
 		 */
@@ -630,6 +632,7 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 			iso_info(buf)->ts = sys_le32_to_cpu(ts_hdr->ts);
 
 			hdr = &ts_hdr->data;
+			iso_info(buf)->flags |= BT_ISO_FLAGS_TS;
 		} else {
 			hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 			/* TODO: Generate a timestamp? */
@@ -641,8 +644,6 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		len = bt_iso_pkt_len(len);
 		pkt_seq_no = sys_le16_to_cpu(hdr->sn);
 		iso_info(buf)->sn = pkt_seq_no;
-
-		iso_info(buf)->flags = 0;
 		if (flags == BT_ISO_DATA_VALID) {
 			iso_info(buf)->flags |= BT_ISO_FLAGS_VALID;
 		} else if (flags == BT_ISO_DATA_INVALID) {
