@@ -1258,7 +1258,7 @@ static bool simplelink_is_supported(int family, int type, int proto)
 	return true;
 }
 
-static int simplelink_socket_create(int family, int type, int proto)
+int simplelink_socket_create(int family, int type, int proto)
 {
 	int fd = z_reserve_fd();
 	int sock;

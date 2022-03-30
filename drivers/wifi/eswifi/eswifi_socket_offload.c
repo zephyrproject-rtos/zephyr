@@ -512,7 +512,7 @@ static bool eswifi_socket_is_supported(int family, int type, int proto)
 	return true;
 }
 
-static int eswifi_socket_create(int family, int type, int proto)
+int eswifi_socket_create(int family, int type, int proto)
 {
 	int fd = z_reserve_fd();
 	int sock;
