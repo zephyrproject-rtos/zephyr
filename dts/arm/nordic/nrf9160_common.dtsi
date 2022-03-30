@@ -364,7 +364,7 @@ power: power@5000 {
 };
 
 wdt: wdt0: watchdog@18000 {
-	compatible = "nordic,nrf-watchdog";
+	compatible = "nordic,nrf-wdt";
 	reg = <0x18000 0x1000>;
 	interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
