@@ -16,10 +16,6 @@
 static struct k_thread ztest_thread;
 #endif
 
-#ifdef CONFIG_ARCH_POSIX
-#include <unistd.h>
-#endif
-
 #ifdef CONFIG_ZTEST_SHUFFLE
 #include <zephyr/random/rand32.h>
 #include <stdlib.h>
@@ -55,29 +51,7 @@ ZTEST_DMEM enum ztest_phase phase = TEST_PHASE_FRAMEWORK;
 
 static ZTEST_BMEM int test_status;
 
-/**
- * @brief Try to shorten a filename by removing the current directory
- *
- * This helps to reduce the very long filenames in assertion failures. It
- * removes the current directory from the filename and returns the rest.
- * This makes assertions a lot more readable, and sometimes they fit on one
- * line.
- *
- * @param file Filename to check
- * @returns Shortened filename, or @file if it could not be shortened
- */
-const char *ztest_relative_filename(const char *file)
-{
-#ifdef CONFIG_ARCH_POSIX
-	const char *cwd;
-	char buf[200];
-
-	cwd = getcwd(buf, sizeof(buf));
-	if (cwd && strlen(file) > strlen(cwd) && !strncmp(file, cwd, strlen(cwd)))
-		return file + strlen(cwd) + 1; /* move past the trailing '/' */
-#endif
-	return file;
-}
+extern ZTEST_DMEM const struct ztest_arch_api ztest_api;
 
 static int cleanup_test(struct ztest_unit_test *test)
 {
@@ -488,7 +462,7 @@ static struct ztest_suite_node *ztest_find_test_suite(const char *name)
 	return NULL;
 }
 
-struct ztest_unit_test *ztest_get_next_test(const char *suite, struct ztest_unit_test *prev)
+struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_unit_test *prev)
 {
 	struct ztest_unit_test *test = (prev == NULL) ? _ztest_unit_test_list_start : prev + 1;
 
@@ -556,15 +530,19 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite)
 			if (strcmp(suite->name, test->test_suite_name) != 0) {
 				continue;
 			}
-			fail += run_test(suite, test, data);
+			if (ztest_api.should_test_run(suite->name, test->name)) {
+				fail += run_test(suite, test, data);
+			}
 
 			if (fail && FAIL_FAST) {
 				break;
 			}
 		}
 #else
-		while (((test = ztest_get_next_test(suite->name, test)) != NULL)) {
-			fail += run_test(suite, test, data);
+		while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
+			if (ztest_api.should_test_run(suite->name, test->name)) {
+				fail += run_test(suite, test, data);
+			}
 
 			if (fail && FAIL_FAST) {
 				break;
@@ -605,18 +583,10 @@ K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 static int __ztest_run_test_suite(struct ztest_suite_node *ptr, const void *state)
 {
 	struct ztest_suite_stats *stats = ptr->stats;
-	bool should_run = true;
 	int count = 0;
 
-	if (ptr->predicate != NULL) {
-		should_run = ptr->predicate(state);
-	} else {
-		/* If predicate is NULL, only run this test once. */
-		should_run = stats->run_count == 0;
-	}
-
 	for (int i = 0; i < NUM_ITER_PER_SUITE; i++) {
-		if (should_run) {
+		if (ztest_api.should_suite_run(state, ptr)) {
 			int fail = z_ztest_run_test_suite_ptr(ptr);
 
 			count++;
@@ -680,10 +650,14 @@ void ztest_verify_all_test_suites_ran(void)
 	}
 }
 
+void ztest_run_all(const void *state)
+{
+	ztest_api.run_all(state);
+}
+
 void __weak test_main(void)
 {
-	ztest_run_test_suites(NULL);
-	ztest_verify_all_test_suites_ran();
+	ztest_run_all(NULL);
 }
 
 #ifndef KERNEL
