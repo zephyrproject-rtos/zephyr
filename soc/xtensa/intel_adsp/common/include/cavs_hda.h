@@ -224,6 +224,11 @@ static inline uint32_t cavs_hda_unused(uint32_t base, uint32_t sid)
 		return dgbs;
 	}
 
+	/* Check if the buffer is full */
+	if (dgcs & DGCS_BF) {
+		return 0;
+	}
+
 	int32_t rp = *DGBRP(base, sid);
 	int32_t wp = *DGBWP(base, sid);
 	int32_t size = rp - wp;
