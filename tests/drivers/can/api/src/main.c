@@ -850,7 +850,7 @@ void test_main(void)
 	ztest_test_suite(can_api_tests,
 			 ztest_user_unit_test(test_get_core_clock),
 			 ztest_user_unit_test(test_set_bitrate_too_high),
-			 ztest_unit_test(test_set_loopback),
+			 ztest_user_unit_test(test_set_loopback),
 			 ztest_user_unit_test(test_send_and_forget),
 			 ztest_unit_test(test_add_filter),
 			 ztest_user_unit_test(test_receive_timeout),
