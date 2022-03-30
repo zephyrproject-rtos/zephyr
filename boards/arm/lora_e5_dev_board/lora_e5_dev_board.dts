@@ -111,16 +111,6 @@
 	msi-range = <11>;
 };
 
-&pll {
-	clocks = <&clk_msi>;
-	div-m = <3>;
-	mul-n = <6>;
-	div-r = <2>;
-	div-q = <2>;
-	div-p = <2>;
-	status = "okay";
-};
-
 &rcc {
 	clocks = <&clk_msi>;
 	clock-frequency = <DT_FREQ_M(48)>;
