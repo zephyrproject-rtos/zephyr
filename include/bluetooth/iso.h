@@ -180,17 +180,17 @@ struct bt_iso_chan_path {
 	uint8_t				cc[0];
 };
 
-/** ISO packet status flags */
+/** ISO packet status flag bits */
 enum {
 	/** The ISO packet is valid. */
-	BT_ISO_FLAGS_VALID,
+	BT_ISO_FLAGS_VALID = BIT(0),
 	/** @brief The ISO packet may possibly contain errors.
 	 *
 	 * May be caused by a failed CRC check or if missing a part of the SDU.
 	 */
-	BT_ISO_FLAGS_ERROR,
+	BT_ISO_FLAGS_ERROR = BIT(1),
 	/** The ISO packet was lost. */
-	BT_ISO_FLAGS_LOST
+	BT_ISO_FLAGS_LOST = BIT(2)
 };
 
 /** @brief ISO Meta Data structure for received ISO packets. */
@@ -203,7 +203,7 @@ struct bt_iso_recv_info {
 	/** ISO packet sequence number of the first fragment in the SDU */
 	uint16_t sn;
 
-	/** ISO packet flags (BT_ISO_FLAGS_*) */
+	/** ISO packet flags bitfield (BT_ISO_FLAGS_*) */
 	uint8_t flags;
 };
 

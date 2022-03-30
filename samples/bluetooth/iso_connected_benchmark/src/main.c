@@ -216,7 +216,7 @@ static void iso_recv(struct bt_iso_chan *chan,
 
 	/* NOTE: The packets received may be on different CISes */
 
-	if (info->flags == BT_ISO_FLAGS_VALID) {
+	if (info->flags & BT_ISO_FLAGS_VALID) {
 		stats_current_conn.iso_recv_count++;
 		stats_overall.iso_recv_count++;
 		stats_latest_arr[stats_latest_arr_pos++] = true;
