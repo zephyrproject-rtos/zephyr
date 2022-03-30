@@ -498,9 +498,6 @@ void ull_llcp_init(struct ll_conn *conn)
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
 	conn->lll.event_counter = 0;
-
-	llcp_lr_init(conn);
-	llcp_rr_init(conn);
 }
 
 void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
