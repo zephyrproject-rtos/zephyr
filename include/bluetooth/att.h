@@ -93,6 +93,9 @@ struct bt_eatt_cb {
 	/** @brief An EATT channel has been connected. */
 	void (*chan_connected)(const struct bt_eatt_chan_info *info);
 
+	/** @brief An EATT channel has been disconnected. */
+	void (*chan_disconnected)(const struct bt_eatt_chan_info *info);
+
 	sys_snode_t node;
 };
 
