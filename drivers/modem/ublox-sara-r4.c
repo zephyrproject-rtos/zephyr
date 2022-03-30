@@ -2097,6 +2097,8 @@ static inline uint8_t *modem_get_mac(const struct device *dev)
 	return data->mac_addr;
 }
 
+static int offload_socket(int family, int type, int proto);
+
 static void modem_net_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -2111,6 +2113,8 @@ static void modem_net_iface_init(struct net_if *iface)
 #ifdef CONFIG_DNS_RESOLVER
 	socket_offload_dns_register(&offload_dns_ops);
 #endif
+
+	net_if_socket_offload_set(iface, offload_socket);
 }
 
 static struct net_if_api api_funcs = {

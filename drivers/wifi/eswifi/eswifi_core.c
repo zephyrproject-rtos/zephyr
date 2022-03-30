@@ -411,6 +411,8 @@ static void eswifi_iface_init(struct net_if *iface)
 	eswifi_offload_init(eswifi);
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
 	eswifi_socket_offload_init(eswifi);
+
+	net_if_socket_offload_set(iface, eswifi_socket_create);
 #endif
 
 }
