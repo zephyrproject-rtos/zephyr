@@ -39,6 +39,8 @@ static int entropy_bt_get_entropy(const struct device *dev,
 		/* Copy random data into buffer */
 		rp = (void *)rsp->data;
 		memcpy(buffer, rp->rand, req);
+
+		net_buf_unref(rsp);
 		buffer += req;
 		length -= req;
 	}
