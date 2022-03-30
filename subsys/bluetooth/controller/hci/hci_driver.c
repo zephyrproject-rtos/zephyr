@@ -87,6 +87,7 @@ static int32_t hbuf_count;
 #endif
 
 #if defined(CONFIG_BT_HCI_RESET_SIGNAL)
+static struct k_sem sem_process_recv;
 static struct k_poll_signal reset_signal;
 #endif
 
@@ -640,6 +641,15 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			node_rx = k_fifo_get(events[RCV_FIFO_DATA].fifo, K_NO_WAIT);
 		}
 
+#if defined(CONFIG_BT_HCI_RESET_SIGNAL)
+		k_sem_take(&sem_process_recv, K_FOREVER);
+		err = k_poll(events, ARRAY_SIZE(events), K_NO_WAIT);
+
+		if (events[RESET_SIGNAL].state == K_POLL_STATE_SIGNALED) {
+			k_sem_give(&sem_process_recv);
+			continue;
+		}
+#endif
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 		events[RCV_FIFO_DATA].state = K_POLL_STATE_NOT_READY;
 		events[FLOW_SIGNAL].state = K_POLL_STATE_NOT_READY;
@@ -679,6 +689,10 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 			k_yield();
 		}
+
+#if defined(CONFIG_BT_HCI_RESET_SIGNAL)
+		k_sem_give(&sem_process_recv);
+#endif
 	}
 }
 
@@ -779,6 +793,7 @@ static int hci_driver_open(void)
 {
 	struct k_poll_signal *signal_reset = NULL;
 	struct k_poll_signal *signal_hbuf = NULL;
+	struct k_sem *sem_process = NULL;
 	uint32_t err;
 
 	DEBUG_INIT();
@@ -794,14 +809,17 @@ static int hci_driver_open(void)
 
 #if defined(CONFIG_BT_HCI_RESET_SIGNAL)
 	k_poll_signal_init(&reset_signal);
+	k_sem_init(&sem_process_recv, 1, 1);
+
 	signal_reset = &reset_signal;
+	sem_process = &sem_process_recv;
 #endif
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	k_poll_signal_init(&hbuf_signal);
 	signal_hbuf = &hbuf_signal;
 #endif
 
-	hci_init(signal_reset, signal_hbuf);
+	hci_init(signal_reset, signal_hbuf, sem_process);
 
 	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
 			K_KERNEL_STACK_SIZEOF(prio_recv_thread_stack),

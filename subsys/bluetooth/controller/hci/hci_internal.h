@@ -31,7 +31,8 @@ extern atomic_t hci_state_mask;
 #define HCI_CLASS_ISO_DATA        6 /* Isochronous data */
 
 
-void hci_init(struct k_poll_signal *signal_reset, struct k_poll_signal *signal_host_buf);
+void hci_init(struct k_poll_signal *signal_reset, struct k_poll_signal *signal_host_buf,
+	      struct k_sem *sem_process);
 struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx);
 void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf);
 uint8_t hci_get_class(struct node_rx_pdu *node_rx);
