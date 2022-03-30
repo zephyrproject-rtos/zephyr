@@ -34,9 +34,9 @@ import sys
 from yaml import load, YAMLError
 try:
     # Use the speedier C LibYAML parser if available
-    from yaml import CLoader as Loader
+    from yaml import CSafeLoader as SafeLoader
 except ImportError:
-    from yaml import Loader
+    from yaml import SafeLoader
 
 
 def _main():
@@ -457,7 +457,7 @@ def _load_maintainers(path):
 
     with open(path, encoding="utf-8") as f:
         try:
-            yaml = load(f, Loader=Loader)
+            yaml = load(f, Loader=SafeLoader)
         except YAMLError as e:
             raise MaintainersError("{}: YAML error: {}".format(path, e))
 
