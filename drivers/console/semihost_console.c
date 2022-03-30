@@ -3,50 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/common/semihost.h>
 
 extern void __stdout_hook_install(int (*fn)(int));
 
-#define SYS_WRITEC 0x03
-
 int arch_printk_char_out(int _c)
 {
-	char c = _c;
-
-#if defined(CONFIG_CPU_CORTEX_M)
-
-	register unsigned long r0 __asm__("r0") = SYS_WRITEC;
-	register void *r1 __asm__("r1") = &c;
-
-	__asm__ __volatile__ ("bkpt 0xab" : : "r" (r0), "r" (r1) : "memory");
-
-#elif defined(CONFIG_ARM64)
-
-	register unsigned long x0 __asm__("x0") = SYS_WRITEC;
-	register void *x1 __asm__("x1") = &c;
-
-	__asm__ volatile ("hlt 0xf000" : : "r" (x0), "r" (x1) : "memory");
-
-#elif defined(CONFIG_RISCV)
-
-	register unsigned long a0 __asm__("a0") = SYS_WRITEC;
-	register void *a1 __asm__("a1") = &c;
-
-	__asm__ volatile (
-	".option push\n\t"
-	".option norvc\n\t"
-	"slli zero, zero, 0x1f\n\t"
-	"ebreak\n\t"
-	"srai zero, zero, 0x7\n\t"
-	".option pop"
-	: : "r" (a0), "r" (a1) : "memory");
-
-#else
-#error "unsupported CPU type"
-#endif
-
+	semihost_poll_out((char)_c);
 	return 0;
 }
 
