@@ -3948,14 +3948,14 @@ class TestPlan(DisablePyTestCollectionMixin):
                 runnable = ts.get('runnable', 0)
                 duration += handler_time
 
-                ts_status = ts.get('status')
+                ts_status = ts.get('status', 'Unknown')
                 # Do not report filtered testcases
                 if ts_status == 'filtered' and self.no_skipped_report:
                     continue
                 if full_report:
                     for tc in ts.get("testcases", []):
                         status = tc.get('status', ts_status)
-                        reason = tc.get('reason', ts.get('reason'))
+                        reason = tc.get('reason', ts.get('reason', 'Unknown'))
                         log = tc.get("log", ts.get("log"))
 
                         tc_duration = tc.get('execution_time', handler_time)
@@ -3965,13 +3965,12 @@ class TestPlan(DisablePyTestCollectionMixin):
                             name, classname, status, reason, tc_duration, runnable,
                             (fails, passes, errors, skips), log)
                 else:
-                    status = ts.get('status', 'Unknown')
                     reason = ts.get('reason', 'Unknown')
                     name = ts.get("name")
                     classname = f"{platform}:{name}"
                     log = ts.get("log")
                     fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
-                        name, classname, status, reason, duration, runnable,
+                        name, classname, ts_status, reason, duration, runnable,
                         (fails, passes, errors, skips), log)
 
             total = (errors + passes + fails + skips)
