@@ -32,7 +32,7 @@
 #define CHANNEL_COUNT_1 BIT(0)
 
 static struct bt_codec lc3_codec =
-	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_16KHZ, BT_CODEC_LC3_DURATION_10, CHANNEL_COUNT_1, 40u, 40u,
+	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY, BT_CODEC_LC3_DURATION_10, CHANNEL_COUNT_1, 40u, 120u,
 		     1u, (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA),
 		     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
@@ -62,16 +62,14 @@ static const struct bt_data ad[] = {
 
 #include "lc3.h"
 
-/* Current sample do not use codec configuration parameters, hence below shall match the selected
- * codec configuration.
- */
-#define AUDIO_SAMPLE_RATE_HZ    16000
-#define AUDIO_LENGTH_US         10000 /* amount of sample data - shall match LC3 frame length */
-#define NUM_SAMPLES             ((AUDIO_LENGTH_US * AUDIO_SAMPLE_RATE_HZ) / USEC_PER_SEC)
+#define MAX_SAMPLE_RATE         48000
+#define MAX_FRAME_DURATION_US   10000
+#define MAX_NUM_SAMPLES         ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
 
-static int16_t audio_buf[NUM_SAMPLES];
+static int16_t audio_buf[MAX_NUM_SAMPLES];
 static lc3_decoder_t lc3_decoder;
 static lc3_decoder_mem_48k_t lc3_decoder_mem;
+static int frames_per_sdu;
 
 #endif
 
@@ -95,6 +93,23 @@ static void print_codec(const struct bt_codec *codec)
 			  codec->data[i].data.data_len -
 			  sizeof(codec->data[i].data.type));
 		printk("\n");
+	}
+
+	if (codec->id == BT_CODEC_LC3_ID) {
+		/* LC3 uses the generic LTV format - other codecs might do as well */
+
+		uint32_t chan_allocation;
+
+		printk("  Frequency: %d Hz\n", bt_codec_cfg_get_freq(codec));
+		printk("  Frame Duration: %d us\n", bt_codec_cfg_get_frame_duration_us(codec));
+		if (bt_codec_cfg_get_chan_allocation_val(codec, &chan_allocation) == 0) {
+			printk("  Channel allocation: 0x%x\n", chan_allocation);
+		}
+
+		printk("  Octets per frame: %d (negative means value not pressent)\n",
+		       bt_codec_cfg_get_octets_per_frame(codec));
+		printk("  Frames per SDU: %d\n",
+		       bt_codec_cfg_get_frame_blocks_per_sdu(codec, true));
 	}
 
 	for (size_t i = 0; i < codec->meta_count; i++) {
@@ -138,6 +153,11 @@ static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 
 	printk("No streams available\n");
 
+#if defined(CONFIG_LIBLC3CODEC)
+	/* Nothing to free as static memory is used */
+	lc3_decoder = NULL;
+#endif
+
 	return NULL;
 }
 
@@ -148,6 +168,11 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 	printk("ASE Codec Reconfig: stream %p cap %p\n", stream, cap);
 
 	print_codec(codec);
+
+#if defined(CONFIG_LIBLC3CODEC)
+	/* Nothing to free as static memory is used */
+	lc3_decoder = NULL;
+#endif
 
 	/* We only support one QoS at the moment, reject changes */
 	return -ENOEXEC;
@@ -169,10 +194,32 @@ static int lc3_enable(struct bt_audio_stream *stream,
 	printk("Enable: stream %p meta_count %u\n", stream, meta_count);
 
 #if defined(CONFIG_LIBLC3CODEC)
-	/* TODO: parse codec config data and extract frame duration and sample-rate
-	 *       Currently there is no lib for this.
-	 */
-	lc3_decoder = lc3_setup_decoder(AUDIO_LENGTH_US, AUDIO_SAMPLE_RATE_HZ, 0, &lc3_decoder_mem);
+	{
+		const int freq = bt_codec_cfg_get_freq(stream->codec);
+		const int frame_duration_us = bt_codec_cfg_get_frame_duration_us(stream->codec);
+
+		if (freq < 0) {
+			printk("Error: Codec frequency not set, cannot start codec.");
+			return -1;
+		}
+
+		if (frame_duration_us < 0) {
+			printk("Error: Frame duration not set, cannot start codec.");
+			return -1;
+		}
+
+		frames_per_sdu = bt_codec_cfg_get_frame_blocks_per_sdu(stream->codec, true);
+
+		lc3_decoder = lc3_setup_decoder(frame_duration_us,
+						freq,
+						0, /* No resampling */
+						&lc3_decoder_mem);
+
+		if (lc3_decoder == NULL) {
+			printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
+			return -1;
+		}
+	}
 #endif
 
 	return 0;
@@ -211,7 +258,6 @@ static int lc3_stop(struct bt_audio_stream *stream)
 static int lc3_release(struct bt_audio_stream *stream)
 {
 	printk("Release: stream %p\n", stream);
-
 	return 0;
 }
 
@@ -232,7 +278,8 @@ static struct bt_audio_capability_ops lc3_ops = {
 
 static void stream_recv_lc3_codec(struct bt_audio_stream *stream, struct net_buf *buf)
 {
-	uint8_t err;
+	uint8_t err = -1;
+
 	/* TODO: If there is a way to know if the controller supports indicating errors in the
 	 *       payload one could feed that into bad-frame-indicator. The HCI layer allows to
 	 *       include this information, but currently there is no controller support.
@@ -241,19 +288,35 @@ static void stream_recv_lc3_codec(struct bt_audio_stream *stream, struct net_buf
 	 */
 	const uint8_t bad_frame_indicator = buf->len == 0 ? 1 : 0;
 	uint8_t *in_buf = (bad_frame_indicator ? NULL : buf->data);
+	const int octets_per_frame = buf->len / frames_per_sdu;
+
+	if (lc3_decoder == NULL) {
+		printk("LC3 decoder not setup, cannot decode data.\n");
+		return;
+	}
 
 	/* This code is to demonstrate the use of the LC3 codec. On an actual implementation
 	 * it might be required to offload the processing to another task to avoid blocking the
 	 * BT stack.
 	 */
+	for (int i = 0; i < frames_per_sdu; i++) {
 
-	err = lc3_decode(lc3_decoder, in_buf, buf->len, LC3_PCM_FORMAT_S16, audio_buf, 1);
+		int offset = 0;
+
+		err = lc3_decode(lc3_decoder, in_buf + offset, octets_per_frame,
+				 LC3_PCM_FORMAT_S16, audio_buf, 1);
+
+		if (in_buf != NULL) {
+			offset += octets_per_frame;
+		}
+	}
 
 	printk("RX stream %p len %u\n", stream, buf->len);
 
 	if (err == 1) {
 		printk("  decoder performed PLC\n");
 		return;
+
 	} else if (err < 0) {
 		printk("  decoder failed - wrong parameters?\n");
 		return;
