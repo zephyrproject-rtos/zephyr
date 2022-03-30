@@ -1966,8 +1966,8 @@ static bool offload_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_REGISTER(ublox_sara_r4, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
-		    offload_is_supported, offload_socket);
+NET_SOCKET_OFFLOAD_REGISTER(ublox_sara_r4, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY,
+			    AF_UNSPEC, offload_is_supported, offload_socket);
 
 #if defined(CONFIG_DNS_RESOLVER)
 /* TODO: This is a bare-bones implementation of DNS handling
