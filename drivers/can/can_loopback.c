@@ -63,7 +63,7 @@ static inline int check_filter_match(const struct zcan_frame *frame,
 		(frame->id & filter->id_mask));
 }
 
-void tx_thread(void *arg1, void *arg2, void *arg3)
+static void tx_thread(void *arg1, void *arg2, void *arg3)
 {
 	const struct device *dev = arg1;
 	struct can_loopback_data *data = dev->data;
@@ -95,10 +95,10 @@ void tx_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-int can_loopback_send(const struct device *dev,
-		      const struct zcan_frame *frame,
-		      k_timeout_t timeout, can_tx_callback_t callback,
-		      void *user_data)
+static int can_loopback_send(const struct device *dev,
+			     const struct zcan_frame *frame,
+			     k_timeout_t timeout, can_tx_callback_t callback,
+			     void *user_data)
 {
 	struct can_loopback_data *data = dev->data;
 	int ret;
@@ -150,8 +150,8 @@ static inline int get_free_filter(struct can_loopback_filter *filters)
 	return -ENOSPC;
 }
 
-int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
-			       void *cb_arg, const struct zcan_filter *filter)
+static int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
+				      void *cb_arg, const struct zcan_filter *filter)
 {
 	struct can_loopback_data *data = dev->data;
 	struct can_loopback_filter *loopback_filter;
@@ -187,7 +187,7 @@ int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
 	return filter_id;
 }
 
-void can_loopback_remove_rx_filter(const struct device *dev, int filter_id)
+static void can_loopback_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct can_loopback_data *data = dev->data;
 
@@ -197,7 +197,7 @@ void can_loopback_remove_rx_filter(const struct device *dev, int filter_id)
 	k_mutex_unlock(&data->mtx);
 }
 
-int can_loopback_set_mode(const struct device *dev, enum can_mode mode)
+static int can_loopback_set_mode(const struct device *dev, enum can_mode mode)
 {
 	struct can_loopback_data *data = dev->data;
 
@@ -205,9 +205,9 @@ int can_loopback_set_mode(const struct device *dev, enum can_mode mode)
 	return 0;
 }
 
-int can_loopback_set_timing(const struct device *dev,
-			 const struct can_timing *timing,
-			 const struct can_timing *timing_data)
+static int can_loopback_set_timing(const struct device *dev,
+				   const struct can_timing *timing,
+				   const struct can_timing *timing_data)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(timing);
@@ -233,7 +233,7 @@ static int can_loopback_get_state(const struct device *dev, enum can_state *stat
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int can_loopback_recover(const struct device *dev, k_timeout_t timeout)
+static int can_loopback_recover(const struct device *dev, k_timeout_t timeout)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(timeout);
@@ -251,14 +251,14 @@ static void can_loopback_set_state_change_callback(const struct device *dev,
 	ARG_UNUSED(user_data);
 }
 
-int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
+static int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	/* Return 16MHz as an realistic value for the testcases */
 	*rate = 16000000;
 	return 0;
 }
 
-int can_loopback_get_max_filters(const struct device *dev, enum can_ide id_type)
+static int can_loopback_get_max_filters(const struct device *dev, enum can_ide id_type)
 {
 	ARG_UNUSED(id_type);
 

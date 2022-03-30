@@ -167,7 +167,7 @@ static int can_stm32h7_set_timing(const struct device *dev,
 	return can_mcan_set_timing(&cfg->mcan_cfg, timing, timing_data);
 }
 
-int can_stm32h7_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+static int can_stm32h7_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct can_stm32h7_config *cfg = dev->config;
 

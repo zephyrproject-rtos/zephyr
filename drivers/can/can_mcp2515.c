@@ -328,14 +328,14 @@ static int mcp2515_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
-int mcp2515_get_max_filters(const struct device *dev, enum can_ide id_type)
+static int mcp2515_get_max_filters(const struct device *dev, enum can_ide id_type)
 {
 	ARG_UNUSED(id_type);
 
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-int mcp2515_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+static int mcp2515_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
 

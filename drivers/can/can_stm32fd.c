@@ -145,7 +145,7 @@ static int can_stm32fd_set_timing(const struct device *dev,
 	return can_mcan_set_timing(mcan_cfg, timing, timing_data);
 }
 
-int can_stm32fd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+static int can_stm32fd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 

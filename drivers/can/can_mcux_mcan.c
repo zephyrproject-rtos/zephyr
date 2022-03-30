@@ -99,7 +99,7 @@ static int mcux_mcan_get_core_clock(const struct device *dev, uint32_t *rate)
 				      rate);
 }
 
-int mcux_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+static int mcux_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct mcux_mcan_config *config = dev->config;
 
