@@ -98,7 +98,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: dcfcee4242d7a8ffa1cae3b22d9bb1d68fb38083
+      revision: a3d46260cc3544777c5ca2105f9c2b84c182c04c
       path: modules/hal/nxp
       groups:
         - hal
@@ -173,7 +173,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 7b9e4eecaa2547ba34cd40a13530f10dd70c92ca
+      revision: e86f575f68fdac2cab1898e0a893c8c6d8fd0fa1
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t

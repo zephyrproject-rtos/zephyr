@@ -21,6 +21,16 @@ config ST7789V
 
 endif # DISPLAY
 
+if FLASH
+
+config SPI
+	default y
+
+config SPI_NOR
+	default y
+
+endif # FLASH
+
 config I2C
 	default y if KSCAN
 

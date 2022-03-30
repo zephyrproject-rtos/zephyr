@@ -49,4 +49,18 @@
 #define __INTPTR_TYPE__ long int
 #define __UINTPTR_TYPE__ long unsigned int
 
+/*
+ * Re-define the INTN_C(value) integer constant expression macros to match the
+ * integer types re-defined above.
+ */
+
+#undef __INT32_C
+#undef __UINT32_C
+#undef __INT64_C
+#undef __UINT64_C
+#define __INT32_C(c) c
+#define __UINT32_C(c) c ## U
+#define __INT64_C(c) c ## LL
+#define __UINT64_C(c) c ## ULL
+
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_ */

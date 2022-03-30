@@ -648,6 +648,38 @@ static inline int z_impl_can_get_max_bitrate(const struct device *dev, uint32_t 
 }
 
 /**
+ * @brief Get the minimum supported timing parameter values.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return Pointer to the minimum supported timing parameter values.
+ */
+__syscall const struct can_timing *can_get_timing_min(const struct device *dev);
+
+static inline const struct can_timing *z_impl_can_get_timing_min(const struct device *dev)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	return &api->timing_min;
+}
+
+/**
+ * @brief Get the maximum supported timing parameter values.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return Pointer to the maximum supported timing parameter values.
+ */
+__syscall const struct can_timing *can_get_timing_max(const struct device *dev);
+
+static inline const struct can_timing *z_impl_can_get_timing_max(const struct device *dev)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	return &api->timing_max;
+}
+
+/**
  * @brief Calculate timing parameters from bitrate and sample point
  *
  * Calculate the timing parameters from a given bitrate in bits/s and the
@@ -667,10 +699,55 @@ static inline int z_impl_can_get_max_bitrate(const struct device *dev, uint32_t 
  * @retval -EINVAL if there is no solution for the desired values.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
-int can_calc_timing(const struct device *dev, struct can_timing *res,
-		    uint32_t bitrate, uint16_t sample_pnt);
+__syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
+			      uint32_t bitrate, uint16_t sample_pnt);
 
 #if defined(CONFIG_CAN_FD_MODE) || defined(__DOXYGEN__)
+
+/**
+ * @brief Get the minimum supported timing parameter values for the data phase.
+ *
+ * Same as @a can_get_timing_min() but for the minimum values for the data phase.
+ *
+ * @note @kconfig{CONFIG_CAN_FD_MODE} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return Pointer to the minimum supported timing parameter values, or NULL if
+ *         CAN-FD is not supported.
+ */
+__syscall const struct can_timing *can_get_timing_min_data(const struct device *dev);
+
+static inline const struct can_timing *z_impl_can_get_timing_min_data(const struct device *dev)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	return &api->timing_min_data;
+}
+
+/**
+ * @brief Get the maximum supported timing parameter values for the data phase.
+ *
+ * Same as @a can_get_timing_max() but for the maximum values for the data phase.
+ *
+ * @note @kconfig{CONFIG_CAN_FD_MODE} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return Pointer to the maximum supported timing parameter values, or NULL if
+ *         CAN-FD is not supported.
+ */
+__syscall const struct can_timing *can_get_timing_max_data(const struct device *dev);
+
+static inline const struct can_timing *z_impl_can_get_timing_max_data(const struct device *dev)
+{
+	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+
+	return &api->timing_max_data;
+}
+
 /**
  * @brief Calculate timing parameters for the data phase
  *
@@ -689,8 +766,9 @@ int can_calc_timing(const struct device *dev, struct can_timing *res,
  * @retval -EINVAL if there is no solution for the desired values.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
-int can_calc_timing_data(const struct device *dev, struct can_timing *res,
-			 uint32_t bitrate, uint16_t sample_pnt);
+__syscall int can_calc_timing_data(const struct device *dev, struct can_timing *res,
+				   uint32_t bitrate, uint16_t sample_pnt);
+
 #endif /* CONFIG_CAN_FD_MODE */
 
 /**

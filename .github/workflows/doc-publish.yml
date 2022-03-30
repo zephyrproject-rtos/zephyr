@@ -2,18 +2,16 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-name: Publish Documentation
+name: Documentation Publish
 
 on:
   workflow_run:
     workflows: ["Documentation Build"]
     branches:
-      - main
-      - v*
-    tags:
-      - v*
+    - main
+    - v*
     types:
-      - completed
+    - completed
 
 jobs:
   doc-publish:

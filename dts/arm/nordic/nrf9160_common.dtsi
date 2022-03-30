@@ -79,6 +79,14 @@ egu5: egu@20000 {
 	status = "okay";
 };
 
+ipc: ipc@2a000 {
+	compatible = "nordic,nrf-ipc";
+	reg = <0x2a000 0x1000>;
+	interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "okay";
+	label = "IPC";
+};
+
 i2s0: i2s@28000 {
 	compatible = "nordic,nrf-i2s";
 	#address-cells = <1>;

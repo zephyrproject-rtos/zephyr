@@ -1207,6 +1207,14 @@ void test_exit(void)
 extern void test_qsort(void);
 
 /**
+ *
+ * @brief Test qsort_r function
+ *
+ * @see qsort_r()
+ */
+extern void test_qsort_r(void);
+
+/**
  * @}
  */
 
@@ -1247,7 +1255,8 @@ void test_main(void)
 			 ztest_unit_test(test_str_operate),
 			 ztest_unit_test(test_tolower_toupper),
 			 ztest_unit_test(test_strtok_r),
-			 ztest_unit_test(test_qsort)
+			 ztest_unit_test(test_qsort),
+			 ztest_unit_test(test_qsort_r)
 			 );
 	ztest_run_test_suite(test_c_lib);
 }

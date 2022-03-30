@@ -95,6 +95,39 @@
 			label = "USART_4";
 		};
 
+		spi0: spi@40013000 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40013000 0x400>;
+			interrupts = <35 0>;
+			rcu-periph-clock = <0x60c>;
+			status = "disabled";
+			label = "SPI_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi1: spi@40003800 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40003800 0x400>;
+			interrupts = <36 0>;
+			rcu-periph-clock = <0x70e>;
+			status = "disabled";
+			label = "SPI_1";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi2: spi@40003c00 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40003c00 0x400>;
+			interrupts = <51 0>;
+			rcu-periph-clock = <0x70f>;
+			status = "disabled";
+			label = "SPI_2";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		exti: interrupt-controller@40010400 {
 			compatible = "gd,gd32-exti";
 			interrupt-controller;

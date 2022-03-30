@@ -35,8 +35,8 @@
 #define MCUX_CTIMER3_CLK		3
 #define MCUX_CTIMER4_CLK		4
 
-#define MCUX_MCAN_CLK			23
+#define MCUX_MCAN_CLK			27
 
-#define MCUX_BUS_CLK			24
+#define MCUX_BUS_CLK			28
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

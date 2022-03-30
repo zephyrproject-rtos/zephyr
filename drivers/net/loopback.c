@@ -97,7 +97,7 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 	 * must be dropped. This is very much needed for TCP packets where
 	 * the packet is reference counted in various stages of sending.
 	 */
-	cloned = net_pkt_clone(pkt, K_MSEC(100));
+	cloned = net_pkt_rx_clone(pkt, K_MSEC(100));
 	if (!cloned) {
 		res = -ENOMEM;
 		goto out;
@@ -125,4 +125,4 @@ NET_DEVICE_INIT(loopback, "lo",
 		loopback_dev_init, NULL, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&loopback_api, DUMMY_L2,
-		NET_L2_GET_CTX_TYPE(DUMMY_L2), 536);
+		NET_L2_GET_CTX_TYPE(DUMMY_L2), 576);

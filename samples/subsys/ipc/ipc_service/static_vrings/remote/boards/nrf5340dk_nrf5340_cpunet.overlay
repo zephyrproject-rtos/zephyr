@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <dt-bindings/ipc_service/static_vrings.h>
+
 / {
 	chosen {
 		/delete-property/ zephyr,ipc_shm;
@@ -40,6 +42,7 @@
 		mboxes = <&mbox 2>, <&mbox 3>;
 		mbox-names = "rx", "tx";
 		role = "remote";
+		zephyr,priority = <2 PRIO_PREEMPT>;
 		status = "okay";
 	};
 };

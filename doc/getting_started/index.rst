@@ -119,7 +119,7 @@ The current minimum required version for the main dependencies are:
 
          .. code-block:: bash
 
-            brew install cmake ninja gperf python3 ccache qemu dtc
+            brew install cmake ninja gperf python3 ccache qemu dtc wget
 
    .. group-tab:: Windows
 
@@ -163,7 +163,7 @@ The current minimum required version for the main dependencies are:
          .. code-block:: console
 
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python git dtc-msys2
+            choco install ninja gperf python git dtc-msys2 wget unzip
 
       #. Close the window and open a new ``cmd.exe`` window **as a regular user** to continue.
 
@@ -471,71 +471,154 @@ Install a Toolchain
 A toolchain provides a compiler, assembler, linker, and other programs required
 to build Zephyr applications.
 
+The Zephyr Software Development Kit (SDK) contains toolchains for each of
+Zephyr's supported architectures. It also includes additional host tools, such
+as custom QEMU and OpenOCD builds.
+
 .. tabs::
 
    .. group-tab:: Ubuntu
 
-      The Zephyr Software Development Kit (SDK) contains toolchains for each of
-      Zephyr's supported architectures. It also includes additional host tools,
-      such as custom QEMU binaries and a host compiler.
-
-      |p|
-
-      #. Download the `latest SDK installer
+      #. Download and verify the `latest Zephyr SDK bundle
          <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
 
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.13.2/zephyr-sdk-0.13.2-linux-x86_64-setup.run
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.0/zephyr-sdk-0.14.0_linux-x86_64.tar.gz
+            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.0/sha256.sum | shasum --check --ignore-missing
 
-      #. Run the installer, installing the SDK in :file:`~/zephyr-sdk-0.13.2`:
+         If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace ``x86_64``
+         with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
+
+      #. Extract the Zephyr SDK bundle archive:
 
          .. code-block:: bash
 
-            chmod +x zephyr-sdk-0.13.2-linux-x86_64-setup.run
-            ./zephyr-sdk-0.13.2-linux-x86_64-setup.run -- -d ~/zephyr-sdk-0.13.2
+            tar xvf zephyr-sdk-0.14.0_linux-x86_64.tar.gz
 
          .. note::
-            It is recommended to install the Zephyr SDK at one of the following locations:
+            It is recommended to extract the Zephyr SDK bundle at one of the following locations:
 
-            * ``$HOME/zephyr-sdk[-x.y.z]``
-            * ``$HOME/.local/zephyr-sdk[-x.y.z]``
-            * ``$HOME/.local/opt/zephyr-sdk[-x.y.z]``
-            * ``$HOME/bin/zephyr-sdk[-x.y.z]``
-            * ``/opt/zephyr-sdk[-x.y.z]``
-            * ``/usr/zephyr-sdk[-x.y.z]``
-            * ``/usr/local/zephyr-sdk[-x.y.z]``
+            * ``$HOME``
+            * ``$HOME/.local``
+            * ``$HOME/.local/opt``
+            * ``$HOME/bin``
+            * ``/opt``
+            * ``/usr/local``
 
-            where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.13.2``.
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.0`` directory and, when
+            extracted under ``$HOME``, the resulting installation path will be
+            ``$HOME/zephyr-sdk-0.14.0``.
 
-            If installing the Zephyr SDK outside any of those locations, please read: :ref:`zephyr_sdk`
+      #. Run the Zephyr SDK bundle setup script:
 
-            You cannot move the SDK directory after you have installed it.
+         .. code-block:: bash
+
+            cd zephyr-sdk-0.14.0
+            ./setup.sh
+
+         .. note::
+            You only need to run the setup script once after extracting the Zephyr SDK bundle.
+
+            You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
+            the initial setup.
 
       #. Install `udev <https://en.wikipedia.org/wiki/Udev>`_ rules, which
          allow you to flash most Zephyr boards as a regular user:
 
          .. code-block:: bash
 
-            sudo cp ~/zephyr-sdk-0.13.2/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk-0.14.0/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
    .. group-tab:: macOS
 
-      Follow the instructions in :ref:`gs_toolchain`. Note that the Zephyr SDK
-      is not available on macOS.
+      #. Download and verify the `latest Zephyr SDK bundle
+         <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
 
-      Do not forget to set the required :ref:`environment variables <env_vars>`
-      (:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` and toolchain specific ones).
+         .. code-block:: bash
+
+            cd ~
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.0/zephyr-sdk-0.14.0_macos-x86_64.tar.gz
+            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.0/sha256.sum | shasum --check --ignore-missing
+
+         If your host architecture is 64-bit ARM (Apple Silicon, also known as M1), replace
+         ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
+
+      #. Extract the Zephyr SDK bundle archive:
+
+         .. code-block:: bash
+
+            tar xvf zephyr-sdk-0.14.0_macos-x86_64.tar.gz
+
+         .. note::
+            It is recommended to extract the Zephyr SDK bundle at one of the following locations:
+
+            * ``$HOME``
+            * ``$HOME/.local``
+            * ``$HOME/.local/opt``
+            * ``$HOME/bin``
+            * ``/opt``
+            * ``/usr/local``
+
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.0`` directory and, when
+            extracted under ``$HOME``, the resulting installation path will be
+            ``$HOME/zephyr-sdk-0.14.0``.
+
+      #. Run the Zephyr SDK bundle setup script:
+
+         .. code-block:: bash
+
+            cd zephyr-sdk-0.14.0
+            ./setup.sh
+
+         .. note::
+            You only need to run the setup script once after extracting the Zephyr SDK bundle.
+
+            You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
+            the initial setup.
 
    .. group-tab:: Windows
 
-      Follow the instructions in :ref:`gs_toolchain`. Note that the Zephyr SDK
-      is not available on Windows.
+      #. Open a ``cmd.exe`` window by pressing the Windows key typing "cmd.exe".
 
-      Do not forget to set the required :ref:`environment variables <env_vars>`
-      (:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` and toolchain specific ones).
+      #. Download the `latest Zephyr SDK bundle
+         <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_:
+
+         .. code-block:: console
+
+            cd %HOMEPATH%
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.14.0/zephyr-sdk-0.14.0_windows-x86_64.zip
+
+      #. Extract the Zephyr SDK bundle archive:
+
+         .. code-block:: console
+
+            unzip zephyr-sdk-0.14.0_windows-x86_64.zip
+
+         .. note::
+            It is recommended to extract the Zephyr SDK bundle at one of the following locations:
+
+            * ``%HOMEPATH%``
+            * ``%PROGRAMFILES%``
+
+            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.14.0`` directory and, when
+            extracted under ``%HOMEPATH%``, the resulting installation path will be
+            ``%HOMEPATH%\zephyr-sdk-0.14.0``.
+
+      #. Run the Zephyr SDK bundle setup script:
+
+         .. code-block:: console
+
+            cd zephyr-sdk-0.14.0
+            setup.cmd
+
+         .. note::
+            You only need to run the setup script once after extracting the Zephyr SDK bundle.
+
+            You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
+            the initial setup.
 
 .. _getting_started_run_sample:
 

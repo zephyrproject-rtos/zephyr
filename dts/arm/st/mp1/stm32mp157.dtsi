@@ -303,6 +303,16 @@
 			status = "disabled";
 			label = "MAILBOX_0";
 		};
+
+		ltdc: display-controller@5A001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x5A001000 0x200>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x000000001>;
+			label = "LTDC";
+			status = "disabled";
+		};
 	};
 };
 

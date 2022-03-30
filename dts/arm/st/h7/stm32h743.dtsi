@@ -32,6 +32,16 @@
 			status = "disabled";
 			label= "OTG_FS";
 		};
+
+		ltdc: display-controller@50001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x50001000 0x200>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x000000008>;
+			status = "disabled";
+			label = "LTDC";
+		};
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */

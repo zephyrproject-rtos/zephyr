@@ -15,20 +15,21 @@
 #include <ipc/ipc_rpmsg.h>
 
 #include <drivers/mbox.h>
+#include <dt-bindings/ipc_service/static_vrings.h>
 
 #include "ipc_rpmsg_static_vrings.h"
 
 #define DT_DRV_COMPAT	zephyr_ipc_openamp_static_vrings
 
-#define WQ_PRIORITY		K_HIGHEST_APPLICATION_THREAD_PRIO
+#define NUM_INSTANCES	DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)
+
 #define WQ_STACK_SIZE	CONFIG_IPC_SERVICE_BACKEND_RPMSG_WQ_STACK_SIZE
 
 #define STATE_READY	(0)
 #define STATE_BUSY	(1)
 #define STATE_INITED	(2)
 
-K_KERNEL_STACK_DEFINE(mbox_stack, WQ_STACK_SIZE);
-static struct k_work_q mbox_wq;
+K_THREAD_STACK_ARRAY_DEFINE(mbox_stack, NUM_INSTANCES, WQ_STACK_SIZE);
 
 struct backend_data_t {
 	/* RPMsg */
@@ -37,8 +38,11 @@ struct backend_data_t {
 	/* Static VRINGs */
 	struct ipc_static_vrings vr;
 
-	/* General */
+	/* MBOX WQ */
 	struct k_work mbox_work;
+	struct k_work_q mbox_wq;
+
+	/* General */
 	unsigned int role;
 	atomic_t state;
 };
@@ -49,6 +53,9 @@ struct backend_config_t {
 	size_t shm_size;
 	struct mbox_channel mbox_tx;
 	struct mbox_channel mbox_rx;
+	unsigned int wq_prio_type;
+	unsigned int wq_prio;
+	unsigned int id;
 };
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ep)
@@ -262,14 +269,20 @@ static void mbox_callback(const struct device *instance, uint32_t channel,
 {
 	struct backend_data_t *data = user_data;
 
-	k_work_submit_to_queue(&mbox_wq, &data->mbox_work);
+	k_work_submit_to_queue(&data->mbox_wq, &data->mbox_work);
 }
 
 static int mbox_init(const struct device *instance)
 {
 	const struct backend_config_t *conf = instance->config;
 	struct backend_data_t *data = instance->data;
-	int err;
+	int prio, err;
+
+	prio = (conf->wq_prio_type == PRIO_COOP) ? K_PRIO_COOP(conf->wq_prio) :
+						   K_PRIO_PREEMPT(conf->wq_prio);
+
+	k_work_queue_init(&data->mbox_wq);
+	k_work_queue_start(&data->mbox_wq, mbox_stack[conf->id], WQ_STACK_SIZE, prio, NULL);
 
 	k_work_init(&data->mbox_work, mbox_callback_process);
 
@@ -458,18 +471,11 @@ static int backend_init(const struct device *instance)
 {
 	const struct backend_config_t *conf = instance->config;
 	struct backend_data_t *data = instance->data;
-	static bool wq_started;
 
 	data->role = conf->role;
 
 	k_mutex_init(&data->rpmsg_inst.mtx);
 	atomic_set(&data->state, STATE_READY);
-
-	if (!wq_started) {
-		k_work_queue_start(&mbox_wq, mbox_stack, K_KERNEL_STACK_SIZEOF(mbox_stack),
-				   WQ_PRIORITY, NULL);
-		wq_started = true;
-	}
 
 	return 0;
 }
@@ -481,6 +487,13 @@ static int backend_init(const struct device *instance)
 		.shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(i, memory_region)),		\
 		.mbox_tx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), tx),			\
 		.mbox_rx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), rx),			\
+		.wq_prio = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
+			   (DT_INST_PROP_BY_IDX(i, zephyr_priority, 0)),		\
+			   (0)),							\
+		.wq_prio_type = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
+			   (DT_INST_PROP_BY_IDX(i, zephyr_priority, 1)),		\
+			   (PRIO_PREEMPT)),						\
+		.id = i,								\
 	};										\
 											\
 	static struct backend_data_t backend_data_##i;					\
@@ -495,3 +508,24 @@ static int backend_init(const struct device *instance)
 			 &backend_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)
+
+#define BACKEND_CONFIG_INIT(n) &backend_config_##n,
+
+#if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET)
+static int shared_memory_prepare(const struct device *arg)
+{
+	static const struct backend_config_t *config[] = {
+		DT_INST_FOREACH_STATUS_OKAY(BACKEND_CONFIG_INIT)
+	};
+
+	for (int i = 0; i < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); i++) {
+		if (config[i]->role == ROLE_HOST) {
+			memset((void *) config[i]->shm_addr, 0, VDEV_STATUS_SIZE);
+		}
+	}
+
+	return 0;
+}
+
+SYS_INIT(shared_memory_prepare, PRE_KERNEL_1, 1);
+#endif /* CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET */

@@ -1405,7 +1405,7 @@ set(post_build_byproducts "")
 list(APPEND
   post_build_commands
   COMMAND
-  ${CMAKE_COMMAND} -E rename ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
+  ${CMAKE_COMMAND} -E copy ${logical_target_for_zephyr_elf}.map ${KERNEL_MAP_NAME}
 )
 list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 

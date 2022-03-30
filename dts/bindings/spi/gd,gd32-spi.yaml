@@ -1,0 +1,26 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigaDevice GD32 SPI
+
+compatible: "gd,gd32-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  rcu-periph-clock:
+    type: int
+    description: Peripheral RCU(Reset Clock Unit) Clock ID
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

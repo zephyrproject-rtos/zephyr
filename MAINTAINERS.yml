@@ -220,12 +220,11 @@ Bluetooth controller:
 Bluetooth Mesh:
     status: maintained
     maintainers:
-        - trond-snekvik
+        - PavelVPV
     collaborators:
         - jhedberg
         - LingaoM
         - alxelax
-        - PavelVPV
     files:
         - subsys/bluetooth/mesh/
         - include/bluetooth/mesh/
@@ -493,21 +492,22 @@ Documentation:
         - martinjaeger
         - legoabram
     files:
+        - doc/reference/canbus/
         - drivers/can/
-        - include/canbus/
-        - subsys/canbus/
-        - subsys/net/l2/canbus/
-        - tests/subsys/canbus/
         - dts/bindings/can/
+        - include/canbus/
         - include/devicetree/can.h
         - include/drivers/can.h
         - include/drivers/can/
-        - samples/drivers/can/
-        - tests/drivers/can/
-        - samples/subsys/canbus/
-        - doc/reference/canbus/
         - modules/canopennode/
+        - samples/drivers/can/
         - samples/modules/canopennode/
+        - samples/net/sockets/can/
+        - samples/subsys/canbus/
+        - subsys/canbus/
+        - subsys/net/l2/canbus/
+        - tests/drivers/can/
+        - tests/subsys/canbus/
     labels:
         - "area: CAN"
 
@@ -698,6 +698,7 @@ Documentation:
         - tbursztyka
     collaborators:
         - rlubos
+        - jciupis
     files:
         - drivers/ieee802154/
     labels:

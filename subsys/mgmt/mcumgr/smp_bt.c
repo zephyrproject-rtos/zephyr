@@ -231,8 +231,17 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 
 	nb = mcumgr_buf_alloc();
 	if (!nb) {
+		LOG_DBG("failed net_buf alloc for SMP packet");
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
+
+	if (net_buf_tailroom(nb) < len) {
+		LOG_DBG("SMP packet len (%zu) > net_buf len (%zu)",
+			len, net_buf_tailroom(nb));
+		mcumgr_buf_free(nb);
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
+
 	net_buf_add_mem(nb, buf, len);
 
 	ud = net_buf_user_data(nb);

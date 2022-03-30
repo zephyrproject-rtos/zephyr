@@ -120,3 +120,20 @@
 		pinctrl-names = "default";
 	};
 };
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioe 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+	nor_flash: gd25q16@0 {
+		compatible ="jedec,spi-nor";
+		size = <0x1000000>;
+		label = "GD25Q16";
+		reg = <0>;
+		spi-max-frequency = <4000000>;
+		status = "okay";
+		jedec-id = [c8 40 15];
+	};
+};

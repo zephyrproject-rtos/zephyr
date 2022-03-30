@@ -51,6 +51,7 @@ static struct k_work_q tcp_work_q;
 static K_KERNEL_STACK_DEFINE(work_q_stack, CONFIG_NET_TCP_WORKQ_STACK_SIZE);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
+static bool is_destination_local(struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
@@ -454,6 +455,7 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 {
 	bool unref = false;
 	struct net_pkt *pkt;
+	bool local = false;
 
 	pkt = tcp_slist(conn, &conn->send_queue, peek_head,
 			struct net_pkt, next);
@@ -489,6 +491,10 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 			goto out;
 		}
 
+		if (is_destination_local(pkt)) {
+			local = true;
+		}
+
 		tcp_send(pkt);
 
 		if (forget == false &&
@@ -501,6 +507,9 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 	if (conn->in_retransmission) {
 		k_work_reschedule_for_queue(&tcp_work_q, &conn->send_timer,
 					    K_MSEC(tcp_rto));
+	} else if (local && !sys_slist_is_empty(&conn->send_queue)) {
+		k_work_reschedule_for_queue(&tcp_work_q, &conn->send_timer,
+					    K_NO_WAIT);
 	}
 
 out:
@@ -2193,6 +2202,10 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	if (tcp_window_full(conn)) {
+		if (conn->send_win == 0) {
+			tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
+		}
+
 		/* Trigger resend if the timer is not active */
 		/* TODO: use k_work_delayable for send_data_timer so we don't
 		 * have to directly access the internals of the legacy object.
@@ -2219,6 +2232,11 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		(void)k_work_schedule_for_queue(&tcp_work_q,
 						&conn->send_data_timer,
 						K_NO_WAIT);
+		ret = -EAGAIN;
+		goto out;
+	}
+
+	if (conn->data_mode == TCP_DATA_MODE_RESEND) {
 		ret = -EAGAIN;
 		goto out;
 	}

@@ -172,7 +172,9 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
  * @param linked_channel       [ 20 : 26 ] - after channel count exhaust will
  *                                        initiate a channel service request
  *                                        at this channel
- * @param reserved             [ 27 : 31 ]
+ * @param cyclic               [ 27 ]      - enable/disable cyclic buffer
+ *                                        0-disable, 1-enable
+ * @param reserved             [ 28 : 31 ]
  * @param source_data_size    [ 0 : 15 ]   - width of source data (in bytes)
  * @param dest_data_size      [ 16 : 31 ]  - width of dest data (in bytes)
  * @param source_burst_length [ 0 : 15 ]   - number of source data units
@@ -193,7 +195,8 @@ struct dma_config {
 	uint32_t  source_chaining_en :   1;
 	uint32_t  dest_chaining_en :     1;
 	uint32_t  linked_channel   :     7;
-	uint32_t  reserved :             5;
+	uint32_t  cyclic :				 1;
+	uint32_t  reserved :             4;
 	uint32_t  source_data_size :    16;
 	uint32_t  dest_data_size :      16;
 	uint32_t  source_burst_length : 16;
@@ -211,12 +214,14 @@ struct dma_config {
  * dir				- DMA transfer direction
  * pending_length 		- data length pending to be transferred in bytes
  * 					or platform dependent.
+ * free             - free buffer space
  *
  */
 struct dma_status {
 	bool busy;
 	enum dma_channel_direction dir;
 	uint32_t pending_length;
+	uint32_t free;
 };
 
 /**
