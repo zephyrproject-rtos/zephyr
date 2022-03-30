@@ -239,14 +239,14 @@ struct lwm2m_engine_obj {
 #endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
 
 #define _INIT_OBJ_RES_INST(_ri_ptr, _ri_idx, _ri_count, _ri_create, \
-			   _data_ptr, _data_len) \
+			   _data_ptr, _data_sz, _data_len) \
 	do { \
 		if (_ri_ptr != NULL && _ri_count > 0) { \
 			for (int _i = 0; _i < _ri_count; _i++) { \
 				_ri_ptr[_ri_idx + _i].data_ptr = \
 						(_data_ptr + _i); \
 				_ri_ptr[_ri_idx + _i].max_data_len = \
-						_data_len; \
+						_data_sz; \
 				_ri_ptr[_ri_idx + _i].data_len = \
 						_data_len; \
 				if (_ri_create) { \
@@ -289,10 +289,22 @@ struct lwm2m_engine_obj {
 			      (_ri_ptr + _ri_idx), _ri_count, _multi_ri, \
 			      _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb); \
 		_INIT_OBJ_RES_INST(_ri_ptr, _ri_idx, _ri_count, _ri_create, \
-				   _data_ptr, _data_len); \
+				   _data_ptr, _data_len, _data_len); \
 	++_r_idx; \
 	} while (false)
 
+#define INIT_OBJ_RES_LEN(_id, _r_ptr, _r_idx, \
+		     _ri_ptr, _ri_idx, _ri_count, _multi_ri, _ri_create, \
+		     _data_ptr, _data_sz, _data_len, \
+		     _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb) \
+	do { \
+		_INIT_OBJ_RES(_id, _r_ptr, _r_idx, \
+			      (_ri_ptr + _ri_idx), _ri_count, _multi_ri, \
+			      _r_cb, _pre_w_cb, _val_cb, _post_w_cb, _ex_cb); \
+		_INIT_OBJ_RES_INST(_ri_ptr, _ri_idx, _ri_count, _ri_create, \
+				   _data_ptr, _data_sz, _data_len); \
+	++_r_idx; \
+	} while (false)
 
 #define INIT_OBJ_RES_OPT(_id, _r_ptr, _r_idx, \
 			 _ri_ptr, _ri_idx, _ri_count, _multi_ri, _ri_create, \
@@ -312,16 +324,27 @@ struct lwm2m_engine_obj {
 		     _ri_ptr, _ri_idx, _ri_count, true, _ri_create, \
 		     _data_ptr, _data_len, NULL, NULL, NULL, NULL, NULL)
 
+#define INIT_OBJ_RES_MULTI_DATA_LEN(_id, _r_ptr, _r_idx, \
+				_ri_ptr, _ri_idx, _ri_count, _ri_create, \
+				_data_ptr, _data_sz, _data_len) \
+	INIT_OBJ_RES_LEN(_id, _r_ptr, _r_idx, \
+		     _ri_ptr, _ri_idx, _ri_count, true, _ri_create, \
+		     _data_ptr, _data_sz, _data_len, NULL, NULL, NULL, NULL, NULL)
+
 #define INIT_OBJ_RES_MULTI_OPTDATA(_id, _r_ptr, _r_idx, \
 				   _ri_ptr, _ri_idx, _ri_count, _ri_create) \
 	INIT_OBJ_RES_OPT(_id, _r_ptr, _r_idx, \
 			 _ri_ptr, _ri_idx, _ri_count, true, _ri_create, \
 			 NULL, NULL, NULL, NULL, NULL)
 
-#define INIT_OBJ_RES_DATA(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, \
-			  _data_ptr, _data_len) \
-	INIT_OBJ_RES(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, 1U, false, true, \
-		     _data_ptr, _data_len, NULL, NULL, NULL, NULL, NULL)
+#define INIT_OBJ_RES_DATA_LEN(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, \
+			  _data_ptr, _data_sz, _data_len) \
+	INIT_OBJ_RES_LEN(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, 1U, false, true, \
+		     _data_ptr, _data_sz, _data_len, NULL, NULL, NULL, NULL, NULL)
+
+#define INIT_OBJ_RES_DATA(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, _data_ptr, _data_len)     \
+	INIT_OBJ_RES_DATA_LEN(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, _data_ptr, _data_len, \
+			      _data_len)
 
 #define INIT_OBJ_RES_OPTDATA(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx) \
 	INIT_OBJ_RES_OPT(_id, _r_ptr, _r_idx, _ri_ptr, _ri_idx, 1U, false, \
