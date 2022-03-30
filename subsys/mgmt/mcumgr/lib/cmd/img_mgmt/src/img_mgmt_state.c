@@ -9,10 +9,11 @@
 
 #include <string.h>
 #include <zcbor_common.h>
+#include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include <mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
-#include "cborattr/cborattr.h"
+#include "zcbor_bulk/zcbor_bulk_priv.h"
 #include "img_mgmt/img_mgmt.h"
 #include "img_mgmt/image.h"
 #include "img_mgmt_priv.h"
@@ -264,48 +265,45 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 int
 img_mgmt_state_write(struct mgmt_ctxt *ctxt)
 {
-	/*
-	 * We add 1 to the 32-byte hash buffer as _cbor_value_copy_string() adds
-	 * a null character at the end of the buffer.
-	 */
-	uint8_t hash[IMAGE_HASH_LEN + 1];
-	size_t hash_len;
-	bool confirm;
+	bool confirm = false;
 	int slot;
 	int rc;
+	size_t decoded = 0;
+	bool ok;
+	struct zcbor_string zhash = { 0 };
 
-	const struct cbor_attr_t write_attr[] = {
-		[0] = {
-			.attribute = "hash",
-			.type = CborAttrByteStringType,
-			.addr.bytestring.data = hash,
-			.addr.bytestring.len = &hash_len,
-			.len = sizeof(hash),
-		},
-		[1] = {
-			.attribute = "confirm",
-			.type = CborAttrBooleanType,
-			.addr.boolean = &confirm,
-			.dflt.boolean = false,
-		},
-		[2] = { 0 },
+	struct zcbor_map_decode_key_val image_list_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_VAL(hash, zcbor_bstr_decode, &zhash),
+		ZCBOR_MAP_DECODE_KEY_VAL(confirm, zcbor_bool_decode, &confirm)
 	};
 
-	hash_len = 0;
-	rc = cbor_read_object(&ctxt->it, write_attr);
-	if (rc != 0) {
+	zcbor_state_t *zsd = ctxt->cnbd->zs;
+
+	ok = zcbor_map_decode_bulk(zsd, image_list_decode,
+		ARRAY_SIZE(image_list_decode), &decoded) == 0;
+
+	if (!ok) {
 		return MGMT_ERR_EINVAL;
 	}
 
 	/* Determine which slot is being operated on. */
-	if (hash_len == 0) {
+	if (zhash.len == 0) {
 		if (confirm) {
 			slot = IMG_MGMT_BOOT_CURR_SLOT;
 		} else {
 			/* A 'test' without a hash is invalid. */
 			return MGMT_ERR_EINVAL;
 		}
+	} else if (zhash.len != IMAGE_HASH_LEN) {
+		/* The img_mgmt_find_by_hash does exact length compare
+		 * so just fail here.
+		 */
+		return MGMT_ERR_EINVAL;
 	} else {
+		uint8_t hash[IMAGE_HASH_LEN];
+
+		memcpy(hash, zhash.value, zhash.len);
+
 		slot = img_mgmt_find_by_hash(hash, NULL);
 		if (slot < 0) {
 			return MGMT_ERR_EINVAL;
