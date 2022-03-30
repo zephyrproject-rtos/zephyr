@@ -184,19 +184,29 @@ struct bt_iso_chan_path {
 enum {
 	/** The ISO packet is valid. */
 	BT_ISO_FLAGS_VALID = BIT(0),
+
 	/** @brief The ISO packet may possibly contain errors.
 	 *
 	 * May be caused by a failed CRC check or if missing a part of the SDU.
 	 */
 	BT_ISO_FLAGS_ERROR = BIT(1),
+
 	/** The ISO packet was lost. */
-	BT_ISO_FLAGS_LOST = BIT(2)
+	BT_ISO_FLAGS_LOST = BIT(2),
+
+	/** Timestamp is valid
+	 *
+	 * If not set, then the bt_iso_recv_info.ts value is not valid, and
+	 * should not be used.
+	 */
+	BT_ISO_FLAGS_TS = BIT(3)
 };
 
 /** @brief ISO Meta Data structure for received ISO packets. */
 struct bt_iso_recv_info {
-	/** ISO timestamp - valid only if the Bluetooth controller includes it
-	 *  If time stamp is not present this value will be 0 on all iso packets
+	/** ISO timestamp
+	 *
+	 * Only valid if @p flags has the BT_ISO_FLAGS_TS bit set.
 	 */
 	uint32_t ts;
 
