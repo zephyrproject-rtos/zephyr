@@ -1149,6 +1149,11 @@ void lwm2m_rd_client_update(void)
 	engine_trigger_update(false);
 }
 
+struct lwm2m_ctx *lwm2m_rd_client_ctx(void)
+{
+	return client.ctx;
+}
+
 static int lwm2m_rd_client_init(const struct device *dev)
 {
 	k_mutex_init(&client.mutex);

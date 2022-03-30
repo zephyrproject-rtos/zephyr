@@ -32,6 +32,13 @@ config LWM2M_VERSION_1_1
 
 endchoice
 
+config LWM2M_SHELL
+	bool "LwM2M shell utilities"
+	select SHELL
+	help
+	  Activate shell module that provides LwM2M commands like
+	  send to the console.
+
 config LWM2M_DTLS_SUPPORT
 	bool "DTLS support in the LwM2M client"
 	select TLS_CREDENTIALS
