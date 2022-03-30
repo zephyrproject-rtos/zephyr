@@ -421,6 +421,9 @@ device.
      - Used by the OpenThread to specify UART device for Spinel protocol
    * - zephyr,pcie-controller
      - The node corresponding to the PCIe Controller
+   * - zephyr,rsc_table
+     - The resource table is copied to the "reserved memory" area specified
+       by the ``zephyr,rsc_table`` node
    * - zephyr,settings-partition
      - Fixed partition node. If defined this selects the partition used
        by the NVS and FCB settings backends.

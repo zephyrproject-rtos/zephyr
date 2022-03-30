@@ -72,8 +72,33 @@ static struct fw_resource_table __resource resource_table = {
 #endif
 };
 
+#if DT_HAS_CHOSEN(zephyr_rsc_table)
+
+#define RSC_TABLE_RELOC			DT_CHOSEN(zephyr_rsc_table)
+#define RSC_TABLE_RELOC_START		DT_REG_ADDR(RSC_TABLE_RELOC)
+#define RSC_TABLE_RELOC_SIZE		DT_REG_SIZE(RSC_TABLE_RELOC)
+
+BUILD_ASSERT(sizeof(resource_table) <= RSC_TABLE_RELOC_SIZE,
+	     "Resource table does not fit in the relocation area");
+
+#endif
+
 void rsc_table_get(void **table_ptr, int *length)
 {
+#if defined(RSC_TABLE_RELOC)
+	const size_t cmp_size = offsetof(struct fw_resource_table, offset) + sizeof(((struct fw_resource_table *)0)->offset);
+
+	*table_ptr = (void *)RSC_TABLE_RELOC_START;
+	*length = sizeof(resource_table);
+
+	/*
+	 * Do not copy the resource table if it has already been installed from the remote host.
+	 * Because the remote host may have already initialized some fields, only the guaranteed constant bytes can be compared.
+	 */
+	if(memcmp(&resource_table, *table_ptr, cmp_size))
+		memcpy(*table_ptr, (void *)&resource_table, *length);
+#else
 	*table_ptr = (void *)&resource_table;
 	*length = sizeof(resource_table);
+#endif
 }
