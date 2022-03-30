@@ -1086,7 +1086,9 @@ static struct bt_audio_broadcast_sink_cb sink_cbs = {
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 
 #if defined(CONFIG_BT_AUDIO_UNICAST) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
-static void audio_recv(struct bt_audio_stream *stream, struct net_buf *buf)
+static void audio_recv(struct bt_audio_stream *stream,
+		       const struct bt_iso_recv_info *info,
+		       struct net_buf *buf)
 {
 	shell_print(ctx_shell, "Incoming audio on stream %p len %u\n", stream, buf->len);
 }
