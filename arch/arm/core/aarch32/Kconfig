@@ -254,14 +254,10 @@ choice
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"
-	depends on !BUILD_WITH_TFM
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling
 	  conventions.
-	  Note: the option is disabled for Zephyr builds with TF-M, as TF-M
-	  does not currently support building with Hard ABI, hence linking
-	  Zephyr with TF-M libraries would not be possible.
 
 config FP_SOFTABI
 	bool "Floating point Soft ABI"
