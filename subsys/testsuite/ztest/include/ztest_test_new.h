@@ -125,6 +125,13 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
 		.stats = &UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME),               \
 	}
 /**
+ * Default entry point for running or listing registered unit tests.
+ *
+ * @param state The current state of the machine as it relates to the test executable.
+ */
+void ztest_run_all(const void *state);
+
+/**
  * Run the registered unit tests which return true from their pragma function.
  *
  * @param state The current state of the machine as it relates to the test executable.
@@ -155,6 +162,16 @@ void ztest_verify_all_test_suites_ran(void);
  * @return Negative value if the test suite never ran; otherwise, return the number of failures.
  */
 int z_ztest_run_test_suite(const char *name);
+
+/**
+ * @brief Returns next test within suite.
+ *
+ * @param suite Name of suite to get next test from.
+ * @param prev  Previous unit test acquired from suite, use NULL to return first
+ *		unit test.
+ * @return struct ztest_unit_test*
+ */
+struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_unit_test *prev);
 
 /**
  * @defgroup ztest_test Ztest testing macros
@@ -355,6 +372,16 @@ extern struct k_mem_partition ztest_mem_partition;
  * @param suite Test suite to run.
  */
 #define ztest_run_test_suite(suite) z_ztest_run_test_suite(STRINGIFY(suite))
+
+/**
+ * @brief Structure for architecture specific APIs
+ *
+ */
+struct ztest_arch_api {
+	void (*run_all)(const void *state);
+	bool (*should_suite_run)(const void *state, struct ztest_suite_node *suite);
+	bool (*should_test_run)(const char *suite, const char *test);
+};
 
 /**
  * @}
