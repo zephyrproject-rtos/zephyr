@@ -21,6 +21,7 @@
 
 #include "pdu.h"
 #include "ll.h"
+#include "ll_feat.h"
 #include "ll_settings.h"
 
 #include "lll.h"
@@ -33,6 +34,7 @@
 #include "ull_internal.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
+#include "ull_llcp_features.h"
 #include "ull_conn_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -652,9 +654,12 @@ static struct node_tx *llcp_rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx
 		llcp_pdu_encode_pause_enc_rsp(pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
-		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
-		llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_ENC_REQ,
-					       BT_HCI_ERR_PIN_OR_KEY_MISSING);
+		if (conn->llcp.fex.valid && feature_ext_rej_ind(conn)) {
+			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_ENC_REQ,
+						       BT_HCI_ERR_PIN_OR_KEY_MISSING);
+		} else {
+			llcp_pdu_encode_reject_ind(pdu, BT_HCI_ERR_PIN_OR_KEY_MISSING);
+		}
 		break;
 	default:
 		LL_ASSERT(0);
