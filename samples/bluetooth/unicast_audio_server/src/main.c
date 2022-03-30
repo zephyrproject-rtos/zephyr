@@ -274,23 +274,25 @@ static struct bt_audio_capability_ops lc3_ops = {
 
 #if defined(CONFIG_LIBLC3CODEC)
 
-static void stream_recv_lc3_codec(struct bt_audio_stream *stream, struct net_buf *buf)
+static void stream_recv_lc3_codec(struct bt_audio_stream *stream,
+				  const struct bt_iso_recv_info *info,
+				  struct net_buf *buf)
 {
+	const uint8_t *in_buf;
 	uint8_t err = -1;
-
-	/* TODO: If there is a way to know if the controller supports indicating errors in the
-	 *       payload one could feed that into bad-frame-indicator. The HCI layer allows to
-	 *       include this information, but currently there is no controller support.
-	 *       Here it is assumed that reveiving a zero-length payload means a lost frame -
-	 *       but actually it could just as well indicate a pause in the stream.
-	 */
-	const uint8_t bad_frame_indicator = buf->len == 0 ? 1 : 0;
-	uint8_t *in_buf = (bad_frame_indicator ? NULL : buf->data);
 	const int octets_per_frame = buf->len / frames_per_sdu;
 
 	if (lc3_decoder == NULL) {
 		printk("LC3 decoder not setup, cannot decode data.\n");
 		return;
+	}
+
+	if (info->flags != BT_ISO_FLAGS_VALID) {
+		printk("Bad packet: 0x%02X\n", info->flags);
+
+		in_buf = NULL;
+	} else {
+		in_buf = buf->data;
 	}
 
 	/* This code is to demonstrate the use of the LC3 codec. On an actual implementation
@@ -323,7 +325,9 @@ static void stream_recv_lc3_codec(struct bt_audio_stream *stream, struct net_buf
 
 #else
 
-static void stream_recv(struct bt_audio_stream *stream, struct net_buf *buf)
+static void stream_recv(struct bt_audio_stream *stream,
+			const struct bt_iso_recv_info *info,
+			struct net_buf *buf)
 {
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
