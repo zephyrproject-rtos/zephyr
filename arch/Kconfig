@@ -148,6 +148,8 @@ config ARCH_IS_SET
 
 menu "General Architecture Options"
 
+source "$(ARCH_DIR)/common/Kconfig"
+
 module = ARCH
 module-str = arch
 source "subsys/logging/Kconfig.template.log_config"
