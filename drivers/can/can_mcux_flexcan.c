@@ -135,14 +135,14 @@ static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
 	return clock_control_get_rate(config->clock_dev, config->clock_subsys, rate);
 }
 
-int mcux_flexcan_get_max_filters(const struct device *dev, enum can_ide id_type)
+static int mcux_flexcan_get_max_filters(const struct device *dev, enum can_ide id_type)
 {
 	ARG_UNUSED(id_type);
 
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-int mcux_flexcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+static int mcux_flexcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 
@@ -450,7 +450,7 @@ static void mcux_flexcan_set_state_change_callback(const struct device *dev,
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
+static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	enum can_state state;
