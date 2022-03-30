@@ -2404,11 +2404,10 @@ int net_tcp_connect(struct net_context *context,
 	/* Input of a (nonexistent) packet with no flags set will cause
 	 * a TCP connection to be established
 	 */
+	conn->in_connect = !IS_ENABLED(CONFIG_NET_TEST_PROTOCOL);
 	tcp_in(conn, NULL);
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
-		conn->in_connect = true;
-
 		if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
 		    conn->state != TCP_ESTABLISHED) {
 			conn->in_connect = false;
