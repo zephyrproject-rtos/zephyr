@@ -283,6 +283,9 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_TOP_BAND_START_POSITION 2
 #define MDM_MIDDLE_BAND_START_POSITION 6
 #define MDM_BOTTOM_BAND_START_POSITION 14
+#define MDM_BAND_BITMAP_STR_LENGTH_MAX                                                             \
+	(MDM_TOP_BAND_SIZE + MDM_MIDDLE_BAND_SIZE + MDM_BOTTOM_BAND_SIZE)
+#define MDM_BAND_BITMAP_STR_LENGTH_MIN 1
 
 #define MDM_DEFAULT_AT_CMD_RETRIES 3
 #define MDM_WAKEUP_TIME K_SECONDS(12)
@@ -660,6 +663,7 @@ static struct stale_socket *dequeue_stale_socket(void)
 
 static bool convert_time_string_to_struct(struct tm *tm, int32_t *offset,
 					  char *time_string);
+static int modem_reset_and_configure(void);
 
 static int read_pin(int default_state, const struct device *port, gpio_pin_t pin)
 {
@@ -4999,6 +5003,68 @@ static int setup_gprs_connection(char *access_point_name)
 	return send_at_cmd(NULL, cmd_string, MDM_CMD_SEND_TIMEOUT, 0, false);
 }
 
+static int set_bands(const char *bands, bool full_reboot)
+{
+	int ret;
+	char cmd[sizeof("AT+KBNDCFG=#,####################")];
+
+	snprintk(cmd, sizeof(cmd), "AT+KBNDCFG=%d,%s", ictx.mdm_rat, bands);
+	ret = send_at_cmd(NULL, cmd, MDM_CMD_SEND_TIMEOUT, MDM_DEFAULT_AT_CMD_RETRIES, false);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!full_reboot) {
+		ret = send_at_cmd(NULL, "AT+CFUN=1,1", MDM_CMD_SEND_TIMEOUT,
+				  MDM_DEFAULT_AT_CMD_RETRIES, false);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = modem_boot_handler("LTE bands were just set");
+	} else {
+		ret = modem_reset_and_configure();
+	}
+	return ret;
+}
+
+int32_t mdm_hl7800_set_bands(const char *bands)
+{
+	int ret, i;
+	char temp_bands[MDM_BAND_BITMAP_STR_LENGTH_MAX + 1];
+	int num_leading_zeros;
+
+	if ((bands == NULL) || (strlen(bands) > MDM_BAND_BITMAP_STR_LENGTH_MAX) ||
+	    (strlen(bands) < MDM_BAND_BITMAP_STR_LENGTH_MIN)) {
+		return -EINVAL;
+	}
+
+	if (strlen(bands) < MDM_BAND_BITMAP_STR_LENGTH_MAX) {
+		num_leading_zeros = MDM_BAND_BITMAP_STR_LENGTH_MAX - strlen(bands);
+		for (i = 0; i < num_leading_zeros; i++) {
+			temp_bands[i] = '0';
+			if (i == (num_leading_zeros - 1)) {
+				strncpy(temp_bands + (i + 1), bands, sizeof(temp_bands) - (i + 1));
+			}
+		}
+	} else {
+		memcpy(temp_bands, bands, sizeof(temp_bands));
+	}
+
+	/* no need to set bands if settings match */
+	if (strncmp(temp_bands, ictx.mdm_bands_string, sizeof(temp_bands)) == 0) {
+		return 0;
+	}
+
+	hl7800_lock();
+
+	ret = set_bands(temp_bands, true);
+
+	hl7800_unlock();
+
+	return ret;
+}
+
 static int modem_reset_and_configure(void)
 {
 	int ret = 0;
@@ -5010,7 +5076,7 @@ static int modem_reset_and_configure(void)
 #if CONFIG_MODEM_HL7800_CONFIGURE_BANDS
 	uint16_t bands_top = 0;
 	uint32_t bands_middle = 0, bands_bottom = 0;
-	char new_bands[sizeof("AT+KBNDCFG=#,####################")];
+	char new_bands[MDM_BAND_BITMAP_STR_LENGTH_MAX + 1];
 #endif
 #if CONFIG_MODEM_HL7800_PSM
 	const char TURN_ON_PSM[] =
@@ -5183,13 +5249,11 @@ reboot:
 		}
 
 		snprintk(new_bands, sizeof(new_bands),
-			 "AT+KBNDCFG=%d,%04x%08x%08x", ictx.mdm_rat, bands_top,
-			 bands_middle, bands_bottom);
-		SEND_AT_CMD_EXPECT_OK(new_bands);
+			 "%0" STRINGIFY(MDM_TOP_BAND_SIZE) "x%0" STRINGIFY(
+				 MDM_MIDDLE_BAND_SIZE) "x%0" STRINGIFY(MDM_BOTTOM_BAND_SIZE) "x",
+			 bands_top, bands_middle, bands_bottom);
 
-		SEND_AT_CMD_EXPECT_OK("AT+CFUN=1,1");
-
-		modem_boot_handler("LTE bands were just set");
+		ret = set_bands(new_bands, false);
 		if (ret < 0) {
 			goto error;
 		}

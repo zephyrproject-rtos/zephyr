@@ -71,7 +71,7 @@ menuconfig MODEM_HL7800_CONFIGURE_BANDS
 	default "y"
 	help
 	  Choose this setting to configure which LTE bands the
-	  HL7800 modem should use.
+	  HL7800 modem should use at boot time.
 
 if MODEM_HL7800_CONFIGURE_BANDS
 
