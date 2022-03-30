@@ -108,6 +108,14 @@ static inline const struct can_timing *z_vrfy_can_get_timing_max_data(const stru
 
 #endif /* CONFIG_CAN_FD_MODE */
 
+static inline int z_vrfy_can_set_mode(const struct device *dev, enum can_mode mode)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_mode));
+
+	return z_impl_can_set_mode(dev, mode);
+}
+#include <syscalls/can_set_mode_mrsh.c>
+
 static inline int z_vrfy_can_send(const struct device *dev,
 				  const struct zcan_frame *frame,
 				  k_timeout_t timeout,
