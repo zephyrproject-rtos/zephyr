@@ -175,12 +175,11 @@ int z_vrfy_can_get_state(const struct device *dev, enum can_state *state,
 #include <syscalls/can_get_state_mrsh.c>
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static inline int z_vrfy_can_recover(const struct device *dev,
-				     k_timeout_t timeout)
+static inline int z_vrfy_can_recover(const struct device *dev, k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, recover));
 
-	return z_impl_can_recover(dev, k_timeout_t timeout);
+	return z_impl_can_recover(dev, timeout);
 }
 #include <syscalls/can_recover_mrsh.c>
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
