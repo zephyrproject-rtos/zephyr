@@ -736,10 +736,12 @@ static void mcp2515_handle_errors(const struct device *dev)
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static void mcp2515_recover(const struct device *dev, k_timeout_t timeout)
+static int mcp2515_recover(const struct device *dev, k_timeout_t timeout)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(timeout);
+
+	return -ENOTSUP;
 }
 #endif
 
