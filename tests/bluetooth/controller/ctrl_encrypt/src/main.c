@@ -23,6 +23,7 @@
 
 #include "pdu.h"
 #include "ll.h"
+#include "ll_feat.h"
 #include "ll_settings.h"
 
 #include "lll.h"
@@ -93,6 +94,10 @@ struct ll_conn conn;
 static void setup(void)
 {
 	test_setup(&conn);
+
+	/* Fake that a Feature exchange proceudre has been executed */
+	conn.llcp.fex.valid = 1U;
+	conn.llcp.fex.features_used |= LL_FEAT_BIT_EXT_REJ_IND;
 }
 
 void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le,
