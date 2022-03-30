@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+
+&pinctrl {
+	/* UART alternate function */
+	uart1_rx_gpb0_default: uart1_rx_gpb0_default {
+		pinmuxs = <&pinctrlb 0 IT8XXX2_ALT_FUNC_3>;
+	};
+	uart1_tx_gpb1_default: uart1_tx_gpb1_default {
+		pinmuxs = <&pinctrlb 1 IT8XXX2_ALT_FUNC_3>;
+	};
+	uart2_rx_gph1_default: uart2_rx_gph1_default {
+		pinmuxs = <&pinctrlh 1 IT8XXX2_ALT_FUNC_4>;
+	};
+	uart2_tx_gph2_default: uart2_tx_gph2_default {
+		pinmuxs = <&pinctrlh 2 IT8XXX2_ALT_FUNC_4>;
+	};
+
+};
