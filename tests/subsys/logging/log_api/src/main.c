@@ -373,7 +373,7 @@ static size_t get_long_hexdump(void)
 	if (IS_ENABLED(CONFIG_LOG2)) {
 		return CONFIG_LOG_BUFFER_SIZE -
 			/* First message */
-			ROUND_UP(LOG2_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d"),
+			ROUND_UP(LOG2_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d %d"),
 				 sizeof(long long)) -
 			/* Hexdump message excluding data */
 			ROUND_UP(LOG2_SIMPLE_MSG_LEN + STR_SIZE("hexdump"),
