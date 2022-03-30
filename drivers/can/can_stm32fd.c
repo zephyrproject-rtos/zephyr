@@ -154,6 +154,13 @@ int can_stm32fd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 	return 0;
 }
 
+static int can_stm32fd_recover(const struct device *dev, k_timeout_t timeout)
+{
+	const struct can_stm32fd_config *cfg = dev->config;
+
+	return can_mcan_recover(&cfg->mcan_cfg, timeout);
+}
+
 static void can_stm32fd_line_0_isr(const struct device *dev)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
@@ -184,7 +191,7 @@ static const struct can_driver_api can_api_funcs = {
 	.remove_rx_filter = can_stm32fd_remove_rx_filter,
 	.get_state = can_stm32fd_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_mcan_recover,
+	.recover = can_stm32fd_recover,
 #endif
 	.get_core_clock = can_stm32fd_get_core_clock,
 	.get_max_bitrate = can_stm32fd_get_max_bitrate,
