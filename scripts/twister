@@ -1094,10 +1094,10 @@ def main():
         tplan.quarantine_verify = options.quarantine_verify
 
     if options.only_failed:
-        tplan.load_from_file(last_run, filter_status=['skipped', 'passed', 'filtered'])
+        tplan.load_from_file(last_run)
         tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
     elif options.load_tests:
-        tplan.load_from_file(options.load_tests, filter_status=['skipped', 'error', 'filtered'])
+        tplan.load_from_file(options.load_tests)
         tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
     elif options.test_only:
         # Get list of connected hardware and filter tests to only be run on connected hardware
@@ -1109,8 +1109,7 @@ def main():
                 if connected['connected']:
                     connected_list.append(connected['platform'])
 
-        tplan.load_from_file(last_run, filter_status=['skipped', 'error'],
-                             filter_platform=connected_list)
+        tplan.load_from_file(last_run, filter_platform=connected_list)
         tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
     else:
         tplan.apply_filters(
@@ -1351,9 +1350,7 @@ def main():
                        options.report_suffix,
                        options.report_dir,
                        options.no_update,
-                       options.only_failed,
-                       options.platform_reports,
-                       options.json_report
+                       options.platform_reports
                        )
 
     logger.info("Run completed")
