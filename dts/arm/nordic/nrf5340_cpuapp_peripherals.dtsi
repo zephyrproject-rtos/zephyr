@@ -291,7 +291,7 @@ dppic: dppic@17000 {
 };
 
 wdt: wdt0: watchdog@18000 {
-	compatible = "nordic,nrf-watchdog";
+	compatible = "nordic,nrf-wdt";
 	reg = <0x18000 0x1000>;
 	interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
@@ -299,7 +299,7 @@ wdt: wdt0: watchdog@18000 {
 };
 
 wdt1: watchdog@19000 {
-	compatible = "nordic,nrf-watchdog";
+	compatible = "nordic,nrf-wdt";
 	reg = <0x19000 0x1000>;
 	interrupts = <25 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
