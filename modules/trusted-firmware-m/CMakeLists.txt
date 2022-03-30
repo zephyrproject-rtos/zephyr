@@ -238,6 +238,13 @@ if (CONFIG_BUILD_WITH_TFM)
       )
   endif()
 
+  if(CONFIG_FPU AND CONFIG_FP_HARDABI)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=hard)
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP_ARCH=${FPU_FOR_${GCC_M_CPU}})
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_FP=soft)
+  endif()
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
