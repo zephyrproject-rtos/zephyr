@@ -588,8 +588,8 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 };
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-NET_SOCKET_REGISTER(eswifi, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
-		    eswifi_socket_is_supported, eswifi_socket_create);
+NET_SOCKET_OFFLOAD_REGISTER(eswifi, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+			    eswifi_socket_is_supported, eswifi_socket_create);
 #endif
 
 static int eswifi_off_getaddrinfo(const char *node, const char *service,

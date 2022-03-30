@@ -934,6 +934,7 @@ struct ifreq {
  */
 struct net_socket_register {
 	int family;
+	bool is_offloaded;
 	bool (*is_supported)(int family, int type, int proto);
 	int (*handler)(int family, int type, int proto);
 };
@@ -943,13 +944,20 @@ struct net_socket_register {
 #define NET_SOCKET_GET_NAME(socket_name, prio)	\
 	__net_socket_register_##prio##_##socket_name
 
-#define NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler) \
+#define _NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler, _is_offloaded) \
 	static const STRUCT_SECTION_ITERABLE(net_socket_register,	\
-			NET_SOCKET_GET_NAME(socket_name, prio)) = {		\
+			NET_SOCKET_GET_NAME(socket_name, prio)) = {	\
 		.family = _family,					\
+		.is_offloaded = _is_offloaded,				\
 		.is_supported = _is_supported,				\
 		.handler = _handler,					\
 	}
+
+#define NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler) \
+	_NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler, false)
+
+#define NET_SOCKET_OFFLOAD_REGISTER(socket_name, prio, _family, _is_supported, _handler) \
+	_NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler, true)
 
 /** @endcond */
 
