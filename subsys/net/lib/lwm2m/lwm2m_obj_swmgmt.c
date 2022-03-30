@@ -688,12 +688,12 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 #endif
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES_DATA(SWMGMT_PACKAGE_NAME_ID, res[index], res_idx, res_inst[index],
-			  res_inst_idx, &instance->package_name, PACKAGE_NAME_LEN);
+	INIT_OBJ_RES_DATA_LEN(SWMGMT_PACKAGE_NAME_ID, res[index], res_idx, res_inst[index],
+			  res_inst_idx, &instance->package_name, PACKAGE_NAME_LEN, 0);
 
-	INIT_OBJ_RES(SWMGMT_PACKAGE_VERSION_ID, res[index], res_idx, res_inst[index], res_inst_idx,
-		     1, true, false, &instance->package_version, PACKAGE_VERSION_LEN,
-		     state_read_pkg_version, NULL, NULL, NULL, NULL);
+	INIT_OBJ_RES_LEN(SWMGMT_PACKAGE_VERSION_ID, res[index], res_idx, res_inst[index],
+			 res_inst_idx, 1, true, false, &instance->package_version,
+			 PACKAGE_VERSION_LEN, 0, state_read_pkg_version, NULL, NULL, NULL, NULL);
 
 	INIT_OBJ_RES_OPT(SWMGMT_PACKAGE_ID, res[index], res_idx, res_inst[index], res_inst_idx, 1,
 			 true, false, NULL, NULL, package_write_cb, NULL, NULL);

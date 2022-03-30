@@ -1924,9 +1924,8 @@ int lwm2m_engine_delete_obj_inst(const char *pathstr)
 	return 0;
 }
 
-
-int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data_len,
-			      uint8_t data_flags)
+int lwm2m_engine_set_res_buf(const char *pathstr, void *buffer_ptr,
+				  uint16_t buffer_len, uint16_t data_len, uint8_t data_flags)
 {
 	struct lwm2m_obj_path path;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
@@ -1955,12 +1954,18 @@ int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data
 	}
 
 	/* assign data elements */
-	res_inst->data_ptr = data_ptr;
+	res_inst->data_ptr = buffer_ptr;
 	res_inst->data_len = data_len;
-	res_inst->max_data_len = data_len;
+	res_inst->max_data_len = buffer_len;
 	res_inst->data_flags = data_flags;
 
 	return ret;
+}
+
+int lwm2m_engine_set_res_data(const char *pathstr, void *data_ptr, uint16_t data_len,
+			      uint8_t data_flags)
+{
+	return lwm2m_engine_set_res_buf(pathstr, data_ptr, data_len, data_len, data_flags);
 }
 
 static int lwm2m_engine_set(const char *pathstr, void *value, uint16_t len)
@@ -2188,10 +2193,25 @@ int lwm2m_engine_set_objlnk(const char *pathstr, struct lwm2m_objlnk *value)
 	return lwm2m_engine_set(pathstr, value, sizeof(struct lwm2m_objlnk));
 }
 
+int lwm2m_engine_set_res_data_len(const char *pathstr, uint16_t data_len)
+{
+	int ret;
+	void *buffer_ptr;
+	uint16_t buffer_len;
+	uint16_t old_len;
+	uint8_t data_flags;
+
+	ret = lwm2m_engine_get_res_buf(pathstr, &buffer_ptr, &buffer_len, &old_len, &data_flags);
+	if (ret) {
+		return ret;
+	}
+	return lwm2m_engine_set_res_buf(pathstr, buffer_ptr, buffer_len, data_len, data_flags);
+}
+
 /* user data getter functions */
 
-int lwm2m_engine_get_res_data(const char *pathstr, void **data_ptr, uint16_t *data_len,
-			      uint8_t *data_flags)
+int lwm2m_engine_get_res_buf(const char *pathstr, void **buffer_ptr, uint16_t *buffer_len,
+				  uint16_t *data_len, uint8_t *data_flags)
 {
 	struct lwm2m_obj_path path;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
@@ -2219,12 +2239,28 @@ int lwm2m_engine_get_res_data(const char *pathstr, void **data_ptr, uint16_t *da
 		return -ENOENT;
 	}
 
-	*data_ptr = res_inst->data_ptr;
-	*data_len = res_inst->data_len;
-	*data_flags = res_inst->data_flags;
+	if (buffer_ptr) {
+		*buffer_ptr = res_inst->data_ptr;
+	}
+	if (buffer_len) {
+		*buffer_len = res_inst->max_data_len;
+	}
+	if (data_len) {
+		*data_len = res_inst->data_len;
+	}
+	if (data_flags) {
+		*data_flags = res_inst->data_flags;
+	}
 
 	return 0;
 }
+
+int lwm2m_engine_get_res_data(const char *pathstr, void **data_ptr, uint16_t *data_len,
+			      uint8_t *data_flags)
+{
+	return lwm2m_engine_get_res_buf(pathstr, data_ptr, NULL, data_len, data_flags);
+}
+
 
 static int lwm2m_engine_get(const char *pathstr, void *buf, uint16_t buflen)
 {
@@ -5812,11 +5848,16 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 	snprintk(pathstr, sizeof(pathstr), "0/%d/%u", client_ctx->sec_obj_inst,
 		 res_id);
 
-	ret = lwm2m_engine_get_res_data(pathstr, &cred, &cred_len, &cred_flags);
+	ret = lwm2m_engine_get_res_buf(pathstr, &cred, NULL, &cred_len, &cred_flags);
 	if (ret < 0) {
 		LOG_ERR("Unable to get resource data for '%s'",
 			log_strdup(pathstr));
 		return ret;
+	}
+
+	if (cred_len == 0) {
+		LOG_ERR("Credential data is empty");
+		return -EINVAL;
 	}
 
 	ret = tls_credential_add(client_ctx->tls_tag, type, cred, cred_len);
@@ -6092,7 +6133,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 
 	/* get the server URL */
 	snprintk(pathstr, sizeof(pathstr), "0/%d/0", client_ctx->sec_obj_inst);
-	ret = lwm2m_engine_get_res_data(pathstr, (void **)&url, &url_len,
+	ret = lwm2m_engine_get_res_buf(pathstr, (void **)&url, NULL, &url_len,
 					&url_data_flags);
 	if (ret < 0) {
 		return ret;

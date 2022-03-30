@@ -110,6 +110,8 @@ Deprecated in this release
 ==========================
 
 * :c:func:`nvs_init` is deprecated in favor of utilizing :c:func:`nvs_mount`.
+* :c:func:`lwm2m_engine_set_res_data` is deprecated in favor of :c:func:`lwm2m_engine_set_res_buf`
+* :c:func:`lwm2m_engine_get_res_data` is deprecated in favor of :c:func:`lwm2m_engine_get_res_buf`
 * The TinyCBOR module has been deprecated in favor of the new zcbor CBOR
   library, included with Zephyr in this release.
 
