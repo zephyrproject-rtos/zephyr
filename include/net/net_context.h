@@ -313,6 +313,9 @@ __net_socket struct net_context {
 #if defined(CONFIG_NET_CONTEXT_SNDTIMEO)
 		k_timeout_t sndtimeo;
 #endif
+#if defined(CONFIG_NET_CONTEXT_RCVBUF)
+		uint16_t rcvbuf;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -1060,6 +1063,7 @@ enum net_context_option {
 	NET_OPT_SOCKS5		= 3,
 	NET_OPT_RCVTIMEO        = 4,
 	NET_OPT_SNDTIMEO        = 5,
+	NET_OPT_RCVBUF		= 6,
 };
 
 /**

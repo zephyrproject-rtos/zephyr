@@ -1209,10 +1209,12 @@ static void tcp_conn_ref(struct tcp *conn)
 	NET_DBG("conn: %p, ref_count: %d", conn, ref_count);
 }
 
-static struct tcp *tcp_conn_alloc(void)
+static struct tcp *tcp_conn_alloc(struct net_context *context)
 {
 	struct tcp *conn = NULL;
 	int ret;
+	int recv_window = 0;
+	size_t len;
 
 	ret = k_mem_slab_alloc(&tcp_conns_slab, (void **)&conn, K_NO_WAIT);
 	if (ret) {
@@ -1244,6 +1246,14 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->in_connect = false;
 	conn->state = TCP_LISTEN;
 	conn->recv_win = tcp_window;
+
+	/* Set the recv_win with the rcvbuf configured for the socket. */
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF) &&
+		net_context_get_option(context, NET_OPT_RCVBUF, &recv_window, &len) == 0) {
+		if (recv_window != 0) {
+			conn->recv_win = recv_window;
+		}
+	}
 
 	/* The ISN value will be set when we get the connection attempt or
 	 * when trying to create a connection.
@@ -1283,7 +1293,7 @@ int net_tcp_get(struct net_context *context)
 
 	k_mutex_lock(&tcp_lock, K_FOREVER);
 
-	conn = tcp_conn_alloc();
+	conn = tcp_conn_alloc(context);
 	if (conn == NULL) {
 		ret = -ENOMEM;
 		goto out;
