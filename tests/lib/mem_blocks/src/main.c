@@ -23,6 +23,27 @@ SYS_MEM_BLOCKS_DEFINE_STATIC_WITH_EXT_BUF(mem_block_02,
 
 static sys_multi_mem_blocks_t alloc_group;
 
+static ZTEST_DMEM volatile int expected_reason = -1;
+
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+{
+	printk("Caught system error -- reason %d\n", reason);
+
+	if (expected_reason == -1) {
+		printk("Was not expecting a crash\n");
+		ztest_test_fail();
+	}
+
+	if (reason != expected_reason) {
+		printk("Wrong crash type got %d expected %d\n", reason,
+		       expected_reason);
+		ztest_test_fail();
+	}
+
+	expected_reason = -1;
+	ztest_test_pass();
+}
+
 sys_mem_blocks_t *choice_fn(struct sys_multi_mem_blocks *group, void *cfg)
 {
 	/* mem_block_"01" or mem_block_"02" */
@@ -266,7 +287,7 @@ static void test_mem_block_get(void)
 	}
 
 	/* get a 2 slots block starting from the last one - should fail */
-	ret = sys_mem_blocks_get(&mem_block_01, mem_block_01.buffer + (BLK_SZ* (NUM_BLOCKS-1)), 2);
+	ret = sys_mem_blocks_get(&mem_block_01, mem_block_01.buffer + (BLK_SZ * (NUM_BLOCKS-1)), 2);
 	zassert_equal(ret, -ENOMEM,
 		      "sys_mem_blocks_get failed - out of bounds (%d)", ret);
 
@@ -388,7 +409,7 @@ static void test_mem_block_get(void)
 #endif
 }
 
-static void test_mem_block_alloc_free_continuous(void)
+static void test_mem_block_alloc_free_contiguous(void)
 {
 	int i, ret, val;
 	void *block;
@@ -608,18 +629,50 @@ static void test_multi_mem_block_alloc_free(void)
 		      "sys_multi_mem_blocks_free failed (%d)", ret);
 }
 
+static void test_mem_block_invalid_params_panic_1(void)
+{
+	void *blocks[2] = {0};
+
+	expected_reason = K_ERR_KERNEL_PANIC;
+	sys_mem_blocks_alloc(NULL, 1, blocks);
+
+	/* test should raise an exception and should not reach this line */
+	ztest_test_fail();
+}
+
+static void test_mem_block_invalid_params_panic_2(void)
+{
+	expected_reason = K_ERR_KERNEL_PANIC;
+	sys_mem_blocks_alloc(&mem_block_01, 1, NULL);
+
+	/* test should raise an exception and should not reach this line */
+	ztest_test_fail();
+}
+
+static void test_mem_block_invalid_params_panic_3(void)
+{
+	void *blocks[2] = {0};
+
+	expected_reason = K_ERR_KERNEL_PANIC;
+	sys_mem_blocks_free(NULL, 1, blocks);
+
+	/* test should raise an exception and should not reach this line */
+	ztest_test_fail();
+}
+
+static void test_mem_block_invalid_params_panic_4(void)
+{
+	expected_reason = K_ERR_KERNEL_PANIC;
+	sys_mem_blocks_free(&mem_block_01, 1, NULL);
+
+	/* test should raise an exception and should not reach this line */
+	ztest_test_fail();
+}
+
 static void test_mem_block_invalid_params(void)
 {
 	int ret;
 	void *blocks[2] = {0};
-
-	ret = sys_mem_blocks_alloc(NULL, 1, blocks);
-	zassert_equal(ret, -EINVAL,
-		      "sys_mem_blocks_alloc should fail with -EINVAL but not");
-
-	ret = sys_mem_blocks_alloc(&mem_block_01, 1, NULL);
-	zassert_equal(ret, -EINVAL,
-		      "sys_mem_blocks_alloc should fail with -EINVAL but not");
 
 	ret = sys_mem_blocks_alloc(&mem_block_01, 0, blocks);
 	zassert_equal(ret, 0,
@@ -632,14 +685,6 @@ static void test_mem_block_invalid_params(void)
 	ret = sys_mem_blocks_alloc(&mem_block_01, 1, blocks);
 	zassert_equal(ret, 0,
 		      "sys_mem_blocks_alloc failed (%d)", ret);
-
-	ret = sys_mem_blocks_free(NULL, 1, blocks);
-	zassert_equal(ret, -EINVAL,
-		      "sys_mem_blocks_free should fail with -EINVAL but not");
-
-	ret = sys_mem_blocks_free(&mem_block_01, 1, NULL);
-	zassert_equal(ret, -EINVAL,
-		      "sys_mem_blocks_free should fail with -EINVAL but not");
 
 	ret = sys_mem_blocks_free(&mem_block_01, 0, blocks);
 	zassert_equal(ret, 0,
@@ -665,20 +710,56 @@ static void test_mem_block_invalid_params(void)
 		      "sys_mem_blocks_free should fail with -EFAULT but not");
 }
 
+static void test_multi_mem_block_invalid_params_panic_1(void)
+{
+	void *blocks[2] = {0};
+
+	expected_reason = K_ERR_KERNEL_PANIC;
+	sys_multi_mem_blocks_alloc(NULL, UINT_TO_POINTER(16),
+						 1, blocks, NULL);
+
+	/* test should raise an exception and should not reach this line */
+	ztest_test_fail();
+}
+
+
+static void test_multi_mem_block_invalid_params_panic_2(void)
+{
+	expected_reason = K_ERR_KERNEL_PANIC;
+
+	sys_multi_mem_blocks_alloc(&alloc_group, UINT_TO_POINTER(16),
+						 1, NULL, NULL);
+
+	/* test should raise an exception and should not reach this line */
+	ztest_test_fail();
+}
+
+static void test_multi_mem_block_invalid_params_panic_3(void)
+{
+	void *blocks[2] = {0};
+
+	expected_reason = K_ERR_KERNEL_PANIC;
+	sys_multi_mem_blocks_free(NULL, 1, blocks);
+
+	/* test should raise an exception and should not reach this line */
+	ztest_test_fail();
+}
+
+
+static void test_multi_mem_block_invalid_params_panic_4(void)
+{
+	expected_reason = K_ERR_KERNEL_PANIC;
+
+	sys_multi_mem_blocks_free(&alloc_group, 1, NULL);
+
+	/* test should raise an exception and should not reach this line */
+	ztest_test_fail();
+}
+
 static void test_multi_mem_block_invalid_params(void)
 {
 	int ret;
 	void *blocks[2] = {0};
-
-	ret = sys_multi_mem_blocks_alloc(NULL, UINT_TO_POINTER(16),
-					 1, blocks, NULL);
-	zassert_equal(ret, -EINVAL,
-		      "sys_multi_mem_blocks_alloc should fail with -EINVAL but not");
-
-	ret = sys_multi_mem_blocks_alloc(&alloc_group, UINT_TO_POINTER(16),
-					 1, NULL, NULL);
-	zassert_equal(ret, -EINVAL,
-		      "sys_multi_mem_blocks_alloc should fail with -EINVAL but not");
 
 	ret = sys_multi_mem_blocks_alloc(&alloc_group, UINT_TO_POINTER(16),
 					 0, blocks, NULL);
@@ -694,14 +775,6 @@ static void test_multi_mem_block_invalid_params(void)
 					 1, blocks, NULL);
 	zassert_equal(ret, 0,
 		      "sys_multi_mem_blocks_alloc failed (%d)", ret);
-
-	ret = sys_multi_mem_blocks_free(NULL, 1, blocks);
-	zassert_equal(ret, -EINVAL,
-		      "sys_multi_mem_blocks_free should fail with -EINVAL but not");
-
-	ret = sys_multi_mem_blocks_free(&alloc_group, 1, NULL);
-	zassert_equal(ret, -EINVAL,
-		      "sys_multi_mem_blocks_free should fail with -EINVAL but not");
 
 	ret = sys_multi_mem_blocks_free(&alloc_group, 0, blocks);
 	zassert_equal(ret, 0,
@@ -739,10 +812,22 @@ void test_main(void)
 			 ztest_unit_test(test_mem_block_multi_alloc_free),
 			 ztest_unit_test(test_mem_block_multi_alloc_free_alt_buf),
 			 ztest_unit_test(test_multi_mem_block_alloc_free),
-			 ztest_unit_test(test_mem_block_invalid_params),
-			 ztest_unit_test(test_multi_mem_block_invalid_params),
 			 ztest_unit_test(test_mem_block_get),
-			 ztest_unit_test(test_mem_block_alloc_free_continuous)
+			 ztest_unit_test(test_mem_block_alloc_free_contiguous),
+			 ztest_unit_test(test_mem_block_invalid_params),
+			 ztest_unit_test(test_mem_block_invalid_params_panic_1),
+			 ztest_unit_test(test_mem_block_invalid_params_panic_2),
+			 ztest_unit_test(test_mem_block_invalid_params_panic_3),
+			 ztest_unit_test(test_mem_block_invalid_params_panic_4),
+			 ztest_unit_test(test_multi_mem_block_invalid_params),
+			 ztest_unit_test(
+				test_multi_mem_block_invalid_params_panic_1),
+			 ztest_unit_test(
+				test_multi_mem_block_invalid_params_panic_2),
+			 ztest_unit_test(
+				test_multi_mem_block_invalid_params_panic_3),
+			 ztest_unit_test(
+				test_multi_mem_block_invalid_params_panic_4)
 			 );
 
 	ztest_run_test_suite(lib_mem_block_test);
