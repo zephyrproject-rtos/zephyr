@@ -75,4 +75,11 @@ config IEEE802154_NRF5_FCS_IN_LENGTH
 	  the overall packet length while others not. Allow to configure this
 	  behavior, based on the selected upper layer.
 
+config IEEE802154_NRF5_DELAY_TRX_ACC
+	int "Clock accuracy for delayed operations"
+	default CLOCK_CONTROL_NRF_ACCURACY
+	help
+	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
+	  or delayed reception), in ppm.
+
 endif

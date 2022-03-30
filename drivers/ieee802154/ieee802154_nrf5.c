@@ -594,7 +594,7 @@ static uint8_t nrf5_get_acc(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return CONFIG_IEEE802154_DELAY_TRX_ACC;
+	return CONFIG_IEEE802154_NRF5_DELAY_TRX_ACC;
 }
 
 static int nrf5_start(const struct device *dev)
