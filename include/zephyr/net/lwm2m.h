@@ -1218,5 +1218,13 @@ char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path);
 int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
 		      bool confirmation_request);
 
+/** 
+ * @brief Returns LwM2M client context
+ *
+ * @return ctx LwM2M context
+ *
+ */
+struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
+
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */
