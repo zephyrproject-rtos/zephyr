@@ -191,9 +191,9 @@ static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
 					    uint32_t period, uint32_t pulse,
 					    pwm_flags_t flags)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
 
-	api = (struct pwm_driver_api *)dev->api;
 	return api->pin_set(dev, pwm, period, pulse, flags);
 }
 
@@ -232,7 +232,8 @@ static inline int pwm_pin_configure_capture(const struct device *dev,
 					    pwm_capture_callback_handler_t cb,
 					    void *user_data)
 {
-	const struct pwm_driver_api *api = (struct pwm_driver_api *)dev->api;
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
 
 	if (api->pin_configure_capture == NULL) {
 		return -ENOSYS;
@@ -266,7 +267,8 @@ __syscall int pwm_pin_enable_capture(const struct device *dev, uint32_t pwm);
 static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
 						uint32_t pwm)
 {
-	const struct pwm_driver_api *api = (struct pwm_driver_api *)dev->api;
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
 
 	if (api->pin_enable_capture == NULL) {
 		return -ENOSYS;
@@ -296,7 +298,8 @@ __syscall int pwm_pin_disable_capture(const struct device *dev, uint32_t pwm);
 static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
 						 uint32_t pwm)
 {
-	const struct pwm_driver_api *api = (struct pwm_driver_api *)dev->api;
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
 
 	if (api->pin_disable_capture == NULL) {
 		return -ENOSYS;
@@ -357,9 +360,9 @@ static inline int z_impl_pwm_get_cycles_per_sec(const struct device *dev,
 						uint32_t pwm,
 						uint64_t *cycles)
 {
-	struct pwm_driver_api *api;
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
 
-	api = (struct pwm_driver_api *)dev->api;
 	return api->get_cycles_per_sec(dev, pwm, cycles);
 }
 
