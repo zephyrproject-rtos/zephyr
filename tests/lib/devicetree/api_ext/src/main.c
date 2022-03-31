@@ -17,10 +17,8 @@
 
 static void test_linker_regions(void)
 {
-	zassert_true(!strcmp(STRINGIFY(LINKER_DT_NODE_REGION_NAME(TEST_SRAM1)),
-		     "SRAM_REGION"), "");
-	zassert_true(!strcmp(STRINGIFY(LINKER_DT_NODE_REGION_NAME(TEST_SRAM2)),
-		     "SRAM_REGION_2"), "");
+	zassert_true(!strcmp(LINKER_DT_NODE_REGION_NAME(TEST_SRAM1), "SRAM_REGION"), "");
+	zassert_true(!strcmp(LINKER_DT_NODE_REGION_NAME(TEST_SRAM2), "SRAM_REGION_2"), "");
 }
 
 void test_main(void)
