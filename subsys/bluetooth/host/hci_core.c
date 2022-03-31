@@ -331,6 +331,38 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	return 0;
 }
 
+int bt_hci_le_rand(void *buffer, size_t len)
+{
+	struct bt_hci_rp_le_rand *rp;
+	struct net_buf *rsp;
+	size_t count;
+	int err;
+
+	/* Check first that HCI_LE_Rand is supported */
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 7)) {
+		return -ENOTSUP;
+	}
+
+	while (len > 0) {
+		/* Number of bytes to fill on this iteration */
+		count = MIN(len, sizeof(rp->rand));
+		/* Request the next 8 bytes over HCI */
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
+		if (err) {
+			return err;
+		}
+		/* Copy random data into buffer */
+		rp = (void *)rsp->data;
+		memcpy(buffer, rp->rand, count);
+
+		net_buf_unref(rsp);
+		buffer = (uint8_t *)buffer + count;
+		len -= count;
+	}
+
+	return 0;
+}
+
 static int hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time)
 {
 	struct bt_hci_rp_le_read_max_data_len *rp;
