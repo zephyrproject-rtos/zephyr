@@ -22,6 +22,11 @@ LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 
 #define SHM_DEVICE_NAME	"shm"
 
+// RPMSG MU channel index
+// As Linux suggests, use MU->Data Channel 1 as communication channel
+// see RPMSG-Lite rpmsg_platform.c -> platform_notify
+#define RPMSG_MU_CHANNEL (1)
+
 #if !DT_HAS_CHOSEN(zephyr_ipc_shm)
 #error "Sample requires definition of shared memory for rpmsg"
 #endif
@@ -136,7 +141,7 @@ int mailbox_notify(void *priv, uint32_t id)
 	ARG_UNUSED(priv);
 
 	LOG_DBG("%s: msg received\n", __func__);
-	ipm_send(ipm_handle, 0, id, NULL, 0);
+	ipm_send(ipm_handle, 0, RPMSG_MU_CHANNEL, NULL, 0);
 
 	return 0;
 }

@@ -1,0 +1,15 @@
+/ {
+	chosen {
+		zephyr,ipc = &mub;
+		zephyr,ipc_shm = &vdevbuffer;
+	};
+
+	vdevbuffer: memory@b8400000 {
+		compatible = "mmio-sram";
+		reg = <0xb8400000 DT_SIZE_M(1)>;
+	};
+};
+
+&mub {
+	status = "okay";
+};
