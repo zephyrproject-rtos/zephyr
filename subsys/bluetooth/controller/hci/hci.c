@@ -6645,9 +6645,14 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 
 	scan = node_rx->hdr.rx_ftr.param;
 
+#if (CONFIG_BT_CTLR_DUP_FILTER_LEN > 0) && \
+	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	dup_periodic_adv_reset(scan->periodic.adv_addr_type,
 			       scan->periodic.adv_addr,
 			       scan->periodic.sid);
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 &&
+	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
+	*/
 
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 
