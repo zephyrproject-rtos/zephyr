@@ -14,6 +14,7 @@
 #include <arch/cpu.h>
 #include <drivers/uart.h>
 #include <drivers/pinctrl.h>
+#include <soc.h>
 
 #define RXDATA_EMPTY   (1 << 31)   /* Receive FIFO Empty */
 #define RXDATA_MASK    0xFF        /* Receive Data Mask */
@@ -383,7 +384,7 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
 	.port         = DT_INST_REG_ADDR(0),
-	.sys_clk_freq = DT_INST_PROP(0, clock_frequency),
+	.sys_clk_freq = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,
 	.baud_rate    = DT_INST_PROP(0, current_speed),
 	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_RXCNT_IRQ,
 	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_TXCNT_IRQ,
@@ -426,7 +427,7 @@ PINCTRL_DT_INST_DEFINE(1);
 
 static const struct uart_sifive_device_config uart_sifive_dev_cfg_1 = {
 	.port         = DT_INST_REG_ADDR(1),
-	.sys_clk_freq = DT_INST_PROP(1, clock_frequency),
+	.sys_clk_freq = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,
 	.baud_rate    = DT_INST_PROP(1, current_speed),
 	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_RXCNT_IRQ,
 	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_TXCNT_IRQ,

@@ -7,6 +7,11 @@
 #include <init.h>
 #include "fu540_prci.h"
 
+BUILD_ASSERT(MHZ(1000) == DT_PROP(DT_NODELABEL(coreclk), clock_frequency),
+	"Unsupported CORECLK frequency");
+BUILD_ASSERT(DT_PROP(DT_NODELABEL(tlclk), clock_div) == 2,
+	"Unsupported TLCLK divider");
+
 /*
  * Switch the clock source to 1GHz PLL from 33.333MHz oscillator on the HiFive
  * Unleashed board.

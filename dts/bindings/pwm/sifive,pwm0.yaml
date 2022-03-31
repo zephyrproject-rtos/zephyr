@@ -8,11 +8,6 @@ compatible: "sifive,pwm0"
 include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
-    clock-frequency:
-      type: int
-      required: false
-      description: Clock frequency information for PWM operation
-
     reg:
       required: true
 
