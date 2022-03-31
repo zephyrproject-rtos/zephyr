@@ -33,6 +33,7 @@ extern "C" {
 
 /**
  * @name PWM capture configuration flags
+ * @anchor PWM_CAPTURE_FLAGS
  * @{
  */
 
@@ -67,21 +68,21 @@ extern "C" {
  *
  * The lower 8 bits are used for standard flags.
  * The upper 8 bits are reserved for SoC specific flags.
+ *
+ * @see @ref PWM_CAPTURE_FLAGS.
  */
 
 typedef uint16_t pwm_flags_t;
 
 /**
- * @typedef pwm_pin_set_t
  * @brief Callback API upon setting the pin
- * See @a pwm_pin_set_cycles() for argument description
+ * @see pwm_pin_set_cycles() for argument description.
  */
 typedef int (*pwm_pin_set_t)(const struct device *dev, uint32_t pwm,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags);
 
 /**
- * @typedef pwm_capture_callback_handler_t
  * @brief PWM capture callback handler function signature
  *
  * @note The callback handler will be called in interrupt context.
@@ -96,9 +97,9 @@ typedef int (*pwm_pin_set_t)(const struct device *dev, uint32_t pwm,
  *                      specific.
  * @param pulse_cycles Captured PWM pulse width (in clock cycles). HW specific.
  * @param status Status for the PWM capture (0 if no error, negative errno
- *               otherwise. See @a pwm_pin_capture_cycles() return value
+ *               otherwise. See pwm_pin_capture_cycles() return value
  *               descriptions for details).
- * @param user_data User data passed to @a pwm_pin_configure_capture()
+ * @param user_data User data passed to pwm_pin_configure_capture()
  */
 typedef void (*pwm_capture_callback_handler_t)(const struct device *dev,
 					       uint32_t pwm,
@@ -108,9 +109,8 @@ typedef void (*pwm_capture_callback_handler_t)(const struct device *dev,
 					       void *user_data);
 
 /**
- * @typedef pwm_pin_configure_capture_t
  * @brief Callback API upon configuring PWM pin capture
- * See @a pwm_pin_configure_capture() for argument description
+ * @see pwm_pin_configure_capture() for argument description.
  */
 typedef int (*pwm_pin_configure_capture_t)(const struct device *dev,
 					   uint32_t pwm,
@@ -118,25 +118,22 @@ typedef int (*pwm_pin_configure_capture_t)(const struct device *dev,
 					   pwm_capture_callback_handler_t cb,
 					   void *user_data);
 /**
- * @typedef pwm_pin_enable_capture_t
  * @brief Callback API upon enabling PWM pin capture
- * See @a pwm_pin_enable_capture() for argument description
+ * @see pwm_pin_enable_capture() for argument description.
  */
 typedef int (*pwm_pin_enable_capture_t)(const struct device *dev,
 					uint32_t pwm);
 
 /**
- * @typedef pwm_pin_disable_capture_t
  * @brief Callback API upon disabling PWM pin capture
- * See @a pwm_pin_disable_capture() for argument description
+ * @see pwm_pin_disable_capture() for argument description
  */
 typedef int (*pwm_pin_disable_capture_t)(const struct device *dev,
 					 uint32_t pwm);
 
 /**
- * @typedef pwm_get_cycles_per_sec_t
  * @brief Callback API upon getting cycles per second
- * See @a pwm_get_cycles_per_sec() for argument description
+ * @see pwm_get_cycles_per_sec() for argument description
  */
 typedef int (*pwm_get_cycles_per_sec_t)(const struct device *dev,
 					uint32_t pwm,
@@ -196,16 +193,17 @@ static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
 	return api->pin_set(dev, pwm, period, pulse, flags);
 }
 
+#if defined(CONFIG_PWM_CAPTURE) || defined(__DOXYGEN__)
 /**
  * @brief Configure PWM period/pulse width capture for a single PWM input.
  *
  * After configuring PWM capture using this function, the capture can be
- * enabled/disabled using @a pwm_pin_enable_capture() and @a
+ * enabled/disabled using pwm_pin_enable_capture() and
  * pwm_pin_disable_capture().
  *
  * @note This API function cannot be invoked from user space due to the use of a
- * function callback. In user space, one of the simpler API functions (@a
- * pwm_pin_capture_cycles(), @a pwm_pin_capture_usec(), or @a
+ * function callback. In user space, one of the simpler API functions
+ * (pwm_pin_capture_cycles(), pwm_pin_capture_usec(), or
  * pwm_pin_capture_nsec()) can be used instead.
  *
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
@@ -224,7 +222,6 @@ static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
  * @retval -EIO if IO error occurred while configuring
  * @retval -EBUSY if PWM capture is already in progress
  */
-#ifdef CONFIG_PWM_CAPTURE
 static inline int pwm_pin_configure_capture(const struct device *dev,
 					    uint32_t pwm,
 					    pwm_flags_t flags,
@@ -244,7 +241,7 @@ static inline int pwm_pin_configure_capture(const struct device *dev,
 /**
  * @brief Enable PWM period/pulse width capture for a single PWM input.
  *
- * The PWM pin must be configured using @a pwm_pin_configure_capture() prior to
+ * The PWM pin must be configured using pwm_pin_configure_capture() prior to
  * calling this function.
  *
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
@@ -278,7 +275,6 @@ static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
 /**
  * @brief Disable PWM period/pulse width capture for a single PWM input.
  *
- *
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
@@ -310,8 +306,8 @@ static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
  * @brief Capture a single PWM period/pulse width in clock cycles for a single
  *        PWM input.
  *
- * This API function wraps calls to @a pwm_pin_configure_capture(), @a
- * pwm_pin_enable_capture(), and @a pwm_pin_disable_capture() and passes the
+ * This API function wraps calls to pwm_pin_configure_capture(),
+ * pwm_pin_enable_capture(), and pwm_pin_disable_capture() and passes the
  * capture result to the caller. The function is blocking until either the PWM
  * capture is completed or a timeout occurs.
  *
@@ -501,7 +497,7 @@ static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
  * @brief Capture a single PWM period/pulse width in microseconds for a single
  *        PWM input.
  *
- * This API function wraps calls to @a pwm_pin_capture_cycles() and @a
+ * This API function wraps calls to pwm_pin_capture_cycles() and
  * pwm_pin_cycles_to_usec() and passes the capture result to the caller. The
  * function is blocking until either the PWM capture is completed or a timeout
  * occurs.
@@ -557,7 +553,7 @@ static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
  * @brief Capture a single PWM period/pulse width in nanoseconds for a single
  *        PWM input.
  *
- * This API function wraps calls to @a pwm_pin_capture_cycles() and @a
+ * This API function wraps calls to pwm_pin_capture_cycles() and
  * pwm_pin_cycles_to_nsec() and passes the capture result to the caller. The
  * function is blocking until either the PWM capture is completed or a timeout
  * occurs.
