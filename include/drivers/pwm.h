@@ -109,6 +109,14 @@ typedef int (*pwm_pin_set_t)(const struct device *dev, uint32_t pwm,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags);
 
+/**
+ * @brief Callback API upon getting cycles per second
+ * @see pwm_get_cycles_per_sec() for argument description
+ */
+typedef int (*pwm_get_cycles_per_sec_t)(const struct device *dev,
+					uint32_t pwm,
+					uint64_t *cycles);
+
 #ifdef CONFIG_PWM_CAPTURE
 /**
  * @brief Callback API upon configuring PWM pin capture
@@ -134,23 +142,15 @@ typedef int (*pwm_pin_disable_capture_t)(const struct device *dev,
 					 uint32_t pwm);
 #endif /* CONFIG_PWM_CAPTURE */
 
-/**
- * @brief Callback API upon getting cycles per second
- * @see pwm_get_cycles_per_sec() for argument description
- */
-typedef int (*pwm_get_cycles_per_sec_t)(const struct device *dev,
-					uint32_t pwm,
-					uint64_t *cycles);
-
 /** @brief PWM driver API definition. */
 __subsystem struct pwm_driver_api {
 	pwm_pin_set_t pin_set;
+	pwm_get_cycles_per_sec_t get_cycles_per_sec;
 #ifdef CONFIG_PWM_CAPTURE
 	pwm_pin_configure_capture_t pin_configure_capture;
 	pwm_pin_enable_capture_t pin_enable_capture;
 	pwm_pin_disable_capture_t pin_disable_capture;
 #endif /* CONFIG_PWM_CAPTURE */
-	pwm_get_cycles_per_sec_t get_cycles_per_sec;
 };
 /** @endcond */
 
@@ -196,151 +196,6 @@ static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
 
 	return api->pin_set(dev, pwm, period, pulse, flags);
 }
-
-#if defined(CONFIG_PWM_CAPTURE) || defined(__DOXYGEN__)
-/**
- * @brief Configure PWM period/pulse width capture for a single PWM input.
- *
- * After configuring PWM capture using this function, the capture can be
- * enabled/disabled using pwm_pin_enable_capture() and
- * pwm_pin_disable_capture().
- *
- * @note This API function cannot be invoked from user space due to the use of a
- * function callback. In user space, one of the simpler API functions
- * (pwm_pin_capture_cycles(), pwm_pin_capture_usec(), or
- * pwm_pin_capture_nsec()) can be used instead.
- *
- * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
- * available.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param pwm PWM pin.
- * @param flags PWM capture flags
- * @param cb Application callback handler function to be called upon capture
- * @param user_data User data to pass to the application callback handler
- *                  function
- *
- * @retval -EINVAL if invalid function parameters were given
- * @retval -ENOSYS if PWM capture is not supported or the given flags are not
- *                  supported
- * @retval -EIO if IO error occurred while configuring
- * @retval -EBUSY if PWM capture is already in progress
- */
-static inline int pwm_pin_configure_capture(const struct device *dev,
-					    uint32_t pwm,
-					    pwm_flags_t flags,
-					    pwm_capture_callback_handler_t cb,
-					    void *user_data)
-{
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
-
-	if (api->pin_configure_capture == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->pin_configure_capture(dev, pwm, flags, cb, user_data);
-}
-#endif /* CONFIG_PWM_CAPTURE */
-
-/**
- * @brief Enable PWM period/pulse width capture for a single PWM input.
- *
- * The PWM pin must be configured using pwm_pin_configure_capture() prior to
- * calling this function.
- *
- * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
- * available.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param pwm PWM pin.
- *
- * @retval 0 If successful.
- * @retval -EINVAL if invalid function parameters were given
- * @retval -ENOSYS if PWM capture is not supported
- * @retval -EIO if IO error occurred while enabling PWM capture
- * @retval -EBUSY if PWM capture is already in progress
- */
-__syscall int pwm_pin_enable_capture(const struct device *dev, uint32_t pwm);
-
-#ifdef CONFIG_PWM_CAPTURE
-static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
-						uint32_t pwm)
-{
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
-
-	if (api->pin_enable_capture == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->pin_enable_capture(dev, pwm);
-}
-#endif /* CONFIG_PWM_CAPTURE */
-
-/**
- * @brief Disable PWM period/pulse width capture for a single PWM input.
- *
- * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
- * available.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param pwm PWM pin.
- *
- * @retval 0 If successful.
- * @retval -EINVAL if invalid function parameters were given
- * @retval -ENOSYS if PWM capture is not supported
- * @retval -EIO if IO error occurred while disabling PWM capture
- */
-__syscall int pwm_pin_disable_capture(const struct device *dev, uint32_t pwm);
-
-#ifdef CONFIG_PWM_CAPTURE
-static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
-						 uint32_t pwm)
-{
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
-
-	if (api->pin_disable_capture == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->pin_disable_capture(dev, pwm);
-}
-#endif /* CONFIG_PWM_CAPTURE */
-
-/**
- * @brief Capture a single PWM period/pulse width in clock cycles for a single
- *        PWM input.
- *
- * This API function wraps calls to pwm_pin_configure_capture(),
- * pwm_pin_enable_capture(), and pwm_pin_disable_capture() and passes the
- * capture result to the caller. The function is blocking until either the PWM
- * capture is completed or a timeout occurs.
- *
- * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
- * available.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param pwm PWM pin.
- * @param flags PWM capture flags.
- * @param period Pointer to the memory to store the captured PWM period width
- *               (in clock cycles). HW specific.
- * @param pulse Pointer to the memory to store the captured PWM pulse width (in
- *              clock cycles). HW specific.
- * @param timeout Waiting period for the capture to complete.
- *
- * @retval 0 If successful.
- * @retval -EBUSY PWM capture already in progress.
- * @retval -EAGAIN Waiting period timed out.
- * @retval -EIO IO error while capturing.
- * @retval -ERANGE If result is too large.
- */
-__syscall int pwm_pin_capture_cycles(const struct device *dev, uint32_t pwm,
-				     pwm_flags_t flags,
-				     uint32_t *period,
-				     uint32_t *pulse,
-				     k_timeout_t timeout);
 
 /**
  * @brief Get the clock rate (cycles per second) for a single PWM output.
@@ -509,6 +364,151 @@ static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
 
 	return 0;
 }
+
+#if defined(CONFIG_PWM_CAPTURE) || defined(__DOXYGEN__)
+/**
+ * @brief Configure PWM period/pulse width capture for a single PWM input.
+ *
+ * After configuring PWM capture using this function, the capture can be
+ * enabled/disabled using pwm_pin_enable_capture() and
+ * pwm_pin_disable_capture().
+ *
+ * @note This API function cannot be invoked from user space due to the use of a
+ * function callback. In user space, one of the simpler API functions
+ * (pwm_pin_capture_cycles(), pwm_pin_capture_usec(), or
+ * pwm_pin_capture_nsec()) can be used instead.
+ *
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pwm PWM pin.
+ * @param flags PWM capture flags
+ * @param cb Application callback handler function to be called upon capture
+ * @param user_data User data to pass to the application callback handler
+ *                  function
+ *
+ * @retval -EINVAL if invalid function parameters were given
+ * @retval -ENOSYS if PWM capture is not supported or the given flags are not
+ *                  supported
+ * @retval -EIO if IO error occurred while configuring
+ * @retval -EBUSY if PWM capture is already in progress
+ */
+static inline int pwm_pin_configure_capture(const struct device *dev,
+					    uint32_t pwm,
+					    pwm_flags_t flags,
+					    pwm_capture_callback_handler_t cb,
+					    void *user_data)
+{
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
+
+	if (api->pin_configure_capture == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->pin_configure_capture(dev, pwm, flags, cb, user_data);
+}
+#endif /* CONFIG_PWM_CAPTURE */
+
+/**
+ * @brief Enable PWM period/pulse width capture for a single PWM input.
+ *
+ * The PWM pin must be configured using pwm_pin_configure_capture() prior to
+ * calling this function.
+ *
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pwm PWM pin.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL if invalid function parameters were given
+ * @retval -ENOSYS if PWM capture is not supported
+ * @retval -EIO if IO error occurred while enabling PWM capture
+ * @retval -EBUSY if PWM capture is already in progress
+ */
+__syscall int pwm_pin_enable_capture(const struct device *dev, uint32_t pwm);
+
+#ifdef CONFIG_PWM_CAPTURE
+static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
+						uint32_t pwm)
+{
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
+
+	if (api->pin_enable_capture == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->pin_enable_capture(dev, pwm);
+}
+#endif /* CONFIG_PWM_CAPTURE */
+
+/**
+ * @brief Disable PWM period/pulse width capture for a single PWM input.
+ *
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pwm PWM pin.
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL if invalid function parameters were given
+ * @retval -ENOSYS if PWM capture is not supported
+ * @retval -EIO if IO error occurred while disabling PWM capture
+ */
+__syscall int pwm_pin_disable_capture(const struct device *dev, uint32_t pwm);
+
+#ifdef CONFIG_PWM_CAPTURE
+static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
+						 uint32_t pwm)
+{
+	const struct pwm_driver_api *api =
+		(const struct pwm_driver_api *)dev->api;
+
+	if (api->pin_disable_capture == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->pin_disable_capture(dev, pwm);
+}
+#endif /* CONFIG_PWM_CAPTURE */
+
+/**
+ * @brief Capture a single PWM period/pulse width in clock cycles for a single
+ *        PWM input.
+ *
+ * This API function wraps calls to pwm_pin_configure_capture(),
+ * pwm_pin_enable_capture(), and pwm_pin_disable_capture() and passes the
+ * capture result to the caller. The function is blocking until either the PWM
+ * capture is completed or a timeout occurs.
+ *
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pwm PWM pin.
+ * @param flags PWM capture flags.
+ * @param period Pointer to the memory to store the captured PWM period width
+ *               (in clock cycles). HW specific.
+ * @param pulse Pointer to the memory to store the captured PWM pulse width (in
+ *              clock cycles). HW specific.
+ * @param timeout Waiting period for the capture to complete.
+ *
+ * @retval 0 If successful.
+ * @retval -EBUSY PWM capture already in progress.
+ * @retval -EAGAIN Waiting period timed out.
+ * @retval -EIO IO error while capturing.
+ * @retval -ERANGE If result is too large.
+ */
+__syscall int pwm_pin_capture_cycles(const struct device *dev, uint32_t pwm,
+				     pwm_flags_t flags,
+				     uint32_t *period,
+				     uint32_t *pulse,
+				     k_timeout_t timeout);
 
 /**
  * @brief Capture a single PWM period/pulse width in microseconds for a single
