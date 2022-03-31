@@ -249,12 +249,12 @@ static inline int pwm_pin_set_usec(const struct device *dev, uint32_t pwm,
 	}
 
 	period_cycles = (period * cycles_per_sec) / USEC_PER_SEC;
-	if (period_cycles >= ((uint64_t)1 << 32)) {
+	if (period_cycles > UINT32_MAX) {
 		return -ENOTSUP;
 	}
 
 	pulse_cycles = (pulse * cycles_per_sec) / USEC_PER_SEC;
-	if (pulse_cycles >= ((uint64_t)1 << 32)) {
+	if (pulse_cycles > UINT32_MAX) {
 		return -ENOTSUP;
 	}
 
@@ -290,12 +290,12 @@ static inline int pwm_pin_set_nsec(const struct device *dev, uint32_t pwm,
 	}
 
 	period_cycles = (period * cycles_per_sec) / NSEC_PER_SEC;
-	if (period_cycles >= ((uint64_t)1 << 32)) {
+	if (period_cycles > UINT32_MAX) {
 		return -ENOTSUP;
 	}
 
 	pulse_cycles = (pulse * cycles_per_sec) / NSEC_PER_SEC;
-	if (pulse_cycles >= ((uint64_t)1 << 32)) {
+	if (pulse_cycles > UINT32_MAX) {
 		return -ENOTSUP;
 	}
 
