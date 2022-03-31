@@ -11,7 +11,7 @@
  * 212 - sizeof(struct icmsg_buf) - 1 = 199.
  * -1 because internal rd/wr_idx is reserved to mean the buffer is empty.
  */
-static uint8_t memory_area[212];
+static uint8_t memory_area[212] __aligned(4);
 
 static void test_icmsg_buf_ut(void)
 {
