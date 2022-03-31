@@ -767,7 +767,7 @@ static void test_send_invalid_dlc(void)
 
 	frame.dlc = CAN_MAX_DLC + 1;
 
-	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, tx_std_callback_1, NULL);
+	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
 	zassert_equal(err, -EINVAL, "sent a frame with an invalid DLC");
 }
 
@@ -791,21 +791,22 @@ void test_main(void)
 
 	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
+	k_object_access_grant(&can_msgq, k_current_get());
 	k_object_access_grant(can_dev, k_current_get());
 
 	/* Tests without callbacks can run in userspace */
 	ztest_test_suite(can_api_tests,
 			 ztest_unit_test(test_set_loopback),
-			 ztest_unit_test(test_send_and_forget),
+			 ztest_user_unit_test(test_send_and_forget),
 			 ztest_unit_test(test_add_filter),
-			 ztest_unit_test(test_receive_timeout),
+			 ztest_user_unit_test(test_receive_timeout),
 			 ztest_unit_test(test_send_callback),
 			 ztest_unit_test(test_send_receive_std_id),
 			 ztest_unit_test(test_send_receive_ext_id),
 			 ztest_unit_test(test_send_receive_std_id_masked),
 			 ztest_unit_test(test_send_receive_ext_id_masked),
-			 ztest_unit_test(test_send_receive_msgq),
-			 ztest_unit_test(test_send_invalid_dlc),
+			 ztest_user_unit_test(test_send_receive_msgq),
+			 ztest_user_unit_test(test_send_invalid_dlc),
 			 ztest_unit_test(test_send_receive_wrong_id),
 			 ztest_user_unit_test(test_recover));
 	ztest_run_test_suite(can_api_tests);
