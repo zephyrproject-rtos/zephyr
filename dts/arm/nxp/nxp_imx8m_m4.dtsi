@@ -66,9 +66,9 @@
 			reg = <0x30200000 DT_SIZE_K(64)>;
 			interrupts = <64 0>, <65 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW))>;
+						   RDC_DOMAIN_PERM_RW)|\
+				   RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+						   RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -80,9 +80,9 @@
 			reg = <0x30210000 DT_SIZE_K(64)>;
 			interrupts = <66 0>, <67 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW))>;
+						   RDC_DOMAIN_PERM_RW)|\
+				   RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+						   RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -94,9 +94,9 @@
 			reg = <0x30220000 DT_SIZE_K(64)>;
 			interrupts = <68 0>, <69 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW))>;
+						   RDC_DOMAIN_PERM_RW)|\
+				   RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+						   RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -108,9 +108,9 @@
 			reg = <0x30230000 DT_SIZE_K(64)>;
 			interrupts = <70 0>, <71 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW))>;
+						   RDC_DOMAIN_PERM_RW)|\
+				   RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+						   RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -122,9 +122,9 @@
 			reg = <0x30240000 DT_SIZE_K(64)>;
 			interrupts = <72 0>, <73 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW))>;
+						   RDC_DOMAIN_PERM_RW)|\
+				   RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+						   RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_5";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -171,6 +171,15 @@
 			interrupts = <29 3>;
 			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 			label = "UART_4";
+			status = "disabled";
+		};
+
+		mub: mu@30ab0000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x30ab0000 DT_SIZE_K(64)>;
+			interrupts = <97 0>;
+			rdc = < 0xf >;
+			label = "MU_B";
 			status = "disabled";
 		};
 	};
