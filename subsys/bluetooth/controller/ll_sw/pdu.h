@@ -81,6 +81,17 @@
 #define PDU_DC_PAYLOAD_TIME_MIN 328
 #define PDU_DC_PAYLOAD_TIME_MIN_CODED 2704
 
+/* Data channel maximum payload size and time */
+#define PDU_DC_PAYLOAD_SIZE_MAX 251
+
+#if defined(CONFIG_BT_CTLR_DF)
+#define PDU_DC_PAYLOAD_TIME_MAX 2128
+#else
+#define PDU_DC_PAYLOAD_TIME_MAX 2120
+#endif
+
+#define PDU_DC_PAYLOAD_TIME_MAX_CODED 17040
+
 /* Link Layer header size of Data PDU. Assumes pdu_data is packed */
 #define PDU_DC_LL_HEADER_SIZE  (offsetof(struct pdu_data, lldata))
 
