@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WL_CLOCK_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WL_CLOCK_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB_CLOCK_H_
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB1    0x048
@@ -13,25 +13,26 @@
 #define STM32_CLOCK_BUS_APB1    0x058
 #define STM32_CLOCK_BUS_APB1_2  0x05c
 #define STM32_CLOCK_BUS_APB2    0x060
-#define STM32_CLOCK_BUS_APB3    0x064
 
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
-#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB3
+#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB2
 
 /** Peripheral clock sources */
-/* RM0461, §6.4.29 Clock configuration register (RCC_CFGR3) */
+/* RM0434, § Clock configuration register (RCC_CCIPRx) */
 
 /** Fixed clocks  */
 #define STM32_SRC_HSI		0x001
-#define STM32_SRC_LSE		0x002
-#define STM32_SRC_LSI		0x003
-/* #define STM32_SRC_HSI48	0x004 */
+/* #define STM32_SRC_HSI48	0x002 */
+#define STM32_SRC_LSE		0x003
+#define STM32_SRC_LSI		0x004
+#define STM32_SRC_MSI		0x005
 /** System clock */
-#define STM32_SRC_SYSCLK	0x005
+#define STM32_SRC_SYSCLK	0x006
 /** Bus clock */
-#define STM32_SRC_PCLK		0x006
-/** PLL clock */
-#define STM32_SRC_PLLCLK	0x007
+#define STM32_SRC_PCLK		0x007
+/** PLL clocks */
+#define STM32_SRC_PLLCLK	0x008
+/* TODO: PLLSAI clocks */
 
 #define STM32_SRC_CLOCK_MIN	STM32_SRC_HSI
 #define STM32_SRC_CLOCK_MAX	STM32_SRC_PLLCLK
@@ -71,16 +72,14 @@
 /** @brief Device clk sources selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR_REG)
-#define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR_REG)
-#define SPI2_SEL(val)		STM32_CLOCK(val, 3, 8, CCIPR_REG)
 #define LPUART1_SEL(val)	STM32_CLOCK(val, 3, 10, CCIPR_REG)
 #define I2C1_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR_REG)
-#define I2C2_SEL(val)		STM32_CLOCK(val, 3, 14, CCIPR_REG)
 #define I2C3_SEL(val)		STM32_CLOCK(val, 3, 16, CCIPR_REG)
 #define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 18, CCIPR_REG)
 #define LPTIM2_SEL(val)		STM32_CLOCK(val, 3, 20, CCIPR_REG)
-#define LPTIM3_SEL(val)		STM32_CLOCK(val, 3, 22, CCIPR_REG)
+#define SAI1_SEL(val)		STM32_CLOCK(val, 3, 22, CCIPR_REG)
+#define CLK48_SEL(val)		STM32_CLOCK(val, 3, 26, CCIPR_REG)
 #define ADC_SEL(val)		STM32_CLOCK(val, 3, 28, CCIPR_REG)
 #define RNG_SEL(val)		STM32_CLOCK(val, 3, 30, CCIPR_REG)
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WL_CLOCK_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB_CLOCK_H_ */
