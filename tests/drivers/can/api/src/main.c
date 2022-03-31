@@ -580,10 +580,43 @@ static void send_receive(const struct zcan_filter *filter1,
 }
 
 /**
+ * @brief Test getting the CAN core clock rate.
+ */
+static void test_get_core_clock(void)
+{
+	uint32_t rate;
+	int err;
+
+	err = can_get_core_clock(can_dev, &rate);
+	zassert_equal(err, 0, "failed to get CAN core clock rate (err %d)", err);
+	zassert_not_equal(rate, 0, "CAN core clock rate is 0");
+}
+
+/**
+ * @brief Test setting a too high bitrate.
+ */
+static void test_set_bitrate_too_high(void)
+{
+	uint32_t max;
+	int err;
+
+	err = can_get_max_bitrate(can_dev, &max);
+	if (err == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_equal(err, 0, "failed to get max bitrate (err %d)", err);
+	zassert_not_equal(max, 0, "max bitrate is 0");
+
+	err = can_set_bitrate(can_dev, max + 1, max + 1);
+	zassert_equal(err, -ENOTSUP, "too high bitrate accepted");
+}
+
+/**
  * @brief Test configuring the CAN controller for loopback mode.
  *
- * This must be the first test case as it allows the other test cases to
- * send/receive their own frames.
+ * This test case must be run before sending/receiving test cases as it allows
+ * these test cases to send/receive their own frames.
  */
 static void test_set_loopback(void)
 {
@@ -815,6 +848,8 @@ void test_main(void)
 
 	/* Tests without callbacks can run in userspace */
 	ztest_test_suite(can_api_tests,
+			 ztest_user_unit_test(test_get_core_clock),
+			 ztest_user_unit_test(test_set_bitrate_too_high),
 			 ztest_unit_test(test_set_loopback),
 			 ztest_user_unit_test(test_send_and_forget),
 			 ztest_unit_test(test_add_filter),
