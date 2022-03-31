@@ -5,7 +5,6 @@
 menuconfig MCUMGR
 	bool "mcumgr Support"
 	select NET_BUF
-	select TINYCBOR
 	select ZCBOR
 	help
 	  This option enables the mcumgr management library.
