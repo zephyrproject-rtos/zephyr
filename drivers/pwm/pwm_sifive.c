@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
 #include <device.h>
 #include <drivers/pinctrl.h>
 #include <drivers/pwm.h>
+#include <soc.h>
 
 /* Macros */
 
@@ -237,7 +238,7 @@ static const struct pwm_driver_api pwm_sifive_api = {
 	static struct pwm_sifive_data pwm_sifive_data_##n;	\
 	static const struct pwm_sifive_cfg pwm_sifive_cfg_##n = {	\
 			.base = DT_INST_REG_ADDR(n),	\
-			.f_sys = DT_INST_PROP(n, clock_frequency),  \
+			.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,  \
 			.cmpwidth = DT_INST_PROP(n, sifive_compare_width), \
 			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	\
 		};	\

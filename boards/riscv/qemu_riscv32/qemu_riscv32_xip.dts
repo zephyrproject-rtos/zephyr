@@ -29,13 +29,8 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	clock-frequency = <16000000>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
-};
-
-&uart1 {
-	clock-frequency = <16000000>;
 };
 
 &spi0 {
