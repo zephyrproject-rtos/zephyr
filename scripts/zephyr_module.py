@@ -113,25 +113,26 @@ def validate_setting(setting, module_path, filename=None):
 
 def process_module(module):
     module_path = PurePath(module)
-    module_yml = module_path.joinpath('zephyr/module.yml')
 
     # The input is a module if zephyr/module.yml is a valid yaml file
     # or if both zephyr/CMakeLists.txt and zephyr/Kconfig are present.
 
-    if Path(module_yml).is_file():
-        with Path(module_yml).open('r') as f:
-            meta = yaml.safe_load(f.read())
+    for module_yml in [module_path.joinpath('zephyr/module.yml'),
+                       module_path.joinpath('zephyr/module.yaml')]:
+        if Path(module_yml).is_file():
+            with Path(module_yml).open('r') as f:
+                meta = yaml.safe_load(f.read())
 
-        try:
-            pykwalify.core.Core(source_data=meta, schema_data=schema)\
-                .validate()
-        except pykwalify.errors.SchemaError as e:
-            sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
-                     .format(module_yml.as_posix(), e))
+            try:
+                pykwalify.core.Core(source_data=meta, schema_data=schema)\
+                    .validate()
+            except pykwalify.errors.SchemaError as e:
+                sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
+                        .format(module_yml.as_posix(), e))
 
-        meta['name'] = meta.get('name', module_path.name)
-        meta['name-sanitized'] = re.sub('[^a-zA-Z0-9]', '_', meta['name'])
-        return meta
+            meta['name'] = meta.get('name', module_path.name)
+            meta['name-sanitized'] = re.sub('[^a-zA-Z0-9]', '_', meta['name'])
+            return meta
 
     if Path(module_path.joinpath('zephyr/CMakeLists.txt')).is_file() and \
        Path(module_path.joinpath('zephyr/Kconfig')).is_file():
