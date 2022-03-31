@@ -181,7 +181,7 @@ __subsystem struct pwm_driver_api {
  * @param flags Flags for pin configuration (polarity).
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code on failure.
  */
 __syscall int pwm_pin_set_cycles(const struct device *dev, uint32_t pwm,
 				 uint32_t period, uint32_t pulse, pwm_flags_t flags);
@@ -351,7 +351,7 @@ __syscall int pwm_pin_capture_cycles(const struct device *dev, uint32_t pwm,
  *		 HW specific.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code on failure.
  */
 __syscall int pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 				     uint64_t *cycles);
@@ -376,16 +376,19 @@ static inline int z_impl_pwm_get_cycles_per_sec(const struct device *dev,
  * @param flags Flags for pin configuration (polarity).
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -ENOTSUP If requested period or pulse cycles are not supported.
+ * @retval -errno Other negative errno code on failure.
  */
 static inline int pwm_pin_set_usec(const struct device *dev, uint32_t pwm,
 				   uint32_t period, uint32_t pulse,
 				   pwm_flags_t flags)
 {
+	int err;
 	uint64_t period_cycles, pulse_cycles, cycles_per_sec;
 
-	if (pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
-		return -EIO;
+	err = pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec);
+	if (err < 0) {
+		return err;
 	}
 
 	period_cycles = (period * cycles_per_sec) / USEC_PER_SEC;
@@ -412,16 +415,19 @@ static inline int pwm_pin_set_usec(const struct device *dev, uint32_t pwm,
  * @param flags Flags for pin configuration (polarity).
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -ENOTSUP If requested period or pulse cycles are not supported.
+ * @retval -errno Other negative errno code on failure.
  */
 static inline int pwm_pin_set_nsec(const struct device *dev, uint32_t pwm,
 				   uint32_t period, uint32_t pulse,
 				   pwm_flags_t flags)
 {
+	int err;
 	uint64_t period_cycles, pulse_cycles, cycles_per_sec;
 
-	if (pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
-		return -EIO;
+	err = pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec);
+	if (err < 0) {
+		return err;
 	}
 
 	period_cycles = (period * cycles_per_sec) / NSEC_PER_SEC;
@@ -447,17 +453,19 @@ static inline int pwm_pin_set_nsec(const struct device *dev, uint32_t pwm,
  * @param usec Pointer to the memory to store calculated usec.
  *
  * @retval 0 If successful.
- * @retval -EIO If cycles per second cannot be determined.
  * @retval -ERANGE If result is too large.
+ * @retval -errno Other negative errno code on failure.
  */
 static inline int pwm_pin_cycles_to_usec(const struct device *dev, uint32_t pwm,
 					 uint32_t cycles, uint64_t *usec)
 {
+	int err;
 	uint64_t cycles_per_sec;
 	uint64_t temp;
 
-	if (pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
-		return -EIO;
+	err = pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec);
+	if (err < 0) {
+		return err;
 	}
 
 	if (u64_mul_overflow(cycles, (uint64_t)USEC_PER_SEC, &temp)) {
@@ -478,17 +486,19 @@ static inline int pwm_pin_cycles_to_usec(const struct device *dev, uint32_t pwm,
  * @param nsec Pointer to the memory to store the calculated nsec.
  *
  * @retval 0 If successful.
- * @retval -EIO If cycles per second cannot be determined.
  * @retval -ERANGE If result is too large.
+ * @retval -errno Other negative errno code on failure.
  */
 static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
 					 uint32_t cycles, uint64_t *nsec)
 {
+	int err;
 	uint64_t cycles_per_sec;
 	uint64_t temp;
 
-	if (pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
-		return -EIO;
+	err = pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec);
+	if (err < 0) {
+		return err;
 	}
 
 	if (u64_mul_overflow(cycles, (uint64_t)NSEC_PER_SEC, &temp)) {
@@ -526,6 +536,7 @@ static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EIO IO error while capturing.
  * @retval -ERANGE If result is too large.
+ * @retval -errno Other negative errno code on failure.
  */
 static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
 				       pwm_flags_t flags,
@@ -582,6 +593,7 @@ static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EIO IO error while capturing.
  * @retval -ERANGE If result is too large.
+ * @retval -errno Other negative errno code on failure.
  */
 static inline int pwm_pin_capture_nsec(const struct device *dev, uint32_t pwm,
 				       pwm_flags_t flags,
