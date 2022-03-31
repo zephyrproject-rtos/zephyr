@@ -3,6 +3,7 @@
 config UART_NATIVE_POSIX
 	bool "UART driver for native_posix"
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	depends on ARCH_POSIX
 	help
 	  This enables a UART driver for the POSIX ARCH with up to 2 UARTs.
@@ -17,7 +18,7 @@ choice
 	default NATIVE_UART_0_ON_OWN_PTY
 
 config NATIVE_UART_0_ON_OWN_PTY
-	bool "Connect the UART to its own pseudo terminal"
+	bool "Connect UART_0 to its own pseudo terminal"
 	help
 	  Connect this UART to its own pseudoterminal. This is the preferred
 	  option for users who want to use Zephyr's shell.
@@ -25,7 +26,7 @@ config NATIVE_UART_0_ON_OWN_PTY
 	  backend which may use the calling shell standard input/output.
 
 config NATIVE_UART_0_ON_STDINOUT
-	bool "Connect the UART to the invoking shell stdin/stdout"
+	bool "Connect UART_0 to the invoking shell stdin/stdout"
 	help
 	  Connect this UART to the stdin & stdout of the calling shell/terminal
 	  which invoked the native_posix executable. This is good enough for
@@ -37,24 +38,51 @@ config NATIVE_UART_0_ON_STDINOUT
 	  shell interactively, as the default terminal configuration is NOT
 	  appropriate for interactive use.
 
+config NATIVE_UART_0_ON_DEVICE
+	bool "Connect UART_0 to a native device"
+	help
+	  Connect UART_0 to a character device set by the --uart_0_device
+	  command line argument.
+
 endchoice
+
+config UART_NATIVE_POSIX_PORT_1_ENABLE
+	bool "Second UART port"
+	help
+	  Enables a UART_1 port.
+
+if UART_NATIVE_POSIX_PORT_1_ENABLE
+
+choice
+	prompt "Native UART Port 1 connection"
+	default NATIVE_UART_1_ON_OWN_PTY
+
+config NATIVE_UART_1_ON_OWN_PTY
+	bool "Connect UART_1 to its own pseudo terminal"
+	help
+	  Connect UART_1 to its own pseudoterminal. Useful if you need to
+	  have another serial connection to host. This is used for example in
+	  PPP (Point-to-Point Protocol) implementation.
+
+config NATIVE_UART_1_ON_DEVICE
+	bool "Connect UART_1 to a native device"
+	help
+	  Connect UART_1 to a character device set by the --uart_1_device
+	  command line argument.
+
+endchoice
+
+endif # UART_NATIVE_POSIX_PORT_1_ENABLE
 
 config UART_NATIVE_WAIT_PTS_READY_ENABLE
 	bool "Support waiting for pseudo terminal client readiness"
-	depends on NATIVE_UART_0_ON_OWN_PTY || UART_NATIVE_POSIX_PORT_1_ENABLE
+	depends on NATIVE_UART_0_ON_OWN_PTY || NATIVE_UART_1_ON_OWN_PTY
 	help
 	  When this option is selected a new command line switch is provided:
 	  ``--wait_uart``
 	  When ``--wait_uart`` is used, writes to the UART will be held until a
 	  client has connected to the slave side of the pseudoterminal.
 	  Otherwise writes are sent irrespectively.
-
-config UART_NATIVE_POSIX_PORT_1_ENABLE
-	bool "Second UART port"
-	help
-	  Useful if you need to have another serial connection to host.
-	  This is used for example in PPP (Point-to-Point Protocol)
-	  implementation.
 
 config NATIVE_UART_AUTOATTACH_DEFAULT_CMD
 	string "Default command to attach the UART to a new terminal"

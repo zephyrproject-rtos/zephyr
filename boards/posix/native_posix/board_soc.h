@@ -26,6 +26,8 @@ extern "C" {
 #define TIMER_TICK_IRQ 0
 #define OFFLOAD_SW_IRQ 1
 #define COUNTER_EVENT_IRQ 2
+#define UART0_IRQ 3
+#define UART1_IRQ 4
 
 /*
  * This interrupt will awake the CPU if IRQs are not locked,
