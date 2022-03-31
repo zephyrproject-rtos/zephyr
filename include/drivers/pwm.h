@@ -97,8 +97,7 @@ typedef void (*pwm_capture_callback_handler_t)(const struct device *dev,
 					       uint32_t pwm,
 					       uint32_t period_cycles,
 					       uint32_t pulse_cycles,
-					       int status,
-					       void *user_data);
+					       int status, void *user_data);
 
 /** @cond INTERNAL_HIDDEN */
 /**
@@ -114,8 +113,7 @@ typedef int (*pwm_pin_set_t)(const struct device *dev, uint32_t pwm,
  * @see pwm_get_cycles_per_sec() for argument description
  */
 typedef int (*pwm_get_cycles_per_sec_t)(const struct device *dev,
-					uint32_t pwm,
-					uint64_t *cycles);
+					uint32_t pwm, uint64_t *cycles);
 
 #ifdef CONFIG_PWM_CAPTURE
 /**
@@ -123,8 +121,7 @@ typedef int (*pwm_get_cycles_per_sec_t)(const struct device *dev,
  * @see pwm_pin_configure_capture() for argument description.
  */
 typedef int (*pwm_pin_configure_capture_t)(const struct device *dev,
-					   uint32_t pwm,
-					   pwm_flags_t flags,
+					   uint32_t pwm, pwm_flags_t flags,
 					   pwm_capture_callback_handler_t cb,
 					   void *user_data);
 /**
@@ -184,7 +181,8 @@ __subsystem struct pwm_driver_api {
  * @retval -errno Negative errno code on failure.
  */
 __syscall int pwm_pin_set_cycles(const struct device *dev, uint32_t pwm,
-				 uint32_t period, uint32_t pulse, pwm_flags_t flags);
+				 uint32_t period, uint32_t pulse,
+				 pwm_flags_t flags);
 
 static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
 					    uint32_t pwm,
@@ -239,7 +237,9 @@ static inline int pwm_pin_set_usec(const struct device *dev, uint32_t pwm,
 				   pwm_flags_t flags)
 {
 	int err;
-	uint64_t period_cycles, pulse_cycles, cycles_per_sec;
+	uint64_t pulse_cycles;
+	uint64_t period_cycles;
+	uint64_t cycles_per_sec;
 
 	err = pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec);
 	if (err < 0) {
@@ -278,7 +278,9 @@ static inline int pwm_pin_set_nsec(const struct device *dev, uint32_t pwm,
 				   pwm_flags_t flags)
 {
 	int err;
-	uint64_t period_cycles, pulse_cycles, cycles_per_sec;
+	uint64_t pulse_cycles;
+	uint64_t period_cycles;
+	uint64_t cycles_per_sec;
 
 	err = pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec);
 	if (err < 0) {
@@ -315,8 +317,8 @@ static inline int pwm_pin_cycles_to_usec(const struct device *dev, uint32_t pwm,
 					 uint32_t cycles, uint64_t *usec)
 {
 	int err;
-	uint64_t cycles_per_sec;
 	uint64_t temp;
+	uint64_t cycles_per_sec;
 
 	err = pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec);
 	if (err < 0) {
@@ -348,8 +350,8 @@ static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
 					 uint32_t cycles, uint64_t *nsec)
 {
 	int err;
-	uint64_t cycles_per_sec;
 	uint64_t temp;
+	uint64_t cycles_per_sec;
 
 	err = pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec);
 	if (err < 0) {
@@ -395,8 +397,7 @@ static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
  * @retval -EBUSY if PWM capture is already in progress
  */
 static inline int pwm_pin_configure_capture(const struct device *dev,
-					    uint32_t pwm,
-					    pwm_flags_t flags,
+					    uint32_t pwm, pwm_flags_t flags,
 					    pwm_capture_callback_handler_t cb,
 					    void *user_data)
 {
@@ -505,10 +506,8 @@ static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
  * @retval -ERANGE If result is too large.
  */
 __syscall int pwm_pin_capture_cycles(const struct device *dev, uint32_t pwm,
-				     pwm_flags_t flags,
-				     uint32_t *period,
-				     uint32_t *pulse,
-				     k_timeout_t timeout);
+				     pwm_flags_t flags, uint32_t *period,
+				     uint32_t *pulse, k_timeout_t timeout);
 
 /**
  * @brief Capture a single PWM period/pulse width in microseconds for a single
@@ -539,14 +538,12 @@ __syscall int pwm_pin_capture_cycles(const struct device *dev, uint32_t pwm,
  * @retval -errno Other negative errno code on failure.
  */
 static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
-				       pwm_flags_t flags,
-				       uint64_t *period,
-				       uint64_t *pulse,
-				       k_timeout_t timeout)
+				       pwm_flags_t flags, uint64_t *period,
+				       uint64_t *pulse, k_timeout_t timeout)
 {
-	uint32_t period_cycles;
-	uint32_t pulse_cycles;
 	int err;
+	uint32_t pulse_cycles;
+	uint32_t period_cycles;
 
 	err = pwm_pin_capture_cycles(dev, pwm, flags, &period_cycles,
 				     &pulse_cycles, timeout);
@@ -596,14 +593,12 @@ static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
  * @retval -errno Other negative errno code on failure.
  */
 static inline int pwm_pin_capture_nsec(const struct device *dev, uint32_t pwm,
-				       pwm_flags_t flags,
-				       uint64_t *period,
-				       uint64_t *pulse,
-				       k_timeout_t timeout)
+				       pwm_flags_t flags, uint64_t *period,
+				       uint64_t *pulse, k_timeout_t timeout)
 {
-	uint32_t period_cycles;
-	uint32_t pulse_cycles;
 	int err;
+	uint32_t pulse_cycles;
+	uint32_t period_cycles;
 
 	err = pwm_pin_capture_cycles(dev, pwm, flags, &period_cycles,
 				     &pulse_cycles, timeout);
