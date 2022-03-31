@@ -53,9 +53,13 @@ config FS_MGMT_MAX_OFFSET_LEN
 	  the selection made in FS_MGMT_MAX_FILE_SIZE menu.
 
 config FS_MGMT_UL_CHUNK_SIZE
-	int "Maximum chunk size for file uploads"
+	int "Maximum chunk size for file uploads (DEPRECATED)"
 	default 512
 	help
+	  DEPRECATED: The chunk is now directly read from received frame buffer
+	  and is no longer copied first into intermediate buffer so the actual
+	  file chunk is as much as MCUMGR_BUF_SIZE can take, less the other
+	  SMP fields.
 	  Limits the maximum chunk size for file uploads, in bytes.  A buffer of
 	  this size gets allocated on the stack during handling of a file upload command.
 
