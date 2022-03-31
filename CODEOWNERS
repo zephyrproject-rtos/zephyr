@@ -771,7 +771,7 @@ scripts/gen_image_info.py                 @tejlmand
 /subsys/testsuite/ztest/*/ztress*         @nordic-krch
 /subsys/timing/                           @nashif @dcpleung
 /subsys/usb/                              @jfischer-no
-/subsys/usb/class/dfu/usb_dfu.c           @nvlsianpu
+/subsys/usb/device/class/dfu/usb_dfu.c    @nvlsianpu
 /tests/                                   @nashif
 /tests/arch/arm/                          @ioannisg @stephanosio
 /tests/benchmarks/cmsis_dsp/              @stephanosio
