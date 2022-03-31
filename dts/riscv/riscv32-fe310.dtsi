@@ -11,19 +11,11 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cpu: cpu@0 {
-			clock-frequency = <0>;
 			compatible = "sifive,rocket0", "riscv";
 			device_type = "cpu";
-			i-cache-block-size = <64>;
-			i-cache-sets = <128>;
-			i-cache-size = <16384>;
-			next-level-cache = <&modeselect &maskrom &otp &spi0>;
 			reg = <0>;
 			riscv,isa = "rv32imac";
-			sifive,dtim = <&dtim>;
-			sifive,itim = <&itim>;
 			status = "okay";
-			timebase-frequency = <32768>;
 			hlic: interrupt-controller {
 				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
