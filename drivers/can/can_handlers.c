@@ -139,7 +139,7 @@ static inline void z_vrfy_can_remove_rx_filter(const struct device *dev, int fil
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, remove_rx_filter));
 
-	z_impl_can_remove_rx_filter((const struct device *)dev, (int)filter_id);
+	z_impl_can_remove_rx_filter(dev, filter_id);
 }
 #include <syscalls/can_remove_rx_filter_mrsh.c>
 
