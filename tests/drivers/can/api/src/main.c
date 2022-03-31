@@ -784,6 +784,25 @@ static void test_recover(void)
 	zassert_equal(err, 0, "failed to recover (err %d)", err);
 }
 
+static void test_get_state(void)
+{
+	struct can_bus_err_cnt err_cnt;
+	enum can_state state;
+	int err;
+
+	err = can_get_state(can_dev, NULL, NULL);
+	zassert_equal(err, 0, "failed to get CAN state without destinations (err %d)", err);
+
+	err = can_get_state(can_dev, &state, NULL);
+	zassert_equal(err, 0, "failed to get CAN state (err %d)", err);
+
+	err = can_get_state(can_dev, NULL, &err_cnt);
+	zassert_equal(err, 0, "failed to get CAN error counters (err %d)", err);
+
+	err = can_get_state(can_dev, &state, &err_cnt);
+	zassert_equal(err, 0, "failed to get CAN state + error counters (err %d)", err);
+}
+
 void test_main(void)
 {
 	k_sem_init(&rx_callback_sem, 0, 2);
@@ -808,6 +827,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_send_receive_msgq),
 			 ztest_user_unit_test(test_send_invalid_dlc),
 			 ztest_unit_test(test_send_receive_wrong_id),
-			 ztest_user_unit_test(test_recover));
+			 ztest_user_unit_test(test_recover),
+			 ztest_user_unit_test(test_get_state));
 	ztest_run_test_suite(can_api_tests);
 }
