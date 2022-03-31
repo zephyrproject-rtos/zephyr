@@ -2275,7 +2275,6 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_NET_MGMT_EVENT \
                          CONFIG_NET_TCP \
                          CONFIG_NET_UDP \
-                         CONFIG_PWM_CAPTURE \
                          CONFIG_SCHED_CPU_MASK \
                          CONFIG_SCHED_DEADLINE \
                          CONFIG_SCHED_DEADLINE \
