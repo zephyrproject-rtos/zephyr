@@ -84,7 +84,7 @@
 #define CCIPR2_REG		0xE4
 #define CCIPR3_REG		0xE8
 
-/** @brief Device clk sources selection helpers (RM0399.pdf) */
+/** @brief Device clk sources selection helpers */
 /** CCIPR1 devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR1_REG)
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR1_REG)
@@ -110,8 +110,6 @@
 #define SDMMC_SEL(val)		STM32_CLOCK(val, 1, 14, CCIPR2_REG)
 #define OCTOSPI_SEL(val)	STM32_CLOCK(val, 3, 20, CCIPR2_REG)
 /** CCIPR3 devices */
-
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_ */
 #define LPUART1_SEL(val)	STM32_CLOCK(val, 7, 0, CCIPR3_REG)
 #define SPI3_SEL(val)		STM32_CLOCK(val, 3, 3, CCIPR3_REG)
 #define I2C3_SEL(val)		STM32_CLOCK(val, 3, 6, CCIPR3_REG)
@@ -120,3 +118,5 @@
 #define ADCDAC_SEL(val)		STM32_CLOCK(val, 7, 12, CCIPR3_REG)
 #define DAC1_SEL(val)		STM32_CLOCK(val, 1, 15, CCIPR3_REG)
 #define ADF1_SEL(val)		STM32_CLOCK(val, 7, 16, CCIPR3_REG)
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_ */
