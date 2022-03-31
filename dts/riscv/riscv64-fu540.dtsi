@@ -17,7 +17,7 @@
 		#size-cells = <0>;
 
 		cpu: cpu@0 {
-			compatible = "sifive,e51", "riscv";
+			compatible = "riscv,sifive-e51";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv64imac";
