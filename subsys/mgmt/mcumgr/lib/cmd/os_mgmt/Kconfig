@@ -107,10 +107,14 @@ config OS_MGMT_ECHO
 if OS_MGMT_ECHO
 
 config OS_MGMT_ECHO_LENGTH
-	int "Echo buffer"
+	int "Echo buffer (DEPRECATED)"
 	default 128
 	help
-	  Size of echo buffer in bytes.
+	  DEPRECATED: The echo sentence is no longer copied into intermediate
+	  buffer, instead a transport buffer is used to directly copy echo
+	  sentence to response. Echo may still respond with not enough
+	  memory error, in case when it would not be possible to fit source
+	  sentence into response buffer limited by MCUMGR_BUF_SIZE.
 
 endif
 
