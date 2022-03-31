@@ -75,14 +75,6 @@ extern "C" {
 typedef uint16_t pwm_flags_t;
 
 /**
- * @brief Callback API upon setting the pin
- * @see pwm_pin_set_cycles() for argument description.
- */
-typedef int (*pwm_pin_set_t)(const struct device *dev, uint32_t pwm,
-			     uint32_t period_cycles, uint32_t pulse_cycles,
-			     pwm_flags_t flags);
-
-/**
  * @brief PWM capture callback handler function signature
  *
  * @note The callback handler will be called in interrupt context.
@@ -108,6 +100,16 @@ typedef void (*pwm_capture_callback_handler_t)(const struct device *dev,
 					       int status,
 					       void *user_data);
 
+/** @cond INTERNAL_HIDDEN */
+/**
+ * @brief Callback API upon setting the pin
+ * @see pwm_pin_set_cycles() for argument description.
+ */
+typedef int (*pwm_pin_set_t)(const struct device *dev, uint32_t pwm,
+			     uint32_t period_cycles, uint32_t pulse_cycles,
+			     pwm_flags_t flags);
+
+#ifdef CONFIG_PWM_CAPTURE
 /**
  * @brief Callback API upon configuring PWM pin capture
  * @see pwm_pin_configure_capture() for argument description.
@@ -130,6 +132,7 @@ typedef int (*pwm_pin_enable_capture_t)(const struct device *dev,
  */
 typedef int (*pwm_pin_disable_capture_t)(const struct device *dev,
 					 uint32_t pwm);
+#endif /* CONFIG_PWM_CAPTURE */
 
 /**
  * @brief Callback API upon getting cycles per second
@@ -149,6 +152,7 @@ __subsystem struct pwm_driver_api {
 #endif /* CONFIG_PWM_CAPTURE */
 	pwm_get_cycles_per_sec_t get_cycles_per_sec;
 };
+/** @endcond */
 
 /**
  * @brief Set the period and pulse width for a single PWM output.
