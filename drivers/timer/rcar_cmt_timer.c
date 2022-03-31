@@ -8,7 +8,7 @@
 #include <soc.h>
 #include <drivers/timer/system_timer.h>
 #include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
+#include <drivers/clock_control/renesas-cpg-mssr.h>
 
 #define DT_DRV_COMPAT renesas_rcar_cmt
 

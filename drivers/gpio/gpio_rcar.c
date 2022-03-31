@@ -13,7 +13,7 @@
 #include <init.h>
 #include <drivers/gpio.h>
 #include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
+#include <drivers/clock_control/renesas-cpg-mssr.h>
 
 #include "gpio_utils.h"
 

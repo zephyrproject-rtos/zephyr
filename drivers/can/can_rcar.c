@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <drivers/can.h>
 #include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
+#include <drivers/clock_control/renesas-cpg-mssr.h>
 #include <drivers/pinctrl.h>
 #include <logging/log.h>
 

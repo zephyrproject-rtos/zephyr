@@ -10,7 +10,7 @@
 #include <soc.h>
 #include <clock_soc.h>
 #include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
+#include <drivers/clock_control/renesas-cpg-mssr.h>
 #include <dt-bindings/clock/renesas/renesas-cpg-mssr.h>
 
 struct rcar_mssr_config {
