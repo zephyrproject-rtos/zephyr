@@ -184,10 +184,10 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
-	dt_val = STM32U5_CLOCK_VAL_GET(pclken->enr) <<
-					STM32U5_CLOCK_SHIFT_GET(pclken->enr);
+	dt_val = STM32_CLOCK_VAL_GET(pclken->enr) <<
+					STM32_CLOCK_SHIFT_GET(pclken->enr);
 	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) +
-					STM32U5_CLOCK_REG_GET(pclken->enr));
+					STM32_CLOCK_REG_GET(pclken->enr));
 	reg_val = *reg;
 	reg_val |= dt_val;
 	*reg = reg_val;
