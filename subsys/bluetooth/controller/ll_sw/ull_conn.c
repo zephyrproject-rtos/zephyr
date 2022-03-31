@@ -7872,16 +7872,50 @@ void ull_dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 	return dle_max_time_get(conn, max_rx_time, max_tx_time);
 }
 
+static bool dle_remote_valid(struct ll_conn *conn)
+{
+	const struct data_pdu_length *dle = &conn->lll.dle.remote;
+
+	if (!IN_RANGE(dle->max_rx_octets, PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_PAYLOAD_SIZE_MAX)) {
+		return false;
+	}
+
+	if (!IN_RANGE(dle->max_tx_octets, PDU_DC_PAYLOAD_SIZE_MIN, PDU_DC_PAYLOAD_SIZE_MAX)) {
+		return false;
+	}
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	if (!IN_RANGE(dle->max_rx_time, PDU_DC_PAYLOAD_TIME_MIN, PDU_DC_PAYLOAD_TIME_MAX_CODED)) {
+		return false;
+	}
+
+	if (!IN_RANGE(dle->max_tx_time, PDU_DC_PAYLOAD_TIME_MIN, PDU_DC_PAYLOAD_TIME_MAX_CODED)) {
+		return false;
+	}
+#else
+	if (!IN_RANGE(dle->max_rx_time, PDU_DC_PAYLOAD_TIME_MIN, PDU_DC_PAYLOAD_TIME_MAX)) {
+		return false;
+	}
+
+	if (!IN_RANGE(dle->max_tx_time, PDU_DC_PAYLOAD_TIME_MIN, PDU_DC_PAYLOAD_TIME_MAX)) {
+		return false;
+	}
+#endif /* CONFIG_BT_CTLR_PHY */
+
+	return true;
+}
+
 uint8_t ull_dle_update_eff(struct ll_conn *conn)
 {
 	uint8_t dle_changed = 0;
+	bool remote_valid = dle_remote_valid(conn);
 
-	const uint16_t eff_tx_octets =
+	const uint16_t eff_tx_octets = remote_valid ?
 		MAX(MIN(conn->lll.dle.local.max_tx_octets, conn->lll.dle.remote.max_rx_octets),
-		    PDU_DC_PAYLOAD_SIZE_MIN);
-	const uint16_t eff_rx_octets =
+		    PDU_DC_PAYLOAD_SIZE_MIN) : conn->lll.dle.local.max_tx_octets;
+	const uint16_t eff_rx_octets = remote_valid ?
 		MAX(MIN(conn->lll.dle.local.max_rx_octets, conn->lll.dle.remote.max_tx_octets),
-		    PDU_DC_PAYLOAD_SIZE_MIN);
+		    PDU_DC_PAYLOAD_SIZE_MIN) : conn->lll.dle.local.max_rx_octets;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	unsigned int min_eff_tx_time = (conn->lll.phy_tx == PHY_CODED) ?
@@ -7889,12 +7923,12 @@ uint8_t ull_dle_update_eff(struct ll_conn *conn)
 	unsigned int min_eff_rx_time = (conn->lll.phy_rx == PHY_CODED) ?
 			PDU_DC_PAYLOAD_TIME_MIN_CODED : PDU_DC_PAYLOAD_TIME_MIN;
 
-	const uint16_t eff_tx_time =
+	const uint16_t eff_tx_time = remote_valid ?
 		MAX(MIN(conn->lll.dle.local.max_tx_time, conn->lll.dle.remote.max_rx_time),
-		    min_eff_tx_time);
-	const uint16_t eff_rx_time =
+		    min_eff_tx_time) : conn->lll.dle.local.max_tx_time;
+	const uint16_t eff_rx_time = remote_valid ?
 		MAX(MIN(conn->lll.dle.local.max_rx_time, conn->lll.dle.remote.max_tx_time),
-		    min_eff_rx_time);
+		    min_eff_rx_time) : conn->lll.dle.local.max_rx_time;
 
 	if (eff_tx_time != conn->lll.dle.eff.max_tx_time) {
 		conn->lll.dle.eff.max_tx_time = eff_tx_time;
