@@ -263,11 +263,16 @@ int log_mem_get_usage(uint32_t *buf_size, uint32_t *usage);
  */
 int log_mem_get_max_usage(uint32_t *max);
 
-#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL) && !defined(CONFIG_LOG_FRONTEND_ONLY)
+#if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
-#define LOG_INIT() log_init()
 #define LOG_PANIC() log_panic()
+#if defined(CONFIG_LOG_FRONTEND_ONLY)
+#define LOG_INIT() 0
+#define LOG_PROCESS() false
+#else /* !CONFIG_LOG_FRONTEND_ONLY */
+#define LOG_INIT() log_init()
 #define LOG_PROCESS() log_process(false)
+#endif /* !CONFIG_LOG_FRONTEND_ONLY */
 #else
 #define LOG_CORE_INIT() do { } while (false)
 #define LOG_INIT() 0
