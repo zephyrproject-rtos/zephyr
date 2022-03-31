@@ -1,0 +1,21 @@
+# STM32H745I-Disco board configuration
+# Copyright (c) 2022 Systerel (https://www.systerel.fr)
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32H745I_DISCO_M7 || BOARD_STM32H745I_DISCO_M4
+
+config BOARD
+	default "stm32h745i_disco_m7" if BOARD_STM32H745I_DISCO_M7
+	default "stm32h745i_disco_m4" if BOARD_STM32H745I_DISCO_M4
+
+config STM32H7_DUAL_CORE
+	default y
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_STM32H745I_DISCO_M7 or BOARD_STM32H745I_DISCO_M4

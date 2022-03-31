@@ -1,0 +1,14 @@
+# STM32H745I-Disco board configuration
+# Copyright (c) 2022 Systerel (https://www.systerel.fr)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H745I_DISCO_M7
+	bool "STM32H745I Discovery Development Board"
+	depends on SOC_STM32H745XX
+	select CPU_CORTEX_M7
+
+config BOARD_STM32H745I_DISCO_M4
+	bool "STM32H745I Discovery Development Board"
+	depends on SOC_STM32H745XX
+	select CPU_CORTEX_M4
+

@@ -1,0 +1,19 @@
+identifier: stm32h745i_disco_m7
+name: STM32 H745I-DISCO
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 1024
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - uart
+  - gpio
+  - counter
+  - i2c
+  - pwm
+  - netif:eth
