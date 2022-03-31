@@ -4,7 +4,7 @@ CONFIG_SOC_SERIES_STM32H7X=y
 CONFIG_SOC_STM32H745XX=y
 
 # Board config should be specified since there are 2 possible targets
-CONFIG_BOARD_STM32H745I_DISCO_M4=n
+CONFIG_BOARD_STM32H745I_DISCO_M4=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y
