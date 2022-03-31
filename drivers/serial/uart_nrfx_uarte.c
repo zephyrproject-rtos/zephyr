@@ -379,15 +379,19 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 	case 28800:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_28800;
 		break;
+#if defined(UARTE_BAUDRATE_BAUDRATE_Baud31250)
 	case 31250:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_31250;
 		break;
+#endif
 	case 38400:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_38400;
 		break;
+#if defined(UARTE_BAUDRATE_BAUDRATE_Baud56000)
 	case 56000:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_56000;
 		break;
+#endif
 	case 57600:
 		nrf_baudrate = NRF_UARTE_BAUDRATE_57600;
 		break;
