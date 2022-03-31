@@ -7,7 +7,7 @@
 
 
 #include <arm/armv7-m.dtsi>
-#include <zephyr/dt-bindings/clock/stm32l4_clock.h>
+#include <zephyr/dt-bindings/clock/stm32g4_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -51,9 +51,8 @@
 
 		clk_lse: clk-lse {
 			#clock-cells = <0>;
-			compatible = "st,stm32-lse-clock";
+			compatible = "fixed-clock";
 			clock-frequency = <32768>;
-			driving-capability = <0>;
 			status = "disabled";
 		};
 
@@ -354,7 +353,7 @@
 		};
 
 		can {
-			compatible = "bosch,m_can-base";
+			compatible = "bosch,m-can-base";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			std-filter-elements = <28>;
