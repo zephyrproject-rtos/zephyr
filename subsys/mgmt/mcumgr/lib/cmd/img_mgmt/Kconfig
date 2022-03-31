@@ -13,10 +13,14 @@ menuconfig MCUMGR_CMD_IMG_MGMT
 
 if MCUMGR_CMD_IMG_MGMT
 config IMG_MGMT_UL_CHUNK_SIZE
-	int "Maximum chunk size for image uploads"
+	int "Maximum chunk size for image uploads (DEPRECATED)"
 	default 512
 	depends on MCUMGR_CMD_IMG_MGMT
 	help
+	  DEPRECATED: The mcumgr no longer copies chunk of file into intermediate
+	  buffer, instead the request transport buffer is used directly to
+	  process image chunk.
+
 	  Limits the maximum chunk size for image uploads, in bytes.  A buffer of
 	  this size gets allocated on the stack during handling of a image upload
 	  command.
