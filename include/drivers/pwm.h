@@ -21,10 +21,12 @@
  */
 
 #include <errno.h>
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <sys/math_extras.h>
+#include <stdint.h>
+
 #include <device.h>
+#include <sys/math_extras.h>
+#include <toolchain.h>
+
 #include <dt-bindings/pwm/pwm.h>
 
 #ifdef __cplusplus
