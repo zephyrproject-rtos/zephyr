@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/byteorder.h>
 #include <string.h>
 
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <mgmt/mcumgr/buf.h>
-#include "mgmt/endian.h"
 #include "mgmt/mgmt.h"
 
 static mgmt_on_evt_cb evt_cb;
@@ -150,15 +150,15 @@ mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
 void
 mgmt_ntoh_hdr(struct mgmt_hdr *hdr)
 {
-	hdr->nh_len = ntohs(hdr->nh_len);
-	hdr->nh_group = ntohs(hdr->nh_group);
+	hdr->nh_len = sys_be16_to_cpu(hdr->nh_len);
+	hdr->nh_group = sys_be16_to_cpu(hdr->nh_group);
 }
 
 void
 mgmt_hton_hdr(struct mgmt_hdr *hdr)
 {
-	hdr->nh_len = htons(hdr->nh_len);
-	hdr->nh_group = htons(hdr->nh_group);
+	hdr->nh_len = sys_cpu_to_be16(hdr->nh_len);
+	hdr->nh_group = sys_cpu_to_be16(hdr->nh_group);
 }
 
 void
