@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include <net/buf.h>
-#include "mgmt/endian.h"
 #include <mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
