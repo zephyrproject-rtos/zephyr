@@ -9,7 +9,6 @@
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <mgmt/mcumgr/buf.h>
-#include "tinycbor/cbor.h"
 #include "mgmt/endian.h"
 #include "mgmt/mgmt.h"
 
@@ -146,18 +145,6 @@ mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
 #endif
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
-}
-
-int
-mgmt_err_from_cbor(int cbor_status)
-{
-	switch (cbor_status) {
-	case CborNoError:
-		return MGMT_ERR_EOK;
-	case CborErrorOutOfMemory:
-		return MGMT_ERR_ENOMEM;
-	}
-	return MGMT_ERR_EUNKNOWN;
 }
 
 void
