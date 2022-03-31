@@ -455,7 +455,7 @@ static ALWAYS_INLINE void clock_init(void)
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_0, false);
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_1, false);
 
-#ifdef CONFIG_SEGGER_RTT_SECTION_DTCM
+#if !defined(CONFIG_PM)
 	/* Enable the AHB clock while the CM7 is sleeping to allow debug access
 	 * to TCM
 	 */
