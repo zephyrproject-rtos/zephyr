@@ -30,9 +30,6 @@ enum bt_audio_state {
 	BT_AUDIO_EP_STATE_RELEASING =        0x06,
 };
 
-/* Unbind ISO channel */
-int bt_audio_cig_terminate(struct bt_audio_stream *stream);
-
 /* Connect ISO channel */
 int bt_audio_stream_connect(struct bt_audio_stream *stream);
 
