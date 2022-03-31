@@ -550,17 +550,17 @@ static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
 
 	err = pwm_pin_capture_cycles(dev, pwm, flags, &period_cycles,
 				     &pulse_cycles, timeout);
-	if (err) {
+	if (err < 0) {
 		return err;
 	}
 
 	err = pwm_pin_cycles_to_usec(dev, pwm, period_cycles, period);
-	if (err) {
+	if (err < 0) {
 		return err;
 	}
 
 	err = pwm_pin_cycles_to_usec(dev, pwm, pulse_cycles, pulse);
-	if (err) {
+	if (err < 0) {
 		return err;
 	}
 
@@ -607,17 +607,17 @@ static inline int pwm_pin_capture_nsec(const struct device *dev, uint32_t pwm,
 
 	err = pwm_pin_capture_cycles(dev, pwm, flags, &period_cycles,
 				     &pulse_cycles, timeout);
-	if (err) {
+	if (err < 0) {
 		return err;
 	}
 
 	err = pwm_pin_cycles_to_nsec(dev, pwm, period_cycles, period);
-	if (err) {
+	if (err < 0) {
 		return err;
 	}
 
 	err = pwm_pin_cycles_to_nsec(dev, pwm, pulse_cycles, pulse);
-	if (err) {
+	if (err < 0) {
 		return err;
 	}
 
