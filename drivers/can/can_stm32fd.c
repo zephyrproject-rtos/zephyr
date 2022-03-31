@@ -154,12 +154,14 @@ static int can_stm32fd_get_max_bitrate(const struct device *dev, uint32_t *max_b
 	return 0;
 }
 
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 static int can_stm32fd_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 
 	return can_mcan_recover(&cfg->mcan_cfg, timeout);
 }
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 static void can_stm32fd_line_0_isr(const struct device *dev)
 {
