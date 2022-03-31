@@ -48,7 +48,8 @@ static inline int z_vrfy_can_get_core_clock(const struct device *dev,
 static inline int z_vrfy_can_get_max_bitrate(const struct device *dev,
 					     uint32_t *max_bitrate)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_max_bitrate));
+	/* Optional API function */
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(max_bitrate, sizeof(*max_bitrate)));
 
 	return z_impl_can_get_max_bitrate(dev, max_bitrate);
