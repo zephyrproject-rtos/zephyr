@@ -20,31 +20,11 @@ static int entropy_bt_init(const struct device *dev)
 static int entropy_bt_get_entropy(const struct device *dev,
 				  uint8_t *buffer, uint16_t length)
 {
-	struct bt_hci_rp_le_rand *rp;
-	struct net_buf *rsp;
-	int req, ret;
-
 	if (!bt_is_ready()) {
 		return -EAGAIN;
 	}
 
-	while (length > 0) {
-		/* Number of bytes to fill on this iteration */
-		req = MIN(length, sizeof(rp->rand));
-		/* Request the next 8 bytes over HCI */
-		ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
-		if (ret) {
-			return ret;
-		}
-		/* Copy random data into buffer */
-		rp = (void *)rsp->data;
-		memcpy(buffer, rp->rand, req);
-
-		net_buf_unref(rsp);
-		buffer += req;
-		length -= req;
-	}
-	return 0;
+	return bt_hci_le_rand(buffer, length);
 }
 
 /* HCI commands cannot be run from an interrupt context */
