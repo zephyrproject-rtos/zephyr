@@ -8,6 +8,11 @@
 #include <init.h>
 #include "fe310_prci.h"
 
+BUILD_ASSERT(MHZ(16) == DT_PROP(DT_NODELABEL(coreclk), clock_frequency),
+	"Unsupported CORECLK frequency");
+BUILD_ASSERT(DT_PROP(DT_NODELABEL(tlclk), clock_div) == 1,
+	"Unsupported TLCLK divider");
+
 /* Selects the 16MHz oscillator on the HiFive1 board, which provides a clock
  * that's accurate enough to actually drive serial ports off of.
  */
