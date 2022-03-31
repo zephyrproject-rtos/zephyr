@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
+#include <net/loopback.h>
 
 #include <net/dummy.h>
 
@@ -59,6 +60,20 @@ static void loopback_init(struct net_if *iface)
 		}
 	}
 }
+
+#ifdef CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP
+static float loopback_packet_drop_ratio = 0.0f;
+static float loopback_packet_drop_state = 0.0f;
+
+int loopback_set_packet_drop_ratio(float ratio)
+{
+	if (ratio < 0.0f || ratio > 1.0f) {
+		return -EINVAL;
+	}
+	loopback_packet_drop_ratio = ratio;
+	return 0;
+}
+#endif
 
 static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 {
@@ -103,6 +118,23 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 		goto out;
 	}
 
+#ifdef CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP
+	/* Drop packets based on the loopback_packet_drop_ratio
+	 * a ratio of 0.2 will drop one every 5 packets
+	 */
+	loopback_packet_drop_state += loopback_packet_drop_ratio;
+	if (loopback_packet_drop_state >= 1.0f) {
+		/* Administrate we dropped a packet */
+		loopback_packet_drop_state -= 1.0f;
+
+		/* Clean up the packet */
+		net_pkt_unref(cloned);
+		/* Pretent everything was fine */
+		res = 0;
+
+		goto out;
+	}
+#endif
 	res = net_recv_data(net_pkt_iface(cloned), cloned);
 	if (res < 0) {
 		LOG_ERR("Data receive failed.");
