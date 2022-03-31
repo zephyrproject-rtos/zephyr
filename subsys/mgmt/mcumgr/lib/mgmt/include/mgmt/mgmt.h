@@ -8,7 +8,6 @@
 #define H_MGMT_MGMT_
 
 #include <inttypes.h>
-#include "tinycbor/cbor.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -339,15 +338,6 @@ const struct mgmt_handler *mgmt_find_handler(uint16_t group_id, uint16_t command
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */
 int mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int status);
-
-/**
- * @brief Converts a CBOR status code to a MGMT_ERR_[...] code.
- *
- * @param cbor_status The CBOR status code to convert.
- *
- * @return The corresponding MGMT_ERR_[,,,] code.
- */
-int mgmt_err_from_cbor(int cbor_status);
 
 /**
  * @brief Byte-swaps an mcumgr header from network to host byte order.

@@ -2,20 +2,6 @@
 # Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-config MGMT_CBORATTR_MAX_SIZE
-	int "The maximum size of a CBOR attribute during decoding"
-	default 512
-	help
-	  The maximum size of a CBOR attribute during decoding
-
-config MGMT_CBORATTR_FLOAT_SUPPORT
-	bool "Support for float"
-	help
-	  The option enables float processing within CBOR attributes.
-	  If your code requires processing of float numbers by CBOR,
-	  the option needs to be enabled.
-	  Disabling the option slightly reduces code footprint.
-
 config MGMT_VERBOSE_ERR_RESPONSE
 	bool "Support verbose error response"
 	help
