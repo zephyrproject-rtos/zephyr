@@ -307,4 +307,38 @@ struct stm32_pclken {
 #define STM32_DT_DEV_OPT_CLOCK_SUPPORT					\
 		(DT_FOREACH_STATUS_OKAY(STM32_OPT_CLOCK_SUPPORT) 0)
 
+/** Clock source binding accessors */
+
+/**
+ * @brief Obtain register field from clock configuration.
+ *
+ * @param clock clock bit field value.
+ */
+#define STM32_CLOCK_REG_GET(clock) \
+	(((clock) >> STM32_CLOCK_REG_SHIFT) & STM32_CLOCK_REG_MASK)
+
+/**
+ * @brief Obtain position field from clock configuration.
+ *
+ * @param clock Clock bit field value.
+ */
+#define STM32_CLOCK_SHIFT_GET(clock) \
+	(((clock) >> STM32_CLOCK_SHIFT_SHIFT) & STM32_CLOCK_SHIFT_MASK)
+
+/**
+ * @brief Obtain mask field from clock configuration.
+ *
+ * @param clock Clock bit field value.
+ */
+#define STM32_CLOCK_MASK_GET(clock) \
+	(((clock) >> STM32_CLOCK_MASK_SHIFT) & STM32_CLOCK_MASK_MASK)
+
+/**
+ * @brief Obtain value field from clock configuration.
+ *
+ * @param clock Clock bit field value.
+ */
+#define STM32_CLOCK_VAL_GET(clock) \
+	(((clock) >> STM32_CLOCK_VAL_SHIFT) & STM32_CLOCK_VAL_MASK)
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_ */

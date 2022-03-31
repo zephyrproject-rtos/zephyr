@@ -417,10 +417,10 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	dt_val = STM32H7_CLOCK_VAL_GET(pclken->enr) <<
-					STM32H7_CLOCK_SHIFT_GET(pclken->enr);
+	dt_val = STM32_CLOCK_VAL_GET(pclken->enr) <<
+					STM32_CLOCK_SHIFT_GET(pclken->enr);
 	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) +
-					STM32H7_CLOCK_REG_GET(pclken->enr));
+					STM32_CLOCK_REG_GET(pclken->enr));
 	reg_val = *reg;
 	reg_val &= ~dt_val;
 	reg_val |= dt_val;
