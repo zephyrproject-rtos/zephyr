@@ -474,6 +474,9 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs,
 				  uint8_t num_msgs)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(msgs);
+	ARG_UNUSED(num_msgs);
 }
 
 #define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
