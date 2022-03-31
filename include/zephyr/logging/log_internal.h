@@ -105,6 +105,12 @@ bool z_log_msg2_pending(void);
  */
 const char *z_log_get_tag(void);
 
+/** @brief Get timestamp.
+ *
+ * @return Timestamp.
+ */
+log_timestamp_t z_log_timestamp(void);
+
 #ifdef __cplusplus
 }
 #endif
