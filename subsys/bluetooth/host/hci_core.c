@@ -3699,6 +3699,9 @@ int bt_disable(void)
 		return err;
 	}
 
+	/* Some functions rely on checking this bitfield */
+	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
+
 	/* Abort TX thread */
 	k_thread_abort(&tx_thread_data);
 
