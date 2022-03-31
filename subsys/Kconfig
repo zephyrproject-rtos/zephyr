@@ -46,7 +46,7 @@ source "subsys/shell/Kconfig"
 
 source "subsys/stats/Kconfig"
 
-source "subsys/usb/Kconfig"
+source "subsys/usb/device/Kconfig"
 
 source "subsys/dfu/Kconfig"
 
