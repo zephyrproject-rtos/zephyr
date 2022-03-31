@@ -227,7 +227,6 @@ class Test(Harness):
         if test_suite_match:
             suite_name = test_suite_match.group("suite_name")
             self.detected_suite_names.append(suite_name)
-            self.ztest = True
 
         match = result_re.match(line)
         if match and match.group(2):
