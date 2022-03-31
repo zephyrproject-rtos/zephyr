@@ -143,18 +143,17 @@ static inline void z_vrfy_can_remove_rx_filter(const struct device *dev, int fil
 }
 #include <syscalls/can_remove_rx_filter_mrsh.c>
 
-static inline
-int z_vrfy_can_get_state(const struct device *dev, enum can_state *state,
-			 struct can_bus_err_cnt *err_cnt)
+static inline int z_vrfy_can_get_state(const struct device *dev, enum can_state *state,
+				       struct can_bus_err_cnt *err_cnt)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_state));
 
 	if (state != NULL) {
-		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(state, sizeof(enum can_state)));
+		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(state, sizeof(*state)));
 	}
 
 	if (err_cnt != NULL) {
-		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(err_cnt, sizeof(struct can_bus_err_cnt)));
+		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(err_cnt, sizeof(*err_cnt)));
 	}
 
 	return z_impl_can_get_state(dev, state, err_cnt);
