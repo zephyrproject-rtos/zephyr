@@ -108,12 +108,14 @@ static int mcux_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bit
 	return 0;
 }
 
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 static int mcux_mcan_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct mcux_mcan_config *config = dev->config;
 
 	return can_mcan_recover(&config->mcan, timeout);
 }
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 static void mcux_mcan_line_0_isr(const struct device *dev)
 {
