@@ -15,9 +15,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 
-/* RAM code section */
-#define __timer_ram_code __attribute__((section(".__ram_code")))
-
 /* Event timer configurations */
 #define EVENT_TIMER		EXT_TIMER_3
 #define EVENT_TIMER_IRQ		DT_INST_IRQ_BY_IDX(0, 0, irq)
@@ -138,7 +135,7 @@ void timer_5ms_one_shot(void)
 #endif /* CONFIG_SOC_IT8XXX2_PLL_FLASH_48M */
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-__timer_ram_code void arch_busy_wait(uint32_t usec_to_wait)
+void arch_busy_wait(uint32_t usec_to_wait)
 {
 	if (!usec_to_wait) {
 		return;
