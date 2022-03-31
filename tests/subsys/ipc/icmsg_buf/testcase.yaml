@@ -1,5 +1,5 @@
 tests:
-  libraries.icmsg:
+  subsys.ipc.icmsg_buf:
     integration_platforms:
       - nrf5340dk_nrf5340_cpuapp
     platform_exclude: qemu_xtensa qemu_malta
