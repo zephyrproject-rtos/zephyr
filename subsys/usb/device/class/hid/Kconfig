@@ -20,7 +20,7 @@ config USB_HID_DEVICE_NAME
 
 module = USB_HID
 default-count = 1
-source "subsys/usb/class/Kconfig.template.composite_device_number"
+source "subsys/usb/device/class/Kconfig.template.composite_device_number"
 
 module = USB_HID
 module-str = usb hid

@@ -158,6 +158,6 @@ config USB_DEVICE_INITIALIZE_AT_BOOT
 	help
 	  Use CDC ACM UART as backend for console, shell, or logging.
 
-source "subsys/usb/class/Kconfig"
+source "subsys/usb/device/class/Kconfig"
 
 endif # USB_DEVICE_STACK
