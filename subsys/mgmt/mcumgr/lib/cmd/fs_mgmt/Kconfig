@@ -5,6 +5,7 @@
 menuconfig MCUMGR_CMD_FS_MGMT
 	bool "Mcumgr handlers for file management (insecure)"
 	depends on FILE_SYSTEM
+	select MGMT_MIN_DECODING_LEVEL_2
 	help
 	  Enables mcumgr handlers for file management
 
