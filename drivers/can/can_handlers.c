@@ -127,15 +127,11 @@ static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev,
 						struct k_msgq *msgq,
 						const struct zcan_filter *filter)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
-
-	Z_OOPS(Z_SYSCALL_MEMORY_READ((struct zcan_filter *)filter,
-				     sizeof(struct zcan_filter)));
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, add_rx_filter));
 	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(filter, sizeof(*filter)));
 
-	return z_impl_can_add_rx_filter_msgq((const struct device *)dev,
-					     (struct k_msgq *)msgq,
-					     (const struct zcan_filter *)filter);
+	return z_impl_can_add_rx_filter_msgq(dev, msgq, filter);
 }
 #include <syscalls/can_add_rx_filter_msgq_mrsh.c>
 
