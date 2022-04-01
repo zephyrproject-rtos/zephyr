@@ -9,6 +9,7 @@ menuconfig SDHC
 if SDHC
 
 source "drivers/sdhc/Kconfig.imx"
+source "drivers/sdhc/Kconfig.spi"
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"
