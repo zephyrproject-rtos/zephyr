@@ -6155,6 +6155,7 @@ static int do_send_op(struct lwm2m_message *msg, uint16_t content_format,
 	}
 }
 
+#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
 static int do_send_reply_cb(const struct coap_packet *response,
 				 struct coap_reply *reply,
 				 const struct sockaddr *from)
@@ -6182,10 +6183,12 @@ static void do_send_timeout_cb(struct lwm2m_message *msg)
 	LOG_WRN("Send Timeout");
 
 }
+#endif
 
 int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
 		      bool confirmation_request)
 {
+#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
 	struct lwm2m_message *msg;
 	int ret;
 	uint16_t content_format;
@@ -6195,6 +6198,11 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm2m_path_list;
 	sys_slist_t lwm2m_path_free_list;
+
+	if (lwm2m_server_get_mute_send(ctx->srv_obj_inst)) {
+		LOG_WRN("Send operation is muted by server");
+		return -EPERM;
+	}
 
 	/* Init list */
 	lwm2m_engine_path_list_init(&lwm2m_path_list, &lwm2m_path_free_list, lwm2m_path_list_buf,
@@ -6278,6 +6286,10 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 cleanup:
 	lwm2m_reset_message(msg, true);
 	return ret;
+#else
+	LOG_WRN("LwM2M send is only supported for CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1");
+	return -ENOTSUP;
+#endif
 }
 
 SYS_INIT(lwm2m_engine_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
