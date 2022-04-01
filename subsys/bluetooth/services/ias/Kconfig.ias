@@ -26,8 +26,23 @@ config BT_IAS_SEC_AUTH
 
 endchoice #BT_IAS_SEC_CHOICE
 
+endif # BT_IAS
+
+#### Immediate Alert Service Client ################################
+
+config BT_IAS_CLIENT
+	bool "Immediate Alert Service Client [Experimental]"
+	select BT_GATT_CLIENT
+	select EXPERIMENTAL
+	help
+	This option enables support for Immediate Alert Service Client
+
+config BT_DEBUG_IAS_CLIENT
+	bool "Immediate Alert Service Client debug"
+	depends on BT_IAS_CLIENT
+	help
+	  This option enables enables Immediate Alert Service Client debug logs.
+
 module = BT_IAS
 module-str = IAS
 source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
-
-endif # BT_IAS
