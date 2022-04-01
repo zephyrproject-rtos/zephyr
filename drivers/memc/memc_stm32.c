@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT st_stm32_fmc
 
 #include <device.h>
+#include <soc.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/pinctrl.h>
