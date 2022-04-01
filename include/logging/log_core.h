@@ -263,9 +263,34 @@ extern "C" {
 /*****************************************************************************/
 /****************** Definitions used by minimal logging *********************/
 /*****************************************************************************/
+#ifdef CONFIG_LOG_MODE_MINIMAL
+
 void z_log_minimal_hexdump_print(int level, const void *data, size_t size);
 void z_log_minimal_vprintk(const char *fmt, va_list ap);
 void z_log_minimal_printk(const char *fmt, ...);
+
+#else
+
+static inline void z_log_minimal_hexdump_print(int level, const void *data, size_t size)
+{
+	ARG_UNUSED(level);
+	ARG_UNUSED(data);
+	ARG_UNUSED(size);
+}
+
+static inline void z_log_minimal_vprintk(const char *fmt, va_list ap)
+{
+	ARG_UNUSED(fmt);
+	ARG_UNUSED(ap);
+}
+
+static inline void z_log_minimal_printk(const char *fmt, ...)
+{
+	ARG_UNUSED(fmt);
+}
+
+#endif /* CONFIG_LOG_MODE_MINIMAL */
+
 
 #define Z_LOG_TO_PRINTK(_level, fmt, ...) do { \
 	z_log_minimal_printk("%c: " fmt "\n", \
