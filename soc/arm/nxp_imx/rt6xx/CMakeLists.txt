@@ -20,8 +20,5 @@ zephyr_library_include_directories(
 zephyr_linker_sources_ifdef(CONFIG_NXP_IMX_RT6XX_BOOT_HEADER
   ROM_START SORT_KEY 0 boot_header.ld)
 
-zephyr_linker_sources(
-  RWDATA quick_access.ld)
-
 zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER
   SECTIONS usb.ld)
