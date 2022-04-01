@@ -244,7 +244,8 @@ static uint8_t input_size;
 
 static int cmd_input_num(const struct shell *shell, size_t argc, char *argv[])
 {
-	int err;
+	int err = 0;
+	uint32_t val;
 
 	if (argc < 2) {
 		return -EINVAL;
@@ -261,7 +262,13 @@ static int cmd_input_num(const struct shell *shell, size_t argc, char *argv[])
 		return 0;
 	}
 
-	err = bt_mesh_input_number(strtoul(argv[1], NULL, 10));
+	val = shell_strtoul(argv[1], 10, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
+	err = bt_mesh_input_number(val);
 	if (err) {
 		shell_error(shell, "Numeric input failed (err %d)", err);
 		return 0;
@@ -426,12 +433,17 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_reset(const struct shell *shell, size_t argc, char *argv[])
 {
+	int err = 0;
 	uint16_t addr;
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	addr = strtoul(argv[1], NULL, 0);
+	addr = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (addr == net.local) {
 		bt_mesh_reset();
@@ -453,32 +465,25 @@ static int cmd_reset(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static uint8_t str2u8(const char *str)
-{
-	if (isdigit((unsigned char)str[0])) {
-		return strtoul(str, NULL, 0);
-	}
-
-	return (!strcmp(str, "on") || !strcmp(str, "enable"));
-}
-
-static bool str2bool(const char *str)
-{
-	return str2u8(str);
-}
-
 #if defined(CONFIG_BT_MESH_LOW_POWER)
 static int cmd_lpn(const struct shell *shell, size_t argc, char *argv[])
 {
 	static bool enabled;
-	int err;
+	bool onoff;
+	int err = 0;
 
 	if (argc < 2) {
 		shell_print(shell, "%s", enabled ? "enabled" : "disabled");
 		return 0;
 	}
 
-	if (str2bool(argv[1])) {
+	onoff = shell_strtobool(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
+	if (onoff) {
 		if (enabled) {
 			shell_print(shell, "LPN already enabled");
 			return 0;
@@ -562,10 +567,14 @@ static int cmd_get_comp(const struct shell *shell, size_t argc, char *argv[])
 	struct bt_mesh_comp_p0_elem elem;
 	struct bt_mesh_comp_p0 comp;
 	uint8_t page = 0x00;
-	int err;
+	int err = 0;
 
 	if (argc > 1) {
-		page = strtol(argv[1], NULL, 0);
+		page = shell_strtoul(argv[1], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
 	}
 
 	err = bt_mesh_cfg_comp_data_get(net.net_idx, net.dst, page, &page,
@@ -637,6 +646,8 @@ static int cmd_get_comp(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_dst(const struct shell *shell, size_t argc, char *argv[])
 {
+	int err = 0;
+
 	if (argc < 2) {
 		shell_print(shell, "Destination address: 0x%04x%s", net.dst,
 			    net.dst == net.local ? " (local)" : "");
@@ -646,7 +657,11 @@ static int cmd_dst(const struct shell *shell, size_t argc, char *argv[])
 	if (!strcmp(argv[1], "local")) {
 		net.dst = net.local;
 	} else {
-		net.dst = strtoul(argv[1], NULL, 0);
+		net.dst = shell_strtoul(argv[1], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
 	}
 
 	shell_print(shell, "Destination address set to 0x%04x%s", net.dst,
@@ -656,24 +671,38 @@ static int cmd_dst(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_netidx(const struct shell *shell, size_t argc, char *argv[])
 {
+	int err = 0;
+
 	if (argc < 2) {
 		shell_print(shell, "NetIdx: 0x%04x", net.net_idx);
 		return 0;
 	}
 
-	net.net_idx = strtoul(argv[1], NULL, 0);
+	net.net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
 	shell_print(shell, "NetIdx set to 0x%04x", net.net_idx);
 	return 0;
 }
 
 static int cmd_appidx(const struct shell *shell, size_t argc, char *argv[])
 {
+	int err = 0;
+
 	if (argc < 2) {
 		shell_print(shell, "AppIdx: 0x%04x", net.app_idx);
 		return 0;
 	}
 
-	net.app_idx = strtoul(argv[1], NULL, 0);
+	net.app_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
 	shell_print(shell, "AppIdx set to 0x%04x", net.app_idx);
 	return 0;
 }
@@ -729,13 +758,19 @@ static int cmd_iv_update(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_iv_update_test(const struct shell *shell, size_t argc,
 			      char *argv[])
 {
+	int err = 0;
 	bool enable;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	enable = str2bool(argv[1]);
+	enable = shell_strtobool(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
 	if (enable) {
 		shell_print(shell, "Enabling IV Update test mode");
 	} else {
@@ -758,15 +793,19 @@ static int cmd_rpl_clear(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_beacon(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		err = bt_mesh_cfg_beacon_get(net.net_idx, net.dst, &status);
 	} else {
-		uint8_t val = str2u8(argv[1]);
+		uint8_t val = shell_strtobool(argv[1], 0, &err);
 
-		err = bt_mesh_cfg_beacon_set(net.net_idx, net.dst, val,
-					     &status);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
+		err = bt_mesh_cfg_beacon_set(net.net_idx, net.dst, val, &status);
 	}
 
 	if (err) {
@@ -813,14 +852,18 @@ static int cmd_provision_gatt(const struct shell *sh, size_t argc,
 	uint16_t net_idx;
 	uint16_t addr;
 	size_t len;
-	int err;
+	int err = 0;
 
 	len = hex2bin(argv[1], strlen(argv[1]), uuid, sizeof(uuid));
 	(void)memset(uuid + len, 0, sizeof(uuid) - len);
 
-	net_idx = strtoul(argv[2], NULL, 0);
-	addr = strtoul(argv[3], NULL, 0);
-	attention_duration = strtoul(argv[4], NULL, 0);
+	net_idx = shell_strtoul(argv[2], 0, &err);
+	addr = shell_strtoul(argv[3], 0, &err);
+	attention_duration = shell_strtoul(argv[4], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_provision_gatt(uuid, net_idx, addr, attention_duration);
 	if (err) {
@@ -836,9 +879,13 @@ static int cmd_proxy_connect(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	uint16_t net_idx;
-	int err;
+	int err = 0;
 
-	net_idx = strtoul(argv[1], NULL, 0);
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_proxy_connect(net_idx);
 	if (err) {
@@ -852,9 +899,13 @@ static int cmd_proxy_disconnect(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	uint16_t net_idx;
-	int err;
+	int err = 0;
 
-	net_idx = strtoul(argv[1], NULL, 0);
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_proxy_disconnect(net_idx);
 	if (err) {
@@ -868,7 +919,13 @@ static int cmd_proxy_disconnect(const struct shell *sh, size_t argc,
 static int cmd_beacon_listen(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
-	uint8_t val = str2u8(argv[1]);
+	int err = 0;
+	bool val = shell_strtobool(argv[1], 0, &err);
+
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (val) {
 		bt_mesh_shell_prov.unprovisioned_beacon = print_unprovisioned_beacon;
@@ -887,12 +944,17 @@ static int cmd_beacon_listen(const struct shell *shell, size_t argc,
 static int cmd_ttl(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint8_t ttl;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		err = bt_mesh_cfg_ttl_get(net.net_idx, net.dst, &ttl);
 	} else {
-		uint8_t val = strtoul(argv[1], NULL, 0);
+		uint8_t val = shell_strtoul(argv[1], 0, &err);
+
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
 
 		err = bt_mesh_cfg_ttl_set(net.net_idx, net.dst, val, &ttl);
 	}
@@ -911,12 +973,17 @@ static int cmd_ttl(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_friend(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint8_t frnd;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		err = bt_mesh_cfg_friend_get(net.net_idx, net.dst, &frnd);
 	} else {
-		uint8_t val = str2u8(argv[1]);
+		uint8_t val = shell_strtobool(argv[1], 0, &err);
+
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
 
 		err = bt_mesh_cfg_friend_set(net.net_idx, net.dst, val, &frnd);
 	}
@@ -935,12 +1002,17 @@ static int cmd_friend(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_gatt_proxy(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint8_t proxy;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		err = bt_mesh_cfg_gatt_proxy_get(net.net_idx, net.dst, &proxy);
 	} else {
-		uint8_t val = str2u8(argv[1]);
+		uint8_t val = shell_strtobool(argv[1], 0, &err);
+
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
 
 		err = bt_mesh_cfg_gatt_proxy_set(net.net_idx, net.dst, val,
 						 &proxy);
@@ -962,9 +1034,13 @@ static int cmd_polltimeout_get(const struct shell *sh,
 {
 	uint16_t lpn_address;
 	int32_t poll_timeout;
-	int err;
+	int err = 0;
 
-	lpn_address = strtoul(argv[1], NULL, 0);
+	lpn_address = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_cfg_lpn_timeout_get(net.net_idx,
 					  net.dst, lpn_address,
@@ -984,7 +1060,7 @@ static int cmd_net_transmit(const struct shell *shell,
 		size_t argc, char *argv[])
 {
 	uint8_t transmit;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		err = bt_mesh_cfg_net_transmit_get(net.net_idx,
@@ -998,8 +1074,12 @@ static int cmd_net_transmit(const struct shell *shell,
 
 		uint8_t count, interval, new_transmit;
 
-		count = strtoul(argv[1], NULL, 0);
-		interval = strtoul(argv[2], NULL, 0);
+		count = shell_strtoul(argv[1], 0, &err);
+		interval = shell_strtoul(argv[2], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
 
 		new_transmit = BT_MESH_TRANSMIT(count, interval);
 
@@ -1023,24 +1103,24 @@ static int cmd_net_transmit(const struct shell *shell,
 static int cmd_relay(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint8_t relay, transmit;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		err = bt_mesh_cfg_relay_get(net.net_idx, net.dst, &relay,
 					    &transmit);
 	} else {
-		uint8_t val = str2u8(argv[1]);
 		uint8_t count, interval, new_transmit;
+		uint8_t val = shell_strtobool(argv[1], 0, &err);
 
 		if (val) {
 			if (argc > 2) {
-				count = strtoul(argv[2], NULL, 0);
+				count = shell_strtoul(argv[2], 0, &err);
 			} else {
 				count = 2U;
 			}
 
 			if (argc > 3) {
-				interval = strtoul(argv[3], NULL, 0);
+				interval = shell_strtoul(argv[3], 0, &err);
 			} else {
 				interval = 20U;
 			}
@@ -1048,6 +1128,11 @@ static int cmd_relay(const struct shell *shell, size_t argc, char *argv[])
 			new_transmit = BT_MESH_TRANSMIT(count, interval);
 		} else {
 			new_transmit = 0U;
+		}
+
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
 		}
 
 		err = bt_mesh_cfg_relay_set(net.net_idx, net.dst, val,
@@ -1073,13 +1158,17 @@ static int cmd_net_key_add(const struct shell *shell, size_t argc, char *argv[])
 	uint8_t key_val[16];
 	uint16_t key_net_idx;
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	key_net_idx = strtoul(argv[1], NULL, 0);
+	key_net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (has_key_val) {
 		size_t len;
@@ -1142,9 +1231,13 @@ static int cmd_net_key_update(const struct shell *sh, size_t argc, char *argv[])
 	uint8_t key_val[16];
 	uint16_t key_net_idx;
 	uint8_t status;
-	int err;
+	int err = 0;
 
-	key_net_idx = strtoul(argv[1], NULL, 0);
+	key_net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (has_key_val) {
 		size_t len;
@@ -1200,9 +1293,13 @@ static int cmd_net_key_del(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint16_t key_net_idx;
 	uint8_t status;
-	int err;
+	int err = 0;
 
-	key_net_idx = strtoul(argv[1], NULL, 0);
+	key_net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_cfg_net_key_del(net.net_idx, net.dst, key_net_idx,
 				      &status);
@@ -1227,14 +1324,18 @@ static int cmd_app_key_add(const struct shell *shell, size_t argc, char *argv[])
 	uint16_t key_net_idx, key_app_idx;
 	bool has_key_val = (argc > 3);
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 3) {
 		return -EINVAL;
 	}
 
-	key_net_idx = strtoul(argv[1], NULL, 0);
-	key_app_idx = strtoul(argv[2], NULL, 0);
+	key_net_idx = shell_strtoul(argv[1], 0, &err);
+	key_app_idx = shell_strtoul(argv[2], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (has_key_val) {
 		size_t len;
@@ -1298,14 +1399,18 @@ static int cmd_app_key_upd(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t key_net_idx, key_app_idx;
 	bool has_key_val = (argc > 3);
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 3) {
 		return -EINVAL;
 	}
 
-	key_net_idx = strtoul(argv[1], NULL, 0);
-	key_app_idx = strtoul(argv[2], NULL, 0);
+	key_net_idx = shell_strtoul(argv[1], 0, &err);
+	key_app_idx = shell_strtoul(argv[2], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (has_key_val) {
 		size_t len;
@@ -1341,10 +1446,16 @@ static int cmd_app_key_get(const struct shell *shell, size_t argc, char *argv[])
 	uint16_t keys[16];
 	size_t cnt;
 	uint8_t status;
-	int err, i;
+	int err = 0;
+	int i;
 
-	net_idx = strtoul(argv[1], NULL, 0);
 	cnt = ARRAY_SIZE(keys);
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
 
 	err = bt_mesh_cfg_app_key_get(net.net_idx, net.dst, net_idx, &status,
 				      keys, &cnt);
@@ -1373,9 +1484,13 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint16_t net_idx;
 	uint8_t status, identify;
-	int err;
+	int err = 0;
 
-	net_idx = strtoul(argv[1], NULL, 0);
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc < 2) {
 		err = bt_mesh_cfg_node_identity_get(net.net_idx, net.dst,
@@ -1386,10 +1501,14 @@ static int cmd_node_id(const struct shell *sh, size_t argc, char *argv[])
 			return 0;
 		}
 	} else {
-		uint8_t new_identify = strtoul(argv[2], NULL, 0);
+		uint8_t new_identify = shell_strtoul(argv[2], 0, &err);
 
-		err = bt_mesh_cfg_node_identity_set(net.net_idx, net.dst,
-						    net_idx, new_identify,
+		if (err) {
+			shell_warn(sh, "Unable to parse input string argument");
+			return err;
+		}
+
+		err = bt_mesh_cfg_node_identity_set(net.net_idx, net.dst, net_idx, new_identify,
 						    &status, &identify);
 		if (err) {
 			shell_print(sh, "Unable to send Node Identify Set (err %d)", err);
@@ -1413,14 +1532,18 @@ static int cmd_app_key_del(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint16_t key_net_idx, key_app_idx;
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 3) {
 		return -EINVAL;
 	}
 
-	key_net_idx = strtoul(argv[1], NULL, 0);
-	key_app_idx = strtoul(argv[2], NULL, 0);
+	key_net_idx = shell_strtoul(argv[1], 0, &err);
+	key_app_idx = shell_strtoul(argv[2], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_cfg_app_key_del(net.net_idx, net.dst, key_net_idx,
 				      key_app_idx, &status);
@@ -1445,18 +1568,27 @@ static int cmd_mod_app_bind(const struct shell *shell, size_t argc,
 {
 	uint16_t elem_addr, mod_app_idx, mod_id, cid;
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 4) {
 		return -EINVAL;
 	}
 
-	elem_addr = strtoul(argv[1], NULL, 0);
-	mod_app_idx = strtoul(argv[2], NULL, 0);
-	mod_id = strtoul(argv[3], NULL, 0);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
+	mod_app_idx = shell_strtoul(argv[2], 0, &err);
+	mod_id = shell_strtoul(argv[3], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 4) {
-		cid = strtoul(argv[4], NULL, 0);
+		cid = shell_strtoul(argv[4], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_app_bind_vnd(net.net_idx, net.dst,
 						   elem_addr, mod_app_idx,
 						   mod_id, cid, &status);
@@ -1487,18 +1619,27 @@ static int cmd_mod_app_unbind(const struct shell *shell, size_t argc,
 {
 	uint16_t elem_addr, mod_app_idx, mod_id, cid;
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 4) {
 		return -EINVAL;
 	}
 
-	elem_addr = strtoul(argv[1], NULL, 0);
-	mod_app_idx = strtoul(argv[2], NULL, 0);
-	mod_id = strtoul(argv[3], NULL, 0);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
+	mod_app_idx = shell_strtoul(argv[2], 0, &err);
+	mod_id = shell_strtoul(argv[3], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 4) {
-		cid = strtoul(argv[4], NULL, 0);
+		cid = shell_strtoul(argv[4], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_app_unbind_vnd(net.net_idx, net.dst,
 						   elem_addr, mod_app_idx,
 						   mod_id, cid, &status);
@@ -1530,14 +1671,24 @@ static int cmd_mod_app_get(const struct shell *shell, size_t argc,
 	uint16_t apps[16];
 	uint8_t status;
 	size_t cnt;
-	int err, i;
+	int err = 0;
+	int i;
 
-	elem_addr = strtoul(argv[1], NULL, 0);
-	mod_id = strtoul(argv[2], NULL, 0);
 	cnt = ARRAY_SIZE(apps);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
+	mod_id = shell_strtoul(argv[2], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 3) {
-		cid = strtoul(argv[3], NULL, 0);
+		cid = shell_strtoul(argv[3], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_app_get_vnd(net.net_idx, net.dst,
 						  elem_addr, mod_id, cid,
 						  &status, apps, &cnt);
@@ -1577,18 +1728,27 @@ static int cmd_mod_sub_add(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint16_t elem_addr, sub_addr, mod_id, cid;
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 4) {
 		return -EINVAL;
 	}
 
-	elem_addr = strtoul(argv[1], NULL, 0);
-	sub_addr = strtoul(argv[2], NULL, 0);
-	mod_id = strtoul(argv[3], NULL, 0);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
+	sub_addr = shell_strtoul(argv[2], 0, &err);
+	mod_id = shell_strtoul(argv[3], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 4) {
-		cid = strtoul(argv[4], NULL, 0);
+		cid = shell_strtoul(argv[4], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_sub_add_vnd(net.net_idx, net.dst,
 						  elem_addr, sub_addr, mod_id,
 						  cid, &status);
@@ -1617,18 +1777,27 @@ static int cmd_mod_sub_del(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint16_t elem_addr, sub_addr, mod_id, cid;
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 4) {
 		return -EINVAL;
 	}
 
-	elem_addr = strtoul(argv[1], NULL, 0);
-	sub_addr = strtoul(argv[2], NULL, 0);
-	mod_id = strtoul(argv[3], NULL, 0);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
+	sub_addr = shell_strtoul(argv[2], 0, &err);
+	mod_id = shell_strtoul(argv[3], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 4) {
-		cid = strtoul(argv[4], NULL, 0);
+		cid = shell_strtoul(argv[4], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_sub_del_vnd(net.net_idx, net.dst,
 						  elem_addr, sub_addr, mod_id,
 						  cid, &status);
@@ -1660,21 +1829,30 @@ static int cmd_mod_sub_add_va(const struct shell *shell, size_t argc,
 	uint8_t label[16];
 	uint8_t status;
 	size_t len;
-	int err;
+	int err = 0;
 
 	if (argc < 4) {
 		return -EINVAL;
 	}
 
-	elem_addr = strtoul(argv[1], NULL, 0);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
 
 	len = hex2bin(argv[2], strlen(argv[2]), label, sizeof(label));
 	(void)memset(label + len, 0, sizeof(label) - len);
 
-	mod_id = strtoul(argv[3], NULL, 0);
+	mod_id = shell_strtoul(argv[3], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 4) {
-		cid = strtoul(argv[4], NULL, 0);
+		cid = shell_strtoul(argv[4], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_sub_va_add_vnd(net.net_idx, net.dst,
 						     elem_addr, label, mod_id,
 						     cid, &sub_addr, &status);
@@ -1708,21 +1886,30 @@ static int cmd_mod_sub_del_va(const struct shell *shell, size_t argc,
 	uint8_t label[16];
 	uint8_t status;
 	size_t len;
-	int err;
+	int err = 0;
 
 	if (argc < 4) {
 		return -EINVAL;
 	}
 
-	elem_addr = strtoul(argv[1], NULL, 0);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
 
 	len = hex2bin(argv[2], strlen(argv[2]), label, sizeof(label));
 	(void)memset(label + len, 0, sizeof(label) - len);
 
-	mod_id = strtoul(argv[3], NULL, 0);
+	mod_id = shell_strtoul(argv[3], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 4) {
-		cid = strtoul(argv[4], NULL, 0);
+		cid = shell_strtoul(argv[4], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_sub_va_del_vnd(net.net_idx, net.dst,
 						     elem_addr, label, mod_id,
 						     cid, &sub_addr, &status);
@@ -1753,18 +1940,27 @@ static int cmd_mod_sub_ow(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint16_t elem_addr, sub_addr, mod_id, cid;
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 4) {
 		return -EINVAL;
 	}
 
-	elem_addr = strtoul(argv[1], NULL, 0);
-	sub_addr = strtoul(argv[2], NULL, 0);
-	mod_id = strtoul(argv[3], NULL, 0);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
+	sub_addr = shell_strtoul(argv[2], 0, &err);
+	mod_id = shell_strtoul(argv[3], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 4) {
-		cid = strtoul(argv[4], NULL, 0);
+		cid = shell_strtoul(argv[4], 0, &err);
+		if (err) {
+			shell_warn(sh, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_sub_overwrite_vnd(net.net_idx, net.dst,
 							elem_addr, sub_addr, mod_id,
 							cid, &status);
@@ -1796,21 +1992,30 @@ static int cmd_mod_sub_ow_va(const struct shell *sh, size_t argc,
 	uint8_t label[16];
 	uint8_t status;
 	size_t len;
-	int err;
+	int err = 0;
 
 	if (argc < 4) {
 		return -EINVAL;
 	}
 
-	elem_addr = strtoul(argv[1], NULL, 0);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
 
 	len = hex2bin(argv[2], strlen(argv[2]), label, sizeof(label));
 	(void)memset(label + len, 0, sizeof(label) - len);
 
-	mod_id = strtoul(argv[3], NULL, 0);
+	mod_id = shell_strtoul(argv[3], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 4) {
-		cid = strtoul(argv[4], NULL, 0);
+		cid = shell_strtoul(argv[4], 0, &err);
+		if (err) {
+			shell_warn(sh, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_sub_va_overwrite_vnd(net.net_idx, net.dst,
 							   elem_addr, label, mod_id,
 							   cid, &sub_addr, &status);
@@ -1841,17 +2046,26 @@ static int cmd_mod_sub_del_all(const struct shell *sh, size_t argc, char *argv[]
 {
 	uint16_t elem_addr, mod_id, cid;
 	uint8_t status;
-	int err;
+	int err = 0;
 
 	if (argc < 3) {
 		return -EINVAL;
 	}
 
-	elem_addr = strtoul(argv[1], NULL, 0);
-	mod_id = strtoul(argv[2], NULL, 0);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
+	mod_id = shell_strtoul(argv[2], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 3) {
-		cid = strtoul(argv[3], NULL, 0);
+		cid = shell_strtoul(argv[3], 0, &err);
+		if (err) {
+			shell_warn(sh, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_sub_del_all_vnd(net.net_idx, net.dst,
 						      elem_addr, mod_id,
 						      cid, &status);
@@ -1883,14 +2097,24 @@ static int cmd_mod_sub_get(const struct shell *shell, size_t argc,
 	uint16_t subs[16];
 	uint8_t status;
 	size_t cnt;
-	int err, i;
+	int err = 0;
+	int i;
 
-	elem_addr = strtoul(argv[1], NULL, 0);
-	mod_id = strtoul(argv[2], NULL, 0);
 	cnt = ARRAY_SIZE(subs);
+	elem_addr = shell_strtoul(argv[1], 0, &err);
+	mod_id = shell_strtoul(argv[2], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc > 3) {
-		cid = strtoul(argv[3], NULL, 0);
+		cid = shell_strtoul(argv[3], 0, &err);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
 		err = bt_mesh_cfg_mod_sub_get_vnd(net.net_idx, net.dst,
 						  elem_addr, mod_id, cid,
 						  &status, subs, &cnt);
@@ -1931,15 +2155,24 @@ static int cmd_krp(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint8_t status, phase;
 	uint16_t key_net_idx;
-	int err;
+	int err = 0;
 
-	key_net_idx = strtoul(argv[1], NULL, 0);
+	key_net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc < 3) {
 		err = bt_mesh_cfg_krp_get(net.net_idx, net.dst, key_net_idx,
 					  &status, &phase);
 	} else {
-		uint16_t trans = strtoul(argv[2], NULL, 0);
+		uint16_t trans = shell_strtoul(argv[2], 0, &err);
+
+		if (err) {
+			shell_warn(sh, "Unable to parse input string argument");
+			return err;
+		}
 
 		err = bt_mesh_cfg_krp_set(net.net_idx, net.dst, key_net_idx,
 					  trans, &status, &phase);
@@ -2007,28 +2240,33 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va,
 	uint16_t interval;
 	uint8_t uuid[16];
 	uint8_t len;
-	int err;
+	int err = 0;
 
 	if (!is_va) {
-		pub.addr = strtoul(argv[0], NULL, 0);
+		pub.addr = shell_strtoul(argv[0], 0, &err);
 	} else {
 		len = hex2bin(argv[0], strlen(argv[0]), uuid, sizeof(uuid));
 		memset(uuid + len, 0, sizeof(uuid) - len);
 		pub.uuid = (const uint8_t *)&uuid;
 	}
 
-	pub.app_idx = strtoul(argv[1], NULL, 0);
-	pub.cred_flag = str2bool(argv[2]);
-	pub.ttl = strtoul(argv[3], NULL, 0);
-	pub.period = strtoul(argv[4], NULL, 0);
+	pub.app_idx = shell_strtoul(argv[1], 0, &err);
+	pub.cred_flag = shell_strtoul(argv[2], 0, &err);
+	pub.ttl = shell_strtoul(argv[3], 0, &err);
+	pub.period = shell_strtoul(argv[4], 0, &err);
 
-	count = strtoul(argv[5], NULL, 0);
+	count = shell_strtoul(argv[5], 0, &err);
 	if (count > 7) {
 		shell_print(sh, "Invalid retransmit count");
 		return -EINVAL;
 	}
 
-	interval = strtoul(argv[6], NULL, 0);
+	interval = shell_strtoul(argv[6], 0, &err);
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
+	}
+
 	if (interval > (31 * 50) || (interval % 50)) {
 		shell_print(sh, "Invalid retransmit interval %u", interval);
 		return -EINVAL;
@@ -2062,24 +2300,30 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va,
 
 static int cmd_mod_pub(const struct shell *shell, size_t argc, char *argv[])
 {
+	int err = 0;
 	uint16_t addr, mod_id, cid;
 
 	if (argc < 3) {
 		return -EINVAL;
 	}
 
-	addr = strtoul(argv[1], NULL, 0);
-	mod_id = strtoul(argv[2], NULL, 0);
+	addr = shell_strtoul(argv[1], 0, &err);
+	mod_id = shell_strtoul(argv[2], 0, &err);
 
 	argc -= 3;
 	argv += 3;
 
 	if (argc == 1 || argc == 8) {
-		cid = strtoul(argv[0], NULL, 0);
+		cid = shell_strtoul(argv[0], 0, &err);
 		argc--;
 		argv++;
 	} else {
 		cid = CID_NVAL;
+	}
+
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
 	}
 
 	if (argc > 0) {
@@ -2095,13 +2339,19 @@ static int cmd_mod_pub(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_mod_pub_va(const struct shell *sh, size_t argc, char *argv[])
 {
+	int err = 0;
 	uint16_t addr, mod_id, cid = CID_NVAL;
 
-	addr = strtoul(argv[1], NULL, 0);
-	mod_id = strtoul(argv[9], NULL, 0);
+	addr = shell_strtoul(argv[1], 0, &err);
+	mod_id = shell_strtoul(argv[9], 0, &err);
 
 	if (argc > 10) {
-		cid = strtoul(argv[10], NULL, 0);
+		cid = shell_strtoul(argv[10], 0, &err);
+	}
+
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
 	}
 
 	argv += 2;
@@ -2150,11 +2400,15 @@ static int hb_sub_set(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_mesh_cfg_hb_sub sub;
 	uint8_t status;
-	int err;
+	int err = 0;
 
-	sub.src = strtoul(argv[1], NULL, 0);
-	sub.dst = strtoul(argv[2], NULL, 0);
-	sub.period = strtoul(argv[3], NULL, 0);
+	sub.src = shell_strtoul(argv[1], 0, &err);
+	sub.dst = shell_strtoul(argv[2], 0, &err);
+	sub.period = shell_strtoul(argv[3], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_cfg_hb_sub_set(net.net_idx, net.dst, &sub, &status);
 	if (err) {
@@ -2218,14 +2472,18 @@ static int hb_pub_set(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_mesh_cfg_hb_pub pub;
 	uint8_t status;
-	int err;
+	int err = 0;
 
-	pub.dst = strtoul(argv[1], NULL, 0);
-	pub.count = strtoul(argv[2], NULL, 0);
-	pub.period = strtoul(argv[3], NULL, 0);
-	pub.ttl = strtoul(argv[4], NULL, 0);
-	pub.feat = strtoul(argv[5], NULL, 0);
-	pub.net_idx = strtoul(argv[6], NULL, 0);
+	pub.dst = shell_strtoul(argv[1], 0, &err);
+	pub.count = shell_strtoul(argv[2], 0, &err);
+	pub.period = shell_strtoul(argv[3], 0, &err);
+	pub.ttl = shell_strtoul(argv[4], 0, &err);
+	pub.feat = shell_strtoul(argv[5], 0, &err);
+	pub.net_idx = shell_strtoul(argv[6], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_cfg_hb_pub_set(net.net_idx, net.dst, &pub, &status);
 	if (err) {
@@ -2262,13 +2520,20 @@ static int cmd_hb_pub(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_pb(bt_mesh_prov_bearer_t bearer, const struct shell *shell,
 		  size_t argc, char *argv[])
 {
-	int err;
+	int err = 0;
+	bool onoff;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	if (str2bool(argv[1])) {
+	onoff = shell_strtobool(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
+	if (onoff) {
 		err = bt_mesh_prov_enable(bearer);
 		if (err) {
 			shell_error(shell, "Failed to enable %s (err %d)",
@@ -2305,14 +2570,18 @@ static int cmd_provision_adv(const struct shell *shell, size_t argc,
 	uint16_t net_idx;
 	uint16_t addr;
 	size_t len;
-	int err;
+	int err = 0;
 
 	len = hex2bin(argv[1], strlen(argv[1]), uuid, sizeof(uuid));
 	(void)memset(uuid + len, 0, sizeof(uuid) - len);
 
-	net_idx = strtoul(argv[2], NULL, 0);
-	addr = strtoul(argv[3], NULL, 0);
-	attention_duration = strtoul(argv[4], NULL, 0);
+	net_idx = shell_strtoul(argv[2], 0, &err);
+	addr = shell_strtoul(argv[3], 0, &err);
+	attention_duration = shell_strtoul(argv[4], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_provision_adv(uuid, net_idx, addr, attention_duration);
 	if (err) {
@@ -2337,19 +2606,24 @@ static int cmd_provision(const struct shell *shell, size_t argc, char *argv[])
 	const uint8_t *net_key = default_key;
 	uint16_t net_idx, addr;
 	uint32_t iv_index;
-	int err;
+	int err = 0;
 
 	if (argc < 3) {
 		return -EINVAL;
 	}
 
-	net_idx = strtoul(argv[1], NULL, 0);
-	addr = strtoul(argv[2], NULL, 0);
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	addr = shell_strtoul(argv[2], 0, &err);
 
 	if (argc > 3) {
-		iv_index = strtoul(argv[3], NULL, 0);
+		iv_index = shell_strtoul(argv[3], 0, &err);
 	} else {
 		iv_index = 0U;
+	}
+
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
@@ -2378,11 +2652,16 @@ static int cmd_provision(const struct shell *shell, size_t argc, char *argv[])
 int cmd_timeout(const struct shell *shell, size_t argc, char *argv[])
 {
 	int32_t timeout_ms;
+	int err = 0;
 
 	if (argc == 2) {
-		int32_t timeout_s;
+		int32_t timeout_s = shell_strtol(argv[1], 0, &err);
 
-		timeout_s = strtol(argv[1], NULL, 0);
+		if (err) {
+			shell_warn(shell, "Unable to parse input string argument");
+			return err;
+		}
+
 		if (timeout_s < 0 || timeout_s > (INT32_MAX / 1000)) {
 			timeout_ms = SYS_FOREVER_MS;
 		} else {
@@ -2411,9 +2690,14 @@ static int cmd_fault_get(const struct shell *shell, size_t argc, char *argv[])
 	size_t fault_count;
 	uint8_t test_id;
 	uint16_t cid;
-	int err;
+	int err = 0;
 
-	cid = strtoul(argv[1], NULL, 0);
+	cid = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
 	fault_count = sizeof(faults);
 
 	err = bt_mesh_health_fault_get(net.dst, net.app_idx, cid, &test_id,
@@ -2435,13 +2719,18 @@ static int cmd_fault_clear(const struct shell *shell, size_t argc,
 	size_t fault_count;
 	uint8_t test_id;
 	uint16_t cid;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	cid = strtoul(argv[1], NULL, 0);
+	cid = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
 	fault_count = sizeof(faults);
 
 	err = bt_mesh_health_fault_clear(net.dst, net.app_idx, cid,
@@ -2460,13 +2749,17 @@ static int cmd_fault_clear_unack(const struct shell *shell, size_t argc,
 				 char *argv[])
 {
 	uint16_t cid;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	cid = strtoul(argv[1], NULL, 0);
+	cid = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_health_fault_clear_unack(net.dst, net.app_idx, cid);
 	if (err) {
@@ -2483,15 +2776,19 @@ static int cmd_fault_test(const struct shell *shell, size_t argc, char *argv[])
 	size_t fault_count;
 	uint8_t test_id;
 	uint16_t cid;
-	int err;
+	int err = 0;
 
 	if (argc < 3) {
 		return -EINVAL;
 	}
 
-	cid = strtoul(argv[1], NULL, 0);
-	test_id = strtoul(argv[2], NULL, 0);
 	fault_count = sizeof(faults);
+	cid = shell_strtoul(argv[1], 0, &err);
+	test_id = shell_strtoul(argv[2], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_health_fault_test(net.dst, net.app_idx, cid,
 				 test_id, faults, &fault_count);
@@ -2510,14 +2807,18 @@ static int cmd_fault_test_unack(const struct shell *shell, size_t argc,
 {
 	uint16_t cid;
 	uint8_t test_id;
-	int err;
+	int err = 0;
 
 	if (argc < 3) {
 		return -EINVAL;
 	}
 
-	cid = strtoul(argv[1], NULL, 0);
-	test_id = strtoul(argv[2], NULL, 0);
+	cid = shell_strtoul(argv[1], 0, &err);
+	test_id = shell_strtoul(argv[2], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_health_fault_test_unack(net.dst, net.app_idx, cid, test_id);
 	if (err) {
@@ -2547,13 +2848,17 @@ static int cmd_period_get(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_period_set(const struct shell *shell, size_t argc, char *argv[])
 {
 	uint8_t divisor, updated_divisor;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	divisor = strtoul(argv[1], NULL, 0);
+	divisor = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_health_period_set(net.dst, net.app_idx, divisor,
 				 &updated_divisor);
@@ -2572,13 +2877,17 @@ static int cmd_period_set_unack(const struct shell *shell, size_t argc,
 				char *argv[])
 {
 	uint8_t divisor;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	divisor = strtoul(argv[1], NULL, 0);
+	divisor = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_health_period_set_unack(net.dst, net.app_idx, divisor);
 	if (err) {
@@ -2611,13 +2920,17 @@ static int cmd_attention_set(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
 	uint8_t attention, updated_attention;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	attention = strtoul(argv[1], NULL, 0);
+	attention = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_health_attention_set(net.dst, net.app_idx, attention,
 				 &updated_attention);
@@ -2636,13 +2949,17 @@ static int cmd_attention_set_unack(const struct shell *shell, size_t argc,
 				   char *argv[])
 {
 	uint8_t attention;
-	int err;
+	int err = 0;
 
 	if (argc < 2) {
 		return -EINVAL;
 	}
 
-	attention = strtoul(argv[1], NULL, 0);
+	attention = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	err = bt_mesh_health_attention_set_unack(net.dst, net.app_idx, attention);
 	if (err) {
@@ -2670,6 +2987,7 @@ static int cmd_add_fault(const struct shell *shell, size_t argc, char *argv[])
 	uint8_t fault_id;
 	uint8_t i;
 	struct bt_mesh_elem *elem;
+	int err = 0;
 
 	elem = primary_element();
 	if (elem == NULL) {
@@ -2681,7 +2999,12 @@ static int cmd_add_fault(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	fault_id = strtoul(argv[1], NULL, 0);
+	fault_id = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
 	if (!fault_id) {
 		shell_print(shell, "The Fault ID must be non-zero!");
 		return -EINVAL;
@@ -2721,6 +3044,7 @@ static int cmd_del_fault(const struct shell *shell, size_t argc, char *argv[])
 	uint8_t fault_id;
 	uint8_t i;
 	struct bt_mesh_elem *elem;
+	int err = 0;
 
 	elem = primary_element();
 	if (elem == NULL) {
@@ -2735,7 +3059,12 @@ static int cmd_del_fault(const struct shell *shell, size_t argc, char *argv[])
 		return 0;
 	}
 
-	fault_id = strtoul(argv[1], NULL, 0);
+	fault_id = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
+
 	if (!fault_id) {
 		shell_print(shell, "The Fault ID must be non-zero!");
 		return -EINVAL;
@@ -2892,13 +3221,18 @@ static int cmd_cdb_node_add(const struct shell *shell, size_t argc,
 	uint16_t addr, net_idx;
 	uint8_t num_elem;
 	size_t len;
+	int err = 0;
 
 	len = hex2bin(argv[1], strlen(argv[1]), uuid, sizeof(uuid));
 	memset(uuid + len, 0, sizeof(uuid) - len);
 
-	addr = strtoul(argv[2], NULL, 0);
-	num_elem = strtoul(argv[3], NULL, 0);
-	net_idx = strtoul(argv[4], NULL, 0);
+	addr = shell_strtoul(argv[2], 0, &err);
+	num_elem = shell_strtoul(argv[3], 0, &err);
+	net_idx = shell_strtoul(argv[4], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc < 6) {
 		bt_rand(dev_key, 16);
@@ -2930,8 +3264,13 @@ static int cmd_cdb_node_del(const struct shell *shell, size_t argc,
 {
 	struct bt_mesh_cdb_node *node;
 	uint16_t addr;
+	int err = 0;
 
-	addr = strtoul(argv[1], NULL, 0);
+	addr = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	node = bt_mesh_cdb_node_get(addr);
 	if (node == NULL) {
@@ -2953,8 +3292,13 @@ static int cmd_cdb_subnet_add(const struct shell *shell, size_t argc,
 	uint8_t net_key[16];
 	uint16_t net_idx;
 	size_t len;
+	int err = 0;
 
-	net_idx = strtoul(argv[1], NULL, 0);
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc < 3) {
 		bt_rand(net_key, 16);
@@ -2986,8 +3330,13 @@ static int cmd_cdb_subnet_del(const struct shell *shell, size_t argc,
 {
 	struct bt_mesh_cdb_subnet *sub;
 	uint16_t net_idx;
+	int err = 0;
 
-	net_idx = strtoul(argv[1], NULL, 0);
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	sub = bt_mesh_cdb_subnet_get(net_idx);
 	if (sub == NULL) {
@@ -3009,9 +3358,14 @@ static int cmd_cdb_app_key_add(const struct shell *shell, size_t argc,
 	uint16_t net_idx, app_idx;
 	uint8_t app_key[16];
 	size_t len;
+	int err = 0;
 
-	net_idx = strtoul(argv[1], NULL, 0);
-	app_idx = strtoul(argv[2], NULL, 0);
+	net_idx = shell_strtoul(argv[1], 0, &err);
+	app_idx = shell_strtoul(argv[2], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	if (argc < 4) {
 		bt_rand(app_key, 16);
@@ -3043,8 +3397,13 @@ static int cmd_cdb_app_key_del(const struct shell *shell, size_t argc,
 {
 	struct bt_mesh_cdb_app_key *key;
 	uint16_t app_idx;
+	int err = 0;
 
-	app_idx = strtoul(argv[1], NULL, 0);
+	app_idx = shell_strtoul(argv[1], 0, &err);
+	if (err) {
+		shell_warn(shell, "Unable to parse input string argument");
+		return err;
+	}
 
 	key = bt_mesh_cdb_app_key_get(app_idx);
 	if (key == NULL) {
