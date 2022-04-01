@@ -106,9 +106,9 @@ static int pwm_sifive_init(const struct device *dev)
 	return 0;
 }
 
-static int pwm_sifive_pin_set(const struct device *dev, uint32_t channel,
-			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+static int pwm_sifive_set_cycles(const struct device *dev, uint32_t channel,
+				 uint32_t period_cycles, uint32_t pulse_cycles,
+				 pwm_flags_t flags)
 {
 	const struct pwm_sifive_cfg *config = dev->config;
 	uint32_t count_max = 0U;
@@ -209,7 +209,7 @@ static int pwm_sifive_get_cycles_per_sec(const struct device *dev,
 /* Device Instantiation */
 
 static const struct pwm_driver_api pwm_sifive_api = {
-	.pin_set = pwm_sifive_pin_set,
+	.set_cycles = pwm_sifive_set_cycles,
 	.get_cycles_per_sec = pwm_sifive_get_cycles_per_sec,
 };
 

@@ -38,9 +38,9 @@ struct rv32m1_tpm_data {
 	tpm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
 };
 
-static int rv32m1_tpm_pin_set(const struct device *dev, uint32_t channel,
-			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
+				 uint32_t period_cycles, uint32_t pulse_cycles,
+				 pwm_flags_t flags)
 {
 	const struct rv32m1_tpm_config *config = dev->config;
 	struct rv32m1_tpm_data *data = dev->data;
@@ -166,7 +166,7 @@ static int rv32m1_tpm_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api rv32m1_tpm_driver_api = {
-	.pin_set = rv32m1_tpm_pin_set,
+	.set_cycles = rv32m1_tpm_set_cycles,
 	.get_cycles_per_sec = rv32m1_tpm_get_cycles_per_sec,
 };
 

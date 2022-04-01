@@ -45,9 +45,9 @@ int pwm_litex_init(const struct device *dev)
 	return 0;
 }
 
-int pwm_litex_pin_set(const struct device *dev, uint32_t channel,
-		      uint32_t period_cycles,
-		      uint32_t pulse_cycles, pwm_flags_t flags)
+int pwm_litex_set_cycles(const struct device *dev, uint32_t channel,
+			 uint32_t period_cycles,
+			 uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_litex_cfg *cfg = dev->config;
 
@@ -75,8 +75,8 @@ int pwm_litex_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 }
 
 static const struct pwm_driver_api pwm_litex_driver_api = {
-	.pin_set             = pwm_litex_pin_set,
-	.get_cycles_per_sec  = pwm_litex_get_cycles_per_sec,
+	.set_cycles = pwm_litex_set_cycles,
+	.get_cycles_per_sec = pwm_litex_get_cycles_per_sec,
 };
 
 /* Device Instantiation */

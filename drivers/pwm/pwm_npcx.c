@@ -88,9 +88,9 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 }
 
 /* PWM api functions */
-static int pwm_npcx_pin_set(const struct device *dev, uint32_t channel,
-			   uint32_t period_cycles, uint32_t pulse_cycles,
-			   pwm_flags_t flags)
+static int pwm_npcx_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
 {
 	/* Single channel for each pwm device */
 	ARG_UNUSED(channel);
@@ -173,7 +173,7 @@ static int pwm_npcx_get_cycles_per_sec(const struct device *dev,
 
 /* PWM driver registration */
 static const struct pwm_driver_api pwm_npcx_driver_api = {
-	.pin_set = pwm_npcx_pin_set,
+	.set_cycles = pwm_npcx_set_cycles,
 	.get_cycles_per_sec = pwm_npcx_get_cycles_per_sec
 };
 

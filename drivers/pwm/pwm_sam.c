@@ -37,9 +37,9 @@ static int sam_pwm_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static int sam_pwm_pin_set(const struct device *dev, uint32_t channel,
-			   uint32_t period_cycles, uint32_t pulse_cycles,
-			   pwm_flags_t flags)
+static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel,
+			      uint32_t period_cycles, uint32_t pulse_cycles,
+			      pwm_flags_t flags)
 {
 	const struct sam_pwm_config *config = dev->config;
 
@@ -104,7 +104,7 @@ static int sam_pwm_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api sam_pwm_driver_api = {
-	.pin_set = sam_pwm_pin_set,
+	.set_cycles = sam_pwm_set_cycles,
 	.get_cycles_per_sec = sam_pwm_get_cycles_per_sec,
 };
 

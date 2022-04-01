@@ -58,9 +58,9 @@ struct mcux_ftm_data {
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
-static int mcux_ftm_pin_set(const struct device *dev, uint32_t channel,
-			    uint32_t period_cycles, uint32_t pulse_cycles,
-			    pwm_flags_t flags)
+static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
 {
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
@@ -136,10 +136,10 @@ static int mcux_ftm_pin_set(const struct device *dev, uint32_t channel,
 }
 
 #ifdef CONFIG_PWM_CAPTURE
-static int mcux_ftm_pin_configure_capture(const struct device *dev,
-					  uint32_t channel, pwm_flags_t flags,
-					  pwm_capture_callback_handler_t cb,
-					  void *user_data)
+static int mcux_ftm_configure_capture(const struct device *dev,
+				      uint32_t channel, pwm_flags_t flags,
+				      pwm_capture_callback_handler_t cb,
+				      void *user_data)
 {
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
@@ -206,8 +206,7 @@ static int mcux_ftm_pin_configure_capture(const struct device *dev,
 	return 0;
 }
 
-static int mcux_ftm_pin_enable_capture(const struct device *dev,
-				       uint32_t channel)
+static int mcux_ftm_enable_capture(const struct device *dev, uint32_t channel)
 {
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
@@ -245,8 +244,7 @@ static int mcux_ftm_pin_enable_capture(const struct device *dev,
 	return 0;
 }
 
-static int mcux_ftm_pin_disable_capture(const struct device *dev,
-					uint32_t channel)
+static int mcux_ftm_disable_capture(const struct device *dev, uint32_t channel)
 {
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
@@ -440,12 +438,12 @@ static int mcux_ftm_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api mcux_ftm_driver_api = {
-	.pin_set = mcux_ftm_pin_set,
+	.set_cycles = mcux_ftm_set_cycles,
 	.get_cycles_per_sec = mcux_ftm_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE
-	.pin_configure_capture = mcux_ftm_pin_configure_capture,
-	.pin_enable_capture = mcux_ftm_pin_enable_capture,
-	.pin_disable_capture = mcux_ftm_pin_disable_capture,
+	.configure_capture = mcux_ftm_configure_capture,
+	.enable_capture = mcux_ftm_enable_capture,
+	.disable_capture = mcux_ftm_disable_capture,
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
