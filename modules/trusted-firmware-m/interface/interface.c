@@ -48,17 +48,14 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 #endif
 	}
 
-#if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 	struct fpu_ctx_full context_buffer;
 
 	z_arm_save_fp_context(&context_buffer);
-#endif
 
 	result = fn(arg0, arg1, arg2, arg3);
 
-#if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 	z_arm_restore_fp_context(&context_buffer);
-#endif
+
 	if (!is_pre_kernel) {
 #if !defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 		/* Unlock the scheduler, to allow the thread to be preempted. */
