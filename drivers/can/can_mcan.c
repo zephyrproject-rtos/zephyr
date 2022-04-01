@@ -160,7 +160,7 @@ void can_mcan_configure_timing(struct can_mcan_reg  *can,
 				timing_data->phase_seg1 > 0);
 		__ASSERT_NO_MSG(timing_data->phase_seg2 <= 0x10 &&
 				timing_data->phase_seg2 > 0);
-		__ASSERT_NO_MSG(timing_data->prescaler <= 20 &&
+		__ASSERT_NO_MSG(timing_data->prescaler <= 0x20 &&
 				timing_data->prescaler > 0);
 		__ASSERT_NO_MSG(timing_data->sjw == CAN_SJW_NO_CHANGE ||
 				(timing_data->sjw <= 0x80 && timing_data->sjw > 0));
