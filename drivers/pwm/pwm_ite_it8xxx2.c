@@ -73,16 +73,16 @@ static int pwm_it8xxx2_get_cycles_per_sec(const struct device *dev,
 	ARG_UNUSED(channel);
 
 	/*
-	 * There are three ways to call pwm_it8xxx2_pin_set() from pwm api:
-	 * 1) pwm_pin_set_usec() -> pwm_pin_set_cycles() -> pwm_it8xxx2_pin_set()
+	 * There are three ways to call pwm_it8xxx2_set_cycles() from pwm api:
+	 * 1) pwm_set_cycles_usec() -> pwm_set_cycles_cycles() -> pwm_it8xxx2_set_cycles()
 	 *    target_freq = pwm_clk_src / period_cycles
 	 *                = cycles / (period * cycles / USEC_PER_SEC)
 	 *                = USEC_PER_SEC / period
-	 * 2) pwm_pin_set_nsec() -> pwm_pin_set_cycles() -> pwm_it8xxx2_pin_set()
+	 * 2) pwm_set_cycles_nsec() -> pwm_set_cycles_cycles() -> pwm_it8xxx2_set_cycles()
 	 *    target_freq = pwm_clk_src / period_cycles
 	 *                = cycles / (period * cycles / NSEC_PER_SEC)
 	 *                = NSEC_PER_SEC / period
-	 * 3) pwm_pin_set_cycles() -> pwm_it8xxx2_pin_set()
+	 * 3) pwm_set_cycles_cycles() -> pwm_it8xxx2_set_cycles()
 	 *    target_freq = pwm_clk_src / period_cycles
 	 *                = cycles / period
 	 *
@@ -95,9 +95,9 @@ static int pwm_it8xxx2_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static int pwm_it8xxx2_pin_set(const struct device *dev, uint32_t channel,
-			       uint32_t period_cycles, uint32_t pulse_cycles,
-			       pwm_flags_t flags)
+static int pwm_it8xxx2_set_cycles(const struct device *dev,
+				  uint32_t channel, uint32_t period_cycles,
+				  uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_it8xxx2_cfg *config = dev->config;
 	struct pwm_it8xxx2_regs *const inst = config->base;
@@ -251,7 +251,7 @@ static int pwm_it8xxx2_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api pwm_it8xxx2_api = {
-	.pin_set = pwm_it8xxx2_pin_set,
+	.set_cycles = pwm_it8xxx2_set_cycles,
 	.get_cycles_per_sec = pwm_it8xxx2_get_cycles_per_sec,
 };
 

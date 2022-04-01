@@ -56,9 +56,9 @@ static int pwm_sam0_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static int pwm_sam0_pin_set(const struct device *dev, uint32_t channel,
-			    uint32_t period_cycles, uint32_t pulse_cycles,
-			    pwm_flags_t flags)
+static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
 {
 	const struct pwm_sam0_config *const cfg = dev->config;
 	Tcc *regs = cfg->regs;
@@ -136,7 +136,7 @@ static int pwm_sam0_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api pwm_sam0_driver_api = {
-	.pin_set = pwm_sam0_pin_set,
+	.set_cycles = pwm_sam0_set_cycles,
 	.get_cycles_per_sec = pwm_sam0_get_cycles_per_sec,
 };
 

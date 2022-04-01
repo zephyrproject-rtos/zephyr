@@ -37,7 +37,7 @@ static bool imx_pwm_is_enabled(PWM_Type *base)
 }
 
 static int imx_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				       uint64_t *cycles)
+				      uint64_t *cycles)
 {
 	PWM_Type *base = DEV_BASE(dev);
 	const struct imx_pwm_config *config = dev->config;
@@ -47,9 +47,9 @@ static int imx_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int imx_pwm_pin_set(const struct device *dev, uint32_t channel,
-			   uint32_t period_cycles, uint32_t pulse_cycles,
-			   pwm_flags_t flags)
+static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
+			      uint32_t period_cycles, uint32_t pulse_cycles,
+			      pwm_flags_t flags)
 {
 	PWM_Type *base = DEV_BASE(dev);
 	const struct imx_pwm_config *config = dev->config;
@@ -149,7 +149,7 @@ static int imx_pwm_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api imx_pwm_driver_api = {
-	.pin_set = imx_pwm_pin_set,
+	.set_cycles = imx_pwm_set_cycles,
 	.get_cycles_per_sec = imx_pwm_get_cycles_per_sec,
 };
 
