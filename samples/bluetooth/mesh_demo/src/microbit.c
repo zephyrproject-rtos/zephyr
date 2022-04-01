@@ -129,14 +129,13 @@ void board_play_tune(const char *str)
 		}
 
 		if (period) {
-			pwm_pin_set_usec(pwm, BUZZER_PWM_CHANNEL,
-					 period, period / 2U, 0);
+			pwm_set_usec(pwm, BUZZER_PWM_CHANNEL, period, period / 2U, 0);
 		}
 
 		k_sleep(K_MSEC(duration));
 
 		/* Disable the PWM */
-		pwm_pin_set_usec(pwm, BUZZER_PWM_CHANNEL, 0, 0, 0);
+		pwm_set_usec(pwm, BUZZER_PWM_CHANNEL, 0, 0, 0);
 	}
 }
 

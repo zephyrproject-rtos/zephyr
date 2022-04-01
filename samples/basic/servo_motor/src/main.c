@@ -49,7 +49,7 @@ void main(void)
 	}
 
 	while (1) {
-		ret = pwm_pin_set_usec(pwm, 0, PERIOD_USEC, pulse_width, 0);
+		ret = pwm_set_usec(pwm, 0, PERIOD_USEC, pulse_width, 0);
 		if (ret < 0) {
 			printk("Error %d: failed to set pulse width\n", ret);
 			return;

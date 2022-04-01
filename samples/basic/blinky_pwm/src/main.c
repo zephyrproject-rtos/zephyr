@@ -55,8 +55,8 @@ void main(void)
 	 */
 	printk("Calibrating for channel %d...\n", PWM_CHANNEL);
 	max_period = MAX_PERIOD_USEC;
-	while (pwm_pin_set_usec(pwm, PWM_CHANNEL,
-				max_period, max_period / 2U, PWM_FLAGS)) {
+	while (pwm_set_usec(pwm, PWM_CHANNEL, max_period, max_period / 2U,
+			    PWM_FLAGS)) {
 		max_period /= 2U;
 		if (max_period < (4U * MIN_PERIOD_USEC)) {
 			printk("Error: PWM device "
@@ -71,8 +71,8 @@ void main(void)
 
 	period = max_period;
 	while (1) {
-		ret = pwm_pin_set_usec(pwm, PWM_CHANNEL,
-				       period, period / 2U, PWM_FLAGS);
+		ret = pwm_set_usec(pwm, PWM_CHANNEL, period, period / 2U,
+				   PWM_FLAGS);
 		if (ret) {
 			printk("Error %d: failed to set pulse width\n", ret);
 			return;

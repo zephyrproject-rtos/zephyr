@@ -64,8 +64,7 @@
 static int pwm_set(const struct device *pwm_dev, uint32_t pwm_pin,
 		     uint32_t pulse_width, pwm_flags_t flags)
 {
-	return pwm_pin_set_usec(pwm_dev, pwm_pin, PERIOD_USEC,
-				pulse_width, flags);
+	return pwm_set_usec(pwm_dev, pwm_pin, PERIOD_USEC, pulse_width, flags);
 }
 
 enum { RED, GREEN, BLUE };
