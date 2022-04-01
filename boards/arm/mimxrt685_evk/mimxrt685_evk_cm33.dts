@@ -392,6 +392,12 @@ i2s1: &flexcomm3 {
 	/* Quick fix for 1.8V SD cards on RT600- disable 1.8V negotiation */
 	no-1-8-v;
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+		label = "SDMMC_0";
+	};
 };
 
 &lpadc0 {
