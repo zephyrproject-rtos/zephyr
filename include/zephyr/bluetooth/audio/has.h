@@ -22,11 +22,23 @@
  * ongoing development.
  */
 
-#include <bluetooth/conn.h>
+#include <bluetooth/bluetooth.h>
+#include <sys/types.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** Preset index definitions */
+#define BT_HAS_PRESET_INDEX_NONE 0x00
+#define BT_HAS_PRESET_INDEX_FIRST 0x01
+#define BT_HAS_PRESET_INDEX_LAST 0xFF
+
+/** Preset name minimum length */
+#define BT_HAS_PRESET_NAME_MIN 1
+/** Preset name maximum length */
+#define BT_HAS_PRESET_NAME_MAX 40
 
 /** @brief Opaque Hearing Access Service object. */
 struct bt_has;
@@ -36,6 +48,18 @@ enum bt_has_hearing_aid_type {
 	BT_HAS_HEARING_AID_TYPE_BINAURAL,
 	BT_HAS_HEARING_AID_TYPE_MONAURAL,
 	BT_HAS_HEARING_AID_TYPE_BANDED,
+};
+
+/** Preset Properties values */
+enum bt_has_properties {
+	/** No properties set */
+	BT_HAS_PROP_NONE = 0,
+
+	/** Preset name can be written by the client */
+	BT_HAS_PROP_WRITABLE = BIT(0),
+
+	/** Preset availability */
+	BT_HAS_PROP_AVAILABLE = BIT(1),
 };
 
 /** Hearing Aid device capablilities */
@@ -106,6 +130,87 @@ int bt_has_client_discover(struct bt_conn *conn);
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_has_client_conn_get(const struct bt_has *has, struct bt_conn **conn);
+
+/** @brief Register structure for preset. */
+struct bt_has_preset_register_param {
+	/**
+	 * @brief Preset index.
+	 *
+	 * Unique preset identifier. The value shall be other than @ref BT_HAS_PRESET_INDEX_NONE.
+	 */
+	uint8_t index;
+
+	/**
+	 * @brief Preset properties.
+	 *
+	 * Bitfield of preset properties.
+	 */
+	enum bt_has_properties properties;
+
+	/**
+	 * @brief Preset name.
+	 *
+	 * Preset name that further can be changed by either server or client if
+	 * @kconfig{CONFIG_BT_HAS_PRESET_NAME_DYNAMIC} configuration option has been enabled.
+	 * It's length shall be greater than @ref BT_HAS_PRESET_NAME_MIN. If the length exceeds
+	 * @ref BT_HAS_PRESET_NAME_MAX, the name will be truncated.
+	 */
+	const char *name;
+};
+
+/**
+ * @brief Register preset.
+ *
+ * Register preset. The preset will be a added to the list of exposed preset records.
+ * This symbol is linkable if @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
+ *
+ * @param param Preset registration parameter.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_has_preset_register(const struct bt_has_preset_register_param *param);
+
+/**
+ * @brief Unregister Preset.
+ *
+ * Unregister preset. The preset will be removed from the list of preset records.
+ *
+ * @param index The index of preset that's being requested to unregister.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_has_preset_unregister(uint8_t index);
+
+enum {
+	BT_HAS_PRESET_ITER_STOP = 0,
+	BT_HAS_PRESET_ITER_CONTINUE,
+};
+
+/**
+ * @typedef bt_has_preset_func_t
+ * @brief Preset iterator callback.
+ *
+ * @param index The index of preset found.
+ * @param properties Preset properties.
+ * @param name Preset name.
+ * @param user_data Data given.
+ *
+ * @return BT_HAS_PRESET_ITER_CONTINUE if should continue to the next preset.
+ * @return BT_HAS_PRESET_ITER_STOP to stop.
+ */
+typedef uint8_t (*bt_has_preset_func_t)(uint8_t index, enum bt_has_properties properties,
+					const char *name, void *user_data);
+
+/**
+ * @brief Preset iterator.
+ *
+ * Iterate presets. Optionally, match non-zero index if given.
+ *
+ * @param index Preset index, passing @ref BT_HAS_PRESET_INDEX_NONE skips index matching.
+ * @param func Callback function.
+ * @param user_data Data to pass to the callback.
+ */
+void bt_has_preset_foreach(uint8_t index, bt_has_preset_func_t func, void *user_data);
 
 #ifdef __cplusplus
 }
