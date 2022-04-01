@@ -770,7 +770,7 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
 	uint32_t port1_pin30_config = (/* Pin is configured as SD0_CLK */
 		IOPCTL_PIO_FUNC1 |
 		/* Disable pull-up / pull-down function */

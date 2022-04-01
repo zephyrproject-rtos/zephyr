@@ -79,7 +79,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_DISK_DRIVER_SDMMC &&					\
+#if CONFIG_IMX_USDHC &&					\
 	(DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) ||	\
 	 DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay))
 
