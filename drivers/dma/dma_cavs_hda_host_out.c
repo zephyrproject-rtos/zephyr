@@ -19,6 +19,7 @@ static const struct dma_driver_api cavs_hda_dma_host_out_api = {
 	.start = cavs_hda_dma_start,
 	.stop = cavs_hda_dma_stop,
 	.get_status = cavs_hda_dma_status,
+	.chan_filter = cavs_hda_dma_chan_filter,
 };
 
 #define CAVS_HDA_DMA_HOST_OUT_INIT(inst)                                                           \
