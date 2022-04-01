@@ -12,6 +12,7 @@
 #include <shell/shell_history.h>
 #include <shell/shell_fprintf.h>
 #include <shell/shell_log_backend.h>
+#include <shell/shell_string_conv.h>
 #include <logging/log_instance.h>
 #include <logging/log.h>
 #include <sys/util.h>
