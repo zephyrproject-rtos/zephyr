@@ -19,3 +19,15 @@ config MEMC_STM32_SDRAM
 	select USE_STM32_HAL_SDRAM
 	help
 	  Enable STM32 FMC SDRAM controller.
+
+DT_COMPAT_ST_STM32_FMC_NOR_PSRAM := st,stm32-fmc-nor-psram
+
+config MEMC_STM32_NOR_PSRAM
+	bool "STM32 FMC NOR/PSRAM controller"
+	depends on MEMC_STM32
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_FMC_NOR_PSRAM))
+	select USE_STM32_LL_FMC
+	select USE_STM32_HAL_NOR
+	select USE_STM32_HAL_SRAM
+	help
+	  Enable STM32 FMC NOR/PSRAM controller.
