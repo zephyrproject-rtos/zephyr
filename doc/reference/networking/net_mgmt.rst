@@ -160,7 +160,7 @@ This new management procedure could then be called by using:
 Signaling a network event
 *************************
 
-You can signal a specific network event using the :c:func:`net_mgmt_notify`
+You can signal a specific network event using the :c:func:`net_mgmt_event_notify`
 function and provide the network event code. See
 :zephyr_file:`include/net/net_mgmt.h` for details. As for the management request
 code, event code can be also found on specific L2 technology mgmt headers,
