@@ -38,8 +38,11 @@ target_include_directories(boot_stage2 PUBLIC
   ${rp2040_dir}/hardware_regs/include
   ${common_dir}/pico_base/include
   ${ZEPHYR_BASE}/include
-  ${ZEPHYR_BASE}/include/zephyr
   )
+
+if(CONFIG_LEGACY_INCLUDE_PATH)
+  target_include_directories(boot_stage2 PUBLIC ${ZEPHYR_BASE}/include/zephyr)
+endif()
 
 target_link_options(boot_stage2 PRIVATE
   "-nostartfiles"
