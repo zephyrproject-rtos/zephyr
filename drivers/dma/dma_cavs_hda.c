@@ -130,6 +130,23 @@ int cavs_hda_dma_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
+bool cavs_hda_dma_chan_filter(const struct device *dev, int channel, void *filter_param)
+{
+	uint32_t requested_channel;
+
+	if (!filter_param) {
+		return true;
+	}
+
+	requested_channel = *(uint32_t *)filter_param;
+
+	if (channel == requested_channel) {
+		return true;
+	}
+
+	return false;
+}
+
 int cavs_hda_dma_start(const struct device *dev, uint32_t channel)
 {
 	const struct cavs_hda_dma_cfg *const cfg = dev->config;
