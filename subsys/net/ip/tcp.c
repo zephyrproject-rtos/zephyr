@@ -1782,6 +1782,9 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 	if (th) {
 		size_t max_win;
+		int sndbuf;
+		size_t sndbuf_len;
+
 
 		conn->send_win = ntohs(th_win(th));
 
@@ -1796,6 +1799,17 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			 */
 			max_win = (CONFIG_NET_BUF_TX_COUNT *
 				   CONFIG_NET_BUF_DATA_SIZE) / 3;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDBUF) &&
+			conn->state != TCP_SYN_SENT &&
+			net_context_get_option(conn->context,
+					       NET_OPT_SNDBUF,
+					       &sndbuf,
+					       &sndbuf_len) == 0) {
+			if (sndbuf > 0) {
+				max_win = sndbuf;
+			}
 		}
 
 		max_win = MAX(max_win, NET_IPV6_MTU);

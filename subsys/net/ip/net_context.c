@@ -1260,6 +1260,21 @@ static int get_context_rcvbuf(struct net_context *context,
 #endif
 }
 
+static int get_context_sndbuf(struct net_context *context,
+				void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_SNDBUF)
+	*((int *)value) = context->options.sndbuf;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -2251,6 +2266,27 @@ static int set_context_rcvbuf(struct net_context *context,
 #endif
 }
 
+static int set_context_sndbuf(struct net_context *context,
+				const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_SNDBUF)
+	int sndbuf_value = *((int *)value);
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if ((sndbuf_value < 0) || (sndbuf_value > UINT16_MAX)) {
+		return -EINVAL;
+	}
+
+	context->options.sndbuf = (uint16_t) sndbuf_value;
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2283,6 +2319,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_RCVBUF:
 		ret = set_context_rcvbuf(context, value, len);
+		break;
+	case NET_OPT_SNDBUF:
+		ret = set_context_sndbuf(context, value, len);
 		break;
 	}
 
@@ -2323,6 +2362,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_RCVBUF:
 		ret = get_context_rcvbuf(context, value, len);
+		break;
+	case NET_OPT_SNDBUF:
+		ret = get_context_sndbuf(context, value, len);
 		break;
 	}
 
