@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 DT_COMPAT_ZEPHYR_MMC_SPI_SLOT := zephyr,mmc-spi-slot
-DT_COMPAT_NXP_USDHC := nxp,imx-usdhc
 DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
 DT_COMPAT_ZEPHYR_MMC := zephyr,sdmmc-disk
 
@@ -41,18 +40,6 @@ config SDMMC_SUBSYS
 	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_MMC))
 	help
 	  Enable SDMMC access via SD subsystem
-
-config SDMMC_USDHC
-	bool "NXP i.MXRT USDHC driver"
-	depends on (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
-	default $(dt_compat_enabled,$(DT_COMPAT_NXP_USDHC))
-	help
-	  File system on a SDHC card accessed over
-	  NXP USDHC.
-
-if SDMMC_USDHC
-source "drivers/disk/Kconfig.usdhc"
-endif
 
 config SDMMC_STM32
 	bool "STM32 SDMMC driver"
