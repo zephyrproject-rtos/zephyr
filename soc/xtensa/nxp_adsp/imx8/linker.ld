@@ -16,7 +16,6 @@ OUTPUT_ARCH(xtensa)
 #include <devicetree.h>
 #include <xtensa/config/core-isa.h>
 #include <soc/memory.h>
-#include <autoconf.h>
 #include <linker/sections.h>
 
 #include <linker/linker-defs.h>

@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <autoconf.h>
- #include <devicetree.h>
+  #include <devicetree.h>
 
 #define IS_CHOSEN_SRAM(x) (DT_DEP_ORD(DT_NODELABEL(x)) == DT_DEP_ORD(DT_CHOSEN(zephyr_sram)))
 

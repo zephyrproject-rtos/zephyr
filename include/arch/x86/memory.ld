@@ -27,7 +27,6 @@
 #ifndef ARCH_X86_MEMORY_LD
 #define ARCH_X86_MEMORY_LD
 
-#include <autoconf.h>
 #include <devicetree.h>
 #include <sys/mem_manage.h>
 

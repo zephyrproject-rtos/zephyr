@@ -13,7 +13,6 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
-#include <autoconf.h>
 #include <devicetree.h>
 #include <toolchain.h>
 

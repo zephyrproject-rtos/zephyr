@@ -9,7 +9,6 @@
 #ifndef ZEPHYR_INCLUDE_SHARED_IRQ_H_
 #define ZEPHYR_INCLUDE_SHARED_IRQ_H_
 
-#include <autoconf.h>
 
 #ifdef __cplusplus
 extern "C" {
