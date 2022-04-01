@@ -84,7 +84,10 @@ void test_cte_req_central_local(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+
 	/* Initiate an CTE Request Procedure */
+	conn.llcp.cte_req.is_enabled = 1U;
+
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
@@ -261,6 +264,8 @@ void test_cte_req_peripheral_local(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an CTE Request Procedure */
+	conn.llcp.cte_req.is_enabled = 1U;
+
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
@@ -475,6 +480,8 @@ void test_cte_req_rejected_inv_ll_param_central_local(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an CTE Request Procedure */
+	conn.llcp.cte_req.is_enabled = 1U;
+
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
@@ -549,6 +556,8 @@ void test_cte_req_rejected_inv_ll_param_peripheral_local(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an CTE Request Procedure */
+	conn.llcp.cte_req.is_enabled = 1U;
+
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
@@ -1124,6 +1133,8 @@ static void test_local_cte_req_wait_for_phy_update_complete_and_disable(uint8_t 
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Initiate an CTE Request Procedure */
+	conn.llcp.cte_req.is_enabled = 1U;
+
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
@@ -1189,6 +1200,8 @@ static void test_local_cte_req_wait_for_phy_update_complete(uint8_t role)
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Initiate an CTE Request Procedure */
+	conn.llcp.cte_req.is_enabled = 1U;
+
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
@@ -1235,6 +1248,8 @@ static void test_local_phy_update_wait_for_cte_req_complete(uint8_t role)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an CTE Request Procedure */
+	conn.llcp.cte_req.is_enabled = 1U;
+
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
@@ -1385,6 +1400,8 @@ static void test_cte_req_wait_for_remote_phy_update_complete_and_disable(uint8_t
 	event_done(&conn);
 
 	/* Initiate an CTE Request Procedure */
+	conn.llcp.cte_req.is_enabled = 1U;
+
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
@@ -1439,6 +1456,8 @@ static void test_cte_req_wait_for_remote_phy_update_complete(uint8_t role)
 	event_done(&conn);
 
 	/* Initiate an CTE Request Procedure */
+	conn.llcp.cte_req.is_enabled = 1U;
+
 	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 

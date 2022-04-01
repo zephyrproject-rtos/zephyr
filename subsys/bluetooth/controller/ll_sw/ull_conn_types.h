@@ -428,15 +428,12 @@ struct llcp_struct {
 		/* Procedure may be active periodically, active state must be stored.
 		 * If procedure is active, request parameters update may not be issued.
 		 */
-		uint8_t is_enabled:1;
-		uint8_t is_active:1;
+		volatile uint8_t is_enabled;
 		uint8_t cte_type;
 		/* Minimum requested CTE length in 8us units */
 		uint8_t min_cte_len;
 		uint16_t req_interval;
 		uint16_t req_expire;
-		void *disable_param;
-		void (*disable_cb)(void *param);
 	} cte_req;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 

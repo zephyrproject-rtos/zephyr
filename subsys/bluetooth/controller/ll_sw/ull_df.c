@@ -1123,12 +1123,12 @@ uint8_t ll_df_set_conn_cte_rx_params(uint16_t handle, uint8_t sampling_enable,
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
 
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 static void df_conn_cte_req_disable(void *param)
 {
 	k_sem_give(param);
 }
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ || CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /* @brief Function enables or disables CTE request control procedure for a connection.
@@ -1164,18 +1164,6 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 
 	if (!enable) {
 		ull_cp_cte_req_set_disable(conn);
-
-		if (conn->llcp.cte_req.is_active) {
-			struct k_sem sem;
-
-			k_sem_init(&sem, 0U, 1U);
-			conn->llcp.cte_req.disable_param = &sem;
-			conn->llcp.cte_req.disable_cb = df_conn_cte_req_disable;
-
-			if (!conn->llcp.cte_req.is_active) {
-				k_sem_take(&sem, K_FOREVER);
-			}
-		}
 
 		return BT_HCI_ERR_SUCCESS;
 	} else {
