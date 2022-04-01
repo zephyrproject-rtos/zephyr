@@ -232,18 +232,18 @@ static void isr_rx(void *param)
 	struct node_rx_iq_report *node_rx;
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
-#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_CTE_RX)
 	bool cte_ready;
 	bool cte_ok = 0;
-#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
+#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
-#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_CTE_RX)
 		cte_ready = radio_df_cte_ready();
-#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
+#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 	}
 
 	/* Clear radio status and events */
@@ -256,11 +256,13 @@ static void isr_rx(void *param)
 	}
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
-	/* Get free iq report node for next Rx operation. */
-	node_rx = ull_df_iq_report_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	if (test_cte_len > 0) {
+		/* Get free iq report node for next Rx operation. */
+		node_rx = ull_df_iq_report_alloc_peek(1);
+		LL_ASSERT(node_rx);
 
-	radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
+		radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
+	}
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
 	/* Setup next Rx */
@@ -270,14 +272,14 @@ static void isr_rx(void *param)
 	/* Count Rx-ed packets */
 	if (crc_ok) {
 
-#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_CTE_RX)
 		if (test_cte_len > 0) {
 			cte_ok = check_rx_cte(cte_ready);
 			if (cte_ok) {
 				test_num_rx++;
 			}
 		} else
-#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
+#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 
 		{
 			test_num_rx++;
@@ -550,7 +552,7 @@ static void payload_set(uint8_t type, uint8_t len, uint8_t cte_len, uint8_t cte_
 #else
 	ARG_UNUSED(cte_len);
 	ARG_UNUSED(cte_type);
-#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
 
 	switch (type) {
 	case BT_HCI_TEST_PKT_PAYLOAD_PRBS9:
