@@ -34,8 +34,8 @@ gen_kobj(KOBJ_GEN_DIR)
 list(APPEND INCLUDE
   subsys/testsuite/ztest/include
   subsys/testsuite/include
-  include
   include/zephyr
+  include
   .
 )
 
