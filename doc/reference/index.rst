@@ -8,6 +8,7 @@ API Reference
    :maxdepth: 2
 
    api/index.rst
+   app_event_manager/index.rst
    audio/index.rst
    misc/notify.rst
    bluetooth/index.rst
