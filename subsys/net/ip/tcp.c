@@ -2260,7 +2260,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDBUF) &&
-			net_context_get_option(context, NET_OPT_SNDBUF, &sndbuf, &sndbuf_len) == 0) {
+		net_context_get_option(context, NET_OPT_SNDBUF, &sndbuf, &sndbuf_len) == 0) {
 		if ((sndbuf > 0) &&
 				(net_pkt_get_len(conn->send_data) + len > sndbuf)) {
 			ret = -ENOMEM;

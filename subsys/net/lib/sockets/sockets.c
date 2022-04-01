@@ -1849,7 +1849,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 				ret = net_context_set_option(ctx,
 						NET_OPT_SNDBUF,
 						optval, optlen);
-				if (ret <0) {
+				if (ret < 0) {
 					errno = -ret;
 					return -1;
 				}
