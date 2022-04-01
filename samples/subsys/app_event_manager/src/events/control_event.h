@@ -13,17 +13,17 @@
  * @{
  */
 
-#include "event_manager/event_manager.h"
+#include <app_event_manager/app_event_manager.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct control_event {
-	struct event_header header;
+	struct app_event_header header;
 };
 
-EVENT_TYPE_DECLARE(control_event);
+APP_EVENT_TYPE_DECLARE(control_event);
 
 #ifdef __cplusplus
 }

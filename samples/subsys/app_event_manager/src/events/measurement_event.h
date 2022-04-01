@@ -13,21 +13,21 @@
  * @{
  */
 
-#include "event_manager/event_manager.h"
+#include <app_event_manager/app_event_manager.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct measurement_event {
-	struct event_header header;
+	struct app_event_header header;
 
 	int8_t value1;
 	int16_t value2;
 	int32_t value3;
 };
 
-EVENT_TYPE_DECLARE(measurement_event);
+APP_EVENT_TYPE_DECLARE(measurement_event);
 
 #ifdef __cplusplus
 }

@@ -10,4 +10,6 @@ target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/multicontext_event.c)
 
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/order_event.c)
 
+target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/sized_events.c)
+
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_events.c)

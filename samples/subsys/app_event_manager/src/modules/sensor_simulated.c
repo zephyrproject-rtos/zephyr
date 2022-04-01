@@ -39,7 +39,7 @@ static void measure(void)
 	event->value1 = value1;
 	event->value2 = value2;
 	event->value3 = value3;
-	EVENT_SUBMIT(event);
+	APP_EVENT_SUBMIT(event);
 }
 
 static void sensor_simulated_thread_fn(void)
@@ -61,18 +61,18 @@ static void init(void)
 			0, K_NO_WAIT);
 }
 
-static bool event_handler(const struct event_header *eh)
+static bool app_event_handler(const struct app_event_header *aeh)
 {
-	if (is_control_event(eh)) {
+	if (is_control_event(aeh)) {
 		value1 = -value1;
 		struct ack_event *ack = new_ack_event();
 
-		EVENT_SUBMIT(ack);
+		APP_EVENT_SUBMIT(ack);
 		return false;
 	}
 
-	if (is_config_event(eh)) {
-		struct config_event *ce = cast_config_event(eh);
+	if (is_config_event(aeh)) {
+		struct config_event *ce = cast_config_event(aeh);
 
 		value1 = ce->init_value1;
 		init();
@@ -85,6 +85,6 @@ static bool event_handler(const struct event_header *eh)
 	return false;
 }
 
-EVENT_LISTENER(MODULE, event_handler);
-EVENT_SUBSCRIBE(MODULE, control_event);
-EVENT_SUBSCRIBE(MODULE, config_event);
+APP_EVENT_LISTENER(MODULE, app_event_handler);
+APP_EVENT_SUBSCRIBE(MODULE, control_event);
+APP_EVENT_SUBSCRIBE(MODULE, config_event);

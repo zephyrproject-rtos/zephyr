@@ -13,14 +13,14 @@
  * @{
  */
 
-#include <event_manager/event_manager.h>
+#include <app_event_manager/app_event_manager.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct data_event {
-	struct event_header header;
+	struct app_event_header header;
 
 	int8_t val1;
 	int16_t val2;
@@ -32,7 +32,7 @@ struct data_event {
 	char *descr;
 };
 
-EVENT_TYPE_DECLARE(data_event);
+APP_EVENT_TYPE_DECLARE(data_event);
 
 #ifdef __cplusplus
 }

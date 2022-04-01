@@ -15,10 +15,10 @@
 
 #define MODULE test_basic
 
-static bool event_handler(const struct event_header *eh)
+static bool app_event_handler(const struct app_event_header *aeh)
 {
-	if (is_test_start_event(eh)) {
-		struct test_start_event *st = cast_test_start_event(eh);
+	if (is_test_start_event(aeh)) {
+		struct test_start_event *st = cast_test_start_event(aeh);
 
 		switch (st->test_id) {
 		case TEST_BASIC:
@@ -27,7 +27,7 @@ static bool event_handler(const struct event_header *eh)
 
 			zassert_not_null(et, "Failed to allocate event");
 			et->test_id = st->test_id;
-			EVENT_SUBMIT(et);
+			APP_EVENT_SUBMIT(et);
 			break;
 		}
 
@@ -46,7 +46,7 @@ static bool event_handler(const struct event_header *eh)
 
 			event->descr = descr;
 
-			EVENT_SUBMIT(event);
+			APP_EVENT_SUBMIT(event);
 			break;
 		}
 
@@ -57,7 +57,7 @@ static bool event_handler(const struct event_header *eh)
 
 				zassert_not_null(event, "Failed to allocate event");
 				event->val = i;
-				EVENT_SUBMIT(event);
+				APP_EVENT_SUBMIT(event);
 			}
 			break;
 		}
@@ -67,7 +67,7 @@ static bool event_handler(const struct event_header *eh)
 			struct order_event *event = new_order_event();
 
 			zassert_not_null(event, "Failed to allocate event");
-			EVENT_SUBMIT(event);
+			APP_EVENT_SUBMIT(event);
 			break;
 		}
 
@@ -86,5 +86,5 @@ static bool event_handler(const struct event_header *eh)
 	return false;
 }
 
-EVENT_LISTENER(MODULE, event_handler);
-EVENT_SUBSCRIBE(MODULE, test_start_event);
+APP_EVENT_LISTENER(MODULE, app_event_handler);
+APP_EVENT_SUBSCRIBE(MODULE, test_start_event);

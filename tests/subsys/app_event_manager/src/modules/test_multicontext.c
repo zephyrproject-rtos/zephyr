@@ -22,7 +22,7 @@ static void send_event(int a, bool sleep)
 
 	zassert_not_null(ev, "Failed to allocate event");
 	/* For every event both values should be the same -
-	 * used to check if Event Manager sends proper values.
+	 * used to check if Application Event Manager sends proper values.
 	 */
 	ev->val1 = a;
 	if (sleep) {
@@ -30,7 +30,7 @@ static void send_event(int a, bool sleep)
 	}
 	ev->val2 = a;
 
-	EVENT_SUBMIT(ev);
+	APP_EVENT_SUBMIT(ev);
 }
 
 static void timer_handler(struct k_timer *timer_id)
@@ -73,10 +73,10 @@ static void start_test(void)
 }
 
 
-static bool event_handler(const struct event_header *eh)
+static bool app_event_handler(const struct app_event_header *aeh)
 {
-	if (is_test_start_event(eh)) {
-		struct test_start_event *st = cast_test_start_event(eh);
+	if (is_test_start_event(aeh)) {
+		struct test_start_event *st = cast_test_start_event(aeh);
 
 		switch (st->test_id) {
 		case TEST_MULTICONTEXT:
@@ -102,5 +102,5 @@ static bool event_handler(const struct event_header *eh)
 	return false;
 }
 
-EVENT_LISTENER(MODULE, event_handler);
-EVENT_SUBSCRIBE(MODULE, test_start_event);
+APP_EVENT_LISTENER(MODULE, app_event_handler);
+APP_EVENT_SUBSCRIBE(MODULE, test_start_event);

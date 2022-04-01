@@ -82,7 +82,7 @@ To create a header file for the event type you want to define:
 
    .. code-block:: c
 
-	   #include <app_event_manager.h>
+	   #include <app_event_manager/app_event_manager.h>
 
 #. Define the new event type by creating a structure that contains an :c:struct:`app_event_header` named ``header`` as the first field.
 #. Optionally, add additional custom data fields to the structure.
@@ -92,7 +92,7 @@ The following code example shows a header file for the event type :c:struct:`sam
 
 .. code-block:: c
 
-   #include <app_event_manager.h>
+   #include <app_event_manager/app_event_manager.h>
 
    struct sample_event {
 	   struct app_event_header header;
@@ -112,7 +112,7 @@ For example, you can add variable sized data to the previously defined event by 
 
 .. code-block:: c
 
-   #include <app_event_manager.h>
+   #include <app_event_manager/app_event_manager.h>
 
    struct sample_event {
 	   struct app_event_header header;
@@ -143,7 +143,7 @@ To create a source file for the event type you defined in the header file:
    The :c:macro:`APP_EVENT_TYPE_DEFINE` macro adds flags as a last parameter.
    These flags are constant and can only be set using :c:macro:`APP_EVENT_FLAGS_CREATE` on :c:macro:`APP_EVENT_TYPE_DEFINE` macro.
    To not set any flag, use :c:macro:`APP_EVENT_FLAGS_CREATE` without any argument as shown in the below example.
-   To get value of specific flag, use :c:func:`get_app_event_type_flag` function.
+   To get value of specific flag, use :c:func:`app_event_get_type_flag` function.
 
 The following code example shows a source file for the event type ``sample_event``:
 

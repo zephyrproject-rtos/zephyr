@@ -1,13 +1,13 @@
-.. _event_manager_sample:
+.. _app_event_manager_sample:
 
-Event Manager
-#############
+Application Event Manager
+#########################
 
 .. contents::
    :local:
    :depth: 2
 
-The Event Manager sample demonstrates the functionality of the :ref:`event_manager` subsystem.
+The Application Event Manager sample demonstrates the functionality of the :ref:`app_event_manager` subsystem.
 It uses an event-driven architecture, where different modules communicate through sending and processing events.
 
 
@@ -32,6 +32,7 @@ Statistics (``stats.c``):
 
 Building and testing
 ********************
+.. |sample path| replace:: :file:`samples/app_event_manager`
 
 1.Using development board:
   Build and flash Event Manager as follows, changing nrf52840dk_nrf52840 for your board:
@@ -45,19 +46,19 @@ Building and testing
 #. Observe that output similar to the following is logged on UART in case of development kit and in terminal in case of qemu::
 
       ***** Booting Zephyr OS v1.13.99-ncs1-4741-g1d6219f *****
-      [00:00:00.000,854] <inf> event_manager: e: config_event init_val_1=3
-      [00:00:00.001,068] <inf> event_manager: e: measurement_event val1=3 val2=3 val3=3
-      [00:00:00.509,063] <inf> event_manager: e: measurement_event val1=3 val2=6 val3=9
-      [00:00:01.018,005] <inf> event_manager: e: measurement_event val1=3 val2=9 val3=18
-      [00:00:01.526,947] <inf> event_manager: e: measurement_event val1=3 val2=12 val3=30
-      [00:00:02.035,888] <inf> event_manager: e: measurement_event val1=3 val2=15 val3=45
-      [00:00:02.035,949] <inf> event_manager: e: control_event
-      [00:00:02.035,980] <inf> event_manager: e: ack_event
-      [00:00:02.544,830] <inf> event_manager: e: measurement_event val1=-3 val2=12 val3=57
-      [00:00:03.053,771] <inf> event_manager: e: measurement_event val1=-3 val2=9 val3=66
-      [00:00:03.562,713] <inf> event_manager: e: measurement_event val1=-3 val2=6 val3=72
-      [00:00:04.071,655] <inf> event_manager: e: measurement_event val1=-3 val2=3 val3=75
-      [00:00:04.580,596] <inf> event_manager: e: measurement_event val1=-3 val2=0 val3=75
+      [00:00:00.000,854] <inf> app_event_manager: e: config_event init_val_1=3
+      [00:00:00.001,068] <inf> app_event_manager: e: measurement_event val1=3 val2=3 val3=3
+      [00:00:00.509,063] <inf> app_event_manager: e: measurement_event val1=3 val2=6 val3=9
+      [00:00:01.018,005] <inf> app_event_manager: e: measurement_event val1=3 val2=9 val3=18
+      [00:00:01.526,947] <inf> app_event_manager: e: measurement_event val1=3 val2=12 val3=30
+      [00:00:02.035,888] <inf> app_event_manager: e: measurement_event val1=3 val2=15 val3=45
+      [00:00:02.035,949] <inf> app_event_manager: e: control_event
+      [00:00:02.035,980] <inf> app_event_manager: e: ack_event
+      [00:00:02.544,830] <inf> app_event_manager: e: measurement_event val1=-3 val2=12 val3=57
+      [00:00:03.053,771] <inf> app_event_manager: e: measurement_event val1=-3 val2=9 val3=66
+      [00:00:03.562,713] <inf> app_event_manager: e: measurement_event val1=-3 val2=6 val3=72
+      [00:00:04.071,655] <inf> app_event_manager: e: measurement_event val1=-3 val2=3 val3=75
+      [00:00:04.580,596] <inf> app_event_manager: e: measurement_event val1=-3 val2=0 val3=75
       [00:00:04.580,596] <inf> stats: Average value3: 45
 
 
@@ -66,5 +67,5 @@ Dependencies
 
 This sample uses the following Zephyr subsystems:
 
-* :ref:`event_manager`
+* :ref:`app_event_manager`
 * :ref:`logging_api`

@@ -28,7 +28,7 @@ static void add_to_stats(int32_t value)
 
 	if (ind == ARRAY_SIZE(val_arr)) {
 		ind = 0;
-		long long sum = 0;
+		long long int sum = 0;
 
 		for (size_t i = 0; i < ARRAY_SIZE(val_arr); i++) {
 			sum += val_arr[i];
@@ -37,10 +37,10 @@ static void add_to_stats(int32_t value)
 	}
 }
 
-static bool event_handler(const struct event_header *eh)
+static bool app_event_handler(const struct app_event_header *aeh)
 {
-	if (is_measurement_event(eh)) {
-		struct measurement_event *me = cast_measurement_event(eh);
+	if (is_measurement_event(aeh)) {
+		struct measurement_event *me = cast_measurement_event(aeh);
 
 		add_to_stats(me->value3);
 		return false;
@@ -52,5 +52,5 @@ static bool event_handler(const struct event_header *eh)
 	return false;
 }
 
-EVENT_LISTENER(MODULE, event_handler);
-EVENT_SUBSCRIBE(MODULE, measurement_event);
+APP_EVENT_LISTENER(MODULE, app_event_handler);
+APP_EVENT_SUBSCRIBE(MODULE, measurement_event);

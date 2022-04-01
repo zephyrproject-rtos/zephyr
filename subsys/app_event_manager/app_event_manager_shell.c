@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <shell/shell.h>
-#include <app_event_manager.h>
+#include <app_event_manager/app_event_manager.h>
 
 static int show_events(const struct shell *event_manager_shell, size_t argc,
 		char **argv)
@@ -117,7 +117,8 @@ static void set_event_displaying(const struct shell *event_manager_shell, size_t
 		}
 
 		for (size_t i = 0; i < ARRAY_SIZE(event_indexes); i++) {
-			atomic_set_bit_to(_app_event_manager_event_display_bm.flags, event_indexes[i],
+			atomic_set_bit_to(_app_event_manager_event_display_bm.flags,
+					  event_indexes[i],
 					  enable);
 			const struct event_type *et =
 				_event_type_list_start + event_indexes[i];

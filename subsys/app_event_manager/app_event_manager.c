@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include <spinlock.h>
 #include <sys/slist.h>
-#include <app_event_manager.h>
+#include <app_event_manager/app_event_manager.h>
 #include <logging/log.h>
 
 #if defined(CONFIG_REBOOT)
@@ -108,7 +108,7 @@ static void log_event_init(void)
 	}
 
 	STRUCT_SECTION_FOREACH(event_type, et) {
-		if (get_app_event_type_flag(et, APP_EVENT_TYPE_FLAGS_INIT_LOG_ENABLE)) {
+		if (app_event_get_type_flag(et, APP_EVENT_TYPE_FLAGS_INIT_LOG_ENABLE)) {
 			size_t idx = et - _event_type_list_start;
 
 			atomic_set_bit(_app_event_manager_event_display_bm.flags, idx);
@@ -163,7 +163,7 @@ static void event_processor_fn(struct k_work *work)
 						       struct app_event_header,
 						       node);
 
-		ASSERT_APP_EVENT_ID(aeh->type_id);
+		APP_EVENT_ASSERT_ID(aeh->type_id);
 
 		const struct event_type *et = aeh->type_id;
 
@@ -210,7 +210,7 @@ static void event_processor_fn(struct k_work *work)
 void _event_submit(struct app_event_header *aeh)
 {
 	__ASSERT_NO_MSG(aeh);
-	ASSERT_APP_EVENT_ID(aeh->type_id);
+	APP_EVENT_ASSERT_ID(aeh->type_id);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 

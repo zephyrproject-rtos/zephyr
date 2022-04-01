@@ -20,14 +20,14 @@ void send_control_event(void)
 	ack_req = true;
 	struct control_event *event = new_control_event();
 
-	EVENT_SUBMIT(event);
+	APP_EVENT_SUBMIT(event);
 }
 
-static bool event_handler(const struct event_header *eh)
+static bool app_event_handler(const struct app_event_header *aeh)
 {
-	if (is_measurement_event(eh)) {
+	if (is_measurement_event(aeh)) {
 		__ASSERT_NO_MSG(!ack_req);
-		struct measurement_event *me = cast_measurement_event(eh);
+		struct measurement_event *me = cast_measurement_event(aeh);
 
 		if ((me->value2 >= VALUE2_THRESH) ||
 		    (me->value2 <= -VALUE2_THRESH)) {
@@ -37,7 +37,7 @@ static bool event_handler(const struct event_header *eh)
 		return false;
 	}
 
-	if (is_ack_event(eh)) {
+	if (is_ack_event(aeh)) {
 		__ASSERT_NO_MSG(ack_req);
 		ack_req = false;
 		return false;
@@ -49,6 +49,6 @@ static bool event_handler(const struct event_header *eh)
 	return false;
 }
 
-EVENT_LISTENER(MODULE, event_handler);
-EVENT_SUBSCRIBE(MODULE, measurement_event);
-EVENT_SUBSCRIBE(MODULE, ack_event);
+APP_EVENT_LISTENER(MODULE, app_event_handler);
+APP_EVENT_SUBSCRIBE(MODULE, measurement_event);
+APP_EVENT_SUBSCRIBE(MODULE, ack_event);

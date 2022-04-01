@@ -7,7 +7,7 @@
 #include "data_event.h"
 
 
-EVENT_TYPE_DEFINE(data_event,
-		  false,
+APP_EVENT_TYPE_DEFINE(data_event,
 		  NULL,
-		  NULL);
+		  NULL,
+		  APP_EVENT_FLAGS_CREATE());

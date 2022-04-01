@@ -7,7 +7,7 @@
 #include "control_event.h"
 
 
-EVENT_TYPE_DEFINE(control_event,
-		  true,
+APP_EVENT_TYPE_DEFINE(control_event,
 		  NULL,
-		  NULL);
+		  NULL,
+		  APP_EVENT_FLAGS_CREATE(APP_EVENT_TYPE_FLAGS_INIT_LOG_ENABLE));

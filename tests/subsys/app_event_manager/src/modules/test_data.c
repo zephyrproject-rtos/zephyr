@@ -18,19 +18,19 @@
 
 static enum test_id cur_test_id;
 
-static bool event_handler(const struct event_header *eh)
+static bool app_event_handler(const struct app_event_header *aeh)
 {
-	if (is_test_start_event(eh)) {
-		struct test_start_event *event = cast_test_start_event(eh);
+	if (is_test_start_event(aeh)) {
+		struct test_start_event *event = cast_test_start_event(aeh);
 
 		cur_test_id = event->test_id;
 
 		return false;
 	}
 
-	if (is_data_event(eh)) {
+	if (is_data_event(aeh)) {
 		if (cur_test_id == TEST_DATA) {
-			struct data_event *event = cast_data_event(eh);
+			struct data_event *event = cast_data_event(aeh);
 			static char descr[] = TEST_STRING;
 
 			zassert_equal(event->val1, TEST_VAL1, "Wrong value");
@@ -46,16 +46,16 @@ static bool event_handler(const struct event_header *eh)
 
 			zassert_not_null(te, "Failed to allocate event");
 			te->test_id = TEST_DATA;
-			EVENT_SUBMIT(te);
+			APP_EVENT_SUBMIT(te);
 		}
 
 		return false;
 	}
 
-	if (is_order_event(eh)) {
+	if (is_order_event(aeh)) {
 		if (cur_test_id == TEST_EVENT_ORDER) {
 			static int i;
-			struct order_event *event = cast_order_event(eh);
+			struct order_event *event = cast_order_event(aeh);
 
 			zassert_equal(event->val, i, "Incorrent event order");
 			i++;
@@ -65,7 +65,7 @@ static bool event_handler(const struct event_header *eh)
 
 				zassert_not_null(te, "Failed to allocate event");
 				te->test_id = TEST_EVENT_ORDER;
-				EVENT_SUBMIT(te);
+				APP_EVENT_SUBMIT(te);
 			}
 		}
 
@@ -77,7 +77,7 @@ static bool event_handler(const struct event_header *eh)
 	return false;
 }
 
-EVENT_LISTENER(MODULE, event_handler);
-EVENT_SUBSCRIBE(MODULE, data_event);
-EVENT_SUBSCRIBE(MODULE, order_event);
-EVENT_SUBSCRIBE(MODULE, test_start_event);
+APP_EVENT_LISTENER(MODULE, app_event_handler);
+APP_EVENT_SUBSCRIBE(MODULE, data_event);
+APP_EVENT_SUBSCRIBE(MODULE, order_event);
+APP_EVENT_SUBSCRIBE(MODULE, test_start_event);

@@ -24,13 +24,13 @@ static void end_test(void)
 	zassert_not_null(event, "Failed to allocate event");
 	event->test_id = cur_test_id;
 
-	EVENT_SUBMIT(event);
+	APP_EVENT_SUBMIT(event);
 }
 
-static bool event_handler(const struct event_header *eh)
+static bool app_event_handler(const struct app_event_header *aeh)
 {
-	if (is_test_start_event(eh)) {
-		struct test_start_event *st = cast_test_start_event(eh);
+	if (is_test_start_event(aeh)) {
+		struct test_start_event *st = cast_test_start_event(aeh);
 
 		switch (st->test_id) {
 		case TEST_MULTICONTEXT:
@@ -50,14 +50,14 @@ static bool event_handler(const struct event_header *eh)
 		return false;
 	}
 
-	if (is_multicontext_event(eh)) {
+	if (is_multicontext_event(aeh)) {
 		if (cur_test_id == TEST_MULTICONTEXT) {
 			static bool isr_received;
 			static bool t1_received;
 			static bool t2_received;
 
 			struct multicontext_event *ev =
-				cast_multicontext_event(eh);
+				cast_multicontext_event(aeh);
 
 			zassert_equal(ev->val1, ev->val2,
 				      "Invalid event data");
@@ -91,6 +91,6 @@ static bool event_handler(const struct event_header *eh)
 	return false;
 }
 
-EVENT_LISTENER(MODULE, event_handler);
-EVENT_SUBSCRIBE(MODULE, test_start_event);
-EVENT_SUBSCRIBE(MODULE, multicontext_event);
+APP_EVENT_LISTENER(MODULE, app_event_handler);
+APP_EVENT_SUBSCRIBE(MODULE, test_start_event);
+APP_EVENT_SUBSCRIBE(MODULE, multicontext_event);

@@ -47,7 +47,6 @@ void test_oom_reset(void)
 	}
 
 	/* This shall only be executed if OOM is not triggered. */
-	zassert_true(i < ARRAY_SIZE(event_tab),
-		     "No OOM detected, increase TEST_EVENTS_CNT");
+	zassert_true(i < ARRAY_SIZE(event_tab), "No OOM detected, increase TEST_EVENTS_CNT");
 	zassert_unreachable("OOM error not detected");
 }

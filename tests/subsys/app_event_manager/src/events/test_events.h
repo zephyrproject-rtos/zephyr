@@ -13,7 +13,7 @@
  * @{
  */
 
-#include <event_manager/event_manager.h>
+#include <app_event_manager/app_event_manager.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,20 +32,20 @@ enum test_id {
 };
 
 struct test_start_event {
-	struct event_header header;
+	struct app_event_header header;
 
 	enum test_id test_id;
 };
 
-EVENT_TYPE_DECLARE(test_start_event);
+APP_EVENT_TYPE_DECLARE(test_start_event);
 
 struct test_end_event {
-	struct event_header header;
+	struct app_event_header header;
 
 	enum test_id test_id;
 };
 
-EVENT_TYPE_DECLARE(test_end_event);
+APP_EVENT_TYPE_DECLARE(test_end_event);
 
 #ifdef __cplusplus
 }

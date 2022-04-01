@@ -6,13 +6,12 @@
 
 #include "test_events.h"
 
-
-EVENT_TYPE_DEFINE(test_start_event,
-		  false,
+APP_EVENT_TYPE_DEFINE(test_start_event,
 		  NULL,
-		  NULL);
-
-EVENT_TYPE_DEFINE(test_end_event,
-		  false,
 		  NULL,
-		  NULL);
+		  APP_EVENT_FLAGS_CREATE());
+
+APP_EVENT_TYPE_DEFINE(test_end_event,
+		  NULL,
+		  NULL,
+		  APP_EVENT_FLAGS_CREATE());
