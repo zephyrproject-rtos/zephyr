@@ -35,15 +35,6 @@
 #define fn_mco2_prescaler(v) LL_RCC_MCO2_DIV_ ## v
 #define mco2_prescaler(v) fn_mco2_prescaler(v)
 
-/* Calculate MSI freq for the given range (at RUN range, not after standby) */
-#if !defined(LL_RCC_MSIRANGESEL_RUN)
-/* CONFIG_SOC_SERIES_STM32WBX or CONFIG_SOC_SERIES_STM32L0X or CONFIG_SOC_SERIES_STM32L1X */
-#define RCC_CALC_MSI_RUN_FREQ() __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSI_GetRange())
-#else
-/* mainly CONFIG_SOC_SERIES_STM32WLX or CONFIG_SOC_SERIES_STM32L4X or CONFIG_SOC_SERIES_STM32L5X */
-#define RCC_CALC_MSI_RUN_FREQ() __LL_RCC_CALC_MSI_FREQ( \
-			LL_RCC_MSIRANGESEL_RUN, LL_RCC_MSI_GetRange())
-#endif
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
 #define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK4_FREQ
@@ -54,11 +45,6 @@
 #else
 #define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK_FREQ
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHBPrescaler
-#endif
-
-/* Identify stm32wl dual-core socs by symbol defined in CMSIS dev header file */
-#if (defined(CONFIG_SOC_SERIES_STM32WLX) && defined(DUAL_CORE))
-#define STM32WL_DUAL_CORE
 #endif
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
