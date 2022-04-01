@@ -200,17 +200,106 @@ on https://github.com and have Git tools available on your development system.
    details link near the end of the PR conversation list. See
    `Continuous Integration`_ for more information
 
-Repository layout
-*****************
+.. _source_tree_v2:
 
-To clone the main Zephyr Project repositories use the instructions in
+Source Tree Structure
+*********************
+
+To clone the main Zephyr Project repository use the instructions in
 :ref:`get_the_code`.
 
-The Zephyr project directory structure is described in :ref:`source_tree_v2`
-documentation. In addition to the Zephyr kernel itself, you'll also find the
-sources for technical documentation, sample code, supported board
-configurations, and a collection of subsystem tests.  All of these are
-available for developers to contribute to and enhance.
+This section describes the main repository's source tree. In addition to the
+Zephyr kernel itself, you'll also find the sources for technical documentation,
+sample code, supported board configurations, and a collection of subsystem
+tests.  All of these are available for developers to contribute to and enhance.
+
+Understanding the Zephyr source tree can help locate the code
+associated with a particular Zephyr feature.
+
+At the top of the tree, several files are of importance:
+
+:file:`CMakeLists.txt`
+    The top-level file for the CMake build system, containing a lot of the
+    logic required to build Zephyr.
+
+:file:`Kconfig`
+    The top-level Kconfig file, which refers to the file :file:`Kconfig.zephyr`
+    also found in the top-level directory.
+
+    See :ref:`the Kconfig section of the manual <kconfig>` for detailed Kconfig
+    documentation.
+
+:file:`west.yml`
+    The :ref:`west` manifest, listing the external repositories managed by
+    the west command-line tool.
+
+The Zephyr source tree also contains the following top-level
+directories, each of which may have one or more additional levels of
+subdirectories not described here.
+
+:file:`arch`
+    Architecture-specific kernel and system-on-chip (SoC) code.
+    Each supported architecture (for example, x86 and ARM)
+    has its own subdirectory,
+    which contains additional subdirectories for the following areas:
+
+    * architecture-specific kernel source files
+    * architecture-specific kernel include files for private APIs
+
+:file:`soc`
+    SoC related code and configuration files.
+
+:file:`boards`
+    Board related code and configuration files.
+
+:file:`doc`
+    Zephyr technical documentation source files and tools used to
+    generate the https://docs.zephyrproject.org web content.
+
+:file:`drivers`
+    Device driver code.
+
+:file:`dts`
+    :ref:`devicetree <dt-guide>` source files used to describe non-discoverable
+    board-specific hardware details.
+
+:file:`include`
+    Include files for all public APIs, except those defined under :file:`lib`.
+
+:file:`kernel`
+    Architecture-independent kernel code.
+
+:file:`lib`
+    Library code, including the minimal standard C library.
+
+:file:`misc`
+    Miscellaneous code that doesn't belong to any of the other top-level
+    directories.
+
+:file:`samples`
+    Sample applications that demonstrate the use of Zephyr features.
+
+:file:`scripts`
+    Various programs and other files used to build and test Zephyr
+    applications.
+
+:file:`cmake`
+    Additional build scripts needed to build Zephyr.
+
+:file:`subsys`
+    Subsystems of Zephyr, including:
+
+    * USB device stack code
+    * Networking code, including the Bluetooth stack and networking stacks
+    * File system code
+    * Bluetooth host and controller
+
+:file:`tests`
+    Test code and benchmarks for Zephyr features.
+
+:file:`share`
+    Additional architecture independent data. It currently contains Zephyr's CMake
+    package.
 
 Pull Requests and Issues
 ************************
