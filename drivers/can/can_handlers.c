@@ -27,11 +27,18 @@ static inline int z_vrfy_can_set_timing(const struct device *dev,
 					const struct can_timing *timing,
 					const struct can_timing *timing_data)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing));
+	struct can_timing timing_copy;
+	struct can_timing timing_data_copy;
 
-	return z_impl_can_set_timing((const struct device *)dev,
-				     (const struct can_timing *)timing,
-				     (const struct can_timing *)timing_data);
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing));
+	Z_OOPS(z_user_from_copy(&timing_copy, timing, sizeof(timing_copy)));
+
+	if (timing_data != NULL) {
+		Z_OOPS(z_user_from_copy(&timing_data_copy, timing_data, sizeof(timing_data_copy)));
+		return z_impl_can_set_timing(dev, &timing_copy, &timing_data_copy);
+	}
+
+	return z_impl_can_set_timing(dev, &timing_copy, NULL);
 }
 #include <syscalls/can_set_timing_mrsh.c>
 
