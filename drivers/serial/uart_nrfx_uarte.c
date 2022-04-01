@@ -545,14 +545,12 @@ static int wait_tx_ready(const struct device *dev)
 
 #ifdef CONFIG_UART_ASYNC_API
 
-static inline bool hw_rx_counting_enabled(struct uarte_nrfx_data *data)
-{
-	if (IS_ENABLED(CONFIG_UARTE_NRF_HW_ASYNC)) {
-		return data->async->hw_rx_counting;
-	} else {
-		return false;
-	}
-}
+/* Using Macro instead of static inline function to handle NO_OPTIMIZATIONS case
+ * where static inline fails on linking.
+ */
+#define HW_RX_COUNTING_ENABLED(data) \
+	(IS_ENABLED(CONFIG_UARTE_NRF_HW_ASYNC) ? data->async->hw_rx_counting : false)
+
 #endif /* CONFIG_UART_ASYNC_API */
 
 static void uarte_enable(const struct device *dev, uint32_t mask)
@@ -565,7 +563,7 @@ static void uarte_enable(const struct device *dev, uint32_t mask)
 		bool disabled = data->async->low_power_mask == 0;
 
 		data->async->low_power_mask |= mask;
-		if (hw_rx_counting_enabled(data) && disabled) {
+		if (HW_RX_COUNTING_ENABLED(data) && disabled) {
 			const nrfx_timer_t *timer = &config->timer;
 
 			nrfx_timer_enable(timer);
@@ -614,7 +612,7 @@ static void uart_disable(const struct device *dev)
 	const struct uarte_nrfx_config *config = dev->config;
 	struct uarte_nrfx_data *data = dev->data;
 
-	if (data->async && hw_rx_counting_enabled(data)) {
+	if (data->async && HW_RX_COUNTING_ENABLED(data)) {
 		nrfx_timer_disable(&config->timer);
 		/* Timer/counter value is reset when disabled. */
 		data->async->rx_total_byte_cnt = 0;
@@ -639,7 +637,7 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	int ret;
 
-	if (hw_rx_counting_enabled(data)) {
+	if (HW_RX_COUNTING_ENABLED(data)) {
 		nrfx_timer_config_t tmr_config = NRFX_TIMER_DEFAULT_CONFIG;
 
 		tmr_config.mode = NRF_TIMER_MODE_COUNTER;
@@ -657,7 +655,7 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 		}
 	}
 
-	if (hw_rx_counting_enabled(data)) {
+	if (HW_RX_COUNTING_ENABLED(data)) {
 		ret = gppi_channel_alloc(&data->async->rx_cnt.ppi);
 		if (ret != NRFX_SUCCESS) {
 			LOG_ERR("Failed to allocate PPI Channel, "
@@ -667,7 +665,7 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 		}
 	}
 
-	if (hw_rx_counting_enabled(data)) {
+	if (HW_RX_COUNTING_ENABLED(data)) {
 #if CONFIG_HAS_HW_NRF_PPI
 		ret = nrfx_ppi_channel_assign(
 			data->async->rx_cnt.ppi,
@@ -1044,7 +1042,7 @@ static void rx_timeout(struct k_timer *timer)
 	nrf_uarte_int_disable(get_uarte_instance(dev),
 			      NRF_UARTE_INT_ENDRX_MASK);
 
-	if (hw_rx_counting_enabled(data)) {
+	if (HW_RX_COUNTING_ENABLED(data)) {
 		read = nrfx_timer_capture(&cfg->timer, 0);
 	} else {
 		read = data->async->rx_cnt.cnt;
@@ -1063,7 +1061,7 @@ static void rx_timeout(struct k_timer *timer)
 	int32_t len = data->async->rx_total_byte_cnt
 		    - data->async->rx_total_user_byte_cnt;
 
-	if (!hw_rx_counting_enabled(data) &&
+	if (!HW_RX_COUNTING_ENABLED(data) &&
 	    (len < 0)) {
 		/* Prevent too low value of rx_cnt.cnt which may occur due to
 		 * latencies in handling of the RXRDY interrupt.
@@ -1431,7 +1429,7 @@ static void uarte_nrfx_isr_async(const struct device *dev)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = dev->data;
 
-	if (!hw_rx_counting_enabled(data)
+	if (!HW_RX_COUNTING_ENABLED(data)
 	    && nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXDRDY)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXDRDY);
 		data->async->rx_cnt.cnt++;
@@ -1925,7 +1923,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		nrf_uarte_enable(uarte);
 
 #ifdef CONFIG_UART_ASYNC_API
-		if (hw_rx_counting_enabled(data)) {
+		if (HW_RX_COUNTING_ENABLED(data)) {
 			nrfx_timer_enable(&cfg->timer);
 		}
 		if (data->async) {
