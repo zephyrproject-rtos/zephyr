@@ -15,7 +15,6 @@
 #include <soc.h>
 #include <devicetree.h>
 
-#include <autoconf.h>
 #include <linker/sections.h>
 #include <linker/devicetree_regions.h>
 

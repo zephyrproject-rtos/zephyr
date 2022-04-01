@@ -7,7 +7,6 @@
 
 #include "pm_stats.h"
 
-#include <autoconf.h>
 #include <init.h>
 #include <kernel_structs.h>
 #include <stats/stats.h>
