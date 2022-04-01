@@ -1672,13 +1672,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 			if (err == BT_HCI_ERR_CMD_DISALLOWED) {
 				/* Conditions has changed e.g. PHY was changed to CODED.
 				 * New CTE REQ is not possible. Disable the periodic requests.
-				 *
-				 * If the CTE REQ is in active state, let it complete and disable
-				 * in regular control procedure way.
 				 */
-				if (!conn->llcp.cte_req.is_active) {
-					ull_cp_cte_req_set_disable(conn);
-				}
+				ull_cp_cte_req_set_disable(conn);
 			}
 		}
 	}
