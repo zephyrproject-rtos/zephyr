@@ -193,6 +193,17 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 		assert_timing_within_bounds(&timing, min, max);
 		assert_sp_within_margin(&timing, test->sp, SAMPLE_POINT_MARGIN);
 
+		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+			if (data_phase) {
+				err = can_set_timing(dev, can_get_timing_min(dev), &timing);
+			} else {
+				err = can_set_timing(dev, &timing, can_get_timing_min_data(dev));
+			}
+		} else {
+			err = can_set_timing(dev, &timing, NULL);
+		}
+		zassert_equal(err, 0, "failed to set timing (err %d)", err);
+
 		printk("OK, sample point error %d.%d%%\n", err / 10, err % 10);
 	}
 }
