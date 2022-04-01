@@ -241,6 +241,38 @@ void test_timing_data(void)
 }
 #endif /* CONFIG_CAN_FD_MODE */
 
+/**
+ * @brief Test that the minimum timing values can be set.
+ */
+void test_set_timing_min(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	int err;
+
+	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+		err = can_set_timing(dev, can_get_timing_min(dev), can_get_timing_min_data(dev));
+	} else {
+		err = can_set_timing(dev, can_get_timing_min(dev), NULL);
+	}
+	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
+}
+
+/**
+ * @brief Test that the maximum timing values can be set.
+ */
+void test_set_timing_max(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	int err;
+
+	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+		err = can_set_timing(dev, can_get_timing_max(dev), can_get_timing_max_data(dev));
+	} else {
+		err = can_set_timing(dev, can_get_timing_max(dev), NULL);
+	}
+	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
+}
+
 void test_main(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
@@ -251,6 +283,8 @@ void test_main(void)
 	k_object_access_grant(dev, k_current_get());
 
 	ztest_test_suite(can_timing_tests,
+			 ztest_user_unit_test(test_set_timing_min),
+			 ztest_user_unit_test(test_set_timing_max),
 			 ztest_user_unit_test(test_timing),
 			 ztest_user_unit_test(test_timing_data));
 	ztest_run_test_suite(can_timing_tests);
