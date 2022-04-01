@@ -34,9 +34,9 @@ struct pwm_mcux_data {
 	pwm_signal_param_t channel[CHANNEL_COUNT];
 };
 
-static int mcux_pwm_pin_set(const struct device *dev, uint32_t channel,
-			    uint32_t period_cycles, uint32_t pulse_cycles,
-			    pwm_flags_t flags)
+static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
 {
 	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
@@ -167,7 +167,7 @@ static int pwm_mcux_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api pwm_mcux_driver_api = {
-	.pin_set = mcux_pwm_pin_set,
+	.set_cycles = mcux_pwm_set_cycles,
 	.get_cycles_per_sec = mcux_pwm_get_cycles_per_sec,
 };
 

@@ -41,9 +41,9 @@ struct mcux_tpm_data {
 	tpm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
 };
 
-static int mcux_tpm_pin_set(const struct device *dev, uint32_t channel,
-			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
 {
 	const struct mcux_tpm_config *config = dev->config;
 	struct mcux_tpm_data *data = dev->data;
@@ -175,7 +175,7 @@ static int mcux_tpm_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api mcux_tpm_driver_api = {
-	.pin_set = mcux_tpm_pin_set,
+	.set_cycles = mcux_tpm_set_cycles,
 	.get_cycles_per_sec = mcux_tpm_get_cycles_per_sec,
 };
 

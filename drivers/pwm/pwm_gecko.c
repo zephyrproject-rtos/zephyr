@@ -23,9 +23,9 @@ struct pwm_gecko_config {
 	uint8_t pin;
 };
 
-static int pwm_gecko_pin_set(const struct device *dev, uint32_t channel,
-			     uint32_t period_cycles, uint32_t pulse_cycles,
-			     pwm_flags_t flags)
+static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
+				uint32_t period_cycles, uint32_t pulse_cycles,
+				pwm_flags_t flags)
 {
 	TIMER_InitCC_TypeDef compare_config = TIMER_INITCC_DEFAULT;
 	const struct pwm_gecko_config *cfg = dev->config;
@@ -73,7 +73,7 @@ static int pwm_gecko_get_cycles_per_sec(const struct device *dev,
 }
 
 static const struct pwm_driver_api pwm_gecko_driver_api = {
-	.pin_set = pwm_gecko_pin_set,
+	.set_cycles = pwm_gecko_set_cycles,
 	.get_cycles_per_sec = pwm_gecko_get_cycles_per_sec
 };
 
