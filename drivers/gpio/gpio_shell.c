@@ -21,6 +21,24 @@
 
 LOG_MODULE_REGISTER(gpio_shell);
 
+#define CMD_HELP_CONF						\
+	"Configure GPIO\n"						\
+	"Usage: conf <device> <index> in/out\n"
+
+#define CMD_HELP_GET				\
+	"Get GPIO value\n"				\
+	"Usage: get <device> <index>\n"
+
+#define CMD_HELP_SET						\
+	"Set GPIO value\n"						\
+	"Usage: set <device> <index> <value>\n"
+
+#define CMD_HELP_BLINK					\
+	"Blink GPIO\n"						\
+	"Usage: blink <device> <index>\n"
+
+#define NO_DEVICE_ERRMSG "Device %s not found or failed to initialize"
+
 struct args_index {
 	uint8_t port;
 	uint8_t index;
@@ -49,6 +67,7 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 		} else if (!strcmp(argv[args_indx.mode], "out")) {
 			type = GPIO_OUTPUT;
 		} else {
+			shell_error(sh, "Wrong parameters for conf");
 			return 0;
 		}
 	} else {
@@ -63,6 +82,8 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv)
 		shell_print(sh, "Configuring %s pin %d",
 			    argv[args_indx.port], index);
 		gpio_pin_configure(dev, index, type);
+	} else {
+		shell_error(sh, NO_DEVICE_ERRMSG, argv[args_indx.port]);
 	}
 
 	return 0;
@@ -95,6 +116,8 @@ static int cmd_gpio_get(const struct shell *sh,
 			shell_error(sh, "Error %d reading value", rc);
 			return -EIO;
 		}
+	} else {
+		shell_error(sh, NO_DEVICE_ERRMSG, argv[args_indx.port]);
 	}
 
 	return 0;
@@ -122,6 +145,8 @@ static int cmd_gpio_set(const struct shell *sh,
 		shell_print(sh, "Writing to %s pin %d",
 			    argv[args_indx.port], index);
 		gpio_pin_set(dev, index, value);
+	} else {
+		shell_error(sh, NO_DEVICE_ERRMSG, argv[args_indx.port]);
 	}
 
 	return 0;
@@ -164,16 +189,18 @@ static int cmd_gpio_blink(const struct shell *sh,
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "\n");
+	} else {
+		shell_error(sh, NO_DEVICE_ERRMSG, argv[args_indx.port]);
 	}
 
 	return 0;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
-			       SHELL_CMD_ARG(conf, NULL, "Configure GPIO", cmd_gpio_conf, 4, 0),
-			       SHELL_CMD_ARG(get, NULL, "Get GPIO value", cmd_gpio_get, 3, 0),
-			       SHELL_CMD_ARG(set, NULL, "Set GPIO", cmd_gpio_set, 4, 0),
-			       SHELL_CMD_ARG(blink, NULL, "Blink GPIO", cmd_gpio_blink, 3, 0),
+			       SHELL_CMD_ARG(conf, NULL, CMD_HELP_CONF, cmd_gpio_conf, 4, 0),
+			       SHELL_CMD_ARG(get, NULL, CMD_HELP_GET, cmd_gpio_get, 3, 0),
+			       SHELL_CMD_ARG(set, NULL, CMD_HELP_SET, cmd_gpio_set, 4, 0),
+			       SHELL_CMD_ARG(blink, NULL, CMD_HELP_BLINK, cmd_gpio_blink, 3, 0),
 			       SHELL_SUBCMD_SET_END /* Array terminated. */
 			       );
 
