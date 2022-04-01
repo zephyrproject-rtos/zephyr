@@ -84,7 +84,7 @@ typedef uint16_t pwm_flags_t;
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected to enable PWM capture
  * support.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param period_cycles Captured PWM period width (in clock cycles). HW
  *                      specific.
@@ -172,7 +172,7 @@ __subsystem struct pwm_driver_api {
  * Passing a non-zero @p pulse equal to @p period will cause the pin
  * to be driven to a constant active level.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param period Period (in clock cycles) set to the PWM. HW specific.
  * @param pulse Pulse width (in clock cycles) set to the PWM. HW specific.
@@ -199,10 +199,10 @@ static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
 /**
  * @brief Get the clock rate (cycles per second) for a single PWM output.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
- * @param cycles Pointer to the memory to store clock rate (cycles per sec).
- *		 HW specific.
+ * @param[out] cycles Pointer to the memory to store clock rate (cycles per
+ *                    sec). HW specific.
  *
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
@@ -224,7 +224,7 @@ static inline int z_impl_pwm_get_cycles_per_sec(const struct device *dev,
  * @brief Set the period and pulse width in microseconds for a single PWM
  *        output.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param period Period (in microseconds) set to the PWM.
  * @param pulse Pulse width (in microseconds) set to the PWM.
@@ -265,7 +265,7 @@ static inline int pwm_pin_set_usec(const struct device *dev, uint32_t pwm,
 /**
  * @brief Set the period and pulse width in nanoseconds for a single PWM output.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param period Period (in nanoseconds) set to the PWM.
  * @param pulse Pulse width (in nanoseconds) set to the PWM.
@@ -306,10 +306,10 @@ static inline int pwm_pin_set_nsec(const struct device *dev, uint32_t pwm,
 /**
  * @brief Convert from PWM cycles to microseconds.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param cycles Cycles to be converted.
- * @param usec Pointer to the memory to store calculated usec.
+ * @param[out] usec Pointer to the memory to store calculated usec.
  *
  * @retval 0 If successful.
  * @retval -ERANGE If result is too large.
@@ -339,10 +339,10 @@ static inline int pwm_pin_cycles_to_usec(const struct device *dev, uint32_t pwm,
 /**
  * @brief Convert from PWM cycles to nanoseconds.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param cycles Cycles to be converted.
- * @param nsec Pointer to the memory to store the calculated nsec.
+ * @param[out] nsec Pointer to the memory to store the calculated nsec.
  *
  * @retval 0 If successful.
  * @retval -ERANGE If result is too large.
@@ -385,12 +385,12 @@ static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param flags PWM capture flags
- * @param cb Application callback handler function to be called upon capture
- * @param user_data User data to pass to the application callback handler
- *                  function
+ * @param[in] cb Application callback handler function to be called upon capture
+ * @param[in] user_data User data to pass to the application callback handler
+ *                      function
  *
  * @retval -EINVAL if invalid function parameters were given
  * @retval -ENOSYS if PWM capture is not supported or the given flags are not
@@ -423,7 +423,7 @@ static inline int pwm_pin_configure_capture(const struct device *dev,
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  *
  * @retval 0 If successful.
@@ -455,7 +455,7 @@ static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  *
  * @retval 0 If successful.
@@ -492,13 +492,13 @@ static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param flags PWM capture flags.
- * @param period Pointer to the memory to store the captured PWM period width
- *               (in clock cycles). HW specific.
- * @param pulse Pointer to the memory to store the captured PWM pulse width (in
- *              clock cycles). HW specific.
+ * @param[out] period Pointer to the memory to store the captured PWM period
+ *                    width (in clock cycles). HW specific.
+ * @param[out] pulse Pointer to the memory to store the captured PWM pulse width
+ *                   (in clock cycles). HW specific.
  * @param timeout Waiting period for the capture to complete.
  *
  * @retval 0 If successful.
@@ -523,13 +523,13 @@ __syscall int pwm_pin_capture_cycles(const struct device *dev, uint32_t pwm,
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param flags PWM capture flags.
- * @param period Pointer to the memory to store the captured PWM period width
- *               (in usec).
- * @param pulse Pointer to the memory to store the captured PWM pulse width (in
- *              usec).
+ * @param[out] period Pointer to the memory to store the captured PWM period
+ *                    width (in usec).
+ * @param[out] pulse Pointer to the memory to store the captured PWM pulse width
+ *                   (in usec).
  * @param timeout Waiting period for the capture to complete.
  *
  * @retval 0 If successful.
@@ -578,13 +578,13 @@ static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
  * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
- * @param dev PWM device instance.
+ * @param[in] dev PWM device instance.
  * @param pwm PWM pin.
  * @param flags PWM capture flags.
- * @param period Pointer to the memory to store the captured PWM period width
- *               (in nsec).
- * @param pulse Pointer to the memory to store the captured PWM pulse width (in
- *              nsec).
+ * @param[out] period Pointer to the memory to store the captured PWM period
+ *                    width (in nsec).
+ * @param[out] pulse Pointer to the memory to store the captured PWM pulse width
+ *                   (in nsec).
  * @param timeout Waiting period for the capture to complete.
  *
  * @retval 0 If successful.
