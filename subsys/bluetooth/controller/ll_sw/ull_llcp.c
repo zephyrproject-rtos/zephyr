@@ -485,9 +485,6 @@ void ull_llcp_init(struct ll_conn *conn)
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	conn->llcp.cte_req.is_enabled = 0U;
 	conn->llcp.cte_req.req_expire = 0U;
-	conn->llcp.cte_req.is_active = 0U;
-	conn->llcp.cte_req.disable_param = NULL;
-	conn->llcp.cte_req.disable_cb = NULL;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	conn->llcp.cte_rsp.is_enabled = 0U;
@@ -980,8 +977,6 @@ uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_ty
 
 		ctx->data.cte_req.min_len = min_cte_len;
 		ctx->data.cte_req.type = cte_type;
-
-		conn->llcp.cte_req.is_active = 1U;
 
 		llcp_lr_enqueue(conn, ctx);
 
