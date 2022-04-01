@@ -130,7 +130,9 @@ Kconfig
 
    The output from Kconfig is an :file:`autoconf.h` header with preprocessor
    assignments, and a :file:`.config` file that acts both as a saved
-   configuration and as configuration output (used by CMake).
+   configuration and as configuration output (used by CMake). The definitions in
+   :file:`autoconf.h` are automatically exposed at compile time, so there is no
+   need to include this header.
 
    Information from devicetree is available to Kconfig, through the functions
    defined in :zephyr_file:`kconfigfunctions.py
