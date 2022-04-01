@@ -333,7 +333,7 @@ static int put_begin_oi(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 
 	if (update_base_name) {
 		fd->base_name.level = LWM2M_PATH_LEVEL_OBJECT_INST;
-		fd->base_name.obj_inst_id = path->obj_id;
+		fd->base_name.obj_id = path->obj_id;
 		fd->base_name.obj_inst_id = path->obj_inst_id;
 	}
 
