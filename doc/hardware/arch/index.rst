@@ -8,4 +8,5 @@ Architecture-related Guides
 
    arc-support-status.rst
    arm_cortex_m.rst
+   semihost.rst
    x86.rst
