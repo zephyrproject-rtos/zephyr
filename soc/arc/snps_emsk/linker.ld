@@ -9,7 +9,6 @@
  */
 
 #include <devicetree.h>
-#include <autoconf.h>
 
 /*
  * DRAM base address and size

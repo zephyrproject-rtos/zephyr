@@ -9,7 +9,6 @@
  */
 
 #include <devicetree.h>
-#include <autoconf.h>
 
 /*
  * SRAM base address and size

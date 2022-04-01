@@ -11,7 +11,6 @@
  * @brief Linker command/script file for the MIPS platform
  */
 
-#include <autoconf.h>
 #include <linker/sections.h>
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>

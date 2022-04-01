@@ -5,7 +5,6 @@
  */
 
 
-#include <autoconf.h>
 #include <devicetree.h>
 
 MEMORY

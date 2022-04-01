@@ -12,7 +12,6 @@
  * Linker script for the POSIX (native) platform
  */
 
-#include <autoconf.h>
 #include <linker/sections.h>
 
 #include <linker/linker-defs.h>

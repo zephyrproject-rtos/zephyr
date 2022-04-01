@@ -11,7 +11,6 @@
  * Linker script for the Nios II platform
  */
 
-#include <autoconf.h>
 #include <linker/sections.h>
 
 #include <linker/linker-defs.h>
