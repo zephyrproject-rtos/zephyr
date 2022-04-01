@@ -37,6 +37,9 @@ int cavs_hda_dma_host_reload(const struct device *dev, uint32_t channel,
 int cavs_hda_dma_status(const struct device *dev, uint32_t channel,
 			struct dma_status *stat);
 
+bool cavs_hda_dma_chan_filter(const struct device *dev, int channel,
+			      void *filter_param);
+
 int cavs_hda_dma_start(const struct device *dev, uint32_t channel);
 
 int cavs_hda_dma_stop(const struct device *dev, uint32_t channel);
