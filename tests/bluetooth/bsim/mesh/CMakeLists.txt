@@ -18,21 +18,28 @@ target_sources(app PRIVATE
 )
 
 if(CONFIG_SETTINGS)
+
  target_sources(app PRIVATE
   src/settings_test_backend.c
   src/test_persistence.c
   src/test_replay_cache.c
  )
+
 elseif(CONFIG_BT_MESH_GATT_PROXY)
+
  target_sources(app PRIVATE
   src/test_advertiser.c
  )
+
 elseif(CONFIG_BT_CTLR_LOW_LAT)
+
  target_sources(app PRIVATE
   src/test_friendship.c
   src/test_transport.c
  )
+
 else()
+
  target_sources(app PRIVATE
   src/test_transport.c
   src/test_friendship.c
@@ -44,6 +51,13 @@ else()
   src/test_iv_index.c
   src/test_advertiser.c
  )
+
+ if(CONFIG_BT_MESH_V1d1)
+  target_sources(app PRIVATE
+   src/test_blob.c
+  )
+ endif()
+
 endif()
 
 zephyr_include_directories(
