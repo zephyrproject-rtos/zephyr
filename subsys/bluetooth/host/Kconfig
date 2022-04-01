@@ -583,7 +583,7 @@ config BT_DEVICE_APPEARANCE
 
 config BT_ID_MAX
 	int "Maximum number of local identities"
-	range 1 64
+	range 1 250
 	default 1
 	help
 	  Maximum number of supported local identity addresses. For most

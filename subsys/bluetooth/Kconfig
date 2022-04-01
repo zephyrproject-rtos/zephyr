@@ -115,7 +115,7 @@ config BT_CONN
 config BT_MAX_CONN
 	int "Maximum number of simultaneous connections"
 	depends on BT_CONN
-	range 1 64
+	range 1 250
 	default 2 if BT_MESH_GATT_CLIENT
 	default 1
 	help
