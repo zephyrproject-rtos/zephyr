@@ -2204,6 +2204,8 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	struct net_buf *orig_buf = NULL;
 	int ret = 0;
 	size_t len;
+	int sndbuf;
+	size_t sndbuf_len;
 
 	if (!conn || conn->state != TCP_ESTABLISHED) {
 		return -ENOTCONN;
@@ -2255,6 +2257,15 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 
 	if (conn->send_data->buffer) {
 		orig_buf = net_buf_frag_last(conn->send_data->buffer);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDBUF) &&
+			net_context_get_option(context, NET_OPT_SNDBUF, &sndbuf, &sndbuf_len) == 0) {
+		if ((sndbuf > 0) &&
+				(net_pkt_get_len(conn->send_data) + len > sndbuf)) {
+			ret = -ENOMEM;
+			goto out;
+		}
 	}
 
 	net_pkt_append_buffer(conn->send_data, pkt->buffer);
