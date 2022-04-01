@@ -31,12 +31,6 @@ LOG_MODULE_REGISTER(ias);
 #define IAS_ALERT_LEVEL_PERM BT_GATT_PERM_WRITE
 #endif
 
-enum bt_ias_alert_lvl {
-	BT_IAS_ALERT_LVL_NO_ALERT,
-	BT_IAS_ALERT_LVL_MILD_ALERT,
-	BT_IAS_ALERT_LVL_HIGH_ALERT,
-};
-
 struct alerting_device {
 	enum bt_ias_alert_lvl alert_level;
 };
