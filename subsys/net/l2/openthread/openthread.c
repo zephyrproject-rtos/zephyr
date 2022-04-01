@@ -535,7 +535,7 @@ void ieee802154_init(struct net_if *iface)
 
 static enum net_l2_flags openthread_flags(struct net_if *iface)
 {
-	return NET_L2_MULTICAST;
+	return NET_L2_MULTICAST | NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE;
 }
 
 static int openthread_enable(struct net_if *iface, bool state)
