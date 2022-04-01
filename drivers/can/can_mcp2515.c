@@ -849,7 +849,7 @@ static const struct can_driver_api can_api_funcs = {
 		.sjw = 0x1,
 		.prop_seg = 0x01,
 		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
+		.phase_seg2 = 0x02,
 		.prescaler = 0x01
 	},
 	.timing_max = {
@@ -857,7 +857,7 @@ static const struct can_driver_api can_api_funcs = {
 		.prop_seg = 0x08,
 		.phase_seg1 = 0x08,
 		.phase_seg2 = 0x08,
-		.prescaler = 0x20
+		.prescaler = 0x40
 	}
 };
 
