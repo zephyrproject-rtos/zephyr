@@ -473,6 +473,12 @@ static int uart_stm32_configure(const struct device *dev,
 		data->baud_rate = cfg->baudrate;
 	}
 
+#ifdef LL_USART_TXRX_SWAPPED
+	if (config->tx_rx_swap) {
+		LL_USART_SetTXRXSwap(config->usart, LL_USART_TXRX_SWAPPED);
+	}
+#endif
+
 	LL_USART_Enable(config->usart);
 	return 0;
 };
@@ -1715,6 +1721,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.single_wire = DT_INST_PROP_OR(index, single_wire, false), \
+	.tx_rx_swap = DT_INST_PROP_OR(index, tx_rx_swap, false),	\
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 };									\
 									\
