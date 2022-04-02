@@ -4,12 +4,6 @@ on:
   pull_request:
     types: [synchronize, opened, reopened, labeled, unlabeled]
 
-  workflow_run:
-    workflows: [Manifest]
-    types:
-      - completed
-
-
 jobs:
   do-not-merge:
     if: ${{ contains(github.event.*.labels.*.name, 'DNM') }}
