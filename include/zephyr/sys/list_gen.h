@@ -115,16 +115,18 @@
 	sys_ ## __lname ## _append_list(sys_ ## __lname ## _t *list,	\
 					void *head, void *tail)		\
 {									\
-	if (sys_ ## __lname ## _peek_tail(list) == NULL) {		\
-		z_ ## __lname ## _head_set(list,			\
-					(sys_ ## __nname ## _t *)head); \
-	} else {							\
-		z_ ## __nname ## _next_set(				\
-			sys_ ## __lname ## _peek_tail(list),		\
-			(sys_ ## __nname ## _t *)head);			\
+	if (head != NULL && tail != NULL) {				\
+		if (sys_ ## __lname ## _peek_tail(list) == NULL) {	\
+			z_ ## __lname ## _head_set(list,		\
+				(sys_ ## __nname ## _t *)head);		\
+		} else {						\
+			z_ ## __nname ## _next_set(			\
+				sys_ ## __lname ## _peek_tail(list),	\
+				(sys_ ## __nname ## _t *)head);		\
+		}							\
+		z_ ## __lname ## _tail_set(list,			\
+			(sys_ ## __nname ## _t *)tail);			\
 	}								\
-	z_ ## __lname ## _tail_set(list,				\
-				     (sys_ ## __nname ## _t *)tail);	\
 }
 
 #define Z_GENLIST_MERGE_LIST(__lname, __nname)				\
