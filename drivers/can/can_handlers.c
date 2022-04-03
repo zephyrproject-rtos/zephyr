@@ -129,13 +129,13 @@ static inline int z_vrfy_can_send(const struct device *dev,
 				  can_tx_callback_t callback,
 				  void *user_data)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, send));
+	struct zcan_frame frame_copy;
 
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(frame, sizeof(*frame)));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(frame->data, sizeof(frame->data)));
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, send));
+	Z_OOPS(z_user_from_copy(&frame_copy, frame, sizeof(frame_copy)));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback == NULL, "callbacks may not be set from user mode"));
 
-	return z_impl_can_send(dev, frame, timeout, callback, user_data);
+	return z_impl_can_send(dev, &frame_copy, timeout, callback, user_data);
 }
 #include <syscalls/can_send_mrsh.c>
 
@@ -143,11 +143,13 @@ static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev,
 						struct k_msgq *msgq,
 						const struct zcan_filter *filter)
 {
+	struct zcan_filter filter_copy;
+
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, add_rx_filter));
 	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(filter, sizeof(*filter)));
+	Z_OOPS(z_user_from_copy(&filter_copy, filter, sizeof(filter_copy)));
 
-	return z_impl_can_add_rx_filter_msgq(dev, msgq, filter);
+	return z_impl_can_add_rx_filter_msgq(dev, msgq, &filter_copy);
 }
 #include <syscalls/can_add_rx_filter_msgq_mrsh.c>
 
