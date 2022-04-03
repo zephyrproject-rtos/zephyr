@@ -26,6 +26,7 @@ static inline uint8_t byte_reverse(uint8_t b)
 struct char_framebuffer {
 	/** Pointer to a buffer in RAM */
 	uint8_t *buf;
+	uint8_t *bak_buf;
 
 	/** Size of the framebuffer */
 	uint32_t size;
@@ -57,8 +58,11 @@ struct char_framebuffer {
 	/** Font kerning */
 	int8_t kerning;
 
-	/** Invertedj*/
+	/** Inverted */
 	bool inverted;
+
+	/** Rotate */
+	uint8_t rotate;
 };
 
 static struct char_framebuffer char_fb;
@@ -159,6 +163,26 @@ static int cfb_invert(const struct char_framebuffer *fb)
 	return 0;
 }
 
+static uint8_t bit_inv(uint8_t byte)
+{
+    return ((((byte >> 0) & 0x1) << 7) | (((byte >> 1) & 0x1) << 6) | (((byte >> 2) & 0x1) << 5) |
+            (((byte >> 3) & 0x1) << 4) | (((byte >> 4) & 0x1) << 3) | (((byte >> 5) & 0x1) << 2) |
+            (((byte >> 6) & 0x1) << 1) | (((byte >> 7) & 0x1) << 0));
+}
+
+static int cfb_rotate(const struct char_framebuffer *fb)
+{
+	for (size_t i = 0; i < fb->x_res * fb->y_res / 8U; i = i + (fb->y_res / 8U)) {
+        for (int j = 0; j < 8; j++) {
+            fb->bak_buf[fb->size - i - j - 1] = bit_inv(fb->buf[i + j]);
+        }
+    }
+
+    memcpy(fb->buf, fb->bak_buf, fb->size);
+
+	return 0;
+}
+
 int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 {
 	const struct char_framebuffer *fb = &char_fb;
@@ -187,6 +211,7 @@ int cfb_framebuffer_invert(const struct device *dev)
 	}
 
 	fb->inverted = !fb->inverted;
+    fb->rotate = 1; // HACK FIXME: need separate api
 
 	return 0;
 }
@@ -209,6 +234,10 @@ int cfb_framebuffer_finalize(const struct device *dev)
 	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
 		cfb_invert(fb);
 	}
+
+    if (fb->rotate > 0) {
+        cfb_rotate(fb);
+    }
 
 	return api->write(dev, 0, 0, &desc, fb->buf);
 }
@@ -288,7 +317,7 @@ int cfb_framebuffer_init(const struct device *dev)
 	api->get_capabilities(dev, &cfg);
 
 	fb->numof_fonts = __font_entry_end - __font_entry_start;
-	LOG_DBG("number of fonts %d", fb->numof_fonts);
+	LOG_INF("number of fonts %d", fb->numof_fonts);
 	if (!fb->numof_fonts) {
 		return -1;
 	}
@@ -299,6 +328,7 @@ int cfb_framebuffer_init(const struct device *dev)
 	fb->pixel_format = cfg.current_pixel_format;
 	fb->screen_info = cfg.screen_info;
 	fb->buf = NULL;
+	fb->bak_buf = NULL;
 	fb->font_idx = 0U;
 	fb->kerning = 0;
 	fb->inverted = false;
@@ -311,8 +341,13 @@ int cfb_framebuffer_init(const struct device *dev)
 	if (!fb->buf) {
 		return -1;
 	}
+	fb->bak_buf = k_malloc(fb->size);
+	if (!fb->bak_buf) {
+		return -1;
+	}
 
 	memset(fb->buf, 0, fb->size);
+	memset(fb->bak_buf, 0, fb->size);
 
 	return 0;
 }
