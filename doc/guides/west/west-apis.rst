@@ -89,6 +89,22 @@ WestCommand
       True if reading the manifest property will succeed instead of erroring
       out.
 
+   .. py:attribute:: config
+
+      A settable property which returns the
+      :py:class:`west.configuration.Configuration` instance or aborts the
+      program if one was not provided. This is only safe to use from the
+      ``do_run()`` method.
+
+   .. versionadded:: 0.13.0
+
+   .. py:attribute:: has_config
+
+      True if reading the config property will succeed instead of erroring
+      out.
+
+   .. versionadded:: 0.13.0
+
    .. py:attribute:: git_version_info
 
       A tuple of Git version information.
@@ -99,12 +115,14 @@ WestCommand
 
    .. automethod:: __init__
 
-   .. versionchanged:: 0.8.0
-      The *topdir* parameter can now be any ``os.PathLike``.
    .. versionadded:: 0.6.0
-      The *requires_installation* parameter.
+      The *requires_installation* parameter (removed in v0.13.0).
    .. versionadded:: 0.7.0
       The *requires_workspace* parameter.
+   .. versionchanged:: 0.8.0
+      The *topdir* parameter can now be any ``os.PathLike``.
+   .. versionchanged:: 0.13.0
+      The deprecated *requires_installation* parameter was removed.
 
    Methods:
 
@@ -150,10 +168,35 @@ west.configuration
 
 .. automodule:: west.configuration
 
-This provides API access to west configuration files and data.
+Since west v0.13, the recommended class for reading this is
+:py:class:`west.configuration.Configuration`.
 
-Reading and writing options
-===========================
+Note that if you are writing a :ref:`west extension <west-extensions>`, you can
+access the current ``Configuration`` object as ``self.configuration``. See
+:py:class:`west.commands.WestCommand`.
+
+Configuration API
+=================
+
+This is the recommended API to use since west v0.13.
+
+.. autoclass:: west.configuration.ConfigFile
+
+.. autoclass:: west.configuration.Configuration
+   :members:
+
+   .. versionadded:: 0.13.0
+
+Deprecated APIs
+===============
+
+The following APIs also use :py:class:`west.configuration.ConfigFile`, but they
+operate by default on a global object which stores the current workspace
+configuration. This has proven to be a bad design descision since west's APIs
+can be used from multiple workspaces. They were deprecated in west v0.13.0.
+
+These APIs are preserved for compatibility with older extensions. They should
+not be used in new code when west v0.13.0 or later may be assumed.
 
 .. autofunction:: west.configuration.read_config
 
@@ -164,11 +207,6 @@ Reading and writing options
    Errors due to an inability to find a local configuration file are ignored.
 
 .. autofunction:: west.configuration.update_config
-
-.. autoclass:: west.configuration.ConfigFile
-
-Global configuration instance
-=============================
 
 .. py:data:: west.configuration.config
 
@@ -244,6 +282,9 @@ Constants and functions
 
 .. autofunction:: west.manifest.validate
 
+.. versionchanged:: 0.13.0
+   This returns the validated dict containing the parsed YAML data.
+
 Manifest and sub-objects
 ========================
 
@@ -252,17 +293,33 @@ Manifest and sub-objects
    .. automethod:: __init__
    .. versionchanged:: 0.7.0
       The *importer* and *import_flags* keyword arguments.
+   .. versionchanged:: 0.13.0
+      All arguments were made keyword-only. The *source_file* argument was
+      removed (use *topdir* instead). The function no longer raises
+      ``WestNotFound``.
+   .. versionadded:: 0.13.0
+      The *config* argument.
+   .. versionadded:: 0.13.0
+      The *abspath*, *posixpath*, *relative_path*, *yaml_path*, *repo_path*,
+      *repo_posixpath*, and *userdata* attributes.
+
+   .. automethod:: from_topdir
+   .. versionadded:: 0.13.0
 
    .. automethod:: from_file
+   .. versionchanged:: 0.7.0
+      ``**kwargs`` added.
    .. versionchanged:: 0.8.0
       The *source_file*, *manifest_path*, and *topdir* arguments
       can now be any ``os.PathLike``.
-   .. versionchanged:: 0.7.0
-      ``**kwargs`` added.
+   .. versionchanged:: 0.13.0
+      The *manifest_path* and *topdir* arguments were removed.
 
    .. automethod:: from_data
    .. versionchanged:: 0.7.0
       ``**kwargs`` added, and *source_data* may be a ``str``.
+   .. versionchanged:: 0.13.0
+      The *manifest_path* and *topdir* arguments were removed.
 
    Conveniences for accessing sub-objects by name or other identifier:
 
@@ -399,6 +456,9 @@ Exceptions
 
    .. versionchanged:: 0.8.0
       The *filename* argument can now be any ``os.PathLike``.
+
+   .. versionchanged:: 0.13.0
+      The *filename* argument was renamed *imp*, and can now take any value.
 
 .. _west-apis-util:
 
