@@ -8,6 +8,7 @@ OS Services
 
 
    debugging/index.rst
+   file_system/index.rst
    formatted_output.rst
    logging/index.rst
    tracing/index.rst
