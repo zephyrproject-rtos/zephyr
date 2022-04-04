@@ -24,6 +24,13 @@ extern "C" {
  * @return 0 on success, otherwise a negative integer.
  */
 int loopback_set_packet_drop_ratio(float ratio);
+
+/**
+ * @brief Get the number of dropped packets
+ *
+ * @return number of packets dropped by the loopback interface
+ */
+int loopback_get_num_dropped_packets(void);
 #endif
 
 #ifdef __cplusplus
