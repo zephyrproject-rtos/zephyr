@@ -56,14 +56,14 @@ static int pwm_b91_init(const struct device *dev)
 }
 
 /* API implementation: pin_set */
-static int pwm_b91_pin_set(const struct device *dev, uint32_t pwm,
+static int pwm_b91_pin_set(const struct device *dev, uint32_t channel,
 			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
 	ARG_UNUSED(dev);
 
 	/* check pwm channel */
-	if (pwm >= NUM_OF_CHANNELS) {
+	if (channel >= NUM_OF_CHANNELS) {
 		return -EINVAL;
 	}
 
@@ -75,39 +75,39 @@ static int pwm_b91_pin_set(const struct device *dev, uint32_t pwm,
 
 	/* set polarity */
 	if (flags & PWM_POLARITY_INVERTED) {
-		pwm_invert_en(pwm);
+		pwm_invert_en(channel);
 	} else {
-		pwm_invert_dis(pwm);
+		pwm_invert_dis(channel);
 	}
 
 	/* set pulse and period */
-	pwm_set_tcmp(pwm, pulse_cycles);
-	pwm_set_tmax(pwm, period_cycles);
+	pwm_set_tcmp(channel, pulse_cycles);
+	pwm_set_tmax(channel, period_cycles);
 
 	/* start pwm */
-	pwm_start(pwm);
+	pwm_start(channel);
 
 	return 0;
 }
 
 /* API implementation: get_cycles_per_sec */
-static int pwm_b91_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				      uint64_t *cycles)
+static int pwm_b91_get_cycles_per_sec(const struct device *dev,
+				      uint32_t channel, uint64_t *cycles)
 {
 	ARG_UNUSED(dev);
 
 	/* check pwm channel */
-	if (pwm >= NUM_OF_CHANNELS) {
+	if (channel >= NUM_OF_CHANNELS) {
 		return -EINVAL;
 	}
 
 	if (
-		((pwm == 0u) && DT_INST_PROP(0, clk32k_ch0_enable)) ||
-		((pwm == 1u) && DT_INST_PROP(0, clk32k_ch1_enable)) ||
-		((pwm == 2u) && DT_INST_PROP(0, clk32k_ch2_enable)) ||
-		((pwm == 3u) && DT_INST_PROP(0, clk32k_ch3_enable)) ||
-		((pwm == 4u) && DT_INST_PROP(0, clk32k_ch4_enable)) ||
-		((pwm == 5u) && DT_INST_PROP(0, clk32k_ch5_enable))
+		((channel == 0u) && DT_INST_PROP(0, clk32k_ch0_enable)) ||
+		((channel == 1u) && DT_INST_PROP(0, clk32k_ch1_enable)) ||
+		((channel == 2u) && DT_INST_PROP(0, clk32k_ch2_enable)) ||
+		((channel == 3u) && DT_INST_PROP(0, clk32k_ch3_enable)) ||
+		((channel == 4u) && DT_INST_PROP(0, clk32k_ch4_enable)) ||
+		((channel == 5u) && DT_INST_PROP(0, clk32k_ch5_enable))
 		) {
 		*cycles = 32000u;
 	} else {

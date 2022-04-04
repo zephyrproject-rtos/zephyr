@@ -15,7 +15,7 @@
 
 #define DT_DRV_COMPAT vnd_pwm
 
-static int vnd_pwm_pin_set(const struct device *dev, uint32_t pwm,
+static int vnd_pwm_pin_set(const struct device *dev, uint32_t channel,
 			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
@@ -24,8 +24,7 @@ static int vnd_pwm_pin_set(const struct device *dev, uint32_t pwm,
 
 #ifdef CONFIG_PWM_CAPTURE
 static int vnd_pwm_pin_configure_capture(const struct device *dev,
-					 uint32_t pwm,
-					 pwm_flags_t flags,
+					 uint32_t channel, pwm_flags_t flags,
 					 pwm_capture_callback_handler_t cb,
 					 void *user_data)
 {
@@ -33,21 +32,20 @@ static int vnd_pwm_pin_configure_capture(const struct device *dev,
 }
 
 static int vnd_pwm_pin_enable_capture(const struct device *dev,
-				      uint32_t pwm)
+				      uint32_t channel)
 {
 	return -ENOTSUP;
 }
 
 static int vnd_pwm_pin_disable_capture(const struct device *dev,
-				       uint32_t pwm)
+				       uint32_t channel)
 {
 	return -ENOTSUP;
 }
 #endif /* CONFIG_PWM_CAPTURE */
 
 static int vnd_pwm_get_cycles_per_sec(const struct device *dev,
-				      uint32_t pwm,
-				      uint64_t *cycles)
+				      uint32_t channel, uint64_t *cycles)
 {
 	return -ENOTSUP;
 }

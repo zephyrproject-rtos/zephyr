@@ -23,47 +23,47 @@ struct pwm_gecko_config {
 	uint8_t pin;
 };
 
-static int pwm_gecko_pin_set(const struct device *dev, uint32_t pwm,
+static int pwm_gecko_pin_set(const struct device *dev, uint32_t channel,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags)
 {
 	TIMER_InitCC_TypeDef compare_config = TIMER_INITCC_DEFAULT;
 	const struct pwm_gecko_config *cfg = dev->config;
 
-	if (BUS_RegMaskedRead(&cfg->timer->CC[pwm].CTRL,
+	if (BUS_RegMaskedRead(&cfg->timer->CC[channel].CTRL,
 		_TIMER_CC_CTRL_MODE_MASK) != timerCCModePWM) {
 
 #ifdef _TIMER_ROUTE_MASK
 		BUS_RegMaskedWrite(&cfg->timer->ROUTE,
 			_TIMER_ROUTE_LOCATION_MASK,
 			cfg->location << _TIMER_ROUTE_LOCATION_SHIFT);
-		BUS_RegMaskedSet(&cfg->timer->ROUTE, 1 << pwm);
+		BUS_RegMaskedSet(&cfg->timer->ROUTE, 1 << channel);
 #elif defined(_TIMER_ROUTELOC0_MASK)
 		BUS_RegMaskedWrite(&cfg->timer->ROUTELOC0,
-			_TIMER_ROUTELOC0_CC0LOC_MASK << (pwm * _TIMER_ROUTELOC0_CC1LOC_SHIFT),
-			cfg->location << (pwm * _TIMER_ROUTELOC0_CC1LOC_SHIFT));
-		BUS_RegMaskedSet(&cfg->timer->ROUTEPEN, 1 << pwm);
+			_TIMER_ROUTELOC0_CC0LOC_MASK <<
+			(channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT),
+			cfg->location << (channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT));
+		BUS_RegMaskedSet(&cfg->timer->ROUTEPEN, 1 << channel);
 #else
 #error Unsupported device
 #endif
 
 		compare_config.mode = timerCCModePWM;
-		TIMER_InitCC(cfg->timer, pwm, &compare_config);
+		TIMER_InitCC(cfg->timer, channel, &compare_config);
 	}
 
-	cfg->timer->CC[pwm].CTRL |= (flags & PWM_POLARITY_INVERTED) ?
+	cfg->timer->CC[channel].CTRL |= (flags & PWM_POLARITY_INVERTED) ?
 		TIMER_CC_CTRL_OUTINV : 0;
 
 	TIMER_TopSet(cfg->timer, period_cycles);
 
-	TIMER_CompareBufSet(cfg->timer, pwm, pulse_cycles);
+	TIMER_CompareBufSet(cfg->timer, channel, pulse_cycles);
 
 	return 0;
 }
 
 static int pwm_gecko_get_cycles_per_sec(const struct device *dev,
-					uint32_t pwm,
-					uint64_t *cycles)
+					uint32_t channel, uint64_t *cycles)
 {
 	const struct pwm_gecko_config *cfg = dev->config;
 

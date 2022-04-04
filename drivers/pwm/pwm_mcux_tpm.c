@@ -41,7 +41,7 @@ struct mcux_tpm_data {
 	tpm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
 };
 
-static int mcux_tpm_pin_set(const struct device *dev, uint32_t pwm,
+static int mcux_tpm_pin_set(const struct device *dev, uint32_t channel,
 			      uint32_t period_cycles, uint32_t pulse_cycles,
 			      pwm_flags_t flags)
 {
@@ -54,18 +54,18 @@ static int mcux_tpm_pin_set(const struct device *dev, uint32_t pwm,
 		return -ENOTSUP;
 	}
 
-	if (pwm >= config->channel_count) {
+	if (channel >= config->channel_count) {
 		LOG_ERR("Invalid channel");
 		return -ENOTSUP;
 	}
 
 	duty_cycle = pulse_cycles * 100U / period_cycles;
-	data->channel[pwm].dutyCyclePercent = duty_cycle;
+	data->channel[channel].dutyCyclePercent = duty_cycle;
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0) {
-		data->channel[pwm].level = kTPM_HighTrue;
+		data->channel[channel].level = kTPM_HighTrue;
 	} else {
-		data->channel[pwm].level = kTPM_LowTrue;
+		data->channel[channel].level = kTPM_LowTrue;
 	}
 
 	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d, flags=%d",
@@ -108,17 +108,17 @@ static int mcux_tpm_pin_set(const struct device *dev, uint32_t pwm,
 		}
 		TPM_StartTimer(config->base, config->tpm_clock_source);
 	} else {
-		TPM_UpdateChnlEdgeLevelSelect(config->base, pwm,
-					      data->channel[pwm].level);
-		TPM_UpdatePwmDutycycle(config->base, pwm, config->mode,
+		TPM_UpdateChnlEdgeLevelSelect(config->base, channel,
+					      data->channel[channel].level);
+		TPM_UpdatePwmDutycycle(config->base, channel, config->mode,
 				       duty_cycle);
 	}
 
 	return 0;
 }
 
-static int mcux_tpm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-					 uint64_t *cycles)
+static int mcux_tpm_get_cycles_per_sec(const struct device *dev,
+				       uint32_t channel, uint64_t *cycles)
 {
 	const struct mcux_tpm_config *config = dev->config;
 	struct mcux_tpm_data *data = dev->data;

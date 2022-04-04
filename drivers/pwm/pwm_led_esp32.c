@@ -295,8 +295,10 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 
 /* period_cycles is not used, set frequency on menuconfig instead. */
 static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
-					uint32_t pwm, uint32_t period_cycles,
-					uint32_t pulse_cycles, pwm_flags_t flags)
+					uint32_t channel,
+					uint32_t period_cycles,
+					uint32_t pulse_cycles,
+					pwm_flags_t flags)
 {
 	int speed_mode;
 	int channel;
@@ -312,7 +314,7 @@ static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
+	channel = pwm_led_esp32_get_gpio_config(channel, config->ch_cfg);
 	if (channel < 0) {
 		return -EINVAL;
 	}
@@ -338,7 +340,7 @@ static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
 	}
 
 	/* Set channel */
-	ret = pwm_led_esp32_channel_set(pwm, speed_mode, channel, 0, timer);
+	ret = pwm_led_esp32_channel_set(channel, speed_mode, channel, 0, timer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -349,8 +351,7 @@ static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
 }
 
 static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
-					    uint32_t pwm,
-					    uint64_t *cycles)
+					    uint32_t channel, uint64_t *cycles)
 {
 	const struct pwm_led_esp32_config *config;
 	int channel;
@@ -359,7 +360,7 @@ static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
 
 	config = (const struct pwm_led_esp32_config *) dev->config;
 
-	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
+	channel = pwm_led_esp32_get_gpio_config(channel, config->ch_cfg);
 	if (channel < 0) {
 		return -EINVAL;
 	}
