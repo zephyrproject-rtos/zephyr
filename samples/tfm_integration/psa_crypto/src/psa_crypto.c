@@ -841,7 +841,7 @@ void crp_test(void)
 
 	/* Sign the hash using key #1. */
 	status = crp_sign_hash(1,
-			       hash, sizeof(hash),
+			       hash, hash_len,
 			       sig, sizeof(sig), &sig_len);
 
 	/* Verify the hash signature using the public key. */
