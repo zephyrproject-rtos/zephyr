@@ -231,17 +231,17 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 	return 0;
 }
 
-static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
+static int pwm_stm32_pin_set(const struct device *dev, uint32_t channel,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
 
-	uint32_t channel;
-	uint32_t current_channel; /* complementary output if used */
+	uint32_t ll_channel;
+	uint32_t current_ll_channel; /* complementary output if used */
 
-	if (pwm < 1u || pwm > TIMER_MAX_CH) {
-		LOG_ERR("Invalid channel (%d)", pwm);
+	if (channel < 1u || channel > TIMER_MAX_CH) {
+		LOG_ERR("Invalid channel (%d)", channel);
 		return -EINVAL;
 	}
 
@@ -270,7 +270,7 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 	}
 
 #ifdef CONFIG_PWM_CAPTURE
-	if ((pwm == 1u) || (pwm == 2u)) {
+	if ((channel == 1u) || (channel == 2u)) {
 		if (LL_TIM_IsEnabledIT_CC1(cfg->timer) ||
 				LL_TIM_IsEnabledIT_CC2(cfg->timer)) {
 			LOG_ERR("Cannot set PWM output, capture in progress");
@@ -279,28 +279,28 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 	}
 #endif /* CONFIG_PWM_CAPTURE */
 
-	channel = ch2ll[pwm - 1u];
+	ll_channel = ch2ll[channel - 1u];
 
 	/* in LL_TIM_CC_DisableChannel and LL_TIM_CC_IsEnabledChannel,
 	 * the channel param could be the complementary one
 	 */
 	if ((flags & PWM_STM32_COMPLEMENTARY_MASK) == PWM_STM32_COMPLEMENTARY) {
-		if (pwm > ARRAY_SIZE(ch2ll_n)) {
+		if (channel > ARRAY_SIZE(ch2ll_n)) {
 			/* setting a flag on a channel that has not this capability */
-			LOG_ERR("Channel %d has NO complementary output", pwm);
+			LOG_ERR("Channel %d has NO complementary output", channel);
 			return -EINVAL;
 		}
-		current_channel = ch2ll_n[pwm - 1u];
+		current_ll_channel = ch2ll_n[channel - 1u];
 	} else {
-		current_channel = channel;
+		current_ll_channel = ll_channel;
 	}
 
 	if (period_cycles == 0u) {
-		LL_TIM_CC_DisableChannel(cfg->timer, current_channel);
+		LL_TIM_CC_DisableChannel(cfg->timer, current_ll_channel);
 		return 0;
 	}
 
-	if (!LL_TIM_CC_IsEnabledChannel(cfg->timer, current_channel)) {
+	if (!LL_TIM_CC_IsEnabledChannel(cfg->timer, current_ll_channel)) {
 		LL_TIM_OC_InitTypeDef oc_init;
 
 		LL_TIM_OC_StructInit(&oc_init);
@@ -333,20 +333,20 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 #endif /* CONFIG_PWM_CAPTURE */
 
 		/* in LL_TIM_OC_Init, the channel is always the non-complementary */
-		if (LL_TIM_OC_Init(cfg->timer, channel, &oc_init) != SUCCESS) {
+		if (LL_TIM_OC_Init(cfg->timer, ll_channel, &oc_init) != SUCCESS) {
 			LOG_ERR("Could not initialize timer channel output");
 			return -EIO;
 		}
 
 		LL_TIM_EnableARRPreload(cfg->timer);
 		/* in LL_TIM_OC_EnablePreload, the channel is always the non-complementary */
-		LL_TIM_OC_EnablePreload(cfg->timer, channel);
+		LL_TIM_OC_EnablePreload(cfg->timer, ll_channel);
 		LL_TIM_SetAutoReload(cfg->timer, period_cycles);
 		LL_TIM_GenerateEvent_UPDATE(cfg->timer);
 	} else {
 		/* in LL_TIM_OC_SetPolarity, the channel could be the complementary one */
-		LL_TIM_OC_SetPolarity(cfg->timer, current_channel, get_polarity(flags));
-		set_timer_compare[pwm - 1u](cfg->timer, pulse_cycles);
+		LL_TIM_OC_SetPolarity(cfg->timer, current_ll_channel, get_polarity(flags));
+		set_timer_compare[channel - 1u](cfg->timer, pulse_cycles);
 		LL_TIM_SetAutoReload(cfg->timer, period_cycles);
 	}
 
@@ -354,8 +354,8 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 }
 
 #ifdef CONFIG_PWM_CAPTURE
-static int init_capture_channel(const struct device *dev, uint32_t pwm,
-		pwm_flags_t flags, uint32_t channel)
+static int init_capture_channel(const struct device *dev, uint32_t channel,
+				pwm_flags_t flags, uint32_t ll_channel)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
 	bool is_inverted = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
@@ -365,8 +365,8 @@ static int init_capture_channel(const struct device *dev, uint32_t pwm,
 	ic.ICPrescaler = TIM_ICPSC_DIV1;
 	ic.ICFilter = LL_TIM_IC_FILTER_FDIV1;
 
-	if (channel == LL_TIM_CHANNEL_CH1) {
-		if (pwm == 1u) {
+	if (ll_channel == LL_TIM_CHANNEL_CH1) {
+		if (channel == 1u) {
 			ic.ICActiveInput = LL_TIM_ACTIVEINPUT_DIRECTTI;
 			ic.ICPolarity = is_inverted ? LL_TIM_IC_POLARITY_FALLING
 					: LL_TIM_IC_POLARITY_RISING;
@@ -376,7 +376,7 @@ static int init_capture_channel(const struct device *dev, uint32_t pwm,
 					: LL_TIM_IC_POLARITY_FALLING;
 		}
 	} else {
-		if (pwm == 1u) {
+		if (channel == 1u) {
 			ic.ICActiveInput = LL_TIM_ACTIVEINPUT_INDIRECTTI;
 			ic.ICPolarity = is_inverted ? LL_TIM_IC_POLARITY_RISING
 					: LL_TIM_IC_POLARITY_FALLING;
@@ -387,7 +387,7 @@ static int init_capture_channel(const struct device *dev, uint32_t pwm,
 		}
 	}
 
-	if (LL_TIM_IC_Init(cfg->timer, channel, &ic) != SUCCESS) {
+	if (LL_TIM_IC_Init(cfg->timer, ll_channel, &ic) != SUCCESS) {
 		LOG_ERR("Could not initialize channel for PWM capture");
 		return -EIO;
 	}
@@ -395,9 +395,9 @@ static int init_capture_channel(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int pwm_stm32_pin_configure_capture(const struct device *dev,
-		uint32_t pwm, pwm_flags_t flags,
-		pwm_capture_callback_handler_t cb, void *user_data)
+static int pwm_stm32_pin_configure_capture(
+	const struct device *dev, uint32_t channel, pwm_flags_t flags,
+	pwm_capture_callback_handler_t cb, void *user_data)
 {
 
 	/*
@@ -412,7 +412,7 @@ static int pwm_stm32_pin_configure_capture(const struct device *dev,
 	struct pwm_stm32_capture_data *cpt = &data->capture;
 	int ret;
 
-	if ((pwm != 1u) && (pwm != 2u)) {
+	if ((channel != 1u) && (channel != 2u)) {
 		LOG_ERR("PWM capture only supported on first two channels");
 		return -ENOTSUP;
 	}
@@ -442,17 +442,17 @@ static int pwm_stm32_pin_configure_capture(const struct device *dev,
 	/* Prevents faulty behavior while making changes */
 	LL_TIM_SetSlaveMode(cfg->timer, LL_TIM_SLAVEMODE_DISABLED);
 
-	ret = init_capture_channel(dev, pwm, flags, LL_TIM_CHANNEL_CH1);
+	ret = init_capture_channel(dev, channel, flags, LL_TIM_CHANNEL_CH1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = init_capture_channel(dev, pwm, flags, LL_TIM_CHANNEL_CH2);
+	ret = init_capture_channel(dev, channel, flags, LL_TIM_CHANNEL_CH2);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (pwm == 1u) {
+	if (channel == 1u) {
 		LL_TIM_SetTriggerInput(cfg->timer, LL_TIM_TS_TI1FP1);
 	} else {
 		LL_TIM_SetTriggerInput(cfg->timer, LL_TIM_TS_TI2FP2);
@@ -470,12 +470,13 @@ static int pwm_stm32_pin_configure_capture(const struct device *dev,
 	return 0;
 }
 
-static int pwm_stm32_pin_enable_capture(const struct device *dev, uint32_t pwm)
+static int pwm_stm32_pin_enable_capture(const struct device *dev,
+					uint32_t channel)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
 	struct pwm_stm32_data *data = dev->data;
 
-	if ((pwm != 1u) && (pwm != 2u)) {
+	if ((channel != 1u) && (channel != 2u)) {
 		LOG_ERR("PWM capture only supported on first two channels");
 		return -EINVAL;
 	}
@@ -498,7 +499,7 @@ static int pwm_stm32_pin_enable_capture(const struct device *dev, uint32_t pwm)
 	LL_TIM_ClearFlag_UPDATE(cfg->timer);
 
 	LL_TIM_SetUpdateSource(cfg->timer, LL_TIM_UPDATESOURCE_COUNTER);
-	if (pwm == 1u) {
+	if (channel == 1u) {
 		LL_TIM_EnableIT_CC1(cfg->timer);
 	} else {
 		LL_TIM_EnableIT_CC2(cfg->timer);
@@ -510,17 +511,18 @@ static int pwm_stm32_pin_enable_capture(const struct device *dev, uint32_t pwm)
 	return 0;
 }
 
-static int pwm_stm32_pin_disable_capture(const struct device *dev, uint32_t pwm)
+static int pwm_stm32_pin_disable_capture(const struct device *dev,
+					 uint32_t channel)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
 
-	if ((pwm != 1u) && (pwm != 2u)) {
+	if ((channel != 1u) && (channel != 2u)) {
 		LOG_ERR("PWM capture only supported on first two channels");
 		return -EINVAL;
 	}
 
 	LL_TIM_SetUpdateSource(cfg->timer, LL_TIM_UPDATESOURCE_REGULAR);
-	if (pwm == 1u) {
+	if (channel == 1u) {
 		LL_TIM_DisableIT_CC1(cfg->timer);
 	} else {
 		LL_TIM_DisableIT_CC2(cfg->timer);
@@ -532,13 +534,13 @@ static int pwm_stm32_pin_disable_capture(const struct device *dev, uint32_t pwm)
 	return 0;
 }
 
-static void get_pwm_capture(const struct device *dev, uint32_t pwm)
+static void get_pwm_capture(const struct device *dev, uint32_t channel)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
 	struct pwm_stm32_data *data = dev->data;
 	struct pwm_stm32_capture_data *cpt = &data->capture;
 
-	if (pwm == 1u) {
+	if (channel == 1u) {
 		cpt->period = LL_TIM_IC_GetCaptureCH1(cfg->timer);
 		cpt->pulse = LL_TIM_IC_GetCaptureCH2(cfg->timer);
 	} else {
@@ -602,8 +604,7 @@ static void pwm_stm32_isr(const struct device *dev)
 #endif /* CONFIG_PWM_CAPTURE */
 
 static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
-					uint32_t pwm,
-					uint64_t *cycles)
+					uint32_t channel, uint64_t *cycles)
 {
 	struct pwm_stm32_data *data = dev->data;
 	const struct pwm_stm32_config *cfg = dev->config;

@@ -313,7 +313,7 @@ done:
 	regs->CONFIG = cfgval;
 }
 
-static int pwm_xec_pin_set(const struct device *dev, uint32_t pwm,
+static int pwm_xec_pin_set(const struct device *dev, uint32_t channel,
 			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
@@ -322,7 +322,7 @@ static int pwm_xec_pin_set(const struct device *dev, uint32_t pwm,
 	uint32_t target_freq;
 	uint32_t on, off;
 
-	if (pwm > 0) {
+	if (channel > 0) {
 		return -EIO;
 	}
 
@@ -355,12 +355,12 @@ static int pwm_xec_pin_set(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int pwm_xec_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				      uint64_t *cycles)
+static int pwm_xec_get_cycles_per_sec(const struct device *dev,
+				      uint32_t channel, uint64_t *cycles)
 {
 	ARG_UNUSED(dev);
 
-	if (pwm > 0) {
+	if (channel > 0) {
 		return -EIO;
 	}
 

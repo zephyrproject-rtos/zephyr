@@ -35,7 +35,7 @@ struct pwm_mcux_sctimer_data {
 	sctimer_pwm_signal_param_t channel[CHANNEL_COUNT];
 };
 
-static int mcux_sctimer_pwm_pin_set(const struct device *dev, uint32_t pwm,
+static int mcux_sctimer_pwm_pin_set(const struct device *dev, uint32_t channel,
 			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
@@ -43,7 +43,7 @@ static int mcux_sctimer_pwm_pin_set(const struct device *dev, uint32_t pwm,
 	struct pwm_mcux_sctimer_data *data = dev->data;
 	uint8_t duty_cycle;
 
-	if (pwm >= CHANNEL_COUNT) {
+	if (channel >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
 		return -EINVAL;
 	}
@@ -54,9 +54,9 @@ static int mcux_sctimer_pwm_pin_set(const struct device *dev, uint32_t pwm,
 	}
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0) {
-		data->channel[pwm].level = kSCTIMER_HighTrue;
+		data->channel[channel].level = kSCTIMER_HighTrue;
 	} else {
-		data->channel[pwm].level = kSCTIMER_LowTrue;
+		data->channel[channel].level = kSCTIMER_LowTrue;
 	}
 
 	duty_cycle = 100 * pulse_cycles / period_cycles;
@@ -67,25 +67,25 @@ static int mcux_sctimer_pwm_pin_set(const struct device *dev, uint32_t pwm,
 		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
 
 		/* Set the output to inactive State */
-		if (data->channel[pwm].level == kSCTIMER_HighTrue) {
-			base->OUTPUT &= ~(1UL << pwm);
+		if (data->channel[channel].level == kSCTIMER_HighTrue) {
+			base->OUTPUT &= ~(1UL << channel);
 		} else {
-			base->OUTPUT |= (1UL << pwm);
+			base->OUTPUT |= (1UL << channel);
 		}
 
 		/* Make sure the PWM is setup */
-		if (data->period_cycles[pwm] != 0) {
+		if (data->period_cycles[channel] != 0) {
 			SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 		}
 
 		return 0;
 	}
 
-	if (period_cycles != data->period_cycles[pwm]) {
+	if (period_cycles != data->period_cycles[channel]) {
 		uint32_t clock_freq;
 		uint32_t pwm_freq;
 
-		data->period_cycles[pwm] = period_cycles;
+		data->period_cycles[channel] = period_cycles;
 
 		/*
 		 * Do not divide by the prescale factor as this is accounted for in
@@ -102,23 +102,26 @@ static int mcux_sctimer_pwm_pin_set(const struct device *dev, uint32_t pwm,
 		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
 
 		LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
-		data->channel[pwm].dutyCyclePercent = duty_cycle;
-		if (SCTIMER_SetupPwm(config->base, &data->channel[pwm], kSCTIMER_EdgeAlignedPwm,
-				pwm_freq, clock_freq, &data->event_number[pwm]) == kStatus_Fail) {
+		data->channel[channel].dutyCyclePercent = duty_cycle;
+		if (SCTIMER_SetupPwm(config->base, &data->channel[channel],
+				     kSCTIMER_EdgeAlignedPwm, pwm_freq,
+				     clock_freq, &data->event_number[channel]) == kStatus_Fail) {
 			LOG_ERR("Could not set up pwm");
 			return -ENOTSUP;
 		}
 
 		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 	} else {
-		SCTIMER_UpdatePwmDutycycle(config->base, pwm, duty_cycle, data->event_number[pwm]);
+		SCTIMER_UpdatePwmDutycycle(config->base, channel, duty_cycle,
+					   data->event_number[channel]);
 	}
 
 	return 0;
 }
 
-static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				       uint64_t *cycles)
+static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev,
+					       uint32_t channel,
+					       uint64_t *cycles)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 
