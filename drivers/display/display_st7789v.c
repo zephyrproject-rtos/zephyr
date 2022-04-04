@@ -26,9 +26,7 @@ LOG_MODULE_REGISTER(display_st7789v);
 struct st7789v_config {
 	struct spi_dt_spec bus;
 	struct gpio_dt_spec cmd_data_gpio;
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	struct gpio_dt_spec reset_gpio;
-#endif
 	uint8_t vcom;
 	uint8_t gctrl;
 	bool vdv_vrh_enable;
@@ -105,18 +103,17 @@ static void st7789v_reset_display(const struct device *dev)
 {
 	LOG_DBG("Resetting display");
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	const struct st7789v_config *config = dev->config;
-
-	k_sleep(K_MSEC(1));
-	gpio_pin_set_dt(&config->reset_gpio, 1);
-	k_sleep(K_MSEC(6));
-	gpio_pin_set_dt(&config->reset_gpio, 0);
-	k_sleep(K_MSEC(20));
-#else
-	st7789v_transmit(dev, ST7789V_CMD_SW_RESET, NULL, 0);
-	k_sleep(K_MSEC(5));
-#endif
+	if (config->reset_gpio.port != NULL) {
+		k_sleep(K_MSEC(1));
+		gpio_pin_set_dt(&config->reset_gpio, 1);
+		k_sleep(K_MSEC(6));
+		gpio_pin_set_dt(&config->reset_gpio, 0);
+		k_sleep(K_MSEC(20));
+	} else {
+		st7789v_transmit(dev, ST7789V_CMD_SW_RESET, NULL, 0);
+		k_sleep(K_MSEC(5));
+	}
 }
 
 static int st7789v_blanking_on(const struct device *dev)
@@ -354,17 +351,17 @@ static int st7789v_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	if (!device_is_ready(config->reset_gpio.port)) {
-		LOG_ERR("Reset GPIO device not ready");
-		return -ENODEV;
-	}
+	if (config->reset_gpio.port != NULL) {
+		if (!device_is_ready(config->reset_gpio.port)) {
+			LOG_ERR("Reset GPIO device not ready");
+			return -ENODEV;
+		}
 
-	if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE)) {
-		LOG_ERR("Couldn't configure reset pin");
-		return -EIO;
+		if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE)) {
+			LOG_ERR("Couldn't configure reset pin");
+			return -EIO;
+		}
 	}
-#endif
 
 	if (!device_is_ready(config->cmd_data_gpio.port)) {
 		LOG_ERR("Reset GPIO device not ready");
@@ -425,9 +422,7 @@ static const struct display_driver_api st7789v_api = {
 static const struct st7789v_config st7789v_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),
 	.cmd_data_gpio = GPIO_DT_SPEC_INST_GET(0, cmd_data_gpios),
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
-#endif
+	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, {}),	\
 	.vcom = DT_INST_PROP(0, vcom),
 	.gctrl = DT_INST_PROP(0, gctrl),
 	.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(0, vrhs) && DT_INST_NODE_HAS_PROP(0, vdvs)),
