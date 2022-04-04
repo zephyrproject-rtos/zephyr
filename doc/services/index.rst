@@ -18,3 +18,4 @@ OS Services
    pm/index.rst
    shell/index.rst
    settings/index.rst
+   smf/index.rst
