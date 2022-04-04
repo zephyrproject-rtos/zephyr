@@ -194,17 +194,14 @@
 /cmake/                                   @tejlmand @nashif
 /cmake/*/arcmwdt/                         @abrodkin @evgeniy-paltsev @tejlmand
 /CMakeLists.txt                           @tejlmand @nashif
-/doc/                                     @dbkinder
-/doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
-/doc/guides/device_mgmt/smp_protocol.rst  @de-nordic
-/doc/guides/device_mgmt/smp_groups/       @de-nordic
+/doc/develop/tools/coccinelle.rst                @himanshujha199640 @JuliaLawall
+/doc/services/device_mgmt/smp_protocol.rst  @de-nordic
+/doc/services/device_mgmt/smp_groups/       @de-nordic
 /doc/CMakeLists.txt                       @carlescufi
 /doc/_scripts/                            @carlescufi
-/doc/guides/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
-/doc/guides/dts/                          @galak @mbolivar-nordic
-/doc/reference/bluetooth/                 @alwa-nordic @jhedberg @Vudentz
-/doc/reference/devicetree/                @galak @mbolivar-nordic
-/doc/reference/canbus/                    @alexanderwachter @henrikbrixandersen
+/doc/connectivity/bluetooth/                    @alwa-nordic @jhedberg @Vudentz
+/doc/build/dts/                          @galak @mbolivar-nordic
+/doc/hardware/preipherals/canbus/                    @alexanderwachter @henrikbrixandersen
 /doc/security/                            @ceolin @d3zd3z
 /drivers/debug/                           @nashif
 /drivers/*/*sam4l*                        @nandojve
