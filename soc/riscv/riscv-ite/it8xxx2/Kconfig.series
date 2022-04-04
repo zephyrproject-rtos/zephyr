@@ -5,6 +5,7 @@ config SOC_SERIES_RISCV32_IT8XXX2
 	bool "ITE IT8XXX2 implementation"
 	#depends on RISCV
 	select COMPRESSED_ISA
+	select CPU_HAS_FPU
 	select SOC_FAMILY_RISCV_ITE
 	help
 	    Enable support for ITE IT8XXX2
