@@ -108,6 +108,7 @@ Sections
    application/index.rst
    build/index.rst
    kernel/index.rst
+   connectivity/index.rst
    reference/index.rst
    guides/index.rst
    security/index.rst
