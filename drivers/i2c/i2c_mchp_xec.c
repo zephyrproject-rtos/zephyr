@@ -362,27 +362,18 @@ static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
 	uint32_t ba = config->base_addr;
-	uint8_t i2c_timer = 0, byte, error = 0;
+	uint8_t i2c_timer = 0, byte;
 	int ret;
 
 	if (data->timeout_seen == 1) {
 		/* Wait to see if the slave has released the CLK */
 		ret = wait_completion(dev);
-		switch (ret) {
-		case 0:	/* Success */
-			break;
-
-		case -ETIMEDOUT:
+		if (ret) {
 			data->timeout_seen = 1;
-			LOG_ERR("%s: %s wait_completion Timeout %d\n",
+			LOG_ERR("%s: %s wait_completion failure %d\n",
 				__func__, dev->name, ret);
 			return ret;
-
-		default:
-			error = 1;
-			break;
 		}
-
 		data->timeout_seen = 0;
 
 		/* If we are here, it means the slave has finally released
@@ -406,13 +397,6 @@ static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 			data->previously_in_read = 0;
 			byte = MCHP_I2C_SMB_DATA(ba);
 		}
-
-		if (error) {
-			LOG_DBG("%s: Recovering %s previously in error",
-				__func__, dev->name);
-			recover_from_error(dev);
-		}
-
 		return -EBUSY;
 	}
 
@@ -460,12 +444,6 @@ static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 
 		case -EIO:
 			LOG_WRN("%s: No Addr ACK from Slave 0x%x on %s",
-				__func__, addr >> 1, dev->name);
-			return ret;
-
-		case -ETIMEDOUT:
-			data->timeout_seen = 1;
-			LOG_ERR("%s: Addr Clk stretch Timeout - Slave 0x%x on %s",
 				__func__, addr >> 1, dev->name);
 			return ret;
 
@@ -529,27 +507,18 @@ static int i2c_xec_poll_read(const struct device *dev, struct i2c_msg msg,
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
 	uint32_t ba = config->base_addr;
-	uint8_t byte, ctrl, i2c_timer = 0, error = 0;
+	uint8_t byte, ctrl, i2c_timer = 0;
 	int ret;
 
 	if (data->timeout_seen == 1) {
 		/* Wait to see if the slave has released the CLK */
 		ret = wait_completion(dev);
-		switch (ret) {
-		case 0:	/* Success */
-			break;
-
-		case -ETIMEDOUT:
+		if (ret) {
 			data->timeout_seen = 1;
-			LOG_ERR("%s: %s wait_completion Timeout %d\n",
+			LOG_ERR("%s: %s wait_completion failure %d\n",
 				__func__, dev->name, ret);
 			return ret;
-
-		default:
-			error = 1;
-			break;
 		}
-
 		data->timeout_seen = 0;
 
 		/* If we are here, it means the slave has finally released
@@ -563,12 +532,6 @@ static int i2c_xec_poll_read(const struct device *dev, struct i2c_msg msg,
 					MCHP_I2C_SMB_CTRL_STO |
 					MCHP_I2C_SMB_CTRL_ACK;
 		k_busy_wait(BUS_IDLE_US_DFLT);
-
-		if (error) {
-			LOG_DBG("%s: Recovering %s previously in error",
-				__func__, dev->name);
-			recover_from_error(dev);
-		}
 		return -EBUSY;
 	}
 
