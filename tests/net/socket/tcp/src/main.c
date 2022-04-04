@@ -723,6 +723,43 @@ void test_open_close_immediately(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+void test_connect_timeout(void)
+{
+	/* Test if socket connect fails when there is not communication
+	 * possible.
+	 */
+	int count_after = 0;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	int c_sock;
+	int rv;
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+
+	s_saddr.sin_family = AF_INET;
+	s_saddr.sin_port = htons(SERVER_PORT);
+	rv = zsock_inet_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &s_saddr.sin_addr);
+	zassert_equal(rv, 1, "inet_pton failed");
+
+	loopback_set_packet_drop_ratio(1.0f);
+
+	zassert_equal(connect(c_sock, (struct sockaddr *)&s_saddr,
+			    sizeof(s_saddr)),
+			    -1, "connect succeed");
+
+	zassert_equal(errno, ETIMEDOUT,
+			    "connect should be timed out, got %i", errno);
+
+	test_close(c_sock);
+
+	/* After the client socket closing, the context count should be 0 */
+	net_context_foreach(calc_net_context, &count_after);
+
+	zassert_equal(count_after, 0,
+			    "net_context still in use");
+}
+
 void test_v4_accept_timeout(void)
 {
 	/* Test if accept() will timeout properly */
@@ -1282,6 +1319,8 @@ void test_main(void)
 		ztest_user_unit_test(test_shutdown_rd_synchronous),
 		ztest_unit_test(test_shutdown_rd_while_recv),
 		ztest_unit_test(test_open_close_immediately),
+		ztest_unit_test_setup_teardown(test_connect_timeout,
+		 restore_packet_loss_ratio, restore_packet_loss_ratio),
 		ztest_user_unit_test(test_v4_accept_timeout),
 		ztest_unit_test(test_so_type),
 		ztest_unit_test(test_so_protocol),
