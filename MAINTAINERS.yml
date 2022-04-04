@@ -173,8 +173,7 @@ Bluetooth:
         - Thalley
         - asbjornsabo
     files:
-        - doc/reference/bluetooth/
-        - doc/guides/bluetooth/
+        - doc/connectivity/bluetooth/
         - drivers/bluetooth/
         - include/bluetooth/
         - include/drivers/bluetooth/
@@ -266,7 +265,7 @@ Build system:
         - scripts/zephyr_module.py
         - share/
         - doc/build/
-        - doc/guides/modules.rst
+        - doc/develop/modules.rst
     labels:
         - "area: Build System"
 
@@ -370,7 +369,7 @@ Device Driver Model:
         - kernel/device.c
         - include/init.h
         - tests/kernel/device/
-        - doc/reference/drivers/
+        - doc/kernel/drivers/
     labels:
         - "area: Device Model"
 
@@ -397,7 +396,7 @@ Devicetree:
         - dts/common/
         - tests/lib/devicetree/
         - dts/bindings/test/
-        - doc/guides/dts/
+        - doc/build/dts/
         - include/devicetree/
     labels:
         - "area: Devicetree"
@@ -493,7 +492,7 @@ Documentation:
         - martinjaeger
         - legoabram
     files:
-        - doc/reference/canbus/
+        - doc/hardware/peripherals/canbus/
         - drivers/can/
         - dts/bindings/can/
         - include/canbus/
@@ -648,7 +647,7 @@ Documentation:
     maintainers:
         - mnkp
     files:
-        - doc/reference/peripherals/gpio.rst
+        - doc/hardware/peripherals/gpio.rst
         - drivers/gpio/
         - include/drivers/gpio/
         - include/drivers/gpio.h
@@ -685,7 +684,7 @@ Documentation:
     maintainers:
         - anangl
     files:
-        - doc/reference/audio/i2s.rst
+        - doc/hardware/peripherals/audio/i2s.rst
         - drivers/i2s/
         - dts/bindings/i2s/
         - include/drivers/i2s.h
@@ -831,7 +830,7 @@ Documentation:
     maintainers:
         - gmarull
     files:
-        - doc/reference/pinctrl/
+        - doc/hardware/pinctrl/
         - include/drivers/pinctrl/
         - include/drivers/pinctrl.h
         - drivers/pinctrl/
@@ -845,7 +844,7 @@ Documentation:
     collaborators:
         - gmarull
     files:
-        - doc/reference/peripherals/pinmux.rst
+        - doc/hardware/peripherals/pinmux.rst
         - drivers/pinmux/
         - include/drivers/pinmux.h
     labels:
@@ -959,7 +958,7 @@ Documentation:
         - katsuster
         - martinjaeger
     files:
-        - doc/reference/peripherals/watchdog.rst
+        - doc/hardware/peripherals/watchdog.rst
         - drivers/watchdog/
         - dts/bindings/watchdog/
         - include/drivers/watchdog.h
@@ -1058,8 +1057,8 @@ Kconfig:
     labels:
         - "area: Kconfig"
     description: >-
-        See https://docs.zephyrproject.org/latest/guides/kconfig/index.html and
-        https://docs.zephyrproject.org/latest/guides/porting/board_porting.html#default-board-configuration
+        See https://docs.zephyrproject.org/latest/build/kconfig/index.html and
+        https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html#default-board-configuration
 
 Kernel:
     status: maintained
@@ -1228,6 +1227,7 @@ Networking:
         - include/net/
         - samples/net/
         - subsys/net/
+        - doc/connectivity/networking/
     files-exclude:
         - samples/net/sockets/coap_*/
         - samples/net/lwm2m_client/
@@ -1437,7 +1437,7 @@ Shields:
         - jfischer-no
     files:
         - boards/shields/
-        - doc/guides/porting/shields.rst
+        - doc/hardware/porting/shields.rst
     labels:
         - "area: Shields"
 
@@ -1772,7 +1772,7 @@ Tracing:
         - include/tracing/
         - subsys/timing/
         - samples/subsys/tracing/
-        - doc/guides/debug_tools/tracing/
+        - doc/services/tracing/
         - tests/subsys/tracing/
     labels:
         - "area: tracing"
@@ -1799,7 +1799,7 @@ Userspace:
     collaborators:
         - enjiamai
     files:
-        - doc/reference/usermode/kernelobjects.rst
+        - doc/kernel/usermode/kernelobjects.rst
         - include/app_memory/
         - include/linker/app_smem*.ld
         - tests/kernel/mem_protect/
@@ -1838,7 +1838,7 @@ West:
     files:
         - scripts/west-commands.yml
         - scripts/west_commands/
-        - doc/guides/west/
+        - doc/develop/west/
     labels:
         - "area: West"
 
