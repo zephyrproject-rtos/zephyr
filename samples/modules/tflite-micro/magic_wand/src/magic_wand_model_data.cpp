@@ -19,7 +19,7 @@
  * See the README for a full description of the creation process.
  */
 
-#include "magic_wand_model_data.h"
+#include "magic_wand_model_data.hpp"
 
 /* Keep model aligned to 8 bytes to guarantee aligned 64-bit accesses. */
 alignas(8) const unsigned char g_magic_wand_model_data[] = {

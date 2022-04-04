@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "output_handler.h"
+#include "output_handler.hpp"
 
 void HandleOutput(tflite::ErrorReporter *error_reporter, int kind)
 {

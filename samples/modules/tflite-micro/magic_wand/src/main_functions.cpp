@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "main_functions.h"
+#include "main_functions.hpp"
 
-#include "accelerometer_handler.h"
-#include "constants.h"
-#include "gesture_predictor.h"
-#include "magic_wand_model_data.h"
-#include "output_handler.h"
+#include "accelerometer_handler.hpp"
+#include "constants.hpp"
+#include "gesture_predictor.hpp"
+#include "magic_wand_model_data.hpp"
+#include "output_handler.hpp"
 #include <tensorflow/lite/micro/micro_error_reporter.h>
 #include <tensorflow/lite/micro/micro_interpreter.h>
 #include <tensorflow/lite/micro/micro_mutable_op_resolver.h>

@@ -24,7 +24,7 @@
  * See train/README.md for a full description of the creation process.
  */
 
-#include "model.h"
+#include "model.hpp"
 
 /* Keep model aligned to 8 bytes to guarantee aligned 64-bit accesses. */
 alignas(8) const unsigned char g_model[] = {
