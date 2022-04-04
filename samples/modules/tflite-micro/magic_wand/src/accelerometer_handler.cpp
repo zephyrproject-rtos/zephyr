@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "accelerometer_handler.h"
+#include "accelerometer_handler.hpp"
 
 #include <device.h>
 #include <drivers/sensor.h>

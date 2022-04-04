@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "gesture_predictor.h"
+#include "gesture_predictor.hpp"
 
-#include "constants.h"
+#include "constants.hpp"
 
 namespace {
 	/* State for the averaging algorithm we're using. */

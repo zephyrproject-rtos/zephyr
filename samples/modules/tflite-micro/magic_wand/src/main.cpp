@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "main_functions.h"
+#include "main_functions.hpp"
 
 /* This is the default main used on systems that have the standard C entry
  * point. Other devices (for example FreeRTOS or ESP32) that have different
