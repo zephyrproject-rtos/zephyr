@@ -34,6 +34,5 @@ API Reference
    task_wdt/index.rst
    misc/timeutil.rst
    usb/index.rst
-   util/index.rst
    settings/index.rst
    virtualization/index.rst
