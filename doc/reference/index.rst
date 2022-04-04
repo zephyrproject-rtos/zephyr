@@ -28,5 +28,4 @@ API Reference
    storage/index.rst
    task_wdt/index.rst
    usb/index.rst
-   settings/index.rst
    virtualization/index.rst

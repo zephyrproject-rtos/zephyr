@@ -13,3 +13,4 @@ OS Services
    resource_management/index.rst
    notify.rst
    shell/index.rst
+   settings/index.rst
