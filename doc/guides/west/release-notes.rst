@@ -3,6 +3,80 @@
 West Release Notes
 ##################
 
+v0.13.0
+*******
+
+New features:
+
+- You can now associate arbitrary user data with the manifest repository
+  itself in the ``manifest: self: userdata:`` value, like so:
+
+  .. code-block:: YAML
+
+     manifest:
+       self:
+         userdata: <any YAML value can go here>
+
+Bug fixes:
+
+- The path to the manifest repository reported by west could be incorrect in
+  certain circumstances detailed in [issue
+  #572](https://github.com/zephyrproject-rtos/west/issues/572). This has been
+  fixed as part of a larger overhaul of path handling support in the
+  ``west.manifest`` API module.
+
+- The ``west.Manifest.ManifestProject.__repr__`` return value was fixed
+
+:ref:`API <west-apis>` changes:
+
+- ``west.configuration.Configuration``: new object-oriented interface to the
+  current configuration. This reflects the system, global, and workspace-local
+  configuration values, and allows you to read, write, and delete configuration
+  options from any or all of these locations.
+
+- ``west.commands.WestCommand``:
+
+  - ``config``: new attribute, returns a ``Configuration`` object or aborts the
+    program if none is set. This is always usable from within extension command
+    ``do_run()`` implementations.
+  - ``has_config``: new boolean attribute, which is ``True`` if and only if
+    reading ``self.config`` will abort the program.
+
+- The path handling in the ``west.manifest`` package has been overhauled in a
+  backwards-incompatible way. For more details, see commit
+  [56cfe8d1d1](https://github.com/zephyrproject-rtos/west/commit/56cfe8d1d1f3c9b45de3e793c738acd62db52aca).
+
+- ``west.manifest.Manifest.validate()``: this now returns the validated data as
+  a Python dict. This can be useful if the value passed to this function was a
+  str, and the dict is desired.
+
+- ``west.manifest.Manifest``: new:
+
+  - path attributes ``abspath``, ``posixpath``, ``relative_path``,
+    ``yaml_path``, ``repo_path``, ``repo_posixpath``
+  - ``userdata`` attribute, which contains the parsed value
+    from ``manifest: self: userdata:``, or is None
+  - ``from_topdir()`` factory method
+
+- ``west.manifest.ManifestProject``: new ``userdata`` attribute, which also
+  contains the parsed value from ``manifest: self: userdata:``, or is None
+
+- ``west.manifest.ManifestImportFailed``: the constructor can now take any
+  value; this can be used to reflect failed imports from a :ref:`map
+  <west-manifest-import-map>` or other compound value.
+
+- Deprecated configuration APIs:
+
+  The following APIs are now deprecated in favor of using a ``Configuration``
+  object. Usually this will be done via ``self.config`` from a ``WestCommand``
+  instance, but this can be done directly by instantiating a ``Configuration``
+  object for other usages.
+
+  - ``west.configuration.config``
+  - ``west.configuration.read_config``
+  - ``west.configuration.update_config``
+  - ``west.configuration.delete_config``
+
 v0.12.0
 *******
 
