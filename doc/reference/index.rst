@@ -20,7 +20,6 @@ API Reference
    misc/formatted_output.rst
    libc/index.rst
    logging/index.rst
-   memory_management/index.rst
    misc/index
    lora_lorawan/index.rst
    modbus/index.rst
