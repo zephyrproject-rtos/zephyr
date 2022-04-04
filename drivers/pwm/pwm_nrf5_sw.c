@@ -107,7 +107,7 @@ static uint32_t pwm_period_check(struct pwm_data *data, uint8_t map_size,
 	return 0;
 }
 
-static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
+static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t channel,
 			       uint32_t period_cycles, uint32_t pulse_cycles,
 			       pwm_flags_t flags)
 {
@@ -116,7 +116,6 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 	NRF_RTC_Type *rtc = pwm_config_rtc(config);
 	struct pwm_data *data = dev->data;
 	uint32_t ppi_mask;
-	uint8_t channel = pwm;
 	uint8_t active_level;
 	uint8_t psel_ch;
 	uint8_t gpiote_ch;
@@ -277,8 +276,7 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 }
 
 static int pwm_nrf5_sw_get_cycles_per_sec(const struct device *dev,
-					  uint32_t pwm,
-					  uint64_t *cycles)
+					  uint32_t channel, uint64_t *cycles)
 {
 	const struct pwm_config *config = dev->config;
 

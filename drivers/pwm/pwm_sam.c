@@ -24,8 +24,8 @@ struct sam_pwm_config {
 	uint8_t divider;
 };
 
-static int sam_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				      uint64_t *cycles)
+static int sam_pwm_get_cycles_per_sec(const struct device *dev,
+				      uint32_t channel, uint64_t *cycles)
 {
 	const struct sam_pwm_config *config = dev->config;
 	uint8_t prescaler = config->prescaler;
@@ -37,7 +37,7 @@ static int sam_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int sam_pwm_pin_set(const struct device *dev, uint32_t ch,
+static int sam_pwm_pin_set(const struct device *dev, uint32_t channel,
 			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
@@ -45,7 +45,7 @@ static int sam_pwm_pin_set(const struct device *dev, uint32_t ch,
 
 	Pwm * const pwm = config->regs;
 
-	if (ch >= PWMCHNUM_NUMBER) {
+	if (channel >= PWMCHNUM_NUMBER) {
 		return -EINVAL;
 	}
 
@@ -63,16 +63,16 @@ static int sam_pwm_pin_set(const struct device *dev, uint32_t ch,
 	}
 
 	/* Select clock A */
-	pwm->PWM_CH_NUM[ch].PWM_CMR = PWM_CMR_CPRE_CLKA_Val;
+	pwm->PWM_CH_NUM[channel].PWM_CMR = PWM_CMR_CPRE_CLKA_Val;
 
 	/* Update period and pulse using the update registers, so that the
 	 * change is triggered at the next PWM period.
 	 */
-	pwm->PWM_CH_NUM[ch].PWM_CPRDUPD = period_cycles;
-	pwm->PWM_CH_NUM[ch].PWM_CDTYUPD = pulse_cycles;
+	pwm->PWM_CH_NUM[channel].PWM_CPRDUPD = period_cycles;
+	pwm->PWM_CH_NUM[channel].PWM_CDTYUPD = pulse_cycles;
 
 	/* Enable the output */
-	pwm->PWM_ENA = 1 << ch;
+	pwm->PWM_ENA = 1 << channel;
 
 	return 0;
 }

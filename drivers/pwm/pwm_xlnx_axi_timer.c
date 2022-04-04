@@ -60,7 +60,7 @@ static inline void xlnx_axi_timer_write32(const struct device *dev,
 	sys_write32(value, config->base + offset);
 }
 
-static int xlnx_axi_timer_pin_set(const struct device *dev, uint32_t pwm,
+static int xlnx_axi_timer_pin_set(const struct device *dev, uint32_t channel,
 				  uint32_t period_cycles, uint32_t pulse_cycles,
 				  pwm_flags_t flags)
 {
@@ -70,7 +70,7 @@ static int xlnx_axi_timer_pin_set(const struct device *dev, uint32_t pwm,
 	uint32_t tlr0;
 	uint32_t tlr1;
 
-	if (pwm != 0) {
+	if (channel != 0) {
 		return -ENOTSUP;
 	}
 
@@ -159,11 +159,11 @@ static int xlnx_axi_timer_pin_set(const struct device *dev, uint32_t pwm,
 }
 
 static int xlnx_axi_timer_get_cycles_per_sec(const struct device *dev,
-					     uint32_t pwm, uint64_t *cycles)
+					     uint32_t channel, uint64_t *cycles)
 {
 	const struct xlnx_axi_timer_config *config = dev->config;
 
-	ARG_UNUSED(pwm);
+	ARG_UNUSED(channel);
 
 	*cycles = config->freq;
 

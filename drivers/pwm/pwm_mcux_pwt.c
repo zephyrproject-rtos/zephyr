@@ -50,12 +50,12 @@ static inline bool mcux_pwt_is_active(const struct device *dev)
 	return !!(config->base->CS & PWT_CS_PWTEN_MASK);
 }
 
-static int mcux_pwt_pin_set(const struct device *dev, uint32_t pwm,
+static int mcux_pwt_pin_set(const struct device *dev, uint32_t channel,
 			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(pwm);
+	ARG_UNUSED(channel);
 	ARG_UNUSED(period_cycles);
 	ARG_UNUSED(pulse_cycles);
 	ARG_UNUSED(flags);
@@ -66,16 +66,15 @@ static int mcux_pwt_pin_set(const struct device *dev, uint32_t pwm,
 }
 
 static int mcux_pwt_pin_configure_capture(const struct device *dev,
-					  uint32_t pwm,
-					  pwm_flags_t flags,
+					  uint32_t channel, pwm_flags_t flags,
 					  pwm_capture_callback_handler_t cb,
 					  void *user_data)
 {
 	const struct mcux_pwt_config *config = dev->config;
 	struct mcux_pwt_data *data = dev->data;
 
-	if (pwm >= PWT_INPUTS) {
-		LOG_ERR("invalid channel %d", pwm);
+	if (channel >= PWT_INPUTS) {
+		LOG_ERR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -87,7 +86,7 @@ static int mcux_pwt_pin_configure_capture(const struct device *dev,
 	data->callback = cb;
 	data->user_data = user_data;
 
-	data->pwt_config.inputSelect = pwm;
+	data->pwt_config.inputSelect = channel;
 
 	data->continuous =
 		(flags & PWM_CAPTURE_MODE_MASK) == PWM_CAPTURE_MODE_CONTINUOUS;
@@ -102,13 +101,14 @@ static int mcux_pwt_pin_configure_capture(const struct device *dev,
 	return 0;
 }
 
-static int mcux_pwt_pin_enable_capture(const struct device *dev, uint32_t pwm)
+static int mcux_pwt_pin_enable_capture(const struct device *dev,
+				       uint32_t channel)
 {
 	const struct mcux_pwt_config *config = dev->config;
 	struct mcux_pwt_data *data = dev->data;
 
-	if (pwm >= PWT_INPUTS) {
-		LOG_ERR("invalid channel %d", pwm);
+	if (channel >= PWT_INPUTS) {
+		LOG_ERR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -130,12 +130,13 @@ static int mcux_pwt_pin_enable_capture(const struct device *dev, uint32_t pwm)
 	return 0;
 }
 
-static int mcux_pwt_pin_disable_capture(const struct device *dev, uint32_t pwm)
+static int mcux_pwt_pin_disable_capture(const struct device *dev,
+					uint32_t channel)
 {
 	const struct mcux_pwt_config *config = dev->config;
 
-	if (pwm >= PWT_INPUTS) {
-		LOG_ERR("invalid channel %d", pwm);
+	if (channel >= PWT_INPUTS) {
+		LOG_ERR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -263,13 +264,13 @@ static void mcux_pwt_isr(const struct device *dev)
 	}
 }
 
-static int mcux_pwt_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				       uint64_t *cycles)
+static int mcux_pwt_get_cycles_per_sec(const struct device *dev,
+				       uint32_t channel, uint64_t *cycles)
 {
 	const struct mcux_pwt_config *config = dev->config;
 	struct mcux_pwt_data *data = dev->data;
 
-	ARG_UNUSED(pwm);
+	ARG_UNUSED(channel);
 
 	*cycles = data->clock_freq >> config->prescale;
 

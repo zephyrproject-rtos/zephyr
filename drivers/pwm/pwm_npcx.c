@@ -88,12 +88,12 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 }
 
 /* PWM api functions */
-static int pwm_npcx_pin_set(const struct device *dev, uint32_t pwm,
+static int pwm_npcx_pin_set(const struct device *dev, uint32_t channel,
 			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
 	/* Single channel for each pwm device */
-	ARG_UNUSED(pwm);
+	ARG_UNUSED(channel);
 	struct pwm_npcx_data *const data = dev->data;
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 	int prescaler;
@@ -160,11 +160,11 @@ static int pwm_npcx_pin_set(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int pwm_npcx_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				      uint64_t *cycles)
+static int pwm_npcx_get_cycles_per_sec(const struct device *dev,
+				       uint32_t channel, uint64_t *cycles)
 {
 	/* Single channel for each pwm device */
-	ARG_UNUSED(pwm);
+	ARG_UNUSED(channel);
 	struct pwm_npcx_data *const data = dev->data;
 
 	*cycles = data->cycles_per_sec;

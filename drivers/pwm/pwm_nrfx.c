@@ -121,7 +121,7 @@ static bool channel_psel_get(uint32_t channel, uint32_t *psel,
 		== PWM_PSEL_OUT_CONNECT_Connected);
 }
 
-static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
+static int pwm_nrfx_pin_set(const struct device *dev, uint32_t channel,
 			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
@@ -132,7 +132,6 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 	 */
 	const struct pwm_nrfx_config *config = dev->config;
 	struct pwm_nrfx_data *data = dev->data;
-	uint8_t channel = pwm;
 	bool inverted = (flags & PWM_POLARITY_INVERTED);
 	bool was_stopped;
 
@@ -227,7 +226,7 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int pwm_nrfx_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
+static int pwm_nrfx_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 				       uint64_t *cycles)
 {
 	/* TODO: Since this function might be removed, we will always return

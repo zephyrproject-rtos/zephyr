@@ -47,7 +47,7 @@ static int imx_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int imx_pwm_pin_set(const struct device *dev, uint32_t pwm,
+static int imx_pwm_pin_set(const struct device *dev, uint32_t channel,
 			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
