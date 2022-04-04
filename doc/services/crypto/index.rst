@@ -14,3 +14,5 @@ The following crypto libraries have been included:
    :maxdepth: 1
 
    tinycrypt.rst
+   random/index.rst
+   api/index.rst
