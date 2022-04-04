@@ -44,6 +44,14 @@
 			status = "disabled";
 		};
 
+		jtag_uart: uart@201000 {
+			compatible = "altr,jtag-uart";
+			reg = <0x201000 0x8>;
+			label = "JTAG_UART";
+
+			status = "disabled";
+		};
+
 		i2c0: i2c@100200 {
 			compatible = "altr,nios2-i2c";
 			clock-frequency = <I2C_BITRATE_ULTRA>;
