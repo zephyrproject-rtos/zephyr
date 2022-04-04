@@ -8,3 +8,4 @@ Kernel
 
    services/index.rst
    drivers/index.rst
+   usermode/index.rst

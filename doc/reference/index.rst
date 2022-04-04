@@ -35,7 +35,6 @@ API Reference
    task_wdt/index.rst
    misc/timeutil.rst
    usb/index.rst
-   usermode/index.rst
    util/index.rst
    settings/index.rst
    timing_functions/index.rst
