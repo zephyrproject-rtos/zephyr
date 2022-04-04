@@ -10,3 +10,4 @@ Kernel
    drivers/index.rst
    usermode/index.rst
    data_structures/index.rst
+   timing_functions/index.rst
