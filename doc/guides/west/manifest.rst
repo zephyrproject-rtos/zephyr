@@ -410,9 +410,13 @@ manifest file schema that can parse this file's data:
 
 The pykwalify schema :file:`manifest-schema.yml` in the west source code
 repository is used to validate the manifest section. The current manifest
-``version`` is 0.10, which is supported by west version v0.10.x.
+``version`` is 0.13, which is supported by west version v0.13.x.
 
-The ``version`` value may be ``"0.7"``, ``"0.8"``, ``"0.9"``, or ``"0.10"``.
+The ``version`` value may be any one of these values: ``"0.7"``, ``"0.8"``,
+``"0.9"``, ``"0.10"``, ``"0.12"``, ``"0.13"``. West v0.11 did not include any
+new features which broke the previous schema, so ``"0.11"`` **is not** a valid
+schema version.
+
 West v0.10.x can load manifests with any of these ``version`` values, while
 west v0.9.x can only load versions up to ``"0.9"``, and so on.
 
@@ -1060,10 +1064,14 @@ submodules in ``foo`` with paths ``path/to/foo-first-sub`` and
 
 .. _west-project-userdata:
 
-Project user data
-*****************
+Repository user data
+********************
 
 West versions v0.12 and later support an optional ``userdata`` key in projects.
+
+West versions v0.13 and later supports this key in the ``manifest: self:``
+section.
+
 It is meant for consumption by programs that require user-specific project
 metadata. Beyond parsing it as YAML, west itself ignores the value completely.
 
@@ -1083,6 +1091,8 @@ Example manifest fragment:
        - name: baz
          userdata:
            key: value
+     self:
+       userdata: blub
 
 Example Python usage:
 
@@ -1095,6 +1105,7 @@ Example Python usage:
    foo.userdata # None
    bar.userdata # 'a-string'
    baz.userdata # {'key': 'value'}
+   manifest.userdata # 'blub'
 
 .. _west-manifest-import:
 
