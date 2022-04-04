@@ -7,6 +7,7 @@
 # DFU
 #
 
+menu "DFU"
 menuconfig IMG_MANAGER
 	bool "DFU image manager"
 	select STREAM_FLASH
@@ -76,6 +77,7 @@ config IMG_ENABLE_IMAGE_CHECK
 	  a new firmware.  This is useful to avoid firmware reboot and test.
 	  Another use is to ensure that firmware upgrade routines from internet
 	  server to flash slot are performing properly.
+
 endif # MCUBOOT_IMG_MANAGER
 
 module = IMG_MANAGER
@@ -93,3 +95,12 @@ config UPDATEABLE_IMAGE_NUMBER
 endif
 
 endif # IMG_MANAGER
+
+config MCUBOOT_BOOT_MODE_API
+	bool "API for request bootloader mode"
+	help
+	  Application can request specific bootloader mode. MCUboot might enter
+	  this mode once system reboot. Implementations of this use SoC specific
+	  resources, like a reset retention register.
+
+endmenu # DFU
