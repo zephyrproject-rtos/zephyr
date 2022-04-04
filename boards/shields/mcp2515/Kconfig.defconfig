@@ -5,6 +5,9 @@ if SHIELD_DFROBOT_CAN_BUS_V2_0 || SHIELD_KEYESTUDIO_CAN_BUS_KS0411
 
 if CAN
 
+config GPIO
+	default y
+
 config SPI
 	default y
 
