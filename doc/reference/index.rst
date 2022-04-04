@@ -10,7 +10,6 @@ API Reference
    api/index.rst
    audio/index.rst
    canbus/index.rst
-   crypto/index.rst
    devicetree/index.rst
    display/index.rst
    edac/index.rst
@@ -20,7 +19,6 @@ API Reference
    modbus/index.rst
    peripherals/index.rst
    pinctrl/index.rst
-   random/index.rst
    storage/index.rst
    task_wdt/index.rst
    usb/index.rst
