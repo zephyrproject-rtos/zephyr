@@ -18,7 +18,6 @@ API Reference
    iterable_sections/index.rst
    libc/index.rst
    misc/index
-   lora_lorawan/index.rst
    modbus/index.rst
    peripherals/index.rst
    pinctrl/index.rst
