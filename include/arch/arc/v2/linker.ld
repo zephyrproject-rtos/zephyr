@@ -27,6 +27,12 @@
 	#endif
 #endif
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
+
 #ifdef CONFIG_ARC_MPU_ENABLE
 	#if CONFIG_ARC_MPU_VER == 2
 		#define MPU_MIN_SIZE 2048
