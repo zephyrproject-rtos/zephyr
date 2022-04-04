@@ -58,12 +58,13 @@ static void pwm_enable(const struct device *dev, int enabled)
 	volatile uint8_t *reg_pcsgr = (uint8_t *)config->reg_pcsgr;
 	int ch = config->channel;
 
-	if (enabled)
+	if (enabled) {
 		/* PWM channel clock source not gating */
 		*reg_pcsgr &= ~BIT(ch);
-	else
+	} else {
 		/* PWM channel clock source gating */
 		*reg_pcsgr |= BIT(ch);
+	}
 }
 
 static int pwm_it8xxx2_get_cycles_per_sec(const struct device *dev,
@@ -113,10 +114,11 @@ static int pwm_it8xxx2_pin_set(const struct device *dev,
 	pwm_enable(dev, 0);
 
 	/* Select PWM inverted polarity (ex. active-low pulse) */
-	if (flags & PWM_POLARITY_INVERTED)
+	if (flags & PWM_POLARITY_INVERTED) {
 		*reg_pwmpol |= BIT(ch);
-	else
+	} else {
 		*reg_pwmpol &= ~BIT(ch);
+	}
 
 	/* If pulse cycles is 0, set duty cycle 0 and enable pwm channel */
 	if (pulse_cycles == 0) {
