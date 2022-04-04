@@ -24,6 +24,8 @@
 #include <stdint.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys_clock.h>
 #include <sys/math_extras.h>
 #include <toolchain.h>
 
@@ -75,6 +77,196 @@ extern "C" {
  */
 
 typedef uint16_t pwm_flags_t;
+
+/**
+ * @brief Container for PWM information specified in devicetree.
+ *
+ * This type contains a pointer to a PWM device, channel number (controlled by
+ * the PWM device), the PWM signal period in nanoseconds and the flags
+ * applicable to the channel. Note that not all PWM drivers support flags. In
+ * such case, flags will be set to 0.
+ *
+ * @see PWM_DT_SPEC_GET_BY_NAME
+ * @see PWM_DT_SPEC_GET_BY_NAME_OR
+ * @see PWM_DT_SPEC_GET_BY_IDX
+ * @see PWM_DT_SPEC_GET_BY_IDX_OR
+ * @see PWM_DT_SPEC_GET
+ * @see PWM_DT_SPEC_GET_OR
+ */
+struct pwm_dt_spec {
+	/** PWM device instance. */
+	const struct device *dev;
+	/** Channel number. */
+	uint32_t channel;
+	/** Period in nanoseconds. */
+	uint32_t period;
+	/** Flags. */
+	pwm_flags_t flags;
+};
+
+/**
+ * @brief Static initializer for a struct pwm_dt_spec
+ *
+ * This returns a static initializer for a struct pwm_dt_spec given a devicetree
+ * node identifier and an index.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *    n: node {
+ *        pwms = <&pwm1 1 1000 PWM_POLARITY_NORMAL>,
+ *               <&pwm2 3 2000 PWM_POLARITY_INVERTED>;
+ *        pwm-names = "alpha", "beta";
+ *    };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    const struct pwm_dt_spec spec =
+ *        PWM_DT_SPEC_GET_BY_NAME(DT_NODELABEL(n), alpha);
+ *
+ *    // Initializes 'spec' to:
+ *    // {
+ *    //         .dev = DEVICE_DT_GET(DT_NODELABEL(pwm1)),
+ *    //         .channel = 1,
+ *    //         .period = 1000,
+ *    //         .flags = PWM_POLARITY_NORMAL,
+ *    // }
+ * @endcode
+ *
+ * The device (dev) must still be checked for readiness, e.g. using
+ * device_is_ready(). It is an error to use this macro unless the node exists,
+ * has the 'pwms' property, and that 'pwms' property specifies a PWM controller,
+ * a channel, a period in nanoseconds and optionally flags.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param name Lowercase-and-underscores name of a pwms element as defined by
+ *             the node's pwm-names property.
+ *
+ * @return Static initializer for a struct pwm_dt_spec for the property.
+ */
+#define PWM_DT_SPEC_GET_BY_NAME(node_id, name)				       \
+	{								       \
+		.dev = DEVICE_DT_GET(DT_PWMS_CTLR_BY_NAME(node_id, name)),     \
+		.channel = DT_PWMS_CHANNEL_BY_NAME(node_id, name),	       \
+		.period = DT_PWMS_PERIOD_BY_NAME(node_id, name),	       \
+		.flags = DT_PWMS_FLAGS_BY_NAME(node_id, name),		       \
+	}
+
+/**
+ * @brief Like PWM_DT_SPEC_GET_BY_NAME(), with a fallback to a default value.
+ *
+ * If the devicetree node identifier 'node_id' refers to a node with a property
+ * 'pwms', this expands to <tt>PWM_DT_SPEC_GET_BY_NAME(node_id, name)</tt>. The
+ * @p default_value parameter is not expanded in this case. Otherwise, this
+ * expands to @p default_value.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param name Lowercase-and-underscores name of a pwms element as defined by
+ *             the node's pwm-names property
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct pwm_dt_spec for the property,
+ *         or @p default_value if the node or property do not exist.
+ */
+#define PWM_DT_SPEC_GET_BY_NAME_OR(node_id, name, default_value)	       \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, pwms),			       \
+		    (PWM_DT_SPEC_GET_BY_NAME(node_id, name)),		       \
+		    (default_value))
+
+/**
+ * @brief Static initializer for a struct pwm_dt_spec
+ *
+ * This returns a static initializer for a struct pwm_dt_spec given a devicetree
+ * node identifier and an index.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *    n: node {
+ *        pwms = <&pwm1 1 1000 PWM_POLARITY_NORMAL>,
+ *               <&pwm2 3 2000 PWM_POLARITY_INVERTED>;
+ *    };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    const struct pwm_dt_spec spec =
+ *        PWM_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), 1);
+ *
+ *    // Initializes 'spec' to:
+ *    // {
+ *    //         .dev = DEVICE_DT_GET(DT_NODELABEL(pwm2)),
+ *    //         .channel = 3,
+ *    //         .period = 2000,
+ *    //         .flags = PWM_POLARITY_INVERTED,
+ *    // }
+ * @endcode
+ *
+ * The device (dev) must still be checked for readiness, e.g. using
+ * device_is_ready(). It is an error to use this macro unless the node exists,
+ * has the 'pwms' property, and that 'pwms' property specifies a PWM controller,
+ * a channel, a period in nanoseconds and optionally flags.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param idx Logical index into 'pwms' property.
+ *
+ * @return Static initializer for a struct pwm_dt_spec for the property.
+ */
+#define PWM_DT_SPEC_GET_BY_IDX(node_id, idx)				       \
+	{								       \
+		.dev = DEVICE_DT_GET(DT_PWMS_CTLR_BY_IDX(node_id, idx)),       \
+		.channel = DT_PWMS_CHANNEL_BY_IDX(node_id, idx),	       \
+		.period = DT_PWMS_PERIOD_BY_IDX(node_id, idx),		       \
+		.flags = DT_PWMS_FLAGS_BY_IDX(node_id, idx),		       \
+	}
+
+/**
+ * @brief Like PWM_DT_SPEC_GET_BY_IDX(), with a fallback to a default value.
+ *
+ * If the devicetree node identifier 'node_id' refers to a node with a property
+ * 'pwms', this expands to <tt>PWM_DT_SPEC_GET_BY_IDX(node_id, idx)</tt>. The
+ * @p default_value parameter is not expanded in this case. Otherwise, this
+ * expands to @p default_value.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param idx Logical index into 'pwms' property.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct pwm_dt_spec for the property,
+ *         or @p default_value if the node or property do not exist.
+ */
+#define PWM_DT_SPEC_GET_BY_IDX_OR(node_id, idx, default_value)		       \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, pwms),			       \
+		    (PWM_DT_SPEC_GET_BY_IDX(node_id, idx)),		       \
+		    (default_value))
+
+/**
+ * @brief Equivalent to <tt>PWM_DT_SPEC_GET_BY_IDX(node_id, 0)</tt>.
+ *
+ * @param node_id Devicetree node identifier.
+ *
+ * @return Static initializer for a struct pwm_dt_spec for the property.
+ *
+ * @see PWM_DT_SPEC_GET_BY_IDX()
+ */
+#define PWM_DT_SPEC_GET(node_id) PWM_DT_SPEC_GET_BY_IDX(node_id, 0)
+
+/**
+ * @brief Equivalent to
+ *        <tt>PWM_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)</tt>.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct pwm_dt_spec for the property.
+ *
+ * @see PWM_DT_SPEC_GET_BY_IDX_OR()
+ */
+#define PWM_DT_SPEC_GET_OR(node_id, default_value)			       \
+	PWM_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
 
 /**
  * @brief PWM capture callback handler function signature
@@ -268,6 +460,55 @@ static inline int pwm_set_usec(const struct device *dev, uint32_t channel,
 }
 
 /**
+ * @brief Set the period and pulse width in microseconds from a struct
+ *        pwm_dt_spec (with custom period).
+ *
+ * This is equivalent to:
+ *
+ *     pwm_set_usec(spec->dev, spec->channel, period, pulse, spec->flags)
+ *
+ * The period specified in @p spec is ignored. This API call can be used when
+ * the period specified in Devicetree needs to be changed at runtime.
+ *
+ * @param[in] spec PWM specification from devicetree.
+ * @param period Period (in microseconds) set to the PWM.
+ * @param pulse Pulse width (in microseconds) set to the PWM.
+ *
+ * @return A value from pwm_set_usec().
+ *
+ * @see pwm_set_usec_pulse_dt()
+ */
+static inline int pwm_set_usec_dt(const struct pwm_dt_spec *spec,
+				  uint32_t period, uint32_t pulse)
+{
+	return pwm_set_usec(spec->dev, spec->channel, period, pulse,
+			    spec->flags);
+}
+
+/**
+ * @brief Set the period and pulse width in microseconds from a struct
+ *        pwm_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     pwm_set_usec(spec->dev, spec->channel, spec->period / NSEC_PER_USEC,
+ *                  pulse, spec->flags)
+ *
+ * @param[in] spec PWM specification from devicetree.
+ * @param pulse Pulse width (in microseconds) set to the PWM.
+ *
+ * @return A value from pwm_set_usec().
+ *
+ * @see pwm_set_usec_dt()
+ */
+static inline int pwm_set_usec_pulse_dt(const struct pwm_dt_spec *spec,
+					uint32_t pulse)
+{
+	return pwm_set_usec(spec->dev, spec->channel,
+			    spec->period / NSEC_PER_USEC, pulse, spec->flags);
+}
+
+/**
  * @brief Set the period and pulse width in nanoseconds for a single PWM output.
  *
  * @param[in] dev PWM device instance.
@@ -306,6 +547,54 @@ static inline int pwm_set_nsec(const struct device *dev, uint32_t channel,
 
 	return pwm_set_cycles(dev, channel, (uint32_t)period_cycles,
 			      (uint32_t)pulse_cycles, flags);
+}
+
+/**
+ * @brief Set the period and pulse width in nanoseconds from a struct
+ *        pwm_dt_spec (with custom period).
+ *
+ * This is equivalent to:
+ *
+ *     pwm_set_nsec(spec->dev, spec->channel, period, pulse, spec->flags)
+ *
+ * The period specified in @p spec is ignored. This API call can be used when
+ * the period specified in Devicetree needs to be changed at runtime.
+ *
+ * @param[in] spec PWM specification from devicetree.
+ * @param period Period (in nanoseconds) set to the PWM.
+ * @param pulse Pulse width (in nanoseconds) set to the PWM.
+ *
+ * @return A value from pwm_set_nsec().
+ *
+ * @see pwm_set_nsec_pulse_dt()
+ */
+static inline int pwm_set_nsec_dt(const struct pwm_dt_spec *spec,
+				  uint32_t period, uint32_t pulse)
+{
+	return pwm_set_nsec(spec->dev, spec->channel, period, pulse,
+			    spec->flags);
+}
+
+/**
+ * @brief Set the period and pulse width in nanoseconds from a struct
+ *        pwm_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     pwm_set_nsec(spec->dev, spec->channel, spec->period, pulse, spec->flags)
+ *
+ * @param[in] spec PWM specification from devicetree.
+ * @param pulse Pulse width (in nanoseconds) set to the PWM.
+ *
+ * @return A value from pwm_set_nsec().
+ *
+ * @see pwm_set_nsec_pulse_dt()
+ */
+static inline int pwm_set_nsec_pulse_dt(const struct pwm_dt_spec *spec,
+					uint32_t pulse)
+{
+	return pwm_set_nsec(spec->dev, spec->channel, spec->period, pulse,
+			    spec->flags);
 }
 
 /**
