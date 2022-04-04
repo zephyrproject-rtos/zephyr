@@ -12,3 +12,4 @@ OS Services
    tracing/index.rst
    resource_management/index.rst
    notify.rst
+   shell/index.rst
