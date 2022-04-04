@@ -108,8 +108,6 @@ static int pwm_it8xxx2_pin_set(const struct device *dev,
 	uint32_t actual_freq = 0xffffffff, target_freq, deviation, cxcprs, ctr;
 	uint64_t pwm_clk_src;
 
-	ARG_UNUSED(pwm);
-
 	/* PWM channel clock source gating before configuring */
 	pwm_enable(dev, 0);
 
