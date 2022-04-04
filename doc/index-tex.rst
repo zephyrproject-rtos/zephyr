@@ -19,6 +19,7 @@ Zephyr Project Documentation
    build/index.rst
    kernel/index.rst
    connectivity/index.rst
+   services/index.rst
    development_process/index.rst
    application/index.rst
    reference/index.rst
