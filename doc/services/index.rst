@@ -7,6 +7,7 @@ OS Services
    :maxdepth: 1
 
 
+   crypto/index
    debugging/index.rst
    file_system/index.rst
    formatted_output.rst

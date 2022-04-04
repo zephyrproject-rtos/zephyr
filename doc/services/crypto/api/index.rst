@@ -1,8 +1,8 @@
 .. _crypto_api:
 
 
-Crypto
-#######
+Crypto APIs
+###########
 
 Overview
 ********
