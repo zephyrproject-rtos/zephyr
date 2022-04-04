@@ -1,7 +1,7 @@
-.. _debug_tools:
+.. _debugging:
 
-Debugging and Tracing
-######################
+Debugging
+#########
 
 .. toctree::
    :maxdepth: 1
@@ -9,4 +9,3 @@ Debugging and Tracing
    thread-analyzer.rst
    coredump.rst
    gdbstub.rst
-   tracing/index.rst

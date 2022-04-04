@@ -7,4 +7,6 @@ OS Services
    :maxdepth: 1
 
 
+   debugging/index.rst
    logging/index.rst
+   tracing/index.rst
