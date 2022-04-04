@@ -1,7 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 / {
-	aliases {
-		pwm-servo = &sw_pwm;
+	servo: servo {
+		compatible = "pwm-servo";
+		pwms = <&sw_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		min-pulse = <PWM_USEC(700)>;
+		max-pulse = <PWM_USEC(2500)>;
 	};
 };
 
