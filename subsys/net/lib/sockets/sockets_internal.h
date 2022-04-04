@@ -33,8 +33,7 @@ static inline uintptr_t sock_get_flag(struct net_context *ctx, uintptr_t mask)
 
 void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick);
 
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && \
-    !defined(CONFIG_NET_SOCKETS_OFFLOAD_TLS)
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 bool net_socket_is_tls(void *obj);
 #else
 static inline bool net_socket_is_tls(void *obj)

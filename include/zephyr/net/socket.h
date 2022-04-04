@@ -145,6 +145,18 @@ struct zsock_pollfd {
  */
 #define TLS_CERT_NOCOPY	       10
 
+/** TLS socket option to use with offloading. The option instructs the network
+ *  stack only to offload underlying TCP/UDP communication. The TLS/DTLS
+ *  operation is handled by a native TLS/DTLS socket implementation from Zephyr.
+ *
+ *  Note, that this option is only applicable if socket dispatcher is used
+ *  (CONFIG_NET_SOCKETS_OFFLOAD_DISPATCHER is enabled).
+ *  In such case, it should be the first socket option set on a newly created
+ *  socket. After that, the application may use SO_BINDTODEVICE to choose the
+ *  dedicated network interface for the underlying TCP/UDP socket.
+ */
+#define TLS_NATIVE 11
+
 /** @} */
 
 /* Valid values for TLS_PEER_VERIFY option */

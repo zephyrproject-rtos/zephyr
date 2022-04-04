@@ -2574,6 +2574,11 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		break;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
+	case TLS_NATIVE:
+		/* Option handled at the socket dispatcher level. */
+		err = 0;
+		break;
+
 	default:
 		/* Unknown or read-only option. */
 		err = -ENOPROTOOPT;

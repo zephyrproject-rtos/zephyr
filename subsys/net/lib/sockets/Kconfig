@@ -199,15 +199,6 @@ config NET_SOCKETS_OFFLOAD_DISPATCHER_CONTEXT_MAX
 	  After a proper socket has been created for a given file descriptor,
 	  the dispatcher context is released and can be reused.
 
-config NET_SOCKETS_OFFLOAD_TLS
-	bool "Offload TLS socket calls to the offloaded sockets"
-	depends on NET_SOCKETS_OFFLOAD
-	default y
-	help
-	  If enabled, the offloading engine is expected to handle TLS/DTLS
-	  socket calls. Otherwise, Zephyrs native TLS socket implementation
-	  will be used, and only TCP/UDP socket calls will be offloaded.
-
 config NET_SOCKETS_PACKET
 	bool "Packet socket support"
 	help

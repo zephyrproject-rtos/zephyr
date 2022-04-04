@@ -26,6 +26,16 @@ static K_MUTEX_DEFINE(dispatcher_lock);
 
 static int sock_dispatch_create(int family, int type, int proto);
 
+static bool is_tls(int proto)
+{
+	if ((proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) ||
+	    (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2)) {
+		return true;
+	}
+
+	return false;
+}
+
 static void dispatcher_ctx_free(struct dispatcher_context *ctx)
 {
 	(void)k_mutex_lock(&dispatcher_lock, K_FOREVER);
@@ -333,6 +343,26 @@ static int sock_dispatch_setsockopt_vmeth(void *obj, int level, int optname,
 		} else {
 			/* Native interface - use native socket implementation. */
 			fd = sock_dispatch_native(obj);
+		}
+	} else if ((level == SOL_TLS) && (optname == TLS_NATIVE)) {
+		const int *tls_native = optval;
+		struct dispatcher_context *ctx = obj;
+
+		if ((tls_native == NULL) || (optlen != sizeof(int))) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		if (!is_tls(ctx->proto)) {
+			errno = ENOPROTOOPT;
+			return -1;
+		}
+
+		if (*tls_native) {
+			fd = sock_dispatch_native(obj);
+		} else {
+			/* No action needed */
+			return 0;
 		}
 	} else {
 		fd = sock_dispatch_default(obj);
