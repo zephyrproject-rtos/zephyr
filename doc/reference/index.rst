@@ -26,7 +26,6 @@ API Reference
    pinctrl/index.rst
    pm/index.rst
    random/index.rst
-   resource_management/index.rst
    shell/index.rst
    storage/index.rst
    task_wdt/index.rst
