@@ -142,9 +142,11 @@ SECTIONS {
 
   /* Boot loader code in IMR memory */
   .imr : {
+    _imr_start = .;
     /* Entry point MUST be here per external configuration */
     KEEP (*(.boot_entry.text))
     *(.imr .imr.*)
+    _imr_end = .;
   } >imr
 
   /* Boot loader data.  Note that rimage seems to want this
@@ -255,6 +257,7 @@ SECTIONS {
 
   .text : {
     _text_start = .;
+    *(.iram1 .iram1.*)
     *(.entry.text)
     *(.init.literal)
     *(.iram0.text)
@@ -371,7 +374,9 @@ SECTIONS {
   * thread stacks, but applications can put symbols here too.
   */
   .cached SEGSTART_CACHED : {
+    _cached_start = .;
     *(.cached .cached.*)
+    _cached_end = .;
   } >ram
 
   /* Rimage requires 4k alignment between "DATA" and "BSS", can't do
