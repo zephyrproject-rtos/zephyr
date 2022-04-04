@@ -45,7 +45,7 @@ The following Python modules are required when building TF-M binaries:
 * pyasn1
 * pyyaml
 * cbor>=1.0.0
-* imgtool>=1.6.0
+* imgtool>=1.9.0
 * jinja2
 * click
 
@@ -53,7 +53,7 @@ You can install them via:
 
    .. code-block:: bash
 
-      $ pip3 install --user cryptography pyasn1 pyyaml cbor>=1.0.0 imgtool>=1.6.0 jinja2 click
+      $ pip3 install --user cryptography pyasn1 pyyaml cbor>=1.0.0 imgtool>=1.9.0 jinja2 click
 
 They are used by TF-M's signing utility to prepare firmware images for
 validation by the bootloader.
