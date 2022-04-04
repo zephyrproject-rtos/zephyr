@@ -17,7 +17,6 @@ User and Developer Guides
    dts/index
    env_vars.rst
    pinctrl/index
-   pm/index
    emulator/index.rst
    modules.rst
    platformio/index.rst
