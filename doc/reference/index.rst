@@ -9,7 +9,6 @@ API Reference
 
    api/index.rst
    audio/index.rst
-   misc/notify.rst
    canbus/index.rst
    crypto/index.rst
    devicetree/index.rst

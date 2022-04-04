@@ -11,3 +11,4 @@ OS Services
    logging/index.rst
    tracing/index.rst
    resource_management/index.rst
+   notify.rst
