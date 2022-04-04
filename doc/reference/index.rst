@@ -26,7 +26,6 @@ API Reference
    data_structures/index.rst
    lora_lorawan/index.rst
    modbus/index.rst
-   networking/index.rst
    peripherals/index.rst
    pinctrl/index.rst
    pm/index.rst

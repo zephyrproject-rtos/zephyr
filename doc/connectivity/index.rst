@@ -7,3 +7,4 @@ Connectivity
    :maxdepth: 1
 
    bluetooth/index.rst
+   networking/index.rst

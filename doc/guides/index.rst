@@ -20,9 +20,7 @@ User and Developer Guides
    pinctrl/index
    pm/index
    emulator/index.rst
-
    modules.rst
-   networking/index
    platformio/index.rst
    portability/index.rst
    porting/index
