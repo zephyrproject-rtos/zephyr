@@ -13,7 +13,6 @@ User and Developer Guides
    code-relocation.rst
    crypto/index
    flash_debug/index
-   debug_tools/index
    device_mgmt/index
    dts/index
    env_vars.rst
