@@ -7,6 +7,7 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_BT smp_bt.c)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_SHELL smp_shell.c)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_UART smp_uart.c)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_UDP smp_udp.c)
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_DUMMY smp_dummy.c)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_REASSEMBLY smp_reassembly.c)
 
 add_subdirectory(lib)

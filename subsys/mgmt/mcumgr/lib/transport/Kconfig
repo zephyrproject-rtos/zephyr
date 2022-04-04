@@ -38,6 +38,8 @@ config MCUMGR_BUF_USER_DATA_SIZE
 	  setting. A value of 4 is sufficient for UART, shell, and bluetooth.
 	  For UDP, the userdata must be large enough to hold a IPv4/IPv6 address.
 
+rsource "Kconfig.dummy"
+
 rsource "Kconfig.bluetooth"
 
 rsource "Kconfig.shell"
