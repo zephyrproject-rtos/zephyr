@@ -47,6 +47,22 @@ extern void z_arm_nmi_init(void);
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+int soc_mcuboot_mode_set(uint8_t mode)
+{
+	nrf_power_gpregret2_set(NRF_POWER, mode);
+
+	return 0;
+}
+
+uint8_t soc_mcuboot_mode_get(void)
+{
+	uint8_t mode = nrf_power_gpregret2_get(NRF_POWER);
+
+	nrf_power_gpregret2_set(NRF_POWER, 0);
+
+	return mode;
+}
+
 /* Overrides the weak ARM implementation:
    Set general purpose retention register and reboot */
 void sys_arch_reboot(int type)

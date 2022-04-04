@@ -17,6 +17,7 @@
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <soc/nrfx_coredep.h>
 #include <logging/log.h>
+#include <hal/nrf_power.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void z_arm_nmi_init(void);
@@ -33,6 +34,22 @@ extern void z_arm_nmi_init(void);
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
+
+int soc_mcuboot_mode_set(uint8_t mode)
+{
+	nrf_power_gpregret_ext_set(NRF_POWER, 1, mode);
+
+	return 0;
+}
+
+uint8_t soc_mcuboot_mode_set(void)
+{
+	uint8_t mode = nrf_power_gpregret_ext_get(NRF_POWER, 1);
+
+	nrf_power_gpregret_ext_set(NRF_POWER, 1, 0);
+
+	return mode;
+}
 
 static int nordicsemi_nrf91_init(const struct device *arg)
 {

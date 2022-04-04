@@ -25,10 +25,12 @@
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_regulators.h>
+#include <hal/nrf_power.h>
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
 #include <hal/nrf_nvmc.h>
 #endif
 #include <soc_secure.h>
+
 
 #define PIN_XL1 0
 #define PIN_XL2 1
@@ -65,6 +67,24 @@ extern void z_arm_nmi_init(void);
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+int soc_mcuboot_mode_set(uint8_t mode)
+{
+	nrf_power_gpregret2_set(NRF_POWER, mode);
+
+	return 0;
+}
+
+uint8_t soc_mcuboot_mode_get(void)
+{
+	uint8_t mode = nrf_power_gpregret2_get(NRF_POWER);
+
+	nrf_power_gpregret2_set(NRF_POWER, 0);
+
+	return mode;
+}
+#endif
 
 static int nordicsemi_nrf53_init(const struct device *arg)
 {
