@@ -47,49 +47,34 @@ GTEXT(z_arm_data_abort)
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
 
-	/*
-	 * Create new esf struct for exception handler debug.  The first
-	 * time the basic stack frame is saved is for getting in and out
-	 * of the exception.
-	 */
-#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
-	sub sp, #___callee_saved_t_SIZEOF
-	sub sp, #___extra_esf_info_t_SIZEOF
-#endif
-
-	srsdb sp!, #\mode
-	stmfd sp, {r0-r3, r12, lr}^
-	sub sp, #24
-
-	/* Increment exception nesting count */
-	ldr r2, =_kernel
-	ldr r0, [r2, #_kernel_offset_to_nested]
-	add r0, r0, #1
-	str r0, [r2, #_kernel_offset_to_nested]
-
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	/* Pointer to extra esf info */
-	add r0, sp, #___basic_sf_t_SIZEOF
-	mov r1, #0
-	str r1, [r0, #4]
-	str r1, [r0, #8]
+	sub sp, #___extra_esf_info_t_SIZEOF
+	mov r0, #0
+	str r0, [sp, #4]
+	str r0, [sp, #8]
 
-	/* Pointer to callee saved registers */
-	add r1, r0, #___extra_esf_info_t_SIZEOF
-	str r1, [r0]
-
+	sub r1, sp, #___callee_saved_t_SIZEOF
+	str r1, [sp]
 	cps #MODE_SYS
 	stm r1, {r4-r11, sp}
 	cps #\mode
+
+	mov r0, sp
+	mov sp, r1
+#else
+	mov r0, sp
 #endif
 
-	/* Invoke fault handler */
-	mov r0, sp
+	/* Increment exception nesting count */
+	ldr r2, =_kernel
+	ldr r1, [r2, #_kernel_offset_to_nested]
+	add r1, r1, #1
+	str r1, [r2, #_kernel_offset_to_nested]
 .endm
 
 .macro exception_exit
 	/* Exit exception */
-	add sp, sp, #___basic_sf_t_SIZEOF
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	add sp, #___extra_esf_info_t_SIZEOF
 	add sp, #___callee_saved_t_SIZEOF
