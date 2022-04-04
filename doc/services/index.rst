@@ -13,5 +13,6 @@ OS Services
    tracing/index.rst
    resource_management/index.rst
    notify.rst
+   pm/index.rst
    shell/index.rst
    settings/index.rst
