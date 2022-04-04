@@ -1458,7 +1458,7 @@ State machine framework:
     collaborators:
         - keith-zephyr
     files:
-        - doc/guides/smf/
+        - doc/services/smf/
         - include/smf.h
         - lib/smf/
         - tests/lib/smf/

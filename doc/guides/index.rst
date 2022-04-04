@@ -21,7 +21,6 @@ User and Developer Guides
    platformio/index.rst
    portability/index.rst
    porting/index
-   smf/index.rst
    test/index
    tfm/index
    west/index
