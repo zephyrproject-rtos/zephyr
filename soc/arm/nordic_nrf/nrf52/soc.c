@@ -53,6 +53,12 @@ LOG_MODULE_REGISTER(soc);
 #define SOC_MCUBOOT_RESET_TYPE_Pos (0UL)
 #define SOC_MCUBOOT_RESET_TYPE_Msk (0x1FUL << SOC_MCUBOOT_RESET_TYPE_Pos)
 
+/*
+ * GPREGRET bits [5:7] are use for retain the MCUBoot boot mode.
+ */
+#define SOC_MCUBOOT_MODE_Pos (5UL)
+#define SOC_MCUBOOT_MODE_Msk (0x7UL << SOC_MCUBOOT_MODE_Pos)
+
 static void soc_retention_reg_mask_set(uint8_t value, uint8_t mask, uint8_t pos)
 {
 	uint8_t x = nrf_power_gpregret_get(NRF_POWER);
@@ -70,6 +76,20 @@ uint8_t soc_retention_reg_mask_get(uint8_t mask, uint8_t pos)
 	nrf_power_gpregret_set(NRF_POWER, x & ~mask);
 
 	return (x & mask) >> pos;
+}
+
+int soc_mcuboot_mode_set(uint8_t mode)
+{
+	soc_retention_reg_mask_set(mode, SOC_MCUBOOT_MODE_Msk,
+				   SOC_MCUBOOT_MODE_Pos);
+
+	return 0;
+}
+
+uint8_t soc_mcuboot_mode_get(void)
+{
+	return soc_retention_reg_mask_get(SOC_MCUBOOT_MODE_Msk,
+					  SOC_MCUBOOT_MODE_Pos);
 }
 
 /* Overrides the weak ARM implementation:
