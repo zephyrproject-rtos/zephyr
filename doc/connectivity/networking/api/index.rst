@@ -1,7 +1,7 @@
 .. _networking_api:
 
-Networking
-##########
+Networking APIs
+###############
 
 .. toctree::
    :maxdepth: 2
