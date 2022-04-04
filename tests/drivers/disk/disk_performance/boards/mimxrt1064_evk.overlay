@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2022, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Disable GPT timer and use systick for better timer accuracy
+ */
+&systick {
+	status = "okay";
+};
+
+&gpt_hw_timer {
+	status = "disabled";
+};
