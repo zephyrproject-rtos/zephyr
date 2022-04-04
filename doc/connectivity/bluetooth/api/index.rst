@@ -1,7 +1,7 @@
 .. _bluetooth_api:
 
-Bluetooth
-#########
+Bluetooth APIs
+##############
 
 .. toctree::
    :maxdepth: 1
