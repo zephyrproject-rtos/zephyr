@@ -44,6 +44,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
     -D_LINKER
     -D_ASMLANGUAGE
+    -imacros ${AUTOCONF_H}
     ${current_includes}
     ${current_defines}
     ${template_script_defines}
