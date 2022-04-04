@@ -10,3 +10,4 @@ OS Services
    debugging/index.rst
    logging/index.rst
    tracing/index.rst
+   resource_management/index.rst
