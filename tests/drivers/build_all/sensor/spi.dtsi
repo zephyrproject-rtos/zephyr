@@ -128,18 +128,6 @@ test_spi_ms5607: ms5607@e {
 	spi-max-frequency = <0>;
 };
 
-test_spi_mcp2515: mcp2515@12 {
-	compatible = "microchip,mcp2515";
-	label = "MCP2515";
-	reg = <0x12>;
-	spi-max-frequency = <0>;
-	osc-freq = <0>;
-	int-gpios = <&test_gpio 0 0>;
-	bus-speed = <0>;
-	sjw = <0>;
-	sample-point = <875>;
-};
-
 test_spi_mcr20a: mcr20a@13 {
 	compatible = "nxp,mcr20a";
 	label = "MCR20A";
