@@ -7,6 +7,7 @@
 # DFU
 #
 
+menu "DFU"
 menuconfig IMG_MANAGER
 	bool "DFU image manager"
 	select STREAM_FLASH
@@ -96,3 +97,30 @@ config UPDATEABLE_IMAGE_NUMBER
 endif
 
 endif # IMG_MANAGER
+
+menuconfig BOOT_MODE_API
+	bool "API for requesting bootloader mode"
+	help
+	  Application can request specific bootloader mode. The bootloader might
+	  enter this mode once system reboot usally.
+
+if BOOT_MODE_API
+choice
+	prompt "Bootloader mode API implementation"
+	default BOOT_MODE_API_MCUBOOT
+	help
+	  Choice support for boot mode requesting.
+	  So far only mcuboot support is available.
+
+config BOOT_MODE_API_MCUBOOT
+	bool "Image manager for mcuboot"
+	help
+	  Application can request specific bootloader mode. MCUboot might enter
+	  this mode once system reboot. Implementations of this use SoC specific
+	  resources, like a reset retention register.
+
+endchoice
+
+endif # BOOT_MODE_API
+
+endmenu # DFU
