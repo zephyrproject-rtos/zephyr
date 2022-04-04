@@ -56,6 +56,11 @@
 #define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 #ifdef CONFIG_RISCV_PMP
 	#define MPU_MIN_SIZE 4
 	#define MPU_MIN_SIZE_ALIGN . = ALIGN(MPU_MIN_SIZE);

@@ -53,6 +53,11 @@
 #define APP_SHARED_ALIGN		MMU_PAGE_ALIGN_PERM
 #endif
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 MEMORY
     {
 #if defined(Z_VM_KERNEL)

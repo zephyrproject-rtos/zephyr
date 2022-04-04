@@ -48,6 +48,11 @@
 	#define RAMABLE_REGION SRAM
 #endif
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 #ifdef CONFIG_XIP
 
 ASSERT(_RESET_VECTOR == _ROM_ADDR, "Reset vector not at beginning of ROM!")

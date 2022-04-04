@@ -41,6 +41,11 @@
 #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 #if defined(CONFIG_ARM_MMU)
   _region_min_align = CONFIG_MMU_PAGE_SIZE;
 #elif defined(CONFIG_ARM_MPU)

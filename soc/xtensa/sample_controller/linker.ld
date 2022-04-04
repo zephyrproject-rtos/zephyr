@@ -19,6 +19,11 @@
 #define RAMABLE_REGION sram0_seg :sram0_phdr
 #define ROMABLE_REGION srom1_seg :srom1_phdr
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 MEMORY
 {
   dram1_0_seg :                       	org = 0x3FFC0000, len = 0x20000

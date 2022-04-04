@@ -52,6 +52,11 @@
 	#define RAMABLE_REGION RAM
 #endif
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 #ifdef CONFIG_MMU
 	#define MMU_PAGE_ALIGN		. = ALIGN(CONFIG_MMU_PAGE_SIZE);
 #else

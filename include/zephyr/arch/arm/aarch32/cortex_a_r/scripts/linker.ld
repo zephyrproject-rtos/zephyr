@@ -53,6 +53,11 @@
   #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 #endif
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 /* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
  * to make linker section alignment comply with MPU granularity.
  */

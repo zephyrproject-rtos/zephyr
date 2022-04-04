@@ -57,6 +57,11 @@
 #define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 /* Make linker section alignment comply with PMA granularity. */
 #if defined(CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE)
 _region_min_align = CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE;

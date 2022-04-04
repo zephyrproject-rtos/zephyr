@@ -9,6 +9,11 @@
 #define ROMABLE_REGION RAM
 #define RAMABLE_REGION RAM
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 #define MMU_PAGE_ALIGN		. = ALIGN(CONFIG_MMU_PAGE_SIZE);
 
 /* Used to align areas with separate memory permission characteristics

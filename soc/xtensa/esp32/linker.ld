@@ -45,6 +45,11 @@
 #define IROM_SEG_ALIGN 0x10000
 #endif
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 MEMORY
 {
   mcuboot_hdr (RX): org = 0x0, len = 0x20

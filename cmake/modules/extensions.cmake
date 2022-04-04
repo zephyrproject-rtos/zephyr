@@ -1136,6 +1136,7 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    Preprocessor directives work inside <files>. Relative paths are resolved
 #    relative to the calling file, like zephyr_sources().
 # <location> is one of
+#    DEFINES       Near the start of the file. After ROM and RAM symbols are defined.
 #    NOINIT        Inside the noinit output section.
 #    RWDATA        Inside the data output section.
 #    RODATA        Inside the rodata output section.
@@ -1188,6 +1189,7 @@ function(zephyr_linker_sources location)
   # the global linker.ld.
   set(snippet_base       "${__build_dir}/include/generated")
   set(sections_path      "${snippet_base}/snippets-sections.ld")
+  set(defines_path       "${snippet_base}/snippets-defines.ld")
   set(ram_sections_path  "${snippet_base}/snippets-ram-sections.ld")
   set(data_sections_path "${snippet_base}/snippets-data-sections.ld")
   set(rom_start_path     "${snippet_base}/snippets-rom-start.ld")
@@ -1205,6 +1207,7 @@ function(zephyr_linker_sources location)
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
   if (NOT DEFINED cleared)
     file(WRITE ${sections_path} "")
+    file(WRITE ${defines_path} "")
     file(WRITE ${ram_sections_path} "")
     file(WRITE ${data_sections_path} "")
     file(WRITE ${rom_start_path} "")
@@ -1222,6 +1225,8 @@ function(zephyr_linker_sources location)
   # Choose destination file, based on the <location> argument.
   if ("${location}" STREQUAL "SECTIONS")
     set(snippet_path "${sections_path}")
+  elseif("${location}" STREQUAL "DEFINES")
+    set(snippet_path "${defines_path}")
   elseif("${location}" STREQUAL "RAM_SECTIONS")
     set(snippet_path "${ram_sections_path}")
   elseif("${location}" STREQUAL "DATA_SECTIONS")

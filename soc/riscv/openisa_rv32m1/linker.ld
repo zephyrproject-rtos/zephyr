@@ -58,6 +58,11 @@
 #define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
 #define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 MEMORY
     {
     ROM (rx)      : ORIGIN = ROM_BASE,    LENGTH = ROM_SIZE

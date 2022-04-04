@@ -22,6 +22,11 @@
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(DEFINES ...).
+ */
+#include <snippets-defines.ld>
+
 MEMORY
 {
     RAM (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
