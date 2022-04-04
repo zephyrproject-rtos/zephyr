@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag_hal.c)
+zephyr_library_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag.c)
 zephyr_library_sources_ifdef(CONFIG_UART_TELINK_B91 uart_b91.c)
 zephyr_library_sources_ifdef(CONFIG_UART_IMX uart_imx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ITE_IT8XXX2 uart_ite_it8xxx2.c)
