@@ -67,8 +67,9 @@ Here is an example DTS file:
 
    / {
            a-node {
-                   subnode_label: a-sub-node {
+                   subnode_nodelabel: a-sub-node {
                            foo = <3>;
+                           label = "SUBNODE";
                    };
            };
    };
@@ -84,10 +85,10 @@ The tree has three *nodes*:
 
 .. _dt-node-labels:
 
-Nodes can be given *labels*, which are unique shorthands that can be used to
-refer to the labeled node elsewhere in the devicetree. Above, ``a-sub-node``
-has label ``subnode_label``. A node can have zero, one, or multiple node
-labels.
+Nodes can be assigned *node labels*, which are unique shorthands that can be
+used to refer to the labeled node elsewhere in the devicetree. Above,
+``a-sub-node`` has the *node label* ``subnode_nodelabel``. A node can have zero,
+one, or multiple *node labels*.
 
 Devicetree nodes have *paths* identifying their locations in the tree. Like
 Unix file system paths, devicetree paths are strings separated by slashes
@@ -102,8 +103,13 @@ array of what are called *cells*. A cell is just a 32-bit unsigned integer.
 
 Node ``a-sub-node`` has a property named ``foo``, whose value is a cell with
 value 3. The size and type of ``foo``\ 's value are implied by the enclosing
-angle brackets (``<`` and ``>``) in the DTS. See
-:ref:`dt-writing-property-values` below for more example property values.
+angle brackets (``<`` and ``>``) in the DTS.
+
+Node ``a-sub-node`` has an additional property named ``label``, whose value is a
+string containing the value "SUBNODE". Note that the ``label`` property is
+distinct from the *node label*.
+
+See :ref:`dt-writing-property-values` below for more example property values.
 
 In practice, devicetree nodes usually correspond to some hardware, and the node
 hierarchy reflects the hardware's physical layout. For example, let's consider
@@ -289,6 +295,9 @@ label
     structure which could be passed to :ref:`I2C API <i2c_api>` functions like
     :c:func:`i2c_transfer()`. The generated C header will also contain a macro
     which expands to this string.
+
+    Note that the ``label`` property is distinct from the :ref:`node
+    label <dt-node-labels>`.
 
 reg
     Information used to address the device. The value is specific to the device
