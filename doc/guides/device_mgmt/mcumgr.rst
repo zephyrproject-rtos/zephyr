@@ -209,6 +209,20 @@ on Zephyr. The ones that are supported are described in the following table:
     :kconfig:option:`CONFIG_THREAD_STACK_INFO` and :kconfig:option:`CONFIG_INIT_STACKS` options
     must be set.
 
+.. _mcumgr_jlink_ob_virtual_msd:
+
+J-Link Virtual MSD Interaction Note
+***********************************
+
+On boards where a J-Link OB is present which has both CDC and MSC (virtual Mass
+Storage Device, also known as drag-and-drop) support, the MSD functionality can
+prevent mcumgr commands over the CDC UART port from working due to how USB
+endpoints are configured in the J-Link firmware (for example on the Nordic
+`nrf52840dk`) because of limiting the maximum packet size (most likely to occur
+when using image management commands for updating firmware). This issue can be
+resolved by disabling MSD functionality on the J-Link device, follow the
+instructions on :ref:`nordic_segger_msd` to disable MSD support.
+
 .. _image_mgmt:
 
 Image Management
