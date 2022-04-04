@@ -16,7 +16,6 @@ API Reference
    edac/index.rst
    file_system/index.rst
    iterable_sections/index.rst
-   misc/formatted_output.rst
    libc/index.rst
    misc/index
    lora_lorawan/index.rst
