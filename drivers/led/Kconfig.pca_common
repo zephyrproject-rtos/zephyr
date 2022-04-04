@@ -1,0 +1,9 @@
+# Copyright (c) 2018 Savoir-Faire Linux
+# SPDX-License-Identifier: Apache-2.0
+
+config PCA_COMMON
+	bool "Driver for PCA LED drivers family"
+	depends on I2C
+	help
+	  Enable driver for PCA LED drivers family.
+	  Supports PCA9633 with 4 channels.
