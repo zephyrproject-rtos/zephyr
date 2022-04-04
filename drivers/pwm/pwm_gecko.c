@@ -37,7 +37,7 @@ static int pwm_gecko_pin_set(const struct device *dev, uint32_t pwm,
 		BUS_RegMaskedWrite(&cfg->timer->ROUTE,
 			_TIMER_ROUTE_LOCATION_MASK,
 			cfg->location << _TIMER_ROUTE_LOCATION_SHIFT);
-		BUS_RegMaskedSet(&pwm->timer->ROUTE, 1 << pwm);
+		BUS_RegMaskedSet(&cfg->timer->ROUTE, 1 << pwm);
 #elif defined(_TIMER_ROUTELOC0_MASK)
 		BUS_RegMaskedWrite(&cfg->timer->ROUTELOC0,
 			_TIMER_ROUTELOC0_CC0LOC_MASK << (pwm * _TIMER_ROUTELOC0_CC1LOC_SHIFT),
