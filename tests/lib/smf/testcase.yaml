@@ -1,9 +1,15 @@
+common:
+  integration_platforms:
+    - native_posix
 tests:
-  libraries.smf.hierarchical:
-    tags: smf
-    platform_allow: native_posix
-    extra_configs:
-      - CONFIG_SMF_ANCESTOR_SUPPORT=y
   libraries.smf.flat:
     tags: smf
-    platform_allow: native_posix
+    testcases:
+    - smf_flat
+  libraries.smf.hierarchical:
+    extra_configs:
+    - CONFIG_SMF_ANCESTOR_SUPPORT=y
+    tags: smf
+    testcases:
+    - smf_hierarchical_5_ancestors
+    - smf_hierarchical
