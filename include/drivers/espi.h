@@ -116,6 +116,16 @@ enum espi_bus_event {
 };
 
 /**
+ * @brief eSPI peripheral channel events.
+ *
+ * eSPI peripheral channel event types to indicate users.
+ */
+enum espi_pc_event {
+	ESPI_PC_EVT_BUS_CHANNEL_READY = BIT(0),
+	ESPI_PC_EVT_BUS_MASTER_ENABLE = BIT(1),
+};
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  */
