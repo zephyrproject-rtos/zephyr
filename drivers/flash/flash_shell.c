@@ -16,8 +16,16 @@
 #include <drivers/flash.h>
 #include <soc.h>
 
-#define BUF_ARRAY_CNT 16
+/* Buffer is only needed for bytes that follow command and offset */
+#define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 2)
 #define TEST_ARR_SIZE 0x1000
+
+/* This only issues compilation error when it would not be possible
+ * to extract at least one byte from command line arguments, yet
+ * it does not warrant successful writes if BUF_ARRAY_CNT
+ * is smaller than flash write alignment.
+ */
+BUILD_ASSERT(BUF_ARRAY_CNT >= 1);
 
 static const struct device *zephyr_flash_controller =
 	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_flash_controller));
@@ -106,8 +114,8 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 {
-	uint32_t check_array[BUF_ARRAY_CNT];
-	uint32_t buf_array[BUF_ARRAY_CNT];
+	uint32_t __aligned(4) check_array[BUF_ARRAY_CNT];
+	uint32_t __aligned(4) buf_array[BUF_ARRAY_CNT];
 	const struct device *flash_dev;
 	uint32_t w_addr;
 	int ret;
@@ -123,10 +131,11 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	for (int i = 2; i < argc && i < BUF_ARRAY_CNT; i++) {
+	for (int i = 2; i < argc; i++) {
+		int j = i - 2;
+
 		buf_array[j] = strtoul(argv[i], NULL, 16);
 		check_array[j] = ~buf_array[j];
-		j++;
 	}
 
 	if (flash_write(flash_dev, w_addr, buf_array,
