@@ -13,7 +13,6 @@ API Reference
    canbus/index.rst
    crypto/index.rst
    devicetree/index.rst
-   drivers/index.rst
    display/index.rst
    edac/index.rst
    file_system/index.rst
