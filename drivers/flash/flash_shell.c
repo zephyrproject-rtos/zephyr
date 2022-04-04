@@ -119,7 +119,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	const struct device *flash_dev;
 	uint32_t w_addr;
 	int ret;
-	int j = 0;
+	size_t op_size;
 
 	ret = parse_helper(shell, &argc, &argv, &flash_dev, &w_addr);
 	if (ret) {
@@ -131,24 +131,30 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
+	op_size = 0;
+
 	for (int i = 2; i < argc; i++) {
 		int j = i - 2;
 
 		buf_array[j] = strtoul(argv[i], NULL, 16);
 		check_array[j] = ~buf_array[j];
+
+		op_size += sizeof(buf_array[0]);
 	}
 
-	if (flash_write(flash_dev, w_addr, buf_array,
-			sizeof(buf_array[0]) * j) != 0) {
+	if (flash_write(flash_dev, w_addr, buf_array, op_size) != 0) {
 		shell_error(shell, "Write internal ERROR!");
 		return -EIO;
 	}
 
 	shell_print(shell, "Write OK.");
 
-	flash_read(flash_dev, w_addr, check_array, sizeof(buf_array[0]) * j);
+	if (flash_read(flash_dev, w_addr, check_array, op_size) < 0) {
+		shell_print(shell, "Verification read ERROR!");
+		return -EIO;
+	}
 
-	if (memcmp(buf_array, check_array, sizeof(buf_array[0]) * j) == 0) {
+	if (memcmp(buf_array, check_array, op_size) == 0) {
 		shell_print(shell, "Verified.");
 	} else {
 		shell_error(shell, "Verification ERROR!");
