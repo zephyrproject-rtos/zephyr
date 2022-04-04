@@ -15,3 +15,4 @@ advantage of the power saving features of SOCs.
    device
    device_runtime
    power_domain
+   api/index.rst
