@@ -1491,22 +1491,7 @@ static bool ascs_codec_store_metadata(struct bt_data *data, void *user_data)
 	struct bt_codec *codec = user_data;
 	struct bt_codec_data *meta;
 
-	if (codec->meta_count >= ARRAY_SIZE(codec->meta)) {
-		BT_ERR("No slot available for Codec Config Metadata");
-		return false;
-	}
-
 	meta = &codec->meta[codec->meta_count];
-
-	if (data->data_len > sizeof(meta->value)) {
-		BT_ERR("Not enough space for Codec Config Metadata: %u > %zu",
-		       data->data_len, sizeof(meta->value));
-		return false;
-	}
-
-	BT_DBG("#%u type 0x%02x len %u", codec->meta_count, data->type,
-	       data->data_len);
-
 	meta->data.type = data->type;
 	meta->data.data_len = data->data_len;
 
@@ -1514,18 +1499,88 @@ static bool ascs_codec_store_metadata(struct bt_data *data, void *user_data)
 	meta->data.data = meta->value;
 	(void)memcpy(meta->value, data->data, data->data_len);
 
-	BT_HEXDUMP_DBG(meta->value, data->data_len, "data");
+	BT_DBG("#%zu: data: %s",
+	       codec->meta_count,
+	       bt_hex(meta->value, data->data_len));
 
 	codec->meta_count++;
 
 	return true;
 }
 
+struct ascs_parse_result {
+	int err;
+	size_t count;
+};
+
+static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
+{
+	struct ascs_parse_result *result = user_data;
+
+	result->count++;
+
+	BT_DBG("#%u type 0x%02x len %u", result->count, data->type,
+	       data->data_len);
+
+	if (result->count > CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
+		BT_ERR("Not enough buffers for Codec Config Metadata: %zu > %zu",
+		       result->count, CONFIG_BT_CODEC_MAX_METADATA_LEN);
+		result->err = -ENOMEM;
+
+		return false;
+	}
+
+	if (data->data_len > CONFIG_BT_CODEC_MAX_METADATA_LEN) {
+		BT_ERR("Not enough space for Codec Config Metadata: %u > %zu",
+		       data->data_len, CONFIG_BT_CODEC_MAX_METADATA_LEN);
+		result->err = -ENOMEM;
+
+		return false;
+	}
+
+	/* TODO: Verify meta data type against assigned numbers */
+
+	/* TODO: If CAP, verify context types */
+
+	return true;
+}
+
+static int ascs_verify_metadata(const struct net_buf_simple *buf)
+{
+	struct net_buf_simple meta_ltv;
+	struct ascs_parse_result result;
+
+	/* Clone the buf to avoid pulling data from the original buffer */
+	net_buf_simple_clone(buf, &meta_ltv);
+
+	/* Parse LTV entries */
+	bt_data_parse(&meta_ltv, ascs_parse_metadata, &result);
+
+	/* Check if all entries could be parsed */
+	if (meta_ltv.len != 0) {
+		BT_ERR("Unable to parse Metadata: len %u", meta_ltv.len);
+
+		if (meta_ltv.len > 2) {
+			/* Value of the Metadata Type field in error */
+			return meta_ltv.data[2];
+		}
+
+		return -EINVAL;
+	}
+
+	if (result.count >= CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
+		BT_ERR("No slot available for Codec Config Metadata");
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
 static int ascs_ep_set_metadata(struct bt_audio_ep *ep,
 				struct net_buf_simple *buf, uint8_t len,
 				struct bt_codec *codec)
 {
-	struct net_buf_simple meta;
+	struct net_buf_simple meta_ltv;
 	int err;
 
 	if (ep == NULL && codec == NULL) {
@@ -1535,6 +1590,7 @@ static int ascs_ep_set_metadata(struct bt_audio_ep *ep,
 	BT_DBG("ep %p len %u codec %p", ep, len, codec);
 
 	if (len == 0) {
+		(void)memset(codec->meta, 0, sizeof(codec->meta));
 		return 0;
 	}
 
@@ -1542,30 +1598,18 @@ static int ascs_ep_set_metadata(struct bt_audio_ep *ep,
 		codec = &ep->codec;
 	}
 
-	/* Reset current metadata */
-	codec->meta_count = 0;
-	(void)memset(codec->meta, 0, sizeof(codec->meta));
-
-	net_buf_simple_init_with_data(&meta, net_buf_simple_pull_mem(buf, len),
+	/* Extract metadata LTV for this specific endpoint */
+	net_buf_simple_init_with_data(&meta_ltv,
+				      net_buf_simple_pull_mem(buf, len),
 				      len);
 
-	/* Parse LTV entries */
-	bt_data_parse(&meta, ascs_codec_store_metadata, codec);
-
-	/* Check if all entries could be parsed */
-	if (meta.len != 0) {
-		BT_ERR("Unable to parse Metadata: len %u", meta.len);
-		err = -EINVAL;
-
-		if (meta.len > 2) {
-			/* Value of the Metadata Type field in error */
-			err = meta.data[2];
-		}
-
-		codec->meta_count = 0;
-		(void)memset(codec->meta, 0, sizeof(codec->meta));
+	err = ascs_verify_metadata(&meta_ltv);
+	if (err != 0) {
 		return err;
 	}
+
+	/* store data contents */
+	bt_data_parse(&meta_ltv, ascs_codec_store_metadata, codec);
 
 	return 0;
 }
