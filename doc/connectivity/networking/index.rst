@@ -15,3 +15,4 @@ operation of the stacks and how they were implemented.
    networking-api-usage.rst
    networking_with_host.rst
    network_monitoring.rst
+   api/index.rst
