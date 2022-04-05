@@ -10,5 +10,6 @@ Developing with Zephyr
    beyond-GSG.rst
    env_vars.rst
    application/index.rst
+   flash_debug/index
    modules.rst
    west/index
