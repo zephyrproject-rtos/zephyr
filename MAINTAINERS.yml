@@ -1726,6 +1726,26 @@ ITE Platforms:
     labels:
         - "platform: ITE"
 
+TI Platforms:
+    status: odd fixes
+    collaborators:
+        - vanti
+        - cfriedt
+    files:
+        - boards/arm/cc13*/
+        - boards/arm/cc26*/
+        - boards/arm/cc32*/
+        - boards/*/msp*/
+        - drivers/*/*cc13*/
+        - drivers/*/*cc25*/
+        - drivers/*/*cc26*/
+        - drivers/*/*cc32*/
+        - dts/*/ti/
+        - dts/bindings/*/ti,*
+        - soc/arm/ti*/
+    labels:
+        - "platform: TI"
+
 Storage:
     status: maintained
     maintainers:
