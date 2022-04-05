@@ -107,7 +107,6 @@ Sections
    services/index.rst
    build/index.rst
    connectivity/index.rst
-   reference/index.rst
    hardware/index.rst
    contribute/index.rst
    project/index.rst

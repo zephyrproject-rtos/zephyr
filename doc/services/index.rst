@@ -15,6 +15,7 @@ OS Services
    logging/index.rst
    tracing/index.rst
    resource_management/index.rst
+   modbus/index.rst
    notify.rst
    pm/index.rst
    portability/index.rst
@@ -24,3 +25,6 @@ OS Services
    storage/index.rst
    task_wdt/index.rst
    tfm/index
+   usb/index.rst
+   virtualization/index.rst
+   misc.rst
