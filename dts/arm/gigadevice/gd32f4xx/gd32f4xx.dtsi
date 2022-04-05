@@ -340,7 +340,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_0";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -360,7 +360,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_1";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -379,7 +379,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_2";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -398,7 +398,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_3";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -418,7 +418,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_4";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -462,7 +462,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_7";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -481,7 +481,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_8";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -500,7 +500,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_9";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -519,7 +519,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_10";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -538,7 +538,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_11";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -557,7 +557,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_12";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -576,7 +576,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_13";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 	};
