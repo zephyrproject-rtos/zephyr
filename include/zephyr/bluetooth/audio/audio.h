@@ -69,6 +69,86 @@ enum bt_audio_context {
 					  BT_AUDIO_CONTEXT_TYPE_ALERTS | \
 					  BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM)
 
+/**
+ * @brief Parental rating defined by the Generic Audio assigned numbers (bluetooth.com).
+ *
+ * The numbering scheme is aligned with Annex F of EN 300 707 v1.2.1 which
+ * defined parental rating for viewing.
+ */
+enum bt_audio_parental_rating {
+	BT_AUDIO_PARENTAL_RATING_NO_RATING        = 0x00,
+	BT_AUDIO_PARENTAL_RATING_AGE_ANY          = 0x01,
+	BT_AUDIO_PARENTAL_RATING_AGE_5_OR_ABOVE   = 0x02,
+	BT_AUDIO_PARENTAL_RATING_AGE_6_OR_ABOVE   = 0x03,
+	BT_AUDIO_PARENTAL_RATING_AGE_7_OR_ABOVE   = 0x04,
+	BT_AUDIO_PARENTAL_RATING_AGE_8_OR_ABOVE   = 0x05,
+	BT_AUDIO_PARENTAL_RATING_AGE_9_OR_ABOVE   = 0x06,
+	BT_AUDIO_PARENTAL_RATING_AGE_10_OR_ABOVE  = 0x07,
+	BT_AUDIO_PARENTAL_RATING_AGE_11_OR_ABOVE  = 0x08,
+	BT_AUDIO_PARENTAL_RATING_AGE_12_OR_ABOVE  = 0x09,
+	BT_AUDIO_PARENTAL_RATING_AGE_13_OR_ABOVE  = 0x0A,
+	BT_AUDIO_PARENTAL_RATING_AGE_14_OR_ABOVE  = 0x0B,
+	BT_AUDIO_PARENTAL_RATING_AGE_15_OR_ABOVE  = 0x0C,
+	BT_AUDIO_PARENTAL_RATING_AGE_16_OR_ABOVE  = 0x0D,
+	BT_AUDIO_PARENTAL_RATING_AGE_17_OR_ABOVE  = 0x0E,
+	BT_AUDIO_PARENTAL_RATING_AGE_18_OR_ABOVE  = 0x0F
+};
+
+/**
+ * @brief Codec metadata type IDs
+ *
+ * Metadata types defined by the Generic Audio assigned numbers (bluetooth.com).
+ */
+enum bt_audio_metadata_type {
+	/** @brief Preferred audio context.
+	 *
+	 * Bitfield of preferred audio contexts.
+	 *
+	 * If 0, the context type is not a preferred use case for this codec
+	 * configuration.
+	 *
+	 * See the BT_AUDIO_CONTEXT_* for valid values.
+	 */
+	BT_AUDIO_METADATA_TYPE_PREF_CONTEXT      = 0x01,
+
+	/** @brief Streaming audio context.
+	 *
+	 * Bitfield of streaming audio contexts.
+	 *
+	 * If 0, the context type is not a preferred use case for this codec
+	 * configuration.
+	 *
+	 * See the BT_AUDIO_CONTEXT_* for valid values.
+	 */
+	BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT    = 0x02,
+
+	/** UTF-8 encoded title or summary of stream content */
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO      = 0x03,
+
+	/** @brief Stream language
+	 *
+	 * 3 octet lower case language code defined by ISO 639-3
+	 */
+	BT_AUDIO_METADATA_TYPE_STREAM_LANG       = 0x04,
+
+	/** Array of 8-bit CCID values */
+	BT_AUDIO_METADATA_TYPE_CCID_LIST         = 0x05,
+
+	/** @brief Parental rating
+	 *
+	 * See @ref bt_audio_parental_rating for valid values.
+	 */
+	BT_AUDIO_METADATA_TYPE_PARENTAL_RATING   = 0x06,
+
+	/** UTF-8 encoded URI for additional Program information */
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI  = 0x07,
+
+	/** Extended metadata */
+	BT_AUDIO_METADATA_TYPE_EXTENDED          = 0xFE,
+
+	/** Vendor specific metadata */
+	BT_AUDIO_METADATA_TYPE_VENDOR            = 0xFF,
+};
 
 /* Unicast Announcement Type, Generic Audio */
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00
@@ -132,23 +212,6 @@ struct bt_codec_data {
 		.meta_count = ARRAY_SIZE(((struct bt_codec_data[]) _meta)), \
 		.meta = _meta, \
 	}
-
-
-/** @brief Meta data type ids used for LTV encoded metadata.
- *
- * These values are defined by the Generic Audio Assigned Numbers, bluetooth.com
- */
-enum bt_audio_meta_type {
-	BT_CODEC_META_PREFER_CONTEXT     = 0x01,
-	BT_CODEC_META_CONTEXT            = 0x02,
-	BT_CODEC_META_PROGRAM_INFO       = 0x03,
-	BT_CODEC_META_LANGUAGE           = 0x04,
-	BT_CODEC_META_CCID_LIST          = 0x05,
-	BT_CODEC_META_PARENTAL_RATING    = 0x06,
-	BT_CODEC_META_PROGRAM_INFO_URI   = 0x07,
-	BT_CODEC_META_EXTENDED_METADATA  = 0xFE,
-	BT_CODEC_META_VENDOR_SPECIFIC    = 0xFF,
-};
 
 /** @brief Location values for BT Audio.
  *
@@ -2275,7 +2338,7 @@ int bt_codec_cfg_get_frame_blocks_per_sdu(const struct bt_codec *codec, bool fal
  *  Typically types used are:
  *  @ref bt_codec_capability_type
  *  @ref bt_codec_config_type
- *  @ref bt_audio_meta_type
+ *  @ref bt_audio_metadata_type
  *
  *  @param codec The codec data to search in.
  *  @param type The type id to look for
