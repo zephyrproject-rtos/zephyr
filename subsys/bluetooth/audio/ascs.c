@@ -1513,6 +1513,49 @@ struct ascs_parse_result {
 	size_t count;
 };
 
+static bool ascs_valid_metadata_type(uint8_t type, uint8_t len)
+{
+	switch (type) {
+	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
+	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
+		if (len != 2) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
+		if (len != 3) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
+		if (len != 1) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 1 - 255 octets */
+	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 1 - 255 octets */
+		if (len < 1) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_CCID_LIST: /* 2 - 254 octets */
+		if (len < 2) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO: /* 0 - 255 octets */
+	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
+		return true;
+	default:
+		return false;
+	}
+}
+
 static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 {
 	struct ascs_parse_result *result = user_data;
@@ -1530,6 +1573,12 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		return false;
 	}
 
+	if (!ascs_valid_metadata_type(data->type, data->data_len)) {
+		result->err = -EINVAL;
+
+		return false;
+	}
+
 	if (data->data_len > CONFIG_BT_CODEC_MAX_METADATA_LEN) {
 		BT_ERR("Not enough space for Codec Config Metadata: %u > %zu",
 		       data->data_len, CONFIG_BT_CODEC_MAX_METADATA_LEN);
@@ -1537,8 +1586,6 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 
 		return false;
 	}
-
-	/* TODO: Verify meta data type against assigned numbers */
 
 	/* TODO: If CAP, verify context types */
 
