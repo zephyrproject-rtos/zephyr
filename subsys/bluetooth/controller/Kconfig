@@ -275,7 +275,7 @@ config BT_CTLR_TX_PWR_PLUS_4
 
 config BT_CTLR_TX_PWR_PLUS_3
 	bool "+3 dBm"
-	depends on SOC_COMPATIBLE_NRF52X
+	depends on SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
 
 config BT_CTLR_TX_PWR_PLUS_2
 	bool "+2 dBm"

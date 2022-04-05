@@ -55,6 +55,7 @@
 #include <nrf52_erratas.h>
 #include "radio_nrf52840.h"
 #elif defined(CONFIG_SOC_NRF5340_CPUNET)
+#include <hal/nrf_vreqctrl.h>
 #include "radio_nrf5340.h"
 #elif
 #error "Unsupported SoC."

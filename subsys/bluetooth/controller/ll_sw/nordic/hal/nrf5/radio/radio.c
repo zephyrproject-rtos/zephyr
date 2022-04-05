@@ -251,13 +251,31 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 void radio_tx_power_set(int8_t power)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	uint32_t value;
+
+	/* NOTE: TXPOWER register only accepts upto 0dBm, hence use the HAL
+	 * floor value for the TXPOWER register. Permit +3dBm by using high
+	 * voltage being set for radio.
+	 */
+	value = hal_radio_tx_power_floor(power);
+	NRF_RADIO->TXPOWER = value;
+	hal_radio_tx_power_high_voltage_set(power);
+
+#else /* !CONFIG_SOC_SERIES_NRF53X */
+
 	/* NOTE: valid value range is passed by Kconfig define. */
 	NRF_RADIO->TXPOWER = (uint32_t)power;
+
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
 }
 
 void radio_tx_power_max_set(void)
 {
-	NRF_RADIO->TXPOWER = hal_radio_tx_power_max_get();
+	int8_t power;
+
+	power = radio_tx_power_max_get();
+	radio_tx_power_set(power);
 }
 
 int8_t radio_tx_power_min_get(void)
@@ -267,11 +285,26 @@ int8_t radio_tx_power_min_get(void)
 
 int8_t radio_tx_power_max_get(void)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	return RADIO_TXPOWER_TXPOWER_Pos3dBm;
+
+#else /* !CONFIG_SOC_SERIES_NRF53X */
 	return (int8_t)hal_radio_tx_power_max_get();
+
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
 }
 
 int8_t radio_tx_power_floor(int8_t power)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: TXPOWER register only accepts upto 0dBm, +3dBm permitted by
+	 * use of high voltage being set for radio when TXPOWER register is set.
+	 */
+	if (power >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
+		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
+	}
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+
 	return (int8_t)hal_radio_tx_power_floor(power);
 }
 
