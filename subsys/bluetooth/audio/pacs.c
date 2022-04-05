@@ -36,6 +36,12 @@ NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
 
 static const struct bt_audio_pacs_cb *pacs_cb;
 
+static struct bt_pacs_context available_context = {
+	/* TODO: This should reflect the ongoing channel contexts */
+	.snk = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED,
+	.src = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED,
+};
+
 static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
 			 struct bt_codec_data *data)
 {
@@ -695,4 +701,15 @@ int bt_audio_pacs_register_cb(const struct bt_audio_pacs_cb *cb)
 	pacs_cb = cb;
 
 	return 0;
+}
+
+bool bt_pacs_context_available(enum bt_audio_dir dir, uint16_t context)
+{
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC) && dir == BT_AUDIO_DIR_SOURCE) {
+		return (context & available_context.src) == context;
+	} else if (IS_ENABLED(CONFIG_BT_PAC_SNK) && dir == BT_AUDIO_DIR_SINK) {
+		return (context & available_context.snk) == context;
+	}
+
+	return false;
 }
