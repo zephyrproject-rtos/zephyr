@@ -12,7 +12,6 @@ User and Developer Guides
    code-relocation.rst
    flash_debug/index
    device_mgmt/index
-   dts/index
    env_vars.rst
    pinctrl/index
    emulator/index.rst

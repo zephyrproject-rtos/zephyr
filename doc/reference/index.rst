@@ -10,7 +10,6 @@ API Reference
    api/index.rst
    audio/index.rst
    canbus/index.rst
-   devicetree/index.rst
    display/index.rst
    edac/index.rst
    iterable_sections/index.rst
