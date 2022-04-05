@@ -207,7 +207,7 @@ uint16_t sample_point_for_bitrate(uint32_t bitrate)
 	return sample_pnt;
 }
 
-int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data)
+int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data)
 {
 	struct can_timing timing;
 #ifdef CONFIG_CAN_FD_MODE
