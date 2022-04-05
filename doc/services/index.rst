@@ -9,6 +9,7 @@ OS Services
 
    crypto/index
    debugging/index.rst
+   device_mgmt/index
    file_system/index.rst
    formatted_output.rst
    logging/index.rst
