@@ -156,10 +156,15 @@ The following factors make a thread unready:
 * The thread has been suspended.
 * The thread has terminated or aborted.
 
-
   .. image:: thread_states.svg
      :align: center
 
+.. note::
+
+  Although the diagram above may appear to suggest that both **Ready** and
+  **Running** are distinct thread states, that is not the correct
+  interpretation. **Ready** is a thread state, and **Running** is a
+  schedule state that only applies to **Ready** threads.
 
 Thread Stack objects
 ********************
