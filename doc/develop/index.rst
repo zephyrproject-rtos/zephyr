@@ -8,5 +8,6 @@ Developing with Zephyr
 
    getting_started/index.rst
    beyond-GSG.rst
+   application/index.rst
    modules.rst
    west/index

@@ -105,7 +105,6 @@ Sections
    develop/index.rst
    contribute/index.rst
    development_process/index.rst
-   application/index.rst
    build/index.rst
    kernel/index.rst
    connectivity/index.rst
