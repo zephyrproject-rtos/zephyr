@@ -32,6 +32,13 @@ struct modem_iface_uart_data {
 
 	/* rx semaphore */
 	struct k_sem rx_sem;
+
+#ifdef CONFIG_MODEM_IFACE_UART_ASYNC
+
+	/* tx semaphore */
+	struct k_sem tx_sem;
+
+#endif /* CONFIG_MODEM_IFACE_UART_ASYNC */
 };
 
 /**
