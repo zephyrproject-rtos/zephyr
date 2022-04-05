@@ -362,27 +362,22 @@ int stm32_clock_control_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
-
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
 
 #if defined(FLASH_ACR_LATENCY)
-	uint32_t new_hclk_freq;
 	uint32_t old_flash_freq;
 	uint32_t new_flash_freq;
 
 	old_flash_freq = RCC_CALC_FLASH_FREQ(HAL_RCC_GetSysClockFreq(),
 					       GET_CURRENT_FLASH_PRESCALER());
 
-	new_hclk_freq = get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-				      STM32_CORE_PRESCALER);
-
-	new_flash_freq = RCC_CALC_FLASH_FREQ(new_hclk_freq,
+	new_flash_freq = RCC_CALC_FLASH_FREQ(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 				      STM32_FLASH_PRESCALER);
 
 	/* If freq increases, set flash latency before any clock setting */
-	if (new_flash_freq > old_flash_freq) {
-		LL_SetFlashLatency(new_flash_freq);
+	if (old_flash_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
+		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
 #endif /* FLASH_ACR_LATENCY */
 
