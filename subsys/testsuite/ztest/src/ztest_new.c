@@ -559,7 +559,7 @@ int ztest_run_test_suites(const void *state)
 	int count = 0;
 
 	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
-		struct ztest_suite_stats *stats = &ptr->stats;
+		struct ztest_suite_stats *stats = ptr->stats;
 		bool should_run = true;
 
 		if (ptr->predicate != NULL) {
@@ -590,7 +590,7 @@ void ztest_verify_all_test_suites_ran(void)
 	struct ztest_unit_test *test;
 
 	for (suite = _ztest_suite_node_list_start; suite < _ztest_suite_node_list_end; ++suite) {
-		if (suite->stats.run_count < 1) {
+		if (suite->stats->run_count < 1) {
 			PRINT("ERROR: Test suite '%s' did not run.\n", suite->name);
 			all_tests_run = false;
 		}
