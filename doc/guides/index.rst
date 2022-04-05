@@ -10,7 +10,6 @@ User and Developer Guides
    coccinelle.rst
    code-relocation.rst
    flash_debug/index
-   device_mgmt/index
    env_vars.rst
    pinctrl/index
    emulator/index.rst
