@@ -7,10 +7,6 @@ User and Developer Guides
    :maxdepth: 1
 
    coccinelle.rst
-   code-relocation.rst
    platformio/index.rst
    portability/index.rst
    porting/index
-   test/index
-   tfm/index
-   optimizations/index
