@@ -176,7 +176,8 @@ static int mock_handle_info_get(struct bt_mesh_model *model, struct bt_mesh_msg_
 
 static const struct bt_mesh_model_op model_op1[] = {
 	{ BT_MESH_BLOB_OP_INFO_GET, 0, mock_handle_info_get },
-	BT_MESH_MODEL_OP_END };
+	BT_MESH_MODEL_OP_END
+};
 
 static const struct bt_mesh_comp none_rsp_srv_comp = {
 	.elem =
@@ -327,7 +328,6 @@ static void test_cli_caps_all_rsp(void)
 	ASSERT_FALSE(srv2->timedout);
 
 	PASS();
-
 }
 
 static void test_cli_caps_partial_rsp(void)
@@ -390,6 +390,199 @@ static void test_srv_caps_no_rsp(void)
 	PASS();
 }
 
+static struct k_sem blob_broad_send_sem;
+static bool broadcast_tx_complete_auto;
+
+static void broadcast_send(struct bt_mesh_blob_cli *b, uint16_t dst)
+{
+	ASSERT_EQUAL(BLOB_GROUP_ADDR, dst);
+	k_sem_give(&blob_broad_send_sem);
+	if (broadcast_tx_complete_auto) {
+		/* Mocks completion of transmission to trigger retransmit timer */
+		blob_cli_broadcast_tx_complete(&blob_cli);
+	}
+}
+
+static struct k_sem blob_broad_next_sem;
+
+static void broadcast_next(struct bt_mesh_blob_cli *b)
+{
+	k_sem_give(&blob_broad_next_sem);
+}
+
+static void test_cli_broadcast_basic(void)
+{
+	bt_mesh_test_cfg_set(NULL, 300);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	struct bt_mesh_blob_target *srv1 = target_srv_add(BLOB_CLI_ADDR + 1, false);
+	struct bt_mesh_blob_target *srv2 = target_srv_add(BLOB_CLI_ADDR + 2, false);
+
+	struct blob_cli_broadcast_ctx tx = {
+		.send = broadcast_send,
+		.next = broadcast_next,
+		.acked = true,
+		.optional = false,
+	};
+
+	broadcast_tx_complete_auto = false;
+	k_sem_init(&blob_broad_send_sem, 0, 1);
+	k_sem_init(&blob_broad_next_sem, 0, 1);
+
+	blob_cli.inputs = &blob_cli_xfer.inputs;
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+
+	/* Call broadcast and expect send CB to trigger */
+	blob_cli_broadcast(&blob_cli, &tx);
+	if (k_sem_take(&blob_broad_send_sem, K_SECONDS(15))) {
+		FAIL("Broadcast did not trigger send CB");
+	}
+
+	ASSERT_FALSE(srv1->acked);
+	ASSERT_FALSE(srv2->acked);
+
+	/* Run tx complete with two missing responses */
+	blob_cli_broadcast_tx_complete(&blob_cli);
+	if (k_sem_take(&blob_broad_send_sem, K_SECONDS(15))) {
+		FAIL("Tx_complete did not trigger send CB after timeout");
+	}
+
+	ASSERT_FALSE(srv1->acked);
+	ASSERT_FALSE(srv2->acked);
+
+	/* Mock rsp from first target server */
+	/* Run tx complete with one missing response */
+	blob_cli_broadcast_rsp(&blob_cli, srv1);
+	blob_cli_broadcast_tx_complete(&blob_cli);
+	if (k_sem_take(&blob_broad_send_sem, K_SECONDS(15))) {
+		FAIL("Tx_complete did not trigger send CB after timeout");
+	}
+
+	ASSERT_TRUE(srv1->acked);
+	ASSERT_FALSE(srv2->acked);
+
+	/* Mock rsp from second target server */
+	/* Run tx complete with response from all targets */
+	blob_cli_broadcast_tx_complete(&blob_cli);
+	blob_cli_broadcast_rsp(&blob_cli, srv2);
+	if (k_sem_take(&blob_broad_next_sem, K_SECONDS(15))) {
+		FAIL("Tx_complete did not trigger next CB after timeout");
+	}
+
+	ASSERT_TRUE(srv1->acked);
+	ASSERT_TRUE(srv2->acked);
+
+	/* Verify that a single broadcast call triggers a single send CB */
+	k_sem_init(&blob_broad_send_sem, 0, 2);
+	(void)target_srv_add(BLOB_CLI_ADDR + 3, false);
+
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+
+	blob_cli_broadcast(&blob_cli, &tx);
+	k_sleep(K_SECONDS(80));
+
+	ASSERT_EQUAL(k_sem_count_get(&blob_broad_send_sem), 1);
+
+	PASS();
+}
+
+static void test_cli_broadcast_trans(void)
+{
+	bt_mesh_test_cfg_set(NULL, 150);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	struct bt_mesh_blob_target *srv1 = target_srv_add(BLOB_CLI_ADDR + 1, true);
+
+	struct blob_cli_broadcast_ctx tx = {
+		.send = broadcast_send,
+		.next = broadcast_next,
+		.acked = true,
+		.optional = false
+	};
+
+	broadcast_tx_complete_auto = true;
+	k_sem_init(&blob_broad_send_sem, 0, 1);
+	k_sem_init(&blob_broad_next_sem, 0, 1);
+	k_sem_init(&lost_target_sem, 0, 1);
+
+	blob_cli.inputs = &blob_cli_xfer.inputs;
+
+	/* Run acked broadcast */
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+
+	blob_cli_broadcast(&blob_cli, &tx);
+
+	/* Checks that the client performs correct amount of retransmit attempts */
+	for (size_t j = 0; j < CONFIG_BT_MESH_BLOB_CLI_BLOCK_RETRIES; j++) {
+		if (k_sem_take(&blob_broad_send_sem, K_SECONDS(15))) {
+			FAIL("Wrong number of attempted transmissions from blob cli"
+			     "(expected: %d, got %d)",
+			     CONFIG_BT_MESH_BLOB_CLI_BLOCK_RETRIES, j);
+		}
+	}
+
+	if (k_sem_take(&blob_broad_next_sem, K_SECONDS(15))) {
+		FAIL("Broadcast did not trigger next CB after retransmisson ran out of attempts");
+	}
+
+	if (k_sem_take(&lost_target_sem, K_NO_WAIT)) {
+		FAIL("Lost targets CB did not trigger for all expected lost targets");
+	}
+
+	ASSERT_TRUE(srv1->timedout);
+
+	/* Re-run with unacked broadcast */
+	tx.acked = false;
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+
+	/* Call broadcast and expect send CB to trigger once*/
+	blob_cli_broadcast(&blob_cli, &tx);
+	if (k_sem_take(&blob_broad_send_sem, K_NO_WAIT)) {
+		FAIL("Broadcast did not trigger send CB");
+	}
+
+	if (k_sem_take(&blob_broad_next_sem, K_NO_WAIT)) {
+		FAIL("Broadcast did not trigger next CB");
+	}
+
+	/* Lost target CB should not trigger for unacked broadcast */
+	if (!k_sem_take(&lost_target_sem, K_NO_WAIT)) {
+		FAIL("Lost targets CB triggered unexpectedly");
+	}
+
+	ASSERT_FALSE(srv1->timedout);
+
+	/* Re-run with optional flag */
+	tx.acked = true;
+	tx.optional = true;
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+
+	blob_cli_broadcast(&blob_cli, &tx);
+
+	for (size_t j = 0; j < CONFIG_BT_MESH_BLOB_CLI_BLOCK_RETRIES; j++) {
+		if (k_sem_take(&blob_broad_send_sem, K_SECONDS(15))) {
+			FAIL("Wrong number of attempted transmissions from blob cli"
+			     "(expected: %d, got %d)",
+			     CONFIG_BT_MESH_BLOB_CLI_BLOCK_RETRIES, j);
+		}
+	}
+
+	if (k_sem_take(&blob_broad_next_sem, K_SECONDS(15))) {
+		FAIL("Broadcast did not trigger next CB");
+	}
+
+	/* Lost target CB should not trigger for optional broadcast */
+	if (!k_sem_take(&lost_target_sem, K_NO_WAIT)) {
+		FAIL("Lost targets CB triggered unexpectedly");
+	}
+
+	ASSERT_FALSE(srv1->timedout);
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "blob_" #role "_" #name,          \
@@ -402,6 +595,9 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(cli, caps_all_rsp, "Caps procedure: All responsive targets"),
 	TEST_CASE(cli, caps_partial_rsp, "Caps procedure: Mixed response from targets"),
 	TEST_CASE(cli, caps_no_rsp, "Caps procedure: No response from targets"),
+	TEST_CASE(cli, broadcast_basic, "Test basic broadcast API and CBs "),
+	TEST_CASE(cli, broadcast_trans, "Test all broadcast transmission types"),
+
 	TEST_CASE(srv, caps_standard, "Standard responsive blob server"),
 	TEST_CASE(srv, caps_no_rsp, "Non-responsive blob server"),
 
