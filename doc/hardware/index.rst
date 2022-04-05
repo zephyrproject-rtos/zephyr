@@ -8,3 +8,4 @@ Hardware Support
 
    arch/index.rst
    peripherals/index.rst
+   pinctrl/index.rst

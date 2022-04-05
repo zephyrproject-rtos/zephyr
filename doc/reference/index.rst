@@ -11,7 +11,5 @@ API Reference
    canbus/index.rst
    misc/index
    modbus/index.rst
-
-   pinctrl/index.rst
    usb/index.rst
    virtualization/index.rst
