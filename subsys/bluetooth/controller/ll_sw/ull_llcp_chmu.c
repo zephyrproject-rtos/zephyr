@@ -186,6 +186,21 @@ static void lp_chmu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
+void llcp_lp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
+
+	switch (pdu->llctrl.opcode) {
+	default:
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		llcp_lr_complete(conn);
+		ctx->state = LP_CHMU_STATE_IDLE;
+		break;
+	}
+}
+
 void llcp_lp_chmu_init_proc(struct proc_ctx *ctx)
 {
 	ctx->state = LP_CHMU_STATE_IDLE;
@@ -195,6 +210,7 @@ void llcp_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_chmu_execute_fsm(conn, ctx, LP_CHMU_EVT_RUN, param);
 }
+
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -285,8 +301,12 @@ void llcp_rp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 		rp_chmu_execute_fsm(conn, ctx, RP_CHMU_EVT_RX_CHAN_MAP_IND, pdu);
 		break;
 	default:
-		/* Unknown opcode */
-		LL_ASSERT(0);
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		llcp_rr_complete(conn);
+		ctx->state = RP_CHMU_STATE_IDLE;
+		break;
 	}
 }
 
