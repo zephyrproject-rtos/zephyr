@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, NXP
+ * Copyright 2022, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,6 +73,14 @@
 		reg = <0x1000 0x1000>;
 		label = "CLKCTL_0";
 		#clock-cells = <1>;
+	};
+
+	iocon: iocon@4000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0x4000 0x1000>;
+		pinctrl: pinctrl {
+			compatible = "nxp,rt-iocon-pinctrl";
+		};
 	};
 
 	clkctl1: clkctl@21000 {
