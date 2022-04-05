@@ -7,11 +7,14 @@ Peripherals
    :maxdepth: 1
 
    adc.rst
+   audio/index.rst
    counter.rst
    clock_control.rst
    dac.rst
+   display/index.rst
    dma.rst
    ec_host_cmd_periph.rst
+   edac/index.rst
    eeprom.rst
    entropy.rst
    flash.rst

@@ -6,7 +6,6 @@ User and Developer Guides
 .. toctree::
    :maxdepth: 1
 
-   arch/index.rst
    coccinelle.rst
    code-relocation.rst
    flash_debug/index
