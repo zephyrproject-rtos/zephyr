@@ -67,12 +67,104 @@ generated in a build directory; Zephyr does not support "in-tree" builds.
 The following sections describe how to create, build, and run Zephyr
 applications, followed by more detailed reference material.
 
-Example standalone application
+.. _zephyr-app-types:
+
+Application types
+*****************
+
+Based on where the source code of the application is located we can distinguish
+between three basic application types.
+
+You can find out more about how the build system supports all the application
+types described in this section in the :ref:`cmake_pkg` section.
+
+.. _zephyr-repo-app:
+
+Zephyr repository application
+=============================
+
+The default Zephyr :ref:`west workspace <west-workspaces>` has the following
+structure:
+
+.. code-block:: none
+
+   zephyrproject/
+   ├─── .west/
+   │    └─── config
+   └─── zephyr/
+        ├── arch/
+        ├── boards/
+        ├── cmake/
+        ├── samples/
+        │    ├── hello_world/
+        │    └── ...
+        ├── tests/
+        └── ...
+
+Any application located within the ``zephyr`` folder is referred to as a Zephyr
+repository application.
+For example, the ``hello_world`` :ref:`sample <hello_world>` is a Zephyr
+repository application.
+
+.. _zephyr-workspace-app:
+
+Zephyr workspace application
+============================
+
+A Zephyr :ref:`workspace <west-workspaces>` has the following overall structure:
+
+.. code-block:: none
+
+   zephyrproject/
+   ├─── .west/
+   │    └─── config
+   ├─── zephyr/
+   ├─── bootloader/
+   ├─── modules/
+   ├─── tools/
+   ├─── <vendor/private-repositories>/
+   └─── applications/
+        └── app/
+
+Any application located within a workspace, but outside the Zephyr repository
+itself, is referred to as a Zephyr workspace application.
+In this example ``app`` is a Zephyr workspace application.
+
+.. _zephyr-freestanding-app:
+
+Zephyr freestanding application
+===============================
+
+A Zephyr freestanding application is a Zephyr application located outside of a
+Zephyr :ref:`workspace <west-workspaces>`.
+
+.. code-block:: none
+
+   <home>/
+   ├─── zephyrproject/
+   │     ├─── .west/
+   │     │    └─── config
+   │     ├── zephyr/
+   │     ├── bootloader/
+   │     ├── modules/
+   │     └── ...
+   │
+   └─── app/
+        ├── CMakeLists.txt
+        ├── prj.conf
+        └── src/
+            └── main.c
+
+In this example ``app`` is a Zephyr freestanding application.
+
+Example workspace application
 ******************************
 
-A reference standalone application contained in its own Git repository can be found in the `Example Application`_
-repository. It can be used as a reference on how to structure out-of-tree, Zephyr-based
-applications using the :ref:`T2 star topology <west-t2>`. It also demonstrates the out-of-tree use of features commonly used in applications such as:
+A reference :ref:`workspace application <zephyr-workspace-app>` contained in its
+own Git repository can be found in the `Example Application`_ repository.
+It can be used as a reference on how to structure out-of-tree, Zephyr-based workspace applications
+using the :ref:`T2 star topology <west-t2>`. It also demonstrates the out-of-tree
+use of features commonly used in applications such as:
 
 - Custom boards
 - Custom devicetree bindings
