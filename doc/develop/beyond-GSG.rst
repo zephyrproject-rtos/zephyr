@@ -50,9 +50,9 @@ configurations for supported development platforms:
 .. toctree::
    :maxdepth: 1
 
-   Linux setup alternatives <../getting_started/installation_linux.rst>
-   macOS setup alternatives <../getting_started/installation_mac.rst>
-   Windows setup alternatives <../getting_started/installation_win.rst>
+   Linux setup alternatives <getting_started/installation_linux.rst>
+   macOS setup alternatives <getting_started/installation_mac.rst>
+   Windows setup alternatives <getting_started/installation_win.rst>
 
 .. _gs_toolchain:
 
@@ -82,10 +82,10 @@ these documents. (If you're not sure which to use, check your specific
 .. toctree::
    :maxdepth: 2
 
-   ../getting_started/toolchain_3rd_party_x_compilers.rst
-   ../getting_started/toolchain_other_x_compilers.rst
-   ../getting_started/toolchain_host.rst
-   ../getting_started/toolchain_custom_cmake.rst
+   getting_started/toolchain_3rd_party_x_compilers.rst
+   getting_started/toolchain_other_x_compilers.rst
+   getting_started/toolchain_host.rst
+   getting_started/toolchain_custom_cmake.rst
 
 Cloning the Zephyr Repositories
 *******************************

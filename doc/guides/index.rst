@@ -6,7 +6,6 @@ User and Developer Guides
 .. toctree::
    :maxdepth: 1
 
-   beyond-GSG.rst
    arch/index.rst
    docs/index.rst
    coccinelle.rst
