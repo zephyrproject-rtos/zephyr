@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/f4/stm32f429Xi.dtsi>
 #include <st/f4/stm32f429zitx-pinctrl.dtsi>
+#include <dt-bindings/display/stm32_ltdc.h>
 #include <dt-bindings/display/ili9xxx.h>
 
 / {
@@ -183,4 +184,32 @@
 			st,sdram-timing = <2 7 4 7 2 2 2>;
 		};
 	};
+};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r2_pc10 &ltdc_r3_pb0 &ltdc_r4_pa11 &ltdc_r5_pa12
+		     &ltdc_r6_pb1 &ltdc_r7_pg6 &ltdc_g2_pa6 &ltdc_g3_pg10
+		     &ltdc_g4_pb10 &ltdc_g5_pb11 &ltdc_g6_pc7 &ltdc_g7_pd3
+		     &ltdc_b2_pd6 &ltdc_b3_pg11 &ltdc_b4_pg12 &ltdc_b5_pa3
+		     &ltdc_b6_pb8 &ltdc_b7_pb9 &ltdc_de_pf10 &ltdc_clk_pg7
+		     &ltdc_hsync_pc6 &ltdc_vsync_pa4>;
+	pinctrl-names = "default";
+	ext-sdram = <&sdram2>;
+	status = "okay";
+
+	width = <240>;
+	height = <320>;
+	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
+	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
+	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
+	pclk-pol = <STM32_LTDC_PCPOL_ACTIVE_LOW>;
+	hsync-duration = <10>;
+	vsync-duration = <2>;
+	hbp-duration = <20>;
+	vbp-duration = <2>;
+	hfp-duration = <10>;
+	vfp-duration = <4>;
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
 };
