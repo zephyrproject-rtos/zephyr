@@ -170,6 +170,11 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 	case PROC_TERMINATE:
 		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
+#if defined(CONFIG_BT_CENTRAL)
+	case PROC_CHAN_MAP_UPDATE:
+		llcp_lp_chmu_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		llcp_lp_comm_rx(conn, ctx, rx);

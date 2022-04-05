@@ -169,18 +169,11 @@ static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		llcp_ntf_encode_feature_rsp(conn, pdu);
 		break;
-	case PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG:
-	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
-		/*
-		 * No notification on feature-request or periph-feature request
-		 * TODO: probably handle as an unexpected call
-		 */
-		break;
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		llcp_ntf_encode_unknown_rsp(ctx, pdu);
 		break;
 	default:
-		/* TODO: define behaviour for unexpected PDU */
+		/* Unexpected PDU, should not get through, so ASSERT */
 		LL_ASSERT(0);
 	}
 }
@@ -193,7 +186,7 @@ static void lp_comm_ntf_version_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 		llcp_ntf_encode_version_ind(conn, pdu);
 		break;
 	default:
-		/* TODO: define behaviour for unexpected PDU */
+		/* Unexpected PDU, should not get through, so ASSERT */
 		LL_ASSERT(0);
 	}
 }
@@ -244,7 +237,7 @@ static void lp_comm_ntf_cte_req(struct ll_conn *conn, struct proc_ctx *ctx, stru
 		llcp_ntf_encode_reject_ext_ind(ctx, pdu);
 		break;
 	default:
-		/* TODO (ppryga): Update when behavior for unexpected PDU is defined */
+		/* Unexpected PDU, should not get through, so ASSERT */
 		LL_ASSERT(0);
 	}
 }
@@ -290,6 +283,15 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_sched();
 }
 
+static void lp_comm_terminate_invalid_pdu(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	/* Invalid behaviour */
+	/* Invalid PDU received so terminate connection */
+	conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+	llcp_lr_complete(conn);
+	ctx->state = LP_COMMON_STATE_IDLE;
+}
+
 static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->proc) {
@@ -301,17 +303,23 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = LP_COMMON_STATE_IDLE;
 		} else {
 			/* Illegal response opcode */
-			LL_ASSERT(0);
+			lp_comm_terminate_invalid_pdu(conn, ctx);
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		if (!llcp_ntf_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_NTF;
+		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP ||
+		    ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_FEATURE_RSP) {
+			if (!llcp_ntf_alloc_is_available()) {
+				ctx->state = LP_COMMON_STATE_WAIT_NTF;
+			} else {
+				lp_comm_ntf(conn, ctx);
+				llcp_lr_complete(conn);
+				ctx->state = LP_COMMON_STATE_IDLE;
+			}
 		} else {
-			lp_comm_ntf(conn, ctx);
-			llcp_lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
+			/* Illegal response opcode */
+			lp_comm_terminate_invalid_pdu(conn, ctx);
 		}
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
@@ -321,12 +329,17 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
-		if (!llcp_ntf_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_NTF;
+		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_VERSION_IND) {
+			if (!llcp_ntf_alloc_is_available()) {
+				ctx->state = LP_COMMON_STATE_WAIT_NTF;
+			} else {
+				lp_comm_ntf(conn, ctx);
+				llcp_lr_complete(conn);
+				ctx->state = LP_COMMON_STATE_IDLE;
+			}
 		} else {
-			lp_comm_ntf(conn, ctx);
-			llcp_lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
+			/* Illegal response opcode */
+			lp_comm_terminate_invalid_pdu(conn, ctx);
 		}
 		break;
 	case PROC_TERMINATE:
@@ -339,7 +352,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		if (ctx->response_opcode != PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) {
+		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) {
 			/* Apply changes in data lengths/times */
 			uint8_t dle_changed = ull_dle_update_eff(conn);
 
@@ -353,12 +366,16 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 				llcp_lr_complete(conn);
 				ctx->state = LP_COMMON_STATE_IDLE;
 			}
-		} else {
+		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) {
 			/* Peer does not accept DLU, so disable on current connection */
 			feature_unmask_features(conn, LL_FEAT_BIT_DLE);
 
 			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
+		} else {
+			/* Illegal response opcode */
+			lp_comm_terminate_invalid_pdu(conn, ctx);
+			break;
 		}
 
 		if (!ull_cp_remote_dle_pending(conn)) {
@@ -402,6 +419,9 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			 */
 			ull_cp_cte_req_set_disable(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
+		} else {
+			/* Illegal response opcode */
+			lp_comm_terminate_invalid_pdu(conn, ctx);
 		}
 
 		if (ctx->state == LP_COMMON_STATE_IDLE) {
@@ -626,6 +646,9 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		llcp_pdu_decode_reject_ext_ind(ctx, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
+		/* Empty on purpose, as we don't care about the PDU content, we'll disconnect */
 		break;
 	default:
 		/* Unknown opcode */

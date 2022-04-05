@@ -569,10 +569,10 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 		break;
 	}
 }
+
 static void rr_st_reject(struct ll_conn *conn, uint8_t evt, void *param)
 {
-	/* TODO */
-	LL_ASSERT(0);
+	rr_act_reject(conn);
 }
 
 static void rr_st_unsupported(struct ll_conn *conn, uint8_t evt, void *param)

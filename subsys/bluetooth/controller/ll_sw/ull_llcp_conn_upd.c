@@ -212,6 +212,7 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		break;
 #endif /* CONFIG_BT_CENTRAL */
 	default:
+		/* Unknown opcode */
 		LL_ASSERT(0);
 		break;
 	}
@@ -601,8 +602,11 @@ void llcp_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		lp_cu_execute_fsm(conn, ctx, LP_CU_EVT_REJECT, pdu);
 		break;
 	default:
-		/* Unknown opcode */
-		LL_ASSERT(0);
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		llcp_lr_complete(conn);
+		ctx->state = LP_CU_STATE_IDLE;
 		break;
 	}
 }
@@ -652,6 +656,7 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		llcp_pdu_encode_unknown_rsp(ctx, pdu);
 		break;
 	default:
+		/* Unknown opcode */
 		LL_ASSERT(0);
 		break;
 	}
@@ -1079,8 +1084,11 @@ void llcp_rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		rp_cu_execute_fsm(conn, ctx, RP_CU_EVT_CONN_UPDATE_IND, pdu);
 		break;
 	default:
-		/* Unknown opcode */
-		LL_ASSERT(0);
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		llcp_rr_complete(conn);
+		ctx->state = RP_CU_STATE_IDLE;
 		break;
 	}
 }

@@ -767,8 +767,12 @@ void llcp_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_REJECT, pdu);
 		break;
 	default:
-		/* Unknown opcode */
-		LL_ASSERT(0);
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		llcp_lr_complete(conn);
+		ctx->state = LP_PU_STATE_IDLE;
+		break;
 	}
 }
 
@@ -1145,8 +1149,12 @@ void llcp_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
 	default:
-		/* Unknown opcode */
-		LL_ASSERT(0);
+		/* Invalid behaviour */
+		/* Invalid PDU received so terminate connection */
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+		llcp_rr_complete(conn);
+		ctx->state = RP_PU_STATE_IDLE;
+		break;
 	}
 }
 

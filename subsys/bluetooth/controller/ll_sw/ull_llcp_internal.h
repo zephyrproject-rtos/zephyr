@@ -413,6 +413,7 @@ void llcp_lp_cu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 /*
  * LLCP Local Channel Map Update
  */
+void llcp_lp_chmu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_lp_chmu_init_proc(struct proc_ctx *ctx);
 void llcp_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 
