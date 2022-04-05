@@ -20,7 +20,6 @@ Zephyr Project Documentation
    connectivity/index.rst
    services/index.rst
    reference/index.rst
-   guides/index.rst
    hardware/index.rst
    security/index.rst
    contribute/index.rst

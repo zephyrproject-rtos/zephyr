@@ -15,3 +15,4 @@ Developing with Zephyr
    modules.rst
    west/index
    test/index
+   tools/index

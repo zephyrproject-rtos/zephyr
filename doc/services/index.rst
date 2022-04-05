@@ -17,6 +17,7 @@ OS Services
    resource_management/index.rst
    notify.rst
    pm/index.rst
+   portability/index.rst
    shell/index.rst
    settings/index.rst
    smf/index.rst
