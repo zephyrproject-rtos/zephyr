@@ -114,14 +114,16 @@ static void *mcux_elcdif_get_framebuffer(const struct device *dev)
 
 static int mcux_elcdif_display_blanking_off(const struct device *dev)
 {
-	LOG_ERR("Display blanking control not implemented");
-	return -ENOTSUP;
+	const struct mcux_elcdif_config *config = dev->config;
+
+	return gpio_pin_set_dt(&config->backlight_gpio, 1);
 }
 
 static int mcux_elcdif_display_blanking_on(const struct device *dev)
 {
-	LOG_ERR("Display blanking control not implemented");
-	return -ENOTSUP;
+	const struct mcux_elcdif_config *config = dev->config;
+
+	return gpio_pin_set_dt(&config->backlight_gpio, 0);
 }
 
 static int mcux_elcdif_set_brightness(const struct device *dev,
