@@ -132,6 +132,77 @@ void test_channel_map_update_central_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
+void test_channel_map_update_central_invalid(void)
+{
+	uint8_t chm[5] = { 0x00, 0x04, 0x05, 0x06, 0x00 };
+	uint8_t err;
+	struct node_tx *tx;
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
+		.type = PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND
+	};
+	struct pdu_data_llctrl_chan_map_ind chmu_ind = {
+		.instant = 6,
+		.chm = { 0x00, 0x04, 0x05, 0x06, 0x00 },
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	err = ull_cp_chan_map_update(&conn, chm);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CHAN_MAP_UPDATE_IND, &conn, &tx, &chmu_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should NOT be a host notification */
+	ut_rx_q_is_empty();
+
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Inject invalid 'RSP' */
+	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", ctx_buffers_free());
+}
+
 void test_channel_map_update_periph_rem(void)
 {
 	uint8_t chm[5] = { 0x00, 0x04, 0x05, 0x06, 0x00 };
@@ -203,6 +274,65 @@ void test_channel_map_update_periph_rem(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
+void test_channel_map_update_periph_invalid(void)
+{
+	struct pdu_data_llctrl_chan_map_ind chmu_ind = {
+		.instant = 6,
+		.chm = { 0x00, 0x04, 0x05, 0x06, 0x00 },
+	};
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
+		.type = PDU_DATA_LLCTRL_TYPE_UNUSED
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* RX */
+	lt_tx(LL_CHAN_MAP_UPDATE_IND, &conn, &chmu_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should not be a host notifications */
+	ut_rx_q_is_empty();
+
+	/* Prepare */
+	event_prepare(&conn);
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Inject invalid 'RSP' */
+	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", ctx_buffers_free());
+}
+
 void test_channel_map_update_periph_loc(void)
 {
 	uint8_t err;
@@ -226,8 +356,12 @@ void test_main(void)
 	ztest_test_suite(chmu,
 			 ztest_unit_test_setup_teardown(test_channel_map_update_central_loc, setup,
 							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_channel_map_update_central_invalid,
+							setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_channel_map_update_periph_rem, setup,
 							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_channel_map_update_periph_invalid,
+							setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_channel_map_update_periph_loc, setup,
 							unit_test_noop));
 

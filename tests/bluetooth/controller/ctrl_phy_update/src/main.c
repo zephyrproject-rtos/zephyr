@@ -219,6 +219,54 @@ void test_phy_update_central_loc(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
+void test_phy_update_central_loc_invalid(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+
+	struct pdu_data_llctrl_reject_ind reject_ind = { };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an PHY Update Procedure */
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* There should be nohost notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", ctx_buffers_free());
+}
+
 void test_phy_update_central_loc_unsupp_feat(void)
 {
 	uint8_t err;
@@ -562,6 +610,62 @@ void test_phy_update_periph_rem(void)
 
 	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_1M);
 	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+				  "Free CTX buffers %d", ctx_buffers_free());
+}
+
+void test_phy_update_periph_rem_invalid(void)
+{
+	struct node_tx *tx;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M | PHY_CODED,
+					       .tx_phys = PHY_1M | PHY_2M | PHY_CODED };
+	struct pdu_data_llctrl_reject_ind reject_ind = { };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_PHY_REQ, &conn, &req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* We received a REQ, so data tx should be paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_RSP, &conn, &tx, &rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Inject invalid PDU */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
@@ -1044,12 +1148,16 @@ void test_main(void)
 {
 	ztest_test_suite(
 		phy,
+		ztest_unit_test_setup_teardown(test_phy_update_central_loc_invalid, setup,
+					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_central_loc, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_central_loc_unsupp_feat, setup,
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_central_rem, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_periph_loc, setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_periph_rem, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_periph_rem_invalid, setup,
+					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_central_loc_collision, setup,
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_phy_update_central_rem_collision, setup,

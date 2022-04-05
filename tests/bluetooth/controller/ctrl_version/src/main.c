@@ -111,6 +111,156 @@ void test_version_exchange_central_loc(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
+/* +-----+                     +-------+            +-----+
+ * | UT  |                     | LL_A  |            | LT  |
+ * +-----+                     +-------+            +-----+
+ *    |                            |                   |
+ *    | Start                      |                   |
+ *    | Version Exchange Proc.     |                   |
+ *    |--------------------------->|                   |
+ *    |                            |                   |
+ *    |                            | LL_VERSION_IND    |
+ *    |                            |------------------>|
+ *    |                            |                   |
+ *    |                            |  LL_<INVALID>_RSP |
+ *    |                            |<------------------|
+ *    |                            |                   |
+ *  ~~~~~~~~~~~~~~~~~~~ TERMINATE CONN ~~~~~~~~~~~~~~~~~~
+ *    |                            |                   |
+ */
+void test_version_exchange_central_loc_invalid_rsp(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+
+	struct pdu_data_llctrl_version_ind local_version_ind = {
+		.version_number = LL_VERSION_NUMBER,
+		.company_id = CONFIG_BT_CTLR_COMPANY_ID,
+		.sub_version_number = CONFIG_BT_CTLR_SUBVERSION_NUMBER,
+	};
+
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
+		.type = PDU_DATA_LLCTRL_TYPE_VERSION_IND
+	};
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND,
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+
+	struct pdu_data_llctrl_reject_ind reject_ind = {
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate a Version Exchange Procedure */
+	err = ull_cp_version_exchange(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* There should be no host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+	/* Cheat, to allow second VEX */
+	conn.llcp.vex.sent = 0;
+
+	/* Initiate another Version Exchange Procedure */
+	err = ull_cp_version_exchange(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* There should be no host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+	/* Cheat, to allow second VEX */
+	conn.llcp.vex.sent = 0;
+
+	/* Initiate yet another Version Exchange Procedure */
+	err = ull_cp_version_exchange(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* There should be no host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+}
+
 void test_version_exchange_central_loc_2(void)
 {
 	uint8_t err;
@@ -367,7 +517,10 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_version_exchange_central_rem_2, setup,
 							unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_version_exchange_central_loc_twice,
-							setup, unit_test_noop));
+							setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(
+					     test_version_exchange_central_loc_invalid_rsp, setup,
+					     unit_test_noop));
 
 	ztest_run_test_suite(version_exchange);
 }

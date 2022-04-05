@@ -132,6 +132,106 @@ void test_feat_exchange_central_loc(void)
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
 
+/*
+ * +-----+                     +-------+            +-----+
+ * | UT  |                     | LL_A  |            | LT  |
+ * +-----+                     +-------+            +-----+
+ *    |                            |                   |
+ *    | Start                      |                   |
+ *    | Feature Exchange Proc.     |                   |
+ *    |--------------------------->|                   |
+ *    |                            |                   |
+ *    |                            | LL_FEATURE_REQ    |
+ *    |                            |------------------>|
+ *    |                            |                   |
+ *    |                            |  LL_<INVALID>_RSP |
+ *    |                            |<------------------|
+ *    |                            |                   |
+ *  ~~~~~~~~~~~~~~~~  TERMINATE CONNECTION ~~~~~~~~~~~~~~
+ *    |                            |                   |
+ */
+void test_feat_exchange_central_loc_invalid_rsp(void)
+{
+	uint64_t err;
+	struct pdu_data_llctrl_feature_req local_feature_req;
+	struct pdu_data_llctrl_reject_ind reject_ind = {
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ,
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+	struct node_tx *tx;
+
+
+	sys_put_le64(DEFAULT_FEATURE, local_feature_req.features);
+
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate a Feature Exchange Procedure */
+	err = ull_cp_feature_exchange(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	event_prepare(&conn);
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_FEATURE_REQ, &conn, &tx, &local_feature_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	event_done(&conn);
+
+	/* Release tx node */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* There should not be a host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate another Feature Exchange Procedure */
+	err = ull_cp_feature_exchange(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	event_prepare(&conn);
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_FEATURE_REQ, &conn, &tx, &local_feature_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	event_done(&conn);
+
+	/* Release tx node */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* There should not be a host notifications */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+}
+
 void test_feat_exchange_central_loc_2(void)
 {
 	uint8_t err;
@@ -156,7 +256,7 @@ void test_feat_exchange_central_loc_2(void)
  * | UT  | | LL_A  |                 | LT  |
  * +-----+ +-------+                 +-----+
  *   |        |                         |
- *   |        |    LL_PERIPH_FEAT_XCHG |
+ *   |        |    LL_PERIPH_FEAT_XCHG  |
  *   |        |<------------------------|
  *   |        |                         |
  *   |        | LL_FEATURE_RSP          |
@@ -430,6 +530,8 @@ void test_main(void)
 	ztest_test_suite(feat_exchange_central,
 			 ztest_unit_test_setup_teardown(test_feat_exchange_central_loc, setup,
 							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_feat_exchange_central_loc_invalid_rsp,
+							setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_feat_exchange_central_loc_2, setup,
 							unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_feat_exchange_central_rem, setup,
