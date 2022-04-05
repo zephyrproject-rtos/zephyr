@@ -20,3 +20,5 @@ OS Services
    shell/index.rst
    settings/index.rst
    smf/index.rst
+   storage/index.rst
+   task_wdt/index.rst
