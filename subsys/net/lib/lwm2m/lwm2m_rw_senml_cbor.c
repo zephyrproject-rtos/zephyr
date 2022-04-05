@@ -141,13 +141,29 @@ static int put_basename(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 	return 0;
 }
 
+static int put_empty_array(struct lwm2m_output_context *out)
+{
+	int len = 1;
+
+	memset(CPKT_BUF_W_PTR(out->out_cpkt), 0x80, len); /* 80 # array(0) */
+	out->out_cpkt->offset += len;
+
+	return len;
+}
+
 static int put_end(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
 {
 	size_t len;
+	struct lwm2m_senml *input = &(LWM2M_OFD_CBOR(out)->input);
+
+	if (!input->_lwm2m_senml__record_count) {
+		len = put_empty_array(out);
+
+		return len;
+	}
 
 	uint_fast8_t ret =
-		cbor_encode_lwm2m_senml(CPKT_BUF_W_REGION(out->out_cpkt),
-					(struct lwm2m_senml *)&(LWM2M_OFD_CBOR(out)->input), &len);
+		cbor_encode_lwm2m_senml(CPKT_BUF_W_REGION(out->out_cpkt), input, &len);
 
 	if (ret != ZCBOR_SUCCESS) {
 		LOG_ERR("unable to encode senml cbor msg");
