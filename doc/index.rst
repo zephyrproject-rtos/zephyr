@@ -102,7 +102,7 @@ Sections
    :caption: Contents
 
    introduction/index.rst
-   getting_started/index.rst
+   develop/index.rst
    contribute/index.rst
    development_process/index.rst
    application/index.rst
