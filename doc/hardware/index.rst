@@ -10,3 +10,4 @@ Hardware Support
    emulator/index.rst
    peripherals/index.rst
    pinctrl/index.rst
+   porting/index
