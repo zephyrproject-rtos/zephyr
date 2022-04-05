@@ -14,7 +14,7 @@
 #             looks after the area.
 #
 #         * odd fixes:
-#            The ares gets odd fixes and has collaborators.
+#            The area gets odd fixes and has collaborators.
 #
 #         * obsolete:
 #             Old code. Something being marked obsolete generally means it has
@@ -1724,6 +1724,27 @@ ITE Platforms:
         - soc/riscv/riscv-ite/
     labels:
         - "platform: ITE"
+
+TI Platforms:
+    status: odd fixes
+    collaborators:
+        - vanti
+        - cfriedt
+    files:
+        - boards/arm/cc13*/
+        - boards/arm/cc26*/
+        - boards/arm/cc32*/
+        - boards/*/msp*/
+        - drivers/*/*cc13*/
+        - drivers/*/*cc25*/
+        - drivers/*/*cc26*/
+        - drivers/*/*cc32*/
+        - dts/*/ti/
+        - dts/bindings/*/ti,*
+        - modules/hal_ti/
+        - soc/arm/ti*/
+    labels:
+        - "platform: TI"
 
 Storage:
     status: maintained
