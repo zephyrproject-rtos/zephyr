@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, NXP
+ * Copyright 2022, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 	return 0;
 }
 
+#ifdef CONFIG_SOC_FAMILY_LPC
+/* LPC family needs iocon clock to be enabled */
+
 static int pinctrl_clock_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -54,3 +57,5 @@ static int pinctrl_clock_init(const struct device *dev)
 }
 
 SYS_INIT(pinctrl_clock_init, PRE_KERNEL_1, 0);
+
+#endif /* CONFIG_SOC_FAMILY_LPC */
