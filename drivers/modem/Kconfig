@@ -64,14 +64,27 @@ config MODEM_CONTEXT_VERBOSE_DEBUG
 
 config MODEM_IFACE_UART
 	bool "UART-based modem interface"
-	depends on SERIAL_SUPPORT_INTERRUPT
-	select UART_INTERRUPT_DRIVEN
 	select RING_BUFFER
 	help
 	  To configure this layer for use, create a modem_iface_uart_data
 	  object and pass it's reference to modem_iface_uart_init()
 	  along with the modem_iface reference from your modem_context object
 	  and the UART device name.
+
+if MODEM_IFACE_UART
+
+choice MODEM_IFACE_UART_BACKEND
+	prompt "UART backend to use for modem interface"
+	default MODEM_IFACE_UART_INTERRUPT
+
+config MODEM_IFACE_UART_INTERRUPT
+	bool "UART-based modem interface using interrupt API"
+	depends on SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+
+endchoice
+
+endif # MODEM_IFACE_UART
 
 config MODEM_CMD_HANDLER
 	bool "Generic modem command handler"
