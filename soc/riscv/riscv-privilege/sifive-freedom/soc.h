@@ -23,7 +23,7 @@
 #define SIFIVE_PINMUX_PINS            32
 
 /* Clock controller. */
-#define PRCI_BASE_ADDR           0x10008000
+#define PRCI_BASE_ADDR               0x10008000
 
 /* Always ON Domain */
 #define SIFIVE_PMUIE		     0x10000140
