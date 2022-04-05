@@ -22,3 +22,4 @@ OS Services
    smf/index.rst
    storage/index.rst
    task_wdt/index.rst
+   tfm/index

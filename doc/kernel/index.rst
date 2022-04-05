@@ -16,3 +16,4 @@ Kernel
    timeutil.rst
    util/index.rst
    iterable_sections/index.rst
+   code-relocation.rst
