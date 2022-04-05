@@ -103,15 +103,15 @@ Sections
 
    introduction/index.rst
    develop/index.rst
-   build/index.rst
    kernel/index.rst
-   connectivity/index.rst
    services/index.rst
+   build/index.rst
+   connectivity/index.rst
    reference/index.rst
    hardware/index.rst
-   security/index.rst
    contribute/index.rst
    project/index.rst
+   security/index.rst
    samples/index.rst
    boards/index.rst
    releases/index.rst
