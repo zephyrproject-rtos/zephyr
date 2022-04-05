@@ -26,6 +26,20 @@
 		__shell_root_cmds_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(shell_subcmds_sections,,)
+	{
+		__shell_subcmds_start = .;
+		KEEP(*(SORT(.shell_subcmd_*)));
+		__shell_subcmds_end = .;
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	SECTION_DATA_PROLOGUE(shell_dynamic_subcmds_sections,,)
+	{
+		__shell_dynamic_subcmds_start = .;
+		KEEP(*(SORT(.shell_dynamic_subcmd_*)));
+		__shell_dynamic_subcmds_end = .;
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(font_entry_sections,,)
 	{
 		__font_entry_start = .;
