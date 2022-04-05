@@ -91,15 +91,12 @@ typedef void (*shell_dynamic_get)(size_t idx,
 /**
  * @brief Shell command descriptor.
  */
-struct shell_cmd_entry {
-	bool is_dynamic;
-	union union_cmd_entry {
-		/*!< Pointer to function returning dynamic commands.*/
-		shell_dynamic_get dynamic_get;
+union shell_cmd_entry {
+	/*!< Pointer to function returning dynamic commands.*/
+	shell_dynamic_get dynamic_get;
 
-		/*!< Pointer to array of static commands. */
-		const struct shell_static_entry *entry;
-	} u;
+	/*!< Pointer to array of static commands. */
+	const struct shell_static_entry *entry;
 };
 
 struct shell;
@@ -158,15 +155,26 @@ typedef int (*shell_cmd_handler)(const struct shell *shell,
 typedef int (*shell_dict_cmd_handler)(const struct shell *shell, size_t argc,
 				      char **argv, void *data);
 
+/* When entries are added to the memory section a padding is applied for
+ * native_posix_64 and x86_64 targets. Adding padding to allow handle data
+ * in the memory section as array.
+ */
+#if (defined(CONFIG_ARCH_POSIX) && defined(CONFIG_64BIT)) || defined(CONFIG_X86_64)
+#define Z_SHELL_STATIC_ENTRY_PADDING 24
+#else
+#define Z_SHELL_STATIC_ENTRY_PADDING 0
+#endif
+
 /*
  * @brief Shell static command descriptor.
  */
 struct shell_static_entry {
 	const char *syntax;			/*!< Command syntax strings. */
 	const char *help;			/*!< Command help string. */
-	const struct shell_cmd_entry *subcmd;	/*!< Pointer to subcommand. */
+	const union shell_cmd_entry *subcmd;	/*!< Pointer to subcommand. */
 	shell_cmd_handler handler;		/*!< Command handler. */
 	struct shell_static_args args;		/*!< Command arguments. */
+	uint8_t padding[Z_SHELL_STATIC_ENTRY_PADDING];
 };
 
 /**
@@ -188,12 +196,11 @@ struct shell_static_entry {
 			       mandatory, optional)			   \
 	static const struct shell_static_entry UTIL_CAT(_shell_, syntax) = \
 	SHELL_CMD_ARG(syntax, subcmd, help, handler, mandatory, optional); \
-	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)   \
+	static const union shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)    \
 	__attribute__ ((section("."					   \
 			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
 	__attribute__((used)) = {					   \
-		.is_dynamic = false,					   \
-		.u = {.entry = &UTIL_CAT(_shell_, syntax)}		   \
+		.entry = &UTIL_CAT(_shell_, syntax)			   \
 	}
 
 /**
@@ -227,9 +234,9 @@ struct shell_static_entry {
 		(\
 		static shell_cmd_handler dummy_##syntax##_handler __unused = \
 								handler;\
-		static const struct shell_cmd_entry *dummy_subcmd_##syntax \
+		static const union shell_cmd_entry *dummy_subcmd_##syntax \
 			__unused = subcmd\
-		)\
+		) \
 	)
 /**
  * @brief Macro for defining and adding a root command (level 0) with
@@ -281,10 +288,84 @@ struct shell_static_entry {
 	static const struct shell_static_entry shell_##name[] = {	\
 		__VA_ARGS__						\
 	};								\
-	static const struct shell_cmd_entry name = {			\
-		.is_dynamic = false,					\
-		.u = { .entry = shell_##name }				\
+	static const union shell_cmd_entry name = {			\
+		.entry = shell_##name					\
 	}
+
+#define Z_SHELL_UNDERSCORE(x) _##x
+#define Z_SHELL_SUBCMD_NAME(...) \
+	UTIL_CAT(shell_subcmd, MACRO_MAP_CAT(Z_SHELL_UNDERSCORE, __VA_ARGS__))
+
+/** @brief Create set of subcommands.
+ *
+ * Commands to this set are added using @ref SHELL_SUBCMD_ADD and @ref SHELL_SUBCMD_COND_ADD.
+ * Commands can be added from multiple files.
+ *
+ * @param[in] _name		Name of the set. @p _name is used to refer the set in the parent
+ * command.
+ *
+ * @param[in] _parent	Set of comma separated parent commands in parenthesis, e.g.
+ * (foo_cmd) if subcommands are for the root command "foo_cmd".
+ */
+#define SHELL_SUBCMD_SET_CREATE(_name, _parent)					\
+	static const struct shell_static_entry _name				\
+	__attribute__ ((section("."						\
+			STRINGIFY(Z_SHELL_SUBCMD_NAME(NUM_VA_ARGS_LESS_1 _parent, \
+					__DEBRACKET _parent)))))		\
+	__attribute__((used))
+
+/** @brief Conditionally add command to the set of subcommands.
+ *
+ * Add command to the set created with @ref SHELL_SUBCMD_SET_CREATE.
+ *
+ * @note The name of the section is formed as concatenation of number of parent
+ * commands, names of all parent commands and own syntax. Number of parent commands
+ * is added to ensure that section prefix is unique. Without it subcommands of
+ * (foo) and (foo, cmd1) would mix.
+ *
+ * @param[in] _flag	 Compile time flag. Command is present only if flag
+ *			 exists and equals 1.
+ * @param[in] _parent	 Parent command sequence. Comma separated in parenthesis.
+ * @param[in] _syntax	 Command syntax (for example: history).
+ * @param[in] _subcmd	 Pointer to a subcommands array.
+ * @param[in] _help	 Pointer to a command help string.
+ * @param[in] _handler	 Pointer to a function handler.
+ * @param[in] _mand	 Number of mandatory arguments including command name.
+ * @param[in] _opt	 Number of optional arguments.
+ */
+#define SHELL_SUBCMD_COND_ADD(_flag, _parent, _syntax, _subcmd, _help, _handler, \
+			   _mand, _opt) \
+	COND_CODE_1(_flag, \
+		(static const struct shell_static_entry \
+		   Z_SHELL_SUBCMD_NAME(__DEBRACKET _parent, _syntax)\
+		   __attribute__ ((section("."						\
+			STRINGIFY(Z_SHELL_SUBCMD_NAME(NUM_VA_ARGS_LESS_1 _parent, \
+				  __DEBRACKET _parent, _syntax)))))	\
+		   __attribute__((used)) = \
+			SHELL_EXPR_CMD_ARG(1, _syntax, _subcmd, _help, \
+					   _handler, _mand, _opt)\
+		), \
+		(static shell_cmd_handler dummy_##syntax##_handler __unused = _handler;\
+		 static const union shell_cmd_entry dummy_subcmd_##syntax __unused = { \
+			.entry = (const struct shell_static_entry *)_subcmd\
+		 } \
+		) \
+	)
+
+/** @brief Add command to the set of subcommands.
+ *
+ * Add command to the set created with @ref SHELL_SUBCMD_SET_CREATE.
+ *
+ * @param[in] _parent	 Parent command sequence. Comma separated in parenthesis.
+ * @param[in] _syntax	 Command syntax (for example: history).
+ * @param[in] _subcmd	 Pointer to a subcommands array.
+ * @param[in] _help	 Pointer to a command help string.
+ * @param[in] _handler	 Pointer to a function handler.
+ * @param[in] _mand	 Number of mandatory arguments including command name.
+ * @param[in] _opt	 Number of optional arguments.
+ */
+#define SHELL_SUBCMD_ADD(_parent, _syntax, _subcmd, _help, _handler, _mand, _opt) \
+	SHELL_SUBCMD_COND_ADD(1, _parent, _syntax, _subcmd, _help, _handler, _mand, _opt)
 
 /**
  * @brief Define ending subcommands set.
@@ -298,10 +379,12 @@ struct shell_static_entry {
  * @param[in] name	Name of the dynamic entry.
  * @param[in] get	Pointer to the function returning dynamic commands array
  */
-#define SHELL_DYNAMIC_CMD_CREATE(name, get)		\
-	static const struct shell_cmd_entry name = {	\
-		.is_dynamic = true,			\
-		.u = { .dynamic_get = get }		\
+#define SHELL_DYNAMIC_CMD_CREATE(name, get)					\
+	static const union shell_cmd_entry name					\
+	__attribute__ ((section("."						\
+			STRINGIFY(UTIL_CAT(shell_dynamic_subcmd_, syntax)))))	\
+	__attribute__((used)) = {						\
+		.dynamic_get = get						\
 	}
 
 /**
@@ -367,7 +450,7 @@ struct shell_static_entry {
 	{ \
 		.syntax = (_expr) ? (const char *)STRINGIFY(_syntax) : "", \
 		.help  = (_expr) ? (const char *)_help : NULL, \
-		.subcmd = (const struct shell_cmd_entry *)((_expr) ? \
+		.subcmd = (const union shell_cmd_entry *)((_expr) ? \
 				_subcmd : NULL), \
 		.handler = (shell_cmd_handler)((_expr) ? _handler : NULL), \
 		.args = { .mandatory = _mand, .optional = _opt} \
