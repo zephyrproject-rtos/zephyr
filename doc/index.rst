@@ -103,7 +103,6 @@ Sections
 
    introduction/index.rst
    develop/index.rst
-   development_process/index.rst
    build/index.rst
    kernel/index.rst
    connectivity/index.rst
@@ -112,6 +111,7 @@ Sections
    guides/index.rst
    security/index.rst
    contribute/index.rst
+   project/index.rst
    samples/index.rst
    boards/index.rst
    releases/index.rst

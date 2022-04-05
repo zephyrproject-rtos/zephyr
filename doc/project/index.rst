@@ -1,7 +1,7 @@
 .. _development_model:
 
-Development and Contribution Process
-####################################
+Project and Governance
+#######################
 
 
 .. toctree::
