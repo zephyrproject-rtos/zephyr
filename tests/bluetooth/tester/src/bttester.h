@@ -575,6 +575,12 @@ struct gatt_read_rp {
 	uint8_t data[];
 } __packed;
 
+struct gatt_char_value {
+	uint16_t handle;
+	uint8_t data_len;
+	uint8_t data[0];
+} __packed;
+
 #define GATT_READ_UUID			0x12
 struct gatt_read_uuid_cmd {
 	uint8_t address_type;
@@ -586,8 +592,8 @@ struct gatt_read_uuid_cmd {
 } __packed;
 struct gatt_read_uuid_rp {
 	uint8_t att_response;
-	uint16_t data_length;
-	uint8_t data[];
+	uint8_t values_count;
+	struct gatt_char_value values[0];
 } __packed;
 
 #define GATT_READ_LONG			0x13
