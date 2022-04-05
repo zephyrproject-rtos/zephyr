@@ -552,6 +552,16 @@ static void ascs_cp_rsp_add_errno(uint8_t id, uint8_t op, int err,
 	case -EBADMSG:
 		return ascs_cp_rsp_add(id, op, BT_ASCS_RSP_INVALID_ASE_STATE,
 					       BT_ASCS_REASON_NONE);
+	case -EACCES:
+		switch (op) {
+		case BT_ASCS_METADATA_OP:
+			return ascs_cp_rsp_add(id, op,
+					       BT_ASCS_RSP_METADATA_REJECTED,
+					       reason);
+		default:
+			return ascs_cp_rsp_add(id, op, BT_ASCS_RSP_UNSPECIFIED,
+					       BT_ASCS_REASON_NONE);
+		}
 	default:
 		return ascs_cp_rsp_add(id, op, BT_ASCS_RSP_UNSPECIFIED,
 				       BT_ASCS_REASON_NONE);
@@ -1511,6 +1521,7 @@ static bool ascs_codec_store_metadata(struct bt_data *data, void *user_data)
 struct ascs_parse_result {
 	int err;
 	size_t count;
+	const enum bt_audio_dir dir;
 };
 
 static bool ascs_valid_metadata_type(uint8_t type, uint8_t len)
@@ -1587,15 +1598,36 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		return false;
 	}
 
-	/* TODO: If CAP, verify context types */
+	/* The CAP acceptor shall not accept metadata with
+	 * unsupported stream context.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR) &&
+	    data->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
+		const uint16_t context = sys_get_le16(data->data);
+
+		if (!bt_pacs_context_available(result->dir, context)) {
+			result->err = -EACCES;
+
+			return false;
+		}
+	}
+
+	/* TODO: The CAP acceptor should be able to verify that all CCID in
+	 * the CCID list exists on this devices
+	 */
 
 	return true;
 }
 
-static int ascs_verify_metadata(const struct net_buf_simple *buf)
+static int ascs_verify_metadata(const struct net_buf_simple *buf,
+				enum bt_audio_dir dir)
 {
+	struct ascs_parse_result result = {
+		.count = 0U,
+		.err = 0,
+		.dir = dir
+	};
 	struct net_buf_simple meta_ltv;
-	struct ascs_parse_result result;
 
 	/* Clone the buf to avoid pulling data from the original buffer */
 	net_buf_simple_clone(buf, &meta_ltv);
@@ -1650,7 +1682,7 @@ static int ascs_ep_set_metadata(struct bt_audio_ep *ep,
 				      net_buf_simple_pull_mem(buf, len),
 				      len);
 
-	err = ascs_verify_metadata(&meta_ltv);
+	err = ascs_verify_metadata(&meta_ltv, ep->dir);
 	if (err != 0) {
 		return err;
 	}
