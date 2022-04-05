@@ -30,6 +30,7 @@
 #include "endpoint.h"
 #include "unicast_server.h"
 #include "pacs_internal.h"
+#include "cap_internal.h"
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 
@@ -1521,7 +1522,7 @@ static bool ascs_codec_store_metadata(struct bt_data *data, void *user_data)
 struct ascs_parse_result {
 	int err;
 	size_t count;
-	const enum bt_audio_dir dir;
+	const struct bt_audio_ep *ep;
 };
 
 static bool ascs_valid_metadata_type(uint8_t type, uint8_t len)
@@ -1570,11 +1571,14 @@ static bool ascs_valid_metadata_type(uint8_t type, uint8_t len)
 static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 {
 	struct ascs_parse_result *result = user_data;
+	const struct bt_audio_ep *ep = result->ep;
+	const uint8_t data_len = data->data_len;
+	const uint8_t data_type = data->type;
+	const uint8_t *data_value = data->data;
 
 	result->count++;
 
-	BT_DBG("#%u type 0x%02x len %u", result->count, data->type,
-	       data->data_len);
+	BT_DBG("#%u type 0x%02x len %u", result->count, data_type, data_len);
 
 	if (result->count > CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
 		BT_ERR("Not enough buffers for Codec Config Metadata: %zu > %zu",
@@ -1584,13 +1588,13 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		return false;
 	}
 
-	if (!ascs_valid_metadata_type(data->type, data->data_len)) {
+	if (!ascs_valid_metadata_type(data_type, data_len)) {
 		result->err = -EINVAL;
 
 		return false;
 	}
 
-	if (data->data_len > CONFIG_BT_CODEC_MAX_METADATA_LEN) {
+	if (data_len > CONFIG_BT_CODEC_MAX_METADATA_LEN) {
 		BT_ERR("Not enough space for Codec Config Metadata: %u > %zu",
 		       data->data_len, CONFIG_BT_CODEC_MAX_METADATA_LEN);
 		result->err = -ENOMEM;
@@ -1601,31 +1605,50 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 	/* The CAP acceptor shall not accept metadata with
 	 * unsupported stream context.
 	 */
-	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR) &&
-	    data->type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
-		const uint16_t context = sys_get_le16(data->data);
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
+		if (data_type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
+			const uint16_t context = sys_get_le16(data_value);
 
-		if (!bt_pacs_context_available(result->dir, context)) {
-			result->err = -EACCES;
+			if (!bt_pacs_context_available(ep->dir, context)) {
+				result->err = -EACCES;
 
-			return false;
+				return false;
+			}
+		} else if (data_type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
+			/* Verify that the CCID is a known CCID on the
+			 * writing device
+			 */
+			for (uint8_t i = 0; i < data_len; i++) {
+				const uint8_t ccid = data_value[i];
+
+				if (!bt_cap_acceptor_ccid_exist(ep->stream->conn,
+								ccid)) {
+					BT_WARN("CCID %u is unknown", ccid);
+
+					/* TBD:
+					 * Should we reject the Metadata?
+					 *
+					 * Should unknown CCIDs trigger a
+					 * discovery procedure for TBS or MCS?
+					 *
+					 * Or should we just accept as is, and
+					 * then let the application decide?
+					 */
+				}
+			}
 		}
 	}
-
-	/* TODO: The CAP acceptor should be able to verify that all CCID in
-	 * the CCID list exists on this devices
-	 */
 
 	return true;
 }
 
 static int ascs_verify_metadata(const struct net_buf_simple *buf,
-				enum bt_audio_dir dir)
+				struct bt_audio_ep *ep)
 {
 	struct ascs_parse_result result = {
 		.count = 0U,
 		.err = 0,
-		.dir = dir
+		.ep = ep
 	};
 	struct net_buf_simple meta_ltv;
 
@@ -1682,7 +1705,7 @@ static int ascs_ep_set_metadata(struct bt_audio_ep *ep,
 				      net_buf_simple_pull_mem(buf, len),
 				      len);
 
-	err = ascs_verify_metadata(&meta_ltv, ep->dir);
+	err = ascs_verify_metadata(&meta_ltv, ep);
 	if (err != 0) {
 		return err;
 	}
