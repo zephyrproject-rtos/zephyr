@@ -16,7 +16,6 @@ User and Developer Guides
    env_vars.rst
    pinctrl/index
    emulator/index.rst
-   modules.rst
    platformio/index.rst
    portability/index.rst
    porting/index
