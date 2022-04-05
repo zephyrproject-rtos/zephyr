@@ -15,7 +15,6 @@ Zephyr Project Documentation
 
    introduction/index.rst
    develop/index.rst
-   contribute/index.rst
    build/index.rst
    kernel/index.rst
    connectivity/index.rst
@@ -24,3 +23,4 @@ Zephyr Project Documentation
    reference/index.rst
    guides/index.rst
    security/index.rst
+   contribute/index.rst
