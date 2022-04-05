@@ -203,6 +203,14 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf,
 			return -EAGAIN;
 		}
 
+		/* Check the encryption level for EATT */
+		if (bt_conn_get_security(chan->att->conn) < BT_SECURITY_L2) {
+			/* Vol 3, Part G, Section 5.3.2 Channel Requirements states:
+			 * The channel shall be encrypted.
+			 */
+			return -EINVAL;
+		}
+
 		/* bt_l2cap_chan_send does actually return the number of bytes
 		 * that could be sent immediately.
 		 */
