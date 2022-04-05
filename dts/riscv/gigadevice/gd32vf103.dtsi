@@ -234,7 +234,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_0";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -254,7 +254,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_1";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -274,7 +274,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_2";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -294,7 +294,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_3";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -314,7 +314,7 @@
 				compatible = "gd,gd32-pwm";
 				status = "disabled";
 				label = "PWM_4";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
