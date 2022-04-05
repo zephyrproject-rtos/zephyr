@@ -10,6 +10,8 @@
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/regulator/pca9420_i2c.h>
 
+#include "mimxrt685_evk_cm33-pinctrl.dtsi"
+
 / {
 	model = "NXP MIMXRT685-EVK board";
 	compatible = "nxp,mimxrt685";
@@ -150,11 +152,15 @@
 	compatible = "nxp,lpc-usart";
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
 };
 
 arduino_i2c: &flexcomm2 {
 	compatible = "nxp,lpc-i2c";
 	status = "okay";
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -171,6 +177,8 @@ arduino_i2c: &flexcomm2 {
 arduino_serial: &flexcomm4 {
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm4_usart>;
+	pinctrl-names = "default";
 };
 
 arduino_spi: &flexcomm5 {
@@ -180,6 +188,8 @@ arduino_spi: &flexcomm5 {
 	#size-cells = <0>;
 	dmas = <&dma0 10>, <&dma0 11>;
 	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_flexcomm5_spi>;
+	pinctrl-names = "default";
 };
 
 /* I2S receive channel */
@@ -191,6 +201,8 @@ i2s0: &flexcomm1 {
 	#size-cells = <0>;
 	dmas = <&dma0 2>;
 	dma-names = "rx";
+	pinctrl-0 = <&pinmux_flexcomm1_i2s>;
+	pinctrl-names = "default";
 };
 
 /* I2S transmit channel */
@@ -202,6 +214,8 @@ i2s1: &flexcomm3 {
 	#size-cells = <0>;
 	dmas = <&dma0 7>;
 	dma-names = "tx";
+	pinctrl-0 = <&pinmux_flexcomm3_i2s>;
+	pinctrl-names = "default";
 };
 
 /* PCA9420 PMIC */
@@ -212,6 +226,8 @@ i2s1: &flexcomm3 {
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_pmic_i2c>;
+	pinctrl-names = "default";
 
 	pca9420: pca9420@61 {
 		label = "PCA9420_PMIC";
@@ -294,6 +310,8 @@ i2s1: &flexcomm3 {
 };
 
 &flexspi {
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
 	mx25um51345g: mx25um51345g@2 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		size = <DT_SIZE_M(64)>;
@@ -385,6 +403,8 @@ i2s1: &flexcomm3 {
 
 &sc_timer {
 	status = "okay";
+	pinctrl-0 = <&pinmux_sctimer>;
+	pinctrl-names = "default";
 };
 
 &usdhc1 {
@@ -398,10 +418,14 @@ i2s1: &flexcomm3 {
 		status = "okay";
 		label = "SDMMC_0";
 	};
+	pinctrl-0 = <&pinmux_usdhc>;
+	pinctrl-names = "default";
 };
 
 &lpadc0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usbhs {
