@@ -8,4 +8,4 @@ tests:
       - CONFIG_USERSPACE=n
   arch.interrupt.nmi.kpti:
     extra_configs:
-      - CONFIG_USERSPACE=y
+      - CONFIG_TEST_USERSPACE=y
