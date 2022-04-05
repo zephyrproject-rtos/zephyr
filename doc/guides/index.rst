@@ -9,7 +9,6 @@ User and Developer Guides
    coccinelle.rst
    code-relocation.rst
    flash_debug/index
-   emulator/index.rst
    platformio/index.rst
    portability/index.rst
    porting/index
