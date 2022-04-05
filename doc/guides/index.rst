@@ -7,7 +7,6 @@ User and Developer Guides
    :maxdepth: 1
 
    arch/index.rst
-   docs/index.rst
    coccinelle.rst
    code-relocation.rst
    flash_debug/index
