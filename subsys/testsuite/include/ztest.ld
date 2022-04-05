@@ -4,25 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-SECTIONS
-{
-	.data.ztest_suite_node_area : ALIGN(4)
-	{
-		_ztest_suite_node_list_start = .;
-		KEEP(*(SORT_BY_NAME(._ztest_suite_node.static.*)))
-		_ztest_suite_node_list_end = .;
-	}
-	.data.ztest_unit_test_area : ALIGN(4)
-	{
-		_ztest_unit_test_list_start = .;
-		KEEP(*(SORT_BY_NAME(._ztest_unit_test.static.*)))
-		_ztest_unit_test_list_end = .;
-	}
-	.data.ztest_test_rule_area : ALIGN(4)
-	{
-		_ztest_test_rule_list_start = .;
-		KEEP(*(SORT_BY_NAME(._ztest_test_rule.static.*)))
-		_ztest_test_rule_list_end = .;
-	}
-}
-INSERT AFTER .data;
+#if defined(CONFIG_ARM_MMU)
+#define _ZTEST_ALIGN CONFIG_MMU_PAGE_SIZE
+#elif defined(CONFIG_ARM_MPU)
+#define _ZTEST_ALIGN CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
+#elif defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
+#define _ZTEST_ALIGN 16
+#else
+#define _ZTEST_ALIGN 4
+#endif
+
+#if defined(CONFIG_ZTEST)
+Z_LINK_ITERABLE_ALIGNED(ztest_suite_node, _ZTEST_ALIGN);
+
+#if defined(CONFIG_ZTEST_NEW_API)
+Z_LINK_ITERABLE_ALIGNED(ztest_unit_test, _ZTEST_ALIGN);
+Z_LINK_ITERABLE_ALIGNED(ztest_test_rule, _ZTEST_ALIGN);
+#endif /* CONFIG_ZTEST_NEW_API */
+
+#endif /* CONFIG_ZTEST */

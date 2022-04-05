@@ -17,6 +17,12 @@
 #include <init.h>
 #include <stdbool.h>
 
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_TEST_USERSPACE)
+#define __USERSPACE_FLAGS (K_USER)
+#else
+#define __USERSPACE_FLAGS (0)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,31 +55,31 @@ struct ztest_suite_stats {
  */
 struct ztest_suite_node {
 	/** The name of the test suite. */
-	const char *name;
+	const char * const name;
 	/**
 	 * Setup function to run before running this suite
 	 *
 	 * @return Pointer to the data structure that will be used throughout this test suite
 	 */
-	void *(*setup)(void);
+	void *(*const setup)(void);
 	/**
 	 * Function to run before each test in this suite
 	 *
 	 * @param data The test suite's data returned from setup()
 	 */
-	void (*before)(void *data);
+	void (*const before)(void *data);
 	/**
 	 * Function to run after each test in this suite
 	 *
 	 * @param data The test suite's data returned from setup()
 	 */
-	void (*after)(void *data);
+	void (*const after)(void *data);
 	/**
 	 * Teardown function to run after running this suite
 	 *
 	 * @param data The test suite's data returned from setup()
 	 */
-	void (*teardown)(void *data);
+	void (*const teardown)(void *data);
 	/**
 	 * An optional predicate function to determine if the test should run. If NULL, then the
 	 * test will only run once on the first attempt.
@@ -81,9 +87,9 @@ struct ztest_suite_node {
 	 * @param state The current state of the test application.
 	 * @return True if the suite should be run; false to skip.
 	 */
-	bool (*predicate)(const void *state);
+	bool (*const predicate)(const void *state);
 	/** Stats */
-	struct ztest_suite_stats stats;
+	struct ztest_suite_stats * const stats;
 };
 
 extern struct ztest_suite_node _ztest_suite_node_list_start[];
@@ -103,17 +109,18 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  * @param after_fn The function to call after each unit test in this suite
  * @param teardown_fn The function to call after running all the tests in this suite
  */
-#define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)	\
-	static STRUCT_SECTION_ITERABLE(ztest_suite_node,				\
-				       UTIL_CAT(z_ztest_test_node_, SUITE_NAME)) = {	\
-		.name = STRINGIFY(SUITE_NAME),						\
-		.setup = (setup_fn),							\
-		.before = (before_fn),							\
-		.after = (after_fn),							\
-		.teardown = (teardown_fn),						\
-		.predicate = PREDICATE,							\
+#define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)  \
+	static struct ztest_suite_stats UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME); \
+	static const STRUCT_SECTION_ITERABLE(ztest_suite_node,				\
+				       UTIL_CAT(z_ztest_test_node_, SUITE_NAME)) = {    \
+		.name = STRINGIFY(SUITE_NAME),                                          \
+		.setup = (setup_fn),                                                    \
+		.before = (before_fn),                                                  \
+		.after = (after_fn),                                                    \
+		.teardown = (teardown_fn),                                              \
+		.predicate = PREDICATE,                                                 \
+		.stats = &UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME),               \
 	}
-
 /**
  * Run the registered unit tests which return true from their pragma function.
  *
@@ -240,7 +247,7 @@ static inline void unit_test_noop(void)
  * @param suite The name of the test suite to attach this test
  * @param fn The test function to call.
  */
-#define ZTEST_USER(suite, fn) Z_ZTEST(suite, fn, COND_CODE_1(CONFIG_USERSPACE, (K_USER), (0)))
+#define ZTEST_USER(suite, fn) Z_ZTEST(suite, fn, __USERSPACE_FLAGS)
 
 /**
  * @brief Define a test function
@@ -262,7 +269,7 @@ static inline void unit_test_noop(void)
  * @param suite The name of the test suite to attach this test
  * @param fn The test function to call.
  */
-#define ZTEST_USER_F(suite, fn) Z_ZTEST_F(suite, fn, COND_CODE_1(CONFIG_USERSPACE, (K_USER), (0)))
+#define ZTEST_USER_F(suite, fn) Z_ZTEST_F(suite, fn, __USERSPACE_FLAGS)
 
 /**
  * @brief Test rule callback function signature
