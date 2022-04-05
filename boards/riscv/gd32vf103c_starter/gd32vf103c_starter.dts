@@ -41,7 +41,7 @@
 		/* NOTE: pwm_led and led1 are share same pin (PA7). */
 		/* When CONFIG_PWM=y it can only be controlled using the PWM API. */
 		pwm_led: pwm_led {
-			pwms = <&pwm2 1 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
