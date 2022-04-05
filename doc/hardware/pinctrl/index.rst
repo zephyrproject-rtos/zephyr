@@ -488,6 +488,19 @@ The example below contains a complete example of a device driver that uses the
 
     DT_INST_FOREACH_STATUS_OKAY(MYDEV_DEFINE)
 
+.. _pinctrl_api:
+
+Pin Control API
+****************
+
+.. doxygengroup:: pinctrl_interface
+
+Dynamic pin control
+====================
+
+.. doxygengroup:: pinctrl_interface_dynamic
+
+
 Other reference material
 ************************
 
