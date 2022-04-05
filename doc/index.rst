@@ -109,6 +109,7 @@ Sections
    services/index.rst
    reference/index.rst
    guides/index.rst
+   hardware/index.rst
    security/index.rst
    contribute/index.rst
    project/index.rst
