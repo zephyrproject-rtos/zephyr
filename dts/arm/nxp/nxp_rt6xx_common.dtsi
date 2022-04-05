@@ -75,6 +75,14 @@
 		#clock-cells = <1>;
 	};
 
+	iocon: iocon@4000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0x4000 0x1000>;
+		pinctrl: pinctrl {
+			compatible = "nxp,rt-iocon-pinctrl";
+		};
+	};
+
 	clkctl1: clkctl@21000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x21000 0x1000>;
