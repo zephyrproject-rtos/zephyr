@@ -25,15 +25,15 @@ static void esf_dump(const z_arch_esf_t *esf)
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
 	LOG_ERR(" xpsr:  0x%08x", esf->basic.xpsr);
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	for (int i = 0; i < ARRAY_SIZE(esf->s); i += 4) {
+	for (int i = 0; i < ARRAY_SIZE(esf->fpu.s); i += 4) {
 		LOG_ERR("s[%2d]:  0x%08x  s[%2d]:  0x%08x"
 			"  s[%2d]:  0x%08x  s[%2d]:  0x%08x",
-			i, (uint32_t)esf->s[i],
-			i + 1, (uint32_t)esf->s[i + 1],
-			i + 2, (uint32_t)esf->s[i + 2],
-			i + 3, (uint32_t)esf->s[i + 3]);
+			i, (uint32_t)esf->fpu.s[i],
+			i + 1, (uint32_t)esf->fpu.s[i + 1],
+			i + 2, (uint32_t)esf->fpu.s[i + 2],
+			i + 3, (uint32_t)esf->fpu.s[i + 3]);
 	}
-	LOG_ERR("fpscr:  0x%08x", esf->fpscr);
+	LOG_ERR("fpscr:  0x%08x", esf->fpu.fpscr);
 #endif
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	const struct _callee_saved *callee = esf->extra_info.callee;

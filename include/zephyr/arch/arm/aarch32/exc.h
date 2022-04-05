@@ -69,6 +69,14 @@ GTEXT(z_arm_exc_exit);
 extern "C" {
 #endif
 
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+struct __fpu_sf {
+	float s[16];
+	uint32_t fpscr;
+	uint32_t undefined;
+};
+#endif
+
 /* Additional register state that is not stacked by hardware on exception
  * entry.
  *
@@ -97,9 +105,7 @@ struct __esf {
 		uint32_t xpsr;
 	} basic;
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	float s[16];
-	uint32_t fpscr;
-	uint32_t undefined;
+	struct __fpu_sf fpu;
 #endif
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	struct __extra_esf_info extra_info;
@@ -113,9 +119,7 @@ struct __esf {
 	struct __extra_esf_info extra_info;
 #endif
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	float s[16];
-	uint32_t fpscr;
-	uint32_t undefined;
+	struct __fpu_sf fpu;
 #endif
 	struct __basic_sf {
 		sys_define_gpr_with_alias(a1, r0);
