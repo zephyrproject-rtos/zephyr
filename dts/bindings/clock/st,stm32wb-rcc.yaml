@@ -32,8 +32,8 @@ properties:
         - 256
         - 512
       description: |
-          CPU1 prescaler. Sets a HCLK1 frequency (feeding Cortex-M Systick)
-          lower than SYSCLK frequency (actual core frequency).
+          CPU1 prescaler. Sets a HCLK1 frequency (Core frequency)
+          lower than SYSCLK frequency.
           The HCLK1 clocks CPU1, AHB1, AHB2, AHB3 and SRAM1.
 
     cpu2-prescaler:
