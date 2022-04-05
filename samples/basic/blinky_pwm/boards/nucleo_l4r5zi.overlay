@@ -4,29 +4,10 @@
  * Copyright (c) 2022 STMicroelectronics
  */
 
-#include <dt-bindings/pwm/pwm.h>
-#include <dt-bindings/pwm/stm32_pwm.h>
-
-/ {
-	pwmleds {
-		compatible = "pwm-leds";
-
-		red_pwm_led: red_pwm_led {
-			pwms = <&pwm1 2 4 (PWM_POLARITY_NORMAL | PWM_STM32_COMPLEMENTARY)>;
-		};
-	};
-
-	aliases {
-		pwm-led0 = &red_pwm_led;
-	};
+&pwmleds {
+	status = "okay";
 };
 
-&timers1 {
+&pwm1 {
 	status = "okay";
-
-	pwm1: pwm {
-		status = "okay";
-		pinctrl-0 = <&tim1_ch2n_pb14>;
-		pinctrl-names = "default";
-	};
 };
