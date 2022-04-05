@@ -14,7 +14,7 @@ Zephyr Project Documentation
    :caption: Contents
 
    introduction/index.rst
-   getting_started/index.rst
+   develop/index.rst
    contribute/index.rst
    build/index.rst
    kernel/index.rst
