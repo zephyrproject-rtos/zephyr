@@ -11,3 +11,4 @@ Build and Configuration Systems
    cmake/index.rst
    dts/index
    kconfig/index.rst
+   zephyr_cmake_package.rst

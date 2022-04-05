@@ -16,4 +16,3 @@ User and Developer Guides
    test/index
    tfm/index
    optimizations/index
-   zephyr_cmake_package.rst
