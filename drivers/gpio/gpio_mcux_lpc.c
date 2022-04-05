@@ -88,8 +88,12 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 	*pinconfig |= IOPCTL_PIO_INBUF_EN;
 
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
-		return -ENOTSUP;
+		*pinconfig |= IOPCTL_PIO_PSEDRAIN_EN;
+	} else {
+		*pinconfig &= ~IOPCTL_PIO_PSEDRAIN_EN;
 	}
+	/* Select GPIO mux for this pin (func 0 is always GPIO) */
+	*pinconfig &= ~(IOPCTL_PIO_FSEL_MASK);
 
 #else /* LPC SOCs */
 	volatile uint32_t *pinconfig;
