@@ -241,7 +241,7 @@ config ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
 
 config ARM_STORE_EXC_RETURN
 	bool
-	default y if FPU_SHARING || ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	default y if CPU_CORTEX_M && (FPU_SHARING || ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 	help
 	  Store the EXC_RETURN value when switching threads.
 	  This is needed when switching between threads that differ in either
