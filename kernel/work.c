@@ -368,13 +368,13 @@ int k_work_submit_to_queue(struct k_work_q *queue,
 
 	k_spin_unlock(&lock, key);
 
-	/* If we changed the queue contents (as indicated by a positive ret)
-	 * the queue thread may now be ready, but we missed the reschedule
-	 * point because the lock was held.  If this is being invoked by a
-	 * preemptible thread then yield.
+	/* submit_to_queue_locked() won't reschedule on its own
+	 * (really it should, otherwise this process will result in
+	 * spurious calls to z_swap() due to the race), so do it here
+	 * if the queue state changed.
 	 */
-	if ((ret > 0) && (k_is_preempt_thread() != 0)) {
-		k_yield();
+	if (ret > 0) {
+		z_reschedule_unlocked();
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work, submit_to_queue, queue, work, ret);
