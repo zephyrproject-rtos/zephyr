@@ -88,6 +88,11 @@ static void compare_isr(const void *arg)
 	curr = count();
 	dticks = (uint32_t)((curr - last_count) / CYC_PER_TICK);
 
+	if (dticks == 0) {
+		k_spin_unlock(&lock, key);
+		return;
+	}
+
 	/* Clear the triggered bit */
 	*WCTCS |= DSP_WCT_CS_TT(COMPARATOR_IDX);
 
