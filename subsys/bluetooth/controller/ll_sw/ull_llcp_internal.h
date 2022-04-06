@@ -190,7 +190,6 @@ struct proc_ctx {
 		} pu;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-		/* TODO(tosk): leave out some params below if !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		/* Connection Update & Connection Parameter Request */
 		struct {
 			uint8_t error;
@@ -202,6 +201,7 @@ struct proc_ctx {
 			uint16_t interval_max;
 			uint16_t latency;
 			uint16_t timeout;
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 			uint8_t  preferred_periodicity;
 			uint16_t reference_conn_event_count;
 			uint16_t offset0;
@@ -210,6 +210,7 @@ struct proc_ctx {
 			uint16_t offset3;
 			uint16_t offset4;
 			uint16_t offset5;
+#endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
 		} cu;
 
 		/* Use by ACL Termination Procedure */
