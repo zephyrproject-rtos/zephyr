@@ -43,6 +43,9 @@ struct dfdspbrcp {
 #define DFDSPBRCP_BATTR_LPSCTL_L1_MIN_WAY		BIT(15)
 #define DFDSPBRCP_BATTR_LPSCTL_BATTR_SLAVE_CORE	BIT(16)
 
+#define DFDSPBRCP_WDT_RESUME		BIT(8)
+#define DFDSPBRCP_WDT_RESTART_COMMAND	0x76
+
 #define DFDSPBRCP (*(volatile struct dfdspbrcp *)DFDSPBRCP_REG)
 
 /* Low priority interrupt indices */
