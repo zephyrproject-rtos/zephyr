@@ -74,14 +74,14 @@ int mqtt_client_websocket_connect(struct mqtt_client *client)
 			client->transport.websocket.timeout,
 			NULL);
 	if (client->transport.websocket.sock < 0) {
-		MQTT_TRC("Websocket connect failed (%d)",
+		NET_ERR("Websocket connect failed (%d)",
 			 client->transport.websocket.sock);
 
 		(void)close(transport_sock);
 		return client->transport.websocket.sock;
 	}
 
-	MQTT_TRC("Connect completed");
+	NET_DBG("Connect completed");
 
 	return 0;
 }
@@ -165,7 +165,7 @@ int mqtt_client_websocket_read(struct mqtt_client *client, uint8_t *data,
 
 int mqtt_client_websocket_disconnect(struct mqtt_client *client)
 {
-	MQTT_TRC("Closing socket %d", client->transport.websocket.sock);
+	NET_INFO("Closing socket %d", client->transport.websocket.sock);
 
 	return websocket_disconnect(client->transport.websocket.sock);
 }
