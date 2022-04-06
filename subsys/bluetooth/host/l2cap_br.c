@@ -30,7 +30,6 @@
 #include "rfcomm_internal.h"
 #include "sdp_internal.h"
 
-#define BR_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_br_chan, chan)
 #define BR_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_br_chan, rtx_work)
 
 #define L2CAP_BR_PSM_START	0x0001
