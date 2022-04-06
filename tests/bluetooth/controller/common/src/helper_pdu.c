@@ -949,3 +949,12 @@ void helper_node_verify_cte_rsp(const char *file, uint32_t line, struct node_rx_
 	zassert_equal(memcmp(rx_iq_report->sample, p_iq_report->sample, p_iq_report->sample_count),
 		      0, "IQ samples mismatch.\nCalled at %s:%d\n", file, line);
 }
+
+void helper_pdu_ntf_verify_cte_rsp(const char *file, uint32_t line, struct pdu_data *pdu,
+				   void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CTE_RSP,
+		      "Not a LL_CTE_RSP. Called at %s:%d\n", file, line);
+}

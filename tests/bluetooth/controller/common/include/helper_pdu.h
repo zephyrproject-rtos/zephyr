@@ -129,6 +129,8 @@ void helper_pdu_verify_cte_req(const char *file, uint32_t line, struct pdu_data 
 void helper_pdu_verify_cte_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_node_verify_cte_rsp(const char *file, uint32_t line, struct node_rx_pdu *rx,
 				void *param);
+void helper_pdu_ntf_verify_cte_rsp(const char *file, uint32_t line, struct pdu_data *pdu,
+				   void *param);
 
 enum helper_pdu_opcode {
 	LL_VERSION_IND,

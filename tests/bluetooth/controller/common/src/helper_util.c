@@ -137,8 +137,7 @@ helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
 	[LL_LENGTH_REQ] = NULL,
 	[LL_LENGTH_RSP] = NULL,
 	[LL_CTE_REQ] = NULL,
-	/* TODO (ppryga): Add verification for RSP notification */
-	[LL_CTE_RSP] = NULL,
+	[LL_CTE_RSP] = helper_pdu_ntf_verify_cte_rsp,
 };
 
 helper_node_encode_func_t *const helper_node_encode[] = {
