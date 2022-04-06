@@ -1638,6 +1638,7 @@ static int context_sendto(struct net_context *context,
 
 	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
 	if (!pkt) {
+		NET_ERR("Failed to allocate net_pkt");
 		return -ENOBUFS;
 	}
 
