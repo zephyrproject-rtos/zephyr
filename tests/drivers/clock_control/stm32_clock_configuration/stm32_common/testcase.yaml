@@ -115,3 +115,6 @@ tests:
   drivers.stm32_clock_configuration.common.f2_f4_f7.sysclksrc_pll_64_hse_8:
     extra_args: DTC_OVERLAY_FILE="boards/clear_f2_f4_f7_clocks.overlay;boards/f2_f4_f7_pll_64_hse_8.overlay"
     platform_allow: nucleo_f207zg nucleo_f429zi nucleo_f446re nucleo_f746zg
+  drivers.stm32_clock_configuration.common.f2_f4_f7.sysclksrc_pll_100_hsi_16_ahb2:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_f2_f4_f7_clocks.overlay;boards/f2_f4_f7_pll_100_hsi_16_ahb_2.overlay"
+    platform_allow: nucleo_f207zg nucleo_f429zi nucleo_f446re nucleo_f746zg
