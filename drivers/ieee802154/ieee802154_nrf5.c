@@ -1005,7 +1005,9 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 	if ((id == DRX_SLOT_PH) || (id == DRX_SLOT_RX)) {
 		__ASSERT_NO_MSG(nrf5_data.event_handler);
 		nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
-		return;
+		if (error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
+			return;
+		}
 	}
 #else
 	ARG_UNUSED(id);
