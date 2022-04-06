@@ -536,8 +536,8 @@ static int esp_recv(struct net_context *context,
 	struct esp_socket *sock = context->offload_context;
 	int ret;
 
-	LOG_DBG("link_id %d, timeout %d, cb 0x%x, data 0x%x", sock->link_id,
-		timeout, (int)cb, (int)user_data);
+	LOG_DBG("link_id %d, timeout %d, cb %p, data %p",
+		sock->link_id, timeout, cb, user_data);
 
 	k_mutex_lock(&sock->lock, K_FOREVER);
 	sock->recv_cb = cb;
