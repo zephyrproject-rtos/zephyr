@@ -11,6 +11,9 @@
 
 LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 
+/* Maximum acceptable deviation in sample point location (permille) */
+#define SAMPLE_POINT_MARGIN 50
+
 /* CAN sync segment is always one time quantum */
 #define CAN_SYNC_SEG 1
 
@@ -180,6 +183,30 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 	return core_clock % (ts * timing->prescaler);
 }
 
+/**
+ * @brief Get the sample point location for a given bitrate
+ *
+ * @param  bitrate The bitrate in bits/second.
+ * @return The sample point in permille.
+ */
+uint16_t sample_point_for_bitrate(uint32_t bitrate)
+{
+	uint16_t sample_pnt;
+
+	if (bitrate > 800000) {
+		/* 75.0% */
+		sample_pnt = 750;
+	} else if (bitrate > 500000) {
+		/* 80.0% */
+		sample_pnt = 800;
+	} else {
+		/* 87.5% */
+		sample_pnt = 875;
+	}
+
+	return sample_pnt;
+}
+
 int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data)
 {
 	struct can_timing timing;
@@ -187,6 +214,7 @@ int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate
 	struct can_timing timing_data;
 #endif /* CONFIG_CAN_FD_MODE */
 	uint32_t max_bitrate;
+	uint16_t sample_pnt;
 	int ret;
 
 	ret = can_get_max_bitrate(dev, &max_bitrate);
@@ -201,8 +229,13 @@ int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate
 		return -ENOTSUP;
 	}
 
-	ret = can_calc_timing(dev, &timing, bitrate, 875);
+	sample_pnt = sample_point_for_bitrate(bitrate);
+	ret = can_calc_timing(dev, &timing, bitrate, sample_pnt);
 	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	if (ret > SAMPLE_POINT_MARGIN) {
 		return -EINVAL;
 	}
 
@@ -213,8 +246,13 @@ int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate
 		return -ENOTSUP;
 	}
 
-	ret = can_calc_timing_data(dev, &timing_data, bitrate_data, 875);
+	sample_pnt = sample_point_for_bitrate(bitrate_data);
+	ret = can_calc_timing_data(dev, &timing_data, bitrate_data, sample_pnt);
 	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	if (ret > SAMPLE_POINT_MARGIN) {
 		return -EINVAL;
 	}
 
