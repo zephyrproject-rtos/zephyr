@@ -254,11 +254,6 @@ void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask re
 	}
 }
 
-void llcp_tx_flush(struct ll_conn *conn)
-{
-	/* TODO(thoh): do something here to flush the TX Q */
-}
-
 /*
  * LLCP Procedure Creation
  */

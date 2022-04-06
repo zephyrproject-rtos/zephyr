@@ -350,7 +350,6 @@ void llcp_proc_ctx_release(struct proc_ctx *ctx);
 void llcp_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
 void llcp_tx_pause_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask pause_mask);
 void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask resume_mask);
-void llcp_tx_flush(struct ll_conn *conn);
 
 /*
  * LLCP Procedure Response Timeout
