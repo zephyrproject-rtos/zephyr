@@ -254,6 +254,8 @@ struct bt_l2cap_br_fixed_chan {
 				.accept = _accept,		\
 			}
 
+#define BR_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_br_chan, chan)
+
 /* Notify L2CAP channels of a new connection */
 void bt_l2cap_connected(struct bt_conn *conn);
 
