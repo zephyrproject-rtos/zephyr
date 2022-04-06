@@ -416,6 +416,9 @@ int stm32_clock_control_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
+	/* Current hclk value */
+	old_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(get_startup_frequency(), LL_RCC_GetAHBPrescaler());
+
 	/* Set up indiviual enabled clocks */
 	set_up_fixed_clock_sources();
 
@@ -427,9 +430,6 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Set voltage regulator to comply with targeted system frequency */
 	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
-
-	/* Current hclk value */
-	old_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(get_startup_frequency(), LL_RCC_GetAHBPrescaler());
 
 	/* Set flash latency */
 	/* If freq increases, set flash latency before any clock setting */
