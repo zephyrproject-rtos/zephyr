@@ -595,15 +595,8 @@ do {                                                                    \
  * @param x Nonzero unsigned long value
  * @return X rounded up to the next power of two
  */
-#ifdef CONFIG_64BIT
-#define Z_POW2_CEIL(x) ((1UL << (63U - __builtin_clzl(x))) < x ?  \
-		1UL << (63U - __builtin_clzl(x) + 1U) : \
-		1UL << (63U - __builtin_clzl(x)))
-#else
-#define Z_POW2_CEIL(x) ((1UL << (31U - __builtin_clz(x))) < x ?  \
-		1UL << (31U - __builtin_clz(x) + 1U) : \
-		1UL << (31U - __builtin_clz(x)))
-#endif
+#define Z_POW2_CEIL(x) \
+	((x) <= 2UL ? (x) : (1UL << (8 * sizeof(long) - __builtin_clzl((x) - 1))))
 
 /**
  * @brief Check whether or not a value is a power of 2

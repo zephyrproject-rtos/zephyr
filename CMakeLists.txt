@@ -381,6 +381,9 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
   if(NOT ${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xcc")
     zephyr_cc_option(-fno-defer-pop)
   endif()
+else()
+  # Clang produces false positive vla warnings
+  zephyr_cc_option(-Wno-vla)
 endif()
 
 zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)

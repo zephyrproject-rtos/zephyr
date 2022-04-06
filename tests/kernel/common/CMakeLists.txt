@@ -22,7 +22,8 @@ target_sources(app PRIVATE
 	src/main.c
 	src/timeout_order.c
 	src/multilib.c
-  src/errno.c
-  src/boot_delay.c
-  src/irq_offload.c
+	src/errno.c
+	src/boot_delay.c
+	src/irq_offload.c
+	src/pow2.c
   )
