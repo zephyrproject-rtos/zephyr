@@ -7,6 +7,24 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PWM_PWM_H_
 
 /**
+ * @name PWM period set helpers
+ * The period cell in the PWM specifier needs to be provided in nanoseconds.
+ * However, in some applications it is more convenient to use another scale.
+ * @{
+ */
+
+/** Specify PWM period in nanoseconds */
+#define PWM_NSEC(x)	(x)
+/** Specify PWM period in microseconds */
+#define PWM_USEC(x)	(PWM_NSEC(x) * 1000UL)
+/** Specify PWM period in milliseconds */
+#define PWM_MSEC(x)	(PWM_USEC(x) * 1000UL)
+/** Specify PWM period in seconds */
+#define PWM_SEC(x)	(PWM_MSEC(x) * 1000UL)
+
+/** @} */
+
+/**
  * @name PWM polarity flags
  * The `PWM_POLARITY_*` flags are used with pwm_pin_set_cycles(),
  * pwm_pin_set_usec(), pwm_pin_set_nsec() or pwm_pin_configure_capture() to
