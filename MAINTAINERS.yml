@@ -167,6 +167,7 @@ Bluetooth:
     maintainers:
         - jhedberg
     collaborators:
+        - jori-nordic
         - alwa-nordic
         - Vudentz
         - Thalley
