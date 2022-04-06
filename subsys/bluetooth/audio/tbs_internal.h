@@ -281,3 +281,61 @@ struct bt_tbs_in_uri {
 	uint8_t call_index;
 	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 } __packed;
+
+#if defined(CONFIG_BT_TBS_CLIENT)
+struct bt_tbs_instance {
+	struct bt_tbs_client_call_state calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
+
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint16_t provider_name_handle;
+	uint16_t bearer_uci_handle;
+	uint16_t technology_handle;
+	uint16_t uri_list_handle;
+	uint16_t signal_strength_handle;
+	uint16_t signal_interval_handle;
+	uint16_t current_calls_handle;
+	uint16_t ccid_handle;
+	uint16_t status_flags_handle;
+	uint16_t in_uri_handle;
+	uint16_t call_state_handle;
+	uint16_t call_cp_handle;
+	uint16_t optional_opcodes_handle;
+	uint16_t termination_reason_handle;
+	uint16_t friendly_name_handle;
+	uint16_t in_call_handle;
+
+	bool busy;
+	uint8_t subscribe_cnt;
+	uint8_t index;
+	bool gtbs;
+	uint8_t ccid;
+
+	struct bt_gatt_subscribe_params name_sub_params;
+	struct bt_gatt_discover_params name_sub_disc_params;
+	struct bt_gatt_subscribe_params technology_sub_params;
+	struct bt_gatt_discover_params technology_sub_disc_params;
+	struct bt_gatt_subscribe_params signal_strength_sub_params;
+	struct bt_gatt_discover_params signal_strength_sub_disc_params;
+	struct bt_gatt_subscribe_params current_calls_sub_params;
+	struct bt_gatt_discover_params current_calls_sub_disc_params;
+	struct bt_gatt_subscribe_params in_target_uri_sub_params;
+	struct bt_gatt_discover_params in_target_uri_sub_disc_params;
+	struct bt_gatt_subscribe_params status_flags_sub_params;
+	struct bt_gatt_discover_params status_sub_disc_params;
+	struct bt_gatt_subscribe_params call_state_sub_params;
+	struct bt_gatt_discover_params call_state_sub_disc_params;
+	struct bt_gatt_subscribe_params call_cp_sub_params;
+	struct bt_gatt_discover_params call_cp_sub_disc_params;
+	struct bt_gatt_subscribe_params termination_sub_params;
+	struct bt_gatt_discover_params termination_sub_disc_params;
+	struct bt_gatt_subscribe_params incoming_call_sub_params;
+	struct bt_gatt_discover_params incoming_call_sub_disc_params;
+	struct bt_gatt_subscribe_params friendly_name_sub_params;
+	struct bt_gatt_discover_params friendly_name_sub_disc_params;
+
+	struct bt_gatt_read_params read_params;
+	uint8_t read_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
+	struct net_buf_simple net_buf;
+};
+#endif /* CONFIG_BT_TBS_CLIENT */
