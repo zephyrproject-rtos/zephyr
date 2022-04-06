@@ -845,7 +845,14 @@ static inline int z_impl_can_set_mode(const struct device *dev, enum can_mode mo
 /**
  * @brief Set the bitrate of the CAN controller
  *
- * The sample point is set to the CiA DS 301 recommended value of 87.5%.
+ * CAN in Automation (CiA) 301 v4.2.0 recommends a sample point location of
+ * 87.5% percent for all bitrates. However, some CAN controllers have
+ * difficulties meeting this for higher bitrates.
+ *
+ * This function defaults to using a sample point of 75.0% for bitrates over 800
+ * kbit/s, 80.0% for bitrates over 500 kbit/s, and 87.5% for all other
+ * bitrates. This is in line with the sample point locations used by the Linux
+ * kernel.
  *
  * @note The parameter ``bitrate_data`` is only relevant for CAN-FD. If the
  * controller does not support CAN-FD or if @kconfig{CONFIG_CAN_FD_MODE} is not
@@ -857,7 +864,7 @@ static inline int z_impl_can_set_mode(const struct device *dev, enum can_mode mo
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP bitrate not supported by CAN controller/transceiver combination
- * @retval -EINVAL bitrate cannot be met.
+ * @retval -EINVAL bitrate/sample point cannot be met.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
 int can_set_bitrate(const struct device *dev, uint32_t bitrate, uint32_t bitrate_data);
