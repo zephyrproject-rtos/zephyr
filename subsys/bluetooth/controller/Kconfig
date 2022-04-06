@@ -225,7 +225,7 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	  Read Buffer Size V2 command response.
 
 config BT_CTLR_ISOAL_SOURCES
-	int "Number of Isochronous Adaptation Layer sinks"
+	int "Number of Isochronous Adaptation Layer sources"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 1 64
 	default 1
