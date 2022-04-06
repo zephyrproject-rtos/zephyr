@@ -353,30 +353,30 @@ static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state
 	shell_print(ctx_shell, "Media State: %d", state);
 }
 
-static void mcc_send_cmd_cb(struct bt_conn *conn, int err, struct mpl_cmd cmd)
+static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
 {
 	if (err) {
 		shell_error(ctx_shell,
 			    "Command send failed (%d) - opcode: %d, param: %d",
-			    err, cmd.opcode, cmd.param);
+			    err, cmd->opcode, cmd->param);
 		return;
 	}
 
-	shell_print(ctx_shell, "Command opcode: %d, param: %d", cmd.opcode, cmd.param);
+	shell_print(ctx_shell, "Command opcode: %d, param: %d", cmd->opcode, cmd->param);
 }
 
 static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
-			   struct mpl_cmd_ntf ntf)
+			   const struct mpl_cmd_ntf *ntf)
 {
 	if (err) {
 		shell_error(ctx_shell,
 			    "Command notification error (%d) - opcode: %d, result: %d",
-			    err, ntf.requested_opcode, ntf.result_code);
+			    err, ntf->requested_opcode, ntf->result_code);
 		return;
 	}
 
 	shell_print(ctx_shell, "Command opcode: %d, result: %d",
-		    ntf.requested_opcode, ntf.result_code);
+		    ntf->requested_opcode, ntf->result_code);
 }
 
 static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
@@ -393,7 +393,7 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
 
 #ifdef CONFIG_BT_MCC_OTS
 static void mcc_send_search_cb(struct bt_conn *conn, int err,
-			       struct mpl_search search)
+			       const struct mpl_search *search)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -948,7 +948,7 @@ int cmd_mcc_set_cp(const struct shell *sh, size_t argc, char *argv[])
 		cmd.param = 0;
 	}
 
-	result = bt_mcc_send_cmd(default_conn, cmd);
+	result = bt_mcc_send_cmd(default_conn, &cmd);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -977,7 +977,7 @@ int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc, char *argv[])
 	memcpy(search.search, argv[1], search.len);
 	BT_DBG("Search string: %s", log_strdup(argv[1]));
 
-	result = bt_mcc_send_search(default_conn, search);
+	result = bt_mcc_send_search(default_conn, &search);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -1075,7 +1075,7 @@ int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
 	shell_print(sh, "Search string: ");
 	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
 
-	result = bt_mcc_send_search(default_conn, search);
+	result = bt_mcc_send_search(default_conn, &search);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -1098,7 +1098,7 @@ int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
 	shell_print(sh, "Search string: ");
 	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
 
-	result = bt_mcc_send_search(default_conn, search);
+	result = bt_mcc_send_search(default_conn, &search);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -1123,7 +1123,7 @@ int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
 	shell_print(sh, "Search string: ");
 	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
 
-	result = bt_mcc_send_search(default_conn, search);
+	result = bt_mcc_send_search(default_conn, &search);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
