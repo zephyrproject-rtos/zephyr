@@ -267,6 +267,7 @@ function renderKconfigEntry(entry) {
     renderKconfigPropList(props, 'Ranges', entry.ranges, false);
     renderKconfigPropList(props, 'Choices', entry.choices, false);
     renderKconfigPropLiteral(props, 'Location', `${entry.filename}:${entry.linenr}`);
+    renderKconfigPropLiteral(props, 'Menu path', entry.menupath);
 
     return container;
 }
