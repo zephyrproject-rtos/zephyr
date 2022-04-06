@@ -509,6 +509,8 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 
 	link_id = data->match_buf[0] - '0';
 
+	LOG_DBG("Link %d closed", link_id);
+
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
 	sock = esp_socket_ref_from_link_id(dev, link_id);
 	if (!sock) {
