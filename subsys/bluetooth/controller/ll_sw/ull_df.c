@@ -1213,11 +1213,7 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 		 * whether required features are enabled.
 		 */
 		if (conn->llcp.fex.valid &&
-		    (!(conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)) ||
-		     ((requested_cte_type == BT_HCI_LE_AOD_CTE_1US ||
-		       requested_cte_type == BT_HCI_LE_AOD_CTE_2US) &&
-		      !(conn->llcp.fex.features_peer &
-			BIT64(BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD))))) {
+		    (!(conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)))) {
 			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		}
 
