@@ -504,6 +504,7 @@ void llcp_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /*
  * Connection Update Procedure Helper
  */
@@ -592,6 +593,7 @@ void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cu.offset4 = sys_le16_to_cpu(p->offset4);
 	ctx->data.cu.offset5 = sys_le16_to_cpu(p->offset5);
 }
+#endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
 
 void llcp_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
