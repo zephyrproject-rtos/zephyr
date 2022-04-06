@@ -2614,35 +2614,36 @@ static void parse_search(struct mpl_search search)
 	bool search_failed = false;
 
 	if (search.len > SEARCH_LEN_MAX) {
-		BT_WARN("Search too long (%d) - truncating", search.len);
-		search.len = SEARCH_LEN_MAX;
-	}
-	BT_DBG("Parsing %d octets search", search.len);
+		BT_WARN("Search too long (%d) - aborting", search.len);
+		search_failed = true;
+	} else {
+		BT_DBG("Parsing %d octets search", search.len);
 
-	while (search.len - index > 0) {
-		sci.len = (uint8_t)search.search[index++];
-		if (sci.len < SEARCH_SCI_LEN_MIN) {
-			BT_WARN("Invalid length field - too small");
-			search_failed = true;
-			break;
-		}
-		if (sci.len > (search.len - index)) {
-			BT_WARN("Incomplete search control item");
-			search_failed = true;
-			break;
-		}
-		sci.type = (uint8_t)search.search[index++];
-		if (sci.type <  BT_MCS_SEARCH_TYPE_TRACK_NAME ||
-		    sci.type > BT_MCS_SEARCH_TYPE_ONLY_GROUPS) {
-			search_failed = true;
-			break;
-		}
-		memcpy(&sci.param, &search.search[index], sci.len - 1);
-		index += sci.len - 1;
+		while (search.len - index > 0) {
+			sci.len = (uint8_t)search.search[index++];
+			if (sci.len < SEARCH_SCI_LEN_MIN) {
+				BT_WARN("Invalid length field - too small");
+				search_failed = true;
+				break;
+			}
+			if (sci.len > (search.len - index)) {
+				BT_WARN("Incomplete search control item");
+				search_failed = true;
+				break;
+			}
+			sci.type = (uint8_t)search.search[index++];
+			if (sci.type <  BT_MCS_SEARCH_TYPE_TRACK_NAME ||
+			    sci.type > BT_MCS_SEARCH_TYPE_ONLY_GROUPS) {
+				search_failed = true;
+				break;
+			}
+			memcpy(&sci.param, &search.search[index], sci.len - 1);
+			index += sci.len - 1;
 
-		BT_DBG("SCI # %d: type: %d", sci_num, sci.type);
-		BT_HEXDUMP_DBG(sci.param, sci.len-1, "param:");
-		sci_num++;
+			BT_DBG("SCI # %d: type: %d", sci_num, sci.type);
+			BT_HEXDUMP_DBG(sci.param, sci.len-1, "param:");
+			sci_num++;
+		}
 	}
 
 	/* TODO: Add real search functionality. */
