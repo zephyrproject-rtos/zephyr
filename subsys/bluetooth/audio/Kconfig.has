@@ -7,6 +7,8 @@
 menuconfig BT_HAS
 	bool "Hearing Access Service support [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	depends on BT_SMP_SC_PAIR_ONLY
+	depends on BT_SMP_MIN_ENC_KEY_SIZE = 16
 	help
 	  This option enables support for Hearing Access Service.
 
