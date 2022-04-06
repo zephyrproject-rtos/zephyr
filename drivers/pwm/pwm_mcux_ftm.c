@@ -71,9 +71,8 @@ static int mcux_ftm_pin_set(const struct device *dev, uint32_t pwm,
 #endif /* CONFIG_PWM_CAPTURE */
 
 	if (period_cycles == 0U) {
-		LOG_ERR("Invalid combination: period_cycles=%d, "
-			    "pulse_cycles=%d", period_cycles, pulse_cycles);
-		return -EINVAL;
+		LOG_ERR("Channel can not be set to inactive level");
+		return -ENOTSUP;
 	}
 
 	if (pwm >= config->channel_count) {

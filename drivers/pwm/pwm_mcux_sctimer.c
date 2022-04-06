@@ -49,9 +49,8 @@ static int mcux_sctimer_pwm_pin_set(const struct device *dev, uint32_t pwm,
 	}
 
 	if (period_cycles == 0) {
-		LOG_ERR("Invalid combination: period_cycles=%u, "
-			"pulse_cycles=%u", period_cycles, pulse_cycles);
-		return -EINVAL;
+		LOG_ERR("Channel can not be set to inactive level");
+		return -ENOTSUP;
 	}
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0) {
