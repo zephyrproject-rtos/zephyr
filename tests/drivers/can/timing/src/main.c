@@ -19,7 +19,7 @@
 /**
  * @brief Allowed sample point calculation margin in permille.
  */
-#define SAMPLE_POINT_MARGIN 100
+#define SAMPLE_POINT_MARGIN 50
 
 /**
  * @brief Defines a set of CAN timing test values
