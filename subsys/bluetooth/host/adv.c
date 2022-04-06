@@ -1368,12 +1368,12 @@ int bt_le_adv_stop(void)
 	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
 	int err;
 
-	(void)bt_le_lim_adv_cancel_timeout(adv);
-
 	if (!adv) {
 		BT_ERR("No valid legacy adv");
 		return 0;
 	}
+
+	(void)bt_le_lim_adv_cancel_timeout(adv);
 
 	/* Make sure advertising is not re-enabled later even if it's not
 	 * currently enabled (i.e. BT_DEV_ADVERTISING is not set).
