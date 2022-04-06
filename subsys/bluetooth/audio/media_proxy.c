@@ -522,30 +522,30 @@ static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state
 	}
 }
 
-static void mcc_send_cmd_cb(struct bt_conn *conn, int err, struct mpl_cmd cmd)
+static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
 {
 	if (err) {
 		BT_ERR("Command send failed (%d) - opcode: %d, param: %d",
-		       err, cmd.opcode, cmd.param);
+		       err, cmd->opcode, cmd->param);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command_send) {
-		mprx.ctrlr.cbs->command_send(&mprx.remote_player, err, cmd);
+		mprx.ctrlr.cbs->command_send(&mprx.remote_player, err, *cmd);
 	} else {
 		BT_DBG("No callback");
 	}
 }
 
 static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
-			   struct mpl_cmd_ntf ntf)
+			   const struct mpl_cmd_ntf *ntf)
 {
 	if (err) {
 		BT_ERR("Command notification error (%d) - command opcode: %d, result: %d",
-		       err, ntf.requested_opcode, ntf.result_code);
+		       err, ntf->requested_opcode, ntf->result_code);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command_recv) {
-		mprx.ctrlr.cbs->command_recv(&mprx.remote_player, err, ntf);
+		mprx.ctrlr.cbs->command_recv(&mprx.remote_player, err, *ntf);
 	} else {
 		BT_DBG("No callback");
 	}
@@ -565,14 +565,14 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err, uint32_
 }
 
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
-static void mcc_send_search_cb(struct bt_conn *conn, int err, struct mpl_search search)
+static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct mpl_search *search)
 {
 	if (err) {
 		BT_ERR("Search send failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_send) {
-		mprx.ctrlr.cbs->search_send(&mprx.remote_player, err, search);
+		mprx.ctrlr.cbs->search_send(&mprx.remote_player, err, *search);
 	} else {
 		BT_DBG("No callback");
 	}
@@ -1551,7 +1551,7 @@ int media_proxy_ctrl_send_command(struct media_player *player, struct mpl_cmd cm
 
 #if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL)
 	if (mprx.remote_player.registered && player == &mprx.remote_player) {
-		return bt_mcc_send_cmd(mprx.remote_player.conn, cmd);
+		return bt_mcc_send_cmd(mprx.remote_player.conn, &cmd);
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
@@ -1622,7 +1622,7 @@ int media_proxy_ctrl_send_search(struct media_player *player, struct mpl_search 
 
 #if defined(CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS)
 	if (mprx.remote_player.registered && player == &mprx.remote_player) {
-		return bt_mcc_send_search(mprx.remote_player.conn, search);
+		return bt_mcc_send_search(mprx.remote_player.conn, &search);
 	}
 #endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS */
 

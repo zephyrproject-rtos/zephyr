@@ -789,7 +789,7 @@ static void mcs_write_cp_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (mcc_cb && mcc_cb->send_cmd) {
-		mcc_cb->send_cmd(conn, cb_err, cmd);
+		mcc_cb->send_cmd(conn, cb_err, &cmd);
 	}
 }
 
@@ -843,7 +843,7 @@ static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (mcc_cb && mcc_cb->send_search) {
-		mcc_cb->send_search(conn, cb_err, search);
+		mcc_cb->send_search(conn, cb_err, &search);
 	}
 }
 
@@ -1006,7 +1006,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 			}
 
 			if (mcc_cb && mcc_cb->cmd_ntf) {
-				mcc_cb->cmd_ntf(conn, cb_err, ntf);
+				mcc_cb->cmd_ntf(conn, cb_err, &ntf);
 			}
 
 		} else if (handle == cur_mcs_inst->opcodes_supported_handle) {
@@ -2142,10 +2142,10 @@ int bt_mcc_read_media_state(struct bt_conn *conn)
 	return err;
 }
 
-int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd cmd)
+int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd)
 {
 	int err;
-	int length = sizeof(cmd.opcode);
+	int length = sizeof(cmd->opcode);
 
 	CHECKIF(!conn) {
 		return -EINVAL;
@@ -2158,11 +2158,11 @@ int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd cmd)
 		return -EBUSY;
 	}
 
-	memcpy(cur_mcs_inst->write_buf, &cmd.opcode, length);
-	if (cmd.use_param) {
-		length += sizeof(cmd.param);
-		memcpy(&cur_mcs_inst->write_buf[sizeof(cmd.opcode)], &cmd.param,
-		       sizeof(cmd.param));
+	memcpy(cur_mcs_inst->write_buf, &cmd->opcode, length);
+	if (cmd->use_param) {
+		length += sizeof(cmd->param);
+		memcpy(&cur_mcs_inst->write_buf[sizeof(cmd->opcode)], &cmd->param,
+		       sizeof(cmd->param));
 	}
 
 	cur_mcs_inst->write_params.offset = 0;
@@ -2171,7 +2171,7 @@ int bt_mcc_send_cmd(struct bt_conn *conn, struct mpl_cmd cmd)
 	cur_mcs_inst->write_params.handle = cur_mcs_inst->cp_handle;
 	cur_mcs_inst->write_params.func = mcs_write_cp_cb;
 
-	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, sizeof(cmd),
+	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, sizeof(*cmd),
 		       "Command sent");
 
 	err = bt_gatt_write(conn, &cur_mcs_inst->write_params);
@@ -2209,7 +2209,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search search)
+int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search)
 {
 	int err;
 
@@ -2224,15 +2224,15 @@ int bt_mcc_send_search(struct bt_conn *conn, struct mpl_search search)
 		return -EBUSY;
 	}
 
-	memcpy(cur_mcs_inst->write_buf, &search.search, search.len);
+	memcpy(cur_mcs_inst->write_buf, &search->search, search->len);
 
 	cur_mcs_inst->write_params.offset = 0;
 	cur_mcs_inst->write_params.data = cur_mcs_inst->write_buf;
-	cur_mcs_inst->write_params.length = search.len;
+	cur_mcs_inst->write_params.length = search->len;
 	cur_mcs_inst->write_params.handle = cur_mcs_inst->scp_handle;
 	cur_mcs_inst->write_params.func = mcs_write_scp_cb;
 
-	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, search.len,
+	BT_HEXDUMP_DBG(cur_mcs_inst->write_params.data, search->len,
 		       "Search sent");
 
 	err = bt_gatt_write(conn, &cur_mcs_inst->write_params);

@@ -350,31 +350,31 @@ static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state
 	SET_FLAG(media_state_read);
 }
 
-static void mcc_send_command_cb(struct bt_conn *conn, int err, struct mpl_cmd cmd)
+static void mcc_send_command_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
 {
 	if (err) {
 		FAIL("Command send failed (%d) - opcode: %u, param: %d",
-		     err, cmd.opcode, cmd.param);
+		     err, cmd->opcode, cmd->param);
 		return;
 	}
 
 	SET_FLAG(command_sent);
 }
 
-static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, struct mpl_cmd_ntf ntf)
+static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, const struct mpl_cmd_ntf *ntf)
 {
 	if (err) {
 		FAIL("Command notification error (%d) - opcode: %u, result: %u",
-		     err, ntf.requested_opcode, ntf.result_code);
+		     err, ntf->requested_opcode, ntf->result_code);
 		return;
 	}
 
-	g_command_result = ntf.result_code;
+	g_command_result = ntf->result_code;
 	SET_FLAG(command_notified);
 }
 
 static void mcc_send_search_cb(struct bt_conn *conn, int err,
-			       struct mpl_search search)
+			       const struct mpl_search *search)
 {
 	if (err) {
 		FAIL("Search send failed (%d)", err);
@@ -647,7 +647,7 @@ static bool test_verify_media_state_wait_flags(uint8_t expected_state)
  * Will FAIL on error to send the command.
  * Will WAIT for the required flags before returning.
  */
-static void test_send_cmd_wait_flags(struct mpl_cmd cmd)
+static void test_send_cmd_wait_flags(struct mpl_cmd *cmd)
 {
 	int err;
 
@@ -661,7 +661,7 @@ static void test_send_cmd_wait_flags(struct mpl_cmd cmd)
 	err = bt_mcc_send_cmd(default_conn, cmd);
 	if (err) {
 		FAIL("Failed to send command: %d, opcode: %u",
-		     err, cmd.opcode);
+		     err, cmd->opcode);
 		return;
 	}
 
@@ -676,7 +676,7 @@ static void test_cp_play(void)
 	cmd.opcode = BT_MCS_OPC_PLAY;
 	cmd.use_param = false;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PLAY command failed\n");
@@ -695,7 +695,7 @@ static void test_cp_pause(void)
 	cmd.opcode = BT_MCS_OPC_PAUSE;
 	cmd.use_param = false;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PAUSE command failed\n");
@@ -714,7 +714,7 @@ static void test_cp_fast_rewind(void)
 	cmd.opcode = BT_MCS_OPC_FAST_REWIND;
 	cmd.use_param = false;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FAST REWIND command failed\n");
@@ -733,7 +733,7 @@ static void test_cp_fast_forward(void)
 	cmd.opcode = BT_MCS_OPC_FAST_FORWARD;
 	cmd.use_param = false;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FAST FORWARD command failed\n");
@@ -752,7 +752,7 @@ static void test_cp_stop(void)
 	cmd.opcode = BT_MCS_OPC_STOP;
 	cmd.use_param = false;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("STOP command failed\n");
@@ -789,7 +789,7 @@ static void test_cp_move_relative(void)
 	cmd.use_param = true;
 	cmd.param = 1000;  /* Position change, measured in 1/100 of a second */
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("MOVE RELATIVE command failed\n");
@@ -833,7 +833,7 @@ static void test_cp_prev_segment(void)
 	cmd.opcode = BT_MCS_OPC_PREV_SEGMENT;
 	cmd.use_param = false;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PREV SEGMENT command failed\n");
@@ -850,7 +850,7 @@ static void test_cp_next_segment(void)
 	cmd.opcode = BT_MCS_OPC_NEXT_SEGMENT;
 	cmd.use_param = false;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("NEXT SEGMENT command failed\n");
@@ -867,7 +867,7 @@ static void test_cp_first_segment(void)
 	cmd.opcode = BT_MCS_OPC_FIRST_SEGMENT;
 	cmd.use_param = false;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FIRST SEGMENT command failed\n");
@@ -884,7 +884,7 @@ static void test_cp_last_segment(void)
 	cmd.opcode = BT_MCS_OPC_LAST_SEGMENT;
 	cmd.use_param = false;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("LAST SEGMENT command failed\n");
@@ -902,7 +902,7 @@ static void test_cp_goto_segment(void)
 	cmd.use_param = true;
 	cmd.param = 2;    /* Second segment - not the first, maybe not last */
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("GOTO SEGMENT command failed\n");
@@ -949,7 +949,7 @@ static void test_cp_prev_track(void)
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PREV TRACK command failed\n");
@@ -981,7 +981,7 @@ static void test_cp_next_track_and_track_changed(void)
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("NEXT TRACK command failed\n");
@@ -1012,7 +1012,7 @@ static void test_cp_first_track(void)
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FIRST TRACK command failed\n");
@@ -1040,7 +1040,7 @@ static void test_cp_last_track(void)
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("LAST TRACK command failed\n");
@@ -1069,7 +1069,7 @@ static void test_cp_goto_track(void)
 	test_read_current_track_object_id_wait_flags();
 	object_id = g_current_track_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("GOTO TRACK command failed\n");
@@ -1123,7 +1123,7 @@ static void test_cp_prev_group(void)
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PREV GROUP command failed\n");
@@ -1152,7 +1152,7 @@ static void test_cp_next_group(void)
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("NEXT GROUP command failed\n");
@@ -1180,7 +1180,7 @@ static void test_cp_first_group(void)
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FIRST GROUP command failed\n");
@@ -1208,7 +1208,7 @@ static void test_cp_last_group(void)
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("LAST GROUP command failed\n");
@@ -1237,7 +1237,7 @@ static void test_cp_goto_group(void)
 	test_read_current_group_object_id_wait_flags();
 	object_id = g_current_group_object_id;
 
-	test_send_cmd_wait_flags(cmd);
+	test_send_cmd_wait_flags(&cmd);
 
 	if (g_command_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("GOTO GROUP command failed\n");
@@ -1306,7 +1306,7 @@ static void test_search(void)
 	UNSET_FLAG(search_notified);
 	UNSET_FLAG(search_results_object_id_read);
 
-	err = bt_mcc_send_search(default_conn, search);
+	err = bt_mcc_send_search(default_conn, &search);
 	if (err) {
 		FAIL("Failed to write to search control point\n");
 		return;
