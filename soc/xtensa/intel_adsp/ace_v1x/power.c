@@ -37,6 +37,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	if (state == PM_STATE_SOFT_OFF) {
 		uint32_t cpu = arch_proc_id();
 
+		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESTART_COMMAND;
 		DFDSPBRCP.bootctl[cpu].bctl &= ~DFDSPBRCP_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = false;
 		z_xtensa_cache_flush_inv_all();
@@ -62,6 +63,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	if (state == PM_STATE_SOFT_OFF) {
 		uint32_t cpu = arch_proc_id();
 
+		DFDSPBRCP.bootctl[cpu].wdtcs = DFDSPBRCP_WDT_RESUME;
 		/* TODO: move clock gating prevent to imr restore vector when it will be ready. */
 		DFDSPBRCP.bootctl[cpu].bctl |= DFDSPBRCP_BCTL_WAITIPCG;
 		soc_cpus_active[cpu] = true;
