@@ -2637,7 +2637,7 @@ static void parse_search(const struct mpl_search *search)
 				search_failed = true;
 				break;
 			}
-			memcpy(&sci.param, &search->search[index], sci.len - 1);
+			(void)memcpy(&sci.param, &search->search[index], sci.len - 1);
 			index += sci.len - 1;
 
 			BT_DBG("SCI # %d: type: %d", sci_num, sci.type);
