@@ -2,7 +2,6 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-DT_COMPAT_ZEPHYR_MMC_SPI_SLOT := zephyr,mmc-spi-slot
 DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
 DT_COMPAT_ZEPHYR_MMC := zephyr,sdmmc-disk
 
@@ -25,13 +24,6 @@ config SDMMC_VOLUME_NAME
 	default "SDMMC"
 	help
 	  Disk name as per file system naming guidelines.
-
-config SDMMC_OVER_SPI
-	bool "SDHC access over SPI"
-	select SPI
-	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_MMC_SPI_SLOT))
-	help
-	  File system on a SDHC card accessed over SPI.
 
 config SDMMC_SUBSYS
 	bool "SDMMC access via SD subsystem"
