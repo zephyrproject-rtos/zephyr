@@ -11,15 +11,15 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test);
 
-static void test_sysclk_freq(void)
+static void test_hclk_freq(void)
 {
-	uint32_t soc_sys_clk_freq;
+	uint32_t soc_hclk_freq;
 
-	soc_sys_clk_freq = HAL_RCC_GetSysClockFreq();
+	soc_hclk_freq = HAL_RCC_GetHCLKFreq();
 
-	zassert_equal(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_sys_clk_freq,
-			"Expected sysclockfreq: %d. Actual sysclockfreq: %d",
-			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_sys_clk_freq);
+	zassert_equal(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_hclk_freq,
+			"Expected hclk_freq: %d. Actual hclk_freq: %d",
+			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_hclk_freq);
 }
 
 static void test_sysclk_src(void)
@@ -80,7 +80,7 @@ static void test_pll_src(void)
 void test_main(void)
 {
 	ztest_test_suite(test_stm32_syclck_config,
-		ztest_unit_test(test_sysclk_freq),
+		ztest_unit_test(test_hclk_freq),
 		ztest_unit_test(test_sysclk_src),
 		ztest_unit_test(test_pll_src)
 			 );
