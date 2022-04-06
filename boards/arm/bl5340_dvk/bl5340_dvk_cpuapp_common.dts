@@ -190,11 +190,16 @@
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
 	sdhc@0 {
-		compatible = "zephyr,mmc-spi-slot";
 		reg = <0>;
+		compatible = "zephyr,sdhc-spi-slot";
 		status = "okay";
-		label = "SDHC";
+		label = "SDHC_0";
 		spi-max-frequency = <8000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+			label = "SDMMC_0";
+		};
 	};
 };
 
