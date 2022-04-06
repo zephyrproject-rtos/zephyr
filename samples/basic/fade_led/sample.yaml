@@ -5,4 +5,4 @@ tests:
     tags: drivers pwm
     depends_on: pwm
     harness: led
-    filter: dt_alias_exists("pwm-led0")
+    filter: dt_alias_exists("pwm-led0") and dt_compat_enabled("pwm-leds")
