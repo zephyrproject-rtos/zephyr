@@ -74,11 +74,6 @@ static int xlnx_axi_timer_pin_set(const struct device *dev, uint32_t pwm,
 		return -ENOTSUP;
 	}
 
-	if (pulse_cycles > period_cycles) {
-		LOG_ERR("pulse cycles must be less than or equal to period");
-		return -EINVAL;
-	}
-
 	LOG_DBG("period = 0x%08x, pulse = 0x%08x", period_cycles, pulse_cycles);
 
 	if (pulse_cycles == 0) {

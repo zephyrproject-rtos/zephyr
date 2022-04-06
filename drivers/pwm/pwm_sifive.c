@@ -171,12 +171,6 @@ static int pwm_sifive_pin_set(const struct device *dev,
 		return -EIO;
 	}
 
-	if (pulse_cycles > period_cycles) {
-		LOG_ERR("Requested pulse %d is longer than period %d\n",
-			pulse_cycles, period_cycles);
-		return -EIO;
-	}
-
 	/* Set the pwmscale field */
 	sys_set_mask(PWM_REG(config, REG_PWMCFG),
 		     SF_PWMSCALEMASK,

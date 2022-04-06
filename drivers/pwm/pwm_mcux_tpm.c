@@ -49,7 +49,7 @@ static int mcux_tpm_pin_set(const struct device *dev, uint32_t pwm,
 	struct mcux_tpm_data *data = dev->data;
 	uint8_t duty_cycle;
 
-	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
+	if (period_cycles == 0U) {
 		LOG_ERR("Invalid combination: period_cycles=%d, "
 			    "pulse_cycles=%d", period_cycles, pulse_cycles);
 		return -EINVAL;

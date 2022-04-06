@@ -235,11 +235,6 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		return -EINVAL;
 	}
 
-	if (pulse_cycles > period_cycles) {
-		LOG_ERR("Invalid combination of pulse and period cycles");
-		return -EINVAL;
-	}
-
 	/*
 	 * Non 32-bit timers count from 0 up to the value in the ARR register
 	 * (16-bit). Thus period_cycles cannot be greater than UINT16_MAX + 1.
