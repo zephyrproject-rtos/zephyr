@@ -8,5 +8,7 @@
 #define PMP_H_
 
 void z_riscv_pmp_init(void);
+void z_riscv_pmp_stackguard_prepare(struct k_thread *thread);
+void z_riscv_pmp_stackguard_enable(struct k_thread *thread);
 
 #endif /* PMP_H_ */
