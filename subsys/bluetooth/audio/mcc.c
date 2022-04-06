@@ -200,7 +200,7 @@ static uint8_t mcc_read_player_name_cb(struct bt_conn *conn, uint8_t err,
 			length = sizeof(name) - 1;
 		}
 
-		memcpy(&name, data, length);
+		(void)memcpy(&name, data, length);
 		name[length] = '\0';
 		BT_DBG("Player name: %s", log_strdup(name));
 	}
@@ -259,7 +259,7 @@ static uint8_t mcc_read_icon_url_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	} else {
 		BT_HEXDUMP_DBG(data, length, "Icon URL");
-		memcpy(&url, data, length);
+		(void)memcpy(&url, data, length);
 		url[length] = '\0';
 		BT_DBG("Icon URL: %s", log_strdup(url));
 	}
@@ -289,7 +289,7 @@ static uint8_t mcc_read_track_title_cb(struct bt_conn *conn, uint8_t err,
 			/* If the description is too long; clip it. */
 			length = sizeof(title) - 1;
 		}
-		memcpy(&title, data, length);
+		(void)memcpy(&title, data, length);
 		title[length] = '\0';
 		BT_DBG("Track title: %s", log_strdup(title));
 	}
@@ -778,9 +778,9 @@ static void mcs_write_cp_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("length: %d, data: %p", params->length, params->data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
-		memcpy(&cmd.opcode, params->data, sizeof(cmd.opcode));
+		(void)memcpy(&cmd.opcode, params->data, sizeof(cmd.opcode));
 		if (params->length == sizeof(cmd.opcode) + sizeof(cmd.param)) {
-			memcpy(&cmd.param,
+			(void)memcpy(&cmd.param,
 			       (char *)(params->data) + sizeof(cmd.opcode),
 			       sizeof(cmd.param));
 			cmd.use_param = true;
@@ -838,7 +838,7 @@ static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		search.len = params->length;
-		memcpy(search.search, params->data, params->length);
+		(void)memcpy(search.search, params->data, params->length);
 		BT_DBG("Length of returned value in callback: %d", search.len);
 	}
 
@@ -1485,7 +1485,7 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 	subscribe_all = subscribe;
 	memset(&discover_params, 0, sizeof(discover_params));
 	memset(&mcs_inst, 0, sizeof(mcs_inst));
-	memcpy(&uuid, BT_UUID_GMCS, sizeof(uuid));
+	(void)memcpy(&uuid, BT_UUID_GMCS, sizeof(uuid));
 
 	discover_params.func = discover_primary_func;
 	discover_params.uuid = &uuid.uuid;
@@ -1678,7 +1678,7 @@ int bt_mcc_set_track_position(struct bt_conn *conn, int32_t pos)
 		return -EBUSY;
 	}
 
-	memcpy(cur_mcs_inst->write_buf, &pos, sizeof(pos));
+	(void)memcpy(cur_mcs_inst->write_buf, &pos, sizeof(pos));
 
 	cur_mcs_inst->write_params.offset = 0;
 	cur_mcs_inst->write_params.data = cur_mcs_inst->write_buf;
@@ -1738,7 +1738,7 @@ int bt_mcc_set_playback_speed(struct bt_conn *conn, int8_t speed)
 		return -EBUSY;
 	}
 
-	memcpy(cur_mcs_inst->write_buf, &speed, sizeof(speed));
+	(void)memcpy(cur_mcs_inst->write_buf, &speed, sizeof(speed));
 
 	cur_mcs_inst->write_params.offset = 0;
 	cur_mcs_inst->write_params.data = cur_mcs_inst->write_buf;
@@ -2070,7 +2070,7 @@ int bt_mcc_set_playing_order(struct bt_conn *conn, uint8_t order)
 		return -EBUSY;
 	}
 
-	memcpy(cur_mcs_inst->write_buf, &order, sizeof(order));
+	(void)memcpy(cur_mcs_inst->write_buf, &order, sizeof(order));
 
 	cur_mcs_inst->write_params.offset = 0;
 	cur_mcs_inst->write_params.data = cur_mcs_inst->write_buf;
@@ -2158,10 +2158,10 @@ int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd)
 		return -EBUSY;
 	}
 
-	memcpy(cur_mcs_inst->write_buf, &cmd->opcode, length);
+	(void)memcpy(cur_mcs_inst->write_buf, &cmd->opcode, length);
 	if (cmd->use_param) {
 		length += sizeof(cmd->param);
-		memcpy(&cur_mcs_inst->write_buf[sizeof(cmd->opcode)], &cmd->param,
+		(void)memcpy(&cur_mcs_inst->write_buf[sizeof(cmd->opcode)], &cmd->param,
 		       sizeof(cmd->param));
 	}
 
@@ -2224,7 +2224,7 @@ int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search)
 		return -EBUSY;
 	}
 
-	memcpy(cur_mcs_inst->write_buf, &search->search, search->len);
+	(void)memcpy(cur_mcs_inst->write_buf, &search->search, search->len);
 
 	cur_mcs_inst->write_params.offset = 0;
 	cur_mcs_inst->write_params.data = cur_mcs_inst->write_buf;
@@ -2394,7 +2394,7 @@ static void decode_track_segments(struct net_buf_simple *buff,
 				seg->name_len =
 					CONFIG_BT_MCC_SEGMENT_NAME_MAX - 1;
 			}
-			memcpy(seg->name, name, seg->name_len);
+			(void)memcpy(seg->name, name, seg->name_len);
 		}
 		seg->name[seg->name_len] = '\0';
 
