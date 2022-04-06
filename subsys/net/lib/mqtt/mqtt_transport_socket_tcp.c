@@ -41,7 +41,7 @@ int mqtt_client_tcp_connect(struct mqtt_client *client)
 	}
 #endif
 
-	MQTT_TRC("Created socket %d", client->transport.tcp.sock);
+	NET_DBG("Created socket %d", client->transport.tcp.sock);
 
 	size_t peer_addr_size = sizeof(struct sockaddr_in6);
 
@@ -55,7 +55,7 @@ int mqtt_client_tcp_connect(struct mqtt_client *client)
 		goto error;
 	}
 
-	MQTT_TRC("Connect completed");
+	NET_DBG("Connect completed");
 	return 0;
 
 error:
@@ -144,7 +144,7 @@ int mqtt_client_tcp_disconnect(struct mqtt_client *client)
 {
 	int ret;
 
-	MQTT_TRC("Closing socket %d", client->transport.tcp.sock);
+	NET_INFO("Closing socket %d", client->transport.tcp.sock);
 
 	ret = zsock_close(client->transport.tcp.sock);
 	if (ret < 0) {
