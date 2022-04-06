@@ -16,6 +16,11 @@
  */
 
 /**
+ * Test bitrate in bits/second.
+ */
+#define TEST_BITRATE 125000
+
+/**
  * @brief Test timeouts.
  */
 #define TEST_SEND_TIMEOUT    K_MSEC(100)
@@ -635,6 +640,17 @@ static void test_set_bitrate_too_high(void)
 }
 
 /**
+ * @brief Test setting bitrate.
+ */
+static void test_set_bitrate(void)
+{
+	int err;
+
+	err = can_set_bitrate(can_dev, TEST_BITRATE, 0);
+	zassert_equal(err, 0, "failed to set bitrate");
+}
+
+/**
  * @brief Test configuring the CAN controller for loopback mode.
  *
  * This test case must be run before sending/receiving test cases as it allows
@@ -903,6 +919,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_get_core_clock),
 			 ztest_unit_test(test_set_state_change_callback),
 			 ztest_user_unit_test(test_set_bitrate_too_high),
+			 ztest_user_unit_test(test_set_bitrate),
 			 ztest_user_unit_test(test_set_loopback),
 			 ztest_user_unit_test(test_send_and_forget),
 			 ztest_unit_test(test_add_filter),
