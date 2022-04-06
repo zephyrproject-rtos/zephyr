@@ -918,6 +918,9 @@ void test_conn_update_central_loc_collision(void)
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
 
+	/* Emulate valid feature exchange */
+	conn.llcp.fex.valid = 1;
+
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
@@ -940,8 +943,6 @@ void test_conn_update_central_loc_collision(void)
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
-
-	/**/
 
 	/* Prepare */
 	event_prepare(&conn);
