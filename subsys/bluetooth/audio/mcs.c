@@ -511,7 +511,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 		BT_DBG("Parameter: %d", command.param);
 	}
 
-	media_proxy_sctrl_send_command(command);
+	media_proxy_sctrl_send_command(&command);
 
 	return len;
 }
@@ -561,7 +561,7 @@ static ssize_t write_search_control_point(struct bt_conn *conn,
 	BT_DBG("Search length: %d", len);
 	BT_HEXDUMP_DBG(&search.search, search.len, "Search content");
 
-	media_proxy_sctrl_send_search(search);
+	media_proxy_sctrl_send_search(&search);
 
 	return len;
 }
@@ -919,11 +919,11 @@ void media_proxy_sctrl_media_state_cb(uint8_t state)
 	notify(BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
 }
 
-void media_proxy_sctrl_command_cb(struct mpl_cmd_ntf cmd_ntf)
+void media_proxy_sctrl_command_cb(const struct mpl_cmd_ntf *cmd_ntf)
 {
 	BT_DBG("Notifying control point command - opcode: %d, result: %d",
-	       cmd_ntf.requested_opcode, cmd_ntf.result_code);
-	notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
+	       cmd_ntf->requested_opcode, cmd_ntf->result_code);
+	notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, cmd_ntf, sizeof(*cmd_ntf));
 }
 
 void media_proxy_sctrl_commands_supported_cb(uint32_t opcodes)

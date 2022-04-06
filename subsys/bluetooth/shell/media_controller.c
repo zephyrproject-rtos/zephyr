@@ -293,17 +293,17 @@ static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 	/* TODO: Parse state and output state name (e.g. "Playing") */
 }
 
-static void command_send_cb(struct media_player *plr, int err, struct mpl_cmd cmd)
+static void command_send_cb(struct media_player *plr, int err, const struct mpl_cmd *cmd)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Command send failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player: %p, Command opcode sent: %u", plr, cmd.opcode);
+	shell_print(ctx_shell, "Player: %p, Command opcode sent: %u", plr, cmd->opcode);
 }
 
-static void command_recv_cb(struct media_player *plr, int err, struct mpl_cmd_ntf cmd_ntf)
+static void command_recv_cb(struct media_player *plr, int err, const struct mpl_cmd_ntf *cmd_ntf)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Command failed (%d)", plr, err);
@@ -311,7 +311,7 @@ static void command_recv_cb(struct media_player *plr, int err, struct mpl_cmd_nt
 	}
 
 	shell_print(ctx_shell, "Player: %p, Command opcode: %u, result: %u",
-		    plr, cmd_ntf.requested_opcode, cmd_ntf.result_code);
+		    plr, cmd_ntf->requested_opcode, cmd_ntf->result_code);
 }
 
 static void commands_supported_cb(struct media_player *plr, int err, uint32_t opcodes)
@@ -326,14 +326,14 @@ static void commands_supported_cb(struct media_player *plr, int err, uint32_t op
 }
 
 #ifdef CONFIG_BT_OTS
-static void search_send_cb(struct media_player *plr, int err, struct mpl_search search)
+static void search_send_cb(struct media_player *plr, int err, const struct mpl_search *search)
 {
 	if (err) {
 		shell_error(ctx_shell, "Player: %p, Search send failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player: %p, Search sent with len %u", plr, search.len);
+	shell_print(ctx_shell, "Player: %p, Search sent with len %u", plr, search->len);
 }
 
 static void search_recv_cb(struct media_player *plr, int err, uint8_t result_code)
@@ -735,7 +735,7 @@ static int cmd_media_send_command(const struct shell *sh, size_t argc, char *arg
 		cmd.param = 0;
 	}
 
-	err = media_proxy_ctrl_send_command(current_player, cmd);
+	err = media_proxy_ctrl_send_command(current_player, &cmd);
 
 	if (err) {
 		shell_error(ctx_shell, "Command send failed (%d)", err);
@@ -769,7 +769,7 @@ int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 	memcpy(search.search, argv[1], search.len);
 	BT_DBG("Search string: %s", log_strdup(argv[1]));
 
-	err = media_proxy_ctrl_send_search(current_player, search);
+	err = media_proxy_ctrl_send_search(current_player, &search);
 	if (err) {
 		shell_error(ctx_shell, "Search send failed (%d)", err);
 	}
