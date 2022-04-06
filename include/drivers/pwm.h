@@ -179,6 +179,7 @@ __subsystem struct pwm_driver_api {
  * @param flags Flags for pin configuration.
  *
  * @retval 0 If successful.
+ * @retval -EINVAL If pulse > period.
  * @retval -errno Negative errno code on failure.
  */
 __syscall int pwm_pin_set_cycles(const struct device *dev, uint32_t pwm,
@@ -192,6 +193,10 @@ static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
 {
 	const struct pwm_driver_api *api =
 		(const struct pwm_driver_api *)dev->api;
+
+	if (pulse > period) {
+		return -EINVAL;
+	}
 
 	return api->pin_set(dev, pwm, period, pulse, flags);
 }
