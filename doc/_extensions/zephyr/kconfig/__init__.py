@@ -333,6 +333,14 @@ def kconfig_build_resources(app: Sphinx) -> None:
                     for sym in sc.syms:
                         choices.append(kconfiglib.expr_str(sym, sc_fmt))
 
+                menupath = ""
+                iternode = node
+                while iternode.parent is not iternode.kconfig.top_node:
+                    iternode = iternode.parent
+                    menupath = f" > {iternode.prompt[0]}" + menupath
+
+                menupath = "(Top)" + menupath
+
                 filename = node.filename
                 for name, path in module_paths.items():
                     if node.filename.startswith(path):
@@ -356,6 +364,7 @@ def kconfig_build_resources(app: Sphinx) -> None:
                         "choices": choices,
                         "filename": filename,
                         "linenr": node.linenr,
+                        "menupath": menupath,
                     }
                 )
 
