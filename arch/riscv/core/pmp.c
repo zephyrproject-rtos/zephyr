@@ -14,6 +14,15 @@
  * PMP slot configurations are updated in memory to avoid read-modify-write
  * cycles on corresponding CSR registers. Relevant CSR registers are always
  * written in batch from their shadow copy in RAM for better efficiency.
+ *
+ * In the stackguard case we keep an m-mode copy for each thread. Each user
+ * mode threads also has a u-mode copy. This makes faster context switching
+ * as precomputed content just have to be written to actual registers with
+ * no additional processing.
+ *
+ * Thread-specific m-mode and u-mode PMP entries start from the PMP slot
+ * indicated by global_pmp_end_index. Lower slots are used by global entries
+ * which are never modified.
  */
 
 #include <kernel.h>
@@ -214,6 +223,15 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 				  pmp_addr, pmp_cfg);
 }
 
+/**
+ * @brief Abstract the last 3 arguments to set_pmp_entry() and
+ *        write_pmp_entries( for m-mode.
+ */
+#define PMP_M_MODE(thread) \
+	thread->arch.m_mode_pmpaddr_regs, \
+	thread->arch.m_mode_pmpcfg_regs, \
+	ARRAY_SIZE(thread->arch.m_mode_pmpaddr_regs)
+
 /*
  * This is used to seed thread PMP copies with global m-mode cfg entries
  * sharing the same cfg register. Locked entries aren't modifiable but
@@ -239,6 +257,17 @@ void z_riscv_pmp_init(void)
 		      (size_t)__rom_region_size,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
+#ifdef CONFIG_PMP_STACK_GUARD
+	/*
+	 * Set the stack guard for this CPU's IRQ stack by making the bottom
+	 * addresses inaccessible. This will never change so we do it here.
+	 */
+	set_pmp_entry(&index, PMP_NONE,
+		      (uintptr_t)_current_cpu->irq_stack - CONFIG_ISR_STACK_SIZE,
+		      Z_RISCV_STACK_GUARD_SIZE,
+		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+#endif
+
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 #ifdef CONFIG_SMP
@@ -256,3 +285,64 @@ void z_riscv_pmp_init(void)
 		dump_pmp_regs("initial register dump");
 	}
 }
+
+#ifdef CONFIG_PMP_STACK_GUARD
+
+/**
+ * @brief Prepare the PMP stackguard content for given thread.
+ *
+ * This is called once during new thread creation.
+ */
+void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
+{
+	unsigned int index = global_pmp_end_index;
+	uintptr_t stack_bottom = thread->stack_info.start;
+
+	/* Retrieve pmpcfg0 partial content from global entries */
+	thread->arch.m_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
+
+	/* make the bottom addresses of our stack inaccessible */
+	set_pmp_entry(&index, PMP_NONE,
+		      stack_bottom, Z_RISCV_STACK_GUARD_SIZE,
+		      PMP_M_MODE(thread));
+
+	/*
+	 * We'll be using MPRV. Make a fallback entry with everything
+	 * accessible as if no PMP entries were matched which is otherwise
+	 * the default behavior for m-mode without MPRV.
+	 */
+	set_pmp_entry(&index, PMP_R | PMP_W | PMP_X,
+		      0, 0, PMP_M_MODE(thread));
+
+	/* remember how many entries we use */
+	thread->arch.m_mode_pmp_end_index = index;
+}
+
+/**
+ * @brief Write PMP stackguard content to actual PMP registers
+ *
+ * This is called on every context switch.
+ */
+void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
+{
+	/*
+	 * Disable (non-locked) PMP entries for m-mode while we update them.
+	 * While at it, also clear MSTATUS_MPP as it must be cleared for
+	 * MSTATUS_MPRV to be effective later.
+	 */
+	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
+
+	/* Write our m-mode MPP entries */
+	write_pmp_entries(global_pmp_end_index, thread->arch.m_mode_pmp_end_index,
+			  false /* no need to clear to the end */,
+			  PMP_M_MODE(thread));
+
+	if (PMP_DEBUG_DUMP) {
+		dump_pmp_regs("m-mode register dump");
+	}
+
+	/* Activate our non-locked PMP entries in m-mode */
+	csr_set(mstatus, MSTATUS_MPRV);
+}
+
+#endif /* CONFIG_PMP_STACK_GUARD */

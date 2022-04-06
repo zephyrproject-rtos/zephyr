@@ -90,7 +90,17 @@ struct _callee_saved {
 };
 typedef struct _callee_saved _callee_saved_t;
 
+#define PMP_M_MODE_SLOTS 8	/* 8 is plenty enough for m-mode */
+
 struct _thread_arch {
+#ifdef CONFIG_PMP_STACK_GUARD
+	unsigned int m_mode_pmp_end_index;
+	ulong_t m_mode_pmpaddr_regs[PMP_M_MODE_SLOTS];
+	ulong_t m_mode_pmpcfg_regs[PMP_M_MODE_SLOTS / sizeof(ulong_t)];
+#endif
+
+	/* legacy stuff below */
+
 #ifdef CONFIG_PMP_STACK_GUARD
 	ulong_t s_pmpcfg[PMP_CFG_CSR_NUM_FOR_STACK_GUARD];
 	ulong_t s_pmpaddr[PMP_REGION_NUM_FOR_STACK_GUARD];
