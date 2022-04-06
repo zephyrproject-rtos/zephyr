@@ -8,19 +8,27 @@
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
+#include <stm32_ll_rcc.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test);
 
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+#define CALC_HCLK_FREQ __LL_RCC_CALC_HCLK1_FREQ
+#else
+#define CALC_HCLK_FREQ __LL_RCC_CALC_HCLK_FREQ
+#endif
 
-static void test_sysclk_freq(void)
+static void test_hclk_freq(void)
 {
-	uint32_t soc_sys_clk_freq;
+	uint32_t soc_hclk_freq;
 
-	soc_sys_clk_freq = HAL_RCC_GetSysClockFreq();
+	soc_hclk_freq = CALC_HCLK_FREQ(HAL_RCC_GetSysClockFreq(),
+					LL_RCC_GetAHBPrescaler());
 
-	zassert_equal(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_sys_clk_freq,
-			"Expected sysclockfreq: %d. Actual sysclockfreq: %d",
-			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_sys_clk_freq);
+	zassert_equal(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_hclk_freq,
+			"Expected hclck_freq: %d. Actual hclck_freq: %d",
+			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, soc_hclk_freq);
 }
 
 static void test_sysclk_src(void)
@@ -102,7 +110,7 @@ void test_main(void)
 {
 	printk("testing clock config on %s\n", CONFIG_BOARD);
 	ztest_test_suite(test_stm32_syclck_config,
-		ztest_unit_test(test_sysclk_freq),
+		ztest_unit_test(test_hclk_freq),
 		ztest_unit_test(test_sysclk_src),
 		ztest_unit_test(test_pll_src)
 			 );
