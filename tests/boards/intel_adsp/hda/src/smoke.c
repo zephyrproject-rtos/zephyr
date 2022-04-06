@@ -90,7 +90,7 @@ void test_hda_host_in_smoke(void)
 	cavs_hda_dbg("host_in", HDA_HOST_IN_BASE, STREAM_ID);
 
 	for (uint32_t i = 0; i < TRANSFER_COUNT; i++) {
-		cavs_hda_commit(HDA_HOST_IN_BASE, STREAM_ID, HDA_BUF_SIZE);
+		cavs_hda_host_commit(HDA_HOST_IN_BASE, STREAM_ID, HDA_BUF_SIZE);
 		printk("dsp inc_pos: "); cavs_hda_dbg("host_in", HDA_HOST_IN_BASE, STREAM_ID);
 
 		WAIT_FOR(cavs_hda_wp_rp_eq(HDA_HOST_IN_BASE, STREAM_ID), 10000, k_msleep(1));
@@ -186,7 +186,7 @@ void test_hda_host_out_smoke(void)
 		}
 		zassert_true(is_ramp, "Expected data to be a ramp");
 
-		cavs_hda_commit(HDA_HOST_OUT_BASE, STREAM_ID, HDA_BUF_SIZE);
+		cavs_hda_host_commit(HDA_HOST_OUT_BASE, STREAM_ID, HDA_BUF_SIZE);
 		printk("dsp inc pos: "); cavs_hda_dbg("host_out", HDA_HOST_OUT_BASE, STREAM_ID);
 
 	}

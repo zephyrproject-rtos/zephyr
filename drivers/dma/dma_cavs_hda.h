@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_DMA_DMA_CAVS_HDA_COMMON_H_
 #define ZEPHYR_DRIVERS_DMA_DMA_CAVS_HDA_COMMON_H_
 
-#define CAVS_HDA_MAX_CHANNELS 32
+#define CAVS_HDA_MAX_CHANNELS DT_PROP(DT_NODELABEL(hda_host_out), dma_channels)
 
 #include <drivers/dma.h>
 
@@ -30,6 +30,17 @@ int cavs_hda_dma_host_in_config(const struct device *dev,
 int cavs_hda_dma_host_out_config(const struct device *dev,
 					uint32_t channel,
 					struct dma_config *dma_cfg);
+
+int cavs_hda_dma_link_in_config(const struct device *dev,
+				       uint32_t channel,
+				struct dma_config *dma_cfg);
+
+int cavs_hda_dma_link_out_config(const struct device *dev,
+					uint32_t channel,
+					struct dma_config *dma_cfg);
+
+int cavs_hda_dma_link_reload(const struct device *dev, uint32_t channel,
+				    uint32_t src, uint32_t dst, size_t size);
 
 int cavs_hda_dma_host_reload(const struct device *dev, uint32_t channel,
 				    uint32_t src, uint32_t dst, size_t size);

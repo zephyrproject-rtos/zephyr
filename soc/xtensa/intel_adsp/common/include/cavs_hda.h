@@ -241,7 +241,7 @@ static inline uint32_t cavs_hda_unused(uint32_t base, uint32_t sid)
 }
 
 /**
- * @brief Commit a number of bytes that have been transferred
+ * @brief Commit a number of bytes that have been transferred to/from host
  *
  * Writes the length to BFPI. For host transfers LLPI and LPIB are
  * also written to with the given length.
@@ -259,13 +259,27 @@ static inline uint32_t cavs_hda_unused(uint32_t base, uint32_t sid)
  * @param sid Stream ID within the register block
  * @param len Len to increment postion by
  */
-static inline void cavs_hda_commit(uint32_t base, uint32_t sid, uint32_t len)
+static inline void cavs_hda_host_commit(uint32_t base, uint32_t sid, uint32_t len)
 {
 	*DGBFPI(base, sid) = len;
-	if (base == HDA_HOST_IN_BASE || base == HDA_HOST_OUT_BASE) {
-		*DGLLPI(base, sid) = len;
-		*DGLPIBI(base, sid) = len;
-	}
+	*DGLLPI(base, sid) = len;
+	*DGLPIBI(base, sid) = len;
+}
+
+/**
+ * @brief Commit a number of bytes that have been transferred to/from link
+ *
+ * Writes the length to BFPI.
+ *
+ * @seealso cavs_hda_host_commit
+ *
+ * @param base Base address of the IP register block
+ * @param sid Stream ID within the register block
+ * @param len Len to increment postion by
+ */
+static inline void cavs_hda_link_commit(uint32_t base, uint32_t sid, uint32_t len)
+{
+	*DGBFPI(base, sid) = len;
 }
 
 /**
@@ -287,8 +301,8 @@ static inline bool cavs_hda_buf_full(uint32_t base, uint32_t sid)
  * For HDA this does not mean that the buffer is full or empty
  * there are bit flags for those cases.
  *
- * This can let you wait on the hardware to catch up to your
- * reads or writes (ex after a cavs_hda_commit)
+ * Useful for waiting on the hardware to catch up to
+ * reads or writes (e.g. after a cavs_hda_commit)
  *
  * @param dev HDA Stream device
  * @param sid Stream ID
