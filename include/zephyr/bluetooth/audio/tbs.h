@@ -71,6 +71,9 @@
  */
 #define BT_TBS_GTBS_INDEX                               0xFF
 
+/** @brief Opaque Telephone Bearer Service instance. */
+struct bt_tbs_instance;
+
 /**
  * @brief Callback function for client originating a call.
  *
@@ -734,5 +737,16 @@ int bt_tbs_client_read_optional_opcodes(struct bt_conn *conn,
  * @param cbs Pointer to the callback structure.
  */
 void bt_tbs_client_register_cb(const struct bt_tbs_client_cb *cbs);
+
+/**
+ * @brief Look up Telephone Bearer Service instance by CCID
+ *
+ * @param conn  The connection to the TBS server.
+ * @param ccid  The CCID to lookup a service instance for.
+ *
+ * @return Pointer to a Telephone Bearer Service instance if found else NULL.
+ */
+struct bt_tbs_instance *bt_tbs_client_get_by_ccid(const struct bt_conn *conn,
+						  uint8_t ccid);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TBS_H_ */
