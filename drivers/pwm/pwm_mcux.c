@@ -52,7 +52,7 @@ static int mcux_pwm_pin_set(const struct device *dev, uint32_t pwm,
 		return -ENOTSUP;
 	}
 
-	if ((period_cycles == 0) || (pulse_cycles > period_cycles)) {
+	if (period_cycles == 0) {
 		LOG_ERR("Invalid combination: period_cycles=%u, "
 			"pulse_cycles=%u", period_cycles, pulse_cycles);
 		return -EINVAL;

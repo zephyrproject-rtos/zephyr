@@ -70,7 +70,7 @@ static int mcux_ftm_pin_set(const struct device *dev, uint32_t pwm,
 	uint32_t irqs;
 #endif /* CONFIG_PWM_CAPTURE */
 
-	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
+	if (period_cycles == 0U) {
 		LOG_ERR("Invalid combination: period_cycles=%d, "
 			    "pulse_cycles=%d", period_cycles, pulse_cycles);
 		return -EINVAL;
