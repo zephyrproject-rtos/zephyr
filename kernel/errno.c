@@ -24,7 +24,9 @@ const int _k_neg_eagain = -EAGAIN;
 
 #ifdef CONFIG_ERRNO
 
-#ifdef CONFIG_ERRNO_IN_TLS
+#if defined(CONFIG_LIBC_ERRNO)
+/* nothing needed here */
+#elif defined(CONFIG_ERRNO_IN_TLS)
 __thread int z_errno_var;
 #else
 
