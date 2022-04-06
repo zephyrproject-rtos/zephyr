@@ -593,6 +593,28 @@ static void test_get_core_clock(void)
 }
 
 /**
+ * @brief CAN state change callback.
+ */
+static void state_change_callback(const struct device *dev, enum can_state state,
+				  struct can_bus_err_cnt err_cnt, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(state);
+	ARG_UNUSED(err_cnt);
+	ARG_UNUSED(user_data);
+}
+
+/**
+ * @brief Test setting the CAN state change callback.
+ */
+static void test_set_state_change_callback(void)
+{
+	/* It is not possible to provoke a change of state, but test the API call */
+	can_set_state_change_callback(can_dev, state_change_callback, NULL);
+	can_set_state_change_callback(can_dev, NULL, NULL);
+}
+
+/**
  * @brief Test setting a too high bitrate.
  */
 static void test_set_bitrate_too_high(void)
@@ -849,6 +871,7 @@ void test_main(void)
 	/* Tests without callbacks can run in userspace */
 	ztest_test_suite(can_api_tests,
 			 ztest_user_unit_test(test_get_core_clock),
+			 ztest_unit_test(test_set_state_change_callback),
 			 ztest_user_unit_test(test_set_bitrate_too_high),
 			 ztest_user_unit_test(test_set_loopback),
 			 ztest_user_unit_test(test_send_and_forget),
