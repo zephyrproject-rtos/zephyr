@@ -204,6 +204,12 @@ config THREAD_USERSPACE_LOCAL_DATA
 	depends on USERSPACE
 	default y if ERRNO && !ERRNO_IN_TLS
 
+config LIBC_ERRNO
+	bool
+	help
+	  Use external libc errno, not the internal one. This eliminates any
+	  locally allocated errno storage and usage.
+
 config ERRNO
 	bool "Errno support"
 	default y
@@ -215,7 +221,7 @@ config ERRNO
 
 config ERRNO_IN_TLS
 	bool "Store errno in thread local storage (TLS)"
-	depends on ERRNO && THREAD_LOCAL_STORAGE
+	depends on ERRNO && THREAD_LOCAL_STORAGE && !LIBC_ERRNO
 	default y
 	help
 	  Use thread local storage to store errno instead of storing it in
