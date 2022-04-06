@@ -51,7 +51,6 @@ struct pdu_data_llctrl_conn_update_ind conn_update_ind = { .win_size = 1U,
 							   .timeout = TIMEOUT,
 							   .instant = 6U };
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /* Default conn_param_req PDU */
 struct pdu_data_llctrl_conn_param_req conn_param_req = { .interval_min = INTVL_MIN,
 							 .interval_max = INTVL_MAX,
@@ -66,6 +65,7 @@ struct pdu_data_llctrl_conn_param_req conn_param_req = { .interval_min = INTVL_M
 							 .offset4 = 0xffffU,
 							 .offset5 = 0xffffU };
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /* Default conn_param_rsp PDU */
 struct pdu_data_llctrl_conn_param_rsp conn_param_rsp = { .interval_min = INTVL_MIN,
 							 .interval_max = INTVL_MAX,
@@ -1274,28 +1274,6 @@ void test_conn_update_central_rem_reject(void)
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
-}
-
-/* Peripheral-initiated Connection Parameters Request procedure.
- * Peripheral requests change in LE connection parameters, central’s Controller do not
- * support Connection Parameters Request procedure.
- *
- * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_C  |                    | LT  |
- * +-----+                    +-------+                    +-----+
- *    |                           |                           |
- *    |                           |   LL_CONNECTION_PARAM_REQ |
- *    |                           |<--------------------------|
- *    |                           |                           |
- *    |                           | LL_UNKNOWN_RSP            |
- *    |                           |-------------------------->|
- *    |                           |                           |
- */
-void test_conn_update_central_rem_unsupp_feat(void)
-{
-	/* TODO(thoh): Implement when Remote Request machine has feature
-	 * checking
-	 */
 }
 
 /*
@@ -2526,29 +2504,6 @@ void test_conn_update_periph_rem_reject(void)
 }
 
 /*
- * Central-initiated Connection Parameters Request procedure.
- * Central requests change in LE connection parameters, peripheral’s Controller do not
- * support Connection Parameters Request procedure.
- *
- * +-----+                    +-------+                    +-----+
- * | UT  |                    | LL_P  |                    | LT  |
- * +-----+                    +-------+                    +-----+
- *    |                           |                           |
- *    |                           |   LL_CONNECTION_PARAM_REQ |
- *    |                           |<--------------------------|
- *    |                           |                           |
- *    |                           | LL_UNKNOWN_RSP            |
- *    |                           |-------------------------->|
- *    |                           |                           |
- */
-void test_conn_update_periph_rem_unsupp_feat(void)
-{
-	/* TODO(thoh): Implement when Remote Request machine has feature
-	 * checking
-	 */
-}
-
-/*
  * (A)
  * Central-initiated Connection Parameters Request procedure.
  * Central requests change in LE connection parameters, peripheral’s Host accepts.
@@ -2890,7 +2845,7 @@ void test_conn_update_central_loc_accept_no_param_req(void)
 
 /*
  * Parameter Request Procedure not supported.
- * Peripheral-initiated Connection Update procedure.
+ * Peripheral-initiated Connection Update/Connection Parameter Request procedure
  * Central receives Connection Update parameters.
  *
  * +-----+                    +-------+                    +-----+
@@ -2904,8 +2859,15 @@ void test_conn_update_central_loc_accept_no_param_req(void)
  *    |                           |-------------------------->|
  *    |                           |                           |
  *    |                           |                           |
+ *    |                           |  LL_CONNECTION_PARAM_REQ  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |           LL_UNKNOWN_RSP  |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |                           |
  */
-void test_conn_update_central_rem_accept_no_param_req(void)
+void test_conn_update_central_rem_unknown_no_param_req(void)
 {
 	struct node_tx *tx;
 
@@ -2943,6 +2905,93 @@ void test_conn_update_central_rem_accept_no_param_req(void)
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
+
+	/* Check UNKNOWN_RSP on Connection Parameter Request */
+	unknown_rsp.type = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_UNKNOWN_RSP, &conn, &tx, &unknown_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should NOT be a host notification */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
+}
+
+/*
+ * Parameter Request Procedure not supported.
+ * Peripheral-initiated Connection Update/Connection Parameter Request procedure
+ * Central receives Connection Update parameters.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_M  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_PARAM_REQ  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |           LL_UNKNOWN_RSP  |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_periph_rem_unknown_no_param_req(void)
+{
+	struct node_tx *tx;
+
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
+		.type = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_UNKNOWN_RSP, &conn, &tx, &unknown_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should NOT be a host notification */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+
 }
 
 /*
@@ -3110,8 +3159,6 @@ void test_main(void)
 							setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_reject,
 							setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_unsupp_feat,
-							setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_conn_update_central_rem_collision,
 							setup, unit_test_noop));
 
@@ -3137,8 +3184,6 @@ void test_main(void)
 							setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_conn_update_periph_rem_reject,
 							setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_conn_update_periph_rem_unsupp_feat,
-							setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_conn_update_periph_rem_collision,
 							setup, unit_test_noop));
 
@@ -3154,7 +3199,7 @@ void test_main(void)
 				 setup, unit_test_noop));
 
 	ztest_test_suite(central_rem_no_param_req, ztest_unit_test_setup_teardown(
-				 test_conn_update_central_rem_accept_no_param_req,
+				 test_conn_update_central_rem_unknown_no_param_req,
 				 setup, unit_test_noop));
 
 	ztest_test_suite(
@@ -3162,8 +3207,12 @@ void test_main(void)
 		ztest_unit_test_setup_teardown(test_conn_update_periph_loc_disallowed_no_param_req,
 					       setup, unit_test_noop));
 
-	ztest_test_suite(periph_rem_no_param_req, ztest_unit_test_setup_teardown(
+	ztest_test_suite(periph_rem_no_param_req,
+			 ztest_unit_test_setup_teardown(
 				 test_conn_update_periph_rem_accept_no_param_req,
+				 setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(
+				 test_conn_update_periph_rem_unknown_no_param_req,
 				 setup, unit_test_noop));
 
 	ztest_run_test_suite(central_loc_no_param_req);
