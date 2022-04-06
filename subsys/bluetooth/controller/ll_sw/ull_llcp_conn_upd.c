@@ -944,31 +944,6 @@ static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	}
 }
 
-static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
-					     uint8_t evt, void *param)
-{
-	switch (evt) {
-	case RP_CU_EVT_CONN_UPDATE_IND:
-		switch (conn->lll.role) {
-		case BT_HCI_ROLE_CENTRAL:
-			ctx->unknown_response.type = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
-			rp_cu_send_unknown_rsp(conn, ctx, evt, param);
-			break;
-		case BT_HCI_ROLE_PERIPHERAL:
-			llcp_pdu_decode_conn_update_ind(ctx, param);
-			/* TODO(tosk): skip/terminate if instant passed? */
-			ctx->state = RP_CU_STATE_WAIT_INSTANT;
-			break;
-		default:
-			/* Unknown role */
-			LL_ASSERT(0);
-		}
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
-
 static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
@@ -997,6 +972,32 @@ static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			llcp_rr_complete(conn);
 			ctx->state = RP_CU_STATE_IDLE;
 		}
+	}
+}
+
+static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+					     uint8_t evt, void *param)
+{
+	switch (evt) {
+	case RP_CU_EVT_CONN_UPDATE_IND:
+		switch (conn->lll.role) {
+		case BT_HCI_ROLE_CENTRAL:
+			ctx->unknown_response.type = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
+			rp_cu_send_unknown_rsp(conn, ctx, evt, param);
+			break;
+		case BT_HCI_ROLE_PERIPHERAL:
+			llcp_pdu_decode_conn_update_ind(ctx, param);
+			ctx->state = RP_CU_STATE_WAIT_INSTANT;
+			/* In case we only just received it in time */
+			rp_cu_check_instant(conn, ctx, evt, param);
+			break;
+		default:
+			/* Unknown role */
+			LL_ASSERT(0);
+		}
+	default:
+		/* Ignore other evts */
+		break;
 	}
 }
 
