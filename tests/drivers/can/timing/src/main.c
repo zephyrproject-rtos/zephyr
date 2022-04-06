@@ -161,6 +161,7 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 	const struct can_timing *max = NULL;
 	const struct can_timing *min = NULL;
 	struct can_timing timing = { 0 };
+	int sp_err;
 	int err;
 
 	printk("testing bitrate %u, sample point %u.%u%% (%s): ",
@@ -172,22 +173,26 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
 			min = can_get_timing_min_data(dev);
 			max = can_get_timing_max_data(dev);
-			err = can_calc_timing_data(dev, &timing, test->bitrate, test->sp);
+			sp_err = can_calc_timing_data(dev, &timing, test->bitrate, test->sp);
 		} else {
 			zassert_unreachable("data phase timing test without CAN-FD support");
 		}
 	} else {
 		min = can_get_timing_min(dev);
 		max = can_get_timing_max(dev);
-		err = can_calc_timing(dev, &timing, test->bitrate, test->sp);
+		sp_err = can_calc_timing(dev, &timing, test->bitrate, test->sp);
 	}
 
 	if (test->invalid) {
-		zassert_equal(err, -EINVAL, "err %d, expected -EINVAL", err);
+		zassert_equal(sp_err, -EINVAL, "err %d, expected -EINVAL", sp_err);
 		printk("OK\n");
 	} else {
-		zassert_true(err >= 0, "unknown error %d", err);
-		zassert_true(err <= SAMPLE_POINT_MARGIN, "sample point error %d too large", err);
+		zassert_true(sp_err >= 0, "unknown error %d", sp_err);
+		zassert_true(sp_err <= SAMPLE_POINT_MARGIN, "sample point error %d too large",
+			     sp_err);
+
+		printk("prop_seg = %u, phase_seg1 = %u, phase_seg2 = %u, prescaler = %u ",
+			timing.prop_seg, timing.phase_seg1, timing.phase_seg2, timing.prescaler);
 
 		assert_bitrate_correct(dev, &timing, test->bitrate);
 		assert_timing_within_bounds(&timing, min, max);
@@ -204,7 +209,7 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 		}
 		zassert_equal(err, 0, "failed to set timing (err %d)", err);
 
-		printk("OK, sample point error %d.%d%%\n", err / 10, err % 10);
+		printk("OK, sample point error %d.%d%%\n", sp_err / 10, sp_err % 10);
 	}
 }
 
