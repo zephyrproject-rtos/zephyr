@@ -74,3 +74,27 @@ tests:
       regex:
         - "Hello with fprintfcb"
         - "Complete"
+  lib.cbprintf_fp.printf.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_APP_FORMATTER_PRINTF=y
+      - CONFIG_PICOLIBC=y
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Hello with printf"
+        - "Complete"
+  lib.cbprintf_fp.printfcb.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_APP_FORMATTER_PRINTFCB=y
+      - CONFIG_PICOLIBC=y
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Hello with printfcb"
+        - "Complete"
