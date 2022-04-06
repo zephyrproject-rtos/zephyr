@@ -183,6 +183,11 @@ struct z_kernel {
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *threads; /* singly linked list of ALL threads */
 #endif
+
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+	/* Need to signal an IPI at the next scheduling point */
+	bool pending_ipi;
+#endif
 };
 
 typedef struct z_kernel _kernel_t;
