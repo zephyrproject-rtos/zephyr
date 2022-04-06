@@ -21,6 +21,7 @@
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
+#include "ll_feat.h"
 
 #include "lll.h"
 #include "lll/lll_df_types.h"
@@ -31,6 +32,7 @@
 #include "ull_conn_types.h"
 #include "ull_conn_internal.h"
 #include "ull_llcp.h"
+#include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -371,9 +373,12 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	/* Encode LL Control PDU */
 	switch (opcode) {
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
-		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
-		llcp_pdu_encode_reject_ext_ind(pdu, conn->llcp.remote.reject_opcode,
-					       BT_HCI_ERR_LL_PROC_COLLISION);
+		if (conn->llcp.fex.valid && feature_ext_rej_ind(conn)) {
+			llcp_pdu_encode_reject_ext_ind(pdu, conn->llcp.remote.reject_opcode,
+						       BT_HCI_ERR_LL_PROC_COLLISION);
+		} else {
+			llcp_pdu_encode_reject_ind(pdu, BT_HCI_ERR_LL_PROC_COLLISION);
+		}
 		break;
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		llcp_pdu_encode_unknown_rsp(ctx, pdu);
