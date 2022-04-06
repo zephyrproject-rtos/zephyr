@@ -191,7 +191,7 @@ static void terminate(struct ppp_fsm *fsm, enum ppp_state next_state)
 		fsm_down(fsm);
 	}
 
-	fsm->retransmits = MAX_CONFIGURE_REQ;
+	fsm->retransmits = MAX_TERMINATE_REQ;
 	fsm->req_id = ++fsm->id;
 
 	(void)ppp_send_pkt(fsm, NULL, PPP_TERMINATE_REQ, fsm->req_id,
