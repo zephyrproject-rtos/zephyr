@@ -15,6 +15,7 @@ CREATE_FLAG(flag_write_complete);
 CREATE_FLAG(flag_chan_1_read);
 CREATE_FLAG(flag_chan_2_read);
 CREATE_FLAG(flag_db_hash_read);
+CREATE_FLAG(flag_encrypted);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
@@ -56,9 +57,21 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	UNSET_FLAG(flag_is_connected);
 }
 
+void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
+{
+	if (err != BT_SECURITY_ERR_SUCCESS) {
+		FAIL("Encryption failed\n");
+	} else if (level < BT_SECURITY_L2) {
+		FAIL("Insufficient security\n");
+	} else {
+		SET_FLAG(flag_encrypted);
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.security_changed = security_changed,
 };
 
 void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct net_buf_simple *ad)
@@ -300,6 +313,13 @@ static void test_main(void)
 	printk("Scanning successfully started\n");
 
 	WAIT_FOR_FLAG(flag_is_connected);
+
+	err = bt_conn_set_security(g_conn, BT_SECURITY_L2);
+	if (err) {
+		FAIL("Failed to start encryption procedure\n");
+	}
+
+	WAIT_FOR_FLAG(flag_encrypted);
 
 	gatt_discover(test_svc_uuid, BT_GATT_DISCOVER_PRIMARY);
 	gatt_discover(BT_UUID_GATT_CLIENT_FEATURES, BT_GATT_DISCOVER_CHARACTERISTIC);
