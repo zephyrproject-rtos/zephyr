@@ -24,6 +24,8 @@ OS management group defines following commands:
     +-------------------+-----------------------------------------------+
     | ``5``             | System reset                                  |
     +-------------------+-----------------------------------------------+
+    | ``6``             | MCUMGR parameters                             |
+    +-------------------+-----------------------------------------------+
 
 Echo command
 ************
@@ -452,6 +454,66 @@ where:
 .. table::
     :align: center
 
+    +-----------------------+---------------------------------------------------+
+    | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`;          |
+    |                       | may not appear if 0                               |
+    +-----------------------+---------------------------------------------------+
+
+MCUMGR Parameters
+*****************
+
+Used to obtain parameters of mcumgr library.
+
+MCUMGR Parameters Request
+=========================
+
+MCUMGR parameters request header fields:
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``0``  | ``0``        |  ``6``         |
+    +--------+--------------+----------------+
+
+The command sends empty CBOR map as data.
+
+MCUMGR Parameters Response
+==========================
+
+MCUMGR parameters response header fields
+
+.. table::
+    :align: center
+
+    +--------+--------------+----------------+
+    | ``OP`` | ``Group ID`` | ``Command ID`` |
+    +========+==============+================+
+    | ``2``  | ``0``        |  ``6``         |
+    +--------+--------------+----------------+
+
+CBOR data of response:
+
+.. code-block:: none
+
+    {
+        (str)"buf_size"     : (uint)
+        (str)"buf_count"    : (uint)
+        (opt,str)"rc"       : (int)
+    }
+
+where:
+
+.. table::
+    :align: center
+
+    +-----------------------+---------------------------------------------------+
+    | "buf_size"            | Single SMP buffer size, this includes SMP header  |
+    |                       | and CBOR payload                                  |
+    +-----------------------+---------------------------------------------------+
+    | "buf_count"           | Number of SMP buffers supported                   |
     +-----------------------+---------------------------------------------------+
     | "rc"                  | :ref:`mcumgr_smp_protocol_status_codes`;          |
     |                       | may not appear if 0                               |
