@@ -147,12 +147,43 @@ menuconfig RISCV_PMP
 	select MPU
 	select SRAM_REGION_PERMISSIONS
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
-	select PMP_POWER_OF_TWO_ALIGNMENT if USERSPACE
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	help
 	  MCU implements Physical Memory Protection.
 
 if RISCV_PMP
-source "arch/riscv/core/pmp/Kconfig"
+
+config PMP_SLOT
+	int "Number of PMP slots"
+	default 8
+	help
+	  This is the number of PMP entries implemented by the hardware.
+	  Typical values are 8 or 16.
+
+config PMP_STACK_GUARD
+	bool "Thread Stack Guard"
+	help
+	  This implements a trap using the PMP to catch stack overflows
+	  by marking the bottom stack area as not accessible.
+
+config PMP_STACK_GUARD_MIN_SIZE
+	int "Guard size"
+	depends on PMP_STACK_GUARD
+	default 64
+	help
+	  Size of the stack guard area. This should be large enough to
+	  accommodate the stack overflow exception stack usage.
+
+config PMP_POWER_OF_TWO_ALIGNMENT
+	bool "Power-of-two alignment for PMP memory areas"
+	default y if TEST_USERSPACE
+	default y if (PMP_SLOT = 8)
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	select GEN_PRIV_STACKS
+	help
+	  This option reduces the PMP slot usage but increases
+	  memory consumption.
+
 endif #RISCV_PMP
 
 endmenu

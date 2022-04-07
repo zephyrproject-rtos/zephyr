@@ -16,6 +16,7 @@
 #define ZEPHYR_ARCH_RISCV_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #include <kernel_arch_data.h>
+#include <pmp.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,17 +24,13 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-#ifdef CONFIG_RISCV_PMP
-void z_riscv_configure_static_pmp_regions(void);
-#endif
-
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
 #ifdef CONFIG_USERSPACE
 	csr_write(mscratch, 0);
 #endif
 #ifdef CONFIG_RISCV_PMP
-	z_riscv_configure_static_pmp_regions();
+	z_riscv_pmp_init();
 #endif
 }
 
