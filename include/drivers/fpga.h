@@ -48,8 +48,8 @@ __subsystem struct fpga_driver_api {
  *
  * @param dev FPGA device structure.
  *
- * @retval 0 if the FPGA is in ACTIVE state.
- * @retval 1 if the FPGA is in INACTIVE state.
+ * @retval 0 if the FPGA is in INACTIVE state.
+ * @retval 1 if the FPGA is in ACTIVE state.
  */
 static inline enum FPGA_status fpga_get_status(const struct device *dev)
 {
