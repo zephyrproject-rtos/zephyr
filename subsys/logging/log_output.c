@@ -63,11 +63,13 @@ extern void log_output_msg2_syst_process(const struct log_output *output,
 				struct log_msg2 *msg, uint32_t flag);
 extern void log_output_string_syst_process(const struct log_output *output,
 				struct log_msg_ids src_level,
-				const char *fmt, va_list ap, uint32_t flag);
+				const char *fmt, va_list ap, uint32_t flag,
+				int16_t source_id);
 extern void log_output_hexdump_syst_process(const struct log_output *output,
 				struct log_msg_ids src_level,
 				const char *metadata,
-				const uint8_t *data, uint32_t length, uint32_t flag);
+				const uint8_t *data, uint32_t length,
+				uint32_t flag, int16_t source_id);
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
  * highest severity and 7 to be the lowest (debugging level) severity.
@@ -731,8 +733,8 @@ void log_output_string(const struct log_output *output,
 
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		log_output_string_syst_process(output,
-				src_level, fmt, ap, flags);
+		log_output_string_syst_process(output, src_level, fmt, ap,
+					       flags, source_id);
 		return;
 	}
 
@@ -769,9 +771,9 @@ void log_output_hexdump(const struct log_output *output,
 
 	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
 	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		log_output_hexdump_syst_process(output,
-				src_level, metadata,
-				data, length, flags);
+		log_output_hexdump_syst_process(output, src_level, metadata,
+						data, length, flags,
+						source_id);
 		return;
 	}
 
