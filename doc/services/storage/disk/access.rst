@@ -23,6 +23,16 @@ Both standard and high-capacity SD cards are supported.
    FAT filesystems are not power safe so the filesystem may become
    corrupted if power is lost or if the card is removed.
 
+SD Memory Card subsystem
+========================
+
+Zephyr supports SD memory cards via the disk driver API, or via the SDMMC
+subsystem. This subsystem can be used transparently via the disk driver API,
+but also supports direct block level access to cards. The SDMMC subsystem
+interacts with the :ref:`sd host controller api <sdhc_api>` to communicate
+with attached SD cards.
+
+
 SD Card support via SPI
 =======================
 
@@ -37,10 +47,15 @@ at 24 MHz once the SD card has been initialized:
             cs-gpios = <&porta 27 GPIO_ACTIVE_LOW>;
 
             sdhc0: sdhc@0 {
-                    compatible = "zephyr,mmc-spi-slot";
+		    compatible = "zephyr,sdhc-spi-slot";
                     reg = <0>;
                     status = "okay";
-                    label = "SDHC0";
+                    label = "SDHC_0";
+		    mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+			label = "SDMMC_0";
+		    };
                     spi-max-frequency = <24000000>;
             };
     };
