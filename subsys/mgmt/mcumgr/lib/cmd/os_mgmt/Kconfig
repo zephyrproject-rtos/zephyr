@@ -118,4 +118,7 @@ config OS_MGMT_ECHO_LENGTH
 
 endif
 
+config OS_MGMT_MCUMGR_PARAMS
+	bool "MCUMGR Parameters retrieval command"
+
 endif
