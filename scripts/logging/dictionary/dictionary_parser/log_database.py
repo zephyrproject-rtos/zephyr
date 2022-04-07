@@ -14,6 +14,7 @@ import json
 
 from .mipi_syst import gen_syst_xml_file
 from .utils import extract_one_string_in_section
+from .utils import find_string_in_mappings
 
 
 ARCHS = {
@@ -190,17 +191,7 @@ class LogDatabase():
         Find string pointed by string_ptr in the string mapping
         list. Return None if not found.
         """
-        if string_ptr in self.database['string_mappings']:
-            return self.database['string_mappings'][string_ptr]
-
-        # No direct match on pointer value.
-        # This may be a combined string. So check for that.
-        for ptr, string in self.database['string_mappings'].items():
-            if ptr <= string_ptr < (ptr + len(string)):
-                whole_str = self.database['string_mappings'][ptr]
-                return whole_str[string_ptr - ptr:]
-
-        return None
+        return find_string_in_mappings(self.database['string_mappings'], string_ptr)
 
 
     def __find_string_in_sections(self, string_ptr):
