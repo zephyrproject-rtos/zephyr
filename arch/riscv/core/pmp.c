@@ -69,13 +69,13 @@ static void print_pmp_entries(unsigned int start, unsigned int end,
 
 static void dump_pmp_regs(const char *banner)
 {
-	ulong_t pmp_addr[CONFIG_PMP_SLOT];
-	ulong_t pmp_cfg[CONFIG_PMP_SLOT / PMPCFG_STRIDE];
+	ulong_t pmp_addr[CONFIG_PMP_SLOTS];
+	ulong_t pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 
 #define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
 
 	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
-#if CONFIG_PMP_SLOT > 8
+#if CONFIG_PMP_SLOTS > 8
 	FOR_EACH(PMPADDR_READ, (;), 8, 9, 10, 11, 12, 13, 14, 15);
 #endif
 
@@ -83,19 +83,19 @@ static void dump_pmp_regs(const char *banner)
 
 #ifdef CONFIG_64BIT
 	pmp_cfg[0] = csr_read(pmpcfg0);
-#if CONFIG_PMP_SLOT > 8
+#if CONFIG_PMP_SLOTS > 8
 	pmp_cfg[1] = csr_read(pmpcfg2);
 #endif
 #else
 	pmp_cfg[0] = csr_read(pmpcfg0);
 	pmp_cfg[1] = csr_read(pmpcfg1);
-#if CONFIG_PMP_SLOT > 8
+#if CONFIG_PMP_SLOTS > 8
 	pmp_cfg[2] = csr_read(pmpcfg2);
 	pmp_cfg[3] = csr_read(pmpcfg3);
 #endif
 #endif
 
-	print_pmp_entries(0, CONFIG_PMP_SLOT, pmp_addr, pmp_cfg, banner);
+	print_pmp_entries(0, CONFIG_PMP_SLOTS, pmp_addr, pmp_cfg, banner);
 }
 
 /**
@@ -164,7 +164,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
  * immediate value as the actual register. This is performed more efficiently
  * in assembly code (pmp.S) than what is possible with C code.
  *
- * Requirement: start < end && end <= CONFIG_PMP_SLOT
+ * Requirement: start < end && end <= CONFIG_PMP_SLOTS
  *
  * @param start Start of the PMP range to be written
  * @param end End (exclusive) of the PMP range to be written
@@ -194,7 +194,7 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 			      unsigned int index_limit)
 {
 	__ASSERT(start < end && end <= index_limit &&
-		 index_limit <= CONFIG_PMP_SLOT,
+		 index_limit <= CONFIG_PMP_SLOTS,
 		 "bad PMP range (start=%u end=%u)", start, end);
 
 	/* Be extra paranoid in case assertions are disabled */
@@ -487,7 +487,7 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 
 int arch_mem_domain_max_partitions_get(void)
 {
-	int available_pmp_slots = CONFIG_PMP_SLOT;
+	int available_pmp_slots = CONFIG_PMP_SLOTS;
 
 	/* remove those slots dedicated to global entries */
 	available_pmp_slots -= global_pmp_end_index;
