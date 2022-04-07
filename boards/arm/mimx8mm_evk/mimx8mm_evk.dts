@@ -28,3 +28,7 @@
 	status = "okay";
 	current-speed = <115200>;
 };
+
+&mailbox0 {
+	status = "okay";
+};
