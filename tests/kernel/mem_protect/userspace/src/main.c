@@ -27,10 +27,6 @@
 extern void arm_core_mpu_disable(void);
 #endif
 
-#if defined(CONFIG_RISCV)
-#include <../arch/riscv/include/core_pmp.h>
-#endif
-
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
@@ -240,7 +236,12 @@ static void test_disable_mmu_mpu(void)
 #elif defined(CONFIG_RISCV)
 	set_fault(K_ERR_CPU_EXCEPTION);
 
-	z_riscv_pmp_clear_config();
+	/*
+	 * Try to make everything accessible through PMP slot 3
+	 * which should not be locked.
+	 */
+	csr_write(pmpaddr3, LLONG_MAX);
+	csr_write(pmpcfg0, (PMP_R|PMP_W|PMP_X|PMP_NAPOT) << 24);
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -1048,10 +1049,8 @@ void test_main(void)
 #if defined(CONFIG_GEN_PRIV_STACKS)
 	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
 #else
-	struct _thread_arch *thread_struct;
-
-	thread_struct = ((struct _thread_arch *) ztest_thread_stack);
-	priv_stack_ptr = (char *)thread_struct->priv_stack_start + 1;
+	priv_stack_ptr = (char *)((uintptr_t)ztest_thread_stack +
+				  Z_RISCV_STACK_GUARD_SIZE);
 #endif
 #endif
 	k_thread_access_grant(k_current_get(),

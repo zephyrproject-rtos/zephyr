@@ -9,7 +9,7 @@
 #include <ksched.h>
 #include <arch/riscv/csr.h>
 #include <stdio.h>
-#include <core_pmp.h>
+#include <pmp.h>
 
 #if defined(CONFIG_USERSPACE) && !defined(CONFIG_SMP)
 /*
@@ -81,13 +81,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->mstatus |= MSTATUS_FS_INIT;
 #endif
 
-#if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_USERSPACE)
-	/* Clear PMP context if RISC-V PMP is used. */
-	z_riscv_pmp_init_thread(thread);
-#endif /* CONFIG_PMP_STACK_GUARD || CONFIG_USERSPACE */
-
 #if defined(CONFIG_USERSPACE)
 	/* Clear user thread context */
+	z_riscv_pmp_usermode_init(thread);
 	thread->arch.priv_stack_start = 0;
 
 	/* the unwound stack pointer upon exiting exception */
@@ -119,7 +115,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #if defined(CONFIG_PMP_STACK_GUARD)
 	/* Setup PMP regions of PMP stack guard of thread. */
-	z_riscv_init_stack_guard(thread);
+	z_riscv_pmp_stackguard_prepare(thread);
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -245,16 +241,17 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	csr_write(mstatus, status);
 	csr_write(mepc, z_thread_entry);
 
-	/* exception stack has to be in mscratch */
-	csr_write(mscratch, top_of_priv_stack);
-
-	/* Set up Physical Memory Protection */
-#if defined(CONFIG_PMP_STACK_GUARD)
-	z_riscv_init_stack_guard(_current);
+#ifdef CONFIG_PMP_STACK_GUARD
+	/* reconfigure as the kernel mode stack will be different */
+	z_riscv_pmp_stackguard_prepare(_current);
 #endif
 
-	z_riscv_init_user_accesses(_current);
-	z_riscv_configure_user_allowed_stack(_current);
+	/* Set up Physical Memory Protection */
+	z_riscv_pmp_usermode_prepare(_current);
+	z_riscv_pmp_usermode_enable(_current);
+
+	/* exception stack has to be in mscratch */
+	csr_write(mscratch, top_of_priv_stack);
 
 #if !defined(CONFIG_SMP)
 	is_user_mode = true;
