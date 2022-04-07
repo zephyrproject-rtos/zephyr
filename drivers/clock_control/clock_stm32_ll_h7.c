@@ -153,6 +153,14 @@
 #endif
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
+#if defined(CONFIG_CPU_CORTEX_M7)
+/* Offset to access bus clock registers from M7 (or only) core */
+#define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc))
+#elif defined(CONFIG_CPU_CORTEX_M4)
+/* Offset to access bus clock registers from M4 core */
+#define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc)) + 0x60
+#endif
+
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
@@ -329,7 +337,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	reg = (uint32_t *)(STM32H7_BUS_CLK_REG + pclken->bus);
 	reg_val = *reg;
 	reg_val |= pclken->enr;
 	*reg = reg_val;
@@ -355,7 +363,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	reg = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	reg = (uint32_t *)(STM32H7_BUS_CLK_REG + pclken->bus);
 	reg_val = *reg;
 	reg_val &= ~pclken->enr;
 	*reg = reg_val;
