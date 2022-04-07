@@ -21,15 +21,17 @@ config LOG_FUNC_NAME_PREFIX_DBG
 
 endmenu
 
-config LOG_MIPI_SYST_ENABLE
+menuconfig LOG_MIPI_SYST_ENABLE
 	bool "MIPI SyS-T format output"
 	select MIPI_SYST_LIB
 	help
 	  Enable MIPI SyS-T format output for the logger system.
 
+if LOG_MIPI_SYST_ENABLE
+
 config LOG_MIPI_SYST_USE_CATALOG
 	bool "Use MIPI Sys-T Catalog for logging"
-	depends on LOG2 && LOG_MIPI_SYST_ENABLE
+	depends on LOG2
 	select LOG2_FMT_SECTION
 	select LOG2_MSG_PKG_ALWAYS_ADD_RO_STRING_IDXS
 	help
@@ -43,6 +45,40 @@ config LOG_MIPI_SYST_CATALOG_ARGS_BUFFER_SIZE
 	  The size (in bytes) of the temporary buffer to store the expanded
 	  argument list needed for the MIPI Sys-T library for processing
 	  catalog messages.
+
+config LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
+	bool "Output Log Message Source ID as Module ID"
+	default y if LOG_MIPI_SYST_USE_CATALOG
+	help
+	  Enable this option to output the log message source ID
+	  as the Sys-T message module ID (as in origin unit in Sys-T
+	  message header).
+
+config LOG_MIPI_SYST_MSG_DEFAULT_MODULE_ID
+	int "Default module ID in Sys-T message"
+	range 0 127
+	default 127 if LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
+	default 0
+	help
+	  The default module ID embedded in the origin unit in
+	  Sys-T message header.
+
+	  If CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID is disabled,
+	  this will be used for all Sys-T messages.
+
+	  If CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID is enabled,
+	  this will be used for log messages without source IDs,
+	  for example, printk() if CONFIG_LOG_PRINTK is enabled.
+
+config LOG_MIPI_SYST_MSG_DEFAULT_UNIT_ID
+	int "Default unit ID in Sys-T message"
+	range 0 15
+	default 0
+	help
+	  The default unit ID embedded in the origin unit in
+	  Sys-T message header.
+
+endif # LOG_MIPI_SYST_ENABLE
 
 config LOG_DICTIONARY_SUPPORT
 	bool

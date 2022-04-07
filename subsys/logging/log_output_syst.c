@@ -420,6 +420,29 @@ static void update_systh_platform_data(struct mipi_syst_handle *handle,
 #endif
 }
 
+#if defined(CONFIG_LOG1) || defined(CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID)
+/**
+ * @brief Set module ID in the origin unit of Sys-T message
+ *
+ * Note that this only sets the module ID if
+ * CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID is enabled.
+ * Otherwise, this is a no-op as the module ID is set to
+ * default at boot time, and no need to be set again.
+ *
+ * @param handle Pointer to mipi_syst_handle struct
+ * @param module_id Module ID to be set (range 0x00 - 0x7F)
+ */
+static void update_handle_origin_unit(struct mipi_syst_handle *handle,
+				      int16_t module_id)
+{
+	handle->systh_tag.et_modunit =
+		_MIPI_SYST_MK_MODUNIT_ORIGIN(
+			module_id,
+			CONFIG_LOG_MIPI_SYST_MSG_DEFAULT_UNIT_ID
+		);
+}
+#endif
+
 #if defined(MIPI_SYST_PCFG_ENABLE_PLATFORM_HANDLE_DATA)
 /*
  * Platform specific SyS-T handle initialization hook function
@@ -717,6 +740,12 @@ void log_output_msg_syst_process(const struct log_output *log_output,
 
 	update_systh_platform_data(&log_syst_handle, log_output, flag);
 
+#ifdef CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
+	int16_t source_id = (int16_t)log_msg_source_id_get(msg);
+
+	update_handle_origin_unit(&log_syst_handle, source_id);
+#endif
+
 	if (log_msg_is_std(msg)) {
 		std_print(msg, log_output);
 	} else if (raw_string) {
@@ -728,11 +757,13 @@ void log_output_msg_syst_process(const struct log_output *log_output,
 
 void log_output_string_syst_process(const struct log_output *log_output,
 				struct log_msg_ids src_level,
-				const char *fmt, va_list ap, uint32_t flag)
+				const char *fmt, va_list ap, uint32_t flag,
+				int16_t source_id)
 {
 	uint32_t severity = level_to_syst_severity((uint32_t)src_level.level);
 
 	update_systh_platform_data(&log_syst_handle, log_output, flag);
+	update_handle_origin_unit(&log_syst_handle, source_id);
 
 	MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, ap);
 }
@@ -741,11 +772,12 @@ void log_output_hexdump_syst_process(const struct log_output *log_output,
 				     struct log_msg_ids src_level,
 				     const char *metadata,
 				     const uint8_t *data, uint32_t length,
-				     uint32_t flag)
+				     uint32_t flag, int16_t source_id)
 {
 	uint32_t severity = level_to_syst_severity((uint32_t)src_level.level);
 
 	update_systh_platform_data(&log_syst_handle, log_output, flag);
+	update_handle_origin_unit(&log_syst_handle, source_id);
 
 	MIPI_SYST_PRINTF(&log_syst_handle, severity, "%s", metadata);
 
@@ -1180,6 +1212,25 @@ void log_output_msg2_syst_process(const struct log_output *output,
 
 	update_systh_platform_data(&log_syst_handle, output, flag);
 
+#ifdef CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
+	uint8_t level = log_msg2_get_level(msg);
+	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
+	int16_t source_id = CONFIG_LOG_MIPI_SYST_MSG_DEFAULT_MODULE_ID;
+
+	/* Set the log source ID as Sys-T message module ID */
+	if (!raw_string) {
+		void *source = (void *)log_msg2_get_source(msg);
+
+		if (source != NULL) {
+			source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+					log_dynamic_source_id(source) :
+					log_const_source_id(source);
+		}
+	}
+
+	update_handle_origin_unit(&log_syst_handle, source_id);
+#endif
+
 	uint8_t *data = log_msg2_get_package(msg, &len);
 
 	if (len) {
@@ -1210,6 +1261,17 @@ static int syst_init(const struct device *arg)
 
 	MIPI_SYST_INIT_HANDLE_STATE(&log_syst_header,
 				    &log_syst_handle, NULL);
+
+	log_syst_handle.systh_tag.et_guid = 0;
+
+#ifndef CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
+	/* Set the default here once as it won't be modified anymore. */
+	log_syst_handle.systh_tag.et_modunit =
+		_MIPI_SYST_MK_MODUNIT_ORIGIN(
+			CONFIG_LOG_MIPI_SYST_MSG_DEFAULT_MODULE_ID,
+			CONFIG_LOG_MIPI_SYST_MSG_DEFAULT_UNIT_ID
+		);
+#endif
 
 	return 0;
 }
