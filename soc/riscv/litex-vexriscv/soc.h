@@ -22,25 +22,42 @@
 
 static inline unsigned char litex_read8(unsigned long addr)
 {
+#if CONFIG_LITEX_CSR_DATA_WIDTH >= 8
 	return sys_read8(addr);
+#else
+#error CSR data width less than 8
+#endif
 }
 
 static inline unsigned short litex_read16(unsigned long addr)
 {
+#if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	return (sys_read8(addr) << 8)
 		| sys_read8(addr + 0x4);
+#elif CONFIG_LITEX_CSR_DATA_WIDTH >= 16
+	return sys_read16(addr);
+#else
+#error Unsupported CSR data width
+#endif
 }
 
 static inline unsigned int litex_read32(unsigned long addr)
 {
+#if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	return (sys_read8(addr) << 24)
 		| (sys_read8(addr + 0x4) << 16)
 		| (sys_read8(addr + 0x8) << 8)
 		| sys_read8(addr + 0xc);
+#elif CONFIG_LITEX_CSR_DATA_WIDTH >= 32
+	return sys_read32(addr);
+#else
+#error Unsupported CSR data width
+#endif
 }
 
 static inline uint64_t litex_read64(unsigned long addr)
 {
+#if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	return (((uint64_t)sys_read8(addr)) << 56)
 		| ((uint64_t)sys_read8(addr + 0x4) << 48)
 		| ((uint64_t)sys_read8(addr + 0x8) << 40)
@@ -49,25 +66,48 @@ static inline uint64_t litex_read64(unsigned long addr)
 		| ((uint64_t)sys_read8(addr + 0x14) << 16)
 		| ((uint64_t)sys_read8(addr + 0x18) << 8)
 		| (uint64_t)sys_read8(addr + 0x1c);
+#elif CONFIG_LITEX_CSR_DATA_WIDTH == 32
+	return ((uint64_t)sys_read32(addr) << 32) | (uint64_t)sys_read32(addr + 0x4);
+#elif CONFIG_LITEX_CSR_DATA_WIDTH >= 64
+	return sys_read64(addr);
+#else
+#error Unsupported CSR data width
+#endif
 }
 
 static inline void litex_write8(unsigned char value, unsigned long addr)
 {
+#if CONFIG_LITEX_CSR_DATA_WIDTH >= 8
 	sys_write8(value, addr);
+#else
+#error CSR data width less than 8
+#endif
 }
 
 static inline void litex_write16(unsigned short value, unsigned long addr)
 {
+#if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	sys_write8(value >> 8, addr);
 	sys_write8(value, addr + 0x4);
+#elif CONFIG_LITEX_CSR_DATA_WIDTH >= 16
+	sys_write16(value, addr);
+#else
+#error Unsupported CSR data width
+#endif
 }
 
 static inline void litex_write32(unsigned int value, unsigned long addr)
 {
+#if CONFIG_LITEX_CSR_DATA_WIDTH == 8
 	sys_write8(value >> 24, addr);
 	sys_write8(value >> 16, addr + 0x4);
 	sys_write8(value >> 8, addr + 0x8);
 	sys_write8(value, addr + 0xC);
+#elif CONFIG_LITEX_CSR_DATA_WIDTH >= 32
+	sys_write32(value, addr);
+#else
+#error Unsupported CSR data width
+#endif
 }
 
 static inline void litex_write(volatile uint32_t *reg, uint32_t reg_size, uint32_t val)
