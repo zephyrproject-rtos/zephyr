@@ -492,6 +492,23 @@ static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
 
 static bool eswifi_socket_is_supported(int family, int type, int proto)
 {
+	enum eswifi_transport_type eswifi_socket_type;
+	int err;
+
+	if (family != AF_INET) {
+		return false;
+	}
+
+	if (type != SOCK_DGRAM &&
+	    type != SOCK_STREAM) {
+		return false;
+	}
+
+	err = eswifi_socket_type_from_zephyr(proto, &eswifi_socket_type);
+	if (err) {
+		return false;
+	}
+
 	return true;
 }
 
