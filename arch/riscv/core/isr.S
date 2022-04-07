@@ -206,11 +206,6 @@ skip_store_fp_caller_saved:
 	/* If a0 != 0, jump to is_interrupt */
 	bnez a0, is_interrupt
 
-#ifdef CONFIG_PMP_STACK_GUARD
-	li t0, MSTATUS_MPRV
-	csrs mstatus, t0
-#endif
-
 	/*
 	 * If the exception is the result of an ECALL, check whether to
 	 * perform a context-switch or an IRQ offload. Otherwise call _Fault
@@ -261,6 +256,14 @@ is_kernel_syscall:
 	lr t0, __z_arch_esf_t_mepc_OFFSET(sp)
 	addi t0, t0, 4
 	sr t0, __z_arch_esf_t_mepc_OFFSET(sp)
+
+#ifdef CONFIG_PMP_STACK_GUARD
+	/* Re-activate PMP for m-mode */
+	li t1, MSTATUS_MPP
+	csrc mstatus, t1
+	li t1, MSTATUS_MPRV
+	csrs mstatus, t1
+#endif
 
 	/* Determine what to do. Operation code is in saved a7. */
 	lr t0, __z_arch_esf_t_a7_OFFSET(sp)
@@ -325,6 +328,16 @@ do_irq_offload:
 
 #ifdef CONFIG_USERSPACE
 is_user_syscall:
+
+#ifdef CONFIG_PMP_STACK_GUARD
+	/*
+	 * We came from userspace and need to reconfigure the
+	 * PMP for kernel mode stack guard.
+	 */
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_pmp_stackguard_enable
+#endif
+
 	/* It is safe to re-enable IRQs now */
 	csrs mstatus, MSTATUS_IEN
 
@@ -374,6 +387,29 @@ valid_syscall_id:
 #endif /* CONFIG_USERSPACE */
 
 is_interrupt:
+
+#ifdef CONFIG_PMP_STACK_GUARD
+#ifdef CONFIG_USERSPACE
+	/*
+	 * If we came from userspace then we need to reconfigure the
+	 * PMP for kernel mode stack guard.
+	 */
+	lr t0, __z_arch_esf_t_mstatus_OFFSET(sp)
+	li t1, MSTATUS_MPP
+	and t0, t0, t1
+	bnez t0, 1f
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_pmp_stackguard_enable
+	j 2f
+#endif /* CONFIG_USERSPACE */
+1:	/* Re-activate PMP for m-mode */
+	li t1, MSTATUS_MPP
+	csrc mstatus, t1
+	li t1, MSTATUS_MPRV
+	csrs mstatus, t1
+2:
+#endif
+
 	/* Increment _current_cpu->nested */
 	lw t3, ___cpu_t_nested_OFFSET(s0)
 	addi t4, t3, 1
@@ -518,6 +554,13 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	and t0, t4, t1
 	bnez t0, 1f
 
+#ifdef CONFIG_PMP_STACK_GUARD
+	/* Remove kernel stack guard and Reconfigure PMP for user mode */
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_pmp_usermode_enable
+#endif
+
+#if !defined(CONFIG_SMP)
 	/* Set user mode variable */
 	li t0, 1
 	la t1, is_user_mode

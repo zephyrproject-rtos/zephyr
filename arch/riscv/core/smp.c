@@ -35,8 +35,8 @@ void z_riscv_secondary_cpu_init(int cpu_num)
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 	soc_interrupt_init();
 #endif
-#ifdef CONFIG_PMP_STACK_GUARD
-	z_riscv_configure_interrupt_stack_guard();
+#ifdef CONFIG_RISCV_PMP
+	z_riscv_pmp_init();
 #endif
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_MACHINE_SOFT_IRQ);
