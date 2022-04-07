@@ -27,7 +27,7 @@
 
 extern enum bst_result_t bst_result;
 
-#define WAIT_TIME (30 * 1e6) /*seconds*/
+#define WAIT_TIME (60 * 1e6) /*seconds*/
 
 #define CREATE_FLAG(flag) static atomic_t flag = (atomic_t)false
 #define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
