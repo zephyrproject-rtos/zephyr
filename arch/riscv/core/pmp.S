@@ -30,7 +30,7 @@
  * we disallow compressed instructions so the update block sizes are easily
  * known (luckily they're all power-of-2's simplifying the code further).
  *
- * start < end && end <= CONFIG_PMP_SLOT must be true.
+ * start < end && end <= CONFIG_PMP_SLOTS must be true.
  */
 
 GTEXT(z_riscv_write_pmp_entries)
@@ -46,7 +46,7 @@ pmpaddr_store:
 	.option push
 	.option norvc
 	.set _index, 0
-	.rept CONFIG_PMP_SLOT
+	.rept CONFIG_PMP_SLOTS
 	lr t0, (RV_REGSIZE * _index)(a3)
 	li t1, _index + 1
 	csrw (CSR_PMPADDR_BASE + _index), t0
@@ -75,7 +75,7 @@ pmpcfg_store:
 	.option push
 	.option norvc
 	.set _index, 0
-	.rept (CONFIG_PMP_SLOT / RV_REGSIZE)
+	.rept (CONFIG_PMP_SLOTS / RV_REGSIZE)
 	lr t0, (RV_REGSIZE * _index)(a4)
 	addi a0, a0, 1
 	csrw (CSR_PMPCFG_BASE + RV_REGSIZE/4 * _index), t0
@@ -98,7 +98,7 @@ pmpcfg_zerotail:
 	.option push
 	.option norvc
 	.set _index, 0
-	.rept (CONFIG_PMP_SLOT / RV_REGSIZE)
+	.rept (CONFIG_PMP_SLOTS / RV_REGSIZE)
 	csrw (CSR_PMPCFG_BASE + RV_REGSIZE/4 * _index), zero
 	.set _index, _index + 1
 	.endr

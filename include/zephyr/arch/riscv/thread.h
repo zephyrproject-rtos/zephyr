@@ -32,9 +32,9 @@
 
 #ifdef CONFIG_RISCV_PMP
 #ifdef CONFIG_64BIT
-#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOT >> 3)
+#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOTS >> 3)
 #else
-#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOT >> 2)
+#define	RISCV_PMP_CFG_NUM	(CONFIG_PMP_SLOTS >> 2)
 #endif
 #endif
 
@@ -95,8 +95,8 @@ typedef struct _callee_saved _callee_saved_t;
 struct _thread_arch {
 #ifdef CONFIG_USERSPACE
 	ulong_t priv_stack_start;
-	ulong_t u_mode_pmpaddr_regs[CONFIG_PMP_SLOT];
-	ulong_t u_mode_pmpcfg_regs[CONFIG_PMP_SLOT / sizeof(ulong_t)];
+	ulong_t u_mode_pmpaddr_regs[CONFIG_PMP_SLOTS];
+	ulong_t u_mode_pmpcfg_regs[CONFIG_PMP_SLOTS / sizeof(ulong_t)];
 	unsigned int u_mode_pmp_domain_offset;
 	unsigned int u_mode_pmp_end_index;
 	unsigned int u_mode_pmp_update_nr;
