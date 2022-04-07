@@ -94,6 +94,7 @@ typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
 #ifdef CONFIG_USERSPACE
+	ulong_t priv_stack_start;
 	ulong_t u_mode_pmpaddr_regs[CONFIG_PMP_SLOT];
 	ulong_t u_mode_pmpcfg_regs[CONFIG_PMP_SLOT / sizeof(ulong_t)];
 	unsigned int u_mode_pmp_domain_offset;
@@ -104,19 +105,6 @@ struct _thread_arch {
 	unsigned int m_mode_pmp_end_index;
 	ulong_t m_mode_pmpaddr_regs[PMP_M_MODE_SLOTS];
 	ulong_t m_mode_pmpcfg_regs[PMP_M_MODE_SLOTS / sizeof(ulong_t)];
-#endif
-
-	/* legacy stuff below */
-
-#ifdef CONFIG_PMP_STACK_GUARD
-	ulong_t s_pmpcfg[PMP_CFG_CSR_NUM_FOR_STACK_GUARD];
-	ulong_t s_pmpaddr[PMP_REGION_NUM_FOR_STACK_GUARD];
-#endif
-
-#ifdef CONFIG_USERSPACE
-	ulong_t priv_stack_start;
-	ulong_t u_pmpcfg[RISCV_PMP_CFG_NUM];
-	ulong_t u_pmpaddr[CONFIG_PMP_SLOT];
 #endif
 };
 
