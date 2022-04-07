@@ -853,6 +853,13 @@ static bool valid_register_param(const struct bt_csis_register_param *param)
 		return false;
 	}
 
+#if CONFIG_BT_CSIS_MAX_INSTANCE_COUNT > 1
+	if (param->parent == NULL) {
+		BT_DBG("Parent service not provided");
+		return false;
+	}
+#endif /* CONFIG_BT_CSIS_MAX_INSTANCE_COUNT > 1 */
+
 	return true;
 }
 

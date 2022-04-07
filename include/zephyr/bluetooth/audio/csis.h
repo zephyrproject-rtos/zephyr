@@ -143,6 +143,19 @@ struct bt_csis_register_param {
 
 	/** Pointer to the callback structure. */
 	struct bt_csis_cb *cb;
+
+#if CONFIG_BT_CSIS_MAX_INSTANCE_COUNT > 1
+	/**
+	 * @brief Parent service pointer
+	 *
+	 * Mandatory parent service pointer if this CSIS instance is included
+	 * by another service. All CSIS instances when
+	 * @kconfig{CONFIG_BT_CSIS_MAX_INSTANCE_COUNT} is above 1 shall
+	 * be included by another service, as per the
+	 * Coordinated Set Identification Profile (CSIP).
+	 */
+	const struct bt_gatt_service *parent;
+#endif /* CONFIG_BT_CSIS_MAX_INSTANCE_COUNT > 1 */
 };
 
 /**
