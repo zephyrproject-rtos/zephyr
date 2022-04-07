@@ -278,6 +278,12 @@ struct ztest_test_rule {
  * provides a mechanism for tests to perform custom operations depending on the specific test or
  * the data (for example logging may use the test's name).
  *
+ * Ordering:
+ * - Test rule's `before` function will run before the suite's `before` function. This is done to
+ * allow the test suite's customization to take precedence over the rule which is applied to all
+ * suites.
+ * - Test rule's `after` function is not guaranteed to run in any particular order.
+ *
  * @param name The name for the test rule (must be unique within the compilation unit)
  * @param before_each_fn The callback function to call before each test (may be NULL)
  * @param after_each_fn The callback function to call after each test (may be NULL)
