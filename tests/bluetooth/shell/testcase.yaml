@@ -228,3 +228,16 @@ tests:
     extra_configs:
       - CONFIG_BT_TBS_CLIENT=n
     tags: bluetooth
+  bluetooth.audio_shell.no_cap_acceptor:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_CAP_ACCEPTOR=n
+  bluetooth.audio_shell.no_cap_acceptor_set_member:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_CAP_ACCEPTOR=n
+      - CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER=n

@@ -44,6 +44,9 @@ config BT_CSIS_MAX_INSTANCE_COUNT
 	  Identification Services. If the service is declared as primary service
 	  then only a single instance is possible.
 
+	  Enabling BT_CAP_ACCEPTOR_SET_MEMBER will take one of the allocated
+	  instances.
+
 ############### DEBUG ###############
 
 config BT_DEBUG_CSIS
