@@ -176,12 +176,7 @@ static void gatt_discover(const struct bt_uuid *uuid, uint8_t type)
 	WAIT_FOR_FLAG(flag_discover_complete);
 	printk("Discover complete\n");
 }
-
-static uint8_t gatt_read_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_read_params *params,
-			    const void *data, uint16_t length);
-
 static struct bt_gatt_read_params chan_1_read = {
-	.func = gatt_read_cb,
 	.handle_count = 1,
 	.single = {
 		.handle = 0, /* Will be set later */
@@ -189,7 +184,6 @@ static struct bt_gatt_read_params chan_1_read = {
 	},
 };
 static struct bt_gatt_read_params chan_2_read = {
-	.func = gatt_read_cb,
 	.handle_count = 1,
 	.single = {
 		.handle = 0, /* Will be set later */
@@ -197,7 +191,6 @@ static struct bt_gatt_read_params chan_2_read = {
 	},
 };
 static struct bt_gatt_read_params db_hash_read = {
-	.func = gatt_read_cb,
 	.handle_count = 0,
 	.by_uuid = {
 		.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE,
@@ -213,29 +206,54 @@ void expect_status(uint8_t err, uint8_t status)
 	}
 }
 
-static uint8_t gatt_read_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_read_params *params,
-			    const void *data, uint16_t length)
+static uint8_t gatt_read_expect_success_cb(struct bt_conn *conn, uint8_t err,
+					   struct bt_gatt_read_params *params, const void *data,
+					   uint16_t length)
 {
 	printk("GATT read cb: err 0x%02X\n", err);
+	expect_status(err, BT_ATT_ERR_SUCCESS);
 
 	if (params == &db_hash_read) {
-		expect_status(err, BT_ATT_ERR_SUCCESS);
 		SET_FLAG(flag_db_hash_read);
 	} else if (params == &chan_1_read) {
-		if (flag_db_hash_read) {
-			expect_status(err, BT_ATT_ERR_SUCCESS);
-		} else {
-			expect_status(err, BT_ATT_ERR_DB_OUT_OF_SYNC);
-		}
-
 		SET_FLAG(flag_chan_1_read);
 	} else if (params == &chan_2_read) {
-		if (flag_db_hash_read) {
-			expect_status(err, BT_ATT_ERR_SUCCESS);
-		} else {
-			expect_status(err, BT_ATT_ERR_DB_OUT_OF_SYNC);
-		}
+		SET_FLAG(flag_chan_2_read);
+	} else {
+		FAIL("Unexpected params\n");
+	}
 
+	return 0;
+}
+
+static uint8_t gatt_read_expect_err_unlikely_cb(struct bt_conn *conn, uint8_t err,
+						struct bt_gatt_read_params *params,
+						const void *data, uint16_t length)
+{
+	printk("GATT read cb: err 0x%02X\n", err);
+	expect_status(err, BT_ATT_ERR_UNLIKELY);
+
+	if (params == &chan_1_read) {
+		SET_FLAG(flag_chan_1_read);
+	} else if (params == &chan_2_read) {
+		SET_FLAG(flag_chan_2_read);
+	} else {
+		FAIL("Unexpected params\n");
+	}
+
+	return 0;
+}
+
+static uint8_t gatt_read_expect_err_out_of_sync_cb(struct bt_conn *conn, uint8_t err,
+						   struct bt_gatt_read_params *params,
+						   const void *data, uint16_t length)
+{
+	printk("GATT read cb: err 0x%02X\n", err);
+	expect_status(err, BT_ATT_ERR_DB_OUT_OF_SYNC);
+
+	if (params == &chan_1_read) {
+		SET_FLAG(flag_chan_1_read);
+	} else if (params == &chan_2_read) {
 		SET_FLAG(flag_chan_2_read);
 	} else {
 		FAIL("Unexpected params\n");
@@ -294,7 +312,7 @@ static void enable_robust_caching(void)
 	printk("Success\n");
 }
 
-static void test_main(void)
+static void test_main_common(bool connect_eatt)
 {
 	int err;
 
@@ -326,9 +344,11 @@ static void test_main(void)
 
 	enable_robust_caching();
 
-	while (bt_eatt_count(g_conn) < 1) {
-		/* Wait for EATT channel to connect, in case it hasn't already */
-		k_sleep(K_MSEC(10));
+	if (connect_eatt) {
+		while (bt_eatt_count(g_conn) < 1) {
+			/* Wait for EATT channel to connect, in case it hasn't already */
+			k_sleep(K_MSEC(10));
+		}
 	}
 
 	/* Tell the server to register additional service */
@@ -339,7 +359,39 @@ static void test_main(void)
 
 	chan_1_read.single.handle = chrc_handle;
 	chan_2_read.single.handle = chrc_handle;
+}
 
+static void test_main_db_hash_read_eatt(void)
+{
+	test_main_common(true);
+
+	/* Read the DB hash to become change-aware */
+	db_hash_read.func = gatt_read_expect_success_cb;
+	gatt_read(&db_hash_read);
+	WAIT_FOR_FLAG(flag_db_hash_read);
+
+	/* These shall now succeed */
+	chan_1_read.func = gatt_read_expect_success_cb;
+	chan_2_read.func = gatt_read_expect_success_cb;
+	UNSET_FLAG(flag_chan_1_read);
+	UNSET_FLAG(flag_chan_2_read);
+	gatt_read(&chan_1_read);
+	gatt_read(&chan_2_read);
+	WAIT_FOR_FLAG(flag_chan_1_read);
+	WAIT_FOR_FLAG(flag_chan_2_read);
+
+	/* Signal to server that reads are done */
+	backchannel_sync_send();
+
+	PASS("GATT client Passed\n");
+}
+
+static void test_main_out_of_sync_eatt(void)
+{
+	test_main_common(true);
+
+	chan_1_read.func = gatt_read_expect_err_out_of_sync_cb;
+	chan_2_read.func = gatt_read_expect_err_out_of_sync_cb;
 	gatt_read(&chan_1_read);
 	gatt_read(&chan_2_read);
 
@@ -350,9 +402,14 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_chan_1_read);
 	WAIT_FOR_FLAG(flag_chan_2_read);
 
+	/* Read the DB hash to become change-aware */
+	db_hash_read.func = gatt_read_expect_success_cb;
 	gatt_read(&db_hash_read);
 	WAIT_FOR_FLAG(flag_db_hash_read);
 
+	/* These shall now succeed */
+	chan_1_read.func = gatt_read_expect_success_cb;
+	chan_2_read.func = gatt_read_expect_success_cb;
 	UNSET_FLAG(flag_chan_1_read);
 	UNSET_FLAG(flag_chan_2_read);
 	gatt_read(&chan_1_read);
@@ -360,15 +417,146 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_chan_1_read);
 	WAIT_FOR_FLAG(flag_chan_2_read);
 
+	/* Signal to server that reads are done */
+	backchannel_sync_send();
+
+	PASS("GATT client Passed\n");
+}
+
+static void test_main_retry_reads_eatt(void)
+{
+	test_main_common(true);
+
+	chan_1_read.func = gatt_read_expect_err_out_of_sync_cb;
+	chan_2_read.func = gatt_read_expect_err_out_of_sync_cb;
+	gatt_read(&chan_1_read);
+	gatt_read(&chan_2_read);
+
+	/* Wait until received response on both reads. When robust caching is implemented
+	 * on the client side, the waiting shall be done automatically by the host when
+	 * reading the DB hash.
+	 */
+	WAIT_FOR_FLAG(flag_chan_1_read);
+	WAIT_FOR_FLAG(flag_chan_2_read);
+
+	/* Retry the reads, these shall time out */
+	chan_1_read.func = gatt_read_expect_err_unlikely_cb;
+	chan_2_read.func = gatt_read_expect_err_unlikely_cb;
+	UNSET_FLAG(flag_chan_1_read);
+	UNSET_FLAG(flag_chan_2_read);
+	gatt_read(&chan_1_read);
+	gatt_read(&chan_2_read);
+	WAIT_FOR_FLAG(flag_chan_1_read);
+	WAIT_FOR_FLAG(flag_chan_2_read);
+
+	/* Signal to server that reads are done */
+	backchannel_sync_send();
+
+	PASS("GATT client Passed\n");
+}
+
+static void test_main_db_hash_read_no_eatt(void)
+{
+	test_main_common(false);
+
+	/* Read the DB hash to become change-aware */
+	db_hash_read.func = gatt_read_expect_success_cb;
+	gatt_read(&db_hash_read);
+	WAIT_FOR_FLAG(flag_db_hash_read);
+
+	/* Read shall now succeed */
+	chan_1_read.func = gatt_read_expect_success_cb;
+	UNSET_FLAG(flag_chan_1_read);
+	gatt_read(&chan_1_read);
+	WAIT_FOR_FLAG(flag_chan_1_read);
+
+	/* Signal to server that reads are done */
+	backchannel_sync_send();
+
+	PASS("GATT client Passed\n");
+}
+
+static void test_main_out_of_sync_no_eatt(void)
+{
+	test_main_common(false);
+
+	chan_1_read.func = gatt_read_expect_err_out_of_sync_cb;
+	gatt_read(&chan_1_read);
+	WAIT_FOR_FLAG(flag_chan_1_read);
+
+	/* Read the DB hash to become change-aware */
+	db_hash_read.func = gatt_read_expect_success_cb;
+	gatt_read(&db_hash_read);
+	WAIT_FOR_FLAG(flag_db_hash_read);
+
+	/* Read shall now succeed */
+	chan_1_read.func = gatt_read_expect_success_cb;
+	UNSET_FLAG(flag_chan_1_read);
+	gatt_read(&chan_1_read);
+	WAIT_FOR_FLAG(flag_chan_1_read);
+
+	/* Signal to server that reads are done */
+	backchannel_sync_send();
+
+	PASS("GATT client Passed\n");
+}
+
+static void test_main_retry_reads_no_eatt(void)
+{
+	test_main_common(false);
+
+	chan_1_read.func = gatt_read_expect_err_out_of_sync_cb;
+	gatt_read(&chan_1_read);
+	WAIT_FOR_FLAG(flag_chan_1_read);
+
+	/* Read again to become change-aware */
+	chan_1_read.func = gatt_read_expect_success_cb;
+	UNSET_FLAG(flag_chan_1_read);
+	gatt_read(&chan_1_read);
+	WAIT_FOR_FLAG(flag_chan_1_read);
+
+	/* Signal to server that reads are done */
+	backchannel_sync_send();
+
 	PASS("GATT client Passed\n");
 }
 
 static const struct bst_test_instance test_vcs[] = {
 	{
-		.test_id = "gatt_client",
+		.test_id = "gatt_client_db_hash_read_eatt",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main,
+		.test_main_f = test_main_db_hash_read_eatt,
+	},
+	{
+		.test_id = "gatt_client_out_of_sync_eatt",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_out_of_sync_eatt,
+	},
+	{
+		.test_id = "gatt_client_retry_reads_eatt",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_retry_reads_eatt,
+	},
+	{
+		.test_id = "gatt_client_db_hash_read_no_eatt",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_db_hash_read_no_eatt,
+	},
+	{
+		.test_id = "gatt_client_out_of_sync_no_eatt",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_out_of_sync_no_eatt,
+	},
+	{
+		.test_id = "gatt_client_retry_reads_no_eatt",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_retry_reads_no_eatt,
 	},
 	BSTEST_END_MARKER,
 };
