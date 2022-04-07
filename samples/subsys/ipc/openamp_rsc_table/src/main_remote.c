@@ -136,7 +136,7 @@ int mailbox_notify(void *priv, uint32_t id)
 	ARG_UNUSED(priv);
 
 	LOG_DBG("%s: msg received\n", __func__);
-	ipm_send(ipm_handle, 0, id, NULL, 0);
+	ipm_send(ipm_handle, 0, CONFIG_OPENAMP_IPC_NOTIFY_CHAN, NULL, 0);
 
 	return 0;
 }

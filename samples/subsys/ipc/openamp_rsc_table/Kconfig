@@ -12,4 +12,8 @@ config OPENAMP_IPC_DEV_NAME
 	help
 	  This option specifies the device name for the IPC device to be used
 
+config OPENAMP_IPC_NOTIFY_CHAN
+	int "Mailbox channel to use to notify the host"
+	default 0
+
 source "Kconfig.zephyr"
