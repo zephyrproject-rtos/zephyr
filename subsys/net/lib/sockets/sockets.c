@@ -1949,7 +1949,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case SO_BINDTODEVICE: {
 			struct net_if *iface;
 			const struct device *dev;
-			struct ifreq *ifreq = (struct ifreq *)optval;
+			const struct ifreq *ifreq = optval;
 
 			if (net_context_get_family(ctx) != AF_INET &&
 			    net_context_get_family(ctx) != AF_INET6) {
