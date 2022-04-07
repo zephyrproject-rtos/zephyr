@@ -479,7 +479,7 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->api;
 	/* dma_context shall be the first one in dev data */
-	struct dma_context *dma_ctx = dev->data;
+	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
 
 	if (dma_ctx->magic != DMA_MAGIC) {
 		return channel;
@@ -515,13 +515,13 @@ __syscall void dma_release_channel(const struct device *dev,
 static inline void z_impl_dma_release_channel(const struct device *dev,
 					      uint32_t channel)
 {
-	struct dma_context *dma_ctx = dev->data;
+	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
 
 	if (dma_ctx->magic != DMA_MAGIC) {
 		return;
 	}
 
-	if (channel < dma_ctx->dma_channels) {
+	if ((int)channel < dma_ctx->dma_channels) {
 		atomic_clear_bit(dma_ctx->atomic, channel);
 	}
 
