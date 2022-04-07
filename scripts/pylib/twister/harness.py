@@ -13,6 +13,8 @@ class Harness:
     FAULT = "ZEPHYR FATAL ERROR"
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
+    run_id_pattern = r"RunID: (?P<run_id>.*)"
+
 
     def __init__(self):
         self.state = None
@@ -33,10 +35,14 @@ class Harness:
         self.ztest = False
         self.is_pytest = False
         self.detected_suite_names = []
+        self.run_id = None
+        self.matched_run_id = False
+        self.run_id_exists = False
 
     def configure(self, instance):
         config = instance.testcase.harness_config
         self.id = instance.testcase.id
+        self.run_id = instance.run_id
         if "ignore_faults" in instance.testcase.tags:
             self.fail_on_fault = False
 
@@ -48,6 +54,13 @@ class Harness:
             self.record = config.get('record', {})
 
     def process_test(self, line):
+
+        runid_match = re.search(self.run_id_pattern, line)
+        if runid_match:
+            run_id = runid_match.group("run_id")
+            self.run_id_exists = True
+            if run_id == str(self.run_id):
+                self.matched_run_id = True
 
         if self.RUN_PASSED in line:
             if self.fault:
