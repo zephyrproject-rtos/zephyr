@@ -3,8 +3,9 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-choice
+choice OPENTHREAD_STACK_VERSION
 	prompt "OpenThread stack version"
+	default OPENTHREAD_THREAD_VERSION_1_1
 	help
 	  This option selects version of Thread stack
 
