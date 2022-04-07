@@ -232,6 +232,15 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 	thread->arch.m_mode_pmpcfg_regs, \
 	ARRAY_SIZE(thread->arch.m_mode_pmpaddr_regs)
 
+/**
+ * @brief Abstract the last 3 arguments to set_pmp_entry() and
+ *        write_pmp_entries( for u-mode.
+ */
+#define PMP_U_MODE(thread) \
+	thread->arch.u_mode_pmpaddr_regs, \
+	thread->arch.u_mode_pmpcfg_regs, \
+	ARRAY_SIZE(thread->arch.u_mode_pmpaddr_regs)
+
 /*
  * This is used to seed thread PMP copies with global m-mode cfg entries
  * sharing the same cfg register. Locked entries aren't modifiable but
@@ -302,6 +311,11 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 	thread->arch.m_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
 
 	/* make the bottom addresses of our stack inaccessible */
+#ifdef CONFIG_USERSPACE
+	if (thread->arch.priv_stack_start != 0) {
+		stack_bottom = thread->arch.priv_stack_start;
+	}
+#endif
 	set_pmp_entry(&index, PMP_NONE,
 		      stack_bottom, Z_RISCV_STACK_GUARD_SIZE,
 		      PMP_M_MODE(thread));
@@ -346,3 +360,250 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 }
 
 #endif /* CONFIG_PMP_STACK_GUARD */
+
+#ifdef CONFIG_USERSPACE
+
+/**
+ * @brief Initialize the usermode portion of the PMP configuration.
+ *
+ * This is called once during new thread creation.
+ */
+void z_riscv_pmp_usermode_init(struct k_thread *thread)
+{
+	/* Only indicate that the u-mode PMP is not prepared yet */
+	thread->arch.u_mode_pmp_end_index = 0;
+}
+
+/**
+ * @brief Prepare the u-mode PMP content for given thread.
+ *
+ * This is called once before making the transition to usermode.
+ */
+void z_riscv_pmp_usermode_prepare(struct k_thread *thread)
+{
+	unsigned int index = global_pmp_end_index;
+
+	/* Retrieve pmpcfg0 partial content from global entries */
+	thread->arch.u_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
+
+#if !defined(CONFIG_SMP)
+	/* Map the is_user_mode variable */
+	extern uint32_t is_user_mode;
+
+	set_pmp_entry(&index, PMP_R,
+		      (uintptr_t) &is_user_mode, sizeof(is_user_mode),
+		      PMP_U_MODE(thread));
+#endif
+
+	/* Map the usermode stack */
+	set_pmp_entry(&index, PMP_R | PMP_W,
+		      thread->stack_info.start, thread->stack_info.size,
+		      PMP_U_MODE(thread));
+
+	thread->arch.u_mode_pmp_domain_offset = index;
+	thread->arch.u_mode_pmp_end_index = index;
+	thread->arch.u_mode_pmp_update_nr = 0;
+}
+
+/**
+ * @brief Convert partition information into PMP entries
+ */
+static void resync_pmp_domain(struct k_thread *thread,
+			      struct k_mem_domain *domain)
+{
+	unsigned int index = thread->arch.u_mode_pmp_domain_offset;
+	int p_idx, remaining_partitions;
+	bool ok;
+
+	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
+
+	remaining_partitions = domain->num_partitions;
+	for (p_idx = 0; remaining_partitions > 0; p_idx++) {
+		struct k_mem_partition *part = &domain->partitions[p_idx];
+
+		if (part->size == 0) {
+			/* skip empty partition */
+			continue;
+		}
+
+		remaining_partitions--;
+
+		if (part->size < 4) {
+			/* * 4 bytes is the minimum we can map */
+			LOG_ERR("non-empty partition too small");
+			__ASSERT(false, "");
+			continue;
+		}
+
+		ok = set_pmp_entry(&index, part->attr.pmp_attr,
+				   part->start, part->size, PMP_U_MODE(thread));
+		__ASSERT(ok,
+			 "no PMP slot left for %d remaining partitions in domain %p",
+			 remaining_partitions + 1, domain);
+	}
+
+	thread->arch.u_mode_pmp_end_index = index;
+	thread->arch.u_mode_pmp_update_nr = domain->arch.pmp_update_nr;
+
+	k_spin_unlock(&z_mem_domain_lock, key);
+}
+
+/**
+ * @brief Write PMP usermode content to actual PMP registers
+ *
+ * This is called on every context switch.
+ */
+void z_riscv_pmp_usermode_enable(struct k_thread *thread)
+{
+	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
+
+	if (thread->arch.u_mode_pmp_end_index == 0) {
+		/* z_riscv_pmp_usermode_prepare() has not been called yet */
+		return;
+	}
+
+	if (thread->arch.u_mode_pmp_update_nr != domain->arch.pmp_update_nr) {
+		/*
+		 * Resynchronize our PMP entries with
+		 * the latest domain partition information.
+		 */
+		resync_pmp_domain(thread, domain);
+	}
+
+#ifdef CONFIG_PMP_STACK_GUARD
+	/* Make sure m-mode PMP usage is disabled before we reprogram it */
+	csr_clear(mstatus, MSTATUS_MPRV);
+#endif
+
+	/* Write our u-mode MPP entries */
+	write_pmp_entries(global_pmp_end_index, thread->arch.u_mode_pmp_end_index,
+			  true /* must clear to the end */,
+			  PMP_U_MODE(thread));
+
+	if (PMP_DEBUG_DUMP) {
+		dump_pmp_regs("u-mode register dump");
+	}
+}
+
+int arch_mem_domain_max_partitions_get(void)
+{
+	int available_pmp_slots = CONFIG_PMP_SLOT;
+
+	/* remove those slots dedicated to global entries */
+	available_pmp_slots -= global_pmp_end_index;
+
+#if !defined(CONFIG_SMP)
+	/* One slot needed to map the is_user_mode variable */
+	available_pmp_slots -= 1;
+#endif
+
+	/* At least one slot to map the user thread's stack */
+	available_pmp_slots -= 1;
+
+	/*
+	 * Each partition may require either 1 or 2 PMP slots depending
+	 * on a couple factors that are not known in advance. Even when
+	 * arch_mem_domain_partition_add() is called, we can't tell if a
+	 * given partition will fit in the remaining PMP slots of an
+	 * affected thread if it hasn't executed in usermode yet.
+	 *
+	 * Give the most optimistic answer here (which should be pretty
+	 * accurate if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT=y) and be
+	 * prepared to deny availability in resync_pmp_domain() if this
+	 * estimate was too high.
+	 */
+	return available_pmp_slots;
+}
+
+int arch_mem_domain_init(struct k_mem_domain *domain)
+{
+	domain->arch.pmp_update_nr = 0;
+	return 0;
+}
+
+int arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				  uint32_t partition_id)
+{
+	/* Force resynchronization for every thread using this domain */
+	domain->arch.pmp_update_nr += 1;
+	return 0;
+}
+
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				     uint32_t partition_id)
+{
+	/* Force resynchronization for every thread using this domain */
+	domain->arch.pmp_update_nr += 1;
+	return 0;
+}
+
+int arch_mem_domain_thread_add(struct k_thread *thread)
+{
+	/* Force resynchronization for this thread */
+	thread->arch.u_mode_pmp_update_nr = 0;
+	return 0;
+}
+
+int arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+	return 0;
+}
+
+#define IS_WITHIN(inner_start, inner_size, outer_start, outer_size) \
+	((inner_start) >= (outer_start) && (inner_size) <= (outer_size) && \
+	 ((inner_start) - (outer_start)) <= ((outer_size) - (inner_size)))
+
+int arch_buffer_validate(void *addr, size_t size, int write)
+{
+	uintptr_t start = (uintptr_t)addr;
+	int ret = -1;
+
+	/* Check if this is on the stack */
+	if (IS_WITHIN(start, size,
+		      _current->stack_info.start, _current->stack_info.size)) {
+		return 0;
+	}
+
+	/* Check if this is within the global read-only area */
+	if (!write) {
+		uintptr_t ro_start = (uintptr_t)__rom_region_start;
+		size_t ro_size = (size_t)__rom_region_size;
+
+		if (IS_WITHIN(start, size, ro_start, ro_size)) {
+			return 0;
+		}
+	}
+
+	/* Look for a matching partition in our memory domain */
+	struct k_mem_domain *domain = _current->mem_domain_info.mem_domain;
+	int p_idx, remaining_partitions;
+	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
+
+	remaining_partitions = domain->num_partitions;
+	for (p_idx = 0; remaining_partitions > 0; p_idx++) {
+		struct k_mem_partition *part = &domain->partitions[p_idx];
+
+		if (part->size == 0) {
+			/* unused partition */
+			continue;
+		}
+
+		remaining_partitions--;
+
+		if (!IS_WITHIN(start, size, part->start, part->size)) {
+			/* unmatched partition */
+			continue;
+		}
+
+		/* partition matched: determine access result */
+		if ((part->attr.pmp_attr & (write ? PMP_W : PMP_R)) != 0) {
+			ret = 0;
+		}
+		break;
+	}
+
+	k_spin_unlock(&z_mem_domain_lock, key);
+	return ret;
+}
+
+#endif /* CONFIG_USERSPACE */
