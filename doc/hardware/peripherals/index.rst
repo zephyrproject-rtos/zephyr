@@ -35,6 +35,7 @@ Peripherals
    regulators.rst
    reset.rst
    rtc.rst
+   sdhc.rst
    sensor.rst
    spi.rst
    tcpc.rst
