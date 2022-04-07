@@ -327,6 +327,16 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 	 */
 	set_pmp_entry(&index, PMP_R | PMP_W | PMP_X,
 		      0, 0, PMP_M_MODE(thread));
+#ifdef CONFIG_QEMU_TARGET
+	/*
+	 * Workaround: The above produced 0x1fffffff which is correct.
+	 * But there is a QEMU bug that prevents it from interpreting this
+	 * value correctly. Hardcode the special case used by QEMU to
+	 * bypass this bug for now. The QEMU fix is here:
+	 * https://lists.gnu.org/archive/html/qemu-devel/2022-04/msg00961.html
+	 */
+	thread->arch.m_mode_pmpaddr_regs[index-1] = -1L;
+#endif
 
 	/* remember how many entries we use */
 	thread->arch.m_mode_pmp_end_index = index;
