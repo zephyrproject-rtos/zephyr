@@ -23,6 +23,10 @@ Changes in this release
   from ``uint8_t`` to ``enum lorawan_message_type``. If ``0`` was passed for
   unconfirmed message, this has to be changed to ``LORAWAN_MSG_UNCONFIRMED``.
 
+* Disk Subsystem: SPI mode SD cards now use the SD subsystem to communicate
+  with SD cards. See :ref:`the disk access api <disk_access_api>` for an
+  example of the new devicetree binding format required.
+
 Removed APIs in this release
 ============================
 
@@ -82,6 +86,10 @@ New APIs in this release
 
   * Added :c:macro:`IN_RANGE` for checking if a value is in the range of two
     other values.
+
+* SDHC API
+
+  * Added the :ref:`SDHC api <sdhc_api>`, used to interact with SD host controllers.
 
 Kernel
 ******
@@ -229,6 +237,13 @@ Libraries / Subsystems
 
   * Added mcumgr os hook to allow an application to accept or decline a reset
     request; :kconfig:option:`CONFIG_OS_MGMT_RESET_HOOK` enables the callback.
+
+* SD Subsystem
+
+  * Added the SD subsystem, which is used by the
+    :ref:`disk access api <disk_access_api>` to interact with connected SD cards.
+    This subsystem uses the :ref:`SDHC api <sdhc_api>` to interact with the SD
+    host controller the SD device is connected to.
 
 HALs
 ****
