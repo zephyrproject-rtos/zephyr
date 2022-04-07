@@ -142,5 +142,5 @@ static const struct fpga_driver_api eos_s3_api = {
 	.get_info = eos_s3_fpga_get_info
 };
 
-DEVICE_DEFINE(fpga, "FPGA", &eos_s3_fpga_init, NULL, &fpga_data, NULL, APPLICATION,
+DEVICE_DT_DEFINE(DT_NODELABEL(fpga0), &eos_s3_fpga_init, NULL, &fpga_data, NULL, APPLICATION,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &eos_s3_api);
