@@ -69,7 +69,7 @@ static void test_pm_policy_next_state_default_allowed(void)
 	/* initial state: PM_STATE_RUNTIME_IDLE allowed
 	 * next state: PM_STATE_RUNTIME_IDLE
 	 */
-	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE);
+	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 	zassert_false(active, NULL);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
@@ -78,9 +78,9 @@ static void test_pm_policy_next_state_default_allowed(void)
 	/* disallow PM_STATE_RUNTIME_IDLE
 	 * next state: NULL (active)
 	 */
-	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE);
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 
-	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE);
+	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 	zassert_true(active, NULL);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
@@ -89,9 +89,40 @@ static void test_pm_policy_next_state_default_allowed(void)
 	/* allow PM_STATE_RUNTIME_IDLE again
 	 * next state: PM_STATE_RUNTIME_IDLE
 	 */
-	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE);
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 
-	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE);
+	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	zassert_false(active, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+
+	/* initial state: PM_STATE_RUNTIME_IDLE and substate 1 allowed
+	 * next state: PM_STATE_RUNTIME_IDLE
+	 */
+	pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1);
+	zassert_false(active, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE, NULL);
+
+	/* disallow PM_STATE_RUNTIME_IDLE and substate 1
+	 * next state: NULL (active)
+	 */
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, 1);
+
+	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1);
+	zassert_true(active, NULL);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next, NULL, NULL);
+
+	/* allow PM_STATE_RUNTIME_IDLE and substate 1 again
+	 * next state: PM_STATE_RUNTIME_IDLE
+	 */
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, 1);
+
+	active = pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, 1);
 	zassert_false(active, NULL);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));

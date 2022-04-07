@@ -31,7 +31,7 @@ static int disable_ds_1(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	pm_policy_state_lock_get(PM_STATE_SOFT_OFF);
+	pm_policy_state_lock_get(PM_STATE_SOFT_OFF, PM_ALL_SUBSTATES);
 	return 0;
 }
 

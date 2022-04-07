@@ -56,7 +56,7 @@ void uart1_wui_isr(const struct device *gpio, struct gpio_callback *cb,
 	 * The pm state of it8xxx2 chip only supports standby, so here we
 	 * can directly set the constraint for standby.
 	 */
-	pm_policy_state_lock_get(PM_STATE_STANDBY);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	k_work_reschedule(&uart_console_data->rx_refresh_timeout_work, delay);
 #endif
 }
@@ -76,7 +76,7 @@ void uart2_wui_isr(const struct device *gpio, struct gpio_callback *cb,
 	 * The pm state of it8xxx2 chip only supports standby, so here we
 	 * can directly set the constraint for standby.
 	 */
-	pm_policy_state_lock_get(PM_STATE_STANDBY);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	k_work_reschedule(&uart_console_data->rx_refresh_timeout_work, delay);
 #endif
 }
@@ -116,7 +116,7 @@ static void uart_it8xxx2_rx_refresh_timeout(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	pm_policy_state_lock_put(PM_STATE_STANDBY);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 #endif
 #endif /* CONFIG_PM_DEVICE */

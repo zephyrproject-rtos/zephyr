@@ -681,7 +681,7 @@ static void uart_ns16550_irq_tx_enable(const struct device *dev)
 		 * different states.
 		 */
 		for (uint8_t i = 0U; i < num_cpu_states; i++) {
-			pm_policy_state_lock_get(cpu_states[i].state);
+			pm_policy_state_lock_get(cpu_states[i].state, PM_ALL_SUBSTATES);
 		}
 	}
 #endif
@@ -718,7 +718,7 @@ static void uart_ns16550_irq_tx_disable(const struct device *dev)
 		 * to different states.
 		 */
 		for (uint8_t i = 0U; i < num_cpu_states; i++) {
-			pm_policy_state_lock_put(cpu_states[i].state);
+			pm_policy_state_lock_put(cpu_states[i].state, PM_ALL_SUBSTATES);
 		}
 	}
 #endif
