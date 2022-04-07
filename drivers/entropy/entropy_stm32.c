@@ -246,7 +246,7 @@ static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf, uint16_t len)
 	available = available - len;
 	if ((available <= rngp->threshold)
 		&& !LL_RNG_IsEnabledIT(entropy_stm32_rng_data.rng)) {
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		LL_RNG_EnableIT(entropy_stm32_rng_data.rng);
 	}
 
@@ -300,7 +300,7 @@ static void stm32_rng_isr(const void *arg)
 				byte);
 		if (ret < 0) {
 			LL_RNG_DisableIT(entropy_stm32_rng_data.rng);
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		}
 
 		k_sem_give(&entropy_stm32_rng_data.sem_sync);
@@ -512,7 +512,7 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	 * rng pool is being populated. The ISR will release the constraint again
 	 * when the rng pool is filled.
 	 */
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 	LL_RNG_EnableIT(dev_data->rng);
 
