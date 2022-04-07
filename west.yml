@@ -174,7 +174,7 @@ manifest:
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
     - name: mbedtls
-      revision: 3e3e58a92de76069730c63e0d524f40fea948a61
+      revision: 7fed49c9b9f983ad6416986661ef637459723bcb
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -229,17 +229,17 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: bfbd7803b0ed77680e220e44ce6fb363ef2a4224
+      revision: 7c53a6e76130a85303f83b15d868a92fdcd5f5be
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
     - name: tf-m-tests
-      revision: 52814181f0fde6d1422fac204d42cde30c62e40e
+      revision: c99a86b295c4887520da9d8402566d7f225c974e
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - tee
     - name: psa-arch-tests
-      revision: 4f45df539d3d98b6e38e112be9936be4a2b8a97c
+      revision: a81f9da287569f169d60026916952641b233faa8
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
