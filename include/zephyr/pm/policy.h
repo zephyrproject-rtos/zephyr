@@ -59,6 +59,9 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
 
 /** @endcond */
 
+/** Special value for 'all substates'. */
+#define PM_ALL_SUBSTATES (UINT8_MAX)
+
 #if defined(CONFIG_PM) || defined(__DOXYGEN__)
 /**
  * @brief Increase a power state lock counter.
@@ -73,29 +76,35 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
  * with PM_STATE_ACTIVE will have no effect.
  *
  * @param state Power state.
+ * @param substate_id Power substate ID. Use PM_ALL_SUBSTATES to affect all the
+ *		      substates in the given power state.
  *
  * @see pm_policy_state_lock_put()
  */
-void pm_policy_state_lock_get(enum pm_state state);
+void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id);
 
 /**
  * @brief Decrease a power state lock counter.
  *
  * @param state Power state.
+ * @param substate_id Power substate ID. Use PM_ALL_SUBSTATES to affect all the
+ *		      substates in the given power state.
  *
  * @see pm_policy_state_lock_get()
  */
-void pm_policy_state_lock_put(enum pm_state state);
+void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id);
 
 /**
  * @brief Check if a power state lock is active (not allowed).
  *
  * @param state Power state.
+ * @param substate_id Power substate ID. Use PM_ALL_SUBSTATES to affect all the
+ *		      substates in the given power state.
  *
  * @retval true if power state lock is active.
  * @retval false if power state lock is not active.
  */
-bool pm_policy_state_lock_is_active(enum pm_state state);
+bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
 
 /**
  * @brief Add a new latency requirement.
@@ -132,19 +141,22 @@ void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
  */
 void pm_policy_latency_changed(pm_policy_latency_changed_cb_t cb);
 #else
-static inline void pm_policy_state_lock_get(enum pm_state state)
+static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 }
 
-static inline void pm_policy_state_lock_put(enum pm_state state)
+static inline void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 }
 
-static inline bool pm_policy_state_lock_is_active(enum pm_state state)
+static inline bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 
 	return false;
 }

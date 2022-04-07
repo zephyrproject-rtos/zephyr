@@ -18,6 +18,7 @@
 			power-state-name = "runtime-idle";
 			min-residency-us = <100000>;
 			exit-latency-us = <10000>;
+			substate-id = <1>;
 		};
 
 		state1: state1 {
@@ -25,6 +26,7 @@
 			power-state-name = "suspend-to-ram";
 			min-residency-us = <1000000>;
 			exit-latency-us = <100000>;
+			substate-id = <10>;
 		};
 
 		state2: state2 {
@@ -32,6 +34,7 @@
 			power-state-name = "suspend-to-ram";
 			min-residency-us = <500000>;
 			exit-latency-us = <50000>;
+			substate-id = <100>;
 		};
 	};
 };

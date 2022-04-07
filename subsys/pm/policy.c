@@ -15,8 +15,30 @@
 #include <sys/atomic.h>
 #include <toolchain.h>
 
-/** State lock reference counting */
-static atomic_t state_lock_cnt[PM_STATE_COUNT];
+#define DT_SUB_LOCK_INIT(node_id)				\
+	{ .state = PM_STATE_DT_INIT(node_id),			\
+	  .substate_id = DT_PROP_OR(node_id, substate_id, 0),	\
+	  .lock = ATOMIC_INIT(0),				\
+	},
+
+/**
+ * State and substate lock structure.
+ *
+ * This struct is associating a reference counting to each <state,substate>
+ * couple to be used with the pm_policy_substate_lock_* functions.
+ *
+ * Operations on this array are in the order of O(n) with the number of power
+ * states and this is mostly due to the random nature of the substate value
+ * (that can be anything from a small integer value to a bitmask). We can
+ * probably do better with an hashmap.
+ */
+static struct {
+	enum pm_state state;
+	uint8_t substate_id;
+	atomic_t lock;
+} substate_lock_t[] = {
+	DT_FOREACH_STATUS_OKAY(zephyr_power_state, DT_SUB_LOCK_INIT)
+};
 
 /** Lock to synchronize access to the latency request list. */
 static struct k_spinlock latency_lock;
@@ -68,7 +90,8 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 		const struct pm_state_info *state = &cpu_states[i];
 		uint32_t min_residency, exit_latency;
 
-		if (pm_policy_state_lock_is_active(state->state)) {
+		/* check if there is a lock on state + substate */
+		if (pm_policy_state_lock_is_active(state->state, state->substate_id)) {
 			continue;
 		}
 
@@ -91,23 +114,43 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 }
 #endif
 
-void pm_policy_state_lock_get(enum pm_state state)
+void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
-	atomic_inc(&state_lock_cnt[state]);
+	for (size_t i = 0; i < ARRAY_SIZE(substate_lock_t); i++) {
+		if (substate_lock_t[i].state == state &&
+		   (substate_lock_t[i].substate_id == substate_id ||
+		    substate_id == PM_ALL_SUBSTATES)) {
+			atomic_inc(&substate_lock_t[i].lock);
+		}
+	}
 }
 
-void pm_policy_state_lock_put(enum pm_state state)
+void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 {
-	atomic_t cnt = atomic_dec(&state_lock_cnt[state]);
+	for (size_t i = 0; i < ARRAY_SIZE(substate_lock_t); i++) {
+		if (substate_lock_t[i].state == state &&
+		   (substate_lock_t[i].substate_id == substate_id ||
+		    substate_id == PM_ALL_SUBSTATES)) {
+			atomic_t cnt = atomic_dec(&substate_lock_t[i].lock);
 
-	ARG_UNUSED(cnt);
+			ARG_UNUSED(cnt);
 
-	__ASSERT(cnt >= 1, "Unbalanced state lock get/put");
+			__ASSERT(cnt >= 1, "Unbalanced state lock get/put");
+		}
+	}
 }
 
-bool pm_policy_state_lock_is_active(enum pm_state state)
+bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
 {
-	return (atomic_get(&state_lock_cnt[state]) != 0);
+	for (size_t i = 0; i < ARRAY_SIZE(substate_lock_t); i++) {
+		if (substate_lock_t[i].state == state &&
+		   (substate_lock_t[i].substate_id == substate_id ||
+		    substate_id == PM_ALL_SUBSTATES)) {
+			return (atomic_get(&substate_lock_t[i].lock) != 0);
+		}
+	}
+
+	return false;
 }
 
 void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
