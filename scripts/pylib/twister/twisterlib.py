@@ -14,12 +14,14 @@ import select
 import shutil
 import shlex
 import signal
+import hashlib
 import threading
 from collections import OrderedDict
 import queue
 import time
 import csv
 import glob
+import random
 import xml.etree.ElementTree as ET
 import logging
 from pathlib import Path
@@ -528,6 +530,12 @@ class Handler:
         harness_class_name = type(harness).__name__
         if harness_class_name == "Test":  # only for ZTest tests
             self._verify_ztest_suite_name(harness.state, harness.detected_suite_names, handler_time)
+
+            if not harness.matched_run_id and harness.run_id_exists:
+                self.set_state("failed", handler_time)
+                self.instance.reason = "RunID mismatch"
+                for k in self.instance.testcase.cases:
+                    self.instance.results[k] = "FAIL"
 
         self.record(harness)
 
@@ -2085,11 +2093,22 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.outdir = outdir
 
         self.name = os.path.join(platform.name, testcase.name)
+        self.run_id = self._get_run_id()
         self.build_dir = os.path.join(outdir, platform.name, testcase.name)
 
         self.run = False
 
         self.results = {}
+
+    def _get_run_id(self):
+        """ generate run id from instance unique identifier and a random
+        number"""
+
+        hash_object = hashlib.md5(self.name.encode())
+        random_str = f"{random.getrandbits(64)}".encode()
+        hash_object.update(random_str)
+        return hash_object.hexdigest()
+
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -2335,6 +2354,7 @@ class CMake():
         cmake_args = [
             f'-B{self.build_dir}',
             f'-S{self.source_dir}',
+            f'-DTC_RUNID={self.instance.run_id}',
             f'-DEXTRA_CFLAGS={cflags}',
             f'-DEXTRA_AFLAGS={aflags}',
             f'-DEXTRA_LDFLAGS={ldflags}',
