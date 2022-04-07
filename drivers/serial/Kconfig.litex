@@ -6,8 +6,6 @@
 config UART_LITEUART
 	bool "LiteUART serial driver"
 	depends on SOC_RISCV32_LITEX_VEXRISCV
-	# currently not supporting interrupts due to a bug in LiteUART Tx IRQ
-	depends on !SERIAL_SUPPORT_INTERRUPT
 	select SERIAL_HAS_DRIVER
 	help
 	  This option enables LiteUART serial driver.
