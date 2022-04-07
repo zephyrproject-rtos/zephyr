@@ -14,6 +14,10 @@ description: |
   Custom pin properties for npcx series are available also:
     - pinmux-locked: Lock pinmux configuration for peripheral device
     - pinmux-gpio: Inverse pinmux back to gpio
+    - psl-in-mode-level: Select the assertion detection mode of PSL input to level detection
+    - psl-in-mode-edge: Select the assertion detection mode of PSL input to edge detection
+    - psl-in-pol-high-rising: Select the assertion detection polarity of PSL input to high/rising
+    - psl-in-pol-low-falling: Select the assertion detection polarity of PSL input to low/falling
 
   An example for NPCX7 family, include the chip level pinctrl DTSI file in the
   board level DTS:
@@ -61,6 +65,17 @@ child-binding:
         description: |
           A map to PUPD_ENn register/bit that enable pull-up/down of NPCX peripheral devices.
           Please don't overwrite this property in the board-level DT driver.
+      psl-offset:
+        type: int
+        description: |
+          Offset to PSL_CTS register that is used for PSL input's status and detection mode.
+          Please don't overwrite this property in the board-level DT driver.
+      psl-polarity:
+        type: phandle
+        required: false
+        description: |
+          A map to DEVALTn that configures detection polarity of PSL input pads.
+          Please don't overwrite this property in the board-level DT driver.
       pinmux-locked:
         required: false
         type: boolean
@@ -69,3 +84,23 @@ child-binding:
         required: false
         type: boolean
         description: Inverse pinmux selection to GPIO
+      psl-in-mode:
+        type: string
+        required: false
+        description: |
+          The assertion detection mode of PSL input selection
+          - "PSL_IN_MODE_LEVEL": Select the detection mode to level detection
+          - "PSL_IN_MODE_EDGE": Select the detection mode to edge detection
+        enum:
+          - "PSL_IN_MODE_LEVEL"
+          - "PSL_IN_MODE_EDGE"
+      psl-in-pol:
+        type: string
+        required: false
+        description: |
+          The assertion detection polarity of PSL input selection
+          - "PSL_IN_POL_LOW_FALLING": Select the detection polarity to low/falling
+          - "PSL_IN_POL_HIGH_RISING": Select the detection polarity to high/rising
+        enum:
+          - "PSL_IN_POL_LOW_FALLING"
+          - "PSL_IN_POL_HIGH_RISING"
