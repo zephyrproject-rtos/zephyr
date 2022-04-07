@@ -41,6 +41,13 @@ static inline void soc_secure_read_deviceid(uint32_t deviceid[2])
 }
 
 #else /* defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) */
+
+static inline int soc_secure_mem_read(void *dst, void *src, size_t len)
+{
+	(void)memcpy(dst, src, len);
+	return 0;
+}
+
 #if defined(GPIO_PIN_CNF_MCUSEL_Msk)
 static inline void soc_secure_gpio_pin_mcu_select(uint32_t pin_number,
 						  nrf_gpio_pin_mcusel_t mcu)
