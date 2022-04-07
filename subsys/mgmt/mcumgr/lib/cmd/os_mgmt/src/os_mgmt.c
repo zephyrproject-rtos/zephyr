@@ -235,6 +235,22 @@ os_mgmt_reset(struct mgmt_ctxt *ctxt)
 	return os_mgmt_impl_reset(CONFIG_OS_MGMT_RESET_MS);
 }
 
+#if CONFIG_OS_MGMT_MCUMGR_PARAMS
+static int
+os_mgmt_mcumgr_params(struct mgmt_ctxt *ctxt)
+{
+	zcbor_state_t *zse = ctxt->cnbe->zs;
+	bool ok;
+
+	ok = zcbor_tstr_put_lit(zse, "buf_size")		&&
+	     zcbor_uint32_put(zse, CONFIG_MCUMGR_BUF_SIZE)	&&
+	     zcbor_tstr_put_lit(zse, "buf_count")		&&
+	     zcbor_uint32_put(zse, CONFIG_MCUMGR_BUF_COUNT);
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+}
+#endif
+
 static const struct mgmt_handler os_mgmt_group_handlers[] = {
 #if CONFIG_OS_MGMT_ECHO
 	[OS_MGMT_ID_ECHO] = {
@@ -249,6 +265,11 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 	[OS_MGMT_ID_RESET] = {
 		NULL, os_mgmt_reset
 	},
+#if CONFIG_OS_MGMT_MCUMGR_PARAMS
+	[OS_MGMT_ID_MCUMGR_PARAMS] = {
+		os_mgmt_mcumgr_params, NULL
+	},
+#endif
 };
 
 #define OS_MGMT_GROUP_SZ ARRAY_SIZE(os_mgmt_group_handlers)
