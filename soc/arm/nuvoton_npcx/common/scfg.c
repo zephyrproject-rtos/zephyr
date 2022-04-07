@@ -52,11 +52,6 @@ static const struct npcx_scfg_config npcx_scfg_cfg = {
 
 #define HAL_GLUE_INST() (struct glue_reg *)(npcx_scfg_cfg.base_glue)
 
-/* PSL input detection mode is configured by bits 7:4 of PSL_CTS */
-#define NPCX_PSL_CTS_MODE_BIT(bit) BIT(bit + 4)
-/* PSL input assertion events are reported by bits 3:0 of PSL_CTS */
-#define NPCX_PSL_CTS_EVENT_BIT(bit) BIT(bit)
-
 /* Pin-control local functions */
 static void npcx_pinctrl_alt_sel(const struct npcx_alt *alt, int alt_func)
 {

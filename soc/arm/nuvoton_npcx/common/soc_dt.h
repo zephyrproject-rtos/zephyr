@@ -700,4 +700,20 @@
 #define NPCX_BOOTER_IS_HIF_TYPE_SET() \
 	DT_PROP(DT_PATH(booter_variant), hif_type_auto)
 
+/**
+ * @brief Helper macro to get address of system configuration module which is
+ * used by serval peripheral device drivers in npcx series.
+ *
+ * @return base address of system configuration module.
+ */
+#define NPCX_SCFG_REG_ADDR DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg)
+
+/**
+ * @brief Helper macro to get address of system glue module which is
+ * used by serval peripheral device drivers in npcx series.
+ *
+ * @return base address of system glue module.
+ */
+#define NPCX_GLUE_REG_ADDR DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), glue)
+
 #endif /* _NUVOTON_NPCX_SOC_DT_H_ */
