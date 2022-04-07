@@ -5,6 +5,10 @@ zephyr_include_directories(
   ${ZEPHYR_BASE}/subsys/testsuite/ztest/include
   )
 
+if(DEFINED TC_RUNID)
+  zephyr_compile_definitions(TC_RUNID=${TC_RUNID})
+endif()
+
 zephyr_library()
 zephyr_library_sources_ifndef(CONFIG_ZTEST_NEW_API src/ztest.c)
 zephyr_library_sources_ifdef(CONFIG_ZTEST_NEW_API  src/ztest_new.c)
