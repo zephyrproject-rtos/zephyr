@@ -93,6 +93,13 @@ typedef struct _callee_saved _callee_saved_t;
 #define PMP_M_MODE_SLOTS 8	/* 8 is plenty enough for m-mode */
 
 struct _thread_arch {
+#ifdef CONFIG_USERSPACE
+	ulong_t u_mode_pmpaddr_regs[CONFIG_PMP_SLOT];
+	ulong_t u_mode_pmpcfg_regs[CONFIG_PMP_SLOT / sizeof(ulong_t)];
+	unsigned int u_mode_pmp_domain_offset;
+	unsigned int u_mode_pmp_end_index;
+	unsigned int u_mode_pmp_update_nr;
+#endif
 #ifdef CONFIG_PMP_STACK_GUARD
 	unsigned int m_mode_pmp_end_index;
 	ulong_t m_mode_pmpaddr_regs[PMP_M_MODE_SLOTS];
