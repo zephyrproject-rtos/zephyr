@@ -746,6 +746,21 @@ static struct net_if_api api_funcs = {
 
 static bool offload_is_supported(int family, int type, int proto)
 {
+	if (family != AF_INET &&
+	    family != AF_INET6) {
+		return false;
+	}
+
+	if (type != SOCK_DGRAM &&
+	    type != SOCK_STREAM) {
+		return false;
+	}
+
+	if (proto != IPPROTO_TCP &&
+	    proto != IPPROTO_UDP) {
+		return false;
+	}
+
 	return true;
 }
 
