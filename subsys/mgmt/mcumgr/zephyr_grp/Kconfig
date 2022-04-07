@@ -12,9 +12,9 @@ config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
 	help
 	  Enables command that allows to erase storage partition.
 
-module=MGMT_SETTINGS
+module=MCUMGR_ZEPHYR_GRP
 module-dep=LOG
-module-str=SETTINGS
+module-str=mcumgr_zephyr_grp
 source "subsys/logging/Kconfig.template.log_config"
 
 endif

@@ -11,7 +11,7 @@
 #include <mgmt/mcumgr/zephyr_groups.h>
 #include <storage/flash_map.h>
 
-LOG_MODULE_REGISTER(mgmt_zephyr_basic, CONFIG_MGMT_SETTINGS_LOG_LEVEL);
+LOG_MODULE_REGISTER(mcumgr_zephyr_grp);
 
 static int storage_erase(void)
 {
