@@ -153,7 +153,7 @@ menuconfig RISCV_PMP
 
 if RISCV_PMP
 
-config PMP_SLOT
+config PMP_SLOTS
 	int "Number of PMP slots"
 	default 8
 	help
@@ -175,9 +175,9 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  accommodate the stack overflow exception stack usage.
 
 config PMP_POWER_OF_TWO_ALIGNMENT
-	bool "Power-of-two alignment for PMP memory areas"
+	bool "Enforce power-of-two alignment on PMP memory areas"
 	default y if TEST_USERSPACE
-	default y if (PMP_SLOT = 8)
+	default y if (PMP_SLOTS = 8)
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	select GEN_PRIV_STACKS
 	help
