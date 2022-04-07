@@ -201,3 +201,15 @@ tests:
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_AUDIO_BROADCAST_SINK=n
+  bluetooth.audio_shell.no_has:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_HAS=n
+  bluetooth.audio_shell.no_has_client:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    platform_allow: native_posix
+    extra_configs:
+      - CONFIG_BT_HAS_CLIENT=n
