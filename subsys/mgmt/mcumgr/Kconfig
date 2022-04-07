@@ -94,23 +94,7 @@ menu "Command Handlers"
 
 rsource "lib/cmd/Kconfig"
 
-menuconfig MCUMGR_GRP_ZEPHYR_BASIC
-	bool "Zephyr specific basic group of commands"
-	help
-	  Enables mcumgr to processing of Zephyr specific groups.
-
-if MCUMGR_GRP_ZEPHYR_BASIC
-config MCUMGR_GRP_BASIC_CMD_STORAGE_ERASE
-	bool "Storage erase command"
-	help
-	  Enables command that allows to erase storage partition.
-
-module=MGMT_SETTINGS
-module-dep=LOG
-module-str=SETTINGS
-source "subsys/logging/Kconfig.template.log_config"
-
-endif
+rsource "zephyr_grp/Kconfig"
 
 endmenu
 
