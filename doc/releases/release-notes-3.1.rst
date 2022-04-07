@@ -40,6 +40,8 @@ Deprecated in this release
 ==========================
 
 * :c:func:`nvs_init` is deprecated in favor of utilizing :c:func:`nvs_mount`.
+* The TinyCBOR module has been deprecated in favor of the new zcbor CBOR
+  library, included with Zephyr in this release.
 
 Stable API changes in this release
 ==================================
