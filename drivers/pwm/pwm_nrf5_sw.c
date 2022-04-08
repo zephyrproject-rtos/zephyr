@@ -237,11 +237,11 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 		NRF_PPI->CH[ppi_chs[0]].EEP =
 			(uint32_t) &(rtc->EVENTS_COMPARE[channel]);
 		NRF_PPI->CH[ppi_chs[0]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[channel]);
+			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
 		NRF_PPI->CH[ppi_chs[1]].EEP =
 			(uint32_t) &(rtc->EVENTS_COMPARE[config->map_size]);
 		NRF_PPI->CH[ppi_chs[1]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[channel]);
+			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
 		NRF_PPI->CH[ppi_chs[2]].EEP =
 			(uint32_t) &(rtc->EVENTS_COMPARE[config->map_size]);
 		NRF_PPI->CH[ppi_chs[2]].TEP =
@@ -250,11 +250,11 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 		NRF_PPI->CH[ppi_chs[0]].EEP =
 			(uint32_t) &(timer->EVENTS_COMPARE[channel]);
 		NRF_PPI->CH[ppi_chs[0]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[channel]);
+			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
 		NRF_PPI->CH[ppi_chs[1]].EEP =
 			(uint32_t) &(timer->EVENTS_COMPARE[config->map_size]);
 		NRF_PPI->CH[ppi_chs[1]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[channel]);
+			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
 	}
 	NRF_PPI->CHENSET = ppi_mask;
 
