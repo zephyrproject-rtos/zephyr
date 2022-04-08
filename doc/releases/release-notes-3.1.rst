@@ -187,6 +187,12 @@ Build and Infrastructure
 Libraries / Subsystems
 **********************
 
+* Management
+
+  * Added support for MCUMGR Parameters command, which can be used to obtain
+    MCUMGR parameters; :kconfig:option:`CONFIG_OS_MGMT_MCUMGR_PARAMS` enables
+    the command.
+
 HALs
 ****
 
