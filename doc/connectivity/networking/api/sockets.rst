@@ -143,6 +143,137 @@ Secure sockets offer the following options for socket management:
 
 .. doxygengroup:: secure_sockets_options
 
+Socket offloading
+*****************
+
+Zephyr allows to register custom socket implementations (called offloaded
+sockets). This allows for seamless integration for devices which provide an
+external IP stack and expose socket-like API.
+
+Socket offloading can be enabled with :kconfig:option:`CONFIG_NET_SOCKETS_OFFLOAD`
+option. A network driver that wants to register a new socket implementation
+should use :c:macro:`NET_SOCKET_OFFLOAD_REGISTER` macro. The macro accepts the
+following parameters:
+
+ * socket_name - an arbitrary name for the socket implementation.
+ * prio - socket implementation priority, the higher priority is, the earlier
+          particular implementation is processed when creating a new socket.
+          Lower numeric value indicate higher priority.
+ * _family - socket family implemented by the offloaded socket. ``AF_UNSPEC``
+             indicate any family.
+ * _is_supported - a filtering function, used to verify whether particular
+                   socket family, type and protocol are supported by the
+                   offloaded socket implementation.
+ * _handler - a function compatible with :c:func:`socket` API, used to create
+              an offloaded socket.
+
+Every offloaded socket implementation should also implement a set of socket
+APIs, specified in :c:struct:`socket_op_vtable` struct.
+
+The function registered for socket creation should allocate a new file
+descriptor using :c:func:`z_reserve_fd` function. Any additional actions,
+specific to the creation of a particular offloaded socket implementation should
+take place after the file descriptor is allocated. As a final step, if the
+offloaded socket was created successfully, the file descriptor should be
+finalized with :c:func:`z_finalize_fd` function. The finalize function allows
+to register a :c:struct:`socket_op_vtable` structure implementing socket APIs
+for an offloaded socket along with an optional socket context data pointer.
+
+Finally, when an offloaded network interface is initialized, it should indicate
+that the interface is offloaded with :c:func:`net_if_socket_offload_set`
+function. The function registers the function used to create an offloaded socket
+(the same as the one provided in :c:macro:`NET_SOCKET_OFFLOAD_REGISTER`) at the
+network interface.
+
+Offloaded socket creation
+=========================
+
+When application creates a new socket with :c:func:`socket` function, the
+network stack iterates over all registered socket implementations (native and
+offloaded). Higher priority socket implementations are processed first.
+For each registered socket implementation, an address family is verified, and if
+it matches (or the socket was registered as ``AF_UNSPEC``), the corresponding
+``_is_supported`` function is called to verify the remaining socket parameters.
+The first implementation that fulfills the socket requirements (i. e.
+``_is_supported`` returns true) will create a new socket with its ``_handler``
+function.
+
+The above indicates the importance of the socket priority. If multiple socket
+implementations support the same set of socket family/type/protocol, the first
+implementation processed by the system will create a socket. Therefore it's
+important to give the highest priority to the implementation that should be the
+system default.
+
+The socket priority for native socket implementation is configured with Kconfig.
+Use :kconfig:option:`CONFIG_NET_SOCKETS_TLS_PRIORITY` to set the priority for
+the native TLS sockets.
+Use :kconfig:option:`CONFIG_NET_SOCKETS_PRIORITY_DEFAULT` to set the priority
+for the remaining native sockets.
+
+Dealing with multiple offloaded interfaces
+==========================================
+
+As the :c:func:`socket` function does not allow to specify which network
+interface should be used by a socket, it's not possible to choose a specific
+implementation in case multiple offloaded socket implementations, supporting the
+same type of sockets, are available. The same problem arises when both native
+and offloaded sockets are available in the system.
+
+To address this problem, a special socket implementation (called socket
+dispatcher) was introduced. The sole reason for this module is to postpone the
+socket creation for until the first operation on a socket is performed. This
+leaves an opening to use ``SO_BINDTODEVICE`` socket option, to bind a socket to
+a particular network interface (and thus offloaded socket implementation).
+The socket dispatcher can be enabled with :kconfig:option:`CONFIG_NET_SOCKETS_OFFLOAD_DISPATCHER`
+Kconfig option.
+
+When enabled, the application can specify the network interface to use with
+:c:func:`setsockopt` function:
+
+.. code-block:: c
+
+   /* A "dispatcher" socket is created */
+   sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+   struct ifreq ifreq = {
+      .ifr_name = "SimpleLink"
+   };
+
+   /* The socket is "dispatched" to a particular network interface
+    * (offloaded or not).
+    */
+   setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof(ifreq));
+
+Similarly, if TLS is supported by both native and offloaded sockets,
+``TLS_NATIVE`` socket option can be used to indicate that a native TLS socket
+should be created. The underlying socket can then be bound to a particular
+network interface:
+
+.. code-block:: c
+
+   /* A "dispatcher" socket is created */
+   sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
+
+   int tls_native = 1;
+
+   /* The socket is "dispatched" to a native TLS socket implmeentation.
+    * The underlying socket is a "dispatcher" socket now.
+    */
+   setsockopt(sock, SOL_TLS, TLS_NATIVE, &tls_native, sizeof(tls_native));
+
+   struct ifreq ifreq = {
+      .ifr_name = "SimpleLink"
+   };
+
+   /* The underlying socket is "dispatched" to a particular network interface
+    * (offloaded or not).
+    */
+   setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof(ifreq));
+
+In case no ``SO_BINDTODEVICE`` socket option is used on a socket, the socket
+will be dispatched according to the default priority and filtering rules on a
+first socket API call.
+
 API Reference
 *************
 
