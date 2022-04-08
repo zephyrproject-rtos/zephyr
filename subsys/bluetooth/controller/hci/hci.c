@@ -6247,7 +6247,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			ptr += sizeof(*adi);
 
 			BT_DBG("    AdvDataInfo DID = 0x%x, SID = 0x%x",
-			       adi->did, adi->sid);
+			       adi_curr->did, adi_curr->sid);
 		}
 
 		if (h->aux_ptr) {
