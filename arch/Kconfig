@@ -743,6 +743,12 @@ endmenu
 
 menu "Cache Options"
 
+config DCACHE
+	bool "Data cache support"
+	default y
+	help
+	  This option enables data cache (d-cache).
+
 config CACHE_MANAGEMENT
 	bool "Cache management features"
 	help
