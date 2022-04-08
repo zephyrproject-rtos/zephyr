@@ -8,6 +8,7 @@
 #define H_MGMT_MGMT_
 
 #include <inttypes.h>
+#include "mgmt/mcumgr/buf.h"
 
 #ifdef __cplusplus
 extern "C" {
