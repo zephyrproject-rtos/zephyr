@@ -56,10 +56,10 @@ struct uart_liteuart_data {
 static void uart_liteuart_poll_out(const struct device *dev, unsigned char c)
 {
 	/* wait for space */
-	while (sys_read8(UART_TXFULL)) {
+	while (litex_read8(UART_TXFULL)) {
 	}
 
-	sys_write8(c, UART_RXTX);
+	litex_write8(c, UART_RXTX);
 }
 
 /**
@@ -72,13 +72,13 @@ static void uart_liteuart_poll_out(const struct device *dev, unsigned char c)
  */
 static int uart_liteuart_poll_in(const struct device *dev, unsigned char *c)
 {
-	if (!sys_read8(UART_RXEMPTY)) {
-		*c = sys_read8(UART_RXTX);
+	if (!litex_read8(UART_RXEMPTY)) {
+		*c = litex_read8(UART_RXTX);
 
 		/* refresh UART_RXEMPTY by writing UART_EV_RX
 		 * to UART_EV_PENDING
 		 */
-		sys_write8(UART_EV_RX, UART_EV_PENDING);
+		litex_write8(UART_EV_RX, UART_EV_PENDING);
 		return 0;
 	} else {
 		return -1;
@@ -93,9 +93,9 @@ static int uart_liteuart_poll_in(const struct device *dev, unsigned char *c)
  */
 static void uart_liteuart_irq_tx_enable(const struct device *dev)
 {
-	uint8_t enable = sys_read8(UART_EV_ENABLE);
+	uint8_t enable = litex_read8(UART_EV_ENABLE);
 
-	sys_write8(enable | UART_EV_TX, UART_EV_ENABLE);
+	litex_write8(enable | UART_EV_TX, UART_EV_ENABLE);
 }
 
 /**
@@ -105,9 +105,9 @@ static void uart_liteuart_irq_tx_enable(const struct device *dev)
  */
 static void uart_liteuart_irq_tx_disable(const struct device *dev)
 {
-	uint8_t enable = sys_read8(UART_EV_ENABLE);
+	uint8_t enable = litex_read8(UART_EV_ENABLE);
 
-	sys_write8(enable & ~(UART_EV_TX), UART_EV_ENABLE);
+	litex_write8(enable & ~(UART_EV_TX), UART_EV_ENABLE);
 }
 
 /**
@@ -117,9 +117,9 @@ static void uart_liteuart_irq_tx_disable(const struct device *dev)
  */
 static void uart_liteuart_irq_rx_enable(const struct device *dev)
 {
-	uint8_t enable = sys_read8(UART_EV_ENABLE);
+	uint8_t enable = litex_read8(UART_EV_ENABLE);
 
-	sys_write8(enable | UART_EV_RX, UART_EV_ENABLE);
+	litex_write8(enable | UART_EV_RX, UART_EV_ENABLE);
 }
 
 /**
@@ -129,9 +129,9 @@ static void uart_liteuart_irq_rx_enable(const struct device *dev)
  */
 static void uart_liteuart_irq_rx_disable(const struct device *dev)
 {
-	uint8_t enable = sys_read8(UART_EV_ENABLE);
+	uint8_t enable = litex_read8(UART_EV_ENABLE);
 
-	sys_write8(enable & ~(UART_EV_RX), UART_EV_ENABLE);
+	litex_write8(enable & ~(UART_EV_RX), UART_EV_ENABLE);
 }
 
 /**
@@ -143,7 +143,7 @@ static void uart_liteuart_irq_rx_disable(const struct device *dev)
  */
 static int uart_liteuart_irq_tx_ready(const struct device *dev)
 {
-	uint8_t val = sys_read8(UART_TXFULL);
+	uint8_t val = litex_read8(UART_TXFULL);
 
 	return !val;
 }
@@ -159,7 +159,7 @@ static int uart_liteuart_irq_rx_ready(const struct device *dev)
 {
 	uint8_t pending;
 
-	pending = sys_read8(UART_EV_PENDING);
+	pending = litex_read8(UART_EV_PENDING);
 
 	if (pending & UART_EV_RX) {
 		return 1;
@@ -182,8 +182,8 @@ static int uart_liteuart_fifo_fill(const struct device *dev,
 {
 	int i;
 
-	for (i = 0; i < size && !sys_read8(UART_TXFULL); i++) {
-		sys_write8(tx_data[i], UART_RXTX);
+	for (i = 0; i < size && !litex_read8(UART_TXFULL); i++) {
+		litex_write8(tx_data[i], UART_RXTX);
 	}
 
 	return i;
@@ -203,13 +203,13 @@ static int uart_liteuart_fifo_read(const struct device *dev,
 {
 	int i;
 
-	for (i = 0; i < size && !sys_read8(UART_RXEMPTY); i++) {
-		rx_data[i] = sys_read8(UART_RXTX);
+	for (i = 0; i < size && !litex_read8(UART_RXEMPTY); i++) {
+		rx_data[i] = litex_read8(UART_RXTX);
 
 		/* refresh UART_RXEMPTY by writing UART_EV_RX
 		 * to UART_EV_PENDING
 		 */
-		sys_write8(UART_EV_RX, UART_EV_PENDING);
+		litex_write8(UART_EV_RX, UART_EV_PENDING);
 	}
 
 	return i;
@@ -231,7 +231,7 @@ static int uart_liteuart_irq_is_pending(const struct device *dev)
 {
 	uint8_t pending;
 
-	pending = sys_read8(UART_EV_PENDING);
+	pending = litex_read8(UART_EV_PENDING);
 
 	if (pending & (UART_EV_TX | UART_EV_RX)) {
 		return 1;
@@ -272,7 +272,7 @@ static void liteuart_uart_irq_handler(const struct device *dev)
 	}
 
 	/* clear events */
-	sys_write8(UART_EV_TX | UART_EV_RX, UART_EV_PENDING);
+	litex_write8(UART_EV_TX | UART_EV_RX, UART_EV_PENDING);
 
 	irq_unlock(key);
 }
@@ -316,7 +316,7 @@ DEVICE_DT_INST_DEFINE(0,
 
 static int uart_liteuart_init(const struct device *dev)
 {
-	sys_write8(UART_EV_TX | UART_EV_RX, UART_EV_PENDING);
+	litex_write8(UART_EV_TX | UART_EV_RX, UART_EV_PENDING);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	IRQ_CONNECT(UART_IRQ, DT_INST_IRQ(0, priority),
