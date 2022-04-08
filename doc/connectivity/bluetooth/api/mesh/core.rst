@@ -32,24 +32,24 @@ To keep a node protected against replay attacks after reboot, it needs to store
 the entire RPL in the persistent storage before it is powered off. Depending on
 the amount of traffic in a mesh network, storing recently seen sequence numbers
 can make flash wear out sooner or later. To mitigate this,
-@ref CONFIG_BT_MESH_RPL_STORE_TIMEOUT can be used. This option postpones
+:kconfig:option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT` can be used. This option postpones
 storing of RPL entries in the persistent storage.
 
 This option, however, doesn't completely solve the issue as the node may
 get powered off before the timer to store the RPL is fired. To ensure that
 messages can not be replayed, the node can initiate storage of the pending
 RPL entry (or entries) at any time (or sufficiently before power loss)
-by calling @ref bt_mesh_rpl_pending_store. This is up to the node to decide,
+by calling :c:func:`bt_mesh_rpl_pending_store`. This is up to the node to decide,
 which RPL entries are to be stored in this case.
 
-Setting @ref CONFIG_BT_MESH_RPL_STORE_TIMEOUT to -1 allows to completely
+Setting :kconfig:option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT` to -1 allows to completely
 switch off the timer, which can help to significantly reduce flash wear out.
 This moves the responsibility of storing RPL to the user application and
 requires that sufficient power backup is available from the time this API
 is called until all RPL entries are written to the flash.
 
-Finding the right balance between @ref CONFIG_BT_MESH_RPL_STORE_TIMEOUT and
-calling @ref bt_mesh_rpl_pending_store may reduce a risk of security
+Finding the right balance between :kconfig:option:`CONFIG_BT_MESH_RPL_STORE_TIMEOUT` and
+calling :c:func:`bt_mesh_rpl_pending_store` may reduce a risk of security
 vulnerability and flash wear out.
 
 .. warning:
