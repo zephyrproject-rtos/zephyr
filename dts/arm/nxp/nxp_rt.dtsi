@@ -22,6 +22,7 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
+			d-cache-line-size = <32>;
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
