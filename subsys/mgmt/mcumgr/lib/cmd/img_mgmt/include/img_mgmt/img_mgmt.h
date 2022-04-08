@@ -9,6 +9,7 @@
 
 #include <inttypes.h>
 #include "img_mgmt_config.h"
+#include "mgmt/mgmt.h"
 #include <zcbor_common.h>
 
 struct image_version;
