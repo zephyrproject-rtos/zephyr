@@ -94,8 +94,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	net_pkt_read(pkt, context->tx_buf[context->txslot], len);
 
 	litex_write8(context->txslot, LITEETH_TX_SLOT);
-	litex_write8(len >> 8, LITEETH_TX_LENGTH);
-	litex_write8(len & 0xFF, LITEETH_TX_LENGTH + 4);
+	litex_write16(len, LITEETH_TX_LENGTH);
 
 	/* wait for the device to be ready to transmit */
 	while (litex_read8(LITEETH_TX_READY) == 0) {
@@ -132,10 +131,7 @@ static void eth_rx(const struct device *port)
 	key = irq_lock();
 
 	/* get frame's length */
-	for (int i = 0; i < 4; i++) {
-		len <<= 8;
-		len |= litex_read8(LITEETH_RX_LENGTH + i * 0x4);
-	}
+	len = litex_read32(LITEETH_RX_LENGTH);
 
 	/* which slot is the frame in */
 	context->rxslot = litex_read8(LITEETH_RX_SLOT);
