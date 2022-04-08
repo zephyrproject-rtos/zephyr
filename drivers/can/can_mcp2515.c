@@ -209,21 +209,6 @@ static int mcp2515_cmd_read_rx_buffer(const struct device *dev, uint8_t nm,
 	return spi_transceive_dt(&dev_cfg->bus, &tx, &rx);
 }
 
-static uint8_t mcp2515_convert_canmode_to_mcp2515mode(enum can_mode mode)
-{
-	switch (mode) {
-	case CAN_NORMAL_MODE:
-		return MCP2515_MODE_NORMAL;
-	case CAN_SILENT_MODE:
-		return MCP2515_MODE_SILENT;
-	case CAN_LOOPBACK_MODE:
-		return MCP2515_MODE_LOOPBACK;
-	default:
-		LOG_ERR("Unsupported CAN Mode %u", mode);
-		return MCP2515_MODE_SILENT;
-	}
-}
-
 static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct zcan_frame
 						      *source, uint8_t *target)
 {
@@ -464,7 +449,23 @@ static int mcp2515_set_mode(const struct device *dev, enum can_mode mode)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
 	struct mcp2515_data *dev_data = dev->data;
+	uint8_t mcp2515_mode;
 	int ret;
+
+	switch (mode) {
+	case CAN_NORMAL_MODE:
+		mcp2515_mode = MCP2515_MODE_NORMAL;
+		break;
+	case CAN_SILENT_MODE:
+		mcp2515_mode = MCP2515_MODE_SILENT;
+		break;
+	case CAN_LOOPBACK_MODE:
+		mcp2515_mode = MCP2515_MODE_LOOPBACK;
+		break;
+	default:
+		LOG_ERR("Unsupported CAN Mode %u", mode);
+		return -ENOTSUP;
+	}
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
@@ -478,8 +479,7 @@ static int mcp2515_set_mode(const struct device *dev, enum can_mode mode)
 
 	k_usleep(MCP2515_OSC_STARTUP_US);
 
-	ret = mcp2515_set_mode_int(dev,
-			mcp2515_convert_canmode_to_mcp2515mode(mode));
+	ret = mcp2515_set_mode_int(dev, mcp2515_mode);
 	if (ret < 0) {
 		LOG_ERR("Failed to set the mode [%d]", ret);
 
