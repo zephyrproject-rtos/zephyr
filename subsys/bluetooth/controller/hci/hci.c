@@ -2869,7 +2869,7 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 		 * node rx footer field.
 		 */
 		sync_handle = ull_sync_handle_get(sync);
-		per_evt_counter = lll->event_counter;
+		per_evt_counter = iq_report->event_counter;
 	}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
@@ -3015,7 +3015,7 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 	sep->cte_type = iq_report->cte_info.type;
 
 	sep->data_chan_idx = iq_report->chan_idx;
-	sep->conn_evt_counter = sys_cpu_to_le16(lll->event_counter);
+	sep->conn_evt_counter = sys_cpu_to_le16(iq_report->event_counter);
 
 	if (sep->cte_type == BT_HCI_LE_AOA_CTE) {
 		sep->slot_durations = iq_report->local_slot_durations;
