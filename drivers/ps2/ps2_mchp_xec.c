@@ -10,6 +10,10 @@
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <errno.h>
 #include <device.h>
+#ifdef CONFIG_SOC_SERIES_MEC172X
+#include <drivers/clock_control/mchp_xec_clock_control.h>
+#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#endif
 #include <drivers/ps2.h>
 #include <soc.h>
 #include <logging/log.h>
@@ -35,6 +39,28 @@ struct ps2_xec_data {
 	struct k_sem tx_lock;
 };
 
+#ifdef CONFIG_SOC_SERIES_MEC172X
+static inline void ps2_xec_slp_en_clr(const struct device *dev)
+{
+	const struct ps2_xec_config * const cfg = dev->config;
+
+	z_mchp_xec_pcr_periph_sleep(cfg->pcr_idx, cfg->pcr_pos, 0);
+}
+
+static inline void ps2_xec_girq_clr(const struct device *dev)
+{
+	const struct ps2_xec_config * const cfg = dev->config;
+
+	mchp_soc_ecia_girq_src_clr(cfg->girq_id, cfg->girq_bit);
+}
+
+static inline void ps2_xec_girq_en(const struct device *dev)
+{
+	const struct ps2_xec_config * const cfg = dev->config;
+
+	mchp_xec_ecia_girq_src_en(cfg->girq_id, cfg->girq_bit);
+}
+#else
 static inline void ps2_xec_slp_en_clr(const struct device *dev)
 {
 	const struct ps2_xec_config * const cfg = dev->config;
@@ -59,6 +85,7 @@ static inline void ps2_xec_girq_en(const struct device *dev)
 
 	MCHP_GIRQ_ENSET(cfg->girq_id) = BIT(cfg->girq_bit);
 }
+#endif /* CONFIG_SOC_SERIES_MEC172X */
 
 static int ps2_xec_configure(const struct device *dev,
 			     ps2_callback_t callback_isr)

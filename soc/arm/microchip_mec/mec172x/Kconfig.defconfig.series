@@ -39,4 +39,8 @@ config CLOCK_CONTROL_MCHP_XEC
 config MCHP_ECIA_XEC
 	default y
 
+config PS2_XEC
+	default y
+	depends on PS2
+
 endif # SOC_SERIES_MEC172X
