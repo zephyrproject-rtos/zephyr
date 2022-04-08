@@ -195,6 +195,15 @@ SECTIONS
 	SECTION_PROLOGUE(rom_mpu_padding,,)
 	{
 		MPU_ALIGN(__rodata_region_end - __rom_region_start);
+#ifdef CONFIG_QEMU_TARGET
+		/*
+		 * QEMU doesn't vet each instruction fetch individually.
+		 * Instead, it grabs a whole page and perform dynamic
+		 * transation on it in a batch. It therefore validates
+		 * PMP permissions using page-sized and -aligned chunks.
+		 */
+		. = ALIGN(0x1000);
+#endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif /* CONFIG_RISCV_PMP */
 
