@@ -43,9 +43,21 @@ Command-line Tool
 MCUmgr provides a command-line tool, :file:`mcumgr`, for managing remote devices.
 The tool is written in the Go programming language.
 
-To install the tool::
+To install the tool:
 
-  go get github.com/apache/mynewt-mcumgr-cli/mcumgr
+.. tabs::
+
+   .. group-tab:: go version < 1.18
+
+      .. code-block:: console
+
+         go get github.com/apache/mynewt-mcumgr-cli/mcumgr
+
+   .. group-tab:: go version >= 1.18
+
+      .. code-block:: console
+
+         go install github.com/apache/mynewt-mcumgr-cli/mcumgr@latest
 
 Configuring the transport
 *************************
