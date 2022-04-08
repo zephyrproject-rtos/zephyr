@@ -860,6 +860,34 @@ static void test_get_state(void)
 	zassert_equal(err, 0, "failed to get CAN state + error counters (err %d)", err);
 }
 
+static void test_filters_preserved_through_mode_change(void)
+{
+	struct zcan_frame frame;
+	int filter_id;
+	int err;
+
+	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	send_test_frame(can_dev, &test_std_frame_1);
+
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	assert_frame_equal(&frame, &test_std_frame_1, 0);
+
+	err = can_set_mode(can_dev, CAN_NORMAL_MODE);
+	zassert_equal(err, 0, "failed to set normal mode (err %d)", err);
+
+	err = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
+
+	send_test_frame(can_dev, &test_std_frame_1);
+
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	assert_frame_equal(&frame, &test_std_frame_1, 0);
+
+	can_remove_rx_filter(can_dev, filter_id);
+}
+
 void test_main(void)
 {
 	k_sem_init(&rx_callback_sem, 0, 2);
@@ -888,6 +916,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_send_invalid_dlc),
 			 ztest_unit_test(test_send_receive_wrong_id),
 			 ztest_user_unit_test(test_recover),
-			 ztest_user_unit_test(test_get_state));
+			 ztest_user_unit_test(test_get_state),
+			 ztest_user_unit_test(test_filters_preserved_through_mode_change));
 	ztest_run_test_suite(can_api_tests);
 }
