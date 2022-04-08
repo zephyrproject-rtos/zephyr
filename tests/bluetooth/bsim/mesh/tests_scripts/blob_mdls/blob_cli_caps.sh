@@ -18,3 +18,8 @@ RunTest blob_caps \
 conf=prj_mesh1d1_conf
 RunTest blob_caps \
 	blob_cli_caps_no_rsp blob_srv_caps_no_rsp blob_srv_caps_no_rsp
+
+# The test instance seqence must stay as it is due to addressing scheme
+conf=prj_mesh1d1_conf
+RunTest blob_caps \
+	blob_cli_caps_cancelled blob_srv_caps_standard

@@ -23,7 +23,7 @@ static struct bt_mesh_prov prov;
 
 static struct {
 	struct bt_mesh_blob_cli_inputs inputs;
-	struct bt_mesh_blob_target targets[2];
+	struct bt_mesh_blob_target targets[6];
 	uint8_t target_count;
 	struct bt_mesh_blob_xfer xfer;
 } blob_cli_xfer;
@@ -266,7 +266,7 @@ static void blob_cli_inputs_prepare(uint16_t group)
 		/* Reset target context. */
 		uint16_t addr = blob_cli_xfer.targets[i].addr;
 
-		memset(&blob_cli_xfer.targets[i].addr, 0, sizeof(struct bt_mesh_blob_target));
+		memset(&blob_cli_xfer.targets[i], 0, sizeof(struct bt_mesh_blob_target));
 		blob_cli_xfer.targets[i].addr = addr;
 
 		sys_slist_append(&blob_cli_xfer.inputs.targets, &blob_cli_xfer.targets[i].n);
@@ -360,9 +360,73 @@ static void test_cli_caps_no_rsp(void)
 	PASS();
 }
 
+static void test_cli_caps_cancelled(void)
+{
+	int err;
+
+	bt_mesh_test_cfg_set(NULL, 300);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	struct bt_mesh_blob_target *srv1 = target_srv_add(BLOB_CLI_ADDR + 1, false);
+	struct bt_mesh_blob_target *srv2 = target_srv_add(BLOB_CLI_ADDR + 2, true);
+
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+
+	k_sem_init(&blob_caps_sem, 0, 1);
+	k_sem_init(&lost_target_sem, 0, 1);
+
+	/* Start first caps procedure */
+	err = bt_mesh_blob_cli_caps_get(&blob_cli, &blob_cli_xfer.inputs);
+	if (err) {
+		FAIL("Boundary check start failed (err: %d)", err);
+	}
+
+	/* Let first caps procedure run for a little while */
+	k_sleep(K_SECONDS(15));
+
+	/* Cancel first caps procedure */
+	bt_mesh_blob_cli_cancel(&blob_cli);
+	ASSERT_EQUAL(blob_cli.state, BT_MESH_BLOB_CLI_STATE_NONE);
+
+	/* Wait and assure that caps procedure is canceled */
+	if (!k_sem_take(&blob_caps_sem, K_SECONDS(60))) {
+		FAIL("Caps CB triggered unexpectedly");
+	}
+
+	/* Expect that the responsive srv responded, while the */
+	/* unresponsive srv has not yet timed out due to cancel call */
+	ASSERT_TRUE(srv1->acked);
+	ASSERT_FALSE(srv1->timedout);
+	ASSERT_FALSE(srv2->acked);
+	ASSERT_FALSE(srv2->timedout);
+
+	/* Start second caps procedure and verify that it completes as expected*/
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+	err = bt_mesh_blob_cli_caps_get(&blob_cli, &blob_cli_xfer.inputs);
+	if (err) {
+		FAIL("Boundary check start failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&blob_caps_sem, K_SECONDS(60))) {
+		FAIL("Caps CB did not trigger at the end of second caps procedure");
+	}
+
+	if (k_sem_take(&lost_target_sem, K_NO_WAIT)) {
+		FAIL("Lost targets CB did not trigger for all expeted lost targets");
+	}
+
+	ASSERT_TRUE(srv1->acked);
+	ASSERT_FALSE(srv1->timedout);
+	ASSERT_FALSE(srv2->acked);
+	ASSERT_TRUE(srv2->timedout);
+
+	PASS();
+}
+
 static void test_srv_caps_standard(void)
 {
-	bt_mesh_test_cfg_set(NULL, 60);
+	bt_mesh_test_cfg_set(NULL, 140);
 	bt_mesh_device_setup(&prov, &srv_comp);
 	blob_srv_prov_and_conf(own_addr_get());
 
@@ -595,6 +659,7 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(cli, caps_all_rsp, "Caps procedure: All responsive targets"),
 	TEST_CASE(cli, caps_partial_rsp, "Caps procedure: Mixed response from targets"),
 	TEST_CASE(cli, caps_no_rsp, "Caps procedure: No response from targets"),
+	TEST_CASE(cli, caps_cancelled, "Caps procedure: Cancel caps"),
 	TEST_CASE(cli, broadcast_basic, "Test basic broadcast API and CBs "),
 	TEST_CASE(cli, broadcast_trans, "Test all broadcast transmission types"),
 
