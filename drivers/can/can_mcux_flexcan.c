@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
  * RX message buffers (filters) will take up the first N message
  * buffers. The rest are available for TX use.
  */
-#define MCUX_FLEXCAN_MAX_RX CONFIG_CAN_MAX_FILTER
+#define MCUX_FLEXCAN_MAX_RX (CONFIG_CAN_MAX_FILTER + RX_START_IDX)
 #define MCUX_FLEXCAN_MAX_TX \
 	(FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(0) \
 	- MCUX_FLEXCAN_MAX_RX)
