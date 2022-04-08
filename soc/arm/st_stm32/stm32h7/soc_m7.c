@@ -62,12 +62,12 @@ static int stm32h7_init(const struct device *arg)
 
 	SCB_EnableICache();
 
-#ifndef CONFIG_NOCACHE_MEMORY
-	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
-		SCB_EnableDCache();
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
+			SCB_EnableDCache();
+		}
 	}
 
-#endif /* CONFIG_NOCACHE_MEMORY */
 	/* Install default handler that simply resets the CPU
 	 * if configured in the kernel, NOP otherwise
 	 */
