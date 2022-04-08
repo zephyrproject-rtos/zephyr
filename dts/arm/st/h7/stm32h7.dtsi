@@ -858,7 +858,7 @@
 		};
 
 		fmc: memory-controller@52004000 {
-			compatible = "st,stm32-fmc";
+			compatible = "st,stm32h7-fmc";
 			reg = <0x52004000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00001000>;
 			label = "STM32_FMC";
