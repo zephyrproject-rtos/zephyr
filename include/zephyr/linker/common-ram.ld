@@ -27,13 +27,16 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
-        SECTION_DATA_PROLOGUE(device_states,,)
+        SECTION_DATA_PROLOGUE(device_contexts,,)
         {
-		/* Device states used by the device objects. */
-                __device_states_start = .;
-		KEEP(*(".z_devstate"));
-		KEEP(*(".z_devstate.*"));
-                __device_states_end = .;
+		/* Device runtime context used by the device objects. */
+                __device_context_start = .;
+		CREATE_OBJ_LEVEL(devcontext, PRE_KERNEL_1)
+		CREATE_OBJ_LEVEL(devcontext, PRE_KERNEL_2)
+		CREATE_OBJ_LEVEL(devcontext, POST_KERNEL)
+		CREATE_OBJ_LEVEL(devcontext, APPLICATION)
+		CREATE_OBJ_LEVEL(devcontext, SMP)
+                __device_context_end = .;
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if CONFIG_PM_DEVICE

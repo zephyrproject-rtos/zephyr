@@ -120,20 +120,10 @@ typedef int16_t device_handle_t;
  */
 #define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
-/* Synthesize a unique name for the device state associated with
+/* Synthesize a unique name for the device runtime context associated with
  * dev_name.
  */
-#define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
-
-/**
- * @brief Utility macro to define and initialize the device state.
- *
- * @param node_id Devicetree node id of the device.
- * @param dev_name Device name.
- */
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+#define Z_DEVICE_CONTEXT_NAME(dev_name) _CONCAT(__devctx_, dev_name)
 
 /**
  * @def DEVICE_DEFINE
@@ -180,11 +170,10 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_device,		\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
-	Z_DEVICE_STATE_DEFINE(DT_INVALID_NODE, dev_name) \
+	Z_DEVICE_CONTEXT_DEFINE(DT_INVALID_NODE, dev_name, level, prio)	\
 	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
-			pm_device,					\
-			data_ptr, cfg_ptr, level, prio, api_ptr,	\
-			&Z_DEVICE_STATE_NAME(dev_name))
+			pm_device, data_ptr, cfg_ptr, level, prio,	\
+			api_ptr)
 
 /**
  * @def DEVICE_DT_NAME
@@ -248,14 +237,12 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
 			 data_ptr, cfg_ptr, level, prio,		\
 			 api_ptr, ...)					\
-	Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)) \
+	Z_DEVICE_CONTEXT_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id), \
+				level, prio)				\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
 			DEVICE_DT_NAME(node_id), init_fn,		\
-			pm_device,					\
-			data_ptr, cfg_ptr, level, prio,			\
-			api_ptr,					\
-			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)),	\
-			__VA_ARGS__)
+			pm_device, data_ptr, cfg_ptr, level, prio,	\
+			api_ptr, __VA_ARGS__)
 
 /**
  * @def DEVICE_DT_INST_DEFINE
@@ -419,14 +406,14 @@ typedef int16_t device_handle_t;
 #define DEVICE_DECLARE(name) static const struct device DEVICE_NAME_GET(name)
 
 /**
- * @brief Runtime device dynamic structure (in RAM) per driver instance
+ * @brief Runtime device context (in RAM) per driver instance
  *
  * Fields in this are expected to be default-initialized to zero. The
  * kernel driver infrastructure and driver access functions are
  * responsible for ensuring that any non-zero initialization is done
  * before they are accessed.
  */
-struct device_state {
+struct device_context {
 	/** Non-negative result of initializing the device.
 	 *
 	 * The absolute value returned when the device initialization
@@ -460,8 +447,6 @@ struct device {
 	const void *config;
 	/** Address of the API structure exposed by the device instance */
 	const void *api;
-	/** Address of the common device state */
-	struct device_state * const state;
 	/** Address of the device instance private data */
 	void * const data;
 	/** optional pointer to handles associated with the device.
@@ -829,14 +814,20 @@ __deprecated static inline int device_usable_check(const struct device *dev)
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
 /*
- * Utility macro to define and initialize the device state.
+ * Utility macro to define and initialize the device runtime context.
  *
  * @param node_id Devicetree node id of the device.
  * @param dev_name Device name.
+ * @param level The device's initialization level. See SYS_INIT() for
+ * details.
+ * @param prio The device's priority within its initialization level.
+ * See SYS_INIT() for details.
  */
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+#define Z_DEVICE_CONTEXT_DEFINE(node_id, dev_name, level, prio)		\
+	static Z_DECL_ALIGN(struct device_context)			\
+		Z_DEVICE_CONTEXT_NAME(dev_name)	__used			\
+	__attribute__(							\
+		(__section__(".z_devcontext_" #level STRINGIFY(prio)"_")));
 
 /* Construct objects that are referenced from struct device. These
  * include power management and dependency handles.
@@ -911,7 +902,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
  * dependency handles that come from outside devicetree.
  */
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,\
-			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr, ...)	\
+			data_ptr, cfg_ptr, level, prio, api_ptr, ...)	\
 	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
@@ -920,7 +911,6 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
-		.state = (state_ptr),					\
 		.data = (data_ptr),					\
 		COND_CODE_1(CONFIG_PM_DEVICE, (.pm = pm_device,), ())	\
 		Z_DEVICE_DEFINE_INIT(node_id, dev_name)			\
