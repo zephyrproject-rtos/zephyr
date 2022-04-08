@@ -24,6 +24,11 @@ extern const struct device __device_start[];
 extern const struct device __device_end[];
 
 
+extern struct device_context __device_context_start[];
+
+#define GET_DEV_CONTEXT(_dev)				\
+	&__device_context_start[_dev - __device_start];
+
 /**
  * @brief Initialize state for all static devices.
  *
@@ -71,6 +76,8 @@ void z_sys_init_run_level(int32_t level)
 		int rc = entry->init(dev);
 
 		if (dev != NULL) {
+			struct device_context *dc = GET_DEV_CONTEXT(dev);
+
 			/* Mark device initialized.  If initialization
 			 * failed, record the error condition.
 			 */
@@ -81,9 +88,9 @@ void z_sys_init_run_level(int32_t level)
 				if (rc > UINT8_MAX) {
 					rc = UINT8_MAX;
 				}
-				dev->state->init_res = rc;
+				dc->init_res = rc;
 			}
-			dev->state->initialized = true;
+			dc->initialized = true;
 		}
 	}
 }
@@ -150,6 +157,8 @@ size_t z_device_get_all_static(struct device const **devices)
 
 bool z_device_is_ready(const struct device *dev)
 {
+	struct device_context *dc;
+
 	/*
 	 * if an invalid device pointer is passed as argument, this call
 	 * reports the `device` as not ready for usage.
@@ -158,7 +167,9 @@ bool z_device_is_ready(const struct device *dev)
 		return false;
 	}
 
-	return dev->state->initialized && (dev->state->init_res == 0U);
+	dc = GET_DEV_CONTEXT(dev);
+
+	return dc->initialized && (dc->init_res == 0U);
 }
 
 static int device_visitor(const device_handle_t *handles,
