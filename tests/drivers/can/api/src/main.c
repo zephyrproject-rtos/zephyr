@@ -779,6 +779,7 @@ void test_send_receive_msgq(void)
 	for (i = 0; i < nframes; i++) {
 		err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
 		zassert_equal(err, 0, "receive timeout");
+		assert_frame_equal(&frame, &test_std_frame_1, 0);
 	}
 
 	for (i = 0; i < nframes; i++) {
@@ -788,6 +789,7 @@ void test_send_receive_msgq(void)
 	for (i = 0; i < nframes; i++) {
 		err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
 		zassert_equal(err, 0, "receive timeout");
+		assert_frame_equal(&frame, &test_std_frame_1, 0);
 	}
 
 	can_remove_rx_filter(can_dev, filter_id);
