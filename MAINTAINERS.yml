@@ -499,7 +499,6 @@ Documentation:
         - include/zephyr/devicetree/can.h
         - include/zephyr/drivers/can.h
         - include/zephyr/drivers/can/
-        - modules/canopennode/
         - samples/drivers/can/
         - samples/modules/canopennode/
         - samples/net/sockets/can/
@@ -1141,7 +1140,6 @@ Mbed TLS:
         - d3zd3z
         - ceolin
     files:
-        - modules/mbedtls/
         - tests/crypto/mbedtls/
     labels:
         - "area: Crypto / RNG"
@@ -1480,7 +1478,6 @@ GD32 Platforms:
         - drivers/*/*gd32*
         - dts/*/gigadevice/
         - dts/bindings/*/*gd32*
-        - modules/hal_gigadevice/
         - soc/arm/gigadevice/
         - soc/riscv/riscv-privilege/gd32vf103/
         - scripts/west_commands/*/*gd32*
@@ -1861,6 +1858,499 @@ West:
         - doc/develop/west/
     labels:
         - "area: West"
+
+"West project: canopennode":
+    status: maintained
+    maintainers:
+        - henrikbrixandersen
+    files:
+        - modules/canopennode/
+    labels:
+        - manifest-canopennode
+        - "area: CAN"
+
+"West project: civetweb":
+    status: obsolete
+    files:
+        - samples/net/civetweb/
+        - modules/Kconfig.civetweb
+    labels:
+        - manifest-civetweb
+        - "area: Networking"
+        - "area: civetweb"
+
+"West project: cmsis":
+    status: maintained
+    maintainers:
+        - stephanosio
+    collaborators:
+        - microbuilder
+        - povergoing
+    files:
+        - modules/Kconfig.cmsis
+        - modules/Kconfig.cmsis_dsp
+        - modules/Kconfig.cmsis_nn
+    labels:
+        - manifest-cmsis
+
+"West project: edtt":
+    status: maintained
+    maintainers:
+        - aescolar
+    collaborators:
+        - wopu-ot
+        - thoh-ot
+    files: []
+    labels:
+        - manifest-edtt
+
+"West project: fatfs":
+    status: maintained
+    maintainers:
+        - de-nordic
+    files: []
+    labels:
+        - manifest-fatfs
+
+"West project: hal_altera":
+    status: odd fixes
+    collaborators:
+        - nashif
+    files:
+        - modules/Kconfig.altera
+    labels:
+        - manifest-hal_altera
+
+"West project: hal_atmel":
+    status: maintained
+    maintainers:
+        - nandojve
+    files:
+        - modules/Kconfig.atmel
+    labels:
+        - manifest-hal_atmel
+
+"West project: hal_cypress":
+    status: maintained
+    maintainers:
+        - ifyall
+    collaborators:
+        - nandojve
+        - nashif
+    files:
+        - modules/Kconfig.cypress
+    labels:
+        - manifest-hal_cypress
+
+"West project: hal_espressif":
+    status: maintained
+    maintainers:
+        - sylvioalves
+        - glaubermaroto
+        - uLipe
+    files: []
+    labels:
+        - manifest-hal_espressif
+
+"West project: hal_gigadevice":
+    status: maintained
+    maintainers:
+        - nandojve
+        - gmarull
+    collaborators:
+        - soburi
+    files:
+        - modules/hal_gigadevice/
+    labels:
+        - manifest-hal_gigadevice
+
+"West project: hal_infineon":
+    status: maintained
+    maintainers:
+        - ifyall
+    collaborators:
+        - parthitce
+    files:
+        - modules/Kconfig.infineon
+    labels:
+        - manifest-hal_infineon
+
+"West project: hal_microchip":
+    status: maintained
+    maintainers:
+        - jvasanth1
+    collaborators:
+        - VenkatKotakonda
+        - albertofloyd
+    files:
+        - modules/Kconfig.microchip
+    labels:
+        - manifest-hal_microchip
+
+"West project: hal_nordic":
+    status: maintained
+    maintainers:
+        - anangl
+    collaborators:
+        - hubertmis
+        - nordic-krch
+    files:
+        - modules/hal_nordic/
+    labels:
+        - manifest-hal_nordic
+
+"West project: hal_nuvoton":
+    status: maintained
+    maintainers:
+        - MulinChao
+        - ChiHuaL
+        - WealianLiao
+    files:
+        - modules/Kconfig.nuvoton
+    labels:
+        - manifest-hal_nuvoton
+
+"West project: hal_nxp":
+    status: maintained
+    maintainers:
+        - dleach02
+    collaborators:
+        - mmahadevan108
+        - danieldegrasse
+    files:
+        - modules/hal_nxp/
+        - modules/Kconfig.imx
+        - modules/Kconfig.mcux
+    labels:
+        - manifest-hal_nxp
+
+"West project: hal_openisa":
+    status: odd fixes
+    collaborators:
+        - dleach02
+    files:
+        - modules/Kconfig.vega
+    labels:
+        - manifest-hal_openisa
+
+"West project: hal_quicklogic":
+    status: odd fixes
+    collaborators:
+        - kowalewskijan
+    files: []
+    labels:
+        - manifest-hal_quicklogic
+
+"West project: hal_rpi_pico":
+    status: maintained
+    maintainers:
+        - yonsch
+    files:
+        - modules/hal_rpi_pico/
+    labels:
+        - manifest-hal_rpi_pico
+
+"West project: hal_silabs":
+    status: odd fixes
+    collaborators:
+        - yonsch
+        - mnkp
+        - chrta
+    files:
+        - modules/Kconfig.silabs
+    labels:
+        - manifest-hal_silabs
+
+"West project: hal_st":
+    status: maintained
+    maintainers:
+        - avisconti
+    collaborators:
+        - erwango
+    files:
+        - modules/Kconfig.st
+    labels:
+        - manifest-hal_st
+
+"West project: hal_stm32":
+    status: maintained
+    maintainers:
+        - erwango
+    collaborators:
+        - FRASTM
+        - ABOSTM
+    files:
+        - modules/Kconfig.stm32
+    labels:
+        - manifest-hal_stm32
+
+"West project: hal_telink":
+    status: maintained
+    maintainers:
+        - yurvyn
+    files:
+        - modules/Kconfig.telink
+    labels:
+        - manifest-hal_telink
+
+"West project: hal_ti":
+    status: odd fixes
+    collaborators:
+        - cfriedt
+        - gmarull
+    files: []
+    labels:
+        - manifest-hal_ti
+
+"West project: hal_xtensa":
+    status: maintained
+    maintainers:
+        - dcpleung
+    collaborators:
+        - andyross
+        - nashif
+    files:
+        - modules/Kconfig.xtensa
+    labels:
+        - manifest-hal_xtensa
+
+"West project: libmetal":
+    status: odd fixes
+    collaborators:
+        - carlocaione
+        - arnopo
+    files:
+        - modules/Kconfig.libmetal
+    labels:
+        - manifest-libmetal
+
+"West project: liblc3codec":
+    status: maintained
+    maintainers:
+        - Casper-Bonde-Bose
+    collaborators:
+        - thalley
+        - asbjornsabo
+    files:
+        - modules/liblc3codec/
+    labels:
+        - manifest-liblc3codec
+
+"West project: littlefs":
+    status: odd fixes
+    files:
+        - modules/littlefs/
+    labels:
+        - manifest-littlefs
+
+"West project: loramac-node":
+    status: maintained
+    maintainers:
+        - Mani-Sadhasivam
+    files:
+        - modules/loramac-node/
+    labels:
+        - manifest-loramac-node
+
+"West project: lvgl":
+    status: maintained
+    maintainers:
+        - brgl
+    files:
+        - modules/Kconfig.lvgl
+    labels:
+        - manifest-lvgl
+
+"West project: lz4":
+    status: odd fixes
+    collaborators:
+        - Navin-Sankar
+    files:
+        - modules/lz4/
+    labels:
+        - manifest-lz4
+
+"West project: mbedtls":
+    status: maintained
+    maintainers:
+        - d3zd3z
+        - ceolin
+    files:
+        - modules/mbedtls/
+    labels:
+        - manifest-mbedtls
+
+"West project: mcuboot":
+    status: maintained
+    maintainers:
+        - d3zd3z
+        - nvlsianpu
+    files:
+        - modules/Kconfig.mcuboot_bootutil
+    labels:
+        - manifest-mcuboot
+
+"West project: mipi-sys-t":
+    status: odd fixes
+    collaborators:
+        - dcpleung
+    files:
+        - modules/Kconfig.syst
+    labels:
+        - manifest-mipi-sys-t
+
+"West project: nanopb":
+    status: odd fixes
+    collaborators:
+        - pdgendt
+    files:
+        - modules/nanopb/
+    labels:
+        - manifest-nanopb
+
+"West project: net-tools":
+    status: odd fixes
+    maintainers:
+        - rlubos
+    collaborators:
+        - jukkar
+    files: []
+    labels:
+        - manifest-net-tools
+
+"West project: nrf_hw_models":
+    status: maintained
+    maintainers:
+        - aescolar
+    collaborators:
+        - wopu-ot
+        - thoh-ot
+    files: []
+    labels:
+        - manifest-nrf_hw_models
+
+"West project: open-amp":
+    status: odd fixes
+    collaborators:
+        - carlocaione
+    files:
+        - modules/Kconfig.open-amp
+    labels:
+        - manifest-open-amp
+
+"West project: openthread":
+    status: maintained
+    maintainers:
+        - rlubos
+    collaborators:
+        - pdgendt
+    files: []
+    labels:
+        - manifest-openthread
+
+"West project: segger":
+    status: odd fixes
+    collaborators:
+        - nordic-krch
+    files: []
+    labels:
+        - manifest-segger
+
+"West project: sof":
+    status: maintained
+    maintainers:
+        - andyross
+        - nashif
+    files:
+        - modules/Kconfig.sof
+    labels:
+        - manifest-sof
+
+"West project: tflite-micro":
+    status: odd fixes
+    collaborators:
+        - laurenmurphyx64
+    files:
+        - modules/tflite-micro/
+    labels:
+        - manifest-tflite-micro
+
+"West project: tinycbor":
+    status: obsolete
+    files:
+        - modules/Kconfig.tinycbor
+    labels:
+        - manifest-tinycbor
+
+"West project: tinycrypt":
+    status: odd fixes
+    files:
+        - modules/Kconfig.tinycrypt
+    labels:
+        - manifest-tinycrypt
+
+"West project: TraceRecorderSource":
+    status: maintained
+    maintainers:
+        - tleksell-pe
+    files:
+        - modules/TraceRecorder/
+    labels:
+        - manifest-TraceRecorderSource
+
+"West project: trusted-firmware-m":
+    status: maintained
+    maintainers:
+        - microbuilder
+    collaborators:
+        - joerchan
+        - SebastianBoe
+        - theotherjimmy
+    files:
+        - modules/trusted-firmware-m/
+    labels:
+        - manifest-trusted-firmware-m
+
+"West project: tf-m-tests":
+    status: maintained
+    maintainers:
+        - microbuilder
+    collaborators:
+        - joerchan
+        - SebastianBoe
+        - theotherjimmy
+    files: []
+    labels:
+        - manifest-tf-m-tests
+
+"West project: psa-arch-tests":
+    status: maintained
+    maintainers:
+        - microbuilder
+    collaborators:
+        - joerchan
+        - SebastianBoe
+        - theotherjimmy
+    files: []
+    labels:
+        - manifest-psa-arch-tests
+
+"West project: zcbor":
+    status: maintained
+    maintainers:
+        - de-nordic
+    files:
+        - modules/zcbor/
+    labels:
+        - manifest-zcbor
+
+"West project: zscilib":
+    status: maintained
+    maintainers:
+        - microbuilder
+    files: []
+    labels:
+        - manifest-zscilib
 
 Xtensa arch:
     status: maintained
