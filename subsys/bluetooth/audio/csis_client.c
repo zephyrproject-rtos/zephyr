@@ -106,7 +106,7 @@ static struct bt_csis *lookup_instance_by_handle(struct bt_conn *conn,
 	return NULL;
 }
 
-static struct bt_csis *lookup_instance_by_index(struct bt_conn *conn,
+static struct bt_csis *lookup_instance_by_index(const struct bt_conn *conn,
 						uint8_t idx)
 {
 	uint8_t conn_index;
@@ -122,7 +122,7 @@ static struct bt_csis *lookup_instance_by_index(struct bt_conn *conn,
 	return &client->csis_insts[idx];
 }
 
-static struct bt_csis *lookup_instance_by_set_info(struct bt_csis_client_set_member *member,
+static struct bt_csis *lookup_instance_by_set_info(const struct bt_csis_client_set_member *member,
 						   const struct bt_csis_client_set_info *set_info)
 {
 	for (int i = 0; i < ARRAY_SIZE(member->insts); i++) {
@@ -157,15 +157,12 @@ static struct bt_csis *get_next_active_instance(void)
 
 static int member_rank_compare_asc(const void *m1, const void *m2)
 {
-	struct bt_csis_client_set_member *member_1 = *(struct bt_csis_client_set_member **)m1;
-	struct bt_csis_client_set_member *member_2 = *(struct bt_csis_client_set_member **)m2;
+	const struct bt_csis_client_set_member *member_1 =
+		*(const struct bt_csis_client_set_member **)m1;
+	const struct bt_csis_client_set_member *member_2 =
+		*(const struct bt_csis_client_set_member **)m2;
 	struct bt_csis *inst_1;
 	struct bt_csis *inst_2;
-
-	/* TODO: lookup_instance_by_set_info should be able to work on a const
-	 * member, but it relies on `bt_conn_index` which doesn't take a const
-	 * bt_conn.
-	 */
 
 	inst_1 = lookup_instance_by_set_info(member_1, active.info);
 	inst_2 = lookup_instance_by_set_info(member_2, active.info);
