@@ -13,7 +13,6 @@ int zcbor_map_decode_bulk(zcbor_state_t *zsd, struct zcbor_map_decode_key_val *m
 	size_t map_size, size_t *matched)
 {
 	bool ok;
-	bool dok;		/* Key decode ok */
 	struct zcbor_map_decode_key_val *dptr = map;
 
 	if (!zcbor_map_start_decode(zsd)) {
@@ -21,16 +20,16 @@ int zcbor_map_decode_bulk(zcbor_state_t *zsd, struct zcbor_map_decode_key_val *m
 	}
 
 	*matched = 0;
-	dok = true;
+	ok = true;
 
 	do {
 		struct zcbor_string key;
 		bool found = false;
 		size_t map_count = 0;
 
-		dok = zcbor_tstr_decode(zsd, &key);
+		ok = zcbor_tstr_decode(zsd, &key);
 
-		while (dok && map_count < map_size) {
+		while (ok && map_count < map_size) {
 			if (dptr >= (map + map_size)) {
 				dptr = map;
 			}
@@ -61,10 +60,10 @@ int zcbor_map_decode_bulk(zcbor_state_t *zsd, struct zcbor_map_decode_key_val *m
 			++map_count;
 		}
 
-		if (!found && dok) {
+		if (!found && ok) {
 			ok = zcbor_any_skip(zsd, NULL);
 		}
-	} while (ok && dok);
+	} while (ok);
 
 	return zcbor_map_end_decode(zsd) ? 0 : -EBADMSG;
 }
