@@ -1056,6 +1056,7 @@ static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready, ui
 		iq_report->rssi_ant_id = ant;
 		iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
 		iq_report->local_slot_durations = rx_params->slot_durations;
+		iq_report->event_counter = lll->event_counter;
 
 		ftr = &iq_report->hdr.rx_ftr;
 		ftr->param = lll;
