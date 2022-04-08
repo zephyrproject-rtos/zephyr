@@ -2380,5 +2380,5 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
 				  CONFIG_MODEM_SIMCOM_SIM7080_INIT_PRIORITY, &api_funcs,
 				  MDM_MAX_DATA_LENGTH);
 
-NET_SOCKET_REGISTER(simcom_sim7080, MDM_SOCKET_PRIO, AF_UNSPEC, offload_is_supported,
-		    offload_socket);
+NET_SOCKET_REGISTER(simcom_sim7080, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+		    offload_is_supported, offload_socket);
