@@ -43,10 +43,10 @@ struct spi_cs_control spi_cs = {
 #define BUF2_SIZE 36
 
 #if CONFIG_NOCACHE_MEMORY
-static const char tx_data[] = "0123456789abcdef\0";
+static const char tx_data[BUF_SIZE] = "0123456789abcdef\0";
 static __aligned(32) char buffer_tx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
 static __aligned(32) char buffer_rx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
-static const char tx2_data[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
 static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
 static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
 #else
