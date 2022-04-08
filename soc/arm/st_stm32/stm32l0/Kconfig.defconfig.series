@@ -15,4 +15,9 @@ config SOC_SERIES
 config STM32_LPTIM_TIMER
 	default y if PM
 
+# adjust the fallback because of the LSI oscaillator characteristics
+config TASK_WDT_HW_FALLBACK_DELAY
+	depends on TASK_WDT_HW_FALLBACK
+	default 200
+
 endif # SOC_SERIES_STM32L0X
