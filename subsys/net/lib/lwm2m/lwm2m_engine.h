@@ -123,6 +123,8 @@ struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
 int lwm2m_init_message(struct lwm2m_message *msg);
 int lwm2m_send_message_async(struct lwm2m_message *msg);
+/* Notification and Send operation */
+int lwm2m_information_interface_send(struct lwm2m_message *msg);
 int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid);
 
 int lwm2m_register_payload_handler(struct lwm2m_message *msg);
@@ -192,6 +194,11 @@ const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr);
 int  lwm2m_socket_add(struct lwm2m_ctx *ctx);
 void lwm2m_socket_del(struct lwm2m_ctx *ctx);
 int  lwm2m_socket_start(struct lwm2m_ctx *client_ctx);
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+int lwm2m_engine_close_socket_connection(struct lwm2m_ctx *client_ctx);
+int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx);
+int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx);
+#endif
 int  lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri);
 
 #endif /* LWM2M_ENGINE_H */

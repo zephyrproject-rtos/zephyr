@@ -117,6 +117,9 @@ struct lwm2m_ctx {
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	sys_slist_t pending_sends;
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+	sys_slist_t queued_messages;
+#endif
 	sys_slist_t observer;
 
 	/** A pointer to currently processed request, for internal LwM2M engine
@@ -151,6 +154,19 @@ struct lwm2m_ctx {
 	 */
 	bool use_dtls;
 
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+	/**
+	 * Flag to indicate that the socket connection is suspended.
+	 * With queue mode, this will tell if there is a need to reconnect.
+	 */
+	bool connection_suspended;
+
+	/**
+	 * Flag to indicate that the client is buffering Notifications and Send messages.
+	 * True value buffer Notifications and Send messages.
+	 */
+	bool buffer_client_messages;
+#endif
 	/** Current index of Security Object used for server credentials */
 	int sec_obj_inst;
 
