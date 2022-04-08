@@ -166,6 +166,17 @@ config NET_SOCKETS_OFFLOAD
 	  See NET_OFFLOAD for a more deeply integrated approach which offloads
 	  from the net_context() API within the Zephyr IP stack.
 
+config NET_SOCKETS_OFFLOAD_PRIORITY
+	int "Default processing priority for offloaded sockets"
+	default 40
+	help
+	  Processing priority for offloaded sockets.
+
+	  If native TLS is enabled, lower value than NET_SOCKETS_TLS_PRIORITY
+	  means that TLS will be offloaded as well (if supported by offloaded
+	  socket implementation). Higher value than NET_SOCKETS_TLS_PRIORITY
+	  means that native TLS will be used.
+
 config NET_SOCKETS_OFFLOAD_TLS
 	bool "Offload TLS socket calls to the offloaded sockets"
 	depends on NET_SOCKETS_OFFLOAD
