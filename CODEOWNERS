@@ -194,6 +194,7 @@
 /cmake/                                   @tejlmand @nashif
 /cmake/*/arcmwdt/                         @abrodkin @evgeniy-paltsev @tejlmand
 /CMakeLists.txt                           @tejlmand @nashif
+/doc/                                     @carlescufi
 /doc/develop/tools/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/services/device_mgmt/smp_protocol.rst  @de-nordic
 /doc/services/device_mgmt/smp_groups/       @de-nordic
