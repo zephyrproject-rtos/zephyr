@@ -166,23 +166,20 @@ static void health_fault_status(struct bt_mesh_health_cli *cli, uint16_t addr,
 				uint8_t test_id, uint16_t cid, uint8_t *faults,
 				size_t fault_count)
 {
-	shell_print(ctx_shell, "Health Fault Status from 0x%04x", addr);
+	shell_print_ctx("Health Fault Status from 0x%04x", addr);
 	show_faults(test_id, cid, faults, fault_count);
 }
 
 static void health_attention_status(struct bt_mesh_health_cli *cli,
 				    uint16_t addr, uint8_t attention)
 {
-	shell_print(ctx_shell, "Health Attention Status from 0x%04x: %u", addr,
-		    attention);
+	shell_print_ctx("Health Attention Status from 0x%04x: %u", addr, attention);
 }
 
 static void health_period_status(struct bt_mesh_health_cli *cli, uint16_t addr,
 				 uint8_t period)
 {
-	shell_print(ctx_shell,
-		    "Health Fast Period Divisor Status from 0x%04x: %u", addr,
-		    period);
+	shell_print_ctx("Health Fast Period Divisor Status from 0x%04x: %u", addr, period);
 }
 
 struct bt_mesh_health_cli bt_mesh_shell_health_cli = {
