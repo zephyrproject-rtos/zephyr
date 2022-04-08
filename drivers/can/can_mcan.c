@@ -865,7 +865,7 @@ int can_mcan_add_rx_filter_std(struct can_mcan_data *data,
 	filter_id = can_mcan_get_free_std(msg_ram->std_filt);
 
 	if (filter_id == -ENOSPC) {
-		LOG_INF("No free standard id filter left");
+		LOG_WRN("No free standard id filter left");
 		return -ENOSPC;
 	}
 
@@ -927,7 +927,7 @@ static int can_mcan_add_rx_filter_ext(struct can_mcan_data *data,
 	filter_id = can_mcan_get_free_ext(msg_ram->ext_filt);
 
 	if (filter_id == -ENOSPC) {
-		LOG_INF("No free extended id filter left");
+		LOG_WRN("No free extended id filter left");
 		return -ENOSPC;
 	}
 
@@ -979,11 +979,9 @@ int can_mcan_add_rx_filter(struct can_mcan_data *data,
 	} else {
 		filter_id = can_mcan_add_rx_filter_ext(data, msg_ram, callback,
 						       user_data, filter);
-		filter_id += NUM_STD_FILTER_DATA;
-	}
-
-	if (filter_id == -ENOSPC) {
-		LOG_INF("No free filter left");
+		if (filter_id >= 0) {
+			filter_id += NUM_STD_FILTER_DATA;
+		}
 	}
 
 	return filter_id;
@@ -995,7 +993,7 @@ void can_mcan_remove_rx_filter(struct can_mcan_data *data,
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	if (filter_id >= NUM_STD_FILTER_DATA) {
 		filter_id -= NUM_STD_FILTER_DATA;
-		if (filter_id >= NUM_STD_FILTER_DATA) {
+		if (filter_id >= NUM_EXT_FILTER_DATA) {
 			LOG_ERR("Wrong filter id");
 			return;
 		}
