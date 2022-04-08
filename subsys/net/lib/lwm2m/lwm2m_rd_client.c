@@ -146,11 +146,20 @@ static void set_sm_state(uint8_t sm_state)
 	if (client.engine_state == ENGINE_UPDATE_SENT &&
 	    (sm_state == ENGINE_REGISTRATION_DONE ||
 	     sm_state == ENGINE_REGISTRATION_DONE_RX_OFF)) {
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+		lwm2m_push_queued_buffers(client.ctx);
+#endif
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE) {
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+		lwm2m_push_queued_buffers(client.ctx);
+#endif
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE_RX_OFF) {
 		event = LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF;
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+		lwm2m_engine_close_socket_connection(client.ctx);
+#endif
 	} else if ((sm_state == ENGINE_INIT ||
 		    sm_state == ENGINE_DEREGISTERED) &&
 		   (client.engine_state >= ENGINE_DO_REGISTRATION &&
@@ -919,6 +928,15 @@ static int sm_registration_done(void)
 		update_objects = client.update_objects;
 		client.trigger_update = false;
 		client.update_objects = false;
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+		ret = lwm2m_engine_connection_resume(client.ctx);
+		if (ret) {
+			lwm2m_engine_context_close(client.ctx);
+			/* perform full registration */
+			set_sm_state(ENGINE_DO_REGISTRATION);
+			return ret;
+		}
+#endif
 
 		ret = sm_send_registration(update_objects,
 					   do_update_reply_cb,
@@ -1153,6 +1171,35 @@ struct lwm2m_ctx *lwm2m_rd_client_ctx(void)
 {
 	return client.ctx;
 }
+
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+int lwm2m_rd_client_connection_resume(struct lwm2m_ctx *client_ctx)
+{
+	if (client.ctx != client_ctx) {
+		return -EPERM;
+	}
+
+	if (client.engine_state == ENGINE_REGISTRATION_DONE_RX_OFF) {
+#ifdef CONFIG_LWM2M_DTLS_SUPPORT
+		/*
+		 * Switch state for triggering a proper registration message
+		 * if CONFIG_LWM2M_TLS_SESSION_CACHING is false we force full
+		 * registration after Fully DTLS handshake
+		 */
+		if (IS_ENABLED(CONFIG_LWM2M_TLS_SESSION_CACHING)) {
+			client.engine_state = ENGINE_REGISTRATION_DONE;
+		} else {
+			client.engine_state = ENGINE_DO_REGISTRATION;
+		}
+#else
+		client.engine_state = ENGINE_REGISTRATION_DONE;
+#endif
+		client.trigger_update = true;
+	}
+
+	return 0;
+}
+#endif
 
 static int lwm2m_rd_client_init(const struct device *dev)
 {
