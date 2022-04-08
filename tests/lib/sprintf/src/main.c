@@ -764,8 +764,10 @@ void test_fprintf(void)
 	ret = fprintf(stdout, "");
 	zassert_equal(ret, 0, "fprintf failed!");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = fprintf(NULL, "%d", i);
 	zassert_equal(ret, EOF, "fprintf failed!");
+#endif
 }
 
 
@@ -806,8 +808,10 @@ void test_vfprintf(void)
 	ret = WriteFrmtd_vf(stdout,  "11\n");
 	zassert_equal(ret, 3, "vfprintf \"11\" failed");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = WriteFrmtd_vf(NULL,  "This %d", 3);
 	zassert_equal(ret, EOF, "vfprintf \"This 3\" failed");
+#endif
 }
 
 /**
@@ -864,8 +868,10 @@ void test_put(void)
 	ret = fputs("This 3\n", stderr);
 	zassert_equal(ret, 0, "fputs \"This 3\" failed");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = fputs("This 3", NULL);
 	zassert_equal(ret, EOF, "fputs \"This 3\" failed");
+#endif
 
 	ret = puts("This 3");
 	zassert_equal(ret, 0, "puts \"This 3\" failed");
@@ -873,14 +879,18 @@ void test_put(void)
 	ret = fputc('T', stdout);
 	zassert_equal(ret, 84, "fputc \'T\' failed");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = fputc('T', NULL);
 	zassert_equal(ret, EOF, "fputc \'T\' failed");
+#endif
 
 	ret = putc('T', stdout);
 	zassert_equal(ret, 84, "putc \'T\' failed");
 
+#ifndef CONFIG_PICOLIBC	/* this is UB */
 	ret = putc('T', NULL);
 	zassert_equal(ret, EOF, "putc \'T\' failed");
+#endif
 
 	ret = fputc('T', stderr);
 	zassert_equal(ret, 84, "fputc \'T\' failed");
