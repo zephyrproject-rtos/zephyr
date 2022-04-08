@@ -32,7 +32,7 @@ static void litex_timer_irq_handler(const void *device)
 {
 	int key = irq_lock();
 
-	sys_write8(TIMER_EV, TIMER_EV_PENDING_ADDR);
+	litex_write8(TIMER_EV, TIMER_EV_PENDING_ADDR);
 	sys_clock_announce(1);
 
 	irq_unlock(key);
@@ -79,18 +79,14 @@ static int sys_clock_driver_init(const struct device *dev)
 			litex_timer_irq_handler, NULL, 0);
 	irq_enable(TIMER_IRQ);
 
-	sys_write8(TIMER_DISABLE, TIMER_EN_ADDR);
+	litex_write8(TIMER_DISABLE, TIMER_EN_ADDR);
 
-	for (int i = 0; i < 4; i++) {
-		sys_write8(k_ticks_to_cyc_floor32(1) >> (24 - i * 8),
-				TIMER_RELOAD_ADDR + i * 0x4);
-		sys_write8(k_ticks_to_cyc_floor32(1) >> (24 - i * 8),
-				TIMER_LOAD_ADDR + i * 0x4);
-	}
+	litex_write32(k_ticks_to_cyc_floor32(1), TIMER_RELOAD_ADDR);
+	litex_write32(k_ticks_to_cyc_floor32(1), TIMER_LOAD_ADDR);
 
-	sys_write8(TIMER_ENABLE, TIMER_EN_ADDR);
-	sys_write8(sys_read8(TIMER_EV_PENDING_ADDR), TIMER_EV_PENDING_ADDR);
-	sys_write8(TIMER_EV, TIMER_EV_ENABLE_ADDR);
+	litex_write8(TIMER_ENABLE, TIMER_EN_ADDR);
+	litex_write8(litex_read8(TIMER_EV_PENDING_ADDR), TIMER_EV_PENDING_ADDR);
+	litex_write8(TIMER_EV, TIMER_EV_ENABLE_ADDR);
 
 	return 0;
 }
