@@ -837,15 +837,6 @@ config SOC_FAMILY
 	  This option holds the directory name used by the build system to locate
 	  the correct linker and header files.
 
-config BOARD
-	string
-	help
-	  This option holds the name of the board and is used to locate the files
-	  related to the board in the source tree (under boards/).
-	  The Board is the first location where we search for a linker.ld file,
-	  if not found we look for the linker file in
-	  soc/<arch>/<family>/<series>
-
 config TOOLCHAIN_HAS_BUILTIN_FFS
 	bool
 	default y if !(64BIT && RISCV)
