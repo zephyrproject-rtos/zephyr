@@ -16,9 +16,10 @@
  */
 
 /**
- * Test bitrate in bits/second.
+ * Test bitrates in bits/second.
  */
-#define TEST_BITRATE 125000
+#define TEST_BITRATE_1 125000
+#define TEST_BITRATE_2 250000
 
 /**
  * @brief Test timeouts.
@@ -646,7 +647,7 @@ static void test_set_bitrate(void)
 {
 	int err;
 
-	err = can_set_bitrate(can_dev, TEST_BITRATE, 0);
+	err = can_set_bitrate(can_dev, TEST_BITRATE_1, 0);
 	zassert_equal(err, 0, "failed to set bitrate");
 }
 
@@ -967,6 +968,34 @@ static void test_filters_preserved_through_mode_change(void)
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
+static void test_filters_preserved_through_bitrate_change(void)
+{
+	struct zcan_frame frame;
+	int filter_id;
+	int err;
+
+	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	send_test_frame(can_dev, &test_std_frame_1);
+
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	assert_frame_equal(&frame, &test_std_frame_1, 0);
+
+	err = can_set_bitrate(can_dev, TEST_BITRATE_2, 0);
+	zassert_equal(err, 0, "failed to set bitrate");
+
+	err = can_set_bitrate(can_dev, TEST_BITRATE_1, 0);
+	zassert_equal(err, 0, "failed to set bitrate");
+
+	send_test_frame(can_dev, &test_std_frame_1);
+
+	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	assert_frame_equal(&frame, &test_std_frame_1, 0);
+
+	can_remove_rx_filter(can_dev, filter_id);
+}
+
 void test_main(void)
 {
 	k_sem_init(&rx_callback_sem, 0, 2);
@@ -999,6 +1028,7 @@ void test_main(void)
 			 ztest_unit_test(test_send_receive_wrong_id),
 			 ztest_user_unit_test(test_recover),
 			 ztest_user_unit_test(test_get_state),
-			 ztest_user_unit_test(test_filters_preserved_through_mode_change));
+			 ztest_user_unit_test(test_filters_preserved_through_mode_change),
+			 ztest_user_unit_test(test_filters_preserved_through_bitrate_change));
 	ztest_run_test_suite(can_api_tests);
 }
