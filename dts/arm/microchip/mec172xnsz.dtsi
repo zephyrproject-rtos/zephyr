@@ -575,8 +575,8 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-/* uarts were here */
 		ps2_0: ps2@40009000 {
+			compatible = "microchip,xec-ps2";
 			reg = <0x40009000 0x40>;
 			interrupts = <100 1>;
 			girqs = <18 10>;
