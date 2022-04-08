@@ -183,16 +183,10 @@ static int mcux_flexcan_set_timing(const struct device *dev,
 
 static int mcux_flexcan_set_mode(const struct device *dev, enum can_mode mode)
 {
-	struct mcux_flexcan_data *data = dev->data;
 	const struct mcux_flexcan_config *config = dev->config;
-	flexcan_config_t flexcan_config;
-	uint32_t clock_freq;
+	uint32_t ctrl1;
+	uint32_t mcr;
 	int err;
-
-	err = mcux_flexcan_get_core_clock(dev, &clock_freq);
-	if (err != 0) {
-		return -EIO;
-	}
 
 	if (config->phy != NULL) {
 		err = can_transceiver_enable(config->phy);
@@ -202,31 +196,33 @@ static int mcux_flexcan_set_mode(const struct device *dev, enum can_mode mode)
 		}
 	}
 
-	FLEXCAN_GetDefaultConfig(&flexcan_config);
-	flexcan_config.maxMbNum = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(0);
-	flexcan_config.clkSrc = config->clk_source;
-	flexcan_config.baudRate = clock_freq /
-	      (1U + data->timing.prop_seg + data->timing.phase_seg1 +
-	       data->timing.phase_seg2) / data->timing.prescaler;
-	flexcan_config.enableIndividMask = true;
+	FLEXCAN_EnterFreezeMode(config->base);
 
-	flexcan_config.timingConfig.rJumpwidth = data->timing.sjw - 1U;
-	flexcan_config.timingConfig.propSeg = data->timing.prop_seg - 1U;
-	flexcan_config.timingConfig.phaseSeg1 = data->timing.phase_seg1 - 1U;
-	flexcan_config.timingConfig.phaseSeg2 = data->timing.phase_seg2 - 1U;
+	ctrl1 = config->base->CTRL1;
+	mcr = config->base->MCR;
 
 	if (mode == CAN_LOOPBACK_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
-		flexcan_config.enableLoopBack = true;
+		/* Enable loopback and self-reception */
+		ctrl1 |= CAN_CTRL1_LPB_MASK;
+		mcr &= ~(CAN_MCR_SRXDIS_MASK);
 	} else {
-		/* Disable self-reception unless loopback is requested */
-		flexcan_config.disableSelfReception = true;
+		/* Disable loopback and self-reception */
+		ctrl1 &= ~(CAN_CTRL1_LPB_MASK);
+		mcr |= CAN_MCR_SRXDIS_MASK;
 	}
 
 	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
-		flexcan_config.enableListenOnlyMode = true;
+		/* Enable listen-only mode */
+		ctrl1 |= CAN_CTRL1_LOM_MASK;
+	} else {
+		/* Disable listen-only mode */
+		ctrl1 &= ~(CAN_CTRL1_LOM_MASK);
 	}
 
-	FLEXCAN_Init(config->base, &flexcan_config, clock_freq);
+	config->base->CTRL1 = ctrl1;
+	config->base->MCR = mcr;
+
+	FLEXCAN_ExitFreezeMode(config->base);
 
 	return 0;
 }
@@ -691,6 +687,8 @@ static int mcux_flexcan_init(const struct device *dev)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
+	flexcan_config_t flexcan_config;
+	uint32_t clock_freq;
 	int err;
 	int i;
 
@@ -743,13 +741,30 @@ static int mcux_flexcan_init(const struct device *dev)
 	}
 #endif
 
-	err = mcux_flexcan_set_mode(dev, CAN_NORMAL_MODE);
-	if (err) {
-		return err;
+	err = mcux_flexcan_get_core_clock(dev, &clock_freq);
+	if (err != 0) {
+		return -EIO;
 	}
 
 	data->dev = dev;
 
+	FLEXCAN_GetDefaultConfig(&flexcan_config);
+	flexcan_config.maxMbNum = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(0);
+	flexcan_config.clkSrc = config->clk_source;
+	flexcan_config.baudRate = clock_freq /
+	      (1U + data->timing.prop_seg + data->timing.phase_seg1 +
+	       data->timing.phase_seg2) / data->timing.prescaler;
+	flexcan_config.enableIndividMask = true;
+	flexcan_config.enableLoopBack = false;
+	flexcan_config.disableSelfReception = true;
+	flexcan_config.enableListenOnlyMode = false;
+
+	flexcan_config.timingConfig.rJumpwidth = data->timing.sjw - 1U;
+	flexcan_config.timingConfig.propSeg = data->timing.prop_seg - 1U;
+	flexcan_config.timingConfig.phaseSeg1 = data->timing.phase_seg1 - 1U;
+	flexcan_config.timingConfig.phaseSeg2 = data->timing.phase_seg2 - 1U;
+
+	FLEXCAN_Init(config->base, &flexcan_config, clock_freq);
 	FLEXCAN_TransferCreateHandle(config->base, &data->handle,
 				     mcux_flexcan_transfer_callback, data);
 
