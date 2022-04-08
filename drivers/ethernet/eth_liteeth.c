@@ -93,12 +93,12 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	len = net_pkt_get_len(pkt);
 	net_pkt_read(pkt, context->tx_buf[context->txslot], len);
 
-	sys_write8(context->txslot, LITEETH_TX_SLOT);
-	sys_write8(len >> 8, LITEETH_TX_LENGTH);
-	sys_write8(len & 0xFF, LITEETH_TX_LENGTH + 4);
+	litex_write8(context->txslot, LITEETH_TX_SLOT);
+	litex_write8(len >> 8, LITEETH_TX_LENGTH);
+	litex_write8(len & 0xFF, LITEETH_TX_LENGTH + 4);
 
 	/* wait for the device to be ready to transmit */
-	while (sys_read8(LITEETH_TX_READY) == 0) {
+	while (litex_read8(LITEETH_TX_READY) == 0) {
 		if (attempts++ == MAX_TX_FAILURE) {
 			goto error;
 		}
@@ -106,7 +106,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* start transmitting */
-	sys_write8(1, LITEETH_TX_START);
+	litex_write8(1, LITEETH_TX_START);
 
 	/* change slot */
 	context->txslot = (context->txslot + 1) % 2;
@@ -134,11 +134,11 @@ static void eth_rx(const struct device *port)
 	/* get frame's length */
 	for (int i = 0; i < 4; i++) {
 		len <<= 8;
-		len |= sys_read8(LITEETH_RX_LENGTH + i * 0x4);
+		len |= litex_read8(LITEETH_RX_LENGTH + i * 0x4);
 	}
 
 	/* which slot is the frame in */
-	context->rxslot = sys_read8(LITEETH_RX_SLOT);
+	context->rxslot = litex_read8(LITEETH_RX_SLOT);
 
 	/* obtain rx buffer */
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, len, AF_UNSPEC, 0,
@@ -169,19 +169,19 @@ out:
 static void eth_irq_handler(const struct device *port)
 {
 	/* check sram reader events (tx) */
-	if (sys_read8(LITEETH_TX_EV_PENDING) & LITEETH_EV_TX) {
+	if (litex_read8(LITEETH_TX_EV_PENDING) & LITEETH_EV_TX) {
 		/* TX event is not enabled nor used by this driver; ack just
 		 * in case if some rogue TX event appeared
 		 */
-		sys_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING);
+		litex_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING);
 	}
 
 	/* check sram writer events (rx) */
-	if (sys_read8(LITEETH_RX_EV_PENDING) & LITEETH_EV_RX) {
+	if (litex_read8(LITEETH_RX_EV_PENDING) & LITEETH_EV_RX) {
 		eth_rx(port);
 
 		/* ack writer irq */
-		sys_write8(LITEETH_EV_RX, LITEETH_RX_EV_PENDING);
+		litex_write8(LITEETH_EV_RX, LITEETH_RX_EV_PENDING);
 	}
 }
 
@@ -226,8 +226,8 @@ static void eth_iface_init(struct net_if *iface)
 	}
 
 	/* clear pending events */
-	sys_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING);
-	sys_write8(LITEETH_EV_RX, LITEETH_RX_EV_PENDING);
+	litex_write8(LITEETH_EV_TX, LITEETH_TX_EV_PENDING);
+	litex_write8(LITEETH_EV_RX, LITEETH_RX_EV_PENDING);
 
 	/* setup tx slots */
 	context->txslot = 0;
@@ -264,7 +264,7 @@ static void eth_irq_config(void)
 	IRQ_CONNECT(LITEETH_IRQ, LITEETH_IRQ_PRIORITY, eth_irq_handler,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(LITEETH_IRQ);
-	sys_write8(1, LITEETH_RX_EV_ENABLE);
+	litex_write8(1, LITEETH_RX_EV_ENABLE);
 }
 
 #endif /* CONFIG_ETH_LITEETH_0 */
