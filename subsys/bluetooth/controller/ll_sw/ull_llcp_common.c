@@ -216,6 +216,13 @@ static void lp_comm_complete_cte_req_finalize(struct ll_conn *conn)
 
 	conn->llcp.cte_req.is_active = 0U;
 
+	/* Disable the CTE request procedure when it is completed in case it was executed as
+	 * non-periodic.
+	 */
+	if (conn->llcp.cte_req.req_interval == 0U) {
+		conn->llcp.cte_req.is_enabled = 0U;
+	}
+
 	/* If disable_cb is not NULL then there is waiting CTE REQ disable request
 	 * from host. Execute the callback to notify waiting thread that the
 	 * procedure is inactive.
