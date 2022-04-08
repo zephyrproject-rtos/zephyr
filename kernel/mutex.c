@@ -222,8 +222,6 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	 */
 	__ASSERT_NO_MSG(mutex->lock_count > 0U);
 
-	z_sched_lock();
-
 	LOG_DBG("mutex %p lock_count: %d", mutex, mutex->lock_count);
 
 	/*
@@ -265,8 +263,6 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 k_mutex_unlock_return:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, 0);
-
-	k_sched_unlock();
 
 	return 0;
 }
