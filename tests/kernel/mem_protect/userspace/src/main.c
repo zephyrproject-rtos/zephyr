@@ -940,6 +940,7 @@ void test_syscall_context(void)
 	check_syscall_context();
 }
 
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 static void tls_leakage_user_part(void *p1, void *p2, void *p3)
 {
 	char *tls_area = p1;
@@ -949,9 +950,11 @@ static void tls_leakage_user_part(void *p1, void *p2, void *p3)
 			      "TLS data leakage to user mode");
 	}
 }
+#endif
 
 void test_tls_leakage(void)
 {
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	/* Tests two assertions:
 	 *
 	 * - That a user thread has full access to its TLS area
@@ -964,15 +967,21 @@ void test_tls_leakage(void)
 
 	k_thread_user_mode_enter(tls_leakage_user_part,
 				 _current->userspace_local_data, NULL, NULL);
+#else
+	ztest_test_skip();
+#endif
 }
 
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 void tls_entry(void *p1, void *p2, void *p3)
 {
 	printk("tls_entry\n");
 }
+#endif
 
 void test_tls_pointer(void)
 {
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	k_thread_create(&test_thread, test_stack, STACKSIZE, tls_entry,
 			NULL, NULL, NULL, 1, K_USER, K_FOREVER);
 
@@ -996,6 +1005,9 @@ void test_tls_pointer(void)
 		printk("tls area out of bounds\n");
 		ztest_test_fail();
 	}
+#else
+	ztest_test_skip();
+#endif
 }
 
 
