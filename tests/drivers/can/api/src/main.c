@@ -704,6 +704,69 @@ static void test_add_filter(void)
 }
 
 /**
+ * @brief Test adding up to and above the maximum number of RX filters.
+ *
+ * @param id_type CAN frame identifier type
+ * @param id_mask filter
+ */
+static void add_remove_max_filters(enum can_ide id_type)
+{
+	uint32_t id_mask = id_type == CAN_STANDARD_IDENTIFIER ? CAN_STD_ID_MASK : CAN_EXT_ID_MASK;
+	struct zcan_filter filter = {
+		.id_type = id_type,
+		.rtr = CAN_DATAFRAME,
+		.id = 0,
+		.rtr_mask = 1,
+		.id_mask = id_mask,
+	};
+	int filter_id;
+	int max;
+	int i;
+
+	max = can_get_max_filters(can_dev, id_type);
+	if (max == -ENOSYS || max == 0) {
+		/*
+		 * Skip test if max is not known or no filters of the given type
+		 * is supported.
+		 */
+		ztest_test_skip();
+	}
+
+	zassert_true(max > 0, "failed to get max filters (err %d)", max);
+
+	int filter_ids[max];
+
+	for (i = 0; i < max; i++) {
+		filter.id++;
+		filter_ids[i] = add_rx_msgq(can_dev, &filter);
+	}
+
+	filter.id++;
+	filter_id = can_add_rx_filter_msgq(can_dev, &can_msgq, &filter);
+	zassert_equal(filter_id, -ENOSPC, "added more than max filters");
+
+	for (i = 0; i < max; i++) {
+		can_remove_rx_filter(can_dev, filter_ids[i]);
+	}
+}
+
+/**
+ * @brief Test max standard (11-bit) CAN RX filters.
+ */
+static void test_max_std_filters(void)
+{
+	add_remove_max_filters(CAN_STANDARD_IDENTIFIER);
+}
+
+/**
+ * @brief Test max extended (29-bit) CAN RX filters.
+ */
+static void test_max_ext_filters(void)
+{
+	add_remove_max_filters(CAN_EXTENDED_IDENTIFIER);
+}
+
+/**
  * @brief Test that no message is received when nothing was sent.
  */
 static void test_receive_timeout(void)
@@ -923,6 +986,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_set_loopback),
 			 ztest_user_unit_test(test_send_and_forget),
 			 ztest_unit_test(test_add_filter),
+			 ztest_user_unit_test(test_max_std_filters),
+			 ztest_user_unit_test(test_max_ext_filters),
 			 ztest_user_unit_test(test_receive_timeout),
 			 ztest_unit_test(test_send_callback),
 			 ztest_unit_test(test_send_receive_std_id),
