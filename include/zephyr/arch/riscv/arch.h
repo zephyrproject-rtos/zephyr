@@ -300,41 +300,30 @@ void nuclei_eclic_irq_priority_set(unsigned int irq, unsigned int prio, unsigned
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
-	ulong_t mstatus;
 
 	__asm__ volatile ("csrrc %0, mstatus, %1"
-			  : "=r" (mstatus)
-			  : "r" (MSTATUS_IEN)
+			  : "=r" (key)
+			  : "rK" (MSTATUS_IEN)
 			  : "memory");
 
-	key = (mstatus & MSTATUS_IEN);
 	return key;
 }
 
 /*
- * use atomic instruction csrrs to unlock global irq
- * csrrs: atomic read and set bits in CSR register
+ * use atomic instruction csrs to unlock global irq
+ * csrs: atomic set bits in CSR register
  */
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
-	ulong_t mstatus;
-
-	__asm__ volatile ("csrrs %0, mstatus, %1"
-			  : "=r" (mstatus)
+	__asm__ volatile ("csrs mstatus, %0"
+			  :
 			  : "r" (key & MSTATUS_IEN)
 			  : "memory");
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
-	/* FIXME: looking at arch_irq_lock, this should be reducable
-	 * to just testing that key is nonzero (because it should only
-	 * have the single bit set).  But there is a mask applied to
-	 * the argument in arch_irq_unlock() that has me worried
-	 * that something elsewhere might try to set a bit?  Do it
-	 * the safe way for now.
-	 */
-	return (key & MSTATUS_IEN) == MSTATUS_IEN;
+	return (key & MSTATUS_IEN) != 0;
 }
 
 static ALWAYS_INLINE void arch_nop(void)
