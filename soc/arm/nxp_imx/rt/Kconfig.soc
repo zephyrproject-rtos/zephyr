@@ -688,11 +688,11 @@ config CODE_ITCM
 
 config CODE_FLEXSPI
 	bool "Link code into external FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_FLEXSPI2
 	bool "Link code into internal FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
