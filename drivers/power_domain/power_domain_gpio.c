@@ -7,12 +7,12 @@
 
 #define DT_DRV_COMPAT power_domain_gpio
 
-#include <kernel.h>
-#include <drivers/gpio.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(power_domain_gpio, LOG_LEVEL_INF);
 
 struct pd_gpio_config {
