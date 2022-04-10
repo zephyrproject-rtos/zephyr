@@ -531,6 +531,28 @@ void test_posix_pthread_termination(void)
 	zassert_equal(ret, ESRCH, "got attr from terminated thread!");
 }
 
+void test_posix_thread_attr_stacksize(void)
+{
+	size_t act_size;
+	pthread_attr_t attr;
+	const size_t exp_size = 0xB105F00D;
+
+	/* TESTPOINT: specify a custom stack size via pthread_attr_t */
+	zassert_equal(0, pthread_attr_init(&attr), "pthread_attr_init() failed");
+
+	if (PTHREAD_STACK_MIN > 0) {
+		zassert_equal(EINVAL, pthread_attr_setstacksize(&attr, 0),
+			      "pthread_attr_setstacksize() did not fail");
+	}
+
+	zassert_equal(0, pthread_attr_setstacksize(&attr, exp_size),
+		      "pthread_attr_setstacksize() failed");
+	zassert_equal(0, pthread_attr_getstacksize(&attr, &act_size),
+		      "pthread_attr_getstacksize() failed");
+	zassert_equal(exp_size, act_size, "wrong size: act: %zu exp: %zu",
+		exp_size, act_size);
+}
+
 static void *create_thread1(void *p1)
 {
 	/* do nothing */
