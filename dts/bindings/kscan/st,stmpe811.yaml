@@ -1,0 +1,13 @@
+# Copyright Konstantinos Papadopoulos <kostas.papadopulos@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMPE811 resistive touch panels
+
+compatible: "st,stmpe811"
+
+include: [kscan.yaml, i2c-device.yaml]
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false
