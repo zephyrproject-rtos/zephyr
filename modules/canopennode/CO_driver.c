@@ -184,18 +184,20 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 	}
 
 	max_filters = can_get_max_filters(ctx->dev, CAN_STANDARD_IDENTIFIER);
-	if (max_filters < 0) {
-		LOG_ERR("unable to determine number of CAN RX filters");
-		return CO_ERROR_SYSCALL;
-	}
+	if (max_filters != -ENOSYS) {
+		if (max_filters < 0) {
+			LOG_ERR("unable to determine number of CAN RX filters");
+			return CO_ERROR_SYSCALL;
+		}
 
-	if (rxSize > max_filters) {
-		LOG_ERR("insufficient number of concurrent CAN RX filters"
-			" (needs %d, %d available)", rxSize, max_filters);
-		return CO_ERROR_OUT_OF_MEMORY;
-	} else if (rxSize < max_filters) {
-		LOG_DBG("excessive number of concurrent CAN RX filters enabled"
-			" (needs %d, %d available)", rxSize, max_filters);
+		if (rxSize > max_filters) {
+			LOG_ERR("insufficient number of concurrent CAN RX filters"
+				" (needs %d, %d available)", rxSize, max_filters);
+			return CO_ERROR_OUT_OF_MEMORY;
+		} else if (rxSize < max_filters) {
+			LOG_DBG("excessive number of concurrent CAN RX filters enabled"
+				" (needs %d, %d available)", rxSize, max_filters);
+		}
 	}
 
 	canopen_detach_all_rx_filters(CANmodule);
