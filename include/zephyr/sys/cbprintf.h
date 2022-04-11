@@ -16,20 +16,13 @@
 #include <stdio.h>
 #endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
 
-/* Determine if _Generic is supported.
- * In general it's a C11 feature but it is supported in releases after:
- * - GCC 4.9.0 https://gcc.gnu.org/gcc-4.9/changes.html
- * - Clang 3.8 Introduced in 3.0 (https://releases.llvm.org/3.0/docs/ClangReleaseNotes.html)
- *   but with bug (http://www.open-std.org/jtc1/sc22/wg14/www/docs/summary.htm#dr_481)
- *   that was fixed in 3.8.
+/* Determine if _Generic is supported using macro from toolchain.h.
  *
  * @note Z_C_GENERIC is also set for C++ where functionality is implemented
  * using overloading and templates.
  */
 #ifndef Z_C_GENERIC
-#if defined(__cplusplus) || (((__STDC_VERSION__ >= 201112L) || \
-	((__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40900) || \
-	((__clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__) >= 30800)))
+#if defined(__cplusplus) || TOOLCHAIN_HAS_C_GENERIC
 #define Z_C_GENERIC 1
 #else
 #define Z_C_GENERIC 0
