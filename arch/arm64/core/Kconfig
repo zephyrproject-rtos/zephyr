@@ -9,6 +9,7 @@ config CPU_CORTEX_A
 	select HAS_FLASH_LOAD_OFFSET
 	select SCHED_IPI_SUPPORTED if SMP
 	select CPU_HAS_FPU
+	select ARCH_HAS_SINGLE_THREAD_SUPPORT
 	imply FPU
 	imply FPU_SHARING
 	help
