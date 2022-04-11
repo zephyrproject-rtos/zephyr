@@ -75,16 +75,22 @@ struct log_msg2_hdr {
 	const void *source;
 	log_timestamp_t timestamp;
 #endif
-#if defined(__xtensa__) && !defined(CONFIG_LOG_TIMESTAMP_64BIT)
-	/* xtensa requires that cbprintf package that follows the header is
-	 * aligned to 16 bytes. Adding padding when necessary.
-	 */
-	uint32_t padding;
-#endif
 };
+
+/* Messages are aligned to alignment required by cbprintf package. */
+#define Z_LOG_MSG2_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
+
+#define Z_LOG_MSG2_PADDING \
+	((sizeof(struct log_msg2_hdr) % Z_LOG_MSG2_ALIGNMENT) > 0 ? \
+	(Z_LOG_MSG2_ALIGNMENT - (sizeof(struct log_msg2_hdr) % Z_LOG_MSG2_ALIGNMENT)) : \
+		0)
 
 struct log_msg2 {
 	struct log_msg2_hdr hdr;
+	/* Adding padding to ensure that cbprintf package that follows is
+	 * properly aligned.
+	 */
+	uint8_t padding[Z_LOG_MSG2_PADDING];
 	uint8_t data[];
 };
 
@@ -131,9 +137,6 @@ enum z_log_msg2_mode {
 	.data_len = _dlen, \
 	.reserved = 0, \
 }
-
-/* Messages are aligned to alignment required by cbprintf package. */
-#define Z_LOG_MSG2_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
 #define Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt) \
 	(CBPRINTF_PACKAGE_FIRST_RO_STR_CNT(_cstr_cnt) | \
@@ -187,10 +190,10 @@ enum z_log_msg2_mode {
 #endif /* Z_LOG_MSG2_USE_VLA */
 
 #define Z_LOG_MSG2_ALIGN_OFFSET \
-	sizeof(struct log_msg2_hdr)
+	offsetof(struct log_msg2, data)
 
 #define Z_LOG_MSG2_LEN(pkg_len, data_len) \
-	(sizeof(struct log_msg2_hdr) + pkg_len + (data_len))
+	(offsetof(struct log_msg2, data) + pkg_len + (data_len))
 
 #define Z_LOG_MSG2_ALIGNED_WLEN(pkg_len, data_len) \
 	ceiling_fraction(ROUND_UP(Z_LOG_MSG2_LEN(pkg_len, data_len), \

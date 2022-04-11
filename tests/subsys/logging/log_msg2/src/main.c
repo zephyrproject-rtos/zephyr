@@ -361,7 +361,7 @@ void test_mode_size_plain_string(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = sizeof(struct log_msg2_hdr) +
+	exp_len = offsetof(struct log_msg2, data) +
 			 /* package */2 * sizeof(const char *);
 
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
@@ -392,7 +392,7 @@ void test_mode_size_data_only(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = sizeof(struct log_msg2_hdr) + sizeof(data);
+	exp_len = offsetof(struct log_msg2, data) + sizeof(data);
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 	get_msg_validate_length(exp_len);
 }
@@ -420,7 +420,7 @@ void test_mode_size_plain_str_data(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = sizeof(struct log_msg2_hdr) + sizeof(data) +
+	exp_len = offsetof(struct log_msg2, data) + sizeof(data) +
 		  /* package */2 * sizeof(char *);
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 	get_msg_validate_length(exp_len);
@@ -454,7 +454,7 @@ void test_mode_size_str_with_strings(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = sizeof(struct log_msg2_hdr) +
+	exp_len = offsetof(struct log_msg2, data) +
 			 /* package */3 * sizeof(const char *);
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 
@@ -495,7 +495,7 @@ void test_mode_size_str_with_2strings(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = sizeof(struct log_msg2_hdr) +
+	exp_len = offsetof(struct log_msg2, data) +
 			 /* package */4 * sizeof(const char *) + 2 + strlen(sufix);
 
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
@@ -516,7 +516,7 @@ void test_saturate(void)
 	}
 
 	uint32_t exp_len =
-		ROUND_UP(sizeof(struct log_msg2_hdr) + 2 * sizeof(void *),
+		ROUND_UP(offsetof(struct log_msg2, data) + 2 * sizeof(void *),
 			 Z_LOG_MSG2_ALIGNMENT);
 	uint32_t exp_capacity = (CONFIG_LOG_BUFFER_SIZE - 1) / exp_len;
 	int mode;
