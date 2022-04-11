@@ -45,8 +45,23 @@
 			compatible = "litex,uart0";
 			interrupt-parent = <&intc0>;
 			interrupts = <2 10>;
-			reg = <0xe0001800 0x18>;
-			reg-names = "control";
+			reg = <0xe0001800 0x4
+				0xe0001804 0x4
+				0xe0001808 0x4
+				0xe000180c 0x4
+				0xe0001810 0x4
+				0xe0001814 0x4
+				0xe0001818 0x4
+				0xe000181c 0x4>;
+			reg-names =
+				"rxtx",
+				"txfull",
+				"rxempty",
+				"ev_status",
+				"ev_pending",
+				"ev_enable",
+				"txempty",
+				"rxfull";
 			label = "uart0";
 			status = "disabled";
 		};
