@@ -19,3 +19,5 @@ tests:
   sample.net.wifi.inventek_eswifi_arduino_spi:
     extra_args: SHIELD=inventek_eswifi_arduino_spi
     platform_allow: frdm_k64f nucleo_f767zi
+  sample.net.wifi.silabs_wfx200_spi:
+    platform_allow: nrf9160dk_nrf9160

@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2021 grandcentrix GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+spi2_default_alt: spi2_default_alt {
+			  group1 {
+				  psels = <NRF_PSEL(SPIM_SCK, 0, 20)>,
+					<NRF_PSEL(SPIM_MOSI, 0, 11)>;
+			  };
+			  group2 {
+				  psels = <NRF_PSEL(SPIM_MISO, 0, 12)>;
+				  bias-pull-down;
+			  };
+		  };
+};
+
+&i2c2 {
+	status = "disabled";
+};
+
+&spi2 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	clock-frequency = <10000000>;
+	cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi2_default_alt>;
+	/delete-property/ pinctrl-1;
+	pinctrl-names = "default";
+
+	wfx200@0 {
+		status = "ok";
+		compatible = "silabs,wfx200";
+		reg = <0>;
+		label = "wifi0";
+		spi-max-frequency = <1000000>;
+
+		int-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+
+		/* This quite complicated looking, jsonish data contains board
+		 * specific configuration for the silabs wfm200s wifi exp board.
+		 * The more human readable version can be found here:
+		 * https://github.com/SiliconLabs/wfx-pds/blob/4165f0a512fd44f7bdbdea31b9f50798f56402de/BRD8023A_Rev_B00.pds.in
+		 * All possible values can be found here:
+		 * https://github.com/SiliconLabs/wfx-firmware/blob/74ba9143f48cc2d243f6d05374fa8d8d03674f8d/PDS/definitions.in
+		 * This can be transformed into the at this point needed format
+		 * using this python tool:
+		 * https://github.com/SiliconLabs/wfx-linux-tools/blob/6fcc31741f564f40d1f6670ae1a5c47e8217f36e/pds_compress
+		 * This precompiled version of this PDS has been copied from
+		 * here:
+		 * https://github.com/SiliconLabs/wfx-fullMAC-tools/blob/a8c600205491c490feb553218e04b00e8d397431/PDS/brd8023a_pds.h
+		 */
+		pds = "{a:{a:4,b:0}}",
+		    "{b:{a:{a:4,b:0,c:0,d:0,e:A},b:{a:4,b:0,c:0,d:0,e:B},c:{a:4,b:0,c:0,d:0,e:C},d:{a:4,b:0,c:0,d:0,e:D},e:{a:4,b:0,c:0,d:0,e:E},f:{a:4,b:0,c:0,d:0,e:F},g:{a:4,b:0,c:0,d:0,e:G},h:{a:4,b:0,c:0,d:0,e:H},i:{a:4,b:0,c:0,d:0,e:I},j:{a:4,b:0,c:0,d:0,e:J},k:{a:4,b:0,c:0,d:0,e:K},l:{a:4,b:0,c:0,d:1,e:L},m:{a:4,b:0,c:0,d:1,e:M}}}",
+		    "{c:{a:{a:4},b:{a:6},c:{a:6,c:0},d:{a:6},e:{a:6},f:{a:6}}}",
+		    "{e:{b:0,c:1}}",
+		    "{h:{e:0,a:50,b:0,d:0,c:[{a:1,b:[0,0,0,0,0,0]},{a:2,b:[0,0,0,0,0,0]},{a:[3,9],b:[0,0,0,0,0,0]},{a:A,b:[0,0,0,0,0,0]},{a:B,b:[0,0,0,0,0,0]},{a:[C,D],b:[0,0,0,0,0,0]},{a:E,b:[0,0,0,0,0,0]}]}}",
+		    "{j:{a:0,b:0}}";
+	};
+};
