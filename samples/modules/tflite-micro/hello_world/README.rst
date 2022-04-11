@@ -71,7 +71,7 @@ It is recommended that you copy and modify one of the two TensorFlow
 samples when creating your own TensorFlow project. To build with
 TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 
-.. code-block:: console
+.. code-block:: kconfig
 
     CONFIG_CPLUSPLUS=y
     CONFIG_NEWLIB_LIBC=y

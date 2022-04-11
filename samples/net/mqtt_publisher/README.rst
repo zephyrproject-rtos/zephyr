@@ -160,7 +160,7 @@ same host as the MQTT broker.
 To start a proxy server, ``ssh`` can be used.
 Use the following command to run it on your host with the default port:
 
-.. code-block: console
+.. code-block:: console
 
 	$ ssh -N -D 0.0.0.0:1080 localhost
 
