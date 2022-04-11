@@ -13,20 +13,20 @@
 #include <spinlock.h>
 #include <drivers/timer/system_timer.h>
 
-#define TIMER_BASE	        DT_INST_REG_ADDR(0)
-#define TIMER_LOAD_ADDR		((TIMER_BASE) + 0x00)
-#define TIMER_RELOAD_ADDR	((TIMER_BASE) + 0x10)
-#define TIMER_EN_ADDR		((TIMER_BASE) + 0x20)
-#define TIMER_EV_PENDING_ADDR	((TIMER_BASE) + 0x3c)
-#define TIMER_EV_ENABLE_ADDR	((TIMER_BASE) + 0x40)
-#define TIMER_TOTAL_UPDATE	((TIMER_BASE) + 0x44)
-#define TIMER_TOTAL		((TIMER_BASE) + 0x48)
+#define TIMER_LOAD_ADDR		DT_INST_REG_ADDR_BY_NAME(0, load)
+#define TIMER_RELOAD_ADDR	DT_INST_REG_ADDR_BY_NAME(0, reload)
+#define TIMER_EN_ADDR		DT_INST_REG_ADDR_BY_NAME(0, en)
+#define TIMER_UPDATE_VALUE_ADDR	DT_INST_REG_ADDR_BY_NAME(0, update_value)
+#define TIMER_VALUE_ADDR	DT_INST_REG_ADDR_BY_NAME(0, value)
+#define TIMER_EV_STATUS_ADDR	DT_INST_REG_ADDR_BY_NAME(0, ev_status)
+#define TIMER_EV_PENDING_ADDR	DT_INST_REG_ADDR_BY_NAME(0, ev_pending)
+#define TIMER_EV_ENABLE_ADDR	DT_INST_REG_ADDR_BY_NAME(0, ev_enable)
 
-#define TIMER_EV	0x1
-#define TIMER_IRQ	DT_INST_IRQN(0)
-#define TIMER_DISABLE	0x0
-#define TIMER_ENABLE	0x1
-#define UPDATE_TOTAL	0x1
+#define TIMER_EV		0x1
+#define TIMER_IRQ		DT_INST_IRQN(0)
+#define TIMER_DISABLE		0x0
+#define TIMER_ENABLE		0x1
+#define TIMER_UPDATE_VALUE	0x1
 
 static void litex_timer_irq_handler(const void *device)
 {
@@ -41,29 +41,29 @@ static void litex_timer_irq_handler(const void *device)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	static struct k_spinlock lock;
-	uint32_t timer_total;
+	uint32_t timer_value;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	litex_write8(UPDATE_TOTAL, TIMER_TOTAL_UPDATE);
-	timer_total = (uint32_t)litex_read64(TIMER_TOTAL);
+	litex_write8(TIMER_UPDATE_VALUE, TIMER_UPDATE_VALUE_ADDR);
+	timer_value = (uint32_t)litex_read64(TIMER_VALUE_ADDR);
 
 	k_spin_unlock(&lock, key);
 
-	return timer_total;
+	return timer_value;
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
 	static struct k_spinlock lock;
-	uint64_t timer_total;
+	uint64_t timer_value;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	litex_write8(UPDATE_TOTAL, TIMER_TOTAL_UPDATE);
-	timer_total = litex_read64(TIMER_TOTAL);
+	litex_write8(TIMER_UPDATE_VALUE, TIMER_UPDATE_VALUE_ADDR);
+	timer_value = litex_read64(TIMER_VALUE_ADDR);
 
 	k_spin_unlock(&lock, key);
 
-	return timer_total;
+	return timer_value;
 }
 
 /* tickless kernel is not supported */
