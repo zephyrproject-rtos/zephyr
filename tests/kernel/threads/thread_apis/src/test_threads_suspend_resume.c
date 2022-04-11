@@ -156,20 +156,28 @@ void test_threads_suspend_timeout(void)
  */
 void test_resume_unsuspend_thread(void)
 {
+	char buffer[32];
+	const char *str;
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
 				      0, K_USER, K_NO_WAIT);
 
+
 	/* Resume an unsuspend thread will not change the thread state. */
-	zassert_true(strcmp(k_thread_state_str(tid), "queued") == 0, NULL);
+	str = k_thread_state_str(tid, buffer, sizeof(buffer));
+	zassert_true(strcmp(str, "queued") == 0, NULL);
 	k_thread_resume(tid);
-	zassert_true(strcmp(k_thread_state_str(tid), "queued") == 0, NULL);
+	str = k_thread_state_str(tid, buffer, sizeof(buffer));
+	zassert_true(strcmp(str, "queued") == 0, NULL);
 
 	/* suspend created thread */
 	k_thread_suspend(tid);
-	zassert_true(strcmp(k_thread_state_str(tid), "suspended") == 0, NULL);
+	str = k_thread_state_str(tid, buffer, sizeof(buffer));
+	zassert_true(strcmp(str, "suspended") == 0, NULL);
+
 	/* Resume an suspend thread will make it to be next eligible.*/
 	k_thread_resume(tid);
-	zassert_true(strcmp(k_thread_state_str(tid), "queued") == 0, NULL);
+	str = k_thread_state_str(tid, buffer, sizeof(buffer));
+	zassert_true(strcmp(str, "queued") == 0, NULL);
 	k_thread_abort(tid);
 }
