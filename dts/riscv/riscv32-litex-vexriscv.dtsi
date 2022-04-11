@@ -65,8 +65,23 @@
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;
 			interrupts = <1 0>;
-			reg = <0xe0002800 0x40>;
-			reg-names = "control";
+			reg = <0xe0002800 0x10
+				0xe0002810 0x10
+				0xe0002820 0x4
+				0xe0002824 0x4
+				0xe0002828 0x10
+				0xe0002838 0x4
+				0xe000283c 0x4
+				0xe0002840 0x4>;
+			reg-names =
+				"load",
+				"reload",
+				"en",
+				"update_value",
+				"value",
+				"ev_status",
+				"ev_pending",
+				"ev_enable";
 			label = "timer0";
 			status = "disabled";
 		};
