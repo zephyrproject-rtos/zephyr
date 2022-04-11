@@ -3605,20 +3605,21 @@ static void rx_work_handler(struct k_work *work)
 		break;
 	}
 
-	/* Make sure we don't hog the CPU if the rx_queue never
-	 * gets empty.
+	/* Schedule the work handler to be executed again if there are
+	 * additional items in the queue. This allows for other users of the
+	 * work queue to get a chance at running, which wouldn't be possible if
+	 * we used a while() loop with a k_yield() statement.
 	 */
-	if (sys_slist_is_empty(&bt_dev.rx_queue)) {
-		return;
-	}
+	if (!sys_slist_is_empty(&bt_dev.rx_queue)) {
 
 #if defined(CONFIG_BT_RECV_WORKQ_SYS)
-	err = k_work_submit(&rx_work);
+		err = k_work_submit(&rx_work);
 #elif defined(CONFIG_BT_RECV_WORKQ_BT)
-	err = k_work_submit_to_queue(&bt_workq, &rx_work);
+		err = k_work_submit_to_queue(&bt_workq, &rx_work);
 #endif
-	if (err < 0) {
-		BT_ERR("Could not submit rx_work: %d", err);
+		if (err < 0) {
+			BT_ERR("Could not submit rx_work: %d", err);
+		}
 	}
 }
 #endif /* !CONFIG_BT_RECV_BLOCKING */
