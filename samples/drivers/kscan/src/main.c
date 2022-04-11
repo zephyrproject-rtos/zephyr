@@ -15,7 +15,12 @@
 
 LOG_MODULE_REGISTER(main);
 
+#ifdef CONFIG_KSCAN_MATRIX_DRIVER
+#define KSCAN_NODE CONFIG_KSCAN_MATRIX_DRV_NAME
+const struct device *kscan_dev;
+#else
 const struct device *const kscan_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_keyboard_scan));
+#endif
 static struct k_timer typematic_timer;
 static struct k_timer block_matrix_timer;
 
@@ -153,10 +158,18 @@ void main(void)
 {
 	printk("Kscan matrix sample application\n");
 
+#ifdef CONFIG_KSCAN_MATRIX_DRIVER
+	kscan_dev = device_get_binding(KSCAN_NODE);
+	if (kscan_dev == NULL) {
+		LOG_ERR("kscan device %s not ready", kscan_dev->name);
+		return;
+	}
+#else
 	if (!device_is_ready(kscan_dev)) {
 		LOG_ERR("kscan device %s not ready", kscan_dev->name);
 		return;
 	}
+#endif
 
 	kscan_config(kscan_dev, kb_callback);
 	k_timer_init(&typematic_timer, typematic_callback, NULL);
