@@ -343,7 +343,7 @@ struct bt_dev {
 
 #if !defined(CONFIG_BT_RECV_BLOCKING)
 	/* Queue for incoming HCI events & ACL data */
-	struct k_fifo		rx_queue;
+	sys_slist_t rx_queue;
 #endif
 
 	/* Queue for outgoing HCI commands */

@@ -86,9 +86,6 @@ struct bt_dev bt_dev = {
 	.ncmd_sem      = Z_SEM_INITIALIZER(bt_dev.ncmd_sem, 0, 1),
 #endif
 	.cmd_tx_queue  = Z_FIFO_INITIALIZER(bt_dev.cmd_tx_queue),
-#if !defined(CONFIG_BT_RECV_BLOCKING)
-	.rx_queue      = Z_FIFO_INITIALIZER(bt_dev.rx_queue),
-#endif
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	.appearance = CONFIG_BT_DEVICE_APPEARANCE,
 #endif
@@ -3420,7 +3417,7 @@ void hci_event_prio(struct net_buf *buf)
 #if !defined(CONFIG_BT_RECV_BLOCKING)
 static void rx_queue_put(struct net_buf *buf)
 {
-	net_buf_put(&bt_dev.rx_queue, buf);
+	net_buf_slist_put(&bt_dev.rx_queue, buf);
 
 #if defined(CONFIG_BT_RECV_WORKQ_SYS)
 	const int err = k_work_submit(&rx_work);
@@ -3579,8 +3576,8 @@ static void rx_work_handler(struct k_work *work)
 
 	struct net_buf *buf;
 
-	BT_DBG("calling fifo_get_wait");
-	buf = net_buf_get(&bt_dev.rx_queue, K_NO_WAIT);
+	BT_DBG("Getting net_buf from queue");
+	buf = net_buf_slist_get(&bt_dev.rx_queue);
 	if (!buf) {
 		return;
 	}
@@ -3611,7 +3608,7 @@ static void rx_work_handler(struct k_work *work)
 	/* Make sure we don't hog the CPU if the rx_queue never
 	 * gets empty.
 	 */
-	if (k_fifo_is_empty(&bt_dev.rx_queue)) {
+	if (sys_slist_is_empty(&bt_dev.rx_queue)) {
 		return;
 	}
 
