@@ -234,13 +234,13 @@ def wrapper_defs(func_name, func_type, args):
 
     return wrap
 
-# Returns an expression for the specified (zero-indexed!) marshalled
-# parameter to a syscall, with handling for a final "more" parameter.
+# Returns an expression for the specified marshalled parameter
+# to a syscall, with handling for a final "more" parameter.
 def mrsh_rval(mrsh_num, total):
-    if mrsh_num < 5 or total <= 6:
+    if mrsh_num < 6 or total <= 6:
         return "arg%d" % mrsh_num
     else:
-        return "(((uintptr_t *)more)[%d])" % (mrsh_num - 5)
+        return "(((const uintptr_t *)more)[%d])" % (mrsh_num - 6)
 
 def marshall_defs(func_name, func_type, args):
     mrsh_name = "z_mrsh_" + func_name
@@ -250,11 +250,11 @@ def marshall_defs(func_name, func_type, args):
     split_parms = [] # list of a (arg_num, mrsh_num) for each split
     for i, (argtype, _) in enumerate(args):
         if need_split(argtype):
-            vrfy_parms.append((i, len(split_parms), True))
-            split_parms.append((i, nmrsh))
+            vrfy_parms.append((i, len(split_parms) + 1, True))
+            split_parms.append((i, nmrsh + 1))
             nmrsh += 2
         else:
-            vrfy_parms.append((i, nmrsh, False))
+            vrfy_parms.append((i, nmrsh + 1, False))
             nmrsh += 1
 
     # Final argument for a 64 bit return value?
@@ -264,28 +264,28 @@ def marshall_defs(func_name, func_type, args):
     decl_arglist = ", ".join([" ".join(argrec) for argrec in args])
     mrsh = "extern %s z_vrfy_%s(%s);\n" % (func_type, func_name, decl_arglist)
 
-    mrsh += "uintptr_t %s(uintptr_t arg0, uintptr_t arg1, uintptr_t arg2,\n" % mrsh_name
+    mrsh += "uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,\n" % mrsh_name
     if nmrsh <= 6:
-        mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, void *ssf)\n"
+        mrsh += "\t\t" + "uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf)\n"
     else:
-        mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, void *more, void *ssf)\n"
+        mrsh += "\t\t" + "uintptr_t arg4, uintptr_t arg5, uintptr_t more, void *ssf)\n"
     mrsh += "{\n"
     mrsh += "\t" + "_current->syscall_frame = ssf;\n"
 
-    for unused_arg in range(nmrsh, 6):
+    for unused_arg in range(nmrsh + 1, 7):
         mrsh += "\t(void) arg%d;\t/* unused */\n" % unused_arg
 
     if nmrsh > 6:
-        mrsh += ("\tZ_OOPS(Z_SYSCALL_MEMORY_READ(more, "
+        mrsh += ("\tZ_OOPS(Z_SYSCALL_MEMORY_READ((const uintptr_t *)more, "
                  + str(nmrsh - 6) + " * sizeof(uintptr_t)));\n")
 
     for i, split_rec in enumerate(split_parms):
         arg_num, mrsh_num = split_rec
         arg_type = args[arg_num][0]
-        mrsh += "\t%s parm%d;\n" % (union_decl(arg_type), i)
-        mrsh += "\t" + "parm%d.split.lo = %s;\n" % (i, mrsh_rval(mrsh_num,
+        mrsh += "\t%s parm%d;\n" % (union_decl(arg_type), i + 1)
+        mrsh += "\t" + "parm%d.split.lo = %s;\n" % (i + 1, mrsh_rval(mrsh_num,
                                                                  nmrsh))
-        mrsh += "\t" + "parm%d.split.hi = %s;\n" % (i, mrsh_rval(mrsh_num + 1,
+        mrsh += "\t" + "parm%d.split.hi = %s;\n" % (i + 1, mrsh_rval(mrsh_num + 1,
                                                                  nmrsh))
     # Finally, invoke the verify function
     out_args = []
@@ -305,7 +305,7 @@ def marshall_defs(func_name, func_type, args):
         mrsh += "\t" + "%s ret = %s;\n" % (func_type, vrfy_call)
 
         if need_split(func_type):
-            ptr = "((uint64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
+            ptr = "((uint64_t *)%s)" % mrsh_rval(nmrsh, nmrsh)
             mrsh += "\t" + "Z_OOPS(Z_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
             mrsh += "\t" + "*%s = ret;\n" % ptr
             mrsh += "\t" + "_current->syscall_frame = NULL;\n"
