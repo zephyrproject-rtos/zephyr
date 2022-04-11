@@ -104,9 +104,28 @@
 			compatible = "litex,eth0";
 			interrupt-parent = <&intc0>;
 			interrupts = <3 0>;
-			reg = <0xe0009800 0x6b 0xb0000000 0x2000>;
+			reg = <0xe0009800 0x4
+				0xe0009804 0x8
+				0xe0009828 0x4
+				0xe000982c 0x4
+				0xe0009830 0x4
+				0xe0009834 0x4
+				0xe000983c 0x4
+				0xe0009840 0x8
+				0xe000984c 0x4
+				0xb0000000 0x2000>;
 			local-mac-address = [10 e2 d5 00 00 02];
-			reg-names = "control", "buffers";
+			reg-names =
+				"rx_slot",
+				"rx_length",
+				"rx_ev_pending",
+				"rx_ev_enable",
+				"tx_start",
+				"tx_ready",
+				"tx_slot",
+				"tx_length",
+				"tx_ev_pending",
+				"buffers";
 			label = "eth0";
 			status = "disabled";
 		};
