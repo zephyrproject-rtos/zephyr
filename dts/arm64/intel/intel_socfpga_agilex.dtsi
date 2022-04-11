@@ -88,17 +88,17 @@
 	 * Timer SP	<0xffc03000 0x200>
 	 * GPIO_0	<0xffc03200 0x100>
 	 * GPIO_1	<0xffc03300 0x100>
+	 * Rst Manager	<0xffd11000 0x1000>
+	 * Sys Manager	<0xffd12000 0x1000>
+	 * Pinmux	<0xffd13000 0x1000>
 	 */
 	periph: periph@ffc02000 {
 		compatible = "syscon";
-		reg = <0xffc02000 0x2000>;
+		reg = <0xffc02000 0x2000>,
+		      <0xffd11000 0x1000>,
+		      <0xffd12000 0x1000>,
+		      <0xffd13000 0x1000>;
 		label = "periph";
-	};
-
-	pinmux: pinmux@ffd13000 {
-		compatible = "syscon";
-		reg = <0xffd13000 0x1000>;
-		label = "pinmux";
 	};
 
 	/* This qspi setting included
