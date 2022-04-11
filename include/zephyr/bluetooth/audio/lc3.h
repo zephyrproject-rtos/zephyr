@@ -268,22 +268,25 @@ enum bt_codec_config_type {
 /** @def BT_CODEC_LC3_META
  *  @brief Helper to declare LC3 codec metadata
  */
-#define BT_CODEC_LC3_META(_prefer_context, _context) \
+#define BT_CODEC_LC3_META(_prefer_context, _stream_context) \
 { \
-	 BT_CODEC_DATA(BT_CODEC_META_PREFER_CONTEXT, (_prefer_context) & 0xffu, \
-		       (_prefer_context) >> 8), \
-	 BT_CODEC_DATA(BT_CODEC_META_CONTEXT, (_context) & 0xffu, (_context) >> 8) \
+	BT_CODEC_DATA(BT_CODEC_META_PREFER_CONTEXT, \
+		      (_prefer_context) & 0xffu, \
+		      (_prefer_context) >> 8), \
+	BT_CODEC_DATA(BT_CODEC_META_CONTEXT, \
+		      (_stream_context) & 0xffu, \
+		      (_stream_context) >> 8) \
 }
 
 /** @def BT_CODEC_LC3
  *  @brief Helper to declare LC3 codec
  */
 #define BT_CODEC_LC3(_freq, _duration, _chan_count, _len_min, _len_max, \
-		     _max_frames_per_sdu, _prefer_context, _context) \
+		     _max_frames_per_sdu, _prefer_context, _stream_context) \
 	BT_CODEC(BT_CODEC_LC3_ID, 0x0000, 0x0000, \
 		 BT_CODEC_LC3_DATA(_freq, _duration, _chan_count, _len_min, \
 				   _len_max, _max_frames_per_sdu), \
-		 BT_CODEC_LC3_META(_prefer_context, _context))
+		 BT_CODEC_LC3_META(_prefer_context, _stream_context))
 
 /** @def BT_CODEC_LC3_CONFIG_DATA
  *  @brief Helper to declare LC3 codec data configuration
@@ -310,24 +313,26 @@ enum bt_codec_config_type {
 /** @def BT_CODEC_LC3_CONFIG_DATA
  *  @brief Helper to declare LC3 codec metadata configuration
  */
-#define BT_CODEC_LC3_CONFIG_META(_context) \
+#define BT_CODEC_LC3_CONFIG_META(_stream_context) \
 { \
-	 BT_CODEC_DATA(BT_CODEC_META_CONTEXT, _context, _context >> 8), \
+	 BT_CODEC_DATA(BT_CODEC_META_CONTEXT, _stream_context, _stream_context >> 8), \
 }
 
 /** @def BT_CODEC_LC3_CONFIG_N
  *  @brief Helper to declare LC3 codec configuration for multiple channels.
  */
-#define BT_CODEC_LC3_CONFIG_N(_freq, _duration, _loc, _len, _frames_per_sdu, _context) \
+#define BT_CODEC_LC3_CONFIG_N(_freq, _duration, _loc, _len, _frames_per_sdu, \
+			      _stream_context) \
 	BT_CODEC(BT_CODEC_LC3_ID, 0x0000, 0x0000, \
 		 BT_CODEC_LC3_CONFIG_DATA(_freq, _duration, _loc, _len, _frames_per_sdu), \
-		 BT_CODEC_LC3_CONFIG_META(_context))
+		 BT_CODEC_LC3_CONFIG_META(_stream_context))
 
 /** @def BT_CODEC_LC3_CONFIG
  *  @brief Helper to declare LC3 codec configuration for left location and one frame per sdu
  */
-#define BT_CODEC_LC3_CONFIG(_freq, _duration, _len, _context) \
-	BT_CODEC_LC3_CONFIG_N(_freq, _duration, BT_AUDIO_LOCATION_FRONT_LEFT, _len, 1, _context)
+#define BT_CODEC_LC3_CONFIG(_freq, _duration, _len, _stream_context) \
+	BT_CODEC_LC3_CONFIG_N(_freq, _duration, BT_AUDIO_LOCATION_FRONT_LEFT, \
+			      _len, 1, _stream_context)
 
 /** @def BT_CODEC_LC3_CONFIG_8_1
  *  @brief Helper to declare LC3 8.1 codec configuration
