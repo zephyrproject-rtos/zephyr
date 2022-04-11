@@ -37,8 +37,15 @@ BUILD_ASSERT(DT_INST_PROP(0, clock_prescaler) == 0,
 #endif
 #define PWM_0_MAP_SIZE DT_INST_PROP(0, channel_count)
 
-/* When RTC is used, one more PPI channel is required. */
-#define PPI_PER_CH (2 + USE_RTC)
+/* When RTC is used, one more PPI task endpoint is required for clearing
+ * the counter, so when FORK feature is not available, one more PPI channel
+ * needs to be used.
+ */
+#if USE_RTC && !defined(PPI_FEATURE_FORKS_PRESENT)
+#define PPI_PER_CH 3
+#else
+#define PPI_PER_CH 2
+#endif
 
 struct pwm_config {
 	union {
@@ -187,7 +194,8 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 	NRF_GPIOTE->CONFIG[gpiote_ch] = 0;
 
 	/* clear PPI used */
-	ppi_mask = BIT(ppi_chs[0]) | BIT(ppi_chs[1]) | (USE_RTC ? BIT(ppi_chs[2]) : 0);
+	ppi_mask = BIT(ppi_chs[0]) | BIT(ppi_chs[1]) |
+		   (PPI_PER_CH > 2 ? BIT(ppi_chs[2]) : 0);
 	NRF_PPI->CHENCLR = ppi_mask;
 
 	/* configure GPIO pin as output */
@@ -242,10 +250,15 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 			(uint32_t) &(rtc->EVENTS_COMPARE[0]);
 		NRF_PPI->CH[ppi_chs[1]].TEP =
 			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
+#if defined(PPI_FEATURE_FORKS_PRESENT)
+		NRF_PPI->FORK[ppi_chs[1]].TEP =
+			(uint32_t) &(rtc->TASKS_CLEAR);
+#else
 		NRF_PPI->CH[ppi_chs[2]].EEP =
 			(uint32_t) &(rtc->EVENTS_COMPARE[0]);
 		NRF_PPI->CH[ppi_chs[2]].TEP =
 			(uint32_t) &(rtc->TASKS_CLEAR);
+#endif
 	} else {
 		NRF_PPI->CH[ppi_chs[0]].EEP =
 			(uint32_t) &(timer->EVENTS_COMPARE[1 + channel]);
