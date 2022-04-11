@@ -182,12 +182,17 @@ static void reset(void)
 
 void main(void)
 {
+	struct bt_audio_stream *streams_p[ARRAY_SIZE(streams)];
 	int err;
 
 	err = init();
 	if (err) {
 		printk("Init failed (err %d)\n", err);
 		return;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(streams_p); i++) {
+		streams_p[i] = &streams[i];
 	}
 
 	while (true) {
@@ -232,7 +237,7 @@ void main(void)
 		printk("Syncing to broadcast\n");
 		err = bt_audio_broadcast_sink_sync(broadcast_sink,
 						   bis_index_bitfield,
-						   streams,
+						   streams_p,
 						   &preset_16_2_1.codec, NULL);
 		if (err != 0) {
 			printk("Unable to sync to broadcast source: %d\n", err);
