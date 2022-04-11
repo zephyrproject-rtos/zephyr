@@ -41,4 +41,8 @@ config GPIO_MCUX_IGPIO
 
 endif # GPIO
 
+config IPM_IMX_REV2
+	default y
+	depends on IPM
+
 endif # SOC_MIMX8MM6
