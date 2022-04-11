@@ -122,6 +122,7 @@
 		sw2 = &button2;
 		sw3 = &button3;
 		bootloader-led0 = &led0;
+		mcuboot-button0 = &button0;
 	};
 };
 
