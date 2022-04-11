@@ -71,7 +71,8 @@ static uint8_t        test_chan;
 static uint8_t        test_slot_duration;
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
-static uint16_t       test_num_rx;
+static uint32_t    tx_tifs;
+static uint16_t    test_num_rx;
 static bool        started;
 
 /* NOTE: The PRBS9 sequence used as packet payload.
@@ -170,8 +171,6 @@ static int create_iq_report(bool crc_ok)
 
 static void isr_tx(void *param)
 {
-	uint32_t l, i, s, t;
-
 	/* Clear radio status and events */
 	radio_status_reset();
 	radio_tmr_status_reset();
@@ -187,38 +186,17 @@ static void isr_tx(void *param)
 		return;
 	}
 
-	/* LE Test Packet Interval */
-	l = radio_tmr_end_get() - radio_tmr_ready_get();
-
-#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
-	i = ceiling_fraction((l + CTE_LEN_US(test_cte_len) + 249), SCAN_INT_UNIT_US) *
-	    SCAN_INT_UNIT_US;
-#else
-	i = ceiling_fraction((l + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
-#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
-
-	t = radio_tmr_end_get() - l + i;
-	t -= radio_tx_ready_delay_get(test_phy, test_phy_flags);
-
-	/* Set timer capture in the future. */
-	radio_tmr_sample();
-	s = radio_tmr_sample_get();
-	while (t < s) {
-		t += SCAN_INT_UNIT_US;
-	}
-
 	/* Setup next Tx */
-	radio_switch_complete_and_disable();
-	radio_tmr_start_us(1, t);
-	radio_tmr_aa_capture();
-	radio_tmr_end_capture();
+	radio_tmr_tifs_set(tx_tifs);
+	radio_switch_complete_and_b2b_tx(test_phy, test_phy_flags, test_phy, test_phy_flags);
 
-	/* TODO: check for probable stale timer capture being set */
+	radio_tmr_end_capture();
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_gpio_pa_setup();
-	radio_gpio_pa_lna_enable(t + radio_tx_ready_delay_get(test_phy,
-							      test_phy_flags) -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+				 tx_tifs -
+				 radio_tx_ready_delay_get(test_phy, test_phy_flags) -
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 }
@@ -482,6 +460,28 @@ static bool check_rx_cte(bool cte_ready)
 }
 #endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 
+static uint32_t calculate_tifs(uint8_t len)
+{
+	uint32_t interval;
+	uint32_t transmit_time;
+
+#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+	/* Include additional byte for the CTEInfo field and CTE length in microseconds. */
+	transmit_time = PDU_US((test_cte_len > 0) ? (len + 1) : len, 0, test_phy, test_phy_flags) +
+			CTE_LEN_US(test_cte_len);
+#else
+	transmit_time = PDU_US(len, 0, test_phy, test_phy_flags);
+#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
+
+	/* Ble Core Specification Vol 6 Part F 4.1.6
+	 * LE Test packet interval: I(L) = ceil((L + 249) / 625) * 625 us
+	 * where L is an LE Test packet length in microseconds unit.
+	 */
+	interval = ceiling_fraction((transmit_time + 249), SCAN_INT_UNIT_US) * SCAN_INT_UNIT_US;
+
+	return interval - transmit_time;
+}
+
 static uint8_t init(uint8_t chan, uint8_t phy, int8_t tx_power,
 		    bool cte, void (*isr)(void *))
 {
@@ -520,7 +520,6 @@ static uint8_t init(uint8_t chan, uint8_t phy, int8_t tx_power,
 	/* Setup Radio in Tx/Rx */
 	/* NOTE: No whitening in test mode. */
 	radio_phy_set(test_phy, test_phy_flags);
-	radio_tmr_tifs_set(EVENT_IFS_US);
 
 	ret = tx_power_set(tx_power);
 
@@ -634,9 +633,12 @@ uint8_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy,
 	test_cte_len = cte_len;
 #endif /* CONFIG_BT_CTLR_DF_CTE_TX */
 
-	radio_switch_complete_and_disable();
+	tx_tifs = calculate_tifs(len);
+
+	radio_tmr_tifs_set(tx_tifs);
+	radio_switch_complete_and_b2b_tx(test_phy, test_phy_flags, test_phy, test_phy_flags);
+
 	start_us = radio_tmr_start(1, cntr_cnt_get() + CNTR_MIN_DELTA, 0);
-	radio_tmr_aa_capture();
 	radio_tmr_end_capture();
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
@@ -698,6 +700,7 @@ uint8_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx, uint8_t expected_
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
 	radio_pkt_rx_set(radio_pkt_scratch_get());
+	radio_tmr_tifs_set(EVENT_IFS_US);
 	radio_switch_complete_and_b2b_rx(test_phy, test_phy_flags, test_phy, test_phy_flags);
 	radio_tmr_start(0, cntr_cnt_get() + CNTR_MIN_DELTA, 0);
 
