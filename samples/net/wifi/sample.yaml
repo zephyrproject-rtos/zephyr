@@ -41,3 +41,7 @@ tests:
       - nucleo_f767zi
     integration_platforms:
       - frdm_k64f
+  sample.net.wifi.silabs_wfx200_spi:
+    extra_args: SHIELD=silabs_wifi_expansion_kit_slexp8023a
+    platform_allow:
+      - wio_terminal
