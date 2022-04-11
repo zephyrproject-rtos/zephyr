@@ -34,13 +34,8 @@
 
 	flexcan0_default: flexcan0_default {
 		group0 {
-			pinmux = <CAN0_RX_PTB19>;
-			drive-strength = "low";
-			bias-pull-up;
-			slew-rate = "fast";
-		};
-		group1 {
-			pinmux = <CAN0_TX_PTB18>;
+			pinmux = <CAN0_RX_PTB19>,
+				<CAN0_TX_PTB18>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -48,13 +43,8 @@
 
 	flexcan1_default: flexcan1_default {
 		group0 {
-			pinmux = <CAN1_RX_PTC16>;
-			drive-strength = "low";
-			bias-pull-up;
-			slew-rate = "fast";
-		};
-		group1 {
-			pinmux = <CAN1_TX_PTC17>;
+			pinmux = <CAN1_RX_PTC16>,
+				<CAN1_TX_PTC17>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -62,13 +52,8 @@
 
 	ftm0_default: ftm0_default {
 		group0 {
-			pinmux = <FTM0_CH1_PTA4>;
-			drive-strength = "low";
-			bias-pull-up;
-			slew-rate = "fast";
-		};
-		group1 {
 			pinmux = <FTM0_CH0_PTC1>,
+				<FTM0_CH1_PTA4>,
 				<FTM0_CH4_PTD4>,
 				<FTM0_CH5_PTD5>;
 			drive-strength = "low";
@@ -79,7 +64,7 @@
 	/* conflicts with UART2 */
 	ftm3_default: ftm3_default {
 		group0 {
-			pinmux = <FTM3_CH3_PTD3>,
+			pinmux = <FTM3_CH1_PTD1>,
 				<FTM3_CH4_PTC8>,
 				<FTM3_CH5_PTC9>,
 				<FTM3_CH6_PTE11>,
@@ -109,8 +94,13 @@
 
 	lpuart0_default: lpuart0_default {
 		group0 {
-			pinmux = <LPUART0_RX_PTD8>,
-				<LPUART0_TX_PTD9>;
+			pinmux = <LPUART0_RX_PTD8>;
+			drive-strength = "low";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+		group1 {
+			pinmux = <LPUART0_TX_PTD9>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
@@ -155,7 +145,6 @@
 			pinmux = <UART0_RX_PTA1>,
 				<UART0_TX_PTA2>;
 			drive-strength = "low";
-			bias-pull-up;
 			slew-rate = "fast";
 		};
 	};
@@ -182,7 +171,7 @@
 	uart4_default: uart4_default {
 		group0 {
 			pinmux = <UART4_CTS_b_PTC13>,
-				<UART4_RTS_b_PTC12>,
+				<UART4_RTS_b_PTE27>,
 				<UART4_RX_PTC14>,
 				<UART4_TX_PTC15>;
 			drive-strength = "low";
