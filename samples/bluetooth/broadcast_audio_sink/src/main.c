@@ -18,7 +18,9 @@ static struct bt_audio_broadcast_sink *broadcast_sink;
 static struct bt_audio_stream streams[CONFIG_BT_AUDIO_BROADCAST_SNK_STREAM_COUNT];
 
 /* Mandatory support preset by both source and sink */
-static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1;
+static struct bt_audio_lc3_preset preset_16_2_1 =
+	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
+					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not

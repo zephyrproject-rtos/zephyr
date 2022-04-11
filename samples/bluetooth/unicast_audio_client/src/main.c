@@ -31,7 +31,9 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1,
  * Allows this sample application to work without logic to parse the codec capabilities of the
  * server and selection of an appropriate codec configuration.
  */
-static struct bt_audio_lc3_preset codec_configuration = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
+static struct bt_audio_lc3_preset codec_configuration =
+	BT_AUDIO_LC3_UNICAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
+					   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static K_SEM_DEFINE(sem_connected, 0, 1);
 static K_SEM_DEFINE(sem_sink_discovered, 0, 1);
