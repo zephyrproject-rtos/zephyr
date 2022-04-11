@@ -8,10 +8,6 @@ if BOARD_MIMXRT1024_EVK
 config BOARD
 	default "mimxrt1024_evk" if BOARD_MIMXRT1024_EVK
 
-choice CODE_LOCATION
-	default CODE_FLEXSPI
-endchoice
-
 config FLASH_MCUX_FLEXSPI_NOR
 	default y if FLASH
 

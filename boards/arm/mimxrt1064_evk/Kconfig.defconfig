@@ -8,10 +8,6 @@ if BOARD_MIMXRT1064_EVK
 config BOARD
 	default "mimxrt1064_evk"
 
-choice CODE_LOCATION
-	default CODE_FLEXSPI2
-endchoice
-
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 

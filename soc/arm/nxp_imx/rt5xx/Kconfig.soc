@@ -68,9 +68,14 @@ config SOC_PART_NUMBER_IMX_RT5XX
 	  option that you should not set directly. The part number selection
 	  choice defines the default value for this string.
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
+NXP_IMX_FLEXSPI := nxp,imx-flexspi-mx25um51345g
+
 menuconfig NXP_IMX_RT5XX_BOOT_HEADER
 	bool "The boot header"
 	depends on !BOOTLOADER_MCUBOOT
+	default $(dt_chosen_has_compat,$(DT_CHOSEN_Z_FLASH),$(NXP_IMX_FLEXSPI))
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.

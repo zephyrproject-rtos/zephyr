@@ -19,7 +19,7 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &flexspi;
+		zephyr,flash-controller = &is25wp064;
 		zephyr,flash = &is25wp064;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sdram0;
@@ -89,10 +89,10 @@ arduino_serial: &lpuart2 {
 
 &flexspi {
 	status = "okay";
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	reg = <0x402a8000 0x4000>;
 	is25wp064: is25wp064@60000000 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <67108864>;
+		size = <DT_SIZE_M(64)>;
 		label = "IS25WP064";
 		reg = <0x60000000 DT_SIZE_M(64)>;
 		port = <0>;

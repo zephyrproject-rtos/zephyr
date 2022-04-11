@@ -20,7 +20,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;
-		zephyr,flash-controller = &flexspi;
+		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
 	};
@@ -59,10 +59,10 @@
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	reg = <0x400cc000 0x4000>;
 	is25wp128: is25wp128@30000000 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <134217728>;
+		size = <DT_SIZE_M(128)>;
 		label = "IS25WP128";
 		reg = <0x30000000 DT_SIZE_M(128)>;
 		port = <0>;

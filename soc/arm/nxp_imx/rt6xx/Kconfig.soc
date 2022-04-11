@@ -77,9 +77,15 @@ config SYSOSC_SETTLING_US
 	  Set the board system oscillator settling time in us. This should be set by the
 	  board's defconfig.
 
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
+NXP_IMX_FLEXSPI := nxp,imx-flexspi-mx25um51345g
+
 menuconfig NXP_IMX_RT6XX_BOOT_HEADER
 	bool "Boot header"
 	depends on !BOOTLOADER_MCUBOOT
+	default $(dt_chosen_has_compat,$(DT_CHOSEN_Z_FLASH),$(NXP_IMX_FLEXSPI))
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.

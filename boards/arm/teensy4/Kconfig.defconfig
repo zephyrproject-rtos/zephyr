@@ -14,10 +14,6 @@ config BOARD
 	default "teensy40" if BOARD_TEENSY40
 	default "teensy41" if BOARD_TEENSY41
 
-choice CODE_LOCATION
-	default CODE_FLEXSPI
-endchoice
-
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 

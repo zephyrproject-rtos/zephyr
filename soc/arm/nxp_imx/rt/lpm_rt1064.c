@@ -47,6 +47,8 @@ uint8_t usb1_pll_pfd3_frac;
 
 uint32_t flexspi_div;
 
+#define FLEXSPI_XIP(node_id) DT_SAME_NODE(node_id, DT_PARENT(DT_CHOSEN(zephyr_flash)))
+
 /*
  * Duplicate implementation of CLOCK_SetMux() provided by SDK. This function
  * must be linked to ITCM, as it will be used to change the clocks of the
@@ -118,7 +120,7 @@ static void clock_init_usb1_pll(const clock_usb_pll_config_t *config)
 
 static void flexspi_enter_critical(void)
 {
-#if CONFIG_CODE_FLEXSPI2
+#if FLEXSPI_XIP(DT_NODELABEL(flexspi2))
 	/* Wait for flexspi to be inactive, and gate the clock */
 	while (!((FLEXSPI2->STS0 & FLEXSPI_STS0_ARBIDLE_MASK) &&
 			(FLEXSPI2->STS0 & FLEXSPI_STS0_SEQIDLE_MASK))) {
@@ -127,7 +129,7 @@ static void flexspi_enter_critical(void)
 
 	/* Disable clock gate of flexspi2. */
 	CCM->CCGR7 &= (~CCM_CCGR7_CG1_MASK);
-#elif CONFIG_CODE_FLEXSPI
+#if FLEXSPI_XIP(DT_NODELABEL(flexspi))
 	/* Wait for flexspi to be inactive, and gate the clock */
 	while (!((FLEXSPI->STS0 & FLEXSPI_STS0_ARBIDLE_MASK) &&
 			(FLEXSPI->STS0 & FLEXSPI_STS0_SEQIDLE_MASK))) {
@@ -141,7 +143,7 @@ static void flexspi_enter_critical(void)
 
 static void flexspi_exit_critical(void)
 {
-#if CONFIG_CODE_FLEXSPI2
+#if FLEXSPI_XIP(DT_NODELABEL(flexspi2))
 	/* Enable clock gate of flexspi2. */
 	CCM->CCGR7 |= (CCM_CCGR7_CG1_MASK);
 
@@ -152,7 +154,7 @@ static void flexspi_exit_critical(void)
 	while (!((FLEXSPI2->STS0 & FLEXSPI_STS0_ARBIDLE_MASK) &&
 		(FLEXSPI2->STS0 & FLEXSPI_STS0_SEQIDLE_MASK))) {
 	}
-#elif CONFIG_CODE_FLEXSPI
+#if FLEXSPI_XIP(DT_NODELABEL(flexspi))
 	/* Enable clock of flexspi. */
 	CCM->CCGR6 |= CCM_CCGR6_CG5_MASK;
 
@@ -210,10 +212,10 @@ void clock_full_power(void)
 #endif
 
 	/* Set Flexspi divider before increasing frequency of PLL3 PDF0. */
-#if CONFIG_CODE_FLEXSPI
+#if FLEXSPI_XIP(DT_NODELABEL(flexspi))
 	clock_set_div(kCLOCK_FlexspiDiv, flexspi_div);
 	clock_set_mux(kCLOCK_FlexspiMux, 3);
-#elif CONFIG_CODE_FLEXSPI2
+#if FLEXSPI_XIP(DT_NODELABEL(flexspi2))
 	clock_set_div(kCLOCK_Flexspi2Div, flexspi_div);
 	clock_set_mux(kCLOCK_Flexspi2Mux, 1);
 #endif

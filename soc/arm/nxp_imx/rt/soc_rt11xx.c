@@ -29,6 +29,8 @@
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
 
+#define FLEXSPI_XIP(node_id) DT_SAME_NODE(node_id, DT_PARENT(DT_CHOSEN(zephyr_flash)))
+
 #ifdef CONFIG_INIT_ARM_PLL
 static const clock_arm_pll_config_t armPllConfig = {
 #if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
@@ -436,7 +438,8 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_EnableClock(kCLOCK_Usdhc1);
 #endif
 
-#if !(defined(CONFIG_CODE_FLEXSPI) || defined(CONFIG_CODE_FLEXSPI2)) && \
+#if !(FLEXSPI_XIP(DT_NODELABEL(flexspi2)) || \
+	FLEXSPI_XIP(DT_NODELABEL(flexspi))) && \
 	defined(CONFIG_MEMC_MCUX_FLEXSPI) && \
 	DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
 	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */

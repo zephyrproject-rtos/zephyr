@@ -622,9 +622,18 @@ config PM_MCUX_DCDC
 config PM_MCUX_PMU
 	bool "MCUX power management unit driver"
 
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
+NXP_IMX_FLEXSPI := nxp,imx-flexspi-nor
+NXP_IMX_HYPERFLASH := nxp,imx-flexspi-hyperflash
+
+# Enable the boot header if the node chosen as the flash location has
+# a compatible string indicating it is a flash device
 menuconfig NXP_IMX_RT_BOOT_HEADER
 	bool "Boot header"
 	depends on !BOOTLOADER_MCUBOOT
+	default $(dt_chosen_has_compat,$(DT_CHOSEN_Z_FLASH),$(NXP_IMX_FLEXSPI)) || \
+		$(dt_chosen_has_compat,$(DT_CHOSEN_Z_FLASH),$(NXP_IMX_HYPERFLASH))
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.
@@ -676,27 +685,6 @@ config DEVICE_CONFIGURATION_DATA
 
 endif # NXP_IMX_RT_BOOT_HEADER
 
-choice CODE_LOCATION
-	prompt "Code location selection"
-	default CODE_ITCM
-
-config CODE_SEMC
-	bool "Link code into external SEMC-controlled memory"
-
-config CODE_ITCM
-	bool "Link code into internal instruction tightly coupled memory (ITCM)"
-
-config CODE_FLEXSPI
-	bool "Link code into external FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
-
-config CODE_FLEXSPI2
-	bool "Link code into internal FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
-
-config CODE_SRAM0
-	bool "Link code into RAM_L memory (RAM_L)"
-endchoice
 
 config OCRAM_NOCACHE
 	bool "Create noncacheable OCRAM region"

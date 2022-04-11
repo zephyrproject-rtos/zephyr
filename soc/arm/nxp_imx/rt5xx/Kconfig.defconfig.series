@@ -18,14 +18,6 @@ config ZTEST_NO_YIELD
 	default y if (PM && ZTEST)
 
 #
-# The base address of the external flash comes from the FLEXSPI base
-# address. The size of the flash is defined by what is populated and
-# described in the board devicetree file.
-#
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@134000,1)
-
-#
 # MBEDTLS is larger but much faster than TinyCrypt so choose wisely
 #
 config MBEDTLS

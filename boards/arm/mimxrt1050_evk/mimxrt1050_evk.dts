@@ -116,10 +116,10 @@ arduino_serial: &lpuart3 {
 	sck-differential-clock;
 	combination-mode;
 	rx-clock-source = <3>;
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
+	reg = <0x402a8000 0x4000>;
 	s26ks512s0: s26ks512s@60000000 {
 		compatible = "nxp,imx-flexspi-hyperflash";
-		size = <DT_SIZE_M(64*8)>;
+		size = <DT_SIZE_M(512)>;
 		label = "S26KS512S";
 		reg = <0x60000000 DT_SIZE_M(512)>;
 		port = <0>;

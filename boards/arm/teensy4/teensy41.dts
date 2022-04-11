@@ -6,9 +6,15 @@
 
 #include "teensy40.dts"
 
+/ {
+	chosen {
+		zephyr,flash = &w25q64jvxgim;
+	};
+};
+
 /delete-node/ &w25q16jvuxim;
 &flexspi {
-	reg = < 0x402a8000 0x4000 >, < 0x60000000 0x800000 >;
+	reg = < 0x402a8000 0x4000 >;
 	/* WINBOND flash memory*/
 	w25q64jvxgim: w25q64jvxgim@60000000 {
 		compatible = "nxp,imx-flexspi-nor", "jedec,spi-nor";

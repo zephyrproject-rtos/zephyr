@@ -23,6 +23,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart6; /* Teensy Pins 0(RX1) 1(TX1) */
 		zephyr,canbus = &flexcan1; /* Teensy Pins 23(CRX1) 22(CTX1) */
+		zephyr,flash = &w25q16jvuxim;
 	};
 
 	leds {
@@ -35,7 +36,7 @@
 };
 
 &flexspi {
-	reg = <0x402a8000 0x4000>, <0x60000000 0x200000>;
+	reg = <0x402a8000 0x4000>;
 	/* WINBOND flash memory*/
 	w25q16jvuxim: w25q16jvuxim@60000000 {
 		compatible = "nxp,imx-flexspi-nor", "jedec,spi-nor";

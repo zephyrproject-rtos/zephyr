@@ -22,7 +22,8 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &flexspi2;
+		/* Use external flash as flash controller */
+		zephyr,flash-controller = &is25wp064;
 		zephyr,flash = &w25q32jvwj0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sdram0;
@@ -181,7 +182,7 @@ arduino_i2c: &lpi2c1 {};
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	reg = <0x402a8000 0x4000>;
 	is25wp064: is25wp064@60000000 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;

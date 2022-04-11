@@ -118,63 +118,6 @@ config PM_MCUX_PMU
 
 endif # SOC_SERIES_IMX_RT10XX && PM
 
-if CODE_SEMC
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/memory@80000000,0,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/memory@80000000)
-
-endif # CODE_SEMC
-
-if CODE_ITCM
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/flexram@40028000/itcm@0,0,K) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_size_int,/soc/flexram@400b0000/itcm@0,0,K) if SOC_SERIES_IMX_RT10XX
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flexram@40028000/itcm@0) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/itcm@0) if SOC_SERIES_IMX_RT10XX
-
-endif # CODE_ITCM
-
-if CODE_SRAM0
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/memory@1ffe0000,0,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/memory@1ffe0000)
-
-endif # CODE_SRAM0
-
-
-if CODE_FLEXSPI
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@400cc000,1,K) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_size_int,/soc/spi@402a8000,1,K) if SOC_SERIES_IMX_RT10XX
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@400cc000,1) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_addr_hex,/soc/spi@402a8000,1) if SOC_SERIES_IMX_RT10XX
-
-endif # CODE_FLEXSPI
-
-if CODE_FLEXSPI2
-
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@4000d000,1,K) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K) if SOC_SERIES_IMX_RT10XX
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@4000d000,1) if SOC_SERIES_IMX_RT11XX
-	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1) if SOC_SERIES_IMX_RT10XX
-
-endif # CODE_FLEXSPI2
-
 config USB_MCUX
 	default y
 	depends on USB_DEVICE_DRIVER

@@ -5,7 +5,13 @@ description: NXP FlexSPI controller
 
 compatible: "nxp,imx-flexspi"
 
-include: [spi-controller.yaml, pinctrl-device.yaml]
+include:
+  - name: base.yaml
+  - name: spi-controller.yaml
+    property-blocklist:
+      - "#address-cells"
+      - "#size-cells"
+  - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -13,6 +19,17 @@ properties:
 
     interrupts:
       required: true
+
+    # Note we explicitly block and override the size and address cells
+    # properties, as the flash device present on the flexspi will be used
+    # as the zephyr,flash chosen node, and therefore should have a reg size and
+    # address property.
+    "#address-cells":
+      required: true
+      const: 1
+    "#size-cells":
+      required: true
+      const: 1
 
     ahb-bufferable:
       type: boolean

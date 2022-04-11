@@ -25,6 +25,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
+		zephyr,flash = &mx25um51345g;
 	};
 
 	gpio_keys {

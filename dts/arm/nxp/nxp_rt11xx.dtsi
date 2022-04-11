@@ -89,7 +89,7 @@
 			interrupts = <130 0>;
 			label = "FLEXSPI";
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			ahb-base = <0x30000000>;
 			status = "disabled";
 		};
@@ -100,7 +100,7 @@
 			interrupts = <131 0>;
 			label = "FLEXSPI2";
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			ahb-base = <0x60000000>;
 			status = "disabled";
 		};

@@ -30,10 +30,10 @@
 
 &flexspi {
 	status = "okay";
-	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(4)>;
+	reg = <0x402a8000 0x4000>;
 	is25wp032: is25wp032@60000000 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(32)>;
+		size = <DT_SIZE_M(4)>;
 		label = "IS25WP032";
 		reg = <0x60000000 DT_SIZE_M(4)>;
 		port = <0>;

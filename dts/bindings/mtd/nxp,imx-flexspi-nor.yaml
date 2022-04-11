@@ -6,3 +6,13 @@ description: NXP FlexSPI NOR
 compatible: "nxp,imx-flexspi-nor"
 
 include: ["nxp,imx-flexspi-device.yaml", soc-nv-flash.yaml]
+
+properties:
+    reg:
+      required: true
+      description: |
+        This register should give the memory mapped base address within the
+        flexspi used to access the flash part, as well as the size of the
+        flash part
+    label:
+      required: true

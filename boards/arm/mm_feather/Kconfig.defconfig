@@ -8,10 +8,6 @@ if BOARD_MM_FEATHER
 config BOARD
 	default "mm_feather"
 
-choice CODE_LOCATION
-	default CODE_FLEXSPI
-endchoice
-
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 
