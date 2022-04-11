@@ -135,6 +135,18 @@
 			#size-cells = <0>;
 		};
 
+		spi1: spi@40003800 {
+			compatible = "gd,gd32-spi";
+			reg = <0x40003800 0x400>;
+			interrupts = <55 0>;
+			interrupt-parent = <&eclic>;
+			rcu-periph-clock = <0x70e>;
+			status = "disabled";
+			label = "SPI_1";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		afio: afio@40010000 {
 			compatible = "gd,gd32-afio";
 			reg = <0x40010000 0x400>;
