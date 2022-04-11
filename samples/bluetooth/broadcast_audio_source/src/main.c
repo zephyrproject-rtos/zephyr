@@ -17,7 +17,9 @@ BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least "
 	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT");
 
-static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1;
+static struct bt_audio_lc3_preset preset_16_2_1 =
+	BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
+					     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 static struct bt_audio_stream streams[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_audio_broadcast_source *broadcast_source;
 
