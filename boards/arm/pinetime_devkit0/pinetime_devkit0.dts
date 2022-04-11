@@ -147,6 +147,24 @@
 		label = "XT25FB32";
 		jedec-id = [0b 40 16];
 		size = <DT_SIZE_M(32)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* next firmware update */
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 0x74000>;
+			};
+
+			/* to be used in firmware */
+			storage_partition: partition@300000 {
+				label = "storage";
+				reg = <0x00300000 0x00100000>;
+			};
+		};
 	};
 
 	/* Sitronix ST7789V LCD */
@@ -194,25 +212,7 @@
 		/* main firmware partition */
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x32000>;
-		};
-
-		/* next firmware update */
-		slot1_partition: partition@3e000 {
-			label = "image-1";
-			reg = <0x0003E000 0x32000>;
-		};
-
-		/* needed to slot0-slot1 swapping */
-		scratch_partition: partition@70000 {
-			label = "image-scratch";
-			reg = <0x00070000 0xa000>;
-		};
-
-		/* to be used in firmware */
-		storage_partition: partition@7a000 {
-			label = "storage";
-			reg = <0x0007a000 0x00006000>;
+			reg = <0x0000C000 0x74000>;
 		};
 	};
 };
