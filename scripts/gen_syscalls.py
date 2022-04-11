@@ -113,13 +113,13 @@ extern "C" {
 
 handler_template = """
 extern uintptr_t z_hdlr_%s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
-                uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);
+                uintptr_t arg4, uintptr_t arg5, uintptr_t %s, void *ssf);
 """
 
 weak_template = """
 __weak ALIAS_OF(handler_no_syscall)
 uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
-         uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);
+         uintptr_t arg4, uintptr_t arg5, uintptr_t %s, void *ssf);
 """
 
 
@@ -316,7 +316,7 @@ def marshall_defs(func_name, func_type, args):
 
     mrsh += "}\n"
 
-    return mrsh, mrsh_name
+    return mrsh, mrsh_name, nmrsh
 
 def analyze_fn(match_group):
     func, args = match_group
@@ -335,13 +335,13 @@ def analyze_fn(match_group):
     sys_id = "K_SYSCALL_" + func_name.upper()
 
     marshaller = None
-    marshaller, handler = marshall_defs(func_name, func_type, args)
+    marshaller, handler, nmrsh = marshall_defs(func_name, func_type, args)
     invocation = wrapper_defs(func_name, func_type, args)
 
     # Entry in _k_syscall_table
     table_entry = "[%s] = %s" % (sys_id, handler)
 
-    return (handler, invocation, marshaller, sys_id, table_entry)
+    return (handler, invocation, marshaller, sys_id, table_entry, nmrsh)
 
 def parse_args():
     global args
@@ -380,9 +380,10 @@ def main():
     ids = []
     table_entries = []
     handlers = []
+    arg_numbers = []
 
     for match_group, fn in syscalls:
-        handler, inv, mrsh, sys_id, entry = analyze_fn(match_group)
+        handler, inv, mrsh, sys_id, entry, nmrsh = analyze_fn(match_group)
 
         if fn not in invocations:
             invocations[fn] = []
@@ -391,6 +392,7 @@ def main():
         ids.append(sys_id)
         table_entries.append(entry)
         handlers.append(handler)
+        arg_numbers.append(nmrsh)
 
         if mrsh:
             syscall = typename_split(match_group[0])[1]
@@ -400,8 +402,9 @@ def main():
     with open(args.syscall_dispatch, "w") as fp:
         table_entries.append("[K_SYSCALL_BAD] = handler_bad_syscall")
 
-        weak_defines = "".join([weak_template % name
-                                for name in handlers
+        weak_defines = "".join([weak_template % (name,
+                                "arg6" if nmrsh <= 6 else "more")
+                                for (name, nmrsh) in zip(handlers, arg_numbers)
                                 if not name in noweak])
 
         # The "noweak" ones just get a regular declaration
