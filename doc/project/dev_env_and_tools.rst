@@ -258,138 +258,155 @@ fix it.
 This saves us all time when searching, reduces the chances of the PR or issue
 being forgotten, speeds up reviewing, avoids duplicate issue reports, etc.
 
-These are the labels we currently have, grouped by type:
+These are the labels we currently have, grouped by applicability:
 
-Area
-====
+Labels applicable to issues only
+================================
 
-=============  ===============================================================
-Labels         ``Area:*``
-Applicable to  PRs  and issues
-Description    Indicates subsystems (e.g., Kernel, I2C, Memory Management),
-               project functions (e.g., Debugging, Documentation, Process),
-               or other categories (e.g., Coding Style, MISRA-C)  affected by
-               the bug or pull request.
-=============  ===============================================================
+* *priority:{high|medium|low}*
 
-An area maintainer should be able to filter by an area label and
-find all issues and PRs which relate to that area.
-
-Platform
-========
-
-=============  ===============================================================
-Labels         ``Platform:*``
-Applicable to  PRs  and issues
-Description    An issue or PR which affects only a particular platform
-=============  ===============================================================
-
-To be discussed in a meeting
-============================
-
-=============  ===============================================================
-Labels         ``dev-review``, ``TSC``
-Applicable to  PRs  and issues
-Description    The issue is to be discussed in the following
-               `dev-review/TSC meeting`_ if time permits
-=============  ===============================================================
-
-.. _`dev-review/TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
-
-Stable API changes
-==================
-
-=============  ===============================================================
-Labels         ``Stable API Change``
-Applicable to  PRs  and issues
-Description    The issue or PR describes a change to a stable API. See
-               additional information in :ref:`stable_api_changes`
-=============  ===============================================================
-
-Minimum PR review time
-======================
-
-=============  ===============================================================
-Labels         ``Hot Fix``, ``Trivial``, ``Maintainer``,
-               ``Security Review``, ``TSC``
-Applicable to  PRs only
-Description    Depending on the PR complexity, an indication of how long a merge
-               should be held to ensure proper review. See
-               :ref:`review process <review_time>`
-=============  ===============================================================
-
-Issue priority labels
-=====================
-
-=============  ===============================================================
-Labels         ``priority:{high|medium|low}``
-Applicable to  Issues only
-Description    To classify the impact and importance of a bug or
-               :ref:`feature <feature-tracking>`
-=============  ===============================================================
+To classify the impact and importance of a bug or
+:ref:`feature <feature-tracking>`.
 
 Note: Issue priorities are generally set or changed during the bug-triage or TSC
 meetings.
 
-Miscellaneous labels
-====================
+* *Regression*
 
-For both PRs and issues
------------------------
+Something, which was working, but does not anymore (bug subtype).
 
-+------------------------+-----------------------------------------------------+
-|``Bug``                 | The issue is a bug, or the PR is fixing a bug       |
-+------------------------+-----------------------------------------------------+
-|``Coverity``            | A Coverity detected issue or its fix                |
-+------------------------+-----------------------------------------------------+
-|``Waiting for response``| The Zephyr developers are waiting for the submitter |
-|                        | to respond to a question, or address an issue.      |
-+------------------------+-----------------------------------------------------+
-|``Blocked``             | Blocked by another PR or issue                      |
-+------------------------+-----------------------------------------------------+
-|``In progress``         | For PRs: is work in progress and should not be      |
-|                        | merged yet. For issues: Is being worked on          |
-+------------------------+-----------------------------------------------------+
-|``RFC``                 | The author would like input from the community. For |
-|                        | a PR it should be considered a draft                |
-+------------------------+-----------------------------------------------------+
-|``LTS``                 | Long term release branch related                    |
-+------------------------+-----------------------------------------------------+
-|``EXT``                 | Related to an external component (in ``ext/``)      |
-+------------------------+-----------------------------------------------------+
+* *Question*
 
-PR only labels
---------------
+This issue is a question to the Zephyr developers.
 
-================ ===============================================================
-``DNM``          This PR should not be merged (Do Not Merge).
-                 For work in progress, GitHub "draft" PRs are preferred
-``Stale PR``     PR which seems abandoned, and requires attention by the author
-``Needs review`` The PR needs attention from the maintainers
-``Backport``     The PR is a backport or should be backported
-``Licensing``    The PR has licensing issues which require a licensing expert to
-                 review it
-================ ===============================================================
+* *Enhancement*
 
-Issue only labels
------------------
+Changes/Updates/Additions to existing :ref:`features <feature-tracking>`.
 
-==================== ===========================================================
-``Regression``       Something, which was working, but does not anymore
-                     (bug subtype)
-``Question``         This issue is a question to the Zephyr developers
-``Enhancement``      Changes/Updates/Additions to existing
-                     :ref:`features <feature-tracking>`
-``Feature request``  A request for a new :ref:`feature <feature-tracking>`
-``Feature``          A :ref:`planned feature<feature-tracking>` with a milestone
-``Duplicate``        This issue is a duplicate of another issue
-                     (please specify)
-``Good first issue`` Good for a first time contributor to take
-``Release Notes``    Issues that need to be mentioned in release notes as known
-                     issues with additional information
-==================== ===========================================================
+* *Feature request*
 
-Any issue must be classified and labeled as either ``Bug``, ``Question``,
-``Enhancement``, ``Feature``, or ``Feature Request``. More information on how
+A request for a new :ref:`feature <feature-tracking>`.
+
+* *Feature*
+
+A :ref:`planned feature<feature-tracking>` with a milestone.
+
+* *Duplicate*
+
+This issue is a duplicate of another issue (please specify).
+
+* *Good first issue*
+
+Good for a first time contributor to take.
+
+* *Release Notes*
+
+Issues that need to be mentioned in release notes as known issues with
+additional information.
+
+Any issue must be classified and labeled as either *Bug*, *Question*,
+*Enhancement*, *Feature*, or *Feature Request*. More information on how
 feature requests are handled and become features can be found in
 :ref:`Feature Tracking<feature-tracking>`.
+
+Labels applicable to pull requests only
+=======================================
+
+The issue or PR describes a change to a stable API. See additional information
+in :ref:`stable_api_changes`.
+
+* *Hot Fix*
+
+* *Trivial*
+
+* *Maintainer*
+
+* *Security Review*
+
+Depending on the PR complexity, an indication of how long a merge should be held
+to ensure proper review. See :ref:`review process <review_time>`.
+
+* *DNM*
+
+This PR should not be merged (Do Not Merge). For work in progress, GitHub
+"draft" PRs are preferred.
+
+* *Stale PR*
+
+PR which seems abandoned, and requires attention by the author.
+
+* *Needs review*
+
+The PR needs attention from the maintainers.
+
+* *Backport*
+
+The PR is a backport or should be backported.
+
+* *Licensing*
+
+The PR has licensing issues which require a licensing expert to review it.
+
+Labels applicable to both pull requests and issues
+==================================================
+
+* *Area:**
+
+Indicates subsystems (e.g., Kernel, I2C, Memory Management), project functions
+(e.g., Debugging, Documentation, Process), or other categories
+(e.g., Coding Style, MISRA-C) affected by the bug or pull request.
+
+An area maintainer should be able to filter by an area label and find all issues
+and PRs which relate to that area.
+
+* *Platform:**
+
+An issue or PR which affects only a particular platform.
+
+* *dev-review*
+* *TSC*
+
+The issue is to be discussed in the following `dev-review/TSC meeting`_ if time
+permits.
+
+.. _`dev-review/TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
+
+* *Stable API Change*
+
+The issue or PR describes a change to a stable API. See additional information
+in :ref:`stable_api_changes`.
+
+* *Bug*
+
+The issue is a bug, or the PR is fixing a bug.
+
+* *Coverity*
+
+A Coverity detected issue or its fix.
+
+* *Waiting for response*
+
+The Zephyr developers are waiting for the submitter to respond to a question, or
+address an issue.
+
+* *Blocked*
+
+Blocked by another PR or issue.
+
+* *In progress*
+
+For PRs: is work in progress and should not be merged yet. For issues: Is being
+worked on.
+
+* *RFC*
+
+The author would like input from the community. For a PR it should be considered
+a draft.
+
+* *LTS*
+
+Long term release branch related.
+
+* *EXT*
+
+Related to an external component (in ``ext/``).
