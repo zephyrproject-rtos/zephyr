@@ -60,6 +60,7 @@ struct pwm_stm32_data {
 struct pwm_stm32_config {
 	TIM_TypeDef *timer;
 	uint32_t prescaler;
+	uint32_t countermode;
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_PWM_CAPTURE
@@ -84,7 +85,6 @@ static const uint32_t ch2ll[TIMER_MAX_CH] = {
 	LL_TIM_CHANNEL_CH5, LL_TIM_CHANNEL_CH6
 #endif
 };
-
 
 /** Some stm32 mcus have complementary channels : 3 or 4 */
 static const uint32_t ch2ll_n[] = {
@@ -124,6 +124,20 @@ static uint32_t get_polarity(pwm_flags_t flags)
 	}
 
 	return LL_TIM_OCPOLARITY_LOW;
+}
+
+/**
+ * @brief  Check if LL counter mode is center-aligned.
+ *
+ * @param  ll_countermode LL counter mode.
+ *
+ * @return `true` when center-aligned, otherwise `false`.
+ */
+static inline bool is_center_aligned(const uint32_t ll_countermode)
+{
+	return ((ll_countermode == LL_TIM_COUNTERMODE_CENTER_DOWN) ||
+		(ll_countermode == LL_TIM_COUNTERMODE_CENTER_UP) ||
+		(ll_countermode == LL_TIM_COUNTERMODE_CENTER_UP_DOWN));
 }
 
 /**
@@ -231,6 +245,21 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		return -EINVAL;
 	}
 
+	if (cfg->countermode == LL_TIM_COUNTERMODE_UP) {
+		/* remove 1 period cycle, accounts for 1 extra low cycle */
+		period_cycles -= 1U;
+	} else if (cfg->countermode == LL_TIM_COUNTERMODE_DOWN) {
+		/* remove 1 pulse cycle, accounts for 1 extra high cycle */
+		pulse_cycles -= 1U;
+		/* remove 1 period cycle, accounts for 1 extra low cycle */
+		period_cycles -= 1U;
+	} else if (is_center_aligned(cfg->countermode)) {
+		pulse_cycles /= 2U;
+		period_cycles /= 2U;
+	} else {
+		return -ENOTSUP;
+	}
+
 	/*
 	 * Non 32-bit timers count from 0 up to the value in the ARR register
 	 * (16-bit). Thus period_cycles cannot be greater than UINT16_MAX + 1.
@@ -312,13 +341,13 @@ static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 		LL_TIM_EnableARRPreload(cfg->timer);
 		/* in LL_TIM_OC_EnablePreload, the channel is always the non-complementary */
 		LL_TIM_OC_EnablePreload(cfg->timer, channel);
-		LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
+		LL_TIM_SetAutoReload(cfg->timer, period_cycles);
 		LL_TIM_GenerateEvent_UPDATE(cfg->timer);
 	} else {
 		/* in LL_TIM_OC_SetPolarity, the channel could be the complementary one */
 		LL_TIM_OC_SetPolarity(cfg->timer, current_channel, get_polarity(flags));
 		set_timer_compare[pwm - 1u](cfg->timer, pulse_cycles);
-		LL_TIM_SetAutoReload(cfg->timer, period_cycles - 1u);
+		LL_TIM_SetAutoReload(cfg->timer, period_cycles);
 	}
 
 	return 0;
@@ -629,7 +658,7 @@ static int pwm_stm32_init(const struct device *dev)
 	LL_TIM_StructInit(&init);
 
 	init.Prescaler = cfg->prescaler;
-	init.CounterMode = LL_TIM_COUNTERMODE_UP;
+	init.CounterMode = cfg->countermode;
 	init.Autoreload = 0u;
 	init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
 
@@ -695,6 +724,7 @@ replaced by 'st,prescaler' property in parent node, aka timers"
 		/* if exist, otherwise use parent (timers) property         */ \
 		.prescaler = DT_INST_PROP_OR(index, st_prescaler,              \
 			(DT_PROP(DT_INST_PARENT(index), st_prescaler))),       \
+		.countermode = DT_PROP(DT_INST_PARENT(index), st_countermode), \
 		.pclken = DT_INST_CLK(index, timer),                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
 		CAPTURE_INIT(index)					       \
