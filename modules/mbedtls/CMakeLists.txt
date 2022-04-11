@@ -30,6 +30,13 @@ if(CONFIG_MBEDTLS_BUILTIN)
 
   zephyr_library_sources_ifdef(CONFIG_MBEDTLS_SHELL shell.c)
 
+  # mbedTLS v3.1.0 is having unused variables and functions in /library/ssl_msg.c
+  # To avoid compilation warnings, which are treated as errors in CI, we disable unused variables and functions.
+  # Please check when mbedTLS is updated to version >v3.1.0 if those flags are still needed.
+  # If mbedTLS has fixed the mentioned issue, then please remove the flags.
+  set_source_files_properties(${ZEPHYR_CURRENT_MODULE_DIR}/library/ssl_msg.c
+      PROPERTIES COMPILE_OPTIONS "-Wno-unused-variable;-Wno-unused-function")
+
   zephyr_library_app_memory(k_mbedtls_partition)
   if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT)
     # i386 assembly code used in MBEDTLS does not compile with size optimization
