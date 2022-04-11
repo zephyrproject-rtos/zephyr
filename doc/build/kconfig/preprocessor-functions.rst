@@ -34,6 +34,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_chosen_label,<property in /chosen>)
    $(dt_chosen_enabled,<property in /chosen>)
    $(dt_chosen_path,<property in /chosen>)
+   $(dt_chosen_has_compat,<property in /chosen>)
    $(dt_path_enabled,<node path>)
    $(dt_alias_enabled,<node alias>)
    $(dt_nodelabel_enabled,<node label>)
