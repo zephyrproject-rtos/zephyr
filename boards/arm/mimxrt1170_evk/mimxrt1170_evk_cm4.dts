@@ -45,11 +45,12 @@
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
-	is25wp128: is25wp128@0 {
+	is25wp128: is25wp128@30000000 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <134217728>;
 		label = "IS25WP128";
-		reg = <0>;
+		reg = <0x30000000 DT_SIZE_M(128)>;
+		port = <0>;
 		spi-max-frequency = <133000000>;
 		status = "okay";
 		jedec-id = [9d 70 17];

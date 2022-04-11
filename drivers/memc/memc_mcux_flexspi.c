@@ -171,12 +171,8 @@ static int memc_flexspi_init(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_XIP) && defined(CONFIG_CODE_FLEXSPI)
-#define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi))
-#elif defined(CONFIG_XIP) && defined(CONFIG_CODE_FLEXSPI2)
-#define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi2))
-#elif defined(CONFIG_SOC_SERIES_IMX_RT6XX)
-#define MEMC_FLEXSPI_CFG_XIP(node_id) IS_ENABLED(CONFIG_XIP)
+#if defined(CONFIG_XIP)
+#define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_PARENT(DT_CHOSEN(zephyr_flash)))
 #else
 #define MEMC_FLEXSPI_CFG_XIP(node_id) false
 #endif
@@ -195,7 +191,7 @@ static int memc_flexspi_init(const struct device *dev)
 		memc_flexspi_data_##n = {				\
 		.base = (FLEXSPI_Type *) DT_INST_REG_ADDR(n),		\
 		.xip = MEMC_FLEXSPI_CFG_XIP(DT_DRV_INST(n)),		\
-		.ahb_base = (uint8_t *) DT_INST_REG_ADDR_BY_IDX(n, 1),	\
+		.ahb_base = (uint8_t *) DT_INST_PROP(n, ahb_base),	\
 		.ahb_bufferable = DT_INST_PROP(n, ahb_bufferable),	\
 		.ahb_cacheable = DT_INST_PROP(n, ahb_cacheable),	\
 		.ahb_prefetch = DT_INST_PROP(n, ahb_prefetch),		\

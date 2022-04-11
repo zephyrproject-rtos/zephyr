@@ -99,3 +99,9 @@ properties:
         Time to wait between AHB triggered command sequences. See the AWRWAIT
         field in registers FLASHA1CR2 through FLASHB2CR2. The default
         corresponds to the reset value of the register field.
+
+    port:
+      type: int
+      required: true
+      description: |
+        FlexSPI chip select port for this flash device.

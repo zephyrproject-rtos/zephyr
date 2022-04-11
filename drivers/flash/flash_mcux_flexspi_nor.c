@@ -562,7 +562,7 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 #define FLASH_FLEXSPI_NOR(n)						\
 	static const struct flash_flexspi_nor_config			\
 		flash_flexspi_nor_config_##n = {			\
-		.port = DT_INST_REG_ADDR(n),				\
+		.port = DT_INST_PROP(n, port),				\
 		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
 		.layout = {						\
 			.pages_count = DT_INST_PROP(n, size) / 8	\

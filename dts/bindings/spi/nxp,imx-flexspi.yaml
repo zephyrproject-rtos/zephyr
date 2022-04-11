@@ -41,6 +41,13 @@ properties:
         Remove burst start address alignment limitation by setting register
         field AHBCR[READADDROPT].
 
+    ahb-base:
+      type: int
+      required: true
+      description: |
+        AHB base. This is the address the flexspi device will be memory mapped
+        to within the memory space.
+
     combination-mode:
       type: boolean
       required: false

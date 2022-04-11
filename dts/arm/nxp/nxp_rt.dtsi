@@ -76,6 +76,7 @@
 			#size-cells = <0>;
 			ahb-bufferable;
 			ahb-cacheable;
+			ahb-base = <0x60000000>;
 			status = "disabled";
 		};
 
@@ -88,6 +89,7 @@
 			#size-cells = <0>;
 			ahb-bufferable;
 			ahb-cacheable;
+			ahb-base = <0x70000000>;
 			status = "disabled";
 		};
 

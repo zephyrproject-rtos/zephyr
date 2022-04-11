@@ -90,6 +90,7 @@
 			label = "FLEXSPI";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			ahb-base = <0x30000000>;
 			status = "disabled";
 		};
 
@@ -100,6 +101,7 @@
 			label = "FLEXSPI2";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			ahb-base = <0x60000000>;
 			status = "disabled";
 		};
 
