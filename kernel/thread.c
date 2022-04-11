@@ -258,32 +258,57 @@ int z_impl_k_thread_name_copy(k_tid_t thread, char *buf, size_t size)
 #endif /* CONFIG_THREAD_NAME */
 }
 
-const char *k_thread_state_str(k_tid_t thread_id)
+static size_t copy_bytes(char *dest, size_t dest_size, const char *src, size_t src_size)
 {
-	switch (thread_id->base.thread_state) {
-	case 0:
+	size_t  bytes_to_copy;
+
+	bytes_to_copy = MIN(dest_size, src_size);
+	memcpy(dest, src, bytes_to_copy);
+
+	return bytes_to_copy;
+}
+
+const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
+{
+	size_t      off = 0;
+	uint8_t     bit;
+	uint8_t     thread_state = thread_id->base.thread_state;
+	static const char  *states_str[8] = {"dummy", "pending", "prestart",
+					     "dead", "suspended", "aborting",
+					     "", "queued"};
+	static const size_t states_sz[8] = {5, 7, 8, 4, 9, 8, 0, 6};
+
+	if ((buf == NULL) || (buf_size == 0)) {
 		return "";
-	case _THREAD_DUMMY:
-		return "dummy";
-	case _THREAD_PENDING:
-		return "pending";
-	case _THREAD_PRESTART:
-		return "prestart";
-	case _THREAD_DEAD:
-		return "dead";
-	case _THREAD_SUSPENDED:
-		return "suspended";
-	case _THREAD_ABORTING:
-		return "aborting";
-	case _THREAD_QUEUED:
-		return "queued";
-	default:
-	/* Add a break, some day when another case gets added at the end,
-	 * this bit of defensive programming will be useful
-	 */
-		break;
 	}
-	return "unknown";
+
+	buf_size--;   /* Reserve 1 byte for end-of-string character */
+
+	/*
+	 * Loop through each bit in the thread_state. Stop once all have
+	 * been processed. If more than one thread_state bit is set, then
+	 * separate the descriptive strings with a '+'.
+	 */
+
+	for (uint8_t index = 0; thread_state != 0; index++) {
+		bit = BIT(index);
+		if ((thread_state & bit) == 0) {
+			continue;
+		}
+
+		off += copy_bytes(buf + off, buf_size - off,
+				  states_str[index], states_sz[index]);
+
+		thread_state &= ~bit;
+
+		if (thread_state != 0) {
+			off += copy_bytes(buf + off, buf_size - off, "+", 1);
+		}
+	}
+
+	buf[off] = '\0';
+
+	return (const char *)buf;
 }
 
 #ifdef CONFIG_USERSPACE

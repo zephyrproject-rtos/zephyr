@@ -62,6 +62,7 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 	size_t size = thread->stack_info.size;
 	const char *tname;
 	int ret;
+	char state_str[32];
 
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	k_thread_runtime_stats_t rt_stats_thread;
@@ -79,7 +80,8 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		      thread->base.user_options,
 		      thread->base.prio,
 		      (int64_t)thread->base.timeout.dticks);
-	shell_print(shell, "\tstate: %s, entry: %p", k_thread_state_str(thread),
+	shell_print(shell, "\tstate: %s, entry: %p",
+		    k_thread_state_str(thread, state_str, sizeof(state_str)),
 		    thread->entry.pEntry);
 
 #ifdef CONFIG_THREAD_RUNTIME_STATS
