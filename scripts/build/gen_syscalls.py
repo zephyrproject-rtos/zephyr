@@ -113,13 +113,13 @@ extern "C" {{
 
 handler_template = """
 extern uintptr_t z_hdlr_%s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
-                uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);
+                uintptr_t arg4, uintptr_t arg5, uintptr_t %s, void *ssf);
 """
 
 weak_template = """
 __weak ALIAS_OF(handler_no_syscall)
 uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3,
-         uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);
+         uintptr_t arg4, uintptr_t arg5, uintptr_t %s, void *ssf);
 """
 
 # defines a macro wrapper which supersedes the syscall when used
@@ -375,7 +375,7 @@ def marshall_defs(func_name, func_type, args):
 
     mrsh += "}\n"
 
-    return mrsh, mrsh_name
+    return mrsh, mrsh_name, nmrsh
 
 def analyze_fn(match_group, fn):
     func, args = match_group
@@ -394,13 +394,14 @@ def analyze_fn(match_group, fn):
     sys_id = "K_SYSCALL_" + func_name.upper()
 
     marshaller = None
-    marshaller, handler = marshall_defs(func_name, func_type, args)
+    marshaller, handler, nmrsh = marshall_defs(func_name, func_type, args)
     invocation = wrapper_defs(func_name, func_type, args, fn)
+
 
     # Entry in _k_syscall_table
     table_entry = "[%s] = %s" % (sys_id, handler)
 
-    return (handler, invocation, marshaller, sys_id, table_entry)
+    return (handler, invocation, marshaller, sys_id, table_entry, nmrsh)
 
 def parse_args():
     global args
@@ -446,15 +447,18 @@ def main():
     handlers = []
     emit_list = []
     exported = []
+    arg_numbers = []
 
     for match_group, fn, to_emit in syscalls:
-        handler, inv, mrsh, sys_id, entry = analyze_fn(match_group, fn)
+        handler, inv, mrsh, sys_id, entry, nmrsh = analyze_fn(match_group, fn)
+
 
         if fn not in invocations:
             invocations[fn] = []
 
         invocations[fn].append(inv)
         handlers.append(handler)
+        arg_numbers.append(nmrsh)
 
         if to_emit:
             ids_emit.append(sys_id)
@@ -472,9 +476,12 @@ def main():
     with open(args.syscall_dispatch, "w") as fp:
         table_entries.append("[K_SYSCALL_BAD] = handler_bad_syscall")
 
-        weak_defines = "".join([weak_template % name
-                                for name in handlers
+
+        weak_defines = "".join([weak_template % (name,
+                                "arg6" if nmrsh <= 6 else "more")
+                                for (name, nmrsh) in zip(handlers, arg_numbers)
                                 if not name in noweak and name in emit_list])
+
 
         # The "noweak" ones just get a regular declaration
         weak_defines += "\n".join(["extern uintptr_t %s(uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, uintptr_t arg6, void *ssf);"
