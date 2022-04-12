@@ -10,6 +10,7 @@ config SOC_SERIES_SAME70
 	select SOC_FAMILY_SAM
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_CORTEX_M_HAS_DWT
+	select CPU_CORTEX_M_HAS_CACHE
 	select ASF
 	select XIP
 	select CPU_HAS_ARM_MPU

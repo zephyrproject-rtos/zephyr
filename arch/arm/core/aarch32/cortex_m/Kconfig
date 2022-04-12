@@ -86,6 +86,13 @@ config CPU_CORTEX_M_HAS_SYSTICK
 	help
 	  This option is enabled when the CPU implements the SysTick timer.
 
+config CPU_CORTEX_M_HAS_CACHE
+	bool
+	depends on CPU_CORTEX_M7 || CPU_CORTEX_M55
+	help
+	  This option signifies that the CPU implements Data and Instruction
+	  Cache
+
 config CPU_CORTEX_M_HAS_DWT
 	bool
 	depends on !CPU_CORTEX_M0 && !CPU_CORTEX_M0PLUS && !CPU_CORTEX_M1
