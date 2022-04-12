@@ -60,7 +60,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x40044000 0x150>;
 			pinctrl: pinctrl {
-				compatible = "nxp,lpc-iocon-pinctrl";
+				compatible = "nxp,lpc11u6x-pinctrl";
 			};
 			/* PIO0_0 to PIO0_23 */
 			pio0: pio0@0 {
@@ -164,8 +164,6 @@
 			#clock-cells = <1>;
 			reg = <0x40048000 0x400>;
 			label = "SYSCON";
-			pinmuxs = <&pinmux2 0 1>, <&pinmux2 1 1>;
-			pinmux-names = "XTALIN", "XTALOUT";
 		};
 
 		uart0: serial@40008000 {
