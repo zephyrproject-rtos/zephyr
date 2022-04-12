@@ -25,6 +25,7 @@ choice
 
 config LWM2M_VERSION_1_0
 	bool "LwM2M version 1.0"
+	imply LWM2M_RW_OMA_TLV_SUPPORT
 
 config LWM2M_VERSION_1_1
 	bool "LwM2M version 1.1 [EXPERIMENTAL]"
@@ -408,6 +409,11 @@ config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR
 	depends on LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 	help
 	  Network address of the CoAP proxy server.
+
+config LWM2M_RW_OMA_TLV_SUPPORT
+	bool "TLV data format"
+	help
+	  Include support for write / parse TLV data
 
 config LWM2M_RW_JSON_SUPPORT
 	bool "support for JSON writer"

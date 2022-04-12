@@ -1582,10 +1582,12 @@ static int select_writer(struct lwm2m_output_context *out, uint16_t accept)
 		out->writer = &plain_text_writer;
 		break;
 
+#ifdef CONFIG_LWM2M_RW_OMA_TLV_SUPPORT
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
 		out->writer = &oma_tlv_writer;
 		break;
+#endif
 
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
 	case LWM2M_FORMAT_OMA_JSON:
@@ -1619,10 +1621,12 @@ static int select_reader(struct lwm2m_input_context *in, uint16_t format)
 		in->reader = &plain_text_reader;
 		break;
 
+#ifdef CONFIG_LWM2M_RW_OMA_TLV_SUPPORT
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
 		in->reader = &oma_tlv_reader;
 		break;
+#endif
 
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
 	case LWM2M_FORMAT_OMA_JSON:
@@ -3684,9 +3688,11 @@ static int do_read_op(struct lwm2m_message *msg, uint16_t content_format)
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		return do_read_op_plain_text(msg, content_format);
 
+#if defined(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT)
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
 		return do_read_op_tlv(msg, content_format);
+#endif
 
 #if defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
 	case LWM2M_FORMAT_OMA_JSON:
@@ -4228,9 +4234,11 @@ static int do_write_op(struct lwm2m_message *msg,
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		return do_write_op_plain_text(msg);
 
+#ifdef CONFIG_LWM2M_RW_OMA_TLV_SUPPORT
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
 		return do_write_op_tlv(msg);
+#endif
 
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
 	case LWM2M_FORMAT_OMA_JSON:
@@ -4423,10 +4431,14 @@ static int lwm2m_engine_default_content_format(uint16_t *accept_format)
 			LOG_ERR("SenML CBOR or JSON is not supported");
 			return -ENOTSUP;
 		}
-	} else {
+	} else if (IS_ENABLED(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT)) {
 		LOG_DBG("No accept option given. Assume OMA TLV.");
 		*accept_format = LWM2M_FORMAT_OMA_TLV;
+	} else {
+		LOG_ERR("No default content format is set");
+		return -ENOTSUP;
 	}
+
 	return 0;
 }
 

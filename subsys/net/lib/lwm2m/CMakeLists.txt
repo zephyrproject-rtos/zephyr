@@ -11,7 +11,6 @@ zephyr_library_sources(
     lwm2m_obj_device.c
     lwm2m_rw_link_format.c
     lwm2m_rw_plain_text.c
-    lwm2m_rw_oma_tlv.c
     lwm2m_util.c
     )
 
@@ -44,6 +43,10 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_PORTFOLIO_OBJ_SUPPORT
     lwm2m_obj_portfolio.c
     )
 
+# TLV Support
+zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT
+    lwm2m_rw_oma_tlv.c
+    )
 # JSON Support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_JSON_SUPPORT
     lwm2m_rw_json.c
