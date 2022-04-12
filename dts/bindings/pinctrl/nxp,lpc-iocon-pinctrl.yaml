@@ -40,6 +40,14 @@ description: |
   bias-pull-down: IOCON_MODE=1
   drive-push-pull: IOCON_MODE=3
 
+  Note: for the LPC11u6x, the following fields are also supported:
+  IOCON_HYS- set by input-schmitt-enable
+  IOCON_S_MODE- set by nxp,digital-filter
+  IOCON_CLKDIV- set by nxp,filter-clock-div
+  IOCON_FILTR- set by nxp,analog-filter
+
+
+
 compatible: "nxp,lpc-iocon-pinctrl"
 
 include:
@@ -52,6 +60,7 @@ include:
           - bias-pull-up
           - bias-pull-down
           - drive-push-pull
+          - input-schmitt-enable
 
 child-binding:
   description: LPC IOCON pin controller pin group
