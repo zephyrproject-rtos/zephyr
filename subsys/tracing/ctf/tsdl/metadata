@@ -260,3 +260,53 @@ event {
 	};
 };
 
+event {
+	name = timer_init;
+	id = 0x2E;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_start;
+	id = 0x2F;
+	fields := struct {
+		uint32_t id;
+		uint32_t duration;
+		uint32_t period;
+	};
+};
+
+event {
+	name = timer_stop;
+	id = 0x30;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_enter;
+	id = 0x31;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_blocking;
+	id = 0x32;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_exit;
+	id = 0x33;
+	fields := struct {
+		uint32_t id;
+		uint32_t result;
+	};
+};
