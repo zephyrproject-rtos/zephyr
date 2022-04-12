@@ -309,7 +309,7 @@ void sys_trace_idle(void);
 #define sys_port_trace_k_mem_slab_free_exit(slab)
 
 #define sys_port_trace_k_timer_init(timer)
-#define sys_port_trace_k_timer_start(timer)
+#define sys_port_trace_k_timer_start(timer, duration, period)
 #define sys_port_trace_k_timer_stop(timer)
 #define sys_port_trace_k_timer_status_sync_enter(timer)
 #define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)

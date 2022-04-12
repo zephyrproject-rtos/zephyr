@@ -412,7 +412,8 @@
 #define sys_port_trace_k_mem_slab_free_exit(slab) sys_trace_k_mem_slab_free_exit(slab, mem)
 
 #define sys_port_trace_k_timer_init(timer) sys_trace_k_timer_init(timer, expiry_fn, stop_fn)
-#define sys_port_trace_k_timer_start(timer) sys_trace_k_timer_start(timer, duration, period)
+#define sys_port_trace_k_timer_start(timer, duration, period)					   \
+	sys_trace_k_timer_start(timer, duration, period)
 #define sys_port_trace_k_timer_stop(timer) sys_trace_k_timer_stop(timer)
 #define sys_port_trace_k_timer_status_sync_enter(timer)
 #define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)                                \
