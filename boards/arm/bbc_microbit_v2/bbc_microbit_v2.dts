@@ -132,7 +132,7 @@
 		status = "okay";
 		reg = <0x1e>;
 		label = "LSM303AGR-MAGN";
-		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;	/* A3 */
+		irq-gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
 
 	lsm303agr-accel@19 {
@@ -140,7 +140,7 @@
 		status = "okay";
 		reg = <0x19>;
 		label = "LSM303AGR-ACCEL";
-		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&gpio0 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 	};
 };
 
