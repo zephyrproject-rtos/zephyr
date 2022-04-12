@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_LPC11U6X_H_
 #define ZEPHYR_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_LPC11U6X_H_
 
+#include <zephyr/drivers/pinctrl.h>
+
 #define LPC11U6X_SYS_AHB_CLK_CTRL_I2C0      (1 << 5)
 #define LPC11U6X_SYS_AHB_CLK_CTRL_GPIO      (1 << 6)
 #define LPC11U6X_SYS_AHB_CLK_CTRL_USART0    (1 << 12)
@@ -132,6 +134,7 @@ struct lpc11u6x_syscon_regs {
 
 struct lpc11u6x_syscon_config {
 	struct lpc11u6x_syscon_regs *syscon;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct lpc11u6x_syscon_data {
