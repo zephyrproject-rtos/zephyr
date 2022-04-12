@@ -475,6 +475,12 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         default=False,
         help="Skip the 'unrecognized section' test.")
 
+    parser.add_argument(
+        "--disable-suite-name-check", action="store_true", default=False,
+        help="Disable extended test suite name verification at the beginning "
+             "of Ztest test. This option could be useful for tests or "
+             "platforms, which from some reasons cannot print early logs.")
+
     parser.add_argument("-e", "--exclude-tag", action="append",
                         help="Specify tags of tests that should not run. "
                              "Default is to run all tests with all tags.")
@@ -945,6 +951,7 @@ def main():
     suite.warnings_as_errors = not options.disable_warnings_as_errors
     suite.integration = options.integration
     suite.overflow_as_errors = options.overflow_as_errors
+    suite.suite_name_check = not options.disable_suite_name_check
 
     if options.ninja:
         suite.generator_cmd = "ninja"

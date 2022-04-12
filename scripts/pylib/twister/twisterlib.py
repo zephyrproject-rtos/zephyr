@@ -431,6 +431,7 @@ class Handler:
         self.set_state("running", self.duration)
         self.generator = None
         self.generator_cmd = None
+        self.suite_name_check = True
 
         self.args = []
         self.terminated = False
@@ -527,8 +528,9 @@ class Handler:
     def _final_handle_actions(self, harness, handler_time):
         self._set_skip_reason(harness.state)
 
+        # only for Ztest tests:
         harness_class_name = type(harness).__name__
-        if harness_class_name == "Test":  # only for ZTest tests
+        if self.suite_name_check and harness_class_name == "Test":
             self._verify_ztest_suite_name(harness.state, harness.detected_suite_names, handler_time)
 
             if not harness.matched_run_id and harness.run_id_exists:
@@ -2543,6 +2545,7 @@ class ProjectBuilder(FilterBuilder):
         self.verbose = kwargs.get('verbose', None)
         self.warnings_as_errors = kwargs.get('warnings_as_errors', True)
         self.overflow_as_errors = kwargs.get('overflow_as_errors', False)
+        self.suite_name_check = kwargs.get('suite_name_check', True)
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -2634,6 +2637,7 @@ class ProjectBuilder(FilterBuilder):
             instance.handler.args = args
             instance.handler.generator_cmd = self.generator_cmd
             instance.handler.generator = self.generator
+            instance.handler.suite_name_check = self.suite_name_check
 
     def process(self, pipeline, done, message, lock, results):
         op = message.get('op')
@@ -3007,6 +3011,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.overflow_as_errors = False
         self.quarantine_verify = False
         self.retry_build_errors = False
+        self.suite_name_check = True
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -3719,7 +3724,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                                     generator_cmd=self.generator_cmd,
                                     verbose=self.verbose,
                                     warnings_as_errors=self.warnings_as_errors,
-                                    overflow_as_errors=self.overflow_as_errors
+                                    overflow_as_errors=self.overflow_as_errors,
+                                    suite_name_check=self.suite_name_check
                                     )
                 pb.process(pipeline, done_queue, task, lock, results)
 
