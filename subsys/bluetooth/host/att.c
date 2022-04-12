@@ -75,6 +75,7 @@ enum {
 	ATT_CONNECTED,
 	ATT_ENHANCED,
 	ATT_PENDING_SENT,
+	ATT_OUT_OF_SYNC_SENT,
 
 	/* Total number of flags - must be at the end of the enum */
 	ATT_NUM_FLAGS,
@@ -1306,7 +1307,11 @@ static uint8_t att_read_rsp(struct bt_att_chan *chan, uint8_t op, uint8_t rsp,
 	struct read_data data;
 
 	if (!bt_gatt_change_aware(conn, true)) {
-		return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
+			return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		} else {
+			return 0;
+		}
 	}
 
 	if (!handle) {
@@ -1380,7 +1385,11 @@ static uint8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
 	uint16_t handle;
 
 	if (!bt_gatt_change_aware(conn, true)) {
-		return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
+			return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		} else {
+			return 0;
+		}
 	}
 
 	(void)memset(&data, 0, sizeof(data));
@@ -1474,7 +1483,11 @@ static uint8_t att_read_mult_vl_req(struct bt_att_chan *chan, struct net_buf *bu
 	uint16_t handle;
 
 	if (!bt_gatt_change_aware(conn, true)) {
-		return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
+			return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		} else {
+			return 0;
+		}
 	}
 
 	(void)memset(&data, 0, sizeof(data));
@@ -1734,7 +1747,11 @@ static uint8_t att_write_rsp(struct bt_att_chan *chan, uint8_t req, uint8_t rsp,
 	struct write_data data;
 
 	if (!bt_gatt_change_aware(chan->att->conn, req ? true : false)) {
-		return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
+			return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		} else {
+			return 0;
+		}
 	}
 
 	if (!handle) {
@@ -1855,7 +1872,11 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 	struct bt_att_prepare_write_rsp *rsp;
 
 	if (!bt_gatt_change_aware(conn, true)) {
-		return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
+			return BT_ATT_ERR_DB_OUT_OF_SYNC;
+		} else {
+			return 0;
+		}
 	}
 
 	if (!handle) {
@@ -3477,4 +3498,32 @@ bool bt_att_fixed_chan_only(struct bt_conn *conn)
 #else
 	return true;
 #endif /* CONFIG_BT_EATT */
+}
+
+void bt_att_clear_out_of_sync_sent(struct bt_conn *conn)
+{
+	struct bt_att *att = att_get(conn);
+	struct bt_att_chan *chan;
+
+	if (!att) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
+		atomic_clear_bit(chan->flags, ATT_OUT_OF_SYNC_SENT);
+	}
+}
+
+bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *l2cap_chan;
+	struct bt_att_chan *att_chan;
+
+	l2cap_chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
+	if (!l2cap_chan) {
+		return false;
+	}
+
+	att_chan = ATT_CHAN(l2cap_chan);
+	return atomic_test_bit(att_chan->flags, ATT_OUT_OF_SYNC_SENT);
 }
