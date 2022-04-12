@@ -499,7 +499,15 @@ static void z_arm_prepare_switch_to_main(void)
 	 * Unshared FP Registers mode (In Shared FP Registers mode, FPSCR is
 	 * initialized at thread creation for threads that make use of the FP).
 	 */
+#if defined(CONFIG_ARMV8_1_M_MAINLINE)
+	/*
+	 * For ARMv8.1-M with FPU, the FPSCR[18:16] LTPSIZE field must be set
+	 * to 0b100 for "Tail predication not applied" as it's reset value
+	 */
+	__set_FPSCR(4 << FPU_FPDSCR_LTPSIZE_Pos);
+#else
 	__set_FPSCR(0);
+#endif
 #if defined(CONFIG_FPU_SHARING)
 	/* In Sharing mode clearing FPSCR may set the CONTROL.FPCA flag. */
 	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
