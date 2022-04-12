@@ -153,6 +153,10 @@ struct ll_conn {
 
 	struct node_rx_pdu *llcp_rx;
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+	struct node_rx_pdu *llcp_rx_hold;
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
 	struct {
 		uint8_t  req;
 		uint8_t  ack;
