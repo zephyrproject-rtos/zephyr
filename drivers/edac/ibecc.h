@@ -21,6 +21,9 @@
 #define PCI_DEVICE_ID_SKU10	0x452e
 #define PCI_DEVICE_ID_SKU11	0x4532
 #define PCI_DEVICE_ID_SKU12	0x4518
+#define PCI_DEVICE_ID_SKU13	0x451a
+#define PCI_DEVICE_ID_SKU14	0x4534
+#define PCI_DEVICE_ID_SKU15	0x4536
 
 /* TODO: Move to correct place NMI registers */
 
