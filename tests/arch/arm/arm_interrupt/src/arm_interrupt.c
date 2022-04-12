@@ -197,7 +197,15 @@ void arm_isr_handler(const void *args)
 	 * to prevent from having the interrupt line set to pending again,
 	 * in case FPU IRQ is selected by the test as "Available IRQ line"
 	 */
+#if defined(CONFIG_ARMV8_1_M_MAINLINE)
+	/*
+	 * For ARMv8.1-M with FPU, the FPSCR[18:16] LTPSIZE field must be set
+	 * to 0b100 for "Tail predication not applied" as it's reset value
+	 */
+	__set_FPSCR(4 << FPU_FPDSCR_LTPSIZE_Pos);
+#else
 	__set_FPSCR(0);
+#endif
 #endif
 
 	test_flag++;
