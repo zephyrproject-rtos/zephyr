@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <mpfs-icicle.dtsi>
+#include <mem.h>
 
 / {
 	model = "Microchip PolarFire-SoC Icicle Kit";
@@ -24,4 +25,16 @@
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <150000000>;
+};
+
+&qspi0 {
+	status = "okay";
+	qspi_flash: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <5000000>;
+		size = <DT_SIZE_M(256)>;
+		jedec-id = [20 ba 19];
+		label = "FLASH0";
+	};
 };
