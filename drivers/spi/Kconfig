@@ -101,4 +101,6 @@ source "drivers/spi/Kconfig.xec_qmspi_ldma"
 
 source "drivers/spi/Kconfig.gd32"
 
+source "drivers/spi/Kconfig.mchp_mss_qspi"
+
 endif # SPI
