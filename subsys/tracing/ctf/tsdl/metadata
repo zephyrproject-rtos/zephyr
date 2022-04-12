@@ -6,15 +6,6 @@ typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
 typealias integer { size = 32; align = 8; signed = true; } := int32_t;
 typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
 typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := ctf_bounded_string_t;
-typealias enum : uint32_t {
-	MUTEX_INIT = 33,
-	MUTEX_UNLOCK = 34,
-	MUTEX_LOCK = 35,
-	SEMA_INIT = 36,
-	SEMA_GIVE = 37,
-	SEMA_TAKE = 38,
-	SLEEP = 39
-} := call_id;
 
 struct event_header {
 	uint32_t timestamp;
@@ -151,22 +142,6 @@ event {
 event {
 	name = idle;
 	id = 0x1E;
-};
-
-event {
-	name = start_call;
-	id = 0x1F;
-	fields := struct {
-		call_id id;
-	};
-};
-
-event {
-	name = end_call;
-	id = 0x20;
-	fields := struct {
-		call_id id;
-	};
 };
 
 event {
