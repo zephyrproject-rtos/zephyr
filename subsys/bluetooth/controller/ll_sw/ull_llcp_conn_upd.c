@@ -260,7 +260,7 @@ static void lp_cu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 static void lp_cu_send_reject_ext_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_CU_STATE_WAIT_TX_REJECT_EXT_IND;
 	} else {
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
