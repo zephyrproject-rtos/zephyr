@@ -466,8 +466,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	config.bitClock.bclkInputDelay = false;
 
 	/* frame sync default configurations */
-#if defined(FSL_FEATURE_SAI_HAS_FRAME_SYNC_ON_DEMAND) &&		\
-	FSL_FEATURE_SAI_HAS_FRAME_SYNC_ON_DEMAND
+#if defined(FSL_FEATURE_SAI_HAS_ON_DEMAND_MODE) && \
+	FSL_FEATURE_SAI_HAS_ON_DEMAND_MODE
 	config.frameSync.frameSyncGenerateOnDemand = false;
 #endif
 
