@@ -66,8 +66,8 @@
 
 	pinmux_sctimer_default: pinmux_sctimer_default {
 		group0 {
-			pinmux = <SCT02_PIO0_15>,
-				<SCT00_PIO1_4>;
+			pinmux = <SCT0_OUT2_PIO0_15>,
+				<SCT0_OUT0_PIO1_4>;
 			slew-rate = "standard";
 		};
 	};
