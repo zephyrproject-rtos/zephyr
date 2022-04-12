@@ -1394,6 +1394,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 		rx_hold_flush(conn);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+		/* if done events have separate mayfly, explicit trigger of
+		 * rx_demux mayfly is necessary.
+		 */
 		ll_rx_sched();
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 	}
@@ -2188,11 +2191,10 @@ static int init_reset(void)
 	return 0;
 }
 
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
 static void rx_hold_put(struct ll_conn *conn, memq_link_t *link,
 			struct node_rx_pdu *rx)
 {
-#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
 	struct node_rx_pdu *rx_last;
 	struct lll_conn *lll;
 
@@ -2214,15 +2216,8 @@ static void rx_hold_put(struct ll_conn *conn, memq_link_t *link,
 	if (lll->rx_hold_req == lll->rx_hold_ack) {
 		lll->rx_hold_req++;
 	}
-
-#else /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
-	ARG_UNUSED(conn);
-
-	ll_rx_put(link, rx);
-#endif /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 }
 
-#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
 static bool rx_hold_is_done(struct ll_conn *conn)
 {
 	return ((conn->lll.rx_hold_req -
@@ -2252,7 +2247,6 @@ static void rx_hold_flush(struct ll_conn *conn)
 	lll->rx_hold_ack = 0U;
 }
 #endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 static void tx_demux_sched(struct ll_conn *conn)
@@ -3222,12 +3216,15 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			cu->latency = conn->llcp_cu.latency;
 			cu->timeout = conn->llcp_cu.timeout;
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
 			/* hold node rx until the instant's anchor point sync */
 			rx_hold_put(conn, rx->hdr.link, rx);
+#else /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+			/* enqueue rx node towards Thread */
+			ll_rx_put(rx->hdr.link, rx);
+			ll_rx_sched();
+#endif /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 
-			if (!IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
-				ll_rx_sched();
-			}
 		} else {
 			/* Mark for buffer for release */
 			rx->hdr.type = NODE_RX_TYPE_RELEASE;
@@ -4779,8 +4776,13 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		upd->tx = lll->phy_tx;
 		upd->rx = lll->phy_rx;
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
 		/* hold node rx until the instant's anchor point sync */
 		rx_hold_put(conn, rx->hdr.link, rx);
+#else /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+		/* enqueue rx node towards Thread */
+		ll_rx_put(rx->hdr.link, rx);
+#endif /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		/* get a rx node for ULL->LL */
@@ -4823,11 +4825,19 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		lr->max_rx_time = sys_cpu_to_le16(lll->max_rx_time);
 		lr->max_tx_time = sys_cpu_to_le16(lll->max_tx_time);
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
 		/* hold node rx until the instant's anchor point sync */
 		rx_hold_put(conn, rx->hdr.link, rx);
+#else /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+		/* enqueue rx node towards Thread */
+		ll_rx_put(rx->hdr.link, rx);
+#endif /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 		if (!IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+			/* Only trigger the rx_demux mayfly when PHY and/or DLE
+			 * node rx are not held back until the anchor point sync
+			 */
 			ll_rx_sched();
 		}
 	}
