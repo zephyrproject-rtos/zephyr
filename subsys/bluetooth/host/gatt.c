@@ -504,7 +504,6 @@ static struct _bt_gatt_ccc sc_ccc = BT_GATT_CCC_INITIALIZER(NULL,
 
 enum {
 	CF_CHANGE_AWARE,	/* Client is changed aware */
-	CF_OUT_OF_SYNC,		/* Client is out of sync */
 	CF_DB_HASH_READ,	/* The client has read the database hash */
 
 	/* Total number of flags - must be at the end of the enum */
@@ -900,7 +899,6 @@ static void remove_cf_cfg(struct bt_conn *conn)
 	} else {
 		/* Update address in case it has changed */
 		bt_addr_le_copy(&cfg->peer, &conn->le.dst);
-		atomic_clear_bit(cfg->flags, CF_OUT_OF_SYNC);
 	}
 }
 
@@ -1375,6 +1373,7 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb)
 static void db_changed(void)
 {
 #if defined(CONFIG_BT_GATT_CACHING)
+	struct bt_conn *conn;
 	int i;
 
 	atomic_clear_bit(gatt_sc.flags, DB_HASH_VALID);
@@ -1393,7 +1392,12 @@ static void db_changed(void)
 			 * becomes change-aware in which case the error response
 			 * shall be sent again.
 			 */
-			atomic_clear_bit(cfg->flags, CF_OUT_OF_SYNC);
+			conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cfg->peer);
+			if (conn) {
+				bt_att_clear_out_of_sync_sent(conn);
+				bt_conn_unref(conn);
+			}
+
 			atomic_clear_bit(cfg->flags, CF_DB_HASH_READ);
 			if (atomic_test_and_clear_bit(cfg->flags,
 						      CF_CHANGE_AWARE)) {
@@ -5265,7 +5269,7 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 	 * ATT request from the client.
 	 */
 	if (atomic_test_and_clear_bit(cfg->flags, CF_DB_HASH_READ)) {
-		atomic_clear_bit(cfg->flags, CF_OUT_OF_SYNC);
+		bt_att_clear_out_of_sync_sent(conn);
 		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
 		BT_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
 		return true;
@@ -5279,14 +5283,13 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 	 * set to Database Out Of Sync (0x12) and then the server receives
 	 * another ATT request from the client.
 	 */
-	if (atomic_test_bit(cfg->flags, CF_OUT_OF_SYNC) && bt_att_fixed_chan_only(conn)) {
-		atomic_clear_bit(cfg->flags, CF_OUT_OF_SYNC);
+	if (bt_att_fixed_chan_only(conn) && bt_att_out_of_sync_sent_on_fixed(conn)) {
+		atomic_clear_bit(cfg->flags, CF_DB_HASH_READ);
+		bt_att_clear_out_of_sync_sent(conn);
 		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
 		BT_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
 		return true;
 	}
-
-	atomic_set_bit(cfg->flags, CF_OUT_OF_SYNC);
 
 	return false;
 #else
