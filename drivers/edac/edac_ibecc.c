@@ -302,6 +302,12 @@ int edac_ibecc_init(const struct device *dev)
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU11):
 		__fallthrough;
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU12):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU13):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU14):
+		__fallthrough;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU15):
 		break;
 	default:
 		LOG_ERR("PCI Probe failed");
