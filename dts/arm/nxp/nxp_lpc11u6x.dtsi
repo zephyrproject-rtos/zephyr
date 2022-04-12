@@ -118,7 +118,7 @@
 			ngpios = <24>;
 
 			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
-			pinmux-port = <&pinmux0>;
+			iocon = <&pio0>;
 
 			status = "disabled";
 		};
@@ -135,7 +135,7 @@
 			#gpio-cells = <2>;
 
 			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
-			pinmux-port = <&pinmux1>;
+			iocon = <&pio1>;
 
 			status = "disabled";
 		};
@@ -154,7 +154,7 @@
 			ngpios = <22>;
 
 			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
-			pinmux-port = <&pinmux2>;
+			iocon = <&pio2>;
 
 			status = "disabled";
 		};
