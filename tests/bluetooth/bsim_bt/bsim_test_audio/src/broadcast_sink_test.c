@@ -8,6 +8,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -18,6 +19,9 @@ CREATE_FLAG(pa_synced);
 CREATE_FLAG(pa_sync_lost);
 
 static struct bt_audio_broadcast_sink *g_sink;
+
+/* Mandatory support preset by both source and sink */
+static struct bt_audio_lc3_preset preset = BT_AUDIO_LC3_BROADCAST_PRESET_16_2_1;
 
 static bool scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			 uint32_t broadcast_id)
@@ -90,6 +94,11 @@ static struct bt_audio_broadcast_sink_cb broadcast_sink_cbs = {
 	.pa_sync_lost = pa_sync_lost_cb
 };
 
+static struct bt_audio_capability capabilities = {
+	.dir = BT_AUDIO_DIR_SINK,
+	.codec = &preset.codec,
+};
+
 static int init(void)
 {
 	int err;
@@ -101,6 +110,12 @@ static int init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	err = bt_audio_capability_register(&capabilities);
+	if (err) {
+		FAIL("Capability register failed (err %d)\n", err);
+		return err;
+	}
 
 	bt_audio_broadcast_sink_register_cb(&broadcast_sink_cbs);
 
