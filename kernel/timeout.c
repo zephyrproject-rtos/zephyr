@@ -18,17 +18,6 @@ static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
 
 static struct k_spinlock timeout_lock;
 
-/* On multiprocessor setups, it's possible to have multiple
- * sys_clock_announce() calls arrive in parallel (the latest to exit
- * the driver will generally be announcing zero ticks).  But we want
- * the list of timeouts to be executed serially, so as not to confuse
- * application code.  This lock wraps the announce loop, external to
- * the nested timeout_lock.
- */
-#ifdef CONFIG_SMP
-static struct k_spinlock ann_lock;
-#endif
-
 #define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
 		  ? K_TICKS_FOREVER : INT_MAX)
 
@@ -253,11 +242,19 @@ void sys_clock_announce(int32_t ticks)
 	z_time_slice(ticks);
 #endif
 
-#ifdef CONFIG_SMP
-	k_spinlock_key_t ann_key = k_spin_lock(&ann_lock);
-#endif
-
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
+
+	/* We release the lock around the callbacks below, so on SMP
+	 * systems someone might be already running the loop.  Don't
+	 * race (which will cause paralllel execution of "sequential"
+	 * timeouts and confuse apps), just increment the tick count
+	 * and return.
+	 */
+	if (IS_ENABLED(CONFIG_SMP) && announce_remaining != 0) {
+		announce_remaining += ticks;
+		k_spin_unlock(&timeout_lock, key);
+		return;
+	}
 
 	announce_remaining = ticks;
 
@@ -285,10 +282,6 @@ void sys_clock_announce(int32_t ticks)
 	sys_clock_set_timeout(next_timeout(), false);
 
 	k_spin_unlock(&timeout_lock, key);
-
-#ifdef CONFIG_SMP
-	k_spin_unlock(&ann_lock, ann_key);
-#endif
 }
 
 int64_t sys_clock_tick_get(void)
