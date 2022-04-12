@@ -15,18 +15,22 @@
 			clock-frequency = <0>;
 			compatible = "microsemi,miv", "riscv";
 			device_type = "cpu";
-			reg = < 0x01 >;
-			riscv,isa = "rv64imac"; 
-			#status = "disabled";
+			reg = < 0x0 >;
+			riscv,isa = "rv64imac";
+			hlic0: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
 		};
 
 		cpu@1 {
 			clock-frequency = <0>;
 			compatible = "microsemi,miv", "riscv";
 			device_type = "cpu";
-			reg = < 0x00 >;
+			reg = < 0x1 >;
 			riscv,isa = "rv64imafdc";
-			hlic: interrupt-controller {
+			hlic1: interrupt-controller {
 				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
 				interrupt-controller;
@@ -52,9 +56,11 @@
 
 		plic: interrupt-controller@c000000 {
 			#interrupt-cells = <2>;
+			#address-cells = <1>;
 			compatible = "sifive,plic-1.0.0";
 			interrupt-controller;
-			interrupts-extended = <&hlic 11>;
+			interrupts-extended = <&hlic0 11
+						&hlic1 11>;
 			reg = <0x0c000000 0x00002000
 			       0x0c002000 0x001fe000
 			       0x0c200000 0x3e000000>;
@@ -62,7 +68,7 @@
 			riscv,max-priority = <7>;
 			riscv,ndev = <187>;
 		};
-			
+
 		uart0: uart@20000000 {
 			compatible = "ns16550";
 			reg = <0x20000000 0x1000>;
@@ -73,6 +79,18 @@
 			label = "UART_0";
 			reg-shift = <2>;
 			status = "disabled";
+		};
+
+		qspi0: qspi@21000000 {
+			compatible = "microchip,mpfs-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x21000000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <85 1>;
+			status = "disabled";
+			label = "QSPI_0";
+			clock-frequency = <150000000>;
 		};
 	};
 };
