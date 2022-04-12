@@ -232,10 +232,12 @@ struct bt_audio_capability {
 	enum bt_audio_dir dir;
 	/** Capability codec reference */
 	struct bt_codec *codec;
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 	/** Capability preferences */
 	struct bt_audio_capability_pref pref;
 	/** Capability operations reference */
 	struct bt_audio_capability_ops *ops;
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 	sys_snode_t node;
 };
 

@@ -5,6 +5,7 @@
  */
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
 
 #define SEM_TIMEOUT K_SECONDS(10)
 
@@ -147,6 +148,11 @@ static struct bt_audio_broadcast_sink_cb broadcast_sink_cbs = {
 	.pa_sync_lost = pa_sync_lost_cb
 };
 
+static struct bt_audio_capability capabilities = {
+	.dir = BT_AUDIO_DIR_SINK,
+	.codec = &preset_16_2_1.codec,
+};
+
 static int init(void)
 {
 	int err;
@@ -158,6 +164,12 @@ static int init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	err = bt_audio_capability_register(&capabilities);
+	if (err) {
+		printk("Capability register failed (err %d)\n", err);
+		return err;
+	}
 
 	bt_audio_broadcast_sink_register_cb(&broadcast_sink_cbs);
 

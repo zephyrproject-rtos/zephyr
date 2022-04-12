@@ -1367,7 +1367,15 @@ struct bt_audio_unicast_server_cb {
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
 	int (*release)(struct bt_audio_stream *stream);
+};
 
+/**  @brief Callback structure for the Public Audio Capabilities Service (PACS)
+ *
+ * This is used for the Unicast Server
+ * (@kconfig{CONFIG_BT_AUDIO_UNICAST_SERVER}) and Broadcast Sink
+ * (@kconfig{CONFIG_BT_AUDIO_BROADCAST_SINK}) roles.
+ */
+struct bt_audio_pacs_cb {
 	/** @brief Get available audio contexts callback
 	 *
 	 *  Get available audio contexts callback is called whenever a remote client
@@ -1377,7 +1385,7 @@ struct bt_audio_unicast_server_cb {
 	 *  @param[in]  conn     The connection that requests the available audio
 	 *                       contexts. Will be NULL if requested for sending
 	 *                       a notification, as a result of calling
-	 *                       bt_audio_unicast_server_available_contexts_changed().
+	 *                       bt_pacs_available_contexts_changed().
 	 *  @param[in]  dir      Direction of the endpoint.
 	 *  @param[out] context  Pointer to the contexts that needs to be set.
 	 *
@@ -1422,8 +1430,7 @@ struct bt_audio_unicast_server_cb {
 	 *  @param[in]  conn      The connection that requests the location.
 	 *                        Will be NULL if the location is requested
 	 *                        for sending a notification, as a result of
-	 *                        calling
-	 *                        bt_audio_unicast_server_location_changed().
+	 *                        calling bt_audio_pacs_location_changed().
 	 *  @param[in]  dir       Direction of the endpoint.
 	 *  @param[out] location  Pointer to the location that needs to be set.
 	 *
@@ -1662,6 +1669,40 @@ void bt_audio_stream_cb_register(struct bt_audio_stream *stream,
  * @{
  */
 
+/** @brief Register Published Audio Capabilities Service callbacks.
+ *
+ *  Only one callback structure can be registered, and attempting to
+ *  registering more than one will result in an error.
+ *
+ *  This can only be done for the Unicast Server
+ *  (@kconfig{CONFIG_BT_AUDIO_UNICAST_SERVER}) and Broadcast Sink
+ *  (@kconfig{CONFIG_BT_AUDIO_BROADCAST_SINK}) roles.
+ *
+ *  Calling bt_audio_capability_register() will implicitly register the
+ *  callbacks.
+ *
+ *  @param cb  Unicast server callback structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_pacs_register_cb(const struct bt_audio_pacs_cb *cb);
+
+/** @brief Notify that the location has changed
+ *
+ * @param dir Direction of the location changed.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_audio_pacs_location_changed(enum bt_audio_dir dir);
+
+/** @brief Notify available audio contexts changed
+ *
+ * Notify connected clients that the available audio contexts has changed
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_pacs_available_contexts_changed(void);
+
 /** @brief Register unicast server callbacks.
  *
  *  Only one callback structure can be registered, and attempting to
@@ -1683,24 +1724,6 @@ int bt_audio_unicast_server_register_cb(const struct bt_audio_unicast_server_cb 
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_cb *cb);
-
-/** @brief Notify location changed
- *
- * Notify connected clients that the location has changed
- *
- * @param dir       Direction of the endpoint.
- *
- * @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_unicast_server_location_changed(enum bt_audio_dir dir);
-
-/** @brief Notify available audio contexts changed
- *
- * Notify connected clients that the available audio contexts has changed
- *
- * @return 0 in case of success or negative value in case of error.
- */
-int bt_audio_unicast_server_available_contexts_changed(void);
 
 /** @} */ /* End of group bt_audio_server */
 
