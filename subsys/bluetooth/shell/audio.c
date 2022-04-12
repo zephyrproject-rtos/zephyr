@@ -437,8 +437,11 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.stop = lc3_stop,
 	.release = lc3_release,
 };
+#endif /* CONFIG_BT_AUDIO_UNICAST */
 
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 static struct bt_audio_capability caps[MAX_PAC] = {
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 	{
 		.dir = BT_AUDIO_DIR_SOURCE,
 		.pref = BT_AUDIO_CAPABILITY_PREF(
@@ -448,17 +451,20 @@ static struct bt_audio_capability caps[MAX_PAC] = {
 		.codec = &lc3_codec,
 		.ops = &lc3_ops,
 	},
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 	{
 		.dir = BT_AUDIO_DIR_SINK,
+		.codec = &lc3_codec,
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 		.pref = BT_AUDIO_CAPABILITY_PREF(
 				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
 				BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u,
 				20000u, 40000u),
-		.codec = &lc3_codec,
 		.ops = &lc3_ops,
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 	},
 };
-#endif /* CONFIG_BT_AUDIO_UNICAST */
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER || CONFIG_BT_AUDIO_BROADCAST_SINK */
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static uint8_t stream_dir(const struct bt_audio_stream *stream)
@@ -1355,10 +1361,11 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-#if defined(CONFIG_BT_AUDIO_UNICAST)
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
 	for (i = 0; i < ARRAY_SIZE(caps); i++) {
 		bt_audio_capability_register(&caps[i]);
 	}
+#endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
 	/* Mark all supported contexts as available */
 	bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
@@ -1366,6 +1373,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
 						   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
+#if defined(CONFIG_BT_AUDIO_UNICAST)
 	for (i = 0; i < ARRAY_SIZE(streams); i++) {
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);
 	}
