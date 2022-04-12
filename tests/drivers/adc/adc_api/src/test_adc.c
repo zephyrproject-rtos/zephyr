@@ -267,6 +267,15 @@
 #define ADC_1ST_CHANNEL_ID	4
 #define ADC_2ND_CHANNEL_ID	5
 
+#elif defined(CONFIG_BOARD_MEC172XEVB_ASSY6906)
+#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, microchip_xec_adc_v2))
+#define ADC_RESOLUTION          12
+#define ADC_GAIN                ADC_GAIN_1
+#define ADC_REFERENCE           ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME    ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID      4
+#define ADC_2ND_CHANNEL_ID      5
+
 #elif defined(CONFIG_BOARD_LPCXPRESSO55S69_CPU0) || \
 	defined(CONFIG_BOARD_LPCXPRESSO55S28) || \
 	defined(CONFIG_BOARD_MIMXRT1170_EVK_CM7) || \
