@@ -274,24 +274,48 @@ void sys_trace_k_mutex_unlock_exit(struct k_mutex *mutex, int ret)
 }
 
 /* Timer */
-void sys_trace_k_timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
-			    k_timer_expiry_t stop_fn)
+void sys_trace_k_timer_init(struct k_timer *timer)
 {
+	ctf_top_timer_init(
+		(uint32_t)(uintptr_t)timer);
 }
 
 void sys_trace_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			     k_timeout_t period)
 {
+	ctf_top_timer_start(
+		(uint32_t)(uintptr_t)timer,
+		k_ticks_to_us_floor32((uint32_t)duration.ticks),
+		k_ticks_to_us_floor32((uint32_t)period.ticks)
+		);
 }
 
 void sys_trace_k_timer_stop(struct k_timer *timer)
 {
+	ctf_top_timer_stop(
+		(uint32_t)(uintptr_t)timer
+		);
 }
 
-void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer)
+void sys_trace_k_timer_status_sync_enter(struct k_timer *timer)
 {
+	ctf_top_timer_status_sync_enter(
+		(uint32_t)(uintptr_t)timer
+		);
+}
+
+void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer, k_timeout_t timeout)
+{
+	ctf_top_timer_status_sync_blocking(
+		(uint32_t)(uintptr_t)timer,
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
 }
 
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result)
 {
+	ctf_top_timer_status_sync_exit(
+		(uint32_t)(uintptr_t)timer,
+		result
+		);
 }

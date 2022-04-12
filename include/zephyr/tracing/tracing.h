@@ -1823,8 +1823,10 @@
 /**
  * @brief Trace Timer start
  * @param timer Timer object
+ * @param duration Timer duration
+ * @param period Timer period
  */
-#define sys_port_trace_k_timer_start(timer)
+#define sys_port_trace_k_timer_start(timer, duration, period)
 
 /**
  * @brief Trace Timer stop
