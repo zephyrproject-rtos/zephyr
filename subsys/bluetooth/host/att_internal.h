@@ -311,3 +311,9 @@ struct bt_att_req *bt_att_find_req_by_user_data(struct bt_conn *conn, const void
 
 /* Checks if only the fixed ATT channel is connected */
 bool bt_att_fixed_chan_only(struct bt_conn *conn);
+
+/* Clear the out of sync flag on all channels */
+void bt_att_clear_out_of_sync_sent(struct bt_conn *conn);
+
+/* Check if BT_ATT_ERR_DB_OUT_OF_SYNC has been sent on the fixed ATT channel */
+bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn);
