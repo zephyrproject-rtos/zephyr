@@ -73,6 +73,10 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+static bool rx_hold_is_done(struct ll_conn *conn);
+static void rx_hold_flush(struct ll_conn *conn);
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 static void tx_demux_sched(struct ll_conn *conn);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
@@ -1010,6 +1014,12 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 		return 0;
 	}
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+	if (conn->llcp_rx_hold && rx_hold_is_done(conn)) {
+		rx_hold_flush(conn);
+	}
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
 	pdu_rx = (void *)(*rx)->pdu;
 
 	switch (pdu_rx->ll_id) {
@@ -1378,6 +1388,16 @@ void ull_conn_done(struct node_rx_event_done *done)
 	if (unlikely(lll->handle == LLL_HANDLE_INVALID)) {
 		return;
 	}
+
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+	if (conn->llcp_rx_hold && rx_hold_is_done(conn)) {
+		rx_hold_flush(conn);
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+		ll_rx_sched();
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
+	}
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Check authenticated payload expiry or MIC failure */
@@ -1936,6 +1956,12 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 		if (handle != LLL_HANDLE_INVALID) {
 			struct ll_conn *conn = ll_conn_get(handle);
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+			if (conn->llcp_rx_hold && rx_hold_is_done(conn)) {
+				rx_hold_flush(conn);
+			}
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 			ctrl_tx_ack(conn, &tx, pdu_tx);
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
@@ -1964,6 +1990,14 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 		pdu_tx->ll_id = PDU_DATA_LLID_RESV;
 	} else {
 		LL_ASSERT(handle != LLL_HANDLE_INVALID);
+
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+		struct ll_conn *conn = ll_conn_get(handle);
+
+		if (conn->llcp_rx_hold && rx_hold_is_done(conn)) {
+			rx_hold_flush(conn);
+		}
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 	}
 
 	ll_tx_ack_put(handle, tx);
@@ -2153,6 +2187,72 @@ static int init_reset(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+static void rx_hold_put(struct ll_conn *conn, memq_link_t *link,
+			struct node_rx_pdu *rx)
+{
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+	struct node_rx_pdu *rx_last;
+	struct lll_conn *lll;
+
+	link->mem = NULL;
+	rx->hdr.link = link;
+
+	rx_last = conn->llcp_rx_hold;
+	while (rx_last && rx_last->hdr.link && rx_last->hdr.link->mem) {
+		rx_last = rx_last->hdr.link->mem;
+	}
+
+	if (rx_last) {
+		rx_last->hdr.link->mem = rx;
+	} else {
+		conn->llcp_rx_hold = rx;
+	}
+
+	lll = &conn->lll;
+	if (lll->rx_hold_req == lll->rx_hold_ack) {
+		lll->rx_hold_req++;
+	}
+
+#else /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+	ARG_UNUSED(conn);
+
+	ll_rx_put(link, rx);
+#endif /* !CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+}
+
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+static bool rx_hold_is_done(struct ll_conn *conn)
+{
+	return ((conn->lll.rx_hold_req -
+		 conn->lll.rx_hold_ack) & RX_HOLD_MASK) == RX_HOLD_ACK;
+}
+
+static void rx_hold_flush(struct ll_conn *conn)
+{
+	struct node_rx_pdu *rx;
+	struct lll_conn *lll;
+
+	rx = conn->llcp_rx_hold;
+	do {
+		struct node_rx_hdr *hdr;
+
+		/* traverse to next rx node */
+		hdr = &rx->hdr;
+		rx = hdr->link->mem;
+
+		/* enqueue rx node towards Thread */
+		ll_rx_put(hdr->link, hdr);
+	} while (rx);
+
+	conn->llcp_rx_hold = NULL;
+	lll = &conn->lll;
+	lll->rx_hold_req = 0U;
+	lll->rx_hold_ack = 0U;
+}
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 static void tx_demux_sched(struct ll_conn *conn)
@@ -3121,14 +3221,21 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			cu->interval = conn->llcp_cu.interval;
 			cu->latency = conn->llcp_cu.latency;
 			cu->timeout = conn->llcp_cu.timeout;
+
+			/* hold node rx until the instant's anchor point sync */
+			rx_hold_put(conn, rx->hdr.link, rx);
+
+			if (!IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+				ll_rx_sched();
+			}
 		} else {
 			/* Mark for buffer for release */
 			rx->hdr.type = NODE_RX_TYPE_RELEASE;
-		}
 
-		/* enqueue rx node towards Thread */
-		ll_rx_put(rx->hdr.link, rx);
-		ll_rx_sched();
+			/* enqueue rx node towards Thread */
+			ll_rx_put(rx->hdr.link, rx);
+			ll_rx_sched();
+		}
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 		/* restore to normal prepare */
@@ -4672,8 +4779,8 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		upd->tx = lll->phy_tx;
 		upd->rx = lll->phy_rx;
 
-		/* enqueue rx node towards Thread */
-		ll_rx_put(rx->hdr.link, rx);
+		/* hold node rx until the instant's anchor point sync */
+		rx_hold_put(conn, rx->hdr.link, rx);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		/* get a rx node for ULL->LL */
@@ -4716,11 +4823,13 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		lr->max_rx_time = sys_cpu_to_le16(lll->max_rx_time);
 		lr->max_tx_time = sys_cpu_to_le16(lll->max_tx_time);
 
-		/* enqueue rx node towards Thread */
-		ll_rx_put(rx->hdr.link, rx);
+		/* hold node rx until the instant's anchor point sync */
+		rx_hold_put(conn, rx->hdr.link, rx);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-		ll_rx_sched();
+		if (!IS_ENABLED(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)) {
+			ll_rx_sched();
+		}
 	}
 }
 #endif /* CONFIG_BT_CTLR_PHY */

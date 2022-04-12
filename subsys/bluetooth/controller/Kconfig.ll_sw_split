@@ -563,6 +563,7 @@ config BT_CTLR_LLID_DATA_START_EMPTY
 
 config BT_CTLR_RX_ENQUEUE_HOLD
 	bool "Procedure Complete after on-air instant"
+	depends on BT_LL_SW_LLCP_LEGACY
 	default y if BT_HCI_RAW
 	help
 	  Hold enqueue of Procedure Complete events with instant until after the
