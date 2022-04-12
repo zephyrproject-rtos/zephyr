@@ -54,6 +54,13 @@ static int cmd_i2c_scan(const struct shell *shell_ctx,
 	const struct device *dev;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;
 
+	if (strncmp(I2C_DEVICE_PREFIX, argv[ARGV_DEV],
+		    (sizeof(I2C_DEVICE_PREFIX) - 1)) != 0) {
+		shell_error(shell_ctx, "I2C: Non-I2C device %s specified.",
+			    argv[ARGV_DEV]);
+		return -EINVAL;
+	}
+
 	dev = device_get_binding(argv[ARGV_DEV]);
 
 	if (!dev) {
@@ -103,6 +110,13 @@ static int cmd_i2c_recover(const struct shell *shell_ctx,
 	const struct device *dev;
 	int err;
 
+	if (strncmp(I2C_DEVICE_PREFIX, argv[ARGV_DEV],
+		    (sizeof(I2C_DEVICE_PREFIX) - 1)) != 0) {
+		shell_error(shell_ctx, "I2C: Non-I2C device %s specified.",
+			    argv[ARGV_DEV]);
+		return -EINVAL;
+	}
+
 	dev = device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(shell_ctx, "I2C: Device driver %s not found.",
@@ -135,6 +149,13 @@ static int i2c_write_from_buffer(const struct shell *shell_ctx,
 	int dev_addr;
 	int ret;
 	int i;
+
+	if (strncmp(I2C_DEVICE_PREFIX, s_dev_name,
+		    (sizeof(I2C_DEVICE_PREFIX) - 1)) != 0) {
+		shell_error(shell_ctx, "I2C: Non-I2C device %s specified.",
+			    s_dev_name);
+		return -EINVAL;
+	}
 
 	dev = device_get_binding(s_dev_name);
 	if (!dev) {
@@ -201,6 +222,13 @@ static int i2c_read_to_buffer(const struct shell *shell_ctx,
 	int reg_addr;
 	int dev_addr;
 	int ret;
+
+	if (strncmp(I2C_DEVICE_PREFIX, s_dev_name,
+		    (sizeof(I2C_DEVICE_PREFIX) - 1)) != 0) {
+		shell_error(shell_ctx, "I2C: Non-I2C device %s specified.",
+			    s_dev_name);
+		return -EINVAL;
+	}
 
 	dev = device_get_binding(s_dev_name);
 	if (!dev) {
