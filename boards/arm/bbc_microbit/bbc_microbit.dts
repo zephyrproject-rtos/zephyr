@@ -69,6 +69,33 @@
 		timer = <&timer2>;
 		pixel-group-size = <3>;
 	};
+
+	edge_connector: connector {
+		compatible = "microbit,edge-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 3 0>,	/* P0, Analog in */
+			   <1 0 &gpio0 2 0>,	/* P1, Analog in */
+			   <2 0 &gpio0 1 0>,	/* P2, Analog in */
+			   <3 0 &gpio0 4 0>,	/* P3, Analog in, LED Col 1 */
+			   <4 0 &gpio0 5 0>,	/* P4, Analog in, LED Col 2 */
+			   <5 0 &gpio0 17 0>,	/* P5, Button A */
+			   <6 0 &gpio0 12 0>,	/* P6, LED Col 9 */
+			   <7 0 &gpio0 11 0>,	/* P7, LED Col 8 */
+			   <8 0 &gpio0 18 0>,	/* P8 */
+			   <9 0 &gpio0 10 0>,	/* P9, LED Col 7 */
+			   <10 0 &gpio0 6 0>,	/* P10, Analog in, LED Col 3 */
+			   <11 0 &gpio0 26 0>,	/* P11, Button B */
+			   <12 0 &gpio0 20 0>,	/* P12 */
+			   <13 0 &gpio0 23 0>,	/* P13, SPI1 SCK */
+			   <14 0 &gpio0 22 0>,	/* P14, SPI1 MISO */
+			   <15 0 &gpio0 21 0>,	/* P15, SPI1 MOSI */
+			   <16 0 &gpio0 16 0>,	/* P16 */
+			   /* 17 and 18 are just 3.3V pins */
+			   <19 0 &gpio0 0 0>,	/* P19, I2C1 SCL */
+			   <20 0 &gpio0 30 0>;	/* P20, I2C1 SDA */
+	};
 };
 
 &gpiote {
@@ -82,10 +109,6 @@
 	 * are needed for the LED matrix and the SW PWM.
 	 */
 	sense-edge-mask = <0xffffffff>;
-};
-
-&sw_pwm {
-	channel-count = <1>;
 };
 
 &uart0 {
