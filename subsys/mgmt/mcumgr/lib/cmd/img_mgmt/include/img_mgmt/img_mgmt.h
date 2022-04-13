@@ -30,7 +30,8 @@ extern "C" {
 #define IMG_MGMT_STATE_F_ACTIVE		0x04
 #define IMG_MGMT_STATE_F_PERMANENT	0x08
 
-#define IMG_MGMT_VER_MAX_STR_LEN	25  /* 255.255.65535.4294967295\0 */
+/* 255.255.65535.4294967295\0 */
+#define IMG_MGMT_VER_MAX_STR_LEN	(sizeof("255.255.65535.4294967295"))
 
 /*
  * Swap Types for image management state machine
@@ -142,7 +143,7 @@ int img_mgmt_my_version(struct image_version *ver);
  * @param dst		   Destination string created from the given
  *					  in image version
  *
- * @return 0 on success, non-zero on failure
+ * @return Non-negative on success, negative value on error.
  */
 int img_mgmt_ver_str(const struct image_version *ver, char *dst);
 
