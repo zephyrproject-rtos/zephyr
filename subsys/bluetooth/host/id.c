@@ -773,12 +773,24 @@ void bt_id_add(struct bt_keys *keys)
 		goto done;
 	}
 
+	/*
+	 * Core Spec 5.3, p 2424
+	 * Controller can accept or reject when trying to add the same device to
+	 * resolving list.  This check ensures only different device is added.
+	 */
+	if (bt_dev.le.rl_entries) {
+		if (bt_keys_match(keys)) {
+			goto entry_added;
+		}
+	}
+
 	err = hci_id_add(keys->id, &keys->addr, keys->irk.val);
 	if (err) {
 		BT_ERR("Failed to add IRK to controller");
 		goto done;
 	}
 
+entry_added:
 	bt_dev.le.rl_entries++;
 	keys->state |= BT_KEYS_ID_ADDED;
 
