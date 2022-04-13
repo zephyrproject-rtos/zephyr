@@ -262,7 +262,7 @@ static int run_trigger_thread(int i)
  * If the fatal error happened and the program enter assert_post_handler,
  * that means fatal error triggered as expected.
  */
-void test_catch_fatal_error(void)
+ZTEST_USER(error_hook_tests, test_catch_fatal_error)
 {
 #if defined(CONFIG_USERSPACE)
 	run_trigger_thread(ZTEST_CATCH_FATAL_ACCESS);
@@ -287,15 +287,20 @@ void test_catch_fatal_error(void)
  * fail happened and the program enter assert_post_handler, that means
  * assert works as expected.
  */
-void test_catch_assert_fail(void)
+ZTEST_USER(error_hook_tests, test_catch_assert_fail)
 {
 	case_type = ZTEST_CATCH_ASSERT_FAIL;
 
+	printk("1\n");
 	ztest_set_assert_valid(false);
 
+	printk("2\n");
 	ztest_set_assert_valid(true);
+
+	printk("3\n");
 	trigger_assert_fail(NULL);
 
+	printk("4\n");
 	ztest_test_fail();
 }
 
@@ -313,7 +318,7 @@ static void tIsr_assert(const void *p)
  * fail happened and the program enter assert_post_handler, that means
  * assert works as expected.
  */
-void test_catch_assert_in_isr(void)
+ZTEST(error_hook_tests, test_catch_assert_in_isr)
 {
 	case_type = ZTEST_CATCH_ASSERT_IN_ISR;
 	irq_offload(tIsr_assert, NULL);
@@ -337,7 +342,7 @@ static void trigger_z_oops(void)
  * that means z_oops triggered as expected. This test only for
  * userspace.
  */
-void test_catch_z_oops(void)
+ZTEST(error_hook_tests, test_catch_z_oops)
 {
 	case_type = ZTEST_CATCH_USER_FATAL_Z_OOPS;
 
@@ -347,25 +352,11 @@ void test_catch_z_oops(void)
 #endif
 
 
-void test_main(void)
+static void *error_hook_tests_setup(void)
 {
-
 #if defined(CONFIG_USERSPACE)
 	k_thread_access_grant(k_current_get(), &tdata, &tstack);
-
-	ztest_test_suite(error_hook_tests,
-			 ztest_user_unit_test(test_catch_assert_fail),
-			 ztest_user_unit_test(test_catch_fatal_error),
-			 ztest_unit_test(test_catch_z_oops),
-			 ztest_unit_test(test_catch_assert_in_isr)
-			 );
-	ztest_run_test_suite(error_hook_tests);
-#else
-	ztest_test_suite(error_hook_tests,
-			 ztest_unit_test(test_catch_fatal_error),
-			 ztest_unit_test(test_catch_assert_fail),
-			 ztest_unit_test(test_catch_assert_in_isr)
-			 );
-	ztest_run_test_suite(error_hook_tests);
 #endif
+	return NULL;
 }
+ZTEST_SUITE(error_hook_tests, NULL, error_hook_tests_setup, NULL, NULL, NULL);
