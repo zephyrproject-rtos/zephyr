@@ -168,7 +168,6 @@ typedef void (*mgmt_free_buf_fn)(void *buf, void *arg);
 struct mgmt_streamer_cfg {
 	mgmt_alloc_rsp_fn alloc_rsp;
 	mgmt_trim_front_fn trim_front;
-	mgmt_reset_buf_fn reset_buf;
 	mgmt_write_hdr_fn write_hdr;
 	mgmt_free_buf_fn free_buf;
 };
@@ -261,16 +260,6 @@ void *mgmt_streamer_alloc_rsp(struct mgmt_streamer *streamer, const void *src_bu
  * @param len		The number of bytes to remove.
  */
 void mgmt_streamer_trim_front(struct mgmt_streamer *streamer, void *buf, size_t len);
-
-/**
- * @brief Uses the specified streamer to reset a buffer to a length of 0.
- *
- * The buffer's user data remains, but its payload is cleared.
- *
- * @param streamer	The streamer providing the callback.
- * @param buf		The buffer to reset.
- */
-void mgmt_streamer_reset_buf(struct mgmt_streamer *streamer, void *buf);
 
 /**
  * @brief Uses the specified streamer to write header to buffer.
