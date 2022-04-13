@@ -114,4 +114,6 @@ properties:
     invctr:
       type: int
       default: 0x07
-      description: Display Inversion Control
+      description: |
+        Display Inversion Control
+        Set dot inversion or line inversion for each normal/idle/partial mode.
