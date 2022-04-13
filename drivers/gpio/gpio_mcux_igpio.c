@@ -24,6 +24,7 @@ struct mcux_igpio_config {
 	struct gpio_driver_config common;
 	GPIO_Type *base;
 #ifdef CONFIG_PINCTRL
+	uint8_t port_num;
 	const struct pinctrl_soc_pinmux *pin_muxes;
 	uint8_t mux_count;
 #endif
@@ -44,9 +45,30 @@ static int mcux_igpio_configure(const struct device *dev,
 
 #ifdef CONFIG_PINCTRL
 	struct pinctrl_soc_pin pin_cfg;
+	int cfg_idx = pin;
+
+	/* Some SOCs have non-contiguous gpio pin layouts, account for this */
+	if (IS_ENABLED(CONFIG_SOC_MIMXRT1015) &&
+		(config->port_num == 3) && (pin >= 20)) {
+		/* RT1015 does not have GPIO3 pins 4-19 */
+		cfg_idx -= 16;
+	} else if (IS_ENABLED(CONFIG_SOC_MIMXRT1015) &&
+		(config->port_num == 5)) {
+		/* RT1015 only has one GPIO5 pin */
+		cfg_idx = 0;
+	} else if ((IS_ENABLED(CONFIG_SOC_MIMXRT1024) ||
+		IS_ENABLED(CONFIG_SOC_MIMXRT1021)) &&
+		(config->port_num == 3) && (pin >= 13)) {
+		/* RT102x does not have GPIO3 pins 10-12 */
+		cfg_idx -= 3;
+	}
+
+	/* Init pin configuration struct, and use pinctrl api to apply settings */
+	assert(cfg_idx < config->mux_count);
+
 	/* Set appropriate bits in pin configuration register */
 	volatile uint32_t *gpio_cfg_reg =
-		(volatile uint32_t *)config->pin_muxes[pin].config_register;
+		(volatile uint32_t *)config->pin_muxes[cfg_idx].config_register;
 	uint32_t reg = *gpio_cfg_reg;
 
 #ifdef CONFIG_SOC_SERIES_IMX_RT10XX
@@ -104,21 +126,21 @@ static int mcux_igpio_configure(const struct device *dev,
 			reg |= IOMUXC_SW_PAD_CTL_PAD_PUS_MASK;
 		}
 		/* PDRV/SNVS/LPSR reg have different ODE bits */
-		if (config->pin_muxes[pin].pdrv_mux) {
+		if (config->pin_muxes[cfg_idx].pdrv_mux) {
 			if ((flags & GPIO_SINGLE_ENDED) != 0) {
 				/* Set ODE bit */
 				reg |= IOMUXC_SW_PAD_CTL_PAD_ODE_MASK;
 			} else {
 				reg &= ~IOMUXC_SW_PAD_CTL_PAD_ODE_MASK;
 			}
-		} else if (config->pin_muxes[pin].lpsr_mux) {
+		} else if (config->pin_muxes[cfg_idx].lpsr_mux) {
 			if ((flags & GPIO_SINGLE_ENDED) != 0) {
 				/* Set ODE bit */
 				reg |= (IOMUXC_SW_PAD_CTL_PAD_ODE_MASK << 1);
 			} else {
 				reg &= ~(IOMUXC_SW_PAD_CTL_PAD_ODE_MASK << 1);
 			}
-		} else if (config->pin_muxes[pin].snvs_mux) {
+		} else if (config->pin_muxes[cfg_idx].snvs_mux) {
 			if ((flags & GPIO_SINGLE_ENDED) != 0) {
 				/* Set ODE bit */
 				reg |= (IOMUXC_SW_PAD_CTL_PAD_ODE_MASK << 2);
@@ -163,9 +185,7 @@ static int mcux_igpio_configure(const struct device *dev,
 	}
 #endif /* CONFIG_SOC_SERIES_IMX_RT10XX */
 
-	/* Init pin configuration struct, and use pinctrl api to apply settings */
-	assert(pin < config->mux_count);
-	memcpy(&pin_cfg.pinmux, &config->pin_muxes[pin], sizeof(pin_cfg));
+	memcpy(&pin_cfg.pinmux, &config->pin_muxes[cfg_idx], sizeof(pin_cfg));
 	/* cfg register will be set by pinctrl_configure_pins */
 	pin_cfg.pin_ctrl_flags = reg;
 	pinctrl_configure_pins(&pin_cfg, 1, PINCTRL_REG_NONE);
@@ -348,6 +368,7 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 		DT_FOREACH_PROP_ELEM(DT_DRV_INST(n), pinmux, PINMUX_INIT)	\
 	};
 #define MCUX_IGPIO_PIN_INIT(n)							\
+	.port_num = (n + 1),								\
 	.pin_muxes = mcux_igpio_pinmux_##n,					\
 	.mux_count = DT_PROP_LEN(DT_DRV_INST(n), pinmux),
 #else
