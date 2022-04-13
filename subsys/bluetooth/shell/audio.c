@@ -270,6 +270,7 @@ static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					struct bt_audio_ep *ep,
 					enum bt_audio_dir dir,
@@ -311,32 +312,6 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 		set_stream(stream);
 	}
 
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
-	if (connecting) {
-		int err;
-
-		if (default_unicast_group == NULL) {
-			err = bt_audio_unicast_group_create(&default_stream, 1,
-							    &default_unicast_group);
-			if (err != 0) {
-				shell_error(ctx_shell,
-					    "Unable to create default unicast group: %d",
-					    err);
-				connecting = false;
-				return -ENOEXEC;
-			}
-		}
-
-		err = bt_audio_stream_qos(default_conn, default_unicast_group,
-					  &default_preset->preset.qos);
-		if (err) {
-			shell_error(ctx_shell, "Unable to setup QoS");
-			connecting = false;
-			return -ENOEXEC;
-		}
-	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
-
 	return 0;
 }
 
@@ -345,22 +320,6 @@ static int lc3_qos(struct bt_audio_stream *stream, struct bt_codec_qos *qos)
 	shell_print(ctx_shell, "QoS: stream %p %p", stream, qos);
 
 	print_qos(qos);
-
-#if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
-	if (connecting) {
-		int err;
-
-		connecting = false;
-
-		err = bt_audio_stream_enable(stream,
-					     default_preset->preset.codec.meta,
-					     default_preset->preset.codec.meta_count);
-		if (err) {
-			shell_error(ctx_shell, "Unable to enable Channel");
-			return -ENOEXEC;
-		}
-	}
-#endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 
 	return 0;
 }
@@ -437,6 +396,7 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.stop = lc3_stop,
 	.release = lc3_release,
 };
+#endif /* CONFIG_BT_AUDIO_UNICAST_SERVER */
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) || defined(CONFIG_BT_AUDIO_BROADCAST_SINK)
