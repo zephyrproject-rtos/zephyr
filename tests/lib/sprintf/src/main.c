@@ -363,9 +363,15 @@ void test_sprintf_double(void)
 	var.exponent = 0x00000001;
 	var.fraction = 0x00000000; /* smallest denormal value */
 	sprintf(buffer, "%g", var.d);
+#ifdef CONFIG_PICOLIBC
+	zassert_true((strcmp(buffer, "5e-324") == 0),
+		     "sprintf(5e-324) - incorrect "
+		     "output '%s'\n", buffer);
+#else
 	zassert_true((strcmp(buffer, "4.94066e-324") == 0),
 		     "sprintf(4.94066e-324) - incorrect "
 		     "output '%s'\n", buffer);
+#endif
 }
 
 /**
