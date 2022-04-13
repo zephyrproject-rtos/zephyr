@@ -18,7 +18,7 @@ Ethernet series MCU with ARM® -Cortex®-M4F core.
 Features:
 =========
 - 32-bit Arm Cortex®-M4 M487JIDAE MCU
-- Core clock upto 192 MHz
+- Core clock up to 192 MHz
 - 512 KB embedded Dual Bank Flash and 160 KB SRAM
 - Audio codec (NAU88L25) with Microphone In and Headphone Out
 - Ethernet (IP101GR) for network application

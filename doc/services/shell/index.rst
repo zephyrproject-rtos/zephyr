@@ -263,7 +263,7 @@ Commands execution
 Each command or subcommand may have a handler. The shell executes the handler
 that is found deepest in the command tree and further subcommands (without a
 handler) are passed as arguments. Characters within parentheses are treated
-as one argument. If shell wont find a handler it will display an error message.
+as one argument. If shell won't find a handler it will display an error message.
 
 Commands can be also executed from a user application using any active backend
 and a function :c:func:`shell_execute_cmd`, as shown in this example:

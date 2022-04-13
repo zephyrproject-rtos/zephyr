@@ -69,7 +69,7 @@ Mode 2: SensorHub Mode
 ======================
 
 In SensorHub mode ISM330DHCX and IIS2DLPC are connected to I2C2 and are accessible from the main board mcu.
-Instead, the IIS2MDC device is connected only to ISM330DHCX sensor thru its SCx/SDX (I2Cx) pins.
+Instead, the IIS2MDC device is connected only to ISM330DHCX sensor through its SCx/SDX (I2Cx) pins.
 
 The jumper configuration to activate this mode is:
 

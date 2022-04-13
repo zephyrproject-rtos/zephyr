@@ -328,7 +328,7 @@ Power supply testpoint
 | TP13  | testpoint             | testpoint boost converter input voltage   |
 +-------+-----------------------+-------------------------------------------+
 
-Build-in Debug Adapter
+Built-in Debug Adapter
 ======================
 
 The debug adapter is based on the DAPLink interface firmware and

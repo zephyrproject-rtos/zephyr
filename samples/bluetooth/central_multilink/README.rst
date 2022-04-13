@@ -7,7 +7,7 @@ Overview
 ********
 
 Application demonstrating BLE Central role functionality by scanning for other
-BLE devices and establishing connection to upto 62 peripherals with a strong
+BLE devices and establishing connection to up to 62 peripherals with a strong
 enough signal.
 
 Requirements

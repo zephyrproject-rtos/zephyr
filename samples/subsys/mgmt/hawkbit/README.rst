@@ -198,7 +198,7 @@ to support https.
    openssl req -new -key server.key -out server.csr
 
 Once you run the command, it will prompt you to enter your Country,
-State, City, Company name and enter the Comman Name field with
+State, City, Company name and enter the Command Name field with
 ``<your-ip-address>``.
 
 * Generate the self-signed x509 certificate suitable to use on web server.

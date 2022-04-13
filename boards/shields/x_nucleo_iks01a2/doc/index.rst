@@ -59,7 +59,7 @@ Mode 1: Standard Mode
 =====================
 
 In standard I2C mode the two buses are connected together. As a consequence, all devices on the shield
-reside on the same I2C bus and are accessible from the main board thru I2C bus.
+reside on the same I2C bus and are accessible from the main board through I2C bus.
 
 The jumper configuration to activate this mode is:
 
@@ -71,7 +71,7 @@ Mode 2: SensorHub Mode
 ======================
 
 In SensorHub mode LSM6DSL is connected to I2C2 and is accessible from the main board.
-All the other devices are connected to LSM6DSL master thru I2C1.
+All the other devices are connected to LSM6DSL master through I2C1.
 
 The jumper configuration to activate this mode is:
 

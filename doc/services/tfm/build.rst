@@ -63,7 +63,7 @@ key, which is stored inside the secure bootloader firmware image.
 
 By default, ``<tfm-dir>/bl2/ext/mcuboot/root-rsa-3072.pem`` is used to sign secure
 images, and ``<tfm-dir>/bl2/ext/mcuboot/root-rsa-3072_1.pem`` is used to sign
-non-secure images. Theses default .pem keys can (and **should**) be overridden
+non-secure images. These default .pem keys can (and **should**) be overridden
 using the :kconfig:option:`CONFIG_TFM_KEY_FILE_S` and
 :kconfig:option:`CONFIG_TFM_KEY_FILE_NS` config flags.
 

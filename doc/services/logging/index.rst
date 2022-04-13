@@ -207,7 +207,7 @@ formatted to *hh:mm:ss:mmm,uuu*. Otherwise is printed in raw format.
 
 Backend options:
 
-:kconfig:option:`CONFIG_LOG_BACKEND_UART`: Enabled build-in UART backend.
+:kconfig:option:`CONFIG_LOG_BACKEND_UART`: Enabled built-in UART backend.
 
 .. _log_usage:
 
