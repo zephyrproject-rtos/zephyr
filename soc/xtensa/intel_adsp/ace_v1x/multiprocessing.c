@@ -173,4 +173,27 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	}
 }
 
+/* Handle SOC specific activity after Low Power Mode Exit */
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(substate_id);
+	uint32_t cpu = arch_proc_id();
+
+	switch (state) {
+	case PM_STATE_SOFT_OFF:/* D3 */
+		/* TODO: move clock gating prevent to imr restore vector when it will be ready. */
+		MTL_PWRBOOT.bootctl[cpu].bctl |= MTL_PWRBOOT_BCTL_WAITIPCG;
+		soc_cpus_active[cpu] = true;
+		z_xtensa_cache_flush_inv_all();
+		__fallthrough;
+	case PM_STATE_SUSPEND_TO_IDLE: /* D0ix */
+		__fallthrough;
+	case PM_STATE_RUNTIME_IDLE:/* D0 */
+		break;
+	default:
+		__ASSERT(false, "invalid argument - unsupported power state");
+		break;
+	}
+}
+
 #endif /* CONFIG_PM */
