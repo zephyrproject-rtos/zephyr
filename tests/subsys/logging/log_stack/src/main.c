@@ -26,7 +26,11 @@ static size_t hexdump_usage;
 static size_t more_args_usage;
 
 /* Stack increase margin. */
+#ifdef CONFIG_PICOLIBC
+#define STACK_USAGE_MARGIN 128
+#else
 #define STACK_USAGE_MARGIN 16
+#endif
 
 static void after(void *data)
 {
