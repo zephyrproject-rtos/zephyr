@@ -601,7 +601,7 @@ int bt_mesh_health_cli_set(struct bt_mesh_model *model)
 	}
 
 	health_cli = model->user_data;
-	msg_timeout = 2 * MSEC_PER_SEC;
+	msg_timeout = CONFIG_BT_MESH_HEALTH_CLI_TIMEOUT;
 
 	return 0;
 }
