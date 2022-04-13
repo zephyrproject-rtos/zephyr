@@ -129,10 +129,11 @@ struct lll_adv_aux {
 	 */
 	uint16_t data_chan_counter;
 
-	/* Temporary stored use by primary channel PDU event to fill the
+	/* Store use by primary channel PDU event to fill the
 	 * auxiliary offset to this auxiliary PDU event.
 	 */
 	uint32_t ticks_offset;
+	uint32_t us_offset;
 
 	struct lll_adv_pdu data;
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)

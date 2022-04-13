@@ -1080,7 +1080,7 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
 			   ticks_anchor, 0,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
-			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,
 			   ull_ticker_status_give, (void *)&ret_cb);
@@ -1175,6 +1175,7 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv)
 
 struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 						    uint32_t ticks_offset,
+						    uint32_t remainder_us,
 						    uint32_t start_us)
 {
 	struct pdu_adv_com_ext_adv *pri_com_hdr;
@@ -1205,7 +1206,7 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 	}
 
 	aux_ptr = (void *)ptr;
-	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
+	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) + remainder_us - start_us;
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
 		aux_ptr->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
@@ -1360,6 +1361,7 @@ static void mfy_aux_offset_get(void *param)
 	uint32_t ticks_current;
 	struct ll_adv_set *adv;
 	struct pdu_adv *pdu;
+	uint32_t remainder;
 	uint8_t ticker_id;
 	uint8_t retry;
 	uint8_t id;
@@ -1382,11 +1384,12 @@ static void mfy_aux_offset_get(void *param)
 		ticks_previous = ticks_current;
 
 		ret_cb = TICKER_STATUS_BUSY;
-		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
-					   TICKER_USER_ID_ULL_LOW,
-					   &id,
-					   &ticks_current, &ticks_to_expire,
-					   ticker_op_cb, (void *)&ret_cb);
+		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
+					       TICKER_USER_ID_ULL_LOW,
+					       &id, &ticks_current,
+					       &ticks_to_expire, &remainder,
+					       NULL, NULL, NULL,
+					       ticker_op_cb, (void *)&ret_cb);
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
 				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
@@ -1402,22 +1405,35 @@ static void mfy_aux_offset_get(void *param)
 		LL_ASSERT(id != TICKER_NULL);
 	} while (id != ticker_id);
 
+	/* Adjust the coarse tick for negative remainder values */
+	if ((!(remainder / 1000000UL)) || (remainder & 0x80000000)) {
+		ticks_to_expire--;
+		remainder += 30517578UL;
+	}
+	remainder /= 1000000UL;
+
 	/* Store the ticks offset for population in other advertising primary
 	 * channel PDUs.
 	 */
-	lll_aux->ticks_offset = ticks_to_expire;
+	lll_aux->ticks_offset =	ticks_to_expire;
 
-	/* NOTE: as remainder used in scheduling primary PDU not available,
-	 * compensate with a probable jitter of one ticker resolution unit that
-	 * would be included in the packet timer capture when scheduling next
-	 * advertising primary channel PDU.
+	/* NOTE: as first primary channel PDU does not use remainder, the packet
+	 * timer is started one tick in advance to start the radio with
+	 * microsecond precision, hence compensate for the higher start_us value
+	 * captured at radio start of the first primary channel PDU.
 	 */
-	lll_aux->ticks_offset +=
-		HAL_TICKER_US_TO_TICKS(EVENT_TICKER_RES_MARGIN_US);
+	lll_aux->ticks_offset += 1U;
 
+	/* Store the microsecond remainder offset for population in other
+	 * advertising primary channel PDUs.
+	 */
+	lll_aux->us_offset = remainder;
+
+	/* Fill the aux offset in the first Primary channel PDU */
 	/* FIXME: we are in ULL_LOW context, fill offset in LLL context? */
 	pdu = lll_adv_data_latest_peek(&adv->lll);
-	aux_ptr = ull_adv_aux_lll_offset_fill(pdu, ticks_to_expire, 0);
+	aux_ptr = ull_adv_aux_lll_offset_fill(pdu, ticks_to_expire, remainder,
+					      0U);
 
 	/* Process channel map update, if any */
 	if (aux->chm_first != aux->chm_last) {
