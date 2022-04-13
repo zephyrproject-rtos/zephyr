@@ -119,18 +119,6 @@ typedef void (*mgmt_on_evt_cb)(uint8_t opcode, uint16_t group, uint8_t id, void 
  */
 typedef void *(*mgmt_alloc_rsp_fn)(const void *src_buf, void *arg);
 
-/** @typedef mgmt_trim_front_fn
- * @brief Trims data from the front of a buffer.
- *
- * If the amount to trim exceeds the size of the buffer, the buffer is
- * truncated to a length of 0.
- *
- * @param buf	The buffer to trim.
- * @param len	The number of bytes to remove.
- * @param arg	Optional streamer argument.
- */
-typedef void (*mgmt_trim_front_fn)(void *buf, size_t len, void *arg);
-
 /** @typedef mgmt_reset_buf_fn
  * @brief Resets a buffer to a length of 0.
  *
@@ -167,7 +155,6 @@ typedef void (*mgmt_free_buf_fn)(void *buf, void *arg);
  */
 struct mgmt_streamer_cfg {
 	mgmt_alloc_rsp_fn alloc_rsp;
-	mgmt_trim_front_fn trim_front;
 	mgmt_write_hdr_fn write_hdr;
 	mgmt_free_buf_fn free_buf;
 };
