@@ -960,14 +960,9 @@ static int bt_audio_broadcast_sink_setup_stream(uint8_t index,
 
 static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 {
-	for (size_t i = 0; i < sink->stream_count; i++) {
-		struct bt_audio_stream *stream;
+	struct bt_audio_stream *stream, *next;
 
-		stream = sink->streams[i];
-		if (stream == NULL) {
-			continue;
-		}
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sink->streams, stream, next, node) {
 		if (stream->ep != NULL) {
 			stream->ep->stream = NULL;
 			stream->ep = NULL;
@@ -977,7 +972,11 @@ static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 		stream->codec = NULL;
 		stream->iso = NULL;
 		stream->group = NULL;
+
+		sys_slist_remove(&sink->streams, NULL, &stream->node);
 	}
+
+	sink->stream_count = 0;
 }
 
 static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
@@ -1076,8 +1075,6 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		}
 	}
 
-	sink->stream_count = stream_count;
-	sink->streams = streams;
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_audio_stream *stream;
 		struct bt_codec *codec;
@@ -1094,6 +1091,8 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 		}
 
 		sink->bis[i] = &stream->ep->iso->iso_chan;
+		sys_slist_append(&sink->streams, &stream->node);
+		sink->stream_count++;
 	}
 
 	param.bis_channels = sink->bis;
@@ -1128,6 +1127,7 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 {
 	struct bt_audio_stream *stream;
+	sys_snode_t *head_node;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -1135,13 +1135,17 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 		return -EINVAL;
 	}
 
-	stream = sink->streams[0];
-
-	if (stream == NULL) {
-		BT_DBG("stream is NULL");
+	if (sys_slist_is_empty(&sink->streams)) {
+		BT_DBG("Source does not have any streams");
 		return -EINVAL;
 	}
 
+	head_node = sys_slist_peek_head(&sink->streams);
+	stream = CONTAINER_OF(head_node, struct bt_audio_stream, node);
+
+	/* All streams in a broadcast source is in the same state,
+	 * so we can just check the first stream
+	 */
 	if (stream->ep == NULL) {
 		BT_DBG("stream->ep is NULL");
 		return -EINVAL;
@@ -1161,14 +1165,13 @@ int bt_audio_broadcast_sink_stop(struct bt_audio_broadcast_sink *sink)
 	}
 
 	broadcast_sink_clear_big(sink);
-	/* Channel states will be updated in the ep_iso_disconnected function */
+	/* Channel states will be updated in the broadcast_sink_iso_disconnected function */
 
 	return 0;
 }
 
 int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 {
-	struct bt_audio_stream **streams;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -1176,10 +1179,20 @@ int bt_audio_broadcast_sink_delete(struct bt_audio_broadcast_sink *sink)
 		return -EINVAL;
 	}
 
-	streams = sink->streams;
-	if (streams != NULL && streams[0] != NULL && streams[0]->ep != NULL) {
-		BT_DBG("Sink is not stopped");
-		return -EBADMSG;
+	if (!sys_slist_is_empty(&sink->streams)) {
+		struct bt_audio_stream *stream;
+		sys_snode_t *head_node;
+
+		head_node = sys_slist_peek_head(&sink->streams);
+		stream = CONTAINER_OF(head_node, struct bt_audio_stream, node);
+
+		/* All streams in a broadcast source is in the same state,
+		 * so we can just check the first stream
+		 */
+		if (stream->ep != NULL) {
+			BT_DBG("Sink is not stopped");
+			return -EBADMSG;
+		}
 	}
 
 	if (sink->pa_sync == NULL) {

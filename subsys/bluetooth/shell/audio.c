@@ -1295,7 +1295,7 @@ static int cmd_accept_broadcast(const struct shell *sh, size_t argc,
 
 static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
-	static struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
+	struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 	uint32_t bis_bitfield;
 	int err;
 
