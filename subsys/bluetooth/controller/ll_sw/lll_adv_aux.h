@@ -10,6 +10,5 @@ void lll_adv_aux_prepare(void *param);
 
 extern uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll);
 extern struct pdu_adv_aux_ptr *
-	ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
-				    uint32_t ticks_offset,
-				    uint32_t start_us);
+	ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu, uint32_t ticks_offset,
+				    uint32_t remainder_us, uint32_t start_us);

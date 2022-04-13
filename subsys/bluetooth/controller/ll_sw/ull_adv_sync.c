@@ -60,6 +60,7 @@ static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
 static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 					 uint32_t ticks_offset,
+					 uint32_t remainder_us,
 					 uint32_t start_us);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
@@ -1780,9 +1781,12 @@ static void mfy_sync_offset_get(void *param)
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
 	struct pdu_adv_sync_info *si;
+	uint32_t sync_remainder_us;
+	uint32_t aux_remainder_us;
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	struct pdu_adv *pdu;
+	uint32_t remainder;
 	uint8_t chm_first;
 	uint8_t ticker_id;
 	uint16_t lazy;
@@ -1809,8 +1813,8 @@ static void mfy_sync_offset_get(void *param)
 		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR,
 					       TICKER_USER_ID_ULL_LOW,
 					       &id, &ticks_current,
-					       &ticks_to_expire, NULL, &lazy,
-					       NULL, NULL,
+					       &ticks_to_expire, &remainder,
+					       &lazy, NULL, NULL,
 					       ticker_op_cb, (void *)&ret_cb);
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
@@ -1827,14 +1831,17 @@ static void mfy_sync_offset_get(void *param)
 		LL_ASSERT(id != TICKER_NULL);
 	} while (id != ticker_id);
 
-	/* NOTE: as remainder not used in scheduling primary PDU
-	 * packet timer starts transmission after 1 tick hence the +1.
-	 */
-	lll_sync->ticks_offset = ticks_to_expire + 1;
+	HAL_TICKER_REMOVE_JITTER(ticks_to_expire, remainder);
+	sync_remainder_us = remainder;
+
+	remainder = sync->aux_remainder;
+	HAL_TICKER_ADD_JITTER(ticks_to_expire, remainder);
+	aux_remainder_us = remainder;
 
 	pdu = lll_adv_aux_data_latest_peek(adv->lll.aux);
 	si = sync_info_get(pdu);
-	sync_info_offset_fill(si, ticks_to_expire, 0);
+	sync_info_offset_fill(si, ticks_to_expire, sync_remainder_us,
+			      aux_remainder_us);
 	si->evt_cntr = lll_sync->event_counter + lll_sync->latency_prepare +
 		       lazy;
 
@@ -1900,11 +1907,12 @@ static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu)
 
 static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 					 uint32_t ticks_offset,
+					 uint32_t remainder_us,
 					 uint32_t start_us)
 {
 	uint32_t offs;
 
-	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
+	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) + remainder_us - start_us;
 
 	if (offs >= OFFS_ADJUST_US) {
 		offs -= OFFS_ADJUST_US;
