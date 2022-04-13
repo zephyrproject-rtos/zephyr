@@ -89,8 +89,6 @@
 };
 
 &uart0 {
-	pinmuxs = <&pinmux1 26 IOCON_FUNC2>, <&pinmux1 27 IOCON_FUNC2>;
-	pinmux-names = "RXD", "TXD";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
@@ -98,8 +96,6 @@
 };
 
 arduino_serial: &uart4 {
-	pinmuxs = <&pinmux2 11 IOCON_FUNC1>, <&pinmux2 12 IOCON_FUNC1>;
-	pinmux-names = "RXD", "TXD";
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;

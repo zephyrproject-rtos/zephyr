@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_SERIAL_UART_LPC11U6X_H_
 #define ZEPHYR_DRIVERS_SERIAL_UART_LPC11U6X_H_
 
+#include <zephyr/drivers/pinctrl.h>
+
 #define LPC11U6X_UART0_CLK 14745600
 
 #define LPC11U6X_UART0_LCR_WLS_5BITS             0
@@ -127,14 +129,9 @@ struct lpc11u6x_uart0_regs {
 struct lpc11u6x_uart0_config {
 	struct lpc11u6x_uart0_regs *uart0;
 	const char *clock_drv_name;
-	const char *rx_pinmux_drv_name;
-	const char *tx_pinmux_drv_name;
 	uint32_t baudrate;
 	uint32_t clkid;
-	uint8_t rx_pin;
-	uint8_t rx_func;
-	uint8_t tx_pin;
-	uint8_t tx_func;
+	const struct pinctrl_dev_config *pincfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -171,14 +168,9 @@ struct lpc11u6x_uartx_regs {
 struct lpc11u6x_uartx_config {
 	struct lpc11u6x_uartx_regs *base;
 	const char *clock_drv_name;
-	const char *rx_pinmux_drv_name;
-	const char *tx_pinmux_drv_name;
 	uint32_t baudrate;
 	uint32_t clkid;
-	uint8_t rx_pin;
-	uint8_t rx_func;
-	uint8_t tx_pin;
-	uint8_t tx_func;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct lpc11u6x_uartx_data {
