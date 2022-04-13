@@ -598,17 +598,23 @@ static int has_init(const struct device *dev)
 		has.features |= BT_HAS_FEAT_WRITABLE_PRESETS_SUPP;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BANDED)) {
-		/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
-		 * A Banded Hearing Aid in the HA role shall set the Front Left and the Front
-		 * Right bits to a value of 0b1 in the Sink Audio Locations characteristic value.
-		 */
-		bt_audio_capability_set_location(BT_AUDIO_SINK, BT_AUDIO_LOCATION_FRONT_LEFT |
-								BT_AUDIO_LOCATION_FRONT_RIGHT);
-	} else if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_LEFT)) {
-		bt_audio_capability_set_location(BT_AUDIO_SINK, BT_AUDIO_LOCATION_FRONT_LEFT);
-	} else {
-		bt_audio_capability_set_location(BT_AUDIO_SINK, BT_AUDIO_LOCATION_FRONT_RIGHT);
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
+		if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BANDED)) {
+			/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
+			 * A Banded Hearing Aid in the HA role shall set the
+			 * Front Left and the Front Right bits to a value of 0b1
+			 * in the Sink Audio Locations characteristic value.
+			 */
+			bt_audio_capability_set_location(BT_AUDIO_SINK,
+							 (BT_AUDIO_LOCATION_FRONT_LEFT |
+								BT_AUDIO_LOCATION_FRONT_RIGHT));
+		} else if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_LEFT)) {
+			bt_audio_capability_set_location(BT_AUDIO_SINK,
+							 BT_AUDIO_LOCATION_FRONT_LEFT);
+		} else {
+			bt_audio_capability_set_location(BT_AUDIO_SINK,
+							 BT_AUDIO_LOCATION_FRONT_RIGHT);
+		}
 	}
 
 	return 0;
