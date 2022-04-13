@@ -5,7 +5,7 @@ description: LPC11U6X I2C Controller
 
 compatible: "nxp,lpc11u6x-i2c"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -17,12 +17,8 @@ properties:
     clocks:
       required: true
 
-    pinmuxs:
-      type: phandle-array
+    pinctrl-0:
       required: true
-      description: SDA and SCL pins
 
-    pinmux-names:
-      type: string-array
+    pinctrl-names:
       required: true
-      description: Pin names for SDA and SCL

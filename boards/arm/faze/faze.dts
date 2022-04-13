@@ -60,9 +60,6 @@
 };
 
 &i2c0 {
-	pinmuxs = <&pinmux0 4 IOCON_FUNC1>,
-		  <&pinmux0 5 IOCON_FUNC1>;
-	pinmux-names = "SCL", "SDA";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_fast>;
 	pinctrl-names = "default", "fast-plus";
@@ -76,9 +73,6 @@
 };
 
 &i2c1 {
-	pinmuxs =  <&pinmux0 7 (IOCON_FUNC3| IOCON_OPENDRAIN_EN)>,
-		   <&pinmux1 24 (IOCON_FUNC2 | IOCON_OPENDRAIN_EN)>;
-	pinmux-names = "SCL", "SDA";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_fast>;
 	pinctrl-names = "default", "fast-plus";
