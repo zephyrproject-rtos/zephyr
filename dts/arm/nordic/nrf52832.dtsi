@@ -465,7 +465,6 @@
 		status = "disabled";
 		label = "SW_PWM";
 		generator = <&timer2>;
-		channel-count = <3>;
 		clock-prescaler = <0>;
 		#pwm-cells = <1>;
 	};
