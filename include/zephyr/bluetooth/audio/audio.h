@@ -1070,6 +1070,7 @@ struct bt_audio_unicast_server_cb {
 	int (*publish_capability)(struct bt_conn *conn, uint8_t type,
 				  uint8_t index, struct bt_codec *const codec);
 
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
 	/** @brief Publish location callback
 	 *
 	 *  Publish location callback is called whenever a remote client
@@ -1090,6 +1091,7 @@ struct bt_audio_unicast_server_cb {
 				enum bt_audio_pac_type type,
 				enum bt_audio_location *location);
 
+#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) || defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
 	/** @brief Write location callback
 	 *
 	 *  Write location callback is called whenever a remote client
@@ -1103,6 +1105,8 @@ struct bt_audio_unicast_server_cb {
 	 */
 	int (*write_location)(struct bt_conn *conn, enum bt_audio_pac_type type,
 			      enum bt_audio_location location);
+#endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
+#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
 };
 
 /** Broadcast Audio Sink callback structure */

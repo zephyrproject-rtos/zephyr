@@ -172,6 +172,7 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 				 sizeof(context));
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
 static int get_pac_loc(struct bt_conn *conn, enum bt_audio_pac_type type,
 		       enum bt_audio_location *location)
 {
@@ -192,11 +193,11 @@ static int get_pac_loc(struct bt_conn *conn, enum bt_audio_pac_type type,
 
 	return 0;
 }
+#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
 #endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 
 #if defined(CONFIG_BT_PAC_SNK)
 static struct k_work_delayable snks_work;
-static struct k_work_delayable snks_loc_work;
 
 static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -206,6 +207,14 @@ static ssize_t snk_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	return pac_read(conn, attr, buf, len, offset);
 }
+
+static void snk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+{
+	BT_DBG("attr %p value 0x%04x", attr, value);
+}
+
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+static struct k_work_delayable snks_loc_work;
 
 static ssize_t snk_loc_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
@@ -237,6 +246,7 @@ static ssize_t snk_loc_read(struct bt_conn *conn,
 				 &location_32_le, sizeof(location_32_le));
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE)
 static ssize_t snk_loc_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
@@ -272,21 +282,18 @@ static ssize_t snk_loc_write(struct bt_conn *conn,
 
 	return len;
 }
-
-static void snk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
-{
-	BT_DBG("attr %p value 0x%04x", attr, value);
-}
+#endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE */
 
 static void snk_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("attr %p value 0x%04x", attr, value);
 }
+
+#endif /* CONFIG_BT_PAC_SNK_LOC */
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SRC)
 static struct k_work_delayable srcs_work;
-static struct k_work_delayable srcs_loc_work;
 
 static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -296,6 +303,14 @@ static ssize_t src_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	return pac_read(conn, attr, buf, len, offset);
 }
+
+static void src_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+{
+	BT_DBG("attr %p value 0x%04x", attr, value);
+}
+
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+static struct k_work_delayable srcs_loc_work;
 
 static ssize_t src_loc_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
@@ -327,6 +342,7 @@ static ssize_t src_loc_read(struct bt_conn *conn,
 				 &location_32_le, sizeof(location_32_le));
 }
 
+#if defined(BT_PAC_SRC_LOC_WRITEABLE)
 static ssize_t src_loc_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
@@ -363,16 +379,13 @@ static ssize_t src_loc_write(struct bt_conn *conn,
 
 	return len;
 }
-
-static void src_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
-{
-	BT_DBG("attr %p value 0x%04x", attr, value);
-}
+#endif /* BT_PAC_SRC_LOC_WRITEABLE */
 
 static void src_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("attr %p value 0x%04x", attr, value);
 }
+#endif /* CONFIG_BT_PAC_SRC_LOC */
 #endif /* CONFIG_BT_PAC_SRC */
 
 #if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
@@ -385,14 +398,22 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 			       snk_read, NULL, NULL),
 	BT_GATT_CCC(snk_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+#if defined(CONFIG_BT_PAC_SNK_LOC)
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SNK_LOC,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
 			       BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ_ENCRYPT |
 			       BT_GATT_PERM_WRITE_ENCRYPT,
-			       snk_loc_read, snk_loc_write, NULL),
+			       snk_loc_read,
+#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE)
+			       snk_loc_write,
+#else
+			       NULL,
+#endif /* BT_PAC_SRC_LOC_WRITEABLE */
+			       NULL),
 	BT_GATT_CCC(snk_loc_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+#endif /* CONFIG_BT_PAC_SNK_LOC */
 #endif /* CONFIG_BT_PAC_SNK */
 #if defined(CONFIG_BT_PAC_SRC)
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SRC,
@@ -401,14 +422,22 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 			       src_read, NULL, NULL),
 	BT_GATT_CCC(src_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+#if defined(CONFIG_BT_PAC_SRC_LOC)
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SRC_LOC,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE |
 			       BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ_ENCRYPT |
 			       BT_GATT_PERM_WRITE_ENCRYPT,
-			       src_loc_read, src_loc_write, NULL),
+			       src_loc_read,
+#if defined(BT_PAC_SRC_LOC_WRITEABLE)
+			       src_loc_write,
+#else
+			       NULL,
+#endif /* BT_PAC_SRC_LOC_WRITEABLE */
+			       NULL),
 	BT_GATT_CCC(src_loc_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
+#endif /* CONFIG_BT_PAC_SRC_LOC */
 #endif /* CONFIG_BT_PAC_SNK */
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_CONTEXT,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
@@ -441,6 +470,7 @@ static struct k_work_delayable *bt_pacs_get_work(uint8_t type)
 	return NULL;
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
 static struct k_work_delayable *bt_pacs_get_loc_work(uint8_t type)
 {
 	switch (type) {
@@ -455,38 +485,6 @@ static struct k_work_delayable *bt_pacs_get_loc_work(uint8_t type)
 	}
 
 	return NULL;
-}
-
-static void pac_notify(struct k_work *work)
-{
-#if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
-	struct bt_uuid *uuid;
-	uint8_t type;
-	int err;
-
-#if defined(CONFIG_BT_PAC_SNK)
-	if (work == &snks_work.work) {
-		type = BT_AUDIO_SINK;
-		uuid = BT_UUID_PACS_SNK;
-	}
-#endif /* CONFIG_BT_PAC_SNK */
-
-#if defined(CONFIG_BT_PAC_SRC)
-	if (work == &srcs_work.work) {
-		type = BT_AUDIO_SOURCE;
-		uuid = BT_UUID_PACS_SRC;
-	}
-#endif /* CONFIG_BT_PAC_SRC */
-
-	/* TODO: We can skip this if we are not connected to any devices */
-	get_pac_records(NULL, type, &read_buf);
-
-	err = bt_gatt_notify_uuid(NULL, uuid, pacs_svc.attrs, read_buf.data,
-				  read_buf.len);
-	if (err != 0) {
-		BT_WARN("PACS notify failed: %d", err);
-	}
-#endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 }
 
 static void pac_notify_loc(struct k_work *work)
@@ -526,6 +524,39 @@ static void pac_notify_loc(struct k_work *work)
 	}
 #endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 }
+#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
+
+static void pac_notify(struct k_work *work)
+{
+#if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
+	struct bt_uuid *uuid;
+	uint8_t type;
+	int err;
+
+#if defined(CONFIG_BT_PAC_SNK)
+	if (work == &snks_work.work) {
+		type = BT_AUDIO_SINK;
+		uuid = BT_UUID_PACS_SNK;
+	}
+#endif /* CONFIG_BT_PAC_SNK */
+
+#if defined(CONFIG_BT_PAC_SRC)
+	if (work == &srcs_work.work) {
+		type = BT_AUDIO_SOURCE;
+		uuid = BT_UUID_PACS_SRC;
+	}
+#endif /* CONFIG_BT_PAC_SRC */
+
+	/* TODO: We can skip this if we are not connected to any devices */
+	get_pac_records(NULL, type, &read_buf);
+
+	err = bt_gatt_notify_uuid(NULL, uuid, pacs_svc.attrs, read_buf.data,
+				  read_buf.len);
+	if (err != 0) {
+		BT_WARN("PACS notify failed: %d", err);
+	}
+#endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
+}
 
 void bt_pacs_add_capability(uint8_t type)
 {
@@ -556,6 +587,7 @@ void bt_pacs_remove_capability(uint8_t type)
 	k_work_reschedule(work, PAC_NOTIFY_TIMEOUT);
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
 int bt_pacs_location_changed(enum bt_audio_pac_type type)
 {
 	struct k_work_delayable *work;
@@ -574,3 +606,4 @@ int bt_pacs_location_changed(enum bt_audio_pac_type type)
 
 	return 0;
 }
+#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
