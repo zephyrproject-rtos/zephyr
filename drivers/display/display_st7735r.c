@@ -50,6 +50,7 @@ struct st7735r_config {
 	uint8_t frmctr3[6];
 	uint8_t gamctrp1[16];
 	uint8_t gamctrn1[16];
+	bool inversion_on;
 };
 
 struct st7735r_data {
@@ -377,7 +378,11 @@ static int st7735r_lcd_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = st7735r_transmit(dev, ST7735R_CMD_INV_OFF, NULL, 0);
+	if (config->inversion_on) {
+		ret = st7735r_transmit(dev, ST7735R_CMD_INV_ON, NULL, 0);
+	} else {
+		ret = st7735r_transmit(dev, ST7735R_CMD_INV_OFF, NULL, 0);
+	}
 	if (ret < 0) {
 		return ret;
 	}
@@ -545,6 +550,7 @@ static const struct display_driver_api st7735r_api = {
 		.frmctr3 = DT_INST_PROP(inst, frmctr3),				\
 		.gamctrp1 = DT_INST_PROP(inst, gamctrp1),			\
 		.gamctrn1 = DT_INST_PROP(inst, gamctrn1),			\
+		.inversion_on = DT_INST_PROP(inst, inversion_on),		\
 	};									\
 										\
 	static struct st7735r_data st7735r_data_ ## inst = {			\
