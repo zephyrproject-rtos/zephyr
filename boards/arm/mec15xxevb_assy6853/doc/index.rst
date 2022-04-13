@@ -401,7 +401,7 @@ Flashing
          :alt: SPI DONGLE ASSY 6791 Connected
 
 
-   .. note:: If you dont't want to press Reset button every time, you can disconnect
+   .. note:: If you don't want to press Reset button every time, you can disconnect
     SPI Dongle ASSY 6791 from the EVB during the west flash programming.
     Then connect it back to the ``J44`` header and apply power to the EVB.
     Result will be the same.

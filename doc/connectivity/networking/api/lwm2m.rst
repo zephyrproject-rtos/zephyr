@@ -264,7 +264,7 @@ Create callback functions for LwM2M resource exuctions:
 		LOG_INF("Device rebooting.");
 		LOG_PANIC();
 		sys_reboot(0);
-		return 0; /* wont reach this */
+		return 0; /* won't reach this */
 	}
 
 The LwM2M RD client can send events back to the sample.  To receive those

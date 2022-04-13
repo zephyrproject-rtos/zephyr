@@ -353,7 +353,7 @@ In this case, choose rather VMWare Workstation.
    :width: 650
    :align: center
 
-One or more of the fallowing steps should help:
+One or more of the following steps should help:
 
 - Close all PTS Windows.
 
