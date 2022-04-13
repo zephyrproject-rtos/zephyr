@@ -14,9 +14,6 @@ config ROM_START_OFFSET
 config NUM_IRQS
 	default 60
 
-config PM
-	select CODE_DATA_RELOCATION_SRAM
-
 config ZTEST_NO_YIELD
 	default y if (ZTEST && PM)
 
