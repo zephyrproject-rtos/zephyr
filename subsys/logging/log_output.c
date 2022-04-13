@@ -288,12 +288,12 @@ static int timestamp_print(const struct log_output *output,
 		} else {
 			if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP)) {
 				length = print_formatted(output,
-							"[%02u:%02u:%02u.%03u,%03u] ",
-							hours, mins, seconds, ms, us);
-			} else {
-				length = print_formatted(output,
 							"[%5ld.%06d] ",
 							total_seconds, ms * 1000U + us);
+			} else {
+				length = print_formatted(output,
+							"[%02u:%02u:%02u.%03u,%03u] ",
+							hours, mins, seconds, ms, us);
 			}
 		}
 	} else {
