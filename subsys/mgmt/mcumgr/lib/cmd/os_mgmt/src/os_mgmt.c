@@ -10,9 +10,9 @@
 #include <assert.h>
 #include <string.h>
 #include <zephyr.h>
+#include <stdio.h>
 #include <debug/object_tracing.h>
 #include <kernel_structs.h>
-#include <util/mcumgr_util.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
@@ -109,7 +109,7 @@ os_mgmt_taskstat_encode_thread_name(zcbor_state_t *zse, int idx,
 #error Unsupported option for taskstat thread name
 #endif
 
-	ll_to_s(idx, sizeof(thread_name) - 1, thread_name);
+	snprintf(thread_name, sizeof(thread_name) - 1, "%d", idx);
 	thread_name[sizeof(thread_name) - 1] = 0;
 
 	return zcbor_tstr_put_term(zse, thread_name);
