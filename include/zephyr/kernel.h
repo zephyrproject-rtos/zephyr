@@ -4133,6 +4133,21 @@ extern void k_work_user_queue_start(struct k_work_user_q *work_q,
 				    size_t stack_size, int prio,
 				    const char *name);
 
+/**
+ * @brief Access the user mode thread that animates a work queue.
+ *
+ * This is necessary to grant a user mode work queue thread access to things
+ * the work items it will process are expected to use.
+ *
+ * @param work_q pointer to the user mode queue structure.
+ *
+ * @return the user mode thread associated with the work queue.
+ */
+static inline k_tid_t k_work_user_queue_thread_get(struct k_work_user_q *work_q)
+{
+	return &work_q->thread;
+}
+
 /** @} */
 
 /**
