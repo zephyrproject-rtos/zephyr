@@ -362,6 +362,9 @@ There are also conveniences for commonly used zephyr-specific properties of the
 .. doxygengroup:: devicetree-zephyr
    :project: Zephyr
 
+Zephyr-specific chosen nodes
+****************************
+
 The following table documents some commonly used Zephyr-specific chosen nodes.
 
 Sometimes, a chosen node's label property will be used to set the default value
