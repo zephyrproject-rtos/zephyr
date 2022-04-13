@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#include <toolchain.h>
+
 /** @cond INTERNAL_HIDDEN */
 
 struct zcbor_map_decode_key_val {
