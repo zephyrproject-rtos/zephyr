@@ -23,7 +23,7 @@ struct zcbor_map_decode_key_val {
 
 /** @brief Define single key-value decode mapping
  *
- * The macro creates a single zcbor_map_decode_key type object.
+ * The macro creates a single zcbor_map_decode_key_val type object.
  *
  * @param k	key; the @p k will be stringified so should be given
  *		without "";
@@ -48,9 +48,9 @@ struct zcbor_map_decode_key_val {
  *
  * The function takes @p map of key to decoder array defined as:
  *
- *	struct zcbor_map_decode_key map[] = {
- *		ZCBOR_MAP_DECODE_KEY(key0, decode_fun0, val_ptr0),
- *		ZCBOR_MAP_DECODE_KEY(key1, decode_fun1, val_ptr1),
+ *	struct zcbor_map_decode_key_val map[] = {
+ *		ZCBOR_MAP_DECODE_KEY_VAL(key0, decode_fun0, val_ptr0),
+ *		ZCBOR_MAP_DECODE_KEY_VAL(key1, decode_fun1, val_ptr1),
  *		...
  *	};
  *
