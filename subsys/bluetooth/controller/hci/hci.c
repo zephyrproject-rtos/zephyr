@@ -7913,7 +7913,7 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
-	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
 		le_df_cte_req_failed(BT_HCI_CTE_REQ_STATUS_RSP_WITHOUT_CTE, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
