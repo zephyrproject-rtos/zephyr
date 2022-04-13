@@ -343,7 +343,7 @@ static int mcp2515_set_timing(const struct device *dev,
 
 	/* CNF3, CNF2, CNF1, CANINTE */
 	uint8_t config_buf[4];
-	uint8_t reset_mode;
+	uint8_t mode;
 
 	/* CNF1; SJW<7:6> | BRP<5:0> */
 	__ASSERT(timing->prescaler > 0, "Prescaler should be bigger than zero");
@@ -397,28 +397,15 @@ static int mcp2515_set_timing(const struct device *dev,
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	k_usleep(MCP2515_OSC_STARTUP_US);
-
-	/* will enter configuration mode automatically */
-	ret = mcp2515_cmd_soft_reset(dev);
+	ret = mcp2515_get_mode(dev, &mode);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset the device [%d]", ret);
+		LOG_ERR("Failed to read device mode [%d]", ret);
 		goto done;
 	}
 
-	k_usleep(MCP2515_OSC_STARTUP_US);
-
-	ret = mcp2515_get_mode(dev, &reset_mode);
+	ret = mcp2515_set_mode_int(dev, MCP2515_MODE_CONFIGURATION);
 	if (ret < 0) {
-		LOG_ERR("Failed to read device mode [%d]",
-			ret);
-		goto done;
-	}
-
-	if (reset_mode != MCP2515_MODE_CONFIGURATION) {
-		LOG_ERR("Device did not reset into configuration mode [%d]",
-			reset_mode);
-		ret = -EIO;
+		LOG_ERR("Failed to enter configuration mode [%d]", ret);
 		goto done;
 	}
 
@@ -426,18 +413,28 @@ static int mcp2515_set_timing(const struct device *dev,
 				    sizeof(config_buf));
 	if (ret < 0) {
 		LOG_ERR("Failed to write the configuration [%d]", ret);
+		goto done;
 	}
 
 	ret = mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_RXB0CTRL, rx0_ctrl,
 				     rx0_ctrl);
 	if (ret < 0) {
 		LOG_ERR("Failed to write RXB0CTRL [%d]", ret);
+		goto done;
 	}
 
 	ret = mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_RXB1CTRL, rx1_ctrl,
 				     rx1_ctrl);
 	if (ret < 0) {
 		LOG_ERR("Failed to write RXB1CTRL [%d]", ret);
+		goto done;
+	}
+
+	/* Restore previous mode */
+	ret = mcp2515_set_mode_int(dev, mode);
+	if (ret < 0) {
+		LOG_ERR("Failed to restore mode [%d]", ret);
+		goto done;
 	}
 
 done:
