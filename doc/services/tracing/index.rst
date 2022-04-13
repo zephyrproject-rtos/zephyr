@@ -204,7 +204,7 @@ Using RAM backend
 =================
 
 For devices that do not have available I/O for tracing such as USB or UART but have
-enough RAM to collect trace datas, the ram backend can be enabled with configuration
+enough RAM to collect trace data, the ram backend can be enabled with configuration
 :kconfig:option:`CONFIG_TRACING_BACKEND_RAM`.
 Adjust :kconfig:option:`CONFIG_RAM_TRACING_BUFFER_SIZE` to be able to record enough traces for your needs.
 Then thanks to a runtime debugger such as gdb this buffer can be fetched from the target
@@ -267,7 +267,7 @@ I/O Taxonomy
   Examples:
     - sync  unbuffered
         E.g. PIO via GPIOs having steady stream, no extra FIFO memory needed.
-        Low jitter but may be less efficient (cant amortize the overhead of
+        Low jitter but may be less efficient (can't amortize the overhead of
         writing).
 
     - sync  buffered
