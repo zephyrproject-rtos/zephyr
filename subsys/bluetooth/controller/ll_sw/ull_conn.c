@@ -1113,6 +1113,21 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 			conn->llcp_type = LLCP_CONN_UPD;
 			conn->llcp_ack -= 2U;
 
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+		} else if (conn->llcp_cis.req != conn->llcp_cis.ack) {
+			if (conn->llcp_cis.state == LLCP_CIS_STATE_RSP_WAIT) {
+				const struct lll_conn *lll = &conn->lll;
+				uint16_t event_counter;
+
+				/* Calculate current event counter */
+				event_counter = lll->event_counter +
+						lll->latency_prepare + lazy;
+
+				/* Handle CIS response */
+				event_send_cis_rsp(conn, event_counter);
+			}
+
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 		/* check if feature exchange procedure is requested */
 		} else if (conn->llcp_feature.ack != conn->llcp_feature.req) {
 			/* handle feature exchange state machine */
@@ -1152,27 +1167,6 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 			/* handle PHY Upd state machine */
 			event_phy_req_prep(conn);
 #endif /* CONFIG_BT_CTLR_PHY */
-
-#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-		} else if (conn->llcp_cis.req != conn->llcp_cis.ack) {
-			struct lll_conn *lll = &conn->lll;
-			uint16_t event_counter;
-
-			/* Calculate current event counter */
-			event_counter = lll->event_counter +
-					lll->latency_prepare + lazy;
-
-			if (conn->llcp_cis.state == LLCP_CIS_STATE_RSP_WAIT) {
-				/* Handle CIS response */
-				event_send_cis_rsp(conn, event_counter);
-			} else if (conn->llcp_cis.state ==
-						LLCP_CIS_STATE_INST_WAIT) {
-				/* Start CIS peripheral */
-				event_peripheral_iso_prep(conn,
-							  event_counter,
-							  ticks_at_expire);
-			}
-#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 		}
 	}
 
@@ -1346,6 +1340,24 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 			}
 		}
 	}
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+	/* In any state, allow processing of CIS peripheral waiting for
+	 * instant.
+	 */
+	if (conn->llcp_cis.state == LLCP_CIS_STATE_INST_WAIT) {
+		const struct lll_conn *lll = &conn->lll;
+		uint16_t event_counter;
+
+		/* Calculate current event counter */
+		event_counter = lll->event_counter +
+				lll->latency_prepare + lazy;
+
+		event_peripheral_iso_prep(conn, event_counter,
+					  ticks_at_expire);
+
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 	return 0;
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
