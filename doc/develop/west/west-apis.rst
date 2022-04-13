@@ -192,7 +192,7 @@ Deprecated APIs
 
 The following APIs also use :py:class:`west.configuration.ConfigFile`, but they
 operate by default on a global object which stores the current workspace
-configuration. This has proven to be a bad design descision since west's APIs
+configuration. This has proven to be a bad design decision since west's APIs
 can be used from multiple workspaces. They were deprecated in west v0.13.0.
 
 These APIs are preserved for compatibility with older extensions. They should

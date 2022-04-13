@@ -87,7 +87,7 @@ To configure a trigger, an application needs to supply a
 :c:struct:`sensor_trigger` and a handler function.  The structure contains the
 trigger type and the channel on which the trigger must be configured.
 
-Because most sensors are connected via SPI or I2C busses, it is not possible
+Because most sensors are connected via SPI or I2C buses, it is not possible
 to communicate with them from the interrupt execution context.  The
 execution of the trigger handler is deferred to a thread, so that data
 fetching operations are possible.  A driver can spawn its own thread to fetch
