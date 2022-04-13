@@ -1564,6 +1564,13 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			/* Cancel RTX work */
 			k_work_cancel_delayable(&chan->rtx_work);
 
+			if (buf->len < sizeof(dcid)) {
+				BT_ERR("Fewer dcid values than expected");
+				bt_l2cap_chan_remove(conn, &chan->chan);
+				bt_l2cap_chan_del(&chan->chan);
+				continue;
+			}
+
 			dcid = net_buf_pull_le16(buf);
 			attempted++;
 
