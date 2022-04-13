@@ -28,9 +28,6 @@
 static sys_slist_t snks;
 static sys_slist_t srcs;
 
-static enum bt_audio_location sink_location;
-static enum bt_audio_location source_location;
-
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_ASCS)
 /* TODO: The unicast server callbacks uses `const` for many of the pointers,
  * wheras the capabilities callbacks do no. The latter should be updated to use
@@ -261,14 +258,28 @@ static int publish_capability_cb(struct bt_conn *conn, uint8_t type,
 	return -ENOENT;
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
+
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+static enum bt_audio_location sink_location;
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
+static enum bt_audio_location source_location;
+#endif /* CONFIG_BT_PAC_SRC_LOC */
+
 static int publish_location_cb(struct bt_conn *conn,
 			       enum bt_audio_pac_type type,
 			       enum bt_audio_location *location)
 {
-	if (type == BT_AUDIO_SINK) {
+	if (0) {
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+	} else if (type == BT_AUDIO_SINK) {
 		*location = sink_location;
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
 	} else if (type == BT_AUDIO_SOURCE) {
 		*location = source_location;
+#endif /* CONFIG_BT_PAC_SRC_LOC */
 	} else {
 		BT_ERR("Invalid endpoint type: %u", type);
 
@@ -278,28 +289,14 @@ static int publish_location_cb(struct bt_conn *conn,
 	return 0;
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) || defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
 static int write_location_cb(struct bt_conn *conn, enum bt_audio_pac_type type,
 			     enum bt_audio_location location)
 {
-	int err;
-
-	if (type == BT_AUDIO_SINK) {
-		sink_location = location;
-	} else if (type == BT_AUDIO_SOURCE) {
-		source_location = location;
-	} else {
-		BT_ERR("Invalid endpoint type: %u", type);
-
-		return -EINVAL;
-	}
-
-	err = bt_audio_unicast_server_location_changed(type);
-	if (err) {
-		BT_DBG("Location for type %d wasn't notified: %d", type, err);
-	}
-
-	return 0;
+	return bt_audio_capability_set_location(type, location);
 }
+#endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
+#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
 
 static struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.config = unicast_server_config_cb,
@@ -312,8 +309,12 @@ static struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.stop = unicast_server_stop_cb,
 	.release = unicast_server_release_cb,
 	.publish_capability = publish_capability_cb,
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
 	.publish_location = publish_location_cb,
+#if defined(CONFIG_BT_PAC_SNK_LOC_WRITEABLE) || defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
 	.write_location = write_location_cb
+#endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
+#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
 };
 #endif /* CONFIG_BT_AUDIO_UNICAST_SERVER && CONFIG_BT_ASCS */
 
@@ -421,15 +422,21 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap)
 	return 0;
 }
 
+#if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
 int bt_audio_capability_set_location(enum bt_audio_pac_type type,
 				     enum bt_audio_location location)
 {
 	int err;
 
-	if (type == BT_AUDIO_SINK) {
+	if (0) {
+#if defined(CONFIG_BT_PAC_SNK_LOC)
+	} else if (type == BT_AUDIO_SINK) {
 		sink_location = location;
+#endif /* CONFIG_BT_PAC_SNK_LOC */
+#if defined(CONFIG_BT_PAC_SRC_LOC)
 	} else if (type == BT_AUDIO_SOURCE) {
 		source_location = location;
+#endif /* CONFIG_BT_PAC_SRC_LOC */
 	} else {
 		BT_ERR("Invalid endpoint type: %u", type);
 
@@ -446,3 +453,4 @@ int bt_audio_capability_set_location(enum bt_audio_pac_type type,
 
 	return 0;
 }
+#endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
