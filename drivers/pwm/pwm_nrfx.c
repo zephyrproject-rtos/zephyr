@@ -89,22 +89,6 @@ static int pwm_period_check_and_set(const struct pwm_nrfx_config *config,
 	return -EINVAL;
 }
 
-static uint8_t pwm_channel_map(const struct pwm_nrfx_config *config,
-			       uint32_t pwm)
-{
-	uint8_t i;
-
-	/* Find pin, return channel number */
-	for (i = 0U; i < NRF_PWM_CHANNEL_COUNT; i++) {
-		if (nrf_pwm_pin_get(config->pwm.p_registers, i) == pwm) {
-			return i;
-		}
-	}
-
-	/* Return NRF_PWM_CHANNEL_COUNT to show that PWM pin was not found. */
-	return NRF_PWM_CHANNEL_COUNT;
-}
-
 static bool pwm_channel_is_active(uint8_t channel,
 				  const struct pwm_nrfx_data *data)
 {
@@ -139,7 +123,7 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 	 */
 	const struct pwm_nrfx_config *config = dev->config;
 	struct pwm_nrfx_data *data = dev->data;
-	uint8_t channel;
+	uint8_t channel = pwm;
 	bool was_stopped;
 
 	if (flags) {
@@ -147,14 +131,8 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 		return -ENOTSUP;
 	}
 
-	/* Check if PWM pin is one of the predefined DTS config pins.
-	 * Return its array index (channel number),
-	 * or NRF_PWM_CHANNEL_COUNT if not initialized through DTS.
-	 */
-	channel = pwm_channel_map(config, pwm);
-	if (channel == NRF_PWM_CHANNEL_COUNT) {
-		LOG_ERR("PWM pin %d not enabled through DTS configuration.",
-			pwm);
+	if (channel >= NRF_PWM_CHANNEL_COUNT) {
+		LOG_ERR("Invalid channel: %u.", channel);
 		return -EINVAL;
 	}
 
@@ -194,8 +172,8 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 		(data->current[channel] & PWM_NRFX_CH_POLARITY_MASK)
 		| (pulse_cycles >> data->prescaler));
 
-	LOG_DBG("pin %u, pulse %u, period %u, prescaler: %u.",
-		pwm, pulse_cycles, period_cycles, data->prescaler);
+	LOG_DBG("channel %u, pulse %u, period %u, prescaler: %u.",
+		channel, pulse_cycles, period_cycles, data->prescaler);
 
 	/* If this channel turns out to not need to be driven by the PWM
 	 * peripheral (it is off or fully on - duty 0% or 100%), set properly
@@ -218,11 +196,13 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 		bool pulse_100_and_inverted =
 			(pulse_cycles == period_cycles)
 			&& channel_inverted_state;
+		uint32_t psel =
+			nrf_pwm_pin_get(config->pwm.p_registers, channel);
 
 		if (pulse_0_and_not_inverted || pulse_100_and_inverted) {
-			nrf_gpio_pin_clear(pwm);
+			nrf_gpio_pin_clear(psel);
 		} else {
-			nrf_gpio_pin_set(pwm);
+			nrf_gpio_pin_set(psel);
 		}
 
 		if (!any_other_channel_is_active(channel, data)) {
