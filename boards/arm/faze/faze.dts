@@ -51,8 +51,6 @@
 };
 
 &uart0 {
-	pinmuxs = <&pinmux0 18 IOCON_FUNC1>, <&pinmux0 19 IOCON_FUNC1>;
-	pinmux-names = "RXD", "TXD";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
