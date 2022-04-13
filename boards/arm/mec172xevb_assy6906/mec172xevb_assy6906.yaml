@@ -18,3 +18,4 @@ supported:
   - pinmux
   - i2c
   - adc
+  - pwm
