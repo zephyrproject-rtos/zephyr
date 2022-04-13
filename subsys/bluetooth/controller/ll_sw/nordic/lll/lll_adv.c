@@ -1315,6 +1315,7 @@ static void isr_done(void *param)
 		if (lll_aux) {
 			(void)ull_adv_aux_lll_offset_fill(pdu,
 							  lll_aux->ticks_offset,
+							  lll_aux->us_offset,
 							  start_us);
 		}
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
