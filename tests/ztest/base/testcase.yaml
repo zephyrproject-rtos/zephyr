@@ -7,6 +7,14 @@ tests:
     tags: test_framework
     integration_platforms:
       - native_posix
+  testing.ztest.base.verbose_0_userspace:
+    filter: CONFIG_USERSPACE
+    extra_args: CONF_FILE=prj_verbose_0.conf
+    tags: test_framework userspace
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+    integration_platforms:
+      - native_posix
   testing.ztest.base.verbose_1:
     extra_args: CONF_FILE=prj_verbose_1.conf
     tags: test_framework
