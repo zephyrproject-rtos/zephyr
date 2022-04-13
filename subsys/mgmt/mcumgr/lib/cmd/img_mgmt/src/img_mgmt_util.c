@@ -4,32 +4,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "util/mcumgr_util.h"
 #include "img_mgmt/image.h"
 #include "img_mgmt/img_mgmt.h"
 
 int
 img_mgmt_ver_str(const struct image_version *ver, char *dst)
 {
-	int off = 0;
+	int rc = 0;
+	int rc1 = 0;
 
-	off += ull_to_s(ver->iv_major, INT_MAX, dst + off);
+	rc = snprintf(dst, IMG_MGMT_VER_MAX_STR_LEN, "%hhu.%hhu.%.hu",
+		ver->iv_major, ver->iv_minor, ver->iv_revision);
 
-	dst[off++] = '.';
-	off += ull_to_s(ver->iv_minor, INT_MAX, dst + off);
-
-	dst[off++] = '.';
-	off += ull_to_s(ver->iv_revision, INT_MAX, dst + off);
-
-	if (ver->iv_build_num != 0) {
-		dst[off++] = '.';
-		off += ull_to_s(ver->iv_build_num, INT_MAX, dst + off);
+	if (rc >= 0 && ver->iv_build_num != 0) {
+		rc1 = snprintf(&dst[rc], IMG_MGMT_VER_MAX_STR_LEN - rc, ".%u",
+			ver->iv_build_num);
 	}
 
-	return 0;
+	if (rc1 >= 0 && rc >= 0) {
+		rc = rc + rc1;
+	} else {
+		/* If any failed then all failed */
+		rc = -1;
+	}
+
+	return rc;
 }
