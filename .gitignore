@@ -10,7 +10,7 @@
 .\#*
 \#*\#
 build*/
-!doc/guides/build
+!doc/build/
 !tests/drivers/build_all
 cscope.*
 .dir
