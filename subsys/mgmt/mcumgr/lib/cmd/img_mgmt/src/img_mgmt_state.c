@@ -229,13 +229,15 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 		     zcbor_tstr_put_lit(zse, "version");
 
 		if (ok) {
-			img_mgmt_ver_str(&ver, vers_str);
-		} else {
-			break;
+			if (img_mgmt_ver_str(&ver, vers_str) < 0) {
+				ok = zcbor_tstr_put_lit(zse, "<\?\?\?>");
+			} else {
+				vers_str[sizeof(vers_str) - 1] = '\0';
+				ok = zcbor_tstr_put_term(zse, vers_str);
+			}
 		}
 
-		ok = zcbor_tstr_put_term(zse, vers_str)						&&
-		     zcbor_tstr_put_term(zse, "hash")						&&
+		ok = zcbor_tstr_put_term(zse, "hash")						&&
 		     zcbor_bstr_encode(zse, &zhash)						&&
 		     ZCBOR_ENCODE_FLAG(zse, "bootable", !(flags & IMAGE_F_NON_BOOTABLE))	&&
 		     ZCBOR_ENCODE_FLAG(zse, "pending",
