@@ -107,12 +107,9 @@ arduino_serial: &uart4 {
 };
 
 arduino_i2c: &i2c0 {
-	pinmuxs = <&pinmux0 4 IOCON_FUNC1>,
-	<&pinmux0 5 IOCON_FUNC1>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_fast>;
 	pinctrl-names = "default", "fast-plus";
-	pinmux-names = "SCL", "SDA";
 	status = "okay";
 };
 
