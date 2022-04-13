@@ -522,31 +522,8 @@ the default value).
 Note that it only makes sense to combine ``default:`` with ``required: false``.
 Combining it with ``required: true`` will raise an error.
 
-There is a risk in using ``default:`` when the value in the binding may be
-incorrect for a particular board or hardware configuration.  For example,
-defaulting the capacity of the connected power cell in a charging IC binding
-is likely to be incorrect.  For such properties it's better to make the
-property ``required: true``, forcing the devicetree maintainer into an explicit
-and witting choice.
-
-Driver developers should use their best judgment as to whether a value can be
-safely defaulted. Candidates for default values include:
-
-- delays that would be different only under unusual conditions
-  (such as intervening hardware)
-- configuration for devices that have a standard initial configuration (such as
-  a USB audio headset)
-- defaults which match the vendor-specified power-on reset value
-  (as long as they are independent from other properties)
-
-Power-on reset values may be used for defaults as long as they're independent.
-If changing one property would require changing another to create a consistent
-configuration, then those properties should be made required.
-
-In any case where ``default:`` is used, the property documentation should
-explain why the value was selected and any conditions that would make it
-necessary to provide a different value. (This is mandatory for built-in
-bindings.)
+For rules related to ``default`` in upstream Zephyr bindings, see
+:ref:`dt-bindings-default-rules`.
 
 See :ref:`dt-bindings-example-properties` for examples. Putting ``default:`` on
 any property type besides those used in the examples will raise an error.
@@ -947,8 +924,8 @@ Decisions made by the Zephyr devicetree maintainer override the contents of
 this section. If that happens, though, please let them know so they can update
 this page, or you can send a patch yourself.
 
-Check for existing bindings
-===========================
+Always check for existing bindings
+==================================
 
 Zephyr aims for devicetree :ref:`dt-source-compatibility`. Therefore, if there
 is an existing binding for your device in an authoritative location, you should
@@ -1017,8 +994,8 @@ General rules
   this rule is if you are replicating a well-established binding from somewhere
   like Linux.)
 
-Vendor prefixes
-===============
+Rules for vendor prefixes
+=========================
 
 The following general rules apply to vendor prefixes in :ref:`compatible
 <dt-important-props>` properties.
@@ -1053,6 +1030,83 @@ The following general rules apply to vendor prefixes in :ref:`compatible
 - If your binding is describing an abstract class of hardware with Zephyr
   specific drivers handling the nodes, it's usually best to use ``zephyr`` as
   the vendor prefix. See :ref:`dt_vendor_zephyr` for examples.
+
+.. _dt-bindings-default-rules:
+
+Rules for default values
+========================
+
+In any case where ``default:`` is used in a devicetree binding, the
+``description:`` for that property **must** explain *why* the value was
+selected and any conditions that would make it necessary to provide a different
+value. Additionally, if changing one property would require changing another to
+create a consistent configuration, then those properties should be made
+required.
+
+There is no need to document the default value itself; this is already present
+in the :ref:`devicetree_binding_index` output.
+
+There is a risk in using ``default:`` when the value in the binding may be
+incorrect for a particular board or hardware configuration.  For example,
+defaulting the capacity of the connected power cell in a charging IC binding
+is likely to be incorrect.  For such properties it's better to make the
+property ``required: true``, forcing the user to make an explicit choice.
+
+Driver developers should use their best judgment as to whether a value can be
+safely defaulted. Candidates for default values include:
+
+- delays that would be different only under unusual conditions
+  (such as intervening hardware)
+- configuration for devices that have a standard initial configuration (such as
+  a USB audio headset)
+- defaults which match the vendor-specified power-on reset value
+  (as long as they are independent from other properties)
+
+Examples of how to write descriptions according to these rules:
+
+.. code-block:: yaml
+
+   properties:
+     cs-interval:
+       type: int
+       default: 0
+       description: |
+         Minimum interval between chip select deassertion and assertion.
+         The default corresponds to the reset value of the register field.
+     hold-time-ms:
+       type: int
+       default: 20
+       description: |
+         Amount of time to hold the power enable GPIO asserted before
+         initiating communication. The default was recommended in the
+         manufacturer datasheet, and would only change under very
+         cold temperatures.
+
+Some examples of what **not** to do, and why:
+
+.. code-block:: yaml
+
+   properties:
+     # Description doesn't mention anything about the default
+     foo:
+       type: int
+       default: 1
+       description: number of foos
+
+     # Description mentions the default value instead of why it
+     # was chosen
+     bar:
+       type: int
+       default: 2
+       description: bar size; default is 2
+
+     # Explanation of the default value is in a comment instead
+     # of the description. This won't be shown in the bindings index.
+     baz:
+       type: int
+       # This is the recommended value chosen by the manufacturer.
+       default: 2
+       description: baz time in milliseconds
 
 .. _dt-inferred-bindings:
 .. _dt-zephyr-user:
