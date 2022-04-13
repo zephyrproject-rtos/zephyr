@@ -122,7 +122,7 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 
 	for (handle = LL_CIS_HANDLE_BASE; handle <= LAST_VALID_CIS_HANDLE; handle++) {
 		cis = ll_iso_stream_connected_get(handle);
-		if (cis && cis->cis_id == req->cis_id) {
+		if (cis && cis->group && cis->cis_id == req->cis_id) {
 			/* CIS ID already in use */
 			return BT_HCI_ERR_INVALID_LL_PARAM;
 		}
