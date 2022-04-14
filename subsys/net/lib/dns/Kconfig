@@ -10,6 +10,13 @@ config DNS_RESOLVER
 
 if DNS_RESOLVER
 
+config DNS_RESOLVER_AUTO_INIT
+	bool "Automatically initialize the default DNS context"
+	default y
+	help
+	  Automatically initialize the default DNS context so dns_resolve_init
+	  does not need to be manually called.
+
 config MDNS_RESOLVER
 	bool "MDNS support"
 	help

@@ -1571,7 +1571,9 @@ int dns_resolve_init_default(struct dns_resolve_context *ctx)
 	return ret;
 }
 
+#ifdef CONFIG_DNS_RESOLVER_AUTO_INIT
 void dns_init_resolver(void)
 {
 	dns_resolve_init_default(dns_resolve_get_default());
 }
+#endif /* CONFIG_DNS_RESOLVER_AUTO_INIT */
