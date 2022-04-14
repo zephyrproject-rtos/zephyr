@@ -34,6 +34,14 @@ jobs:
       EDTT_PATH: ../tools/edtt
       bsim_bt_test_results_file: ./bsim_bt_out/bsim_results.xml
     steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
       - name: Update PATH for west
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
