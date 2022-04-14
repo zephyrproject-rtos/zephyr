@@ -43,7 +43,6 @@ jobs:
 
       - name: Environment Setup
         run: |
-          pip3 install GitPython
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
