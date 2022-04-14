@@ -1090,5 +1090,3 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 	}
 	return rc;
 }
-
-/* EOF */
