@@ -61,7 +61,6 @@ jobs:
       - name: Environment Setup
         if: github.event_name == 'pull_request_target'
         run: |
-          pip3 install GitPython
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
@@ -145,7 +144,6 @@ jobs:
 
       - name: Environment Setup
         run: |
-          pip3 install GitPython
           if [ "${{github.event_name}}" = "pull_request_target" ]; then
             git config --global user.email "bot@zephyrproject.org"
             git config --global user.name "Zephyr Builder"
