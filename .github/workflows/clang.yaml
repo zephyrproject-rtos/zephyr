@@ -30,6 +30,14 @@ jobs:
     outputs:
       report_needed: ${{ steps.twister.outputs.report_needed }}
     steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
       - name: Cleanup
         run: |
           # hotfix, until we have a better way to deal with existing data
