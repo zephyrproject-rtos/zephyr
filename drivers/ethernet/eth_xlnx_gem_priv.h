@@ -774,5 +774,3 @@ struct eth_xlnx_gem_dev_data {
 };
 
 #endif /* _ZEPHYR_DRIVERS_ETHERNET_ETH_XLNX_GEM_PRIV_H_ */
-
-/* EOF */

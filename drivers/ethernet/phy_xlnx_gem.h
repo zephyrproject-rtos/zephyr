@@ -153,5 +153,3 @@ struct phy_xlnx_gem_supported_dev {
 int phy_xlnx_gem_detect(const struct device *dev);
 
 #endif /* _ZEPHYR_DRIVERS_ETHERNET_PHY_XLNX_GEM_H_ */
-
-/* EOF */
