@@ -464,12 +464,12 @@ static inline int dns_cancel_addr_info(uint16_t dns_id)
 /**
  * @brief Initialize DNS subsystem.
  */
-#if defined(CONFIG_DNS_RESOLVER)
+#if defined(CONFIG_DNS_RESOLVER_AUTO_INIT)
 void dns_init_resolver(void);
 
 #else
 #define dns_init_resolver(...)
-#endif /* CONFIG_DNS_RESOLVER */
+#endif /* CONFIG_DNS_RESOLVER_AUTO_INIT */
 
 /** @endcond */
 
