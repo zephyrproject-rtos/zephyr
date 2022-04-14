@@ -30,9 +30,9 @@
  * edac info ecc_error [show|clear]       Show ECC Errors
  * edac info parity_error [show|clear]    Show Parity Errors
  *
- * Physical memory access interface
+ * Physical memory access interface using devmem shell module
  *
- * edac mem address [width [value]]       Physical memory read / write
+ * devmem [width [value]]       Physical memory read / write
  */
 
 static void decode_ecc_error(const struct shell *shell, uint64_t ecc_error)
