@@ -10,9 +10,6 @@
 #include "../riscv-privilege/common/soc_common.h"
 #include <devicetree.h>
 
-#define LITEX_SUBREG_SIZE          0x1
-#define LITEX_SUBREG_SIZE_BIT      (LITEX_SUBREG_SIZE * 8)
-
 /* lib-c hooks required RAM defined variables */
 #define RISCV_RAM_BASE              DT_REG_ADDR(DT_INST(0, mmio_sram))
 #define RISCV_RAM_SIZE              DT_REG_SIZE(DT_INST(0, mmio_sram))
@@ -110,30 +107,45 @@ static inline void litex_write32(unsigned int value, unsigned long addr)
 #endif
 }
 
-static inline void litex_write(volatile uint32_t *reg, uint32_t reg_size, uint32_t val)
+/*
+ * Operates on uint32_t values only
+ * Size is in bytes and meaningful are 1, 2 or 4
+ * Address must be aligned to 4 bytes
+ */
+static inline void litex_write(uint32_t addr, uint32_t size, uint32_t value)
 {
-	uint32_t shifted_data, i;
-	volatile uint32_t *reg_addr;
-
-	for (i = 0; i < reg_size; ++i) {
-		shifted_data = val >> ((reg_size - i - 1) *
-					LITEX_SUBREG_SIZE_BIT);
-		reg_addr = ((volatile uint32_t *) reg) + i;
-		*(reg_addr) = shifted_data;
+	switch (size) {
+	case 1:
+		litex_write8(value, addr);
+		break;
+	case 2:
+		litex_write16(value, addr);
+		break;
+	case 4:
+		litex_write32(value, addr);
+		break;
+	default:
+		break;
 	}
 }
 
-static inline uint32_t litex_read(volatile uint32_t *reg, uint32_t reg_size)
+/*
+ * Operates on uint32_t values only
+ * Size is in bytes and meaningful are 1, 2 or 4
+ * Address must be aligned to 4 bytes
+ */
+static inline uint32_t litex_read(uint32_t addr, uint32_t size)
 {
-	uint32_t shifted_data, i, result = 0;
-
-	for (i = 0; i < reg_size; ++i) {
-		shifted_data = *(reg + i) << ((reg_size - i - 1) *
-						LITEX_SUBREG_SIZE_BIT);
-		result |= shifted_data;
+	switch (size) {
+	case 1:
+		return litex_read8(addr);
+	case 2:
+		return litex_read16(addr);
+	case 4:
+		return litex_read32(addr);
+	default:
+		return 0;
 	}
-
-	return result;
 }
 
 #endif /* _ASMLANGUAGE */
