@@ -1486,12 +1486,12 @@ struct dns_resolve_context *dns_resolve_get_default(void)
 	return &dns_default_ctx;
 }
 
-void dns_init_resolver(void)
+int dns_resolve_init_default(struct dns_resolve_context *ctx)
 {
+	int ret = 0;
 #if defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
 	static const char *dns_servers[SERVER_COUNT + 1];
 	int count = DNS_SERVER_COUNT;
-	int ret;
 
 	if (count > 5) {
 		count = 5;
@@ -1558,7 +1558,7 @@ void dns_init_resolver(void)
 
 	dns_servers[SERVER_COUNT] = NULL;
 
-	ret = dns_resolve_init(dns_resolve_get_default(), dns_servers, NULL);
+	ret = dns_resolve_init(ctx, dns_servers, NULL);
 	if (ret < 0) {
 		NET_WARN("Cannot initialize DNS resolver (%d)", ret);
 	}
@@ -1568,4 +1568,10 @@ void dns_init_resolver(void)
 	 */
 	(void)dns_resolve_init(dns_resolve_get_default(), NULL, NULL);
 #endif
+	return ret;
+}
+
+void dns_init_resolver(void)
+{
+	dns_resolve_init_default(dns_resolve_get_default());
 }
