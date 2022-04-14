@@ -756,7 +756,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  * After this returns, the thread will no longer be schedulable on any
  * CPUs.  The thread must not be currently runnable.
  *
- * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -770,7 +770,7 @@ int k_thread_cpu_mask_clear(k_tid_t thread);
  * After this returns, the thread will be schedulable on any CPU.  The
  * thread must not be currently runnable.
  *
- * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -783,7 +783,7 @@ int k_thread_cpu_mask_enable_all(k_tid_t thread);
  *
  * The thread must not be currently runnable.
  *
- * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -797,7 +797,7 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  *
  * The thread must not be currently runnable.
  *
- * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
