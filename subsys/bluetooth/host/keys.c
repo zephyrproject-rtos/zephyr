@@ -309,6 +309,26 @@ void bt_keys_clear(struct bt_keys *keys)
 	(void)memset(keys, 0, sizeof(*keys));
 }
 
+bool bt_keys_match(struct bt_keys *keys)
+{
+	int i;
+	int n_found = 0;
+
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		if (key_pool[i].id == keys->id) {
+			if (!memcmp(&key_pool[i].irk.val, &keys->irk.val, 16)) {
+				if (!bt_addr_cmp(&key_pool[i].addr.a, &keys->addr.a)) {
+					n_found++;
+					if (n_found > 1) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
 #if defined(CONFIG_BT_SETTINGS)
 int bt_keys_store(struct bt_keys *keys)
 {
