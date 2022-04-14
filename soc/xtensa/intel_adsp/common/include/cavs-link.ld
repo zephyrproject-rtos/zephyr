@@ -277,6 +277,10 @@ SECTIONS {
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
     *(.rodata1)
+
+    . = ALIGN(4);
+    #include <snippets-rodata.ld>
+
     __XT_EXCEPTION_TABLE__ = .;
     KEEP (*(.xt_except_table))
     KEEP (*(.gcc_except_table .gcc_except_table.*))
