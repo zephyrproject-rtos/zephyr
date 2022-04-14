@@ -320,23 +320,23 @@
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009000 0x40>;
 			interrupts = <100 1>;
+			girqs = <18 10>;
+			pcrs = <3 5>;
 			label = "PS2_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			girq = <18>;
-			girq-bit = <10>;
 		};
 		ps2_1: ps2@40009040 {
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009040 0x40>;
 			interrupts = <101 1>;
+			girqs = <18 11>;
+			pcrs = <3 6>;
 			label = "PS2_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			girq = <18>;
-			girq-bit = <11>;
 		};
 		pwm0: pwm@40005800 {
 			compatible = "microchip,xec-pwm";
