@@ -1,0 +1,13 @@
+# Copyright (c) 2022, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Sensor subsystem (senss) motion detector sensor bindings.
+
+compatible: "senss,motion-detector"
+
+# Common senss sensor properties.
+include: zephyr,senss-sensor.yaml
+
+# Sensor specific properties can be added below.
+#properties:

@@ -1,0 +1,15 @@
+sample:
+  description: sensorsubsys sample application
+  name: sensorsubsys
+common:
+    tags: introduction
+    integration_platforms:
+      - native_posix
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello Sensor Subsystem! (.*)"
+tests:
+  sample.basic.sensorsubsys:
+    tags: introduction

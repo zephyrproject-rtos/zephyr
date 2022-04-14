@@ -1,0 +1,13 @@
+# Copyright (c) 2022, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Sensor Subsystem (senss)
+
+compatible: "zephyr,senss"
+
+properties:
+    label:
+      type: string
+      required: true
+      description: sensor device tree node label name

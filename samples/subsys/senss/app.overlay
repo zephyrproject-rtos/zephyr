@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing the devicetree.h API.
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+#include "senss.dtsi"
+
+&senss {
+	base_accel: base-accel {
+		compatible = "senss,phy-accel";
+		status = "okay";
+		sensor-type = <0x73>;
+		sensor-index = <0>;
+		label = "senss_base_acccelerometer";
+		vendor = "VND";
+		model = "Test";
+		friendly-name = "Base Accelerometer Sensor";
+		underlying-device = <&bmi_i2c>;
+		minimal-interval = <10000>;
+		rotation-matrix = <0 1 0
+				   1 0 0
+				   0 0 (-1)>;
+	};
+
+	lid_accel: lid-accel {
+		compatible = "senss,phy-accel";
+		status = "okay";
+		sensor-type = <0x73>;
+		sensor-index = <1>;
+		label = "senss_lid_acccelerometer";
+		vendor = "VND";
+		model = "Test";
+		friendly-name = "Lid Accelerometer Sensor";
+		underlying-device = <&bmi_spi>;
+		minimal-interval = <10000>;
+		rotation-matrix = <1 0 0
+				   0 1 0
+				   0 0 (-1)>;
+	};
+};
+
+&spi0 {
+	bmi_spi: bmi@3 {
+		compatible = "bosch,bmi160";
+		spi-max-frequency = <50000000>;
+		reg = <3>;
+		label = "accel-spi";
+	};
+};
+
+&i2c0 {
+	bmi_i2c: bmi@68 {
+		compatible = "bosch,bmi160";
+		reg = <0x68>;
+		label = "accel-i2c";
+	};
+};
+
+
+

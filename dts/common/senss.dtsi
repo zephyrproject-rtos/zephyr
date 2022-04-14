@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Default device tree for sensor subsystem.
+ */
+
+/ {
+	senss: senss-node {
+		compatible = "zephyr,senss";
+		status = "okay";
+		label = "senss";
+
+		motion_detector: motion-detector {
+			compatible = "senss,motion-detector";
+			status = "okay";
+			sensor-type = <0x77>;
+			sensor-index = <0>;
+			label = "senss_sensor_motion_detector";
+			vendor = "VND";
+			model = "Test";
+			friendly-name = "Motion Detector Sensor";
+			reporters = <&lid_accel>;
+			minimal-interval = <100000>;
+		};
+
+		hinge_angle: hinge-angle {
+			compatible = "senss,hinge-angle";
+			status = "okay";
+			sensor-type = <0x20B>;
+			sensor-index = <0>;
+			label = "senss_sensor_hinge_angle";
+			vendor = "VND";
+			model = "Test";
+			friendly-name = "Hinge Angle Sensor";
+			reporters = <&base_accel &lid_accel &motion_detector>;
+			minimal-interval = <10000>;
+		};
+
+		base_accel: base-accel {
+			compatible = "senss,phy-accel";
+			status = "okay";
+			sensor-type = <0x73>;
+			sensor-index = <0>;
+			label = "senss_base_acccelerometer";
+			vendor = "VND";
+			model = "Test";
+			friendly-name = "Base Accelerometer Sensor";
+			underlying-device = <&bmi_spi>;
+			minimal-interval = <10000>;
+			rotation-matrix = <0 1 0
+					   1 0 0
+					   0 0 (-1)>;
+		};
+
+		lid_accel: lid-accel {
+			compatible = "senss,phy-accel";
+			status = "okay";
+			sensor-type = <0x73>;
+			sensor-index = <1>;
+			label = "senss_lid_acccelerometer";
+			vendor = "VND";
+			model = "Test";
+			friendly-name = "Lid Accelerometer Sensor";
+			underlying-device = <&bmi_i2c>;
+			minimal-interval = <10000>;
+			rotation-matrix = <0 1 0
+					   0 1 0
+					   0 0 (-1)>;
+		};
+	};
+};
+

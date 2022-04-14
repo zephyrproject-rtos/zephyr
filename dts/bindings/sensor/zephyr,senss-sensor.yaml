@@ -1,0 +1,51 @@
+# Copyright (c) 2022, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Sensor subsystem (senss) sensor common properties bindings.
+
+properties:
+    label:
+      type: string
+      required: true
+      description: sensor device tree node label name
+
+    sensor-type:
+      type: int
+      required: true
+      description: sensor type id (follow HID spec definition)
+
+    sensor-index:
+      type: int
+      required: true
+      description: sensor instance index for same sensor type
+
+    vendor:
+      type: string
+      required: true
+      description: sensor vendor name
+
+    model:
+      type: string
+      required: true
+      description: sensor model name
+
+    friendly-name:
+      type: string
+      required: true
+      description: sensor friendly name
+
+    minimal-interval:
+      type: int
+      required: true
+      description: sensor minimal report interval
+
+    rotation-matrix:
+      type: array
+      required: false
+      description: sensor rotation matrix
+
+    reporters:
+      type: phandles
+      required: false
+      description: sensor reporters
