@@ -62,7 +62,7 @@ static int ecc_error_show(const struct shell *sh, const struct device *dev)
 	int err;
 
 	err = edac_ecc_error_log_get(dev, &error);
-	if (err != 0) {
+	if (err != 0 && err != -ENODATA) {
 		shell_error(sh, "Error getting error log (err %d)", err);
 		return err;
 	}
@@ -73,7 +73,7 @@ static int ecc_error_show(const struct shell *sh, const struct device *dev)
 		decode_ecc_error(sh, error);
 	}
 
-	return err;
+	return 0;
 }
 
 static int parity_error_show(const struct shell *sh, const struct device *dev)
@@ -82,14 +82,14 @@ static int parity_error_show(const struct shell *sh, const struct device *dev)
 	int err;
 
 	err = edac_parity_error_log_get(dev, &error);
-	if (err != 0) {
+	if (err != 0 && err != -ENODATA) {
 		shell_error(sh, "Error getting parity error log (err %d)", err);
 		return err;
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "Parity Error: 0x%llx\n", error);
 
-	return err;
+	return 0;
 }
 
 static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
