@@ -91,5 +91,3 @@ static int soc_xlnx_zynq7000s_init(const struct device *arg)
 
 SYS_INIT(soc_xlnx_zynq7000s_init, PRE_KERNEL_1,
 	CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-/* EOF */
