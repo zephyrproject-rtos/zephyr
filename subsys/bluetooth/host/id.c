@@ -697,7 +697,7 @@ void bt_id_pending_keys_update(void)
 	}
 }
 
-void bt_id_add(struct bt_keys *keys)
+static void bt_id_add_rl(struct bt_keys *keys, bool duplicate_address)
 {
 	struct bt_conn *conn;
 	int err;
@@ -773,13 +773,23 @@ void bt_id_add(struct bt_keys *keys)
 		goto done;
 	}
 
-	err = hci_id_add(keys->id, &keys->addr, keys->irk.val);
-	if (err) {
-		BT_ERR("Failed to add IRK to controller");
-		goto done;
+	/*
+	 * Core Spec 5.3, Vol 4, Part E, 7.8.38
+	 *
+	 * If an entry already exists in the resolving list with the same
+	 * four parameter values, the Controller shall either reject the command
+	 * or not add the device to the resolving list again and return success.
+	 * If the command is rejected then the error code
+	 * Invalid HCI Command Parameters (0x12) should be used.
+	 */
+	if (!duplicate_address) {
+		err = hci_id_add(keys->id, &keys->addr, keys->irk.val);
+		if (err) {
+			BT_ERR("Failed to add IRK to controller");
+			goto done;
+		}
+		bt_dev.le.rl_entries++;
 	}
-
-	bt_dev.le.rl_entries++;
 	keys->state |= BT_KEYS_ID_ADDED;
 
 	/*
@@ -812,6 +822,16 @@ done:
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
 	}
+}
+
+void bt_id_add(struct bt_keys *keys)
+{
+	bt_id_add_rl(keys, false);
+}
+
+void bt_id_add_duplicate(struct bt_keys *keys)
+{
+	bt_id_add_rl(keys, true);
 }
 
 static void keys_add_id(struct bt_keys *keys, void *data)

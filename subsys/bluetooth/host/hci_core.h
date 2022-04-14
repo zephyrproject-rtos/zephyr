@@ -416,6 +416,7 @@ int bt_send(struct net_buf *buf);
 struct bt_keys;
 void bt_id_add(struct bt_keys *keys);
 void bt_id_del(struct bt_keys *keys);
+void bt_id_add_duplicate(struct bt_keys *keys);
 
 int bt_setup_random_id_addr(void);
 int bt_setup_public_id_addr(void);

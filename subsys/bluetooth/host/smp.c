@@ -3906,15 +3906,16 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
-	if (bt_addr_le_cmp(&conn->le.dst, &req->addr) != 0) {
-		struct bt_keys *keys = bt_keys_find_addr(conn->id, &req->addr);
+	struct bt_keys *keys = bt_keys_find_addr(conn->id, &req->addr);
 
-		if (keys) {
+	if (keys) {
+		if (bt_addr_le_cmp(&conn->le.dst, &req->addr) != 0) {
 			if (!update_keys_check(smp, keys)) {
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
 
 			bt_keys_clear(keys);
+		} else {
 			duplicate_addr = true;
 		}
 	}
@@ -3960,8 +3961,11 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 			}
 		}
 
-		if (!duplicate_addr)
+		if (duplicate_addr) {
+			bt_id_add_duplicate(keys);
+		} else {
 			bt_id_add(keys);
+		}
 	}
 
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
