@@ -19,9 +19,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_dw_common);
 
-static __aligned(32) struct dw_lli lli_pool[DW_MAX_CHAN][CONFIG_DMA_DW_LLI_POOL_SIZE];
-
-
 /* number of tries to wait for reset */
 #define DW_DMA_CFG_TRIES	10000
 
@@ -185,7 +182,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 
 
 	/* setup a list of lli structs. we don't need to allocate */
-	chan_data->lli = &lli_pool[channel][0]; /* TODO allocate here */
+	chan_data->lli = &dev_data->lli_pool[channel][0]; /* TODO allocate here */
 	chan_data->lli_count = cfg->block_count;
 
 	/* zero the scatter gather list */
