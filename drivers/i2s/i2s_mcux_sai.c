@@ -220,7 +220,7 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev,
 	I2S_Type *base = (I2S_Type *)dev_cfg->base;
 	struct stream *strm = &dev_data->tx;
 	void *buffer = NULL;
-	int ret;
+	int ret = 0;
 	unsigned int key;
 
 	*blocks_queued = 0;
@@ -435,8 +435,7 @@ static void enable_mclk_direction(const struct device *dev, bool dir)
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	uint32_t offset = dev_cfg->mclk_pin_offset;
 	uint32_t mask = dev_cfg->mclk_pin_mask;
-	uint32_t *gpr = (uint32_t *)DT_REG_ADDR(DT_NODELABEL(iomuxcgpr))
-				+ offset;
+	uint32_t *gpr = (uint32_t *)(DT_REG_ADDR(DT_NODELABEL(iomuxcgpr)) + offset);
 
 	if (dir) {
 		*gpr |= mask;
@@ -535,8 +534,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 
 	memset(&config, 0, sizeof(config));
 
-	enable_mclk_direction(dev,
-			      i2s_cfg->options | I2S_OPT_BIT_CLK_MASTER);
+	const bool is_mclk_slave = i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE;
+	enable_mclk_direction(dev, !is_mclk_slave);
 	get_mclk_rate(dev, &mclk);
 	LOG_DBG("mclk is %d", mclk);
 
@@ -1136,6 +1135,7 @@ static void audio_clock_settings(const struct device *dev)
 	imxrt_audio_codec_pll_init(clock_name, dev_cfg->clk_src,
 				   dev_cfg->clk_pre_div, dev_cfg->clk_src_div);
 
+	audioPllConfig.src = dev_cfg->pll_src;
 	audioPllConfig.loopDivider = dev_cfg->pll_lp;
 	audioPllConfig.postDivider = dev_cfg->pll_pd;
 	audioPllConfig.numerator = dev_cfg->pll_num;
