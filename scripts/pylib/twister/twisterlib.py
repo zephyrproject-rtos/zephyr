@@ -559,6 +559,7 @@ class BinaryHandler(Handler):
         self.asan = False
         self.ubsan = False
         self.coverage = False
+        self.seed = None
 
     def try_kill_process_by_pid(self):
         if self.pid_fn:
@@ -636,6 +637,10 @@ class BinaryHandler(Handler):
                        "--track-origins=yes",
                        ] + command
             run_valgrind = True
+
+        # Only valid for native_posix
+        if self.seed is not None:
+            command = command + ["--seed="+str(self.seed)]
 
         logger.debug("Spawning process: " +
                      " ".join(shlex.quote(word) for word in command) + os.linesep +
@@ -2563,6 +2568,7 @@ class ProjectBuilder(FilterBuilder):
         self.warnings_as_errors = kwargs.get('warnings_as_errors', True)
         self.overflow_as_errors = kwargs.get('overflow_as_errors', False)
         self.suite_name_check = kwargs.get('suite_name_check', True)
+        self.seed = kwargs.get('seed', 0)
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -2851,6 +2857,11 @@ class ProjectBuilder(FilterBuilder):
                 else:
                     more_info = "build"
 
+                if ( instance.status in ["error", "failed", "timeout", "flash_error"]
+                     and hasattr(self.instance.handler, 'seed')
+                     and self.instance.handler.seed is not None ):
+                    more_info += "/seed: " + str(self.seed)
+
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
                 results.done + results.skipped_filter, total_tests_width, total_to_do , instance.platform.name,
                 instance.testcase.name, status, more_info))
@@ -2927,6 +2938,12 @@ class ProjectBuilder(FilterBuilder):
             if instance.handler.type_str == "device":
                 instance.handler.suite = self.suite
 
+            if(self.seed is not None and instance.platform.name.startswith("native_posix")):
+                self.parse_generated()
+                if('CONFIG_FAKE_ENTROPY_NATIVE_POSIX' in self.defconfig and
+                    self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
+                    instance.handler.seed = self.seed
+
             instance.handler.handle()
 
         sys.stdout.flush()
@@ -2988,7 +3005,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "toolchain_allow": {"type": "set"},
                        "filter": {"type": "str"},
                        "harness": {"type": "str"},
-                       "harness_config": {"type": "map", "default": {}}
+                       "harness_config": {"type": "map", "default": {}},
+                       "seed": {"type": "int", "default": 0}
                        }
 
     RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "release",
@@ -3030,6 +3048,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.quarantine_verify = False
         self.retry_build_errors = False
         self.suite_name_check = True
+        self.seed = 0
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -3361,6 +3380,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         tc.min_flash = tc_dict["min_flash"]
                         tc.extra_sections = tc_dict["extra_sections"]
                         tc.integration_platforms = tc_dict["integration_platforms"]
+                        tc.seed = tc_dict["seed"]
 
                         tc.parse_subcases(tc_path)
 
@@ -3752,7 +3772,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                                     verbose=self.verbose,
                                     warnings_as_errors=self.warnings_as_errors,
                                     overflow_as_errors=self.overflow_as_errors,
-                                    suite_name_check=self.suite_name_check
+                                    suite_name_check=self.suite_name_check,
+                                    seed=self.seed
                                     )
                 pb.process(pipeline, done_queue, task, lock, results)
 
