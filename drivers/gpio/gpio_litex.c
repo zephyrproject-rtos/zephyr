@@ -33,12 +33,12 @@ static const char *LITEX_LOG_CANNOT_CHANGE_DIR =
 	"Cannot change port direction selected in device tree\n";
 
 struct gpio_litex_cfg {
-	volatile uint32_t *reg_addr;
+	uint32_t reg_addr;
 	int reg_size;
-	volatile uint32_t *ev_pending_addr;
-	volatile uint32_t *ev_enable_addr;
-	volatile uint32_t *ev_mode_addr;
-	volatile uint32_t *ev_edge_addr;
+	uint32_t ev_pending_addr;
+	uint32_t ev_enable_addr;
+	uint32_t ev_mode_addr;
+	uint32_t ev_edge_addr;
 	int nr_gpios;
 	bool port_is_output;
 };
@@ -288,24 +288,16 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 
 #define GPIO_LITEX_INIT(n) \
 	static int gpio_litex_port_init_##n(const struct device *dev); \
-	BUILD_ASSERT(DT_INST_REG_SIZE(n) != 0 \
-		     && DT_INST_REG_SIZE(n) % 4 == 0, \
-		     "Register size must be a multiple of 4"); \
 \
 	static const struct gpio_litex_cfg gpio_litex_cfg_##n = { \
-		.reg_addr = \
-		(volatile uint32_t *) DT_INST_REG_ADDR(n), \
-		.reg_size = DT_INST_REG_SIZE(n) / 4, \
+		.reg_addr = DT_INST_REG_ADDR(n), \
+		.reg_size = DT_INST_REG_SIZE(n), \
 		.nr_gpios = DT_INST_PROP(n, ngpios), \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), ( \
-			.ev_mode_addr = \
-			(volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, irq_mode), \
-			.ev_edge_addr = \
-			(volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, irq_edge), \
-			.ev_pending_addr = \
-			(volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, irq_pend), \
-			.ev_enable_addr = \
-			(volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, irq_en), \
+			.ev_mode_addr    = DT_INST_REG_ADDR_BY_NAME(n, irq_mode), \
+			.ev_edge_addr    = DT_INST_REG_ADDR_BY_NAME(n, irq_edge), \
+			.ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, irq_pend), \
+			.ev_enable_addr  = DT_INST_REG_ADDR_BY_NAME(n, irq_en), \
 		)) \
 		.port_is_output = DT_INST_PROP(n, port_is_output), \
 	}; \
@@ -325,8 +317,11 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 	{ \
 		const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev); \
 \
-		/* each 4-byte register is able to handle 8 GPIO pins */ \
-		if (gpio_config->nr_gpios > (gpio_config->reg_size * 8)) { \
+		/* Check if gpios fit in declared register space */ \
+		/* Number of subregisters times size in bits */ \
+		const int max_gpios_can_fit = DT_INST_REG_SIZE(n) / 4 \
+					* CONFIG_LITEX_CSR_DATA_WIDTH; \
+		if (gpio_config->nr_gpios > max_gpios_can_fit) { \
 			LOG_ERR("%s", LITEX_LOG_REG_SIZE_NGPIOS_MISMATCH); \
 			return -EINVAL; \
 		} \
