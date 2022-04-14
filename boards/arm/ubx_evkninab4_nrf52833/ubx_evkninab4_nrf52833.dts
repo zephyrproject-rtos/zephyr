@@ -45,13 +45,13 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		red_pwm_led: red_pwm_led {
-			pwms = <&pwm0 13>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm0 33>;
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm0 32>;
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -185,8 +185,6 @@ arduino_spi: &spi2 {
 };
 
 &pwm0 {
-	status = "okay";
-	status = "okay";
 	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
