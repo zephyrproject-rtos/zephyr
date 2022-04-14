@@ -705,6 +705,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "as 'slow' in testcase.yaml. Normally these are only built.")
 
     parser.add_argument(
+        "--seed", type=int,
+        help="Seed for native posix pseudo-random number generator")
+
+    parser.add_argument(
         "--short-build-path",
         action="store_true",
         help="Create shorter build directory paths based on symbolic links. "
@@ -957,6 +961,7 @@ def main():
     suite.integration = options.integration
     suite.overflow_as_errors = options.overflow_as_errors
     suite.suite_name_check = not options.disable_suite_name_check
+    suite.seed = options.seed
 
     # get all enabled west projects
     west_proj = west_projects()
