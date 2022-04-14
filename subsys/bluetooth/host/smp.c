@@ -3896,6 +3896,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_ident_addr_info *req = (void *)buf->data;
 	uint8_t err;
+	bool duplicate_addr = false;
 
 	BT_DBG("identity %s", bt_addr_le_str(&req->addr));
 
@@ -3914,6 +3915,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 			}
 
 			bt_keys_clear(keys);
+			duplicate_addr = true;
 		}
 	}
 
@@ -3958,7 +3960,8 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 			}
 		}
 
-		bt_id_add(keys);
+		if (!duplicate_addr)
+			bt_id_add(keys);
 	}
 
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
