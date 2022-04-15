@@ -1958,8 +1958,8 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream);
 
 /** @brief Release Audio Stream
  *
- *  This procedure is used by a client to release a unicast or broadcast
- *  source stream.
+ *  This procedure is used by a unicast client or unicast server to release a
+ *  unicast stream.
  *
  *  Broadcast sink streams cannot be released, but can be deleted by
  *  bt_audio_broadcast_sink_delete().
