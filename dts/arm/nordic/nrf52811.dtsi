@@ -310,7 +310,7 @@
 			interrupts = <28 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "PWM_0";
-			#pwm-cells = <1>;
+			#pwm-cells = <3>;
 		};
 
 		pdm0: pdm@4001d000 {
@@ -365,7 +365,7 @@
 		label = "SW_PWM";
 		generator = <&timer2>;
 		clock-prescaler = <0>;
-		#pwm-cells = <1>;
+		#pwm-cells = <3>;
 	};
 };
 

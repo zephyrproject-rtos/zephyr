@@ -327,7 +327,7 @@
 		label = "SW_PWM";
 		generator = <&timer1>;
 		clock-prescaler = <0>;
-		#pwm-cells = <1>;
+		#pwm-cells = <3>;
 	};
 };
 
