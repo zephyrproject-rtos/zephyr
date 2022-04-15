@@ -287,7 +287,7 @@ pwm0: pwm@21000 {
 	interrupts = <33 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_0";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pwm1: pwm@22000 {
@@ -296,7 +296,7 @@ pwm1: pwm@22000 {
 	interrupts = <34 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_1";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pwm2: pwm@23000 {
@@ -305,7 +305,7 @@ pwm2: pwm@23000 {
 	interrupts = <35 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_2";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pwm3: pwm@24000 {
@@ -314,7 +314,7 @@ pwm3: pwm@24000 {
 	interrupts = <36 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_3";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 gpio0: gpio@842500 {
