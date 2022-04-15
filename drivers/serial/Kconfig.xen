@@ -37,7 +37,6 @@ config XEN_EARLY_CONSOLEIO
 	bool "Early printk/stdout through console_io Xen interface"
 	depends on BOARD_XENVM
 	depends on UART_XEN_HVC
-	default n
 	help
 	  Enable setting of console_io symbol hook for stdout and printk.
 	  Log output will become available on PRE_KERNEL_1 stage. Requires
