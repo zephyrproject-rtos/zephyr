@@ -790,7 +790,7 @@ class DeviceHandler(Handler):
 
     def make_device_available(self, serial):
         for d in self.suite.duts:
-            if d.serial == serial or d.serial_pty:
+            if serial in [d.serial_pty, d.serial]:
                 d.available = 1
 
     @staticmethod
@@ -876,6 +876,13 @@ class DeviceHandler(Handler):
                     elif runner == "stm32cubeprogrammer":
                         command.append("--tool-opt=sn=%s" % (board_id))
 
+                    # Receive parameters from an runner_params field
+                    # of the specified hardware map file.
+                    for d in self.suite.duts:
+                        if (d.platform == self.instance.platform.name) and d.runner_params:
+                            for param in d.runner_params:
+                                command.append(param)
+
             if command_extra_args != []:
                 command.append('--')
                 command.extend(command_extra_args)
@@ -908,7 +915,10 @@ class DeviceHandler(Handler):
                 outs, errs = ser_pty_process.communicate()
                 logger.debug("Process {} terminated outs: {} errs {}".format(serial_pty, outs, errs))
 
-            self.make_device_available(serial_device)
+            if serial_pty:
+                self.make_device_available(serial_pty)
+            else:
+                self.make_device_available(serial_device)
             return
 
         ser.flush()
@@ -1003,8 +1013,10 @@ class DeviceHandler(Handler):
         if post_script:
             self.run_custom_script(post_script, 30)
 
-        self.make_device_available(serial_device)
-
+        if serial_pty:
+            self.make_device_available(serial_pty)
+        else:
+            self.make_device_available(serial_device)
 
 class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
@@ -4360,6 +4372,7 @@ class DUT(object):
                  product=None,
                  serial_pty=None,
                  connected=False,
+                 runner_params=None,
                  pre_script=None,
                  post_script=None,
                  post_flash_script=None,
@@ -4376,6 +4389,7 @@ class DUT(object):
         self.id = id
         self.product = product
         self.runner = runner
+        self.runner_params = runner_params
         self.fixtures = []
         self.post_flash_script = post_flash_script
         self.post_script = post_script
@@ -4478,17 +4492,22 @@ class HardwareMap:
             platform  = dut.get('platform')
             id = dut.get('id')
             runner = dut.get('runner')
+            runner_params = dut.get('runner_params')
+            serial_pty = dut.get('serial_pty')
             serial = dut.get('serial')
             baud = dut.get('baud', None)
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
+            connected= dut.get('connected') and ((serial or serial_pty) is not None)
             new_dut = DUT(platform=platform,
                           product=product,
                           runner=runner,
+                          runner_params=runner_params,
                           id=id,
+                          serial_pty=serial_pty,
                           serial=serial,
                           serial_baud=baud,
-                          connected=serial is not None,
+                          connected=connected,
                           pre_script=pre_script,
                           post_script=post_script,
                           post_flash_script=post_flash_script)
