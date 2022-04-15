@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_ARM_NXP_LPC_COMMON_PINCTRL_SOC_H_
-#define ZEPHYR_SOC_ARM_NXP_LPC_COMMON_PINCTRL_SOC_H_
+#ifndef ZEPHYR_SOC_ARM_NXP_LPC_55xxx_PINCTRL_SOC_H_
+#define ZEPHYR_SOC_ARM_NXP_LPC_55xxx_PINCTRL_SOC_H_
 
 #include <devicetree.h>
 #include <zephyr/types.h>
@@ -65,4 +65,4 @@ typedef uint32_t pinctrl_soc_pin_t;
 }
 #endif
 
-#endif /* ZEPHYR_SOC_ARM_NXP_LPC_COMMON_PINCTRL_SOC_H_ */
+#endif /* ZEPHYR_SOC_ARM_NXP_LPC_55xxx_PINCTRL_SOC_H_ */
