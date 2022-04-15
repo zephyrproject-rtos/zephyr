@@ -6,6 +6,7 @@
 
 #include "mem_protect.h"
 #include <kernel_internal.h> /* For z_main_thread */
+#include <sys/libc-hooks.h> /* for z_libc_partition */
 
 static struct k_thread child_thread;
 static K_THREAD_STACK_DEFINE(child_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
@@ -13,7 +14,11 @@ static K_THREAD_STACK_DEFINE(child_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
 /* Special memory domain for test case purposes */
 static struct k_mem_domain test_domain;
 
+#if Z_LIBC_PARTITION_EXISTS
+#define PARTS_USED	3
+#else
 #define PARTS_USED	2
+#endif
 /* Maximum number of allowable memory partitions defined by the build */
 #define NUM_RW_PARTS	(CONFIG_MAX_DOMAIN_PARTITIONS - PARTS_USED)
 
@@ -45,7 +50,12 @@ static K_THREAD_DEFINE(zzz_thread, 256 + CONFIG_TEST_EXTRA_STACK_SIZE,
 void test_mem_domain_setup(void)
 {
 	int max_parts = arch_mem_domain_max_partitions_get();
-	struct k_mem_partition *parts[] = { &ro_part, &ztest_mem_partition };
+	struct k_mem_partition *parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&ro_part, &ztest_mem_partition
+	};
 
 	num_rw_parts = max_parts - PARTS_USED;
 	zassert_true(num_rw_parts <= NUM_RW_PARTS,

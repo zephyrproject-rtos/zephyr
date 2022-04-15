@@ -6,6 +6,7 @@
 
 #include "mem_protect.h"
 #include <syscall_handler.h>
+#include <sys/libc-hooks.h> /* for z_libc_partition */
 
 /* function prototypes */
 static inline void dummy_start(struct k_timer *timer)
@@ -38,6 +39,9 @@ K_MEM_PARTITION_DEFINE(inherit_memory_partition,
 		       K_MEM_PARTITION_P_RW_U_RW);
 
 struct k_mem_partition *inherit_memory_partition_array[] = {
+#if Z_LIBC_PARTITION_EXISTS
+	&z_libc_partition,
+#endif
 	&inherit_memory_partition,
 	&ztest_mem_partition
 };
