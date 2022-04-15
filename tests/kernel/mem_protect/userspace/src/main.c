@@ -17,6 +17,7 @@
 #include <debug/stack.h>
 #include <syscall_handler.h>
 #include "test_syscall.h"
+#include <sys/libc-hooks.h> /* for z_libc_partition */
 
 #if defined(CONFIG_ARC)
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
@@ -680,7 +681,12 @@ static void drop_user(volatile bool *to_modify)
  */
 static void test_init_and_access_other_memdomain(void)
 {
-	struct k_mem_partition *parts[] = { &ztest_mem_partition, &alt_part };
+	struct k_mem_partition *parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&ztest_mem_partition, &alt_part
+	};
 
 	zassert_equal(
 		k_mem_domain_init(&alternate_domain, ARRAY_SIZE(parts), parts),
