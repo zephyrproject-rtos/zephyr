@@ -6,7 +6,6 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
-#include <board.h>
 #include <drivers/gpio.h>
 #include <device.h>
 #include <string.h>
@@ -107,7 +106,7 @@ static struct x_y ball_vel = { 0, 0 };
 static int64_t a_timestamp;
 static int64_t b_timestamp;
 
-#define SOUND_PIN            EXT_P0_GPIO_PIN
+#define SOUND_PWM_CHANNEL    0
 #define SOUND_PERIOD_PADDLE  200
 #define SOUND_PERIOD_WALL    1000
 
@@ -121,7 +120,7 @@ static enum sound_state {
 
 static inline void beep(int period)
 {
-	pwm_pin_set_usec(pwm, SOUND_PIN, period, period / 2, 0);
+	pwm_pin_set_usec(pwm, SOUND_PWM_CHANNEL, period, period / 2, 0);
 }
 
 static void sound_set(enum sound_state state)
