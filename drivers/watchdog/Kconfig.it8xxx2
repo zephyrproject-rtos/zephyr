@@ -21,7 +21,6 @@ config WDT_ITE_WARNING_LEADING_TIME_MS
 config WDT_ITE_REDUCE_WARNING_LEADING_TIME
 	bool "Reduce warning leading time"
 	depends on SOC_IT8XXX2
-	default n
 	help
 	  Once warning timer triggered, if watchdog timer isn't reloaded,
 	  then we will reduce interval of warning timer to 30ms to print
