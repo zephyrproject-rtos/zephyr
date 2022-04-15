@@ -26,8 +26,6 @@ config PINMUX_INIT_PRIORITY
 
 source "drivers/pinmux/Kconfig.beetle"
 
-source "drivers/pinmux/Kconfig.cc13xx_cc26xx"
-
 source "drivers/pinmux/Kconfig.esp32"
 
 source "drivers/pinmux/Kconfig.hsdk"

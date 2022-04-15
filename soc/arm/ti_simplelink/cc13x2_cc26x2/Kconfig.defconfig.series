@@ -25,10 +25,6 @@ config NUM_IRQS
 config CC13X2_CC26X2_RTC_TIMER
 	default y
 
-config PINMUX_CC13XX_CC26XX
-	default y
-	depends on PINMUX
-
 config GPIO_CC13XX_CC26XX
 	default y
 	depends on GPIO
