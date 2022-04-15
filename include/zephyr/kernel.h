@@ -805,6 +805,18 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  * @return Zero on success, otherwise error code
  */
 int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
+
+/**
+ * @brief Pin a thread to a CPU
+ *
+ * Pin a thread to a CPU by first clearing the cpu mask and then enabling the
+ * thread on the selected CPU.
+ *
+ * @param thread Thread to operate upon
+ * @param cpu CPU index
+ * @return Zero on success, otherwise error code
+ */
+int k_thread_cpu_pin(k_tid_t thread, int cpu);
 #endif
 
 /**
