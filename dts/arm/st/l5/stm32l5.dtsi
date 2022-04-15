@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <freq.h>
 
 / {
@@ -369,6 +370,7 @@
 			label = "DAC_1";
 			#io-channel-cells = <1>;
 		};
+
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
@@ -389,6 +391,17 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			status = "disabled";
 			label = "SPI_3";
+		};
+
+		octospi1: octospi@44021000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x44021000 0x400>;
+			interrupts = <76 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			label= "OCTOSPI1";
 		};
 
 		rng: rng@420c0800 {
