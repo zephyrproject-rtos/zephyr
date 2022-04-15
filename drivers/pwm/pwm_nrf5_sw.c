@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT nordic_nrf_sw_pwm
 
 #include <soc.h>
+#include <drivers/pwm.h>
+#include <dt-bindings/gpio/gpio.h>
 #include <nrfx_gpiote.h>
 #include <nrfx_ppi.h>
 #include <hal/nrf_gpio.h>
-
-#include <drivers/pwm.h>
 #include <nrf_peripherals.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
@@ -54,6 +54,7 @@ struct pwm_config {
 		NRF_TIMER_Type *timer;
 	};
 	uint8_t psel_ch[PWM_0_MAP_SIZE];
+	uint8_t initially_inverted;
 	uint8_t map_size;
 	uint8_t prescaler;
 };
@@ -116,15 +117,11 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 	struct pwm_data *data = dev->data;
 	uint32_t ppi_mask;
 	uint8_t channel = pwm;
+	uint8_t active_level;
 	uint8_t psel_ch;
 	uint8_t gpiote_ch;
 	const uint8_t *ppi_chs;
-	uint32_t ret;
-
-	if (flags) {
-		/* PWM polarity not supported (yet?) */
-		return -ENOTSUP;
-	}
+	int ret;
 
 	if (channel >= config->map_size) {
 		LOG_ERR("Invalid channel: %u.", channel);
@@ -173,21 +170,36 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 		   (PPI_PER_CH > 2 ? BIT(ppi_chs[2]) : 0);
 	NRF_PPI->CHENCLR = ppi_mask;
 
-	/* configure GPIO pin as output */
-	nrf_gpio_cfg_output(psel_ch);
-	if (pulse_cycles == 0U) {
-		/* 0% duty cycle, keep pin low */
-		nrf_gpio_pin_clear(psel_ch);
+	active_level = (flags & PWM_POLARITY_INVERTED) ? 0 : 1;
 
-		goto pin_set_pwm_off;
-	} else if (pulse_cycles == period_cycles) {
-		/* 100% duty cycle, keep pin high */
-		nrf_gpio_pin_set(psel_ch);
+	/*
+	 * If the duty cycle is 0% or 100%, there is no need to generate
+	 * the PWM signal, just	keep the output pin in inactive or active
+	 * state, respectively.
+	 */
+	if (pulse_cycles == 0 || pulse_cycles == period_cycles) {
+		nrf_gpio_pin_write(psel_ch,
+			pulse_cycles == 0 ? !active_level
+					  :  active_level);
 
-		goto pin_set_pwm_off;
-	} else {
-		/* x% duty cycle, start PWM with pin low */
-		nrf_gpio_pin_clear(psel_ch);
+		/* No PWM generation for this channel. */
+		data->pulse_cycles[channel] = 0U;
+
+		/* Check if PWM signal is generated on any channel. */
+		for (uint8_t i = 0; i < config->map_size; i++) {
+			if (data->pulse_cycles[i]) {
+				return 0;
+			}
+		}
+
+		/* No PWM generation needed, stop the timer. */
+		if (USE_RTC) {
+			rtc->TASKS_STOP = 1;
+		} else {
+			timer->TASKS_STOP = 1;
+		}
+
+		return 0;
 	}
 
 	/* configure RTC / TIMER */
@@ -212,8 +224,12 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 		timer->TASKS_CLEAR = 1;
 	}
 
-	/* configure GPIOTE, toggle with initialise output high */
-	NRF_GPIOTE->CONFIG[gpiote_ch] = 0x00130003 | (psel_ch << 8);
+	/* Configure GPIOTE - toggle task with proper initial output value. */
+	NRF_GPIOTE->CONFIG[gpiote_ch] =
+		(GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos) |
+		((uint32_t)psel_ch << 8) |
+		(GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos) |
+		((uint32_t)active_level << GPIOTE_CONFIG_OUTINIT_Pos);
 
 	/* setup PPI */
 	if (USE_RTC) {
@@ -258,29 +274,6 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 	data->pulse_cycles[channel] = pulse_cycles;
 
 	return 0;
-
-pin_set_pwm_off:
-	data->pulse_cycles[channel] = 0U;
-	bool pwm_active = false;
-
-	/* stop timer if all channels are inactive */
-	for (channel = 0U; channel < config->map_size; channel++) {
-		if (data->pulse_cycles[channel]) {
-			pwm_active = true;
-			break;
-		}
-	}
-
-	if (!pwm_active) {
-		/* No active PWM, stop timer */
-		if (USE_RTC) {
-			rtc->TASKS_STOP = 1;
-		} else {
-			timer->TASKS_STOP = 1;
-		}
-	}
-
-	return 0;
 }
 
 static int pwm_nrf5_sw_get_cycles_per_sec(const struct device *dev,
@@ -318,10 +311,10 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 	NRF_TIMER_Type *timer = pwm_config_timer(config);
 	NRF_RTC_Type *rtc = pwm_config_rtc(config);
 
-	/* Allocate resources. */
 	for (uint32_t i = 0; i < config->map_size; i++) {
 		nrfx_err_t err;
 
+		/* Allocate resources. */
 		for (uint32_t j = 0; j < PPI_PER_CH; j++) {
 			err = nrfx_ppi_channel_alloc(&data->ppi_ch[i][j]);
 			if (err != NRFX_SUCCESS) {
@@ -341,6 +334,11 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 			LOG_ERR("Failed to allocate GPIOTE channel");
 			return -ENOMEM;
 		}
+
+		/* Set initial state of the output pins. */
+		nrf_gpio_pin_write(config->psel_ch[i],
+			(config->initially_inverted & BIT(i)) ? 1 : 0);
+		nrf_gpio_cfg_output(config->psel_ch[i]);
 	}
 
 	if (USE_RTC) {
@@ -366,11 +364,17 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 #define PSEL_AND_COMMA(_node_id, _prop, _idx) \
 	NRF_DT_GPIOS_TO_PSEL_BY_IDX(_node_id, _prop, _idx),
 
+#define ACTIVE_LOW_BITS(_node_id, _prop, _idx) \
+	((DT_GPIO_FLAGS_BY_IDX(_node_id, _prop, _idx) & GPIO_ACTIVE_LOW) \
+	 ? BIT(_idx) : 0) |
+
 static const struct pwm_config pwm_nrf5_sw_0_config = {
 	COND_CODE_1(USE_RTC, (.rtc), (.timer)) = GENERATOR_ADDR,
 	.psel_ch = {
 		DT_INST_FOREACH_PROP_ELEM(0, channel_gpios, PSEL_AND_COMMA)
 	},
+	.initially_inverted =
+		DT_INST_FOREACH_PROP_ELEM(0, channel_gpios, ACTIVE_LOW_BITS) 0,
 	.map_size = PWM_0_MAP_SIZE,
 	.prescaler = DT_INST_PROP(0, clock_prescaler),
 };
