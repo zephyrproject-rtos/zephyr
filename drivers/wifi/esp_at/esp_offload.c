@@ -517,7 +517,7 @@ void esp_close_work(struct k_work *work)
 	}
 
 	/* Should we notify that the socket has been closed? */
-	if (old_flags & ESP_SOCK_CONNECTED) {
+	if (old_flags & ESP_SOCK_CLOSE_PENDING) {
 		k_mutex_lock(&sock->lock, K_FOREVER);
 		if (sock->recv_cb) {
 			sock->recv_cb(sock->context, NULL, NULL, NULL, 0,
