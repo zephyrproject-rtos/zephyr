@@ -204,7 +204,6 @@ config TRACING_CMD_BUFFER_SIZE
 
 config TRACING_OBJECT_TRACKING
 	bool "Object tracking"
-	default n
 	help
 	  Keep lists to track kernel objects.
 
