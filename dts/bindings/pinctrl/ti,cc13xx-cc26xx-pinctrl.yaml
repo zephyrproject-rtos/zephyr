@@ -1,0 +1,88 @@
+# Copyright (c) 2022 Vaishnav Achath
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI SimpleLink CC13xx / CC26xx pinctrl node.
+
+    Device pin configuration should be placed in the child nodes of this node.
+    Populate the 'pinmux' field with a pair consisting of a pin number and its IO
+    functions.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as in the i2c0 example shown at the end.
+
+    Here is a list of
+    supported standard pin properties:
+
+    - bias-disable: Disable pull-up/down.
+    - bias-pull-down: Enable pull-down resistor.
+    - bias-pull-up: Enable pull-up resistor.
+    - drive-open-drain: Output driver is open-drain.
+    - drive-open-drain: Output driver is open-source.
+    - input-enable: enable input.
+    - input-schmitt-enable: enable input schmitt circuit.
+
+    An example for CC13XX family, include the chip level pinctrl
+    DTSI file in the board level DTS:
+
+      #include <dt-bindings/pinctrl/cc13xx_cc26xx-pinctrl.h>
+
+    We want to configure the I2C pins to open drain, with pullup enabled
+    and input enabled.
+
+    To change a pin's pinctrl default properties add a reference to the
+    pin in the board's DTS file and set the properties.
+
+      &i2c0 {
+        pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
+        pinctrl-1 = <&i2c0_scl_sleep &i2c0_sda_sleep>;
+        pinctrl-names = "default", "sleep";
+      }
+
+    The i2c0_scl_default corresponds to the following in the board dts file:
+
+      &pinctrl {
+        i2c0_scl_default: i2c0_scl_default {
+          pinmux = <4 IOC_PORT_MCU_I2C_MSSCL>;
+          bias-pull-up;
+          drive-open-drain;
+          input-enable;
+        };
+      };
+
+compatible: "ti,cc13xx-cc26xx-pinctrl"
+
+include:
+    - name: base.yaml
+    - name: pincfg-node.yaml
+      child-binding:
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - drive-open-drain
+          - drive-open-source
+          - input-enable
+          - input-schmitt-enable
+
+properties:
+    reg:
+      required: true
+
+child-binding:
+  description: |
+    This binding gives a base representation of the CC13XX/CC26XX
+    pins configuration.
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        CC13XX/CC26XX pin's configuration (IO pin, IO function).
