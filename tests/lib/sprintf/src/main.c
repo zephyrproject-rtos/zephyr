@@ -255,7 +255,7 @@ void test_sprintf_double(void)
 	var.d = 1234.56789;
 	sprintf(buffer, "%f", var.d);
 	zassert_true((strcmp(buffer, "1234.567890") == 0),
-		     "sprintf(-1.0) - incorrect output '%s'\n", buffer);
+		     "sprintf(1234.56789) - incorrect output '%s'\n", buffer);
 
 	/*
 	 * With very large precision, the output differs significantly in
