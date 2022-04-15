@@ -98,14 +98,12 @@ if !ETH_STM32_AUTO_NEGOTIATION_ENABLE
 
 config ETH_STM32_SPEED_10M
 	bool "Set speed to 10 Mbps when autonegotiation is disabled"
-	default n
 	help
 	  Set this if using 10 Mbps and when autonegotiation is disabled, otherwise speed
 	  is 100 Mbps
 
 config ETH_STM32_MODE_HALFDUPLEX
 	bool "Half duplex mode"
-	default n
 	help
 	  Set this if using half duplex when autonegotiation is disabled otherwise
 	  duplex mode is full duplex
