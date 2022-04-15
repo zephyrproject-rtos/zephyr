@@ -353,7 +353,7 @@ do { \
 	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
 	bool has_rw_str = CBPRINTF_MUST_RUNTIME_PACKAGE( \
 					Z_LOG_MSG2_CBPRINTF_FLAGS(_cstr_cnt), \
-					__VA_ARGS__); \
+					Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
 	if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0) && !has_rw_str) {\
 		LOG_MSG2_DBG("create zero-copy message\n");\
 		Z_LOG_MSG2_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, \

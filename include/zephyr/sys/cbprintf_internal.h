@@ -110,24 +110,20 @@ extern "C" {
  * @retval 0 otherwise.
  */
 #define Z_CBPRINTF_IS_X_PCHAR(idx, x, flags) \
-	  (idx < Z_CBPRINTF_PACKAGE_FIRST_RO_STR_CNT_GET(flags) ? \
+	  (idx < (Z_CBPRINTF_PACKAGE_FIRST_RO_STR_CNT_GET(flags) + 1) ? \
 		0 : Z_CBPRINTF_IS_PCHAR(x, flags))
 
-/** @brief Calculate number of char * or wchar_t * arguments in the arguments.
+/* @brief Count number of char pointer arguments.
  *
- * @param fmt string.
+ * @param flags Option flags. If @ref CBPRINTF_PACKAGE_CONST_CHAR_RO is used then
+ * pointers to constants are not included in the count.
  *
- * @param ... string arguments.
+ * @param ... Format string with argument.
  *
- * @return number of arguments which are char * or wchar_t *.
+ * @return Number of counted char pointer arguments.
  */
-#define Z_CBPRINTF_HAS_PCHAR_ARGS(flags, fmt, ...) \
-	(FOR_EACH_IDX_FIXED_ARG(Z_CBPRINTF_IS_X_PCHAR, (+), flags, __VA_ARGS__))
-
 #define Z_CBPRINTF_PCHAR_COUNT(flags, ...) \
-	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
-		    (0), \
-		    (Z_CBPRINTF_HAS_PCHAR_ARGS(flags, __VA_ARGS__)))
+	FOR_EACH_IDX_FIXED_ARG(Z_CBPRINTF_IS_X_PCHAR, (+), flags, (const char *)__VA_ARGS__)
 
 /**
  * @brief Check if formatted string must be packaged in runtime.
