@@ -35,6 +35,12 @@ ZTEST(framework_tests, test_assert_mem_equal)
 	zassert_mem_equal(actual, expected, sizeof(expected), NULL);
 }
 
+ZTEST(framework_tests, test_skip_config)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
+	zassert_true(false, NULL);
+}
+
 /***************************************************************************************************
  * Sample fixture tests
  **************************************************************************************************/
