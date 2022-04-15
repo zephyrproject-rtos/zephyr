@@ -6,5 +6,7 @@
 };
 
 &sw_pwm {
+	status = "okay";
 	clock-prescaler = <3>;
+	channel-gpios = <&edge_connector 19 GPIO_ACTIVE_HIGH>;
 };
