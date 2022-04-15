@@ -1905,7 +1905,8 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 
 /** @brief Change Audio Stream Metadata
  *
- *  This procedure is used by a client to change the metadata of a stream.
+ *  This procedure is used by a unicast client or unicast server to change the
+ *  metadata of a stream.
  *
  *  @param stream Stream object
  *  @param meta_count Number of metadata entries
