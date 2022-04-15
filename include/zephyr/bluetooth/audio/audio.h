@@ -1917,7 +1917,8 @@ int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 
 /** @brief Disable Audio Stream
  *
- *  This procedure is used by a client to disable a stream.
+ *  This procedure is used by a unicast client or unicast server to disable a
+ *  stream.
  *
  *  This shall only be called for unicast streams, as broadcast streams will
  *  always be enabled once created.
