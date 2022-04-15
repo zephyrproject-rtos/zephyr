@@ -34,6 +34,7 @@ struct stm32_temp_data {
 
 struct stm32_temp_config {
 	int tsv_mv;
+	bool is_adc_calib;
 #if HAS_CALIBRATION
 	uint16_t *cal1_addr;
 	uint16_t *cal2_addr;
@@ -111,6 +112,7 @@ static const struct sensor_driver_api stm32_temp_driver_api = {
 static int stm32_temp_init(const struct device *dev)
 {
 	struct stm32_temp_data *data = dev->data;
+	const struct stm32_temp_config *cfg = dev->config;
 	struct adc_channel_cfg *accp = &data->adc_cfg;
 	struct adc_sequence *asp = &data->adc_seq;
 	int rc;
@@ -135,7 +137,7 @@ static int stm32_temp_init(const struct device *dev)
 		.buffer = &data->sample_buffer,
 		.buffer_size = sizeof(data->sample_buffer),
 		.resolution = 12,
-		.calibrate = true,
+		.calibrate = cfg->is_adc_calib,
 	};
 
 	return 0;
@@ -143,6 +145,7 @@ static int stm32_temp_init(const struct device *dev)
 
 static const struct stm32_temp_config stm32_temp_dev_config = {
 	.tsv_mv = DT_INST_PROP(0, ts_voltage_mv),
+	.is_adc_calib = DT_INST_PROP(0, adc_calib),
 #if HAS_CALIBRATION
 	.cal1_addr = (uint16_t *)DT_INST_PROP(0, ts_cal1_addr),
 	.cal2_addr = (uint16_t *)DT_INST_PROP(0, ts_cal2_addr),

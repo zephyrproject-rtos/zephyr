@@ -13,3 +13,9 @@ properties:
       type: int
       default: 3300
       description: Temperature sensor voltage in millivolts
+
+    adc-calib:
+      type: boolean
+      description: |
+        Calibrate ADC during first reading.
+        False if STM32F1, STM32F2, STM32F4, STM32F7, STM32L1
