@@ -46,8 +46,8 @@
 	};
 
 	soc {
-		pinmux: pinmux@40081000 {
-			compatible = "ti,cc13xx-cc26xx-pinmux";
+		pinctrl: pinctrl@40081000 {
+			compatible = "ti,cc13xx-cc26xx-pinctrl";
 			reg = <0x40081000 0x1000>;
 		};
 
