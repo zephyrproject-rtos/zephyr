@@ -1271,10 +1271,7 @@ const char *z_log_get_tag(void)
 
 int log_set_tag(const char *str)
 {
-	if (CONFIG_LOG_TAG_MAX_LEN == 0) {
-		return -ENOTSUP;
-	}
-
+#if CONFIG_LOG_TAG_MAX_LEN > 0
 	if (str == NULL) {
 		return -EINVAL;
 	}
@@ -1291,6 +1288,9 @@ int log_set_tag(const char *str)
 	}
 
 	return 0;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 int log_mem_get_usage(uint32_t *buf_size, uint32_t *usage)
