@@ -11,6 +11,8 @@
 #include <zephyr/bluetooth/audio/audio.h>
 
 #include "pacs_internal.h"
+#include "stream.h"
+#include "ascs_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_UNICAST_SERVER)
 #define LOG_MODULE_NAME bt_unicast_server
@@ -48,6 +50,33 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
 	}
 
 	unicast_server_cb = NULL;
+
+	return 0;
+}
+
+int bt_unicast_server_release(struct bt_audio_stream *stream, bool cache)
+{
+	int err;
+
+	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
+		err = unicast_server_cb->release(stream);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	if (err != 0) {
+		return err;
+	}
+
+	if (cache) {
+		ascs_ep_set_state(stream->ep,
+				  BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
+	} else {
+		/* ase_process will set the state to IDLE after sending the
+		 * notification, finalizing the release
+		 */
+		ascs_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_RELEASING);
+	}
 
 	return 0;
 }
