@@ -119,7 +119,6 @@ config SHELL_ECHO_STATUS
 
 config SHELL_START_OBSCURED
 	bool "Display asterisk when echoing"
-	default n
 	help
 	  If enabled, don't echo actual character, but echo * instead.
 	  This is used for login prompts.
