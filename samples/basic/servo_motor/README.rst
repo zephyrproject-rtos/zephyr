@@ -51,7 +51,7 @@ BBC micro:bit
 =============
 
 You will need to connect the motor's red wire to external 5V, the black wire to
-ground and the white wire to the SCL pin, i.e. pin 21 on the edge connector.
+ground and the white wire to the SCL pin, i.e. pin P19 on the edge connector.
 
 Building and Running
 ********************
