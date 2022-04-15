@@ -53,6 +53,36 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
 	return 0;
 }
 
+int bt_unicast_server_metadata(struct bt_audio_stream *stream,
+			       struct bt_codec_data meta[],
+			       size_t meta_count)
+{
+	struct bt_audio_ep *ep;
+	int err;
+
+
+	if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
+		err = unicast_server_cb->metadata(stream, meta, meta_count);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	ep = stream->ep;
+	for (size_t i = 0U; i < meta_count; i++) {
+		(void)memcpy(&ep->codec.meta[i], &meta[i],
+			     sizeof(ep->codec.meta[i]));
+	}
+
+	if (err) {
+		return err;
+	}
+
+	/* Set the state to the same state to trigger the notifications */
+	ascs_ep_set_state(ep, ep->status.state);
+
+	return 0;
+}
+
 int bt_unicast_server_disable(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep;
