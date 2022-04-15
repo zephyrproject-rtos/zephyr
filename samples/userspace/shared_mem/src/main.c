@@ -15,6 +15,7 @@
  */
 
 #include <sys/__assert.h>
+#include <sys/libc-hooks.h> /* for z_libc_partition */
 
 #include "main.h"
 #include "enc.h"
@@ -101,8 +102,18 @@ _app_ct_d char ctMSG[] = "CT!\n";
 
 void main(void)
 {
-	struct k_mem_partition *enc_parts[] = {&enc_part, &red_part, &blk_part};
-	struct k_mem_partition *pt_parts[] = {&user_part, &red_part};
+	struct k_mem_partition *enc_parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&enc_part, &red_part, &blk_part
+	};
+	struct k_mem_partition *pt_parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&user_part, &red_part
+	};
 	k_tid_t tPT, tENC, tCT;
 	int ret;
 
@@ -129,7 +140,7 @@ void main(void)
 	/* use K_FOREVER followed by k_thread_start*/
 	printk("ENC Thread Created %p\n", tENC);
 
-	ret = k_mem_domain_init(&enc_domain, 3, enc_parts);
+	ret = k_mem_domain_init(&enc_domain, ARRAY_SIZE(enc_parts), enc_parts);
 	__ASSERT(ret == 0, "k_mem_domain_init() on enc_domain failed %d", ret);
 	ARG_UNUSED(ret);
 
@@ -145,7 +156,7 @@ void main(void)
 	k_thread_access_grant(tPT, &allforone);
 	printk("PT Thread Created %p\n", tPT);
 
-	ret = k_mem_domain_init(&pt_domain, 2, pt_parts);
+	ret = k_mem_domain_init(&pt_domain, ARRAY_SIZE(pt_parts), pt_parts);
 	__ASSERT(ret == 0, "k_mem_domain_init() on pt_domain failed %d", ret);
 
 	k_mem_domain_add_thread(&pt_domain, tPT);

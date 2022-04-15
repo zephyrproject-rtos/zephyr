@@ -13,7 +13,7 @@
 #include <kernel.h>
 #include <zephyr.h>
 #include <ksched.h>
-
+#include <sys/libc-hooks.h>
 #include "footprint.h"
 
 #ifdef CONFIG_USERSPACE
@@ -44,7 +44,10 @@ void main(void)
 #ifdef CONFIG_USERSPACE
 	int ret;
 	struct k_mem_partition *mem_parts[] = {
-	&footprint_mem_partition
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&footprint_mem_partition
 	};
 
 	ret = k_mem_domain_init(&footprint_mem_domain,
