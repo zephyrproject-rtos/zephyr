@@ -250,6 +250,7 @@ struct esp_data {
 	struct k_work_delayable ip_addr_work;
 	struct k_work scan_work;
 	struct k_work connect_work;
+	struct k_work disconnect_work;
 	struct k_work mode_switch_work;
 	struct k_work dns_work;
 
