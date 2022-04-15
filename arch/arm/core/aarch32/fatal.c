@@ -77,9 +77,13 @@ void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
  *   fault handler will executed instead of the SVC.
  *
  * @param esf exception frame
+ * @param callee_regs Callee-saved registers (R4-R11)
  */
-void z_do_kernel_oops(const z_arch_esf_t *esf)
+void z_do_kernel_oops(const z_arch_esf_t *esf, _callee_saved_t *callee_regs)
 {
+#if !(defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE))
+	ARG_UNUSED(callee_regs);
+#endif
 	/* Stacked R0 holds the exception reason. */
 	unsigned int reason = esf->basic.r0;
 
@@ -103,14 +107,25 @@ void z_do_kernel_oops(const z_arch_esf_t *esf)
 #if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	z_arm_fatal_error(reason, esf);
 #else
+	z_arch_esf_t esf_copy;
+
+	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	/* extra exception info is collected in callee_reg param
+	 * on CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	 */
+
+	esf_copy.extra_info = (struct __extra_esf_info) {
+		.callee = callee_regs,
+	};
+#else
 	/* extra exception info is not collected for kernel oops
 	 * path today so we make a copy of the ESF and zero out
 	 * that information
 	 */
-	z_arch_esf_t esf_copy;
-
-	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
 	esf_copy.extra_info = (struct __extra_esf_info) { 0 };
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
 	z_arm_fatal_error(reason, &esf_copy);
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 }
