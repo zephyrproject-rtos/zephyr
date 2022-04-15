@@ -1934,7 +1934,8 @@ int bt_audio_stream_disable(struct bt_audio_stream *stream);
 
 /** @brief Start Audio Stream
  *
- *  This procedure is used by a client to make a stream start streaming.
+ *  This procedure is used by a unicast client or unicast server to make a
+ *  stream start streaming.
  *
  *  This shall only be called for unicast streams.
  *  Broadcast sinks will always be started once synchronized, and broadcast

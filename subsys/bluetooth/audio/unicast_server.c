@@ -53,6 +53,25 @@ int bt_audio_unicast_server_unregister_cb(const struct bt_audio_unicast_server_c
 	return 0;
 }
 
+int bt_unicast_server_start(struct bt_audio_stream *stream)
+{
+	int err;
+
+	if (unicast_server_cb != NULL && unicast_server_cb->start != NULL) {
+		err = unicast_server_cb->start(stream);
+	} else {
+		err = -ENOTSUP;
+	}
+
+	if (err != 0) {
+		return err;
+	}
+
+	ascs_ep_set_state(stream->ep, BT_AUDIO_EP_STATE_STREAMING);
+
+	return 0;
+}
+
 int bt_unicast_server_metadata(struct bt_audio_stream *stream,
 			       struct bt_codec_data meta[],
 			       size_t meta_count)
