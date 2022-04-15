@@ -350,7 +350,7 @@
 			interrupts = <28 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "PWM_0";
-			#pwm-cells = <1>;
+			#pwm-cells = <3>;
 		};
 
 		pdm0: pdm@4001d000 {
@@ -403,7 +403,7 @@
 			interrupts = <33 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "PWM_1";
-			#pwm-cells = <1>;
+			#pwm-cells = <3>;
 		};
 
 		pwm2: pwm@40022000 {
@@ -412,7 +412,7 @@
 			interrupts = <34 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "PWM_2";
-			#pwm-cells = <1>;
+			#pwm-cells = <3>;
 		};
 
 		spi2: spi@40023000 {
@@ -491,7 +491,7 @@
 			interrupts = <45 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			label = "PWM_3";
-			#pwm-cells = <1>;
+			#pwm-cells = <3>;
 		};
 
 		spi3: spi@4002f000 {
@@ -549,7 +549,7 @@
 		label = "SW_PWM";
 		generator = <&timer2>;
 		clock-prescaler = <0>;
-		#pwm-cells = <1>;
+		#pwm-cells = <3>;
 	};
 };
 
