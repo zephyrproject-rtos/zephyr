@@ -556,8 +556,29 @@ _stack_frame_endif:
 
 _oops:
     push {r0, lr}
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    /* Build _callee_saved_t. To match the struct
+     * definition we push the psp & then r11-r4
+     */
+    mrs r1, PSP
+    push {r1, r2}
+    push {r4-r11}
+    mov  r1, sp /* pointer to _callee_saved_t */
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
     bl z_do_kernel_oops
     /* return from SVC exception is done here */
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    /* We do not need to restore any register state here
+     * because we did not use any callee-saved registers
+     * in this routine. Therefore, we can just reset
+     * the MSP to its value prior to entering the function
+     */
+    add sp, #40
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
     pop {r0, pc}
 
 #if defined(CONFIG_USERSPACE)
