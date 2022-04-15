@@ -681,43 +681,6 @@ int bt_audio_stream_enable(struct bt_audio_stream *stream,
 	return 0;
 }
 
-int bt_audio_stream_start(struct bt_audio_stream *stream)
-{
-	uint8_t role;
-	int err;
-
-	BT_DBG("stream %p ep %p", stream, stream == NULL ? NULL : stream->ep);
-
-	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
-		return -EINVAL;
-	}
-
-	role = stream->conn->role;
-	if (role != BT_HCI_ROLE_CENTRAL) {
-		BT_DBG("Invalid conn role: %u, shall be central", role);
-		return -EINVAL;
-	}
-
-	switch (stream->ep->status.state) {
-	/* Valid only if ASE_State field = 0x03 (Enabling) */
-	case BT_AUDIO_EP_STATE_ENABLING:
-		break;
-	default:
-		BT_ERR("Invalid state: %s",
-		       bt_audio_ep_state_str(stream->ep->status.state));
-		return -EBADMSG;
-	}
-
-	err = bt_unicast_client_start(stream);
-	if (err != 0) {
-		BT_DBG("Starting stream failed: %d", err);
-		return err;
-	}
-
-	return 0;
-}
-
 int bt_audio_stream_stop(struct bt_audio_stream *stream)
 {
 	struct bt_audio_ep *ep;
@@ -1059,6 +1022,48 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 }
 
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+
+int bt_audio_stream_start(struct bt_audio_stream *stream)
+{
+	uint8_t state;
+	uint8_t role;
+	int err;
+
+	BT_DBG("stream %p ep %p", stream, stream == NULL ? NULL : stream->ep);
+
+	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		BT_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	state = stream->ep->status.state;
+	switch (state) {
+	/* Valid only if ASE_State field = 0x03 (Enabling) */
+	case BT_AUDIO_EP_STATE_ENABLING:
+		break;
+	default:
+		BT_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		return -EBADMSG;
+	}
+
+	role = stream->conn->role;
+	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
+	    role == BT_HCI_ROLE_CENTRAL) {
+		err = bt_unicast_client_start(stream);
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER) &&
+		   role == BT_HCI_ROLE_PERIPHERAL) {
+		err = bt_unicast_server_start(stream);
+	} else {
+		err = -EOPNOTSUPP;
+	}
+
+	if (err != 0) {
+		BT_DBG("Starting stream failed: %d", err);
+		return err;
+	}
+
+	return 0;
+}
 
 int bt_audio_stream_metadata(struct bt_audio_stream *stream,
 			     struct bt_codec_data *meta,
