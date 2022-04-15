@@ -138,6 +138,19 @@ it needs to report either a pass or fail.  For example::
 		ztest_run_test_suite(common);
 	}
 
+Use the following macro at the start of your test to skip it with a KConfig
+option.
+
+#define Z_TEST_SKIP_IFDEF(config)
+
+For example::
+
+	void test_test1(void)
+	{
+		Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
+		zassert_equal(1, 0, NULL);
+	}
+
 Quick start - Unit testing
 **************************
 
