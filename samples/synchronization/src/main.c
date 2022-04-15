@@ -113,8 +113,7 @@ void main(void)
 			PRIORITY, 0, K_FOREVER);
 	k_thread_name_set(&threadA_data, "thread_a");
 #if PIN_THREADS
-	k_thread_cpu_mask_clear(&threadA_data);
-	k_thread_cpu_mask_enable(&threadA_data, 0);
+	k_thread_cpu_pin(&threadA_data, 0);
 #endif
 
 	k_thread_create(&threadB_data, threadB_stack_area,
@@ -123,8 +122,7 @@ void main(void)
 			PRIORITY, 0, K_FOREVER);
 	k_thread_name_set(&threadB_data, "thread_b");
 #if PIN_THREADS
-	k_thread_cpu_mask_clear(&threadB_data);
-	k_thread_cpu_mask_enable(&threadB_data, 1);
+	k_thread_cpu_pin(&threadB_data, 1);
 #endif
 
 	k_thread_start(&threadA_data);
