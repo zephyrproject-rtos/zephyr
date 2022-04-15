@@ -28,7 +28,6 @@ config PLIC
 
 config SWERV_PIC
 	bool "SweRV EH1 Programmable Interrupt Controller (PIC)"
-	default n
 	help
 	  Programmable Interrupt Controller for the SweRV EH1 RISC-V CPU;
 
