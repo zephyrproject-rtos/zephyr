@@ -114,6 +114,9 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x1000 0x100>;
+		pinctrl: pinctrl {
+			compatible = "nxp,lpc-iocon-pinctrl";
+		};
 		pio0: pio0@0 {
 			compatible = "nxp,lpc-iocon-pio";
 			reg = <0x0 0x80>;
