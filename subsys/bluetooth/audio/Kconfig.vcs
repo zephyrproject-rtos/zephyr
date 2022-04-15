@@ -10,7 +10,6 @@
 
 config BT_VCS
 	bool "Volume Control Service Support [EXPERIMENTAL]"
-	default n
 	select EXPERIMENTAL
 	help
 	  This option enables support for Volume Control Service.
@@ -63,7 +62,6 @@ config BT_VCS_CLIENT
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select EXPERIMENTAL
-	default n
 	help
 	  This option enables support for Volume Control Profile.
 
