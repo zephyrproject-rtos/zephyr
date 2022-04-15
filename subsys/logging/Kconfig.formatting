@@ -108,7 +108,6 @@ config LOG_BACKEND_FORMAT_TIMESTAMP
 
 config LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP
 	bool "Format timestamp in Linux format"
-	default n
 	help
 	  This formatting is something in the middle between the pure raw format
 	  and the hh:mm:ss:ms,us one. It resembles the Linux's kernel format in
