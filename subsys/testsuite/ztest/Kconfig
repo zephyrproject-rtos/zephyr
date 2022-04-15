@@ -63,7 +63,6 @@ config ZTEST_RETEST_IF_PASSED
 
 config ZTEST_FATAL_HOOK
 	bool "Using a pre-defined fatal handler and hook function"
-	default n
 	help
 	  Use the pre-defined common fatal error handler and a post hook to
 	  do actions in your test case, this option often enabled when doing
@@ -72,7 +71,6 @@ config ZTEST_FATAL_HOOK
 
 config ZTEST_ASSERT_HOOK
 	bool "Using a pre-defined assert handler and hook function"
-	default n
 	help
 	  Use the pre-defined common assert fail handler and a post hook to
 	  do actions in your test case, this option often enabled when doing
