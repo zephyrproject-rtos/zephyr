@@ -2277,6 +2277,8 @@ class CMake():
         self.generator = None
         self.generator_cmd = None
 
+        self.default_encoding = sys.getdefaultencoding()
+
     def parse_generated(self):
         self.defconfig = {}
         return {}
@@ -2310,8 +2312,8 @@ class CMake():
             results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
 
             if out:
-                log_msg = out.decode(sys.getdefaultencoding())
-                with open(os.path.join(self.build_dir, self.log), "a") as log:
+                log_msg = out.decode(self.default_encoding)
+                with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
                     log.write(log_msg)
 
             else:
@@ -2320,8 +2322,8 @@ class CMake():
             # A real error occurred, raise an exception
             log_msg = ""
             if out:
-                log_msg = out.decode(sys.getdefaultencoding())
-                with open(os.path.join(self.build_dir, self.log), "a") as log:
+                log_msg = out.decode(self.default_encoding)
+                with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
                     log.write(log_msg)
 
             if log_msg:
@@ -2401,8 +2403,8 @@ class CMake():
             results = {"returncode": p.returncode}
 
         if out:
-            with open(os.path.join(self.build_dir, self.log), "a") as log:
-                log_msg = out.decode(sys.getdefaultencoding())
+            with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
+                log_msg = out.decode(self.default_encoding)
                 log.write(log_msg)
 
         return results
