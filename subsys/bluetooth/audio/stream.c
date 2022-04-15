@@ -22,6 +22,7 @@
 
 #include "endpoint.h"
 #include "unicast_client_internal.h"
+#include "unicast_server.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM)
 #define LOG_MODULE_NAME bt_audio_stream
@@ -835,51 +836,6 @@ int bt_audio_stream_stop(struct bt_audio_stream *stream)
 	return 0;
 }
 
-int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
-{
-	uint8_t role;
-	int err;
-
-	BT_DBG("stream %p cache %s", stream, cache ? "true" : "false");
-
-	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
-		return -EINVAL;
-	}
-
-	role = stream->conn->role;
-	if (role != BT_HCI_ROLE_CENTRAL) {
-		BT_DBG("Invalid conn role: %u, shall be central", role);
-		return -EINVAL;
-	}
-
-	switch (stream->ep->status.state) {
-	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
-	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
-	 /* or 0x02 (QoS Configured) */
-	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
-	 /* or 0x03 (Enabling) */
-	case BT_AUDIO_EP_STATE_ENABLING:
-	 /* or 0x04 (Streaming) */
-	case BT_AUDIO_EP_STATE_STREAMING:
-	 /* or 0x04 (Disabling) */
-	case BT_AUDIO_EP_STATE_DISABLING:
-		break;
-	default:
-		BT_ERR("Invalid state: %s",
-		       bt_audio_ep_state_str(stream->ep->status.state));
-		return -EBADMSG;
-	}
-
-	err = bt_unicast_client_release(stream);
-	if (err != 0) {
-		BT_DBG("Stopping stream failed: %d", err);
-		return err;
-	}
-
-	return 0;
-}
-
 int bt_audio_cig_terminate(struct bt_audio_unicast_group *group)
 {
 	BT_DBG("group %p", group);
@@ -1183,4 +1139,54 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 }
 
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+
+int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache)
+{
+	uint8_t state;
+	uint8_t role;
+	int err;
+
+	BT_DBG("stream %p cache %s", stream, cache ? "true" : "false");
+
+	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		BT_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	state = stream->ep->status.state;
+	switch (state) {
+	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+	 /* or 0x02 (QoS Configured) */
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+	 /* or 0x03 (Enabling) */
+	case BT_AUDIO_EP_STATE_ENABLING:
+	 /* or 0x04 (Streaming) */
+	case BT_AUDIO_EP_STATE_STREAMING:
+	 /* or 0x04 (Disabling) */
+	case BT_AUDIO_EP_STATE_DISABLING:
+		break;
+	default:
+		BT_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		return -EBADMSG;
+	}
+
+	role = stream->conn->role;
+	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
+	    role == BT_HCI_ROLE_CENTRAL) {
+		err = bt_unicast_client_release(stream);
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER) &&
+		   role == BT_HCI_ROLE_PERIPHERAL) {
+		err = bt_unicast_server_release(stream, cache);
+	} else {
+		err = -EOPNOTSUPP;
+	}
+
+	if (err != 0) {
+		BT_DBG("Releasing stream failed: %d", err);
+		return err;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_BT_AUDIO_UNICAST */
