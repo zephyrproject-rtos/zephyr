@@ -23,7 +23,6 @@ config GPIO_SX1509B_INIT_PRIORITY
 
 config GPIO_SX1509B_INTERRUPT
 	bool "Interrupt enable"
-	default n
 	help
 	  Enable support for interrupts on GPIO pins.
 
