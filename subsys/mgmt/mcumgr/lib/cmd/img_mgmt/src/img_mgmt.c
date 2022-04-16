@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
+#include <zephyr/toolchain.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
