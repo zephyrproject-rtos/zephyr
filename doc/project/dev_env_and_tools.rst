@@ -348,9 +348,10 @@ Labels applicable to both pull requests and issues
 
 * *area: **
 
-Indicates subsystems (e.g., Kernel, I2C, Memory Management), project functions
-(e.g., Debugging, Documentation, Process), or other categories
-(e.g., Coding Style, MISRA-C) affected by the bug or pull request.
+Indicates Zephyr subsystems (e.g, *area: Kernel*, *area: I2C*,
+*area: Memory Management*), project functions (e.g., *area: Debugging*,
+*area: Documentation*, *area: Process*), or other categories (e.g.,
+*area: Coding Style*, *area: MISRA-C*) affected by the bug or the pull request.
 
 An area maintainer should be able to filter by an area label and find all issues
 and PRs which relate to that area.
