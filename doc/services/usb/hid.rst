@@ -4,8 +4,8 @@ USB Human Interface Devices (HID) support
 #########################################
 
 Since the USB HID specification is not only used by the USB subsystem, the USB HID API
-is split into two header files :zephyr_file:`include/usb/class/hid.h`
-and :zephyr_file:`include/usb/class/usb_hid.h`. The second includes a specific
+is split into two header files :zephyr_file:`include/zephyr/usb/class/hid.h`
+and :zephyr_file:`include/zephyr/usb/class/usb_hid.h`. The second includes a specific
 part for HID support in the USB device stack.
 
 HID Item helpers

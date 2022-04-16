@@ -13,7 +13,7 @@ Overview
 
 Network buffers are a core concept of how the networking stack
 (as well as the Bluetooth stack) pass data around. The API for them is
-defined in :zephyr_file:`include/net/buf.h`:.
+defined in :zephyr_file:`include/zephyr/net/buf.h`:.
 
 Creating buffers
 ****************

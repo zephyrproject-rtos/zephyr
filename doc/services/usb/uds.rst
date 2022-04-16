@@ -16,7 +16,7 @@ over time. It provides the following functionalities:
   revision 2.0.
 * Provides a programming interface to be used by USB device classes or
   customer applications. The APIs is described in
-  :zephyr_file:`include/usb/usb_device.h`
+  :zephyr_file:`include/zephyr/usb/usb_device.h`
 
 The device stack has few limitations with which it is not possible to support
 more than one controller instance at runtime, and only one USB device
