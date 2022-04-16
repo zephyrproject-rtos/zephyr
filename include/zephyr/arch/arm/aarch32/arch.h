@@ -97,6 +97,13 @@ extern "C" {
  * address (lowest address).  Stack guard, if present, will comprise
  * the lowest MPU_GUARD_ALIGN_AND_SIZE bytes of the stack.
  *
+ * The guard region must include enough space for an exception frame
+ * below the trapping region as a stack fault will end up storing
+ * the exception data (0x20 bytes) onto the stack below wherever
+ * the stack pointer refers, even if that is within the guard region,
+ * so we make sure the region is strictly larger than this size by
+ * setting it to 0x40 (to respect any power-of-two requirements).
+ *
  * As the stack grows down, it will reach the end of the stack when it
  * encounters either the stack guard region, or the stack allocation
  * address.
@@ -123,7 +130,12 @@ extern "C" {
  *
  */
 #if defined(CONFIG_MPU_STACK_GUARD)
+/* make sure there's more than enough space for an exception frame */
+#if CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE <= 0x20
+#define MPU_GUARD_ALIGN_AND_SIZE 0x40
+#else
 #define MPU_GUARD_ALIGN_AND_SIZE CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
+#endif
 #else
 #define MPU_GUARD_ALIGN_AND_SIZE 0
 #endif
@@ -140,7 +152,11 @@ extern "C" {
  */
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
 	&& defined(CONFIG_MPU_STACK_GUARD)
+#if CONFIG_MPU_STACK_GUARD_MIN_SIZE_FLOAT <= 0x20
+#define MPU_GUARD_ALIGN_AND_SIZE_FLOAT 0x40
+#else
 #define MPU_GUARD_ALIGN_AND_SIZE_FLOAT CONFIG_MPU_STACK_GUARD_MIN_SIZE_FLOAT
+#endif
 #else
 #define MPU_GUARD_ALIGN_AND_SIZE_FLOAT 0
 #endif
