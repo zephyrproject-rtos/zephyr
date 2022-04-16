@@ -331,10 +331,6 @@ to ensure proper review. See :ref:`review process <review_time>`.
 This PR should not be merged (Do Not Merge). For work in progress, GitHub
 "draft" PRs are preferred.
 
-* *Stale*
-
-PR which seems abandoned, and requires attention by the author.
-
 * *Needs review*
 
 The PR needs attention from the maintainers.
@@ -392,6 +388,10 @@ address an issue.
 * *Blocked*
 
 Blocked by another PR or issue.
+
+* *Stale*
+
+An issue or a PR which seems abandoned, and requires attention by the author.
 
 * *In progress*
 
