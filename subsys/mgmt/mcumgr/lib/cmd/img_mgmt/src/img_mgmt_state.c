@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include <string.h>
 #include <zcbor_common.h>
