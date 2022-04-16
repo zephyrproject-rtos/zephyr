@@ -445,7 +445,7 @@ are programmed during system boot.
   ``zephyr,memory-region-mpu`` defining the MPU permissions for the memory region.
   See the next section for more details.
 
-The above MPU regions are defined in :file:`soc/arm/common/arm_mpu_regions.c`.
+The above MPU regions are defined in :file:`soc/arm/common/cortex_m/arm_mpu_regions.c`.
 Alternative MPU configurations are allowed by enabling :kconfig:option:`CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS`.
 When enabled, this option signifies that the Cortex-M SoC will define and
 configure its own fixed MPU regions in the SoC definition.
@@ -475,7 +475,7 @@ For example, to define a new non-cacheable memory region in devicetree:
    };
 
 This will automatically create a new MPU entry in
-:zephyr_file:`soc/arm/common/arm_mpu_regions.c` with the correct name, base,
+:zephyr_file:`soc/arm/common/cortex_m/arm_mpu_regions.c` with the correct name, base,
 size and attributes gathered directly from the devicetree. See
 :zephyr_file:`include/zephyr/linker/devicetree_regions.h` for more details.
 
