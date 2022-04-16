@@ -409,4 +409,4 @@ Long term release branch related.
 
 * *EXT*
 
-Related to an external component (in ``ext/``).
+Related to an external component.
