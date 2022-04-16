@@ -360,12 +360,18 @@ and PRs which relate to that area.
 An issue or PR which affects only a particular platform.
 
 * *dev-review*
-* *TSC*
 
-The issue is to be discussed in the following `dev-review/TSC meeting`_ if time
+The issue is to be discussed in the following `dev-review`_ if time
 permits.
 
-.. _`dev-review/TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
+.. _`dev-review`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#zephyr-dev-meeting
+
+* *TSC*
+
+TSC stands for Technical Steering Committee. The issue is to be discussed in the
+following `TSC meeting`_ if time permits.
+
+.. _`TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#technical-steering-committee-tsc
 
 * *Stable API Change*
 
