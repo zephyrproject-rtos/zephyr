@@ -30,6 +30,15 @@
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID 26
 
+#elif defined(CONFIG_BOARD_MEC172XEVB_ASSY6906)
+#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, microchip_xec_adc_v2))
+#define ADC_RESOLUTION          12
+#define ADC_GAIN                ADC_GAIN_1
+#define ADC_REFERENCE           ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME    ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID      4
+#define ADC_2ND_CHANNEL_ID      5
+
 #endif
 
 #define HW_TRIGGER_INTERVAL (2U)
@@ -67,42 +76,6 @@ const struct device *get_adc_device(void)
 	return device_get_binding(ADC_DEVICE_NAME);
 }
 
-const struct device *get_count_device(void)
-{
-	char *dev_name = DT_LABEL(DT_NODELABEL(pit0));
-
-	return device_get_binding(dev_name);
-}
-
-static void init_pit(void)
-{
-	char *dev_name = DT_LABEL(DT_NODELABEL(pit0));
-	int err;
-	const struct device *dev;
-	struct counter_top_cfg top_cfg = { .callback = NULL,
-					   .user_data = NULL,
-					   .flags = 0 };
-
-	dev = device_get_binding(dev_name);
-	zassert_not_null(dev, "Unable to get counter device %s", dev_name);
-
-	counter_start(dev);
-	top_cfg.ticks = counter_us_to_ticks(dev, HW_TRIGGER_INTERVAL);
-	err = counter_set_top_value(dev, &top_cfg);
-	zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)",
-		      dev_name, err);
-}
-
-static void stop_pit(void)
-{
-	char *dev_name = DT_LABEL(DT_NODELABEL(pit0));
-	const struct device *dev;
-
-	dev = device_get_binding(dev_name);
-	zassert_not_null(dev, "Unable to get counter device %s", dev_name);
-	counter_stop(dev);
-}
-
 static const struct device *init_adc(void)
 {
 	int ret;
@@ -123,8 +96,6 @@ static const struct device *init_adc(void)
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
 	(void)memset(m_sample_buffer, 0, sizeof(m_sample_buffer));
-
-	init_pit();
 
 	return adc_dev;
 }
