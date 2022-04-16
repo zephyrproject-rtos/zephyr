@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - v*-branch
   pull_request_target:
     branches:
       - main
+      - v*-branch
   schedule:
     # Run at 00:00 on Wednesday and Saturday
     - cron: '0 0 * * 3,6'
