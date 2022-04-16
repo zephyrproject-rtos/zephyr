@@ -6,6 +6,7 @@ tests:
     # To get clean results we need to disable this test until the bug is fixed and fix
     # gets propagated to new Zephyr-SDK.
     platform_exclude: twr_ke18f qemu_arc_hs qemu_arc_em
+    extra_args: CONFIG_TEST_HW_STACK_PROTECTION=n
     tags: kernel security userspace ignore_faults
   kernel.memory_protection.gap_filling.arc:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
