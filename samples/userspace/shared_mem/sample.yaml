@@ -15,3 +15,5 @@ tests:
   sample.kernel.memory_protection.shared_mem:
     filter: CONFIG_ARCH_HAS_USERSPACE
     platform_exclude: twr_ke18f
+    extra_configs:
+      - CONFIG_TEST_HW_STACK_PROTECTION=n
