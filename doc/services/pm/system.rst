@@ -26,7 +26,7 @@ Some handful examples using different power management features:
 * :zephyr_file:`samples/subsys/pm/device_pm/`
 * :zephyr_file:`tests/subsys/pm/power_mgmt/`
 * :zephyr_file:`tests/subsys/pm/power_mgmt_soc/`
-* :zephyr_file:`tests/subsys/pm/power_state_api/`
+* :zephyr_file:`tests/subsys/pm/power_states_api/`
 
 Power States
 ============
