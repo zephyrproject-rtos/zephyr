@@ -263,7 +263,7 @@ These are the labels we currently have, grouped by applicability:
 Labels applicable to issues only
 ================================
 
-* *priority:{high|medium|low}*
+* *priority: {high|medium|low}*
 
 To classify the impact and importance of a bug or
 :ref:`feature <feature-tracking>`.
@@ -315,7 +315,7 @@ Labels applicable to pull requests only
 The issue or PR describes a change to a stable API. See additional information
 in :ref:`stable_api_changes`.
 
-* *Hot Fix*
+* *Hotfix*
 
 * *Trivial*
 
@@ -331,7 +331,7 @@ to ensure proper review. See :ref:`review process <review_time>`.
 This PR should not be merged (Do Not Merge). For work in progress, GitHub
 "draft" PRs are preferred.
 
-* *Stale PR*
+* *Stale*
 
 PR which seems abandoned, and requires attention by the author.
 
@@ -350,7 +350,7 @@ The PR has licensing issues which require a licensing expert to review it.
 Labels applicable to both pull requests and issues
 ==================================================
 
-* *Area:**
+* *area: **
 
 Indicates subsystems (e.g., Kernel, I2C, Memory Management), project functions
 (e.g., Debugging, Documentation, Process), or other categories
@@ -359,7 +359,7 @@ Indicates subsystems (e.g., Kernel, I2C, Memory Management), project functions
 An area maintainer should be able to filter by an area label and find all issues
 and PRs which relate to that area.
 
-* *Platform:**
+* *platform: **
 
 An issue or PR which affects only a particular platform.
 
