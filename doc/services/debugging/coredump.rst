@@ -240,7 +240,7 @@ The file header consists of the following fields:
      - ``unsigned int``
      - Reason for the fatal error, as the same in
        ``enum k_fatal_error_reason`` defined in
-       :zephyr_file:`include/fatal.h`
+       :zephyr_file:`include/zephyr/fatal.h`
 
 Architecture-specific Block
 ---------------------------
@@ -311,7 +311,7 @@ dumping routine and parser for new targets. To add a new target,
 the following needs to be done:
 
 #. Add a new target code to the ``enum coredump_tgt_code`` in
-   :zephyr_file:`include/debug/coredump.h`.
+   :zephyr_file:`include/zephyr/debug/coredump.h`.
 #. Implement :c:func:`arch_coredump_tgt_code_get` simply to return
    the newly introduced target code.
 #. Implement :c:func:`arch_coredump_info_dump` to construct

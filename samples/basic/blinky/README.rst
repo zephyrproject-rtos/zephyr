@@ -87,7 +87,7 @@ Tips:
 - If you're not sure what to do, check the devicetrees for supported boards which
   use the same SoC as your target. See :ref:`get-devicetree-outputs` for details.
 
-- See :zephyr_file:`include/dt-bindings/gpio/gpio.h` for the flags you can use
+- See :zephyr_file:`include/zephyr/dt-bindings/gpio/gpio.h` for the flags you can use
   in devicetree.
 
 - If the LED is built in to your board hardware, the alias should be defined in

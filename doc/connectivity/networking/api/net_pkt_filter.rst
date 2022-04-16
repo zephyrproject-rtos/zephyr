@@ -45,7 +45,7 @@ can be embedded into a larger structure when a specific condition requires
 extra test data. It is up to the test function for such conditions to
 retrieve the outer structure from the provided ``npf_test`` structure pointer.
 
-Convenience macros are provided in :zephyr_file:`include/net/net_pkt_filter.h`
+Convenience macros are provided in :zephyr_file:`include/zephyr/net/net_pkt_filter.h`
 to statically define condition instances for various conditions, and
 :c:macro:`NPF_RULE()` to create a rule instance to tie them.
 

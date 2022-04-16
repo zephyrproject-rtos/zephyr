@@ -477,7 +477,7 @@ For example, to define a new non-cacheable memory region in devicetree:
 This will automatically create a new MPU entry in
 :zephyr_file:`soc/arm/common/arm_mpu_regions.c` with the correct name, base,
 size and attributes gathered directly from the devicetree. See
-:zephyr_file:`include/linker/devicetree_regions.h` for more details.
+:zephyr_file:`include/zephyr/linker/devicetree_regions.h` for more details.
 
 Static MPU regions
 ------------------

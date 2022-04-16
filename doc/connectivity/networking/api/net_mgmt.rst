@@ -119,7 +119,7 @@ An example follows.
 		net_mgmt_add_event_callback(&ipv4_callback);
 	}
 
-See :zephyr_file:`include/net/net_event.h` for available generic core events that
+See :zephyr_file:`include/zephyr/net/net_event.h` for available generic core events that
 can be listened to.
 
 
@@ -133,9 +133,9 @@ associated mgmt_request code.
 Management request code are defined in relevant places depending on
 the targeted layer or eventually, if l2 is the layer, on the
 technology as well. For instance, all IP layer management request code
-will be found in the :zephyr_file:`include/net/net_event.h` header file. But in case
+will be found in the :zephyr_file:`include/zephyr/net/net_event.h` header file. But in case
 of an L2 technology, let's say Ethernet, these would be found in
-:zephyr_file:`include/net/ethernet.h`
+:zephyr_file:`include/zephyr/net/ethernet.h`
 
 You define your handler modeled with this signature:
 
@@ -162,9 +162,9 @@ Signaling a network event
 
 You can signal a specific network event using the :c:func:`net_mgmt_event_notify`
 function and provide the network event code. See
-:zephyr_file:`include/net/net_mgmt.h` for details. As for the management request
+:zephyr_file:`include/zephyr/net/net_mgmt.h` for details. As for the management request
 code, event code can be also found on specific L2 technology mgmt headers,
-for example :zephyr_file:`include/net/ieee802154_mgmt.h` would be the right place if
+for example :zephyr_file:`include/zephyr/net/ieee802154_mgmt.h` would be the right place if
 802.15.4 L2 is the technology one wants to listen to events.
 
 API Reference

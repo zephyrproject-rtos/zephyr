@@ -382,6 +382,6 @@ Related configuration options:
 API Reference
 *************
 
-The following ring buffer APIs are provided by :zephyr_file:`include/sys/ring_buffer.h`:
+The following ring buffer APIs are provided by :zephyr_file:`include/zephyr/sys/ring_buffer.h`:
 
 .. doxygengroup:: ring_buffer_apis

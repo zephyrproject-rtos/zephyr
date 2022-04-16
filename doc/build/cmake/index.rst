@@ -92,7 +92,7 @@ Devicetree
    preprocessor macros.
 
    Source code should access preprocessor macros generated from devicetree by
-   including the :zephyr_file:`devicetree.h <include/devicetree.h>` header,
+   including the :zephyr_file:`devicetree.h <include/zephyr/devicetree.h>` header,
    which includes :file:`devicetree_unfixed.h`.
 
    :file:`gen_defines.py` also writes the final devicetree to
