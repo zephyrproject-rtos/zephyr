@@ -82,8 +82,8 @@ Usage
 Packet header definition
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Packet header details can be found in :zephyr_file:`include/sys/mpsc_packet.h`.
-API functions can be found in :zephyr_file:`include/sys/mpsc_pbuf.h`. Headers
+Packet header details can be found in :zephyr_file:`include/zephyr/sys/mpsc_packet.h`.
+API functions can be found in :zephyr_file:`include/zephyr/sys/mpsc_pbuf.h`. Headers
 are split to avoid include spam when declaring the packet.
 
 User header structure must start with internal header:

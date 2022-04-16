@@ -17,7 +17,7 @@ metadata for the core to hold important information. Such an object is
 called net_pkt in this document.
 
 The data structure and the whole API around it are defined in
-:zephyr_file:`include/net/net_pkt.h`.
+:zephyr_file:`include/zephyr/net/net_pkt.h`.
 
 Architectural notes
 ===================

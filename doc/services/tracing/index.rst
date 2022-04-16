@@ -21,7 +21,7 @@ that has implied:
 6. Writing custom ad-hoc tools for filtering and presentation.
 
 An application can use one of the existing formats or define a custom format by
-overriding the macros declared in :zephyr_file:`include/tracing/tracing.h`.
+overriding the macros declared in :zephyr_file:`include/zephyr/tracing/tracing.h`.
 
 Different formats, transports and host tools are available and supported in
 Zephyr.

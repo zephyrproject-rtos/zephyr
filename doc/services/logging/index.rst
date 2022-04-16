@@ -66,7 +66,7 @@ time filtering is independent for each backend and each source of log messages.
 Source of log messages can be a module or specific instance of the module.
 
 There are four severity levels available in the system: error, warning, info
-and debug. For each severity level the logging API (:zephyr_file:`include/logging/log.h`)
+and debug. For each severity level the logging API (:zephyr_file:`include/zephyr/logging/log.h`)
 has set of dedicated macros. Logger API also has macros for logging data.
 
 For each level following set of macros are available:
@@ -335,7 +335,7 @@ Controlling the logging
 =======================
 
 Logging can be controlled using API defined in
-:zephyr_file:`include/logging/log_ctrl.h`. Logger must be initialized before it can be
+:zephyr_file:`include/zephyr/logging/log_ctrl.h`. Logger must be initialized before it can be
 used. Optionally, user can provide function which returns timestamp value. If
 not provided, :c:macro:`k_cycle_get_32` is used for timestamping.
 :c:func:`log_process` function is used to trigger processing of one log
@@ -521,7 +521,7 @@ Custom Frontend
 ===============
 
 Custom frontend is enabled using :kconfig:option:`CONFIG_LOG_FRONTEND`. Logs are directed
-to functions declared in :zephyr_file:`include/logging/log_frontend.h`.
+to functions declared in :zephyr_file:`include/zephyr/logging/log_frontend.h`.
 If option :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY` is enabled then log message is not
 created and no backend is handled. Otherwise, custom frontend can coexist with
 backends (not available in v1).
@@ -636,7 +636,7 @@ Message formatting
 ------------------
 
 Logging provides set of function that can be used by the backend to format a
-message. Helper functions are available in :zephyr_file:`include/logging/log_output.h`.
+message. Helper functions are available in :zephyr_file:`include/zephyr/logging/log_output.h`.
 
 Example message formatted using :c:func:`log_output_msg_process` or
 :c:func:`log_output_msg2_process`.

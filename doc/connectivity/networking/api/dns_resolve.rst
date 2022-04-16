@@ -30,7 +30,7 @@ about LLMNR.
 
 For more information about DNS configuration variables, see:
 :zephyr_file:`subsys/net/lib/dns/Kconfig`. The DNS resolver API can be found at
-:zephyr_file:`include/net/dns_resolve.h`.
+:zephyr_file:`include/zephyr/net/dns_resolve.h`.
 
 Sample usage
 ************

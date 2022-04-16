@@ -118,7 +118,7 @@ Use the following macros for adding shell commands:
 * :c:macro:`SHELL_DYNAMIC_CMD_CREATE` - Create a dynamic subcommands array.
 
 Commands can be created in any file in the system that includes
-:zephyr_file:`include/shell/shell.h`. All created commands are available for all
+:zephyr_file:`include/zephyr/shell/shell.h`. All created commands are available for all
 shell instances.
 
 Static commands

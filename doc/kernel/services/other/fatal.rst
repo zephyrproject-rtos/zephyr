@@ -15,7 +15,7 @@ Runtime Assertions
 
 Zephyr provides some macros to perform runtime assertions which may be
 conditionally compiled. Their definitions may be found in
-:zephyr_file:`include/sys/__assert.h`.
+:zephyr_file:`include/zephyr/sys/__assert.h`.
 
 Assertions are enabled by setting the ``__ASSERT_ON`` preprocessor symbol to a
 non-zero value. There are two ways to do this:
