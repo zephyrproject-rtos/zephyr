@@ -225,10 +225,23 @@
 	pinmux_sai1: pinmux_sai1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_17_sai1_mclk>,
+				<&iomuxc_gpio_ad_18_sai1_rx_sync>,
+				<&iomuxc_gpio_ad_19_sai1_rx_bclk>,
 				<&iomuxc_gpio_ad_20_sai1_rx_data00>,
 				<&iomuxc_gpio_ad_21_sai1_tx_data00>,
 				<&iomuxc_gpio_ad_22_sai1_tx_bclk>,
 				<&iomuxc_gpio_ad_23_sai1_tx_sync>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_sai4: pinmux_sai4 {
+		group0 {
+			pinmux = <&iomuxc_lpsr_gpio_lpsr_09_sai4_tx_data>,
+				<&iomuxc_lpsr_gpio_lpsr_10_sai4_tx_sync>,
+				<&iomuxc_lpsr_gpio_lpsr_12_sai4_tx_bclk>;
 			drive-strength = "high";
 			slew-rate = "fast";
 			input-enable;
