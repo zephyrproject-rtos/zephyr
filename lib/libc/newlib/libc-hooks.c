@@ -89,7 +89,7 @@
 	/* End of the malloc arena is the end of physical memory */
 	#if defined(CONFIG_XTENSA)
 		/* TODO: Why is xtensa a special case? */
-		extern void *_heap_sentry;
+		extern char _heap_sentry[];
 		#define MAX_HEAP_SIZE	(POINTER_TO_UINT(&_heap_sentry) - \
 					 HEAP_BASE)
 	#else
