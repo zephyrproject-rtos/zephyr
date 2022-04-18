@@ -865,7 +865,7 @@ __deprecated static inline int device_usable_check(const struct device *dev)
  * {
  *     List of existing devicetree dependency handles (if any),
  *     DEVICE_HANDLE_SEP,
- *     List of injected dependency ordinals (if any),
+ *     List of injected devicetree dependency handles (if any),
  *     DEVICE_HANDLE_SEP,
  *     List of existing devicetree support handles (if any),
  *     DEVICE_HANDLE_NULL
