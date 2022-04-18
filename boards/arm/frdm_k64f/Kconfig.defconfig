@@ -24,6 +24,13 @@ config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc1)"
 	depends on SENSOR && ADC
 
+if MCUBOOT
+
+config BOOT_SWAP_USING_MOVE
+	default y
+
+endif # MCUBOOT
+
 if NETWORKING
 
 config NET_L2_ETHERNET

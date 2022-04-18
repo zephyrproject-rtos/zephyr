@@ -222,17 +222,19 @@ zephyr_udc0: &usbotg {
 			reg = <0x0001e000 0x00002000>;
 		};
 
+		/*
+		 * For "swap-move" in MCUboot, slot 0 must be 1 page
+		 * larger than the maximum image size.  With even
+		 * pages, it isn't helpful to make the sizes
+		 * different, and we are limited by 1 less than the
+		 * size of slot 1. */
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00020000 0x00060000>;
+			reg = <0x00020000 0x00070000>;
 		};
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@90000 {
 			label = "image-1";
-			reg = <0x00080000 0x00060000>;
-		};
-		scratch_partition: partition@e0000 {
-			label = "image-scratch";
-			reg = <0x000e0000 0x00020000>;
+			reg = <0x00090000 0x00070000>;
 		};
 	};
 };
