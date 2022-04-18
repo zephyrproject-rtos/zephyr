@@ -372,6 +372,7 @@ static struct bt_conn_tx *conn_tx_alloc(void)
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data)
 {
+	int err = 0;
 	struct bt_conn_tx *tx;
 
 	BT_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle,
@@ -379,21 +380,24 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("not connected!");
-		return -ENOTCONN;
+		err = -ENOTCONN;
+		goto end;
 	}
 
 	if (cb) {
 		tx = conn_tx_alloc();
 		if (!tx) {
 			BT_ERR("Unable to allocate TX context");
-			return -ENOBUFS;
+			err = -ENOBUFS;
+			goto end;
 		}
 
 		/* Verify that we're still connected after blocking */
 		if (conn->state != BT_CONN_CONNECTED) {
 			BT_WARN("Disconnected while allocating context");
 			tx_free(tx);
-			return -ENOTCONN;
+			err = -ENOTCONN;
+			goto end;
 		}
 
 		tx->cb = cb;
@@ -405,8 +409,14 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		tx_data(buf)->tx = NULL;
 	}
 
-	net_buf_put(&conn->tx_queue, buf);
-	return 0;
+end:
+	if (err) {
+		net_buf_unref(buf);
+	} else {
+		net_buf_put(&conn->tx_queue, buf);
+	}
+
+	return err;
 }
 
 enum {
