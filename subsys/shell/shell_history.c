@@ -33,10 +33,6 @@
  * |                 | header     | "history item" |                          |
  * |                 | no padding |                |                          |
  * +-----------------+------------+----------------+--------------------------+
- *
- * As an optimization, the added padding is attributed to the preceding item
- * instead of the current item. This way the padding will be freed one item
- * sooner.
  */
 struct shell_history_item {
 	sys_dnode_t dnode;
@@ -165,17 +161,6 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 	}
 
 	do {
-		if (ring_buf_is_empty(history->ring_buf)) {
-			/* if history is empty reset ring buffer. Even when
-			 * ring buffer is empty, it is possible that available
-			 * continues memory in worst case equals half of the
-			 * ring buffer capacity. By resetting ring buffer we
-			 * ensure that it is capable to provide continues memory
-			 * of ring buffer capacity length.
-			 */
-			ring_buf_reset(history->ring_buf);
-		}
-
 		claim_len = ring_buf_put_claim(history->ring_buf,
 						(uint8_t **)&h_item, total_len);
 		/* second allocation may succeed if we were at the end of the
@@ -186,11 +171,7 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 				ring_buf_put_claim(history->ring_buf,
 						   (uint8_t **)&h_item, total_len);
 			if (claim2_len == total_len) {
-				/*
-				 * We may get here only if a previous entry
-				 * exists. Stick the excess padding to it.
-				 */
-				h_item->padding += claim_len;
+				padding += claim_len;
 				total_len += claim_len;
 				claim_len = total_len;
 			}
@@ -203,7 +184,17 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 		}
 
 		ring_buf_put_finish(history->ring_buf, 0);
-		remove_from_tail(history);
+		if (remove_from_tail(history) == false) {
+			__ASSERT_NO_MSG(ring_buf_is_empty(history->ring_buf));
+			/* if history is empty reset ring buffer. Even when
+			 * ring buffer is empty, it is possible that available
+			 * continues memory in worst case equals half of the
+			 * ring buffer capacity. By reseting ring buffer we
+			 * ensure that it is capable to provide continues memory
+			 * of ring buffer capacity length.
+			 */
+			ring_buf_reset(history->ring_buf);
+		}
 	} while (1);
 }
 
