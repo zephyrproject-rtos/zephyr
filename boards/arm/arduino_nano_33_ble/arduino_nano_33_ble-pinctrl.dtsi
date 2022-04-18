@@ -65,4 +65,38 @@
 			low-power-enable;
 		};
 	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 24)>,
+					<NRF_PSEL(PWM_OUT1, 0, 16)>,
+					<NRF_PSEL(PWM_OUT2, 0, 6)>,
+					<NRF_PSEL(PWM_OUT3, 0, 13)>;
+			nordic,invert;
+		};
+	};
+
+	pwm0_sleep: pwm0_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 24)>,
+					<NRF_PSEL(PWM_OUT1, 0, 16)>,
+					<NRF_PSEL(PWM_OUT2, 0, 6)>,
+					<NRF_PSEL(PWM_OUT3, 0, 13)>;
+			low-power-enable;
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 9)>;
+			nordic,invert;
+		};
+	};
+
+	pwm1_sleep: pwm1_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 9)>;
+			low-power-enable;
+		};
+	};
 };
