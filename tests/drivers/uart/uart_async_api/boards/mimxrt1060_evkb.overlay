@@ -1,0 +1,13 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+       chosen {
+               zephyr,sram = &dtcm;
+       };
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+	nxp,loopback;
+};
