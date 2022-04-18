@@ -307,7 +307,7 @@ def main():
         hv = handle.handles
         hvi = 1
         handle.dev_deps = []
-        handle.ext_deps = []
+        handle.dev_injected = []
         handle.dev_sups = []
         hdls = handle.dev_deps
         while hvi < len(hv):
@@ -316,7 +316,7 @@ def main():
                 break
             if h == DEVICE_HANDLE_SEP:
                 if hdls == handle.dev_deps:
-                    hdls = handle.ext_deps
+                    hdls = handle.dev_injected
                 else:
                     hdls = handle.dev_sups
             else:
@@ -369,7 +369,7 @@ def main():
             hs = dev.handle
             assert hs, "no hs for %s" % (dev.sym.name,)
             dep_paths = []
-            ext_paths = []
+            inj_paths = []
             sup_paths = []
             hdls = []
 
@@ -383,10 +383,13 @@ def main():
                         dep_paths.append('(%s)' % dn.path)
             # Force separator to signal start of injected dependencies
             hdls.append(DEVICE_HANDLE_SEP)
-            if len(hs.ext_deps) > 0:
-                # TODO: map these to something smaller?
-                ext_paths.extend(map(str, hs.ext_deps))
-                hdls.extend(hs.ext_deps)
+            for inj in hs.dev_injected:
+                if inj not in edt.dep_ord2node:
+                    continue
+                expected = edt.dep_ord2node[inj]
+                if expected in used_nodes:
+                    inj_paths.append(expected.path)
+                    hdls.append(expected.__device.dev_handle)
 
             # Force separator to signal start of supported devices
             hdls.append(DEVICE_HANDLE_SEP)
@@ -414,9 +417,9 @@ def main():
             if len(dep_paths) > 0:
                 lines.append(' * Direct Dependencies:')
                 lines.append(' *   - %s' % ('\n *   - '.join(dep_paths)))
-            if len(ext_paths) > 0:
+            if len(inj_paths) > 0:
                 lines.append(' * Injected Dependencies:')
-                lines.append(' *   - %s' % ('\n *   - '.join(ext_paths)))
+                lines.append(' *   - %s' % ('\n *   - '.join(inj_paths)))
             if len(sup_paths) > 0:
                 lines.append(' * Supported:')
                 lines.append(' *   - %s' % ('\n *   - '.join(sup_paths)))
