@@ -587,6 +587,52 @@ device_required_handles_get(const struct device *dev,
 }
 
 /**
+ * @brief Get the device handles for injected dependencies of this device.
+ *
+ * This function returns a pointer to an array of device handles. The
+ * length of the array is stored in the @p count parameter.
+ *
+ * The array contains a handle for each device that @p dev manually injected
+ * as a dependency, via providing extra arguments to Z_DEVICE_DEFINE. This does
+ * not include transitive dependencies; you must recursively determine those.
+ *
+ * @param dev the device for which injected dependencies are desired.
+ *
+ * @param count pointer to where this function should store the length
+ * of the returned array. No value is stored if the call returns a
+ * null pointer. The value may be set to zero if the device has no
+ * devicetree dependencies.
+ *
+ * @return a pointer to a sequence of @p *count device handles, or a null
+ * pointer if @p dev does not have any dependency data.
+ */
+static inline const device_handle_t *
+device_injected_handles_get(const struct device *dev,
+			    size_t *count)
+{
+	const device_handle_t *rv = dev->handles;
+	size_t region = 0;
+	size_t i = 0;
+
+	if (rv != NULL) {
+		/* Fast forward to injected devices */
+		while (region != 1) {
+			if (*rv == DEVICE_HANDLE_SEP) {
+				region++;
+			}
+			rv++;
+		}
+		while ((rv[i] != DEVICE_HANDLE_ENDS)
+		       && (rv[i] != DEVICE_HANDLE_SEP)) {
+			++i;
+		}
+		*count = i;
+	}
+
+	return rv;
+}
+
+/**
  * @brief Get the set of handles that this device supports.
  *
  * This function returns a pointer to an array of device handles. The
