@@ -386,7 +386,6 @@ def main():
             if len(hs.ext_deps) > 0:
                 # TODO: map these to something smaller?
                 ext_paths.extend(map(str, hs.ext_deps))
-                hdls.append(DEVICE_HANDLE_SEP)
                 hdls.extend(hs.ext_deps)
 
             # Force separator to signal start of supported devices
