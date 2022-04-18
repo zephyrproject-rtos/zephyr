@@ -937,19 +937,32 @@
 			#pinmux-cells = <2>;
 			reg = <0x40384000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 2>;
-			pre-div = <0>;
-			podf = <63>;
-			pll-clocks = <&anatop 0x70 0xC000 0>,
-					<&anatop 0x70 0x7F 32>,
-					<&anatop 0x70 0x18 1>,
-					<&anatop 0x80 0x3FFFFFFF 77>,
-					<&anatop 0x90 0x3FFFFFFF 100>;
+			/* Audio PLL Output Frequency is determined by:
+			 * (Fref * (DIV_SELECT + NUM/DENOM)) / POST_DIV
+			 * = (24MHz * (32 + 77 / 100)) / 1 = 786.48 MHz
+			 */
+		       pll-clocks = <&anatop 0x70 0xC000 0>,
+				      <&anatop 0x70 0x7F 32>,
+				      <&anatop 0x70 0x180000 1>,
+				      <&anatop 0x80 0x3FFFFFFF 77>,
+				      <&anatop 0x90 0x3FFFFFFF 100>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
+			/* The maximum input frequency into the SAI mclk input is 300MHz
+			 * Based on this requirement, pre-div must be at least 3
+			 * The pre-div and post-div are one less than the actual divide-by amount.
+			 * A pre-div value of 0x1 results in a pre-divider of
+			 * (1+1) = 2
+			 */
+			pre-div = <0x3>;
+			podf = <0x0F>;
 			pinmuxes = <&iomuxcgpr 0x4 0x80000>;
 			interrupts = <56 0>;
 			dmas = <&edma0 0 19>, <&edma0 0 20>;
 			dma-names = "rx", "tx";
-			nxp,tx-channel = <0>;
+			/* This translates to SAIChannelMask (fsl_sai.c) and
+			 * cannot be 0
+			 */
+			nxp,tx-channel = <1>;
 			nxp,tx-dma-channel = <0>;
 			nxp,rx-dma-channel = <1>;
 			status = "disabled";
@@ -965,11 +978,11 @@
 			clocks = <&ccm IMX_CCM_SAI2_CLK 0x7C 2>;
 			pre-div = <0>;
 			podf = <63>;
-			pll-clocks = <&anatop 0x70 0xC000 0>,
-				   <&anatop 0x70 0x7F 32>,
-				   <&anatop 0x70 0x18 1>,
-				   <&anatop 0x80 0x3FFFFFFF 77>,
-				   <&anatop 0x90 0x3FFFFFFF 100>;
+			pll-clocks = <&anatop 0x70 0xC000 0x0>,
+					<&anatop 0x70 0x7F 32>,
+					<&anatop 0x70 0x180000 1>,
+					<&anatop 0x80 0x3FFFFFFF 77>,
+					<&anatop 0x90 0x3FFFFFFF 100>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x4 0x100000>;
 			interrupts = <57 0>;
@@ -993,7 +1006,7 @@
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0>,
 				   <&anatop 0x70 0x7F 32>,
-				   <&anatop 0x70 0x18 1>,
+				   <&anatop 0x70 0x180000 1>,
 				   <&anatop 0x80 0x3FFFFFFF 77>,
 				   <&anatop 0x90 0x3FFFFFFF 100>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
