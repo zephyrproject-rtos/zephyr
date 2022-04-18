@@ -30,9 +30,40 @@
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
+		led3: led_3 {
+			/* Cannot be used together with spi2. */
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED";
+		};
 		led4: led_4 {
 			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: led_pwm_0 {
+			pwms = <&pwm0 24>;
+			label = "Red PWM LED";
+		};
+		green_pwm_led: led_pwm_1 {
+			pwms = <&pwm0 16>;
+			label = "Green PWM LED";
+		};
+		blue_pwm_led: led_pwm_2 {
+			pwms = <&pwm0 6>;
+			label = "Blue PWM LED";
+		};
+		yellow_pwm_led: led_pwm_3 {
+			/* Cannot be used together with spi2. */
+			pwms = <&pwm0 13>;
+			label = "Yellow PWM LED";
+		};
+		user_pwm_led: led_pwm_4 {
+			pwms = <&pwm1 41>;
+			label = "User PWM LED";
 		};
 	};
 
@@ -55,7 +86,16 @@
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
+		led3 = &led3;
 		led4 = &led4;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		pwm-led3 = &yellow_pwm_led;
+		pwm-led4 = &user_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 		spi = &spi2;
 	};
 };
@@ -136,6 +176,20 @@ arduino_spi: &spi2 {
 
 &gpio1 {
 	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 zephyr_udc0: &usbd {
