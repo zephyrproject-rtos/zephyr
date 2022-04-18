@@ -1134,7 +1134,7 @@ boilerplate with ``find_package(Zephyr ...)``.
 .. note::
 
    When specifying ``BOARD_ROOT`` in a CMakeLists.txt, then an absolute path must
-   be provided, for example ``list(APPEND BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/<extra-board-root>``.
+   be provided, for example ``list(APPEND BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/<extra-board-root>)``.
    When using ``-DBOARD_ROOT=<board-root>`` both absolute and relative paths can
    be used. Relative paths are treated relatively to the application directory.
 
