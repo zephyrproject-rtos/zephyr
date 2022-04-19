@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef ZEPHYR_DRIVERS_CAN_MCAN_INT_H_
-#define ZEPHYR_DRIVERS_CAN_MCAN_INT_H_
+#ifndef ZEPHYR_DRIVERS_CAN_CAN_MCAN_PRIV_H_
+#define ZEPHYR_DRIVERS_CAN_CAN_MCAN_PRIV_H_
 
 #include <drivers/can.h>
 
@@ -1569,4 +1569,4 @@ struct can_mcan_reg {
 
 #endif /* CONFIG_CAN_STM32FD */
 
-#endif /*ZEPHYR_DRIVERS_CAN_MCAN_INT_H_*/
+#endif /* ZEPHYR_DRIVERS_CAN_CAN_MCAN_PRIV_H_*/
