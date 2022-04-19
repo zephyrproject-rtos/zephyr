@@ -166,7 +166,7 @@ struct can_mcan_msg_sram {
 } __packed __aligned(4);
 
 struct can_mcan_data {
-	const struct device *dev;
+	struct can_mcan_msg_sram *msg_ram;
 	struct k_mutex inst_mutex;
 	struct k_sem tx_sem;
 	struct k_mutex tx_mtx;
@@ -184,6 +184,7 @@ struct can_mcan_data {
 	uint8_t ext_filt_rtr;
 	uint8_t ext_filt_rtr_mask;
 	struct can_mcan_mm mm;
+	void *custom;
 } __aligned(4);
 
 struct can_mcan_config {
@@ -203,47 +204,44 @@ struct can_mcan_config {
 #endif
 	const struct device *phy;
 	uint32_t max_bitrate;
+	const void *custom;
 };
 
 struct can_mcan_reg;
 
-int can_mcan_set_mode(const struct can_mcan_config *cfg, enum can_mode mode);
+int can_mcan_set_mode(const struct device *dev, enum can_mode mode);
 
-int can_mcan_set_timing(const struct can_mcan_config *cfg,
+int can_mcan_set_timing(const struct device *dev,
 			const struct can_timing *timing,
 			const struct can_timing *timing_data);
 
-int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
-		  struct can_mcan_msg_sram *msg_ram,
-		  struct can_mcan_data *data);
+int can_mcan_init(const struct device *dev);
 
-void can_mcan_line_0_isr(const struct can_mcan_config *cfg,
-			 struct can_mcan_msg_sram *msg_ram,
-			 struct can_mcan_data *data);
+void can_mcan_line_0_isr(const struct device *dev);
 
-void can_mcan_line_1_isr(const struct can_mcan_config *cfg,
-			 struct can_mcan_msg_sram *msg_ram,
-			 struct can_mcan_data *data);
+void can_mcan_line_1_isr(const struct device *dev);
 
-int can_mcan_recover(const struct can_mcan_config *cfg, k_timeout_t timeout);
+int can_mcan_recover(const struct device *dev, k_timeout_t timeout);
 
-int can_mcan_send(const struct can_mcan_config *cfg, struct can_mcan_data *data,
-		  struct can_mcan_msg_sram *msg_ram,
-		  const struct zcan_frame *frame,
+int can_mcan_send(const struct device *dev, const struct zcan_frame *frame,
 		  k_timeout_t timeout, can_tx_callback_t callback,
 		  void *user_data);
 
 int can_mcan_get_max_filters(const struct device *dev, enum can_ide id_type);
 
-int can_mcan_add_rx_filter(struct can_mcan_data *data,
-			   struct can_mcan_msg_sram *msg_ram,
+int can_mcan_add_rx_filter(const struct device *dev,
 			   can_rx_callback_t callback, void *user_data,
 			   const struct zcan_filter *filter);
 
-void can_mcan_remove_rx_filter(struct can_mcan_data *data,
-			       struct can_mcan_msg_sram *msg_ram, int filter_id);
+void can_mcan_remove_rx_filter(const struct device *dev, int filter_id);
 
-int can_mcan_get_state(const struct can_mcan_config *cfg, enum can_state *state,
+int can_mcan_get_state(const struct device *dev, enum can_state *state,
 		       struct can_bus_err_cnt *err_cnt);
+
+void can_mcan_set_state_change_callback(const struct device *dev,
+					can_state_change_callback_t callback,
+					void *user_data);
+
+int can_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
 
 #endif /* ZEPHYR_DRIVERS_CAN_MCAN_H_ */
