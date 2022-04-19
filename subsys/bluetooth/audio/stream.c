@@ -337,59 +337,6 @@ int bt_audio_stream_config(struct bt_conn *conn,
 	return 0;
 }
 
-int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
-			     struct bt_codec *codec)
-{
-	struct bt_audio_ep *ep;
-	uint8_t role;
-	int err;
-
-	BT_DBG("stream %p codec %p", stream, codec);
-
-	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		BT_DBG("Invalid stream");
-		return -EINVAL;
-	}
-
-	role = stream->conn->role;
-	if (role != BT_HCI_ROLE_CENTRAL) {
-		BT_DBG("Invalid conn role: %u, shall be central", role);
-		return -EINVAL;
-	}
-
-	ep = stream->ep;
-
-	if (codec == NULL) {
-		BT_DBG("NULL codec");
-		return -EINVAL;
-	}
-
-	switch (ep->status.state) {
-	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_AUDIO_EP_STATE_IDLE:
-	 /* or 0x01 (Codec Configured) */
-	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
-	 /* or 0x02 (QoS Configured) */
-	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
-		break;
-	default:
-		BT_ERR("Invalid state: %s",
-		       bt_audio_ep_state_str(ep->status.state));
-		return -EBADMSG;
-	}
-
-	bt_audio_stream_attach(stream->conn, stream, ep, codec);
-
-	err = bt_unicast_client_config(stream, codec);
-	if (err) {
-		return err;
-	}
-
-	stream->codec = codec;
-
-	return 0;
-}
-
 static void bt_audio_codec_qos_to_cig_param(struct bt_iso_cig_param *cig_param,
 					    const struct bt_codec_qos *qos)
 {
@@ -1022,6 +969,59 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 }
 
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
+
+int bt_audio_stream_reconfig(struct bt_audio_stream *stream,
+			     const struct bt_codec *codec)
+{
+	uint8_t state;
+	uint8_t role;
+	int err;
+
+	BT_DBG("stream %p codec %p", stream, codec);
+
+	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		BT_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	CHECKIF(codec == NULL) {
+		BT_DBG("codec is NULL");
+		return -EINVAL;
+	}
+
+	state = stream->ep->status.state;
+	switch (state) {
+	/* Valid only if ASE_State field = 0x00 (Idle) */
+	case BT_AUDIO_EP_STATE_IDLE:
+	 /* or 0x01 (Codec Configured) */
+	case BT_AUDIO_EP_STATE_CODEC_CONFIGURED:
+	 /* or 0x02 (QoS Configured) */
+	case BT_AUDIO_EP_STATE_QOS_CONFIGURED:
+		break;
+	default:
+		BT_ERR("Invalid state: %s", bt_audio_ep_state_str(state));
+		return -EBADMSG;
+	}
+
+	role = stream->conn->role;
+	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_CLIENT) &&
+	    role == BT_HCI_ROLE_CENTRAL) {
+		err = bt_unicast_client_config(stream, codec);
+	} else if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER) &&
+		   role == BT_HCI_ROLE_PERIPHERAL) {
+		err = bt_unicast_server_reconfig(stream, codec);
+	} else {
+		err = -EOPNOTSUPP;
+	}
+
+	if (err != 0) {
+		BT_DBG("reconfiguring stream failed: %d", err);
+	} else {
+		stream->codec = codec;
+	}
+
+	return 0;
+}
 
 int bt_audio_stream_start(struct bt_audio_stream *stream)
 {

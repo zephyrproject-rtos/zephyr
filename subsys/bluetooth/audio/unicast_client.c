@@ -830,10 +830,10 @@ static void unicast_client_ep_set_status(struct bt_audio_ep *ep,
 static void unicast_client_codec_data_add(struct net_buf_simple *buf,
 					  const char *prefix,
 					  size_t num,
-					  struct bt_codec_data *data)
+					  const struct bt_codec_data *data)
 {
 	for (size_t i = 0; i < num; i++) {
-		struct bt_data *d = &data[i].data;
+		const struct bt_data *d = &data[i].data;
 		struct bt_ascs_codec_config *cc;
 
 		BT_DBG("#%u: %s type 0x%02x len %u", i, prefix, d->type,
@@ -1198,7 +1198,7 @@ struct net_buf_simple *bt_unicast_client_ep_create_pdu(uint8_t op)
 
 static int unicast_client_ep_config(struct bt_audio_ep *ep,
 				    struct net_buf_simple *buf,
-				    struct bt_codec *codec)
+				    const struct bt_codec *codec)
 {
 	struct bt_ascs_config *req;
 	uint8_t cc_len;
@@ -1547,7 +1547,7 @@ void bt_unicast_client_ep_detach(struct bt_audio_ep *ep,
 }
 
 int bt_unicast_client_config(struct bt_audio_stream *stream,
-			     struct bt_codec *codec)
+			     const struct bt_codec *codec)
 {
 	struct bt_audio_ep *ep = stream->ep;
 	struct bt_ascs_config_op *op;
