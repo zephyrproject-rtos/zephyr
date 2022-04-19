@@ -1,10 +1,13 @@
 sample:
   name: syst sample
+common:
+  tags: logging mipi-sys-t
+  modules:
+    - mipi-sys-t
 tests:
   sample.logger.syst.v1.deferred:
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
-    tags: logging
     harness: console
     harness_config:
       type: one_line
@@ -14,7 +17,6 @@ tests:
       - CONFIG_LOG1=y
   sample.logger.syst.v1.immediate:
     platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
-    tags: logging
     harness: console
     harness_config:
       type: one_line
@@ -25,7 +27,6 @@ tests:
   sample.logger.syst.v2.deferred:
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
-    tags: logging
     harness: console
     harness_config:
       type: one_line
@@ -33,7 +34,6 @@ tests:
         - "SYS-T RAW DATA: "
   sample.logger.syst.v2.immediate:
     platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
-    tags: logging
     harness: console
     harness_config:
       type: one_line
@@ -42,7 +42,6 @@ tests:
   sample.logger.syst.catalog.v2.deferred:
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     platform_allow: mps2_an385 qemu_x86
-    tags: logging
     harness: console
     harness_config:
       type: one_line
@@ -52,7 +51,6 @@ tests:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
   sample.logger.syst.catalog.v2.immediate:
     platform_allow: mps2_an385 qemu_x86
-    tags: logging
     harness: console
     harness_config:
       type: one_line
