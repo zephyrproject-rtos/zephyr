@@ -3340,6 +3340,37 @@ int bt_eatt_disconnect_one(struct bt_conn *conn)
 
 	return err;
 }
+
+int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
+{
+	struct bt_att_chan *att_chan = att_get_fixed_chan(conn);
+	struct bt_att *att = att_chan->att;
+	struct bt_l2cap_chan *chans[CONFIG_BT_EATT_MAX + 1] = {};
+	size_t offset = 0;
+	size_t i = 0;
+	int err;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, att_chan, node) {
+		if (atomic_test_bit(att_chan->flags, ATT_ENHANCED)) {
+			chans[i] = &att_chan->chan.chan;
+			i++;
+		}
+	}
+
+	while (offset < i) {
+		/* bt_l2cap_ecred_chan_reconfigure() uses the first L2CAP_ECRED_CHAN_MAX_PER_REQ
+		 * elements of the array or until a null-terminator is reached.
+		 */
+		err = bt_l2cap_ecred_chan_reconfigure(&chans[offset], mtu);
+		if (err < 0) {
+			return err;
+		}
+
+		offset += L2CAP_ECRED_CHAN_MAX_PER_REQ;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_BT_TESTING */
 #endif /* CONFIG_BT_EATT */
 
