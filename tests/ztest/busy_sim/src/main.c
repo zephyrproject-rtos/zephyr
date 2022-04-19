@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <busy_sim.h>
+#include <zephyr/ztest.h>
+#include <zephyr/busy_sim.h>
 
 static void test_busy_sim(void)
 {
