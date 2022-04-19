@@ -75,6 +75,8 @@ void config_enable_default_clocks(void)
 		/* Wait for Backup domain access */
 	}
 
+	/* Configure driving capability */
+	LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
 	/* Enable LSE Oscillator (32.768 kHz) */
 	LL_RCC_LSE_Enable();
 	while (!LL_RCC_LSE_IsReady()) {
