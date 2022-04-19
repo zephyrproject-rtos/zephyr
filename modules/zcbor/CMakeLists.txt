@@ -9,4 +9,10 @@ if(CONFIG_ZCBOR)
     ${ZEPHYR_ZCBOR_MODULE_DIR}/src/zcbor_decode.c
     ${ZEPHYR_ZCBOR_MODULE_DIR}/src/zcbor_encode.c
   )
+
+  zephyr_compile_definitions_ifdef(CONFIG_ZCBOR_CANONICAL ZCBOR_CANONICAL)
+  zephyr_compile_definitions_ifdef(CONFIG_ZCBOR_STOP_ON_ERROR ZCBOR_STOP_ON_ERROR)
+  zephyr_compile_definitions_ifdef(CONFIG_ZCBOR_VERBOSE ZCBOR_VERBOSE)
+  zephyr_compile_definitions_ifdef(CONFIG_ZCBOR_ASSERT ZCBOR_ASSERT)
+  zephyr_compile_definitions_ifdef(CONFIG_ZCBOR_BIG_ENDIAN ZCBOR_BIG_ENDIAN)
 endif()
