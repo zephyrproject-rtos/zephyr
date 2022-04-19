@@ -1147,7 +1147,7 @@ struct coap_pending *coap_pending_next_unused(
 	size_t i;
 
 	for (i = 0, p = pendings; i < len; i++, p++) {
-		if (p->timeout == 0) {
+		if (p->data == 0) {
 			return p;
 		}
 	}
