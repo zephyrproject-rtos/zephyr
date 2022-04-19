@@ -397,6 +397,8 @@ static void start_ble_rf(void)
 	}
 
 #if STM32_LSE_ENABLED
+	/* Configure driving capability */
+	LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
 	/* Select LSE clock */
 	LL_RCC_LSE_Enable();
 	while (!LL_RCC_LSE_IsReady()) {
