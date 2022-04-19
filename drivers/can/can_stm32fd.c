@@ -151,8 +151,6 @@ static void config_can_##inst##_irq(void)                                      \
 	irq_enable(DT_INST_IRQ_BY_NAME(inst, line_1, irq));                    \
 }
 
-#ifdef CONFIG_CAN_FD_MODE
-
 #define CAN_STM32FD_CFG_INST(inst)					\
 	PINCTRL_DT_INST_DEFINE(inst);					\
 									\
@@ -161,57 +159,18 @@ static void config_can_##inst##_irq(void)                                      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
 	};								\
 									\
-	static const struct can_mcan_config can_mcan_cfg_##inst = {	\
-		.can = (struct can_mcan_reg *) DT_INST_REG_ADDR_BY_NAME(inst, m_can), \
-		.bus_speed = DT_INST_PROP(inst, bus_speed),		\
-		.sjw = DT_INST_PROP(inst, sjw),				\
-		.sample_point = DT_INST_PROP_OR(inst, sample_point, 0),	\
-		.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) +	\
-			DT_INST_PROP_OR(inst, phase_seg1, 0),		\
-		.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),		\
-		.bus_speed_data = DT_INST_PROP(inst, bus_speed_data),	\
-		.sjw_data = DT_INST_PROP(inst, sjw_data),		\
-		.sample_point_data = DT_INST_PROP_OR(inst, sample_point_data, 0), \
-		.prop_ts1_data = DT_INST_PROP_OR(inst, prop_seg_data, 0) + \
-			DT_INST_PROP_OR(inst, phase_seg1_data, 0),	\
-		.ts2_data = DT_INST_PROP_OR(inst, phase_seg2_data, 0),	\
-		.tx_delay_comp_offset =	DT_INST_PROP(inst, tx_delay_comp_offset), \
-		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)), \
-		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 5000000), \
-		.custom = &can_stm32fd_cfg_##inst,			\
-	};
-#else /* CONFIG_CAN_FD_MODE */
-#define CAN_STM32FD_CFG_INST(inst)					\
-	PINCTRL_DT_INST_DEFINE(inst);					\
-									\
-	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = { \
-		.config_irq = config_can_##inst##_irq,			\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
-	};								\
-									\
-	static const struct can_mcan_config can_mcan_cfg_##inst = {	\
-		.can = (struct can_mcan_reg *) DT_INST_REG_ADDR_BY_NAME(inst, m_can), \
-		.bus_speed = DT_INST_PROP(inst, bus_speed),		\
-		.sjw = DT_INST_PROP(inst, sjw),				\
-		.sample_point = DT_INST_PROP_OR(inst, sample_point, 0),	\
-		.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) +	\
-			DT_INST_PROP_OR(inst, phase_seg1, 0),		\
-		.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),		\
-		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)), \
-		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000), \
-		.custom = &can_stm32fd_cfg_##inst,			\
-	};
-#endif /* CONFIG_CAN_FD_MODE */
+	static const struct can_mcan_config can_mcan_cfg_##inst =	\
+		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_stm32fd_cfg_##inst);
 
 #define CAN_STM32FD_DATA_INST(inst)					\
-	static struct can_mcan_data can_mcan_dev_data_##inst = {	\
-		.msg_ram = (struct can_mcan_msg_sram *)			\
+	static struct can_mcan_data can_mcan_data_##inst =		\
+		CAN_MCAN_DATA_INITIALIZER((struct can_mcan_msg_sram *)	\
 			DT_INST_REG_ADDR_BY_NAME(inst, message_ram),	\
-	};
+			NULL);
 
 #define CAN_STM32FD_DEVICE_INST(inst)					\
 	DEVICE_DT_INST_DEFINE(inst, &can_stm32fd_init, NULL,		\
-			      &can_mcan_dev_data_##inst, &can_mcan_cfg_##inst, \
+			      &can_mcan_data_##inst, &can_mcan_cfg_##inst, \
 			      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
 			      &can_stm32fd_driver_api);
 
