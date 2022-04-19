@@ -10,6 +10,8 @@
 
 extern const struct bt_audio_unicast_server_cb *unicast_server_cb;
 
+int bt_unicast_server_reconfig(struct bt_audio_stream *stream,
+			       const struct bt_codec *codec);
 int bt_unicast_server_start(struct bt_audio_stream *stream);
 int bt_unicast_server_metadata(struct bt_audio_stream *stream,
 			       struct bt_codec_data meta[],
