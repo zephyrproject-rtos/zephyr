@@ -70,6 +70,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CLIENT_BINDING_LEN sizeof("U")
 #define CLIENT_QUEUE_LEN sizeof("Q")
 
+static void sm_handle_registration_update_failure(void);
+
 /* The states for the RD client state machine */
 /*
  * When node is unregistered it ends up in UNREGISTERED
@@ -237,7 +239,8 @@ static void sm_handle_failure_state(enum sm_engine_state sm_state)
 	if (client.engine_state == ENGINE_REGISTRATION_SENT) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE;
 	} else if (client.engine_state == ENGINE_UPDATE_SENT) {
-		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE;
+		sm_handle_registration_update_failure();
+		return;
 	} else if (client.engine_state == ENGINE_DEREGISTER_SENT) {
 		event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
 	}
@@ -860,6 +863,21 @@ cleanup:
 	LOG_ERR("error %d when sending registration message", ret);
 	lwm2m_reset_message(msg, true);
 	return ret;
+}
+
+static void sm_handle_registration_update_failure(void)
+{
+	int ret;
+
+	LOG_WRN("Registration Update fail -> trigger full registration");
+	client.engine_state = ENGINE_DO_REGISTRATION;
+	ret = sm_send_registration(true, do_registration_reply_cb, do_registration_timeout_cb);
+	if (!ret) {
+		set_sm_state(ENGINE_REGISTRATION_SENT);
+	} else {
+		LOG_ERR("Registration err: %d", ret);
+		set_sm_state(ENGINE_NETWORK_ERROR);
+	}
 }
 
 static int sm_do_registration(void)
