@@ -23,6 +23,13 @@
 
 extern enum bst_result_t bst_result;
 
+#define CREATE_FLAG(flag) static atomic_t flag = (atomic_t)false
+#define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
+#define WAIT_FOR_FLAG(flag) \
+	while (!(bool)atomic_get(&flag)) { \
+		(void)k_sleep(K_MSEC(1)); \
+	}
+
 #define FAIL(...)                                                                                  \
 	do {                                                                                       \
 		bst_result = Failed;                                                               \
