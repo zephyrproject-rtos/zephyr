@@ -36,30 +36,40 @@
 /* Register bit definitions */
 
 /* SAF EC Portal Command register */
-#define MCHP_SAF_ECP_CMD_OFS		0x18u
-#define MCHP_SAF_ECP_CMD_MASK		0xff00ffffu
-#define MCHP_SAF_ECP_CMD_PUT_POS	0
-#define MCHP_SAF_ECP_CMD_PUT_MASK	0xffu
-#define MCHP_SAF_ECP_CMD_PUT_FLASH_NP	0x0au
-#define MCHP_SAF_ECP_CMD_CTYPE_POS	8
-#define MCHP_SAF_ECP_CMD_CTYPE_READ0	0x00u
-#define MCHP_SAF_ECP_CMD_CTYPE_WRITE0	0x01u
-#define MCHP_SAF_ECP_CMD_CTYPE_ERASE0	0x02u
-#define MCHP_SAF_ECP_CMD_CTYPE_MAX0	0x03u
-#define MCHP_SAF_ECP_CMD_CTYPE_MASK	0xff00ul
-#define MCHP_SAF_ECP_CMD_CTYPE_READ	0x0000ul
-#define MCHP_SAF_ECP_CMD_CTYPE_WRITE	0x0100ul
-#define MCHP_SAF_ECP_CMD_CTYPE_ERASE	0x0200ul
-#define MCHP_SAF_ECP_CMD_LEN_POS	24
-#define MCHP_SAF_ECP_CMD_LEN_MASK0	0xffu
-#define MCHP_SAF_ECP_CMD_LEN_MASK	0xff000000ul
+#define MCHP_SAF_ECP_CMD_OFS			0x18u
+#define MCHP_SAF_ECP_CMD_MASK			0xff00ffffu
+#define MCHP_SAF_ECP_CMD_PUT_POS		0
+#define MCHP_SAF_ECP_CMD_PUT_MASK		0xffu
+#define MCHP_SAF_ECP_CMD_PUT_FLASH_NP		0x0au
+#define MCHP_SAF_ECP_CMD_CTYPE_POS		8
+#define MCHP_SAF_ECP_CMD_CTYPE_MSK0		0xffu
+#define MCHP_SAF_ECP_CMD_CTYPE_MASK		0xff00u
+#define MCHP_SAF_ECP_CMD_CTYPE_READ		0x0000u
+#define MCHP_SAF_ECP_CMD_CTYPE_WRITE		0x0100u
+#define MCHP_SAF_ECP_CMD_CTYPE_ERASE		0x0200u
+#define MCHP_SAF_ECP_CMD_CTYPE_RPMC_OP1_CS0	0x0300u
+#define MCHP_SAF_ECP_CMD_CTYPE_RPMC_OP2_CS0	0x0400u
+#define MCHP_SAF_ECP_CMD_CTYPE_RPMC_OP1_CS1	0x8300u
+#define MCHP_SAF_ECP_CMD_CTYPE_RPMC_OP2_CS1	0x8400u
+#define MCHP_SAF_ECP_CMD_LEN_POS		24
+#define MCHP_SAF_ECP_CMD_LEN_MASK0		0xffu
+#define MCHP_SAF_ECP_CMD_LEN_MASK		0xff000000ul
 /* Read/Write request size (1 <= reqlen <= 64) bytes */
-#define MCHP_SAF_ECP_CMD_RW_LEN_MIN	1u
-#define MCHP_SAF_ECP_CMD_RW_LEN_MAX	64u
+#define MCHP_SAF_ECP_CMD_RW_LEN_MIN		1u
+#define MCHP_SAF_ECP_CMD_RW_LEN_MAX		64u
 /* Only three erase sizes are supported encoded as */
-#define MCHP_SAF_ECP_CMD_ERASE_4K	0u
-#define MCHP_SAF_ECP_CMD_ERASE_32K	BIT(24)
-#define MCHP_SAF_ECP_CMD_ERASE_64K	BIT(25)
+#define MCHP_SAF_ECP_CMD_ERASE_4K		0u
+#define MCHP_SAF_ECP_CMD_ERASE_32K		BIT(24)
+#define MCHP_SAF_ECP_CMD_ERASE_64K		BIT(25)
+
+/* Zero based command values */
+#define MCHP_SAF_ECP_CMD_READ			0x00u
+#define MCHP_SAF_ECP_CMD_WRITE			0x01u
+#define MCHP_SAF_ECP_CMD_ERASE			0x02u
+#define MCHP_SAF_ECP_CMD_RPMC_OP1_CS0		0x03u
+#define MCHP_SAF_ECP_CMD_RPMC_OP2_CS0		0x04u
+#define MCHP_SAF_ECP_CMD_RPMC_OP1_CS1		0x83u
+#define MCHP_SAF_ECP_CMD_RPMC_OP2_CS1		0x84u
 
 /* SAF EC Portal Flash Address register */
 #define MCHP_SAF_ECP_FLAR_OFS		0x1cu
@@ -68,6 +78,7 @@
 /* SAF EC Portal Start register */
 #define MCHP_SAF_ECP_START_OFS		0x20u
 #define MCHP_SAF_ECP_START_MASK		0x01u
+#define MCHP_SAF_ECP_START_POS		0
 #define MCHP_SAF_ECP_START		BIT(0)
 
 /* SAF EC Portal Buffer Address register */
@@ -78,6 +89,15 @@
 #define MCHP_SAF_ECP_STS_OFS		0x28u
 #define MCHP_SAF_ECP_STS_MASK		0x1ffu
 #define MCHP_SAF_ECP_STS_ERR_MASK	0x1fcu
+#define MCHP_SAF_ECP_STS_DONE_POS	0
+#define MCHP_SAF_ECP_STS_DONE_TST_POS	1
+#define MCHP_SAF_ECP_STS_TMOUT_POS	2
+#define MCHP_SAF_ECP_STS_OOR_POS	3
+#define MCHP_SAF_ECP_STS_AV_POS		4
+#define MCHP_SAF_ECP_STS_BND_4K_POS	5
+#define MCHP_SAF_ECP_STS_ERSZ_POS	6
+#define MCHP_SAF_ECP_STS_ST_OVFL_POS	7
+#define MCHP_SAF_ECP_STS_BAD_REQ_POS	8
 #define MCHP_SAF_ECP_STS_DONE		BIT(0)
 #define MCHP_SAF_ECP_STS_DONE_TST	BIT(1)
 #define MCHP_SAF_ECP_STS_TMOUT		BIT(2)
@@ -91,6 +111,7 @@
 /* SAF EC Portal Interrupt Enable register */
 #define MCHP_SAF_ECP_INTEN_OFS		0x2cu
 #define MCHP_SAF_ECP_INTEN_MASK		0x01u
+#define MCHP_SAF_ECP_INTEN_DONE_POS	0
 #define MCHP_SAF_ECP_INTEN_DONE		BIT(0)
 
 /* SAF Flash Configuration Size Limit register */
@@ -102,40 +123,46 @@
 #define MCHP_SAF_FL_CFG_THRH_MASK	0xffffffffu
 
 /* SAF Flash Configuration Miscellaneous register */
-#define MCHP_SAF_FL_CFG_MISC_OFS	0x38u
-#define MCHP_SAF_FL_CFG_MISC_MASK	0x000030f3u
-#define MCHP_SAF_FL_CFG_MISC_PFOE_MASK	0x03u
-#define MCHP_SAF_FL_CFG_MISC_PFOE_DFLT	0x00u
-#define MCHP_SAF_FL_CFG_MISC_PFOE_EXP	0x03u
-#define MCHP_SAF_FL_CFG_MISC_CS0_4BM	BIT(4)
-#define MCHP_SAF_FL_CFG_MISC_CS1_4BM	BIT(5)
-#define MCHP_SAF_FL_CFG_MISC_CS0_CPE	BIT(6)
-#define MCHP_SAF_FL_CFG_MISC_CS1_CPE	BIT(7)
-#define MCHP_SAF_FL_CFG_MISC_SAF_EN	BIT(12)
-#define MCHP_SAF_FL_CFG_MISC_SAF_LOCK	BIT(13)
+#define MCHP_SAF_FL_CFG_MISC_OFS		0x38u
+#define MCHP_SAF_FL_CFG_MISC_MASK		0x000030f3u
+#define MCHP_SAF_FL_CFG_MISC_PFOE_MASK		0x3u
+#define MCHP_SAF_FL_CFG_MISC_PFOE_DFLT		0u
+#define MCHP_SAF_FL_CFG_MISC_PFOE_EXP		0x3u
+#define MCHP_SAF_FL_CFG_MISC_CS0_4BM_POS	4
+#define MCHP_SAF_FL_CFG_MISC_CS1_4BM_POS	5
+#define MCHP_SAF_FL_CFG_MISC_CS0_CPE_POS	6
+#define MCHP_SAF_FL_CFG_MISC_CS1_CPE_POS	7
+#define MCHP_SAF_FL_CFG_MISC_SAF_EN_POS		12
+#define MCHP_SAF_FL_CFG_MISC_SAF_LOCK_POS	13
+#define MCHP_SAF_FL_CFG_MISC_CS0_4BM		BIT(4)
+#define MCHP_SAF_FL_CFG_MISC_CS1_4BM		BIT(5)
+#define MCHP_SAF_FL_CFG_MISC_CS0_CPE		BIT(6)
+#define MCHP_SAF_FL_CFG_MISC_CS1_CPE		BIT(7)
+#define MCHP_SAF_FL_CFG_MISC_SAF_EN		BIT(12)
+#define MCHP_SAF_FL_CFG_MISC_SAF_LOCK		BIT(13)
 
-/* SAF eSPI Monitor Status register */
-#define MCHP_SAF_ESPI_MON_STATUS_OFS	0x3cu
-#define MCHP_SAF_ESPI_MON_STATUS_MASK	0x1fu
-#define MCHP_SAF_ESPI_MON_STS_TMOUT	BIT(0)
-#define MCHP_SAF_ESPI_MON_STS_OOR	BIT(1)
-#define MCHP_SAF_ESPI_MON_STS_AV	BIT(2)
-#define MCHP_SAF_ESPI_MON_STS_BND_4K	BIT(3)
-#define MCHP_SAF_ESPI_MON_STS_ERSZ	BIT(4)
-
-/* SAF eSPI Monitor Interrupt Enable register */
-#define MCHP_SAF_ESPI_MON_INTEN_OFS	0x40u
-#define MCHP_SAF_ESPI_MON_INTEN_MASK	0x1fu
-#define MCHP_SAF_ESPI_MON_INTEN_TMOUT	BIT(0)
-#define MCHP_SAF_ESPI_MON_INTEN_OOR	BIT(1)
-#define MCHP_SAF_ESPI_MON_INTEN_AV	BIT(2)
-#define MCHP_SAF_ESPI_MON_INTEN_BND_4K	BIT(3)
-#define MCHP_SAF_ESPI_MON_INTEN_ERSZ	BIT(4)
+/* SAF eSPI Monitor Status and Interrupt enable registers */
+#define MCHP_SAF_ESPI_MON_STATUS_OFS		0x3cu
+#define MCHP_SAF_ESPI_MON_INTEN_OFS		0x40u
+#define MCHP_SAF_ESPI_MON_STS_IEN_MSK		0x1fu
+#define MCHP_SAF_ESPI_MON_STS_IEN_TMOUT_POS	0
+#define MCHP_SAF_ESPI_MON_STS_IEN_OOR_POS	1
+#define MCHP_SAF_ESPI_MON_STS_IEN_AV_POS	2
+#define MCHP_SAF_ESPI_MON_STS_IEN_BND_4K_POS	3
+#define MCHP_SAF_ESPI_MON_STS_IEN_ERSZ_POS	4
+#define MCHP_SAF_ESPI_MON_STS_IEN_TMOUT		BIT(0)
+#define MCHP_SAF_ESPI_MON_STS_IEN_OOR		BIT(1)
+#define MCHP_SAF_ESPI_MON_STS_IEN_AV		BIT(2)
+#define MCHP_SAF_ESPI_MON_STS_IEN_BND_4K	BIT(3)
+#define MCHP_SAF_ESPI_MON_STS_IEN_ERSZ		BIT(4)
 
 /* SAF EC Portal Busy register */
 #define MCHP_SAF_ECP_BUSY_OFS		0x44u
 #define MCHP_SAF_ECP_BUSY_MASK		0x01u
-#define MCHP_SAF_ECP_BUSY		BIT(0)
+#define MCHP_SAF_ECP_EC0_BUSY_POS	0
+#define MCHP_SAF_ECP_EC1_BUSY_POS	1
+#define MCHP_SAF_ECP_EC0_BUSY		BIT(0)
+#define MCHP_SAF_ECP_EC1_BUSY		BIT(1)
 
 /* SAF CS0/CS1 Opcode A registers */
 #define MCHP_SAF_CS0_OPA_OFS		0x4cu
@@ -444,7 +471,64 @@
 
 /* SAF DnX Protection Bypass register */
 #define MCHP_SAF_DNX_PROT_BYP_OFS	0x1b4u
-#define MCHP_SAF_DNX_PROT_BYP_MASK	0xffffffffu
+#define MCHP_SAF_DNX_PROT_BYP_MASK	0x1110ffffu
+#define MCHP_SAF_DNX_PB_TAG_POS(n)	((uint32_t)(n) & 0xfu)
+#define MCHP_SAF_DNX_PB_TAG(n)		BIT(((n) & 0xfu))
+#define MCHP_SAF_DNX_DS_RO_POS		20
+#define MCHP_SAF_DNX_DS_RO		BIT(20)
+#define MCHP_SAF_DNX_DM_POS		24
+#define MCHP_SAF_DNX_DM			BIT(24)
+#define MCHP_SAF_DNX_LK_POS		28
+#define MCHP_SAF_DNX_LK			BIT(28)
+
+/* SAF Activity Count Reload Valud register */
+#define MCHP_SAF_AC_RELOAD_OFS		0x1b8u
+#define MCHP_SAF_AC_RELOAD_REG_MSK	0xffffu
+
+/* SAF Power Down Control register */
+#define SAF_PWRDN_CTRL_OFS		0x1bcu
+#define SAF_PWRDN_CTRL_REG_MSK		0x0fu
+#define SAF_PWRDN_CTRL_CS0_PD_EN_POS	0
+#define SAF_PWRDN_CTRL_CS1_PD_EN_POS	1
+#define SAF_PWRDN_CTRL_CS0_WPA_EN_POS	2
+#define SAF_PWRDN_CTRL_CS1_WPA_EN_POS	3
+
+/* SAF Memory Power Status register (RO) */
+#define SAF_MEM_PWR_STS_OFS		0x1c0u
+#define SAF_MEM_PWR_STS_REG_MSK		0x03u
+
+/* SAF Config CS0 and CS1 Opcode registers */
+#define SAF_CFG_CS0_OPC_OFS		0x1c4u
+#define SAF_CFG_CS1_OPC_OFS		0x1c8u
+#define SAF_CFG_CS_OPC_REG_MSK		0x00ffffffu
+#define SAF_CFG_CS_OPC_ENTER_PD_POS	0
+#define SAF_CFG_CS_OPC_ENTER_PD_MSK0	0xffu
+#define SAF_CFG_CS_OPC_ENTER_PD_MSK	0xffu
+#define SAF_CFG_CS_OPC_EXIT_PD_POS	8
+#define SAF_CFG_CS_OPC_EXIT_PD_MSK0	0xffu
+#define SAF_CFG_CS_OPC_EXIT_PD_MSK	0xff00u
+#define SAF_CFG_CS_OPC_RPMC_OP2_POS	16
+#define SAF_CFG_CS_OPC_RPMC_OP2_MSK0	0xffu
+#define SAF_CFG_CS_OPC_RPMC_OP2_MSK	0xff0000u
+
+
+/* SAF Flash Power Down/Up Timerout register */
+#define SAF_FL_PWR_TMOUT_OFS		0x1ccu
+#define SAF_FL_PWR_TMOUT_REG_MSK	0xffffu
+
+/* SAF Clock Divider CS0 and CS1 registers */
+#define SAF_CLKDIV_CS0_OFS		0x200u
+#define SAF_CLKDIV_CS1_OFS		0x204u
+#define SAF_CLKDIV_CS_REG_MSK		0xffffffffu
+#define SAF_CLKDIV_CS_READ_POS		0
+#define SAF_CLKDIV_CS_REST_POS		16
+#define SAF_CLKDIV_CS_MSK0		0xffffu
+
+/* SAF RPMC OP2 eSPI, EC0, and EC1 Result Address register */
+#define	SAF_RPMC_OP2_ESPI_RES_OFS	0x208u
+#define SAF_RPMC_OP2_EC0_RES_OFS	0x20cu
+#define SAF_RPMC_OP2_EC1_RES_OFS	0x210u
+#define	SAF_RPMC_OP2_RES_REG_MSK	0xffffffffu
 
 /* SAF Communication Mode */
 #define MCHP_SAF_COMM_MODE_MASK		0x01u
@@ -496,36 +580,48 @@ struct mchp_espi_saf_pr {
 /** @brief eSPI SAF configuration and control registers at 0x40008000 */
 struct mchp_espi_saf {
 	uint32_t RSVD1[6];
-	volatile uint32_t SAF_ECP_CMD;
-	volatile uint32_t SAF_ECP_FLAR;
-	volatile uint32_t SAF_ECP_START;
-	volatile uint32_t SAF_ECP_BFAR;
-	volatile uint32_t SAF_ECP_STATUS;
-	volatile uint32_t SAF_ECP_INTEN;
-	volatile uint32_t SAF_FL_CFG_SIZE_LIM;
-	volatile uint32_t SAF_FL_CFG_THRH;
-	volatile uint32_t SAF_FL_CFG_MISC;
-	volatile uint32_t SAF_ESPI_MON_STATUS;
-	volatile uint32_t SAF_ESPI_MON_INTEN;
-	volatile uint32_t SAF_ECP_BUSY;
+	volatile uint32_t SAF_ECP_CMD;			/* 0x18 */
+	volatile uint32_t SAF_ECP_FLAR;			/* 0x1c */
+	volatile uint32_t SAF_ECP_START;		/* 0x20 */
+	volatile uint32_t SAF_ECP_BFAR;			/* 0x24 */
+	volatile uint32_t SAF_ECP_STATUS;		/* 0x28 */
+	volatile uint32_t SAF_ECP_INTEN;		/* 0x2c */
+	volatile uint32_t SAF_FL_CFG_SIZE_LIM;		/* 0x30 */
+	volatile uint32_t SAF_FL_CFG_THRH;		/* 0x34 */
+	volatile uint32_t SAF_FL_CFG_MISC;		/* 0x38 */
+	volatile uint32_t SAF_ESPI_MON_STATUS;		/* 0x3c */
+	volatile uint32_t SAF_ESPI_MON_INTEN;		/* 0x40 */
+	volatile uint32_t SAF_ECP_BUSY;			/* 0x44 */
 	uint32_t RSVD2[1];
-	struct mchp_espi_saf_op SAF_CS_OP[2];
-	volatile uint32_t SAF_FL_CFG_GEN_DESCR;
-	volatile uint32_t SAF_PROT_LOCK;
-	volatile uint32_t SAF_PROT_DIRTY;
-	volatile uint32_t SAF_TAG_MAP[3];
-	struct mchp_espi_saf_pr SAF_PROT_RG[17];
-	volatile uint32_t SAF_POLL_TMOUT;
-	volatile uint32_t SAF_POLL_INTRVL;
-	volatile uint32_t SAF_SUS_RSM_INTRVL;
-	volatile uint32_t SAF_CONSEC_RD_TMOUT;
-	volatile uint16_t SAF_CS0_CFG_P2M;
-	volatile uint16_t SAF_CS1_CFG_P2M;
-	volatile uint32_t SAF_FL_CFG_SPM;
-	volatile uint32_t SAF_SUS_CHK_DLY;
-	volatile uint16_t SAF_CS0_CM_PRF;
-	volatile uint16_t SAF_CS1_CM_PRF;
-	volatile uint32_t SAF_DNX_PROT_BYP;
+	struct mchp_espi_saf_op SAF_CS_OP[2];		/* 0x4c - 0x6b */
+	volatile uint32_t SAF_FL_CFG_GEN_DESCR;		/* 0x6c */
+	volatile uint32_t SAF_PROT_LOCK;		/* 0x70 */
+	volatile uint32_t SAF_PROT_DIRTY;		/* 0x74 */
+	volatile uint32_t SAF_TAG_MAP[3];		/* 0x78 - 0x83 */
+	struct mchp_espi_saf_pr SAF_PROT_RG[17];	/* 0x84 - 0x193 */
+	volatile uint32_t SAF_POLL_TMOUT;		/* 0x194 */
+	volatile uint32_t SAF_POLL_INTRVL;		/* 0x198 */
+	volatile uint32_t SAF_SUS_RSM_INTRVL;		/* 0x19c */
+	volatile uint32_t SAF_CONSEC_RD_TMOUT;		/* 0x1a0 */
+	volatile uint16_t SAF_CS0_CFG_P2M;		/* 0x1a4 */
+	volatile uint16_t SAF_CS1_CFG_P2M;		/* 0x1a6 */
+	volatile uint32_t SAF_FL_CFG_SPM;		/* 0x1a8 */
+	volatile uint32_t SAF_SUS_CHK_DLY;		/* 0x1ac */
+	volatile uint16_t SAF_CS0_CM_PRF;		/* 0x1b0 */
+	volatile uint16_t SAF_CS1_CM_PRF;		/* 0x1b2 */
+	volatile uint32_t SAF_DNX_PROT_BYP;		/* 0x1b4 */
+	volatile uint32_t SAF_AC_RELOAD;		/* 0x1b8 */
+	volatile uint32_t SAF_PWRDN_CTRL;		/* 0x1bc */
+	volatile uint32_t SAF_MEM_PWR_STS;		/* 0x1c0 */
+	volatile uint32_t SAF_CFG_CS0_OPD;		/* 0x1c4 */
+	volatile uint32_t SAF_CFG_CS1_OPD;		/* 0x1c8 */
+	volatile uint32_t SAF_FL_PWR_TMOUT;		/* 0x1cc */
+	uint32_t RSVD[12];
+	volatile uint32_t SAF_CLKDIV_CS0;		/* 0x200 */
+	volatile uint32_t SAF_CLKDIV_CS1;		/* 0x204 */
+	volatile uint32_t SAF_RPMC_OP2_ESPI_RES;	/* 0x208 */
+	volatile uint32_t SAF_RPMC_OP2_EC0_RES;		/* 0x20c */
+	volatile uint32_t SAF_RPMC_OP2_EC1_RES;		/* 0x210 */
 };
 
 struct mchp_espi_saf_comm { /* @ 0x40071000 */
