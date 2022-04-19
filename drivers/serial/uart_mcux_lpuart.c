@@ -42,6 +42,7 @@ struct mcux_lpuart_config {
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
+	bool loopback_en;
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -962,6 +963,12 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 
 	LPUART_Init(config->base, &uart_config, clock_freq);
 
+	if (config->loopback_en) {
+		/* Set the LPUART into loopback mode */
+		config->base->CTRL |= LPUART_CTRL_LOOPS_MASK;
+		config->base->CTRL &= ~LPUART_CTRL_RSRC_MASK;
+	}
+
 	/* update internal uart_config */
 	data->uart_config = *cfg;
 
@@ -1159,6 +1166,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {		\
 	.baud_rate = DT_INST_PROP(n, current_speed),				\
 	.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?				\
 		UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,		\
+	.loopback_en = DT_INST_PROP(n, nxp_loopback),				\
 	PINCTRL_INIT(n)								\
 	MCUX_LPUART_IRQ_INIT(n)							\
 	RX_DMA_CONFIG(n)							\
