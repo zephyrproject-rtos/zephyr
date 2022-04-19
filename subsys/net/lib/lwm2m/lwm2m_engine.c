@@ -4453,8 +4453,11 @@ static int lwm2m_engine_default_content_format(uint16_t *accept_format)
 		if (IS_ENABLED(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)) {
 			LOG_DBG("No accept option given. Assume SenML Json.");
 			*accept_format = LWM2M_FORMAT_APP_SEML_JSON;
+		} else if (IS_ENABLED(CONFIG_LWM2M_RW_CBOR_SUPPORT)) {
+			LOG_DBG("No accept option given. Assume CBOR.");
+			*accept_format = LWM2M_FORMAT_APP_CBOR;
 		} else {
-			LOG_ERR("SenML CBOR or JSON is not supported");
+			LOG_ERR("CBOR, SenML CBOR or SenML JSON is not supported");
 			return -ENOTSUP;
 		}
 	} else if (IS_ENABLED(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT)) {
