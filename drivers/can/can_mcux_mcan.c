@@ -119,45 +119,6 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
-#ifdef CONFIG_CAN_FD_MODE
-#define MCUX_MCAN_MCAN_INIT(n)			\
-	{								\
-		.can = (struct can_mcan_reg *)DT_INST_REG_ADDR(n),	\
-		.bus_speed = DT_INST_PROP(n, bus_speed),		\
-		.sjw = DT_INST_PROP(n, sjw),				\
-		.sample_point = DT_INST_PROP_OR(n, sample_point, 0),	\
-		.prop_ts1 = DT_INST_PROP_OR(n, prop_seg, 0) +		\
-			DT_INST_PROP_OR(n, phase_seg1, 0),		\
-		.ts2 = DT_INST_PROP_OR(n, phase_seg2, 0),		\
-		.bus_speed_data = DT_INST_PROP(n, bus_speed_data),	\
-		.sjw_data = DT_INST_PROP(n, sjw_data),			\
-		.sample_point_data =					\
-			DT_INST_PROP_OR(n, sample_point_data, 0),	\
-		.prop_ts1_data = DT_INST_PROP_OR(n, prop_seg_data, 0) + \
-			DT_INST_PROP_OR(n, phase_seg1_data, 0),		\
-		.ts2_data = DT_INST_PROP_OR(n, phase_seg2_data, 0),	\
-		.tx_delay_comp_offset =					\
-			DT_INST_PROP(n, tx_delay_comp_offset),		\
-		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phys)),	\
-		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(n, 5000000), \
-		.custom = &mcux_mcan_config_##n,			\
-	}
-#else /* CONFIG_CAN_FD_MODE */
-#define MCUX_MCAN_MCAN_INIT(n)						\
-	{								\
-		.can = (struct can_mcan_reg *)DT_INST_REG_ADDR(n),	\
-		.bus_speed = DT_INST_PROP(n, bus_speed),		\
-		.sjw = DT_INST_PROP(n, sjw),				\
-		.sample_point = DT_INST_PROP_OR(n, sample_point, 0),	\
-		.prop_ts1 = DT_INST_PROP_OR(n, prop_seg, 0) +		\
-			DT_INST_PROP_OR(n, phase_seg1, 0),		\
-		.ts2 = DT_INST_PROP_OR(n, phase_seg2, 0),		\
-		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phys)),	\
-		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(n, 1000000), \
-		.custom = &mcux_mcan_config_##n,			\
-	}
-#endif /* !CONFIG_CAN_FD_MODE */
-
 #define MCUX_MCAN_INIT(n)						\
 	static void mcux_mcan_irq_config_##n(const struct device *dev); \
 									\
@@ -169,14 +130,13 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_config_##n =	\
-		MCUX_MCAN_MCAN_INIT(n);					\
+		CAN_MCAN_DT_CONFIG_INST_GET(n, &mcux_mcan_config_##n);	\
 									\
 	static struct mcux_mcan_data mcux_mcan_data_##n;		\
 									\
-	static struct can_mcan_data can_mcan_data_##n = {		\
-		.msg_ram = &mcux_mcan_data_##n.msg_ram,			\
-		.custom = &mcux_mcan_data_##n,				\
-	};								\
+	static struct can_mcan_data can_mcan_data_##n =			\
+		CAN_MCAN_DATA_INITIALIZER(&mcux_mcan_data_##n.msg_ram,	\
+					  &mcux_mcan_data_##n);		\
 									\
 	DEVICE_DT_INST_DEFINE(n, &mcux_mcan_init, NULL,			\
 			      &can_mcan_data_##n,			\
