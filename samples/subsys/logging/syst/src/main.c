@@ -39,14 +39,14 @@ void log_msgs(void)
 #ifndef CONFIG_LOG2
 	struct log_msg_ids src_level = {
 		.level = LOG_LEVEL_INTERNAL_RAW_STRING,
-		.source_id = 0, /* not used as level indicates raw string. */
 		.domain_id = 0, /* not used as level indicates raw string. */
+		.source_id = 0, /* not used as level indicates raw string. */
 	};
 #endif
 
 	char c = '!';
-	char *s = "static str";
-	char *s1 = "c str";
+	const char *s = "static str";
+	const char *s1 = "c str";
 	char vs0[32];
 	char vs1[32];
 
