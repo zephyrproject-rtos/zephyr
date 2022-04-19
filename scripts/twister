@@ -63,6 +63,9 @@ pairs:
     minimum amount of ROM needed for this test to build and run. This is
     compared with information provided by the board metadata.
 
+  modules: <list of modules>
+    Add list of modules needed for this sample to build and run.
+
   timeout: <number of seconds>
     Length of time to run test in emulator before automatically killing it.
     Default to 60 seconds.
@@ -180,6 +183,7 @@ from colorama import Fore
 from pathlib import Path
 from multiprocessing.managers import BaseManager
 import queue
+from zephyr_module import west_projects, parse_modules
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -927,6 +931,7 @@ def main():
     # Check version of zephyr repo
     suite.check_zephyr_version()
 
+
     # Set testsuite options from command line.
     suite.build_only = options.build_only
     suite.cmake_only = options.cmake_only
@@ -952,6 +957,14 @@ def main():
     suite.integration = options.integration
     suite.overflow_as_errors = options.overflow_as_errors
     suite.suite_name_check = not options.disable_suite_name_check
+
+    # get all enabled west projects
+    west_proj = west_projects()
+    modules_meta = parse_modules(ZEPHYR_BASE,
+                                [p.posixpath for p in west_proj['projects']]
+                                if west_proj else None, None)
+    modules = [module.meta.get('name') for module in modules_meta]
+    suite.modules = modules
 
     if options.ninja:
         suite.generator_cmd = "ninja"
@@ -1153,7 +1166,6 @@ def main():
             run_individual_tests=run_individual_tests,
             runnable=(options.device_testing or options.filter == 'runnable'),
             force_platform=options.force_platform
-
         )
 
     if (options.export_tests or options.list_tests) and options.platform:
