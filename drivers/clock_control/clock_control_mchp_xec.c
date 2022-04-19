@@ -559,11 +559,19 @@ static int xec_clock_control_get_subsys_rate(const struct device *dev,
 	switch (bus) {
 	case MCHP_XEC_PCR_CLK_CORE:
 	case MCHP_XEC_PCR_CLK_PERIPH_FAST:
-		*rate = MHZ(96);
+		if (pcr->TURBO_CLK & MCHP_PCR_TURBO_CLK_96M) {
+			*rate = MHZ(96);
+		} else {
+			*rate = MHZ(48);
+		}
 		break;
 	case MCHP_XEC_PCR_CLK_CPU:
 		/* if PCR PROC_CLK_CTRL is 0 the chip is not running */
-		*rate = MHZ(96) / pcr->PROC_CLK_CTRL;
+		if (pcr->TURBO_CLK & MCHP_PCR_TURBO_CLK_96M) {
+			*rate = MHZ(96) / pcr->PROC_CLK_CTRL;
+		} else {
+			*rate = MHZ(48) / pcr->PROC_CLK_CTRL;
+		}
 		break;
 	case MCHP_XEC_PCR_CLK_BUS:
 	case MCHP_XEC_PCR_CLK_PERIPH:
