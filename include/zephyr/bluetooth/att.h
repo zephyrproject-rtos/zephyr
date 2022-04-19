@@ -60,6 +60,9 @@ extern "C" {
 
 int bt_eatt_disconnect_one(struct bt_conn *conn);
 
+/* Reconfigure all EATT channels on connection */
+int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu);
+
 #endif /* CONFIG_BT_TESTING */
 
 /** @brief Connect Enhanced ATT channels
