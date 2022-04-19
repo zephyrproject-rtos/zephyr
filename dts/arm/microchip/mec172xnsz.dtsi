@@ -798,12 +798,17 @@
 		};
 		espi0: espi@400f3400 {
 			compatible = "microchip,xec-espi-v2";
+			/* reg tuple contains one 32-bit address cell and one
+			 * 32-bit length(size) cell.
+			 */
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = < 0x400f3400 0x400
 				0x400f3800 0x400
 				0x400f9c00 0x400>;
 			reg-names = "io", "mem", "vw";
 			interrupts = <103 3>, <104 3>, <105 3>, <106 3>,
-				     <107 3>, <108 3>, <109 3>, <110 3>,
+				     <107 3>, <108 3>, <109 3>, <110 2>,
 				     <156 3>;
 			interrupt-names = "pc", "bm1", "bm2", "ltr", "oob_up",
 					  "oob_dn", "fc", "rst", "vw_chan_en";
@@ -817,9 +822,20 @@
 				  MCHP_XEC_ECIA(19, 7, 11, 110)
 				  MCHP_XEC_ECIA(19, 8, 11, 156) >;
 			pcrs = <2 19>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			status = "disabled";
+
+			espi_saf0: espi_saf@40008000 {
+				compatible = "microchip,xec-espi-saf-v2";
+				reg = <0x40008000 0x400>, <0x40070000 0x400>,
+				      <0x40071000 0x400>;
+				reg-names = "safbr", "safqspi", "safcomm";
+				interrupts = <166 3>, <167 3>;
+				interrupt-names = "done", "err";
+				girqs = < MCHP_XEC_ECIA(19, 9, 11, 166) >,
+					< MCHP_XEC_ECIA(19, 10, 11, 167) >;
+				pcrs = <2 27>;
+				status = "disabled";
+			};
 
 			mbox0: mbox@400f0000 {
 				compatible = "microchip,xec-espi-host-dev";

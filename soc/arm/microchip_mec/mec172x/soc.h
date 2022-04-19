@@ -284,6 +284,9 @@ typedef enum {
 #include "../common/soc_espi_channels.h"
 #include "../common/soc_i2c.h"
 
+/* MEC172x SAF V2 */
+#include "soc_espi_saf_v2.h"
+
 #endif
 
 #endif
