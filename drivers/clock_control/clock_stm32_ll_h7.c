@@ -473,6 +473,9 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable backup domain */
 		LL_PWR_EnableBkUpAccess();
 
+		/* Configure driving capability */
+		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
+
 		/* Enable LSE oscillator */
 		LL_RCC_LSE_Enable();
 		while (LL_RCC_LSE_IsReady() != 1) {
