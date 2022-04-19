@@ -9,9 +9,10 @@
 #include <kernel.h>
 #include <drivers/can.h>
 #include <drivers/can/transceiver.h>
-#include "can_mcan.h"
-#include "can_mcan_int.h"
 #include <logging/log.h>
+
+#include "can_mcan.h"
+#include "can_mcan_priv.h"
 
 LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 
