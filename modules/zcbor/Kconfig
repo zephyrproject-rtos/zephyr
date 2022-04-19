@@ -5,6 +5,31 @@ config ZEPHYR_ZCBOR_MODULE
 	bool
 
 config ZCBOR
-	bool "zcbor library"
+	bool "zcbor CBOR library"
 	help
-	  Enable zcbor CBOR encoder/decoder library
+	  zcbor CBOR encoder/decoder library
+
+if ZCBOR
+
+config ZCBOR_CANONICAL
+	bool "Produce canonical CBOR"
+	help
+	  Enabling this will prevent zcbor from creating lists and maps with
+	  indefinite-length arrays (it will still decode them properly).
+
+config ZCBOR_STOP_ON_ERROR
+	bool "Stop on error when processing"
+	help
+	  This makes all functions abort their execution if called when an error
+	  has already happened.
+
+config ZCBOR_VERBOSE
+	bool "Make zcbor code print messages"
+
+config ZCBOR_ASSERT
+	def_bool ASSERT
+
+config ZCBOR_BIG_ENDIAN
+	def_bool BIG_ENDIAN
+
+endif # ZCBOR
