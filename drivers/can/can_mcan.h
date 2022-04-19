@@ -209,6 +209,54 @@ struct can_mcan_config {
 
 struct can_mcan_reg;
 
+#ifdef CONFIG_CAN_FD_MODE
+#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom_config)				\
+	{									\
+		.can = (struct can_mcan_reg *)DT_REG_ADDR_BY_NAME(node_id, m_can), \
+		.bus_speed = DT_PROP(node_id, bus_speed),			\
+		.sjw = DT_PROP(node_id, sjw),					\
+		.sample_point = DT_PROP_OR(node_id, sample_point, 0),		\
+		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) +			\
+			DT_PROP_OR(node_id, phase_seg1, 0),			\
+		.ts2 = DT_PROP_OR(node_id, phase_seg2, 0),			\
+		.bus_speed_data = DT_PROP(node_id, bus_speed_data),		\
+		.sjw_data = DT_PROP(node_id, sjw_data),				\
+		.sample_point_data =						\
+			DT_PROP_OR(node_id, sample_point_data, 0),		\
+		.prop_ts1_data = DT_PROP_OR(node_id, prop_seg_data, 0) +	\
+			DT_PROP_OR(node_id, phase_seg1_data, 0),		\
+		.ts2_data = DT_PROP_OR(node_id, phase_seg2_data, 0),		\
+		.tx_delay_comp_offset =						\
+			DT_PROP(node_id, tx_delay_comp_offset),			\
+		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),	\
+		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 5000000),\
+		.custom = _custom_config,					\
+	}
+#else /* CONFIG_CAN_FD_MODE */
+#define CAN_MCAN_DT_CONFIG_GET(node_id, _custom_config)				\
+	{									\
+		.can = (struct can_mcan_reg *)DT_REG_ADDR_BY_NAME(node_id, m_can), \
+		.bus_speed = DT_PROP(node_id, bus_speed),			\
+		.sjw = DT_PROP(node_id, sjw),					\
+		.sample_point = DT_PROP_OR(node_id, sample_point, 0),		\
+		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) +			\
+			DT_PROP_OR(node_id, phase_seg1, 0),			\
+		.ts2 = DT_PROP_OR(node_id, phase_seg2, 0),			\
+		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),	\
+		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 1000000),\
+		.custom = _custom_config,					\
+	}
+#endif /* !CONFIG_CAN_FD_MODE */
+
+#define CAN_MCAN_DT_CONFIG_INST_GET(inst, _custom_config)		\
+	CAN_MCAN_DT_CONFIG_GET(DT_DRV_INST(inst), _custom_config)
+
+#define CAN_MCAN_DATA_INITIALIZER(_msg_ram, _custom_data)		\
+	{								\
+		.msg_ram = _msg_ram,					\
+		.custom = _custom_data,					\
+	}
+
 int can_mcan_set_mode(const struct device *dev, enum can_mode mode);
 
 int can_mcan_set_timing(const struct device *dev,
