@@ -52,6 +52,11 @@ static uint32_t format_flags(void)
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_ADSP_OUTPUT_SYST)) {
+		flags |= LOG_OUTPUT_FLAG_FORMAT_SYST;
+	}
+
 	return flags;
 }
 
