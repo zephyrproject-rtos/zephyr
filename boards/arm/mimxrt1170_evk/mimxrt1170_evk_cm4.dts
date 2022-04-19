@@ -14,6 +14,12 @@
 	compatible = "nxp,mimxrt1176";
 
 	chosen {
+		/*
+		 * Note: when using DMA, the SRAM region must be set to
+		 * a memory region that is not cached by the chip. If the chosen
+		 * sram region is changed and DMA is in use, you will
+		 * encounter issues!
+		 */
 		zephyr,sram = &sram1;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
@@ -93,5 +99,9 @@
 };
 
 &sai1 {
+	status = "okay";
+};
+
+&edma_lpsr0 {
 	status = "okay";
 };

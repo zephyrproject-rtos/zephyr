@@ -47,7 +47,16 @@ struct dma_mcux_edma_config {
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define EDMA_TCDPOOL_CACHE_ATTR __nocache
 #else
-#error tcdpool could not be located in cacheable memory, a requirement for proper EDMA operation.
+/*
+ * Note: the TCD pool *must* be in non cacheable memory. All of the NXP SOCs
+ * that support caching memory have their default SRAM regions defined as a
+ * non cached memory region, but if the default SRAM region is changed EDMA
+ * TCD pools would be moved to cacheable memory, resulting in DMA cache
+ * coherency issues.
+ */
+
+#define EDMA_TCDPOOL_CACHE_ATTR
+
 #endif /* CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS */
 
 #else /* CONFIG_HAS_MCUX_CACHE */

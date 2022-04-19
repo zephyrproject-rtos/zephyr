@@ -14,6 +14,12 @@
 	compatible = "nxp,mimxrt1166";
 
 	chosen {
+		/*
+		 * Note: when using DMA, the SRAM region must be set to
+		 * a memory region that is not cached by the chip. If the chosen
+		 * sram region is changed and DMA is in use, you will
+		 * encounter issues!
+		 */
 		zephyr,sram = &sram1;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
@@ -89,5 +95,9 @@
  * to use systick, change this node from "gpt_hw_timer" to "systick"
  */
 &gpt_hw_timer {
+	status = "okay";
+};
+
+&edma_lpsr0 {
 	status = "okay";
 };
