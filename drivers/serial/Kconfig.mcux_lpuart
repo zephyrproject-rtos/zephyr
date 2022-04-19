@@ -12,3 +12,10 @@ config UART_MCUX_LPUART
 	select DMA if UART_ASYNC_API
 	help
 	  Enable the MCUX LPUART driver.
+
+config UART_MCUX_LPUART_ISR_SUPPORT
+	bool
+	depends on UART_MCUX_LPUART
+	default y if UART_INTERRUPT_DRIVEN || PM || UART_ASYNC_API
+	help
+	  Enable UART interrupt service routine.

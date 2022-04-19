@@ -42,13 +42,12 @@ struct mcux_lpuart_config {
 	clock_control_subsys_t clock_subsys;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
+#ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	void (*irq_config_func)(const struct device *dev);
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 	const struct lpuart_dma_config rx_dma_config;
 	const struct lpuart_dma_config tx_dma_config;
-	void (*async_config_func)(const struct device *dev);
 #endif /* CONFIG_UART_ASYNC_API */
 };
 
@@ -365,35 +364,6 @@ static void mcux_lpuart_irq_callback_set(const struct device *dev,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
-static void mcux_lpuart_isr(const struct device *dev)
-{
-	struct mcux_lpuart_data *data = dev->data;
-#if CONFIG_PM
-	const struct mcux_lpuart_config *config = dev->config;
-#endif
-
-#if CONFIG_PM
-	if (LPUART_GetStatusFlags(config->base) &
-		kLPUART_TransmissionCompleteFlag) {
-
-		if (data->tx_poll_stream_on) {
-			/* Poll transmission complete. Allow system to sleep */
-			LPUART_DisableInterrupts(config->base,
-				kLPUART_TransmissionCompleteInterruptEnable);
-			data->tx_poll_stream_on = false;
-			mcux_lpuart_pm_policy_state_lock_put(dev);
-		}
-	}
-#endif /* CONFIG_PM */
-
-#if CONFIG_UART_INTERRUPT_DRIVEN
-	if (data->callback) {
-		data->callback(dev, data->cb_data);
-	}
-#endif
-}
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_PM */
 
 #ifdef CONFIG_UART_ASYNC_API
 static inline void async_timer_start(struct k_work_delayable *work, size_t timeout_us)
@@ -401,20 +371,6 @@ static inline void async_timer_start(struct k_work_delayable *work, size_t timeo
 	if ((timeout_us != SYS_FOREVER_US) && (timeout_us != 0)) {
 		LOG_DBG("async timer started for %d us", timeout_us);
 		k_work_reschedule(work, K_USEC(timeout_us));
-	}
-}
-
-static void mcux_lpuart_async_isr(const struct device *dev)
-{
-	struct mcux_lpuart_data *data = dev->data;
-	const struct mcux_lpuart_config *config = dev->config;
-	LPUART_Type *lpuart = config->base;
-	const uint32_t status = LPUART_GetStatusFlags(lpuart);
-
-	if (kLPUART_IdleLineFlag & status) {
-		async_timer_start(&data->async.rx_dma_params.timeout_work,
-				  data->async.rx_dma_params.timeout_us);
-		assert(LPUART_ClearStatusFlags(lpuart, kLPUART_IdleLineFlag) == 0U);
 	}
 }
 
@@ -871,6 +827,44 @@ static void mcux_lpuart_async_tx_timeout(struct k_work *work)
 
 #endif /* CONFIG_UART_ASYNC_API */
 
+#if CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
+static void mcux_lpuart_isr(const struct device *dev)
+{
+	struct mcux_lpuart_data *data = dev->data;
+#if CONFIG_PM || CONFIG_UART_ASYNC_API
+	const struct mcux_lpuart_config *config = dev->config;
+	const uint32_t status = LPUART_GetStatusFlags(config->base);
+#endif
+
+#if CONFIG_PM
+	if (status & kLPUART_TransmissionCompleteFlag) {
+
+		if (data->tx_poll_stream_on) {
+			/* Poll transmission complete. Allow system to sleep */
+			LPUART_DisableInterrupts(config->base,
+				kLPUART_TransmissionCompleteInterruptEnable);
+			data->tx_poll_stream_on = false;
+			mcux_lpuart_pm_policy_state_lock_put(dev);
+		}
+	}
+#endif /* CONFIG_PM */
+
+#if CONFIG_UART_INTERRUPT_DRIVEN
+	if (data->callback) {
+		data->callback(dev, data->cb_data);
+	}
+#endif
+
+#if CONFIG_UART_ASYNC_API
+	if (status & kLPUART_IdleLineFlag) {
+		async_timer_start(&data->async.rx_dma_params.timeout_work,
+				  data->async.rx_dma_params.timeout_us);
+		assert(LPUART_ClearStatusFlags(config->base, kLPUART_IdleLineFlag) == 0U);
+	}
+#endif /* CONFIG_UART_ASYNC_API */
+}
+#endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */
+
 static int mcux_lpuart_configure_init(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct mcux_lpuart_config *config = dev->config;
@@ -1026,7 +1020,7 @@ static int mcux_lpuart_init(const struct device *dev)
 	}
 #endif
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
+#ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	config->irq_config_func(dev);
 #endif
 
@@ -1034,9 +1028,6 @@ static int mcux_lpuart_init(const struct device *dev)
 	data->pm_state_lock_on = false;
 	data->tx_poll_stream_on = false;
 	data->tx_int_stream_on = false;
-#endif
-#ifdef CONFIG_UART_ASYNC_API
-	config->async_config_func(dev);
 #endif
 
 	return 0;
@@ -1077,7 +1068,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 };
 
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_PM)
+#ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 #define MCUX_LPUART_IRQ_INSTALL(n, i)					\
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		\
@@ -1098,7 +1089,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 #else
 #define MCUX_LPUART_IRQ_INIT(n)
 #define MCUX_LPUART_IRQ_DEFINE(n)
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */
 
 #ifdef CONFIG_UART_ASYNC_API
 #define TX_DMA_CONFIG(id)								       \
@@ -1147,30 +1138,9 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 			.user_data = (void *)DEVICE_DT_INST_GET(id)			       \
 		},									       \
 	},
-#define MCUX_LPUART_ASYNC_IRQ_INSTALL(n, i)				      \
-	do {								      \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		      \
-			    DT_INST_IRQ_BY_IDX(n, i, priority),		      \
-			    mcux_lpuart_async_isr, DEVICE_DT_INST_GET(n), 0); \
-									      \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		      \
-	} while (0)
-#define MCUX_LPUART_ASYNC_IRQ_DEFINE(n)					\
-	static void mcux_lpuart_async_config_func_##n(const struct device *dev)	\
-	{									\
-		MCUX_LPUART_ASYNC_IRQ_INSTALL(n, 0);				\
-										\
-		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 1),			        \
-			   (MCUX_LPUART_ASYNC_IRQ_INSTALL(n, 1);))		\
-	}
-#define MCUX_LPUART_ASYNC_IRQ_INIT(n) \
-	.async_config_func = mcux_lpuart_async_config_func_##n,
-
 #else
 #define RX_DMA_CONFIG(n)
 #define TX_DMA_CONFIG(n)
-#define MCUX_LPUART_ASYNC_IRQ_INIT(n)
-#define MCUX_LPUART_ASYNC_IRQ_DEFINE(n)
 #endif /* CONFIG_UART_ASYNC_API */
 
 #if CONFIG_PINCTRL
@@ -1191,7 +1161,6 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {		\
 		UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,		\
 	PINCTRL_INIT(n)								\
 	MCUX_LPUART_IRQ_INIT(n)							\
-	MCUX_LPUART_ASYNC_IRQ_INIT(n)						\
 	RX_DMA_CONFIG(n)							\
 	TX_DMA_CONFIG(n)							\
 };
@@ -1202,7 +1171,6 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {		\
 									\
 	PINCTRL_DEFINE(n)						\
 	MCUX_LPUART_IRQ_DEFINE(n)					\
-	MCUX_LPUART_ASYNC_IRQ_DEFINE(n)					\
 									\
 	LPUART_MCUX_DECLARE_CFG(n)					\
 									\
