@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <fff.h>
+#include <zephyr/ztest.h>
+#include <zephyr/fff.h>
 
 #include <c_test_framework.h>
 

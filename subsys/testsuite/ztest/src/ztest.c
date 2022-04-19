@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
 #include <stdio.h>
+
+
+#include <zephyr/ztest.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #ifdef CONFIG_USERSPACE
 #include <zephyr/sys/libc-hooks.h>
