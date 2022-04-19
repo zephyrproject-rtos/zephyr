@@ -824,7 +824,7 @@
 			mbox0: mbox@400f0000 {
 				compatible = "microchip,xec-espi-host-dev";
 				reg = <0x400f0000 0x200>;
-				interrupts = <60 0>;
+				interrupts = <60 3>;
 				girqs = < MCHP_XEC_ECIA(15, 20, 7, 60) >;
 				pcrs = <2 17>;
 				ldn = <0>;
@@ -910,7 +910,7 @@
 			uart0: uart@400f2400 {
 				compatible = "microchip,xec-uart";
 				reg = <0x400f2400 0x400>;
-				interrupts = <40 0>;
+				interrupts = <40 1>;
 				clock-frequency = <1843200>;
 				current-speed = <38400>;
 				girqs = <15 0>;
@@ -921,7 +921,7 @@
 			uart1: uart@400f2800 {
 				compatible = "microchip,xec-uart";
 				reg = <0x400f2800 0x400>;
-				interrupts = <41 0>;
+				interrupts = <41 1>;
 				clock-frequency = <1843200>;
 				current-speed = <38400>;
 				girqs = <15 1>;
@@ -932,7 +932,7 @@
 			emi0: emi@400f4000 {
 				compatible = "microchip,xec-espi-host-dev";
 				reg = <0x400f4000 0x400>;
-				interrupts = <42 0>;
+				interrupts = <42 3>;
 				girqs = < MCHP_XEC_ECIA(15, 2, 7, 42) >;
 				ldn = <16>;
 				status = "disabled";
@@ -940,7 +940,7 @@
 			emi1: emi@400f4400 {
 				compatible = "microchip,xec-espi-host-dev";
 				reg = <0x400f4400 0x400>;
-				interrupts = <43 0>;
+				interrupts = <43 3>;
 				girqs = < MCHP_XEC_ECIA(15, 3, 7, 43) >;
 				ldn = <17>;
 				status = "disabled";
@@ -948,7 +948,7 @@
 			emi2: emi@400f4800 {
 				compatible = "microchip,xec-espi-host-dev";
 				reg = <0x400f4800 0x400>;
-				interrupts = <44 0>;
+				interrupts = <44 3>;
 				girqs = < MCHP_XEC_ECIA(15, 4, 7, 44) >;
 				ldn = <18>;
 				status = "disabled";
@@ -956,7 +956,7 @@
 			rtc0: rtc@400f5000 {
 				compatible = "microchip,xec-espi-host-dev";
 				reg = <0x400f5000 0x100>;
-				interrupts = <119 0>, <120 0>;
+				interrupts = <119 3>, <120 3>;
 				girqs = < MCHP_XEC_ECIA(21, 8, 13, 119)
 					  MCHP_XEC_ECIA(21, 9, 13, 120) >;
 				pcrs = <2 18>;
