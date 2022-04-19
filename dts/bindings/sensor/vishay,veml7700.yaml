@@ -1,0 +1,84 @@
+# Copyright (c) 2022 Nikolaus Huber
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Driver for Vishay VEML7700 High-Accuracy Ambient Light Sensor. See datasheet
+  at https://www.vishay.com/docs/84286/veml7700.pdf
+
+compatible: "vishay,veml7700"
+
+include: i2c-device.yaml
+
+properties:
+  als-it:
+    type: int
+    required: false
+    default: 100
+    description: |
+      ALS integration time in ms.
+
+      If not specified, an integration time of 100ms is used. This is according
+      to the standard integration time mentioned in the sensor datasheet.
+
+      An application must wait at least the chosen integration time before
+      fetching a new sensor reading, otherwise a stale value might be returned.
+    enum:
+      - 25
+      - 50
+      - 100
+      - 200
+      - 400
+      - 800
+
+  gain:
+    type: string
+    required: false
+    default: "x1"
+    description: |
+      ALS gain.
+
+      If not defined, "x1" will be chosen as the sensor gain, as this is the
+      value all sensor readings are normalized to.
+
+      Higher gain means higher precision, but also a smaller window of possible
+      sensor readings.
+
+      The interaction between gain and integration time is illustrated in the
+      datasheet.
+    enum:
+      - "x1"
+      - "x2"
+      - "x1/8"
+      - "x1/4"
+
+  persistence:
+    type: int
+    required: false
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+
+  enable-psm:
+    type: boolean
+    required: false
+    description: Enable power saving mode
+
+  psm-mode:
+    type: string
+    required: false
+    default: "mode 1"
+    description: |
+      Power saving mode.
+
+      By setting the power saving mode a certain delay between readings can be
+      achieved. This decreases power consumption. Different examples for the
+      interaction between integration time and power saving modes are given in
+      the datasheet.
+    enum:
+      - "mode 1"
+      - "mode 2"
+      - "mode 3"
+      - "mode 4"

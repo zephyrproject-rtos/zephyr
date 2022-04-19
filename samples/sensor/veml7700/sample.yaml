@@ -1,0 +1,7 @@
+sample:
+  name: VEML7700 Sensor sample
+tests:
+  sample.sensor.bme680:
+    harness: sensor
+    tags: samples sensor
+    filter: dt_compat_enabled("vishay,veml7700")

@@ -1,0 +1,10 @@
+# VEML7700 light sensor configuration options
+
+# Copyright (c) 2022 Nikolaus Huber
+# SPDX-License-Identifier: Apache-2.0
+
+config VEML7700
+	bool "VEML7700 sensor"
+	depends on I2C
+	help
+		Enable driver for VEML7700 I2C-based light sensor

@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2022 Nikolaus Huber
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	veml7700@10 {
+		compatible = "vishay,veml7700";
+		reg = <0x10>;
+		label = "VEML7700";
+		als-it = <100>;
+		gain = "x2";
+		persistence = <1>;
+		enable-psm;
+		psm-mode = "mode 1";
+	};
+};
