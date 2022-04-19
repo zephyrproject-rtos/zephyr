@@ -3039,6 +3039,17 @@ static void bt_att_released(struct bt_l2cap_chan *ch)
 	k_mem_slab_free(&chan_slab, (void **)&chan);
 }
 
+#if defined(CONFIG_BT_EATT)
+static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
+{
+	struct bt_att_chan *att_chan = ATT_CHAN(l2cap_chan);
+
+	BT_DBG("chan %p", att_chan);
+
+	att_chan_mtu_updated(att_chan);
+}
+#endif /* CONFIG_BT_EATT */
+
 static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 {
 	int quota = 0;
@@ -3052,6 +3063,9 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 		.encrypt_change = bt_att_encrypt_change,
 	#endif /* CONFIG_BT_SMP */
 		.released = bt_att_released,
+	#if defined(CONFIG_BT_EATT)
+		.reconfigured = bt_att_reconfigured,
+	#endif /* CONFIG_BT_EATT */
 	};
 	struct bt_att_chan *chan;
 
