@@ -84,3 +84,65 @@ tests:
         - "SYS-T RAW DATA: "
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
+
+  sample.logger.syst.v1.deferred_cpp:
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG1=y
+      - CONFIG_CPLUSPLUS=y
+  sample.logger.syst.v1.immediate_cpp:
+    platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG1=y
+      - CONFIG_CPLUSPLUS=y
+  sample.logger.syst.v2.deferred_cpp:
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+  sample.logger.syst.v2.immediate_cpp:
+    platform_allow: mps2_an385 qemu_x86 qemu_x86_64 sam_e70_xplained qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_CPLUSPLUS=y
+  sample.logger.syst.catalog.v2.deferred_cpp:
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    platform_allow: mps2_an385 qemu_x86
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
+      - CONFIG_CPLUSPLUS=y
+  sample.logger.syst.catalog.v2.immediate_cpp:
+    platform_allow: mps2_an385 qemu_x86
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SYS-T RAW DATA: "
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
+      - CONFIG_CPLUSPLUS=y
