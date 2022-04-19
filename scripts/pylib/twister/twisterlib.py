@@ -2960,6 +2960,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "slow": {"type": "bool", "default": False},
                        "timeout": {"type": "int", "default": 60},
                        "min_ram": {"type": "int", "default": 8},
+                       "modules": {"type": "list", "default": []},
                        "depends_on": {"type": "set"},
                        "min_flash": {"type": "int", "default": 32},
                        "arch_allow": {"type": "set"},
@@ -3044,6 +3045,8 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         self.pipeline = None
         self.version = "NA"
+
+        self.modules = []
 
     def check_zephyr_version(self):
         try:
@@ -3338,6 +3341,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         tc.build_on_all = tc_dict["build_on_all"]
                         tc.slow = tc_dict["slow"]
                         tc.min_ram = tc_dict["min_ram"]
+                        tc.modules = tc_dict["modules"]
                         tc.depends_on = tc_dict["depends_on"]
                         tc.min_flash = tc_dict["min_flash"]
                         tc.extra_sections = tc_dict["extra_sections"]
@@ -3534,6 +3538,10 @@ class TestSuite(DisablePyTestCollectionMixin):
                 if (plat.arch == "unit") != (tc.type == "unit"):
                     # Discard silently
                     continue
+
+                if tc.modules and self.modules:
+                    if not set(tc.modules).issubset(set(self.modules)):
+                        discards[instance] = discards.get(instance, f"one or more required module not available: {','.join(tc.modules)}")
 
                 if runnable and not instance.run:
                     discards[instance] = discards.get(instance, "Not runnable on device")
