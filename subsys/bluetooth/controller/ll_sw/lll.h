@@ -376,9 +376,9 @@ struct node_rx_ftr {
 
 /* Meta-information for isochronous PDUs in node_rx_hdr */
 struct node_rx_iso_meta {
-	uint64_t payload_number : 39; /* cisPayloadNumber */
-	uint32_t timestamp;           /* Time of reception */
-	uint8_t  status;              /* Status of reception (OK/not OK) */
+	uint64_t payload_number:39; /* cisPayloadNumber */
+	uint64_t status:8;          /* Status of reception (OK/not OK) */
+	uint32_t timestamp;         /* Time of reception */
 };
 
 /* Define invalid/unassigned Controller state/role instance handle */
@@ -532,6 +532,8 @@ static inline void lll_hdr_init(void *lll, void *parent)
 #define iso_rx_sched() ll_rx_sched()
 #endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 
+struct node_tx_iso;
+
 void lll_done_score(void *param, uint8_t result);
 
 int lll_init(void);
@@ -570,6 +572,8 @@ void ull_rx_sched(void);
 void ull_rx_sched_done(void);
 void ull_iso_rx_put(memq_link_t *link, void *rx);
 void ull_iso_rx_sched(void);
+void *ull_iso_tx_ack_dequeue(void);
+void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *tx);
 struct event_done_extra *ull_event_done_extra_get(void);
 struct event_done_extra *ull_done_extra_type_set(uint8_t type);
 void *ull_event_done(void *param);

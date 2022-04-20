@@ -111,9 +111,9 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 {
 	struct bt_hci_iso_ts_data_hdr *data_hdr;
 	uint16_t packet_status_flag;
-	uint16_t slen, slen_packed;
 	struct bt_hci_iso_hdr *hdr;
 	uint16_t handle_packed;
+	uint16_t slen_packed;
 	struct net_buf *buf;
 	uint16_t handle;
 	uint8_t  ts, pb;
@@ -131,12 +131,8 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 			return ISOAL_STATUS_OK;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA */
-		data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
-		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
-
-		handle = sink_ctx->session.handle;
-
-		pb = sink_ctx->sdu_production.sdu_state;
+		pb  = sink_ctx->sdu_production.sdu_state;
+		len = sink_ctx->sdu_production.sdu_written;
 
 		/*
 		 * BLUETOOTH CORE SPECIFICATION Version 5.3 | Vol 4, Part E
@@ -154,28 +150,36 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 		 * Time_Stamp field. This bit shall only be set if the PB_Flag field equals 0b00 or
 		 * 0b10.
 		 */
-		ts = !(pb & 1);
+		ts = (pb & 0x1) == 0x0;
+
+		if (ts) {
+			data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
+			packet_status_flag = valid_sdu->status;
+
+			/* TODO: Validity of length might need to be reconsidered here. Not handled
+			 * in ISO-AL.
+			 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
+			 * 5.4.5 HCI ISO Data packets
+			 * If Packet_Status_Flag equals 0b10 then PB_Flag shall equal 0b10.
+			 * When Packet_Status_Flag is set to 0b10 in packets from the Controller to
+			 * the Host, there is no data and ISO_SDU_Length shall be set to zero.
+			 */
+			slen_packed = bt_iso_pkt_len_pack(len, packet_status_flag);
+
+			data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
+			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) valid_sdu->seqn);
+			data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
+
+			len += BT_HCI_ISO_TS_DATA_HDR_SIZE;
+		}
+
+		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
+
+		handle = sink_ctx->session.handle;
 		handle_packed = bt_iso_handle_pack(handle, pb, ts);
-		len = sink_ctx->sdu_production.sdu_written + BT_HCI_ISO_TS_DATA_HDR_SIZE;
 
 		hdr->handle = sys_cpu_to_le16(handle_packed);
 		hdr->len = sys_cpu_to_le16(len);
-
-		packet_status_flag = valid_sdu->status;
-		/* TODO: Validity of length might need to be reconsidered here. Not handled in
-		 * ISO-AL.
-		 * BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
-		 * 5.4.5 HCI ISO Data packets
-		 * If Packet_Status_Flag equals 0b10 then PB_Flag shall equal 0b10.
-		 * When Packet_Status_Flag is set to 0b10 in packets from the Controller to the
-		 * Host, there is no data and ISO_SDU_Length shall be set to zero.
-		 */
-		slen = sink_ctx->sdu_production.sdu_written;
-		slen_packed = bt_iso_pkt_len_pack(slen, packet_status_flag);
-
-		data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
-		data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) valid_sdu->seqn);
-		data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
 
 		/* send fragment up the chain */
 		bt_recv(buf);

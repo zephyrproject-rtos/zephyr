@@ -688,25 +688,23 @@ struct pdu_data_llctrl_cte_rsp {
 } __packed;
 
 struct pdu_data_llctrl_cis_req {
-	uint8_t cig_id;
-	uint8_t cis_id;
-	uint8_t c_phy;
-	uint8_t p_phy;
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	uint16_t c_max_sdu:12;
-	uint16_t rfu0:3;
-	uint16_t framed:1;
-	uint16_t p_max_sdu:12;
-	uint16_t rfu1:4;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	uint16_t framed:1;
-	uint16_t rfu0:3;
-	uint16_t c_max_sdu:12;
-	uint16_t rfu1:4;
-	uint16_t p_max_sdu:12;
-#else
-#error "Unsupported endianness"
-#endif
+	uint8_t  cig_id;
+	uint8_t  cis_id;
+	uint8_t  c_phy;
+	uint8_t  p_phy;
+	/* c_max_sdu:12
+	 * rfu:3
+	 * framed:1
+	 * NOTE: This layout as bitfields is not portable for BE using
+	 * endianness conversion macros.
+	 */
+	uint8_t  c_max_sdu_packed[2];
+	/* p_max_sdu:12
+	 * rfu:4
+	 * NOTE: This layout as bitfields is not portable for BE using
+	 * endianness conversion macros.
+	 */
+	uint8_t  p_max_sdu[2];
 	uint8_t  c_sdu_interval[3];
 	uint8_t  p_sdu_interval[3];
 	uint16_t c_max_pdu;
@@ -903,6 +901,15 @@ struct pdu_iso_sdu_sh {
 #error "Unsupported endianness"
 #endif /* __BYTE_ORDER__ */
 } __packed;
+
+enum pdu_cis_llid {
+	/** Unframed complete or end fragment */
+	PDU_CIS_LLID_COMPLETE_END = 0x00,
+	/** Unframed start or continuation fragment */
+	PDU_CIS_LLID_START_CONTINUE = 0x01,
+	/** Framed; one or more segments of a SDU */
+	PDU_CIS_LLID_FRAMED = 0x02
+};
 
 struct pdu_cis {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
