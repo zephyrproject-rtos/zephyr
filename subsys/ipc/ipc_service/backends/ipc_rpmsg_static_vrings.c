@@ -610,7 +610,7 @@ static int backend_init(const struct device *instance)
 			   (0)),							\
 		.wq_prio_type = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
 			   (DT_INST_PROP_BY_IDX(i, zephyr_priority, 1)),		\
-			   (PRIO_PREEMPT)),						\
+			   (PRIO_COOP)),						\
 		.id = i,								\
 	};										\
 											\
