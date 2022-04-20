@@ -5,10 +5,10 @@ description: Nuvoton, NPCX-Host UART IO node
 
 compatible: "nuvoton,npcx-host-uart"
 
-include: [base.yaml]
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
     pinctrl-0:
-        type: phandles
         required: true
-        description: configurations of host uart pinmux controllers
+    pinctrl-names:
+        required: true
