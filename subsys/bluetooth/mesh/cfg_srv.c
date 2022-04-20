@@ -1039,7 +1039,7 @@ static int mod_sub_add(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) {
 		status = STATUS_INVALID_ADDRESS;
 		goto send_status;
 	}
@@ -1117,7 +1117,7 @@ static int mod_sub_del(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) {
 		status = STATUS_INVALID_ADDRESS;
 		goto send_status;
 	}
@@ -1198,7 +1198,7 @@ static int mod_sub_overwrite(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (!BT_MESH_ADDR_IS_GROUP(sub_addr)) {
+	if (!BT_MESH_ADDR_IS_GROUP(sub_addr) && !BT_MESH_ADDR_IS_FIXED_GROUP(sub_addr)) {
 		status = STATUS_INVALID_ADDRESS;
 		goto send_status;
 	}
