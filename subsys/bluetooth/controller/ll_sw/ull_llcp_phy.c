@@ -304,6 +304,20 @@ static inline void pu_combine_phys(struct ll_conn *conn, struct proc_ctx *ctx, u
 	}
 }
 
+#if defined(CONFIG_BT_CENTRAL)
+static void pu_prepare_instant(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	/* Set instance only in case there is actual PHY change. Otherwise the instant should be
+	 * set to 0.
+	 */
+	if (ctx->data.pu.tx != 0 && ctx->data.pu.rx != 0) {
+		ctx->data.pu.instant = ull_conn_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
+	} else {
+		ctx->data.pu.instant = 0;
+	}
+}
+#endif /* CONFIG_BT_CENTRAL */
+
 /*
  * LLCP Local Procedure PHY Update FSM
  */
@@ -459,7 +473,7 @@ static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
-		ctx->data.pu.instant = ull_conn_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
+		pu_prepare_instant(conn, ctx);
 		lp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		ctx->state = LP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND;
@@ -861,8 +875,9 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
-		ctx->data.pu.instant = ull_conn_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
+		pu_prepare_instant(conn, ctx);
 		rp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND);
+
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		ctx->state = RP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND;
 	}
