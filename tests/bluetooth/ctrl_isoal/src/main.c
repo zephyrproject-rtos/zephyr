@@ -38,6 +38,7 @@ uint32_t sdu_interval = (3 * 1250);
 uint8_t  burst_number = 1;
 uint8_t  flush_timeout = 1;
 uint8_t  role = BT_CONN_ROLE_PERIPHERAL;
+uint8_t  framed;
 
 uint64_t payload_number = 2000;
 
@@ -264,7 +265,6 @@ isoal_status_t sink_sdu_emit_test(const struct isoal_sink         *sink_ctx,
 
 	buf = (uint8_t *) valid_sdu->contents.dbuf;
 	int res = memcmp(buf, pdu_ref, sink_ctx->sdu_production.sdu_written);
-
 	debug_print_sdu(sink_ctx, buf);
 	zassert_equal(res, 0, "len=%u buf[0]=0x%x ref[0]=0x%0x",
 		      sink_ctx->sdu_production.sdu_written, buf[0], pdu_ref[0]);
@@ -300,7 +300,7 @@ void test_setup(void)
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
 
 	/* Create a sink based on global parameters */
-	err = isoal_sink_create(handle, role,
+	err = isoal_sink_create(handle, role, framed,
 				burst_number, flush_timeout,
 				sdu_interval, iso_interval,
 				stream_sync_delay, group_sync_delay,
@@ -528,7 +528,7 @@ void test_sink_create_destroy(void)
 
 	for (int i = 0; i < CONFIG_BT_CTLR_ISOAL_SINKS; i++) {
 		/* Create a sink based on global parameters */
-		err = isoal_sink_create(handle, dummy_role,
+		err = isoal_sink_create(handle, dummy_role, framed,
 					burst_number, flush_timeout,
 					sdu_interval, iso_interval,
 					stream_sync_delay, group_sync_delay,
@@ -566,7 +566,7 @@ void test_sink_create_err(void)
 
 	for (int i = 0; i < CONFIG_BT_CTLR_ISOAL_SINKS; i++) {
 		/* Create a sink based on global parameters */
-		err = isoal_sink_create(handle, role,
+		err = isoal_sink_create(handle, role, framed,
 					burst_number, flush_timeout,
 					sdu_interval, iso_interval,
 					stream_sync_delay, group_sync_delay,
@@ -578,7 +578,7 @@ void test_sink_create_err(void)
 	}
 
 	/* Should be out of sinks, allocation should generate an error */
-	err = isoal_sink_create(handle, role,
+	err = isoal_sink_create(handle, role, framed,
 				burst_number, flush_timeout,
 				sdu_interval, iso_interval,
 				stream_sync_delay, group_sync_delay,
@@ -657,7 +657,7 @@ void test_unframed_seq_err(void)
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
 	/* Expecting data to be written but with error status */
 	zassert_equal(err, ISOAL_STATUS_OK, "err=0x%02x", err);
-	zassert_equal(sink->sdu_production.sdu_written, 3+7, "written=%u",
+	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		      sink->sdu_production.sdu_written);
 	zassert_equal(sink->sdu_production.sdu_status, ISOAL_SDU_STATUS_LOST_DATA,
 		      "sdu_status=0x%x", sink->sdu_production.sdu_status);
@@ -1003,7 +1003,7 @@ void test_trig_assert_isoal_sink_create(void)
 
 	ztest_set_assert_valid(true);
 	/* Create a sink based on global parameters */
-	err = isoal_sink_create(handle, 99 /* Faulty role param to trigger assert */,
+	err = isoal_sink_create(handle, 99 /* Faulty role param to trigger assert */, framed,
 				burst_number, flush_timeout,
 				sdu_interval, iso_interval,
 				stream_sync_delay, group_sync_delay,
@@ -1089,7 +1089,7 @@ void test_unframed_disabled_sink(void)
 
 	/* Test recombine */
 	err = isoal_rx_pdu_recombine(sink_hdl, &pdu_meta);
-	zassert_equal(err, ISOAL_STATUS_ERR_SDU_ALLOC, "");
+	zassert_equal(err, ISOAL_STATUS_OK, "");
 	zassert_equal(sink->sdu_production.sdu_written, 0, "written=%u",
 		      sink->sdu_production.sdu_written);
 }
@@ -1501,6 +1501,7 @@ void test_main(void)
 	/* FRAMED TEST CASES */
 	sdu_buf_len = SDU_BUF_MAX_LEN;
 	sdu_interval = (4 * 1250); /* 4 PDUs per SDU interval */
+	framed = 1;
 	ztest_test_suite(test_framed,
 		ztest_unit_test(test_setup),
 		ztest_unit_test(test_framed_single_pdu),
