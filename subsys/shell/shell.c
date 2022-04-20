@@ -1330,15 +1330,15 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 
 		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 
-		if (shell->iface->api->update) {
-			shell->iface->api->update(shell->iface);
-		}
-
 		shell_signal_handle(shell, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(shell, SHELL_SIGNAL_RXRDY, shell_process);
 		if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 			shell_signal_handle(shell, SHELL_SIGNAL_LOG_MSG,
 					    shell_log_process);
+		}
+
+		if (shell->iface->api->update) {
+			shell->iface->api->update(shell->iface);
 		}
 
 		k_mutex_unlock(&shell->ctx->wr_mtx);
