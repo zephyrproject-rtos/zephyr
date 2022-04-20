@@ -203,12 +203,15 @@ config BT_MESH_PROXY_USE_DEVICE_NAME
 
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
-	default 3
+	default 16
 	range 1 32767
 	depends on BT_MESH_GATT_PROXY
 	help
 	  This option specifies how many Proxy Filter entries the local
-	  node supports.
+	  node supports. This helps in reducing unwanted traffic getting sent to
+	  the proxy client. This value is application specific and should be large
+	  enough so that proxy client can communicate with several devices through
+	  this proxy server node using the default accept list filter type.
 
 endif # BT_CONN
 
@@ -288,13 +291,17 @@ config BT_MESH_CRPL
 
 config BT_MESH_MSG_CACHE_SIZE
 	int "Network message cache size"
-	default 10
+	default 32
 	range 2 65535
 	help
-	  Number of messages that are cached for the network. This helps
-	  prevent unnecessary decryption operations and unnecessary
-	  relays. This option is similar to the replay protection list,
-	  but has a different purpose.
+	  Number of messages that are cached by the node to avoid acting on the
+	  recently seen duplicate messages. This option is similar to
+	  the replay protection list, but has a different purpose. Network message
+	  cache helps prevent unnecessary decryption operations. This also prevents
+	  unnecessary relaying and helps in getting rid of relay loops. Setting
+	  this value to a very low number can cause unnecessary network traffic.
+	  Setting this value to a very large number can impact the processing time
+	  for each received network PDU and increases RAM footprint proportionately.
 
 config BT_MESH_ADV_BUF_COUNT
 	int "Number of advertising buffers"
