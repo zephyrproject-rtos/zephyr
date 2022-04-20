@@ -1046,6 +1046,7 @@ void hci_le_cis_req(struct net_buf *buf)
 		return;
 	}
 
+	iso->iso.info.type = BT_ISO_CHAN_TYPE_CONNECTED;
 	iso->iso.cig_id = evt->cig_id;
 	iso->iso.cis_id = evt->cis_id;
 
