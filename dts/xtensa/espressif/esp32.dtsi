@@ -142,26 +142,40 @@
 			status = "disabled";
 		};
 
-		gpio0: gpio@3ff44000 {
-			compatible = "espressif,esp32-gpio";
-			gpio-controller;
+		gpio: gpio {
+			compatible = "simple-bus";
+			gpio-map-mask = <0xffffffe0 0xffffffc0>;
+			gpio-map-pass-thru = <0x1f 0x3f>;
+			gpio-map = <
+				0x00 0x0 &gpio0 0x0 0x0
+				0x20 0x0 &gpio1 0x0 0x0
+			>;
 			#gpio-cells = <2>;
-			reg = <0x3ff44000 0x800>;
-			interrupts = <GPIO_INTR_SOURCE>;
-			interrupt-parent = <&intc>;
-			label = "GPIO_0";
-			ngpios = <32>;   /* 0..31 */
-		};
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
-		gpio1: gpio@3ff44800 {
-			compatible = "espressif,esp32-gpio";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <0x3ff44800 0x800>;
-			interrupts = <GPIO_INTR_SOURCE>;
-			interrupt-parent = <&intc>;
-			label = "GPIO_1";
-			ngpios = <8>;   /* 32..39 */
+			gpio0: gpio@3ff44000 {
+				compatible = "espressif,esp32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x3ff44000 0x800>;
+				interrupts = <GPIO_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				label = "GPIO_0";
+				ngpios = <32>;   /* 0..31 */
+			};
+
+			gpio1: gpio@3ff44800 {
+				compatible = "espressif,esp32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x3ff44800 0x800>;
+				interrupts = <GPIO_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				label = "GPIO_1";
+				ngpios = <8>;   /* 32..39 */
+			};
 		};
 
 		i2c0: i2c@3ff53000 {
