@@ -34,7 +34,7 @@ struct pwm_nrfx_data {
 	uint16_t current[NRF_PWM_CHANNEL_COUNT];
 	uint16_t countertop;
 	uint8_t  prescaler;
-	uint8_t  inverted_channels;
+	uint8_t  initially_inverted;
 };
 
 
@@ -112,6 +112,15 @@ static bool any_other_channel_is_active(uint8_t channel,
 	return false;
 }
 
+static bool channel_psel_get(uint32_t channel, uint32_t *psel,
+			     const struct pwm_nrfx_config *config)
+{
+	*psel = nrf_pwm_pin_get(config->pwm.p_registers, channel);
+
+	return (((*psel & PWM_PSEL_OUT_CONNECT_Msk) >> PWM_PSEL_OUT_CONNECT_Pos)
+		== PWM_PSEL_OUT_CONNECT_Connected);
+}
+
 static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
@@ -124,12 +133,8 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 	const struct pwm_nrfx_config *config = dev->config;
 	struct pwm_nrfx_data *data = dev->data;
 	uint8_t channel = pwm;
+	bool inverted = (flags & PWM_POLARITY_INVERTED);
 	bool was_stopped;
-
-	if (flags) {
-		/* PWM polarity not supported (yet?) */
-		return -ENOTSUP;
-	}
 
 	if (channel >= NRF_PWM_CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel: %u.", channel);
@@ -156,8 +161,7 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 	/* Check if period_cycles is either matching currently used, or
 	 * possible to use with our prescaler options.
 	 * Don't do anything if the period length happens to be zero.
-	 * In such case, pulse cycles will be right below limited to 0
-	 * and this will result in making the channel inactive.
+	 * In such case, the channel is treated as inactive.
 	 */
 	if (period_cycles != 0 && period_cycles != data->period_cycles) {
 		int ret = pwm_period_check_and_set(config, data, channel,
@@ -167,10 +171,8 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 		}
 	}
 
-	/* Store new pulse value bit[14:0], and polarity bit[15] for channel. */
-	data->current[channel] = (
-		(data->current[channel] & PWM_NRFX_CH_POLARITY_MASK)
-		| (pulse_cycles >> data->prescaler));
+	data->current[channel] =
+		PWM_NRFX_CH_VALUE(pulse_cycles >> data->prescaler, inverted);
 
 	LOG_DBG("channel %u, pulse %u, period %u, prescaler: %u.",
 		channel, pulse_cycles, period_cycles, data->prescaler);
@@ -182,27 +184,22 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 	 * is disabled after all channels appear to be inactive.
 	 */
 	if (!pwm_channel_is_active(channel, data)) {
-		/* If pulse 0% and pin not inverted, set LOW.
-		 * If pulse 100% and pin inverted, set LOW.
-		 * If pulse 0% and pin inverted, set HIGH.
-		 * If pulse 100% and pin not inverted, set HIGH.
-		 */
-		bool channel_inverted_state =
-			data->inverted_channels & BIT(channel);
+		uint32_t psel;
 
-		bool pulse_0_and_not_inverted =
-			(pulse_cycles == 0U)
-			&& !channel_inverted_state;
-		bool pulse_100_and_inverted =
-			(pulse_cycles == period_cycles)
-			&& channel_inverted_state;
-		uint32_t psel =
-			nrf_pwm_pin_get(config->pwm.p_registers, channel);
+		if (channel_psel_get(channel, &psel, config)) {
+			/* If pulse 0% and pin not inverted, set LOW.
+			 * If pulse 100% and pin inverted, set LOW.
+			 * If pulse 0% and pin inverted, set HIGH.
+			 * If pulse 100% and pin not inverted, set HIGH.
+			 */
+			bool pulse_0_and_not_inverted =
+				(pulse_cycles == 0U) && !inverted;
+			bool pulse_100_and_inverted =
+				(pulse_cycles == period_cycles) && inverted;
+			uint32_t value = (pulse_0_and_not_inverted ||
+					  pulse_100_and_inverted) ? 0 : 1;
 
-		if (pulse_0_and_not_inverted || pulse_100_and_inverted) {
-			nrf_gpio_pin_clear(psel);
-		} else {
-			nrf_gpio_pin_set(psel);
+			nrf_gpio_pin_write(psel, value);
 		}
 
 		if (!any_other_channel_is_active(channel, data)) {
@@ -259,23 +256,23 @@ static int pwm_nrfx_init(const struct device *dev)
 		return ret;
 	}
 
-	data->inverted_channels = 0;
+	data->initially_inverted = 0;
 	for (size_t i = 0; i < ARRAY_SIZE(data->current); i++) {
-		uint32_t psel = nrf_pwm_pin_get(config->pwm.p_registers, i);
-		/* Mark channels as inverted according to what initial state
-		 * of their outputs has been set by pinctrl (high idle state
-		 * means that the channel is inverted).
-		 */
-		if (((psel & PWM_PSEL_OUT_CONNECT_Msk) >> PWM_PSEL_OUT_CONNECT_Pos)
-		    == PWM_PSEL_OUT_CONNECT_Connected) {
-			data->inverted_channels |=
+		uint32_t psel;
+
+		if (channel_psel_get(i, &psel, config)) {
+			/* Mark channels as inverted according to what initial
+			 * state of their outputs has been set by pinctrl (high
+			 * idle state means that the channel is inverted).
+			 */
+			data->initially_inverted |=
 				nrf_gpio_pin_out_read(psel) ? BIT(i) : 0;
 		}
 	}
 #endif
 
 	for (size_t i = 0; i < ARRAY_SIZE(data->current); i++) {
-		bool inverted = data->inverted_channels & BIT(i);
+		bool inverted = data->initially_inverted & BIT(i);
 
 		data->current[i] = PWM_NRFX_CH_VALUE(0, inverted);
 	}
@@ -362,7 +359,7 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 				     ch0_pin, ch1_pin, ch2_pin, ch3_pin);     \
 	static struct pwm_nrfx_data pwm_nrfx_##idx##_data = {		      \
 		COND_CODE_1(CONFIG_PINCTRL, (),				      \
-			(.inverted_channels =				      \
+			(.initially_inverted =				      \
 				(PWM_CH_INVERTED(idx, 0) ? BIT(0) : 0) |      \
 				(PWM_CH_INVERTED(idx, 1) ? BIT(1) : 0) |      \
 				(PWM_CH_INVERTED(idx, 2) ? BIT(2) : 0) |      \
