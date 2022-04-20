@@ -3,6 +3,15 @@
 West Release Notes
 ##################
 
+v0.13.1
+*******
+
+Bug fix:
+
+- When calling west.manifest.Manifest.from_file() when outside of a
+  workspace, west again falls back on the ZEPHYR_BASE environment
+  variable to locate the workspace.
+
 v0.13.0
 *******
 
