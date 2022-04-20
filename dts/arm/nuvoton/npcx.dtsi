@@ -386,8 +386,6 @@
 
 			/* clocks for eSPI modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL6 7>;
-			/* PIN46.47.51.52.53.54.55.57 */
-			pinctrl-0 = <&alt1_no_lpc_espi>;
 			/* WUI maps for eSPI signals */
 			espi-rst-wui = <&wui_espi_rst>;
 			label = "ESPI_0";
@@ -575,11 +573,6 @@
 		 */
 		host_uart: io_host_uart {
 			compatible = "nuvoton,npcx-host-uart";
-			/* Host serial port pinmux PIN75 86 36 33 42 C7 B3 B2 */
-			pinctrl-0 = <&altb_rxd_sl &altb_txd_sl
-						&altb_rts_sl &altb_cts_sl
-						&altb_ri_sl &altb_dtr_bout_sl
-						&altb_dcd_sl &altb_dsr_sl>;
 			label = "HOST_UART_IO";
 			status = "disabled";
 		};
