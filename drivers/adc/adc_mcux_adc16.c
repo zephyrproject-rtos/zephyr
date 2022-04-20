@@ -11,7 +11,6 @@
 #include <drivers/pinctrl.h>
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
 #include <drivers/dma.h>
-#include <fsl_sim.h>
 #endif
 
 #include <fsl_adc16.h>
