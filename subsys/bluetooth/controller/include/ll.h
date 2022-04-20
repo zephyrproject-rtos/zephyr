@@ -321,7 +321,8 @@ void ll_iso_rx_mem_release(void **node_rx);
 /* Downstream - ISO Data */
 void *ll_iso_tx_mem_acquire(void);
 void ll_iso_tx_mem_release(void *tx);
-int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx);
+int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx, void *link);
+void ll_iso_link_tx_release(void *link);
 
 /* External co-operation */
 void ll_timeslice_ticker_id_get(uint8_t * const instance_index,
