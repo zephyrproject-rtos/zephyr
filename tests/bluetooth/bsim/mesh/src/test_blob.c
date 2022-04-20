@@ -647,6 +647,159 @@ static void test_cli_broadcast_trans(void)
 	PASS();
 }
 
+static uint16_t dst_addr_last;
+static struct k_sem blob_broad_send_uni_sem;
+
+static void broadcast_uni_send(struct bt_mesh_blob_cli *b, uint16_t dst)
+{
+	dst_addr_last = dst;
+	k_sem_give(&blob_broad_send_uni_sem);
+	if (broadcast_tx_complete_auto) {
+		/* Mocks completion of transmission to trigger retransmit timer */
+		blob_cli_broadcast_tx_complete(&blob_cli);
+	}
+}
+
+static void test_cli_broadcast_unicast_seq(void)
+{
+	bt_mesh_test_cfg_set(NULL, 60);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	struct bt_mesh_blob_target *srv1 = target_srv_add(BLOB_CLI_ADDR + 1, false);
+	struct bt_mesh_blob_target *srv2 = target_srv_add(BLOB_CLI_ADDR + 2, false);
+
+	struct blob_cli_broadcast_ctx tx = {
+		.send = broadcast_uni_send,
+		.next = broadcast_next,
+		.acked = true,
+		.optional = false,
+	};
+
+	k_sem_init(&blob_broad_send_uni_sem, 0, 1);
+	k_sem_init(&blob_broad_next_sem, 0, 1);
+
+	blob_cli.inputs = &blob_cli_xfer.inputs;
+	broadcast_tx_complete_auto = false;
+
+	/** Two responsive targets. Checks that:
+	 * - Send CB alternates between targets
+	 * - Don't retransmit to responded targets
+	 * - Next CB is called as soon as all have responded
+	 * (Test assumes at least 5 transmission attempts)
+	 */
+	BUILD_ASSERT(CONFIG_BT_MESH_BLOB_CLI_BLOCK_RETRIES >= 5);
+
+	blob_cli_inputs_prepare(BT_MESH_ADDR_UNASSIGNED);
+	blob_cli_broadcast(&blob_cli, &tx);
+
+	for (size_t i = 0; i < 2; i++) {
+		if (k_sem_take(&blob_broad_send_uni_sem, K_SECONDS(10))) {
+			FAIL("Broadcast did not trigger send CB");
+		}
+
+		ASSERT_EQUAL(BLOB_CLI_ADDR + 1, dst_addr_last);
+		blob_cli_broadcast_tx_complete(&blob_cli);
+		if (k_sem_take(&blob_broad_send_uni_sem, K_SECONDS(10))) {
+			FAIL("Tx complete did not trigger send CB");
+		}
+
+		ASSERT_EQUAL(BLOB_CLI_ADDR + 2, dst_addr_last);
+		blob_cli_broadcast_tx_complete(&blob_cli);
+	}
+
+	blob_cli_broadcast_rsp(&blob_cli, srv1);
+	for (size_t i = 0; i < 2; i++) {
+		if (k_sem_take(&blob_broad_send_uni_sem, K_SECONDS(10))) {
+			FAIL("Tx complete did not trigger send CB");
+		}
+
+		ASSERT_EQUAL(BLOB_CLI_ADDR + 2, dst_addr_last);
+		blob_cli_broadcast_tx_complete(&blob_cli);
+	}
+
+	blob_cli_broadcast_rsp(&blob_cli, srv2);
+	if (!k_sem_take(&blob_broad_send_uni_sem, K_SECONDS(10))) {
+		FAIL("Unexpected send CB");
+	}
+
+	if (k_sem_take(&blob_broad_next_sem, K_NO_WAIT)) {
+		FAIL("Broadcast did not trigger next CB");
+	}
+
+	PASS();
+}
+
+static void test_cli_broadcast_unicast(void)
+{
+	bt_mesh_test_cfg_set(NULL, 120);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	(void)target_srv_add(BLOB_CLI_ADDR + 1, true);
+	(void)target_srv_add(BLOB_CLI_ADDR + 2, true);
+
+	struct blob_cli_broadcast_ctx tx = {
+		.send = broadcast_uni_send,
+		.next = broadcast_next,
+		.acked = true,
+		.optional = false,
+	};
+
+	k_sem_init(&blob_broad_send_uni_sem, 0, 1);
+	k_sem_init(&blob_broad_next_sem, 0, 1);
+	k_sem_init(&lost_target_sem, 0, 1);
+
+	blob_cli.inputs = &blob_cli_xfer.inputs;
+	broadcast_tx_complete_auto = true;
+
+	/** 1. Two non-responsive targets. Checks that:
+	 * - Next CB is called after all retransmit attempts expires
+	 * - All lost targets is registered
+	 */
+	blob_cli_inputs_prepare(BT_MESH_ADDR_UNASSIGNED);
+	blob_cli_broadcast(&blob_cli, &tx);
+
+	if (k_sem_take(&blob_broad_next_sem, K_SECONDS(60))) {
+		FAIL("Broadcast did not trigger next CB");
+	}
+
+	if (k_sem_take(&lost_target_sem, K_NO_WAIT)) {
+		FAIL("Lost targets CB did not trigger for all expected lost targets");
+	}
+
+	/** 2. Two non-responsive targets re-run. Checks that:
+	 * - Already lost targets does not attempt new transmission
+	 * (Next CB called immediately)
+	 */
+	blob_cli_broadcast(&blob_cli, &tx);
+	if (k_sem_take(&blob_broad_next_sem, K_NO_WAIT)) {
+		FAIL("Broadcast did not trigger immediate next CB");
+	}
+
+	/** 3. Two non-responsive targets (Abort after first attempt). Checks that:
+	 * - First transmission calls send CB
+	 * - After abort is called, neither send or next CB is called
+	 */
+	k_sem_init(&blob_broad_send_uni_sem, 0, 1);
+	blob_cli_inputs_prepare(BT_MESH_ADDR_UNASSIGNED);
+	blob_cli_broadcast(&blob_cli, &tx);
+	if (k_sem_take(&blob_broad_send_uni_sem, K_NO_WAIT)) {
+		FAIL("Broadcast did not trigger send CB");
+	}
+
+	blob_cli_broadcast_abort(&blob_cli);
+	if (!k_sem_take(&blob_broad_send_uni_sem, K_SECONDS(60))) {
+		FAIL("Unexpected send CB");
+	}
+
+	if (!k_sem_take(&blob_broad_next_sem, K_NO_WAIT)) {
+		FAIL("Unexpected next CB");
+	}
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "blob_" #role "_" #name,          \
@@ -662,6 +815,8 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(cli, caps_cancelled, "Caps procedure: Cancel caps"),
 	TEST_CASE(cli, broadcast_basic, "Test basic broadcast API and CBs "),
 	TEST_CASE(cli, broadcast_trans, "Test all broadcast transmission types"),
+	TEST_CASE(cli, broadcast_unicast_seq, "Test broadcast with unicast addr (Sequential)"),
+	TEST_CASE(cli, broadcast_unicast, "Test broadcast with unicast addr"),
 
 	TEST_CASE(srv, caps_standard, "Standard responsive blob server"),
 	TEST_CASE(srv, caps_no_rsp, "Non-responsive blob server"),
