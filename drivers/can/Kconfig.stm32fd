@@ -52,8 +52,9 @@ config CAN_STM32FD_CLOCK_SOURCE_PCLK1
 
 endchoice
 
-config CAN_STM32_CLOCK_DIVISOR
+config CAN_STM32FD_CLOCK_DIVISOR
 	int "CAN clock divisor"
+	depends on CAN_STM32FD_CLOCK_SOURCE_PCLK1
 	range 1 30
 	default 1
 	help
@@ -62,4 +63,4 @@ config CAN_STM32_CLOCK_DIVISOR
 	  Note that the the divisor affects all CAN controllers.
 	  Allowed values: 1 or 2 * n, where n <= 15.
 
-endif #CAN_STM32FD
+endif # CAN_STM32FD
