@@ -285,9 +285,15 @@ void test_set_timing_max(void)
 void test_main(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	uint32_t core_clock;
+	int err;
 
 	zassert_true(device_is_ready(dev), "CAN device not ready");
-	printk("testing on device %s\n", dev->name);
+
+	err = can_get_core_clock(dev, &core_clock);
+	zassert_equal(err, 0, "failed to get core CAN clock");
+
+	printk("testing on device %s @ %u Hz\n", dev->name, core_clock);
 
 	k_object_access_grant(dev, k_current_get());
 
