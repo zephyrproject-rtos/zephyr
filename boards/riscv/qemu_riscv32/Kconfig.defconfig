@@ -10,3 +10,8 @@ config BOARD
 
 config COMPRESSED_ISA
 	default y
+
+# Use thread local storage by default so that
+# this feature gets more CI coverage.
+config THREAD_LOCAL_STORAGE
+	default y
