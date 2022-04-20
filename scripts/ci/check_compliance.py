@@ -202,10 +202,15 @@ class CheckPatch(ComplianceTest):
         if not os.path.exists(checkpatch):
             self.skip(checkpatch + " not found")
 
+        # git diff's output doesn't depend on the current (sub)directory
+        diff = subprocess.Popen(('git', 'diff', COMMIT_RANGE),
+                                stdout=subprocess.PIPE)
         try:
-            subprocess.check_output((checkpatch, '--no-tree', '-g', COMMIT_RANGE),
+            subprocess.check_output((checkpatch, '--mailback', '--no-tree', '-'),
+                                    stdin=diff.stdout,
                                     stderr=subprocess.STDOUT,
-                                    cwd=GIT_TOP)
+                                    shell=True, cwd=GIT_TOP)
+
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
             self.add_failure(output)
