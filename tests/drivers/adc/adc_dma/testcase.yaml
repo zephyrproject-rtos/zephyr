@@ -2,5 +2,5 @@ common:
   tags: adc dma trigger
 tests:
   drivers.adc-dma:
-    depends_on: adc dma pit
+    depends_on: adc dma
     platform_allow: frdm_k82f frdm_k64f
