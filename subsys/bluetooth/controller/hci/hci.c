@@ -31,6 +31,9 @@
 
 #include "hal/ecb.h"
 #include "hal/ccm.h"
+#include "hal/ticker.h"
+
+#include "ticker/ticker.h"
 
 #include "ll_sw/pdu.h"
 
@@ -58,6 +61,7 @@
 #include "ll_sw/ull_conn_types.h"
 #include "ll_sw/ull_iso_types.h"
 #include "ll_sw/ull_conn_iso_types.h"
+#include "ll_sw/ull_conn_iso_internal.h"
 #include "ll_sw/ull_df_types.h"
 
 #include "ll_sw/ull_adv_internal.h"
@@ -5160,15 +5164,21 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_iso_data_hdr *iso_data_hdr;
+	struct isoal_sdu_tx sdu_frag_tx;
 	struct bt_hci_iso_hdr *iso_hdr;
-	uint16_t stream_handle;
-	struct node_tx_iso *tx;
+	struct ll_iso_datapath *dp_in;
+	struct ll_iso_stream_hdr *hdr;
+	uint32_t *time_stamp;
 	uint16_t handle;
+	uint8_t pb_flag;
+	uint8_t ts_flag;
 	uint8_t flags;
-	uint16_t slen;
 	uint16_t len;
 
-	*evt = NULL;
+	iso_data_hdr = NULL;
+	*evt  = NULL;
+	hdr   = NULL;
+	dp_in = NULL;
 
 	if (buf->len < sizeof(*iso_hdr)) {
 		BT_ERR("No HCI ISO header");
@@ -5184,113 +5194,201 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		return -EINVAL;
 	}
 
-	/* assigning flags first because handle will be overwritten */
+	/* Assigning flags first because handle will be overwritten */
 	flags = bt_iso_flags(handle);
-	if (bt_iso_flags_ts(flags)) {
-		struct bt_hci_iso_ts_data_hdr *iso_ts_data_hdr;
-
-		iso_ts_data_hdr = net_buf_pull_mem(buf,
-						   sizeof(*iso_ts_data_hdr));
-	}
-
-	iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
-	slen = iso_data_hdr->slen;
-
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
-	/* Check invalid BIS PDU length */
-	if (slen > LL_BIS_OCTETS_TX_MAX) {
-		BT_ERR("Invalid HCI ISO Data length");
-		return -EINVAL;
-	}
-
-	/* Get BIS stream handle and stream context */
+	pb_flag = bt_iso_flags_pb(flags);
+	ts_flag = bt_iso_flags_ts(flags);
 	handle = bt_iso_handle(handle);
-	if (handle < BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE) {
-		return -EINVAL;
-	}
-	stream_handle = handle - BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
 
-	struct lll_adv_iso_stream *stream;
-
-	stream = ull_adv_iso_stream_get(stream_handle);
-	if (!stream) {
-		BT_ERR("Invalid BIS stream");
-		return -EINVAL;
-	}
-
-	struct ll_adv_iso_set *adv_iso;
-
-	adv_iso = ull_adv_iso_by_stream_get(stream_handle);
-	if (!adv_iso) {
-		BT_ERR("No BIG associated with stream handle");
-		return -EINVAL;
-	}
-
-	/* Get free node tx */
-	tx = ll_iso_tx_mem_acquire();
-	if (!tx) {
-		BT_ERR("ISO Tx Buffer Overflow");
-		data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
-		return -ENOBUFS;
-	}
-
-	struct pdu_bis *pdu = (void *)tx->pdu;
-
-	/* FIXME: Update to use correct LLID for BIS and CIS */
-	switch (bt_iso_flags_pb(flags)) {
-	case BT_ISO_SINGLE:
-		pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
-		break;
-	default:
-		ll_iso_tx_mem_release(tx);
-		return -EINVAL;
-	}
-
-	pdu->len = slen;
-	memcpy(pdu->payload, buf->data, slen);
-
-	struct lll_adv_iso *lll_iso;
-
-	lll_iso = &adv_iso->lll;
-
-	uint64_t pkt_seq_num;
-
-	pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
-	if (((pkt_seq_num - stream->pkt_seq_num) & BIT64_MASK(39)) <=
-	    BIT64_MASK(38)) {
-		stream->pkt_seq_num = pkt_seq_num;
-	} else {
-		pkt_seq_num = stream->pkt_seq_num;
-	}
-
-	tx->payload_count = pkt_seq_num * lll_iso->bn;
-
-	stream->pkt_seq_num++;
-
-#else /* CONFIG_BT_CTLR_CONN_ISO */
-	/* FIXME: Add Connected ISO implementation */
-	stream_handle = 0U;
-
-	/* NOTE: Keeping the code below to pass compilation until Connected ISO
-	 *       integration.
+	/* Extract time stamp */
+	/* Set default to current time
+	 * BT Core V5.3 : Vol 6 Low Energy Controller : Part G IS0-AL:
+	 * 3.1 Time_Offset in framed PDUs :
+	 * The Controller transmitting a SDU may use any of the following
+	 * methods to determine the value of the SDU reference time:
+	 * -- A captured time stamp of the SDU
+	 * -- A time stamp provided by the higher layer
+	 * -- A computed time stamp based on a sequence counter provided by the
+	 *    higher layer (Not implemented)
+	 * -- Any other method of determining Time_Offset (Not implemented)
 	 */
-	/* Get free node tx */
-	tx = ll_iso_tx_mem_acquire();
-	if (!tx) {
-		BT_ERR("ISO Tx Buffer Overflow");
-		data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
-		return -ENOBUFS;
+	if (ts_flag) {
+		/* Overwrite time stamp with HCI provided time stamp */
+		time_stamp = net_buf_pull_mem(buf, sizeof(*time_stamp));
+		len -= sizeof(*time_stamp);
+		sdu_frag_tx.time_stamp = *time_stamp;
+	} else {
+		sdu_frag_tx.time_stamp =
+			HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
 	}
 
+	/* Extract ISO data header if included (PB_Flag 0b00 or 0b10) */
+	if ((pb_flag & 0x01) == 0) {
+		iso_data_hdr = net_buf_pull_mem(buf, sizeof(*iso_data_hdr));
+		len -= sizeof(*iso_data_hdr);
+		sdu_frag_tx.packet_sn = iso_data_hdr->sn;
+		sdu_frag_tx.iso_sdu_length = iso_data_hdr->slen;
+	} else {
+		sdu_frag_tx.packet_sn = 0;
+		sdu_frag_tx.iso_sdu_length = 0;
+	}
+
+	/* Packet boudary flags should be bitwise identical to the SDU state
+	 * 0b00 BT_ISO_START
+	 * 0b01 BT_ISO_CONT
+	 * 0b10 BT_ISO_SINGLE
+	 * 0b11 BT_ISO_END
+	 */
+	sdu_frag_tx.sdu_state = pb_flag;
+	/* Fill in SDU buffer fields */
+	sdu_frag_tx.dbuf = buf->data;
+	sdu_frag_tx.size = len;
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	/* Extract source handle from CIS or BIS handle by way of header and
+	 * data path
+	 */
+	if (IS_CIS_HANDLE(handle)) {
+		struct ll_conn_iso_stream *cis =
+			ll_iso_stream_connected_get(handle);
+		if (!cis) {
+			return -EINVAL;
+		}
+
+		struct ll_conn_iso_group *cig = cis->group;
+
+		hdr = &(cis->hdr);
+
+		/* Set target event as the current event. This might cause some
+		 * misalignment between SDU interval and ISO interval in the
+		 * case of a burst from the application or late release. However
+		 * according to the specifications:
+		 * BT Core V5.3 : Vol 6 Low Energy Controller : Part B LL Spec:
+		 * 4.5.13.3 Connected Isochronous Data:
+		 * This burst is associated with the corresponding CIS event but
+		 * the payloads may be transmitted in later events as well.
+		 * If flush timeout is greater than one, use the current event,
+		 * otherwise postpone to the next.
+		 *
+		 * TODO: Calculate the best possible target event based on CIS
+		 * reference, FT and event_count.
+		 */
+		sdu_frag_tx.target_event = cis->lll.event_count +
+			(cis->lll.tx.flush_timeout > 1 ? 0 : 1);
+
+		sdu_frag_tx.cig_ref_point = cig->cig_ref_point;
+
+		/* Get controller's input data path for CIS */
+		dp_in = hdr->datapath_in;
+		if (!dp_in || dp_in->path_id != BT_HCI_DATAPATH_ID_HCI) {
+			BT_ERR("Input data path not set for HCI");
+			return -EINVAL;
+		}
+
+		/* Get input data path's source handle */
+		isoal_source_handle_t source = dp_in->source_hdl;
+
+		/* Start Fragmentation */
+		if (isoal_tx_sdu_fragment(source, &sdu_frag_tx)) {
+			return -EINVAL;
+		}
+
+		/* TODO: Assign *evt if an immediate response is required */
+		return 0;
+	}
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
-	if (ll_iso_tx_mem_enqueue(stream_handle, tx)) {
-		BT_ERR("Invalid ISO Tx Enqueue");
-		ll_iso_tx_mem_release(tx);
-		return -EINVAL;
-	}
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+	if (IS_ADV_ISO_HANDLE(handle)) {
+		/* FIXME: Use ISOAL */
+		struct node_tx_iso *tx;
+		uint16_t stream_handle;
+		uint16_t slen;
 
-	return 0;
+		/* FIXME: Code only expects header present */
+		slen = iso_data_hdr ? iso_data_hdr->slen : 0;
+
+		/* Check invalid BIS PDU length */
+		if (slen > LL_BIS_OCTETS_TX_MAX) {
+			BT_ERR("Invalid HCI ISO Data length");
+			return -EINVAL;
+		}
+
+		/* Get BIS stream handle and stream context */
+		handle = bt_iso_handle(handle);
+		if (handle < BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE) {
+			return -EINVAL;
+		}
+		stream_handle = handle - BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+
+		struct lll_adv_iso_stream *stream;
+
+		stream = ull_adv_iso_stream_get(stream_handle);
+		if (!stream) {
+			BT_ERR("Invalid BIS stream");
+			return -EINVAL;
+		}
+
+		struct ll_adv_iso_set *adv_iso;
+
+		adv_iso = ull_adv_iso_by_stream_get(stream_handle);
+		if (!adv_iso) {
+			BT_ERR("No BIG associated with stream handle");
+			return -EINVAL;
+		}
+
+		/* Get free node tx */
+		tx = ll_iso_tx_mem_acquire();
+		if (!tx) {
+			BT_ERR("ISO Tx Buffer Overflow");
+			data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
+			return -ENOBUFS;
+		}
+
+		struct pdu_bis *pdu = (void *)tx->pdu;
+
+		/* FIXME: Update to use correct LLID for BIS and CIS */
+		switch (bt_iso_flags_pb(flags)) {
+		case BT_ISO_SINGLE:
+			pdu->ll_id = PDU_BIS_LLID_COMPLETE_END;
+			break;
+		default:
+			ll_iso_tx_mem_release(tx);
+			return -EINVAL;
+		}
+
+		pdu->len = slen;
+		memcpy(pdu->payload, buf->data, slen);
+
+		struct lll_adv_iso *lll_iso;
+
+		lll_iso = &adv_iso->lll;
+
+		uint64_t pkt_seq_num;
+
+		pkt_seq_num = lll_iso->payload_count / lll_iso->bn;
+		if (((pkt_seq_num - stream->pkt_seq_num) & BIT64_MASK(39)) <=
+		BIT64_MASK(38)) {
+			stream->pkt_seq_num = pkt_seq_num;
+		} else {
+			pkt_seq_num = stream->pkt_seq_num;
+		}
+
+		tx->payload_count = pkt_seq_num * lll_iso->bn;
+
+		stream->pkt_seq_num++;
+
+		if (ll_iso_tx_mem_enqueue(stream_handle, tx, NULL)) {
+			BT_ERR("Invalid ISO Tx Enqueue");
+			ll_iso_tx_mem_release(tx);
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
+	return -EINVAL;
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 

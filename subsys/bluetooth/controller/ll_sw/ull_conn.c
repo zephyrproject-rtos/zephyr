@@ -145,7 +145,8 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-static inline void event_send_cis_rsp(struct ll_conn *conn);
+static inline void event_send_cis_rsp(struct ll_conn *conn,
+				      uint16_t event_counter);
 static inline void event_peripheral_iso_prep(struct ll_conn *conn,
 					     uint16_t event_counter,
 					     uint32_t ticks_at_expire);
@@ -531,7 +532,12 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
 	struct ll_conn *conn;
 
+	if (!IS_ACL_HANDLE(handle)) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
 	conn = ll_connected_get(handle);
+
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
@@ -561,7 +567,6 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
 		ull_periph_latency_cancel(conn, handle);
 	}
-
 	return 0;
 }
 
@@ -1140,18 +1145,18 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 		} else if (conn->llcp_cis.req != conn->llcp_cis.ack) {
+			struct lll_conn *lll = &conn->lll;
+			uint16_t event_counter;
+
+			/* Calculate current event counter */
+			event_counter = lll->event_counter +
+					lll->latency_prepare + lazy;
+
 			if (conn->llcp_cis.state == LLCP_CIS_STATE_RSP_WAIT) {
 				/* Handle CIS response */
-				event_send_cis_rsp(conn);
+				event_send_cis_rsp(conn, event_counter);
 			} else if (conn->llcp_cis.state ==
 						LLCP_CIS_STATE_INST_WAIT) {
-				struct lll_conn *lll = &conn->lll;
-				uint16_t event_counter;
-
-				/* Calculate current event counter */
-				event_counter = lll->event_counter +
-						lll->latency_prepare + lazy;
-
 				/* Start CIS peripheral */
 				event_peripheral_iso_prep(conn,
 							  event_counter,
@@ -6108,30 +6113,56 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
-void event_send_cis_rsp(struct ll_conn *conn)
+void event_send_cis_rsp(struct ll_conn *conn, uint16_t event_counter)
 {
 	struct node_tx *tx;
 
 	/* If waiting for accept/reject from host, do nothing */
-	if (((conn->llcp_cis.req - conn->llcp_cis.ack) & 0xFF) == CIS_REQUEST_AWAIT_HOST) {
+	if (((conn->llcp_cis.req - conn->llcp_cis.ack) & 0xFF) ==
+		CIS_REQUEST_AWAIT_HOST) {
 		return;
 	}
 
 	tx = mem_acquire(&mem_conn_tx_ctrl.free);
 	if (tx) {
 		struct pdu_data *pdu = (void *)tx->pdu;
+		uint16_t conn_event_count;
 
 		ull_pdu_data_init(pdu);
 
 		pdu->ll_id = PDU_DATA_LLID_CTRL;
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CIS_RSP;
 
+		/* Try to request extra time to setup the CIS. If central's
+		 * CIS_IND is delayed, or it decides to do differently, this
+		 * still might not be possible. Only applies if instance is
+		 * less than two events in the future.
+		 *
+		 * In the example below it is shown how the CIS_IND is adjusted
+		 * by peripheral increasing the event_counter in the CIS_RSP.
+		 * This improves the peripheral's chances of setting up the CIS
+		 * in due time. Current event counter is left most column.
+		 *
+		 * Without correction (LATE)     With correction (OK)
+		 * --------------------------------------------------------
+		 * 10 ==> CIS_REQ E=15           10 ==> CIS_REQ E=15
+		 * 14 <== CIS_RSP E=15           14 <== CIS_RSP E=16 (14+2)
+		 * 15 ==> CIS_IND E=16           15 ==> CIS_IND E=17
+		 * 16 ==> (+ offset) First PDU   16     Peripheral setup
+		 * 16     Peripheral setup       17 ==> (+ offset) First PDU
+		 * 17     Peripheral ready
+		 *
+		 * TODO: Port to new LLCP procedures
+		 */
+		conn_event_count = MAX(conn->llcp_cis.conn_event_count,
+				       event_counter + 2);
+
 		sys_put_le24(conn->llcp_cis.cis_offset_min,
 			     pdu->llctrl.cis_rsp.cis_offset_min);
 		sys_put_le24(conn->llcp_cis.cis_offset_max,
 			     pdu->llctrl.cis_rsp.cis_offset_max);
 		pdu->llctrl.cis_rsp.conn_event_count =
-			sys_cpu_to_le16(conn->llcp_cis.conn_event_count);
+			sys_cpu_to_le16(conn_event_count);
 
 		pdu->len = offsetof(struct pdu_data_llctrl, cis_rsp) +
 				    sizeof(struct pdu_data_llctrl_cis_rsp);
@@ -6145,8 +6176,26 @@ void event_send_cis_rsp(struct ll_conn *conn)
 void event_peripheral_iso_prep(struct ll_conn *conn, uint16_t event_counter,
 			       uint32_t ticks_at_expire)
 {
-	if (event_counter == conn->llcp_cis.conn_event_count) {
-		ull_peripheral_iso_start(conn, ticks_at_expire);
+	struct ll_conn_iso_group *cig;
+	uint16_t start_event_count;
+
+	start_event_count = conn->llcp_cis.conn_event_count;
+
+	cig = ll_conn_iso_group_get_by_id(conn->llcp_cis.cig_id);
+	LL_ASSERT(cig);
+
+	if (!cig->started) {
+		/* Start ISO peripheral one event before the requested instant
+		 * for first CIS. This is done to be able to accept small CIS
+		 * offsets.
+		 */
+		start_event_count--;
+	}
+
+	/* Start ISO peripheral one event before the requested instant */
+	if (event_counter == start_event_count) {
+		/* Start CIS peripheral */
+		ull_peripheral_iso_start(conn, ticks_at_expire, conn->llcp_cis.cis_handle);
 
 		conn->llcp_cis.state = LLCP_CIS_STATE_REQ;
 		conn->llcp_cis.ack = conn->llcp_cis.req;
@@ -6163,17 +6212,17 @@ static uint8_t cis_req_recv(struct ll_conn *conn, memq_link_t *link,
 	void *node;
 
 	conn->llcp_cis.cig_id = req->cig_id;
-	conn->llcp_cis.framed = req->framed;
-	conn->llcp_cis.c_max_sdu = sys_le16_to_cpu(req->c_max_sdu);
-	conn->llcp_cis.p_max_sdu = sys_le16_to_cpu(req->p_max_sdu);
+	conn->llcp_cis.c_max_sdu = (uint16_t)(req->c_max_sdu_packed[1] & 0x0F) << 8 |
+					      req->c_max_sdu_packed[0];
+	conn->llcp_cis.p_max_sdu = (uint16_t)(req->p_max_sdu[1] & 0x0F) << 8 | req->p_max_sdu[0];
 	conn->llcp_cis.cis_offset_min = sys_get_le24(req->cis_offset_min);
 	conn->llcp_cis.cis_offset_max = sys_get_le24(req->cis_offset_max);
-	conn->llcp_cis.conn_event_count =
-		sys_le16_to_cpu(req->conn_event_count);
+	conn->llcp_cis.conn_event_count = sys_le16_to_cpu(req->conn_event_count);
 
 	/* Acquire resources for new CIS */
 	err = ull_peripheral_iso_acquire(conn, &pdu->llctrl.cis_req, &cis_handle);
 	if (err) {
+		(*rx)->hdr.type = NODE_RX_TYPE_RELEASE;
 		return err;
 	}
 
@@ -6192,7 +6241,7 @@ static uint8_t cis_req_recv(struct ll_conn *conn, memq_link_t *link,
 	conn_iso_req = node;
 	conn_iso_req->cig_id = req->cig_id;
 	conn_iso_req->cis_id = req->cis_id;
-	conn_iso_req->cis_handle = sys_le16_to_cpu(cis_handle);
+	conn_iso_req->cis_handle = cis_handle;
 
 	return 0;
 }
@@ -7518,7 +7567,13 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		err = cis_req_recv(conn, link, rx, pdu_rx);
 		if (err) {
-			conn->llcp_terminate.reason_final = err;
+			if (err == BT_HCI_ERR_INVALID_LL_PARAM) {
+				nack = reject_ext_ind_send(conn, *rx,
+						PDU_DATA_LLCTRL_TYPE_CIS_REQ,
+						BT_HCI_ERR_UNSUPP_LL_PARAM_VAL);
+			} else {
+				conn->llcp_terminate.reason_final = err;
+			}
 		}
 		break;
 	}
