@@ -94,6 +94,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->sp = (ulong_t)(stack_init + 1);
 #endif /* CONFIG_USERSPACE */
 
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	stack_init->tp = thread->tls;
+	thread->callee_saved.tp = thread->tls;
+#endif
+
 	/* Assign thread entry point and mstatus.MPRV mode. */
 	if (IS_ENABLED(CONFIG_USERSPACE)
 	    && (thread->base.user_options & K_USER)) {
