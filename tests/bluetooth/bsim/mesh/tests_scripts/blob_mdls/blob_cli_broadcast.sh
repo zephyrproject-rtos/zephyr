@@ -11,3 +11,11 @@ RunTest blob_broadcast \
 conf=prj_mesh1d1_conf
 RunTest blob_broadcast \
 	blob_cli_broadcast_trans
+
+conf=prj_mesh1d1_conf
+RunTest blob_broadcast \
+	blob_cli_broadcast_unicast_seq
+
+conf=prj_mesh1d1_conf
+RunTest blob_broadcast \
+	blob_cli_broadcast_unicast
