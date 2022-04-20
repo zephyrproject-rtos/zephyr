@@ -5,7 +5,7 @@ description: Nuvoton, NPCX-eSPI node
 
 compatible: "nuvoton,npcx-espi"
 
-include: espi-controller.yaml
+include: [espi-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -17,9 +17,10 @@ properties:
         description: configurations of device source clock controller
 
     pinctrl-0:
-        type: phandles
         required: true
-        description: configurations of pinmux controllers
+
+    pinctrl-names:
+        required: true
 
     espi-rst-wui:
         type: phandle
