@@ -42,4 +42,5 @@ properties:
       or for K_PRIO_PREEMPT(2)
         priority = <2 PRIO_PREEMPT>;
 
-      When this property is missing a default priority of 0 is assumed.
+      When this property is missing a default priority of <0 PRIO_COOP> is
+      assumed.
