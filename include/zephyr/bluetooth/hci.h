@@ -1326,7 +1326,7 @@ struct bt_hci_cp_le_set_ext_adv_data {
 	uint8_t  op;
 	uint8_t  frag_pref;
 	uint8_t  len;
-	uint8_t  data[251];
+	uint8_t  data[0];
 } __packed;
 
 #define BT_HCI_OP_LE_SET_EXT_SCAN_RSP_DATA      BT_OP(BT_OGF_LE, 0x0038)
@@ -1335,7 +1335,7 @@ struct bt_hci_cp_le_set_ext_scan_rsp_data {
 	uint8_t  op;
 	uint8_t  frag_pref;
 	uint8_t  len;
-	uint8_t  data[251];
+	uint8_t  data[0];
 } __packed;
 
 #define BT_HCI_OP_LE_SET_EXT_ADV_ENABLE         BT_OP(BT_OGF_LE, 0x0039)
@@ -1390,7 +1390,7 @@ struct bt_hci_cp_le_set_per_adv_data {
 	uint8_t  handle;
 	uint8_t  op;
 	uint8_t  len;
-	uint8_t  data[BT_HCI_LE_PER_ADV_FRAG_MAX_LEN];
+	uint8_t  data[0];
 } __packed;
 
 #define BT_HCI_LE_SET_PER_ADV_ENABLE_ENABLE     BIT(0)
