@@ -30,7 +30,7 @@
 #define IOC_IOPULL_UP           0x00004000
 #define IOC_IOPULL_DOWN         0x00002000
 
-typedef struct pinctrl_soc_pin_t {
+typedef struct pinctrl_soc_pin {
 	uint32_t pin;
 	uint32_t iofunc;
 	uint32_t iomode;
