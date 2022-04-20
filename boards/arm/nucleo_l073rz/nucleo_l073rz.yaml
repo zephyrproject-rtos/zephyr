@@ -19,3 +19,4 @@ supported:
   - adc
   - dac
   - pwm
+  - rng
