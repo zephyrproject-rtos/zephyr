@@ -59,6 +59,7 @@
 	op a5, __z_arch_esf_t_a5_OFFSET(sp)		;\
 	op a6, __z_arch_esf_t_a6_OFFSET(sp)		;\
 	op a7, __z_arch_esf_t_a7_OFFSET(sp)		;\
+	op tp, __z_arch_esf_t_tp_OFFSET(sp)             ;\
 	op ra, __z_arch_esf_t_ra_OFFSET(sp)
 
 #ifdef CONFIG_SMP
