@@ -41,6 +41,9 @@ void z_riscv_secondary_cpu_init(int cpu_num)
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_MACHINE_SOFT_IRQ);
 #endif
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	__asm__("mv tp, %0" : : "r" (z_idle_threads[cpu_num].tls));
+#endif
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }
 

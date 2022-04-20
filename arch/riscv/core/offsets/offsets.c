@@ -81,6 +81,8 @@ GEN_OFFSET_SYM(z_arch_esf_t, mstatus);
 
 GEN_OFFSET_SYM(z_arch_esf_t, s0);
 
+GEN_OFFSET_SYM(z_arch_esf_t, tp);
+
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(z_arch_esf_t, sp);
 #endif
