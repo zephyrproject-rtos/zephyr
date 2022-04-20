@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 EPAM Systems
+ * Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,8 +19,15 @@ LOG_MODULE_REGISTER(xen_events);
 extern shared_info_t *HYPERVISOR_shared_info;
 
 static evtchn_handle_t event_channels[EVTCHN_2L_NR_CHANNELS];
+static bool events_missed[EVTCHN_2L_NR_CHANNELS];
 
-static void empty_callback(void *data) { }
+static void empty_callback(void *data)
+{
+	/* data is the event_channels entry, subtracting the base, it's the port */
+	unsigned int port = (((evtchn_handle_t *)data) - event_channels);
+
+	events_missed[port] = true;
+}
 
 void notify_evtchn(evtchn_port_t port)
 {
@@ -60,7 +68,22 @@ int unbind_event_channel(evtchn_port_t port)
 		__func__, port);
 
 	event_channels[port].cb = empty_callback;
-	event_channels[port].priv = NULL;
+	event_channels[port].priv = &event_channels[port];
+	events_missed[port] = false;
+
+	return 0;
+}
+
+int get_missed_events(evtchn_port_t port)
+{
+	__ASSERT(port < EVTCHN_2L_NR_CHANNELS,
+		"%s: trying to get missed event from invalid port #%u\n",
+		__func__, port);
+
+	if (events_missed[port]) {
+		events_missed[port] = false;
+		return 1;
+	}
 
 	return 0;
 }
@@ -170,7 +193,8 @@ int xen_events_init(void)
 	/* bind all ports with default callback */
 	for (i = 0; i < EVTCHN_2L_NR_CHANNELS; i++) {
 		event_channels[i].cb = empty_callback;
-		event_channels[i].priv = NULL;
+		event_channels[i].priv = &event_channels[i];
+		events_missed[i] = false;
 	}
 
 	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_INST(0, xen_xen), 0, irq),
