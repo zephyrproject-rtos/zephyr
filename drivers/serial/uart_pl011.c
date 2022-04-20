@@ -459,132 +459,54 @@ void pl011_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-
-#ifdef CONFIG_UART_PL011_PORT0
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void pl011_irq_config_func_0(const struct device *dev);
-#endif
+#define PL011_IRQ_CONFIG_FUNC_BODY(n, prop, i)		\
+	{						\
+		IRQ_CONNECT(DT_IRQ_BY_IDX(n, i, irq),	\
+			DT_IRQ_BY_IDX(n, i, priority),	\
+			pl011_isr,			\
+			DEVICE_DT_GET(n),		\
+			0);				\
+		irq_enable(DT_IRQ_BY_IDX(n, i, irq));	\
+	}
 
-static struct pl011_config pl011_cfg_port_0 = {
-	.uart = (volatile struct pl011_regs *)DT_INST_REG_ADDR(0),
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = pl011_irq_config_func_0,
-#endif
-};
-
-static struct pl011_data pl011_data_port_0 = {
-	.baud_rate = DT_INST_PROP(0, current_speed),
-};
-
-DEVICE_DT_INST_DEFINE(0,
-		    &pl011_init,
-		    NULL,
-		    &pl011_data_port_0,
-		    &pl011_cfg_port_0, PRE_KERNEL_1,
-		    CONFIG_SERIAL_INIT_PRIORITY,
-		    &pl011_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void pl011_irq_config_func_0(const struct device *dev)
-{
-#if DT_NUM_IRQS(DT_INST(0, arm_pl011)) == 1
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    pl011_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
-	irq_enable(DT_INST_IRQN(0));
+#define PL011_CONFIG_PORT(n)								\
+	static void pl011_irq_config_func_##n(const struct device *dev)			\
+	{										\
+		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names,				\
+			PL011_IRQ_CONFIG_FUNC_BODY)					\
+	};										\
+											\
+	static struct pl011_config pl011_cfg_port_##n = {				\
+		.uart = (volatile struct pl011_regs *)DT_INST_REG_ADDR(n),		\
+		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),	\
+		.irq_config_func = pl011_irq_config_func_##n,				\
+	};
 #else
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, tx, irq),
-		    DT_INST_IRQ_BY_NAME(0, tx, priority),
-		    pl011_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, tx, irq));
+#define PL011_CONFIG_PORT(n)								\
+	static struct pl011_config pl011_cfg_port_##n = {				\
+		.uart = (volatile struct pl011_regs *)DT_INST_REG_ADDR(n),		\
+		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),	\
+	};
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx, irq),
-		    DT_INST_IRQ_BY_NAME(0, rx, priority),
-		    pl011_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, rx, irq));
+#define PL011_INIT(n)						\
+								\
+	PL011_CONFIG_PORT(n)					\
+								\
+	static struct pl011_data pl011_data_port_##n = {	\
+		.baud_rate = DT_INST_PROP(n, current_speed),	\
+	};							\
+								\
+	DEVICE_DT_INST_DEFINE(n, &pl011_init,			\
+			NULL,					\
+			&pl011_data_port_##n,			\
+			&pl011_cfg_port_##n,			\
+			PRE_KERNEL_1,				\
+			CONFIG_SERIAL_INIT_PRIORITY,		\
+			&pl011_driver_api);
 
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rxtim, irq),
-		    DT_INST_IRQ_BY_NAME(0, rxtim, priority),
-		    pl011_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(0, rxtim, irq));
-#endif
-}
-#endif
-
-#endif /* CONFIG_UART_PL011_PORT0 */
-
-#ifdef CONFIG_UART_PL011_PORT1
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void pl011_irq_config_func_1(const struct device *dev);
-#endif
-
-static struct pl011_config pl011_cfg_port_1 = {
-	.uart = (volatile struct pl011_regs *)DT_INST_REG_ADDR(1),
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(1, clocks, clock_frequency),
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = pl011_irq_config_func_1,
-#endif
-};
-
-static struct pl011_data pl011_data_port_1 = {
-	.baud_rate = DT_INST_PROP(1, current_speed),
-};
-
-DEVICE_DT_INST_DEFINE(1,
-		    &pl011_init,
-		    NULL,
-		    &pl011_data_port_1,
-		    &pl011_cfg_port_1, PRE_KERNEL_1,
-		    CONFIG_SERIAL_INIT_PRIORITY,
-		    &pl011_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void pl011_irq_config_func_1(const struct device *dev)
-{
-#if DT_NUM_IRQS(DT_INST(1, arm_pl011)) == 1
-	IRQ_CONNECT(DT_INST_IRQN(1),
-		    DT_INST_IRQ(1, priority),
-		    pl011_isr,
-		    DEVICE_DT_INST_GET(1),
-		    0);
-	irq_enable(DT_INST_IRQN(1));
-#else
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, tx, irq),
-		    DT_INST_IRQ_BY_NAME(1, tx, priority),
-		    pl011_isr,
-		    DEVICE_DT_INST_GET(1),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, tx, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rx, irq),
-		    DT_INST_IRQ_BY_NAME(1, rx, priority),
-		    pl011_isr,
-		    DEVICE_DT_INST_GET(1),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, rx, irq));
-
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, rxtim, irq),
-		    DT_INST_IRQ_BY_NAME(1, rxtim, priority),
-		    pl011_isr,
-		    DEVICE_DT_INST_GET(1),
-		    0);
-	irq_enable(DT_INST_IRQ_BY_NAME(1, rxtim, irq));
-#endif
-}
-#endif
-
-#endif /* CONFIG_UART_PL011_PORT1 */
+DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 
 #ifdef CONFIG_UART_PL011_SBSA
 
