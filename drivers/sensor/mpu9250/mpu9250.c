@@ -210,9 +210,9 @@ static int mpu9250_sample_fetch(const struct device *dev,
 	drv_data->gyro_y = sys_be16_to_cpu(buf[5]);
 	drv_data->gyro_z = sys_be16_to_cpu(buf[6]);
 #ifdef CONFIG_MPU9250_MAGN_EN
-	drv_data->magn_x = sys_be16_to_cpu(buf[7]);
-	drv_data->magn_y = sys_be16_to_cpu(buf[8]);
-	drv_data->magn_z = sys_be16_to_cpu(buf[9]);
+	drv_data->magn_x = sys_le16_to_cpu(buf[7]);
+	drv_data->magn_y = sys_le16_to_cpu(buf[8]);
+	drv_data->magn_z = sys_le16_to_cpu(buf[9]);
 	drv_data->magn_st2 = ((uint8_t *)buf)[20];
 	LOG_DBG("magn_st2: %u", drv_data->magn_st2);
 #endif
