@@ -18,12 +18,12 @@ static void test_dt_spec(void)
 		SPI_DT_SPEC_GET(DT_NODELABEL(test_spi_dev_cs), 0, 0);
 
 	LOG_DBG("spi_cs.bus = %p", spi_cs.bus);
-	LOG_DBG("spi_cs.config.cs->gpio_dev = %p", spi_cs.config.cs->gpio_dev);
 	LOG_DBG("spi_cs.config.cs->gpio.port = %p", spi_cs.config.cs->gpio.port);
+	LOG_DBG("spi_cs.config.cs->gpio.pin = %u", spi_cs.config.cs->gpio.pin);
 
 	zassert_equal(spi_cs.bus, DEVICE_DT_GET(DT_NODELABEL(test_spi_cs)), "");
-	zassert_equal(spi_cs.config.cs->gpio_dev, DEVICE_DT_GET(DT_NODELABEL(test_gpio)), "");
 	zassert_equal(spi_cs.config.cs->gpio.port, DEVICE_DT_GET(DT_NODELABEL(test_gpio)), "");
+	zassert_equal(spi_cs.config.cs->gpio.pin, 0x10, "");
 
 	const struct spi_dt_spec spi_no_cs =
 		SPI_DT_SPEC_GET(DT_NODELABEL(test_spi_dev_no_cs), 0, 0);
