@@ -56,14 +56,20 @@
 			pwms = <&pwm0 6>;
 			label = "Blue PWM LED";
 		};
-		yellow_pwm_led: led_pwm_3 {
-			/* Cannot be used together with spi2. */
-			pwms = <&pwm0 13>;
-			label = "Yellow PWM LED";
-		};
 		user_pwm_led: led_pwm_4 {
 			pwms = <&pwm1 41>;
 			label = "User PWM LED";
+		};
+	};
+
+	pwmleds2 {
+		compatible = "pwm-leds";
+		/* Cannot be used together with spi2. */
+		status = "disabled";
+
+		yellow_pwm_led: led_pwm_3 {
+			pwms = <&pwm2 13>;
+			label = "Yellow PWM LED";
 		};
 	};
 
@@ -189,6 +195,14 @@ arduino_spi: &spi2 {
 	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm2 {
+	/* Cannot be used together with spi2 because of conflict on P0.13. */
+	status = "disabled";
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-1 = <&pwm2_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
