@@ -93,6 +93,20 @@
 	pwm1_sleep: pwm1_sleep {
 		group1 {
 			psels = <NRF_PSEL(PWM_OUT0, 1, 9)>;
+		};
+	};
+
+	pdm0_default: pdm0_default {
+		group1 {
+			psels = <NRF_PSEL(PDM_CLK, 0, 26)>,
+				<NRF_PSEL(PDM_DIN, 0, 25)>;
+		};
+	};
+
+	pdm0_sleep: pdm0_sleep {
+		group1 {
+			psels = <NRF_PSEL(PDM_CLK, 0, 26)>,
+				<NRF_PSEL(PDM_DIN, 0, 25)>;
 			low-power-enable;
 		};
 	};

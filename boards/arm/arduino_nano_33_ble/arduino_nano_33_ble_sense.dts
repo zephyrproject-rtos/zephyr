@@ -12,6 +12,14 @@
 / {
 	model = "Arduino Nano 33 BLE Sense";
 	compatible = "arduino,arduino_nano_33_ble_sense";
+
+	mic_pwr: mic_pwr {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "mic_pwr";
+		regulator-name = "mic_pwr";
+		enable-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
 };
 
 &i2c1 {
@@ -36,4 +44,12 @@
 		label = "APDS9960";
 		int-gpios = <&gpio0 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	};
+};
+
+dmic_dev: &pdm0 {
+	status = "okay";
+	pinctrl-0 = <&pdm0_default>;
+	pinctrl-1 = <&pdm0_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-source = "PCLK32M_HFXO";
 };
