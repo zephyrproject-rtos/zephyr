@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config ADXL345
-	bool "ADXL345 Three Axis I2C accelerometer"
-	depends on I2C
+	bool "ADXL345 Three Axis accelerometer"
+	depends on I2C || SPI
 	help
 	  Enable driver for ADXL345 Three-Axis Digital Accelerometer.
