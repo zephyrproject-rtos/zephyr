@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CACHE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CACHE_H_
 
-#include <cache.h>
+#include <zephyr/cache.h>
 
 /**
  * @brief Enable d-cache
