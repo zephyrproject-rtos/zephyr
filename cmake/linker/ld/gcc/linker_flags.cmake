@@ -10,5 +10,6 @@ endif()
 # ld/gcc linker flags for sanitizing.
 check_set_linker_property(TARGET linker APPEND PROPERTY sanitize_address -lasan)
 check_set_linker_property(TARGET linker APPEND PROPERTY sanitize_address -fsanitize=address)
-
 check_set_linker_property(TARGET linker APPEND PROPERTY sanitize_undefined -fsanitize=undefined)
+
+check_set_linker_property(TARGET linker APPEND PROPERTY gprof -pg)
