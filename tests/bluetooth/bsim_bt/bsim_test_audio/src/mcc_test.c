@@ -6,22 +6,7 @@
 
 #ifdef CONFIG_BT_MCC
 
-#include <zephyr/zephyr.h>
-#include <zephyr/sys/printk.h>
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <errno.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/sem.h>
-
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/uuid.h>
-#include <zephyr/bluetooth/gatt.h>
-
 #include <zephyr/bluetooth/audio/mcc.h>
-
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/services/ots.h>
 
