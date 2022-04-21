@@ -10,16 +10,15 @@ description: |
     pin properties.
 
     Each Zephyr-based application has its own set of pin muxing/pin configuration
-    requirements. The next  use ESP-WROVER-KIT's I2C_0 to illustrate how one could
-    change a node's pin state properties. Though based on a particular board, the
-    same following steps can be tweaked to address specifics of any other target
-    board.
+    requirements. The next steps use ESP-WROVER-KIT's I2C_0 to illustrate how one
+    could change a node's pin state properties. Though based on a particular board,
+    the same steps can be tweaked to address specifics of any other target board.
 
     Suppose an application running on top of the ESP-WROVER-KIT board, for some
     reason it needs I2C_0's SDA signal to be routed to GPIO_33. When looking at
     that board's original device tree source file (i.e., 'esp_wrover_kit.dts'),
-    you'll note that the I2C_0 node is already assigned to a set of states. Below
-    is highlighted the information that most interests us on that file
+    you'll notice that the I2C_0 node is already assigned to a set of states.
+    Below is highlighted the information that most interests us on that file
 
 
         #include "esp_wrover_kit-pinctrl.dtsi"
@@ -66,7 +65,7 @@ description: |
     target SoC in the following URL
 
 
-    https://github.com/zephyrproject-rtos/hal_espressif/tree/include/dt-bindings/pinctrl
+    https://github.com/zephyrproject-rtos/hal_espressif/tree/zephyr/include/dt-bindings/pinctrl
 
 
     The ESP-WROVER-KIT board is based on the ESP32 SoC, in that case, we search
@@ -144,7 +143,7 @@ child-binding:
           required: true
           type: int
           description: |
-            Integer array, represents pin mux settings.
+            Integer value, represents pin mux settings.
             With:
             - pin: The gpio pin number (0, 1, ..., GPIO_NUM_MAX)
             - sigi: The input signal assigned to a pin, if not available, it gets
