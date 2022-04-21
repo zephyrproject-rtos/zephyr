@@ -127,3 +127,10 @@
 	sample-clk = <NPCX_TACH_FREQ_LFCLK>; /* Use LFCLK as sampling clock */
 	pulses-per-round = <1>; /* number of pulses per round of encoder */
 };
+
+&power_domain_psl {
+	status = "okay";
+	pinctrl-0 = <&psl_in2_gp00>;
+	pinctrl-names = "sleep";
+	enable-gpios = <&gpio8 5 0>;
+};

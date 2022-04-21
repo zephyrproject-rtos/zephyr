@@ -14,3 +14,9 @@
 &pwm6_gpc0 {
 	drive-open-drain;
 };
+
+/* A falling edge detection type for PSL_IN2 */
+&psl_in2_gp00 {
+	psl-in-mode = "PSL_IN_MODE_EDGE";
+	psl-in-pol = "PSL_IN_POL_LOW_FALLING";
+};

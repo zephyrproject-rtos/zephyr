@@ -17,4 +17,15 @@ config POWER_DOMAIN_GPIO
 	depends on GPIO
 	depends on TIMEOUT_64BIT
 
+config POWER_DOMAIN_PSL
+	bool "Power Switch Logic (PSL) controlled power domain"
+	depends on GPIO
+	depends on SOC_FAMILY_NPCX
+
+config POWER_DOMAIN_INIT_PRIORITY
+	int "Power domain driver init priority"
+	default 75
+	help
+	  Power domain driver initialization priority.
+
 endif
