@@ -51,7 +51,7 @@ This shows an example on how to use the timing functions:
 
 .. code-block:: c
 
-   #include <timing/timing.h>
+   #include <zephyr/timing/timing.h>
 
    void gather_timing(void)
    {

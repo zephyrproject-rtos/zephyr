@@ -122,7 +122,7 @@ the initial state is S0.
 
 Code::
 
-	#include <smf.h>
+	#include <zephyr/smf.h>
 
 	/* Forward declaration of state table */
 	static const struct smf_state demo_states[];
@@ -230,7 +230,7 @@ S0 and S1 share a parent state and S0 is the initial state.
 
 Code::
 
-	#include <smf.h>
+	#include <zephyr/smf.h>
 
 	/* Forward declaration of state table */
 	static const struct smf_state demo_states[];

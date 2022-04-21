@@ -446,7 +446,7 @@ The example below contains a complete example of a device driver that uses the
     #define DT_DRV_COMPAT mydev
 
     ...
-    #include <drivers/pinctrl.h>
+    #include <zephyr/drivers/pinctrl.h>
     ...
 
     struct mydev_config {

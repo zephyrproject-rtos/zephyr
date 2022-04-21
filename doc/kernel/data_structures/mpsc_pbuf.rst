@@ -90,7 +90,7 @@ User header structure must start with internal header:
 
 .. code-block:: c
 
-   #include <sys/mpsc_packet.h>
+   #include <zephyr/sys/mpsc_packet.h>
 
    struct foo_header {
            MPSC_PBUF_HDR;

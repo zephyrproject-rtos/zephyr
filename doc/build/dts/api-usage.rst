@@ -349,7 +349,7 @@ compatible with less typing, like this:
 
 .. code-block:: c
 
-   #include <devicetree.h>
+   #include <zephyr/devicetree.h>
 
    #define DT_DRV_COMPAT my_driver_compat
 

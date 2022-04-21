@@ -415,7 +415,7 @@ device-specific configuration and data structures and API functions, like this:
 .. code-block:: c
 
    /* my_driver.c */
-   #include <drivers/some_api.h>
+   #include <zephyr/drivers/some_api.h>
 
    /* Define data (RAM) and configuration (ROM) structures: */
    struct my_dev_data {

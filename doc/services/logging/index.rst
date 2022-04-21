@@ -225,7 +225,7 @@ if custom log level is not provided.
 
 .. code-block:: c
 
-   #include <logging/log.h>
+   #include <zephyr/logging/log.h>
    LOG_MODULE_REGISTER(foo, CONFIG_FOO_LOG_LEVEL);
 
 If the module consists of multiple files, then ``LOG_MODULE_REGISTER()`` should
@@ -237,7 +237,7 @@ is used if custom log level is not provided.
 
 .. code-block:: c
 
-   #include <logging/log.h>
+   #include <zephyr/logging/log.h>
    /* In all files comprising the module but one */
    LOG_MODULE_DECLARE(foo, CONFIG_FOO_LOG_LEVEL);
 
@@ -250,7 +250,7 @@ provided.
 
 .. code-block:: c
 
-   #include <logging/log.h>
+   #include <zephyr/logging/log.h>
 
    static inline void foo(void)
    {
@@ -286,7 +286,7 @@ In order to use instance level filtering following steps must be performed:
 
 .. code-block:: c
 
-   #include <logging/log_instance.h>
+   #include <zephyr/logging/log_instance.h>
 
    struct foo_object {
    	LOG_INSTANCE_PTR_DECLARE(log);
@@ -345,7 +345,7 @@ Following snippet shows how logging can be processed in simple forever loop.
 
 .. code-block:: c
 
-   #include <log_ctrl.h>
+   #include <zephyr/log_ctrl.h>
 
    void main(void)
    {
@@ -613,7 +613,7 @@ to the pool. It is up to the backend how message is processed.
 
 .. code-block:: c
 
-   #include <log_backend.h>
+   #include <zephyr/logging/log_backend.h>
 
    void put(const struct log_backend *const backend,
    	    struct log_msg *msg)
