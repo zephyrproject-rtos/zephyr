@@ -27,7 +27,7 @@
 #ifndef ARCH_X86_MEMORY_LD
 #define ARCH_X86_MEMORY_LD
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <sys/mem_manage.h>
 
 /* Bounds of physical RAM from DTS */

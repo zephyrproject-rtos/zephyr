@@ -16,7 +16,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_ARCH_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <sw_isr_table.h>
 #include <arch/common/ffs.h>
 #include <arch/arc/thread.h>

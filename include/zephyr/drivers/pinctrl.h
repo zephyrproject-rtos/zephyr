@@ -19,7 +19,7 @@
  */
 
 #include <zephyr/device.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <devicetree/pinctrl.h>
 #include <pinctrl_soc.h>
 #include <sys/util.h>

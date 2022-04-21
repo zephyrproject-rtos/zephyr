@@ -26,7 +26,7 @@
 #include <irq.h>
 #include <sw_isr_table.h>
 #include <soc.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <arch/riscv/csr.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */

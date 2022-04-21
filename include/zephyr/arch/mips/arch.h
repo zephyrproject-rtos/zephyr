@@ -17,7 +17,7 @@
 
 #include <irq.h>
 #include <sw_isr_table.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <mips/mipsregs.h>
 
 #define ARCH_STACK_PTR_ALIGN 16
