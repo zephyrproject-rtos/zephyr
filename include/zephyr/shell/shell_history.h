@@ -7,7 +7,7 @@
 #ifndef SHELL_HISTORY_H__
 #define SHELL_HISTORY_H__
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <sys/util.h>
 #include <sys/dlist.h>
 #include <sys/ring_buffer.h>

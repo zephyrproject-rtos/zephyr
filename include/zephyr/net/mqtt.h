@@ -24,7 +24,7 @@
 
 #include <stddef.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
 #include <net/tls_credentials.h>
 #include <net/net_ip.h>

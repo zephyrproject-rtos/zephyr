@@ -7,7 +7,7 @@
 #ifndef SHELL_H__
 #define SHELL_H__
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <shell/shell_types.h>
 #include <shell/shell_history.h>
 #include <shell/shell_fprintf.h>
