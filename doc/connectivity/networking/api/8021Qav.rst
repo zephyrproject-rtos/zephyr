@@ -42,9 +42,9 @@ The application can configure the credit-based shaper like this:
 
 .. code-block:: c
 
-	#include <net/net_if.h>
-	#include <net/ethernet.h>
-	#include <net/ethernet_mgmt.h>
+	#include <zephyr/net/net_if.h>
+	#include <zephyr/net/ethernet.h>
+	#include <zephyr/net/ethernet_mgmt.h>
 
 	static void qav_set_status(struct net_if *iface,
 	                           int queue_id, bool enable)

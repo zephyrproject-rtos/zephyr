@@ -194,7 +194,7 @@ A device-specific API definition typically looks like this:
 
 .. code-block:: C
 
-   #include <drivers/subsystem.h>
+   #include <zephyr/drivers/subsystem.h>
 
    /* When extensions need not be invoked from user mode threads */
    int specific_do_that(const struct device *dev, int foo);
@@ -235,7 +235,7 @@ implementation of both the subsystem API and the specific APIs:
 
    #ifdef CONFIG_USERSPACE
 
-   #include <syscall_handler.h>
+   #include <zephyr/syscall_handler.h>
 
    int z_vrfy_specific_from_user(const struct device *dev, int bar)
    {

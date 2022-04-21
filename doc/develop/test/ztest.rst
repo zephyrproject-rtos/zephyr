@@ -196,7 +196,7 @@ Here is a generic template for a test showing the expected use of
 
 .. code-block:: C
 
-   #include <ztest.h>
+   #include <zephyr/ztest.h>
 
    extern void test_sometest1(void);
    extern void test_sometest2(void);
@@ -227,7 +227,7 @@ Alternatively, it is possible to split tests across multiple files using
 
 .. code-block:: C
 
-  #include <ztest.h>
+  #include <zephyr/ztest.h>
 
   void test_sometest1(void) {
   	zassert_true(1, "true");
@@ -251,7 +251,7 @@ state and different test suites need to run. This is achieved in the following:
 
 .. code-block:: C
 
-  #include <ztest.h>
+  #include <zephyr/ztest.h>
 
   struct state {
   	bool is_hibernating;
