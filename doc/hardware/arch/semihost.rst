@@ -14,7 +14,7 @@ More complete documentation on the available functionality is available at the
 `ARM Github documentation`_.
 
 The RISC-V functionality borrows from the ARM definitions, as described at the
-`RISC-V Github documentation`.
+`RISC-V Github documentation`_.
 
 File Operations
 ***************
