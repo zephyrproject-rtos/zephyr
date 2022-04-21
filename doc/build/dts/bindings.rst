@@ -1132,7 +1132,7 @@ gpio_dt_spec``, then use it like this:
 
 .. code-block:: C
 
-   #include <drivers/gpio.h>
+   #include <zephyr/drivers/gpio.h>
 
    #define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
 

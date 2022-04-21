@@ -225,10 +225,10 @@ up from where it was before restart.
 
 .. code-block:: c
 
-    #include <zephyr.h>
-    #include <sys/reboot.h>
-    #include <settings/settings.h>
-    #include <sys/printk.h>
+    #include <zephyr/zephyr.h>
+    #include <zephyr/sys/reboot.h>
+    #include <zephyr/settings/settings.h>
+    #include <zephyr/sys/printk.h>
     #include <inttypes.h>
 
     #define DEFAULT_FOO_VAL_VALUE 0

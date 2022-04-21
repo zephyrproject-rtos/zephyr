@@ -252,7 +252,7 @@ how GDB stub works.
          test () at <ZEPHYR_BASE>/samples/subsys/debug/gdbstub/src/main.c:13
          13     {
          (gdb) list
-         8      #include <sys/printk.h>
+         8      #include <zephyr/sys/printk.h>
          9
          10     #define STACKSIZE 512
          11

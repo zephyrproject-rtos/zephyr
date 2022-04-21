@@ -237,7 +237,7 @@ BSS.
 
 .. code-block:: c
 
-    #include <app_memory/app_memdomain.h>
+    #include <zephyr/app_memory/app_memdomain.h>
 
     /* Declare a k_mem_partition "my_partition" that is read-write to
      * user mode. Note that we do not specify a base address or size.
