@@ -17,7 +17,7 @@
 #ifndef ZEPHYR_INCLUDE_CRYPTO_H_
 #define ZEPHYR_INCLUDE_CRYPTO_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
 #include <sys/util.h>
 #include <sys/__assert.h>

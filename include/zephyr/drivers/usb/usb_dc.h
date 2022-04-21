@@ -17,7 +17,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_USB_USB_DC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_USB_USB_DC_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 /**
  * USB endpoint direction and number.

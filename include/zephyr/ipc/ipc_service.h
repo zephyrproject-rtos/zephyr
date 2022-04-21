@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_IPC_IPC_SERVICE_H_
 
 #include <stdio.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

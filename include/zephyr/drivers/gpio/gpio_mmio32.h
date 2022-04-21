@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_MMIO32_H_
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_MMIO32_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <drivers/gpio.h>
 #include <zephyr/types.h>
 

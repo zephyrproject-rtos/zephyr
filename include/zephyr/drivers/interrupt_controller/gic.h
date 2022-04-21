@@ -266,7 +266,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 /*
  * GIC Driver Interface Functions

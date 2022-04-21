@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_PM_DEVICE_H_
 #define ZEPHYR_INCLUDE_PM_DEVICE_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <kernel.h>
 #include <sys/atomic.h>
 

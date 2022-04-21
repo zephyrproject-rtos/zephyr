@@ -19,7 +19,7 @@
 
 #include <zephyr/types.h>
 #include <kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 /**
  * @brief Task Watchdog APIs

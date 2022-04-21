@@ -17,7 +17,7 @@
 #ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
 #define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <irq.h>
 
 /**

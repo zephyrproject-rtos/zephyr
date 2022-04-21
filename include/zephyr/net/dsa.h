@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_DSA_H_
 #define ZEPHYR_INCLUDE_NET_DSA_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <net/net_if.h>
 
 /**

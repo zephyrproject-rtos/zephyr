@@ -22,7 +22,7 @@
 #define ZEPHYR_INCLUDE_USB_CLASS_AUDIO_H_
 
 #include <usb/usb_ch9.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <net/buf.h>
 #include <sys/util.h>
 

@@ -23,7 +23,7 @@
  */
 
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #include "usbc_tc.h"
 #include "usbc_pd.h"

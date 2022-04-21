@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_TMP116_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_TMP116_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <sys/types.h>
 
 #define EEPROM_TMP116_SIZE (4 * sizeof(uint16_t))
