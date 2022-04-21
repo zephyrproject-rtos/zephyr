@@ -328,9 +328,6 @@ Maintainer review reqiured.
 
 To be reviewed by a security expert.
 
-Depending on the PR complexity, an indication of how long a merge should be held
-to ensure proper review. See :ref:`review process <review_time>`.
-
 * *DNM*
 
 This PR should not be merged (Do Not Merge). For work in progress, GitHub
@@ -347,6 +344,12 @@ The PR is a backport or should be backported.
 * *Licensing*
 
 The PR has licensing issues which require a licensing expert to review it.
+
+.. note::
+   For all labels applicable to PRs: Please note that the label, together with
+   PR complexity, affects how long a merge should be held to ensure proper
+   review. See :ref:`review process <review_time>` for details.
+
 
 Labels applicable to both pull requests and issues
 ==================================================
