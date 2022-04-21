@@ -326,6 +326,8 @@ Maintainer review reqiured.
 
 * *Security Review*
 
+To be reviewed by a security expert.
+
 Depending on the PR complexity, an indication of how long a merge should be held
 to ensure proper review. See :ref:`review process <review_time>`.
 
