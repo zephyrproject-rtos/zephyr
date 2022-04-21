@@ -35,7 +35,7 @@ config BT_CTLR_CTEINLINE_SUPPORT
 
 menuconfig BT_CTLR_DF
 	bool "LE Direction Finding [EXPERIMENTAL]"
-	depends on BT_CTLR_DF_SUPPORT
+	depends on BT_CTLR_DF_CTE_TX_SUPPORT || BT_CTLR_DF_CTE_RX_SUPPORT
 	select EXPERIMENTAL
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding
