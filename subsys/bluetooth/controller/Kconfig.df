@@ -3,6 +3,9 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# BT_CTLR_DF_SUPPORT is a wrapper for all DF features.
+# If only certain DF features are supported, those should be selected
+# individually.
 config BT_CTLR_DF_SUPPORT
 	bool
 	depends on !BT_CTLR_TIFS_HW
