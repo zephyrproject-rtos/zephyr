@@ -488,9 +488,7 @@ Documentation:
     collaborators:
         - alexanderwachter
         - karstenkoenig
-        - nixward
         - martinjaeger
-        - legoabram
     files:
         - doc/hardware/peripherals/canbus/
         - drivers/can/
