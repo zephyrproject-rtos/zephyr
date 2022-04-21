@@ -311,7 +311,7 @@ SECTIONS {
 
   .module_init : {
     _module_init_start = .;
-    *(*.module_init)
+    *(*.initcall)
     _module_init_end = .;
   } >ram
 
