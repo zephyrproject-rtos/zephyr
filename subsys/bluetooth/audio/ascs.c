@@ -133,6 +133,8 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 				ops->disabled(stream);
 			}
 			break;
+		case BT_AUDIO_EP_STATE_RELEASING:
+			break; /* no-op*/
 		default:
 			BT_ERR("Invalid state: %u", state);
 			break;
