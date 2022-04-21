@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_CAPTURE_H_
 #define ZEPHYR_INCLUDE_NET_CAPTURE_H_
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #ifdef __cplusplus
 extern "C" {

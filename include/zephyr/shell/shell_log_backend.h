@@ -7,7 +7,7 @@
 #ifndef SHELL_LOG_BACKEND_H__
 #define SHELL_LOG_BACKEND_H__
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <logging/log_backend.h>
 #include <logging/log_output.h>
 #include <sys/mpsc_pbuf.h>
