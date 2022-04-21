@@ -339,7 +339,7 @@ SECTIONS
   .module_init : ALIGN(4)
   {
    _module_init_start = ABSOLUTE(.);
-    *(*.module_init)
+    *(*.initcall)
     _module_init_end = ABSOLUTE(.);
   } >sdram0 :sdram0_phdr
 
