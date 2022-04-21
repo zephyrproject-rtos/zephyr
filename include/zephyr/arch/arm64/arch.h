@@ -17,7 +17,7 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM64_ARCH_H_
 
 /* Add include for DTS generated information */
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #include <arch/arm64/thread.h>
 #include <arch/arm64/exc.h>

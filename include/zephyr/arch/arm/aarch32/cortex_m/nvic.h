@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_NVIC_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_NVIC_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #if defined(CONFIG_ARMV8_1_M_MAINLINE)
 /* The order here is on purpose since ARMv8.1-M SoCs may define

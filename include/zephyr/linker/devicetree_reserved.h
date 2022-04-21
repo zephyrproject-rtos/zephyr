@@ -6,7 +6,7 @@
  * Generate memory regions and sections from reserved-memory nodes.
  */
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 /* Reserved memory node */
 #define _NODE_RESERVED DT_INST(0, reserved_memory)

@@ -15,7 +15,7 @@
 
 #include <irq.h>
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
 #include <zephyr/types.h>
 #include <toolchain.h>
