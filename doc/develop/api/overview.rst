@@ -307,6 +307,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.3
      - 2.3
 
+   * - :ref:`sdhc_api`
+     - Experimental
+     - 3.1
+     - 3.1
+
    * - :ref:`task_wdt_api`
      - Experimental
      - 2.5
