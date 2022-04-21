@@ -767,10 +767,6 @@ static void ase_process(struct k_work *work)
 	    ase->ep.stream == NULL) {
 		ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
 	}
-
-	if (ase->ep.status.state == BT_AUDIO_EP_STATE_IDLE) {
-		return;
-	}
 }
 
 static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
