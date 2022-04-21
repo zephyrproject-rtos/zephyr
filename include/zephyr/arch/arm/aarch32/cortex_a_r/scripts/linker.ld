@@ -12,7 +12,7 @@
  */
 
 #include <linker/sections.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #include <linker/devicetree_regions.h>
 #include <linker/linker-defs.h>

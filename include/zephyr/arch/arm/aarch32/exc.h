@@ -16,7 +16,7 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #include <arch/arm/aarch32/cortex_m/nvic.h>
 

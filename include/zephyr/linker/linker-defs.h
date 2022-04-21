@@ -34,7 +34,7 @@
 #define DT_NODE_HAS_STATUS(node, status) 0
 #else
 #include <linker/devicetree_reserved.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #endif
 
 #ifdef _LINKER

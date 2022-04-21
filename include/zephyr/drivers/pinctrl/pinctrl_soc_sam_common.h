@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_SOC_SAM_COMMON_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_SOC_SAM_COMMON_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 #include <dt-bindings/pinctrl/atmel_sam_pinctrl.h>
 

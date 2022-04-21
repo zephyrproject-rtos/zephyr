@@ -23,7 +23,7 @@
 #include <irq.h>
 #include <sw_isr_table.h>
 #include <soc.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 /* stacks, for SPARC architecture stack shall be 8byte-aligned */
 #define ARCH_STACK_PTR_ALIGN 8

@@ -18,7 +18,7 @@
 #define ZEPHYR_INCLUDE_ARCH_POSIX_ARCH_H_
 
 /* Add include for DTS generated information */
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #include <toolchain.h>
 #include <irq.h>
