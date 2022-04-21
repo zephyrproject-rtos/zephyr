@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2022 NXP
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 
-#define DT_DRV_COMPAT nxp_imx_sdhc
+#define DT_DRV_COMPAT nxp_imx_usdhc
 
 #include <zephyr/zephyr.h>
 #include <zephyr/devicetree.h>
