@@ -145,6 +145,8 @@ config BT_CTLR_DF_CONN_CTE_RX
 	  Enable reception and sampling of Constant Tone Extension in direction
 	  finding connected mode.
 
+if BT_LL_SW_SPLIT
+
 config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
 	bool "Sampling of CTE for PDUs with bad CRC"
 	depends on BT_CTLR_DF_SCAN_CTE_RX
@@ -268,5 +270,7 @@ config BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE
 	  CTEINLINECTRLEN is enabled and received PDU does not have CTEInfo field. The option
 	  enables workaround for the delay to maintain inter frame spacing (IFS) for connection
 	  events.
+
+endif # BT_LL_SW_SPLIT
 
 endif # BT_CTLR_DF
