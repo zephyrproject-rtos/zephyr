@@ -7,7 +7,7 @@
 #ifndef _OSDP_H_
 #define _OSDP_H_
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdint.h>
 
 #include <sys/slist.h>

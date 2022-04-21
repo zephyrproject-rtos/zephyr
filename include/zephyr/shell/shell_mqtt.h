@@ -7,7 +7,7 @@
 #ifndef SHELL_MQTT_H__
 #define SHELL_MQTT_H__
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <shell/shell.h>
 #include <net/socket.h>
 #include <net/net_mgmt.h>

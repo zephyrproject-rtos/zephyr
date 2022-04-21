@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_EVENTFD_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_EVENTFD_H_
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <sys/fdtable.h>
 #include <sys/types.h>
 
