@@ -8,7 +8,7 @@
 # individually.
 config BT_CTLR_DF_SUPPORT
 	bool
-	depends on !BT_CTLR_TIFS_HW
+	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
 	select BT_CTLR_DF_CTE_TX_SUPPORT
 	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
 	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
@@ -115,7 +115,7 @@ config BT_CTLR_DF_CONN_CTE_RSP
 config BT_CTLR_DF_ADV_CTE_TX
 	bool "Connectionless CTE Transmitter feature"
 	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_ADV_PERIODIC
-	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
+	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY if BT_LL_SW_SPLIT
 	default y
 	help
 	  Enable support for Bluetooth v5.1 Connectionless CTE Transmitter
