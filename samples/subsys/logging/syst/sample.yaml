@@ -5,7 +5,6 @@ common:
   modules:
     - mipi-sys-t
   arch_exclude: mips nios2 posix sparc
-  filter: not CONFIG_64BIT
 tests:
   sample.logger.syst.v1.deferred:
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
@@ -66,6 +65,8 @@ tests:
     integration_platforms:
       - mps2_an385
       - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -77,6 +78,8 @@ tests:
     integration_platforms:
       - mps2_an385
       - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -150,6 +153,8 @@ tests:
     integration_platforms:
       - mps2_an385
       - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
@@ -162,6 +167,8 @@ tests:
     integration_platforms:
       - mps2_an385
       - qemu_x86
+      - qemu_x86_64
+      - qemu_cortex_a53
     harness: console
     harness_config:
       type: one_line
