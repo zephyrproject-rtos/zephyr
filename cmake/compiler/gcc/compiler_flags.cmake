@@ -177,6 +177,8 @@ set_compiler_property(PROPERTY imacros -imacros)
 # GCC compiler flags for sanitizing.
 set_compiler_property(PROPERTY sanitize_address -fsanitize=address)
 
+set_compiler_property(PROPERTY gprof -pg)
+
 set_compiler_property(PROPERTY sanitize_undefined -fsanitize=undefined)
 
 # GCC compiler flag for turning off thread-safe initialization of local statics

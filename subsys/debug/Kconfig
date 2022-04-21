@@ -99,6 +99,13 @@ config DEBUG
 	  only disables optimization, more debugging variants can be selected
 	  from here to allow more debugging.
 
+config GPROF
+	bool "Generate profiling information"
+	depends on ARCH_POSIX
+	help
+	  Generate call graph profile data for the application that can be
+	  analyzed with gprof
+
 config ASAN
 	bool "Build with address sanitizer"
 	depends on ARCH_POSIX
