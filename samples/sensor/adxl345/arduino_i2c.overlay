@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2022, TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example configuration of a ADXL345 device on an Arduino I2C bus.
+ *
+ * Device address 0x53 is assumed. Your device may have a different
+ * address; check your device documentation if unsure.
+ */
+&arduino_i2c {
+	status = "okay";
+	adxl345@53 {
+		compatible = "adi,adxl345";
+		reg = <0x53>;
+		label = "ADXL345_I2C";
+	};
+};

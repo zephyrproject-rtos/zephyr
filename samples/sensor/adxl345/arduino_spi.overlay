@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2022, TOKITA Hiroshi <tokita.hiroshi@fujtisu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+        adxl345@0 {
+                compatible = "adi,adxl345";
+                spi-max-frequency = <1000000>;
+                reg = <0>;
+                label = "ADXL345_SPI";
+        };
+};

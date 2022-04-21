@@ -1,0 +1,13 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_ADI_ADXL345 := adi,adxl345
+
+config SPI
+	default $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL345),spi)
+
+config I2C
+	default $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL345),i2c)
+
+source "Kconfig.zephyr"
