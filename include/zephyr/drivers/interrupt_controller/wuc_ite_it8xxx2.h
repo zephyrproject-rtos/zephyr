@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_IT8XXX2_WUC_H_
 #define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_IT8XXX2_WUC_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <stdint.h>
 
 /**

@@ -10,7 +10,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_IPM_CONSOLE_H_
 
 #include <kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <sys/ring_buffer.h>
 
 #ifdef __cplusplus

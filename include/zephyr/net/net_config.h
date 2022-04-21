@@ -12,7 +12,7 @@
 #define ZEPHYR_INCLUDE_NET_NET_CONFIG_H_
 
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <net/net_if.h>
 
 #ifdef __cplusplus

@@ -9,7 +9,7 @@
 
 #include <sys/types.h>
 #include <kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <toolchain.h>
 
 #ifdef __cplusplus

@@ -20,7 +20,7 @@
  */
 
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
 
 #ifdef __cplusplus

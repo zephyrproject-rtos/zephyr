@@ -7,7 +7,7 @@
 #define __XEN_CONSOLE_H__
 
 #include <init.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <drivers/uart.h>
 #include <sys/device_mmio.h>
 

@@ -21,7 +21,7 @@
 #include <net/buf.h>
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_vs.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {
