@@ -244,6 +244,18 @@ void sys_clock_announce(int32_t ticks)
 
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
 
+	/* We release the lock around the callbacks below, so on SMP
+	 * systems someone might be already running the loop.  Don't
+	 * race (which will cause paralllel execution of "sequential"
+	 * timeouts and confuse apps), just increment the tick count
+	 * and return.
+	 */
+	if (IS_ENABLED(CONFIG_SMP) && announce_remaining != 0) {
+		announce_remaining += ticks;
+		k_spin_unlock(&timeout_lock, key);
+		return;
+	}
+
 	announce_remaining = ticks;
 
 	while (first() != NULL && first()->dticks <= announce_remaining) {

@@ -35,6 +35,15 @@ LOG_MODULE_REGISTER(soc);
 # define DSP_INIT_GENO	          0x71A6C
 # define GENO_MDIVOSEL		  BIT(1)
 # define GENO_DIOPTOSEL           BIT(2)
+
+# define DSP_INIT_IOPO             0x71A68
+# define IOPO_DMIC_FLAG            BIT(0)
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V18
+/* amount of i2s nodes = amount of bits set in second byte */
+# define IOPO_I2S_FLAG             7 << 8
+#else
+# define IOPO_I2S_FLAG             63 << 8
+#endif
 #endif
 
 #if CONFIG_MP_NUM_CPUS > 1
@@ -102,6 +111,8 @@ static __imr void power_init(void)
 		    DSP_INIT_LPGPDMA(0));
 	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
 		    DSP_INIT_LPGPDMA(1));
+
+	sys_write32(IOPO_DMIC_FLAG | IOPO_I2S_FLAG, DSP_INIT_IOPO);
 #endif
 }
 

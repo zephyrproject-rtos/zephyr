@@ -40,7 +40,7 @@ start the emulator:
 
 .. code-block:: console
 
-    renode -e "set zephyr_elf @./build/zephyr/zephyr.elf; s @./renode/litex-vexriscv-tflite.resc"
+    renode -e "set zephyr_elf @./build/zephyr/zephyr.elf; s @./samples/modules/tflite-micro/magic_wand/renode/litex-vexriscv-tflite.resc"
 
 .. _download and install Renode 1.12 or higher as a package:
     https://github.com/renode/renode/releases/
@@ -102,11 +102,9 @@ Modifying Sample for Your Own Project
 
 It is recommended that you copy and modify one of the two TensorFlow
 samples when creating your own TensorFlow project. To build with
-TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`.
+TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 
-:file:`prj.conf`:
-
-.. code-block:: console
+.. code-block:: kconfig
 
     CONFIG_CPLUSPLUS=y
     CONFIG_NEWLIB_LIBC=y

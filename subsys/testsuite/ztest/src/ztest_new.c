@@ -400,10 +400,10 @@ static void test_cb(void *a, void *b, void *c)
 	struct ztest_unit_test *test = b;
 
 	test_result = 1;
+	run_test_rules(/*is_before=*/true, test, /*data=*/c);
 	if (suite->before) {
 		suite->before(/*data=*/c);
 	}
-	run_test_rules(/*is_before=*/true, test, /*data=*/c);
 	run_test_functions(suite, test, c);
 	test_result = 0;
 }
@@ -430,10 +430,10 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		k_thread_join(&ztest_thread, K_FOREVER);
 	} else {
 		test_result = 1;
+		run_test_rules(/*is_before=*/true, test, data);
 		if (suite->before) {
 			suite->before(data);
 		}
-		run_test_rules(/*is_before=*/true, test, data);
 		run_test_functions(suite, test, data);
 	}
 

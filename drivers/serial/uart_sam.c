@@ -20,13 +20,13 @@
 #include <init.h>
 #include <soc.h>
 #include <drivers/uart.h>
+#include <drivers/pinctrl.h>
 
 /* Device constant configuration parameters */
 struct uart_sam_dev_cfg {
 	Uart *regs;
 	uint32_t periph_id;
-	struct soc_gpio_pin pin_rx;
-	struct soc_gpio_pin pin_tx;
+	const struct pinctrl_dev_config *pcfg;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t	irq_config_func;
@@ -58,8 +58,10 @@ static int uart_sam_init(const struct device *dev)
 	soc_pmc_peripheral_enable(cfg->periph_id);
 
 	/* Connect pins to the peripheral */
-	soc_gpio_configure(&cfg->pin_rx);
-	soc_gpio_configure(&cfg->pin_tx);
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	/* Reset and disable UART */
 	uart->UART_CR =   UART_CR_RSTRX | UART_CR_RSTTX
@@ -356,8 +358,7 @@ static const struct uart_driver_api uart_sam_driver_api = {
 		.regs = (Uart *)DT_INST_REG_ADDR(n),			\
 		.periph_id = DT_INST_PROP(n, peripheral_id),		\
 									\
-		.pin_rx = ATMEL_SAM_DT_INST_PIN(n, 0),			\
-		.pin_tx = ATMEL_SAM_DT_INST_PIN(n, 1),			\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 									\
 		IRQ_FUNC_INIT						\
 	}
@@ -384,6 +385,7 @@ static const struct uart_driver_api uart_sam_driver_api = {
 #endif
 
 #define UART_SAM_INIT(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static struct uart_sam_dev_data uart##n##_sam_data = {		\
 		.baud_rate = DT_INST_PROP(n, current_speed),		\
 	};								\

@@ -1748,9 +1748,36 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 		}
-		}
-
 		break;
+
+		case SO_RCVBUF:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_RCVBUF,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+			break;
+
+		case SO_SNDBUF:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDBUF)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_SNDBUF,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+			break;
+		}
 	}
 
 	errno = ENOPROTOOPT;
@@ -1802,6 +1829,36 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 	switch (level) {
 	case SOL_SOCKET:
 		switch (optname) {
+		case SO_RCVBUF:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_RCVBUF,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case SO_SNDBUF:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDBUF)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_SNDBUF,
+							     optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case SO_REUSEADDR:
 			/* Ignore for now. Provided to let port
 			 * existing apps.
@@ -1921,7 +1978,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case SO_BINDTODEVICE: {
 			struct net_if *iface;
 			const struct device *dev;
-			struct ifreq *ifreq = (struct ifreq *)optval;
+			const struct ifreq *ifreq = optval;
 
 			if (net_context_get_family(ctx) != AF_INET &&
 			    net_context_get_family(ctx) != AF_INET6) {

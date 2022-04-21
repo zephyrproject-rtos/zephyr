@@ -1,29 +1,36 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <dt-bindings/gpio/gpio.h>
+#include <freq.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
 	compatible = "sifive,FE310G-0002-Z0-dev", "fe310-dev", "sifive-dev";
 	model = "SiFive,FE310G-0002-Z0";
+	clocks {
+		coreclk: core-clk {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(16)>;
+		};
+
+		tlclk: tl-clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&coreclk>;
+			clock-div = <1>;
+		};
+	};
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cpu: cpu@0 {
-			clock-frequency = <0>;
-			compatible = "sifive,rocket0", "riscv";
+			compatible = "riscv,sifive-e31";
 			device_type = "cpu";
-			i-cache-block-size = <64>;
-			i-cache-sets = <128>;
-			i-cache-size = <16384>;
-			next-level-cache = <&modeselect &maskrom &otp &spi0>;
 			reg = <0>;
 			riscv,isa = "rv32imac";
-			sifive,dtim = <&dtim>;
-			sifive,itim = <&itim>;
 			status = "okay";
-			timebase-frequency = <32768>;
 			hlic: interrupt-controller {
 				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
@@ -99,7 +106,7 @@
 			ranges;
 
 			pinctrl: pinctrl@10012038 {
-				compatible = "sifive,iof";
+				compatible = "sifive,pinctrl";
 				reg = <0x10012038 0x8>;
 			};
 		};

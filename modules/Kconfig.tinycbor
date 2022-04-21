@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config TINYCBOR
-	bool "tinyCBOR Support"
+	bool "DEPRECATED: tinyCBOR Support"
 	help
 	  This option enables the tinyCBOR library.
+	  Note: This module is deprecated, please use ZCBOR instead.
 
 if TINYCBOR
 

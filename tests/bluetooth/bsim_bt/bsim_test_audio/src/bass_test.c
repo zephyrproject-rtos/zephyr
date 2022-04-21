@@ -86,9 +86,9 @@ static void test_main(void)
 
 	printk("Advertising successfully started\n");
 
-	WAIT_FOR(g_connected);
+	WAIT_FOR_COND(g_connected);
 
-	WAIT_FOR(g_pa_synced);
+	WAIT_FOR_COND(g_pa_synced);
 
 	PASS("BASS passed\n");
 }

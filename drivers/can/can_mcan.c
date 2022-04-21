@@ -133,7 +133,8 @@ void can_mcan_configure_timing(struct can_mcan_reg  *can,
 				timing->phase_seg2 > 0);
 		__ASSERT_NO_MSG(timing->prescaler <= 0x200 &&
 				timing->prescaler > 0);
-		__ASSERT_NO_MSG(timing->sjw <= 0x80 && timing->sjw > 0);
+		__ASSERT_NO_MSG(timing->sjw == CAN_SJW_NO_CHANGE ||
+				(timing->sjw <= 0x80 && timing->sjw > 0));
 
 		can->nbtp = (((uint32_t)timing->phase_seg1 - 1UL) & 0xFF) <<
 				CAN_MCAN_NBTP_NTSEG1_POS |
@@ -159,10 +160,10 @@ void can_mcan_configure_timing(struct can_mcan_reg  *can,
 				timing_data->phase_seg1 > 0);
 		__ASSERT_NO_MSG(timing_data->phase_seg2 <= 0x10 &&
 				timing_data->phase_seg2 > 0);
-		__ASSERT_NO_MSG(timing_data->prescaler <= 20 &&
+		__ASSERT_NO_MSG(timing_data->prescaler <= 0x20 &&
 				timing_data->prescaler > 0);
-		__ASSERT_NO_MSG(timing_data->sjw <= 0x80 &&
-				timing_data->sjw > 0);
+		__ASSERT_NO_MSG(timing_data->sjw == CAN_SJW_NO_CHANGE ||
+				(timing_data->sjw <= 0x80 && timing_data->sjw > 0));
 
 		can->dbtp = (((uint32_t)timing_data->phase_seg1 - 1UL) & 0x1F) <<
 				CAN_MCAN_DBTP_DTSEG1_POS |
@@ -721,8 +722,10 @@ int can_mcan_get_state(const struct can_mcan_config *cfg, enum can_state *state,
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int can_mcan_recover(struct can_mcan_reg *can, k_timeout_t timeout)
+int can_mcan_recover(const struct can_mcan_config *cfg, k_timeout_t timeout)
 {
+	struct can_mcan_reg *can = cfg->can;
+
 	return can_leave_init_mode(can, timeout);
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
@@ -862,7 +865,7 @@ int can_mcan_add_rx_filter_std(struct can_mcan_data *data,
 	filter_id = can_mcan_get_free_std(msg_ram->std_filt);
 
 	if (filter_id == -ENOSPC) {
-		LOG_INF("No free standard id filter left");
+		LOG_WRN("No free standard id filter left");
 		return -ENOSPC;
 	}
 
@@ -924,7 +927,7 @@ static int can_mcan_add_rx_filter_ext(struct can_mcan_data *data,
 	filter_id = can_mcan_get_free_ext(msg_ram->ext_filt);
 
 	if (filter_id == -ENOSPC) {
-		LOG_INF("No free extended id filter left");
+		LOG_WRN("No free extended id filter left");
 		return -ENOSPC;
 	}
 
@@ -976,11 +979,9 @@ int can_mcan_add_rx_filter(struct can_mcan_data *data,
 	} else {
 		filter_id = can_mcan_add_rx_filter_ext(data, msg_ram, callback,
 						       user_data, filter);
-		filter_id += NUM_STD_FILTER_DATA;
-	}
-
-	if (filter_id == -ENOSPC) {
-		LOG_INF("No free filter left");
+		if (filter_id >= 0) {
+			filter_id += NUM_STD_FILTER_DATA;
+		}
 	}
 
 	return filter_id;
@@ -992,7 +993,7 @@ void can_mcan_remove_rx_filter(struct can_mcan_data *data,
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	if (filter_id >= NUM_STD_FILTER_DATA) {
 		filter_id -= NUM_STD_FILTER_DATA;
-		if (filter_id >= NUM_STD_FILTER_DATA) {
+		if (filter_id >= NUM_EXT_FILTER_DATA) {
 			LOG_ERR("Wrong filter id");
 			return;
 		}

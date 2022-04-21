@@ -21,7 +21,16 @@ properties:
     required: true
 
   size:
-    required: true
+    type: int
+    required: false
+    description: |
+      The size in bits. Set this or size-in-bytes, but not both.
+
+  size-in-bytes:
+    type: int
+    required: false
+    description: |
+      The size in bytes. Set this or size, but not both.
 
   # Match original driver NORDIC_QSPI_NOR_QE_BIT Kconfig default.
   quad-enable-requirements:

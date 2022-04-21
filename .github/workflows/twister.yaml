@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - v*-branch
   pull_request_target:
     branches:
       - main
+      - v*-branch
   schedule:
     # Run at 00:00 on Wednesday and Saturday
     - cron: '0 0 * * 3,6'
@@ -25,7 +27,7 @@ jobs:
     runs-on: zephyr_runner
     needs: twister-build-cleanup
     container:
-      image: zephyrprojectrtos/ci:v0.21.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.0
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -37,12 +39,20 @@ jobs:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 80
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
       - name: Cleanup
         run: |
           # hotfix, until we have a better way to deal with existing data
@@ -59,13 +69,13 @@ jobs:
       - name: Environment Setup
         if: github.event_name == 'pull_request_target'
         run: |
-          pip3 install GitPython
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
           west init -l . || true
+          west config manifest.group-filter -- +ci
           # no need for west update here
 
       - name: Generate Test Plan with Twister
@@ -110,7 +120,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: zephyrprojectrtos/ci:v0.21.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.0
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -119,7 +129,7 @@ jobs:
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.2
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       TWISTER_COMMON: ' --inline-logs -v -N -M --retry-failed 3 '
       DAILY_OPTIONS: ' -M --build-only --all --no-skipped-report'
@@ -128,6 +138,14 @@ jobs:
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
       - name: Cleanup
         run: |
           # hotfix, until we have a better way to deal with existing data
@@ -142,7 +160,6 @@ jobs:
 
       - name: Environment Setup
         run: |
-          pip3 install GitPython
           if [ "${{github.event_name}}" = "pull_request_target" ]; then
             git config --global user.email "bot@zephyrproject.org"
             git config --global user.name "Zephyr Builder"
@@ -179,6 +196,7 @@ jobs:
       - name: use cache
         id: cache-ccache
         uses: nashif/action-s3-cache@master
+        continue-on-error: true
         with:
           key: ${{ steps.ccache_cache_timestamp.outputs.repo }}-${{ github.ref_name }}-${{github.event_name}}-${{ matrix.subset }}-ccache
           path: /github/home/.ccache

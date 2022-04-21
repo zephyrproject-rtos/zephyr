@@ -95,6 +95,11 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     log_backend_spinel.c
   )
 
+  zephyr_sources_ifdef(
+    CONFIG_LOG_FRONTEND_DICT_UART
+    log_frontend_dict_uart.c
+  )
+
   if(CONFIG_LOG_DICTIONARY_SUPPORT)
     zephyr_sources(log_output_dict.c)
   endif()
@@ -105,12 +110,12 @@ endif()
 
 if(CONFIG_LOG2_MODE_IMMEDIATE OR CONFIG_LOG2_MODE_DEFERRED)
   message(WARNING "CONFIG_LOG2_MODE_{IMMEDIATE,DEFERRED} is deprecated. Please \
-￼                  use CONFIG_LOG_MODE_{IMMEDIATE,DEFERRED} which defaults to v2"
-￼         )
+                   use CONFIG_LOG_MODE_{IMMEDIATE,DEFERRED} which defaults to v2"
+          )
 endif()
 
 if(CONFIG_LOG1)
   message(WARNING "Logging v1 has been deprecated. Use v2 instead and adapt \
                    custom backend to the new backend API"
-￼         )
+          )
 endif()

@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <autoconf.h>
 #include <linker/sections.h>
 #include <devicetree.h>
 

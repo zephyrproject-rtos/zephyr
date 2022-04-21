@@ -6,6 +6,7 @@
 
 #include <fs/fs.h>
 #include <errno.h>
+#include <mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
 #include <fs_mgmt/fs_mgmt_impl.h>
 
@@ -16,7 +17,12 @@ fs_mgmt_impl_filelen(const char *path, size_t *out_len)
 	int rc;
 
 	rc = fs_stat(path, &dirent);
-	if (rc != 0) {
+
+	if (rc == -EINVAL) {
+		return MGMT_ERR_EINVAL;
+	} else if (rc == -ENOENT) {
+		return MGMT_ERR_ENOENT;
+	} else if (rc != 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
 

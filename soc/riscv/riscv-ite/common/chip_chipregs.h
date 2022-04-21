@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -694,12 +694,9 @@ struct pwm_it8xxx2_regs {
 
 /* TODO: should a defined interface for configuring wake-up interrupts */
 #define IT8XXX2_WUC_WUEMR1 (IT8XXX2_WUC_BASE + 0x00)
-#define IT8XXX2_WUC_WUEMR3 (IT8XXX2_WUC_BASE + 0x02)
 #define IT8XXX2_WUC_WUEMR5 (IT8XXX2_WUC_BASE + 0x0c)
 #define IT8XXX2_WUC_WUESR1 (IT8XXX2_WUC_BASE + 0x04)
-#define IT8XXX2_WUC_WUESR3 (IT8XXX2_WUC_BASE + 0x06)
 #define IT8XXX2_WUC_WUESR5 (IT8XXX2_WUC_BASE + 0x0d)
-#define IT8XXX2_WUC_WUENR3 (IT8XXX2_WUC_BASE + 0x0a)
 #define IT8XXX2_WUC_WUBEMR1 (IT8XXX2_WUC_BASE + 0x3c)
 #define IT8XXX2_WUC_WUBEMR5 (IT8XXX2_WUC_BASE + 0x0f)
 
@@ -863,6 +860,10 @@ struct wdt_it8xxx2_regs {
 
 /* External Timer register fields */
 /* External Timer 3~8 control */
+#define IT8XXX2_EXT_ETX_COMB_RST_EN	(IT8XXX2_EXT_ETXCOMB | \
+					 IT8XXX2_EXT_ETXRST | \
+					 IT8XXX2_EXT_ETXEN)
+#define IT8XXX2_EXT_ETXCOMB		BIT(3)
 #define IT8XXX2_EXT_ETXRST		BIT(1)
 #define IT8XXX2_EXT_ETXEN		BIT(0)
 
@@ -897,8 +898,8 @@ enum ext_clk_src_sel {
 enum ext_timer_idx {
 	EXT_TIMER_3 = 0,	/* Event timer */
 	EXT_TIMER_4,		/* Free run timer */
-	EXT_TIMER_5,
-	EXT_TIMER_6,
+	EXT_TIMER_5,		/* Busy wait low timer */
+	EXT_TIMER_6,		/* Busy wait high timer */
 	EXT_TIMER_7,
 	EXT_TIMER_8,
 };
@@ -1510,6 +1511,14 @@ struct adc_it8xxx2_regs {
 #define IT8XXX2_ADC_VCHEN			BIT(4)
 /* Automatic hardware calibration enable */
 #define IT8XXX2_ADC_AHCE			BIT(7)
+/* 0x046, 0x049, 0x04c, 0x06e, 0x071, 0x074: Voltage comparator x control */
+#define IT8XXX2_VCMP_CMPEN			BIT(7)
+#define IT8XXX2_VCMP_CMPINTEN			BIT(6)
+#define IT8XXX2_VCMP_GREATER_THRESHOLD		BIT(5)
+#define IT8XXX2_VCMP_EDGE_TRIGGER		BIT(4)
+#define IT8XXX2_VCMP_GPIO_ACTIVE_LOW		BIT(3)
+/* 0x077~0x07c: Voltage comparator x channel select MSB */
+#define IT8XXX2_VCMP_VCMPXCSELM			BIT(0)
 
 /**
  *

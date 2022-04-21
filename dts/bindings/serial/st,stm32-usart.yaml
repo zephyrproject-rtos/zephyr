@@ -20,6 +20,12 @@ properties:
         only TX pin is used afterwards and should be configured.
         RX/TX conflicts must be handled on user side.
 
+    tx-rx-swap:
+      type: boolean
+      required: false
+      description: |
+        Swap the TX and RX pins. Used in case of a cross-wired connection.
+
     pinctrl-0:
       required: true
 

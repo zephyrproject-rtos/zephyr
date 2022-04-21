@@ -295,12 +295,10 @@ void npcx_clock_compensate_system_timer(void)
 			sys_clock_hw_cycles_per_sec()) / EVT_CYCLES_PER_SEC;
 }
 
-#if defined(CONFIG_NPCX_PM_TRACE)
 uint64_t npcx_clock_get_sleep_ticks(void)
 {
 	return  cyc_sys_compensated / SYS_CYCLES_PER_TICK;
 }
-#endif /* CONFIG_NPCX_PM_TRACE */
 #endif /* CONFIG_PM */
 
 static int sys_clock_driver_init(const struct device *dev)

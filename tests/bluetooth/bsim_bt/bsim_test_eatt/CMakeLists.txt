@@ -14,8 +14,10 @@ project(bsim_test_host)
 
 
 target_sources(app PRIVATE
-  src/main.c
+  src/common.c
   src/main_collision.c
+  src/main_autoconnect.c
+  src/main.c
 )
 
 

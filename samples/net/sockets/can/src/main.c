@@ -12,6 +12,10 @@ LOG_MODULE_REGISTER(net_socket_can_sample, LOG_LEVEL_DBG);
 #include <net/socket.h>
 #include <net/socket_can.h>
 
+#ifdef CONFIG_SAMPLE_SOCKETCAN_LOOPBACK_MODE
+#include <drivers/can.h>
+#endif
+
 #define PRIORITY  k_thread_priority_get(k_current_get())
 #define STACKSIZE 1024
 #define SLEEP_PERIOD K_SECONDS(1)
@@ -175,6 +179,10 @@ static int setup_socket(void)
 		LOG_ERR("No CANBUS network interface found!");
 		return -ENOENT;
 	}
+
+#ifdef CONFIG_SAMPLE_SOCKETCAN_LOOPBACK_MODE
+	can_set_mode(DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus)), CAN_LOOPBACK_MODE);
+#endif
 
 	fd = socket(AF_CAN, SOCK_RAW, CAN_RAW);
 	if (fd < 0) {

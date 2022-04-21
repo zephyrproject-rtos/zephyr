@@ -10,6 +10,7 @@
 #include <inttypes.h>
 #include "img_mgmt_config.h"
 #include "mgmt/mgmt.h"
+#include <zcbor_common.h>
 
 struct image_version;
 
@@ -29,7 +30,8 @@ extern "C" {
 #define IMG_MGMT_STATE_F_ACTIVE		0x04
 #define IMG_MGMT_STATE_F_PERMANENT	0x08
 
-#define IMG_MGMT_VER_MAX_STR_LEN	25  /* 255.255.65535.4294967295\0 */
+/* 255.255.65535.4294967295\0 */
+#define IMG_MGMT_VER_MAX_STR_LEN	(sizeof("255.255.65535.4294967295"))
 
 /*
  * Swap Types for image management state machine
@@ -64,10 +66,8 @@ struct img_mgmt_upload_req {
 	unsigned long long image;	/* 0 by default */
 	unsigned long long off;		/* -1 if unspecified */
 	unsigned long long size;	/* -1 if unspecified */
-	size_t data_len;
-	size_t data_sha_len;
-	uint8_t img_data[CONFIG_IMG_MGMT_UL_CHUNK_SIZE];
-	uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
+	struct zcbor_string img_data;
+	struct zcbor_string data_sha;
 	bool upgrade;			/* Only allow greater version numbers. */
 };
 
@@ -143,7 +143,7 @@ int img_mgmt_my_version(struct image_version *ver);
  * @param dst		   Destination string created from the given
  *					  in image version
  *
- * @return 0 on success, non-zero on failure
+ * @return Non-negative on success, negative value on error.
  */
 int img_mgmt_ver_str(const struct image_version *ver, char *dst);
 

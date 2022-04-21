@@ -1922,7 +1922,7 @@ static void test_dep_ord(void)
 	};
 	zassert_equal(ARRAY_SIZE(children_combined_ords),
 		      ARRAY_SIZE(children_combined_ords_expected),
-		      "%u", ARRAY_SIZE(children_combined_ords));
+		      "%zu", ARRAY_SIZE(children_combined_ords));
 	for (i = 0; i < ARRAY_SIZE(children_combined_ords); i++) {
 		zassert_equal(children_combined_ords[i],
 			      children_combined_ords_expected[i],
@@ -1949,7 +1949,7 @@ static void test_dep_ord(void)
 	};
 	zassert_equal(ARRAY_SIZE(child_a_combined_ords),
 		      ARRAY_SIZE(child_a_combined_ords_expected),
-		      "%u", ARRAY_SIZE(child_a_combined_ords));
+		      "%zu", ARRAY_SIZE(child_a_combined_ords));
 	for (i = 0; i < ARRAY_SIZE(child_a_combined_ords); i++) {
 		zassert_equal(child_a_combined_ords[i],
 			      child_a_combined_ords_expected[i],
@@ -1994,6 +1994,13 @@ static void test_node_name(void)
 			     "temperature-sensor"), "");
 	zassert_true(strcmp(DT_NODE_FULL_NAME(TEST_REG),
 			     "reg-holder"), "");
+}
+
+static void test_node_child_idx(void)
+{
+	zassert_equal(DT_NODE_CHILD_IDX(DT_NODELABEL(test_child_a)), 0, "");
+	zassert_equal(DT_NODE_CHILD_IDX(DT_NODELABEL(test_child_b)), 1, "");
+	zassert_equal(DT_NODE_CHILD_IDX(DT_NODELABEL(test_child_c)), 2, "");
 }
 
 static void test_same_node(void)
@@ -2184,24 +2191,24 @@ static void test_mbox(void)
 	zassert_equal(channel_tx.id, 1, "");
 	zassert_equal(channel_rx.id, 2, "");
 
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, tx), 1, "");
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, rx), 2, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, tx), 1, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, rx), 2, "");
 
-	zassert_true(DT_SAME_NODE(MBOX_DT_CTLR_BY_NAME(TEST_TEMP, tx),
+	zassert_true(DT_SAME_NODE(DT_MBOX_CTLR_BY_NAME(TEST_TEMP, tx),
 				  DT_NODELABEL(test_mbox)), "");
-	zassert_true(DT_SAME_NODE(MBOX_DT_CTLR_BY_NAME(TEST_TEMP, rx),
+	zassert_true(DT_SAME_NODE(DT_MBOX_CTLR_BY_NAME(TEST_TEMP, rx),
 				  DT_NODELABEL(test_mbox)), "");
 
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, tx), 1, "");
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, rx), 2, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, tx), 1, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, rx), 2, "");
 
 	const struct mbox_channel channel_zero = MBOX_DT_CHANNEL_GET(TEST_TEMP, zero);
 
 	zassert_equal(channel_zero.id, 0, "");
 
-	zassert_equal(MBOX_DT_CHANNEL_ID_BY_NAME(TEST_TEMP, zero), 0, "");
+	zassert_equal(DT_MBOX_CHANNEL_BY_NAME(TEST_TEMP, zero), 0, "");
 
-	zassert_true(DT_SAME_NODE(MBOX_DT_CTLR_BY_NAME(TEST_TEMP, zero),
+	zassert_true(DT_SAME_NODE(DT_MBOX_CTLR_BY_NAME(TEST_TEMP, zero),
 				  DT_NODELABEL(test_mbox_zero_cell)), "");
 }
 
@@ -2250,6 +2257,80 @@ static void test_string_token(void)
 	}
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+static void test_reset(void)
+{
+	/* DT_RESET_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_RESET_CTLR_BY_IDX(TEST_TEMP, 1),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_RESET_CTLR */
+	zassert_true(DT_SAME_NODE(DT_RESET_CTLR(TEST_TEMP),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_RESET_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_RESET_CTLR_BY_NAME(TEST_TEMP, reset_b),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_RESET_CELL_BY_IDX */
+	zassert_equal(DT_RESET_CELL_BY_IDX(TEST_TEMP, 1, id), 20, "");
+	zassert_equal(DT_RESET_CELL_BY_IDX(TEST_TEMP, 0, id), 10, "");
+
+	/* DT_RESET_CELL_BY_NAME */
+	zassert_equal(DT_RESET_CELL_BY_NAME(TEST_TEMP, reset_a, id), 10, "");
+	zassert_equal(DT_RESET_CELL_BY_NAME(TEST_TEMP, reset_b, id), 20, "");
+
+	/* DT_RESET_CELL */
+	zassert_equal(DT_RESET_CELL(TEST_TEMP, id), 10, "");
+
+	/* reg-width on reset */
+	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_TEMP, resets, 1, reg_width), 4, "");
+
+	/* DT_INST */
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
+
+	/* DT_INST_RESET_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_INST_RESET_CTLR_BY_IDX(0, 1),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_INST_RESET_CTLR */
+	zassert_true(DT_SAME_NODE(DT_INST_RESET_CTLR(0),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_INST_RESET_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_INST_RESET_CTLR_BY_NAME(0, reset_b),
+				  DT_NODELABEL(test_reset)), "");
+
+	/* DT_INST_RESET_CELL_BY_IDX */
+	zassert_equal(DT_INST_RESET_CELL_BY_IDX(0, 1, id), 20, "");
+	zassert_equal(DT_INST_RESET_CELL_BY_IDX(0, 0, id), 10, "");
+
+	/* DT_INST_RESET_CELL_BY_NAME */
+	zassert_equal(DT_INST_RESET_CELL_BY_NAME(0, reset_a, id), 10, "");
+	zassert_equal(DT_INST_RESET_CELL_BY_NAME(0, reset_b, id), 20, "");
+
+	/* DT_INST_RESET_CELL */
+	zassert_equal(DT_INST_RESET_CELL(0, id), 10, "");
+
+	/* reg-width on reset */
+	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, resets, 1, reg_width), 4, "");
+
+	/* DT_RESET_ID_BY_IDX */
+	zassert_equal(DT_RESET_ID_BY_IDX(TEST_TEMP, 0), 10, "");
+	zassert_equal(DT_RESET_ID_BY_IDX(TEST_TEMP, 1), 20, "");
+
+	/* DT_RESET_ID */
+	zassert_equal(DT_RESET_ID(TEST_TEMP), 10, "");
+
+	/* DT_INST_RESET_ID_BY_IDX */
+	zassert_equal(DT_INST_RESET_ID_BY_IDX(0, 0), 10, "");
+	zassert_equal(DT_INST_RESET_ID_BY_IDX(0, 1), 20, "");
+
+	/* DT_INST_RESET_ID */
+	zassert_equal(DT_INST_RESET_ID(0), 10, "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -2295,10 +2376,12 @@ void test_main(void)
 			 ztest_unit_test(test_dep_ord),
 			 ztest_unit_test(test_path),
 			 ztest_unit_test(test_node_name),
+			 ztest_unit_test(test_node_child_idx),
 			 ztest_unit_test(test_same_node),
 			 ztest_unit_test(test_pinctrl),
 			 ztest_unit_test(test_mbox),
-			 ztest_unit_test(test_string_token)
+			 ztest_unit_test(test_string_token),
+			 ztest_unit_test(test_reset)
 		);
 	ztest_run_test_suite(devicetree_api);
 }

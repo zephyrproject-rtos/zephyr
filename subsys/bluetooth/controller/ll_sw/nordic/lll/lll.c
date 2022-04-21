@@ -573,6 +573,7 @@ void lll_isr_cleanup(void *param)
 	}
 
 	radio_tmr_stop();
+	radio_stop();
 
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);

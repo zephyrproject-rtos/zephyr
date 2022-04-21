@@ -14,6 +14,4 @@ tests:
           - nrf5340dk_nrf5340_cpuapp
         build_only: true
         extra_args: OVERLAY_CONFIG="boards/nrf5340dk_nrf5340_cpuapp_mbox.conf"
-          DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_mbox.overlay"
           NET_OVERLAY_CONF="boards/nrf5340dk_nrf5340_cpunet_mbox.conf"
-          NET_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpunet_mbox.overlay"

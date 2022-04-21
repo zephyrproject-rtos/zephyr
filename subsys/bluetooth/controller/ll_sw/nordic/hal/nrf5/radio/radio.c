@@ -229,6 +229,11 @@ void radio_reset(void)
 #endif
 }
 
+void radio_stop(void)
+{
+	hal_radio_stop();
+}
+
 void radio_phy_set(uint8_t phy, uint8_t flags)
 {
 	uint32_t mode;
@@ -246,13 +251,31 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 void radio_tx_power_set(int8_t power)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	uint32_t value;
+
+	/* NOTE: TXPOWER register only accepts upto 0dBm, hence use the HAL
+	 * floor value for the TXPOWER register. Permit +3dBm by using high
+	 * voltage being set for radio.
+	 */
+	value = hal_radio_tx_power_floor(power);
+	NRF_RADIO->TXPOWER = value;
+	hal_radio_tx_power_high_voltage_set(power);
+
+#else /* !CONFIG_SOC_SERIES_NRF53X */
+
 	/* NOTE: valid value range is passed by Kconfig define. */
 	NRF_RADIO->TXPOWER = (uint32_t)power;
+
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
 }
 
 void radio_tx_power_max_set(void)
 {
-	NRF_RADIO->TXPOWER = hal_radio_tx_power_max_get();
+	int8_t power;
+
+	power = radio_tx_power_max_get();
+	radio_tx_power_set(power);
 }
 
 int8_t radio_tx_power_min_get(void)
@@ -262,11 +285,26 @@ int8_t radio_tx_power_min_get(void)
 
 int8_t radio_tx_power_max_get(void)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	return RADIO_TXPOWER_TXPOWER_Pos3dBm;
+
+#else /* !CONFIG_SOC_SERIES_NRF53X */
 	return (int8_t)hal_radio_tx_power_max_get();
+
+#endif /* !CONFIG_SOC_SERIES_NRF53X */
 }
 
 int8_t radio_tx_power_floor(int8_t power)
 {
+#if defined(CONFIG_SOC_SERIES_NRF53X)
+	/* NOTE: TXPOWER register only accepts upto 0dBm, +3dBm permitted by
+	 * use of high voltage being set for radio when TXPOWER register is set.
+	 */
+	if (power >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
+		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
+	}
+#endif /* CONFIG_SOC_SERIES_NRF53X */
+
 	return (int8_t)hal_radio_tx_power_floor(power);
 }
 
@@ -717,12 +755,26 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		/* RX */
 
 		/* Calculate delay with respect to current and next PHY. */
-		delay = HAL_RADIO_NS2US_CEIL(
-			hal_radio_rx_ready_delay_ns_get(phy_next, flags_next) +
-			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
-			(EVENT_CLOCK_JITTER_US << 1);
+		if (dir_curr) {
+			delay = HAL_RADIO_NS2US_CEIL(
+				hal_radio_rx_ready_delay_ns_get(phy_next,
+								flags_next) +
+				hal_radio_tx_chain_delay_ns_get(phy_curr,
+								flags_curr)) +
+				(EVENT_CLOCK_JITTER_US << 1);
 
-		hal_radio_rxen_on_sw_switch(ppi);
+			hal_radio_rxen_on_sw_switch(ppi);
+		} else {
+			delay = HAL_RADIO_NS2US_CEIL(
+				hal_radio_rx_ready_delay_ns_get(phy_next,
+								flags_next) +
+				hal_radio_rx_chain_delay_ns_get(phy_curr,
+								flags_curr)) +
+				(EVENT_CLOCK_JITTER_US << 1);
+
+			hal_radio_b2b_rxen_on_sw_switch(ppi);
+		}
+
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 		hal_radio_sw_switch_phyend_delay_compensation_config_clear(radio_enable_ppi,
@@ -835,6 +887,21 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
 
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
+		  END_EVT_DELAY_DISABLED);
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
+				      uint8_t phy_next, uint8_t flags_next)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
+			    RADIO_SHORTS_END_DISABLE_Msk |
+			    RADIO_SHORTS_DISABLED_RXEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_PDU_END_DISABLE;
+
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }

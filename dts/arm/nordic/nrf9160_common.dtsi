@@ -7,6 +7,7 @@
 flash_controller: flash-controller@39000 {
 	compatible = "nordic,nrf91-flash-controller";
 	reg = <0x39000 0x1000>;
+	partial-erase;
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -77,6 +78,14 @@ egu5: egu@20000 {
 	reg = <0x20000 0x1000>;
 	interrupts = <32 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
+};
+
+ipc: ipc@2a000 {
+	compatible = "nordic,nrf-ipc";
+	reg = <0x2a000 0x1000>;
+	interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "okay";
+	label = "IPC";
 };
 
 i2s0: i2s@28000 {
@@ -356,7 +365,7 @@ power: power@5000 {
 };
 
 wdt: wdt0: watchdog@18000 {
-	compatible = "nordic,nrf-watchdog";
+	compatible = "nordic,nrf-wdt";
 	reg = <0x18000 0x1000>;
 	interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";

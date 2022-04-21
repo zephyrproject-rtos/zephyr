@@ -102,10 +102,6 @@ static int pwm_npcx_pin_set(const struct device *dev, uint32_t pwm,
 	uint32_t dcr;
 	uint32_t prsc;
 
-	if (pulse_cycles > period_cycles) {
-		return -EINVAL;
-	}
-
 	ctl = inst->PWMCTL | BIT(NPCX_PWMCTL_PWR);
 
 	/* Select PWM inverted polarity (ie. active-low pulse). */

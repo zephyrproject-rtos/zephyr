@@ -203,12 +203,15 @@ config BT_MESH_PROXY_USE_DEVICE_NAME
 
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
-	default 3
+	default 16
 	range 1 32767
 	depends on BT_MESH_GATT_PROXY
 	help
 	  This option specifies how many Proxy Filter entries the local
-	  node supports.
+	  node supports. This helps in reducing unwanted traffic getting sent to
+	  the proxy client. This value is application specific and should be large
+	  enough so that proxy client can communicate with several devices through
+	  this proxy server node using the default accept list filter type.
 
 endif # BT_CONN
 
@@ -288,13 +291,17 @@ config BT_MESH_CRPL
 
 config BT_MESH_MSG_CACHE_SIZE
 	int "Network message cache size"
-	default 10
+	default 32
 	range 2 65535
 	help
-	  Number of messages that are cached for the network. This helps
-	  prevent unnecessary decryption operations and unnecessary
-	  relays. This option is similar to the replay protection list,
-	  but has a different purpose.
+	  Number of messages that are cached by the node to avoid acting on the
+	  recently seen duplicate messages. This option is similar to
+	  the replay protection list, but has a different purpose. Network message
+	  cache helps prevent unnecessary decryption operations. This also prevents
+	  unnecessary relaying and helps in getting rid of relay loops. Setting
+	  this value to a very low number can cause unnecessary network traffic.
+	  Setting this value to a very large number can impact the processing time
+	  for each received network PDU and increases RAM footprint proportionately.
 
 config BT_MESH_ADV_BUF_COUNT
 	int "Number of advertising buffers"
@@ -769,10 +776,34 @@ config BT_MESH_CFG_CLI
 	help
 	  Enable support for the configuration client model.
 
+if BT_MESH_CFG_CLI
+
+config BT_MESH_CFG_CLI_TIMEOUT
+	int "Config Client model timeout in milliseconds"
+	default 5000
+	help
+	  This timeout controls how long config client waits for a response
+	  message to arrive. This value can be changed at runtime using
+	  @ref bt_mesh_cfg_cli_timeout_set.
+
+endif # BT_MESH_CFG_CLI
+
 config BT_MESH_HEALTH_CLI
 	bool "Support for Health Client Model"
 	help
 	  Enable support for the health client model.
+
+if BT_MESH_HEALTH_CLI
+
+config BT_MESH_HEALTH_CLI_TIMEOUT
+	int "Health Client model timeout in milliseconds"
+	default 2000
+	help
+	  This timeout controls how long health client waits for a response
+	  message to arrive. This value can be changed at runtime using
+	  @ref bt_mesh_health_cli_timeout_set.
+
+endif # BT_MESH_HEALTH_CLI
 
 config BT_MESH_SHELL
 	bool "Bluetooth mesh shell"
@@ -833,6 +864,9 @@ config BT_MESH_RPL_STORE_TIMEOUT
 	  stored by @ref BT_MESH_STORE_TIMEOUT. Finding the right balance
 	  between this timeout and calling @ref bt_mesh_rpl_pending_store
 	  may reduce a risk of security vulnerability and flash wear out.
+	  Failure to store the RPL and becoming vulnerable after reboot
+	  will cause the device to not perform the replay protection
+	  required by the spec.
 
 endif # BT_SETTINGS
 

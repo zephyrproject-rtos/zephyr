@@ -334,13 +334,13 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
 	pthread_mutex_lock(&pthread_key_lock);
 
-	if (*once == PTHREAD_ONCE_INIT) {
+	if (*once != PTHREAD_ONCE_INIT) {
 		pthread_mutex_unlock(&pthread_key_lock);
 		return 0;
 	}
 
 	init_func();
-	*once = PTHREAD_ONCE_INIT;
+	*once = 0;
 
 	pthread_mutex_unlock(&pthread_key_lock);
 
@@ -550,6 +550,25 @@ int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
 	*stacksize = attr->stacksize;
 	return 0;
 
+}
+
+/**
+ * @brief Set stack size attribute in thread attributes object.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
+{
+	if ((attr == NULL) || (attr->initialized == 0U)) {
+		return EINVAL;
+	}
+
+	if (stacksize < PTHREAD_STACK_MIN) {
+		return EINVAL;
+	}
+
+	attr->stacksize = stacksize;
+	return 0;
 }
 
 /**

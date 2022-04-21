@@ -2,6 +2,8 @@ sample:
   name: Fat filesystem sample
 common:
   tags: filesystem
+  modules:
+    - fatfs
 tests:
   sample.filesystem.fat_fs:
     depends_on: sdhc

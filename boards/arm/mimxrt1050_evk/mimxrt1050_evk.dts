@@ -6,7 +6,8 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt1050.dtsi>
+#include "mimxrt1050_evk-pinctrl.dtsi"
 
 / {
 	model = "NXP MIMXRT1050-EVK board";
@@ -92,16 +93,24 @@
 	};
 };
 
-arduino_serial: &lpuart3 {};
+arduino_serial: &lpuart3 {
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
 
 &adc1 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_adc1>;
+	pinctrl-names = "default";
 };
 
 &flexspi {
 	status = "okay";
 	ahb-prefetch;
 	ahb-read-addr-opt;
+	pinctrl-0 = <&pinmux_flexspi1>;
+	pinctrl-names = "default";
 	ahb-bufferable;
 	ahb-cacheable;
 	sck-differential-clock;
@@ -167,6 +176,9 @@ arduino_serial: &lpuart3 {};
 	polarity = <3>;
 	pixel-format = "bgr-565";
 	data-buswidth = "16-bit";
+	pinctrl-0 = <&pinmux_lcdif>;
+	pinctrl-names = "default";
+	backlight-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
 	port {
 		lcd_panel_out: endpoint {
 			remote-endpoint = <&lcd_panel_in>;
@@ -176,6 +188,8 @@ arduino_serial: &lpuart3 {};
 
 &lpi2c1 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
 
 	fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -202,6 +216,9 @@ arduino_serial: &lpuart3 {};
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &lpspi1 {
@@ -209,6 +226,8 @@ arduino_serial: &lpuart3 {};
 	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
 	dmas = <&edma0 0 13>, <&edma0 1 14>;
 	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
 };
 
 &lpspi3 {
@@ -216,11 +235,19 @@ arduino_serial: &lpuart3 {};
 	/* DMA channels 2 and 3, muxed to LPSPI3 RX and TX */
 	dmas = <&edma0 2 15>, <&edma0 3 16>;
 	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi3>;
+	pinctrl-names = "default";
 };
 
 &enet {
 	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	int-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 	ptp {
+		pinctrl-0 = <&pinmux_ptp>;
+		pinctrl-names = "default";
 		status = "okay";
 	};
 };
@@ -234,6 +261,11 @@ zephyr_udc0: &usb1 {
 	no-1-8-v;
 	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
 };
 
 &wdog0 {

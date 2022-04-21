@@ -250,6 +250,7 @@ static int i2c_enhance_configure(const struct device *dev,
 				 uint32_t dev_config_raw)
 {
 	const struct i2c_enhance_config *config = dev->config;
+	struct i2c_enhance_data *const data = dev->data;
 
 	if (!(I2C_MODE_MASTER & dev_config_raw)) {
 		return -EINVAL;
@@ -258,6 +259,8 @@ static int i2c_enhance_configure(const struct device *dev,
 	if (I2C_ADDR_10_BITS & dev_config_raw) {
 		return -EINVAL;
 	}
+
+	data->bus_freq = I2C_SPEED_GET(dev_config_raw);
 
 	i2c_enhanced_port_set_frequency(dev, config->bitrate);
 
@@ -275,14 +278,11 @@ static int i2c_enhance_get_config(const struct device *dev, uint32_t *dev_config
 	}
 
 	switch (data->bus_freq) {
+	case I2C_SPEED_DT:
 	case I2C_SPEED_STANDARD:
-		speed = I2C_SPEED_SET(I2C_SPEED_STANDARD);
-		break;
 	case I2C_SPEED_FAST:
-		speed = I2C_SPEED_SET(I2C_SPEED_FAST);
-		break;
 	case I2C_SPEED_FAST_PLUS:
-		speed = I2C_SPEED_SET(I2C_SPEED_FAST_PLUS);
+		speed = I2C_SPEED_SET(data->bus_freq);
 		break;
 	default:
 		return -ERANGE;
@@ -620,7 +620,15 @@ static int i2c_enhance_init(const struct device *dev)
 	IT8XXX2_I2C_CTR1(base) = 0;
 
 	/* Set clock frequency for I2C ports */
-	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
+	if (config->bitrate == I2C_BITRATE_STANDARD ||
+		config->bitrate == I2C_BITRATE_FAST ||
+		config->bitrate == I2C_BITRATE_FAST_PLUS) {
+		bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
+	} else {
+		/* Device tree specified speed */
+		bitrate_cfg = I2C_SPEED_DT << I2C_SPEED_SHIFT;
+	}
+
 	error = i2c_enhance_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	data->i2ccs = I2C_CH_NORMAL;
 
@@ -717,6 +725,14 @@ static const struct i2c_driver_api i2c_enhance_driver_api = {
 };
 
 #define I2C_ITE_ENHANCE_INIT(inst)                                              \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) ==                    \
+		     50000) ||                                                  \
+		     (DT_INST_PROP(inst, clock_frequency) ==                    \
+		     I2C_BITRATE_STANDARD) ||                                   \
+		     (DT_INST_PROP(inst, clock_frequency) ==                    \
+		     I2C_BITRATE_FAST) ||                                       \
+		     (DT_INST_PROP(inst, clock_frequency) ==                    \
+		     I2C_BITRATE_FAST_PLUS), "Not support I2C bit rate value"); \
 	static void i2c_enhance_config_func_##inst(void);                       \
 	static const struct i2c_alts_cfg                                        \
 		i2c_alts_##inst[DT_INST_NUM_PINCTRLS_BY_IDX(inst, 0)] =         \

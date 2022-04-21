@@ -31,7 +31,8 @@ config HWINFO_STM32
 config HWINFO_NRF
 	bool "NRF device ID"
 	default y
-	depends on SOC_FAMILY_NRF && !TRUSTED_EXECUTION_NONSECURE
+	depends on SOC_FAMILY_NRF
+	depends on NRF_SOC_SECURE_SUPPORTED
 	help
 	  Enable Nordic NRF hwinfo driver.
 

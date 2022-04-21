@@ -32,7 +32,7 @@
 GEN_OFFSET_SYM(_thread_arch_t, basepri);
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
 GEN_OFFSET_SYM(_thread_arch_t, mode);
 #endif
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)

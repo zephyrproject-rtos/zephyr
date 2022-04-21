@@ -542,7 +542,7 @@ static int can_register_receiver(struct net_if *iface, struct net_context *ctx,
 {
 	int i;
 
-	NET_DBG("Max %lu receivers", ARRAY_SIZE(receivers));
+	NET_DBG("Max %zu receivers", ARRAY_SIZE(receivers));
 
 	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
 		if (receivers[i].ctx != NULL) {

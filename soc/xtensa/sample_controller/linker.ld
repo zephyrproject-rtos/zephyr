@@ -10,7 +10,6 @@
  * Linker script for the Xtensa platform.
  */
 
-#include <autoconf.h>
 #include <linker/sections.h>
 
 #include <devicetree.h>

@@ -155,8 +155,10 @@ static void set_sm_state(uint8_t sm_state)
 		    sm_state == ENGINE_DEREGISTERED) &&
 		   (client.engine_state >= ENGINE_DO_REGISTRATION &&
 		    client.engine_state <= ENGINE_DEREGISTER_SENT)) {
+		lwm2m_engine_context_close(client.ctx);
 		event = LWM2M_RD_CLIENT_EVENT_DISCONNECT;
 	} else if (sm_state == ENGINE_NETWORK_ERROR) {
+		lwm2m_engine_context_close(client.ctx);
 		client.retry_delay = 1 << client.retries;
 		client.retries++;
 		if (client.retries > CONFIG_LWM2M_RD_CLIENT_MAX_RETRIES) {
@@ -231,6 +233,7 @@ static void sm_handle_failure_state(enum sm_engine_state sm_state)
 		event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
 	}
 
+	lwm2m_engine_context_close(client.ctx);
 	set_sm_state(sm_state);
 
 	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.event_cb) {
@@ -456,7 +459,6 @@ static int do_deregister_reply_cb(const struct coap_packet *response,
 
 	if (code == COAP_RESPONSE_CODE_DELETED) {
 		LOG_INF("Deregistration success");
-		lwm2m_engine_context_close(client.ctx);
 		set_sm_state(ENGINE_DEREGISTERED);
 		return 0;
 	}
@@ -678,7 +680,6 @@ static int sm_do_bootstrap_reg(void)
 		set_sm_state(ENGINE_BOOTSTRAP_REG_SENT);
 	} else {
 		LOG_ERR("Bootstrap registration err: %d", ret);
-		lwm2m_engine_context_close(client.ctx);
 		set_sm_state(ENGINE_NETWORK_ERROR);
 	}
 
@@ -896,7 +897,6 @@ static int sm_do_registration(void)
 		set_sm_state(ENGINE_REGISTRATION_SENT);
 	} else {
 		LOG_ERR("Registration err: %d", ret);
-		lwm2m_engine_context_close(client.ctx);
 		set_sm_state(ENGINE_NETWORK_ERROR);
 	}
 
@@ -951,7 +951,8 @@ static int sm_do_deregister(void)
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
 		LOG_ERR("Unable to get a lwm2m message!");
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto close_ctx;
 	}
 
 	msg->type = COAP_TYPE_CON;
@@ -992,7 +993,9 @@ static int sm_do_deregister(void)
 
 cleanup:
 	lwm2m_reset_message(msg, true);
+close_ctx:
 	lwm2m_engine_context_close(client.ctx);
+	set_sm_state(ENGINE_DEREGISTERED);
 	return ret;
 }
 
@@ -1129,17 +1132,26 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 	if (sm_is_registered() && deregister) {
 		set_sm_state(ENGINE_DEREGISTER);
 	} else {
-		set_sm_state(ENGINE_IDLE);
+		set_sm_state(ENGINE_DEREGISTERED);
 	}
 
 	LOG_INF("Stop LWM2M Client: %s", log_strdup(client.ep_name));
 
 	k_mutex_unlock(&client.mutex);
+
+	while (get_sm_state() != ENGINE_IDLE) {
+		k_sleep(K_MSEC(STATE_MACHINE_UPDATE_INTERVAL_MS / 2));
+	}
 }
 
 void lwm2m_rd_client_update(void)
 {
 	engine_trigger_update(false);
+}
+
+struct lwm2m_ctx *lwm2m_rd_client_ctx(void)
+{
+	return client.ctx;
 }
 
 static int lwm2m_rd_client_init(const struct device *dev)

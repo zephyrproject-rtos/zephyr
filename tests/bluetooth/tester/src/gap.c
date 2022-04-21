@@ -254,6 +254,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, GAP_OOB_SC_GET_LOCAL_DATA);
 	tester_set_bit(cmds, GAP_OOB_SC_SET_REMOTE_DATA);
 #endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
+	tester_set_bit(cmds, GAP_SET_FILTER_LIST);
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -808,19 +809,32 @@ static void stop_discovery(const uint8_t *data, uint16_t len)
 
 static void connect(const uint8_t *data, uint16_t len)
 {
-	struct bt_conn *conn;
+	const bt_addr_le_t *addr = (const bt_addr_le_t *)data;
 	uint8_t status;
 	int err;
 
-	err = bt_conn_le_create((bt_addr_le_t *) data, BT_CONN_LE_CREATE_CONN,
-				 BT_LE_CONN_PARAM_DEFAULT, &conn);
-	if (err) {
-		LOG_ERR("Failed to create connection (%d)", err);
-		status = BTP_STATUS_FAILED;
-		goto rsp;
+	if (bt_addr_le_cmp(addr, BT_ADDR_LE_ANY) != 0) {
+		struct bt_conn *conn;
+
+		err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+					BT_LE_CONN_PARAM_DEFAULT, &conn);
+		if (err) {
+			LOG_ERR("Failed to create connection (%d)", err);
+			status = BTP_STATUS_FAILED;
+			goto rsp;
+		}
+
+		bt_conn_unref(conn);
+	} else {
+		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN,
+					     BT_LE_CONN_PARAM_DEFAULT);
+		if (err) {
+			LOG_ERR("Failed to create auto connection (%d)", err);
+			status = BTP_STATUS_FAILED;
+			goto rsp;
+		}
 	}
 
-	bt_conn_unref(conn);
 	status = BTP_STATUS_SUCCESS;
 
 rsp:
@@ -943,6 +957,11 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 #endif
 }
 
+static struct bt_conn_auth_info_cb auth_info_cb = {
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
+};
+
 static void set_io_cap(const uint8_t *data, uint16_t len)
 {
 	const struct gap_set_io_cap_cmd *cmd = (void *) data;
@@ -984,8 +1003,6 @@ static void set_io_cap(const uint8_t *data, uint16_t len)
 	}
 
 	cb.pairing_accept = auth_pairing_accept;
-	cb.pairing_failed = auth_pairing_failed;
-	cb.pairing_complete = auth_pairing_complete;
 
 	if (bt_conn_auth_cb_register(&cb)) {
 		status = BTP_STATUS_FAILED;
@@ -1176,6 +1193,35 @@ static void set_oob_legacy_data(const uint8_t *data, uint16_t len)
 		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
 }
 
+static void set_filter_list(const uint8_t *data, uint16_t len)
+{
+	const struct gap_set_filter_list *cmd = (const void *) data;
+	uint8_t status;
+	int err;
+
+	if (len < sizeof(*cmd) ||
+	    len != (sizeof(*cmd) + (cmd->cnt * sizeof(cmd->addr[0])))) {
+		status = BTP_STATUS_FAILED;
+		goto failed;
+	}
+
+	(void)bt_le_filter_accept_list_clear();
+
+	for (int i = 0; i < cmd->cnt; i++) {
+		err = bt_le_filter_accept_list_add(&cmd->addr[i]);
+		if (err < 0) {
+			status = BTP_STATUS_FAILED;
+			goto failed;
+		}
+	}
+
+	status = BTP_STATUS_SUCCESS;
+
+failed:
+	tester_rsp(BTP_SERVICE_ID_GAP, GAP_SET_FILTER_LIST,
+		   CONTROLLER_INDEX, status);
+}
+
 void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		       uint16_t len)
 {
@@ -1274,6 +1320,9 @@ void tester_handle_gap(uint8_t opcode, uint8_t index, uint8_t *data,
 		set_oob_sc_remote_data(data, len);
 		return;
 #endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
+	case GAP_SET_FILTER_LIST:
+		set_filter_list(data, len);
+		return;
 	default:
 		LOG_WRN("Unknown opcode: 0x%x", opcode);
 		tester_rsp(BTP_SERVICE_ID_GAP, opcode, index,
@@ -1316,6 +1365,7 @@ uint8_t tester_init_gap(void)
 	if (bt_conn_auth_cb_register(&cb)) {
 		return BTP_STATUS_FAILED;
 	}
+	bt_conn_auth_info_cb_register(&auth_info_cb);
 
 	err = bt_enable(tester_init_gap_cb);
 	if (err < 0) {

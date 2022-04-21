@@ -68,6 +68,17 @@
 		gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 		label = "Key out";
 	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 7>;
+		output-ohms = <1000000>;
+		full-ohms = <(1000000 + 1000000)>;
+	};
+};
+
+&adc {
+	status = "okay";
 };
 
 &gpiote {

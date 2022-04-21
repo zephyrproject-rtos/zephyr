@@ -258,6 +258,8 @@ static void simplelink_iface_init(struct net_if *iface)
 	/* Direct socket offload: */
 	socket_offload_dns_register(&simplelink_dns_ops);
 	simplelink_sockets_init();
+
+	net_if_socket_offload_set(iface, simplelink_socket_create);
 #endif
 
 }

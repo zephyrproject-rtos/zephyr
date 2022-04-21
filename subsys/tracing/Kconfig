@@ -160,6 +160,7 @@ config TRACING_BACKEND_RAM
 	  Use a ram buffer to output tracing data which can
 	  be dumped to a file at runtime with a debugger.
 	  See gdb dump binary memory documentation for example.
+endchoice
 
 config RAM_TRACING_BUFFER_SIZE
 	int "Ram Tracing buffer size"
@@ -169,7 +170,6 @@ config RAM_TRACING_BUFFER_SIZE
 	  Size of the RAM trace buffer. Trace will be discarded if the
 	  length is exceeded.
 
-endchoice
 
 config TRACING_BACKEND_UART_NAME
 	string "Device Name of UART Device for UART backend"
@@ -204,7 +204,6 @@ config TRACING_CMD_BUFFER_SIZE
 
 config TRACING_OBJECT_TRACKING
 	bool "Object tracking"
-	default n
 	help
 	  Keep lists to track kernel objects.
 

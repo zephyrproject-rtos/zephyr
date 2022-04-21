@@ -5,7 +5,7 @@ description: NXP i.MXRT USDHC module
 
 compatible: "nxp,imx-usdhc"
 
-include: mmc.yaml
+include: [mmc.yaml, pinctrl-device.yaml]
 
 properties:
     clocks:

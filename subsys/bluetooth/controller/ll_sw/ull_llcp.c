@@ -54,16 +54,13 @@ sys_slist_t tx_buffer_wait_list;
 static uint8_t common_tx_buffer_alloc;
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
-/* TODO: Determine 'correct' number of tx nodes */
 static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * LLCP_TX_CTRL_BUF_COUNT];
 static struct llcp_mem_pool mem_tx = { .pool = buffer_mem_tx };
 
-/* TODO: Determine 'correct' number of ctx */
 static uint8_t buffer_mem_local_ctx[PROC_CTX_BUF_SIZE *
 				    CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_local_ctx = { .pool = buffer_mem_local_ctx };
 
-/* TODO(thoh-ot): Determine 'correct' number of ctx */
 static uint8_t buffer_mem_remote_ctx[PROC_CTX_BUF_SIZE *
 				     CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_remote_ctx = { .pool = buffer_mem_remote_ctx };
@@ -240,14 +237,21 @@ void llcp_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 	ull_tx_q_enqueue_ctrl(&conn->tx_q, tx);
 }
 
-void llcp_tx_pause_data(struct ll_conn *conn)
+void llcp_tx_pause_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask pause_mask)
 {
-	ull_tx_q_pause_data(&conn->tx_q);
+	if ((conn->llcp.tx_q_pause_data_mask & pause_mask) == 0) {
+		conn->llcp.tx_q_pause_data_mask |= pause_mask;
+		ull_tx_q_pause_data(&conn->tx_q);
+	}
 }
 
-void llcp_tx_resume_data(struct ll_conn *conn)
+void llcp_tx_resume_data(struct ll_conn *conn, enum llcp_tx_q_pause_data_mask resume_mask)
 {
-	ull_tx_q_resume_data(&conn->tx_q);
+	conn->llcp.tx_q_pause_data_mask &= ~resume_mask;
+
+	if (conn->llcp.tx_q_pause_data_mask == 0) {
+		ull_tx_q_resume_data(&conn->tx_q);
+	}
 }
 
 void llcp_tx_flush(struct ll_conn *conn)
@@ -270,7 +274,6 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 
 	ctx->proc = proc;
 	ctx->collision = 0U;
-	ctx->pause = 0U;
 	ctx->done = 0U;
 
 	/* Clear procedure data */
@@ -449,10 +452,12 @@ void ull_llcp_init(struct ll_conn *conn)
 	/* Reset local request fsm */
 	llcp_lr_init(conn);
 	sys_slist_init(&conn->llcp.local.pend_proc_list);
+	conn->llcp.local.pause = 0U;
 
 	/* Reset remote request fsm */
 	llcp_rr_init(conn);
 	sys_slist_init(&conn->llcp.remote.pend_proc_list);
+	conn->llcp.remote.pause = 0U;
 	conn->llcp.remote.incompat = INCOMPAT_NO_COLLISION;
 	conn->llcp.remote.collision = 0U;
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -497,10 +502,8 @@ void ull_llcp_init(struct ll_conn *conn)
 #endif /* (CONFIG_BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM > 0) */
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 
+	conn->llcp.tx_q_pause_data_mask = 0;
 	conn->lll.event_counter = 0;
-
-	llcp_lr_init(conn);
-	llcp_rr_init(conn);
 }
 
 void ull_cp_release_tx(struct ll_conn *conn, struct node_tx *tx)
@@ -625,7 +628,9 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 {
 	struct proc_ctx *ctx;
 
-	/* TODO(thoh): Proper checks for role, parameters etc. */
+	if (conn->lll.role != BT_HCI_ROLE_CENTRAL) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
 	ctx = llcp_create_local_procedure(PROC_ENCRYPTION_START);
 	if (!ctx) {
@@ -649,7 +654,9 @@ uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], con
 {
 	struct proc_ctx *ctx;
 
-	/* TODO(thoh): Proper checks for role, parameters etc. */
+	if (conn->lll.role != BT_HCI_ROLE_CENTRAL) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
 	ctx = llcp_create_local_procedure(PROC_ENCRYPTION_PAUSE);
 	if (!ctx) {
@@ -693,8 +700,6 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 {
 	struct proc_ctx *ctx;
 
-	/* TODO(thoh): Proper checks for role, parameters etc. */
-
 	ctx = llcp_create_local_procedure(PROC_PHY_UPDATE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -724,10 +729,6 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 
 	ctx->data.term.error_code = error_code;
 
-	/* TODO
-	 * Termination procedure may be initiated at any time, even if other
-	 * LLCP is active.
-	 */
 	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
@@ -865,9 +866,6 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 		LL_ASSERT(0); /* Unknown procedure */
 	}
 
-	/* TODO(tosk): Check what to handle (ADV_SCHED) from this legacy fct. */
-	/* event_conn_upd_prep() (event_conn_upd_init()) */
-
 	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
@@ -971,7 +969,9 @@ static bool pdu_is_unknown(struct pdu_data *pdu, struct proc_ctx *ctx)
 
 static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
-	/* TODO(thoh): For LL_REJECT_IND check if the active procedure is supporting the PDU */
+	/* For LL_REJECT_IND there is no simple way of confirming protocol validity of the PDU
+	 * for the given procedure, so simply pass it on and let procedure engine deal with it
+	 */
 	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) &&
 		 (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) ||
 		(pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
@@ -1001,36 +1001,119 @@ void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 
 void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 {
+	struct proc_ctx *ctx_l;
+	struct proc_ctx *ctx_r;
 	struct pdu_data *pdu;
-	struct proc_ctx *ctx;
+	bool unexpected_l;
+	bool unexpected_r;
 
 	pdu = (struct pdu_data *)rx->pdu;
 
-	if (!pdu_is_terminate(pdu)) {
-		/*
-		 * Process non LL_TERMINATE_IND PDU's as responses to active
-		 * procedures
-		 */
-
-		ctx = llcp_lr_peek(conn);
-		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) ||
-			    pdu_is_reject(pdu, ctx))) {
-			/* Response on local procedure */
-			llcp_lr_rx(conn, ctx, rx);
-			return;
-		}
-
-		ctx = llcp_rr_peek(conn);
-		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) ||
-			    pdu_is_reject(pdu, ctx))) {
-			/* Response on remote procedure */
-			llcp_rr_rx(conn, ctx, rx);
-			return;
-		}
+	if (pdu_is_terminate(pdu)) {
+		/*  Process LL_TERMINATE_IND PDU's as new procedure */
+		ctx_l = NULL;
+		ctx_r = NULL;
+	} else {
+		/* Query local and remote activity */
+		ctx_l = llcp_lr_peek(conn);
+		ctx_r = llcp_rr_peek(conn);
 	}
 
-	/* New remote request */
-	llcp_rr_new(conn, rx);
+	if (ctx_l) {
+		/* Local active procedure */
+
+		if (ctx_r) {
+			/* Local active procedure
+			 * Remote active procedure
+			 */
+
+			unexpected_l = !(pdu_is_expected(pdu, ctx_l) ||
+					 pdu_is_unknown(pdu, ctx_l) ||
+					 pdu_is_reject(pdu, ctx_l));
+
+			unexpected_r = !(pdu_is_expected(pdu, ctx_r) ||
+					 pdu_is_unknown(pdu, ctx_r) ||
+					 pdu_is_reject(pdu, ctx_r));
+
+			if (unexpected_l && unexpected_r) {
+				/* Local active procedure
+				 * Unexpected local procedure PDU
+				 * Remote active procedure
+				 * Unexpected remote procedure PDU
+				 */
+
+				/* Invalid Behaviour */
+				conn->llcp_terminate.reason_final = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+			} else if (unexpected_l) {
+				/* Local active procedure
+				 * Unexpected local procedure PDU
+				 * Remote active procedure
+				 * Expected remote procedure PDU
+				 */
+
+				/* Process PDU in remote procedure */
+				llcp_rr_rx(conn, ctx_r, rx);
+			} else if (unexpected_r) {
+				/* Local active procedure
+				 * Expected local procedure PDU
+				 * Remote active procedure
+				 * Unexpected remote procedure PDU
+				 */
+
+				/* Process PDU in local procedure */
+				llcp_lr_rx(conn, ctx_l, rx);
+			} else {
+				/* Local active procedure
+				 * Expected local procedure PDU
+				 * Remote active procedure
+				 * Expected remote procedure PDU
+				 */
+
+				/* This cannot happen */
+				LL_ASSERT(0);
+			}
+		} else {
+			/* Local active procedure
+			 * No remote active procedure
+			 */
+
+			unexpected_l = !(pdu_is_expected(pdu, ctx_l) ||
+					 pdu_is_unknown(pdu, ctx_l) ||
+					 pdu_is_reject(pdu, ctx_l));
+
+			if (unexpected_l) {
+				/* Local active procedure
+				 * Unexpected local procedure PDU
+				 * No remote active procedure
+				 */
+
+				/* Process PDU as a new remote request */
+				llcp_rr_new(conn, rx);
+			} else {
+				/* Local active procedure
+				 * Expected local procedure PDU
+				 * No remote active procedure
+				 */
+
+				/* Process PDU in local procedure */
+				llcp_lr_rx(conn, ctx_l, rx);
+			}
+		}
+	} else if (ctx_r) {
+		/* No local active procedure
+		 * Remote active procedure
+		 */
+
+		/* Process PDU in remote procedure */
+		llcp_rr_rx(conn, ctx_r, rx);
+	} else {
+		/* No local active procedure
+		 * No remote active procedure
+		 */
+
+		/* Process PDU as a new remote request */
+		llcp_rr_new(conn, rx);
+	}
 }
 
 #ifdef ZTEST_UNITTEST
@@ -1163,7 +1246,6 @@ void test_int_create_proc(void)
 
 	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE, NULL);
 	zassert_equal(ctx->collision, 0, NULL);
-	zassert_equal(ctx->pause, 0, NULL);
 
 	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
 		zassert_not_null(ctx, NULL);
@@ -1171,6 +1253,22 @@ void test_int_create_proc(void)
 	}
 
 	zassert_is_null(ctx, NULL);
+}
+
+void test_int_llcp_init(void)
+{
+	struct ll_conn conn;
+
+	ull_cp_init();
+
+	ull_llcp_init(&conn);
+
+	memset(&conn.llcp, 0xAA, sizeof(conn.llcp));
+
+	ull_llcp_init(&conn);
+
+	zassert_equal(conn.llcp.local.pause, 0, NULL);
+	zassert_equal(conn.llcp.remote.pause, 0, NULL);
 }
 
 #endif

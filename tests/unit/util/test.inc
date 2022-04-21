@@ -337,7 +337,7 @@ static void test_FOR_EACH_IDX(void)
 		FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST3, (,), 1, 2, 3)
 	};
 
-	zassert_equal(ARRAY_SIZE(a), 3, "Unexpected value:%d", ARRAY_SIZE(a));
+	zassert_equal(ARRAY_SIZE(a), 3, "Unexpected value:%zu", ARRAY_SIZE(a));
 }
 
 static void test_FOR_EACH_IDX_FIXED_ARG(void)

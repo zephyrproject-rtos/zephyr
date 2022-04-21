@@ -115,7 +115,7 @@ static inline uint32_t stm32_pinval_get(int pin)
  * @brief Configure the hardware.
  */
 static void gpio_stm32_configure_raw(const struct device *dev, int pin,
-				     int conf, int altf)
+				     int conf, int func)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
@@ -123,7 +123,7 @@ static void gpio_stm32_configure_raw(const struct device *dev, int pin,
 	int pin_ll = stm32_pinval_get(pin);
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
-	ARG_UNUSED(altf);
+	ARG_UNUSED(func);
 
 	uint32_t temp = conf &
 			      (STM32_MODE_INOUT_MASK << STM32_MODE_INOUT_SHIFT);
@@ -211,9 +211,9 @@ static void gpio_stm32_configure_raw(const struct device *dev, int pin,
 
 	if (mode == STM32_MODER_ALT_MODE) {
 		if (pin < 8) {
-			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, altf);
+			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, func);
 		} else {
-			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, altf);
+			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, func);
 		}
 	}
 
@@ -222,20 +222,6 @@ static void gpio_stm32_configure_raw(const struct device *dev, int pin,
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 #endif  /* CONFIG_SOC_SERIES_STM32F1X */
 
-}
-
-int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
-{
-	int ret;
-
-	ret = pm_device_runtime_get(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	gpio_stm32_configure_raw(dev, pin, conf, altf);
-
-	return pm_device_runtime_put(dev);
 }
 
 /**
@@ -461,6 +447,36 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+#define IS_GPIO_OUT GPIO_OUT
+#else
+#define IS_GPIO_OUT STM32_GPIO
+#endif
+
+int gpio_stm32_configure(const struct device *dev, int pin, int conf, int func)
+{
+	int ret;
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	gpio_stm32_configure_raw(dev, pin, conf, func);
+
+	if (func == IS_GPIO_OUT) {
+		uint32_t gpio_out = conf & (STM32_ODR_MASK << STM32_ODR_SHIFT);
+
+		if (gpio_out == STM32_ODR_1) {
+			gpio_stm32_port_set_bits_raw(dev, BIT(pin));
+		} else if (gpio_out == STM32_ODR_0) {
+			gpio_stm32_port_clear_bits_raw(dev, BIT(pin));
+		}
+	}
+
+	return pm_device_runtime_put(dev);
+}
+
 /**
  * @brief Configure pin or port
  */
@@ -626,7 +642,7 @@ static int gpio_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	pm_device_runtime_init_suspended(dev);
+	pm_device_init_suspended(dev);
 	(void)pm_device_runtime_enable(dev);
 
 	return 0;

@@ -459,6 +459,7 @@ if BUILD_OUTPUT_UF2
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	string "UF2 device family ID"
 	default "0x1c5f21b0" if SOC_ESP32
+	default "0x621e937a" if SOC_NRF52833_QIAA
 	default "0xada52840" if SOC_NRF52840_QIAA
 	default "0x4fb2d5bd" if SOC_SERIES_IMX_RT
 	default "0x2abc77ec" if SOC_SERIES_LPC55XXX
@@ -799,3 +800,15 @@ config COMPAT_INCLUDES
 	  deprecated header files.
 
 endmenu
+
+config LEGACY_INCLUDE_PATH
+	bool "Allow for the legacy include paths (without the zephyr/ prefix)"
+	default y
+	help
+	  Allow applications and libraries to use the Zephyr legacy include
+	  path which does not use the zephyr/ prefix. For example, the
+	  preferred way to include a Zephyr header is to use <zephyr/kernel.h>,
+	  but enabling CONFIG_LEGACY_INCLUDE_PATH will allow developers to
+	  use <kernel.h> instead. This (without the zephyr/ prefix) is
+	  deprecated and should be avoided. Eventually, it will not be
+	  supported.

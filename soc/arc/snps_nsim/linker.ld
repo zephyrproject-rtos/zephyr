@@ -9,7 +9,6 @@
  */
 
 #include <devicetree.h>
-#include <autoconf.h>
 
 /* Instruction Closely Coupled Memory (ICCM) base address and size */
 #if DT_NODE_HAS_PROP(DT_INST(0, arc_iccm), reg) && \

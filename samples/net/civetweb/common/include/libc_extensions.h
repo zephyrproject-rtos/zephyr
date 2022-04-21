@@ -26,10 +26,8 @@ size_t strspn(const char *s1, const char *s2);
 int iscntrl(int c);
 
 double atof(const char *str);
-long long strtoll(const char *str, char **endptr, int base);
 int sscanf(const char *s, const char *format, ...);
 char *strerror(int err);
-unsigned long long strtoull(const char *str, char **endptr, int base);
 
 time_t time(time_t *t);
 struct tm *gmtime(const time_t *ptime);

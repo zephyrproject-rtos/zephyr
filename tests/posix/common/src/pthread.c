@@ -410,7 +410,7 @@ void test_posix_pthread_error_condition(void)
 	void *stackaddr;
 	size_t stacksize;
 	int policy, detach;
-	static pthread_once_t key = 1;
+	static pthread_once_t key;
 
 	/* TESTPOINT: invoke pthread APIs with NULL */
 	zassert_equal(pthread_attr_destroy(NULL), EINVAL,
@@ -529,6 +529,28 @@ void test_posix_pthread_termination(void)
 	/* TESTPOINT: Try getting scheduling info from terminated thread */
 	ret = pthread_getschedparam(newthread[N_THR_T/2], &policy, &schedparam);
 	zassert_equal(ret, ESRCH, "got attr from terminated thread!");
+}
+
+void test_posix_thread_attr_stacksize(void)
+{
+	size_t act_size;
+	pthread_attr_t attr;
+	const size_t exp_size = 0xB105F00D;
+
+	/* TESTPOINT: specify a custom stack size via pthread_attr_t */
+	zassert_equal(0, pthread_attr_init(&attr), "pthread_attr_init() failed");
+
+	if (PTHREAD_STACK_MIN > 0) {
+		zassert_equal(EINVAL, pthread_attr_setstacksize(&attr, 0),
+			      "pthread_attr_setstacksize() did not fail");
+	}
+
+	zassert_equal(0, pthread_attr_setstacksize(&attr, exp_size),
+		      "pthread_attr_setstacksize() failed");
+	zassert_equal(0, pthread_attr_getstacksize(&attr, &act_size),
+		      "pthread_attr_getstacksize() failed");
+	zassert_equal(exp_size, act_size, "wrong size: act: %zu exp: %zu",
+		exp_size, act_size);
 }
 
 static void *create_thread1(void *p1)

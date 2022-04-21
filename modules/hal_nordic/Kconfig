@@ -1,6 +1,10 @@
 # Copyright (c) 2016-2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# This file needs to be sourced first as it defines variables that are supposed
+# to be available for all Nordic related options.
+rsource "Kconfig.dt"
+
 config ZEPHYR_HAL_NORDIC_MODULE
 	bool
 
@@ -169,7 +173,7 @@ if NRF_802154_SER_RADIO
 
 config NRF_802154_SER_RADIO_INIT_PRIO
 	int "nRF52 IEEE 802.15.4 serialization initialization priority"
-	default 47
+	default 51
 	help
 	  Set the initialization priority number. Do not mess with it unless
 	  you know what you are doing.
@@ -178,10 +182,6 @@ endif
 
 menu "nRF 802.15.4 serialization"
 	depends on NRF_802154_SER_HOST || NRF_802154_SER_RADIO
-
-choice IPC_SERVICE_BACKEND
-	default IPC_SERVICE_BACKEND_RPMSG
-endchoice
 
 config NRF_802154_SER_LOG
 	bool "802.15.4 serialization logs"

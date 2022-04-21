@@ -4,10 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "drivers/dma.h"
 #define DT_DRV_COMPAT intel_cavs_gpdma
 
-#define GPDMA_CTL_OFFSET 0x004
+#define GPDMA_CTL_OFFSET 0x0004
 #define GPDMA_CTL_FDCGB BIT(0)
+
+#define GPDMA_CHLLPC_OFFSET(channel) (0x0010 + (channel) * 0x10)
+#define GPDMA_CHLLPC_EN BIT(7)
+#define GPDMA_CHLLPC_DHRS(x) SET_BITS(6, 0, x)
+
+#define GPDMA_CHLLPL(channel) (0x0018 + (channel) * 0x10)
+#define GPDMA_CHLLPU(channel) (0x001c + (channel) * 0x10)
 
 #include "dma_dw_common.h"
 
@@ -36,6 +44,137 @@ static void cavs_gpdma_clock_enable(const struct device *dev)
 	sys_write32(GPDMA_CTL_FDCGB, reg);
 }
 
+static void cavs_gpdma_llp_config(const struct device *dev, uint32_t channel,
+				  uint32_t addr)
+{
+#ifdef CONFIG_DMA_CAVS_GPDMA_HAS_LLP
+	const struct cavs_gpdma_cfg *const dev_cfg = dev->config;
+
+	dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel), GPDMA_CHLLPC_DHRS(addr));
+#endif
+}
+
+static inline void cavs_gpdma_llp_enable(const struct device *dev,
+					      uint32_t channel)
+{
+#ifdef CONFIG_DMA_CAVS_GPDMA_HAS_LLP
+	const struct cavs_gpdma_cfg *const dev_cfg = dev->config;
+	uint32_t val;
+
+	val = dw_read(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel));
+	if (!(val & GPDMA_CHLLPC_EN)) {
+		dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel), val | GPDMA_CHLLPC_EN);
+	}
+#endif
+}
+
+static inline void cavs_gpdma_llp_disable(const struct device *dev,
+					       uint32_t channel)
+{
+#ifdef CONFIG_DMA_CAVS_GPDMA_HAS_LLP
+	const struct cavs_gpdma_cfg *const dev_cfg = dev->config;
+	uint32_t val;
+
+	val = dw_read(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel));
+	dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel), val | GPDMA_CHLLPC_EN);
+#endif
+}
+
+static inline void cavs_gpdma_llp_read(const struct device *dev,
+					    uint32_t channel,
+					    uint32_t *llp_l,
+					    uint32_t *llp_u)
+{
+#ifdef CONFIG_DMA_CAVS_GPDMA_HAS_LLP
+	const struct cavs_gpdma_cfg *const dev_cfg = dev->config;
+
+	*llp_l = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
+	*llp_u = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
+#endif
+}
+
+
+static int cavs_gpdma_config(const struct device *dev, uint32_t channel,
+		      struct dma_config *cfg)
+{
+	int res = dw_dma_config(dev, channel, cfg);
+
+	if (res != 0) {
+		return res;
+	}
+
+	struct dma_block_config *block_cfg = cfg->head_block;
+
+	/* Assume all scatter/gathers are for the same device? */
+	switch (cfg->channel_direction) {
+	case MEMORY_TO_PERIPHERAL:
+		LOG_DBG("%s: dma %s configuring llp for destination %x",
+			__func__, dev->name, block_cfg->dest_address);
+		cavs_gpdma_llp_config(dev, channel, block_cfg->dest_address);
+		break;
+	case PERIPHERAL_TO_MEMORY:
+		LOG_DBG("%s: dma %s configuring llp for source %x",
+			__func__, dev->name, block_cfg->source_address);
+		cavs_gpdma_llp_config(dev, channel, block_cfg->source_address);
+		break;
+	default:
+		break;
+	}
+
+	return res;
+}
+
+static int cavs_gpdma_start(const struct device *dev, uint32_t channel)
+{
+	int ret;
+
+	cavs_gpdma_llp_enable(dev, channel);
+	ret = dw_dma_start(dev, channel);
+	if (ret != 0) {
+		cavs_gpdma_llp_disable(dev, channel);
+	}
+	return ret;
+}
+
+static int cavs_gpdma_stop(const struct device *dev, uint32_t channel)
+{
+	int ret;
+
+	ret = dw_dma_stop(dev, channel);
+	if (ret == 0) {
+		cavs_gpdma_llp_disable(dev, channel);
+	}
+	return ret;
+}
+
+int cavs_gpdma_copy(const struct device *dev, uint32_t channel,
+		    uint32_t src, uint32_t dst, size_t size)
+{
+	struct dw_dma_dev_data *const dev_data = dev->data;
+	struct dw_dma_chan_data *chan_data;
+	int i = 0;
+
+	if (channel >= DW_MAX_CHAN) {
+		return -EINVAL;
+	}
+
+	chan_data = &dev_data->chan[channel];
+
+	/* default action is to clear the DONE bit for all LLI making
+	 * sure the cache is coherent between DSP and DMAC.
+	 */
+	for (i = 0; i < chan_data->lli_count; i++) {
+		chan_data->lli[i].ctrl_hi &= ~DW_CTLH_DONE(1);
+	}
+
+	chan_data->ptr_data.current_ptr += size;
+	if (chan_data->ptr_data.current_ptr >= chan_data->ptr_data.end_ptr) {
+		chan_data->ptr_data.current_ptr = chan_data->ptr_data.start_ptr +
+			(chan_data->ptr_data.current_ptr - chan_data->ptr_data.end_ptr);
+	}
+
+	return 0;
+}
 
 int cavs_gpdma_init(const struct device *dev)
 {
@@ -45,22 +184,31 @@ int cavs_gpdma_init(const struct device *dev)
 	cavs_gpdma_clock_enable(dev);
 
 	/* Disable all channels and Channel interrupts */
-	dw_dma_setup(dev);
+	int ret = dw_dma_setup(dev);
+
+	if (ret != 0) {
+		LOG_ERR("%s: dma %s failed to initialize", __func__, dev->name);
+		goto out;
+	}
 
 	/* Configure interrupts */
 	dev_cfg->dw_cfg.irq_config();
 
-	LOG_INF("Device %s initialized", dev->name);
+	LOG_INF("%s: dma %s initialized", __func__, dev->name);
 
+out:
 	return 0;
 }
 
 
 static const struct dma_driver_api cavs_gpdma_driver_api = {
-	.config = dw_dma_config,
-	.reload = dw_dma_reload,
-	.start = dw_dma_transfer_start,
-	.stop = dw_dma_transfer_stop,
+	.config = cavs_gpdma_config,
+	.reload = cavs_gpdma_copy,
+	.start = cavs_gpdma_start,
+	.stop = cavs_gpdma_stop,
+	.suspend = dw_dma_suspend,
+	.resume = dw_dma_resume,
+	.get_status = dw_dma_get_status,
 };
 
 

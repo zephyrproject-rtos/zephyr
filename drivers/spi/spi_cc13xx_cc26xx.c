@@ -11,12 +11,12 @@
 LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
 
 #include <drivers/spi.h>
+#include <drivers/pinctrl.h>
 #include <pm/device.h>
 #include <pm/policy.h>
 
 #include <driverlib/prcm.h>
 #include <driverlib/ssi.h>
-#include <driverlib/ioc.h>
 
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26X2.h>
@@ -25,10 +25,7 @@ LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
 
 struct spi_cc13xx_cc26xx_config {
 	uint32_t base;
-	uint32_t sck_pin;
-	uint32_t mosi_pin;
-	uint32_t miso_pin;
-	uint32_t cs_pin;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct spi_cc13xx_cc26xx_data {
@@ -44,6 +41,7 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 	struct spi_cc13xx_cc26xx_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t prot;
+	int ret;
 
 	if (spi_context_configured(ctx, config)) {
 		return 0;
@@ -106,8 +104,11 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 		}
 	}
 
-	IOCPinTypeSsiMaster(cfg->base, cfg->miso_pin, cfg->mosi_pin,
-			    cfg->cs_pin, cfg->sck_pin);
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("applying SPI pinctrl state failed");
+		return ret;
+	}
 
 	ctx->config = config;
 
@@ -311,16 +312,13 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 	}
 
 #define SPI_CC13XX_CC26XX_INIT(n)					\
+	PINCTRL_DT_INST_DEFINE(n);	\
 	SPI_CC13XX_CC26XX_INIT_FUNC(n)					\
 									\
 	static const struct spi_cc13xx_cc26xx_config			\
 		spi_cc13xx_cc26xx_config_##n = {			\
 		.base = DT_INST_REG_ADDR(n),				\
-		.sck_pin = DT_INST_PROP(n, sck_pin),			\
-		.mosi_pin = DT_INST_PROP(n, mosi_pin),			\
-		.miso_pin = DT_INST_PROP(n, miso_pin),			\
-		.cs_pin = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, cs_pin),	\
-			(DT_INST_PROP(n, cs_pin)), (IOID_UNUSED))	\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n) \
 	};								\
 									\
 	static struct spi_cc13xx_cc26xx_data				\

@@ -814,6 +814,163 @@ void test_strtoul(void)
 
 /**
  *
+ * @brief test strtoll function
+ *
+ * @see strtoll().
+ *
+ */
+void test_strtoll(void)
+{
+	static const char buf1[] = "+10379aegi";
+	static const char buf2[] = "   -10379aegi";
+	static const char buf3[] = "-010379aegi";
+	static const char buf4[] = "0x10379aegi";
+	static const char buf5[] = "0X10379aegi";
+	static const char buf6[] = "01037aegi";
+	static const char buf7[] = "1037aegi";
+	static const char buf8[] = "++1037aegi";
+	static const char buf9[] = "A1037aegi";
+	static const char buf10[] = "a1037aegi";
+	static const char str_normal[] = "-1011 This stopped it";
+	static const char str_abnormal[] = "ABCDEFGH";
+	char *stop = NULL;
+	long long ret;
+
+	/* test function strtoll() */
+	ret = strtoll(buf3, NULL, 8);
+	zassert_equal(ret, -543, "strtoll base = 8 failed");
+	ret = strtoll(buf1, NULL, 10);
+	zassert_equal(ret, 10379, "strtoll base = 10 failed");
+	ret = strtoll(buf2, NULL, 10);
+	zassert_equal(ret, -10379, "strtoll base = 10 failed");
+	ret = strtoll(buf4, NULL, 16);
+	zassert_equal(ret, 17004974, "strtoll base = 16 failed");
+	ret = strtoll(buf4, NULL, 0);
+	zassert_equal(ret, 17004974, "strtoll base = 16 failed");
+	ret = strtoll(buf5, NULL, 0);
+	zassert_equal(ret, 17004974, "strtoll base = 16 failed");
+	ret = strtoll(buf6, NULL, 0);
+	zassert_equal(ret, 543, "strtoll base = 8 failed");
+	ret = strtoll(buf7, NULL, 0);
+	zassert_equal(ret, 1037, "strtoll base = 10 failed");
+	ret = strtoll(buf8, NULL, 10);
+	zassert_not_equal(ret, 1037, "strtoll base = 10 failed");
+	ret = strtoll(buf9, NULL, 10);
+	zassert_not_equal(ret, 1037, "strtoll base = 10 failed");
+	ret = strtoll(buf10, NULL, 10);
+	zassert_not_equal(ret, 1037, "strtoll base = 10 failed");
+
+	ret = strtoll(str_normal, &stop, 10);
+	zassert_equal(ret, -1011, "strtoll base = 10 failed");
+	zassert_true((strcmp(stop, " This stopped it") == 0), "strtoll get stop failed");
+
+	ret = strtoll(str_abnormal, &stop, 0);
+	zassert_equal(ret, 0, "strtoll base = 0 failed");
+	zassert_true((strcmp(stop, "ABCDEFGH") == 0), "strtoll get stop failed");
+
+	char border1[] = "-9223372036854775808";
+	char border2[] = "+9223372036854775807";
+	char border3[] = "+9223372036854775806";
+	char border4[] = "922337203685477580000000";
+	char border5[] = "0x0000000000000000000000000000000000001";
+	char border6[] = "10000000000000000000000000000000000001";
+	char border7[] = "-10000000000000000000000000000000000001";
+
+	ret = strtoll(border1, NULL, 10);
+	zassert_equal(ret, LLONG_MIN, "strtoll base = 10 failed");
+	ret = strtoll(border2, NULL, 10);
+	zassert_equal(ret, LLONG_MAX, "strtoll base = 10 failed");
+	ret = strtoll(border3, NULL, 10);
+	zassert_equal(ret, 9223372036854775806, "strtoll base = 10 failed");
+	ret = strtoll(border4, NULL, 10);
+	zassert_equal(ret, LLONG_MAX, "strtoll base = 10 failed");
+	ret = strtoull(border5, NULL, 16);
+	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%x", border5, ret);
+	ret = strtoull(border6, NULL, 10);
+	zassert_equal(errno, ERANGE, "strtoull base = 10 failed, %s != %lld", border6, ret);
+	ret = strtoull(border7, NULL, 10);
+	zassert_equal(errno, ERANGE, "strtoull base = 10 failed, %s != %lld", border7, ret);
+}
+
+/**
+ *
+ * @brief test strtoull function
+ *
+ * @see strtoull().
+ *
+ */
+void test_strtoull(void)
+{
+	static const char buf1[] = "+10379aegi";
+	static const char buf2[] = "   -10379aegi";
+	static const char buf3[] = "-010379aegi";
+	static const char buf4[] = "0x10379aegi";
+	static const char buf5[] = "0X10379aegi";
+	static const char buf6[] = "01037aegi";
+	static const char buf7[] = "1037aegi";
+	static const char buf8[] = "++1037aegi";
+	static const char buf9[] = "A1037aegi";
+	static const char buf10[] = "a1037aegi";
+	static const char str_normal[] = "-1011 This stopped it";
+	static const char str_abnormal[] = "ABCDEFGH";
+	char *stop = NULL;
+	unsigned long long ret;
+
+	/* test function strtoull() */
+	ret = strtoull(buf3, NULL, 8);
+	zassert_equal(ret, -543, "strtoull base = 8 failed");
+	ret = strtoull(buf1, NULL, 10);
+	zassert_equal(ret, 10379, "strtoull base = 10 failed");
+	ret = strtoull(buf2, NULL, 10);
+	zassert_equal(ret, -10379, "strtoull base = 10 failed");
+	ret = strtoull(buf4, NULL, 16);
+	zassert_equal(ret, 17004974, "strtoull base = 16 failed");
+	ret = strtoull(buf4, NULL, 0);
+	zassert_equal(ret, 17004974, "strtoull base = 16 failed");
+	ret = strtoull(buf5, NULL, 0);
+	zassert_equal(ret, 17004974, "strtoull base = 16 failed");
+	ret = strtoull(buf6, NULL, 0);
+	zassert_equal(ret, 543, "strtoull base = 8 failed");
+	ret = strtoull(buf7, NULL, 0);
+	zassert_equal(ret, 1037, "strtoull base = 10 failed");
+	ret = strtoull(buf8, NULL, 10);
+	zassert_not_equal(ret, 1037, "strtoull base = 10 failed");
+	ret = strtoull(buf9, NULL, 10);
+	zassert_not_equal(ret, 1037, "strtoull base = 10 failed");
+	ret = strtoull(buf10, NULL, 10);
+	zassert_not_equal(ret, 1037, "strtoull base = 10 failed");
+
+	ret = strtoull(str_normal, &stop, 10);
+	zassert_equal(ret, -1011, "strtoull base = 10 failed");
+	zassert_true((strcmp(stop, " This stopped it") == 0), "strtoull get stop failed");
+
+	ret = strtoull(str_abnormal, &stop, 0);
+	zassert_equal(ret, 0, "strtoull base = 0 failed");
+	zassert_true((strcmp(stop, "ABCDEFGH") == 0), "strtoull get stop failed");
+
+	char border1[] = "+18446744073709551615";
+	char border2[] = "-18446744073709551615000";
+	char border3[] = "+18446744073709551619";
+	char border4[] = "0x0000000000000000000000000000000000001";
+	char border5[] = "10000000000000000000000000000000000001";
+	char border6[] = "-10000000000000000000000000000000000001";
+
+	ret = strtoull(border1, NULL, 10);
+	zassert_equal(ret, ULLONG_MAX, "strtoull base = 10 failed");
+	ret = strtoull(border2, NULL, 10);
+	zassert_equal(ret, ULLONG_MAX, "strtoull base = 10 failed");
+	ret = strtoull(border3, NULL, 10);
+	zassert_equal(ret, ULLONG_MAX, "strtoull base = 10 failed");
+	ret = strtoull(border4, NULL, 16);
+	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%x", border4, ret);
+	ret = strtoull(border5, NULL, 10);
+	zassert_equal(errno, ERANGE, "strtoull base = 10 failed, %s != %lld", border5, ret);
+	ret = strtoull(border6, NULL, 10);
+	zassert_equal(errno, ERANGE, "strtoull base = 10 failed, %s != %lld", border6, ret);
+}
+
+/**
+ *
  * @brief test convert function
  *
  */
@@ -1050,6 +1207,14 @@ void test_exit(void)
 extern void test_qsort(void);
 
 /**
+ *
+ * @brief Test qsort_r function
+ *
+ * @see qsort_r()
+ */
+extern void test_qsort_r(void);
+
+/**
  * @}
  */
 
@@ -1075,6 +1240,8 @@ void test_main(void)
 			 ztest_unit_test(test_strncmp),
 			 ztest_unit_test(test_strtol),
 			 ztest_unit_test(test_strtoul),
+			 ztest_unit_test(test_strtoll),
+			 ztest_unit_test(test_strtoull),
 			 ztest_unit_test(test_checktype),
 			 ztest_unit_test(test_memchr),
 			 ztest_unit_test(test_memcpy),
@@ -1088,7 +1255,8 @@ void test_main(void)
 			 ztest_unit_test(test_str_operate),
 			 ztest_unit_test(test_tolower_toupper),
 			 ztest_unit_test(test_strtok_r),
-			 ztest_unit_test(test_qsort)
+			 ztest_unit_test(test_qsort),
+			 ztest_unit_test(test_qsort_r)
 			 );
 	ztest_run_test_suite(test_c_lib);
 }

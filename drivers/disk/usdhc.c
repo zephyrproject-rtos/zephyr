@@ -12,6 +12,13 @@
 #include <sys/byteorder.h>
 #include <soc.h>
 #include <drivers/clock_control.h>
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#define PINCTRL_STATE_SLOW PINCTRL_STATE_PRIV_START
+#define PINCTRL_STATE_MED (PINCTRL_STATE_PRIV_START + 1U)
+#define PINCTRL_STATE_FAST (PINCTRL_STATE_PRIV_START + 2U)
+#define PINCTRL_STATE_NOPULL (PINCTRL_STATE_PRIV_START + 3U)
+#endif
 
 #include "sdmmc_sdhc.h"
 
@@ -412,6 +419,11 @@ struct usdhc_config {
 	uint8_t write_burst_len;
 	/* Write burst len
 	 */
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+	/* Pin configuration
+	 */
+#endif
 };
 
 struct usdhc_capability {
@@ -2024,13 +2036,21 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 
 		/* config IO strength in IOMUX*/
 		if (priv->card_info.sd_timing == SD_TIMING_SDR50_MODE) {
+#ifdef CONFIG_PINCTRL
+			pinctrl_apply_state(priv->config->pincfg, PINCTRL_STATE_MED);
+#else
 			imxrt_usdhc_pinmux(config->nusdhc, false,
 				CARD_BUS_FREQ_100MHZ1,
 				CARD_BUS_STRENGTH_7);
+#endif /* CONFIG_PINCTRL */
 		} else {
+#ifdef CONFIG_PINCTRL
+			pinctrl_apply_state(priv->config->pincfg, PINCTRL_STATE_FAST);
+#else
 			imxrt_usdhc_pinmux(config->nusdhc, false,
 				CARD_BUS_FREQ_200MHZ,
 				CARD_BUS_STRENGTH_7);
+#endif /* CONFIG_PINCTRL */
 		}
 		/* execute tuning */
 		priv->op_context.cmd_only = 0;
@@ -2049,12 +2069,13 @@ static int usdhc_select_bus_timing(struct usdhc_priv *priv)
 		if (error)
 			return error;
 	} else {
-		/* set default IO strength to 4 to cover card adapter driver
-		 * strength difference
-		 */
+#ifdef CONFIG_PINCTRL
+		pinctrl_apply_state(priv->config->pincfg, PINCTRL_STATE_SLOW);
+#else
 		imxrt_usdhc_pinmux(config->nusdhc, false,
 			CARD_BUS_FREQ_100MHZ1,
 			CARD_BUS_STRENGTH_4);
+#endif /* CONFIG_PINCTRL */
 	}
 
 	return error;
@@ -2689,8 +2710,25 @@ static int usdhc_dat3_pull(bool pullup, struct usdhc_priv *priv)
 {
 	int ret = 0U;
 
+#ifdef CONFIG_PINCTRL
+	if (pullup) {
+		/* Default pin configuration pulls dat3 up */
+		ret = pinctrl_apply_state(priv->config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (ret) {
+			return ret;
+		}
+	} else {
+		/* remove pull on dat3 */
+		ret = pinctrl_apply_state(priv->config->pincfg, PINCTRL_STATE_NOPULL);
+		if (ret) {
+			LOG_ERR("No floating pinctrl state");
+			return ret;
+		}
+	}
+#else
 	/* Call board specific function to pull down DAT3 */
 	imxrt_usdhc_dat3_pull(pullup);
+#endif
 #ifdef CONFIG_SDMMC_USDHC_DAT3_PWR_TOGGLE
 	if (!pullup) {
 		/* Power off the card to clear DAT3 legacy status */
@@ -2937,6 +2975,15 @@ static struct disk_info usdhc_disk = {
 static int disk_usdhc_init(const struct device *dev)
 {
 	struct usdhc_priv *priv = dev->data;
+#ifdef CONFIG_PINCTRL
+	const struct usdhc_config *config = dev->config;
+	int err;
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_PINCTRL */
 
 	priv->status = DISK_STATUS_UNINIT;
 
@@ -2944,6 +2991,15 @@ static int disk_usdhc_init(const struct device *dev)
 
 	return disk_access_register(&usdhc_disk);
 }
+
+
+#ifdef CONFIG_PINCTRL
+#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#else
+#define PINCTRL_DEFINE(n)
+#define PINCTRL_INIT(n)
+#endif /* CONFIG_PINCTRL */
 
 #define DISK_ACCESS_USDHC_INIT_NONE(n)
 
@@ -2968,6 +3024,7 @@ static int disk_usdhc_init(const struct device *dev)
 		    (DISK_ACCESS_USDHC_INIT_NONE(n)))
 
 #define DISK_ACCESS_USDHC_INIT(n)					\
+	PINCTRL_DEFINE(n)						\
 	static const struct usdhc_config usdhc_config_##n = {		\
 		.base = (USDHC_Type  *) DT_INST_REG_ADDR(n),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
@@ -2984,6 +3041,7 @@ static int disk_usdhc_init(const struct device *dev)
 		.write_watermark =  USDHC_WRITE_WATERMARK_LEVEL,	\
 		.read_burst_len = USDHC_READ_BURST_LEN,			\
 		.write_burst_len = USDHC_WRITE_BURST_LEN,		\
+		PINCTRL_INIT(n)						\
 	};								\
 									\
 	static struct usdhc_priv usdhc_priv_##n;			\

@@ -27,7 +27,8 @@ static inline void mock_log_frontend_record(uint16_t source_id, uint8_t level, c
 }
 
 void mock_log_frontend_validate(bool panic);
-
+void mock_log_frontend_check_enable(void);
+void mock_log_frontend_check_disable(void);
 #ifdef __cplusplus
 }
 #endif

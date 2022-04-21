@@ -32,6 +32,7 @@ source "modules/Kconfig.tinycbor"
 source "modules/Kconfig.tinycrypt"
 source "modules/Kconfig.vega"
 source "modules/Kconfig.xtensa"
+source "modules/zcbor/Kconfig"
 source "modules/Kconfig.mcuboot_bootutil"
 
 comment "Unavailable modules, please install those via the project manifest."
@@ -52,6 +53,9 @@ comment "hal_gigadevice module not available."
 
 comment "hal_nordic module not available."
 	depends on !ZEPHYR_HAL_NORDIC_MODULE
+
+comment "liblc3codec module not available."
+	depends on !ZEPHYR_LIBLC3CODEC_MODULE
 
 comment "LittleFS module not available."
 	depends on !ZEPHYR_LITTLEFS_MODULE
@@ -76,6 +80,12 @@ comment "CANopenNode module not available."
 
 comment "FFF module not available."
 	depends on !ZEPHYR_FFF_MODULE
+
+comment "zcbor module not available."
+	depends on !ZEPHYR_ZCBOR_MODULE
+
+comment "CHRE module not available."
+	depends on !ZEPHYR_CHRE_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the

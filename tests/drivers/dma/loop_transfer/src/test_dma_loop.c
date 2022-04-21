@@ -28,35 +28,56 @@
 #include <ztest.h>
 
 /* in millisecond */
-#define SLEEPTIME 1000
+#define SLEEPTIME 250
 
-#define TRANSFER_LOOPS (5)
-#define RX_BUFF_SIZE (64)
+#define DATA                                                                                       \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog\n"                                            \
+	"The quick brown fox jumps over the lazy dog"
+
+#define TRANSFER_LOOPS (4)
+#define RX_BUFF_SIZE (1024)
 
 #if CONFIG_NOCACHE_MEMORY
-static const char TX_DATA[] = "The quick brown fox jumps over the lazy dog";
-static __aligned(16) char tx_data[64] __used
+static const char TX_DATA[] = DATA;
+static __aligned(32) char tx_data[1024] __used
 	__attribute__((__section__(".nocache")));
-static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
+static __aligned(32) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
 /* this src memory shall be in RAM to support usingas a DMA source pointer.*/
-static char tx_data[] =
-	"The quick brown fox jumps over the lazy dog";
+static char tx_data[] = DATA;
 static __aligned(16) char rx_data[TRANSFER_LOOPS][RX_BUFF_SIZE] = { { 0 } };
 #endif
 
 #define DMA_DEVICE_NAME CONFIG_DMA_LOOP_TRANSFER_DRV_NAME
 
-volatile uint8_t transfer_count;
+volatile uint32_t transfer_count;
+volatile uint32_t done;
 static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
 static int test_case_id;
 
 static void test_transfer(const struct device *dev, uint32_t id)
 {
-	int res = 0;
-
 	transfer_count++;
 	if (transfer_count < TRANSFER_LOOPS) {
 		dma_block_cfg.block_size = strlen(tx_data);
@@ -69,22 +90,17 @@ static void test_transfer(const struct device *dev, uint32_t id)
 		zassert_false(dma_start(dev, id),
 					"Not able to start next transfer %d",
 					transfer_count + 1);
-		if (test_case_id == 1) {
-			res = dma_suspend(dev, id);
-			if (res == -ENOSYS) {
-				TC_PRINT("dma suspend not supported\n");
-				dma_stop(dev, id);
-			} else if (res != 0) {
-				TC_PRINT("ERROR: suspend failed, channel %d, result %d\n", id, res);
-			}
-			test_case_id = 2;
-		}
 	}
 }
 
 static void dma_user_callback(const struct device *dma_dev, void *arg,
 			      uint32_t id, int error_code)
 {
+	/* test case is done so ignore the interrupt */
+	if (done) {
+		return;
+	}
+
 	zassert_false(error_code, "DMA could not proceed, an error occurred\n");
 
 #ifdef CONFIG_DMAMUX_STM32
@@ -145,6 +161,7 @@ static int test_loop(void)
 		chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
 	}
 	transfer_count = 0;
+	done = 0;
 	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
 	dma_block_cfg.block_size = strlen(tx_data);
 	dma_block_cfg.source_address = (uint32_t)tx_data;
@@ -232,10 +249,13 @@ static int test_loop_suspend_resume(void)
 		chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
 	}
 	transfer_count = 0;
+	done = 0;
 	TC_PRINT("Starting the transfer on channel %d and waiting for 1 second\n", chan_id);
 	dma_block_cfg.block_size = strlen(tx_data);
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
+
+	unsigned int irq_key;
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
@@ -247,12 +267,24 @@ static int test_loop_suspend_resume(void)
 		return TC_FAIL;
 	}
 
-	while (transfer_count == 0) {
-	}
+	/* Try multiple times to suspend the transfers */
+	uint32_t tc = transfer_count;
 
-	TC_PRINT("Sleeping while suspended\n");
-	k_sleep(K_MSEC(SLEEPTIME));
+	do {
+		irq_key = irq_lock();
+		res = dma_suspend(dma, chan_id);
+		if (res == -ENOSYS) {
+			done = 1;
+			TC_PRINT("suspend not supported");
+			dma_stop(dma, chan_id);
+			return TC_PASS;
+		}
+		tc = transfer_count;
+		irq_unlock(irq_key);
+		k_busy_wait(100);
+	} while (tc != transfer_count);
 
+	/* If we failed to suspend we failed */
 	if (transfer_count == TRANSFER_LOOPS) {
 		TC_PRINT("ERROR: failed to suspend transfers\n");
 		if (dma_stop(dma, chan_id)) {
@@ -260,7 +292,20 @@ static int test_loop_suspend_resume(void)
 		}
 		return TC_FAIL;
 	}
-	TC_PRINT("Suspended after %d transfers occurred\n", transfer_count);
+	TC_PRINT("suspended after %d transfers occurred\n", transfer_count);
+
+	/* Now sleep */
+	k_sleep(K_MSEC(SLEEPTIME));
+
+	/* If we failed to suspend we failed */
+	if (transfer_count == TRANSFER_LOOPS) {
+		TC_PRINT("ERROR: failed to suspend transfers\n");
+		if (dma_stop(dma, chan_id)) {
+			TC_PRINT("ERROR: transfer stop\n");
+		}
+		return TC_FAIL;
+	}
+	TC_PRINT("resuming after %d transfers occurred\n", transfer_count);
 
 	res = dma_resume(dma, chan_id);
 	TC_PRINT("Resumed transfers\n");

@@ -94,6 +94,16 @@ struct xec_acpi_ec_config {
 	uint32_t obe_ecia_info;
 };
 
+#ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
+
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE +
+			CONFIG_ESPI_XEC_PERIPHERAL_ACPI_SHD_MEM_SIZE] __aligned(8);
+#else
+static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE] __aligned(8);
+#endif
+
+#endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
 
 #ifdef CONFIG_ESPI_PERIPHERAL_XEC_MAILBOX
 
@@ -181,21 +191,41 @@ static void kbc0_ibf_isr(const struct device *dev)
 	struct espi_xec_data *const data =
 		(struct espi_xec_data *const)dev->data;
 
-
+#ifdef CONFIG_ESPI_PERIPHERAL_KBC_IBF_EVT_DATA
+	/* Chrome solution */
+	struct espi_event evt = {
+		ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		ESPI_PERIPHERAL_8042_KBC,
+		ESPI_PERIPHERAL_NODATA,
+	};
+	struct espi_evt_data_kbc *kbc_evt =
+				(struct espi_evt_data_kbc *)&evt.evt_data;
+	/*
+	 * Indicates if the host sent a command or data.
+	 * 0 = data
+	 * 1 = Command.
+	 */
+	kbc_evt->type = kbc_hw->EC_KBC_STS & MCHP_KBC_STS_CD ? 1 : 0;
+	/* The data in KBC Input Buffer */
+	kbc_evt->data = kbc_hw->EC_DATA;
+	/* KBC Input Buffer Full event */
+	kbc_evt->evt = HOST_KBC_EVT_IBF;
+#else
+	/* Windows solution */
 	/* The high byte contains information from the host,
 	 * and the lower byte speficies if the host sent
 	 * a command or data. 1 = Command.
 	 */
-	uint32_t isr_data = ((kbc_hw->EC_DATA & 0xFF) << E8042_ISR_DATA_POS) |
-				((kbc_hw->EC_KBC_STS & MCHP_KBC_STS_CD) <<
-				 E8042_ISR_CMD_DATA_POS);
+	uint32_t isr_data = ((kbc_hw->EC_KBC_STS & MCHP_KBC_STS_CD) <<
+				E8042_ISR_CMD_DATA_POS);
+	isr_data |= ((kbc_hw->EC_DATA & 0xFF) << E8042_ISR_DATA_POS);
 
 	struct espi_event evt = {
 		.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
 		.evt_details = ESPI_PERIPHERAL_8042_KBC,
 		.evt_data = isr_data
 	};
-
+#endif
 	espi_send_callbacks(&data->callbacks, dev, evt);
 
 	mchp_xec_ecia_info_girq_src_clr(xec_kbc0_cfg.ibf_ecia_info);
@@ -203,8 +233,37 @@ static void kbc0_ibf_isr(const struct device *dev)
 
 static void kbc0_obe_isr(const struct device *dev)
 {
+#ifdef CONFIG_ESPI_PERIPHERAL_KBC_OBE_CBK
+	/* Chrome solution */
+	struct espi_xec_data *const data =
+		(struct espi_xec_data *const)dev->data;
+
+	struct espi_event evt = {
+		ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		ESPI_PERIPHERAL_8042_KBC,
+		ESPI_PERIPHERAL_NODATA,
+	};
+	struct espi_evt_data_kbc *kbc_evt =
+				(struct espi_evt_data_kbc *)&evt.evt_data;
+
+	/* Disable KBC OBE interrupt first */
+	mchp_xec_ecia_info_girq_src_dis(xec_kbc0_cfg.obe_ecia_info);
+
+	/*
+	 * Notify application that host already read out data. The application
+	 * might need to clear status register via espi_api_lpc_write_request()
+	 * with E8042_CLEAR_FLAG opcode in callback.
+	 */
+	kbc_evt->evt = HOST_KBC_EVT_OBE;
+	kbc_evt->data = 0;
+	kbc_evt->type = 0;
+
+	espi_send_callbacks(&data->callbacks, dev, evt);
+#else
+	/* Windows solution */
 	/* disable and clear GIRQ interrupt and status */
 	mchp_xec_ecia_info_girq_src_dis(xec_kbc0_cfg.obe_ecia_info);
+#endif
 	mchp_xec_ecia_info_girq_src_clr(xec_kbc0_cfg.obe_ecia_info);
 }
 
@@ -369,6 +428,26 @@ static void acpi_ec0_ibf_isr(const struct device *dev)
 	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION,
 		ESPI_PERIPHERAL_HOST_IO, ESPI_PERIPHERAL_NODATA
 	};
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+	struct acpi_ec_regs *acpi_ec0_hw = (struct acpi_ec_regs *)xec_acpi_ec0_cfg.regbase;
+
+	/* Updates to fit Chrome shim layer design */
+	struct espi_evt_data_acpi *acpi_evt =
+				(struct espi_evt_data_acpi *)&evt.evt_data;
+
+	/* Host put data on input buffer of ACPI EC0 channel */
+	if (acpi_ec0_hw->EC_STS & MCHP_ACPI_EC_STS_IBF) {
+		/* Set processing flag before reading command byte */
+		acpi_ec0_hw->EC_STS |= MCHP_ACPI_EC_STS_UD1A;
+		/*
+		 * Indicates if the host sent a command or data.
+		 * 0 = data
+		 * 1 = Command.
+		 */
+		acpi_evt->type = acpi_ec0_hw->EC_STS & MCHP_ACPI_EC_STS_CMD ? 1 : 0;
+		acpi_evt->data = acpi_ec0_hw->OS2EC_DATA;
+	}
+#endif /* CONFIG_ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA */
 
 	espi_send_callbacks(&data->callbacks, dev, evt);
 
@@ -387,22 +466,56 @@ static int eacpi_rd_req(const struct device *dev,
 			enum lpc_peripheral_opcode op,
 			uint32_t *data)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(op);
-	ARG_UNUSED(data);
+	struct acpi_ec_regs *acpi_ec0_hw = (struct acpi_ec_regs *)xec_acpi_ec0_cfg.regbase;
 
-	return -EINVAL;
+	ARG_UNUSED(dev);
+
+	switch (op) {
+	case EACPI_OBF_HAS_CHAR:
+		/* EC has written data back to host. OBF is
+		 * automatically cleared after host reads
+		 * the data
+		 */
+		*data = acpi_ec0_hw->EC_STS & MCHP_ACPI_EC_STS_OBF ? 1 : 0;
+		break;
+	case EACPI_IBF_HAS_CHAR:
+		*data = acpi_ec0_hw->EC_STS & MCHP_ACPI_EC_STS_IBF ? 1 : 0;
+		break;
+	case EACPI_READ_STS:
+		*data = acpi_ec0_hw->EC_STS;
+		break;
+#if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
+	case EACPI_GET_SHARED_MEMORY:
+		*data = (uint32_t)ec_host_cmd_sram + CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE;
+		break;
+#endif /* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION */
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int eacpi_wr_req(const struct device *dev,
 			enum lpc_peripheral_opcode op,
 			uint32_t *data)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(op);
-	ARG_UNUSED(data);
+	struct acpi_ec_regs *acpi_ec0_hw = (struct acpi_ec_regs *)xec_acpi_ec0_cfg.regbase;
 
-	return -EINVAL;
+	ARG_UNUSED(dev);
+
+	switch (op) {
+	case EACPI_WRITE_CHAR:
+		acpi_ec0_hw->EC2OS_DATA = (*data & 0xff);
+		break;
+	case EACPI_WRITE_STS:
+		acpi_ec0_hw->EC_STS = (*data & 0xff);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int connect_irq_acpi_ec0(const struct device *dev)
@@ -470,6 +583,19 @@ static void acpi_ec1_ibf_isr(const struct device *dev)
 #endif
 		.evt_data = ESPI_PERIPHERAL_NODATA
 	};
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+	struct acpi_ec_regs *acpi_ec1_hw = (struct acpi_ec_regs *)xec_acpi_ec1_cfg.regbase;
+
+	/* Updates to fit Chrome shim layer design.
+	 * Host put data on input buffer of ACPI EC1 channel.
+	 */
+	if (acpi_ec1_hw->EC_STS & MCHP_ACPI_EC_STS_IBF) {
+		/* Set processing flag before reading command byte */
+		acpi_ec1_hw->EC_STS |= MCHP_ACPI_EC_STS_UD1A;
+		/* Read out input data and clear IBF pending bit */
+		evt.evt_data = acpi_ec1_hw->OS2EC_DATA;
+	}
+#endif /* CONFIG_ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA */
 
 	espi_send_callbacks(&data->callbacks, dev, evt);
 
@@ -549,13 +675,6 @@ static const struct xec_emi_config xec_emi0_cfg = {
 	.regbase = DT_REG_ADDR(DT_NODELABEL(emi0)),
 };
 
-#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
-static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE +
-						CONFIG_ESPI_XEC_PERIPHERAL_ACPI_SHD_MEM_SIZE];
-#else
-static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE];
-#endif
-
 static int init_emi0(const struct device *dev)
 {
 	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
@@ -586,6 +705,9 @@ static int init_emi0(const struct device *dev)
 
 #ifdef CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE
 
+static void host_cus_opcode_enable_interrupts(void);
+static void host_cus_opcode_disable_interrupts(void);
+
 static int ecust_rd_req(const struct device *dev,
 			enum lpc_peripheral_opcode op,
 			uint32_t *data)
@@ -609,11 +731,32 @@ static int ecust_wr_req(const struct device *dev,
 			enum lpc_peripheral_opcode op,
 			uint32_t *data)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(op);
-	ARG_UNUSED(data);
+	struct acpi_ec_regs *acpi_ec1_hw = (struct acpi_ec_regs *)xec_acpi_ec1_cfg.regbase;
 
-	return -EINVAL;
+	ARG_UNUSED(dev);
+
+	switch (op) {
+	case ECUSTOM_HOST_SUBS_INTERRUPT_EN:
+		if (*data != 0) {
+			host_cus_opcode_enable_interrupts();
+		} else {
+			host_cus_opcode_disable_interrupts();
+		}
+		break;
+	case ECUSTOM_HOST_CMD_SEND_RESULT:
+		/*
+		 * Write result to the data byte.  This sets the OBF
+		 * status bit.
+		 */
+		acpi_ec1_hw->EC2OS_DATA = (*data & 0xff);
+		/* Clear processing flag */
+		acpi_ec1_hw->EC_STS &= ~MCHP_ACPI_EC_STS_UD1A;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 #endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
@@ -948,3 +1091,53 @@ int espi_xec_read_lpc_request(const struct device *dev,
 	return -ENOTSUP;
 }
 #endif /* CONFIG_ESPI_PERIPHERAL_CHANNEL */
+
+#if defined(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)
+static void host_cus_opcode_enable_interrupts(void)
+{
+	/* Enable host KBC sub-device interrupt */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_8042_KBC)) {
+		mchp_xec_ecia_info_girq_src_en(xec_kbc0_cfg.ibf_ecia_info);
+		mchp_xec_ecia_info_girq_src_en(xec_kbc0_cfg.obe_ecia_info);
+	}
+
+	/* Enable host ACPI EC0 (Host IO) and
+	 * ACPI EC1 (Host CMD) sub-device interrupt
+	 */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO) ||
+	    IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		mchp_xec_ecia_info_girq_src_en(xec_acpi_ec0_cfg.ibf_ecia_info);
+		mchp_xec_ecia_info_girq_src_en(xec_acpi_ec0_cfg.obe_ecia_info);
+		mchp_xec_ecia_info_girq_src_en(xec_acpi_ec1_cfg.ibf_ecia_info);
+	}
+
+	/* Enable host Port80 sub-device interrupt installation */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)) {
+		mchp_xec_ecia_info_girq_src_en(xec_p80bd0_cfg.ecia_info);
+	}
+}
+
+static void host_cus_opcode_disable_interrupts(void)
+{
+	/* Disable host KBC sub-device interrupt */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_8042_KBC)) {
+		mchp_xec_ecia_info_girq_src_dis(xec_kbc0_cfg.ibf_ecia_info);
+		mchp_xec_ecia_info_girq_src_dis(xec_kbc0_cfg.obe_ecia_info);
+	}
+
+	/* Disable host ACPI EC0 (Host IO) and
+	 * ACPI EC1 (Host CMD) sub-device interrupt
+	 */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO) ||
+		IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		mchp_xec_ecia_info_girq_src_dis(xec_acpi_ec0_cfg.ibf_ecia_info);
+		mchp_xec_ecia_info_girq_src_dis(xec_acpi_ec0_cfg.obe_ecia_info);
+		mchp_xec_ecia_info_girq_src_dis(xec_acpi_ec1_cfg.ibf_ecia_info);
+	}
+
+	/* Disable host Port80 sub-device interrupt installation */
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80)) {
+		mchp_xec_ecia_info_girq_src_dis(xec_p80bd0_cfg.ecia_info);
+	}
+}
+#endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */

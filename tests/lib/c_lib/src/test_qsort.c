@@ -121,3 +121,27 @@ void test_qsort(void)
 				  "size 93 not sorted");
 	}
 }
+
+static int compare_ints_with_boolp_arg(const void *a, const void *b, void *argp)
+{
+	int aa = *(const int *)a;
+	int bb = *(const int *)b;
+
+	*(bool *)argp = true;
+
+	return (aa > bb) - (aa < bb);
+}
+
+void test_qsort_r(void)
+{
+	bool arg = false;
+
+	const int expect_int[] = { 1, 5, 7 };
+	int actual_int[] = { 1, 7, 5 };
+
+	qsort_r(actual_int, ARRAY_SIZE(actual_int), sizeof(actual_int[0]),
+		compare_ints_with_boolp_arg, &arg);
+
+	zassert_mem_equal(actual_int, expect_int, sizeof(expect_int), "array not sorted");
+	zassert_true(arg, "arg not modified");
+}

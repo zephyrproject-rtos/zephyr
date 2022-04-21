@@ -6,6 +6,7 @@
 config PWM_MCUX_FTM
 	bool "MCUX FTM PWM driver"
 	depends on HAS_MCUX_FTM
+	select PINCTRL
 	help
 	  Enable support for mcux ftm pwm driver.
 

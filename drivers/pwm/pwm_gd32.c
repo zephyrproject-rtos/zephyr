@@ -142,10 +142,6 @@ static int pwm_gd32_pin_set(const struct device *dev, uint32_t pwm,
 		return -EINVAL;
 	}
 
-	if (pulse_cycles > period_cycles) {
-		return -EINVAL;
-	}
-
 	/* 16-bit timers can count up to UINT16_MAX */
 	if (!config->is_32bit && (period_cycles > UINT16_MAX)) {
 		return -ENOTSUP;

@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME mcumgr_flash_mgmt
-#define LOG_LEVEL CONFIG_IMG_MANAGER_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(mcumgr_img_mgmt, CONFIG_MCUMGR_IMG_MGMT_LOG_LEVEL);
 
 #include <assert.h>
 #include <drivers/flash.h>
@@ -17,6 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <init.h>
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
+#include <mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
 #include <img_mgmt/img_mgmt_impl.h>
 #include <img_mgmt/img_mgmt.h>
@@ -559,7 +558,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 
 	if (req->off == 0) {
 		/* First upload chunk. */
-		if (req->data_len < sizeof(struct image_header)) {
+		if (req->img_data.len < sizeof(struct image_header)) {
 			/*  Image header is the first thing in the image */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
 			return MGMT_ERR_EINVAL;
@@ -572,13 +571,13 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		}
 		action->size = req->size;
 
-		hdr = (struct image_header *)req->img_data;
+		hdr = (struct image_header *)req->img_data.value;
 		if (hdr->ih_magic != IMAGE_MAGIC) {
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_magic_mismatch);
 			return MGMT_ERR_EINVAL;
 		}
 
-		if (req->data_sha_len > IMG_MGMT_DATA_SHA_LEN) {
+		if (req->data_sha.len > IMG_MGMT_DATA_SHA_LEN) {
 			return MGMT_ERR_EINVAL;
 		}
 
@@ -588,9 +587,10 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		 * the same data hash so we can just resume it by simply including
 		 * current upload offset in response.
 		 */
-		if ((req->data_sha_len > 0) && (g_img_mgmt_state.area_id != -1)) {
-			if ((g_img_mgmt_state.data_sha_len == req->data_sha_len) &&
-			    !memcmp(g_img_mgmt_state.data_sha, req->data_sha, req->data_sha_len)) {
+		if ((req->data_sha.len > 0) && (g_img_mgmt_state.area_id != -1)) {
+			if ((g_img_mgmt_state.data_sha_len == req->data_sha.len) &&
+			    !memcmp(g_img_mgmt_state.data_sha, req->data_sha.value,
+				    req->data_sha.len)) {
 				return 0;
 			}
 		}
@@ -663,7 +663,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 		}
 	}
 
-	action->write_bytes = req->data_len;
+	action->write_bytes = req->img_data.len;
 	action->proceed = true;
 	IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, NULL);
 

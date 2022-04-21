@@ -918,13 +918,11 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 #define ESPI_OOB_TAG                 0x00
 #define ESPI_OOB_TIMEOUT_MS          200
 
-/* eSPI oob cycle type, tag, and length fields. */
-#define ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE  3
+/* eSPI tag + len[11:8] field */
+#define ESPI_TAG_LEN_FIELD(tag, len) \
+		   ((((tag) & 0xF) << 4) | (((len) >> 8) & 0xF))
 
 struct espi_oob_msg_packet {
-	uint8_t cycle_type;
-	uint8_t tag_len_bit_11_8;
-	uint8_t len_bit_7_0;
 	uint8_t data_byte[0];
 };
 
@@ -938,10 +936,6 @@ static int espi_it8xxx2_send_oob(const struct device *dev,
 		(struct espi_queue1_regs *)config->base_espi_queue1;
 	struct espi_oob_msg_packet *oob_pckt =
 		(struct espi_oob_msg_packet *)pckt->buf;
-	uint16_t oob_msg_len;
-
-	__ASSERT(pckt->len >= ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE,
-		"Invalid OOB packet length");
 
 	if (!(slave_reg->CH_OOB_CAPCFG3 & IT8XXX2_ESPI_OOB_READY_MASK)) {
 		LOG_ERR("%s: OOB channel isn't ready", __func__);
@@ -953,17 +947,7 @@ static int espi_it8xxx2_send_oob(const struct device *dev,
 		return -EIO;
 	}
 
-	oob_msg_len = oob_pckt->len_bit_7_0 |
-				((oob_pckt->tag_len_bit_11_8 & 0xf) << 8);
-
-	if (pckt->len < (oob_msg_len +
-				ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE)) {
-		LOG_ERR("%s: Out of tx buf %d vs %d", __func__, pckt->len,
-			(oob_msg_len + ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE));
-		return -EINVAL;
-	}
-
-	if (oob_msg_len > ESPI_IT8XXX2_OOB_MAX_PAYLOAD_SIZE) {
+	if (pckt->len > ESPI_IT8XXX2_OOB_MAX_PAYLOAD_SIZE) {
 		LOG_ERR("%s: Out of OOB queue space", __func__);
 		return -EINVAL;
 	}
@@ -971,12 +955,12 @@ static int espi_it8xxx2_send_oob(const struct device *dev,
 	/* Set cycle type */
 	slave_reg->ESUCTRL1 = IT8XXX2_ESPI_CYCLE_TYPE_OOB;
 	/* Set tag and length[11:8] */
-	slave_reg->ESUCTRL2 = oob_pckt->tag_len_bit_11_8;
+	slave_reg->ESUCTRL2 = ESPI_TAG_LEN_FIELD(0, pckt->len);
 	/* Set length [7:0] */
-	slave_reg->ESUCTRL3 = oob_pckt->len_bit_7_0;
+	slave_reg->ESUCTRL3 = pckt->len & 0xff;
 
 	/* Set data byte */
-	for (int i = 0; i < oob_msg_len; i++) {
+	for (int i = 0; i < pckt->len; i++) {
 		queue1_reg->UPSTREAM_DATA[i] = oob_pckt->data_byte[i];
 	}
 
@@ -1023,18 +1007,15 @@ static int espi_it8xxx2_receive_oob(const struct device *dev,
 	 * Buffer passed to driver isn't enough.
 	 * The first three bytes of buffer are cycle type, tag, and length.
 	 */
-	if ((oob_len + ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE) > pckt->len) {
+	if (oob_len > pckt->len) {
 		LOG_ERR("%s: Out of rx buf %d vs %d", __func__,
-		(oob_len + ESPI_OOB_PACKET_SIZE_WITHOUT_DATA_BYTE), pckt->len);
+			oob_len, pckt->len);
 		return -EINVAL;
 	}
 
-	oob_pckt->cycle_type = ESPI_OOB_CYCLE_TYPE;
-	oob_pckt->tag_len_bit_11_8 = ESPI_OOB_TAG;
-	oob_pckt->len_bit_7_0 = oob_len;
-
+	pckt->len = oob_len;
 	/* Get data byte */
-	for (int i = 0; i < oob_pckt->len_bit_7_0; i++) {
+	for (int i = 0; i < oob_len; i++) {
 		oob_pckt->data_byte[i] = queue0_reg->PUT_OOB_DATA[i];
 	}
 

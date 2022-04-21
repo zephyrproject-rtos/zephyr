@@ -78,15 +78,16 @@ static struct net_buf *bt_rpmsg_evt_recv(const uint8_t *data, size_t remaining)
 	}
 	BT_DBG("len %u", hdr.len);
 
-	buf = bt_buf_get_evt(hdr.evt, discardable, K_NO_WAIT);
-	if (!buf) {
-		if (discardable) {
-			BT_DBG("Discardable buffer pool full, ignoring event");
-		} else {
-			BT_ERR("No available event buffers!");
+	do {
+		buf = bt_buf_get_evt(hdr.evt, discardable, discardable ? K_NO_WAIT : K_SECONDS(10));
+		if (!buf) {
+			if (discardable) {
+				BT_DBG("Discardable buffer pool full, ignoring event");
+				return buf;
+			}
+			BT_WARN("Couldn't allocate a buffer after waiting 10 seconds.");
 		}
-		return buf;
-	}
+	} while (!buf);
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 

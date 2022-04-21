@@ -729,7 +729,7 @@ static struct bt_conn_cb conn_callbacks = {
 	.security_changed = csis_security_changed,
 };
 
-static const struct bt_conn_auth_cb auth_callbacks = {
+static struct bt_conn_auth_info_cb auth_callbacks = {
 	.pairing_complete = auth_pairing_complete,
 	.bond_deleted = csis_bond_deleted
 };
@@ -885,7 +885,7 @@ int bt_csis_register(const struct bt_csis_register_param *param,
 	instance_cnt++;
 
 	bt_conn_cb_register(&conn_callbacks);
-	bt_conn_auth_cb_register(&auth_callbacks);
+	bt_conn_auth_info_cb_register(&auth_callbacks);
 
 	err = bt_gatt_service_register(inst->srv.service_p);
 	if (err != 0) {

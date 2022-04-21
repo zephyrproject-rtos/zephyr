@@ -12,6 +12,7 @@
 #include <soc.h>
 #include <drivers/i2c.h>
 #include <drivers/dma.h>
+#include <drivers/pinctrl.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
@@ -24,6 +25,7 @@ LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 
 struct i2c_sam0_dev_config {
 	SercomI2cm *regs;
+	const struct pinctrl_dev_config *pcfg;
 	uint32_t bitrate;
 #ifdef MCLK
 	volatile uint32_t *mclk;
@@ -711,6 +713,11 @@ static int i2c_sam0_initialize(const struct device *dev)
 	/* Disable all I2C interrupts */
 	i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
+
 	/* I2C mode, enable timeouts */
 	i2c->CTRLA.reg = SERCOM_I2CM_CTRLA_MODE_I2C_MASTER |
 #ifdef SERCOM_I2CM_CTRLA_LOWTOUTEN
@@ -796,17 +803,19 @@ static void i2c_sam0_irq_config_##n(const struct device *dev)			\
 #define I2C_SAM0_CONFIG(n)						\
 static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),			\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	.bitrate = DT_INST_PROP(n, clock_frequency),			\
 	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
-	.irq_config_func = &i2c_sam0_irq_config_##n			\
+	.irq_config_func = &i2c_sam0_irq_config_##n,			\
 	I2C_SAM0_DMA_CHANNELS(n)					\
 }
 #else /* !MCLK */
 #define I2C_SAM0_CONFIG(n)						\
 static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),			\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	.bitrate = DT_INST_PROP(n, clock_frequency),			\
 	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
@@ -816,6 +825,7 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 #endif
 
 #define I2C_SAM0_DEVICE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static void i2c_sam0_irq_config_##n(const struct device *dev);	\
 	I2C_SAM0_CONFIG(n);						\
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		\

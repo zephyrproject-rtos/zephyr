@@ -164,10 +164,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * https://docs.zephyrproject.org/latest/reference/devicetree/index.html#fixed-flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

@@ -27,6 +27,7 @@
 #include <init.h>
 #include <drivers/dma.h>
 #include <drivers/i2s.h>
+#include <drivers/pinctrl.h>
 #include <soc.h>
 
 #define LOG_DOMAIN dev_i2s_sam_ssc
@@ -67,8 +68,7 @@ struct i2s_sam_dev_cfg {
 	const struct device *dev_dma;
 	Ssc *regs;
 	void (*irq_config)(void);
-	const struct soc_gpio_pin *pin_list;
-	uint8_t pin_list_size;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t periph_id;
 	uint8_t irq_id;
 };
@@ -952,6 +952,7 @@ static int i2s_sam_initialize(const struct device *dev)
 	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
 	struct i2s_sam_dev_data *const dev_data = dev->data;
 	Ssc *const ssc = dev_cfg->regs;
+	int ret;
 
 	/* Configure interrupts */
 	dev_cfg->irq_config();
@@ -967,7 +968,10 @@ static int i2s_sam_initialize(const struct device *dev)
 	}
 
 	/* Connect pins to the peripheral */
-	soc_gpio_list_configure(dev_cfg->pin_list, dev_cfg->pin_list_size);
+	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Enable module's clock */
 	soc_pmc_peripheral_enable(dev_cfg->periph_id);
@@ -1004,7 +1008,7 @@ static void i2s0_sam_irq_config(void)
 		    DEVICE_DT_INST_GET(0), 0);
 }
 
-static const struct soc_gpio_pin i2s0_pins[] = ATMEL_SAM_DT_INST_PINS(0);
+PINCTRL_DT_INST_DEFINE(0);
 
 static const struct i2s_sam_dev_cfg i2s0_sam_config = {
 	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(0, tx)),
@@ -1012,8 +1016,7 @@ static const struct i2s_sam_dev_cfg i2s0_sam_config = {
 	.irq_config = i2s0_sam_irq_config,
 	.periph_id = DT_INST_PROP(0, peripheral_id),
 	.irq_id = DT_INST_IRQN(0),
-	.pin_list = i2s0_pins,
-	.pin_list_size = ARRAY_SIZE(i2s0_pins),
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 struct queue_item rx_0_ring_buf[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];

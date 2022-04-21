@@ -75,8 +75,8 @@ struct lll_df_adv_cfg {
  * To mitigate the limited accuracy and losing information about saturated IQ samples a 0x80 value
  * is selected to serve the purpose.
  */
-#define IQ_SAMPLE_STATURATED_16_BIT 0x8000
-#define IQ_SAMPLE_STATURATED_8_BIT 0x80
+#define IQ_SAMPLE_STATURATED_16_BIT ((int16_t)0x8000)
+#define IQ_SAMPLE_STATURATED_8_BIT ((int8_t)0x80)
 
 #define IQ_SHIFT_12_TO_8_BIT(x) ((int8_t)((x) >> 4))
 #define IQ_CONVERT_12_TO_8_BIT(x)                                                                  \
@@ -97,6 +97,7 @@ struct node_rx_iq_report {
 	uint8_t packet_status;
 	uint8_t rssi_ant_id;
 	uint8_t chan_idx;
+	uint16_t event_counter;
 	union {
 		uint8_t pdu[0] __aligned(4);
 		struct iq_sample sample[0];

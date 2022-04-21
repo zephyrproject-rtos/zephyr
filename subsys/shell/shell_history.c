@@ -135,7 +135,7 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 			 size_t len)
 {
 	sys_dnode_t *l_item; /* list item */
-	struct shell_history_item *h_item;
+	struct shell_history_item *h_item, *h_prev_item;
 	uint32_t total_len = len + offsetof(struct shell_history_item, data);
 	uint32_t claim_len;
 	uint32_t claim2_len;
@@ -155,11 +155,11 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 	}
 
 	l_item = sys_dlist_peek_head(&history->list);
-	h_item = CONTAINER_OF(l_item, struct shell_history_item, dnode);
+	h_prev_item = CONTAINER_OF(l_item, struct shell_history_item, dnode);
 
 	if (l_item &&
-	   (h_item->len == len) &&
-	   (memcmp(h_item->data, line, len) == 0)) {
+	   (h_prev_item->len == len) &&
+	   (memcmp(h_prev_item->data, line, len) == 0)) {
 		/* Same command as before, do not store */
 		return;
 	}
@@ -190,7 +190,7 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 				 * We may get here only if a previous entry
 				 * exists. Stick the excess padding to it.
 				 */
-				h_item->padding += claim_len;
+				h_prev_item->padding += claim_len;
 				total_len += claim_len;
 				claim_len = total_len;
 			}

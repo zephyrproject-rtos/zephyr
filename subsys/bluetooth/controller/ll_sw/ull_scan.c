@@ -57,6 +57,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static uint8_t disable(uint8_t handle);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define IS_PHY_ENABLED(scan_ctx, scan_phy) ((scan_ctx)->lll.phy & (scan_phy))
+
 static uint8_t is_scan_update(uint8_t handle, uint16_t duration,
 			      uint16_t period, struct ll_scan_set **scan,
 			      struct node_rx_pdu **node_rx_scan_term);
@@ -114,6 +116,9 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 		return 0;
 	}
 
+	/* If phy assigned is PHY_1M or PHY_CODED, then scanning on that
+	 * PHY is enabled.
+	 */
 	lll->phy = phy;
 
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
@@ -196,7 +201,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	if (!is_coded_phy || (scan->lll.phy & PHY_1M))
+	if (!is_coded_phy || IS_PHY_ENABLED(scan, PHY_1M))
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	{
 		err = duration_period_setup(scan, duration, period,
@@ -244,7 +249,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	if (!is_coded_phy || (scan->lll.phy & PHY_1M))
+	if (!is_coded_phy || IS_PHY_ENABLED(scan, PHY_1M))
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	{
 		err = duration_period_update(scan, is_update_1m);
@@ -266,7 +271,7 @@ uint8_t ll_scan_enable(uint8_t enable)
 	}
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	if (!is_coded_phy || (scan->lll.phy & PHY_1M))
+	if (!is_coded_phy || IS_PHY_ENABLED(scan, PHY_1M))
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	{
@@ -359,7 +364,9 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	uint32_t volatile ret_cb;
 	uint32_t ticks_interval;
 	uint32_t ticks_anchor;
+	uint32_t ticks_offset;
 	struct lll_scan *lll;
+	uint8_t handle;
 	uint32_t ret;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -435,12 +442,31 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
-	uint8_t handle = ull_scan_handle_get(scan);
+	handle = ull_scan_handle_get(scan);
+
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
+	} else if (handle == SCAN_HANDLE_PHY_CODED) {
+		const struct ll_scan_set *scan_1m;
+
+		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
+		if (IS_PHY_ENABLED(scan_1m, PHY_1M)) {
+			ticks_offset = scan_1m->lll.ticks_window +
+				       (EVENT_TICKER_RES_MARGIN_US << 1);
+		} else {
+			ticks_offset = 0U;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
+
+	} else {
+		ticks_offset = 0U;
+	}
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE + handle,
-			   ticks_anchor, 0, ticks_interval,
+			   (ticks_anchor + ticks_offset), 0, ticks_interval,
 			   HAL_TICKER_REMAINDER((uint64_t)lll->interval *
 						SCAN_INT_UNIT_US),
 			   TICKER_NULL_LAZY,
@@ -576,7 +602,7 @@ void ull_scan_term_dequeue(uint8_t handle)
 		struct ll_scan_set *scan_coded;
 
 		scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-		if (scan_coded->lll.phy & PHY_CODED) {
+		if (IS_PHY_ENABLED(scan_coded, PHY_CODED)) {
 			uint8_t err;
 
 			err = disable(SCAN_HANDLE_PHY_CODED);
@@ -586,7 +612,7 @@ void ull_scan_term_dequeue(uint8_t handle)
 		struct ll_scan_set *scan_1m;
 
 		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
-		if (scan_1m->lll.phy & PHY_1M) {
+		if (IS_PHY_ENABLED(scan_1m, PHY_1M)) {
 			uint8_t err;
 
 			err = disable(SCAN_HANDLE_1M);

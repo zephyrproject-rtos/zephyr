@@ -11,7 +11,6 @@
  */
 
 #include <devicetree.h>
-#include <autoconf.h>
 #include <linker/sections.h>
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>

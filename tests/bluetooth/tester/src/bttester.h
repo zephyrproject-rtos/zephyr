@@ -7,6 +7,7 @@
  */
 
 #include <sys/util.h>
+#include <bluetooth/addr.h>
 
 #define BTP_MTU 1024
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
@@ -279,6 +280,12 @@ struct gap_oob_sc_set_remote_data_cmd {
 #define GAP_SET_MITM			0x1b
 struct gap_set_mitm {
 	uint8_t mitm;
+} __packed;
+
+#define GAP_SET_FILTER_LIST		0x1c
+struct gap_set_filter_list {
+	uint8_t cnt;
+	bt_addr_le_t addr[0];
 } __packed;
 
 /* events */

@@ -237,10 +237,10 @@ struct gpio_stm32_data {
  * @param dev GPIO port device pointer
  * @param pin IO pin
  * @param conf GPIO mode
- * @param altf Alternate function
+ * @param func Pin function
  *
  * @return 0 on success, negative errno code on failure
  */
-int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf);
+int gpio_stm32_configure(const struct device *dev, int pin, int conf, int func);
 
 #endif /* ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_ */

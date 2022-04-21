@@ -116,8 +116,17 @@ struct bluenrg_aci_cmd_ll_param {
 static int bt_spi_send_aci_config_data_controller_mode(void);
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
+#if defined(CONFIG_BT_SPI_BLUENRG)
+/* In case of BlueNRG-MS, it is necessary to prevent SPI driver to release CS,
+ * and instead, let current driver manage CS release. see kick_cs()/release_cs()
+ * So, add SPI_HOLD_ON_CS to operation field.
+ */
+static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
+	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_HOLD_ON_CS, 0);
+#else
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
 	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
+#endif
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
@@ -190,13 +199,13 @@ static int configure_cs(void)
 
 static void kick_cs(void)
 {
-	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
 	gpio_pin_set_dt(&bus.config.cs->gpio, 0);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
 }
 
 static void release_cs(void)
 {
-	gpio_pin_set_dt(&bus.config.cs->gpio, 1);
+	gpio_pin_set_dt(&bus.config.cs->gpio, 0);
 }
 
 static bool irq_pin_high(void)

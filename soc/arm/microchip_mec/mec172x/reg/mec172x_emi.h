@@ -25,9 +25,9 @@ struct emi_regs {
 	volatile uint8_t INTR_MSK_LSB;
 	volatile uint8_t INTR_MSK_MSB;
 	volatile uint8_t APPID;			/* +0x0C */
-	uint16_t RSVD1[3];
+	uint8_t RSVD1[3];
 	volatile uint8_t APPID_ASSGN;	/* +0x10 */
-	uint16_t RSVD2[3];
+	uint8_t RSVD2[3];
 	uint32_t RSVD3[(0x100 - 0x14) / 4];
 	volatile uint8_t HOST_TO_EC;	/* +0x100 */
 	volatile uint8_t EC_TO_HOST;

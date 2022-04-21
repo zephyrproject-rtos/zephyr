@@ -52,6 +52,14 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+/* Check that timeout_reload member is at safe offset when ll_sync_set is
+ * allocated using mem interface. timeout_reload being non-zero is used to
+ * indicate that a sync is established. And is used to check for sync being
+ * terminated under race conditions between HCI Tx and Rx thread when
+ * Periodic Advertising Reports are generated.
+ */
+MEM_FREE_MEMBER_ACCESS_BUILD_ASSERT(struct ll_sync_set, timeout_reload);
+
 static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
 static void sync_ticker_cleanup(struct ll_sync_set *sync, ticker_op_func stop_op_cb);
@@ -242,8 +250,16 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Enable scanner to create sync */
 	scan->periodic.sync = sync;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	scan->lll.is_sync = 1U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded->periodic.sync = sync;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		scan_coded->lll.is_sync = 1U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 	}
 
 	return 0;
@@ -362,7 +378,7 @@ uint8_t ll_sync_terminate(uint16_t handle)
 
 		aux = HDR_LLL2ULL(lll_aux);
 		err = ull_scan_aux_stop(aux);
-		if (err) {
+		if (err && (err != -EALREADY)) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
@@ -705,10 +721,12 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(
-			EVENT_OVERHEAD_START_US + ready_delay_us +
-			PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, lll->phy) +
-			EVENT_OVERHEAD_END_US);
+	sync->ull.ticks_slot =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
+				       ready_delay_us +
+				       PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
+						     lll->phy) +
+				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
 				sync->ull.ticks_prepare_to_start);
@@ -739,18 +757,26 @@ void ull_sync_setup_reset(struct ll_scan_set *scan)
 {
 	/* Remove the sync context from being associated with scan contexts */
 	scan->periodic.sync = NULL;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	scan->lll.is_sync = 0U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		struct ll_scan_set *scan_1m;
 
 		scan_1m = ull_scan_set_get(SCAN_HANDLE_1M);
 		if (scan == scan_1m) {
-			struct ll_scan_set *scan_coded;
-
-			scan_coded = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
-			scan_coded->periodic.sync = NULL;
+			scan = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
 		} else {
-			scan_1m->periodic.sync = NULL;
+			scan = scan_1m;
 		}
+
+		scan->periodic.sync = NULL;
+
+#if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		scan->lll.is_sync = 0U;
+#endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 	}
 }
 
@@ -1054,8 +1080,8 @@ void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len)
 int ull_sync_slot_update(struct ll_sync_set *sync, uint32_t slot_plus_us,
 			 uint32_t slot_minus_us)
 {
+	uint32_t volatile ret_cb;
 	uint32_t ret;
-	uint32_t ret_cb;
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
@@ -1063,8 +1089,8 @@ int ull_sync_slot_update(struct ll_sync_set *sync, uint32_t slot_plus_us,
 			    (TICKER_ID_SCAN_SYNC_BASE +
 			    ull_sync_handle_get(sync)),
 			    0, 0,
-			    slot_plus_us,
-			    slot_minus_us,
+			    HAL_TICKER_US_TO_TICKS(slot_plus_us),
+			    HAL_TICKER_US_TO_TICKS(slot_minus_us),
 			    0, 0,
 			    ticker_update_op_status_give,
 			    (void *)&ret_cb);

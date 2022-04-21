@@ -274,8 +274,8 @@ static bool net_buf_decode_bis_data(struct net_buf_simple *buf,
 	}
 
 	bis->index = net_buf_simple_pull_u8(buf);
-	if (bis->index == 0) {
-		BT_DBG("BIS index was 0");
+	if (!IN_RANGE(bis->index, BT_ISO_BIS_INDEX_MIN, BT_ISO_BIS_INDEX_MAX)) {
+		BT_DBG("Invalid BIS index %u", bis->index);
 		return false;
 	}
 
@@ -463,6 +463,14 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 
 	codec_qos.pd = net_buf_simple_pull_le24(&net_buf);
 	sink->subgroup_count = net_buf_simple_pull_u8(&net_buf);
+
+	if (sink->subgroup_count > ARRAY_SIZE(base.subgroups)) {
+		BT_DBG("Cannot decode BASE with %u subgroups (max supported is %zu)",
+		       sink->subgroup_count, ARRAY_SIZE(base.subgroups));
+
+		return false;
+	}
+
 	base.subgroup_count = sink->subgroup_count;
 	for (int i = 0; i < base.subgroup_count; i++) {
 		if (!net_buf_decode_subgroup(&net_buf, &base.subgroups[i])) {
@@ -566,6 +574,8 @@ static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
 		};
 
 		bt_le_per_adv_sync_cb_register(&cb);
+
+		pa_cb_registered = true;
 	}
 
 	sink = broadcast_sink_free_get();
@@ -841,8 +851,11 @@ static void broadcast_sink_cleanup_streams(struct bt_audio_broadcast_sink *sink)
 
 		stream = &sink->streams[i];
 
-		stream->ep->stream = NULL;
-		stream->ep = NULL;
+		if (stream->ep != NULL) {
+			stream->ep->stream = NULL;
+			stream->ep = NULL;
+		}
+
 		stream->qos = NULL;
 		stream->codec = NULL;
 		stream->iso = NULL;

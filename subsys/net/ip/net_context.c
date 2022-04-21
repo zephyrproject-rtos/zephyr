@@ -1245,6 +1245,36 @@ static int get_context_sndtimeo(struct net_context *context,
 #endif
 }
 
+static int get_context_rcvbuf(struct net_context *context,
+			      void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_RCVBUF)
+	*((int *)value) = context->options.rcvbuf;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_sndbuf(struct net_context *context,
+				void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_SNDBUF)
+	*((int *)value) = context->options.sndbuf;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -1623,6 +1653,7 @@ static int context_sendto(struct net_context *context,
 
 	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
 	if (!pkt) {
+		NET_ERR("Failed to allocate net_pkt");
 		return -ENOBUFS;
 	}
 
@@ -2213,6 +2244,49 @@ static int set_context_sndtimeo(struct net_context *context,
 #endif
 }
 
+static int set_context_rcvbuf(struct net_context *context,
+				const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_RCVBUF)
+	int rcvbuf_value = *((int *)value);
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if ((rcvbuf_value < 0) || (rcvbuf_value > UINT16_MAX)) {
+		return -EINVAL;
+	}
+
+	context->options.rcvbuf = (uint16_t) rcvbuf_value;
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_sndbuf(struct net_context *context,
+				const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_SNDBUF)
+	int sndbuf_value = *((int *)value);
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if ((sndbuf_value < 0) || (sndbuf_value > UINT16_MAX)) {
+		return -EINVAL;
+	}
+
+	context->options.sndbuf = (uint16_t) sndbuf_value;
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2242,6 +2316,12 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_SNDTIMEO:
 		ret = set_context_sndtimeo(context, value, len);
+		break;
+	case NET_OPT_RCVBUF:
+		ret = set_context_rcvbuf(context, value, len);
+		break;
+	case NET_OPT_SNDBUF:
+		ret = set_context_sndbuf(context, value, len);
 		break;
 	}
 
@@ -2279,6 +2359,12 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_SNDTIMEO:
 		ret = get_context_sndtimeo(context, value, len);
+		break;
+	case NET_OPT_RCVBUF:
+		ret = get_context_rcvbuf(context, value, len);
+		break;
+	case NET_OPT_SNDBUF:
+		ret = get_context_sndbuf(context, value, len);
 		break;
 	}
 

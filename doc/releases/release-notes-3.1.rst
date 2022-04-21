@@ -40,6 +40,8 @@ Deprecated in this release
 ==========================
 
 * :c:func:`nvs_init` is deprecated in favor of utilizing :c:func:`nvs_mount`.
+* The TinyCBOR module has been deprecated in favor of the new zcbor CBOR
+  library, included with Zephyr in this release.
 
 Stable API changes in this release
 ==================================
@@ -51,6 +53,12 @@ Bluetooth
 
   * The enum bt_l2cap_chan_state values BT_L2CAP_CONNECT and BT_L2CAP_DISCONNECT
     has been renamed to BT_L2CAP_CONNECTING and BT_L2CAP_DISCONNECTING.
+
+  * Moved the callbacks :c:func:`pairing_complete`, :c:func:`pairing_failed` and
+    :c:func:`bond_delete` from the `struct bt_auth_cb` to a newly created
+    informational-only callback `struct bt_auth_info_cb`.
+
+  * The :c:macro:bt_conn_index function now takes a `const struct bt_conn`.
 
 
 New APIs in this release
@@ -178,6 +186,30 @@ Build and Infrastructure
 
 Libraries / Subsystems
 **********************
+
+* Management
+
+  * Added support for MCUMGR Parameters command, which can be used to obtain
+    MCUMGR parameters; :kconfig:option:`CONFIG_OS_MGMT_MCUMGR_PARAMS` enables
+    the command.
+  * Added mcumgr fs handler for getting file status which returns file size;
+    controlled with :kconfig:option:`CONFIG_FS_MGMT_FILE_STATUS`
+  * Added mcumgr fs handler for getting file hash/checksum, with support for
+    IEEE CRC32 and SHA256, the following Kconfig options have been added to
+    control the addition:
+
+    * :kconfig:option:`CONFIG_FS_MGMT_CHECKSUM_HASH` to enable the command;
+    * :kconfig:option:`CONFIG_FS_MGMT_CHECKSUM_HASH_CHUNK_SIZE` that sets size
+      of buffer (stack memory) used for calculation:
+
+      * :kconfig:option:`CONFIG_FS_MGMT_CHECKSUM_IEEE_CRC32` enables support for
+        IEEE CRC32.
+      * :kconfig:option:`CONFIG_FS_MGMT_HASH_SHA256` enables SHA256 hash support.
+      * When hash/checksum query to mcumgr does not specify a type, then the order
+        of preference (most priority) is CRC32 followed by SHA256.
+
+  * Added mcumgr os hook to allow an application to accept or decline a reset
+    request; :kconfig:option:`CONFIG_OS_MGMT_RESET_HOOK` enables the callback.
 
 HALs
 ****

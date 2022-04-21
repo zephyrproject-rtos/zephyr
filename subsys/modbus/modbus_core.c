@@ -238,6 +238,8 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 		goto init_server_error;
 	}
 
+	ctx->client = false;
+
 	switch (param.mode) {
 	case MODBUS_MODE_RTU:
 	case MODBUS_MODE_ASCII:
@@ -262,7 +264,6 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 		goto init_server_error;
 	}
 
-	ctx->client = false;
 	ctx->unit_id = param.server.unit_id;
 	ctx->mbs_user_cb = param.server.user_cb;
 	if (IS_ENABLED(CONFIG_MODBUS_FC08_DIAGNOSTIC)) {
@@ -298,6 +299,8 @@ int modbus_init_client(const int iface, struct modbus_iface_param param)
 		goto init_client_error;
 	}
 
+	ctx->client = true;
+
 	switch (param.mode) {
 	case MODBUS_MODE_RTU:
 	case MODBUS_MODE_ASCII:
@@ -322,7 +325,6 @@ int modbus_init_client(const int iface, struct modbus_iface_param param)
 		goto init_client_error;
 	}
 
-	ctx->client = true;
 	ctx->unit_id = 0;
 	ctx->mbs_user_cb = NULL;
 	ctx->rxwait_to = param.rx_timeout;

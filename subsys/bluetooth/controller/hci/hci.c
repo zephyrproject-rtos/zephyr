@@ -207,6 +207,8 @@ static uint64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
 static struct net_buf *cmd_complete_status(uint8_t status);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define BUF_GET_TIMEOUT K_SECONDS(10)
+
 #if defined(CONFIG_BT_HCI_RAW)
 static uint8_t ll_adv_cmds;
 
@@ -2867,7 +2869,7 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 		 * node rx footer field.
 		 */
 		sync_handle = ull_sync_handle_get(sync);
-		per_evt_counter = lll->event_counter;
+		per_evt_counter = iq_report->event_counter;
 	}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
@@ -3013,7 +3015,7 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 	sep->cte_type = iq_report->cte_info.type;
 
 	sep->data_chan_idx = iq_report->chan_idx;
-	sep->conn_evt_counter = sys_cpu_to_le16(lll->event_counter);
+	sep->conn_evt_counter = sys_cpu_to_le16(iq_report->event_counter);
 
 	if (sep->cte_type == BT_HCI_LE_AOA_CTE) {
 		sep->slot_durations = iq_report->local_slot_durations;
@@ -6025,7 +6027,9 @@ static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 		*data_len -= data_len_frag;
 		*data_len_total -= data_len_frag;
 
-		*evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+		*evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
+		LL_ASSERT(*evt_buf);
+
 		net_buf_frag_add(buf, *evt_buf);
 
 		/* Continue to fragment until last partial PDU data fragment,
@@ -6120,6 +6124,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
 	struct net_buf *evt_buf;
+	bool devmatch = false;
 	uint8_t data_len = 0U;
 	uint8_t evt_type = 0U;
 	uint8_t sec_phy = 0U;
@@ -6173,6 +6178,11 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 		direct_resolved_curr = node_rx_curr->hdr.rx_ftr.direct_resolved;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		const bool devmatch_curr = node_rx_curr->hdr.rx_ftr.devmatch;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 		/* The Link Layer currently returns RSSI as an absolute value */
 		rssi = -(node_rx_curr->hdr.rx_ftr.rssi);
@@ -6237,7 +6247,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			ptr += sizeof(*adi);
 
 			BT_DBG("    AdvDataInfo DID = 0x%x, SID = 0x%x",
-			       adi->did, adi->sid);
+			       adi_curr->did, adi_curr->sid);
 		}
 
 		if (h->aux_ptr) {
@@ -6336,12 +6346,20 @@ no_ext_hdr:
 			data = data_curr;
 			scan_data_len_total = 0U;
 			tx_pwr = tx_pwr_curr;
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 			rl_idx = rl_idx_curr;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 			direct_report = direct_report_curr;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+			devmatch = devmatch_curr;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+
 		} else {
 			/* TODO: Validate current value with previous */
 
@@ -6391,6 +6409,13 @@ no_ext_hdr:
 				direct_report = direct_report_curr;
 			}
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+			if (!devmatch) {
+				devmatch = devmatch_curr;
+			}
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 		}
 
 		if (!node_rx_next) {
@@ -6413,6 +6438,13 @@ no_ext_hdr:
 		node_rx_next = node_rx_curr->hdr.rx_ftr.extra;
 		adv = (void *)node_rx_curr->pdu;
 	} while (1);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
+	    !devmatch) {
+		node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
+		return;
+	}
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	if (adv_addr) {
@@ -6511,7 +6543,9 @@ no_ext_hdr:
 	/* Allocate, append as buf fragement and construct the scan response
 	 * event.
 	 */
-	evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+	evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
+	LL_ASSERT(evt_buf);
+
 	net_buf_frag_add(buf, evt_buf);
 
 	/* If PDU data length less than total data length or PDU data length
@@ -6617,9 +6651,14 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 
 	scan = node_rx->hdr.rx_ftr.param;
 
+#if (CONFIG_BT_CTLR_DUP_FILTER_LEN > 0) && \
+	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	dup_periodic_adv_reset(scan->periodic.adv_addr_type,
 			       scan->periodic.adv_addr,
 			       scan->periodic.sid);
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 &&
+	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
+	*/
 
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 
@@ -6643,6 +6682,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	struct pdu_adv_aux_ptr *aux_ptr = NULL;
 	const struct pdu_adv_adi *adi = NULL;
 	uint8_t cte_type = BT_HCI_LE_NO_CTE;
+	const struct ll_sync_set *sync;
 	struct pdu_adv_com_ext_adv *p;
 	struct pdu_adv_ext_hdr *h;
 	uint16_t data_len_total;
@@ -6661,6 +6701,22 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    (!(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) &&
 	     !(le_event_mask & BT_EVT_MASK_LE_BIGINFO_ADV_REPORT))) {
+		return;
+	}
+
+	/* NOTE: The timeout_reload field in the sync context is checked under
+	 *       race condition between HCI Tx and Rx thread wherein a sync
+	 *       terminate was performed which resets the timeout_reload field
+	 *       before releasing the sync context back into its memory pool.
+	 *       It is important that timeout_reload field is at safe offset
+	 *       inside the sync context such that it is not corrupt while being
+	 *       in the memory pool.
+	 *
+	 *       This check ensures reports are not sent out after sync
+	 *       terminate.
+	 */
+	sync = HDR_LLL2ULL(ftr->param);
+	if (unlikely(!sync->timeout_reload)) {
 		return;
 	}
 
@@ -6787,14 +6843,13 @@ no_ext_hdr:
 	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT) &&
 		   adi) {
-		const struct ll_sync_set *sync = HDR_LLL2ULL(ftr->param);
 		uint8_t data_status;
 
 		data_status = (aux_ptr) ?
 			      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL :
 			      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
 
-		accept = ftr->sync_rx_enabled &&
+		accept = sync->rx_enable && ftr->sync_rx_enabled &&
 			 (!sync->nodups ||
 			  !dup_found(PDU_ADV_TYPE_EXT_IND,
 				     sync->peer_id_addr_type,
@@ -6806,7 +6861,7 @@ no_ext_hdr:
 	*/
 
 	} else {
-		accept = ftr->sync_rx_enabled;
+		accept = sync->rx_enable && ftr->sync_rx_enabled;
 	}
 
 	data_len_max = CONFIG_BT_BUF_EVT_RX_SIZE -
@@ -6867,7 +6922,9 @@ no_ext_hdr:
 				/* Some data left in PDU, mark as partial data. */
 				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 
-				evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+				evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
+				LL_ASSERT(evt_buf);
+
 				net_buf_frag_add(buf, evt_buf);
 
 				tx_pwr = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
@@ -6913,7 +6970,8 @@ no_ext_hdr:
 		 * constructed with the caller supplied buffer.
 		 */
 		if (!evt_buf) {
-			evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+			evt_buf = bt_buf_get_rx(BT_BUF_EVT, BUF_GET_TIMEOUT);
+			LL_ASSERT(evt_buf);
 
 			net_buf_frag_add(buf, evt_buf);
 		}
@@ -7855,7 +7913,7 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
-	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
 		le_df_cte_req_failed(BT_HCI_CTE_REQ_STATUS_RSP_WITHOUT_CTE, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */

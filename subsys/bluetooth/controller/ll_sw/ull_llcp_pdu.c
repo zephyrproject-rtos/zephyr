@@ -329,9 +329,12 @@ void llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	memcpy(p->rand, ctx->data.enc.rand, sizeof(p->rand));
 	p->ediv[0] = ctx->data.enc.ediv[0];
 	p->ediv[1] = ctx->data.enc.ediv[1];
-	/* TODO(thoh): Optimize getting random data */
-	csrand_get(p->skdm, sizeof(p->skdm));
-	csrand_get(p->ivm, sizeof(p->ivm));
+	/* Optimal getting random data, p->ivm is packed right after p->skdm */
+	BUILD_ASSERT(offsetof(struct pdu_data_llctrl_enc_req, ivm) ==
+		     offsetof(struct pdu_data_llctrl_enc_req, skdm) + sizeof(p->skdm),
+		     "Member IVM must be after member SKDM");
+	csrand_get(p->skdm, sizeof(p->skdm) + sizeof(p->ivm));
+
 }
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -361,9 +364,11 @@ void llcp_pdu_encode_enc_rsp(struct pdu_data *pdu)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 
 	p = &pdu->llctrl.enc_rsp;
-	/* TODO(thoh): Optimize getting random data */
-	csrand_get(p->skds, sizeof(p->skds));
-	csrand_get(p->ivs, sizeof(p->ivs));
+	/* Optimal getting random data, p->ivs is packed right after p->skds */
+	BUILD_ASSERT(offsetof(struct pdu_data_llctrl_enc_rsp, ivs) ==
+		     offsetof(struct pdu_data_llctrl_enc_rsp, skds) + sizeof(p->skds),
+		     "Member IVS must be after member SKDS");
+	csrand_get(p->skds, sizeof(p->skds) + sizeof(p->ivs));
 }
 
 void llcp_pdu_encode_start_enc_req(struct pdu_data *pdu)

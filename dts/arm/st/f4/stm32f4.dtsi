@@ -10,6 +10,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/pwm/stm32_pwm.h>
 #include <freq.h>
 
 / {
@@ -513,6 +514,15 @@
 			st,mem2mem;
 			status = "disabled";
 			label = "DMA_2";
+		};
+
+		sdmmc1: sdmmc@40012c00 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x40012c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
+			interrupts = <49 0>;
+			status = "disabled";
+			label = "SDMMC_1";
 		};
 	};
 

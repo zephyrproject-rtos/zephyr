@@ -43,11 +43,14 @@ macro(include_boilerplate location)
 
   if(NOT NO_BOILERPLATE)
     list(LENGTH Zephyr_FIND_COMPONENTS components_length)
+    # The module messages are intentionally higher than STATUS to avoid the -- prefix
+    # and make them more visible to users. This does result in them being output
+    # to stderr, but that is an implementation detail of cmake.
     if(components_length EQUAL 0)
-      message("Loading Zephyr default modules (${location}).")
+      message(NOTICE "Loading Zephyr default modules (${location}).")
       include(zephyr_default NO_POLICY_SCOPE)
     else()
-      message("Loading Zephyr module(s) (${location}): ${Zephyr_FIND_COMPONENTS}")
+      message(NOTICE "Loading Zephyr module(s) (${location}): ${Zephyr_FIND_COMPONENTS}")
       foreach(component ${Zephyr_FIND_COMPONENTS})
         if(${component} MATCHES "^\([^:]*\):\(.*\)$")
           string(REPLACE "," ";" SUB_COMPONENTS ${CMAKE_MATCH_2})

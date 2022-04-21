@@ -15,7 +15,6 @@ config BT_H4
 	bool "H:4 UART"
 	select UART_INTERRUPT_DRIVEN
 	select BT_UART
-	select BT_RECV_IS_RX_THREAD
 	depends on SERIAL
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
@@ -38,14 +37,6 @@ config BT_RPMSG
 	help
 	  Bluetooth HCI driver for communication with another CPU
 	  using RPMsg framework.
-
-if BT_RPMSG
-
-choice IPC_SERVICE_BACKEND
-	default IPC_SERVICE_BACKEND_RPMSG
-endchoice
-
-endif # BT_RPMSG
 
 config BT_SPI
 	bool "SPI HCI"

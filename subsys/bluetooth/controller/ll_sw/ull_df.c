@@ -466,7 +466,7 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 		 * (-ENOENT) gracefully.
 		 * Periodic sync lost event also disables the CTE sampling.
 		 */
-		err = ull_sync_slot_update(sync, 0, CTE_LEN_MAX_US);
+		err = ull_sync_slot_update(sync, slot_plus_us, slot_minus_us);
 		LL_ASSERT(err == 0 || err == -ENOENT);
 	}
 

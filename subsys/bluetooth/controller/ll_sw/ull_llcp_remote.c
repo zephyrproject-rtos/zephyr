@@ -73,37 +73,23 @@ enum {
 
 static bool proc_with_instant(struct proc_ctx *ctx)
 {
-	/*
-	 * TODO: should we combine all the cases that return 0
-	 * and all the cases that return 1?
-	 */
 	switch (ctx->proc) {
 	case PROC_UNKNOWN:
-		return 0U;
 	case PROC_FEATURE_EXCHANGE:
-		return 0U;
 	case PROC_MIN_USED_CHANS:
-		return 0U;
 	case PROC_LE_PING:
-		return 0U;
 	case PROC_VERSION_EXCHANGE:
-		return 0U;
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
-		return 0U;
-	case PROC_PHY_UPDATE:
-		return 1U;
-	case PROC_CONN_UPDATE:
-	case PROC_CONN_PARAM_REQ:
-		return 1U;
 	case PROC_TERMINATE:
-		return 0U;
-	case PROC_CHAN_MAP_UPDATE:
-		return 1U;
 	case PROC_DATA_LENGTH_UPDATE:
-		return 0U;
 	case PROC_CTE_REQ:
 		return 0U;
+	case PROC_PHY_UPDATE:
+	case PROC_CONN_UPDATE:
+	case PROC_CONN_PARAM_REQ:
+	case PROC_CHAN_MAP_UPDATE:
+		return 1U;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -191,24 +177,19 @@ struct proc_ctx *llcp_rr_peek(struct ll_conn *conn)
 	return ctx;
 }
 
+bool llcp_rr_ispaused(struct ll_conn *conn)
+{
+	return conn->llcp.remote.pause == 1U;
+}
+
 void llcp_rr_pause(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
-	if (ctx) {
-		ctx->pause = 1;
-	}
+	conn->llcp.remote.pause = 1U;
 }
 
 void llcp_rr_resume(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
-	if (ctx) {
-		ctx->pause = 0;
-	}
+	conn->llcp.remote.pause = 0U;
 }
 
 
@@ -403,7 +384,7 @@ static void rr_act_reject(struct ll_conn *conn)
 
 	LL_ASSERT(ctx != NULL);
 
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_REJECT);
 	} else {
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
@@ -419,7 +400,7 @@ static void rr_act_unsupported(struct ll_conn *conn)
 
 	LL_ASSERT(ctx != NULL);
 
-	if (ctx->pause || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		rr_set_state(conn, RR_STATE_UNSUPPORTED);
 	} else {
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP);
@@ -444,7 +425,7 @@ static void rr_act_complete(struct ll_conn *conn)
 
 static void rr_act_connect(struct ll_conn *conn)
 {
-	/* TODO */
+	/* Empty on purpose */
 }
 
 static void rr_act_disconnect(struct ll_conn *conn)
@@ -753,9 +734,9 @@ static const struct proc_role new_proc_lut[] = {
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 	[PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND] = { PROC_MIN_USED_CHANS, ACCEPT_ROLE_CENTRAL },
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
-#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	[PDU_DATA_LLCTRL_TYPE_CTE_REQ] = { PROC_CTE_REQ, ACCEPT_ROLE_BOTH },
-#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
 	[PDU_DATA_LLCTRL_TYPE_CTE_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
 };
 
@@ -814,7 +795,6 @@ static void rr_abort(struct ll_conn *conn)
 		ctx = rr_dequeue(conn);
 	}
 
-	/* TODO(thoh): Whats missing here ??? */
 	rr_set_collision(conn, 0U);
 	rr_set_state(conn, RR_STATE_IDLE);
 }

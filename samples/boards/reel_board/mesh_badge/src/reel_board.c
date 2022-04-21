@@ -7,6 +7,7 @@
 
 #include <zephyr.h>
 #include <device.h>
+#include <devicetree.h>
 #include <drivers/gpio.h>
 #include <display/cfb.h>
 #include <sys/printk.h>
@@ -577,9 +578,12 @@ static int configure_leds(void)
 
 static int erase_storage(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 
-	dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	if (!device_is_ready(dev)) {
+		printk("Flash device not ready\n");
+		return -ENODEV;
+	}
 
 	return flash_erase(dev, FLASH_AREA_OFFSET(storage),
 			   FLASH_AREA_SIZE(storage));

@@ -82,6 +82,7 @@ extensions = [
     "zephyr.doxyrunner",
     "zephyr.vcs_link",
     "notfound.extension",
+    "sphinx_copybutton",
     "zephyr.external_content",
 ]
 
@@ -151,7 +152,7 @@ html_context = {
     "reference_links": {
         "API": f"{reference_prefix}/doxygen/html/index.html",
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
-        "Devicetree Bindings": f"{reference_prefix}/reference/devicetree/bindings.html",
+        "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
     }
 }
 
@@ -237,8 +238,8 @@ vcs_link_prefixes = {
 }
 vcs_link_exclude = [
     "reference/kconfig.*",
-    "reference/devicetree/bindings.*",
-    "reference/devicetree/compatibles.*",
+    "build/dts/api/bindings.*",
+    "build/dts/api/compatibles.*",
 ]
 
 # -- Options for zephyr.kconfig -------------------------------------------
@@ -257,9 +258,9 @@ external_content_contents = [
 ]
 external_content_keep = [
     "reference/kconfig/*",
-    "reference/devicetree/bindings.rst",
-    "reference/devicetree/bindings/**/*",
-    "reference/devicetree/compatibles/**/*",
+    "build/dts/api/bindings.rst",
+    "build/dts/api/bindings/**/*",
+    "build/dts/api/compatibles/**/*",
 ]
 
 # -- Options for sphinx.ext.graphviz --------------------------------------

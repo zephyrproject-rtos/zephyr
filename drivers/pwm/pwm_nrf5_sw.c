@@ -37,8 +37,15 @@ BUILD_ASSERT(DT_INST_PROP(0, clock_prescaler) == 0,
 #endif
 #define PWM_0_MAP_SIZE DT_INST_PROP(0, channel_count)
 
-/* When RTC is used, one more PPI channel is required. */
-#define PPI_PER_CH (2 + USE_RTC)
+/* When RTC is used, one more PPI task endpoint is required for clearing
+ * the counter, so when FORK feature is not available, one more PPI channel
+ * needs to be used.
+ */
+#if USE_RTC && !defined(PPI_FEATURE_FORKS_PRESENT)
+#define PPI_PER_CH 3
+#else
+#define PPI_PER_CH 2
+#endif
 
 struct pwm_config {
 	union {
@@ -187,7 +194,8 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 	NRF_GPIOTE->CONFIG[gpiote_ch] = 0;
 
 	/* clear PPI used */
-	ppi_mask = BIT(ppi_chs[0]) | BIT(ppi_chs[1]) | (USE_RTC ? BIT(ppi_chs[2]) : 0);
+	ppi_mask = BIT(ppi_chs[0]) | BIT(ppi_chs[1]) |
+		   (PPI_PER_CH > 2 ? BIT(ppi_chs[2]) : 0);
 	NRF_PPI->CHENCLR = ppi_mask;
 
 	/* configure GPIO pin as output */
@@ -209,23 +217,23 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 
 	/* configure RTC / TIMER */
 	if (USE_RTC) {
-		rtc->EVENTS_COMPARE[channel] = 0;
-		rtc->EVENTS_COMPARE[config->map_size] = 0;
+		rtc->EVENTS_COMPARE[1 + channel] = 0;
+		rtc->EVENTS_COMPARE[0] = 0;
 
 		/*
 		 * '- 1' adjusts pulse and period cycles to the fact that CLEAR
 		 * task event is generated always one LFCLK cycle after period
 		 * COMPARE value is reached.
 		 */
-		rtc->CC[channel] = pulse_cycles - 1;
-		rtc->CC[config->map_size] = period_cycles - 1;
+		rtc->CC[1 + channel] = pulse_cycles - 1;
+		rtc->CC[0] = period_cycles - 1;
 		rtc->TASKS_CLEAR = 1;
 	} else {
-		timer->EVENTS_COMPARE[channel] = 0;
-		timer->EVENTS_COMPARE[config->map_size] = 0;
+		timer->EVENTS_COMPARE[1 + channel] = 0;
+		timer->EVENTS_COMPARE[0] = 0;
 
-		timer->CC[channel] = pulse_cycles;
-		timer->CC[config->map_size] = period_cycles;
+		timer->CC[1 + channel] = pulse_cycles;
+		timer->CC[0] = period_cycles;
 		timer->TASKS_CLEAR = 1;
 	}
 
@@ -235,26 +243,31 @@ static int pwm_nrf5_sw_pin_set(const struct device *dev, uint32_t pwm,
 	/* setup PPI */
 	if (USE_RTC) {
 		NRF_PPI->CH[ppi_chs[0]].EEP =
-			(uint32_t) &(rtc->EVENTS_COMPARE[channel]);
+			(uint32_t) &(rtc->EVENTS_COMPARE[1 + channel]);
 		NRF_PPI->CH[ppi_chs[0]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[channel]);
+			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
 		NRF_PPI->CH[ppi_chs[1]].EEP =
-			(uint32_t) &(rtc->EVENTS_COMPARE[config->map_size]);
+			(uint32_t) &(rtc->EVENTS_COMPARE[0]);
 		NRF_PPI->CH[ppi_chs[1]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[channel]);
+			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
+#if defined(PPI_FEATURE_FORKS_PRESENT)
+		NRF_PPI->FORK[ppi_chs[1]].TEP =
+			(uint32_t) &(rtc->TASKS_CLEAR);
+#else
 		NRF_PPI->CH[ppi_chs[2]].EEP =
-			(uint32_t) &(rtc->EVENTS_COMPARE[config->map_size]);
+			(uint32_t) &(rtc->EVENTS_COMPARE[0]);
 		NRF_PPI->CH[ppi_chs[2]].TEP =
 			(uint32_t) &(rtc->TASKS_CLEAR);
+#endif
 	} else {
 		NRF_PPI->CH[ppi_chs[0]].EEP =
-			(uint32_t) &(timer->EVENTS_COMPARE[channel]);
+			(uint32_t) &(timer->EVENTS_COMPARE[1 + channel]);
 		NRF_PPI->CH[ppi_chs[0]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[channel]);
+			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
 		NRF_PPI->CH[ppi_chs[1]].EEP =
-			(uint32_t) &(timer->EVENTS_COMPARE[config->map_size]);
+			(uint32_t) &(timer->EVENTS_COMPARE[0]);
 		NRF_PPI->CH[ppi_chs[1]].TEP =
-			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[channel]);
+			(uint32_t) &(NRF_GPIOTE->TASKS_OUT[gpiote_ch]);
 	}
 	NRF_PPI->CHENSET = ppi_mask;
 
@@ -360,10 +373,6 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 		/* setup RTC */
 		rtc->PRESCALER = 0;
 
-		/*
-		 * TODO: set EVTEN to map_size if not 3, i.e. if RTC supports
-		 * less than 4 compares, then less channels can be supported.
-		 */
 		rtc->EVTENSET = (RTC_EVTENSET_COMPARE0_Msk |
 				 RTC_EVTENSET_COMPARE1_Msk |
 				 RTC_EVTENSET_COMPARE2_Msk |
@@ -374,12 +383,7 @@ static int pwm_nrf5_sw_init(const struct device *dev)
 		timer->PRESCALER = config->prescaler;
 		timer->BITMODE = TIMER_BITMODE_BITMODE_16Bit;
 
-		/*
-		 * TODO: set shorts according to map_size if not 3, i.e. if
-		 * NRF_TIMER supports more than 4 compares, then more channels
-		 * can be supported.
-		 */
-		timer->SHORTS = TIMER_SHORTS_COMPARE3_CLEAR_Msk;
+		timer->SHORTS = TIMER_SHORTS_COMPARE0_CLEAR_Msk;
 	}
 
 	return 0;

@@ -62,6 +62,8 @@ def parse_args():
 
     parser.add_argument("-k", "--kernel", required=True,
                         help="Input zephyr ELF binary")
+    parser.add_argument("-d", "--num-dynamic-devices", required=False, default=0,
+                        type=int, help="Input number of dynamic devices allowed")
     parser.add_argument("-o", "--output-source", required=True,
             help="Output source file")
 
@@ -112,6 +114,7 @@ def symbol_handle_data(elf, sym):
 # These match the corresponding constants in <device.h>
 DEVICE_HANDLE_SEP = -32768
 DEVICE_HANDLE_ENDS = 32767
+DEVICE_HANDLE_NULL = 0
 def handle_name(hdl):
     if hdl == DEVICE_HANDLE_SEP:
         return "DEVICE_HANDLE_SEP"
@@ -134,6 +137,7 @@ class Device:
         # assigned by correlating the device struct handles pointer
         # value with the addr of a Handles instance.
         self.__handles = None
+        self.__pm = None
 
     @property
     def obj_handles(self):
@@ -153,6 +157,55 @@ class Device:
             offset = self.ld_constants["_DEVICE_STRUCT_HANDLES_OFFSET"]
             self.__handles = struct.unpack(format, data[offset:offset + size])[0]
         return self.__handles
+
+    @property
+    def obj_pm(self):
+        """
+        Returns the value from the device struct pm field, pointing to the
+        pm struct for this device.
+        """
+        if self.__pm is None:
+            data = symbol_data(self.elf, self.sym)
+            format = "<" if self.elf.little_endian else ">"
+            if self.elf.elfclass == 32:
+                format += "I"
+                size = 4
+            else:
+                format += "Q"
+                size = 8
+            offset = self.ld_constants["_DEVICE_STRUCT_PM_OFFSET"]
+            self.__pm = struct.unpack(format, data[offset:offset + size])[0]
+        return self.__pm
+
+class PMDevice:
+    """
+    Represents information about a pm_device object and its references to other objects.
+    """
+    def __init__(self, elf, ld_constants, sym, addr):
+        self.elf = elf
+        self.ld_constants = ld_constants
+        self.sym = sym
+        self.addr = addr
+
+        # Point to the device instance associated with the pm_device;
+        self.__flags = None
+
+    def is_domain(self):
+        """
+        Checks if the device that this pm struct belongs is a power domain.
+        """
+        if self.__flags is None:
+            data = symbol_data(self.elf, self.sym)
+            format = "<" if self.elf.little_endian else ">"
+            if self.elf.elfclass == 32:
+                format += "I"
+                size = 4
+            else:
+                format += "Q"
+                size = 8
+            offset = self.ld_constants["_PM_DEVICE_STRUCT_FLAGS_OFFSET"]
+            self.__flags = struct.unpack(format, data[offset:offset + size])[0]
+        return self.__flags & (1 << self.ld_constants["_PM_DEVICE_FLAG_PD"])
 
 class Handles:
     def __init__(self, sym, addr, handles, node):
@@ -174,6 +227,7 @@ def main():
     with open(edtser, 'rb') as f:
         edt = pickle.load(f)
 
+    pm_devices = {}
     devices = []
     handles = []
     # Leading _ are stripped from the stored constant key
@@ -181,6 +235,10 @@ def main():
     want_constants = set([args.start_symbol,
                           "_DEVICE_STRUCT_SIZEOF",
                           "_DEVICE_STRUCT_HANDLES_OFFSET"])
+    if args.num_dynamic_devices != 0:
+        want_constants.update(["_PM_DEVICE_FLAG_PD",
+                               "_DEVICE_STRUCT_PM_OFFSET",
+                               "_PM_DEVICE_STRUCT_FLAGS_OFFSET"])
     ld_constants = dict()
 
     for section in elf.iter_sections():
@@ -205,6 +263,10 @@ def main():
                         node = edt.dep_ord2node[hdls[0]] if (hdls and hdls[0] != 0) else None
                         handles.append(Handles(sym, addr, hdls, node))
                         debug("handles %s %d %s" % (sym.name, hdls[0] if hdls else -1, node))
+                if sym.name.startswith("__pm_device__") and not sym.name.endswith("_slot"):
+                    addr = sym.entry.st_value
+                    pm_devices[addr] = PMDevice(elf, ld_constants, sym, addr)
+                    debug("pm device %s" % (sym.name,))
 
     assert len(want_constants) == len(ld_constants), "linker map data incomplete"
 
@@ -336,6 +398,11 @@ def main():
                     else:
                         sup_paths.append('(%s)' % dn.path)
                 hdls.extend(dn.__device.dev_handle for dn in sn.__supports)
+
+            if args.num_dynamic_devices != 0:
+                pm = pm_devices.get(dev.obj_pm)
+                if pm and pm.is_domain():
+                    hdls.extend(DEVICE_HANDLE_NULL for dn in range(args.num_dynamic_devices))
 
             # Terminate the array with the end symbol
             hdls.append(DEVICE_HANDLE_ENDS)

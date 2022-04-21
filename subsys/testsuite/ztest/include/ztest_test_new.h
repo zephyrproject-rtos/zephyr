@@ -211,6 +211,16 @@ static inline void unit_test_noop(void)
 #define Z_ZTEST_F(suite, fn, t_options) Z_TEST(suite, fn, t_options, 1)
 
 /**
+ * @brief Skips the test if config is enabled
+ *
+ * Use this macro at the start of your test case, to skip it when
+ * config is enabled.  Useful when your test is still under development.
+ *
+ * @param config The Kconfig option used to skip the test.
+ */
+#define Z_TEST_SKIP_IFDEF(config) COND_CODE_1(config, (ztest_test_skip()), ())
+
+/**
  * @brief Create and register a new unit test.
  *
  * Calling this macro will create a new unit test and attach it to the declared `suite`. The `suite`
@@ -277,6 +287,12 @@ struct ztest_test_rule {
  * callback, the test functions are provided a pointer to the test being run, and the data. This
  * provides a mechanism for tests to perform custom operations depending on the specific test or
  * the data (for example logging may use the test's name).
+ *
+ * Ordering:
+ * - Test rule's `before` function will run before the suite's `before` function. This is done to
+ * allow the test suite's customization to take precedence over the rule which is applied to all
+ * suites.
+ * - Test rule's `after` function is not guaranteed to run in any particular order.
  *
  * @param name The name for the test rule (must be unique within the compilation unit)
  * @param before_each_fn The callback function to call before each test (may be NULL)

@@ -26,9 +26,8 @@
 #include <hal/uart_hal.h>
 #include <hal/uart_types.h>
 
-#include <drivers/gpio.h>
+#include <drivers/pinctrl.h>
 
-#include <soc/gpio_sig_map.h>
 #include <soc/uart_reg.h>
 #include <device.h>
 #include <soc.h>
@@ -50,22 +49,13 @@
 #define ISR_HANDLER intr_handler_t
 #endif
 
-struct uart_esp32_pin {
-	const char *gpio_name;
-	int pin;
-};
-
 struct uart_esp32_config {
 	const struct device *clock_dev;
 
-	const struct uart_esp32_pin tx;
-	const struct uart_esp32_pin rx;
-	const struct uart_esp32_pin rts;
-	const struct uart_esp32_pin cts;
+	const struct pinctrl_dev_config *pcfg;
 
 	const clock_control_subsys_t clock_subsys;
 
-	uint8_t uart_num;
 	int irq_source;
 };
 
@@ -202,66 +192,11 @@ static int uart_esp32_config_get(const struct device *dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-static int uart_esp32_configure_pins(const struct device *dev, const struct uart_config *uart)
-{
-	const struct uart_esp32_config *const cfg = dev->config;
-
-	do {
-		if (cfg->tx.gpio_name == NULL || cfg->rx.gpio_name == NULL)
-			break;
-
-		/* TX pin config */
-		const struct device *tx_dev = device_get_binding(cfg->tx.gpio_name);
-
-		if (!tx_dev)
-			break;
-		gpio_pin_set(tx_dev, cfg->tx.pin, 1);
-		gpio_pin_configure(tx_dev, cfg->tx.pin, GPIO_OUTPUT);
-		esp_rom_gpio_matrix_out(cfg->tx.pin,
-				uart_periph_signal[cfg->uart_num].tx_sig, 0, 0);
-
-		/* RX pin config */
-		const struct device *rx_dev = device_get_binding(cfg->rx.gpio_name);
-
-		if (!rx_dev)
-			break;
-		gpio_pin_configure(rx_dev, cfg->rx.pin, GPIO_PULL_UP | GPIO_INPUT);
-		esp_rom_gpio_matrix_in(cfg->rx.pin, uart_periph_signal[cfg->uart_num].rx_sig, 0);
-
-		if (uart->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
-			if (cfg->rts.gpio_name == NULL || cfg->cts.gpio_name == NULL)
-				break;
-
-			/* CTS pin config */
-			const struct device *cts_dev = device_get_binding(cfg->cts.gpio_name);
-
-			if (!cts_dev)
-				break;
-			gpio_pin_configure(cts_dev, cfg->cts.pin, GPIO_PULL_UP | GPIO_INPUT);
-			esp_rom_gpio_matrix_in(cfg->cts.pin,
-					uart_periph_signal[cfg->uart_num].cts_sig, 0);
-
-			/* RTS pin config */
-			const struct device *rts_dev = device_get_binding(cfg->rts.gpio_name);
-
-			if (!rts_dev)
-				break;
-			gpio_pin_configure(rts_dev, cfg->rts.pin, GPIO_OUTPUT);
-			esp_rom_gpio_matrix_out(cfg->rts.pin,
-					uart_periph_signal[cfg->uart_num].rts_sig, 0, 0);
-		}
-		return 0;
-
-	} while (0);
-
-	return -EINVAL;
-}
-
 static int uart_esp32_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct uart_esp32_config *config = dev->config;
 	struct uart_esp32_data *data = dev->data;
-	int ret = uart_esp32_configure_pins(dev, cfg);
+	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
 		return ret;
@@ -530,35 +465,13 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 #endif  /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#define GPIO0_NAME COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay), \
-			     (DT_LABEL(DT_INST(0, espressif_esp32_gpio))), (NULL))
-#define GPIO1_NAME COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay), \
-			     (DT_LABEL(DT_INST(1, espressif_esp32_gpio))), (NULL))
-
-#define DT_UART_ESP32_GPIO_NAME(idx, pin) ( \
-	DT_INST_PROP(idx, pin) < 32 ? GPIO0_NAME : GPIO1_NAME)
-
 #define ESP32_UART_INIT(idx)						       \
+										\
+PINCTRL_DT_INST_DEFINE(idx);							\
+										\
 static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
-	.uart_num = DT_INST_PROP(idx, peripheral),	\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		       \
-	.tx = {	\
-		.pin = DT_INST_PROP(idx, tx_pin),	\
-		.gpio_name = DT_UART_ESP32_GPIO_NAME(idx, tx_pin),	\
-	},	\
-	.rx = {	\
-		.pin = DT_INST_PROP(idx, rx_pin),	\
-		.gpio_name = DT_UART_ESP32_GPIO_NAME(idx, rx_pin),	\
-	},	\
-	IF_ENABLED(DT_NODE_HAS_PROP(idx, hw_flow_control), (	\
-	.rts = {	\
-		.pin = DT_INST_PROP(idx, rts_pin),	\
-		.gpio_name = DT_UART_ESP32_GPIO_NAME(idx, rts_pin),	\
-	},	\
-	.cts = {	\
-		.pin = DT_INST_PROP(idx, cts_pin),	\
-		.gpio_name = DT_UART_ESP32_GPIO_NAME(idx, cts_pin),	\
-	},))	\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),				\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
 	.irq_source = DT_INST_IRQN(idx)			       \
 };									       \

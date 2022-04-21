@@ -5,7 +5,9 @@ description: Atmel SAM SSC (Synchronous Serial Controller) controller
 
 compatible: "atmel,sam-ssc"
 
-include: base.yaml
+include:
+    - name: base.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:
@@ -17,20 +19,6 @@ properties:
     peripheral-id:
       type: int
       description: peripheral ID
-      required: true
-
-    pinctrl-0:
-      type: phandles
-      description: |
-        PIO pin configuration for RF, RK, RD, TF, TK, & TD signals.
-        We expect that the phandles will reference pinctrl nodes.
-        These nodes will have a nodelabel that matches the Atmel SoC HAL
-        defines and be of the form p<port><pin><periph>_<inst>_<signal>.
-
-        For example the SSC on SAME7x would be
-           pinctrl-0 = <&pd24b_ssc_rf &pa22a_ssc_rk &pa10c_ssc_rd
-                        &pb0d_ssc_tf &pb1d_ssc_tk &pb5d_ssc_td>;
-
       required: true
 
     dmas:

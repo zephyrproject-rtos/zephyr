@@ -20,6 +20,7 @@
 		led1 = &led_1;
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
+		uart-1 = &uart1;
 		watchdog0 = &wdog0;
 	};
 
@@ -109,4 +110,8 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+};
+
+&uart1 {
+	status = "okay";
 };

@@ -6,5 +6,6 @@
 config PECI_XEC
 	bool "XEC Microchip PECI driver"
 	depends on SOC_FAMILY_MEC
+	default $(dt_compat_enabled,${DT_COMPAT_ST_PECI_XEC})
 	help
 	  Enable the Microchip XEC PECI IO driver.

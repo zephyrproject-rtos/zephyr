@@ -40,6 +40,16 @@
 			health-test-magic = <0x17590abc>;
 			health-test-config = <0xaa74>;
 		};
+
+		ltdc: display-controller@50001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x50001000 0x200>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x000000008>;
+			label = "LTDC";
+			status = "disabled";
+		};
 	};
 
 	/* DTCM memory directly coupled to CPU */

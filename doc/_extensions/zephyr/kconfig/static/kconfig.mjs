@@ -88,9 +88,10 @@ function renderKconfigPropLiteral(parent, title, content) {
  * @param {Element} parent Parent element.
  * @param {String} title Title.
  * @param {list} elements List of elements.
- * @returns
+ * @param {boolean} linkElements Whether to link elements (treat each element
+ *                  as an unformatted option)
  */
-function renderKconfigPropList(parent, title, elements) {
+function renderKconfigPropList(parent, title, elements, linkElements) {
     if (elements.length === 0) {
         return;
     }
@@ -112,8 +113,17 @@ function renderKconfigPropList(parent, title, elements) {
         const listItem = document.createElement('li');
         list.appendChild(listItem);
 
-        /* using HTML since element content may be pre-formatted */
-        listItem.innerHTML = element;
+        if (linkElements) {
+            const link = document.createElement('a');
+            link.href = '#' + element;
+            listItem.appendChild(link);
+
+            const linkText = document.createTextNode(element);
+            link.appendChild(linkText);
+        } else {
+            /* using HTML since element content is pre-formatted */
+            listItem.innerHTML = element;
+        }
     });
 }
 
@@ -250,11 +260,14 @@ function renderKconfigEntry(entry) {
         renderKconfigPropList(props, 'Dependencies', [entry.dependencies]);
     }
     renderKconfigDefaults(props, entry.defaults, entry.alt_defaults);
-    renderKconfigPropList(props, 'Selects', entry.selects);
-    renderKconfigPropList(props, 'Implies', entry.implies);
-    renderKconfigPropList(props, 'Ranges', entry.ranges);
-    renderKconfigPropList(props, 'Choices', entry.choices);
+    renderKconfigPropList(props, 'Selects', entry.selects, false);
+    renderKconfigPropList(props, 'Selected by', entry.selected_by, true);
+    renderKconfigPropList(props, 'Implies', entry.implies, false);
+    renderKconfigPropList(props, 'Implied by', entry.implied_by, true);
+    renderKconfigPropList(props, 'Ranges', entry.ranges, false);
+    renderKconfigPropList(props, 'Choices', entry.choices, false);
     renderKconfigPropLiteral(props, 'Location', `${entry.filename}:${entry.linenr}`);
+    renderKconfigPropLiteral(props, 'Menu path', entry.menupath);
 
     return container;
 }

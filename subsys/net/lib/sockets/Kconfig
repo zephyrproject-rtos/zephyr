@@ -166,14 +166,38 @@ config NET_SOCKETS_OFFLOAD
 	  See NET_OFFLOAD for a more deeply integrated approach which offloads
 	  from the net_context() API within the Zephyr IP stack.
 
-config NET_SOCKETS_OFFLOAD_TLS
-	bool "Offload TLS socket calls to the offloaded sockets"
-	depends on NET_SOCKETS_OFFLOAD
-	default y
+config NET_SOCKETS_OFFLOAD_PRIORITY
+	int "Default processing priority for offloaded sockets"
+	default 40
 	help
-	  If enabled, the offloading engine is expected to handle TLS/DTLS
-	  socket calls. Otherwise, Zephyrs native TLS socket implementation
-	  will be used, and only TCP/UDP socket calls will be offloaded.
+	  Processing priority for offloaded sockets.
+
+	  If native TLS is enabled, lower value than NET_SOCKETS_TLS_PRIORITY
+	  means that TLS will be offloaded as well (if supported by offloaded
+	  socket implementation). Higher value than NET_SOCKETS_TLS_PRIORITY
+	  means that native TLS will be used.
+
+config NET_SOCKETS_OFFLOAD_DISPATCHER
+	bool "Intermediate socket offloading layer [EXPERIMENTAL]"
+	depends on NET_SOCKETS_OFFLOAD
+	select EXPERIMENTAL
+	help
+	  If enabled, an intermediate socket offloading layer is included
+	  (called socket dispatcher), allowing to select an offloaded network
+	  interface and thus socket implementation with SO_BINDTODEVICE socket
+	  option. This can be useful, when multiple offloaded sockets
+	  implementations are available in the system, allowing to easily bind
+	  a socket to a particular implementation.
+
+config NET_SOCKETS_OFFLOAD_DISPATCHER_CONTEXT_MAX
+	int "Maximum number of dispatcher sockets created"
+	default 4
+	depends on NET_SOCKETS_OFFLOAD_DISPATCHER
+	help
+	  Maximum number of dispatcher sockets created at a time. Note, that
+	  only sockets that has not been dispatched yet count into the limit.
+	  After a proper socket has been created for a given file descriptor,
+	  the dispatcher context is released and can be reused.
 
 config NET_SOCKETS_PACKET
 	bool "Packet socket support"

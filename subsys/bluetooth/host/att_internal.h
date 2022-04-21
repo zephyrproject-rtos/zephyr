@@ -299,9 +299,6 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req);
 /* Cancel ATT request */
 void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req);
 
-/* Connect EATT channels */
-int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels);
-
 /* Disconnect EATT channels */
 int bt_eatt_disconnect(struct bt_conn *conn);
 
@@ -311,3 +308,12 @@ int bt_eatt_disconnect(struct bt_conn *conn);
  *  @return The found request. NULL if not found.
  */
 struct bt_att_req *bt_att_find_req_by_user_data(struct bt_conn *conn, const void *user_data);
+
+/* Checks if only the fixed ATT channel is connected */
+bool bt_att_fixed_chan_only(struct bt_conn *conn);
+
+/* Clear the out of sync flag on all channels */
+void bt_att_clear_out_of_sync_sent(struct bt_conn *conn);
+
+/* Check if BT_ATT_ERR_DB_OUT_OF_SYNC has been sent on the fixed ATT channel */
+bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn);

@@ -148,12 +148,13 @@ struct net_buf *bt_iso_create_frag_timeout(size_t reserve, k_timeout_t timeout);
 #endif
 
 #if defined(CONFIG_BT_DEBUG_ISO)
-void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, uint8_t state,
+void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan,
+				 enum bt_iso_state state,
 				 const char *func, int line);
 #define bt_iso_chan_set_state(_chan, _state) \
 	bt_iso_chan_set_state_debug(_chan, _state, __func__, __LINE__)
 #else
-void bt_iso_chan_set_state(struct bt_iso_chan *chan, uint8_t state);
+void bt_iso_chan_set_state(struct bt_iso_chan *chan, enum bt_iso_state state);
 #endif /* CONFIG_BT_DEBUG_ISO */
 
 /* Process incoming data for a connection */

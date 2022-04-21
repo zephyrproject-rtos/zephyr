@@ -166,6 +166,10 @@ int32_t lwm2m_server_get_pmin(uint16_t obj_inst_id);
 int32_t lwm2m_server_get_pmax(uint16_t obj_inst_id);
 int lwm2m_server_short_id_to_inst(uint16_t short_id);
 
+#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
+bool lwm2m_server_get_mute_send(uint16_t obj_inst_id);
+#endif
+
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state);
 void lwm2m_firmware_set_update_result_inst(uint16_t obj_inst_id, uint8_t result);

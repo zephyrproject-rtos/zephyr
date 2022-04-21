@@ -14,11 +14,12 @@ config LOG_PRINTK_MAX_STRING_LENGTH
 	int "Maximum string length supported by LOG_PRINTK"
 	depends on LOG_PRINTK
 	depends on (!LOG_MODE_IMMEDIATE || USERSPACE)
+	depends on LOG1
 	default 128
 	help
 	  Array is allocated on the stack.
 
-if !LOG_MODE_IMMEDIATE
+if LOG_MODE_DEFERRED && !LOG_FRONTEND_ONLY
 
 config LOG_MODE_OVERFLOW
 	bool "Drop oldest message when full"
@@ -106,7 +107,7 @@ config LOG_BUFFER_SIZE
 	help
 	  Number of bytes dedicated for the logger internal buffer.
 
-endif # !LOG_MODE_IMMEDIATE
+endif # LOG_MODE_DEFERRED && !LOG_FRONTEND_ONLY
 
 if LOG1_DEFERRED
 

@@ -1634,5 +1634,3 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 	/* Indicate completion to a blocking eth_xlnx_gem_send() call */
 	k_sem_give(&dev_data->tx_done_sem);
 }
-
-/* EOF */

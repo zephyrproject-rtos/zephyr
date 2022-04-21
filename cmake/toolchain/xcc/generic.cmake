@@ -8,7 +8,7 @@ set(CC xcc)
 set(C++ xc++)
 
 list(APPEND TOOLCHAIN_C_FLAGS
-  -imacros${ZEPHYR_BASE}/include/toolchain/xcc_missing_defs.h
+  -imacros${ZEPHYR_BASE}/include/zephyr/toolchain/xcc_missing_defs.h
   )
 
 # GCC-based XCC uses GNU Assembler (xt-as).

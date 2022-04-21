@@ -591,6 +591,10 @@ void lll_conn_isr_tx(void *param)
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 	radio_isr_set(lll_conn_isr_rx, param);
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+	ull_conn_lll_tx_demux_sched(lll);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 }
 
 void lll_conn_rx_pkt_set(struct lll_conn *lll)
@@ -1052,6 +1056,10 @@ static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready, ui
 		iq_report->rssi_ant_id = ant;
 		iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
 		iq_report->local_slot_durations = rx_params->slot_durations;
+		/* Event counter is updated to next value during event preparation, hence
+		 * it has to be subtracted to store actual event counter value.
+		 */
+		iq_report->event_counter = lll->event_counter - 1;
 
 		ftr = &iq_report->hdr.rx_ftr;
 		ftr->param = lll;

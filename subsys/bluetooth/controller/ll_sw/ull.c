@@ -334,10 +334,17 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
  *
  * If Extended Scanning is supported, then an additional auxiliary scan event's
  * prepare could be enqueued in the pipeline during the preemption duration.
+ *
+ * If Extended Scanning with Coded PHY is supported, then an additional 1 resume
+ * prepare could be enqueued in the pipeline during the preemption duration.
  */
 #if !defined(VENDOR_EVENT_DONE_MAX)
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+#define EVENT_DONE_MAX 6
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
 #define EVENT_DONE_MAX 5
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
 #define EVENT_DONE_MAX 4
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_OBSERVER */
@@ -447,7 +454,7 @@ static struct {
 	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +                                    \
 	  (IQ_REPORT_CNT)))
 static struct {
-	uint8_t quota_pdu; /* Number of un-utilized buffers */
+	uint16_t quota_pdu; /* Number of un-utilized buffers */
 
 	void *free;
 	uint8_t pool[LINK_RX_POOL_SIZE];

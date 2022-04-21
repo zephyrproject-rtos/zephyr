@@ -18,6 +18,22 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include "eswifi.h"
 #include <net/net_pkt.h>
 
+int eswifi_socket_type_from_zephyr(int proto, enum eswifi_transport_type *type)
+{
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) &&
+	    proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
+		*type = ESWIFI_TRANSPORT_TCP_SSL;
+	} else if (proto == IPPROTO_TCP) {
+		*type = ESWIFI_TRANSPORT_TCP;
+	} else if (proto == IPPROTO_UDP) {
+		*type = ESWIFI_TRANSPORT_UDP;
+	} else {
+		return -EPFNOSUPPORT;
+	}
+
+	return 0;
+}
+
 static int __stop_socket(struct eswifi_dev *eswifi,
 			 struct eswifi_off_socket *socket)
 {
@@ -274,16 +290,10 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
 		return -ENOMEM;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) &&
-	    proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
-		socket->type = ESWIFI_TRANSPORT_TCP_SSL;
-	} else if (proto == IPPROTO_TCP) {
-		socket->type = ESWIFI_TRANSPORT_TCP;
-	} else if (proto == IPPROTO_UDP) {
-		socket->type = ESWIFI_TRANSPORT_UDP;
-	} else {
+	err = eswifi_socket_type_from_zephyr(proto, &socket->type);
+	if (err) {
 		LOG_ERR("Only TCP & UDP is supported");
-		return -EPFNOSUPPORT;
+		return err;
 	}
 
 	err = __select_socket(eswifi, socket->index);

@@ -36,9 +36,20 @@
 		};
 	};
 
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		/* NOTE: disabled by default, PWM2 conflicts with SPI1 */
+		status = "disabled";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		pwm-led0 = &green_pwm_led;
 	};
 };
 
@@ -138,4 +149,15 @@
 
 &dma1 {
 	status = "okay";
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		/* NOTE: disabled by default, PWM2 conflicts with SPI1 */
+		pinctrl-0 = <&tim2_ch1_pa5>;
+		pinctrl-names = "default";
+	};
 };

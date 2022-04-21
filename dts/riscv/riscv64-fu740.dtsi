@@ -5,6 +5,7 @@
  */
 
 #include <dt-bindings/gpio/gpio.h>
+#include <freq.h>
 
 / {
 	#address-cells = <1>;
@@ -12,12 +13,26 @@
 	compatible = "sifive,FU740-C000", "fu740-dev", "sifive-dev";
 	model = "sifive,FU740";
 
+	clocks {
+		coreclk: core-clk {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(1000)>;
+		};
+
+		pclk: p-clk {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(125125)>;
+		};
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		cpu: cpu@0 {
-			compatible = "sifive,s7", "riscv";
+			compatible = "riscv,sifive-s7";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv64imac";

@@ -8,8 +8,6 @@
 #include <sys/reboot.h>
 #include <debug/object_tracing.h>
 #include <kernel_structs.h>
-#include <mgmt/mgmt.h>
-#include <util/mcumgr_util.h>
 #include <os_mgmt/os_mgmt.h>
 #include <os_mgmt/os_mgmt_impl.h>
 

@@ -12,6 +12,8 @@ extern struct bst_test_list *test_mics_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_mics_client_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_csis_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_csis_client_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_tbs_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_tbs_client_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_mcs_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_mcc_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_media_controller_install(struct bst_test_list *tests);
@@ -22,6 +24,8 @@ extern struct bst_test_list *test_broadcast_sink_install(struct bst_test_list *t
 extern struct bst_test_list *test_bass_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_bass_client_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_bass_broadcaster_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_has_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_has_client_install(struct bst_test_list *tests);
 
 bst_test_install_t test_installers[] = {
 	test_vcs_install,
@@ -30,6 +34,8 @@ bst_test_install_t test_installers[] = {
 	test_mics_client_install,
 	test_csis_install,
 	test_csis_client_install,
+	test_tbs_install,
+	test_tbs_client_install,
 	test_mcs_install,
 	test_mcc_install,
 	test_media_controller_install,
@@ -40,6 +46,8 @@ bst_test_install_t test_installers[] = {
 	test_bass_install,
 	test_bass_client_install,
 	test_bass_broadcaster_install,
+	test_has_install,
+	test_has_client_install,
 	NULL
 };
 

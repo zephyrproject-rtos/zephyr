@@ -1598,6 +1598,17 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 	return cpu_mask_mod(thread, 0, BIT(cpu));
 }
 
+int k_thread_cpu_pin(k_tid_t thread, int cpu)
+{
+	int ret;
+
+	ret = k_thread_cpu_mask_clear(thread);
+	if (ret == 0) {
+		return k_thread_cpu_mask_enable(thread, cpu);
+	}
+	return ret;
+}
+
 #endif /* CONFIG_SCHED_CPU_MASK */
 
 static inline void unpend_all(_wait_q_t *wait_q)

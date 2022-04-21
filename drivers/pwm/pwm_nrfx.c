@@ -189,12 +189,6 @@ static int pwm_nrfx_pin_set(const struct device *dev, uint32_t pwm,
 		}
 	}
 
-	/* Limit pulse cycles to period cycles (meaning 100% duty), bigger
-	 * values might not fit after prescaling into the 15-bit field that
-	 * is filled below.
-	 */
-	pulse_cycles = MIN(pulse_cycles, period_cycles);
-
 	/* Store new pulse value bit[14:0], and polarity bit[15] for channel. */
 	data->current[channel] = (
 		(data->current[channel] & PWM_NRFX_CH_POLARITY_MASK)

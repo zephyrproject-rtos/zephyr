@@ -262,9 +262,14 @@ static void init_idle_thread(int i)
 	k_thread_stack_t *stack = z_idle_stacks[i];
 
 #ifdef CONFIG_THREAD_NAME
-	char tname[8];
 
+#if CONFIG_MP_NUM_CPUS > 1
+	char tname[8];
 	snprintk(tname, 8, "idle %02d", i);
+#else
+	char *tname = "idle";
+#endif
+
 #else
 	char *tname = NULL;
 #endif /* CONFIG_THREAD_NAME */

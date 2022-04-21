@@ -8,6 +8,7 @@
 
 #include <drivers/can.h>
 #include <drivers/can/transceiver.h>
+#include <drivers/pinctrl.h>
 #include <soc.h>
 #include <kernel.h>
 #include <logging/log.h>
@@ -19,7 +20,7 @@ LOG_MODULE_REGISTER(can_sam, CONFIG_CAN_LOG_LEVEL);
 struct can_sam_config {
 	struct can_mcan_config mcan_cfg;
 	void (*config_irq)(void);
-	struct soc_gpio_pin pin_list[2];
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t pmc_id;
 };
 
@@ -62,7 +63,12 @@ static int can_sam_init(const struct device *dev)
 	int ret;
 
 	can_sam_clock_enable(cfg);
-	soc_gpio_list_configure(cfg->pin_list, ARRAY_SIZE(cfg->pin_list));
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = can_mcan_init(dev, mcan_cfg, msg_ram, mcan_data);
 	if (ret) {
 		return ret;
@@ -130,7 +136,7 @@ static int can_sam_set_timing(const struct device *dev, const struct can_timing 
 	return can_mcan_set_timing(mcan_cfg, timing, timing_data);
 }
 
-int can_sam_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+static int can_sam_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct can_sam_config *cfg = dev->config;
 
@@ -138,6 +144,15 @@ int can_sam_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 
 	return 0;
 }
+
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+static int can_sam_recover(const struct device *dev, k_timeout_t timeout)
+{
+	const struct can_sam_config *cfg = dev->config;
+
+	return can_mcan_recover(&cfg->mcan_cfg, timeout);
+}
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 static void can_sam_line_0_isr(const struct device *dev)
 {
@@ -169,7 +184,7 @@ static const struct can_driver_api can_api_funcs = {
 	.remove_rx_filter = can_sam_remove_rx_filter,
 	.get_state = can_sam_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_mcan_recover,
+	.recover = can_sam_recover,
 #endif
 	.get_core_clock = can_sam_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
@@ -255,7 +270,7 @@ static void config_can_##inst##_irq(void)                                       
 #define CAN_SAM_CFG_INST(inst)                                                                 \
 static const struct can_sam_config can_sam_cfg_##inst = {                                      \
 	.pmc_id = DT_INST_PROP(inst, peripheral_id),                                           \
-	.pin_list = { ATMEL_SAM_DT_INST_PIN(inst, 0), ATMEL_SAM_DT_INST_PIN(inst, 1) },        \
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                          \
 	.config_irq = config_can_##inst##_irq,                                                 \
 	.mcan_cfg = CAN_SAM_MCAN_CFG(inst)                                                     \
 };
@@ -268,6 +283,7 @@ DEVICE_DT_INST_DEFINE(inst, &can_sam_init, NULL, &can_sam_dev_data_##inst,      
 		      &can_api_funcs);
 
 #define CAN_SAM_INST(inst)                                                     \
+	PINCTRL_DT_INST_DEFINE(inst);                                          \
 	CAN_SAM_IRQ_CFG_FUNCTION(inst)                                         \
 	CAN_SAM_CFG_INST(inst)                                                 \
 	CAN_SAM_DATA_INST(inst)                                                \

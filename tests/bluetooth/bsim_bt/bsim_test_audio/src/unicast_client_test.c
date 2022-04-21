@@ -153,18 +153,6 @@ static void discover_sink_cb(struct bt_conn *conn,
 	}
 }
 
-static void gatt_mtu_cb(struct bt_conn *conn, uint8_t err,
-		   struct bt_gatt_exchange_params *params)
-{
-	if (err != 0) {
-		FAIL("Failed to exchange MTU (%u)\n", err);
-		return;
-	}
-
-	printk("MTU exchanged\n");
-	SET_FLAG(flag_mtu_exchanged);
-}
-
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -188,6 +176,16 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
+static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	printk("MTU exchanged\n");
+	SET_FLAG(flag_mtu_exchanged);
+}
+
+static struct bt_gatt_cb gatt_callbacks = {
+	.att_mtu_updated = att_mtu_updated,
+};
+
 static void init(void)
 {
 	int err;
@@ -201,6 +199,8 @@ static void init(void)
 	for (size_t i = 0; i < ARRAY_SIZE(g_streams); i++) {
 		g_streams[i].ops = &stream_ops;
 	}
+
+	bt_gatt_cb_register(&gatt_callbacks);
 }
 
 static void scan_and_connect(void)
@@ -219,17 +219,6 @@ static void scan_and_connect(void)
 
 static void exchange_mtu(void)
 {
-	struct bt_gatt_exchange_params mtu_params = {
-		.func = gatt_mtu_cb
-	};
-	int err;
-
-	err = bt_gatt_exchange_mtu(default_conn, &mtu_params);
-	if (err != 0) {
-		FAIL("Failed to exchange MTU %d\n", err);
-		return;
-	}
-
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 }
 

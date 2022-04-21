@@ -13,6 +13,14 @@ config COMPRESSED_ISA
 	bool
 	default y if 64BIT
 
+config RISCV_ATOMICS_ISA
+	bool "RISC-V atomics 'a' extension"
+	default y
+
+config RISCV_MUL_ISA
+	bool "RISC-V HW multiply 'm' extension"
+	default y
+
 config FLOAT_HARD
 	bool "Hard-float calling convention"
 	default y

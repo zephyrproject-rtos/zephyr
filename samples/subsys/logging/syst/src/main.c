@@ -46,6 +46,7 @@ void log_msgs(void)
 
 	char c = '!';
 	char *s = "static str";
+	char *s1 = "c str";
 	char vs0[32];
 	char vs1[32];
 
@@ -67,7 +68,7 @@ void log_msgs(void)
 	snprintk(&vs1[0], sizeof(vs1), "%s", "another dynamic str");
 
 	LOG_DBG("char %c", c);
-	LOG_DBG("s str %s", s);
+	LOG_DBG("s str %s %s", s, s1);
 
 #ifdef CONFIG_LOG1
 	LOG_DBG("d str %s", log_strdup(vs0));
@@ -105,6 +106,15 @@ void log_msgs(void)
 	log_string_sync(src_level, "%s", "log string sync");
 #endif
 
+#if CONFIG_LOG_MODE_DEFERRED
+	/*
+	 * When deferred logging is enabled, the work is being performed by
+	 * another thread. This k_sleep() gives that thread time to process
+	 * those messages.
+	 */
+
+	k_sleep(K_TICKS(10));
+#endif
 }
 
 void main(void)
@@ -115,14 +125,20 @@ void main(void)
 
 	uint32_t log_type = LOG_OUTPUT_TEXT;
 
-	log_backend_format_set(log_backend_get_by_name("log_backend_uart"), log_type);
+	log_format_set_all_active_backends(log_type);
 
 	log_msgs();
 
 	log_type = LOG_OUTPUT_SYST;
-	log_backend_format_set(log_backend_get_by_name("log_backend_uart"), log_type);
+	log_format_set_all_active_backends(log_type);
 
 	log_msgs();
+
+	log_type = LOG_OUTPUT_TEXT;
+	log_format_set_all_active_backends(log_type);
+
+	/* raw string */
+	printk("SYST Sample Execution Completed\n");
 #endif
 
 }

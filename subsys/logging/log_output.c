@@ -44,7 +44,18 @@ static const char *const colors[] = {
 };
 
 static uint32_t freq;
-static uint32_t timestamp_div;
+static log_timestamp_t timestamp_div;
+
+#define SECONDS_IN_DAY			86400U
+
+static uint32_t days_in_month[12] = {31, 28, 31, 30, 31, 30, 31,
+									31, 30, 31, 30, 31};
+
+struct YMD_date {
+	uint32_t year;
+	uint32_t month;
+	uint32_t day;
+};
 
 extern void log_output_msg_syst_process(const struct log_output *output,
 				struct log_msg *msg, uint32_t flag);
@@ -169,19 +180,68 @@ void log_output_flush(const struct log_output *output)
 	output->control_block->offset = 0;
 }
 
+static inline bool is_leap_year(uint32_t year)
+{
+	return (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0));
+}
+
+static void __attribute__((unused)) get_YMD_from_seconds(uint64_t seconds,
+			struct YMD_date *output_date)
+{
+	uint64_t tmp;
+	int i;
+
+	output_date->year = 1970;
+	output_date->month = 1;
+	output_date->day = 1;
+
+	/* compute the proper year */
+	while (1) {
+		tmp = (is_leap_year(output_date->year)) ?
+					366*SECONDS_IN_DAY : 365*SECONDS_IN_DAY;
+		if (tmp > seconds) {
+			break;
+		}
+		seconds -= tmp;
+		output_date->year++;
+	}
+	/* compute the proper month */
+	for (i = 0; i < sizeof(days_in_month); i++) {
+		tmp = ((i == 1) && is_leap_year(output_date->year)) ?
+					(days_in_month[i] + 1) * SECONDS_IN_DAY :
+					days_in_month[i] * SECONDS_IN_DAY;
+		if (tmp > seconds) {
+			output_date->month += i;
+			break;
+		}
+		seconds -= tmp;
+	}
+
+	output_date->day += seconds / SECONDS_IN_DAY;
+}
+
 static int timestamp_print(const struct log_output *output,
-			   uint32_t flags, uint32_t timestamp)
+			   uint32_t flags, log_timestamp_t timestamp)
 {
 	int length;
 	bool format =
 		(flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP) |
-		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG);
+		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) |
+		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP);
 
 
 	if (!format) {
+#ifndef CONFIG_LOG_TIMESTAMP_64BIT
 		length = print_formatted(output, "[%08lu] ", timestamp);
+#else
+		length = print_formatted(output, "[%016llu] ", timestamp);
+#endif
 	} else if (freq != 0U) {
+#ifndef CONFIG_LOG_TIMESTAMP_64BIT
 		uint32_t total_seconds;
+#else
+		uint64_t total_seconds;
+#endif
 		uint32_t remainder;
 		uint32_t seconds;
 		uint32_t hours;
@@ -216,14 +276,25 @@ static int timestamp_print(const struct log_output *output,
 			length = print_formatted(output, "%s.%06uZ ",
 						 time_str, ms * 1000U + us);
 #else
+			struct YMD_date date;
+
+			get_YMD_from_seconds(total_seconds, &date);
+			hours = hours % 24;
 			length = print_formatted(output,
-					"1970-01-01T%02u:%02u:%02u.%06uZ ",
+					"%04u-%02u-%02uT%02u:%02u:%02u.%06uZ ",
+					date.year, date.month, date.day,
 					hours, mins, seconds, ms * 1000U + us);
 #endif
 		} else {
-			length = print_formatted(output,
-						 "[%02u:%02u:%02u.%03u,%03u] ",
-						 hours, mins, seconds, ms, us);
+			if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP)) {
+				length = print_formatted(output,
+							"[%5ld.%06d] ",
+							total_seconds, ms * 1000U + us);
+			} else {
+				length = print_formatted(output,
+							"[%02u:%02u:%02u.%03u,%03u] ",
+							hours, mins, seconds, ms, us);
+			}
 		}
 	} else {
 		length = 0;
@@ -493,7 +564,7 @@ static void raw_string_print(struct log_msg *msg,
 }
 
 static uint32_t prefix_print(const struct log_output *output,
-			 uint32_t flags, bool func_on, uint32_t timestamp, uint8_t level,
+			 uint32_t flags, bool func_on, log_timestamp_t timestamp, uint8_t level,
 			 uint8_t domain_id, int16_t source_id)
 {
 	uint32_t length = 0U;

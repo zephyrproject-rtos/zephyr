@@ -19,13 +19,12 @@
 #define TESTBUF_SIZE (MAX_PAGE_SIZE * MAX_NUM_PAGES)
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 #define FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
-#define FLASH_NAME DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
 
 /* so that we don't overwrite the application when running on hw */
 #define FLASH_BASE (128*1024)
 #define FLASH_AVAILABLE (FLASH_SIZE-FLASH_BASE)
 
-static const struct device *fdev;
+static const struct device *fdev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static const struct flash_driver_api *api;
 static const struct flash_pages_layout *layout;
 static size_t layout_size;
@@ -646,7 +645,8 @@ static void test_stream_flash_progress_clear(void)
 
 void test_main(void)
 {
-	fdev = device_get_binding(FLASH_NAME);
+	__ASSERT_NO_MSG(device_is_ready(fdev));
+
 	api = fdev->api;
 	api->page_layout(fdev, &layout, &layout_size);
 

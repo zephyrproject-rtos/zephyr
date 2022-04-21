@@ -6,12 +6,14 @@
 /dts-v1/;
 
 #include <atmel/sam4lx4.dtsi>
+#include "sam4l_ek-pinctrl.dtsi"
 
 / {
 	model = "Atmel SAM4L-EK Board with an Atmel SAM4LC4C SoC";
 	compatible = "atmel,sam4l_ek";
 
 	aliases {
+		i2c-0 = &twim0;
 		led0 = &user_led;
 		sw0 = &sw0_dfu;
 	};
@@ -46,18 +48,19 @@
 };
 
 &usart2 {
-	current-speed = <115200>;
-	pinctrl-0 = <&pc11b_usart2_rxd2 &pc12b_usart2_txd2>;
 	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
 };
 
 &spi0 {
 	status = "okay";
-	pinctrl-0 = <&pc4a_spi_miso
-		     &pc5a_spi_mosi
-		     &pc6a_spi_sck
-		     &pa2b_spi_npcs0
-		     &pc0a_spi_npcs2>;
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
 	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>,
 		   <&gpioc 0 GPIO_ACTIVE_LOW>;
 };
@@ -69,6 +72,9 @@
 
 &twim0 {
 	status = "okay";
+
+	pinctrl-0 = <&twi0_default>;
+	pinctrl-names = "default";
 
 	std-clk-slew-lim = <0>;
 	std-clk-strength-low = "0.5";
@@ -86,4 +92,7 @@
 
 zephyr_udc0: &usbc {
 	status = "okay";
+
+	pinctrl-0 = <&usbc_default>;
+	pinctrl-names = "default";
 };

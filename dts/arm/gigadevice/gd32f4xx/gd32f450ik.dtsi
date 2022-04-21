@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <gigadevice/gd32f4xx/gd32f4xx.dtsi>
+#include <gigadevice/gd32f4xx/gd32f450.dtsi>
 
 / {
 	soc {

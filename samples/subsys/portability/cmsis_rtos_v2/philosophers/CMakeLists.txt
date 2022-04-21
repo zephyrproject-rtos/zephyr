@@ -14,5 +14,5 @@ if(DEFINED FORKS)
   zephyr_compile_definitions(FORKS=${FORKS})
 endif()
 
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/include/portability)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/include/zephyr/portability)
 target_sources(app PRIVATE src/main.c)

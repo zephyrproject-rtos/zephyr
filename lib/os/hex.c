@@ -39,7 +39,7 @@ int hex2char(uint8_t x, char *c)
 
 size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 {
-	if ((hexlen + 1) < buflen * 2) {
+	if (hexlen < (buflen * 2 + 1)) {
 		return 0;
 	}
 

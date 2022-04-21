@@ -152,8 +152,8 @@ static void adc_npcx_start_scan(const struct device *dev)
 	SET_FIELD(inst->ADCCNF, NPCX_ADCCNF_ADCMD_FIELD,
 			NPCX_ADC_SCAN_CONVERSION_MODE);
 
-	/* Select 'One-Shot' Repetitive mode */
-	inst->ADCCNF |= BIT(NPCX_ADCCNF_INTECEN);
+	/* Enable end of cyclic conversion event interrupt */
+	inst->ADCCNF |= BIT(NPCX_ADCCNF_INTECCEN);
 
 	/* Start conversion */
 	inst->ADCCNF |= BIT(NPCX_ADCCNF_START);

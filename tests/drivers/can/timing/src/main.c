@@ -19,7 +19,7 @@
 /**
  * @brief Allowed sample point calculation margin in permille.
  */
-#define SAMPLE_POINT_MARGIN 100
+#define SAMPLE_POINT_MARGIN 50
 
 /**
  * @brief Defines a set of CAN timing test values
@@ -38,9 +38,13 @@ struct can_timing_test {
  */
 static const struct can_timing_test can_timing_tests[] = {
 	/** Standard bitrates. */
+	{   20000, 875, false },
+	{   50000, 875, false },
 	{  125000, 875, false },
+	{  250000, 875, false },
 	{  500000, 875, false },
-	{ 1000000, 875, false },
+	{  800000, 800, false },
+	{ 1000000, 750, false },
 	/** Additional, valid sample points. */
 	{  125000, 900, false },
 	{  125000, 800, false },
@@ -48,50 +52,30 @@ static const struct can_timing_test can_timing_tests[] = {
 	{  125000, 1000, true },
 #ifdef CONFIG_CAN_FD_MODE
 	/** Invalid CAN-FD bitrate, valid sample point. */
-	{ 8000000 + 1, 875, true },
+	{ 8000000 + 1, 750, true },
 #else /* CONFIG_CAN_FD_MODE */
 	/** Invalid classical bitrate, valid sample point. */
-	{ 1000000 + 1, 875, true },
+	{ 1000000 + 1, 750, true },
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
 /**
- * @brief CAN timing test fixture
+ * @brief List of CAN timing values to test for the data phase.
  */
-struct can_timing_tests_fixture {
-	/** CAN device. */
-	const struct device *dev;
-	/** List of CAN timing test values. */
-	const struct can_timing_test *tests;
-	/** Number of CAN timing test list entries. */
-	const size_t test_count;
+#ifdef CONFIG_CAN_FD_MODE
+static const struct can_timing_test can_timing_data_tests[] = {
+	/** Standard bitrates. */
+	{  500000, 875, false },
+	{ 1000000, 875, false },
+	/** Additional, valid sample points. */
+	{  500000, 900, false },
+	{  500000, 800, false },
+	/** Valid bitrate, invalid sample point. */
+	{  500000, 1000, true },
+	/** Invalid CAN-FD bitrate, valid sample point. */
+	{ 8000000 + 1, 750, true },
 };
-
-/**
- * @brief CAN timing test fixture instance common to all test cases
- */
-static struct can_timing_tests_fixture test_fixture = {
-	.dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus)),
-	.tests = can_timing_tests,
-	.test_count = ARRAY_SIZE(can_timing_tests),
-};
-
-/**
- * @brief CAN timing test setup function
- *
- * Asserts that the CAN device is ready before starting tests.
- *
- * @return Pointer to CAN timing test fixture instance
- */
-static void *can_timing_test_setup(void)
-{
-	zassert_true(device_is_ready(test_fixture.dev), "CAN device not ready");
-	printk("testing on device %s\n", test_fixture.dev->name);
-
-	return &test_fixture;
-}
-
-ZTEST_SUITE(can_timing_tests, NULL, can_timing_test_setup, NULL, NULL, NULL);
+#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Assert that a CAN timing struct matches the specified bitrate
@@ -129,19 +113,21 @@ static void assert_bitrate_correct(const struct device *dev, struct can_timing *
  * @param dev pointer to the device structure for the driver instance
  * @param timing pointer to the CAN timing struct
  */
-static void assert_timing_within_bounds(const struct device *dev, struct can_timing *timing)
+static void assert_timing_within_bounds(struct can_timing *timing,
+					const struct can_timing *min,
+					const struct can_timing *max)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
-	const struct can_timing *max = &api->timing_max;
-	const struct can_timing *min = &api->timing_min;
+	zassert_true(timing->sjw == CAN_SJW_NO_CHANGE, "sjw does not equal CAN_SJW_NO_CHANGE");
 
 	zassert_true(timing->prop_seg <= max->prop_seg, "prop_seg exceeds max");
 	zassert_true(timing->phase_seg1 <= max->phase_seg1, "phase_seg1 exceeds max");
 	zassert_true(timing->phase_seg2 <= max->phase_seg2, "phase_seg2 exceeds max");
+	zassert_true(timing->prescaler <= max->prescaler, "prescaler exceeds max");
 
 	zassert_true(timing->prop_seg >= min->prop_seg, "prop_seg lower than min");
 	zassert_true(timing->phase_seg1 >= min->phase_seg1, "phase_seg1 lower than min");
 	zassert_true(timing->phase_seg2 >= min->phase_seg2, "phase_seg2 lower than min");
+	zassert_true(timing->prescaler >= min->prescaler, "prescaler lower than min");
 }
 
 /**
@@ -173,40 +159,142 @@ static void assert_sp_within_margin(struct can_timing *timing, uint16_t sp, uint
  * @param dev pointer to the device structure for the driver instance
  * @param test pointer to the set of CAN timing values
  */
-static void test_timing_values(const struct device *dev, const struct can_timing_test *test)
+static void test_timing_values(const struct device *dev, const struct can_timing_test *test,
+			       bool data_phase)
 {
+	const struct can_timing *max = NULL;
+	const struct can_timing *min = NULL;
 	struct can_timing timing = { 0 };
+	int sp_err;
 	int err;
 
 	printk("testing bitrate %u, sample point %u.%u%% (%s): ",
 		test->bitrate, test->sp / 10, test->sp % 10, test->invalid ? "invalid" : "valid");
 
-	err = can_calc_timing(dev, &timing, test->bitrate, test->sp);
+	timing.sjw = CAN_SJW_NO_CHANGE;
+
+	if (data_phase) {
+		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+			min = can_get_timing_min_data(dev);
+			max = can_get_timing_max_data(dev);
+			sp_err = can_calc_timing_data(dev, &timing, test->bitrate, test->sp);
+		} else {
+			zassert_unreachable("data phase timing test without CAN-FD support");
+		}
+	} else {
+		min = can_get_timing_min(dev);
+		max = can_get_timing_max(dev);
+		sp_err = can_calc_timing(dev, &timing, test->bitrate, test->sp);
+	}
+
 	if (test->invalid) {
-		zassert_equal(err, -EINVAL, "err %d, expected -EINVAL", err);
+		zassert_equal(sp_err, -EINVAL, "err %d, expected -EINVAL", sp_err);
 		printk("OK\n");
 	} else {
-		zassert_true(err >= 0, "unknown error %d", err);
-		zassert_true(err <= SAMPLE_POINT_MARGIN, "sample point error %d too large", err);
+		zassert_true(sp_err >= 0, "unknown error %d", sp_err);
+		zassert_true(sp_err <= SAMPLE_POINT_MARGIN, "sample point error %d too large",
+			     sp_err);
+
+		printk("prop_seg = %u, phase_seg1 = %u, phase_seg2 = %u, prescaler = %u ",
+			timing.prop_seg, timing.phase_seg1, timing.phase_seg2, timing.prescaler);
 
 		assert_bitrate_correct(dev, &timing, test->bitrate);
-		assert_timing_within_bounds(dev, &timing);
+		assert_timing_within_bounds(&timing, min, max);
 		assert_sp_within_margin(&timing, test->sp, SAMPLE_POINT_MARGIN);
 
-		printk("OK, sample point error %d.%d%%\n", err / 10, err % 10);
+		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+			if (data_phase) {
+				err = can_set_timing(dev, can_get_timing_min(dev), &timing);
+			} else {
+				err = can_set_timing(dev, &timing, can_get_timing_min_data(dev));
+			}
+		} else {
+			err = can_set_timing(dev, &timing, NULL);
+		}
+		zassert_equal(err, 0, "failed to set timing (err %d)", err);
+
+		printk("OK, sample point error %d.%d%%\n", sp_err / 10, sp_err % 10);
 	}
 }
 
 /**
  * @brief Test all CAN timing values
- *
- * @param this Pointer to a CAN timing test fixture
  */
-ZTEST_F(can_timing_tests, test_timing)
+void test_timing(void)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int i;
 
-	for (i = 0; i < this->test_count; i++) {
-		test_timing_values(this->dev, &this->tests[i]);
+	for (i = 0; i < ARRAY_SIZE(can_timing_tests); i++) {
+		test_timing_values(dev, &can_timing_tests[i], false);
 	}
+}
+
+/**
+ * @brief Test all CAN timing values for the data phase.
+ */
+#ifdef CONFIG_CAN_FD_MODE
+void test_timing_data(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(can_timing_data_tests); i++) {
+		test_timing_values(dev, &can_timing_data_tests[i], true);
+	}
+}
+#else /* CONFIG_CAN_FD_MODE */
+void test_timing_data(void)
+{
+	ztest_test_skip();
+}
+#endif /* CONFIG_CAN_FD_MODE */
+
+/**
+ * @brief Test that the minimum timing values can be set.
+ */
+void test_set_timing_min(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	int err;
+
+	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+		err = can_set_timing(dev, can_get_timing_min(dev), can_get_timing_min_data(dev));
+	} else {
+		err = can_set_timing(dev, can_get_timing_min(dev), NULL);
+	}
+	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
+}
+
+/**
+ * @brief Test that the maximum timing values can be set.
+ */
+void test_set_timing_max(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	int err;
+
+	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
+		err = can_set_timing(dev, can_get_timing_max(dev), can_get_timing_max_data(dev));
+	} else {
+		err = can_set_timing(dev, can_get_timing_max(dev), NULL);
+	}
+	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
+}
+
+void test_main(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+
+	zassert_true(device_is_ready(dev), "CAN device not ready");
+	printk("testing on device %s\n", dev->name);
+
+	k_object_access_grant(dev, k_current_get());
+
+	ztest_test_suite(can_timing_tests,
+			 ztest_user_unit_test(test_set_timing_min),
+			 ztest_user_unit_test(test_set_timing_max),
+			 ztest_user_unit_test(test_timing),
+			 ztest_user_unit_test(test_timing_data));
+	ztest_run_test_suite(can_timing_tests);
 }

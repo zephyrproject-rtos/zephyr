@@ -74,6 +74,9 @@
 			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			dfe-supported;
+			ieee802154-supported;
+			ble-2mbps-supported;
+			ble-coded-phy-supported;
 		};
 
 		rng: random@41009000 {
@@ -93,7 +96,7 @@
 		};
 
 		wdt: wdt0: watchdog@4100b000 {
-			compatible = "nordic,nrf-watchdog";
+			compatible = "nordic,nrf-wdt";
 			reg = <0x4100b000 0x1000>;
 			interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
@@ -116,6 +119,14 @@
 			interrupts = <13 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			label = "ECB";
+		};
+
+		ccm: ccm@4100e000 {
+			compatible = "nordic,nrf-ccm";
+			reg = <0x4100e000 0x1000>;
+			interrupts = <14 NRF_DEFAULT_IRQ_PRIORITY>;
+			length-field-length-8-bits;
+			status = "okay";
 		};
 
 		dppic: dppic@4100f000 {
@@ -151,8 +162,8 @@
 			status = "okay";
 		};
 
-		mbox: mbox@41012000 {
-			compatible = "nordic,mbox-nrf-ipc";
+		mbox: ipc: mbox@41012000 {
+			compatible = "nordic,mbox-nrf-ipc", "nordic,nrf-ipc";
 			reg = <0x41012000 0x1000>;
 			tx-mask = <0x0000ffff>;
 			rx-mask = <0x0000ffff>;
@@ -239,9 +250,44 @@
 			label = "TIMER2";
 		};
 
+		swi0: swi@4101a000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101a000 0x1000>;
+			interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi1: swi@4101b000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101b000 0x1000>;
+			interrupts = <27 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi2: swi@4101c000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101c000 0x1000>;
+			interrupts = <28 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		swi3: swi@4101d000 {
+			compatible = "nordic,nrf-swi";
+			reg = <0x4101d000 0x1000>;
+			interrupts = <29 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+		};
+
+		acl: acl@41080000 {
+			compatible = "nordic,nrf-acl";
+			reg = <0x41080000 0x1000>;
+			status = "okay";
+		};
+
 		flash_controller: flash-controller@41080000 {
 			compatible = "nordic,nrf53-flash-controller";
 			reg = <0x41080000 0x1000>;
+			partial-erase;
 
 			#address-cells = <1>;
 			#size-cells = <1>;

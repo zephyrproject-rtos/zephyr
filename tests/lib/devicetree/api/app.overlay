@@ -343,6 +343,8 @@
 			dma-names = "tx", "rx";
 			clocks = <&test_clk 3 7>, <&test_fixed_clk>, <&test_clk 8 2>;
 			clock-names = "clk-a", "clk-fixed", "clk-b";
+			resets = <&test_reset 10>, <&test_reset 20>;
+			reset-names = "reset-a", "reset-b";
 			pinctrl-0 = <&test_pincfg_a &test_pincfg_b>;
 			pinctrl-1 = <&test_pincfg_c &test_pincfg_d>;
 			pinctrl-2 = <&test_pincfg_d>;
@@ -385,6 +387,14 @@
 			compatible = "vnd,clock";
                         label = "TEST_CLOCK";
 			#clock-cells = <2>;
+		};
+
+		test_reset: test-reset@abcd1234 {
+			compatible = "vnd,reset";
+			reg-width = <4>;
+			reg = <0xabcd1234 0x100>;
+			#reset-cells = <1>;
+			label = "TEST_RESET";
 		};
 
 		test_dma1: dma@44443333 {

@@ -42,16 +42,16 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm4 1 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm4 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 		orange_pwm_led: orange_pwm_led {
-			pwms = <&pwm4 2 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm4 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 		red_pwm_led: red_pwm_led {
-			pwms = <&pwm4 3 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm4 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm4 4 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm4 4 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 

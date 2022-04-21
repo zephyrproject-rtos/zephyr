@@ -928,8 +928,8 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @ZEPHYR_BASE@/include/portability/cmsis_os.h \
-                         @ZEPHYR_BASE@/include/portability/cmsis_os2.h
+EXCLUDE                = @ZEPHYR_BASE@/include/zephyr/portability/cmsis_os.h \
+                         @ZEPHYR_BASE@/include/zephyr/portability/cmsis_os2.h
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -2275,7 +2275,6 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_NET_MGMT_EVENT \
                          CONFIG_NET_TCP \
                          CONFIG_NET_UDP \
-                         CONFIG_PWM_CAPTURE \
                          CONFIG_SCHED_CPU_MASK \
                          CONFIG_SCHED_DEADLINE \
                          CONFIG_SCHED_DEADLINE \

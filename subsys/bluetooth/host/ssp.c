@@ -214,13 +214,22 @@ static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 {
 	if (!status) {
 		bool bond = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
+		struct bt_conn_auth_info_cb *listener, *next;
 
-		if (bt_auth && bt_auth->pairing_complete) {
-			bt_auth->pairing_complete(conn, bond);
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+						  next, node) {
+			if (listener->pairing_complete) {
+				listener->pairing_complete(conn, bond);
+			}
 		}
 	} else {
-		if (bt_auth && bt_auth->pairing_failed) {
-			bt_auth->pairing_failed(conn, status);
+		struct bt_conn_auth_info_cb *listener, *next;
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+						  next, node) {
+			if (listener->pairing_complete) {
+				listener->pairing_complete(conn, status);
+			}
 		}
 	}
 }

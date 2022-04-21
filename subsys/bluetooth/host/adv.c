@@ -556,8 +556,7 @@ static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
 		total_data_len = BT_GAP_ADV_MAX_ADV_DATA_LEN;
 	}
 
-	cmd_size = total_data_len +
-		   offsetof(struct bt_hci_cp_le_set_ext_adv_data, data);
+	cmd_size = sizeof(*set_data) + total_data_len;
 
 	buf = bt_hci_cmd_create(hci_op, cmd_size);
 	if (!buf) {
@@ -596,9 +595,8 @@ static int hci_set_adv_ext_fragmented(struct bt_le_ext_adv *adv, uint16_t hci_op
 	while (!ad_stream_is_empty(&stream)) {
 		struct bt_hci_cp_le_set_ext_adv_data *set_data;
 		struct net_buf *buf;
-		size_t data_len = MIN(sizeof(set_data->data), stream.remaining_size);
-		const size_t cmd_size = data_len +
-					offsetof(struct bt_hci_cp_le_set_ext_adv_data, data);
+		const size_t data_len = MIN(BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN, stream.remaining_size);
+		const size_t cmd_size = sizeof(*set_data) + data_len;
 		int err;
 
 		buf = bt_hci_cmd_create(hci_op, cmd_size);
@@ -610,7 +608,7 @@ static int hci_set_adv_ext_fragmented(struct bt_le_ext_adv *adv, uint16_t hci_op
 
 		set_data->handle = adv->handle;
 		set_data->frag_pref = BT_HCI_LE_EXT_ADV_FRAG_ENABLED;
-		set_data->len = ad_stream_read(&stream, set_data->data, sizeof(set_data->data));
+		set_data->len = ad_stream_read(&stream, set_data->data, data_len);
 
 		if (is_first_iteration && ad_stream_is_empty(&stream)) {
 			set_data->op = BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA;
@@ -705,9 +703,8 @@ static int hci_set_per_adv_data(const struct bt_le_ext_adv *adv,
 	while (!ad_stream_is_empty(&stream)) {
 		struct bt_hci_cp_le_set_per_adv_data *set_data;
 		struct net_buf *buf;
-		size_t data_len = MIN(sizeof(set_data->data), stream.remaining_size);
-		const size_t cmd_size = data_len +
-					offsetof(struct bt_hci_cp_le_set_ext_adv_data, data);
+		const size_t data_len = MIN(BT_HCI_LE_PER_ADV_FRAG_MAX_LEN, stream.remaining_size);
+		const size_t cmd_size = sizeof(*set_data) + data_len;
 		int err;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_DATA, cmd_size);
@@ -719,7 +716,7 @@ static int hci_set_per_adv_data(const struct bt_le_ext_adv *adv,
 		(void)memset(set_data, 0, cmd_size);
 
 		set_data->handle = adv->handle;
-		set_data->len = ad_stream_read(&stream, set_data->data, sizeof(set_data->data));
+		set_data->len = ad_stream_read(&stream, set_data->data, data_len);
 
 		if (is_first_iteration && ad_stream_is_empty(&stream)) {
 			set_data->op = BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA;
@@ -906,7 +903,7 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 			return -ENOMEM;
 		}
 
-		bt_conn_set_state(conn, BT_CONN_CONNECT_ADV);
+		bt_conn_set_state(conn, BT_CONN_CONNECTING_ADV);
 		*out_conn = conn;
 		return 0;
 	}
@@ -920,7 +917,7 @@ static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 		return -ENOMEM;
 	}
 
-	bt_conn_set_state(conn, BT_CONN_CONNECT_DIR_ADV);
+	bt_conn_set_state(conn, BT_CONN_CONNECTING_DIR_ADV);
 	*out_conn = conn;
 	return 0;
 }
@@ -931,10 +928,10 @@ static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv, uint8_t statu
 
 	if (!bt_addr_le_cmp(&adv->target_addr, BT_ADDR_LE_ANY)) {
 		conn = bt_conn_lookup_state_le(adv->id, BT_ADDR_LE_NONE,
-					       BT_CONN_CONNECT_ADV);
+					       BT_CONN_CONNECTING_ADV);
 	} else {
 		conn = bt_conn_lookup_state_le(adv->id, &adv->target_addr,
-					       BT_CONN_CONNECT_DIR_ADV);
+					       BT_CONN_CONNECTING_DIR_ADV);
 	}
 
 	if (conn) {
@@ -1368,12 +1365,12 @@ int bt_le_adv_stop(void)
 	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
 	int err;
 
-	(void)bt_le_lim_adv_cancel_timeout(adv);
-
 	if (!adv) {
 		BT_ERR("No valid legacy adv");
 		return 0;
 	}
+
+	(void)bt_le_lim_adv_cancel_timeout(adv);
 
 	/* Make sure advertising is not re-enabled later even if it's not
 	 * currently enabled (i.e. BT_DEV_ADVERTISING is not set).

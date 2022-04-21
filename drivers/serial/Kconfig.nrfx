@@ -27,19 +27,15 @@ config UART_ASYNC_TX_CACHE_SIZE
 	  in RAM, because EasyDMA in UARTE peripherals can only transfer data
 	  from RAM.
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_NORDIC_NRF_UART  := nordic,nrf-uart
-DT_COMPAT_NORDIC_NRF_UARTE := nordic,nrf-uarte
-
 # ----------------- port 0 -----------------
 config UART_0_NRF_UART
-	def_bool $(dt_nodelabel_has_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UART))
+	def_bool HAS_HW_NRF_UART0
 	select NRF_UART_PERIPHERAL
 	help
 	  Enable nRF UART without EasyDMA on port 0.
 
 config UART_0_NRF_UARTE
-	def_bool $(dt_nodelabel_has_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	def_bool HAS_HW_NRF_UARTE0
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 0.
@@ -119,7 +115,7 @@ endif # UART_0_NRF_UART || UART_0_NRF_UARTE
 
 # ----------------- port 1 -----------------
 config UART_1_NRF_UARTE
-	def_bool $(dt_nodelabel_has_compat,uart1,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	def_bool HAS_HW_NRF_UARTE1
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 1.
@@ -196,7 +192,7 @@ endif # UART_1_NRF_UARTE
 
 # ----------------- port 2 -----------------
 config UART_2_NRF_UARTE
-	def_bool $(dt_nodelabel_has_compat,uart2,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	def_bool HAS_HW_NRF_UARTE2
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 2.
@@ -272,7 +268,7 @@ endif # UART_2_NRF_UARTE
 
 # ----------------- port 3 -----------------
 config UART_3_NRF_UARTE
-	def_bool $(dt_nodelabel_has_compat,uart3,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	def_bool HAS_HW_NRF_UARTE3
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 3.
@@ -349,59 +345,57 @@ endif # UART_3_NRF_UARTE
 
 config NRFX_TIMER0
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 0 || UART_1_NRF_HW_ASYNC_TIMER = 0 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 0 || UART_2_NRF_HW_ASYNC_TIMER = 0
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 0 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 0 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 0 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 0
 
 config NRFX_TIMER1
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 1 || UART_1_NRF_HW_ASYNC_TIMER = 1 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 1 || UART_2_NRF_HW_ASYNC_TIMER = 1
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 1
 
 config NRFX_TIMER2
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 2 || UART_1_NRF_HW_ASYNC_TIMER = 2 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 2 || UART_2_NRF_HW_ASYNC_TIMER = 2
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 2
 
 config NRFX_TIMER3
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 3 || UART_1_NRF_HW_ASYNC_TIMER = 3 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 3 || UART_2_NRF_HW_ASYNC_TIMER = 3
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 3
 
 config NRFX_TIMER4
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 4 || UART_1_NRF_HW_ASYNC_TIMER = 4 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 4 || UART_2_NRF_HW_ASYNC_TIMER = 4
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 4 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 4 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 4 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 4
 
-
-if UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC || UART_3_NRF_HW_ASYNC
-
-config NRFX_TIMER
-	default y
-
-config NRFX_PPI
-	depends on HAS_HW_NRF_PPI
-	default y
-
-config NRFX_DPPI
-	depends on HAS_HW_NRF_DPPIC
-	default y
 
 config UARTE_NRF_HW_ASYNC
-	bool
-	default y
-
-endif
-
-if UART_0_ENHANCED_POLL_OUT || UART_1_ENHANCED_POLL_OUT || \
-	UART_2_ENHANCED_POLL_OUT || UART_3_ENHANCED_POLL_OUT
-
-config UART_ENHANCED_POLL_OUT
-	bool
-	default y
+	def_bool y
+	depends on UART_0_NRF_HW_ASYNC \
+		|| UART_1_NRF_HW_ASYNC \
+		|| UART_2_NRF_HW_ASYNC \
+		|| UART_3_NRF_HW_ASYNC
 	select NRFX_PPI if HAS_HW_NRF_PPI
 	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 
-endif
+config UART_ENHANCED_POLL_OUT
+	def_bool y
+	depends on UART_0_ENHANCED_POLL_OUT \
+		|| UART_1_ENHANCED_POLL_OUT \
+		|| UART_2_ENHANCED_POLL_OUT \
+		|| UART_3_ENHANCED_POLL_OUT
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 
 config NRF_UART_PERIPHERAL
 	bool

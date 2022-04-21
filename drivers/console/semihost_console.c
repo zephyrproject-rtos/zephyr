@@ -29,6 +29,20 @@ int arch_printk_char_out(int _c)
 
 	__asm__ volatile ("hlt 0xf000" : : "r" (x0), "r" (x1) : "memory");
 
+#elif defined(CONFIG_RISCV)
+
+	register unsigned long a0 __asm__("a0") = SYS_WRITEC;
+	register void *a1 __asm__("a1") = &c;
+
+	__asm__ volatile (
+	".option push\n\t"
+	".option norvc\n\t"
+	"slli zero, zero, 0x1f\n\t"
+	"ebreak\n\t"
+	"srai zero, zero, 0x7\n\t"
+	".option pop"
+	: : "r" (a0), "r" (a1) : "memory");
+
 #else
 #error "unsupported CPU type"
 #endif

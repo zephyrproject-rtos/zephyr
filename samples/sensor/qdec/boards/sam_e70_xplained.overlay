@@ -7,6 +7,8 @@
 &tc0 {
 	compatible = "atmel,sam-tc-qdec";
 	status = "okay";
-	pinctrl-0 = <&pa0b_tc0_tioa0 &pa1b_tc0_tiob0>;
 	label = "QDEC_0";
+
+	pinctrl-0 = <&tc0_qdec_default>;
+	pinctrl-names = "default";
 };

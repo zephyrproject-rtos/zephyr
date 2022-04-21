@@ -1333,7 +1333,9 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 		coap_reply_clear(msg->reply);
 	}
 
-	sys_slist_find_and_remove(&msg->ctx->pending_sends, &msg->node);
+	if (msg->ctx) {
+		sys_slist_find_and_remove(&msg->ctx->pending_sends, &msg->node);
+	}
 
 	if (release) {
 		(void)memset(msg, 0, sizeof(*msg));
@@ -1419,6 +1421,12 @@ cleanup:
 int lwm2m_send_message_async(struct lwm2m_message *msg)
 {
 	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
+
+	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
+	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
+		engine_update_tx_time();
+	}
+
 	return 0;
 }
 
@@ -1448,11 +1456,6 @@ static int lwm2m_send_message(struct lwm2m_message *msg)
 
 	if (msg->type != COAP_TYPE_CON) {
 		lwm2m_reset_message(msg, true);
-	}
-
-	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT) &&
-	    IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
-		engine_update_tx_time();
 	}
 
 	return 0;
@@ -1580,10 +1583,12 @@ static int select_writer(struct lwm2m_output_context *out, uint16_t accept)
 		out->writer = &plain_text_writer;
 		break;
 
+#ifdef CONFIG_LWM2M_RW_OMA_TLV_SUPPORT
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
 		out->writer = &oma_tlv_writer;
 		break;
+#endif
 
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
 	case LWM2M_FORMAT_OMA_JSON:
@@ -1617,10 +1622,12 @@ static int select_reader(struct lwm2m_input_context *in, uint16_t format)
 		in->reader = &plain_text_reader;
 		break;
 
+#ifdef CONFIG_LWM2M_RW_OMA_TLV_SUPPORT
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
 		in->reader = &oma_tlv_reader;
 		break;
+#endif
 
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
 	case LWM2M_FORMAT_OMA_JSON:
@@ -3682,9 +3689,11 @@ static int do_read_op(struct lwm2m_message *msg, uint16_t content_format)
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		return do_read_op_plain_text(msg, content_format);
 
+#if defined(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT)
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
 		return do_read_op_tlv(msg, content_format);
+#endif
 
 #if defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
 	case LWM2M_FORMAT_OMA_JSON:
@@ -3838,15 +3847,16 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 	uint8_t num_read = 0U;
 
 	if (msg->path.level >= LWM2M_PATH_LEVEL_OBJECT_INST) {
-		obj_inst = get_engine_obj_inst(msg->path.obj_id,
-					       msg->path.obj_inst_id);
+		obj_inst = get_engine_obj_inst(msg->path.obj_id, msg->path.obj_inst_id);
+		if (!obj_inst) {
+			/* When Object instace is indicated error have to be reported */
+			return -ENOENT;
+		}
 	} else if (msg->path.level == LWM2M_PATH_LEVEL_OBJECT) {
-		/* find first obj_inst with path's obj_id */
+		/* find first obj_inst with path's obj_id.
+		 * Path level 1 can accept NULL. It define empty payload to response.
+		 */
 		obj_inst = next_engine_obj_inst(msg->path.obj_id, -1);
-	}
-
-	if (!obj_inst) {
-		return -ENOENT;
 	}
 
 	/* set output content-format */
@@ -4225,9 +4235,11 @@ static int do_write_op(struct lwm2m_message *msg,
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		return do_write_op_plain_text(msg);
 
+#ifdef CONFIG_LWM2M_RW_OMA_TLV_SUPPORT
 	case LWM2M_FORMAT_OMA_TLV:
 	case LWM2M_FORMAT_OMA_OLD_TLV:
 		return do_write_op_tlv(msg);
+#endif
 
 #ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
 	case LWM2M_FORMAT_OMA_JSON:
@@ -4420,10 +4432,14 @@ static int lwm2m_engine_default_content_format(uint16_t *accept_format)
 			LOG_ERR("SenML CBOR or JSON is not supported");
 			return -ENOTSUP;
 		}
-	} else {
+	} else if (IS_ENABLED(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT)) {
 		LOG_DBG("No accept option given. Assume OMA TLV.");
 		*accept_format = LWM2M_FORMAT_OMA_TLV;
+	} else {
+		LOG_ERR("No default content format is set");
+		return -ENOTSUP;
 	}
+
 	return 0;
 }
 
@@ -5586,9 +5602,11 @@ static int load_tls_credential(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 
 int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 {
+	socklen_t addr_len;
 	int flags;
-#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	int ret;
+
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	uint8_t tmp;
 
 	if (client_ctx->load_credentials) {
@@ -5632,13 +5650,12 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		ret = setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST,
 				 tls_tag_list, sizeof(tls_tag_list));
 		if (ret < 0) {
-			LOG_ERR("Failed to set TLS_SEC_TAG_LIST option: %d",
-				errno);
-			lwm2m_engine_context_close(client_ctx);
-			return -errno;
+			ret = -errno;
+			LOG_ERR("Failed to set TLS_SEC_TAG_LIST option: %d", ret);
+			goto error;
 		}
 
-		if (client_ctx->desthostname != NULL) {
+		if (client_ctx->hostname_verify && (client_ctx->desthostname != NULL)) {
 			/** store character at len position */
 			tmp = client_ctx->desthostname[client_ctx->desthostnamelen];
 
@@ -5652,27 +5669,49 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 			/** restore character */
 			client_ctx->desthostname[client_ctx->desthostnamelen] = tmp;
 			if (ret < 0) {
-				LOG_ERR("Failed to set TLS_HOSTNAME option: %d", errno);
-				return -errno;
+				ret = -errno;
+				LOG_ERR("Failed to set TLS_HOSTNAME option: %d", ret);
+				goto error;
 			}
 		}
 	}
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+	if ((client_ctx->remote_addr).sa_family == AF_INET) {
+		addr_len = sizeof(struct sockaddr_in);
+	} else if ((client_ctx->remote_addr).sa_family == AF_INET6) {
+		addr_len = sizeof(struct sockaddr_in6);
+	} else {
+		lwm2m_engine_context_close(client_ctx);
+		return -EPROTONOSUPPORT;
+	}
 
 	if (connect(client_ctx->sock_fd, &client_ctx->remote_addr,
-		    NET_SOCKADDR_MAX_SIZE) < 0) {
-		LOG_ERR("Cannot connect UDP (-%d)", errno);
-		lwm2m_engine_context_close(client_ctx);
-		return -errno;
+		    addr_len) < 0) {
+		ret = -errno;
+		LOG_ERR("Cannot connect UDP (%d)", ret);
+		goto error;
 	}
 
 	flags = fcntl(client_ctx->sock_fd, F_GETFL, 0);
 	if (flags == -1) {
-		return -errno;
+		ret = -errno;
+		LOG_ERR("fcntl(F_GETFL) failed (%d)", ret);
+		goto error;
 	}
-	fcntl(client_ctx->sock_fd, F_SETFL, flags | O_NONBLOCK);
+	ret = fcntl(client_ctx->sock_fd, F_SETFL, flags | O_NONBLOCK);
+	if (ret == -1) {
+		ret = -errno;
+		LOG_ERR("fcntl(F_SETFL) failed (%d)", ret);
+		goto error;
+	}
+
+	LOG_INF("Connected, sock id %d", client_ctx->sock_fd);
 
 	return lwm2m_socket_add(client_ctx);
+
+error:
+	lwm2m_engine_context_close(client_ctx);
+	return ret;
 }
 
 int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri)
@@ -6142,6 +6181,7 @@ static int do_send_op(struct lwm2m_message *msg, uint16_t content_format,
 	}
 }
 
+#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
 static int do_send_reply_cb(const struct coap_packet *response,
 				 struct coap_reply *reply,
 				 const struct sockaddr *from)
@@ -6169,10 +6209,12 @@ static void do_send_timeout_cb(struct lwm2m_message *msg)
 	LOG_WRN("Send Timeout");
 
 }
+#endif
 
 int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t path_list_size,
 		      bool confirmation_request)
 {
+#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
 	struct lwm2m_message *msg;
 	int ret;
 	uint16_t content_format;
@@ -6182,6 +6224,11 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm2m_path_list;
 	sys_slist_t lwm2m_path_free_list;
+
+	if (lwm2m_server_get_mute_send(ctx->srv_obj_inst)) {
+		LOG_WRN("Send operation is muted by server");
+		return -EPERM;
+	}
 
 	/* Init list */
 	lwm2m_engine_path_list_init(&lwm2m_path_list, &lwm2m_path_free_list, lwm2m_path_list_buf,
@@ -6265,6 +6312,10 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 cleanup:
 	lwm2m_reset_message(msg, true);
 	return ret;
+#else
+	LOG_WRN("LwM2M send is only supported for CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1");
+	return -ENOTSUP;
+#endif
 }
 
 SYS_INIT(lwm2m_engine_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

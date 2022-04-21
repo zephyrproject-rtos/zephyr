@@ -2,6 +2,8 @@ sample:
   name: CANopenNode sample
 common:
   tags: can canopen
+  modules:
+    - canopennode
   depends_on: can
   filter: dt_chosen_enabled("zephyr,canbus")
   harness: console

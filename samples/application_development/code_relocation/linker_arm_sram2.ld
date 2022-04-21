@@ -11,7 +11,6 @@
  * Linker script for the Cortex-M platforms.
  */
 
-#include <autoconf.h>
 #include <linker/sections.h>
 #include <devicetree.h>
 

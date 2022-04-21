@@ -78,28 +78,40 @@ features:
 Programming
 ***********
 
-Two components are required in order to build applications for this board: the
-`toolchain`_ and the `SDK`_.  Both are provided by the SoC manufacturer.
+The ESP32 toolchain :file:`xtensa-esp32-elf` is required to build this port.
+Install the toolchain:
 
-The SDK contains headers and a hardware abstraction layer library (provided only
-as object files) that are required for the port to function.
+   .. code-block:: console
 
-The toolchain is available for Linux, Windows, and macOS hosts and instructions
-to obtain and set them up are available in the `ESP-IDF repository
-<https://github.com/espressif/esp-idf>`_, as explained in the
-`ESP-IDF Programming Guide <SDK>`_.
+      west espressif install
+
+   .. note::
+
+      By default, the toolchain will be downloaded and installed under $HOME/.espressif directory
+      (%USERPROFILE%/.espressif on Windows).
 
 Set up build environment
 ------------------------
 
-With both the toolchain and SDK installed, the Zephyr build system must be
-instructed to use this particular variant by setting the following shell
-variables:
+With the toolchain installed, the Zephyr build system must be instructed to
+use this particular variant by setting the following shell variables:
 
 .. code-block:: console
 
    export ZEPHYR_TOOLCHAIN_VARIANT="espressif"
    export ESPRESSIF_TOOLCHAIN_PATH="/path/to/xtensa-esp32-elf/"
+
+Finally, retrieve required submodules to build this port. This might take
+a while for the first time:
+
+.. code-block:: console
+
+   west espressif update
+
+.. note::
+
+   It is recommended running the command above after :file:`west update` so
+   that submodules also get updated.
 
 Flashing
 --------
@@ -112,7 +124,6 @@ Here is an example for the :ref:`hello_world` application.
    :host-os: unix
    :board: odroid_go
    :goals: build
-   :gen-args: -DESP_IDF_PATH=/path/to/esp-idf/
 
 Refer to :ref:`build_an_application` and :ref:`application_run` for more
 details.
@@ -145,7 +156,7 @@ having build the application in the ``build`` directory:
 
 .. code-block:: console
 
-   west flash -d build/ --skip-rebuild --esp-tool=/path/to/esp-idf/components/esptool_py/esptool/esptool.py --esp-device /dev/ttyUSB0
+   west flash -d build/ --skip-rebuild --esp-device /dev/ttyUSB0
 
 Connect ODROID-GO to your PC via the mini USB port and run your favorite
 terminal program to listen for output.
@@ -167,5 +178,3 @@ References
 .. target-notes::
 
 .. [1] https://wiki.odroid.com/odroid_go/odroid_go
-.. _`toolchain`: https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-setup-toolchain
-.. _`SDK`: https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-get-esp-idf

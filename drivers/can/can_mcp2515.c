@@ -209,21 +209,6 @@ static int mcp2515_cmd_read_rx_buffer(const struct device *dev, uint8_t nm,
 	return spi_transceive_dt(&dev_cfg->bus, &tx, &rx);
 }
 
-static uint8_t mcp2515_convert_canmode_to_mcp2515mode(enum can_mode mode)
-{
-	switch (mode) {
-	case CAN_NORMAL_MODE:
-		return MCP2515_MODE_NORMAL;
-	case CAN_SILENT_MODE:
-		return MCP2515_MODE_SILENT;
-	case CAN_LOOPBACK_MODE:
-		return MCP2515_MODE_LOOPBACK;
-	default:
-		LOG_ERR("Unsupported CAN Mode %u", mode);
-		return MCP2515_MODE_SILENT;
-	}
-}
-
 static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct zcan_frame
 						      *source, uint8_t *target)
 {
@@ -328,14 +313,14 @@ static int mcp2515_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
-int mcp2515_get_max_filters(const struct device *dev, enum can_ide id_type)
+static int mcp2515_get_max_filters(const struct device *dev, enum can_ide id_type)
 {
 	ARG_UNUSED(id_type);
 
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-int mcp2515_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+static int mcp2515_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
 
@@ -464,7 +449,23 @@ static int mcp2515_set_mode(const struct device *dev, enum can_mode mode)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
 	struct mcp2515_data *dev_data = dev->data;
+	uint8_t mcp2515_mode;
 	int ret;
+
+	switch (mode) {
+	case CAN_NORMAL_MODE:
+		mcp2515_mode = MCP2515_MODE_NORMAL;
+		break;
+	case CAN_SILENT_MODE:
+		mcp2515_mode = MCP2515_MODE_SILENT;
+		break;
+	case CAN_LOOPBACK_MODE:
+		mcp2515_mode = MCP2515_MODE_LOOPBACK;
+		break;
+	default:
+		LOG_ERR("Unsupported CAN Mode %u", mode);
+		return -ENOTSUP;
+	}
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
@@ -478,8 +479,7 @@ static int mcp2515_set_mode(const struct device *dev, enum can_mode mode)
 
 	k_usleep(MCP2515_OSC_STARTUP_US);
 
-	ret = mcp2515_set_mode_int(dev,
-			mcp2515_convert_canmode_to_mcp2515mode(mode));
+	ret = mcp2515_set_mode_int(dev, mcp2515_mode);
 	if (ret < 0) {
 		LOG_ERR("Failed to set the mode [%d]", ret);
 
@@ -736,10 +736,12 @@ static void mcp2515_handle_errors(const struct device *dev)
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static void mcp2515_recover(const struct device *dev, k_timeout_t timeout)
+static int mcp2515_recover(const struct device *dev, k_timeout_t timeout)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(timeout);
+
+	return -ENOTSUP;
 }
 #endif
 
@@ -847,7 +849,7 @@ static const struct can_driver_api can_api_funcs = {
 		.sjw = 0x1,
 		.prop_seg = 0x01,
 		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
+		.phase_seg2 = 0x02,
 		.prescaler = 0x01
 	},
 	.timing_max = {
@@ -855,7 +857,7 @@ static const struct can_driver_api can_api_funcs = {
 		.prop_seg = 0x08,
 		.phase_seg1 = 0x08,
 		.phase_seg2 = 0x08,
-		.prescaler = 0x20
+		.prescaler = 0x40
 	}
 };
 
@@ -990,40 +992,5 @@ static const struct mcp2515_config mcp2515_config_1 = {
 DEVICE_DT_INST_DEFINE(0, &mcp2515_init, NULL,
 		    &mcp2515_data_1, &mcp2515_config_1, POST_KERNEL,
 		    CONFIG_CAN_INIT_PRIORITY, &can_api_funcs);
-
-#if defined(CONFIG_NET_SOCKETS_CAN)
-
-#include "socket_can_generic.h"
-
-static struct socket_can_context socket_can_context_1;
-
-static int socket_can_init(const struct device *dev)
-{
-	const struct device *can_dev = DEVICE_DT_INST_GET(1);
-	struct socket_can_context *socket_context = dev->data;
-
-	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->name, can_dev, can_dev->name);
-
-	socket_context->can_dev = can_dev;
-	socket_context->msgq = &socket_can_msgq;
-
-	socket_context->rx_tid =
-		k_thread_create(&socket_context->rx_thread_data,
-				rx_thread_stack,
-				K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-				rx_thread, socket_context, NULL, NULL,
-				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
-
-	return 0;
-}
-
-NET_DEVICE_INIT(socket_can_mcp2515_1, SOCKET_CAN_NAME_1, socket_can_init,
-		NULL, &socket_can_context_1, NULL,
-		CONFIG_CAN_INIT_PRIORITY,
-		&socket_can_api,
-		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
-
-#endif
 
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */

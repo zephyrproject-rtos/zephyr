@@ -109,9 +109,6 @@ static int pwm_it8xxx2_pin_set(const struct device *dev,
 
 	ARG_UNUSED(pwm);
 
-	if (pulse_cycles > period_cycles)
-		return -EINVAL;
-
 	/* PWM channel clock source gating before configuring */
 	pwm_enable(dev, 0);
 

@@ -160,6 +160,11 @@ static log_timestamp_t dummy_timestamp(void)
 	return 0;
 }
 
+log_timestamp_t z_log_timestamp(void)
+{
+	return timestamp_func();
+}
+
 uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
 {
 	char curr;
@@ -611,16 +616,16 @@ void log_core_init(void)
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		z_log_runtime_filters_init();
 	}
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+		log_frontend_init();
+	}
 }
 
 void log_init(void)
 {
 	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
 	int i;
-
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		log_frontend_init();
-	}
 
 	if (atomic_inc(&initialized) != 0) {
 		return;
@@ -1266,10 +1271,7 @@ const char *z_log_get_tag(void)
 
 int log_set_tag(const char *str)
 {
-	if (CONFIG_LOG_TAG_MAX_LEN == 0) {
-		return -ENOTSUP;
-	}
-
+#if CONFIG_LOG_TAG_MAX_LEN > 0
 	if (str == NULL) {
 		return -EINVAL;
 	}
@@ -1286,6 +1288,9 @@ int log_set_tag(const char *str)
 	}
 
 	return 0;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 int log_mem_get_usage(uint32_t *buf_size, uint32_t *usage)

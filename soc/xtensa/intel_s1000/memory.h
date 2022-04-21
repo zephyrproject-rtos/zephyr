@@ -6,7 +6,6 @@
 #ifndef __INC_MEMORY_H
 #define __INC_MEMORY_H
 
-#include <autoconf.h>
 
 /* L2 HP SRAM */
 #define L2_VECTOR_SIZE				0x1000

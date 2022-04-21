@@ -1,0 +1,77 @@
+# USB HID configuration options
+
+# Copyright (c) 2018 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_DEVICE_HID
+	bool "USB Human Interface Device support"
+	help
+	  Enables USB Human Interface Device support. Default device name
+	  is "HID_0".
+
+if USB_DEVICE_HID
+
+config USB_HID_DEVICE_NAME
+	string "USB HID device name template"
+	default "HID"
+	help
+	  Device name template for the HID Devices. First device would have
+	  name $(USB_HID_DEVICE_NAME)_0, etc.
+
+module = USB_HID
+default-count = 1
+source "subsys/usb/device/class/Kconfig.template.composite_device_number"
+
+module = USB_HID
+module-str = usb hid
+source "subsys/logging/Kconfig.template.log_config"
+
+config ENABLE_HID_INT_OUT_EP
+	bool "USB HID Device Interrupt OUT Endpoint"
+	help
+	  Enable USB HID Device Interrupt OUT Endpoint.
+
+config HID_INTERRUPT_EP_MPS
+	int "USB HID Device Interrupt Endpoint size"
+	default 16
+	help
+	  USB HID Device interrupt endpoint size
+
+config USB_HID_POLL_INTERVAL_MS
+	int "Polling interval"
+	default 9
+	help
+	  Polling interval in ms selected by the USB HID Device.
+
+config USB_HID_REPORTS
+	int "Number of HID idle reports in the instance"
+	default 1
+	range 1 256
+	help
+	  This configuration is only necessary if the application must
+	  support USB HID idle rate and Set/Get Idle Requests.
+	  The application can use Report ID to identify data fields
+	  in the report descriptor and report itself.
+	  This configuration value should correspond to the number of Input
+	  Report IDs, the gaps and offset in Report IDs can not be supported.
+	  Set this configuration value to 1 if Report IDs are not used but
+	  idle rate must be supported.
+
+config USB_HID_BOOT_PROTOCOL
+	bool "USB HID Boot Protocol handling"
+	help
+	  Sets bInterfaceSubClass to 1 and enables Set_Protocol and Get_Protocol
+	  requests handling.
+	  See Chapter 4.2 of Device Class Definition for Human Interface Devices 1.11
+	  for more information.
+
+config USB_HID_PROTOCOL_CODE
+	int "HID Boot Interface protocol code (DEPRECATED)"
+	default 0
+	range 0 2
+	depends on USB_HID_BOOT_PROTOCOL
+	help
+	  This option is deprecated.
+	  Please use usb_hid_set_proto_code() instead.
+
+endif # USB_DEVICE_HID

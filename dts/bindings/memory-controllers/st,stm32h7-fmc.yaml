@@ -1,0 +1,50 @@
+# Copyright (c) 2022 Georgij Cernysiov
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Flexible Memory Controller (FMC).
+
+  The FMC allows to interface with static-memory mapped external devices such as
+  SRAM, NOR Flash, NAND Flash, SDRAM...
+
+  All external memories share the addresses, data and control signals with the
+  controller. Each external device is accessed by means of a unique chip select.
+  The FMC performs only one access at a time to an external device.
+
+  The flexible memory controller includes three memory controllers:
+
+    - NOR/PSRAM memory controller
+    - NAND memory controller (some devices also support PC Card)
+    - Synchronous DRAM (SDRAM/Mobile LPSDR SDRAM) controller
+
+  Each memory controller is defined below the FMC DeviceTree node and is managed
+  by a separate Zephyr device. However, because signals are shared the FMC
+  device handles the signals and the peripheral clocks. FMC can be enabled
+  in your board DeviceTree file like this:
+
+  &fmc {
+      status = "okay";
+      pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1 &fmc_nbl2_pi4...>;
+  };
+
+compatible: "st,stm32h7-fmc"
+
+include: ["st,stm32-fmc.yaml"]
+
+properties:
+    st,mem-swap:
+      type: string
+      required: false
+      default: "disable" # reset state
+      enum:
+        - "disable"
+        - "sdram-sram"
+        - "sdramb2"
+      description: |
+        The FMC bank mapping configuration (BMAP bits of FMC_BCR1).
+
+        * disable    - Default mapping.
+        * sdram-sram - Swap the NOR/PSRAM bank with SDRAM.
+        * sdramb2    - Remaps the SDRAM bank2.
+
+        If absent, then default mapping (disable) is used (reset state).

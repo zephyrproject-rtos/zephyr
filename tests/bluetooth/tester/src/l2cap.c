@@ -259,7 +259,7 @@ static void connect(uint8_t *data, uint16_t len)
 fail:
 	for (i = 0U; i < ARRAY_SIZE(allocated_channels); i++) {
 		if (allocated_channels[i]) {
-			channels[allocated_channels[i]->ident].in_use = false;
+			channels[BT_L2CAP_LE_CHAN(allocated_channels[i])->ident].in_use = false;
 		}
 	}
 	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_CONNECT, CONTROLLER_INDEX,

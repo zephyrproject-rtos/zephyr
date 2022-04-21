@@ -26,6 +26,7 @@
 		i2c-0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
 		i2c7 = &i2c_smb_2;
+		pwm-0 = &pwm0;
 	};
 
 	leds {
@@ -238,5 +239,11 @@
 &pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pwm0_gpio053>;
+	pinctrl-names = "default";
+};
+
+&tach0 {
+	status = "okay";
+	pinctrl-0 = <&tach0_gpio050>;
 	pinctrl-names = "default";
 };

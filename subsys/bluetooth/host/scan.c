@@ -330,14 +330,14 @@ int bt_le_scan_update(bool fast_scan)
 
 		/* don't restart scan if we have pending connection */
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-					       BT_CONN_CONNECT);
+					       BT_CONN_CONNECTING);
 		if (conn) {
 			bt_conn_unref(conn);
 			return 0;
 		}
 
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-					       BT_CONN_CONNECT_SCAN);
+					       BT_CONN_CONNECTING_SCAN);
 		if (conn) {
 			atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 
@@ -373,7 +373,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 	}
 
 	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, id_addr,
-				       BT_CONN_CONNECT_SCAN);
+				       BT_CONN_CONNECTING_SCAN);
 	if (!conn) {
 		return;
 	}
@@ -388,7 +388,7 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		goto failed;
 	}
 
-	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	bt_conn_set_state(conn, BT_CONN_CONNECTING);
 	bt_conn_unref(conn);
 	return;
 
@@ -941,6 +941,12 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
 		/* Now we know which address and SID we synchronized to. */
 		bt_addr_le_copy(&pending_per_adv_sync->addr, &evt->adv_addr);
 		pending_per_adv_sync->sid = evt->sid;
+
+		/* Translate "enhanced" identity address type to normal one */
+		if (pending_per_adv_sync->addr.type == BT_ADDR_LE_PUBLIC_ID ||
+		    pending_per_adv_sync->addr.type == BT_ADDR_LE_RANDOM_ID) {
+			pending_per_adv_sync->addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		}
 	}
 
 	sync_info.addr = &pending_per_adv_sync->addr;

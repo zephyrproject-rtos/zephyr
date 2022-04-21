@@ -60,7 +60,7 @@
 
 		/* NOTE: bridge TIMER0_CH0 (PA8) and LED1 (PC0) */
 		pwm_led: pwm_led {
-			pwms = <&pwm0 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 

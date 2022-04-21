@@ -974,5 +974,3 @@ int phy_xlnx_gem_detect(const struct device *dev)
 	LOG_ERR("%s PHY detection failed", dev->name);
 	return -EIO;
 }
-
-/* EOF */

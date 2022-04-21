@@ -6,9 +6,9 @@
  */
 
 #include <zephyr.h>
-#include "net/buf.h"
+#include <net/buf.h>
+#include <mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
-#include "mgmt/mcumgr/buf.h"
 #include "smp/smp.h"
 #include "mgmt/mcumgr/smp.h"
 #include "smp_reassembly.h"
@@ -128,22 +128,10 @@ zephyr_smp_split_frag(struct net_buf **nb, void *arg, uint16_t mtu)
 	return frag;
 }
 
-static void
-zephyr_smp_reset_buf(void *buf, void *arg)
-{
-	net_buf_reset(buf);
-}
-
 static int
-zephyr_smp_write_hdr(struct cbor_encoder_writer *writer, const struct mgmt_hdr *hdr)
+zephyr_smp_write_hdr(struct cbor_nb_writer *cnw, const struct mgmt_hdr *hdr)
 {
-	struct cbor_nb_writer *czw;
-	struct net_buf *nb;
-
-	czw = (struct cbor_nb_writer *)writer;
-	nb = czw->nb;
-
-	memcpy(nb->data, hdr, sizeof(*hdr));
+	memcpy(cnw->nb->data, hdr, sizeof(*hdr));
 
 	return 0;
 }
@@ -200,28 +188,6 @@ zephyr_smp_tx_rsp(struct smp_streamer *ns, void *rsp, void *arg)
 	return 0;
 }
 
-static int
-zephyr_smp_init_reader(struct cbor_decoder_reader *reader, void *buf)
-{
-	struct cbor_nb_reader *czr;
-
-	czr = (struct cbor_nb_reader *)reader;
-	cbor_nb_reader_init(czr, buf);
-
-	return 0;
-}
-
-static int
-zephyr_smp_init_writer(struct cbor_encoder_writer *writer, void *buf)
-{
-	struct cbor_nb_writer *czw;
-
-	czw = (struct cbor_nb_writer *)writer;
-	cbor_nb_writer_init(czw, buf);
-
-	return 0;
-}
-
 /**
  * Processes a single SMP packet and sends the corresponding response(s).
  */
@@ -237,8 +203,8 @@ zephyr_smp_process_packet(struct zephyr_smp_transport *zst,
 	streamer = (struct smp_streamer) {
 		.mgmt_stmr = {
 			.cfg = &zephyr_smp_cbor_cfg,
-			.reader = &reader.r,
-			.writer = &writer.enc,
+			.reader = &reader,
+			.writer = &writer,
 			.cb_arg = zst,
 		},
 		.tx_rsp_cb = zephyr_smp_tx_rsp,
@@ -267,10 +233,7 @@ zephyr_smp_handle_reqs(struct k_work *work)
 static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg = {
 	.alloc_rsp = zephyr_smp_alloc_rsp,
 	.trim_front = zephyr_smp_trim_front,
-	.reset_buf = zephyr_smp_reset_buf,
 	.write_hdr = zephyr_smp_write_hdr,
-	.init_reader = zephyr_smp_init_reader,
-	.init_writer = zephyr_smp_init_writer,
 	.free_buf = zephyr_smp_free_buf,
 };
 

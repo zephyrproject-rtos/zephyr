@@ -15,6 +15,9 @@
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 #include <drivers/dma.h>
 #endif
+#ifdef CONFIG_PINCTRL
+#include <drivers/pinctrl.h>
+#endif
 #include <sys_clock.h>
 
 LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
@@ -33,6 +36,9 @@ struct spi_mcux_config {
 	uint32_t post_delay;
 	uint32_t frame_delay;
 	uint32_t transfer_delay;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
@@ -714,6 +720,13 @@ static int spi_mcux_init(const struct device *dev)
 
 	data->dev = dev;
 
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif
+
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 	if (!device_is_ready(data->dma_tx.dma_dev)) {
 		LOG_ERR("%s device is not ready", data->dma_tx.dma_dev->name);
@@ -759,6 +772,14 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 	irq_enable(DT_INST_IRQN(id));				\
 }
 
+#ifdef CONFIG_PINCTRL
+#define SPI_MCUX_FLEXCOMM_PINCTRL_DEFINE(id) PINCTRL_DT_INST_DEFINE(id);
+#define SPI_MCUX_FLEXCOMM_PINCTRL_INIT(id) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),
+#else
+#define SPI_MCUX_FLEXCOMM_PINCTRL_DEFINE(id)
+#define SPI_MCUX_FLEXCOMM_PINCTRL_INIT(id)
+#endif
+
 #ifndef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 #define SPI_DMA_CHANNELS(id)
 #else
@@ -790,6 +811,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 
 #define SPI_MCUX_FLEXCOMM_DEVICE(id)					\
 	SPI_MCUX_FLEXCOMM_IRQ_HANDLER_DECL(id);			\
+	SPI_MCUX_FLEXCOMM_PINCTRL_DEFINE(id)				\
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
 		(SPI_Type *)DT_INST_REG_ADDR(id),			\
@@ -801,6 +823,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		.post_delay = DT_INST_PROP_OR(id, post_delay, 0),		\
 		.frame_delay = DT_INST_PROP_OR(id, frame_delay, 0),		\
 		.transfer_delay = DT_INST_PROP_OR(id, transfer_delay, 0),		\
+		SPI_MCUX_FLEXCOMM_PINCTRL_INIT(id)			\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\

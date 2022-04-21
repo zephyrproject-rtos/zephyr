@@ -154,7 +154,7 @@
 	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
 	pinctrl-names = "default";
 
-	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
 		   <&gpioe 0 GPIO_ACTIVE_LOW>;
 
 	spbtle-rf@0 {

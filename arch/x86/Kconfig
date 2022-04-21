@@ -479,6 +479,14 @@ config X86_KPTI
 	  user thread interrupts and system calls, and significant footprint
 	  increase for additional page tables and trampoline stacks.
 
+config X86_EFI
+	bool "EFI"
+	default y
+	depends on BUILD_OUTPUT_EFI
+	help
+	  Enable EFI support. This means you build your image with zefi
+	  support. See arch/x86/zefi/README.txt for more information.
+
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"
 

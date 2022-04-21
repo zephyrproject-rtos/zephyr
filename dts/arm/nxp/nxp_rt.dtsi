@@ -22,6 +22,7 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
+			d-cache-line-size = <32>;
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -182,6 +183,41 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
+		/*
+		 * Note: interrupts for GPIO6-9 are not currently supported
+		 * by the gpio driver.
+		 */
+		gpio6: gpio@42000000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x42000000 0x4000>;
+			label = "GPIO_6";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio7: gpio@42004000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x42004000 0x4000>;
+			label = "GPIO_7";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio8: gpio@42008000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x42008000 0x4000>;
+			label = "GPIO_8";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio9: gpio@4200c000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x4200c000 0x4000>;
+			label = "GPIO_9";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
 
 		lpi2c1: i2c@403f0000 {
 			compatible = "nxp,imx-lpi2c";
@@ -298,6 +334,8 @@
 			reg = <0x40184000 0x4000>;
 			interrupts = <20 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x7c 24>;
+			dmas = <&edma0 1 2>, <&edma0 2 3>;
+			dma-names = "tx", "rx";
 			label = "UART_1";
 			status = "disabled";
 		};
@@ -307,6 +345,8 @@
 			reg = <0x40188000 0x4000>;
 			interrupts = <21 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x68 28>;
+			dmas = <&edma0 3 66>, <&edma0 4 67>;
+			dma-names = "tx", "rx";
 			label = "UART_2";
 			status = "disabled";
 		};
@@ -316,6 +356,8 @@
 			reg = <0x4018c000 0x4000>;
 			interrupts = <22 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x68 12>;
+			dmas = <&edma0 5 4>, <&edma0 6 5>;
+			dma-names = "tx", "rx";
 			label = "UART_3";
 			status = "disabled";
 		};
@@ -325,6 +367,8 @@
 			reg = <0x40190000 0x4000>;
 			interrupts = <23 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
+			dmas = <&edma0 7 68>, <&edma0 8 69>;
+			dma-names = "tx", "rx";
 			label = "UART_4";
 			status = "disabled";
 		};
@@ -334,6 +378,8 @@
 			reg = <0x40194000 0x4000>;
 			interrupts = <24 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x74 2>;
+			dmas = <&edma0 9 6>, <&edma0 10 7>;
+			dma-names = "tx", "rx";
 			label = "UART_5";
 			status = "disabled";
 		};
@@ -343,6 +389,8 @@
 			reg = <0x40198000 0x4000>;
 			interrupts = <25 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x74 6>;
+			dmas = <&edma0 11 70>, <&edma0 12 71>;
+			dma-names = "tx", "rx";
 			label = "UART_6";
 			status = "disabled";
 		};
@@ -352,6 +400,8 @@
 			reg = <0x4019c000 0x4000>;
 			interrupts = <26 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x7c 26>;
+			dmas = <&edma0 13 8>, <&edma0 14 9>;
+			dma-names = "tx", "rx";
 			label = "UART_7";
 			status = "disabled";
 		};
@@ -361,6 +411,8 @@
 			reg = <0x401a0000 0x4000>;
 			interrupts = <27 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x80 14>;
+			dmas = <&edma0 15 72>, <&edma0 16 73>;
+			dma-names = "tx", "rx";
 			label = "UART_8";
 			status = "disabled";
 		};
@@ -579,7 +631,7 @@
 			status = "disabled";
 			label = "ETH_0";
 			phy-addr = <0>;
-			ptp {
+			ptp: ptp {
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";
 				interrupts = <115 0>;

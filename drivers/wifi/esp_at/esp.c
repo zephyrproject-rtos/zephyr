@@ -1026,7 +1026,7 @@ static void esp_init_work(struct k_work *work)
 	net_if_up(dev->net_iface);
 }
 
-static void esp_reset(struct esp_data *dev)
+static int esp_reset(struct esp_data *dev)
 {
 	if (net_if_is_up(dev->net_iface)) {
 		net_if_down(dev->net_iface);
@@ -1055,20 +1055,16 @@ static void esp_reset(struct esp_data *dev)
 
 	if (ret < 0) {
 		LOG_ERR("Failed to reset device: %d", ret);
-		return;
+		return -EAGAIN;
 	}
 #endif
+	return 0;
 }
 
 static void esp_iface_init(struct net_if *iface)
 {
-	const struct device *dev = net_if_get_device(iface);
-	struct esp_data *data = dev->data;
-
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
-	data->net_iface = iface;
 	esp_offload_init(iface);
-	esp_reset(data);
 }
 
 static const struct net_wifi_mgmt_offload esp_api = {
@@ -1079,6 +1075,17 @@ static const struct net_wifi_mgmt_offload esp_api = {
 	.ap_enable	= esp_mgmt_ap_enable,
 	.ap_disable	= esp_mgmt_ap_disable,
 };
+
+static int esp_init(const struct device *dev);
+
+/* The network device must be instantiated above the init function in order
+ * for the struct net_if that the macro declares to be visible inside the
+ * function. An `extern` declaration does not work as the struct is static.
+ */
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, NULL,
+				  &esp_driver_data, NULL,
+				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
+				  ESP_MTU);
 
 static int esp_init(const struct device *dev)
 {
@@ -1154,11 +1161,12 @@ static int esp_init(const struct device *dev)
 			K_NO_WAIT);
 	k_thread_name_set(&esp_rx_thread, "esp_rx");
 
+	/* Retrieve associated network interface so asynchronous messages can be processed early */
+	data->net_iface = NET_IF_GET(Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(0)), 0);
+
+	/* Reset the modem */
+	ret = esp_reset(data);
+
 error:
 	return ret;
 }
-
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, NULL,
-				  &esp_driver_data, NULL,
-				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
-				  ESP_MTU);

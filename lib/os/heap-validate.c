@@ -422,6 +422,18 @@ int sys_heap_runtime_stats_get(struct sys_heap *heap,
 
 	stats->free_bytes = heap->heap->free_bytes;
 	stats->allocated_bytes = heap->heap->allocated_bytes;
+	stats->max_allocated_bytes = heap->heap->max_allocated_bytes;
+
+	return 0;
+}
+
+int sys_heap_runtime_stats_reset_max(struct sys_heap *heap)
+{
+	if (heap == NULL) {
+		return -EINVAL;
+	}
+
+	heap->heap->max_allocated_bytes = heap->heap->allocated_bytes;
 
 	return 0;
 }

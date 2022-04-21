@@ -11,10 +11,10 @@
 #include <string.h>
 #include <zephyr.h>
 #include <init.h>
-#include "net/buf.h"
+#include <net/buf.h>
+#include <mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include "mgmt/mcumgr/serial.h"
-#include "mgmt/mcumgr/buf.h"
 #include "mgmt/mcumgr/smp.h"
 #include "mgmt/mcumgr/smp_shell.h"
 #include "drivers/uart.h"

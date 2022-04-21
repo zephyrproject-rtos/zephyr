@@ -225,7 +225,7 @@ void can_mcan_line_1_isr(const struct can_mcan_config *cfg,
 			 struct can_mcan_msg_sram *msg_ram,
 			 struct can_mcan_data *data);
 
-int can_mcan_recover(struct can_mcan_reg *can, k_timeout_t timeout);
+int can_mcan_recover(const struct can_mcan_config *cfg, k_timeout_t timeout);
 
 int can_mcan_send(const struct can_mcan_config *cfg, struct can_mcan_data *data,
 		  struct can_mcan_msg_sram *msg_ram,

@@ -122,6 +122,7 @@ void ite_intc_irq_disable(unsigned int irq)
 {
 	uint32_t g, i;
 	volatile uint8_t *en;
+	volatile uint8_t _ier __unused;
 
 	if (irq > CONFIG_NUM_IRQS) {
 		return;
@@ -133,6 +134,11 @@ void ite_intc_irq_disable(unsigned int irq)
 	/* critical section due to run a bit-wise OR operation */
 	unsigned int key = irq_lock();
 	CLEAR_MASK(*en, BIT(i));
+	/*
+	 * This load operation will guarantee the above modification of
+	 * SOC's register can be seen by any following instructions.
+	 */
+	_ier = *en;
 	irq_unlock(key);
 }
 
@@ -179,6 +185,11 @@ uint8_t ite_intc_get_irq_num(void)
 	return intc_irq;
 }
 
+bool ite_intc_no_irq(void)
+{
+	return (IVECT == IVECT_OFFSET_WITH_IRQ);
+}
+
 uint8_t get_irq(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -197,8 +208,6 @@ uint8_t get_irq(void *arg)
 	intc_irq -= IVECT_OFFSET_WITH_IRQ;
 	/* clear interrupt status */
 	ite_intc_isr_clear(intc_irq);
-	/* Clear flag on each interrupt. */
-	wait_interrupt_fired = 0;
 	/* return interrupt number */
 	return intc_irq;
 }

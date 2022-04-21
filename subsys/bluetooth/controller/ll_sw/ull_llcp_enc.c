@@ -339,11 +339,10 @@ static void lp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 static void lp_enc_st_unencrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
 		/* Pause Tx data */
-		llcp_tx_pause_data(conn);
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		llcp_tx_flush(conn);
 		lp_enc_send_enc_req(conn, ctx, evt, param);
 		break;
@@ -408,7 +407,7 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ll_conn *conn, struct proc_ct
 		break;
 	case LP_ENC_EVT_REJECT:
 		/* Resume Tx data */
-		llcp_tx_resume_data(conn);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
 		ctx->data.enc.error = (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND) ?
@@ -444,7 +443,7 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ct
 	switch (evt) {
 	case LP_ENC_EVT_START_ENC_RSP:
 		/* Resume Tx data */
-		llcp_tx_resume_data(conn);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
 		ctx->data.enc.error = BT_HCI_ERR_SUCCESS;
@@ -462,7 +461,6 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ct
 
 static void lp_enc_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
 		lp_enc_complete(conn, ctx, evt, param);
@@ -476,11 +474,10 @@ static void lp_enc_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				   void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
 		/* Pause Tx data */
-		llcp_tx_pause_data(conn);
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		llcp_tx_flush(conn);
 		lp_enc_send_pause_enc_req(conn, ctx, evt, param);
 		break;
@@ -825,7 +822,7 @@ static void rp_enc_send_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, u
 		ctx->state = RP_ENC_STATE_UNENCRYPTED;
 
 		/* Resume Tx data */
-		llcp_tx_resume_data(conn);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
 		/* Resume possibly paused local procedure */
@@ -844,7 +841,7 @@ static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 		ctx->state = RP_ENC_STATE_UNENCRYPTED;
 
 		/* Resume Tx data */
-		llcp_tx_resume_data(conn);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
 
@@ -910,7 +907,7 @@ static void rp_enc_state_wait_rx_enc_req(struct ll_conn *conn, struct proc_ctx *
 	switch (evt) {
 	case RP_ENC_EVT_ENC_REQ:
 		/* Pause Tx data */
-		llcp_tx_pause_data(conn);
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		llcp_tx_flush(conn);
 		/* Pause Rx data */
 		ull_conn_pause_rx_data(conn);
@@ -930,7 +927,6 @@ static void rp_enc_state_wait_rx_enc_req(struct ll_conn *conn, struct proc_ctx *
 static void rp_enc_state_wait_tx_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					 void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_enc_rsp(conn, ctx, evt, param);
@@ -944,7 +940,6 @@ static void rp_enc_state_wait_tx_enc_rsp(struct ll_conn *conn, struct proc_ctx *
 static void rp_enc_state_wait_ntf_ltk_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_ltk_ntf(conn, ctx, evt, param);
@@ -958,7 +953,6 @@ static void rp_enc_state_wait_ntf_ltk_req(struct ll_conn *conn, struct proc_ctx 
 static void rp_enc_state_wait_ltk_reply(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_LTK_REQ_REPLY:
 		rp_enc_send_start_enc_req(conn, ctx, evt, param);
@@ -975,7 +969,6 @@ static void rp_enc_state_wait_ltk_reply(struct ll_conn *conn, struct proc_ctx *c
 static void rp_enc_state_wait_tx_start_enc_req(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_start_enc_req(conn, ctx, evt, param);
@@ -989,7 +982,6 @@ static void rp_enc_state_wait_tx_start_enc_req(struct ll_conn *conn, struct proc
 static void rp_enc_state_wait_tx_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					    void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_reject_ind(conn, ctx, evt, param);
@@ -1003,7 +995,6 @@ static void rp_enc_state_wait_tx_reject_ind(struct ll_conn *conn, struct proc_ct
 static void rp_enc_state_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_START_ENC_RSP:
 		rp_enc_complete(conn, ctx, evt, param);
@@ -1017,7 +1008,6 @@ static void rp_enc_state_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc
 static void rp_enc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_complete(conn, ctx, evt, param);
@@ -1031,7 +1021,6 @@ static void rp_enc_state_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, ui
 static void rp_enc_state_wait_tx_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_start_enc_rsp(conn, ctx, evt, param);
@@ -1058,11 +1047,10 @@ static void rp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, u
 static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_PAUSE_ENC_REQ:
 		/* Pause Tx data */
-		llcp_tx_pause_data(conn);
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		llcp_tx_flush(conn);
 		/*
 		 * Pause Rx data; will be resumed when the encapsulated
@@ -1080,7 +1068,6 @@ static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc
 static void rp_enc_state_wait_tx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_RUN:
 		rp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
@@ -1094,7 +1081,6 @@ static void rp_enc_state_wait_tx_pause_enc_rsp(struct ll_conn *conn, struct proc
 static void rp_enc_state_wait_rx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 					       uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_PAUSE_ENC_RSP:
 		/* Continue with an encapsulated Start Procedure */

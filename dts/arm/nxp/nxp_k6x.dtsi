@@ -389,7 +389,7 @@
 			reg = <0x400ac000 0x88>;
 			interrupts = <65 3>;
 			label = "SPI_2";
-			dmas = <&edma0 0 17>, <&edma0 0 17>;
+			dmas = <&edma0 0 38>, <&edma0 0 39>;
 			dma-names = "rx", "tx";
 			rx-fifo-size = <1>;
 			tx-fifo-size = <1>;
@@ -515,7 +515,7 @@
 			label = "ETH_0";
 			phy-addr = <0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0 0>;
-			ptp {
+			ptp: ptp {
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";
 				interrupts = <82 0>;

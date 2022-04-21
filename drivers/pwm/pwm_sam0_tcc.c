@@ -14,11 +14,13 @@
 #include <device.h>
 #include <errno.h>
 #include <drivers/pwm.h>
+#include <drivers/pinctrl.h>
 #include <soc.h>
 
 /* Static configuration */
 struct pwm_sam0_config {
 	Tcc *regs;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t channels;
 	uint8_t counter_size;
 	uint16_t prescaler;
@@ -102,6 +104,7 @@ static int pwm_sam0_init(const struct device *dev)
 {
 	const struct pwm_sam0_config *const cfg = dev->config;
 	Tcc *regs = cfg->regs;
+	int retval;
 
 	/* Enable the clocks */
 #ifdef MCLK
@@ -113,6 +116,11 @@ static int pwm_sam0_init(const struct device *dev)
 			    GCLK_CLKCTRL_CLKEN;
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
 #endif
+
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	regs->CTRLA.bit.SWRST = 1;
 	wait_synchronization(regs);
@@ -144,8 +152,10 @@ static const struct pwm_driver_api pwm_sam0_driver_api = {
 #endif
 
 #define PWM_SAM0_INIT(inst)						       \
+	PINCTRL_DT_INST_DEFINE(inst);					       \
 	static const struct pwm_sam0_config pwm_sam0_config_##inst = {	       \
 		.regs = (Tcc *)DT_INST_REG_ADDR(inst),			       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		       \
 		.channels = DT_INST_PROP(inst, channels),		       \
 		.counter_size = DT_INST_PROP(inst, counter_size),	       \
 		.prescaler = UTIL_CAT(TCC_CTRLA_PRESCALER_DIV,		       \

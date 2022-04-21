@@ -13,7 +13,7 @@ function Execute(){
  compile it?)\e[39m"
     exit 1
   fi
-  timeout 300 $@ & process_ids="$process_ids $!"
+  timeout 900 $@ & process_ids="$process_ids $!"
 }
 
 : "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"
@@ -30,7 +30,7 @@ Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_multiple_prj_conf\
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=2 -sim_length=600e6 $@
+  -D=2 -sim_length=4500e6 $@
 
 for process_id in $process_ids; do
   wait $process_id || let "exit_code=$?"

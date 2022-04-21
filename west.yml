@@ -28,16 +28,19 @@ manifest:
     - name: canopennode
       revision: 53d3415c14d60f8f4bfca54bfbc5d5a667d7e724
       path: modules/lib/canopennode
+    - name: chre
+      revision: 0edfe2c2ec656afb910cfab8ed59a5ffd59b87c8
+      path: modules/lib/chre
     - name: civetweb
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
       path: modules/lib/civetweb
     - name: cmsis
-      revision: b0612c97c1401feeb4160add6462c3627fe90fc7
+      revision: ed63b704bbfaceb71220557b658304c5ea3d5b88
       path: modules/hal/cmsis
       groups:
         - hal
     - name: edtt
-      revision: 1fc2e6f7d2a01a01074456f2ef2ccf1f3df7fac1
+      revision: 1ea61a390d2bfcf3b2ecdba8f8b0b98dfdffbd11
       path: tools/edtt
       groups:
         - tools
@@ -57,7 +60,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 7c24242679372edc81cc1f9968e02b51127d3677
+      revision: 78c5567c05b6b434dd7d98f49156319df4217bac
       path: modules/hal/atmel
       groups:
         - hal
@@ -67,7 +70,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 3373bdddba3857d34c22c0d493da25bdb8630071
+      revision: fb57c28853fb7b3b85457bebfcce9c63ab83cac4
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -83,12 +86,12 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 870d05e6a64ea9548da6b907058b03c8c9420826
+      revision: 5d079f1683a00b801373bbbbf5d181d4e33b30d5
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
-      revision: 1f9145e8c8359f103b4ac5085c6f5d2e66a2557d
+      revision: 4464a6f96b4a6a1b7ac5ca1b8c3caf6a81d25e57
       path: modules/hal/nordic
       groups:
         - hal
@@ -98,7 +101,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: da6c1410490e382e69ee654a648b86a25e682679
+      revision: 46be8173d2453b16c617b555f96c59d62920a290
       path: modules/hal/nxp
       groups:
         - hal
@@ -129,7 +132,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: ab42f7015e16500db4a51ba562eee36460b7473e
+      revision: 5945d50882a5133e6cab918d1214c3be373b2c6a
       path: modules/hal/stm32
       groups:
         - hal
@@ -153,6 +156,9 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
+    - name: liblc3codec
+      revision: 3951cf1b71ff3be086c9b9b595e473e12301337c
+      path: modules/lib/liblc3codec
     - name: littlefs
       path: modules/fs/littlefs
       groups:
@@ -173,13 +179,13 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 7b9e4eecaa2547ba34cd40a13530f10dd70c92ca
+      revision: e86f575f68fdac2cab1898e0a893c8c6d8fd0fa1
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
         - debug
-      revision: d9da086b11cda494d85f4d8a9829f505c2d5e380
+      revision: a5163c1800a5243f8b05d84c942da008df4cb666
     - name: nanopb
       revision: d148bd26718e4c10414f07a7eb1bd24c62e56c5d
       path: modules/lib/nanopb
@@ -195,7 +201,7 @@ manifest:
       revision: cfd050ff38a9d028dc211690b2ec35971128e45e
       path: modules/lib/open-amp
     - name: openthread
-      revision: 732203ee338b4700612dada157ca3e2c15a4dd10
+      revision: d4d46ba94290bcf93cc849b832f0ad305c72c473
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -203,14 +209,14 @@ manifest:
       groups:
         - debug
     - name: sof
-      revision: ab715d8e347fcbbc253ec5cae1c5295043821727
+      revision: 2efc3ea41c0074c6dab5f376fafaa26f52c25c75
       path: modules/audio/sof
     - name: tflite-micro
       revision: 9156d050927012da87079064db59d07f03b8baf6
       path: modules/lib/tflite-micro
       repo-path: tflite-micro
     - name: tinycbor
-      revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
+      revision: 9e1f34bc08123aaad7666d3652aaa839e8178b3b
       path: modules/lib/tinycbor
     - name: tinycrypt
       revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
@@ -223,7 +229,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: 5d32c3e64b3d589548e881eeeeb37d84944c90af
+      revision: bfbd7803b0ed77680e220e44ce6fb363ef2a4224
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -233,10 +239,13 @@ manifest:
       groups:
         - tee
     - name: psa-arch-tests
-      revision: 0aab24602cbef30f6422e7ef1066a8473073e586
+      revision: 4f45df539d3d98b6e38e112be9936be4a2b8a97c
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee
+    - name: zcbor
+      revision: 882c489a7d9fdfff31d27666914a78a9eb6976d7
+      path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
       revision: 12bfe3f0a9fcbfe3edab7eabc9678b6c62875d34

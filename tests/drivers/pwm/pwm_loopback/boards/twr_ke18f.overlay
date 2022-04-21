@@ -36,6 +36,7 @@
 	status = "okay";
 	prescaler = <32>;
 	pinctrl-0 = <&pwt_default>;
+	pinctrl-names = "default";
 };
 
 &ftm2 {
@@ -44,4 +45,5 @@
 	prescaler = <128>;
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm2_default>;
+	pinctrl-names = "default";
 };

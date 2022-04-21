@@ -44,12 +44,10 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	clock-frequency = <500000000>;
 };
 
 &spi0 {
 	status = "okay";
-	clock-frequency = <500000000>;
 
 	reg = <0x10040000 0x1000 0x20000000 0x2000000>;
 	flash0: flash@0 {
@@ -64,12 +62,10 @@
 
 &spi1 {
 	status = "okay";
-	clock-frequency = <500000000>;
 };
 
 &spi2 {
 	status = "okay";
-	clock-frequency = <500000000>;
 };
 
 &gpio0 {

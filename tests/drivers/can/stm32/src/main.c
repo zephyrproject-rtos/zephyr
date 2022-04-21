@@ -1,179 +1,207 @@
 /*
+ * Copyright (c) 2022 Vestas Wind Systems A/S
  * Copyright (c) 2019 Alexander Wachter
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <drivers/can.h>
 #include <ztest.h>
-#include <strings.h>
 
-/*
+/**
  * @addtogroup t_can_driver
  * @{
- * @defgroup t_can_stm32 test_stm32_can
- * @brief TestPurpose: verify correct filter handling of stm32 driver
- * @details
- * - Test Steps
- *   -# Set driver to loopback mode
- *   -# Add a extended and masked filter (1 bank/filter)
- *   -# Add a standard none masked filter (1/4 bank/filter)
- *   -# Remove the first filter (first bank gets free) and add
- *      a different standard none masked filter (1/4 bank/filter).
- *      Bank 0 is extended to 4 filters/bank which leads to a left shift
- *      of the first filter by 3 and tests the corner case of the last filter
- *      is used.
- *   -# Test message sending and receiving
- *   -# Remove first filter (gets free) and add an extended filter.
- *      This shrinks bank 0 to 2 filters/bank which leads to a right shift
- *      of the first buffer by two.
- *   -# Test message sending and receiving.
- *   -# Remove both filters.
- * - Expected Results
- *   -# Message reception should work in any case
+ * @defgroup t_can_stm32 test_can_stm32
  * @}
  */
 
+/**
+ * @brief Test timeouts.
+ */
 #define TEST_SEND_TIMEOUT    K_MSEC(100)
 #define TEST_RECEIVE_TIMEOUT K_MSEC(100)
 
+/**
+ * @brief Standard (11-bit) CAN IDs and masks used for testing.
+ */
 #define TEST_CAN_STD_ID      0x555
 #define TEST_CAN_SOME_STD_ID 0x123
 
+/**
+ * @brief Extended (29-bit) CAN IDs and masks used for testing.
+ */
 #define TEST_CAN_EXT_ID      0x15555555
 #define TEST_CAN_EXT_MASK    0x1FFFFFF0
 
+/**
+ * @brief Global variables.
+ */
 CAN_MSGQ_DEFINE(can_msgq, 5);
 
-struct zcan_frame test_std_msg = {
+/**
+ * @brief Standard (11-bit) CAN ID test frame.
+ */
+struct zcan_frame test_std_frame = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
-	.id  = TEST_CAN_STD_ID,
+	.id      = TEST_CAN_STD_ID,
 	.dlc     = 8,
-	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
+	.data    = { 1, 2, 3, 4, 5, 6, 7, 8 }
 };
 
+/**
+ * @brief Standard (11-bit) CAN ID filter.
+ */
 const struct zcan_filter test_std_filter = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr = CAN_DATAFRAME,
-	.id = TEST_CAN_STD_ID,
+	.id_type  = CAN_STANDARD_IDENTIFIER,
+	.rtr      = CAN_DATAFRAME,
+	.id       = TEST_CAN_STD_ID,
 	.rtr_mask = 1,
-	.id_mask = CAN_STD_ID_MASK
+	.id_mask  = CAN_STD_ID_MASK
 };
 
+/**
+ * @brief Extended (29-bit) CAN ID filter.
+ */
 const struct zcan_filter test_ext_filter = {
-	.id_type = CAN_EXTENDED_IDENTIFIER,
-	.rtr = CAN_DATAFRAME,
-	.id = TEST_CAN_EXT_ID,
+	.id_type  = CAN_EXTENDED_IDENTIFIER,
+	.rtr      = CAN_DATAFRAME,
+	.id       = TEST_CAN_EXT_ID,
 	.rtr_mask = 1,
-	.id_mask = CAN_EXT_ID_MASK
+	.id_mask  = CAN_EXT_ID_MASK
 };
 
+/**
+ * @brief Extended (29-bit) CAN ID masked filter.
+ */
 const struct zcan_filter test_ext_masked_filter = {
-	.id_type = CAN_EXTENDED_IDENTIFIER,
-	.rtr = CAN_DATAFRAME,
-	.id = TEST_CAN_EXT_ID,
+	.id_type  = CAN_EXTENDED_IDENTIFIER,
+	.rtr      = CAN_DATAFRAME,
+	.id       = TEST_CAN_EXT_ID,
 	.rtr_mask = 1,
-	.id_mask = TEST_CAN_EXT_MASK
+	.id_mask  = TEST_CAN_EXT_MASK
 };
 
+/**
+ * @brief Standard (11-bit) CAN ID filter. This filter matches
+ * ``TEST_CAN_SOME_STD_ID``.
+ */
 const struct zcan_filter test_std_some_filter = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr = CAN_DATAFRAME,
-	.id = TEST_CAN_SOME_STD_ID,
+	.id_type  = CAN_STANDARD_IDENTIFIER,
+	.rtr      = CAN_DATAFRAME,
+	.id       = TEST_CAN_SOME_STD_ID,
 	.rtr_mask = 1,
-	.id_mask = CAN_STD_ID_MASK
+	.id_mask  = CAN_STD_ID_MASK
 };
 
-static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2)
+/**
+ * @brief Assert that two CAN frames are equal.
+ *
+ * @param frame1  First CAN frame.
+ * @param frame2  Second CAN frame.
+ */
+static inline void assert_frame_equal(const struct zcan_frame *frame1,
+				      const struct zcan_frame *frame2)
 {
-	int cmp_res;
-
-	zassert_equal(msg1->id_type, msg2->id_type,
-		      "ID type does not match");
-
-	zassert_equal(msg1->rtr, msg2->rtr,
-		      "RTR bit does not match");
-
-	zassert_equal(msg1->id, msg2->id, "ID does not match");
-
-	zassert_equal(msg1->dlc, msg2->dlc,
-		      "DLC does not match");
-
-	cmp_res = memcmp(msg1->data, msg2->data, msg1->dlc);
-	zassert_equal(cmp_res, 0, "Received data differ");
+	zassert_equal(frame1->id_type, frame2->id_type, "ID type does not match");
+	zassert_equal(frame1->rtr, frame2->rtr, "RTR bit does not match");
+	zassert_equal(frame1->id, frame2->id, "ID does not match");
+	zassert_equal(frame1->dlc, frame2->dlc, "DLC does not match");
+	zassert_mem_equal(frame1->data, frame2->data, frame1->dlc, "Received data differ");
 }
 
-static void send_test_msg(const struct device *can_dev,
-			  struct zcan_frame *msg)
+/**
+ * @brief Send a CAN test frame with asserts.
+ *
+ * This function will block until the frame is transmitted or a test timeout
+ * occurs.
+ *
+ * @param dev   Pointer to the device structure for the driver instance.
+ * @param frame Pointer to the CAN frame to send.
+ */
+static void send_test_frame(const struct device *dev, const struct zcan_frame *frame)
 {
-	int ret;
+	int err;
 
-	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL, NULL);
-	zassert_not_equal(ret, -EBUSY,
-			  "Arbitration though in loopback mode");
-	zassert_equal(ret, 0, "Can't send a message. Err: %d", ret);
+	err = can_send(dev, frame, TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_not_equal(err, -EBUSY, "arbitration lost in loopback mode");
+	zassert_equal(err, 0, "failed to send frame (err %d)", err);
 }
 
-/*
- * Test a more advanced filter handling. Add more than one filter at
- * the same time, remove and change the filters before the message.
- * This tests the internals filter handling of the driver itself.
+/**
+ * @brief Test a more advanced filter handling.
+ *
+ * Add more than one filter at the same time, remove and change the filters
+ * before sending a frame. This tests the internal filter handling of the STM32
+ * driver.
  */
 static void test_filter_handling(void)
 {
-	const struct device *can_dev;
-	int ret, filter_id_1, filter_id_2;
-	struct zcan_frame msg_buffer;
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	struct zcan_frame frame_buffer;
+	int filter_id_1;
+	int filter_id_2;
+	int err;
 
-	can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
-	zassert_true(device_is_ready(can_dev), "CAN device ready");
+	zassert_true(device_is_ready(dev), "CAN device not ready");
 
-	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	/* Set driver to loopback mode */
+	err = can_set_mode(dev, CAN_LOOPBACK_MODE);
+	zassert_equal(err, 0, "failed to set loopback mode");
 
-	filter_id_1 = can_add_rx_filter_msgq(can_dev, &can_msgq, &test_ext_masked_filter);
-	zassert_not_equal(filter_id_1, -ENOSPC,
-			  "Filter full even for a single one");
-	zassert_true((filter_id_1 >= 0), "Negative filter number");
+	/* Add a extended and masked filter (1 bank/filter) */
+	filter_id_1 = can_add_rx_filter_msgq(dev, &can_msgq, &test_ext_masked_filter);
+	zassert_not_equal(filter_id_1, -ENOSPC, "no filters available");
+	zassert_true(filter_id_1 >= 0, "negative filter number");
 
-	filter_id_2 = can_add_rx_filter_msgq(can_dev, &can_msgq, &test_std_filter);
-	zassert_not_equal(filter_id_2, -ENOSPC,
-			  "Filter full when adding the second one");
-	zassert_true((filter_id_2 >= 0), "Negative filter number");
+	/* Add a standard non-masked filter (1/4 bank/filter) */
+	filter_id_2 = can_add_rx_filter_msgq(dev, &can_msgq, &test_std_filter);
+	zassert_not_equal(filter_id_2, -ENOSPC, "no filters available");
+	zassert_true(filter_id_2 >= 0, "negative filter number");
 
-	can_remove_rx_filter(can_dev, filter_id_1);
-	filter_id_1 = can_add_rx_filter_msgq(can_dev, &can_msgq, &test_std_some_filter);
-	zassert_not_equal(filter_id_1, -ENOSPC,
-			  "Filter full when overriding the first one");
-	zassert_true((filter_id_1 >= 0), "Negative filter number");
+	/*
+	 * Remove the first filter (first bank gets free) and add a different
+	 * standard none masked filter (1/4 bank/filter).  Bank 0 is extended to
+	 * 4 filters/bank which leads to a left shift of the first filter by 3
+	 * and tests the corner case of the last filter is used.
+	 */
+	can_remove_rx_filter(dev, filter_id_1);
+	filter_id_1 = can_add_rx_filter_msgq(dev, &can_msgq, &test_std_some_filter);
+	zassert_not_equal(filter_id_1, -ENOSPC, "no filters available");
+	zassert_true((filter_id_1 >= 0), "negative filter number");
 
-	send_test_msg(can_dev, &test_std_msg);
+	/* Test message sending and receiving */
+	send_test_frame(dev, &test_std_frame);
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	assert_frame_equal(&test_std_frame, &frame_buffer);
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "more than one frame in the queue");
 
-	ret = k_msgq_get(&can_msgq, &msg_buffer, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(ret, 0, "Receiving timeout");
-	check_msg(&test_std_msg, &msg_buffer);
+	/*
+	 * Remove first filter (gets free) and add an extended filter. This
+	 * shrinks bank 0 to 2 filters/bank which leads to a right shift of the
+	 * first buffer by two.
+	 */
+	can_remove_rx_filter(dev, filter_id_1);
+	filter_id_1 = can_add_rx_filter_msgq(dev, &can_msgq, &test_ext_filter);
+	zassert_not_equal(filter_id_1, -ENOSPC, "no filters available");
+	zassert_true((filter_id_1 >= 0), "negative filter number");
 
-	ret = k_msgq_get(&can_msgq, &msg_buffer, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(ret, -EAGAIN, "There is more than one msg in the queue");
+	/* Test message sending and receiving */
+	send_test_frame(dev, &test_std_frame);
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, 0, "receive timeout");
+	assert_frame_equal(&test_std_frame, &frame_buffer);
 
-	can_remove_rx_filter(can_dev, filter_id_1);
-	filter_id_1 = can_add_rx_filter_msgq(can_dev, &can_msgq, &test_ext_filter);
-	zassert_not_equal(filter_id_1, -ENOSPC,
-			  "Filter full when overriding the first one");
-	zassert_true((filter_id_1 >= 0), "Negative filter number");
-
-	send_test_msg(can_dev, &test_std_msg);
-
-	ret = k_msgq_get(&can_msgq, &msg_buffer, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(ret, 0, "Receiving timeout");
-	check_msg(&test_std_msg, &msg_buffer);
-
-	can_remove_rx_filter(can_dev, filter_id_1);
-	can_remove_rx_filter(can_dev, filter_id_2);
+	/* Remove both filters */
+	can_remove_rx_filter(dev, filter_id_1);
+	can_remove_rx_filter(dev, filter_id_2);
 }
 
 void test_main(void)
 {
-	ztest_test_suite(can_driver,
+	ztest_test_suite(can_stm32_tests,
 			 ztest_unit_test(test_filter_handling));
-	ztest_run_test_suite(can_driver);
+	ztest_run_test_suite(can_stm32_tests);
 }

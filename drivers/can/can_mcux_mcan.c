@@ -99,7 +99,7 @@ static int mcux_mcan_get_core_clock(const struct device *dev, uint32_t *rate)
 				      rate);
 }
 
-int mcux_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+static int mcux_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct mcux_mcan_config *config = dev->config;
 
@@ -107,6 +107,15 @@ int mcux_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 
 	return 0;
 }
+
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+static int mcux_mcan_recover(const struct device *dev, k_timeout_t timeout)
+{
+	const struct mcux_mcan_config *config = dev->config;
+
+	return can_mcan_recover(&config->mcan, timeout);
+}
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 static void mcux_mcan_line_0_isr(const struct device *dev)
 {
@@ -154,7 +163,7 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	.add_rx_filter = mcux_mcan_add_rx_filter,
 	.remove_rx_filter = mcux_mcan_remove_rx_filter,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_mcan_recover,
+	.recover = mcux_mcan_recover,
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	.get_state = mcux_mcan_get_state,
 	.set_state_change_callback = mcux_mcan_set_state_change_callback,

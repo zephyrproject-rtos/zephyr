@@ -75,6 +75,14 @@
 				<1 0 &gpio0 14 0>,   /* ADC1 = AIN2 */
 				<0 0 &gpio0 13 0>;   /* ADC0 = AIN1 */
 	};
+
+	nrf-ps-en {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "nrf_ps_en";
+		regulator-name = "nrf_ps_en";
+		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
 };
 
 &adc {

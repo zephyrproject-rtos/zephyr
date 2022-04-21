@@ -46,7 +46,7 @@ config XTENSA_USE_CORE_CRT1
 config XTENSA_ENABLE_BACKTRACE
 	bool "Backtrace on panic exception"
 	default y
-	depends on SOC_ESP32
+	depends on SOC_ESP32 || SOC_FAMILY_INTEL_ADSP
 	help
 	  Enable this config option to print backtrace on panic exception
 

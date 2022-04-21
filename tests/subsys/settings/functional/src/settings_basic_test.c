@@ -31,7 +31,13 @@ static void test_clear_settings(void)
 {
 #if IS_ENABLED(CONFIG_SETTINGS_FCB) || IS_ENABLED(CONFIG_SETTINGS_NVS)
 	const struct flash_area *fap;
-	int rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+	int rc;
+
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+	rc = flash_area_open(FLASH_AREA_ID(chosen_partition), &fap);
+#else
+	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+#endif
 
 	if (rc == 0) {
 		rc = flash_area_erase(fap, 0, fap->fa_size);

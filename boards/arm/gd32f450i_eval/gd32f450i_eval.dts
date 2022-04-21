@@ -56,7 +56,7 @@
 
 		/* NOTE: bridge TIMER1_CH2 (PB10) and LED1 (PE2) */
 		pwm_led: pwm_led {
-			pwms = <&pwm1 2 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm1 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -86,6 +86,14 @@
 };
 
 &gpiof {
+	status = "okay";
+};
+
+&gpioi {
+	status = "okay";
+};
+
+&gpiog {
 	status = "okay";
 };
 
@@ -126,5 +134,22 @@
 		pagesize = <8>;
 		address-width = <8>;
 		timeout = <5>;
+	};
+};
+
+&spi5 {
+	status = "okay";
+	pinctrl-0 = <&spi5_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+
+	nor_flash: gd25q16@0 {
+		compatible ="jedec,spi-nor";
+		size = <0x1000000>;
+		label = "GD25Q16";
+		reg = <0>;
+		spi-max-frequency = <4000000>;
+		status = "okay";
+		jedec-id = [c8 40 15];
 	};
 };

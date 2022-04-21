@@ -27,6 +27,7 @@ void main(void)
 	uint64_t u64 = 65;
 	char c = '!';
 	char *s = "static str";
+	char *s1 = "c str";
 	char vs0[32];
 	char vs1[32];
 	void *p = s;
@@ -49,7 +50,7 @@ void main(void)
 	snprintk(&vs1[0], sizeof(vs1), "%s", "another dynamic str");
 
 	LOG_DBG("char %c", c);
-	LOG_DBG("s str %s", s);
+	LOG_DBG("s str %s %s", s, s1);
 	LOG_DBG("d str %s", vs0);
 	LOG_DBG("mixed str %s %s %s %s %s %s %s", vs0, "---", vs0, "---", vs1, "---", vs1);
 	LOG_DBG("mixed c/s %c %s %s %s %c", c, s, vs0, s, c);

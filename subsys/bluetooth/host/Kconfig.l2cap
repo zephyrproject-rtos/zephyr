@@ -33,6 +33,7 @@ config BT_L2CAP_TX_MTU
 	default 69 if BT_MESH_GATT
 	default 65 if BT_SMP
 	default 64 if BT_AUDIO_UNICAST_SERVER || BT_AUDIO_UNICAST_CLIENT || BT_AUDIO_BROADCAST_SINK || BT_BASS || BT_BASS_CLIENT
+	default 49 if BT_HAS || BT_HAS_CLIENT
 	default 23
 	range 65 2000 if BT_SMP
 	range 23 2000

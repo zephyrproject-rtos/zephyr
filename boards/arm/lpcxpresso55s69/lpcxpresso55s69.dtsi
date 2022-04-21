@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "lpcxpresso55s69-pinctrl.dtsi"
+
 / {
 	aliases{
 		led0 = &red_led;
@@ -173,4 +175,39 @@ arduino_gpio: &gpio1 {
 };
 
 mikrobus_spi: &hs_lspi {
+};
+
+&flexcomm0 {
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm2 {
+	pinctrl-0 = <&pinmux_flexcomm2_usart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm4 {
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
+};
+
+&flexcomm6 {
+	pinctrl-0 = <&pinmux_flexcomm6_i2s>;
+	pinctrl-names = "default";
+};
+
+&flexcomm7 {
+	pinctrl-0 = <&pinmux_flexcomm7_i2s>;
+	pinctrl-names = "default";
+};
+
+&hs_lspi {
+	pinctrl-0 = <&pinmux_hs_lspi_default>;
+	pinctrl-names = "default";
+};
+
+&sc_timer {
+	pinctrl-0 = <&pinmux_sctimer_default>;
+	pinctrl-names = "default";
 };

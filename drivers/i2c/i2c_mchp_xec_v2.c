@@ -20,6 +20,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 
+#include "i2c-priv.h"
+
 #define SPEED_100KHZ_BUS	0
 #define SPEED_400KHZ_BUS	1
 #define SPEED_1MHZ_BUS		2
@@ -75,13 +77,14 @@ struct xec_speed_cfg {
 	uint32_t bus_clk;
 	uint32_t data_timing;
 	uint32_t start_hold_time;
-	uint32_t config;
+	uint32_t idle_scale;
 	uint32_t timeout_scale;
 };
 
 struct i2c_xec_config {
 	uint32_t port_sel;
 	uint32_t base_addr;
+	uint32_t clock_freq;
 	uint8_t girq;
 	uint8_t girq_pos;
 	uint8_t pcr_idx;
@@ -114,21 +117,21 @@ static const struct xec_speed_cfg xec_cfg_params[] = {
 		.bus_clk            = 0x00004F4F,
 		.data_timing        = 0x0C4D5006,
 		.start_hold_time    = 0x0000004D,
-		.config             = 0x01FC01ED,
+		.idle_scale         = 0x01FC01ED,
 		.timeout_scale      = 0x4B9CC2C7,
 	},
 	[SPEED_400KHZ_BUS] = {
 		.bus_clk            = 0x00000F17,
 		.data_timing        = 0x040A0A06,
 		.start_hold_time    = 0x0000000A,
-		.config             = 0x01000050,
+		.idle_scale         = 0x01000050,
 		.timeout_scale      = 0x159CC2C7,
 	},
 	[SPEED_1MHZ_BUS] = {
 		.bus_clk            = 0x00000509,
 		.data_timing        = 0x04060601,
 		.start_hold_time    = 0x00000006,
-		.config             = 0x10000050,
+		.idle_scale         = 0x10000050,
 		.timeout_scale      = 0x089CC2C7,
 	},
 };
@@ -263,6 +266,7 @@ static int i2c_xec_reset_config(const struct device *dev)
 	regs->RSHTM = xec_cfg_params[data->speed_id].start_hold_time;
 	regs->DATATM = xec_cfg_params[data->speed_id].data_timing;
 	regs->TMOUTSC = xec_cfg_params[data->speed_id].timeout_scale;
+	regs->IDLSC = xec_cfg_params[data->speed_id].idle_scale;
 
 	/*
 	 * PIN=1 clears all status except NBB
@@ -1044,6 +1048,7 @@ static int i2c_xec_init(const struct device *dev)
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
 	int ret;
+	uint32_t bitrate_cfg;
 
 	data->state = I2C_XEC_STATE_STOPPED;
 	data->target_cfg = NULL;
@@ -1055,10 +1060,13 @@ static int i2c_xec_init(const struct device *dev)
 		return ret;
 	}
 
+	bitrate_cfg = i2c_map_dt_bitrate(cfg->clock_freq);
+	if (!bitrate_cfg) {
+		return -EINVAL;
+	}
+
 	/* Default configuration */
-	ret = i2c_xec_configure(dev,
-				I2C_MODE_MASTER |
-				I2C_SPEED_SET(I2C_SPEED_STANDARD));
+	ret = i2c_xec_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret) {
 		return ret;
 	}
@@ -1083,6 +1091,7 @@ static int i2c_xec_init(const struct device *dev)
 		.base_addr =						\
 			DT_INST_REG_ADDR(n),				\
 		.port_sel = DT_INST_PROP(n, port_sel),			\
+		.clock_freq = DT_INST_PROP(n, clock_frequency),		\
 		.girq = DT_INST_PROP_BY_IDX(n, girqs, 0),		\
 		.girq_pos = DT_INST_PROP_BY_IDX(n, girqs, 1),		\
 		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),		\

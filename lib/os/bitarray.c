@@ -218,6 +218,7 @@ int sys_bitarray_set_bit(sys_bitarray_t *bitarray, size_t bit)
 
 	key = k_spin_lock(&bitarray->lock);
 
+	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
 
 	if (bit >= bitarray->num_bits) {
@@ -243,9 +244,10 @@ int sys_bitarray_clear_bit(sys_bitarray_t *bitarray, size_t bit)
 	int ret;
 	size_t idx, off;
 
-	key = k_spin_lock(&bitarray->lock);
-
+	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
 
 	if (bit >= bitarray->num_bits) {
 		ret = -EINVAL;
@@ -270,9 +272,10 @@ int sys_bitarray_test_bit(sys_bitarray_t *bitarray, size_t bit, int *val)
 	int ret;
 	size_t idx, off;
 
-	key = k_spin_lock(&bitarray->lock);
-
+	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
 
 	CHECKIF(val == NULL) {
 		ret = -EINVAL;
@@ -306,9 +309,10 @@ int sys_bitarray_test_and_set_bit(sys_bitarray_t *bitarray, size_t bit, int *pre
 	int ret;
 	size_t idx, off;
 
-	key = k_spin_lock(&bitarray->lock);
-
+	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
 
 	CHECKIF(prev_val == NULL) {
 		ret = -EINVAL;
@@ -344,9 +348,10 @@ int sys_bitarray_test_and_clear_bit(sys_bitarray_t *bitarray, size_t bit, int *p
 	int ret;
 	size_t idx, off;
 
-	key = k_spin_lock(&bitarray->lock);
-
+	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
 
 	CHECKIF(prev_val == NULL) {
 		ret = -EINVAL;
@@ -386,9 +391,10 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 	size_t off_start, off_end;
 	size_t mismatch;
 
-	key = k_spin_lock(&bitarray->lock);
-
+	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
 
 	CHECKIF(offset == NULL) {
 		ret = -EINVAL;
@@ -457,9 +463,10 @@ int sys_bitarray_free(sys_bitarray_t *bitarray, size_t num_bits,
 	size_t off_end = offset + num_bits - 1;
 	struct bundle_data bd;
 
-	key = k_spin_lock(&bitarray->lock);
-
+	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	key = k_spin_lock(&bitarray->lock);
 
 	if ((num_bits == 0)
 	    || (num_bits > bitarray->num_bits)
@@ -493,6 +500,7 @@ static bool is_region_set_clear(sys_bitarray_t *bitarray, size_t num_bits,
 	size_t off_end = offset + num_bits - 1;
 	k_spinlock_key_t key = k_spin_lock(&bitarray->lock);
 
+	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
 
 	if ((num_bits == 0)
@@ -529,6 +537,7 @@ static int set_clear_region(sys_bitarray_t *bitarray, size_t num_bits,
 	size_t off_end = offset + num_bits - 1;
 	k_spinlock_key_t key = k_spin_lock(&bitarray->lock);
 
+	__ASSERT_NO_MSG(bitarray != NULL);
 	__ASSERT_NO_MSG(bitarray->num_bits > 0);
 
 	if ((num_bits == 0)
@@ -541,6 +550,41 @@ static int set_clear_region(sys_bitarray_t *bitarray, size_t num_bits,
 
 	set_region(bitarray, offset, num_bits, to_set, NULL);
 	ret = 0;
+
+out:
+	k_spin_unlock(&bitarray->lock, key);
+	return ret;
+}
+
+int sys_bitarray_test_and_set_region(sys_bitarray_t *bitarray, size_t num_bits,
+				     size_t offset, bool to_set)
+{
+	int ret;
+	bool region_clear;
+	struct bundle_data bd;
+
+	__ASSERT_NO_MSG(bitarray != NULL);
+	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	size_t off_end = offset + num_bits - 1;
+	k_spinlock_key_t key = k_spin_lock(&bitarray->lock);
+
+
+	if ((num_bits == 0)
+	    || (num_bits > bitarray->num_bits)
+	    || (offset >= bitarray->num_bits)
+	    || (off_end >= bitarray->num_bits)) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	region_clear = match_region(bitarray, offset, num_bits, !to_set, &bd, NULL);
+	if (region_clear) {
+		set_region(bitarray, offset, num_bits, to_set, &bd);
+		ret = 0;
+	} else {
+		ret = -EEXIST;
+	}
 
 out:
 	k_spin_unlock(&bitarray->lock, key);

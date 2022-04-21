@@ -39,7 +39,6 @@
 #include "helper_util.h"
 
 static uint32_t event_active;
-static uint16_t lazy;
 sys_slist_t ut_rx_q;
 static sys_slist_t lt_tx_q;
 static uint32_t no_of_ctx_buffers_at_test_setup;
@@ -223,7 +222,6 @@ void test_setup(struct ll_conn *conn)
 	ll_reset();
 	conn->lll.event_counter = 0;
 	event_active = 0;
-	lazy = 0;
 
 	no_of_ctx_buffers_at_test_setup = ctx_buffers_free();
 }
@@ -260,9 +258,6 @@ void event_prepare(struct ll_conn *conn)
 	lll->event_counter = event_counter + 1;
 
 	lll->latency_prepare = 0;
-
-	/* Rest lazy */
-	lazy = 0;
 }
 
 void event_tx_ack(struct ll_conn *conn, struct node_tx *tx)
@@ -289,15 +284,10 @@ void event_done(struct ll_conn *conn)
 
 uint16_t event_counter(struct ll_conn *conn)
 {
-	/* TODO(thoh): Mocked lll_conn */
-	struct lll_conn *lll;
 	uint16_t event_counter;
 
-	/**/
-	lll = &conn->lll;
-
 	/* Calculate current event counter */
-	event_counter = lll->event_counter + lll->latency_prepare + lazy;
+	event_counter = ull_conn_event_counter(conn);
 
 	/* If event_counter is called inside an event_prepare()/event_done() pair
 	 * return the current event counter value (i.e. -1);

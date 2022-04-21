@@ -26,9 +26,6 @@ config HWINFO_SAM0
 config I2C_SAM0
 	default I2C
 
-config PINMUX_SAM0
-	default PINMUX
-
 config PWM_SAM0_TCC
 	default PWM
 

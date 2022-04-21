@@ -45,6 +45,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define OBJECT_SEPARATOR(f) ((f & WRITER_OUTPUT_VALUE) ? "," : "")
 
 #define TOKEN_BUF_LEN 64
+#define BASE64_OUTPUT_MIN_LENGTH 4
+#define BASE64_MODULO_LENGTH(x) (x % BASE64_OUTPUT_MIN_LENGTH)
+#define BASE64_BYTES_TO_MODULO(x) (BASE64_OUTPUT_MIN_LENGTH - x)
 
 struct json_out_formatter_data {
 	/* flags */
@@ -330,7 +333,7 @@ static int put_begin_oi(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 
 	if (update_base_name) {
 		fd->base_name.level = LWM2M_PATH_LEVEL_OBJECT_INST;
-		fd->base_name.obj_inst_id = path->obj_id;
+		fd->base_name.obj_id = path->obj_id;
 		fd->base_name.obj_inst_id = path->obj_inst_id;
 	}
 
@@ -875,12 +878,71 @@ static int get_bool(struct lwm2m_input_context *in, bool *value)
 	return fd->value_len;
 }
 
+static void base64_url_safe_decode(uint8_t *data_buf, size_t buf_len)
+{
+	uint8_t *ptr = data_buf;
+
+	for (size_t i = 0; i < buf_len; i++) {
+		if (*ptr == '-') {
+			/* replace '-' with "+" */
+			*ptr = '+';
+		} else if (*ptr == '_') {
+			/* replace '_' with "/" */
+			*ptr = '/';
+		}
+		ptr++;
+	}
+}
+
+static int store_padded_modulo(uint16_t *padded_length, uint8_t *padded_buf, uint8_t *data_tail,
+			       uint16_t data_length)
+{
+	uint16_t padded_len = BASE64_MODULO_LENGTH(data_length);
+
+	if (data_length < padded_len) {
+		return -ENODATA;
+	}
+	*padded_length = padded_len;
+
+	if (padded_len) {
+		uint8_t *tail_ptr;
+
+		tail_ptr = data_tail - padded_len;
+		memcpy(padded_buf, tail_ptr, padded_len);
+		for (size_t i = padded_len; i < BASE64_OUTPUT_MIN_LENGTH; i++) {
+			padded_buf[i] = '=';
+		}
+	}
+	return 0;
+}
+
+static int store_modulo_data(struct lwm2m_senml_json_context *block_ctx, uint8_t *data_ptr,
+			       uint16_t data_length)
+{
+	block_ctx->base64_buf_len = BASE64_MODULO_LENGTH(data_length);
+	if (data_length < block_ctx->base64_buf_len) {
+		return -ENODATA;
+	}
+
+	if (block_ctx->base64_buf_len) {
+		uint8_t *data_tail_ptr;
+
+		data_tail_ptr = data_ptr + (data_length - block_ctx->base64_buf_len);
+		memcpy(block_ctx->base64_mod_buf, data_tail_ptr, block_ctx->base64_buf_len);
+	}
+	return 0;
+}
+
 static int get_opaque(struct lwm2m_input_context *in, uint8_t *value, size_t buflen,
 			 struct lwm2m_opaque_context *opaque, bool *last_block)
 {
 	struct json_in_formatter_data *fd;
 	struct lwm2m_senml_json_context *block_ctx;
-	int in_len;
+	int in_len, ret;
+	uint8_t module_buf[BASE64_OUTPUT_MIN_LENGTH];
+	uint16_t padded_length = 0;
+	uint8_t padded_buf[BASE64_OUTPUT_MIN_LENGTH];
+	size_t buffer_base64_length;
 
 	block_ctx = seml_json_context_get(in->block_ctx);
 
@@ -891,55 +953,57 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 
 	uint8_t *data_ptr = in->in_cpkt->data + fd->value_offset;
 
+	/* Decode from url safe to normal */
+	base64_url_safe_decode(data_ptr, fd->value_len);
+
 	if (opaque->remaining == 0) {
 		size_t original_size = fd->value_len;
 		size_t base64_length;
 
 		if (block_ctx) {
 			if (block_ctx->base64_buf_len) {
-				uint8_t module_buf[4];
-				size_t buffer_module_length = 4 - block_ctx->base64_buf_len;
+				size_t b_to_module;
 
-				if (fd->value_len < buffer_module_length) {
+				b_to_module = BASE64_BYTES_TO_MODULO(block_ctx->base64_buf_len);
+
+				if (fd->value_len < b_to_module) {
 					return -ENODATA;
 				}
 
-				fd->value_len -= buffer_module_length;
+				fd->value_len -= b_to_module;
 				memcpy(module_buf, block_ctx->base64_mod_buf,
 				       block_ctx->base64_buf_len);
 				memcpy(module_buf + block_ctx->base64_buf_len, data_ptr,
-				       buffer_module_length);
+				       b_to_module);
 
-				size_t buffer_base64_length;
-
-				if (base64_decode(module_buf, 4, &buffer_base64_length, module_buf,
-						  4) < 0) {
+				if (base64_decode(module_buf, BASE64_OUTPUT_MIN_LENGTH,
+						  &buffer_base64_length, module_buf,
+						  BASE64_OUTPUT_MIN_LENGTH) < 0) {
 					return -ENODATA;
 				}
 
-				block_ctx->base64_buf_len = 0;
+				if (in->block_ctx->last_block) {
+					ret = store_padded_modulo(&padded_length, padded_buf,
+								  data_ptr + original_size,
+								  fd->value_len);
+					if (ret) {
+						return ret;
+					}
+					fd->value_len -= padded_length;
 
-				if (!in->block_ctx->last_block) {
-					block_ctx->base64_buf_len = (fd->value_len % 4);
-					if (fd->value_len < block_ctx->base64_buf_len) {
-						return -ENODATA;
+				} else {
+					ret = store_modulo_data(block_ctx, data_ptr,
+								  fd->value_len);
+					if (ret) {
+						return ret;
 					}
 
-					if (block_ctx->base64_buf_len) {
-						uint8_t *data_tail_ptr;
-
-						data_tail_ptr =
-							data_ptr + (original_size -
-								    block_ctx->base64_buf_len);
-						memcpy(block_ctx->base64_mod_buf, data_tail_ptr,
-						       block_ctx->base64_buf_len);
-						fd->value_len -= block_ctx->base64_buf_len;
-					}
+					fd->value_len -= block_ctx->base64_buf_len;
 				}
+
 				/* Decode rest of data and do memmove */
 				if (base64_decode(data_ptr, original_size, &base64_length,
-						  data_ptr + buffer_module_length,
-						  fd->value_len) < 0) {
+						  data_ptr + b_to_module, fd->value_len) < 0) {
 					return -ENODATA;
 				}
 				fd->value_len = base64_length;
@@ -948,18 +1012,22 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 				memcpy(data_ptr, module_buf, buffer_base64_length);
 				fd->value_len += buffer_base64_length;
 			} else {
-				block_ctx->base64_buf_len = (fd->value_len % 4);
-				if (fd->value_len < block_ctx->base64_buf_len) {
-					return -ENODATA;
-				}
+				if (in->block_ctx->last_block) {
+					ret = store_padded_modulo(&padded_length, padded_buf,
+								  data_ptr + original_size,
+								  original_size);
+					if (ret) {
+						return ret;
+					}
+					fd->value_len -= padded_length;
 
-				if (block_ctx->base64_buf_len) {
-					uint8_t *data_tail_ptr =
-						data_ptr +
-						(original_size - block_ctx->base64_buf_len);
+				} else {
+					ret = store_modulo_data(block_ctx, data_ptr,
+								  fd->value_len);
+					if (ret) {
+						return ret;
+					}
 
-					memcpy(block_ctx->base64_mod_buf, data_tail_ptr,
-					       block_ctx->base64_buf_len);
 					fd->value_len -= block_ctx->base64_buf_len;
 				}
 
@@ -969,14 +1037,42 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 				}
 				fd->value_len = base64_length;
 			}
+
+			if (padded_length) {
+				if (base64_decode(padded_buf, BASE64_OUTPUT_MIN_LENGTH,
+						  &buffer_base64_length, padded_buf,
+						  BASE64_OUTPUT_MIN_LENGTH) < 0) {
+					return -ENODATA;
+				}
+				/* Add padded tail */
+				memcpy(data_ptr + fd->value_len, padded_buf, buffer_base64_length);
+				fd->value_len += buffer_base64_length;
+			}
 			/* Set zero because total length is unknown */
 			opaque->len = 0;
 		} else {
+			ret = store_padded_modulo(&padded_length, padded_buf,
+						  data_ptr + original_size, original_size);
+			if (ret) {
+				return ret;
+			}
+
 			if (base64_decode(data_ptr, fd->value_len, &base64_length, data_ptr,
 					  fd->value_len) < 0) {
 				return -ENODATA;
 			}
+
 			fd->value_len = base64_length;
+			if (padded_length) {
+				if (base64_decode(padded_buf, BASE64_OUTPUT_MIN_LENGTH,
+						  &buffer_base64_length, padded_buf,
+						  BASE64_OUTPUT_MIN_LENGTH) < 0) {
+					return -ENODATA;
+				}
+				/* Add padded tail */
+				memcpy(data_ptr + fd->value_len, padded_buf, buffer_base64_length);
+				fd->value_len += buffer_base64_length;
+			}
 			opaque->len = fd->value_len;
 		}
 		opaque->remaining = fd->value_len;
@@ -1053,6 +1149,7 @@ const struct lwm2m_writer senml_json_writer = {
 	.put_s32 = put_s32,
 	.put_s64 = put_s64,
 	.put_string = put_string,
+	.put_time = put_s64,
 	.put_float = put_float,
 	.put_bool = put_bool,
 	.put_opaque = put_opaque,
@@ -1063,6 +1160,7 @@ const struct lwm2m_reader senml_json_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
+	.get_time = get_s64,
 	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,

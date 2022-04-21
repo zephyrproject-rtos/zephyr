@@ -959,12 +959,16 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
 						      PHY_1M);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		conn_lll->max_tx_time = MAX(conn_lll->max_tx_time,
-					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
-							  lll->phy_s));
-		conn_lll->max_rx_time = MAX(conn_lll->max_rx_time,
-					    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
-							  lll->phy_s));
+		if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
+			conn_lll->max_tx_time =
+				MAX(conn_lll->max_tx_time,
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy_s));
+			conn_lll->max_rx_time =
+				MAX(conn_lll->max_rx_time,
+				    PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						  lll->phy_s));
+		}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif
@@ -1120,6 +1124,10 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 		conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		conn->pause_rx_data = 0U;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 		/* Re-initialize the Tx Q */
 		ull_tx_q_init(&conn->tx_q);

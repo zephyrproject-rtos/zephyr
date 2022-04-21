@@ -24,6 +24,16 @@
 		dmamux1: dmamux@40020800 {
 			dma-requests= <107>;
 		};
+
+		ltdc: display-controller@50001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x50001000 0x200>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x000000008>;
+			label = "LTDC";
+			status = "disabled";
+		};
 	};
 	/*
 	* The RAM memories placed here can be used by both cores M4/M7

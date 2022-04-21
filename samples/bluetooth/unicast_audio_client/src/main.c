@@ -21,55 +21,198 @@ static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
 static struct bt_audio_stream audio_stream;
 static struct bt_audio_unicast_group *unicast_group;
-static struct bt_codec *remote_codecs[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
+static struct bt_codec *remote_codec_capabilities[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 static struct bt_audio_ep *sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1,
 			  CONFIG_BT_ISO_TX_MTU + BT_ISO_CHAN_SEND_RESERVE,
 			  8, NULL);
 
-/* Mandatory support preset by both client and server */
-static struct bt_audio_lc3_preset preset_16_2_1 = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
+/* Select a codec configuration to apply that is mandatory to support by both client and server.
+ * Allows this sample application to work without logic to parse the codec capabilities of the
+ * server and selection of an appropriate codec configuration.
+ */
+static struct bt_audio_lc3_preset codec_configuration = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
 
 static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
 static K_SEM_DEFINE(sem_sink_discovered, 0, 1);
 static K_SEM_DEFINE(sem_stream_configured, 0, 1);
 static K_SEM_DEFINE(sem_stream_qos, 0, 1);
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
 
-void print_hex(const uint8_t *ptr, size_t len)
+
+#if defined(CONFIG_LIBLC3CODEC)
+
+#include "lc3.h"
+#include "math.h"
+
+#define MAX_SAMPLE_RATE         48000
+#define MAX_FRAME_DURATION_US   10000
+#define MAX_NUM_SAMPLES         ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
+#define AUDIO_VOLUME            (INT16_MAX - 3000) /* codec does clipping above INT16_MAX - 3000 */
+#define AUDIO_TONE_FREQUENCY_HZ   400
+
+static int16_t audio_buf[MAX_NUM_SAMPLES];
+static lc3_encoder_t lc3_encoder;
+static lc3_encoder_mem_48k_t lc3_encoder_mem;
+static int freq_hz;
+static int frame_duration_us;
+static int frame_duration_100us;
+static int frames_per_sdu;
+static int octets_per_frame;
+
+
+/**
+ * Use the math lib to generate a sine-wave using 16 bit samples into a buffer.
+ *
+ * @param buf Destination buffer
+ * @param length_us Length of the buffer in microseconds
+ * @param frequency_hz frequency in Hz
+ * @param sample_rate_hz sample-rate in Hz.
+ */
+static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, int sample_rate_hz)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	const int sine_period_samples = sample_rate_hz / frequency_hz;
+	const unsigned int num_samples = (length_us * sample_rate_hz) / USEC_PER_SEC;
+	const float step = 2 * 3.1415 / sine_period_samples;
+
+	for (unsigned int i = 0; i < num_samples; i++) {
+		const float sample = sin(i * step);
+
+		buf[i] = (int16_t)(AUDIO_VOLUME * sample);
 	}
 }
 
-static void print_codec(const struct bt_codec *codec)
+static void lc3_audio_timer_timeout(struct k_work *work)
 {
-	printk("codec 0x%02x cid 0x%04x vid 0x%04x count %u\n",
-	       codec->id, codec->cid, codec->vid, codec->data_count);
+	/* For the first call-back we push multiple audio frames to the buffer to use the
+	 * controller ISO buffer to handle jitter.
+	 */
+	const uint8_t prime_count = 2;
+	static int64_t start_time;
+	static int32_t sdu_cnt;
+	int32_t sdu_goal_cnt;
+	int64_t uptime, run_time_ms, run_time_100us;
 
-	for (size_t i = 0; i < codec->data_count; i++) {
-		printk("data #%zu: type 0x%02x len %u\n",
-		       i, codec->data[i].data.type,
-		       codec->data[i].data.data_len);
-		print_hex(codec->data[i].data.data,
-			  codec->data[i].data.data_len -
-				sizeof(codec->data[i].data.type));
-		printk("\n");
+	k_work_schedule(&audio_send_work, K_USEC(codec_configuration.qos.interval));
+
+	if (lc3_encoder == NULL) {
+		printk("LC3 encoder not setup, cannot encode data.\n");
+		return;
 	}
 
-	for (size_t i = 0; i < codec->meta_count; i++) {
-		printk("meta #%zu: type 0x%02x len %u\n",
-		       i, codec->meta[i].data.type,
-		       codec->meta[i].data.data_len);
-		print_hex(codec->meta[i].data.data,
-			  codec->meta[i].data.data_len -
-				sizeof(codec->meta[i].data.type));
-		printk("\n");
+	if (start_time == 0) {
+		/* Read start time and produce the number of frames needed to catch up with any
+		 * inaccuracies in the timer. by calculating the number of frames we should
+		 * have sent and compare to how many were actually sent.
+		 */
+		start_time = k_uptime_get();
+	}
+
+	uptime = k_uptime_get();
+	run_time_ms = uptime - start_time;
+
+	/* PDU count calculations done in 100us units to allow 7.5ms framelength in fixed-point */
+	run_time_100us = run_time_ms * 10;
+	sdu_goal_cnt = run_time_100us / (frame_duration_100us * frames_per_sdu);
+
+	/* Add primer value to ensure the controller do not run low on data due to jitter */
+	sdu_goal_cnt += prime_count;
+
+	printk("LC3 encode %d frames in %d SDUs\n", (sdu_goal_cnt - sdu_cnt) * frames_per_sdu,
+						    (sdu_goal_cnt - sdu_cnt));
+
+	while (sdu_cnt < sdu_goal_cnt) {
+
+		int ret;
+		struct net_buf *buf;
+		uint8_t *net_buffer;
+		uint16_t lc3_ret;
+		const uint16_t tx_sdu_len = frames_per_sdu * octets_per_frame;
+		int offset = 0;
+
+
+		buf = net_buf_alloc(&tx_pool, K_FOREVER);
+		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+
+		net_buffer = net_buf_tail(buf);
+		buf->len += tx_sdu_len;
+
+		for (int i = 0; i < frames_per_sdu; i++) {
+
+			lc3_ret = lc3_encode(lc3_encoder, LC3_PCM_FORMAT_S16, audio_buf,
+					     1, octets_per_frame, net_buffer + offset);
+			offset += octets_per_frame;
+		}
+
+		if (lc3_ret == -1) {
+			printk("LC3 encoder failed - wrong parameters?: %d", lc3_ret);
+			net_buf_unref(buf);
+			return;
+		}
+
+		ret = bt_audio_stream_send(&audio_stream, buf);
+
+		if (ret < 0) {
+			printk("  Failed to send LC3 audio data (%d)\n", ret);
+			net_buf_unref(buf);
+		} else {
+			printk("  TX LC3 l: %zu\n", tx_sdu_len);
+			sdu_cnt++;
+		}
 	}
 }
+
+static void init_lc3(void)
+{
+	unsigned int num_samples;
+
+	freq_hz = bt_codec_cfg_get_freq(&codec_configuration.codec);
+	frame_duration_us = bt_codec_cfg_get_frame_duration_us(&codec_configuration.codec);
+	octets_per_frame = bt_codec_cfg_get_octets_per_frame(&codec_configuration.codec);
+	frames_per_sdu = bt_codec_cfg_get_frame_blocks_per_sdu(audio_stream.codec, true);
+	octets_per_frame = bt_codec_cfg_get_octets_per_frame(audio_stream.codec);
+
+	if (freq_hz < 0) {
+		printk("Error: Codec frequency not set, cannot start codec.");
+		return;
+	}
+
+	if (frame_duration_us < 0) {
+		printk("Error: Frame duration not set, cannot start codec.");
+		return;
+	}
+
+	if (octets_per_frame < 0) {
+		printk("Error: Octets per frame not set, cannot start codec.");
+		return;
+	}
+
+	frame_duration_100us = frame_duration_us / 100;
+
+
+	/* Fill audio buffer with Sine wave only once and repeat encoding the same tone frame */
+	fill_audio_buf_sin(audio_buf, frame_duration_us, AUDIO_TONE_FREQUENCY_HZ, freq_hz);
+
+	num_samples = ((frame_duration_us * freq_hz) / USEC_PER_SEC);
+	for (unsigned int i = 0; i < num_samples; i++) {
+		printk("%3i: %6i\n", i, audio_buf[i]);
+	}
+
+	/* Create the encoder instance. This shall complete before stream_started() is called. */
+	lc3_encoder = lc3_setup_encoder(frame_duration_us,
+					freq_hz,
+					0, /* No resampling */
+					&lc3_encoder_mem);
+
+	if (lc3_encoder == NULL) {
+		printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
+	}
+}
+
+#else
+
+#define init_lc3(...)
 
 /**
  * @brief Send audio data on timeout
@@ -120,6 +263,41 @@ static void audio_timer_timeout(struct k_work *work)
 	len_to_send++;
 	if (len_to_send > ARRAY_SIZE(buf_data)) {
 		len_to_send = 1;
+	}
+}
+
+#endif
+
+static void print_hex(const uint8_t *ptr, size_t len)
+{
+	while (len-- != 0) {
+		printk("%02x", *ptr++);
+	}
+}
+
+static void print_codec_capabilities(const struct bt_codec *codec)
+{
+	printk("codec 0x%02x cid 0x%04x vid 0x%04x count %u\n",
+	       codec->id, codec->cid, codec->vid, codec->data_count);
+
+	for (size_t i = 0; i < codec->data_count; i++) {
+		printk("data #%zu: type 0x%02x len %u\n",
+		       i, codec->data[i].data.type,
+		       codec->data[i].data.data_len);
+		print_hex(codec->data[i].data.data,
+			  codec->data[i].data.data_len -
+			  sizeof(codec->data[i].data.type));
+		printk("\n");
+	}
+
+	for (size_t i = 0; i < codec->meta_count; i++) {
+		printk("meta #%zu: type 0x%02x len %u\n",
+		       i, codec->meta[i].data.type,
+		       codec->meta[i].data.data_len);
+		print_hex(codec->meta[i].data.data,
+			  codec->meta[i].data.data_len -
+			  sizeof(codec->meta[i].data.type));
+		printk("\n");
 	}
 }
 
@@ -286,19 +464,19 @@ static void add_remote_sink(struct bt_audio_ep *ep, uint8_t index)
 	sinks[index] = ep;
 }
 
-static void add_remote_codec(struct bt_codec *codec, int index,
+static void add_remote_codec(struct bt_codec *codec_capabilities, int index,
 				  uint8_t type)
 {
-	printk("#%u: codec %p type 0x%02x\n", index, codec, type);
+	printk("#%u: codec %p type 0x%02x\n", index, codec_capabilities, type);
 
-	print_codec(codec);
+	print_codec_capabilities(codec_capabilities);
 
 	if (type != BT_AUDIO_SINK && type != BT_AUDIO_SOURCE) {
 		return;
 	}
 
 	if (index < CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT) {
-		remote_codecs[index] = codec;
+		remote_codec_capabilities[index] = codec_capabilities;
 	}
 }
 
@@ -332,17 +510,6 @@ static void discover_sink_cb(struct bt_conn *conn,
 	(void)memset(params, 0, sizeof(*params));
 
 	k_sem_give(&sem_sink_discovered);
-}
-
-static void gatt_mtu_cb(struct bt_conn *conn, uint8_t err,
-		   struct bt_gatt_exchange_params *params)
-{
-	if (err != 0) {
-		printk("Failed to exchange MTU (%u)\n", err);
-		return;
-	}
-
-	k_sem_give(&sem_mtu_exchanged);
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -404,7 +571,11 @@ static int init(void)
 
 	audio_stream.ops = &stream_ops;
 
+#if defined(CONFIG_LIBLC3CODEC)
+	k_work_init_delayable(&audio_send_work, lc3_audio_timer_timeout);
+#else
 	k_work_init_delayable(&audio_send_work, audio_timer_timeout);
+#endif
 
 	return 0;
 }
@@ -418,28 +589,6 @@ static int scan_and_connect(void)
 	err = k_sem_take(&sem_connected, K_FOREVER);
 	if (err != 0) {
 		printk("failed to take sem_connected (err %d)\n", err);
-		return err;
-	}
-
-	return 0;
-}
-
-static int exchange_mtu(void)
-{
-	struct bt_gatt_exchange_params mtu_params = {
-		.func = gatt_mtu_cb
-	};
-	int err;
-
-	err = bt_gatt_exchange_mtu(default_conn, &mtu_params);
-	if (err != 0) {
-		printk("Failed to exchange MTU %d\n", err);
-		return err;
-	}
-
-	err = k_sem_take(&sem_mtu_exchanged, K_FOREVER);
-	if (err != 0) {
-		printk("failed to take sem_mtu_exchanged (err %d)\n", err);
 		return err;
 	}
 
@@ -474,7 +623,7 @@ static int configure_stream(struct bt_audio_stream *stream)
 	int err;
 
 	err = bt_audio_stream_config(default_conn, stream, sinks[0],
-				     &preset_16_2_1.codec);
+				     &codec_configuration.codec);
 	if (err != 0) {
 		printk("Could not configure stream\n");
 		return err;
@@ -507,7 +656,7 @@ static int set_stream_qos(void)
 	int err;
 
 	err = bt_audio_stream_qos(default_conn, unicast_group,
-				&preset_16_2_1.qos);
+				&codec_configuration.qos);
 	if (err != 0) {
 		printk("Unable to setup QoS: %d", err);
 		return err;
@@ -526,8 +675,12 @@ static int enable_stream(struct bt_audio_stream *stream)
 {
 	int err;
 
-	err = bt_audio_stream_enable(stream, preset_16_2_1.codec.meta,
-				     preset_16_2_1.codec.meta_count);
+	if (IS_ENABLED(CONFIG_LIBLC3CODEC)) {
+		init_lc3();
+	}
+
+	err = bt_audio_stream_enable(stream, codec_configuration.codec.meta,
+				     codec_configuration.codec.meta_count);
 	if (err != 0) {
 		printk("Unable to enable stream: %d", err);
 		return err;
@@ -578,13 +731,6 @@ void main(void)
 		return;
 	}
 	printk("Connected\n");
-
-	printk("Initiating MTU exchange\n");
-	err = exchange_mtu();
-	if (err != 0) {
-		return;
-	}
-	printk("MTU exchanged\n");
 
 	printk("Discovering sink\n");
 	err = discover_sink();

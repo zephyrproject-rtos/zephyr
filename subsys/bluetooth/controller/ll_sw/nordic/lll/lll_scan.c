@@ -100,9 +100,10 @@ static inline bool isr_scan_tgta_rpa_check(const struct lll_scan *lll,
 					   const uint8_t *addr,
 					   bool *const dir_report);
 static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
-static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
-			      uint8_t phy_flags_rx, uint8_t irkmatch_ok,
-			      uint8_t rl_idx, bool dir_report);
+static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
+			      uint8_t irkmatch_ok, uint8_t rl_idx,
+			      uint8_t rssi_ready, uint8_t phy_flags_rx,
+			      bool dir_report);
 
 int lll_scan_init(void)
 {
@@ -734,9 +735,20 @@ static void isr_rx(void *param)
 	rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	if (has_adva &&
-	    !lll_scan_isr_rx_check(lll, irkmatch_ok, devmatch_ok, rl_idx)) {
-		goto isr_rx_do_close;
+	if (has_adva) {
+		bool allow;
+
+		allow = lll_scan_isr_rx_check(lll, irkmatch_ok, devmatch_ok,
+					      rl_idx);
+		if (false) {
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+		} else if (allow || lll->is_sync) {
+			devmatch_ok = allow ? 1U : 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+		} else if (!allow) {
+			goto isr_rx_do_close;
+		}
 	}
 
 	err = isr_rx_pdu(lll, pdu, devmatch_ok, devmatch_id, irkmatch_ok,
@@ -1270,8 +1282,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		radio_switch_complete_and_rx(0);
 
 		/* save the adv packet */
-		err = isr_rx_scan_report(lll, rssi_ready, phy_flags_rx,
-					 irkmatch_ok, rl_idx, false);
+		err = isr_rx_scan_report(lll, devmatch_ok, irkmatch_ok, rl_idx,
+					 rssi_ready, phy_flags_rx, false);
 		if (err) {
 			return err;
 		}
@@ -1374,8 +1386,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		uint32_t err;
 
 		/* save the scan response packet */
-		err = isr_rx_scan_report(lll, rssi_ready, phy_flags_rx,
-					 irkmatch_ok, rl_idx, dir_report);
+		err = isr_rx_scan_report(lll, devmatch_ok, irkmatch_ok, rl_idx,
+					 rssi_ready, phy_flags_rx, dir_report);
 		if (err) {
 			/* Auxiliary PDU LLL scanning has been setup */
 			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
@@ -1464,9 +1476,10 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
 			&srsp->scan_rsp.addr[0], BDADDR_SIZE) == 0));
 }
 
-static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
-			      uint8_t phy_flags_rx, uint8_t irkmatch_ok,
-			      uint8_t rl_idx, bool dir_report)
+static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
+			      uint8_t irkmatch_ok, uint8_t rl_idx,
+			      uint8_t rssi_ready, uint8_t phy_flags_rx,
+			      bool dir_report)
 {
 	struct node_rx_pdu *node_rx;
 	int err = 0;
@@ -1558,6 +1571,11 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 	/* save the directed adv report flag */
 	node_rx->hdr.rx_ftr.direct = dir_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
+	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	node_rx->hdr.rx_ftr.devmatch = devmatch_ok;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {

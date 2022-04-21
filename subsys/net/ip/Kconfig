@@ -587,6 +587,20 @@ config NET_CONTEXT_SNDTIMEO
 	  sockets timeout is configured per socket with
 	  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, ...) function.
 
+config NET_CONTEXT_RCVBUF
+	bool "Add RCVBUF support to net_context"
+	help
+	  If is possible to define the maximum socket receive buffer per socket.
+	  The default value is set by CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE. For
+	  TCP sockets, the rcvbuf will determine the receive window size.
+
+config NET_CONTEXT_SNDBUF
+	bool "Add SNDBUF support to net_context"
+	help
+	  It is possible to define the maximum socket send buffer per socket.
+	  For TCP sockets, the sndbuf will determine the total size of queued
+	  data in the TCP layer.
+
 config NET_TEST
 	bool "Network Testing"
 	help

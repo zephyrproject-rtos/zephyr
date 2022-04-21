@@ -88,6 +88,11 @@ mapping:
       "min_flash":
         type: int
         required: false
+      "modules":
+        type: seq
+        required: false
+        sequence:
+          - type: str
       "platform_exclude":
         type: str
         required: false
@@ -221,6 +226,11 @@ mapping:
           "min_flash":
             type: int
             required: false
+          "modules":
+            type: seq
+            required: false
+            sequence:
+              - type: str
           "platform_exclude":
             type: str
             required: false

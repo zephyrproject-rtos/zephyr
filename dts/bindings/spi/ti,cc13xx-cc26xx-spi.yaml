@@ -5,28 +5,8 @@ description: TI SimpleLink CC13xx / CC26xx SPI node
 
 compatible: "ti,cc13xx-cc26xx-spi"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
     reg:
       required: true
-
-    sck-pin:
-      type: int
-      required: true
-      description: SCK pin
-
-    mosi-pin:
-      type: int
-      required: true
-      description: MOSI pin
-
-    miso-pin:
-      type: int
-      required: true
-      description: MISO pin
-
-    cs-pin:
-      type: int
-      required: false
-      description: CS pin

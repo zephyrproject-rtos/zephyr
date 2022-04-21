@@ -74,6 +74,19 @@ config TFM_PARTITION_AUDIT_LOG
 	  Note: the Audit Log service does not implement the IPC model
 	  interface so it may not be enabled together with IPC option.
 
+config TFM_PARTITION_FIRMWARE_UPDATE
+	bool "Include the secure parition 'Firmware Update'"
+	select TFM_MCUBOOT_DATA_SHARING
+	default n
+	help
+	  Setting this option will cause '-DTFM_PARTITION_FIRMWARE_UPDATE'
+	  to be passed to the TF-M build system. Look at 'config_default.cmake'
+	  in the trusted-firmware-m repository for details regarding this
+	  parameter. Any dependencies between the various TFM_PARTITION_*
+	  options are handled by the build system in the trusted-firmware-m
+	  repository.
+
+
 choice TFM_PARTITION_LOG_LEVEL
 	prompt "TF-M Partition Log Level" if !TFM_LOG_LEVEL_SILENCE
 	default TFM_PARTITION_LOG_LEVEL_INFO

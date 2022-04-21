@@ -11,6 +11,7 @@
 #include <init.h>
 #include <soc.h>
 #include <drivers/mdio.h>
+#include <drivers/pinctrl.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mdio_sam, CONFIG_MDIO_LOG_LEVEL);
@@ -28,6 +29,7 @@ struct mdio_sam_dev_data {
 
 struct mdio_sam_dev_config {
 	Gmac * const regs;
+	const struct pinctrl_dev_config *pcfg;
 	int protocol;
 };
 
@@ -109,11 +111,15 @@ static void mdio_sam_bus_disable(const struct device *dev)
 
 static int mdio_sam_initialize(const struct device *dev)
 {
+	const struct mdio_sam_dev_config *const cfg = dev->config;
 	struct mdio_sam_dev_data *const data = dev->data;
+	int retval;
 
 	k_sem_init(&data->sem, 1, 1);
 
-	return 0;
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+
+	return retval;
 }
 
 static const struct mdio_driver_api mdio_sam_driver_api = {
@@ -126,10 +132,12 @@ static const struct mdio_driver_api mdio_sam_driver_api = {
 #define MDIO_SAM_CONFIG(n)						\
 static const struct mdio_sam_dev_config mdio_sam_dev_config_##n = {	\
 	.regs = (Gmac *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	.protocol = DT_INST_ENUM_IDX(n, protocol),			\
 };
 
 #define MDIO_SAM_DEVICE(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	MDIO_SAM_CONFIG(n);						\
 	static struct mdio_sam_dev_data mdio_sam_dev_data##n;		\
 	DEVICE_DT_INST_DEFINE(n,					\

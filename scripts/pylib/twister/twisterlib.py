@@ -14,12 +14,14 @@ import select
 import shutil
 import shlex
 import signal
+import hashlib
 import threading
 from collections import OrderedDict
 import queue
 import time
 import csv
 import glob
+import random
 import xml.etree.ElementTree as ET
 import logging
 from pathlib import Path
@@ -95,6 +97,7 @@ class ExecutionCounter(object):
         self._passed = Value('i', 0)
         self._skipped_configs = Value('i', 0)
         self._skipped_runtime = Value('i', 0)
+        self._skipped_filter = Value('i', 0)
         self._skipped_cases = Value('i', 0)
         self._error = Value('i', 0)
         self._failed = Value('i', 0)
@@ -103,6 +106,21 @@ class ExecutionCounter(object):
 
 
         self.lock = Lock()
+
+
+    def summary(self):
+        logger.debug("--------------------------------")
+        logger.debug(f"Total Test suites: {self.total}")
+        logger.debug(f"Total Test cases: {self.cases}")
+        logger.debug(f"Skipped test cases: {self.skipped_cases}")
+        logger.debug(f"Completed Testsuites: {self.done}")
+        logger.debug(f"Passing Testsuites: {self.passed}")
+        logger.debug(f"Failing Testsuites: {self.failed}")
+        logger.debug(f"Skipped Testsuites: {self.skipped_configs}")
+        logger.debug(f"Skipped Testsuites (runtime): {self.skipped_runtime}")
+        logger.debug(f"Skipped Testsuites (filter): {self.skipped_filter}")
+        logger.debug(f"Errors: {self.error}")
+        logger.debug("--------------------------------")
 
     @property
     def cases(self):
@@ -163,6 +181,16 @@ class ExecutionCounter(object):
     def skipped_configs(self, value):
         with self._skipped_configs.get_lock():
             self._skipped_configs.value = value
+
+    @property
+    def skipped_filter(self):
+        with self._skipped_filter.get_lock():
+            return self._skipped_filter.value
+
+    @skipped_filter.setter
+    def skipped_filter(self, value):
+        with self._skipped_filter.get_lock():
+            self._skipped_filter.value = value
 
     @property
     def skipped_runtime(self):
@@ -403,6 +431,7 @@ class Handler:
         self.set_state("running", self.duration)
         self.generator = None
         self.generator_cmd = None
+        self.suite_name_check = True
 
         self.args = []
         self.terminated = False
@@ -465,6 +494,52 @@ class Handler:
                 self.instance.reason == instance_reason_unknown and \
                 harness_testcase_result_skip in self.instance.results.values():
             self.instance.reason = "ztest skip"
+
+    def _verify_ztest_suite_name(self, harness_state, detected_suite_names, handler_time):
+        """
+        If test suite names was found in test's C source code, then verify if
+        detected suite names from output correspond to expected suite names
+        (and not in reverse).
+        """
+        expected_suite_names = self.instance.testcase.ztest_suite_names
+        if not expected_suite_names or \
+                not harness_state == "passed":
+            return
+        if not detected_suite_names:
+            self._missing_suite_name(expected_suite_names, handler_time)
+        for detected_suite_name in detected_suite_names:
+            if detected_suite_name not in expected_suite_names:
+                self._missing_suite_name(expected_suite_names, handler_time)
+                break
+
+    def _missing_suite_name(self, expected_suite_names, handler_time):
+        """
+        Change result of performed test if problem with missing or unpropper
+        suite name was occurred.
+        """
+        self.set_state("failed", handler_time)
+        for k in self.instance.testcase.cases:
+            self.instance.results[k] = "FAIL"
+        self.instance.reason = f"Testsuite mismatch"
+        logger.debug("Test suite names were not printed or some of them in " \
+                     "output do not correspond with expected: %s",
+                     str(expected_suite_names))
+
+    def _final_handle_actions(self, harness, handler_time):
+        self._set_skip_reason(harness.state)
+
+        # only for Ztest tests:
+        harness_class_name = type(harness).__name__
+        if self.suite_name_check and harness_class_name == "Test":
+            self._verify_ztest_suite_name(harness.state, harness.detected_suite_names, handler_time)
+
+            if not harness.matched_run_id and harness.run_id_exists:
+                self.set_state("failed", handler_time)
+                self.instance.reason = "RunID mismatch"
+                for k in self.instance.testcase.cases:
+                    self.instance.results[k] = "FAIL"
+
+        self.record(harness)
 
 
 class BinaryHandler(Handler):
@@ -552,11 +627,12 @@ class BinaryHandler(Handler):
             command = [self.binary]
 
         run_valgrind = False
-        if self.valgrind and shutil.which("valgrind"):
+        if self.valgrind:
             command = ["valgrind", "--error-exitcode=2",
                        "--leak-check=full",
                        "--suppressions=" + ZEPHYR_BASE + "/scripts/valgrind.supp",
-                       "--log-file=" + self.build_dir + "/valgrind.log"
+                       "--log-file=" + self.build_dir + "/valgrind.log",
+                       "--track-origins=yes",
                        ] + command
             run_valgrind = True
 
@@ -606,13 +682,14 @@ class BinaryHandler(Handler):
         self.instance.results = harness.tests
 
         if not self.terminated and self.returncode != 0:
-            # When a process is killed, the default handler returns 128 + SIGTERM
-            # so in that case the return code itself is not meaningful
-            self.set_state("failed", handler_time)
-            self.instance.reason = "Failed"
-        elif run_valgrind and self.returncode == 2:
-            self.set_state("failed", handler_time)
-            self.instance.reason = "Valgrind error"
+            if run_valgrind and self.returncode == 2:
+                self.set_state("failed", handler_time)
+                self.instance.reason = "Valgrind error"
+            else:
+                # When a process is killed, the default handler returns 128 + SIGTERM
+                # so in that case the return code itself is not meaningful
+                self.set_state("failed", handler_time)
+                self.instance.reason = "Failed"
         elif harness.state:
             self.set_state(harness.state, handler_time)
             if harness.state == "failed":
@@ -622,9 +699,7 @@ class BinaryHandler(Handler):
             self.instance.reason = "Timeout"
             self.add_missing_testscases(harness)
 
-        self._set_skip_reason(harness.state)
-
-        self.record(harness)
+        self._final_handle_actions(harness, handler_time)
 
 
 class DeviceHandler(Handler):
@@ -698,7 +773,7 @@ class DeviceHandler(Handler):
         for d in self.suite.duts:
             if fixture and fixture not in d.fixtures:
                 continue
-            if d.platform != device or not (d.serial or d.serial_pty):
+            if d.platform != device or (d.serial is None and d.serial_pty is None):
                 continue
             d.lock.acquire()
             avail = False
@@ -922,13 +997,12 @@ class DeviceHandler(Handler):
         else:
             self.set_state(out_state, handler_time)
 
-        self._set_skip_reason(harness.state)
+        self._final_handle_actions(harness, handler_time)
 
         if post_script:
             self.run_custom_script(post_script, 30)
 
         self.make_device_available(serial_device)
-        self.record(harness)
 
 
 class QEMUHandler(Handler):
@@ -1080,8 +1154,6 @@ class QEMUHandler(Handler):
             harness.pytest_run(logfile)
             out_state = harness.state
 
-        handler.record(harness)
-
         handler_time = time.time() - start_time
         logger.debug(f"QEMU ({pid}) complete ({out_state}) after {handler_time} seconds")
 
@@ -1192,7 +1264,7 @@ class QEMUHandler(Handler):
                 self.instance.reason = "Exited with {}".format(self.returncode)
             self.add_missing_testscases(harness)
 
-        self._set_skip_reason(harness.state)
+        self._final_handle_actions(harness, 0)
 
     def get_fifo(self):
         return self.fifo_fn
@@ -1622,18 +1694,21 @@ class ScanPathResult:
                                          ztest_run_registered_test_suites.
         has_test_main                    Whether or not the path contains a
                                          definition of test_main(void)
+        ztest_suite_names                Names of found ztest suites
     """
     def __init__(self,
                  matches: List[str] = None,
                  warnings: str = None,
                  has_registered_test_suites: bool = False,
                  has_run_registered_test_suites: bool = False,
-                 has_test_main: bool = False):
+                 has_test_main: bool = False,
+                 ztest_suite_names: List[str] = []):
         self.matches = matches
         self.warnings = warnings
         self.has_registered_test_suites = has_registered_test_suites
         self.has_run_registered_test_suites = has_run_registered_test_suites
         self.has_test_main = has_test_main
+        self.ztest_suite_names = ztest_suite_names
 
     def __eq__(self, other):
         if not isinstance(other, ScanPathResult):
@@ -1644,7 +1719,9 @@ class ScanPathResult:
                  other.has_registered_test_suites) and
                 (self.has_run_registered_test_suites ==
                  other.has_run_registered_test_suites) and
-                self.has_test_main == other.has_test_main)
+                self.has_test_main == other.has_test_main and
+                (sorted(self.ztest_suite_names) ==
+                 sorted(other.ztest_suite_names)))
 
 
 class TestCase(DisablePyTestCollectionMixin):
@@ -1702,6 +1779,7 @@ class TestCase(DisablePyTestCollectionMixin):
         self.min_flash = -1
         self.extra_sections = None
         self.integration_platforms = []
+        self.ztest_suite_names = []
 
     @staticmethod
     def get_unique(testcase_root, workdir, name):
@@ -1725,9 +1803,8 @@ Tests should reference the category and subsystem with a dot as a separator.
                     )
         return unique
 
-    @staticmethod
-    def scan_file(inf_name):
-        suite_regex = re.compile(
+    def scan_file(self, inf_name):
+        regular_suite_regex = re.compile(
             # do not match until end-of-line, otherwise we won't allow
             # stc_regex below to catch the ones that are declared in the same
             # line--as we only search starting the end of this match
@@ -1736,6 +1813,9 @@ Tests should reference the category and subsystem with a dot as a separator.
         registered_suite_regex = re.compile(
             br"^\s*ztest_register_test_suite"
             br"\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
+            re.MULTILINE)
+        new_suite_regex = re.compile(
+            br"^\s*ZTEST_SUITE\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
             re.MULTILINE)
         # Checks if the file contains a definition of "void test_main(void)"
         # Since ztest provides a plain test_main implementation it is OK to:
@@ -1746,35 +1826,11 @@ Tests should reference the category and subsystem with a dot as a separator.
         test_main_regex = re.compile(
             br"^\s*void\s+test_main\(void\)",
             re.MULTILINE)
-        stc_regex = re.compile(
-            br"""^\s*  # empty space at the beginning is ok
-            # catch the case where it is declared in the same sentence, e.g:
-            #
-            # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
-            # ztest_register_test_suite(n, p, ztest_user_unit_test(TESTNAME),
-            (?:ztest_
-              (?:test_suite\(|register_test_suite\([a-zA-Z0-9_]+\s*,\s*)
-              [a-zA-Z0-9_]+\s*,\s*
-            )?
-            # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
-            ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?
-            # Consume the argument that becomes the extra testcase
-            \(\s*(?P<stc_name>[a-zA-Z0-9_]+)
-            # _setup_teardown() variant has two extra arguments that we ignore
-            (?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?
-            \s*\)""",
-            # We don't check how it finishes; we don't care
-            re.MULTILINE | re.VERBOSE)
-        suite_run_regex = re.compile(
-            br"^\s*ztest_run_test_suite\((?P<suite_name>[a-zA-Z0-9_]+)\)",
-            re.MULTILINE)
         registered_suite_run_regex = re.compile(
             br"^\s*ztest_run_registered_test_suites\("
             br"(\*+|&)?(?P<state_identifier>[a-zA-Z0-9_]+)\)",
             re.MULTILINE)
-        achtung_regex = re.compile(
-            br"(#ifdef|#endif)",
-            re.MULTILINE)
+
         warnings = None
         has_registered_test_suites = False
         has_run_registered_test_suites = False
@@ -1788,68 +1844,164 @@ Tests should reference the category and subsystem with a dot as a separator.
                              'offset': 0}
 
             with contextlib.closing(mmap.mmap(**mmap_args)) as main_c:
-                suite_regex_match = suite_regex.search(main_c)
-                registered_suite_regex_match = registered_suite_regex.search(
-                    main_c)
+                regular_suite_regex_matches = \
+                    [m for m in regular_suite_regex.finditer(main_c)]
+                registered_suite_regex_matches = \
+                    [m for m in registered_suite_regex.finditer(main_c)]
+                new_suite_regex_matches = \
+                    [m for m in new_suite_regex.finditer(main_c)]
 
-                if registered_suite_regex_match:
+                if registered_suite_regex_matches:
                     has_registered_test_suites = True
                 if registered_suite_run_regex.search(main_c):
                     has_run_registered_test_suites = True
                 if test_main_regex.search(main_c):
                     has_test_main = True
 
-                if not suite_regex_match and not has_registered_test_suites:
+                if regular_suite_regex_matches:
+                    ztest_suite_names = \
+                        self._extract_ztest_suite_names(regular_suite_regex_matches)
+                    testcase_names, warnings = \
+                        self._find_regular_ztest_testcases(main_c, regular_suite_regex_matches, has_registered_test_suites)
+                elif registered_suite_regex_matches:
+                    ztest_suite_names = \
+                        self._extract_ztest_suite_names(registered_suite_regex_matches)
+                    testcase_names, warnings = \
+                        self._find_regular_ztest_testcases(main_c, registered_suite_regex_matches, has_registered_test_suites)
+                elif new_suite_regex_matches:
+                    ztest_suite_names = \
+                        self._extract_ztest_suite_names(new_suite_regex_matches)
+                    testcase_names, warnings = \
+                        self._find_new_ztest_testcases(main_c)
+                else:
                     # can't find ztest_test_suite, maybe a client, because
                     # it includes ztest.h
-                    return ScanPathResult(
-                        matches=None,
-                        warnings=None,
-                        has_registered_test_suites=has_registered_test_suites,
-                        has_run_registered_test_suites=has_run_registered_test_suites,
-                        has_test_main=has_test_main)
+                    ztest_suite_names = []
+                    testcase_names, warnings = None, None
 
-                suite_run_match = suite_run_regex.search(main_c)
-                if suite_regex_match and not suite_run_match:
-                    raise ValueError("can't find ztest_run_test_suite")
-
-                if suite_regex_match:
-                    search_start = suite_regex_match.end()
-                else:
-                    search_start = registered_suite_regex_match.end()
-
-                if suite_run_match:
-                    search_end = suite_run_match.start()
-                else:
-                    search_end = re.compile(br"\);", re.MULTILINE) \
-                        .search(main_c, search_start) \
-                        .end()
-                achtung_matches = re.findall(
-                    achtung_regex,
-                    main_c[search_start:search_end])
-                if achtung_matches:
-                    warnings = "found invalid %s in ztest_test_suite()" \
-                               % ", ".join(sorted({match.decode() for match in achtung_matches},reverse = True))
-                _matches = re.findall(
-                    stc_regex,
-                    main_c[search_start:search_end])
-                for match in _matches:
-                    if not match.decode().startswith("test_"):
-                        warnings = "Found a test that does not start with test_"
-                matches = [match.decode().replace("test_", "", 1) for match in _matches]
                 return ScanPathResult(
-                    matches=matches,
+                    matches=testcase_names,
                     warnings=warnings,
                     has_registered_test_suites=has_registered_test_suites,
                     has_run_registered_test_suites=has_run_registered_test_suites,
-                    has_test_main=has_test_main)
+                    has_test_main=has_test_main,
+                    ztest_suite_names=ztest_suite_names)
+
+    @staticmethod
+    def _extract_ztest_suite_names(suite_regex_matches):
+        ztest_suite_names = \
+            [m.group("suite_name") for m in suite_regex_matches]
+        ztest_suite_names = \
+            [name.decode("UTF-8") for name in ztest_suite_names]
+        return ztest_suite_names
+
+    def _find_regular_ztest_testcases(self, search_area, suite_regex_matches, is_registered_test_suite):
+        """
+        Find regular ztest testcases like "ztest_unit_test" or similar. Return
+        testcases' names and eventually found warnings.
+        """
+        testcase_regex = re.compile(
+            br"""^\s*  # empty space at the beginning is ok
+            # catch the case where it is declared in the same sentence, e.g:
+            #
+            # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
+            # ztest_register_test_suite(n, p, ztest_user_unit_test(TESTNAME),
+            (?:ztest_
+              (?:test_suite\(|register_test_suite\([a-zA-Z0-9_]+\s*,\s*)
+              [a-zA-Z0-9_]+\s*,\s*
+            )?
+            # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
+            ztest_(?:1cpu_)?(?:user_)?unit_test(?:_setup_teardown)?
+            # Consume the argument that becomes the extra testcase
+            \(\s*(?P<testcase_name>[a-zA-Z0-9_]+)
+            # _setup_teardown() variant has two extra arguments that we ignore
+            (?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?
+            \s*\)""",
+            # We don't check how it finishes; we don't care
+            re.MULTILINE | re.VERBOSE)
+        achtung_regex = re.compile(
+            br"(#ifdef|#endif)",
+            re.MULTILINE)
+
+        search_start, search_end = \
+            self._get_search_area_boundary(search_area, suite_regex_matches, is_registered_test_suite)
+        limited_search_area = search_area[search_start:search_end]
+        testcase_names, warnings = \
+            self._find_ztest_testcases(limited_search_area, testcase_regex)
+
+        achtung_matches = re.findall(achtung_regex, limited_search_area)
+        if achtung_matches and warnings is None:
+            achtung = ", ".join(sorted({match.decode() for match in achtung_matches},reverse = True))
+            warnings = f"found invalid {achtung} in ztest_test_suite()"
+
+        return testcase_names, warnings
+
+    @staticmethod
+    def _get_search_area_boundary(search_area, suite_regex_matches, is_registered_test_suite):
+        """
+        Get search area boundary based on "ztest_test_suite(...)",
+        "ztest_register_test_suite(...)" or "ztest_run_test_suite(...)"
+        functions occurrence.
+        """
+        suite_run_regex = re.compile(
+            br"^\s*ztest_run_test_suite\((?P<suite_name>[a-zA-Z0-9_]+)\)",
+            re.MULTILINE)
+
+        search_start = suite_regex_matches[0].end()
+
+        suite_run_match = suite_run_regex.search(search_area)
+        if suite_run_match:
+            search_end = suite_run_match.start()
+        elif not suite_run_match and not is_registered_test_suite:
+            raise ValueError("can't find ztest_run_test_suite")
+        else:
+            search_end = re.compile(br"\);", re.MULTILINE) \
+                .search(search_area, search_start) \
+                .end()
+
+        return search_start, search_end
+
+    def _find_new_ztest_testcases(self, search_area):
+        """
+        Find regular ztest testcases like "ZTEST" or "ZTEST_F". Return
+        testcases' names and eventually found warnings.
+        """
+        testcase_regex = re.compile(
+            br"^\s*(?:ZTEST|ZTEST_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+            br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
+            re.MULTILINE)
+
+        return self._find_ztest_testcases(search_area, testcase_regex)
+
+    @staticmethod
+    def _find_ztest_testcases(search_area, testcase_regex):
+        """
+        Parse search area and try to find testcases defined in testcase_regex
+        argument. Return testcase names and eventually found warnings.
+        """
+        testcase_regex_matches = \
+            [m for m in testcase_regex.finditer(search_area)]
+        testcase_names = \
+            [m.group("testcase_name") for m in testcase_regex_matches]
+        testcase_names = [name.decode("UTF-8") for name in testcase_names]
+        warnings = None
+        for testcase_name in testcase_names:
+            if not testcase_name.startswith("test_"):
+                warnings = "Found a test that does not start with test_"
+        testcase_names = \
+            [tc_name.replace("test_", "", 1) for tc_name in testcase_names]
+
+        return testcase_names, warnings
 
     def scan_path(self, path):
         subcases = []
         has_registered_test_suites = False
         has_run_registered_test_suites = False
         has_test_main = False
-        for filename in glob.glob(os.path.join(path, "src", "*.c*")):
+        ztest_suite_names = []
+
+        src_dir_path = self._find_src_dir_path(path)
+        for filename in glob.glob(os.path.join(src_dir_path, "*.c*")):
             try:
                 result: ScanPathResult = self.scan_file(filename)
                 if result.warnings:
@@ -1864,6 +2016,9 @@ Tests should reference the category and subsystem with a dot as a separator.
                     has_run_registered_test_suites = True
                 if result.has_test_main:
                     has_test_main = True
+                if result.ztest_suite_names:
+                    ztest_suite_names += result.ztest_suite_names
+
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
 
@@ -1874,6 +2029,8 @@ Tests should reference the category and subsystem with a dot as a separator.
                     logger.error("%s: %s" % (filename, result.warnings))
                 if result.matches:
                     subcases += result.matches
+                if result.ztest_suite_names:
+                    ztest_suite_names += result.ztest_suite_names
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
 
@@ -1885,16 +2042,33 @@ Tests should reference the category and subsystem with a dot as a separator.
             logger.error(warning)
             raise TwisterRuntimeError(warning)
 
-        return subcases
+        return subcases, ztest_suite_names
 
     def parse_subcases(self, test_path):
-        results = self.scan_path(test_path)
-        for sub in results:
+        subcases, ztest_suite_names = self.scan_path(test_path)
+        for sub in subcases:
             name = "{}.{}".format(self.id, sub)
             self.cases.append(name)
 
-        if not results:
+        if not subcases:
             self.cases.append(self.id)
+
+        self.ztest_suite_names = ztest_suite_names
+
+    @staticmethod
+    def _find_src_dir_path(test_dir_path):
+        """
+        Try to find src directory with test source code. Sometimes due to the
+        optimization reasons it is placed in upper directory.
+        """
+        src_dir_name = "src"
+        src_dir_path = os.path.join(test_dir_path, src_dir_name)
+        if os.path.isdir(src_dir_path):
+            return src_dir_path
+        src_dir_path = os.path.join(test_dir_path, "..", src_dir_name)
+        if os.path.isdir(src_dir_path):
+            return src_dir_path
+        return ""
 
     def __str__(self):
         return self.name
@@ -1921,11 +2095,22 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.outdir = outdir
 
         self.name = os.path.join(platform.name, testcase.name)
+        self.run_id = self._get_run_id()
         self.build_dir = os.path.join(outdir, platform.name, testcase.name)
 
         self.run = False
 
         self.results = {}
+
+    def _get_run_id(self):
+        """ generate run id from instance unique identifier and a random
+        number"""
+
+        hash_object = hashlib.md5(self.name.encode())
+        random_str = f"{random.getrandbits(64)}".encode()
+        hash_object.update(random_str)
+        return hash_object.hexdigest()
+
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -2092,6 +2277,8 @@ class CMake():
         self.generator = None
         self.generator_cmd = None
 
+        self.default_encoding = sys.getdefaultencoding()
+
     def parse_generated(self):
         self.defconfig = {}
         return {}
@@ -2125,8 +2312,8 @@ class CMake():
             results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
 
             if out:
-                log_msg = out.decode(sys.getdefaultencoding())
-                with open(os.path.join(self.build_dir, self.log), "a") as log:
+                log_msg = out.decode(self.default_encoding)
+                with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
                     log.write(log_msg)
 
             else:
@@ -2135,8 +2322,8 @@ class CMake():
             # A real error occurred, raise an exception
             log_msg = ""
             if out:
-                log_msg = out.decode(sys.getdefaultencoding())
-                with open(os.path.join(self.build_dir, self.log), "a") as log:
+                log_msg = out.decode(self.default_encoding)
+                with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
                     log.write(log_msg)
 
             if log_msg:
@@ -2171,6 +2358,7 @@ class CMake():
         cmake_args = [
             f'-B{self.build_dir}',
             f'-S{self.source_dir}',
+            f'-DTC_RUNID={self.instance.run_id}',
             f'-DEXTRA_CFLAGS={cflags}',
             f'-DEXTRA_AFLAGS={aflags}',
             f'-DEXTRA_LDFLAGS={ldflags}',
@@ -2215,8 +2403,8 @@ class CMake():
             results = {"returncode": p.returncode}
 
         if out:
-            with open(os.path.join(self.build_dir, self.log), "a") as log:
-                log_msg = out.decode(sys.getdefaultencoding())
+            with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
+                log_msg = out.decode(self.default_encoding)
                 log.write(log_msg)
 
         return results
@@ -2359,6 +2547,7 @@ class ProjectBuilder(FilterBuilder):
         self.verbose = kwargs.get('verbose', None)
         self.warnings_as_errors = kwargs.get('warnings_as_errors', True)
         self.overflow_as_errors = kwargs.get('overflow_as_errors', False)
+        self.suite_name_check = kwargs.get('suite_name_check', True)
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -2450,6 +2639,7 @@ class ProjectBuilder(FilterBuilder):
             instance.handler.args = args
             instance.handler.generator_cmd = self.generator_cmd
             instance.handler.generator = self.generator
+            instance.handler.suite_name_check = self.suite_name_check
 
     def process(self, pipeline, done, message, lock, results):
         op = message.get('op')
@@ -2596,7 +2786,7 @@ class ProjectBuilder(FilterBuilder):
                 fin.write(data)
 
     def report_out(self, results):
-        total_to_do = results.total - results.skipped_configs
+        total_to_do = results.total
         total_tests_width = len(str(total_to_do))
         results.done += 1
         instance = self.instance
@@ -2620,8 +2810,14 @@ class ProjectBuilder(FilterBuilder):
                 self.log_info_file(self.inline_logs)
         elif instance.status == "skipped":
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
+            results.skipped_configs += 1
+            results.skipped_cases += len(instance.testcase.cases)
         elif instance.status == "passed":
             status = Fore.GREEN + "PASSED" + Fore.RESET
+            results.passed += 1
+            for res in instance.results.values():
+                if res == 'SKIP':
+                    results.skipped_cases += 1
         else:
             logger.debug(f"Unknown status = {instance.status}")
             status = Fore.YELLOW + "UNKNOWN" + Fore.RESET
@@ -2641,7 +2837,7 @@ class ProjectBuilder(FilterBuilder):
                     more_info = "build"
 
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
-                results.done, total_tests_width, total_to_do, instance.platform.name,
+                results.done + results.skipped_filter, total_tests_width, total_to_do , instance.platform.name,
                 instance.testcase.name, status, more_info))
 
             if instance.status in ["error", "failed", "timeout"]:
@@ -2649,17 +2845,16 @@ class ProjectBuilder(FilterBuilder):
         else:
             completed_perc = 0
             if total_to_do > 0:
-                completed_perc = int((float(results.done) / total_to_do) * 100)
+                completed_perc = int((float(results.done + results.skipped_filter) / total_to_do) * 100)
 
-            skipped = results.skipped_configs + results.skipped_runtime
             sys.stdout.write("\rINFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s" % (
                 Fore.GREEN,
-                results.done,
+                results.done + results.skipped_filter,
                 total_to_do,
                 Fore.RESET,
                 completed_perc,
-                Fore.YELLOW if skipped > 0 else Fore.RESET,
-                skipped,
+                Fore.YELLOW if results.skipped_configs > 0 else Fore.RESET,
+                results.skipped_filter + results.skipped_runtime,
                 Fore.RESET,
                 Fore.RED if results.failed > 0 else Fore.RESET,
                 results.failed,
@@ -2765,6 +2960,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "slow": {"type": "bool", "default": False},
                        "timeout": {"type": "int", "default": 60},
                        "min_ram": {"type": "int", "default": 8},
+                       "modules": {"type": "list", "default": []},
                        "depends_on": {"type": "set"},
                        "min_flash": {"type": "int", "default": 32},
                        "arch_allow": {"type": "set"},
@@ -2817,6 +3013,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.warnings_as_errors = True
         self.overflow_as_errors = False
         self.quarantine_verify = False
+        self.retry_build_errors = False
+        self.suite_name_check = True
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -2848,6 +3046,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.pipeline = None
         self.version = "NA"
 
+        self.modules = []
+
     def check_zephyr_version(self):
         try:
             subproc = subprocess.run(["git", "describe", "--abbrev=12", "--always"],
@@ -2873,20 +3073,13 @@ class TestSuite(DisablePyTestCollectionMixin):
         sys.stdout.write(what + "\n")
         sys.stdout.flush()
 
-    def update_counting(self, results=None, initial=False):
-        results.skipped_configs = 0
-        results.skipped_cases = 0
+    def update_counting(self, results=None):
         for instance in self.instances.values():
-            if initial:
-                results.cases += len(instance.testcase.cases)
+            results.cases += len(instance.testcase.cases)
             if instance.status == 'skipped':
+                results.skipped_filter += 1
                 results.skipped_configs += 1
                 results.skipped_cases += len(instance.testcase.cases)
-            elif instance.status == "passed":
-                results.passed += 1
-                for res in instance.results.values():
-                    if res == 'SKIP':
-                        results.skipped_cases += 1
 
     def compare_metrics(self, filename):
         # name, datatype, lower results better
@@ -2979,7 +3172,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             "{}{} of {}{} test configurations passed ({:.2%}), {}{}{} failed, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
                 Fore.RED if failed else Fore.GREEN,
                 results.passed,
-                results.total - results.skipped_configs,
+                results.total,
                 Fore.RESET,
                 pass_rate,
                 Fore.RED if results.failed else Fore.RESET,
@@ -3148,6 +3341,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         tc.build_on_all = tc_dict["build_on_all"]
                         tc.slow = tc_dict["slow"]
                         tc.min_ram = tc_dict["min_ram"]
+                        tc.modules = tc_dict["modules"]
                         tc.depends_on = tc_dict["depends_on"]
                         tc.min_flash = tc_dict["min_flash"]
                         tc.extra_sections = tc_dict["extra_sections"]
@@ -3345,6 +3539,10 @@ class TestSuite(DisablePyTestCollectionMixin):
                     # Discard silently
                     continue
 
+                if tc.modules and self.modules:
+                    if not set(tc.modules).issubset(set(self.modules)):
+                        discards[instance] = discards.get(instance, f"one or more required module not available: {','.join(tc.modules)}")
+
                 if runnable and not instance.run:
                     discards[instance] = discards.get(instance, "Not runnable on device")
 
@@ -3452,8 +3650,6 @@ class TestSuite(DisablePyTestCollectionMixin):
                 instances = list(filter(lambda item:  item.platform.name in tc.integration_platforms, instance_list))
                 self.add_instances(instances)
 
-
-
             elif emulation_platforms:
                 self.add_instances(instance_list)
                 for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
@@ -3480,6 +3676,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                 # Such configuration has to be removed from discards to make sure it won't get skipped
                 remove_from_discards.append(instance)
             else:
+
                 instance.status = "skipped"
                 instance.fill_results_by_status()
 
@@ -3496,21 +3693,22 @@ class TestSuite(DisablePyTestCollectionMixin):
         for instance in instance_list:
             self.instances[instance.name] = instance
 
-    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False):
+    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
         for instance in self.instances.values():
             if build_only:
                 instance.run = False
 
-            if instance.status not in ['passed', 'skipped', 'error']:
+            no_retry_statuses = ['passed', 'skipped']
+            if not retry_build_errors:
+                no_retry_statuses.append("error")
+
+            if instance.status not in no_retry_statuses:
                 logger.debug(f"adding {instance.name}")
                 instance.status = None
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})
                 else:
                     pipeline.put({"op": "cmake", "test": instance})
-            # If the instance got 'error' status before, proceed to the report stage
-            if instance.status == "error":
-                pipeline.put({"op": "report", "test": instance})
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         while True:
@@ -3536,7 +3734,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                                     generator_cmd=self.generator_cmd,
                                     verbose=self.verbose,
                                     warnings_as_errors=self.warnings_as_errors,
-                                    overflow_as_errors=self.overflow_as_errors
+                                    overflow_as_errors=self.overflow_as_errors,
+                                    suite_name_check=self.suite_name_check
                                     )
                 pb.process(pipeline, done_queue, task, lock, results)
 
@@ -3545,7 +3744,8 @@ class TestSuite(DisablePyTestCollectionMixin):
     def execute(self, pipeline, done, results):
         lock = Lock()
         logger.info("Adding tasks to the queue...")
-        self.add_tasks_to_queue(pipeline, self.build_only, self.test_only)
+        self.add_tasks_to_queue(pipeline, self.build_only, self.test_only,
+                                retry_build_errors=self.retry_build_errors)
         logger.info("Added initial list of jobs to queue")
 
         processes = []

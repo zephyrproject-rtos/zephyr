@@ -116,7 +116,7 @@ add_custom_target(
   ${PYTHON_EXECUTABLE} ${GEN_DEVICETREE_REST_SCRIPT}
     --vendor-prefixes ${ZEPHYR_BASE}/dts/bindings/vendor-prefixes.txt
     ${DTS_ARGS}
-    ${DOCS_SRC_DIR}/reference/devicetree
+    ${DOCS_SRC_DIR}/build/dts/api
   VERBATIM
   USES_TERMINAL
   COMMENT "Generating Devicetree bindings documentation..."

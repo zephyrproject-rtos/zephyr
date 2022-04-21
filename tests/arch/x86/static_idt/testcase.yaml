@@ -1,5 +1,5 @@
 tests:
-  arch.interrupt.x86:
+  arch.x86.interrupt:
     arch_allow: x86
     filter: not CONFIG_X86_64
     tags: ignore_faults interrupt idt

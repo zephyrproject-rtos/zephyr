@@ -277,6 +277,7 @@ config SOC_MIMXRT1064
 config SOC_MIMXRT1176_CM7
 	bool "SOC_MIMXRT1176_CM7"
 	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_SERIES_IMX_RT11XX
 	select HAS_MCUX_CACHE
@@ -337,6 +338,7 @@ config SOC_MIMXRT1176_CM4
 config SOC_MIMXRT1166_CM7
 	bool "SOC_MIMXRT1166_CM7"
 	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_SERIES_IMX_RT11XX
 	select HAS_MCUX_CACHE
@@ -563,6 +565,7 @@ config SOC_PART_NUMBER_IMX_RT
 config SOC_SERIES_IMX_RT10XX
 	bool "i.MX RT 10XX Series"
 	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_CACHE
 	select CPU_CORTEX_M_HAS_DWT
 
 config SOC_SERIES_IMX_RT11XX
@@ -688,14 +691,23 @@ config CODE_ITCM
 
 config CODE_FLEXSPI
 	bool "Link code into external FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_FLEXSPI2
 	bool "Link code into internal FlexSPI-controlled memory"
-	select NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+	imply NXP_IMX_RT_BOOT_HEADER if !BOOTLOADER_MCUBOOT
 
 config CODE_SRAM0
 	bool "Link code into RAM_L memory (RAM_L)"
 endchoice
+
+config OCRAM_NOCACHE
+	bool "Create noncacheable OCRAM region"
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	select PLATFORM_SPECIFIC_INIT
+	help
+	  Creates linker section and MPU region for OCRAM region with
+	  noncacheable attribute. OCRAM memory is useful for fast DMA transfers.
+
 
 endif # SOC_SERIES_IMX_RT

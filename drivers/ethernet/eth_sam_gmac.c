@@ -42,6 +42,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <drivers/i2c.h>
+#include <drivers/pinctrl.h>
 #include <soc.h>
 #include "eth_sam_gmac_priv.h"
 
@@ -1767,6 +1768,7 @@ static void queue5_isr(const struct device *dev)
 static int eth_initialize(const struct device *dev)
 {
 	const struct eth_sam_dev_cfg *const cfg = dev->config;
+	int retval;
 
 	cfg->config_func();
 
@@ -1774,15 +1776,15 @@ static int eth_initialize(const struct device *dev)
 	/* Enable GMAC module's clock */
 	soc_pmc_peripheral_enable(cfg->periph_id);
 
-	/* Connect pins to the peripheral */
-	soc_gpio_list_configure(cfg->pin_list, cfg->pin_list_size);
 #else
 	/* Enable MCLK clock on GMAC */
 	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
 	*MCLK_GMAC |= MCLK_GMAC_MASK;
 #endif
+	/* Connect pins to the peripheral */
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
-	return 0;
+	return retval;
 }
 
 #ifdef CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM
@@ -2203,16 +2205,13 @@ static void eth0_irq_config(void)
 #endif
 }
 
-#ifdef CONFIG_SOC_FAMILY_SAM
-static const struct soc_gpio_pin pins_eth0[] = ATMEL_SAM_DT_INST_PINS(0);
-#endif
+PINCTRL_DT_INST_DEFINE(0);
 
 static const struct eth_sam_dev_cfg eth0_config = {
 	.regs = (Gmac *)DT_INST_REG_ADDR(0),
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 #ifdef CONFIG_SOC_FAMILY_SAM
 	.periph_id = DT_INST_PROP_OR(0, peripheral_id, 0),
-	.pin_list = pins_eth0,
-	.pin_list_size = ARRAY_SIZE(pins_eth0),
 #endif
 	.config_func = eth0_irq_config,
 #if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), phy))

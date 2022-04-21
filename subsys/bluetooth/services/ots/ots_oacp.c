@@ -426,7 +426,8 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	len = read_op->oacp_params.len - read_op->sent_len;
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
 	    ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
-		len = bt_ots_dir_list_content_get(ots->dir_list, &obj_chunk, len, offset);
+		len = bt_ots_dir_list_content_get(ots->dir_list, ots->obj_manager,
+						  &obj_chunk, len, offset);
 	} else {
 		len = ots->cb->obj_read(ots, conn, ots->cur_obj->id, &obj_chunk,
 					len, offset);

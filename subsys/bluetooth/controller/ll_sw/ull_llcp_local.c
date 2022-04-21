@@ -112,24 +112,19 @@ struct proc_ctx *llcp_lr_peek(struct ll_conn *conn)
 	return ctx;
 }
 
+bool llcp_lr_ispaused(struct ll_conn *conn)
+{
+	return conn->llcp.local.pause == 1U;
+}
+
 void llcp_lr_pause(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
-	if (ctx) {
-		ctx->pause = 1;
-	}
+	conn->llcp.local.pause = 1U;
 }
 
 void llcp_lr_resume(struct ll_conn *conn)
 {
-	struct proc_ctx *ctx;
-
-	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
-	if (ctx) {
-		ctx->pause = 0;
-	}
+	conn->llcp.local.pause = 0U;
 }
 
 void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
@@ -293,7 +288,7 @@ static void lr_act_complete(struct ll_conn *conn)
 
 static void lr_act_connect(struct ll_conn *conn)
 {
-	/* TODO */
+	/* Empty on purpose */
 }
 
 static void lr_act_disconnect(struct ll_conn *conn)
@@ -459,7 +454,6 @@ void llcp_lr_abort(struct ll_conn *conn)
 		ctx = lr_dequeue(conn);
 	}
 
-	/* TODO(thoh): Whats missing here ??? */
 	ull_conn_prt_clear(conn);
 	llcp_rr_set_incompat(conn, 0U);
 	lr_set_state(conn, LR_STATE_IDLE);

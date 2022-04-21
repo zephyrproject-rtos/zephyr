@@ -8,6 +8,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/interrupt-controller/esp-esp32c3-intmux.h>
 #include <dt-bindings/clock/esp32c3_clock.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -40,9 +41,9 @@
 			reg = <0x3fc7c000 0x50000>;
 		};
 
-		pinmux: pinmux@60009000 {
-			compatible = "espressif,esp32-pinmux";
-			reg = <0x60009000 0x800>;
+		pinctrl: pin-controller {
+			compatible = "espressif,esp32-pinctrl";
+			status = "okay";
 		};
 
 		intc: interrupt-controller@600c2000 {
@@ -120,7 +121,6 @@
 			interrupts = <UART0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART0_MODULE>;
-			peripheral = <0>;
 		};
 
 		uart1: uart@60010000 {
@@ -132,7 +132,6 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
-			peripheral = <1>;
 		};
 
 		timer0: counter@6001f000 {
@@ -168,7 +167,6 @@
 			label = "SPI_2";
 			clocks = <&rtc ESP32_SPI2_MODULE>;
 			status = "disabled";
-			use-iomux;
 		};
 
 		wdt0: watchdog@6001f048  {

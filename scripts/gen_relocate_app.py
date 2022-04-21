@@ -418,7 +418,7 @@ def create_dict_wrt_mem():
         if ':' not in line:
             continue
 
-        mem_region, file_name, copy_flag = line.split(':', 2)
+        mem_region, copy_flag, file_name = line.split(':', 2)
 
         file_name_list = glob.glob(file_name)
         if not file_name_list:

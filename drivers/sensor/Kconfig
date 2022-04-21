@@ -104,6 +104,8 @@ source "drivers/sensor/i3g4250d/Kconfig"
 
 source "drivers/sensor/icm42605/Kconfig"
 
+source "drivers/sensor/icm42670/Kconfig"
+
 source "drivers/sensor/iis2dh/Kconfig"
 
 source "drivers/sensor/iis2dlpc/Kconfig"
@@ -241,5 +243,7 @@ source "drivers/sensor/mcux_acmp/Kconfig"
 source "drivers/sensor/nuvoton_tach_npcx/Kconfig"
 
 source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
+
+source "drivers/sensor/ite_vcmp_it8xxx2/Kconfig"
 
 endif # SENSOR

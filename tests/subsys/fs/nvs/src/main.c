@@ -30,6 +30,7 @@
 #define TEST_DATA_ID			1
 #define TEST_SECTOR_COUNT		5U
 
+static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static struct nvs_fs fs;
 struct stats_hdr *sim_stats;
 struct stats_hdr *sim_thresholds;
@@ -608,13 +609,9 @@ void test_delete(void)
 void test_nvs_gc_corrupt_close_ate(void)
 {
 	struct nvs_ate ate, close_ate;
-	const struct device *flash_dev;
 	uint32_t data;
 	ssize_t len;
 	int err;
-
-	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(flash_dev != NULL,  "device_get_binding failure");
 
 	close_ate.id = 0xffff;
 	close_ate.offset = fs.sector_size - sizeof(struct nvs_ate) * 5;
@@ -667,11 +664,7 @@ void test_nvs_gc_corrupt_close_ate(void)
 void test_nvs_gc_corrupt_ate(void)
 {
 	struct nvs_ate corrupt_ate, close_ate;
-	const struct device *flash_dev;
 	int err;
-
-	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(flash_dev != NULL,  "device_get_binding failure");
 
 	close_ate.id = 0xffff;
 	close_ate.offset = fs.sector_size / 2;
@@ -709,6 +702,8 @@ void test_nvs_gc_corrupt_ate(void)
 
 void test_main(void)
 {
+	__ASSERT_NO_MSG(device_is_ready(flash_dev));
+
 	ztest_test_suite(test_nvs,
 			 ztest_unit_test_setup_teardown(test_nvs_mount, setup,
 				 teardown),

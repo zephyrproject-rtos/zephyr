@@ -30,4 +30,13 @@
 			drive-open-drain;
 		};
 	};
+
+	spi5_default: spi5_default {
+		group1 {
+			pinmux = <SPI5_SCK_PG13>, <SPI5_MOSI_PG14>,
+				 <SPI5_MISO_PG12>,
+				 /* Use pinmux to pullup pg10 and pg11. */
+				 <SPI5_IO2_PG10>, <SPI5_IO3_PG11>;
+		};
+	};
 };

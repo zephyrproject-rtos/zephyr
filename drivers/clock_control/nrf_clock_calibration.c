@@ -107,11 +107,6 @@ static void cal_lf_callback(struct onoff_manager *mgr,
 /* Start actual HW calibration assuming that HFCLK XTAL is on. */
 static void start_hw_cal(void)
 {
-	/* Workaround for Errata 192 */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NRF52X)) {
-		*(volatile uint32_t *)0x40000C34 = 0x00000002;
-	}
-
 	nrfx_clock_calibration_start();
 	calib_skip_cnt = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP;
 }

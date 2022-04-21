@@ -17,4 +17,5 @@
 &cmp2 {
 	status = "okay";
 	pinctrl-0 = <&cmp2_default>;
+	pinctrl-names = "default";
 };

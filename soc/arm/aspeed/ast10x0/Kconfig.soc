@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2021 ASPEED Technology Inc.
+
+choice
+	prompt "ASPEED AST10X0 Selection"
+	depends on SOC_SERIES_AST10X0
+
+config SOC_AST1030
+	bool "AST1030"
+
+endchoice
+
+config SRAM_NC_SIZE
+	int "noncached SRAM Size in kB"
+	help
+	  The non-cached SRAM size in kB. The default value comes from reg[1]
+	  of /chosen/zephyr,sram in devicetree. The user should generally avoid
+	  changing it via menuconfig or in configuration files.
+
+config SRAM_NC_BASE_ADDRESS
+	hex "noncached SRAM Base Address"
+	help
+	  The non-cached SRAM base address. The default value comes from from
+	  reg[1] of /chosen/zephyr,sram in devicetree. The user should
+	  generally avoid changing it via menuconfig or in configuration files.

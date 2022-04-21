@@ -43,6 +43,17 @@ typedef struct pinctrl_soc_pin {
  */
 #define Z_PINCTRL_STM32_PINMUX_INIT(node_id) DT_PROP(node_id, pinmux)
 
+/**
+ * @brief Definitions used to initialize fields in #pinctrl_pin_t
+ */
+#define STM32_NO_PULL     0x0
+#define STM32_PULL_UP     0x1
+#define STM32_PULL_DOWN   0x2
+#define STM32_PUSH_PULL   0x0
+#define STM32_OPEN_DRAIN  0x1
+#define STM32_OUTPUT_LOW  0x0
+#define STM32_OUTPUT_HIGH 0x1
+
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 /**
  * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t (F1).
@@ -55,6 +66,8 @@ typedef struct pinctrl_soc_pin {
 	 ((STM32_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << STM32_PUPD_SHIFT) | \
 	 ((STM32_PUSH_PULL * DT_PROP(node_id, drive_push_pull)) << STM32_CNF_OUT_0_SHIFT) | \
 	 ((STM32_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain)) << STM32_CNF_OUT_0_SHIFT) | \
+	 ((STM32_OUTPUT_LOW * DT_PROP(node_id, output_low)) << STM32_ODR_SHIFT) | \
+	 ((STM32_OUTPUT_HIGH * DT_PROP(node_id, output_high)) << STM32_ODR_SHIFT) | \
 	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_MODE_OSPEED_SHIFT))
 #else
 /**
@@ -68,6 +81,8 @@ typedef struct pinctrl_soc_pin {
 	 ((STM32_PULL_DOWN * DT_PROP(node_id, bias_pull_down)) << STM32_PUPDR_SHIFT) | \
 	 ((STM32_PUSH_PULL * DT_PROP(node_id, drive_push_pull)) << STM32_OTYPER_SHIFT) | \
 	 ((STM32_OPEN_DRAIN * DT_PROP(node_id, drive_open_drain)) << STM32_OTYPER_SHIFT) | \
+	 ((STM32_OUTPUT_LOW * DT_PROP(node_id, output_low)) << STM32_ODR_SHIFT) | \
+	 ((STM32_OUTPUT_HIGH * DT_PROP(node_id, output_high)) << STM32_ODR_SHIFT) | \
 	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_OSPEEDR_SHIFT))
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 

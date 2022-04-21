@@ -90,9 +90,6 @@ void main(void)
 #ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
 	shell_mgmt_register_group();
 #endif
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-	fs_mgmt_register_group();
-#endif
 #ifdef CONFIG_MCUMGR_SMP_BT
 	start_smp_bluetooth();
 #endif

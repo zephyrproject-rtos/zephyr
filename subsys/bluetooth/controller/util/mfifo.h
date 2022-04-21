@@ -45,11 +45,11 @@
 		struct {                                                    \
 			/* TODO: const, optimise RAM use */                 \
 			/* TODO: Separate s,n,f,l out into common struct */ \
-			uint8_t const s;         /* Stride between elements */ \
-			uint8_t const n;         /* Number of buffers */       \
-			uint8_t f;               /* First. Read index */       \
-			uint8_t l;               /* Last. Write index */       \
-			uint8_t MALIGN(4) m[MROUND(sz) * ((cnt) + 1)];         \
+			uint16_t const s;     /* Stride between elements */ \
+			uint16_t const n;     /* Number of buffers */       \
+			uint8_t f;            /* First. Read index */       \
+			uint8_t l;            /* Last. Write index */       \
+			uint8_t MALIGN(4) m[MROUND(sz) * ((cnt) + 1)];      \
 		} mfifo_##name = {                                          \
 			.n = ((cnt) + 1),                                   \
 			.s = MROUND(sz),                                    \

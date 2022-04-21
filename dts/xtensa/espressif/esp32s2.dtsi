@@ -9,6 +9,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/clock/esp32s2_clock.h>
 #include <dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -89,7 +90,6 @@
 			interrupts = <UART0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART0_MODULE>;
-			peripheral = <0>;
 		};
 
 		uart1: uart@3f410000 {
@@ -101,12 +101,11 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
-			peripheral = <1>;
 		};
 
-		pinmux: pinmux@3f409000 {
-			compatible = "espressif,esp32-pinmux";
-			reg = <0x3f409000 0x94>;
+		pinctrl: pin-controller {
+			compatible = "espressif,esp32-pinctrl";
+			status = "okay";
 		};
 
 		gpio0: gpio@3f404000 {
@@ -205,7 +204,6 @@
 			label = "SPI_2";
 			clocks = <&rtc ESP32_FSPI_MODULE>;
 			status = "disabled";
-			use-iomux;
 		};
 
 		spi3: spi@3f425000 {

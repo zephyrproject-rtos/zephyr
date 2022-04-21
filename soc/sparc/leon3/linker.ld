@@ -11,7 +11,6 @@
  * Linker script for LEON3
  */
 
-#include <autoconf.h>
 #include <devicetree.h>
 
 MEMORY

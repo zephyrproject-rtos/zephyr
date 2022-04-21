@@ -232,18 +232,18 @@ static void isr_rx(void *param)
 	struct node_rx_iq_report *node_rx;
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
-#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_CTE_RX)
 	bool cte_ready;
 	bool cte_ok = 0;
-#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
+#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
-#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_CTE_RX)
 		cte_ready = radio_df_cte_ready();
-#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
+#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 	}
 
 	/* Clear radio status and events */
@@ -256,27 +256,30 @@ static void isr_rx(void *param)
 	}
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
-	/* Get free iq report node for next Rx operation. */
-	node_rx = ull_df_iq_report_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	if (test_cte_len > 0) {
+		/* Get free iq report node for next Rx operation. */
+		node_rx = ull_df_iq_report_alloc_peek(1);
+		LL_ASSERT(node_rx);
 
-	radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
+		radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
+	}
+#endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
 	/* Setup next Rx */
-	radio_switch_complete_and_rx(test_phy);
-#endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
+	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_switch_complete_and_b2b_rx(test_phy, test_phy_flags, test_phy, test_phy_flags);
 
 	/* Count Rx-ed packets */
 	if (crc_ok) {
 
-#if defined(CONFIG_BT_CTLR_DF_CTE_TX)
+#if defined(CONFIG_BT_CTLR_DF_CTE_RX)
 		if (test_cte_len > 0) {
 			cte_ok = check_rx_cte(cte_ready);
 			if (cte_ok) {
 				test_num_rx++;
 			}
 		} else
-#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
+#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 
 		{
 			test_num_rx++;
@@ -517,7 +520,7 @@ static uint8_t init(uint8_t chan, uint8_t phy, int8_t tx_power,
 	/* Setup Radio in Tx/Rx */
 	/* NOTE: No whitening in test mode. */
 	radio_phy_set(test_phy, test_phy_flags);
-	radio_tmr_tifs_set(150);
+	radio_tmr_tifs_set(EVENT_IFS_US);
 
 	ret = tx_power_set(tx_power);
 
@@ -549,7 +552,7 @@ static void payload_set(uint8_t type, uint8_t len, uint8_t cte_len, uint8_t cte_
 #else
 	ARG_UNUSED(cte_len);
 	ARG_UNUSED(cte_type);
-#endif /* CONFIG_BT_CTLR_DF_CTE_RX */
+#endif /* CONFIG_BT_CTLR_DF_CTE_TX */
 
 	switch (type) {
 	case BT_HCI_TEST_PKT_PAYLOAD_PRBS9:
@@ -695,7 +698,7 @@ uint8_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx, uint8_t expected_
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
 	radio_pkt_rx_set(radio_pkt_scratch_get());
-	radio_switch_complete_and_rx(test_phy);
+	radio_switch_complete_and_b2b_rx(test_phy, test_phy_flags, test_phy, test_phy_flags);
 	radio_tmr_start(0, cntr_cnt_get() + CNTR_MIN_DELTA, 0);
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)

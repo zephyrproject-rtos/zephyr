@@ -16,3 +16,15 @@ properties:
       memory region in the final executable. The region address and size
       is taken from the <reg> property, while the name is the value of
       this property.
+
+  zephyr,memory-region-mpu:
+    type: string
+    required: false
+    enum:
+      - "RAM"
+      - "RAM_NOCACHE"
+      - "FLASH"
+    description: |
+      Signify that this node should result in a dedicated MPU region. The
+      region address and size are taken from the <reg> property, while the MPU
+      attribute is the value of this property.

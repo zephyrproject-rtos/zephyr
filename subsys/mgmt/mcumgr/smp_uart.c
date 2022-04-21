@@ -11,11 +11,11 @@
 #include <string.h>
 #include <zephyr.h>
 #include <init.h>
-#include "net/buf.h"
+#include <net/buf.h>
+#include <mgmt/mcumgr/buf.h>
 #include <drivers/console/uart_mcumgr.h>
 #include "mgmt/mgmt.h"
 #include <mgmt/mcumgr/serial.h>
-#include "mgmt/mcumgr/buf.h"
 #include "mgmt/mcumgr/smp.h"
 
 struct device;

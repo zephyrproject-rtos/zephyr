@@ -1062,6 +1062,10 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 			iq_report->rssi_ant_id = ant;
 			iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
 			iq_report->local_slot_durations = cfg->slot_durations;
+			/* Event counter is updated to next value during event preparation, hence
+			 * it has to be subtracted to store actual event counter value.
+			 */
+			iq_report->event_counter = lll->event_counter - 1;
 
 			ftr = &iq_report->hdr.rx_ftr;
 			ftr->param = lll;

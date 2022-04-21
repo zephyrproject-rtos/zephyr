@@ -31,5 +31,46 @@
 
 			status = "okay";
 		};
+		hda_link_out: dma@72400 {
+			compatible = "intel,cavs-hda-link-out";
+			#dma-cells = <1>;
+			reg = <0x00072400 0x40>;
+			dma-channels = <7>;
+			label = "HDA_LINK_OUT";
+
+			status = "okay";
+		};
+
+		hda_link_in: dma@72600 {
+			compatible = "intel,cavs-hda-link-in";
+			#dma-cells = <1>;
+			reg = <0x00072600 0x40>;
+			dma-channels = <7>;
+			label = "HDA_LINK_IN";
+
+			status = "okay";
+		};
+
+		hda_host_out: dma@72800 {
+			compatible = "intel,cavs-hda-host-out";
+			#dma-cells = <1>;
+			reg = <0x00072800 0x40>;
+			dma-channels = <7>;
+			label = "HDA_HOST_OUT";
+
+			status = "okay";
+		};
+
+		hda_host_in: dma@72c00 {
+			compatible = "intel,cavs-hda-host-in";
+			#dma-cells = <1>;
+			reg = <0x00072c00 0x40>;
+			dma-channels = <7>;
+			label = "HDA_HOST_IN";
+
+			status = "okay";
+		};
+
+
 	};
 };

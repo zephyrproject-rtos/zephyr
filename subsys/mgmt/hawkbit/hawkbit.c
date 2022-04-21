@@ -33,8 +33,6 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #include "mgmt/hawkbit.h"
 #include "hawkbit_firmware.h"
 
-#include "mbedtls/md.h"
-
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #define CA_CERTIFICATE_TAG 1
 #include <net/tls_credentials.h>
@@ -71,7 +69,6 @@ struct hawkbit_download {
 	int download_progress;
 	size_t downloaded_size;
 	size_t http_content_size;
-	mbedtls_md_context_t hash_ctx;
 	uint8_t file_hash[SHA256_HASH_SIZE];
 };
 
@@ -805,14 +802,6 @@ static void response_cb(struct http_response *rsp,
 			body_data = rsp->body_frag_start;
 			body_len = rsp->body_frag_len;
 
-			ret = mbedtls_md_update(&hb_context.dl.hash_ctx, body_data,
-					  body_len);
-			if (ret != 0) {
-				LOG_ERR("mbedTLS md update error: %d", ret);
-				hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-				break;
-			}
-
 			ret = flash_img_buffered_write(
 				&hb_context.flash_ctx, body_data, body_len,
 				final_data == HTTP_DATA_FINAL);
@@ -1037,8 +1026,7 @@ enum hawkbit_response hawkbit_probe(void)
 	int ret;
 	int32_t action_id;
 	int32_t file_size = 0;
-	uint8_t response_hash[SHA256_HASH_SIZE] = { 0 };
-	const mbedtls_md_info_t *hash_info;
+	struct flash_img_check fic;
 	char device_id[DEVICE_ID_HEX_MAX_SIZE] = { 0 },
 	     cancel_base[CANCEL_BASE_SIZE] = { 0 },
 	     download_http[DOWNLOAD_HTTP_SIZE] = { 0 },
@@ -1228,61 +1216,48 @@ enum hawkbit_response hawkbit_probe(void)
 
 	flash_img_init(&hb_context.flash_ctx);
 
-	hash_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-	if (!hash_info) {
-		LOG_ERR("Unable to request hash type from mbedTLS");
-		hb_context.code_status = HAWKBIT_METADATA_ERROR;
-		goto cleanup;
-	}
-
-	mbedtls_md_init(&hb_context.dl.hash_ctx);
-	if (mbedtls_md_setup(&hb_context.dl.hash_ctx, hash_info, 0) < 0) {
-		LOG_ERR("Can't setup mbedTLS hash engine");
-		mbedtls_md_free(&hb_context.dl.hash_ctx);
-		hb_context.code_status = HAWKBIT_METADATA_ERROR;
-		goto free_md;
-	}
-
-	mbedtls_md_starts(&hb_context.dl.hash_ctx);
-
 	ret = (int)send_request(HTTP_GET, HAWKBIT_DOWNLOAD,
 			  HAWKBIT_STATUS_FINISHED_NONE,
 			  HAWKBIT_STATUS_EXEC_NONE);
 
-	mbedtls_md_finish(&hb_context.dl.hash_ctx, response_hash);
-
 	if (!ret) {
 		LOG_ERR("Send request failed (HAWKBIT_DOWNLOAD): %d", ret);
 		hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
-		goto free_md;
+		goto cleanup;
 	}
 
 	if (hb_context.code_status == HAWKBIT_DOWNLOAD_ERROR) {
-		goto free_md;
+		goto cleanup;
 	}
 
+	/* Check if download finished */
 	if (!hb_context.final_data_received) {
 		LOG_ERR("Download is not complete");
 		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-	} else if (memcmp(response_hash, hb_context.dl.file_hash,
-			  mbedtls_md_get_size(hash_info)) != 0) {
-		LOG_ERR("Hash mismatch");
-		LOG_HEXDUMP_DBG(response_hash, sizeof(response_hash), "resp");
-		LOG_HEXDUMP_DBG(hb_context.dl.file_hash,
-				sizeof(hb_context.dl.file_hash), "file");
-		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-	} else if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
-		LOG_ERR("Failed to mark the image in slot 1 as pending");
-		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
-	} else {
-		hb_context.code_status = HAWKBIT_UPDATE_INSTALLED;
-		hawkbit_device_acid_update(hb_context.json_action_id);
+		goto cleanup;
 	}
 
-	hb_context.dl.http_content_size = 0;
+	/* Verify the hash of the stored firmware */
+	fic.match = hb_context.dl.file_hash;
+	fic.clen = hb_context.dl.downloaded_size;
+	if (flash_img_check(&hb_context.flash_ctx, &fic, FLASH_AREA_ID(image_1))) {
+		LOG_ERR("Firmware - flash validation has failed");
+		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+		goto cleanup;
+	}
 
-free_md:
-	mbedtls_md_free(&hb_context.dl.hash_ctx);
+	/* Request mcuboot to upgrade */
+	if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
+		LOG_ERR("Failed to mark the image in slot 1 as pending");
+		hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
+		goto cleanup;
+	}
+
+	/* If everything is successful */
+	hb_context.code_status = HAWKBIT_UPDATE_INSTALLED;
+	hawkbit_device_acid_update(hb_context.json_action_id);
+
+	hb_context.dl.http_content_size = 0;
 
 cleanup:
 	cleanup_connection();

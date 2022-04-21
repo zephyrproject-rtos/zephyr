@@ -1434,7 +1434,8 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 			 * set status and continue.
 			 */
 			if ((user_op->op > TICKER_USER_OP_TYPE_STOP_ABS) ||
-			    (state == 0U) ||
+			    ((state == 0U) &&
+			     (user_op->op != TICKER_USER_OP_TYPE_YIELD_ABS)) ||
 			    ((user_op->op == TICKER_USER_OP_TYPE_UPDATE) &&
 			     (user_op->params.update.ticks_drift_plus == 0U) &&
 			     (user_op->params.update.ticks_drift_minus == 0U) &&
@@ -1450,7 +1451,8 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 			}
 
 			/* Delete or yield node, if not expired */
-			if (state == 1U) {
+			if ((state == 1U) ||
+			    (user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS)) {
 				ticker_job_node_manage(instance, ticker,
 						       user_op, ticks_elapsed,
 						       insert_head);

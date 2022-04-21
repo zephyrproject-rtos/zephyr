@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &mx25r64;
+
+&pinctrl {
+	qspi_default: qspi_default {
+		group1 {
+			psels = <NRF_PSEL(QSPI_SCK, 0, 30)>,
+				<NRF_PSEL(QSPI_IO0, 0, 29)>,
+				<NRF_PSEL(QSPI_IO1, 0, 28)>,
+				<NRF_PSEL(QSPI_IO2, 0, 04)>,
+				<NRF_PSEL(QSPI_IO3, 0, 03)>,
+				<NRF_PSEL(QSPI_CSN, 0, 31)>;
+		};
+	};
+	qspi_sleep: qspi_sleep {
+		group1 {
+			psels = <NRF_PSEL(QSPI_SCK, 0, 30)>,
+				<NRF_PSEL(QSPI_IO0, 0, 29)>,
+				<NRF_PSEL(QSPI_IO1, 0, 28)>,
+				<NRF_PSEL(QSPI_IO2, 0, 04)>,
+				<NRF_PSEL(QSPI_IO3, 0, 03)>,
+				<NRF_PSEL(QSPI_CSN, 0, 31)>;
+			low-power-enable;
+		};
+	};
+};
+
+&qspi {
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	mx25l51: mx25l51245g@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		/* MX25L5145G supports only pp and pp4io */
+		writeoc = "pp4io";
+		/* MX25L5145G supports all readoc options */
+		readoc = "read4io";
+		sck-frequency = <2000000>;
+		label = "MX25L51245G";
+		jedec-id = [c2 20 1A];
+		sfdp-bfp = [
+			e5 20 fb ff  1f ff ff ff  44 eb 08 6b  08 3b 04 bb
+			fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52
+			10 d8 00 ff  d6 49 c5 00  81 df 04 e3  44 03 67 38
+			30 b0 30 b0  f7 bd d5 5c  4a 9e 29 ff  f0 50 f9 85
+		];
+		size = <0x20000000>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <30000>;
+		enter-4byte-addr = <0x85>;
+		address-size-32;
+	};
+};

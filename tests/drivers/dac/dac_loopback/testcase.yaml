@@ -1,7 +1,7 @@
 common:
   tags: dac drivers
 tests:
-  drivers.dac:
+  drivers.dac.loopback:
     depends_on: dac adc
     harness: ztest
     harness_config:

@@ -733,10 +733,6 @@ int cbprintf_package_copy(void *in_packaged,
 
 	in_len != 0 ? in_len : get_package_len(in_packaged);
 
-	if (packaged && (len < in_len)) {
-		return -ENOSPC;
-	}
-
 	/* Get number of RO string indexes in the package and check if copying
 	 * includes appending those strings.
 	 */
@@ -793,8 +789,14 @@ int cbprintf_package_copy(void *in_packaged,
 				str_pos++;
 			}
 		} else {
-			str_pos += ros_nbr;
+			if (ros_nbr && flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) {
+				str_pos += ros_nbr;
+			}
 		}
+
+		bool drop_ro_str_pos = !(flags &
+					(CBPRINTF_PACKAGE_COPY_KEEP_RO_STR |
+					 CBPRINTF_PACKAGE_COPY_RO_STR));
 
 		/* Handle RW strings. */
 		for (int i = 0; i < rws_nbr; i++) {
@@ -811,6 +813,14 @@ int cbprintf_package_copy(void *in_packaged,
 				}
 				out_len += len;
 			}
+
+			if (is_ro && drop_ro_str_pos) {
+				/* If read-only string location is dropped decreased
+				 * length.
+				 */
+				out_len--;
+			}
+
 			str_pos++;
 		}
 
@@ -825,6 +835,9 @@ int cbprintf_package_copy(void *in_packaged,
 	memcpy(dst, in_packaged, args_size);
 	dst += args_size;
 
+	/* Pointer to the beginning of string locations in the destination package. */
+	uint8_t *dst_str_loc = dst;
+
 	/* If read-only strings shall be appended to the output package copy
 	 * their indexes to the local array, otherwise indicate that indexes
 	 * shall remain in the output package.
@@ -837,10 +850,12 @@ int cbprintf_package_copy(void *in_packaged,
 		str_pos += ros_nbr;
 	} else {
 		scpy_cnt = 0;
-		if (ros_nbr) {
+		if (ros_nbr && flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) {
 			memcpy(dst, str_pos, ros_nbr);
 			dst += ros_nbr;
 			str_pos += ros_nbr;
+		} else {
+			dst_hdr[2] = 0;
 		}
 	}
 
@@ -852,21 +867,30 @@ int cbprintf_package_copy(void *in_packaged,
 		const char *str = *(const char **)&buf32[*str_pos];
 		bool is_ro = ptr_in_rodata(str);
 
-		if ((is_ro && flags & CBPRINTF_PACKAGE_COPY_RO_STR) ||
-		    (!is_ro && flags & CBPRINTF_PACKAGE_COPY_RW_STR)) {
-			cpy_str_pos[scpy_cnt++] = *str_pos;
+		if (is_ro) {
+			if (flags & CBPRINTF_PACKAGE_COPY_RO_STR) {
+				cpy_str_pos[scpy_cnt++] = *str_pos;
+			} else if (flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) {
+				*dst++ = *str_pos;
+				/* Increment amount of ro locations. */
+				dst_hdr[2]++;
+			} else {
+				/* Drop information about ro_str location. */
+			}
 		} else {
-			*dst++ = *str_pos;
+			if (flags & CBPRINTF_PACKAGE_COPY_RW_STR) {
+				cpy_str_pos[scpy_cnt++] = *str_pos;
+			} else {
+				*dst++ = *str_pos;
+			}
 		}
 		str_pos++;
 	}
 
-	uint8_t out_str_pos_nbr = ros_nbr + rws_nbr - scpy_cnt;
-
 	/* Increment amount of strings appended to the package. */
 	dst_hdr[1] += scpy_cnt;
 	/* Update number of rw string locations in the package. */
-	dst_hdr[3] = out_str_pos_nbr - dst_hdr[2];
+	dst_hdr[3] = (uint8_t)(uintptr_t)(dst - dst_str_loc) - dst_hdr[2];
 
 	/* Copy appended strings from source package to destination. */
 	size_t strs_len = in_len - (args_size + ros_nbr + rws_nbr);
@@ -880,7 +904,7 @@ int cbprintf_package_copy(void *in_packaged,
 	}
 
 	/* Calculate remaining space in the buffer. */
-	size_t rem = len - (args_size + strs_len + out_str_pos_nbr);
+	size_t rem = len - ((size_t)(uintptr_t)(dst - dst_hdr));
 
 	if (rem <= scpy_cnt) {
 		return -ENOSPC;

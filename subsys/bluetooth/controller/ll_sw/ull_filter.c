@@ -62,7 +62,7 @@ static struct lll_filter fal_filter;
 #include "common/rpa.h"
 
 /* Filter Accept List peer list */
-static struct lll_fal fal[FAL_SIZE];
+static struct lll_fal fal[CONFIG_BT_CTLR_FAL_SIZE];
 
 /* Resolving list */
 static struct lll_resolve_list rl[CONFIG_BT_CTLR_RL_SIZE];
@@ -192,7 +192,7 @@ static uint32_t pal_remove(const bt_addr_le_t *const id_addr,
 #if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 uint8_t ll_fal_size_get(void)
 {
-	return FAL_SIZE;
+	return CONFIG_BT_CTLR_FAL_SIZE;
 }
 
 uint8_t ll_fal_clear(void)
@@ -1016,7 +1016,7 @@ uint8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa, uint8_t rl_idx,
 
 static void fal_clear(void)
 {
-	for (int i = 0; i < FAL_SIZE; i++) {
+	for (int i = 0; i < CONFIG_BT_CTLR_FAL_SIZE; i++) {
 		uint8_t j = fal[i].rl_idx;
 
 		if (j < ARRAY_SIZE(rl)) {
@@ -1035,7 +1035,7 @@ static uint8_t fal_find(uint8_t addr_type, const uint8_t *const addr,
 		*free_idx = FILTER_IDX_NONE;
 	}
 
-	for (i = 0; i < FAL_SIZE; i++) {
+	for (i = 0; i < CONFIG_BT_CTLR_FAL_SIZE; i++) {
 		if (LIST_MATCH(fal, i, addr_type, addr)) {
 			return i;
 		} else if (free_idx && !fal[i].taken &&
@@ -1101,7 +1101,7 @@ static void fal_update(void)
 	uint8_t i;
 
 	/* Populate filter from fal peers */
-	for (i = 0U; i < FAL_SIZE; i++) {
+	for (i = 0U; i < CONFIG_BT_CTLR_FAL_SIZE; i++) {
 		uint8_t j;
 
 		if (!fal[i].taken) {
@@ -1322,7 +1322,7 @@ static uint32_t filter_find(const struct lll_filter *const filter,
 		return FILTER_IDX_NONE;
 	}
 
-	index = FAL_SIZE;
+	index = LLL_FILTER_SIZE;
 	while (index--) {
 		if ((filter->enable_bitmask & BIT(index)) &&
 		    (((filter->addr_type_bitmask >> index) & 0x01) ==

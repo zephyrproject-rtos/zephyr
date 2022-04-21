@@ -180,7 +180,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_reset_cause,
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_hwinfo,
 	SHELL_CMD_ARG(devid, NULL, "Show device id", cmd_get_device_id, 1, 0),
 	SHELL_CMD_ARG(reset_cause, &sub_reset_cause, "Reset cause commands",
-		      cmd_get_device_id, 1, 0),
+		      cmd_show_reset_cause, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

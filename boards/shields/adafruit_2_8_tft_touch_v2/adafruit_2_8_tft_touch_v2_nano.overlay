@@ -1,0 +1,26 @@
+/*
+ * Copyright (C) 2022 Huawei Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "adafruit_2_8_tft_touch_v2.dtsi"
+
+/ {
+	/*
+	 * Arduino Nano form factor doesn't really have a Rev3 Arduino header
+	 * so the below is a mapping of "virtual" Rev3 pins to real nano pins.
+	 */
+	arduino_header: virtual_connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <10 0 &arduino_nano_header 4 0>,  /* D4  */
+			   <15 0 &arduino_nano_header 10 0>, /* D10 */
+			   <16 0 &arduino_nano_header 9 0>;  /* D9  */
+	};
+};
+
+arduino_i2c: &arduino_nano_i2c {};
+arduino_spi: &arduino_nano_spi {};

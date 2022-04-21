@@ -195,7 +195,7 @@ the image.
     west flash --bin-file build/zephyr/zephyr.signed.bin
 
 We need to explicitly specify the *signed* image file, otherwise the non-signed version
-will be used and the image wont be runnable.
+will be used and the image won't be runnable.
 
 Sample image: hello world!
 ==========================
@@ -245,6 +245,18 @@ send a string to the remote target device and have it echo it back:
 .. note::
    In the following sections, examples will use ``<connection string>`` to represent
    the ``--conntype <type>`` and ``--connstring=<string>`` :file:`mcumgr` parameters.
+
+J-Link Virtual MSD Interaction Note
+***********************************
+
+On boards where a J-Link OB is present which has both CDC and MSC (virtual Mass
+Storage Device, also known as drag-and-drop) support, the MSD functionality can
+prevent mcumgr commands over the CDC UART port from working due to how USB
+endpoints are configured in the J-Link firmware (for example on the Nordic
+``nrf52840dk``) because of limiting the maximum packet size (most likely to occur
+when using image management commands for updating firmware). This issue can be
+resolved by disabling MSD functionality on the J-Link device, follow the
+instructions on :ref:`nordic_segger_msd` to disable MSD support.
 
 Device Firmware Upgrade (DFU)
 *****************************

@@ -18,7 +18,7 @@ module-str = CAN
 source "subsys/logging/Kconfig.template.log_config"
 
 config CAN_INIT_PRIORITY
-	int "CAN init priority"
+	int "CAN driver init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  CAN driver device initialization priority.
@@ -66,14 +66,17 @@ config CANFD_MAX_DLC
 	  optimize memory consumption.
 endif # CAN_FD_MODE
 
-config CAN_INIT_PRIORITY
-	int "CAN driver init priority"
-	default 80
+config CAN_SOCKETCAN_INIT_PRIORITY
+	int "socketCAN net device init priority"
+	default 81
+	depends on NET_SOCKETS_CAN
 	help
-	  CAN device driver initialization priority.
+	  socketCAN net device initialization priority.
 	  Do not mess with it unless you know what you are doing.
 	  Note that the priority needs to be lower than the net stack
-	  so that it can start before the networking sub-system.
+	  so that it can start before the networking sub-system,
+	  and higher than the CAN driver so that it can use the underlaying
+	  driver when starting.
 
 config CAN_RX_TIMESTAMP
 	bool "Receiving timestamps"

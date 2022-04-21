@@ -35,6 +35,9 @@ struct lll_scan {
 	uint8_t  phy:3;
 	uint8_t  is_adv_ind:1;
 	uint8_t  is_aux_sched:1;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	uint8_t  is_sync:1;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CENTRAL)

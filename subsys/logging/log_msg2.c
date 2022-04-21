@@ -47,14 +47,35 @@ void z_impl_z_log_msg2_static_create(const void *source,
 		return;
 	}
 
-	uint32_t msg_wlen = log_msg2_get_total_wlen(desc);
-	struct log_msg2 *msg = z_log_msg2_alloc(msg_wlen);
+	struct log_msg2_desc out_desc = desc;
+	int inlen = desc.package_len;
+	struct log_msg2 *msg;
 
-	if (msg) {
-		memcpy(msg->data, package, desc.package_len);
+	if (inlen > 0) {
+		uint32_t flags = CBPRINTF_PACKAGE_COPY_RW_STR;
+		uint16_t strl[4];
+		int len;
+
+		len = cbprintf_package_copy(package, inlen,
+					    NULL, 0, flags,
+					    strl, ARRAY_SIZE(strl));
+
+		/* Update package length with calculated value (which may be extended
+		 * when strings are copied into the package.
+		 */
+		out_desc.package_len = len;
+		msg = z_log_msg2_alloc(log_msg2_get_total_wlen(out_desc));
+		if (msg) {
+			len = cbprintf_package_copy(package, inlen,
+						    msg->data, out_desc.package_len,
+						    flags, strl, ARRAY_SIZE(strl));
+			__ASSERT_NO_MSG(len >= 0);
+		}
+	} else {
+		msg = z_log_msg2_alloc(log_msg2_get_total_wlen(out_desc));
 	}
 
-	z_log_msg2_finalize(msg, source, desc, data);
+	z_log_msg2_finalize(msg, source, out_desc, data);
 }
 
 #ifdef CONFIG_USERSPACE

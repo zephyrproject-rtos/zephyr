@@ -7,6 +7,8 @@
 #include <stdlib.h>
 
 #include <zephyr.h>
+#include <device.h>
+#include <devicetree.h>
 #include <drivers/flash.h>
 #include <shell/shell.h>
 
@@ -27,6 +29,11 @@
 #define MTEST_CMD_HELP "Memory Test writes or reads a memory location.\n"    \
 			"Command accepts 1 (Read) or 2 (Write) parameters."
 
+#if defined(CONFIG_SOC_FLASH_MCUX) || defined(CONFIG_SOC_FLASH_LPC) || \
+	defined(CONFIG_SOC_FLASH_STM32)
+static const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+#endif
+
 static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
@@ -46,12 +53,8 @@ static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	const struct device *flash_dev;
 	uint32_t value[2];
 	uint32_t offset;
-
-	flash_dev =
-		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	/* 128K reserved to the application */
 	offset = FLASH_MEM + 0x20000;
@@ -74,11 +77,6 @@ static int cmd_write_stm32(const struct shell *shell, size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
-
-	const struct device *flash_dev;
-
-	flash_dev =
-		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	/* 16K reserved to the application */
 	uint32_t offset = FLASH_MEM + 0x4000;
@@ -143,7 +141,13 @@ static int cmd_mtest(const struct shell *shell, size_t argc, char *argv[])
 
 void main(void)
 {
-
+#if defined(CONFIG_SOC_FLASH_MCUX) || defined(CONFIG_SOC_FLASH_LPC) || \
+	defined(CONFIG_SOC_FLASH_STM32)
+	if (!device_is_ready(flash_dev)) {
+		printk("Flash device not ready\n");
+		return;
+	}
+#endif
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_mpu,

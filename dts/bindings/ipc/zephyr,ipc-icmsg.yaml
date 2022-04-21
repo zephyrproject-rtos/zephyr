@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Inter core messaging backend
+
+compatible: "zephyr,ipc-icmsg"
+
+include: base.yaml
+
+properties:
+  tx-region:
+    description: phandle to the shared memory region used for data transmission
+    required: true
+    type: phandle
+
+  rx-region:
+    description: phandle to the shared memory region used for data reception
+    required: true
+    type: phandle
+
+  mboxes:
+    description: phandle to the MBOX controller (TX and RX are required)
+    required: true
+
+  mbox-names:
+    description: MBOX channel names (must be called "tx" and "rx")
+    required: true

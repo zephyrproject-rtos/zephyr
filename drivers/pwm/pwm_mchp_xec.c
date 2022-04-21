@@ -326,10 +326,6 @@ static int pwm_xec_pin_set(const struct device *dev, uint32_t pwm,
 		return -EIO;
 	}
 
-	if (pulse_cycles > period_cycles) {
-		return -EINVAL;
-	}
-
 	if (flags) {
 		/* PWM polarity not supported (yet?) */
 		return -ENOTSUP;

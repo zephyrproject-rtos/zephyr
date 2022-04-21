@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config ITE_IT8XXX2_INTC
-	def_bool $(dt_nodelabel_has_compat,intc,it8xxx2-intc)
+	def_bool $(dt_nodelabel_enabled_with_compat,intc,it8xxx2-intc)
 	depends on (SOC_IT8XXX2)
 	help
 	 Configures the maximum number of clients allowed per shared

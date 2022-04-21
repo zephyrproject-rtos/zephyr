@@ -145,7 +145,7 @@ static int can_stm32fd_set_timing(const struct device *dev,
 	return can_mcan_set_timing(mcan_cfg, timing, timing_data);
 }
 
-int can_stm32fd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
+static int can_stm32fd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct can_stm32fd_config *cfg = dev->config;
 
@@ -153,6 +153,15 @@ int can_stm32fd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 
 	return 0;
 }
+
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+static int can_stm32fd_recover(const struct device *dev, k_timeout_t timeout)
+{
+	const struct can_stm32fd_config *cfg = dev->config;
+
+	return can_mcan_recover(&cfg->mcan_cfg, timeout);
+}
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
 static void can_stm32fd_line_0_isr(const struct device *dev)
 {
@@ -184,21 +193,21 @@ static const struct can_driver_api can_api_funcs = {
 	.remove_rx_filter = can_stm32fd_remove_rx_filter,
 	.get_state = can_stm32fd_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_mcan_recover,
+	.recover = can_stm32fd_recover,
 #endif
 	.get_core_clock = can_stm32fd_get_core_clock,
 	.get_max_bitrate = can_stm32fd_get_max_bitrate,
 	.get_max_filters = can_mcan_get_max_filters,
 	.set_state_change_callback = can_stm32fd_set_state_change_callback,
 	.timing_min = {
-		.sjw = 0x7f,
+		.sjw = 0x01,
 		.prop_seg = 0x00,
 		.phase_seg1 = 0x01,
 		.phase_seg2 = 0x01,
 		.prescaler = 0x01
 	},
 	.timing_max = {
-		.sjw = 0x7f,
+		.sjw = 0x80,
 		.prop_seg = 0x00,
 		.phase_seg1 = 0x100,
 		.phase_seg2 = 0x80,
@@ -207,7 +216,7 @@ static const struct can_driver_api can_api_funcs = {
 #ifdef CONFIG_CAN_FD_MODE
 	.timing_min_data = {
 		.sjw = 0x01,
-		.prop_seg = 0x01,
+		.prop_seg = 0x00,
 		.phase_seg1 = 0x01,
 		.phase_seg2 = 0x01,
 		.prescaler = 0x01

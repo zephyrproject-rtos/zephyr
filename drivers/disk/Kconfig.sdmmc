@@ -51,7 +51,7 @@ config SDMMC_STM32
 	select USE_STM32_HAL_SD
 	select USE_STM32_HAL_SD_EX if SOC_SERIES_STM32L4X
 	select USE_STM32_LL_SDMMC
-	select USE_STM32_HAL_DMA if (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X)
+	select USE_STM32_HAL_DMA if (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32F4X)
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_SDMMC))
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.

@@ -8,7 +8,6 @@
  * @brief Linker script for the Telink B91 SoC
  */
 
-#include <autoconf.h>
 #include <devicetree.h>
 #include <linker/linker-tool.h>
 

@@ -340,6 +340,8 @@
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "transmit", "receive";
 			clocks = <&pcc 0x1a8 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			dmas = <&edma 1 2>, <&edma 2 3>;
+			dma-names = "rx", "tx";
 			label = "UART_0";
 			status = "disabled";
 		};
@@ -350,6 +352,8 @@
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "transmit", "receive";
 			clocks = <&pcc 0x1ac KINETIS_PCC_SRC_FIRC_ASYNC>;
+			dmas = <&edma 3 4>, <&edma 4 5>;
+			dma-names = "rx", "tx";
 			label = "UART_1";
 			status = "disabled";
 		};
@@ -360,6 +364,8 @@
 			interrupts = <35 0>, <36 0>;
 			interrupt-names = "transmit", "receive";
 			clocks = <&pcc 0x1b0 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			dmas = <&edma 5 6>, <&edma 5 7>;
+			dma-names = "rx", "tx";
 			label = "UART_2";
 			status = "disabled";
 		};

@@ -864,7 +864,7 @@ kbd, .kbd {
     column-width: 18em;
 }
 
-.figure {
+.rst-content div.figure, .rst-content figure {
     text-align: center;
 }
 

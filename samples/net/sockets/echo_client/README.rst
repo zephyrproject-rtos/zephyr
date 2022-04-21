@@ -124,13 +124,13 @@ with the default port:
 
 For IPv4 proxy server:
 
-.. code-block: console
+.. code-block:: console
 
         $ ssh -N -D 0.0.0.0:1080 localhost
 
 For IPv6 proxy server:
 
-.. code-block: console
+.. code-block:: console
 
         $ ssh -N -D [::]:1080 localhost
 

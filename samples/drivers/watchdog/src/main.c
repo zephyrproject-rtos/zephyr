@@ -26,13 +26,13 @@
 #define WDT_MAX_WINDOW  100U
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_watchdog)
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_wdt)
 /* Nordic supports a callback, but it has 61.2 us to complete before
  * the reset occurs, which is too short for this sample to do anything
  * useful.  Explicitly disallow use of the callback.
  */
 #define WDT_ALLOW_CALLBACK 0
-#define WDT_NODE DT_INST(0, nordic_nrf_watchdog)
+#define WDT_NODE DT_INST(0, nordic_nrf_wdt)
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_watchdog)
 #define WDT_NODE DT_INST(0, espressif_esp32_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(silabs_gecko_wdog)
