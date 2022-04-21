@@ -1,4 +1,4 @@
-description: Bosch m_can CAN-FD controller
+description: ST STM32 FDCAN CAN-FD controller
 
 compatible: "st,stm32-fdcan"
 
