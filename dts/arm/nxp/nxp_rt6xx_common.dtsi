@@ -321,7 +321,7 @@
 	};
 
 	usdhc1: usdhc@136000 {
-		compatible = "nxp,imx-sdhc";
+		compatible = "nxp,imx-usdhc";
 		reg = <0x136000 0x1000>;
 		status = "disabled";
 		interrupts = <45 0>;
@@ -334,7 +334,7 @@
 	};
 
 	usdhc2: usdhc@137000 {
-		compatible = "nxp,imx-sdhc";
+		compatible = "nxp,imx-usdhc";
 		reg = <0x137000 0x1000>;
 		status = "disabled";
 		interrupts = <46 0>;

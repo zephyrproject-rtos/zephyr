@@ -680,7 +680,7 @@
 		};
 
 		usdhc1: usdhc@402c0000 {
-			compatible = "nxp,imx-sdhc";
+			compatible = "nxp,imx-usdhc";
 			reg = <0x402c0000 0x4000>;
 			status = "disabled";
 			interrupts = <110 0>;
@@ -693,7 +693,7 @@
 		};
 
 		usdhc2: usdhc@402c4000 {
-			compatible = "nxp,imx-sdhc";
+			compatible = "nxp,imx-usdhc";
 			reg = <0x402c4000 0x4000>;
 			status = "disabled";
 			interrupts = <111 0>;

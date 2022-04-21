@@ -775,7 +775,7 @@
 		};
 
 		usdhc1: usdhc@40418000 {
-			compatible = "nxp,imx-sdhc";
+			compatible = "nxp,imx-usdhc";
 			reg = <0x40418000 0x4000>;
 			status = "disabled";
 			interrupts = <133 0>;
@@ -788,7 +788,7 @@
 		};
 
 		usdhc2: usdhc@4041c000 {
-			compatible = "nxp,imx-sdhc";
+			compatible = "nxp,imx-usdhc";
 			reg = <0x4041c000 0x4000>;
 			status = "disabled";
 			interrupts = <134 0>;
