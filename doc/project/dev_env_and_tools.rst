@@ -322,6 +322,8 @@ Fix for an issue blocking development.
 
 * *Maintainer*
 
+Maintainer review reqiured.
+
 * *Security Review*
 
 Depending on the PR complexity, an indication of how long a merge should be held
