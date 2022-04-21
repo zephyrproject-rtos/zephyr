@@ -186,8 +186,6 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		}
 		sync->iso.sync_iso = NULL;
 
-		ull_sync_iso_stream_release(sync_iso);
-
 		node_rx = (void *)sync->iso.node_rx_estab;
 		link_sync_estab = node_rx->hdr.link;
 		link_sync_lost = sync_iso->node_rx_lost.hdr.link;
