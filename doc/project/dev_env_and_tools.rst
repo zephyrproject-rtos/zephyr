@@ -316,6 +316,8 @@ The issue or PR describes a change to a stable API.
 
 * *Hotfix*
 
+Fix for an issue blocking development.
+
 * *Trivial*
 
 * *Maintainer*
