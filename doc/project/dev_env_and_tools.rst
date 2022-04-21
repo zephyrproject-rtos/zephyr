@@ -312,8 +312,7 @@ feature requests are handled and become features can be found in
 Labels applicable to pull requests only
 =======================================
 
-The issue or PR describes a change to a stable API. See additional information
-in :ref:`stable_api_changes`.
+The issue or PR describes a change to a stable API.
 
 * *Hotfix*
 
