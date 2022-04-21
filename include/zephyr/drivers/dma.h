@@ -14,7 +14,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_DMA_H_
 
 #include <kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

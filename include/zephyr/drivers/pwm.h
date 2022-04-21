@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <stdint.h>
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <sys/math_extras.h>
 #include <toolchain.h>
 

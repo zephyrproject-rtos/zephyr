@@ -21,7 +21,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <dt-bindings/spi/spi.h>
 #include <drivers/gpio.h>
 

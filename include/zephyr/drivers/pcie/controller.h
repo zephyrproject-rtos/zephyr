@@ -13,7 +13,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_CONTROLLERS_H_
 
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef CONFIG_PCIE_MSI
 #include <drivers/pcie/msi.h>

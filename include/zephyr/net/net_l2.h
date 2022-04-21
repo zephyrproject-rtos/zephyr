@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_L2_H_
 #define ZEPHYR_INCLUDE_NET_NET_L2_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <net/buf.h>
 #include <net/capture.h>
 

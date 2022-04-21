@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_IEEE802154_CC1200_H_
 #define ZEPHYR_INCLUDE_DRIVERS_IEEE802154_CC1200_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 /* RF settings
  *

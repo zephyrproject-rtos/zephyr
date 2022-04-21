@@ -22,7 +22,7 @@
 #include <errno.h>
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <dt-bindings/pwm/pwm.h>
 
 #ifdef __cplusplus

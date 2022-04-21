@@ -21,7 +21,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RTC_MCUX_SNVS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_RTC_MCUX_SNVS_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #ifdef __cplusplus
 extern "C" {

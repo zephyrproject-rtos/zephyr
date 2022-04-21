@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <init.h>
 #include <kernel.h>
 #include <stdint.h>

@@ -14,7 +14,7 @@
  */
 
 #include <zephyr/types.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <drivers/espi.h>
 #include <drivers/emul.h>
 

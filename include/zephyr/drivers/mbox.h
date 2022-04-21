@@ -67,7 +67,7 @@
  */
 
 #include <kernel.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <devicetree/mbox.h>
 
 #ifdef __cplusplus
