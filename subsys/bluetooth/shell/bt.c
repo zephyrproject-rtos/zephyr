@@ -1048,8 +1048,8 @@ static int cmd_scan_filter_set_addr(const struct shell *sh, size_t argc,
 {
 	const char *addr_arg = argv[1];
 
-	/* Validate length */
-	if (strlen(addr_arg) > sizeof(scan_filter.addr)) {
+	/* Validate length including null terminator. */
+	if (strlen(addr_arg) >= sizeof(scan_filter.addr)) {
 		shell_error(ctx_shell, "Invalid address string: %s\n",
 			    addr_arg);
 		return -ENOEXEC;
