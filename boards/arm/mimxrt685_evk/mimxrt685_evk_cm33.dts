@@ -70,17 +70,17 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		green_pwm_led: green_pwm_led {
-			pwms = <&sc_timer 0 PWM_POLARITY_NORMAL>;
+			pwms = <&sc_timer 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Green PWM LED";
 			status = "okay";
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&sc_timer 6 PWM_POLARITY_NORMAL>;
+			pwms = <&sc_timer 6 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Blue PWM LED";
 			status = "okay";
 		};
 		red_pwm_led: red_pwm_led {
-			pwms = <&sc_timer 6 PWM_POLARITY_NORMAL>;
+			pwms = <&sc_timer 6 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "Red PWM LED";
 			status = "disabled";
 		};
