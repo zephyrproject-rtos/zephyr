@@ -56,6 +56,15 @@ config LOG2_FMT_SECTION
 	  removing strings from final binary and should be used for dictionary
 	  logging.
 
+if LOG2_FMT_SECTION
+
+config LOG2_FMT_SECTION_STRIP
+	bool "Strip log strings from binary"
+	select LINKER_DEVNULL_MEMORY
+
+endif # LOG2_FMT_SECTION
+
+
 config LOG_MEM_UTILIZATION
 	bool "Tracking maximum memory utilization"
 	depends on LOG_MODE_DEFERRED
