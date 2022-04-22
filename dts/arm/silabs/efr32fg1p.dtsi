@@ -184,7 +184,7 @@
 				compatible = "silabs,gecko-pwm";
 				status = "disabled";
 				label = "PWM_0";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
