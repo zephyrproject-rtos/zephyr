@@ -5,8 +5,11 @@
  */
 
 #include <zephyr.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(app);
 
 void main(void)
 {
-	printk("Hello World! %s\n", CONFIG_BOARD);
+	LOG_INF("test string that should be removed. %d", 0xDDDDDDDD);
+	LOG_INF("test string that should be also removed.");
 }
