@@ -49,7 +49,7 @@
 		compatible = "pwm-leds";
 
 		pwm_led_blue: pwm_led_0 {
-			pwms = <&pwm0 0 PWM_MSEC(20) 0>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "PWM LED Blue";
 		};
 	};
