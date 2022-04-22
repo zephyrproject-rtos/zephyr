@@ -337,6 +337,14 @@
 			status = "disabled";
 		};
 
+		sdmmc1: sdmmc@420c8000 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x420c8000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00400000>;
+			interrupts = <78 0>;
+			status = "disabled";
+		};
+
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
