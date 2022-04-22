@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi/espi.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #define ESPI_XEC_V2_DEBUG	1

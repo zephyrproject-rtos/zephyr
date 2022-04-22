@@ -5,7 +5,7 @@
  */
 
 /**
- * @file Header with definitions for eSPI drivers callback functions
+ * Header file with definitions for eSPI drivers callback functions
  */
 
 #ifndef ZEPHYR_DRIVERS_ESPI_UTILS_H_
@@ -48,7 +48,7 @@ static inline int espi_manage_callback(sys_slist_t *callbacks,
  *
  * @param list A pointer on the espi callback list.
  * @param dev A pointer on the espi driver instance.
- * @param pins The details on the event that triggered the callback.
+ * @param evt The details on the event that triggered the callback.
  */
 static inline void espi_send_callbacks(sys_slist_t *list,
 				       const struct device *dev,

@@ -9,11 +9,11 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi/espi.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/espi/espi_utils.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-#include "espi_utils.h"
 
 /* Minimum delay before acknowledging a virtual wire */
 #define ESPI_XEC_VWIRE_ACK_DELAY    10ul

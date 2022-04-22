@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi/espi.h>
 #include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus

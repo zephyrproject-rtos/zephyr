@@ -39,9 +39,9 @@
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/drivers/espi_emul.h>
-#include <zephyr/drivers/espi.h>
-/* drivers/espi_saf.h requires SoC specific header */
+#include <zephyr/drivers/espi/espi_emul.h>
+#include <zephyr/drivers/espi/espi.h>
+/* drivers/espi/espi_saf.h requires SoC specific header */
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/fpga.h>
 #include <zephyr/drivers/gna.h>

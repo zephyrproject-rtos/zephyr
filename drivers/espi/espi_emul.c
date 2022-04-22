@@ -17,9 +17,9 @@ LOG_MODULE_REGISTER(espi_emul_ctlr);
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
-#include <zephyr/drivers/espi.h>
-#include <zephyr/drivers/espi_emul.h>
-#include "espi_utils.h"
+#include <zephyr/drivers/espi/espi.h>
+#include <zephyr/drivers/espi/espi_emul.h>
+#include <zephyr/drivers/espi/espi_utils.h>
 
 /** Working data for the controller */
 struct espi_emul_data {

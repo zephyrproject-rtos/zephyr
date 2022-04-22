@@ -9,8 +9,8 @@
 #include <zephyr/device.h>
 #include <soc.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/espi.h>
-#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/drivers/espi/espi.h>
+#include <zephyr/drivers/espi/espi_saf.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>

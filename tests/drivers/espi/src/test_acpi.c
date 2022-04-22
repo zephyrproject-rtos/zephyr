@@ -4,8 +4,8 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/espi.h>
-#include <zephyr/drivers/espi_emul.h>
+#include <zephyr/drivers/espi/espi.h>
+#include <zephyr/drivers/espi/espi_emul.h>
 #include <zephyr/ztest.h>
 
 ZTEST(espi, test_acpi_shared_memory)

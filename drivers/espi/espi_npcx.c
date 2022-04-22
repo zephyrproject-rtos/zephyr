@@ -7,7 +7,8 @@
 #define DT_DRV_COMPAT nuvoton_npcx_espi
 
 #include <assert.h>
-#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi/espi.h>
+#include <zephyr/drivers/espi/espi_utils.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -16,7 +17,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
-#include "espi_utils.h"
 #include "soc_host.h"
 #include "soc_miwu.h"
 

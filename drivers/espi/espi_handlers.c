@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi/espi.h>
 #include <zephyr/syscall_handler.h>
 
 

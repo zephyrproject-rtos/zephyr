@@ -10,7 +10,8 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi/espi.h>
+#include <zephyr/drivers/espi/espi_utils.h>
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
@@ -18,7 +19,6 @@
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
-#include "espi_utils.h"
 #include "espi_mchp_xec_v2.h"
 
 /* Minimum delay before acknowledging a virtual wire */

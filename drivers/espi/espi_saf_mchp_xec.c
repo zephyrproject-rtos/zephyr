@@ -10,11 +10,11 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <zephyr/drivers/espi.h>
-#include <zephyr/drivers/espi_saf.h>
+#include <zephyr/drivers/espi/espi.h>
+#include <zephyr/drivers/espi/espi_saf.h>
+#include <zephyr/drivers/espi/espi_utils.h>
 #include <zephyr/logging/log.h>
 
-#include "espi_utils.h"
 LOG_MODULE_REGISTER(espi_saf, CONFIG_ESPI_LOG_LEVEL);
 
 /* SAF EC Portal read/write flash access limited to 1-64 bytes */

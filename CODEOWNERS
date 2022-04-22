@@ -556,7 +556,7 @@
 /include/zephyr/drivers/can/                     @alexanderwachter @henrikbrixandersen
 /include/zephyr/drivers/counter.h                @nordic-krch
 /include/zephyr/drivers/dac.h                    @martinjaeger
-/include/zephyr/drivers/espi.h                   @albertofloyd @franciscomunoz @sjvasanth1
+/include/zephyr/drivers/espi/espi.h              @albertofloyd @franciscomunoz @sjvasanth1
 /include/zephyr/drivers/bluetooth/               @alwa-nordic @jhedberg @Vudentz
 /include/zephyr/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @de-nordic
 /include/zephyr/drivers/i2c_emul.h               @sjg20

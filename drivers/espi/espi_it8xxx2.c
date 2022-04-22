@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT ite_it8xxx2_espi
 
 #include <assert.h>
-#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi/espi.h>
+#include <zephyr/drivers/espi/espi_utils.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include "soc_espi.h"
-#include "espi_utils.h"
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

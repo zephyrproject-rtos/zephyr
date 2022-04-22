@@ -720,7 +720,7 @@ Release Notes:
     - jvasanth1
   files:
     - drivers/espi/
-    - include/zephyr/drivers/espi.h
+    - include/zephyr/drivers/espi/espi.h
     - include/zephyr/dt-bindings/espi/
     - samples/drivers/espi/
     - dts/bindings/espi/
@@ -2864,7 +2864,7 @@ Emulation:
   files:
     - subsys/emul/
     - include/zephyr/drivers/emul.h
-    - include/zephyr/drivers/espi_emul.h
+    - include/zephyr/drivers/espi/espi_emul.h
     - include/zephyr/drivers/i2c_emul.h
     - include/zephyr/drivers/spi_emul.h
   labels:
