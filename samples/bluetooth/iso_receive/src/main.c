@@ -204,7 +204,7 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 	.biginfo = biginfo_cb,
 };
 
-#define BIS_ISO_CHAN_COUNT 1
+#define BIS_ISO_CHAN_COUNT 2
 
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
@@ -245,18 +245,24 @@ static struct bt_iso_chan_ops iso_ops = {
 	.disconnected	= iso_disconnected,
 };
 
-static struct bt_iso_chan_io_qos iso_rx_qos;
+static struct bt_iso_chan_io_qos iso_rx_qos[BIS_ISO_CHAN_COUNT];
 
-static struct bt_iso_chan_qos bis_iso_qos = {
-	.rx = &iso_rx_qos,
+static struct bt_iso_chan_qos bis_iso_qos[BIS_ISO_CHAN_COUNT] = {
+	{ .rx = &iso_rx_qos[0], },
+	{ .rx = &iso_rx_qos[1], },
 };
 
-static struct bt_iso_chan bis_iso_chan = {
-	.ops = &iso_ops,
-	.qos = &bis_iso_qos,
+static struct bt_iso_chan bis_iso_chan[BIS_ISO_CHAN_COUNT] = {
+	{ .ops = &iso_ops,
+	  .qos = &bis_iso_qos[0], },
+	{ .ops = &iso_ops,
+	  .qos = &bis_iso_qos[1], },
 };
 
-static struct bt_iso_chan *bis[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
+static struct bt_iso_chan *bis[BIS_ISO_CHAN_COUNT] = {
+	&bis_iso_chan[0],
+	&bis_iso_chan[1],
+};
 
 static struct bt_iso_big_sync_param big_sync_param = {
 	.bis_channels = bis,
