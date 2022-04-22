@@ -644,6 +644,10 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 	struct bt_hci_cp_le_add_dev_to_rl *cp;
 	struct net_buf *buf;
 
+	if (id >= CONFIG_BT_ID_MAX) {
+		return -EINVAL;
+	}
+
 	BT_DBG("addr %s", bt_addr_le_str(addr));
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_RL, sizeof(*cp));
