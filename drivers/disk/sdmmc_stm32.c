@@ -151,12 +151,15 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 	LL_RCC_SetSDMMCClockSource(LL_RCC_SDMMC1_CLKSOURCE_PLLSAI1);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
+#if defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* By default the SDMMC clock source is set to 0 --> 48MHz, must be enabled */
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
 	}
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
+#endif /* CONFIG_SOC_SERIES_STM32L5X ||
+	* CONFIG_SOC_SERIES_STM32U5X
+	*/
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/* Enable the APB clock for stm32_sdmmc */
