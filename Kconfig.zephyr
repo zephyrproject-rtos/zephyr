@@ -256,6 +256,13 @@ config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 
 endmenu # "Linker Sections"
 
+config LINKER_DEVNULL_MEMORY
+	bool "Use devnull region"
+	depends on CPU_CORTEX_M
+	help
+	  Devnull region is created. It is stripped from final binary but remains
+	  in byproduct elf file.
+
 endmenu
 
 menu "Compiler Options"

@@ -27,6 +27,12 @@
 #define RAMABLE_REGION SRAM
 #endif
 
+#if defined(CONFIG_LINKER_DEVNULL_MEMORY)
+#define DEVNULL_REGION DEVNULL_ROM
+#else
+#define DEVNULL_REGION ROMABLE_REGION
+#endif
+
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
 #else
@@ -80,6 +86,10 @@ MEMORY
     {
     FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     SRAM  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+#if defined(CONFIG_LINKER_DEVNULL_MEMORY)
+    /* ROM memory where data is stored which can be stripped from the final binary. */
+    DEVNULL_ROM (rx) : ORIGIN = ROM_ADDR + ROM_SIZE, LENGTH = ROM_SIZE
+#endif
     LINKER_DT_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K

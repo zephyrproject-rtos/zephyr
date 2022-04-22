@@ -1,5 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+/* TODO where to put it? */
+#ifndef DEVNULL_REGION
+#define DEVNULL_REGION ROMABLE_REGION
+#endif
+
 	SECTION_PROLOGUE(initlevel,,)
 	{
 		/*
