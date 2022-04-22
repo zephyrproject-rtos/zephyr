@@ -2,7 +2,7 @@ common:
   depends_on: spi
   tags: drivers spi
   platform_exclude: seeeduino_xiao serpente arduino_nano_33_iot atsamr21_xpro
-    atsamd21_xpro arduino_zero adafruit_trinket_m0
+    atsamd21_xpro arduino_zero adafruit_trinket_m0 arduino_mkrzero
 tests:
   drivers.spi.loopback:
     harness: ztest
