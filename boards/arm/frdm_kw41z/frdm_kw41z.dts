@@ -49,15 +49,15 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		blue_pwm_led: pwm_led_0 {
-			pwms = <&tpm2 0 PWM_MSEC(20) 0>;
+			pwms = <&tpm2 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LD1";
 		};
 		green_pwm_led: pwm_led_1 {
-			pwms = <&tpm2 1 PWM_MSEC(20) 0>;
+			pwms = <&tpm2 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LD2";
 		};
 		red_pwm_led: pwm_led_2 {
-			pwms = <&tpm0 2 PWM_MSEC(20) 0>;
+			pwms = <&tpm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LD3";
 		};
 	};
