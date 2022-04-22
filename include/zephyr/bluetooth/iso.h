@@ -621,10 +621,103 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  */
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf);
 
+struct bt_iso_unicast_tx_info {
+	/** The transport latency in us */
+	uint32_t latency;
+
+	/** The flush timeout (N * 1.25 ms) */
+	uint32_t flush_timeout;
+
+	/** The maximum PDU size in octets */
+	uint16_t max_pdu;
+
+	/** The transport PHY  */
+	uint8_t  phy;
+
+	/** The burst number */
+	uint8_t  bn;
+};
+
+struct bt_iso_unicast_info {
+	/** The maximum time in us for all PDUs of all CIS in a CIG event */
+	uint32_t cig_sync_delay;
+
+	/** The maximum time in us for all PDUs of this CIS in a CIG event */
+	uint32_t cis_sync_delay;
+
+	/** @brief TX information for the central to peripheral data path */
+	struct bt_iso_unicast_tx_info central;
+
+	/** TX information for  the peripheral to central data */
+	struct bt_iso_unicast_tx_info peripheral;
+};
+
+struct bt_iso_broadcaster_info {
+	/** The maximum time in us for all PDUs of all BIS in a BIG event */
+	uint32_t sync_delay;
+
+	/** The transport latency in us */
+	uint32_t latency;
+
+	/** Pre-transmission offset (N * 1.25 ms) */
+	uint32_t  pto;
+
+	/** The maximum PDU size in octets */
+	uint16_t max_pdu;
+
+	/** The transport PHY  */
+	uint8_t  phy;
+
+	/** The burst number */
+	uint8_t  bn;
+
+	/** Number of times a payload is transmitted in a BIS event */
+	uint8_t  irc;
+};
+
+struct bt_iso_sync_receiver_info {
+	/** The transport latency in us */
+	uint32_t latency;
+
+	/** Pre-transmission offset (N * 1.25 ms) */
+	uint32_t  pto;
+
+	/** The maximum PDU size in octets */
+	uint16_t max_pdu;
+
+	/** The burst number */
+	uint8_t  bn;
+
+	/** Number of times a payload is transmitted in a BIS event */
+	uint8_t  irc;
+};
+
 /** ISO channel Info Structure */
 struct bt_iso_info {
 	/** Channel Type. */
 	enum bt_iso_chan_type type;
+
+	/** The ISO interval (N * 1.25 ms) */
+	uint16_t iso_interval;
+
+	/** The maximum number of subevents in each ISO event */
+	uint8_t  max_subevent;
+
+	/** Connection Type specific Info.*/
+	union {
+#if defined(CONFIG_BT_ISO_UNICAST)
+		/** Unicast specific Info. */
+		struct bt_iso_unicast_info unicast;
+#endif /* CONFIG_BT_ISO_UNICAST */
+#if defined(CONFIG_BT_ISO_BROADCASTER)
+		/** Broadcaster specific Info. */
+		struct bt_iso_broadcaster_info broadcaster;
+#endif /* CONFIG_BT_ISO_BROADCASTER */
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+		/** Sync receiver specific Info. */
+		struct bt_iso_sync_receiver_info sync_receiver;
+#endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
+	};
 };
 
 /** @brief Get ISO channel info
