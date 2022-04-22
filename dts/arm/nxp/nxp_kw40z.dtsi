@@ -6,6 +6,7 @@
 #include <dt-bindings/clock/kinetis_mcg.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
