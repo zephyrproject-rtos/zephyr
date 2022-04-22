@@ -167,7 +167,7 @@
 			channels = <6>;
 			label = "PWM";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		hspi: spi@81FFFFC0 {
