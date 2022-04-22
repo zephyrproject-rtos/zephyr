@@ -27,6 +27,7 @@ CREATE_FLAG(flag_sink_discovered);
 CREATE_FLAG(flag_stream_configured);
 CREATE_FLAG(flag_stream_qos);
 CREATE_FLAG(flag_stream_enabled);
+CREATE_FLAG(flag_stream_released);
 
 static void stream_configured(struct bt_audio_stream *stream,
 			      const struct bt_codec_qos_pref *pref)
@@ -77,6 +78,8 @@ static void stream_stopped(struct bt_audio_stream *stream)
 static void stream_released(struct bt_audio_stream *stream)
 {
 	printk("Released stream %p\n", stream);
+
+	SET_FLAG(flag_stream_released);
 }
 
 static struct bt_audio_stream_ops stream_ops = {
@@ -281,6 +284,29 @@ static size_t configure_streams(void)
 	return stream_cnt;
 }
 
+static size_t release_streams(size_t stream_cnt)
+{
+	for (size_t i = 0; i < stream_cnt; i++) {
+		int err;
+
+		if (g_sinks[i] == NULL) {
+			break;
+		}
+
+		UNSET_FLAG(flag_stream_released);
+
+		err = bt_audio_stream_release(&g_streams[i], false);
+		if (err != 0) {
+			FAIL("Unable to release stream[%zu]: %d", i, err);
+			return 0;
+		}
+
+		WAIT_FOR_FLAG(flag_stream_released);
+	}
+
+	return stream_cnt;
+}
+
 static void create_unicast_group(struct bt_audio_unicast_group **unicast_group,
 				 size_t stream_cnt)
 {
@@ -338,6 +364,7 @@ static void delete_unicast_group(struct bt_audio_unicast_group *unicast_group,
 
 static void test_main(void)
 {
+	const unsigned int iterations = 3;
 	struct bt_audio_unicast_group *unicast_group;
 	size_t stream_cnt;
 
@@ -349,26 +376,28 @@ static void test_main(void)
 
 	discover_sink();
 
-	printk("Configuring streams\n");
-	stream_cnt = configure_streams();
+	/* Run the stream setup multiple time to ensure states are properly
+	 * set and reset
+	 */
+	for (unsigned int i = 0U; i < iterations; i++) {
+		printk("\n########### Running iteration #%u\n\n", i);
 
-	printk("Creating unicast group\n");
-	create_unicast_group(&unicast_group, stream_cnt);
+		printk("Configuring streams\n");
+		stream_cnt = configure_streams();
 
-	/* TODO: When babblesim supports ISO setup Audio streams */
+		printk("Creating unicast group\n");
+		create_unicast_group(&unicast_group, stream_cnt);
 
-	/* Test removing streams from group after creation */
-	printk("Deleting unicast group\n");
-	delete_unicast_group(unicast_group, stream_cnt);
-	unicast_group = NULL;
+		/* TODO: When babblesim supports ISO setup Audio streams */
 
-	/* Recreate unicast group to verify that it's possible */
-	printk("Recreating unicast group\n");
-	create_unicast_group(&unicast_group, stream_cnt);
+		release_streams(stream_cnt);
 
-	printk("Deleting unicast group\n");
-	delete_unicast_group(unicast_group, stream_cnt);
-	unicast_group = NULL;
+		/* Test removing streams from group after creation */
+		printk("Deleting unicast group\n");
+		delete_unicast_group(unicast_group, stream_cnt);
+		unicast_group = NULL;
+	}
+
 
 	PASS("Unicast client passed\n");
 }
