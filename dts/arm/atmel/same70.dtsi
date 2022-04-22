@@ -8,6 +8,7 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	aliases {
