@@ -1109,6 +1109,8 @@ static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeo
 /* This implementation prevents inking errors for auto recovery */
 static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeout)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(timeout);
 	return 0;
 }
 #endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
