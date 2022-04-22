@@ -38,7 +38,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		pwm_led0: pwm_led_0 {
-			pwms = <&tcc0 3>;
+			pwms = <&tcc0 3 PWM_MSEC(20)>;
 		};
 	};
 
@@ -105,7 +105,7 @@
 	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <4>;
-	#pwm-cells = <1>;
+	#pwm-cells = <2>;
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
