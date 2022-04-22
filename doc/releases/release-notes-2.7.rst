@@ -55,6 +55,19 @@ release:
 * :github:`40844` - gen_app_partitions scans object files unrelated to current image
 * :github:`41237` - drivers: ieee802154_dw1000: use dedicated workqueue
 
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+* CVE-2021-3966: `Zephyr project bug tracker GHSA-hfxq-3w6x-fv2m
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hfxq-3w6x-fv2m>`_
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+
 .. _zephyr_2.7.0:
 
 Zephyr 2.7.0
