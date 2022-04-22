@@ -19,6 +19,13 @@ properties:
       required: true
       description: PWM PCR register index and bit position
 
+    "#pwm-cells":
+      const: 2
+
 pcr-cells:
     - regidx
     - bitpos
+
+pwm-cells:
+    - channel
+    - period
