@@ -287,7 +287,7 @@
 			reg = <0x40080000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 0>;
 			pinctrl-0 = <&alt4_pwm0_sl>; /* PINC3 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 			label = "PWM_0";
 		};
@@ -297,7 +297,7 @@
 			reg = <0x40082000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 1>;
 			pinctrl-0 = <&alt4_pwm1_sl>; /* PINC2 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 			label = "PWM_1";
 		};
@@ -307,7 +307,7 @@
 			reg = <0x40084000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 2>;
 			pinctrl-0 = <&alt4_pwm2_sl>; /* PINC4 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 			label = "PWM_2";
 		};
@@ -317,7 +317,7 @@
 			reg = <0x40086000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 3>;
 			pinctrl-0 = <&alt4_pwm3_sl>; /* PIN80 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 			label = "PWM_3";
 		};
@@ -327,7 +327,7 @@
 			reg = <0x40088000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 4>;
 			pinctrl-0 = <&alt4_pwm4_sl>; /* PINB6 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 			label = "PWM_4";
 		};
@@ -337,7 +337,7 @@
 			reg = <0x4008a000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 5>;
 			pinctrl-0 = <&alt4_pwm5_sl>; /* PINB7 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 			label = "PWM_5";
 		};
@@ -347,7 +347,7 @@
 			reg = <0x4008c000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 6>;
 			pinctrl-0 = <&alt4_pwm6_sl>; /* PINC0 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 			label = "PWM_6";
 		};
@@ -357,7 +357,7 @@
 			reg = <0x4008e000 0x2000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 7>;
 			pinctrl-0 = <&alt4_pwm7_sl>; /* PIN60 */
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 			status = "disabled";
 			label = "PWM_7";
 		};
