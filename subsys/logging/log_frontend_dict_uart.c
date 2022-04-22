@@ -332,6 +332,9 @@ void log_frontend_init(void)
 	} else if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
 		uart_irq_callback_user_data_set(dev, uart_isr_callback, NULL);
 		err = 0;
+	} else {
+		err = 0;
+		in_panic = true;
 	}
 
 	__ASSERT(err == 0, "Failed to set callback");
