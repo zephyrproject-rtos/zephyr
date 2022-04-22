@@ -770,9 +770,12 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			      uint32_t iso_interval_us)
 {
 	uint32_t ticks_slot_overhead;
+	struct lll_adv_iso *lll_iso;
 	uint32_t ticks_slot_offset;
 	uint32_t volatile ret_cb;
 	uint32_t ticks_anchor;
+	uint32_t ctrl_spacing;
+	uint32_t pdu_spacing;
 	uint32_t ticks_slot;
 	uint32_t slot_us;
 	uint32_t ret;
@@ -780,9 +783,17 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 
 	ull_hdr_init(&adv_iso->ull);
 
-	/* FIXME: Calc slot_us */
-	slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-	slot_us += 1000U;
+	lll_iso = &adv_iso->lll;
+
+	pdu_spacing = PDU_BIS_US(lll_iso->max_pdu, lll_iso->enc, lll_iso->phy,
+				 lll_iso->phy_flags) +
+		      EVENT_MSS_US;
+	ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), lll_iso->enc,
+				  lll_iso->phy, lll_iso->phy_flags) +
+		       EVENT_IFS_US;
+	slot_us = (pdu_spacing * lll_iso->nse * lll_iso->num_bis) +
+		  ctrl_spacing;
+	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	adv_iso->ull.ticks_active_to_start = 0U;
 	adv_iso->ull.ticks_prepare_to_start =
@@ -812,7 +823,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-			   (TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
+			   (TICKER_ID_ADV_ISO_BASE + lll_iso->handle),
 			   ticks_anchor, 0U,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
 			   HAL_TICKER_REMAINDER(iso_interval_us),
