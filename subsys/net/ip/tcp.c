@@ -358,12 +358,13 @@ static void tcp_send_queue_flush(struct tcp *conn)
 }
 
 #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
-#define tcp_conn_unref(conn)				\
-	tcp_conn_unref_debug(conn, __func__, __LINE__)
+#define tcp_conn_unref(conn, status)				\
+	tcp_conn_unref_debug(conn, status, __func__, __LINE__)
 
-static int tcp_conn_unref_debug(struct tcp *conn, const char *caller, int line)
+static int tcp_conn_unref_debug(struct tcp *conn, int status,
+				const char *caller, int line)
 #else
-static int tcp_conn_unref(struct tcp *conn)
+static int tcp_conn_unref(struct tcp *conn, int status)
 #endif
 {
 	int ref_count = atomic_get(&conn->ref_count);
@@ -409,7 +410,7 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	if (conn->context->recv_cb) {
 		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
-					-ECONNRESET, conn->recv_user_data);
+				       status, conn->recv_user_data);
 	}
 
 	conn->context->tcp = NULL;
@@ -446,7 +447,7 @@ int net_tcp_unref(struct net_context *context)
 	NET_DBG("context: %p, conn: %p", context, context->tcp);
 
 	if (context->tcp) {
-		ref_count = tcp_conn_unref(context->tcp);
+		ref_count = tcp_conn_unref(context->tcp, 0);
 	}
 
 	return ref_count;
@@ -530,7 +531,7 @@ static void tcp_send_process(struct k_work *work)
 	k_mutex_unlock(&conn->lock);
 
 	if (unref) {
-		tcp_conn_unref(conn);
+		tcp_conn_unref(conn, -ETIMEDOUT);
 	}
 }
 
@@ -929,7 +930,7 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		k_work_schedule_for_queue(&tcp_work_q,
 					  &conn->send_timer, K_NO_WAIT);
 	} else if (tcp_send_process_no_lock(conn)) {
-		tcp_conn_unref(conn);
+		tcp_conn_unref(conn, -ETIMEDOUT);
 	}
 out:
 	return ret;
@@ -1172,7 +1173,7 @@ static void tcp_resend_data(struct k_work *work)
 	k_mutex_unlock(&conn->lock);
 
 	if (conn_unref) {
-		tcp_conn_unref(conn);
+		tcp_conn_unref(conn, -ETIMEDOUT);
 	}
 }
 
@@ -1192,7 +1193,7 @@ static void tcp_establish_timeout(struct tcp *conn)
 	NET_DBG("Did not receive %s in %dms", "ACK", ACK_TIMEOUT_MS);
 	NET_DBG("conn: %p %s", conn, log_strdup(tcp_conn_state(conn, NULL)));
 
-	(void)tcp_conn_unref(conn);
+	(void)tcp_conn_unref(conn, -ETIMEDOUT);
 }
 
 static void tcp_fin_timeout(struct k_work *work)
@@ -1745,6 +1746,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	size_t len;
 	int ret;
 	int sndbuf_opt = 0;
+	int close_status = 0;
 
 	if (th) {
 		/* Currently we ignore ECN and CWR flags */
@@ -1764,6 +1766,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	if (th && th_off(th) < 5) {
 		tcp_out(conn, RST);
 		conn_state(conn, TCP_CLOSED);
+		close_status = -ECONNRESET;
 		goto next_state;
 	}
 
@@ -1777,6 +1780,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 		conn_state(conn, TCP_CLOSED);
+		close_status = -ECONNRESET;
 		goto next_state;
 	}
 
@@ -1785,6 +1789,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		NET_DBG("DROP: Invalid TCP option list");
 		tcp_out(conn, RST);
 		conn_state(conn, TCP_CLOSED);
+		close_status = -ECONNRESET;
 		goto next_state;
 	}
 
@@ -1953,6 +1958,7 @@ next_state:
 				net_stats_update_tcp_seg_drop(conn->iface);
 				tcp_out(conn, RST);
 				conn_state(conn, TCP_CLOSED);
+				close_status = -ECONNRESET;
 				break;
 			}
 
@@ -1994,6 +2000,7 @@ next_state:
 			if (ret < 0 && ret != -ENOBUFS) {
 				tcp_out(conn, RST);
 				conn_state(conn, TCP_CLOSED);
+				close_status = ret;
 				break;
 			}
 		}
@@ -2021,6 +2028,7 @@ next_state:
 		if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_CLOSED;
+			close_status = 0;
 		}
 		break;
 	case TCP_CLOSED:
@@ -2119,7 +2127,7 @@ next_state:
 	 * to a deadlock.
 	 */
 	if (do_close) {
-		tcp_conn_unref(conn);
+		tcp_conn_unref(conn, close_status);
 	}
 }
 
@@ -2277,7 +2285,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 
 	ret = tcp_send_queued_data(conn);
 	if (ret < 0 && ret != -ENOBUFS) {
-		tcp_conn_unref(conn);
+		tcp_conn_unref(conn, ret);
 		goto out;
 	}
 
@@ -2433,7 +2441,7 @@ int net_tcp_connect(struct net_context *context,
 		if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
 		    conn->state != TCP_ESTABLISHED) {
 			conn->in_connect = false;
-			tcp_conn_unref(conn);
+			tcp_conn_unref(conn, -ETIMEDOUT);
 			ret = -ETIMEDOUT;
 			goto out;
 		}
@@ -2739,7 +2747,7 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 
 				conn = (void *)sys_slist_peek_head(&tcp_conns);
 				context = conn->context;
-				while (tcp_conn_unref(conn))
+				while (tcp_conn_unref(conn, 0))
 					;
 				tcp_free(context);
 			}
