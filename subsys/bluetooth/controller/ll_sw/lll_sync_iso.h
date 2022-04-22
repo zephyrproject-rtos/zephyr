@@ -6,6 +6,7 @@
 
 struct lll_sync_iso_stream {
 	uint8_t big_handle;
+	uint8_t bis_index;
 	struct ll_iso_datapath *dp;
 };
 
@@ -51,6 +52,8 @@ struct lll_sync_iso {
 	uint8_t bn_curr:3;
 	uint8_t bis_curr:5;
 
+	uint8_t stream_curr:5;
+
 	uint8_t chm_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t chm_chan_count:6;
 
@@ -81,5 +84,6 @@ void lll_sync_iso_create_prepare(void *param);
 void lll_sync_iso_prepare(void *param);
 
 extern uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll);
+extern struct lll_sync_iso_stream *ull_sync_iso_lll_stream_get(uint16_t handle);
 extern void ll_iso_rx_put(memq_link_t *link, void *rx);
 extern void ll_rx_sched(void);
