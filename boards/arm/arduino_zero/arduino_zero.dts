@@ -47,7 +47,7 @@
 		compatible = "pwm-leds";
 
 		pwm_led0: pwm_led_0 {
-			pwms = <&tcc2 1>;
+			pwms = <&tcc2 1 PWM_MSEC(20)>;
 		};
 	};
 };
@@ -95,7 +95,7 @@
 	compatible = "atmel,sam0-tcc-pwm";
 	/* Gives a maximum period of 1.4 s */
 	prescaler = <1024>;
-	#pwm-cells = <1>;
+	#pwm-cells = <2>;
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
