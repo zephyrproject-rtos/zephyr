@@ -109,5 +109,14 @@ properties:
     "#pwm-cells":
       const: 1
 
+    dma-buffer-memory-region:
+      type: phandle
+      required: false
+      description: /
+        Memory region where EasyDMA buffer will be placed by compiler.
+        It is used by driver to place variables that are passed to EasyDMA in memory region
+        using compiler-specific feature - __attribute__((__section__(<section_name>)))
+        Phandle have to refer to node with zephyr,memory-region compatible.
+
 pwm-cells:
   - channel

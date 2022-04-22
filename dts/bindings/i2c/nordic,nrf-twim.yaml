@@ -61,3 +61,12 @@ properties:
             It is recommended to use the same value for this property and for
             the zephyr,concat-buf-size one, as both these buffering mechanisms
             can utilize the same space in RAM.
+
+    dma-buffer-memory-region:
+      type: phandle
+      required: false
+      description: /
+        Memory region where EasyDMA buffer will be placed by compiler.
+        It is used by driver to place variables that are passed to EasyDMA in memory region
+        using compiler-specific feature - __attribute__((__section__(<section_name>)))
+        Phandle have to refer to node with zephyr,memory-region compatible.

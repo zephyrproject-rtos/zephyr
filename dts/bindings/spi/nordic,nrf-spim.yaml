@@ -25,3 +25,12 @@ properties:
         Enables the workaround for the nRF52832 SoC SPIM PAN 58 anomaly.
         Must be used in conjunction with
         CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58=y
+
+    dma-buffer-memory-region:
+      type: phandle
+      required: false
+      description: /
+        Memory region where EasyDMA buffer will be placed by compiler.
+        It is used by driver to place variables that are passed to EasyDMA in memory region
+        using compiler-specific feature - __attribute__((__section__(<section_name>)))
+        Phandle have to refer to node with zephyr,memory-region compatible.
