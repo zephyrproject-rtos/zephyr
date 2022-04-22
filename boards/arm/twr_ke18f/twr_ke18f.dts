@@ -86,32 +86,32 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		orange_pwm_led: led_pwm_0 {
-			pwms = <&ftm3 7 60000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 7 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D9";
 		};
 		yellow_pwm_led: led_pwm_1 {
-			pwms = <&ftm3 6 60000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 6 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D8";
 		};
 		green_pwm_led: led_pwm_2 {
-			pwms = <&ftm3 5 60000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 5 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D7";
 		};
 		red_pwm_led: led_pwm_3 {
-			pwms = <&ftm3 4 60000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 4 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D6";
 		};
 
 		tri_red_pwm_led: led_pwm_4 {
-			pwms = <&ftm0 1 60000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Red)";
 		};
 		tri_green_pwm_led: led_pwm_5 {
-			pwms = <&ftm0 0 60000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Green)";
 		};
 		tri_blue_pwm_led: led_pwm_6 {
-			pwms = <&ftm0 5 60000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm0 5 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Blue)";
 		};
 	};
