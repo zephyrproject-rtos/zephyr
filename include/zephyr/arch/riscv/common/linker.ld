@@ -72,12 +72,18 @@
 	#define MPU_ALIGN(region_size) . = ALIGN(4)
 #endif
 
+#include <zephyr/linker/linker-devnull.h>
+
 MEMORY
 {
 #ifdef CONFIG_XIP
     ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
 #endif
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
+
+#if defined(CONFIG_LINKER_DEVNULL_MEMORY)
+    DEVNULL_ROM (rx) : ORIGIN = DEVNULL_ADDR, LENGTH = DEVNULL_SIZE
+#endif
 
     LINKER_DT_REGIONS()
 
