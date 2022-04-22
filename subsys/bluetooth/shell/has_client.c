@@ -39,9 +39,26 @@ static void has_client_preset_switch_cb(struct bt_has *has, uint8_t index)
 	shell_print(ctx_shell, "HAS %p preset switch index 0x%02x", has, index);
 }
 
+static void has_client_preset_read_rsp_cb(struct bt_has *has, int err,
+					  const struct bt_has_preset_record *record, bool is_last)
+{
+	if (err) {
+		shell_error(ctx_shell, "Preset Read operation failed (err %d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Preset Index: 0x%02x\tProperties: 0x%02x\tName: %s",
+		    record->index, record->properties, record->name);
+
+	if (is_last) {
+		shell_print(ctx_shell, "Preset Read operation complete");
+	}
+}
+
 static const struct bt_has_client_cb has_client_cb = {
 	.discover = has_client_discover_cb,
 	.preset_switch = has_client_preset_switch_cb,
+	.preset_read_rsp = has_client_preset_read_rsp_cb,
 };
 
 static int cmd_has_client_init(const struct shell *sh, size_t argc, char **argv)
@@ -81,6 +98,35 @@ static int cmd_has_client_discover(const struct shell *sh, size_t argc, char **a
 	return err;
 }
 
+static int cmd_has_client_read_presets(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+	const uint8_t count = shell_strtoul(argv[2], 10, &err);
+
+	if (err < 0) {
+		shell_error(sh, "Invalid command parameter (err %d)", err);
+		return err;
+	}
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (!inst) {
+		shell_error(sh, "No instance discovered");
+		return -ENOEXEC;
+	}
+
+	err = bt_has_client_presets_read(inst, index, count);
+	if (err != 0) {
+		shell_error(sh, "bt_has_client_discover (err %d)", err);
+	}
+
+	return err;
+}
+
 static int cmd_has_client(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -97,6 +143,8 @@ static int cmd_has_client(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(has_client_cmds,
 	SHELL_CMD_ARG(init, NULL, HELP_NONE, cmd_has_client_init, 1, 0),
 	SHELL_CMD_ARG(discover, NULL, HELP_NONE, cmd_has_client_discover, 1, 0),
+	SHELL_CMD_ARG(presets-read, NULL, "<start_index_hex> <max_count_dec>",
+		      cmd_has_client_read_presets, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
