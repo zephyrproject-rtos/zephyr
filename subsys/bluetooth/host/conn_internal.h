@@ -130,8 +130,8 @@ struct bt_conn_iso {
 	uint16_t seq_num;
 #endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
 
-	/** Type of the ISO channel */
-	enum bt_iso_chan_type type;
+	/** Stored information about the ISO stream */
+	struct bt_iso_info info;
 };
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data);
