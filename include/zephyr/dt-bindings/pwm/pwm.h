@@ -21,6 +21,10 @@
 #define PWM_MSEC(x)	(PWM_USEC(x) * 1000UL)
 /** Specify PWM period in seconds */
 #define PWM_SEC(x)	(PWM_MSEC(x) * 1000UL)
+/** Specify PWM frequency in hertz */
+#define PWM_HZ(x)	(PWM_SEC(1UL) / (x))
+/** Specify PWM frequency in kilohertz */
+#define PWM_KHZ(x)	(PWM_HZ((x) * 1000UL))
 
 /** @} */
 
