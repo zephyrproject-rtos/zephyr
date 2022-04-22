@@ -94,6 +94,7 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	struct pdu_big_info *big_info;
 	uint8_t pdu_big_info_size;
 	uint32_t iso_interval_us;
+	uint32_t latency_packing;
 	memq_link_t *link_cmplt;
 	memq_link_t *link_term;
 	struct ll_adv_set *adv;
@@ -251,23 +252,18 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 				  lll_adv_iso->phy_flags) + EVENT_IFS_US;
 
 	latency_pdu = max_latency * USEC_PER_MSEC * lll_adv_iso->bn / bn;
+	latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
+			  lll_adv_iso->num_bis;
 
 	/* Based on packing requested, sequential or interleaved */
 	if (packing) {
-		uint32_t latency_packing;
-
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
-		latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
-				  lll_adv_iso->num_bis;
 		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, latency_pdu,
 					    latency_packing, ctrl_spacing);
 		lll_adv_iso->nse += lll_adv_iso->ptc;
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
 					    lll_adv_iso->nse;
 	} else {
-		uint32_t latency_packing;
-
-		latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse;
 		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, latency_pdu,
 					    latency_packing, ctrl_spacing);
 		lll_adv_iso->nse += lll_adv_iso->ptc;
