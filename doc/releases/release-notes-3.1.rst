@@ -100,6 +100,12 @@ New APIs in this release
 
   * Added the :ref:`SDHC api <sdhc_api>`, used to interact with SD host controllers.
 
+* MIPI-DSI
+
+  * Added a :ref:`MIPI-DSI api <mipi_dsi_api>`. This is an experimental API,
+    some of the features/APIs will be implemented later.
+
+
 Kernel
 ******
 

@@ -44,3 +44,4 @@ Peripherals
    watchdog.rst
    video.rst
    espi.rst
+   mipi_dsi.rst

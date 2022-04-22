@@ -222,6 +222,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.14
      - 2.4
 
+   * - :ref:`mipi_dsi_api`
+     - Experimental
+     - 3.1
+     - 3.1
+
    * - :ref:`misc_api`
      - Stable
      - 1.0
