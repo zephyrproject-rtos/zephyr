@@ -94,6 +94,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	default 1152 if LOG_BACKEND_NET
 	default 4096 if NO_OPTIMIZATIONS
 	default 1024 if XTENSA
+	default 2048 if ASSERT || SPIN_VALIDATE
 	default 768
 	help
 	  Set the internal stack size for log processing thread.
