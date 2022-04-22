@@ -35,7 +35,7 @@
 #if CONFIG_FLASH_LOAD_SIZE > 0
 #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
-#define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
+#define ROM_SIZE (CONFIG_FLASH_SIZE * 1024 - CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
 #if defined(CONFIG_XIP)
@@ -75,10 +75,15 @@ _region_min_align = 4;
     . = ALIGN(_region_min_align)
 #endif
 
+#include <zephyr/linker/linker-devnull.h>
+
 MEMORY
     {
     FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     RAM   (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+#if defined(CONFIG_LINKER_DEVNULL_MEMORY)
+    DEVNULL_ROM (rx) : ORIGIN = DEVNULL_ADDR, LENGTH = DEVNULL_SIZE
+#endif
     LINKER_DT_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
