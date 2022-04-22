@@ -33,7 +33,7 @@
 	leds-pwm {
 		compatible = "pwm-leds";
 		pwm_led0_green: pwm_led_0 {
-			pwms = <&pwm6 0 PWM_POLARITY_INVERTED>;
+			pwms = <&pwm6 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User D7 green";
 		};
 	};
