@@ -11,6 +11,7 @@
 
 #define SOCK_EOF 1
 #define SOCK_NONBLOCK 2
+#define SOCK_ERROR 4
 
 int zsock_close_ctx(struct net_context *ctx);
 int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout);
@@ -47,6 +48,8 @@ static inline bool net_socket_is_tls(void *obj)
 #define sock_is_eof(ctx) sock_get_flag(ctx, SOCK_EOF)
 #define sock_set_eof(ctx) sock_set_flag(ctx, SOCK_EOF, SOCK_EOF)
 #define sock_is_nonblock(ctx) sock_get_flag(ctx, SOCK_NONBLOCK)
+#define sock_is_error(ctx) sock_get_flag(ctx, SOCK_ERROR)
+#define sock_set_error(ctx) sock_set_flag(ctx, SOCK_ERROR, SOCK_ERROR)
 
 struct socket_op_vtable {
 	struct fd_op_vtable fd_vtable;
