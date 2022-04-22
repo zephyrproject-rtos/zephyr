@@ -347,7 +347,7 @@
 		status = "disabled";
 		prescaler = <8>;
 		label = "SC_TIMER";
-		#pwm-cells = <2>;
+		#pwm-cells = <3>;
 	};
 
 	wwdt0: watchdog@e000 {
