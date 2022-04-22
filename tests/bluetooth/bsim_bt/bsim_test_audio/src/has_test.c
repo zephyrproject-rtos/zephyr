@@ -12,8 +12,15 @@
 
 extern enum bst_result_t bst_result;
 
+const uint8_t test_preset_index_1 = 0x01;
+const uint8_t test_preset_index_5 = 0x05;
+const char *test_preset_name_1 = "test_preset_name_1";
+const char *test_preset_name_5 = "test_preset_name_5";
+const enum bt_has_properties test_preset_properties = BT_HAS_PROP_AVAILABLE;
+
 static void test_main(void)
 {
+	struct bt_has_preset_register_param param;
 	int err;
 
 	err = bt_enable(NULL);
@@ -31,6 +38,28 @@ static void test_main(void)
 	}
 
 	printk("Advertising successfully started\n");
+
+	param.index = test_preset_index_5;
+	param.properties = test_preset_properties;
+	param.name = test_preset_name_5;
+
+	err = bt_has_preset_register(&param);
+	if (err) {
+		FAIL("Preset register failed (err %d)\n", err);
+		return;
+	}
+
+	param.index = test_preset_index_1;
+	param.properties = test_preset_properties;
+	param.name = test_preset_name_1;
+
+	err = bt_has_preset_register(&param);
+	if (err) {
+		FAIL("Preset register failed (err %d)\n", err);
+		return;
+	}
+
+	printk("Presets registered\n");
 
 	PASS("HAS passed\n");
 }
