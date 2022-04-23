@@ -95,6 +95,10 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_counter_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
+#define WDT_TEST_MAX_WINDOW 20000U
+#define TIMEOUTS 0
+#endif
 
 #ifdef WDT_NODE
 #define WDT_DEV_NAME DT_LABEL(WDT_NODE)
