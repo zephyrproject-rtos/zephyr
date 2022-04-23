@@ -19,7 +19,7 @@ setup the system:
 
 .. csv-table:: Kconfig options for network configuration library
    :header: "Option name", "Description"
-   :widths: auto
+   :widths: 45 55
 
    ":kconfig:option:`CONFIG_NET_CONFIG_SETTINGS`", "This option controls whether the
    network system is configured or initialized at all. If not set, then the
