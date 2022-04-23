@@ -153,6 +153,8 @@ Drivers and Sensors
 
 * Watchdog
 
+  * Added support for Raspberry Pi Pico watchdog.
+
 Networking
 **********
 
