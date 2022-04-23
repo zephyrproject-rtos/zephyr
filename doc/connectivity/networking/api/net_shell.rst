@@ -13,7 +13,7 @@ The following net-shell commands are implemented:
 
 .. csv-table:: net-shell commands
    :header: "Command", "Description"
-   :widths: auto
+   :widths: 15 85
 
    "net allocs", "Print network memory allocations. Only available if
    :kconfig:option:`CONFIG_NET_DEBUG_NET_PKT_ALLOC` is set."
