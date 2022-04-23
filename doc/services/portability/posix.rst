@@ -52,14 +52,14 @@ as POSIX.1-2017).
 
 
     POSIX_C_LANG_JUMP,
-    POSIX_C_LANG_SUPPORT,+
+    POSIX_C_LANG_SUPPORT,yes
     POSIX_DEVICE_IO,
     POSIX_FILE_LOCKING,
     POSIX_SIGNALS,
     POSIX_SINGLE_PROCESS,
-    POSIX_THREADS_BASE,+
-    XSI_THREAD_MUTEX_EXT,+
-    XSI_THREADS_EXT,+
+    POSIX_THREADS_BASE,yes
+    XSI_THREAD_MUTEX_EXT,yes
+    XSI_THREADS_EXT,yes
 
 
 Option Requirements
@@ -88,15 +88,15 @@ Zephyr.
     _POSIX_MONOTONIC_CLOCK,
     _POSIX_NO_TRUNC,
     _POSIX_REALTIME_SIGNALS,
-    _POSIX_SEMAPHORES,+
+    _POSIX_SEMAPHORES,yes
     _POSIX_SHARED_MEMORY_OBJECTS,
     _POSIX_SYNCHRONIZED_IO,
     _POSIX_THREAD_ATTR_STACKADDR,
     _POSIX_THREAD_ATTR_STACKSIZE,
     _POSIX_THREAD_CPUTIME,
-    _POSIX_THREAD_PRIO_INHERIT,+
+    _POSIX_THREAD_PRIO_INHERIT,yes
     _POSIX_THREAD_PRIO_PROTECT,
-    _POSIX_THREAD_PRIORITY_SCHEDULING,+
+    _POSIX_THREAD_PRIORITY_SCHEDULING,yes
     _POSIX_THREAD_SPORADIC_SERVER,
     _POSIX_TIMEOUTS,
     _POSIX_TIMERS,
@@ -126,44 +126,44 @@ multiple processes.
    :widths: 50,10
 
     pthread_atfork(),
-    pthread_attr_destroy(),+
-    pthread_attr_getdetachstate(),+
-    pthread_attr_getschedparam(),+
-    pthread_attr_init(),+
-    pthread_attr_setdetachstate(),+
-    pthread_attr_setschedparam(),+
-    pthread_cancel(),+
+    pthread_attr_destroy(),yes
+    pthread_attr_getdetachstate(),yes
+    pthread_attr_getschedparam(),yes
+    pthread_attr_init(),yes
+    pthread_attr_setdetachstate(),yes
+    pthread_attr_setschedparam(),yes
+    pthread_cancel(),yes
     pthread_cleanup_pop(),
     pthread_cleanup_push(),
-    pthread_cond_broadcast(),+
+    pthread_cond_broadcast(),yes
     pthread_cond_destroy(),
-    pthread_cond_init(),+
-    pthread_cond_signal(),+
-    pthread_cond_timedwait(),+
-    pthread_cond_wait(),+
+    pthread_cond_init(),yes
+    pthread_cond_signal(),yes
+    pthread_cond_timedwait(),yes
+    pthread_cond_wait(),yes
     pthread_condattr_destroy(),
     pthread_condattr_init(),
-    pthread_create(),+
-    pthread_detach(),+
+    pthread_create(),yes
+    pthread_detach(),yes
     pthread_equal(),
-    pthread_exit(),+
-    pthread_getspecific(),+
-    pthread_join(),+
-    pthread_key_create(),+
-    pthread_key_delete(),+
+    pthread_exit(),yes
+    pthread_getspecific(),yes
+    pthread_join(),yes
+    pthread_key_create(),yes
+    pthread_key_delete(),yes
     pthread_kill(),
-    pthread_mutex_destroy(),+
-    pthread_mutex_init(),+
-    pthread_mutex_lock(),+
-    pthread_mutex_trylock(),+
-    pthread_mutex_unlock(),+
+    pthread_mutex_destroy(),yes
+    pthread_mutex_init(),yes
+    pthread_mutex_lock(),yes
+    pthread_mutex_trylock(),yes
+    pthread_mutex_unlock(),yes
     pthread_mutexattr_destroy(),
     pthread_mutexattr_init(),
-    pthread_once(),+
-    pthread_self(),+
+    pthread_once(),yes
+    pthread_self(),yes
     pthread_setcalcelstate(),
     pthread_setcanceltype(),
-    pthread_setspecific(),+
+    pthread_setspecific(),yes
     pthread_sigmask(),
     pthread_testcancel(),
 
@@ -183,9 +183,9 @@ This table lists service support status in Zephyr:
    :widths: 50,10
 
     pthread_attr_getguardsize(),
-    pthread_attr_getstack(),+
+    pthread_attr_getstack(),yes
     pthread_attr_setguardsize(),
-    pthread_attr_setstack(),+
+    pthread_attr_setstack(),yes
     pthread_getconcurrency(),
     pthread_setconcurrency()
 
@@ -203,8 +203,8 @@ This table lists service support status in Zephyr:
    :header: API, Supported
    :widths: 50,10
 
-    pthread_mutexattr_gettype(),+
-    pthread_mutexattr_settype(),+
+    pthread_mutexattr_gettype(),yes
+    pthread_mutexattr_settype(),yes
 
 
 POSIX_C_LANG_SUPPORT
@@ -220,15 +220,15 @@ This is implemented as part of the minimal C library available in Zephyr.
    :header: API, Supported
    :widths: 50,10
 
-    abs(),+
+    abs(),yes
     asctime(),
     asctime_r(),
     atof(),
-    atoi(),+
+    atoi(),yes
     atol(),
     atoll(),
-    bsearch(),+
-    calloc(),+
+    bsearch(),yes
+    calloc(),yes
     ctime(),
     ctime_r(),
     difftime(),
@@ -244,86 +244,86 @@ This is implemented as part of the minimal C library available in Zephyr.
     fesetround(),
     fetestexcept(),
     feupdateenv(),
-    free(),+
-    gmtime(),+
-    gmtime_r(),+
+    free(),yes
+    gmtime(),yes
+    gmtime_r(),yes
     imaxabs(),
     imaxdiv(),
-    isalnum(),+
-    isalpha(),+
+    isalnum(),yes
+    isalpha(),yes
     isblank(),
     iscntrl(),
-    isdigit(),+
-    isgraph(),+
+    isdigit(),yes
+    isgraph(),yes
     islower(),
-    isprint(),+
+    isprint(),yes
     ispunct(),
-    isspace(),+
-    isupper(),+
-    isxdigit(),+
-    labs(),+
+    isspace(),yes
+    isupper(),yes
+    isxdigit(),yes
+    labs(),yes
     ldiv(),
-    llabs(),+
+    llabs(),yes
     lldiv(),
     localeconv(),
-    localtime(),+
+    localtime(),yes
     localtime_r(),
-    malloc(),+
-    memchr(),+
-    memcmp(),+
-    memcpy(),+
-    memmove(),+
-    memset(),+
-    mktime(),+
+    malloc(),yes
+    memchr(),yes
+    memcmp(),yes
+    memcpy(),yes
+    memmove(),yes
+    memset(),yes
+    mktime(),yes
     qsort(),
-    rand(),+
+    rand(),yes
     rand_r(),
-    realloc(),+
+    realloc(),yes
     setlocale(),
-    snprintf(),+
-    sprintf(),+
-    srand(),+
+    snprintf(),yes
+    sprintf(),yes
+    srand(),yes
     sscanf(),
-    strcat(),+
-    strchr(),+
-    strcmp(),+
+    strcat(),yes
+    strchr(),yes
+    strcmp(),yes
     strcoll(),
-    strcpy(),+
+    strcpy(),yes
     strcspn(),
     strerror(),
     strerror_r(),
     strftime(),
-    strlen(),+
-    strncat(),+
-    strncmp(),+
-    strncpy(),+
+    strlen(),yes
+    strncat(),yes
+    strncmp(),yes
+    strncpy(),yes
     strpbrk(),
-    strrchr(),+
+    strrchr(),yes
     strspn(),
-    strstr(),+
+    strstr(),yes
     strtod(),
     strtof(),
     strtoimax(),
     strtok(),
-    strtok_r(),+
-    strtol(),+
+    strtok_r(),yes
+    strtol(),yes
     strtold(),
-    strtoll(),+
-    strtoul(),+
-    strtoull(),+
+    strtoll(),yes
+    strtoul(),yes
+    strtoull(),yes
     strtoumax(),
     strxfrm(),
-    time(),+
-    tolower(),+
-    toupper(),+
+    time(),yes
+    tolower(),yes
+    toupper(),yes
     tzname(),
     tzset(),
     va_arg(),
     va_copy(),
     va_end(),
     va_start(),
-    vsnprintf(),+
-    vsprintf(),+
+    vsnprintf(),yes
+    vsprintf(),yes
     vsscanf(),
 
 
@@ -358,7 +358,7 @@ required for error and event handling.
    :widths: 50,10
 
 
-    abort(),+
+    abort(),yes
     alarm(),
     kill(),
     pause(),
@@ -401,23 +401,23 @@ POSIX_DEVICE_IO
     fgets(),
     fileno(),
     fopen(),
-    fprintf(),+
-    fputc(),+
-    fputs(),+
+    fprintf(),yes
+    fputc(),yes
+    fputs(),yes
     fread(),
     freopen(),
     fscanf(),
-    fwrite(),+
+    fwrite(),yes
     getc(),
     getchar(),
     gets(),
-    open(),+
+    open(),yes
     perror(),
-    printf(),+
-    putc(),+
+    printf(),yes
+    putc(),yes
     putchar(),
-    puts(),+
-    read(),+
+    puts(),yes
+    read(),yes
     scanf(),
     setbuf(),
     etvbuf(),
@@ -425,8 +425,8 @@ POSIX_DEVICE_IO
     stdin,
     stdout,
     ungetc(),
-    vfprintf(),+
+    vfprintf(),yes
     vfscanf(),
-    vprintf(),+
+    vprintf(),yes
     vscanf(),
     write(),
