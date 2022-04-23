@@ -20,7 +20,7 @@ long semihost_exec(enum semihost_instr instr, void *args)
 		"ebreak\n\t"
 		"srai zero, zero, 0x7\n\t"
 		".option pop"
-		: : "r" (a0), "r" (a1) : "memory");
+		: "=r" (ret) : "r" (a0), "r" (a1) : "memory");
 
 	return ret;
 }
