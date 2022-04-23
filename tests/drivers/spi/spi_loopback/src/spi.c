@@ -24,8 +24,10 @@ LOG_MODULE_REGISTER(main);
 #if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
 #define CS_CTRL_GPIO_DRV_NAME CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_DRV_NAME
 struct spi_cs_control spi_cs = {
-	.gpio_pin = CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_PIN,
-	.gpio_dt_flags = GPIO_ACTIVE_LOW,
+	.gpio = {
+		.pin = CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_PIN,
+		.dt_flags = GPIO_ACTIVE_LOW
+	},
 	.delay = 0,
 };
 #define SPI_CS (&spi_cs)
@@ -102,10 +104,10 @@ struct spi_config spi_cfg_fast = {
 #if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
 static int cs_ctrl_gpio_config(void)
 {
-	spi_cs.gpio_dev = device_get_binding(CS_CTRL_GPIO_DRV_NAME);
-	if (!spi_cs.gpio_dev) {
+	spi_cs.gpio.port = device_get_binding(CS_CTRL_GPIO_DRV_NAME);
+	if (!spi_cs.gpio.port) {
 		LOG_ERR("Cannot find %s!", CS_CTRL_GPIO_DRV_NAME);
-		zassert_not_null(spi_cs.gpio_dev, "Invalid gpio device");
+		zassert_not_null(spi_cs.gpio.port, "Invalid gpio device");
 		return -1;
 	}
 
