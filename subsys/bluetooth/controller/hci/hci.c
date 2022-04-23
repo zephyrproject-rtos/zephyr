@@ -6119,7 +6119,6 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	const uint8_t *data = NULL;
 	uint8_t scan_data_len = 0U;
 	uint8_t adv_addr_type = 0U;
-	bool direct_report = false;
 	uint8_t sec_phy_scan = 0U;
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
@@ -6226,11 +6225,21 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			bt_addr_le_t addr;
 
 			lll = node_rx->hdr.rx_ftr.param;
+
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 			direct_addr_type_curr =
 				ext_adv_direct_addr_type(lll,
 							 direct_resolved_curr,
 							 direct_report_curr,
 							 adv->rx_addr, ptr);
+#else /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
+			direct_addr_type_curr =
+				ext_adv_direct_addr_type(lll,
+							 direct_resolved_curr,
+							 false, adv->rx_addr,
+							 ptr);
+#endif /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
+
 			direct_addr_curr = ptr;
 			ptr += BDADDR_SIZE;
 
@@ -6351,10 +6360,6 @@ no_ext_hdr:
 			rl_idx = rl_idx_curr;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-			direct_report = direct_report_curr;
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
 	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 			devmatch = devmatch_curr;
@@ -6403,12 +6408,6 @@ no_ext_hdr:
 				rl_idx = rl_idx_curr;
 			}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-			if (!direct_report) {
-				direct_report = direct_report_curr;
-			}
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
 	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
