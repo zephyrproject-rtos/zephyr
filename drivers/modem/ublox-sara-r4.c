@@ -343,6 +343,11 @@ static ssize_t send_socket_data(void *obj,
 		}
 
 		ret = modem_context_get_addr_port(dst_addr, &dst_port);
+		if (ret != 0) {
+			LOG_ERR("Error getting port from IP address %d", ret);
+			goto exit;
+		}
+
 		snprintk(send_buf, sizeof(send_buf),
 			 "AT+USOST=%d,\"%s\",%u,%zu", sock->id,
 			 ip_str,
