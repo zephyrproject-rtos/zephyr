@@ -75,26 +75,25 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 	}
 }
 
+#define SPI_FLAGS_BASE (SPI_MODE_CPHA | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | \
+			SPI_WORD_SET(8) | SPI_LINES_SINGLE)
+
+#if CONFIG_SPI_LOOPBACK_MODE_LOOP
+#define SPI_FLAGS (SPI_FLAGS_BASE | SPI_MODE_LOOP)
+#else
+#define SPI_FLAGS SPI_FLAGS_BASE
+#endif /* CONFIG_SPI_LOOPBACK_MODE_LOOP */
+
 struct spi_config spi_cfg_slow = {
 	.frequency = SLOW_FREQ,
-#if CONFIG_SPI_LOOPBACK_MODE_LOOP
-	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_LOOP |
-#else
-	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-#endif
-	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
+	.operation = SPI_FLAGS,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
 };
 
 struct spi_config spi_cfg_fast = {
 	.frequency = FAST_FREQ,
-#if CONFIG_SPI_LOOPBACK_MODE_LOOP
-	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_LOOP |
-#else
-	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-#endif
-	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
+	.operation = SPI_FLAGS,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
 };
