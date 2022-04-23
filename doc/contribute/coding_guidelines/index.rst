@@ -52,6 +52,7 @@ severity and the equivalent rules from other standards for reference.
 
 .. list-table:: Main rules
     :header-rows: 1
+    :widths: 17 14 43 12 14
 
     * -  MISRA C 2012
       -  Severity
