@@ -1,0 +1,9 @@
+# Copyright (c) 2022, CSIRO.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SPI Loopback Device
+
+compatible: "zephyr,spi-loopback"
+
+include: spi-device.yaml

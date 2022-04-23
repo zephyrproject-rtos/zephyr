@@ -16,24 +16,6 @@ LOG_MODULE_REGISTER(main);
 
 #include <drivers/spi.h>
 
-#define SPI_DRV_NAME	CONFIG_SPI_LOOPBACK_DRV_NAME
-#define SPI_SLAVE	CONFIG_SPI_LOOPBACK_SLAVE_NUMBER
-#define SLOW_FREQ	CONFIG_SPI_LOOPBACK_SLOW_FREQ
-#define FAST_FREQ	CONFIG_SPI_LOOPBACK_FAST_FREQ
-
-#if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
-#define CS_CTRL_GPIO_DRV_NAME CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_DRV_NAME
-struct spi_cs_control spi_cs = {
-	.gpio_pin = CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_PIN,
-	.gpio_dt_flags = GPIO_ACTIVE_LOW,
-	.delay = 0,
-};
-#define SPI_CS (&spi_cs)
-#else
-#define SPI_CS NULL
-#define CS_CTRL_GPIO_DRV_NAME ""
-#endif
-
 /* to run this test, connect MOSI pin to the MISO of the SPI */
 
 #define STACK_SIZE 512
@@ -84,37 +66,11 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 #define SPI_FLAGS SPI_FLAGS_BASE
 #endif /* CONFIG_SPI_LOOPBACK_MODE_LOOP */
 
-struct spi_config spi_cfg_slow = {
-	.frequency = SLOW_FREQ,
-	.operation = SPI_FLAGS,
-	.slave = SPI_SLAVE,
-	.cs = SPI_CS,
-};
-
-struct spi_config spi_cfg_fast = {
-	.frequency = FAST_FREQ,
-	.operation = SPI_FLAGS,
-	.slave = SPI_SLAVE,
-	.cs = SPI_CS,
-};
-
-#if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
-static int cs_ctrl_gpio_config(void)
-{
-	spi_cs.gpio_dev = device_get_binding(CS_CTRL_GPIO_DRV_NAME);
-	if (!spi_cs.gpio_dev) {
-		LOG_ERR("Cannot find %s!", CS_CTRL_GPIO_DRV_NAME);
-		zassert_not_null(spi_cs.gpio_dev, "Invalid gpio device");
-		return -1;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_SPI_LOOPBACK_CS_GPIO */
+struct spi_dt_spec spi_spec_slow = SPI_DT_SPEC_GET(DT_NODELABEL(spi_loopback_slow), SPI_FLAGS, 0);
+struct spi_dt_spec spi_spec_fast = SPI_DT_SPEC_GET(DT_NODELABEL(spi_loopback_fast), SPI_FLAGS, 0);
 
 /* test transferring different buffers on the same dma channels */
-static int spi_complete_multiple(const struct device *dev,
-				 struct spi_config *spi_conf)
+static int spi_complete_multiple(struct spi_dt_spec *spec)
 {
 	struct spi_buf tx_bufs[2];
 	const struct spi_buf_set tx = {
@@ -145,7 +101,7 @@ static int spi_complete_multiple(const struct device *dev,
 
 	LOG_INF("Start complete multiple");
 
-	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	ret = spi_transceive_dt(spec, &tx, &rx);
 	if (ret) {
 		LOG_ERR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
@@ -175,8 +131,7 @@ static int spi_complete_multiple(const struct device *dev,
 	return 0;
 }
 
-static int spi_complete_loop(const struct device *dev,
-			     struct spi_config *spi_conf)
+static int spi_complete_loop(struct spi_dt_spec *spec)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -203,7 +158,7 @@ static int spi_complete_loop(const struct device *dev,
 
 	LOG_INF("Start complete loop");
 
-	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	ret = spi_transceive_dt(spec, &tx, &rx);
 	if (ret) {
 		LOG_ERR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
@@ -224,8 +179,7 @@ static int spi_complete_loop(const struct device *dev,
 	return 0;
 }
 
-static int spi_null_tx_buf(const struct device *dev,
-			   struct spi_config *spi_conf)
+static int spi_null_tx_buf(struct spi_dt_spec *spec)
 {
 	static const uint8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
 
@@ -259,7 +213,7 @@ static int spi_null_tx_buf(const struct device *dev,
 
 	LOG_INF("Start null tx");
 
-	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	ret = spi_transceive_dt(spec, &tx, &rx);
 	if (ret) {
 		LOG_ERR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
@@ -280,8 +234,7 @@ static int spi_null_tx_buf(const struct device *dev,
 	return 0;
 }
 
-static int spi_rx_half_start(const struct device *dev,
-			     struct spi_config *spi_conf)
+static int spi_rx_half_start(struct spi_dt_spec *spec)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -309,7 +262,7 @@ static int spi_rx_half_start(const struct device *dev,
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	ret = spi_transceive_dt(spec, &tx, &rx);
 	if (ret) {
 		LOG_ERR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
@@ -330,8 +283,7 @@ static int spi_rx_half_start(const struct device *dev,
 	return 0;
 }
 
-static int spi_rx_half_end(const struct device *dev,
-			   struct spi_config *spi_conf)
+static int spi_rx_half_end(struct spi_dt_spec *spec)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -368,7 +320,7 @@ static int spi_rx_half_end(const struct device *dev,
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	ret = spi_transceive_dt(spec, &tx, &rx);
 	if (ret) {
 		LOG_ERR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
@@ -389,8 +341,7 @@ static int spi_rx_half_end(const struct device *dev,
 	return 0;
 }
 
-static int spi_rx_every_4(const struct device *dev,
-			  struct spi_config *spi_conf)
+static int spi_rx_every_4(struct spi_dt_spec *spec)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -440,7 +391,7 @@ static int spi_rx_every_4(const struct device *dev,
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	ret = spi_transceive_dt(spec, &tx, &rx);
 	if (ret) {
 		LOG_ERR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
@@ -499,8 +450,7 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 	}
 }
 
-static int spi_async_call(const struct device *dev,
-			  struct spi_config *spi_conf)
+static int spi_async_call(struct spi_dt_spec *spec)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -526,7 +476,7 @@ static int spi_async_call(const struct device *dev,
 
 	LOG_INF("Start async call");
 
-	ret = spi_transceive_async(dev, spi_conf, &tx, &rx, &async_sig);
+	ret = spi_transceive_async(spec->bus, &spec->config, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
 		LOG_DBG("Not supported");
 		return 0;
@@ -552,24 +502,22 @@ static int spi_async_call(const struct device *dev,
 }
 #endif
 
-static int spi_resource_lock_test(const struct device *lock_dev,
-				  struct spi_config *spi_conf_lock,
-				  const struct device *try_dev,
-				  struct spi_config *spi_conf_try)
+static int spi_resource_lock_test(struct spi_dt_spec *lock_spec,
+				  struct spi_dt_spec *try_spec)
 {
-	spi_conf_lock->operation |= SPI_LOCK_ON;
+	lock_spec->config.operation |= SPI_LOCK_ON;
 
-	if (spi_complete_loop(lock_dev, spi_conf_lock)) {
+	if (spi_complete_loop(lock_spec)) {
 		return -1;
 	}
 
-	if (spi_release(lock_dev, spi_conf_lock)) {
+	if (spi_release_dt(lock_spec)) {
 		LOG_ERR("Deadlock now?");
 		zassert_false(1, "SPI release failed");
 		return -1;
 	}
 
-	if (spi_complete_loop(try_dev, spi_conf_try)) {
+	if (spi_complete_loop(try_spec)) {
 		return -1;
 	}
 
@@ -582,25 +530,19 @@ void test_spi_loopback(void)
 	struct k_thread async_thread;
 	k_tid_t async_thread_id;
 #endif
-	const struct device *spi_slow;
-	const struct device *spi_fast;
 
 	LOG_INF("SPI test on buffers TX/RX %p/%p", buffer_tx, buffer_rx);
 
-#if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
-	if (cs_ctrl_gpio_config()) {
+	if (!spi_is_ready(&spi_spec_slow)) {
+		LOG_ERR("Bus %s not ready!\n", spi_spec_slow.bus->name);
+		zassert_true(0, "SPI device not ready");
 		return;
 	}
-#endif /* CONFIG_SPI_LOOPBACK_CS_GPIO */
-
-	spi_slow = device_get_binding(SPI_DRV_NAME);
-	if (!spi_slow) {
-		LOG_ERR("Cannot find %s!\n", SPI_DRV_NAME);
-		zassert_not_null(spi_slow, "Invalid SPI device");
+	if (!spi_is_ready(&spi_spec_fast)) {
+		LOG_ERR("Bus %s not ready!\n", spi_spec_fast.bus->name);
+		zassert_true(0, "SPI device not ready");
 		return;
 	}
-
-	spi_fast = spi_slow;
 
 #if (CONFIG_SPI_ASYNC)
 	async_thread_id = k_thread_create(&async_thread,
@@ -612,14 +554,14 @@ void test_spi_loopback(void)
 
 	LOG_INF("SPI test slow config");
 
-	if (spi_complete_multiple(spi_slow, &spi_cfg_slow) ||
-	    spi_complete_loop(spi_slow, &spi_cfg_slow) ||
-	    spi_null_tx_buf(spi_slow, &spi_cfg_slow) ||
-	    spi_rx_half_start(spi_slow, &spi_cfg_slow) ||
-	    spi_rx_half_end(spi_slow, &spi_cfg_slow) ||
-	    spi_rx_every_4(spi_slow, &spi_cfg_slow)
+	if (spi_complete_multiple(&spi_spec_slow) ||
+	    spi_complete_loop(&spi_spec_slow) ||
+	    spi_null_tx_buf(&spi_spec_slow) ||
+	    spi_rx_half_start(&spi_spec_slow) ||
+	    spi_rx_half_end(&spi_spec_slow) ||
+	    spi_rx_every_4(&spi_spec_slow)
 #if (CONFIG_SPI_ASYNC)
-	    || spi_async_call(spi_slow, &spi_cfg_slow)
+	    || spi_async_call(&spi_spec_slow)
 #endif
 	    ) {
 		goto end;
@@ -627,21 +569,21 @@ void test_spi_loopback(void)
 
 	LOG_INF("SPI test fast config");
 
-	if (spi_complete_multiple(spi_fast, &spi_cfg_fast) ||
-	    spi_complete_loop(spi_fast, &spi_cfg_fast) ||
-	    spi_null_tx_buf(spi_fast, &spi_cfg_fast) ||
-	    spi_rx_half_start(spi_fast, &spi_cfg_fast) ||
-	    spi_rx_half_end(spi_fast, &spi_cfg_fast) ||
-	    spi_rx_every_4(spi_fast, &spi_cfg_fast)
+	if (spi_complete_multiple(&spi_spec_fast) ||
+	    spi_complete_loop(&spi_spec_fast) ||
+	    spi_null_tx_buf(&spi_spec_fast) ||
+	    spi_rx_half_start(&spi_spec_fast) ||
+	    spi_rx_half_end(&spi_spec_fast) ||
+	    spi_rx_every_4(&spi_spec_fast)
 #if (CONFIG_SPI_ASYNC)
-	    || spi_async_call(spi_fast, &spi_cfg_fast)
+	    || spi_async_call(&spi_spec_fast)
 #endif
 	    ) {
 		goto end;
 	}
 
-	if (spi_resource_lock_test(spi_slow, &spi_cfg_slow,
-				   spi_fast, &spi_cfg_fast)) {
+	if (spi_resource_lock_test(&spi_spec_slow,
+				   &spi_spec_fast)) {
 		goto end;
 	}
 

@@ -11,6 +11,8 @@
 		&dma1 2 0x20480>;
 	dma-names = "tx", "rx";
 	status = "okay";
+
+#include <default_loopback.dtsi>
 };
 
 &dma1 {

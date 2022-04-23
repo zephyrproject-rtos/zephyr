@@ -1,0 +1,3 @@
+&spi4 {
+#include <default_loopback.dtsi>
+};

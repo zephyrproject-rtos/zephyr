@@ -1,0 +1,3 @@
+&lpspi1 {
+#include <default_loopback.dtsi>
+};

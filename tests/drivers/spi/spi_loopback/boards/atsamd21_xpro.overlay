@@ -8,4 +8,6 @@
 	/* Internally connect MOSI to MISO for loop-back operation */
 	dipo = <0>;
 	dopo = <0>;
+
+#include <default_loopback.dtsi>
 };

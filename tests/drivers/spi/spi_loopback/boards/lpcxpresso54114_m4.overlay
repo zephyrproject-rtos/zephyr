@@ -1,0 +1,3 @@
+&flexcomm5 {
+#include <default_loopback.dtsi>
+};

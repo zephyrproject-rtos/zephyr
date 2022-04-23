@@ -1,0 +1,10 @@
+&spi0 {
+#include <default_loopback.dtsi>
+};
+
+&spi_loopback_fast {
+	spi-max-frequency = <160000>;
+};
+&spi_loopback_slow {
+	spi-max-frequency = <5000>;
+};

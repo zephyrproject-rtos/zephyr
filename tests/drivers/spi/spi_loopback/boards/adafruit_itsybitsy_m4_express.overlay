@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sercom1 {
+	cs-gpios = <&porta 7 GPIO_ACTIVE_LOW>;
+
+	/* Internally connect MOSI to MISO for loop-back operation */
+	dipo = <0>;
+	dopo = <0>;
+
+#include <default_loopback.dtsi>
+};

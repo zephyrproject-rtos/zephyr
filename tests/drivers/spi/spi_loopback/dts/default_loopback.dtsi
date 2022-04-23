@@ -1,0 +1,13 @@
+spi_loopback_fast: loopback_fast@0 {
+	compatible = "zephyr,spi-loopback";
+	reg = <0>;
+	spi-max-frequency = <16000000>;
+	label = "LOOPBACK_FAST";
+};
+
+spi_loopback_slow: loopback_slow@0 {
+	compatible = "zephyr,spi-loopback";
+	reg = <0>;
+	spi-max-frequency = <500000>;
+	label = "LOOPBACK_SLOW";
+};

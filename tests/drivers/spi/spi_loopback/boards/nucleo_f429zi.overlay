@@ -8,10 +8,13 @@
 	dmas = <&dma2 5 3 0x28440 0x03
 		&dma2 2 3 0x28480 0x03>;
 	dma-names = "tx", "rx";
+	status = "okay";
+
+#include <default_loopback.dtsi>
+
 };
 
 &spi1 {
-	status = "okay";
 };
 
 &dma2 {

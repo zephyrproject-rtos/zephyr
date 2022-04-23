@@ -1,0 +1,5 @@
+&spi1 {
+	cs-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+
+#include <default_loopback.dtsi>
+};

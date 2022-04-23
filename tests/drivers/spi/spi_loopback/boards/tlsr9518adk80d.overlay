@@ -1,0 +1,3 @@
+&pspi {
+#include <default_loopback.dtsi>
+};

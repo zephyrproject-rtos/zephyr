@@ -6,4 +6,6 @@
 
 &daplink_single_spi0 {
 	status = "okay";
+
+#include <default_loopback.dtsi>
 };

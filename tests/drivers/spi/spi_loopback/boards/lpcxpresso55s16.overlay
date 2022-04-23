@@ -1,0 +1,3 @@
+&hs_lspi {
+#include <default_loopback.dtsi>
+};

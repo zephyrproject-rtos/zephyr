@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&spi0 {
+#include <default_loopback.dtsi>
+};
+
 &sercom5 {
 	/* Internally connect MOSI to MISO for loop-back operation */
 	dipo = <0>;

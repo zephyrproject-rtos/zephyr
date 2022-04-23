@@ -8,6 +8,8 @@
 	dmas = <&dmamux1 0 11 0x20440
 		&dmamux1 1 10 0x20480>;
 	dma-names = "tx", "rx";
+
+#include <default_loopback.dtsi>
 };
 
 &dma1 {

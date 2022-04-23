@@ -20,7 +20,6 @@ tests:
     platform_allow: frdm_k64f
   drivers.stm32_spi.loopback:
     harness: ztest
-    extra_args: OVERLAY_CONFIG="overlay-stm32-spi.conf"
     harness_config:
       fixture: spi_loopback
     filter: CONFIG_SOC_FAMILY_STM32
