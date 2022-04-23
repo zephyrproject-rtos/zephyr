@@ -13,6 +13,7 @@ long semihost_exec(enum semihost_instr instr, void *args)
 	register void *x1 __asm__ ("x1") = args;
 	register long ret __asm__ ("x0");
 
-	__asm__ volatile ("hlt 0xf000" : : "r" (w0), "r" (x1) : "memory");
+	__asm__ volatile ("hlt 0xf000"
+			  : "=r" (ret) : "r" (w0), "r" (x1) : "memory");
 	return ret;
 }
