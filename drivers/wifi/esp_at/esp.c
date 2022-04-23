@@ -291,6 +291,7 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 
 static void esp_dns_work(struct k_work *work)
 {
+#if defined(ESP_MAX_DNS)
 	struct esp_data *data = CONTAINER_OF(work, struct esp_data, dns_work);
 	struct dns_resolve_context *dnsctx;
 	struct sockaddr_in *addrs = data->dns_addresses;
@@ -312,11 +313,13 @@ static void esp_dns_work(struct k_work *work)
 	}
 
 	LOG_DBG("DNS resolver reconfigured");
+#endif
 }
 
 /* +CIPDNS:enable[,"DNS IP1"[,"DNS IP2"[,"DNS IP3"]]] */
 MODEM_CMD_DEFINE(on_cmd_cipdns)
 {
+#if defined(ESP_MAX_DNS)
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
 	struct sockaddr_in *addrs = dev->dns_addresses;
@@ -352,6 +355,7 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 	if (valid_servers) {
 		k_work_submit(&dev->dns_work);
 	}
+#endif
 
 	return 0;
 }
