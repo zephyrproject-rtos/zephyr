@@ -375,6 +375,7 @@ device.
 
 .. list-table:: Zephyr-specific chosen properties
    :header-rows: 1
+   :widths: 25 75
 
    * - Property
      - Purpose
