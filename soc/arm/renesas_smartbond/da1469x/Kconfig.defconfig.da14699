@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_DA14699
+
+config SOC
+	default "da14699"
+
+endif # SOC_DA14699
