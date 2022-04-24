@@ -13,3 +13,4 @@ ram: 2048
 flash: 64
 testing:
   timeout_multiplier: 8
+  default: true
