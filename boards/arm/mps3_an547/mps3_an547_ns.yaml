@@ -8,7 +8,7 @@ identifier: mps3_an547_ns
 name: Arm MPS3-AN547_ns
 type: mcu
 arch: arm
-simulation: qemu
+simulation: armfvp
 toolchain:
   - gnuarmemb
   - zephyr
