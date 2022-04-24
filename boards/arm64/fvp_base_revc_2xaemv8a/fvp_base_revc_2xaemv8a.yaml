@@ -5,6 +5,7 @@ identifier: fvp_base_revc_2xaemv8a
 name: FVP Emulation FVP_Base_RevC-2xAEMvA
 arch: arm64
 type: sim
+simulation: armfvp
 toolchain:
   - zephyr
   - cross-compile
