@@ -16,6 +16,7 @@ toolchain:
 supported:
   - gpio
 testing:
+  default: true
   ignore_tags:
     - drivers
     - bluetooth
