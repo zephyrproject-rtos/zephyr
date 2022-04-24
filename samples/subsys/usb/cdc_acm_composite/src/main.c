@@ -50,7 +50,8 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 
 		if (uart_irq_rx_ready(dev)) {
 			uint8_t buf[64];
-			size_t read, wrote;
+			int read;
+			size_t wrote;
 			struct ring_buf *rb = &peer->data->rb;
 
 			read = uart_fifo_read(dev, buf, sizeof(buf));
