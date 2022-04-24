@@ -6,6 +6,7 @@
 #include "mesh_test.h"
 #include "mesh/blob.h"
 #include "argparse.h"
+#include "mesh/adv.h"
 
 #define LOG_MODULE_NAME test_blob
 
@@ -15,6 +16,73 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define BLOB_GROUP_ADDR 0xc000
 #define BLOB_CLI_ADDR 0x0001
 #define MODEL_LIST(...) ((struct bt_mesh_model[]){ __VA_ARGS__ })
+#define SYNC_CHAN 0
+#define CLI_DEV 0
+#define SRV1_DEV 1
+
+static bool is_pull_mode;
+
+static void test_args_parse(int argc, char *argv[])
+{
+	bs_args_struct_t args_struct[] = {
+		{
+			.dest = &is_pull_mode,
+			.type = 'b',
+			.name = "{0, 1}",
+			.option = "use-pull-mode",
+			.descript = "Set transfer type to pull mode"
+		},
+	};
+
+	bs_args_parse_all_cmd_line(argc, argv, args_struct);
+}
+
+static int blob_io_open(const struct bt_mesh_blob_io *io,
+			const struct bt_mesh_blob_xfer *xfer,
+			enum bt_mesh_blob_io_mode mode)
+{
+	return 0;
+}
+
+static struct k_sem first_block_wr_sem;
+static uint16_t partial_block;
+ATOMIC_DEFINE(block_bitfield, 8);
+
+static int blob_chunk_wr(const struct bt_mesh_blob_io *io,
+			 const struct bt_mesh_blob_xfer *xfer,
+			 const struct bt_mesh_blob_block *block,
+			 const struct bt_mesh_blob_chunk *chunk)
+{
+	partial_block += chunk->size;
+	ASSERT_TRUE(partial_block <= block->size, "Received block is too large");
+
+
+	if (partial_block == block->size) {
+		partial_block = 0;
+		ASSERT_FALSE(atomic_test_and_set_bit(block_bitfield, block->number),
+			     "Received duplicate block");
+	}
+
+	if (atomic_test_bit(block_bitfield, 0)) {
+		k_sem_give(&first_block_wr_sem);
+	}
+
+	return 0;
+}
+
+static int blob_chunk_rd(const struct bt_mesh_blob_io *io,
+			 const struct bt_mesh_blob_xfer *xfer,
+			 const struct bt_mesh_blob_block *block,
+			 const struct bt_mesh_blob_chunk *chunk)
+{
+	return 0;
+}
+
+static const struct bt_mesh_blob_io blob_io = {
+	.open = blob_io_open,
+	.rd = blob_chunk_rd,
+	.wr = blob_chunk_wr,
+};
 
 static uint8_t dev_key[16] = { 0xdd };
 static uint8_t app_key[16] = { 0xaa };
@@ -23,7 +91,8 @@ static struct bt_mesh_prov prov;
 
 static struct {
 	struct bt_mesh_blob_cli_inputs inputs;
-	struct bt_mesh_blob_target targets[6];
+	struct bt_mesh_blob_target targets[5];
+	struct bt_mesh_blob_target_pull pull[5];
 	uint8_t target_count;
 	struct bt_mesh_blob_xfer xfer;
 } blob_cli_xfer;
@@ -91,21 +160,33 @@ static void blob_cli_lost_target(struct bt_mesh_blob_cli *b, struct bt_mesh_blob
 	}
 }
 
+static struct k_sem blob_cli_suspend_sem;
+
 static void blob_cli_suspended(struct bt_mesh_blob_cli *b)
 {
+	k_sem_give(&blob_cli_suspend_sem);
 }
+
+static struct k_sem blob_cli_end_sem;
 
 static void blob_cli_end(struct bt_mesh_blob_cli *b, const struct bt_mesh_blob_xfer *xfer,
 			 bool success)
 {
+	k_sem_give(&blob_cli_end_sem);
 }
+
+static struct k_sem blob_srv_suspend_sem;
 
 static void blob_srv_suspended(struct bt_mesh_blob_srv *b)
 {
+	k_sem_give(&blob_srv_suspend_sem);
 }
+
+static struct k_sem blob_srv_end_sem;
 
 static void blob_srv_end(struct bt_mesh_blob_srv *b, uint64_t id, bool success)
 {
+	k_sem_give(&blob_srv_end_sem);
 }
 
 static int blob_srv_recover(struct bt_mesh_blob_srv *b, struct bt_mesh_blob_xfer *xfer,
@@ -268,6 +349,7 @@ static void blob_cli_inputs_prepare(uint16_t group)
 
 		memset(&blob_cli_xfer.targets[i], 0, sizeof(struct bt_mesh_blob_target));
 		blob_cli_xfer.targets[i].addr = addr;
+		blob_cli_xfer.targets[i].pull = &blob_cli_xfer.pull[i];
 
 		sys_slist_append(&blob_cli_xfer.inputs.targets, &blob_cli_xfer.targets[i].n);
 	}
@@ -800,10 +882,145 @@ static void test_cli_broadcast_unicast(void)
 	PASS();
 }
 
+static void test_cli_trans_resume(void)
+{
+	int err;
+	struct bt_mesh_test_sync_ctx sync = {
+		.chan_nmbr = (uint32_t[]){ SYNC_CHAN },
+		.dev_nmbr = (uint32_t[]){ SRV1_DEV },
+		.cnt = 1
+	};
+
+	bt_mesh_test_sync_init(&sync);
+	tm_set_phy_max_resync_offset(100000);
+
+	bt_mesh_test_cfg_set(NULL, 800);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	(void)target_srv_add(BLOB_CLI_ADDR + 1, true);
+
+	k_sem_init(&blob_caps_sem, 0, 1);
+	k_sem_init(&lost_target_sem, 0, 1);
+	k_sem_init(&blob_cli_end_sem, 0, 1);
+	k_sem_init(&blob_cli_suspend_sem, 0, 1);
+
+	LOG_INF("Running transfer in %s", is_pull_mode ? "Pull mode" : "Push mode");
+
+	/** Test resumption of suspended BLOB transfer (Push).
+	 * Client initiates transfer with two blocks. After
+	 * first block completes the server will be suspended.
+	 * At this point the client will attempt to resume the
+	 * transfer.
+	 */
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+	blob_cli_xfer.xfer.mode =
+		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 2;
+	blob_cli_xfer.xfer.id = 1;
+	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.chunk_size = 377;
+	blob_cli_xfer.inputs.timeout_base = 10;
+
+	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
+				    &blob_cli_xfer.xfer, &blob_io);
+	if (err) {
+		FAIL("BLOB send failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&blob_cli_suspend_sem, K_SECONDS(500))) {
+		FAIL("Suspend CB did not trigger as expected for the cli");
+	}
+
+	if (k_sem_take(&lost_target_sem, K_NO_WAIT)) {
+		FAIL("Lost targets CB did not trigger for the target srv");
+	}
+
+	ASSERT_TRUE(blob_cli.state == BT_MESH_BLOB_CLI_STATE_SUSPENDED);
+
+	/* Sync with the server device to enable scanning again. */
+	ASSERT_TRUE(bt_mesh_test_sync(sync.chan_id[0], 3));
+	/* Initiate resumption of BLOB transfer */
+	err = bt_mesh_blob_cli_resume(&blob_cli);
+	if (err) {
+		FAIL("BLOB resume failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&blob_cli_end_sem, K_SECONDS(180))) {
+		FAIL("End CB did not trigger as expected for the cli");
+	}
+
+	ASSERT_TRUE(blob_cli.state == BT_MESH_BLOB_CLI_STATE_NONE);
+
+	PASS();
+}
+
+static void test_srv_trans_resume(void)
+{
+	struct bt_mesh_test_sync_ctx sync = {
+		.chan_nmbr = (uint32_t[]){ SYNC_CHAN },
+		.dev_nmbr = (uint32_t[]){ 0 },
+		.cnt = 1
+	};
+
+	bt_mesh_test_sync_init(&sync);
+	tm_set_phy_max_resync_offset(100000);
+
+	bt_mesh_test_cfg_set(NULL, 800);
+	bt_mesh_device_setup(&prov, &srv_comp);
+	blob_srv_prov_and_conf(own_addr_get());
+
+	k_sem_init(&first_block_wr_sem, 0, 1);
+	k_sem_init(&blob_srv_end_sem, 0, 1);
+	k_sem_init(&blob_srv_suspend_sem, 0, 1);
+
+	/** Wait for a first blob block to be received, then simulate radio
+	 * disruption to cause suspension of the blob srv. Re-enable the radio
+	 * as soon as the server is suspended and wait to receive the second
+	 * block.
+	 */
+	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 1);
+
+	/* Let server receive a couple of chunks from second block before disruption */
+	for (int i = 0; i < 3; i++) {
+		if (k_sem_take(&first_block_wr_sem, K_SECONDS(180))) {
+			FAIL("Server did not receive the first BLOB block");
+		}
+	}
+
+	bt_mesh_scan_disable();
+	partial_block = 0;
+	if (k_sem_take(&blob_srv_suspend_sem, K_SECONDS(30))) {
+		FAIL("Suspend CB did not trigger as expected for the srv");
+	}
+
+	ASSERT_TRUE(blob_srv.phase == BT_MESH_BLOB_XFER_PHASE_SUSPENDED);
+
+	/* Wait for BLOB client to suspend */
+	ASSERT_TRUE(bt_mesh_test_sync(sync.chan_id[0], 400));
+
+	bt_mesh_scan_enable();
+	if (k_sem_take(&blob_srv_end_sem, K_SECONDS(180))) {
+		FAIL("End CB did not trigger as expected for the srv");
+	}
+
+	ASSERT_TRUE(blob_srv.phase == BT_MESH_BLOB_XFER_PHASE_COMPLETE);
+
+	/* Check that all blocks is received */
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 0));
+	ASSERT_TRUE(atomic_test_bit(block_bitfield, 1));
+
+	/* Check that a third block was not received */
+	ASSERT_FALSE(atomic_test_bit(block_bitfield, 3));
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "blob_" #role "_" #name,          \
 		.test_descr = description,                     \
+		.test_args_f = test_args_parse, \
 		.test_tick_f = bt_mesh_test_timeout,           \
 		.test_main_f = test_##role##_##name,           \
 	}
@@ -817,9 +1034,11 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(cli, broadcast_trans, "Test all broadcast transmission types"),
 	TEST_CASE(cli, broadcast_unicast_seq, "Test broadcast with unicast addr (Sequential)"),
 	TEST_CASE(cli, broadcast_unicast, "Test broadcast with unicast addr"),
+	TEST_CASE(cli, trans_resume, "Resume BLOB transfer after srv suspension (Default: Push)"),
 
 	TEST_CASE(srv, caps_standard, "Standard responsive blob server"),
 	TEST_CASE(srv, caps_no_rsp, "Non-responsive blob server"),
+	TEST_CASE(srv, trans_resume, "Self suspending server after first received block"),
 
 	BSTEST_END_MARKER
 };
