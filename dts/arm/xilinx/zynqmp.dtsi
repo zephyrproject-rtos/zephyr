@@ -270,5 +270,27 @@
 				status = "okay";
 			};
 		};
+
+		can0: can@ff060000 {
+			compatible = "xlnx,zynq-can-1.0";
+			status = "disabled";
+			reg = <0xff060000 0x10000>;
+			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			sjw = <1>;
+			sample-point = <875>;
+		};
+
+		can1: can@ff070000 {
+			compatible = "xlnx,zynq-can-1.0";
+			status = "disabled";
+			reg = <0xff070000 0x10000>;
+			interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			sjw = <1>;
+			sample-point = <875>;
+		};
 	};
 };
