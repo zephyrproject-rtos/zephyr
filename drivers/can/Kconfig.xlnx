@@ -1,0 +1,15 @@
+#
+# Xilinx Processor System CAN controller driver
+# configuration options
+#
+# Copyright (c) 2022, Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config CAN_XLNX
+	bool "Xilinx Processor System CAN controller driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQ_CAN_1_0_ENABLED
+	depends on !QEMU_TARGET
+	help
+	  Enable the Xilinx Processor System CAN controller driver.

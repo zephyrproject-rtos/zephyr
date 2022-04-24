@@ -101,6 +101,7 @@ source "drivers/can/Kconfig.loopback"
 source "drivers/can/Kconfig.native_posix_linux"
 source "drivers/can/Kconfig.sja1000"
 source "drivers/can/Kconfig.esp32"
+source "drivers/can/Kconfig.xlnx"
 
 source "drivers/can/transceiver/Kconfig"
 
