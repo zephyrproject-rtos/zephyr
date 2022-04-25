@@ -4,7 +4,7 @@
 
 config ENTROPY_BT_HCI
 	bool "Bluetooth HCI RNG driver"
-	depends on BT_HCI
+	depends on BT_HCI_HOST
 	select ENTROPY_HAS_DRIVER
 	help
 	  Enable Random Number Generator from a Bluetooth HCI device.
