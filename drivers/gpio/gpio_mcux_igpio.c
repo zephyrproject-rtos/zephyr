@@ -44,13 +44,12 @@ static int mcux_igpio_configure(const struct device *dev,
 
 #ifdef CONFIG_PINCTRL
 	struct pinctrl_soc_pin pin_cfg;
-
-#ifdef CONFIG_SOC_SERIES_IMX_RT10XX
 	/* Set appropriate bits in pin configuration register */
 	volatile uint32_t *gpio_cfg_reg =
 		(volatile uint32_t *)config->pin_muxes[pin].config_register;
 	uint32_t reg = *gpio_cfg_reg;
 
+#ifdef CONFIG_SOC_SERIES_IMX_RT10XX
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		/* Set ODE bit */
 		reg |= IOMUXC_SW_PAD_CTL_PAD_ODE_MASK;
@@ -71,11 +70,6 @@ static int mcux_igpio_configure(const struct device *dev,
 		reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
 	}
 #elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
-	/* Set appropriate bits in pin configuration register */
-	volatile uint32_t *gpio_cfg_reg =
-		(volatile uint32_t *)config->pin_muxes[pin].config_register;
-	uint32_t reg = *gpio_cfg_reg;
-
 	if (config->pin_muxes[pin].pue_mux) {
 		/* PUE type register layout (GPIO_AD pins) */
 		if ((flags & GPIO_SINGLE_ENDED) != 0) {
@@ -135,7 +129,38 @@ static int mcux_igpio_configure(const struct device *dev,
 
 
 	}
-
+#elif defined(CONFIG_SOC_SERIES_IMX8MQ_M4)
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+		/* Set ODE bit */
+		reg |= (0x1 << MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT);
+	} else {
+		reg &= ~(0x1 << MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT);
+	}
+	if ((flags & GPIO_PULL_UP) != 0) {
+		reg |= (0x1 << MCUX_IMX_BIAS_PULL_UP_SHIFT);
+	}
+	if ((flag & GPIO_PULL_DOWN) != 0) {
+		return -ENOTSUP;
+	}
+#else
+	/* Default flags, should work for most SOCs */
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+		/* Set ODE bit */
+		reg |= (0x1 << MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT);
+	} else {
+		reg &= ~(0x1 << MCUX_IMX_DRIVE_OPEN_DRAIN_SHIFT);
+	}
+	if (((flags & GPIO_PULL_UP) != 0) || ((flags & GPIO_PULL_DOWN) != 0)) {
+		reg |= (0x1 << MCUX_IMX_BIAS_PULL_ENABLE_SHIFT);
+		if (((flags & GPIO_PULL_UP) != 0)) {
+			reg |= (0x1 << MCUX_IMX_BIAS_PULL_UP_SHIFT);
+		} else {
+			reg &= ~(0x1 << MCUX_IMX_BIAS_PULL_UP_SHIFT);
+		}
+	} else {
+		/* Set pin to highz */
+		reg &= ~(0x1 << MCUX_IMX_BIAS_PULL_ENABLE_SHIFT);
+	}
 #endif /* CONFIG_SOC_SERIES_IMX_RT10XX */
 
 	/* Init pin configuration struct, and use pinctrl api to apply settings */
