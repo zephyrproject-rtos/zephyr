@@ -251,5 +251,20 @@
 			status = "okay";
 		};
 
+		alh0:alh@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			label = "ALH_0";
+
+			status = "okay";
+		};
+
+		alh1:alh@24400 {
+			compatible = "intel,alh-dai";
+			reg = <0x00024400 0x00024600>;
+			label = "ALH_1";
+
+			status = "okay";
+		};
 	};
 };

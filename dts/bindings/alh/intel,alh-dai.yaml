@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel ALH DAI controller
+
+compatible: "intel,alh-dai"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
