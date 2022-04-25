@@ -11,6 +11,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_CFG_CLI cfg.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_LARGE_COMP_DATA_CLI large_comp_data.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_PRIV_BEACON_CLI priv_beacon.c)
+
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_RPR_CLI rpr.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_SAR_CFG_CLI sar.c)
