@@ -28,6 +28,7 @@ config SOC_MIMXRT1011
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1015
 	bool "SOC_MIMXRT1015"
@@ -51,6 +52,7 @@ config SOC_MIMXRT1015
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1021
 	bool "SOC_MIMXRT1021"
@@ -80,6 +82,7 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1024
 	bool "SOC_MIMXRT1024"
@@ -109,6 +112,7 @@ config SOC_MIMXRT1024
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
@@ -138,6 +142,7 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -171,6 +176,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -200,6 +206,7 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
@@ -235,6 +242,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
@@ -271,6 +279,7 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_GPC
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1176_CM7
 	bool "SOC_MIMXRT1176_CM7"
@@ -309,6 +318,7 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_I2S
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_SRC_V2
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1176_CM4
 	bool "SOC_MIMXRT1176_CM4"
@@ -336,6 +346,7 @@ config SOC_MIMXRT1176_CM4
 	select HAS_MCUX_GPC
 	select HAS_MCUX_I2S
 	select HAS_MCUX_SRC_V2
+	select HAS_MCUX_IOMUXC
 
 config SOC_MIMXRT1166_CM7
 	bool "SOC_MIMXRT1166_CM7"
@@ -371,6 +382,7 @@ config SOC_MIMXRT1166_CM7
 	select HAS_MCUX_GPC
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_SRC_V2
+	select HAS_MCUX_IOMUXC
 
 
 config SOC_MIMXRT1166_CM4
@@ -398,6 +410,7 @@ config SOC_MIMXRT1166_CM4
 	select HAS_MCUX_ENET
 	select HAS_MCUX_GPC
 	select HAS_MCUX_SRC_V2
+	select HAS_MCUX_IOMUXC
 
 endchoice
 

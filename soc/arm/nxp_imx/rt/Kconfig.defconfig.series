@@ -32,6 +32,10 @@ config GPIO_MCUX_IGPIO
 	default y if HAS_MCUX_IGPIO
 	depends on GPIO
 
+config PINCTRL_IMX
+	default y if HAS_MCUX_IOMUXC
+	depends on PINCTRL
+
 config ENTROPY_MCUX_TRNG
 	default y if HAS_MCUX_TRNG
 	depends on ENTROPY_GENERATOR

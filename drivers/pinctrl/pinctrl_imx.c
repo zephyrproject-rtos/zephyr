@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_mcux_rt_pinctrl
-
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
-#include <fsl_iomuxc.h>
-#include <fsl_gpio.h>
 
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
@@ -23,6 +19,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		uint32_t input_daisy = pins[i].pinmux.input_daisy;
 		uint32_t config_register = pins[i].pinmux.config_register;
 		uint32_t pin_ctrl_flags = pins[i].pin_ctrl_flags;
+#if defined(CONFIG_SOC_SERIES_IMX_RT10XX) || defined(CONFIG_SOC_SERIES_IMX_RT11XX)
 		volatile uint32_t *gpr_register =
 			(volatile uint32_t *)pins[i].pinmux.gpr_register;
 		if (gpr_register) {
@@ -34,14 +31,16 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 				*gpr_register &= ~(0x1 << pins[i].pinmux.gpr_shift);
 			}
 		}
-
-		IOMUXC_SetPinMux(mux_register, mux_mode, input_register,
-			input_daisy, config_register,
-			MCUX_RT_INPUT_ENABLE(pin_ctrl_flags));
+#endif
+		*((volatile uint32_t *)mux_register) = IOMUXC_SW_MUX_CTL_PAD_MUX_MODE(mux_mode) |
+			IOMUXC_SW_MUX_CTL_PAD_SION(MCUX_IMX_INPUT_ENABLE(pin_ctrl_flags));
+		if (input_register) {
+			*((volatile uint32_t *)input_register) =
+				IOMUXC_SELECT_INPUT_DAISY(input_daisy);
+		}
 		if (config_register) {
-			IOMUXC_SetPinConfig(mux_register, mux_mode, input_register,
-				input_daisy, config_register,
-				pin_ctrl_flags & (~(0x1 << MCUX_RT_INPUT_ENABLE_SHIFT)));
+			*((volatile uint32_t *)config_register) =
+				pin_ctrl_flags & (~(0x1 << MCUX_IMX_INPUT_ENABLE_SHIFT));
 		}
 
 
@@ -49,19 +48,22 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 	return 0;
 }
 
-static int mcux_pinctrl_init(const struct device *dev)
+static int imx_pinctrl_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-
+#ifdef CONFIG_SOC_SERIES_IMX_RT
 	CLOCK_EnableClock(kCLOCK_Iomuxc);
 #ifdef CONFIG_SOC_SERIES_IMX_RT10XX
 	CLOCK_EnableClock(kCLOCK_IomuxcSnvs);
 	CLOCK_EnableClock(kCLOCK_IomuxcGpr);
 #elif defined(CONFIG_SOC_SERIES_IMX_RT11XX)
 	CLOCK_EnableClock(kCLOCK_Iomuxc_Lpsr);
-#endif
+#endif /* CONFIG_SOC_SERIES_IMX_RT10XX */
+#elif defined(CONFIG_SOC_MIMX8MQ6)
+	CLOCK_EnableClock(kCLOCK_Iomux);
+#endif /* CONFIG_SOC_SERIES_IMX_RT */
 
 	return 0;
 }
 
-SYS_INIT(mcux_pinctrl_init, PRE_KERNEL_1, 0);
+SYS_INIT(imx_pinctrl_init, PRE_KERNEL_1, 0);

@@ -317,7 +317,7 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 
 #ifdef CONFIG_PINCTRL
 /* These macros will declare an array of pinctrl_soc_pinmux types */
-#define PINMUX_INIT(node, prop, idx) MCUX_RT_PINMUX(DT_PROP_BY_IDX(node, prop, idx)),
+#define PINMUX_INIT(node, prop, idx) MCUX_IMX_PINMUX(DT_PROP_BY_IDX(node, prop, idx)),
 #define MCUX_IGPIO_PIN_DECLARE(n)						\
 	const struct pinctrl_soc_pinmux mcux_igpio_pinmux_##n[] = {		\
 		DT_FOREACH_PROP_ELEM(DT_DRV_INST(n), pinmux, PINMUX_INIT)	\
