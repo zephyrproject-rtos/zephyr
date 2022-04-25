@@ -11,6 +11,22 @@ import subprocess
 import ctypes
 import mmap
 import argparse
+import socketserver
+import threading
+import netifaces
+
+# Global variable use to sync between log and request services.
+# When it is true, the adsp is able to start running.
+start_output = False
+lock = threading.Lock()
+
+HOST = None
+PORT_LOG = 9999
+PORT_REQ = PORT_LOG + 1
+BUF_SIZE = 4096
+CMD_LOG_START = "start_log"
+CMD_LOG_STOP = "stop_log"
+CMD_DOWNLOAD = "download"
 
 logging.basicConfig()
 log = logging.getLogger("cavs-fw")
@@ -580,7 +596,7 @@ def ipc_command(data, ext_data):
         dsp.HIPCIDD = ext_data
         dsp.HIPCIDR = (1<<31) | ext_data
 
-async def main():
+async def _main(server):
     #TODO this bit me, remove the globals, write a little FirmwareLoader class or something to contain.
     global hda, sd, dsp, hda_ostream_id, hda_streams
     try:
@@ -595,28 +611,153 @@ async def main():
     if args.log_only:
         wait_fw_entered()
     else:
-        if not args.fw_file:
+        if not fw_file:
             log.error("Firmware file argument missing")
             sys.exit(1)
 
-        load_firmware(args.fw_file)
+        load_firmware(fw_file)
         time.sleep(0.1)
         if not args.quiet:
-            sys.stdout.write("--\n")
+            adsp_log("--\n", server)
 
     hda_streams = dict()
 
     last_seq = 0
-    while True:
+    while start_output is True:
         await asyncio.sleep(0.03)
         (last_seq, output) = winstream_read(last_seq)
         if output:
-            sys.stdout.write(output)
-            sys.stdout.flush()
+            adsp_log(output, server)
         if dsp.HIPCTDR & 0x80000000:
             ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
         if dsp.HIPCIDA & 0x80000000:
             dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
+
+class adsp_request_handler(socketserver.BaseRequestHandler):
+    """
+    The request handler class for control the actions of server.
+    """
+
+    def receive_fw(self, filename):
+        try:
+            with open(fw_file,'wb') as f:
+                cnt = 0
+                log.info("Receiving...")
+
+                while True:
+                    l = self.request.recv(BUF_SIZE)
+                    ll = len(l)
+                    cnt = cnt + ll
+                    if not l:
+                        break
+                    else:
+                        f.write(l)
+        except Exception as e:
+            log.error(f"Get exception {e} during FW transfer.")
+            return 1
+
+        log.info(f"Done Receiving {cnt}.")
+
+    def handle(self):
+        global start_output, fw_file
+
+        cmd = self.request.recv(BUF_SIZE)
+        log.info(f"{self.client_address[0]} wrote: {cmd}")
+        action = cmd.decode("utf-8")
+        log.debug(f'load {action}')
+
+        if action == CMD_DOWNLOAD:
+            self.request.sendall(cmd)
+            recv_fn = self.request.recv(BUF_SIZE)
+            log.info(f"{self.client_address[0]} wrote: {recv_fn}")
+
+            try:
+                tmp_file = recv_fn.decode("utf-8")
+            except UnicodeDecodeError:
+                tmp_file = "zephyr.ri.decode_error"
+                log.info(f'did not receive a correct filename')
+
+            lock.acquire()
+            fw_file = tmp_file
+            ret = self.receive_fw(fw_file)
+            if not ret:
+                start_output = True
+            lock.release()
+
+            log.debug(f'{recv_fn}, {fw_file}, {start_output}')
+
+        elif action == CMD_LOG_STOP:
+            self.request.sendall(cmd)
+            lock.acquire()
+            start_output = False
+            if fw_file:
+                os.remove(fw_file)
+                fw_file = None
+            lock.release()
+        else:
+            log.error("incorrect load communitcation!")
+
+class adsp_log_handler(socketserver.BaseRequestHandler):
+    """
+    The log handler class for grabbing output messages of server.
+    """
+    def run_adsp(self):
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(_main(self))
+
+    def handle(self):
+        global start_output, fw_file
+
+        cmd = self.request.recv(BUF_SIZE)
+        log.info(f"{self.client_address[0]} wrote: {cmd}")
+        action = cmd.decode("utf-8")
+        log.debug(f'monitor {action}')
+
+        if action == CMD_LOG_START:
+            self.request.sendall(cmd)
+            log.info(f"Waiting for instruction...")
+            while start_output is False:
+                time.sleep(1)
+
+            log.info(f"Loaded FW {fw_file} and running...")
+            if os.path.exists(fw_file):
+                self.run_adsp()
+                self.request.sendall("service complete.".encode())
+                log.info("service complete.")
+            else:
+                log.error("cannot find the FW file")
+
+            lock.acquire()
+            fw_file = None
+            start_output = False
+            lock.release()
+
+        else:
+            log.error("incorrect monitor communitcation!")
+
+
+def adsp_log(output, server):
+    if server:
+        server.request.sendall(output.encode("utf-8"))
+    else:
+        sys.stdout.write(output)
+        sys.stdout.flush()
+
+def get_host_ip():
+    """
+    Helper tool use to detect host's serving ip address.
+    """
+    interfaces = netifaces.interfaces()
+
+    for i in interfaces:
+        if i != "lo":
+            try:
+                netifaces.ifaddresses(i)
+                ip = netifaces.ifaddresses(i)[netifaces.AF_INET][0]['addr']
+                log.info (f"Use interface {i}, IP address: {ip}")
+            except Exception:
+                log.info(f"Ignore the interface {i} which is not activated.")
+    return ip
 
 
 ap = argparse.ArgumentParser(description="DSP loader/logger tool")
@@ -626,11 +767,41 @@ ap.add_argument("-l", "--log-only", action="store_true",
                 help="Don't load firmware, just show log output")
 ap.add_argument("-n", "--no-history", action="store_true",
                 help="No current log buffer at start, just new output")
+ap.add_argument("-s", "--server-addr",
+                help="No current log buffer at start, just new output")
 ap.add_argument("fw_file", nargs="?", help="Firmware file")
+
 args = ap.parse_args()
 
 if args.quiet:
     log.setLevel(logging.WARN)
 
+if args.fw_file:
+    fw_file = args.fw_file
+else:
+    fw_file = None
+
+if args.server_addr:
+    HOST = args.server_addr
+else:
+    HOST = get_host_ip()
+
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main())
+    # Launch the command request service
+    socketserver.TCPServer.allow_reuse_address = True
+    req_server = socketserver.TCPServer((HOST, PORT_REQ), adsp_request_handler)
+    req_t = threading.Thread(target=req_server.serve_forever, daemon=True)
+
+    # Activate the log service which output adsp execution
+    with socketserver.TCPServer((HOST, PORT_LOG), adsp_log_handler) as log_server:
+        try:
+            log.info("Req server start...")
+            req_t.start()
+            log.info("Log server start...")
+            log_server.serve_forever()
+        except KeyboardInterrupt:
+            lock.acquire()
+            start_output = False
+            lock.release()
+            log_server.shutdown()
+            req_server.shutdown()
