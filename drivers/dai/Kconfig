@@ -26,5 +26,6 @@ source "subsys/logging/Kconfig.template.log_config"
 comment "Device Drivers"
 
 source "drivers/dai/intel/ssp/Kconfig.ssp"
+source "drivers/dai/intel/alh/Kconfig.alh"
 
 endif # DAI
