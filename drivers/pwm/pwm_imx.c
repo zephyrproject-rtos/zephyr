@@ -8,6 +8,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <soc.h>
 #include <device_imx.h>
+#include <drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -24,6 +25,7 @@ LOG_MODULE_REGISTER(pwm_imx);
 struct imx_pwm_config {
 	PWM_Type *base;
 	uint16_t prescaler;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct imx_pwm_data {
@@ -140,8 +142,15 @@ static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 static int imx_pwm_init(const struct device *dev)
 {
+	const struct imx_pwm_config *config = dev->config;
 	struct imx_pwm_data *data = dev->data;
+	int err;
 	PWM_Type *base = DEV_BASE(dev);
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
 
 	PWM_PWMPR_REG(base) = data->period_cycles;
 
@@ -154,9 +163,11 @@ static const struct pwm_driver_api imx_pwm_driver_api = {
 };
 
 #define PWM_IMX_INIT(n)							\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	static const struct imx_pwm_config imx_pwm_config_##n = {	\
 		.base = (PWM_Type *)DT_INST_REG_ADDR(n),		\
 		.prescaler = DT_INST_PROP(n, prescaler),		\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	static struct imx_pwm_data imx_pwm_data_##n;			\
