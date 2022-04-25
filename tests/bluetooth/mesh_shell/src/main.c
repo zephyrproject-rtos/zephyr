@@ -24,6 +24,10 @@ static struct bt_mesh_dfd_srv dfd_srv;
 static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
 #endif
 
+#if defined(CONFIG_BT_MESH_PRIV_BEACON_CLI)
+static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
+#endif
+
 BT_MESH_SHELL_HEALTH_PUB_DEFINE(health_pub);
 
 static struct bt_mesh_model root_models[] = {
@@ -64,6 +68,13 @@ static struct bt_mesh_model root_models[] = {
 #endif
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI)
 	BT_MESH_MODEL_LARGE_COMP_DATA_CLI,
+#endif
+
+#if defined(CONFIG_BT_MESH_PRIV_BEACON_SRV)
+	BT_MESH_MODEL_PRIV_BEACON_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_PRIV_BEACON_CLI)
+	BT_MESH_MODEL_PRIV_BEACON_CLI(&priv_beacon_cli),
 #endif
 };
 

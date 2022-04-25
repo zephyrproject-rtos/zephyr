@@ -1382,6 +1382,68 @@ The SAR Configuration client is an optional mesh model that can be enabled throu
 	* ``ack_retrans_count``: SAR Acknowledgment Retransmissions Count state.
 
 
+Private Beacon Client
+---------------------
+
+The Private Beacon Client model is an optional mesh subsystem that can be enabled through the :kconfig:option:`CONFIG_BT_MESH_PRIV_BEACON_CLI` configuration option.
+
+``mesh models prb priv-beacon-get``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the target's Private Beacon state. Possible values:
+
+		* ``0x00``: The node doesn't broadcast Private beacons.
+		* ``0x01``: The node broadcasts Private beacons.
+
+``mesh models prb priv-beacon-set <enable> <rand_interval>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Set the target's Private Beacon state.
+
+	* ``enable``: Control Private Beacon state.
+	* ``rand_interval``: Random refresh interval (in 10-second steps), or 0 to keep current value.
+
+``mesh models prb priv-gatt-proxy-get``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the target's Private GATT Proxy state. Possible values:
+
+		* ``0x00``: The Private Proxy functionality is supported, but disabled.
+		* ``0x01``: The Private Proxy functionality is enabled.
+		* ``0x02``: The Private Proxy functionality is not supported.
+
+``mesh models prb priv-gatt-proxy-set <state>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Set the target's Private GATT Proxy state.
+
+	* ``state``: New Private GATT Proxy value:
+
+		* ``0x00``: Disable the Private Proxy functionality.
+		* ``0x01``: Enable the Private Proxy functionality.
+
+``mesh models prb priv-node-id-get <net_idx>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Get the target's Private Node Identity state. Possible values:
+
+		* ``0x00``: The node does not adverstise with the Private Node Identity.
+		* ``0x01``: The node advertises with the Private Node Identity.
+		* ``0x02``: The node doesn't support advertising with the Private Node Identity.
+
+	* ``net_idx``: Network index to get the Private Node Identity state of.
+
+``mesh models prb priv-node-id-set <net_idx> <state>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Set the target's Private Node Identity state.
+
+	* ``net_idx``: Network index to set the Private Node Identity state of.
+	* ``state``: New Private Node Identity value:
+		* ``0x00``: Stop advertising with the Private Node Identity.
+		* ``0x01``: Start advertising with the Private Node Identity..
+
+
 Configuration database
 ======================
 
@@ -1460,4 +1522,3 @@ The Configuration database is an optional mesh subsystem that can be enabled thr
 	Delete an application key from the Configuration database.
 
 	* ``AppKeyIdx``: Key index of the application key to delete.
-

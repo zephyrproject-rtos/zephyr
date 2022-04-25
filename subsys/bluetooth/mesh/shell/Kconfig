@@ -157,4 +157,11 @@ config BT_MESH_SHELL_SAR_CFG_CLI
 	help
 	  SAR Configuration Client shell support.
 
+config BT_MESH_SHELL_PRIV_BEACON_CLI
+	bool "Support for Private Beacons Client shell commands"
+	depends on BT_MESH_PRIV_BEACON_CLI
+	default y
+	help
+	  Private Beacons Client shell support.
+
 endif # BT_MESH_SHELL
