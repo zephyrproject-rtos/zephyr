@@ -27,6 +27,7 @@
 
 #define CHAR_SIZE_MAX           512
 
+#if defined(CONFIG_BT_GATT_CLIENT) || defined(CONFIG_BT_GATT_DYNAMIC_DB)
 extern uint8_t selected_id;
 
 static struct write_stats {
@@ -70,13 +71,14 @@ static void print_write_stats(void)
 	shell_print(ctx_shell, "Write #%u: %u bytes (%u bps)",
 		    write_stats.count, write_stats.total, write_stats.rate);
 }
+#endif /* CONFIG_BT_GATT_CLIENT || CONFIG_BT_GATT_DYNAMIC_DB */
 
+#if defined(CONFIG_BT_GATT_CLIENT)
 static void reset_write_stats(void)
 {
 	memset(&write_stats, 0, sizeof(write_stats));
 }
 
-#if defined(CONFIG_BT_GATT_CLIENT)
 static void exchange_func(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
