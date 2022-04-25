@@ -12,6 +12,7 @@ config SOC_MIMX8MQ6
 	select HAS_MCUX
 	select HAS_MCUX_CCM
 	select HAS_MCUX_RDC
+	select HAS_MCUX_IOMUXC
 
 endchoice
 
