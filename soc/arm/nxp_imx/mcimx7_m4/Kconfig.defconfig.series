@@ -12,6 +12,10 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 127
 
+config PINCTRL_IMX
+	default y if HAS_IMX_IOMUXC
+	depends on PINCTRL
+
 source "soc/arm/nxp_imx/mcimx7_m4/Kconfig.defconfig.mcimx7_m4"
 
 endif # SOC_SERIES_IMX7_M4
