@@ -5,7 +5,7 @@ description: Nordic nRF family SPIM (SPI master with EasyDMA)
 
 compatible: "nordic,nrf-spim"
 
-include: nordic,nrf-spi-common.yaml
+include: ["nordic,nrf-spi-common.yaml", "memory-region.yaml"]
 
 properties:
     miso-pull-up:
