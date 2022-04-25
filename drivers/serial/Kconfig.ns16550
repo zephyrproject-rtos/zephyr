@@ -34,6 +34,11 @@ config UART_NS16750
 	  This enables support for 64-bytes FIFO and automatic hardware
 	  flow control if UART controller is 16750.
 
+config UART_NS16750_EXTFIFO
+	bool "Enable UART features (128-bytes FIFO and auto flow control)"
+	help
+	  This enables support for 128-bytes FIFO and automatic hardware flow control.
+
 config UART_NS16550_ACCESS_WORD_ONLY
 	bool "NS16550 only allows word access"
 	help

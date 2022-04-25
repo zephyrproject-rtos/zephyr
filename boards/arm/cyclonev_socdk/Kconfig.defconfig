@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+# Description:
+# Adding support for Cyclone V SoC DevKit
+
+if BOARD_CVSXDEVKIT
+
+config BOARD
+   default "cyclonev_socdk"
+   depends on BOARD_CVSXDEVKIT 
+
+endif # BOARD_CVSXDEVKIT

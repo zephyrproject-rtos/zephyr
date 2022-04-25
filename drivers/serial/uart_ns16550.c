@@ -89,12 +89,15 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define IIR_MASK  0x07 /* interrupt id bits mask  */
 #define IIR_ID    0x06 /* interrupt ID mask without NIP */
 #define IIR_FE    0xC0 /* FIFO mode enabled */
+#define IIR_CH    0x0C /* Character timeout*/
 
 /* equates for FIFO control register */
 
 #define FCR_FIFO 0x01    /* enable XMIT and RCVR FIFO */
 #define FCR_RCVRCLR 0x02 /* clear RCVR FIFO */
 #define FCR_XMITCLR 0x04 /* clear XMIT FIFO */
+#define FCR_TET_MASK 0x30 /* Empty Threshold level mask */
+#define FCR_RT_MASK 0xC0 /* Rx Trigger level mask */
 
 /* equates for Apollo Lake clock control register (PRV_CLOCK_PARAMS) */
 
@@ -447,7 +450,7 @@ static int uart_ns16550_configure(const struct device *dev,
 		uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
 	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
-#ifdef CONFIG_UART_NS16750
+#if defined(CONFIG_UART_NS16750) || defined(CONFIG_UART_NS16750_EXTFIFO)
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		mdc |= MCR_AFCE;
 	}
@@ -470,6 +473,8 @@ static int uart_ns16550_configure(const struct device *dev,
 	if ((INBYTE(IIR(dev)) & IIR_FE) == IIR_FE) {
 #ifdef CONFIG_UART_NS16750
 		dev_data->fifo_size = 64;
+#elif CONFIG_UART_NS16750_EXTFIFO
+		dev_data->fifo_size = 128;
 #else
 		dev_data->fifo_size = 16;
 #endif
