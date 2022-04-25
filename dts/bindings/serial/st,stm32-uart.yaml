@@ -20,6 +20,20 @@ properties:
         only TX pin is used afterwards and should be configured.
         RX/TX conflicts must be handled on user side.
 
+    tx-invert:
+      type: boolean
+      required: false
+      description: |
+        Invert the binary logic of tx pin. When enabled, physical logic levels are inverted and
+        we use 1=Low, 0=High instead of 1=High, 0=Low.
+
+    rx-invert:
+      type: boolean
+      required: false
+      description: |
+        Invert the binary logic of rx pin. When enabled, physical logic levels are inverted and
+        we use 1=Low, 0=High instead of 1=High, 0=Low.
+
     pinctrl-0:
       required: true
 

@@ -32,6 +32,10 @@ struct uart_stm32_config {
 	bool single_wire;
 	/* enable tx/rx pin swap */
 	bool tx_rx_swap;
+	/* enable rx pin inversion */
+	bool rx_invert;
+	/* enable tx pin inversion */
+	bool tx_invert;
 	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
 	defined(CONFIG_PM)
