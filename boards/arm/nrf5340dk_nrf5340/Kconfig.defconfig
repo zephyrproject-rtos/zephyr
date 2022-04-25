@@ -9,7 +9,7 @@ config BOARD
 	default "nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
 config ENTROPY_BT_HCI
-	default y if BT_HCI
+	default y if BT_HCI_HOST
 	depends on ENTROPY_GENERATOR
 
 # By default, if we build for a Non-Secure version of the board,
