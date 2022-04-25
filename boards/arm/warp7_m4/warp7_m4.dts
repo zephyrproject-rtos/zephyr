@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx7d_m4.dtsi>
+#include "warp7_m4-pinctrl.dtsi"
 
 / {
 	model = "WaRP7 IMX7S board";
@@ -36,20 +37,41 @@
 	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
 };
 
 &uart6 {
 	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
+	pinctrl-0 = <&uart6_default>;
+	pinctrl-names = "default";
 };
 
 &gpio7 {
 	status = "okay";
 };
 
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+};
+
 &i2c4 {
 	status = "okay";
+	pinctrl-0 = <&i2c4_default>;
+	pinctrl-names = "default";
 
 	fxos8700@1e {
 		compatible = "nxp,fxos8700";
