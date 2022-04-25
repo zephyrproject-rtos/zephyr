@@ -771,6 +771,8 @@ class DeviceHandler(Handler):
         device = instance.platform.name
         fixture = instance.testcase.harness_config.get("fixture")
         for d in self.suite.duts:
+            if not d.platform == device:
+                continue
             if fixture and fixture not in d.fixtures:
                 continue
             if d.platform != device or (d.serial is None and d.serial_pty is None):
@@ -787,8 +789,11 @@ class DeviceHandler(Handler):
 
         return None
 
-    def make_device_available(self, serial):
+    def make_device_available(self, serial, instance):
+        device = instance.platform.name
         for d in self.suite.duts:
+            if not d.platform == device:
+                continue
             if d.serial == serial or d.serial_pty:
                 d.available = 1
 
@@ -907,7 +912,7 @@ class DeviceHandler(Handler):
                 outs, errs = ser_pty_process.communicate()
                 logger.debug("Process {} terminated outs: {} errs {}".format(serial_pty, outs, errs))
 
-            self.make_device_available(serial_device)
+            self.make_device_available(serial_device, self.instance)
             return
 
         ser.flush()
@@ -1002,7 +1007,7 @@ class DeviceHandler(Handler):
         if post_script:
             self.run_custom_script(post_script, 30)
 
-        self.make_device_available(serial_device)
+        self.make_device_available(serial_device, self.instance)
 
 
 class QEMUHandler(Handler):
