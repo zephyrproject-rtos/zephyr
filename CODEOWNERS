@@ -229,6 +229,7 @@
 /drivers/can/                             @alexanderwachter @henrikbrixandersen
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/can/*rcar*                       @aaillet @pmarzin
+/drivers/can/*xlnx*                       @ibirnbaum
 /drivers/clock_control/*agilex*           @siclim
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx @glaubermaroto
