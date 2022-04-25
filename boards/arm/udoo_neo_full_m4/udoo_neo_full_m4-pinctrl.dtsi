@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx/mimx6sx-pinctrl.dtsi>
+
+&pinctrl {
+	uart5_default: uart5_default {
+		group0 {
+			pinmux = <&mx6sx_pad_sd4_data4__uart5_dte_tx>,
+				<&mx6sx_pad_sd4_data5__uart5_dte_rx>;
+			input-schmitt-enable;
+			slew-rate = "fast";
+			drive-strength = "r0-6";
+			nxp,speed = "150-mhz";
+			bias-pull-up;
+			bias-pull-up-value="100k";
+		};
+	};
+};
