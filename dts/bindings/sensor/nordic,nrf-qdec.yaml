@@ -16,7 +16,7 @@ properties:
 
     a-pin:
       type: int
-      required: true
+      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled. It will be deprecated in the future.
@@ -35,7 +35,7 @@ properties:
 
     b-pin:
       type: int
-      required: true
+      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled. It will be deprecated in the future.
