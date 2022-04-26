@@ -2116,10 +2116,9 @@ int bt_audio_broadcast_sink_scan_stop(void);
  *  @param indexes_bitfield   Bitfield of the BIS index to sync to. To sync to
  *                            e.g. BIS index 1 and 2, this should have the value
  *                            of BIT(1) | BIT(2).
- *  @param streams            Stream object pointerss to be used for the
+ *  @param streams            Stream objects pointers to be used for the
  *                            receiver. If multiple BIS indexes shall be
  *                            synchronized, multiple streams shall be provided.
- *  @param codec              Codec configuration.
  *  @param broadcast_code     The 16-octet broadcast code. Shall be supplied if
  *                            the broadcast is encrypted (see the syncable
  *                            callback).
@@ -2129,7 +2128,6 @@ int bt_audio_broadcast_sink_scan_stop(void);
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 uint32_t indexes_bitfield,
 				 struct bt_audio_stream *streams[],
-				 struct bt_codec *codec,
 				 const uint8_t broadcast_code[16]);
 
 /** @brief Stop audio broadcast sink.
