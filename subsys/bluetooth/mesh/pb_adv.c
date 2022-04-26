@@ -149,7 +149,7 @@ static struct bt_mesh_send_cb buf_sent_cb = {
 	.end = buf_sent,
 };
 
-static uint8_t last_seg(uint8_t len)
+static uint8_t last_seg(uint16_t len)
 {
 	if (len <= START_PAYLOAD_MAX) {
 		return 0;
@@ -478,6 +478,13 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 
 	if (START_LAST_SEG(rx->gpc) > 0 && link.rx.buf->len <= 20U) {
 		BT_ERR("Too small total length for multi-segment PDU");
+		prov_failed(PROV_ERR_NVAL_FMT);
+		return;
+	}
+
+	if (START_LAST_SEG(rx->gpc) != last_seg(link.rx.buf->len)) {
+		BT_ERR("Invalid SegN (%u, calculated %u)", START_LAST_SEG(rx->gpc),
+		       last_seg(link.rx.buf->len));
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
 	}
