@@ -42,12 +42,7 @@ LOG_MODULE_REGISTER(i2c_dw);
 
 static inline uint32_t get_regs(const struct device *dev)
 {
-#ifdef CONFIG_SOC_CYCLONE5  /* adding an exception for Cyclone V SoC FPGA SoC */
-	const struct i2c_dw_rom_config * const rom = dev->config;
-	return (uint32_t ) (rom->_mmio.phys_addr);
-#else
 	return (uint32_t)DEVICE_MMIO_GET(dev);
-#endif
 }
 
 static inline void i2c_dw_data_ask(const struct device *dev)
