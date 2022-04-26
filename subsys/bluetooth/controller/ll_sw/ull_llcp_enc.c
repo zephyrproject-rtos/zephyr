@@ -377,6 +377,23 @@ static void lp_enc_store_s(struct ll_conn *conn, struct proc_ctx *ctx, struct pd
 	memcpy(&conn->lll.ccm_rx.iv[4], pdu->llctrl.enc_rsp.ivs, sizeof(pdu->llctrl.enc_rsp.ivs));
 }
 
+static inline uint8_t reject_error_code(struct pdu_data *pdu)
+{
+	if (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND) {
+		return pdu->llctrl.reject_ind.error_code;
+#if defined(CONFIG_BT_CTLR_EXT_REJ_IND)
+	} else if (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) {
+		return pdu->llctrl.reject_ext_ind.error_code;
+#endif /* CONFIG_BT_CTLR_EXT_REJ_IND */
+	} else {
+		/* Called with an invalid PDU */
+		LL_ASSERT(0);
+
+		/* Keep compiler happy */
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+}
+
 static void lp_enc_st_wait_rx_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
@@ -390,6 +407,21 @@ static void lp_enc_st_wait_rx_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 		/* Wait for LL_START_ENC_REQ */
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_REQ;
+		break;
+	case LP_ENC_EVT_REJECT:
+		/* Encryption is not supported by the Link Layer of the Peripheral */
+
+		/* Resume Tx data */
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
+
+		/* Store the error reason */
+		ctx->data.enc.error = reject_error_code(pdu);
+
+		/* Resume possibly paused remote procedure */
+		llcp_rr_resume(conn);
+
+		/* Complete the procedure */
+		lp_enc_complete(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -411,9 +443,10 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ll_conn *conn, struct proc_ct
 		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
-		ctx->data.enc.error = (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND) ?
-						    pdu->llctrl.reject_ind.error_code :
-						    pdu->llctrl.reject_ext_ind.error_code;
+
+		/* Store the error reason */
+		ctx->data.enc.error = reject_error_code(pdu);
+
 		/* Resume possibly paused remote procedure */
 		llcp_rr_resume(conn);
 
