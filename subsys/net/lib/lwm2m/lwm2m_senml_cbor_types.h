@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 /*
- * Generated using zcbor version 0.3.99
+ * Generated using zcbor version 0.4.0
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
  */
@@ -35,20 +35,13 @@ struct record_n {
 	struct zcbor_string _record_n;
 };
 
-struct numeric_ {
-	union {
-		int64_t _numeric_int;
-		double _numeric_float;
-	};
-	enum { _numeric_int,
-	       _numeric_float,
-	} _numeric_choice;
-};
-
 struct record_union_ {
 	union {
 		struct {
-			struct numeric_ _union_v;
+			int64_t _union_vi;
+		};
+		struct {
+			double _union_vf;
 		};
 		struct {
 			struct zcbor_string _union_vs;
@@ -60,10 +53,12 @@ struct record_union_ {
 			struct zcbor_string _union_vd;
 		};
 	};
-	enum { _union_v,
-	       _union_vs,
-	       _union_vb,
-	       _union_vd,
+	enum {
+		_union_vi,
+		_union_vf,
+		_union_vs,
+		_union_vb,
+		_union_vd,
 	} _record_union_choice;
 };
 
@@ -71,13 +66,16 @@ struct value_ {
 	union {
 		struct zcbor_string _value_tstr;
 		struct zcbor_string _value_bstr;
-		struct numeric_ _value__numeric;
+		int64_t _value_int;
+		double _value_float;
 		bool _value_bool;
 	};
-	enum { _value_tstr,
-	       _value_bstr,
-	       _value__numeric,
-	       _value_bool,
+	enum {
+		_value_tstr,
+		_value_bstr,
+		_value_int,
+		_value_float,
+		_value_bool,
 	} _value_choice;
 };
 

@@ -304,9 +304,8 @@ static int put_value(struct lwm2m_output_context *out, struct lwm2m_obj_path *pa
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_v;
-	record->_record_union._union_v._numeric_choice = _numeric_int;
-	record->_record_union._union_v._numeric_int = value;
+	record->_record_union._record_union_choice = _union_vi;
+	record->_record_union._union_vi = value;
 	record->_record_union_present = 1;
 
 	return 0;
@@ -343,9 +342,8 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_v;
-	record->_record_union._union_v._numeric_choice = _numeric_int;
-	record->_record_union._union_v._numeric_int = value;
+	record->_record_union._record_union_choice = _union_vi;
+	record->_record_union._union_vi = value;
 	record->_record_union_present = 1;
 
 	return 0;
@@ -362,9 +360,8 @@ static int put_float(struct lwm2m_output_context *out, struct lwm2m_obj_path *pa
 	struct record *record = CONSUME_CBOR_FD_REC(LWM2M_OFD_CBOR(out));
 
 	/* Write the value */
-	record->_record_union._record_union_choice = _union_v;
-	record->_record_union._union_v._numeric_choice = _numeric_float;
-	record->_record_union._union_v._numeric_float = *value;
+	record->_record_union._record_union_choice = _union_vf;
+	record->_record_union._union_vf = *value;
 	record->_record_union_present = 1;
 
 	return 0;
@@ -477,7 +474,7 @@ static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 		return -EINVAL;
 	}
 
-	*value = fd->current->_record_union._union_v._numeric_int;
+	*value = fd->current->_record_union._union_vi;
 	fd->current = NULL;
 
 	return 0;
@@ -492,7 +489,7 @@ static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 		return -EINVAL;
 	}
 
-	*value = fd->current->_record_union._union_v._numeric_int;
+	*value = fd->current->_record_union._union_vi;
 	fd->current = NULL;
 
 	return 0;
@@ -507,7 +504,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 		return -EINVAL;
 	}
 
-	*value = fd->current->_record_union._union_v._numeric_float;
+	*value = fd->current->_record_union._union_vf;
 	fd->current = NULL;
 
 	return 0;
