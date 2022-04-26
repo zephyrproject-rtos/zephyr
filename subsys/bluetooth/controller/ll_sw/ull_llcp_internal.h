@@ -134,6 +134,9 @@ struct proc_ctx {
 	/* Expected opcode to be received next */
 	enum pdu_data_llctrl_type rx_opcode;
 
+	/* Greedy RX (used for central encryption) */
+	uint8_t rx_greedy;
+
 	/* Last transmitted opcode used for unknown/reject */
 	enum pdu_data_llctrl_type tx_opcode;
 
