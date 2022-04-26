@@ -404,6 +404,15 @@ static void lp_enc_st_wait_rx_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 		/* Pause Rx data */
 		ull_conn_pause_rx_data(conn);
 		lp_enc_store_s(conn, ctx, pdu);
+
+		/* After the Central has received the LL_ENC_RSP PDU,
+		 * only PDUs related to this procedure are valid, and invalids should
+		 * result in disconnect.
+		 * to achieve this enable the greedy RX behaviour, such that
+		 * all PDU's end up in this FSM.
+		 */
+		ctx->rx_greedy = 1U;
+
 		/* Wait for LL_START_ENC_REQ */
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_REQ;
@@ -450,6 +459,9 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ll_conn *conn, struct proc_ct
 		/* Resume possibly paused remote procedure */
 		llcp_rr_resume(conn);
 
+		/* Disable the greedy behaviour */
+		ctx->rx_greedy = 0U;
+
 		lp_enc_complete(conn, ctx, evt, param);
 		break;
 	default:
@@ -484,6 +496,9 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ct
 
 		/* Resume possibly paused remote procedure */
 		llcp_rr_resume(conn);
+
+		/* Disable the greedy behaviour */
+		ctx->rx_greedy = 0U;
 
 		lp_enc_complete(conn, ctx, evt, param);
 		break;
@@ -631,7 +646,23 @@ void llcp_lp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_p
 		break;
 	default:
 		/* Unknown opcode */
-		LL_ASSERT(0);
+
+		/*
+		 * BLUETOOTH CORE SPECIFICATION Version 5.3
+		 * Vol 6, Part B, 5.1.3.1 Encryption Start procedure
+		 *
+		 * [...]
+		 *
+		 * If, at any time during the encryption start procedure after the Peripheral has
+		 * received the LL_ENC_REQ PDU or the Central has received the
+		 * LL_ENC_RSP PDU, the Link Layer of the Central or the Peripheral receives an
+		 * unexpected Data Physical Channel PDU from the peer Link Layer, it shall
+		 * immediately exit the Connection state, and shall transition to the Standby state.
+		 * The Host shall be notified that the link has been disconnected with the error
+		 * code Connection Terminated Due to MIC Failure (0x3D).
+		 */
+
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 	}
 }
 

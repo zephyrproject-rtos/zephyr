@@ -1000,7 +1000,7 @@ void ull_cp_cte_req_set_disable(struct ll_conn *conn)
 
 static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
-	return ctx->rx_opcode == pdu->llctrl.opcode;
+	return (ctx->rx_opcode == pdu->llctrl.opcode || ctx->rx_greedy);
 }
 
 static bool pdu_is_unknown(struct pdu_data *pdu, struct proc_ctx *ctx)
