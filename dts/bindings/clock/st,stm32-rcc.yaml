@@ -37,6 +37,20 @@ description: |
   the bus controlling the peripheral and the second index specifies the bit used to
   control the peripheral clock in that bus register.
 
+  Specifying an alternate clock source:
+
+  Specifying an alternate source clock could be done by adding a clock specifier to the
+  clock property:
+  ... {
+           ...
+           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>,
+                        <&rcc STM32_SRC_HSI I2C1_SEL(2)>;
+           ...
+  }
+  In this example I2C1 device is assigned HSI as clock source.
+  It is device driver's responsibility to querry and use clock source information in
+  accordance with clock_control API specifications.
+
 compatible: "st,stm32-rcc"
 
 include: [clock-controller.yaml, base.yaml]
