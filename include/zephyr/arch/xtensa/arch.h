@@ -44,6 +44,12 @@
 extern "C" {
 #endif
 
+extern void xtensa_arch_except(int reason_p);
+
+#define ARCH_EXCEPT(reason_p) do { \
+	xtensa_arch_except(reason_p); \
+} while (false)
+
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 

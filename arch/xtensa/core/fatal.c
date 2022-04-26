@@ -82,6 +82,9 @@ char *z_xtensa_exccause(unsigned int cause_code)
 		return "store prohibited";
 	case 32: case 33: case 34: case 35: case 36: case 37: case 38: case 39:
 		return "coprocessor disabled";
+	case 63:
+		/* i.e. z_except_reason */
+		return "zephyr exception";
 	default:
 		return "unknown/reserved";
 	}
