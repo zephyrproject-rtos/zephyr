@@ -86,6 +86,36 @@
 			clocks = <&uartclk>;
 		};
 
+		uart1: uart@1c0a0000 {
+			compatible = "arm,pl011";
+			reg = <0x1c0a0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 6 0 IRQ_TYPE_LEVEL>;
+			interrupt-names = "irq_6";
+			label = "UART_1";
+			clocks = <&uartclk>;
+		};
+
+		uart2: uart@1c0b0000 {
+			compatible = "arm,pl011";
+			reg = <0x1c0b0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 7 0 IRQ_TYPE_LEVEL>;
+			interrupt-names = "irq_7";
+			label = "UART_2";
+			clocks = <&uartclk>;
+		};
+
+		uart3: uart@1c0c0000 {
+			compatible = "arm,pl011";
+			reg = <0x1c0c0000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 8 0 IRQ_TYPE_LEVEL>;
+			interrupt-names = "irq_8";
+			label = "UART_3";
+			clocks = <&uartclk>;
+		};
+
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_K(64)>;
