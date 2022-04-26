@@ -2,7 +2,7 @@
 
 set_property(TARGET linker PROPERTY devices_start_symbol "Image$$device$$Base")
 
-find_program(CMAKE_LINKER ${CROSS_COMPILE}armlink PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_LINKER ${CROSS_COMPILE}armlink PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 add_custom_target(armlink)
 
