@@ -1168,7 +1168,23 @@ void llcp_rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_p
 		break;
 	default:
 		/* Unknown opcode */
-		LL_ASSERT(0);
+
+		/*
+		 * BLUETOOTH CORE SPECIFICATION Version 5.3
+		 * Vol 6, Part B, 5.1.3.1 Encryption Start procedure
+		 *
+		 * [...]
+		 *
+		 * If, at any time during the encryption start procedure after the Peripheral has
+		 * received the LL_ENC_REQ PDU or the Central has received the
+		 * LL_ENC_RSP PDU, the Link Layer of the Central or the Peripheral receives an
+		 * unexpected Data Physical Channel PDU from the peer Link Layer, it shall
+		 * immediately exit the Connection state, and shall transition to the Standby state.
+		 * The Host shall be notified that the link has been disconnected with the error
+		 * code Connection Terminated Due to MIC Failure (0x3D).
+		 */
+
+		conn->llcp_terminate.reason_final = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 	}
 }
 
