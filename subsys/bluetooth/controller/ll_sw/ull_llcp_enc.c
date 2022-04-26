@@ -1200,6 +1200,11 @@ void llcp_rp_enc_ltk_req_neg_reply(struct ll_conn *conn, struct proc_ctx *ctx)
 	rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_LTK_REQ_NEG_REPLY, NULL);
 }
 
+bool llcp_rp_enc_ltk_req_reply_allowed(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	return (ctx->state == RP_ENC_STATE_WAIT_LTK_REPLY);
+}
+
 void llcp_rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_RUN, param);
