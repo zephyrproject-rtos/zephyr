@@ -15,5 +15,4 @@
 	/delete-property/ clocks;
 	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
 		 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
-	clock-names = "reg", "kernel";
 };
