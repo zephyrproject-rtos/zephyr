@@ -102,11 +102,11 @@ uint8_t ull_cp_encryption_paused(struct ll_conn *conn);
 
 /**
  */
-void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16]);
+uint8_t ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16]);
 
 /**
  */
-void ull_cp_ltk_req_neq_reply(struct ll_conn *conn);
+uint8_t ull_cp_ltk_req_neq_reply(struct ll_conn *conn);
 
 /**
  * @brief Initiate a PHY Update Procedure.

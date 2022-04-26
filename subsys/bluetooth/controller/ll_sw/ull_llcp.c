@@ -838,27 +838,31 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
+uint8_t ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
 {
-	/* TODO(thoh): Call rp_enc to query if LTK request reply is allowed */
 	struct proc_ctx *ctx;
 
 	ctx = llcp_rr_peek(conn);
-	if (ctx && (ctx->proc == PROC_ENCRYPTION_START || ctx->proc == PROC_ENCRYPTION_PAUSE)) {
+	if (ctx && (ctx->proc == PROC_ENCRYPTION_START || ctx->proc == PROC_ENCRYPTION_PAUSE) &&
+	    llcp_rp_enc_ltk_req_reply_allowed(conn, ctx)) {
 		memcpy(ctx->data.enc.ltk, ltk, sizeof(ctx->data.enc.ltk));
 		llcp_rp_enc_ltk_req_reply(conn, ctx);
+		return BT_HCI_ERR_SUCCESS;
 	}
+	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-void ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
+uint8_t ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 {
-	/* TODO(thoh): Call rp_enc to query if LTK negative request reply is allowed */
 	struct proc_ctx *ctx;
 
 	ctx = llcp_rr_peek(conn);
-	if (ctx && (ctx->proc == PROC_ENCRYPTION_START || ctx->proc == PROC_ENCRYPTION_PAUSE)) {
+	if (ctx && (ctx->proc == PROC_ENCRYPTION_START || ctx->proc == PROC_ENCRYPTION_PAUSE) &&
+	    llcp_rp_enc_ltk_req_reply_allowed(conn, ctx)) {
 		llcp_rp_enc_ltk_req_neg_reply(conn, ctx);
+		return BT_HCI_ERR_SUCCESS;
 	}
+	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
