@@ -176,6 +176,7 @@ struct sx127x_config {
 
 static const struct sx127x_config dev_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),
+	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
 	.antenna_enable = GPIO_DT_SPEC_INST_GET(0, antenna_enable_gpios),
 #endif
