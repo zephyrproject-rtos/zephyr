@@ -95,6 +95,13 @@ account password. (This may be required if your account has two-factor
 authentication enabled, and may be preferable to storing your account password
 in plain text even if two-factor authentication is disabled.)
 
+You can use the Git credential store to authenticate with a GitHub PAT
+(Personal Access Token) like so:
+
+.. code-block:: shell
+
+   echo "https://x-access-token:$GH_TOKEN@github.com" >> ~/.git-credentials
+
 If you don't want to store any credentials on the file system, you can store
 them in memory temporarily using `git-credential-cache`_ instead.
 
