@@ -23,6 +23,7 @@ def test_runner_imports():
                     'esp32',
                     'gd32isp',
                     'hifive1',
+                    'intel_cyclonev',
                     'intel_s1000',
                     'jlink',
                     'mdb-nsim',
