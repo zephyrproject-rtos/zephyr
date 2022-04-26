@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 /*
- * Generated using zcbor version 0.3.99
+ * Generated using zcbor version 0.4.0
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
  */
@@ -43,47 +43,31 @@ static bool decode_repeated_record_n(zcbor_state_t *state, struct record_n *resu
 	return tmp_result;
 }
 
-static bool decode_numeric(zcbor_state_t *state, struct numeric_ *result)
-{
-	zcbor_print("%s\r\n", __func__);
-	bool int_res;
-
-	bool tmp_result =
-		(((zcbor_union_start_code(state) &&
-		   (int_res = ((((zcbor_int64_decode(state, (&(*result)._numeric_int))) &&
-				 ((((*result)._numeric_int >= -9223372036854775807LL) &&
-				   ((*result)._numeric_int <= 9223372036854775807LL)) ||
-				  (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) &&
-				(((*result)._numeric_choice = _numeric_int) || 1)) ||
-			       (((zcbor_float_decode(state, (&(*result)._numeric_float)))) &&
-				(((*result)._numeric_choice = _numeric_float) || 1))),
-		    zcbor_union_end_code(state), int_res))));
-
-	if (!tmp_result)
-		zcbor_trace();
-
-	return tmp_result;
-}
-
 static bool decode_repeated_record_union(zcbor_state_t *state, struct record_union_ *result)
 {
 	zcbor_print("%s\r\n", __func__);
 	bool int_res;
 
-	bool tmp_result = (((zcbor_union_start_code(state) &&
-			     (int_res = (((((zcbor_uint32_expect_union(state, (2)))) &&
-					   (decode_numeric(state, (&(*result)._union_v)))) &&
-					  (((*result)._record_union_choice = _union_v) || 1)) ||
-					 ((((zcbor_uint32_expect_union(state, (3)))) &&
-					   (zcbor_tstr_decode(state, (&(*result)._union_vs)))) &&
-					  (((*result)._record_union_choice = _union_vs) || 1)) ||
-					 ((((zcbor_uint32_expect_union(state, (4)))) &&
-					   (zcbor_bool_decode(state, (&(*result)._union_vb)))) &&
-					  (((*result)._record_union_choice = _union_vb) || 1)) ||
-					 ((((zcbor_uint32_expect_union(state, (8)))) &&
-					   (zcbor_bstr_decode(state, (&(*result)._union_vd)))) &&
-					  (((*result)._record_union_choice = _union_vd) || 1))),
-			      zcbor_union_end_code(state), int_res))));
+	bool tmp_result = (((zcbor_union_start_code(state) && (int_res = (
+			((((zcbor_uint32_expect_union(state, (2)))) &&
+				(zcbor_int64_decode(state, (&(*result)._union_vi)))	&&
+				((((*result)._union_vi >= -9223372036854775807LL)	&&
+				((*result)._union_vi <= 9223372036854775807LL)) ||
+				(zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) &&
+				(((*result)._record_union_choice = _union_vi) || 1))	||
+			((((zcbor_uint32_expect_union(state, (2))))	&&
+				(zcbor_float_decode(state, (&(*result)._union_vf)))) &&
+				(((*result)._record_union_choice = _union_vf) || 1))	||
+			((((zcbor_uint32_expect_union(state, (3)))) &&
+				(zcbor_tstr_decode(state, (&(*result)._union_vs)))) &&
+				(((*result)._record_union_choice = _union_vs) || 1)) ||
+			((((zcbor_uint32_expect_union(state, (4)))) &&
+				(zcbor_bool_decode(state, (&(*result)._union_vb)))) &&
+				(((*result)._record_union_choice = _union_vb) || 1)) ||
+			((((zcbor_uint32_expect_union(state, (8)))) &&
+				(zcbor_bstr_decode(state, (&(*result)._union_vd)))) &&
+				(((*result)._record_union_choice = _union_vd) || 1))),
+		zcbor_union_end_code(state), int_res))));
 
 	if (!tmp_result)
 		zcbor_trace();
@@ -97,18 +81,21 @@ static bool decode_value(zcbor_state_t *state, struct value_ *result)
 	bool int_res;
 
 	bool tmp_result =
-		(((zcbor_union_start_code(state) &&
-		   (int_res = ((((zcbor_tstr_decode(state, (&(*result)._value_tstr)))) &&
+		(((zcbor_union_start_code(state) && (int_res = (
+			(((zcbor_tstr_decode(state, (&(*result)._value_tstr)))) &&
 				(((*result)._value_choice = _value_tstr) || 1)) ||
-			       (((zcbor_bstr_decode(state, (&(*result)._value_bstr)))) &&
+			(((zcbor_bstr_decode(state, (&(*result)._value_bstr)))) &&
 				(((*result)._value_choice = _value_bstr) || 1)) ||
-			       (zcbor_union_elem_code(state) &&
-				(((decode_numeric(state, (&(*result)._value__numeric)))) &&
-				 (((*result)._value_choice = _value__numeric) || 1))) ||
-			       (zcbor_union_elem_code(state) &&
-				(((zcbor_bool_decode(state, (&(*result)._value_bool)))) &&
-				 (((*result)._value_choice = _value_bool) || 1)))),
-		    zcbor_union_end_code(state), int_res))));
+			(((zcbor_int64_decode(state, (&(*result)._value_int))) &&
+				((((*result)._value_int >= -9223372036854775807LL) &&
+				((*result)._value_int <= 9223372036854775807LL)) ||
+				(zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) &&
+				(((*result)._value_choice = _value_int) || 1)) ||
+			(((zcbor_float_decode(state, (&(*result)._value_float)))) &&
+				(((*result)._value_choice = _value_float) || 1)) ||
+			(((zcbor_bool_decode(state, (&(*result)._value_bool)))) &&
+				(((*result)._value_choice = _value_bool) || 1))),
+		zcbor_union_end_code(state), int_res))));
 
 	if (!tmp_result)
 		zcbor_trace();
@@ -163,7 +150,7 @@ static bool decode_record(zcbor_state_t *state, struct record *result)
 					state, (&(*result)._record__key_value_pair),
 					sizeof(struct record__key_value_pair))) ||
 		    (zcbor_list_map_end_force_decode(state), false)) &&
-		   zcbor_map_end_decode(state))));
+		zcbor_map_end_decode(state))));
 
 	if (!tmp_result)
 		zcbor_trace();
@@ -190,10 +177,10 @@ static bool decode_lwm2m_senml(zcbor_state_t *state, struct lwm2m_senml *result)
 	return tmp_result;
 }
 
-uint_fast8_t cbor_decode_lwm2m_senml(const uint8_t *payload, size_t payload_len,
+int cbor_decode_lwm2m_senml(const uint8_t *payload, size_t payload_len,
 				     struct lwm2m_senml *result, size_t *payload_len_out)
 {
-	zcbor_state_t states[6];
+	zcbor_state_t states[5];
 
 	zcbor_new_state(states, sizeof(states) / sizeof(zcbor_state_t), payload, payload_len, 1);
 
@@ -204,7 +191,7 @@ uint_fast8_t cbor_decode_lwm2m_senml(const uint8_t *payload, size_t payload_len,
 	}
 
 	if (!ret) {
-		uint_fast8_t ret = zcbor_pop_error(states);
+		int ret = zcbor_pop_error(states);
 
 		return (ret == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : ret;
 	}
