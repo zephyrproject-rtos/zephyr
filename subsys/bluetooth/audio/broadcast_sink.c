@@ -496,16 +496,15 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	}
 
 	codec_qos.pd = net_buf_simple_pull_le24(&net_buf);
-	sink->subgroup_count = net_buf_simple_pull_u8(&net_buf);
+	base.subgroup_count = net_buf_simple_pull_u8(&net_buf);
 
-	if (sink->subgroup_count > ARRAY_SIZE(base.subgroups)) {
+	if (base.subgroup_count > ARRAY_SIZE(base.subgroups)) {
 		BT_DBG("Cannot decode BASE with %u subgroups (max supported is %zu)",
-		       sink->subgroup_count, ARRAY_SIZE(base.subgroups));
+		       base.subgroup_count, ARRAY_SIZE(base.subgroups));
 
 		return false;
 	}
 
-	base.subgroup_count = sink->subgroup_count;
 	for (int i = 0; i < base.subgroup_count; i++) {
 		if (!net_buf_decode_subgroup(&net_buf, &base.subgroups[i])) {
 			BT_DBG("Failed to decode subgroup %d", i);
@@ -525,6 +524,11 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 			return false;
 		}
 	}
+
+	/* We only overwrite the sink->base data once the base has successfully
+	 * been decoded to avoid overwriting it with invalid data
+	 */
+	(void)memcpy(&sink->base, &base, sizeof(base));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, node) {
 		if (listener->base_recv != NULL) {
@@ -904,13 +908,29 @@ static void broadcast_sink_cleanup(struct bt_audio_broadcast_sink *sink)
 	(void)memset(sink, 0, sizeof(*sink));
 }
 
+static struct bt_codec *codec_from_base_by_index(struct bt_audio_base *base,
+						 uint8_t index)
+{
+	for (size_t i = 0U; i < base->subgroup_count; i++) {
+		struct bt_audio_base_subgroup *subgroup = &base->subgroups[i];
+
+		for (size_t j = 0U; j < subgroup->bis_count; j++) {
+			if (subgroup->bis_data[j].index == index) {
+				return &subgroup->codec;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 				 uint32_t indexes_bitfield,
 				 struct bt_audio_stream *streams[],
-				 struct bt_codec *codec,
 				 const uint8_t broadcast_code[16])
 {
 	struct bt_iso_big_sync_param param;
+	struct bt_codec *codecs[BROADCAST_SNK_STREAM_CNT] = { NULL };
 	uint8_t stream_count;
 	int err;
 
@@ -957,7 +977,17 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 	stream_count = 0;
 	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if ((indexes_bitfield & BIT(i)) != 0) {
-			stream_count++;
+			struct bt_codec *codec = codec_from_base_by_index(&sink->base, i);
+
+			__ASSERT(codec != NULL, "Codec[%d] was NULL", i);
+
+			codecs[stream_count++] = codec;
+
+			if (stream_count > BROADCAST_SNK_STREAM_CNT) {
+				BT_DBG("Cannot sync to more than %d streams",
+				       BROADCAST_SNK_STREAM_CNT);
+				return -EINVAL;
+			}
 		}
 	}
 
@@ -970,14 +1000,15 @@ int bt_audio_broadcast_sink_sync(struct bt_audio_broadcast_sink *sink,
 
 	sink->stream_count = stream_count;
 	sink->streams = streams;
-	sink->codec = codec;
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_audio_stream *stream;
+		struct bt_codec *codec;
 
 		stream = streams[i];
+		codec = codecs[i];
 
 		err = bt_audio_broadcast_sink_setup_stream(sink->index, stream,
-							   sink->codec);
+							   codec);
 		if (err != 0) {
 			BT_DBG("Failed to setup streams[%zu]: %d", i, err);
 			broadcast_sink_cleanup_streams(sink);
