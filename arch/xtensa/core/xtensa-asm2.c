@@ -20,6 +20,14 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 			void (*entry)(void *, void *, void *),
 			void *arg1, void *arg2, void *arg3)
 {
+	/* Not-a-cpu ID Ensures that the first time this is run, the
+	 * stack will be invalidated.  That covers the edge case of
+	 * restarting a thread on a stack that had previously been run
+	 * on one CPU, but then initialized on this one, and
+	 * potentially run THERE and not HERE.
+	 */
+	thread->arch.last_cpu = -1;
+
 	/* We cheat and shave 16 bytes off, the top four words are the
 	 * A0-A3 spill area for the caller of the entry function,
 	 * which doesn't exist.  It will never be touched, so we
