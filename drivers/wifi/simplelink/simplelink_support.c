@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Texas Instruments Incorporated
+ * Copyright (c) 2022 T-Mobile USA, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -126,9 +127,15 @@ static int32_t configure_simplelink(void)
 	}
 
 	/* Use Fast Connect Policy, to automatically connect to last AP: */
-	retval = sl_WlanPolicySet(SL_WLAN_POLICY_CONNECTION,
-				  SL_WLAN_CONNECTION_POLICY(1, 1, 0, 0),
-				  NULL, 0);
+	retval = sl_WlanPolicySet(
+				SL_WLAN_POLICY_CONNECTION,
+				SL_WLAN_CONNECTION_POLICY(
+				   IS_ENABLED(CONFIG_WIFI_SIMPLELINK_WLAN_POLICY_AUTO_CONNECT),
+				   IS_ENABLED(CONFIG_WIFI_SIMPLELINK_WLAN_POLICY_FAST_CONNECT),
+				   IS_ENABLED(CONFIG_WIFI_SIMPLELINK_WLAN_POLICY_ANYP2P),
+				   IS_ENABLED(CONFIG_WIFI_SIMPLELINK_WLAN_POLICY_AUTO_PROVISIONING)),
+				NULL,
+				0);
 	ASSERT_ON_ERROR(retval, WLAN_ERROR);
 
 	/* Disable Auto Provisioning*/

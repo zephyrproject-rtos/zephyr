@@ -1,6 +1,7 @@
 # SimpleLink WiFi driver options
 
 # Copyright (c) 2018 Texas Instruments, Incorporated
+# Copyright (c) 2022 T-Mobile USA, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI_SIMPLELINK
@@ -37,6 +38,35 @@ config WIFI_SIMPLELINK_MAX_SCAN_RETRIES
 	help
 	  The number of times, separated by a one second interval, to retry
 	  a request for the network list.
+
+config WIFI_SIMPLELINK_WLAN_POLICY_AUTO_CONNECT
+	bool "Use the SimpleLink Auto Connection Policy"
+	default y
+	help
+	  The device tries to connect to an AP from the stored profiles
+	  based on priority. Up to seven profiles are supported.
+
+config WIFI_SIMPLELINK_WLAN_POLICY_FAST_CONNECT
+	bool "Use the SimpleLink Fast Connection Policy"
+	default y
+	help
+	  The device will try to connect to the last connected AP.
+
+config WIFI_SIMPLELINK_WLAN_POLICY_ANYP2P
+	bool "Use the SimpleLink AnyP2P Connection Policy"
+	help
+	  Relevant for Wi-Fi-Direct mode only. The device immediately tries
+	  to connect to the first Wi-Fi direct device available, supporting
+	  push-button only.
+
+config WIFI_SIMPLELINK_WLAN_POLICY_AUTO_PROVISIONING
+	bool "Use the SimpleLink Auto Provisioning Connection Policy"
+	help
+	  The device automatically starts the provisioning process if 2
+	  seconds have passed since reset without receiving any command from
+	  the host, while no saved profiles exist. Or the device
+	  automatically starts the provisioning process after 2 minutes of
+	  disconnection, while saved profiles exist.
 
 config WIFI_SIMPLELINK_FAST_CONNECT_TIMEOUT
 	int "Time (in seconds) to wait for fast connect on startup"

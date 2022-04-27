@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2018 Texas Instruments, Incorporated
+ * Copyright (c) 2022 T-Mobile USA, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -234,11 +235,15 @@ static void simplelink_iface_init(struct net_if *iface)
 		return;
 	}
 
-	ret = k_sem_take(&ip_acquired, FC_TIMEOUT);
-	if (ret < 0) {
+	if (IS_ENABLED(CONFIG_WIFI_SIMPLELINK_WLAN_POLICY_FAST_CONNECT)) {
+		ret = k_sem_take(&ip_acquired, FC_TIMEOUT);
+		if (ret < 0) {
+			simplelink_data.initialized = false;
+			LOG_ERR("FastConnect timed out connecting to previous AP.");
+			LOG_ERR("Please re-establish WiFi connection.");
+		}
+	} else {
 		simplelink_data.initialized = false;
-		LOG_ERR("FastConnect timed out connecting to previous AP.");
-		LOG_ERR("Please re-establish WiFi connection.");
 	}
 
 	/* Grab our MAC address: */
