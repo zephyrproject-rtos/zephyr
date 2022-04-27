@@ -1775,6 +1775,20 @@ TF-M Integration:
     labels:
         - "area: TF-M"
 
+Toolchain Integration:
+    status: maintained
+    maintainers:
+        - tejlmand
+    collaborators:
+        - stephanosio
+    files:
+        - cmake/bintools/
+        - cmake/compiler/
+        - cmake/linker/
+        - cmake/toolchain/
+    labels:
+        - "area: Toolchains"
+
 Tracing:
     status: maintained
     maintainers:
