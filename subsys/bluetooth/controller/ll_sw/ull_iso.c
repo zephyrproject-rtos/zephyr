@@ -786,12 +786,8 @@ static void iso_rx_cig_ref_point_update(struct ll_conn_iso_group *cig,
 			/* Update the CIG reference point based on the CIS
 			 * anchor point
 			 */
-			/* TODO: It is not clear that the timestamp is in ticks.
-			 * Upstream expectations might be different and this
-			 * might have to be updated.
-			 */
-			cig->cig_ref_point = HAL_TICKER_TICKS_TO_US(meta->timestamp) +
-						cis_sync_delay - cig_sync_delay;
+			cig->cig_ref_point = meta->timestamp + cis_sync_delay -
+					     cig_sync_delay;
 		}
 	}
 }
