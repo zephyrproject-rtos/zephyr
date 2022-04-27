@@ -449,6 +449,10 @@
 #define MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 #endif
 
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+#define MBEDTLS_PSA_CRYPTO_C
+#endif
+
 /* User config file */
 
 #if defined(CONFIG_MBEDTLS_USER_CONFIG_FILE)
