@@ -35,6 +35,8 @@ static void heap_resized(uintptr_t heap_id, void *old_heap_end, void *new_heap_e
 
 static HEAP_LISTENER_RESIZE_DEFINE(listener, HEAP_ID_LIBC, heap_resized);
 
+void *ptr;
+
 /**
  * @brief Test that heap listener is notified when libc heap size changes.
  *
@@ -45,7 +47,6 @@ static HEAP_LISTENER_RESIZE_DEFINE(listener, HEAP_ID_LIBC, heap_resized);
 void test_alloc_and_trim(void)
 {
 	uintptr_t saved_heap_end;
-	void *ptr;
 
 	TC_PRINT("Allocating memory...\n");
 
