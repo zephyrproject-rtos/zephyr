@@ -416,9 +416,9 @@ Devicetree:
 Disk:
     status: maintained
     maintainers:
-        - jfischer-no
-    collaborators:
         - danieldegrasse
+    collaborators:
+        - jfischer-no
     files:
         - include/zephyr/storage/disk_access.h
         - include/zephyr/drivers/disk.h
