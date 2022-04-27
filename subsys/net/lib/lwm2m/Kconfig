@@ -86,6 +86,7 @@ config LWM2M_DNS_SUPPORT
 
 config LWM2M_ENGINE_STACK_SIZE
 	int "LWM2M engine stack size"
+	default 14336 if LWM2M_RW_SENML_CBOR_SUPPORT
 	default 2560 if NET_LOG
 	default 2048
 	help
