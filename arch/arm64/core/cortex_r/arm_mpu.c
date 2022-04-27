@@ -151,8 +151,6 @@ static void region_init(const uint32_t index,
  */
 void z_arm64_mm_init(bool is_primary_core)
 {
-	/* This param is only for compatibility with the MMU init */
-	ARG_UNUSED(is_primary_core);
 	uint64_t val;
 	uint32_t r_index;
 
@@ -200,7 +198,12 @@ void z_arm64_mm_init(bool is_primary_core)
 
 	arm_core_mpu_enable();
 
+	if (!is_primary_core) {
+		return;
+	}
+
 #ifdef CONFIG_USERSPACE
+	/* Only primary core do the dynamic_areas_init. */
 	int rc = dynamic_areas_init(MPU_DYNAMIC_REGIONS_AREA_START,
 				    MPU_DYNAMIC_REGIONS_AREA_SIZE);
 	if (rc <= 0) {
