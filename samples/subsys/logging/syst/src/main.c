@@ -117,7 +117,7 @@ void log_msgs(void)
 #endif
 }
 
-void main(void)
+int main(void)
 {
 	log_msgs();
 
@@ -140,5 +140,5 @@ void main(void)
 	/* raw string */
 	printk("SYST Sample Execution Completed\n");
 #endif
-
+	return 0;
 }
