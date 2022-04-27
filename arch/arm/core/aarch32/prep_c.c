@@ -184,6 +184,10 @@ static inline void z_arm_floating_point_init(void)
 
 extern FUNC_NORETURN void z_cstart(void);
 
+#if defined(CONFIG_EARLY_INIT)
+extern void z_early_init(void);
+#endif /* CONFIG_EARLY_INIT */
+
 /**
  *
  * @brief Prepare to and run C code
@@ -193,6 +197,9 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 void z_arm_prep_c(void)
 {
+#if defined(CONFIG_EARLY_INIT)
+	z_early_init();
+#endif
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
