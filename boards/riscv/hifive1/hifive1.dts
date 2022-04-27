@@ -25,15 +25,15 @@
 	leds {
 		compatible = "pwm-leds";
 		led0: led_0 {
-			pwms = <&pwm1 1 0>;
+			pwms = <&pwm1 1 PWM_MSEC(20)>;
 			label = "Green LED";
 		};
 		led1: led_1 {
-			pwms = <&pwm1 2 0>;
+			pwms = <&pwm1 2 PWM_MSEC(20)>;
 			label = "Blue LED";
 		};
 		led2: led_2 {
-			pwms = <&pwm1 3 0>;
+			pwms = <&pwm1 3 PWM_MSEC(20)>;
 			label = "Red LED";
 		};
 	};
