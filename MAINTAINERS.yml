@@ -1137,6 +1137,7 @@ Logging:
         - nordic-krch
     collaborators:
         - chen-png
+        - aasthagr
     files:
         - include/zephyr/logging/
         - samples/subsys/logging/
