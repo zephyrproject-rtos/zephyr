@@ -43,6 +43,17 @@
 	};
 };
 
+/*
+ * Default for this board is to allocate SRAM0-1 to M4 CPU but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-3 differently.
+ *
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(128)>;
+};
+
 &cpu0 {
 	clock-frequency = <48000000>;
 };
