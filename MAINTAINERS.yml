@@ -322,6 +322,18 @@ CMSIS-DSP integration:
     labels:
         - "area: CMSIS-DSP"
 
+CMSIS-NN integration:
+    status: maintained
+    maintainers:
+        - JordanYates
+    collaborators:
+        - stephanosio
+    files:
+        - modules/Kconfig.cmsis_nn
+        - tests/lib/cmsis_nn/
+    labels:
+        - "area: CMSIS-NN"
+
 Common Architecture Interface:
     status: odd fixes
     collaborators:
