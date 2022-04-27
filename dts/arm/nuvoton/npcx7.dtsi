@@ -25,7 +25,6 @@
 		pinctrl-0 = <&alt0_gpio_no_spip
 			   &alt0_gpio_no_fpip
 			   &alt1_no_pwrgd
-			   &alt1_no_lpc_espi
 			   &alta_no_peci_en
 			   &altd_npsl_in1_sl
 			   &altd_npsl_in2_sl
