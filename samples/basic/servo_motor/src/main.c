@@ -38,7 +38,7 @@ void main(void)
 	}
 
 	while (1) {
-		ret = pwm_set_nsec_pulse_dt(&servo, pulse_width);
+		ret = pwm_set_pulse_dt(&servo, pulse_width);
 		if (ret < 0) {
 			printk("Error %d: failed to set pulse width\n", ret);
 			return;

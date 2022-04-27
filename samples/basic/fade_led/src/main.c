@@ -35,7 +35,7 @@ void main(void)
 	}
 
 	while (1) {
-		ret = pwm_set_nsec_pulse_dt(&pwm_led0, pulse_width);
+		ret = pwm_set_pulse_dt(&pwm_led0, pulse_width);
 		if (ret) {
 			printk("Error %d: failed to set pulse width\n", ret);
 			return;

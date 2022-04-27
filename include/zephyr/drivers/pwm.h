@@ -418,98 +418,10 @@ static inline int z_impl_pwm_get_cycles_per_sec(const struct device *dev,
 }
 
 /**
- * @brief Set the period and pulse width in microseconds for a single PWM
- *        output.
- *
- * @param[in] dev PWM device instance.
- * @param channel PWM channel.
- * @param period Period (in microseconds) set to the PWM.
- * @param pulse Pulse width (in microseconds) set to the PWM.
- * @param flags Flags for pin configuration (polarity).
- *
- * @retval 0 If successful.
- * @retval -ENOTSUP If requested period or pulse cycles are not supported.
- * @retval -errno Other negative errno code on failure.
- */
-static inline int pwm_set_usec(const struct device *dev, uint32_t channel,
-			       uint32_t period, uint32_t pulse,
-			       pwm_flags_t flags)
-{
-	int err;
-	uint64_t pulse_cycles;
-	uint64_t period_cycles;
-	uint64_t cycles_per_sec;
-
-	err = pwm_get_cycles_per_sec(dev, channel, &cycles_per_sec);
-	if (err < 0) {
-		return err;
-	}
-
-	period_cycles = (period * cycles_per_sec) / USEC_PER_SEC;
-	if (period_cycles > UINT32_MAX) {
-		return -ENOTSUP;
-	}
-
-	pulse_cycles = (pulse * cycles_per_sec) / USEC_PER_SEC;
-	if (pulse_cycles > UINT32_MAX) {
-		return -ENOTSUP;
-	}
-
-	return pwm_set_cycles(dev, channel, (uint32_t)period_cycles,
-			      (uint32_t)pulse_cycles, flags);
-}
-
-/**
- * @brief Set the period and pulse width in microseconds from a struct
- *        pwm_dt_spec (with custom period).
- *
- * This is equivalent to:
- *
- *     pwm_set_usec(spec->dev, spec->channel, period, pulse, spec->flags)
- *
- * The period specified in @p spec is ignored. This API call can be used when
- * the period specified in Devicetree needs to be changed at runtime.
- *
- * @param[in] spec PWM specification from devicetree.
- * @param period Period (in microseconds) set to the PWM.
- * @param pulse Pulse width (in microseconds) set to the PWM.
- *
- * @return A value from pwm_set_usec().
- *
- * @see pwm_set_usec_pulse_dt()
- */
-static inline int pwm_set_usec_dt(const struct pwm_dt_spec *spec,
-				  uint32_t period, uint32_t pulse)
-{
-	return pwm_set_usec(spec->dev, spec->channel, period, pulse,
-			    spec->flags);
-}
-
-/**
- * @brief Set the period and pulse width in microseconds from a struct
- *        pwm_dt_spec.
- *
- * This is equivalent to:
- *
- *     pwm_set_usec(spec->dev, spec->channel, spec->period / NSEC_PER_USEC,
- *                  pulse, spec->flags)
- *
- * @param[in] spec PWM specification from devicetree.
- * @param pulse Pulse width (in microseconds) set to the PWM.
- *
- * @return A value from pwm_set_usec().
- *
- * @see pwm_set_usec_dt()
- */
-static inline int pwm_set_usec_pulse_dt(const struct pwm_dt_spec *spec,
-					uint32_t pulse)
-{
-	return pwm_set_usec(spec->dev, spec->channel,
-			    spec->period / NSEC_PER_USEC, pulse, spec->flags);
-}
-
-/**
  * @brief Set the period and pulse width in nanoseconds for a single PWM output.
+ *
+ * @note Utility macros such as PWM_MSEC() can be used to convert from other
+ * scales or units to nanoseconds, the units used by this function.
  *
  * @param[in] dev PWM device instance.
  * @param channel PWM channel.
@@ -521,9 +433,8 @@ static inline int pwm_set_usec_pulse_dt(const struct pwm_dt_spec *spec,
  * @retval -ENOTSUP If requested period or pulse cycles are not supported.
  * @retval -errno Other negative errno code on failure.
  */
-static inline int pwm_set_nsec(const struct device *dev, uint32_t channel,
-			       uint32_t period, uint32_t pulse,
-			       pwm_flags_t flags)
+static inline int pwm_set(const struct device *dev, uint32_t channel,
+			  uint32_t period, uint32_t pulse, pwm_flags_t flags)
 {
 	int err;
 	uint64_t pulse_cycles;
@@ -555,7 +466,7 @@ static inline int pwm_set_nsec(const struct device *dev, uint32_t channel,
  *
  * This is equivalent to:
  *
- *     pwm_set_nsec(spec->dev, spec->channel, period, pulse, spec->flags)
+ *     pwm_set(spec->dev, spec->channel, period, pulse, spec->flags)
  *
  * The period specified in @p spec is ignored. This API call can be used when
  * the period specified in Devicetree needs to be changed at runtime.
@@ -564,15 +475,14 @@ static inline int pwm_set_nsec(const struct device *dev, uint32_t channel,
  * @param period Period (in nanoseconds) set to the PWM.
  * @param pulse Pulse width (in nanoseconds) set to the PWM.
  *
- * @return A value from pwm_set_nsec().
+ * @return A value from pwm_set().
  *
- * @see pwm_set_nsec_pulse_dt()
+ * @see pwm_set_pulse_dt()
  */
-static inline int pwm_set_nsec_dt(const struct pwm_dt_spec *spec,
-				  uint32_t period, uint32_t pulse)
+static inline int pwm_set_dt(const struct pwm_dt_spec *spec, uint32_t period,
+			     uint32_t pulse)
 {
-	return pwm_set_nsec(spec->dev, spec->channel, period, pulse,
-			    spec->flags);
+	return pwm_set(spec->dev, spec->channel, period, pulse, spec->flags);
 }
 
 /**
@@ -581,20 +491,20 @@ static inline int pwm_set_nsec_dt(const struct pwm_dt_spec *spec,
  *
  * This is equivalent to:
  *
- *     pwm_set_nsec(spec->dev, spec->channel, spec->period, pulse, spec->flags)
+ *     pwm_set(spec->dev, spec->channel, spec->period, pulse, spec->flags)
  *
  * @param[in] spec PWM specification from devicetree.
  * @param pulse Pulse width (in nanoseconds) set to the PWM.
  *
- * @return A value from pwm_set_nsec().
+ * @return A value from pwm_set().
  *
- * @see pwm_set_nsec_pulse_dt()
+ * @see pwm_set_pulse_dt()
  */
-static inline int pwm_set_nsec_pulse_dt(const struct pwm_dt_spec *spec,
-					uint32_t pulse)
+static inline int pwm_set_pulse_dt(const struct pwm_dt_spec *spec,
+				   uint32_t pulse)
 {
-	return pwm_set_nsec(spec->dev, spec->channel, spec->period, pulse,
-			    spec->flags);
+	return pwm_set(spec->dev, spec->channel, spec->period, pulse,
+		       spec->flags);
 }
 
 /**
@@ -934,26 +844,27 @@ pwm_pin_set_cycles(const struct device *dev, uint32_t channel, uint32_t period,
 
 /**
  * @brief Set the period and pulse width for a single PWM output.
- * @deprecated Use pwm_set_usec() instead.
+ * @deprecated Use pwm_set() with PWM_USEC() instead.
  */
 __deprecated static inline int pwm_pin_set_usec(const struct device *dev,
 						uint32_t channel,
 						uint32_t period, uint32_t pulse,
 						pwm_flags_t flags)
 {
-	return pwm_set_usec(dev, channel, period, pulse, flags);
+	return pwm_set(dev, channel, period * NSEC_PER_USEC,
+		       pulse * NSEC_PER_USEC, flags);
 }
 
 /**
  * @brief Set the period and pulse width for a single PWM output.
- * @deprecated Use pwm_set_nsec() instead.
+ * @deprecated Use pwm_set() instead.
  */
 __deprecated static inline int pwm_pin_set_nsec(const struct device *dev,
 						uint32_t channel,
 						uint32_t period, uint32_t pulse,
 						pwm_flags_t flags)
 {
-	return pwm_set_nsec(dev, channel, period, pulse, flags);
+	return pwm_set(dev, channel, period, pulse, flags);
 }
 
 /**
