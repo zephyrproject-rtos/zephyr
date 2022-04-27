@@ -27,3 +27,4 @@ supported:
   - hwinfo
   - watchdog
   - netif:eth
+  - mipi_dsi
