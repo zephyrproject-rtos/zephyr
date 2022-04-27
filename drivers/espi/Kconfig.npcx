@@ -30,6 +30,17 @@ config ESPI_NPCX_PERIPHERAL_HOST_CMD_PARAM_SIZE
 	  Please notice the valid value in npcx ec series for this option is
 	  8/16/32/64/128/256/512/1024/2048/4096 bytes.
 
+config ESPI_NPCX_BYPASS_CH_ENABLE_FATAL_ERROR
+	bool
+	depends on SOC_SERIES_NPCX7 || SOC_SERIES_NPCX9
+	default y
+	help
+	  Workaround the issue documented in NPCX99nF errata rev1_2, No.3.10.
+	  Enabling an eSPI channel during an eSPI transaction might
+	  (with low probability) cause the eSPI_SIF module to transition to
+	  a wrong state and therefore response with FATAL_ERROR on an incoming
+	  transaction.
+
 # The default value 'y' for the existing options if ESPI_NPCX is selected.
 if ESPI_NPCX
 
