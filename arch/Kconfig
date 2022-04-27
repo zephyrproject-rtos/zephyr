@@ -484,6 +484,13 @@ config INIT_ARCH_HW_AT_BOOT
 	  implementation details refer to each architecture where
 	  this feature is supported.
 
+config EARLY_INIT
+	bool "Call early init function"
+	depends on ARCH_HAS_EARLY_INIT
+	help
+	  The early init function (must be called z_early_init) is the first
+	  function called after the stack is setup and C functions can be used.
+
 endmenu
 
 #
@@ -537,6 +544,9 @@ config ARCH_HAS_COHERENCE
 	  memory using the ".cached" linker section.
 
 config ARCH_HAS_THREAD_LOCAL_STORAGE
+	bool
+
+config ARCH_HAS_EARLY_INIT
 	bool
 
 #
