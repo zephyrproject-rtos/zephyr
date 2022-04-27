@@ -89,6 +89,7 @@ BT_GATT_SERVICE_DEFINE(has_svc,
 
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
 #define PRESET_CONTROL_POINT_ATTR &has_svc.attrs[4]
+#define ACTIVE_PRESET_INDEX_ATTR &has_svc.attrs[7]
 
 static struct has_client {
 	struct bt_conn *conn;
@@ -113,10 +114,14 @@ static struct has_preset {
 #else
 	const char *name;
 #endif /* CONFIG_BT_HAS_PRESET_NAME_DYNAMIC */
+	const struct bt_has_preset_ops *ops;
 } has_preset_list[CONFIG_BT_HAS_PRESET_COUNT];
 
 /* Number of registered presets */
 static uint8_t has_preset_num;
+
+/* Active preset notification work */
+static struct k_work active_preset_work;
 
 static void process_control_point_work(struct k_work *work);
 
@@ -240,7 +245,7 @@ static int preset_index_compare(const void *p1, const void *p2)
 }
 
 static struct has_preset *preset_alloc(uint8_t index, enum bt_has_properties properties,
-					  const char *name)
+				       const char *name, const struct bt_has_preset_ops *ops)
 {
 	struct has_preset *preset = NULL;
 
@@ -253,6 +258,7 @@ static struct has_preset *preset_alloc(uint8_t index, enum bt_has_properties pro
 #else
 		preset->name = name;
 #endif /* CONFIG_BT_HAS_PRESET_NAME_DYNAMIC */
+		preset->ops = ops;
 
 		has_preset_num++;
 
@@ -513,6 +519,150 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 	return 0;
 }
 
+static void active_preset_work_process(struct k_work *work)
+{
+	const uint8_t active_index = bt_has_preset_active_get();
+
+	bt_gatt_notify(NULL, ACTIVE_PRESET_INDEX_ATTR, &active_index, sizeof(active_index));
+}
+
+static void preset_active_set(uint8_t index)
+{
+	if (index != has.active_index) {
+		has.active_index = index;
+
+		/* Emit active preset notification */
+		k_work_submit(&active_preset_work);
+	}
+}
+
+static uint8_t preset_select(const struct has_preset *preset, bool sync)
+{
+	const int err = preset->ops->select(preset->index, sync);
+
+	if (err == -EINPROGRESS) {
+		/* User has to confirm once the requested preset becomes active by
+		 * calling bt_has_preset_active_set.
+		 */
+		return 0;
+	}
+
+	if (err == -EBUSY) {
+		return BT_HAS_ERR_OPERATION_NOT_POSSIBLE;
+	}
+
+	if (err) {
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	preset_active_set(preset->index);
+
+	return 0;
+}
+
+static uint8_t handle_set_active_preset(struct net_buf_simple *buf, bool sync)
+{
+	const struct bt_has_cp_set_active_preset *pdu;
+	const struct has_preset *preset = NULL;
+
+	if (buf->len < sizeof(*pdu)) {
+		return BT_HAS_ERR_INVALID_PARAM_LEN;
+	}
+
+	pdu = net_buf_simple_pull_mem(buf, sizeof(*pdu));
+
+	preset_foreach(pdu->index, pdu->index, preset_found, &preset);
+	if (preset == NULL) {
+		return BT_ATT_ERR_OUT_OF_RANGE;
+	}
+
+	if (!(preset->properties & BT_HAS_PROP_AVAILABLE)) {
+		return BT_HAS_ERR_OPERATION_NOT_POSSIBLE;
+	}
+
+	return preset_select(preset, sync);
+}
+
+static uint8_t handle_set_next_preset(bool sync)
+{
+	const struct has_preset *next_avail = NULL;
+	const struct has_preset *first_avail = NULL;
+
+	for (size_t i = 0; i < has_preset_num; i++) {
+		const struct has_preset *tmp = &has_preset_list[i];
+
+		if (tmp->index == BT_HAS_PRESET_INDEX_NONE) {
+			break;
+		}
+
+		if (!(tmp->properties & BT_HAS_PROP_AVAILABLE)) {
+			continue;
+		}
+
+		if (tmp->index < has.active_index && !first_avail) {
+			first_avail = tmp;
+			continue;
+		}
+
+		if (tmp->index > has.active_index) {
+			next_avail = tmp;
+			break;
+		}
+	}
+
+	if (next_avail) {
+		return preset_select(next_avail, sync);
+	}
+
+	if (first_avail) {
+		return preset_select(first_avail, sync);
+	}
+
+	return BT_HAS_ERR_OPERATION_NOT_POSSIBLE;
+}
+
+static uint8_t handle_set_prev_preset(bool sync)
+{
+	const struct has_preset *prev_available = NULL;
+	const struct has_preset *last_available = NULL;
+
+	for (size_t i = 0; i < ARRAY_SIZE(has_preset_list); i++) {
+		const struct has_preset *tmp = &has_preset_list[i];
+
+		if (tmp->index == BT_HAS_PRESET_INDEX_NONE) {
+			break;
+		}
+
+		if (!(tmp->properties & BT_HAS_PROP_AVAILABLE)) {
+			continue;
+		}
+
+		if (tmp->index < has.active_index) {
+			prev_available = tmp;
+			continue;
+		}
+
+		if (prev_available) {
+			break;
+		}
+
+		if (tmp->index > has.active_index) {
+			last_available = tmp;
+			continue;
+		}
+	}
+
+	if (prev_available) {
+		return preset_select(prev_available, sync);
+	}
+
+	if (last_available) {
+		return preset_select(last_available, sync);
+	}
+
+	return BT_HAS_ERR_OPERATION_NOT_POSSIBLE;
+}
+
 static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_has_cp_hdr *hdr;
@@ -525,7 +675,21 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 	switch (hdr->opcode) {
 	case BT_HAS_OP_READ_PRESET_REQ:
 		return handle_read_preset_req(conn, buf);
-	}
+	case BT_HAS_OP_SET_ACTIVE_PRESET:
+		return handle_set_active_preset(buf, false);
+	case BT_HAS_OP_SET_NEXT_PRESET:
+		return handle_set_next_preset(false);
+	case BT_HAS_OP_SET_PREV_PRESET:
+		return handle_set_prev_preset(false);
+#if defined(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)
+	case BT_HAS_OP_SET_ACTIVE_PRESET_SYNC:
+		return handle_set_active_preset(buf, true);
+	case BT_HAS_OP_SET_NEXT_PRESET_SYNC:
+		return handle_set_next_preset(true);
+	case BT_HAS_OP_SET_PREV_PRESET_SYNC:
+		return handle_set_prev_preset(true);
+#endif /* CONFIG_BT_HAS_PRESET_SYNC_SUPPORT */
+	};
 
 	return BT_HAS_ERR_INVALID_OPCODE;
 }
@@ -589,12 +753,22 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 		BT_WARN("param->name is too long (%zu > %u)", name_len, BT_HAS_PRESET_NAME_MAX);
 	}
 
+	CHECKIF(param->ops == NULL) {
+		BT_ERR("param->ops is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(param->ops->select == NULL) {
+		BT_ERR("param->ops->select is NULL");
+		return -EINVAL;
+	}
+
 	preset_foreach(param->index, param->index, preset_found, &preset);
 	if (preset != NULL) {
 		return -EALREADY;
 	}
 
-	preset = preset_alloc(param->index, param->properties, param->name);
+	preset = preset_alloc(param->index, param->properties, param->name, param->ops);
 	if (preset == NULL) {
 		return -ENOMEM;
 	}
@@ -706,6 +880,31 @@ void bt_has_preset_foreach(uint8_t index, bt_has_preset_func_t func, void *user_
 
 	preset_foreach(start_index, end_index, bt_has_preset_foreach_func, &data);
 }
+
+int bt_has_preset_active_set(uint8_t index)
+{
+	if (index != BT_HAS_PRESET_INDEX_NONE) {
+		struct has_preset *preset = NULL;
+
+		preset_foreach(index, index, preset_found, &preset);
+		if (preset == NULL) {
+			return -ENOENT;
+		}
+
+		if (!(preset->properties & BT_HAS_PROP_AVAILABLE)) {
+			return -EINVAL;
+		}
+	}
+
+	preset_active_set(index);
+
+	return 0;
+}
+
+uint8_t bt_has_preset_active_get(void)
+{
+	return has.active_index;
+}
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 static int has_init(const struct device *dev)
@@ -747,6 +946,10 @@ static int has_init(const struct device *dev)
 							 BT_AUDIO_LOCATION_FRONT_RIGHT);
 		}
 	}
+
+#if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
+	k_work_init(&active_preset_work, active_preset_work_process);
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 	return 0;
 }
