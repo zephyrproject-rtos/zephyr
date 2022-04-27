@@ -18,6 +18,15 @@ const char *test_preset_name_1 = "test_preset_name_1";
 const char *test_preset_name_5 = "test_preset_name_5";
 const enum bt_has_properties test_preset_properties = BT_HAS_PROP_AVAILABLE;
 
+static int preset_select(uint8_t index, bool sync)
+{
+	return 0;
+}
+
+static const struct bt_has_preset_ops preset_ops = {
+	.select = preset_select,
+};
+
 static void test_main(void)
 {
 	struct bt_has_preset_register_param param;
@@ -42,6 +51,7 @@ static void test_main(void)
 	param.index = test_preset_index_5;
 	param.properties = test_preset_properties;
 	param.name = test_preset_name_5;
+	param.ops = &preset_ops,
 
 	err = bt_has_preset_register(&param);
 	if (err) {
