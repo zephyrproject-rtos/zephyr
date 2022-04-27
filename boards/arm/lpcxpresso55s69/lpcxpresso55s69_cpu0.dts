@@ -65,6 +65,22 @@
 	};
 };
 
+/*
+ * Default for this board is to allocate SRAM0-2 to cpu0 but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-4 differently.
+ *
+ * For example, SRAM0-3 could be allocated to cpu0 with only SRAM4
+ * for cpu1. This would require the zephyr,sram chosen value for cpu1
+ * to be changed to sram4 and the value of sram0 to have a DT_SIZE_K
+ * of 256.
+ *
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(192)>;
+};
+
 &gpio0 {
 	status = "okay";
 };
