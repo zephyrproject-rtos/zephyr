@@ -39,7 +39,7 @@ void main(void)
 	while (1) {
 		for (pulse_red = 0U; pulse_red <= red_pwm_led.period;
 		     pulse_red += STEP_SIZE) {
-			ret = pwm_set_nsec_pulse_dt(&red_pwm_led, pulse_red);
+			ret = pwm_set_pulse_dt(&red_pwm_led, pulse_red);
 			if (ret != 0) {
 				printk("Error %d: red write failed\n", ret);
 				return;
@@ -48,8 +48,8 @@ void main(void)
 			for (pulse_green = 0U;
 			     pulse_green <= green_pwm_led.period;
 			     pulse_green += STEP_SIZE) {
-				ret = pwm_set_nsec_pulse_dt(&green_pwm_led,
-							    pulse_green);
+				ret = pwm_set_pulse_dt(&green_pwm_led,
+						       pulse_green);
 				if (ret != 0) {
 					printk("Error %d: green write failed\n",
 					       ret);
@@ -59,8 +59,8 @@ void main(void)
 				for (pulse_blue = 0U;
 				     pulse_blue <= blue_pwm_led.period;
 				     pulse_blue += STEP_SIZE) {
-					ret = pwm_set_nsec_pulse_dt(
-						&blue_pwm_led, pulse_blue);
+					ret = pwm_set_pulse_dt(&blue_pwm_led,
+							       pulse_blue);
 					if (ret != 0) {
 						printk("Error %d: "
 						       "blue write failed\n",

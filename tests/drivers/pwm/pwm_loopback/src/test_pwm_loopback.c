@@ -50,17 +50,16 @@ void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit unit,
 	case TEST_PWM_UNIT_NSEC:
 		TC_PRINT("Testing PWM capture @ %u/%u nsec\n",
 			 pulse, period);
-		err = pwm_set_nsec(out.dev, out.pwm, period,
-				   pulse, out.flags ^=
-				   (flags & PWM_POLARITY_MASK));
+		err = pwm_set(out.dev, out.pwm, period, pulse, out.flags ^=
+			      (flags & PWM_POLARITY_MASK));
 		break;
 
 	case TEST_PWM_UNIT_USEC:
 		TC_PRINT("Testing PWM capture @ %u/%u usec\n",
 			 pulse, period);
-		err = pwm_set_usec(out.dev, out.pwm, period,
-				   pulse, out.flags ^=
-				   (flags & PWM_POLARITY_MASK));
+		err = pwm_set(out.dev, out.pwm, PWM_USEC(period),
+			      PWM_USEC(pulse), out.flags ^=
+			      (flags & PWM_POLARITY_MASK));
 		break;
 
 	default:
@@ -235,8 +234,8 @@ void test_continuous_capture(void)
 	memset(buffer, 0, sizeof(buffer));
 	k_sem_init(&data.sem, 0, 1);
 
-	err = pwm_set_usec(out.dev, out.pwm, period_usec, pulse_usec,
-			       out.flags);
+	err = pwm_set(out.dev, out.pwm, PWM_USEC(period_usec),
+		      PWM_USEC(pulse_usec), out.flags);
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
 
 	err = pwm_configure_capture(in.dev, in.pwm,

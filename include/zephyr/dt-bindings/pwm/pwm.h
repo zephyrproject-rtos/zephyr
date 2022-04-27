@@ -30,9 +30,8 @@
 
 /**
  * @name PWM polarity flags
- * The `PWM_POLARITY_*` flags are used with pwm_set_cycles(), pwm_set_usec(),
- * pwm_set_nsec() or pwm_configure_capture() to specify the polarity of a PWM
- * channel.
+ * The `PWM_POLARITY_*` flags are used with pwm_set_cycles(), pwm_set()
+ * or pwm_configure_capture() to specify the polarity of a PWM channel.
  *
  * The flags are on the lower 8bits of the pwm_flags_t
  * @{
