@@ -213,9 +213,9 @@ void flush_fpu_ipi_handler(const void *unused)
 
 void z_arm64_flush_fpu_ipi(unsigned int cpu)
 {
-	const uint64_t mpidr = GET_MPIDR();
+	const uint64_t mpidr = cpu_node_list[cpu];
 
-	gic_raise_sgi(SGI_FPU_IPI, mpidr, (1 << cpu));
+	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << MPIDR_TO_CORE(mpidr));
 }
 #endif
 
