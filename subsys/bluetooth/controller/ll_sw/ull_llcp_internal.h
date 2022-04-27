@@ -196,6 +196,7 @@ struct proc_ctx {
 		/* Connection Update & Connection Parameter Request */
 		struct {
 			uint8_t error;
+			uint8_t rejected_opcode;
 			uint8_t params_changed;
 			uint16_t instant;
 			uint8_t win_size;
