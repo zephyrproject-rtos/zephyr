@@ -60,25 +60,6 @@ typedef uint8_t isoal_production_mode_t;
 #define ISOAL_PRODUCTION_MODE_ENABLED     ((isoal_production_mode_t) 0x01)
 
 
-/**
- *  Origin of {PDU or SDU}.
- */
-struct isoal_rx_origin {
-	/** Originating subsystem */
-	enum __packed {
-		ISOAL_SUBSYS_BT_LLL   = 0x01,    /*!< Bluetooth LLL */
-		ISOAL_SUBSYS_BT_HCI   = 0x02,    /*!< Bluetooth HCI */
-		ISOAL_SUBSYS_VS       = 0xff     /*!< Vendor specific */
-	} subsys;
-
-	/** Subsystem instance */
-	union {
-		struct {
-			uint16_t  handle;       /*!< BT connection handle */
-		} bt_lll;
-	} inst;
-};
-
 enum isoal_mode {
 	ISOAL_MODE_CIS,
 	ISOAL_MODE_BIS
@@ -133,10 +114,6 @@ struct isoal_sdu_produced {
 	isoal_time_t            timestamp;
 	/** Sequence number of SDU */
 	isoal_sdu_cnt_t         seqn;
-	/** Regardless of status, we always know where the PDUs that produced
-	 *  this SDU, came from
-	 */
-	struct isoal_rx_origin  origin;
 	/** Contents and length can only be trusted if status is valid */
 	struct isoal_sdu_buffer contents;
 	/** Optional context to be carried from PDU at alloc-time */
@@ -263,6 +240,7 @@ struct isoal_sdu_production {
 	/* Assumes that isoal_pdu_cnt_t is a uint64_t bit field */
 	uint64_t prev_pdu_is_end:1;
 	uint64_t prev_pdu_is_padding:1;
+	uint64_t sdu_allocated:1;
 	enum {
 		ISOAL_START,
 		ISOAL_CONTINUE,
@@ -362,8 +340,8 @@ struct isoal_source_session {
 	uint8_t                    burst_number;
 	uint8_t                    pdus_per_sdu;
 	uint8_t                    max_pdu_size;
-	uint32_t                   latency_unframed;
-	uint32_t                   latency_framed;
+	int32_t                    latency_unframed;
+	int32_t                    latency_framed;
 };
 
 struct isoal_pdu_production {
