@@ -97,6 +97,14 @@ static void tx_lll_flush(void *param);
 static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+/* Connection context pointer used as CPR mutex to serialize connection
+ * parameter requests procedures across simulataneous connections so that
+ * offsets exchanged to the peer do not get changed.
+ */
+struct ll_conn *conn_upd_curr;
+#endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
+
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 static inline void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx);
 static inline void event_fex_prep(struct ll_conn *conn);
@@ -119,14 +127,6 @@ static inline bool ctrl_is_unexpected(struct ll_conn *conn, uint8_t opcode);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-/* NOTE: cpr_active_* functions are inline as they are simple assignment to
- *       global variable, and if in future get called from more than two caller
- *       functions, we dont want the caller function branching into these which
- *       can add to CPU use inside ULL ISR.
- */
-static inline void cpr_active_check_and_reset(struct ll_conn *conn);
-static inline void cpr_active_reset(void);
-
 static inline void event_conn_param_prep(struct ll_conn *conn,
 					 uint16_t event_counter,
 					 uint32_t ticks_at_expire);
@@ -907,13 +907,6 @@ int ull_conn_reset(void)
 
 	/* Re-initialize the Tx Ack mfifo */
 	MFIFO_INIT(conn_ack);
-
-#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	/* Reset CPR mutex */
-	cpr_active_reset();
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	err = init_reset();
 	if (err) {
@@ -2129,6 +2122,11 @@ static int init_reset(void)
 	ull_cp_init();
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	/* Reset CPR mutex */
+	cpr_active_reset();
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	/* Initialize the DLE defaults */
 	default_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
@@ -2866,42 +2864,6 @@ static bool is_enc_req_pause_tx(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-/* Connection context pointer used as CPR mutex to serialize connection
- * parameter requests procedures across simulataneous connections so that
- * offsets exchanged to the peer do not get changed.
- */
-static struct ll_conn *conn_upd_curr;
-
-static inline void cpr_active_check_and_set(struct ll_conn *conn)
-{
-	if (!conn_upd_curr) {
-		conn_upd_curr = conn;
-	}
-}
-
-static inline void cpr_active_set(struct ll_conn *conn)
-{
-	conn_upd_curr = conn;
-}
-
-static inline bool cpr_active_is_set(struct ll_conn *conn)
-{
-	return conn_upd_curr && (conn_upd_curr != conn);
-}
-
-static inline void cpr_active_check_and_reset(struct ll_conn *conn)
-{
-	if (conn == conn_upd_curr) {
-		conn_upd_curr = NULL;
-	}
-}
-
-static inline void cpr_active_reset(void)
-{
-	conn_upd_curr = NULL;
-}
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 static inline void event_conn_upd_init(struct ll_conn *conn,
 				       uint16_t event_counter,
