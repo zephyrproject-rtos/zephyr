@@ -942,6 +942,15 @@ void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code)
 		llcp_rp_conn_param_req_neg_reply(conn, ctx);
 	}
 }
+
+uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	return (ctx && ctx->proc == PROC_CONN_PARAM_REQ);
+}
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
