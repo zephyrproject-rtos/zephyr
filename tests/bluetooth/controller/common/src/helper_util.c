@@ -38,7 +38,9 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
-static uint32_t event_active;
+static struct ll_conn *emul_conn_pool[CONFIG_BT_MAX_CONN];
+
+static uint32_t event_active[CONFIG_BT_MAX_CONN];
 sys_slist_t ut_rx_q;
 static sys_slist_t lt_tx_q;
 static uint32_t no_of_ctx_buffers_at_test_setup;
@@ -197,6 +199,17 @@ uint16_t test_ctx_buffers_cnt(void)
 	return no_of_ctx_buffers_at_test_setup;
 }
 
+static uint8_t find_idx(struct ll_conn *conn)
+{
+	for (uint8_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+		if (emul_conn_pool[i] == conn) {
+			return i;
+		}
+	}
+	zassert_true(0, "Invalid connection object");
+	return 0xFF;
+}
+
 void test_setup(struct ll_conn *conn)
 {
 	ull_conn_init();
@@ -221,11 +234,34 @@ void test_setup(struct ll_conn *conn)
 
 	ll_reset();
 	conn->lll.event_counter = 0;
-	event_active = 0;
+	event_active[0] = 0;
+
+	memset(emul_conn_pool, 0x00, sizeof(emul_conn_pool));
+	emul_conn_pool[0] = conn;
 
 	no_of_ctx_buffers_at_test_setup = ctx_buffers_free();
+
 }
 
+void test_setup_idx(struct ll_conn *conn, uint8_t idx)
+{
+	if (idx == 0) {
+		test_setup(conn);
+		return;
+	}
+
+	memset(conn, 0x00, sizeof(*conn));
+
+	/* Initialize the ULL TX Q */
+	ull_tx_q_init(&conn->tx_q);
+
+	/* Initialize the connection object */
+	ull_llcp_init(conn);
+
+	conn->lll.event_counter = 0;
+	event_active[idx] = 0;
+	emul_conn_pool[idx] = conn;
+}
 
 void test_set_role(struct ll_conn *conn, uint8_t role)
 {
@@ -235,10 +271,11 @@ void test_set_role(struct ll_conn *conn, uint8_t role)
 void event_prepare(struct ll_conn *conn)
 {
 	struct lll_conn *lll;
+	uint32_t *evt_active = &(event_active[find_idx(conn)]);
 
 	/* Can only be called with no active event */
-	zassert_equal(event_active, 0, "Called inside an active event");
-	event_active = 1;
+	zassert_equal(*evt_active, 0, "Called inside an active event");
+	*evt_active = 1;
 
 	/*** ULL Prepare ***/
 
@@ -262,8 +299,9 @@ void event_prepare(struct ll_conn *conn)
 
 void event_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 {
+	uint32_t *evt_active = &(event_active[find_idx(conn)]);
 	/* Can only be called with active event */
-	zassert_equal(event_active, 1, "Called outside an active event");
+	zassert_equal(*evt_active, 1, "Called outside an active event");
 
 	ull_cp_tx_ack(conn, tx);
 }
@@ -271,10 +309,12 @@ void event_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 void event_done(struct ll_conn *conn)
 {
 	struct node_rx_pdu *rx;
+	uint32_t *evt_active = &(event_active[find_idx(conn)]);
 
 	/* Can only be called with active event */
-	zassert_equal(event_active, 1, "Called outside an active event");
-	event_active = 0;
+	zassert_equal(*evt_active, 1, "Called outside an active event");
+	*evt_active = 0;
+
 
 	while ((rx = (struct node_rx_pdu *)sys_slist_get(&lt_tx_q))) {
 		ull_cp_rx(conn, rx);
@@ -285,6 +325,7 @@ void event_done(struct ll_conn *conn)
 uint16_t event_counter(struct ll_conn *conn)
 {
 	uint16_t event_counter;
+	uint32_t *evt_active = &(event_active[find_idx(conn)]);
 
 	/* Calculate current event counter */
 	event_counter = ull_conn_event_counter(conn);
@@ -293,7 +334,7 @@ uint16_t event_counter(struct ll_conn *conn)
 	 * return the current event counter value (i.e. -1);
 	 * otherwise return the next event counter value
 	 */
-	if (event_active)
+	if (*evt_active)
 		event_counter--;
 
 	return event_counter;
