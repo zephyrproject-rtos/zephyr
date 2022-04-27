@@ -167,7 +167,8 @@ set_compiler_property(PROPERTY imacros -imacros)
 set_compiler_property(PROPERTY security_canaries -fstack-protector-all)
 
 #no support of _FORTIFY_SOURCE"
-set_compiler_property(PROPERTY security_fortify "")
+set_compiler_property(PROPERTY security_fortify_compile_time)
+set_compiler_property(PROPERTY security_fortify_run_time)
 
 # Required C++ flags when using mwdt
 set_property(TARGET compiler-cpp PROPERTY required "-Hcplus" "-Hoff=Stackcheck_alloca")

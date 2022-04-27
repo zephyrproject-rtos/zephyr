@@ -155,7 +155,8 @@ if(NOT CONFIG_NO_OPTIMIZATIONS)
   # _FORTIFY_SOURCE: Detect common-case buffer overflows for certain functions
   # _FORTIFY_SOURCE=1 : Compile-time checks (requires -O1 at least)
   # _FORTIFY_SOURCE=2 : Additional lightweight run-time checks
-  set_compiler_property(PROPERTY security_fortify _FORTIFY_SOURCE=2)
+  set_compiler_property(PROPERTY security_fortify_compile_time _FORTIFY_SOURCE=1)
+  set_compiler_property(PROPERTY security_fortify_run_time _FORTIFY_SOURCE=2)
 endif()
 
 # gcc flag for a hosted (no-freestanding) application
