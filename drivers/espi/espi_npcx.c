@@ -865,6 +865,14 @@ static int espi_npcx_init(const struct device *dev)
 		return ret;
 	}
 
+	if (IS_ENABLED(CONFIG_ESPI_NPCX_BYPASS_CH_ENABLE_FATAL_ERROR)) {
+		/* Enable the access to the NPCX_ONLY_ESPI_REG2 register */
+		inst->NPCX_ONLY_ESPI_REG1 = NPCX_ONLY_ESPI_REG1_UNLOCK_REG2;
+		inst->NPCX_ONLY_ESPI_REG2 &= ~BIT(NPCX_ONLY_ESPI_REG2_TRANS_END_CONFIG);
+		/* Disable the access to the NPCX_ONLY_ESPI_REG2 register */
+		inst->NPCX_ONLY_ESPI_REG1 = NPCX_ONLY_ESPI_REG1_LOCK_REG2;
+	}
+
 	/* Enable events which share the same espi bus interrupt */
 	for (i = 0; i < ARRAY_SIZE(espi_bus_isr_tbl); i++) {
 		inst->ESPIIE |= BIT(espi_bus_isr_tbl[i].int_en_bit);
