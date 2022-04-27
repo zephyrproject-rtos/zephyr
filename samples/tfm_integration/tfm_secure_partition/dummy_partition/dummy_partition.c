@@ -35,7 +35,7 @@ static psa_status_t tfm_dp_secret_digest(uint32_t secret_index,
 	psa_status_t status;
 
 	/* Check that secret_index is valid. */
-	if (secret_index >= NUM_SECRETS) {
+	if (secret_index > NUM_SECRETS) {
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
