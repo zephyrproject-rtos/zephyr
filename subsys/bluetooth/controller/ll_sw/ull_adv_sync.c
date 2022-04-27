@@ -1311,16 +1311,21 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 		ad_data = NULL;
 	}
 
-	/* Add AD len to tertiary PDU length */
-	ter_len += ad_len;
+	/* Check Max Advertising Data Length */
+	if (ad_len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
 
 	/* Check AdvData overflow */
-	if (ter_len > PDU_AC_PAYLOAD_SIZE_MAX) {
+	if ((ter_len + ad_len) > PDU_AC_PAYLOAD_SIZE_MAX) {
+		/* Will use packet too long error to determine fragmenting
+		 * long data
+		 */
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
 	/* set the tertiary PDU len */
-	ter_pdu->len = ter_len;
+	ter_pdu->len = ter_len + ad_len;
 
 	/* Start filling tertiary PDU payload based on flags from here
 	 * ==============================================================
