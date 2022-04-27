@@ -12,8 +12,7 @@
  * @details
  * - Test Steps
  *   -# Bind PWM_0 port 0.
- *   -# Set PWM period and pulse using pwm_set_cycles(),
- *	pwm_set_usec(), or pwm_set_nsec().
+ *   -# Set PWM period and pulse using pwm_set_cycles() or pwm_set().
  *   -# Use multimeter or other instruments to measure the output
  *	from PWM_OUT_0.
  * - Expected Results
@@ -121,15 +120,9 @@ static int test_task(uint32_t port, uint32_t period, uint32_t pulse, uint8_t uni
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}
-	} else if (unit == UNIT_USECS) {
-		/* Verify pwm_set_usec() */
-		if (pwm_set_usec(pwm_dev, port, period, pulse, 0)) {
-			TC_PRINT("Fail to set the period and pulse width\n");
-			return TC_FAIL;
-		}
 	} else { /* unit == UNIT_NSECS */
-		/* Verify pwm_set_nsec() */
-		if (pwm_set_nsec(pwm_dev, port, period, pulse, 0)) {
+		/* Verify pwm_set() */
+		if (pwm_set(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}

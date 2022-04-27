@@ -120,7 +120,7 @@ static enum sound_state {
 
 static inline void beep(int period)
 {
-	pwm_set_usec(pwm, SOUND_PWM_CHANNEL, period, period / 2, 0);
+	pwm_set(pwm, SOUND_PWM_CHANNEL, PWM_USEC(period), PWM_USEC(period) / 2, 0);
 }
 
 static void sound_set(enum sound_state state)

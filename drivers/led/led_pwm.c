@@ -49,7 +49,7 @@ static int led_pwm_blink(const struct device *dev, uint32_t led,
 
 	dt_led = &config->led[led];
 
-	return pwm_set_usec_dt(dt_led, period_usec, pulse_usec);
+	return pwm_set_dt(dt_led, PWM_USEC(period_usec), PWM_USEC(pulse_usec));
 }
 
 static int led_pwm_set_brightness(const struct device *dev,
@@ -64,8 +64,8 @@ static int led_pwm_set_brightness(const struct device *dev,
 
 	dt_led = &config->led[led];
 
-	return pwm_set_nsec_pulse_dt(&config->led[led],
-				     dt_led->period * value / 100);
+	return pwm_set_pulse_dt(&config->led[led],
+				dt_led->period * value / 100);
 }
 
 static int led_pwm_on(const struct device *dev, uint32_t led)
