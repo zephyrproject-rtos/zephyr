@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <inttypes.h>
 #include <ctype.h>
 #include <sys/util.h>
+#include <kernel.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -49,6 +50,17 @@ struct cbor_in_fmt_data {
 	char basename[sizeof("/65535/999/")]; /* Null terminated basename */
 };
 
+/* Statically allocated formatter data is shared between different threads */
+static union cbor_io_fmt_data{
+	struct cbor_in_fmt_data i;
+	struct cbor_out_fmt_data o;
+} fdio;
+
+/*
+ * SEND is called from a different context than the rest of the LwM2M functionality
+ */
+K_MUTEX_DEFINE(fd_mtx);
+
 #define GET_CBOR_FD_NAME(fd) ((fd)->names[(fd)->name_cnt])
 /* Get the current record */
 #define GET_CBOR_FD_REC(fd) \
@@ -61,49 +73,39 @@ struct cbor_in_fmt_data {
 /* Get CBOR output formatter data */
 #define LWM2M_OFD_CBOR(octx) ((struct cbor_out_fmt_data *)engine_get_out_user_data(octx))
 
-static struct cbor_out_fmt_data *setup_out_fmt_data(struct lwm2m_message *msg)
+static void setup_out_fmt_data(struct lwm2m_message *msg)
 {
-	struct cbor_out_fmt_data *fd = malloc(sizeof(*fd));
+	k_mutex_lock(&fd_mtx, K_FOREVER);
 
-	if (!fd) {
-		return NULL;
-	}
+	struct cbor_out_fmt_data *fd = &fdio.o;
 
 	(void)memset(fd, 0, sizeof(*fd));
 	engine_set_out_user_data(&msg->out, fd);
 	fd->name_sz = sizeof("/65535/999/");
-
-	return fd;
 }
 
-static void clear_out_fmt_data(struct lwm2m_message *msg, struct cbor_out_fmt_data *fd)
+static void clear_out_fmt_data(struct lwm2m_message *msg)
 {
-	free(fd);
-	fd = NULL;
-
 	engine_clear_out_user_data(&msg->out);
+
+	k_mutex_unlock(&fd_mtx);
 }
 
-static struct cbor_in_fmt_data *setup_in_fmt_data(struct lwm2m_message *msg)
+static void setup_in_fmt_data(struct lwm2m_message *msg)
 {
-	struct cbor_in_fmt_data *fd = malloc(sizeof(*fd));
+	k_mutex_lock(&fd_mtx, K_FOREVER);
 
-	if (!fd) {
-		return NULL;
-	}
+	struct cbor_in_fmt_data *fd = &fdio.i;
 
 	(void)memset(fd, 0, sizeof(*fd));
 	engine_set_in_user_data(&msg->in, fd);
-
-	return fd;
 }
 
-static void clear_in_fmt_data(struct lwm2m_message *msg, struct cbor_in_fmt_data *fd)
+static void clear_in_fmt_data(struct lwm2m_message *msg)
 {
-	free(fd);
-	fd = NULL;
-
 	engine_clear_in_user_data(&msg->in);
+
+	k_mutex_unlock(&fd_mtx);
 }
 
 static int put_basename(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
@@ -678,15 +680,12 @@ const struct lwm2m_reader senml_cbor_reader = {
 int do_read_op_senml_cbor(struct lwm2m_message *msg)
 {
 	int ret;
-	struct cbor_out_fmt_data *fd = setup_out_fmt_data(msg);
 
-	if (!fd) {
-		return -ENOMEM;
-	}
+	setup_out_fmt_data(msg);
 
 	ret = lwm2m_perform_read_op(msg, LWM2M_FORMAT_APP_SENML_CBOR);
 
-	clear_out_fmt_data(msg, fd);
+	clear_out_fmt_data(msg);
 
 	return ret;
 }
@@ -706,11 +705,9 @@ static uint8_t parse_composite_read_paths(struct lwm2m_message *msg,
 	int len;
 	int ret;
 
-	fd = setup_in_fmt_data(msg);
-	if (!fd) {
-		LOG_ERR("unable to decode composite read paths, out of memory");
-		return -ENOMEM;
-	}
+	setup_in_fmt_data(msg);
+
+	fd = engine_get_in_user_data(&msg->in);
 
 	dret = cbor_decode_lwm2m_senml(ICTX_BUF_R_REGION(&msg->in), &fd->dcd, &isize);
 
@@ -767,7 +764,7 @@ static uint8_t parse_composite_read_paths(struct lwm2m_message *msg,
 	}
 
 out:
-	clear_in_fmt_data(msg, fd);
+	clear_in_fmt_data(msg);
 
 	return paths;
 }
@@ -776,7 +773,6 @@ out:
 int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 {
 	int ret;
-	struct cbor_out_fmt_data *fd;
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm_path_list;
 	sys_slist_t lwm_path_free_list;
@@ -796,15 +792,11 @@ int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 
 	lwm2m_engine_clear_duplicate_path(&lwm_path_list, &lwm_path_free_list);
 
-	fd = setup_out_fmt_data(msg);
-	if (!fd) {
-		LOG_ERR("unable to encode composite read msg, out of memory");
-		return -ENOMEM;
-	}
+	setup_out_fmt_data(msg);
 
 	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SENML_CBOR, &lwm_path_list);
 
-	clear_out_fmt_data(msg, fd);
+	clear_out_fmt_data(msg);
 
 	return ret;
 }
@@ -831,11 +823,9 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 		return do_write_op_item(msg, NULL);
 	}
 
-	fd = setup_in_fmt_data(msg);
-	if (!fd) {
-		LOG_ERR("unable to decode msg, out of memory");
-		return -ENOMEM;
-	}
+	setup_in_fmt_data(msg);
+
+	fd = engine_get_in_user_data(&msg->in);
 
 	dret = cbor_decode_lwm2m_senml(ICTX_BUF_R_PTR(&msg->in), ICTX_BUF_R_LEFT_SZ(&msg->in),
 					   &fd->dcd, &decoded_sz);
@@ -867,7 +857,7 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 		ret = -EBADMSG;
 	}
 
-	clear_in_fmt_data(msg, fd);
+	clear_in_fmt_data(msg);
 
 	return ret < 0 ?  ret : decoded_sz;
 }
@@ -896,16 +886,12 @@ int do_composite_observe_parse_path_senml_cbor(struct lwm2m_message *msg,
 int do_send_op_senml_cbor(struct lwm2m_message *msg, sys_slist_t *lwm2m_path_list)
 {
 	int ret;
-	struct cbor_out_fmt_data *fd = setup_out_fmt_data(msg);
 
-	if (!fd) {
-		LOG_ERR("Unable to complete SEND op, out of memory");
-		return -ENOMEM;
-	}
+	setup_out_fmt_data(msg);
 
 	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SENML_CBOR, lwm2m_path_list);
 
-	clear_out_fmt_data(msg, fd);
+	clear_out_fmt_data(msg);
 
 	return ret;
 }
