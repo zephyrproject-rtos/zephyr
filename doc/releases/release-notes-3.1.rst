@@ -48,6 +48,15 @@ Deprecated in this release
   * Deprecated the `gpio_dev`, `gpio_pin` and `gpio_dt_flags` members from
     spi_cs_control struct in favor of `gpio_dt_spec` gpio.
 
+* PWM
+
+  * The ``pin`` prefix has been removed from all PWM API calls. So for example,
+    ``pwm_pin_set_cycles`` is now ``pwm_set_cycles``. The old API calls are
+    still provided but marked as deprecated.
+  * The PWM period is now always set in nanoseconds, so the ``_nsec`` and
+    ``_usec`` set functions have been deprecated. Other units can be specified
+    using, e.g. ``PWM_USEC()`` macros, which convert down to nanoseconds.
+
 Stable API changes in this release
 ==================================
 
@@ -167,6 +176,11 @@ Drivers and Sensors
 * Pin control
 
 * PWM
+
+  * Added :c:struct:`pwm_dt_spec` and associated helpers, e.g.
+    :c:macro:`PWM_DT_SPEC_GET` or :c:func:`pwm_set_dt`. This addition makes it
+    easier to use the PWM API when the PWM channel, period and flags are taken
+    from a Devicetree PWM cell.
 
 * Sensor
 
