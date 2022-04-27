@@ -430,4 +430,9 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
+config MBEDTLS_PSA_CRYPTO_C
+	bool "Platform Security Architecture cryptography API"
+	depends on MBEDTLS_ENTROPY_ENABLED
+	depends on MBEDTLS_CTR_DRBG_ENABLED || MBEDTLS_HMAC_DRBG_ENABLED
+
 endmenu
