@@ -2178,7 +2178,7 @@ class TestInstance(DisablePyTestCollectionMixin):
             if c.name == name:
                 return c
 
-        logger.warning(f"Could not find a matching testcase for {name}")
+        logger.debug(f"Could not find a matching testcase for {name}")
         tc = TestCase(name=name)
         self.testcases.append(tc)
         return tc
@@ -2350,6 +2350,10 @@ class CMake():
             msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
 
             self.instance.status = "passed"
+            if not self.instance.run:
+                for case in self.instance.testcases:
+                    case.status = "skipped"
+                    case.reason = "built only"
             results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
 
             if out:
@@ -3897,7 +3901,8 @@ class TestPlan(DisablePyTestCollectionMixin):
                 passes += 1
         else:
             if not status:
-                logger.error(f"{name}: No status")
+                logger.debug(f"{name}: No status")
+                ET.SubElement(eleTestcase, 'skipped', type=f"untested", message="No results captured, testsuite misconfiguration?")
             else:
                 logger.error(f"{name}: Unknown status '{status}'")
 
@@ -3926,7 +3931,7 @@ class TestPlan(DisablePyTestCollectionMixin):
             suites = list(filter(lambda d: d['platform'] == platform, all_suites))
             # do not create entry if everything is filtered out
             if self.no_skipped_report:
-                non_filtered = list(filter(lambda d: d['status'] != "filtered", suites))
+                non_filtered = list(filter(lambda d: d.get('status') != "filtered", suites))
                 if not non_filtered:
                     continue
 
@@ -3948,13 +3953,13 @@ class TestPlan(DisablePyTestCollectionMixin):
                 runnable = ts.get('runnable', 0)
                 duration += float(handler_time)
 
-                ts_status = ts.get('status', 'Unknown')
+                ts_status = ts.get('status')
                 # Do not report filtered testcases
                 if ts_status == 'filtered' and self.no_skipped_report:
                     continue
                 if full_report:
                     for tc in ts.get("testcases", []):
-                        status = tc.get('status', ts_status)
+                        status = tc.get('status')
                         reason = tc.get('reason', ts.get('reason', 'Unknown'))
                         log = tc.get("log", ts.get("log"))
 
@@ -4021,7 +4026,6 @@ class TestPlan(DisablePyTestCollectionMixin):
                 suite["ram_size"] = ram_size
             if rom_size:
                 suite["rom_size"] = rom_size
-            suite["execution_time"] =  f"{float(handler_time):.2f}"
 
             if instance.status in ["error", "failed", "timeout", "flash_error"]:
                 if instance.status == 'failed':
@@ -4040,8 +4044,12 @@ class TestPlan(DisablePyTestCollectionMixin):
             elif instance.status == 'filtered':
                 suite["status"] = "filtered"
                 suite["reason"] = instance.reason
-            else:
-                suite["status"] = instance.status
+            elif instance.status == 'passed':
+                suite["status"] = "passed"
+
+            if instance.status is not None:
+                suite["execution_time"] =  f"{float(handler_time):.2f}"
+
 
             testcases = []
 
@@ -4053,10 +4061,11 @@ class TestPlan(DisablePyTestCollectionMixin):
             for case in instance.testcases:
                 testcase = {}
                 testcase['identifier'] = case.name
-                if single_case_duration:
-                    testcase['execution_time'] = single_case_duration
-                else:
-                    testcase['execution_time'] = f"{float(case.duration):.2f}"
+                if instance.status:
+                    if single_case_duration:
+                        testcase['execution_time'] = single_case_duration
+                    else:
+                        testcase['execution_time'] = f"{float(case.duration):.2f}"
 
                 if case.output != "":
                     testcase['log'] = case.output
@@ -4065,6 +4074,9 @@ class TestPlan(DisablePyTestCollectionMixin):
                     if instance.status != "filtered":
                         testcase["status"] = "skipped"
                         testcase["reason"] = case.reason or instance.reason
+                    else:
+                        testcase["status"] = "filtered"
+
                 elif case.status == 'passed':
                     testcase["status"] = "passed"
                 elif case.status == 'blocked':
@@ -4075,8 +4087,11 @@ class TestPlan(DisablePyTestCollectionMixin):
                 elif case.status in ["error", "flash_error"]:
                     testcase["status"] = "error"
                     testcase["reason"] = instance.reason
+                elif instance.status == "filtered":
+                    testcase["status"] = "filtered"
 
                 testcases.append(testcase)
+
             suite['testcases'] = testcases
             suites.append(suite)
 
