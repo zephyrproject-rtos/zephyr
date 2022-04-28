@@ -92,6 +92,7 @@ struct observe_node {
 	uint8_t  tkl;
 	bool resource_update : 1;	/* Resource is updated */
 	bool composite : 1;		/* Composite Observation */
+	bool active_tx_operation : 1;	/* Active Notification  process ongoing */
 };
 
 struct notification_attrs {
@@ -688,6 +689,7 @@ static void engine_observe_node_init(struct observe_node *obs, const uint8_t *to
 		obs->event_timestamp = 0;
 	}
 	obs->resource_update = false;
+	obs->active_tx_operation = false;
 	obs->format = format;
 	obs->counter = OBSERVE_COUNTER_START;
 	sys_slist_append(&ctx->observer,
@@ -5216,11 +5218,21 @@ static int32_t retransmit_request(struct lwm2m_ctx *client_ctx,
 static void notify_message_timeout_cb(struct lwm2m_message *msg)
 {
 	if (msg->ctx != NULL) {
+		struct observe_node *obs;
 		struct lwm2m_ctx *client_ctx = msg->ctx;
+		sys_snode_t *prev_node = NULL;
 
-		if (client_ctx->observe_cb) {
-			client_ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT,
-					       &msg->path, msg->reply->user_data);
+		obs = engine_observe_node_discover(&client_ctx->observer, &prev_node, NULL,
+						   msg->token, msg->tkl);
+
+		if (obs) {
+			obs->active_tx_operation = false;
+			if (client_ctx->observe_cb) {
+				client_ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT,
+						       &msg->path, msg->reply->user_data);
+			}
+
+			lwm2m_rd_client_timeout(client_ctx);
 		}
 	}
 
@@ -5234,7 +5246,8 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 	int ret = 0;
 	uint8_t type, code;
 	struct lwm2m_message *msg;
-	struct observe_node *obs, *found_obj = NULL;
+	struct observe_node *obs;
+	sys_snode_t *prev_node = NULL;
 
 	type = coap_header_get_type(response);
 	code = coap_header_get_code(response);
@@ -5258,14 +5271,11 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 			LOG_ERR("notify reply missing token -- ignored.");
 		}
 	} else {
-		SYS_SLIST_FOR_EACH_CONTAINER(&msg->ctx->observer, obs, node) {
-			if (memcmp(obs->token, reply->token, reply->tkl) == 0) {
-				found_obj = obs;
-				break;
-			}
-		}
+		obs = engine_observe_node_discover(&msg->ctx->observer, &prev_node, NULL,
+						   reply->token, reply->tkl);
 
-		if (found_obj) {
+		if (obs) {
+			obs->active_tx_operation = false;
 			if (msg->ctx->observe_cb) {
 				msg->ctx->observe_cb(LWM2M_OBSERVE_EVENT_NOTIFY_ACK,
 						     lwm2m_read_first_path_ptr(&obs->path_list),
@@ -5325,6 +5335,7 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 	msg->operation = LWM2M_OP_READ;
 
 	obs->resource_update = false;
+	obs->active_tx_operation = true;
 
 
 	msg->type = COAP_TYPE_CON;
@@ -5617,6 +5628,11 @@ static void check_notifications(struct lwm2m_ctx *ctx,
 		if (!obs->event_timestamp || timestamp < obs->event_timestamp) {
 			continue;
 		}
+		/* Check That There is not pending process and client is registred */
+		if (obs->active_tx_operation || !lwm2m_rd_client_is_registred(ctx)) {
+			continue;
+		}
+
 		rc = generate_notify_message(ctx, obs, NULL);
 		if (rc == -ENOMEM) {
 			/* no memory/messages available, retry later */
@@ -6423,6 +6439,7 @@ static int do_send_reply_cb(const struct coap_packet *response,
 static void do_send_timeout_cb(struct lwm2m_message *msg)
 {
 	LOG_WRN("Send Timeout");
+	lwm2m_rd_client_timeout(msg->ctx);
 
 }
 #endif
@@ -6440,6 +6457,11 @@ int lwm2m_engine_send(struct lwm2m_ctx *ctx, char const *path_list[], uint8_t pa
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm2m_path_list;
 	sys_slist_t lwm2m_path_free_list;
+
+	/* Validate Connection */
+	if (!lwm2m_rd_client_is_registred(ctx)) {
+		return -EPERM;
+	}
 
 	if (lwm2m_server_get_mute_send(ctx->srv_obj_inst)) {
 		LOG_WRN("Send operation is muted by server");
