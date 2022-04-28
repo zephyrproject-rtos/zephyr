@@ -56,8 +56,7 @@ struct bt_cap_initiator_cb {
 	 *
 	 * @param conn The connection pointer supplied to
 	 *             bt_cap_initiator_unicast_discover().
-	 * @param err  0 if Common Audio Service was found, else BT_GATT_ERR()
-	 *             with a specific ATT (BT_ATT_ERR_*) error code.
+	 * @param err  0 if Common Audio Service was found else -ENODATA.
 	 */
 	void (*discovery_complete)(struct bt_conn *conn, int err);
 
