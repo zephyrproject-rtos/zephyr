@@ -48,6 +48,7 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
+static uint8_t adv_type_check(struct ll_adv_set *adv);
 static inline struct ll_adv_sync_set *sync_acquire(void);
 static inline void sync_release(struct ll_adv_sync_set *sync);
 static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
@@ -350,6 +351,15 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		uint8_t err;
+
+		err = adv_type_check(adv);
+		if (err) {
+			return err;
+		}
+	}
+
 	lll_sync = adv->lll.sync;
 	if (!lll_sync) {
 		struct pdu_adv *ter_pdu;
@@ -453,6 +463,15 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	adv =  ull_adv_is_created_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		uint8_t err;
+
+		err = adv_type_check(adv);
+		if (err) {
+			return err;
+		}
 	}
 
 	lll_sync = adv->lll.sync;
@@ -585,6 +604,15 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 		err = sync_remove(sync, adv, 0U);
 		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		uint8_t err;
+
+		err = adv_type_check(adv);
+		if (err) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	/* TODO: Check for periodic data being complete */
@@ -1512,6 +1540,41 @@ static int init_reset(void)
 	mem_init(ll_adv_sync_pool, sizeof(struct ll_adv_sync_set),
 		 sizeof(ll_adv_sync_pool) / sizeof(struct ll_adv_sync_set),
 		 &adv_sync_free);
+
+	return 0;
+}
+
+static uint8_t adv_type_check(struct ll_adv_set *adv)
+{
+	struct pdu_adv_com_ext_adv *pri_com_hdr;
+	struct pdu_adv_ext_hdr *pri_hdr;
+	struct pdu_adv *pri_pdu;
+
+	pri_pdu = lll_adv_data_latest_peek(&adv->lll);
+	if (pri_pdu->type != PDU_ADV_TYPE_EXT_IND) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	pri_com_hdr = (void *)&pri_pdu->adv_ext_ind;
+	if (pri_com_hdr->adv_mode != 0U) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
+	if (pri_hdr->aux_ptr) {
+		struct pdu_adv_com_ext_adv *sec_com_hdr;
+		struct pdu_adv_ext_hdr *sec_hdr;
+		struct pdu_adv *sec_pdu;
+
+		sec_pdu = lll_adv_aux_data_latest_peek(adv->lll.aux);
+		sec_com_hdr = (void *)&sec_pdu->adv_ext_ind;
+		sec_hdr = (void *)sec_com_hdr->ext_hdr_adv_data;
+		if (!pri_hdr->adv_addr && !sec_hdr->adv_addr) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+	} else if (!pri_hdr->adv_addr) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	return 0;
 }
