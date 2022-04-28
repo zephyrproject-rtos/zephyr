@@ -1216,7 +1216,7 @@ static void discover_included(struct bt_conn *conn)
 #endif /* CONFIG_BT_MCC_OTS */
 
 /* Subscribe to a characteristic - helper function */
-static void do_subscribe(struct bt_conn *conn, uint16_t handle,
+static int do_subscribe(struct bt_conn *conn, uint16_t handle,
 			 struct bt_gatt_subscribe_params *sub_params)
 {
 	/* With ccc_handle == 0 it will use auto discovery */
@@ -1226,7 +1226,7 @@ static void do_subscribe(struct bt_conn *conn, uint16_t handle,
 	sub_params->value_handle = handle;
 	sub_params->notify = mcs_notify_handler;
 
-	bt_gatt_subscribe(conn, sub_params);
+	return bt_gatt_subscribe(conn, sub_params);
 }
 
 /* This function is called when characteristics are found.
@@ -1240,6 +1240,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 {
 	struct bt_gatt_chrc *chrc;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
+	int err = 0;
 
 	if (attr) {
 		/* Found an attribute */
@@ -1366,7 +1367,13 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 
 		if (subscribe_all && sub_params) {
 			BT_DBG("Subscribing - handle: 0x%04x", attr->handle);
-			do_subscribe(conn, chrc->value_handle, sub_params);
+			err = do_subscribe(conn, chrc->value_handle, sub_params);
+			if (err) {
+				BT_WARN("Subscription failed (err %d)", err);
+				if (mcc_cb && mcc_cb->discover_mcs) {
+					mcc_cb->discover_mcs(conn, err);
+				}
+			}
 		}
 
 		/* Continue to search for more attributes */
