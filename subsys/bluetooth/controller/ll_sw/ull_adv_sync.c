@@ -460,12 +460,9 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = len;
-	(void)memcpy((void *)&hdr_data[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET], &data,
-		     ULL_ADV_HDR_DATA_DATA_PTR_SIZE);
-
-	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
-				     &extra_data_prev, &extra_data, &ter_idx);
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
+				     &pdu_prev, &pdu, &extra_data_prev,
+				     &extra_data, &ter_idx);
 	if (err) {
 		return err;
 	}
@@ -477,10 +474,52 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	}
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
-	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, ULL_ADV_PDU_HDR_FIELD_AD_DATA, 0,
+	/* Use length = 0 and NULL pointer to retain old data in the PDU.
+	 * Use length = 0 and valid pointer of `data` (auto/local variable) to
+	 * remove old data.
+	 * User length > 0 and valid pointer of `data` (auto/local variable) to
+	 * set new data.
+	 */
+	if (op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA) {
+		hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = 0U;
+		(void)memset((void *)&hdr_data[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
+			     0U, ULL_ADV_HDR_DATA_DATA_PTR_SIZE);
+	} else {
+		hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] = len;
+		(void)memcpy((void *)&hdr_data[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
+			     &data, ULL_ADV_HDR_DATA_DATA_PTR_SIZE);
+	}
+
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
+					 ULL_ADV_PDU_HDR_FIELD_AD_DATA, 0,
 					 hdr_data);
 	if (err) {
 		return err;
+	}
+
+	sync = HDR_LLL2ULL(lll_sync);
+
+	/* Parameter validation, if operation is 0x04 (unchanged data)
+	 * - periodic advertising is disabled, or
+	 * - periodic advertising contains no data, or
+	 * - Advertising Data Length is zero
+	 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
+	    (op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA) &&
+	    ((!sync->is_enabled) ||
+	     (hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET] == 0U) ||
+	     (len != 0U))) {
+		/* NOTE: latest PDU was not consumed by LLL and as
+		 * ull_adv_sync_pdu_alloc() has reverted back the double buffer
+		 * with the first PDU, and returned the latest PDU as the new
+		 * PDU, we need to enqueue back the new PDU which is infact
+		 * the latest PDU.
+		 */
+		if (pdu_prev == pdu) {
+			lll_adv_sync_data_enqueue(lll_sync, ter_idx);
+		}
+
+		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
 	/* alloc() will return the same PDU as peek() in case there was PDU
@@ -490,7 +529,6 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	 */
 	adv_sync_pdu_chain_check_and_duplicate(pdu, pdu_prev);
 
-	sync = HDR_LLL2ULL(lll_sync);
 	if (sync->is_started) {
 		err = ull_adv_sync_time_update(sync, pdu);
 		if (err) {
@@ -1302,10 +1340,26 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 
 	/* Get Adv data from function parameters */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
+		uint8_t ad_len_prev;
+
 		ad_len = *(uint8_t *)hdr_data;
+
+		/* return prev ad data length */
+		ad_len_prev = ter_pdu_prev->len - ter_len_prev;
+		*(uint8_t *)hdr_data = ad_len_prev;
 		hdr_data = (uint8_t *)hdr_data + sizeof(ad_len);
 
+		/* remember the reference to new ad data */
 		(void)memcpy(&ad_data, hdr_data, sizeof(ad_data));
+
+		/* return the reference to prev ad data */
+		(void)memcpy(hdr_data, &ter_dptr, sizeof(ter_dptr));
+
+		/* unchanged data */
+		if (!ad_len && !ad_data) {
+			ad_len = ad_len_prev;
+			ad_data = ter_dptr_prev;
+		}
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA)) {
 		ad_len = ter_pdu_prev->len - ter_len_prev;
 		ad_data = ter_dptr_prev;
