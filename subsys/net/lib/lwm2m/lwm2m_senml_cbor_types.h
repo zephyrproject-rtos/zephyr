@@ -18,6 +18,16 @@
 #include <string.h>
 #include "zcbor_common.h"
 
+enum lwm2m_senml_cbor_key {
+	lwm2m_senml_cbor_key_bn = -2,
+	lwm2m_senml_cbor_key_n  = 0,
+	lwm2m_senml_cbor_key_vi = 2,
+	lwm2m_senml_cbor_key_vf = 2,
+	lwm2m_senml_cbor_key_vs = 3,
+	lwm2m_senml_cbor_key_vb = 4,
+	lwm2m_senml_cbor_key_vd = 8,
+};
+
 /** Which value for --default-max-qty this file was created with.
  *
  *  The define is used in the other generated file to do a build-time
