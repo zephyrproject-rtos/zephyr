@@ -416,15 +416,6 @@ i2s0: i2s@28000 {
 	label = "I2S_0";
 };
 
-ipc0: ipc0 {
-	compatible = "zephyr,ipc-openamp-static-vrings";
-	memory-region = <&sram0_shared>;
-	mboxes = <&mbox 0>, <&mbox 1>;
-	mbox-names = "tx", "rx";
-	role = "host";
-	status = "okay";
-};
-
 mbox: ipc: mbox@2a000 {
 	compatible = "nordic,mbox-nrf-ipc", "nordic,nrf-ipc";
 	reg = <0x2a000 0x1000>;
