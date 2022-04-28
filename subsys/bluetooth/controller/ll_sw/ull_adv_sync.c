@@ -1193,7 +1193,10 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) &&
 		   ter_hdr_prev.cte_info) {
 		ter_hdr.cte_info = 1;
+		cte_info = 0U; /* value not used, will be read from prev PDU */
 		ter_dptr += sizeof(struct pdu_cte_info);
+	} else {
+		cte_info = 0U; /* value not used */
 	}
 
 	/* If CTEInfo exists in prev PDU */
