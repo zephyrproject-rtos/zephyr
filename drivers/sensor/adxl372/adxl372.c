@@ -643,15 +643,18 @@ static int adxl372_attr_set_thresh(const struct device *dev,
 {
 	const struct adxl372_dev_config *cfg = dev->config;
 	struct adxl372_activity_threshold threshold;
+	int64_t llvalue;
 	int32_t value;
 	int64_t micro_ms2 = val->val1 * 1000000LL + val->val2;
 	uint8_t reg;
 
-	value = abs((micro_ms2 * 10) / SENSOR_G);
+	llvalue = llabs((micro_ms2 * 10) / SENSOR_G);
 
-	if (value > 2047) {
+	if (llvalue > 2047) {
 		return -EINVAL;
 	}
+
+	value = (int32_t) llvalue;
 
 	threshold.thresh = value;
 	threshold.enable = cfg->activity_th.enable;
