@@ -604,29 +604,30 @@ static int do_write_op_item(struct lwm2m_message *msg, struct record *rec)
 	int ret;
 	uint8_t created = 0U;
 	struct cbor_in_fmt_data *fd;
+	/* Composite op - name with basename */
+	char name[sizeof("65535/999")] = { 0 }; /* Null terminated name */
+	int len = 0;
+	char fqn[MAX_RESOURCE_LEN + 1] = {0};
 
 	fd = engine_get_in_user_data(&msg->in);
 	if (!fd) {
 		return -EINVAL;
 	}
 
-	/* Composite op - name with basename */
+	/* If there's no name then the basename forms the path */
 	if (rec->_record_n_present) {
-		char name[sizeof("65535/999")]; /* Null terminated name */
-		int len = MIN(sizeof(name) - 1, rec->_record_n._record_n.len);
-		char fqn[MAX_RESOURCE_LEN + 1] = {0};
-
+		len = MIN(sizeof(name) - 1, rec->_record_n._record_n.len);
 		snprintk(name, len + 1, "%s", rec->_record_n._record_n.value);
+	}
 
-		/* Form fully qualified path name */
-		snprintk(fqn, sizeof(fqn), "%s%s", fd->basename, name);
+	/* Form fully qualified path name */
+	snprintk(fqn, sizeof(fqn), "%s%s", fd->basename, name);
 
-		/* Set path on record basis */
-		ret = lwm2m_string_to_path(fqn, &msg->path, '/');
-		if (ret < 0) {
-			__ASSERT_NO_MSG(false);
-			return ret;
-		}
+	/* Set path on record basis */
+	ret = lwm2m_string_to_path(fqn, &msg->path, '/');
+	if (ret < 0) {
+		__ASSERT_NO_MSG(false);
+		return ret;
 	}
 
 	fd->current = rec;
@@ -830,33 +831,50 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 	dret = cbor_decode_lwm2m_senml(ICTX_BUF_R_PTR(&msg->in), ICTX_BUF_R_LEFT_SZ(&msg->in),
 					   &fd->dcd, &decoded_sz);
 
-	if (dret == ZCBOR_SUCCESS) {
-		msg->in.offset += decoded_sz;
+	if (dret != ZCBOR_SUCCESS) {
+		ret = -EBADMSG;
+		goto error;
+	}
 
-		for (int idx = 0; idx < fd->dcd._lwm2m_senml__record_count; idx++) {
+	msg->in.offset += decoded_sz;
 
-			struct record *rec = &fd->dcd._lwm2m_senml__record[idx];
+	for (int idx = 0; idx < fd->dcd._lwm2m_senml__record_count; idx++) {
 
-			/* Basename applies for current and succeeding records */
-			if (rec->_record_bn_present) {
+		struct record *rec = &fd->dcd._lwm2m_senml__record[idx];
+
+		/* Basename applies for current and succeeding records */
+		if (rec->_record_bn_present) {
+			int len = MIN(sizeof(fd->basename) - 1,
+				rec->_record_bn._record_bn.len);
+
+			snprintk(fd->basename, len + 1, "%s", rec->_record_bn._record_bn.value);
+			goto write;
+		}
+
+		/* Keys' lexicographic order differ from the default */
+		for (int jdx = 0; jdx < rec->_record__key_value_pair_count; jdx++) {
+			struct key_value_pair *kvp =
+				&(rec->_record__key_value_pair[jdx]._record__key_value_pair);
+
+			if (kvp->_key_value_pair_key == lwm2m_senml_cbor_key_bn) {
 				int len = MIN(sizeof(fd->basename) - 1,
-					      rec->_record_bn._record_bn.len);
+					kvp->_key_value_pair._value_tstr.len);
 
 				snprintk(fd->basename, len + 1, "%s",
-					 rec->_record_bn._record_bn.value);
-			}
-
-			ret = do_write_op_item(msg, rec);
-
-			/* Write isn't supposed to fail */
-			if (ret < 0) {
+					kvp->_key_value_pair._value_tstr.value);
 				break;
 			}
 		}
-	} else {
-		ret = -EBADMSG;
+write:
+		ret = do_write_op_item(msg, rec);
+
+		/* Write isn't supposed to fail */
+		if (ret < 0) {
+			break;
+		}
 	}
 
+error:
 	clear_in_fmt_data(msg);
 
 	return ret < 0 ?  ret : decoded_sz;
