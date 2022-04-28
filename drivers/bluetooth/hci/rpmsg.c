@@ -283,7 +283,8 @@ static struct ipc_ept_cfg hci_ept_cfg = {
 static int bt_rpmsg_open(void)
 {
 	int err;
-	const struct device *hci_ipc_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
+	const struct device *hci_ipc_instance =
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
 
 	BT_DBG("");
 
