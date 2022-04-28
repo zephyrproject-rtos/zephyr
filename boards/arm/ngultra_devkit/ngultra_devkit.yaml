@@ -1,0 +1,6 @@
+identifier: ngultra_devkit
+name: NG-Ultra devkit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr

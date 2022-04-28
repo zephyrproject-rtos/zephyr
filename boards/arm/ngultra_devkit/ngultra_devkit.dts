@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2022 NanoXplore
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <arm/nanoxplore/ng/ngultra.dtsi>
+
+/ {
+	model = "NanoXplore devkit board";
+	compatible = "nanoxplore,devkit";
+
+	chosen {
+		zephyr,sram = &eram0;
+	};
+};

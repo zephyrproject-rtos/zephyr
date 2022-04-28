@@ -399,6 +399,7 @@ mundoreader	Mundo Reader S.L.
 murata	Murata Manufacturing Co., Ltd.
 mxicy	Macronix International Co., Ltd.
 myir	MYIR Tech Limited
+nanoxplore	NanoXplore SAS
 national	National Semiconductor
 nec	NEC LCD Technologies, Ltd.
 neonode	Neonode Inc.
