@@ -39,7 +39,6 @@ config BT_PAC_SNK_LOC
 
 config BT_PAC_SNK_LOC_WRITEABLE
 	bool "Sink PAC Location Writable Support"
-	default y
 	depends on BT_PAC_SNK_LOC
 	help
 	  This option enables support for clients to write to the Sink PAC
@@ -79,7 +78,6 @@ config BT_PAC_SRC_LOC
 
 config BT_PAC_SRC_LOC_WRITEABLE
 	bool "Source PAC Location Writable Support"
-	default y
 	depends on BT_PAC_SRC_LOC
 	help
 	  This option enables support for clients to write to the Source PAC
