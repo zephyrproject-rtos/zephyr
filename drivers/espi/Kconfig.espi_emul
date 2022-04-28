@@ -6,10 +6,11 @@ config ESPI_EMUL
 	default y
 	depends on DT_HAS_ZEPHYR_ESPI_EMUL_CONTROLLER_ENABLED
 	help
-	  Enable the eSPI emulator driver. This is a fake driver,
-	  it does not talk to real hardware. Instead it talks to emulation
-	  drivers that pretend to be devices on the emulated eSPI bus. It is
-	  used for testing drivers for eSPI devices.
+	  Enable the eSPI emulator driver. This is a fake peripheral driver,
+	  it does not talk to real hardware. Instead, it can talk to the host emulator
+	  driver that pretends to be the controller of the emulated eSPI bus. It is
+	  used for testing drivers for eSPI signals and for communication between MCU eSPI
+	  peripheral and host eSPI controller.
 
 	  eSPI is an interface using SPI wires, whose main goal is to reduce the
 	  number of required pins. It includes the functionality of LPC, SMB, SPI

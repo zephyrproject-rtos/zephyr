@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ESPI_SPI_EMUL_H_
-#define ZEPHYR_INCLUDE_DRIVERS_ESPI_SPI_EMUL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ESPI_EMUL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ESPI_EMUL_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
@@ -30,81 +30,48 @@
 extern "C" {
 #endif
 
-#define EMUL_ESPI_HOST_CHIPSEL 0
+#define ESPI_EMUL_KBC8042_PORT_IN_STATUS 0x64
+#define ESPI_EMUL_KBC8042_PORT_IN_DATA	 0x60
+#define ESPI_EMUL_KBC8042_PORT_OUT_DATA	 0x60
+#define ESPI_EMUL_KBC8042_PORT_OUT_CMD	 0x64
+
+#define KBC8042_STATUS_OBF BIT(0)
+#define KBC8042_STATUS_IBF BIT(1)
+#define KBC8042_STATUS_F0  BIT(2)
+#define KBC8042_STATUS_A2  BIT(3)
+#define KBC8042_STATUS_ST0 BIT(4)
+#define KBC8042_STATUS_ST1 BIT(5)
+#define KBC8042_STATUS_ST2 BIT(6)
+#define KBC8042_STATUS_ST3 BIT(7)
+
+#define KBC8042_STATUS_OBF BIT(0)
+#define KBC8042_STATUS_IBF BIT(1)
+#define KBC8042_STATUS_F0  BIT(2)
+#define KBC8042_STATUS_A2  BIT(3)
+#define KBC8042_STATUS_ST0 BIT(4)
+#define KBC8042_STATUS_ST1 BIT(5)
+#define KBC8042_STATUS_ST2 BIT(6)
+#define KBC8042_STATUS_ST3 BIT(7)
 
 struct espi_emul;
 
-/**
- * Passes eSPI virtual wires set request (virtual wire packet) to the emulator.
- * The emulator updates the state (level) of its virtual wire.
- *
- * @param target The device Emulator instance
- * @param vw The signal to be set.
- * @param level The level of signal requested LOW(0) or HIGH(1).
- *
- * @retval 0 If successful.
- * @retval -EIO General input / output error.
- */
-typedef int (*emul_espi_api_set_vw)(const struct emul *target, enum espi_vwire_signal vw,
-				    uint8_t level);
+struct espi_emul_driver_api {
+	struct espi_driver_api espi_api;
 
-/**
- * Passes eSPI virtual wires get request (virtual wire packet) to the emulator.
- * The emulator returns the state (level) of its virtual wire.
- *
- * @param target The device Emulator instance
- * @param vw The signal to be get.
- * @param level The level of the signal to be get.
- *
- * @retval 0 If successful.
- * @retval -EIO General input / output error.
- */
-typedef int (*emul_espi_api_get_vw)(const struct emul *target, enum espi_vwire_signal vw,
-				    uint8_t *level);
-
-#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
-/**
- * Get the ACPI shared memory address owned by the emulator.
- *
- * @param target The device Emulator instance
- *
- * @retval The address of the memory.
- */
-typedef uintptr_t (*emul_espi_api_get_acpi_shm)(const struct emul *target);
-#endif
-
-/**
- * Find an emulator present on a eSPI bus
- *
- * At present the function is used only to find an emulator of the host
- * device. It may be useful in systems with the SPI flash chips.
- *
- * @param dev eSPI emulation controller device
- * @param chipsel Chip-select value
- * @return espi_emul to use
- * @return NULL if not found
- */
-typedef struct espi_emul *(*emul_find_emul)(const struct device *dev, unsigned int chipsel);
-
-/**
- * Triggers an event on the emulator of eSPI controller side which causes
- * calling specific callbacks.
- *
- * @param dev Device instance of emulated eSPI controller
- * @param evt Event to be triggered
- *
- * @retval 0 If successful.
- * @retval -EIO General input / output error.
- */
-typedef int (*emul_trigger_event)(const struct device *dev, struct espi_event *evt);
-
-/** Definition of the eSPI device emulator API */
-struct emul_espi_device_api {
-	emul_espi_api_set_vw set_vw;
-	emul_espi_api_get_vw get_vw;
-#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
-	emul_espi_api_get_acpi_shm get_acpi_shm;
-#endif
+	/**
+	 * Perform the I/O read from host through the eSPI bus.
+	 * This function doesn't exist in real eSPI API since it is
+	 * handled internally by the MCUs if needed. It is used by some
+	 * peripherals like 8042 keyboard controller.
+	 */
+	int (*host_io_read)(const struct device *dev, uint8_t length, uint16_t addr, uint32_t *reg);
+	/**
+	 * Perform the I/O write from host through the eSPI bus.
+	 * This function doesn't exist in real eSPI API since it is
+	 * handled internally by the MCUs if needed. It is used by some
+	 * peripherals like 8042 keyboard controller.
+	 */
+	int (*host_io_write)(const struct device *dev, uint8_t length, uint16_t addr, uint32_t reg);
 };
 
 /** Node in a linked list of emulators for eSPI devices */
@@ -113,20 +80,63 @@ struct espi_emul {
 	/** Target emulator - REQUIRED for all emulated bus nodes of any type */
 	const struct emul *target;
 	/** API provided for this device */
-	const struct emul_espi_device_api *api;
+	const struct espi_emul_device_api *api;
 	/** eSPI chip-select of the emulated device */
 	uint16_t chipsel;
 };
 
-/** Definition of the eSPI controller emulator API */
-struct emul_espi_driver_api {
-	/* The struct espi_driver_api has to be first in
-	 * struct emul_espi_driver_api to make pointer casting working
+/** Data about the virtual wire */
+struct espi_emul_vw_data {
+	/* Virtual wire signal */
+	enum espi_vwire_signal sig;
+	/* The level(state) of the virtual wire */
+	bool level;
+};
+
+/**
+ * Defines the API used to communicate with the emulated bus and device.
+ * Uses the functions defined in struct espi_driver_api used by eSPI
+ * subsystem with changed parameter from struct device to espi_emul and adds
+ * some functions that are normally handled internally by the MCU.
+ */
+struct espi_emul_device_api {
+	int (*config)(const struct espi_emul *dev, struct espi_cfg *cfg);
+	bool (*get_channel_status)(const struct espi_emul *dev, enum espi_channel ch);
+	/* Logical Channel 0 APIs */
+	int (*read_request)(const struct espi_emul *dev, struct espi_request_packet *req);
+	int (*write_request)(const struct espi_emul *dev, struct espi_request_packet *req);
+	int (*read_lpc_request)(const struct espi_emul *dev, enum lpc_peripheral_opcode op,
+				uint32_t *data);
+	int (*write_lpc_request)(const struct espi_emul *dev, enum lpc_peripheral_opcode op,
+				 uint32_t *data);
+	/* Logical Channel 1 APIs */
+	int (*send_vwire)(const struct espi_emul *dev, enum espi_vwire_signal vw, uint8_t level);
+	int (*receive_vwire)(const struct espi_emul *dev, enum espi_vwire_signal vw,
+			     uint8_t *level);
+	/* Logical Channel 2 APIs */
+	int (*send_oob)(const struct espi_emul *dev, struct espi_oob_packet *pckt);
+	int (*receive_oob)(const struct espi_emul *dev, struct espi_oob_packet *pckt);
+	/* Logical Channel 3 APIs */
+	int (*flash_read)(const struct espi_emul *dev, struct espi_flash_packet *pckt);
+	int (*flash_write)(const struct espi_emul *dev, struct espi_flash_packet *pckt);
+	int (*flash_erase)(const struct espi_emul *dev, struct espi_flash_packet *pckt);
+	/* Callbacks and traffic intercept */
+	int (*manage_callback)(const struct espi_emul *dev, struct espi_callback *callback,
+			       bool set);
+
+	/**
+	 * Sends the registered callbacks. It may be used by host side of
+	 * the bus to emulate the reception of some events that are normally
+	 * sent through the bus and handled by the controller.
 	 */
-	struct espi_driver_api espi_api;
-	/* The rest, emulator specific functions */
-	emul_trigger_event trigger_event;
-	emul_find_emul find_emul;
+	int (*raise_event)(const struct espi_emul *dev, struct espi_event ev);
+
+	/**
+	 * Retrieve the pointer to the ACPI shared memory region.
+	 */
+#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+	uintptr_t (*get_acpi_shm)(const struct espi_emul *dev);
+#endif
 };
 
 /**
@@ -139,40 +149,83 @@ struct emul_espi_driver_api {
 int espi_emul_register(const struct device *dev, struct espi_emul *emul);
 
 /**
- * Sets the eSPI virtual wire on the host side, which will
- * trigger a proper event(and callbacks) on the emulated eSPI controller
+ * Perform the I/O read from host through the emulated eSPI bus.
+ * This function doesn't exist in real eSPI API since it is
+ * handled internally by the MCUs if needed. It is used by some
+ * peripherals like 8042 keyboard controller.
  *
- * @param espi_dev eSPI emulation controller device
- * @param vw The signal to be set.
- * @param level The level of the signal to be set.
- *
- * @retval 0 If successful.
- * @retval -EIO General input / output error.
+ * @param dev Device that will handle the operation
+ * @param length number of bytes to read (1/2/4 supported)
+ * @param addr I/O address to read
+ * @param reg Pointer to value which will store the data
+ * @return 0 if IO was successful, -EINVAL if address is not supported
  */
-int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal vw, uint8_t level);
+int espi_emul_host_io_read(const struct device *dev, uint8_t length, uint16_t addr, uint32_t *reg);
 
 /**
- * Perform port80 write on the emulated host side, which will
- * trigger a proper event(and callbacks) on the emulated eSPI controller
+ * Perform the I/O write from host through the eSPI bus.
+ * This function doesn't exist in real eSPI API since it is
+ * handled internally by the MCUs if needed. It is used by some
+ * peripherals like 8042 keyboard controller.
  *
- * @param espi_dev eSPI emulation controller device
- * @param data The date to be written.
- *
- * @retval 0 If successful.
- * @retval -EIO General input / output error.
+ * @param dev Device that will handle the operation
+ * @param length number of bytes to write (1/2/4 supported)
+ * @param addr I/O address to write
+ * @param reg Data to write
+ * @return 0 if IO was successful, -EINVAL if address is not supported
  */
-int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data);
+int espi_emul_host_io_write(const struct device *dev, uint8_t length, uint16_t addr, uint32_t reg);
+
+/**
+ * Perform the set_vwire but from the host side of the bus.
+ * This value then will be sent from the host through the emulated eSPI bus
+ * to notify the controller about the level change.
+ * If the callback for the reception of vwire change is set, it will be called.
+ *
+ * @param dev Device that will handle the operation
+ * @param vw virtual wire which value will be changed
+ * @param level logic level on virtual wire
+ * @return 0 if IO was successful, -EIO if there's no emulator, -EPERM if
+ *           the direction of vwire is invalid
+ */
+int espi_emul_host_set_vwire(const struct device *dev, enum espi_vwire_signal vw, uint8_t level);
 
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
 /**
- * Get the host device's ACPI shared memory start address. The size of the region is
- * CONFIG_EMUL_ESPI_HOST_ACPI_SHM_REGION_SIZE.
+ * Retrieve the pointer to the ACPI shared memory region.
  *
- * @param espi_dev eSPI emulation controller device.
- * @return Address of the start of the ACPI shared memory.
+ * @param dev Device that will handle the operation
+ * @return pointer to the shared memory region with size specified by
+ *         CONFIG_ESPI_EMUL_HOST_ACPI_SHM_REGION_SIZE
  */
-uintptr_t emul_espi_host_get_acpi_shm(const struct device *espi_dev);
+uintptr_t espi_emul_host_get_acpi_shm(const struct device *dev);
 #endif
+
+/**
+ * Manage the callbacks of the eSPI host.
+ * It may be used to verify if calling the send_vwire function on the
+ * controller bus results in the reception of it on the host.
+ *
+ * @param dev Device that will handle the operation
+ * @param callback structure describing managed callback
+ * @param set enable or disable the callback
+ * @return 0 if IO was successful, -EIO if there's no emulator, or other values
+ *           returned by the emulator
+ */
+int espi_emul_host_manage_callback(const struct device *dev, struct espi_callback *callback,
+				   bool set);
+
+/**
+ * Sends the registered callbacks. It may be used by the host side of the bus
+ * to emulate the reception of some events that are normally sent through
+ * the bus and handled by the MCU with interrupts.
+ *
+ * @param dev Device that will handle the operation
+ * @param ev structure describing event about which the secondary side
+ *           wants to inform
+ * @return always 0
+ */
+int espi_emul_raise_event(const struct device *dev, struct espi_event ev);
 
 #ifdef __cplusplus
 }
@@ -182,4 +235,4 @@ uintptr_t emul_espi_host_get_acpi_shm(const struct device *espi_dev);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_ESPI_SPI_EMUL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ESPI_EMUL_H_ */

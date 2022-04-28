@@ -69,7 +69,6 @@ int emul_init_for_bus(const struct device *dev)
 #endif /* CONFIG_I2C_EMUL */
 #ifdef CONFIG_ESPI_EMUL
 		case EMUL_BUS_TYPE_ESPI:
-			rc = espi_emul_register(dev, emul->bus.espi);
 			break;
 #endif /* CONFIG_ESPI_EMUL */
 #ifdef CONFIG_SPI_EMUL

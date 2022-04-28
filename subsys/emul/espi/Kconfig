@@ -3,16 +3,15 @@
 # Copyright 2020 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 
-config EMUL_ESPI_HOST
+config ESPI_EMUL_HOST
 	bool "Emulate an eSPI host"
 	help
 	  This is an emulator of the generic eSPI host. The emulator supports
-	  basic host operations - virtual wires and writing to port 80. It can be
-	  extended.
+	  basic host operations - virtual wires, shared memory, keyboard handling.
 
-if EMUL_ESPI_HOST
+if ESPI_EMUL_HOST
 
-config EMUL_ESPI_HOST_ACPI_SHM_REGION_SIZE
+config ESPI_EMUL_HOST_ACPI_SHM_REGION_SIZE
 	int "Host I/O peripheral port size for shared memory in emulator"
 	depends on ESPI_PERIPHERAL_ACPI_SHM_REGION
 	default 256
@@ -20,4 +19,19 @@ config EMUL_ESPI_HOST_ACPI_SHM_REGION_SIZE
 	  This is the port size used to mimic the Host and EC communication
 	  over the shared memory region which returns the ACPI response data.
 
-endif # EMUL_ESPI_HOST
+config ESPI_EMUL_HOST_CMD_SHM_REGION_SIZE
+	int "Size of shared memory region used for custom opcodes"
+	depends on ESPI_PERIPHERAL_CUSTOM_OPCODE
+	default 256
+	help
+	  This memory region can be used by custom opcodes, for example
+	  to send the host commands between AP and EC.
+
+endif # ESPI_EMUL_HOST
+
+config ESPI_EMUL_KBC8042
+	bool "Emulate an Intel 8042 keyboard controller"
+	help
+	  This option enables the emulator of the
+	  Intel 8042 keyboard controller.
+	  It emulates the built-in controller found in the EC.
