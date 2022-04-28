@@ -838,7 +838,6 @@ static int i2c_dw_initialize(const struct device *dev)
 	const struct i2c_dw_rom_config * const rom = dev->config;
 	struct i2c_dw_dev_config * const dw = dev->data;
 	union ic_con_register ic_con;
-	uint32_t reg_base = get_regs(dev);
 	int ret = 0;
 
 #if defined(CONFIG_PINCTRL)
@@ -868,6 +867,7 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
+	uint32_t reg_base = get_regs(dev);
 
 	/* verify that we have a valid DesignWare register first */
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {
