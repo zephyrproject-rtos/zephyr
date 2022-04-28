@@ -738,6 +738,6 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 			    &gpio_emul_data_##_num,			\
 			    &gpio_emul_config_##_num, POST_KERNEL,	\
 			    CONFIG_GPIO_INIT_PRIORITY,			\
-			    &gpio_emul_driver)
+			    &gpio_emul_driver);
 
-DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_EMUL);
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_EMUL)
