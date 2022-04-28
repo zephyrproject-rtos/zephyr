@@ -445,6 +445,7 @@
 				interrupts = <35 0>, <36 0>;
 				interrupt-names = "LINE_0", "LINE_1";
 				peripheral-id = <35>;
+				divider = <6>;
 				sjw = <1>;
 				sample-point = <875>;
 				sjw-data = <1>;
@@ -462,6 +463,7 @@
 				interrupts = <37 0>, <38 0>;
 				interrupt-names = "LINE_0", "LINE_1";
 				peripheral-id = <37>;
+				divider = <6>;
 				sjw = <1>;
 				sample-point = <875>;
 				sjw-data = <1>;

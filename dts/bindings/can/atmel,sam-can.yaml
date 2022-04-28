@@ -17,3 +17,12 @@ properties:
       type: int
       required: true
       description: peripheral ID
+
+    divider:
+      type: int
+      required: true
+      enum:
+        - 6
+        - 12
+        - 24
+      description: Clock divider for the CAN core clock
