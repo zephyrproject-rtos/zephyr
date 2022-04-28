@@ -80,6 +80,8 @@
 				<I2C0_SDA_PTE25>;
 			drive-strength = "low";
 			slew-rate = "fast";
+			drive-open-drain;
+			//bias-pull-up;
 		};
 	};
 
@@ -89,6 +91,8 @@
 				<I2C1_SDA_PTC11>;
 			drive-strength = "low";
 			slew-rate = "fast";
+			drive-open-drain;
+			//bias-pull-up;
 		};
 	};
 
