@@ -736,6 +736,8 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 		 */
 		ll_tx_ack_put(handle, (void *)node_tx);
 		ll_rx_sched();
+	} else {
+		LL_ASSERT(0);
 	}
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
