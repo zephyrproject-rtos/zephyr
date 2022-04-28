@@ -135,27 +135,25 @@ static int mcux_lpc_ctimer_set_top_value(const struct device *dev,
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
 	struct mcux_lpc_ctimer_data *data = dev->data;
-	bool counter_reset = true;
-	bool counter_interrupt = true;
 
 	data->top_callback = cfg->callback;
 	data->top_user_data = cfg->user_data;
 
-	if (cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
-		counter_reset = false;
-	}
-
-	/* If top value specified is 0, then turn off the interrupt */
-	if (cfg->ticks == 0) {
-		counter_interrupt = false;
+	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		CTIMER_Reset(config->base);
+	} else if (mcux_lpc_ctimer_read(config->base) >= cfg->ticks) {
+		if (cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+			CTIMER_Reset(config->base);
+		}
+		return -ETIME;
 	}
 
 	ctimer_match_config_t match_config = { .matchValue = cfg->ticks,
-					       .enableCounterReset = counter_reset,
+					       .enableCounterReset = true,
 					       .enableCounterStop = false,
 					       .outControl = kCTIMER_Output_NoAction,
 					       .outPinInitState = false,
-					       .enableInterrupt = counter_interrupt };
+					       .enableInterrupt = true };
 
 	CTIMER_SetupMatch(config->base, NUM_CHANNELS, &match_config);
 
