@@ -15,7 +15,7 @@
 
 struct args_index {
 	uint8_t device;
-	uint8_t pwm;
+	uint8_t channel;
 	uint8_t period;
 	uint8_t pulse;
 	uint8_t flags;
