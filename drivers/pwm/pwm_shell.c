@@ -85,7 +85,7 @@ static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 		flags = strtoul(argv[args_indx.flags], NULL, 0);
 	}
 
-	err = pwm_set_cycles_usec(dev, channel, period, pulse, flags);
+	err = pwm_set(dev, channel, PWM_USEC(period), PWM_USEC(pulse), flags);
 	if (err) {
 		shell_error(shell, "failed to setup PWM (err %d)", err);
 		return err;
@@ -117,7 +117,7 @@ static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
 		flags = strtoul(argv[args_indx.flags], NULL, 0);
 	}
 
-	err = pwm_set_cycles_nsec(dev, channel, period, pulse, flags);
+	err = pwm_set(dev, channel, period, pulse, flags);
 	if (err) {
 		shell_error(shell, "failed to setup PWM (err %d)", err);
 		return err;
