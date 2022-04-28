@@ -273,19 +273,6 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	/* give channel from index 0 */
 	id = id - STREAM_OFFSET;
 
-	/* Check potential DMA override */
-	if (config->linked_channel == STM32_DMA_HAL_OVERRIDE) {
-		/* DMA channel is overridden by HAL DMA
-		 * Retain that the channel is busy and proceed to the minimal
-		 * configuration to properly route the IRQ
-		 */
-		stream->busy = true;
-		stream->hal_override = true;
-		stream->dma_callback = config->dma_callback;
-		stream->user_data = config->user_data;
-		return 0;
-	}
-
 	if (id >= dev_config->max_streams) {
 		LOG_ERR("cannot configure the dma stream %d.", id);
 		return -EINVAL;
@@ -302,6 +289,19 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	}
 
 	dma_stm32_clear_stream_irq(dev, id);
+
+	/* Check potential DMA override (if id parameters and stream are valid) */
+	if (config->linked_channel == STM32_DMA_HAL_OVERRIDE) {
+		/* DMA channel is overridden by HAL DMA
+		 * Retain that the channel is busy and proceed to the minimal
+		 * configuration to properly route the IRQ
+		 */
+		stream->busy = true;
+		stream->hal_override = true;
+		stream->dma_callback = config->dma_callback;
+		stream->user_data = config->user_data;
+		return 0;
+	}
 
 	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
 		LOG_ERR("Data size too big: %d\n",
