@@ -143,16 +143,6 @@ struct zsock_pollfd {
  *  ignored for PEM certificates.
  */
 #define TLS_CERT_NOCOPY	       10
-/** Socket option to control TLS session caching on a socket. Accepted values:
- *  - 0 - Disabled.
- *  - 1 - Enabled.
- */
-#define TLS_SESSION_CACHE 11
-/** Write-only socket option to purge session cache immediately.
- *  This option accepts any value.
- */
-#define TLS_SESSION_CACHE_PURGE 12
-
 /** TLS socket option to use with offloading. The option instructs the network
  *  stack only to offload underlying TCP/UDP communication. The TLS/DTLS
  *  operation is handled by a native TLS/DTLS socket implementation from Zephyr.
@@ -164,6 +154,15 @@ struct zsock_pollfd {
  *  dedicated network interface for the underlying TCP/UDP socket.
  */
 #define TLS_NATIVE 11
+/** Socket option to control TLS session caching on a socket. Accepted values:
+ *  - 0 - Disabled.
+ *  - 1 - Enabled.
+ */
+#define TLS_SESSION_CACHE 12
+/** Write-only socket option to purge session cache immediately.
+ *  This option accepts any value.
+ */
+#define TLS_SESSION_CACHE_PURGE 13
 
 /** @} */
 
