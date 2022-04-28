@@ -3273,6 +3273,24 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	min_interval = sys_get_le24(cmd->prim_min_interval);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		const uint32_t max_interval =
+					sys_get_le24(cmd->prim_max_interval);
+
+		/* Compare advertising interval maximum with implementation
+		 * supported advertising interval maximum value defined in the
+		 * Kconfig CONFIG_BT_CTLR_ADV_INTERVAL_MAX.
+		 */
+		if ((min_interval > max_interval) ||
+		    (min_interval < BT_HCI_LE_PRIM_ADV_INTERVAL_MIN) ||
+		    (max_interval > CONFIG_BT_CTLR_ADV_INTERVAL_MAX)) {
+			*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+			return;
+		}
+	}
+
 	status = ll_adv_set_by_hci_handle_get_or_new(cmd->handle, &handle);
 	if (status) {
 		*evt = cmd_complete_status(status);
@@ -3280,7 +3298,6 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 	}
 
 	evt_prop = sys_le16_to_cpu(cmd->props);
-	min_interval = sys_get_le24(cmd->prim_min_interval);
 	tx_pwr = cmd->tx_power;
 	phy_p = BIT(cmd->prim_adv_phy - 1);
 	phy_s = BIT(cmd->sec_adv_phy - 1);
@@ -3464,7 +3481,7 @@ static void le_clear_adv_sets(struct net_buf *buf, struct net_buf **evt)
 static void le_set_per_adv_param(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_per_adv_param *cmd = (void *)buf->data;
-	uint16_t interval;
+	uint16_t max_interval;
 	uint16_t flags;
 	uint8_t status;
 	uint8_t handle;
@@ -3473,16 +3490,34 @@ static void le_set_per_adv_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
+	max_interval = sys_le16_to_cpu(cmd->max_interval);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		const uint32_t min_interval =
+					sys_le16_to_cpu(cmd->min_interval);
+
+		/* Compare periodic advertising interval maximum with
+		 * implementation supported periodic advertising interval
+		 * maximum value defined in the Kconfig
+		 * CONFIG_BT_CTLR_ADV_PERIODIC_INTERVAL_MAX.
+		 */
+		if ((min_interval > max_interval) ||
+		    (min_interval < BT_HCI_LE_PER_ADV_INTERVAL_MIN) ||
+		    (max_interval > CONFIG_BT_CTLR_ADV_PERIODIC_INTERVAL_MAX)) {
+			*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+			return;
+		}
+	}
+
 	status = ll_adv_set_by_hci_handle_get(cmd->handle, &handle);
 	if (status) {
 		*evt = cmd_complete_status(status);
 		return;
 	}
 
-	interval = sys_le16_to_cpu(cmd->max_interval);
 	flags = sys_le16_to_cpu(cmd->props);
 
-	status = ll_adv_sync_param_set(handle, interval, flags);
+	status = ll_adv_sync_param_set(handle, max_interval, flags);
 
 	*evt = cmd_complete_status(status);
 }
