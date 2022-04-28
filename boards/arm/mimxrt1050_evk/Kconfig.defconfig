@@ -15,18 +15,17 @@ endchoice
 
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
+if FLASH
 
 config FLASH_MCUX_FLEXSPI_HYPERFLASH
-	default y if FLASH && BOARD_MIMXRT1050_EVK
-	default n if FLASH && BOARD_MIMXRT1050_EVK_QSPI
+	default y if BOARD_MIMXRT1050_EVK
+	default n if BOARD_MIMXRT1050_EVK_QSPI
 
 config FLASH_MCUX_FLEXSPI_NOR
-	default y if FLASH && BOARD_MIMXRT1050_EVK_QSPI
-	default n if FLASH && BOARD_MIMXRT1050_EVK
+	default y if BOARD_MIMXRT1050_EVK_QSPI
+	default n if BOARD_MIMXRT1050_EVK
 
-config FLASH_MCUX_FLEXSPI_XIP
-	default y if FLASH
-	depends on MEMC_MCUX_FLEXSPI
+endif #FLASH
 
 config I2C
 	default y if KSCAN
