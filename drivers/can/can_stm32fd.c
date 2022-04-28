@@ -10,6 +10,7 @@
 #include <kernel.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
+#include <stm32_ll_bus.h>
 #include <logging/log.h>
 
 #include "can_mcan.h"
@@ -22,6 +23,10 @@ LOG_MODULE_REGISTER(can_stm32fd, CONFIG_CAN_LOG_LEVEL);
 #define CAN_STM32FD_CLOCK_SOURCE LL_RCC_FDCAN_CLKSOURCE_PLL
 #elif defined(CONFIG_CAN_STM32FD_CLOCK_SOURCE_PCLK1)
 #define CAN_STM32FD_CLOCK_SOURCE LL_RCC_FDCAN_CLKSOURCE_PCLK1
+#elif defined(CONFIG_CAN_STM32FD_CLOCK_SOURCE_PLL1Q)
+#define CAN_STM32FD_CLOCK_SOURCE LL_RCC_FDCAN_CLKSOURCE_PLL1
+#elif defined(CONFIG_CAN_STM32FD_CLOCK_SOURCE_PLL2P)
+#define CAN_STM32FD_CLOCK_SOURCE LL_RCC_FDCAN_CLKSOURCE_PLL2
 #else
 #error "Unsupported FDCAN clock source"
 #endif
@@ -62,7 +67,19 @@ static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 static void can_stm32fd_clock_enable(void)
 {
 	LL_RCC_SetFDCANClockSource(CAN_STM32FD_CLOCK_SOURCE);
+
+	/* LL_RCC API names do not align with PLL output name but are correct */
+#ifdef CONFIG_CAN_STM32FD_CLOCK_SOURCE_PLL1Q
+	LL_RCC_PLL1_EnableDomain_48M();
+#elif CONFIG_CAN_STM32FD_CLOCK_SOURCE_PLL2P
+	LL_RCC_PLL2_EnableDomain_SAI();
+#endif
+
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_FDCAN1);
+#else
 	__HAL_RCC_FDCAN_CLK_ENABLE();
+#endif
 
 	FDCAN_CONFIG->CKDIV = CAN_STM32FD_CLOCK_DIVISOR >> 1;
 }
