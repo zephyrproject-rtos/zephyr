@@ -1235,6 +1235,30 @@ int lwm2m_rd_client_connection_resume(struct lwm2m_ctx *client_ctx)
 }
 #endif
 
+int lwm2m_rd_client_timeout(struct lwm2m_ctx *client_ctx)
+{
+	if (client.ctx != client_ctx) {
+		return -EPERM;
+	}
+
+	if (!sm_is_registered()) {
+		return 0;
+	}
+
+	LOG_WRN("Confirmable Timeout -> Re-connect and register");
+	client.engine_state = ENGINE_DO_REGISTRATION;
+	return 0;
+}
+
+bool lwm2m_rd_client_is_registred(struct lwm2m_ctx *client_ctx)
+{
+	if (client.ctx != client_ctx || !sm_is_registered()) {
+		return false;
+	}
+
+	return true;
+}
+
 static int lwm2m_rd_client_init(const struct device *dev)
 {
 	client.ctx = NULL;
