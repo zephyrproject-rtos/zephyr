@@ -268,7 +268,8 @@ static struct ipc_ept_cfg hci_ept_cfg = {
 void main(void)
 {
 	int err;
-	const struct device *hci_ipc_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
+	const struct device *hci_ipc_instance =
+		DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci_rpmsg_ipc));
 
 	/* incoming events and data from the controller */
 	static K_FIFO_DEFINE(rx_queue);
