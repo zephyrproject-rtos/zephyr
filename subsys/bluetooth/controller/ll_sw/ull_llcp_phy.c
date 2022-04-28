@@ -310,7 +310,7 @@ static void pu_prepare_instant(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Set instance only in case there is actual PHY change. Otherwise the instant should be
 	 * set to 0.
 	 */
-	if (ctx->data.pu.tx != 0 && ctx->data.pu.rx != 0) {
+	if (ctx->data.pu.c_to_p_phy  != 0 || ctx->data.pu.p_to_c_phy != 0) {
 		ctx->data.pu.instant = ull_conn_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
 	} else {
 		ctx->data.pu.instant = 0;
@@ -342,6 +342,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 #if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 		pu_prep_update_ind(conn, ctx);
+		pu_prepare_instant(conn, ctx);
 		llcp_pdu_encode_phy_update_ind(ctx, pdu);
 		break;
 #endif /* CONFIG_BT_CENTRAL */
@@ -473,7 +474,6 @@ static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
-		pu_prepare_instant(conn, ctx);
 		lp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		ctx->state = LP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND;
@@ -815,6 +815,7 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 #if defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 		pu_prep_update_ind(conn, ctx);
+		pu_prepare_instant(conn, ctx);
 		llcp_pdu_encode_phy_update_ind(ctx, pdu);
 		break;
 #endif /* CONFIG_BT_CENTRAL */
@@ -886,7 +887,6 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
-		pu_prepare_instant(conn, ctx);
 		rp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND);
 
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
