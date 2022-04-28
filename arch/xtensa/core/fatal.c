@@ -118,6 +118,7 @@ void exit(int return_code)
 	LOG_ERR("exit(%d)", return_code);
 	k_panic();
 #endif
+	CODE_UNREACHABLE;
 }
 
 #ifdef XT_SIMULATOR
