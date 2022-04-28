@@ -1,0 +1,4 @@
+# Copyright (c) 2021 NanoXplore
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/arm/nanoxplore_ng/*/Kconfig.defconfig.series"

@@ -1,0 +1,13 @@
+# NanoXplore NG SoC line
+
+# Copyright (c) 2022 NanoXplore
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NANOXPLORE_NGULTRA
+
+source "soc/arm/nanoxplore_ng/ngultra/Kconfig.defconfig.ngultra"
+
+config SOC_SERIES
+	default "ngultra"
+
+endif # SOC_SERIES_NANOXPLORE_NGULTRA

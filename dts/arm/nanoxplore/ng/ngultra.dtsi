@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2022 NanoXplore
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-r.dtsi>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <0>;
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		eram0: memory@3000000 {
+			compatible = "mmio-sram";
+			reg = <0x3000000 DT_SIZE_M(2)>;
+		};
+
+		gic: interrupt-controller@d400000 {
+			compatible = "arm,gic";
+			reg = <0xd400000 0x100000>,   /* GICD */
+			      <0xd500000 0x20000>;    /* GICR */
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+	};
+};

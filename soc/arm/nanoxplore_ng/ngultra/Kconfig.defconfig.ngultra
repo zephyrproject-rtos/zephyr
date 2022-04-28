@@ -1,0 +1,12 @@
+# Copyright (c) 2022 NanoXplore
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NGULTRA
+
+config SOC
+	default "ngultra"
+
+config NUM_IRQS
+	default 192
+
+endif # SOC_NGULTRA

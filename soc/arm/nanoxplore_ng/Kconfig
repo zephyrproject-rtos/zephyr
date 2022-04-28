@@ -1,0 +1,17 @@
+# NanoXplore NG SoC line
+
+# Copyright (c) 2021 NanoXplore
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_NG
+	bool
+
+if SOC_FAMILY_NG
+
+config SOC_FAMILY
+	string
+	default "nanoxplore_ng"
+
+source "soc/arm/nanoxplore_ng/*/Kconfig.soc"
+
+endif # SOC_FAMILY_NG

@@ -493,6 +493,7 @@
 /dts/arm64/armv8-r.dtsi                   @povergoing
 /dts/arm64/intel/*intel_socfpga*          @siclim
 /dts/arm64/nxp/                           @JiafeiPan
+/dts/arm/nanoxplore/                      @hamtinepeng
 /dts/arm/quicklogic/                      @fkokosinski @kgugala
 /dts/arm/seeed/                           @str4t0m
 /dts/arm/st/                              @erwango
