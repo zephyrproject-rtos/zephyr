@@ -21,6 +21,7 @@ struct can_sam_config {
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t pmc_id;
+	int divider;
 };
 
 struct can_sam_data {
@@ -29,18 +30,20 @@ struct can_sam_data {
 
 static int can_sam_get_core_clock(const struct device *dev, uint32_t *rate)
 {
-	ARG_UNUSED(dev);
+	const struct can_mcan_config *mcan_cfg = dev->config;
+	const struct can_sam_config *sam_cfg = mcan_cfg->custom;
 
-	*rate = SOC_ATMEL_SAM_MCK_FREQ_HZ / (CONFIG_CAN_SAM_CKDIV + 1);
+	*rate = SOC_ATMEL_SAM_UPLLCK_FREQ_HZ / (sam_cfg->divider);
 
 	return 0;
 }
 
-static void can_sam_clock_enable(const struct can_sam_config *cfg)
+static void can_sam_clock_enable(const struct can_sam_config *sam_cfg)
 {
-	REG_PMC_PCK5 = PMC_PCK_CSS_PLLA_CLK | PMC_PCK_PRES(CONFIG_CAN_SAM_CKDIV);
+	REG_PMC_PCK5 = PMC_PCK_CSS_UPLL_CLK | PMC_PCK_PRES(sam_cfg->divider - 1);
 	PMC->PMC_SCER |= PMC_SCER_PCK5;
-	soc_pmc_peripheral_enable(cfg->pmc_id);
+
+	soc_pmc_peripheral_enable(sam_cfg->pmc_id);
 }
 
 static int can_sam_init(const struct device *dev)
@@ -129,6 +132,7 @@ static void config_can_##inst##_irq(void)                                       
 #define CAN_SAM_CFG_INST(inst)						\
 	static const struct can_sam_config can_sam_cfg_##inst = {	\
 		.pmc_id = DT_INST_PROP(inst, peripheral_id),		\
+		.divider = DT_INST_PROP(inst, divider),			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
 		.config_irq = config_can_##inst##_irq,			\
 	};								\
