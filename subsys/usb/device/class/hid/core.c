@@ -327,8 +327,8 @@ void hid_sof_handler(struct hid_device_info *dev_data)
 			continue;
 		}
 
-		uint32_t diff = abs(dev_data->idle_rate[i] * 4U -
-				    dev_data->sof_cnt[i]);
+		int32_t diff = abs((int32_t) ((uint32_t) dev_data->idle_rate[i] * 4U -
+					      dev_data->sof_cnt[i]));
 
 		if (diff < 2 && reported == false) {
 			dev_data->sof_cnt[i] = 0U;
