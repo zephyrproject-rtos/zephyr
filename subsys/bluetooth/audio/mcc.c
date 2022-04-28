@@ -1193,8 +1193,27 @@ static uint8_t discover_include_func(struct bt_conn *conn,
 	}
 	return BT_GATT_ITER_STOP;
 }
-#endif /* CONFIG_BT_MCC_OTS */
 
+/* Start discovery of included services */
+static void discover_included(struct bt_conn *conn)
+{
+	int err;
+
+	discover_params.start_handle = cur_mcs_inst->start_handle;
+	discover_params.end_handle = cur_mcs_inst->end_handle;
+	discover_params.type = BT_GATT_DISCOVER_INCLUDE;
+	discover_params.func = discover_include_func;
+
+	BT_DBG("Start discovery of included services");
+	err = bt_gatt_discover(conn, &discover_params);
+	if (err) {
+		BT_DBG("Discover of included service failed (err %d)", err);
+		if (mcc_cb && mcc_cb->discover_mcs) {
+			mcc_cb->discover_mcs(conn, err);
+		}
+	}
+}
+#endif /* CONFIG_BT_MCC_OTS */
 
 /* This function is called when characteristics are found.
  * The function will store handles, and optionally subscribe to, GMCS
@@ -1207,7 +1226,6 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 {
 	struct bt_gatt_chrc *chrc;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
-	int err = 0;
 
 	if (attr) {
 		/* Found an attribute */
@@ -1354,20 +1372,8 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 
 #ifdef CONFIG_BT_MCC_OTS
 
-	/* Discover included services */
-	discover_params.start_handle = cur_mcs_inst->start_handle;
-	discover_params.end_handle = cur_mcs_inst->end_handle;
-	discover_params.type = BT_GATT_DISCOVER_INCLUDE;
-	discover_params.func = discover_include_func;
-
-	BT_DBG("Start discovery of included services");
-	err = bt_gatt_discover(conn, &discover_params);
-	if (err) {
-		BT_DBG("Discover of included service failed (err %d)", err);
-		if (mcc_cb && mcc_cb->discover_mcs) {
-			mcc_cb->discover_mcs(conn, err);
-		}
-	}
+	/* Start discovery of included services to find OTS */
+	discover_included(conn);
 
 #else
 
