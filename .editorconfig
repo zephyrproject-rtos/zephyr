@@ -21,6 +21,11 @@ indent_size = 8
 indent_style = tab
 indent_size = 8
 
+# C++
+[*.{cpp,hpp}]
+indent_style = tab
+indent_size = 8
+
 # Linker Script
 [*.ld]
 indent_style = tab
