@@ -302,6 +302,15 @@ config ZERO_LATENCY_IRQS
 	  higher priority than the rest of the kernel they cannot use any
 	  kernel functionality.
 
+config ZERO_LATENCY_LEVELS
+	int "Number of interrupt priority levels reserved for zero latency"
+	depends on ZERO_LATENCY_IRQS
+	range 1 255
+	help
+	  The amount of interrupt priority levels reserved for zero latency
+	  interrupts. Increase this value to reserve more than one priority
+	  level for zero latency interrupts.
+
 config DYNAMIC_DIRECT_INTERRUPTS
 	bool "Support for dynamic direct interrupts"
 	depends on DYNAMIC_INTERRUPTS
