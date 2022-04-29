@@ -18,7 +18,7 @@ struct ll_adv_set {
 	 */
 	struct {
 		uint8_t len;
-		uint8_t data[PDU_AC_DATA_SIZE_MAX];
+		uint8_t data[PDU_AC_LEG_DATA_SIZE_MAX];
 	} ad_data_backup;
 #endif /* CONFIG_BT_CTLR_AD_DATA_BACKUP */
 

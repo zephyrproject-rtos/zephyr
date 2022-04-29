@@ -535,12 +535,15 @@ config BT_CTLR_ADV_INTERVAL_MAX
 
 config BT_CTLR_ADV_DATA_LEN_MAX
 	int "Maximum Advertising Data Length"
+	depends on BT_BROADCASTER
+	range 31 191 if BT_LL_SW_SPLIT
 	range 31 1650
 	help
 	  Maximum Extended Advertising Data Length.
 
 config BT_CTLR_ADV_EXT_RX_PDU_LEN_MAX
 	int "Maximum Advertising Extensions Receive PDU Length"
+	depends on BT_OBSERVER
 	range 255 255 if BT_HCI_RAW
 	range 31 255
 	default 255
@@ -593,9 +596,10 @@ config BT_CTLR_SYNC_PERIODIC
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in
 	  Synchronization state in the Controller.
 
+if BT_CTLR_SYNC_PERIODIC
+
 config BT_CTLR_SYNC_PERIODIC_ADV_LIST
 	bool "LE Periodic Advertiser List support"
-	depends on BT_CTLR_SYNC_PERIODIC
 	default y
 	help
 	  Enable support for LE Periodic Advertiser List support.
@@ -611,7 +615,6 @@ config BT_CTLR_SYNC_PERIODIC_ADV_LIST_SIZE
 
 config BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
 	bool "Periodic Advertising Sync with ADI support (duplicate filtering)"
-	depends on BT_CTLR_SYNC_PERIODIC
 	default y
 	help
 	  Enable support for duplicate filtering using AdvDataInfo present in
@@ -619,7 +622,6 @@ config BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
 
 config BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING
 	bool "LE Periodic Advertiser filtering by CTE type"
-	depends on BT_CTLR_SYNC_PERIODIC
 	default y
 	help
 	  Enable filtering of periodic advertisements depending on type of
@@ -628,8 +630,9 @@ config BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING
 config BT_CTLR_CHECK_SAME_PEER_SYNC
 	# Hidden Kconfig to add same peer synchronization check
 	bool
-	depends on BT_CTLR_SYNC_PERIODIC
 	default BT_PER_ADV_SYNC_MAX > 1
+
+endif # BT_CTLR_SYNC_PERIODIC
 
 config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT
