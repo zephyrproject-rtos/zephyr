@@ -136,6 +136,7 @@ config MBEDTLS_ECJPAKE_C
 
 config MBEDTLS_ECP_C
 	bool "Elliptic curve over GF(p) library"
+	default y if UOSCORE || UEDHOC
 
 if MBEDTLS_ECP_C
 
@@ -167,6 +168,7 @@ config MBEDTLS_ECP_DP_SECP224R1_ENABLED
 
 config MBEDTLS_ECP_DP_SECP256R1_ENABLED
 	bool "SECP256R1 elliptic curve"
+	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_ECP_DP_SECP384R1_ENABLED
 	bool "SECP384R1 elliptic curve"
@@ -269,6 +271,7 @@ config MBEDTLS_CIPHER_BLOWFISH_ENABLED
 config MBEDTLS_CIPHER_CCM_ENABLED
 	bool "Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
 	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_CAMELLIA_ENABLED
+	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_CIPHER_GCM_ENABLED
 	bool "Galois/Counter Mode (GCM) for AES"
@@ -380,6 +383,7 @@ config MBEDTLS_HAVE_ASM
 config MBEDTLS_ENTROPY_ENABLED
 	bool "MbedTLS generic entropy pool"
 	depends on MBEDTLS_MAC_SHA256_ENABLED || MBEDTLS_MAC_SHA384_ENABLED || MBEDTLS_MAC_SHA512_ENABLED
+	default y if MBEDTLS_ZEPHYR_ENTROPY
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	bool "MbedTLS optimizations for OpenThread"
@@ -454,5 +458,6 @@ config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
 	depends on MBEDTLS_ENTROPY_ENABLED
 	depends on MBEDTLS_CTR_DRBG_ENABLED || MBEDTLS_HMAC_DRBG_ENABLED
+	default y if UOSCORE || UEDHOC
 
 endmenu
