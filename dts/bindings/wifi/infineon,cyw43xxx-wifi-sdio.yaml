@@ -1,0 +1,56 @@
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    CYW43xxx WIFI Connectivity.
+
+compatible: "infineon,cyw43xxx-wifi-sdio"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+    wifi-reg-on-gpios:
+      type: phandle-array
+      required: false
+
+    wifi-host-wake-gpios:
+      type: phandle-array
+      required: false
+
+    wifi-dev-wake-gpios:
+      type: phandle-array
+      required: false
+
+    wifi-sdio-cmd-gpios:
+      type: phandle-array
+      required: true
+
+    wifi-sdio-clk-gpios:
+      type: phandle-array
+      required: true
+
+    wifi-sdio-d0-gpios:
+      type: phandle-array
+      required: true
+
+    wifi-sdio-d1-gpios:
+      type: phandle-array
+      required: true
+
+    wifi-sdio-d2-gpios:
+      type: phandle-array
+      required: true
+
+    wifi-sdio-d3-gpios:
+      type: phandle-array
+      required: true
+
+    pinctrl-0:
+      description: |
+        PORT pin configuration for SDIO signals (clk, cmd, d0..d3).
+      required: false
+
+    pinctrl-names:
+      required: false

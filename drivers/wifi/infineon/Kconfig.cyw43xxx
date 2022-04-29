@@ -1,0 +1,161 @@
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_CYW43XXX
+	bool "Infineon CYW43xxx SoC Wi-Fi support"
+	select THREAD_CUSTOM_DATA
+	select USE_INFINEON_SDIO
+	  depends on DT_HAS_INFINEON_CYW43XXX_WIFI_SDIO_ENABLED
+	help
+	  Enable Infineon CYW43xxx SoC Wi-Fi support.
+
+	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2
+	  in a single-chip solution to enable small-form-factor IoT designs. Combo, standalone Wi-Fi, and Wi-Fi SoCs
+	  with embedded MCU and on-chip networking capabilities are also offered in 1x1 SISO and 2x2 MIMO configurations.
+
+if WIFI_CYW43XXX
+
+# Enable Zephyr variant of Abstraction RTOS
+config ABSTRACTION_RTOS_COMPONENT_ZEPHYR
+	bool
+	default y
+
+# For WIFI_CYW43XXX, MINIMAL_LIBC_MALLOC must be disabled
+config MINIMAL_LIBC_MALLOC
+	bool
+	default n
+
+config CYW43XXX_WIFI_SSID
+	string "SSID of Wi-Fi network"
+	help
+	  SSID (network name) for the application to connect to.
+
+config CYW43XXX_WIFI_PASSWORD
+	string "Password (WPA or WPA2) of Wi-Fi network"
+	help
+	  WiFi password (WPA or WPA2) for the example to use.
+
+config CYW43XXX_WIFI_EVENT_TASK_STACK_SIZE
+	int "Event Task Stack Size"
+	default 4096
+
+config CYW43XXX_WIFI_EVENT_TASK_PRIO
+	int "Event Task Priority"
+	default 4
+
+choice CYW43XXX_PART
+	prompt "Select CYW43XXX part"
+
+
+config CYW4343W
+	bool "CYW4343W"
+	help
+	  Enable Infineon CYW4343W Wi-Fi connectivity,
+	  More information about CYW4343W device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw4343w/
+
+config CYW4373
+	bool "CYW4373"
+	help
+	  Enable Infineon CYW4373 Wi-Fi connectivity,
+	  More information about CYW4373 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw4373/
+
+config CYW43012
+	bool "CYW43012"
+	help
+	  Enable Infineon CYW43012 Wi-Fi connectivity,
+	  More information about CYW43012 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43012/
+
+config CYW43438
+	bool "CYW43438"
+	help
+	  Enable Infineon CYW43438 Wi-Fi connectivity,
+	  More information about CYW43438 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43438/
+
+config CYW43439
+	bool "CYW43439"
+	help
+	  Enable Infineon CYW43439 Wi-Fi connectivity,
+	  More information about CYW43439 device you can find on
+	  https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/cyw43439/
+
+
+choice CYW43012_MODULE
+	prompt "Select CYW43012 module"
+	depends on CYW43012
+
+config CYW43012_MURATA_1LV
+	bool "MURATA-1LV"
+
+config CYW43012_CYSBSYS_RP01
+	bool "CYSBSYS-RP01"
+
+config CYW43012_WM_BAC_CYW_50
+	bool "WM-BAC-CYW-50"
+
+config CYW43012_CUSTOM
+	bool "Custom CYW43012 module"
+endchoice
+
+
+choice CYW4343W_MODULE
+	prompt "Select CYW4343W module"
+	depends on CYW4343W
+
+
+config CYW4343W_MURATA_1DX
+	bool "MURATA-1DX"
+
+config CYW4343W_CUSTOM
+	bool "Custom CYW4343W module"
+
+endchoice
+
+
+choice CYW4373_MODULE
+	prompt "Select CYW4373 module"
+	depends on CYW4373
+
+config CYW4373_STERLING_LWB5PLUS
+	bool "STERLING-LWB5plus"
+
+config CYW4373_CUSTOM
+	bool "Custom CYW4373 module"
+
+endchoice
+
+
+choice CYW43438_MODULE
+	prompt "Select CYW43438 module"
+	depends on CYW43438
+
+config CYW43438_AW_CU427_P
+	bool "AW-CU427-P"
+
+config CYW43438_CUSTOM
+	bool "Custom CYW43438 module"
+
+endchoice
+
+
+choice CYW43439_MODULE
+	prompt "Select CYW43439 module"
+	depends on CYW43439
+
+config CYW43439_MURATA_1YN
+	bool "MURATA_1YN"
+
+config CYW43439_CYW943439M2IPA
+	bool "CYW943439M2IPA1"
+
+config CYW43439_CUSTOM
+	bool "Custom CYW43439 module"
+
+endchoice
+endchoice
+
+endif # WIFI_CY43XXX
