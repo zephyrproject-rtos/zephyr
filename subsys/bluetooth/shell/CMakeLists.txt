@@ -74,6 +74,14 @@ zephyr_library_sources_ifdef(
   has.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_CAP_ACCEPTOR
+  cap_acceptor.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CAP_INITIATOR
+  cap_initiator.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_HAS_CLIENT
   has_client.c
   )
