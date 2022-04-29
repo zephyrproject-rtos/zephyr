@@ -1619,6 +1619,16 @@ typedef uint8_t (*bt_gatt_notify_func_t)(struct bt_conn *conn,
 				      struct bt_gatt_subscribe_params *params,
 				      const void *data, uint16_t length);
 
+/** @typedef bt_gatt_subscribe_func_t
+ *  @brief Subscription callback function
+ *
+ *  @param conn Connection object.
+ *  @param err ATT error code.
+ *  @param params Subscription parameters used.
+ */
+typedef void (*bt_gatt_subscribe_func_t)(struct bt_conn *conn, uint8_t err,
+					 struct bt_gatt_subscribe_params *params);
+
 /** Subscription flags */
 enum {
 	/** @brief Persistence flag
@@ -1660,7 +1670,12 @@ enum {
 struct bt_gatt_subscribe_params {
 	/** Notification value callback */
 	bt_gatt_notify_func_t notify;
-	/** Subscribe CCC write request response callback */
+	/** Subscribe CCC write request response callback
+	 *  If given, called with the subscription parameters given when subscribing
+	 */
+	bt_gatt_subscribe_func_t subscribe;
+
+	/** @deprecated{subscribe CCC write response callback} */
 	bt_gatt_write_func_t write;
 	/** Subscribe value handle */
 	uint16_t value_handle;
