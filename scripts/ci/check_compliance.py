@@ -561,6 +561,8 @@ UNDEF_KCONFIG_WHITELIST = {
     "REG2",
     "SAMPLE_MODULE_LOG_LEVEL",  # Used as an example in samples/subsys/logging
     "SAMPLE_MODULE_LOG_LEVEL_DBG",  # Used in tests/subsys/logging/log_api
+    "LOG_BACKEND_MOCK_OUTPUT_DEFAULT", #Referenced in tests/subsys/logging/log_syst
+    "LOG_BACKEND_MOCK_OUTPUT_SYST", #Referenced in testcase.yaml of log_syst test
     "SEL",
     "SHIFT",
     "SOC_WATCH",  # Issue 13749
