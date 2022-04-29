@@ -4,6 +4,7 @@ tests:
       - nrf52_bsim
       - nrf51dk_nrf51422
       - nrf52840dk_nrf52840
+      - cy8cproto_062_4343w
     tags: bluetooth
     slow: true
     timeout: 360

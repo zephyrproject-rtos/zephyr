@@ -3,76 +3,76 @@ common:
   tags: bluetooth
 tests:
   bluetooth.init.test:
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_0:
     extra_args: CONF_FILE=prj_0.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_1:
     extra_args: CONF_FILE=prj_1.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_10:
     extra_args: CONF_FILE=prj_10.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_11:
     extra_args: CONF_FILE=prj_11.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_12:
     extra_args: CONF_FILE=prj_12.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_13:
     extra_args: CONF_FILE=prj_13.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_14:
     extra_args: CONF_FILE=prj_14.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_15:
     extra_args: CONF_FILE=prj_15.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_16:
     extra_args: CONF_FILE=prj_16.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_17:
     extra_args: CONF_FILE=prj_17.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_18:
     extra_args: CONF_FILE=prj_18.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_19:
     extra_args: CONF_FILE=prj_19.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_2:
     extra_args: CONF_FILE=prj_2.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_20:
     extra_args: CONF_FILE=prj_20.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_21:
     extra_args: CONF_FILE=prj_21.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_22:
     extra_args: CONF_FILE=prj_22.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_3:
     extra_args: CONF_FILE=prj_3.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_4:
     extra_args: CONF_FILE=prj_4.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_5:
     extra_args: CONF_FILE=prj_5.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_6:
     extra_args: CONF_FILE=prj_6.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_7:
     extra_args: CONF_FILE=prj_7.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_8:
     extra_args: CONF_FILE=prj_8.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_9:
     extra_args: CONF_FILE=prj_9.conf
-    platform_allow: qemu_cortex_m3
+    platform_allow: qemu_cortex_m3 cy8cproto_062_4343w
   bluetooth.init.test_ctlr:
     extra_args: CONF_FILE=prj_ctlr.conf
     platform_allow:
@@ -129,6 +129,7 @@ tests:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
       - rv32m1_vega_ri5cy
+      - cy8cproto_062_4343w
   bluetooth.init.test_ctlr_peripheral:
     extra_args: CONF_FILE=prj_ctlr_peripheral.conf
     platform_allow:
@@ -136,6 +137,7 @@ tests:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
       - rv32m1_vega_ri5cy
+      - cy8cproto_062_4343w
   bluetooth.init.test_ctlr_peripheral_priv:
     extra_args: CONF_FILE=prj_ctlr_peripheral_priv.conf
     platform_allow:
@@ -143,6 +145,7 @@ tests:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
       - rv32m1_vega_ri5cy
+      - cy8cproto_062_4343w
   bluetooth.init.test_ctlr_observer:
     extra_args: CONF_FILE=prj_ctlr_observer.conf
     platform_allow:
@@ -150,6 +153,7 @@ tests:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
       - rv32m1_vega_ri5cy
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
@@ -161,6 +165,7 @@ tests:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
       - rv32m1_vega_ri5cy
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
@@ -172,6 +177,7 @@ tests:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
       - rv32m1_vega_ri5cy
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
@@ -182,6 +188,7 @@ tests:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf51dk_nrf51422
@@ -191,6 +198,7 @@ tests:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf51dk_nrf51422
@@ -200,6 +208,7 @@ tests:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf51dk_nrf51422
@@ -209,6 +218,7 @@ tests:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf51dk_nrf51422
@@ -218,6 +228,7 @@ tests:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf51dk_nrf51422
@@ -227,6 +238,7 @@ tests:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf51dk_nrf51422
@@ -236,6 +248,7 @@ tests:
       - nrf52840dk_nrf52840
       - nrf52dk_nrf52832
       - nrf51dk_nrf51422
+      - cy8cproto_062_4343w
     integration_platforms:
       - nrf52840dk_nrf52840
       - nrf51dk_nrf51422

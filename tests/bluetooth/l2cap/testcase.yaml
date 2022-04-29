@@ -5,6 +5,7 @@ tests:
       - native_posix_64
       - qemu_x86
       - qemu_cortex_m3
+      - cy8cproto_062_4343w
     integration_platforms:
       - native_posix
     tags:
