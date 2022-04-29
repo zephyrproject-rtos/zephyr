@@ -1,22 +1,21 @@
 /**
  * @file
- * @brief Shell APIs for Bluetooth CSIS
+ * @brief Shell APIs for Bluetooth CAP acceptor
  *
- * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/types.h>
 
-#include <zephyr/zephyr.h>
+#include <zephyr.h>
 #include <zephyr/types.h>
-#include <zephyr/shell/shell.h>
+#include <shell/shell.h>
 #include <stdlib.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/audio/csis.h>
+#include <bluetooth/gatt.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/audio/cap.h>
 #include "bt.h"
 
 extern const struct shell *ctx_shell;
@@ -58,7 +57,8 @@ static struct bt_csis_cb csis_cbs = {
 	.sirk_read_req = sirk_read_req_cb,
 };
 
-static int cmd_csis_register(const struct shell *sh, size_t argc, char **argv)
+static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
+				 char **argv)
 {
 	int err;
 	struct bt_csis_register_param param = {
@@ -88,25 +88,28 @@ static int cmd_csis_register(const struct shell *sh, size_t argc, char **argv)
 				      param.set_sirk, sizeof(param.set_sirk));
 			if (len == 0) {
 				shell_error(sh, "Could not parse SIRK");
+
 				return -ENOEXEC;
 			}
 		} else {
 			shell_help(sh);
+
 			return SHELL_CMD_HELP_PRINTED;
 		}
 	}
 
-	err = bt_csis_register(&param, &csis);
+	err = bt_cap_acceptor_register(&param, &csis);
 	if (err != 0) {
-		shell_error(sh, "Could not register CSIS: %d", err);
+		shell_error(sh, "Could not register CAS: %d", err);
+
 		return err;
 	}
 
 	return 0;
 }
 
-static int cmd_csis_advertise(const struct shell *sh, size_t argc,
-			      char *argv[])
+static int cmd_cap_acceptor_advertise(const struct shell *sh, size_t argc,
+				      char *argv[])
 {
 	int err;
 
@@ -116,6 +119,7 @@ static int cmd_csis_advertise(const struct shell *sh, size_t argc,
 			shell_error(sh, "Failed to stop advertising %d", err);
 			return -ENOEXEC;
 		}
+
 		shell_print(sh, "Advertising stopped");
 	} else if (strcmp(argv[1], "on") == 0) {
 		err = bt_csis_advertise(csis, true);
@@ -123,51 +127,59 @@ static int cmd_csis_advertise(const struct shell *sh, size_t argc,
 			shell_error(sh, "Failed to start advertising %d", err);
 			return -ENOEXEC;
 		}
+
 		shell_print(sh, "Advertising started");
 	} else {
 		shell_error(sh, "Invalid argument: %s", argv[1]);
+
 		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
-static int cmd_csis_update_rsi(const struct shell *sh, size_t argc,
+static int cmd_cap_acceptor_update_psri(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	int err;
 
 	if (bt_csis_advertise(csis, false) != 0) {
 		shell_error(sh,
-			    "Failed to stop advertising - rsi not updated");
+			    "Failed to stop advertising - PSRI not updated");
+
 		return -ENOEXEC;
 	}
+
 	err = bt_csis_advertise(csis, true);
 	if (err != 0) {
 		shell_error(sh,
-			    "Failed to start advertising  - rsi not updated");
+			    "Failed to start advertising - PSRI not updated");
+
 		return -ENOEXEC;
 	}
 
-	shell_print(sh, "RSI and optionally RPA updated");
+	shell_print(sh, "PSRI and optionally RPA updated");
 
 	return 0;
 }
 
-static int cmd_csis_print_sirk(const struct shell *sh, size_t argc,
-			       char *argv[])
+static int cmd_cap_acceptor_print_sirk(const struct shell *sh, size_t argc,
+				       char *argv[])
 {
 	bt_csis_print_sirk(csis);
+
 	return 0;
 }
 
-static int cmd_csis_lock(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_cap_acceptor_lock(const struct shell *sh, size_t argc,
+				 char *argv[])
 {
 	int err;
 
 	err = bt_csis_lock(csis, true, false);
 	if (err != 0) {
 		shell_error(sh, "Failed to set lock: %d", err);
+
 		return -ENOEXEC;
 	}
 
@@ -176,8 +188,8 @@ static int cmd_csis_lock(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_csis_release(const struct shell *sh, size_t argc,
-			    char *argv[])
+static int cmd_cap_acceptor_release(const struct shell *sh, size_t argc,
+				    char *argv[])
 {
 	bool force = false;
 	int err;
@@ -187,6 +199,7 @@ static int cmd_csis_release(const struct shell *sh, size_t argc,
 			force = true;
 		} else {
 			shell_error(sh, "Unknown parameter: %s", argv[1]);
+
 			return -ENOEXEC;
 		}
 	}
@@ -195,6 +208,7 @@ static int cmd_csis_release(const struct shell *sh, size_t argc,
 
 	if (err != 0) {
 		shell_error(sh, "Failed to release lock: %d", err);
+
 		return -ENOEXEC;
 	}
 
@@ -203,8 +217,8 @@ static int cmd_csis_release(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_csis_set_sirk_rsp(const struct shell *sh, size_t argc,
-				 char *argv[])
+static int cmd_cap_acceptor_set_sirk_rsp(const struct shell *sh, size_t argc,
+					 char *argv[])
 {
 	if (strcmp(argv[1], "accept") == 0) {
 		sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
@@ -222,39 +236,39 @@ static int cmd_csis_set_sirk_rsp(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_csis(const struct shell *sh, size_t argc, char **argv)
+static int cmd_cap_acceptor(const struct shell *sh, size_t argc, char **argv)
 {
 	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(csis_cmds,
-	SHELL_CMD_ARG(register, NULL,
+SHELL_STATIC_SUBCMD_SET_CREATE(cap_acceptor_cmds,
+	SHELL_CMD_ARG(init, NULL,
 		      "Initialize the service and register callbacks "
 		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
-		      cmd_csis_register, 1, 4),
+		      cmd_cap_acceptor_init, 1, 4),
 	SHELL_CMD_ARG(advertise, NULL,
-		      "Start/stop advertising CSIS RSIs <on/off>",
-		      cmd_csis_advertise, 2, 0),
-	SHELL_CMD_ARG(update_rsi, NULL,
-		      "Update the advertised RSI",
-		      cmd_csis_update_rsi, 1, 0),
+		      "Start/stop advertising CAP acceptor CSIS PSRI <on/off>",
+		      cmd_cap_acceptor_advertise, 2, 0),
+	SHELL_CMD_ARG(update_psri, NULL,
+		      "Update the advertised PSRI",
+		      cmd_cap_acceptor_update_psri, 1, 0),
 	SHELL_CMD_ARG(lock, NULL,
 		      "Lock the set",
-		      cmd_csis_lock, 1, 0),
+		      cmd_cap_acceptor_lock, 1, 0),
 	SHELL_CMD_ARG(release, NULL,
 		      "Release the set [force]",
-		      cmd_csis_release, 1, 1),
+		      cmd_cap_acceptor_release, 1, 1),
 	SHELL_CMD_ARG(print_sirk, NULL,
 		      "Print the currently used SIRK",
-		      cmd_csis_print_sirk, 1, 0),
+		      cmd_cap_acceptor_print_sirk, 1, 0),
 	SHELL_CMD_ARG(set_sirk_rsp, NULL,
 		      "Set the response used in SIRK requests "
 		      "<accept, accept_enc, reject, oob>",
-		      cmd_csis_set_sirk_rsp, 2, 0),
+		      cmd_cap_acceptor_set_sirk_rsp, 2, 0),
 		      SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(csis, &csis_cmds, "Bluetooth CSIS shell commands",
-		       cmd_csis, 1, 1);
+SHELL_CMD_ARG_REGISTER(cap_acceptor, &cap_acceptor_cmds, "Bluetooth CAP acceptor shell commands",
+		       cmd_cap_acceptor, 1, 1);
