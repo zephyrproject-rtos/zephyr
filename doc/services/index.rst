@@ -28,3 +28,4 @@ OS Services
    usb/index.rst
    virtualization/index.rst
    misc.rst
+   async.rst
