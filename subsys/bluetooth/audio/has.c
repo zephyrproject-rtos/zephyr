@@ -181,6 +181,22 @@ static struct has_client *client_get(struct bt_conn *conn)
 	return NULL;
 }
 
+static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
+{
+	struct has_client *client;
+
+	BT_DBG("conn %p level %d err %d", (void *)conn, level, err);
+
+	if (err != BT_SECURITY_ERR_SUCCESS) {
+		return;
+	}
+
+	client = client_get_or_new(conn);
+	if (unlikely(!client)) {
+		BT_ERR("Failed to allocate client");
+	}
+}
+
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct has_client *client;
@@ -195,6 +211,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected,
+	.security_changed = security_changed,
 };
 
 typedef uint8_t (*preset_func_t)(const struct has_preset *preset, void *user_data);
@@ -492,6 +509,11 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 		return BT_ATT_ERR_CCC_IMPROPER_CONF;
 	}
 
+	client = client_get(conn);
+	if (!client) {
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
 	req = net_buf_simple_pull_mem(buf, sizeof(*req));
 
 	BT_DBG("start_index %d num_presets %d", req->start_index, req->num_presets);
@@ -502,8 +524,6 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 	if (preset == NULL) {
 		return BT_ATT_ERR_OUT_OF_RANGE;
 	}
-
-	client = client_get_or_new(conn);
 
 	/* Reject if already in progress */
 	if (read_presets_req_is_pending(client)) {
