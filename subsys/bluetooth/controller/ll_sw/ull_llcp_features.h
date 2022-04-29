@@ -117,6 +117,15 @@ static inline bool feature_phy_coded(struct ll_conn *conn)
 #endif
 }
 
+static inline bool feature_cte_req(struct ll_conn *conn)
+{
+#if defined(CONFIG_BT_CTLR_DF) && defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	return conn->llcp.fex.features_used & LL_FEAT_BIT_CONNECTION_CTE_REQ;
+#else
+	return 0;
+#endif
+}
+
 /*
  * for asymmetric features we can check either if we support it
  * or if the peer supports it
@@ -148,10 +157,6 @@ static inline bool feature_peer_smi_tx(struct ll_conn *conn)
  * per_adv
  * pwr_class1
  * min_chann
- * CTE_req
- * CTE_rsp
- * CTE_tx
- * CTE_rx
  * ant_sw_CTE_tx
  * ant_sw_CTE_rx
  * tone_ext
