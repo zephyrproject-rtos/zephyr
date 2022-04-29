@@ -110,8 +110,11 @@ void test_cte_req_central_local(void)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_CTE_RSP, &ntf, &remote_cte_rsp);
 
-	/* There should not be a host notifications */
+	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -288,11 +291,14 @@ void test_cte_req_peripheral_local(void)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_CTE_RSP, &ntf, &remote_cte_rsp);
 
+	/* The RX queue should be empty now */
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
-
-	/* There should not be a host notifications */
-	ut_rx_q_is_empty();
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
@@ -504,8 +510,11 @@ void test_cte_req_rejected_inv_ll_param_central_local(void)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_REJECT_EXT_IND, &ntf, &remote_reject_ext_ind);
 
-	/* There should not be a host notifications */
+	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -580,11 +589,14 @@ void test_cte_req_rejected_inv_ll_param_peripheral_local(void)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_REJECT_EXT_IND, &ntf, &remote_reject_ext_ind);
 
+	/* The RX queue should be empty now */
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
-
-	/* There should not be a host notifications */
-	ut_rx_q_is_empty();
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
@@ -934,8 +946,11 @@ static void run_local_cte_req(struct pdu_data_llctrl_cte_req *cte_req)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_CTE_RSP, &ntf, &remote_cte_rsp);
 
-	/* There should not be a host notifications */
+	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -1014,7 +1029,7 @@ void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl
 		ull_cp_release_tx(&conn, tx);
 	}
 
-	/* There should not be a host notifications */
+	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
 
 	check_current_phy_state(&conn, phy_req->tx_phys, PREFER_S2_CODING, phy_req->tx_phys);
