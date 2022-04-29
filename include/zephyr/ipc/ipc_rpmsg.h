@@ -90,7 +90,7 @@ struct ipc_rpmsg_instance {
  *  Init an RPMsg instance.
  *
  *  @param instance Pointer to the RPMsg instance struct.
- *  @param role Master / Remote role.
+ *  @param role Host / Remote role.
  *  @param shm_io SHM IO region pointer.
  *  @param vdev VirtIO device pointer.
  *  @param shb Shared memory region pointer.
@@ -115,7 +115,7 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
  *  Register an endpoint to a provided RPMsg instance.
  *
  *  @param instance Pointer to the RPMsg instance struct.
- *  @param role Master / Remote role.
+ *  @param role Host / Remote role.
  *  @param ept Endpoint to register.
  *
  *  @retval -EINVAL When some parameter is missing.
