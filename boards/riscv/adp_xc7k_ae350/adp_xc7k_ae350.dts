@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <andes_v5_ae350.dtsi>
+#include <andes/andes_v5_ae350.dtsi>
 
 / {
 	model = "Andes ADP-XC7K AE350";
