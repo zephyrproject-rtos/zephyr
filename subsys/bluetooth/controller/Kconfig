@@ -512,6 +512,18 @@ config BT_CTLR_ADV_SET
 	help
 	  Maximum supported advertising sets.
 
+config BT_CTLR_ADV_INTERVAL_MAX
+	hex "Primary Advertising Interval Maximum"
+	depends on BT_BROADCASTER
+	range 0x000020 0x004000 if BT_LL_SW_SPLIT
+	range 0x000020 0xFFFFFF
+	default 0x004000 if BT_LL_SW_SPLIT
+	default 0xFFFFFF
+	help
+	  Supported Primary Advertising Interval Maximum value.
+	  Bluetooth Core Specification v5.3 permitted range is 0x000020 to
+	  0xFFFFFF in 0.625 ms units.
+
 config BT_CTLR_ADV_DATA_LEN_MAX
 	int "Maximum Advertising Data Length"
 	range 31 1650
@@ -549,12 +561,26 @@ config BT_CTLR_ADV_PERIODIC
 config PROMPT_ADJUSTMENT_WORKAROUND
 	bool
 
+if BT_CTLR_ADV_PERIODIC
+
 config BT_CTLR_ADV_PERIODIC_ADI_SUPPORT
 	bool "Periodic Advertising ADI support"
-	depends on BT_CTLR_ADV_PERIODIC
 	default y
 	help
 	  Enable support for adding AdvDataInfo in Periodic Advertising PDUs.
+
+config BT_CTLR_ADV_PERIODIC_INTERVAL_MAX
+	hex "Periodic Advertising Interval Maximum"
+	range 0x0006 0x2000 if BT_LL_SW_SPLIT
+	range 0x0006 0xFFFF
+	default 0x2000 if BT_LL_SW_SPLIT
+	default 0xFFFF
+	help
+	  Supported Periodic Advertising Interval Maximum value.
+	  Bluetooth Core Specification v5.3 permitted range is 0x0006 to
+	  0xFFFF in 1.25 ms units.
+
+endif # BT_CTLR_ADV_PERIODIC
 
 config BT_CTLR_SYNC_PERIODIC
 	bool "LE Periodic Advertising in Synchronization State" if !BT_LL_SW_SPLIT
