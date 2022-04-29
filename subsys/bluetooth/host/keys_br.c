@@ -176,7 +176,7 @@ static int link_key_set(const char *name, size_t len_rd,
 
 	err = bt_settings_decode_key(name, &le_addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", name);
+		BT_ERR("Unable to decode address %s", log_strdup(name));
 		return -EINVAL;
 	}
 

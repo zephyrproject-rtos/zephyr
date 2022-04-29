@@ -365,7 +365,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", name);
+		BT_ERR("Unable to decode address %s", log_strdup(name));
 		return -EINVAL;
 	}
 
