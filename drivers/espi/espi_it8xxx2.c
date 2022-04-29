@@ -378,14 +378,14 @@ static void kbc_it8xxx2_ibf_isr(const struct device *dev)
 
 	/* KBC Input Buffer Full event */
 	kbc_evt->evt = HOST_KBC_EVT_IBF;
-	/* The data in KBC Input Buffer */
-	kbc_evt->data = kbc_reg->KBHIDIR;
 	/*
 	 * Indicates if the host sent a command or data.
 	 * 0 = data
 	 * 1 = Command.
 	 */
 	kbc_evt->type = !!(kbc_reg->KBHISR & KBC_KBHISR_A2_ADDR);
+	/* The data in KBC Input Buffer */
+	kbc_evt->data = kbc_reg->KBHIDIR;
 
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
