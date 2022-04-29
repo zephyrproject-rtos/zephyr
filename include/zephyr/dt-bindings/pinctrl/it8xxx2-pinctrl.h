@@ -8,13 +8,6 @@
 
 #define NO_FUNC 0
 
-/* PINMUX config */
-#define IT8XXX2_PINMUX_FUNC_1 0
-#define IT8XXX2_PINMUX_FUNC_2 1
-#define IT8XXX2_PINMUX_FUNC_3 2
-#define IT8XXX2_PINMUX_FUNC_4 3
-#define IT8XXX2_PINMUX_PINS   8
-
 /**
  * @brief PIN alternate function.
  */
