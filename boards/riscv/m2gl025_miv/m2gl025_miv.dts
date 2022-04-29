@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <microsemi-miv.dtsi>
+#include <microsemi/microsemi-miv.dtsi>
 
 / {
 	model = "SiFive HiFive 1";
