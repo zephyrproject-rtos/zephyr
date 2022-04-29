@@ -159,6 +159,14 @@ config MBEDTLS_SHELL
 	  Enable mbed TLS shell module, which allows to show debug information
 	  about mbed TLS library, such as heap usage.
 
+config MBEDTLS_ZEPHYR_ENTROPY
+	bool "mbed TLS entropy source based on Zephyr entropy driver"
+	depends on MBEDTLS
+	help
+	  This option enables the entropy source based on Zephyr entropy driver
+	  for mbed TLS. The entropy source is registered automatically during
+	  system initialization.
+
 config APP_LINK_WITH_MBEDTLS
 	bool "Link 'app' with MBEDTLS"
 	default y
