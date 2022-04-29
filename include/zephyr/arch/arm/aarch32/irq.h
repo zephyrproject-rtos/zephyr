@@ -86,16 +86,27 @@ extern void z_arm_interrupt_init(void);
 
 /* Flags for use with IRQ_CONNECT() */
 /**
- * Set this interrupt up as a zero-latency IRQ. It has a fixed hardware
- * priority level (discarding what was supplied in the interrupt's priority
- * argument), and will run even if irq_lock() is active. Be careful!
+ * Set this interrupt up as a zero-latency IRQ. If CONFIG_ZERO_LATENCY_LEVELS
+ * is 1 it has a fixed hardware priority level (discarding what was supplied
+ * in the interrupt's priority argument). If CONFIG_ZERO_LATENCY_LEVELS is
+ * greater 1 it has the priority level assigned by the argument.
+ * The interrupt wil run even if irq_lock() is active. Be careful!
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
 
 #ifdef CONFIG_CPU_CORTEX_M
+
+#if defined(CONFIG_ZERO_LATENCY_LEVELS)
+#define ZERO_LATENCY_LEVELS CONFIG_ZERO_LATENCY_LEVELS
+#else
+#define ZERO_LATENCY_LEVELS 1
+#endif
+
 #define _CHECK_PRIO(priority_p, flags_p) \
-	BUILD_ASSERT((flags_p & IRQ_ZERO_LATENCY) || \
-		     priority_p <= IRQ_PRIO_LOWEST, \
+	BUILD_ASSERT(((flags_p & IRQ_ZERO_LATENCY) && \
+		      ((ZERO_LATENCY_LEVELS == 1) || \
+		       (priority_p < ZERO_LATENCY_LEVELS))) || \
+		     (priority_p <= IRQ_PRIO_LOWEST), \
 		     "Invalid interrupt priority. Values must not exceed IRQ_PRIO_LOWEST");
 #else
 #define _CHECK_PRIO(priority_p, flags_p)

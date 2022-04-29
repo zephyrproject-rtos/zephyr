@@ -74,7 +74,11 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	 * via flags
 	 */
 	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) && (flags & IRQ_ZERO_LATENCY)) {
-		prio = _EXC_ZERO_LATENCY_IRQS_PRIO;
+		if (ZERO_LATENCY_LEVELS == 1) {
+			prio = _EXC_ZERO_LATENCY_IRQS_PRIO;
+		} else {
+			/* Use caller supplied prio level as-is */
+		}
 	} else {
 		prio += _IRQ_PRIO_OFFSET;
 	}
