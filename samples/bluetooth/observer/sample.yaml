@@ -7,6 +7,7 @@ tests:
       - qemu_cortex_m3
       - qemu_x86
       - nrf52840dk_nrf52840
+      - cy8cproto_062_4343w
     integration_platforms:
       - qemu_cortex_m3
     tags: bluetooth
