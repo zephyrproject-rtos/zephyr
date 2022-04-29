@@ -734,6 +734,96 @@ void test_cte_req_reject_inv_ll_param_peripheral_remote(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
+/* +-----+                     +-------+                         +-----+
+ * | UT  |                     | LL_A  |                         | LT  |
+ * +-----+                     +-------+                         +-----+
+ *    |                            |                                |
+ *    | Start initiation           |                                |
+ *    | CTE Request Proc.          |                                |
+ *    |--------------------------->|                                |
+ *    |                            |                                |
+ *    |                            | LL_LE_CTE_REQ                  |
+ *    |                            |------------------------------->|
+ *    |                            |                                |
+ *    |                            | LL_UNKNOWN_RSP                 |
+ *    |                            |<-------------------------------|
+ *    |                            |                                |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                            |                                |
+ *    | LE CTE Request Failed      |                                |
+ *    |<---------------------------|                                |
+ *    |                            |                                |
+ *    |                            |                                |
+ */
+void test_cte_req_ll_unknown_rsp_local(uint8_t role)
+{
+	uint8_t err;
+	struct node_tx *tx;
+
+	struct pdu_data_llctrl_cte_req local_cte_req = {
+		.cte_type_req = BT_HCI_LE_AOD_CTE_1US,
+		.min_cte_len_req = BT_HCI_LE_CTE_LEN_MIN,
+	};
+
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = { .type = PDU_DATA_LLCTRL_TYPE_CTE_REQ };
+	struct node_rx_pdu *ntf;
+
+	/* Role */
+	test_set_role(&conn, role);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an CTE Request Procedure */
+	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CTE_REQ, &conn, &tx, &local_cte_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Receive notification of reception of unknown response. The notification is changed to
+	 * HCI_LE_CTE_Request_Failed before send to host by HCI. This is why it is verified if CTE
+	 * request state machine sends LL_UNKNOWN_RSP towards host.
+	 */
+	ut_rx_pdu(LL_UNKNOWN_RSP, &ntf, &unknown_rsp);
+
+	/* The RX queue should be empty now */
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Release tx node */
+	ull_cp_release_tx(&conn, tx);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(), "Free CTX buffers %d",
+		      ctx_buffers_free());
+
+	/* Verify that CTE response feature is marked as not supported by peer device */
+	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
+	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, NULL);
+}
+
+void test_cte_req_ll_unknown_rsp_central_local(void)
+{
+	test_cte_req_ll_unknown_rsp_local(BT_HCI_ROLE_CENTRAL);
+}
+
+void test_cte_req_ll_unknown_rsp_peripheral_local(void)
+{
+	test_cte_req_ll_unknown_rsp_local(BT_HCI_ROLE_PERIPHERAL);
+}
+
 /* Tests related with PHY update procedure and CTE request procedure "collision" */
 
 #define PREFER_S2_CODING 0U
@@ -1509,6 +1599,10 @@ void test_main(void)
 					       setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_reject_inv_ll_param_peripheral_remote,
 					       setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_cte_req_ll_unknown_rsp_central_local, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_cte_req_ll_unknown_rsp_peripheral_local, setup,
+					       unit_test_noop),
 		ztest_unit_test_setup_teardown(
 			test_central_local_cte_req_wait_for_phy_update_complete_and_disable, setup,
 			unit_test_noop),
