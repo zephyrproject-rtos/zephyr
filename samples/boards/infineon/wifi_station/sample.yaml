@@ -1,0 +1,19 @@
+sample:
+  name: Infineon CYW43XX WiFi Station
+tests:
+  sample.board.infineon.wifi_station:
+    platform_allow: cy8cproto_062_4343w
+    tags: cyw43xxx
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "WLAN MAC Address"
+        - "WHD VERSION"
+        - "infineon_wifi_sta: Connecting to AP"
+        - "infineon_wifi_sta: Connected to AP"
+        - "net_dhcpv4: Received:"
+        - "infineon_wifi_sta: Your address:"
+        - "infineon_wifi_sta: Subnet:"
+        - "infineon_wifi_sta: Router:"
+    filter: dt_compat_enabled("infineon,cyw43xxx-wifi-sdio")
