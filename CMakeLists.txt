@@ -269,6 +269,8 @@ endif()
 
 if("${SPARSE}" STREQUAL "y")
   list(APPEND TOOLCHAIN_C_FLAGS -D__CHECKER__)
+  # Avoid compiler "attribute directive ignored" warnings
+  list(APPEND TOOLCHAIN_C_FLAGS -Wno-attributes)
 endif()
 
 zephyr_compile_options(
