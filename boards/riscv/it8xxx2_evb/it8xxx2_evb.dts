@@ -7,7 +7,6 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <it8xxx2.dtsi>
-#include <it8xxx2-alts-map.dtsi>
 #include <ite/it8xxx2-pinctrl-map.dtsi>
 
 / {

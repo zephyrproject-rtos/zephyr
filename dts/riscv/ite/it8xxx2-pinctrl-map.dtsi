@@ -130,6 +130,20 @@
 		pinmuxs = <&pinctrla 7 IT8XXX2_ALT_FUNC_1>;
 	};
 
+	/* SHI alternate function */
+	shi_mosi_gpm0_default: shi_mosi_gpm0_default {
+		pinmuxs = <&pinctrlm 0 IT8XXX2_ALT_FUNC_1>;
+	};
+	shi_miso_gpm1_default: shi_miso_gpm1_default {
+		pinmuxs = <&pinctrlm 1 IT8XXX2_ALT_FUNC_1>;
+	};
+	shi_clk_gpm4_default: shi_clk_gpm4_default {
+		pinmuxs = <&pinctrlm 4 IT8XXX2_ALT_FUNC_1>;
+	};
+	shi_cs_gpm5_default: shi_cs_gpm5_default {
+		pinmuxs = <&pinctrlm 5 IT8XXX2_ALT_FUNC_1>;
+	};
+
 	/* Tachometer alternate function */
 	tach0a_gpd6_default: tach0a_gpd6_default {
 		pinmuxs = <&pinctrld 6 IT8XXX2_ALT_FUNC_1>;
