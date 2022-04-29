@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <riscv32-fe310.dtsi>
+#include <sifive/riscv32-fe310.dtsi>
 #include "qemu_riscv32_xip-pinctrl.dtsi"
 
 / {
