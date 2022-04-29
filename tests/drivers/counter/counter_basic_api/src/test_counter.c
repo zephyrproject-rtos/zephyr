@@ -43,7 +43,10 @@ static const struct device *const devices[] = {
 #undef STM32_COUNTER_DEV
 #endif
 #ifdef CONFIG_COUNTER_NATIVE_POSIX
-	DEVICE_DT_GET(DT_NODELABEL(counter0)),
+	DT_LABEL(DT_NODELABEL(counter0)),
+#endif
+#ifdef CONFIG_COUNTER_INFINEON_CAT1
+	DEVICE_DT_GET(DT_NODELABEL(counter0_0)),
 #endif
 	/* NOTE: there is no trailing comma, as the DEVS_FOR_DT_COMPAT
 	 * handles it.
