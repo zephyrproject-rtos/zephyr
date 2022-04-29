@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <riscv64-fu740.dtsi>
+#include <sifive/riscv64-fu740.dtsi>
 
 / {
 	chosen {
