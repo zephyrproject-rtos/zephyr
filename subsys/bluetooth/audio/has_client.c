@@ -404,7 +404,7 @@ static uint8_t active_preset_notify_cb(struct bt_conn *conn,
 }
 
 static void active_index_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
-				      struct bt_gatt_write_params *params)
+				      struct bt_gatt_subscribe_params *params)
 {
 	struct has_inst *inst = inst_by_conn(conn);
 
@@ -427,7 +427,7 @@ static int active_index_subscribe(struct has_inst *inst, uint16_t value_handle)
 	BT_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->active_index_subscription.notify = active_preset_notify_cb;
-	inst->active_index_subscription.write = active_index_subscribe_cb;
+	inst->active_index_subscription.subscribe = active_index_subscribe_cb;
 	inst->active_index_subscription.value_handle = value_handle;
 	inst->active_index_subscription.ccc_handle = 0x0000;
 	inst->active_index_subscription.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
@@ -491,7 +491,7 @@ static int active_index_read(struct has_inst *inst)
 }
 
 static void control_point_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
-				       struct bt_gatt_write_params *write)
+				       struct bt_gatt_subscribe_params *subscribe)
 {
 	struct has_inst *inst = inst_by_conn(conn);
 	int err = att_err;
@@ -525,7 +525,7 @@ static int control_point_subscribe(struct has_inst *inst, uint16_t value_handle,
 	BT_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->control_point_subscription.notify = control_point_notify_cb;
-	inst->control_point_subscription.write = control_point_subscribe_cb;
+	inst->control_point_subscription.subscribe = control_point_subscribe_cb;
 	inst->control_point_subscription.value_handle = value_handle;
 	inst->control_point_subscription.ccc_handle = 0x0000;
 	inst->control_point_subscription.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
@@ -654,7 +654,7 @@ static int features_read(struct has_inst *inst, uint16_t value_handle)
 }
 
 static void features_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
-				  struct bt_gatt_write_params *params)
+				  struct bt_gatt_subscribe_params *params)
 {
 	struct has_inst *inst = inst_by_conn(conn);
 	int err = att_err;
@@ -722,7 +722,7 @@ static int features_subscribe(struct has_inst *inst, uint16_t value_handle)
 	BT_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->features_subscription.notify = features_notify_cb;
-	inst->features_subscription.write = features_subscribe_cb;
+	inst->features_subscription.subscribe = features_subscribe_cb;
 	inst->features_subscription.value_handle = value_handle;
 	inst->features_subscription.ccc_handle = 0x0000;
 	inst->features_subscription.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;

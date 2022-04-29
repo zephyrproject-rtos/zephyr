@@ -76,7 +76,7 @@ static uint8_t notify_func(struct bt_conn *conn,
 }
 
 static void notify_enabled(struct bt_conn *conn, uint8_t err,
-			   struct bt_gatt_write_params *params)
+			   struct bt_gatt_subscribe_params *params)
 {
 	struct bt_mesh_gatt_server *server = get_server(conn);
 
@@ -143,7 +143,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		(void)memset(&server->subscribe, 0, sizeof(server->subscribe));
 
 		server->subscribe.notify = notify_func;
-		server->subscribe.write = notify_enabled;
+		server->subscribe.subscribe = notify_enabled;
 		server->subscribe.value = BT_GATT_CCC_NOTIFY;
 		server->subscribe.ccc_handle = attr->handle;
 		server->subscribe.value_handle = attr->handle - 1;
