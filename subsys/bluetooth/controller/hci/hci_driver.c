@@ -130,6 +130,7 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 			return ISOAL_STATUS_OK;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA */
+
 		pb  = sink_ctx->sdu_production.sdu_state;
 		len = sink_ctx->sdu_production.sdu_written;
 		packet_status_flag = valid_sdu->status;
@@ -379,9 +380,8 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		}
 
 		struct ll_iso_datapath *dp = hdr->datapath_out;
-		isoal_sink_handle_t sink = dp->sink_hdl;
 
-		if (dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
+		if (dp && dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
 			/* If HCI datapath pass to ISO AL here */
 			struct isoal_pdu_rx pckt_meta = {
 				.meta = &node_rx->hdr.rx_iso_meta,
@@ -390,7 +390,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 			/* Pass the ISO PDU through ISO-AL */
 			isoal_status_t err =
-				isoal_rx_pdu_recombine(sink, &pckt_meta);
+				isoal_rx_pdu_recombine(dp->sink_hdl, &pckt_meta);
 
 			LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
 		}
