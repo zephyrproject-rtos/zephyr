@@ -36,11 +36,12 @@
 #define PDU_AC_PAYLOAD_SIZE_MIN 1
 /* Advertisement channel maximum legacy payload size */
 #define PDU_AC_LEG_PAYLOAD_SIZE_MAX 37
+/* Advertisement channel maximum legacy advertising/scan data size */
+#define PDU_AC_LEG_DATA_SIZE_MAX   31
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 /* Advertisement channel maximum extended payload size */
 #define PDU_AC_EXT_PAYLOAD_SIZE_MAX 255
-
-/* Advertisement channel maximum payload size */
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
 
 /* Extended Scan and Periodic Sync Rx PDU time reservation */
 #if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
@@ -58,24 +59,24 @@
  */
 #define PDU_AC_EXT_PAYLOAD_OVERHEAD (PDU_AC_EXT_HEADER_SIZE_MIN + \
 				     PDU_AC_EXT_HEADER_SIZE_MAX)
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_BROADCASTER)
 #define PDU_AC_PAYLOAD_SIZE_MAX     MAX(MIN((PDU_AC_EXT_PAYLOAD_OVERHEAD + \
 					     CONFIG_BT_CTLR_ADV_DATA_LEN_MAX), \
 					    PDU_AC_EXT_PAYLOAD_SIZE_MAX), \
 					PDU_AC_LEG_PAYLOAD_SIZE_MAX)
 #define PDU_AC_EXT_AD_DATA_LEN_MAX  (PDU_AC_PAYLOAD_SIZE_MAX - \
 				     PDU_AC_EXT_PAYLOAD_OVERHEAD)
-#else /* !CONFIG_BT_CTLR_ADV_EXT */
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_BROADCASTER */
 #define PDU_AC_PAYLOAD_SIZE_MAX     PDU_AC_LEG_PAYLOAD_SIZE_MAX
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_BROADCASTER */
 
 /* Link Layer header size of Adv PDU. Assumes pdu_adv is packed */
 #define PDU_AC_LL_HEADER_SIZE  (offsetof(struct pdu_adv, payload))
 
 /* Link Layer Advertisement channel maximum PDU buffer size */
 #define PDU_AC_LL_SIZE_MAX     (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
-
-/* Advertisement channel maximum legacy advertising/scan data size */
-#define PDU_AC_DATA_SIZE_MAX   31
 
 /* Advertisement channel Access Address */
 #define PDU_AC_ACCESS_ADDR     0x8e89bed6
@@ -261,7 +262,7 @@
 
 struct pdu_adv_adv_ind {
 	uint8_t addr[BDADDR_SIZE];
-	uint8_t data[PDU_AC_DATA_SIZE_MAX];
+	uint8_t data[PDU_AC_LEG_DATA_SIZE_MAX];
 } __packed;
 
 struct pdu_adv_direct_ind {
@@ -271,7 +272,7 @@ struct pdu_adv_direct_ind {
 
 struct pdu_adv_scan_rsp {
 	uint8_t addr[BDADDR_SIZE];
-	uint8_t data[PDU_AC_DATA_SIZE_MAX];
+	uint8_t data[PDU_AC_LEG_DATA_SIZE_MAX];
 } __packed;
 
 struct pdu_adv_scan_req {

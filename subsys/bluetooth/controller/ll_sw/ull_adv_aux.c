@@ -678,7 +678,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	pri_pdu_prev = lll_adv_data_peek(lll);
 	if (pri_pdu_prev->type != PDU_ADV_TYPE_EXT_IND) {
 		if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) ||
-		    (len > PDU_AC_DATA_SIZE_MAX)) {
+		    (len > PDU_AC_LEG_DATA_SIZE_MAX)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 		return ull_scan_rsp_set(adv, len, data);
