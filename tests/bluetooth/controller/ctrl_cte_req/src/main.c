@@ -1610,7 +1610,7 @@ void test_main(void)
 			test_central_local_cte_req_wait_for_phy_update_complete_and_disable, setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_peripheral_local_cte_req_wait_for_phy_update_complete, setup,
+			test_central_local_cte_req_wait_for_phy_update_complete, setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
 			test_central_local_phy_update_wait_for_cte_req_complete, setup,
