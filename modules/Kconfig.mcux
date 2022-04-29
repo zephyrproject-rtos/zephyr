@@ -136,6 +136,11 @@ config HAS_MCUX_GPT
 	help
 	  Set if the general purpose timer (GPT) module is present in the SoC.
 
+config HAS_MCUX_QTMR
+	bool
+	help
+	  Set if the quad timer (QTMR) module is present in the SoC.
+
 config HAS_MCUX_GPC
 	bool
 	help
