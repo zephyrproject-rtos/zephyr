@@ -274,7 +274,9 @@ static void lp_comm_complete_cte_req(struct ll_conn *conn, struct proc_ctx *ctx)
 			ull_cp_cte_req_set_disable(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
 		} else {
-			/* Illegal response opcode */
+			/* Illegal response opcode, internally changes state to
+			 * LP_COMMON_STATE_IDLE
+			 */
 			lp_comm_terminate_invalid_pdu(conn, ctx);
 		}
 	} else {
