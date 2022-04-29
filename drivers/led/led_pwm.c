@@ -131,7 +131,7 @@ static const struct led_driver_api led_pwm_api = {
 	.set_brightness	= led_pwm_set_brightness,
 };
 
-#define PWM_DT_SPEC_GET_AND_COMMA(node_id) PWM_DT_SPEC_GET(node_id)),
+#define PWM_DT_SPEC_GET_AND_COMMA(node_id) PWM_DT_SPEC_GET(node_id),
 
 #define LED_PWM_DEVICE(id)					\
 								\
