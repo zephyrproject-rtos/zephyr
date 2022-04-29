@@ -135,8 +135,8 @@
 #define VIRTQUEUE_ID_HOST	(0)
 #define VIRTQUEUE_ID_REMOTE	(1)
 
-#define ROLE_HOST		VIRTIO_DEV_MASTER
-#define ROLE_REMOTE		VIRTIO_DEV_SLAVE
+#define ROLE_HOST		VIRTIO_DEV_DRIVER
+#define ROLE_REMOTE		VIRTIO_DEV_DEVICE
 
 static inline size_t vq_ring_size(unsigned int num)
 {
