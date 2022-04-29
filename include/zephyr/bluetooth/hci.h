@@ -1278,6 +1278,9 @@ struct bt_hci_cp_le_set_adv_set_random_addr {
 #define BT_HCI_LE_ADV_PROP_ANON                 BIT(5)
 #define BT_HCI_LE_ADV_PROP_TX_POWER             BIT(6)
 
+#define BT_HCI_LE_PRIM_ADV_INTERVAL_MIN         0x000020
+#define BT_HCI_LE_PRIM_ADV_INTERVAL_MAX         0xFFFFFF
+
 #define BT_HCI_LE_ADV_SCAN_REQ_ENABLE  1
 #define BT_HCI_LE_ADV_SCAN_REQ_DISABLE 0
 
@@ -1369,6 +1372,9 @@ struct bt_hci_cp_le_remove_adv_set {
 } __packed;
 
 #define BT_HCI_OP_CLEAR_ADV_SETS                BT_OP(BT_OGF_LE, 0x003d)
+
+#define BT_HCI_LE_PER_ADV_INTERVAL_MIN          0x0006
+#define BT_HCI_LE_PER_ADV_INTERVAL_MAX          0xFFFF
 
 #define BT_HCI_OP_LE_SET_PER_ADV_PARAM          BT_OP(BT_OGF_LE, 0x003e)
 struct bt_hci_cp_le_set_per_adv_param {
