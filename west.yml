@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: libmetal
-      revision: c6efe091dfe02704097586a522969b5a4cc197bd
+      revision: 850a3c3fd5bc655987021dc9106d8e8cd0f7e061
       path: modules/hal/libmetal
       groups:
         - hal
