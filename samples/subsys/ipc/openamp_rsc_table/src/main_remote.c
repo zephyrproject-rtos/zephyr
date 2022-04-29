@@ -225,7 +225,7 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 	struct virtio_device *vdev;
 	int ret;
 
-	vdev = rproc_virtio_create_vdev(VIRTIO_DEV_SLAVE, VDEV_ID,
+	vdev = rproc_virtio_create_vdev(VIRTIO_DEV_DEVICE, VDEV_ID,
 					rsc_table_to_vdev(rsc_table),
 					rsc_io, NULL, mailbox_notify, NULL);
 
@@ -349,7 +349,7 @@ void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
 		goto task_end;
 	}
 
-	rpdev = platform_create_rpmsg_vdev(0, VIRTIO_DEV_SLAVE, NULL,
+	rpdev = platform_create_rpmsg_vdev(0, VIRTIO_DEV_DEVICE, NULL,
 					   new_service_cb);
 	if (!rpdev) {
 		LOG_ERR("Failed to create rpmsg virtio device\n");

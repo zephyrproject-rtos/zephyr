@@ -91,7 +91,7 @@ struct ipc_static_vrings {
  *  Init VRINGs and Virtqueues of an OpenAMP / RPMsg instance.
  *
  *  @param vr Pointer to the VRINGs instance struct.
- *  @param role Master / Remote role.
+ *  @param role Host / Remote role.
  *
  *  @retval -EINVAL When some parameter is missing.
  *  @retval -ENOMEM When memory is not enough for VQs allocation.
