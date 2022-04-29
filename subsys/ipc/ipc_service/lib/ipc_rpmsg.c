@@ -86,7 +86,7 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 		bind_cb = ns_bind_cb;
 	}
 
-	if (role == RPMSG_MASTER) {
+	if (role == RPMSG_HOST) {
 		rpmsg_virtio_init_shm_pool(&instance->shm_pool, shb, size);
 		return rpmsg_init_vdev(&instance->rvdev, vdev, bind_cb,
 				       shm_io, &instance->shm_pool);
