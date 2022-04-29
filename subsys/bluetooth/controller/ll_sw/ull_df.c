@@ -1166,50 +1166,42 @@ uint8_t ll_df_set_conn_cte_req_enable(uint16_t handle, uint8_t enable,
 		ull_cp_cte_req_set_disable(conn);
 
 		return BT_HCI_ERR_SUCCESS;
-	} else {
-		if (!conn->lll.df_rx_cfg.is_initialized) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
+	}
 
-		if (conn->llcp.cte_req.is_enabled) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
+	if (!conn->lll.df_rx_cfg.is_initialized) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	if (conn->llcp.cte_req.is_enabled) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		/* CTE request may be enabled only in case the receiver PHY is not CODED */
-		if (conn->lll.phy_rx == PHY_CODED) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
+	/* CTE request may be enabled only in case the receiver PHY is not CODED */
+	if (conn->lll.phy_rx == PHY_CODED) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 #endif /* CONFIG_BT_CTLR_PHY */
 
-		if (cte_request_interval != 0 && cte_request_interval < conn->lll.latency) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		if (requested_cte_length < BT_HCI_LE_CTE_LEN_MIN ||
-		    requested_cte_length > BT_HCI_LE_CTE_LEN_MAX) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-
-		if (requested_cte_type != BT_HCI_LE_AOA_CTE &&
-		    requested_cte_type != BT_HCI_LE_AOD_CTE_1US &&
-		    requested_cte_type != BT_HCI_LE_AOD_CTE_2US) {
-			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-		}
-
-		/* If controller is aware of features supported by peer device then check
-		 * whether required features are enabled.
-		 */
-		if (conn->llcp.fex.valid &&
-		    (!(conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)))) {
-			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
-		}
-
-		conn->llcp.cte_req.is_enabled = 1U;
-		conn->llcp.cte_req.req_interval = cte_request_interval;
-		conn->llcp.cte_req.cte_type = requested_cte_type;
-		conn->llcp.cte_req.min_cte_len = requested_cte_length;
+	if (cte_request_interval != 0 && cte_request_interval < conn->lll.latency) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	if (requested_cte_length < BT_HCI_LE_CTE_LEN_MIN ||
+	    requested_cte_length > BT_HCI_LE_CTE_LEN_MAX) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	if (requested_cte_type != BT_HCI_LE_AOA_CTE &&
+	    requested_cte_type != BT_HCI_LE_AOD_CTE_1US &&
+	    requested_cte_type != BT_HCI_LE_AOD_CTE_2US) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	conn->llcp.cte_req.is_enabled = 1U;
+	conn->llcp.cte_req.req_interval = cte_request_interval;
+	conn->llcp.cte_req.cte_type = requested_cte_type;
+	conn->llcp.cte_req.min_cte_len = requested_cte_length;
 
 	return ull_cp_cte_req(conn, requested_cte_length, requested_cte_type);
 }
