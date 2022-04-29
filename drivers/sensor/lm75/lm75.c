@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LM75, CONFIG_SENSOR_LOG_LEVEL);
 #define LM75_REG_T_OS   0x03
 
 struct lm75_data {
-	int16_t temp; /*temp in 0.1°C*/
+	float temp; /*temp in 0.1°C*/
 };
 
 struct lm75_config {
@@ -53,7 +53,7 @@ static inline int lm75_fetch_temp(const struct lm75_config *cfg, struct lm75_dat
 	temp = temp_read[0] << 8 | temp_read[1];
 
 	/* shift right by 7, multiply by 10 to get 0.1° and divide by 2 to get °C */
-	data->temp = (temp / 128) * 10 / 2;
+	data->temp = (temp / 128.0) * 10.0 / 2.0;
 
 	return 0;
 }
