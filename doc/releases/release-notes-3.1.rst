@@ -135,6 +135,9 @@ Bluetooth
 
   * The :c:macro:bt_conn_index function now takes a `const struct bt_conn`.
 
+  * The `struct bt_gatt_subscribe_params` :c:func:`write` callback
+    function has been deprecated.  A :c:func:`subscribe` callback
+    function has been added to replace it.
 
 New APIs in this release
 ========================
