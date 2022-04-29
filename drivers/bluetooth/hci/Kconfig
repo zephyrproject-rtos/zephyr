@@ -109,6 +109,19 @@ config BT_STM32_IPM_RX_STACK_SIZE
 	depends on BT_STM32_IPM
 	default 512
 
+menuconfig BT_CYW43XXX
+	bool "CYW43XXX BT connectivity"
+	default y
+	select BT_HCI_SETUP
+	depends on GPIO
+	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED
+	depends on BT_H4
+	help
+	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates
+	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip
+	  solution to enable small-form-factor IoT designs.
+source "drivers/bluetooth/hci/Kconfig.infineon"
+
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
 	depends on BT_AUTO_DATA_LEN_UPDATE
