@@ -656,7 +656,7 @@ struct _static_thread_data {
  */
 
 /**
- * @brief Statically define and initialize a thread.
+ * @brief Statically define and initialize a thread in a public (non-static) scope.
  *
  * The thread may be scheduled for immediate execution or a delayed start.
  *
@@ -695,6 +695,43 @@ struct _static_thread_data {
 				entry, p1, p2, p3, prio, options, delay, \
 				NULL, name);				 	 \
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+
+/**
+ * @brief Statically define and initialize a thread in a private (static) scope.
+ *
+ * The thread may be scheduled for immediate execution or a delayed start.
+ *
+ * Thread options are architecture-specific, and can include K_ESSENTIAL,
+ * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
+ * them using "|" (the logical OR operator).
+ *
+ * @param name Name of the thread.
+ * @param stack_size Stack size in bytes.
+ * @param entry Thread entry function.
+ * @param p1 1st entry point parameter.
+ * @param p2 2nd entry point parameter.
+ * @param p3 3rd entry point parameter.
+ * @param prio Thread priority.
+ * @param options Thread options.
+ * @param delay Scheduling delay (in milliseconds), zero for no delay.
+ *
+ *
+ * @internal It has been observed that the x86 compiler by default aligns
+ * these _static_thread_data structures to 32-byte boundaries, thereby
+ * wasting space. To work around this, force a 4-byte alignment.
+ *
+ */
+#define K_THREAD_DEFINE_STATIC(name, stack_size,                                     \
+			       entry, p1, p2, p3,                                    \
+			       prio, options, delay)                                 \
+	K_THREAD_STACK_DEFINE_STATIC(_k_thread_stack_##name, stack_size);            \
+	static struct k_thread _k_thread_obj_##name;                                 \
+	static STRUCT_SECTION_ITERABLE(_static_thread_data, _k_thread_data_##name) = \
+		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,                          \
+				     _k_thread_stack_##name, stack_size,             \
+				     entry, p1, p2, p3, prio, options, delay,        \
+				     NULL, name);                                    \
+	static const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
  * @brief Get a thread's priority.
@@ -1399,7 +1436,7 @@ typedef void (*k_timer_expiry_t)(struct k_timer *timer);
 typedef void (*k_timer_stop_t)(struct k_timer *timer);
 
 /**
- * @brief Statically define and initialize a timer.
+ * @brief Statically define and initialize a timer in a public (non-static) scope.
  *
  * The timer can be accessed outside the module where it is defined using:
  *
@@ -1411,6 +1448,17 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  */
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
 	STRUCT_SECTION_ITERABLE(k_timer, name) = \
+		Z_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
+
+/**
+ * @brief Statically define and initialize a timer in a private (static) scope.
+ *
+ * @param name Name of the timer variable.
+ * @param expiry_fn Function to invoke each time the timer expires.
+ * @param stop_fn   Function to invoke if the timer is stopped while running.
+ */
+#define K_TIMER_DEFINE_STATIC(name, expiry_fn, stop_fn) \
+	static STRUCT_SECTION_ITERABLE(k_timer, name) = \
 		Z_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
 
 /**
@@ -1975,7 +2023,7 @@ __syscall void *k_queue_peek_head(struct k_queue *queue);
 __syscall void *k_queue_peek_tail(struct k_queue *queue);
 
 /**
- * @brief Statically define and initialize a queue.
+ * @brief Statically define and initialize a queue in a public (non-static) scope.
  *
  * The queue can be accessed outside the module where it is defined using:
  *
@@ -1985,6 +2033,15 @@ __syscall void *k_queue_peek_tail(struct k_queue *queue);
  */
 #define K_QUEUE_DEFINE(name) \
 	STRUCT_SECTION_ITERABLE(k_queue, name) = \
+		Z_QUEUE_INITIALIZER(name)
+
+/**
+ * @brief Statically define and initialize a queue in a private (static) scope.
+ *
+ * @param name Name of the queue.
+ */
+#define K_QUEUE_DEFINE_STATIC(name)                     \
+	static STRUCT_SECTION_ITERABLE(k_queue, name) = \
 		Z_QUEUE_INITIALIZER(name)
 
 /** @} */
@@ -2193,7 +2250,7 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
 				    bool reset, k_timeout_t timeout);
 
 /**
- * @brief Statically define and initialize an event object
+ * @brief Statically define and initialize an event object in a public (non-static) scope.
  *
  * The event can be accessed outside the module where it is defined using:
  *
@@ -2203,6 +2260,15 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
  */
 #define K_EVENT_DEFINE(name)                                   \
 	STRUCT_SECTION_ITERABLE(k_event, name) =               \
+		Z_EVENT_INITIALIZER(name);
+
+/**
+ * @brief Statically define and initialize an event object in a private (static) scope.
+ *
+ * @param name Name of the event object.
+ */
+#define K_EVENT_DEFINE_STATIC(name)                     \
+	static STRUCT_SECTION_ITERABLE(k_event, name) = \
 		Z_EVENT_INITIALIZER(name);
 
 /** @} */
@@ -2427,7 +2493,7 @@ struct k_fifo {
 	})
 
 /**
- * @brief Statically define and initialize a FIFO queue.
+ * @brief Statically define and initialize a FIFO queue in a public (non-static) scope.
  *
  * The FIFO queue can be accessed outside the module where it is defined using:
  *
@@ -2437,6 +2503,15 @@ struct k_fifo {
  */
 #define K_FIFO_DEFINE(name) \
 	STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_fifo, name) = \
+		Z_FIFO_INITIALIZER(name)
+
+/**
+ * @brief Statically define and initialize a FIFO queue in a private (static) scope.
+ *
+ * @param name Name of the FIFO queue.
+ */
+#define K_FIFO_DEFINE_STATIC(name)                                        \
+	static STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_fifo, name) = \
 		Z_FIFO_INITIALIZER(name)
 
 /** @} */
@@ -2547,7 +2622,7 @@ struct k_lifo {
 	})
 
 /**
- * @brief Statically define and initialize a LIFO queue.
+ * @brief Statically define and initialize a LIFO queue in a public (non-static) scope.
  *
  * The LIFO queue can be accessed outside the module where it is defined using:
  *
@@ -2557,6 +2632,15 @@ struct k_lifo {
  */
 #define K_LIFO_DEFINE(name) \
 	STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_lifo, name) = \
+		Z_LIFO_INITIALIZER(name)
+
+/**
+ * @brief Statically define and initialize a LIFO queue in a private (static) scope.
+ *
+ * @param name Name of the fifo.
+ */
+#define K_LIFO_DEFINE_STATIC(name)                                        \
+	static STRUCT_SECTION_ITERABLE_ALTERNATE(k_queue, k_lifo, name) = \
 		Z_LIFO_INITIALIZER(name)
 
 /** @} */
@@ -2678,7 +2762,7 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 			  k_timeout_t timeout);
 
 /**
- * @brief Statically define and initialize a stack
+ * @brief Statically define and initialize a stack in a public (non-static) scope.
  *
  * The stack can be accessed outside the module where it is defined using:
  *
@@ -2691,6 +2775,19 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 	stack_data_t __noinit                                  \
 		_k_stack_buf_##name[stack_num_entries];        \
 	STRUCT_SECTION_ITERABLE(k_stack, name) =               \
+		Z_STACK_INITIALIZER(name, _k_stack_buf_##name, \
+				    stack_num_entries)
+
+/**
+ * @brief Statically define and initialize a stack in a private (static) scope.
+ *
+ * @param name Name of the stack.
+ * @param stack_num_entries Maximum number of values that can be stacked.
+ */
+#define K_STACK_DEFINE_STATIC(name, stack_num_entries)         \
+	static stack_data_t __noinit                           \
+		_k_stack_buf_##name[stack_num_entries];        \
+	static STRUCT_SECTION_ITERABLE(k_stack, name) =        \
 		Z_STACK_INITIALIZER(name, _k_stack_buf_##name, \
 				    stack_num_entries)
 
@@ -2750,7 +2847,7 @@ struct k_mutex {
  */
 
 /**
- * @brief Statically define and initialize a mutex.
+ * @brief Statically define and initialize a mutex in a public (non-static) scope.
  *
  * The mutex can be accessed outside the module where it is defined using:
  *
@@ -2760,6 +2857,15 @@ struct k_mutex {
  */
 #define K_MUTEX_DEFINE(name) \
 	STRUCT_SECTION_ITERABLE(k_mutex, name) = \
+		Z_MUTEX_INITIALIZER(name)
+
+/**
+ * @brief Statically define and initialize a mutex in a private (static) scope.
+ *
+ * @param name Name of the mutex.
+ */
+#define K_MUTEX_DEFINE_STATIC(name)                     \
+	static STRUCT_SECTION_ITERABLE(k_mutex, name) = \
 		Z_MUTEX_INITIALIZER(name)
 
 /**
@@ -2888,7 +2994,7 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 			     k_timeout_t timeout);
 
 /**
- * @brief Statically define and initialize a condition variable.
+ * @brief Statically define and initialize a condition variable in a public (non-static) scope.
  *
  * The condition variable can be accessed outside the module where it is
  * defined using:
@@ -2900,6 +3006,16 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 #define K_CONDVAR_DEFINE(name)                                                 \
 	STRUCT_SECTION_ITERABLE(k_condvar, name) =                             \
 		Z_CONDVAR_INITIALIZER(name)
+
+/**
+ * @brief Statically define and initialize a condition variable in a private (static) scope.
+ *
+ * @param name Name of the condition variable.
+ */
+#define K_CONDVAR_DEFINE_STATIC(name)                     \
+	static STRUCT_SECTION_ITERABLE(k_condvar, name) = \
+		Z_CONDVAR_INITIALIZER(name)
+
 /**
  * @}
  */
@@ -3028,7 +3144,7 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 }
 
 /**
- * @brief Statically define and initialize a semaphore.
+ * @brief Statically define and initialize a semaphore in a public (non-static) scope.
  *
  * The semaphore can be accessed outside the module where it is defined using:
  *
@@ -3044,6 +3160,20 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 	BUILD_ASSERT(((count_limit) != 0) && \
 		     ((initial_count) <= (count_limit)) && \
 			 ((count_limit) <= K_SEM_MAX_LIMIT));
+
+/**
+ * @brief Statically define and initialize a semaphore in a private (static) scope.
+ *
+ * @param name Name of the semaphore.
+ * @param initial_count Initial semaphore count.
+ * @param count_limit Maximum permitted semaphore count.
+ */
+#define K_SEM_DEFINE_STATIC(name, initial_count, count_limit)        \
+	static STRUCT_SECTION_ITERABLE(k_sem, name) =                \
+		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
+	BUILD_ASSERT(((count_limit) != 0) &&                         \
+		     ((initial_count) <= (count_limit)) &&           \
+		     ((count_limit) <= K_SEM_MAX_LIMIT));
 
 /** @} */
 
@@ -3709,7 +3839,7 @@ struct k_work_delayable {
 }
 
 /**
- * @brief Initialize a statically-defined delayable work item.
+ * @brief Initialize a statically-defined delayable work item in a public (non-static) scope.
  *
  * This macro can be used to initialize a statically-defined delayable
  * work item, prior to its first use. For example,
@@ -3725,8 +3855,23 @@ struct k_work_delayable {
  * @param work_handler Function to invoke each time work item is processed.
  */
 #define K_WORK_DELAYABLE_DEFINE(work, work_handler) \
-	struct k_work_delayable work \
-	  = Z_WORK_DELAYABLE_INITIALIZER(work_handler)
+	struct k_work_delayable work =              \
+		Z_WORK_DELAYABLE_INITIALIZER(work_handler)
+
+/**
+ * @brief Initialize a statically-defined delayable work item in a private (static) scope.
+ *
+ * Note that if the runtime dependencies support initialization with
+ * k_work_init_delayable() using that will eliminate the initialized
+ * object in ROM that is produced by this macro and copied in at
+ * system startup.
+ *
+ * @param work Symbol name for delayable work item object
+ * @param work_handler Function to invoke each time work item is processed.
+ */
+#define K_WORK_DELAYABLE_DEFINE_STATIC(work, work_handler) \
+	static struct k_work_delayable work =              \
+		Z_WORK_DELAYABLE_INITIALIZER(work_handler)
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -3921,18 +4066,22 @@ struct k_work_user {
 #endif
 
 /**
- * @brief Initialize a statically-defined user work item.
- *
- * This macro can be used to initialize a statically-defined user work
- * item, prior to its first use. For example,
- *
- * @code static K_WORK_USER_DEFINE(<work>, <work_handler>); @endcode
+ * @brief Initialize a statically-defined user work item in a public (non-static) scope.
  *
  * @param work Symbol name for work item object
  * @param work_handler Function to invoke each time work item is processed.
  */
 #define K_WORK_USER_DEFINE(work, work_handler) \
 	struct k_work_user work = Z_WORK_USER_INITIALIZER(work_handler)
+
+/**
+ * @brief Initialize a statically-defined user work item in a private (static) scope.
+ *
+ * @param work Symbol name for work item object
+ * @param work_handler Function to invoke each time work item is processed.
+ */
+#define K_WORK_USER_DEFINE_STATIC(work, work_handler) \
+	static struct k_work_user work = Z_WORK_USER_INITIALIZER(work_handler)
 
 /**
  * @brief Initialize a userspace work item.
@@ -4075,7 +4224,7 @@ struct k_work_poll {
  */
 
 /**
- * @brief Initialize a statically-defined work item.
+ * @brief Initialize a statically-defined work item in a public (non-static) scope.
  *
  * This macro can be used to initialize a statically-defined workqueue work
  * item, prior to its first use. For example,
@@ -4087,6 +4236,15 @@ struct k_work_poll {
  */
 #define K_WORK_DEFINE(work, work_handler) \
 	struct k_work work = Z_WORK_INITIALIZER(work_handler)
+
+/**
+ * @brief Initialize a statically-defined work item in a private (static) scope.
+ *
+ * @param work Symbol name for work item object
+ * @param work_handler Function to invoke each time work item is processed.
+ */
+#define K_WORK_DEFINE_STATIC(work, work_handler) \
+	static struct k_work work = Z_WORK_INITIALIZER(work_handler)
 
 /**
  * @brief Initialize a triggered work item.
@@ -4267,9 +4425,8 @@ struct k_msgq_attrs {
 	uint32_t used_msgs;
 };
 
-
 /**
- * @brief Statically define and initialize a message queue.
+ * @brief Statically define and initialize a message queue in a public (non-static) scope.
  *
  * The message queue's ring buffer contains space for @a q_max_msgs messages,
  * each of which is @a q_msg_size bytes long. The buffer is aligned to a
@@ -4293,6 +4450,28 @@ struct k_msgq_attrs {
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
 	STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
 	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
+				  q_msg_size, q_max_msgs)
+
+/**
+ * @brief Statically define and initialize a message queue in a private (static) scope.
+ *
+ * The message queue's ring buffer contains space for @a q_max_msgs messages,
+ * each of which is @a q_msg_size bytes long. The buffer is aligned to a
+ * @a q_align -byte boundary, which must be a power of 2. To ensure that each
+ * message is similarly aligned to this boundary, @a q_msg_size must also be
+ * a multiple of @a q_align.
+ *
+ * @param q_name Name of the message queue.
+ * @param q_msg_size Message size (in bytes).
+ * @param q_max_msgs Maximum number of messages that can be queued.
+ * @param q_align Alignment of the message queue's ring buffer.
+ *
+ */
+#define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align) \
+	static char __noinit __aligned(q_align)                       \
+		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];    \
+	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =              \
+		Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,      \
 				  q_msg_size, q_max_msgs)
 
 /**
@@ -4529,7 +4708,7 @@ struct k_mbox {
  */
 
 /**
- * @brief Statically define and initialize a mailbox.
+ * @brief Statically define and initialize a mailbox in a public (non-static) scope.
  *
  * The mailbox is to be accessed outside the module where it is defined using:
  *
@@ -4539,7 +4718,15 @@ struct k_mbox {
  */
 #define K_MBOX_DEFINE(name) \
 	STRUCT_SECTION_ITERABLE(k_mbox, name) = \
-		Z_MBOX_INITIALIZER(name) \
+		Z_MBOX_INITIALIZER(name)
+/**
+ * @brief Statically define and initialize a mailbox in a private (static) scope.
+ *
+ * @param name Name of the mailbox.
+ */
+#define K_MBOX_DEFINE_STATIC(name)                     \
+	static STRUCT_SECTION_ITERABLE(k_mbox, name) = \
+		Z_MBOX_INITIALIZER(name)
 
 /**
  * @brief Initialize a mailbox.
@@ -4675,7 +4862,7 @@ struct k_pipe {
  */
 
 /**
- * @brief Statically define and initialize a pipe.
+ * @brief Statically define and initialize a pipe in a public (non-static) scope.
  *
  * The pipe can be accessed outside the module where it is defined using:
  *
@@ -4691,6 +4878,21 @@ struct k_pipe {
 	static unsigned char __noinit __aligned(pipe_align)		\
 		_k_pipe_buf_##name[pipe_buffer_size];			\
 	STRUCT_SECTION_ITERABLE(k_pipe, name) =				\
+		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
+
+/**
+ * @brief Statically define and initialize a pipe in a private (static) scope.
+ *
+ * @param name Name of the pipe.
+ * @param pipe_buffer_size Size of the pipe's ring buffer (in bytes),
+ *                         or zero if no ring buffer is used.
+ * @param pipe_align Alignment of the pipe's ring buffer (power of 2).
+ *
+ */
+#define K_PIPE_DEFINE_STATIC(name, pipe_buffer_size, pipe_align) \
+	static unsigned char __noinit __aligned(pipe_align)      \
+		_k_pipe_buf_##name[pipe_buffer_size];            \
+	static STRUCT_SECTION_ITERABLE(k_pipe, name) =           \
 		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**
@@ -5153,7 +5355,7 @@ void k_heap_free(struct k_heap *h, void *mem);
 #define Z_HEAP_MIN_SIZE (sizeof(void *) > 4 ? 56 : 44)
 
 /**
- * @brief Define a static k_heap in the specified linker section
+ * @brief Define a static k_heap in the specified linker section in a public (non-static) scope.
  *
  * This macro defines and initializes a static memory region and
  * k_heap of the requested size in the specified linker section.
@@ -5180,7 +5382,34 @@ void k_heap_free(struct k_heap *h, void *mem);
 	}
 
 /**
- * @brief Define a static k_heap
+ * @brief Define a static k_heap in the specified linker section in a private (static) scope.
+ *
+ * This macro defines and initializes a static memory region and
+ * k_heap of the requested size in the specified linker section.
+ * After kernel start, &name can be used as if k_heap_init() had
+ * been called.
+ *
+ * Note that this macro enforces a minimum size on the memory region
+ * to accommodate metadata requirements.  Very small heaps will be
+ * padded to fit.
+ *
+ * @param name Symbol name for the struct k_heap object
+ * @param bytes Size of memory region, in bytes
+ * @param in_section __attribute__((section(name))
+ */
+#define Z_HEAP_DEFINE_IN_SECT_STATIC(name, bytes, in_section)      \
+	static char in_section                                     \
+	     __aligned(8) /* CHUNK_UNIT */                         \
+	     kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];            \
+	static STRUCT_SECTION_ITERABLE(k_heap, name) = {           \
+		.heap = {                                          \
+			.init_mem = kheap_##name,                  \
+			.init_bytes = MAX(bytes, Z_HEAP_MIN_SIZE), \
+		 },                                                \
+	}
+
+/**
+ * @brief Define a static k_heap in a public (non-static) scope.
  *
  * This macro defines and initializes a static memory region and
  * k_heap of the requested size.  After kernel start, &name can be
@@ -5198,7 +5427,25 @@ void k_heap_free(struct k_heap *h, void *mem);
 			      __noinit_named(kheap_buf_##name))
 
 /**
- * @brief Define a static k_heap in uncached memory
+ * @brief Define a static k_heap in a private (static) scope.
+ *
+ * This macro defines and initializes a static memory region and
+ * k_heap of the requested size.  After kernel start, &name can be
+ * used as if k_heap_init() had been called.
+ *
+ * Note that this macro enforces a minimum size on the memory region
+ * to accommodate metadata requirements.  Very small heaps will be
+ * padded to fit.
+ *
+ * @param name Symbol name for the struct k_heap object
+ * @param bytes Size of memory region, in bytes
+ */
+#define K_HEAP_DEFINE_STATIC(name, bytes)         \
+	Z_HEAP_DEFINE_IN_SECT_STATIC(name, bytes, \
+				     __noinit_named(kheap_buf_##name))
+
+/**
+ * @brief Define a static k_heap in uncached memory in a public (non-static) scope.
  *
  * This macro defines and initializes a static memory region and
  * k_heap of the requested size in uncached memory.  After kernel
@@ -5213,6 +5460,23 @@ void k_heap_free(struct k_heap *h, void *mem);
  */
 #define K_HEAP_DEFINE_NOCACHE(name, bytes)			\
 	Z_HEAP_DEFINE_IN_SECT(name, bytes, __nocache)
+
+/**
+ * @brief Define a static k_heap in uncached memory in a private (static) scope.
+ *
+ * This macro defines and initializes a static memory region and
+ * k_heap of the requested size in uncached memory.  After kernel
+ * start, &name can be used as if k_heap_init() had been called.
+ *
+ * Note that this macro enforces a minimum size on the memory region
+ * to accommodate metadata requirements.  Very small heaps will be
+ * padded to fit.
+ *
+ * @param name Symbol name for the struct k_heap object
+ * @param bytes Size of memory region, in bytes
+ */
+#define K_HEAP_DEFINE_NOCACHE_STATIC(name, bytes) \
+	Z_HEAP_DEFINE_IN_SECT_STATIC(name, bytes, __nocache)
 
 /**
  * @}
