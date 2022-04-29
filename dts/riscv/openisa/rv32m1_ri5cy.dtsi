@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <riscv/rv32m1.dtsi>
+#include <riscv/openisa/rv32m1.dtsi>
 
 / {
 	aliases {
