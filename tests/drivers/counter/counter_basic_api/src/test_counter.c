@@ -86,6 +86,9 @@ static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_RTC
 	LABELS_FOR_DT_COMPAT(nxp_kinetis_rtc)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_QTMR
+	LABELS_FOR_DT_COMPAT(nxp_imx_tmr)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	LABELS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
@@ -798,6 +801,9 @@ static void test_short_relative_alarm_instance(const char *dev_name)
 		.flags = 0,
 		.user_data = NULL
 	};
+
+	/* for timers with very short ticks, counter_ticks_to_us() returns 0 */
+	tick_us = tick_us == 0 ? 1 : tick_us;
 
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: Unexpected error", dev_name);
