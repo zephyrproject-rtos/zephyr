@@ -31,13 +31,17 @@ if(CONFIG_MBEDTLS_BUILTIN)
   zephyr_library_sources_ifdef(CONFIG_MBEDTLS_SHELL shell.c)
 
   zephyr_library_app_memory(k_mbedtls_partition)
-if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT)
-  # i386 assembly code used in MBEDTLS does not compile with size optimization
-  # if address sanitizer is enabled, as such switch default optimization level
-  # to speed
-  set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/library/bignum.c APPEND PROPERTY COMPILE_OPTIONS
-      "${OPTIMIZE_FOR_SPEED_FLAG}")
-endif ()
+  if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT)
+    # i386 assembly code used in MBEDTLS does not compile with size optimization
+    # if address sanitizer is enabled, as such switch default optimization level
+    # to speed
+    set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/library/bignum.c APPEND PROPERTY COMPILE_OPTIONS
+        "${OPTIMIZE_FOR_SPEED_FLAG}")
+  endif ()
+
+  if(CONFIG_MBEDTLS_ZEPHYR_ENTROPY AND NOT CONFIG_ENTROPY_HAS_DRIVER)
+    message(WARNING "No entropy device on the system, using fake entropy source!")
+  endif()
 
   zephyr_library_link_libraries(mbedTLS)
 elseif (CONFIG_MBEDTLS_LIBRARY)
