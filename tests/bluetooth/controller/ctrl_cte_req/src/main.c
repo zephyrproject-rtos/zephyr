@@ -41,6 +41,9 @@ struct ll_conn conn;
 static void setup(void)
 {
 	test_setup(&conn);
+
+	/* Set CTE request enable as if it was called by Host */
+	conn.llcp.cte_req.is_enabled = 1U;
 }
 
 /* Tests of successful execution of CTE Request Procedure */
@@ -792,6 +795,8 @@ static uint16_t pu_event_counter(struct ll_conn *conn)
 static void phy_update_setup(void)
 {
 	test_setup(&conn);
+	/* Set CTE request enable as if it was called by Host */
+	conn.llcp.cte_req.is_enabled = 1U;
 
 	/* Emulate initial conn state */
 	conn.phy_pref_rx = PHY_PREFER_ANY;
