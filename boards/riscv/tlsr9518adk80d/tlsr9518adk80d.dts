@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <telink_b91.dtsi>
+#include <telink/telink_b91.dtsi>
 #include "tlsr9518adk80d-pinctrl.dtsi"
 
 / {
