@@ -219,12 +219,26 @@ static void lp_comm_ntf_cte_req(struct ll_conn *conn, struct proc_ctx *ctx, stru
 			llcp_ntf_encode_cte_req(pdu);
 		}
 		break;
+	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+		llcp_ntf_encode_unknown_rsp(ctx, pdu);
+		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		llcp_ntf_encode_reject_ext_ind(ctx, pdu);
 		break;
 	default:
 		/* Unexpected PDU, should not get through, so ASSERT */
 		LL_ASSERT(0);
+	}
+}
+
+static void lp_comm_ntf_cte_req_tx(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	if (llcp_ntf_alloc_is_available()) {
+		lp_comm_ntf(conn, ctx);
+		ull_cp_cte_req_set_disable(conn);
+		ctx->state = LP_COMMON_STATE_IDLE;
+	} else {
+		ctx->state = LP_COMMON_STATE_WAIT_NTF;
 	}
 }
 
@@ -238,22 +252,19 @@ static void lp_comm_complete_cte_req(struct ll_conn *conn, struct proc_ctx *ctx)
 						conn->llcp.cte_req.req_interval;
 				}
 				ctx->state = LP_COMMON_STATE_IDLE;
-			} else if (llcp_ntf_alloc_is_available()) {
-				lp_comm_ntf(conn, ctx);
-				ull_cp_cte_req_set_disable(conn);
-				ctx->state = LP_COMMON_STATE_IDLE;
 			} else {
-				ctx->state = LP_COMMON_STATE_WAIT_NTF;
+				lp_comm_ntf_cte_req_tx(conn, ctx);
 			}
 		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
-			ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
-			if (llcp_ntf_alloc_is_available()) {
-				lp_comm_ntf(conn, ctx);
-				ull_cp_cte_req_set_disable(conn);
-				ctx->state = LP_COMMON_STATE_IDLE;
-			} else {
-				ctx->state = LP_COMMON_STATE_WAIT_NTF;
-			}
+			   ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
+			lp_comm_ntf_cte_req_tx(conn, ctx);
+		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP &&
+			   ctx->unknown_response.type == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
+			/* CTE response is unsupported in peer, so disable locally for this
+			 * connection
+			 */
+			feature_unmask_features(conn, LL_FEAT_BIT_CONNECTION_CTE_REQ);
+			lp_comm_ntf_cte_req_tx(conn, ctx);
 		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNUSED) {
 			/* This path is related with handling disable the CTE REQ when PHY
 			 * has been changed to CODED PHY. BT 5.3 Core Vol 4 Part E 7.8.85

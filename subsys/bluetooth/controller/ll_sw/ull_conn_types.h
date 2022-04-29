@@ -404,7 +404,17 @@ struct llcp_struct {
 	struct {
 		uint8_t sent;
 		uint8_t valid;
+		/*
+		 * Stores features supported by peer device. The content of the member may be
+		 * verified when feature exchange procedure has completed, valid member is set to 1.
+		 */
 		uint64_t features_peer;
+		/*
+		 * Stores features common for two connected devices. Before feature exchange
+		 * procedure is completed, the member stores information about all features
+		 * supported by local device. After completion of the procedure, the feature set
+		 * may be limited to features that are common.
+		 */
 		uint64_t features_used;
 	} fex;
 

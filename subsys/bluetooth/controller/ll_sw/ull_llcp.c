@@ -971,6 +971,19 @@ uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_ty
 {
 	struct proc_ctx *ctx;
 
+	/* If Controller gained, awareness:
+	 * - by Feature Exchange control procedure that peer device does not support CTE response,
+	 * - by reception LL_UNKNOWN_RSP with unknown type LL_CTE_REQ that peer device does not
+	 *   recognize CTE request,
+	 * then response to Host that CTE request enable command is not possible due to unsupported
+	 * remote feature.
+	 */
+	if ((conn->llcp.fex.valid &&
+	     (!(conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_CONN_CTE_RESP)))) ||
+	    (!conn->llcp.fex.valid && !feature_cte_req(conn))) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+	}
+
 	/* The request may be started by periodic CTE request procedure, so it skips earlier
 	 * verification of PHY. In case the PHY has changed to CODE the request should be stopped.
 	 */
