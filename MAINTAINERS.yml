@@ -1742,7 +1742,7 @@ ITE Platforms:
         - drivers/*/*/*it8xxx2*.c
         - drivers/*/*it8xxx2*.c
         - dts/bindings/*/*ite*
-        - dts/riscv/*it8xxx2*
+        - dts/riscv/ite/
         - soc/riscv/riscv-ite/
     labels:
         - "platform: ITE"

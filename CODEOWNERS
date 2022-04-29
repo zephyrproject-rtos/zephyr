@@ -484,7 +484,7 @@
 /dts/arm/silabs/efr32mg21*                @l-alfred
 /dts/arm/silabs/efr32fg13*                @yonsch
 /dts/riscv/                               @kgugala @pgielda
-/dts/riscv/it8xxx2.dtsi                   @ite
+/dts/riscv/ite/                           @ite
 /dts/riscv/microsemi-miv.dtsi             @galak
 /dts/riscv/rv32m1*                        @dleach02
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
