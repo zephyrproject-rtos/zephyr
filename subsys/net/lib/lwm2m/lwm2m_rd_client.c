@@ -552,6 +552,7 @@ static int sm_select_server_inst(int sec_obj_inst, int *srv_obj_inst,
 		return -EINVAL;
 	}
 
+	sm_update_lifetime(obj_inst_id, lifetime);
 	*srv_obj_inst = obj_inst_id;
 
 	return 0;
