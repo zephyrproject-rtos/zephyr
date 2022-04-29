@@ -1,0 +1,75 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    CYW43xxx Connectivity that uses Zephyr's Bluetooth Host Controller Interface UART
+    driver.
+
+    Example of enabling CYW43xxx device:
+
+      &uart2 {
+        status = "okay";
+        current-speed = <115200>;
+
+        /* HCI-UART pins*/
+        pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx
+                     &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
+        pinctrl-names = "default";
+
+        bt-hci {
+          status = "okay";
+          compatible = "infineon,cyw43xxx-bt-hci";
+          bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+
+          fw-download-speed = <3000000>;
+        };
+      };
+
+    NOTE1: The UART bus speed (current_speed) for zephyr_bt_uart should be the same
+           as the default baudrate defined in CYW43xx firmware (default 115200).
+
+    NOTE2: Use fw-download-speed and hci-operation-speed properties to configure UART
+           speeds for firmware download (fw-download-speed) and HCI operation
+           (hci-operation-speed).
+           If hci-operation-speed or fw-download-speed are not defined in bt-hci node,
+           cyw43xx driver will use bus/current-speed as default speed.
+
+    NOTE3: CYW43xxx requires fetch binary files of BT controller. To fetch binary blobs:
+           west blobs fetch hal_infineon
+
+compatible: "infineon,cyw43xxx-bt-hci"
+
+include: base.yaml
+
+properties:
+  bt-reg-on-gpios:
+    description: |
+      Power-up/down gpio to control the internal regulators used
+      by the Bluetooth section of CYW43xx device.
+    type: phandle-array
+
+  bt-dev-wake-gpios:
+    description: |
+      Bluetooth device wake-up gpio. Signal from the host to the
+      CYW43xx indicating that the host requires attention.
+    type: phandle-array
+
+  bt-host-wake-gpios:
+    description: |
+      Host wake-up gpio. Signal from the CYW43xx to the host
+      indicating that the CYW43xx requires attention.
+    type: phandle-array
+
+  hci-operation-speed:
+    type: int
+    description: |
+      HCI UART boudrate for feature operation. If not defined
+      bus/current-speed wil be used as default.
+
+  fw-download-speed:
+    type: int
+    description: |
+      HCI UART boudrate for FW dowload operation. If not defined
+      bus/current-speed wil be used as default.
