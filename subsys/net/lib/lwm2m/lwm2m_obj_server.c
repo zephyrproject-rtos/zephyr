@@ -343,7 +343,6 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 
 static int lwm2m_server_init(const struct device *dev)
 {
-	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;
 
 	server.obj_id = LWM2M_OBJECT_SERVER_ID;
@@ -356,10 +355,14 @@ static int lwm2m_server_init(const struct device *dev)
 	server.create_cb = server_create;
 	lwm2m_register_obj(&server);
 
-	/* auto create the first instance */
-	ret = lwm2m_create_obj_inst(LWM2M_OBJECT_SERVER_ID, 0, &obj_inst);
-	if (ret < 0) {
-		LOG_ERR("Create LWM2M server instance 0 error: %d", ret);
+	/* don't create automatically when using bootstrap */
+	if (!IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)) {
+		struct lwm2m_engine_obj_inst *obj_inst = NULL;
+
+		ret = lwm2m_create_obj_inst(LWM2M_OBJECT_SERVER_ID, 0, &obj_inst);
+		if (ret < 0) {
+			LOG_ERR("Create LWM2M server instance 0 error: %d", ret);
+		}
 	}
 
 	return ret;
