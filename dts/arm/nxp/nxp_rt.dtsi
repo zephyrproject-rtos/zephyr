@@ -120,6 +120,134 @@
 			label = "GPT2";
 		};
 
+		qtmr1: qtmr@401dc000 {
+			compatible = "nxp,imx-qtmr";
+			reg = <0x401dc000 0x7a>;
+			interrupts = <133 0>;
+			clocks = <&ccm IMX_CCM_QTMR_CLK 0 0>;
+			label = "QTMR1";
+			qtmr1_timer0: timer0 {
+				compatible = "nxp,imx-tmr";
+				channel = <0>;
+				label = "QTMR1_TIMER0";
+				status = "disabled";
+			};
+			qtmr1_timer1: timer1 {
+				compatible = "nxp,imx-tmr";
+				channel = <1>;
+				label = "QTMR1_TIMER1";
+				status = "disabled";
+			};
+			qtmr1_timer2: timer2 {
+				compatible = "nxp,imx-tmr";
+				channel = <2>;
+				label = "QTMR1_TIMER2";
+				status = "disabled";
+			};
+			qtmr1_timer3: timer3 {
+				compatible = "nxp,imx-tmr";
+				channel = <3>;
+				label = "QTMR1_TIMER3";
+				status = "disabled";
+			};
+		};
+
+		qtmr2: qtmr@401e0000 {
+			compatible = "nxp,imx-qtmr";
+			reg = <0x401e0000 0x7a>;
+			interrupts = <134 0>;
+			clocks = <&ccm IMX_CCM_QTMR_CLK 0 0>;
+			label = "QTMR2";
+			qtmr2_timer0: timer0 {
+				compatible = "nxp,imx-tmr";
+				channel = <0>;
+				label = "QTMR2_TIMER0";
+				status = "disabled";
+			};
+			qtmr2_timer1: timer1 {
+				compatible = "nxp,imx-tmr";
+				channel = <1>;
+				label = "QTMR2_TIMER1";
+				status = "disabled";
+			};
+			qtmr2_timer2: timer2 {
+				compatible = "nxp,imx-tmr";
+				channel = <2>;
+				label = "QTMR2_TIMER2";
+				status = "disabled";
+			};
+			qtmr2_timer3: timer3 {
+				compatible = "nxp,imx-tmr";
+				channel = <3>;
+				label = "QTMR2_TIMER3";
+				status = "disabled";
+			};
+		};
+
+		qtmr3: qtmr@401e4000 {
+			compatible = "nxp,imx-qtmr";
+			reg = <0x401e4000 0x7a>;
+			interrupts = <135 0>;
+			clocks = <&ccm IMX_CCM_QTMR_CLK 0 0>;
+			label = "QTMR3";
+			qtmr3_timer0: timer0 {
+				compatible = "nxp,imx-tmr";
+				channel = <0>;
+				label = "QTMR3_TIMER0";
+				status = "disabled";
+			};
+			qtmr3_timer1: timer1 {
+				compatible = "nxp,imx-tmr";
+				channel = <1>;
+				label = "QTMR3_TIMER1";
+				status = "disabled";
+			};
+			qtmr3_timer2: timer2 {
+				compatible = "nxp,imx-tmr";
+				channel = <2>;
+				label = "QTMR3_TIMER2";
+				status = "disabled";
+			};
+			qtmr3_timer3: timer3 {
+				compatible = "nxp,imx-tmr";
+				channel = <3>;
+				label = "QTMR3_TIMER3";
+				status = "disabled";
+			};
+		};
+
+		qtmr4: qtmr@401e8000 {
+			compatible = "nxp,imx-qtmr";
+			reg = <0x401e8000 0x7a>;
+			interrupts = <136 0>;
+			clocks = <&ccm IMX_CCM_QTMR_CLK 0 0>;
+			label = "QTMR4";
+			qtmr4_timer0: timer0 {
+				compatible = "nxp,imx-tmr";
+				channel = <0>;
+				label = "QTMR4_TIMER0";
+				status = "disabled";
+			};
+			qtmr4_timer1: timer1 {
+				compatible = "nxp,imx-tmr";
+				channel = <1>;
+				label = "QTMR4_TIMER1";
+				status = "disabled";
+			};
+			qtmr4_timer2: timer2 {
+				compatible = "nxp,imx-tmr";
+				channel = <2>;
+				label = "QTMR4_TIMER2";
+				status = "disabled";
+			};
+			qtmr4_timer3: timer3 {
+				compatible = "nxp,imx-tmr";
+				channel = <3>;
+				label = "QTMR4_TIMER3";
+				status = "disabled";
+			};
+		};
+
 		ccm: ccm@400fc000 {
 			compatible = "nxp,imx-ccm";
 			reg = <0x400fc000 0x4000>;

@@ -1,0 +1,86 @@
+# Copyright (c) 2022 KT-Elektronik, Klaucke und Partner GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX Quad Timer Channel. Each channel of each quad timer can operate independently
+  and hence will be realized as a separate counter device
+
+compatible: "nxp,imx-tmr"
+
+include: base.yaml
+
+properties:
+  label:
+    required: true
+
+  channel:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  mode:
+    type: string
+    required: true
+    description: counting mode of the timer, see qtmr_counting_mode_t enumerator type
+      of the MCUXpresso SDK
+    enum:
+      - "kQTMR_NoOperation"
+      - "kQTMR_PriSrcRiseEdge"
+      - "kQTMR_PriSrcRiseAndFallEdge"
+      - "kQTMR_PriSrcRiseEdgeSecInpHigh"
+      - "kQTMR_QuadCountMode"
+      - "kQTMR_PriSrcRiseEdgeSecDir"
+      - "kQTMR_SecSrcTrigPriCnt"
+      - "kQTMR_CascadeCount"
+
+  primary_source:
+    type: string
+    required: true
+    description: Primary source of the timer, see qtmr_primary_count_source_t enumerator type
+      of the MCUXpresso SDK
+    enum:
+      - "kQTMR_ClockCounter0InputPin"
+      - "kQTMR_ClockCounter1InputPin"
+      - "kQTMR_ClockCounter2InputPin"
+      - "kQTMR_ClockCounter3InputPin"
+      - "kQTMR_ClockCounter0Output"
+      - "kQTMR_ClockCounter1Output"
+      - "kQTMR_ClockCounter2Output"
+      - "kQTMR_ClockCounter3Output"
+      - "kQTMR_ClockDivide_1"
+      - "kQTMR_ClockDivide_2"
+      - "kQTMR_ClockDivide_4"
+      - "kQTMR_ClockDivide_8"
+      - "kQTMR_ClockDivide_16"
+      - "kQTMR_ClockDivide_32"
+      - "kQTMR_ClockDivide_64"
+      - "kQTMR_ClockDivide_128"
+
+  secondary_source:
+    type: string
+    required: false
+    description: Secondary source of the timer, see qtmr_input_source_t enumerator type
+      of the MCUXpresso SDK
+    enum:
+      - "kQTMR_Counter0InputPin"
+      - "kQTMR_Counter1InputPin"
+      - "kQTMR_Counter2InputPin"
+      - "kQTMR_Counter3InputPin"
+
+  filter_count:
+    type: int
+    required: false
+    description: Fault filter count (0-255).
+
+  filter_period:
+    type: int
+    required: false
+    description: Fault filter period (0-255).
+
+  freq:
+    type: int
+    required: false
+    description: clock frequency (only used for external clock sources)
