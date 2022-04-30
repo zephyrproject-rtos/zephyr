@@ -63,7 +63,20 @@ void lock_unlock_check(const void *arg)
 
 void test_kernel_apis(void)
 {
-	versionInfo version, version_irq;
+	versionInfo version = {
+		.os_info = {
+			.api = 0xfefefefe,
+			.kernel = 0xfdfdfdfd,
+		},
+		.info = "local function call info is uninitialized"
+	};
+	versionInfo version_irq = {
+		.os_info = {
+			.api = 0xfcfcfcfc,
+			.kernel = 0xfbfbfbfb,
+		},
+		.info = "irq_offload function call info is uninitialized"
+	};
 
 	get_version_check(&version);
 	irq_offload(get_version_check, (const void *)&version_irq);
