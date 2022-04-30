@@ -9,6 +9,12 @@
 #include <kernel.h>
 #include <zephyr/types.h>
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32F4X)
+#define ETH_HAL_IS_NOT_LEGACY 1
+#else
+#define ETH_HAL_IS_NOT_LEGACY 0
+#endif
+
 #define ST_OUI_B0 0x00
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1
@@ -41,9 +47,9 @@ struct eth_stm32_hal_dev_data {
 	const struct device *clock;
 	struct k_mutex tx_mutex;
 	struct k_sem rx_int_sem;
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#ifdef ETH_HAL_IS_NOT_LEGACY
 	struct k_sem tx_int_sem;
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 	K_KERNEL_STACK_MEMBER(rx_thread_stack,
 		CONFIG_ETH_STM32_HAL_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;

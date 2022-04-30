@@ -57,8 +57,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ETH_MEDIA_INTERFACE_MII		HAL_ETH_MII_MODE
 #define ETH_MEDIA_INTERFACE_RMII	HAL_ETH_RMII_MODE
 
-#define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
-
 /* Only one tx_buffer is sufficient to pass only 1 dma_buffer */
 #define ETH_TXBUF_DEF_NB	1U
 #else
@@ -67,6 +65,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 							ETH_DMATXDESC_OWN)
 
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
+
+#define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
+
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
 	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
@@ -86,24 +87,91 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __eth_stm32_desc;
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
-static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __eth_stm32_buf;
 static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __eth_stm32_buf;
+static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __eth_stm32_buf;
+
+BUILD_ASSERT(ETH_RX_BUF_SIZE % 4 == 0, "Rx buffer size must be a multiple of 4");
+
+#if ETH_HAL_IS_NOT_LEGACY
+
+/* add extra buffer size for alignment */
+struct eth_stm32_rx_buffer_header {
+	struct eth_stm32_rx_buffer_header *next;
+	uint16_t size;
+	bool used;
+};
+
+struct eth_stm32_tx_context {
+	struct net_pkt *pkt;
+	uint16_t tx_buffer_index;
+};
+
+static struct eth_stm32_rx_buffer_header dma_rx_buffer_header[ETH_RXBUFNB];
+static bool dma_tx_buffer_used[ETH_TXBUFNB];
+static ETH_TxPacketConfig tx_config;
+
+void HAL_ETH_RxAllocateCallback(uint8_t **buf)
+{
+	for (size_t i = 0; i < ETH_RXBUFNB; ++i) {
+		if (!dma_rx_buffer_header[i].used) {
+			dma_rx_buffer_header[i].next = NULL;
+			dma_rx_buffer_header[i].size = 0;
+			dma_rx_buffer_header[i].used = true;
+			*buf = dma_rx_buffer[i];
+			return;
+		}
+	}
+	*buf = NULL;
+}
+
+void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t Length)
+{
+	size_t index = (uintptr_t)(buff - &dma_rx_buffer[0][0]) / ETH_RX_BUF_SIZE;
+	struct eth_stm32_rx_buffer_header *header = &dma_rx_buffer_header[index];
+
+	header->size = Length;
+
+	if (!*pStart) {
+		*pStart = header;
+	}
+
+	if (!*pEnd) {
+		*pEnd = header;
+	} else {
+		((struct eth_stm32_rx_buffer_header *)*pEnd)->next = header;
+		*pEnd = header;
+	}
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-static ETH_TxPacketConfig tx_config;
+	SCB_InvalidateDCache_by_Addr(buff, Length);
 #endif
+}
+
+void HAL_ETH_TxFreeCallback(uint32_t *buff)
+{
+	struct eth_stm32_tx_context *ctx = (struct eth_stm32_tx_context *)buff;
+
+	dma_tx_buffer_used[ctx->tx_buffer_index] = false;
+}
+
+
+#else /* ETH_HAL_IS_NOT_LEGACY */
+
+
+
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 
 static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
 						uint32_t PHYAddr,
 						uint32_t PHYReg,
 						uint32_t *RegVal)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if ETH_HAL_IS_NOT_LEGACY
 	return HAL_ETH_ReadPHYRegister(heth, PHYAddr, PHYReg, RegVal);
 #else
 	ARG_UNUSED(PHYAddr);
 	return HAL_ETH_ReadPHYRegister(heth, PHYReg, RegVal);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
 }
 
 static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
@@ -169,16 +237,32 @@ static bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
 
 	return true;
 }
+
+#if ETH_HAL_IS_NOT_LEGACY
+void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
+{
+	struct eth_stm32_tx_context *ctx = (struct eth_stm32_tx_context *)buff;
+
+	ctx->pkt->timestamp.second = timestamp->TimeStampHigh;
+	ctx->pkt->timestamp.nanosecond = timestamp->TimeStampLow;
+
+	net_if_add_tx_timestamp(ctx->pkt);
+}
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth;
+#if ETH_HAL_IS_NOT_LEGACY
+	struct eth_stm32_tx_context ctx = {.pkt = pkt, .tx_buffer_index = 0};
+#else
+	__IO ETH_DMADescTypeDef *dma_tx_desc;
+#endif /* ETH_HAL_NOT_LEGACY */
 	uint8_t *dma_buffer;
 	int res;
 	size_t total_len;
-	__IO ETH_DMADescTypeDef *dma_tx_desc;
 	HAL_StatusTypeDef hal_ret = HAL_OK;
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	bool timestamped_frame;
@@ -191,52 +275,62 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	heth = &dev_data->heth;
 
-	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
 
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > ETH_TX_BUF_SIZE) {
 		LOG_ERR("PKT too big");
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	uint32_t cur_tx_desc_idx;
+	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
 
-	cur_tx_desc_idx = heth->TxDescList.CurTxDesc;
-	dma_tx_desc = (ETH_DMADescTypeDef *)heth->TxDescList.TxDesc[cur_tx_desc_idx];
+#if ETH_HAL_IS_NOT_LEGACY
+
+	for (;;) {
+		for (; ctx.tx_buffer_index < ETH_TXBUFNB; ctx.tx_buffer_index++) {
+			if (!dma_tx_buffer_used[ctx.tx_buffer_index]) {
+				dma_tx_buffer_used[ctx.tx_buffer_index] = true;
+				goto buffer_found;
+			}
+		}
+		ctx.tx_buffer_index = 0;
+		k_yield();
+	}
+
+buffer_found:
+
 #else
 	dma_tx_desc = heth->TxDesc;
-#endif
 
 	while (IS_ETH_DMATXDESC_OWN(dma_tx_desc) != (uint32_t)RESET) {
 		k_yield();
 	}
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	timestamped_frame = eth_is_ptp_pkt(net_pkt_iface(pkt), pkt);
 	if (timestamped_frame) {
 		/* Enable transmit timestamp */
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		dma_tx_desc->DESC2 |= ETH_DMATXNDESCRF_TTSE;
+#if ETH_HAL_IS_NOT_LEGACY
+		HAL_ETH_PTP_InsertTxTimestamp(heth);
 #else
 		dma_tx_desc->Status |= ETH_DMATXDESC_TTSE;
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	dma_buffer = dma_tx_buffer[cur_tx_desc_idx];
+#if ETH_HAL_IS_NOT_LEGACY
+	dma_buffer = dma_tx_buffer[ctx.tx_buffer_index];
 #else
 	dma_buffer = (uint8_t *)(dma_tx_desc->Buffer1Addr);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 
 	if (net_pkt_read(pkt, dma_buffer, total_len)) {
 		res = -ENOBUFS;
 		goto error;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if ETH_HAL_IS_NOT_LEGACY
 	ETH_BufferTypeDef tx_buffer_def;
 
 	tx_buffer_def.buffer = dma_buffer;
@@ -323,42 +417,14 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		res = -EIO;
 		goto error;
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
+#if !ETH_HAL_IS_NOT_LEGACY
 	if (timestamped_frame) {
-		/* Retrieve transmission timestamp from last DMA TX descriptor */
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		ETH_TxDescListTypeDef * dma_tx_desc_list;
-
-		__IO ETH_DMADescTypeDef *last_dma_tx_desc;
-
-		dma_tx_desc_list = &heth->TxDescList;
-		for (uint32_t i = 0; i < ETH_TX_DESC_CNT; i++) {
-			const uint32_t last_desc_idx = (cur_tx_desc_idx + i) % ETH_TX_DESC_CNT;
-
-			last_dma_tx_desc =
-				(ETH_DMADescTypeDef *)dma_tx_desc_list->TxDesc[last_desc_idx];
-			if (last_dma_tx_desc->DESC3 & ETH_DMATXNDESCWBF_LD) {
-				break;
-			}
-		}
-
-		while (IS_ETH_DMATXDESC_OWN(last_dma_tx_desc) != (uint32_t)RESET) {
-			/* Wait for transmission */
-			k_yield();
-		}
-
-		if ((last_dma_tx_desc->DESC3 & ETH_DMATXNDESCWBF_LD) &&
-				(last_dma_tx_desc->DESC3 & ETH_DMATXNDESCWBF_TTSS)) {
-			pkt->timestamp.second = last_dma_tx_desc->DESC1;
-			pkt->timestamp.nanosecond = last_dma_tx_desc->DESC0;
-		} else {
-			/* Invalid value */
-			pkt->timestamp.second = UINT64_MAX;
-			pkt->timestamp.nanosecond = UINT32_MAX;
-		}
-#else
+		/* Retrieve transmission timestamp from last DMA TX descriptor,
+		 * new driver sets it in a callback
+		 */
 		__IO ETH_DMADescTypeDef *last_dma_tx_desc = dma_tx_desc;
 
 		while (!(last_dma_tx_desc->Status & ETH_DMATXDESC_LS) &&
@@ -381,14 +447,23 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 			pkt->timestamp.second = UINT64_MAX;
 			pkt->timestamp.nanosecond = UINT32_MAX;
 		}
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 		net_if_add_tx_timestamp(pkt);
 	}
+#endif /* !ETH_HAL_IS_NOT_LEGACY */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 	res = 0;
 error:
+
+#if ETH_HAL_IS_NOT_LEGACY
+	/* free package tx buffer */
+	if (HAL_ETH_ReleaseTxPacket(heth) != HAL_OK) {
+		LOG_ERR("HAL_ETH_ReleaseTxPacket failed");
+	}
+	dma_tx_buffer_used[ctx.tx_buffer_index] = false;
+#endif
+
 	k_mutex_unlock(&dev_data->tx_mutex);
 
 	return res;
@@ -417,15 +492,19 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
-	__IO ETH_DMADescTypeDef *dma_rx_desc;
-#endif /* !CONFIG_SOC_SERIES_STM32H7X */
 	struct net_pkt *pkt;
-	size_t total_len;
+	size_t total_len = 0;
+#if ETH_HAL_IS_NOT_LEGACY
+	void *appbuf = NULL;
+	struct eth_stm32_rx_buffer_header *rx_header;
+#else
 	uint8_t *dma_buffer;
+	__IO ETH_DMADescTypeDef *dma_rx_desc;
 	HAL_StatusTypeDef hal_ret = HAL_OK;
+#endif
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	struct net_ptp_time timestamp;
+	ETH_TimeStampTypeDef ts_registers;
 	/* Default to invalid value. */
 	timestamp.second = UINT64_MAX;
 	timestamp.nanosecond = UINT32_MAX;
@@ -439,31 +518,18 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 
 	heth = &dev_data->heth;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	if (HAL_ETH_IsRxDataAvailable(heth) != true) {
+#if ETH_HAL_IS_NOT_LEGACY
+	if (HAL_ETH_ReadData(heth, &appbuf) != HAL_OK) {
 		/* no frame available */
 		return NULL;
 	}
 
-	ETH_BufferTypeDef rx_buffer_def;
-	uint32_t frame_length = 0;
-
-	hal_ret = HAL_ETH_GetRxDataBuffer(heth, &rx_buffer_def);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_GetRxDataBuffer: failed with state: %d",
-			hal_ret);
-		return NULL;
+	/* computing sizes and marking buffers as free */
+	for (rx_header = (struct eth_stm32_rx_buffer_header *)appbuf;
+			rx_header; rx_header = rx_header->next) {
+		total_len += rx_header->size;
+		rx_header->used = false;
 	}
-
-	hal_ret = HAL_ETH_GetRxDataLength(heth, &frame_length);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_GetRxDataLength: failed with state: %d",
-			hal_ret);
-		return NULL;
-	}
-
-	total_len = frame_length;
-	dma_buffer = rx_buffer_def.buffer;
 #else
 	hal_ret = HAL_ETH_GetReceivedFrame_IT(heth);
 	if (hal_ret != HAL_OK) {
@@ -476,36 +542,13 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	ETH_RxDescListTypeDef * dma_rx_desc_list;
+#if ETH_HAL_IS_NOT_LEGACY
 
-	dma_rx_desc_list = &heth->RxDescList;
-	if (dma_rx_desc_list->AppDescNbr) {
-		__IO ETH_DMADescTypeDef *last_dma_rx_desc;
-
-		const uint32_t last_desc_idx =
-			(dma_rx_desc_list->FirstAppDesc + dma_rx_desc_list->AppDescNbr - 1U)
-				% ETH_RX_DESC_CNT;
-
-		last_dma_rx_desc =
-			(ETH_DMADescTypeDef *)dma_rx_desc_list->RxDesc[last_desc_idx];
-
-		if (dma_rx_desc_list->AppContextDesc &&
-				last_dma_rx_desc->DESC1 & ETH_DMARXNDESCWBF_TSA) {
-			/* Retrieve timestamp from context DMA descriptor */
-			__IO ETH_DMADescTypeDef *context_dma_rx_desc;
-
-			const uint32_t context_desc_idx = (last_desc_idx + 1U) % ETH_RX_DESC_CNT;
-
-			context_dma_rx_desc =
-				(ETH_DMADescTypeDef *)dma_rx_desc_list->RxDesc[context_desc_idx];
-			if (context_dma_rx_desc->DESC1 != UINT32_MAX ||
-					context_dma_rx_desc->DESC0 != UINT32_MAX) {
-				timestamp.second = context_dma_rx_desc->DESC1;
-				timestamp.nanosecond = context_dma_rx_desc->DESC0;
-			}
-		}
+	if (HAL_ETH_PTP_GetRxTimestamp(heth, &ts_registers) == HAL_OK) {
+		timestamp.second = ts_registers.TimeStampHigh;
+		timestamp.nanosecond = ts_registers.TimeStampLow;
 	}
+
 #else
 	__IO ETH_DMADescTypeDef *last_dma_rx_desc;
 
@@ -518,12 +561,33 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
+
+
+
 	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data, *vlan_tag),
 					   total_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
+
+#if ETH_HAL_IS_NOT_LEGACY
+
+
+	for (rx_header = (struct eth_stm32_rx_buffer_header *)appbuf;
+			rx_header; rx_header = rx_header->next) {
+		const size_t index = (uintptr_t)(rx_header - &dma_rx_buffer_header[0])
+			/ sizeof(struct eth_stm32_rx_buffer_header);
+		if (net_pkt_write(pkt, dma_rx_buffer[index], rx_header->size)) {
+			LOG_ERR("Failed to append RX buffer to context buffer");
+			net_pkt_unref(pkt);
+			pkt = NULL;
+			goto release_desc;
+		}
+	}
+
+release_desc:
+#else
 
 	if (net_pkt_write(pkt, dma_buffer, total_len)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
@@ -533,12 +597,7 @@ static struct net_pkt *eth_rx(const struct device *dev, uint16_t *vlan_tag)
 	}
 
 release_desc:
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	hal_ret = HAL_ETH_BuildRxDescriptors(heth);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_BuildRxDescriptors: failed: %d", hal_ret);
-	}
-#else
+
 	/* Release descriptors to DMA */
 	/* Point to first descriptor */
 	dma_rx_desc = heth->RxFrameInfos.FSRxDesc;
@@ -561,7 +620,7 @@ release_desc:
 		/* Resume DMA reception */
 		heth->Instance->DMARPDR = 0;
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 
 	if (!pkt) {
 		goto out;
@@ -817,11 +876,11 @@ static int eth_initialize(const struct device *dev)
 #endif
 	heth->Init.MACAddr = dev_data->mac_addr;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if ETH_HAL_IS_NOT_LEGACY
 	heth->Init.TxDesc = dma_tx_desc_tab;
 	heth->Init.RxDesc = dma_rx_desc_tab;
 	heth->Init.RxBuffLen = ETH_RX_BUF_SIZE;
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 
 	hal_ret = HAL_ETH_Init(heth);
 	if (hal_ret == HAL_TIMEOUT) {
@@ -845,23 +904,23 @@ static int eth_initialize(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if ETH_HAL_IS_NOT_LEGACY
 	/* Tx config init: */
 	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
 	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
 				ETH_TX_PACKETS_FEATURES_CRCPAD;
 	tx_config.ChecksumCtrl = ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
 	tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 
 	dev_data->link_up = false;
 
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#ifdef ETH_HAL_IS_NOT_LEGACY
 	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 
 	/* Start interruption-poll thread */
 	k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
@@ -872,16 +931,7 @@ static int eth_initialize(const struct device *dev)
 
 	k_thread_name_set(&dev_data->rx_thread, "stm_eth");
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	for (uint32_t i = 0; i < ETH_RX_DESC_CNT; i++) {
-		hal_ret = HAL_ETH_DescAssignMemory(heth, i, dma_rx_buffer[i],
-						   NULL);
-		if (hal_ret != HAL_OK) {
-			LOG_ERR("HAL_ETH_DescAssignMemory: failed: %d, i: %d",
-				hal_ret, i);
-			return -EINVAL;
-		}
-	}
+#if ETH_HAL_IS_NOT_LEGACY
 
 	hal_ret = HAL_ETH_Start_IT(heth);
 #else
@@ -899,7 +949,7 @@ static int eth_initialize(const struct device *dev)
 
 	disable_mcast_filter(heth);
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if ETH_HAL_IS_NOT_LEGACY
 	/* Adjust MDC clock range depending on HCLK frequency: */
 	HAL_ETH_SetMDIOClockRange(heth);
 
@@ -911,7 +961,7 @@ static int eth_initialize(const struct device *dev)
 	mac_config.DuplexMode = ETH_FULLDUPLEX_MODE;
 	mac_config.Speed = ETH_SPEED_100M;
 	HAL_ETH_SetMACConfig(heth, &mac_config);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ETH_HAL_IS_NOT_LEGACY */
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -1075,7 +1125,7 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 	.heth = {
 		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init = {
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if !ETH_HAL_IS_NOT_LEGACY
 #if defined(CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE)
 			.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE,
 #else
@@ -1094,7 +1144,7 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 			.PhyAddress = PHY_ADDR,
 			.RxMode = ETH_RXINTERRUPT_MODE,
 			.ChecksumMode = ETH_CHECKSUM_BY_SOFTWARE,
-#endif /* !CONFIG_SOC_SERIES_STM32H7X */
+#endif /* !ETH_HAL_IS_NOT_LEGACY */
 #if defined(CONFIG_ETH_STM32_HAL_MII)
 			.MediaInterface = ETH_MEDIA_INTERFACE_MII,
 #else
