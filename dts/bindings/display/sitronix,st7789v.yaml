@@ -113,3 +113,8 @@ properties:
       type: uint8-array
       required: true
       description: RGB Interface Control Parameter
+
+    inverted-sck:
+      type: boolean
+      required: false
+      description: Only necessary if the display don't have a CS pin
