@@ -338,15 +338,18 @@ void z_riscv_pmp_init(void)
 void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 {
 	unsigned int index = global_pmp_end_index;
-	uintptr_t stack_bottom = thread->stack_info.start;
+	uintptr_t stack_bottom;
 
 	/* Retrieve pmpcfg0 partial content from global entries */
 	thread->arch.m_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
 
 	/* make the bottom addresses of our stack inaccessible */
+	stack_bottom = thread->stack_info.start - K_KERNEL_STACK_RESERVED;
 #ifdef CONFIG_USERSPACE
 	if (thread->arch.priv_stack_start != 0) {
 		stack_bottom = thread->arch.priv_stack_start;
+	} else if (z_stack_is_user_capable(thread->stack_obj)) {
+		stack_bottom = thread->stack_info.start - K_THREAD_STACK_RESERVED;
 	}
 #endif
 	set_pmp_entry(&index, PMP_NONE,
