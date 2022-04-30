@@ -6,6 +6,8 @@
 
 /dts-v1/;
 
+#include <freq.h>
+
 #include <rpi_pico/rp2040.dtsi>
 #include "rpi_pico-pinctrl.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -100,6 +102,13 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 };
 
