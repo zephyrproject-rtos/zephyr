@@ -782,12 +782,21 @@ class DeviceHandler(Handler):
 
     def handle(self):
         runner = None
+        timeout_cnt = os.getenv('TWISTER_DEVICE_TIMEOUT')
+        if timeout_cnt is None:
+            timeout_cnt = self.timeout
 
         hardware = self.device_is_available(self.instance)
-        while not hardware:
+        while not hardware and timeout_cnt > 0:
             logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
             time.sleep(1)
+            timeout_cnt -= 1
             hardware = self.device_is_available(self.instance)
+
+        if not hardware:
+            self.set_state("skipped", self.timeout)
+            self.instance.reason = "Timeout"
+            return
 
         runner = hardware.runner or self.testplan.west_runner
         serial_pty = hardware.serial_pty
