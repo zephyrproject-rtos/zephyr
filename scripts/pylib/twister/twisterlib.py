@@ -471,19 +471,6 @@ class Handler:
         proc.kill()
         self.terminated = True
 
-    def add_missing_testscases(self, reason=None):
-        """
-        If testsuite was broken by some error (e.g. timeout) it is necessary to
-        add information about next testcases, which were not be
-        performed due to this error.
-        """
-
-        for case in self.instance.testcases:
-            if not case.status:
-                case.status = "blocked"
-                if reason:
-                    case.reason = reason
-
     def _verify_ztest_suite_name(self, harness_state, detected_suite_names, handler_time):
         """
         If test suite names was found in test's C source code, then verify if
@@ -689,7 +676,7 @@ class BinaryHandler(Handler):
         else:
             self.set_state("timeout", handler_time)
             self.instance.reason = "Timeout"
-            self.add_missing_testscases("Timeout")
+            self.instance.add_missing_testscases("blocked", "Timeout")
 
         self._final_handle_actions(harness, handler_time)
 
@@ -901,7 +888,7 @@ class DeviceHandler(Handler):
             self.instance.reason = "Serial Device Error"
             logger.error("Serial device error: %s" % (str(e)))
 
-            self.add_missing_testscases("Serial Device Error")
+            self.instance.add_missing_testscases("blocked", "Serial Device Error")
             if serial_pty and ser_pty_process:
                 ser_pty_process.terminate()
                 outs, errs = ser_pty_process.communicate()
@@ -975,7 +962,7 @@ class DeviceHandler(Handler):
         handler_time = time.time() - start_time
 
         if out_state in ["timeout", "flash_error"]:
-            self.add_missing_testscases(harness)
+            self.instance.add_missing_testscases("blocked")
 
             if out_state == "timeout":
                 self.instance.reason = "Timeout"
@@ -988,7 +975,7 @@ class DeviceHandler(Handler):
         # sometimes a test instance hasn't been executed successfully with no
         # status, in order to include it into final report,
         # so fill the results as blocked
-        self.add_missing_testscases(harness)
+        self.instance.add_missing_testscases("blocked")
 
         if harness.state:
             self.set_state(harness.state, handler_time)
@@ -1263,7 +1250,7 @@ class QEMUHandler(Handler):
                 self.instance.reason = "Timeout"
             else:
                 self.instance.reason = "Exited with {}".format(self.returncode)
-            self.add_missing_testscases(harness)
+            self.instance.add_missing_testscases("blocked")
 
         self._final_handle_actions(harness, 0)
 
@@ -2144,6 +2131,12 @@ class TestInstance(DisablePyTestCollectionMixin):
         hash_object.update(random_str)
         return hash_object.hexdigest()
 
+    def add_missing_testscases(self, status, reason=None):
+        for case in self.testcases:
+            if not case.status:
+                case.status = status
+                if reason:
+                    case.reason = reason
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -2351,9 +2344,7 @@ class CMake():
 
             self.instance.status = "passed"
             if not self.instance.run:
-                for case in self.instance.testcases:
-                    case.status = "skipped"
-                    case.reason = "built only"
+                self.instance.add_missing_testscases("skipped", "Test was built only")
             results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
 
             if out:
@@ -2712,8 +2703,7 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.status = "filtered"
                     self.instance.reason = "runtime filter"
                     results.skipped_runtime += 1
-                    for case in self.instance.testcases:
-                        case.status = "skipped"
+                    self.instance.add_missing_testscases("skipped")
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2721,7 +2711,6 @@ class ProjectBuilder(FilterBuilder):
         elif op == "build":
             logger.debug("build test: %s" % self.instance.name)
             res = self.build()
-
             if not res:
                 self.instance.status = "error"
                 self.instance.reason = "Build Failure"
@@ -2733,6 +2722,7 @@ class ProjectBuilder(FilterBuilder):
                 if inst and inst.status == "skipped":
                     results.skipped_runtime += 1
                 if res.get('returncode', 1) > 0:
+                    self.instance.add_missing_testscases("blocked", "Builld Failure")
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "gather_metrics", "test": self.instance})
@@ -3767,8 +3757,7 @@ class TestPlan(DisablePyTestCollectionMixin):
             else:
                 instance.status = "filtered"
 
-            for case in instance.testcases:
-                case.status = instance.status
+            instance.add_missing_testscases(instance.status)
 
         # Remove from discards configurations that must not be discarded
         # (e.g. integration_platforms when --integration was used)
