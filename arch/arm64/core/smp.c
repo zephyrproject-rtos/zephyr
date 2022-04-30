@@ -85,7 +85,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		return;
 	}
 
-	arm64_cpu_boot_params.sp = Z_THREAD_STACK_BUFFER(stack) + sz;
+	arm64_cpu_boot_params.sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 	arm64_cpu_boot_params.fn = fn;
 	arm64_cpu_boot_params.arg = arg;
 	arm64_cpu_boot_params.cpu_num = cpu_num;
