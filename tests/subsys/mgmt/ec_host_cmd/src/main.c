@@ -62,7 +62,6 @@ struct tx_structure {
 	struct ec_host_cmd_response_header header;
 	union {
 		struct ec_response_add add;
-		struct ec_response_too_big too_big;
 		uint8_t raw[0];
 	};
 } __packed * const expected_dut_to_host = (void *)&expected_dut_to_host_buffer;
