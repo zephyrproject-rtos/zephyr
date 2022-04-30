@@ -169,10 +169,13 @@ config PMP_STACK_GUARD
 config PMP_STACK_GUARD_MIN_SIZE
 	int "Guard size"
 	depends on PMP_STACK_GUARD
-	default 64
+	default 1024 if 64BIT
+	default 512
 	help
 	  Size of the stack guard area. This should be large enough to
-	  accommodate the stack overflow exception stack usage.
+	  catch any sudden jump in stack pointer decrement, plus some
+	  wiggle room to accommodate the eventual overflow exception
+	  stack usage.
 
 config PMP_POWER_OF_TWO_ALIGNMENT
 	bool "Enforce power-of-two alignment on PMP memory areas"
@@ -190,6 +193,7 @@ endmenu
 
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
+	default 2048 if PMP_STACK_GUARD
 
 config TEST_EXTRA_STACK_SIZE
 	default 1024

@@ -28,17 +28,26 @@
 #include <soc.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/arch/riscv/exp.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define ARCH_STACK_PTR_ALIGN  16
 
 #ifdef CONFIG_PMP_STACK_GUARD
-#define Z_RISCV_PMP_ALIGN CONFIG_PMP_STACK_GUARD_MIN_SIZE
-#define Z_RISCV_STACK_GUARD_SIZE  Z_RISCV_PMP_ALIGN
-#else
-#define Z_RISCV_PMP_ALIGN 4
-#define Z_RISCV_STACK_GUARD_SIZE  0
-#endif
+/*
+ * The StackGuard is an area at the bottom of the kernel-mode stack made to
+ * fault when accessed. It is _not_ faulting when in exception mode as we rely
+ * on that area to save the exception stack frame and to process said fault.
+ * Therefore the guard area must be large enough to hold the esf, plus some
+ * configurable stack wiggle room to execute the fault handling code off of,
+ * as well as some guard size to cover possible sudden stack pointer
+ * displacement before the fault.
+ *
+ * The m-mode PMP set is not overly used so no need to force NAPOT.
+ */
+#define Z_RISCV_STACK_GUARD_SIZE \
+	ROUND_UP(sizeof(z_arch_esf_t) + CONFIG_PMP_STACK_GUARD_MIN_SIZE, \
+		 ARCH_STACK_PTR_ALIGN)
 
 /* Kernel-only stacks have the following layout if a stack guard is enabled:
  *
@@ -52,31 +61,40 @@
  * | TLS        | } thread.stack_info.delta
  * +------------+ <- thread.stack_info.start + thread.stack_info.size
  */
-#ifdef CONFIG_PMP_STACK_GUARD
 #define ARCH_KERNEL_STACK_RESERVED	Z_RISCV_STACK_GUARD_SIZE
-#define ARCH_KERNEL_STACK_OBJ_ALIGN \
-		MAX(Z_RISCV_PMP_ALIGN, ARCH_STACK_PTR_ALIGN)
+
+#else /* !CONFIG_PMP_STACK_GUARD */
+#define Z_RISCV_STACK_GUARD_SIZE 0
 #endif
 
-#ifdef CONFIG_USERSPACE
-/* Any thread running In user mode will have full access to the region denoted
- * by thread.stack_info.
- *
- * Thread-local storage is at the very highest memory locations of this area.
- * Memory for TLS and any initial random stack pointer offset is captured
- * in thread.stack_info.delta.
- */
-#ifdef CONFIG_PMP_STACK_GUARD
 #ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-/* Use defaults for everything. The privilege elevation stack is located
- * in another area of memory generated at build time by gen_kobject_list.py
+/* The privilege elevation stack is located in another area of memory
+ * generated at build time by gen_kobject_list.py
  *
  * +------------+ <- thread.arch.priv_stack_start
  * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
  * +------------+
- * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE - Z_RISCV_STACK_GUARD_SIZE
+ * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
  * +------------+ <- thread.arch.priv_stack_start +
- *                   CONFIG_PRIVILEGED_STACK_SIZE
+ *                   CONFIG_PRIVILEGED_STACK_SIZE +
+ *                   Z_RISCV_STACK_GUARD_SIZE
+ *
+ * The main stack will be initially (or potentially only) used by kernel
+ * mode so we need to make room for a possible stack guard area when enabled:
+ *
+ * +------------+ <- thread.stack_obj
+ * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
+ * +............| <- thread.stack_info.start
+ * | Thread     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
+ *
+ * When transitioning to user space, the guard area will be removed from
+ * the main stack. Any thread running in user mode will have full access
+ * to the region denoted by thread.stack_info. Make it PMP-NAPOT compatible.
  *
  * +------------+ <- thread.stack_obj = thread.stack_info.start
  * | Thread     |
@@ -86,65 +104,20 @@
  * | TLS        | } thread.stack_info.delta
  * +------------+ <- thread.stack_info.start + thread.stack_info.size
  */
+#define ARCH_THREAD_STACK_RESERVED Z_RISCV_STACK_GUARD_SIZE
 #define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
-		Z_POW2_CEIL(ROUND_UP((size), Z_RISCV_PMP_ALIGN))
+		Z_POW2_CEIL(MAX(size, CONFIG_PRIVILEGED_STACK_SIZE))
 #define ARCH_THREAD_STACK_OBJ_ALIGN(size) \
 		ARCH_THREAD_STACK_SIZE_ADJUST(size)
-#define ARCH_THREAD_STACK_RESERVED		0
+
 #else /* !CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+
 /* The stack object will contain the PMP guard, the privilege stack, and then
- * the stack buffer in that order:
+ * the usermode stack buffer in that order:
  *
  * +------------+ <- thread.stack_obj
  * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
- * +------------+ <- thread.arch.priv_stack_start
- * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
- * +------------+ <- thread.stack_info.start
- * | Thread     |
- * | stack      |
- * |            |
- * +............|
- * | TLS        | } thread.stack_info.delta
- * +------------+ <- thread.stack_info.start + thread.stack_info.size
- */
-#define ARCH_THREAD_STACK_RESERVED	(Z_RISCV_STACK_GUARD_SIZE + \
-					 CONFIG_PRIVILEGED_STACK_SIZE)
-#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_RISCV_PMP_ALIGN
-/* We need to be able to exactly cover the stack buffer with an PMP region,
- * so round its size up to the required granularity of the PMP
- */
-#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
-		(ROUND_UP((size), Z_RISCV_PMP_ALIGN))
-
-#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
-#else /* !CONFIG_PMP_STACK_GUARD */
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-/* Use defaults for everything. The privilege elevation stack is located
- * in another area of memory generated at build time by gen_kobject_list.py
- *
- * +------------+ <- thread.arch.priv_stack_start
- * | Priv Stack | } Z_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)
  * +------------+
- *
- * +------------+ <- thread.stack_obj = thread.stack_info.start
- * | Thread     |
- * | stack      |
- * |            |
- * +............|
- * | TLS        | } thread.stack_info.delta
- * +------------+ <- thread.stack_info.start + thread.stack_info.size
- */
-#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
-		Z_POW2_CEIL(ROUND_UP((size), Z_RISCV_PMP_ALIGN))
-#define ARCH_THREAD_STACK_OBJ_ALIGN(size) \
-		ARCH_THREAD_STACK_SIZE_ADJUST(size)
-#define ARCH_THREAD_STACK_RESERVED		0
-#else /* !CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
-/* Userspace enabled, but supervisor stack guards are not in use */
-
-/* Reserved area of the thread object just contains the privilege stack:
- *
- * +------------+ <- thread.stack_obj = thread.arch.priv_stack_start
  * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
  * +------------+ <- thread.stack_info.start
  * | Thread     |
@@ -154,38 +127,11 @@
  * | TLS        | } thread.stack_info.delta
  * +------------+ <- thread.stack_info.start + thread.stack_info.size
  */
-#define ARCH_THREAD_STACK_RESERVED		CONFIG_PRIVILEGED_STACK_SIZE
-#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
-		(ROUND_UP((size), Z_RISCV_PMP_ALIGN))
-#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_RISCV_PMP_ALIGN
+#define ARCH_THREAD_STACK_RESERVED \
+	ROUND_UP(Z_RISCV_STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE, \
+		 ARCH_STACK_PTR_ALIGN)
 
 #endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
-#endif /* CONFIG_PMP_STACK_GUARD */
-
-#else /* !CONFIG_USERSPACE */
-
-#ifdef CONFIG_PMP_STACK_GUARD
-/* Reserve some memory for the stack guard.
- * This is just a minimally-sized region at the beginning of the stack
- * object, which is programmed to produce an exception if written to.
- *
- * +------------+ <- thread.stack_obj
- * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
- * +------------+ <- thread.stack_info.start
- * | Thread     |
- * | stack      |
- * |            |
- * +............|
- * | TLS        | } thread.stack_info.delta
- * +------------+ <- thread.stack_info.start + thread.stack_info.size
- */
-#define ARCH_THREAD_STACK_RESERVED		Z_RISCV_STACK_GUARD_SIZE
-#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_RISCV_PMP_ALIGN
-/* Default for ARCH_THREAD_STACK_SIZE_ADJUST */
-#else /* !CONFIG_PMP_STACK_GUARD */
-/* No stack guard, no userspace, Use defaults for everything. */
-#endif /* CONFIG_PMP_STACK_GUARD */
-#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_64BIT
 #define RV_REGSIZE 8
