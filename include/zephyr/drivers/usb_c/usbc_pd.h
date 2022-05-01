@@ -98,6 +98,104 @@ extern "C" {
 #define PD_T_SAFE_5V_MAX_MS  275
 
 /**
+ * @brief Time to wait for TCPC to complete transmit
+ */
+#define PD_T_TX_TIMEOUT_MS 100
+
+/**
+ * @brief Minimum time a Hard Reset must complete.
+ *	  See Table 6-68 Time Values
+ */
+#define PD_T_HARD_RESET_COMPLETE_MIN_MS 4
+
+/**
+ * @brief Maximum time a Hard Reset must complete.
+ *	  See Table 6-68 Time Values
+ */
+#define PD_T_HARD_RESET_COMPLETE_MAX_MS 5
+
+/**
+ * @brief Minimum time a response must be sent from a Port Partner
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_SENDER_RESPONSE_MIN_MS 24
+
+/**
+ * @brief Nomiminal time a response must be sent from a Port Partner
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_SENDER_RESPONSE_NOM_MS 27
+
+/**
+ * @brief Maximum time a response must be sent from a Port Partner
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_SENDER_RESPONSE_MAX_MS 30
+
+/**
+ * @brief Minimum SPR Mode time for a power suppply to transition to a new level
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_SPR_PS_TRANSITION_MIN_MS 450
+
+/**
+ * @brief Nominal SPR Mode time for a power suppply to transition to a new level
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_SPR_PS_TRANSITION_NOM_MS 500
+
+/**
+ * @brief Maximum SPR Mode time for a power suppply to transition to a new level
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_SPR_PS_TRANSITION_MAX_MS 550
+
+/**
+ * @brief Minimum EPR Mode time for a power suppply to transition to a new level
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_EPR_PS_TRANSITION_MIN_MS 830
+
+/**
+ * @brief Nominal EPR Mode time for a power suppply to transition to a new level
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_EPR_PS_TRANSITION_NOM_MS 925
+
+/**
+ * @brief Maximum EPR Mode time for a power suppply to transition to a new level
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_EPR_PS_TRANSITION_MAX_MS 1020
+
+/**
+ * @brief Minimum time to wait before sending another request after receiving a Wait message
+ *        See Table 6-68 Time Values
+ */
+#define PD_T_SINK_REQUEST_MIN_MS 100
+
+/**
+ * @brief Minimum time to wait before sending a Not_Supported message after receiving a
+ *	  Chunked message
+ *	  See Table 6-68 Time Values
+ */
+#define PD_T_CHUNKING_NOT_SUPPORTED_MIN_MS 40
+
+/**
+ * @brief Nominal time to wait before sending a Not_Supported message after receiving a
+ *	  Chunked message
+ *	  See Table 6-68 Time Values
+ */
+#define PD_T_CHUNKING_NOT_SUPPORTED_NOM_MS 45
+
+/**
+ * @brief Maximum time to wait before sending a Not_Supported message after receiving a
+ *	  Chunked message
+ *	  See Table 6-68 Time Values
+ */
+#define PD_T_CHUNKING_NOT_SUPPORTED_MAX_MS 50
+
+/**
  * @brief Convert bytes to PD Header data object count, where a
  *	  data object is 4-bytes.
  *
@@ -111,6 +209,18 @@ extern "C" {
  * @param c number of PD Header data objects
  */
 #define PD_CONVERT_PD_HEADER_COUNT_TO_BYTES(c) ((c) << 2)
+
+/**
+ * @brief Collision avoidance Rp values in REV 3.0
+ *	  Sink Transmit "OK"
+ */
+#define SINK_TX_OK TC_RP_3A0
+
+/**
+ * @brief Collision avoidance Rp values in REV 3.0
+ *	  Sink Transmit "NO GO"
+ */
+#define SINK_TX_NG TC_RP_1A5
 
 /**
  * @brief Build a PD message header
@@ -137,6 +247,13 @@ union pd_header {
 };
 
 /**
+ * @brief Used to get extended header from the first 32-bit word of the message
+ *
+ * @param c first 32-bit word of the message
+ */
+#define PD_GET_EXT_HEADER(c) ((c) & 0xffff)
+
+/**
  * @brief Build an extended message header
  *	  See Table 6-3 Extended Message Header
  */
@@ -161,6 +278,11 @@ union pd_ext_header {
  * PDO - Power Data Object
  * RDO - Request Data Object
  */
+
+/**
+ * @brief Maximum number of 32-bit data objects sent in a single request
+ */
+#define PDO_MAX_DATA_OBJECTS 7
 
 /**
  * @brief Power Data Object Source Type
@@ -678,6 +800,11 @@ enum pd_packet_type {
 	/** USED ONLY FOR RECEPTION OF UNKNOWN MSG TYPES */
 	PD_PACKET_MSG_INVALID           = 0xf
 };
+
+/**
+ * @brief Number of valid Transmit Types
+ */
+#define NUM_SOP_STAR_TYPES (PD_PACKET_DEBUG_PRIME_PRIME + 1)
 
 /**
  * @brief Control Message type
