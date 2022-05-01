@@ -624,6 +624,16 @@ int log_mem_get_max_usage(uint32_t *max)
 	return mpsc_pbuf_get_max_utilization(&log_buffer, max);
 }
 
+static void log_backend_notify_all(enum log_backend_evt event,
+				   union log_backend_evt_arg *arg)
+{
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		const struct log_backend *backend = log_backend_get(i);
+
+		log_backend_notify(backend, event, arg);
+	}
+}
+
 static void log_process_thread_timer_expiry_fn(struct k_timer *timer)
 {
 	k_sem_give(&log_process_thread_sem);
@@ -635,6 +645,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 
 	uint32_t activate_mask = z_log_init(false, false);
 	k_timeout_t timeout = K_MSEC(50); /* Arbitrary value */
+	bool processed_any = false;
 
 	thread_set(k_current_get());
 
@@ -650,7 +661,13 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		}
 
 		if (log_process() == false) {
+			if (processed_any) {
+				processed_any = false;
+				log_backend_notify_all(LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
+			}
 			(void)k_sem_take(&log_process_thread_sem, timeout);
+		} else {
+			processed_any = true;
 		}
 	}
 }
