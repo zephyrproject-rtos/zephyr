@@ -363,6 +363,17 @@ enum tc_cc_pull {
 };
 
 /**
+ * @brief Cable plug. See 6.2.1.1.7 Cable Plug. Only applies to SOP' and SOP".
+ *	  Replaced by pd_power_role for SOP packets.
+ */
+enum tc_cable_plug {
+	/* Message originated from a DFP or UFP */
+	PD_PLUG_FROM_DFP_UFP = 0,
+	/* Message originated from a Cable Plug or VPD */
+	PD_PLUG_FROM_CABLE_VPD = 1
+};
+
+/**
  * @brief Power Delivery Power Role
  */
 enum tc_power_role {
