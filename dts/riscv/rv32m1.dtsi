@@ -43,6 +43,12 @@
 		reg = <0x09000000 0x20000>;
 	};
 
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "openisa,rv32m1-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
