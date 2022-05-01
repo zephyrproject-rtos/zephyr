@@ -31,6 +31,19 @@ struct log_backend;
  * @brief Backend events
  */
 enum log_backend_evt {
+	/**
+	 * @brief Event when process thread finishes processing.
+	 *
+	 * This event is emitted when the process thread finishes
+	 * processing pending log messages.
+	 *
+	 * @note This is not emitted when there are no pending
+	 *       log messages being processed.
+	 *
+	 * @note Deferred mode only.
+	 */
+	LOG_BACKEND_EVT_PROCESS_THREAD_DONE,
+
 	/** @brief Maximum number of backend events */
 	LOG_BACKEND_EVT_MAX,
 };
