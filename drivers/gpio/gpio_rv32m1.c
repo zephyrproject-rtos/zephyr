@@ -126,6 +126,10 @@ static int gpio_rv32m1_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	/* Set PCR mux to GPIO for the pin we are configuring */
+	mask |= PORT_PCR_MUX_MASK;
+	pcr |= PORT_PCR_MUX(kPORT_MuxAsGpio);
+
 	/* Now do the PORT module. Figure out the pullup/pulldown
 	 * configuration, but don't write it to the PCR register yet.
 	 */
