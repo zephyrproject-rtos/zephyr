@@ -53,7 +53,7 @@ def test_csv_report(class_testsuite, instances_fixture, tmpdir):
 
     mydict = {'test': [], 'arch' : [], 'platform' : [], 'status': [],
               'extra_args': [], 'handler': [], 'handler_time': [],
-              'ram_size': [], 'rom_size': []}
+              'ram_size': [], 'rom_size': [], 'run_id': []}
 
     with open(filename, "r") as file:
         csv_reader = csv.reader(file)
@@ -71,6 +71,7 @@ def test_csv_report(class_testsuite, instances_fixture, tmpdir):
         mydict["handler_time"].append(instance.metrics.get("handler_time", ""))
         mydict["ram_size"].append(instance.metrics.get("ram_size", '0'))
         mydict["rom_size"].append(instance.metrics.get("rom_size", '0'))
+        mydict["run_id"].append(instance.run_id)
 
     dict_file = open(filename, "r")
     dict_reader = csv.DictReader(dict_file)
