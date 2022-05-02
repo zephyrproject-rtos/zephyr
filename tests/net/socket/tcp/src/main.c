@@ -1167,6 +1167,8 @@ void test_v4_msg_waitall(void)
 	test_close(new_sock);
 	test_close(s_sock);
 	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 void test_v6_msg_waitall(void)
@@ -1241,6 +1243,8 @@ void test_v6_msg_waitall(void)
 	test_close(new_sock);
 	test_close(s_sock);
 	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 #ifdef CONFIG_USERSPACE
