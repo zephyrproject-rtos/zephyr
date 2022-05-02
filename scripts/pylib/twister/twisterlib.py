@@ -3410,6 +3410,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                     if filter_platform and platform.name not in filter_platform:
                         continue
                     instance = TestInstance(self.testcases[test], platform, self.outdir)
+                    if "run_id" in row and row["run_id"] != "na":
+                        instance.run_id = row["run_id"]
                     if self.device_testing:
                         tfilter = 'runnable'
                     else:
@@ -3991,7 +3993,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "status",
                           "extra_args", "handler", "handler_time", "ram_size",
-                          "rom_size"]
+                          "rom_size", "run_id"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
             for instance in self.instances.values():
@@ -4009,6 +4011,12 @@ class TestSuite(DisablePyTestCollectionMixin):
                     rom_size = instance.metrics.get("rom_size", 0)
                     rowdict["ram_size"] = ram_size
                     rowdict["rom_size"] = rom_size
+                    try:
+                        rowdict["run_id"] = instance.run_id
+                    except AttributeError:
+                        # No run_id available
+                        rowdict["run_id"] = "na"
+
                 cw.writerow(rowdict)
 
     def json_report(self, filename, append=False, version="NA"):
