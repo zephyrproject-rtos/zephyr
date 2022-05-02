@@ -1594,6 +1594,11 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 {
 	int ret = 0;
 
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+	__ASSERT((thread->base.thread_state != _THREAD_PRESTART),
+		 "Only PRESTARTED threads can change CPU pin");
+#endif
+
 	LOCKED(&sched_spinlock) {
 		if (z_is_thread_prevented_from_running(thread)) {
 			thread->base.cpu_mask |= enable_mask;
