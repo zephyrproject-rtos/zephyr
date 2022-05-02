@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <arm64/qemu-virt/qemu-virt-a53.dtsi>
+#include <arm64/qemu/qemu-virt-a53.dtsi>
 
 / {
 	model = "QEMU Cortex-A53";
