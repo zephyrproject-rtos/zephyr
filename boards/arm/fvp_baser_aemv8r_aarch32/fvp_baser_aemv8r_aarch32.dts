@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <arm64/fvp-aemv8r/fvp-aemv8r.dtsi>
+#include <arm64/fvp/fvp-aemv8r.dtsi>
 
 / {
 	model = "FVP BaseR AEMv8R";
