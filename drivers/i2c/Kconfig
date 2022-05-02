@@ -28,6 +28,11 @@ config I2C_STATS
 	help
 	  Enable I2C Stats.
 
+config I2C_CALLBACK
+	bool "I2C asynchronous callback API"
+	help
+	  API and implementations of i2c_transfer_cb.
+
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 source "drivers/i2c/Kconfig.b91"

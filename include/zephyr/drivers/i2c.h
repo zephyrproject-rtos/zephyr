@@ -160,6 +160,15 @@ struct i2c_msg {
 };
 
 /**
+ * @brief I2C callback for asynchronous transfer requests
+ *
+ * @param dev I2C device which is notifying of transfer completion or error
+ * @param result Result code of the transfer request. 0 is success, -errno for failure.
+ * @param data Transfer requester supplied data which is passed along to the callback.
+ */
+typedef void (*i2c_callback_t)(const struct device *dev, int result, void *data);
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * These are for internal use only, so skip these in
@@ -179,6 +188,14 @@ typedef int (*i2c_api_target_register_t)(const struct device *dev,
 					struct i2c_target_config *cfg);
 typedef int (*i2c_api_target_unregister_t)(const struct device *dev,
 					  struct i2c_target_config *cfg);
+#ifdef CONFIG_I2C_CALLBACK
+typedef int (*i2c_api_transfer_cb_t)(const struct device *dev,
+				 struct i2c_msg *msgs,
+				 uint8_t num_msgs,
+				 uint16_t addr,
+				 i2c_callback_t cb,
+				 void *userdata);
+#endif /* CONFIG_I2C_CALLBACK */
 typedef int (*i2c_api_recover_bus_t)(const struct device *dev);
 
 __subsystem struct i2c_driver_api {
@@ -187,6 +204,9 @@ __subsystem struct i2c_driver_api {
 	i2c_api_full_io_t transfer;
 	i2c_api_target_register_t target_register;
 	i2c_api_target_unregister_t target_unregister;
+#ifdef CONFIG_I2C_CALLBACK
+	i2c_api_transfer_cb_t transfer_cb;
+#endif
 	i2c_api_recover_bus_t recover_bus;
 };
 
@@ -601,6 +621,92 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 
 	return res;
 }
+
+#ifdef CONFIG_I2C_CALLBACK
+
+/**
+ * @brief Perform data transfer to another I2C device in controller mode.
+ *
+ * This routine provides a generic interface to perform data transfer
+ * to another I2C device asynchronously with a callback completion.
+ *
+ * @see i2c_transfer()
+ * @funcprop \isr_ok
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ *            driver configured in controller mode.
+ * @param msgs Array of messages to transfer, must live until callback completes.
+ * @param num_msgs Number of messages to transfer.
+ * @param addr Address of the I2C target device.
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ * @retval -ENOSYS If transfer async is not implemented
+ * @retval -EWOULDBLOCK If the device is temporarily busy doing another transfer
+ */
+static inline int i2c_transfer_cb(const struct device *dev,
+				 struct i2c_msg *msgs,
+				 uint8_t num_msgs,
+				 uint16_t addr,
+				 i2c_callback_t cb,
+				 void *userdata)
+{
+	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+
+	if (api->transfer_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
+}
+
+#ifdef CONFIG_POLL
+
+/** @cond INTERNAL_HIDDEN */
+void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userdata);
+/** @endcond */
+
+/**
+ * @brief Perform data transfer to another I2C device in controller mode.
+ *
+ * This routine provides a generic interface to perform data transfer
+ * to another I2C device asynchronously with a k_poll_signal completion.
+ *
+ * @see i2c_transfer_cb()
+ * @funcprop \isr_ok
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ *            driver configured in controller mode.
+ * @param msgs Array of messages to transfer, must live until callback completes.
+ * @param num_msgs Number of messages to transfer.
+ * @param addr Address of the I2C target device.
+ * @param signal Signal to notify of transfer completion.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ * @retval -ENOSYS If transfer async is not implemented
+ * @retval -EWOULDBLOCK If the device is temporarily busy doing another transfer
+ */
+static inline int i2c_transfer_signal(const struct device *dev,
+				 struct i2c_msg *msgs,
+				 uint8_t num_msgs,
+				 uint16_t addr,
+				 struct k_poll_signal *sig)
+{
+	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+
+	if (api->transfer_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->transfer_cb(dev, msgs, num_msgs, addr, z_i2c_transfer_signal_cb, sig);
+}
+
+#endif /* CONFIG_POLL */
+
+#endif /* CONFIG_I2C_CALLBACK */
 
 /**
  * @brief Perform data transfer to another I2C device in controller mode.
