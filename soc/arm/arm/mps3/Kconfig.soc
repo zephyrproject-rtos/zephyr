@@ -13,7 +13,7 @@ config SOC_MPS3_AN547
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
-	select ARMV8_1_M_MVEI if !QEMU_TARGET
-	select ARMV8_1_M_MVEF if !QEMU_TARGET
+	select ARMV8_1_M_MVEI
+	select ARMV8_1_M_MVEF
 
 endchoice
