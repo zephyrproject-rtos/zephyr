@@ -1,7 +1,3 @@
-common:
-  # TODO: Remove when QEMU 6.2 is released with MVE emulation (see #37694).
-  platform_exclude: mps3_an547
-
 tests:
   libraries.cmsis_nn:
     filter: CONFIG_CPU_CORTEX_M and TOOLCHAIN_HAS_NEWLIB == 1
