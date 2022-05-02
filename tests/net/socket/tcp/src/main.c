@@ -709,18 +709,29 @@ void test_open_close_immediately(void)
 	zassert_not_equal(connect(c_sock, (struct sockaddr *)&s_saddr,
 				  sizeof(s_saddr)),
 			  0, "connect succeed");
+
 	test_close(c_sock);
+
+	/* Allow for the close communication to finish,
+	 * this makes the test success, no longer scheduling dependent
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT / 2));
 
 	/* After the client socket closing, the context count should be 1 */
 	net_context_foreach(calc_net_context, &count_after);
 
 	test_close(s_sock);
 
+	/* Although closing a server socket does not require communication,
+	 * wait a little to make the test robust to scheduling order
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT / 2));
+
 	zassert_equal(count_before - 1, count_after,
 		      "net_context still in use (before %d vs after %d)",
 		      count_before - 1, count_after);
 
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
+	/* No need to wait here, as the test success depends on the socket being closed */
 }
 
 void test_connect_timeout(void)
