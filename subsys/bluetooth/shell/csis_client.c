@@ -24,10 +24,11 @@
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
-static struct bt_csis_client_set_member set_members[CONFIG_BT_MAX_CONN];
+static struct bt_conn *conns[CONFIG_BT_MAX_CONN];
+static const struct bt_csis_client_set_member *set_members[CONFIG_BT_MAX_CONN];
 struct bt_csis_client_csis_inst *cur_inst;
 static bt_addr_le_t addr_found[CONFIG_BT_MAX_CONN];
-static struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
+static const struct bt_csis_client_set_member *locked_members[CONFIG_BT_MAX_CONN];
 
 static bool is_discovered(const bt_addr_le_t *addr)
 {
@@ -42,6 +43,7 @@ static bool is_discovered(const bt_addr_le_t *addr)
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	uint8_t conn_index;
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
@@ -51,38 +53,38 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	shell_print(ctx_shell, "[%u]: Connected to %s",
-		    bt_conn_index(conn), addr);
+	conn_index = bt_conn_index(conn);
+
+	shell_print(ctx_shell, "[%u]: Connected to %s", conn_index, addr);
 
 	/* TODO: Handle RPAs */
 
-	if (members_found == 0) {
-		shell_print(ctx_shell, "Assuming member[0] connected");
-		set_members[0].conn = conn;
-		bt_addr_le_copy(&addr_found[0], bt_conn_get_dst(conn));
-		members_found = 1;
-		return;
-	}
+	conns[conn_index] = bt_conn_ref(conn);
+	shell_print(ctx_shell, "Member[%u] connected", conn_index);
 
-	for (uint8_t i = 0; i < members_found; i++) {
-		if (bt_addr_le_cmp(bt_conn_get_dst(conn),
-				   &addr_found[i]) == 0) {
-			set_members[i].conn = conn;
-			shell_print(ctx_shell, "Member[%u] connected", i);
-			return;
-		}
-	}
 	shell_warn(ctx_shell, "[%u] connected but was not member of set",
-		   bt_conn_index(conn));
+		   conn_index);
+}
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	uint8_t conn_index = bt_conn_index(conn);
+
+	bt_conn_unref(conns[conn_index]);
+	conns[conn_index] = NULL;
 }
 
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected_cb,
+	.disconnected = disconnected_cb
 };
 
-static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
-			     uint8_t set_count)
+static void csis_discover_cb(struct bt_conn *conn,
+			     const struct bt_csis_client_set_member *member,
+			     int err, size_t set_count)
 {
+	uint8_t conn_index;
+
 	if (err != 0) {
 		shell_error(ctx_shell, "discover failed (%d)", err);
 		return;
@@ -93,12 +95,12 @@ static void csis_discover_cb(struct bt_csis_client_set_member *member, int err,
 		return;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(set_members); i++) {
-		if (&set_members[i] == member) {
-			shell_print(ctx_shell, "Found %u sets on member[%u]",
-				    set_count, i);
-		}
-	}
+	conn_index = bt_conn_index(conn);
+
+	shell_print(ctx_shell, "Found %zu sets on member[%u]",
+		    set_count, conn_index);
+
+	set_members[conn_index] = member;
 }
 
 static void csis_client_lock_set_cb(int err)
@@ -251,7 +253,7 @@ static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 	if (argc > 1) {
 		member_index = strtol(argv[1], NULL, 0);
 
-		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
+		if (member_index < 0 || member_index > ARRAY_SIZE(conns)) {
 			shell_error(sh, "Invalid member_index %ld",
 				    member_index);
 			return -ENOEXEC;
@@ -263,7 +265,7 @@ static int cmd_csis_client_discover(const struct shell *sh, size_t argc,
 	}
 
 	shell_print(sh, "Discovering for member[%u]", (uint8_t)member_index);
-	err = bt_csis_client_discover(&set_members[member_index]);
+	err = bt_csis_client_discover(conns[member_index]);
 	if (err != 0) {
 		shell_error(sh, "Fail: %d", err);
 	}
@@ -283,14 +285,14 @@ static int cmd_csis_client_discover_members(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 
-	if (cur_inst->info.set_size > CONFIG_BT_MAX_CONN) {
+	if (cur_inst->info.set_size > ARRAY_SIZE(set_members)) {
 		/*
 		 * TODO Handle case where set size is larger than
 		 * number of possible connections
 		 */
 		shell_error(sh,
 			    "Set size (%u) larger than max connections (%u)",
-			    cur_inst->info.set_size, CONFIG_BT_MAX_CONN);
+			    cur_inst->info.set_size, ARRAY_SIZE(set_members));
 		return -EINVAL;
 	}
 
@@ -327,8 +329,8 @@ static int cmd_csis_client_lock_set(const struct shell *sh, size_t argc,
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
-		if (set_members[i].conn != NULL) {
-			locked_members[conn_count++] = &set_members[i];
+		if (set_members[i] != NULL) {
+			locked_members[conn_count++] = set_members[i];
 		}
 	}
 
@@ -352,8 +354,8 @@ static int cmd_csis_client_release_set(const struct shell *sh, size_t argc,
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
-		if (set_members[i].conn != NULL) {
-			locked_members[conn_count++] = &set_members[i];
+		if (set_members[i] != NULL) {
+			locked_members[conn_count++] = set_members[i];
 		}
 	}
 
@@ -370,7 +372,7 @@ static int cmd_csis_client_ordered_access(const struct shell *sh, size_t argc,
 {
 	int err;
 	long member_count = (long)ARRAY_SIZE(set_members);
-	struct bt_csis_client_set_member *members[ARRAY_SIZE(set_members)];
+	const struct bt_csis_client_set_member *members[ARRAY_SIZE(set_members)];
 
 	if (argc > 1) {
 		member_count = strtol(argv[1], NULL, 0);
@@ -383,7 +385,7 @@ static int cmd_csis_client_ordered_access(const struct shell *sh, size_t argc,
 	}
 
 	for (size_t i = 0; i < (size_t)member_count; i++) {
-		members[i] = &set_members[i];
+		members[i] = set_members[i];
 	}
 
 	err = bt_csis_client_ordered_access(members, ARRAY_SIZE(members),
@@ -401,7 +403,7 @@ static int cmd_csis_client_lock(const struct shell *sh, size_t argc,
 {
 	int err;
 	long member_index = 0;
-	struct bt_csis_client_set_member *lock_member[1];
+	const struct bt_csis_client_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");
@@ -411,14 +413,15 @@ static int cmd_csis_client_lock(const struct shell *sh, size_t argc,
 	if (argc > 1) {
 		member_index = strtol(argv[1], NULL, 0);
 
-		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
+		if (member_index < 0 ||
+		    member_index > ARRAY_SIZE(set_members)) {
 			shell_error(sh, "Invalid member_index %ld",
 				    member_index);
 			return -ENOEXEC;
 		}
 	}
 
-	lock_member[0] = &set_members[member_index];
+	lock_member[0] = set_members[member_index];
 
 	err = bt_csis_client_lock(lock_member, 1, &cur_inst->info);
 	if (err != 0) {
@@ -433,7 +436,7 @@ static int cmd_csis_client_release(const struct shell *sh, size_t argc,
 {
 	int err;
 	long member_index = 0;
-	struct bt_csis_client_set_member *lock_member[1];
+	const struct bt_csis_client_set_member *lock_member[1];
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");
@@ -443,14 +446,15 @@ static int cmd_csis_client_release(const struct shell *sh, size_t argc,
 	if (argc > 1) {
 		member_index = strtol(argv[1], NULL, 0);
 
-		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
+		if (member_index < 0 ||
+		    member_index > ARRAY_SIZE(set_members)) {
 			shell_error(sh, "Invalid member_index %ld",
 				    member_index);
 			return -ENOEXEC;
 		}
 	}
 
-	lock_member[0] = &set_members[member_index];
+	lock_member[0] = set_members[member_index];
 
 	err = bt_csis_client_release(lock_member, 1, &cur_inst->info);
 	if (err != 0) {
