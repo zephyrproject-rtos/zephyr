@@ -258,8 +258,6 @@ struct bt_csis_client_csis_inst {
 
 /** Struct representing a remote device as a set member */
 struct bt_csis_client_set_member {
-	/** Connection pointer to the remote device, populated by the user */
-	struct bt_conn *conn;
 	/** Array of Coordinated Set Identification Service instances for the remote device */
 	struct bt_csis_client_csis_inst insts[BT_CSIS_CLIENT_MAX_CSIS_INSTANCES];
 };
@@ -268,22 +266,24 @@ struct bt_csis_client_set_member {
  * @typedef bt_csis_client_discover_cb
  * @brief Callback for discovering Coordinated Set Identification Services.
  *
+ * @param conn      Pointer to the remote device.
  * @param member    Pointer to the set member.
  * @param err       0 on success, or an errno value on error.
  * @param set_count Number of sets on the member.
  */
-typedef void (*bt_csis_client_discover_cb)(struct bt_csis_client_set_member *member,
-					   int err, uint8_t set_count);
+typedef void (*bt_csis_client_discover_cb)(struct bt_conn *conn,
+					   const struct bt_csis_client_set_member *member,
+					   int err, size_t set_count);
 
 /**
  * @brief Initialise the csis_client instance for a connection. This will do a
  * discovery on the device and prepare the instance for following commands.
  *
- * @param member Pointer to a set member struct to store discovery results in.
+ * @param conn Pointer to remote device to perform discovery on.
  *
  * @return int Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_discover(struct bt_csis_client_set_member *member);
+int bt_csis_client_discover(struct bt_conn *conn);
 
 /**
  * @typedef bt_csis_client_lock_set_cb
@@ -343,7 +343,7 @@ struct bt_csis_client_cb {
  *
  * @return true if the advertising data indicates a set member, false otherwise
  */
-bool bt_csis_client_is_set_member(uint8_t set_sirk[BT_CSIS_SET_SIRK_SIZE],
+bool bt_csis_client_is_set_member(const uint8_t set_sirk[BT_CSIS_SET_SIRK_SIZE],
 				  struct bt_data *data);
 
 /**
@@ -391,7 +391,7 @@ typedef bool (*bt_csis_client_ordered_access_t)(const struct bt_csis_client_set_
  *                  be part of multiple sets.
  * @param cb        The callback function to be called for each member.
  */
-int bt_csis_client_ordered_access(struct bt_csis_client_set_member *members[],
+int bt_csis_client_ordered_access(const struct bt_csis_client_set_member *members[],
 				  uint8_t count,
 				  const struct bt_csis_client_set_info *set_info,
 				  bt_csis_client_ordered_access_t cb);
@@ -410,7 +410,7 @@ int bt_csis_client_ordered_access(struct bt_csis_client_set_member *members[],
  *
  * @return Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_lock(struct bt_csis_client_set_member **members,
+int bt_csis_client_lock(const struct bt_csis_client_set_member **members,
 			uint8_t count,
 			const struct bt_csis_client_set_info *set_info);
 
@@ -426,7 +426,7 @@ int bt_csis_client_lock(struct bt_csis_client_set_member **members,
  *
  * @return Return 0 on success, or an errno value on error.
  */
-int bt_csis_client_release(struct bt_csis_client_set_member **members,
+int bt_csis_client_release(const struct bt_csis_client_set_member **members,
 			   uint8_t count,
 			   const struct bt_csis_client_set_info *set_info);
 
