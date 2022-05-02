@@ -27,4 +27,10 @@
 #define DCCM_SIZE		DT_REG_SIZE(DT_INST(0, arc_dccm))
 #endif
 
+/* SRAM - memory available for all cores in cluster. Can be used for both instructions and data */
+#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_sram), reg) && (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) > 0)
+#define SRAM_START		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define SRAM_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 #include <arch/arc/v2/linker.ld>
