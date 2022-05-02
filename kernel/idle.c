@@ -39,6 +39,8 @@ void idle(void *unused1, void *unused2, void *unused3)
 	__ASSERT_NO_MSG(_current->base.prio >= 0);
 
 	while (true) {
+		unsigned int key;
+
 		/* SMP systems without a working IPI can't
 		 * actual enter an idle state, because they
 		 * can't be notified of scheduler changes
@@ -59,7 +61,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 * unmasked.  It does not take a spinlock or other
 		 * higher level construct.
 		 */
-		(void) arch_irq_lock();
+		key = arch_irq_lock();
 
 #ifdef CONFIG_PM
 		_kernel.idle = z_get_next_timeout_expiry();
@@ -80,10 +82,10 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 * logic.
 		 */
 		if (k_is_pre_kernel() || !pm_system_suspend(_kernel.idle)) {
-			k_cpu_idle();
+			k_cpu_atomic_idle(key);
 		}
 #else
-		k_cpu_idle();
+		k_cpu_atomic_idle(key);
 #endif
 
 #if !defined(CONFIG_PREEMPT_ENABLED)
