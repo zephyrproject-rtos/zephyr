@@ -148,7 +148,9 @@ config SCHED_CPU_MASK_PIN_ONLY
 	  architecture and want to make their own decisions about how
 	  to assign work to CPUs.  In that circumstance, some moderate
 	  optimizations can be made (e.g. having a separate run queue
-	  per CPU, keeping the list length shorter).  Most
+	  per CPU, keeping the list length shorter). When selected,
+	  the CPU mask becomes an immutable thread attribute. It can
+	  only be modified before a thread is started.  Most
 	  applications don't want this.
 
 config MAIN_STACK_SIZE
