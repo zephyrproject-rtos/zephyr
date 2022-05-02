@@ -352,6 +352,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.5
      - 3.2
 
+   * - :ref:`usbc_api`
+     - Experimental
+     - 3.3
+     - 3.3
+
    * - :ref:`usermode_api`
      - Stable
      - 1.11
