@@ -84,6 +84,14 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 				 : "=r"(a0save));
 	}
 
+	/* The following option ensures that a living thread will never
+	 * be executed in a different CPU so we can safely return without
+	 * invalidate and/or flush threads cache.
+	 */
+	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
+		return;
+	}
+
 	/* The "live" area (the region between the switch handle,
 	 * which is the stack pointer, and the top of the stack
 	 * memory) of the inbound stack needs to be invalidated if we
