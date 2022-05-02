@@ -3,4 +3,8 @@ name: ESP32-S2
 type: mcu
 arch: xtensa
 toolchain:
-  - espressif
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
