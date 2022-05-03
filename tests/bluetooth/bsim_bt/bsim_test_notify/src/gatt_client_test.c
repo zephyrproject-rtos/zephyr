@@ -160,6 +160,7 @@ static void gatt_discover(void)
 	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+	discover_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 
 	err = bt_gatt_discover(g_conn, &discover_params);
 	if (err != 0) {
@@ -209,6 +210,7 @@ static struct bt_gatt_subscribe_params sub_params_short = {
 	.disc_params = &disc_params_short, /* Auto-discover CCC */
 	.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
 	.value = BT_GATT_CCC_NOTIFY,
+	.chan_opt = BT_ATT_CHAN_OPT_NONE,
 };
 static struct bt_gatt_discover_params disc_params_long;
 static struct bt_gatt_subscribe_params sub_params_long = {
@@ -218,6 +220,7 @@ static struct bt_gatt_subscribe_params sub_params_long = {
 	.disc_params = &disc_params_long, /* Auto-discover CCC */
 	.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
 	.value = BT_GATT_CCC_NOTIFY,
+	.chan_opt = BT_ATT_CHAN_OPT_NONE,
 };
 
 static void gatt_subscribe_short(void)
