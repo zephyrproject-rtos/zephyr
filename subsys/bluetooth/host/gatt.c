@@ -2256,6 +2256,11 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_EATT) &&
+	    !bt_att_chan_opt_valid(conn, BT_ATT_CHAN_OPT(params))) {
+		return -EINVAL;
+	}
+
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE) && (CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS != 0)
 	if (gatt_cf_notify_multi(conn)) {
 		return gatt_notify_mult(conn, handle, params);
@@ -2330,6 +2335,11 @@ static int gatt_req_send(struct bt_conn *conn, bt_att_func_t func, void *params,
 	struct net_buf *buf;
 	int err;
 
+	if (IS_ENABLED(CONFIG_BT_EATT) &&
+	    !bt_att_chan_opt_valid(conn, chan_opt)) {
+		return -EINVAL;
+	}
+
 	req = gatt_req_alloc(func, params, encode, op, len);
 	if (!req) {
 		return -ENOMEM;
@@ -2394,6 +2404,11 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 	 */
 	if (!bt_gatt_is_subscribed(conn, params->attr, BT_GATT_CCC_INDICATE)) {
 		BT_WARN("Device is not subscribed to characteristic");
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_EATT) &&
+	    !bt_att_chan_opt_valid(conn, BT_ATT_CHAN_OPT(params))) {
 		return -EINVAL;
 	}
 
