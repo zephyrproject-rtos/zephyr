@@ -1,0 +1,30 @@
+# Copyright (c) 2022, Matthias Freese
+# SPDX-License-Identifier: Apache-2.0
+
+description: SN74HC595 SPI based GPIO expander
+
+compatible: "ti,sn74hc595"
+
+include: [gpio-controller.yaml, spi-device.yaml]
+
+properties:
+    label:
+      required: true
+
+    reset-gpios:
+      type: phandle-array
+      required: true
+      description: Reset pin
+
+    ngpios:
+      type: int
+      required: true
+      const: 8
+      description: Number of supported gpios
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags
