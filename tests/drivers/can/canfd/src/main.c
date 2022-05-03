@@ -125,6 +125,7 @@ static inline void assert_frame_equal(const struct zcan_frame *frame1,
 				      const struct zcan_frame *frame2)
 {
 	zassert_equal(frame1->id_type, frame2->id_type, "ID type does not match");
+	zassert_equal(frame1->fd, frame2->fd, "FD bit does not match");
 	zassert_equal(frame1->rtr, frame2->rtr, "RTR bit does not match");
 	zassert_equal(frame1->id, frame2->id, "ID does not match");
 	zassert_equal(frame1->dlc, frame2->dlc, "DLC does not match");
