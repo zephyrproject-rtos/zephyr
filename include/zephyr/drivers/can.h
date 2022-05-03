@@ -709,8 +709,6 @@ static inline const struct can_timing *z_impl_can_get_timing_max(const struct de
 __syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
 			      uint32_t bitrate, uint16_t sample_pnt);
 
-#if defined(CONFIG_CAN_FD_MODE) || defined(__DOXYGEN__)
-
 /**
  * @brief Get the minimum supported timing parameter values for the data phase.
  *
@@ -726,12 +724,14 @@ __syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
  */
 __syscall const struct can_timing *can_get_timing_data_min(const struct device *dev);
 
+#ifdef CONFIG_CAN_FD_MODE
 static inline const struct can_timing *z_impl_can_get_timing_data_min(const struct device *dev)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
 	return &api->timing_data_min;
 }
+#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Get the maximum supported timing parameter values for the data phase.
@@ -748,12 +748,14 @@ static inline const struct can_timing *z_impl_can_get_timing_data_min(const stru
  */
 __syscall const struct can_timing *can_get_timing_data_max(const struct device *dev);
 
+#ifdef CONFIG_CAN_FD_MODE
 static inline const struct can_timing *z_impl_can_get_timing_data_max(const struct device *dev)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
 	return &api->timing_data_max;
 }
+#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Calculate timing parameters for the data phase
@@ -795,6 +797,7 @@ __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *
 __syscall int can_set_timing_data(const struct device *dev,
 				  const struct can_timing *timing_data);
 
+#ifdef CONFIG_CAN_FD_MODE
 static inline int z_impl_can_set_timing_data(const struct device *dev,
 					     const struct can_timing *timing_data)
 {
@@ -802,6 +805,7 @@ static inline int z_impl_can_set_timing_data(const struct device *dev,
 
 	return api->set_timing_data(dev, timing_data);
 }
+#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Set the bitrate for the data phase of the CAN-FD controller
@@ -829,8 +833,6 @@ static inline int z_impl_can_set_timing_data(const struct device *dev,
  * @retval -EIO General input/output error, failed to set bitrate.
  */
 __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data);
-
-#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Fill in the prescaler value for a given bitrate and timing
