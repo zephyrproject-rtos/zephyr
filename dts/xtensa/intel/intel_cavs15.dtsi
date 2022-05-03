@@ -53,6 +53,15 @@
 		#clock-cells = <0>;
 	};
 
+	clkctl: clkctl {
+		compatible = "intel,cavs-shim-clkctl";
+		cavs-clkctl-clk-lpro = <0>;
+		cavs-clkctl-clk-hpro = <2>;
+		cavs-clkctl-freq-enc = <0x3 0x1 0x0>;
+		cavs-clkctl-freq-default = <1>;
+		cavs-clkctl-freq-lowest = <0>;
+	};
+
 	soc {
 		shim: shim@1000 {
 			compatible = "intel,cavs-shim";
