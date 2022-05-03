@@ -3804,3 +3804,20 @@ void bt_att_free_tx_meta_data(const struct net_buf *buf)
 {
 	tx_meta_data_free(bt_att_tx_meta_data(buf));
 }
+
+bool bt_att_chan_opt_valid(struct bt_conn *conn, enum bt_att_chan_opt chan_opt)
+{
+	if ((chan_opt & (BT_ATT_CHAN_OPT_ENHANCED_ONLY | BT_ATT_CHAN_OPT_UNENHANCED_ONLY)) ==
+	    (BT_ATT_CHAN_OPT_ENHANCED_ONLY | BT_ATT_CHAN_OPT_UNENHANCED_ONLY)) {
+		/* Enhanced and Unenhanced are mutually exclusive */
+		return false;
+	}
+
+	/* Choosing EATT requires EATT channels connected and encryption enabled */
+	if (chan_opt & BT_ATT_CHAN_OPT_ENHANCED_ONLY) {
+		return (bt_conn_get_security(conn) > BT_SECURITY_L1) &&
+		       !bt_att_fixed_chan_only(conn);
+	}
+
+	return true;
+}
