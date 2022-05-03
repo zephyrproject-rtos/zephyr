@@ -330,6 +330,9 @@ struct bt_csis_client_cb {
 	/* Device specific callbacks */
 	bt_csis_client_discover_cb             discover;
 	bt_csis_client_ordered_access_cb_t     ordered_access;
+
+	/** Internally used field for list handling */
+	sys_snode_t _node;
 };
 
 /**
@@ -347,8 +350,10 @@ bool bt_csis_client_is_set_member(const uint8_t set_sirk[BT_CSIS_SET_SIRK_SIZE],
  * @brief Registers callbacks for csis_client.
  *
  * @param cb   Pointer to the callback structure.
+ *
+ * @return Return 0 on success, or an errno value on error.
  */
-void bt_csis_client_register_cb(struct bt_csis_client_cb *cb);
+int bt_csis_client_register_cb(struct bt_csis_client_cb *cb);
 
 /**
  * @brief Callback function definition for bt_csis_client_ordered_access()
