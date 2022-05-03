@@ -355,18 +355,37 @@ static int submit_to_queue_locked(struct k_work *work,
 	return ret;
 }
 
-int k_work_submit_to_queue(struct k_work_q *queue,
-			    struct k_work *work)
+/* Submit work to a queue but do not yield the current thread.
+ *
+ * Intended for internal use.
+ *
+ * See also submit_to_queue_locked().
+ *
+ * @param queuep pointer to a queue reference.
+ * @param work the work structure to be submitted
+ *
+ * @retval see submit_to_queue_locked()
+ */
+int z_work_submit_to_queue(struct k_work_q *queue,
+		  struct k_work *work)
 {
 	__ASSERT_NO_MSG(work != NULL);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, submit_to_queue, queue, work);
-
 	int ret = submit_to_queue_locked(work, &queue);
 
 	k_spin_unlock(&lock, key);
+
+	return ret;
+}
+
+int k_work_submit_to_queue(struct k_work_q *queue,
+			    struct k_work *work)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, submit_to_queue, queue, work);
+
+	int ret = z_work_submit_to_queue(queue, work);
 
 	/* submit_to_queue_locked() won't reschedule on its own
 	 * (really it should, otherwise this process will result in
