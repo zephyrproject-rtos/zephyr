@@ -508,17 +508,11 @@ struct adc_reg {
 	volatile uint16_t MEAST;
 };
 
-static inline uint32_t npcx_thrctl_offset(uint32_t ctl_no)
-{
-	return DT_PROP(DT_INST(0, nuvoton_npcx_adc), threshold_reg_offset) + (ctl_no - 1) * 2;
-}
-
 static inline uint32_t npcx_chndat_offset(uint32_t ch)
 {
 	return 0x40 + ch * 2;
 }
 
-#define THRCTL(base, ctl_no) (*(volatile uint16_t *)((base) + npcx_thrctl_offset(ctl_no)))
 #define CHNDAT(base, ch) (*(volatile uint16_t *)((base) + npcx_chndat_offset(ch)))
 
 /* ADC register fields */
