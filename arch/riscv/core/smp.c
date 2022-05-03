@@ -9,6 +9,7 @@
 #include <ksched.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/pm_cpu_ops.h>
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -18,6 +19,8 @@ volatile struct {
 volatile uintptr_t riscv_cpu_wake_flag;
 volatile void *riscv_cpu_sp;
 
+extern void __start(void);
+
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
@@ -26,6 +29,13 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	riscv_cpu_sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 	riscv_cpu_wake_flag = _kernel.cpus[cpu_num].arch.hartid;
+
+#ifdef CONFIG_PM_CPU_OPS
+	if (pm_cpu_on(cpu_num, (uintptr_t)&__start)) {
+		printk("Failed to boot secondary CPU %d\n", cpu_num);
+		return;
+	}
+#endif
 
 	while (riscv_cpu_wake_flag != 0U) {
 		;
