@@ -6,3 +6,15 @@ description: LM75 Digital Temperature Sensor with 2-Wire Interface.
 compatible: "lm75"
 
 include: i2c-device.yaml
+
+properties:
+    temp-res:
+      type: int
+      required: false
+      default: 9
+      description: |
+        Resolution of the temperature. Size in bits of the temperature 
+        register of the LM75 sensor. 
+        Some sensors use a user-configurable resolution of up to 12 bit.
+        Default: 9
+        Valid range: 9-12
