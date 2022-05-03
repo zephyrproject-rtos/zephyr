@@ -175,8 +175,8 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 
 	if (data_phase) {
 		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
-			min = can_get_timing_min_data(dev);
-			max = can_get_timing_max_data(dev);
+			min = can_get_timing_data_min(dev);
+			max = can_get_timing_data_max(dev);
 			sp_err = can_calc_timing_data(dev, &timing, test->bitrate, test->sp);
 		} else {
 			zassert_unreachable("data phase timing test without CAN-FD support");
@@ -258,7 +258,7 @@ void test_set_timing_min(void)
 	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
 
 	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
-		err = can_set_timing_data(dev, can_get_timing_min_data(dev));
+		err = can_set_timing_data(dev, can_get_timing_data_min(dev));
 		zassert_equal(err, 0, "failed to set minimum timing data parameters (err %d)", err);
 	}
 }
@@ -275,7 +275,7 @@ void test_set_timing_max(void)
 	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
 
 	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
-		err = can_set_timing_data(dev, can_get_timing_max_data(dev));
+		err = can_set_timing_data(dev, can_get_timing_data_max(dev));
 		zassert_equal(err, 0, "failed to set maximum timing data parameters (err %d)", err);
 	}
 }

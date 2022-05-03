@@ -90,21 +90,21 @@ static int z_vrfy_can_calc_timing_data(const struct device *dev, struct can_timi
 }
 #include <syscalls/can_calc_timing_data_mrsh.c>
 
-static inline const struct can_timing *z_vrfy_can_get_timing_min_data(const struct device *dev)
+static inline const struct can_timing *z_vrfy_can_get_timing_data_min(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
-	return z_impl_can_get_timing_min_data(dev);
+	return z_impl_can_get_timing_data_min(dev);
 }
-#include <syscalls/can_get_timing_min_data_mrsh.c>
+#include <syscalls/can_get_timing_data_min_mrsh.c>
 
-static inline const struct can_timing *z_vrfy_can_get_timing_max_data(const struct device *dev)
+static inline const struct can_timing *z_vrfy_can_get_timing_data_max(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
-	return z_impl_can_get_timing_max_data(dev);
+	return z_impl_can_get_timing_data_max(dev);
 }
-#include <syscalls/can_get_timing_max_data_mrsh.c>
+#include <syscalls/can_get_timing_data_max_mrsh.c>
 
 static inline int z_vrfy_can_set_timing_data(const struct device *dev,
 					     const struct can_timing *timing_data)

@@ -396,9 +396,9 @@ __subsystem struct can_driver_api {
 #if defined(CONFIG_CAN_FD_MODE) || defined(__DOXYGEN__)
 	can_set_timing_data_t set_timing_data;
 	/* Min values for the timing registers during the data phase */
-	struct can_timing timing_min_data;
+	struct can_timing timing_data_min;
 	/* Max values for the timing registers during the data phase */
-	struct can_timing timing_max_data;
+	struct can_timing timing_data_max;
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
@@ -724,13 +724,13 @@ __syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
  * @return Pointer to the minimum supported timing parameter values, or NULL if
  *         CAN-FD is not supported.
  */
-__syscall const struct can_timing *can_get_timing_min_data(const struct device *dev);
+__syscall const struct can_timing *can_get_timing_data_min(const struct device *dev);
 
-static inline const struct can_timing *z_impl_can_get_timing_min_data(const struct device *dev)
+static inline const struct can_timing *z_impl_can_get_timing_data_min(const struct device *dev)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return &api->timing_min_data;
+	return &api->timing_data_min;
 }
 
 /**
@@ -746,13 +746,13 @@ static inline const struct can_timing *z_impl_can_get_timing_min_data(const stru
  * @return Pointer to the maximum supported timing parameter values, or NULL if
  *         CAN-FD is not supported.
  */
-__syscall const struct can_timing *can_get_timing_max_data(const struct device *dev);
+__syscall const struct can_timing *can_get_timing_data_max(const struct device *dev);
 
-static inline const struct can_timing *z_impl_can_get_timing_max_data(const struct device *dev)
+static inline const struct can_timing *z_impl_can_get_timing_data_max(const struct device *dev)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return &api->timing_max_data;
+	return &api->timing_data_max;
 }
 
 /**
