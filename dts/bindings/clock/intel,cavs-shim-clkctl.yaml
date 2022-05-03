@@ -1,0 +1,42 @@
+# Copyright (c) 2022 Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel cAVS clock controlling related constants.
+
+compatible: "intel,cavs-shim-clkctl"
+
+properties:
+    cavs-clkctl-clk-wovcro:
+        type: int
+        required: false
+        description: Index of WOVCRO clock encoding in the encoding array (cAVS 2.5 only).
+
+    cavs-clkctl-clk-lpro:
+        type: int
+        required: false
+        description: Index of LPRO clock encoding in the encoding array.
+
+    cavs-clkctl-clk-hpro:
+        type: int
+        required: false
+        description: Index of HPRO clock encoding in the encoding array.
+
+    cavs-clkctl-freq-enc:
+        type: array
+        required: true
+        description: Array that encodes what is needed to enable each clock.
+
+    cavs-clkctl-freq-mask:
+        type: array
+        required: false
+        description: Array that encodes needed masks to enable each clock.
+
+    cavs-clkctl-freq-default:
+        type: int
+        required: true
+        description: Index for the default clock.
+
+    cavs-clkctl-freq-lowest:
+        type: int
+        required: true
+        description: Index for the lowest frequency clock.
