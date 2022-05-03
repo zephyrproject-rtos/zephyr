@@ -272,7 +272,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	ret = can_set_bitrate(can_dev, bitrate, 0);
+	ret = can_set_bitrate(can_dev, bitrate);
 	if (ret) {
 		shell_error(sh, "Failed to set bitrate [%d]",
 			    ret);

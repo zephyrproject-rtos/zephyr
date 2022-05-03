@@ -185,7 +185,34 @@ void can_mcan_configure_timing(struct can_mcan_reg *can,
 }
 
 int can_mcan_set_timing(const struct device *dev,
-			const struct can_timing *timing,
+			const struct can_timing *timing)
+{
+	const struct can_mcan_config *cfg = dev->config;
+	struct can_mcan_reg *can = cfg->can;
+	int ret;
+
+	ret = can_enter_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
+	if (ret) {
+		LOG_ERR("Failed to enter init mode");
+		return -EIO;
+	}
+
+	/* Configuration Change Enable */
+	can->cccr |= CAN_MCAN_CCCR_CCE;
+
+	can_mcan_configure_timing(can, timing, NULL);
+
+	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
+	if (ret) {
+		LOG_ERR("Failed to leave init mode");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_CAN_FD_MODE
+int can_mcan_set_timing_data(const struct device *dev,
 			const struct can_timing *timing_data)
 {
 	const struct can_mcan_config *cfg = dev->config;
@@ -201,7 +228,7 @@ int can_mcan_set_timing(const struct device *dev,
 	/* Configuration Change Enable */
 	can->cccr |= CAN_MCAN_CCCR_CCE;
 
-	can_mcan_configure_timing(can, timing, timing_data);
+	can_mcan_configure_timing(can, NULL, timing_data);
 
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
@@ -211,6 +238,7 @@ int can_mcan_set_timing(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_CAN_FD_MODE */
 
 int can_mcan_set_mode(const struct device *dev, enum can_mode mode)
 {

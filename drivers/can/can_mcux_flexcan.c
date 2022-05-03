@@ -152,10 +152,8 @@ static int mcux_flexcan_get_max_bitrate(const struct device *dev, uint32_t *max_
 }
 
 static int mcux_flexcan_set_timing(const struct device *dev,
-				   const struct can_timing *timing,
-				   const struct can_timing *timing_data)
+				   const struct can_timing *timing)
 {
-	ARG_UNUSED(timing_data);
 	struct mcux_flexcan_data *data = dev->data;
 	const struct mcux_flexcan_config *config = dev->config;
 	uint8_t sjw_backup = data->timing.sjw;

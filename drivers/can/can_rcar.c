@@ -648,14 +648,11 @@ static void can_rcar_set_bittiming(const struct can_rcar_cfg *config,
 }
 
 static int can_rcar_set_timing(const struct device *dev,
-			       const struct can_timing *timing,
-			       const struct can_timing *timing_data)
+			       const struct can_timing *timing)
 {
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
 	int ret = 0;
-
-	ARG_UNUSED(timing_data);
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
@@ -955,7 +952,7 @@ static int can_rcar_init(const struct device *dev)
 		}
 	}
 
-	ret = can_rcar_set_timing(dev, &timing, NULL);
+	ret = can_rcar_set_timing(dev, &timing);
 	if (ret) {
 		return ret;
 	}

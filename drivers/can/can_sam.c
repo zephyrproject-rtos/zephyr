@@ -98,6 +98,7 @@ static const struct can_driver_api can_sam_driver_api = {
 		.prescaler = 0x200
 		},
 #ifdef CONFIG_CAN_FD_MODE
+	.set_timing_data = can_mcan_set_timing_data,
 	.timing_min_data = {
 		.sjw = 0x01,
 		.prop_seg = 0x00,

@@ -284,11 +284,7 @@ Setting the bitrate
 *******************
 
 The bitrate and sampling point is initially set at runtime. To change it from
-the application, one can use the :c:func:`can_set_timing` API. This function
-takes three arguments. The first timing parameter sets the timing for classic
-CAN and arbitration phase for CAN-FD. The second parameter sets the timing of
-the data phase for CAN-FD. For classic CAN, you can use only the first
-parameter and put NULL to the second one. The :c:func:`can_calc_timing`
+the application, one can use the :c:func:`can_set_timing` API. The :c:func:`can_calc_timing`
 function can calculate timing from a bitrate and sampling point in permille.
 The following example sets the bitrate to 250k baud with the sampling point at
 87.5%.
@@ -309,10 +305,13 @@ The following example sets the bitrate to 250k baud with the sampling point at
     return;
   }
 
-  ret = can_set_timing(can_dev, &timing, NULL);
+  ret = can_set_timing(can_dev, &timing);
   if (ret != 0) {
     LOG_ERR("Failed to set timing");
   }
+
+A similar API exists for calculating and setting the timing for the data phase for CAN-FD capable
+controllers. See :c:func:`can_set_timing_data` and :c:func:`can_calc_timing_data`.
 
 SocketCAN
 *********

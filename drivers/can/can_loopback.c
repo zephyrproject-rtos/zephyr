@@ -206,12 +206,11 @@ static int can_loopback_set_mode(const struct device *dev, enum can_mode mode)
 }
 
 static int can_loopback_set_timing(const struct device *dev,
-				   const struct can_timing *timing,
-				   const struct can_timing *timing_data)
+				   const struct can_timing *timing)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(timing);
-	ARG_UNUSED(timing_data);
+
 	return 0;
 }
 
