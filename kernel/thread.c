@@ -1100,6 +1100,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 		stats->execution_cycles += tmp_stats.execution_cycles;
 		stats->total_cycles     += tmp_stats.total_cycles;
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+		stats->current_cycles   += tmp_stats.current_cycles;
 		stats->peak_cycles      += tmp_stats.peak_cycles;
 		stats->average_cycles   += tmp_stats.average_cycles;
 #endif
