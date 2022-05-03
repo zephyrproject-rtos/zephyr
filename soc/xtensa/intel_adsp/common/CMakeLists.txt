@@ -17,6 +17,8 @@ zephyr_library_sources_ifdef(CONFIG_INTEL_ADSP_CAVS
     rimage_modules.c
     boot.c)
 
+zephyr_library_sources_ifdef(CONFIG_CAVS_CLOCK clk.c)
+
 if(CONFIG_SMP OR CONFIG_MP_NUM_CPUS GREATER 1)
   zephyr_library_sources(soc_mp.c)
   if(CONFIG_INTEL_ADSP_CAVS)

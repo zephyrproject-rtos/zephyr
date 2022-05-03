@@ -104,6 +104,8 @@ struct cavs_win {
 #define CAVS_CLKCTL_SLIMFDCGB BIT(25)   /* Slimbus force dynamic clock gating*/
 #define CAVS_CLKCTL_TCPLCG(x) BIT(16+x) /* Set bit: prevent clock gating on core x */
 #define CAVS_CLKCTL_SLIMCSS   BIT(6)    /* Slimbus clock (0: XTAL, 1: Audio) */
+#define CAVS_CLKCTL_WOVCRO    BIT(4)    /* Request WOVCRO clock */
+#define CAVS_CLKCTL_WOVCROSC  BIT(3)    /* WOVCRO select */
 #define CAVS_CLKCTL_OCS       BIT(2)    /* Oscillator clock (0: LP, 1: HP) */
 #define CAVS_CLKCTL_LMCS      BIT(1)    /* LP mem divisor (0: div/2, 1: div/4) */
 #define CAVS_CLKCTL_HMCS      BIT(0)    /* HP mem divisor (0: div/2, 1: div/4) */
@@ -125,6 +127,7 @@ struct cavs_win {
 #define CAVS15_CLKCTL_HDOCS           BIT(2)
 #define CAVS15_CLKCTL_LMPCS           BIT(1)
 #define CAVS15_CLKCTL_HMPCS           BIT(0)
+#define CAVS15_CLKCTL_DPCS_MASK(x)    (0x3 << (8 + (x) * 2))
 
 #define CAVS_PWRCTL_TCPDSPPG(x) BIT(x)
 #define CAVS_PWRSTS_PDSPPGS(x)  BIT(x)
@@ -141,5 +144,8 @@ struct cavs_win {
 
 #define CAVS_DMWBA_ENABLE   BIT(0)
 #define CAVS_DMWBA_READONLY BIT(1)
+
+#define CAVS_CLKCTL_OSC_SOURCE_MASK   BIT_MASK(2)
+#define CAVS_CLKCTL_OSC_REQUEST_MASK  (~BIT_MASK(28))
 
 #endif /* ZEPHYR_SOC_INTEL_ADSP_CAVS_SHIM_H_ */
