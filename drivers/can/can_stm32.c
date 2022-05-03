@@ -402,15 +402,12 @@ done:
 }
 
 static int can_stm32_set_timing(const struct device *dev,
-				const struct can_timing *timing,
-				const struct can_timing *timing_data)
+				const struct can_timing *timing)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 	struct can_stm32_data *data = dev->data;
 	int ret = -EIO;
-
-	ARG_UNUSED(timing_data);
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	ret = can_enter_init_mode(can);
@@ -566,7 +563,7 @@ static int can_stm32_init(const struct device *dev)
 		}
 	}
 
-	ret = can_stm32_set_timing(dev, &timing, NULL);
+	ret = can_stm32_set_timing(dev, &timing);
 	if (ret) {
 		return ret;
 	}
