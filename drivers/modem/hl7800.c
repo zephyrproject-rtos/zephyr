@@ -4698,8 +4698,6 @@ static void mdm_vgpio_work_cb(struct k_work *item)
 		    ictx.desired_sleep_level == HL7800_SLEEP_LITE_HIBERNATE) {
 			if (ictx.sleep_state != ictx.desired_sleep_level) {
 				set_sleep_state(ictx.desired_sleep_level);
-			} else {
-				LOG_WRN("Unexpected sleep condition");
 			}
 		}
 		if (ictx.iface && ictx.initialized && net_if_is_up(ictx.iface) &&
@@ -4842,15 +4840,15 @@ void mdm_uart_cts_callback(const struct device *port, struct gpio_callback *cb, 
 	}
 
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
-	if (ictx.desired_sleep_level == HL7800_SLEEP_SLEEP) {
-		if (ictx.cts_state) {
-			/* HL7800 is not awake, shut down UART to save power */
+	if (ictx.cts_state) {
+		/* HL7800 is not awake, shut down UART to save power */
+		if (ictx.allow_sleep) {
 			shutdown_uart();
-		} else {
-			power_on_uart();
-			if (ictx.sleep_state == HL7800_SLEEP_SLEEP) {
-				allow_sleep(false);
-			}
+		}
+	} else {
+		power_on_uart();
+		if (ictx.sleep_state == HL7800_SLEEP_SLEEP) {
+			allow_sleep(false);
 		}
 	}
 #endif
