@@ -35,7 +35,7 @@ manifest:
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
       path: modules/lib/civetweb
     - name: cmsis
-      revision: ed63b704bbfaceb71220557b658304c5ea3d5b88
+      revision: e6e0c9c65a6ff371932b90ebc2153ac93386662b
       path: modules/hal/cmsis
       groups:
         - hal
