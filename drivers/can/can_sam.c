@@ -99,14 +99,14 @@ static const struct can_driver_api can_sam_driver_api = {
 		},
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_mcan_set_timing_data,
-	.timing_min_data = {
+	.timing_data_min = {
 		.sjw = 0x01,
 		.prop_seg = 0x00,
 		.phase_seg1 = 0x01,
 		.phase_seg2 = 0x01,
 		.prescaler = 0x01
 		},
-	.timing_max_data = {
+	.timing_data_max = {
 		.sjw = 0x10,
 		.prop_seg = 0x00,
 		.phase_seg1 = 0x20,
