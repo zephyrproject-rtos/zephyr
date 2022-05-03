@@ -22,7 +22,7 @@
 #include <zephyr/usb/usb_device.h>
 #include "usb_dw_registers.h"
 #include <soc.h>
-
+#include <devicetree.h>
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_dw);
@@ -719,7 +719,12 @@ int usb_dc_attach(void)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    usb_dw_isr_handler, 0,
+#ifdef CONFIG_GIC_V1
+		    DT_INST_IRQ(0, type));
+#else
 		    DT_INST_IRQ(0, sense));
+#endif
+
 	irq_enable(DT_INST_IRQN(0));
 
 	usb_dw_ctrl.attached = 1U;
