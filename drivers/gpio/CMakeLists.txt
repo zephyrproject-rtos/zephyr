@@ -56,6 +56,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_NCT38XX_INTERRUPT gpio_nct38xx_alert.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_TEST       gpio_test.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_GD32       gpio_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_XLNX_PS    gpio_xlnx_ps.c gpio_xlnx_ps_bank.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_SN74HC595  gpio_sn74hc595.c)
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 
