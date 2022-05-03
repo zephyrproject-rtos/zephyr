@@ -151,8 +151,8 @@ int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
 int z_impl_can_calc_timing_data(const struct device *dev, struct can_timing *res,
 				uint32_t bitrate, uint16_t sample_pnt)
 {
-	const struct can_timing *min = can_get_timing_min_data(dev);
-	const struct can_timing *max = can_get_timing_max_data(dev);
+	const struct can_timing *min = can_get_timing_data_min(dev);
+	const struct can_timing *max = can_get_timing_data_max(dev);
 	uint32_t core_clock;
 	int ret;
 
