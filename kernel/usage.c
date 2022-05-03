@@ -39,16 +39,19 @@ static void sched_cpu_update_usage(struct _cpu *cpu, uint32_t cycles)
 		return;
 	}
 
-#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-	cpu->usage.current += cycles;
-
-	if (cpu->usage.longest < cpu->usage.current) {
-		cpu->usage.longest = cpu->usage.current;
-	}
-#endif
-
 	if (cpu->current != cpu->idle_thread) {
 		cpu->usage.total += cycles;
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+		cpu->usage.current += cycles;
+
+		if (cpu->usage.longest < cpu->usage.current) {
+			cpu->usage.longest = cpu->usage.current;
+		}
+	} else {
+		cpu->usage.current = 0;
+		cpu->usage.num_windows++;
+#endif
 	}
 }
 #else
