@@ -5,7 +5,7 @@
 
 config COUNTER_MAXIM_DS3231
 	bool "Maxim DS3231 RTC/TCXO"
-	select I2C
+	depends on I2C
 	select POLL
 	help
 	  Enable counter driver based on Maxim DS3231 I2C device.
