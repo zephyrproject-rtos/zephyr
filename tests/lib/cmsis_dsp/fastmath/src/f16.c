@@ -20,6 +20,15 @@
 #define ABS_ERROR_THRESH	(1.0e-3)
 #define ABS_LOG_ERROR_THRESH	(3.0e-2)
 
+#ifdef CONFIG_ARMV8_1_M_MVEF
+/*
+ * NOTE: The MVE vector version of the `vinverse` function is slightly less
+ *       accurate than the scalar version.
+ */
+#undef REL_ERROR_THRESH
+#define REL_ERROR_THRESH	(1.1e-3)
+#endif
+
 #if 0
 /*
  * NOTE: These tests must be enabled once the F16 sine and cosine function
