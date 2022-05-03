@@ -48,12 +48,7 @@
 			compatible = "bosch,m_can-base";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			std-filter-elements = <28>;
-			ext-filter-elements = <8>;
-			rx-fifo0-elements = <3>;
-			rx-fifo1-elements = <3>;
-			rx-buffer-elements = <0>;
-			tx-buffer-elements = <1>;
+			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
 
 			can0: can@42001c00 {
 				compatible = "atmel,sam0-can";
