@@ -1179,8 +1179,11 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
  * @param[in] observe_cb Observe callback function called when an observer was
  *			 added or deleted, and when a notification was acked or
  *			 has timed out
+ *
+ * @return 0 for success, -EINPROGRESS when client is already running
+ *         or negative error codes in case of failure.
  */
-void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
+int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb,
 			   lwm2m_observe_cb_t observe_cb);
 
@@ -1196,8 +1199,10 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  * @param[in] event_cb Client event callback function
  * @param[in] deregister True to deregister the client if registered.
  *                       False to force close the connection.
+ *
+ * @return 0 for success or negative in case of error.
  */
-void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
+int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 			  lwm2m_ctx_event_cb_t event_cb, bool deregister);
 
 /**
