@@ -330,10 +330,8 @@ static int mcp2515_get_max_bitrate(const struct device *dev, uint32_t *max_bitra
 }
 
 static int mcp2515_set_timing(const struct device *dev,
-			      const struct can_timing *timing,
-			      const struct can_timing *timing_data)
+			      const struct can_timing *timing)
 {
-	ARG_UNUSED(timing_data);
 	struct mcp2515_data *dev_data = dev->data;
 	int ret;
 
@@ -949,7 +947,7 @@ static int mcp2515_init(const struct device *dev)
 		}
 	}
 
-	ret = can_set_timing(dev, &timing, NULL);
+	ret = can_set_timing(dev, &timing);
 	if (ret) {
 		return ret;
 	}

@@ -260,8 +260,10 @@ struct can_mcan_reg;
 int can_mcan_set_mode(const struct device *dev, enum can_mode mode);
 
 int can_mcan_set_timing(const struct device *dev,
-			const struct can_timing *timing,
-			const struct can_timing *timing_data);
+			const struct can_timing *timing);
+
+int can_mcan_set_timing_data(const struct device *dev,
+			     const struct can_timing *timing_data);
 
 int can_mcan_init(const struct device *dev);
 
