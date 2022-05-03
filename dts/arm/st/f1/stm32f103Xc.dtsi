@@ -92,6 +92,15 @@
 			status = "disabled";
 		};
 
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			status = "disabled";
+			label = "DAC_1";
+			#io-channel-cells = <1>;
+		};
+
 		pinctrl: pin-controller@40010800 {
 			reg = <0x40010800 0x2000>;
 
