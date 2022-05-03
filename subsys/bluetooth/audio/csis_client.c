@@ -66,7 +66,7 @@ struct bt_csis_client_inst {
 
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
-static struct bt_csis_client_cb *csis_client_cbs;
+static sys_slist_t csis_client_cbs = SYS_SLIST_STATIC_INIT(&csis_client_cbs);
 static struct bt_csis_client_inst client_insts[CONFIG_BT_MAX_CONN];
 
 static int read_set_sirk(struct bt_csis *csis);
@@ -261,6 +261,81 @@ static int sirk_decrypt(struct bt_conn *conn,
 	return err;
 }
 
+static void lock_changed(struct bt_csis_client_csis_inst *inst, bool locked)
+{
+	struct bt_csis_client_cb *listener;
+
+	active_members_reset();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csis_client_cbs, listener, node) {
+		if (listener->lock_changed) {
+			listener->lock_changed(inst, locked);
+		}
+	}
+}
+
+static void release_set_complete(int err)
+{
+	struct bt_csis_client_cb *listener;
+
+	active_members_reset();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csis_client_cbs, listener, node) {
+		if (listener->release_set) {
+			listener->release_set(err);
+		}
+	}
+}
+
+static void lock_set_complete(int err)
+{
+	struct bt_csis_client_cb *listener;
+
+	active_members_reset();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csis_client_cbs, listener, node) {
+		if (listener->lock_set) {
+			listener->lock_set(err);
+		}
+	}
+}
+
+static void ordered_access_complete(const struct bt_csis_client_set_info *set_info,
+				    int err, bool locked,
+				    struct bt_csis_client_set_member *member)
+{
+
+	struct bt_csis_client_cb *listener;
+
+	active_members_reset();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csis_client_cbs, listener, node) {
+		if (listener->ordered_access) {
+			listener->ordered_access(set_info, err, locked, member);
+		}
+	}
+}
+
+static void discover_complete(struct bt_csis_client_inst *client, int err)
+{
+	struct bt_csis_client_cb *listener;
+
+	cur_inst = NULL;
+	busy = false;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&csis_client_cbs, listener, node) {
+		if (listener->discover) {
+			if (err == 0) {
+				listener->discover(client->conn,
+						   &client->set_member,
+						   err, client->inst_count);
+			} else {
+				listener->discover(client->conn, NULL, err, 0U);
+			}
+		}
+	}
+}
+
 static uint8_t sirk_notify_func(struct bt_conn *conn,
 				struct bt_gatt_subscribe_params *params,
 				const void *data, uint16_t length)
@@ -402,6 +477,8 @@ static uint8_t lock_notify_func(struct bt_conn *conn,
 
 	if (csis_inst != NULL) {
 		if (length == sizeof(csis_inst->cli.set_lock)) {
+			struct bt_csis_client_inst *client;
+			struct bt_csis_client_csis_inst *inst;
 			bool locked;
 
 			(void)memcpy(&value, data, length);
@@ -417,16 +494,11 @@ static uint8_t lock_notify_func(struct bt_conn *conn,
 			BT_DBG("Instance %u lock was %s",
 			       csis_inst->cli.idx,
 			       locked ? "locked" : "released");
-			if (csis_client_cbs != NULL &&
-			    csis_client_cbs->lock_changed != NULL) {
-				struct bt_csis_client_inst *client;
-				struct bt_csis_client_csis_inst *inst;
 
-				client = &client_insts[bt_conn_index(conn)];
-				inst = &client->set_member.insts[csis_inst->cli.idx];
+			client = &client_insts[bt_conn_index(conn)];
+			inst = &client->set_member.insts[csis_inst->cli.idx];
 
-				csis_client_cbs->lock_changed(inst, locked);
-			}
+			lock_changed(inst, locked);
 		} else {
 			BT_DBG("Invalid length %u", length);
 		}
@@ -553,21 +625,6 @@ static int csis_client_discover_sets(struct bt_csis_client_set_member *member)
 	}
 
 	return err;
-}
-
-static void discover_complete(struct bt_csis_client_inst *client, int err)
-{
-	cur_inst = NULL;
-	busy = false;
-	if (csis_client_cbs != NULL && csis_client_cbs->discover != NULL) {
-		if (err == 0) {
-			csis_client_cbs->discover(client->conn,
-						  &client->set_member,
-						  err, client->inst_count);
-		} else {
-			csis_client_cbs->discover(client->conn, NULL, err, 0U);
-		}
-	}
 }
 
 static uint8_t discover_func(struct bt_conn *conn,
@@ -955,11 +1012,8 @@ static void csis_client_write_restore_cb(struct bt_conn *conn, uint8_t err,
 
 	if (err != 0) {
 		BT_WARN("Could not restore (%d)", err);
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->release_set != NULL) {
-			csis_client_cbs->release_set(err);
-		}
+		release_set_complete(err);
+
 		return;
 	}
 
@@ -975,11 +1029,7 @@ static void csis_client_write_restore_cb(struct bt_conn *conn, uint8_t err,
 		member = active.members[active.members_handled - active.members_restored - 1];
 		cur_inst = lookup_instance_by_set_info(member, active.info);
 		if (cur_inst == NULL) {
-			active_members_reset();
-			if (csis_client_cbs != NULL &&
-			    csis_client_cbs->release_set != NULL) {
-				csis_client_cbs->release_set(-ENOENT);
-			}
+			release_set_complete(-ENOENT);
 
 			return;
 		}
@@ -992,18 +1042,10 @@ static void csis_client_write_restore_cb(struct bt_conn *conn, uint8_t err,
 			BT_DBG("Failed to release next member[%u]: %d",
 			       active.members_handled, csis_client_err);
 
-			active_members_reset();
-			if (csis_client_cbs != NULL &&
-			    csis_client_cbs->release_set != NULL) {
-				csis_client_cbs->release_set(csis_client_err);
-			}
+			release_set_complete(csis_client_err);
 		}
 	} else {
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->release_set != NULL) {
-			csis_client_cbs->release_set(0);
-		}
+		release_set_complete(0);
 	}
 }
 
@@ -1027,11 +1069,7 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 				BT_DBG("Failed to lookup instance by set_info %p",
 				       active.info);
 
-				active_members_reset();
-				if (csis_client_cbs != NULL &&
-				csis_client_cbs->lock_set != NULL) {
-					csis_client_cbs->lock_set(-ENOENT);
-				}
+				lock_set_complete(-ENOENT);
 			}
 
 			csis_client_err = csis_client_write_set_lock(cur_inst,
@@ -1047,11 +1085,8 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 			}
 		}
 
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->lock_set != NULL) {
-			csis_client_cbs->lock_set(err);
-		}
+		lock_set_complete(err);
+
 		return;
 	}
 
@@ -1065,11 +1100,7 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 
 		cur_inst = get_next_active_instance();
 		if (cur_inst == NULL) {
-			active_members_reset();
-			if (csis_client_cbs != NULL &&
-			    csis_client_cbs->lock_set != NULL) {
-				csis_client_cbs->lock_set(-ENOENT);
-			}
+			lock_set_complete(-ENOENT);
 
 			return;
 		}
@@ -1097,11 +1128,7 @@ static void csis_client_write_lock_cb(struct bt_conn *conn, uint8_t err,
 			}
 		}
 	} else {
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->lock_set != NULL) {
-			csis_client_cbs->lock_set(0);
-		}
+		lock_set_complete(0);
 	}
 }
 
@@ -1112,11 +1139,8 @@ static void csis_client_write_release_cb(struct bt_conn *conn, uint8_t err,
 
 	if (err != 0) {
 		BT_DBG("Could not release lock (%d)", err);
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->release_set != NULL) {
-			csis_client_cbs->release_set(err);
-		}
+		release_set_complete(err);
+
 		return;
 	}
 
@@ -1129,11 +1153,7 @@ static void csis_client_write_release_cb(struct bt_conn *conn, uint8_t err,
 
 		cur_inst = get_next_active_instance();
 		if (cur_inst == NULL) {
-			active_members_reset();
-			if (csis_client_cbs != NULL &&
-			    csis_client_cbs->release_set != NULL) {
-				csis_client_cbs->release_set(-ENOENT);
-			}
+			release_set_complete(-ENOENT);
 
 			return;
 		}
@@ -1146,18 +1166,10 @@ static void csis_client_write_release_cb(struct bt_conn *conn, uint8_t err,
 			BT_DBG("Failed to release next member[%u]: %d",
 			       active.members_handled, csis_client_err);
 
-			active_members_reset();
-			if (csis_client_cbs != NULL &&
-			    csis_client_cbs->release_set != NULL) {
-				csis_client_cbs->release_set(csis_client_err);
-			}
+			release_set_complete(csis_client_err);
 		}
 	} else {
-		active_members_reset();
-		if (csis_client_cbs != NULL &&
-		    csis_client_cbs->release_set != NULL) {
-			csis_client_cbs->release_set(0);
-		}
+		release_set_complete(0);
 	}
 }
 
@@ -1172,12 +1184,7 @@ static void csis_client_lock_state_read_cb(int err, bool locked)
 		err = -ECANCELED;
 	}
 
-	active_members_reset();
-
-	if (csis_client_cbs != NULL &&
-		csis_client_cbs->ordered_access != NULL) {
-		csis_client_cbs->ordered_access(info, err, locked, cur_member);
-	}
+	ordered_access_complete(info, err, locked, cur_member);
 }
 
 static uint8_t csis_client_read_lock_cb(struct bt_conn *conn, uint8_t err,
@@ -1324,9 +1331,17 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 };
 
 /*************************** PUBLIC FUNCTIONS ***************************/
-void bt_csis_client_register_cb(struct bt_csis_client_cb *cb)
+int bt_csis_client_register_cb(struct bt_csis_client_cb *cb)
 {
-	csis_client_cbs = cb;
+	CHECKIF(cb == NULL) {
+		BT_DBG("cb is NULL");
+
+		return -EINVAL;
+	}
+
+	sys_slist_append(&csis_client_cbs, &cb->node);
+
+	return 0;
 }
 
 int bt_csis_client_discover(struct bt_conn *conn)
