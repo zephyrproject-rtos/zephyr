@@ -33,7 +33,7 @@ void z_smp_global_unlock(unsigned int key)
 		_current->base.global_lock_count--;
 
 		if (_current->base.global_lock_count == 0) {
-			atomic_clear(&global_lock);
+			(void)atomic_clear(&global_lock);
 		}
 	}
 
@@ -44,7 +44,7 @@ void z_smp_global_unlock(unsigned int key)
 void z_smp_release_global_lock(struct k_thread *thread)
 {
 	if (thread->base.global_lock_count == 0) {
-		atomic_clear(&global_lock);
+		(void)atomic_clear(&global_lock);
 	}
 }
 
