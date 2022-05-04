@@ -411,7 +411,9 @@ static int bt_audio_cig_create(struct bt_audio_unicast_group *group,
 
 	cis_count = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
-		group->cis[cis_count++] = stream->iso;
+		if (stream->iso != NULL) {
+			group->cis[cis_count++] = stream->iso;
+		}
 	}
 
 	param.num_cis = cis_count;
