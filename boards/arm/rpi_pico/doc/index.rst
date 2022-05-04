@@ -57,6 +57,9 @@ hardware features:
    * - GPIO
      - :kconfig:option:`CONFIG_GPIO`
      - :dtcompatible:`rpi,pico-gpio`
+   * - ADC
+     - :kconfig:option:`CONFIG_ADC`
+     - :dtcompatible:`raspberrypi,pico-adc`
    * - I2C
      - :kconfig:option:`CONFIG_I2C`
      - :dtcompatible:`snps,designware-i2c`
