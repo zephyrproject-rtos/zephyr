@@ -181,6 +181,30 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param);
  */
 int bt_has_preset_unregister(uint8_t index);
 
+/**
+ * @brief Set the preset as available.
+ *
+ * Set the @ref BT_HAS_PROP_AVAILABLE property bit. This will notify preset availability
+ * to peer devices. Only available preset can be selected as active preset.
+ *
+ * @param index The index of preset that's became available.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_preset_available(uint8_t index);
+
+/**
+ * @brief Set the preset as unavailable.
+ *
+ * Clear the @ref BT_HAS_PROP_AVAILABLE property bit. This will notify preset availability
+ * to peer devices. Unavailable preset cannot be selected as active preset.
+ *
+ * @param index The index of preset that's became unavailable.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_preset_unavailable(uint8_t index);
+
 enum {
 	BT_HAS_PRESET_ITER_STOP = 0,
 	BT_HAS_PRESET_ITER_CONTINUE,
