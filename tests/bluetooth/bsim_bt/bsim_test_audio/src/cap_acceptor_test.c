@@ -63,10 +63,12 @@ static void init(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_cap_acceptor_register(&csis_param, &csis);
-	if (err != 0) {
-		FAIL("CAP acceptor failed to register (err %d)\n", err);
-		return;
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)) {
+		err = bt_cap_acceptor_register(&csis_param, &csis);
+		if (err != 0) {
+			FAIL("CAP acceptor failed to register (err %d)\n", err);
+			return;
+		}
 	}
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, cap_acceptor_ad,
