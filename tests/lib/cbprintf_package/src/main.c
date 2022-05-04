@@ -809,6 +809,74 @@ ZTEST(cbprintf_package, test_cbprintf_must_runtime_package)
 	zassert_equal(rv, 0, NULL);
 }
 
+struct test_cbprintf_covert_ctx {
+	uint8_t buf[256];
+	size_t offset;
+	bool null;
+};
+
+static int convert_cb(const void *buf, size_t len, void *context)
+{
+	struct test_cbprintf_covert_ctx *ctx = (struct test_cbprintf_covert_ctx *)context;
+
+	zassert_false(ctx->null, NULL);
+	if (buf) {
+		zassert_false(ctx->null, NULL);
+		zassert_true(ctx->offset + len <= sizeof(ctx->buf), NULL);
+		memcpy(&ctx->buf[ctx->offset], buf, len);
+		ctx->offset += len;
+		return len;
+	}
+
+	/* At the end of conversion callback should be called with null
+	 * buffer to indicate the end.
+	 */
+	ctx->null = true;
+	return 0;
+}
+
+ZTEST(cbprintf_package, test_cbprintf_package_convert)
+{
+	int slen, clen;
+	static const char test_str[] = "test %s %d %s";
+	char test_str1[] = "test str1";
+	static const char test_str2[] = "test str2";
+	/* Store indexes of rw strings. */
+	uint32_t flags = CBPRINTF_PACKAGE_ADD_RW_STR_POS;
+	struct test_cbprintf_covert_ctx ctx;
+
+#define TEST_FMT test_str, test_str1, 100, test_str2
+	char exp_str[256];
+
+	snprintfcb(exp_str, sizeof(exp_str), TEST_FMT);
+
+	slen = cbprintf_package(NULL, 0, flags, TEST_FMT);
+	zassert_true(slen > 0, NULL);
+
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) spackage[slen];
+
+	memset(&ctx, 0, sizeof(ctx));
+	memset(spackage, 0, slen);
+
+	slen = cbprintf_package(spackage, slen, flags, TEST_FMT);
+	zassert_true(slen > 0, NULL);
+
+	uint32_t copy_flags = CBPRINTF_PACKAGE_COPY_RW_STR |
+			      CBPRINTF_PACKAGE_COPY_KEEP_RO_STR;
+
+	clen = cbprintf_package_convert(spackage, slen, NULL, 0, copy_flags, NULL, 0);
+	zassert_true(clen > 0, NULL);
+
+	clen = cbprintf_package_convert(spackage, slen, convert_cb, &ctx, copy_flags, NULL, 0);
+	zassert_true(clen > 0, NULL);
+	zassert_true(ctx.null, NULL);
+	zassert_equal(ctx.offset, clen, NULL);
+
+	check_package(ctx.buf, ctx.offset, exp_str);
+#undef TEST_FMT
+
+}
+
 /**
  * @brief Log information about variable sizes and alignment.
  *
