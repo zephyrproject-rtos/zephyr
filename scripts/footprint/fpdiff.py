@@ -36,36 +36,39 @@ def main():
     args = parse_args()
 
     with open(args.file1, "r") as f:
-        data = json.load(f)
-        root1 = importer.import_(data['symbols'])
+        data1 = json.load(f)
 
     with open(args.file2, "r") as f:
-        data = json.load(f)
-        root2 = importer.import_(data['symbols'])
+        data2 = json.load(f)
 
-    for node in PreOrderIter(root1):
-        # pylint: disable=undefined-loop-variable
-        n = find(root2, lambda node2: node2.identifier == node.identifier)
-        if n:
-            if n.size != node.size:
-                diff = n.size - node.size
-                if diff == 0:
-                    continue
-                if not n.children or not n.parent:
-                    if diff < 0:
-                        print(f"{n.identifier} -> {Fore.GREEN}{diff}{Fore.RESET}")
-                    else:
-                        print(f"{n.identifier} -> {Fore.RED}+{diff}{Fore.RESET}")
+    for idx, ch in enumerate(data1['symbols']['children']):
+        root1 = importer.import_(ch)
+        root2 = importer.import_(data2['symbols']['children'][idx])
+        print(f"{root1.name}\n+++++++++++++++++++++")
 
-        else:
-            if not node.children:
-                print(f"{node.identifier} ({Fore.GREEN}-{node.size}{Fore.RESET}) disappeared.")
+        for node in PreOrderIter(root1):
+            # pylint: disable=undefined-loop-variable
+            n = find(root2, lambda node2: node2.identifier == node.identifier)
+            if n:
+                if n.size != node.size:
+                    diff = n.size - node.size
+                    if diff == 0:
+                        continue
+                    if not n.children or not n.parent:
+                        if diff < 0:
+                            print(f"{n.identifier} -> {Fore.GREEN}{diff}{Fore.RESET}")
+                        else:
+                            print(f"{n.identifier} -> {Fore.RED}+{diff}{Fore.RESET}")
 
-    for node in PreOrderIter(root2):
-        n = find(root1, lambda node2: node2.identifier == node.identifier)
-        if not n:
-            if not node.children and node.size != 0:
-                print(f"{node.identifier} ({Fore.RED}+{node.size}{Fore.RESET}) is new.")
+            else:
+                if not node.children:
+                    print(f"{node.identifier} ({Fore.GREEN}-{node.size}{Fore.RESET}) disappeared.")
+
+        for node in PreOrderIter(root2):
+            n = find(root1, lambda node2: node2.identifier == node.identifier)
+            if not n:
+                if not node.children and node.size != 0:
+                    print(f"{node.identifier} ({Fore.RED}+{node.size}{Fore.RESET}) is new.")
 
 
 if __name__ == "__main__":
