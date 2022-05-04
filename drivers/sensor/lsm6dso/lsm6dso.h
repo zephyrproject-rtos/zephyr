@@ -79,7 +79,7 @@ struct lsm6dso_data {
 	int16_t gyro[3];
 	uint32_t gyro_gain;
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-	int temp_sample;
+	int16_t temp_sample;
 #endif
 #if defined(CONFIG_LSM6DSO_SENSORHUB)
 	uint8_t ext_data[2][6];
