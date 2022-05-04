@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ETHERNET_LOG_LEVEL);
 
 #if defined(CONFIG_DSA_SPI)
 #include <drivers/spi.h>
+#elif defined(CONFIG_DSA_I2C)
+#include <drivers/i2c.h>
 #else
 #error "No communication bus defined"
 #endif
@@ -33,12 +35,19 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ETHERNET_LOG_LEVEL);
 #error "Unsupported KSZ chipset"
 #endif
 
+#define KSZ8XXX_I2C_ADDRESS             DT_INST_REG_ADDR(0)
+
 struct ksz8xxx_data {
 	int iface_init_count;
 	bool is_init;
 #if defined(CONFIG_DSA_SPI)
 	struct spi_dt_spec spi;
 #endif
+#if defined(CONFIG_DSA_I2C)
+  struct i2c_dt_spec i2c;
+#endif
+
+
 };
 
 #define PRV_DATA(ctx) ((struct ksz8xxx_data *const)(ctx)->prv_data)
@@ -46,8 +55,8 @@ struct ksz8xxx_data {
 static void dsa_ksz8xxx_write_reg(const struct ksz8xxx_data *pdev,
 				  uint16_t reg_addr, uint8_t value)
 {
-#if defined(CONFIG_DSA_SPI)
 	uint8_t buf[3];
+#if defined(CONFIG_DSA_SPI)
 
 	const struct spi_buf tx_buf = {
 		.buf = buf,
@@ -58,11 +67,27 @@ static void dsa_ksz8xxx_write_reg(const struct ksz8xxx_data *pdev,
 		.count = 1
 	};
 
+#if CONFIG_DSA_KSZ8863
+	buf[0] = KSZ8XXX_SPI_CMD_WR;
+	buf[1] = (reg_addr) & 0xFF;
+	buf[2] = value;
+#elif CONFIG_DSA_KSZ8794
 	buf[0] = KSZ8XXX_SPI_CMD_WR | ((reg_addr >> 7) & 0x1F);
 	buf[1] = (reg_addr << 1) & 0xFE;
 	buf[2] = value;
+#else
+#error "Unsupported KSZ chipset"
+#endif
 
 	spi_write_dt(&pdev->spi, &tx);
+#endif
+#if defined(CONFIG_DSA_I2C)
+  buf[0] = reg_addr;
+
+  if (i2c_write_dt	(	&pdev->i2c, buf, 1) < 0) {
+		LOG_DBG("Failure while writing 0x%04x to register 0x%04x", 
+            value, reg_addr);
+	}
 #endif
 }
 
@@ -70,7 +95,7 @@ static void dsa_ksz8xxx_read_reg(const struct ksz8xxx_data *pdev,
 				 uint16_t reg_addr, uint8_t *value)
 {
 #if defined(CONFIG_DSA_SPI)
-	uint8_t buf[3];
+  uint8_t buf[3];	
 
 	const struct spi_buf tx_buf = {
 		.buf = buf,
@@ -90,15 +115,29 @@ static void dsa_ksz8xxx_read_reg(const struct ksz8xxx_data *pdev,
 		.count = 1
 	};
 
+#if CONFIG_DSA_KSZ8863
+	buf[0] = KSZ8XXX_SPI_CMD_RD;
+	buf[1] = (reg_addr) & 0xFF;
+	buf[2] = 0x0;
+#elif CONFIG_DSA_KSZ8794
 	buf[0] = KSZ8XXX_SPI_CMD_RD | ((reg_addr >> 7) & 0x1F);
 	buf[1] = (reg_addr << 1) & 0xFE;
 	buf[2] = 0x0;
+#else
+#error "Unsupported KSZ chipset"
+#endif
 
 	if (!spi_transceive_dt(&pdev->spi, &tx, &rx)) {
 		*value = buf[2];
 	} else {
 		LOG_DBG("Failure while reading register 0x%04x", reg_addr);
 		*value = 0U;
+	}
+#endif
+#if defined(CONFIG_DSA_I2C)
+
+  if (i2c_reg_read_byte_dt	(	&pdev->i2c, reg_addr, value) < 0) {
+		LOG_DBG("Failure while reading register 0x%04x", reg_addr);
 	}
 #endif
 }
@@ -153,8 +192,7 @@ static int dsa_ksz8xxx_probe(struct ksz8xxx_data *pdev)
 
 	if (val[0] != KSZ8XXX_CHIP_ID0_ID_DEFAULT ||
 	    val[1] != KSZ8XXX_CHIP_ID1_ID_DEFAULT) {
-		LOG_ERR("Chip ID mismatch. "
-			"Expected %02x%02x but found %02x%02x",
+		LOG_ERR("Chip ID mismatch. Expected %02x%02x but found %02x%02x",
 			KSZ8XXX_CHIP_ID0_ID_DEFAULT,
 			KSZ8XXX_CHIP_ID1_ID_DEFAULT,
 			val[0],
@@ -1089,12 +1127,15 @@ static struct dsa_api dsa_api_f = {
 		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 4)
 
 #if defined(CONFIG_DSA_SPI)
-#define DSA_SPI_BUS_CONFIGURATION(n)					\
+#define DSA_BUS_CONFIGURATION(n)					\
 	.spi = SPI_DT_SPEC_INST_GET(n,					\
 			COND_CODE_1(DT_INST_PROP(n, spi_cpol), (SPI_MODE_CPOL), ()) | \
 			COND_CODE_1(DT_INST_PROP(n, spi_cpha), (SPI_MODE_CPHA), ()) | \
 			SPI_WORD_SET(8),				\
 			0U)
+#elif defined(CONFIG_DSA_I2C)
+#define DSA_BUS_CONFIGURATION(n)					\
+	.i2c = I2C_DT_SPEC_INST_GET(n)
 #else
 #define DSA_SPI_BUS_CONFIGURATION(n)
 #endif
@@ -1103,7 +1144,7 @@ static struct dsa_api dsa_api_f = {
 	static struct ksz8xxx_data dsa_device_prv_data_##n = {		\
 		.iface_init_count = 0,					\
 		.is_init = false,					\
-		DSA_SPI_BUS_CONFIGURATION(n),				\
+		DSA_BUS_CONFIGURATION(n),				\
 	};								\
 	static struct dsa_context dsa_context_##n = {			\
 		.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),	\
