@@ -2883,7 +2883,7 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 }
 
 bool bt_gatt_is_subscribed(struct bt_conn *conn,
-			   const struct bt_gatt_attr *attr, uint16_t ccc_value)
+			   const struct bt_gatt_attr *attr, uint16_t ccc_type)
 {
 	const struct _bt_gatt_ccc *ccc;
 
@@ -2924,7 +2924,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 		const struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 
 		if (bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer) &&
-		    (ccc_value & ccc->cfg[i].value)) {
+		    (ccc_type & ccc->cfg[i].value)) {
 			return true;
 		}
 	}
