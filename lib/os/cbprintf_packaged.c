@@ -185,18 +185,6 @@ static int cbprintf_via_va_list(cbprintf_cb out,
 
 #endif
 
-static int z_strncpy(char *dst, const char *src, size_t num)
-{
-	for (size_t i = 0; i < num; i++) {
-		dst[i] = src[i];
-		if (src[i] == '\0') {
-			return i + 1;
-		}
-	}
-
-	return -ENOSPC;
-}
-
 static size_t get_package_len(void *packaged)
 {
 	__ASSERT_NO_MSG(packaged != NULL);
@@ -224,21 +212,14 @@ static size_t get_package_len(void *packaged)
 	return (size_t)(uintptr_t)(buf - start);
 }
 
-static int append_string(void *dst, size_t max, const char *str, uint16_t strl)
+static int append_string(cbprintf_convert_cb cb, void *ctx, const char *str, uint16_t strl)
 {
-	char *buf = dst;
-
-	if (dst == NULL) {
+	if (cb == NULL) {
 		return 1 + strlen(str);
 	}
 
-	if (strl) {
-		memcpy(dst, str, strl);
-
-		return strl;
-	}
-
-	return z_strncpy(buf, str, max);
+	strl = strl > 0 ? strl : strlen(str) + 1;
+	return cb(str, strl, ctx);
 }
 
 int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
@@ -723,13 +704,13 @@ int cbpprintf_external(cbprintf_cb out,
 	return cbprintf_via_va_list(out, formatter, ctx, fmt, buf);
 }
 
-int cbprintf_package_copy(void *in_packaged,
-			  size_t in_len,
-			  void *packaged,
-			  size_t len,
-			  uint32_t flags,
-			  uint16_t *strl,
-			  size_t strl_len)
+int cbprintf_package_convert(void *in_packaged,
+			     size_t in_len,
+			     cbprintf_convert_cb cb,
+			     void *ctx,
+			     uint32_t flags,
+			     uint16_t *strl,
+			     size_t strl_len)
 {
 	__ASSERT_NO_MSG(in_packaged != NULL);
 
@@ -738,31 +719,31 @@ int cbprintf_package_copy(void *in_packaged,
 	unsigned int args_size, ros_nbr, rws_nbr;
 	bool rw_cpy;
 	bool ro_cpy;
+	struct z_cbprintf_desc *in_desc = in_packaged;
 
 	in_len != 0 ? in_len : get_package_len(in_packaged);
 
 	/* Get number of RO string indexes in the package and check if copying
 	 * includes appending those strings.
 	 */
-	ros_nbr = buf[2];
+	ros_nbr = in_desc->ro_str_cnt;
 	ro_cpy = ros_nbr &&
 		(flags & CBPRINTF_PACKAGE_COPY_RO_STR) == CBPRINTF_PACKAGE_COPY_RO_STR;
 
 	/* Get number of RW string indexes in the package and check if copying
 	 * includes appending those strings.
 	 */
-	rws_nbr = buf[3];
+	rws_nbr = in_desc->rw_str_cnt;
 	rw_cpy = rws_nbr > 0 &&
 		 (flags & CBPRINTF_PACKAGE_COPY_RW_STR) == CBPRINTF_PACKAGE_COPY_RW_STR;
-
 
 	/* If flags are not set or appending request without rw string indexes
 	 * present is chosen, just do a simple copy (or length calculation).
 	 * Assuming that it is the most common case.
 	 */
 	if (!rw_cpy && !ro_cpy) {
-		if (packaged) {
-			memcpy(packaged, in_packaged, in_len);
+		if (cb) {
+			cb(in_packaged, in_len, ctx);
 		}
 
 		return in_len;
@@ -772,9 +753,9 @@ int cbprintf_package_copy(void *in_packaged,
 	 * done with strings appending.
 	 * Retrieve the size of the arg list.
 	 */
-	args_size = buf[0] * sizeof(int);
+	args_size = in_desc->len * sizeof(int);
 
-	size_t out_len = in_len;
+	int out_len;
 
 	/* Pointer to array with string locations. Array starts with read-only
 	 * string locations.
@@ -783,11 +764,12 @@ int cbprintf_package_copy(void *in_packaged,
 	size_t strl_cnt = 0;
 
 	/* If null destination, just calculate output length. */
-	if (packaged == NULL) {
+	if (cb == NULL) {
+		out_len = (int)in_len;
 		if (ro_cpy) {
 			for (int i = 0; i < ros_nbr; i++) {
 				const char *str = *(const char **)&buf32[*str_pos];
-				int len = append_string(NULL, 0, str, 0);
+				int len = append_string(cb, NULL, str, 0);
 
 				/* If possible store calculated string length. */
 				if (strl && strl_cnt < strl_len) {
@@ -813,7 +795,7 @@ int cbprintf_package_copy(void *in_packaged,
 
 			if ((is_ro && flags & CBPRINTF_PACKAGE_COPY_RO_STR) ||
 			    (!is_ro && flags & CBPRINTF_PACKAGE_COPY_RW_STR)) {
-				int len = append_string(NULL, 0, str, 0);
+				int len = append_string(cb, NULL, str, 0);
 
 				/* If possible store calculated string length. */
 				if (strl && strl_cnt < strl_len) {
@@ -835,37 +817,37 @@ int cbprintf_package_copy(void *in_packaged,
 		return out_len;
 	}
 
+	struct z_cbprintf_desc out_desc;
+	/* At least one is copied in. */
 	uint8_t cpy_str_pos[16];
+	/* Up to one will be kept since if both types are kept it returns earlier. */
+	uint8_t keep_str_pos[16];
 	uint8_t scpy_cnt;
-	uint8_t *dst = packaged;
-	uint8_t *dst_hdr = packaged;
-
-	memcpy(dst, in_packaged, args_size);
-	dst += args_size;
-
-	/* Pointer to the beginning of string locations in the destination package. */
-	uint8_t *dst_str_loc = dst;
+	uint8_t keep_cnt;
+	uint8_t *dst;
+	int rv;
 
 	/* If read-only strings shall be appended to the output package copy
 	 * their indexes to the local array, otherwise indicate that indexes
 	 * shall remain in the output package.
 	 */
 	if (ro_cpy) {
-		memcpy(cpy_str_pos, str_pos, ros_nbr);
 		scpy_cnt = ros_nbr;
-		/* Read only string indexes removed from package. */
-		dst_hdr[2] = 0;
-		str_pos += ros_nbr;
+		keep_cnt = 0;
+		dst = cpy_str_pos;
+	} else if (ros_nbr && flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) {
+		scpy_cnt = 0;
+		keep_cnt = ros_nbr;
+		dst = keep_str_pos;
 	} else {
 		scpy_cnt = 0;
-		if (ros_nbr && flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) {
-			memcpy(dst, str_pos, ros_nbr);
-			dst += ros_nbr;
-			str_pos += ros_nbr;
-		} else {
-			dst_hdr[2] = 0;
-		}
+		keep_cnt = 0;
+		dst = NULL;
 	}
+	if (dst) {
+		memcpy(dst, str_pos, ros_nbr);
+	}
+	str_pos += ros_nbr;
 
 	/* Go through read-write strings and identify which shall be appended.
 	 * Note that there may be read-only strings there. Use address evaluation
@@ -877,66 +859,83 @@ int cbprintf_package_copy(void *in_packaged,
 
 		if (is_ro) {
 			if (flags & CBPRINTF_PACKAGE_COPY_RO_STR) {
+				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
 				cpy_str_pos[scpy_cnt++] = *str_pos;
 			} else if (flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) {
-				*dst++ = *str_pos;
-				/* Increment amount of ro locations. */
-				dst_hdr[2]++;
+				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
+				keep_str_pos[keep_cnt++] = *str_pos;
 			} else {
 				/* Drop information about ro_str location. */
 			}
 		} else {
 			if (flags & CBPRINTF_PACKAGE_COPY_RW_STR) {
+				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
 				cpy_str_pos[scpy_cnt++] = *str_pos;
 			} else {
-				*dst++ = *str_pos;
+				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
+				keep_str_pos[keep_cnt++] = *str_pos;
 			}
 		}
 		str_pos++;
 	}
 
-	/* Increment amount of strings appended to the package. */
-	dst_hdr[1] += scpy_cnt;
-	/* Update number of rw string locations in the package. */
-	dst_hdr[3] = (uint8_t)(uintptr_t)(dst - dst_str_loc) - dst_hdr[2];
+	/* Set amount of strings appended to the package. */
+	out_desc.len = in_desc->len;
+	out_desc.str_cnt = in_desc->str_cnt + scpy_cnt;
+	out_desc.rw_str_cnt = (flags & CBPRINTF_PACKAGE_COPY_RW_STR) ? 0 : keep_cnt;
+	out_desc.ro_str_cnt = (flags & CBPRINTF_PACKAGE_COPY_RO_STR) ? 0 :
+			((flags & CBPRINTF_PACKAGE_COPY_KEEP_RO_STR) ? keep_cnt : 0);
+
+	/* Temporary overwrite input descriptor to allow bulk transfer */
+	struct z_cbprintf_desc in_desc_backup = *in_desc;
+	*in_desc = out_desc;
+
+	/* Copy package header and arguments. */
+	rv = cb(in_packaged, args_size, ctx);
+	if (rv < 0) {
+		return rv;
+	}
+	out_len = rv;
+	/* Restore input descriptor. */
+	*in_desc = in_desc_backup;
+
+	/* Copy string positions which are kept. */
+	rv = cb(keep_str_pos, keep_cnt, ctx);
+	if (rv < 0) {
+		return rv;
+	}
+	out_len += rv;
 
 	/* Copy appended strings from source package to destination. */
 	size_t strs_len = in_len - (args_size + ros_nbr + rws_nbr);
 
-	memcpy(dst, str_pos, strs_len);
-
-	dst += strs_len;
-
-	if (scpy_cnt == 0) {
-		return dst - dst_hdr;
+	rv = cb(str_pos, strs_len, ctx);
+	if (rv < 0) {
+		return rv;
 	}
-
-	/* Calculate remaining space in the buffer. */
-	size_t rem = len - ((size_t)(uintptr_t)(dst - dst_hdr));
-
-	if (rem <= scpy_cnt) {
-		return -ENOSPC;
-	}
+	out_len += rv;
 
 	/* Append strings */
 	for (int i = 0; i < scpy_cnt; i++) {
 		uint8_t loc = cpy_str_pos[i];
 		const char *str = *(const char **)&buf32[loc];
-		int cpy_len;
 		uint16_t str_len = strl ? strl[i] : 0;
 
-		*dst = loc;
-		rem--;
-		dst++;
-		cpy_len = append_string(dst, rem, str, str_len);
-
-		if (cpy_len < 0) {
-			return -ENOSPC;
+		rv = cb(&loc, 1, ctx);
+		if (rv < 0) {
+			return rv;
 		}
+		out_len += rv;
 
-		rem -= cpy_len;
-		dst += cpy_len;
+		rv = append_string(cb, ctx, str, str_len);
+		if (rv < 0) {
+			return rv;
+		}
+		out_len += rv;
 	}
 
-	return len - rem;
+	/* Empty call (can be interpreted as flushing) */
+	(void)cb(NULL, 0, ctx);
+
+	return out_len;
 }
