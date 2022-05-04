@@ -25,6 +25,12 @@ config PM_STATS
 	help
 	  Enable System Power Management Stats.
 
+config PM_S2RAM
+	bool "Suspend-to-RAM (S2RAM)"
+	depends on ARCH_HAS_SUSPEND_TO_RAM
+	help
+	  This option enables suspend-to-RAM (S2RAM).
+
 choice PM_POLICY
 	prompt "Idle State Power Management Policy"
 	default PM_POLICY_DEFAULT
