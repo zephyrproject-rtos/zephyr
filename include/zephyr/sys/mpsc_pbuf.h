@@ -103,7 +103,10 @@ struct mpsc_pbuf_buffer {
 	/** Lock. */
 	struct k_spinlock lock;
 
-	/** User callback called whenever packet is dropped. */
+	/** User callback called whenever packet is dropped.
+	 *
+	 * May be NULL if unneeded.
+	 */
 	mpsc_pbuf_notify_drop notify_drop;
 
 	/** Callback for getting packet length. */
