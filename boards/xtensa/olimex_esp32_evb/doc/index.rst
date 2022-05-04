@@ -49,7 +49,7 @@ these reference documents:
 - `ESP32-WROOM32-E/UE Datasheet`_
 
 Supported Features
-==================
+******************
 
 The olimex_esp32_evb board configuration supports the following hardware
 features:
@@ -87,16 +87,37 @@ The default configuration can be found in the defconfig file:
 
 Other hardware features are not currently supported by the port.
 
-Programming and Debugging
-*************************
+System requirements
+*******************
+
+Prerequisites
+-------------
+
+Espressif HAL requires binary blobs in order work. The west extension below performs the required
+syncronization to clone, checkout and pull the submodules:
+
+.. code-block:: console
+
+   west espressif update
+
+.. note::
+
+   It is recommended running the command above after :file:`west update`.
+
+Building & Flashing
+-------------------
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Flashing
-========
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: olimex_esp32_evb
+   :goals: build
 
-Here is an example for the :ref:`hello_world` application.
+The usual ``flash`` target will work with the ``olimex_esp32_evb`` board
+configuration. Here is an example for the :ref:`hello_world`
+application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -117,8 +138,40 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! olimex_esp32_evb
 
-Please see the generic :ref:`esp32` instructions for further tips on programming
-and debugging.
+Debugging
+---------
+
+As with much custom hardware, the ESP32 modules require patches to
+OpenOCD that are not upstreamed. Espressif maintains their own fork of
+the project. The custom OpenOCD can be obtained by running the following extension:
+
+.. code-block:: console
+
+   west espressif install
+
+.. note::
+
+   By default, the OpenOCD will be downloaded and installed under $HOME/.espressif/tools/zephyr directory
+   (%USERPROFILE%/.espressif/tools/zephyr on Windows).
+
+The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
+``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
+parameter when building.
+
+Here is an example for building the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: olimex_esp32_evb
+   :goals: build flash
+   :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
+
+You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: olimex_esp32_evb
+   :goals: debug
 
 .. _ESP32-EVB Website:
    https://www.olimex.com/Products/IoT/ESP32/ESP32-EVB/open-source-hardware
