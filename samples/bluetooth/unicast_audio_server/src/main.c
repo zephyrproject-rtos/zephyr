@@ -36,10 +36,8 @@ static struct bt_codec lc3_codec =
 		     1u, (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA),
 		     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, 8, NULL);
 static struct bt_conn *default_conn;
 static struct bt_audio_stream streams[MAX_PAC];
-
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
