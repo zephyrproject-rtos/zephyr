@@ -16,7 +16,7 @@ img_mgmt_ver_str(const struct image_version *ver, char *dst)
 	int rc = 0;
 	int rc1 = 0;
 
-	rc = snprintf(dst, IMG_MGMT_VER_MAX_STR_LEN, "%hhu.%hhu.%.hu",
+	rc = snprintf(dst, IMG_MGMT_VER_MAX_STR_LEN, "%hhu.%hhu.%hu",
 		ver->iv_major, ver->iv_minor, ver->iv_revision);
 
 	if (rc >= 0 && ver->iv_build_num != 0) {
