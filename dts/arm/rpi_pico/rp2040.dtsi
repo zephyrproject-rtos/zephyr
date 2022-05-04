@@ -119,6 +119,16 @@
 			status = "disabled";
 		};
 
+		adc: adc@4004c000 {
+			compatible = "raspberrypi,pico-adc";
+			reg = <0x4004c000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_ADC>;
+			interrupts = <22 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "adc0";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		i2c0: i2c@40044000 {
 			compatible = "snps,designware-i2c";
 			#address-cells = <1>;
