@@ -326,6 +326,33 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 	return -ECANCELED;
 }
 
+static int control_point_send_all(struct net_buf_simple *buf)
+{
+	int result = 0;
+
+	for (size_t i = 0; i < ARRAY_SIZE(has_client_list); i++) {
+		struct has_client *client = &has_client_list[i];
+		int err;
+
+		if (!client->conn) {
+			continue;
+		}
+
+		if (!bt_gatt_is_subscribed(client->conn, PRESET_CONTROL_POINT_ATTR,
+					   BT_GATT_CCC_NOTIFY | BT_GATT_CCC_INDICATE)) {
+			continue;
+		}
+
+		err = control_point_send(client, buf);
+		if (err) {
+			result = err;
+			/* continue anyway */
+		}
+	}
+
+	return result;
+}
+
 static int bt_has_cp_read_preset_rsp(struct has_client *client, const struct has_preset *preset,
 				     bool is_last)
 {
@@ -391,6 +418,54 @@ static void process_control_point_work(struct k_work *work)
 			client->read_presets_req.num_presets--;
 		}
 	}
+}
+
+static uint8_t get_prev_preset_index(struct has_preset *preset)
+{
+	const struct has_preset *prev = NULL;
+
+	for (size_t i = 0; i < ARRAY_SIZE(has_preset_list); i++) {
+		const struct has_preset *tmp = &has_preset_list[i];
+
+		if (tmp->index == BT_HAS_PRESET_INDEX_NONE || tmp == preset) {
+			break;
+		}
+
+		prev = tmp;
+	}
+
+	return prev ? prev->index : BT_HAS_PRESET_INDEX_NONE;
+}
+
+static void preset_changed_prepare(struct net_buf_simple *buf, uint8_t change_id, uint8_t is_last)
+{
+	struct bt_has_cp_hdr *hdr;
+	struct bt_has_cp_preset_changed *preset_changed;
+
+	hdr = net_buf_simple_add(buf, sizeof(*hdr));
+	hdr->opcode = BT_HAS_OP_PRESET_CHANGED;
+	preset_changed = net_buf_simple_add(buf, sizeof(*preset_changed));
+	preset_changed->change_id = change_id;
+	preset_changed->is_last = is_last;
+}
+
+static int bt_has_cp_generic_update(struct has_preset *preset, uint8_t is_last)
+{
+	struct bt_has_cp_generic_update *generic_update;
+
+	NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
+			      sizeof(struct bt_has_cp_preset_changed) +
+			      sizeof(struct bt_has_cp_generic_update) + BT_HAS_PRESET_NAME_MAX);
+
+	preset_changed_prepare(&buf, BT_HAS_CHANGE_ID_GENERIC_UPDATE, is_last);
+
+	generic_update = net_buf_simple_add(&buf, sizeof(*generic_update));
+	generic_update->prev_index = get_prev_preset_index(preset);
+	generic_update->index = preset->index;
+	generic_update->properties = preset->properties;
+	net_buf_simple_add_mem(&buf, preset->name, strlen(preset->name));
+
+	return control_point_send_all(&buf);
 }
 
 static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simple *buf)
@@ -524,12 +599,15 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 		return -ENOMEM;
 	}
 
-	return 0;
+	return bt_has_cp_generic_update(preset, BT_HAS_IS_LAST);
 }
 
 int bt_has_preset_unregister(uint8_t index)
 {
 	struct has_preset *preset = NULL;
+
+	NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
+			      sizeof(struct bt_has_cp_preset_changed) + sizeof(uint8_t));
 
 	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
 		BT_ERR("index is invalid");
@@ -541,7 +619,60 @@ int bt_has_preset_unregister(uint8_t index)
 		return -ENOENT;
 	}
 
+	preset_changed_prepare(&buf, BT_HAS_CHANGE_ID_PRESET_DELETED, BT_HAS_IS_LAST);
+	net_buf_simple_add_u8(&buf, preset->index);
+
 	preset_free(preset);
+
+	return control_point_send_all(&buf);
+}
+
+int bt_has_preset_available(uint8_t index)
+{
+	struct has_preset *preset = NULL;
+
+	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
+		BT_ERR("index is invalid");
+		return -EINVAL;
+	}
+
+	/* toggle property bit if needed */
+	if (!(preset->properties & BT_HAS_PROP_AVAILABLE)) {
+		NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
+				      sizeof(struct bt_has_cp_preset_changed) + sizeof(uint8_t));
+
+		preset->properties ^= BT_HAS_PROP_AVAILABLE;
+
+		preset_changed_prepare(&buf, BT_HAS_CHANGE_ID_PRESET_AVAILABLE, BT_HAS_IS_LAST);
+		net_buf_simple_add_u8(&buf, preset->index);
+
+		return control_point_send_all(&buf);
+	}
+
+	return 0;
+}
+
+int bt_has_preset_unavailable(uint8_t index)
+{
+	struct has_preset *preset = NULL;
+
+	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
+		BT_ERR("index is invalid");
+		return -EINVAL;
+	}
+
+	/* toggle property bit if needed */
+	if (preset->properties & BT_HAS_PROP_AVAILABLE) {
+		NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
+				      sizeof(struct bt_has_cp_preset_changed) + sizeof(uint8_t));
+
+		preset->properties ^= BT_HAS_PROP_AVAILABLE;
+
+		preset_changed_prepare(&buf, BT_HAS_CHANGE_ID_PRESET_UNAVAILABLE, BT_HAS_IS_LAST);
+		net_buf_simple_add_u8(&buf, preset->index);
+
+		return control_point_send_all(&buf);
+	}
 
 	return 0;
 }
