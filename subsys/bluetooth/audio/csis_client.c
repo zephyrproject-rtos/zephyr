@@ -764,7 +764,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 
 		cur_inst = &client->csis_insts[client->inst_count];
 		cur_inst->cli.idx = client->inst_count;
-		cur_inst->cli.start_handle = attr->handle + 1;
+		cur_inst->cli.start_handle = attr->handle;
 		cur_inst->cli.end_handle = prim_service->end_handle;
 		cur_inst->cli.conn = bt_conn_ref(conn);
 		client->inst_count++;
@@ -1329,6 +1329,22 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
+
+struct bt_csis_client_csis_inst *bt_csis_client_csis_inst_by_handle(struct bt_conn *conn,
+								    uint16_t start_handle)
+{
+	const struct bt_csis *csis_inst = lookup_instance_by_handle(conn, start_handle);
+
+	if (csis_inst != NULL) {
+		struct bt_csis_client_inst *client;
+
+		client = &client_insts[bt_conn_index(conn)];
+
+		return &client->set_member.insts[csis_inst->cli.idx];
+	}
+
+	return NULL;
+}
 
 /*************************** PUBLIC FUNCTIONS ***************************/
 int bt_csis_client_register_cb(struct bt_csis_client_cb *cb)

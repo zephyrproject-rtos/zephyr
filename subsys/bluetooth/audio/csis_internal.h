@@ -93,3 +93,6 @@ struct bt_csis {
 #endif /* CONFIG_BT_CSIS_CLIENT */
 	};
 };
+
+struct bt_csis_client_csis_inst *bt_csis_client_csis_inst_by_handle(struct bt_conn *conn,
+								    uint16_t start_handle);

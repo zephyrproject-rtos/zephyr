@@ -23,14 +23,16 @@
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 
-static void cap_discover_cb(struct bt_conn *conn, int err)
+static void cap_discover_cb(struct bt_conn *conn, int err,
+			    const struct bt_csis_client_csis_inst *csis_inst)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "discover failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "discovery completed");
+	shell_print(ctx_shell, "discovery completed%s",
+		    csis_inst == NULL ? "" : " with CSIS");
 }
 
 static struct bt_cap_initiator_cb cbs = {

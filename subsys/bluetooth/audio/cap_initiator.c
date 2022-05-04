@@ -9,6 +9,7 @@
 #include <bluetooth/audio/tbs.h>
 #include <bluetooth/audio/cap.h>
 #include "cap_internal.h"
+#include "csis_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_CAP_INITIATOR)
 #define LOG_MODULE_NAME bt_cap_initiator
@@ -58,26 +59,146 @@ int bt_cap_initiator_broadcast_audio_stop(struct bt_audio_broadcast_source *broa
 #if defined(CONFIG_BT_AUDIO_UNICAST_CLIENT)
 static const struct bt_uuid *cas_uuid = BT_UUID_CAS;
 
-static struct {
+struct cap_unicast_client {
 	struct bt_gatt_discover_params param;
-} bt_cap_unicast_clients[CONFIG_BT_MAX_CONN];
+	uint16_t csis_start_handle;
+	const struct bt_csis_client_csis_inst *csis_inst;
+};
 
-static uint8_t cap_unicast_discover_cb(struct bt_conn *conn,
-				       const struct bt_gatt_attr *attr,
-				       struct bt_gatt_discover_params *params)
+static struct cap_unicast_client bt_cap_unicast_clients[CONFIG_BT_MAX_CONN];
+
+static void csis_client_discover_cb(struct bt_conn *conn,
+				    const struct bt_csis_client_set_member *member,
+				    int err, size_t set_count)
 {
-	int err;
+	struct cap_unicast_client *client;
+
+	if (err != 0) {
+		BT_DBG("CSIS client discover failed: %d", err);
+
+		if (cap_cb && cap_cb->discovery_complete) {
+			cap_cb->discovery_complete(conn, err, NULL);
+		}
+
+		return;
+	}
+
+	client = &bt_cap_unicast_clients[bt_conn_index(conn)];
+	client->csis_inst = bt_csis_client_csis_inst_by_handle(
+					conn, client->csis_start_handle);
+
+	if (member == NULL || set_count == 0 || client->csis_inst == NULL) {
+		BT_ERR("Unable to find CSIS for CAS");
+
+		if (cap_cb && cap_cb->discovery_complete) {
+			cap_cb->discovery_complete(conn, -ENODATA, NULL);
+		}
+	} else {
+		BT_DBG("Found CAS with CSIS");
+		if (cap_cb && cap_cb->discovery_complete) {
+			cap_cb->discovery_complete(conn, 0, client->csis_inst);
+		}
+	}
+}
+
+static uint8_t cap_unicast_discover_included_cb(struct bt_conn *conn,
+						const struct bt_gatt_attr *attr,
+						struct bt_gatt_discover_params *params)
+{
 
 	params->func = NULL;
 
 	if (attr == NULL) {
-		err = -ENODATA;
+		BT_DBG("CAS CSIS include not found");
+
+		if (cap_cb && cap_cb->discovery_complete) {
+			cap_cb->discovery_complete(conn, 0, NULL);
+		}
 	} else {
-		err = 0;
+		const struct bt_gatt_include *included_service = attr->user_data;
+		struct cap_unicast_client *client = CONTAINER_OF(params,
+								 struct cap_unicast_client,
+								 param);
+
+
+		/* If the remote CAS includes CSIS, we first check if we
+		 * have already discovered it, and if so we can just retrieve it
+		 * and forward it to the application. If not, then we start
+		 * CSIS discovery
+		 */
+		client->csis_start_handle = included_service->start_handle;
+		client->csis_inst = bt_csis_client_csis_inst_by_handle(
+					conn, client->csis_start_handle);
+
+		if (client->csis_inst == NULL) {
+			static struct bt_csis_client_cb csis_client_cb = {
+				.discover = csis_client_discover_cb
+			};
+			static bool csis_cbs_registered;
+			int err;
+
+			BT_DBG("CAS CSIS not known, discovering");
+
+			if (!csis_cbs_registered) {
+				bt_csis_client_register_cb(&csis_client_cb);
+				csis_cbs_registered = true;
+			}
+
+			err = bt_csis_client_discover(conn);
+			if (err != 0) {
+				BT_DBG("Discover failed (err %d)", err);
+				if (cap_cb && cap_cb->discovery_complete) {
+					cap_cb->discovery_complete(conn, err,
+								   NULL);
+				}
+			}
+		} else if (cap_cb && cap_cb->discovery_complete) {
+			BT_DBG("Found CAS with CSIS");
+			cap_cb->discovery_complete(conn, 0, client->csis_inst);
+		}
 	}
 
-	if (cap_cb && cap_cb->discovery_complete) {
-		cap_cb->discovery_complete(conn, err);
+	return BT_GATT_ITER_STOP;
+}
+
+static uint8_t cap_unicast_discover_cas_cb(struct bt_conn *conn,
+				       const struct bt_gatt_attr *attr,
+				       struct bt_gatt_discover_params *params)
+{
+	params->func = NULL;
+
+	if (attr == NULL) {
+		if (cap_cb && cap_cb->discovery_complete) {
+			cap_cb->discovery_complete(conn, -ENODATA, NULL);
+		}
+	} else {
+		const struct bt_gatt_service_val *prim_service = attr->user_data;
+		int err;
+
+		if (attr->handle == prim_service->end_handle) {
+			BT_DBG("Found CAS without CSIS");
+			cap_cb->discovery_complete(conn, 0, NULL);
+
+			return BT_GATT_ITER_STOP;
+		}
+
+		BT_DBG("Found CAS, discovering included CSIS");
+
+		params->uuid = NULL;
+		params->start_handle = attr->handle + 1;
+		params->end_handle = prim_service->end_handle;
+		params->type = BT_GATT_DISCOVER_INCLUDE;
+		params->func = cap_unicast_discover_included_cb;
+
+		err = bt_gatt_discover(conn, params);
+		if (err != 0) {
+			BT_DBG("Discover failed (err %d)", err);
+
+			params->func = NULL;
+			if (cap_cb && cap_cb->discovery_complete) {
+				cap_cb->discovery_complete(conn, err, NULL);
+			}
+		}
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -100,7 +221,7 @@ int bt_cap_initiator_unicast_discover(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
-	param->func = cap_unicast_discover_cb;
+	param->func = cap_unicast_discover_cas_cb;
 	param->uuid = cas_uuid;
 	param->type = BT_GATT_DISCOVER_PRIMARY;
 	param->start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;

@@ -54,11 +54,17 @@ struct bt_cap_initiator_cb {
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_discover().
 	 *
-	 * @param conn The connection pointer supplied to
-	 *             bt_cap_initiator_unicast_discover().
-	 * @param err  0 if Common Audio Service was found else -ENODATA.
+	 * @param conn      The connection pointer supplied to
+	 *                  bt_cap_initiator_unicast_discover().
+	 * @param err       0 if Common Audio Service was found else -ENODATA.
+	 * @param csis_inst The Coordinated Set Identification Service if
+	 *                  Common Audio Service was found and includes a
+	 *                  Coordinated Set Identification Service.
+	 *                  NULL on error or if remote device does not include
+	 *                  Coordinated Set Identification Service.
 	 */
-	void (*discovery_complete)(struct bt_conn *conn, int err);
+	void (*discovery_complete)(struct bt_conn *conn, int err,
+				   const struct bt_csis_client_csis_inst *csis_inst);
 
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_start().
