@@ -12,15 +12,18 @@
 #include <zephyr/bluetooth/testing.h>
 #include <zephyr/bluetooth/mesh/cfg.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/settings/settings.h>
 #include <app_keys.h>
 #include <va.h>
 #include <sar_cfg_internal.h>
+#include <string.h>
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_mesh
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 #include "btp/btp.h"
+#include "dfu_slot.h"
 
 #define CID_LOCAL 0x05F1
 #define COMPANY_ID_LF 0x05F1
@@ -54,7 +57,245 @@ static uint8_t vnd_app_key[16];
 static uint16_t vnd_app_key_idx = 0x000f;
 
 /* Model send data */
-#define MODEL_BOUNDS_MAX 2
+#define MODEL_BOUNDS_MAX 100
+
+#if defined(CONFIG_BT_MESH_BLOB_SRV) || defined(CONFIG_BT_MESH_BLOB_CLI)
+/* BLOB Model data*/
+static uint8_t blob_rx_sum;
+static bool blob_valid;
+static const char *blob_data = "11111111111111111111111111111111";
+
+static int blob_io_open(const struct bt_mesh_blob_io *io,
+			const struct bt_mesh_blob_xfer *xfer,
+			enum bt_mesh_blob_io_mode mode)
+{
+	blob_rx_sum = 0;
+	blob_valid = true;
+	return 0;
+}
+
+static int blob_chunk_wr(const struct bt_mesh_blob_io *io,
+			 const struct bt_mesh_blob_xfer *xfer,
+			 const struct bt_mesh_blob_block *block,
+			 const struct bt_mesh_blob_chunk *chunk)
+{
+	for (int i = 0; i < chunk->size; ++i) {
+		blob_rx_sum += chunk->data[i];
+		if (chunk->data[i] !=
+		    blob_data[(i + chunk->offset) % strlen(blob_data)]) {
+			blob_valid = false;
+		}
+	}
+
+	return 0;
+}
+
+static int blob_chunk_rd(const struct bt_mesh_blob_io *io,
+			 const struct bt_mesh_blob_xfer *xfer,
+			 const struct bt_mesh_blob_block *block,
+			 const struct bt_mesh_blob_chunk *chunk)
+{
+	for (int i = 0; i < chunk->size; ++i) {
+		chunk->data[i] =
+			blob_data[(i + chunk->offset) % strlen(blob_data)];
+	}
+
+	return 0;
+}
+
+static const struct bt_mesh_blob_io dummy_blob_io = {
+	.open = blob_io_open,
+	.rd = blob_chunk_rd,
+	.wr = blob_chunk_wr,
+};
+#endif
+
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+/* DFD Model data*/
+static int dfd_srv_recv(struct bt_mesh_dfd_srv *srv,
+			const struct bt_mesh_dfu_slot *slot,
+			const struct bt_mesh_blob_io **io)
+{
+	LOG_DBG("Uploading new firmware image to the distributor.");
+
+	*io = &dummy_blob_io;
+
+	return 0;
+}
+
+static void dfd_srv_del(struct bt_mesh_dfd_srv *srv,
+			const struct bt_mesh_dfu_slot *slot)
+{
+	LOG_DBG("Deleting the firmware image from the distributor.");
+}
+
+static int dfd_srv_send(struct bt_mesh_dfd_srv *srv,
+			const struct bt_mesh_dfu_slot *slot,
+			const struct bt_mesh_blob_io **io)
+{
+	LOG_DBG("Starting the firmware distribution.");
+
+	*io = &dummy_blob_io;
+
+	return 0;
+}
+
+static struct bt_mesh_dfd_srv_cb dfd_srv_cb = {
+	.recv = dfd_srv_recv,
+	.del = dfd_srv_del,
+	.send = dfd_srv_send,
+};
+
+static struct bt_mesh_dfd_srv dfd_srv = BT_MESH_DFD_SRV_INIT(&dfd_srv_cb);
+#endif
+
+#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+static struct {
+	struct bt_mesh_blob_cli_inputs inputs;
+	struct bt_mesh_blob_target targets[32];
+	struct bt_mesh_blob_target_pull pull[32];
+	uint8_t target_count;
+	struct bt_mesh_blob_xfer xfer;
+} blob_cli_xfer;
+
+static void blob_cli_lost_target(struct bt_mesh_blob_cli *cli,
+				 struct bt_mesh_blob_target *target,
+				 enum bt_mesh_blob_status reason)
+{
+	LOG_DBG("Mesh Blob: Lost target 0x%04x (reason: %u)", target->addr,
+		reason);
+	tester_event(BTP_SERVICE_ID_MESH, MESH_EV_BLOB_LOST_TARGET, NULL, 0);
+}
+
+static void blob_cli_caps(struct bt_mesh_blob_cli *cli,
+			  const struct bt_mesh_blob_cli_caps *caps)
+{
+	const char *const modes[] = {
+		"none",
+		"push",
+		"pull",
+		"all",
+	};
+
+	if (!caps) {
+		LOG_DBG("None of the targets can be used for BLOB transfer");
+		return;
+	}
+
+	LOG_DBG("Mesh BLOB: capabilities:");
+	LOG_DBG("\tMax BLOB size: %u bytes", caps->max_size);
+	LOG_DBG("\tBlock size: %u-%u (%u-%u bytes)", caps->min_block_size_log,
+		caps->max_block_size_log, 1 << caps->min_block_size_log,
+		1 << caps->max_block_size_log);
+	LOG_DBG("\tMax chunks: %u", caps->max_chunks);
+	LOG_DBG("\tChunk size: %u", caps->max_chunk_size);
+	LOG_DBG("\tMTU size: %u", caps->mtu_size);
+	LOG_DBG("\tModes: %s", modes[caps->modes]);
+}
+
+static void blob_cli_end(struct bt_mesh_blob_cli *cli,
+			 const struct bt_mesh_blob_xfer *xfer, bool success)
+{
+	if (success) {
+		LOG_DBG("Mesh BLOB transfer complete.");
+	} else {
+		LOG_DBG("Mesh BLOB transfer failed.");
+	}
+}
+
+static const struct bt_mesh_blob_cli_cb blob_cli_handlers = {
+	.lost_target = blob_cli_lost_target,
+	.caps = blob_cli_caps,
+	.end = blob_cli_end,
+};
+
+static struct bt_mesh_blob_cli blob_cli = { .cb = &blob_cli_handlers };
+#endif
+
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+const char *metadata_data = "1100000000000011";
+
+static uint8_t dfu_fwid[] = {
+	0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static struct bt_mesh_dfu_img dfu_imgs[] = { {
+	.fwid = &dfu_fwid,
+	.fwid_len = sizeof(dfu_fwid),
+} };
+
+static int dfu_meta_check(struct bt_mesh_dfu_srv *srv,
+			  const struct bt_mesh_dfu_img *img,
+			  struct net_buf_simple *metadata,
+			  enum bt_mesh_dfu_effect *effect)
+{
+	char string[2 * CONFIG_BT_MESH_DFU_METADATA_MAXLEN + 1];
+	int i;
+	size_t len;
+
+	len = bin2hex(metadata->data, metadata->len, string, sizeof(string));
+	string[len] = '\0';
+
+	for (i = 0; i <= len; i++) {
+		if (string[i] != metadata_data[i]) {
+			LOG_ERR("Wrong Firmware Metadata");
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+static int dfu_start(struct bt_mesh_dfu_srv *srv,
+		     const struct bt_mesh_dfu_img *img,
+		     struct net_buf_simple *metadata,
+		     const struct bt_mesh_blob_io **io)
+{
+	LOG_DBG("DFU setup");
+
+	*io = &dummy_blob_io;
+
+	return 0;
+}
+
+static void dfu_end(struct bt_mesh_dfu_srv *srv,
+		    const struct bt_mesh_dfu_img *img, bool success)
+{
+	if (!success) {
+		LOG_ERR("DFU failed");
+		return;
+	}
+
+	if (!blob_valid) {
+		bt_mesh_dfu_srv_rejected(srv);
+		return;
+	}
+
+	bt_mesh_dfu_srv_verified(srv);
+}
+
+static int dfu_apply(struct bt_mesh_dfu_srv *srv,
+		     const struct bt_mesh_dfu_img *img)
+{
+	if (!blob_valid) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("Applying DFU transfer...");
+
+	return 0;
+}
+
+static const struct bt_mesh_dfu_srv_cb dfu_handlers = {
+	.check = dfu_meta_check,
+	.start = dfu_start,
+	.end = dfu_end,
+	.apply = dfu_apply,
+};
+
+static struct bt_mesh_dfu_srv dfu_srv =
+	BT_MESH_DFU_SRV_INIT(&dfu_handlers, dfu_imgs, ARRAY_SIZE(dfu_imgs));
+#endif /* CONFIG_BT_MESH_DFU_SRV */
 
 /* Model Authentication Method */
 #define AUTH_METHOD_STATIC 0x01
@@ -366,6 +607,16 @@ static struct bt_mesh_rpr_cli rpr_cli = {
 };
 #endif
 
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+static uint8_t dfu_srv_apply(const void *cmd, uint16_t cmd_len,
+			     void *rsp, uint16_t *rsp_len)
+{
+	LOG_DBG("Applying image on server");
+	bt_mesh_dfu_srv_applied(&dfu_srv);
+	return BTP_STATUS_SUCCESS;
+}
+#endif
+
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -389,8 +640,28 @@ static struct bt_mesh_model root_models[] = {
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 	BT_MESH_MODEL_RPR_SRV,
 #endif
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+	BT_MESH_MODEL_DFD_SRV(&dfd_srv),
+#endif
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+	BT_MESH_MODEL_DFU_SRV(&dfu_srv),
+#endif
+#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+	BT_MESH_MODEL_BLOB_CLI(&blob_cli),
+#endif
 };
+struct model_data *lookup_model_bound(uint16_t id)
+{
+	int i;
 
+	for (i = 0; i < ARRAY_SIZE(model_bound); i++) {
+		if (model_bound[i].model && model_bound[i].model->id == id) {
+			return &model_bound[i];
+		}
+	}
+
+	return NULL;
+}
 static struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND(CID_LOCAL, VND_MODEL_ID_1, BT_MESH_MODEL_NO_OPS, NULL,
 			  NULL),
@@ -3089,6 +3360,643 @@ static uint8_t rpr_reprov_remote(const void *cmd, uint16_t cmd_len,
 }
 #endif
 
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+static struct {
+	struct bt_mesh_dfu_target targets[32];
+	struct bt_mesh_blob_target_pull pull[32];
+	size_t target_cnt;
+	struct bt_mesh_blob_cli_inputs inputs;
+} dfu_tx;
+
+static void dfu_tx_prepare(void)
+{
+	sys_slist_init(&dfu_tx.inputs.targets);
+
+	for (int i = 0; i < dfu_tx.target_cnt; i++) {
+		/* Reset target context. */
+		uint16_t addr = dfu_tx.targets[i].blob.addr;
+
+		memset(&dfu_tx.targets[i].blob, 0,
+		       sizeof(struct bt_mesh_blob_target));
+		memset(&dfu_tx.pull[i], 0,
+		       sizeof(struct bt_mesh_blob_target_pull));
+		dfu_tx.targets[i].blob.addr = addr;
+		dfu_tx.targets[i].blob.pull = &dfu_tx.pull[i];
+
+		sys_slist_append(&dfu_tx.inputs.targets,
+				 &dfu_tx.targets[i].blob.n);
+	}
+}
+
+static void dfu_target(uint8_t img_idx, uint16_t addr)
+{
+	if (dfu_tx.target_cnt == ARRAY_SIZE(dfu_tx.targets)) {
+		LOG_ERR("No room.");
+		return;
+	}
+
+	for (int i = 0; i < dfu_tx.target_cnt; i++) {
+		if (dfu_tx.targets[i].blob.addr == addr) {
+			LOG_ERR("Target 0x%04x already exists", addr);
+			return;
+		}
+	}
+
+	dfu_tx.targets[dfu_tx.target_cnt].blob.addr = addr;
+	dfu_tx.targets[dfu_tx.target_cnt].img_idx = img_idx;
+	sys_slist_append(&dfu_tx.inputs.targets,
+			 &dfu_tx.targets[dfu_tx.target_cnt].blob.n);
+	dfu_tx.target_cnt++;
+
+	LOG_DBG("Added target 0x%04x", addr);
+}
+static void dfu_slot_add(size_t size, uint8_t *fwid, size_t fwid_len,
+			 uint8_t *metadata, size_t metadata_len)
+{
+	struct bt_mesh_dfu_slot *slot;
+	int err;
+
+	slot = bt_mesh_dfu_slot_reserve();
+	err = bt_mesh_dfu_slot_info_set(slot, size, metadata, metadata_len);
+	if (err) {
+		LOG_ERR("Failed to set slot info: %d", err);
+		return;
+	}
+
+	err = bt_mesh_dfu_slot_fwid_set(slot, fwid, fwid_len);
+	if (err) {
+		LOG_ERR("Failed to set slot fwid: %d", err);
+		return;
+	}
+
+	bt_mesh_dfu_slot_commit(slot);
+	if (err) {
+		LOG_ERR("Failed to commit slot: %d", err);
+		return;
+	}
+
+	LOG_DBG("Slot added.");
+}
+static enum bt_mesh_dfu_iter dfu_img_cb(struct bt_mesh_dfu_cli *cli,
+					struct bt_mesh_msg_ctx *ctx,
+					uint8_t idx, uint8_t total,
+					const struct bt_mesh_dfu_img *img,
+					void *cb_data)
+{
+	char fwid[2 * CONFIG_BT_MESH_DFU_FWID_MAXLEN + 1];
+	size_t len;
+
+	idx = 0xff;
+
+	if (img->fwid_len <= sizeof(fwid)) {
+		len = bin2hex(img->fwid, img->fwid_len, fwid, sizeof(fwid));
+	} else {
+		LOG_ERR("FWID is too big");
+		return BT_MESH_DFU_ITER_STOP;
+	}
+
+	fwid[len] = '\0';
+
+	LOG_DBG("Image %u:", idx);
+	LOG_DBG("\tFWID: ");
+	if (img->uri) {
+		LOG_DBG("\tURI:  ");
+	}
+
+	return BT_MESH_DFU_ITER_CONTINUE;
+}
+
+static uint8_t dfu_info_get(const void *cmd, uint16_t cmd_len,
+			    void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mmdl_dfu_info_get_cmd *cp = cmd;
+	struct model_data *model_bound;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	uint8_t max_count;
+	int err = 0;
+
+	LOG_DBG("");
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+	ctx.addr = model_bound->addr;
+	ctx.app_idx = model_bound->appkey_idx;
+
+	max_count = cp->limit;
+
+	err = bt_mesh_dfu_cli_imgs_get(&dfd_srv.dfu, &ctx, dfu_img_cb, NULL,
+				       max_count);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t dfu_update_metadata_check(const void *cmd, uint16_t cmd_len,
+					 void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mmdl_dfu_metadata_check_cmd *cp = cmd;
+	struct btp_mmdl_dfu_metadata_check_rp *rp = rsp;
+	const struct bt_mesh_dfu_slot *slot;
+	struct model_data *model_bound;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct bt_mesh_dfu_metadata_status rsp_data;
+	uint8_t img_idx, slot_idx;
+	size_t size;
+	size_t fwid_len;
+	size_t metadata_len;
+	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN];
+	uint8_t metadata[CONFIG_BT_MESH_DFU_METADATA_MAXLEN];
+	int err;
+
+	LOG_DBG("");
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	ctx.addr = model_bound->addr;
+	ctx.app_idx = model_bound->appkey_idx;
+	img_idx = cp->index;
+	slot_idx = cp->slot_idx;
+	size = cp->slot_size;
+	fwid_len = cp->fwid_len;
+	metadata_len = cp->metadata_len;
+
+	if ((metadata_len > 0) &&
+		(metadata_len < CONFIG_BT_MESH_DFU_METADATA_MAXLEN)) {
+		memcpy(&metadata, cp->data, metadata_len);
+	}
+
+	dfu_slot_add(size, fwid, fwid_len, metadata, metadata_len);
+
+	slot = bt_mesh_dfu_slot_at(slot_idx);
+	if (!slot) {
+		LOG_ERR("No image in slot %u", slot_idx);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_mesh_dfu_cli_metadata_check(&dfd_srv.dfu, &ctx, img_idx, slot,
+					     &rsp_data);
+
+	if (err) {
+		LOG_ERR("ERR %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->idx = rsp_data.idx;
+	rp->status = rsp_data.status;
+	rp->effect = rsp_data.effect;
+
+	*rsp_len = sizeof(struct btp_mmdl_dfu_metadata_check_rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t dfu_firmware_update_get(const void *cmd, uint16_t cmd_len,
+				       void *rsp, uint16_t *rsp_len)
+{
+	struct model_data *model_bound;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct bt_mesh_dfu_target_status rsp_data;
+	struct btp_mmdl_dfu_firmware_update_rp *rp = rsp;
+	int err;
+
+	LOG_DBG("");
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	ctx.addr = model_bound->addr;
+	ctx.app_idx = model_bound->appkey_idx;
+
+	err = bt_mesh_dfu_cli_status_get(&dfd_srv.dfu, &ctx, &rsp_data);
+	if (err) {
+		LOG_ERR("err %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->status = rsp_data.status;
+	*rsp_len = sizeof(struct btp_mmdl_dfu_firmware_update_rp);
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t dfu_firmware_update_cancel(const void *cmd, uint16_t cmd_len,
+					  void *rsp, uint16_t *rsp_len)
+{
+	struct model_data *model_bound;
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	int err;
+
+	LOG_DBG("");
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	ctx.addr = model_bound->addr;
+	ctx.app_idx = model_bound->appkey_idx;
+
+	err = bt_mesh_dfu_cli_cancel(&dfd_srv.dfu, &ctx);
+	if (err) {
+		LOG_ERR("err %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t dfu_firmware_update_start(const void *cmd, uint16_t cmd_len,
+					 void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mmdl_dfu_firmware_update_cmd *cp = cmd;
+	struct model_data *model_bound;
+	struct bt_mesh_dfu_cli_xfer xfer;
+	uint8_t addr_cnt;
+	uint16_t addr = BT_MESH_ADDR_UNASSIGNED;
+	uint8_t slot_idx;
+	size_t size;
+	size_t fwid_len;
+	size_t metadata_len;
+	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN];
+	uint8_t metadata[CONFIG_BT_MESH_DFU_METADATA_MAXLEN];
+	int err = 0;
+	int i = 0;
+
+	LOG_DBG("");
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	struct bt_mesh_dfu_cli_xfer_blob_params blob = {
+		.block_size_log = cp->block_size,
+		.chunk_size = cp->chunk_size,
+	};
+
+	addr_cnt = cp->addr_cnt;
+	slot_idx = cp->slot_idx;
+	size = cp->slot_size;
+	fwid_len = cp->fwid_len;
+	metadata_len = cp->metadata_len;
+	xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
+	xfer.blob_params = &blob;
+
+	if ((metadata_len > 0) &&
+		(metadata_len < CONFIG_BT_MESH_DFU_METADATA_MAXLEN)) {
+		memcpy(&metadata, cp->data, metadata_len);
+	}
+
+	bt_mesh_dfu_slot_del_all();
+
+	dfu_slot_add(size, fwid, fwid_len, metadata, metadata_len);
+
+	xfer.slot = bt_mesh_dfu_slot_at(slot_idx);
+	if (!xfer.slot) {
+		LOG_ERR("No image in slot %u", slot_idx);
+		return BTP_STATUS_FAILED;
+	}
+
+	for (i = 0; i < addr_cnt; i++) {
+		addr = cp->data[metadata_len + 1 + i * sizeof(uint16_t)] |
+			(cp->data[metadata_len + i * sizeof(uint16_t)] << 8);
+		dfu_target(slot_idx, addr);
+	}
+
+	dfu_tx_prepare();
+
+	if (!dfu_tx.target_cnt) {
+		LOG_ERR("No targets.");
+		return BTP_STATUS_FAILED;
+	}
+
+	if (addr_cnt > 1) {
+		dfu_tx.inputs.group = BT_MESH_ADDR_UNASSIGNED;
+	} else {
+		dfu_tx.inputs.group = addr;
+	}
+
+	dfu_tx.inputs.app_idx = model_bound->appkey_idx;
+	dfu_tx.inputs.ttl = BT_MESH_TTL_DEFAULT;
+
+	err = bt_mesh_dfu_cli_send(&dfd_srv.dfu, &dfu_tx.inputs, &dummy_blob_io, &xfer);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t dfu_firmware_update_apply(const void *cmd, uint16_t cmd_len,
+					 void *rsp, uint16_t *rsp_len)
+{
+	struct model_data *model_bound;
+	int err;
+
+	LOG_DBG("");
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_mesh_dfu_cli_apply(&dfd_srv.dfu);
+	if (err) {
+		LOG_ERR("err %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif
+
+#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+static void blob_cli_inputs_prepare(uint16_t group, uint16_t app_idx)
+{
+	int i;
+
+	blob_cli_xfer.inputs.ttl = BT_MESH_TTL_DEFAULT;
+	blob_cli_xfer.inputs.group = group;
+	blob_cli_xfer.inputs.app_idx = app_idx;
+	sys_slist_init(&blob_cli_xfer.inputs.targets);
+
+	for (i = 0; i < blob_cli_xfer.target_count; ++i) {
+		/* Reset target context. */
+		uint16_t addr = blob_cli_xfer.targets[i].addr;
+
+		memset(&blob_cli_xfer.targets[i], 0,
+		       sizeof(struct bt_mesh_blob_target));
+		memset(&blob_cli_xfer.pull[i], 0,
+		       sizeof(struct bt_mesh_blob_target_pull));
+		blob_cli_xfer.targets[i].addr = addr;
+		blob_cli_xfer.targets[i].pull = &blob_cli_xfer.pull[i];
+
+		sys_slist_append(&blob_cli_xfer.inputs.targets,
+				 &blob_cli_xfer.targets[i].n);
+	}
+}
+
+static int cmd_blob_target(uint16_t addr)
+{
+	struct bt_mesh_blob_target *t;
+
+	if (blob_cli_xfer.target_count == ARRAY_SIZE(blob_cli_xfer.targets)) {
+		LOG_ERR("No more room");
+		return 0;
+	}
+
+	t = &blob_cli_xfer.targets[blob_cli_xfer.target_count];
+
+	t->addr = addr;
+
+	LOG_DBG("Added target 0x%04x", t->addr);
+
+	blob_cli_xfer.target_count++;
+	return 0;
+}
+
+static uint8_t blob_info_get(const void *cmd, uint16_t cmd_len,
+			     void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mmdl_blob_info_get_cmd *cp = cmd;
+	struct model_data *model_bound;
+	uint16_t addr = BT_MESH_ADDR_UNASSIGNED;
+	uint16_t group = BT_MESH_ADDR_UNASSIGNED;
+	int err;
+
+	LOG_DBG("");
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_CLI);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	for (int i = 0; i < cp->addr_cnt; i++) {
+		addr = cp->addr[1 + i * sizeof(uint16_t)] |
+			(cp->addr[i * sizeof(uint16_t)] << 8);
+		err = cmd_blob_target(addr);
+		if (err) {
+			LOG_ERR("err target %d", err);
+			return BTP_STATUS_FAILED;
+		}
+	}
+
+	if (cp->addr_cnt > 1) {
+		group = BT_MESH_ADDR_UNASSIGNED;
+	} else {
+		group = addr;
+	}
+
+	if (!blob_cli_xfer.target_count) {
+		LOG_ERR("Failed: No targets");
+		return BTP_STATUS_FAILED;
+	}
+
+	blob_cli_inputs_prepare(group, model_bound->appkey_idx);
+
+	err = bt_mesh_blob_cli_caps_get(&blob_cli, &blob_cli_xfer.inputs);
+
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t blob_transfer_start(const void *cmd, uint16_t cmd_len,
+				   void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mmdl_blob_transfer_start_cmd *cp = cmd;
+	struct model_data *model_bound;
+	int err = 0;
+
+	LOG_DBG("");
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_CLI);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	if (!blob_cli_xfer.target_count) {
+		LOG_ERR("Failed: No targets");
+		return BTP_STATUS_FAILED;
+	}
+	blob_cli_xfer.xfer.id = cp->id;
+	blob_cli_xfer.xfer.size = cp->size;
+	blob_cli_xfer.xfer.block_size_log = cp->block_size;
+	blob_cli_xfer.xfer.chunk_size = cp->chunk_size;
+
+	if (blob_cli.caps.modes) {
+		blob_cli_xfer.xfer.mode = blob_cli.caps.modes;
+	} else {
+		blob_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
+	}
+
+	if (cp->timeout) {
+		blob_cli_xfer.inputs.timeout_base = cp->timeout;
+	}
+
+	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
+				    &blob_cli_xfer.xfer, &dummy_blob_io);
+
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t blob_transfer_cancel(const void *cmd, uint16_t cmd_len,
+				    void *rsp, uint16_t *rsp_len)
+{
+	LOG_DBG("");
+
+	bt_mesh_blob_cli_cancel(&blob_cli);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t blob_transfer_get(const void *cmd, uint16_t cmd_len,
+				 void *rsp, uint16_t *rsp_len)
+{
+	struct model_data *model_bound;
+	uint16_t group;
+	int err;
+
+	LOG_DBG("");
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_CLI);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	group = model_bound->addr;
+
+	err = cmd_blob_target(group);
+	if (err) {
+		LOG_ERR("err target %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (!blob_cli_xfer.target_count) {
+		LOG_ERR("Failed: No targets");
+		return BTP_STATUS_FAILED;
+	}
+
+	blob_cli_inputs_prepare(group, model_bound->appkey_idx);
+
+	err = bt_mesh_blob_cli_xfer_progress_get(&blob_cli, &blob_cli_xfer.inputs);
+
+	if (err) {
+		LOG_ERR("ERR %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* CONFIG_BT_MESH_BLOB_CLI */
+
+#if defined(CONFIG_BT_MESH_BLOB_SRV)
+static uint8_t blob_srv_recv(const void *cmd, uint16_t cmd_len,
+			     void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mmdl_blob_srv_recv_cmd *cp = cmd;
+	struct model_data *model_bound;
+	int err;
+
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+	struct bt_mesh_blob_srv *srv = &dfu_srv.blob;
+#elif defined(CONFIG_BT_MESH_DFD_SRV)
+	struct bt_mesh_blob_srv *srv = &dfd_srv.upload.blob;
+#endif
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_SRV);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	uint16_t timeout_base;
+	uint64_t id;
+
+	LOG_DBG("");
+
+	id = cp->id;
+	timeout_base = cp->timeout;
+
+	err = bt_mesh_blob_srv_recv(srv, id, &dummy_blob_io, BT_MESH_TTL_MAX,
+				    timeout_base);
+
+	if (err) {
+		LOG_ERR("ERR %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t blob_srv_cancel(const void *cmd, uint16_t cmd_len,
+			       void *rsp, uint16_t *rsp_len)
+{
+	struct model_data *model_bound;
+	int err;
+
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+	struct bt_mesh_blob_srv *srv = &dfu_srv.blob;
+#elif defined(CONFIG_BT_MESH_DFD_SRV)
+	struct bt_mesh_blob_srv *srv = &dfd_srv.upload.blob;
+#endif
+
+	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_SRV);
+	if (!model_bound) {
+		LOG_ERR("Model not found");
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("");
+
+	err = bt_mesh_blob_srv_cancel(srv);
+
+	if (err) {
+		LOG_ERR("ERR %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_MESH_READ_SUPPORTED_COMMANDS,
@@ -3577,6 +4485,83 @@ static const struct btp_handler handlers[] = {
 	},
 };
 
+
+static const struct btp_handler mdl_handlers[] = {
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+	{
+		.opcode = BTP_MMDL_DFU_INFO_GET,
+		.expect_len = sizeof(struct btp_mmdl_dfu_info_get_cmd),
+		.func = dfu_info_get,
+	},
+	{
+		.opcode = BTP_MMDL_DFU_UPDATE_METADATA_CHECK,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = dfu_update_metadata_check,
+	},
+	{
+		.opcode = BTP_MMDL_DFU_FIRMWARE_UPDATE_GET,
+		.expect_len = 0,
+		.func = dfu_firmware_update_get,
+	},
+	{
+		.opcode = BTP_MMDL_DFU_FIRMWARE_UPDATE_CANCEL,
+		.expect_len = 0,
+		.func = dfu_firmware_update_cancel,
+	},
+	{
+		.opcode = BTP_MMDL_DFU_FIRMWARE_UPDATE_START,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = dfu_firmware_update_start,
+	},
+	{
+		.opcode = BTP_MMDL_DFU_FIRMWARE_UPDATE_APPLY,
+		.expect_len = 0,
+		.func = dfu_firmware_update_apply,
+	},
+#endif
+#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+	{
+		.opcode = BTP_MMDL_BLOB_INFO_GET,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = blob_info_get,
+	},
+	{
+		.opcode = BTP_MMDL_BLOB_TRANSFER_START,
+		.expect_len = sizeof(struct btp_mmdl_blob_transfer_start_cmd),
+		.func = blob_transfer_start,
+	},
+	{
+		.opcode = BTP_MMDL_BLOB_TRANSFER_CANCEL,
+		.expect_len = 0,
+		.func = blob_transfer_cancel,
+	},
+	{
+		.opcode = BTP_MMDL_BLOB_TRANSFER_GET,
+		.expect_len = 0,
+		.func = blob_transfer_get,
+	},
+#endif
+#if defined(CONFIG_BT_MESH_BLOB_SRV)
+	{
+		.opcode = BTP_MMDL_BLOB_SRV_RECV,
+		.expect_len = sizeof(struct btp_mmdl_blob_srv_recv_cmd),
+		.func = blob_srv_recv
+	},
+	{
+		.opcode = BTP_MMDL_BLOB_SRV_CANCEL,
+		.expect_len = 0,
+		.func = blob_srv_cancel
+	},
+#endif
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+	{
+		.opcode = BTP_MMDL_DFU_SRV_APPLY,
+		.expect_len = 0,
+		.func = dfu_srv_apply
+	},
+#endif
+};
+
 void net_recv_ev(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst, const void *payload,
 		 size_t payload_len)
 {
@@ -3782,6 +4767,18 @@ uint8_t tester_init_mesh(void)
 }
 
 uint8_t tester_unregister_mesh(void)
+{
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t tester_init_mmdl(void)
+{
+	tester_register_command_handlers(BTP_SERVICE_ID_MESH_MDL, mdl_handlers,
+					 ARRAY_SIZE(mdl_handlers));
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t tester_unregister_mmdl(void)
 {
 	return BTP_STATUS_SUCCESS;
 }

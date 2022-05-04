@@ -73,6 +73,9 @@ uint8_t tester_unregister_vocs(void);
 uint8_t tester_init_ias(void);
 uint8_t tester_unregister_ias(void);
 
+uint8_t tester_init_mmdl(void);
+uint8_t tester_unregister_mmdl(void);
+
 uint8_t tester_init_gap(void);
 uint8_t tester_unregister_gap(void);
 
