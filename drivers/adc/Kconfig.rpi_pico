@@ -1,0 +1,9 @@
+# Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_RPI_PICO
+	bool "Raspberry Pi Pico ADC driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_ADC_ENABLED
+	select PICOSDK_USE_ADC
+	depends on RESET
