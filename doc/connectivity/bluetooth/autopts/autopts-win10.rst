@@ -69,94 +69,7 @@ drivers from installation directory
 Setup Zephyr project for Windows
 =================================
 
-Brief of setup `Getting Started Guide <https://docs.zephyrproject.org/latest/getting_started/index.html>`_:
-
-Open Git Bash and go to home:
-
-.. code-block::
-
-    cd ~
-
-Install west:
-
-.. code-block::
-
-    pip3 install west
-
-Get the Zephyr source code:
-
-.. code-block::
-
-    west init zephyrproject
-
-Go into freshly created folder:
-
-.. code-block::
-
-    cd zephyrproject
-
-Run:
-
-.. code-block::
-
-    west update
-
-Export a Zephyr CMake package. This allows CMake to automatically load
-boilerplate code required for building Zephyr applications:
-
-.. code-block::
-
-    west zephyr-export
-
-Zephyr’s scripts/requirements.txt file declares additional Python
-dependencies. Install them with pip:
-
-.. code-block::
-
-    pip3 install -r ~\zephyrproject\zephyr\scripts\requirements.txt
-
-Setup WSL with Ubuntu
-============================
-
-Install Ubuntu 20.4 on `WSL <https://docs.microsoft.com/en-us/windows/wsl/install-win10>`_.
-
-When finished, perform the Ubuntu setup from `Getting Started Guide <https://docs.zephyrproject.org/latest/getting_started/index.html>`_,
-but skip west init and west update commands, as you can use the previously downloaded
-Zephyr source code at mounted Windows folder /mnt/c/Users/<user>/zephyrproject.
-Skip install of udev rules also, because we won't flash the board from wsl.
-
-Remember to run:
-
-.. code-block::
-
-    cd /mnt/c/Users/<user>/zephyrproject
-    west zephyr-export
-    pip3 install --user -r zephyr/scripts/requirements.txt
-
-Restart the Ubuntu machine. You may want to shutdown all WSL consoles from
-Windows's Git Bash:
-
-.. code-block::
-
-    wsl --shutdown
-
-After Ubuntu restart, go to:
-
-.. code-block::
-
-    cd /mnt/c/Users/<user>/zephyrproject
-
-and test if west can build:
-
-.. code-block::
-
-    west build -p auto -b nrf52840dk_nrf52840 zephyr/tests/bluetooth/tester/
-
-From now on, you can build projects by typing in Windows's Git Bash:
-
-.. code-block::
-
-    wsl -d Ubuntu-20.04 -u <user> -- bash -c -i "cd /mnt/c/Users/<user>/zephyrproject/ ; west build -p auto -b nrf52840dk_nrf52840 zephyr/tests/bluetooth/tester/"
+Perform Windows setup from `Getting Started Guide <https://docs.zephyrproject.org/latest/getting_started/index.html>`_.
 
 Install nrftools
 =================
@@ -198,6 +111,12 @@ In Git Bash, go to zephyrproject
 .. code-block::
 
     cd ~/zephyrproject
+
+Build the auto-pts tester app
+
+.. code-block::
+
+    west build -p auto -b nrf52840dk_nrf52840 zephyr/tests/bluetooth/tester/
 
 You can display flashing options with:
 
