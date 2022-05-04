@@ -16,9 +16,11 @@ void test_fcb_len(void)
 	int rc2;
 	struct fcb fcb = { .f_erase_value = fcb_test_erase_value };
 
+
+
 	for (len = 0U; len < FCB_MAX_LEN; len++) {
 		rc = fcb_put_len(&fcb, buf, len);
-		zassert_true(rc == 1 || rc == 2, "fcb_pull_len call failure");
+		zassert_true(rc == 1 || rc == 2, "fcb_put_len call failure");
 
 		rc2 = fcb_get_len(&fcb, buf, &len2);
 		zassert_true(rc2 == rc, "fcb_get_len call failure");
