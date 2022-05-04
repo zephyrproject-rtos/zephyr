@@ -895,6 +895,72 @@ struct btp_rpr_reprov_remote_cmd {
 	bool comp_change;
 } __packed;
 
+#define BTP_MMDL_DFU_INFO_GET			0x5f
+struct btp_mmdl_dfu_info_get_cmd {
+	uint8_t limit;
+} __packed;
+
+#define BTP_MMDL_BLOB_INFO_GET			0x60
+struct btp_mmdl_blob_info_get_cmd {
+	uint8_t addr_cnt;
+	uint8_t addr[];
+} __packed;
+
+#define BTP_MMDL_DFU_UPDATE_METADATA_CHECK	0x61
+struct btp_mmdl_dfu_metadata_check_cmd {
+	uint8_t index;
+	uint8_t slot_idx;
+	uint8_t slot_size;
+	uint8_t fwid_len;
+	uint8_t metadata_len;
+	uint8_t data[];
+} __packed;
+
+struct btp_mmdl_dfu_metadata_check_rp {
+	uint8_t idx;
+	uint8_t status;
+	uint8_t effect;
+} __packed;
+
+#define BTP_MMDL_DFU_FIRMWARE_UPDATE_GET	0x62
+#define BTP_MMDL_DFU_FIRMWARE_UPDATE_CANCEL	0x63
+#define BTP_MMDL_DFU_FIRMWARE_UPDATE_START	0x64
+struct btp_mmdl_dfu_firmware_update_cmd {
+	uint8_t addr_cnt;
+	uint8_t slot_idx;
+	uint8_t slot_size;
+	uint8_t fwid_len;
+	uint8_t metadata_len;
+	uint8_t block_size;
+	uint16_t chunk_size;
+	uint8_t data[];
+} __packed;
+
+struct btp_mmdl_dfu_firmware_update_rp {
+	uint8_t status;
+} __packed;
+
+#define BTP_MMDL_BLOB_SRV_RECV			0x65
+struct btp_mmdl_blob_srv_recv_cmd {
+	uint64_t id;
+	uint16_t timeout;
+} __packed;
+
+#define BTP_MMDL_BLOB_TRANSFER_START		0x66
+struct btp_mmdl_blob_transfer_start_cmd {
+	uint64_t id;
+	uint16_t size;
+	uint8_t block_size;
+	uint16_t chunk_size;
+	uint16_t timeout;
+} __packed;
+
+#define BTP_MMDL_BLOB_TRANSFER_CANCEL		0x67
+#define BTP_MMDL_BLOB_TRANSFER_GET		0x68
+#define BTP_MMDL_BLOB_SRV_CANCEL		0x69
+#define BTP_MMDL_DFU_FIRMWARE_UPDATE_APPLY	0x6A
+#define BTP_MMDL_DFU_SRV_APPLY			0x6B
+
 /* events */
 #define BTP_MESH_EV_OUT_NUMBER_ACTION		0x80
 struct btp_mesh_out_number_action_ev {
@@ -996,3 +1062,5 @@ struct btp_mesh_model_recv_ev {
 	uint8_t payload_len;
 	uint8_t payload[];
 } __packed;
+
+#define MESH_EV_BLOB_LOST_TARGET		0x90
