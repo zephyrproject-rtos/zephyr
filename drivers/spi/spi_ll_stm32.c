@@ -730,7 +730,7 @@ static int transceive_dma(const struct device *dev,
 	/* Set buffers info */
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	/* set request before enabling (else SPI CFG1 reg is write protected) */
 	LL_SPI_EnableDMAReq_RX(spi);
 	LL_SPI_EnableDMAReq_TX(spi);
@@ -741,7 +741,7 @@ static int transceive_dma(const struct device *dev,
 	}
 #else
 	LL_SPI_Enable(spi);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* st_stm32h7_spi */
 
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
@@ -764,11 +764,12 @@ static int transceive_dma(const struct device *dev,
 			break;
 		}
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+
 		/* toggle the DMA request to restart the transfer */
 		LL_SPI_EnableDMAReq_RX(spi);
 		LL_SPI_EnableDMAReq_TX(spi);
-#endif /* ! CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ! st_stm32h7_spi */
 
 		ret = wait_dma_rx_tx_done(dev);
 		if (ret != 0) {
@@ -784,11 +785,11 @@ static int transceive_dma(const struct device *dev,
 		while (ll_func_spi_dma_busy(spi) == 0) {
 		}
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		/* toggle the DMA transfer request */
 		LL_SPI_DisableDMAReq_TX(spi);
 		LL_SPI_DisableDMAReq_RX(spi);
-#endif /* ! CONFIG_SOC_SERIES_STM32H7X */
+#endif /* ! st_stm32h7_spi */
 
 		spi_context_update_tx(&data->ctx, 1, dma_len);
 		spi_context_update_rx(&data->ctx, 1, dma_len);
@@ -914,6 +915,9 @@ static int spi_stm32_init(const struct device *dev)
 		LOG_ERR("%s device not ready", data->dma_tx.dma_dev->name);
 		return -ENODEV;
 	}
+
+	LOG_INF(" SPI with DMA transfer");
+
 #endif /* CONFIG_SPI_STM32_DMA */
 
 	err = spi_context_cs_configure_all(&data->ctx);
