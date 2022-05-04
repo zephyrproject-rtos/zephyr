@@ -52,6 +52,8 @@ struct lsm6dso_config {
 	} stmemsc_cfg;
 	uint8_t accel_pm;
 	uint8_t accel_odr;
+#define ACCEL_RANGE_DOUBLE	BIT(7)
+#define ACCEL_RANGE_MASK	BIT_MASK(6)
 	uint8_t accel_range;
 	uint8_t gyro_pm;
 	uint8_t gyro_odr;
