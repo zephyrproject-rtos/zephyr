@@ -569,6 +569,11 @@ config ARCH_HAS_COHERENCE
 config ARCH_HAS_THREAD_LOCAL_STORAGE
 	bool
 
+config ARCH_HAS_SUSPEND_TO_RAM
+	bool
+	help
+	  When selected, the architecture supports suspend-to-RAM (S2RAM).
+
 #
 # Other architecture related options
 #
