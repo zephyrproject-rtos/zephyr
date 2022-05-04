@@ -336,7 +336,6 @@
 /drivers/peci/                            @albertofloyd @franciscomunoz @sjvasanth1
 /drivers/pinctrl/                         @gmarull
 /drivers/pinctrl/*esp32*                  @glaubermaroto
-/drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*it8xxx2*                 @ite
 /drivers/pm_cpu_ops/                      @carlocaione
 /drivers/power_domain/                    @ceolin
