@@ -217,14 +217,20 @@ int device_lock(struct device *dev)
 {
 	struct device_context *dc = GET_DEV_CONTEXT(dev);
 
-	return k_sem_take(&dc->lock, K_FOREVER);
+	if (dc->lock == NULL) {
+		return 0;
+	}
+
+	return k_sem_take(dc->lock, K_FOREVER);
 }
 
 int device_release(struct device *dev, int status)
 {
 	struct device_context *dc = GET_DEV_CONTEXT(dev);
 
-	k_sem_give(&dc->lock);
+	if (dc->lock != NULL) {
+		k_sem_give(dc->lock);
+	}
 
 	return status;
 }

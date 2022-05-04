@@ -1,6 +1,6 @@
 # Common fields for all devices
 
-include: [pm.yaml]
+include: [pm.yaml, "zephyr,device.yaml"]
 
 properties:
     status:

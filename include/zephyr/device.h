@@ -170,7 +170,7 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_device,		\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
-	Z_DEVICE_CONTEXT_DEFINE(DT_INVALID_NODE, dev_name, level, prio)	\
+	Z_DEVICE_CONTEXT_DEFINE(DT_INVALID_NODE, dev_name, level, prio) \
 	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
 			pm_device, data_ptr, cfg_ptr, level, prio,	\
 			api_ptr)
@@ -429,7 +429,7 @@ struct device_context {
 	bool initialized : 1;
 
 #if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
-	struct k_sem lock;
+	struct k_sem *lock;
 #endif
 };
 
@@ -838,15 +838,33 @@ int device_release(struct device *dev, int status);
 
 #if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
 
+/* Get device context's lock name */
+#define Z_DEVICE_CONTEXT_LOCK_NAME(dev_name)		\
+	_CONCAT(Z_DEVICE_CONTEXT_NAME(dev_name), _lock)
+
+/* Declare and initialize a lock */
+#define Z_DEVICE_CONTEXT_LOCK_DECLARE(dev_name)				\
+	static struct k_sem Z_DEVICE_CONTEXT_LOCK_NAME(dev_name) __used	\
+	__attribute__((__section__(".z_devcontext_lock"))) = 		\
+		Z_SEM_INITIALIZER(Z_DEVICE_CONTEXT_LOCK_NAME(dev_name), 1, 1);
+
+/* Conditionally create a lock for the device context */
+#define Z_DEVICE_CONTEXT_LOCK_INITIALIZE(node_id, dev_name)		\
+	COND_CODE_0(DT_PROP(node_id, zephyr_no_lock),			\
+		    (Z_DEVICE_CONTEXT_LOCK_DECLARE(dev_name)), ())
+
 /* Initialize structure device_context's specific attributes */
-#define Z_DEVICE_CONTEXT_INITIALIZE(_obj)			\
-	{							\
-		.lock = Z_SEM_INITIALIZER(_obj.lock, 1, 1),	\
+#define Z_DEVICE_CONTEXT_INITIALIZE(node_id, dev_name)			\
+	{								\
+		COND_CODE_0(DT_PROP(node_id, zephyr_no_lock),		\
+			    (.lock = &Z_DEVICE_CONTEXT_LOCK_NAME(dev_name)), \
+			    (.lock = NULL))				\
 	}
 
 #else /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 
-#define Z_DEVICE_CONTEXT_INITIALIZE(_obj) {}
+#define Z_DEVICE_CONTEXT_LOCK_INITIALIZE(node_id, dev_name)
+#define Z_DEVICE_CONTEXT_INITIALIZE(node_id, dev_name) {}
 
 #endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 
@@ -861,11 +879,12 @@ int device_release(struct device *dev, int status);
  * See SYS_INIT() for details.
  */
 #define Z_DEVICE_CONTEXT_DEFINE(node_id, dev_name, level, prio)		\
+	Z_DEVICE_CONTEXT_LOCK_INITIALIZE(node_id, dev_name)		\
 	static Z_DECL_ALIGN(struct device_context)			\
 		Z_DEVICE_CONTEXT_NAME(dev_name)	__used			\
 	__attribute__(							\
 		(__section__(".z_devcontext_" #level STRINGIFY(prio)"_"))) = \
-		Z_DEVICE_CONTEXT_INITIALIZE(Z_DEVICE_CONTEXT_NAME(dev_name));
+		Z_DEVICE_CONTEXT_INITIALIZE(node_id, dev_name);
 
 /* Synthesize the name of the object that holds device ordinal and
  * dependency data. If the object doesn't come from a devicetree

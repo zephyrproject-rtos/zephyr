@@ -1,0 +1,9 @@
+# Common fields for zephyr devices
+
+properties:
+    zephyr,no-lock:
+        type: boolean
+        required: false
+        description: |
+            Unset by default, it enables the possibility to avoid allocating a lock
+            on the device instance.
