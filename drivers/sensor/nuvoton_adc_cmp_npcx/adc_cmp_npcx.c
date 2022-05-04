@@ -19,6 +19,8 @@ struct adc_cmp_npcx_data {
 	sensor_trigger_handler_t handler;
 	/* ADC NPCX driver reference */
 	const struct device *dev;
+	/* Driver user sensor trigger reference */
+	const struct sensor_trigger *trigger;
 };
 
 struct adc_cmp_npcx_config {
@@ -50,13 +52,9 @@ static void adc_cmp_npcx_trigger_work_handler(struct k_work *item)
 {
 	struct adc_cmp_npcx_data *data =
 			CONTAINER_OF(item, struct adc_cmp_npcx_data, work);
-	struct sensor_trigger trigger = {
-		.type = SENSOR_TRIG_THRESHOLD,
-		.chan = SENSOR_CHAN_VOLTAGE
-	};
 
 	if (data->handler) {
-		data->handler(data->dev, &trigger);
+		data->handler(data->dev, data->trigger);
 	}
 }
 
@@ -224,6 +222,7 @@ static int adc_cmp_npcx_trigger_set(const struct device *dev,
 	}
 
 	data->handler = handler;
+	data->trigger = trig;
 
 	param.type = ADC_NPCX_THRESHOLD_PARAM_WORK;
 	param.val = (uint32_t)&data->work;
