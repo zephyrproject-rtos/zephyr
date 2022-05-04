@@ -274,7 +274,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (dirent.type != FS_DIR_ENTRY_FILE) {
-		shell_error(shell, "Note a file %s", path);
+		shell_error(shell, "Not a file %s", path);
 		return -ENOEXEC;
 	}
 
@@ -356,7 +356,7 @@ static int cmd_cat(const struct shell *shell, size_t argc, char **argv)
 		}
 
 		if (dirent.type != FS_DIR_ENTRY_FILE) {
-			shell_error(shell, "Note a file %s", path);
+			shell_error(shell, "Not a file %s", path);
 			continue;
 		}
 
@@ -505,7 +505,7 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 	res = fs_mount(&fatfs_mnt);
 	if (res != 0) {
 		shell_error(shell,
-			"Error mounting fat fs.Error Code [%d]", res);
+			"Error mounting FAT fs. Error Code [%d]", res);
 		return -ENOEXEC;
 	}
 
