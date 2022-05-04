@@ -6,7 +6,7 @@ menuconfig USB_DFU_CLASS
 	select MPU_ALLOW_FLASH_WRITE
 	select POLL
 	depends on IMG_MANAGER
-	select IMG_ERASE_PROGRESSIVELY if SOC_FLASH_NRF
+	select IMG_ERASE_PROGRESSIVELY if (SOC_FLASH_NRF || FLASH_MCUX_FLEXSPI_NOR)
 	help
 	  USB DFU class driver
 
