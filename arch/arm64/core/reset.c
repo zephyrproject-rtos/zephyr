@@ -89,8 +89,10 @@ void z_arm64_el3_init(void)
 
 #if defined(CONFIG_GIC_V3)
 	reg = read_sysreg(ICC_SRE_EL3);
-	reg = (ICC_SRE_ELx_SRE_BIT |	/* System register interface is used */
-	       ICC_SRE_EL3_EN_BIT);	/* Enables lower Exception level access to ICC_SRE_EL1 */
+	reg |= (ICC_SRE_ELx_DFB_BIT |	/* Disable FIQ bypass */
+		ICC_SRE_ELx_DIB_BIT |	/* Disable IRQ bypass */
+		ICC_SRE_ELx_SRE_BIT |	/* System register interface is used */
+		ICC_SRE_EL3_EN_BIT);	/* Enables lower Exception level access to ICC_SRE_EL1 */
 	write_sysreg(reg, ICC_SRE_EL3);
 #endif
 
