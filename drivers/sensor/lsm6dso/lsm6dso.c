@@ -876,6 +876,16 @@ static int lsm6dso_init(const struct device *dev)
 			 SPI_MODE_CPOL |				\
 			 SPI_MODE_CPHA)					\
 
+#define LSM6DSO_CONFIG_COMMON(inst)					\
+	.accel_pm = DT_INST_PROP(inst, accel_pm),			\
+	.accel_odr = DT_INST_PROP(inst, accel_odr),			\
+	.accel_range = DT_INST_PROP(inst, accel_range),			\
+	.gyro_pm = DT_INST_PROP(inst, gyro_pm),				\
+	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
+	.gyro_range = DT_INST_PROP(inst, gyro_range),			\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
+		(LSM6DSO_CFG_IRQ(inst)), ())
+
 #define LSM6DSO_CONFIG_SPI(inst)					\
 	{								\
 		.ctx = {						\
@@ -891,14 +901,7 @@ static int lsm6dso_init(const struct device *dev)
 					   LSM6DSO_SPI_OP,		\
 					   0),				\
 		},							\
-		.accel_pm = DT_INST_PROP(inst, accel_pm),		\
-		.accel_odr = DT_INST_PROP(inst, accel_odr),		\
-		.accel_range = DT_INST_PROP(inst, accel_range),		\
-		.gyro_pm = DT_INST_PROP(inst, gyro_pm),			\
-		.gyro_odr = DT_INST_PROP(inst, gyro_odr),		\
-		.gyro_range = DT_INST_PROP(inst, gyro_range),		\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
-			(LSM6DSO_CFG_IRQ(inst)), ())			\
+		LSM6DSO_CONFIG_COMMON(inst)				\
 	}
 
 /*
@@ -918,14 +921,7 @@ static int lsm6dso_init(const struct device *dev)
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
-		.accel_pm = DT_INST_PROP(inst, accel_pm),		\
-		.accel_odr = DT_INST_PROP(inst, accel_odr),		\
-		.accel_range = DT_INST_PROP(inst, accel_range),		\
-		.gyro_pm = DT_INST_PROP(inst, gyro_pm),			\
-		.gyro_odr = DT_INST_PROP(inst, gyro_odr),		\
-		.gyro_range = DT_INST_PROP(inst, gyro_range),		\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
-			(LSM6DSO_CFG_IRQ(inst)), ())			\
+		LSM6DSO_CONFIG_COMMON(inst)				\
 	}
 
 /*
