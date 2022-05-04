@@ -3220,7 +3220,9 @@ class TestPlan(DisablePyTestCollectionMixin):
                               str(instance.metrics.get("unrecognized", []))))
                 failed += 1
 
-            if instance.metrics.get('handler_time', None):
+            # FIXME: need a better way to identify executed tests
+            handler_time = instance.metrics.get('handler_time', 0)
+            if float(handler_time) > 0:
                 run += 1
 
         if results.total and results.total != results.skipped_configs:
@@ -3255,8 +3257,9 @@ class TestPlan(DisablePyTestCollectionMixin):
                 (100 * len(self.filtered_platforms) / len(self.platforms))
             ))
 
+        built_only = results.total - run - results.skipped_configs
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
-{Fore.RED}{results.total - run - results.skipped_configs}{Fore.RESET} test configurations were only built.")
+{Fore.RED}{built_only}{Fore.RESET} test configurations were only built.")
 
     def save_reports(self, name, suffix, report_dir, no_update, platform_reports):
         if not self.instances:
@@ -3478,6 +3481,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                 instance = TestInstance(self.testsuites[testsuite], platform, self.outdir)
                 if ts.get("run_id"):
                     instance.run_id = ts.get("run_id")
+
                 if self.device_testing:
                     tfilter = 'runnable'
                 else:
@@ -3495,6 +3499,10 @@ class TestPlan(DisablePyTestCollectionMixin):
                 status = ts.get('status', None)
                 reason = ts.get("reason", "Unknown")
                 if status in ["error", "failed"]:
+                    instance.status = None
+                # test marked as passed (built only) but can run when
+                # --test-only is used. Reset status to capture new results.
+                elif status == 'passed' and instance.run and self.test_only:
                     instance.status = None
                 else:
                     instance.status = status
