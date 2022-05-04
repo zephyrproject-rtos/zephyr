@@ -17,11 +17,25 @@ CREATE_FLAG(flag_connected);
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
 
-static void cap_discovery_complete_cb(struct bt_conn *conn, int err)
+static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
+				      const struct bt_csis_client_csis_inst *csis_inst)
 {
 	if (err != 0) {
 		FAIL("Failed to discover CAS: %d", err);
+
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER)) {
+		if (csis_inst == NULL)  {
+			FAIL("Failed to discover CAS CSIS");
+
+			return;
+		}
+
+		printk("Found CAS with CSIS %p\n", csis_inst);
+	} else {
+		printk("Found CAS\n");
 	}
 
 	SET_FLAG(flag_discovered);
