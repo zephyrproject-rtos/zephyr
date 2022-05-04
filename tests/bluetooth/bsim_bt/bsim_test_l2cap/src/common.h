@@ -34,7 +34,7 @@
 	}
 
 
-#define WAIT_TIME (240 * NSEC_PER_SEC) /* 240 seconds*/
+#define WAIT_TIME (60e6) /* 60 seconds*/
 
 #define FAIL(...)				       \
 	do {					       \

@@ -23,7 +23,7 @@ void test_init(void)
 void test_tick(bs_time_t HW_device_time)
 {
 	if (bst_result != Passed) {
-		FAIL("test failed (not passed after %i seconds)\n", WAIT_TIME);
+		FAIL("test failed (not passed after %i us)\n", WAIT_TIME);
 	}
 }
 
