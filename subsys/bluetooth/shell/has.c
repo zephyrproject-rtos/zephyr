@@ -90,6 +90,44 @@ static int cmd_preset_list(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_preset_avail(const struct shell *sh, size_t argc, char **argv)
+{
+	int err = 0;
+	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	if (err < 0) {
+		shell_print(sh, "Invalid command parameter (err %d)", err);
+		return err;
+	}
+
+	err = bt_has_preset_available(index);
+	if (err < 0) {
+		shell_print(sh, "Preset availability set failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_preset_unavail(const struct shell *sh, size_t argc, char **argv)
+{
+	int err = 0;
+	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	if (err < 0) {
+		shell_print(sh, "Invalid command parameter (err %d)", err);
+		return err;
+	}
+
+	err = bt_has_preset_unavailable(index);
+	if (err < 0) {
+		shell_print(sh, "Preset availability set failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int cmd_has(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -106,6 +144,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(has_cmds,
 		      cmd_preset_reg, 4, 0),
 	SHELL_CMD_ARG(preset-unreg, NULL, "Unregister preset <index>", cmd_preset_unreg, 2, 0),
 	SHELL_CMD_ARG(preset-list, NULL, "List all presets", cmd_preset_list, 1, 0),
+	SHELL_CMD_ARG(preset-set-avail, NULL, "Set preset as available <index>",
+		      cmd_preset_avail, 2, 0),
+	SHELL_CMD_ARG(preset-set-unavail, NULL, "Set preset as unavailable <index>",
+		      cmd_preset_unavail, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
