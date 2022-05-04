@@ -106,4 +106,24 @@ GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread) -
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread));
 #endif
 
+/*
+ * CPU context for S2RAM
+ */
+#if defined(CONFIG_PM_S2RAM)
+GEN_OFFSET_SYM(_cpu_context_t, msp);
+GEN_OFFSET_SYM(_cpu_context_t, msplim);
+GEN_OFFSET_SYM(_cpu_context_t, psp);
+GEN_OFFSET_SYM(_cpu_context_t, psplim);
+GEN_OFFSET_SYM(_cpu_context_t, apsr);
+GEN_OFFSET_SYM(_cpu_context_t, ipsr);
+GEN_OFFSET_SYM(_cpu_context_t, epsr);
+
+GEN_OFFSET_SYM(_cpu_context_t, primask);
+GEN_OFFSET_SYM(_cpu_context_t, faultmask);
+GEN_OFFSET_SYM(_cpu_context_t, basepri);
+GEN_OFFSET_SYM(_cpu_context_t, control);
+
+GEN_ABSOLUTE_SYM(___cpu_context_t_SIZEOF, sizeof(_cpu_context_t));
+#endif /* CONFIG_PM_S2RAM */
+
 #endif /* _ARM_OFFSETS_INC_ */
