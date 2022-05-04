@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-zephyr_sources_ifdef(CONFIG_PINMUX_HSDK pinmux.c)
+zephyr_sources(platform.c)
