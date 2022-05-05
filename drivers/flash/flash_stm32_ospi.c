@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_OSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
 #define STM32_OSPI_USE_DMA DT_NODE_HAS_PROP(DT_PARENT(DT_DRV_INST(0)), dmas)
+
 #if STM32_OSPI_USE_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
@@ -50,6 +51,27 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 #define SPI_NOR_WRITEOC_NONE 0xFF
 
 #if STM32_OSPI_USE_DMA
+#if CONFIG_DMA_STM32U5
+static const uint32_t table_src_size[] = {
+	LL_DMA_SRC_DATAWIDTH_BYTE,
+	LL_DMA_SRC_DATAWIDTH_HALFWORD,
+	LL_DMA_SRC_DATAWIDTH_WORD,
+};
+
+static const uint32_t table_dest_size[] = {
+	LL_DMA_DEST_DATAWIDTH_BYTE,
+	LL_DMA_DEST_DATAWIDTH_HALFWORD,
+	LL_DMA_DEST_DATAWIDTH_WORD,
+};
+
+/* Lookup table to set dma priority from the DTS */
+static const uint32_t table_priority[] = {
+	LL_DMA_LOW_PRIORITY_LOW_WEIGHT,
+	LL_DMA_LOW_PRIORITY_MID_WEIGHT,
+	LL_DMA_LOW_PRIORITY_HIGH_WEIGHT,
+	LL_DMA_HIGH_PRIORITY,
+};
+#else
 static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
 	LL_DMA_MDATAALIGN_HALFWORD,
@@ -69,6 +91,7 @@ static const uint32_t table_priority[] = {
 	DMA_PRIORITY_HIGH,
 	DMA_PRIORITY_VERY_HIGH,
 };
+#endif /* CONFIG_DMA_STM32U5 */
 
 struct stream {
 	DMA_TypeDef *reg;
@@ -126,7 +149,7 @@ struct flash_stm32_ospi_data {
 	int cmd_status;
 #if STM32_OSPI_USE_DMA
 	struct stream dma;
-#endif
+#endif /* STM32_OSPI_USE_DMA */
 };
 
 static inline void ospi_lock_thread(const struct device *dev)
@@ -227,7 +250,7 @@ static int ospi_write_access(const struct device *dev, OSPI_RegularCmdTypeDef *c
 #endif
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to read data", hal_ret);
+		LOG_ERR("%d: Failed to write data", hal_ret);
 		return -EIO;
 	}
 
@@ -1053,18 +1076,19 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	LOG_DBG("OSPI: write %zu data", size);
 	ospi_lock_thread(dev);
 
+	ret = stm32_ospi_mem_ready(&dev_data->hospi,
+				   dev_cfg->data_mode, dev_cfg->data_rate);
+	if (ret != 0) {
+		LOG_ERR("OSPI: write not ready");
+		return -EIO;
+	}
+
 	while ((size > 0) && (ret == 0)) {
 		to_write = size;
-
-		ret = stm32_ospi_mem_ready(&dev_data->hospi,
-						 dev_cfg->data_mode, dev_cfg->data_rate);
-		if (ret != 0) {
-			break;
-		}
-
 		ret = stm32_ospi_write_enable(&dev_data->hospi,
 						    dev_cfg->data_mode, dev_cfg->data_rate);
 		if (ret != 0) {
+			LOG_ERR("OSPI: write not enabled");
 			break;
 		}
 		/* Don't write more than a page. */
@@ -1082,6 +1106,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 
 		ret = ospi_write_access(dev, &cmd_pp, data, to_write);
 		if (ret != 0) {
+			LOG_ERR("OSPI: write not access");
 			break;
 		}
 
@@ -1093,6 +1118,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 		ret = stm32_ospi_mem_ready(&dev_data->hospi,
 						 dev_cfg->data_mode, dev_cfg->data_rate);
 		if (ret != 0) {
+			LOG_ERR("OSPI: write PP not ready");
 			break;
 		}
 	}
@@ -1685,8 +1711,11 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
 	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel + 1, &dma_cfg);
+	ret = dma_config(dev_data->dma.dev,
+			 (dev_data->dma.channel + STM32_DMA_STREAM_OFFSET), &dma_cfg);
 	if (ret != 0) {
+		LOG_ERR("Failed to configure DMA channel %d",
+			dev_data->dma.channel + STM32_DMA_STREAM_OFFSET);
 		return ret;
 	}
 
@@ -1698,29 +1727,55 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 	int index = find_lsb_set(dma_cfg.source_data_size) - 1;
 
+#if CONFIG_DMA_STM32U5
+	/* Fill the structure for dma init */
+	hdma.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+	hdma.Init.SrcInc = DMA_SINC_FIXED;
+	hdma.Init.DestInc = DMA_DINC_INCREMENTED;
+	hdma.Init.SrcDataWidth = table_src_size[index];
+	hdma.Init.DestDataWidth = table_dest_size[index];
+	hdma.Init.SrcBurstLength = 4;
+	hdma.Init.DestBurstLength = 4;
+	hdma.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT1;
+	hdma.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+#else
 	hdma.Init.PeriphDataAlignment = table_p_size[index];
 	hdma.Init.MemDataAlignment = table_m_size[index];
 	hdma.Init.PeriphInc = DMA_PINC_DISABLE;
 	hdma.Init.MemInc = DMA_MINC_ENABLE;
+#endif /* CONFIG_DMA_STM32U5 */
 	hdma.Init.Mode = DMA_NORMAL;
 	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
 	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+#ifdef CONFIG_DMA_STM32_V1
+	/* TODO: Not tested in this configuration */
+	hdma.Init.Channel = dma_cfg.dma_slot;
+	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(dev_data->dma.reg,
+						     dev_data->dma.channel);
+#else
 	hdma.Init.Request = dma_cfg.dma_slot;
-#ifdef CONFIG_DMAMUX_STM32
+#if CONFIG_DMA_STM32U5
+	hdma.Instance = LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
+						      dev_data->dma.channel);
+#elif defined(CONFIG_DMAMUX_STM32)
 	/*
 	 * HAL expects a valid DMA channel (not DMAMUX).
-	 * The channel is from 0 to 7 because of the STREAM_OFFSET in the dma_stm32 driver
+	 * The channel is from 0 to 7 because of the STM32_DMA_STREAM_OFFSET in the dma_stm32 driver
 	 */
 	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
 						      dev_data->dma.channel);
 #else
 	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
 						      dev_data->dma.channel-1);
-#endif /* CONFIG_DMAMUX_STM32 */
+#endif /* CONFIG_DMA_STM32U5 */
+#endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&dev_data->hospi, hdma, hdma);
-	HAL_DMA_Init(&hdma);
+	if (HAL_DMA_Init(&hdma) != HAL_OK) {
+		LOG_ERR("OSPI DMA Init failed");
+		return -EIO;
+	}
 	LOG_INF("OSPI with DMA transfer");
 
 #endif /* STM32_OSPI_USE_DMA */
