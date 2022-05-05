@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <st/g0/stm32g0b1Xe.dtsi>
-#include <st/g0/stm32g0b1r(c-e)tx-pinctrl.dtsi>
+#include <st/g0/stm32g0b1r(b-c-e)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
