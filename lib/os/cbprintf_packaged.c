@@ -721,7 +721,7 @@ int cbprintf_package_convert(void *in_packaged,
 	bool ro_cpy;
 	struct z_cbprintf_desc *in_desc = in_packaged;
 
-	in_len != 0 ? in_len : get_package_len(in_packaged);
+	in_len = in_len != 0 ? in_len : get_package_len(in_packaged);
 
 	/* Get number of RO string indexes in the package and check if copying
 	 * includes appending those strings.
