@@ -1,0 +1,12 @@
+identifier: nsim_hs5x
+name: HS5x nSIM simulator
+type: mcu
+simulation: nsim
+arch: arc
+toolchain:
+  - arcmwdt
+  - cross-compile
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
