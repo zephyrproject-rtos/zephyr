@@ -79,18 +79,32 @@ extern "C" {
 /** @} */
 
 /**
- * @brief Defines the mode of the CAN controller
+ * @name CAN controller mode flags
+ * @anchor CAN_MODE_FLAGS
+ *
+ * @{
  */
-enum can_mode {
-	/** Normal mode. */
-	CAN_NORMAL_MODE,
-	/** Controller is not allowed to send dominant bits. */
-	CAN_SILENT_MODE,
-	/** Controller is in loopback mode (receives own frames). */
-	CAN_LOOPBACK_MODE,
-	/** Combination of loopback and silent modes. */
-	CAN_SILENT_LOOPBACK_MODE
-};
+
+/** Normal mode. */
+#define CAN_MODE_NORMAL     0
+
+/** Controller is in loopback mode (receives own frames). */
+#define CAN_MODE_LOOPBACK   BIT(0)
+
+/** Controller is not allowed to send dominant bits. */
+#define CAN_MODE_LISTENONLY BIT(1)
+
+/** @} */
+
+/**
+ * @brief Provides a type to hold CAN controller configuration flags.
+ *
+ * The lower 24 bits are reserved for common CAN controller mode flags. The upper 8 bits are
+ * reserved for CAN controller/driver specific flags.
+ *
+ * @see @ref CAN_MODE_FLAGS.
+ */
+typedef uint32_t can_mode_t;
 
 /**
  * @brief Defines the state of the CAN bus
@@ -310,7 +324,7 @@ typedef int (*can_set_timing_data_t)(const struct device *dev,
  * @brief Callback API upon setting CAN controller mode
  * See @a can_set_mode() for argument description
  */
-typedef int (*can_set_mode_t)(const struct device *dev, enum can_mode mode);
+typedef int (*can_set_mode_t)(const struct device *dev, can_mode_t mode);
 
 /**
  * @brief Callback API upon sending a CAN frame
@@ -891,9 +905,9 @@ static inline int z_impl_can_set_timing(const struct device *dev,
  * @retval 0 If successful.
  * @retval -EIO General input/output error, failed to configure device.
  */
-__syscall int can_set_mode(const struct device *dev, enum can_mode mode);
+__syscall int can_set_mode(const struct device *dev, can_mode_t mode);
 
-static inline int z_impl_can_set_mode(const struct device *dev, enum can_mode mode)
+static inline int z_impl_can_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
