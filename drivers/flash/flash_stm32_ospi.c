@@ -170,6 +170,48 @@ static int ospi_write_access(const struct device *dev, OSPI_RegularCmdTypeDef *c
 }
 
 /*
+ * Gives a OSPI_RegularCmdTypeDef with all parameters set
+ * except Instruction, Address, DummyCycles, NbData
+ */
+static OSPI_RegularCmdTypeDef ospi_prepare_cmd(uint8_t transfer_mode, uint8_t transfer_rate)
+{
+
+	OSPI_RegularCmdTypeDef cmd_tmp = {
+		.OperationType = HAL_OSPI_OPTYPE_COMMON_CFG,
+		.FlashId = HAL_OSPI_FLASH_ID_1,
+		.InstructionMode = ((transfer_mode == OSPI_SPI_MODE)
+				? HAL_OSPI_INSTRUCTION_1_LINE
+				: HAL_OSPI_INSTRUCTION_8_LINES),
+		.InstructionSize = ((transfer_mode == OSPI_SPI_MODE)
+				? HAL_OSPI_INSTRUCTION_8_BITS
+				: HAL_OSPI_INSTRUCTION_16_BITS),
+		.InstructionDtrMode = ((transfer_rate == OSPI_DTR_TRANSFER)
+				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
+				: HAL_OSPI_INSTRUCTION_DTR_DISABLE),
+		.AddressMode = ((transfer_mode == OSPI_SPI_MODE)
+				? HAL_OSPI_ADDRESS_1_LINE
+				: HAL_OSPI_ADDRESS_8_LINES),
+		.AddressDtrMode = ((transfer_rate == OSPI_DTR_TRANSFER)
+				? HAL_OSPI_ADDRESS_DTR_ENABLE
+				: HAL_OSPI_ADDRESS_DTR_DISABLE),
+		.AddressSize = HAL_OSPI_ADDRESS_32_BITS,
+		.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
+		.DataMode = ((transfer_mode == OSPI_SPI_MODE)
+				? HAL_OSPI_DATA_1_LINE
+				: HAL_OSPI_DATA_8_LINES),
+		.DataDtrMode = ((transfer_rate == OSPI_DTR_TRANSFER)
+				? HAL_OSPI_DATA_DTR_ENABLE
+				: HAL_OSPI_DATA_DTR_DISABLE),
+		.DQSMode = (transfer_rate == OSPI_DTR_TRANSFER)
+				? HAL_OSPI_DQS_ENABLE
+				: HAL_OSPI_DQS_DISABLE,
+		.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD,
+	};
+
+	return cmd_tmp;
+}
+
+/*
  * Read Serial Flash Discovery Parameter :
  * perform a read access over SPI bus for SDFP (DataMode is already set)
  * or get it from the sdfp table (in the DTS)
@@ -189,42 +231,16 @@ static int ospi_read_sfdp(const struct device *dev, off_t addr, uint8_t *data,
 	}
 #else /* sfdp_bfp */
 
-	OSPI_RegularCmdTypeDef cmd = {
-		.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG,
-		.FlashId            = HAL_OSPI_FLASH_ID_1,
-		.InstructionMode    = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_1_LINE
-				: HAL_OSPI_INSTRUCTION_8_LINES),
-		.InstructionDtrMode = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-				: HAL_OSPI_INSTRUCTION_DTR_DISABLE),
-		.InstructionSize    = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_8_BITS
-				: HAL_OSPI_INSTRUCTION_16_BITS),
-		.Instruction        = ((dev_cfg->data_mode == OSPI_SPI_MODE)
+	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(dev_cfg->data_mode,
+						      dev_cfg->data_rate);
+	cmd.Instruction = ((dev_cfg->data_mode == OSPI_SPI_MODE)
 				? JESD216_CMD_READ_SFDP
-				: JESD216_OCMD_READ_SFDP),
-		.Address = addr,
-		.AddressDtrMode     = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE),
-		.AddressSize        = ((dev_cfg->data_mode == OSPI_SPI_MODE)
+				: JESD216_OCMD_READ_SFDP);
+	cmd.Address = addr;
+	cmd.AddressSize = ((dev_cfg->data_mode == OSPI_SPI_MODE)
 				?  HAL_OSPI_ADDRESS_24_BITS
-				:  HAL_OSPI_ADDRESS_32_BITS),
-		.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
-		.DataMode           = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_DATA_1_LINE
-				: HAL_OSPI_DATA_8_LINES),
-		.DataDtrMode        = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_ENABLE
-				: HAL_OSPI_DATA_DTR_DISABLE),
-		.DummyCycles        = ((dev_cfg->data_mode == OSPI_SPI_MODE) ? 8U : 20U),
-		.DQSMode            = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DQS_ENABLE
-				: HAL_OSPI_DQS_DISABLE),
-		.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD,
-	};
-
+				:  HAL_OSPI_ADDRESS_32_BITS);
+	cmd.DummyCycles = ((dev_cfg->data_mode == OSPI_SPI_MODE) ? 8U : 20U);
 	cmd.NbData = size;
 
 	HAL_StatusTypeDef hal_ret;
@@ -261,58 +277,23 @@ static bool ospi_address_is_valid(const struct device *dev, off_t addr,
  * This function Polls the WIP(Write In Progress) bit to become to 0
  * in nor_mode SPI/OPI OSPI_SPI_MODE or OSPI_OPI_MODE
  * and nor_rate transfer STR/DTR OSPI_STR_TRANSFER or OSPI_DTR_TRANSFER
- */transmit_data
+ */
 static int stm32_ospi_mem_ready(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uint8_t nor_rate)
 {
-	OSPI_RegularCmdTypeDef s_command = {0};
 	OSPI_AutoPollingTypeDef s_config = {0};
-
-	/* NOR flash memory SPI/DTR config is not a valid mode */
-	if ((nor_mode == OSPI_SPI_MODE) && (nor_rate == OSPI_DTR_TRANSFER)) {
-		LOG_ERR("OSPI SPI/DTR mode is not supported");
-		return -ENOTSUP;
-	}
+	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
 	/* Configure automatic polling mode command to wait for memory ready */
-	s_command.OperationType = HAL_OSPI_OPTYPE_COMMON_CFG;
-	s_command.FlashId = HAL_OSPI_FLASH_ID_1;
-	s_command.InstructionMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_1_LINE
-				: HAL_OSPI_INSTRUCTION_8_LINES;
-	s_command.InstructionDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-				: HAL_OSPI_INSTRUCTION_DTR_DISABLE;
-	s_command.InstructionSize = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_8_BITS
-				: HAL_OSPI_INSTRUCTION_16_BITS;
 	s_command.Instruction = (nor_mode == OSPI_SPI_MODE)
 				? SPI_NOR_CMD_RDSR
 				: SPI_NOR_OCMD_RDSR;
-	s_command.AddressMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_ADDRESS_NONE
-				: HAL_OSPI_ADDRESS_8_LINES;
-	s_command.AddressDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE;
-	s_command.AddressSize = HAL_OSPI_ADDRESS_32_BITS;
 	s_command.Address = 0;
-	s_command.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-	s_command.DataMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_DATA_1_LINE
-				: HAL_OSPI_DATA_8_LINES;
-	s_command.DataDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_ENABLE
-				: HAL_OSPI_DATA_DTR_DISABLE;
 	s_command.DummyCycles = (nor_mode == OSPI_SPI_MODE)
 				? 0U
 				: ((nor_rate == OSPI_DTR_TRANSFER)
 					? SPI_NOR_DUMMY_REG_OCTAL_DTR
 					: SPI_NOR_DUMMY_REG_OCTAL);
 	s_command.NbData = (nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U;
-	s_command.DQSMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DQS_ENABLE
-				: HAL_OSPI_DQS_DISABLE;
-	s_command.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD;
 
 	/* Set the mask to  0x01 to mask all Status REG bits except WIP */
 	/* Set the match to 0x00 to check if the WIP bit is Reset */
@@ -339,30 +320,16 @@ static int stm32_ospi_mem_ready(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uin
 /* Enables writing to the memory sending a Write Enable and wait it is effective */
 static int stm32_ospi_write_enable(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uint8_t nor_rate)
 {
-	OSPI_RegularCmdTypeDef s_command = {0};
 	OSPI_AutoPollingTypeDef s_config = {0};
+	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
 	/* Initialize the write enable command */
-	s_command.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;
-	s_command.FlashId            = HAL_OSPI_FLASH_ID_1;
-	s_command.InstructionMode    = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_1_LINE
-				: HAL_OSPI_INSTRUCTION_8_LINES;
-	s_command.InstructionDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-				: HAL_OSPI_INSTRUCTION_DTR_DISABLE;
-	s_command.InstructionSize    = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_8_BITS
-				: HAL_OSPI_INSTRUCTION_16_BITS;
-	s_command.Instruction        = (nor_mode == OSPI_SPI_MODE)
+	s_command.Instruction = (nor_mode == OSPI_SPI_MODE)
 				? SPI_NOR_CMD_WREN
 				: SPI_NOR_OCMD_WREN;
-	s_command.AddressMode        = HAL_OSPI_ADDRESS_NONE;
-	s_command.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-	s_command.DataMode           = HAL_OSPI_DATA_NONE;
-	s_command.DummyCycles        = 0U;
-	s_command.DQSMode            = HAL_OSPI_DQS_DISABLE;
-	s_command.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD;
+	s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
+	s_command.DataMode    = HAL_OSPI_DATA_NONE;
+	s_command.DummyCycles = 0U;
 
 	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI flash write enable cmd failed");
@@ -376,26 +343,16 @@ static int stm32_ospi_write_enable(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, 
 	s_command.AddressMode    = (nor_mode == OSPI_SPI_MODE)
 				? HAL_OSPI_ADDRESS_1_LINE
 				: HAL_OSPI_ADDRESS_8_LINES;
-	s_command.AddressDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE;
-	s_command.AddressSize    = HAL_OSPI_ADDRESS_32_BITS;
 	s_command.Address        = 0U;
-	s_command.DataMode       = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_DATA_1_LINE
-				: HAL_OSPI_DATA_8_LINES;
-	s_command.DataDtrMode    = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_ENABLE
-				: HAL_OSPI_DATA_DTR_DISABLE;
 	s_command.DummyCycles    = (nor_mode == OSPI_SPI_MODE)
 				? 0U
 				: ((nor_rate == OSPI_DTR_TRANSFER)
 				? SPI_NOR_DUMMY_REG_OCTAL_DTR
 				: SPI_NOR_DUMMY_REG_OCTAL);
+	s_command.DataMode       = (nor_mode == OSPI_SPI_MODE)
+				? HAL_OSPI_DATA_1_LINE
+				: HAL_OSPI_DATA_8_LINES;
 	s_command.NbData         = (nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U;
-	s_command.DQSMode        = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DQS_ENABLE
-				: HAL_OSPI_DQS_DISABLE;
 
 	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI config auto polling cmd failed");
@@ -420,51 +377,26 @@ static int stm32_ospi_write_enable(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, 
 static int stm32_ospi_write_cfg2reg_dummy(OSPI_HandleTypeDef *hospi,
 					uint8_t nor_mode, uint8_t nor_rate)
 {
-	OSPI_RegularCmdTypeDef s_command;
+	uint8_t transmit_data = SPI_NOR_CR2_DUMMY_CYCLES_66MHZ;
+	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
 	/* Initialize the writing of configuration register 2 */
-	s_command.OperationType = HAL_OSPI_OPTYPE_COMMON_CFG;
-	s_command.FlashId = HAL_OSPI_FLASH_ID_1;
-	s_command.InstructionMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_1_LINE
-				: HAL_OSPI_INSTRUCTION_8_LINES;
-	s_command.InstructionDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-				: HAL_OSPI_INSTRUCTION_DTR_DISABLE;
-	s_command.InstructionSize    = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_8_BITS
-				: HAL_OSPI_INSTRUCTION_16_BITS;
 	s_command.Instruction = (nor_mode == OSPI_SPI_MODE)
 				? SPI_NOR_CMD_WR_CFGREG2
 				: SPI_NOR_OCMD_WR_CFGREG2;
-	s_command.AddressMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_ADDRESS_1_LINE
-				: HAL_OSPI_ADDRESS_8_LINES;
-	s_command.AddressDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE;
-	s_command.AddressSize  = HAL_OSPI_ADDRESS_32_BITS;
 	s_command.Address = SPI_NOR_REG2_ADDR3;
-	s_command.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-	s_command.DataMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_DATA_1_LINE
-				: HAL_OSPI_DATA_8_LINES;
-	s_command.DataDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_ENABLE
-				: HAL_OSPI_DATA_DTR_DISABLE;
 	s_command.DummyCycles = 0U;
 	s_command.NbData = (nor_mode == OSPI_SPI_MODE) ? 1U
 			: ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
-	s_command.DQSMode = HAL_OSPI_DQS_DISABLE;
-	s_command.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD;
 
-	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Command(hospi, &s_command,
+		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI transmit ");
 		return -EIO;
 	}
-	uint8_t tmp = SPI_NOR_CR2_DUMMY_CYCLES_66MHZ;
 
-	if (HAL_OSPI_Transmit(hospi, &tmp, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Transmit(hospi, &transmit_data,
+		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI transmit ");
 		return -EIO;
 	}
@@ -476,49 +408,16 @@ static int stm32_ospi_write_cfg2reg_dummy(OSPI_HandleTypeDef *hospi,
 static int stm32_ospi_write_cfg2reg_io(OSPI_HandleTypeDef *hospi,
 				       uint8_t nor_mode, uint8_t nor_rate, uint8_t op_enable)
 {
-	OSPI_RegularCmdTypeDef s_command;
-	uint8_t transmit_data;
-
-	if ((op_enable != SPI_NOR_CR2_STR_OPI_EN) && (op_enable != SPI_NOR_CR2_DTR_OPI_EN)) {
-		LOG_ERR("OSPI wrong OSPI protocol");
-		return -EIO;
-	}
+	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
 	/* Initialize the writing of configuration register 2 */
-	s_command.OperationType = HAL_OSPI_OPTYPE_COMMON_CFG;
-	s_command.FlashId = HAL_OSPI_FLASH_ID_1;
-	s_command.InstructionMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_1_LINE
-				: HAL_OSPI_INSTRUCTION_8_LINES;
-	s_command.InstructionDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-				: HAL_OSPI_INSTRUCTION_DTR_DISABLE;
-	s_command.InstructionSize    = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_8_BITS
-				: HAL_OSPI_INSTRUCTION_16_BITS;
 	s_command.Instruction = (nor_mode == OSPI_SPI_MODE)
 				? SPI_NOR_CMD_WR_CFGREG2
 				: SPI_NOR_OCMD_WR_CFGREG2;
-	s_command.AddressMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_ADDRESS_1_LINE
-				: HAL_OSPI_ADDRESS_8_LINES;
-	s_command.AddressDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE;
-	s_command.AddressSize  = HAL_OSPI_ADDRESS_32_BITS;
 	s_command.Address = SPI_NOR_REG2_ADDR1;
-	s_command.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-	s_command.DataMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_DATA_1_LINE
-				: HAL_OSPI_DATA_8_LINES;
-	s_command.DataDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_ENABLE
-				: HAL_OSPI_DATA_DTR_DISABLE;
 	s_command.DummyCycles = 0U;
 	s_command.NbData = (nor_mode == OSPI_SPI_MODE) ? 1U
 			: ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
-	s_command.DQSMode = HAL_OSPI_DQS_DISABLE;
-	s_command.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD;
 
 	if (HAL_OSPI_Command(hospi, &s_command,
 		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
@@ -526,9 +425,7 @@ static int stm32_ospi_write_cfg2reg_io(OSPI_HandleTypeDef *hospi,
 		return -EIO;
 	}
 
-	transmit_data = op_enable;
-
-	if (HAL_OSPI_Transmit(hospi, &transmit_data,
+	if (HAL_OSPI_Transmit(hospi, &op_enable,
 		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("Write Flash configuration reg2 failed");
 		return -EIO;
@@ -541,60 +438,19 @@ static int stm32_ospi_write_cfg2reg_io(OSPI_HandleTypeDef *hospi,
 static int stm32_ospi_read_cfg2reg(OSPI_HandleTypeDef *hospi,
 				   uint8_t nor_mode, uint8_t nor_rate, uint8_t *value)
 {
-	OSPI_RegularCmdTypeDef s_command;
+	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
 	/* Initialize the writing of configuration register 2 */
-	s_command.OperationType = HAL_OSPI_OPTYPE_COMMON_CFG;
-	s_command.FlashId = HAL_OSPI_FLASH_ID_1;
-	s_command.InstructionMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_1_LINE
-				: HAL_OSPI_INSTRUCTION_8_LINES;
-	s_command.InstructionDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-				: HAL_OSPI_INSTRUCTION_DTR_DISABLE;
-	s_command.InstructionSize = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_8_BITS
-				: HAL_OSPI_INSTRUCTION_16_BITS;
 	s_command.Instruction = (nor_mode == OSPI_SPI_MODE)
 				? SPI_NOR_CMD_RD_CFGREG2
 				: SPI_NOR_OCMD_RD_CFGREG2;
-	s_command.AddressMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_ADDRESS_1_LINE
-				: HAL_OSPI_ADDRESS_8_LINES;
-	s_command.AddressDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE;
-	s_command.InstructionSize = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_8_BITS
-				: HAL_OSPI_INSTRUCTION_16_BITS;
-	s_command.Instruction = (nor_mode == OSPI_SPI_MODE)
-				? SPI_NOR_CMD_RD_CFGREG2
-				: SPI_NOR_OCMD_RD_CFGREG2;
-	s_command.AddressMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_ADDRESS_1_LINE
-				: HAL_OSPI_ADDRESS_8_LINES;
-	s_command.AddressDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE;
-	s_command.AddressSize = HAL_OSPI_ADDRESS_32_BITS;
 	s_command.Address = SPI_NOR_REG2_ADDR1;
-	s_command.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-	s_command.DataMode = (nor_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_DATA_1_LINE
-				: HAL_OSPI_DATA_8_LINES;
-	s_command.DataDtrMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_ENABLE
-				: HAL_OSPI_DATA_DTR_DISABLE;
 	s_command.DummyCycles = (nor_mode == OSPI_SPI_MODE)
 				? 0U
 				: ((nor_rate == OSPI_DTR_TRANSFER)
 					? SPI_NOR_DUMMY_REG_OCTAL_DTR
 					: SPI_NOR_DUMMY_REG_OCTAL);
 	s_command.NbData = (nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U;
-	s_command.DQSMode = (nor_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DQS_ENABLE
-				: HAL_OSPI_DQS_DISABLE;
-	s_command.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD;
 
 	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("Write Flash configuration reg2 failed");
@@ -947,40 +803,10 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-	OSPI_RegularCmdTypeDef cmd = {
-		.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG,
-		.FlashId            = HAL_OSPI_FLASH_ID_1,
-		.InstructionMode    = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_1_LINE
-				: HAL_OSPI_INSTRUCTION_8_LINES),
-		.InstructionDtrMode = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-				: HAL_OSPI_INSTRUCTION_DTR_DISABLE),
-		.InstructionSize    = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_8_BITS
-				: HAL_OSPI_INSTRUCTION_16_BITS),
-		.AddressMode       = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_ADDRESS_1_LINE
-				: HAL_OSPI_ADDRESS_8_LINES),
-		.AddressDtrMode     = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE),
-		.Address = addr,
-		.AddressSize = HAL_OSPI_ADDRESS_32_BITS,
-		.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
-		.DataMode           = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_DATA_1_LINE
-				: HAL_OSPI_DATA_8_LINES),
-		.DataDtrMode        = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_ENABLE
-				: HAL_OSPI_DATA_DTR_DISABLE),
-		/* dataSize is set by the read cmd */
-		.DQSMode            = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DQS_ENABLE
-				: HAL_OSPI_DQS_DISABLE),
-		.SIOOMode           = HAL_OSPI_SIOO_INST_EVERY_CMD,
-		/* other parameters are set below */
-	};
+	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
+	/* Instruction and DummyCycles are set below */
+	cmd.Address = addr;
+	/* DataSize is set by the read cmd */
 
 	LOG_DBG("OSPI: read %u data", size);
 	ospi_lock_thread(dev);
@@ -1029,37 +855,10 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-	/* Page Program for STR or DTR mode */
-	OSPI_RegularCmdTypeDef cmd_pp = {
-		.OperationType = HAL_OSPI_OPTYPE_COMMON_CFG,
-		.FlashId = HAL_OSPI_FLASH_ID_1,
-		.InstructionMode = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_1_LINE
-				: HAL_OSPI_INSTRUCTION_8_LINES),
-		.InstructionSize = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_INSTRUCTION_8_BITS
-				: HAL_OSPI_INSTRUCTION_16_BITS),
-		.InstructionDtrMode = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-				: HAL_OSPI_INSTRUCTION_DTR_DISABLE),
-		.AddressMode = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_ADDRESS_1_LINE
-				: HAL_OSPI_ADDRESS_8_LINES),
-		.AddressDtrMode = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE),
-		.AddressSize = HAL_OSPI_ADDRESS_32_BITS,
-		.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
-		.DataMode = ((dev_cfg->data_mode == OSPI_SPI_MODE)
-				? HAL_OSPI_DATA_1_LINE
-				: HAL_OSPI_DATA_8_LINES),
-		.DataDtrMode = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_ENABLE
-				: HAL_OSPI_DATA_DTR_DISABLE),
-		.DummyCycles = 0,
-		.DQSMode = HAL_OSPI_DQS_DISABLE,
-		.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD,
-	};
+	/* page program for STR or DTR mode */
+	OSPI_RegularCmdTypeDef cmd_pp = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
+
+	cmd_pp.DummyCycles = 0;
 
 	LOG_INF("OSPI: write %u data", size);
 	ospi_lock_thread(dev);
