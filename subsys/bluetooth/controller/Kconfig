@@ -245,6 +245,7 @@ config BT_CTLR_ISOAL_SINKS
 config BT_CTLR_ISO_VENDOR_DATA_PATH
 	bool "Vendor-specific ISO data path"
 	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
+	select BT_CTLR_HCI_CODEC_AND_DELAY_INFO
 
 choice BT_CTLR_TX_PWR
 	prompt "Tx Power"
