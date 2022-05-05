@@ -109,7 +109,7 @@ static int espi_emul_read_lpc_request(const struct device *dev, enum lpc_periphe
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
 	case EACPI_GET_SHARED_MEMORY:
 		__ASSERT_NO_MSG(api->get_acpi_shm);
-		*data = (uint32_t)api->get_acpi_shm(emul);
+		*data = (uint32_t)api->get_acpi_shm(emul->target);
 		break;
 #endif
 	default:
@@ -146,7 +146,7 @@ static int espi_emul_send_vwire(const struct device *dev, enum espi_vwire_signal
 	__ASSERT_NO_MSG(emul->api->set_vw);
 	api = emul->api;
 
-	return api->set_vw(emul, vw, level);
+	return api->set_vw(emul->target, vw, level);
 }
 
 static int espi_emul_receive_vwire(const struct device *dev, enum espi_vwire_signal vw,
@@ -170,7 +170,7 @@ static int espi_emul_receive_vwire(const struct device *dev, enum espi_vwire_sig
 	__ASSERT_NO_MSG(emul->api->get_vw);
 	api = emul->api;
 
-	return api->get_vw(emul, vw, level);
+	return api->get_vw(emul->target, vw, level);
 }
 
 static int espi_emul_manage_callback(const struct device *dev, struct espi_callback *callback,
@@ -189,11 +189,10 @@ static int espi_emul_manage_callback(const struct device *dev, struct espi_callb
 static int espi_emul_init(const struct device *dev)
 {
 	struct espi_emul_data *data = dev->data;
-	const struct emul_list_for_bus *list = dev->config;
 
 	sys_slist_init(&data->emuls);
 
-	return emul_init_for_bus_from_list(dev, list);
+	return emul_init_for_bus(dev);
 }
 
 int espi_emul_register(const struct device *dev, const char *name, struct espi_emul *emul)
