@@ -418,7 +418,7 @@ static int lc3_release(struct bt_audio_stream *stream)
 
 static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						BT_CODEC_LC3_DURATION_ANY,
-						0x03, 30, 240, 2,
+						BT_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
 						(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |
 						BT_AUDIO_CONTEXT_TYPE_MEDIA),
 						BT_AUDIO_CONTEXT_TYPE_ANY);
