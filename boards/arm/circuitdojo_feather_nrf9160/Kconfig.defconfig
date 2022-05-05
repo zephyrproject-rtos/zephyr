@@ -9,6 +9,21 @@ if BOARD_CIRCUITDOJO_FEATHER_NRF9160 || BOARD_CIRCUITDOJO_FEATHER_NRF9160_NS
 config BOARD
 	default "circuitdojo_feather_nrf9160"
 
+# By default, if we build for a Non-Secure version of the board,
+# enable building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y if BOARD_CIRCUITDOJO_FEATHER_NRF9160_NS
+
+if BUILD_WITH_TFM
+
+# By default, if we build with TF-M, instruct build system to
+# flash the combined TF-M (Secure) & Zephyr (Non Secure) image
+config TFM_FLASH_MERGED_BINARY
+	bool
+	default y
+
+endif # BUILD_WITH_TFM
+
 # For the secure version of the board the firmware is linked at the beginning
 # of the flash, or into the code-partition defined in DT if it is intended to
 # be loaded by MCUboot. If the secure firmware is to be combined with a non-

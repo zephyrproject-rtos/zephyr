@@ -8,6 +8,21 @@ if BOARD_ACTINIUS_ICARUS_SOM || BOARD_ACTINIUS_ICARUS_SOM_NS
 config BOARD
 	default "actinius_icarus_som"
 
+# By default, if we build for a Non-Secure version of the board,
+# enable building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y if BOARD_ACTINIUS_ICARUS_SOM_NS
+
+if BUILD_WITH_TFM
+
+# By default, if we build with TF-M, instruct build system to
+# flash the combined TF-M (Secure) & Zephyr (Non Secure) image
+config TFM_FLASH_MERGED_BINARY
+	bool
+	default y
+
+endif # BUILD_WITH_TFM
+
 source "boards/common/actinius/Kconfig"
 
 # For the secure version of the board the firmware is linked at the beginning
