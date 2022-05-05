@@ -6,9 +6,9 @@
 
 #include <stdio.h>
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
 
 /**
  * @file Sample app using the MAX6675 cold-junction-compensated K-thermocouple

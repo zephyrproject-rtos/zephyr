@@ -5,21 +5,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/gpio.h>
-#include <display/cfb.h>
-#include <sys/printk.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/display/cfb.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/sensor.h>
 
 #include <string.h>
 #include <stdio.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/mesh/access.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/mesh/access.h>
 
 #include "mesh.h"
 #include "board.h"

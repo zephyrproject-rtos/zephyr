@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <drivers/ipm.h>
+#include <zephyr/drivers/ipm.h>
 
 #include <openamp/open_amp.h>
 #include <metal/device.h>
 #include <resource_table.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 
 #define SHM_DEVICE_NAME	"shm"

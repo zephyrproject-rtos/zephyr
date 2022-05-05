@@ -8,13 +8,13 @@
  * and ciphertexts used for crosschecking are from TinyCrypt.
  */
 
-#include <device.h>
-#include <zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <crypto/crypto.h>
+#include <zephyr/crypto/crypto.h>
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 #ifdef CONFIG_CRYPTO_TINYCRYPT_SHIM

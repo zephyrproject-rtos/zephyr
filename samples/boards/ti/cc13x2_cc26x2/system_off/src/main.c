@@ -6,11 +6,11 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <init.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/pm.h>
 
 #include <driverlib/ioc.h>
 

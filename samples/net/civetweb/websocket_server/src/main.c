@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
-#include <posix/pthread.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/posix/pthread.h>
 
 #include "civetweb.h"
 

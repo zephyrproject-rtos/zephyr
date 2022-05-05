@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <sys/printk.h>
-#include <drivers/fpga.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/fpga.h>
 #include "redled.h"
 #include "greenled.h"
 #include <eoss3_dev.h>

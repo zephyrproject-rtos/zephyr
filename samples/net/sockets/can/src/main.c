@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_socket_can_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <net/socket.h>
-#include <net/socket_can.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/socket_can.h>
 
 #ifdef CONFIG_SAMPLE_SOCKETCAN_LOOPBACK_MODE
-#include <drivers/can.h>
+#include <zephyr/drivers/can.h>
 #endif
 
 #define PRIORITY  k_thread_priority_get(k_current_get())

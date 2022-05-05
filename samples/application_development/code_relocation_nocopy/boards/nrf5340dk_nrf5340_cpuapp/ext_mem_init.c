@@ -5,12 +5,12 @@
  */
 
 #include <errno.h>
-#include <init.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <nrfx_qspi.h>
 #include <hal/nrf_clock.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define QSPI_STD_CMD_WRSR  0x01
 #define QSPI_STD_CMD_WRDI  0x04

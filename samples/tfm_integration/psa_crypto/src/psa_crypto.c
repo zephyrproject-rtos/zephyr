@@ -6,10 +6,10 @@
 
 #include <stdio.h>
 
-#include <zephyr.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-#include <data/json.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/data/json.h>
 
 #include "mbedtls/pk.h"
 #include "mbedtls/x509.h"

@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <device.h>
-#include <drivers/i2c.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 
-#include <drivers/misc/grove_lcd/grove_lcd.h>
+#include <zephyr/drivers/misc/grove_lcd/grove_lcd.h>
 
 /**
  * @file Display a counter through I2C and Grove LCD.
