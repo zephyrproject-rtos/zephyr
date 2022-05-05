@@ -25,6 +25,9 @@ Changes in this release
 * LoRaWAN: The message type parameter in :c:func:`lorawan_send` was changed
   from ``uint8_t`` to ``enum lorawan_message_type``. If ``0`` was passed for
   unconfirmed message, this has to be changed to ``LORAWAN_MSG_UNCONFIRMED``.
+* Bluetooth: Applications where :kconfig:option:`CONFIG_BT_EATT` is enabled
+  must set the :c:member:`chan_opt` field on the GATT parameter structs.
+  To keep the old behavior use :c:enumerator:`BT_ATT_CHAN_OPT_NONE`.
 
 * Disk Subsystem: SPI mode SD cards now use the SD subsystem to communicate
   with SD cards. See :ref:`the disk access api <disk_access_api>` for an
