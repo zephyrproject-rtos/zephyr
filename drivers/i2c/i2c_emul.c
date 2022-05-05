@@ -90,7 +90,7 @@ static int i2c_emul_transfer(const struct device *dev, struct i2c_msg *msgs, uin
 	__ASSERT_NO_MSG(emul->api);
 	__ASSERT_NO_MSG(emul->api->transfer);
 
-	ret = api->transfer(emul, msgs, num_msgs, addr);
+	ret = api->transfer(emul->target, msgs, num_msgs, addr);
 	if (ret) {
 		return ret;
 	}
@@ -106,12 +106,11 @@ static int i2c_emul_transfer(const struct device *dev, struct i2c_msg *msgs, uin
 static int i2c_emul_init(const struct device *dev)
 {
 	struct i2c_emul_data *data = dev->data;
-	const struct emul_list_for_bus *list = dev->config;
 	int rc;
 
 	sys_slist_init(&data->emuls);
 
-	rc = emul_init_for_bus_from_list(dev, list);
+	rc = emul_init_for_bus(dev);
 
 	/* Set config to an uninitialized state */
 	data->config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(data->bitrate));

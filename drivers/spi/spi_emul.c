@@ -78,7 +78,7 @@ static int spi_emul_io(const struct device *dev, const struct spi_config *config
 	__ASSERT_NO_MSG(emul->api);
 	__ASSERT_NO_MSG(emul->api->io);
 
-	return api->io(emul, config, tx_bufs, rx_bufs);
+	return api->io(emul->target, config, tx_bufs, rx_bufs);
 }
 
 /**
@@ -89,11 +89,10 @@ static int spi_emul_io(const struct device *dev, const struct spi_config *config
 static int spi_emul_init(const struct device *dev)
 {
 	struct spi_emul_data *data = dev->data;
-	const struct emul_list_for_bus *list = dev->config;
 
 	sys_slist_init(&data->emuls);
 
-	return emul_init_for_bus_from_list(dev, list);
+	return emul_init_for_bus(dev);
 }
 
 int spi_emul_register(const struct device *dev, const char *name, struct spi_emul *emul)
