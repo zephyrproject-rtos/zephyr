@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
 #define pollfd zsock_pollfd
 #define fcntl zsock_fcntl

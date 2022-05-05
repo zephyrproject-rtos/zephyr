@@ -5,18 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(net_google_iot_mqtt, LOG_LEVEL_DBG);
 #include "protocol.h"
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <data/jwt.h>
-#include <drivers/entropy.h>
+#include <zephyr/data/jwt.h>
+#include <zephyr/drivers/entropy.h>
 
-#include <net/tls_credentials.h>
-#include <net/mqtt.h>
+#include <zephyr/net/tls_credentials.h>
+#include <zephyr/net/mqtt.h>
 
 #include <mbedtls/platform.h>
 #include <mbedtls/ssl.h>

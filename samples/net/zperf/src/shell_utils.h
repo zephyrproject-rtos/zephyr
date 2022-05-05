@@ -6,7 +6,7 @@
 #ifndef __SHELL_UTILS_H
 #define __SHELL_UTILS_H
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #define IPV4_STR_LEN_MAX 15
 #define IPV4_STR_LEN_MIN 7

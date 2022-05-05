@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include "battery.h"
 
 /** A discharge curve specific to the power source. */

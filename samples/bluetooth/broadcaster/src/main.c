@@ -8,11 +8,11 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
 static uint8_t mfg_data[] = { 0xff, 0xff, 0x00 };
 

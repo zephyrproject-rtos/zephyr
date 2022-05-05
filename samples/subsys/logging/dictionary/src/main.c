@@ -6,10 +6,10 @@
  */
 
 #include <inttypes.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <logging/log.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hello_world, 4);
 

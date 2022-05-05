@@ -5,16 +5,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <logging/log.h>
-#include <usb/usb_device.h>
-#include <fs/fs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/fs/fs.h>
 #include <stdio.h>
 
 LOG_MODULE_REGISTER(main);
 
 #if CONFIG_DISK_DRIVER_FLASH
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 #endif
 
 #if CONFIG_FAT_FILESYSTEM_ELM
@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(main);
 #endif
 
 #if CONFIG_FILE_SYSTEM_LITTLEFS
-#include <fs/littlefs.h>
+#include <zephyr/fs/littlefs.h>
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 #endif
 

@@ -8,16 +8,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <net/socket.h>
-#include <net/net_core.h>
-#include <net/net_l2.h>
-#include <net/net_if.h>
-#include <net/socket.h>
-#include <net/ethernet.h>
-#include <net/lldp.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/lldp.h>
 #include <errno.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "main.h"
 
 /* Loglevel of dsa_lldp function */
