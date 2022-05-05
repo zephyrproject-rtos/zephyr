@@ -22,7 +22,7 @@
 	-connect_pmu=1
 	-connect_idu=2
 	-connect_idu_cirqnum=64
-	-connect_gfrc=1
+	-connect_gfrc=3
 	-connect_icd=2
 	-connect_ici=2
 	-noprofile
