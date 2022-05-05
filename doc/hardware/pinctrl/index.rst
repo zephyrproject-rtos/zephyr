@@ -292,6 +292,13 @@ requires to have one node for each pin mapping and state, since in general,
 nodes can not be re-used for multiple states. This method is discouraged if
 autogeneration is not an option.
 
+.. note::
+
+   Because all Devicetree information is parsed into a C header, it is important
+   to make sure its size is kept to a minimum. For this reason it is important
+   to prefix pre-generated nodes with ``/omit-if-no-ref/``. This prefix makes
+   sure that the node is discarded when not used.
+
 .. code-block:: devicetree
 
     /* board.dts */
@@ -312,17 +319,17 @@ autogeneration is not an option.
 
     &pinctrl {
         /* Mapping for PERIPH0_SIGA -> PX0, to be used for default state */
-        periph0_siga_px0_default: periph0_siga_px0_default {
+        /omit-if-no-ref/ periph0_siga_px0_default: periph0_siga_px0_default {
             pinmux = <VNDSOC_PIN(X, 0, MUX0)>;
         };
 
         /* Mapping for PERIPH0_SIGB -> PY7, to be used for default state */
-        periph0_sigb_py7_default: periph0_sigb_py7_default {
+        /omit-if-no-ref/ periph0_sigb_py7_default: periph0_sigb_py7_default {
             pinmux = <VNDSOC_PIN(Y, 7, MUX4)>;
         };
 
         /* Mapping for PERIPH0_SIGC -> PZ1, to be used for default state */
-        periph0_sigc_pz1_default: periph0_sigc_pz1_default {
+        /omit-if-no-ref/ periph0_sigc_pz1_default: periph0_sigc_pz1_default {
             pinmux = <VNDSOC_PIN(Z, 1, MUX2)>;
         };
     };
@@ -355,7 +362,7 @@ autogeneration is not an option.
     .. code-block:: devicetree
 
         /* not evident that "periph0_siga_px0_default" also implies "bias-pull-up" */
-        periph0_siga_px0_default: periph0_siga_px0_default {
+        /omit-if-no-ref/ periph0_siga_px0_default: periph0_siga_px0_default {
             pinmux = <VNDSOC_PIN(X, 0, MUX0)>;
             bias-pull-up;
         };
