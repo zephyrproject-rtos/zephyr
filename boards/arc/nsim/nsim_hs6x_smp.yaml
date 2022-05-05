@@ -6,6 +6,7 @@ arch: arc
 toolchain:
   - cross-compile
   - zephyr
+  - arcmwdt
 testing:
   timeout_multiplier: 1.5
   ignore_tags:
