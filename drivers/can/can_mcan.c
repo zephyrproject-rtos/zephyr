@@ -246,10 +246,17 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 	struct can_mcan_reg *can = cfg->can;
 	int ret;
 
+#ifdef CONFIG_CAN_FD_MODE
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_FD)) != 0) {
+		LOG_ERR("unsupported mode: 0x%08x", mode);
+		return -ENOTSUP;
+	}
+#else
 	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
+#endif /* CONFIG_CAN_FD_MODE */
 
 	if (cfg->phy != NULL) {
 		ret = can_transceiver_enable(cfg->phy);
@@ -288,6 +295,14 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 	} else {
 		can->cccr &= ~CAN_MCAN_CCCR_MON;
 	}
+
+#ifdef CONFIG_CAN_FD_MODE
+	if ((mode & CAN_MODE_FD) != 0) {
+		can->cccr |= CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE;
+	} else {
+		can->cccr &= ~(CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE);
+	}
+#endif /* CONFIG_CAN_FD_MODE */
 
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));
 	if (ret) {
@@ -407,13 +422,8 @@ int can_mcan_init(const struct device *dev)
 				/ 16 + 5) << CAN_MCAN_RXESC_RBDS_POS);
 	}
 #endif
-
-#ifdef CONFIG_CAN_FD_MODE
-	can->cccr |= CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE;
-#else
-	can->cccr &= ~(CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE);
-#endif
-	can->cccr &= ~(CAN_MCAN_CCCR_TEST | CAN_MCAN_CCCR_MON |
+	can->cccr &= ~(CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE |
+		       CAN_MCAN_CCCR_TEST | CAN_MCAN_CCCR_MON |
 		       CAN_MCAN_CCCR_ASM);
 	can->test &= ~(CAN_MCAN_TEST_LBCK);
 
