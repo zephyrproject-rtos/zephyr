@@ -661,7 +661,7 @@ static void test_set_loopback(void)
 {
 	int err;
 
-	err = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
 }
 
@@ -953,10 +953,10 @@ static void test_filters_preserved_through_mode_change(void)
 	zassert_equal(err, 0, "receive timeout");
 	assert_frame_equal(&frame, &test_std_frame_1, 0);
 
-	err = can_set_mode(can_dev, CAN_NORMAL_MODE);
+	err = can_set_mode(can_dev, CAN_MODE_NORMAL);
 	zassert_equal(err, 0, "failed to set normal mode (err %d)", err);
 
-	err = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	err = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(err, 0, "failed to set loopback-mode (err %d)", err);
 
 	send_test_frame(can_dev, &test_std_frame_1);

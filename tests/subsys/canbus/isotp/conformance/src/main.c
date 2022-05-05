@@ -969,7 +969,7 @@ void test_main(void)
 
 	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
-	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(ret, 0, "Failed to set loopback mode [%d]", ret);
 
 	k_sem_init(&send_compl_sem, 0, 1);
