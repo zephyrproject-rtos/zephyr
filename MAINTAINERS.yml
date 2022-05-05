@@ -579,6 +579,20 @@ Documentation:
     labels:
         - "area: DAC"
 
+"Drivers: DAI":
+    status: maintained
+    maintainers:
+        - juimonen
+    collaborators:
+        - lgirdwood
+        - kv2019i
+    files:
+        - drivers/dai/
+        - doc/hardware/peripherals/audio/dai.rst
+        - include/zephyr/drivers/dai.h
+    labels:
+        - "area: DAI"
+
 "Drivers: DMA":
     status: maintained
     maintainers:
