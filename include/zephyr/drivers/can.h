@@ -94,6 +94,9 @@ extern "C" {
 /** Controller is not allowed to send dominant bits. */
 #define CAN_MODE_LISTENONLY BIT(1)
 
+/** Controller allows transmitting/receiving CAN-FD frames. */
+#define CAN_MODE_FD         BIT(2)
+
 /** @} */
 
 /**
