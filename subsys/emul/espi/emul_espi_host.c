@@ -109,7 +109,8 @@ static void emul_host_init_vw_state(struct espi_host_emul_data *data)
  * @return index in the array
  * @return -1 if not found
  */
-static int emul_host_find_index(struct espi_host_emul_data *data, enum espi_vwire_signal vw)
+static int emul_host_find_index(struct espi_host_emul_data *data,
+				enum espi_vwire_signal vw)
 {
 	int idx;
 
@@ -122,12 +123,12 @@ static int emul_host_find_index(struct espi_host_emul_data *data, enum espi_vwir
 	return -1;
 }
 
-static int emul_host_set_vw(struct espi_emul *emul, enum espi_vwire_signal vw, uint8_t level)
+static int emul_host_set_vw(const struct emul *emulator,
+			    enum espi_vwire_signal vw, uint8_t level)
 {
-	struct espi_host_emul_data *data;
+	struct espi_host_emul_data *data = emulator->data;
 	int idx;
 
-	data = CONTAINER_OF(emul, struct espi_host_emul_data, emul);
 	idx = emul_host_find_index(data, vw);
 
 	if (idx < 0 || data->vw_state[idx].dir != ESPI_SLAVE_TO_MASTER) {
@@ -140,12 +141,12 @@ static int emul_host_set_vw(struct espi_emul *emul, enum espi_vwire_signal vw, u
 	return 0;
 }
 
-static int emul_host_get_vw(struct espi_emul *emul, enum espi_vwire_signal vw, uint8_t *level)
+static int emul_host_get_vw(const struct emul *emulator,
+			    enum espi_vwire_signal vw, uint8_t *level)
 {
-	struct espi_host_emul_data *data;
+	struct espi_host_emul_data *data = emulator->data;
 	int idx;
 
-	data = CONTAINER_OF(emul, struct espi_host_emul_data, emul);
 	idx = emul_host_find_index(data, vw);
 
 	if (idx < 0 || data->vw_state[idx].dir != ESPI_MASTER_TO_SLAVE) {
@@ -158,7 +159,8 @@ static int emul_host_get_vw(struct espi_emul *emul, enum espi_vwire_signal vw, u
 	return 0;
 }
 
-int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal vw, uint8_t level)
+int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal vw,
+			   uint8_t level)
 {
 	struct espi_emul *emul_espi;
 	struct espi_event evt;
@@ -173,7 +175,7 @@ int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal
 	__ASSERT_NO_MSG(api->find_emul);
 
 	emul_espi = api->find_emul(espi_dev, EMUL_ESPI_HOST_CHIPSEL);
-	data_host = CONTAINER_OF(emul_espi, struct espi_host_emul_data, emul);
+	data_host = espi_dev->data;
 
 	idx = emul_host_find_index(data_host, vw);
 	if (idx < 0 || data_host->vw_state[idx].dir != ESPI_MASTER_TO_SLAVE) {
@@ -212,9 +214,9 @@ int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data)
 }
 
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
-static uintptr_t emul_espi_dev_get_acpi_shm(struct espi_emul *emul)
+static uintptr_t emul_espi_dev_get_acpi_shm(const struct emul *emulator)
 {
-	struct espi_host_emul_data *data = CONTAINER_OF(emul, struct espi_host_emul_data, emul);
+	struct espi_host_emul_data *data = emulator->data;
 
 	return (uintptr_t)data->shm_acpi_mmap;
 }
@@ -226,7 +228,7 @@ uintptr_t emul_espi_host_get_acpi_shm(const struct device *espi_dev)
 
 	__ASSERT_NO_MSG(rc == 0);
 
-	return (uintptr_t)shm;
+	return (uintptr_t) shm;
 }
 #endif
 
@@ -246,16 +248,11 @@ static struct emul_espi_device_api ap_emul_api = {
  */
 static int emul_host_init(const struct emul *emul, const struct device *bus)
 {
-	const struct espi_host_emul_cfg *cfg = emul->cfg;
 	struct espi_host_emul_data *data = emul->data;
 
-	data->emul.api = &ap_emul_api;
-	data->emul.chipsel = cfg->chipsel;
-	data->emul.parent = emul;
-	data->espi = bus;
 	emul_host_init_vw_state(data);
 
-	return espi_emul_register(bus, emul->dev_label, &data->emul);
+	return 0;
 }
 
 #define HOST_EMUL(n)                                                                               \
@@ -264,6 +261,6 @@ static int emul_host_init(const struct emul *emul, const struct device *bus)
 		.chipsel = DT_INST_REG_ADDR(n),                                                    \
 	};                                                                                         \
 	EMUL_DEFINE(emul_host_init, DT_DRV_INST(n), &espi_host_emul_cfg_##n,                       \
-		    &espi_host_emul_data_##n)
+		    &espi_host_emul_data_##n, &ap_emul_api)
 
 DT_INST_FOREACH_STATUS_OKAY(HOST_EMUL)
