@@ -114,9 +114,49 @@ static int cmd_read(const struct shell *shell_ptr, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_write(const struct shell *shell_ptr, size_t argc, char *argv[])
+{
+	int err;
+	const char *name = argv[1];
+	const char *hex;
+	uint8_t binary[SETTINGS_MAX_VAL_LEN];
+	size_t number_of_bytes;
+
+	/*
+	 * Explicit deletion instead of just writing 0 bytes (technically the same) for more precise
+	 * error message.
+	 */
+	if (argc == 2) {
+		err = settings_delete(name);
+
+		if (err) {
+			shell_error(shell_ptr, "Failed to delete settings: %d", err);
+		}
+
+		return err;
+	}
+
+	hex = argv[2];
+	number_of_bytes = hex2bin(hex, strlen(hex), binary, sizeof(binary));
+
+	if (!number_of_bytes) {
+		shell_error(shell_ptr, "Failed to parse hexstring");
+		return -EINVAL;
+	}
+
+	err = settings_save_one(name, &binary, number_of_bytes);
+	if (err) {
+		shell_error(shell_ptr, "Failed to save settings: %d", name, err);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(settings_cmds,
 			       SHELL_CMD_ARG(list, NULL, "[<subtree>]", cmd_list, 1, 1),
 			       SHELL_CMD_ARG(read, NULL, "<name>", cmd_read, 2, 0),
+			       SHELL_CMD_ARG(write, NULL, "<name> [<hex>]", cmd_write, 2, 1),
 			       SHELL_SUBCMD_SET_END
 			       );
 
