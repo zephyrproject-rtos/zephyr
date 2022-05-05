@@ -24,3 +24,7 @@ add_subdirectory(core)
 if(COMPILER STREQUAL arcmwdt)
   add_subdirectory(arcmwdt)
 endif()
+
+if(CONFIG_ISA_ARCV3 AND NOT CONFIG_64BIT)
+  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-littlearc64)
+endif()

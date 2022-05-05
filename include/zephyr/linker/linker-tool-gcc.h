@@ -27,8 +27,10 @@
 #elif defined(CONFIG_ARM64)
 	OUTPUT_FORMAT("elf64-littleaarch64")
 #elif defined(CONFIG_ARC)
-	#if defined(CONFIG_64BIT)
+	#if defined(CONFIG_ISA_ARCV3) && defined(CONFIG_64BIT)
 		OUTPUT_FORMAT("elf64-littlearc")
+	#elif defined(CONFIG_ISA_ARCV3) && !defined(CONFIG_64BIT)
+		OUTPUT_FORMAT("elf32-littlearc64")
 	#else
 		OUTPUT_FORMAT("elf32-littlearc", "elf32-bigarc", "elf32-littlearc")
 	#endif

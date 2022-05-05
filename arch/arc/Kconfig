@@ -87,6 +87,12 @@ endif #ISA_ARCV2
 
 if ISA_ARCV3
 
+config CPU_HS5X
+	bool
+	select CPU_ARCHS
+	help
+	  If y, the SoC uses an ARC HS6x CPU
+
 config CPU_HS6X
 	bool
 	select CPU_ARCHS
