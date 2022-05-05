@@ -42,7 +42,6 @@
 #else
 #define ATT_CHAN_MAX				1
 #endif /* CONFIG_BT_EATT */
-
 typedef enum __packed {
 		ATT_COMMAND,
 		ATT_REQUEST,
@@ -179,6 +178,10 @@ void att_sent(struct bt_conn *conn, void *user_data)
 	}
 }
 
+#if defined(CONFIG_BT_TESTING)
+atomic_t flag_send_over_eatt = (atomic_t)false;
+#endif
+
 /* In case of success the ownership of the buffer is transferred to the stack
  * which takes care of releasing it when it completes transmitting to the
  * controller.
@@ -236,6 +239,10 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 			 */
 			return -EINVAL;
 		}
+
+		#if defined(CONFIG_BT_TESTING)
+		atomic_set(&flag_send_over_eatt, (atomic_t) true);
+		#endif
 
 		data->att_chan = chan;
 
