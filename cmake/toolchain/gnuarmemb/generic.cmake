@@ -24,6 +24,7 @@ set(BINTOOLS gnu)
 
 set(CROSS_COMPILE_TARGET arm-none-eabi)
 set(SYSROOT_TARGET       arm-none-eabi)
+set(CMAKE_EXE_LINKER_FLAGS_INIT "--specs=nosys.specs")
 
 set(CROSS_COMPILE ${TOOLCHAIN_HOME}/bin/${CROSS_COMPILE_TARGET}-)
 set(SYSROOT_DIR   ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})
