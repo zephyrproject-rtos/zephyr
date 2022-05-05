@@ -20,6 +20,7 @@
 
 #define JESD216_CMD_READ_SFDP   0x5A
 #define JESD216_CMD_BURST_SFDP  0x5B
+#define JESD216_OCMD_READ_SFDP  0x5AA5
 
 /* Layout of a JESD216 parameter header. */
 struct jesd216_param_header {
