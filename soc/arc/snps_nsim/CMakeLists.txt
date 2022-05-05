@@ -63,6 +63,16 @@ else()
              -Xtimer0 -Xtimer1 -Xrtc -dcache=32768,64,2,a -Hld_cycles=1)
 
   zephyr_ld_option_ifdef(CONFIG_SOC_NSIM_HS5X_SMP -Hlib=hs58_full)
+
+  zephyr_compile_options_ifdef(CONFIG_SOC_NSIM_HS6X -arc64 -core0 -uarch_rev=0:0 -HL -Xatomic=2
+             -Xunaligned -Xmpy_cycles=3 -Xtimer0 -Xtimer1 -Xrtc -dcache=32768,64,2,a -Hld_cycles=1)
+
+  zephyr_ld_option_ifdef(CONFIG_SOC_NSIM_HS6X -Hlib=hs68_full_zephyr)
+
+  zephyr_compile_options_ifdef(CONFIG_SOC_NSIM_HS6X_SMP -arc64 -core0 -uarch_rev=0:0 -HL -Xatomic=2
+             -Xunaligned -Xmpy_cycles=3 -Xtimer0 -Xtimer1 -Xrtc -dcache=32768,64,2,a -Hld_cycles=1)
+
+  zephyr_ld_option_ifdef(CONFIG_SOC_NSIM_HS6X_SMP -Hlib=hs68_full_zephyr)
 endif()
 
 zephyr_sources(soc.c)
