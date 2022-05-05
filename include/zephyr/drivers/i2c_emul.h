@@ -13,16 +13,16 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_I2C_EMUL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_I2C_I2C_EMUL_H_
 
+#include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
+#include <zephyr/types.h>
+
 /**
  * @brief I2C Emulation Interface
  * @defgroup i2c_emul_interface I2C Emulation Interface
  * @ingroup io_emulators
  * @{
  */
-
-#include <zephyr/types.h>
-#include <zephyr/device.h>
-#include <zephyr/drivers/emul.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,8 +35,8 @@ struct i2c_emul_api;
 struct i2c_emul {
 	sys_snode_t node;
 
-	/** Parent emulator */
-	const struct emul *parent;
+	/** Target emulator - REQUIRED for all emulated bus nodes of any type */
+	const struct emul *target;
 
 	/* API provided for this device */
 	const struct i2c_emul_api *api;
@@ -49,16 +49,16 @@ struct i2c_emul {
  * Passes I2C messages to the emulator. The emulator updates the data with what
  * was read back.
  *
- * @param emul Emulator instance
+ * @param target The device Emulator instance.
  * @param msgs Array of messages to transfer. For 'read' messages, this function
- *	updates the 'buf' member with the data that was read
+ *	updates the 'buf' member with the data that was read.
  * @param num_msgs Number of messages to transfer.
  * @param addr Address of the I2C target device.
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*i2c_emul_transfer_t)(struct i2c_emul *emul, struct i2c_msg *msgs, int num_msgs,
+typedef int (*i2c_emul_transfer_t)(const struct emul *target, struct i2c_msg *msgs, int num_msgs,
 				   int addr);
 
 /**
