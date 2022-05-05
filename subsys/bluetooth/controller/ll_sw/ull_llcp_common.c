@@ -819,22 +819,22 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		llcp_pdu_encode_ping_rsp(pdu);
-		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		llcp_pdu_encode_feature_rsp(conn, pdu);
-		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 	case PROC_VERSION_EXCHANGE:
 		llcp_pdu_encode_version_ind(pdu);
-		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		llcp_pdu_encode_length_rsp(conn, pdu);
 		ctx->tx_ack = tx;
-		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -860,10 +860,10 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 
 		if (!err_code) {
 			llcp_pdu_encode_cte_rsp(ctx, pdu);
-			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
+			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		} else {
 			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_CTE_REQ, err_code);
-			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
+			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		}
 
 		ctx->tx_ack = tx;
