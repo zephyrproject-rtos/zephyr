@@ -12,6 +12,8 @@ since the previous invocation.
 
 import os
 import argparse
+import sysconfig
+import re
 
 
 def parse_args():
@@ -35,6 +37,8 @@ def parse_args():
 
     return args
 
+def mingw_replacement(match):
+    return match.group(2) + match.group(1).lower() + match.group(2)
 
 def get_subfolder_list(directory, create_links=None):
     """Return subfolder list of a directory"""
@@ -64,6 +68,13 @@ def get_subfolder_list(directory, create_links=None):
                 dirlist.append(symlink)
             else:
                 dirlist.append(os.path.join(root, subdir))
+
+    """Workaround MSYS2 automatic path convertion"""
+    if sysconfig.get_platform().startswith("mingw"):
+        tmp = dirlist.copy()
+        dirlist.clear()
+        for dir in tmp:
+            dirlist.append(re.sub("^(.):(.)", mingw_replacement, dir))
 
     return dirlist
 

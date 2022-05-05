@@ -45,6 +45,10 @@ foreach(file_name include/stddef.h include-fixed/limits.h)
     OUTPUT_VARIABLE _OUTPUT
     )
   get_filename_component(_OUTPUT "${_OUTPUT}" DIRECTORY)
+  # get absolute pathname
+  cmake_path(NORMAL_PATH _OUTPUT OUTPUT_VARIABLE _OUTPUT)
+  # solve gcc's MSYS pathname, harmless on other hosts
+  string(REGEX REPLACE "^(.):(.)" "\\2\\1\\2" _OUTPUT "${_OUTPUT}")
   string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
 
   list(APPEND NOSTDINC ${_OUTPUT})
