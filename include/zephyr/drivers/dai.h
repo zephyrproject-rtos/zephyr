@@ -169,11 +169,13 @@ enum dai_trigger_cmd {
  * for example to setup dma outside the driver code.
  *
  * @param fifo_address Fifo hw address for e.g. when connecting to dma.
+ * @param fifo_depth Fifo depth.
  * @param dma_hs_id Dma handshake id.
  * @param reg_init_delay Delay for initializing registers.
  */
 struct dai_properties {
 	uint32_t fifo_address; /* fifo address */
+	uint32_t fifo_depth; /* fifo depth */
 	uint32_t dma_hs_id; /* dma handshake id */
 	uint32_t reg_init_delay; /* delay for register init */
 };
