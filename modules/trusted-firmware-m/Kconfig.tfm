@@ -317,11 +317,10 @@ endif # !TFM_BL2
 config TFM_FLASH_MERGED_BINARY
 	bool
 	help
-		This option instructs west flash to program the
-		combined (merged) binary consisting of the TF-M
-		Secure firmware image, optionally, the BL2 image
-		(if building with TFM_BL2 is enabled), and the
-		Non-Secure application firmware.
+	  This option instructs west flash to program the combined (merged)
+	  binary consisting of the TF-M Secure firmware image, optionally, the
+	  BL2 image (if building with TFM_BL2 is enabled), and the Non-Secure
+	  application firmware.
 
 config TFM_LOG_LEVEL_SILENCE
 	bool "TF-M Disable secure logging"
