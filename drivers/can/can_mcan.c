@@ -240,11 +240,16 @@ int can_mcan_set_timing_data(const struct device *dev,
 }
 #endif /* CONFIG_CAN_FD_MODE */
 
-int can_mcan_set_mode(const struct device *dev, enum can_mode mode)
+int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_reg *can = cfg->can;
 	int ret;
+
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
+		LOG_ERR("unsupported mode: 0x%08x", mode);
+		return -ENOTSUP;
+	}
 
 	if (cfg->phy != NULL) {
 		ret = can_transceiver_enable(cfg->phy);
@@ -269,32 +274,19 @@ int can_mcan_set_mode(const struct device *dev, enum can_mode mode)
 	/* Configuration Change Enable */
 	can->cccr |= CAN_MCAN_CCCR_CCE;
 
-	switch (mode) {
-	case CAN_NORMAL_MODE:
-		LOG_DBG("Config normal mode");
-		can->cccr &= ~(CAN_MCAN_CCCR_TEST | CAN_MCAN_CCCR_MON);
-		break;
-
-	case CAN_SILENT_MODE:
-		LOG_DBG("Config silent mode");
-		can->cccr &= ~CAN_MCAN_CCCR_TEST;
-		can->cccr |= CAN_MCAN_CCCR_MON;
-		break;
-
-	case CAN_LOOPBACK_MODE:
-		LOG_DBG("Config loopback mode");
-		can->cccr &= ~CAN_MCAN_CCCR_MON;
+	if ((mode & CAN_MODE_LOOPBACK) != 0) {
+		/* Loopback mode */
 		can->cccr |= CAN_MCAN_CCCR_TEST;
 		can->test |= CAN_MCAN_TEST_LBCK;
-		break;
+	} else {
+		can->cccr &= ~CAN_MCAN_CCCR_TEST;
+	}
 
-	case CAN_SILENT_LOOPBACK_MODE:
-		LOG_DBG("Config silent loopback mode");
-		can->cccr |= (CAN_MCAN_CCCR_TEST | CAN_MCAN_CCCR_MON);
-		can->test |= CAN_MCAN_TEST_LBCK;
-		break;
-	default:
-		break;
+	if ((mode & CAN_MODE_LISTENONLY) != 0) {
+		/* Bus monitoring mode */
+		can->cccr |= CAN_MCAN_CCCR_MON;
+	} else {
+		can->cccr &= ~CAN_MCAN_CCCR_MON;
 	}
 
 	ret = can_leave_init_mode(can, K_MSEC(CAN_INIT_TIMEOUT));

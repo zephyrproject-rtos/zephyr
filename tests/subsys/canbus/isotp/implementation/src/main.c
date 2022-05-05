@@ -420,7 +420,7 @@ void test_main(void)
 
 	zassert_true(device_is_ready(can_dev), "CAN device not ready");
 
-	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
 	zassert_equal(ret, 0, "Configuring loopback mode failed (%d)", ret);
 
 	ztest_test_suite(isotp,

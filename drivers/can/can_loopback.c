@@ -197,11 +197,11 @@ static void can_loopback_remove_rx_filter(const struct device *dev, int filter_i
 	k_mutex_unlock(&data->mtx);
 }
 
-static int can_loopback_set_mode(const struct device *dev, enum can_mode mode)
+static int can_loopback_set_mode(const struct device *dev, can_mode_t mode)
 {
 	struct can_loopback_data *data = dev->data;
 
-	data->loopback = mode == CAN_LOOPBACK_MODE ? 1 : 0;
+	data->loopback = (mode & CAN_MODE_LOOPBACK) != 0 ? 1 : 0;
 	return 0;
 }
 

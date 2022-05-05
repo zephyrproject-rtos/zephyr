@@ -181,7 +181,7 @@ static int setup_socket(void)
 	}
 
 #ifdef CONFIG_SAMPLE_SOCKETCAN_LOOPBACK_MODE
-	can_set_mode(DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus)), CAN_LOOPBACK_MODE);
+	can_set_mode(DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus)), CAN_MODE_LOOPBACK);
 #endif
 
 	fd = socket(AF_CAN, SOCK_RAW, CAN_RAW);

@@ -257,7 +257,7 @@ struct can_mcan_reg;
 		.custom = _custom_data,					\
 	}
 
-int can_mcan_set_mode(const struct device *dev, enum can_mode mode);
+int can_mcan_set_mode(const struct device *dev, can_mode_t mode);
 
 int can_mcan_set_timing(const struct device *dev,
 			const struct can_timing *timing);
