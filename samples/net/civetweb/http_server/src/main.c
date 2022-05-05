@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <posix/pthread.h>
-#include <data/json.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/posix/pthread.h>
+#include <zephyr/data/json.h>
 
 #include "civetweb.h"
 

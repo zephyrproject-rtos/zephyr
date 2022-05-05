@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#include <drivers/misc/grove_lcd/grove_lcd.h>
+#include <zephyr/drivers/misc/grove_lcd/grove_lcd.h>
 #include <stdio.h>
 #include <string.h>
 

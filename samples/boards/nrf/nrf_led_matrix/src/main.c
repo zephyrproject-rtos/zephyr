@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <drivers/display.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/display.h>
 #include <string.h>
 
 #define PIXEL_BIT(idx, val)  (val ? BIT(idx) : 0)

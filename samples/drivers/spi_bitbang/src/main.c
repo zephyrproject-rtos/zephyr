@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <stdio.h>
 #include <string.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 
 #define SPIBB_NODE	DT_NODELABEL(spibb0)
 

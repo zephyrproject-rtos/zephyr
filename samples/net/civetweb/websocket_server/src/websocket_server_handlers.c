@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(websocket_server_handlers, LOG_LEVEL_DBG);
 
 #include "websocket_server_handlers.h"

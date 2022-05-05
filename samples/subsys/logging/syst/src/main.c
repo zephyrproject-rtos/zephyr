@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <logging/log.h>
-#include <sys/printk.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_output.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output.h>
 
 #define DATA_MAX_DLEN 8
 #define LOG_MODULE_NAME syst

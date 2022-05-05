@@ -6,8 +6,8 @@
 
 #include "sample_driver.h"
 #include <string.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(sample_driver);
 

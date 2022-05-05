@@ -5,10 +5,10 @@
  */
 
 #define LOG_LEVEL LOG_LEVEL_INF
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(audio_proc);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include "audio_core.h"
 

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/iso.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/byteorder.h>
 
 #define BIG_TERMINATE_TIMEOUT 60 /* seconds */
 

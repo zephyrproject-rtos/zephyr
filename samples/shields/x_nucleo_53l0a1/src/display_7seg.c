@@ -6,8 +6,8 @@
 
 #include "display_7seg.h"
 
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 
 const uint8_t DISPLAY_OFF[4] = { CHAR_OFF, CHAR_OFF, CHAR_OFF, CHAR_OFF };
 const uint8_t TEXT_Err[4] = { CHAR_E, CHAR_r, CHAR_r, CHAR_OFF };

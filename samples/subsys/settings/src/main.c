@@ -10,11 +10,11 @@
 #include "settings/settings.h"
 
 #include <errno.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #if IS_ENABLED(CONFIG_SETTINGS_FS)
-#include <fs/fs.h>
-#include <fs/littlefs.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
 #endif
 
 #define GAMMA_DEFAULT_VAl 0

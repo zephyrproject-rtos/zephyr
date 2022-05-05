@@ -5,10 +5,10 @@
  */
 
 #include <errno.h>
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <drivers/spi.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
 
 /**
  * @file Sample app using the Fujitsu MB85RS64V FRAM through SPI.

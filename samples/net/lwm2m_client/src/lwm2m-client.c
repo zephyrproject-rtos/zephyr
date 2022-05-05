@@ -8,14 +8,14 @@
 #define LOG_MODULE_NAME net_lwm2m_client_app
 #define LOG_LEVEL LOG_LEVEL_DBG
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <drivers/hwinfo.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <net/lwm2m.h>
+#include <zephyr/drivers/hwinfo.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/net/lwm2m.h>
 
 #define APP_BANNER "Run LWM2M client"
 

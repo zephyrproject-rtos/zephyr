@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <shell/shell.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
 #include <version.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <stdlib.h>
-#include <drivers/uart.h>
-#include <usb/usb_device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/usb/usb_device.h>
 #include <ctype.h>
 
 LOG_MODULE_REGISTER(app);

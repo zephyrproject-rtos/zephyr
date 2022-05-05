@@ -8,10 +8,10 @@
  */
 
 #include <stddef.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
 static struct k_work work_adv_start;
 static uint8_t volatile conn_count;

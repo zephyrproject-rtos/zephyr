@@ -3,7 +3,7 @@
  */
 
 #include <cinttypes>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #include "chre_api/chre/event.h"
 #include "chre/core/event_loop_manager.h"

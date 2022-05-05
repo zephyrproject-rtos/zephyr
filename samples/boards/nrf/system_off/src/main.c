@@ -5,12 +5,12 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <device.h>
-#include <init.h>
-#include <pm/pm.h>
-#include <pm/device.h>
-#include <pm/policy.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <soc.h>
 #include "retained.h"
 #include <hal/nrf_gpio.h>

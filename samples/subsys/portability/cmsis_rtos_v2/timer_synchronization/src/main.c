@@ -8,7 +8,7 @@
  * @file Synchronization demo using CMSIS RTOS V2 APIs.
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <cmsis_os2.h>
 
 /* specify delay between greetings (in ms); compute equivalent in ticks */

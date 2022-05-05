@@ -7,13 +7,13 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/direction.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/direction.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 /* Length of CTE in unit of 8[us] */
 #define CTE_LEN (0x14U)

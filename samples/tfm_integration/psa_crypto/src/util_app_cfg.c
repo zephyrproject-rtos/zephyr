@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "psa/error.h"
 #include "psa/protected_storage.h"

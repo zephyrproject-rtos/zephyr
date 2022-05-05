@@ -6,12 +6,12 @@
 
 #include <ctype.h>
 #include <stdlib.h>
-#include <console/console.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/iso.h>
-#include <sys/byteorder.h>
+#include <zephyr/console/console.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(iso_broadcast_broadcaster, LOG_LEVEL_DBG);
 
 #define DEFAULT_BIS_RTN         2

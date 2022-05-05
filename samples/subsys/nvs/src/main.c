@@ -38,13 +38,13 @@
  */
 
 
-#include <zephyr.h>
-#include <sys/reboot.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <fs/nvs.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/fs/nvs.h>
 
 static struct nvs_fs fs;
 

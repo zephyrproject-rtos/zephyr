@@ -5,15 +5,15 @@
  */
 
 #include <errno.h>
-#include <net/dns_sd.h>
-#include <net/socket.h>
-#include <posix/netinet/in.h>
+#include <zephyr/net/dns_sd.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/posix/netinet/in.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdns_echo_service, LOG_LEVEL_DBG);
 
 /* A default port of 0 causes bind(2) to request an ephemeral port */

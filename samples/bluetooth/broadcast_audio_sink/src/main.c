@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 #define SEM_TIMEOUT K_SECONDS(10)
 
