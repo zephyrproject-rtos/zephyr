@@ -9,19 +9,19 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdbool.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <stdio.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
-#include <bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 
 #include "media_proxy_internal.h"
 

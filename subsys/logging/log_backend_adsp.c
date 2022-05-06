@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <logging/log_backend_std.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_backend_std.h>
 
 /*
  * A lock is needed as log_process() and log_panic() have no internal locks

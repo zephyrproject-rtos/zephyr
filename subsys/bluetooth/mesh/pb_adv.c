@@ -6,9 +6,9 @@
  */
 #include <stdint.h>
 #include <string.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/mesh.h>
-#include <net/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
 #include "host/testing.h"
 #include "net.h"
 #include "adv.h"

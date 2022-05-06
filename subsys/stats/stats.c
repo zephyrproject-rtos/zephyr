@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <zephyr/types.h>
-#include <stats/stats.h>
+#include <zephyr/stats/stats.h>
 
 #define STATS_GEN_NAME_MAX_LEN  (sizeof("s255"))
 

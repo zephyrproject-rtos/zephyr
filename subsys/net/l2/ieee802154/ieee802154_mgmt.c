@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_mgmt, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include <net/net_core.h>
+#include <zephyr/net/net_core.h>
 
 #include <errno.h>
 
-#include <net/net_if.h>
-#include <net/ieee802154_radio.h>
-#include <net/ieee802154_mgmt.h>
-#include <net/ieee802154.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_mgmt.h>
+#include <zephyr/net/ieee802154.h>
 
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt_priv.h"

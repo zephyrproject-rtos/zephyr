@@ -5,7 +5,7 @@
  */
 
 #include <stdlib.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 
 #include "osdp_common.h"

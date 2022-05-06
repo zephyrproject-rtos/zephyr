@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <sys/crc.h>
-#include <fs/fs.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/fs/fs.h>
 #include <mgmt/mgmt.h>
 #include <fs_mgmt/fs_mgmt_config.h>
 #include <fs_mgmt/fs_mgmt_impl.h>

@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_USB_WORK_Q_H_
 #define ZEPHYR_USB_WORK_Q_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

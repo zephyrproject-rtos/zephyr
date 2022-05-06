@@ -10,13 +10,13 @@
  * @brief Internal functions to handle transport over Websocket.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mqtt_websocket, CONFIG_MQTT_LOG_LEVEL);
 
 #include <errno.h>
-#include <net/socket.h>
-#include <net/mqtt.h>
-#include <net/websocket.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/mqtt.h>
+#include <zephyr/net/websocket.h>
 
 #include "mqtt_os.h"
 #include "mqtt_transport.h"

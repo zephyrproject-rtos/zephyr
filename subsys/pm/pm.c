@@ -4,22 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <zephyr.h>
-#include <kernel.h>
-#include <timeout_q.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/timeout_q.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
-#include <pm/pm.h>
-#include <pm/state.h>
-#include <pm/policy.h>
-#include <tracing/tracing.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/state.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/tracing/tracing.h>
 
 #include "pm_stats.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 
 static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_NUM_CPUS);

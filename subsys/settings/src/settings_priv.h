@@ -9,9 +9,9 @@
 #define __SETTINGS_PRIV_H_
 
 #include <sys/types.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #include <errno.h>
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
 #ifdef __cplusplus
 extern "C" {

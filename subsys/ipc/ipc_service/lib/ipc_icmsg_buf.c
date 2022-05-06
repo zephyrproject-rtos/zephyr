@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <errno.h>
-#include <cache.h>
-#include <ipc/ipc_icmsg_buf.h>
+#include <zephyr/cache.h>
+#include <zephyr/ipc/ipc_icmsg_buf.h>
 
 
 /* Helpers */

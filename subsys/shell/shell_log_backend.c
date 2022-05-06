@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell_log_backend.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell_log_backend.h>
+#include <zephyr/shell/shell.h>
 #include "shell_ops.h"
-#include <logging/log_ctrl.h>
+#include <zephyr/logging/log_ctrl.h>
 
 static bool process_msg2_from_buffer(const struct shell *shell);
 

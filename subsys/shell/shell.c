@@ -6,10 +6,10 @@
 
 #include <ctype.h>
 #include <stdlib.h>
-#include <sys/atomic.h>
-#include <shell/shell.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/shell/shell.h>
 #if defined(CONFIG_SHELL_BACKEND_DUMMY)
-#include <shell/shell_dummy.h>
+#include <zephyr/shell/shell_dummy.h>
 #endif
 #include "shell_ops.h"
 #include "shell_help.h"

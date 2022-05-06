@@ -7,20 +7,20 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <init.h>
-#include <fs/fs.h>
-#include <fs/fs_sys.h>
+#include <zephyr/init.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/fs_sys.h>
 
 #define LFS_LOG_REGISTER
 #include <lfs_util.h>
 
 #include <lfs.h>
-#include <fs/littlefs.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <storage/disk_access.h>
+#include <zephyr/fs/littlefs.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/storage/disk_access.h>
 
 #include "fs_impl.h"
 

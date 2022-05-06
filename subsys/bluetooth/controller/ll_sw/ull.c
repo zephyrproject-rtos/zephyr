@@ -8,11 +8,11 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <device.h>
-#include <drivers/entropy.h>
-#include <bluetooth/hci.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"

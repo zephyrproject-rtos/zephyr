@@ -9,7 +9,7 @@
 
 /** @brief Internal APIs for Bluetooth Media Control */
 
-#include <bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 
 #define MPL_NO_TRACK_ID 0
 

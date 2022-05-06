@@ -53,10 +53,10 @@ typedef struct esf z_arch_esf_t;
 #endif
 #endif /* KERNEL */
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #define PRINT printk
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include <ztest_assert.h>
 #include <ztest_mock.h>

@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include "net/buf.h"
 #include "mgmt/mcumgr/buf.h"
 #include <mgmt/mgmt.h>

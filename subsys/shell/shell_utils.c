@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ctype.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <stdlib.h>
 #include "shell_utils.h"
 #include "shell_wildcard.h"

@@ -5,10 +5,10 @@
  */
 
 #include <LoRaMac.h>
-#include <kernel.h>
-#include <settings/settings.h>
+#include <zephyr/kernel.h>
+#include <zephyr/settings/settings.h>
 #include "lorawan_nvm.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(lorawan_nvm, CONFIG_LORAWAN_LOG_LEVEL);
 

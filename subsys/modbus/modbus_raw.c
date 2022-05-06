@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modbus_raw, CONFIG_MODBUS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <sys/byteorder.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
 #include <modbus_internal.h>
 
 #define MODBUS_ADU_LENGTH_DEVIATION	2

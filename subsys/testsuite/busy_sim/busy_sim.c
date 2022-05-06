@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <drivers/entropy.h>
-#include <drivers/counter.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/gpio.h>
 #include "busy_sim.h"
-#include <sys/ring_buffer.h>
-#include <random/rand32.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/random/rand32.h>
 
 #define BUFFER_SIZE 32
 

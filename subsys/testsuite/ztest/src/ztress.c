@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztress.h>
-#include <sys/printk.h>
-#include <random/rand32.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/random/rand32.h>
 #include <string.h>
 
 

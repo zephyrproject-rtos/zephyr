@@ -6,12 +6,12 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <sys/types.h>
-#include <toolchain.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include "util/memq.h"
 #include "pdu.h"

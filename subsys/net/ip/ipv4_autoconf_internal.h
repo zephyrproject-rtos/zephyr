@@ -13,9 +13,9 @@
 #ifndef __IPV4_AUTOCONF_INTERNAL_H
 #define __IPV4_AUTOCONF_INTERNAL_H
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <net/ipv4_autoconf.h>
+#include <zephyr/net/ipv4_autoconf.h>
 
 /* Initial random delay*/
 #define IPV4_AUTOCONF_PROBE_WAIT 1

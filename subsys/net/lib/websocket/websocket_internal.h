@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain/common.h>
+#include <zephyr/toolchain/common.h>
 
 #define WS_SHA1_OUTPUT_LEN 20
 

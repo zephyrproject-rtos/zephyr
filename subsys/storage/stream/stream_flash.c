@@ -7,17 +7,17 @@
 
 #define LOG_MODULE_NAME STREAM_FLASH
 #define LOG_LEVEL CONFIG_STREAM_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_STREAM_FLASH_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <string.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 
-#include <storage/stream_flash.h>
+#include <zephyr/storage/stream_flash.h>
 
 #ifdef CONFIG_STREAM_FLASH_PROGRESS
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
 static int settings_direct_loader(const char *key, size_t len,
 				  settings_read_cb read_cb, void *cb_arg,

@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_capture, CONFIG_NET_CAPTURE_LOG_LEVEL);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
-#include <sys/slist.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
-#include <net/virtual.h>
-#include <net/virtual_mgmt.h>
-#include <net/capture.h>
-#include <net/ethernet.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/virtual.h>
+#include <zephyr/net/virtual_mgmt.h>
+#include <zephyr/net/capture.h>
+#include <zephyr/net/ethernet.h>
 
 #include "net_private.h"
 #include "ipv4.h"

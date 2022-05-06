@@ -9,23 +9,23 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <init.h>
-#include <device.h>
-#include <drivers/clock_control.h>
-#include <sys/atomic.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/atomic.h>
 
-#include <sys/util.h>
-#include <debug/stack.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #ifdef CONFIG_CLOCK_CONTROL_NRF
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)

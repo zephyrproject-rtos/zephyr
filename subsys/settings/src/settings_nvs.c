@@ -11,9 +11,9 @@
 #include "settings/settings.h"
 #include "settings/settings_nvs.h"
 #include "settings_priv.h"
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 #if DT_HAS_CHOSEN(zephyr_settings_partition)

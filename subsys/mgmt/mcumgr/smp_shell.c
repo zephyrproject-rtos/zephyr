@@ -9,10 +9,10 @@
  */
 
 #include <string.h>
-#include <zephyr.h>
-#include <init.h>
-#include <net/buf.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include "mgmt/mcumgr/serial.h"
 #include "mgmt/mcumgr/smp.h"
@@ -22,7 +22,7 @@
 #include "shell/shell.h"
 #include "shell/shell_uart.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_shell);
 
 static struct zephyr_smp_transport smp_shell_transport;

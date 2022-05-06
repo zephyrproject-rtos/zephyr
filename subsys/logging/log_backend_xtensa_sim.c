@@ -8,11 +8,11 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <logging/log_backend_std.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_backend_std.h>
 #include <xtensa/simcall.h>
 
 #define CHAR_BUF_SIZE (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? \

@@ -5,16 +5,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <sys/crc.h>
-#include <sys/byteorder.h>
-#include <net/buf.h>
-#include <sys/base64.h>
-#include <mgmt/mcumgr/buf.h>
-#include <mgmt/mcumgr/serial.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/base64.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/serial.h>
 
 static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 {

@@ -6,11 +6,11 @@
  */
 
 #define LOG_LEVEL CONFIG_EMUL_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(emul);
 
-#include <device.h>
-#include <drivers/emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
 #include <string.h>
 
 const struct emul *emul_get_binding(const char *name)

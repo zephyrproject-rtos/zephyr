@@ -14,14 +14,14 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #include "bt.h"
 

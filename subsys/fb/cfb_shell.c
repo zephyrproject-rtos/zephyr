@@ -12,8 +12,8 @@
  */
 
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <display/cfb.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/display/cfb.h>
 
 #define HELP_NONE "[none]"
 #define HELP_INIT "call \"cfb init\" first"

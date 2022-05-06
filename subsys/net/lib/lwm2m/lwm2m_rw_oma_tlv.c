@@ -60,12 +60,12 @@
 #define LOG_MODULE_NAME net_lwm2m_oma_tlv
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <string.h>
 #include <stdint.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_engine.h"

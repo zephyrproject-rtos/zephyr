@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/mbox.h>
+#include <zephyr/drivers/mbox.h>
 
-#include <ipc/ipc_service_backend.h>
+#include <zephyr/ipc/ipc_service_backend.h>
 #include "ipc_icmsg.h"
 
 #define DT_DRV_COMPAT	zephyr_ipc_icmsg

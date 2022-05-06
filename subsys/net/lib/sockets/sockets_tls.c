@@ -8,15 +8,15 @@
 #include <stdbool.h>
 #include <fcntl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <init.h>
-#include <sys/util.h>
-#include <net/socket.h>
-#include <random/rand32.h>
-#include <syscall_handler.h>
-#include <sys/fdtable.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/fdtable.h>
 
 /* TODO: Remove all direct access to private fields.
  * According with Mbed TLS migration guide:

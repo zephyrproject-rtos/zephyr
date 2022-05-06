@@ -5,13 +5,13 @@
  */
 
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <debug/coredump.h>
+#include <zephyr/debug/coredump.h>
 #include "coredump_internal.h"
 
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
 
 /* Length of buffer of printable size */
@@ -127,7 +127,7 @@ struct coredump_backend_api coredump_backend_logging = {
 
 
 #ifdef CONFIG_DEBUG_COREDUMP_SHELL
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 static int cmd_coredump_error_get(const struct shell *shell,
 				  size_t argc, char **argv)

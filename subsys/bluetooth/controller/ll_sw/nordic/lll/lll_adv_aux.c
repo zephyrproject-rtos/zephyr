@@ -7,8 +7,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <sys/byteorder.h>
-#include <bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
 #include <soc.h>
 
 #include "hal/cpu.h"
