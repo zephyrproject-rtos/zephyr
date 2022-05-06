@@ -17,4 +17,9 @@ config POWER_DOMAIN_GPIO
 	depends on GPIO
 	depends on TIMEOUT_64BIT
 
+config POWER_DOMAIN_INTEL_ADSP
+	bool "Use Intel ADSP power gating mechanisms"
+	help
+	  Include Intel ADSP power domain control mechanisms
+
 endif
