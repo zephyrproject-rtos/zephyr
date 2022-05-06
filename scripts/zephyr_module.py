@@ -368,9 +368,14 @@ def west_projects():
     # West is imported here, as it is optional
     # (and thus maybe not installed)
     # if user is providing a specific modules list.
-    from west.manifest import Manifest
-    from west.util import WestNotFound
-    from west.version import __version__ as WestVersion
+    try:
+        from west.manifest import Manifest
+        from west.util import WestNotFound
+        from west.version import __version__ as WestVersion
+    except ImportError:
+        # West is not installed, so don't return any projects.
+        return None
+
     from packaging import version
     try:
         manifest = Manifest.from_file()
