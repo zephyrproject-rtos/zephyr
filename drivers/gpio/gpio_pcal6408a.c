@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT nxp_pcal6408a
 
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 #include "gpio_utils.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcal6408a, CONFIG_GPIO_LOG_LEVEL);
 
 enum {

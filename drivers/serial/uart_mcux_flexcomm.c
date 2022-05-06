@@ -15,14 +15,14 @@
  */
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_usart.h>
 #include <soc.h>
 #include <fsl_device_registers.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 struct mcux_flexcomm_config {

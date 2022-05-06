@@ -11,19 +11,19 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LIS2DW12_LIS2DW12_H_
 #define ZEPHYR_DRIVERS_SENSOR_LIS2DW12_LIS2DW12_H_
 
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/sensor.h>
 #include <stmemsc.h>
 #include "lis2dw12_reg.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 /* Return ODR reg value based on data rate set */

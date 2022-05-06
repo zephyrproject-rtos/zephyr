@@ -16,8 +16,8 @@
 
 #define DT_DRV_COMPAT gaisler_irqmp
 
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 
 /*
  * Register description for IRQMP and IRQAMP interrupt controllers

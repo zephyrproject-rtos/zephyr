@@ -9,8 +9,8 @@
  * devices for the "vnd,serial" devicetree compatible used in test code.
  */
 
-#include <zephyr.h>
-#include <drivers/uart.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/uart.h>
 
 #define DT_DRV_COMPAT vnd_serial
 

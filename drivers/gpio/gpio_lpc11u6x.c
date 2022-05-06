@@ -15,11 +15,11 @@
  * @note See the UM10732 LPC11U6x/E6x user manual for register definitions.
  */
 
-#include <drivers/clock_control.h>
-#include <drivers/gpio.h>
-#include <drivers/pinmux.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinmux.h>
 
-#include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
 
 #include "gpio_utils.h"
 

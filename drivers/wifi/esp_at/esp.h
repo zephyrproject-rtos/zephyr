@@ -8,12 +8,12 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_AT_ESP_H_
 #define ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_AT_ESP_H_
 
-#include <kernel.h>
-#include <net/net_context.h>
-#include <net/net_if.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/wifi_mgmt.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 #include "modem_context.h"
 #include "modem_cmd_handler.h"

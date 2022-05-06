@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/can.h>
-#include <drivers/clock_control.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/logging/log.h>
 
 #include "can_mcan.h"
 

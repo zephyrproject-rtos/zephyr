@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT maxim_max30101
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "max30101.h"
 

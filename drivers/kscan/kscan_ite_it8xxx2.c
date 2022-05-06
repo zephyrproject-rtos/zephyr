@@ -5,19 +5,19 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_kscan
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/interrupt_controller/wuc_ite_it8xxx2.h>
-#include <drivers/kscan.h>
-#include <drivers/pinctrl.h>
-#include <dt-bindings/interrupt-controller/it8xxx2-wuc.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
+#include <zephyr/drivers/kscan.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <errno.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <soc_dt.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_LEVEL CONFIG_KSCAN_LOG_LEVEL
 LOG_MODULE_REGISTER(kscan_ite_it8xxx2);
 

@@ -22,14 +22,14 @@
  * associated IRQ numbers to work with this driver.
  */
 
-#include <kernel.h>
-#include <drivers/clock_control.h>
-#include <init.h>
-#include <irq.h>
-#include <irq_nextlevel.h>
-#include <sw_isr_table.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/init.h>
+#include <zephyr/irq.h>
+#include <zephyr/irq_nextlevel.h>
+#include <zephyr/sw_isr_table.h>
 #include <soc.h>
-#include <dt-bindings/interrupt-controller/openisa-intmux.h>
+#include <zephyr/dt-bindings/interrupt-controller/openisa-intmux.h>
 
 /*
  * CHn_VEC registers are offset by a value that is convenient if

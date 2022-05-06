@@ -11,31 +11,31 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <init.h>
-#include <pm/device.h>
-#include <arch/cpu.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/arch/cpu.h>
 #include <string.h>
 
 #if defined(CONFIG_PINCTRL)
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 #include <soc.h>
 #include <errno.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/interrupt_controller/ioapic.h>
+#include <zephyr/drivers/interrupt_controller/ioapic.h>
 #endif
 
 #include "i2c_dw.h"
 #include "i2c_dw_registers.h"
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"

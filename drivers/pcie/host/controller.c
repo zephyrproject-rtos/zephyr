@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie_core, LOG_LEVEL_INF);
 
-#include <kernel.h>
-#include <drivers/pcie/pcie.h>
-#include <drivers/pcie/controller.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/controller.h>
 
 #if CONFIG_PCIE_MSI
-#include <drivers/pcie/msi.h>
+#include <zephyr/drivers/pcie/msi.h>
 #endif
 
 /* arch agnostic PCIe API implementation */

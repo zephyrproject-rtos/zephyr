@@ -22,7 +22,7 @@
  * communicate to or from the Host or Link. Each stream set is uni directional.
  */
 
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 
 #include "dma_cavs_hda.h"
 

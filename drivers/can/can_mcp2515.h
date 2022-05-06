@@ -8,8 +8,8 @@
 #ifndef _MCP2515_H_
 #define _MCP2515_H_
 
-#include <drivers/gpio.h>
-#include <drivers/can.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/can.h>
 
 #define MCP2515_RX_CNT                   2
 /* Reduce the number of Tx buffers to 1 in order to avoid priority inversion. */

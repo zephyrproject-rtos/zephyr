@@ -7,16 +7,16 @@
 #define DT_DRV_COMPAT nuvoton_npcx_adc
 
 #include <assert.h>
-#include <drivers/adc.h>
-#include <drivers/adc/adc_npcx_threshold.h>
-#include <drivers/clock_control.h>
-#include <kernel.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/adc/adc_npcx_threshold.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_npcx, CONFIG_ADC_LOG_LEVEL);
 
 /* ADC speed/delay values during initialization */

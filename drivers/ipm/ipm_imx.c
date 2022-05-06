@@ -8,9 +8,9 @@
 
 #include <errno.h>
 #include <string.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/ipm.h>
+#include <zephyr/drivers/ipm.h>
 #if IS_ENABLED(CONFIG_IPM_IMX_REV2)
 #include "fsl_mu.h"
 #else

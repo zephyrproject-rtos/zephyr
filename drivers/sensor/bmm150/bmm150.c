@@ -8,7 +8,7 @@
 
 #define DT_DRV_COMPAT bosch_bmm150
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "bmm150.h"
 
 LOG_MODULE_REGISTER(BMM150, CONFIG_SENSOR_LOG_LEVEL);

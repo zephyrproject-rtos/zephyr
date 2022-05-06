@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT nxp_imx_gpio
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <gpio_imx.h>
 
 #include "gpio_utils.h"

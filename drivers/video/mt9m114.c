@@ -5,16 +5,16 @@
  */
 
 #define DT_DRV_COMPAT aptina_mt9m114
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <drivers/video.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/video.h>
+#include <zephyr/drivers/i2c.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mt9m114);
 
 #define MT9M114_CHIP_ID_VAL				0x2481

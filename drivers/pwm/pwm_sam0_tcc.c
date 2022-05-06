@@ -11,10 +11,10 @@
 
 #define DT_DRV_COMPAT atmel_sam0_tcc_pwm
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/pwm.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 /* Static configuration */

@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_MHZ19B_MHZ19B
 #define ZEPHYR_DRIVERS_SENSOR_MHZ19B_MHZ19B
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
 
 #define MHZ19B_BUF_LEN 9
 

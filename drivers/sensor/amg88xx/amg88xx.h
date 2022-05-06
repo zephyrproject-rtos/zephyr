@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_AMG88XX_AMG88XX_H_
 #define ZEPHYR_DRIVERS_SENSOR_AMG88XX_AMG88XX_H_
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 #define AMG88XX_PCLT		0x00 /* Setting Power control register */
 #define AMG88XX_RST		0x01 /* Reset register */

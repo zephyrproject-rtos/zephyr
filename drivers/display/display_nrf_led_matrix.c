@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/display.h>
-#include <devicetree.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <hal/nrf_timer.h>
 #ifdef PWM_PRESENT
 #include <hal/nrf_pwm.h>
@@ -16,7 +16,7 @@
 #include <nrfx_ppi.h>
 #endif
 #include <nrf_peripherals.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nrf_led_matrix, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define MATRIX_NODE  DT_INST(0, nordic_nrf_led_matrix)

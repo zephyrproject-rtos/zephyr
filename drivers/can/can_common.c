@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/can.h>
-#include <kernel.h>
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 

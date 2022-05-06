@@ -12,10 +12,10 @@
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_system.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
 #include <stm32_ll_utils.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 /* Macros to fill up prescaler values */
 #define z_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v

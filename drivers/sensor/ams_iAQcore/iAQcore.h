@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_AMS_IAQCORE_IAQCORE_H_
 #define ZEPHYR_DRIVERS_SENSOR_AMS_IAQCORE_IAQCORE_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 
 struct iaq_registers {
 	uint16_t co2_pred;

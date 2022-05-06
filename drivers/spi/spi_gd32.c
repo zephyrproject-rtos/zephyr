@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT gd_gd32_spi
 
 #include <errno.h>
-#include <kernel.h>
-#include <drivers/pinctrl.h>
-#include <drivers/spi.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/spi.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_gd32);
 
 #include "spi_context.h"

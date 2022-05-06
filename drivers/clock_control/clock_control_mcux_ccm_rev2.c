@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT nxp_imx_ccm_rev2
 #include <errno.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/clock/imx_ccm_rev2.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <fsl_clock.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
 static int mcux_ccm_on(const struct device *dev,

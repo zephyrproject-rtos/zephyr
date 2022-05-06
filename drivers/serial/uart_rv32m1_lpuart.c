@@ -8,13 +8,13 @@
 #define DT_DRV_COMPAT openisa_rv32m1_lpuart
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_lpuart.h>
 #include <soc.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 struct rv32m1_lpuart_config {

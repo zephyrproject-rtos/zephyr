@@ -12,13 +12,13 @@
 #include <esp32/rom/gpio.h>
 #include <soc/gpio_sig_map.h>
 #include <soc/ledc_reg.h>
-#include <drivers/gpio/gpio_esp32.h>
+#include <zephyr/drivers/gpio/gpio_esp32.h>
 
 #include <soc.h>
 #include <errno.h>
-#include <drivers/pwm.h>
-#include <kernel.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 
 #define PWM_ESP32_HSCH_HPOINT(i) (LEDC_HSCH0_HPOINT_REG + (0x14 * i))
@@ -383,8 +383,8 @@ int pwm_led_esp32_init(const struct device *dev)
 }
 
 /* Initialization for PWM_LED_ESP32 */
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
 #define CH_HS_TIMER(i) ((CONFIG_PWM_LED_ESP32_HS_CH ## i ## _TIMER) & 0x2)
 #define CH_HS_GPIO(i) ((CONFIG_PWM_LED_ESP32_HS_CH ## i ## _GPIO) & 0xfff)

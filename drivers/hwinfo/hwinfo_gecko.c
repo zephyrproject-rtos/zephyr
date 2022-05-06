@@ -7,9 +7,9 @@
 
 #include <em_system.h>
 #include <em_rmu.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #if defined(RMU_RSTCAUSE_BODUNREGRST) || defined(RMU_RSTCAUSE_BODREGRST) || \
     defined(RMU_RSTCAUSE_AVDDBOD) || defined(RMU_RSTCAUSE_DVDDBOD) || \

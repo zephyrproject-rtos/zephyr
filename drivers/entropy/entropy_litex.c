@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT litex_prbs
 
-#include <device.h>
-#include <drivers/entropy.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/entropy.h>
 #include <errno.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #define PRBS_STATUS     DT_INST_REG_ADDR(0)
 #define PRBS_WIDTH      DT_INST_REG_SIZE(0)

@@ -7,17 +7,17 @@
 #define DT_DRV_COMPAT st_stm32_ltdc
 
 #include <string.h>
-#include <device.h>
-#include <devicetree.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <stm32_ll_rcc.h>
-#include <drivers/display.h>
-#include <drivers/gpio.h>
-#include <drivers/pinctrl.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
-#include <pm/device.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 
 #if defined(CONFIG_STM32_LTDC_ARGB8888)
@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #endif /* CONFIG_STM32_LTDC_ARGB8888 */
 
 #if defined(CONFIG_HAS_CMSIS_CORE_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #if __DCACHE_PRESENT == 1
 #define CACHE_INVALIDATE(addr, size)	SCB_InvalidateDCache_by_Addr((addr), (size))

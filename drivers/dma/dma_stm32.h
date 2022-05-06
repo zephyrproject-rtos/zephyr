@@ -9,8 +9,8 @@
 
 #include <soc.h>
 #include <stm32_ll_dma.h>
-#include <drivers/dma.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 /* Maximum data sent in single transfer (Bytes) */
 #define DMA_STM32_MAX_DATA_ITEMS	0xffff

@@ -5,10 +5,10 @@
  */
 
 #include <soc.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <hal/nrf_ficr.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #ifndef CONFIG_BOARD_QEMU_CORTEX_M0
 #include <helpers/nrfx_reset_reason.h>
 #endif

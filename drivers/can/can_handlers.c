@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <drivers/can.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/can.h>
 
 static int z_vrfy_can_calc_timing(const struct device *dev, struct can_timing *res,
 				  uint32_t bitrate, uint16_t sample_pnt)

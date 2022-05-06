@@ -30,13 +30,13 @@
  * communication between the host MCU and the driver.
  */
 
-#include <drivers/i2c.h>
-#include <drivers/led.h>
-#include <device.h>
-#include <zephyr.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lp5562);
 
 #include "led_context.h"

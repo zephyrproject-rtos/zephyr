@@ -5,11 +5,11 @@
  */
 #define DT_DRV_COMPAT nxp_lpc11u6x_uart
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
-#include <drivers/uart.h>
-#include <drivers/pinmux.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/pinmux.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "uart_lpc11u6x.h"
 

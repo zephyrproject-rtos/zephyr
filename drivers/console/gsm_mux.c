@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gsm_mux, CONFIG_GSM_MUX_LOG_LEVEL);
 
-#include <kernel.h>
-#include <sys/util.h>
-#include <sys/crc.h>
-#include <net/buf.h>
-#include <net/ppp.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/ppp.h>
 
 #include "uart_mux_internal.h"
 #include "gsm_mux.h"

@@ -41,15 +41,15 @@
  * from encoders.
  */
 
-#include <device.h>
-#include <drivers/pinctrl.h>
-#include <drivers/sensor.h>
-#include <dt-bindings/sensor/it8xxx2_tach.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/it8xxx2_tach.h>
 #include <errno.h>
 #include <soc.h>
 #include <soc_dt.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tach_ite_it8xxx2, CONFIG_SENSOR_LOG_LEVEL);
 
 /*

@@ -7,12 +7,12 @@
  */
 
 
-#include <init.h>
-#include <sys/util.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 #include "bluetooth/addr.h"
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include "app_conf.h"
 #include "stm32_wpan_common.h"

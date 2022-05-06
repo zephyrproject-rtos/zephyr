@@ -11,9 +11,9 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include <limits.h>
 #include <fcntl.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 /* Define sockaddr, etc, before simplelink.h */
-#include <net/socket_offload.h>
+#include <zephyr/net/socket_offload.h>
 
 #include <errno.h>
 #include <ti/drivers/net/wifi/simplelink.h>

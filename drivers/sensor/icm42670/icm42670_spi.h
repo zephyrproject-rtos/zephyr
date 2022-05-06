@@ -8,8 +8,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM42670_SPI_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM42670_SPI_H_
 
-#include <device.h>
-#include <drivers/spi.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
 
 /**
  * @brief perform a single SPI write to a ICM42670 register

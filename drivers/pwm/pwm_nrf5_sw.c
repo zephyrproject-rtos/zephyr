@@ -7,15 +7,15 @@
 #define DT_DRV_COMPAT nordic_nrf_sw_pwm
 
 #include <soc.h>
-#include <drivers/pwm.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <nrfx_gpiote.h>
 #include <nrfx_ppi.h>
 #include <hal/nrf_gpio.h>
 #include <nrf_peripherals.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_nrf5_sw);
 
 #define GENERATOR_NODE	DT_INST_PHANDLE(0, generator)

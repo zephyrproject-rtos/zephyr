@@ -10,7 +10,7 @@
 
 #define DT_DRV_COMPAT st_lis2ds12
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "lis2ds12.h"
 
 LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);

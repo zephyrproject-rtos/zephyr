@@ -10,11 +10,11 @@
 
 #define DT_DRV_COMPAT bosch_bmg160
 
-#include <init.h>
-#include <drivers/sensor.h>
-#include <sys/byteorder.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 #include "bmg160.h"
 

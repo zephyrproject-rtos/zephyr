@@ -10,7 +10,7 @@
 #define DT_DRV_COMPAT st_lsm6dsl
 
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "lsm6dsl.h"
 

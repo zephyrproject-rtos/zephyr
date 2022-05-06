@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_dac32
 
-#include <zephyr.h>
-#include <drivers/dac.h>
-#include <logging/log.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <fsl_dac32.h>
 

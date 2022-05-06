@@ -8,11 +8,11 @@
 #define DT_DRV_COMPAT silabs_gecko_wdog
 
 #include <soc.h>
-#include <drivers/watchdog.h>
+#include <zephyr/drivers/watchdog.h>
 #include <em_wdog.h>
 #include <em_cmu.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_gecko, CONFIG_WDT_LOG_LEVEL);
 
 #ifdef cmuClock_CORELE

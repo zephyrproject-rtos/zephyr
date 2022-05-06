@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/can/transceiver.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
-#include <drivers/pinctrl.h>
-#include <sys/util.h>
+#include <zephyr/drivers/can/transceiver.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <drivers/can.h>
-#include <logging/log.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/logging/log.h>
 
 #include "can_stm32.h"
 

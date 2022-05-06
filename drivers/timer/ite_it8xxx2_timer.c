@@ -5,14 +5,14 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_timer
 
-#include <device.h>
-#include <drivers/timer/system_timer.h>
-#include <dt-bindings/interrupt-controller/ite-intc.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <soc.h>
-#include <spinlock.h>
-#include <sys_clock.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys_clock.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 
 BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,

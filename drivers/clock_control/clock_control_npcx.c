@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT nuvoton_npcx_pcc
 
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/clock/npcx_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/npcx_clock.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_npcx, LOG_LEVEL_ERR);
 
 /* Driver config */

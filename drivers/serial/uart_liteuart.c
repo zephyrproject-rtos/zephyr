@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT litex_uart0
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <init.h>
-#include <irq.h>
-#include <device.h>
-#include <drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/init.h>
+#include <zephyr/irq.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
 #include <zephyr/types.h>
 
 #define UART_RXTX_ADDR		DT_INST_REG_ADDR_BY_NAME(0, rxtx)

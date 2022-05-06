@@ -9,7 +9,7 @@
 
 #define CAVS_HDA_MAX_CHANNELS DT_PROP(DT_NODELABEL(hda_host_out), dma_channels)
 
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 
 struct cavs_hda_dma_data {
 	struct dma_context ctx;

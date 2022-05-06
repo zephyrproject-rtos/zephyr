@@ -11,14 +11,14 @@
  * @brief PWM driven LEDs
  */
 
-#include <drivers/led.h>
-#include <drivers/pwm.h>
-#include <device.h>
-#include <pm/device.h>
-#include <zephyr.h>
-#include <sys/math_extras.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/math_extras.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_pwm, CONFIG_LED_LOG_LEVEL);
 
 struct led_pwm_config {

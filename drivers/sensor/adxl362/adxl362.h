@@ -8,9 +8,9 @@
 #define ZEPHYR_DRIVERS_SENSOR_ADXL362_ADXL362_H_
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
 #define ADXL362_SLAVE_ID    1
 

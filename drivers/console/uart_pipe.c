@@ -11,15 +11,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_pipe, CONFIG_UART_CONSOLE_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
-#include <drivers/console/uart_pipe.h>
-#include <sys/printk.h>
+#include <zephyr/drivers/console/uart_pipe.h>
+#include <zephyr/sys/printk.h>
 
 static const struct device *uart_pipe_dev;
 

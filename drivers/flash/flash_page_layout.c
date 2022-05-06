@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 
 static int flash_get_page_info(const struct device *dev, off_t offs,
 			       uint32_t index, struct flash_pages_info *info)

@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_uart
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/pinctrl.h>
-#include <drivers/uart.h>
-#include <kernel.h>
-#include <pm/device.h>
-#include <pm/policy.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_ite_it8xxx2, CONFIG_UART_LOG_LEVEL);
 
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)

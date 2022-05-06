@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT ite_peci_it8xxx2
 
-#include <drivers/gpio.h>
-#include <drivers/pinctrl.h>
-#include <drivers/peci.h>
-#include <kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/peci.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <device.h>
-#include <drivers/peci.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/peci.h>
 #include <soc.h>
 #include <soc_dt.h>
-#include <logging/log.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(peci_ite_it8xxx2, CONFIG_PECI_LOG_LEVEL);
 

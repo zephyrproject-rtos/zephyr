@@ -11,7 +11,7 @@
  * Bus-specific functionality for BME680s accessed via SPI.
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "bme680.h"
 
 #if BME680_BUS_SPI

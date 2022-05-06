@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_IFACE_UART_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_IFACE_UART_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

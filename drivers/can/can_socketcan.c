@@ -6,13 +6,13 @@
  *
  */
 
-#include <net/net_pkt.h>
-#include <net/socket_can.h>
-#include <drivers/can.h>
-#include <devicetree.h>
-#include <device.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/socket_can.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/device.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(can_socketcan, CONFIG_CAN_LOG_LEVEL);
 
 #define SEND_TIMEOUT K_MSEC(100)

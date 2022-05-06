@@ -7,7 +7,7 @@
 
 #include "esp.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 
 #define RX_NET_PKT_ALLOC_TIMEOUT				\

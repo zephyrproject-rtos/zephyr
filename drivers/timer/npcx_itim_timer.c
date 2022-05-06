@@ -34,14 +34,14 @@
  *   "sleep/deep sleep" power state if CONFIG_PM is enabled.
  */
 
-#include <device.h>
-#include <drivers/clock_control.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(itim, LOG_LEVEL_ERR);
 
 #define NPCX_ITIM32_MAX_CNT 0xffffffff

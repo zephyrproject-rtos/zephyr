@@ -7,9 +7,9 @@
 #ifndef MPXXDTYY_H
 #define MPXXDTYY_H
 
-#include <audio/dmic.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/audio/dmic.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include "OpenPDMFilter.h"
 
 #ifdef __cplusplus

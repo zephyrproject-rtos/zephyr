@@ -20,7 +20,7 @@
  * of pins information.
  */
 
-#include <drivers/pinmux.h>
+#include <zephyr/drivers/pinmux.h>
 
 struct pinmux_lpc11u6x_config {
 	uint8_t port;

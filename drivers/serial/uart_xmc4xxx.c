@@ -9,7 +9,7 @@
 
 #include <xmc_gpio.h>
 #include <xmc_uart.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
 struct uart_xmc4xx_config {
 	XMC_USIC_CH_t *uart;

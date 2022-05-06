@@ -25,7 +25,7 @@
 #include <sys/select.h>
 #include <net/if.h>
 #include <time.h>
-#include <arch/posix/posix_trace.h>
+#include <zephyr/arch/posix/posix_trace.h>
 
 #ifdef __linux
 #include <linux/if_tun.h>
@@ -37,14 +37,14 @@
 #define LOG_MODULE_NAME eth_posix_adapt
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/types.h>
-#include <sys_clock.h>
+#include <zephyr/sys_clock.h>
 
 #if defined(CONFIG_NET_GPTP)
-#include <net/gptp.h>
+#include <zephyr/net/gptp.h>
 #endif
 
 #include "eth_native_posix_priv.h"

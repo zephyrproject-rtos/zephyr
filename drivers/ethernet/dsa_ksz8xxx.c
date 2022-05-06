@@ -6,19 +6,19 @@
 
 #define LOG_MODULE_NAME dsa
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ETHERNET_LOG_LEVEL);
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <sys/util.h>
-#include <net/ethernet.h>
-#include <linker/sections.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/linker/sections.h>
 
 #if defined(CONFIG_DSA_SPI)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #else
 #error "No communication bus defined"
 #endif

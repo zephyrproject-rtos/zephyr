@@ -11,13 +11,13 @@
  * @brief LED driver for the HT16K33 I2C LED driver with keyscan
  */
 
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <drivers/led.h>
-#include <drivers/led/ht16k33.h>
-#include <sys/byteorder.h>
-#include <logging/log.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/drivers/led/ht16k33.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(ht16k33, CONFIG_LED_LOG_LEVEL);
 

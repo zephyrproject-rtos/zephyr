@@ -6,22 +6,22 @@
 
 #define DT_DRV_COMPAT brcm_iproc_pax_dma_v1
 
-#include <arch/cpu.h>
-#include <cache.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/cache.h>
 #include <errno.h>
-#include <init.h>
-#include <kernel.h>
-#include <linker/sections.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/linker/sections.h>
 #include <soc.h>
 #include <string.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <drivers/dma.h>
-#include <drivers/pcie/endpoint/pcie_ep.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
 #include "dma_iproc_pax_v1.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_iproc_pax);
 
 /* Driver runtime data for PAX DMA and RM */

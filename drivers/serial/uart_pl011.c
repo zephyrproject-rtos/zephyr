@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT arm_pl011
 #define SBSA_COMPAT arm_sbsa_uart
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <init.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
 /*
  * UART PL011 register map structure

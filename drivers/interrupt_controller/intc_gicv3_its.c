@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_gicv3_its, LOG_LEVEL_ERR);
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/interrupt_controller/gicv3_its.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"

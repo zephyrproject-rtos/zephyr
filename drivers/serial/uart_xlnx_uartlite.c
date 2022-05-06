@@ -9,9 +9,9 @@
 
 #define DT_DRV_COMPAT xlnx_xps_uartlite_1_00_a
 
-#include <device.h>
-#include <drivers/uart.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/sys_io.h>
 
 /* AXI UART Lite v2 registers offsets (See Xilinx PG142 for details) */
 #define RX_FIFO_OFFSET  0x00

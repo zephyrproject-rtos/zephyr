@@ -10,11 +10,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_iface_uart, CONFIG_MODEM_LOG_LEVEL);
 
-#include <kernel.h>
-#include <drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
 
 #include "modem_context.h"
 #include "modem_iface_uart.h"

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <drivers/eeprom.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/eeprom.h>
 
 static inline int z_vrfy_eeprom_read(const struct device *dev, off_t offset,
 				     void *data, size_t len)

@@ -10,12 +10,12 @@
 
 #define DT_DRV_COMPAT st_iis2mdc
 
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "iis2mdc.h"
 
 struct iis2mdc_data iis2mdc_data;

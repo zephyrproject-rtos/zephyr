@@ -9,18 +9,18 @@
 #define LOG_MODULE_NAME eth_liteeth
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stdbool.h>
-#include <net/ethernet.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #include "eth.h"
 

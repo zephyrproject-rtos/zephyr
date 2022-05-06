@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT sensirion_sgp40
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
-#include <pm/device.h>
-#include <sys/byteorder.h>
-#include <sys/crc.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 
-#include <drivers/sensor/sgp40.h>
+#include <zephyr/drivers/sensor/sgp40.h>
 #include "sgp40.h"
 
 LOG_MODULE_REGISTER(SGP40, CONFIG_SENSOR_LOG_LEVEL);

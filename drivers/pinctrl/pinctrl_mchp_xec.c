@@ -9,7 +9,7 @@
 
 #define DT_DRV_COMPAT microchip_xec_pinctrl
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 /* Microchip XEC: each GPIO pin has two 32-bit control register.

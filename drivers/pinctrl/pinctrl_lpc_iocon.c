@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <fsl_clock.h>
 
 #define OFFSET(mux) (((mux) & 0xFFF00000) >> 20)

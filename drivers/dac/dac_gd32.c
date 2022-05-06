@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT gd_gd32_dac
 
 #include <errno.h>
-#include <drivers/pinctrl.h>
-#include <drivers/dac.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/dac.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dac_gd32, CONFIG_DAC_LOG_LEVEL);
 
 /**

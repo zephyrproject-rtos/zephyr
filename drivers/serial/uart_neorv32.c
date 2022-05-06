@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT neorv32_uart
 
-#include <device.h>
-#include <drivers/syscon.h>
-#include <drivers/uart.h>
-#include <pm/device.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/sys_io.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 
 /* NEORV32 UART registers offsets */
