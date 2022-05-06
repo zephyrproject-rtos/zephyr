@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <irq.h>
+#include <zephyr/irq.h>
 
 /*
  * In RISC-V there is no conventional way to handle CPU power save.

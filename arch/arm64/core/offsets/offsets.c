@@ -26,7 +26,7 @@
 #define _ARM_OFFSETS_INC_
 
 #include <gen_offset.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
 
@@ -58,7 +58,7 @@ GEN_ABSOLUTE_SYM(___esf_t_SIZEOF, sizeof(_esf_t));
 
 #ifdef CONFIG_HAS_ARM_SMCCC
 
-#include <arch/arm64/arm-smccc.h>
+#include <zephyr/arch/arm64/arm-smccc.h>
 
 GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a0, a0_a1);
 GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a2, a2_a3);

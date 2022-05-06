@@ -15,7 +15,7 @@
 #ifndef ZEPHYR_ARCH_ARC_INCLUDE_V2_IRQ_H_
 #define ZEPHYR_ARCH_ARC_INCLUDE_V2_IRQ_H_
 
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -14,11 +14,11 @@
  */
 
 #include "kernel.h"
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include "posix_core.h"
 #include "irq.h"
 #include "kswap.h"
-#include <pm/pm.h>
+#include <zephyr/pm/pm.h>
 
 int arch_swap(unsigned int key)
 {

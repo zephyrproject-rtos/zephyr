@@ -9,12 +9,12 @@
  * @brief codes required for ARC multicore and Zephyr smp support
  *
  */
-#include <device.h>
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <ksched.h>
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 
 #ifndef IRQ_ICI
