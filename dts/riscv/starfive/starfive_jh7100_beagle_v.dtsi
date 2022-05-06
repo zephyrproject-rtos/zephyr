@@ -5,7 +5,7 @@
  */
 
 #include "starfive_jh7100_clk.dtsi"
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	#address-cells = <2>;
