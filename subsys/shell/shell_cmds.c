@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include "shell_utils.h"
 #include "shell_help.h"
 #include "shell_ops.h"

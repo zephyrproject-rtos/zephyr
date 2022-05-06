@@ -14,7 +14,7 @@
 #ifndef __GPTP_PRIVATE_H
 #define __GPTP_PRIVATE_H
 
-#include <net/gptp.h>
+#include <zephyr/net/gptp.h>
 
 #ifdef __cplusplus
 extern "C" {

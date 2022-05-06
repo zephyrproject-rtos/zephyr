@@ -8,10 +8,10 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
@@ -21,8 +21,8 @@
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
 
-#include <bluetooth/mesh.h>
-#include <bluetooth/crypto.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/crypto.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_CRYPTO)
 #define LOG_MODULE_NAME bt_mesh_tc_crypto

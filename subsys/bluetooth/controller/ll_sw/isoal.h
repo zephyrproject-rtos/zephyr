@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <zephyr/types.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /** Function return error codes */
 typedef uint8_t isoal_status_t;

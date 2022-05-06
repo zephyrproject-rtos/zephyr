@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <shell/shell_mqtt.h>
-#include <init.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell_mqtt.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 #include <string.h>
 #include <stdio.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 
 SHELL_MQTT_DEFINE(shell_transport_mqtt);
 SHELL_DEFINE(shell_mqtt, "", &shell_transport_mqtt,

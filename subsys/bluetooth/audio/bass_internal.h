@@ -10,8 +10,8 @@
  */
 
 #include <zephyr/types.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/audio/bass.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/audio/bass.h>
 
 #define BT_BASS_SCAN_STATE_NOT_SCANNING   0x00
 #define BT_BASS_SCAN_STATE_SCANNING       0x01

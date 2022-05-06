@@ -6,15 +6,15 @@
 #define LOG_MODULE_NAME net_lwm2m_shell
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <kernel.h>
-#include <net/lwm2m.h>
-#include <shell/shell.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/lwm2m.h>
+#include <zephyr/shell/shell.h>
 
 #define LWM2M_HELP_CMD "LwM2M commands"
 #define LWM2M_HELP_SEND "LwM2M SEND operation\nsend [OPTION]... [PATH]...\n" \

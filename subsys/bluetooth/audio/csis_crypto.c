@@ -10,13 +10,13 @@
  * it easier to compare.
  */
 #include "csis_crypto.h"
-#include <bluetooth/crypto.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/aes.h>
 #include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/ccm_mode.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CSIS_CRYPTO)
 #define LOG_MODULE_NAME bt_csis_crypto

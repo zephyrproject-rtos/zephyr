@@ -37,15 +37,15 @@
  * Driver for USB CDC ACM device class driver
  */
 
-#include <kernel.h>
-#include <init.h>
-#include <drivers/uart/cdc_acm.h>
-#include <drivers/uart.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart/cdc_acm.h>
+#include <zephyr/drivers/uart.h>
 #include <string.h>
-#include <sys/ring_buffer.h>
-#include <sys/byteorder.h>
-#include <usb/class/usb_cdc.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/class/usb_cdc.h>
+#include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 #include <usb_work_q.h>
 
@@ -56,7 +56,7 @@
 /* definitions */
 
 #define LOG_LEVEL CONFIG_USB_CDC_ACM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_cdc_acm);
 
 /* 115200bps, no parity, 1 stop bit, 8bit char */

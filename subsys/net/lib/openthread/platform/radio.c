@@ -13,7 +13,7 @@
 
 #define LOG_MODULE_NAME net_otPlat_radio
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include <stdbool.h>
@@ -21,11 +21,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <stdint.h>
 #include <string.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <net/ieee802154_radio.h>
-#include <net/net_pkt.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/sys/__assert.h>
 
 #include <openthread/ip6.h>
 #include <openthread-system.h>

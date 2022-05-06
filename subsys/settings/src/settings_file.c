@@ -7,15 +7,15 @@
 
 #include <string.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 #include "settings/settings.h"
 #include "settings/settings_file.h"
 #include "settings_priv.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 

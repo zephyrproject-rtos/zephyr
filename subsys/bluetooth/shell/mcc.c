@@ -10,14 +10,14 @@
  */
 
 #include <stdlib.h>
-#include <bluetooth/audio/mcc.h>
-#include <shell/shell.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "bt.h"
 
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "../services/ots/ots_client_internal.h"
 #include "../audio/media_proxy_internal.h"
 

@@ -6,7 +6,7 @@
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 
-#include <net/ieee802154.h>
+#include <zephyr/net/ieee802154.h>
 
 int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
 				      uint8_t level, uint8_t key_mode,

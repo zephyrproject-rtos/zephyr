@@ -5,7 +5,7 @@
  */
 
 #include <stdint.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "lwm2m_engine.h"
 #include "lwm2m_rw_link_format.h"

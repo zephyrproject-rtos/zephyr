@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "ecc.h"
 #include "hci_core.h"

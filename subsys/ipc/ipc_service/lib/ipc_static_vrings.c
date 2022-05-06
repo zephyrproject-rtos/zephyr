@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ipc/ipc_static_vrings.h>
-#include <cache.h>
+#include <zephyr/ipc/ipc_static_vrings.h>
+#include <zephyr/cache.h>
 
 #define SHM_DEVICE_NAME		"sram0.shm"
 

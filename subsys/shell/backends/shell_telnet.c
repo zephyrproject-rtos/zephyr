@@ -5,13 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 
-#include <logging/log.h>
-#include <net/net_context.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <shell/shell_telnet.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/shell/shell_telnet.h>
 
 #include "shell_telnet_protocol.h"
 

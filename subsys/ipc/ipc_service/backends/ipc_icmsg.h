@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ipc/ipc_icmsg_buf.h>
+#include <zephyr/ipc/ipc_icmsg_buf.h>
 
 enum icmsg_state {
 	ICMSG_STATE_OFF,

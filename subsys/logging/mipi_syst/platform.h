@@ -7,7 +7,7 @@
 #ifndef MIPI_SYST_PLATFORM_INCLUDED
 #define MIPI_SYST_PLATFORM_INCLUDED
 
-#include <logging/log_output.h>
+#include <zephyr/logging/log_output.h>
 
 #ifdef __cplusplus
 extern "C" {

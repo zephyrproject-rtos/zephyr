@@ -10,11 +10,11 @@
 
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
 
-#include <bluetooth/buf.h>
-#include <bluetooth/sdp.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/sdp.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SDP)
 #define LOG_MODULE_NAME bt_sdp

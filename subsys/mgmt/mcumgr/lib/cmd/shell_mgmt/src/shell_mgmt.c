@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 #include <stdio.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
 #include "shell_mgmt/shell_mgmt.h"
 #include "shell_mgmt/shell_mgmt_config.h"
-#include <shell/shell_dummy.h>
+#include <zephyr/shell/shell_dummy.h>
 
 static int
 shell_exec(const char *line)

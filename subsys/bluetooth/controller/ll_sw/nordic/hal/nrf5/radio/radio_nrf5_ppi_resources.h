@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include "radio_nrf5_fem.h"
 
 #if defined(CONFIG_BT_CTLR_TIFS_HW) || !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)

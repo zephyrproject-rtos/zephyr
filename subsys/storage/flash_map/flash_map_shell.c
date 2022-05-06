@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <init.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <storage/flash_map.h>
-#include <logging/log.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 

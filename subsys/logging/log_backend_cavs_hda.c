@@ -5,13 +5,13 @@
  */
 
 #include "arch/xtensa/cache.h"
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <logging/log_backend_std.h>
-#include <logging/log_backend_cavs_hda.h>
-#include <drivers/dma.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_backend_std.h>
+#include <zephyr/logging/log_backend_cavs_hda.h>
+#include <zephyr/drivers/dma.h>
 #include <zephyr/kernel.h>
 
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_CAVS_HDA_OUTPUT_DEFAULT;

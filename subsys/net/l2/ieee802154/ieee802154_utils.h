@@ -12,7 +12,7 @@
 #ifndef __IEEE802154_UTILS_H__
 #define __IEEE802154_UTILS_H__
 
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 static inline
 enum ieee802154_hw_caps ieee802154_get_hw_capabilities(struct net_if *iface)

@@ -12,15 +12,15 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <zephyr.h>
-#include <shell/shell.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/iso.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/iso.h>
 
 #include "bt.h"
 

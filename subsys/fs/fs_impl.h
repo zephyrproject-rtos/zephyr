@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_SUBSYS_FS_FS_IMPL_H_
 #define ZEPHYR_SUBSYS_FS_FS_IMPL_H_
 
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 #ifdef __cplusplus
 extern "C" {

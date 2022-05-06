@@ -7,7 +7,7 @@
 #ifndef _SOCKETS_INTERNAL_H_
 #define _SOCKETS_INTERNAL_H_
 
-#include <sys/fdtable.h>
+#include <zephyr/sys/fdtable.h>
 
 #define SOCK_EOF 1
 #define SOCK_NONBLOCK 2

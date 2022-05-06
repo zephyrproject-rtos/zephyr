@@ -8,9 +8,9 @@
  */
 
 #include <zephyr/types.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/audio/vcs.h>
-#include <shell/shell.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/audio/vcs.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <stdio.h>
 

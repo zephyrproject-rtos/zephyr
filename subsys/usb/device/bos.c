@@ -5,14 +5,14 @@
  */
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_bos);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <usb/usb_device.h>
+#include <zephyr/usb/usb_device.h>
 
-#include <usb/bos.h>
+#include <zephyr/usb/bos.h>
 
 extern const uint8_t __usb_bos_desc_start[];
 extern const uint8_t __usb_bos_desc_end[];
