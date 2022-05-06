@@ -8,7 +8,7 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #if defined(CONFIG_SOC_MKW40Z4) || defined(CONFIG_SOC_MKW41Z4)
 

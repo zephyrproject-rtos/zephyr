@@ -18,7 +18,7 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <arch/xtensa/arch.h>
+#include <zephyr/arch/xtensa/arch.h>
 #include <stdlib.h>
 
 void __esp_platform_start(void);

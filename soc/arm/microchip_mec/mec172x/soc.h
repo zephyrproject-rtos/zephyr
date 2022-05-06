@@ -242,7 +242,7 @@ typedef enum {
 	MAX_IRQn
 } IRQn_Type;
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 /* chip specific register defines */
 #include "reg/mec172x_defs.h"

@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <devicetree.h>
-#include <init.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
 
-#include <arch/arm/aarch32/mmu/arm_mmu.h>
+#include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
 #include "soc.h"
 
 static const struct arm_mmu_region mmu_regions[] = {

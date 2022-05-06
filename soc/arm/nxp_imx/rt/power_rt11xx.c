@@ -3,15 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <device.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/pm.h>
 #include <fsl_dcdc.h>
 #include <fsl_gpc.h>
-#include <dt-bindings/pm/imx_spc.h>
+#include <zephyr/dt-bindings/pm/imx_spc.h>
 #include "power_rt11xx.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /*

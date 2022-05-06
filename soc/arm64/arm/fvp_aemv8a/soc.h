@@ -8,11 +8,11 @@
 #ifndef _SOC_H_
 #define _SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #endif /* !_ASMLANGUAGE */
 

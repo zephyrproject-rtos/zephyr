@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <irq.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/irq.h>
+#include <zephyr/arch/cpu.h>
 
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 
 static ALWAYS_INLINE void riscv_idle(unsigned int key)
 {

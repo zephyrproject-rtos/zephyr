@@ -4,7 +4,7 @@
 #ifndef _ZEPHYR_SOC_INTEL_ADSP_MEM
 #define _ZEPHYR_SOC_INTEL_ADSP_MEM
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <cavs-vectors.h>
 
 #define L2_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram0)))

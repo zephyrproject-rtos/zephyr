@@ -4,13 +4,13 @@
  * Copyright (c) 2021 ASPEED Technology Inc.
  */
 
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <stdint.h>
 #include <string.h>
-#include <linker/linker-defs.h>
-#include <device.h>
-#include <cache.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/device.h>
+#include <zephyr/cache.h>
 #include <soc.h>
 
 extern char __bss_nc_start__[];

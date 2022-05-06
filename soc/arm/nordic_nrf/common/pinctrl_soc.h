@@ -12,8 +12,8 @@
 #ifndef ZEPHYR_SOC_ARM_NORDIC_NRF_COMMON_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM_NORDIC_NRF_COMMON_PINCTRL_SOC_H_
 
-#include <devicetree.h>
-#include <dt-bindings/pinctrl/nrf-pinctrl.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

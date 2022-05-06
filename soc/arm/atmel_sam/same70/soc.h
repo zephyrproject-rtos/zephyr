@@ -13,7 +13,7 @@
 #ifndef _ATMEL_SAME70_SOC_H_
 #define _ATMEL_SAME70_SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 

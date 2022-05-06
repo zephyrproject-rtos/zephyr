@@ -11,7 +11,7 @@
 #ifndef _ST_STM32_DT_H_
 #define _ST_STM32_DT_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 /* Devicetree related macros to construct pinctrl config data */
 
