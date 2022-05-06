@@ -172,6 +172,10 @@ class Filters:
                     all_boards.add(kb.name)
 
         _options = []
+        if len(all_boards) > 20:
+            logging.warning(f"{len(boards)} boards changed, this looks like a global change, skipping test handling")
+            return
+
         for board in all_boards:
             _options.extend(["-p", board ])
 
@@ -197,8 +201,12 @@ class Filters:
         for t in tests:
             _options.extend(["-T", t ])
 
+        if len(tests) > 20:
+            logging.warning(f"{len(tests)} tests changed, this looks like a global change, skipping test handling")
+            return
+
         if _options:
-            logging.info(f'Potential test filters...')
+            logging.info(f'Potential test filters...({len(tests)} changed...)')
             if self.platforms:
                 for platform in self.platforms:
                     _options.extend(["-p", platform])
