@@ -416,6 +416,28 @@ static int cmd_disconnect(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+
+static int cmd_tx_sync_read_cis(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_iso_tx_info tx_info;
+	int err;
+
+	if (!iso_chan.iso) {
+		shell_error(sh, "Not bound");
+		return 0;
+	}
+
+	err = bt_iso_chan_get_tx_sync(&iso_chan, &tx_info);
+	if (err) {
+		shell_error(sh, "Unable to read sync info (err %d)", err);
+		return 0;
+	}
+
+	shell_print(sh, "TX sync info:\n\tTimestamp=%u\n\tOffset=%u\n\tSequence number=%u",
+		tx_info.ts, tx_info.offset, tx_info.seq_num);
+
+	return 0;
+}
 #endif /* CONFIG_BT_ISO_UNICAST */
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
@@ -537,6 +559,28 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_tx_sync_read_bis(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_iso_tx_info tx_info;
+	int err;
+
+	if (!bis_iso_chan.iso) {
+		shell_error(sh, "BIG not created");
+		return -ENOEXEC;
+	}
+
+	err = bt_iso_chan_get_tx_sync(&bis_iso_chan, &tx_info);
+	if (err) {
+		shell_error(sh, "Unable to read sync info (err %d)", err);
+		return 0;
+	}
+
+	shell_print(sh, "TX sync info:\n\tTimestamp=%u\n\tOffset=%u\n\tSequence number=%u",
+		tx_info.ts, tx_info.offset, tx_info.seq_num);
+
+	return 0;
+}
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
@@ -640,11 +684,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 		      cmd_send, 1, 1),
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect ISO Channel",
 		      cmd_disconnect, 1, 0),
+	SHELL_CMD_ARG(tx_sync_read_cis, NULL, "Read CIS TX sync info", cmd_tx_sync_read_cis, 1, 0),
 #endif /* CONFIG_BT_ISO_UNICAST */
 #if defined(CONFIG_BT_ISO_BROADCASTER)
 	SHELL_CMD_ARG(create-big, NULL, "Create a BIG as a broadcaster [enc <broadcast code>]",
 		      cmd_big_create, 1, 2),
 	SHELL_CMD_ARG(broadcast, NULL, "Broadcast on ISO channels", cmd_broadcast, 1, 1),
+	SHELL_CMD_ARG(tx_sync_read_bis, NULL, "Read BIS TX sync info", cmd_tx_sync_read_bis, 1, 0),
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 	SHELL_CMD_ARG(sync-big, NULL, "Synchronize to a BIG as a receiver <BIS bitfield> [mse] "
