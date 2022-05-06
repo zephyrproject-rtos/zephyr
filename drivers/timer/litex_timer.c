@@ -13,20 +13,22 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/timer/system_timer.h>
 
-#define TIMER_LOAD_ADDR		DT_INST_REG_ADDR_BY_NAME(0, load)
-#define TIMER_RELOAD_ADDR	DT_INST_REG_ADDR_BY_NAME(0, reload)
-#define TIMER_EN_ADDR		DT_INST_REG_ADDR_BY_NAME(0, en)
-#define TIMER_UPDATE_VALUE_ADDR	DT_INST_REG_ADDR_BY_NAME(0, update_value)
-#define TIMER_VALUE_ADDR	DT_INST_REG_ADDR_BY_NAME(0, value)
-#define TIMER_EV_STATUS_ADDR	DT_INST_REG_ADDR_BY_NAME(0, ev_status)
-#define TIMER_EV_PENDING_ADDR	DT_INST_REG_ADDR_BY_NAME(0, ev_pending)
-#define TIMER_EV_ENABLE_ADDR	DT_INST_REG_ADDR_BY_NAME(0, ev_enable)
+#define TIMER_LOAD_ADDR			DT_INST_REG_ADDR_BY_NAME(0, load)
+#define TIMER_RELOAD_ADDR		DT_INST_REG_ADDR_BY_NAME(0, reload)
+#define TIMER_EN_ADDR			DT_INST_REG_ADDR_BY_NAME(0, en)
+#define TIMER_UPDATE_VALUE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, update_value)
+#define TIMER_VALUE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, value)
+#define TIMER_EV_STATUS_ADDR		DT_INST_REG_ADDR_BY_NAME(0, ev_status)
+#define TIMER_EV_PENDING_ADDR		DT_INST_REG_ADDR_BY_NAME(0, ev_pending)
+#define TIMER_EV_ENABLE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, ev_enable)
+#define TIMER_UPTIME_LATCH_ADDR		DT_INST_REG_ADDR_BY_NAME(0, uptime_latch)
+#define TIMER_UPTIME_CYCLES_ADDR	DT_INST_REG_ADDR_BY_NAME(0, uptime_cycles)
 
 #define TIMER_EV		0x1
 #define TIMER_IRQ		DT_INST_IRQN(0)
 #define TIMER_DISABLE		0x0
 #define TIMER_ENABLE		0x1
-#define TIMER_UPDATE_VALUE	0x1
+#define TIMER_UPTIME_LATCH	0x1
 
 static void litex_timer_irq_handler(const void *device)
 {
@@ -41,29 +43,29 @@ static void litex_timer_irq_handler(const void *device)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	static struct k_spinlock lock;
-	uint32_t timer_value;
+	uint32_t uptime_cycles;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	litex_write8(TIMER_UPDATE_VALUE, TIMER_UPDATE_VALUE_ADDR);
-	timer_value = (uint32_t)litex_read64(TIMER_VALUE_ADDR);
+	litex_write8(TIMER_UPTIME_LATCH, TIMER_UPTIME_LATCH_ADDR);
+	uptime_cycles = (uint32_t)litex_read64(TIMER_UPTIME_CYCLES_ADDR);
 
 	k_spin_unlock(&lock, key);
 
-	return timer_value;
+	return uptime_cycles;
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
 	static struct k_spinlock lock;
-	uint64_t timer_value;
+	uint64_t uptime_cycles;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	litex_write8(TIMER_UPDATE_VALUE, TIMER_UPDATE_VALUE_ADDR);
-	timer_value = litex_read64(TIMER_VALUE_ADDR);
+	litex_write8(TIMER_UPTIME_LATCH, TIMER_UPTIME_LATCH_ADDR);
+	uptime_cycles = litex_read64(TIMER_UPTIME_CYCLES_ADDR);
 
 	k_spin_unlock(&lock, key);
 
-	return timer_value;
+	return uptime_cycles;
 }
 
 /* tickless kernel is not supported */

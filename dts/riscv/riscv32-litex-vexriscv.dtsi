@@ -87,7 +87,9 @@
 				0xe0002828 0x10
 				0xe0002838 0x4
 				0xe000283c 0x4
-				0xe0002840 0x4>;
+				0xe0002840 0x4
+				0xe0002844 0x4
+				0xe0002848 0x20>;
 			reg-names =
 				"load",
 				"reload",
@@ -96,7 +98,9 @@
 				"value",
 				"ev_status",
 				"ev_pending",
-				"ev_enable";
+				"ev_enable",
+				"uptime_latch",
+				"uptime_cycles";
 			label = "timer0";
 			status = "disabled";
 		};
