@@ -48,6 +48,9 @@ struct sdhc_command {
 	int timeout_ms; /*!< Command timeout in milliseconds */
 };
 
+#define SDHC_NATIVE_RESPONSE_MASK 0xF
+#define SDHC_SPI_RESPONSE_TYPE_MASK 0xF0
+
 /**
  * @brief SD host controller data structure
  *
