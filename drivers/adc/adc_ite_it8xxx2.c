@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT ite_it8xxx2_adc
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 
-#include <drivers/adc.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <soc_dt.h>
 #include <errno.h>

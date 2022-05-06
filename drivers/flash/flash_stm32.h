@@ -10,8 +10,8 @@
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #endif
 
 struct flash_stm32_priv {

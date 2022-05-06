@@ -10,14 +10,14 @@
  *
  */
 
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <drivers/interrupt_controller/ioapic.h>
-#include <drivers/interrupt_controller/loapic.h>
-#include <drivers/interrupt_controller/sysapic.h>
-#include <irq.h>
-#include <linker/sections.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/ioapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
+#include <zephyr/irq.h>
+#include <zephyr/linker/sections.h>
 
 #define IS_IOAPIC_IRQ(irq)  (irq < z_loapic_irq_base())
 #define HARDWARE_IRQ_LIMIT ((z_loapic_irq_base() + LOAPIC_IRQ_COUNT) - 1)

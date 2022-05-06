@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <SEGGER_RTT.h>
 
 #define DT_DRV_COMPAT segger_rtt_uart

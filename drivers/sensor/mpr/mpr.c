@@ -9,13 +9,13 @@
 #define DT_DRV_COMPAT honeywell_mpr
 
 #include <errno.h>
-#include <kernel.h>
-#include <sys/__assert.h>
-#include <drivers/sensor.h>
-#include <drivers/i2c.h>
-#include <sys/byteorder.h>
-#include <init.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 #include "mpr.h"
 #include "mpr_configuration.h"
 

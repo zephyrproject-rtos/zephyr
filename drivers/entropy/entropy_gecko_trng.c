@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT silabs_gecko_trng
 
- #include <drivers/entropy.h>
+ #include <zephyr/drivers/entropy.h>
  #include <string.h>
  #include "soc.h"
  #include "em_cmu.h"

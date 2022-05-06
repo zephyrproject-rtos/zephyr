@@ -8,21 +8,21 @@
 
 #define DT_DRV_COMPAT worldsemi_ws2812_gpio
 
-#include <drivers/led_strip.h>
+#include <zephyr/drivers/led_strip.h>
 
 #include <string.h>
 
 #define LOG_LEVEL CONFIG_LED_STRIP_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ws2812_gpio);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <drivers/gpio.h>
-#include <device.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <dt-bindings/led/led.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 struct ws2812_gpio_cfg {
 	struct gpio_dt_spec in_gpio;

@@ -5,11 +5,11 @@
  */
 #define DT_DRV_COMPAT nxp_lpc_ctimer
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 #include <fsl_ctimer.h>
-#include <logging/log.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 LOG_MODULE_REGISTER(mcux_ctimer, CONFIG_COUNTER_LOG_LEVEL);
 
 /* One of the CTimer channels is reserved to implement set_top_value API */

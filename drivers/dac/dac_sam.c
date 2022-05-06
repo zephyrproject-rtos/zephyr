@@ -14,13 +14,13 @@
 #define DT_DRV_COMPAT atmel_sam_dac
 
 #include <errno.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include <soc.h>
-#include <device.h>
-#include <drivers/dac.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dac_sam, CONFIG_DAC_LOG_LEVEL);
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_SAME70) ||

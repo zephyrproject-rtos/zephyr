@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <drivers/video.h>
+#include <zephyr/drivers/video.h>
 
 K_HEAP_DEFINE(video_buffer_pool,
 	      CONFIG_VIDEO_BUFFER_POOL_SZ_MAX *

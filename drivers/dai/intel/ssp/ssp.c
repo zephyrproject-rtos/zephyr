@@ -7,10 +7,10 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <spinlock.h>
-#include <devicetree.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/devicetree.h>
 #define LOG_DOMAIN dai_intel_ssp
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "ssp.h"

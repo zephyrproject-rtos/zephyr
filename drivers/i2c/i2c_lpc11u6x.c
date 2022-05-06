@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT nxp_lpc11u6x_i2c
 
-#include <kernel.h>
-#include <drivers/i2c.h>
-#include <drivers/pinmux.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinmux.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
 #include "i2c_lpc11u6x.h"
 
 #define DEV_BASE(dev) (((struct lpc11u6x_i2c_config *)(dev->config))->base)

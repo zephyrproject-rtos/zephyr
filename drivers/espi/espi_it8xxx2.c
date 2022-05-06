@@ -7,14 +7,14 @@
 #define DT_DRV_COMPAT ite_it8xxx2_espi
 
 #include <assert.h>
-#include <drivers/espi.h>
-#include <drivers/gpio.h>
-#include <kernel.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include "soc_espi.h"
 #include "espi_utils.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 #define ESPI_IT8XXX2_GET_GCTRL_BASE \

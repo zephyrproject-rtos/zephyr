@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/uart.h>
-#include <syscall_handler.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/syscall_handler.h>
 
 #define UART_SIMPLE(op_) \
 	static inline int z_vrfy_uart_##op_(const struct device *dev) \

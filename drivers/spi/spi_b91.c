@@ -15,12 +15,12 @@
 
 #include "clock.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_telink);
 
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #include "spi_context.h"
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 
 #define CHIP_SELECT_COUNT               3u

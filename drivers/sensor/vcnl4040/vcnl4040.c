@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT vishay_vcnl4040
 
 #include "vcnl4040.h"
-#include <pm/device.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 #include <stdlib.h>
 
 LOG_MODULE_REGISTER(vcnl4040, CONFIG_SENSOR_LOG_LEVEL);

@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT atmel_sam_usbc
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam_usbc, CONFIG_USB_DRIVER_LOG_LEVEL);
 
-#include <kernel.h>
-#include <usb/usb_device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/usb/usb_device.h>
 #include <soc.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define EP_UDINT_MASK           0x000FF000
 

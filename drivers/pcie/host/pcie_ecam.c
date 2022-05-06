@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie_ecam, LOG_LEVEL_ERR);
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/pcie/pcie.h>
-#include <drivers/pcie/controller.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/controller.h>
 #ifdef CONFIG_GIC_V3_ITS
-#include <drivers/interrupt_controller/gicv3_its.h>
+#include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 #endif
 
 #define DT_DRV_COMPAT pci_host_ecam_generic

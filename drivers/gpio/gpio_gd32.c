@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT gd_gd32_gpio
 
-#include <drivers/gpio.h>
-#include <drivers/interrupt_controller/gd32_exti.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/interrupt_controller/gd32_exti.h>
 #include <soc.h>
 
 #include "gpio_utils.h"

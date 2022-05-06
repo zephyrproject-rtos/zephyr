@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT silabs_si7210
 
-#include <kernel.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <pm/device.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(SI7210, CONFIG_SENSOR_LOG_LEVEL);
 

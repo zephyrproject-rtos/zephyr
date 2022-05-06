@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT nxp_lpc11u6x_syscon
 
-#include <devicetree.h>
-#include <device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/device.h>
 
-#include <drivers/clock_control/lpc11u6x_clock_control.h>
-#include <drivers/pinmux.h>
+#include <zephyr/drivers/clock_control/lpc11u6x_clock_control.h>
+#include <zephyr/drivers/pinmux.h>
 
 #include "clock_control_lpc11u6x.h"
 

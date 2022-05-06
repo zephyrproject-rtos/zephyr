@@ -11,10 +11,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_IIS2DH_IIS2DH_H_
 #define ZEPHYR_DRIVERS_SENSOR_IIS2DH_IIS2DH_H_
 
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/sensor.h>
 #include "iis2dh_reg.h"
 
 /*

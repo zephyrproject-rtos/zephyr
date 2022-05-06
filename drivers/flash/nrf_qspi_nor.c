@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT nordic_qspi_nor
 
 #include <errno.h>
-#include <drivers/flash.h>
-#include <init.h>
-#include <pm/device.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #include "spi_nor.h"
@@ -1410,7 +1410,7 @@ void  z_impl_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
 }
 
 #ifdef CONFIG_USERSPACE
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 void z_vrfy_nrf_qspi_nor_base_clock_div_force(const struct device *dev,
 					      bool force)

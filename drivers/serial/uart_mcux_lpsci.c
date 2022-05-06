@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT nxp_kinetis_lpsci
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <fsl_lpsci.h>
 #include <soc.h>
 

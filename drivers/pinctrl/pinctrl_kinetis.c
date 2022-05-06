@@ -7,7 +7,7 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_pinmux
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <fsl_clock.h>
 
 /* Port register addresses. */

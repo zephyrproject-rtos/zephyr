@@ -10,8 +10,8 @@
  * devices for the "vnd,pwm" devicetree compatible used in test code.
  */
 
-#include <zephyr.h>
-#include <drivers/pwm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/pwm.h>
 
 #define DT_DRV_COMPAT vnd_pwm
 

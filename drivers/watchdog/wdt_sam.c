@@ -19,11 +19,11 @@
  *   CONFIG_WDT_DISABLE_AT_BOOT must be unset in the app's config file
  */
 
-#include <drivers/watchdog.h>
+#include <zephyr/drivers/watchdog.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_sam);
 
 #define SAM_PRESCALAR   128

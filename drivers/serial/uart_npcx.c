@@ -6,18 +6,18 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_uart
 
-#include <sys/__assert.h>
-#include <drivers/gpio.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
-#include <kernel.h>
-#include <pm/device.h>
-#include <pm/policy.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <soc.h>
 #include "soc_miwu.h"
 #include "soc_power.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_npcx, CONFIG_UART_LOG_LEVEL);
 
 /* Driver config */

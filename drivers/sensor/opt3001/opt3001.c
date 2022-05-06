@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT ti_opt3001
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
-#include <sys/__assert.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 
 #include "opt3001.h"
 

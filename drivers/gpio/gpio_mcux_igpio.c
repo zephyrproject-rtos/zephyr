@@ -7,14 +7,14 @@
 #define DT_DRV_COMPAT nxp_imx_gpio
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <fsl_common.h>
 #include <fsl_gpio.h>
 
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 #include "gpio_utils.h"

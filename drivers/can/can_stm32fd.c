@@ -5,13 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/can.h>
-#include <drivers/pinctrl.h>
-#include <kernel.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_bus.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "can_mcan.h"
 

@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_gpio
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 
 #include "gpio_utils.h"
 #include "soc_gpio.h"
 #include "soc_miwu.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_npcx, LOG_LEVEL_ERR);
 
 /* GPIO module instances declarations */

@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT ti_ina237
 
-#include <logging/log.h>
-#include <drivers/sensor.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor.h>
 #include "ina237.h"
 #include "ina23x_common.h"
 

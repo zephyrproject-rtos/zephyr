@@ -7,19 +7,19 @@
 #define DT_DRV_COMPAT solomon_ssd16xxfb
 
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ssd16xx);
 
 #include <string.h>
-#include <device.h>
-#include <drivers/display.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <sys/byteorder.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "ssd16xx_regs.h"
-#include <display/cfb.h>
+#include <zephyr/display/cfb.h>
 
 /**
  * SSD1673, SSD1608, SSD1681, ILI3897 compatible EPD controller driver.

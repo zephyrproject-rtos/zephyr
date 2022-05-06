@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT st_stm32_counter
 
-#include <drivers/counter.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <sys/atomic.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/sys/atomic.h>
 
 #include <stm32_ll_tim.h>
 #include <stm32_ll_rcc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
 /** Maximum number of timer channels. */

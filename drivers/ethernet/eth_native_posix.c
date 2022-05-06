@@ -14,25 +14,25 @@
 #define LOG_MODULE_NAME eth_posix
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdio.h>
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
 
-#include <net/net_pkt.h>
-#include <net/net_core.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
-#include <drivers/ptp_clock.h>
-#include <net/gptp.h>
-#include <net/lldp.h>
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/gptp.h>
+#include <zephyr/net/lldp.h>
 
 #include "eth_native_posix_priv.h"
 #include "eth.h"

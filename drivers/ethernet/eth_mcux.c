@@ -19,25 +19,25 @@
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 #define RING_ID 0
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <device.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <sys/__assert.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
-#include <pm/device.h>
+#include <zephyr/pm/device.h>
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-#include <drivers/ptp_clock.h>
+#include <zephyr/drivers/ptp_clock.h>
 #endif
 
 #if IS_ENABLED(CONFIG_NET_DSA)
-#include <net/dsa.h>
+#include <zephyr/net/dsa.h>
 #endif
 
 #include "fsl_enet.h"
@@ -46,12 +46,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "fsl_enet_mdio.h"
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 #include "fsl_clock.h"
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #endif
-#include <devicetree.h>
-#include <drivers/gpio.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #if defined(CONFIG_PINCTRL)
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 #include "eth.h"

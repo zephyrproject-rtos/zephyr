@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT   nxp_imx_flexspi_hyperram
 
-#include <logging/log.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include "memc_mcux_flexspi.h"
 

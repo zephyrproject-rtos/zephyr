@@ -8,7 +8,7 @@
 #define ZEPHYR_DRIVERS_GPIO_GPIO_DW_H_
 
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include "gpio_dw_registers.h"
 
 #ifdef __cplusplus

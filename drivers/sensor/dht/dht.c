@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT aosong_dht
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/sensor.h>
 #include <string.h>
-#include <zephyr.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
 
 #include "dht.h"
 

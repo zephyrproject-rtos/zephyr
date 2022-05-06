@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT openisa_rv32m1_lptmr
 
-#include <device.h>
-#include <zephyr.h>
-#include <sys/util.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <soc.h>
 
 /*

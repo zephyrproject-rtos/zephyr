@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT st_mpxxdtyy
 
 #include "mpxxdtyy.h"
-#include <drivers/i2s.h>
+#include <zephyr/drivers/i2s.h>
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(mpxxdtyy);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2s)

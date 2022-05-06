@@ -7,7 +7,7 @@
 #ifndef __SPI_NOR_H__
 #define __SPI_NOR_H__
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define SPI_NOR_MAX_ID_LEN	3
 

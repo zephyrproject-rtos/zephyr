@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT	nxp_imx_flexspi
 
-#include <logging/log.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 #include "memc_mcux_flexspi.h"

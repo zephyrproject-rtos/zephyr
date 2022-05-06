@@ -8,9 +8,9 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM42670_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM42670_H_
 
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
 
 struct icm42670_data {
 	int16_t accel_x;

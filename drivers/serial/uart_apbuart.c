@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT gaisler_apbuart
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <errno.h>
 
 /* APBUART registers

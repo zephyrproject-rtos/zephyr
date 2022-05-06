@@ -7,8 +7,8 @@
 
 #define DT_DRV_COMPAT zephyr_bt_hci_entropy
 
-#include <drivers/entropy.h>
-#include <bluetooth/hci.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/bluetooth/hci.h>
 #include <string.h>
 
 static int entropy_bt_init(const struct device *dev)

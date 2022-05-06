@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT atmel_sam_mdio
 
 #include <errno.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/mdio.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/mdio.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdio_sam, CONFIG_MDIO_LOG_LEVEL);
 
 /* GMAC */

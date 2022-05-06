@@ -7,23 +7,23 @@
 #include "eswifi_log.h"
 LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 
-#include <net/socket_offload.h>
-#include <net/tls_credentials.h>
+#include <zephyr/net/socket_offload.h>
+#include <zephyr/net/tls_credentials.h>
 
 #include "sockets_internal.h"
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #include "tls_internal.h"
 #endif
 #include "eswifi.h"
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 
 /* Increment by 1 to make sure we do not store the value of 0, which has
  * a special meaning in the fdtable subsys.

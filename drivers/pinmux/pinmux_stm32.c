@@ -13,15 +13,15 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_system.h>
-#include <drivers/pinmux.h>
+#include <zephyr/drivers/pinmux.h>
 #include <gpio/gpio_stm32.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/pinmux_stm32.h>
 
 const struct device * const gpio_ports[STM32_PORTS_MAX] = {

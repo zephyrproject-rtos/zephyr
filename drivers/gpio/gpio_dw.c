@@ -8,30 +8,30 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/gpio/snps-designware-gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/snps-designware-gpio.h>
 #include "gpio_dw.h"
 #include "gpio_utils.h"
 
-#include <pm/device.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
-#include <sys/sys_io.h>
-#include <init.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
-#include <drivers/clock_control.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/clock_control.h>
 
 #ifdef CONFIG_SHARED_IRQ
-#include <shared_irq.h>
+#include <zephyr/shared_irq.h>
 #endif
 
 #ifdef CONFIG_IOAPIC
-#include <drivers/interrupt_controller/ioapic.h>
+#include <zephyr/drivers/interrupt_controller/ioapic.h>
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-#include <pm/device.h>
+#include <zephyr/pm/device.h>
 #endif
 
 static int gpio_dw_port_set_bits_raw(const struct device *port, uint32_t mask);

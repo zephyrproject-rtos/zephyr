@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT ti_bq274xx
 
-#include <drivers/i2c.h>
-#include <init.h>
-#include <drivers/sensor.h>
-#include <pm/device.h>
-#include <sys/__assert.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "bq274xx.h"
 

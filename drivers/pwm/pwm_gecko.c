@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT silabs_gecko_pwm
 
-#include <drivers/pwm.h>
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "em_cmu.h"
 #include "em_timer.h"
 

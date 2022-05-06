@@ -6,9 +6,9 @@
 
 #define DT_DRV_COMPAT invensense_mpu9250
 
-#include <sys/byteorder.h>
-#include <logging/log.h>
-#include <devicetree.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/devicetree.h>
 
 #include "mpu9250.h"
 

@@ -7,10 +7,10 @@
  * Author: Saravanan Sekar <saravanan@linumiz.com>
  */
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 #include "itds.h"
 LOG_MODULE_DECLARE(ITDS, CONFIG_SENSOR_LOG_LEVEL);

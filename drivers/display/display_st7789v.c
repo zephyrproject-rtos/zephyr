@@ -12,15 +12,15 @@
 
 #include "display_st7789v.h"
 
-#include <device.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <pm/device.h>
-#include <sys/byteorder.h>
-#include <drivers/display.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/display.h>
 
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_st7789v);
 
 struct st7789v_config {

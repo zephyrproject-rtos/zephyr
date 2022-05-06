@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT nxp_imx_flexspi_hyperflash
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 /*
  * NOTE: If CONFIG_FLASH_MCUX_FLEXSPI_XIP is selected, Any external functions
@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(flexspi_hyperflash, CONFIG_FLASH_LOG_LEVEL);
 #include <fsl_cache.h>
 #endif
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #include "memc_mcux_flexspi.h"
 

@@ -9,12 +9,12 @@
 #define DT_DRV_COMPAT openisa_rv32m1_gpio
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <fsl_common.h>
 #include <fsl_port.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "gpio_utils.h"
 

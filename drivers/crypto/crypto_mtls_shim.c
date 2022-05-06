@@ -9,10 +9,10 @@
  */
 
 
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <errno.h>
-#include <crypto/crypto.h>
+#include <zephyr/crypto/crypto.h>
 
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
@@ -33,7 +33,7 @@
 		      CAP_NO_IV_PREFIX)
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbedtls);
 
 struct mtls_shim_session {

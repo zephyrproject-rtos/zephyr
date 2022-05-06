@@ -13,11 +13,11 @@
 
 #include "dma_stm32.h"
 
-#include <init.h>
-#include <drivers/clock_control.h>
-#include <drivers/dma/dma_stm32.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/dma/dma_stm32.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)

@@ -8,7 +8,7 @@
 #define __INTEL_DAI_DRIVER_SSP_H__
 
 #include <stdint.h>
-#include <drivers/dai.h>
+#include <zephyr/drivers/dai.h>
 #include "dai-params-intel-ipc3.h"
 #include "dai-params-intel-ipc4.h"
 
