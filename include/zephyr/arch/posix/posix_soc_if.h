@@ -14,7 +14,7 @@
  * or all its boards
  */
 
-#include <arch/posix/posix_trace.h>
+#include <zephyr/arch/posix/posix_trace.h>
 #include "soc_irq.h" /* Must exist and define _ARCH_IRQ/ISR_* macros */
 
 #ifdef __cplusplus

@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_H_
 
 #include <zephyr/device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <stdint.h>
 
 enum pcie_ob_mem_type {

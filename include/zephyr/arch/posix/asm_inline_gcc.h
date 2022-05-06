@@ -21,12 +21,12 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <toolchain/common.h>
+#include <zephyr/toolchain/common.h>
 #include <zephyr/types.h>
-#include <arch/common/sys_bitops.h>
-#include <arch/common/sys_io.h>
-#include <arch/common/ffs.h>
-#include <arch/posix/posix_soc_if.h>
+#include <zephyr/arch/common/sys_bitops.h>
+#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/common/ffs.h>
+#include <zephyr/arch/posix/posix_soc_if.h>
 
 #endif /* _ASMLANGUAGE */
 

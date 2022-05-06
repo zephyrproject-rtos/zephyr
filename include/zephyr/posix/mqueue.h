@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_MQUEUE_H_
 #define ZEPHYR_INCLUDE_POSIX_MQUEUE_H_
 
-#include <kernel.h>
-#include <posix/time.h>
+#include <zephyr/kernel.h>
+#include <zephyr/posix/time.h>
 #include <fcntl.h>
 #include "posix_types.h"
 #include "sys/stat.h"

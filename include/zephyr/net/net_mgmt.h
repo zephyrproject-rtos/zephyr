@@ -12,9 +12,9 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_MGMT_H_
 #define ZEPHYR_INCLUDE_NET_NET_MGMT_H_
 
-#include <sys/__assert.h>
-#include <net/net_core.h>
-#include <net/net_event.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_event.h>
 
 #ifdef __cplusplus
 extern "C" {

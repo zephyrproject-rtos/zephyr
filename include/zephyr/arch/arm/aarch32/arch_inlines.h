@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_INLINES_H
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_INLINES_H
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
 #ifndef CONFIG_SMP
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)

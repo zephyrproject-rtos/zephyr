@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_TIMER_ARM_ARCH_TIMER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_TIMER_ARM_ARCH_TIMER_H_
 
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/types.h>
 
 #define ARM_TIMER_NODE DT_INST(0, arm_armv8_timer)

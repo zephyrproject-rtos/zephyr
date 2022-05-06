@@ -7,7 +7,7 @@
 #ifndef _ADC_NPCX_THRESHOLD_H_
 #define _ADC_NPCX_THRESHOLD_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 enum adc_npcx_threshold_param_l_h {
 	ADC_NPCX_THRESHOLD_PARAM_L_H_HIGHER,

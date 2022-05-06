@@ -22,7 +22,7 @@
  * Profile specifications.
  */
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

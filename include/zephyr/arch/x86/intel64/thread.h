@@ -46,7 +46,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
-#include <arch/x86/mmustructs.h>
+#include <zephyr/arch/x86/mmustructs.h>
 
 /*
  * 64-bit Task State Segment. One defined per CPU.

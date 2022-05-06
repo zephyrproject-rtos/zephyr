@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_H_
 
-#include <logging/log_instance.h>
-#include <logging/log_core.h>
+#include <zephyr/logging/log_instance.h>
+#include <zephyr/logging/log_core.h>
 
 #ifdef __cplusplus
 extern "C" {

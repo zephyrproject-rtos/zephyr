@@ -22,7 +22,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
-#include <drivers/emul.h>
+#include <zephyr/drivers/emul.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -19,11 +19,11 @@
 
 #include <stdbool.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci_err.h>
-#include <bluetooth/addr.h>
-#include <bluetooth/gap.h>
-#include <bluetooth/direction.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci_err.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/direction.h>
 
 #ifdef __cplusplus
 extern "C" {

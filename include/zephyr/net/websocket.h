@@ -13,11 +13,11 @@
 #ifndef ZEPHYR_INCLUDE_NET_WEBSOCKET_H_
 #define ZEPHYR_INCLUDE_NET_WEBSOCKET_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <net/net_ip.h>
-#include <net/http_parser.h>
-#include <net/http_client.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/http_parser.h>
+#include <zephyr/net/http_client.h>
 
 #ifdef __cplusplus
 extern "C" {

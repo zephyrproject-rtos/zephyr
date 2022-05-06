@@ -24,9 +24,9 @@
 
 #include <sys/types.h>
 #include <zephyr/types.h>
-#include <net/net_ip.h>
-#include <net/dns_resolve.h>
-#include <net/socket_select.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/socket_select.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus

@@ -22,7 +22,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 /**
  * @brief Random Function APIs

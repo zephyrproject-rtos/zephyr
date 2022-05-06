@@ -22,10 +22,10 @@
 extern "C" {
 #endif
 
-#include <sys/atomic.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
 
 /** @def BT_ISO_CHAN_SEND_RESERVE
  *  @brief Headroom needed for outgoing ISO SDUs

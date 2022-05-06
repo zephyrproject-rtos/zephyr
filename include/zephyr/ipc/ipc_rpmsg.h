@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_IPC_SERVICE_IPC_RPMSG_H_
 #define ZEPHYR_INCLUDE_IPC_SERVICE_IPC_RPMSG_H_
 
-#include <ipc/ipc_service.h>
+#include <zephyr/ipc/ipc_service.h>
 #include <openamp/open_amp.h>
 #include <metal/device.h>
 

@@ -5,9 +5,9 @@
  */
 
 #ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 #else
-#include <posix/netdb.h>
+#include <zephyr/posix/netdb.h>
 #endif
 
 /**

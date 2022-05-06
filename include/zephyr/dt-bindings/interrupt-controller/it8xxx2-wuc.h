@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_IT8XXX2_WUC_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_IT8XXX2_WUC_H_
 
-#include <dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/dt-util.h>
 
 /** WUC reserved register of reg property */
 #define IT8XXX2_WUC_UNUSED_REG	0

@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
 #include <stddef.h>
-#include <dt-bindings/pcie/pcie.h>
+#include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

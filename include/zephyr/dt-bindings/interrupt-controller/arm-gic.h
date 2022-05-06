@@ -6,7 +6,7 @@
 #ifndef __DT_BINDING_ARM_GIC_H
 #define __DT_BINDING_ARM_GIC_H
 
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 /* CPU Interrupt numbers */
 #define	GIC_INT_VIRT_MAINT		25

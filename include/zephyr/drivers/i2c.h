@@ -342,7 +342,7 @@ struct i2c_slave_config {
 
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
 
-#include <stats/stats.h>
+#include <zephyr/stats/stats.h>
 
 /** @cond INTERNAL_HIDDEN */
 

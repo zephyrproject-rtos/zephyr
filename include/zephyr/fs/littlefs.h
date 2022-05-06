@@ -8,8 +8,8 @@
 #define ZEPHYR_INCLUDE_FS_LITTLEFS_H_
 
 #include <zephyr/types.h>
-#include <kernel.h>
-#include <storage/flash_map.h>
+#include <zephyr/kernel.h>
+#include <zephyr/storage/flash_map.h>
 
 #include <lfs.h>
 

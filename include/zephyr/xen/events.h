@@ -6,9 +6,9 @@
 #ifndef __XEN_EVENTS_H__
 #define __XEN_EVENTS_H__
 
-#include <xen/public/event_channel.h>
+#include <zephyr/xen/public/event_channel.h>
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 typedef void (*evtchn_cb_t)(void *priv);
 

@@ -10,8 +10,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 
-#include <sys/slist.h>
-#include <bluetooth/conn.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/bluetooth/conn.h>
 
 #ifdef __cplusplus
 extern "C" {

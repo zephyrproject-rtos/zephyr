@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#include <bluetooth/l2cap.h>
+#include <zephyr/bluetooth/l2cap.h>
 
 /** @brief AVDTP SEID Information */
 struct bt_avdtp_seid_info {

@@ -16,7 +16,7 @@
 
 #include <soc.h>
 
-#include <arch/arm/aarch32/cortex_m/nvic.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/nvic.h>
 
 #ifdef __cplusplus
 extern "C" {

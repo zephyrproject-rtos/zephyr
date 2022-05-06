@@ -26,10 +26,10 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys_clock.h>
-#include <sys/math_extras.h>
-#include <toolchain.h>
+#include <zephyr/sys/math_extras.h>
+#include <zephyr/toolchain.h>
 
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 #ifdef __cplusplus
 extern "C" {

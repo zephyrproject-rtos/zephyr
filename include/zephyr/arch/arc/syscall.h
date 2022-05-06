@@ -27,7 +27,7 @@
 #include <stdbool.h>
 
 #ifdef CONFIG_ISA_ARCV2
-#include <arch/arc/v2/aux_regs.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
 #endif
 
 #ifdef __cplusplus

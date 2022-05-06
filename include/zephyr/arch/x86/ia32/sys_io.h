@@ -11,7 +11,7 @@
 
 #if !defined(_ASMLANGUAGE)
 
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 

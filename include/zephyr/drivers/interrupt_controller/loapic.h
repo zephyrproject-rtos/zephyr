@@ -9,9 +9,9 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
 
-#include <arch/cpu.h>
-#include <arch/x86/msr.h>
-#include <sys/device_mmio.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/x86/msr.h>
+#include <zephyr/sys/device_mmio.h>
 
 /* Local APIC Register Offset */
 

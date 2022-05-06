@@ -23,11 +23,11 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/toolchain.h>
 
-#include <net/net_linkaddr.h>
+#include <zephyr/net/net_linkaddr.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LED_HT16K33_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LED_HT16K33_H_
 
-#include <drivers/kscan.h>
+#include <zephyr/drivers/kscan.h>
 
 /**
  * Register a HT16K33 keyscan device to be notified of relevant

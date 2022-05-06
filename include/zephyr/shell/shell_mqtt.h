@@ -8,13 +8,13 @@
 #define SHELL_MQTT_H__
 
 #include <zephyr/zephyr.h>
-#include <shell/shell.h>
-#include <net/socket.h>
-#include <net/net_mgmt.h>
-#include <net/net_event.h>
-#include <net/net_conn_mgr.h>
-#include <net/mqtt.h>
-#include <sys/ring_buffer.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_conn_mgr.h>
+#include <zephyr/net/mqtt.h>
+#include <zephyr/sys/ring_buffer.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_INTEL_VTD_H_
 #define ZEPHYR_INCLUDE_DRIVERS_INTEL_VTD_H_
 
-#include <drivers/pcie/msi.h>
+#include <zephyr/drivers/pcie/msi.h>
 
 typedef int (*vtd_alloc_entries_f)(const struct device *dev,
 				   uint8_t n_entries);

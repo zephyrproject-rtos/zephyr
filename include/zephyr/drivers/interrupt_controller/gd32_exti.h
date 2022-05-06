@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 /**
  * @name EXTI trigger modes.

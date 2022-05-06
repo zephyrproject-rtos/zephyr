@@ -15,19 +15,19 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 
-#include <arch/riscv/thread.h>
-#include <arch/riscv/exp.h>
-#include <arch/common/sys_bitops.h>
-#include <arch/common/sys_io.h>
-#include <arch/common/ffs.h>
+#include <zephyr/arch/riscv/thread.h>
+#include <zephyr/arch/riscv/exp.h>
+#include <zephyr/arch/common/sys_bitops.h>
+#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/common/ffs.h>
 #if defined(CONFIG_USERSPACE)
-#include <arch/riscv/syscall.h>
+#include <zephyr/arch/riscv/syscall.h>
 #endif /* CONFIG_USERSPACE */
-#include <irq.h>
-#include <sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
 #include <soc.h>
 #include <zephyr/devicetree.h>
-#include <arch/riscv/csr.h>
+#include <zephyr/arch/riscv/csr.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define ARCH_STACK_PTR_ALIGN  16
@@ -217,7 +217,7 @@
 #define MSTATUS_DEF_RESTORE (MSTATUS_MPP_M | MSTATUS_MPIE_EN)
 
 #ifndef _ASMLANGUAGE
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -349,7 +349,7 @@ static inline uint64_t arch_k_cycle_get_64(void)
 	return sys_clock_cycle_get_64();
 }
 
-#include <arch/riscv/error.h>
+#include <zephyr/arch/riscv/error.h>
 
 #ifdef __cplusplus
 }
@@ -358,7 +358,7 @@ static inline uint64_t arch_k_cycle_get_64(void)
 #endif /*_ASMLANGUAGE */
 
 #if defined(CONFIG_SOC_FAMILY_RISCV_PRIVILEGE)
-#include <arch/riscv/riscv-privilege/asm_inline.h>
+#include <zephyr/arch/riscv/riscv-privilege/asm_inline.h>
 #endif
 
 
