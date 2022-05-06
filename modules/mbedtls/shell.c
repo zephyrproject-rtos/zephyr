@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <mbedtls/memory_buffer_alloc.h>
 
 #if defined(MBEDTLS_MEMORY_DEBUG)

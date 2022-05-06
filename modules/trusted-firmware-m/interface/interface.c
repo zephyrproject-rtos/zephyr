@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <arch/arm/aarch32/cortex_m/fpu.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/fpu.h>
 
 #include <tfm_ns_interface.h>
 
