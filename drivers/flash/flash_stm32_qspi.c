@@ -43,6 +43,8 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_QSPI_FIFO_THRESHOLD         8
 #define STM32_QSPI_CLOCK_PRESCALER_MAX  255
 
+#define STM32_QSPI_UNKNOWN_MODE (0xFF)
+
 #define STM32_QSPI_USE_DMA DT_NODE_HAS_PROP(DT_INST_PARENT(0), dmas)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
@@ -90,6 +92,7 @@ struct flash_stm32_qspi_data {
 	struct jesd216_erase_type erase_types[JESD216_NUM_ERASE_TYPES];
 	/* Number of bytes per page */
 	uint16_t page_size;
+	enum jesd216_mode_type mode;
 	int cmd_status;
 	struct stream dma;
 	uint8_t qspi_write_cmd;
@@ -133,17 +136,29 @@ static inline void qspi_set_address_size(const struct device *dev,
 	cmd->AddressSize = QSPI_ADDRESS_24_BITS;
 }
 
-static inline void qspi_prepare_quad_read(const struct device *dev,
+static inline int qspi_prepare_quad_read(const struct device *dev,
 					  QSPI_CommandTypeDef *cmd)
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
 	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO) && dev_data->flag_quad_io_en) {
+		switch (dev_data->mode) {
+		case JESD216_MODE_114:
+			cmd->AddressMode = QSPI_ADDRESS_1_LINE;
+			break;
+		case JESD216_MODE_144:
+			cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
 		cmd->Instruction = dev_data->qspi_read_cmd;
-		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
 		cmd->DataMode = QSPI_DATA_4_LINES;
 		cmd->DummyCycles = dev_data->qspi_read_cmd_latency;
 	}
+
+	return 0;
 }
 
 static inline int qspi_prepare_quad_program(const struct device *dev,
@@ -329,7 +344,10 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 	};
 
 	qspi_set_address_size(dev, &cmd);
-	qspi_prepare_quad_read(dev, &cmd);
+	ret = qspi_prepare_quad_read(dev, &cmd);
+	if (ret < 0) {
+		return ret;
+	}
 	qspi_lock_thread(dev);
 
 	ret = qspi_read_access(dev, &cmd, data, size);
@@ -884,34 +902,52 @@ static int spi_nor_process_bfp(const struct device *dev,
 			}
 		}
 	}
+
 	/*
-	 * Only check if the 1-4-4 (i.e. 4READ) fast read operation is
-	 * supported - other modes - e.g. 1-1-4 (QREAD) or 1-1-2 (DREAD) are
-	 * not.
+	 * Only check if the 1-4-4 (i.e. 4READ) or 1-1-4 (QREAD)
+	 * is supported - other modes are not.
 	 */
 	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO)) {
+		const enum jesd216_mode_type supported_modes[] = { JESD216_MODE_114,
+								   JESD216_MODE_144 };
+		struct jesd216_bfp_dw15 dw15;
 		struct jesd216_instr res;
 
-		rc = jesd216_bfp_read_support(php, bfp, JESD216_MODE_144, &res);
-		if (rc > 0) {
-			/* Program flash memory to use SIO[0123] */
-			rc = qspi_program_quad_io(dev);
-			if (rc) {
-				LOG_ERR("Unable to enable QUAD IO mode: %d\n",
-					rc);
-				return rc;
-			}
+		/* reset active mode */
+		data->mode = STM32_QSPI_UNKNOWN_MODE;
 
-			LOG_INF("Mode: 1-4-4 with instr:[0x%x] supported!",
-				res.instr);
+		/* query supported read modes, begin from the slowest */
+		for (size_t i = 0; i < ARRAY_SIZE(supported_modes); ++i) {
+			rc = jesd216_bfp_read_support(php, bfp, supported_modes[i], &res);
+			if (rc >= 0) {
+				LOG_INF("Quad read mode %d instr [0x%x] supported",
+					supported_modes[i], res.instr);
 
-			data->qspi_read_cmd = res.instr;
-			data->qspi_read_cmd_latency = res.wait_states;
-			if (res.mode_clocks) {
-				data->qspi_read_cmd_latency +=
-					res.mode_clocks;
+				data->mode = supported_modes[i];
+				data->qspi_read_cmd = res.instr;
+				data->qspi_read_cmd_latency = res.wait_states;
+
+				if (res.mode_clocks) {
+					data->qspi_read_cmd_latency += res.mode_clocks;
+				}
 			}
 		}
+
+		/* don't continue when there is no supported mode */
+		if (data->mode == STM32_QSPI_UNKNOWN_MODE) {
+			LOG_ERR("No supported flash read mode found");
+			return -ENOTSUP;
+		}
+
+		LOG_INF("Quad read mode %d instr [0x%x] will be used", data->mode, res.instr);
+
+		/* enable QE */
+		rc = qspi_program_quad_io(dev);
+		if (rc < 0) {
+			LOG_ERR("Failed to enable Quad mode: %d", rc);
+			return rc;
+		}
+
 	}
 
 	return 0;
