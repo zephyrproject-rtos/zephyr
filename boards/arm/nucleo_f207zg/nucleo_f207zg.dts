@@ -179,7 +179,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		storage_partition: partition@e0000 {
 			label = "storage";
-			reg = <0x000e0000 0x00020000>;
+			reg = <0x000e0000 DT_SIZE_K(128)>;
 		};
 	};
 };

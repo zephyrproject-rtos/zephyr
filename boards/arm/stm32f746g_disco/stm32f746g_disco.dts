@@ -175,7 +175,7 @@ zephyr_udc0: &usbotg_fs {
 
 			slot1_partition: partition@0 {
 				label = "image-1";
-				reg = <0x00000000 0x000a0000>;
+				reg = <0x00000000 DT_SIZE_K(640)>;
 				};
 
 			storage_partition: partition@a0000 {
