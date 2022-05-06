@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <arm/armv6-m.dtsi>
-#include <dt-bindings/clock/lpc11u6x_clock.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/lpc11u6x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
 
 / {
