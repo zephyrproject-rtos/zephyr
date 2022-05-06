@@ -343,6 +343,7 @@ static void test_bind_unbind(void)
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
 		send_sf(can_dev);
+		k_sleep(K_MSEC(100));
 		get_sf_net(&recv_ctx);
 		isotp_unbind(&recv_ctx);
 	}
@@ -352,15 +353,17 @@ static void test_bind_unbind(void)
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
 		send_sf(can_dev);
+		k_sleep(K_MSEC(100));
 		get_sf(&recv_ctx);
 		isotp_unbind(&recv_ctx);
 	}
 
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
 		send_test_data(can_dev, random_data, 60);
+		k_sleep(K_MSEC(100));
 		receive_test_data_net(&recv_ctx, random_data, 60, 0);
 		isotp_unbind(&recv_ctx);
 	}
@@ -370,6 +373,7 @@ static void test_bind_unbind(void)
 				 &fc_opts, K_NO_WAIT);
 		zassert_equal(ret, 0, "Binding failed (%d)", ret);
 		send_test_data(can_dev, random_data, 60);
+		k_sleep(K_MSEC(100));
 		receive_test_data(&recv_ctx, random_data, 60, 0);
 		isotp_unbind(&recv_ctx);
 	}
