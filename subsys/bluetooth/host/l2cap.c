@@ -543,6 +543,9 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	for (i = 0; i < channels; i++) {
 		ch = BT_L2CAP_LE_CHAN(chan[i]);
 
+		__ASSERT(ch->psm == req->psm,
+			 "The PSM shall be the same for channels in the same request.");
+
 		ch->ident = ident;
 
 		net_buf_add_le16(buf, ch->rx.cid);
