@@ -4,7 +4,7 @@
 /dts-v1/;
 
 #include <riscv32-fe310.dtsi>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include "hifive1_revb-pinctrl.dtsi"
 
 / {

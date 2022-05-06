@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #define LED_R_PIN  DT_GPIO_PIN(DT_ALIAS(led2), gpios)
 #define LED_G_PIN  DT_GPIO_PIN(DT_ALIAS(led1), gpios)

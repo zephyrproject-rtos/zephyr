@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/b91-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
 
 &pinctrl {
 	/* Set pad-mul-sel register value.
