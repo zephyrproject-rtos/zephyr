@@ -1029,6 +1029,16 @@ static int spi_nor_process_bfp(const struct device *dev,
 
 		LOG_INF("Quad read mode %d instr [0x%x] will be used", data->mode, res.instr);
 
+		/* try to decode QE requirement type */
+		rc = jesd216_bfp_decode_dw15(php, bfp, &dw15);
+		if (rc < 0) {
+			/* will use QER from DTS or default (refer to device data) */
+			LOG_WRN("Unable to decode QE requirement [DW15]: %d", rc);
+		} else {
+			/* bypass DTS QER value */
+			data->qer_type = dw15.qer;
+		}
+
 		LOG_INF("QE requirement mode: %x", data->qer_type);
 
 		/* enable QE */
