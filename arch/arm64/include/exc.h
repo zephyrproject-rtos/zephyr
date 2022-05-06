@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_ARCH_ARM64_INCLUDE_EXC_H_
 #define ZEPHYR_ARCH_ARM64_INCLUDE_EXC_H_
 
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 #ifdef _ASMLANGUAGE
 

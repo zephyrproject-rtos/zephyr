@@ -25,7 +25,7 @@
 #ifndef _ARM_OFFSETS_INC_
 #define _ARM_OFFSETS_INC_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
 

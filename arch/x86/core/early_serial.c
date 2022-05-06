@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/device_mmio.h>
-#include <sys/util.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/pcie/pcie.h>
 #include <soc.h>
 
 

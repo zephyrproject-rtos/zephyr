@@ -5,23 +5,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <arch/x86/mmustructs.h>
-#include <sys/mem_manage.h>
-#include <sys/__assert.h>
-#include <sys/check.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/x86/mmustructs.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/logging/log.h>
 #include <errno.h>
 #include <ctype.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 #include <kernel_arch_func.h>
 #include <x86_mmu.h>
-#include <init.h>
+#include <zephyr/init.h>
 #include <kernel_internal.h>
 #include <mmu.h>
-#include <drivers/interrupt_controller/loapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <mmu.h>
-#include <arch/x86/memmap.h>
+#include <zephyr/arch/x86/memmap.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

@@ -12,9 +12,9 @@
  * and Cortex-R CPUs.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static void esf_dump(const z_arch_esf_t *esf)

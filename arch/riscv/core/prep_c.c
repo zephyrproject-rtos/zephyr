@@ -16,8 +16,8 @@
  */
 
 #include <stddef.h>
-#include <toolchain.h>
-#include <kernel_structs.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 
 /**

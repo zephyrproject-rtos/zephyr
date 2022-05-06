@@ -25,15 +25,15 @@
  * which are never modified.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 #include <pmp.h>
-#include <sys/arch_interface.h>
-#include <arch/riscv/csr.h>
+#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/riscv/csr.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpu);
 
 #define PMP_DEBUG_DUMP 0

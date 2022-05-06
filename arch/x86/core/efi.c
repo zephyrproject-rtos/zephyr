@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <spinlock.h>
-#include <arch/x86/efi.h>
-#include <sys/mem_manage.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/arch/x86/efi.h>
+#include <zephyr/sys/mem_manage.h>
 #include "../zefi/efi.h" /* ZEFI not on include path */
 
 #define EFI_CON_BUFSZ 128

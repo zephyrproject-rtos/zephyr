@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/speculation.h>
-#include <syscall_handler.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/speculation.h>
+#include <zephyr/syscall_handler.h>
 #include <kernel_arch_func.h>
 #include <ksched.h>
 #include <x86_mmu.h>

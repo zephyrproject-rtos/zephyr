@@ -11,10 +11,10 @@
  * Core thread related primitives for the ARM64 Cortex-A
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <arch/cpu.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/arch/cpu.h>
 
 /*
  * Note about stack usage:

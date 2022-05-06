@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <arch/x86/memmap.h>
-#include <linker/linker-defs.h>
+#include <zephyr/arch/x86/memmap.h>
+#include <zephyr/linker/linker-defs.h>
 #include <kernel_arch_data.h>
 
 struct x86_memmap_exclusion x86_memmap_exclusions[] = {

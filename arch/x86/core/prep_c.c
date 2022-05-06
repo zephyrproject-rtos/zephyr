@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <arch/x86/acpi.h>
-#include <arch/x86/multiboot.h>
-#include <arch/x86/efi.h>
+#include <zephyr/arch/x86/acpi.h>
+#include <zephyr/arch/x86/multiboot.h>
+#include <zephyr/arch/x86/efi.h>
 #include <x86_mmu.h>
 
 extern FUNC_NORETURN void z_cstart(void);
