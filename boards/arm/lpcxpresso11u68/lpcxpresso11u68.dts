@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_lpc11u68.dtsi>
-#include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
 
 / {
 	model = "NXP LPCXPRESSO11U68 board";

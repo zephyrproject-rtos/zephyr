@@ -7,8 +7,8 @@
 /dts-v1/;
 #include <st/f4/stm32f429Xi.dtsi>
 #include <st/f4/stm32f429zitx-pinctrl.dtsi>
-#include <dt-bindings/display/stm32_ltdc.h>
-#include <dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/ili9xxx.h>
 
 / {
 	model = "STMicroelectronics STM32F429I_DISC1 board";

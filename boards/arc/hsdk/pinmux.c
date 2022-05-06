@@ -5,8 +5,8 @@
  */
 
 #include <soc.h>
-#include <init.h>
-#include <drivers/pinmux.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/pinmux.h>
 
 static int board_pinmux_init(const struct device *dev)
 {

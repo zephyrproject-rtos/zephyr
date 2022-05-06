@@ -18,7 +18,7 @@
 #include "board_soc.h"
 #include "sw_isr_table.h"
 #include "soc.h"
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 
 typedef void (*normal_irq_f_ptr)(const void *);
 typedef int (*direct_irq_f_ptr)(void);

@@ -7,8 +7,8 @@
 /dts-v1/;
 
 #include <nxp/nxp_ke18f512vlx16.dtsi>
-#include <dt-bindings/clock/kinetis_scg.h>
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/clock/kinetis_scg.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "twr_ke18f-pinctrl.dtsi"
 
 / {
