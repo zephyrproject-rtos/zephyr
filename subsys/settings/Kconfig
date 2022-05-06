@@ -133,3 +133,9 @@ config SETTINGS_SHELL
 	  reading the settings requires quite a big stack buffer, so the stack
 	  size of the shell thread may need to be increased to accommodate this
 	  feature.
+
+config SETTINGS_MAX_VAL_LEN
+	int "Max number of bytes per setting item"
+	default 256
+	help
+	  Limit the number of bytes a settings item can contain.

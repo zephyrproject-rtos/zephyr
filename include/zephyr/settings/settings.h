@@ -32,7 +32,7 @@ extern "C" {
 
 #define SETTINGS_MAX_DIR_DEPTH	8	/* max depth of settings tree */
 #define SETTINGS_MAX_NAME_LEN	(8 * SETTINGS_MAX_DIR_DEPTH)
-#define SETTINGS_MAX_VAL_LEN	256
+#define SETTINGS_MAX_VAL_LEN	CONFIG_SETTINGS_MAX_VAL_LEN
 #define SETTINGS_NAME_SEPARATOR	'/'
 #define SETTINGS_NAME_END '='
 

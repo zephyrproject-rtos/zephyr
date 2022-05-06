@@ -612,6 +612,51 @@ static void test_direct_loading_filter(void)
 	}
 }
 
+struct get_max_sized_data_result {
+	uint8_t buffer[SETTINGS_MAX_VAL_LEN];
+	size_t len;
+	bool found;
+};
+
+static int settings_read_callback(const char *key, size_t len, settings_read_cb read_cb,
+				  void *cb_arg, void *param)
+{
+	struct get_max_sized_data_result *result = (struct get_max_sized_data_result *)param;
+	ssize_t rc;
+
+	/* Process only the exact match and ignore descendants of the searched name */
+	if (settings_name_next(key, NULL) != 0) {
+		result->found = 0;
+		return 0;
+	}
+
+	rc = read_cb(cb_arg, result->buffer, len);
+	if (rc < 0) {
+		result->found = 0;
+		return 0;
+	}
+
+	result->len = (size_t)rc;
+	result->found = true;
+
+	return 0;
+}
+
+void test_set_and_get_max_sized_value(void)
+{
+	/* static to keep the required stack size small */
+	static uint8_t src[SETTINGS_MAX_VAL_LEN];
+	static struct get_max_sized_data_result dst;
+
+	memset(src, 'X', sizeof(src));
+	zassert_ok(settings_save_one("max_sized_value", src, sizeof(src)), NULL);
+
+	zassert_ok(settings_load_subtree_direct("max_sized_value", settings_read_callback, &dst),
+		   NULL);
+	zassert_true(dst.found, NULL);
+	zassert_equal(SETTINGS_MAX_VAL_LEN, dst.len, NULL);
+	zassert_mem_equal(src, dst.buffer, SETTINGS_MAX_VAL_LEN, NULL);
+}
 
 void test_main(void)
 {
@@ -620,7 +665,8 @@ void test_main(void)
 			 ztest_unit_test(test_support_rtn),
 			 ztest_unit_test(test_register_and_loading),
 			 ztest_unit_test(test_direct_loading),
-			 ztest_unit_test(test_direct_loading_filter)
+			 ztest_unit_test(test_direct_loading_filter),
+			 ztest_unit_test(test_set_and_get_max_sized_value)
 			);
 
 	ztest_run_test_suite(settings_test_suite);
