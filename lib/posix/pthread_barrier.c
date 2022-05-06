@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <posix/pthread.h>
+#include <zephyr/kernel.h>
+#include <zephyr/posix/pthread.h>
 #include <ksched.h>
-#include <wait_q.h>
+#include <zephyr/wait_q.h>
 
 extern struct k_spinlock z_pthread_spinlock;
 

@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/types.h>
 
-#include <data/json.h>
+#include <zephyr/data/json.h>
 
 struct token {
 	enum json_tokens type;

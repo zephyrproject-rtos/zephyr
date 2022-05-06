@@ -14,10 +14,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <sys/types.h>
-#include <sys/util.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/cbprintf.h>
 
 /* newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
  * idea how to make that happen, so lets put it right here.

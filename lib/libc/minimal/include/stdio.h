@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDIO_H_
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDIO_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <stdarg.h>     /* Needed to get definition of va_list */
 #include <stddef.h>
 

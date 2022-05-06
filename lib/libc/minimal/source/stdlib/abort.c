@@ -5,7 +5,7 @@
  */
 
 #include <stdlib.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 void abort(void)
 {

@@ -5,8 +5,8 @@
  */
 
 #include <stdlib.h>
-#include <sys/libc-hooks.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
 #define LIBC_DATA K_APP_DMEM(z_libc_partition)
 

@@ -53,7 +53,7 @@
 #include "getopt.h"
 #include "getopt_common.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(getopt);
 
 #define GNU_COMPATIBLE		/* Be more compatible, configure's use us! */

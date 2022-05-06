@@ -9,7 +9,7 @@
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_TIME_H_
 
 #include <stdint.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <sys/_types.h>
 #include <sys/_timespec.h>
 
