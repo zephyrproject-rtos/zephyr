@@ -28,6 +28,13 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_OSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
+#define STM32_OSPI_USE_DMA DT_NODE_HAS_PROP(DT_PARENT(DT_DRV_INST(0)), dmas)
+#if STM32_OSPI_USE_DMA
+#include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/dma.h>
+#include <stm32_ll_dma.h>
+#endif /* STM32_OSPI_USE_DMA */
+
 #define STM32_OSPI_FIFO_THRESHOLD         4
 #define STM32_OSPI_CLOCK_PRESCALER_MAX  255
 
@@ -40,6 +47,35 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 /* used as default value for DTS writeoc */
 #define SPI_NOR_WRITEOC_NONE 0xFF
+
+#if STM32_OSPI_USE_DMA
+uint32_t table_m_size[] = {
+	LL_DMA_MDATAALIGN_BYTE,
+	LL_DMA_MDATAALIGN_HALFWORD,
+	LL_DMA_MDATAALIGN_WORD,
+};
+
+uint32_t table_p_size[] = {
+	LL_DMA_PDATAALIGN_BYTE,
+	LL_DMA_PDATAALIGN_HALFWORD,
+	LL_DMA_PDATAALIGN_WORD,
+};
+
+/* Lookup table to set dma priority from the DTS */
+uint32_t table_priority[] = {
+	DMA_PRIORITY_LOW,
+	DMA_PRIORITY_MEDIUM,
+	DMA_PRIORITY_HIGH,
+	DMA_PRIORITY_VERY_HIGH,
+};
+
+struct stream {
+	DMA_TypeDef *reg;
+	const struct device *dev;
+	uint32_t channel;
+	struct dma_config cfg;
+};
+#endif /* STM32_OSPI_USE_DMA */
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
@@ -80,6 +116,9 @@ struct flash_stm32_ospi_data {
 	enum jesd216_mode_type read_mode;
 	enum jesd216_dw15_qer_type qer_type;
 	int cmd_status;
+#if STM32_OSPI_USE_DMA
+	struct stream dma;
+#endif
 };
 
 static inline void ospi_lock_thread(const struct device *dev)
@@ -132,8 +171,11 @@ static int ospi_read_access(const struct device *dev, OSPI_RegularCmdTypeDef *cm
 		return -EIO;
 	}
 
+#if STM32_OSPI_USE_DMA
+	hal_ret = HAL_OSPI_Receive_DMA(&dev_data->hospi, data);
+#else
 	hal_ret = HAL_OSPI_Receive_IT(&dev_data->hospi, data);
-
+#endif
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to read data", hal_ret);
 		return -EIO;
@@ -170,7 +212,11 @@ static int ospi_write_access(const struct device *dev, OSPI_RegularCmdTypeDef *c
 		return -EIO;
 	}
 
+#if STM32_OSPI_USE_DMA
+	hal_ret = HAL_OSPI_Transmit_DMA(&dev_data->hospi, (uint8_t *)data);
+#else
 	hal_ret = HAL_OSPI_Transmit_IT(&dev_data->hospi, (uint8_t *)data);
+#endif
 
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to read data", hal_ret);
@@ -1081,6 +1127,24 @@ __weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 	return HAL_OK;
 }
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
+
+/* This function is executed in the interrupt context */
+#if STM32_OSPI_USE_DMA
+static void ospi_dma_callback(const struct device *dev, void *arg,
+			 uint32_t channel, int status)
+{
+	DMA_HandleTypeDef *hdma = arg;
+
+	ARG_UNUSED(dev);
+
+	if (status != 0) {
+		LOG_ERR("DMA callback error with channel %d.", channel);
+	}
+
+	HAL_DMA_IRQHandler(hdma);
+}
+#endif
+
 /*
  * Transfer Error callback.
  */
@@ -1591,6 +1655,68 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if STM32_OSPI_USE_DMA
+	/*
+	 * DMA configuration
+	 * Due to use of OSPI HAL API in current driver,
+	 * both HAL and Zephyr DMA drivers should be configured.
+	 * The required configuration for Zephyr DMA driver should only provide
+	 * the minimum information to inform the DMA slot will be in used and
+	 * how to route callbacks.
+	 */
+	struct dma_config dma_cfg = dev_data->dma.cfg;
+	static DMA_HandleTypeDef hdma;
+
+	if (!device_is_ready(dev_data->dma.dev)) {
+		LOG_ERR("%s device not ready", dev_data->dma.dev->name);
+		return -ENODEV;
+	}
+
+	/* Proceed to the minimum Zephyr DMA driver init */
+	dma_cfg.user_data = &hdma;
+	/* HACK: This field is used to inform driver that it is overridden */
+	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
+	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
+	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel + 1, &dma_cfg);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Proceed to the HAL DMA driver init */
+	if (dma_cfg.source_data_size != dma_cfg.dest_data_size) {
+		LOG_ERR("Source and destination data sizes not aligned");
+		return -EINVAL;
+	}
+
+	int index = find_lsb_set(dma_cfg.source_data_size) - 1;
+
+	hdma.Init.PeriphDataAlignment = table_p_size[index];
+	hdma.Init.MemDataAlignment = table_m_size[index];
+	hdma.Init.PeriphInc = DMA_PINC_DISABLE;
+	hdma.Init.MemInc = DMA_MINC_ENABLE;
+	hdma.Init.Mode = DMA_NORMAL;
+	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
+	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+	hdma.Init.Request = dma_cfg.dma_slot;
+#ifdef CONFIG_DMAMUX_STM32
+	/*
+	 * HAL expects a valid DMA channel (not DMAMUX).
+	 * The channel is from 0 to 7 because of the STREAM_OFFSET in the dma_stm32 driver
+	 */
+	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
+						      dev_data->dma.channel);
+#else
+	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
+						      dev_data->dma.channel-1);
+#endif /* CONFIG_DMAMUX_STM32 */
+
+	/* Initialize DMA HAL */
+	__HAL_LINKDMA(&dev_data->hospi, hdma, hdma);
+	HAL_DMA_Init(&hdma);
+	LOG_INF("OSPI with DMA transfer");
+
+#endif /* STM32_OSPI_USE_DMA */
+
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			     (clock_control_subsys_t) &dev_cfg->pclken[0]) != 0) {
@@ -1788,6 +1914,37 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	return 0;
 }
 
+#if STM32_OSPI_USE_DMA
+#define DMA_CHANNEL_CONFIG(node, dir)					\
+		DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
+
+#define OSPI_DMA_CHANNEL_INIT(node, dir)				\
+	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),			\
+	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),		\
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(				\
+				   DT_PHANDLE_BY_NAME(node, dmas, dir)),\
+	.cfg = {							\
+		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),	\
+		.source_data_size = STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE( \
+					DMA_CHANNEL_CONFIG(node, dir)), \
+		.dest_data_size = STM32_DMA_CONFIG_MEMORY_DATA_SIZE(    \
+					DMA_CHANNEL_CONFIG(node, dir)), \
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
+					DMA_CHANNEL_CONFIG(node, dir)), \
+		.dma_callback = ospi_dma_callback,			\
+	},								\
+
+#define OSPI_DMA_CHANNEL(node, dir)					\
+	.dma = {							\
+		COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),		\
+			(OSPI_DMA_CHANNEL_INIT(node, dir)),		\
+			(NULL))						\
+		},
+
+#else
+#define OSPI_DMA_CHANNEL(node, dir)
+#endif /* CONFIG_USE_STM32_HAL_DMA */
+
 #define OSPI_FLASH_MODULE(drv_id, flash_id)				\
 		(DT_DRV_INST(drv_id), ospi_nor_flash_##flash_id)
 
@@ -1840,6 +1997,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 	},
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
+	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)
 };
 
 DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL,
