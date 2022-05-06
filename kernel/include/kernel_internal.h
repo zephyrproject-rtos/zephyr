@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_interface.h>
 #include <string.h>
 

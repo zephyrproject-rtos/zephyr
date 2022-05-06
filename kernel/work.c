@@ -10,13 +10,13 @@
  * Second generation work queue implementation
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
-#include <spinlock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/spinlock.h>
 #include <errno.h>
 #include <ksched.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 static inline void flag_clear(uint32_t *flagp,
 			      uint32_t bit)

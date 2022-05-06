@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <timing/timing.h>
+#include <zephyr/timing/timing.h>
 #include <ksched.h>
-#include <spinlock.h>
-#include <sys/check.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/check.h>
 
 /* Need one of these for this to work */
 #if !defined(CONFIG_USE_SWITCH) && !defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)

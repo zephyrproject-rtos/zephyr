@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <syscall_handler.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/syscall_handler.h>
 #include <stdbool.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 
 static struct k_spinlock lock;
 

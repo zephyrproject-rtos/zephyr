@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <spinlock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/spinlock.h>
 #include <ksched.h>
-#include <timeout_q.h>
-#include <syscall_handler.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+#include <zephyr/timeout_q.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
 
 static uint64_t curr_tick;
 
