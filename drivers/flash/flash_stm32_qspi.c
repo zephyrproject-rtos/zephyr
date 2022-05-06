@@ -20,6 +20,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/gpio.h>
 
 #if DT_INST_NODE_HAS_PROP(0, spi_bus_width) && \
 	DT_INST_PROP(0, spi_bus_width) == 4
@@ -29,9 +30,7 @@
 #endif
 
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
-#if STM32_QSPI_RESET_GPIO
-#include <zephyr/drivers/gpio.h>
-#endif
+
 #include <stm32_ll_dma.h>
 
 #include "spi_nor.h"
