@@ -6,7 +6,7 @@
 #ifndef __INC_SOC_H
 #define __INC_SOC_H
 
-#include <arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/cache.h>
 
 /* macros related to interrupt handling */
 #define XTENSA_IRQ_NUM_SHIFT			0

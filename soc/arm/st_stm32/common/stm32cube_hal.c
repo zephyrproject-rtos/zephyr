@@ -12,7 +12,7 @@
  *        implementations.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 /**
  * @brief This function configures the source of stm32cube time base.

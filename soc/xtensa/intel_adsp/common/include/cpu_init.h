@@ -4,7 +4,7 @@
 #ifndef __INTEL_ADSP_CPU_INIT_H
 #define __INTEL_ADSP_CPU_INIT_H
 
-#include <arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/cache.h>
 #include <xtensa/config/core-isa.h>
 
 #define CxL1CCAP (*(volatile uint32_t *)0x9F080080)

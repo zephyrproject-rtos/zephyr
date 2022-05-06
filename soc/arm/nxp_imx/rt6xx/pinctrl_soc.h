@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_SOC_ARM_NXP_IMX_RT6XX_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM_NXP_IMX_RT6XX_PINCTRL_SOC_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

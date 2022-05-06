@@ -14,12 +14,12 @@
 #include "hal/soc_ll.h"
 #include "esp_spi_flash.h"
 #include <soc/interrupt_reg.h>
-#include <drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <string.h>
-#include <toolchain/gcc.h>
+#include <zephyr/toolchain/gcc.h>
 #include <soc.h>
 
 /*

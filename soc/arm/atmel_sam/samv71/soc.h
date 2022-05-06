@@ -14,7 +14,7 @@
 #ifndef _ATMEL_SAMV71_SOC_H_
 #define _ATMEL_SAMV71_SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 

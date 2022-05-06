@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/pinctrl/npcx-pinctrl.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/npcx-pinctrl.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
 #include "soc_gpio.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pimux_npcx, LOG_LEVEL_ERR);
 
 /* Driver config */

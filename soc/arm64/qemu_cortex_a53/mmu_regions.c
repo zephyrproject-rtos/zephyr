@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <soc.h>
-#include <arch/arm64/arm_mmu.h>
+#include <zephyr/arch/arm64/arm_mmu.h>
 
 #define SZ_1K	1024
 

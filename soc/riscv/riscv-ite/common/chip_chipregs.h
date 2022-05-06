@@ -6,7 +6,7 @@
 #ifndef CHIP_CHIPREGS_H
 #define CHIP_CHIPREGS_H
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define EC_REG_BASE_ADDR 0x00f00000
 

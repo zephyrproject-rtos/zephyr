@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include "../../common/cortex_m/arm_mpu_mem_cfg.h"
 
 static const struct arm_mpu_region mpu_regions[] = {

@@ -12,8 +12,8 @@
 
 #ifndef _ASMLANGUAGE
 #include <nrfx.h>
-#include <devicetree.h>
-#include <toolchain.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/toolchain.h>
 
 /**
  * @brief Get a PSEL value out of a foo-gpios or foo-pin devicetree property

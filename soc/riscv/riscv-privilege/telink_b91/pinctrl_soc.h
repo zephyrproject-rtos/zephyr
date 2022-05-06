@@ -8,8 +8,8 @@
 #define SOC_RISCV_TELINK_B91_PINCTRL_SOC_H
 
 #include <stdint.h>
-#include <devicetree.h>
-#include <dt-bindings/pinctrl/b91-pinctrl.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
 
 /**
  * @brief Telink B91 pin type.

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/slist.h>
-#include <arch/arm/aarch32/mpu/arm_mpu.h>
-#include <linker/devicetree_regions.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/arch/arm/aarch32/mpu/arm_mpu.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #include "arm_mpu_mem_cfg.h"
 
