@@ -1172,7 +1172,7 @@ static int sdmmc_read_status(struct sd_card *card)
 /* Waits for SD card to be ready for data. Returns 0 if card is ready */
 static int sdmmc_wait_ready(struct sd_card *card)
 {
-	int ret, timeout = CONFIG_SD_DATA_TIMEOUT;
+	int ret, timeout = CONFIG_SD_DATA_TIMEOUT * 1000;
 	bool busy = true;
 
 	do {
