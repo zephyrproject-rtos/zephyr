@@ -180,7 +180,7 @@ arduino_i2c: &i2c1 {};
 		/* Set aside 32KiB for data at the end of the 192KiB flash */
 		storage_partition: partition@28000 {
 			label = "storage";
-			reg = <0x00028000 0x00008000>;
+			reg = <0x00028000 DT_SIZE_K(32)>;
 		};
 	};
 };

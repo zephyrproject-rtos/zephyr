@@ -171,7 +171,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
+			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
 
@@ -182,20 +182,20 @@
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00020000 0x0006C000>;
+			reg = <0x00020000 DT_SIZE_K(432)>;
 		};
 		slot1_partition: partition@8c000 {
 			label = "image-1";
-			reg = <0x0008C000 0x0006C000>;
+			reg = <0x0008C000 DT_SIZE_K(432)>;
 		};
 		scratch_partition: partition@f8000 {
 			label = "image-scratch";
-			reg = <0x000F8000 0x00004000>;
+			reg = <0x000F8000 DT_SIZE_K(16)>;
 		};
 
 		storage_partition: partition@fc000 {
 			label = "storage";
-			reg = <0x000fc000 0x00004000>;
+			reg = <0x000fc000 DT_SIZE_K(16)>;
 		};
 	};
 };

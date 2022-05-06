@@ -188,7 +188,7 @@ zephyr_udc0: &usbotg_fs {
 		/* Reserve last 16KiB for property storage */
 		storage_partition: partition@1FB000 {
 			label = "storage";
-			reg = <0x001FB000 0x00004000>;
+			reg = <0x001FB000 DT_SIZE_K(16)>;
 		};
 	};
 };

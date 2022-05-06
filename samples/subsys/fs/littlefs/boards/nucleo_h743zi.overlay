@@ -41,7 +41,7 @@
 
 			   partition@0 {
 			       label = "storage";
-			       reg = <0x01000000 0x00800000>;
+			       reg = <0x01000000 DT_SIZE_M(8)>;
 			   };
 		};
 	};

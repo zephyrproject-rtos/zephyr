@@ -126,7 +126,7 @@
 		/* Set 6Kb of storage at the end of the 64Kb of flash */
 		storage_partition: partition@e800 {
 			label = "storage";
-			reg = <0x0000e800 0x00001800>;
+			reg = <0x0000e800 DT_SIZE_K(6)>;
 		};
 	};
 };

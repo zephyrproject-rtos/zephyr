@@ -132,11 +132,11 @@
 
 			product_info: partition@0 {
 				label = "product-info";
-				reg = <0x00000000 0x1000>;
+				reg = <0x00000000 DT_SIZE_K(4)>;
 			};
 			led_das: partition@10000 {
 				label = "led-das";
-				reg = <0x00001000 0x0000f000>;
+				reg = <0x00001000 DT_SIZE_K(60)>;
 			};
 		};
 	};
