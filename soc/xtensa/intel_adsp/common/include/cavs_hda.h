@@ -5,9 +5,9 @@
 #ifndef ZEPHYR_INCLUDE_CAVS_HDA_H
 #define ZEPHYR_INCLUDE_CAVS_HDA_H
 
-#include <arch/xtensa/cache.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/arch/xtensa/cache.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <cavs-shim.h>
 #include <cavs-mem.h>
 

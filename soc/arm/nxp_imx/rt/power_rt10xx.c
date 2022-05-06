@@ -6,15 +6,15 @@
  * Note: this file is linked to RAM. Any functions called while preparing for
  * sleep mode must be defined within this file, or linked to RAM.
  */
-#include <zephyr.h>
-#include <device.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/pm/pm.h>
 #include <fsl_dcdc.h>
 #include <fsl_pmu.h>
 #include <fsl_gpc.h>
 #include <fsl_lpuart.h>
 #include <fsl_clock.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "power_rt10xx.h"
 

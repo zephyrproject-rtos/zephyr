@@ -5,10 +5,10 @@
  *
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <arch/arm/aarch32/cortex_a_r/cmsis.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
 
 /**
  *

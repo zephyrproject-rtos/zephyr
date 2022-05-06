@@ -6,7 +6,7 @@
 #ifndef _ARM_CORTEX_M_MPU_MEM_CFG_H_
 #define _ARM_CORTEX_M_MPU_MEM_CFG_H_
 
-#include <arch/arm/aarch32/mpu/arm_mpu.h>
+#include <zephyr/arch/arm/aarch32/mpu/arm_mpu.h>
 
 #if !defined(CONFIG_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_MAINLINE)
 

@@ -3,7 +3,7 @@
  */
 #include <cavs_ipc.h>
 #include <cavs-ipc-regs.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 
 void cavs_ipc_set_message_handler(const struct device *dev,
 				  cavs_ipc_handler_t fn, void *arg)

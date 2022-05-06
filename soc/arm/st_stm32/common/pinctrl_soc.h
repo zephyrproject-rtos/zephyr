@@ -13,13 +13,13 @@
 #ifndef ZEPHYR_SOC_ARM_ST_STM32_COMMON_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM_ST_STM32_COMMON_PINCTRL_SOC_H_
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
-#include <dt-bindings/pinctrl/stm32f1-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h>
 #else
-#include <dt-bindings/pinctrl/stm32-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
 #endif
 
 #ifdef __cplusplus

@@ -7,8 +7,8 @@
 #ifndef SOC_H
 #define SOC_H
 
-#include <sys/util.h>
-#include <toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 /* Registers block */
 #define CRMU_MCU_EXTRA_EVENT_STATUS	0x40070054

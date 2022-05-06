@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 /*
  * Account for MDK inconsistencies

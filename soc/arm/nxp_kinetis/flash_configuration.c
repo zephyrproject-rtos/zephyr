@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/linker/sections.h>
 
 uint8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
 	/* Backdoor Comparison Key (unused) */

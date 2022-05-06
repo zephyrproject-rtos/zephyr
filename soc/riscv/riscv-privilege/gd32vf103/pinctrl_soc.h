@@ -12,6 +12,6 @@
 #ifndef ZEPHYR_SOC_RISCV_RISCV_PRIVILEGE_NUCLEI_GD32VF103_COMMON_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_RISCV_RISCV_PRIVILEGE_NUCLEI_GD32VF103_COMMON_PINCTRL_SOC_H_
 
-#include <drivers/pinctrl/pinctrl_soc_gd32_common.h>
+#include <zephyr/drivers/pinctrl/pinctrl_soc_gd32_common.h>
 
 #endif /* ZEPHYR_SOC_RISCV_RISCV_PRIVILEGE_NUCLEI_GD32VF103_COMMON_PINCTRL_SOC_H_ */
