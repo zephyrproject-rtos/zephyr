@@ -231,7 +231,7 @@ static int sdhc_spi_response_get(const struct device *dev, struct sdhc_command *
 		}
 		/* else IDLE_STATE bit is set, which is not an error, card is just resetting */
 	}
-	switch ((cmd->response_type & 0xF0)) {
+	switch ((cmd->response_type & SDHC_SPI_RESPONSE_TYPE_MASK)) {
 	case SD_SPI_RSP_TYPE_R1:
 		/* R1 response - one byte*/
 		break;

@@ -586,7 +586,7 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 	host_cmd.index = cmd->opcode;
 	host_cmd.argument = cmd->arg;
 	/* Mask out part of response type field used for SPI commands */
-	host_cmd.responseType = (cmd->response_type & 0xF);
+	host_cmd.responseType = (cmd->response_type & SDHC_NATIVE_RESPONSE_MASK);
 	transfer.command = &host_cmd;
 	if (cmd->timeout_ms == SDHC_TIMEOUT_FOREVER) {
 		request.command_timeout = K_FOREVER;
@@ -711,8 +711,10 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 	k_mutex_unlock(&dev_data->access_mutex);
 	/* Record command response */
 	memcpy(cmd->response, host_cmd.response, sizeof(cmd->response));
-	/* Record number of bytes xfered */
-	data->bytes_xfered = dev_data->transfer_handle.transferredWords;
+	if (data) {
+		/* Record number of bytes xfered */
+		data->bytes_xfered = dev_data->transfer_handle.transferredWords;
+	}
 	return ret;
 }
 
