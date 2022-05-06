@@ -1410,7 +1410,7 @@ static int uart_stm32_async_init(const struct device *dev)
 	}
 
 	if (data->dma_tx.dma_dev != NULL) {
-		if (!device_is_ready(data->dma_rx.dma_dev)) {
+		if (!device_is_ready(data->dma_tx.dma_dev)) {
 			return -ENODEV;
 		}
 	}
