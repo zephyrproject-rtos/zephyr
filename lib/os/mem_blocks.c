@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/__assert.h>
-#include <sys/check.h>
-#include <sys/heap_listener.h>
-#include <sys/mem_blocks.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/heap_listener.h>
+#include <zephyr/sys/mem_blocks.h>
+#include <zephyr/sys/util.h>
 
 static void *alloc_blocks(sys_mem_blocks_t *mem_block, size_t num_blocks)
 {

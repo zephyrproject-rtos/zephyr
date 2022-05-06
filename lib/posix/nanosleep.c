@@ -5,13 +5,13 @@
  */
 
 #include <stdint.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <limits.h>
 #include <errno.h>
 /* required for struct timespec */
-#include <posix/time.h>
-#include <sys/util.h>
-#include <sys_clock.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
 
 /**
  * @brief Suspend execution for nanosecond intervals.

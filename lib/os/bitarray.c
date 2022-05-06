@@ -8,9 +8,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <sys/bitarray.h>
-#include <sys/check.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/sys_io.h>
 
 /* Number of bits represented by one bundle */
 #define bundle_bitness(ba)	(sizeof(ba->bundles[0]) * 8)

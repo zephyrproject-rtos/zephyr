@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <posix/unistd.h>
+#include <zephyr/kernel.h>
+#include <zephyr/posix/unistd.h>
 
 /**
  * @brief Sleep for a specified number of seconds.

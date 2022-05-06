@@ -12,14 +12,14 @@
  * init time. If no routine is installed, a nop routine is called.
  */
 
-#include <kernel.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 #include <stdarg.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <syscall_handler.h>
-#include <logging/log.h>
-#include <sys/cbprintf.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/cbprintf.h>
 #include <sys/types.h>
 
 /* Option present only when CONFIG_USERSPACE enabled. */
