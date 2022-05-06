@@ -782,6 +782,61 @@ static bool valid_chan_io_qos(const struct bt_iso_chan_io_qos *io_qos,
 	return true;
 }
 #endif /* CONFIG_BT_ISO_CENTRAL || CONFIG_BT_ISO_BROADCASTER */
+
+int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_info *info)
+{
+	struct bt_hci_cp_le_read_iso_tx_sync *cp;
+	struct bt_hci_rp_le_read_iso_tx_sync *rp;
+	struct net_buf *buf;
+	struct net_buf *rsp = NULL;
+	int err;
+
+	CHECKIF(chan == NULL) {
+		BT_DBG("chan is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(chan->iso == NULL) {
+		BT_DBG("chan->iso is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(info == NULL) {
+		BT_DBG("info is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(chan->state != BT_ISO_STATE_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_ISO_TX_SYNC, sizeof(*cp));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(chan->iso->handle);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_ISO_TX_SYNC, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	if (rsp) {
+		rp = (struct bt_hci_rp_le_read_iso_tx_sync *)rsp->data;
+
+		info->ts = sys_le32_to_cpu(rp->timestamp);
+		info->seq_num = sys_le16_to_cpu(rp->seq);
+		info->offset = sys_get_le24(rp->offset);
+
+		net_buf_unref(rsp);
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
 
 #if defined(CONFIG_BT_ISO_UNICAST)
