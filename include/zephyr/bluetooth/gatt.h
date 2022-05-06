@@ -18,12 +18,12 @@
  */
 
 #include <stddef.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #include <sys/types.h>
-#include <sys/util.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/att.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/att.h>
 
 #ifdef __cplusplus
 extern "C" {

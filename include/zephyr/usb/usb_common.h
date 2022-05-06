@@ -43,7 +43,7 @@
  */
 
 #include <version.h>
-#include <usb/usb_ch9.h>
+#include <zephyr/usb/usb_ch9.h>
 
 #ifndef ZEPHYR_INCLUDE_USB_USB_COMMON_H_
 #define ZEPHYR_INCLUDE_USB_USB_COMMON_H_

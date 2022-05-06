@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_THREAD_STACK_H
 #define ZEPHYR_INCLUDE_ARCH_X86_THREAD_STACK_H
 
-#include <arch/x86/mmustructs.h>
+#include <zephyr/arch/x86/mmustructs.h>
 
 #ifdef CONFIG_X86_64
 #define ARCH_STACK_PTR_ALIGN 16UL

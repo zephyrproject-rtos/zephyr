@@ -15,13 +15,13 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_H_
 
-#include <sys/__assert.h>
-#include <sys/slist.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/slist.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/device.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -15,7 +15,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #endif /* _ASMLANGUAGE */
 

@@ -7,11 +7,11 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PTP_CLOCK_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PTP_CLOCK_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdint.h>
 #include <zephyr/device.h>
-#include <sys/util.h>
-#include <net/ptp_time.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/ptp_time.h>
 
 #ifdef __cplusplus
 extern "C" {

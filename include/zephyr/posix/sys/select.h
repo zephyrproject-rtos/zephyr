@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_SELECT_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_SELECT_H_
 
-#include <net/socket_select.h>
+#include <zephyr/net/socket_select.h>
 #include <sys/_timeval.h>
 
 #define fd_set zsock_fd_set

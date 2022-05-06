@@ -6,13 +6,13 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_MSG2_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_MSG2_H_
 
-#include <logging/log_instance.h>
-#include <sys/mpsc_packet.h>
-#include <sys/cbprintf.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
+#include <zephyr/logging/log_instance.h>
+#include <zephyr/sys/mpsc_packet.h>
+#include <zephyr/sys/cbprintf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __GNUC__
 #ifndef alloca

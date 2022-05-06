@@ -6,14 +6,14 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 
-#include <logging/log_msg.h>
-#include <logging/log_msg2.h>
-#include <logging/log_instance.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_msg2.h>
+#include <zephyr/logging/log_instance.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include <syscall.h>
-#include <sys/util.h>
+#include <zephyr/syscall.h>
+#include <zephyr/sys/util.h>
 
 /* This header file keeps all macros and functions needed for creating logging
  * messages (macros like @ref LOG_ERR).

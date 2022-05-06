@@ -8,7 +8,7 @@
 #ifndef _ASMLANGUAGE
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #endif
 
 /* Convenience macros to represent the ARMv7-M-specific

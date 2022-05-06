@@ -9,7 +9,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {

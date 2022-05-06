@@ -14,8 +14,8 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-#include <sys/sys_io.h>
-#include <toolchain.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/toolchain.h>
 
 /* Using the *io variants of these instructions to prevent issues on
  * devices that have an instruction/data cache

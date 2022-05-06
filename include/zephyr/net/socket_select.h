@@ -14,8 +14,8 @@
  * @{
  */
 
-#include <toolchain.h>
-#include <net/socket_types.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/net/socket_types.h>
 
 #ifdef __cplusplus
 extern "C" {

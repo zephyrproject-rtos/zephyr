@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_SYS_MEM_MANAGE_H
 #define ZEPHYR_INCLUDE_SYS_MEM_MANAGE_H
 
-#include <sys/util.h>
-#include <toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #if defined(CONFIG_ARM_MMU) && defined(CONFIG_ARM64)
-#include <arch/arm64/arm_mem.h>
+#include <zephyr/arch/arm64/arm_mem.h>
 #endif
 
 /*
@@ -86,7 +86,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <inttypes.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 
 struct k_mem_paging_stats_t {
 #ifdef CONFIG_DEMAND_PAGING_STATS

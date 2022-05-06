@@ -60,9 +60,9 @@ enum coredump_cmd_id {
 
 #ifdef CONFIG_DEBUG_COREDUMP
 
-#include <toolchain.h>
-#include <arch/cpu.h>
-#include <sys/byteorder.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/byteorder.h>
 
 #define COREDUMP_HDR_VER		1
 

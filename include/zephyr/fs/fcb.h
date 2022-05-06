@@ -13,9 +13,9 @@
 #include <inttypes.h>
 #include <limits.h>
 
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

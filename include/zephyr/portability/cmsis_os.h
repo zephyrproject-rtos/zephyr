@@ -66,8 +66,8 @@
  
 #include <stdint.h>
 #include <stddef.h>
-#include <kernel.h>
-#include <sys/bitarray.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/bitarray.h>
  
 #ifdef  __cplusplus
 extern "C"

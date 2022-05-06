@@ -18,7 +18,7 @@
 #define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_MCHP_XEC_ECIA_H_
 
 #include <zephyr/device.h>
-#include <irq.h>
+#include <zephyr/irq.h>
 
 /**
  * @brief enable GIRQn interrupt for specific source

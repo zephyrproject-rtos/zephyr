@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DMA_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
 #ifdef __cplusplus

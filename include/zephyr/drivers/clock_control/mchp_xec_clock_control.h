@@ -6,8 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_
 
-#include <drivers/clock_control.h>
-#include <dt-bindings/clock/mchp_xec_pcr.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 
 /*
  * Set/clear Microchip XEC peripheral sleep enable.

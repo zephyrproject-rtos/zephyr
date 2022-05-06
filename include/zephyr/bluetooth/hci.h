@@ -8,15 +8,15 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sys/util.h>
-#include <net/buf.h>
-#include <bluetooth/addr.h>
-#include <bluetooth/hci_err.h>
-#include <bluetooth/conn.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/hci_err.h>
+#include <zephyr/bluetooth/conn.h>
 
 #ifdef __cplusplus
 extern "C" {

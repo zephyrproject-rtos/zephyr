@@ -12,7 +12,7 @@
 #define ZEPHYR_INCLUDE_NET_DSA_H_
 
 #include <zephyr/device.h>
-#include <net/net_if.h>
+#include <zephyr/net/net_if.h>
 
 /**
  * @brief DSA definitions and helpers

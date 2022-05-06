@@ -22,8 +22,8 @@
 #define ZEPHYR_INCLUDE_SYS_THREAD_STACK_H
 
 #if !defined(_ASMLANGUAGE)
-#include <arch/cpu.h>
-#include <sys/util.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -6,10 +6,10 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 
-#include <logging/log_msg.h>
-#include <sys/util.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/sys/util.h>
 #include <stdarg.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {

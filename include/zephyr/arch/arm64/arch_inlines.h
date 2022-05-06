@@ -9,9 +9,9 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <kernel_structs.h>
-#include <arch/arm64/lib_helpers.h>
-#include <arch/arm64/tpidrro_el0.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/arm64/lib_helpers.h>
+#include <zephyr/arch/arm64/tpidrro_el0.h>
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {

@@ -22,7 +22,7 @@
  * @{
  */
 
-#include <drivers/i2s.h>
+#include <zephyr/drivers/i2s.h>
 
 #ifdef __cplusplus
 extern "C" {

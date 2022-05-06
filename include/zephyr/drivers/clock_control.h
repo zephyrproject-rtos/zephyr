@@ -24,8 +24,8 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/device.h>
-#include <sys/__assert.h>
-#include <sys/slist.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

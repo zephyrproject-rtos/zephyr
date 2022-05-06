@@ -10,9 +10,9 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
-#include <arch/arc/v2/aux_regs.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {

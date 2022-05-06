@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RTC_MCP7940N_H_
 #define ZEPHYR_INCLUDE_DRIVERS_RTC_MCP7940N_H_
 
-#include <sys/timeutil.h>
+#include <zephyr/sys/timeutil.h>
 #include <time.h>
 
 struct mcp7940n_rtc_sec {

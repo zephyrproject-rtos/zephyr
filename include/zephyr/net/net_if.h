@@ -20,21 +20,21 @@
  */
 
 #include <zephyr/device.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
-#include <net/net_core.h>
-#include <net/hostname.h>
-#include <net/net_linkaddr.h>
-#include <net/net_ip.h>
-#include <net/net_l2.h>
-#include <net/net_stats.h>
-#include <net/net_timeout.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/hostname.h>
+#include <zephyr/net/net_linkaddr.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_timeout.h>
 
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
-#include <net/dhcpv4.h>
+#include <zephyr/net/dhcpv4.h>
 #endif
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
-#include <net/ipv4_autoconf.h>
+#include <zephyr/net/ipv4_autoconf.h>
 #endif
 
 #ifdef __cplusplus

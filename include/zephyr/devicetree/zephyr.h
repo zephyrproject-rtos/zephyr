@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_DEVICETREE_ZEPHYR_H_
 #define ZEPHYR_INCLUDE_DEVICETREE_ZEPHYR_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /**
  * @defgroup devicetree-zephyr Zephyr's /chosen nodes

@@ -16,11 +16,11 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <logging/log.h>
-#include <sys/__assert.h>
-#include <kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
 
-#include <net/net_timeout.h>
+#include <zephyr/net/net_timeout.h>
 
 #ifdef __cplusplus
 extern "C" {

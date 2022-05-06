@@ -20,9 +20,9 @@
  * @{
  */
 
-#include <kernel.h>
-#include <net/net_ip.h>
-#include <net/http_parser.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/http_parser.h>
 
 #ifdef __cplusplus
 extern "C" {

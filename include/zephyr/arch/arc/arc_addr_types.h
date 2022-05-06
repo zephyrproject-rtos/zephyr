@@ -20,7 +20,7 @@
 typedef unsigned long paddr_t;
 typedef void *vaddr_t;
 #else
-#include <arch/common/addr_types.h>
+#include <zephyr/arch/common/addr_types.h>
 #endif
 
 #endif /* _ASMLANGUAGE */

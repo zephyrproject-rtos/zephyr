@@ -16,6 +16,6 @@
  * variable length macros with zero or more elements.
  */
 
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_DT_UTIL_H_ */

@@ -40,7 +40,7 @@
  * This file contains structures and defines of the standard USB packets
  */
 
-#include <usb/usb_ch9.h>
+#include <zephyr/usb/usb_ch9.h>
 
 #ifndef ZEPHYR_INCLUDE_USB_USBSTRUCT_H_
 #define ZEPHYR_INCLUDE_USB_USBSTRUCT_H_

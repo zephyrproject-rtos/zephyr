@@ -15,14 +15,14 @@
 
 #if !defined(_ASMLANGUAGE)
 
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <irq.h>
-#include <arch/x86/mmustructs.h>
-#include <arch/x86/thread_stack.h>
-#include <linker/sections.h>
+#include <zephyr/irq.h>
+#include <zephyr/arch/x86/mmustructs.h>
+#include <zephyr/arch/x86/thread_stack.h>
+#include <zephyr/linker/sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -228,15 +228,15 @@ extern unsigned char _irq_to_interrupt_vector[];
 }
 #endif
 
-#include <drivers/interrupt_controller/sysapic.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
 
 #ifdef CONFIG_X86_64
-#include <arch/x86/intel64/arch.h>
+#include <zephyr/arch/x86/intel64/arch.h>
 #else
-#include <arch/x86/ia32/arch.h>
+#include <zephyr/arch/x86/ia32/arch.h>
 #endif
 
-#include <arch/common/ffs.h>
+#include <zephyr/arch/common/ffs.h>
 
 #ifdef __cplusplus
 extern "C" {

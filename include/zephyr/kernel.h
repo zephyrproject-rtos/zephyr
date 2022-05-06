@@ -14,12 +14,12 @@
 #define ZEPHYR_INCLUDE_KERNEL_H_
 
 #if !defined(_ASMLANGUAGE)
-#include <kernel_includes.h>
+#include <zephyr/kernel_includes.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <toolchain.h>
-#include <tracing/tracing_macros.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/tracing/tracing_macros.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -5935,7 +5935,7 @@ extern void k_sys_runtime_stats_disable(void);
 }
 #endif
 
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 #include <syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */

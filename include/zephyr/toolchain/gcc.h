@@ -85,7 +85,7 @@
 #define ZRESTRICT restrict
 #endif
 
-#include <toolchain/common.h>
+#include <zephyr/toolchain/common.h>
 #include <stdbool.h>
 
 #define ALIAS_OF(of) __attribute__((alias(#of)))
@@ -94,7 +94,7 @@
 	return_type new_alias() ALIAS_OF(real_func)
 
 #if defined(CONFIG_ARCH_POSIX)
-#include <arch/posix/posix_trace.h>
+#include <zephyr/arch/posix/posix_trace.h>
 
 /*let's not segfault if this were to happen for some reason*/
 #define CODE_UNREACHABLE \

@@ -9,12 +9,12 @@
 #define ZEPHYR_INCLUDE_SYSCALL_H_
 
 #include <syscall_list.h>
-#include <arch/syscall.h>
+#include <zephyr/arch/syscall.h>
 #include <stdbool.h>
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
 #ifdef __cplusplus
 extern "C" {

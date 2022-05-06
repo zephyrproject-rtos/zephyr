@@ -11,7 +11,7 @@
 #define ARCH_STACK_PTR_ALIGN			16
 
 #if CONFIG_USERSPACE
-#include <arch/arm64/mm.h>
+#include <zephyr/arch/arm64/mm.h>
 #define Z_ARM64_STACK_BASE_ALIGN		MEM_DOMAIN_ALIGN_AND_SIZE
 #define Z_ARM64_STACK_SIZE_ALIGN		MEM_DOMAIN_ALIGN_AND_SIZE
 #else

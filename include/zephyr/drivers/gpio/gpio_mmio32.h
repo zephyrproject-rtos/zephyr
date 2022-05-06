@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_MMIO32_H_
 
 #include <zephyr/device.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/types.h>
 
 extern const struct gpio_driver_api gpio_mmio32_api;

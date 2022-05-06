@@ -8,5 +8,5 @@
 #define ZEPHYR_INCLUDE_DEBUG_TRACING_H
 #warning "This header file has moved, include <tracing/tracing.h> instead."
 
-#include <tracing/tracing.h>
+#include <zephyr/tracing/tracing.h>
 #endif

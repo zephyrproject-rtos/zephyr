@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_DHCPV4_H_
 #define ZEPHYR_INCLUDE_NET_DHCPV4_H_
 
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

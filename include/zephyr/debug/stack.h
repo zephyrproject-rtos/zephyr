@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_INCLUDE_DEBUG_STACK_H_
 #define ZEPHYR_INCLUDE_DEBUG_STACK_H_
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <stdbool.h>
 
 static inline void log_stack_usage(const struct k_thread *thread)

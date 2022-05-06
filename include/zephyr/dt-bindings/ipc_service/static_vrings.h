@@ -6,7 +6,7 @@
 #ifndef __DT_BINDING_IPC_SERVICE_STATIC_VRINGS_H
 #define __DT_BINDING_IPC_SERVICE_STATIC_VRINGS_H
 
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 #define	PRIO_COOP	BIT(0)
 #define	PRIO_PREEMPT	BIT(1)

@@ -16,7 +16,7 @@
 #include <zephyr/device.h>
 
 #ifdef CONFIG_PCIE_MSI
-#include <drivers/pcie/msi.h>
+#include <zephyr/drivers/pcie/msi.h>
 #endif
 
 /**

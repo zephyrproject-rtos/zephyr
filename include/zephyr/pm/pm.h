@@ -8,9 +8,9 @@
 #define ZEPHYR_INCLUDE_PM_PM_H_
 
 #include <zephyr/types.h>
-#include <sys/slist.h>
-#include <pm/state.h>
-#include <toolchain.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/pm/state.h>
+#include <zephyr/toolchain.h>
 #include <errno.h>
 #include <stdbool.h>
 

@@ -11,13 +11,13 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AUDIO_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_AUDIO_H_
 
-#include <sys/atomic.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/iso.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/lc3.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 
 /**
  * @brief Bluetooth Audio

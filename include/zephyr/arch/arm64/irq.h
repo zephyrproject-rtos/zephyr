@@ -15,8 +15,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_IRQ_H_
 
-#include <irq.h>
-#include <sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

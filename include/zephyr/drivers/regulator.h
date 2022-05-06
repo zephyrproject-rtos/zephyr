@@ -19,8 +19,8 @@
  */
 
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-#include <sys/onoff.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/onoff.h>
 
 #ifdef __cplusplus
 extern "C" {

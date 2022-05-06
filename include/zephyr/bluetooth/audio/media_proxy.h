@@ -38,7 +38,7 @@
 
 #include <stdbool.h>
 #include <zephyr/types.h>
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 /* TODO: Remove dependency on mcs.h */
 #include "mcs.h"

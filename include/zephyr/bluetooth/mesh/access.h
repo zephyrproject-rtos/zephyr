@@ -10,9 +10,9 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
-#include <settings/settings.h>
-#include <sys/util.h>
-#include <bluetooth/mesh/msg.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/mesh/msg.h>
 
 /* Internal macros used to initialize array members */
 #define BT_MESH_KEY_UNUSED_ELT_(IDX, _) BT_MESH_KEY_UNUSED

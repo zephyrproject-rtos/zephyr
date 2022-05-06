@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_MMU_H
 #define ZEPHYR_INCLUDE_ARCH_X86_MMU_H
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 /*
  * K_MEM_PARTITION_* defines
@@ -54,7 +54,7 @@
 					 Z_X86_MMU_XD)
 
 #ifndef _ASMLANGUAGE
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 /* Page table entry data type at all levels. Defined here due to
  * k_mem_partition_attr_t, eventually move to private x86_mmu.h
