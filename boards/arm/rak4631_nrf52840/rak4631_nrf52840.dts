@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
-#include <dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
 #include "rak4631_nrf52840-pinctrl.dtsi"
 
 / {

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include "device_imx.h"
 
 static int meerakt96_pinmux_init(const struct device *dev)
