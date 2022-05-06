@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <ztest.h>
 #include <tc_util.h>
 
-#include <drivers/edac.h>
+#include <zephyr/drivers/edac.h>
 #include <ibecc.h>
 
 #define DEVICE_NAME		DT_LABEL(DT_NODELABEL(ibecc))

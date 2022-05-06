@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <sys/mem_manage.h>
-#include <toolchain.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/toolchain.h>
 #include <mmu.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
 /* 32-bit IA32 page tables have no mechanism to restrict execution */
 #if defined(CONFIG_X86) && !defined(CONFIG_X86_64) && !defined(CONFIG_X86_PAE)

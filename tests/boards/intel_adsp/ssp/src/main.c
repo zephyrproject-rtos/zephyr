@@ -5,15 +5,15 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <toolchain.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#include <device.h>
-#include <drivers/dai.h>
-#include <drivers/dma.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/dai.h>
+#include <zephyr/drivers/dma.h>
 #include <soc.h>
 
 /* sof ssp bespoke data */

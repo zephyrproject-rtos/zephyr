@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include "test_driver.h"
 

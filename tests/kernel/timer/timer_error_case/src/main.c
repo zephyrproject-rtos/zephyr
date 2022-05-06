@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <ztest.h>
 #include <zephyr/types.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include <ztest_error_hook.h>
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)

@@ -150,9 +150,9 @@ void test_k_float_disable_syscall(void)
 
 #if defined(CONFIG_ARM) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #else
 #include <interrupt_util.h>
 #endif

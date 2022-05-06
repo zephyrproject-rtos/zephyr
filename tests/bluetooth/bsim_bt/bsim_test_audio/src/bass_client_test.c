@@ -6,9 +6,9 @@
 
 #ifdef CONFIG_BT_BASS_CLIENT
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/audio/bass.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/audio/bass.h>
 #include "../../../../../subsys/bluetooth/host/hci_core.h"
 #include "common.h"
 

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <hal/nrf_clock.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
 #ifndef CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC

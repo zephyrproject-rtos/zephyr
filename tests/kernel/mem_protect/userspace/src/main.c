@@ -7,20 +7,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/util.h>
-#include <debug/stack.h>
-#include <syscall_handler.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/syscall_handler.h>
 #include "test_syscall.h"
-#include <sys/libc-hooks.h> /* for z_libc_partition */
+#include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 #if defined(CONFIG_ARC)
-#include <arch/arc/v2/mpu/arc_core_mpu.h>
+#include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
 #if defined(CONFIG_ARM)
@@ -281,7 +281,7 @@ static void test_write_kernram(void)
 
 extern int _k_neg_eagain;
 
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 /**
  * @brief Test to write kernel RO

@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <canbus/isotp.h>
-#include <drivers/can.h>
+#include <zephyr/canbus/isotp.h>
+#include <zephyr/drivers/can.h>
 #include <ztest.h>
 #include <strings.h>
 #include "random_data.h"

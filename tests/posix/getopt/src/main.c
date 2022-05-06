@@ -9,7 +9,7 @@
  *
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <string.h>
 #include <getopt.h>

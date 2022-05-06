@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <canbus/isotp.h>
+#include <zephyr/canbus/isotp.h>
 #include <ztest.h>
 #include <strings.h>
 #include "random_data.h"
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #define NUMBER_OF_REPETITIONS 5
 #define DATA_SIZE_SF          7

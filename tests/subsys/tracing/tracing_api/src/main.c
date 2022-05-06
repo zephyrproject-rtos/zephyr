@@ -5,11 +5,11 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
 #include <tracing_buffer.h>
 #include <tracing_core.h>
-#include <tracing/tracing_format.h>
+#include <zephyr/tracing/tracing_format.h>
 #if defined(CONFIG_TRACING_BACKEND_UART)
 #include "../../../../subsys/tracing/include/tracing_backend.h"
 #endif

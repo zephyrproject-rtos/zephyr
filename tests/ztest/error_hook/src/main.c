@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
-#include <syscall_handler.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/syscall_handler.h>
 #include <ztest_error_hook.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)

@@ -6,8 +6,8 @@
 
 #include <ztest.h>
 #include <kernel_internal.h>
-#include <irq_offload.h>
-#include <sys/multi_heap.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/sys/multi_heap.h>
 #include "test_mheap.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)

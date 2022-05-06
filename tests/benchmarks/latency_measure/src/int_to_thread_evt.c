@@ -15,8 +15,8 @@
  * interrupted.
  */
 
-#include <zephyr.h>
-#include <irq_offload.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/irq_offload.h>
 
 #include "utils.h"
 

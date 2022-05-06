@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <linker/linker-defs.h>
-#include <sys/slist.h>
-#include <arch/arm/aarch32/mpu/arm_mpu.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/arch/arm/aarch32/mpu/arm_mpu.h>
 #include <ztest.h>
 #include <string.h>
 

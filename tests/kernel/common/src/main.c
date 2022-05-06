@@ -6,8 +6,8 @@
 
 
 #include <ztest.h>
-#include <kernel_version.h>
-#include <sys/speculation.h>
+#include <zephyr/kernel_version.h>
+#include <zephyr/sys/speculation.h>
 #include "version.h"
 
 extern void test_byteorder_memcpy_swap(void);

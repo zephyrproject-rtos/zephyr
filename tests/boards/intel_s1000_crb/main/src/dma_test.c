@@ -26,11 +26,11 @@
  *     be printed on to the console. No error should be seen.
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <device.h>
-#include <drivers/dma.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/dma.h>
 
 #include <string.h>
 #include <xtensa/hal.h>

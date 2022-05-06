@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <storage/flash_map.h>
-#include <dfu/mcuboot.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/dfu/mcuboot.h>
 
 #define BOOT_MAGIC_VAL_W0 0xf395c277
 #define BOOT_MAGIC_VAL_W1 0x7fefd260

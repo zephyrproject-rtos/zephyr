@@ -3,9 +3,9 @@
  * Copyright (c) 2019 Intel Corp.
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/counter.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/counter.h>
 
 #define NR_SAMPLES 10	/* sample timer 10 times */
 

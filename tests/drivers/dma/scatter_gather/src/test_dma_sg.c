@@ -17,8 +17,8 @@
  *      software intervention.
  */
 
-#include <kernel.h>
-#include <drivers/dma.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/dma.h>
 #include <ztest.h>
 
 #define XFERS 2

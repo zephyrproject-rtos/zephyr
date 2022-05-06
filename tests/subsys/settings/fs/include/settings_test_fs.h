@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ztest.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 #include "settings/settings.h"
 

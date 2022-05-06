@@ -9,19 +9,19 @@
  *
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <errno.h>
-#include <settings/settings.h>
-#include <logging/log.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(settings_basic_test);
 
 #if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS)
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 #endif
 #if IS_ENABLED(CONFIG_SETTINGS_FS)
-#include <fs/fs.h>
-#include <fs/littlefs.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
 #endif
 
 /* The standard test expects a cleared flash area.  Make sure it has

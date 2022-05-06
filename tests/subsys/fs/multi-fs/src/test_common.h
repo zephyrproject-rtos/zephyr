@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #include <limits.h>
 
 void test_clear_flash(void);

@@ -27,11 +27,11 @@
  * "
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <device.h>
-#include <drivers/i2c.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 
 #define I2C_DEV                 "I2C_0"
 #define I2C_ADDR_LED_MAT0       0x65

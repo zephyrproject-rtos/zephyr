@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <devicetree.h>
-#include <sys/printk.h>
-#include <drivers/flash.h>
-#include <random/rand32.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/random/rand32.h>
 #include <soc/soc_memory_layout.h>
 
 /* definitions used in Flash & RAM operations */

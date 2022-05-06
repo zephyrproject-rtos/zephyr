@@ -8,7 +8,7 @@
 #include <cavs_ipc.h>
 #include <cavstool.h>
 #include <stdint.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <ztest.h>
 
 void test_hda_host_in_smoke(void);

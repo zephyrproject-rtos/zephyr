@@ -7,7 +7,7 @@
 #ifndef TEST_SOCKETPAIR_THREAD_H_
 #define TEST_SOCKETPAIR_THREAD_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 extern struct k_work_q test_socketpair_work_q;
 

@@ -5,12 +5,12 @@
  */
 
 #include <fcntl.h>
-#include <logging/log.h>
-#include <net/dummy.h>
-#include <net/net_if.h>
-#include <net/socket.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/socket.h>
 #include <sockets_internal.h>
-#include <sys/fdtable.h>
+#include <zephyr/sys/fdtable.h>
 #include <ztest.h>
 
 

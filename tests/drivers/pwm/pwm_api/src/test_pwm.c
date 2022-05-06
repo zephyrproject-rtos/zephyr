@@ -23,10 +23,10 @@
  *	Always off  ->  Period : Pulse (1 : 0)  ->  0V
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <inttypes.h>
-#include <drivers/pwm.h>
-#include <zephyr.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(pwm_0), okay)

@@ -6,8 +6,8 @@
 
 #include "mesh_test.h"
 #include "settings_test_backend.h"
-#include <bluetooth/mesh.h>
-#include <sys/reboot.h>
+#include <zephyr/bluetooth/mesh.h>
+#include <zephyr/sys/reboot.h>
 #include "mesh/net.h"
 #include "mesh/app_keys.h"
 #include "mesh/crypto.h"
@@ -15,7 +15,7 @@
 
 #define LOG_MODULE_NAME test_persistence
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define WAIT_TIME 60 /*seconds*/

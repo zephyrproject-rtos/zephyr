@@ -19,11 +19,11 @@
 #include <string.h>
 #include <ztest.h>
 
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <stats/stats.h>
-#include <sys/crc.h>
-#include <fs/nvs.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/stats/stats.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/fs/nvs.h>
 #include "nvs_priv.h"
 
 #define TEST_FLASH_AREA_STORAGE_OFFSET	FLASH_AREA_OFFSET(storage)

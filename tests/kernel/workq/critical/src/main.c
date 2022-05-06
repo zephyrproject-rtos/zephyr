@@ -24,8 +24,8 @@
  * @{
  * @}
  */
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 #include <ztest.h>
 
 #define NUM_MILLISECONDS        50

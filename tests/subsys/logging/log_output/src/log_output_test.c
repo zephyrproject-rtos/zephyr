@@ -9,12 +9,12 @@
  * @brief Test log message
  */
 
-#include <logging/log.h>
-#include <logging/log_output.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_output.h>
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #define LOG_MODULE_NAME test

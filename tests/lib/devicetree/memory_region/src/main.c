@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <devicetree.h>
-#include <device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/device.h>
 
-#include <linker/devicetree_regions.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #define TEST_SRAM_NODE	DT_NODELABEL(test_sram)
 #define TEST_SRAM_SECT	LINKER_DT_NODE_REGION_NAME(TEST_SRAM_NODE)

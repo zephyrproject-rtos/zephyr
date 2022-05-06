@@ -12,7 +12,7 @@
  * specific contexts are properly handled (i.e. re-entrant).
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #include <stdio.h>
