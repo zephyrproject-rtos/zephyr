@@ -141,7 +141,7 @@ static inline int qspi_prepare_quad_read(const struct device *dev,
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
-	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO) && dev_data->flag_quad_io_en) {
+	if (dev_data->flag_quad_io_en) {
 		switch (dev_data->mode) {
 		case JESD216_MODE_114:
 			cmd->AddressMode = QSPI_ADDRESS_1_LINE;
@@ -166,7 +166,7 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
-	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO) && dev_data->flag_quad_io_en) {
+	if (dev_data->flag_quad_io_en) {
 		cmd->Instruction = dev_data->qspi_write_cmd;
 
 		switch (cmd->Instruction) {
@@ -344,10 +344,13 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 	};
 
 	qspi_set_address_size(dev, &cmd);
-	ret = qspi_prepare_quad_read(dev, &cmd);
-	if (ret < 0) {
-		return ret;
+	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO)) {
+		ret = qspi_prepare_quad_read(dev, &cmd);
+		if (ret < 0) {
+			return ret;
+		}
 	}
+
 	qspi_lock_thread(dev);
 
 	ret = qspi_read_access(dev, &cmd, data, size);
@@ -404,10 +407,13 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 	};
 
 	qspi_set_address_size(dev, &cmd_pp);
-	ret = qspi_prepare_quad_program(dev, &cmd_pp);
-	if (ret < 0) {
-		return ret;
+	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO)) {
+		ret = qspi_prepare_quad_program(dev, &cmd_pp);
+		if (ret < 0) {
+			return ret;
+		}
 	}
+
 	qspi_lock_thread(dev);
 
 	while (size > 0) {
