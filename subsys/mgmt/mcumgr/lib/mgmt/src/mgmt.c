@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <string.h>
 
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 
 static mgmt_on_evt_cb evt_cb;

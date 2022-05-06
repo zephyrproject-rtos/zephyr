@@ -9,19 +9,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <sys/atomic.h>
-#include <debug/stack.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/debug/stack.h>
+#include <zephyr/sys/byteorder.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_hci_ecc
@@ -31,7 +31,7 @@
 #include "ecc.h"
 
 #ifdef CONFIG_BT_HCI_RAW
-#include <bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_raw.h>
 #include "hci_raw_internal.h"
 #else
 #include "hci_core.h"

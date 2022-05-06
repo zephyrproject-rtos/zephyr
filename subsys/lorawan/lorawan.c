@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <errno.h>
-#include <lorawan/lorawan.h>
+#include <zephyr/lorawan/lorawan.h>
 
 #include "lw_priv.h"
 
@@ -45,7 +45,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_LORAMAC_REGION_UNKNOWN),
 #define LORAWAN_ABP_VERSION 0x01000300
 
 #define LOG_LEVEL CONFIG_LORAWAN_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan);
 
 K_SEM_DEFINE(mlme_confirm_sem, 0, 1);

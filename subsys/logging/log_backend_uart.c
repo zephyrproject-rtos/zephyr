@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <logging/log_output_dict.h>
-#include <logging/log_backend_std.h>
-#include <logging/log.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <sys/__assert.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_output_dict.h>
+#include <zephyr/logging/log_backend_std.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/__assert.h>
 LOG_MODULE_REGISTER(log_uart);
 
 /* Fixed size to avoid auto-added trailing '\0'.

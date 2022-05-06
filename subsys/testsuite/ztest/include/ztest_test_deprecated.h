@@ -13,8 +13,8 @@
 #ifndef ZEPHYR_TESTSUITE_ZTEST_TEST_H_
 #define ZEPHYR_TESTSUITE_ZTEST_TEST_H_
 
-#include <app_memory/app_memdomain.h>
-#include <init.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/init.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

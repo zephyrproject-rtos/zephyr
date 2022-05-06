@@ -6,17 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <assert.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdio.h>
-#include <debug/object_tracing.h>
-#include <kernel_structs.h>
+#include <zephyr/debug/object_tracing.h>
+#include <zephyr/kernel_structs.h>
 #include <zcbor_common.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 
 #include "mgmt/mgmt.h"
 #include "os_mgmt/os_mgmt.h"

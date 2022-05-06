@@ -6,10 +6,10 @@
 
 #include "rpmsg_backend.h"
 
-#include <zephyr.h>
-#include <drivers/ipm.h>
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 
 #include <openamp/open_amp.h>
 #include <metal/device.h>

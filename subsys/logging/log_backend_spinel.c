@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log_backend.h>
-#include <logging/log_backend_std.h>
-#include <logging/log_output.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_backend_std.h>
+#include <zephyr/logging/log_output.h>
 #include <openthread/platform/logging.h>
 #include <utils/uart.h>
 #include <platform-zephyr.h>

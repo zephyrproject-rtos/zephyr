@@ -5,9 +5,9 @@
  */
 #include <stdint.h>
 
-#include <toolchain.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"

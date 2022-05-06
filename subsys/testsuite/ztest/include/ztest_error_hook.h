@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ZTEST_FATAL_HOOK_H_
 #define ZEPHYR_INCLUDE_ZTEST_FATAL_HOOK_H_
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 
 #if defined(CONFIG_ZTEST_FATAL_HOOK)

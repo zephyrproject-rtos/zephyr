@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/l2cap.h>
+#include <zephyr/bluetooth/l2cap.h>
 
 enum l2cap_conn_list_action {
 	BT_L2CAP_CHAN_LOOKUP,

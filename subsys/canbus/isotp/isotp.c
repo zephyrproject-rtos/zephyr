@@ -5,12 +5,12 @@
  */
 
 #include "isotp_internal.h"
-#include <net/buf.h>
-#include <kernel.h>
-#include <init.h>
-#include <sys/util.h>
-#include <logging/log.h>
-#include <timeout_q.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/timeout_q.h>
 
 LOG_MODULE_REGISTER(isotp, CONFIG_ISOTP_LOG_LEVEL);
 

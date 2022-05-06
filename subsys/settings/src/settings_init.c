@@ -13,7 +13,7 @@
 
 #include "settings/settings.h"
 #include "settings/settings_file.h"
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 
 bool settings_subsys_initialized;

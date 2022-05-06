@@ -15,7 +15,7 @@
 #define LOG_MODULE_NAME net_lwm2m_engine
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <fcntl.h>
@@ -26,17 +26,17 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include <init.h>
-#include <sys/printk.h>
-#include <net/net_ip.h>
-#include <net/http_parser_url.h>
-#include <net/socket.h>
-#include <net/lwm2m.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/http_parser_url.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/lwm2m.h>
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-#include <net/tls_credentials.h>
+#include <zephyr/net/tls_credentials.h>
 #endif
 #if defined(CONFIG_DNS_RESOLVER)
-#include <net/dns_resolve.h>
+#include <zephyr/net/dns_resolve.h>
 #endif
 
 #include "lwm2m_object.h"

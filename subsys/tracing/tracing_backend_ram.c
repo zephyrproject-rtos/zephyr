@@ -5,7 +5,7 @@
  */
 
 #include <ctype.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>

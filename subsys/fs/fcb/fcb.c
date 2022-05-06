@@ -8,12 +8,12 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include "fcb_priv.h"
 #include "string.h"
 #include <errno.h>
-#include <device.h>
-#include <drivers/flash.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
 
 uint8_t
 fcb_get_align(const struct fcb *fcb)

@@ -7,7 +7,7 @@
 #include <openamp/virtio_ring.h>
 #include <openamp/rpmsg_virtio.h>
 
-#include <ipc/ipc_static_vrings.h>
+#include <zephyr/ipc/ipc_static_vrings.h>
 
 /*
  * Endpoint registration flow:

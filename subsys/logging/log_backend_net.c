@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 
-#include <logging/log_backend.h>
-#include <logging/log_core.h>
-#include <logging/log_output.h>
-#include <logging/log_msg.h>
-#include <net/net_pkt.h>
-#include <net/net_context.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_context.h>
 
 /* Set this to 1 if you want to see what is being sent to server */
 #define DEBUG_PRINTING 0

@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_output.h>
-#include <logging/log_output_dict.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_output_dict.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 static void buffer_write(log_output_func_t outf, uint8_t *buf, size_t len,
 			 void *ctx)

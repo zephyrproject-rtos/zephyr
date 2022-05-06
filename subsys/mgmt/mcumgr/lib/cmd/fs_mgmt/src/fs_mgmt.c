@@ -6,16 +6,16 @@
  */
 
 #include <assert.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <limits.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include "zcbor_bulk/zcbor_bulk_priv.h"
-#include <mgmt/mcumgr/buf.h>
-#include <fs/fs.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/fs/fs.h>
 #include "mgmt/mgmt.h"
 #include "fs_mgmt/fs_mgmt.h"
 #include "fs_mgmt/fs_mgmt_impl.h"
@@ -50,7 +50,7 @@
 #endif
 
 #define LOG_LEVEL CONFIG_MCUMGR_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fs_mgmt);
 
 #define HASH_CHECKSUM_TYPE_SIZE 8

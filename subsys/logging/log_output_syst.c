@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <mipi_syst.h>
-#include <spinlock.h>
-#include <toolchain.h>
-#include <sys/__assert.h>
-#include <linker/utils.h>
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_output.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/linker/utils.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output.h>
 
 static struct mipi_syst_header log_syst_header;
 static struct mipi_syst_handle log_syst_handle;

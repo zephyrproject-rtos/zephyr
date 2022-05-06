@@ -10,15 +10,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_trickle, CONFIG_NET_TRICKLE_LOG_LEVEL);
 
 #include <errno.h>
-#include <sys/util.h>
-#include <random/rand32.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/random/rand32.h>
 
-#include <net/net_core.h>
-#include <net/trickle.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/trickle.h>
 
 #define TICK_MAX ~0
 

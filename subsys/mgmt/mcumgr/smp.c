@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <net/buf.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include "smp/smp.h"
 #include "mgmt/mcumgr/smp.h"
 #include "smp_reassembly.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_SMP_LOG_LEVEL);
 
 /* To be able to unit test some callers some functions need to be

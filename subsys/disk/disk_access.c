@@ -6,15 +6,15 @@
 
 #include <string.h>
 #include <zephyr/types.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <init.h>
-#include <storage/disk_access.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/init.h>
+#include <zephyr/storage/disk_access.h>
 #include <errno.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 #define LOG_LEVEL CONFIG_DISK_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(disk);
 
 /* list of mounted file systems */

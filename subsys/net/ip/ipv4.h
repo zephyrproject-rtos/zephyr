@@ -15,10 +15,10 @@
 
 #include <zephyr/types.h>
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/net_context.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_context.h>
 
 #define NET_IPV4_IHL_MASK 0x0F
 

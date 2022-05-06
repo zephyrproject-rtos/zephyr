@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log_output.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
-#include <sys/__assert.h>
-#include <sys/cbprintf.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/cbprintf.h>
 #include <ctype.h>
 #include <time.h>
 #include <stdio.h>

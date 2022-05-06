@@ -10,7 +10,7 @@
  *   This file includes the platform-specific initializers.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <openthread/instance.h>
 #include <openthread/tasklet.h>
 

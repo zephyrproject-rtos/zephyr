@@ -13,8 +13,8 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
-#include <devicetree.h>
-#include <toolchain.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/toolchain.h>
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT

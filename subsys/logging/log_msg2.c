@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <syscall_handler.h>
-#include <logging/log_internal.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_frontend.h>
-#include <logging/log_backend.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_frontend.h>
+#include <zephyr/logging/log_backend.h>
 
 /* Returns true if any backend is in use. */
 #define BACKENDS_IN_USE() \

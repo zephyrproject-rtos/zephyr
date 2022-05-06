@@ -13,15 +13,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <zephyr.h>
-#include <shell/shell.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/audio.h>
-#include <bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
 
 #include "bt.h"
 

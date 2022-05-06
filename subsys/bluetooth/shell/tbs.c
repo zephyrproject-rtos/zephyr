@@ -9,10 +9,10 @@
  */
 
 #include <stdlib.h>
-#include <zephyr.h>
-#include <shell/shell.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/shell/shell.h>
 
-#include <bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/audio/tbs.h>
 
 #include "bt.h"
 

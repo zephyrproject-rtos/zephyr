@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <stdlib.h>
@@ -12,17 +12,17 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <random/rand32.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/types.h>
-#include <sys/byteorder.h>
-#include <sys/math_extras.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/math_extras.h>
 
-#include <net/net_ip.h>
-#include <net/net_core.h>
-#include <net/coap.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/coap.h>
 
 /* Values as per RFC 7252, section-3.1.
  *

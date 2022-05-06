@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log_internal.h>
-#include <logging/log_ctrl.h>
-#include <syscall_handler.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/syscall_handler.h>
 
 /* Implementation of functions related to controlling logging sources and backends:
  * - getting/setting source details like name, filtering

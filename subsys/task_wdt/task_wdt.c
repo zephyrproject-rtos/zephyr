@@ -6,13 +6,13 @@
 
 #include "task_wdt/task_wdt.h"
 
-#include <drivers/watchdog.h>
-#include <sys/reboot.h>
-#include <device.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/device.h>
 #include <errno.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(task_wdt);
 
 /*

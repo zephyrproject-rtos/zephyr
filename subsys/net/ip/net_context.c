@@ -11,22 +11,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
-#include <kernel.h>
-#include <random/rand32.h>
+#include <zephyr/kernel.h>
+#include <zephyr/random/rand32.h>
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
 
-#include <net/net_pkt.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/net_context.h>
-#include <net/net_offload.h>
-#include <net/ethernet.h>
-#include <net/socket_can.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_offload.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/socket_can.h>
 
 #include "connection.h"
 #include "net_private.h"

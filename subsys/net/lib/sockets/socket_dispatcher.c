@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-#include <net/socket.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/socket.h>
 
 #include "sockets_internal.h"
 

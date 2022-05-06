@@ -10,7 +10,7 @@
 #define MS_TO_US(ms)  (ms * USEC_PER_MSEC)
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
 {
@@ -71,8 +71,8 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_GIC)
-#include <drivers/interrupt_controller/gic.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 static inline void trigger_irq(int irq)
 {
@@ -103,10 +103,10 @@ static inline void trigger_irq(int irq)
 #elif defined(CONFIG_X86)
 
 #ifdef CONFIG_X2APIC
-#include <drivers/interrupt_controller/loapic.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
 #define VECTOR_MASK 0xFF
 #else
-#include <sys/arch_interface.h>
+#include <zephyr/sys/arch_interface.h>
 #define LOAPIC_ICR_IPI_TEST  0x00004000U
 #endif
 
