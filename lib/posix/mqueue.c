@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/atomic.h>
-#include <posix/time.h>
-#include <posix/mqueue.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/mqueue.h>
 
 typedef struct mqueue_object {
 	sys_snode_t snode;

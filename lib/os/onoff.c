@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/onoff.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/onoff.h>
 #include <stdio.h>
 
 #define SERVICE_REFS_MAX UINT16_MAX

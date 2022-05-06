@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sys/mpsc_pbuf.h>
+#include <zephyr/sys/mpsc_pbuf.h>
 
 #define MPSC_PBUF_DEBUG 0
 

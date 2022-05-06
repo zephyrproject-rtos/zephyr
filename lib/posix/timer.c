@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <posix/time.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/posix/time.h>
 
 #define ACTIVE 1
 #define NOT_ACTIVE 0

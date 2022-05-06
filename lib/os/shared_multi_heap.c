@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <sys/sys_heap.h>
-#include <sys/multi_heap.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/sys_heap.h>
+#include <zephyr/sys/multi_heap.h>
 
-#include <multi_heap/shared_multi_heap.h>
+#include <zephyr/multi_heap/shared_multi_heap.h>
 
 static struct sys_multi_heap shared_multi_heap;
 static struct sys_heap heap_pool[MAX_SHARED_MULTI_HEAP_ATTR][MAX_MULTI_HEAPS];
