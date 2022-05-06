@@ -32,6 +32,7 @@ add_dependencies(testbinary ${KOBJ_TYPES_H_TARGET})
 gen_kobj(KOBJ_GEN_DIR)
 
 list(APPEND INCLUDE
+  subsys/testsuite/ztest/include/zephyr
   subsys/testsuite/ztest/include
   subsys/testsuite/include
   include/zephyr
