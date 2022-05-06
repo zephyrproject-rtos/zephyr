@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 Piotr Mienkowski
  * Copyright (c) 2020 Linaro Limited
+ * Copyright (c) 2022 Georgij Cernysiov
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,6 +92,7 @@ struct flash_stm32_qspi_data {
 	uint16_t page_size;
 	int cmd_status;
 	struct stream dma;
+	uint8_t qspi_write_cmd;
 	uint8_t qspi_read_cmd;
 	uint8_t qspi_read_cmd_latency;
 	/*
@@ -144,25 +146,30 @@ static inline void qspi_prepare_quad_read(const struct device *dev,
 	}
 }
 
-static inline void qspi_prepare_quad_program(const struct device *dev,
+static inline int qspi_prepare_quad_program(const struct device *dev,
 					     QSPI_CommandTypeDef *cmd)
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
-	/*
-	 * There is no info about PP/4PP command in the SFDP tables,
-	 * hence it has been assumed that NOR flash memory supporting
-	 * 1-4-4 mode also would support fast page programming.
-	 */
+
 	if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO) && dev_data->flag_quad_io_en) {
-		cmd->Instruction = SPI_NOR_CMD_4PP;
-		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+		cmd->Instruction = dev_data->qspi_write_cmd;
+
+		switch (cmd->Instruction) {
+		case SPI_NOR_CMD_PP_1_1_4:
+			cmd->AddressMode = QSPI_ADDRESS_1_LINE;
+			break;
+		case SPI_NOR_CMD_PP_1_4_4:
+			cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
 		cmd->DataMode = QSPI_DATA_4_LINES;
-		/*
-		 * Dummy cycles are not required for 4PP command -
-		 * data to be programmed are sent just after address.
-		 */
 		cmd->DummyCycles = 0;
 	}
+
+	return 0;
 }
 
 /*
@@ -379,7 +386,10 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 	};
 
 	qspi_set_address_size(dev, &cmd_pp);
-	qspi_prepare_quad_program(dev, &cmd_pp);
+	ret = qspi_prepare_quad_program(dev, &cmd_pp);
+	if (ret < 0) {
+		return ret;
+	}
 	qspi_lock_thread(dev);
 
 	while (size > 0) {
@@ -1141,6 +1151,11 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 static void flash_stm32_qspi_irq_config_func(const struct device *dev);
 
+#define DT_WRITEOC_PROP_OR(inst, default_value)                                              \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),                                    \
+		    (_CONCAT(SPI_NOR_CMD_, DT_STRING_TOKEN(DT_DRV_INST(inst), writeoc))),    \
+		    ((default_value)))
+
 #define STM32_QSPI_NODE DT_INST_PARENT(0)
 
 PINCTRL_DT_DEFINE(STM32_QSPI_NODE);
@@ -1170,6 +1185,7 @@ static struct flash_stm32_qspi_data flash_stm32_qspi_dev_data = {
 			.ClockMode = QSPI_CLOCK_MODE_0,
 			},
 	},
+	.qspi_write_cmd = DT_WRITEOC_PROP_OR(0, SPI_NOR_CMD_PP_1_4_4),
 	QSPI_DMA_CHANNEL(STM32_QSPI_NODE, tx_rx)
 };
 
