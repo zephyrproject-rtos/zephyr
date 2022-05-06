@@ -47,15 +47,15 @@
 /* stdint conversions */
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <net/net_ip.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 #include <sys/types.h>
 
-#include <net/coap.h>
-#include <net/lwm2m.h>
+#include <zephyr/net/coap.h>
+#include <zephyr/net/lwm2m.h>
 
 #include "buf_util.h"
 

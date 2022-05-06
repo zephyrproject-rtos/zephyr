@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_MESH_PB_GATT_SRV_H_
 #define ZEPHYR_SUBSYS_BLUETOOTH_MESH_PB_GATT_SRV_H_
 
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 int bt_mesh_pb_gatt_srv_enable(void);
 int bt_mesh_pb_gatt_srv_disable(void);

@@ -38,23 +38,23 @@
  *
  */
 
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <errno.h>
-#include <drivers/flash.h>
-#include <storage/flash_map.h>
-#include <dfu/mcuboot.h>
-#include <dfu/flash_img.h>
-#include <sys/byteorder.h>
-#include <sys/reboot.h>
-#include <usb/usb_device.h>
-#include <usb/class/usb_dfu.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/flash_img.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_dfu.h>
 #include <usb_descriptor.h>
 #include <usb_work_q.h>
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dfu);
 
 #define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_REQUEST_BUFFER_SIZE

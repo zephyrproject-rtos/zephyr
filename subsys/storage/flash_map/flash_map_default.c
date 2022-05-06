@@ -7,8 +7,8 @@
 
 #define DT_DRV_COMPAT fixed_partitions
 
-#include <zephyr.h>
-#include <storage/flash_map.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/storage/flash_map.h>
 
 #define FLASH_AREA_FOO(part)						\
 	{.fa_id = DT_FIXED_PARTITION_ID(part),				\

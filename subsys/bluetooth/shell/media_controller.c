@@ -10,14 +10,14 @@
  */
 
 #include <stdlib.h>
-#include <shell/shell.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "bt.h"
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 
-#include <bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 #include "../audio/media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)

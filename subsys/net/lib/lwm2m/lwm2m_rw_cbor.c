@@ -7,8 +7,8 @@
 #define LOG_MODULE_NAME net_lwm2m_cbor
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -19,7 +19,7 @@
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 
-#include <net/lwm2m.h>
+#include <zephyr/net/lwm2m.h>
 #include "lwm2m_object.h"
 #include "lwm2m_rw_cbor.h"
 #include "lwm2m_engine.h"

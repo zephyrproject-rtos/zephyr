@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log_frontend.h>
-#include <logging/log_internal.h>
-#include <logging/log_output_dict.h>
-#include <sys/mpsc_pbuf.h>
-#include <device.h>
-#include <drivers/uart.h>
+#include <zephyr/logging/log_frontend.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/logging/log_output_dict.h>
+#include <zephyr/sys/mpsc_pbuf.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
 
 static uint32_t dbuf[CONFIG_LOG_FRONTEND_DICT_UART_BUFFER_SIZE / sizeof(uint32_t)];
 

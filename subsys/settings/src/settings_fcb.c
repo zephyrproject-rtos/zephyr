@@ -7,14 +7,14 @@
 
 #include <errno.h>
 #include <stdbool.h>
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include <string.h>
 
 #include "settings/settings.h"
 #include "settings/settings_fcb.h"
 #include "settings_priv.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 #if DT_HAS_CHOSEN(zephyr_settings_partition)

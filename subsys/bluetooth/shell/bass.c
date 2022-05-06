@@ -9,13 +9,13 @@
 
 #include <zephyr/types.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/bass.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/bass.h>
 #include "bt.h"
 
 static void pa_synced(struct bt_bass_recv_state *recv_state,

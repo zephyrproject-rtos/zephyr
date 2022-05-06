@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <settings/settings.h>
-#include <shell/shell.h>
-#include <sys/util.h>
-#include <toolchain.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include <stdint.h>
 #include <stddef.h>

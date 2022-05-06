@@ -12,8 +12,8 @@
  * properties to the generic macros required by the nRF5 radio HAL.
  */
 
-#include <devicetree.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(radio), fem)
 #define FEM_NODE             DT_PHANDLE(DT_NODELABEL(radio), fem)

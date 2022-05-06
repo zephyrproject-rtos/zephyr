@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <usb_work_q.h>
 
 K_KERNEL_STACK_DEFINE(z_usb_work_q_stack, CONFIG_USB_WORKQUEUE_STACK_SIZE);

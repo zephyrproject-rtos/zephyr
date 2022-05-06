@@ -7,7 +7,7 @@
 #define LOG_MODULE_NAME net_lwm2m_senml_cbor
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdio.h>
@@ -16,8 +16,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdlib.h>
 #include <inttypes.h>
 #include <ctype.h>
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>

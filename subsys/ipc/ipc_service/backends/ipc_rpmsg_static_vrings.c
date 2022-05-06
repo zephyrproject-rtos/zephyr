@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-#include <zephyr.h>
-#include <cache.h>
-#include <device.h>
-#include <sys/atomic.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/atomic.h>
 
-#include <ipc/ipc_service_backend.h>
-#include <ipc/ipc_static_vrings.h>
-#include <ipc/ipc_rpmsg.h>
+#include <zephyr/ipc/ipc_service_backend.h>
+#include <zephyr/ipc/ipc_static_vrings.h>
+#include <zephyr/ipc/ipc_rpmsg.h>
 
-#include <drivers/mbox.h>
-#include <dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/drivers/mbox.h>
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
 
 #include "ipc_rpmsg_static_vrings.h"
 

@@ -7,9 +7,9 @@
 
 #include <string.h>
 
-#include <zephyr.h>
-#include <sys/byteorder.h>
-#include <bluetooth/crypto.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/crypto.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_aes_ccm

@@ -7,10 +7,10 @@
 #define LOG_MODULE_NAME net_openthread_alarm
 #define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <inttypes.h>
 

@@ -6,14 +6,14 @@
  */
 #include <sys/types.h>
 
-#include <sys/byteorder.h>
-#include <sys/check.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/iso.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/direction.h>
-#include <bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/addr.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"

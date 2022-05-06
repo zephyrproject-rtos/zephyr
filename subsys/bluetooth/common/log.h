@@ -11,15 +11,15 @@
 #ifndef __BT_LOG_H
 #define __BT_LOG_H
 
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 #include <offsets.h>
-#include <zephyr.h>
-#include <logging/log.h>
-#include <sys/__assert.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/hci.h>
 
 #ifdef __cplusplus
 extern "C" {

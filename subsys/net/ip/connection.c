@@ -8,17 +8,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/udp.h>
-#include <net/ethernet.h>
-#include <net/socket_can.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/udp.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/socket_can.h>
 
 #include "net_private.h"
 #include "icmpv6.h"

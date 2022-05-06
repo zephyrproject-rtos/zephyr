@@ -7,13 +7,13 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include <logging/log_backend.h>
-#include <logging/log_backend_std.h>
-#include <logging/log_core.h>
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <irq.h>
-#include <arch/posix/posix_trace.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_backend_std.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/irq.h>
+#include <zephyr/arch/posix/posix_trace.h>
 
 #define _STDOUT_BUF_SIZE 256
 static char stdout_buff[_STDOUT_BUF_SIZE];

@@ -5,13 +5,13 @@
  */
 
 #include <assert.h>
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 #include <string.h>
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
-#include <mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
 #include "zcbor_bulk/zcbor_bulk_priv.h"
 #include "img_mgmt/img_mgmt.h"

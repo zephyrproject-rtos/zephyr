@@ -10,17 +10,17 @@
 #define DT_DRV_COMPAT bosch_bmi160
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bosch_bmi160);
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <bmi160.h>
-#include <device.h>
-#include <drivers/emul.h>
-#include <drivers/i2c.h>
-#include <drivers/i2c_emul.h>
-#include <drivers/spi.h>
-#include <drivers/spi_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2c_emul.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi_emul.h>
 
 /** Run-time data used by the emulator */
 struct bmi160_emul_data {

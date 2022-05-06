@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ipc/ipc_service.h>
-#include <ipc/ipc_service_backend.h>
+#include <zephyr/ipc/ipc_service.h>
+#include <zephyr/ipc/ipc_service_backend.h>
 
-#include <logging/log.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
 LOG_MODULE_REGISTER(ipc_service, CONFIG_IPC_SERVICE_LOG_LEVEL);
 

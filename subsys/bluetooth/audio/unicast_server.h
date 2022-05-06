@@ -6,6 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 extern const struct bt_audio_unicast_server_cb *unicast_server_cb;

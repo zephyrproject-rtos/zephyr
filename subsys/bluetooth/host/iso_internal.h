@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <bluetooth/iso.h>
+#include <zephyr/bluetooth/iso.h>
 
 struct iso_data {
 	/** BT_BUF_ISO_IN */

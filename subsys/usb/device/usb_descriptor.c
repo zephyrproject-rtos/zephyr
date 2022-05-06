@@ -8,14 +8,14 @@
  */
 
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/usb/usb_device.h>
 #include "usb_descriptor.h"
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_descriptor);
 
 /*

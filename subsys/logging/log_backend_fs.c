@@ -6,11 +6,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <logging/log_backend.h>
-#include <logging/log_output_dict.h>
-#include <logging/log_backend_std.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_output_dict.h>
+#include <zephyr/logging/log_backend_std.h>
 #include <assert.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 #define MAX_PATH_LEN 256
 #define MAX_FLASH_WRITE_SIZE 256

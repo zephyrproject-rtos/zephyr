@@ -9,17 +9,17 @@
 #include <fcntl.h>
 
 /* Zephyr headers */
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <net/net_context.h>
-#include <net/net_pkt.h>
-#include <net/socket.h>
-#include <net/socket_types.h>
-#include <syscall_handler.h>
-#include <sys/fdtable.h>
-#include <sys/math_extras.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/socket_types.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/sys/math_extras.h>
 
 #if defined(CONFIG_SOCKS)
 #include "socks.h"

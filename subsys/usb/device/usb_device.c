@@ -59,20 +59,20 @@
 
 #include <errno.h>
 #include <stddef.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
-#include <usb/class/usb_audio.h>
+#include <zephyr/usb/class/usb_audio.h>
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_device);
 
-#include <usb/bos.h>
+#include <zephyr/usb/bos.h>
 #include <os_desc.h>
 #include "usb_transfer.h"
 

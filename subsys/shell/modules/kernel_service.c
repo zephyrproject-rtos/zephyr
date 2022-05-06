@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
-#include <shell/shell.h>
-#include <init.h>
-#include <sys/reboot.h>
-#include <debug/stack.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/debug/stack.h>
 #include <string.h>
-#include <device.h>
-#include <drivers/timer/system_timer.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 
 static int cmd_kernel_version(const struct shell *shell,

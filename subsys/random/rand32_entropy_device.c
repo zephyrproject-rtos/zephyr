@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/atomic.h>
-#include <kernel.h>
-#include <drivers/entropy.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/entropy.h>
 #include <string.h>
 
 static const struct device *entropy_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));

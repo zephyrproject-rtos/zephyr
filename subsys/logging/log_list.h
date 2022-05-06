@@ -6,7 +6,7 @@
 #ifndef LOG_LIST_H_
 #define LOG_LIST_H_
 
-#include <logging/log_msg.h>
+#include <zephyr/logging/log_msg.h>
 
 #ifdef __cplusplus
 extern "C" {

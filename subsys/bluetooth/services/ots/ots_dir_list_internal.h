@@ -13,8 +13,8 @@ extern "C" {
 
 #include <sys/types.h>
 #include <zephyr/types.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
 
 /** Maximum size of the Directory Listing Object Record. Table 4.1 in the OTS spec. */
 #define DIR_LIST_OBJ_RECORD_MIN_SIZE       13

@@ -7,12 +7,12 @@
  */
 
 #include <string.h>
-#include <sys/printk.h>
-#include <sys/dlist.h>
-#include <sys/byteorder.h>
-#include <bluetooth/addr.h>
-#include <toolchain.h>
-#include <irq.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/irq.h>
 #include <errno.h>
 
 #include "util/mem.h"

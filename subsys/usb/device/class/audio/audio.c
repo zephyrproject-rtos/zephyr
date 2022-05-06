@@ -11,17 +11,17 @@
  * Driver for USB Audio device class driver
  */
 
-#include <kernel.h>
-#include <usb/usb_device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
-#include <usb/class/usb_audio.h>
+#include <zephyr/usb/class/usb_audio.h>
 #include "usb_audio_internal.h"
 
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <net/buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/buf.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_audio, CONFIG_USB_AUDIO_LOG_LEVEL);
 
 /* Device data structure */

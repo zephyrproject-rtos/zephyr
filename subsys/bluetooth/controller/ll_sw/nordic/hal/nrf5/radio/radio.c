@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/dlist.h>
-#include <toolchain.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <soc.h>
 
 #include <hal/nrf_rtc.h>
