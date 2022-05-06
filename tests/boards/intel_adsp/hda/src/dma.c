@@ -3,10 +3,10 @@
  */
 
 #include "arch/xtensa/cache.h"
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #include "tests.h"
 
 #define IPC_TIMEOUT K_MSEC(500)

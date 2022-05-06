@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <pthread.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define N_THR 3
 #define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)

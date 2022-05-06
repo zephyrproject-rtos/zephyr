@@ -7,12 +7,12 @@
 #include <ztest.h>
 #include <tc_util.h>
 
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 
-#include <usb/bos.h>
+#include <zephyr/usb/bos.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
 
 /*

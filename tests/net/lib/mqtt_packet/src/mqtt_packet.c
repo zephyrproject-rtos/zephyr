@@ -6,7 +6,7 @@
 
 #include <tc_util.h>
 #include <mqtt_internal.h>
-#include <sys/util.h>	/* for ARRAY_SIZE */
+#include <zephyr/sys/util.h>	/* for ARRAY_SIZE */
 #include <ztest.h>
 
 #define CLIENTID	MQTT_UTF8_LITERAL("zephyr")

@@ -6,7 +6,7 @@
 
 #include "mock_backend.h"
 #include <ztest.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/logging/log_ctrl.h>
 
 struct mock_log_frontend {
 	bool do_check;

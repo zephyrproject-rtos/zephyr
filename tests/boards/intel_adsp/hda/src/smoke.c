@@ -3,10 +3,10 @@
  */
 
 #include "arch/xtensa/cache.h"
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include "tests.h"
 
 #define HDA_HOST_IN_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_in), reg, 0)

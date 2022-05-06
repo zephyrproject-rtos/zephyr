@@ -6,8 +6,8 @@
  */
 
 #include <ztest.h>
-#include <storage/flash_map.h>
-#include <dfu/flash_img.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/dfu/flash_img.h>
 
 void test_init_id(void)
 {

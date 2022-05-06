@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include "subsys/bluetooth/host/at.h"
 

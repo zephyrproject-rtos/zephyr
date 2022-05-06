@@ -15,8 +15,8 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#include <zephyr.h>
-#include <sys/__assert.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/__assert.h>
 #include <ztest.h>
 
 #include <limits.h>

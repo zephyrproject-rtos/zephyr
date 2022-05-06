@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <drivers/flash.h>
-#include <device.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/device.h>
 
 /* configuration derived from DT */
 #ifdef CONFIG_ARCH_POSIX
@@ -277,7 +277,7 @@ static void test_get_erase_value(void)
 		      FLASH_SIMULATOR_ERASE_VALUE);
 }
 
-#include <drivers/flash/flash_simulator.h>
+#include <zephyr/drivers/flash/flash_simulator.h>
 
 static void test_get_mock(void)
 {

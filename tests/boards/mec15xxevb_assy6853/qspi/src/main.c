@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 
 #define TEST_FREQ_HZ 24000000U
 #define W25Q128_JEDEC_ID 0x001840efU

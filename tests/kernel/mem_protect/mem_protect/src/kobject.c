@@ -5,7 +5,7 @@
  */
 
 #include "mem_protect.h"
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 /* Kernel objects */
 

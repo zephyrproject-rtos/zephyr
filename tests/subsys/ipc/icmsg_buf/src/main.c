@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <ipc/ipc_icmsg_buf.h>
+#include <zephyr/ipc/ipc_icmsg_buf.h>
 
 /* The buffer size itself would be 199 bytes.
  * 212 - sizeof(struct icmsg_buf) - 1 = 199.

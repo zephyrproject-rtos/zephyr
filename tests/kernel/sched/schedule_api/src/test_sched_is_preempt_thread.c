@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include "test_sched.h"
 
 /* local variables */

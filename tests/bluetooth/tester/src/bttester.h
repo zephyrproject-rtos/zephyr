@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/util.h>
-#include <bluetooth/addr.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/addr.h>
 
 #define BTP_MTU 1024
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))

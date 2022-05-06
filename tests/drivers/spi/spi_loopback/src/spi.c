@@ -5,16 +5,16 @@
  */
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 #include <string.h>
 #include <stdio.h>
 #include <ztest.h>
 
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 
 #define SPI_DRV_NAME	CONFIG_SPI_LOOPBACK_DRV_NAME
 #define SPI_SLAVE	CONFIG_SPI_LOOPBACK_SLAVE_NUMBER

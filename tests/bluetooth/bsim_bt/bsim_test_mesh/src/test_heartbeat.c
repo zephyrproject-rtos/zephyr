@@ -11,7 +11,7 @@
 
 #define LOG_MODULE_NAME test_heartbeat
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define WAIT_TIME 60 /*seconds*/

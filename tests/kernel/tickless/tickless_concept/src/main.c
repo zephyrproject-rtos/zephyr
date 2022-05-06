@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <pm/pm.h>
+#include <zephyr/pm/pm.h>
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define NUM_THREAD 4

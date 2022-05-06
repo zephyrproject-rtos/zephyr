@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include "tests_thread_apis.h"
 

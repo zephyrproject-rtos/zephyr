@@ -6,7 +6,7 @@
 
 #include "test_modbus.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbs_test, LOG_LEVEL_INF);
 
 const static uint16_t fp_offset = MB_TEST_FP_OFFSET;

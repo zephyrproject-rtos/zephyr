@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <tc_util.h>
 
-#include <drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/pcie.h>
 #include <ibecc.h>
 
 #define CONFIG_EDAC_LOG_LEVEL LOG_LEVEL_DBG

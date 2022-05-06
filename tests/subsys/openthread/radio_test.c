@@ -6,12 +6,12 @@
 
 #include <ztest.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdio.h>
 
-#include <net/ieee802154_radio.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/net_pkt.h>
 
 #include <openthread/platform/radio.h>
 #include <openthread/message.h>

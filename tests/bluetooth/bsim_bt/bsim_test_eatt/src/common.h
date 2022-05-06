@@ -9,13 +9,13 @@
 #include <stddef.h>
 
 #include <zephyr/types.h>
-#include <sys/printk.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/att.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"

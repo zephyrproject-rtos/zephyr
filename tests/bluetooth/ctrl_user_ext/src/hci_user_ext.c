@@ -6,9 +6,9 @@
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
 #include "util/memq.h"
 #include "ll_sw/pdu.h"

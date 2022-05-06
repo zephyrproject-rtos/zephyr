@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef min
 #define min(a, b) ((a) < (b)) ? (a) : (b)

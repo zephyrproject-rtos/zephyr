@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdlib.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
 #include "tests.h"

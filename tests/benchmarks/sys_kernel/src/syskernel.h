@@ -12,7 +12,7 @@
 #include <timestamp.h>
 
 #include <stdio.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #define STACK_SIZE 2048
 #if CONFIG_SRAM_SIZE <= 32

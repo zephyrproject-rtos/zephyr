@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include "abstract_driver.h"
 
 #define MY_DRIVER_A	"my_driver_A"

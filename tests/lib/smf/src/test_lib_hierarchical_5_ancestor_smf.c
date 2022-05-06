@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <smf.h>
+#include <zephyr/smf.h>
 
 /*
  * Hierarchical 5 Ancestor State Test Transition:

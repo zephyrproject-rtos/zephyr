@@ -5,8 +5,8 @@
  */
 
 #include "common.h"
-#include <bluetooth/conn.h>
-#include <bluetooth/att.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/att.h>
 
 extern enum bst_result_t bst_result;
 

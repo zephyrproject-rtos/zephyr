@@ -16,7 +16,7 @@
 #error __FILE__ goes only with ARC GCC
 #endif
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include "float_context.h"
 
 /**
