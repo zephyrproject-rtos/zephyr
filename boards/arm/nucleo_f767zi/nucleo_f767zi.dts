@@ -200,7 +200,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x0 0x00010000>;
+			reg = <0x0 DT_SIZE_K(64)>;
 			read-only;
 		};
 
@@ -211,7 +211,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		storage_partition: partition@10000 {
 			label = "storage";
-			reg = <0x00010000 0x00010000>;
+			reg = <0x00010000 DT_SIZE_K(64)>;
 		};
 
 		/*
@@ -223,7 +223,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		slot0_partition: partition@40000 {
 			label = "image-0";
-			reg = <0x00040000 0x000C0000>;
+			reg = <0x00040000 DT_SIZE_K(768)>;
 		};
 
 		/*
@@ -231,7 +231,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		slot1_partition: partition@100000 {
 			label = "image-1";
-			reg = <0x00100000 0x000C0000>;
+			reg = <0x00100000 DT_SIZE_K(768)>;
 		};
 
 		/*
@@ -239,7 +239,7 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		scratch_partition: partition@1C0000 {
 			label = "image-scratch";
-			reg = <0x001C0000 0x00040000>;
+			reg = <0x001C0000 DT_SIZE_K(256)>;
 		};
 	};
 };
