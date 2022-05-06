@@ -158,13 +158,13 @@ config BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC
 
 config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
 	int "Maximum length of antenna switch pattern"
-	range 3 39 if SOC_COMPATIBLE_NRF
+	range 2 38 if SOC_COMPATIBLE_NRF
 	range 2 75 if !SOC_COMPATIBLE_NRF
 	default 12
 	help
 	  Defines maximum length of antenna switch pattern that controller
 	  is able to store. For nRF5x-based controllers, the hardware imposes
-	  the value is within range 3 to 40, where last value is maximum.
+	  the value is within range 2 to 38, where last value is maximum.
 	  For general use cases Bluetooth Core 5.1 spec. required the value
 	  to be within range 2 up to 75.
 
