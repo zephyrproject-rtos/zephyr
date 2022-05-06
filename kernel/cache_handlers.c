@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <cache.h>
-#include <syscall_handler.h>
+#include <zephyr/cache.h>
+#include <zephyr/syscall_handler.h>
 
 static inline int z_vrfy_sys_cache_data_all(int op)
 {

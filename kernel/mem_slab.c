@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <wait_q.h>
-#include <sys/dlist.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/sys/dlist.h>
 #include <ksched.h>
-#include <init.h>
-#include <sys/check.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/check.h>
 
 /**
  * @brief Initialize kernel memory slab subsystem.
