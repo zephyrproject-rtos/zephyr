@@ -21,7 +21,7 @@
  * static_assert is not supported, so BUILD_ASSERT is used instead.
  * BUILD_ASSERT is included through toolchain.h.
  */
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #define static_assert(expr, msg...) BUILD_ASSERT((expr), "" msg)
 
 /* Convert uses of asm, which is not supported in c99, to __asm */

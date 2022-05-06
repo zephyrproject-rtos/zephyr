@@ -7,7 +7,7 @@
 #include "nrf_802154_serialization_crit_sect.h"
 
 #ifndef TEST
-#include <irq.h>
+#include <zephyr/irq.h>
 #endif
 
 void nrf_802154_serialization_crit_sect_enter(uint32_t *p_critical_section)

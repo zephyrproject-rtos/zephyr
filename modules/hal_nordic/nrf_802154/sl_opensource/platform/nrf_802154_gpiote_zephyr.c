@@ -9,10 +9,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <sys/__assert.h>
-#include <device.h>
-#include <toolchain.h>
-#include <drivers/gpio.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/device.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/drivers/gpio.h>
 
 #include <hal/nrf_gpio.h>
 #include <nrf_802154_sl_coex.h>

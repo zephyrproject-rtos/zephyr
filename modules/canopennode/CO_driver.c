@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/can.h>
-#include <init.h>
-#include <sys/util.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
 
 #include <canopennode.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(canopen_driver);
 
 K_KERNEL_STACK_DEFINE(canopen_tx_workq_stack,
