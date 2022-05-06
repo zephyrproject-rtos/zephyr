@@ -10,20 +10,20 @@
  */
 
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <string.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <sys/dlist.h>
-#include <sys/math_extras.h>
-#include <init.h>
-#include <syscall_handler.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/math_extras.h>
+#include <zephyr/init.h>
+#include <zephyr/syscall_handler.h>
 #include <kernel_internal.h>
-#include <sys/check.h>
+#include <zephyr/sys/check.h>
 
 #ifdef CONFIG_POLL
 static inline void handle_poll_events(struct k_msgq *msgq, uint32_t state)

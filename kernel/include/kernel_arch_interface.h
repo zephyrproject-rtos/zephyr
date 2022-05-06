@@ -17,8 +17,8 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_ARCH_INTERFACE_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_ARCH_INTERFACE_H_
 
-#include <kernel.h>
-#include <sys/arch_interface.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/arch_interface.h>
 
 #ifndef _ASMLANGUAGE
 
