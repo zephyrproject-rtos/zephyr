@@ -5,10 +5,10 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/clock/kinetis_pcc.h>
-#include <dt-bindings/clock/kinetis_scg.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/kinetis_pcc.h>
+#include <zephyr/dt-bindings/clock/kinetis_scg.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	aliases {
