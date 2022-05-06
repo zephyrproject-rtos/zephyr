@@ -1,0 +1,34 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Fields for I3C Controllers
+
+include: base.yaml
+
+bus: [i3c, i2c]
+
+properties:
+    "#address-cells":
+      required: true
+      const: 3
+
+    "#size-cells":
+      required: true
+      const: 0
+
+    i3c-scl-hz:
+      type: int
+      required: false
+      description: |
+        Frequency of the SCL signal used for I3C transfers. When undefined,
+        use the controller default or as specified by the I3C specification.
+
+    i2c-scl-hz:
+      type: int
+      required: false
+      description: |
+        Frequency of the SCL signal used for I2C transfers. When undefined
+        and there are I2C devices attached to the bus, look at the Legacy
+        Virtual Register (LVR) of all connected I2C devices to determine
+        the maximum allowed frequency.
