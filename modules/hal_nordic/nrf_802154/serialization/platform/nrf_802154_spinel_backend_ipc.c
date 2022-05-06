@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <ipc/ipc_service.h>
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ipc/ipc_service.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 
 #include "nrf_802154_spinel_backend_callouts.h"
 #include "nrf_802154_serialization_error.h"
