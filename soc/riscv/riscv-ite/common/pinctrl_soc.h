@@ -9,7 +9,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
-#include <zephyr/zephyr/types.h>
+#include <zephyr/types.h>
 
 /**
  * @brief ITE IT8XXX2 pin type.
