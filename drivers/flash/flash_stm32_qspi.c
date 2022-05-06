@@ -60,7 +60,6 @@ uint32_t table_p_size[] = {
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
-
 struct stream {
 	DMA_TypeDef *reg;
 	const struct device *dev;
@@ -1107,8 +1106,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
-
-	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }
