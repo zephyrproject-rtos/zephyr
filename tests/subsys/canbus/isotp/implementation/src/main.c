@@ -244,9 +244,8 @@ static void test_send_receive_net_blocks(void)
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
-		send_test_data(can_dev, random_data, random_data_len);
-		receive_test_data_net(&recv_ctx, random_data,
-				      random_data_len, 0);
+		send_test_data(can_dev, random_data, sizeof(random_data));
+		receive_test_data_net(&recv_ctx, random_data, sizeof(random_data), 0);
 	}
 
 	isotp_unbind(&recv_ctx);
