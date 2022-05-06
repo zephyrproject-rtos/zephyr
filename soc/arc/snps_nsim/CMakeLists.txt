@@ -53,7 +53,4 @@ else()
   zephyr_ld_option_ifdef(CONFIG_SOC_NSIM_HS_MPUV6 -Hlib=hs38_full)
 endif()
 
-zephyr_sources(
-  soc.c
-  soc_config.c
-  )
+zephyr_sources(soc.c)
