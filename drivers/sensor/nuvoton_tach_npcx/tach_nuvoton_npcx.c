@@ -40,12 +40,12 @@
  */
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/clock_control.h>
-#include <drivers/sensor.h>
-#include <dt-bindings/sensor/npcx_tach.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/npcx_tach.h>
 #include <soc.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(tach_npcx, CONFIG_SENSOR_LOG_LEVEL);
 

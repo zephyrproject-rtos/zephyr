@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT nordic_nrf_ipc
 
 #include <string.h>
-#include <drivers/ipm.h>
+#include <zephyr/drivers/ipm.h>
 #include <nrfx_ipc.h>
 #include "ipm_nrfx_ipc.h"
 
 #define LOG_LEVEL CONFIG_IPM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ipm_nrfx_ipc);
 
 struct ipm_nrf_data {

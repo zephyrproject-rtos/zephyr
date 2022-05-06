@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT hynitron_cst816s
 
-#include <sys/byteorder.h>
-#include <drivers/kscan.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/kscan.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(cst816s, CONFIG_KSCAN_LOG_LEVEL);
 

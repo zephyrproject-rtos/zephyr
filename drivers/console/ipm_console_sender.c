@@ -8,10 +8,10 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <sys/printk.h>
-#include <drivers/ipm.h>
-#include <drivers/console/ipm_console.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/drivers/console/ipm_console.h>
 
 static const struct device *ipm_console_device;
 

@@ -6,18 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 
 #define DT_DRV_COMPAT st_stm32_flash_controller
 
 #include <string.h>
-#include <drivers/flash.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "flash_stm32.h"
 #include "stm32_hsem.h"

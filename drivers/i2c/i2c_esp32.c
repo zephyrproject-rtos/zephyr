@@ -17,15 +17,15 @@
 
 #include <soc.h>
 #include <errno.h>
-#include <drivers/gpio.h>
-#include <drivers/pinctrl.h>
-#include <drivers/i2c.h>
-#include <drivers/interrupt_controller/intc_esp32.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"

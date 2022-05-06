@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_SHT4X_SHT4X_H_
 #define ZEPHYR_DRIVERS_SENSOR_SHT4X_SHT4X_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #define SHT4X_CMD_READ_SERIAL	0x89
 #define SHT4X_CMD_RESET		0x94

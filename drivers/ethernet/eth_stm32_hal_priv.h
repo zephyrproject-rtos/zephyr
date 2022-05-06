@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 #define ST_OUI_B0 0x00

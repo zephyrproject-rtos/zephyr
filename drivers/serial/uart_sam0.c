@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT atmel_sam0_uart
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <init.h>
-#include <sys/__assert.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
 #include <soc.h>
-#include <drivers/uart.h>
-#include <drivers/dma.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <string.h>
 
 #ifndef SERCOM_USART_CTRLA_MODE_USART_INT_CLK

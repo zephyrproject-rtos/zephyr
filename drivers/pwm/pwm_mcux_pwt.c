@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_pwt
 
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <errno.h>
-#include <drivers/pwm.h>
+#include <zephyr/drivers/pwm.h>
 #include <soc.h>
 #include <fsl_pwt.h>
 #include <fsl_clock.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_mcux_pwt, CONFIG_PWM_LOG_LEVEL);
 
 /* Number of PWT input ports */

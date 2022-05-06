@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT swir_hl7800
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_hl7800, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -14,19 +14,19 @@ LOG_MODULE_REGISTER(modem_hl7800, CONFIG_MODEM_LOG_LEVEL);
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <drivers/gpio.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <pm/device.h>
-#include <drivers/uart.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/uart.h>
 
-#include <net/net_context.h>
-#include <net/net_if.h>
-#include <net/net_offload.h>
-#include <net/net_pkt.h>
-#include <net/dns_resolve.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_offload.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/dns_resolve.h>
 #if defined(CONFIG_NET_IPV6)
 #include "ipv6.h"
 #endif
@@ -38,11 +38,11 @@ LOG_MODULE_REGISTER(modem_hl7800, CONFIG_MODEM_LOG_LEVEL);
 #endif
 
 #ifdef CONFIG_MODEM_HL7800_FW_UPDATE
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #endif
 
 #include "modem_receiver.h"
-#include <drivers/modem/hl7800.h>
+#include <zephyr/drivers/modem/hl7800.h>
 
 #define PREFIXED_SWITCH_CASE_RETURN_STRING(prefix, val)                        \
 	case prefix##_##val: {                                                 \

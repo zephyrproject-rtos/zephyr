@@ -11,10 +11,10 @@
 #ifndef ZEPHYR_DRIVERS_GPIO_GPIO_MCP23S17_H_
 #define ZEPHYR_DRIVERS_GPIO_GPIO_MCP23S17_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
 #ifdef __cplusplus
 extern "C" {

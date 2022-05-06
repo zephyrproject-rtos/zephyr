@@ -5,14 +5,14 @@
  */
 
 
-#include <drivers/i2c.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <pm/device.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <nrfx_twi.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_TRANSFER_TIMEOUT_MSEC		K_MSEC(500)

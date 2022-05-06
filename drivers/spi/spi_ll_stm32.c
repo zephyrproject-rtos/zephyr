@@ -7,23 +7,23 @@
 #define DT_DRV_COMPAT st_stm32_spi
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_ll_stm32);
 
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <stm32_ll_spi.h>
 #include <errno.h>
-#include <drivers/spi.h>
-#include <drivers/pinctrl.h>
-#include <toolchain.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/toolchain.h>
 #ifdef CONFIG_SPI_STM32_DMA
-#include <drivers/dma/dma_stm32.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/dma.h>
 #endif
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "spi_ll_stm32.h"
 

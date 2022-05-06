@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <nrfx_pwm.h>
-#include <drivers/pwm.h>
-#include <pm/device.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <hal/nrf_gpio.h>
 #include <stdbool.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_nrfx);
 
 #define PWM_NRFX_CH_POLARITY_MASK          BIT(15)

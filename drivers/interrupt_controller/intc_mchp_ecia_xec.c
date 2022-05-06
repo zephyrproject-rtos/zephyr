@@ -12,14 +12,14 @@
 
 #define DT_DRV_COMPAT microchip_xec_ecia
 
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <device.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <sys/__assert.h>
-#include <drivers/clock_control/mchp_xec_clock_control.h>
-#include <drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#include <dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 
 /* defined at the SoC layer */
 #define MCHP_FIRST_GIRQ			MCHP_FIRST_GIRQ_NOS

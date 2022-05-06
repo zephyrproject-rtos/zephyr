@@ -9,10 +9,10 @@
 
 #include <soc.h>
 #include <string.h>
-#include <drivers/usb/usb_dc.h>
-#include <usb/usb_device.h>
+#include <zephyr/drivers/usb/usb_dc.h>
+#include <zephyr/usb/usb_device.h>
 #include <soc.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include "usb_dc_mcux.h"
 #ifdef CONFIG_USB_DC_NXP_EHCI
 #include "usb_device_ehci.h"
@@ -25,7 +25,7 @@
 #endif
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_mcux);
 
 static void usb_isr_handler(void);

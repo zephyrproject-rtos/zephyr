@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT litex_dna0
 
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <soc.h>
 #include <string.h>
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {

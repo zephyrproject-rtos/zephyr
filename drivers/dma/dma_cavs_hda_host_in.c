@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT intel_cavs_hda_host_in
 
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #include "dma_cavs_hda.h"
 
 static const struct dma_driver_api cavs_hda_dma_host_in_api = {

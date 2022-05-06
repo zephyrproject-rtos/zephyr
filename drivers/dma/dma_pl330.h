@@ -7,7 +7,7 @@
 #ifndef DMA_PL330_H
 #define DMA_PL330_H
 
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 
 #define DT_DRV_COMPAT arm_dma_pl330
 /*

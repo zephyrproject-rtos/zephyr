@@ -13,16 +13,16 @@
 #include <hal/wdt_hal.h>
 
 #include <string.h>
-#include <drivers/watchdog.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/drivers/clock_control.h>
 #ifndef CONFIG_SOC_ESP32C3
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
-#include <drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #endif
-#include <device.h>
+#include <zephyr/device.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_esp32, CONFIG_WDT_LOG_LEVEL);
 
 #ifdef CONFIG_SOC_ESP32C3

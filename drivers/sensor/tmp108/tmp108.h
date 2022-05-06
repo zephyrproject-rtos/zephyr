@@ -9,9 +9,9 @@
 
 #include <stdint.h>
 
-#include <drivers/sensor.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor/tmp108.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor/tmp108.h>
 
 #define TI_TMP108_REG_TEMP		0x00   /** Temperature register */
 #define TI_TMP108_REG_CONF		0x01   /** Configuration register */

@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_DHT_DHT_H_
 #define ZEPHYR_DRIVERS_SENSOR_DHT_DHT_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #define DHT_START_SIGNAL_DURATION		18000
 #define DHT_SIGNAL_MAX_WAIT_DURATION		100

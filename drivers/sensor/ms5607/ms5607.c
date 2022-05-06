@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT meas_ms5607
 
-#include <init.h>
-#include <kernel.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
 
 #include "ms5607.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ms5607);
 
 static void ms5607_compensate(struct ms5607_data *data,

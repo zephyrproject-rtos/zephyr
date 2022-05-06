@@ -13,10 +13,10 @@
  * channel is represented as an independent counter device.
  */
 
-#include <drivers/counter.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_qtmr.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mcux_qtmr, CONFIG_COUNTER_LOG_LEVEL);
 

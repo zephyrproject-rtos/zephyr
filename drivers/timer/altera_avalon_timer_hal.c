@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <device.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <altera_common.h>
 
 #include "altera_avalon_timer_regs.h"

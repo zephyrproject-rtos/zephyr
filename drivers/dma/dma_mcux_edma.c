@@ -11,16 +11,16 @@
 
 #include <errno.h>
 #include <soc.h>
-#include <init.h>
-#include <kernel.h>
-#include <devicetree.h>
-#include <sys/atomic.h>
-#include <drivers/dma.h>
-#include <drivers/clock_control.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "dma_mcux_edma.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #define DT_DRV_COMPAT nxp_mcux_edma
 

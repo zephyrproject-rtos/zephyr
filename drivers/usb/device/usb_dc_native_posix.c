@@ -11,15 +11,15 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <sys/byteorder.h>
-#include <drivers/usb/usb_dc.h>
-#include <usb/usb_device.h>
-#include <net/net_ip.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/usb/usb_dc.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/net/net_ip.h>
 
 #include "usb_dc_native_posix_adapt.h"
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(native_posix);
 
 #define USBIP_IN_EP_NUM		8

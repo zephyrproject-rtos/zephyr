@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
-#include <kernel.h>
-#include <drivers/can.h>
-#include <drivers/can/transceiver.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/transceiver.h>
+#include <zephyr/logging/log.h>
 
 #include "can_mcan.h"
 #include "can_mcan_priv.h"
@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 #endif
 
 #if CONFIG_HAS_CMSIS_CORE_M
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #if __DCACHE_PRESENT == 1
 #define CACHE_INVALIDATE(addr, size) SCB_InvalidateDCache_by_Addr((addr), (size))

@@ -11,16 +11,16 @@
  */
 
 #include <errno.h>
-#include <sys/__assert.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <soc.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 #include "dma_sam_xdmac.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_sam_xdmac);
 
 #define XDMAC_INT_ERR (XDMAC_CIE_RBIE | XDMAC_CIE_WBIE | XDMAC_CIE_ROIE)

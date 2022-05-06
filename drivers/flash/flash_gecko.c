@@ -10,14 +10,14 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <em_msc.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_gecko);
 
 struct flash_gecko_data {

@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT atmel_sam0_adc
 
 #include <soc.h>
-#include <drivers/adc.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER

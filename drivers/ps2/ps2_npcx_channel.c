@@ -16,11 +16,11 @@
  *
  */
 
-#include <drivers/clock_control.h>
-#include <drivers/ps2.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/ps2.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ps2_npcx_channel, CONFIG_PS2_LOG_LEVEL);
 
 #include "ps2_npcx_controller.h"

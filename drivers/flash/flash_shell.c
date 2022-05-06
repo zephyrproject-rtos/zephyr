@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <devicetree.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/devicetree.h>
 
-#include <shell/shell.h>
-#include <sys/util.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/util.h>
 
 #include <stdlib.h>
 #include <string.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <soc.h>
 
 /* Buffer is only needed for bytes that follow command and offset */

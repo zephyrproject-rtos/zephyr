@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT st_lis3mdl_magn
 
-#include <drivers/i2c.h>
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "lis3mdl.h"
 

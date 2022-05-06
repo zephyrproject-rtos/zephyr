@@ -10,10 +10,10 @@
 
 #define DT_DRV_COMPAT sifive_uart0
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <drivers/uart.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 #define RXDATA_EMPTY   (1 << 31)   /* Receive FIFO Empty */

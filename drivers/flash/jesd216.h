@@ -8,8 +8,8 @@
 #define ZEPHYR_DRIVERS_FLASH_JESD216_H_
 
 #include <errno.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 /* Following are structures and constants supporting the JEDEC Serial

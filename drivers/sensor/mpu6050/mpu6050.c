@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT invensense_mpu6050
 
-#include <drivers/i2c.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "mpu6050.h"
 

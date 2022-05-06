@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <device.h>
-#include <drivers/timer/arm_arch_timer.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
-#include <arch/cpu.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/arm_arch_timer.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/arch/cpu.h>
 
 #define CYC_PER_TICK	((uint64_t)sys_clock_hw_cycles_per_sec() \
 			/ (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)

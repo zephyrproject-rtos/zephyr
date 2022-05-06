@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT microchip_mcp2515
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/can/transceiver.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/can/transceiver.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(can_mcp2515, CONFIG_CAN_LOG_LEVEL);
 

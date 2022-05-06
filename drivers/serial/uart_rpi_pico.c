@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/uart.h>
-#include <drivers/reset.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/reset.h>
+#include <zephyr/drivers/pinctrl.h>
 
 /* pico-sdk includes */
 #include <hardware/uart.h>

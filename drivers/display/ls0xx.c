@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT   sharp_ls0xx
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ls0xx, CONFIG_DISPLAY_LOG_LEVEL);
 
 #include <string.h>
-#include <device.h>
-#include <drivers/display.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <sys/byteorder.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/byteorder.h>
 
 /* Supports LS012B7DD01, LS012B7DD06, LS013B7DH03, LS013B7DH05
  * LS013B7DH06, LS027B7DH01A, LS032B7DD02, LS044Q7DH01

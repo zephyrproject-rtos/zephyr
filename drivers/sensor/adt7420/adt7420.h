@@ -8,8 +8,8 @@
 #define ZEPHYR_DRIVERS_SENSOR_ADT7420_ADT7420_H_
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 
 /* ADT7420 registers */
 #define ADT7420_REG_TEMP_MSB		0x00 /* Temperature value MSB */

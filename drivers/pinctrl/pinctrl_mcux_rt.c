@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_mcux_rt_pinctrl
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <fsl_iomuxc.h>
 #include <fsl_gpio.h>

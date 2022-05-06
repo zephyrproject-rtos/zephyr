@@ -9,9 +9,9 @@
 #ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 #define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/util.h>
 
 /* Commands/registers. */
 #define ILI9XXX_SWRESET 0x01

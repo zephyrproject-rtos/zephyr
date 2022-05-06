@@ -8,11 +8,11 @@
 #ifndef ZEPHYR_DRIVERS_CAN_MCAN_H_
 #define ZEPHYR_DRIVERS_CAN_MCAN_H_
 
-#include <kernel.h>
-#include <devicetree.h>
-#include <drivers/can.h>
+#include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/can.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <stdint.h>
 
 #ifdef CONFIG_CAN_MCUX_MCAN

@@ -8,8 +8,8 @@
 
 #include "pwm.h"
 #include "clock.h"
-#include <drivers/pwm.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/pinctrl.h>
 
 
 #define PWM_PCLK_SPEED      DT_INST_PROP(0, clock_frequency)

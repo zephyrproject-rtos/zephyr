@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 /* pico-sdk includes */
 #include <hardware/gpio.h>

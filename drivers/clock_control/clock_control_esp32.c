@@ -13,16 +13,16 @@
 #define DT_CPU_COMPAT cdns_tensilica_xtensa_lx6
 #undef CPU_RESET_REASON
 #define CPU_RESET_REASON SW_CPU_RESET
-#include <dt-bindings/clock/esp32_clock.h>
+#include <zephyr/dt-bindings/clock/esp32_clock.h>
 #include "esp32/rom/rtc.h"
 #include "soc/dport_reg.h"
 #elif defined(CONFIG_SOC_ESP32S2)
 #define DT_CPU_COMPAT cdns_tensilica_xtensa_lx7
-#include <dt-bindings/clock/esp32s2_clock.h>
+#include <zephyr/dt-bindings/clock/esp32s2_clock.h>
 #include "esp32s2/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define DT_CPU_COMPAT espressif_riscv
-#include <dt-bindings/clock/esp32c3_clock.h>
+#include <zephyr/dt-bindings/clock/esp32c3_clock.h>
 #include "esp32c3/rom/rtc.h"
 #include <soc/soc_caps.h>
 #include <soc/soc.h>
@@ -34,7 +34,7 @@
 #include <soc/timer_group_reg.h>
 #include <hal/clk_gate_ll.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <driver/periph_ctrl.h>
 #include <hal/cpu_hal.h>
 

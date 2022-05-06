@@ -7,13 +7,13 @@
 #define DT_DRV_COMPAT nuvoton_npcx_pwm
 
 #include <assert.h>
-#include <drivers/pwm.h>
-#include <dt-bindings/clock/npcx_clock.h>
-#include <drivers/clock_control.h>
-#include <kernel.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/dt-bindings/clock/npcx_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_npcx, LOG_LEVEL_ERR);
 
 /* 16-bit period cycles/prescaler in NPCX PWM modules */

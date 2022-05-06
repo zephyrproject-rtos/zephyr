@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max17262, CONFIG_SENSOR_LOG_LEVEL);
 
 #include "max17262.h"

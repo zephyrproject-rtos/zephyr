@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_acmp
 
-#include <device.h>
-#include <drivers/sensor.h>
-#include <drivers/sensor/mcux_acmp.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/mcux_acmp.h>
+#include <zephyr/logging/log.h>
 #include <fsl_acmp.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 LOG_MODULE_REGISTER(mcux_acmp, CONFIG_SENSOR_LOG_LEVEL);
 

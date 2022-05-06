@@ -13,8 +13,8 @@
 
 #define DT_DRV_COMPAT motorola_mc146818
 
-#include <drivers/counter.h>
-#include <device.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 /* The "CMOS" device is accessed via an address latch and data port. */

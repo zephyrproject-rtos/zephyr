@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT st_mpxxdtyy
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #include "mpxxdtyy.h"
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpxxdtyy);
 
 #define CHANNEL_MASK	0x55

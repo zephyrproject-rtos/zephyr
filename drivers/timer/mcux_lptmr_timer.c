@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_lptmr
 
-#include <device.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <fsl_lptmr.h>
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,

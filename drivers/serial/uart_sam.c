@@ -15,12 +15,12 @@
  */
 
 #include <errno.h>
-#include <sys/__assert.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/uart.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/pinctrl.h>
 
 /* Device constant configuration parameters */
 struct uart_sam_dev_cfg {

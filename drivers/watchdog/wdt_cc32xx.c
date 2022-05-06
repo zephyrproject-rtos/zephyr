@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT ti_cc32xx_watchdog
 
-#include <drivers/watchdog.h>
+#include <zephyr/drivers/watchdog.h>
 #include <soc.h>
 #include <errno.h>
 
@@ -22,8 +22,8 @@
 #define MAX_RELOAD_VALUE        0xFFFFFFFF
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 LOG_MODULE_REGISTER(wdt_cc32xx);
 
 struct wdt_cc32xx_data {

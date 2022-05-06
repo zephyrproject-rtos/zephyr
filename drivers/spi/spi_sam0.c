@@ -6,15 +6,15 @@
 #define DT_DRV_COMPAT atmel_sam0_spi
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_sam0);
 
 #include "spi_context.h"
 #include <errno.h>
-#include <device.h>
-#include <drivers/spi.h>
-#include <drivers/dma.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 #ifndef SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val

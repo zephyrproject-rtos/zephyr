@@ -13,12 +13,12 @@
  *
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/__assert.h>
 #include <soc.h>
-#include <init.h>
-#include <drivers/uart.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/uart.h>
 #include <uart_imx.h>
 
 #define UART_STRUCT(dev) \

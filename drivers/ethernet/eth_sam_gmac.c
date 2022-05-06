@@ -27,22 +27,22 @@
 #define LOG_MODULE_NAME eth_sam
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <kernel.h>
-#include <device.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <net/phy.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/net/phy.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
-#include <drivers/i2c.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include "eth_sam_gmac_priv.h"
 
@@ -52,8 +52,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "eth_sam0_gmac.h"
 #endif
 
-#include <drivers/ptp_clock.h>
-#include <net/gptp.h>
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/gptp.h>
 
 #ifdef __DCACHE_PRESENT
 static bool dcache_enabled;

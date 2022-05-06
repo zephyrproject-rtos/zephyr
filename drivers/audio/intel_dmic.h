@@ -13,7 +13,7 @@
 #ifndef __INTEL_DMIC_H__
 #define __INTEL_DMIC_H__
 
-#include <device.h>
+#include <zephyr/device.h>
 
 #define DMIC_HW_IOCLK		38400000
 

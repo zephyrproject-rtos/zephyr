@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT seeed_grove_light
 
-#include <drivers/adc.h>
-#include <device.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/device.h>
 #include <math.h>
-#include <drivers/sensor.h>
-#include <zephyr.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(grove_light, CONFIG_SENSOR_LOG_LEVEL);
 

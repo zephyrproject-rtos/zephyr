@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT litex_spi
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_litespi);
 #include "spi_litespi.h"
 #include <stdbool.h>

@@ -9,15 +9,15 @@
 #define DT_DRV_COMPAT openisa_rv32m1_lpspi
 
 #include <errno.h>
-#include <drivers/spi.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_lpspi.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_rv32m1_lpspi);
 
 #include "spi_context.h"

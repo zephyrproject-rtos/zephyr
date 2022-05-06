@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
 
 int adc_gain_invert(enum adc_gain gain,
 		    int32_t *value)

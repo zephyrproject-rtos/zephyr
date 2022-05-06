@@ -8,14 +8,14 @@
 
 #define DT_DRV_COMPAT infineon_dps310
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <drivers/i2c.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(DPS310, CONFIG_SENSOR_LOG_LEVEL);
 

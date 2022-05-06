@@ -13,14 +13,14 @@
 
 #include "display_st7735r.h"
 
-#include <device.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <pm/device.h>
-#include <sys/byteorder.h>
-#include <drivers/display.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/display.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_st7735r, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define ST7735R_RESET_TIME              K_MSEC(1)

@@ -8,11 +8,11 @@
 
 #include "display_ili9xxx.h"
 
-#include <dt-bindings/display/ili9xxx.h>
-#include <drivers/display.h>
-#include <sys/byteorder.h>
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_ili9xxx, CONFIG_DISPLAY_LOG_LEVEL);
 
 struct ili9xxx_data {

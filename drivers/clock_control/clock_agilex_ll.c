@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/cpu.h>
-#include <arch/common/sys_bitops.h>
-#include <drivers/clock_control/clock_agilex_ll.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/common/sys_bitops.h>
+#include <zephyr/drivers/clock_control/clock_agilex_ll.h>
 #include <socfpga_system_manager.h>
 
 /*

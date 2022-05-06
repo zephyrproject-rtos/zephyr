@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT litex_i2c
 
-#include <device.h>
-#include <drivers/i2c.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
 #include "i2c_bitbang.h"
 
 #define SCL_BIT_POS                0

@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_CAN_STM32_CAN_H_
 #define ZEPHYR_DRIVERS_CAN_STM32_CAN_H_
 
-#include <drivers/can.h>
+#include <zephyr/drivers/can.h>
 
 #define BIT_SEG_LENGTH(cfg) ((cfg)->prop_ts1 + (cfg)->ts2 + 1)
 

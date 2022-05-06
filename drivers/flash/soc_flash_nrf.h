@@ -7,7 +7,7 @@
 #ifndef __SOC_FLASH_NRF_H__
 #define __SOC_FLASH_NRF_H__
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
 #define FLASH_OP_DONE    (0) /* 0 for compliance with the driver API. */

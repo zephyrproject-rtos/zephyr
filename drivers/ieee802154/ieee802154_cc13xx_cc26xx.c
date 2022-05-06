@@ -6,18 +6,18 @@
  */
 
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <sys/byteorder.h>
-#include <net/ieee802154_radio.h>
-#include <net/ieee802154.h>
-#include <net/net_pkt.h>
-#include <random/rand32.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/random/rand32.h>
 #include <string.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <driverlib/rf_ieee_mailbox.h>
 #include <driverlib/rfc.h>

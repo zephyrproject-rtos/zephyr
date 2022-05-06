@@ -11,16 +11,16 @@
 
 
 #include <zephyr/types.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include <stdint.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/gpio.h>
 
 #define BMM150_REG_CHIP_ID         0x40
 #define BMM150_CHIP_ID_VAL         0x32

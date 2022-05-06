@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/i2c.h>
-#include <shell/shell.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define I2C_DEVICE_PREFIX "I2C_"

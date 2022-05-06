@@ -5,17 +5,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <drivers/lora.h>
-#include <drivers/spi.h>
-#include <zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/lora.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/zephyr.h>
 
 #include <sx126x/sx126x.h>
 
 #include "sx12xx_common.h"
 #include "sx126x_common.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/spi.h>
-#include <syscall_handler.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/syscall_handler.h>
 #include <string.h>
 
 /* This assumes that bufs and buf_copy are copies from the values passed

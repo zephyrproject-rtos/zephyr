@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_BMA280_BMA280_H_
 #define ZEPHYR_DRIVERS_SENSOR_BMA280_BMA280_H_
 
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #define BMA280_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 

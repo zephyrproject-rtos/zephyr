@@ -5,14 +5,14 @@
  */
 
 #define DT_DRV_COMPAT intel_hpet
-#include <device.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
-#include <irq.h>
-#include <linker/sections.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/irq.h>
+#include <zephyr/linker/sections.h>
 
-#include <dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
 
 #include <soc.h>
 

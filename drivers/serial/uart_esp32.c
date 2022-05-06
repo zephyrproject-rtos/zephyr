@@ -26,21 +26,21 @@
 #include <hal/uart_hal.h>
 #include <hal/uart_types.h>
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <soc/uart_reg.h>
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 
 #ifndef CONFIG_SOC_ESP32C3
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
-#include <drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #endif
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <esp_attr.h>
 
 #ifdef CONFIG_SOC_ESP32C3

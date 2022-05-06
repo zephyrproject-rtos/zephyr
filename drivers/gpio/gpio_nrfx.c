@@ -7,8 +7,8 @@
 
 #include <nrfx_gpiote.h>
 #include <string.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/gpio/nordic-nrf-gpio.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
 #include "gpio_utils.h"
 
 struct gpio_nrfx_data {

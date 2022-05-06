@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_HP206C_HP206C_H_
 #define ZEPHYR_DRIVERS_SENSOR_HP206C_HP206C_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define HP206C_I2C_ADDRESS				0x76
 
