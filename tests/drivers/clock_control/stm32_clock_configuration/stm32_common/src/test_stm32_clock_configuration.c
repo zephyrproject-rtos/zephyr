@@ -6,10 +6,10 @@
 
 #include <ztest.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <stm32_ll_rcc.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || \

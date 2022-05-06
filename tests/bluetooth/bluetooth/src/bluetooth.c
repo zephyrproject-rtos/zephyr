@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include <errno.h>
 #include <tc_util.h>
 #include <ztest.h>
 
-#include <bluetooth/bluetooth.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define EXPECTED_ERROR -ENOSYS
 

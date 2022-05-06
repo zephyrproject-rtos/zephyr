@@ -6,11 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stddef.h>
 #include <ztest.h>
 
-#include <bluetooth/uuid.h>
+#include <zephyr/bluetooth/uuid.h>
 
 static struct bt_uuid_16 uuid_16 = BT_UUID_INIT_16(0xffff);
 

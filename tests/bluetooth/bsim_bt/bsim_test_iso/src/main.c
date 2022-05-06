@@ -8,13 +8,13 @@
 
 #include <stddef.h>
 
-#include <sys/byteorder.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/iso.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/iso.h>
 
 #include "subsys/bluetooth/host/hci_core.h"
 #include "subsys/bluetooth/controller/include/ll.h"

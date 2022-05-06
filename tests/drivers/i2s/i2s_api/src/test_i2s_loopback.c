@@ -5,9 +5,9 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <drivers/i2s.h>
+#include <zephyr/drivers/i2s.h>
 #include "i2s_api_test.h"
 
 static ZTEST_DMEM const struct device *dev_i2s_rx;

@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 #define FATFS_MNTP	"/NAND:"
 #if IS_ENABLED(CONFIG_FS_FATFS_LFN)

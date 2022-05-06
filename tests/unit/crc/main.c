@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <sys/crc.h>
+#include <zephyr/sys/crc.h>
 #include "../../../lib/os/crc8_sw.c"
 #include "../../../lib/os/crc16_sw.c"
 #include "../../../lib/os/crc32_sw.c"

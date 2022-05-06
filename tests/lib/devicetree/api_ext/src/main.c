@@ -6,11 +6,11 @@
  */
 
 #include <ztest.h>
-#include <devicetree.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <linker/devicetree_regions.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #define TEST_SRAM1      DT_NODELABEL(test_sram1)
 #define TEST_SRAM2      DT_NODELABEL(test_sram2)

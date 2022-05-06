@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_TESTS_KERNEL_THREADS_THREAD_APIS_SRC_TEST_THREAD_APIS_H_
 #define ZEPHYR_TESTS_KERNEL_THREADS_THREAD_APIS_SRC_TEST_THREAD_APIS_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

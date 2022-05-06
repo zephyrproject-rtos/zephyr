@@ -16,8 +16,8 @@
  * forth by yielding the cpu. When counter reaches the maximal value, threads
  * stop and the average time of context switch is displayed.
  */
-#include <kernel.h>
-#include <timing/timing.h>
+#include <zephyr/kernel.h>
+#include <zephyr/timing/timing.h>
 #include "utils.h"
 
 /* number of context switches */

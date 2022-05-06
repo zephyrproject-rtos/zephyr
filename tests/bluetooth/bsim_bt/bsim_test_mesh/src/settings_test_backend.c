@@ -18,7 +18,7 @@
 #include "argparse.h"
 
 #define LOG_MODULE_NAME settings_test_backend
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define SETTINGS_FILE setting_file

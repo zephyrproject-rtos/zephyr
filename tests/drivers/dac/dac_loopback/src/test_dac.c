@@ -12,9 +12,9 @@
  * @}
  */
 
-#include <drivers/dac.h>
-#include <drivers/adc.h>
-#include <zephyr.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 /*

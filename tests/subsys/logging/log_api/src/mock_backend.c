@@ -6,7 +6,7 @@
 
 #include "mock_backend.h"
 #include <ztest.h>
-#include <logging/log_core.h>
+#include <zephyr/logging/log_core.h>
 
 void mock_log_backend_reset(const struct log_backend *backend)
 {

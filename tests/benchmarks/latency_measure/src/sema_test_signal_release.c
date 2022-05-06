@@ -12,8 +12,8 @@
  * mutex being tested.
  */
 
-#include <zephyr.h>
-#include <timing/timing.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/timing/timing.h>
 #include "utils.h"
 
 /* the number of semaphore give/take cycles */

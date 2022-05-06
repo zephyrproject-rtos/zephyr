@@ -7,13 +7,13 @@
 #include <stdio.h>
 #include <ztest.h>
 
-#include <zephyr.h>
-#include <sys/reboot.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/reboot.h>
 #include <string.h>
 
-#include <settings/settings.h>
-#include <storage/flash_map.h>
-#include <drivers/flash.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
 
 static uint32_t val32;
 

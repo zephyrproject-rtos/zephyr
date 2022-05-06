@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <drivers/flash.h>
-#include <devicetree.h>
-#include <storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/storage/flash_map.h>
 
 #if (CONFIG_NORDIC_QSPI_NOR - 0)
 #define NORDIC_QSPI_NOR_NODE DT_INST(0, nordic_qspi_nor)

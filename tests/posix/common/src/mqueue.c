@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 #include <fcntl.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <mqueue.h>
 #include <pthread.h>
 

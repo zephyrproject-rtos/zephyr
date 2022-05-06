@@ -9,10 +9,10 @@
  * this test with an disk that has useful data
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <storage/disk_access.h>
-#include <device.h>
+#include <zephyr/storage/disk_access.h>
+#include <zephyr/device.h>
 
 #if IS_ENABLED(CONFIG_DISK_DRIVER_SDMMC)
 #define DISK_NAME CONFIG_SDMMC_VOLUME_NAME

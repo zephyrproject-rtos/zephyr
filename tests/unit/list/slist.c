@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 static sys_slist_t test_list;
 static sys_slist_t append_list;

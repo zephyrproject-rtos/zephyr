@@ -5,13 +5,13 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <toolchain.h>
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
-#include <drivers/mm/system_mm.h>
+#include <zephyr/drivers/mm/system_mm.h>
 
 #include <soc.h>
 #include <cavs-mem.h>

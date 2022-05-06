@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 
 /* convenience macro - return either 64-bit or 32-bit value */
 #define ATOMIC_WORD(val_if_64, val_if_32)                                                          \

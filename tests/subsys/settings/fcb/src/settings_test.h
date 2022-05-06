@@ -13,7 +13,7 @@
 #include <ztest.h>
 
 #include "settings/settings.h"
-#include <storage/flash_map.h>
+#include <zephyr/storage/flash_map.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -9,16 +9,16 @@
 /* This test covers deprecated API.  Avoid inappropriate diagnostics
  * about the use of that API.
  */
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #undef __deprecated
 #define __deprecated
 #undef __DEPRECATED_MACRO
 #define __DEPRECATED_MACRO
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define NUM_TEST_ITEMS          6
 /* Each work item takes 100ms */

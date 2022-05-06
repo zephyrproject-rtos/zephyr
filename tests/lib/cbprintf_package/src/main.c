@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <sys/cbprintf.h>
-#include <linker/utils.h>
+#include <zephyr/sys/cbprintf.h>
+#include <zephyr/linker/utils.h>
 
 #define CBPRINTF_DEBUG 1
 

@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 
 #define LOOP 10
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)

@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
-#include <sys/fdtable.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/fdtable.h>
 #include <errno.h>
 
 /* The thread will test that the refcounting of fd object will

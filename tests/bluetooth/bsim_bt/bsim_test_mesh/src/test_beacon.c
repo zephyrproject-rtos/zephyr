@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
-#include <bluetooth/hci.h>
+#include <zephyr/kernel.h>
+#include <zephyr/bluetooth/hci.h>
 #include "mesh_test.h"
 #include "mesh/adv.h"
 #include "mesh/net.h"
@@ -15,7 +15,7 @@
 
 #define LOG_MODULE_NAME test_beacon
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 
 #define GROUP_ADDR 0xc000

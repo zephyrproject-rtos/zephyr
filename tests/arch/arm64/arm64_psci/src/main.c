@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <drivers/pm_cpu_ops/psci.h>
-#include <drivers/pm_cpu_ops.h>
+#include <zephyr/drivers/pm_cpu_ops/psci.h>
+#include <zephyr/drivers/pm_cpu_ops.h>
 
 void test_psci_func(void)
 {

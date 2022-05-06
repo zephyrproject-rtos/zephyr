@@ -6,17 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include <errno.h>
 #include <tc_util.h>
 #include <ztest.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <drivers/bluetooth/hci_driver.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/sys/byteorder.h>
 
 /* HCI Proprietary vendor event */
 const uint8_t hci_prop_evt_prefix[2] = { 0xAB, 0xBA };

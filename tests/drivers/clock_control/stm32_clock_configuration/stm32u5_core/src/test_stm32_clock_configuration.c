@@ -6,9 +6,9 @@
 
 #include <ztest.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
 static void test_hclk_freq(void)

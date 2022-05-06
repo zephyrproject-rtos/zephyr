@@ -3,7 +3,7 @@
  * Copyright (c) 2019 Intel Corp.
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include "info.h"
 
 __weak void multiboot(void)

@@ -21,10 +21,10 @@
  *   -# Data is transferred correctly from src to dest, for each loop
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <device.h>
-#include <drivers/dma.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/dma.h>
 #include <ztest.h>
 
 /* in millisecond */

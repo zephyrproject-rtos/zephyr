@@ -9,15 +9,15 @@
  * @brief Test log message
  */
 
-#include <logging/log_msg2.h>
-#include <logging/log_internal.h>
-#include <logging/log_ctrl.h>
+#include <zephyr/logging/log_msg2.h>
+#include <zephyr/logging/log_internal.h>
+#include <zephyr/logging/log_ctrl.h>
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 
 #if CONFIG_NO_OPTIMIZATIONS
 #define EXP_MODE(name) Z_LOG_MSG2_MODE_RUNTIME

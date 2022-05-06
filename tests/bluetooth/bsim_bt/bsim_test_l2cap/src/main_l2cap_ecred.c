@@ -9,7 +9,7 @@
 #include "common.h"
 
 #define LOG_MODULE_NAME main_l2cap_ecred
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
 
 extern enum bst_result_t bst_result;

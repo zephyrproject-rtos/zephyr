@@ -6,7 +6,7 @@
 
 #include <zephyr/types.h>
 
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "hal/cpu_vendor_hal.h"
 #include "hal/ccm.h"

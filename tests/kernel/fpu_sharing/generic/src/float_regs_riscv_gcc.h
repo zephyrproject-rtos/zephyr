@@ -16,7 +16,7 @@
 #error __FILE__ goes only with RISCV GCC
 #endif
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include "float_context.h"
 
 #ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION

@@ -7,9 +7,9 @@
  */
 
 
-#include <drivers/adc.h>
-#include <drivers/counter.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #if defined(CONFIG_BOARD_FRDM_K64F)

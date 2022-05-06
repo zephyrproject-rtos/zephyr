@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <ztest.h>
 #include <ksched.h>
-#include <kernel.h>
-#include <pm/pm.h>
+#include <zephyr/kernel.h>
+#include <zephyr/pm/pm.h>
 #include "dummy_driver.h"
 
 #define SLEEP_MSEC 100

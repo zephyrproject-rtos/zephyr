@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
-#include <debug/stack.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/debug/stack.h>
 
 #include "tests_thread_apis.h"
 

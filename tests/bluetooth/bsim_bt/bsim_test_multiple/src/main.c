@@ -8,10 +8,10 @@
 
 #include <stddef.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <sys/printk.h>
-#include <sys/util.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
