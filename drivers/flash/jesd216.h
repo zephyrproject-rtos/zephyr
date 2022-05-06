@@ -457,7 +457,7 @@ enum jesd216_dw15_qer_type {
 struct jesd216_bfp_dw15 {
 	/* If true clear NVECR bit 4 to disable HOLD/RESET */
 	bool hold_reset_disable: 1;
-	/* Encoded jesd216_qer_type */
+	/* Encoded jesd216_dw15_qer_type */
 	unsigned int qer: 3;
 	/* 0-4-4 mode entry method */
 	unsigned int entry_044: 4;
