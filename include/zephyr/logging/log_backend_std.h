@@ -6,9 +6,9 @@
 #ifndef ZEPHYR_LOG_BACKEND_STD_H_
 #define ZEPHYR_LOG_BACKEND_STD_H_
 
-#include <logging/log_msg.h>
-#include <logging/log_output.h>
-#include <kernel.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

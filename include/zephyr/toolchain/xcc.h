@@ -18,7 +18,7 @@
 #define __BYTE_ORDER__
 #endif
 
-#include <toolchain/gcc.h>
+#include <zephyr/toolchain/gcc.h>
 
 #ifndef __clang__
 #undef __BYTE_ORDER__

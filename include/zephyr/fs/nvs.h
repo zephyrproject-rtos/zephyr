@@ -8,9 +8,9 @@
 #define ZEPHYR_INCLUDE_FS_NVS_H_
 
 #include <sys/types.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {

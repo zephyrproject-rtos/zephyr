@@ -10,7 +10,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <zsr.h>
 
 #define RSR(sr) \

@@ -14,7 +14,7 @@
 #endif
 
 #ifdef CONFIG_POSIX_API
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 #endif
 
 #ifdef __cplusplus

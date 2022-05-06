@@ -15,8 +15,8 @@
 #ifndef ZEPHYR_INCLUDE_SYS_DEVICE_MMIO_H
 #define ZEPHYR_INCLUDE_SYS_DEVICE_MMIO_H
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
 /**
  * @defgroup device-mmio Device memory-mapped IO management
@@ -40,8 +40,8 @@
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <stddef.h>
-#include <sys/mem_manage.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/mem_manage.h>
+#include <zephyr/sys/sys_io.h>
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
 /* Store the physical address and size from DTS, we'll memory

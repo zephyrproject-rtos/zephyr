@@ -20,9 +20,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <devicetree/pinctrl.h>
+#include <zephyr/devicetree/pinctrl.h>
 #include <pinctrl_soc.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

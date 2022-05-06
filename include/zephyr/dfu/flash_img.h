@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 #define ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 
-#include <storage/stream_flash.h>
+#include <zephyr/storage/stream_flash.h>
 
 #ifdef __cplusplus
 extern "C" {

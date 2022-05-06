@@ -9,11 +9,11 @@
 #define ZEPHYR_INCLUDE_SYS_ATOMIC_H_
 
 #include <stdbool.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <stddef.h>
 
 #include <zephyr/types.h>
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,7 @@ typedef atomic_ptr_t atomic_ptr_val_t;
 
 #if defined(CONFIG_ATOMIC_OPERATIONS_C)
 /* Generic-but-slow implementation based on kernel locking and syscalls */
-#include <sys/atomic_c.h>
+#include <zephyr/sys/atomic_c.h>
 #elif defined(CONFIG_ATOMIC_OPERATIONS_ARCH)
 /* Some architectures need their own implementation */
 # ifdef CONFIG_XTENSA
@@ -40,7 +40,7 @@ typedef atomic_ptr_t atomic_ptr_val_t;
 # endif /* CONFIG_XTENSA */
 #else
 /* Default.  See this file for the Doxygen reference: */
-#include <sys/atomic_builtin.h>
+#include <zephyr/sys/atomic_builtin.h>
 #endif
 
 /* Portable higher-level utilities: */

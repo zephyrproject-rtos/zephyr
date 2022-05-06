@@ -16,13 +16,13 @@
 #ifndef ZEPHYR_INCLUDE_SYS_CLOCK_H_
 #define ZEPHYR_INCLUDE_SYS_CLOCK_H_
 
-#include <sys/util.h>
-#include <sys/dlist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/dlist.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include <sys/time_units.h>
+#include <zephyr/sys/time_units.h>
 
 #ifdef __cplusplus
 extern "C" {

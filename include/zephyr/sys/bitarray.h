@@ -14,7 +14,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 struct sys_bitarray {
 	/* Number of bits */

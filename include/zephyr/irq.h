@@ -12,10 +12,10 @@
 #define ZEPHYR_INCLUDE_IRQ_H_
 
 /* Pull in the arch-specific implementations */
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_CONSOLE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_CONSOLE_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {

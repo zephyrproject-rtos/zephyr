@@ -23,10 +23,10 @@
 #ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
 #define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
-#include <kernel.h>
-#include <sys/mutex.h>
-#include <net/coap.h>
-#include <net/lwm2m_path.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/mutex.h>
+#include <zephyr/net/coap.h>
+#include <zephyr/net/lwm2m_path.h>
 
 /**
  * @brief LwM2M Objects managed by OMA for LwM2M tech specification.  Objects

@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_USB_HID_CLASS_DEVICE_H_
 #define ZEPHYR_INCLUDE_USB_HID_CLASS_DEVICE_H_
 
-#include <usb/class/hid.h>
+#include <zephyr/usb/class/hid.h>
 
 #ifdef __cplusplus
 extern "C" {

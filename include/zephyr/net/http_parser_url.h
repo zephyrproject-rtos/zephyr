@@ -26,7 +26,7 @@
 #include <sys/types.h>
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <net/http_parser_state.h>
+#include <zephyr/net/http_parser_state.h>
 
 #ifdef __cplusplus
 extern "C" {

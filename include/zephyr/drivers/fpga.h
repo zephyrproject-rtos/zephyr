@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_FPGA_H_
 
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/device.h>
 
 #ifdef __cplusplus

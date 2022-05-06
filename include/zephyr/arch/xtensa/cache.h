@@ -6,9 +6,9 @@
 #define ZEPHYR_INCLUDE_ARCH_XTENSA_CACHE_H_
 
 #include <xtensa/config/core-isa.h>
-#include <toolchain.h>
-#include <sys/util.h>
-#include <debug/sparse.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/debug/sparse.h>
 
 #ifdef __cplusplus
 extern "C" {

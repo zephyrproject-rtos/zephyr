@@ -10,7 +10,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <string.h>
 
 #ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
@@ -31,7 +31,7 @@
 #endif
 
 /* Z_C_GENERIC is used there */
-#include <sys/cbprintf_internal.h>
+#include <zephyr/sys/cbprintf_internal.h>
 
 #ifdef __cplusplus
 extern "C" {

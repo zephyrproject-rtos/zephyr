@@ -15,7 +15,7 @@
  */
 
 #if defined(__GNUC__)
-#include <arch/arm/aarch32/asm_inline_gcc.h>
+#include <zephyr/arch/arm/aarch32/asm_inline_gcc.h>
 #else
 #include <arch/arm/asm_inline_other.h>
 #endif

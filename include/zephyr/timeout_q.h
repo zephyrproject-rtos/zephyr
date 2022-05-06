@@ -12,7 +12,7 @@
  * @brief timeout queue for threads on kernel objects
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include <stdbool.h>
 

@@ -20,8 +20,8 @@
  * @{
  */
 
-#include <net/net_core.h>
-#include <net/ptp_time.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/ptp_time.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

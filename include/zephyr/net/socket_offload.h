@@ -12,8 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_H_
 #define ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_H_
 
-#include <net/net_ip.h>
-#include <net/socket.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
 
 #ifdef __cplusplus
 extern "C" {

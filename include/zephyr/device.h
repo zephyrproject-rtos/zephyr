@@ -26,10 +26,10 @@
  * @{
  */
 
-#include <init.h>
-#include <linker/sections.h>
-#include <sys/device_mmio.h>
-#include <sys/util.h>
+#include <zephyr/init.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -24,9 +24,9 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include <net/net_ip.h>
+#include <zephyr/net/net_ip.h>
 
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -27,11 +27,11 @@
 #define ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_
 
 #ifndef _ASMLANGUAGE
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <stddef.h>
 #include <zephyr/types.h>
-#include <arch/cpu.h>
-#include <irq_offload.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/irq_offload.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1077,7 +1077,7 @@ size_t arch_icache_line_size_get(void);
 /** @} */
 
 #ifdef CONFIG_TIMING_FUNCTIONS
-#include <timing/types.h>
+#include <zephyr/timing/types.h>
 
 /**
  * @ingroup arch-timing
@@ -1219,7 +1219,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 }
 #endif /* __cplusplus */
 
-#include <arch/arch_inlines.h>
+#include <zephyr/arch/arch_inlines.h>
 
 #endif /* _ASMLANGUAGE */
 

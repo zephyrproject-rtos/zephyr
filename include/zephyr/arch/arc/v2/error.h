@@ -14,8 +14,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_ERROR_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_V2_ERROR_H_
 
-#include <arch/arc/syscall.h>
-#include <arch/arc/v2/exc.h>
+#include <zephyr/arch/arc/syscall.h>
+#include <zephyr/arch/arc/v2/exc.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

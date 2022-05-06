@@ -9,9 +9,9 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <toolchain.h>
-#include <sys/sys_io.h>
-#include <arch/arc/v2/aux_regs.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>

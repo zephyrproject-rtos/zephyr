@@ -12,10 +12,10 @@
 #ifndef ZEPHYR_INCLUDE_SPINLOCK_H_
 #define ZEPHYR_INCLUDE_SPINLOCK_H_
 
-#include <sys/atomic.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/__assert.h>
 #include <stdbool.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 #ifdef __cplusplus
 extern "C" {

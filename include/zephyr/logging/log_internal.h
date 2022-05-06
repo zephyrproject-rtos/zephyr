@@ -7,8 +7,8 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_INTERNAL_H_
 
 #include <zephyr/types.h>
-#include <sys/__assert.h>
-#include <logging/log_core.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log_core.h>
 
 #ifdef __cplusplus
 extern "C" {

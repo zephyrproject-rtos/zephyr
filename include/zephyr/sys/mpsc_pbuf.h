@@ -6,8 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_SYS_MPSC_PBUF_H_
 #define ZEPHYR_INCLUDE_SYS_MPSC_PBUF_H_
 
-#include <kernel.h>
-#include <sys/mpsc_packet.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/mpsc_packet.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>

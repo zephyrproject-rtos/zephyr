@@ -19,9 +19,9 @@
 
 #include <zephyr/device.h>
 #include <errno.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
-#include <crypto/hash.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/crypto/hash.h>
 #include "cipher.h"
 
 /**

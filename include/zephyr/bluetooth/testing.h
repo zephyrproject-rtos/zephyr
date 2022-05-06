@@ -12,7 +12,7 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_
 
 #if defined(CONFIG_BT_MESH)
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/mesh.h>
 #endif /* CONFIG_BT_MESH */
 
 /**

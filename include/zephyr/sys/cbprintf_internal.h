@@ -11,9 +11,9 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <toolchain.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
 
 /*
  * Special alignment cases
@@ -52,7 +52,7 @@ static inline void z_cbprintf_wcpy(int *dst, int *src, size_t len)
 	}
 }
 
-#include <sys/cbprintf_cxx.h>
+#include <zephyr/sys/cbprintf_cxx.h>
 
 #ifdef __cplusplus
 extern "C" {

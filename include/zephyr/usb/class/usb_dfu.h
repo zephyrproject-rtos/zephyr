@@ -44,7 +44,7 @@
 #ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_
 #define ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_
 
-#include <sys_clock.h>
+#include <zephyr/sys_clock.h>
 
 /** DFU Class Subclass */
 #define DFU_SUBCLASS			0x01

@@ -6,6 +6,6 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_NET_IF_H_
 #define ZEPHYR_INCLUDE_POSIX_NET_IF_H_
 
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
 #endif /* ZEPHYR_INCLUDE_POSIX_NET_IF_H_ */

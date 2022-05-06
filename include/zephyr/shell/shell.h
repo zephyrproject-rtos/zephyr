@@ -8,14 +8,14 @@
 #define SHELL_H__
 
 #include <zephyr/zephyr.h>
-#include <shell/shell_types.h>
-#include <shell/shell_history.h>
-#include <shell/shell_fprintf.h>
-#include <shell/shell_log_backend.h>
-#include <shell/shell_string_conv.h>
-#include <logging/log_instance.h>
-#include <logging/log.h>
-#include <sys/util.h>
+#include <zephyr/shell/shell_types.h>
+#include <zephyr/shell/shell_history.h>
+#include <zephyr/shell/shell_fprintf.h>
+#include <zephyr/shell/shell_log_backend.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/logging/log_instance.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #if defined CONFIG_SHELL_GETOPT
 #include <getopt.h>

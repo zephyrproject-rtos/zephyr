@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_HCI_VS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_HCI_VS_H_
 
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/hci.h>
 
 #ifdef __cplusplus
 extern "C" {

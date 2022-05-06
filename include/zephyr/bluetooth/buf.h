@@ -19,9 +19,9 @@
  */
 
 #include <zephyr/types.h>
-#include <net/buf.h>
-#include <bluetooth/hci.h>
-#include <sys/util.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -15,7 +15,7 @@
 #ifndef ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_GCC_H_
 #define ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_GCC_H_
 
-#include <sys/mem_manage.h>
+#include <zephyr/sys/mem_manage.h>
 
 #if defined(CONFIG_ARM)
 	#if defined(CONFIG_BIG_ENDIAN)

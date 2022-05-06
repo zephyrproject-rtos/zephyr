@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 enum sensor_channel_fdc2x1x {
 	/** CH0 Capacitance, in Picofarad **/

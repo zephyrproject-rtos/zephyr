@@ -21,7 +21,7 @@
  */
 
 #include <stdbool.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 
 #ifdef __cplusplus
 extern "C" {

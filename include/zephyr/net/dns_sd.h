@@ -12,7 +12,7 @@
 #define ZEPHYR_INCLUDE_NET_DNS_SD_H_
 
 #include <stdint.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,7 +127,7 @@ extern "C" {
  *
  * Example (with TXT):
  * @code{c}
- * #include <net/dns_sd.h>
+ * #include <zephyr/net/dns_sd.h>
  * static const bar_txt[] = {
  *   "\x06" "path=/"
  *   "\x0f" "this=is the way"
@@ -173,8 +173,8 @@ extern "C" {
  *
  * Example (no TXT):
  * @code{c}
- * #include <net/dns_sd.h>
- * #include <sys/byteorder.h>
+ * #include <zephyr/net/dns_sd.h>
+ * #include <zephyr/sys/byteorder.h>
  * static const foo_port = sys_cpu_to_be16(4242);
  * DNS_SD_REGISTER_UDP_SERVICE(foo, CONFIG_NET_HOSTNAME,
  *   "_foo", DNS_SD_EMPTY_TXT, &foo_port);
