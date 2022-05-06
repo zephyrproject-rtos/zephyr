@@ -113,6 +113,14 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 #endif
 
+#if (defined(FSL_FEATURE_SOC_SDIF_COUNT) && \
+	(FSL_FEATURE_SOC_SDIF_COUNT)) && \
+	CONFIG_MCUX_SDIF
+	case MCUX_SDIF_CLK:
+		*rate = CLOCK_GetSdioClkFreq();
+		break;
+#endif
+
 #if defined(CONFIG_CAN_MCUX_MCAN)
 	case MCUX_MCAN_CLK:
 		*rate = CLOCK_GetMCanClkFreq();
