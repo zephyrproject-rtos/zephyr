@@ -24,5 +24,6 @@ supported:
   - i2c
   - i2s
   - spi
+  - sdhc
   - usb_device
   - watchdog
