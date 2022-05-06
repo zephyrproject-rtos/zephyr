@@ -4,20 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/device_mmio.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/device_mmio.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
 #ifdef CONFIG_ACPI
-#include <arch/x86/acpi.h>
+#include <zephyr/arch/x86/acpi.h>
 #endif
 
 #ifdef CONFIG_PCIE_MSI
 #include <kernel_arch_func.h>
-#include <device.h>
-#include <drivers/pcie/msi.h>
-#include <drivers/interrupt_controller/sysapic.h>
-#include <arch/x86/cpuid.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pcie/msi.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
+#include <zephyr/arch/x86/cpuid.h>
 #endif
 
 /* PCI Express Extended Configuration Mechanism (MMIO) */
@@ -161,8 +161,8 @@ void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 
 #ifdef CONFIG_INTEL_VTD_ICTL
 
-#include <drivers/interrupt_controller/intel_vtd.h>
-#include <arch/x86/acpi.h>
+#include <zephyr/drivers/interrupt_controller/intel_vtd.h>
+#include <zephyr/arch/x86/acpi.h>
 
 static const struct device *vtd = DEVICE_DT_GET_ONE(intel_vt_d);
 

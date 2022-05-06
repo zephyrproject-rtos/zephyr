@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <kernel_structs.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
-#include <arch/x86/msr.h>
-#include <arch/x86/cpuid.h>
-#include <kernel.h>
+#include <zephyr/arch/x86/msr.h>
+#include <zephyr/arch/x86/cpuid.h>
+#include <zephyr/kernel.h>
 
 /*
  * See:

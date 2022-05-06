@@ -9,7 +9,7 @@
 #include "efi.h"
 #include "printf.h"
 #include <zefi-segments.h>
-#include <arch/x86/efi.h>
+#include <zephyr/arch/x86/efi.h>
 
 #define PUTCHAR_BUFSZ 128
 

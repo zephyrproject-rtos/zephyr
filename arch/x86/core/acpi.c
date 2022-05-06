@@ -2,9 +2,9 @@
  * Copyright (c) 2020 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
-#include <arch/x86/acpi.h>
-#include <arch/x86/efi.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/x86/acpi.h>
+#include <zephyr/arch/x86/efi.h>
 
 static struct acpi_rsdp *rsdp;
 static bool is_rsdp_searched;

@@ -13,7 +13,7 @@
 #ifndef _ASMLANGUAGE
 #include <kernel_internal.h>
 #include <string.h>
-#include <arch/xtensa/cache.h>
+#include <zephyr/arch/xtensa/cache.h>
 #include <zsr.h>
 
 #ifdef __cplusplus

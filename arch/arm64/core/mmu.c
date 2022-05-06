@@ -7,20 +7,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <cache.h>
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_func.h>
 #include <kernel_arch_interface.h>
 #include <kernel_internal.h>
-#include <logging/log.h>
-#include <arch/arm64/cpu.h>
-#include <arch/arm64/lib_helpers.h>
-#include <arch/arm64/mm.h>
-#include <linker/linker-defs.h>
-#include <spinlock.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/arch/arm64/cpu.h>
+#include <zephyr/arch/arm64/lib_helpers.h>
+#include <zephyr/arch/arm64/mm.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/util.h>
 
 #include "mmu.h"
 

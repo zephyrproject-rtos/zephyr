@@ -11,15 +11,15 @@
  * Common fault handler for ARCv2 processors.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <inttypes.h>
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <kernel_structs.h>
-#include <exc_handle.h>
-#include <logging/log.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/exc_handle.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_USERSPACE
