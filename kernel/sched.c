@@ -3,21 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <spinlock.h>
-#include <kernel/sched_priq.h>
-#include <wait_q.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/kernel/sched_priq.h>
+#include <zephyr/wait_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>
-#include <syscall_handler.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include <stdbool.h>
 #include <kernel_internal.h>
-#include <logging/log.h>
-#include <sys/atomic.h>
-#include <sys/math_extras.h>
-#include <timing/timing.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/math_extras.h>
+#include <zephyr/timing/timing.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

@@ -14,15 +14,15 @@
  * constructs.
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <wait_q.h>
+#include <zephyr/wait_q.h>
 #include <ksched.h>
-#include <syscall_handler.h>
-#include <sys/dlist.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
 #include <stdbool.h>
 
 /* Single subsystem lock.  Locking per-event would be better on highly
