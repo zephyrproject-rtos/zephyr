@@ -49,6 +49,8 @@
  * _IDX_<i>: logical index into property
  * _IDX_<i>_EXISTS: logical index into property is defined
  * _IDX_<i>_PH: phandle array's phandle by index (or phandle, phandles)
+ * _IDX_<i>_STRING_TOKEN: string array element value as a token
+ * _IDX_<i>_STRING_UPPER_TOKEN: string array element value as a uppercased token
  * _IDX_<i>_VAL_<val>: phandle array's specifier value by index
  * _IDX_<i>_VAL_<val>_EXISTS: cell value exists, by index
  * _LEN: property logical length
@@ -911,6 +913,94 @@
 #define DT_STRING_UPPER_TOKEN_OR(node_id, prop, default_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
 		(DT_STRING_UPPER_TOKEN(node_id, prop)), (default_value))
+
+/**
+ * @brief Get an element out of a string-array property as a token.
+ *
+ * This removes "the quotes" from an element in the array, and converts
+ * non-alphanumeric characters to underscores. That can be useful, for example,
+ * when programmatically using the value to form a C variable or code.
+ *
+ * DT_STRING_TOKEN_BY_IDX() can only be used for properties with
+ * string-array type.
+ *
+ * It is an error to use DT_STRING_TOKEN_BY_IDX() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "f1", "F2";
+ *     };
+ *     n2: node-2 {
+ *             prop = "123 foo", "456 FOO";
+ *     };
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string-array
+ *
+ * Example usage:
+ *
+ *     DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(n1), prop, 0) // f1
+ *     DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(n1), prop, 1) // F2
+ *     DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(n2), prop, 0) // 123_foo
+ *     DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(n2), prop, 1) // 456_FOO
+ *
+ * For more information, see @ref DT_STRING_TOKEN.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @return the element in @p prop at index @p idx as a token
+ */
+#define DT_STRING_TOKEN_BY_IDX(node_id, prop, idx) \
+	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _STRING_TOKEN)
+
+/**
+ * @brief Like DT_STRING_TOKEN_BY_IDX(), but uppercased.
+ *
+ * This removes "the quotes" and capitalizes an element in the array, and
+ * converts non-alphanumeric characters to underscores. That can be useful, for
+ * example, when programmatically using the value to form a C variable or code.
+ *
+ * DT_STRING_UPPER_TOKEN_BY_IDX() can only be used for properties with
+ * string-array type.
+ *
+ * It is an error to use DT_STRING_UPPER_TOKEN_BY_IDX() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "f1", "F2";
+ *     };
+ *     n2: node-2 {
+ *             prop = "123 foo", "456 FOO";
+ *     };
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string-array
+ *
+ * Example usage:
+ *
+ *     DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(n1), prop, 0) // F1
+ *     DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(n1), prop, 1) // F2
+ *     DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(n2), prop, 0) // 123_FOO
+ *     DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(n2), prop, 1) // 456_FOO
+ *
+ * For more information, see @ref DT_STRING_UPPER_TOKEN.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @return the element in @p prop at index @p idx as an uppercased token
+ */
+#define DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx) \
+	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _STRING_UPPER_TOKEN)
 
 /*
  * phandle properties
@@ -2581,6 +2671,26 @@
  */
 #define DT_INST_STRING_UPPER_TOKEN(inst, prop) \
 	DT_STRING_UPPER_TOKEN(DT_DRV_INST(inst), prop)
+
+/**
+ * @brief Get an element out of string-array property as a token.
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property string name
+ * @param idx the index to get
+ * @return the element in @p prop at index @p idx as a token
+ */
+#define DT_INST_STRING_TOKEN_BY_IDX(inst, prop, idx) \
+	DT_STRING_TOKEN_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Like DT_INST_STRING_TOKEN_BY_IDX(), but uppercased.
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @return the element in @p prop at index @p idx as an uppercased token
+ */
+#define DT_INST_STRING_UPPER_TOKEN_BY_IDX(inst, prop, idx) \
+	DT_STRING_UPPER_TOKEN_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's property value from a phandle's node
