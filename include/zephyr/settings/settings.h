@@ -260,13 +260,6 @@ int settings_load_subtree(const char *subtree);
  * @param[in,out] param   parameter given to the
  *                        @ref settings_load_subtree_direct function.
  *
- *  - key[in] the name with skipped part that was used as name in
- *    handler registration
- *  - len[in] the size of the data found in the backend.
- *  - read_cb[in] function provided to read the data from the backend.
- *  - cb_arg[in] arguments for the read function provided by the
- *    backend.
- *
  * @return When nonzero value is returned, further subtree searching is stopped.
  *         Use with care as some settings backends would iterate through old
  *         values, and the current value is returned last.
