@@ -74,6 +74,9 @@
 #define SOC_ATMEL_SAM_MCK_FREQ_HZ \
 	(SOC_ATMEL_SAM_HCLK_FREQ_HZ / CONFIG_SOC_ATMEL_SAMV71_MDIV)
 
+/** UTMI PLL clock (UPLLCK) Frequency */
+#define SOC_ATMEL_SAM_UPLLCK_FREQ_HZ MHZ(480)
+
 #endif /* _ASMLANGUAGE */
 
 #include "pwm_fixup.h"
