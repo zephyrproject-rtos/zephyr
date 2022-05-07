@@ -415,7 +415,6 @@ class Handler:
         """
         self.state = "waiting"
         self.run = False
-        self.duration = 0
         self.type_str = type_str
 
         self.binary = None
@@ -429,21 +428,12 @@ class Handler:
         self.build_dir = instance.build_dir
         self.log = os.path.join(self.build_dir, "handler.log")
         self.returncode = 0
-        self.set_state("running", self.duration)
         self.generator = None
         self.generator_cmd = None
         self.suite_name_check = True
 
         self.args = []
         self.terminated = False
-
-    def set_state(self, state, duration):
-        self.state = state
-        self.duration = duration
-
-    def get_state(self):
-        ret = (self.state, self.duration)
-        return ret
 
     def record(self, harness):
         if harness.recording:
@@ -493,7 +483,8 @@ class Handler:
         Change result of performed test if problem with missing or unpropper
         suite name was occurred.
         """
-        self.set_state("failed", handler_time)
+        self.instance.status = "failed"
+        self.instance.execution_time = handler_time
         for tc in self.instance.testcases:
             tc.status = "failed"
         self.instance.reason = f"Testsuite mismatch"
@@ -509,7 +500,8 @@ class Handler:
             self._verify_ztest_suite_name(harness.state, harness.detected_suite_names, handler_time)
 
             if not harness.matched_run_id and harness.run_id_exists:
-                self.set_state("failed", handler_time)
+                self.instance.status = "failed"
+                self.instance.execution_time = handler_time
                 self.instance.reason = "RunID mismatch"
                 for tc in self.instance.testcases:
                     tc.status = "failed"
@@ -660,21 +652,21 @@ class BinaryHandler(Handler):
         if harness.is_pytest:
             harness.pytest_run(self.log)
 
+        self.instance.execution_time = handler_time
         if not self.terminated and self.returncode != 0:
+            self.instance.status = "failed"
             if run_valgrind and self.returncode == 2:
-                self.set_state("failed", handler_time)
                 self.instance.reason = "Valgrind error"
             else:
                 # When a process is killed, the default handler returns 128 + SIGTERM
                 # so in that case the return code itself is not meaningful
-                self.set_state("failed", handler_time)
                 self.instance.reason = "Failed"
         elif harness.state:
-            self.set_state(harness.state, handler_time)
+            self.instance.status = harness.state
             if harness.state == "failed":
                 self.instance.reason = "Failed"
         else:
-            self.set_state("timeout", handler_time)
+            self.instance.status = "failed"
             self.instance.reason = "Timeout"
             self.instance.add_missing_testscases("blocked", "Timeout")
 
@@ -786,7 +778,6 @@ class DeviceHandler(Handler):
                 logger.error("{} timed out".format(script))
 
     def handle(self):
-        out_state = "failed"
         runner = None
 
         hardware = self.device_is_available(self.instance)
@@ -884,7 +875,7 @@ class DeviceHandler(Handler):
                 timeout=self.timeout
             )
         except serial.SerialException as e:
-            self.set_state("failed", 0)
+            self.instance.status = "failed"
             self.instance.reason = "Serial Device Error"
             logger.error("Serial device error: %s" % (str(e)))
 
@@ -924,14 +915,15 @@ class DeviceHandler(Handler):
                     logger.debug(stdout.decode(errors = "ignore"))
 
                     if proc.returncode != 0:
-                        self.instance.reason = "Device issue (Flash?)"
+                        self.instance.status = "error"
+                        self.instance.reason = "Device issue (Flash error?)"
                         with open(d_log, "w") as dlog_fp:
                             dlog_fp.write(stderr.decode())
                         os.write(write_pipe, b'x')  # halt the thread
-                        out_state = "flash_error"
                 except subprocess.TimeoutExpired:
                     proc.kill()
                     (stdout, stderr) = proc.communicate()
+                    self.instance.status = "error"
                     self.instance.reason = "Device issue (Timeout)"
 
             with open(d_log, "w") as dlog_fp:
@@ -946,7 +938,6 @@ class DeviceHandler(Handler):
         t.join(self.timeout)
         if t.is_alive():
             logger.debug("Timed out while monitoring serial output on {}".format(self.instance.platform.name))
-            out_state = "timeout"
 
         if ser.isOpen():
             ser.close()
@@ -961,13 +952,8 @@ class DeviceHandler(Handler):
 
         handler_time = time.time() - start_time
 
-        if out_state in ["timeout", "flash_error"]:
-            self.instance.add_missing_testscases("blocked")
-
-            if out_state == "timeout":
-                self.instance.reason = "Timeout"
-            elif out_state == "flash_error":
-                self.instance.reason = "Flash error"
+        if self.instance.status == "error":
+            self.instance.add_missing_testscases("blocked", self.instance.reason)
 
         if harness.is_pytest:
             harness.pytest_run(self.log)
@@ -978,11 +964,11 @@ class DeviceHandler(Handler):
         self.instance.add_missing_testscases("blocked")
 
         if harness.state:
-            self.set_state(harness.state, handler_time)
+            self.instance.status = harness.state
             if harness.state == "failed":
                 self.instance.reason = "Failed"
         else:
-            self.set_state(out_state, handler_time)
+            self.instance.execution_time = handler_time
 
         self._final_handle_actions(harness, handler_time)
 
@@ -1146,17 +1132,19 @@ class QEMUHandler(Handler):
         handler_time = time.time() - start_time
         logger.debug(f"QEMU ({pid}) complete ({out_state}) after {handler_time} seconds")
 
+        handler.instance.execution_time = handler_time
         if out_state == "timeout":
+            handler.instance.status = "failed"
             handler.instance.reason = "Timeout"
-            handler.set_state("failed", handler_time)
         elif out_state == "failed":
+            handler.instance.status = "failed"
             handler.instance.reason = "Failed"
-            handler.set_state("failed", handler_time)
         elif out_state in ['unexpected eof', 'unexpected byte']:
+            handler.instance.status = "failed"
             handler.instance.reason = out_state
-            handler.set_state("failed", handler_time)
         else:
-            handler.set_state(out_state, handler_time)
+            handler.instance.status = out_state
+            handler.instance.reason = "Unknown"
 
         log_out_fp.close()
         out_fp.close()
@@ -1245,7 +1233,7 @@ class QEMUHandler(Handler):
         logger.debug(f"return code from QEMU ({qemu_pid}): {self.returncode}")
 
         if (self.returncode != 0 and not self.ignore_qemu_crash) or not harness.state:
-            self.set_state("failed", 0)
+            self.instance.status = "failed"
             if is_timeout:
                 self.instance.reason = "Timeout"
             else:
@@ -2108,6 +2096,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.metrics = dict()
         self.handler = None
         self.outdir = outdir
+        self.execution_time = 0
 
         self.name = os.path.join(platform.name, testsuite.name)
         self.run_id = self._get_run_id()
@@ -2137,6 +2126,8 @@ class TestInstance(DisablePyTestCollectionMixin):
                 case.status = status
                 if reason:
                     case.reason = reason
+                else:
+                    case.reason = self.reason
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -2363,14 +2354,14 @@ class CMake():
                     log.write(log_msg)
 
             if log_msg:
-                res = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM)' overflowed by", log_msg)
-                if res and not self.overflow_as_errors:
-                    logger.debug("Test skipped due to {} Overflow".format(res[0]))
+                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM)' overflowed by", log_msg)
+                if overflow_found and not self.overflow_as_errors:
+                    logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
                     self.instance.status = "skipped"
-                    self.instance.reason = "{} overflow".format(res[0])
+                    self.instance.reason = "{} overflow".format(overflow_found[0])
                 else:
                     self.instance.status = "error"
-                    self.instance.reason = "Overflow failure"
+                    self.instance.reason = "Build failure"
 
             results = {
                 "returncode": p.returncode,
@@ -2739,7 +2730,6 @@ class ProjectBuilder(FilterBuilder):
         elif op == "run":
             logger.debug("run test: %s" % self.instance.name)
             self.run()
-            self.instance.status, _ = self.instance.handler.get_state()
             logger.debug(f"run status: {self.instance.name} {self.instance.status}")
 
             # to make it work with pickle
@@ -2832,7 +2822,7 @@ class ProjectBuilder(FilterBuilder):
         results.done += 1
         instance = self.instance
 
-        if instance.status in ["error", "failed", "timeout", "flash_error"]:
+        if instance.status in ["error", "failed"]:
             if instance.status == "error":
                 results.error += 1
             else:
@@ -2872,7 +2862,7 @@ class ProjectBuilder(FilterBuilder):
             else:
                 if instance.handler and instance.run:
                     more_info = instance.handler.type_str
-                    htime = instance.handler.duration
+                    htime = instance.execution_time
                     if htime:
                         more_info += " {:.3f}s".format(htime)
                 else:
@@ -2990,7 +2980,7 @@ class ProjectBuilder(FilterBuilder):
                 instance.metrics["rom_size"] = 0
                 instance.metrics["unrecognized"] = []
 
-            instance.metrics["handler_time"] = instance.handler.duration if instance.handler else 0
+            instance.metrics["handler_time"] = instance.execution_time
 
 class TestPlan(DisablePyTestCollectionMixin):
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -3881,12 +3871,12 @@ class TestPlan(DisablePyTestCollectionMixin):
         if status in ['skipped', 'filtered']:
             skips += 1
             ET.SubElement(eleTestcase, 'skipped', type=f"{status}", message=f"{reason}")
-        elif status in ["failed", "timeout", "blocked"]:
+        elif status in ["failed", "blocked"]:
             fails += 1
             el = ET.SubElement(eleTestcase, 'failure', type="failure", message=f"{reason}")
             if log:
                 el.text = log
-        elif status in ["error"]:
+        elif status == "error":
             errors += 1
             el = ET.SubElement(eleTestcase, 'error', type="failure", message=f"{reason}")
             if log:
@@ -4025,12 +4015,8 @@ class TestPlan(DisablePyTestCollectionMixin):
             if rom_size:
                 suite["rom_size"] = rom_size
 
-            if instance.status in ["error", "failed", "timeout", "flash_error"]:
-                if instance.status == 'failed':
-                    suite['status'] = instance.status
-                else:
-                    suite['status'] = "error"
-
+            if instance.status in ["error", "failed"]:
+                suite['status'] = instance.status
                 suite["reason"] = instance.reason
                 # FIXME
                 if os.path.exists(handler_log):
@@ -4077,20 +4063,10 @@ class TestPlan(DisablePyTestCollectionMixin):
                     else:
                         testcase["status"] = "skipped"
                         testcase["reason"] = case.reason or instance.reason
-
-                elif case.status == 'passed':
-                    testcase["status"] = "passed"
-                elif case.status == 'blocked':
-                    testcase["reason"] = case.reason
-                    testcase["status"] = "blocked"
-                elif case.status in ['failed', 'timeout']:
-                    testcase["status"] = "failed"
-                    testcase["reason"] = instance.reason
-                elif case.status in ["error", "flash_error"]:
-                    testcase["status"] = "error"
-                    testcase["reason"] = instance.reason
-                elif instance.status == "filtered":
-                    testcase["status"] = "filtered"
+                else:
+                    testcase["status"] = case.status
+                    if case.reason:
+                        testcase["reason"] = case.reason
 
                 testcases.append(testcase)
 

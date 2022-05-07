@@ -1280,7 +1280,7 @@ def main():
                 break
             else:
                 inst.metrics.update(tplan.instances[inst.name].metrics)
-                inst.metrics["handler_time"] = inst.handler.duration if inst.handler else 0
+                inst.metrics["handler_time"] = inst.execution_time
                 inst.metrics["unrecognized"] = []
                 tplan.instances[inst.name] = inst
 
