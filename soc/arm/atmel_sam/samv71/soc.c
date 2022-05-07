@@ -178,6 +178,14 @@ static ALWAYS_INLINE void clock_init(void)
 		;
 	}
 
+	/* Setup UPLL */
+	PMC->CKGR_UCKR = CKGR_UCKR_UPLLCOUNT(0x3Fu) | CKGR_UCKR_UPLLEN;
+
+	/* Wait for PLL lock */
+	while (!(PMC->PMC_SR & PMC_SR_LOCKU)) {
+		;
+	}
+
 	/*
 	 * Final setup of the Master Clock
 	 */
