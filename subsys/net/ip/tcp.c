@@ -1126,6 +1126,8 @@ static void tcp_resend_data(struct k_work *work)
 	bool conn_unref = false;
 	int ret;
 
+	k_mutex_lock(&conn->context->lock, K_FOREVER);
+
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
 	NET_DBG("send_data_retries=%hu", conn->send_data_retries);
@@ -1170,6 +1172,8 @@ static void tcp_resend_data(struct k_work *work)
 
  out:
 	k_mutex_unlock(&conn->lock);
+
+	k_mutex_unlock(&conn->context->lock);
 
 	if (conn_unref) {
 		tcp_conn_unref(conn);
