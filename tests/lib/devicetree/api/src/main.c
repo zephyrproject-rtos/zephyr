@@ -2339,6 +2339,106 @@ ZTEST(devicetree_api, test_string_token)
 }
 
 #undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_string_array_token
+ZTEST(devicetree_api, test_string_idx_token)
+{
+	enum token_string_idx {
+		/* Tokens */
+		token_first_idx_zero,
+		token_first_idx_one,
+		token_first_idx_two,
+		token_second_idx_zero,
+		token_second_idx_one,
+		token_second_idx_two,
+		token_second_idx_three,
+		/* Upper tokens */
+		TOKEN_FIRST_IDX_ZERO,
+		TOKEN_FIRST_IDX_ONE,
+		TOKEN_FIRST_IDX_TWO,
+		TOKEN_SECOND_IDX_ZERO,
+		TOKEN_SECOND_IDX_ONE,
+		TOKEN_SECOND_IDX_TWO,
+		TOKEN_SECOND_IDX_THREE
+	};
+
+	/* Test direct idx access */
+	zassert_equal(DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_0), val, 0),
+			token_first_idx_zero, "");
+	zassert_equal(DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_0), val, 1),
+			token_first_idx_one, "");
+	zassert_equal(DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_0), val, 2),
+			token_first_idx_two, "");
+	zassert_equal(DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_1), val, 0),
+			token_second_idx_zero, "");
+	zassert_equal(DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_1), val, 1),
+			token_second_idx_one, "");
+	zassert_equal(DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_1), val, 2),
+			token_second_idx_two, "");
+	zassert_equal(DT_STRING_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_1), val, 3),
+			token_second_idx_three, "");
+
+	zassert_equal(DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_0), val, 0),
+			TOKEN_FIRST_IDX_ZERO, "");
+	zassert_equal(DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_0), val, 1),
+			TOKEN_FIRST_IDX_ONE, "");
+	zassert_equal(DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_0), val, 2),
+			TOKEN_FIRST_IDX_TWO, "");
+	zassert_equal(DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_1), val, 0),
+			TOKEN_SECOND_IDX_ZERO, "");
+	zassert_equal(DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_1), val, 1),
+			TOKEN_SECOND_IDX_ONE, "");
+	zassert_equal(DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_1), val, 2),
+			TOKEN_SECOND_IDX_TWO, "");
+	zassert_equal(DT_STRING_UPPER_TOKEN_BY_IDX(DT_NODELABEL(test_str_array_token_1), val, 3),
+			TOKEN_SECOND_IDX_THREE, "");
+
+	/* Test instances */
+#define STRING_TOKEN_BY_IDX_VAR(node_id) _CONCAT(var_token_, node_id)
+#define STRING_TOKEN_BY_IDX_TEST_INST_EXPANSION(inst) \
+	enum token_string_idx STRING_TOKEN_BY_IDX_VAR(DT_DRV_INST(inst))[] = { \
+		DT_INST_STRING_TOKEN_BY_IDX(inst, val, 0), \
+		DT_INST_STRING_TOKEN_BY_IDX(inst, val, 1), \
+		DT_INST_STRING_TOKEN_BY_IDX(inst, val, 2)  \
+	};
+	DT_INST_FOREACH_STATUS_OKAY(STRING_TOKEN_BY_IDX_TEST_INST_EXPANSION);
+
+	zassert_equal(STRING_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_0))[0],
+			token_first_idx_zero, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_0))[1],
+			token_first_idx_one, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_0))[2],
+			token_first_idx_two, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_1))[0],
+			token_second_idx_zero, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_1))[1],
+			token_second_idx_one, "");
+	zassert_equal(STRING_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_1))[2],
+			token_second_idx_two, "");
+
+#define STRING_UPPER_TOKEN_BY_IDX_VAR(node_id) _CONCAT(var_upper_token, node_id)
+#define STRING_UPPER_TOKEN_BY_IDX_TEST_INST_EXPANSION(inst) \
+	enum token_string_idx STRING_UPPER_TOKEN_BY_IDX_VAR(DT_DRV_INST(inst))[] = { \
+		DT_INST_STRING_UPPER_TOKEN_BY_IDX(inst, val, 0), \
+		DT_INST_STRING_UPPER_TOKEN_BY_IDX(inst, val, 1), \
+		DT_INST_STRING_UPPER_TOKEN_BY_IDX(inst, val, 2)  \
+	};
+	DT_INST_FOREACH_STATUS_OKAY(STRING_UPPER_TOKEN_BY_IDX_TEST_INST_EXPANSION);
+
+	zassert_equal(STRING_UPPER_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_0))[0],
+			TOKEN_FIRST_IDX_ZERO, "");
+	zassert_equal(STRING_UPPER_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_0))[1],
+			TOKEN_FIRST_IDX_ONE, "");
+	zassert_equal(STRING_UPPER_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_0))[2],
+			TOKEN_FIRST_IDX_TWO, "");
+	zassert_equal(STRING_UPPER_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_1))[0],
+			TOKEN_SECOND_IDX_ZERO, "");
+	zassert_equal(STRING_UPPER_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_1))[1],
+			TOKEN_SECOND_IDX_ONE, "");
+	zassert_equal(STRING_UPPER_TOKEN_BY_IDX_VAR(DT_NODELABEL(test_str_array_token_1))[2],
+			TOKEN_SECOND_IDX_TWO, "");
+}
+
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_adc_temp_sensor
 ZTEST(devicetree_api, test_reset)
 {
