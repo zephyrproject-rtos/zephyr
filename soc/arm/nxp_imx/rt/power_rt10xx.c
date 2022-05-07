@@ -174,9 +174,11 @@ static void lpm_raise_voltage(void)
 
 
 /* Sets device into low power mode */
-__weak void pm_power_state_set(struct pm_state_info info)
+__weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	switch (info.state) {
+	ARG_UNUSED(substate_id);
+
+	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		LOG_DBG("entering PM state runtime idle");
 		lpm_set_sleep_mode_config(kCLOCK_ModeWait);
@@ -198,10 +200,12 @@ __weak void pm_power_state_set(struct pm_state_info info)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(substate_id);
+
 	/* Set run mode config after wakeup */
-	switch (info.state) {
+	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		lpm_set_run_mode_config();
 		LOG_DBG("exited PM state runtime idle");
