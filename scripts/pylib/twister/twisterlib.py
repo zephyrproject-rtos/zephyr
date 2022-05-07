@@ -2370,7 +2370,7 @@ class CMake():
                     self.instance.reason = "{} overflow".format(res[0])
                 else:
                     self.instance.status = "error"
-                    self.instance.reason = "Build failure"
+                    self.instance.reason = "Overflow failure"
 
             results = {
                 "returncode": p.returncode,
@@ -2718,11 +2718,12 @@ class ProjectBuilder(FilterBuilder):
             else:
                 # Count skipped cases during build, for example
                 # due to ram/rom overflow.
-                inst = res.get("instance", None)
-                if inst and inst.status == "skipped":
+                if  self.instance.status == "skipped":
                     results.skipped_runtime += 1
+                    self.instance.add_missing_testscases("skipped", self.instance.reason)
+
                 if res.get('returncode', 1) > 0:
-                    self.instance.add_missing_testscases("blocked", "Builld Failure")
+                    self.instance.add_missing_testscases("blocked", self.instance.reason)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "gather_metrics", "test": self.instance})
@@ -4043,6 +4044,9 @@ class TestPlan(DisablePyTestCollectionMixin):
                 suite["reason"] = instance.reason
             elif instance.status == 'passed':
                 suite["status"] = "passed"
+            elif instance.status == 'skipped':
+                suite["status"] = "skipped"
+                suite["reason"] = instance.reason
 
             if instance.status is not None:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
@@ -4068,17 +4072,18 @@ class TestPlan(DisablePyTestCollectionMixin):
                     testcase['log'] = case.output
 
                 if case.status == "skipped":
-                    if instance.status != "filtered":
+                    if instance.status == "filtered":
+                        testcase["status"] = "filtered"
+                    else:
                         testcase["status"] = "skipped"
                         testcase["reason"] = case.reason or instance.reason
-                    else:
-                        testcase["status"] = "filtered"
 
                 elif case.status == 'passed':
                     testcase["status"] = "passed"
                 elif case.status == 'blocked':
+                    testcase["reason"] = case.reason
                     testcase["status"] = "blocked"
-                elif case.status in ['failed', 'blocked', 'timeout']:
+                elif case.status in ['failed', 'timeout']:
                     testcase["status"] = "failed"
                     testcase["reason"] = instance.reason
                 elif case.status in ["error", "flash_error"]:
