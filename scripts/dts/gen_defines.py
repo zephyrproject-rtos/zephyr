@@ -625,6 +625,8 @@ def write_vanilla_props(node):
                     subval_as_token = edtlib.str_as_token(subval)
                     macro2val[macro + f"_IDX_{i}_TOKEN"] = subval_as_token
                     macro2val[macro + f"_IDX_{i}_UPPER_TOKEN"] = subval_as_token.upper()
+                    macro2val[macro + f"_IDX_{i}_STRING_TOKEN"] = subval_as_token
+                    macro2val[macro + f"_IDX_{i}_STRING_UPPER_TOKEN"] = subval_as_token.upper()
                 else:
                     macro2val[macro + f"_IDX_{i}"] = subval
                 macro2val[macro + f"_IDX_{i}_EXISTS"] = 1
