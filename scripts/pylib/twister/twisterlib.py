@@ -4554,7 +4554,7 @@ class HardwareMap:
             with open(hwm_file, 'r') as yaml_file:
                 hwm = yaml.load(yaml_file, Loader=SafeLoader)
                 if hwm:
-                    hwm.sort(key=lambda x: x['serial'] or '')
+                    hwm.sort(key=lambda x: x.get('serial', ''))
 
                     # disconnect everything
                     for h in hwm:
