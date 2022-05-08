@@ -3278,6 +3278,7 @@ class TestPlan(DisablePyTestCollectionMixin):
             self.json_report(json_file, version=self.version)
             self.xunit_report(json_file, filename + ".xml", full_report=False)
             self.xunit_report(json_file, filename + "_report.xml", full_report=True)
+            self.xunit_report_suites(json_file, filename + "_suite_report.xml")
 
             if platform_reports:
                 self.target_report(json_file, outdir, suffix)
@@ -3905,6 +3906,69 @@ class TestPlan(DisablePyTestCollectionMixin):
                 logger.error(f"{name}: Unknown status '{status}'")
 
         return (fails, passes, errors, skips)
+
+    # Generate a report with all testsuites instead of doing this per platform
+    def xunit_report_suites(self, json_file, filename):
+
+        json_data = {}
+        with open(json_file, "r") as json_results:
+            json_data = json.load(json_results)
+
+
+        env = json_data.get('environment', {})
+        version = env.get('zephyr_version', None)
+
+        eleTestsuites = ET.Element('testsuites')
+        all_suites = json_data.get("testsuites", [])
+
+        suites_to_report = all_suites
+            # do not create entry if everything is filtered out
+        if self.no_skipped_report:
+            suites_to_report = list(filter(lambda d: d.get('status') != "filtered", all_suites))
+
+        for suite in suites_to_report:
+            duration = 0
+            eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
+                                            name=suite.get("name"), time="0",
+                                            tests="0",
+                                            failures="0",
+                                            errors="0", skipped="0")
+            eleTSPropetries = ET.SubElement(eleTestsuite, 'properties')
+            # Multiple 'property' can be added to 'properties'
+            # differing by name and value
+            ET.SubElement(eleTSPropetries, 'property', name="version", value=version)
+            ET.SubElement(eleTSPropetries, 'property', name="platform", value=suite.get("platform"))
+            ET.SubElement(eleTSPropetries, 'property', name="architecture", value=suite.get("arch"))
+
+            total = 0
+            fails = passes = errors = skips = 0
+            handler_time = suite.get('execution_time', 0)
+            runnable = suite.get('runnable', 0)
+            duration += float(handler_time)
+            ts_status = suite.get('status')
+            for tc in suite.get("testcases", []):
+                status = tc.get('status')
+                reason = tc.get('reason', suite.get('reason', 'Unknown'))
+                log = tc.get("log", suite.get("log"))
+
+                tc_duration = tc.get('execution_time', handler_time)
+                name = tc.get("identifier")
+                classname = ".".join(name.split(".")[:2])
+                fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
+                    name, classname, status, ts_status, reason, tc_duration, runnable,
+                    (fails, passes, errors, skips), log)
+
+            total = (errors + passes + fails + skips)
+
+            eleTestsuite.attrib['time'] = f"{duration}"
+            eleTestsuite.attrib['failures'] = f"{fails}"
+            eleTestsuite.attrib['errors'] = f"{errors}"
+            eleTestsuite.attrib['skipped'] = f"{skips}"
+            eleTestsuite.attrib['tests'] = f"{total}"
+
+        result = ET.tostring(eleTestsuites)
+        with open(filename, 'wb') as report:
+            report.write(result)
 
     def xunit_report(self, json_file, filename, selected_platform=None, full_report=False):
         if selected_platform:
