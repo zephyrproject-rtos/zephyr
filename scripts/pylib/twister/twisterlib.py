@@ -3978,8 +3978,6 @@ class TestPlan(DisablePyTestCollectionMixin):
         with open(filename, 'wb') as report:
             report.write(result)
 
-        return fails, passes, errors, skips
-
     def json_report(self, filename, version="NA"):
         logger.info(f"Writing JSON report {filename}")
         report = {}
