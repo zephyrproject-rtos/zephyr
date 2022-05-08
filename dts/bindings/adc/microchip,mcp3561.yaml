@@ -1,0 +1,5 @@
+description: Microchip MCP3561
+
+compatible: "microchip,mcp3561"
+
+include: microchip,mcp356x-base.yaml

@@ -1,0 +1,74 @@
+# MCP356x ADC configuration options
+
+# Copyright (c) 2022 Trent Piepho <trent.piepho@igorinstitute.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MCP356X
+	bool "MCP3561/2/4 driver"
+	depends on SPI
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable MCP3561/2/4 ADC driver.
+
+	  The MCP3561/2/4 are 2/4/8 channel 24-bit A/D converters
+	  with a SPI interface.
+
+if ADC_MCP356X
+
+config ADC_MCP356X_USE_INTERNAL_TIMER
+	bool "Use internal ADC timer and continuous mode"
+	default n
+	help
+	  This will use the timer in the ADC to create the delay between
+	  samples.  The ADC operates in continuous mode when doing this.  When
+	  disabled, a Zephyr system timer is used to start each conversion in
+	  one-shot mode, which is now most other ADC drivers work.
+
+	  The internal ADC timer will produce samples with less jitter, as
+	  Zephyr interrupt and thread sheduling delays won't affect sampling
+	  time.	 And it avoids SPI traffic to start each conversion.  However,
+	  there are limitation on what the ADC timer can do as well as accurate
+	  issues if not using an external MCLK.	 See the driver for more
+	  details.
+
+config ADC_MCP356X_OSR_FIXED
+	bool "Fixed Oversampling rate"
+	default y
+	help
+	  Use a fixed OSR value.  The OSR affects the output data rate as well
+	  as the effective number of bits.
+
+	  When this option is off, it can be set per ADC sequence in the
+	  'oversampling' field.	 However, the value is not the power of 2 number
+	  of samples, as specified in the Zephyr ADC API, but the code from the
+	  table 5-6 in the datasheet.  This is a ΔΣ ADC and its oversampling
+	  isn't quite the same thing as the successive approximation ADC the API
+	  was designed for.
+
+	  Thus, code written to the Zephyr API will not set oversampling
+	  correctly.  Turn this option on and configure the OSR kernel.	 If code
+	  is written specifically to use this ADC, then runtime control of OSR
+	  can be done by turning this option off.
+
+config ADC_MCP356X_OSR
+	hex "OSR Value" if ADC_MCP356X_OSR_FIXED
+	default 0x3
+	range 0x0 0xf
+	help
+	  Value to use as OSR in fixed mode.  See datasheet table 5-6.
+
+
+config ADC_MCP356X_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 512
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+config ADC_MCP356X_ACQUISITION_THREAD_PRIO
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+endif # ADC_MCP356X

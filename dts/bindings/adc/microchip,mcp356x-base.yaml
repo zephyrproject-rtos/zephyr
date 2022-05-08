@@ -1,0 +1,70 @@
+# Common fields for Microchip MCP3204/MCP3208
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+    "#io-channel-cells":
+      const: 1
+
+    irq-gpios:
+      required: true
+      type: phandle-array
+      description: IRQ pin
+        The bIRQ/MDAT pin from the device, which is active low, configurable to
+        either driven or high-Z in inactive state.  This has DRDY, POR, CRCCFG,
+        and STP interrupts.
+
+    drive-open-drain:
+      required: false
+      type: boolean
+      description: IRQ pin drive mode is open drain.  The default.
+
+    drive-push-pull:
+      required: false
+      type: boolean
+      description: IRQ pin drive mode is push-poll.  Mutually exclusive with drive-open-drain.
+
+    address:
+      required: false
+      type: int
+      default: 1
+      description: Device address
+        Internal device address.  This is burned into the chip during
+        manufacture and allows multiple ADCs to share the same CS line and yet
+        be individually addressable.  The default value is 1, which is used in
+        the standard part.
+        Valid range 0 - 3
+
+    clocks:
+      required: false
+      type: phandle-array
+      description: External MCLK signal
+
+    amclk-div:
+      required: false
+      type: int
+      default: 1
+      description: AMCLK prescaler
+        This is the divisor from MCLK to AMCLK.  The default is 1.
+      enum:
+       - 1
+       - 2
+       - 4
+       - 8
+
+    boost:
+      required: false
+      type: string
+      default: "1x"
+      description: Bias Current
+        The bias current setting, see §5.4.3 and Table 5-5.  Higher bias
+        current increases bandwidth and allows higher AMCLK values at the cost
+        of increased sampling current (see Figure 2-36).
+      enum:
+       - "0.5x"
+       - "0.66x"
+       - "1x"
+       - "2x"
+
+io-channel-cells:
+    - channel

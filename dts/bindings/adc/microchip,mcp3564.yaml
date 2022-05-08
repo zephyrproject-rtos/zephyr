@@ -1,0 +1,5 @@
+description: Microchip MCP3564
+
+compatible: "microchip,mcp3564"
+
+include: microchip,mcp356x-base.yaml
