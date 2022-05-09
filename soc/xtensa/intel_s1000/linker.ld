@@ -13,12 +13,12 @@
 
 OUTPUT_ARCH(xtensa)
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include "memory.h"
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 #include <xtensa/config/core-isa.h>
 
@@ -196,7 +196,7 @@ PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_s1000);
 SECTIONS
 {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
   .ResetVector.text : ALIGN(4)
   {
@@ -353,8 +353,8 @@ SECTIONS
     _text_end = ABSOLUTE(.);
     _etext = .;
   } >ram :ram_phdr
-#include <linker/common-rom.ld>
-#include <linker/thread-local-storage.ld>
+#include <zephyr/linker/common-rom.ld>
+#include <zephyr/linker/thread-local-storage.ld>
 
   .noinit :  ALIGN(4)
   {
@@ -430,7 +430,7 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
   } >ram :ram_phdr
-#include <linker/common-ram.ld>
+#include <zephyr/linker/common-ram.ld>
 
   .tm_clone_table :
   {
@@ -523,6 +523,6 @@ SECTIONS
     KEEP (*(.gnu.linkonce.xt.profile_files.*))
   }
 #ifdef CONFIG_GEN_ISR_TABLES
-#include <linker/intlist.ld>
+#include <zephyr/linker/intlist.ld>
 #endif
 }

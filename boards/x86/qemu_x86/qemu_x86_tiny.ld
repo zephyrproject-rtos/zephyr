@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <offsets.h>
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
-#include <sys/util.h>
-#include <sys/mem_manage.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/mem_manage.h>
 
 
 /* Bounds of physical RAM from DTS */
@@ -241,7 +241,7 @@ ENTRY(epoint)
 SECTIONS
 	{
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
     /DISCARD/ :
 	{
@@ -389,7 +389,7 @@ SECTIONS
 
 		ZEPHYR_KERNEL_FUNCS_IN_SECT
 
-#include <linker/kobject-text.ld>
+#include <zephyr/linker/kobject-text.ld>
 
 		MMU_PAGE_ALIGN_PERM
 
@@ -400,12 +400,12 @@ SECTIONS
 
 	lnkr_pinned_rodata_start = .;
 
-#include <linker/common-rom.ld>
-#include <linker/thread-local-storage.ld>
+#include <zephyr/linker/common-rom.ld>
+#include <zephyr/linker/thread-local-storage.ld>
 
 	SECTION_PROLOGUE(pinned.rodata,,)
 	{
-#include <arch/x86/ia32/scripts/static_intr.ld>
+#include <zephyr/arch/x86/ia32/scripts/static_intr.ld>
 
 		LIB_KERNEL_IN_SECT(rodata)
 		LIB_ARCH_X86_IN_SECT(rodata)
@@ -429,7 +429,7 @@ SECTIONS
 
 #include <snippets-rodata.ld>
 
-#include <linker/kobject-rom.ld>
+#include <zephyr/linker/kobject-rom.ld>
 
 		MMU_PAGE_ALIGN_PERM
 
@@ -444,8 +444,8 @@ SECTIONS
 
 		. = ALIGN(4);
 
-#include <arch/x86/ia32/scripts/shared_kernel_pages.ld>
-#include <arch/x86/ia32/scripts/dynamic_intr.ld>
+#include <zephyr/arch/x86/ia32/scripts/shared_kernel_pages.ld>
+#include <zephyr/arch/x86/ia32/scripts/dynamic_intr.ld>
 
 		LIB_KERNEL_IN_SECT(data)
 		LIB_ARCH_X86_IN_SECT(data)
@@ -460,9 +460,9 @@ SECTIONS
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#include <linker/common-ram.ld>
-#include <arch/x86/pagetables.ld>
-#include <linker/kobject-data.ld>
+#include <zephyr/linker/common-ram.ld>
+#include <zephyr/arch/x86/pagetables.ld>
+#include <zephyr/linker/kobject-data.ld>
 
 	lnkr_pinned_data_end = .;
 
@@ -593,7 +593,7 @@ SECTIONS
 	*(.eini)
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
-#include <linker/kobject-text.ld>
+#include <zephyr/linker/kobject-text.ld>
 #endif
 
 	MMU_PAGE_ALIGN_PERM
@@ -604,8 +604,8 @@ SECTIONS
 	__rodata_region_start = .;
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
-#include <linker/common-rom.ld>
-#include <linker/thread-local-storage.ld>
+#include <zephyr/linker/common-rom.ld>
+#include <zephyr/linker/thread-local-storage.ld>
 #endif
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -616,7 +616,7 @@ SECTIONS
 
 #ifndef CONFIG_DYNAMIC_INTERRUPTS
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
-#include <arch/x86/ia32/scripts/static_intr.ld>
+#include <zephyr/arch/x86/ia32/scripts/static_intr.ld>
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
@@ -626,11 +626,11 @@ SECTIONS
  */
 #include <snippets-rodata.ld>
 
-#include <linker/kobject-rom.ld>
+#include <zephyr/linker/kobject-rom.ld>
 #endif
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#include <linker/cplusplus-rom.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
 
 	MMU_PAGE_ALIGN_PERM
 	/* ROM ends here, position counter will now be in RAM areas */
@@ -693,7 +693,7 @@ SECTIONS
 
 	__bss_num_words	= (__bss_end - __bss_start) >> 2;
 
-#include <linker/common-noinit.ld>
+#include <zephyr/linker/common-noinit.ld>
 
 	MMU_PAGE_ALIGN_PERM
 
@@ -708,7 +708,7 @@ SECTIONS
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
-#include <arch/x86/ia32/scripts/dynamic_intr.ld>
+#include <zephyr/arch/x86/ia32/scripts/dynamic_intr.ld>
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
@@ -718,7 +718,7 @@ SECTIONS
 #include <snippets-rwdata.ld>
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
-#include <arch/x86/ia32/scripts/shared_kernel_pages.ld>
+#include <zephyr/arch/x86/ia32/scripts/shared_kernel_pages.ld>
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 
 	. = ALIGN(4);
@@ -726,14 +726,14 @@ SECTIONS
 
 	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
-#include <linker/cplusplus-ram.ld>
+#include <zephyr/linker/cplusplus-ram.ld>
 
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
-#include <linker/common-ram.ld>
-#include <arch/x86/pagetables.ld>
+#include <zephyr/linker/common-ram.ld>
+#include <zephyr/arch/x86/pagetables.ld>
 
 /* Must be last in RAM */
-#include <linker/kobject-data.ld>
+#include <zephyr/linker/kobject-data.ld>
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 
 	MMU_PAGE_ALIGN
@@ -778,7 +778,7 @@ SECTIONS
  */
 #include <snippets-sections.ld>
 
-#include <linker/debug-sections.ld>
+#include <zephyr/linker/debug-sections.ld>
 
 	/DISCARD/ : { *(.note.GNU-stack) }
 

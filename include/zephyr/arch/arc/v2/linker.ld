@@ -9,9 +9,9 @@
  * GNU and MWDT toolchains.
  */
 
-#include <linker/sections.h>
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 /* physical address of RAM */
 #ifdef CONFIG_HARVARD
@@ -69,7 +69,7 @@ MEMORY {
 
 SECTIONS {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
 	GROUP_START(ROMABLE_REGION)
 
@@ -85,14 +85,14 @@ SECTIONS {
 		*(.gnu.linkonce.t.*)
 
 	. = ALIGN(4);
-#include <linker/kobject-text.ld>
+#include <zephyr/linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	__text_region_end = .;
 	__rodata_region_start = .;
 
-#include <linker/common-rom.ld>
-#include <linker/thread-local-storage.ld>
+#include <zephyr/linker/common-rom.ld>
+#include <zephyr/linker/thread-local-storage.ld>
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,) {
 		*(".rodata")
@@ -104,7 +104,7 @@ SECTIONS {
  */
 #include <snippets-rodata.ld>
 
-#include <linker/kobject-rom.ld>
+#include <zephyr/linker/kobject-rom.ld>
 
 #if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
 		. = ALIGN(4);
@@ -117,7 +117,7 @@ SECTIONS {
 #ifdef __MWDT_LINKER_CMD__
 /* TODO: add mwdt specific ROM C++ sections */
 #else
-#include <linker/cplusplus-rom.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
 #endif /* __MWDT_LINKER_CMD__ */
 
 	__rodata_region_end = .;
@@ -169,7 +169,7 @@ SECTIONS {
 		__bss_end = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
-#include <linker/common-noinit.ld>
+#include <zephyr/linker/common-noinit.ld>
 
 	GROUP_START(DATA_REGION)
 
@@ -196,13 +196,13 @@ SECTIONS {
 
 	__data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
-#include <linker/common-ram.ld>
-#include <linker/kobject-data.ld>
+#include <zephyr/linker/common-ram.ld>
+#include <zephyr/linker/kobject-data.ld>
 
 #ifdef __MWDT_LINKER_CMD__
 /* TODO: add mwdt specific RAM C++ sections */
 #else
-#include <linker/cplusplus-ram.ld>
+#include <zephyr/linker/cplusplus-ram.ld>
 #endif /* __MWDT_LINKER_CMD__ */
 
 /* Located in generated directory. This file is populated by the
@@ -237,7 +237,7 @@ SECTIONS {
  */
 #include <snippets-sections.ld>
 
-#include <linker/debug-sections.ld>
+#include <zephyr/linker/debug-sections.ld>
 
 	SECTION_PROLOGUE(.ARC.attributes, 0,) {
 		KEEP(*(.ARC.attributes))
