@@ -13,7 +13,7 @@
 #include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(power_domain_gpio, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(power_domain_gpio, CONFIG_POWER_DOMAIN_LOG_LEVEL);
 
 struct pd_gpio_config {
 	struct gpio_dt_spec enable;
@@ -45,7 +45,7 @@ static int pd_gpio_pm_action(const struct device *dev,
 		k_sleep(data->next_boot);
 		/* Switch power on */
 		gpio_pin_set_dt(&cfg->enable, 1);
-		LOG_DBG("%s is now ON", dev->name);
+		LOG_INF("%s is now ON", dev->name);
 		/* Wait for domain to come up */
 		k_sleep(K_USEC(cfg->startup_delay_us));
 		/* Notify supported devices they are now powered */
@@ -56,7 +56,7 @@ static int pd_gpio_pm_action(const struct device *dev,
 		pm_device_children_action_run(dev, PM_DEVICE_ACTION_TURN_OFF, NULL);
 		/* Switch power off */
 		gpio_pin_set_dt(&cfg->enable, 0);
-		LOG_DBG("%s is now OFF and powered", dev->name);
+		LOG_INF("%s is now OFF", dev->name);
 		/* Store next time we can boot */
 		next_boot_ticks = k_uptime_ticks() + k_us_to_ticks_ceil32(cfg->off_on_delay_us);
 		data->next_boot = K_TIMEOUT_ABS_TICKS(next_boot_ticks);
