@@ -21,7 +21,7 @@ zephyr_cc_option(-ffunction-sections -fdata-sections)
 
 zephyr_linker_sources_ifdef(CONFIG_GEN_ISR_TABLES
   SECTIONS
-  ${ZEPHYR_BASE}/include/linker/intlist.ld
+  ${ZEPHYR_BASE}/include/zephyr/linker/intlist.ld
 )
 
 if(CONFIG_GEN_ISR_TABLES)
