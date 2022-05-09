@@ -11,17 +11,17 @@
 
 #include <soc.h>
 
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
     {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
     __rom_region_start = .;
 
@@ -41,8 +41,8 @@ SECTIONS
     __text_region_end = .;
     __rodata_region_start = .;
 
-#include <linker/common-rom.ld>
-#include <linker/thread-local-storage.ld>
+#include <zephyr/linker/common-rom.ld>
+#include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -59,7 +59,7 @@ SECTIONS
 
 	} GROUP_LINK_IN(REGION_RODATA)
 
-#include <linker/cplusplus-rom.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
 
     __rodata_region_end = .;
     __rodata_region_size = __rodata_region_end - __rodata_region_start;
@@ -102,7 +102,7 @@ SECTIONS
     __data_size = __data_end - __data_start;
     __data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
-#include <linker/common-ram.ld>
+#include <zephyr/linker/common-ram.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -152,7 +152,7 @@ SECTIONS
 
 	} GROUP_LINK_IN(REGION_BSS)
 
-#include <linker/cplusplus-ram.ld>
+#include <zephyr/linker/cplusplus-ram.ld>
 
      _image_ram_end = .;
      _end = .; /* end of image */
@@ -162,7 +162,7 @@ SECTIONS
  */
 #include <snippets-sections.ld>
 
-#include <linker/debug-sections.ld>
+#include <zephyr/linker/debug-sections.ld>
 
     /DISCARD/ : { *(.note.GNU-stack) }
     /DISCARD/ : { *(.gnu_debuglink) }

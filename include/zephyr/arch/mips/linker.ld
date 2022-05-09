@@ -11,9 +11,9 @@
  * @brief Linker command/script file for the MIPS platform
  */
 
-#include <linker/sections.h>
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 #define ROMABLE_REGION              RAM
 #define RAMABLE_REGION              RAM
@@ -44,7 +44,7 @@ PROVIDE (__stack = CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE - 1) * 1024);
 SECTIONS
 {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
     SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
     {
@@ -74,8 +74,8 @@ SECTIONS
 	} GROUP_LINK_IN(REGION_TEXT)
 
     __rodata_region_start = .;
-#include <linker/common-rom.ld>
-#include <linker/thread-local-storage.ld>
+#include <zephyr/linker/common-rom.ld>
+#include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -92,7 +92,7 @@ SECTIONS
 
 	} GROUP_LINK_IN(REGION_RODATA)
 
-#include <linker/cplusplus-rom.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
     __rodata_region_end = .;
 
     SECTION_PROLOGUE(.plt,,)
@@ -126,7 +126,7 @@ SECTIONS
 
 	} GROUP_DATA_LINK_IN(REGION_DATA_VMA, REGION_DATA_LMA)
 
-#include <linker/common-ram.ld>
+#include <zephyr/linker/common-ram.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -179,7 +179,7 @@ SECTIONS
 
 	} GROUP_LINK_IN(REGION_BSS)
 
-#include <linker/cplusplus-ram.ld>
+#include <zephyr/linker/cplusplus-ram.ld>
 
      _image_ram_end = .;
      _end = .; /* end of image */
@@ -189,7 +189,7 @@ SECTIONS
  */
 #include <snippets-sections.ld>
 
-#include <linker/debug-sections.ld>
+#include <zephyr/linker/debug-sections.ld>
 
 	.mdebug.abi32 : {
 		KEEP(*(.mdebug.abi32))

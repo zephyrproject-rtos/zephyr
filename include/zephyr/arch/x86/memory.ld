@@ -28,7 +28,7 @@
 #define ARCH_X86_MEMORY_LD
 
 #include <zephyr/devicetree.h>
-#include <sys/mem_manage.h>
+#include <zephyr/sys/mem_manage.h>
 
 /* Bounds of physical RAM from DTS */
 #define PHYS_RAM_ADDR		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
