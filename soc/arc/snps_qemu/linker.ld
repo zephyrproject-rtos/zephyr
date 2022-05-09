@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 /*
  * SRAM base address and size
@@ -24,4 +24,4 @@
 #define FLASH_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
 #endif
 
-#include <arch/arc/v2/linker.ld>
+#include <zephyr/arch/arc/v2/linker.ld>

@@ -4,5 +4,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/x86/memory.ld>
-#include <arch/x86/ia32/linker.ld>
+#include <zephyr/arch/x86/memory.ld>
+#include <zephyr/arch/x86/ia32/linker.ld>

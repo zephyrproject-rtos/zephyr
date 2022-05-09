@@ -12,10 +12,10 @@
  * Linker script for the POSIX (native) platform
  */
 
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 
 SECTIONS
@@ -29,7 +29,7 @@ SECTION_PROLOGUE(rom_start,,)
 	#include <snippets-rom-start.ld>
 } GROUP_LINK_IN(ROMABLE_REGION)
 
-#include <linker/common-rom.ld>
+#include <zephyr/linker/common-rom.ld>
 
 SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 {
@@ -47,14 +47,14 @@ SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	#include <snippets-rwdata.ld>
 } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#include <linker/common-ram.ld>
+#include <zephyr/linker/common-ram.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-ram-sections.ld>
 
-#include <arch/posix/native_tasks.ld>
+#include <zephyr/arch/posix/native_tasks.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.

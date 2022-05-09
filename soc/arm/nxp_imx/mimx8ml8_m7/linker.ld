@@ -5,7 +5,7 @@
  */
 
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 MEMORY
      {
@@ -16,7 +16,7 @@ MEMORY
 #endif
      }
 
-#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>
 
 SECTIONS
      {

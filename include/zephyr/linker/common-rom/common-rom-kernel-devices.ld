@@ -80,6 +80,6 @@
 #if !defined(CONFIG_HAS_DYNAMIC_DEVICE_HANDLES)
 	SECTION_DATA_PROLOGUE(device_handles,,)
 	{
-#include "linker/device-handles.ld"
+#include <zephyr/linker/device-handles.ld>
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* !CONFIG_HAS_DYNAMIC_DEVICE_HANDLES */

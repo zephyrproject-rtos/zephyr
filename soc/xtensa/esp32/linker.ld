@@ -12,10 +12,10 @@
  * Linker script for the Xtensa platform.
  */
 
-#include <devicetree.h>
-#include <linker/sections.h>
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 #define RAMABLE_REGION dram0_0_seg
 #define RAMABLE_REGION_1 dram0_1_seg
@@ -127,7 +127,7 @@ SECTIONS
     LONG(LOADADDR(".dummy.dram.data") + SIZEOF(".dummy.dram.data") - LOADADDR(".dram0.data"))
   } > metadata
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
   _image_drom_start = LOADADDR(_RODATA_SECTION_NAME);
   _image_drom_size = LOADADDR(_RODATA_SECTION_NAME) + SIZEOF(_RODATA_SECTION_NAME) - _image_drom_start;
   _image_drom_vaddr = ADDR(_RODATA_SECTION_NAME);
@@ -238,7 +238,7 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
   #include <snippets-data-sections.ld>
-  #include <linker/common-ram.ld>
+  #include <zephyr/linker/common-ram.ld>
   #include <snippets-ram-sections.ld>
 
   /* logging sections should be placed in RAM area to avoid flash cache disabled issues */
@@ -468,10 +468,10 @@ SECTIONS
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
 
 #ifdef CONFIG_GEN_ISR_TABLES
-#include <linker/intlist.ld>
+#include <zephyr/linker/intlist.ld>
 #endif
 
-#include <linker/debug-sections.ld>
+#include <zephyr/linker/debug-sections.ld>
 
   SECTION_PROLOGUE(.xtensa.info, 0,)
   {
