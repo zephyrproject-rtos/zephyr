@@ -1105,7 +1105,7 @@ def main():
         # If the platform does not exist in the hardware map, just skip it.
         connected_list = []
         if not options.platform:
-            for connected in hwm.connected_hardware:
+            for connected in hwm.duts:
                 if connected['connected']:
                     connected_list.append(connected['platform'])
 
