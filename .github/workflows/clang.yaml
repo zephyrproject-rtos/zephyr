@@ -110,7 +110,7 @@ jobs:
           if [ -s testplan.csv ]; then
             echo "::set-output name=report_needed::1";
             # Full twister but with options based on changes
-            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.csv --retry-failed 2 -x "CONFIG_LEGACY_INCLUDE_PATH=n"
+            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.csv --retry-failed 2
           else
             # if nothing is run, skip reporting step
             echo "::set-output name=report_needed::0";
