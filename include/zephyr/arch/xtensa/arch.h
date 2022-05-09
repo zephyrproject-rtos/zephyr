@@ -13,21 +13,21 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
 
-#include <irq.h>
+#include <zephyr/irq.h>
 
 #include <zephyr/devicetree.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
 #include <zephyr/types.h>
-#include <toolchain.h>
-#include <arch/common/sys_bitops.h>
-#include <arch/common/sys_io.h>
-#include <arch/common/ffs.h>
-#include <sw_isr_table.h>
-#include <arch/xtensa/thread.h>
-#include <arch/xtensa/irq.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/arch/common/sys_bitops.h>
+#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/common/ffs.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/arch/xtensa/thread.h>
+#include <zephyr/arch/xtensa/irq.h>
 #include <xtensa/config/core.h>
-#include <arch/common/addr_types.h>
-#include <arch/xtensa/gdbstub.h>
+#include <zephyr/arch/common/addr_types.h>
+#include <zephyr/arch/xtensa/gdbstub.h>
 
 #ifdef CONFIG_KERNEL_COHERENCE
 #define ARCH_STACK_PTR_ALIGN XCHAL_DCACHE_LINESIZE
@@ -38,7 +38,7 @@
 /* Xtensa GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
 
-#include <arch/xtensa/exc.h>
+#include <zephyr/arch/xtensa/exc.h>
 
 #ifdef __cplusplus
 extern "C" {

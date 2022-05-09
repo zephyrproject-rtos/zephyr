@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <psa/crypto.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifndef EXC_RETURN_S
 /* bit [6] stack used to push registers: 0=Non-secure 1=Secure */

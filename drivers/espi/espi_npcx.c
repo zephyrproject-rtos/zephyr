@@ -7,17 +7,17 @@
 #define DT_DRV_COMPAT nuvoton_npcx_espi
 
 #include <assert.h>
-#include <drivers/espi.h>
-#include <drivers/gpio.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/espi/npcx_espi.h>
-#include <kernel.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/espi/npcx_espi.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include "espi_utils.h"
 #include "soc_host.h"
 #include "soc_miwu.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 struct espi_npcx_config {

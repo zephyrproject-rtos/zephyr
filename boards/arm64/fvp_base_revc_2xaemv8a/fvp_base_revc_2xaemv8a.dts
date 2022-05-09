@@ -7,7 +7,7 @@
 
 #include <mem.h>
 #include <arm64/armv8-a.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
 	model = "FVP Base RevC 2xAEMv8A";

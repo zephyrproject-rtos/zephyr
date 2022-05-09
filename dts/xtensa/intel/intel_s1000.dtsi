@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <xtensa/xtensa.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
-#include <dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
 
 
 / {

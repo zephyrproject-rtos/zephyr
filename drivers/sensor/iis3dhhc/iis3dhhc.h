@@ -12,11 +12,11 @@
 #define ZEPHYR_DRIVERS_SENSOR_IIS3DHHC_IIS3DHHC_H_
 
 #include <stdint.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include "iis3dhhc_reg.h"
 
 struct iis3dhhc_config {

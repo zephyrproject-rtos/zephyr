@@ -6,9 +6,9 @@
 
 #include <tc_util.h>
 #include <ztest.h>
-#include <arch/cpu.h>
-#include <sys/util.h>
-#include <irq_offload.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/irq_offload.h>
 #include <stdbool.h>
 
 #if defined(CONFIG_ASSERT) && defined(CONFIG_DEBUG)

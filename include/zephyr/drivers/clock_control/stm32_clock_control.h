@@ -9,35 +9,35 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_
 
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F1X) || \
 	defined(CONFIG_SOC_SERIES_STM32F3X)
-#include <dt-bindings/clock/stm32f1_clock.h>
+#include <zephyr/dt-bindings/clock/stm32f1_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X)
-#include <dt-bindings/clock/stm32f4_clock.h>
+#include <zephyr/dt-bindings/clock/stm32f4_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
-#include <dt-bindings/clock/stm32g0_clock.h>
+#include <zephyr/dt-bindings/clock/stm32g0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
-#include <dt-bindings/clock/stm32l0_clock.h>
+#include <zephyr/dt-bindings/clock/stm32l0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L1X)
-#include <dt-bindings/clock/stm32l1_clock.h>
+#include <zephyr/dt-bindings/clock/stm32l1_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32G4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX)
-#include <dt-bindings/clock/stm32l4_clock.h>
+#include <zephyr/dt-bindings/clock/stm32l4_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WLX)
-#include <dt-bindings/clock/stm32wl_clock.h>
+#include <zephyr/dt-bindings/clock/stm32wl_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
-#include <dt-bindings/clock/stm32h7_clock.h>
+#include <zephyr/dt-bindings/clock/stm32h7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-#include <dt-bindings/clock/stm32u5_clock.h>
+#include <zephyr/dt-bindings/clock/stm32u5_clock.h>
 #else
-#include <dt-bindings/clock/stm32_clock.h>
+#include <zephyr/dt-bindings/clock/stm32_clock.h>
 #endif
 
 /** Common clock control device node for all STM32 chips */

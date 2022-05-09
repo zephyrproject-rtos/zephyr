@@ -8,10 +8,10 @@
 #ifndef ZEPHYR_SOC_ARM_RENESAS_RCAR_GEN3_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM_RENESAS_RCAR_GEN3_PINCTRL_SOC_H_
 
-#include <devicetree.h>
-#include <dt-bindings/pinctrl/renesas/pinctrl-rcar-common.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rcar-common.h>
 #include <stdint.h>
-#include <sys/util_macro.h>
+#include <zephyr/sys/util_macro.h>
 
 struct rcar_pin_func {
 	uint8_t bank:5;      /* bank number 0 - 18 */

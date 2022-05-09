@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/display.h>
-#include <display/framebuf.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/display/framebuf.h>
 #include <string.h>
 
 static int framebuf_blanking_on(const struct device *dev)

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include "mem_protect.h"
 
 /* Add volatile to disable pre-calculation in compile stage in some

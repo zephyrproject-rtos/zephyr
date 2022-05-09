@@ -5,18 +5,18 @@
  */
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/clock_control_litex.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_litex.h>
 #include "clock_control_litex.h"
-#include <logging/log.h>
-#include <logging/log_ctrl.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 LOG_MODULE_REGISTER(CLK_CTRL_LITEX, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 

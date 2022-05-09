@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_LIBC_HOOKS_H_
 #define ZEPHYR_INCLUDE_SYS_LIBC_HOOKS_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <stdio.h>
 #include <stddef.h>
 

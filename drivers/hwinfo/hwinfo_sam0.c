@@ -7,9 +7,9 @@
 #define DT_DRV_COMPAT atmel_sam0_id
 
 #include <soc.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 struct sam0_uid {
 	uint32_t id[4];

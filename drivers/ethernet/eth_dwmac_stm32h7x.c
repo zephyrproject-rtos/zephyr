@@ -11,19 +11,19 @@
 
 #define LOG_MODULE_NAME dwmac_plat
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* be compatible with the HAL-based driver here */
 #define DT_DRV_COMPAT st_stm32_ethernet
 
 #include <sys/types.h>
-#include <zephyr.h>
-#include <net/ethernet.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include "eth_dwmac_priv.h"
 

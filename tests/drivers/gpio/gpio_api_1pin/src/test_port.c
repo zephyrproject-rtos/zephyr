@@ -6,7 +6,7 @@
 
 
 #include <limits.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include "test_gpio_api.h"
 
 #define TEST_GPIO_PORT_VALUE_MAX         ((1LLU << GPIO_MAX_PINS_PER_PORT) - 1)

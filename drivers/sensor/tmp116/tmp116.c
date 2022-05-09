@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT ti_tmp116
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <drivers/sensor/tmp116.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/tmp116.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 
 #include "tmp116.h"
 

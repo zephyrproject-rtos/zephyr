@@ -12,10 +12,10 @@
  * context, on the IRQ stack.
  *
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <kernel_structs.h>
-#include <irq_offload.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/irq_offload.h>
 
 volatile uint32_t sentinel;
 #define SENTINEL_VALUE 0xDEADBEEF

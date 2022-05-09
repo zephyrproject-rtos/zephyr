@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <hardware/flash.h>
 #include <hardware/structs/vreg_and_chip_reset.h>
 

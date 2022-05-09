@@ -14,11 +14,11 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_IRQ_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_V2_IRQ_H_
 
-#include <arch/arc/v2/aux_regs.h>
-#include <toolchain/common.h>
-#include <irq.h>
-#include <sys/util.h>
-#include <sw_isr_table.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
+#include <zephyr/toolchain/common.h>
+#include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sw_isr_table.h>
 
 #ifdef __cplusplus
 extern "C" {

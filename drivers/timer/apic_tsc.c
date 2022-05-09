@@ -2,11 +2,11 @@
  * Copyright (c) 2021 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <device.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
-#include <drivers/interrupt_controller/loapic.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
 
 #define IA32_TSC_DEADLINE_MSR 0x6e0
 #define IA32_TSC_ADJUST_MSR   0x03b

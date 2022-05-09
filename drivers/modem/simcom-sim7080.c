@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT simcom_sim7080
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_simcom_sim7080, CONFIG_MODEM_LOG_LEVEL);
 
-#include <drivers/modem/simcom-sim7080.h>
+#include <zephyr/drivers/modem/simcom-sim7080.h>
 #include "simcom-sim7080.h"
 
 #define SMS_TP_UDHI_HEADER 0x40

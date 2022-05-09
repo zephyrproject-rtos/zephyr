@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_OPT3001_H_
 #define ZEPHYR_DRIVERS_SENSOR_OPT3001_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define OPT3001_REG_RESULT 0x00
 #define OPT3001_REG_CONFIG 0x01

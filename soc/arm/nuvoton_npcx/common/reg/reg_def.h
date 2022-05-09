@@ -9,10 +9,10 @@
 
 #include <stdint.h>
 
-#include <devicetree.h>
-#include <sys/__assert.h>
-#include <sys/util_macro.h>
-#include <toolchain.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 /*
  * NPCX register structure size/offset checking macro function to mitigate

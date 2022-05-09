@@ -7,11 +7,11 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_MSI_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_MSI_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
 
-#include <drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
 #ifdef __cplusplus
 extern "C" {

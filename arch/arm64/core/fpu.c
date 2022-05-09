@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_arch_interface.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 /* to be found in fpu.S */
 extern void z_arm64_fpu_save(struct z_arm64_fp_context *saved_fp_context);

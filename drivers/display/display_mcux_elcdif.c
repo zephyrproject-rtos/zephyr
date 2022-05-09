@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT nxp_imx_elcdif
 
-#include <drivers/display.h>
-#include <drivers/pinctrl.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/display.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/gpio.h>
 #include <fsl_elcdif.h>
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>
 #endif
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 

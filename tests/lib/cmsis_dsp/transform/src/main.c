@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 extern void test_transform_cq15(void);
 extern void test_transform_rq15(void);

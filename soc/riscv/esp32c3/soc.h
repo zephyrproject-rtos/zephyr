@@ -15,7 +15,7 @@
 #include <esp_clk.h>
 #endif
 
-#include <arch/riscv/arch.h>
+#include <zephyr/arch/riscv/arch.h>
 
 /* IRQ numbers */
 #define RISCV_MACHINE_SOFT_IRQ 3 /* Machine Software Interrupt */

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <shell/shell.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
 #ifdef CONFIG_PCIE_MSI
-#include <drivers/pcie/msi.h>
-#include <drivers/pcie/cap.h>
+#include <zephyr/drivers/pcie/msi.h>
+#include <zephyr/drivers/pcie/cap.h>
 #endif
 
 static void show_msi(const struct shell *shell, pcie_bdf_t bdf)

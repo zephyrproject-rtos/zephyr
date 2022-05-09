@@ -10,14 +10,14 @@
 
 #define DT_DRV_COMPAT st_iis2iclx
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "iis2iclx.h"
 

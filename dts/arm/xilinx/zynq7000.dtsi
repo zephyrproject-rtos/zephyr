@@ -5,8 +5,8 @@
 
 #include <mem.h>
 #include <arm/armv7-a.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <dt-bindings/ethernet/xlnx_gem.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
 
 / {
 	soc {

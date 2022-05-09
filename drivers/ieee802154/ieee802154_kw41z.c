@@ -9,24 +9,24 @@
 #define LOG_MODULE_NAME ieee802154_kw41z
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <irq.h>
-#include <net/ieee802154_radio.h>
-#include <net/net_if.h>
-#include <net/net_pkt.h>
-#include <sys/byteorder.h>
-#include <random/rand32.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/irq.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/random/rand32.h>
 
 #include "fsl_xcvr.h"
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
-#include <net/openthread.h>
+#include <zephyr/net/openthread.h>
 #endif
 
 

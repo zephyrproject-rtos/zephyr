@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
+#include <zephyr/init.h>
 #include "device_imx.h"
 
 static int udoo_neo_full_m4_init(const struct device *dev)

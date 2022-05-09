@@ -6,18 +6,18 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_flexcan
 
-#include <zephyr.h>
-#include <sys/atomic.h>
-#include <drivers/can.h>
-#include <drivers/can/transceiver.h>
-#include <drivers/clock_control.h>
-#include <device.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/transceiver.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/byteorder.h>
 #include <fsl_flexcan.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);

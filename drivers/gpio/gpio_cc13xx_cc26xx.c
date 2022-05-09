@@ -7,11 +7,11 @@
 #define DT_DRV_COMPAT ti_cc13xx_cc26xx_gpio
 
 #include <zephyr/types.h>
-#include <sys/__assert.h>
-#include <device.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/gpio.h>
-#include <dt-bindings/gpio/ti-cc13xx-cc26xx-gpio.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/ti-cc13xx-cc26xx-gpio.h>
 
 #include <driverlib/gpio.h>
 #include <driverlib/interrupt.h>

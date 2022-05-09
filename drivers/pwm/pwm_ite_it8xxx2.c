@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_pwm
 
-#include <device.h>
-#include <drivers/pwm.h>
-#include <drivers/pinctrl.h>
-#include <dt-bindings/pwm/it8xxx2_pwm.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/pwm/it8xxx2_pwm.h>
 #include <errno.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <soc_dt.h>
 #include <stdlib.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_ite_it8xxx2, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_CTRX_MIN	100

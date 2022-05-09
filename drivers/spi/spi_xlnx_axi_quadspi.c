@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT xlnx_xps_spi_2_00_a
 
-#include <device.h>
-#include <drivers/spi.h>
-#include <sys/sys_io.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(xlnx_quadspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"

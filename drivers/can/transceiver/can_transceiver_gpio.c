@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT can_transceiver_gpio
 
-#include <device.h>
-#include <drivers/can/transceiver.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/can/transceiver.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(can_transceiver_gpio, CONFIG_CAN_LOG_LEVEL);
 

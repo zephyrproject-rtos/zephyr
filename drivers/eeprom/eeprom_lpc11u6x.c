@@ -16,11 +16,11 @@
  *       EEPROM functions.
  */
 
-#include <drivers/eeprom.h>
+#include <zephyr/drivers/eeprom.h>
 #include <iap.h>
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_lpc11u6x);
 
 struct eeprom_lpc11u6x_config {

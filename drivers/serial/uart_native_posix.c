@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <poll.h>
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include "cmdline.h" /* native_posix command line options header */
 #include "soc.h"
 

@@ -5,18 +5,18 @@
  */
 
 #define LOG_LEVEL CONFIG_PCIE_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie);
 
 #include <errno.h>
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #include <soc.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/pcie.h>
 #include "ptm.h"
 
 static int pcie_ptm_root_setup(const struct device *dev, uint32_t base)

@@ -6,12 +6,12 @@
 
 #define DT_DRV_COMPAT st_stm32h7_flash_controller
 
-#include <sys/util.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include <stm32h7xx_ll_bus.h>
 #include <stm32h7xx_ll_utils.h>
@@ -21,7 +21,7 @@
 
 #define LOG_DOMAIN flash_stm32h7
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #define STM32H7_FLASH_MAX_ERASE_TIME    4000

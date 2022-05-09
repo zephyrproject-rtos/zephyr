@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_i2c
 
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <errno.h>
 #include <soc.h>
 #include <soc_dt.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ite_it8xxx2, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"

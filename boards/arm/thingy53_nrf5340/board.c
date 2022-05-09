@@ -6,7 +6,7 @@
 
 #include <device.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(thingy53_board_init);
 
 /* Initialization chain of Thingy:53 board requires some delays before on board sensors

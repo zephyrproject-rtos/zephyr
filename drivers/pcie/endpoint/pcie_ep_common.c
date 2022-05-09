@@ -5,9 +5,9 @@
  *
  */
 
-#include <drivers/pcie/endpoint/pcie_ep.h>
+#include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 /*
  * During DEVICE_TO_HOST data transfer, in order to make sure that all

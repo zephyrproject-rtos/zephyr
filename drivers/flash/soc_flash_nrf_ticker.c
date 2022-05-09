@@ -6,15 +6,15 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
 #include "soc_flash_nrf.h"
 
-#include <sys/__assert.h>
-#include <bluetooth/hci.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/bluetooth/hci.h>
 #include "controller/hal/ticker.h"
 #include "controller/ticker/ticker.h"
 #include "controller/include/ll.h"

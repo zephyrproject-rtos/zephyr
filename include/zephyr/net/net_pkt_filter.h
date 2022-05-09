@@ -16,9 +16,9 @@
 
 #include <limits.h>
 #include <stdbool.h>
-#include <sys/slist.h>
-#include <net/net_core.h>
-#include <net/ethernet.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/ethernet.h>
 
 #ifdef __cplusplus
 extern "C" {

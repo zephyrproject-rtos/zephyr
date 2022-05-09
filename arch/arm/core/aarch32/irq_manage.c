@@ -14,21 +14,21 @@
  * connecting ISRs at runtime.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_A) \
 	|| defined(CONFIG_CPU_AARCH32_CORTEX_R)
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #endif
-#include <sys/__assert.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <irq.h>
-#include <tracing/tracing.h>
-#include <pm/pm.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/tracing/tracing.h>
+#include <zephyr/pm/pm.h>
 
 extern void z_arm_reserved(void);
 

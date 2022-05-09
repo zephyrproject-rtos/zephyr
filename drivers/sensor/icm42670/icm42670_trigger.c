@@ -5,15 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/util.h>
 #include "icm42670.h"
 #include "icm42670_reg.h"
 #include "icm42670_spi.h"
 #include "icm42670_trigger.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ICM42670, CONFIG_SENSOR_LOG_LEVEL);
 
 static void icm42670_gpio_callback(const struct device *dev, struct gpio_callback *cb,

@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <arch/riscv/csr.h>
+#include <zephyr/arch/riscv/csr.h>
 #include <stdio.h>
 #include <pmp.h>
 

@@ -10,7 +10,7 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CAPABILITIES_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CAPABILITIES_H_
 
-#include <bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/audio.h>
 
 #ifdef __cplusplus
 extern "C" {

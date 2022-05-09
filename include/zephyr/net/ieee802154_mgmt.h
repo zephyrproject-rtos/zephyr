@@ -12,8 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_IEEE802154_MGMT_H_
 #define ZEPHYR_INCLUDE_NET_IEEE802154_MGMT_H_
 
-#include <net/ieee802154.h>
-#include <net/net_mgmt.h>
+#include <zephyr/net/ieee802154.h>
+#include <zephyr/net/net_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {

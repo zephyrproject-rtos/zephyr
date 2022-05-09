@@ -24,9 +24,9 @@
  * @}
  */
 
-#include <init.h>
-#include <arch/cpu.h>
-#include <sys_clock.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys_clock.h>
 #include <stdbool.h>
 #include <tc_util.h>
 #include <ztest.h>

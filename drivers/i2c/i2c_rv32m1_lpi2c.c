@@ -10,12 +10,12 @@
 
 #define DT_DRV_COMPAT openisa_rv32m1_lpi2c
 
-#include <drivers/i2c.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_lpi2c.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 LOG_MODULE_REGISTER(rv32m1_lpi2c);

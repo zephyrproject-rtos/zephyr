@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT ti_stellaris_gpio
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 #include "gpio_utils.h"
 
 typedef void (*config_func_t)(const struct device *dev);

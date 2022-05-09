@@ -5,13 +5,13 @@
  */
 
 #include <string.h>
-#include <drivers/i2s.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/sys/byteorder.h>
 #include <soc.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
 #include "i2s_litex.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(i2s_litex);
 

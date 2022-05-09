@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <sys/sys_heap.h>
+#include <zephyr/sys/sys_heap.h>
 
 #define HEAP_SZ 0x1000
 

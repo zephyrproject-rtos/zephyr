@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <wait_q.h>
+#include <zephyr/wait_q.h>
 
 #define DELAY          K_MSEC(50)
 #define SHORT_TIMEOUT  K_MSEC(100)

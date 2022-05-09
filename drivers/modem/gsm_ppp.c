@@ -6,18 +6,18 @@
 
 #define DT_DRV_COMPAT zephyr_gsm_ppp
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 
 #include <stdlib.h>
-#include <kernel.h>
-#include <device.h>
-#include <sys/ring_buffer.h>
-#include <sys/util.h>
-#include <net/ppp.h>
-#include <drivers/modem/gsm_ppp.h>
-#include <drivers/uart.h>
-#include <drivers/console/uart_mux.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/ppp.h>
+#include <zephyr/drivers/modem/gsm_ppp.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/console/uart_mux.h>
 
 #include "modem_context.h"
 #include "modem_iface_uart.h"

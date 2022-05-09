@@ -6,8 +6,8 @@
  */
 
 
-#include <drivers/adc.h>
-#include <zephyr.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 #if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)

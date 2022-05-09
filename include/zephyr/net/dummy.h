@@ -8,8 +8,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_DUMMY_H_
 #define ZEPHYR_INCLUDE_NET_DUMMY_H_
 
-#include <net/net_if.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
 
 #ifdef __cplusplus
 extern "C" {

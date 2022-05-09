@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT xlnx_xps_timer_1_00_a
 
-#include <device.h>
-#include <drivers/counter.h>
-#include <sys/sys_io.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(xlnx_axi_timer, CONFIG_COUNTER_LOG_LEVEL);
 
 /* AXI Timer v2.0 registers offsets (See Xilinx PG079 for details) */

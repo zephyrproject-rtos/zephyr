@@ -8,10 +8,10 @@
 #define SHELL_LOG_BACKEND_H__
 
 #include <zephyr/zephyr.h>
-#include <logging/log_backend.h>
-#include <logging/log_output.h>
-#include <sys/mpsc_pbuf.h>
-#include <sys/atomic.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_output.h>
+#include <zephyr/sys/mpsc_pbuf.h>
+#include <zephyr/sys/atomic.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

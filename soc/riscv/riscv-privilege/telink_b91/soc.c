@@ -6,7 +6,7 @@
 
 #include "sys.h"
 #include "clock.h"
-#include <device.h>
+#include <zephyr/device.h>
 
 /* Software reset defines */
 #define reg_reset                   REG_ADDR8(0x1401ef)

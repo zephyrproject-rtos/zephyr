@@ -8,7 +8,7 @@
 
 #include <soc.h>
 #include <stm32_ll_hsem.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 /** HW semaphore Complement ID list defined in hw_conf.h from STM32WB

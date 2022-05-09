@@ -12,7 +12,7 @@
 #define _SOC_ESPI_SAF_H_
 
 #include <stdint.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 
 #define MCHP_SAF_MAX_FLASH_DEVICES 2U

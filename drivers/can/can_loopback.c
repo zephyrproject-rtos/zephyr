@@ -10,9 +10,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <drivers/can.h>
-#include <kernel.h>
-#include <logging/log.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(can_loopback, CONFIG_CAN_LOG_LEVEL);
 

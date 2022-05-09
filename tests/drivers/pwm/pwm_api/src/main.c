@@ -5,9 +5,9 @@
  */
 
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <device.h>
+#include <zephyr/device.h>
 
 const struct device *get_pwm_device(void);
 void test_pwm_usec(void);

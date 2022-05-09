@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_STM32_PINCTRLF1_H_
 #define ZEPHYR_STM32_PINCTRLF1_H_
 
-#include <dt-bindings/pinctrl/stm32-pinctrl-common.h>
-#include <dt-bindings/pinctrl/stm32f1-afio.h>
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/stm32f1-afio.h>
 
 /* Adapted from Linux: include/dt-bindings/pinctrl/stm32-pinfunc.h */
 

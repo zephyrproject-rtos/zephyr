@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <tc_util.h>
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #ifdef CONFIG_SMP
 #error Cannot test MP API if SMP is using the CPUs

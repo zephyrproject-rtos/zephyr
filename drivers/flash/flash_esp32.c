@@ -22,12 +22,12 @@
 #include <spi_flash_defs.h>
 #include <esp_flash_encrypt.h>
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <soc.h>
 
 #if defined(CONFIG_SOC_ESP32)
@@ -50,7 +50,7 @@
 
 #include "soc/mmu.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_esp32, CONFIG_FLASH_LOG_LEVEL);
 
 struct flash_esp32_dev_config {

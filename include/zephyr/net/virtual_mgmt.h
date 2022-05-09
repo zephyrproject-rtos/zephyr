@@ -12,8 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_VIRTUAL_MGMT_H_
 #define ZEPHYR_INCLUDE_NET_VIRTUAL_MGMT_H_
 
-#include <net/virtual.h>
-#include <net/net_mgmt.h>
+#include <zephyr/net/virtual.h>
+#include <zephyr/net/net_mgmt.h>
 
 #ifdef __cplusplus
 extern "C" {

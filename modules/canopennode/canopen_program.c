@@ -7,13 +7,13 @@
 #include <CANopen.h>
 
 #include <canopennode.h>
-#include <dfu/flash_img.h>
-#include <dfu/mcuboot.h>
-#include <storage/flash_map.h>
-#include <sys/crc.h>
+#include <zephyr/dfu/flash_img.h>
+#include <zephyr/dfu/mcuboot.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/crc.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(canopen_program);
 
 /* Object dictionary indexes */

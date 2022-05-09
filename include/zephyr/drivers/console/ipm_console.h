@@ -9,9 +9,9 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_IPM_CONSOLE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_IPM_CONSOLE_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <sys/ring_buffer.h>
+#include <zephyr/sys/ring_buffer.h>
 
 #ifdef __cplusplus
 extern "C" {

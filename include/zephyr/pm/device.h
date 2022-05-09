@@ -8,8 +8,8 @@
 #define ZEPHYR_INCLUDE_PM_DEVICE_H_
 
 #include <zephyr/device.h>
-#include <kernel.h>
-#include <sys/atomic.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {

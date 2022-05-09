@@ -7,12 +7,12 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_ESWIFI_ESWIFI_H_
 #define ZEPHYR_DRIVERS_WIFI_ESWIFI_ESWIFI_H_
 
-#include <zephyr.h>
-#include <kernel.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
-#include <net/wifi_mgmt.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 #include "eswifi_offload.h"
 

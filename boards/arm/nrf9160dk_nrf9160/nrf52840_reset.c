@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <drivers/uart.h>
-#include <device.h>
-#include <devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 
 #define RESET_NODE DT_NODELABEL(nrf52840_reset)
 

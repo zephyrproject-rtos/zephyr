@@ -10,12 +10,12 @@
 
 #include "vl53l0x_platform.h"
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 

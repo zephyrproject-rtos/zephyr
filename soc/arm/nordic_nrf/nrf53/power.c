@@ -4,12 +4,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/pm/pm.h>
 
 #include <hal/nrf_regulators.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Invoke Low Power/System Off specific Tasks */

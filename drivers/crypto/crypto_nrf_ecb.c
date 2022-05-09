@@ -5,8 +5,8 @@
  */
 
 #include <string.h>
-#include <crypto/crypto.h>
-#include <logging/log.h>
+#include <zephyr/crypto/crypto.h>
+#include <zephyr/logging/log.h>
 #include <hal/nrf_ecb.h>
 
 #define DT_DRV_COMPAT nordic_nrf_ecb

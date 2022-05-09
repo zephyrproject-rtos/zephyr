@@ -8,14 +8,14 @@
 #define DT_DRV_COMPAT nxp_lpc_i2s
 
 #include <string.h>
-#include <drivers/dma.h>
-#include <drivers/i2s.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_i2s.h>
 #include <fsl_dma.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 LOG_MODULE_REGISTER(i2s_mcux_flexcomm);

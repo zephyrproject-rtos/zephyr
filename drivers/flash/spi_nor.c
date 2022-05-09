@@ -10,11 +10,11 @@
 #define DT_DRV_COMPAT jedec_spi_nor
 
 #include <errno.h>
-#include <drivers/flash.h>
-#include <drivers/spi.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/init.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"

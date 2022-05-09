@@ -8,22 +8,22 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_exti.h>
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_system.h>
-#include <drivers/gpio.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/pinmux_stm32.h>
-#include <drivers/pinmux.h>
-#include <sys/util.h>
-#include <drivers/interrupt_controller/exti_stm32.h>
-#include <pm/device.h>
-#include <pm/device_runtime.h>
+#include <zephyr/drivers/pinmux.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include "stm32_hsem.h"
 #include "gpio_stm32.h"

@@ -24,7 +24,7 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
 #ifdef __cplusplus
 extern "C" {

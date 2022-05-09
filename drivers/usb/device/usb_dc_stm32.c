@@ -20,15 +20,15 @@
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
 #include <string.h>
-#include <usb/usb_device.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <sys/util.h>
-#include <drivers/gpio.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
 #include "stm32_hsem.h"
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_stm32);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)

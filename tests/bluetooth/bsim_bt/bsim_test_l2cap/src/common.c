@@ -8,7 +8,7 @@
 
 #define LOG_MODULE_NAME common
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
 

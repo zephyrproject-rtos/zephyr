@@ -20,9 +20,9 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_DATA_H_
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <aarch32/cortex_m/stack.h>
@@ -33,10 +33,10 @@
 #endif
 
 #ifndef _ASMLANGUAGE
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <sys/dlist.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/atomic.h>
 
 #ifdef __cplusplus
 extern "C" {

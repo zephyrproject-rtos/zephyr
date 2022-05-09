@@ -7,7 +7,7 @@
 #include <time.h>
 
 /* clock_gettime() prototype */
-#include <posix/time.h>
+#include <zephyr/posix/time.h>
 
 time_t time(time_t *tloc)
 {

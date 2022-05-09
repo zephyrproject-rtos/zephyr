@@ -8,10 +8,10 @@
 #define ZEPHYR_INCLUDE_KERNEL_THREAD_H_
 
 #ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
-#include <sys/mem_manage.h>
+#include <zephyr/sys/mem_manage.h>
 #endif
 
-#include <kernel/stats.h>
+#include <zephyr/kernel/stats.h>
 
 /**
  * @typedef k_thread_entry_t

@@ -14,16 +14,16 @@
 #define LOG_MODULE_NAME netlo
 #define LOG_LEVEL CONFIG_NET_LOOPBACK_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <net/net_pkt.h>
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/loopback.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/loopback.h>
 
-#include <net/dummy.h>
+#include <zephyr/net/dummy.h>
 
 int loopback_dev_init(const struct device *dev)
 {

@@ -12,7 +12,7 @@
 #ifndef ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 #define ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <stm32_ll_usart.h>
 

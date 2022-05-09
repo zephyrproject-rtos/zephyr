@@ -7,7 +7,7 @@
 
 #define LOG_MODULE_NAME mesh_test
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Max number of messages that can be pending on RX at the same time */

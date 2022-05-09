@@ -13,12 +13,12 @@
 #define DT_DRV_COMPAT intel_dmic
 
 #include <errno.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 
-#include <audio/dmic.h>
+#include <zephyr/audio/dmic.h>
 #include "intel_dmic.h"
 #include "decimation/pdm_decim_fir.h"
 
@@ -26,7 +26,7 @@
 #define DMA_CHANNEL_DMIC_RXB DT_INST_DMAS_CELL_BY_NAME(0, rx_b, channel)
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(audio_dmic);
 
 /*

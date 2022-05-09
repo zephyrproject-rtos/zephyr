@@ -7,7 +7,7 @@
 /dts-v1/;
 #include <st/h7/stm32h7b3Xi.dtsi>
 #include <st/h7/stm32h7b3lihxq-pinctrl.dtsi>
-#include <dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 #include "arduino_r3_connector.dtsi"
 
 / {

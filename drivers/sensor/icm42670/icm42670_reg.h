@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM42670_REG_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM42670_REG_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 /* Helper macros for addressing registers in MREG1-3, see datasheet section 13 */
 #define REG_MADDR_BASE			0x0028

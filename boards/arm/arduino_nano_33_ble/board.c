@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <drivers/gpio.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
 
 static int board_init(const struct device *dev)
 {

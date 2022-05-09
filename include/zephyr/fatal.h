@@ -11,8 +11,8 @@
 #ifndef ZEPHYR_INCLUDE_FATAL_H
 #define ZEPHYR_INCLUDE_FATAL_H
 
-#include <arch/cpu.h>
-#include <toolchain.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {

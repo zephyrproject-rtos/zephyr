@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -399,7 +399,7 @@ __subsystem struct can_driver_api {
 
 #if defined(CONFIG_CAN_STATS) || defined(__DOXYGEN__)
 
-#include <stats/stats.h>
+#include <zephyr/stats/stats.h>
 
 /** @cond INTERNAL_HIDDEN */
 

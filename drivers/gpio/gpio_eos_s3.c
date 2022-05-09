@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT quicklogic_eos_s3_gpio
 
 #include <errno.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <eoss3_hal_gpio.h>
 #include <eoss3_hal_pads.h>

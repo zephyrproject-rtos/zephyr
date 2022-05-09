@@ -15,11 +15,11 @@
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_dh.h>
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 #define LOG_MODULE_NAME mesh_prov
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /*

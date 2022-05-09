@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/pinctrl.h>
 
 static int twr_ke18f_pinmux_init(const struct device *dev)
 {

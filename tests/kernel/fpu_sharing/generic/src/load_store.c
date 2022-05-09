@@ -36,7 +36,7 @@
  */
 
 #include <ztest.h>
-#include <debug/gcov.h>
+#include <zephyr/debug/gcov.h>
 
 #if defined(CONFIG_X86)
 #if defined(__GNUC__)

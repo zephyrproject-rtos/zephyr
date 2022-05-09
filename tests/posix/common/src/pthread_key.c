@@ -5,9 +5,9 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <pthread.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define N_THR 2
 #define N_KEY 2

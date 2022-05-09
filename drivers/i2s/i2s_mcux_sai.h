@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <fsl_sai.h>
 #include <fsl_edma.h>
 

@@ -8,13 +8,13 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <sys/ring_buffer.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/printk.h>
 #include <stdio.h>
-#include <drivers/ipm.h>
-#include <drivers/console/ipm_console.h>
-#include <sys/__assert.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/drivers/console/ipm_console.h>
+#include <zephyr/sys/__assert.h>
 
 static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 {

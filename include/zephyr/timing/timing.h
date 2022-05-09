@@ -7,8 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_TIMING_TIMING_H_
 #define ZEPHYR_INCLUDE_TIMING_TIMING_H_
 
-#include <sys/arch_interface.h>
-#include <timing/types.h>
+#include <zephyr/sys/arch_interface.h>
+#include <zephyr/timing/types.h>
 
 void soc_timing_init(void);
 void soc_timing_start(void);

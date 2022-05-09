@@ -7,15 +7,15 @@
 #define DT_DRV_COMPAT silabs_gecko_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 #include <em_cmu.h>
 #include <em_i2c.h>
 #include <em_gpio.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_gecko);
 
 #include "i2c-priv.h"

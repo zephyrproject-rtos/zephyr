@@ -12,7 +12,7 @@
 #ifndef _ARM_MPS2_REGS_H_
 #define _ARM_MPS2_REGS_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 /* Registers in the FPGA system control block */

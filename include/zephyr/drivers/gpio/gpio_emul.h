@@ -13,7 +13,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_EMUL_H_
 
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 
 #ifdef __cplusplus
 extern "C" {

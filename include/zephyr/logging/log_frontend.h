@@ -6,7 +6,7 @@
 #ifndef LOG_FRONTEND_H_
 #define LOG_FRONTEND_H_
 
-#include <logging/log_core.h>
+#include <zephyr/logging/log_core.h>
 
 /** @brief Initialize frontend.
  */

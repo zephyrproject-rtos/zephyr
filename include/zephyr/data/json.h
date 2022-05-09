@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_DATA_JSON_H_
 #define ZEPHYR_INCLUDE_DATA_JSON_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 #include <stddef.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <sys/types.h>
 

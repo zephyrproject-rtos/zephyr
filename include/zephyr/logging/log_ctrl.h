@@ -6,10 +6,10 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 
-#include <kernel.h>
-#include <logging/log_backend.h>
-#include <logging/log_msg.h>
-#include <logging/log_internal.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_internal.h>
 
 #ifdef __cplusplus
 extern "C" {

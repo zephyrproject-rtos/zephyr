@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sw_isr_table.h>
-#include <arch/cpu.h>
-#include <sys/__assert.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/__assert.h>
 /*
  * Common code for arches that use software ISR tables (CONFIG_GEN_ISR_TABLES)
  */

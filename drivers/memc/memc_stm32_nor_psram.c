@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT st_stm32_fmc_nor_psram
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
 #include <errno.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(memc_stm32_nor_psram, CONFIG_MEMC_LOG_LEVEL);
 
 /** SRAM base register offset, see FMC_Bank1_R_BASE */

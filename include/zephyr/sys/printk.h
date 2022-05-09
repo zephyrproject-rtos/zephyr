@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_PRINTK_H_
 #define ZEPHYR_INCLUDE_SYS_PRINTK_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <stddef.h>
 #include <stdarg.h>
 #include <inttypes.h>

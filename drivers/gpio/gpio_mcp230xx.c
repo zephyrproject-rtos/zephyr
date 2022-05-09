@@ -11,17 +11,17 @@
  */
 
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
-#include <sys/byteorder.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 
 #include "gpio_utils.h"
 #include "gpio_mcp23xxx.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_mcp230xx);
 
 static int mcp230xx_read_port_regs(const struct device *dev, uint8_t reg, uint16_t *buf)

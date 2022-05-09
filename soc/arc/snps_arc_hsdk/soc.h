@@ -14,7 +14,7 @@
 #ifndef _SOC_H_
 #define _SOC_H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 
 /* ARC HS Core IRQs */
@@ -25,8 +25,8 @@
 #ifndef _ASMLANGUAGE
 
 
-#include <sys/util.h>
-#include <random/rand32.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/random/rand32.h>
 
 /* PINMUX IO Hardware Functions */
 #define HSDK_PINMUX_FUNS		8

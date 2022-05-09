@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <soc.h>
-#include <arch/arc/v2/mpu/arc_mpu.h>
-#include <linker/linker-defs.h>
+#include <zephyr/arch/arc/v2/mpu/arc_mpu.h>
+#include <zephyr/linker/linker-defs.h>
 
 static struct arc_mpu_region mpu_regions[] = {
 	/* Region ICCM */

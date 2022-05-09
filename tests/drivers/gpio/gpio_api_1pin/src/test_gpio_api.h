@@ -7,8 +7,8 @@
 #ifndef TEST_GPIO_API_H_
 #define TEST_GPIO_API_H_
 
-#include <zephyr.h>
-#include <drivers/gpio.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/gpio.h>
 #include <ztest.h>
 
 #if DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)

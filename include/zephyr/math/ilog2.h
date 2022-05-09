@@ -6,9 +6,9 @@
 
 #include <stdint.h>
 
-#include <toolchain.h>
-#include <arch/common/ffs.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/arch/common/ffs.h>
+#include <zephyr/sys/util.h>
 
 /**
  * @file

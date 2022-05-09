@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <usb/usb_device.h>
+#include <zephyr/usb/usb_device.h>
 #include "test_uart.h"
 
 #ifdef CONFIG_SHELL

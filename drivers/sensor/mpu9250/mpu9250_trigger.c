@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/util.h>
-#include <logging/log.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 
 #include "mpu9250.h"
 

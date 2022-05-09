@@ -11,24 +11,24 @@
 
 #include <errno.h>
 #include <string.h>
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/dma.h>
-#include <drivers/i2s.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/i2s.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
-#include <drivers/clock_control.h>
-#include <dt-bindings/clock/imx_ccm.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <soc.h>
 
 #include "i2s_mcux_sai.h"
 
 #define LOG_DOMAIN dev_i2s_mcux
 #define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 

@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <ztest_assert.h>
-#include <sys/sem.h>
-#include <net/socket.h>
-#include <net/dns_resolve.h>
-#include <net/buf.h>
+#include <zephyr/sys/sem.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/buf.h>
 
 #include "../../socket_helpers.h"
 

@@ -12,8 +12,8 @@
 
 #if defined(CONFIG_X86_64)
 
-#include <arch/x86/intel64/thread.h>
-#include <kernel_structs.h>
+#include <zephyr/arch/x86/intel64/thread.h>
+#include <zephyr/kernel_structs.h>
 
 static inline struct _cpu *arch_curr_cpu(void)
 {

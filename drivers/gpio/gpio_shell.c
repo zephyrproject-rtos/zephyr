@@ -7,15 +7,15 @@
  * Use "device list" command for GPIO port names
  */
 
-#include <sys/printk.h>
-#include <shell/shell.h>
-#include <init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/init.h>
 #include <string.h>
 #include <stdio.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 

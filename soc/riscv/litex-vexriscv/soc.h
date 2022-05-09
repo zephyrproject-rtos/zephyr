@@ -8,7 +8,7 @@
 #define __RISCV32_LITEX_VEXRISCV_SOC_H_
 
 #include "../riscv-privilege/common/soc_common.h"
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 /* lib-c hooks required RAM defined variables */
 #define RISCV_RAM_BASE              DT_REG_ADDR(DT_INST(0, mmio_sram))

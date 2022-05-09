@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_POSIX_PTHREAD_KEY_H_
 
 #ifdef CONFIG_PTHREAD_IPC
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus

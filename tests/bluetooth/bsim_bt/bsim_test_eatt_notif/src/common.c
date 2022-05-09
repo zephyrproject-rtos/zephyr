@@ -5,7 +5,7 @@
  */
 
 #include "common.h"
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_MODULE_NAME common
 

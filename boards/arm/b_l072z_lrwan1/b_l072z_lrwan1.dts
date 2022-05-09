@@ -119,7 +119,7 @@ arduino_i2c: &i2c1 {};
 	status = "okay";
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 
-	lora: sx1276@0 {
+	lora: lora@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
 		label = "sx1276";

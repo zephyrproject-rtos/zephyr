@@ -17,7 +17,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 #include <soc_context.h>

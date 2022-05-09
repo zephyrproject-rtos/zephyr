@@ -10,19 +10,19 @@
  * @brief codes required for AArch64 multicore and Zephyr smp support
  */
 
-#include <cache.h>
-#include <device.h>
-#include <devicetree.h>
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <ksched.h>
 #include <soc.h>
-#include <init.h>
-#include <arch/arm64/mm.h>
-#include <arch/cpu.h>
-#include <drivers/interrupt_controller/gic.h>
-#include <drivers/pm_cpu_ops.h>
-#include <sys/arch_interface.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/arm64/mm.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/drivers/pm_cpu_ops.h>
+#include <zephyr/sys/arch_interface.h>
 #include "boot.h"
 
 #define SGI_SCHED_IPI	0

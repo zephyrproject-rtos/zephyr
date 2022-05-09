@@ -8,9 +8,9 @@
 
 #define DT_DRV_COMPAT nxp_imx_iuart
 
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/clock_control.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
 #include <errno.h>
 #include <soc.h>
 

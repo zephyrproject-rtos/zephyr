@@ -8,9 +8,9 @@
 #define SHELL_HISTORY_H__
 
 #include <zephyr/zephyr.h>
-#include <sys/util.h>
-#include <sys/dlist.h>
-#include <sys/ring_buffer.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

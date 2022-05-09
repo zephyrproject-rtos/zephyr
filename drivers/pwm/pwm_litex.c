@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT litex_pwm
 
-#include <device.h>
-#include <drivers/pwm.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pwm.h>
 #include <zephyr/types.h>
 
 #define REG_EN_ENABLE             0x1

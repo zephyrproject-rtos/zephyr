@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_mux, CONFIG_UART_MUX_LOG_LEVEL);
 
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <init.h>
-#include <syscall_handler.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/console/uart_mux.h>
-#include <sys/ring_buffer.h>
-#include <sys/util.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/console/uart_mux.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/atomic.h>
 
 #include "gsm_mux.h"
 

@@ -5,7 +5,7 @@
  */
 
 
-#include <init.h>
+#include <zephyr/init.h>
 #include "device_imx.h"
 
 static int pico_pi_m4_pinmux_init(const struct device *dev)

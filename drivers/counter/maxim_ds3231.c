@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT maxim_ds3231
 
-#include <device.h>
-#include <drivers/rtc/maxim_ds3231.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <kernel.h>
-#include <logging/log.h>
-#include <sys/timeutil.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/rtc/maxim_ds3231.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/timeutil.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(DS3231, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -1300,7 +1300,7 @@ DEVICE_DT_INST_DEFINE(0, ds3231_init, NULL, &ds3231_0_data,
 
 #ifdef CONFIG_USERSPACE
 
-#include <syscall_handler.h>
+#include <zephyr/syscall_handler.h>
 
 int z_vrfy_maxim_ds3231_get_syncpoint(const struct device *dev,
 				      struct maxim_ds3231_syncpoint *syncpoint)

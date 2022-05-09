@@ -2,10 +2,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log_backend_cavs_hda.h>
-#include <logging/log_backend.h>
-#include <logging/log_ctrl.h>
-#include <kernel.h>
+#include <zephyr/logging/log_backend_cavs_hda.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
@@ -14,7 +14,7 @@
 #define CHANNEL 6
 #define HOST_BUF_SIZE 512
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(hda_test, LOG_LEVEL_DBG);
 
 #define IPC_TIMEOUT K_MSEC(500)

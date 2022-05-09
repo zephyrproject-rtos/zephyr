@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 #define ECIA_BASE_ADDR			DT_REG_ADDR(DT_NODELABEL(ecia))
 

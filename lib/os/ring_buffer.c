@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/ring_buffer.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <string.h>
 
 uint32_t ring_buf_put_claim(struct ring_buf *buf, uint8_t **data, uint32_t size)

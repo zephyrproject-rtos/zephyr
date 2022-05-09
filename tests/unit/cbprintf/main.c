@@ -14,7 +14,7 @@
 #include <wctype.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define CBPRINTF_VIA_UNIT_TEST
 
@@ -131,7 +131,7 @@
 #define PACKAGE_FLAGS 0
 #endif
 
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 #include "../../../lib/os/cbprintf.c"
 
 #if defined(CONFIG_CBPRINTF_COMPLETE)

@@ -7,9 +7,9 @@
 #include "analog.h"
 #include "clock.h"
 
-#include <device.h>
-#include <drivers/uart.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/pinctrl.h>
 
 
 /* Driver dts compatibility: telink,b91_uart */

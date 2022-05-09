@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT microchip_xec_espi
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <errno.h>
-#include <drivers/espi.h>
-#include <logging/log.h>
+#include <zephyr/drivers/espi.h>
+#include <zephyr/logging/log.h>
 #include "espi_utils.h"
 
 /* Minimum delay before acknowledging a virtual wire */

@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT maxim_max6675
 
-#include <drivers/sensor.h>
-#include <drivers/spi.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max6675, CONFIG_SENSOR_LOG_LEVEL);
 
 /** Thermocouple input bit (goes high if thermocouple is disconnected). */

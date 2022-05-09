@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT raspberrypi_pico_reset
 
-#include <device.h>
-#include <drivers/reset.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/reset.h>
 
 struct reset_rpi_config {
 	DEVICE_MMIO_ROM;

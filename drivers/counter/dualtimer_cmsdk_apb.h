@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_COUNTER_DUALTIMER_CMSDK_APB_H_
 #define ZEPHYR_DRIVERS_COUNTER_DUALTIMER_CMSDK_APB_H_
 
-#include <drivers/counter.h>
+#include <zephyr/drivers/counter.h>
 
 #ifdef __cplusplus
 extern "C" {

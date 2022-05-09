@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/flash.h>
-#include <drivers/spi.h>
-#include <pm/device.h>
-#include <sys/byteorder.h>
-#include <logging/log.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 

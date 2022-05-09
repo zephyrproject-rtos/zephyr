@@ -5,10 +5,10 @@
  */
 
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <drivers/uart.h>
-#include <sys/sys_io.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/sys_io.h>
 
 #define DT_DRV_COMPAT   altr_jtag_uart
 

@@ -8,17 +8,17 @@
 #define DT_DRV_COMPAT st_stm32_qspi_nor
 
 #include <errno.h>
-#include <kernel.h>
-#include <toolchain.h>
-#include <arch/common/ffs.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/arch/common/ffs.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
-#include <drivers/pinctrl.h>
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
-#include <drivers/flash.h>
-#include <drivers/dma.h>
-#include <drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_stm32.h>
 
 #if DT_INST_NODE_HAS_PROP(0, spi_bus_width) && \
 	DT_INST_PROP(0, spi_bus_width) == 4
@@ -29,14 +29,14 @@
 
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 #if STM32_QSPI_RESET_GPIO
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #endif
 #include <stm32_ll_dma.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_QSPI_FIFO_THRESHOLD         8

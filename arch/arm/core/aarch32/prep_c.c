@@ -16,9 +16,9 @@
  * initialization is performed.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/linker-defs.h>
 
 #if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
 #include <aarch32/cortex_a_r/stack.h>

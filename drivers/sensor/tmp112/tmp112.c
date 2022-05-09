@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT ti_tmp112
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 #include "tmp112.h"
 
 LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);

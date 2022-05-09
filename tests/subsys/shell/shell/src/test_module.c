@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 static int cmd2_handler(const struct shell *sh, size_t argc, char **argv)
 {

@@ -8,7 +8,7 @@
 
 #include "common.h"
 
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/gatt.h>
 
 CREATE_FLAG(flag_reconfigured);
 

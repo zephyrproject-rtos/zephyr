@@ -39,15 +39,15 @@
  */
 #include <toolchain/other.h>
 #elif defined(__XCC__)
-#include <toolchain/xcc.h>
+#include <zephyr/toolchain/xcc.h>
 #elif defined(__CCAC__)
-#include <toolchain/mwdt.h>
+#include <zephyr/toolchain/mwdt.h>
 #elif defined(__ARMCOMPILER_VERSION)
-#include <toolchain/armclang.h>
+#include <zephyr/toolchain/armclang.h>
 #elif defined(__llvm__)
-#include <toolchain/llvm.h>
+#include <zephyr/toolchain/llvm.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
-#include <toolchain/gcc.h>
+#include <zephyr/toolchain/gcc.h>
 #else
 #error "Invalid/unknown toolchain configuration"
 #endif

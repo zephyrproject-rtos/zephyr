@@ -11,16 +11,16 @@
 #ifndef ZEPHYR_INCLUDE_NET_VIRTUAL_H_
 #define ZEPHYR_INCLUDE_NET_VIRTUAL_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <sys/atomic.h>
+#include <zephyr/sys/atomic.h>
 
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
 
-#include <sys/util.h>
-#include <net/net_if.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/net/net_if.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -8,17 +8,17 @@
 
 #include <errno.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <audio/codec.h>
+#include <zephyr/audio/codec.h>
 #include "tlv320dac310x.h"
 
 #define LOG_LEVEL CONFIG_AUDIO_CODEC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tlv320dac310x);
 
 #define CODEC_OUTPUT_VOLUME_MAX		0

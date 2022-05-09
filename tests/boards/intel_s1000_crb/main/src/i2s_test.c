@@ -20,11 +20,11 @@
  * start operation is triggered
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <device.h>
-#include <drivers/i2s.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2s.h>
 
 #define I2S_DEV_NAME "I2S_3"
 #define NUM_I2S_BUFFERS 4

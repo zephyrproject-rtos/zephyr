@@ -9,11 +9,11 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_WAIT_Q_H_
 #define ZEPHYR_KERNEL_INCLUDE_WAIT_Q_H_
 
-#include <kernel_structs.h>
-#include <sys/dlist.h>
-#include <sys/rb.h>
-#include <kernel/sched_priq.h>
-#include <timeout_q.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/rb.h>
+#include <zephyr/kernel/sched_priq.h>
+#include <zephyr/timeout_q.h>
 
 #ifdef __cplusplus
 extern "C" {

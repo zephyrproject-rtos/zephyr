@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 /* The idea of this test is to estimate stack usage of logging messages. Each
  * test checks stack usage before and after logging a message. Increase of stack

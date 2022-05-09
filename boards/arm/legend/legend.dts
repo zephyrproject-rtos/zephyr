@@ -7,8 +7,8 @@
 /dts-v1/;
 #include <st/f0/stm32f070Xb.dtsi>
 #include <st/f0/stm32f070cbtx-pinctrl.dtsi>
-#include <dt-bindings/led/led.h>
-#include <dt-bindings/led/seagate_legend_b1414.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/seagate_legend_b1414.h>
 
 / {
 	chosen {

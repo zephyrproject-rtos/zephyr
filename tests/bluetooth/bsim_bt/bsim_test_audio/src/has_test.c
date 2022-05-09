@@ -5,8 +5,8 @@
  */
 
 #ifdef CONFIG_BT_HAS
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/has.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/has.h>
 
 #include "common.h"
 

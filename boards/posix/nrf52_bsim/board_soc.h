@@ -19,8 +19,8 @@
 #ifndef _POSIX_NRF52_BOARD_SOC_H
 #define _POSIX_NRF52_BOARD_SOC_H
 
-#include <toolchain.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h>
 
 #include <stdint.h>
 #include <stdbool.h>

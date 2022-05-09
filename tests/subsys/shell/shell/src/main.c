@@ -9,11 +9,11 @@
  *
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
-#include <shell/shell.h>
-#include <shell/shell_dummy.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_dummy.h>
 
 #define MAX_CMD_SYNTAX_LEN	(11)
 static char dynamic_cmd_buffer[][MAX_CMD_SYNTAX_LEN] = {

@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include <stm32l0xx_ll_utils.h>
 #include <stm32l0xx_ll_bus.h>
@@ -15,9 +15,9 @@
 #include <stm32l0xx_ll_rcc.h>
 #include <stm32l0xx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Select MSI as wake-up system clock if configured, HSI otherwise */

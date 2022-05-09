@@ -13,7 +13,7 @@
  */
 
 #include <version.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef ZEPHYR_INCLUDE_USB_CH9_H_
 #define ZEPHYR_INCLUDE_USB_CH9_H_

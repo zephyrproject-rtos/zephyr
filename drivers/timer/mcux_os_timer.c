@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT nxp_os_timer
 
-#include <device.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
 #include "fsl_ostimer.h"
 #include "fsl_power.h"
 

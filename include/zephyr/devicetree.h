@@ -19,7 +19,7 @@
 #include <devicetree_unfixed.h>
 #include <devicetree_fixups.h>
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 /**
  * @brief devicetree.h API
@@ -3014,18 +3014,18 @@
 	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
 
 /* have these last so they have access to all previously defined macros */
-#include <devicetree/io-channels.h>
-#include <devicetree/clocks.h>
-#include <devicetree/gpio.h>
-#include <devicetree/spi.h>
-#include <devicetree/dma.h>
-#include <devicetree/pwms.h>
-#include <devicetree/fixed-partitions.h>
-#include <devicetree/zephyr.h>
-#include <devicetree/ordinals.h>
-#include <devicetree/pinctrl.h>
-#include <devicetree/can.h>
-#include <devicetree/reset.h>
-#include <devicetree/mbox.h>
+#include <zephyr/devicetree/io-channels.h>
+#include <zephyr/devicetree/clocks.h>
+#include <zephyr/devicetree/gpio.h>
+#include <zephyr/devicetree/spi.h>
+#include <zephyr/devicetree/dma.h>
+#include <zephyr/devicetree/pwms.h>
+#include <zephyr/devicetree/fixed-partitions.h>
+#include <zephyr/devicetree/zephyr.h>
+#include <zephyr/devicetree/ordinals.h>
+#include <zephyr/devicetree/pinctrl.h>
+#include <zephyr/devicetree/can.h>
+#include <zephyr/devicetree/reset.h>
+#include <zephyr/devicetree/mbox.h>
 
 #endif /* DEVICETREE_H */

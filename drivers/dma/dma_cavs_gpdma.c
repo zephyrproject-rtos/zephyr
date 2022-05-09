@@ -20,7 +20,7 @@
 #include "dma_dw_common.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_cavs_gpdma);
 
 

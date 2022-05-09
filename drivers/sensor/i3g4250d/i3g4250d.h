@@ -12,10 +12,10 @@
 #define ZEPHYR_DRIVERS_SENSOR_I3G4250D_I3G4250D_H_
 
 #include <stdint.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
-#include <sys/util.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/util.h>
 #include "i3g4250d_reg.h"
 
 struct i3g4250d_device_config {

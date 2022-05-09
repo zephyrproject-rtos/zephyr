@@ -7,7 +7,7 @@
 #ifndef SHELL_TELNET_H__
 #define SHELL_TELNET_H__
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #ifdef __cplusplus
 extern "C" {

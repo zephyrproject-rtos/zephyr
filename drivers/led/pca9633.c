@@ -11,13 +11,13 @@
  * @brief LED driver for the PCA9633 I2C LED driver (7-bit slave address 0x62)
  */
 
-#include <drivers/i2c.h>
-#include <drivers/led.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pca9633);
 
 #include "led_context.h"

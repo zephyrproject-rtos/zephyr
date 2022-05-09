@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 #define I2C_ENABLED(idx)  (IS_ENABLED(CONFIG_I2C) && \
 			   DT_NODE_HAS_STATUS(DT_NODELABEL(i2c##idx), okay))

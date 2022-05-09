@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
 extern void test_dac_loopback(void);

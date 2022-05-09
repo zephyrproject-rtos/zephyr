@@ -16,12 +16,12 @@
  * generate an interrupt every tick.
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/clock_control.h>
-#include <drivers/timer/system_timer.h>
-#include <drivers/pinctrl.h>
-#include <sys_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys_clock.h>
 
 /* RTC registers. */
 #define RTC0 ((RtcMode0 *) DT_INST_REG_ADDR(0))

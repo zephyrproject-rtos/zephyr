@@ -11,7 +11,7 @@
  */
 
 #include <xtensa/config/core-isa.h>
-#include <sw_isr_table.h>
+#include <zephyr/sw_isr_table.h>
 
 #if !defined(XCHAL_INT0_LEVEL) || XCHAL_INT0_LEVEL != 1
 #error core-isa.h interrupt level does not match dispatcher!

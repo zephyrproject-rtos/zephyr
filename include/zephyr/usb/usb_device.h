@@ -38,9 +38,9 @@
 #ifndef ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
 #define ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
 
-#include <drivers/usb/usb_dc.h>
-#include <usb/usb_ch9.h>
-#include <logging/log.h>
+#include <zephyr/drivers/usb/usb_dc.h>
+#include <zephyr/usb/usb_ch9.h>
+#include <zephyr/logging/log.h>
 
 #ifdef __cplusplus
 extern "C" {

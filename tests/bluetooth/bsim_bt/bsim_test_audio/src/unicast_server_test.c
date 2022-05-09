@@ -6,9 +6,9 @@
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/audio/audio.h>
-#include <bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/capabilities.h>
 #include "common.h"
 #include "unicast_common.h"
 

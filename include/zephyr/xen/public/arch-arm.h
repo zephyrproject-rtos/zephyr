@@ -29,7 +29,7 @@
 #ifndef __XEN_PUBLIC_ARCH_ARM_H__
 #define __XEN_PUBLIC_ARCH_ARM_H__
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 /*
  * `incontents 50 arm_abi Hypercall Calling Convention

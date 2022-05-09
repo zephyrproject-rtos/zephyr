@@ -13,9 +13,9 @@
  * exceptions
  */
 
-#include <kernel.h>
-#include <logging/log.h>
-#include <exc_handle.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/exc_handle.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

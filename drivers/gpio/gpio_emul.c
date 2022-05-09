@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT zephyr_gpio_emul
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/gpio/gpio_emul.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
 #include <errno.h>
-#include <zephyr.h>
-#include <pm/device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/pm/device.h>
 
 #include "gpio_utils.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_emul);
 
 #define GPIO_EMUL_INT_BITMASK						\

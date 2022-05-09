@@ -6,6 +6,6 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_NETINET_TCP_H_
 #define ZEPHYR_INCLUDE_POSIX_NETINET_TCP_H_
 
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 
 #endif /* ZEPHYR_INCLUDE_POSIX_NETINET_TCP_H_ */

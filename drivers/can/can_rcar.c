@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT renesas_rcar_can
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <drivers/can.h>
-#include <drivers/can/transceiver.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
-#include <drivers/pinctrl.h>
-#include <logging/log.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/transceiver.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(can_rcar, CONFIG_CAN_LOG_LEVEL);
 

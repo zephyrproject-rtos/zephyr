@@ -8,14 +8,14 @@
 #include "soc.h"
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <string.h>
-#include <toolchain/gcc.h>
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/types.h>
 
 #include "esp_private/system_internal.h"

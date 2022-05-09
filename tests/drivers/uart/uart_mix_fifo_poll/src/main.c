@@ -11,10 +11,10 @@
  * @}
  */
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <ztest.h>
-#include <drivers/counter.h>
-#include <random/rand32.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/random/rand32.h>
 /* RX and TX pins have to be connected together*/
 
 #if defined(CONFIG_BOARD_NRF52840DK_NRF52840)

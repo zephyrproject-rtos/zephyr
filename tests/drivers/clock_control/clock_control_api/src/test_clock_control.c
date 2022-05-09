@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ztest.h>
-#include <drivers/clock_control.h>
-#include <logging/log.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
-#include <drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif
 
 struct device_subsys_data {

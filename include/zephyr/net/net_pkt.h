@@ -19,15 +19,15 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
-#include <net/net_core.h>
-#include <net/net_linkaddr.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/net_context.h>
-#include <net/ethernet_vlan.h>
-#include <net/ptp_time.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_linkaddr.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/ethernet_vlan.h>
+#include <zephyr/net/ptp_time.h>
 
 #ifdef __cplusplus
 extern "C" {

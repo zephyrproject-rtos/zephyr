@@ -13,8 +13,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_DNS_RESOLVE_H_
 #define ZEPHYR_INCLUDE_NET_DNS_RESOLVE_H_
 
-#include <net/net_ip.h>
-#include <net/net_context.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_context.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -17,14 +17,14 @@
  * number from 16 to last IRQ number on the platform.
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <sys/__assert.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <sw_isr_table.h>
-#include <irq.h>
-#include <sys/printk.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/irq.h>
+#include <zephyr/sys/printk.h>
 
 
 /*

@@ -5,13 +5,13 @@
  *
  */
 
-#include <arch/riscv/csr.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/arch/riscv/csr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
 #include "soc_espi.h"
-#include <dt-bindings/interrupt-controller/ite-intc.h>
+#include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 
 #ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
 #define __intc_ram_code __attribute__((section(".__ram_code")))

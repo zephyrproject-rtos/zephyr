@@ -12,8 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
 
-#include <net/net_mgmt.h>
-#include <net/wifi.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/wifi.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,7 +97,7 @@ struct wifi_scan_result {
 };
 
 struct wifi_connect_req_params {
-	uint8_t *ssid;
+	const uint8_t *ssid;
 	uint8_t ssid_length; /* Max 32 */
 
 	uint8_t *psk;
@@ -111,7 +111,7 @@ struct wifi_status {
 	int status;
 };
 
-#include <net/net_if.h>
+#include <zephyr/net/net_if.h>
 
 typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
 				 struct wifi_scan_result *entry);

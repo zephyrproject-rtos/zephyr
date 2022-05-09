@@ -15,12 +15,12 @@
 
 #define DT_DRV_COMPAT regulator_pmic
 
-#include <kernel.h>
-#include <drivers/regulator.h>
-#include <drivers/regulator/consumer.h>
-#include <drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/regulator.h>
+#include <zephyr/drivers/regulator/consumer.h>
+#include <zephyr/drivers/i2c.h>
 #include <errno.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(pmic_regulator, CONFIG_REGULATOR_LOG_LEVEL);
 

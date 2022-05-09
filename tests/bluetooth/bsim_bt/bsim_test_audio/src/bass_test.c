@@ -5,7 +5,7 @@
  */
 
 #ifdef CONFIG_BT_BASS
-#include <bluetooth/audio/bass.h>
+#include <zephyr/bluetooth/audio/bass.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;

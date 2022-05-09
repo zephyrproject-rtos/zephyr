@@ -6,18 +6,18 @@
 
 #define DT_DRV_COMPAT intel_ibecc
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
-#include <drivers/edac.h>
+#include <zephyr/drivers/edac.h>
 #include "ibecc.h"
 
 /**
  * In the driver 64 bit registers are used and not all of then at the
  * moment may be correctly logged.
  */
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(edac_ibecc, CONFIG_EDAC_LOG_LEVEL);
 
 #define DEVICE_NODE DT_NODELABEL(ibecc)

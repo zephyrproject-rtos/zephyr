@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ztest_error_hook.h>
 
 static struct k_poll_signal signal_err;
