@@ -313,7 +313,7 @@ static int lc3_reconfig(struct bt_audio_stream *stream,
 		int err;
 
 		if (default_unicast_group == NULL) {
-			err = bt_audio_unicast_group_create(default_stream, 1,
+			err = bt_audio_unicast_group_create(&default_stream, 1,
 							    &default_unicast_group);
 			if (err != 0) {
 				shell_error(ctx_shell,
@@ -733,7 +733,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (default_unicast_group == NULL) {
-		err = bt_audio_unicast_group_create(default_stream, 1, &default_unicast_group);
+		err = bt_audio_unicast_group_create(&default_stream, 1, &default_unicast_group);
 		if (err != 0) {
 			shell_error(sh, "Unable to create default unicast group: %d", err);
 			return -ENOEXEC;
@@ -1119,6 +1119,7 @@ static int cmd_select_broadcast_source(const struct shell *sh, size_t argc,
 static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 				char *argv[])
 {
+	static struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_source_streams)];
 	struct named_lc3_preset *named_preset;
 	int err;
 
@@ -1138,8 +1139,12 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		}
 	}
 
-	err = bt_audio_broadcast_source_create(broadcast_source_streams,
-					       ARRAY_SIZE(broadcast_source_streams),
+	(void)memset(streams, 0, sizeof(streams));
+	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+		streams[i] = &broadcast_source_streams[i];
+	}
+
+	err = bt_audio_broadcast_source_create(streams, ARRAY_SIZE(streams),
 					       &named_preset->preset.codec,
 					       &named_preset->preset.qos,
 					       &default_source);
@@ -1152,7 +1157,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 		    named_preset->name);
 
 	if (default_stream == NULL) {
-		default_stream = &broadcast_source_streams[0];
+		default_stream = streams[0];
 	}
 
 	return 0;
@@ -1255,6 +1260,7 @@ static int cmd_accept_broadcast(const struct shell *sh, size_t argc,
 
 static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
+	static struct bt_audio_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 	uint32_t bis_bitfield;
 	int err;
 
@@ -1273,8 +1279,13 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	(void)memset(streams, 0, sizeof(streams));
+	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+		streams[i] = &broadcast_sink_streams[i];
+	}
+
 	err = bt_audio_broadcast_sink_sync(default_sink, bis_bitfield,
-					   broadcast_sink_streams,
+					   streams,
 					   &default_preset->preset.codec,
 					   NULL);
 	if (err != 0) {

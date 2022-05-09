@@ -2,9 +2,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <spinlock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/spinlock.h>
 #include <kswap.h>
 #include <kernel_internal.h>
 

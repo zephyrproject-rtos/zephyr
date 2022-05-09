@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <device.h>
+#include <zephyr/device.h>
 
-#include <pm/device.h>
+#include <zephyr/pm/device.h>
 
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
