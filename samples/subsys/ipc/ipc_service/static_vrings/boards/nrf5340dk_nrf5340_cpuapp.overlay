@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
 
 / {
 	chosen {
