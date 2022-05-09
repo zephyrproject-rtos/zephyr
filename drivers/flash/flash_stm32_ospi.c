@@ -1052,6 +1052,7 @@ static void flash_stm32_ospi_isr(const struct device *dev)
 	HAL_OSPI_IRQHandler(&dev_data->hospi);
 }
 
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 /* weak function required for HAL compilation */
 __weak HAL_StatusTypeDef HAL_DMA_Abort_IT(DMA_HandleTypeDef *hdma)
 {
@@ -1063,7 +1064,7 @@ __weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 {
 	return HAL_OK;
 }
-
+#endif /* !CONFIG_SOC_SERIES_STM32H7X */
 /*
  * Transfer Error callback.
  */
