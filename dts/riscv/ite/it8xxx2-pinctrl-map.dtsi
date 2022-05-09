@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 
 &pinctrl {
 	/* ADC alternate function */
