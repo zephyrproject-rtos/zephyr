@@ -14,15 +14,15 @@
  * on ARM Cortex-A, Cortex-M and Cortex-R CPUs.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <syscall.h>
-#include <kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/syscall.h>
+#include <zephyr/kernel.h>
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cpu.h>
 #endif
 _ASM_FILE_PROLOGUE
 
