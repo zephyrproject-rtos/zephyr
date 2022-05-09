@@ -56,6 +56,14 @@
 				interrupts = <39 0>;
 			};
 		};
+
+		uart: uart@50020000 {
+			compatible = "renesas,smartbond-uart";
+			reg = <0x50020000 0x100>;
+			periph-clock-config = <0x01>;
+			interrupts = <5 0>;
+			status = "disabled";
+		};
 	};
 };
 
