@@ -125,7 +125,7 @@ struct settings_handler {
 /**
  * @struct settings_handler_static
  * Config handlers without the node element, used for static handlers.
- * These are registered using a call to SETTINGS_REGISTER_STATIC().
+ * These are registered using a call to SETTINGS_STATIC_HANDLER_DEFINE().
  */
 struct settings_handler_static {
 
