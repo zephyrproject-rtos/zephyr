@@ -473,12 +473,6 @@ static int uart_stm32_configure(const struct device *dev,
 		data->baud_rate = cfg->baudrate;
 	}
 
-#ifdef LL_USART_TXRX_SWAPPED
-	if (config->tx_rx_swap) {
-		LL_USART_SetTXRXSwap(config->usart, LL_USART_TXRX_SWAPPED);
-	}
-#endif
-
 	LL_USART_Enable(config->usart);
 	return 0;
 };
@@ -1611,6 +1605,12 @@ static int uart_stm32_init(const struct device *dev)
 	if (config->single_wire) {
 		LL_USART_EnableHalfDuplex(config->usart);
 	}
+
+#ifdef LL_USART_TXRX_SWAPPED
+	if (config->tx_rx_swap) {
+		LL_USART_SetTXRXSwap(config->usart, LL_USART_TXRX_SWAPPED);
+	}
+#endif
 
 	LL_USART_Enable(config->usart);
 
