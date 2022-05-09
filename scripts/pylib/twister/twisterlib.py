@@ -3491,18 +3491,24 @@ class TestPlan(DisablePyTestCollectionMixin):
                 reason = ts.get("reason", "Unknown")
                 if status in ["error", "failed"]:
                     instance.status = None
+                    instance.reason = None
                 # test marked as passed (built only) but can run when
                 # --test-only is used. Reset status to capture new results.
                 elif status == 'passed' and instance.run and self.test_only:
                     instance.status = None
+                    instance.reason = None
                 else:
                     instance.status = status
-                instance.reason = reason
+                    instance.reason = reason
 
                 for tc in ts.get('testcases', []):
                     identifier = tc['identifier']
                     tc_status = tc.get('status', None)
-                    tc_reason = tc.get('reason')
+                    tc_reason = None
+                    # we set reason only if status is valid, it might have been
+                    # reset above...
+                    if instance.status:
+                        tc_reason = tc.get('reason')
                     if tc_status:
                         case = instance.set_case_status_by_name(identifier, tc_status, tc_reason)
                         case.duration = tc.get('execution_time', 0)
