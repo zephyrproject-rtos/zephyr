@@ -7,9 +7,9 @@
 #define DT_DRV_COMPAT nxp_imx_src_rev2
 
 #include <soc.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 #include <fsl_soc_src.h>
 
 #ifdef CONFIG_CPU_CORTEX_M7
