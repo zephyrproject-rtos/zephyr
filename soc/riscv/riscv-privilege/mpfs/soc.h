@@ -7,7 +7,7 @@
 #define __RISCV64_MPFS_SOC_H_
 
 #include <soc_common.h>
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 
 /* Timer configuration */
