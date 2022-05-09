@@ -3856,7 +3856,7 @@ class TestPlan(DisablePyTestCollectionMixin):
 
 
     @staticmethod
-    def xunit_testcase(eleTestsuite, name, classname, status, reason, duration, runnable, stats, log):
+    def xunit_testcase(eleTestsuite, name, classname, status, ts_status, reason, duration, runnable, stats, log):
         fails, passes, errors, skips = stats
 
         if status in ['skipped', 'filtered']:
@@ -3870,7 +3870,11 @@ class TestPlan(DisablePyTestCollectionMixin):
 
         if status in ['skipped', 'filtered']:
             skips += 1
-            ET.SubElement(eleTestcase, 'skipped', type=f"{status}", message=f"{reason}")
+            if ts_status == "passed" and not runnable:
+                tc_type = "build"
+            else:
+                tc_type = status
+            ET.SubElement(eleTestcase, 'skipped', type=f"{tc_type}", message=f"{reason}")
         elif status in ["failed", "blocked"]:
             fails += 1
             el = ET.SubElement(eleTestcase, 'failure', type="failure", message=f"{reason}")
@@ -3955,7 +3959,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                         name = tc.get("identifier")
                         classname = ".".join(name.split(".")[:2])
                         fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
-                            name, classname, status, reason, tc_duration, runnable,
+                            name, classname, status, ts_status, reason, tc_duration, runnable,
                             (fails, passes, errors, skips), log)
                 else:
                     reason = ts.get('reason', 'Unknown')
@@ -3963,7 +3967,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                     classname = f"{platform}:{name}"
                     log = ts.get("log")
                     fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
-                        name, classname, ts_status, reason, duration, runnable,
+                        name, classname, ts_status, ts_status, reason, duration, runnable,
                         (fails, passes, errors, skips), log)
 
             total = (errors + passes + fails + skips)
