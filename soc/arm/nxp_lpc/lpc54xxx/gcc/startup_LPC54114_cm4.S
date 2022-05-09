@@ -7,9 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT) && defined(CONFIG_SOC_LPC54114_M4)
 

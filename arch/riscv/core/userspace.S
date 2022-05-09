@@ -6,13 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <syscall.h>
-#include <kernel_structs.h>
-#include <arch/riscv/csr.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/syscall.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/riscv/csr.h>
 #include "asm_macros.inc"
 
 /* exports */

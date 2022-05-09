@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/sparc/sparc.h>
+#include <zephyr/arch/sparc/sparc.h>
 
 GTEXT(__sparc_trap_except_reason)
 GTEXT(__sparc_trap_fault)

@@ -13,11 +13,11 @@
  * See isr_wrapper.S for details.
  */
 
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <offsets_short.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
 
 GTEXT(_firq_enter)
