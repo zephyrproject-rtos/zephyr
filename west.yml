@@ -64,11 +64,6 @@ manifest:
       path: modules/hal/atmel
       groups:
         - hal
-    - name: hal_cypress
-      revision: 81a059f21435bc7e315bccd720da5a9b615bbb50
-      path: modules/hal/cypress
-      groups:
-        - hal
     - name: hal_espressif
       revision: 5a334d5584d030d5773de2f1d489288a8625529c
       path: modules/hal/espressif
@@ -81,7 +76,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: f1fa8241f8786198ba41155413243de36ed878a5
+      revision: 4af06965f57ba1e7d170e6a97d24c33785543a8c
       path: modules/hal/infineon
       groups:
         - hal
