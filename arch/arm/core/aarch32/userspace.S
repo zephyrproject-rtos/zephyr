@@ -7,15 +7,15 @@
  *
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <syscall.h>
+#include <zephyr/syscall.h>
 
-#include <arch/arm/aarch32/exc.h>
+#include <zephyr/arch/arm/aarch32/exc.h>
 
 #if defined(CONFIG_ARMV7_R)
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #endif
 
 _ASM_FILE_PROLOGUE

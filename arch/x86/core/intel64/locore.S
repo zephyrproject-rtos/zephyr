@@ -3,16 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <arch/x86/multiboot.h>
-#include <arch/x86/efi.h>
-#include <sys/util.h>
-#include <arch/x86/msr.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/arch/x86/multiboot.h>
+#include <zephyr/arch/x86/efi.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/arch/x86/msr.h>
 #include <kernel_arch_data.h>
 #include <offsets_short.h>
-#include <drivers/interrupt_controller/loapic.h>
-#include <arch/cpu.h>
-#include <sys/mem_manage.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sys/mem_manage.h>
 
 /*
  * Definitions/macros for enabling paging

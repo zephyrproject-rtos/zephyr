@@ -8,12 +8,12 @@
  * ARM64 Cortex-A ISRs wrapper
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <sw_isr_table.h>
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE

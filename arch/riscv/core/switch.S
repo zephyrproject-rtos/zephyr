@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <kernel.h>
-#include <sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 #include "asm_macros.inc"
 
 /* Convenience macros for loading/storing register states. */
