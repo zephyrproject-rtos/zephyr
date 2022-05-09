@@ -362,8 +362,8 @@ def main():
         debug("\nFinal sups:\n\t%s" % ("\n\t".join([_sn.path for _sn in n.__supports])))
 
     with open(args.output_source, "w") as fp:
-        fp.write('#include <device.h>\n')
-        fp.write('#include <toolchain.h>\n')
+        fp.write('#include <zephyr/device.h>\n')
+        fp.write('#include <zephyr/toolchain.h>\n')
 
         for dev in devices:
             hs = dev.handle
