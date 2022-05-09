@@ -1069,7 +1069,7 @@ For example, with this DTS fragment:
 
 .. code-block:: devicetree
 
-   #include <dt-bindings/gpio/gpio.h>
+   #include <zephyr/dt-bindings/gpio/gpio.h>
 
    / {
 	zephyr,user {
