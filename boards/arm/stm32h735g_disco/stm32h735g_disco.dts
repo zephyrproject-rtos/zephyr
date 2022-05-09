@@ -118,6 +118,47 @@
 	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
 };
 
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_clk_pf10 &octospim_p1_ncs_pg6
+		     &octospim_p1_io0_pd11 &octospim_p1_io1_pd12
+		     &octospim_p1_io2_pe2 &octospim_p1_io3_pd13
+		     &octospim_p1_io4_pd4 &octospim_p1_io5_pd5
+		     &octospim_p1_io6_pg9 &octospim_p1_io7_pd7
+		     &octospim_p1_dqs_pb2>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	mx25lm51245: ospi-nor-flash@0 {
+		compatible = "st,stm32-ospi-nor";
+		label = "MX25LM51245";
+		reg = <0>;
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		size = <DT_SIZE_M(64)>;
+		spi-bus-width = <OSPI_OPI_MODE>;
+		data-rate = <OSPI_DTR_TRANSFER>;
+		status = "okay";
+		sfdp-bfp = [
+			53 46 44 50 06 01 02 ff
+			00 06 01 10 30 00 00 ff
+			C2 00 01 04 10 01 00 ff
+			84 00 01 02 C0 00 00 ff
+			00 00 00 00
+		];
+
+		partitions {
+			   compatible = "fixed-partitions";
+			   #address-cells = <1>;
+			   #size-cells = <1>;
+
+			   partition@0 {
+			       label = "nor";
+			       reg = <0x00000000 DT_SIZE_M(4)>;
+			   };
+		};
+	};
+};
+
 &lptim1 {
 	status = "okay";
 };
