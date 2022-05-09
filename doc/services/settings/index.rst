@@ -199,7 +199,7 @@ export functionality, for example, writing to the shell console).
     }
 
     static int foo_settings_export(int (*storage_func)(const char *name,
-                                                       void *value,
+                                                       const void *value,
                                                        size_t val_len))
     {
         return storage_func("foo/bar", &foo_val, sizeof(foo_val));
