@@ -6,6 +6,7 @@
 
 #include <st/h7/stm32h7.dtsi>
 #include <zephyr/dt-bindings/display/stm32_ltdc.h>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 / {
 	soc {
@@ -46,6 +47,30 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
 			label = "LTDC";
 			status = "disabled";
+		};
+
+		octospi1: octospi@52005000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x52005000 0x1000>;
+			interrupts = <92 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>,
+				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			label= "OCTOSPI1";
+		};
+
+		octospi2: octospi@5200a000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x5200a000 0x1000>;
+			interrupts = <150 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x000080000>,
+				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			label= "OCTOSPI2";
 		};
 	};
 
