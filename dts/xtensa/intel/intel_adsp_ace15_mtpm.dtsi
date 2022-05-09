@@ -162,6 +162,7 @@
 			dmas = <&lpgpdma0 2
 					&lpgpdma0 3>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -176,6 +177,7 @@
 			dmas = <&lpgpdma0 4
 					&lpgpdma0 5>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -190,6 +192,7 @@
 			dmas = <&lpgpdma0 6
 					&lpgpdma0 7>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -204,6 +207,7 @@
 			dmas = <&lpgpdma0 8
 					&lpgpdma0 9>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -218,6 +222,7 @@
 			dmas = <&lpgpdma0 10
 					&lpgpdma0 11>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
@@ -232,6 +237,7 @@
 			dmas = <&lpgpdma0 12
 					&lpgpdma0 13>;
 			dma-names = "tx", "rx";
+			power-domain = <&io0_domain>;
 			status = "okay";
 		};
 
