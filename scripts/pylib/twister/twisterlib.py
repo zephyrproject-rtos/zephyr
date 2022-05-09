@@ -17,6 +17,7 @@ import shlex
 import signal
 import hashlib
 import threading
+from datetime import datetime
 from collections import OrderedDict
 import queue
 import time
@@ -3092,6 +3093,8 @@ class TestPlan(DisablePyTestCollectionMixin):
 
         self.modules = []
 
+        self.timestamp = datetime.now().isoformat()
+
     def check_zephyr_version(self):
         try:
             subproc = subprocess.run(["git", "describe", "--abbrev=12", "--always"],
@@ -3930,6 +3933,7 @@ class TestPlan(DisablePyTestCollectionMixin):
             duration = 0
             eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
                                             name=suite.get("name"), time="0",
+                                            timestamp = self.timestamp,
                                             tests="0",
                                             failures="0",
                                             errors="0", skipped="0")
@@ -3999,7 +4003,9 @@ class TestPlan(DisablePyTestCollectionMixin):
 
             duration = 0
             eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
-                                            name=platform, time="0",
+                                            name=platform,
+                                            timestamp = self.timestamp,
+                                            time="0",
                                             tests="0",
                                             failures="0",
                                             errors="0", skipped="0")
