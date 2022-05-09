@@ -274,7 +274,7 @@ up from where it was before restart.
 
         printk("foo: %d\n", foo_val);
 
-        k_sleep(1000);
+        k_msleep(1000);
         sys_reboot(SYS_REBOOT_COLD);
     }
 
