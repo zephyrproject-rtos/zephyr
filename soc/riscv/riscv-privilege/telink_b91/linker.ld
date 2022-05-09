@@ -8,8 +8,8 @@
  * @brief Linker script for the Telink B91 SoC
  */
 
-#include <devicetree.h>
-#include <linker/linker-tool.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/linker/linker-tool.h>
 
 MEMORY
 {
@@ -26,7 +26,7 @@ SECTIONS
 	} GROUP_LINK_IN(ROM_INIT)
 }
 
-#include <arch/riscv/common/linker.ld>
+#include <zephyr/arch/riscv/common/linker.ld>
 
 SECTIONS
 {

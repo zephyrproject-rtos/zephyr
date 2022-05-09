@@ -11,11 +11,11 @@
  * Linker script for the Cortex-M platforms.
  */
 
-#include <linker/sections.h>
-#include <devicetree.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/devicetree.h>
 
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 #if CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP
 
@@ -44,4 +44,4 @@ MEMORY
 
 #endif /* CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP */
 
-#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>

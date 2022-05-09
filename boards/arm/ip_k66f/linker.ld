@@ -42,4 +42,4 @@ ITERABLE_SECTION_RAM(net_if_dev, 4)                             \
 ITERABLE_SECTION_RAM(net_l2, 4)                                 \
 ITERABLE_SECTION_RAM(eth_bridge, 4)
 
-#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>
+#include <zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld>

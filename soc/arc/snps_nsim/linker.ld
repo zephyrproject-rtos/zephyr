@@ -8,7 +8,7 @@
  * @brief Linker script for the Synopsys EM Starterkit platform.
  */
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 
 /* Instruction Closely Coupled Memory (ICCM) base address and size */
 #if DT_NODE_HAS_PROP(DT_INST(0, arc_iccm), reg) && \
@@ -33,4 +33,4 @@
 #define SRAM_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
 #endif
 
-#include <arch/arc/v2/linker.ld>
+#include <zephyr/arch/arc/v2/linker.ld>
