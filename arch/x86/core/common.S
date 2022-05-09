@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/x86/multiboot.h>
+#include <zephyr/arch/x86/multiboot.h>
 
 /*
  * This is included by ia32/crt0.S and intel64/locore.S

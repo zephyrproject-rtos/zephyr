@@ -8,9 +8,9 @@
  * ARM64 Cortex-A power management
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 
 _ASM_FILE_PROLOGUE
 

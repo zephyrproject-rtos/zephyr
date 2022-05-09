@@ -12,9 +12,9 @@
  * Reset handler that prepares the system for running C code.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <offsets_short.h>
 #include <aarch32/cortex_a_r/tcm.h>
 #include "vector_table.h"

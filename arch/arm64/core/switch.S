@@ -11,11 +11,11 @@
  * on ARM64 Cortex-A (AArch64)
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <offsets_short.h>
-#include <arch/cpu.h>
-#include <syscall.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/syscall.h>
 #include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE

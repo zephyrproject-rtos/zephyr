@@ -10,8 +10,8 @@
  * @brief Populated vector table in ROM
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include "vector_table.h"
 
 _ASM_FILE_PROLOGUE

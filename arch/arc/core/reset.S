@@ -11,11 +11,11 @@
  * Reset handler that prepares the system for running C code.
  */
 
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
-#include <arch/arc/asm-compat/assembler.h>
+#include <zephyr/arch/arc/asm-compat/assembler.h>
 
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)

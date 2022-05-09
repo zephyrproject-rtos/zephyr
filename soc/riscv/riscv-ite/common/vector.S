@@ -6,7 +6,7 @@
  */
 
 #include "chip_chipregs.h"
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /* exports */
 GTEXT(__start)
