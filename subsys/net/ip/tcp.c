@@ -426,8 +426,9 @@ static int tcp_conn_unref(struct tcp *conn, int status)
 		tcp_pkt_unref(conn->queue_recv_data);
 	}
 
-	k_work_cancel_delayable(&conn->timewait_timer);
-	k_work_cancel_delayable(&conn->fin_timer);
+	(void)k_work_cancel_delayable(&conn->timewait_timer);
+	(void)k_work_cancel_delayable(&conn->fin_timer);
+	(void)k_work_cancel_delayable(&conn->persist_timer);
 
 	sys_slist_find_and_remove(&tcp_conns, &conn->next);
 
@@ -1224,6 +1225,23 @@ static void tcp_fin_timeout(struct k_work *work)
 	net_context_unref(conn->context);
 }
 
+static void tcp_send_zwp(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, persist_timer);
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	(void)tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
+
+	if (conn->send_win == 0) {
+		(void)k_work_reschedule_for_queue(
+			&tcp_work_q, &conn->persist_timer, K_MSEC(tcp_rto));
+	}
+
+	k_mutex_unlock(&conn->lock);
+}
+
 static void tcp_conn_ref(struct tcp *conn)
 {
 	int ref_count = atomic_inc(&conn->ref_count) + 1;
@@ -1290,6 +1308,7 @@ static struct tcp *tcp_conn_alloc(struct net_context *context)
 	k_work_init_delayable(&conn->fin_timer, tcp_fin_timeout);
 	k_work_init_delayable(&conn->send_data_timer, tcp_resend_data);
 	k_work_init_delayable(&conn->recv_queue_timer, tcp_cleanup_recv_queue);
+	k_work_init_delayable(&conn->persist_timer, tcp_send_zwp);
 
 	tcp_conn_ref(conn);
 
@@ -1835,6 +1854,13 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			conn->send_win = max_win;
 		}
 
+		if (conn->send_win == 0) {
+			(void)k_work_reschedule_for_queue(
+				&tcp_work_q, &conn->persist_timer, K_MSEC(tcp_rto));
+		} else {
+			(void)k_work_cancel_delayable(&conn->persist_timer);
+		}
+
 		if (tcp_window_full(conn)) {
 			(void)k_sem_take(&conn->tx_sem, K_NO_WAIT);
 		} else {
@@ -2256,7 +2282,11 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 
 	if (tcp_window_full(conn)) {
 		if (conn->send_win == 0) {
-			tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
+			/* No point retransmiting if the current TX window size
+			 * is 0.
+			 */
+			ret = -EAGAIN;
+			goto out;
 		}
 
 		/* Trigger resend if the timer is not active */
