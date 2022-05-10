@@ -75,6 +75,11 @@ int pm_device_action_run(const struct device *dev,
 		 */
 		switch (action) {
 		case PM_DEVICE_ACTION_TURN_ON:
+			/* Store an error flag when the transition explicitly fails */
+			if (ret != -ENOTSUP) {
+				atomic_set_bit(&pm->flags, PM_DEVICE_FLAG_TURN_ON_FAILED);
+			}
+			__fallthrough;
 		case PM_DEVICE_ACTION_TURN_OFF:
 			pm->state = action_target_state[action];
 			break;
@@ -85,6 +90,10 @@ int pm_device_action_run(const struct device *dev,
 	}
 
 	pm->state = action_target_state[action];
+	/* Power up failure flag is no longer relevant */
+	if (action == PM_DEVICE_ACTION_TURN_OFF) {
+		atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_TURN_ON_FAILED);
+	}
 
 	return 0;
 }
