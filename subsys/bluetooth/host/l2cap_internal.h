@@ -379,3 +379,5 @@ struct bt_l2cap_ecred_cb {
 
 /* Register callbacks for Enhanced Credit based Flow Control */
 void bt_l2cap_register_ecred_cb(const struct bt_l2cap_ecred_cb *cb);
+
+void l2cap_tx_destroy(void *meta_data);

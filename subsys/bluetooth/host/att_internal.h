@@ -321,3 +321,5 @@ void bt_att_set_tx_meta_data(struct net_buf *buf, bt_conn_tx_cb_t func, void *us
 
 bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_conn_tx_cb_t func,
 			       const void *user_data);
+
+void att_tx_destroy(void *meta);

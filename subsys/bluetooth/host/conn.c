@@ -46,7 +46,31 @@ struct tx_meta {
 };
 
 #define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
+
+#if defined(CONFIG_BT_CONN)
+static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
+#endif /* CONFIG_BT_CONN */
+
 K_FIFO_DEFINE(free_tx);
+
+static void tx_free(struct bt_conn_tx *tx);
+
+static void conn_tx_destroy(struct bt_conn_tx *tx)
+{
+	__ASSERT_NO_MSG(tx);
+#if defined(CONFIG_BT_CONN)
+	if (PART_OF_ARRAY(conn_tx, tx)) {
+		if (tx->user_data) {
+			l2cap_tx_destroy(tx->user_data);
+		}
+
+		tx_free(tx);
+	} else {
+		/* Not conn metadata, let L2CAP handle it */
+		l2cap_tx_destroy((void *)tx);
+	}
+#endif /* CONFIG_BT_CONN */
+}
 
 #if defined(CONFIG_BT_CONN_TX)
 static void tx_complete_work(struct k_work *work);
@@ -60,10 +84,21 @@ static void tx_complete_work(struct k_work *work);
 static void deferred_work(struct k_work *work);
 static void notify_connected(struct bt_conn *conn);
 
+static void acl_tx_pool_destroy(struct net_buf *buf)
+{
+	struct bt_conn_tx *tx = tx_data(buf)->tx;
+
+	if (tx) {
+		conn_tx_destroy(tx);
+	}
+
+	net_buf_destroy(buf);
+}
+
 static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
-		    sizeof(struct tx_meta), NULL);
+		    sizeof(struct tx_meta), acl_tx_pool_destroy);
 
 #if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
 /* Dedicated pool for fragment buffers in case queued up TX buffers don't
@@ -83,8 +118,6 @@ sys_slist_t bt_auth_info_cbs = SYS_SLIST_STATIC_INIT(&bt_auth_info_cbs);
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 static struct bt_conn_cb *callback_list;
-
-static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 
 #if defined(CONFIG_BT_BREDR)
 static int bt_hci_connect_br_cancel(struct bt_conn *conn);
@@ -513,6 +546,11 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	if (IS_ENABLED(CONFIG_BT_ISO) && conn->type == BT_CONN_TYPE_ISO) {
 		err = send_iso(conn, buf, flags);
 	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
+		/* Parts of buffer user data may be overridden by send_acl().
+		 * Set it to NULL here and reset in case of failure to ensure
+		 * the user data is not interpreted as an unaligned pointer.
+		 */
+		tx_data(buf)->tx = NULL;
 		err = send_acl(conn, buf, flags);
 	} else {
 		__ASSERT(false, "Invalid connection type %u", conn->type);
@@ -524,6 +562,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 		/* Roll back the pending TX info */
 		if (tx) {
 			sys_slist_find_and_remove(&conn->tx_pending, &tx->node);
+			tx_data(buf)->tx = tx;
 		} else {
 			__ASSERT_NO_MSG(*pending_no_cb > 0);
 			(*pending_no_cb)--;
@@ -536,9 +575,6 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 
 fail:
 	k_sem_give(bt_conn_get_pkts(conn));
-	if (tx) {
-		tx_free(tx);
-	}
 
 	if (always_consume) {
 		net_buf_unref(buf);
@@ -649,10 +685,6 @@ static void conn_cleanup(struct bt_conn *conn)
 
 	/* Give back any allocated buffers */
 	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
-		if (tx_data(buf)->tx) {
-			tx_free(tx_data(buf)->tx);
-		}
-
 		net_buf_unref(buf);
 	}
 
@@ -778,7 +810,7 @@ static void process_unack_tx(struct bt_conn *conn)
 		tx->pending_no_cb = 0U;
 		irq_unlock(key);
 
-		tx_free(tx);
+		conn_tx_destroy(tx);
 
 		k_sem_give(bt_conn_get_pkts(conn));
 	}

@@ -26,6 +26,7 @@
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
+#include "att_internal.h"
 #include "keys.h"
 
 #define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, rtx_work)
@@ -1932,9 +1933,13 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	 * callback has been set.
 	 */
 	if ((buf == seg || !buf->len) && ch->chan.ops->sent) {
+		if (seg != buf) {
+			l2cap_tx_meta_data(seg) = l2cap_tx_meta_data(buf);
+			l2cap_tx_meta_data(buf) = NULL;
+		}
 		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
 				       l2cap_chan_sdu_sent,
-				       l2cap_tx_meta_data(buf));
+				       l2cap_tx_meta_data(seg));
 	} else {
 		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
 				       l2cap_chan_seg_sent,
@@ -2985,3 +2990,25 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return bt_l2cap_chan_send_cb(chan, buf, NULL, NULL);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+
+void l2cap_tx_destroy(void *meta_data)
+{
+	__ASSERT_NO_MSG(meta_data);
+
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	if (PART_OF_ARRAY(l2cap_tx_meta_data, (struct l2cap_tx_meta_data *)meta_data)) {
+		struct l2cap_tx_meta_data *data = meta_data;
+
+		if (data->user_data) {
+			att_tx_destroy(data->user_data);
+		}
+
+		free_tx_meta_data(data);
+
+		return;
+	}
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+
+	/* Not L2CAP metadata, let ATT handle it */
+	att_tx_destroy(meta_data);
+}
