@@ -30,6 +30,8 @@ struct device;
 enum pm_device_flag {
 	/** Indicate if the device is busy or not. */
 	PM_DEVICE_FLAG_BUSY,
+	/** Indicate if the device failed to power up. */
+	PM_DEVICE_FLAG_TURN_ON_FAILED,
 	/**
 	 * Indicates whether or not the device is capable of waking the system
 	 * up.
