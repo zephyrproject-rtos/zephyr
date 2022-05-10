@@ -142,6 +142,12 @@ int pm_device_runtime_get(const struct device *dev)
 		if (ret != 0) {
 			goto unlock;
 		}
+		/* Check if powering up this device failed */
+		if (atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_TURN_ON_FAILED)) {
+			(void)pm_device_runtime_put(PM_DOMAIN(pm));
+			ret = -EAGAIN;
+			goto unlock;
+		}
 	}
 
 	pm->usage++;
