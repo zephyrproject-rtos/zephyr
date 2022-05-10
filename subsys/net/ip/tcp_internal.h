@@ -367,6 +367,16 @@ void net_tcp_init(void);
 #define net_tcp_init(...)
 #endif
 
+/**
+ * @brief Obtain a semaphore indicating if transfers are blocked (either due to
+ *        filling TX window or entering retransmission mode).
+ *
+ * @param context Network context
+ *
+ * @return semaphore indicating if transfers are blocked
+ */
+struct k_sem *net_tcp_tx_sem_get(struct net_context *context);
+
 #ifdef __cplusplus
 }
 #endif
