@@ -20,6 +20,7 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &n25q128a1;
+		zephyr,display = &ltdc;
 	};
 
 	leds {
@@ -232,4 +233,35 @@ zephyr_udc0: &usbotg_fs {
 			st,sdram-timing = <2 6 4 6 2 2 2>;
 		};
 	};
+};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r0_pi15 &ltdc_r1_pj0 &ltdc_r2_pj1 &ltdc_r3_pj2
+		     &ltdc_r4_pj3 &ltdc_r5_pj4 &ltdc_r6_pj5 &ltdc_r7_pj6
+		     &ltdc_g0_pj7 &ltdc_g1_pj8 &ltdc_g2_pj9 &ltdc_g3_pj10
+		     &ltdc_g4_pj11 &ltdc_g5_pk0 &ltdc_g6_pk1 &ltdc_g7_pk2
+		     &ltdc_b0_pe4 &ltdc_b1_pj13 &ltdc_b2_pj14 &ltdc_b3_pj15
+		     &ltdc_b4_pg12 &ltdc_b5_pk4 &ltdc_b6_pk5 &ltdc_b7_pk6
+		     &ltdc_de_pk7 &ltdc_clk_pi14 &ltdc_hsync_pi10 &ltdc_vsync_pi9>;
+	pinctrl-names = "default";
+	disp-on-gpios = <&gpioi 12 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpiok 3 GPIO_ACTIVE_HIGH>;
+	ext-sdram = <&sdram1>;
+	status = "okay";
+
+	width = <480>;
+	height = <272>;
+	hsync-pol = <STM32_LTDC_HSPOL_ACTIVE_LOW>;
+	vsync-pol = <STM32_LTDC_VSPOL_ACTIVE_LOW>;
+	de-pol = <STM32_LTDC_DEPOL_ACTIVE_LOW>;
+	pclk-pol = <STM32_LTDC_PCPOL_ACTIVE_LOW>;
+	hsync-duration = <1>;
+	vsync-duration = <10>;
+	hbp-duration = <43>;
+	vbp-duration = <12>;
+	hfp-duration = <8>;
+	vfp-duration = <4>;
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
 };
