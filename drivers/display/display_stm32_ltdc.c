@@ -262,9 +262,9 @@ static int stm32_ltdc_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32F7X)
 	LL_RCC_PLLSAI_Disable();
 	LL_RCC_PLLSAI_ConfigDomain_LTDC(LL_RCC_PLLSOURCE_HSE,
-					LL_RCC_PLLM_DIV_8,
-					192,
-					LL_RCC_PLLSAIR_DIV_4,
+					LL_RCC_PLLM_DIV_25,
+					384,
+					LL_RCC_PLLSAIR_DIV_5,
 					LL_RCC_PLLSAIDIVR_DIV_8);
 
 	LL_RCC_PLLSAI_Enable();
