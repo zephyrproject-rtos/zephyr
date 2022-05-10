@@ -116,6 +116,8 @@ The Zephyr stm32f746g_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | QSPI NOR  | on-chip    | off-chip flash                      |
 +-----------+------------+-------------------------------------+
+| FMC       | on-chip    | memc (SDRAM)                        |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -147,6 +149,15 @@ configured as follows
 - LD1 : PI1
 - USB DM : PA11
 - USB DP : PA12
+- FMC SDRAM :
+
+   - D0-D15 : PD14/PD15/PD0/PD1/PE7/PE8/PE9/PE10/PE11/PE12/PE13/PE14/PE15/PD8/PD9/PD10
+   - A0-A11 : PF0/PF1/PF2/PF3/PF4/PF5/PF12/PF13/PF14/PF15/PG0/PG1
+   - A14/A15 : PG4/PG5
+   - SDNRAS/SDNCAS : PF11/PG15
+   - NBL0/NBL1 : PE0/PE1
+   - SDCLK/SDNWE/SDCKE0/SDNE0 : PG8/PH5/PC3/PH3
+
 
 System Clock
 ============
