@@ -47,6 +47,7 @@ struct uart_npcx_data {
 	/* Baud rate */
 	uint32_t baud_rate;
 	struct miwu_dev_callback uart_rx_cb;
+	uint8_t err_stat;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
@@ -78,6 +79,15 @@ static void uart_npcx_pm_policy_state_lock_put(struct uart_npcx_data *data,
 #endif /* defined(CONFIG_PM) && defined(CONFIG_UART_INTERRUPT_DRIVEN) */
 
 /* UART local functions */
+static uint8_t uart_npcx_get_err_state(const struct device *dev)
+{
+	const struct uart_npcx_config *const config = dev->config;
+	struct uart_reg *const inst = config->inst;
+	uint8_t stat = inst->USTAT;
+
+	return stat & 0x07;
+}
+
 static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate, int src_clk)
 {
 	/* Fix baud rate to 115200 so far */
@@ -268,6 +278,13 @@ static void uart_npcx_irq_callback_set(const struct device *dev, uart_irq_callba
 static void uart_npcx_isr(const struct device *dev)
 {
 	struct uart_npcx_data *data = dev->data;
+	uint8_t stat;
+
+	/* Restore and clear error state by reading USTAT */
+	stat = uart_npcx_get_err_state(dev);
+	if (stat != 0) {
+		data->err_stat |= stat;
+	}
 
 	/*
 	 * Set pm constraint to prevent the system enter suspend state within
@@ -354,20 +371,19 @@ static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
 /* UART api functions */
 static int uart_npcx_err_check(const struct device *dev)
 {
-	const struct uart_npcx_config *const config = dev->config;
-	struct uart_reg *const inst = config->inst;
+	struct uart_npcx_data *data = dev->data;
 	uint32_t err = 0U;
-	uint8_t stat = inst->USTAT;
 
-	if (IS_BIT_SET(stat, NPCX_USTAT_DOE))
+	if (IS_BIT_SET(data->err_stat, NPCX_USTAT_DOE))
 		err |= UART_ERROR_OVERRUN;
 
-	if (IS_BIT_SET(stat, NPCX_USTAT_PE))
+	if (IS_BIT_SET(data->err_stat, NPCX_USTAT_PE))
 		err |= UART_ERROR_PARITY;
 
-	if (IS_BIT_SET(stat, NPCX_USTAT_FE))
+	if (IS_BIT_SET(data->err_stat, NPCX_USTAT_FE))
 		err |= UART_ERROR_FRAMING;
 
+	data->err_stat = 0;
 	return err;
 }
 
