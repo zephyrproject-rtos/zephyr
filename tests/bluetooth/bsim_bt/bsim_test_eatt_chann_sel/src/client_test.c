@@ -16,7 +16,7 @@ CREATE_FLAG(flag_subscribed);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
-static struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
+static const struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
