@@ -5,3 +5,4 @@ zephyr_library()
 
 zephyr_library_sources(udc_common.c)
 zephyr_library_sources_ifdef(CONFIG_UDC_NRF udc_nrf.c)
+zephyr_library_sources_ifdef(CONFIG_UDC_KINETIS udc_kinetis.c)
