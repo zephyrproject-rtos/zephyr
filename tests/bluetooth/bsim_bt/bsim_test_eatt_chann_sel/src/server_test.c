@@ -74,7 +74,7 @@ static void subscribe(const struct bt_gatt_attr *attr, uint16_t value)
 		SET_FLAG(flag_subscribe);
 	}
 
-	printk("Short notifications %s\n", notif_enabled ? "enabled" : "disabled");
+	printk("notifications %s\n", notif_enabled ? "enabled" : "disabled");
 }
 
 BT_GATT_SERVICE_DEFINE(test_svc, BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
