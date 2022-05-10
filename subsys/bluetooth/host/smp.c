@@ -3905,16 +3905,22 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
-	if (bt_addr_le_cmp(&conn->le.dst, &req->addr) != 0) {
-		struct bt_keys *keys = bt_keys_find_addr(conn->id, &req->addr);
+	struct bt_keys *keys = bt_keys_find_addr(conn->id, &req->addr);
 
-		if (keys) {
+	if (keys) {
+		if (bt_addr_le_cmp(&conn->le.dst, &req->addr) != 0) {
 			if (!update_keys_check(smp, keys)) {
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
-
-			bt_keys_clear(keys);
 		}
+
+		/* We found a key for this address.  We don't know if it has been added
+		 * to resolving list before.  Clear the key - because if we try to add
+		 * the same item to resolving list, controller have the option to
+		 * accept or reject the command.
+		 * Refer to Core v5.3, Vol 4, Part E, 7.8.38.
+		 */
+		bt_keys_clear(keys);
 	}
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
