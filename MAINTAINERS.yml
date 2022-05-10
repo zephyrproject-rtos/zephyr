@@ -363,6 +363,7 @@ Debug:
     collaborators:
         - dcpleung
         - chen-png
+        - mrkhldn
     files:
         - include/zephyr/debug/
         - subsys/debug/
@@ -544,6 +545,17 @@ Documentation:
         - tests/drivers/console/
     labels:
         - "area: Console"
+
+"Drivers: Coredump":
+    status: maintained
+    maintainers:
+        - mrkhldn
+    files:
+        - drivers/coredump/
+        - dts/bindings/coredump/
+        - include/zephyr/drivers/coredump.h
+    labels:
+        - "area: Coredump"
 
 "Drivers: Counter":
     status: maintained
