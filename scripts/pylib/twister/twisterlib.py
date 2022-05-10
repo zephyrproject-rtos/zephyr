@@ -3045,7 +3045,7 @@ class TestPlan(DisablePyTestCollectionMixin):
         self.enable_ubsan = False
         self.enable_lsan = False
         self.enable_asan = False
-        self.no_skipped_report = False
+        self.detailed_skipped_report = False
         self.enable_valgrind = False
         self.extra_args = []
         self.inline_logs = False
@@ -3926,7 +3926,7 @@ class TestPlan(DisablePyTestCollectionMixin):
 
         suites_to_report = all_suites
             # do not create entry if everything is filtered out
-        if self.no_skipped_report:
+        if not self.detailed_skipped_report:
             suites_to_report = list(filter(lambda d: d.get('status') != "filtered", all_suites))
 
         for suite in suites_to_report:
@@ -3996,7 +3996,7 @@ class TestPlan(DisablePyTestCollectionMixin):
         for platform in selected:
             suites = list(filter(lambda d: d['platform'] == platform, all_suites))
             # do not create entry if everything is filtered out
-            if self.no_skipped_report:
+            if not self.detailed_skipped_report:
                 non_filtered = list(filter(lambda d: d.get('status') != "filtered", suites))
                 if not non_filtered:
                     continue
@@ -4023,7 +4023,7 @@ class TestPlan(DisablePyTestCollectionMixin):
 
                 ts_status = ts.get('status')
                 # Do not report filtered testcases
-                if ts_status == 'filtered' and self.no_skipped_report:
+                if ts_status == 'filtered' and not self.detailed_skipped_report:
                     continue
                 if full_report:
                     for tc in ts.get("testcases", []):
