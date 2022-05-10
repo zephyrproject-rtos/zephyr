@@ -129,16 +129,13 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 static int stm32_ltdc_set_orientation(const struct device *dev,
 				const enum display_orientation orientation)
 {
-	int err;
+	ARG_UNUSED(dev);
 
-	switch (orientation) {
-	case DISPLAY_ORIENTATION_NORMAL:
-		err = 0;
-	default:
-		err = -ENOTSUP;
+	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+		return 0;
 	}
 
-	return err;
+	return -ENOTSUP;
 }
 
 static void stm32_ltdc_get_capabilities(const struct device *dev,
