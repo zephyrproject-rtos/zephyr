@@ -23,6 +23,15 @@ config CHECK_BEFORE_READING
 	  This feature prevents erroneous/forbidden reading. Some ECC enabled
 	  devices will crash when reading an erased or wrongly programmed area.
 
+config FLASH_MCUX_LPC_IAP_WRITE_BUFFER
+	bool "MCUX LPC IAP write RAM buffer"
+	default y if SOC_SERIES_LPC55XXX
+	help
+	  Enable write buffer for MCUX LPC. This allows the LPC flash to accept
+	  writes with a length that is not a multiple of 512. This comes at
+	  the cost of 1KB of RAM to store write buffers, and additional ROM
+	  space for the unaligned write logic.
+
 endif # SOC_FLASH_MCUX
 
 if HAS_MCUX_FLEXSPI

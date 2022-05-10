@@ -39,6 +39,11 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
+
+#ifdef CONFIG_FLASH_MCUX_LPC_IAP_WRITE_BUFFER
+static uint8_t mcux_flash_write_buffer[DT_PROP(SOC_NV_FLASH_NODE, write_block_size)][2];
+#endif /* FLASH_MCUX_LPC_IAP_WRITE_BUFFER */
+
 #ifdef CONFIG_CHECK_BEFORE_READING
 #define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
 #define FMC_STATUS_ERR	FLASH_INT_CLR_ENABLE_ERR_MASK
@@ -119,7 +124,9 @@ struct flash_priv {
 };
 
 static const struct flash_parameters flash_mcux_parameters = {
-#if DT_NODE_HAS_PROP(SOC_NV_FLASH_NODE, write_block_size)
+#if CONFIG_FLASH_MCUX_LPC_IAP_WRITE_BUFFER
+	.write_block_size = 1,
+#elif DT_NODE_HAS_PROP(SOC_NV_FLASH_NODE, write_block_size)
 	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
 #else
 	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
@@ -206,7 +213,7 @@ static int flash_mcux_write(const struct device *dev, off_t offset,
 {
 	struct flash_priv *priv = dev->data;
 	uint32_t addr;
-	status_t rc;
+	status_t rc = 0;
 	unsigned int key;
 
 	if (k_sem_take(&priv->write_lock, K_FOREVER)) {
@@ -216,7 +223,128 @@ static int flash_mcux_write(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 	key = irq_lock();
+#ifdef CONFIG_FLASH_MCUX_LPC_IAP_WRITE_BUFFER
+	size_t page_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size);
+	size_t size_before = offset % page_size;
+	size_t size_after = page_size - ((size_before + len) % page_size);
+	size_t aligned_size = size_before + len + size_after;
+	off_t start_page = offset - size_before;
+	off_t last_page = start_page + aligned_size - page_size;
+	bool single_page_write = (size_before + len <= page_size);
+
+	char *before_data;
+	char *after_data;
+
+	if (size_before == 0 && size_after == 0) {
+		/* Aligned write */
+		rc = FLASH_Program(&priv->config, addr, (uint8_t *) data, len);
+	} else {
+		/*
+		 * LPC flash requires all writes be 512 byte length aligned.
+		 * read the flash pages, then modify the block and write
+		 * those pages back.
+		 */
+		before_data = mcux_flash_write_buffer[0];
+		after_data = mcux_flash_write_buffer[1];
+
+		if (single_page_write) {
+			if (size_before) {
+				/* Read old data from flash */
+				rc = flash_mcux_read(dev, start_page,
+					before_data, size_before);
+				if (rc) {
+					goto exit;
+				}
+			}
+			/* Replace section of page with new data */
+			memcpy(before_data + size_before, data, len);
+			if (size_after) {
+				/* Read old data from flash */
+				rc = flash_mcux_read(dev, offset + len,
+					before_data + size_before + len,
+					size_after);
+				if (rc) {
+					goto exit;
+				}
+			}
+		} else {
+			/* Multipage write */
+			if (size_before) {
+				/* Read before block from flash */
+				rc = flash_mcux_read(dev, start_page,
+					before_data, size_before);
+				if (rc) {
+					goto exit;
+				}
+				/* Fill the rest with new data */
+				memcpy(before_data + size_before, data,
+					page_size - size_before);
+			}
+			if (size_after) {
+				/* Fill first part of page with data */
+				memcpy((void *)after_data,
+					(void *)(((char *)data) + len -
+					((len + size_before) % page_size)),
+					page_size - size_before);
+				/* Fill end of page with flash data */
+				rc = flash_mcux_read(dev, offset + len,
+					(after_data + (page_size - size_after)),
+					size_after);
+				if (rc) {
+					goto exit;
+				}
+			}
+		}
+		/* Erase all the pages that overlap with new data. */
+		rc = FLASH_Erase(&priv->config,
+			start_page + priv->pflash_block_base,
+			aligned_size, kFLASH_ApiEraseKey);
+		if (rc != kStatus_Success) {
+			goto exit;
+		}
+		if (single_page_write || size_before > 0) {
+			addr = start_page + priv->pflash_block_base;
+			rc = FLASH_Program(&priv->config,
+				addr, before_data, page_size);
+			if (rc != kStatus_Success) {
+				goto exit;
+			}
+		}
+		if (!single_page_write) {
+			size_t middle_data_len = aligned_size;
+			off_t middle_page_start = start_page;
+			off_t data_offset = (off_t)data;
+
+			if (size_before > 0) {
+				middle_page_start += page_size;
+				middle_data_len -= page_size;
+				data_offset += (page_size - size_before);
+			}
+			if (size_after > 0) {
+				middle_data_len -= page_size;
+			}
+			if (middle_data_len > 0) {
+				addr = middle_page_start + priv->pflash_block_base;
+				rc = FLASH_Program(&priv->config,
+					addr,
+					(void *)data_offset,
+					middle_data_len);
+				if (rc != kStatus_Success) {
+					goto exit;
+				}
+			}
+			/* Write the last page if needed */
+			if (size_after > 0) {
+				addr = last_page + priv->pflash_block_base;
+				rc = FLASH_Program(&priv->config,
+					addr, after_data, page_size);
+			}
+		}
+	}
+exit:
+#else
 	rc = FLASH_Program(&priv->config, addr, (uint8_t *) data, len);
+#endif /* CONFIG_FLASH_MCUX_LPC_IAP_WRITE_BUFFER */
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
