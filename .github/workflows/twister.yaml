@@ -44,6 +44,9 @@ jobs:
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
+      BSIM_OUT_PATH: /opt/bsim/
+      BSIM_COMPONENTS_PATH: /opt/bsim/components
+      EDTT_PATH: ../tools/edtt
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -137,6 +140,9 @@ jobs:
       PUSH_OPTIONS: ' --clobber-output -M --no-skipped-report'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
+      BSIM_OUT_PATH: /opt/bsim/
+      BSIM_COMPONENTS_PATH: /opt/bsim/components
+      EDTT_PATH: ../tools/edtt
     steps:
       - name: Apply container owner mismatch workaround
         run: |
