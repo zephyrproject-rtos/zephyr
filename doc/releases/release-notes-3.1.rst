@@ -19,6 +19,15 @@ API Changes
 Changes in this release
 =======================
 
+* All Zephyr public headers have been moved to ``include/zephyr``, meaning they
+  need to be prefixed with ``<zephyr/...>`` when included. Because this change
+  can potentially break many applications or libraries,
+  :kconfig:option:`CONFIG_LEGACY_INCLUDE_PATH` is provided to allow using the
+  old include path. This option is now enabled by default to allow a smooth
+  transition. In order to facilitate the migration to the new include prefix, a
+  script to automate the process is also provided:
+  :zephyr_file:`scripts/utils/migrate_includes.py`.
+
 * LoRaWAN: The message type parameter in :c:func:`lorawan_send` was changed
   from ``uint8_t`` to ``enum lorawan_message_type``. If ``0`` was passed for
   unconfirmed message, this has to be changed to ``LORAWAN_MSG_UNCONFIRMED``.
