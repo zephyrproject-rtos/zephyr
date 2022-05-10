@@ -1433,7 +1433,21 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 	}
 
 	if (pfd->events & ZSOCK_POLLOUT) {
-		return -EALREADY;
+		if (IS_ENABLED(CONFIG_NET_NATIVE_TCP) &&
+		    net_context_get_type(ctx) == SOCK_STREAM) {
+			if (*pev == pev_end) {
+				return -ENOMEM;
+			}
+
+			(*pev)->obj = net_tcp_tx_sem_get(ctx);
+			(*pev)->type = K_POLL_TYPE_SEM_AVAILABLE;
+			(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
+			(*pev)->state = K_POLL_STATE_NOT_READY;
+			(*pev)++;
+		} else {
+			return -EALREADY;
+		}
+
 	}
 
 	/* If socket is already in EOF or error, it can be reported
@@ -1452,16 +1466,23 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 {
 	ARG_UNUSED(ctx);
 
-	/* For now, assume that socket is always writable */
-	if (pfd->events & ZSOCK_POLLOUT) {
-		pfd->revents |= ZSOCK_POLLOUT;
-	}
-
 	if (pfd->events & ZSOCK_POLLIN) {
 		if ((*pev)->state != K_POLL_STATE_NOT_READY || sock_is_eof(ctx)) {
 			pfd->revents |= ZSOCK_POLLIN;
 		}
 		(*pev)++;
+	}
+	if (pfd->events & ZSOCK_POLLOUT) {
+		if (IS_ENABLED(CONFIG_NET_NATIVE_TCP) &&
+		    net_context_get_type(ctx) == SOCK_STREAM) {
+			if ((*pev)->state != K_POLL_STATE_NOT_READY &&
+			    !sock_is_eof(ctx)) {
+				pfd->revents |= ZSOCK_POLLOUT;
+			}
+			(*pev)++;
+		} else {
+			pfd->revents |= ZSOCK_POLLOUT;
+		}
 	}
 
 	if (sock_is_error(ctx)) {
