@@ -548,10 +548,17 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="Re-use the outdir before building. Will result in "
              "faster compilation since builds will be incremental.")
 
+    # To be removed in favor of --detailed-skipped-report
     parser.add_argument(
         "--no-skipped-report", action="store_true",
         help="""Do not report skipped test cases in junit output. [Experimental]
         """)
+
+    parser.add_argument(
+        "--detailed-skipped-report", action="store_true",
+        help="Generate a detailed report with all skipped test cases"
+             "including those that are filtered based on testsuite definition."
+        )
 
     parser.add_argument(
         "-O", "--outdir",
@@ -922,7 +929,7 @@ def main():
     tplan.overflow_as_errors = options.overflow_as_errors
     tplan.suite_name_check = not options.disable_suite_name_check
     tplan.seed = options.seed
-    tplan.no_skipped_report = options.no_skipped_report
+    tplan.detailed_skipped_report = options.detailed_skipped_report
 
     # get all enabled west projects
     west_proj = west_projects()
