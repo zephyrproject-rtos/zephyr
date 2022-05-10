@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "../../ip/net_stats.h"
 
 #include "sockets_internal.h"
+#include "../../ip/tcp_internal.h"
 
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
@@ -653,6 +654,65 @@ static inline int z_vrfy_zsock_accept(int sock, struct sockaddr *addr,
 #define WAIT_BUFS K_MSEC(100)
 #define MAX_WAIT_BUFS K_SECONDS(10)
 
+static int send_check_and_wait(struct net_context *ctx, int status,
+			       uint64_t buf_timeout, k_timeout_t timeout)
+{
+	int64_t remaining;
+
+	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		goto out;
+	}
+
+	if (status != -ENOBUFS && status != -EAGAIN) {
+		goto out;
+	}
+
+	/* If we cannot get any buffers in reasonable
+	 * amount of time, then do not wait forever as
+	 * there might be some bigger issue.
+	 * If we get -EAGAIN and cannot recover, then
+	 * it means that the sending window is blocked
+	 * and we just cannot send anything.
+	 */
+	remaining = buf_timeout - sys_clock_tick_get();
+	if (remaining <= 0) {
+		if (status == -ENOBUFS) {
+			status = -ENOMEM;
+		} else {
+			status = -ENOBUFS;
+		}
+
+		goto out;
+	}
+
+	if (status == -ENOBUFS) {
+		/* We can monitor net_pkt/net_buf avaialbility, so just wait. */
+		k_sleep(WAIT_BUFS);
+	}
+
+	if (status == -EAGAIN) {
+		if (IS_ENABLED(CONFIG_NET_NATIVE_TCP) &&
+		    net_context_get_type(ctx) == SOCK_STREAM) {
+			struct k_poll_event event;
+
+			k_poll_event_init(&event,
+					  K_POLL_TYPE_SEM_AVAILABLE,
+					  K_POLL_MODE_NOTIFY_ONLY,
+					  net_tcp_tx_sem_get(ctx));
+
+			k_poll(&event, 1, WAIT_BUFS);
+		} else {
+			k_sleep(WAIT_BUFS);
+		}
+	}
+
+	return 0;
+
+out:
+	errno = -status;
+	return -1;
+}
+
 ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 int flags,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
@@ -689,33 +749,13 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		}
 
 		if (status < 0) {
-			if (((status == -ENOBUFS) || (status == -EAGAIN)) &&
-			    K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-				/* If we cannot get any buffers in reasonable
-				 * amount of time, then do not wait forever as
-				 * there might be some bigger issue.
-				 * If we get -EAGAIN and cannot recover, then
-				 * it means that the sending window is blocked
-				 * and we just cannot send anything.
-				 */
-				int64_t remaining = buf_timeout - sys_clock_tick_get();
-
-				if (remaining <= 0) {
-					if (status == -ENOBUFS) {
-						errno = ENOMEM;
-					} else {
-						errno = ENOBUFS;
-					}
-
-					return -1;
-				}
-
-				k_sleep(WAIT_BUFS);
-				continue;
-			} else {
-				errno = -status;
-				return -1;
+			status = send_check_and_wait(ctx, status, buf_timeout,
+						     timeout);
+			if (status < 0) {
+				return status;
 			}
+
+			continue;
 		}
 
 		break;
@@ -767,32 +807,15 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 	while (1) {
 		status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
 		if (status < 0) {
-			if (((status == -ENOBUFS) || (status == -EAGAIN)) &&
-			    K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-				/* If we cannot get any buffers in reasonable
-				 * amount of time, then do not wait forever as
-				 * there might be some bigger issue.
-				 * If we get -EAGAIN and cannot recover, then
-				 * it means that the sending window is blocked
-				 * and we just cannot send anything.
-				 */
-				int64_t remaining = buf_timeout - sys_clock_tick_get();
-
-				if (remaining <= 0) {
-					if (status == -ENOBUFS) {
-						errno = ENOMEM;
-					} else {
-						errno = ENOBUFS;
-					}
-
-					return -1;
+			if (status < 0) {
+				status = send_check_and_wait(ctx, status,
+							     buf_timeout,
+							     timeout);
+				if (status < 0) {
+					return status;
 				}
 
-				k_sleep(WAIT_BUFS);
 				continue;
-			} else {
-				errno = -status;
-				return -1;
 			}
 		}
 
