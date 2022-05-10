@@ -1,0 +1,36 @@
+# Copyright Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+compatible: "zephyr,coredump"
+
+description: Pseudo-device to help capturing desired data into core dumps
+
+properties:
+    label:
+      required: true
+
+    memory-regions:
+      type: array
+      required: false
+      description: Start address and size of memory regions to be collected in a core dump
+
+    coredump-type:
+      required: true
+      type: string
+      description: |
+        Designate which type of coredump device this will be.
+        A device of type COREDUMP_TYPE_MEMCPY can directly memcpy the provided memory-regions
+        into the coredump. The memory-regions array can contain 0 or more entries, and more
+        regions can be added at runtime through the coredump_device_register_memory API.
+        A device of type COREDUMP_TYPE_CALLBACK must specify exactly one entry in the
+        memory-regions array with a size of 0 and a desired size. The coredump device will statically
+        allocate a block of memory of the desired size and provide a callback with a pointer to
+        that memory which will be invoked at the time of a dump. This allows a consumer to add data
+        into the coredump that may not be directly accessible through a memcpy and/or provides an
+        opportunity to manipulate data for inclusion in the dump. The coredump_device_register_memory
+        API is not available for a device of this type.
+      enum:
+        - "COREDUMP_TYPE_MEMCPY"
+        - "COREDUMP_TYPE_CALLBACK"
