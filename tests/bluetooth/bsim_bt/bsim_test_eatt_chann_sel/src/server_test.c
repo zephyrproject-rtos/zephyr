@@ -156,7 +156,7 @@ static void test_main(void)
 	notify();
 	WAIT_FOR_FLAG(flag_notif_send);
 	WAIT_FOR_FLAG(flag_notif_send);
-	if (atomic_get(&flag_send_over_eatt) != (atomic_t) true) {
+	if (atomic_get(&flag_send_over_eatt) != (atomic_t)true) {
 		FAIL("Failed to send on EATT channel\n");
 		return;
 	} else {
