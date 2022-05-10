@@ -28,6 +28,9 @@ Here are the choices regarding memory dump:
   walking the stack in the debugger. Use this only if absolute minimum of data
   dump is desired.
 
+Additional memory can be included in a dump (even with the "DEBUG_COREDUMP_MEMORY_DUMP_MIN"
+config selected) through one or more :ref:`coredump devices <coredump_device_api>`
+
 Usage
 *****
 
