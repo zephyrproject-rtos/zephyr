@@ -201,7 +201,7 @@ manifest:
       revision: 8d53544871e1f300c478224faca6be8384ab0d04
       path: modules/lib/open-amp
     - name: openthread
-      revision: d4d46ba94290bcf93cc849b832f0ad305c72c473
+      revision: 59623523733fa2a18f949fb1f513cec34f0a44e7
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
