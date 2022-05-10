@@ -19,3 +19,4 @@ supported:
   - sdhc
   - usb_device
   - kscan:touch
+  - memc
