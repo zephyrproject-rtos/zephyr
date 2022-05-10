@@ -65,16 +65,21 @@ int pm_device_action_run(const struct device *dev,
 		/*
 		 * TURN_ON and TURN_OFF are actions triggered by a power domain
 		 * when it is resumed or suspended, which means that the energy
-		 * to the device will be removed or added. For this reason, even
-		 * if the device does not handle these actions its state needs to
-		 * updated to reflect its physical behavior.
+		 * to the device will be removed or added. For this reason, if
+		 * the transition fails or the device does not handle these
+		 * actions its state still needs to updated to reflect its
+		 * physical behavior.
 		 *
 		 * The function will still return the error code so the domain
 		 * can take whatever action is more appropriated.
 		 */
-		if ((ret == -ENOTSUP) && ((action == PM_DEVICE_ACTION_TURN_ON)
-				  || (action == PM_DEVICE_ACTION_TURN_OFF))) {
+		switch (action) {
+		case PM_DEVICE_ACTION_TURN_ON:
+		case PM_DEVICE_ACTION_TURN_OFF:
 			pm->state = action_target_state[action];
+			break;
+		default:
+			break;
 		}
 		return ret;
 	}
