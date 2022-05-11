@@ -1686,6 +1686,7 @@ STM32 Platforms:
         - ABOSTM
         - FRASTM
         - gmarull
+        - GeorgeCGV
     files:
         - boards/arm/nucleo_*/
         - boards/arm/stm32*_disco/
