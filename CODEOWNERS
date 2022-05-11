@@ -240,9 +240,10 @@
 /drivers/display/display_framebuf.c       @dcpleung
 /drivers/display/*rm68200*                @mmahadevan108
 /drivers/dac/                             @martinjaeger
-/drivers/dai/                             @juimonen
-/drivers/dai/intel/                       @juimonen
-/drivers/dai/intel/ssp/                   @juimonen
+/drivers/dai/                             @juimonen @marcinszkudlinski
+/drivers/dai/intel/                       @juimonen @marcinszkudlinski
+/drivers/dai/intel/ssp/                   @juimonen @marcinszkudlinski
+/drivers/dai/intel/dmic/                  @marcinszkudlinski
 /drivers/dma/*dw*                         @tbursztyka
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/dma/dma_stm32*                   @cybertale @lowlander
