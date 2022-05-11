@@ -19,7 +19,9 @@ LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/net/canbus.h>
 #include <zephyr/net/socket_can.h>
+#include <zephyr/drivers/can.h>
 
 #include "sockets_internal.h"
 
