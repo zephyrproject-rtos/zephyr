@@ -493,7 +493,13 @@ static inline int z_impl_uart_err_check(const struct device *dev)
  */
 
 /**
- * @brief Poll the device for input.
+ * @brief Read a character from the device for input.
+ *
+ * This routine checks if the receiver has valid data.  When the
+ * receiver has valid data, it reads a character from the device,
+ * stores to the location pointed to by p_char, and returns 0 to the
+ * calling thread. It returns -1, otherwise. This function is a
+ * non-blocking call.
  *
  * @param dev UART device instance.
  * @param p_char Pointer to character.
@@ -520,7 +526,13 @@ static inline int z_impl_uart_poll_in(const struct device *dev,
 }
 
 /**
- * @brief Poll the device for wide data input.
+ * @brief Read a 16-bit datum from the device for input.
+ *
+ * This routine checks if the receiver has valid data.  When the
+ * receiver has valid data, it reads a 16-bit datum from the device,
+ * stores to the location pointed to by p_u16, and returns 0 to the
+ * calling thread. It returns -1, otherwise. This function is a
+ * non-blocking call.
  *
  * @param dev UART device instance.
  * @param p_u16 Pointer to 16-bit data.
@@ -554,11 +566,12 @@ static inline int z_impl_uart_poll_in_u16(const struct device *dev,
 }
 
 /**
- * @brief Output a character in polled mode.
+ * @brief Write a character to the device for output.
  *
- * This routine checks if the transmitter is empty.
- * When the transmitter is empty, it writes a character to the data
- * register.
+ * This routine checks if the transmitter is full.  When the
+ * transmitter is not full, it writes a character to the data
+ * register. It waits and blocks the calling thread, otherwise. This
+ * function is a blocking call.
  *
  * To send a character when hardware flow control is enabled, the handshake
  * signal CTS must be asserted.
@@ -579,11 +592,12 @@ static inline void z_impl_uart_poll_out(const struct device *dev,
 }
 
 /**
- * @brief Output wide data in polled mode.
+ * @brief Write a 16-bit datum to the device for output.
  *
- * This routine checks if the transmitter is empty.
- * When the transmitter is empty, it writes a datum to the data
- * register.
+ * This routine checks if the transmitter is full. When the
+ * transmitter is not full, it writes a 16-bit datum to the data
+ * register. It waits and blocks the calling thread, otherwise. This
+ * function is a blocking call.
  *
  * To send a datum when hardware flow control is enabled, the handshake
  * signal CTS must be asserted.
