@@ -288,7 +288,7 @@ static void test_packet_sockets(void)
 static void test_packet_sockets_dgram(void)
 {
 	uint8_t data_to_send[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-	uint8_t data_to_receive[sizeof(data_to_send)];
+	uint8_t data_to_receive[128];
 	socklen_t addrlen = sizeof(struct sockaddr_ll);
 	struct user_data ud = { 0 };
 	struct sockaddr_ll dst, src;
@@ -332,10 +332,14 @@ static void test_packet_sockets_dgram(void)
 		k_msleep(10);
 	} while (ret < 0 && errno == EAGAIN);
 
+	for (int i = 0; i < ret; i++)
+		printk("%s: data[%d]: %x\n", __func__, i, data_to_receive[i]);
+
 	zassert_equal(ret, sizeof(data_to_send),
 		      "Cannot receive all data (%d vs %zd) (%d)",
 		      ret, sizeof(data_to_send), -errno);
 
+	zassert_equal(data_to_send, data_to_receive, "Data mismatch");
 	/* Send to socket 2 but read from socket 1. There should not be any
 	 * data in socket 1
 	 */
