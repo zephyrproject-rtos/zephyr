@@ -5,10 +5,14 @@ arch: riscv64
 toolchain:
   - zephyr
 ram: 3840
+simulation: renode
 testing:
   ignore_tags:
     - net
     - bluetooth
+    - flash
+    - newlib
+    - crypto
 supported:
   - gpio
   - spi
