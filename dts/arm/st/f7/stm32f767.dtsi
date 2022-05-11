@@ -5,6 +5,7 @@
  */
 
 #include <st/f7/stm32f7.dtsi>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 
 / {
 	/* 128KB DTCM @ 20000000, 368KB SRAM1 @ 20020000,
