@@ -91,6 +91,7 @@ GTEXT(z_riscv_thread_start)
 
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_isr_enter)
+GTEXT(sys_trace_isr_exit)
 #endif
 
 #ifdef CONFIG_USERSPACE
@@ -491,6 +492,10 @@ on_irq_stack:
 
 	/* Call ISR function */
 	jalr ra, t1, 0
+
+#ifdef CONFIG_TRACING_ISR
+    call sys_trace_isr_exit
+#endif
 
 irq_done:
 	/* Decrement _current_cpu->nested */
