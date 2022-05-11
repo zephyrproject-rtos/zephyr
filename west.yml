@@ -45,7 +45,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 9237454a30bcf6e14a89db174e8dbeb8f31831d2
+      revision: a30531af3a95a9a3ea7d771ea8a578ebfed45514
       path: modules/fs/fatfs
       groups:
         - fs
@@ -70,7 +70,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 83d01afcea5ac1a6c1f7c06dadbdc9ca5ee9ee09
+      revision: 5a334d5584d030d5773de2f1d489288a8625529c
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -163,7 +163,7 @@ manifest:
       path: modules/fs/littlefs
       groups:
         - fs
-      revision: 7b2cf4ba759bd530b543644e2790b07cf20cd6aa
+      revision: 652f2c5646e79b881e6f3099686ad3b7af9e216c
     - name: loramac-node
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
