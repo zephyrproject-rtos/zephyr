@@ -100,7 +100,7 @@ child-binding:
           be defined using the NRF_PSEL utility macro that encodes the port,
           pin and function.
 
-      drive-mode:
+      nordic,drive-mode:
         type: int
         default: 0
         description: |
