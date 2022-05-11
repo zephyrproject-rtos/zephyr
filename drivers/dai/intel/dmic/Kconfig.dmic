@@ -1,0 +1,76 @@
+# SOF DMIC configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_INTEL_DMIC
+	bool "Intel digital PDM microphone driver support for DAI interface"
+	help
+	  Enable Intel digital PDM microphone driver for DAI interface
+
+if DAI_INTEL_DMIC
+
+choice
+	prompt "Driver operation mode"
+	default DAI_INTEL_DMIC_NHLT
+	help
+	  The driver can support two operation modes.
+	  1. A HW registers dump blob that is passed via IPC
+	  2. DAI tokens those describe the use case PCM format
+	  and PDM bus and microphone parameters
+
+config DAI_INTEL_DMIC_NHLT
+	bool "Use NHLT DMIC blob"
+	help
+	  All registers configuration is retrieved from blob. The
+	  number of channels, sample rate, and PCM format are
+	  defined in the blob and there are no runtime made
+	  configuration choices.
+
+config DAI_INTEL_DMIC_TPLG_PARAMS
+	bool "Use parameters from topology - WIP"
+	help
+	  All registers configuration is computed on the fly
+	  based on use case and microphone datasheet parameters
+	  and topology defined PCM format. The parameters are
+	  easy to to customize in the topology.
+	  WORK IN PROGRESS, not enabled in the driver yet
+
+endchoice
+
+config DAI_DMIC_HAS_OWNERSHIP
+	bool "Use DMIC ownership claim/release"
+	default n
+	help
+	 a feature introduced in ACE1.5 hardware
+	 dmic ownership must be claimed before use of dmic
+
+config DAI_DMIC_HAS_MULTIPLE_LINE_SYNC
+	bool "Use DMIC sync for multiple lines"
+	default n
+	help
+	 a feature introduced in ACE1.5 hardware
+	 dmic sync registers must be set before use of dmic
+
+config DAI_DMIC_HW_CONTROLLERS
+	int "Number of hardware controllers in the system"
+	default 2
+
+config DAI_DMIC_HW_FIFOS
+	int "Number of stream FIFOs in DMIC controller"
+	default 2
+
+config DAI_DMIC_HW_IOCLK
+	int "IO Clock value for DMIC"
+	default 19200000
+
+config DAI_DMIC_PLATFORM_SYNC_PERIOD
+	int "Sync period per platform"
+	default 4000
+	help
+	  DMIC sync period used for:
+	  CONFIG_DAI_DMIC_HW_IOCLK / CONFIG_DAI_DMIC_PLATFORM_SYNC_PERIOD
+	  From spec: E.g. for 19.2 MHz XTAL oscillator clock, 4 KHz sync period,
+	  the value to be programmed is 4799 (12BFh)
+
+endif
