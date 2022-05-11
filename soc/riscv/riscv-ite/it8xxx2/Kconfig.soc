@@ -10,7 +10,9 @@ config SOC_IT8XXX2
 	select RISCV
 	select ATOMIC_OPERATIONS_BUILTIN
 	select RISCV_ISA_RV32I
-	select RISCV_ISA_EXT_M
+	# Workaround mul instruction bug, see:
+	# https://www.ite.com.tw/uploads/product_download/it81202-bx-chip-errata.pdf
+	#select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
 
