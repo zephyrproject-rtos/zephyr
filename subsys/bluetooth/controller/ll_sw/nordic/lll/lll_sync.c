@@ -814,7 +814,7 @@ static void isr_rx_adv_sync_estab(void *param)
 isr_rx_done:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
 	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
-	isr_rx_done_cleanup(lll, crc_ok, sync_ok == SYNC_STAT_TERM);
+	isr_rx_done_cleanup(lll, crc_ok, sync_ok != SYNC_STAT_ALLOWED);
 #else
 	isr_rx_done_cleanup(lll, crc_ok, false);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
