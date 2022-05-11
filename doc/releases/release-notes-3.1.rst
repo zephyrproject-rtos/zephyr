@@ -71,6 +71,10 @@ Changes in this release
     * The previous ``CAN_SILENT_LOOPBACK_MODE`` can be set using the bitmask ``(CAN_MODE_LISTENONLY |
       CAN_MODE_LOOPBACK)``.
 
+* STM32H7 The `CONFIG_NOCACHE_MEMORY` no longer is responsible for disabling
+  data cache when defined. Now the newly introduced `CONFIG_DCACHE=n` explicitly
+  does that.
+
 Removed APIs in this release
 ============================
 
