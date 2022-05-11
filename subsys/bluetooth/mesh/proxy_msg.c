@@ -164,7 +164,7 @@ int bt_mesh_proxy_msg_send(struct bt_conn *conn, uint8_t type,
 	net_buf_simple_pull(msg, mtu);
 
 	while (msg->len) {
-		if (msg->len + 1 < mtu) {
+		if (msg->len + 1 <= mtu) {
 			net_buf_simple_push_u8(msg, PDU_HDR(SAR_LAST, type));
 			err = role->cb.send(conn, msg->data, msg->len, end, user_data);
 			if (err) {
