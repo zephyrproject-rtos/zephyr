@@ -808,6 +808,14 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		sync_status = lll_sync_cte_is_allowed(lll->cte_type, lll->filter_policy, 0,
 						      BT_HCI_LE_NO_CTE);
 	}
+
+	/* If there is no CTEInline support, notify done event handler to terminate periodic
+	 * advertising sync in case the CTE is not allowed.
+	 * If the periodic filtering list is not used then terminate synchronization and notify
+	 * host. If the periodic filtering list is used then stop synchronization with this
+	 * particular periodic advertised but continue to search for other one.
+	 */
+	sync->is_term = (sync_status != SYNC_STAT_ALLOWED);
 #endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 
 	/* Send periodic advertisement sync established report when sync has correct CTE type
@@ -824,16 +832,10 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		rx_establ->hdr.type = NODE_RX_TYPE_SYNC;
 		rx_establ->hdr.handle = ull_sync_handle_get(sync);
 		se = (void *)rx_establ->pdu;
-
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 		se->status = (ftr->sync_status == SYNC_STAT_TERM) ?
 					   BT_HCI_ERR_UNSUPP_REMOTE_FEATURE :
 					   BT_HCI_ERR_SUCCESS;
-
-#if !defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
-		/* Notify done event handler to terminate sync scan if required. */
-		sync->is_term = (sync_status == SYNC_STAT_TERM);
-#endif /* !CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 #else
 		se->status = BT_HCI_ERR_SUCCESS;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
@@ -851,7 +853,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	 * the sync was found or was established in the past. The report is not send if
 	 * scanning is terminated due to wrong CTE type.
 	 */
-	if (sync_status != SYNC_STAT_TERM) {
+	if (sync_status == SYNC_STAT_ALLOWED) {
 #else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
 	if (1) {
@@ -896,7 +898,16 @@ void ull_sync_done(struct node_rx_event_done *done)
 #else
 	if (sync->is_term) {
 #endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
-		/* Stop periodic advertising scan ticker */
+		/* In case the periodic advertising list filtering is not used the synchronization
+		 * must be terminated and host notification must be send.
+		 * In case the periodic advertising list filtering is used the synchronization with
+		 * this particular periodic advertiser but search for other one from the list.
+		 *
+		 * Stop periodic advertising sync ticker and clear variables informing the
+		 * sync is pending. That is a step to completely terminate the synchronization.
+		 * In case search for another periodic advertiser it allows to setup new ticker for
+		 * that.
+		 */
 		sync_ticker_cleanup(sync, NULL);
 	} else
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
