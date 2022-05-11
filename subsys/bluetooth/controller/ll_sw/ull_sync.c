@@ -815,13 +815,13 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	 * host. If the periodic filtering list is used then stop synchronization with this
 	 * particular periodic advertised but continue to search for other one.
 	 */
-	sync->is_term = (sync_status != SYNC_STAT_ALLOWED);
+	sync->is_term = ((sync_status == SYNC_STAT_TERM) || (sync_status == SYNC_STAT_CONT_SCAN));
 #endif /* CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
 
 	/* Send periodic advertisement sync established report when sync has correct CTE type
 	 * or the CTE type is incorrect and filter policy doesn't allow to continue scanning.
 	 */
-	if (sync_status != SYNC_STAT_READY_OR_CONT_SCAN) {
+	if (sync_status == SYNC_STAT_ALLOWED || sync_status == SYNC_STAT_TERM) {
 #else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
 	if (1) {
@@ -853,7 +853,7 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	 * the sync was found or was established in the past. The report is not send if
 	 * scanning is terminated due to wrong CTE type.
 	 */
-	if (sync_status == SYNC_STAT_ALLOWED) {
+	if (sync_status == SYNC_STAT_ALLOWED || sync_status == SYNC_STAT_READY) {
 #else /* !CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING */
 
 	if (1) {
