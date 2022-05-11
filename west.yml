@@ -244,7 +244,7 @@ manifest:
       groups:
         - tee
     - name: zcbor
-      revision: 882c489a7d9fdfff31d27666914a78a9eb6976d7
+      revision: pull/1/head
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
