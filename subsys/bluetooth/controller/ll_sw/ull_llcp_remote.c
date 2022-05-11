@@ -363,6 +363,8 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
+	struct proc_ctx *ctx_local;
+	uint8_t reject_code;
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
@@ -373,11 +375,20 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	/* Encode LL Control PDU */
 	switch (opcode) {
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
+		ctx_local = llcp_lr_peek(conn);
+		if (ctx_local->proc == ctx->proc ||
+		    (ctx_local->proc == PROC_CONN_UPDATE &&
+		     ctx->proc == PROC_CONN_PARAM_REQ)) {
+			reject_code = BT_HCI_ERR_LL_PROC_COLLISION;
+		} else {
+			reject_code = BT_HCI_ERR_DIFF_TRANS_COLLISION;
+		}
+
 		if (conn->llcp.fex.valid && feature_ext_rej_ind(conn)) {
 			llcp_pdu_encode_reject_ext_ind(pdu, conn->llcp.remote.reject_opcode,
-						       BT_HCI_ERR_LL_PROC_COLLISION);
+						       reject_code);
 		} else {
-			llcp_pdu_encode_reject_ind(pdu, BT_HCI_ERR_LL_PROC_COLLISION);
+			llcp_pdu_encode_reject_ind(pdu, reject_code);
 		}
 		break;
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
