@@ -61,10 +61,10 @@ static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_N
  *    0xFFFF / (LSE freq (32768Hz) / 128)
  */
 
-static uint32_t lptim_clock_freq = 32000;
+static uint32_t lptim_clock_freq = KHZ(32);
 static int32_t lptim_time_base;
 
-/* The prescaler given by the DTS and to apply to the lptim clock */
+/* The prescaler given by the DTS and to apply to the lptim_clock_freq */
 #define LPTIM_CLOCK_RATIO DT_PROP(DT_DRV_INST(0), st_prescaler)
 
 /* Minimum nb of clock cycles to have to set autoreload register correctly */
@@ -225,9 +225,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	next_arr = (((lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 			/ lptim_clock_freq) + 1) * lptim_clock_freq
 			/ (CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-	/* add count unit from the expected nb of Ticks */
 	next_arr = next_arr + ((uint32_t)(ticks) * lptim_clock_freq)
-			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1;
+			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	/* if the lptim_clock_freq <  one ticks/sec, then next_arr must be > 0 */
 
 	/* maximise to TIMEBASE */
 	if (next_arr > lptim_time_base) {
@@ -240,6 +240,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	else if (next_arr < (lp_time + LPTIM_GUARD_VALUE)) {
 		next_arr = lp_time + LPTIM_GUARD_VALUE;
 	}
+	/* with slow lptim_clock_freq, LPTIM_GUARD_VALUE of 1 is enough */
+	next_arr = next_arr - 1;
 
 	/* Update autoreload register */
 	lptim_set_autoreload(next_arr);
