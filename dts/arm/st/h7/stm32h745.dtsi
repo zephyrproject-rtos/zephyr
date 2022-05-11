@@ -5,6 +5,7 @@
  */
 
 #include <st/h7/stm32h7_dualcore.dtsi>
+#include <zephyr/dt-bindings/display/stm32_ltdc.h>
 
 / {
 	soc {
