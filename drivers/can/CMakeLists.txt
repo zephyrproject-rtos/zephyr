@@ -16,6 +16,5 @@ zephyr_library_sources_ifdef(CONFIG_CAN_RCAR         can_rcar.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE        can_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_SHELL        can_shell.c)
-zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN  can_socketcan.c)
 
 add_subdirectory(transceiver)
