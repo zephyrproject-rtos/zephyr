@@ -1568,15 +1568,18 @@ static int context_sendto(struct net_context *context,
 			return -EINVAL;
 		}
 
-		if (ll_addr->sll_ifindex < 0) {
-			return -EDESTADDRREQ;
-		}
+		iface = net_context_get_iface(context);
+		if (iface == NULL) {
+			if (ll_addr->sll_ifindex < 0) {
+				return -EDESTADDRREQ;
+			}
 
-		iface = net_if_get_by_index(ll_addr->sll_ifindex);
-		if (!iface) {
-			NET_ERR("Cannot bind to interface index %d",
-				ll_addr->sll_ifindex);
-			return -EDESTADDRREQ;
+			iface = net_if_get_by_index(ll_addr->sll_ifindex);
+			if (iface == NULL) {
+				NET_ERR("Cannot bind to interface index %d",
+					ll_addr->sll_ifindex);
+				return -EDESTADDRREQ;
+			}
 		}
 
 		if (net_context_get_type(context) == SOCK_DGRAM) {
