@@ -220,7 +220,7 @@ manifest:
       groups:
         - crypto
     - name: TraceRecorderSource
-      revision: e8ca3b6a83d19b2fc4738a0d9607190436e5e452
+      revision: 9893bf1cf649a2c4ee2e27293f887994f3d0da5b
       path: modules/debug/TraceRecorder
       groups:
         - debug
