@@ -73,12 +73,14 @@ config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
 choice BT_LL_SW_LLCP_IMPL
 	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
+	default BT_LL_SW_LLCP if BT_CTLR_DF_CONN_CTE_RX || BT_CTLR_DF_CONN_CTE_TX
 	default BT_LL_SW_LLCP_LEGACY
 	help
 	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
 
 config BT_LL_SW_LLCP_LEGACY
 	bool "Legacy implementation"
+	depends on !BT_CTLR_DF_CONN_CTE_RX && !BT_CTLR_DF_CONN_CTE_TX
 	help
 	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
 
