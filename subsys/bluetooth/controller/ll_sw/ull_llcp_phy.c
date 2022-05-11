@@ -653,7 +653,8 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		break;
 	case LP_PU_EVT_REJECT:
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
-		ctx->data.pu.error = BT_HCI_ERR_LL_PROC_COLLISION;
+		llcp_pdu_decode_reject_ext_ind(ctx, (struct pdu_data *) param);
+		ctx->data.pu.error = ctx->reject_ext_ind.error_code;
 		ctx->data.pu.ntf_pu = 1;
 		lp_pu_complete(conn, ctx, evt, param);
 	default:
