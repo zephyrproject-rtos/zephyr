@@ -46,6 +46,11 @@ static ssize_t read_active_preset_index(struct bt_conn *conn, const struct bt_ga
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &has.active_index,
 				 sizeof(has.active_index));
 }
+
+static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+{
+	BT_DBG("attr %p value 0x%04x", attr, value);
+}
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
@@ -59,11 +64,6 @@ static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &has.features,
 				 sizeof(has.features));
-}
-
-static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
-{
-	BT_DBG("attr %p value 0x%04x", attr, value);
 }
 
 /* Hearing Access Service GATT Attributes */
