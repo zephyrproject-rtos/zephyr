@@ -9,6 +9,8 @@ config SOC_RISCV_ANDES_AE350
 	bool "Andes AE350 SoC implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
 
 endchoice
 
@@ -20,9 +22,11 @@ default RV32I_CPU
 
 config RV32I_CPU
 	bool "RISCV32 CPU ISA"
+	select RISCV_ISA_RV32I
 
 config RV64I_CPU
 	bool "RISCV64 CPU ISA"
+	select RISCV_ISA_RV64I
 	select 64BIT
 
 endchoice
