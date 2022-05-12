@@ -357,7 +357,15 @@ union z_cbprintf_hdr {
 /* Allocation to avoid using VLA and alloca. Alloc frees space when leaving
  * a function which can lead to increased stack usage if logging is used
  * multiple times. VLA is not always available.
+ *
+ * Use large array when optimization is off to avoid increased stack usage.
  */
+#ifdef CONFIG_NO_OPTIMIZATIONS
+#define Z_CBPRINTF_ON_STACK_ALLOC(_name, _len) \
+	__ASSERT(_len <= 32, "Too many string arguments."); \
+	uint8_t _name##_buf32[32]; \
+	_name = _name##_buf32
+#else
 #define Z_CBPRINTF_ON_STACK_ALLOC(_name, _len) \
 	__ASSERT(_len <= 32, "Too many string arguments."); \
 	uint8_t _name##_buf4[4]; \
@@ -370,6 +378,7 @@ union z_cbprintf_hdr {
 		((_len) <= 12 ? _name##_buf12 : \
 		((_len) <= 16 ? _name##_buf16 : \
 		 _name##_buf32)))
+#endif
 
 /** @brief Statically package a formatted string with arguments.
  *
