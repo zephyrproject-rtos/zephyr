@@ -11,4 +11,9 @@ if(CONFIG_RTIO)
 		rtio_executor_simple.c
 	)
 
+	zephyr_library_sources_ifdef(
+		CONFIG_RTIO_EXECUTOR_CONCURRENT
+		rtio_executor_concurrent.c
+	)
+
 endif()

@@ -11,6 +11,7 @@
 #include <zephyr/rtio/rtio_spsc.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/rtio/rtio_executor_simple.h>
+#include <zephyr/rtio/rtio_executor_concurrent.h>
 
 #include "rtio_iodev_test.h"
 
@@ -231,8 +232,12 @@ void test_spsc_threaded(void)
 }
 
 
-RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec);
-RTIO_DEFINE(r_simple, (struct rtio_executor *)&simple_exec, 4, 4);
+RTIO_EXECUTOR_SIMPLE_DEFINE(simple_exec_simp);
+RTIO_DEFINE(r_simple_simp, (struct rtio_executor *)&simple_exec_simp, 4, 4);
+
+RTIO_EXECUTOR_CONCURRENT_DEFINE(simple_exec_con, 1);
+RTIO_DEFINE(r_simple_con, (struct rtio_executor *)&simple_exec_con, 4, 4);
+
 struct rtio_iodev_test iodev_test_simple;
 
 /**
@@ -241,7 +246,7 @@ struct rtio_iodev_test iodev_test_simple;
  * Ensures that we can setup an RTIO context, enqueue a request, and receive
  * a completion event.
  */
-void test_rtio_simple(void)
+void test_rtio_simple_(struct rtio *r)
 {
 	int res;
 	uintptr_t userdata[2] = {0, 1};
@@ -251,23 +256,35 @@ void test_rtio_simple(void)
 	rtio_iodev_test_init(&iodev_test_simple);
 
 	TC_PRINT("setting up single no-op\n");
-	sqe = rtio_spsc_acquire(r_simple.sq);
+	sqe = rtio_spsc_acquire(r->sq);
 	zassert_not_null(sqe, "Expected a valid sqe");
 	rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_simple, &userdata[0]);
 
 	TC_PRINT("submit with wait\n");
-	res = rtio_submit(&r_simple, 1);
+	res = rtio_submit(r, 1);
 	zassert_ok(res, "Should return ok from rtio_execute");
 
-	cqe = rtio_spsc_consume(r_simple.cq);
+	cqe = rtio_spsc_consume(r->cq);
 	zassert_not_null(cqe, "Expected a valid cqe");
 	zassert_ok(cqe->result, "Result should be ok");
 	zassert_equal_ptr(cqe->userdata, &userdata[0], "Expected userdata back");
-	rtio_spsc_release(r_simple.cq);
+	rtio_spsc_release(r->cq);
 }
 
-RTIO_EXECUTOR_SIMPLE_DEFINE(chain_exec);
-RTIO_DEFINE(r_chain, (struct rtio_executor *)&chain_exec, 4, 4);
+void test_rtio_simple(void)
+{
+	TC_PRINT("rtio simple simple\n");
+	test_rtio_simple_(&r_simple_simp);
+	TC_PRINT("rtio simple concurrent\n");
+	test_rtio_simple_(&r_simple_con);
+}
+
+RTIO_EXECUTOR_SIMPLE_DEFINE(chain_exec_simp);
+RTIO_DEFINE(r_chain_simp, (struct rtio_executor *)&chain_exec_simp, 4, 4);
+
+RTIO_EXECUTOR_CONCURRENT_DEFINE(chain_exec_con, 1);
+RTIO_DEFINE(r_chain_con, (struct rtio_executor *)&chain_exec_con, 4, 4);
+
 struct rtio_iodev_test iodev_test_chain[2];
 
 /**
@@ -277,47 +294,63 @@ struct rtio_iodev_test iodev_test_chain[2];
  * and receive completion events in the correct order given the chained
  * flag and multiple devices where serialization isn't guaranteed.
  */
-void test_rtio_chain(void)
+void test_rtio_chain_(struct rtio *r)
 {
 	int res;
 	uintptr_t userdata[4] = {0, 1, 2, 3};
 	struct rtio_sqe *sqe;
 	struct rtio_cqe *cqe;
 
-	for (int i = 0; i < 2; i++) {
-		rtio_iodev_test_init(&iodev_test_chain[i]);
-	}
-
 	for (int i = 0; i < 4; i++) {
-		sqe = rtio_spsc_acquire(r_chain.sq);
+		sqe = rtio_spsc_acquire(r->sq);
 		zassert_not_null(sqe, "Expected a valid sqe");
 		rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_chain[i % 2],
 				  &userdata[i]);
 		sqe->flags |= RTIO_SQE_CHAINED;
 	}
 
-	res = rtio_submit(&r_chain, 4);
+	/* Clear the last one */
+	sqe->flags = 0;
+
+	res = rtio_submit(r, 4);
 	zassert_ok(res, "Should return ok from rtio_execute");
-	zassert_equal(rtio_spsc_consumable(r_chain.cq), 4, "Should have 4 pending completions");
+	zassert_equal(rtio_spsc_consumable(r->cq), 4, "Should have 4 pending completions");
 
 	for (int i = 0; i < 4; i++) {
 		TC_PRINT("consume %d\n", i);
-		cqe = rtio_spsc_consume(r_chain.cq);
+		cqe = rtio_spsc_consume(r->cq);
 		zassert_not_null(cqe, "Expected a valid cqe");
 		zassert_ok(cqe->result, "Result should be ok");
 		zassert_equal_ptr(cqe->userdata, &userdata[i], "Expected in order completions");
-		rtio_spsc_release(r_chain.cq);
+		rtio_spsc_release(r->cq);
 	}
 }
 
-RTIO_EXECUTOR_SIMPLE_DEFINE(multi_exec);
-RTIO_DEFINE(r_multi, (struct rtio_executor *)&multi_exec, 4, 4);
+void test_rtio_chain(void)
+{
+	for (int i = 0; i < 2; i++) {
+		rtio_iodev_test_init(&iodev_test_chain[i]);
+	}
+
+	TC_PRINT("rtio chain simple\n");
+	test_rtio_chain_(&r_chain_simp);
+	TC_PRINT("rtio chain concurrent\n");
+	test_rtio_chain_(&r_chain_con);
+}
+
+
+RTIO_EXECUTOR_SIMPLE_DEFINE(multi_exec_simp);
+RTIO_DEFINE(r_multi_simp, (struct rtio_executor *)&multi_exec_simp, 4, 4);
+
+RTIO_EXECUTOR_CONCURRENT_DEFINE(multi_exec_con, 2);
+RTIO_DEFINE(r_multi_con, (struct rtio_executor *)&multi_exec_con, 4, 4);
+
 struct rtio_iodev_test iodev_test_multi[2];
 
 /**
  * @brief Test multiple asynchronous chains against one iodev
  */
-void test_rtio_multiple_chains(void)
+void test_rtio_multiple_chains_(struct rtio *r)
 {
 	int res;
 	uintptr_t userdata[4] = {0, 1, 2, 3};
@@ -325,12 +358,8 @@ void test_rtio_multiple_chains(void)
 	struct rtio_cqe *cqe;
 
 	for (int i = 0; i < 2; i++) {
-		rtio_iodev_test_init(&iodev_test_multi[i]);
-	}
-
-	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 2; j++) {
-			sqe = rtio_spsc_acquire(r_multi.sq);
+			sqe = rtio_spsc_acquire(r->sq);
 			zassert_not_null(sqe, "Expected a valid sqe");
 			rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_multi[i],
 					  (void *)userdata[i*2 + j]);
@@ -343,7 +372,7 @@ void test_rtio_multiple_chains(void)
 	}
 
 	TC_PRINT("calling submit from test case\n");
-	res = rtio_submit(&r_multi, 0);
+	res = rtio_submit(r, 0);
 	zassert_ok(res, "Should return ok from rtio_execute");
 
 	bool seen[4] = { 0 };
@@ -351,11 +380,11 @@ void test_rtio_multiple_chains(void)
 	TC_PRINT("waiting for 4 completions\n");
 	for (int i = 0; i < 4; i++) {
 		TC_PRINT("waiting on completion %d\n", i);
-		cqe = rtio_spsc_consume(r_multi.cq);
+		cqe = rtio_spsc_consume(r->cq);
 
 		while (cqe == NULL) {
 			k_sleep(K_MSEC(1));
-			cqe = rtio_spsc_consume(r_multi.cq);
+			cqe = rtio_spsc_consume(r->cq);
 		}
 
 		zassert_not_null(cqe, "Expected a valid cqe");
@@ -369,12 +398,25 @@ void test_rtio_multiple_chains(void)
 		if (seen[3]) {
 			zassert_true(seen[2], "Should see 2 before 3");
 		}
-		rtio_spsc_release(r_multi.cq);
+		rtio_spsc_release(r->cq);
 	}
+}
+
+void test_rtio_multiple_chains(void)
+{
+	for (int i = 0; i < 2; i++) {
+		rtio_iodev_test_init(&iodev_test_multi[i]);
+	}
+
+	TC_PRINT("rtio multiple simple\n");
+	test_rtio_multiple_chains_(&r_multi_simp);
+	TC_PRINT("rtio_multiple concurrent\n");
+	test_rtio_multiple_chains_(&r_multi_con);
 }
 
 void test_main(void)
 {
+	TC_PRINT("imxrt1010 RTIO\n");
 	ztest_test_suite(rtio_spsc_test,
 			 ztest_1cpu_unit_test(test_produce_consume_size1),
 			 ztest_1cpu_unit_test(test_produce_consume_wrap_around),
