@@ -168,6 +168,8 @@ extern "C" {
 #else
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
 	__auto_type _v = (v) + 0; \
+	/* Static code analysis may complain about unused variable. */ \
+	(void)_v; \
 	size_t _arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
@@ -194,6 +196,9 @@ extern "C" {
 				float : (arg) + 0, \
 				default : \
 					0.0); \
+		/* Static code analysis may complain about unused variable. */ \
+		(void)_v; \
+		(void)_d; \
 		size_t arg_size = Z_CBPRINTF_ARG_SIZE(arg); \
 		size_t _wsize = arg_size / sizeof(int); \
 		z_cbprintf_wcpy((int *)buf, \
