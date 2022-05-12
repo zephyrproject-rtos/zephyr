@@ -108,6 +108,16 @@ struct pinctrl_dev_config {
 	_CONCAT(__pinctrl_states, DEVICE_DT_NAME_GET(node_id))
 
 /**
+ * @brief Obtain the device register from the given DT node identifier. If DT
+ * node hasn't reg property, return #PINCTRL_REG_NONE instead.
+ *
+ * @param node_id Node identifier.
+ */
+#define Z_PINCTRL_STORE_REG(node_id)				\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, reg),		\
+		(DT_REG_ADDR(node_id)), (PINCTRL_REG_NONE))
+
+/**
  * @brief Obtain the variable name storing pinctrl pins for the given DT node
  * identifier and state index.
  *
@@ -179,7 +189,7 @@ struct pinctrl_dev_config {
  */
 #define Z_PINCTRL_DEV_CONFIG_INIT(node_id)				       \
 	{								       \
-		.reg = DT_REG_ADDR(node_id),				       \
+		.reg = Z_PINCTRL_STORE_REG(node_id),			       \
 		.states = Z_PINCTRL_STATES_NAME(node_id),		       \
 		.state_cnt = ARRAY_SIZE(Z_PINCTRL_STATES_NAME(node_id)),       \
 	}
