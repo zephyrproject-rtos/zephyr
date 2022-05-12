@@ -30,6 +30,11 @@
 		};
 	};
 
+	pinctrl: pin-controller {
+		compatible = "espressif,esp32-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -39,11 +44,6 @@
 		sram0: memory@3fc7c000 {
 			compatible = "mmio-sram";
 			reg = <0x3fc7c000 0x50000>;
-		};
-
-		pinctrl: pin-controller {
-			compatible = "espressif,esp32-pinctrl";
-			status = "okay";
 		};
 
 		intc: interrupt-controller@600c2000 {
