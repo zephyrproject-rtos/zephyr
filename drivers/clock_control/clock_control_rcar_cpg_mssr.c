@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 IoT.bzh
+ * Copyright (c) 2020-2022 IoT.bzh
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,8 @@
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/rcar_clock_control.h>
-#include <zephyr/dt-bindings/clock/renesas_rcar_cpg.h>
+#include <zephyr/dt-bindings/clock/renesas_cpg_mssr.h>
+#include <zephyr/dt-bindings/clock/renesas/r8a7795_cpg_mssr.h>
 
 struct rcar_mssr_config {
 	uint32_t base_address;
@@ -72,7 +73,7 @@ static int cpg_core_clock_endisable(const struct device *dev,
 	int ret;
 
 	/* Only support CANFD core clock at the moment */
-	if (module != CPG_CORE_CLK_CANFD) {
+	if (module != R8A7795_CLK_CANFD) {
 		return -EINVAL;
 	}
 
@@ -178,7 +179,7 @@ static int cpg_get_rate(const struct device *dev,
 	}
 
 	switch (clk->module) {
-	case CPG_CORE_CLK_CANFD:
+	case R8A7795_CLK_CANFD:
 		val = sys_read32(config->base_address + CANFDCKCR);
 		if (val & CANFDCKCR_CKSTP) {
 			*rate = 0;
@@ -187,7 +188,7 @@ static int cpg_get_rate(const struct device *dev,
 			*rate = CANFDCKCR_PARENT_CLK_RATE / (val + 1);
 		}
 		break;
-	case CPG_CORE_CLK_S3D4:
+	case R8A7795_CLK_S3D4:
 		*rate = S3D4_CLK_RATE;
 		break;
 	default:
