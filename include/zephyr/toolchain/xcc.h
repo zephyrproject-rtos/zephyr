@@ -144,6 +144,10 @@
 #define __builtin_unreachable() do { __ASSERT(false, "Unreachable code"); } \
 	while (true)
 
+/* Not a full barrier, just a SW barrier */
+#define __sync_synchronize() do { __asm__ __volatile__ ("" ::: "memory"); } \
+	while (false)
+
 #ifdef __deprecated
 /*
  * XCC does not support using deprecated attribute in enum,
