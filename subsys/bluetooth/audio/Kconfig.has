@@ -66,7 +66,10 @@ config BT_HAS_PRESET_COUNT
 	  This option sets the number of Hearing Access Service Presets
 	  that can be registered. Setting this value to 0 disables Presets support.
 
-if BT_HAS_PRESET_COUNT > 0
+config BT_HAS_PRESET_SUPPORT
+	def_bool BT_HAS_PRESET_COUNT > 0
+
+if BT_HAS_PRESET_SUPPORT
 
 if BT_HAS_HEARING_AID_BINAURAL
 
@@ -91,7 +94,7 @@ config BT_HAS_PRESET_NAME_DYNAMIC
 	help
 	  Enabling this option allows for runtime configuration of preset name.
 
-endif # BT_HAS_PRESET_COUNT > 0
+endif # BT_HAS_PRESET_SUPPORT
 
 config BT_DEBUG_HAS
 	bool "Hearing Access Service debug"
