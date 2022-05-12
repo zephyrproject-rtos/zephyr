@@ -189,6 +189,10 @@ struct net_pkt {
 				 * defined(CONFIG_NET_ETHERNET_BRIDGE).
 				 */
 
+	uint8_t l2_processed : 1; /* Set to 1 if this packet has already been
+				   * processed by the L2
+				   */
+
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
 		 * The value is shared between IPv6 and IPv4.
@@ -357,6 +361,17 @@ static inline void net_pkt_set_l2_bridged(struct net_pkt *pkt, bool is_l2_bridge
 	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE)) {
 		pkt->l2_bridged = is_l2_bridged;
 	}
+}
+
+static inline bool net_pkt_is_l2_processed(struct net_pkt *pkt)
+{
+	return !!(pkt->l2_processed);
+}
+
+static inline void net_pkt_set_l2_processed(struct net_pkt *pkt,
+					    bool is_l2_processed)
+{
+	pkt->l2_processed = is_l2_processed;
 }
 
 static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
