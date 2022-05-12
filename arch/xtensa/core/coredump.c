@@ -9,12 +9,13 @@
 #include <xtensa-asm2.h>
 
 #define ARCH_HDR_VER			1
-#define XTENSA_BLOCK_HDR_VER	1
+#define XTENSA_BLOCK_HDR_VER		2
 
 enum xtensa_soc_code {
 	XTENSA_SOC_UNKNOWN = 0,
 	XTENSA_SOC_SAMPLE_CONTROLLER,
 	XTENSA_SOC_ESP32,
+	XTENSA_SOC_INTEL_ADSP,
 };
 
 struct xtensa_arch_block {
@@ -28,13 +29,15 @@ struct xtensa_arch_block {
 	 */
 	uint8_t		soc;
 
-	/* Future versions of Xtensa coredump
-	 * may expand minimum set of registers
+	/* Future versions of Xtensa coredump may expand
+	 * minimum set of registers
 	 *
 	 * (This should stay the second field for the same
 	 * reason as the first once we have more versions)
 	 */
 	uint16_t	version;
+
+	uint8_t		toolchain;
 
 	struct {
 		/* Minimum set shown by GDB 'info registers',
@@ -101,13 +104,18 @@ void arch_coredump_info_dump(const z_arch_esf_t *esf)
 
 	arch_blk.version = XTENSA_BLOCK_HDR_VER;
 
-#if CONFIG_SOC_XTENSA_SAMPLE_CONTROLLER
-	arch_blk.soc = XTENSA_SOC_SAMPLE_CONTROLLER;
-#elif CONFIG_SOC_ESP32
-	arch_blk.soc = XTENSA_SOC_ESP32;
-#else
-	arch_blk.soc = XTENSA_SOC_UNKNOWN;
-#endif
+	#if CONFIG_SOC_XTENSA_SAMPLE_CONTROLLER
+		arch_blk.soc = XTENSA_SOC_SAMPLE_CONTROLLER;
+	#elif CONFIG_SOC_ESP32
+		arch_blk.soc = XTENSA_SOC_ESP32;
+	#elif CONFIG_SOC_FAMILY_INTEL_ADSP
+		arch_blk.soc = XTENSA_SOC_INTEL_ADSP;
+	#else
+		arch_blk.soc = XTENSA_SOC_UNKNOWN;
+	#endif
+
+	/* Set in top-level CMakeLists.txt for use with Xtensa coredump */
+	arch_blk.toolchain = XTENSA_TOOLCHAIN_VARIANT;
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(arch_blk.r.exccause));
 
