@@ -15,6 +15,10 @@ config SOC_MPFS
 	select USE_SWITCH
 	select CPU_HAS_FPU
 	select SCHED_IPI_SUPPORTED
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
 
 endchoice
 

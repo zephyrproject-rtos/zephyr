@@ -11,17 +11,28 @@ config SOC_RISCV_SIFIVE_FREEDOM
 	bool "SiFive Freedom SOC implementation"
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
 
 config SOC_RISCV_SIFIVE_FU540
 	bool "SiFive Freedom U540 SOC implementation"
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
 	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
 
 config SOC_RISCV_SIFIVE_FU740
 	bool "SiFive Freedom U740 SOC implementation"
 	select ATOMIC_OPERATIONS_C
 	select INCLUDE_RESET_VECTOR
 	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
 
 endchoice
