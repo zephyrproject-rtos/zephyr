@@ -41,6 +41,11 @@
 #include "ull_iso_types.h"
 #include "ull_conn_types.h"
 #include "ull_conn_iso_types.h"
+
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+#include "ull_vendor.h"
+#endif /* CONFIG_BT_CTLR_USER_EXT */
+
 #include "ull_internal.h"
 #include "ull_sched_internal.h"
 #include "ull_chan_internal.h"
@@ -52,9 +57,6 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
 
-#if defined(CONFIG_BT_CTLR_USER_EXT)
-#include "ull_vendor.h"
-#endif /* CONFIG_BT_CTLR_USER_EXT */
 
 #include "ll.h"
 #include "ll_feat.h"
