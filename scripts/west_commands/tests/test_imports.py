@@ -21,6 +21,7 @@ def test_runner_imports():
                     'dediprog',
                     'dfu-util',
                     'esp32',
+                    'ezflashcli',
                     'gd32isp',
                     'hifive1',
                     'intel_adsp',
