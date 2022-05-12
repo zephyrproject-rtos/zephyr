@@ -1742,6 +1742,7 @@ Renesas R-Car Platforms:
     files:
         - boards/arm/rcar_*/
         - drivers/*/*rcar*
+        - drivers/clock_control/*cpg_mssr*
         - dts/arm/renesas/
         - dts/bindings/*/*rcar*
         - soc/arm/renesas_rcar/

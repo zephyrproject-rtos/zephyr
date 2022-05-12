@@ -3,8 +3,6 @@
 
 description: Renesas Clock Pulse Generator / Module Standby and Software Reset
 
-compatible: "renesas,rcar-cpg-mssr"
-
 include: [clock-controller.yaml, base.yaml]
 
 properties:
