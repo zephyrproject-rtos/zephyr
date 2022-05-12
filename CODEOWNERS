@@ -591,6 +591,7 @@
 /include/zephyr/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/zephyr/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
 /include/zephyr/dt-bindings/pcie/                @dcpleung
+/include/zephyr/dt-bindings/pinctrl/esp*         @glaubermaroto
 /include/zephyr/dt-bindings/pwm/*it8xxx2*        @RuibinChang
 /include/zephyr/dt-bindings/usb/usb.h            @galak
 /include/zephyr/drivers/emul.h                   @sjg20
