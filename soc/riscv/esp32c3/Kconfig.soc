@@ -11,6 +11,9 @@ config SOC_ESP32C3
 	select PINCTRL
 	select XIP
 	select HAS_ESPRESSIF_HAL
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
 
 if SOC_ESP32C3
 

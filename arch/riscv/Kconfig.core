@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "RISCV core"
+
+config RISCV_CORE_E31
+	bool "E31 core"
+	select RISCV_PMP
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	help
+	  SiFive E31 Standard Core
+
+endmenu

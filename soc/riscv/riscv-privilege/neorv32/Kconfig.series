@@ -4,6 +4,9 @@
 config SOC_SERIES_NEORV32
 	bool "NEORV32 Processor"
 	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	help
 	  Enable support for the NEORV32 Processor (SoC).

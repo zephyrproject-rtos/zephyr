@@ -4,6 +4,10 @@
 config SOC_SERIES_RISCV_TELINK_B91
 	bool "Telink B91 SoC Implementation"
 	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	select HAS_TELINK_DRIVERS
 	help

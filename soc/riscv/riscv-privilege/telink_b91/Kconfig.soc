@@ -7,6 +7,10 @@ depends on SOC_SERIES_RISCV_TELINK_B91
 
 config B91_CPU_RISCV32
 	bool "RISCV32 CPU Architecture"
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
 
 endchoice
 

@@ -9,5 +9,9 @@ config SOC_JH7100
 	bool "Starfive JH7100"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select INCLUDE_RESET_VECTOR
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
 
 endchoice
