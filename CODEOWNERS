@@ -230,7 +230,7 @@
 /drivers/clock_control/*agilex*           @siclim
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx @glaubermaroto
-/drivers/clock_control/*rcar*             @aaillet
+/drivers/clock_control/*cpg_mssr*         @aaillet
 /drivers/counter/                         @nordic-krch
 /drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
