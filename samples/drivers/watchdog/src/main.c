@@ -45,6 +45,11 @@
 #define WDT_NODE DT_INST(0, ti_cc32xx_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_wdog)
 #define WDT_NODE DT_INST(0, nxp_imx_wdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_wwdgt)
+#define WDT_NODE DT_INST(0, gd_gd32_wwdgt)
+#define WDT_MAX_WINDOW 24U
+#define WDT_MIN_WINDOW 18U
+#define WDG_FEED_INTERVAL 12U
 #elif DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_fwdgt)
 #define WDT_NODE DT_INST(0, gd_gd32_fwdgt)
 #else
@@ -62,6 +67,10 @@
 
 #ifndef WDT_MAX_WINDOW
 #define WDT_MAX_WINDOW  1000U
+#endif
+
+#ifndef WDT_MIN_WINDOW
+#define WDT_MIN_WINDOW  0U
 #endif
 
 #ifndef WDG_FEED_INTERVAL
@@ -113,7 +122,7 @@ void main(void)
 		.flags = WDT_FLAG_RESET_SOC,
 
 		/* Expire watchdog after max window */
-		.window.min = 0U,
+		.window.min = WDT_MIN_WINDOW,
 		.window.max = WDT_MAX_WINDOW,
 	};
 
@@ -144,6 +153,8 @@ void main(void)
 		return;
 	}
 
+	/* Wait opening window. */
+	k_sleep(K_MSEC(WDT_MIN_WINDOW));
 	/* Feeding watchdog. */
 	printk("Feeding watchdog %d times\n", WDT_FEED_TRIES);
 	for (int i = 0; i < WDT_FEED_TRIES; ++i) {
