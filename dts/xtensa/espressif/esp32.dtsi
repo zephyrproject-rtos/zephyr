@@ -40,6 +40,11 @@
 		status = "disabled";
 	};
 
+	pinctrl: pin-controller {
+		compatible = "espressif,esp32-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		sram0: memory@3ffb0000 {
 			compatible = "mmio-sram";
@@ -126,11 +131,6 @@
 			label = "UART_2";
 			clocks = <&rtc ESP32_UART2_MODULE>;
 			status = "disabled";
-		};
-
-		pinctrl: pin-controller {
-			compatible = "espressif,esp32-pinctrl";
-			status = "okay";
 		};
 
 		ledc0: ledc@3ff59000 {
