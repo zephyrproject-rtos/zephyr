@@ -619,7 +619,7 @@ void llcp_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 
 	p = (void *)&pdu->llctrl.conn_update_ind;
 	ctx->data.cu.win_size = p->win_size;
-	ctx->data.cu.win_offset_us = sys_le16_to_cpu(p->win_offset * CONN_INT_UNIT_US);
+	ctx->data.cu.win_offset_us = sys_le16_to_cpu(p->win_offset) * CONN_INT_UNIT_US;
 	ctx->data.cu.latency = sys_le16_to_cpu(p->latency);
 	ctx->data.cu.interval_max = sys_le16_to_cpu(p->interval);
 	ctx->data.cu.timeout = sys_le16_to_cpu(p->timeout);
