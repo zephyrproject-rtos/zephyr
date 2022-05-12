@@ -223,13 +223,13 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 		txArray[i].bufferFull = false;
 	}
 
-	err = can_set_bitrate(CANmodule->dev, KHZ(CANbitRate), 0);
+	err = can_set_bitrate(CANmodule->dev, KHZ(CANbitRate));
 	if (err) {
 		LOG_ERR("failed to configure CAN bitrate (err %d)", err);
 		return CO_ERROR_ILLEGAL_ARGUMENT;
 	}
 
-	err = can_set_mode(CANmodule->dev, CAN_NORMAL_MODE);
+	err = can_set_mode(CANmodule->dev, CAN_MODE_NORMAL);
 	if (err) {
 		LOG_ERR("failed to configure CAN interface (err %d)", err);
 		return CO_ERROR_ILLEGAL_ARGUMENT;
@@ -250,7 +250,7 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 
 	canopen_detach_all_rx_filters(CANmodule);
 
-	err = can_set_mode(CANmodule->dev, CAN_SILENT_MODE);
+	err = can_set_mode(CANmodule->dev, CAN_MODE_LISTENONLY);
 	if (err) {
 		LOG_ERR("failed to disable CAN interface (err %d)", err);
 	}

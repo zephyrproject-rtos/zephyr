@@ -330,10 +330,8 @@ static int mcp2515_get_max_bitrate(const struct device *dev, uint32_t *max_bitra
 }
 
 static int mcp2515_set_timing(const struct device *dev,
-			      const struct can_timing *timing,
-			      const struct can_timing *timing_data)
+			      const struct can_timing *timing)
 {
-	ARG_UNUSED(timing_data);
 	struct mcp2515_data *dev_data = dev->data;
 	int ret;
 
@@ -442,7 +440,7 @@ done:
 	return ret;
 }
 
-static int mcp2515_set_mode(const struct device *dev, enum can_mode mode)
+static int mcp2515_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
 	struct mcp2515_data *dev_data = dev->data;
@@ -450,13 +448,13 @@ static int mcp2515_set_mode(const struct device *dev, enum can_mode mode)
 	int ret;
 
 	switch (mode) {
-	case CAN_NORMAL_MODE:
+	case CAN_MODE_NORMAL:
 		mcp2515_mode = MCP2515_MODE_NORMAL;
 		break;
-	case CAN_SILENT_MODE:
+	case CAN_MODE_LISTENONLY:
 		mcp2515_mode = MCP2515_MODE_SILENT;
 		break;
-	case CAN_LOOPBACK_MODE:
+	case CAN_MODE_LOOPBACK:
 		mcp2515_mode = MCP2515_MODE_LOOPBACK;
 		break;
 	default:
@@ -949,12 +947,12 @@ static int mcp2515_init(const struct device *dev)
 		}
 	}
 
-	ret = can_set_timing(dev, &timing, NULL);
+	ret = can_set_timing(dev, &timing);
 	if (ret) {
 		return ret;
 	}
 
-	ret = can_set_mode(dev, CAN_NORMAL_MODE);
+	ret = can_set_mode(dev, CAN_MODE_NORMAL);
 
 	return ret;
 }

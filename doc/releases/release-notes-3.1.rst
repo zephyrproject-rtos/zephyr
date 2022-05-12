@@ -19,6 +19,15 @@ API Changes
 Changes in this release
 =======================
 
+* All Zephyr public headers have been moved to ``include/zephyr``, meaning they
+  need to be prefixed with ``<zephyr/...>`` when included. Because this change
+  can potentially break many applications or libraries,
+  :kconfig:option:`CONFIG_LEGACY_INCLUDE_PATH` is provided to allow using the
+  old include path. This option is now enabled by default to allow a smooth
+  transition. In order to facilitate the migration to the new include prefix, a
+  script to automate the process is also provided:
+  :zephyr_file:`scripts/utils/migrate_includes.py`.
+
 * LoRaWAN: The message type parameter in :c:func:`lorawan_send` was changed
   from ``uint8_t`` to ``enum lorawan_message_type``. If ``0`` was passed for
   unconfirmed message, this has to be changed to ``LORAWAN_MSG_UNCONFIRMED``.
@@ -237,6 +246,14 @@ Libraries / Subsystems
 
   * Added mcumgr os hook to allow an application to accept or decline a reset
     request; :kconfig:option:`CONFIG_OS_MGMT_RESET_HOOK` enables the callback.
+  * Added mcumgr fs hook to allow an application to accept or decline a file
+    read/write request; :kconfig:option:`CONFIG_FS_MGMT_FILE_ACCESS_HOOK`
+    enables the feature which then needs to be registered by the application.
+  * Added supplied image header to mcumgr img upload callback parameter list
+    which allows the application to inspect it to determine if it should be
+    allowed or declined.
+  * Made the img mgmt ``img_mgmt_vercmp`` function public to allow application-
+    level comparison of image versions.
 
 * SD Subsystem
 

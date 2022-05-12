@@ -24,6 +24,10 @@ endif
 config SOC
 	default "esp32s2"
 
+config SOC_TOOLCHAIN_NAME
+	string
+	default "espressif_esp32s2"
+
 config GEN_ISR_TABLES
 	default y
 

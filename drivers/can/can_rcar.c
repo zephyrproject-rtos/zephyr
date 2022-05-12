@@ -566,30 +566,34 @@ static int can_rcar_enter_operation_mode(const struct can_rcar_cfg *config)
 	return 0;
 }
 
-static int can_rcar_set_mode(const struct device *dev, enum can_mode mode)
+static int can_rcar_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
 	uint8_t tcr = 0;
 	int ret = 0;
 
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
+		LOG_ERR("Unsupported mode: 0x%08x", mode);
+		return -ENOTSUP;
+	}
+
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	switch (mode) {
-	case CAN_NORMAL_MODE:
-		tcr = 0;
-		break;
-	/*Controller is not allowed to send dominant bits*/
-	case CAN_SILENT_MODE:
-		tcr = RCAR_CAN_TCR_LISTEN_ONLY | RCAR_CAN_TCR_TSTE;
-		break;
-	/*Controller is in loopback mode (receive own messages)*/
-	case CAN_LOOPBACK_MODE:
-		tcr = RCAR_CAN_TCR_INT_LOOP | RCAR_CAN_TCR_TSTE;
-		break;
-	/*Combination of loopback and silent*/
-	case CAN_SILENT_LOOPBACK_MODE:
+
+	if ((mode & (CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) ==
+		(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) {
+		LOG_ERR("Combination of loopback and listenonly modes not supported");
 		ret = -ENOTSUP;
 		goto unlock;
+	} else if ((mode & CAN_MODE_LOOPBACK) != 0) {
+		/* Loopback mode */
+		tcr = RCAR_CAN_TCR_INT_LOOP | RCAR_CAN_TCR_TSTE;
+	} else if ((mode & CAN_MODE_LISTENONLY) != 0) {
+		/* Listen-only mode */
+		tcr = RCAR_CAN_TCR_LISTEN_ONLY | RCAR_CAN_TCR_TSTE;
+	} else {
+		/* Normal mode */
+		tcr = 0;
 	}
 
 	/* Enable CAN transceiver */
@@ -648,14 +652,11 @@ static void can_rcar_set_bittiming(const struct can_rcar_cfg *config,
 }
 
 static int can_rcar_set_timing(const struct device *dev,
-			       const struct can_timing *timing,
-			       const struct can_timing *timing_data)
+			       const struct can_timing *timing)
 {
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
 	int ret = 0;
-
-	ARG_UNUSED(timing_data);
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
@@ -955,12 +956,12 @@ static int can_rcar_init(const struct device *dev)
 		}
 	}
 
-	ret = can_rcar_set_timing(dev, &timing, NULL);
+	ret = can_rcar_set_timing(dev, &timing);
 	if (ret) {
 		return ret;
 	}
 
-	ret = can_rcar_set_mode(dev, CAN_NORMAL_MODE);
+	ret = can_rcar_set_mode(dev, CAN_MODE_NORMAL);
 	if (ret) {
 		return ret;
 	}

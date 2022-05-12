@@ -45,7 +45,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 9237454a30bcf6e14a89db174e8dbeb8f31831d2
+      revision: a30531af3a95a9a3ea7d771ea8a578ebfed45514
       path: modules/fs/fatfs
       groups:
         - fs
@@ -70,7 +70,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: a7dc3c72291a387e0eb3b268d07df6eb70811a84
+      revision: 5a334d5584d030d5773de2f1d489288a8625529c
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -163,7 +163,7 @@ manifest:
       path: modules/fs/littlefs
       groups:
         - fs
-      revision: 7b2cf4ba759bd530b543644e2790b07cf20cd6aa
+      revision: 652f2c5646e79b881e6f3099686ad3b7af9e216c
     - name: loramac-node
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
@@ -174,7 +174,7 @@ manifest:
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
     - name: mbedtls
-      revision: 3e3e58a92de76069730c63e0d524f40fea948a61
+      revision: 7fed49c9b9f983ad6416986661ef637459723bcb
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -201,7 +201,7 @@ manifest:
       revision: 8d53544871e1f300c478224faca6be8384ab0d04
       path: modules/lib/open-amp
     - name: openthread
-      revision: d4d46ba94290bcf93cc849b832f0ad305c72c473
+      revision: 59623523733fa2a18f949fb1f513cec34f0a44e7
       path: modules/lib/openthread
     - name: segger
       revision: 3a52ab222133193802d3c3b4d21730b9b1f1d2f6
@@ -229,17 +229,17 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-m
-      revision: bfbd7803b0ed77680e220e44ce6fb363ef2a4224
+      revision: 7c53a6e76130a85303f83b15d868a92fdcd5f5be
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
     - name: tf-m-tests
-      revision: 52814181f0fde6d1422fac204d42cde30c62e40e
+      revision: c99a86b295c4887520da9d8402566d7f225c974e
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - tee
     - name: psa-arch-tests
-      revision: 4f45df539d3d98b6e38e112be9936be4a2b8a97c
+      revision: a81f9da287569f169d60026916952641b233faa8
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - tee

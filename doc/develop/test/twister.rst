@@ -525,6 +525,16 @@ only one board at a time, specified using the ``--platform`` option.
 The ``--device-serial-baud`` option is only needed if your device does not run at
 115200 baud.
 
+To support devices without a physical serial port, use the ``--device-serial-pty``
+option. In this cases, log messages are captured for example using a script.
+In this case you can run twister with the following options::
+
+    scripts/twister --device-testing --device-serial-pty "script.py" \
+    -p intel_adsp_cavs25 -T tests/kernel
+
+The script is user-defined and handles delivering the messages which can be
+used by twister to determine the test execution status.
+
 
 Executing tests on multiple devices
 ===================================
@@ -593,6 +603,46 @@ on those platforms.
   Currently only boards with support for both pyocd and nrfjprog are supported
   with the hardware map features. Boards that require other runners to flash the
   Zephyr binary are still work in progress.
+
+Serial PTY support using ``--device-serial-pty``  can also be used in the
+hardware map::
+
+ - connected: true
+   id: None
+   platform: intel_adsp_cavs18
+   product: None
+   runner: intel_adsp
+   serial_pty: path/to/script.py
+   runner_params:
+     - --remote-host=remote_host_ip_addr
+     - --key=/path/to/key.pem
+ - connected: true
+   id: None
+   platform: intel_adsp_cavs25
+   product: None
+   runner: intel_adsp
+   serial_pty: path/to/script.py
+   runner_params:
+     - --remote-host=remote_host_ip_addr
+     - --key=/path/to/key.pem
+
+
+The runner_params field indicates the parameters you want to pass to the
+west runner. For some boards the west runner needs some extra parameters to
+work. It is equivalent to following west and twister commands::
+
+   west flash --remote-host remote_host_ip_addr --key /path/to/key.pem
+
+   twister -p intel_adsp_cavs18 --device-testing --device-serial-pty script.py
+   --west-flash="--remote-host=remote_host_ip_addr,--key=/path/to/key.pem"
+
+
+.. note::
+
+  For serial PTY, the "--generate-hardware-map" option cannot scan it out
+  and generate a correct hardware map automatically. You have to edit it
+  manually according to above example. This is because the serial port
+  of the PTY is not fixed and being allocated in the system at runtime.
 
 Fixtures
 +++++++++
@@ -700,3 +750,12 @@ An example of entries in a quarantine yaml::
       platforms:
         - qemu_cortex_m3
         - native_posix
+
+Running in Tests in Random Order
+********************************
+Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
+run your tests in random order.  This can be beneficial for identifying
+dependencies between test cases.  For native_posix platforms, you can provide
+the seed to the random number generator by providing ``-seed=value`` as an
+argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
+details.

@@ -220,7 +220,11 @@ void main(void)
 	}
 
 #ifdef CONFIG_LOOPBACK_MODE
-	can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+	if (ret != 0) {
+		printk("Error setting CAN mode [%d]", ret);
+		return;
+	}
 #endif
 
 	if (led.port != NULL) {

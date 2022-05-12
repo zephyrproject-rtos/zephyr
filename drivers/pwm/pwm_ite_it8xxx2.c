@@ -157,11 +157,18 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 	 *          CTRx[7:0] value FFh results in a divisor 256
 	 */
 	for (ctr = 0xFF; ctr >= PWM_CTRX_MIN; ctr--) {
-		cxcprs = (((uint32_t) pwm_clk_src) / (ctr + 1) / target_freq) - 1;
-		if (cxcprs >= 0) {
-			actual_freq = ((uint32_t) pwm_clk_src) / (ctr + 1) / (cxcprs + 1);
-			if (abs(actual_freq - target_freq) < deviation)
+		cxcprs = (((uint32_t) pwm_clk_src) / (ctr + 1) / target_freq);
+		/*
+		 * Make sure cxcprs isn't zero, or we will have
+		 * divide-by-zero on calculating actual_freq.
+		 */
+		if (cxcprs != 0) {
+			actual_freq = ((uint32_t) pwm_clk_src) / (ctr + 1) / cxcprs;
+			if (abs(actual_freq - target_freq) < deviation) {
+				/* CxCPRS[15:0] = cxcprs - 1 */
+				cxcprs--;
 				break;
+			}
 		}
 	}
 

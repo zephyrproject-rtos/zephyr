@@ -127,18 +127,19 @@ static const struct can_driver_api can_stm32h7_driver_api = {
 		.prescaler = 0x200
 	},
 #ifdef CONFIG_CAN_FD_MODE
+	.set_timing_data = can_mcan_set_timing_data,
 	/* Data timing limits are per the STM32H7 Reference Manual
 	 * (RM0433 Rev 7), section 56.5.3, FDCAN data bit timing and prescaler
 	 * register (FDCAN_DBTP).
 	 */
-	.timing_min_data = {
+	.timing_data_min = {
 		.sjw = 0x00,
 		.prop_seg = 0x00,
 		.phase_seg1 = 0x00,
 		.phase_seg2 = 0x00,
 		.prescaler = 0x00
 	},
-	.timing_max_data = {
+	.timing_data_max = {
 		.sjw = 0x10,
 		.prop_seg = 0x00,
 		.phase_seg1 = 0x20,

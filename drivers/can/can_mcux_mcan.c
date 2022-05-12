@@ -94,6 +94,7 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 		.prescaler = 512,
 	},
 #ifdef CONFIG_CAN_FD_MODE
+	.set_timing_data = can_mcan_set_timing_data,
 	/*
 	 * MCUX MCAN data timing limits are specified in the "Data bit timing
 	 * and prescaler register (DBTP)" table in the SoC reference manual.
@@ -102,14 +103,14 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	 * the register field limits are physical values minus 1 (which is
 	 * handled by the register assignments in the common MCAN driver code).
 	 */
-	.timing_min_data = {
+	.timing_data_min = {
 		.sjw = 1,
 		.prop_seg = 0,
 		.phase_seg1 = 1,
 		.phase_seg2 = 1,
 		.prescaler = 1,
 	},
-	.timing_max_data = {
+	.timing_data_max = {
 		.sjw = 16,
 		.prop_seg = 0,
 		.phase_seg1 = 16,

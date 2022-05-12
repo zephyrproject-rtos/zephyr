@@ -152,10 +152,8 @@ static int mcux_flexcan_get_max_bitrate(const struct device *dev, uint32_t *max_
 }
 
 static int mcux_flexcan_set_timing(const struct device *dev,
-				   const struct can_timing *timing,
-				   const struct can_timing *timing_data)
+				   const struct can_timing *timing)
 {
-	ARG_UNUSED(timing_data);
 	struct mcux_flexcan_data *data = dev->data;
 	const struct mcux_flexcan_config *config = dev->config;
 	uint8_t sjw_backup = data->timing.sjw;
@@ -181,12 +179,17 @@ static int mcux_flexcan_set_timing(const struct device *dev,
 	return 0;
 }
 
-static int mcux_flexcan_set_mode(const struct device *dev, enum can_mode mode)
+static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct mcux_flexcan_config *config = dev->config;
 	uint32_t ctrl1;
 	uint32_t mcr;
 	int err;
+
+	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) != 0) {
+		LOG_ERR("unsupported mode: 0x%08x", mode);
+		return -ENOTSUP;
+	}
 
 	if (config->phy != NULL) {
 		err = can_transceiver_enable(config->phy);
@@ -201,7 +204,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, enum can_mode mode)
 	ctrl1 = config->base->CTRL1;
 	mcr = config->base->MCR;
 
-	if (mode == CAN_LOOPBACK_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
+	if ((mode & CAN_MODE_LOOPBACK) != 0) {
 		/* Enable loopback and self-reception */
 		ctrl1 |= CAN_CTRL1_LPB_MASK;
 		mcr &= ~(CAN_MCR_SRXDIS_MASK);
@@ -211,7 +214,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, enum can_mode mode)
 		mcr |= CAN_MCR_SRXDIS_MASK;
 	}
 
-	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
+	if ((mode & CAN_MODE_LISTENONLY) != 0) {
 		/* Enable listen-only mode */
 		ctrl1 |= CAN_CTRL1_LOM_MASK;
 	} else {

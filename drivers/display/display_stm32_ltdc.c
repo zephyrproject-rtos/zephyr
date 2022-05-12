@@ -129,16 +129,13 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 static int stm32_ltdc_set_orientation(const struct device *dev,
 				const enum display_orientation orientation)
 {
-	int err;
+	ARG_UNUSED(dev);
 
-	switch (orientation) {
-	case DISPLAY_ORIENTATION_NORMAL:
-		err = 0;
-	default:
-		err = -ENOTSUP;
+	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+		return 0;
 	}
 
-	return err;
+	return -ENOTSUP;
 }
 
 static void stm32_ltdc_get_capabilities(const struct device *dev,
@@ -265,9 +262,9 @@ static int stm32_ltdc_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32F7X)
 	LL_RCC_PLLSAI_Disable();
 	LL_RCC_PLLSAI_ConfigDomain_LTDC(LL_RCC_PLLSOURCE_HSE,
-					LL_RCC_PLLM_DIV_8,
-					192,
-					LL_RCC_PLLSAIR_DIV_4,
+					LL_RCC_PLLM_DIV_25,
+					384,
+					LL_RCC_PLLSAIR_DIV_5,
 					LL_RCC_PLLSAIDIVR_DIV_8);
 
 	LL_RCC_PLLSAI_Enable();
