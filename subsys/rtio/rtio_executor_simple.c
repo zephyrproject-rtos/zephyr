@@ -30,7 +30,6 @@ int rtio_simple_submit(struct rtio *r)
 	struct rtio_sqe *sqe = rtio_spsc_consume(r->sq);
 
 	if (sqe != NULL) {
-		LOG_DBG("Calling iodev submit");
 		rtio_iodev_submit(sqe, r);
 	}
 
