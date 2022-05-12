@@ -42,7 +42,7 @@ properties:
         MOSI and MISO or half-duplex on MOSI only. Lines set to 2
         or 4 indicate dual or quad I/O modes. Defaults to 1.
 
-    port-sel:
+    port_sel:
       type: int
       required: false
       description: |
@@ -51,7 +51,7 @@ properties:
         chip configurations with an embedded SPI flash. Defaults
         to port 0 (shared SPI port).
 
-    chip-select:
+    chip_select:
       type: int
       required: false
       description: |
