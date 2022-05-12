@@ -36,6 +36,11 @@
 		status = "disabled";
 	};
 
+	pinctrl: pin-controller {
+		compatible = "espressif,esp32-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -101,11 +106,6 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			current-speed = <115200>;
-		};
-
-		pinctrl: pin-controller {
-			compatible = "espressif,esp32-pinctrl";
-			status = "okay";
 		};
 
 		gpio0: gpio@3f404000 {
