@@ -847,6 +847,8 @@ class DeviceHandler(Handler):
                         command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
                     elif runner == "stm32cubeprogrammer":
                         command.append("--tool-opt=sn=%s" % (board_id))
+                    elif runner == "intel_adsp":
+                        command.append("--pty")
 
                     # Receive parameters from an runner_params field
                     # of the specified hardware map file.
