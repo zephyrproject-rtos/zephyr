@@ -10,9 +10,9 @@
 #include <zephyr/sys/arch_interface.h>
 #include <zephyr/timing/types.h>
 
-#ifdef __cplusplus 
-extern "C" { 
-#endif 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void soc_timing_init(void);
 void soc_timing_start(void);
