@@ -55,6 +55,10 @@
 #include "ull_df_types.h"
 #include "ull_df_internal.h"
 
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+#include "ull_vendor.h"
+#endif /* CONFIG_BT_CTLR_USER_EXT */
+
 #include "isoal.h"
 #include "ull_internal.h"
 #include "ull_iso_internal.h"
@@ -71,10 +75,6 @@
 
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
-
-#if defined(CONFIG_BT_CTLR_USER_EXT)
-#include "ull_vendor.h"
-#endif /* CONFIG_BT_CTLR_USER_EXT */
 
 #include "ll.h"
 #include "ll_feat.h"
