@@ -63,6 +63,9 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	int ret;
 	bool locally_routed = false;
 
+	net_pkt_set_l2_processed(pkt, false);
+
+	/* Initial call will forward packets to SOCK_RAW packet sockets. */
 	ret = net_packet_socket_input(pkt, ETH_P_ALL);
 	if (ret != NET_CONTINUE) {
 		return ret;
@@ -99,6 +102,23 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		}
 	}
 
+	net_pkt_set_l2_processed(pkt, true);
+
+	/* L2 has modified the buffer starting point, it is easier
+	 * to re-initialize the cursor rather than updating it.
+	 */
+	net_pkt_cursor_init(pkt);
+
+#if defined(CONFIG_NET_SOCKETS_PACKET_DGRAM)
+	/* Consecutive call will forward packets to SOCK_DGRAM packet sockets
+	 * (after L2 removed header).
+	 */
+	ret = net_packet_socket_input(pkt, ETH_P_ALL);
+	if (ret != NET_CONTINUE) {
+		return ret;
+	}
+#endif
+
 	/* L2 processed, now we can pass IPPROTO_RAW to packet socket: */
 	ret = net_packet_socket_input(pkt, IPPROTO_RAW);
 	if (ret != NET_CONTINUE) {
@@ -109,11 +129,6 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	if (ret != NET_CONTINUE) {
 		return ret;
 	}
-
-	/* L2 has modified the buffer starting point, it is easier
-	 * to re-initialize the cursor rather than updating it.
-	 */
-	net_pkt_cursor_init(pkt);
 
 	/* IP version and header length. */
 	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
