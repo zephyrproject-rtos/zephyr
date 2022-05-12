@@ -758,7 +758,7 @@
 			clock-frequency = <12000000>;
 			label = "SPI_0";
 			lines = <1>;
-			chip-select = <0>;
+			chip_select = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
