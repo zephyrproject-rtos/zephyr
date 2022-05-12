@@ -34,20 +34,6 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 		return NET_CONTINUE;
 	}
 #endif
-	/* Currently we are skipping L2 layer verification and not
-	 * removing L2 header from packet.
-	 * TODO :
-	 * 1) Pass it through L2 layer, so that L2 will verify
-	 * that packet is intended to us or not and sets src and dst lladdr.
-	 * And L2 should not pull off L2 header when combination of socket
-	 * like this AF_PACKET, SOCK_RAW and ETH_P_ALL proto.
-	 * 2) Socket combination of AF_INET, SOCK_RAW, IPPROTO_RAW
-	 * packet has to go through L2 and L2 verifies it's header and removes
-	 * header. Only packet with L3 header will be given to socket.
-	 * 3) If user opens raw and non raw socket together, based on raw
-	 * socket combination packet has to be feed to raw socket and only
-	 * data part to be feed to non raw socket.
-	 */
 
 	orig_family = net_pkt_family(pkt);
 
