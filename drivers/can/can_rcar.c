@@ -11,7 +11,7 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 

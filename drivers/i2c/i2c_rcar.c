@@ -12,7 +12,7 @@
 #include <soc.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_rcar);
