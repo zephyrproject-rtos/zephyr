@@ -1356,7 +1356,7 @@ nRF52 BSIM:
     files:
         - boards/posix/nrf52_bsim/
     labels:
-        - "platform: nrf52_bsim"
+        - "platform: nRF52 BSIM"
 
 POSIX API layer:
     status: odd fixes
