@@ -103,10 +103,6 @@ struct flash_stm32_qspi_data {
 	 * 24-bit addresses.
 	 */
 	bool flag_access_32bit: 1;
-	/*
-	 * If set IO operations will be perfromed on SIO[0123] pins
-	 */
-	bool flag_quad_io_en: 1;
 };
 
 static inline void qspi_lock_thread(const struct device *dev)
@@ -141,22 +137,20 @@ static inline int qspi_prepare_quad_read(const struct device *dev,
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
-	if (dev_data->flag_quad_io_en) {
-		switch (dev_data->mode) {
-		case JESD216_MODE_114:
-			cmd->AddressMode = QSPI_ADDRESS_1_LINE;
-			break;
-		case JESD216_MODE_144:
-			cmd->AddressMode = QSPI_ADDRESS_4_LINES;
-			break;
-		default:
-			return -ENOTSUP;
-		}
-
-		cmd->Instruction = dev_data->qspi_read_cmd;
-		cmd->DataMode = QSPI_DATA_4_LINES;
-		cmd->DummyCycles = dev_data->qspi_read_cmd_latency;
+	switch (dev_data->mode) {
+	case JESD216_MODE_114:
+		cmd->AddressMode = QSPI_ADDRESS_1_LINE;
+		break;
+	case JESD216_MODE_144:
+		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+		break;
+	default:
+		return -ENOTSUP;
 	}
+
+	cmd->Instruction = dev_data->qspi_read_cmd;
+	cmd->DataMode = QSPI_DATA_4_LINES;
+	cmd->DummyCycles = dev_data->qspi_read_cmd_latency;
 
 	return 0;
 }
@@ -166,23 +160,21 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
-	if (dev_data->flag_quad_io_en) {
-		cmd->Instruction = dev_data->qspi_write_cmd;
+	cmd->Instruction = dev_data->qspi_write_cmd;
 
-		switch (cmd->Instruction) {
-		case SPI_NOR_CMD_PP_1_1_4:
-			cmd->AddressMode = QSPI_ADDRESS_1_LINE;
-			break;
-		case SPI_NOR_CMD_PP_1_4_4:
-			cmd->AddressMode = QSPI_ADDRESS_4_LINES;
-			break;
-		default:
-			return -ENOTSUP;
-		}
-
-		cmd->DataMode = QSPI_DATA_4_LINES;
-		cmd->DummyCycles = 0;
+	switch (cmd->Instruction) {
+	case SPI_NOR_CMD_PP_1_1_4:
+		cmd->AddressMode = QSPI_ADDRESS_1_LINE;
+		break;
+	case SPI_NOR_CMD_PP_1_4_4:
+		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+		break;
+	default:
+		return -ENOTSUP;
 	}
+
+	cmd->DataMode = QSPI_DATA_4_LINES;
+	cmd->DummyCycles = 0;
 
 	return 0;
 }
@@ -1047,7 +1039,6 @@ static int spi_nor_process_bfp(const struct device *dev,
 			return rc;
 		}
 
-		data->flag_quad_io_en = true;
 		LOG_INF("Quad mode enabled");
 	}
 
