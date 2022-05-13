@@ -305,7 +305,7 @@ void z_riscv_pmp_init(void)
 	 * addresses inaccessible. This will never change so we do it here.
 	 */
 	set_pmp_entry(&index, PMP_NONE,
-		      (uintptr_t)_current_cpu->irq_stack - CONFIG_ISR_STACK_SIZE,
+		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
