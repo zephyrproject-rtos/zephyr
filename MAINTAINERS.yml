@@ -1527,7 +1527,7 @@ Synopsys Platforms:
     labels:
         - "platform: Synopsys"
 
-Nuvoton_NPCX Platforms:
+Nuvoton NPCX Platforms:
     status: maintained
     maintainers:
         - MulinChao
@@ -1549,7 +1549,7 @@ Nuvoton_NPCX Platforms:
         - dts/bindings/*/*npcx*
         - drivers/*/*_npcx*.c
     labels:
-        - "platform: Nuvoton_NPCX"
+        - "platform: Nuvoton NPCX"
 
 Nuvoton_Numicro Platforms:
     status: odd fixes
