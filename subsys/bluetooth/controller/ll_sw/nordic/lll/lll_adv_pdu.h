@@ -101,7 +101,8 @@ static inline void lll_adv_aux_data_enqueue(struct lll_adv_aux *lll,
 	lll_adv_pdu_enqueue(&lll->data, idx);
 }
 
-static inline struct pdu_adv *lll_adv_aux_data_peek(struct lll_adv_aux *lll)
+static inline struct pdu_adv *
+	lll_adv_aux_data_peek(const struct lll_adv_aux *const lll)
 {
 	return (void *)lll->data.pdu[lll->data.last];
 }

@@ -1407,7 +1407,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 
-			ticks_slot_overhead_aux = ull_adv_aux_evt_init(aux);
+			ticks_slot_overhead_aux =
+				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 			/* Start periodic advertising if enabled and not already
