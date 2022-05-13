@@ -4,6 +4,7 @@ menuconfig WIFI_ESP32
 	bool "ESP32 SoC WiFi support"
 	depends on !SMP
 	select THREAD_CUSTOM_DATA
+	select WIFI_USE_NATIVE_NETWORKING
 	help
 	  Enable ESP32 SoC WiFi support. Only supported in single
 	  core mode because the network stack is not aware of SMP
