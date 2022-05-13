@@ -341,8 +341,11 @@ config BT_CTLR_XTAL_THRESHOLD
 
 config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
-	depends on (BT_MAX_CONN != 0) && BT_CTLR_SCHED_ADVANCED_SUPPORT
-	default y if !(BT_PERIPHERAL && !BT_CENTRAL)
+	depends on BT_CTLR_SCHED_ADVANCED_SUPPORT && \
+		   (BT_CONN || \
+		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 1)) || \
+		    BT_CTLR_ADV_ISO)
+	default y if BT_CENTRAL || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_ISO
 	help
 	  Enable non-overlapping placement of observer, initiator and central
 	  roles in timespace. Uses window offset in connection updates and uses
