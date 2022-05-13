@@ -7,6 +7,7 @@ toolchain:
   - arcmwdt
   - cross-compile
 testing:
+  timeout_multiplier: 1.5
   ignore_tags:
     - net
     - bluetooth
