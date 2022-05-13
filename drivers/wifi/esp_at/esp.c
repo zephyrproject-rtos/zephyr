@@ -1088,7 +1088,7 @@ static void esp_iface_init(struct net_if *iface)
 }
 
 static const struct net_wifi_mgmt_offload esp_api = {
-	.iface_api.init = esp_iface_init,
+	.wifi_iface.init = esp_iface_init,
 	.scan		= esp_mgmt_scan,
 	.connect	= esp_mgmt_connect,
 	.disconnect	= esp_mgmt_disconnect,

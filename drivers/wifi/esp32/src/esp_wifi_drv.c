@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/device.h>
 #include <soc.h>
 #include <ethernet/eth_stats.h>
@@ -220,19 +221,18 @@ static int eth_esp32_dev_init(const struct device *dev)
 	return ret;
 }
 
-
 static struct esp32_wifi_runtime eth_data;
 
-static const struct ethernet_api eth_esp32_apis = {
-	.iface_api.init	= eth_esp32_init,
-	.send =  eth_esp32_send,
+static const struct net_wifi_mgmt_offload esp32_api = {
+	.wifi_iface.iface_api.init = eth_esp32_init,
+	.wifi_iface.send = eth_esp32_send,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = eth_esp32_stats,
-#endif
+	.wifi_iface.get_stats = eth_esp32_stats,
+ #endif
 };
 
 NET_DEVICE_DT_INST_DEFINE(0,
 		eth_esp32_dev_init, NULL,
 		&eth_data, NULL, CONFIG_ETH_INIT_PRIORITY,
-		&eth_esp32_apis, ETHERNET_L2,
+		&esp32_api, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
