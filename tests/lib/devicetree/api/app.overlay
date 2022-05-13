@@ -566,5 +566,35 @@
 			      "token_second_idx_two",
 			      "token_second_idx_three";
 		};
+
+		test_str_unquoted_f0: string-unquoted-f0 {
+			compatible = "vnd,string-unquoted";
+			val = "0.1234";
+		};
+
+		test_str_unquoted_f1: string-unquoted-f1 {
+			compatible = "vnd,string-unquoted";
+			val = "0.9e-3";
+		};
+
+		test_str_unquoted_t: string-unquoted-t {
+			compatible = "vnd,string-unquoted";
+			val = "XA XPLUS XB";
+		};
+
+		test_stra_unquoted_f0: string-array-unquoted-f0 {
+			compatible = "vnd,string-array-unquoted";
+			val = "1.0e2", "2.0e2", "3.0e2", "4.0e2";
+		};
+
+		test_stra_unquoted_f1: string-array-unquoted-f1 {
+			compatible = "vnd,string-array-unquoted";
+			val = "0.01", "0.1", "1.0", "10.0";
+		};
+
+		test_stra_unquoted_t: string-array-unquoted-t {
+			compatible = "vnd,string-array-unquoted";
+			val = "XA XPLUS XB", "XC XPLUS XD", "XA XMINUS XB", "XC XMINUS XD";
+		};
 	};
 };
