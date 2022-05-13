@@ -13,5 +13,6 @@ config SOC_SERIES_AST10X0
 	select SYSCON
 	select CACHE
 	select CACHE_MANAGEMENT
+	select CACHE_ASPEED
 	help
 	  Enable support for ASPEED AST10X0 series
