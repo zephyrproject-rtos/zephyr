@@ -128,22 +128,9 @@ struct modem_context *modem_context_from_id(int id)
 
 int modem_context_register(struct modem_context *ctx)
 {
-	int ret;
-
 	if (!ctx) {
 		return -EINVAL;
 	}
 
-	ret = modem_context_get(ctx);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = modem_pin_init(ctx);
-	if (ret < 0) {
-		LOG_ERR("modem pin init error: %d", ret);
-		return ret;
-	}
-
-	return 0;
+	return modem_context_get(ctx);
 }
