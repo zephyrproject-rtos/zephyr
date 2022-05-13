@@ -1,0 +1,46 @@
+# Copyright Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.coredump.api.qemu_riscv32:
+    tags: ignore_faults ignore_qemu_crash
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    platform_allow: qemu_riscv32
+    harness: console
+    harness_config:
+      type: multi_line
+      # Verify core dump contains test values saved in memory
+      regex:
+        - "E: #CD:BEGIN#"
+        - "E: #CD:5([aA])45([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:12121212"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:34343434"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:ababababcdcdcdcdefefefef"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:565656567878787890909090"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:babababa"
+        - "E: #CD:END#"
+  drivers.coredump.api:
+    tags: ignore_faults ignore_qemu_crash
+    filter: CONFIG_ARCH_SUPPORTS_COREDUMP
+    platform_exclude: qemu_riscv32
+    harness: console
+    harness_config:
+      type: multi_line
+      # Verify core dump contains test values saved in memory
+      regex:
+        - "E: #CD:BEGIN#"
+        - "E: #CD:5([aA])45([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:ababababcdcdcdcdefefefef"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:babababa"
+        - "E: #CD:END#"
