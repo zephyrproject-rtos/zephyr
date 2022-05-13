@@ -1029,8 +1029,24 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 			  const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
 {
 	ARG_UNUSED(aInstance);
-	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
 	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE)
+	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_KEY_REF);
+	size_t keyLen;
+
+	__ASSERT_NO_MSG(otPlatCryptoExportKey(aPrevKey->mKeyMaterial.mKeyRef,
+					      (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8,
+					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+	__ASSERT_NO_MSG(otPlatCryptoExportKey(aCurrKey->mKeyMaterial.mKeyRef,
+					      (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8,
+					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+	__ASSERT_NO_MSG(otPlatCryptoExportKey(aNextKey->mKeyMaterial.mKeyRef,
+					      (uint8_t *)aNextKey->mKeyMaterial.mKey.m8,
+					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+#else
+	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
+#endif
 
 	uint8_t key_id_mode = aKeyIdMode >> 3;
 
