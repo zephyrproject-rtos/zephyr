@@ -1648,6 +1648,22 @@ Microchip MEC Platforms:
   labels:
     - "platform: Microchip MEC"
 
+Microchip SAM Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+  collaborators:
+    - mnkp
+    - stephanosio
+  files:
+    - boards/arm/atsam*/
+    - boards/arm/sam*/
+    - dts/arm/atmel/
+    - soc/arm/atmel_sam*/
+    - drivers/*/*sam*.c
+  labels:
+    - "platform: Microchip SAM"
+
 nRF Platforms:
     status: maintained
     maintainers:
