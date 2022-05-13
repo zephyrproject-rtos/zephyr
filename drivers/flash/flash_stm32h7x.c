@@ -373,7 +373,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	const uint8_t nbytes = FLASH_NB_32BITWORD_IN_FLASHWORD * 4;
 	uint8_t unaligned_datas[nbytes];
 
-	for (i = 0; i < len && i + 32 <= len; i += 32, offset += 32U) {
+	for (i = 0; i < len && i + nbytes <= len; i += nbytes, offset += nbytes) {
 		rc = write_ndwords(dev, offset,
 				   (const uint64_t *) data + (i >> 3),
 				   ndwords);
