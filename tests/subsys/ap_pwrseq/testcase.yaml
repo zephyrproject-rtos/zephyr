@@ -1,0 +1,4 @@
+tests:
+  subsys.ap_pwrseq:
+    tags: ap_pwrseq
+    platform_allow: native_posix

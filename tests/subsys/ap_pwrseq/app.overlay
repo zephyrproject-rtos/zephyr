@@ -1,0 +1,7 @@
+/ {
+	added-states-test {
+		compatible = "ap-pwrseq-sub-states";
+		chipset = "AP_POWER_STATE_S0IX", "AP_POWER_STATE_S0IX_2";
+		application = "AP_POWER_STATE_APP_S0IX";
+	};
+};
