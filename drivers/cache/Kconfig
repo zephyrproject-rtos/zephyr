@@ -16,3 +16,5 @@ config CACHE_HAS_DRIVER
 	bool
 
 endif # CACHE
+
+source "drivers/cache/Kconfig.aspeed"
