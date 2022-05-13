@@ -51,6 +51,7 @@
  * _IDX_<i>_PH: phandle array's phandle by index (or phandle, phandles)
  * _IDX_<i>_STRING_TOKEN: string array element value as a token
  * _IDX_<i>_STRING_UPPER_TOKEN: string array element value as a uppercased token
+ * _IDX <i>_STRING_UNQUOTED: string array element value as a sequence of tokens, with no quotes
  * _IDX_<i>_VAL_<val>: phandle array's specifier value by index
  * _IDX_<i>_VAL_<val>_EXISTS: cell value exists, by index
  * _LEN: property logical length
@@ -59,6 +60,7 @@
  * _NAME_<name>_VAL_<val>_EXISTS: cell value exists, by name
  * _STRING_TOKEN: string property's value as a token
  * _STRING_UPPER_TOKEN: like _STRING_TOKEN, but uppercased
+ * _STRING_UNQUOTED: string property's value as a sequence of tokens, with no quotes
  */
 
 /**
@@ -983,6 +985,67 @@
 		(DT_STRING_UPPER_TOKEN(node_id, prop)), (default_value))
 
 /**
+ * @brief Get a string property's value as an unquoted sequence of tokens
+ *
+ * This removes "the quotes" from string-valued properties.
+ * That can be useful, for example,
+ * when defining floating point values as a string in devicetree
+ * that you would like to use to initialize a float or double variable in C.
+ *
+ * DT_STRING_UNQUOTED() can only be used for properties with string type.
+ *
+ * It is an error to use DT_STRING_UNQUOTED() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "12.7";
+ *     };
+ *     n2: node-2 {
+ *             prop = "0.5";
+ *     }
+ *     n3: node-3 {
+ *             prop = "A B C";
+ *     };
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string
+ *
+ * Example usage:
+ *
+ *     DT_STRING_UNQUOTED(DT_NODELABEL(n1), prop) // 12.7
+ *     DT_STRING_UNQUOTED(DT_NODELABEL(n2), prop) // 0.5
+ *     DT_STRING_UNQUOTED(DT_NODELABEL(n3), prop) // A B C
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @return the property's value as a sequence of tokens, with no quotes
+ */
+#define DT_STRING_UNQUOTED(node_id, prop) \
+	DT_CAT4(node_id, _P_, prop, _STRING_UNQUOTED)
+
+/**
+ * @brief Like DT_STRING_UNQUOTED(), but with a fallback to @p default_value
+ *
+ * If the value exists, this expands to DT_STRING_UNQUOTED(node_id, prop).
+ * The @p default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's value as a sequence of tokens, with no quotes,
+ *         or @p default_value
+ */
+#define DT_STRING_UNQUOTED_OR(node_id, prop, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		(DT_STRING_UNQUOTED(node_id, prop)), (default_value))
+
+/**
  * @brief Get an element out of a string-array property as a token.
  *
  * This removes "the quotes" from an element in the array, and converts
@@ -1081,6 +1144,49 @@
  */
 #define DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx) \
 	DT_CAT6(node_id, _P_, prop, _IDX_, idx, _STRING_UPPER_TOKEN)
+
+/**
+ * @brief Get a string array item value as an unquoted sequence of tokens.
+ *
+ * This removes "the quotes" from string-valued item.
+ * That can be useful, for example,
+ * when defining floating point values as a string in devicetree
+ * that you would like to use to initialize a float or double variable in C.
+ *
+ * DT_STRING_UNQUOTED_BY_IDX() can only be used for properties with
+ * string-array type.
+ *
+ * It is an error to use DT_STRING_UNQUOTED_BY_IDX() in other circumstances.
+ *
+ * Example devicetree fragment:
+ *
+ *     n1: node-1 {
+ *             prop = "12.7", "34.1";
+ *     };
+ *     n2: node-2 {
+ *             prop = "A B", "C D";
+ *     }
+ *
+ * Example bindings fragment:
+ *
+ *     properties:
+ *       prop:
+ *         type: string-array
+ *
+ * Example usage:
+ *
+ *     DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(n1), prop, 0) // 12.7
+ *     DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(n1), prop, 1) // 34.1
+ *     DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(n2), prop, 0) // A B
+ *     DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(n2), prop, 1) // C D
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @return the property's value as a sequence of tokens, with no quotes
+ */
+#define DT_STRING_UNQUOTED_BY_IDX(node_id, prop, idx) \
+	DT_CAT4(node_id, _P_, prop##_IDX_##idx, _STRING_UNQUOTED)
 
 /*
  * phandle properties
@@ -3302,7 +3408,7 @@
  *        token.
  *
  * @param inst instance number
- * @param prop lowercase-and-underscores property string name
+ * @param prop lowercase-and-underscores property name
  * @return the value of @p prop as a token, i.e. without any quotes
  *         and with special characters converted to underscores
  */
@@ -3312,7 +3418,7 @@
 /**
  * @brief Like DT_INST_STRING_TOKEN(), but uppercased.
  * @param inst instance number
- * @param prop lowercase-and-underscores property string name
+ * @param prop lowercase-and-underscores property name
  * @return the value of @p prop as an uppercased token, i.e. without
  *         any quotes and with special characters converted to underscores
  */
@@ -3320,9 +3426,20 @@
 	DT_STRING_UPPER_TOKEN(DT_DRV_INST(inst), prop)
 
 /**
+ * @brief Get a `DT_DRV_COMPAT` instance's string property's value as
+ *        an unquoted sequence of tokens.
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @return the value of @p prop as a sequence of tokens, with no quotes
+ */
+#define DT_INST_STRING_UNQUOTED(inst, prop) \
+	DT_STRING_UNQUOTED(DT_DRV_INST(inst), prop)
+
+/**
  * @brief Get an element out of string-array property as a token.
  * @param inst instance number
- * @param prop lowercase-and-underscores property string name
+ * @param prop lowercase-and-underscores property name
  * @param idx the index to get
  * @return the element in @p prop at index @p idx as a token
  */
@@ -3338,6 +3455,16 @@
  */
 #define DT_INST_STRING_UPPER_TOKEN_BY_IDX(inst, prop, idx) \
 	DT_STRING_UPPER_TOKEN_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Get an element out of string-array property as an unquoted sequence of tokens.
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @return the value of @p prop at index @p idx as a sequence of tokens, with no quotes
+ */
+#define DT_INST_STRING_UNQUOTED_BY_IDX(inst, prop, idx) \
+	DT_STRING_UNQUOTED_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
  * @brief Get a `DT_DRV_COMPAT` instance's property value from a phandle's node
@@ -3606,6 +3733,17 @@
  */
 #define DT_INST_STRING_UPPER_TOKEN_OR(inst, name, default_value) \
 	DT_STRING_UPPER_TOKEN_OR(DT_DRV_INST(inst), name, default_value)
+
+/**
+ * @brief Like DT_INST_STRING_UNQUOTED(), but with a fallback to
+ *        @p default_value
+ * @param inst instance number
+ * @param name lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's value as a sequence of tokens, with no quotes, or @p default_value
+ */
+#define DT_INST_STRING_UNQUOTED_OR(inst, name, default_value) \
+	DT_STRING_UNQUOTED_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
  * @brief Test if any `DT_DRV_COMPAT` node is on a bus of a given type
