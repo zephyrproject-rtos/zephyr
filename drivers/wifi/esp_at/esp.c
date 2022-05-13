@@ -29,27 +29,12 @@ LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 
 #include "esp.h"
 
-/* pin settings */
-enum modem_control_pins {
+struct esp_config {
 #if DT_INST_NODE_HAS_PROP(0, power_gpios)
-	ESP_POWER,
+	const struct gpio_dt_spec power;
 #endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	ESP_RESET,
-#endif
-	NUM_PINS,
-};
-
-static struct modem_pin modem_pins[] = {
-#if DT_INST_NODE_HAS_PROP(0, power_gpios)
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, power_gpios),
-		  DT_INST_GPIO_PIN(0, power_gpios),
-		  DT_INST_GPIO_FLAGS(0, power_gpios) | GPIO_OUTPUT_INACTIVE),
-#endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, reset_gpios),
-		  DT_INST_GPIO_PIN(0, reset_gpios),
-		  DT_INST_GPIO_FLAGS(0, reset_gpios) | GPIO_OUTPUT_INACTIVE),
+	const struct gpio_dt_spec reset;
 #endif
 };
 
@@ -65,6 +50,14 @@ struct k_thread esp_rx_thread;
 K_KERNEL_STACK_DEFINE(esp_workq_stack,
 		      CONFIG_WIFI_ESP_AT_WORKQ_STACK_SIZE);
 
+static const struct esp_config esp_driver_config = {
+#if DT_INST_NODE_HAS_PROP(0, power_gpios)
+	.power = GPIO_DT_SPEC_INST_GET(0, power_gpios),
+#endif
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+#endif
+};
 struct esp_data esp_driver_data;
 
 static void esp_configure_hostname(struct esp_data *data)
@@ -1044,27 +1037,33 @@ static void esp_init_work(struct k_work *work)
 	net_if_up(dev->net_iface);
 }
 
-static int esp_reset(struct esp_data *dev)
+static int esp_reset(const struct device *dev)
 {
-	if (net_if_is_up(dev->net_iface)) {
-		net_if_down(dev->net_iface);
+	struct esp_data *data = dev->data;
+
+	if (net_if_is_up(data->net_iface)) {
+		net_if_down(data->net_iface);
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, power_gpios)
-	modem_pin_write(&dev->mctx, ESP_POWER, 0);
+	const struct esp_config *config = dev->config;
+
+	gpio_pin_set_dt(&config->power, 0);
 	k_sleep(K_MSEC(100));
-	modem_pin_write(&dev->mctx, ESP_POWER, 1);
+	gpio_pin_set_dt(&config->power, 1);
 #elif DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	modem_pin_write(&dev->mctx, ESP_RESET, 1);
+	const struct esp_config *config = dev->config;
+
+	gpio_pin_set_dt(&config->reset, 1);
 	k_sleep(K_MSEC(100));
-	modem_pin_write(&dev->mctx, ESP_RESET, 0);
+	gpio_pin_set_dt(&config->reset, 0);
 #else
 	int ret;
 	int retries = 3;
 
 	while (retries--) {
-		ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
-				     NULL, 0, "AT+RST", &dev->sem_if_ready,
+		ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
+				     NULL, 0, "AT+RST", &data->sem_if_ready,
 				     K_MSEC(CONFIG_WIFI_ESP_AT_RESET_TIMEOUT));
 		if (ret == 0 || ret != -ETIMEDOUT) {
 			break;
@@ -1101,12 +1100,15 @@ static int esp_init(const struct device *dev);
  * function. An `extern` declaration does not work as the struct is static.
  */
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, NULL,
-				  &esp_driver_data, NULL,
+				  &esp_driver_data, &esp_driver_config,
 				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
 				  ESP_MTU);
 
 static int esp_init(const struct device *dev)
 {
+#if DT_INST_NODE_HAS_PROP(0, power_gpios) || DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	const struct esp_config *config = dev->config;
+#endif
 	struct esp_data *data = dev->data;
 	int ret = 0;
 
@@ -1160,8 +1162,20 @@ static int esp_init(const struct device *dev)
 	}
 
 	/* pin setup */
-	data->mctx.pins = modem_pins;
-	data->mctx.pins_len = ARRAY_SIZE(modem_pins);
+#if DT_INST_NODE_HAS_PROP(0, power_gpios)
+	ret = gpio_pin_configure_dt(&config->power, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "power");
+		goto error;
+	}
+#endif
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "reset");
+		goto error;
+	}
+#endif
 
 	data->mctx.driver_data = data;
 
@@ -1184,7 +1198,7 @@ static int esp_init(const struct device *dev)
 	data->net_iface = NET_IF_GET(Z_DEVICE_DT_DEV_NAME(DT_DRV_INST(0)), 0);
 
 	/* Reset the modem */
-	ret = esp_reset(data);
+	ret = esp_reset(dev);
 
 error:
 	return ret;
