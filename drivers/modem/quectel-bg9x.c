@@ -21,6 +21,15 @@ static K_KERNEL_STACK_DEFINE(modem_rx_stack, CONFIG_MODEM_QUECTEL_BG9X_RX_STACK_
 static K_KERNEL_STACK_DEFINE(modem_workq_stack, CONFIG_MODEM_QUECTEL_BG9X_RX_WORKQ_STACK_SIZE);
 NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE, 0, NULL);
 
+static const struct gpio_dt_spec power_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_power_gpios);
+static const struct gpio_dt_spec reset_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_reset_gpios);
+#if DT_INST_NODE_HAS_PROP(0, mdm_dtr_gpios)
+static const struct gpio_dt_spec dtr_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_dtr_gpios);
+#endif
+#if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
+static const struct gpio_dt_spec wdisable_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_wdisable_gpios);
+#endif
+
 static inline int digits(int n)
 {
 	int count = 0;
@@ -876,7 +885,7 @@ static void pin_init(void)
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
 	LOG_INF("Deactivate W Disable");
-	modem_pin_write(&mctx, MDM_WDISABLE, 0);
+	gpio_pin_set_dt(&wdisable_gpio, 0);
 	k_sleep(K_MSEC(250));
 #endif
 
@@ -885,13 +894,13 @@ static void pin_init(void)
 	 */
 
 	/* MDM_POWER -> 1 for 500-1000 msec. */
-	modem_pin_write(&mctx, MDM_POWER, 1);
+	gpio_pin_set_dt(&power_gpio, 1);
 	k_sleep(K_MSEC(750));
 
 	/* MDM_POWER -> 0 and wait for ~2secs as UART remains in "inactive" state
 	 * for some time after the power signal is enabled.
 	 */
-	modem_pin_write(&mctx, MDM_POWER, 0);
+	gpio_pin_set_dt(&power_gpio, 0);
 	k_sleep(K_SECONDS(2));
 
 	LOG_INF("... Done!");
@@ -1177,8 +1186,35 @@ static int modem_init(const struct device *dev)
 	mctx.data_rssi = &mdata.mdm_rssi;
 
 	/* pin setup */
-	mctx.pins	       = modem_pins;
-	mctx.pins_len	       = ARRAY_SIZE(modem_pins);
+	ret = gpio_pin_configure_dt(&power_gpio, GPIO_OUTPUT_LOW);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "power");
+		goto error;
+	}
+
+	ret = gpio_pin_configure_dt(&reset_gpio, GPIO_OUTPUT_LOW);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "reset");
+		goto error;
+	}
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_dtr_gpios)
+	ret = gpio_pin_configure_dt(&dtr_gpio, GPIO_OUTPUT_LOW);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "dtr");
+		goto error;
+	}
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
+	ret = gpio_pin_configure_dt(&wdisable_gpio, GPIO_OUTPUT_LOW);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "wdisable");
+		goto error;
+	}
+#endif
+
+	/* modem context setup */
 	mctx.driver_data       = &mdata;
 
 	ret = modem_context_register(&mctx);
