@@ -42,42 +42,17 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 #endif
 
 /* pin settings */
-enum mdm_control_pins {
-	MDM_POWER = 0,
+static const struct gpio_dt_spec power_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_power_gpios);
 #if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
-	MDM_RESET,
+static const struct gpio_dt_spec reset_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_reset_gpios);
 #endif
 #if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-	MDM_VINT,
+static const struct gpio_dt_spec vint_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_vint_gpios);
 #endif
-};
-
-static struct modem_pin modem_pins[] = {
-	/* MDM_POWER */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_power_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_power_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_power_gpios) | GPIO_OUTPUT),
-
-#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
-	/* MDM_RESET */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_reset_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_reset_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_reset_gpios) | GPIO_OUTPUT),
-#endif
-
-#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-	/* MDM_VINT */
-	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_vint_gpios),
-		  DT_INST_GPIO_PIN(0, mdm_vint_gpios),
-		  DT_INST_GPIO_FLAGS(0, mdm_vint_gpios) | GPIO_INPUT),
-#endif
-};
 
 #define MDM_UART_NODE			DT_INST_BUS(0)
 #define MDM_UART_DEV			DEVICE_DT_GET(MDM_UART_NODE)
 
-#define MDM_POWER_ENABLE		1
-#define MDM_POWER_DISABLE		0
 #define MDM_RESET_NOT_ASSERTED		1
 #define MDM_RESET_ASSERTED		0
 
@@ -968,36 +943,36 @@ static int pin_init(void)
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
 	LOG_DBG("MDM_RESET_PIN -> NOT_ASSERTED");
-	modem_pin_write(&mctx, MDM_RESET, MDM_RESET_NOT_ASSERTED);
+	gpio_pin_set_dt(&reset_gpio, MDM_RESET_NOT_ASSERTED);
 #endif
 
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+	gpio_pin_set_dt(&power_gpio, 1);
 	k_sleep(K_SECONDS(4));
 
 	LOG_DBG("MDM_POWER_PIN -> DISABLE");
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+	gpio_pin_set_dt(&power_gpio, 0);
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 	k_sleep(K_SECONDS(1));
 #else
 	k_sleep(K_SECONDS(4));
 #endif
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+	gpio_pin_set_dt(&power_gpio, 1);
 	k_sleep(K_SECONDS(1));
 
 	/* make sure module is powered off */
 #if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 0");
 
-	while (modem_pin_read(&mctx, MDM_VINT) > 0) {
+	while (gpio_pin_get_dt(&vint_gpio) > 0) {
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		/* try to power off again */
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+		gpio_pin_set_dt(&power_gpio, 0);
 		k_sleep(K_SECONDS(1));
 		LOG_DBG("MDM_POWER_PIN -> ENABLE");
-		modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+		gpio_pin_set_dt(&power_gpio, 1);
 #endif
 		k_sleep(K_MSEC(100));
 	}
@@ -1009,13 +984,13 @@ static int pin_init(void)
 
 	unsigned int irq_lock_key = irq_lock();
 
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_DISABLE);
+	gpio_pin_set_dt(&power_gpio, 0);
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 	k_usleep(50);		/* 50-80 microseconds */
 #else
 	k_sleep(K_SECONDS(1));
 #endif
-	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
+	gpio_pin_set_dt(&power_gpio, 1);
 
 	irq_unlock(irq_lock_key);
 
@@ -1025,12 +1000,12 @@ static int pin_init(void)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 1");
 	do {
 		k_sleep(K_MSEC(100));
-	} while (modem_pin_read(&mctx, MDM_VINT) == 0);
+	} while (gpio_pin_get_dt(&vint_gpio) == 0);
 #else
 	k_sleep(K_SECONDS(10));
 #endif
 
-	modem_pin_config(&mctx, MDM_POWER, false);
+	gpio_pin_configure_dt(&power_gpio, GPIO_INPUT);
 
 	LOG_INF("... Done!");
 
@@ -2196,8 +2171,27 @@ static int modem_init(const struct device *dev)
 	mctx.data_rssi = &mdata.mdm_rssi;
 
 	/* pin setup */
-	mctx.pins = modem_pins;
-	mctx.pins_len = ARRAY_SIZE(modem_pins);
+	ret = gpio_pin_configure_dt(&power_gpio, GPIO_OUTPUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "power");
+		goto error;
+	}
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
+	ret = gpio_pin_configure_dt(&reset_gpio, GPIO_OUTPUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "reset");
+		goto error;
+	}
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
+	ret = gpio_pin_configure_dt(&vint_gpio, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "vint");
+		goto error;
+	}
+#endif
 
 	mctx.driver_data = &mdata;
 
