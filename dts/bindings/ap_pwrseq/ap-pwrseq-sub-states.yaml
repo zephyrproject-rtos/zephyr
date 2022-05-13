@@ -1,0 +1,25 @@
+# Copyright 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Define additional substates to be included in state machine.
+
+compatible: "ap-pwrseq-sub-states"
+
+description: |
+  String array of additional substates, use corresponding macros to provide
+  action handlers.
+properties:
+  chipset:
+    type: string-array
+    required: false
+    description: |
+      User defined power subtstates, use AP_POWER_CHIPSET_SUB_STATE_DEFINE, to define
+      substate action handler functions.
+
+  application:
+    type: string-array
+    required: false
+    description: |
+      User defined power subtstates, use AP_POWER_APP_SUB_STATE_DEFINE, to define
+      substate action handler functions.

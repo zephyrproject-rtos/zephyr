@@ -1,0 +1,38 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config AP_PWRSEQ
+	bool "Support for Aplication Processor power sequence"
+	select SMF
+	select SMF_ANCESTOR_SUPPORT
+	select EVENTS
+	help
+	  Support for AP power sequence subsystem
+
+if AP_PWRSEQ
+
+module = AP_PWRSEQ
+module-str = AP power sequencing
+source "subsys/logging/Kconfig.template.log_config"
+
+config AP_PWRSEQ_STACK_SIZE
+	int "Stack size for AP Power sequence thread"
+	default 1024
+	help
+	  AP Power sequence stack size
+
+config AP_PWRSEQ_THREAD_PRIORITY
+	int "AP Power Sequence thread priority"
+	default 12
+	help
+	  This option determines AP power sequence thread priority, this number
+	  must be selected in such way thread priority is in the middle of all
+	  the enabled threads.
+
+config AP_PWRSEQ_AUTOSTART
+	bool "Start thread"
+	default y
+	help
+	  AP Power thread
+
+endif # AP_PWRSEQ
