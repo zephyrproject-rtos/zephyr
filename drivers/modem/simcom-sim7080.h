@@ -168,13 +168,6 @@ struct sim7080_data {
 };
 
 /*
- * Pin definitions
- */
-static struct modem_pin modem_pins[] = { MODEM_PIN(
-	DT_INST_GPIO_LABEL(0, mdm_power_gpios), DT_INST_GPIO_PIN(0, mdm_power_gpios),
-	DT_INST_GPIO_FLAGS(0, mdm_power_gpios) | GPIO_OUTPUT_LOW) };
-
-/*
  * Socket read callback data.
  */
 struct socket_read_data {
