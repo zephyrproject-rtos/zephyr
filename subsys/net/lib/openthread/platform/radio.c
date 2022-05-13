@@ -1135,6 +1135,15 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 	return radio_api->get_sch_acc(radio_dev);
 }
 
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT)
+uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT;
+}
+#endif
+
 #if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
 /**
  * Header IE format - IEEE Std. 802.15.4-2015, 7.4.2.1 && 7.4.2.2
