@@ -47,7 +47,7 @@ struct cbor_in_fmt_data {
 	/* Decoded data */
 	struct lwm2m_senml dcd; /* Decoded data */
 	struct record *current;
-	char basename[sizeof("/65535/999/")]; /* Null terminated basename */
+	char basename[MAX_RESOURCE_LEN + 1]; /* Null terminated basename */
 };
 
 /* Statically allocated formatter data is shared between different threads */
