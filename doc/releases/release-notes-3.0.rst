@@ -1,5 +1,43 @@
 :orphan:
 
+.. _zephyr_3.0.1:
+
+Zephyr 3.0.1
+####################
+
+This is a maintenance release for 3.0.0.
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+* (N/A)
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 3.0.0 tagged
+release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+
 .. _zephyr_3.0.0:
 
 Zephyr 3.0.0
