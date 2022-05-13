@@ -264,4 +264,16 @@ config ESP32_UNIVERSAL_MAC_ADDRESSES
 	default 2 if ESP32_UNIVERSAL_MAC_ADDRESSES_TWO
 	default 4 if ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
 
+config ESP32_PHY_MAX_WIFI_TX_POWER
+	int "Max WiFi/BLE TX power (dBm)"
+	range 10 20
+	default 20
+	help
+	  Set maximum transmit power for WiFi radio. Actual transmit power for high
+	  data rates may be lower than this setting.
+
+config ESP32_PHY_MAX_TX_POWER
+	int
+	default ESP32_PHY_MAX_WIFI_TX_POWER
+
 endif # SOC_ESP32
