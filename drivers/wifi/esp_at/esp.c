@@ -1004,8 +1004,7 @@ static void esp_init_work(struct k_work *work)
 			UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE,
 	};
 
-	ret = uart_configure(device_get_binding(DT_INST_BUS_LABEL(0)),
-			     &uart_config);
+	ret = uart_configure(DEVICE_DT_GET(DT_INST_BUS(0)), &uart_config);
 	if (ret < 0) {
 		LOG_ERR("Baudrate change failed %d", ret);
 		return;
