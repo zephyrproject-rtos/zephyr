@@ -916,6 +916,42 @@
 			#io-channel-cells = <1>;
 		};
 
+		acmp1: cmp@401a4000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x401a4000 0x4000>;
+			interrupts = <157 0>;
+			label = "CMP_1";
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		acmp2: cmp@401a8000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x401a8000 0x4000>;
+			interrupts = <158 0>;
+			label = "CMP_2";
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		acmp3: cmp@401ac000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x401ac000 0x4000>;
+			interrupts = <159 0>;
+			label = "CMP_3";
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		acmp4: cmp@401b0000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x401b0000 0x4000>;
+			interrupts = <160 0>;
+			label = "CMP_4";
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
 		anatop: anatop@40c84000 {
 			compatible = "nxp,imx-anatop";
 			reg = <0x40c84000 0x4000>;
