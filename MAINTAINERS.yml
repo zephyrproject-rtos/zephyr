@@ -1551,7 +1551,7 @@ Nuvoton NPCX Platforms:
     labels:
         - "platform: Nuvoton NPCX"
 
-Nuvoton_Numicro Platforms:
+Nuvoton Numicro Platforms:
     status: odd fixes
     collaborators:
         - ssekar15
@@ -1562,7 +1562,7 @@ Nuvoton_Numicro Platforms:
         - dts/bindings/*/*numicro*
         - drivers/*/*_numicro*
     labels:
-        - "platform: Nuvoton_Numicro"
+        - "platform: Nuvoton Numicro"
 
 SiLabs Platforms:
     status: odd fixes
