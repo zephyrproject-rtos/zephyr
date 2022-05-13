@@ -406,6 +406,15 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 #endif
 
+#ifdef CONFIG_MCUX_ACMP
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(acmp1), okay)
+	/* Configure ACMP1 using Osc48MDiv2*/
+	rootCfg.mux = kCLOCK_ACMP_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Acmp, &rootCfg);
+#endif
+#endif
+
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
 	rootCfg.mux = kCLOCK_LCDIF_ClockRoot_MuxSysPll2Out;
 	rootCfg.div = 9;
