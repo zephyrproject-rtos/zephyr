@@ -137,18 +137,13 @@ static inline int qspi_prepare_quad_read(const struct device *dev,
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
-	switch (dev_data->mode) {
-	case JESD216_MODE_114:
-		cmd->AddressMode = QSPI_ADDRESS_1_LINE;
-		break;
-	case JESD216_MODE_144:
-		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
-		break;
-	default:
-		return -ENOTSUP;
-	}
+	__ASSERT_NO_MSG(dev_data->mode == JESD216_MODE_114 ||
+			dev_data->mode == JESD216_MODE_144);
 
 	cmd->Instruction = dev_data->qspi_read_cmd;
+	cmd->AddressMode = ((dev_data->mode == JESD216_MODE_114)
+				? QSPI_ADDRESS_1_LINE
+				: QSPI_ADDRESS_4_LINES);
 	cmd->DataMode = QSPI_DATA_4_LINES;
 	cmd->DummyCycles = dev_data->qspi_read_cmd_latency;
 
@@ -160,19 +155,13 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
+	__ASSERT_NO_MSG(dev_data->qspi_write_cmd == SPI_NOR_CMD_PP_1_1_4 ||
+			dev_data->qspi_write_cmd == SPI_NOR_CMD_PP_1_4_4);
+
 	cmd->Instruction = dev_data->qspi_write_cmd;
-
-	switch (cmd->Instruction) {
-	case SPI_NOR_CMD_PP_1_1_4:
-		cmd->AddressMode = QSPI_ADDRESS_1_LINE;
-		break;
-	case SPI_NOR_CMD_PP_1_4_4:
-		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
+	cmd->AddressMode = ((cmd->Instruction == SPI_NOR_CMD_PP_1_1_4)
+				? QSPI_ADDRESS_1_LINE
+				: QSPI_ADDRESS_4_LINES);
 	cmd->DataMode = QSPI_DATA_4_LINES;
 	cmd->DummyCycles = 0;
 
