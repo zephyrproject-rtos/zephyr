@@ -107,10 +107,10 @@ jobs:
           python3 ./scripts/ci/test_plan.py --platform ${{ matrix.platform }} -c origin/${BASE_REF}..
 
           # We can limit scope to just what has changed
-          if [ -s testplan.csv ]; then
+          if [ -s testplan.json ]; then
             echo "::set-output name=report_needed::1";
             # Full twister but with options based on changes
-            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.csv --retry-failed 2
+            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
           else
             # if nothing is run, skip reporting step
             echo "::set-output name=report_needed::0";
