@@ -14,6 +14,10 @@
 
 #ifndef _ASMLANGUAGE
 #include <gd32f403.h>
+
+/* The GigaDevice HAL headers define this, but it conflicts with the Zephyr can.h */
+#undef CAN_MODE_NORMAL
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC__H_ */
