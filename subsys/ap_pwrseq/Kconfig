@@ -15,6 +15,16 @@ module = AP_PWRSEQ
 module-str = AP power sequencing
 source "subsys/logging/Kconfig.template.log_config"
 
+config AP_PWRSEQ_X86
+	bool "Support for Aplication Processor power sequence for Intel X86 SOC"
+	help
+	  Support for AP X86 power sequence subsystem
+
+config AP_PWRSEQ_X86_ADL
+	bool "Support for Aplication Processor power sequence for Intel X86 ADL SOC"
+	help
+	  Support for AP X86 Alderlake power sequence subsystem
+
 config AP_PWRSEQ_STACK_SIZE
 	int "Stack size for AP Power sequence thread"
 	default 1024
