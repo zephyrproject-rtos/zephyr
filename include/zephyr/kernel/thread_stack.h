@@ -355,7 +355,8 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @return Alignment of the stack object
  */
 #if defined(ARCH_THREAD_STACK_OBJ_ALIGN)
-#define Z_THREAD_STACK_OBJ_ALIGN(size)	ARCH_THREAD_STACK_OBJ_ALIGN(size)
+#define Z_THREAD_STACK_OBJ_ALIGN(size)	\
+	ARCH_THREAD_STACK_OBJ_ALIGN(Z_THREAD_STACK_SIZE_ADJUST(size))
 #else
 #define Z_THREAD_STACK_OBJ_ALIGN(size)	ARCH_STACK_PTR_ALIGN
 #endif /* ARCH_THREAD_STACK_OBJ_ALIGN */
@@ -389,7 +390,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #if defined(ARCH_THREAD_STACK_SIZE_ADJUST)
 #define Z_THREAD_STACK_SIZE_ADJUST(size) \
-	(ARCH_THREAD_STACK_SIZE_ADJUST(size) + K_THREAD_STACK_RESERVED)
+	ARCH_THREAD_STACK_SIZE_ADJUST((size) + K_THREAD_STACK_RESERVED)
 #else
 #define Z_THREAD_STACK_SIZE_ADJUST(size) \
 	(ROUND_UP((size), ARCH_STACK_PTR_ALIGN) + K_THREAD_STACK_RESERVED)
@@ -574,7 +575,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #define K_THREAD_STACK_LEN(size) \
 	ROUND_UP(Z_THREAD_STACK_SIZE_ADJUST(size), \
-		 Z_THREAD_STACK_OBJ_ALIGN(Z_THREAD_STACK_SIZE_ADJUST(size)))
+		 Z_THREAD_STACK_OBJ_ALIGN(size))
 
 /**
  * @brief Declare a toplevel array of thread stack memory regions
