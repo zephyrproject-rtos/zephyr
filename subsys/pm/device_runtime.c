@@ -119,6 +119,10 @@ int pm_device_runtime_get(const struct device *dev)
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
 
+	if (pm == NULL) {
+		return -ENOTSUP;
+	}
+
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_get, dev);
 
 	if (!k_is_pre_kernel()) {
@@ -175,6 +179,10 @@ int pm_device_runtime_put(const struct device *dev)
 {
 	int ret;
 
+	if (dev->pm == NULL) {
+		return -ENOTSUP;
+	}
+
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put, dev);
 	ret = runtime_suspend(dev, false);
 
@@ -193,6 +201,10 @@ int pm_device_runtime_put_async(const struct device *dev)
 {
 	int ret;
 
+	if (dev->pm == NULL) {
+		return -ENOTSUP;
+	}
+
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put_async, dev);
 	ret = runtime_suspend(dev, true);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, ret);
@@ -204,6 +216,10 @@ int pm_device_runtime_enable(const struct device *dev)
 {
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
+
+	if (pm == NULL) {
+		return -ENOTSUP;
+	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_enable, dev);
 
@@ -253,6 +269,10 @@ int pm_device_runtime_disable(const struct device *dev)
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
 
+	if (pm == NULL) {
+		return -ENOTSUP;
+	}
+
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_disable, dev);
 
 	if (!k_is_pre_kernel()) {
@@ -297,5 +317,5 @@ bool pm_device_runtime_is_enabled(const struct device *dev)
 {
 	struct pm_device *pm = dev->pm;
 
-	return atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
+	return pm && atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
 }
