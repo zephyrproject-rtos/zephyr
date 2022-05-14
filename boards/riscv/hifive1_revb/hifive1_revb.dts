@@ -108,10 +108,20 @@
 
 &spi1 {
 	status = "okay";
+	pinctrl-0 = <&spi1_cs0_default
+		     &spi1_mosi_default
+		     &spi1_miso_default
+		     &spi1_sck_default>;
+	pinctrl-names = "default";
 };
 
 &spi2 {
 	status = "okay";
+	pinctrl-0 = <&spi1_cs2_default
+		     &spi1_mosi_default
+		     &spi1_miso_default
+		     &spi1_sck_default>;
+	pinctrl-names = "default";
 };
 
 &pwm0 {
