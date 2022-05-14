@@ -1,0 +1,217 @@
+# Copyright (c) 2022, Jeremy LOCHE
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ST7789H2 320x240 display controller
+
+  Using the FMC peripheral of STM32 microcontrollers parallel bus
+  interface for the read/write operations to the display.
+
+  You need to configure the FMC peripheral as an SRAM controller
+  with correct bank access timing and configuration.
+
+  This drivers only needs 2 address to work and defined in "reg = <>":
+    Register/Command address:
+      Used to write the LCD controller registers
+    Data address:
+      Used to write LCD RAM display data
+
+  Example configuration:
+
+  &fmc {
+    status = "okay";
+    /* ST7789H2 FMC pinout based on your boards layout */
+    pinctrl-0 = <...>;
+    pinctrl-names = "default";
+
+    /* ST7789H2 FMC SRAM interface*/
+    lcd_fmc_sram: sram {
+      compatible = "st,stm32-fmc-nor-psram";
+      #address-cells = <1>;
+      #size-cells = <0>;
+      label = "STM32_FMC_NOR_PSRAM";
+      status = "okay";
+
+      lcd_data_bus: sram@0 {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        reg = <0>;
+
+        /* Configure the FMC bus */
+        st,control = <STM32_FMC_DATA_ADDRESS_MUX_DISABLE
+                      STM32_FMC_MEMORY_TYPE_SRAM
+                      STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16
+                      STM32_FMC_BURST_ACCESS_MODE_DISABLE
+                      STM32_FMC_WAIT_SIGNAL_POLARITY_LOW
+                      STM32_FMC_WAIT_TIMING_BEFORE_WS
+                      STM32_FMC_WRITE_OPERATION_ENABLE
+                      STM32_FMC_WAIT_SIGNAL_DISABLE
+                      STM32_FMC_EXTENDED_MODE_DISABLE
+                      STM32_FMC_ASYNCHRONOUS_WAIT_DISABLE
+                      STM32_FMC_WRITE_BURST_DISABLE
+                      STM32_FMC_CONTINUOUS_CLOCK_SYNC_ONLY
+                      STM32_FMC_WRITE_FIFO_DISABLE
+                      STM32_FMC_PAGE_SIZE_NONE>;
+
+        st,timing = <1 1 32 0 2 2 STM32_FMC_ACCESS_MODE_A>;
+        st,timing-ext = <5 1 3 2 STM32_FMC_ACCESS_MODE_A>;
+      };
+    };
+  };
+
+  &lcd_data_bus {
+    st7789h2: st7789h2@0 {
+      /* CMD reg */
+      /* DATA reg */
+      reg = <0x60000000
+            0x60000002>;
+
+      compatible = "sitronix,st7789h2-st-fmc";
+      label = "DISPLAY";
+      status = "okay";
+
+      backlight-gpio = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+      reset-gpio = <&gpiof 14 GPIO_ACTIVE_LOW>;
+      te-gpio = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+      height = <240>;
+      width = <240>;
+      x-offset = <0>;
+      y-offset = <0>;
+      vcom = <0x1f>;
+      gctrl = <0x35>;
+      vrhs = <0x12>;
+      vdvs = <0x20>;
+      mdac = <0>;
+      lcm = <0x2c>;
+      colmod = <0x55>;
+      gamma = <0x1>;
+      porch-param = [0C 0C 00 33 33];
+      cmd2en-param = [5a 69 02 01];
+      pwctrl1-param = [a4 a1];
+      pvgam-param = [D0 08 11 08 0C 15 39 33 50 36 13 14 29 2D];
+      nvgam-param = [D0 07 10 08 06 06 39 44 51 0B 16 14 2F 31];
+      ram-param = [00 F0];
+      rgb-param = [CD 08 14];
+    };
+  };
+
+
+
+
+compatible: "sitronix,st7789h2-st-fmc"
+
+include: display-controller.yaml
+
+properties:
+
+    backlight-gpio:
+      type: phandle-array
+      specifier-space: gpio
+      required: false
+      description: BACKLIGHT pin
+
+    reset-gpio:
+      type: phandle-array
+      specifier-space: gpio
+      required: false
+      description: |
+        RESET pin.
+
+        The RESET pin of ST7789H2 is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    te-gpio:
+      type: phandle-array
+      specifier-space: gpio
+      required: false
+      description: |
+        Tearing effect line pin
+
+        The TE pin of ST7789H2 is used as VSYNC line
+
+    x-offset:
+      type: int
+      required: true
+      description: The column offset in pixels of the LCD to the controller memory
+
+    y-offset:
+      type: int
+      required: true
+      description: The row offset in pixels of the LCD to the controller memory
+
+    vcom:
+      type: int
+      required: true
+      description: VCOM Setting
+
+    gctrl:
+      type: int
+      required: true
+      description: Gate Control
+
+    vrhs:
+      type: int
+      required: false
+      description: VRH Setting
+
+    vdvs:
+      type: int
+      required: false
+      description: VDV Setting
+
+    mdac:
+      type: int
+      required: true
+      description: Memory Data Access Control
+
+    lcm:
+      type: int
+      required: true
+      description: LCM Setting
+
+    colmod:
+      type: int
+      required: true
+      description: Interface Pixel Format
+
+    gamma:
+      type: int
+      required: true
+      description: Gamma Setting
+
+    porch-param:
+      type: uint8-array
+      required: true
+      description: Porch Setting
+
+    cmd2en-param:
+      type: uint8-array
+      required: true
+      description: Command 2 Enable Parameter
+
+    pwctrl1-param:
+      type: uint8-array
+      required: true
+      description: Power Control 1 Parameter
+
+    pvgam-param:
+      type: uint8-array
+      required: true
+      description: Positive Voltage Gamma Control Parameter
+
+    nvgam-param:
+      type: uint8-array
+      required: true
+      description: Negative Voltage Gamma Control Parameter
+
+    ram-param:
+      type: uint8-array
+      required: true
+      description: RAM Control Parameter
+
+    rgb-param:
+      type: uint8-array
+      required: true
+      description: RGB Interface Control Parameter

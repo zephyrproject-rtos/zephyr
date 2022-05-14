@@ -1,0 +1,13 @@
+# ST7789H2 display driver configuration options
+
+# Copyright (c) 2022, Jeremy LOCHE
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ST7789H2_ST_FMC := sitronix,st7789h2-st-fmc
+
+config ST7789H2_ST_FMC
+	bool "ST7789H2 display driver"
+	depends on MEMC_STM32_NOR_PSRAM
+	default $(dt_compat_enabled,$(DT_COMPAT_ST7789H2_ST_FMC))
+	help
+	  Enable driver for ST7789H2 display driver using ST FMC peripheral.

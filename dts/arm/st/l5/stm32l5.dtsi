@@ -620,6 +620,16 @@
 			status = "disabled";
 			label = "UCPD_1";
 		};
+
+		/* Non secure address 0x44020000 */
+		/* Secure address 0x54020000*/
+		fmc: memory-controller@44020000 {
+			compatible = "st,stm32-fmc";
+			reg = <0x44020000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000001>;
+			label = "STM32_FMC";
+			status = "disabled";
+		};
 	};
 
 	usb_fs_phy: usbphy {
