@@ -34,6 +34,7 @@ extern "C" {
  *
  * @retval 0 If the device runtime PM is enabled successfully.
  * @retval -EPERM If device has power state locked.
+ * @retval -ENOTSUP If the device does not support PM.
  * @retval -ENOSYS If the functionality is not available.
  * @retval -errno Other negative errno, result of suspending the device.
  *
@@ -51,6 +52,7 @@ int pm_device_runtime_enable(const struct device *dev);
  * @param dev Device instance.
  *
  * @retval 0 If the device runtime PM is disabled successfully.
+ * @retval -ENOTSUP If the device does not support PM.
  * @retval -ENOSYS If the functionality is not available.
  * @retval -errno Other negative errno, result of resuming the device.
  */
@@ -73,6 +75,7 @@ int pm_device_runtime_disable(const struct device *dev);
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
+ * @retval -ENOTSUP If the device does not support PM.
  * @retval -errno Other negative errno, result of the PM action callback.
  */
 int pm_device_runtime_get(const struct device *dev);
@@ -91,6 +94,7 @@ int pm_device_runtime_get(const struct device *dev);
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
+ * @retval -ENOTSUP If the device does not support PM.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
  * @retval -errno Other negative errno, result of the action callback.
@@ -116,6 +120,7 @@ int pm_device_runtime_put(const struct device *dev);
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
+ * @retval -ENOTSUP If the device does not support PM.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
  * calls are unbalanced).
  *
