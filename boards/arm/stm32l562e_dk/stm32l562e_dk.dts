@@ -19,11 +19,13 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,display = &st7789h2;
 	};
 
 	aliases {
 		led0 = &green_led_10;
 		sw0 = &user_button;
+		kscan0 = &touch_controller;
 	};
 };
 
