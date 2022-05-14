@@ -115,7 +115,8 @@ void stack_buffer_scenarios(void)
 	if (scenario_data.is_user) {
 		reserved = K_THREAD_STACK_RESERVED;
 		stack_buf = Z_THREAD_STACK_BUFFER(stack_obj);
-		alignment = Z_THREAD_STACK_OBJ_ALIGN(stack_size);
+		/* always use the original size here */
+		alignment = Z_THREAD_STACK_OBJ_ALIGN(STEST_STACKSIZE);
 	} else
 #endif
 	{
@@ -191,6 +192,20 @@ void stack_buffer_scenarios(void)
 		zassert_true(check_perms(stack_end, 1, 0),
 			     "user mode access to memory %p past end of stack object",
 			     obj_end);
+
+		/*
+		 * The reserved area, when it exists, is dropped at run time
+		 * when transitioning to user mode on RISC-V. Reinstate that
+		 * reserved area here for the next tests to work properly
+		 * with a static non-zero K_THREAD_STACK_RESERVED definition.
+		 */
+		if (IS_ENABLED(CONFIG_RISCV) &&
+		    IS_ENABLED(CONFIG_GEN_PRIV_STACKS) &&
+		    K_THREAD_STACK_RESERVED != 0) {
+			stack_start += reserved;
+			stack_size -= reserved;
+		}
+
 		zassert_true(stack_size <= obj_size - reserved,
 			      "bad stack size %zu in thread struct",
 			      stack_size);
