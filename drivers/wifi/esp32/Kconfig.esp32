@@ -6,7 +6,12 @@ menuconfig WIFI_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED
 	depends on !SMP
 	select THREAD_CUSTOM_DATA
+	select NET_L2_WIFI_MGMT
 	select WIFI_USE_NATIVE_NETWORKING
+	select MBEDTLS
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	select MBEDTLS_ECP_ALL_ENABLED
 	help
 	  Enable ESP32 SoC WiFi support. Only supported in single
 	  core mode because the network stack is not aware of SMP
@@ -31,7 +36,6 @@ config ESP32_WIFI_STA_AUTO
 
 config ESP32_WIFI_STA_RECONNECT
 	bool "WiFi connection retry"
-	default y
 	help
 	  Set auto WiFI reconnection when disconnected.
 
