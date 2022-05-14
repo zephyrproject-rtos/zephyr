@@ -216,6 +216,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 #ifdef CONFIG_GEN_PRIV_STACKS
 	_current->arch.priv_stack_start =
 			(ulong_t)z_priv_stack_find(_current->stack_obj);
+	/* remove the stack guard from the main stack */
+	_current->stack_info.start -= K_THREAD_STACK_RESERVED;
+	_current->stack_info.size += K_THREAD_STACK_RESERVED;
 #else
 	_current->arch.priv_stack_start = (ulong_t)_current->stack_obj;
 #endif /* CONFIG_GEN_PRIV_STACKS */
