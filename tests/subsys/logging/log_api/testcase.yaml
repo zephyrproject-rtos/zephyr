@@ -1,5 +1,7 @@
 common:
-  filter: CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX
+  platform_type:
+    - qemu
+    - native
   tags: log_api logging
   integration_platforms:
     - native_posix

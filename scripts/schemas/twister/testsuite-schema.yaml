@@ -104,6 +104,11 @@ mapping:
       "platform_allow":
         type: str
         required: false
+      "platform_type":
+        type: seq
+        required: false
+        sequence:
+          - type: str
       "tags":
         type: str
         required: false
@@ -247,6 +252,11 @@ mapping:
           "platform_allow":
             type: str
             required: false
+          "platform_type":
+            type: seq
+            required: false
+            sequence:
+              - type: str
           "tags":
             type: str
             required: false

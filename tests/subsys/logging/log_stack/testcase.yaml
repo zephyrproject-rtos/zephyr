@@ -1,5 +1,6 @@
 common:
-  filter: CONFIG_QEMU_TARGET
+  platform_type:
+    - qemu
   tags: log_api logging
   integration_platforms:
     - qemu_x86
