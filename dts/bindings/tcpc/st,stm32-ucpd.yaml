@@ -7,7 +7,7 @@ description: |
 
 compatible: "st,stm32-ucpd"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -66,3 +66,9 @@ properties:
         Determines the division ratio of a ucpd_clk divider producing
         half-bit clock (hbit_clk)
         Valid range: 1 - 64
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
