@@ -9,6 +9,7 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/usb_c/usbc_tcpc.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <stm32_ll_ucpd.h>
 
 /**
@@ -251,6 +252,8 @@ struct alert_info {
  * @brief Driver config
  */
 struct tcpc_config {
+	/* STM32 UCPC CC pin control */
+	const struct pinctrl_dev_config *ucpd_pcfg;
 	/* STM32 UCPD port */
 	UCPD_TypeDef *ucpd_port;
 	/* STM32 UCPD parameters */

@@ -177,6 +177,8 @@
 	 */
 	psc-ucpdclk = <1>;
 	hbitclkdiv = <27>;
+	pinctrl-0 = <&ucpd1_cc1_pa8 &ucpd1_cc2_pb15>;
+	pinctrl-names = "default";
 };
 
 &iwdg {

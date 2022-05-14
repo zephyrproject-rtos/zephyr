@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(ucpd_stm32, CONFIG_USBC_LOG_LEVEL);
 #include <soc.h>
 #include <stddef.h>
 #include <zephyr/math/ilog2.h>
-#include <stm32g0xx_ll_system.h>
+#include <stm32_ll_system.h>
 #include <zephyr/irq.h>
 
 #include "ucpd_stm32_priv.h"
@@ -1375,6 +1375,13 @@ static int ucpd_init(const struct device *dev)
 	uint32_t cfg1;
 	int ret;
 
+	LOG_DBG("Pinctrl signals configuration");
+	ret = pinctrl_apply_state(config->ucpd_pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("USB pinctrl setup failed (%d)", ret);
+		return ret;
+	}
+
 	/*
 	 * The UCPD port is disabled in the LL_UCPD_Init function
 	 *
@@ -1459,8 +1466,10 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 	     "No compatible STM32 TCPC instance found");
 
 #define TCPC_DRIVER_INIT(inst)								\
+	PINCTRL_DT_INST_DEFINE(inst);							\
 	static struct tcpc_data drv_data_##inst;					\
 	static const struct tcpc_config drv_config_##inst = {				\
+		.ucpd_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 		.ucpd_port = (UCPD_TypeDef *)DT_INST_REG_ADDR(inst),			\
 		.ucpd_params.psc_ucpdclk = ilog2(DT_INST_PROP(inst, psc_ucpdclk)),	\
 		.ucpd_params.transwin = DT_INST_PROP(inst, transwin) - 1,		\
