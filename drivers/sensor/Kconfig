@@ -41,6 +41,8 @@ config SENSOR_INFO
 
 comment "Device Drivers"
 
+source "drivers/sensor/adt7310/Kconfig"
+
 source "drivers/sensor/adt7420/Kconfig"
 
 source "drivers/sensor/adxl345/Kconfig"
