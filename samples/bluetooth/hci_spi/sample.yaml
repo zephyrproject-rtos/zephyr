@@ -10,4 +10,3 @@ tests:
       - 96b_carbon_nrf51
       - nrf51dk_nrf51422
     tags: bluetooth spi
-    depends_on: spi
