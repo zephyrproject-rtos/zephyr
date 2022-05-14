@@ -672,32 +672,39 @@ static const struct adc_driver_api adc_npcx_driver_api = {
 
 static int adc_npcx_init(const struct device *dev);
 
-PINCTRL_DT_INST_DEFINE(0);
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	"only one 'nuvoton_npcx_adc' compatible node may be present");
 
-static const struct adc_npcx_config adc_npcx_cfg_0 = {
-	.base = DT_INST_REG_ADDR(0),
-	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
-	.threshold_count = DT_INST_PROP(0, threshold_count),
-	.threshold_reg_offset = DT_INST_PROP(0, threshold_reg_offset),
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-};
+#define NPCX_ADC_INST_DEFINE(inst)                                            \
+	PINCTRL_DT_INST_DEFINE(inst);                                         \
+		BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,     \
+		"only one 'nuvoton_npcx_adc' compatible node may be present");\
+                                                                              \
+	static const struct adc_npcx_config adc_npcx_cfg_##inst = {           \
+		.base = DT_INST_REG_ADDR(inst),                               \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                        \
+		.threshold_count = DT_INST_PROP(inst, threshold_count),       \
+		.threshold_reg_offset =                                       \
+				DT_INST_PROP(inst, threshold_reg_offset),     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                 \
+	};                                                                    \
+                                                                              \
+	static struct adc_npcx_threshold_data threshold_data_##inst;          \
+                                                                              \
+	static struct adc_npcx_data adc_npcx_data_##inst = {                  \
+		ADC_CONTEXT_INIT_TIMER(adc_npcx_data_##inst, ctx),            \
+		ADC_CONTEXT_INIT_LOCK(adc_npcx_data_##inst, ctx),             \
+		ADC_CONTEXT_INIT_SYNC(adc_npcx_data_##inst, ctx),             \
+                .threshold_data = COND_CODE_1(IS_ENABLED(CONFIG_ADC_CMP_NPCX),\
+			(&threshold_data_##inst), (NULL)),                    \
+	};                                                                    \
+                                                                              \
+	DEVICE_DT_INST_DEFINE(inst,                                           \
+			      adc_npcx_init, NULL,                            \
+			      &adc_npcx_data_##inst, &adc_npcx_cfg_##inst,    \
+			      PRE_KERNEL_1,                                   \
+			      CONFIG_ADC_INIT_PRIORITY,                       \
+			      &adc_npcx_driver_api);
 
-static struct adc_npcx_threshold_data threshold_data_0;
-
-static struct adc_npcx_data adc_npcx_data_0 = {
-	ADC_CONTEXT_INIT_TIMER(adc_npcx_data_0, ctx),
-	ADC_CONTEXT_INIT_LOCK(adc_npcx_data_0, ctx),
-	ADC_CONTEXT_INIT_SYNC(adc_npcx_data_0, ctx),
-};
-
-DEVICE_DT_INST_DEFINE(0,
-		    adc_npcx_init, NULL,
-		    &adc_npcx_data_0, &adc_npcx_cfg_0,
-		    PRE_KERNEL_1,
-		    CONFIG_ADC_INIT_PRIORITY,
-		    &adc_npcx_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(NPCX_ADC_INST_DEFINE)
 
 static int adc_npcx_init(const struct device *dev)
 {
