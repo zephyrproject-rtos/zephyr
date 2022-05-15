@@ -23,6 +23,10 @@ static int uart_xmc4xxx_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_xmc4xx_config *config = dev->config;
 
+	if (!XMC_USIC_CH_GetReceiveBufferStatus(config->uart)) {
+		return -1;
+	}
+
 	*c = (unsigned char)XMC_UART_CH_GetReceivedData(config->uart);
 
 	return 0;
