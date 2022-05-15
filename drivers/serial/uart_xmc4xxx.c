@@ -23,7 +23,7 @@ static int uart_xmc4xxx_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_xmc4xx_config *config = dev->config;
 
-	*(uint16_t *)c = XMC_UART_CH_GetReceivedData(config->uart);
+	*c = (unsigned char)XMC_UART_CH_GetReceivedData(config->uart);
 
 	return 0;
 }
