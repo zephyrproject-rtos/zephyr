@@ -36,7 +36,7 @@ static void uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_xmc4xx_config *config = dev->config;
 
-	XMC_UART_CH_Transmit(config->uart, (uint16_t)c);
+	XMC_UART_CH_Transmit(config->uart, c);
 }
 
 static int uart_xmc4xxx_init(const struct device *dev)
