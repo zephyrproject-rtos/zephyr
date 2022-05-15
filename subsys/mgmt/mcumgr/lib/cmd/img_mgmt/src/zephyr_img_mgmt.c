@@ -602,7 +602,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 			}
 
 			if (fa->fa_off != hdr->ih_load_addr) {
-				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(aciton,
+				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
 					img_mgmt_err_str_image_bad_flash_addr);
 				flash_area_close(fa);
 				return MGMT_ERR_EINVAL;
