@@ -100,7 +100,8 @@ if [ "$DO_SIGN" = "1" ]; then
     ELF=$BLDDIR/zephyr/zephyr.elf.mod
     BOOT=$BLDDIR/zephyr/bootloader.elf.mod
     (cd $BLDDIR;
-     west sign --tool-data=$CAVS_RIMAGE/config -t rimage -- -k $CAVS_KEY)
+     west sign --tool-data="$CAVS_RIMAGE"/config -t rimage --tool-path "$CAVS_RIMAGE"/rimage -- -k $CAVS_KEY
+     )
     cp $BLDDIR/zephyr/zephyr.ri $IMAGE
 fi
 
