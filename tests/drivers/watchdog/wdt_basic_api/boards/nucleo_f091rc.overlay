@@ -8,11 +8,3 @@
 	/* Reduce APB1 speed to achieve test window timings */
 	apb1-prescaler = <16>;
 };
-
-&wwdg {
-	status = "okay";
-};
-
-&iwdg {
-	status = "disabled";
-};
