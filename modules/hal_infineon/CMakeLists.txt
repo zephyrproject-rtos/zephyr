@@ -2,7 +2,9 @@
 # Copyright (c) 2022 Cypress Semiconductor Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library_named(modules_hal_infineon)
+if(CONFIG_HAS_XMCLIB OR CONFIG_SOC_FAMILY_PSOC6)
+  zephyr_library_named(modules_hal_infineon)
+endif()
 
 ## Add PDL sources for XMC devices
 if (CONFIG_HAS_XMCLIB)
