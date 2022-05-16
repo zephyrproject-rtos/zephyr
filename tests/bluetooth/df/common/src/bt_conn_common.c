@@ -14,6 +14,7 @@
 
 #include <hal/ccm.h>
 
+#include <bluetooth/hci.h>
 #include <pdu.h>
 #include <lll.h>
 #include <lll/lll_df_types.h>
@@ -42,6 +43,8 @@ uint16_t ut_bt_create_connection(void)
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	conn->llcp.cte_req.is_enabled = 0U;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+	conn->llcp.fex.features_used |= BIT(BT_LE_FEAT_BIT_CONN_CTE_RESP);
 
 	return conn->lll.handle;
 }
