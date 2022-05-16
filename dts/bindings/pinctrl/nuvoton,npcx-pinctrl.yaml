@@ -61,12 +61,6 @@ child-binding:
         description: |
           A map to PUPD_ENn register/bit that enable pull-up/down of NPCX peripheral devices.
           Please don't overwrite this property in the board-level DT driver.
-      drive-supported:
-        required: false
-        type: boolean
-        description: |
-          It indicates the pad's drive mode is selectable. So far, only PWM's pad has this
-          property in npcx series. Please don't overwrite it in the board-level DT driver.
       pinmux-locked:
         required: false
         type: boolean
