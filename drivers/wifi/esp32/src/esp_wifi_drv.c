@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include "esp_system.h"
 #include "esp_wpa.h"
 
+#define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
+
 /* use global iface pointer to support any ethernet driver */
 /* necessary for wifi callback functions */
 static struct net_if *esp32_wifi_iface;
@@ -39,7 +41,6 @@ enum esp32_state_flag {
 };
 
 struct esp32_wifi_runtime {
-	struct net_if *iface;
 	uint8_t mac_addr[6];
 	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
@@ -54,6 +55,22 @@ static void esp_wifi_event_task(void);
 K_MSGQ_DEFINE(esp_wifi_msgq, sizeof(system_event_t), 10, 4);
 K_THREAD_STACK_DEFINE(esp_wifi_event_stack, CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE);
 static struct k_thread esp_wifi_event_thread;
+
+static struct net_mgmt_event_callback esp32_dhcp_cb;
+
+static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+			       struct net_if *iface)
+{
+	const struct wifi_status *status = (const struct wifi_status *)cb->info;
+
+	switch (mgmt_event) {
+	case NET_EVENT_IPV4_DHCP_BOUND:
+		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
+		break;
+	default:
+		break;
+	}
+}
 
 /* internal wifi library callback function */
 esp_err_t esp_event_send_internal(esp_event_base_t event_base,
@@ -161,19 +178,51 @@ static void scan_done_handler(void)
 			}
 
 			if (esp32_data.scan_cb) {
-				esp32_data.scan_cb(esp32_data.iface, 0, &res);
+				esp32_data.scan_cb(esp32_wifi_iface, 0, &res);
 
 				/* ensure notifications get delivered */
 				k_yield();
 			}
 		}
+	} else {
+		LOG_INF("Unable to retrieve AP records");
 	}
+
 	k_free(ap_list_buffer);
 
 out:
 	/* report end of scan event */
-	esp32_data.scan_cb(esp32_data.iface, 0, NULL);
+	esp32_data.scan_cb(esp32_wifi_iface, 0, NULL);
 	esp32_data.scan_cb = NULL;
+}
+
+static void esp_wifi_handle_connect_event(void)
+{
+	esp32_data.state = ESP32_STA_CONNECTED;
+	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
+		net_dhcpv4_start(esp32_wifi_iface);
+	} else {
+		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
+	}
+}
+
+static void esp_wifi_handle_disconnect_event(void)
+{
+	if (esp32_data.state == ESP32_STA_CONNECTED) {
+		if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
+			net_dhcpv4_stop(esp32_wifi_iface);
+		}
+		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
+	} else {
+		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, -1);
+	}
+
+	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT)) {
+		esp32_data.state = ESP32_STA_CONNECTING;
+		esp_wifi_connect();
+	} else {
+		esp32_data.state = ESP32_STA_STARTED;
+	}
 }
 
 static void esp_wifi_event_task(void)
@@ -194,16 +243,10 @@ static void esp_wifi_event_task(void)
 			net_if_down(esp32_wifi_iface);
 			break;
 		case ESP32_WIFI_EVENT_STA_CONNECTED:
-			esp32_data.state = ESP32_STA_CONNECTED;
-			wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
+			esp_wifi_handle_connect_event();
 			break;
 		case ESP32_WIFI_EVENT_STA_DISCONNECTED:
-			if (esp32_data.state == ESP32_STA_CONNECTED) {
-				wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
-			} else {
-				wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, -1);
-			}
-			esp32_data.state = ESP32_STA_STARTED;
+			esp_wifi_handle_disconnect_event();
 			break;
 		case ESP32_WIFI_EVENT_SCAN_DONE:
 			scan_done_handler();
@@ -360,7 +403,7 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 {
 	struct esp32_wifi_data *data = dev->data;
 
-	esp_err_t err = esp_wifi_set_mode(WIFI_MODE_NULL);
+	esp_err_t ret = esp_wifi_set_mode(WIFI_MODE_NULL);
 
 	ret |= esp_wifi_start();
 	if (ret != ESP_OK) {
@@ -376,7 +419,6 @@ static void esp32_wifi_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct esp32_wifi_runtime *dev_data = dev->data;
 
-	dev_data->iface = iface;
 	esp32_wifi_iface = iface;
 	dev_data->state = ESP32_STA_STOPPED;
 
@@ -413,6 +455,11 @@ static int esp32_wifi_dev_init(const struct device *dev)
 			K_NO_WAIT);
 
 	k_thread_name_set(tid, "esp_event");
+
+	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
+		net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
+		net_mgmt_add_event_callback(&esp32_dhcp_cb);
+	}
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
