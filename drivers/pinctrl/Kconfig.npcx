@@ -8,7 +8,6 @@ DT_COMPAT_ST_PINCTRL_NPCX := nuvoton,npcx-pinctrl
 config PINCTRL_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) pin controller driver"
 	depends on SOC_FAMILY_NPCX
-	select PINCTRL_STORE_REG
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_PINCTRL_NPCX))
 	help
 	  This option enables the pin controller driver for NPCX family of
