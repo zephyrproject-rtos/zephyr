@@ -672,12 +672,11 @@ static const struct adc_driver_api adc_npcx_driver_api = {
 
 static int adc_npcx_init(const struct device *dev);
 
+PINCTRL_DT_INST_DEFINE(inst);
+	BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
+	"only one 'nuvoton_npcx_adc' compatible node may be present");
 
 #define NPCX_ADC_INST_DEFINE(inst)                                            \
-	PINCTRL_DT_INST_DEFINE(inst);                                         \
-		BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,     \
-		"only one 'nuvoton_npcx_adc' compatible node may be present");\
-                                                                              \
 	static const struct adc_npcx_config adc_npcx_cfg_##inst = {           \
 		.base = DT_INST_REG_ADDR(inst),                               \
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                        \
@@ -747,10 +746,6 @@ static int adc_npcx_init(const struct device *dev)
 	inst->ADCCNF2 = ADC_REGULAR_ADCCNF2_VAL;
 	inst->GENDLY = ADC_REGULAR_GENDLY_VAL;
 	inst->MEAST = ADC_REGULAR_MEAST_VAL;
-
-	if (IS_ENABLED(CONFIG_ADC_CMP_NPCX)) {
-		data->threshold_data = &threshold_data_0;
-	}
 
 	/* Configure ADC interrupt and enable it */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), adc_npcx_isr,
