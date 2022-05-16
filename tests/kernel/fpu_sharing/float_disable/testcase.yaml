@@ -21,11 +21,11 @@ tests:
     extra_args: CONF_FILE=prj_x86.conf
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=n
-    platform_allow: qemu_x86 qemu_x86_lakemont
+    platform_allow: qemu_x86 qemu_x86_lakemont ehl_crb
     tags: fpu kernel userspace
   kernel.fpu_sharing.float_disable.x86.sse:
     extra_args: CONF_FILE=prj_x86.conf
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=y
-    platform_allow: qemu_x86 qemu_x86_lakemont
+    platform_allow: qemu_x86 qemu_x86_lakemont ehl_crb
     tags: fpu kernel userspace
