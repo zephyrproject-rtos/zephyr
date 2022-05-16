@@ -104,6 +104,24 @@
 	pinctrl-names = "default";
 };
 
+arduino_i2c: &flexcomm4 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
+
+	fxos8700@1e {
+		compatible = "nxp,fxos8700";
+		reg = <0x1e>;
+		label = "FXOS8700";
+		int1-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 arduino_serial: &flexcomm12 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
