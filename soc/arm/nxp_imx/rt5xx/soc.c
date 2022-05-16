@@ -184,6 +184,10 @@ void clock_init(void)
 	/* Switch FLEXCOMM0 to FRG */
 	CLOCK_AttachClk(kFRG_to_FLEXCOMM0);
 #endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
+	/* Switch FLEXCOMM4 to FRO_DIV4 */
+	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM4);
+#endif
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm12), nxp_lpc_usart, okay)
 	/* Switch FLEXCOMM12 to FRG */
 	CLOCK_AttachClk(kFRG_to_FLEXCOMM12);
