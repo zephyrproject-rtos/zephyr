@@ -46,6 +46,10 @@
 			status = "disabled";
 		};
 
+		die_temp: dietemp {
+			io-channels = <&adc1 18>;
+		};
+
 		can1: can@40006400 {
 			compatible = "st,stm32-can";
 			reg = <0x40006400 0x400>;

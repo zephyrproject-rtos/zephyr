@@ -31,6 +31,10 @@
 			status = "disabled";
 		};
 
+		die_temp: dietemp {
+			ts-cal2-temp = <130>;
+		};
+
 		adc1: adc@50040000 {
 			has-temp-channel;
 			has-vref-channel;

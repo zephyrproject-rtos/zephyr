@@ -290,9 +290,19 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
 			interrupts = <18 0>;
 			status = "disabled";
+			vref-mv = <3300>;
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
+		};
+
+		die_temp: dietemp {
+			compatible = "st,stm32-temp";
+			io-channels = <&adc1 16>;
+			status = "disabled";
+			avgslope = <43>;
+			v25 = <1430>;
+			ntc;
 		};
 
 		dma1: dma@40020000 {
