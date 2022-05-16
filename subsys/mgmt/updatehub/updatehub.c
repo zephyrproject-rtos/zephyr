@@ -97,8 +97,7 @@ static int bin2hex_str(uint8_t *bin, size_t bin_len, char *str, size_t str_buf_l
 	}
 
 	memset(str, 0, str_buf_len);
-	/* str_buf_len - 1 ensure space for \0 */
-	bin2hex(bin, bin_len, str, str_buf_len - 1);
+	bin2hex(bin, bin_len, str, str_buf_len);
 
 	return 0;
 }
