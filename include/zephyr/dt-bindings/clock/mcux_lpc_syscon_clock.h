@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-22, NXP
+ * Copyright 2020-2022, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #define MCUX_FLEXCOMM13_CLK		13
 #define MCUX_HS_SPI_CLK			14
 #define MCUX_PMIC_I2C_CLK		15
+#define MCUX_HS_SPI1_CLK		16
 
 #define MCUX_USDHC1_CLK			20
 #define MCUX_USDHC2_CLK			21
