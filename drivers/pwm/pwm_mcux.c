@@ -67,7 +67,7 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	duty_cycle = 100 * pulse_cycles / period_cycles;
-	data->pulse_cycles[pwm] = pulse_cycles;
+	data->pulse_cycles[channel] = pulse_cycles;
 
 	/* FIXME: Force re-setup even for duty-cycle update */
 	if (period_cycles != data->period_cycles[channel]) {
