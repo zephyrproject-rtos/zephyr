@@ -172,6 +172,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.9
      - 2.6
 
+   * - :ref:`i3c_api`
+     - Experimental
+     - 3.2
+     - 3.2
+
    * - :ref:`ipm_api`
      - Stable
      - 1.0

@@ -25,6 +25,7 @@ Peripherals
    hwinfo.rst
    i2c_eeprom_target.rst
    i2c.rst
+   i3c.rst
    ipm.rst
    kscan.rst
    led.rst
