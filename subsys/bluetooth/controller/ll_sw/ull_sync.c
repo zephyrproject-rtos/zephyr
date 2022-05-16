@@ -182,8 +182,13 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 
 	/* Initialize sync context */
 	node_rx->link = link_sync_estab;
-	sync->node_rx_sync_estab = node_rx;
 	sync->node_rx_lost.hdr.link = link_sync_lost;
+
+	/* Make sure that the node_rx_sync_establ hasn't got anything assigned. It is used to
+	 * mark when sync establishment is in progress.
+	 */
+	LL_ASSERT(!sync->node_rx_sync_estab);
+	sync->node_rx_sync_estab = node_rx;
 
 	/* Reporting initially enabled/disabled */
 	sync->rx_enable =
@@ -301,16 +306,43 @@ uint8_t ll_sync_create_cancel(void **rx)
 	}
 	cpu_dmb();
 	sync = scan->periodic.sync;
-	if (!sync || sync->timeout_reload) {
-		/* FIXME: sync establishment in progress looking for first
-		 *        AUX_SYNC_IND. Cleanup by stopping ticker and disabling
-		 *        LLL events.
-		 */
+	if (!sync) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	/* node_rx_sync_estab is assigned when Host calls create sync and cleared when sync is
+	 * established. timeout_reload is set when sync is found and setup. It is non-zero until
+	 * sync is terminated. Together they give information about current sync state:
+	 * - node_rx_sync_estab == NULL && timeout_reload != 0 => sync is established
+	 * - node_rx_sync_estab == NULL && timeout_reload == 0 => sync is terminated
+	 * - node_rx_sync_estab != NULL && timeout_reload == 0 => sync is created
+	 * - node_rx_sync_estab != NULL && timeout_reload != 0 => sync is waiting to be established
+	 */
+	if (!sync->node_rx_sync_estab) {
+		/* There is no sync to be cancelled */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	sync->is_stop = 1U;
+	cpu_dmb();
+
+	if (sync->timeout_reload != 0) {
+		uint16_t sync_handle = ull_sync_handle_get(sync);
+
+		LL_ASSERT(sync_handle <= UINT8_MAX);
+
+		/* Sync is not established yet, so stop sync ticker */
+		int err = ull_ticker_stop_with_mark(
+			TICKER_ID_SCAN_SYNC_BASE + (uint8_t)sync_handle, sync, &sync->lll);
+
+		LL_ASSERT(err == 0 || err == -EALREADY);
+		if (err != 0 && err != -EALREADY) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+	} /* else: sync was created but not yet setup, there is no sync ticker yet. */
+
 	/* It is safe to remove association with scanner as cancelled flag is
-	 * set and sync has not been established.
+	 * set, sync is_stop flag was set and sync has not been established.
 	 */
 	ull_sync_setup_reset(scan);
 
@@ -326,6 +358,11 @@ uint8_t ll_sync_create_cancel(void **rx)
 	ll_rx_link_release(link_sync_lost);
 	ll_rx_link_release(link_sync_estab);
 	ll_rx_release(node_rx);
+
+	/* Clear the node after release to mark the sync establish as being completed.
+	 * In this case the completion reason is sync cancelled by Host.
+	 */
+	sync->node_rx_sync_estab = NULL;
 
 	node_rx = (void *)&sync->node_rx_lost;
 	node_rx->hdr.type = NODE_RX_TYPE_SYNC;
@@ -792,6 +829,11 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 	lll = ftr->param;
 	sync = HDR_LLL2ULL(lll);
 
+	/* Do nothing if sync is cancelled or lost. */
+	if (unlikely(sync->is_stop || !sync->timeout_reload)) {
+		return;
+	}
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 	enum sync_status sync_status;
 
@@ -832,6 +874,11 @@ void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx)
 		rx_establ->hdr.type = NODE_RX_TYPE_SYNC;
 		rx_establ->hdr.handle = ull_sync_handle_get(sync);
 		se = (void *)rx_establ->pdu;
+		/* Clear the node to mark the sync establish as being completed.
+		 * In this case the completion reason is sync being established.
+		 */
+		sync->node_rx_sync_estab = NULL;
+
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING)
 		se->status = (ftr->sync_status == SYNC_STAT_TERM) ?
 					   BT_HCI_ERR_UNSUPP_REMOTE_FEATURE :
@@ -1241,6 +1288,11 @@ static void sync_expire(void *param)
 	rx = (void *)sync->node_rx_sync_estab;
 	rx->hdr.type = NODE_RX_TYPE_SYNC;
 	rx->hdr.handle = LLL_HANDLE_INVALID;
+
+	/* Clear the node to mark the sync establish as being completed.
+	 * In this case the completion reason is sync expire.
+	 */
+	sync->node_rx_sync_estab = NULL;
 
 	/* NOTE: struct node_rx_sync_estab has uint8_t member following the
 	 *       struct node_rx_hdr to store the reason.
