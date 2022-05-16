@@ -201,9 +201,21 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000200>;
 			interrupts = <18 0>;
 			status = "disabled";
+			vref-mv = <3000>;
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;
+		};
+
+		die_temp: dietemp {
+			compatible = "st,stm32-temp-cal";
+			ts-cal1-addr = <0x1FF800FA>;
+			ts-cal2-addr = <0x1FF800FE>;
+			ts-cal1-temp = <30>;
+			ts-cal2-temp = <110>;
+			ts-cal-vrefanalog = <3000>;
+			io-channels = <&adc1 16>;
+			status = "disabled";
 		};
 
 		dac1: dac@40007400 {

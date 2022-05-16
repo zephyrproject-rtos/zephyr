@@ -41,6 +41,11 @@
 			};
 		};
 
+		die_temp: dietemp {
+			ts-cal1-addr = <0x1FF0F44C>;
+			ts-cal2-addr = <0x1FF0F44E>;
+		};
+
 		i2c4: i2c@40006000 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;

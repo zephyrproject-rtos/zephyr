@@ -30,6 +30,11 @@
 			status = "disabled";
 		};
 
+		die_temp: dietemp {
+			io-channels = <&adc3 17>;
+			ts-cal2-temp = <130>;
+		};
+
 		usart10: serial@40011c00 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011c00 0x400>;
