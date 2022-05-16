@@ -106,6 +106,9 @@
 #endif
 #endif /* MCLK */
 
+/*
+ * All SAM0 define the internal voltage reference as 1.0V by default.
+ */
 #ifndef ADC_REFCTRL_REFSEL_INTERNAL
 #  ifdef ADC_REFCTRL_REFSEL_INTREF
 #    define ADC_REFCTRL_REFSEL_INTERNAL ADC_REFCTRL_REFSEL_INTREF
@@ -114,17 +117,27 @@
 #  endif
 #endif
 
-#ifndef ADC_REFCTRL_REFSEL_VDD_1_2
-#  ifdef ADC_REFCTRL_REFSEL_INTVCC0
-#    define ADC_REFCTRL_REFSEL_VDD_1_2 ADC_REFCTRL_REFSEL_INTVCC0
-#  else
-#    define ADC_REFCTRL_REFSEL_VDD_1_2 ADC_REFCTRL_REFSEL_INTVCC1
+/*
+ * Some SAM0 devices can use VDDANA as a direct reference. For the devices
+ * that not offer this option, the internal 1.0V reference will be used.
+ */
+#ifndef ADC_REFCTRL_REFSEL_VDD_1
+#  if defined(ADC0_BANDGAP)
+#    define ADC_REFCTRL_REFSEL_VDD_1 ADC_REFCTRL_REFSEL_INTVCC1
+#  elif defined(ADC_REFCTRL_REFSEL_INTVCC2)
+#    define ADC_REFCTRL_REFSEL_VDD_1 ADC_REFCTRL_REFSEL_INTVCC2
 #  endif
 #endif
 
-#ifndef ADC_REFCTRL_REFSEL_VDD_1
-#  ifdef ADC_REFCTRL_REFSEL_INTVCC1
-#    define ADC_REFCTRL_REFSEL_VDD_1 ADC_REFCTRL_REFSEL_INTVCC1
+/*
+ * SAMD/E5x define ADC[0-1]_BANDGAP symbol. Only those devices use INTVCC0 to
+ * implement VDDANA / 2.
+ */
+#ifndef ADC_REFCTRL_REFSEL_VDD_1_2
+#  ifdef ADC0_BANDGAP
+#    define ADC_REFCTRL_REFSEL_VDD_1_2 ADC_REFCTRL_REFSEL_INTVCC0
+#  else
+#    define ADC_REFCTRL_REFSEL_VDD_1_2 ADC_REFCTRL_REFSEL_INTVCC1
 #  endif
 #endif
 
