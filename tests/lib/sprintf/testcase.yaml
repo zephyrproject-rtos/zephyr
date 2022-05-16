@@ -1,7 +1,7 @@
 tests:
   libraries.libc.sprintf:
     extra_args: CONF_FILE=prj.conf
-    filter: not CONFIG_SOC_MCIMX7_M4
+    filter: not CONFIG_SOC_MCIMX7_M4 and CONFIG_STDOUT_CONSOLE
     integration_platforms:
     - qemu_x86
     platform_exclude: native_posix native_posix_64 nrf52_bsim
