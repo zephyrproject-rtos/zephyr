@@ -17,6 +17,22 @@ static const struct npcx_pinctrl_config npcx_pinctrl_cfg = {
 	.base_scfg = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg),
 };
 
+/* PWM pinctrl config */
+struct npcx_pwm_pinctrl_config {
+	uintptr_t base;
+	int channel;
+};
+
+#define NPCX_PWM_PINCTRL_CFG_INIT(node_id)			\
+	{							\
+		.base = DT_REG_ADDR(node_id),			\
+		.channel = DT_PROP(node_id, pwm_channel),	\
+	},
+
+static const struct npcx_pwm_pinctrl_config pwm_pinctrl_cfg[] = {
+	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_pwm, NPCX_PWM_PINCTRL_CFG_INIT)
+};
+
 /* Pin-control local functions for peripheral devices */
 static bool npcx_periph_pinmux_has_lock(int group)
 {
@@ -70,8 +86,23 @@ static void npcx_periph_pupd_configure(const struct npcx_periph *pupd,
 	}
 }
 
-static void npcx_periph_pwm_drive_mode_configure(uintptr_t reg, bool is_od)
+static void npcx_periph_pwm_drive_mode_configure(const struct npcx_periph *periph,
+	bool is_od)
 {
+	uintptr_t reg = 0;
+
+	/* Find selected pwm module which enables open-drain prop. */
+	for (int i = 0; i < ARRAY_SIZE(pwm_pinctrl_cfg); i++) {
+		if (periph->group == pwm_pinctrl_cfg[i].channel) {
+			reg = pwm_pinctrl_cfg[i].base;
+			break;
+		}
+	}
+
+	if (reg == 0) {
+		return;
+	}
+
 	struct pwm_reg *const inst = (struct pwm_reg *)(reg);
 
 	if (is_od) {
@@ -94,7 +125,7 @@ static void npcx_periph_configure(const pinctrl_soc_pin_t *pin, uintptr_t reg)
 			pin->flags.io_bias_type);
 	} else if (pin->cfg.periph.type == NPCX_PINCTRL_TYPE_PERIPH_DRIVE) {
 		/* Configure peripheral device's drive mode. (Only PWM pads support it) */
-		npcx_periph_pwm_drive_mode_configure(reg,
+		npcx_periph_pwm_drive_mode_configure(&pin->cfg.periph,
 			pin->flags.io_drive_type == NPCX_DRIVE_TYPE_OPEN_DRAIN);
 	}
 }
