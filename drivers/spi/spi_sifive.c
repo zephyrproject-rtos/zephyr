@@ -100,7 +100,7 @@ int spi_config(const struct device *dev, uint32_t frequency,
 	return 0;
 }
 
-void spi_sifive_send(const struct device *dev, uint16_t frame)
+void spi_sifive_send(const struct device *dev, uint8_t frame)
 {
 	while (sys_read32(SPI_REG(dev, REG_TXDATA)) & SF_TXDATA_FULL) {
 	}
@@ -108,20 +108,20 @@ void spi_sifive_send(const struct device *dev, uint16_t frame)
 	sys_write32((uint32_t) frame, SPI_REG(dev, REG_TXDATA));
 }
 
-uint16_t spi_sifive_recv(const struct device *dev)
+uint8_t spi_sifive_recv(const struct device *dev)
 {
 	uint32_t val;
 
 	while ((val = sys_read32(SPI_REG(dev, REG_RXDATA))) & SF_RXDATA_EMPTY) {
 	}
 
-	return (uint16_t) val;
+	return (uint8_t) val;
 }
 
 void spi_sifive_xfer(const struct device *dev, const bool hw_cs_control)
 {
 	struct spi_context *ctx = &SPI_DATA(dev)->ctx;
-	uint16_t txd, rxd;
+	uint8_t txd, rxd;
 
 	do {
 		/* Send a frame */
