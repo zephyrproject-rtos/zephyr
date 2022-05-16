@@ -47,6 +47,7 @@ struct ipc_service_backend {
 	 *  @retval -EINVAL when instance is invalid.
 	 *  @retval -EBADMSG when the message is invalid.
 	 *  @retval -EBUSY when the instance is busy or not ready.
+	 *  @retval -ENOMEM when no memory / buffers are available.
 	 *
 	 *  @retval bytes number of bytes sent.
 	 *  @retval other errno codes depending on the implementation of the
