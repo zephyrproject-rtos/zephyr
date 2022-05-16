@@ -4413,6 +4413,8 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
+	bt_att_set_tx_meta_data(buf, func, user_data);
+
 	return bt_att_send(conn, buf);
 }
 
