@@ -394,6 +394,7 @@ static int send(const struct device *instance, void *token,
 {
 	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_ept *rpmsg_ept;
+	int ret;
 
 	/* Instance is not ready */
 	if (atomic_get(&data->state) != STATE_INITED) {
@@ -407,7 +408,14 @@ static int send(const struct device *instance, void *token,
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
 
-	return rpmsg_send(&rpmsg_ept->ep, msg, len);
+	ret = rpmsg_send(&rpmsg_ept->ep, msg, len);
+
+	/* No buffers available */
+	if (ret == RPMSG_ERR_NO_BUFF) {
+		return -ENOMEM;
+	}
+
+	return ret;
 }
 
 static int send_nocopy(const struct device *instance, void *token,
