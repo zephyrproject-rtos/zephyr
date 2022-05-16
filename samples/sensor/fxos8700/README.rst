@@ -121,6 +121,18 @@ Sample can be built and executed for the MIMXRT685-EVK as follows:
    :goals: build flash
    :compact:
 
+Building and Running for MIMXRT595-EVK
+======================================
+MIMXRT595-EVK is optionally equipped with FXOS8700CQ accelerometer and magnetometer.
+Please confirm the FXOS8700CQ(U6) is populated on your board.
+Sample can be built and executed for the MIMXRT595-EVK as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: mimxrt595_evk_cm33
+   :goals: build flash
+   :compact:
+
 Sample Output
 =============
 
