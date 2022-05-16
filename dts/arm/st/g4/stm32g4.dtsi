@@ -80,9 +80,21 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
 			interrupts = <18 0>;
 			status = "disabled";
+			vref-mv = <3300>;
 			#io-channel-cells = <1>;
 			has-vref-channel;
 			has-temp-channel;
+		};
+
+		die_temp: dietemp {
+			compatible = "st,stm32-temp-cal";
+			ts-cal1-addr = <0x1FFF75A8>;
+			ts-cal2-addr = <0x1FFF75CA>;
+			ts-cal1-temp = <30>;
+			ts-cal2-temp = <130>;
+			ts-cal-vrefanalog = <3000>;
+			io-channels = <&adc1 16>;
+			status = "disabled";
 		};
 
 		adc2: adc@50000100 {

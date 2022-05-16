@@ -676,6 +676,20 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			has-temp-channel;
+			has-vref-channel;
+		};
+
+		die_temp: dietemp {
+			compatible = "st,stm32-temp-cal";
+			ts-cal1-addr = <0x1FF1E820>;
+			ts-cal2-addr = <0x1FF1E840>;
+			ts-cal1-temp = <30>;
+			ts-cal2-temp = <110>;
+			ts-cal-vrefanalog = <3300>;
+			ts-cal-resolution = <16>;
+			io-channels = <&adc3 18>;
+			status = "disabled";
 		};
 
 		adc2: adc@40022100 {
@@ -703,6 +717,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x01000000>;
 			interrupts = <127 0>;
 			status = "disabled";
+			vref-mv = <3300>;
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;

@@ -244,6 +244,17 @@
 			status = "disabled";
 		};
 
+		die_temp: dietemp {
+			compatible = "st,stm32-temp-cal";
+			ts-cal1-addr = <0x1FFF7A2C>;
+			ts-cal2-addr = <0x1FFF7A2E>;
+			ts-cal1-temp = <30>;
+			ts-cal2-temp = <110>;
+			ts-cal-vrefanalog = <3300>;
+			io-channels = <&adc1 16>;
+			status = "disabled";
+		};
+
 		spi1: spi@40013000 {
 			compatible = "st,stm32-spi";
 			#address-cells = <1>;
@@ -445,6 +456,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000100>;
 			interrupts = <18 0>;
 			status = "disabled";
+			vref-mv = <3300>;
 			#io-channel-cells = <1>;
 			has-temp-channel;
 			has-vref-channel;

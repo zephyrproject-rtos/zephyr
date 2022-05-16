@@ -67,6 +67,10 @@
 			status = "disabled";
 		};
 
+		die_temp: dietemp {
+			io-channels = <&adc1 18>;
+		};
+
 		timers6: timers@40001000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
