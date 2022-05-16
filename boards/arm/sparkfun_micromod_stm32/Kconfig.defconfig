@@ -1,0 +1,11 @@
+# Sparkfun MicroMod STM32 Processor
+
+# Copyright (c) 2022 Alvaro Viebrantz
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SPARKFUN_MICROMOD_STM32
+
+config BOARD
+	default "sparkfun_micromod_stm32"
+
+endif # BOARD_SPARKFUN_MICROMOD_STM32

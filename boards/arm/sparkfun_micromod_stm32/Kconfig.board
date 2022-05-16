@@ -1,0 +1,8 @@
+# Sparkfun MicroMod STM32 Processor
+
+# Copyright (c) 2022 Alvaro Viebrantz
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SPARKFUN_MICROMOD_STM32
+	bool "Sparkfun MicroMod STM32 Processor"
+	depends on SOC_STM32F405XG

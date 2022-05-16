@@ -1,0 +1,14 @@
+identifier: sparkfun_micromod_stm32
+name: Sparkfun MicroMod STM32 Processor
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 1024
+supported:
+  - i2c
+  - spi
+  - usb
