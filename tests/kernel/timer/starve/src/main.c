@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <tc_util.h>
 #include <ztest.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #define STAMP_INTERVAL_s 60
 #define TIMER_DELAY_ms 500

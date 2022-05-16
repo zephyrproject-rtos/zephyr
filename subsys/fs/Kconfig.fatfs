@@ -43,8 +43,21 @@ config FS_FATFS_MOUNT_MKFS
 	  If formatting is not needed, disabling this flag will slightly
 	  reduce application size.
 
+if FS_FATFS_MOUNT_MKFS
+
+config FS_FATFS_MAX_ROOT_ENTRIES
+	int "Max number of entries in FAT FS root directory"
+	default 512
+	range 1 32768
+	help
+	  Sets how many root directory entries will be allocated when
+	  formatting new FAT system to a device.
+	  Note that this should be multiply of FS_FATFS_MAX_SS / 32.
+
+endif # FS_FATFS_MOUNT_MKFS
+
 config FS_FATFS_EXFAT
-	bool "Enable exFAT support"
+	bool "ExFAT support"
 	select FS_FATFS_LFN
 	help
 	  Enable the exFAT format support for FatFs.
@@ -58,7 +71,7 @@ config FS_FATFS_NUM_DIRS
 	default 4
 
 config FS_FATFS_LFN
-	bool "Enable long filenames (LFN)"
+	bool "Long filenames (LFN)"
 	help
 	  Without long filenames enabled, file names are limited to 8.3 format.
 	  This option increases working buffer size.
@@ -128,6 +141,19 @@ config FS_FATFS_MAX_SS
 	int "Maximum supported sector size"
 	range 512 4096
 	default 512
+
+config FS_FATFS_WINDOW_ALIGNMENT
+	int "Memory alignment for the member \"win\" in FATFS"
+	default 1
+	help
+	  Specifies alignment, in bytes of FAT FS window buffer that is
+	  used for device's read/write operations. MMC controllers may
+	  require read/write buffer to start at memory address with
+	  specific alignment, for example 16 or 512 bytes, the value
+	  provided here is used as such alignment. Note that the window
+	  buffer is internal element of FATFS structure, which means
+	  that, in worst scenario, value provided here may cause FATFS
+	  structure to have size of twice the value
 
 endmenu
 

@@ -339,10 +339,10 @@ For more information refer to the `Srecord Manual`_.
 
 .. code-block:: bash
 
-   srec_cat $BIN_BOOLOADER -Binary -offset $FLASH_OFFSET $BIN_APP -Binary -offset $IMAGE_OFFSET -o zephyr.hex -Intel
+   srec_cat $BIN_BOOTLOADER -Binary -offset $FLASH_OFFSET $BIN_APP -Binary -offset $IMAGE_OFFSET -o zephyr.hex -Intel
 
    # For a 128K bootloader IMAGE_OFFSET = $FLASH_OFFSET + 0x20000
-   srec_cat $BIN_BOOLOADER -Binary -offset 0xA000000 $BIN_APP -Binary -offset 0xA020000 -o zephyr.hex -Intel
+   srec_cat $BIN_BOOTLOADER -Binary -offset 0xA000000 $BIN_APP -Binary -offset 0xA020000 -o zephyr.hex -Intel
 
 .. image:: img/v2m_musca_s1_powered.png
      :width: 600px

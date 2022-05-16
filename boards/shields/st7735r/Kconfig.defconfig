@@ -14,16 +14,7 @@ config ST7735R
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "ST7735R"
-
-config LVGL_HOR_RES_MAX
-	default 160
-
-config LVGL_VER_RES_MAX
-	default 128
-
-config LVGL_BITS_PER_PIXEL
+config LV_Z_BITS_PER_PIXEL
 	default 16
 
 endif # LVGL

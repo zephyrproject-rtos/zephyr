@@ -5,10 +5,10 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef min
 #define min(a, b) ((a) < (b)) ? (a) : (b)
@@ -17,7 +17,7 @@
 #define N_THR_E 3
 #define N_THR_T 4
 #define BOUNCES 64
-#define STACKS (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKS (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_PRIORITY 3
 #define ONE_SECOND 1
 
@@ -97,7 +97,7 @@ void *thread_top_exec(void *p1)
 		 * scheduled and wait on cvar0.
 		 */
 		if (!(id == 0 && i == 0)) {
-			pthread_cond_wait(&cvar0, &lock);
+			zassert_equal(0, pthread_cond_wait(&cvar0, &lock), "");
 		} else {
 			pthread_mutex_unlock(&lock);
 			usleep(USEC_PER_MSEC * 500U);
@@ -410,7 +410,7 @@ void test_posix_pthread_error_condition(void)
 	void *stackaddr;
 	size_t stacksize;
 	int policy, detach;
-	static pthread_once_t key = 1;
+	static pthread_once_t key;
 
 	/* TESTPOINT: invoke pthread APIs with NULL */
 	zassert_equal(pthread_attr_destroy(NULL), EINVAL,
@@ -428,7 +428,7 @@ void test_posix_pthread_error_condition(void)
 	zassert_equal(pthread_attr_setdetachstate(NULL, 0),
 		      EINVAL, "pthread set detach state with NULL error");
 	zassert_equal(pthread_attr_getdetachstate(NULL, &detach),
-		      EINVAL, "get datach state error");
+		      EINVAL, "get detach state error");
 	zassert_equal(pthread_detach(NULL), ESRCH, "detach with NULL error");
 	zassert_equal(pthread_attr_init(NULL), ENOMEM,
 		      "init with NULL error");
@@ -447,7 +447,7 @@ void test_posix_pthread_error_condition(void)
 
 	attr.initialized = 0U;
 	zassert_equal(pthread_attr_getdetachstate(&attr, &detach),
-		      EINVAL, "get datach state error");
+		      EINVAL, "get detach state error");
 
 	/* Initialise thread attribute to ensure won't be return with init error */
 	zassert_false(pthread_attr_init(&attr),
@@ -465,7 +465,7 @@ void test_posix_pthread_error_condition(void)
 	zassert_equal(pthread_attr_setdetachstate(&attr, 3),
 		      EINVAL, "set detach state error");
 	zassert_false(pthread_attr_getdetachstate(&attr, &detach),
-		      "get datach state error");
+		      "get detach state error");
 }
 
 void test_posix_pthread_termination(void)
@@ -529,6 +529,28 @@ void test_posix_pthread_termination(void)
 	/* TESTPOINT: Try getting scheduling info from terminated thread */
 	ret = pthread_getschedparam(newthread[N_THR_T/2], &policy, &schedparam);
 	zassert_equal(ret, ESRCH, "got attr from terminated thread!");
+}
+
+void test_posix_thread_attr_stacksize(void)
+{
+	size_t act_size;
+	pthread_attr_t attr;
+	const size_t exp_size = 0xB105F00D;
+
+	/* TESTPOINT: specify a custom stack size via pthread_attr_t */
+	zassert_equal(0, pthread_attr_init(&attr), "pthread_attr_init() failed");
+
+	if (PTHREAD_STACK_MIN > 0) {
+		zassert_equal(EINVAL, pthread_attr_setstacksize(&attr, 0),
+			      "pthread_attr_setstacksize() did not fail");
+	}
+
+	zassert_equal(0, pthread_attr_setstacksize(&attr, exp_size),
+		      "pthread_attr_setstacksize() failed");
+	zassert_equal(0, pthread_attr_getstacksize(&attr, &act_size),
+		      "pthread_attr_getstacksize() failed");
+	zassert_equal(exp_size, act_size, "wrong size: act: %zu exp: %zu",
+		exp_size, act_size);
 }
 
 static void *create_thread1(void *p1)

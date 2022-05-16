@@ -247,7 +247,7 @@ config USE_STM32_HAL_I2S
 config USE_STM32_HAL_I2S_EX
 	bool
 	help
-	  Enable STM32Cube Etxended Inter-IC sound (I2S) HAL module driver
+	  Enable STM32Cube Extended Inter-IC sound (I2S) HAL module driver
 
 config USE_STM32_HAL_IPCC
 	bool
@@ -552,7 +552,12 @@ config USE_STM32_LL_DAC
 config USE_STM32_LL_DELAYBLOCK
 	bool
 	help
-	  Enable STM32Cube DelayBlock (DELAYBLOCK) LL module driver
+	  Enable STM32Cube DelayBlock (DELAYBLOCK) LL module driver (stm32H7 or stm32MP1)
+
+config USE_STM32_LL_DLYB
+	bool
+	help
+	  Enable STM32Cube DelayBlock (DELAYBLOCK) LL module driver (stm32U5)
 
 config USE_STM32_LL_DMA
 	bool
@@ -673,6 +678,12 @@ config USE_STM32_LL_TIM
 	bool
 	help
 	  Enable STM32Cube Timer (TIM) LL module driver
+
+config USE_STM32_LL_UCPD
+	bool
+	help
+	  Enable STM32Cube USB Power Delivery device interface
+	  (UCPD) LL module driver
 
 config USE_STM32_LL_USART
 	bool

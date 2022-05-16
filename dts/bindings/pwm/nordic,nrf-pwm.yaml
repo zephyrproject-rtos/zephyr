@@ -2,7 +2,7 @@ description: nRF PWM
 
 compatible: "nordic,nrf-pwm"
 
-include: [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -17,6 +17,9 @@ properties:
       type: int
       required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The channel 0 pin to use.
 
         For pins P0.0 through P0.31, use the pin number. For example,
@@ -32,46 +35,81 @@ properties:
     ch0-inverted:
       type: boolean
       required: false
-      description: Set this to invert channel 0.
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+        When the pin control driver is enabled, use the "nordic,invert" property
+        in the corresponding pin configuration group instead.
+
+        Set this to invert channel 0.
 
     ch1-pin:
       type: int
       required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The channel 1 pin to use. The pin numbering scheme is the same
         as the ch0-pin property's.
 
     ch1-inverted:
       type: boolean
       required: false
-      description: Set this to invert channel 1.
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+        When the pin control driver is enabled, use the "nordic,invert" property
+        in the corresponding pin configuration group instead.
+
+        Set this to invert channel 1.
 
     ch2-pin:
       type: int
       required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The channel 2 pin to use. The pin numbering scheme is the same
         as the ch0-pin property's.
 
     ch2-inverted:
       type: boolean
       required: false
-      description: Set this to invert channel 2.
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+        When the pin control driver is enabled, use the "nordic,invert" property
+        in the corresponding pin configuration group instead.
+
+        Set this to invert channel 2.
 
     ch3-pin:
       type: int
       required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The channel 3 pin to use. The pin numbering scheme is the same
         as the ch0-pin property's.
 
     ch3-inverted:
       type: boolean
       required: false
-      description: Set this to invert channel 3.
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+        When the pin control driver is enabled, use the "nordic,invert" property
+        in the corresponding pin configuration group instead.
+
+        Set this to invert channel 3.
 
     "#pwm-cells":
-      const: 1
+      const: 3
 
 pwm-cells:
   - channel
+  - period
+  - flags

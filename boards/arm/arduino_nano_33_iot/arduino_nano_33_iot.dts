@@ -6,6 +6,8 @@
 
 /dts-v1/;
 #include <atmel/samd21.dtsi>
+#include "arduino_nano_33_iot-pinctrl.dtsi"
+#include "arduino_nano_r3_connector.dtsi"
 
 / {
 	model = "Arduino Nano 33 IOT";
@@ -31,7 +33,7 @@
 		compatible = "pwm-leds";
 
 		pwm_led0: pwm_led_0 {
-			pwms = <&tcc2 1>;
+			pwms = <&tcc2 1 PWM_MSEC(20)>;
 		};
 	};
 
@@ -52,6 +54,9 @@
 	dopo = <1>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom1_spi_default>;
+	pinctrl-names = "default";
 };
 
 &sercom2 {
@@ -62,6 +67,9 @@
 	dopo = <3>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom2_spi_default>;
+	pinctrl-names = "default";
 
 	cs-gpios = <&porta 14 GPIO_ACTIVE_LOW>;
 
@@ -83,7 +91,8 @@
 	rxpo = <1>;
 	txpo = <0>;
 
-	pinctrl-0 = <&pa23c_sercom3_pad1 &pa22c_sercom3_pad0>;
+	pinctrl-0 = <&sercom3_uart_default>;
+	pinctrl-names = "default";
 
 	nina_prog {
 		compatible = "espressif,esp-at";
@@ -98,6 +107,9 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom4_i2c_default>;
+	pinctrl-names = "default";
 
 	lsm6ds3@6a {
 		compatible = "st,lsm6ds3";
@@ -119,14 +131,18 @@
 	rxpo = <3>;
 	txpo = <1>;
 
-	pinctrl-0 = <&pb23d_sercom5_pad3 &pb22d_sercom5_pad2>;
+	pinctrl-0 = <&sercom5_uart_default>;
+	pinctrl-names = "default";
 };
 
 &tcc2 {
 	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <1024>;
-	#pwm-cells = <1>;
+	#pwm-cells = <2>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {
@@ -161,4 +177,7 @@
 
 zephyr_udc0: &usb0 {
 	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
 };

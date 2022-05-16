@@ -9,11 +9,11 @@
  *
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 
-#include <shell/shell.h>
-#include <shell/shell_dummy.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_dummy.h>
 
 #define MAX_CMD_SYNTAX_LEN	(11)
 static char dynamic_cmd_buffer[][MAX_CMD_SYNTAX_LEN] = {
@@ -389,6 +389,65 @@ static void test_max_argc(void)
 	test_shell_execute_cmd("dummy 1 2 3 4 5 6 7 8 9 10 11 12", -ENOEXEC);
 }
 
+
+static int cmd_handler_dict_1(const struct shell *sh, size_t argc, char **argv, void *data)
+{
+	int n = (intptr_t)data;
+
+	return n;
+}
+
+static int cmd_handler_dict_2(const struct shell *sh, size_t argc, char **argv, void *data)
+{
+	int n = (intptr_t)data;
+
+	return n + n;
+}
+
+SHELL_SUBCMD_DICT_SET_CREATE(dict1, cmd_handler_dict_1, (one, 1), (two, 2));
+SHELL_SUBCMD_DICT_SET_CREATE(dict2, cmd_handler_dict_2, (one, 1), (two, 2));
+
+SHELL_CMD_REGISTER(dict1, &dict1, NULL, NULL);
+SHELL_CMD_REGISTER(dict2, &dict2, NULL, NULL);
+
+static void test_cmd_dict(void)
+{
+	test_shell_execute_cmd("dict1 one", 1);
+	test_shell_execute_cmd("dict1 two", 2);
+
+	test_shell_execute_cmd("dict2 one", 2);
+	test_shell_execute_cmd("dict2 two", 4);
+}
+
+SHELL_SUBCMD_SET_CREATE(sub_section_cmd, (section_cmd));
+
+static int cmd1_handler(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	return 10;
+}
+
+/* Create a set of subcommands for "section_cmd cm1". */
+SHELL_SUBCMD_SET_CREATE(sub_section_cmd1, (section_cmd, cmd1));
+
+/* Add command to the set. Subcommand set is identify by parent shell command. */
+SHELL_SUBCMD_ADD((section_cmd), cmd1, &sub_section_cmd1, "help for cmd1", cmd1_handler, 1, 0);
+
+SHELL_CMD_REGISTER(section_cmd, &sub_section_cmd,
+		   "Demo command using section for subcommand registration", NULL);
+
+static void test_section_cmd(void)
+{
+	test_shell_execute_cmd("section_cmd", SHELL_CMD_HELP_PRINTED);
+	test_shell_execute_cmd("section_cmd cmd1", 10);
+	test_shell_execute_cmd("section_cmd cmd2", 20);
+	test_shell_execute_cmd("section_cmd cmd1 sub_cmd1", 11);
+	test_shell_execute_cmd("section_cmd cmd1 sub_cmd2", -EINVAL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(shell_test_suite,
@@ -404,7 +463,9 @@ void test_main(void)
 			ztest_unit_test(test_shell_fprintf),
 			ztest_unit_test(test_set_root_cmd),
 			ztest_unit_test(test_raw_arg),
-			ztest_unit_test(test_max_argc)
+			ztest_unit_test(test_max_argc),
+			ztest_unit_test(test_cmd_dict),
+			ztest_unit_test(test_section_cmd)
 			);
 
 	/* Let the shell backend initialize. */

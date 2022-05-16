@@ -130,6 +130,33 @@ memq_link_t *memq_peek(memq_link_t *head, memq_link_t *tail, void **mem)
 }
 
 /**
+ * @brief Non-destructive peek of nth (zero indexed) element of queue.
+ *
+ * @param head[in] Pointer to head link-element of queue
+ * @param tail[in] Pointer to tail link-element of queue
+ * @param n[in]    Nth element of queue to peek into
+ * @param mem[out] The memory pointed to by head-element
+ * @return         head or NULL if queue is empty
+ */
+memq_link_t *memq_peek_n(memq_link_t *head, memq_link_t *tail, uint8_t n,
+			 void **mem)
+{
+	/* Traverse to Nth element, zero indexed */
+	do {
+		/* Use memq peek to get the current head and its mem */
+		head = memq_peek(head, tail, mem);
+		if (head == NULL) {
+			return NULL; /* Nth element is empty */
+		}
+
+		/* Progress to next element */
+		head = head->next;
+	} while (n--);
+
+	return head; /*  queue was not empty */
+}
+
+/**
  * @brief Remove and returns the head of queue.
  * @details Dequeue is destructive so head will change to new head
  *

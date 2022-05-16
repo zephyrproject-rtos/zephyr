@@ -11,11 +11,11 @@
  */
 
 #include <errno.h>
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
 
 #include "gpio_utils.h"
 
@@ -361,7 +361,7 @@ DEVICE_DT_INST_DEFINE(0,
 		    gpio_sifive_init,
 		    NULL,
 		    &gpio_sifive_data0, &gpio_sifive_config0,
-		    POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
+		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
 		    &gpio_sifive_driver);
 
 #define		IRQ_INIT(n)					\

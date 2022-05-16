@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
+#include "nrf52_sparkfun-pinctrl.dtsi"
 
 / {
 	model = "Sparkfun nRF52832 Breakout";
@@ -58,8 +59,9 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <27>;
-	rx-pin = <26>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {

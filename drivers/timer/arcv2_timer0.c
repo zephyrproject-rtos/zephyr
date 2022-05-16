@@ -4,11 +4,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
-#include <arch/arc/v2/aux_regs.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
 #include <soc.h>
 /*
  * note: This implementation assumes Timer0 is present. Be sure
@@ -97,7 +97,6 @@ static volatile uint32_t overflow_cycles;
 #endif
 
 /**
- *
  * @brief Get contents of Timer0 count register
  *
  * @return Current Timer0 count
@@ -108,10 +107,7 @@ static ALWAYS_INLINE uint32_t timer0_count_register_get(void)
 }
 
 /**
- *
  * @brief Set Timer0 count register to the specified value
- *
- * @return N/A
  */
 static ALWAYS_INLINE void timer0_count_register_set(uint32_t value)
 {
@@ -119,10 +115,9 @@ static ALWAYS_INLINE void timer0_count_register_set(uint32_t value)
 }
 
 /**
- *
  * @brief Get contents of Timer0 control register
  *
- * @return N/A
+ * @return Contents of Timer0 control register.
  */
 static ALWAYS_INLINE uint32_t timer0_control_register_get(void)
 {
@@ -130,10 +125,7 @@ static ALWAYS_INLINE uint32_t timer0_control_register_get(void)
 }
 
 /**
- *
  * @brief Set Timer0 control register to the specified value
- *
- * @return N/A
  */
 static ALWAYS_INLINE void timer0_control_register_set(uint32_t value)
 {
@@ -141,10 +133,9 @@ static ALWAYS_INLINE void timer0_control_register_set(uint32_t value)
 }
 
 /**
- *
  * @brief Get contents of Timer0 limit register
  *
- * @return N/A
+ * @return Contents of Timer0 limit register.
  */
 static ALWAYS_INLINE uint32_t timer0_limit_register_get(void)
 {
@@ -152,10 +143,7 @@ static ALWAYS_INLINE uint32_t timer0_limit_register_get(void)
 }
 
 /**
- *
  * @brief Set Timer0 limit register to the specified value
- *
- * @return N/A
  */
 static ALWAYS_INLINE void timer0_limit_register_set(uint32_t count)
 {
@@ -210,14 +198,11 @@ static uint32_t elapsed(void)
 #endif
 
 /**
- *
  * @brief System clock periodic tick handler
  *
  * This routine handles the system clock tick interrupt. It always
  * announces one tick when TICKLESS is not enabled, or multiple ticks
  * when TICKLESS is enabled.
- *
- * @return N/A
  */
 static void timer_int_handler(const void *unused)
 {
@@ -265,50 +250,6 @@ static void timer_int_handler(const void *unused)
 	sys_clock_announce(TICKLESS ? dticks : 1);
 #endif
 
-}
-
-
-/**
- *
- * @brief Initialize and enable the system clock
- *
- * This routine is used to program the ARCv2 timer to deliver interrupts at the
- * rate specified via the CYC_PER_TICK.
- *
- * @return 0
- */
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* ensure that the timer will not generate interrupts */
-	timer0_control_register_set(0);
-
-#if SMP_TIMER_DRIVER
-	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
-		    timer_int_handler, NULL, 0);
-
-	timer0_limit_register_set(CYC_PER_TICK - 1);
-	last_time = z_arc_connect_gfrc_read();
-	start_time = last_time;
-#else
-	last_load = CYC_PER_TICK;
-	overflow_cycles = 0;
-	announced_cycles = 0;
-
-	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
-		    timer_int_handler, NULL, 0);
-
-	timer0_limit_register_set(last_load - 1);
-#endif
-	timer0_count_register_set(0);
-	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
-
-	/* everything has been configured: safe to enable the interrupt */
-
-	irq_enable(IRQ_TIMER0);
-
-	return 0;
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -459,3 +400,49 @@ void smp_timer_init(void)
 	irq_enable(IRQ_TIMER0);
 }
 #endif
+
+/**
+ *
+ * @brief Initialize and enable the system clock
+ *
+ * This routine is used to program the ARCv2 timer to deliver interrupts at the
+ * rate specified via the CYC_PER_TICK.
+ *
+ * @return 0
+ */
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* ensure that the timer will not generate interrupts */
+	timer0_control_register_set(0);
+
+#if SMP_TIMER_DRIVER
+	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
+		    timer_int_handler, NULL, 0);
+
+	timer0_limit_register_set(CYC_PER_TICK - 1);
+	last_time = z_arc_connect_gfrc_read();
+	start_time = last_time;
+#else
+	last_load = CYC_PER_TICK;
+	overflow_cycles = 0;
+	announced_cycles = 0;
+
+	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
+		    timer_int_handler, NULL, 0);
+
+	timer0_limit_register_set(last_load - 1);
+#endif
+	timer0_count_register_set(0);
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
+
+	/* everything has been configured: safe to enable the interrupt */
+
+	irq_enable(IRQ_TIMER0);
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -8,8 +8,8 @@
 #define FLASH_SIZE DT_REG_SIZE(DT_INST(0, soc_nv_flash))
 
 #include "flash.h"
-#include <device.h>
-#include <drivers/flash.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/flash.h>
 
 
 /* driver data structure */
@@ -180,4 +180,4 @@ static const struct flash_driver_api flash_b91_api = {
 /* Driver registration */
 DEVICE_DT_INST_DEFINE(0, flash_b91_init,
 		      NULL, &flash_data, NULL, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_b91_api);
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_b91_api);

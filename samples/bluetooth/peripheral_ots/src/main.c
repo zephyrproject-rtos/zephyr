@@ -7,19 +7,19 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 
 #define DEVICE_NAME      CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN  (sizeof(DEVICE_NAME) - 1)
 
-#define OBJ_POOL_SIZE 2
+#define OBJ_POOL_SIZE CONFIG_BT_OTS_MAX_OBJ_CNT
 #define OBJ_MAX_SIZE  100
 
 static const struct bt_data ad[] = {
@@ -36,6 +36,14 @@ static struct {
 	char name[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
 } objects[OBJ_POOL_SIZE];
 static uint32_t obj_cnt;
+
+struct object_creation_data {
+	struct bt_ots_obj_size size;
+	char *name;
+	uint32_t props;
+};
+
+static struct object_creation_data *object_being_created;
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -57,11 +65,12 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-static int ots_obj_created(struct bt_ots *ots, struct bt_conn *conn,
-			   uint64_t id,
-			   const struct bt_ots_obj_metadata *init)
+static int ots_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
+			   const struct bt_ots_obj_add_param *add_param,
+			   struct bt_ots_obj_created_desc *created_desc)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
+	uint64_t index;
 
 	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
 
@@ -71,10 +80,26 @@ static int ots_obj_created(struct bt_ots *ots, struct bt_conn *conn,
 		return -ENOMEM;
 	}
 
-	if (init->size.alloc > OBJ_MAX_SIZE) {
+	if (add_param->size > OBJ_MAX_SIZE) {
 		printk("Object pool item is too small for Object with %s ID\n",
 		       id_str);
 		return -ENOMEM;
+	}
+
+	if (object_being_created) {
+		created_desc->name = object_being_created->name;
+		created_desc->size = object_being_created->size;
+		created_desc->props = object_being_created->props;
+	} else {
+		index = id - BT_OTS_OBJ_ID_MIN;
+		objects[index].name[0] = '\0';
+
+		created_desc->name = objects[index].name;
+		created_desc->size.alloc = OBJ_MAX_SIZE;
+		BT_OTS_OBJ_SET_PROP_READ(created_desc->props);
+		BT_OTS_OBJ_SET_PROP_WRITE(created_desc->props);
+		BT_OTS_OBJ_SET_PROP_PATCH(created_desc->props);
+		BT_OTS_OBJ_SET_PROP_DELETE(created_desc->props);
 	}
 
 	printk("Object with %s ID has been created\n", id_str);
@@ -83,7 +108,7 @@ static int ots_obj_created(struct bt_ots *ots, struct bt_conn *conn,
 	return 0;
 }
 
-static void ots_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
+static int ots_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 			    uint64_t id)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
@@ -93,6 +118,8 @@ static void ots_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 	printk("Object with %s ID has been deleted\n", id_str);
 
 	obj_cnt--;
+
+	return 0;
 }
 
 static void ots_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
@@ -150,18 +177,20 @@ static ssize_t ots_obj_write(struct bt_ots *ots, struct bt_conn *conn,
 		"Offset = %lu, Length = %zu, Remaining= %zu\n",
 		id_str, (long)offset, len, rem);
 
-	memcpy(&objects[obj_index].data[offset], data, len);
+	(void)memcpy(&objects[obj_index].data[offset], data, len);
 
 	return len;
 }
 
-void ots_obj_name_written(struct bt_ots *ots, struct bt_conn *conn, uint64_t id, const char *name)
+static void ots_obj_name_written(struct bt_ots *ots, struct bt_conn *conn,
+				 uint64_t id, const char *cur_name, const char *new_name)
 {
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 
 	bt_ots_obj_id_to_str(id, id_str, sizeof(id_str));
 
-	printk("Name for object with %s ID has been written\n", id_str);
+	printk("Name for object with %s ID is being changed from '%s' to '%s'\n",
+		id_str, cur_name, new_name);
 }
 
 static struct bt_ots_cb ots_callbacks = {
@@ -177,8 +206,9 @@ static int ots_init(void)
 {
 	int err;
 	struct bt_ots *ots;
+	struct object_creation_data obj_data;
 	struct bt_ots_init ots_init;
-	struct bt_ots_obj_metadata obj_init;
+	struct bt_ots_obj_add_param param;
 	const char * const first_object_name = "first_object.txt";
 	const char * const second_object_name = "second_object.gif";
 	uint32_t cur_size;
@@ -191,9 +221,11 @@ static int ots_init(void)
 	}
 
 	/* Configure OTS initialization. */
-	memset(&ots_init, 0, sizeof(ots_init));
+	(void)memset(&ots_init, 0, sizeof(ots_init));
 	BT_OTS_OACP_SET_FEAT_READ(ots_init.features.oacp);
 	BT_OTS_OACP_SET_FEAT_WRITE(ots_init.features.oacp);
+	BT_OTS_OACP_SET_FEAT_CREATE(ots_init.features.oacp);
+	BT_OTS_OACP_SET_FEAT_DELETE(ots_init.features.oacp);
 	BT_OTS_OACP_SET_FEAT_PATCH(ots_init.features.oacp);
 	BT_OTS_OLCP_SET_FEAT_GO_TO(ots_init.features.olcp);
 	ots_init.cb = &ots_callbacks;
@@ -212,22 +244,25 @@ static int ots_init(void)
 		objects[0].data[i] = i + 1;
 	}
 
-	memset(&obj_init, 0, sizeof(obj_init));
+	(void)memset(&obj_data, 0, sizeof(obj_data));
 	__ASSERT(strlen(first_object_name) <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
 		 "Object name length is larger than the allowed maximum of %u",
 		 CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
-	strcpy(objects[0].name, first_object_name);
-	obj_init.name = objects[0].name;
-	obj_init.type.uuid.type = BT_UUID_TYPE_16;
-	obj_init.type.uuid_16.val = BT_UUID_OTS_TYPE_UNSPECIFIED_VAL;
-	obj_init.size.cur = cur_size;
-	obj_init.size.alloc = alloc_size;
-	BT_OTS_OBJ_SET_PROP_READ(obj_init.props);
-	BT_OTS_OBJ_SET_PROP_WRITE(obj_init.props);
-	BT_OTS_OBJ_SET_PROP_PATCH(obj_init.props);
+	(void)strcpy(objects[0].name, first_object_name);
+	obj_data.name = objects[0].name;
+	obj_data.size.cur = cur_size;
+	obj_data.size.alloc = alloc_size;
+	BT_OTS_OBJ_SET_PROP_READ(obj_data.props);
+	BT_OTS_OBJ_SET_PROP_WRITE(obj_data.props);
+	BT_OTS_OBJ_SET_PROP_PATCH(obj_data.props);
+	object_being_created = &obj_data;
 
-	err = bt_ots_obj_add(ots, &obj_init);
-	if (err) {
+	param.size = alloc_size;
+	param.type.uuid.type = BT_UUID_TYPE_16;
+	param.type.uuid_16.val = BT_UUID_OTS_TYPE_UNSPECIFIED_VAL;
+	err = bt_ots_obj_add(ots, &param);
+	object_being_created = NULL;
+	if (err < 0) {
 		printk("Failed to add an object to OTS (err: %d)\n", err);
 		return err;
 	}
@@ -239,20 +274,23 @@ static int ots_init(void)
 		objects[1].data[i] = i * 2;
 	}
 
-	memset(&obj_init, 0, sizeof(obj_init));
+	(void)memset(&obj_data, 0, sizeof(obj_data));
 	__ASSERT(strlen(second_object_name) <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
 		 "Object name length is larger than the allowed maximum of %u",
 		 CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
-	strcpy(objects[1].name, second_object_name);
-	obj_init.name = objects[1].name;
-	obj_init.type.uuid.type = BT_UUID_TYPE_16;
-	obj_init.type.uuid_16.val = BT_UUID_OTS_TYPE_UNSPECIFIED_VAL;
-	obj_init.size.cur = cur_size;
-	obj_init.size.alloc = alloc_size;
-	BT_OTS_OBJ_SET_PROP_READ(obj_init.props);
+	(void)strcpy(objects[1].name, second_object_name);
+	obj_data.name = objects[1].name;
+	obj_data.size.cur = cur_size;
+	obj_data.size.alloc = alloc_size;
+	BT_OTS_OBJ_SET_PROP_READ(obj_data.props);
+	object_being_created = &obj_data;
 
-	err = bt_ots_obj_add(ots, &obj_init);
-	if (err) {
+	param.size = alloc_size;
+	param.type.uuid.type = BT_UUID_TYPE_16;
+	param.type.uuid_16.val = BT_UUID_OTS_TYPE_UNSPECIFIED_VAL;
+	err = bt_ots_obj_add(ots, &param);
+	object_being_created = NULL;
+	if (err < 0) {
 		printk("Failed to add an object to OTS (err: %d)\n", err);
 		return err;
 	}

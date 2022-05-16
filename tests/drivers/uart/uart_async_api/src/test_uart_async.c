@@ -15,6 +15,10 @@ K_SEM_DEFINE(rx_disabled, 0, 1);
 ZTEST_BMEM volatile bool failed_in_isr;
 ZTEST_BMEM static const struct device *uart_dev;
 
+static void read_abort_timeout(struct k_timer *timer);
+K_TIMER_DEFINE(read_abort_timer, read_abort_timeout, NULL);
+
+
 void init_test(void)
 {
 	uart_dev = device_get_binding(UART_DEVICE_NAME);
@@ -25,7 +29,7 @@ void set_permissions(void)
 {
 	k_thread_access_grant(k_current_get(), &tx_done, &tx_aborted,
 			      &rx_rdy, &rx_buf_released, &rx_disabled,
-			      uart_dev);
+			      uart_dev, &read_abort_timer);
 }
 #endif
 
@@ -68,7 +72,9 @@ void test_single_read_setup(void)
 void test_single_read(void)
 {
 	uint8_t rx_buf[10] = {0};
-	uint8_t tx_buf[5] = "test";
+
+	/* Check also if sending from read only memory (e.g. flash) works. */
+	static const uint8_t tx_buf[5] = "test";
 
 	zassert_not_equal(memcmp(tx_buf, rx_buf, 5), 0,
 			  "Initial buffer check failed");
@@ -99,6 +105,104 @@ void test_single_read(void)
 
 	zassert_equal(memcmp(tx_buf, rx_buf+5, 5), 0, "Buffers not equal");
 	zassert_equal(tx_aborted_count, 0, "TX aborted triggered");
+}
+
+void test_multiple_rx_enable_setup(void)
+{
+	tx_aborted_count = 0;
+
+	/* Reuse the callback from the single_read test case, as this test case
+	 * does not need anything extra in this regard.
+	 */
+	uart_callback_set(uart_dev,
+			  test_single_read_callback,
+			  (void *)&tx_aborted_count);
+
+	k_sem_reset(&rx_rdy);
+	k_sem_reset(&rx_buf_released);
+	k_sem_reset(&rx_disabled);
+	k_sem_reset(&tx_done);
+}
+
+void test_multiple_rx_enable(void)
+{
+	/* Check also if sending from read only memory (e.g. flash) works. */
+	static const uint8_t tx_buf[] = "test";
+	uint8_t rx_buf[sizeof(tx_buf)] = {0};
+	int ret;
+
+	/* Enable RX without a timeout. */
+	ret = uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), SYS_FOREVER_US);
+	zassert_equal(ret, 0, "uart_rx_enable failed");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
+		      "RX_RDY not expected at this point");
+	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), -EAGAIN,
+		      "RX_DISABLED not expected at this point");
+
+	/* Disable RX before any data has been received. */
+	ret = uart_rx_disable(uart_dev);
+	zassert_equal(ret, 0, "uart_rx_disable failed");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
+		      "RX_RDY not expected at this point");
+	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)), 0,
+		      "RX_BUF_RELEASED timeout");
+	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
+		      "RX_DISABLED timeout");
+
+	k_sem_reset(&rx_buf_released);
+	k_sem_reset(&rx_disabled);
+
+	/* Check that RX can be reenabled after "manual" disabling. */
+	ret = uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf),
+			     50 * USEC_PER_MSEC);
+	zassert_equal(ret, 0, "uart_rx_enable failed");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
+		      "RX_RDY not expected at this point");
+
+	/* Send enough data to completely fill RX buffer, so that RX ends. */
+	ret = uart_tx(uart_dev, tx_buf, sizeof(tx_buf), 100 * USEC_PER_MSEC);
+	zassert_equal(ret, 0, "uart_tx failed");
+	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
+		      "Extra RX_RDY received");
+	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)), 0,
+		      "RX_BUF_RELEASED timeout");
+	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
+		      "RX_DISABLED timeout");
+	zassert_equal(tx_aborted_count, 0, "Unexpected TX abort");
+
+	zassert_equal(memcmp(tx_buf, rx_buf, sizeof(tx_buf)), 0,
+		      "Buffers not equal");
+
+	k_sem_reset(&rx_rdy);
+	k_sem_reset(&rx_buf_released);
+	k_sem_reset(&rx_disabled);
+	k_sem_reset(&tx_done);
+	memset(rx_buf, 0, sizeof(rx_buf));
+
+	/* Check that RX can be reenabled after automatic disabling. */
+	ret = uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf),
+			     50 * USEC_PER_MSEC);
+	zassert_equal(ret, 0, "uart_rx_enable failed");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
+		      "RX_RDY not expected at this point");
+
+	/* Fill RX buffer again to confirm that RX still works properly. */
+	ret = uart_tx(uart_dev, tx_buf, sizeof(tx_buf), 100 * USEC_PER_MSEC);
+	zassert_equal(ret, 0, "uart_tx failed");
+	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
+	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
+		      "Extra RX_RDY received");
+	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)), 0,
+		      "RX_BUF_RELEASED timeout");
+	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
+		      "RX_DISABLED timeout");
+	zassert_equal(tx_aborted_count, 0, "Unexpected TX abort");
+
+	zassert_equal(memcmp(tx_buf, rx_buf, sizeof(tx_buf)), 0,
+		      "Buffers not equal");
 }
 
 ZTEST_BMEM uint8_t chained_read_buf0[10];
@@ -266,6 +370,14 @@ void test_read_abort_callback(const struct device *dev,
 	}
 }
 
+static void read_abort_timeout(struct k_timer *timer)
+{
+	int err;
+
+	err = uart_rx_disable(uart_dev);
+	zassert_equal(err, 0, "Unexpected err:%d", err);
+}
+
 void test_read_abort_setup(void)
 {
 	failed_in_isr = false;
@@ -294,12 +406,10 @@ void test_read_abort(void)
 
 	uart_tx(uart_dev, tx_buf, 95, 100 * USEC_PER_MSEC);
 
-	/* Wait for at least one character. RX_RDY event will be generated only
-	 * if there is pending data.
-	 */
-	k_busy_wait(1000);
+	k_timer_start(&read_abort_timer, K_USEC(300), K_NO_WAIT);
 
-	uart_rx_disable(uart_dev);
+	/* RX will be aborted from k_timer timeout */
+
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
 		      "RX_DISABLED timeout");

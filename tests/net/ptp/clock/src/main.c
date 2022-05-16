@@ -10,7 +10,7 @@
 /* Custom PTP device name to avoid conflicts with PTP devices on SOC */
 #define PTP_VIRT_CLOCK_NAME "PTP_CLOCK_VIRT"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -18,20 +18,20 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
 
 #include <ztest.h>
 
-#include <drivers/ptp_clock.h>
-#include <net/ptp_time.h>
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/ptp_time.h>
 
-#include <net/ethernet.h>
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/net_l2.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_l2.h>
 
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -218,7 +218,7 @@ static int my_ptp_clock_adjust(const struct device *dev, int increment)
 	return 0;
 }
 
-static int my_ptp_clock_rate_adjust(const struct device *dev, float ratio)
+static int my_ptp_clock_rate_adjust(const struct device *dev, double ratio)
 {
 	return 0;
 }
@@ -337,11 +337,11 @@ static void test_check_interfaces(void)
 	net_if_foreach(iface_cb, &ud);
 
 	zassert_equal(ud.eth_if_count, MAX_NUM_INTERFACES,
-		      "Invalid numer of ethernet interfaces %d vs %d\n",
+		      "Invalid number of ethernet interfaces %d vs %d\n",
 		      ud.eth_if_count, MAX_NUM_INTERFACES);
 
 	zassert_equal(ud.total_if_count, ud.eth_if_count,
-		      "Invalid numer of interfaces %d vs %d\n",
+		      "Invalid number of interfaces %d vs %d\n",
 		      ud.total_if_count, ud.eth_if_count);
 }
 
@@ -370,7 +370,7 @@ static void test_address_setup(void)
 		zassert_not_null(ifaddr, "addr1\n");
 	}
 
-	/* For testing purposes we need to set the adddresses preferred */
+	/* For testing purposes we need to set the addresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &ll_addr,

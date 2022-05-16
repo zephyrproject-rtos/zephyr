@@ -1,11 +1,20 @@
+&pinctrl {
+	i2s0_default_alt: i2s0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(I2S_SCK_M, 1, 4)>,
+				<NRF_PSEL(I2S_LRCK_M, 1, 3)>,
+				<NRF_PSEL(I2S_SDOUT, 1, 2)>,
+				<NRF_PSEL(I2S_SDIN, 1, 1)>;
+		};
+	};
+};
+
 &uart1 {
 	status = "disabled";
 };
 
 &i2s0 {
 	status = "okay";
-	sck-pin = <36>;
-	lrck-pin = <35>;
-	sdout-pin = <34>;
-	sdin-pin = <33>;
+	pinctrl-0 = <&i2s0_default_alt>;
+	pinctrl-names = "default";
 };

@@ -3,9 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
 
 #define TIMER_IRQ UTIL_CAT(XCHAL_TIMER,		\
 			   UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
@@ -54,16 +55,6 @@ static void ccompare_isr(const void *arg)
 
 	k_spin_unlock(&lock, key);
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
-}
-
-int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONNECT(TIMER_IRQ, 0, ccompare_isr, 0, 0);
-	set_ccompare(ccount() + CYC_PER_TICK);
-	irq_enable(TIMER_IRQ);
-	return 0;
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -122,3 +113,16 @@ void smp_timer_init(void)
 	irq_enable(TIMER_IRQ);
 }
 #endif
+
+static int sys_clock_driver_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	IRQ_CONNECT(TIMER_IRQ, 0, ccompare_isr, 0, 0);
+	set_ccompare(ccount() + CYC_PER_TICK);
+	irq_enable(TIMER_IRQ);
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

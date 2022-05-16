@@ -7,7 +7,7 @@
 #ifndef TEST_MODULE_H
 #define TEST_MODULE_H
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 void test_func(void);
 

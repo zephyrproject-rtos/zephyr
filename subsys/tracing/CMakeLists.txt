@@ -45,6 +45,11 @@ if(NOT CONFIG_PERCEPIO_TRACERECORDER AND NOT CONFIG_TRACING_CTF
   zephyr_sources(tracing_none.c)
 endif()
 
+zephyr_sources_ifdef(
+  CONFIG_TRACING_OBJECT_TRACKING
+  tracing_tracking.c
+  )
+
 zephyr_include_directories_ifdef(
   CONFIG_TRACING
   ${ZEPHYR_BASE}/kernel/include

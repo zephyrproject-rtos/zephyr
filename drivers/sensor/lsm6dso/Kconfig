@@ -56,12 +56,12 @@ config LSM6DSO_THREAD_STACK_SIZE
 endif # LSM6DSO_TRIGGER
 
 config LSM6DSO_ENABLE_TEMP
-	bool "Enable temperature"
+	bool "Temperature"
 	help
 	  Enable/disable temperature
 
 config LSM6DSO_SENSORHUB
-	bool "Enable I2C sensorhub feature"
+	bool "I2C sensorhub feature"
 	help
 	  Enable/disable internal sensorhub. You can enable
 	  a maximum of two external sensors (if more than two are enabled
@@ -70,87 +70,19 @@ config LSM6DSO_SENSORHUB
 if LSM6DSO_SENSORHUB
 
 config LSM6DSO_EXT_LIS2MDL
-	bool "Enable LIS2MDL as external sensor"
+	bool "LIS2MDL as external sensor"
 	default y
 
 config LSM6DSO_EXT_LPS22HH
-	bool "Enable LPS22HH as external sensor"
+	bool "LPS22HH as external sensor"
 	default y
 
 config LSM6DSO_EXT_HTS221
-	bool "Enable HTS221 as external sensor"
+	bool "HTS221 as external sensor"
 
 config LSM6DSO_EXT_LPS22HB
-	bool "Enable LPS22HB as external sensor"
+	bool "LPS22HB as external sensor"
 
 endif # LSM6DSO_SENSORHUB
-
-menu "Attributes"
-
-config LSM6DSO_GYRO_FS
-	int "Gyroscope full-scale range"
-	default 0
-	help
-	  Specify the default gyroscope full-scale range.
-	  An X value for the config represents a range of +/- X degree per
-	  second. Valid values are:
-	  0:  Full Scale selected at runtime
-	  125:   +/- 125dps
-	  250:   +/- 250dps
-	  500:   +/- 500dps
-	  1000:  +/- 1000dps
-	  2000:  +/- 2000dps
-
-config LSM6DSO_GYRO_ODR
-	int "Gyroscope Output data rate frequency"
-	range 0 10
-	default 0
-	help
-	  Specify the default accelerometer output data rate expressed in
-	  samples per second (Hz).
-	  0: ODR selected at runtime
-	  1: 12.5Hz
-	  2: 26Hz
-	  3: 52Hz
-	  4: 104Hz
-	  5: 208Hz
-	  6: 416Hz
-	  7: 833Hz
-	  8: 1660Hz
-	  9: 3330Hz
-	  10: 6660Hz
-
-config LSM6DSO_ACCEL_FS
-	int "Accelerometer full-scale range"
-	default 0
-	help
-	  Specify the default accelerometer full-scale range.
-	  An X value for the config represents a range of +/- X G. Valid values
-	  are:
-	  0:  Full Scale selected at runtime
-	  2:  +/- 2g
-	  4:  +/- 4g
-	  8:  +/- 8g
-	  16: +/- 16g
-
-config LSM6DSO_ACCEL_ODR
-	int "Accelerometer Output data rate frequency"
-	range 0 10
-	default 0
-	help
-	  Specify the default accelerometer output data rate expressed in
-	  samples per second (Hz).
-	  0: ODR selected at runtime
-	  1: 12.5Hz
-	  2: 26Hz
-	  3: 52Hz
-	  4: 104Hz
-	  5: 208Hz
-	  6: 416Hz
-	  7: 833Hz
-	  8: 1660Hz
-	  9: 3330Hz
-	  10: 6660Hz
-endmenu
 
 endif # LSM6DSO

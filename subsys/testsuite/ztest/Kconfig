@@ -10,7 +10,13 @@ config ZTEST
 
 if ZTEST
 
-config ZTEST_STACKSIZE
+config ZTEST_NEW_API
+	bool "Use the new Ztest API"
+	help
+	  Enables the new Ztest APIs for creating suites and unit tests in
+	  separate compilation units as well as the new 'rules' API.
+
+config ZTEST_STACK_SIZE
 	int "Test function thread stack size"
 	default 2048 if COVERAGE_GCOV
 	default 1024
@@ -57,7 +63,6 @@ config ZTEST_RETEST_IF_PASSED
 
 config ZTEST_FATAL_HOOK
 	bool "Using a pre-defined fatal handler and hook function"
-	default n
 	help
 	  Use the pre-defined common fatal error handler and a post hook to
 	  do actions in your test case, this option often enabled when doing
@@ -66,12 +71,57 @@ config ZTEST_FATAL_HOOK
 
 config ZTEST_ASSERT_HOOK
 	bool "Using a pre-defined assert handler and hook function"
-	default n
 	help
 	  Use the pre-defined common assert fail handler and a post hook to
 	  do actions in your test case, this option often enabled when doing
 	  error test case. Remember to add ignore_fault tag in yaml file when
 	  using twister to run testing.
+
+config ZTEST_NO_YIELD
+	bool "Do not yield to the idle thread after tests complete"
+	help
+	  When the tests complete, do not yield to the idle thread and instead
+	  spin in a loop. This is useful for low power mode tests, where
+	  yielding to the idle thread may put the board into a low power state
+	  where a debugger cannot connect to it.
+
+if ZTEST_NEW_API
+
+menu "ztest provided rules"
+
+config ZTEST_RULE_1CPU
+	bool "Run all the tests on a single CPU"
+	help
+	  This rule will call z_test_1cpu_start before each unit test and
+	  ztest_1cpu_stop after each test.
+
+endmenu
+
+config ZTEST_SHUFFLE
+	bool "Shuffle the order of tests and suites"
+	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
+	help
+	  This rule will shuffle the order of tests and test suites.
+
+if ZTEST_SHUFFLE
+config ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
+	int "Number of iterations the test suite will run"
+	default 3
+	help
+	  This rule will execute a test suite N number of times. The tests
+	  per suite will be shuffled on each iteration.  The test order will likely
+	  be different per iteration.
+
+config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+	int "Number of iterations the test will run"
+	default 3
+	help
+	  This rule will execute a test N number of times.  The test order will
+	  likely be different per iteration.
+
+endif #ZTEST_SHUFFLE
+
+endif # ZTEST_NEW_API
 
 endif # ZTEST
 
@@ -87,3 +137,29 @@ config ZTEST_PARAMETER_COUNT
 	depends on ZTEST_MOCKING
 	help
 	  Maximum amount of concurrent return values / expected parameters.
+
+config ZTRESS
+	bool "Stress test framework"
+	select THREAD_RUNTIME_STATS
+	select THREAD_MONITOR
+	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
+	depends on !USERSPACE
+
+if ZTRESS
+
+config ZTRESS_MAX_THREADS
+	int "Maximum number of threads in ztress framework"
+	default 3
+	range 1 16
+
+config ZTRESS_STACK_SIZE
+	int "Stack size of Ztress thread"
+	default 4096 if NO_OPTIMIZATIONS
+	default 2048
+
+config ZTRESS_REPORT_PROGRESS_MS
+	int "Progress report interval (in milliseconds)"
+	default 1000
+	help
+	  Use 0 to disable.
+endif # ZTRESS

@@ -2,7 +2,7 @@ description: STM32 CAN controller
 
 compatible: "st,stm32-can"
 
-include: can-controller.yaml
+include: [can-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -15,13 +15,18 @@ properties:
       required: true
 
     pinctrl-0:
-      type: phandles
+      required: true
+
+    pinctrl-names:
+      required: true
+
+    one-shot:
+      type: boolean
       required: false
       description: |
-        GPIO pin configuration for CAN RX and TX. The phandles are
-        expected to reference pinctrl nodes, e.g.
-
-          pinctrl-0 = <&can1_rx_pa11 &can1_tx_pa12>;
+        Disable automatic retransmissions. A CAN frame will only be transmitted
+        once, independently of the transmission result (successful, error, or
+        arbitration lost).
 
     master-can-reg:
       type: int

@@ -9,6 +9,21 @@ set(WORKSPACE_RELATIVE_DIR "../../../../..")
 # Relative directory of Zephyr dir as seen from Zephyr package file
 set(ZEPHYR_RELATIVE_DIR "../../../..")
 
+# This function updates Zephyr_DIR to the point to the candidate dir.
+# For Zephyr 3.0 and earlier, the Zephyr_DIR might in some cases be
+# `Zephyr_DIR-NOTFOUND` or pointing to the Zephyr package including the
+# boilerplate code instead of the Zephyr package of the included boilerplate.
+# This code ensures that when Zephyr releases <=3.0 is loaded, then Zephyr_DIR
+# will point correctly, see also #43094 which relates to this.
+function(set_zephyr_dir zephyr_candidate)
+  get_filename_component(zephyr_candidate_dir "${zephyr_candidate}" DIRECTORY)
+  if(NOT "${zephyr_candidate_dir}" STREQUAL "${Zephyr_DIR}")
+    set(Zephyr_DIR ${zephyr_candidate_dir} CACHE PATH
+        "The directory containing a CMake configuration file for Zephyr." FORCE
+    )
+  endif()
+endfunction()
+
 # This macro returns a list of parent folders to use for later searches.
 macro(get_search_paths START_PATH SEARCH_PATHS PREFERENCE_LIST)
   get_filename_component(SEARCH_PATH ${START_PATH} DIRECTORY)
@@ -79,6 +94,7 @@ macro(check_zephyr_package)
           return()
         else()
           include(${ZEPHYR_CANDIDATE} NO_POLICY_SCOPE)
+          set_zephyr_dir(${ZEPHYR_CANDIDATE})
           return()
         endif()
     endif()
@@ -99,6 +115,7 @@ macro(check_zephyr_package)
           return()
 	else()
           include(${ZEPHYR_CANDIDATE} NO_POLICY_SCOPE)
+          set_zephyr_dir(${ZEPHYR_CANDIDATE})
 	  return()
         endif()
       endif()

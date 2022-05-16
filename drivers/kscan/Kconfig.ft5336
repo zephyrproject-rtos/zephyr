@@ -20,7 +20,7 @@ config KSCAN_FT5336_PERIOD
 	  Sample period in milliseconds when in polling mode.
 
 config KSCAN_FT5336_INTERRUPT
-	bool "Enable interrupt"
+	bool "Interrupt"
 	help
 	  Enable interrupt support (requires GPIO).
 

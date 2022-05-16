@@ -7,6 +7,7 @@
 flash_controller: flash-controller@39000 {
 	compatible = "nordic,nrf91-flash-controller";
 	reg = <0x39000 0x1000>;
+	partial-erase;
 
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -77,6 +78,14 @@ egu5: egu@20000 {
 	reg = <0x20000 0x1000>;
 	interrupts = <32 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
+};
+
+ipc: ipc@2a000 {
+	compatible = "nordic,nrf-ipc";
+	reg = <0x2a000 0x1000>;
+	interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "okay";
+	label = "IPC";
 };
 
 i2s0: i2s@28000 {
@@ -154,6 +163,7 @@ i2c0: i2c@8000 {
 	 * compatible = "nordic,nrf-twim" or
 	 *              "nordic,nrf-twis".
 	 */
+	compatible = "nordic,nrf-twim";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
@@ -169,6 +179,7 @@ i2c1: i2c@9000 {
 	 * compatible = "nordic,nrf-twim" or
 	 *              "nordic,nrf-twis".
 	 */
+	compatible = "nordic,nrf-twim";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9000 0x1000>;
@@ -184,6 +195,7 @@ i2c2: i2c@a000 {
 	 * compatible = "nordic,nrf-twim" or
 	 *              "nordic,nrf-twis".
 	 */
+	compatible = "nordic,nrf-twim";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
@@ -199,6 +211,7 @@ i2c3: i2c@b000 {
 	 * compatible = "nordic,nrf-twim" or
 	 *              "nordic,nrf-twis".
 	 */
+	compatible = "nordic,nrf-twim";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;
@@ -214,6 +227,7 @@ spi0: spi@8000 {
 	 * compatible = "nordic,nrf-spim" or
 	 *              "nordic,nrf-spis".
 	 */
+	compatible = "nordic,nrf-spim";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
@@ -228,6 +242,7 @@ spi1: spi@9000 {
 	 * compatible = "nordic,nrf-spim" or
 	 *              "nordic,nrf-spis".
 	 */
+	compatible = "nordic,nrf-spim";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9000 0x1000>;
@@ -242,6 +257,7 @@ spi2: spi@a000 {
 	 * compatible = "nordic,nrf-spim" or
 	 *              "nordic,nrf-spis".
 	 */
+	compatible = "nordic,nrf-spim";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
@@ -256,6 +272,7 @@ spi3: spi@b000 {
 	 * compatible = "nordic,nrf-spim" or
 	 *              "nordic,nrf-spis".
 	 */
+	compatible = "nordic,nrf-spim";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;
@@ -270,7 +287,7 @@ pwm0: pwm@21000 {
 	interrupts = <33 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_0";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pwm1: pwm@22000 {
@@ -279,7 +296,7 @@ pwm1: pwm@22000 {
 	interrupts = <34 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_1";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pwm2: pwm@23000 {
@@ -288,7 +305,7 @@ pwm2: pwm@23000 {
 	interrupts = <35 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_2";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 pwm3: pwm@24000 {
@@ -297,7 +314,7 @@ pwm3: pwm@24000 {
 	interrupts = <36 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
 	label = "PWM_3";
-	#pwm-cells = <1>;
+	#pwm-cells = <3>;
 };
 
 gpio0: gpio@842500 {
@@ -348,7 +365,7 @@ power: power@5000 {
 };
 
 wdt: wdt0: watchdog@18000 {
-	compatible = "nordic,nrf-watchdog";
+	compatible = "nordic,nrf-wdt";
 	reg = <0x18000 0x1000>;
 	interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";

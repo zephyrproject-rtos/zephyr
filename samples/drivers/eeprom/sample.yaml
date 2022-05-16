@@ -2,18 +2,18 @@ sample:
   name: EEPROM Sample
 common:
     tags: eeprom
-    integration_platforms:
-      - native_posix
     harness: console
     harness_config:
       type: one_line
       regex:
-        - "Reset the MCU to see the inceasing boot counter."
+        - "Reset the MCU to see the increasing boot counter."
 
 tests:
   sample.drivers.eeprom:
     tags: eeprom
-    platform_allow: native_posix
+    platform_allow: native_posix gd32f450i_eval
+    integration_platforms:
+      - native_posix
   sample.drivers.eeprom.shield.x_nucleo_eeprma2:
     tags: eeprom shield
     depends_on: arduino_gpio arduino_i2c arduino_spi
@@ -22,3 +22,5 @@ tests:
     harness: console
     harness_config:
         fixture: fixture_shield_x_nucleo_eeprma2
+    integration_platforms:
+      - nucleo_f070rb

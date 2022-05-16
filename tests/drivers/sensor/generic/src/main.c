@@ -236,9 +236,9 @@ void test_sensor_handle_triggers(void)
 
 		/* check the result of the trigger channel */
 		zassert_equal(data.val1, trigger_elements[i].data.val1,
-				"retrived data is not match.");
+				"retrieved data is not match.");
 		zassert_equal(data.val2, trigger_elements[i].data.val2,
-				"retrived data is not match.");
+				"retrieved data is not match.");
 
 		/* set attributes for no trig dev */
 		zassert_equal(sensor_attr_set(dev_no_trig,
@@ -263,7 +263,7 @@ void test_sensor_handle_triggers(void)
 }
 
 /**
- * @brief Test unit coversion of sensor module
+ * @brief Test unit conversion of sensor module
  * @details Verify helper function to convert acceleration from
  * Gs to m/s^2 and from m/s^2 to Gs.  Verify helper function
  * to convert radians to degrees and degrees to radians.  Verify

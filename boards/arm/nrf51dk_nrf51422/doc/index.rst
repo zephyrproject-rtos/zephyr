@@ -75,7 +75,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `nRF51 DK website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF51 Development Kit board hardware features.
 

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_LLDP
-	bool "Enable Link Layer Discovery Protocol (LLDP)"
+	bool "Link Layer Discovery Protocol (LLDP)"
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	help
@@ -43,7 +43,7 @@ config NET_LLDP_TX_HOLD
 # End of LLDPDU TLV CONFIG
 #
 config NET_LLDP_END_LLDPDU_TLV_ENABLED
-	bool "Enable End of LLDPDU TLV"
+	bool "End of LLDPDU TLV"
 	default y
 	help
 	  Tells whether LLDPDU packet will have marker at the end of the packet.

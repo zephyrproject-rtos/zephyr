@@ -12,12 +12,12 @@
  *        for RISC-V processors
  */
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
-#include <sw_isr_table.h>
+#include <zephyr/sw_isr_table.h>
 
 #define PLIC_MAX_PRIO	DT_INST_PROP(0, riscv_max_priority)
 #define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME(0, prio)
@@ -35,16 +35,14 @@ struct plic_regs_t {
 static int save_irq;
 
 /**
- *
  * @brief Enable a riscv PLIC-specific interrupt line
  *
  * This routine enables a RISCV PLIC-specific interrupt line.
  * riscv_plic_irq_enable is called by SOC_FAMILY_RISCV_PRIVILEGE
  * arch_irq_enable function to enable external interrupts for
  * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
- * @param irq IRQ number to enable
  *
- * @return N/A
+ * @param irq IRQ number to enable
  */
 void riscv_plic_irq_enable(uint32_t irq)
 {
@@ -58,16 +56,14 @@ void riscv_plic_irq_enable(uint32_t irq)
 }
 
 /**
- *
  * @brief Disable a riscv PLIC-specific interrupt line
  *
  * This routine disables a RISCV PLIC-specific interrupt line.
  * riscv_plic_irq_disable is called by SOC_FAMILY_RISCV_PRIVILEGE
  * arch_irq_disable function to disable external interrupts, for
  * IRQS level == 2, whenever CONFIG_RISCV_HAS_PLIC variable is set.
- * @param irq IRQ number to disable
  *
- * @return N/A
+ * @param irq IRQ number to disable
  */
 void riscv_plic_irq_disable(uint32_t irq)
 {
@@ -81,7 +77,6 @@ void riscv_plic_irq_disable(uint32_t irq)
 }
 
 /**
- *
  * @brief Check if a riscv PLIC-specific interrupt line is enabled
  *
  * This routine checks if a RISCV PLIC-specific interrupt line is enabled.
@@ -98,15 +93,14 @@ int riscv_plic_irq_is_enabled(uint32_t irq)
 }
 
 /**
- *
  * @brief Set priority of a riscv PLIC-specific interrupt line
  *
  * This routine set the priority of a RISCV PLIC-specific interrupt line.
  * riscv_plic_irq_set_prio is called by riscv arch_irq_priority_set to set
  * the priority of an interrupt whenever CONFIG_RISCV_HAS_PLIC variable is set.
- * @param irq IRQ number for which to set priority
  *
- * @return N/A
+ * @param irq IRQ number for which to set priority
+ * @param priority Priority of IRQ to set to
  */
 void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 {
@@ -120,14 +114,12 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 }
 
 /**
- *
  * @brief Get riscv PLIC-specific interrupt line causing an interrupt
  *
  * This routine returns the RISCV PLIC-specific interrupt line causing an
  * interrupt.
- * @param irq IRQ number for which to set priority
  *
- * @return N/A
+ * @return PLIC-specific interrupt line causing an interrupt.
  */
 int riscv_plic_get_irq(void)
 {
@@ -174,9 +166,9 @@ static void plic_irq_handler(const void *arg)
 }
 
 /**
- *
  * @brief Initialize the Platform Level Interrupt Controller
- * @return N/A
+ *
+ * @retval 0 on success.
  */
 static int plic_init(const struct device *dev)
 {
@@ -216,4 +208,4 @@ static int plic_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(plic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(plic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);

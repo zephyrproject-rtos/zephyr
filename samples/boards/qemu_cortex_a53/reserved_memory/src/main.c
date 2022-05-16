@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <linker/linker-defs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/linker-defs.h>
 
 /* Variables placed in reserved sections */
 uint32_t var_in_res0 __attribute((__section__(".res0"))) = 0xaabbccdd;

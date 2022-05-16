@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/g0/stm32g071Xb.dtsi>
 #include <st/g0/stm32g071r(6-8-b)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/sensor/ina230.h>
 
 / {
 	model = "STM32G071B DEMO board";
@@ -63,6 +64,24 @@
 		};
 	};
 
+	cc_config {
+		compatible = "gpio-leds";
+		encc1 {
+			gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+			label = "ENCC1";
+		};
+
+		encc2 {
+			gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+			label = "ENCC2";
+		};
+
+		rdcc1 {
+			gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+			label = "RDCC1";
+		};
+	};
+
 	aliases {
 		led0 = &red_led_4;
 		led1 = &red_led_5;
@@ -99,8 +118,65 @@
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	/*
+	 * Use U10, INA230 to measure VBUS. I2C Address: 0x40
+	 */
+	vbus_meas: ina230@40 {
+		status = "okay";
+		compatible = "ti,ina230";
+		label = "VBUS";
+		reg = <0x40>;
+		config = <INA230_CONFIG(
+			INA230_OPER_MODE_BUS_VOLTAGE_CONT,
+			INA230_CONV_TIME_1100,
+			INA230_CONV_TIME_1100,
+			INA230_AVG_MODE_1)>;
+		/* Set current LSB to 1mA */
+		current-lsb = <1>;
+		/* Set shunt resistor value to 15 milliohms */
+		rshunt = <15>;
+	};
+};
+
+&ucpd1 {
+	status = "okay";
+
+	/*
+	 * UCPD is fed directly from HSI which is @ 16MHz. The ucpd_clk goes to
+	 * a prescaler who's output feeds the 'half-bit' divider which is used
+	 * to generate clock for delay counters and BMC Rx/Tx blocks. The rx is
+	 * designed to work in freq ranges of 6 <--> 18 MHz, however recommended
+	 * range is 9 <--> 18 MHz.
+	 *
+	 *          +-------+ @ 16 MHz +-------+   @ ~600 kHz   +-----------+
+	 * HSI ---->| /psc  |--------->| /hbit |--------------->| trans_cnt |
+	 *          +-------+          +-------+   |            +-----------+
+	 *                                         |            +-----------+
+	 *                                         +----------->| ifrgap_cnt|
+	 *                                                      +-----------+
+	 * Requirements:
+	 *   1. hbit_clk ~= 600 kHz: 16 MHz / 600 kHz = 26.67
+	 *   2. tTransitionWindow - 12 to 20 uSec
+	 *   3. tInterframGap - uSec
+	 *
+	 * hbit_clk = HSI_clk / 27 = 592.6 kHz = 1.687 uSec period
+	 * tTransitionWindow = 1.687 uS * 8 = 13.5 uS
+	 * tInterFrameGap = 1.687 uS * 17 = 28.68 uS
+	 */
+	psc-ucpdclk = <1>;
+	hbitclkdiv = <27>;
 };
 
 &iwdg {

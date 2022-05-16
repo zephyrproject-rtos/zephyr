@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <kernel.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <drivers/can.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
 
 #define RX_THREAD_STACK_SIZE 512
 #define RX_THREAD_PRIORITY 2
@@ -30,20 +30,29 @@ struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
 struct k_thread rx_thread_data;
 struct k_thread poll_state_thread_data;
-struct zcan_work rx_work;
+struct k_work_poll change_led_work;
 struct k_work state_change_work;
 enum can_state current_state;
 struct can_bus_err_cnt current_err_cnt;
 
-CAN_DEFINE_MSGQ(counter_msgq, 2);
+CAN_MSGQ_DEFINE(change_led_msgq, 2);
+CAN_MSGQ_DEFINE(counter_msgq, 2);
 
-void tx_irq_callback(uint32_t error_flags, void *arg)
+static struct k_poll_event change_led_events[1] = {
+	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&change_led_msgq, 0)
+};
+
+void tx_irq_callback(const struct device *dev, int error, void *arg)
 {
 	char *sender = (char *)arg;
 
-	if (error_flags) {
+	ARG_UNUSED(dev);
+
+	if (error != 0) {
 		printk("Callback! error-code: %d\nSender: %s\n",
-		       error_flags, sender);
+		       error, sender);
 	}
 }
 
@@ -62,7 +71,7 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	struct zcan_frame msg;
 	int filter_id;
 
-	filter_id = can_attach_msgq(can_dev, &counter_msgq, &filter);
+	filter_id = can_add_rx_filter_msgq(can_dev, &counter_msgq, &filter);
 	printk("Counter filter id: %d\n", filter_id);
 
 	while (1) {
@@ -78,22 +87,23 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-void change_led(struct zcan_frame *msg, void *unused)
+void change_led_work_handler(struct k_work *work)
 {
-	ARG_UNUSED(unused);
+	struct zcan_frame frame;
+	int ret;
 
-	if (led.port == NULL) {
-		printk("LED %s\n", msg->data[0] == SET_LED ? "ON" : "OFF");
-		return;
+	while (k_msgq_get(&change_led_msgq, &frame, K_NO_WAIT) == 0) {
+		if (led.port == NULL) {
+			printk("LED %s\n", frame.data[0] == SET_LED ? "ON" : "OFF");
+		} else {
+			gpio_pin_set(led.port, led.pin, frame.data[0] == SET_LED ? 1 : 0);
+		}
 	}
 
-	switch (msg->data[0]) {
-	case SET_LED:
-		gpio_pin_set(led.port, led.pin, 1);
-		break;
-	case RESET_LED:
-		gpio_pin_set(led.port, led.pin, 0);
-		break;
+	ret = k_work_poll_submit(&change_led_work, change_led_events,
+				 ARRAY_SIZE(change_led_events), K_FOREVER);
+	if (ret != 0) {
+		printk("Failed to resubmit msgq polling: %d", ret);
 	}
 }
 
@@ -102,6 +112,8 @@ char *state_to_str(enum can_state state)
 	switch (state) {
 	case CAN_ERROR_ACTIVE:
 		return "error-active";
+	case CAN_ERROR_WARNING:
+		return "error-warning";
 	case CAN_ERROR_PASSIVE:
 		return "error-passive";
 	case CAN_BUS_OFF:
@@ -117,9 +129,16 @@ void poll_state_thread(void *unused1, void *unused2, void *unused3)
 	struct can_bus_err_cnt err_cnt_prev = {0, 0};
 	enum can_state state_prev = CAN_ERROR_ACTIVE;
 	enum can_state state;
+	int err;
 
 	while (1) {
-		state = can_get_state(can_dev, &err_cnt);
+		err = can_get_state(can_dev, &state, &err_cnt);
+		if (err != 0) {
+			printk("Failed to get CAN controller state: %d", err);
+			k_sleep(K_MSEC(100));
+			continue;
+		}
+
 		if (err_cnt.tx_err_cnt != err_cnt_prev.tx_err_cnt ||
 		    err_cnt.rx_err_cnt != err_cnt_prev.rx_err_cnt ||
 		    state_prev != state) {
@@ -157,11 +176,16 @@ void state_change_work_handler(struct k_work *work)
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 }
 
-void state_change_isr(enum can_state state, struct can_bus_err_cnt err_cnt)
+void state_change_callback(const struct device *dev, enum can_state state,
+			   struct can_bus_err_cnt err_cnt, void *user_data)
 {
+	struct k_work *work = (struct k_work *)user_data;
+
+	ARG_UNUSED(dev);
+
 	current_state = state;
 	current_err_cnt = err_cnt;
-	k_work_submit(&state_change_work);
+	k_work_submit(work);
 }
 
 void main(void)
@@ -196,7 +220,11 @@ void main(void)
 	}
 
 #ifdef CONFIG_LOOPBACK_MODE
-	can_set_mode(can_dev, CAN_LOOPBACK_MODE);
+	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+	if (ret != 0) {
+		printk("Error setting CAN mode [%d]", ret);
+		return;
+	}
 #endif
 
 	if (led.port != NULL) {
@@ -213,17 +241,23 @@ void main(void)
 		}
 	}
 
-
 	k_work_init(&state_change_work, state_change_work_handler);
+	k_work_poll_init(&change_led_work, change_led_work_handler);
 
-	ret = can_attach_workq(can_dev, &k_sys_work_q, &rx_work, change_led,
-			       NULL, &change_led_filter);
-	if (ret == CAN_NO_FREE_FILTER) {
+	ret = can_add_rx_filter_msgq(can_dev, &change_led_msgq, &change_led_filter);
+	if (ret == -ENOSPC) {
 		printk("Error, no filter available!\n");
 		return;
 	}
 
 	printk("Change LED filter ID: %d\n", ret);
+
+	ret = k_work_poll_submit(&change_led_work, change_led_events,
+				 ARRAY_SIZE(change_led_events), K_FOREVER);
+	if (ret != 0) {
+		printk("Failed to submit msgq polling: %d", ret);
+		return;
+	}
 
 	rx_tid = k_thread_create(&rx_thread_data, rx_thread_stack,
 				 K_THREAD_STACK_SIZEOF(rx_thread_stack),
@@ -232,7 +266,6 @@ void main(void)
 	if (!rx_tid) {
 		printk("ERROR spawning rx thread\n");
 	}
-
 
 	get_state_tid = k_thread_create(&poll_state_thread_data,
 					poll_state_stack,
@@ -244,7 +277,7 @@ void main(void)
 		printk("ERROR spawning poll_state_thread\n");
 	}
 
-	can_register_state_change_isr(can_dev, state_change_isr);
+	can_set_state_change_callback(can_dev, state_change_callback, &state_change_work);
 
 	printk("Finished init.\n");
 

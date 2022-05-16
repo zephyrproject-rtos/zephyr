@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -17,7 +17,9 @@
 #define REL_ERROR_THRESH	(1.0e-6)
 #define ABS_ERROR_THRESH	(1.0e-5)
 
-static void test_arm_cos_f32(void)
+ZTEST_SUITE(fastmath_f32, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(fastmath_f32, test_arm_cos_f32)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(in_angles);
@@ -47,7 +49,7 @@ static void test_arm_cos_f32(void)
 	free(output);
 }
 
-static void test_arm_sin_f32(void)
+ZTEST(fastmath_f32, test_arm_sin_f32)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(in_angles);
@@ -77,7 +79,7 @@ static void test_arm_sin_f32(void)
 	free(output);
 }
 
-static void test_arm_sqrt_f32(void)
+ZTEST(fastmath_f32, test_arm_sqrt_f32)
 {
 	size_t index;
 	size_t length = ARRAY_SIZE(in_sqrt);
@@ -146,10 +148,10 @@ static void test_arm_vlog_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_vlog_f32, all, in_log, ref_log, 25);
-DEFINE_TEST_VARIANT3(arm_vlog_f32, 3, in_log, ref_log, 3);
-DEFINE_TEST_VARIANT3(arm_vlog_f32, 8, in_log, ref_log, 8);
-DEFINE_TEST_VARIANT3(arm_vlog_f32, 11, in_log, ref_log, 11);
+DEFINE_TEST_VARIANT3(fastmath_f32, arm_vlog_f32, all, in_log, ref_log, 25);
+DEFINE_TEST_VARIANT3(fastmath_f32, arm_vlog_f32, 3, in_log, ref_log, 3);
+DEFINE_TEST_VARIANT3(fastmath_f32, arm_vlog_f32, 8, in_log, ref_log, 8);
+DEFINE_TEST_VARIANT3(fastmath_f32, arm_vlog_f32, 11, in_log, ref_log, 11);
 
 static void test_arm_vexp_f32(
 	const uint32_t *input1, const uint32_t *ref, size_t length)
@@ -178,26 +180,7 @@ static void test_arm_vexp_f32(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_vexp_f32, all, in_exp, ref_exp, 52);
-DEFINE_TEST_VARIANT3(arm_vexp_f32, 3, in_exp, ref_exp, 3);
-DEFINE_TEST_VARIANT3(arm_vexp_f32, 8, in_exp, ref_exp, 8);
-DEFINE_TEST_VARIANT3(arm_vexp_f32, 11, in_exp, ref_exp, 11);
-
-void test_fastmath_f32(void)
-{
-	ztest_test_suite(fastmath_f32,
-		ztest_unit_test(test_arm_cos_f32),
-		ztest_unit_test(test_arm_sin_f32),
-		ztest_unit_test(test_arm_sqrt_f32),
-		ztest_unit_test(test_arm_vlog_f32_all),
-		ztest_unit_test(test_arm_vlog_f32_3),
-		ztest_unit_test(test_arm_vlog_f32_8),
-		ztest_unit_test(test_arm_vlog_f32_11),
-		ztest_unit_test(test_arm_vexp_f32_all),
-		ztest_unit_test(test_arm_vexp_f32_3),
-		ztest_unit_test(test_arm_vexp_f32_8),
-		ztest_unit_test(test_arm_vexp_f32_11)
-		);
-
-	ztest_run_test_suite(fastmath_f32);
-}
+DEFINE_TEST_VARIANT3(fastmath_f32, arm_vexp_f32, all, in_exp, ref_exp, 52);
+DEFINE_TEST_VARIANT3(fastmath_f32, arm_vexp_f32, 3, in_exp, ref_exp, 3);
+DEFINE_TEST_VARIANT3(fastmath_f32, arm_vexp_f32, 8, in_exp, ref_exp, 8);
+DEFINE_TEST_VARIANT3(fastmath_f32, arm_vexp_f32, 11, in_exp, ref_exp, 11);

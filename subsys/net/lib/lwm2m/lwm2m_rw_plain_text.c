@@ -59,7 +59,7 @@
 #define LOG_MODULE_NAME net_lwm2m_plain_text
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdarg.h>
@@ -76,84 +76,85 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* some temporary buffer space for format conversions */
 static char pt_buffer[42];
 
-size_t plain_text_put_format(struct lwm2m_output_context *out,
-			     const char *format, ...)
+int plain_text_put_format(struct lwm2m_output_context *out, const char *format,
+			  ...)
 {
 	va_list vargs;
-	int n;
+	int n, ret;
 
 	va_start(vargs, format);
 	n = vsnprintk(pt_buffer, sizeof(pt_buffer), format, vargs);
 	va_end(vargs);
-	if (n < 0) {
-		/* TODO: generate an error? */
-		return 0;
+	if (n < 0 || n >= sizeof(pt_buffer)) {
+		return -EINVAL;
 	}
 
-	n = strlen(pt_buffer);
-	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, n) < 0) {
-		return 0;
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, n);
+	if (ret < 0) {
+		return ret;
 	}
 
-	return (size_t)n;
+	return n;
 }
 
-static size_t put_s32(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, int32_t value)
+static int put_s32(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path, int32_t value)
 {
 	return plain_text_put_format(out, "%d", value);
 }
 
-static size_t put_s8(struct lwm2m_output_context *out,
-		     struct lwm2m_obj_path *path, int8_t value)
+static int put_s8(struct lwm2m_output_context *out, struct lwm2m_obj_path *path,
+		  int8_t value)
 {
 	return plain_text_put_format(out, "%d", value);
 }
 
-static size_t put_s16(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, int16_t value)
+static int put_s16(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path, int16_t value)
 {
 	return plain_text_put_format(out, "%d", value);
 }
 
-static size_t put_s64(struct lwm2m_output_context *out,
-		      struct lwm2m_obj_path *path, int64_t value)
+static int put_s64(struct lwm2m_output_context *out,
+		   struct lwm2m_obj_path *path, int64_t value)
 {
 	return plain_text_put_format(out, "%lld", value);
 }
 
-size_t plain_text_put_float(struct lwm2m_output_context *out,
-			    struct lwm2m_obj_path *path,
-			    double *value)
+int plain_text_put_float(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path, double *value)
 {
-	int len = lwm2m_ftoa(value, pt_buffer, sizeof(pt_buffer), 15);
+	int len, ret;
 
+	len = lwm2m_ftoa(value, pt_buffer, sizeof(pt_buffer), 15);
 	if (len < 0 || len >= sizeof(pt_buffer)) {
 		LOG_ERR("Failed to encode float value");
-		return 0;
+		return -EINVAL;
 	}
 
-	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, len) < 0) {
-		return 0;
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, len);
+	if (ret < 0) {
+		return ret;
 	}
 
-	return (size_t)len;
+	return len;
 }
 
-static size_t put_string(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path,
-			 char *buf, size_t buflen)
+static int put_string(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path, char *buf, size_t buflen)
 {
-	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, buflen) < 0) {
-		return 0;
+	int ret;
+
+	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, buflen);
+	if (ret < 0) {
+		return ret;
 	}
 
 	return buflen;
 }
 
-static size_t put_bool(struct lwm2m_output_context *out,
-		       struct lwm2m_obj_path *path,
-		       bool value)
+static int put_bool(struct lwm2m_output_context *out,
+		    struct lwm2m_obj_path *path, bool value)
 {
 	if (value) {
 		return plain_text_put_format(out, "%u", 1);
@@ -162,20 +163,24 @@ static size_t put_bool(struct lwm2m_output_context *out,
 	}
 }
 
-static size_t put_objlnk(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path,
-			 struct lwm2m_objlnk *value)
+static int put_objlnk(struct lwm2m_output_context *out,
+		      struct lwm2m_obj_path *path, struct lwm2m_objlnk *value)
 {
 	return plain_text_put_format(out, "%u:%u", value->obj_id,
 				     value->obj_inst);
 }
 
-static size_t plain_text_read_int(struct lwm2m_input_context *in,
-				  int64_t *value, bool accept_sign)
+static int plain_text_read_int(struct lwm2m_input_context *in, int64_t *value,
+			       bool accept_sign)
 {
 	int i = 0;
 	bool neg = false;
 	uint8_t tmp;
+
+	if (in->offset >= in->in_cpkt->offset) {
+		/* No remaining data in the payload. */
+		return -ENODATA;
+	}
 
 	/* initialize values to 0 */
 	*value = 0;
@@ -206,7 +211,7 @@ static size_t plain_text_read_int(struct lwm2m_input_context *in,
 	return i;
 }
 
-static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
+static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 {
 	int64_t tmp = 0;
 	size_t len = 0;
@@ -219,20 +224,20 @@ static size_t get_s32(struct lwm2m_input_context *in, int32_t *value)
 	return len;
 }
 
-static size_t get_s64(struct lwm2m_input_context *in, int64_t *value)
+static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 {
 	return plain_text_read_int(in, value, true);
 }
 
-static size_t get_string(struct lwm2m_input_context *in,
-			 uint8_t *value, size_t buflen)
+static int get_string(struct lwm2m_input_context *in, uint8_t *value,
+		      size_t buflen)
 {
 	uint16_t in_len;
 
 	coap_packet_get_payload(in->in_cpkt, &in_len);
 
 	if (in_len > buflen) {
-		/* TODO: generate warning? */
+		LOG_ERR("Buffer too small to accommodate string, truncating");
 		in_len = buflen - 1;
 	}
 
@@ -246,13 +251,17 @@ static size_t get_string(struct lwm2m_input_context *in,
 	return (size_t)in_len;
 }
 
-static size_t get_float(struct lwm2m_input_context *in,
-			double *value)
+static int get_float(struct lwm2m_input_context *in, double *value)
 {
 	size_t i = 0, len = 0;
 	bool has_dot = false;
 	uint8_t tmp, buf[24];
+	int ret;
 
+	if (in->offset >= in->in_cpkt->offset) {
+		/* No remaining data in the payload. */
+		return -ENODATA;
+	}
 
 	while (in->offset < in->in_cpkt->offset) {
 		if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt),
@@ -283,39 +292,50 @@ static size_t get_float(struct lwm2m_input_context *in,
 
 	buf[i] = '\0';
 
-	if (lwm2m_atof(buf, value) != 0) {
+	ret = lwm2m_atof(buf, value);
+	if (ret != 0) {
 		LOG_ERR("Failed to parse float value");
+		return -EBADMSG;
 	}
 
 	return len;
 }
 
-static size_t get_bool(struct lwm2m_input_context *in,
-		       bool *value)
+static int get_bool(struct lwm2m_input_context *in, bool *value)
 {
 	uint8_t tmp;
+	int ret;
 
-	if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt), &in->offset) < 0) {
-		return 0;
+	if (in->offset >= in->in_cpkt->offset) {
+		/* No remaining data in the payload. */
+		return -ENODATA;
 	}
 
-	if (tmp == '1' || tmp == '0') {
-		*value = (tmp == '1') ? true : false;
-		return 1;
+	ret = buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt), &in->offset);
+	if (ret < 0) {
+		return ret;
 	}
 
-	return 0;
+	if (tmp != '1' && tmp != '0') {
+		return -EBADMSG;
+	}
+
+	*value = (tmp == '1') ? true : false;
+	return sizeof(uint8_t);
 }
 
-static size_t get_opaque(struct lwm2m_input_context *in,
-			 uint8_t *value, size_t buflen,
-			 struct lwm2m_opaque_context *opaque,
-			 bool *last_block)
+static int get_opaque(struct lwm2m_input_context *in, uint8_t *value,
+		      size_t buflen, struct lwm2m_opaque_context *opaque,
+		      bool *last_block)
 {
 	uint16_t in_len;
 
 	if (opaque->remaining == 0) {
 		coap_packet_get_payload(in->in_cpkt, &in_len);
+
+		if (in_len == 0) {
+			return -ENODATA;
+		}
 
 		if (in->block_ctx != NULL) {
 			uint32_t block_num =
@@ -347,24 +367,33 @@ static size_t get_opaque(struct lwm2m_input_context *in,
 					    opaque, last_block);
 }
 
-
-static size_t get_objlnk(struct lwm2m_input_context *in,
-			 struct lwm2m_objlnk *value)
+static int get_objlnk(struct lwm2m_input_context *in,
+		      struct lwm2m_objlnk *value)
 {
 	int64_t tmp;
-	size_t len;
+	int len, total_len;
 
 	len = plain_text_read_int(in, &tmp, false);
+	if (len <= 0) {
+		return -ENODATA;
+	}
+
+	total_len = len;
 	value->obj_id = (uint16_t)tmp;
 
-	/* Skip ':' delimeter. */
+	/* Skip ':' delimiter. */
+	total_len++;
 	in->offset++;
-	len++;
 
-	len += plain_text_read_int(in, &tmp, false);
+	len = plain_text_read_int(in, &tmp, false);
+	if (len <= 0) {
+		return -ENODATA;
+	}
+
+	total_len += len;
 	value->obj_inst = (uint16_t)tmp;
 
-	return len;
+	return total_len;
 }
 
 const struct lwm2m_writer plain_text_writer = {
@@ -374,6 +403,7 @@ const struct lwm2m_writer plain_text_writer = {
 	.put_s64 = put_s64,
 	.put_string = put_string,
 	.put_float = plain_text_put_float,
+	.put_time = put_s64,
 	.put_bool = put_bool,
 	.put_objlnk = put_objlnk,
 };
@@ -382,6 +412,7 @@ const struct lwm2m_reader plain_text_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
+	.get_time = get_s64,
 	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
@@ -390,9 +421,15 @@ const struct lwm2m_reader plain_text_reader = {
 
 int do_read_op_plain_text(struct lwm2m_message *msg, int content_format)
 {
-	/* Plain text can only return single resource */
-	if (msg->path.level != 3U) {
-		return -EPERM; /* NOT_ALLOWED */
+	/* Plain text can only return single resource (instance) */
+	if (msg->path.level < LWM2M_PATH_LEVEL_RESOURCE) {
+		return -EPERM;
+	} else if (msg->path.level > LWM2M_PATH_LEVEL_RESOURCE) {
+		if (!IS_ENABLED(CONFIG_LWM2M_VERSION_1_1)) {
+			return -ENOENT;
+		} else if (msg->path.level > LWM2M_PATH_LEVEL_RESOURCE_INST) {
+			return -ENOENT;
+		}
 	}
 
 	return lwm2m_perform_read_op(msg, content_format);
@@ -404,7 +441,7 @@ int do_write_op_plain_text(struct lwm2m_message *msg)
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
-	int ret, i;
+	int ret;
 	uint8_t created = 0U;
 
 	ret = lwm2m_get_or_create_engine_obj(msg, &obj_inst, &created);
@@ -412,39 +449,13 @@ int do_write_op_plain_text(struct lwm2m_message *msg)
 		return ret;
 	}
 
-	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj, msg->path.res_id);
-	if (!obj_field) {
-		return -ENOENT;
+	ret = lwm2m_engine_validate_write_access(msg, obj_inst, &obj_field);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W)) {
-		return -EPERM;
-	}
-
-	if (!obj_inst->resources || obj_inst->resource_count == 0U) {
-		return -EINVAL;
-	}
-
-	for (i = 0; i < obj_inst->resource_count; i++) {
-		if (obj_inst->resources[i].res_id == msg->path.res_id) {
-			res = &obj_inst->resources[i];
-			break;
-		}
-	}
-
-	if (!res) {
-		return -ENOENT;
-	}
-
-	for (i = 0; i < res->res_inst_count; i++) {
-		if (res->res_instances[i].res_inst_id ==
-		    msg->path.res_inst_id) {
-			res_inst = &res->res_instances[i];
-			break;
-		}
-	}
-
-	if (!res_inst) {
+	ret = lwm2m_engine_get_create_res_inst(&msg->path, &res, &res_inst);
+	if (ret < 0) {
 		return -ENOENT;
 	}
 

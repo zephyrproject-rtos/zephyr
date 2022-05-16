@@ -1,0 +1,17 @@
+# LPCXpresso55S06 board
+
+# Copyright (c) 2022 metraTec
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: lpcxpresso55s06
+name: NXP LPCXpresso55S06
+type: mcu
+arch: arm
+ram: 96
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio

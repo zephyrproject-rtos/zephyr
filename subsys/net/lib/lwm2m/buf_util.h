@@ -62,7 +62,7 @@ static inline int buf_read(uint8_t *dst, uint16_t len, uint8_t *src, uint16_t sr
 	}
 
 	if (*offset + len > src_len) {
-		return -ENOMEM;
+		return -ENODATA;
 	}
 
 	if (dst) {

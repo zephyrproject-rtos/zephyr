@@ -7,7 +7,7 @@
  */
 
 #include "master.h"
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #ifdef MEMMAP_BENCH
 
@@ -16,7 +16,6 @@
  *
  * @brief Memory map get/free test
  *
- * @return N/A
  */
 void memorymap_test(void)
 {

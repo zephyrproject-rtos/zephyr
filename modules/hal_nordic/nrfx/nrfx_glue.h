@@ -7,9 +7,9 @@
 #ifndef NRFX_GLUE_H__
 #define NRFX_GLUE_H__
 
-#include <sys/__assert.h>
-#include <sys/atomic.h>
-#include <irq.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/irq.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -195,6 +195,41 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
  */
 #define NRFX_ATOMIC_FETCH_SUB(p_data, value)  atomic_sub(p_data, value)
 
+/**
+ * @brief Macro for running compare and swap on an atomic object.
+ *
+ * Value is updated to the new value only if it previously equaled old value.
+ *
+ * @param[in,out] p_data      Atomic memory pointer.
+ * @param[in]     old_value Expected old value.
+ * @param[in]     new_value   New value.
+ *
+ * @retval true If value was updated.
+ * @retval false If value was not updated because location was not equal to @p old_value.
+ */
+#define NRFX_ATOMIC_CAS(p_data, old_value, new_value) \
+	atomic_cas(p_data, old_value, new_value)
+
+/**
+ * @brief Macro for counting leading zeros.
+ *
+ * @param[in] value A word value.
+ *
+ * @return Number of leading 0-bits in @p value, starting at the most significant bit position.
+ *         If x is 0, the result is undefined.
+ */
+#define NRFX_CLZ(value) __builtin_clz(value)
+
+/**
+ * @brief Macro for counting trailing zeros.
+ *
+ * @param[in] value A word value.
+ *
+ * @return Number of trailing 0-bits in @p value, starting at the least significant bit position.
+ *         If x is 0, the result is undefined.
+ */
+#define NRFX_CTZ(value) __builtin_ctz(value)
+
 //------------------------------------------------------------------------------
 
 /**
@@ -229,8 +264,7 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 /** @brief Bitmask that defines PPI channels that are reserved for use outside of the nrfx library. */
 #define NRFX_PPI_CHANNELS_USED    (NRFX_PPI_CHANNELS_USED_BY_BT_CTLR |    \
 				   NRFX_PPI_CHANNELS_USED_BY_802154_DRV | \
-				   NRFX_PPI_CHANNELS_USED_BY_MPSL |       \
-				   NRFX_PPI_CHANNELS_USED_BY_PWM_SW)
+				   NRFX_PPI_CHANNELS_USED_BY_MPSL)
 
 /** @brief Bitmask that defines PPI groups that are reserved for use outside of the nrfx library. */
 #define NRFX_PPI_GROUPS_USED      (NRFX_PPI_GROUPS_USED_BY_BT_CTLR |    \
@@ -238,57 +272,63 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 				   NRFX_PPI_GROUPS_USED_BY_MPSL)
 
 /** @brief Bitmask that defines GPIOTE channels that are reserved for use outside of the nrfx library. */
-#define NRFX_GPIOTE_CHANNELS_USED NRFX_GPIOTE_CHANNELS_USED_BY_PWM_SW
+#define NRFX_GPIOTE_CHANNELS_USED NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR
 
 #if defined(CONFIG_BT_CTLR)
-extern const uint32_t z_bt_ctlr_used_nrf_ppi_channels;
-extern const uint32_t z_bt_ctlr_used_nrf_ppi_groups;
-#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR   z_bt_ctlr_used_nrf_ppi_channels
-#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR     z_bt_ctlr_used_nrf_ppi_groups
+/*
+ * The enabled Bluetooth controller subsystem is responsible for providing
+ * definitions of the BT_CTLR_USED_* symbols used below in a file named
+ * bt_ctlr_used_resources.h and for adding its location to global include
+ * paths so that the file can be included here for all Zephyr libraries that
+ * are to be built.
+ */
+#include <bt_ctlr_used_resources.h>
+#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR    BT_CTLR_USED_PPI_CHANNELS
+#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR      BT_CTLR_USED_PPI_GROUPS
+#define NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR BT_CTLR_USED_GPIOTE_CHANNELS
 #else
-#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR   0
-#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR     0
+#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR    0
+#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR      0
+#define NRFX_GPIOTE_CHANNELS_USED_BY_BT_CTLR 0
 #endif
 
 #if defined(CONFIG_NRF_802154_RADIO_DRIVER)
-extern const uint32_t g_nrf_802154_used_nrf_ppi_channels;
-extern const uint32_t g_nrf_802154_used_nrf_ppi_groups;
-#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   g_nrf_802154_used_nrf_ppi_channels
-#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     g_nrf_802154_used_nrf_ppi_groups
+#if defined(NRF52_SERIES)
+#include <../src/nrf_802154_peripherals_nrf52.h>
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_PPI_CHANNELS_USED_MASK
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_PPI_GROUPS_USED_MASK
+#elif defined(NRF53_SERIES)
+#include <../src/nrf_802154_peripherals_nrf53.h>
+#define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   NRF_802154_DPPI_CHANNELS_USED_MASK
+#define NRFX_PPI_GROUPS_USED_BY_802154_DRV     NRF_802154_DPPI_GROUPS_USED_MASK
 #else
+#error Unsupported chip family
+#endif
+#else // CONFIG_NRF_802154_RADIO_DRIVER
 #define NRFX_PPI_CHANNELS_USED_BY_802154_DRV   0
 #define NRFX_PPI_GROUPS_USED_BY_802154_DRV     0
-#endif
+#endif // CONFIG_NRF_802154_RADIO_DRIVER
 
-#if defined(CONFIG_NRF_802154_RADIO_DRIVER) && \
-	!defined(CONFIG_NRF_802154_SL_OPENSOURCE)
-extern const uint32_t z_mpsl_used_nrf_ppi_channels;
-extern const uint32_t z_mpsl_used_nrf_ppi_groups;
-#define NRFX_PPI_CHANNELS_USED_BY_MPSL   z_mpsl_used_nrf_ppi_channels
-#define NRFX_PPI_GROUPS_USED_BY_MPSL     z_mpsl_used_nrf_ppi_groups
+#if defined(CONFIG_NRF_802154_RADIO_DRIVER) && !defined(CONFIG_NRF_802154_SL_OPENSOURCE)
+#include <mpsl.h>
+#define NRFX_PPI_CHANNELS_USED_BY_MPSL   MPSL_RESERVED_PPI_CHANNELS
+#define NRFX_PPI_GROUPS_USED_BY_MPSL     0
 #else
 #define NRFX_PPI_CHANNELS_USED_BY_MPSL   0
 #define NRFX_PPI_GROUPS_USED_BY_MPSL     0
 #endif
 
-#if defined(CONFIG_PWM_NRF5_SW)
-#define PWM_NRF5_SW_NODE DT_INST(0, nordic_nrf_sw_pwm)
-#define PWM_NRF5_SW_GENERATOR_NODE DT_PHANDLE(PWM_NRF5_SW_NODE, generator)
-#if DT_NODE_HAS_COMPAT(PWM_NRF5_SW_GENERATOR_NODE, nordic_nrf_rtc)
-#define PWM_NRF5_SW_PPI_CHANNELS_PER_PIN	3
-#else
-#define PWM_NRF5_SW_PPI_CHANNELS_PER_PIN	2
-#endif /* DT_NODE_HAS_COMPAT(PWM_NRF5_SW_GENERATOR_NODE, nordic_nrf_rtc) */
-#define NRFX_PPI_CHANNELS_USED_BY_PWM_SW \
-    (BIT_MASK(DT_PROP(PWM_NRF5_SW_NODE, channel_count) *	\
-	      PWM_NRF5_SW_PPI_CHANNELS_PER_PIN)			\
-         << DT_PROP(PWM_NRF5_SW_NODE, ppi_base))
-#define NRFX_GPIOTE_CHANNELS_USED_BY_PWM_SW \
-    DT_PROP(PWM_NRF5_SW_NODE, channel_count)
-#else
-#define NRFX_PPI_CHANNELS_USED_BY_PWM_SW    0
-#define NRFX_GPIOTE_CHANNELS_USED_BY_PWM_SW 0
-#endif
+#if NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL
+BUILD_ASSERT(
+	(NRFX_PPI_CHANNELS_USED_BY_802154_DRV & NRFX_PPI_CHANNELS_USED_BY_MPSL) == 0,
+	"PPI channels used by the IEEE802.15.4 radio driver overlap with those "
+	"assigned to the MPSL.");
+
+BUILD_ASSERT(
+	(NRFX_PPI_GROUPS_USED_BY_802154_DRV & NRFX_PPI_GROUPS_USED_BY_MPSL) == 0,
+	"PPI groups used by the IEEE802.15.4 radio driver overlap with those "
+	"assigned to the MPSL.");
+#endif // NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL
 
 /** @brief Bitmask that defines EGU instances that are reserved for use outside of the nrfx library. */
 #define NRFX_EGUS_USED            0

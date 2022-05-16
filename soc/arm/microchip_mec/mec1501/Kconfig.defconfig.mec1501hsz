@@ -59,14 +59,4 @@ config SPI_XEC_QMSPI
 	default y
 	depends on SPI
 
-if SOC_POWER_MANAGEMENT
-
-config PM
-	default y if SYS_CLOCK_EXISTS
-
-config PM_DEVICE
-	default n
-
-endif # SOC_POWER_MANAGEMENT
-
 endif # SOC_MEC1501_HSZ

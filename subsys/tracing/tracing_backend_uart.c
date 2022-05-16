@@ -11,10 +11,10 @@
 
 #include <errno.h>
 #include <ctype.h>
-#include <kernel.h>
-#include <device.h>
-#include <drivers/uart.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/sys/__assert.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_backend.h>

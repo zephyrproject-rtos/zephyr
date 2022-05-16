@@ -16,18 +16,18 @@
 
 #include <errno.h>
 #include <string.h>
-#include <sys/__assert.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <drivers/dma.h>
-#include <drivers/i2s.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/i2s.h>
 #include <soc.h>
 #include "i2s_cavs.h"
 
 #define LOG_DOMAIN dev_i2s_cavs
 #define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 /* length of the buffer queue */
@@ -85,12 +85,6 @@ struct i2s_cavs_dev_data {
 	struct stream rx;
 };
 
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct i2s_cavs_config *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2s_cavs_dev_data *const)(dev)->data)
-
 static void i2s_dma_tx_callback(const struct device *, void *, uint32_t, int);
 static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *,
 		volatile struct i2s_cavs_ssp *const, const struct device *);
@@ -115,8 +109,8 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg,
 				uint32_t channel, int status)
 {
 	const struct device *dev = (const struct device *)arg;
-	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
-	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_cavs_config *const dev_cfg = dev->config;
+	struct i2s_cavs_dev_data *const dev_data = dev->data;
 
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	struct stream *strm = &dev_data->tx;
@@ -151,7 +145,7 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg,
 			/*
 			 * DMA encountered an error (status != 0)
 			 * or
-			 * No bufers in input queue
+			 * No buffers in input queue
 			 */
 			LOG_ERR("DMA status %08x channel %u k_msgq_get ret %d",
 					status, channel, ret);
@@ -171,8 +165,8 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg,
 				uint32_t channel, int status)
 {
 	const struct device *dev = (const struct device *)arg;
-	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
-	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_cavs_config *const dev_cfg = dev->config;
+	struct i2s_cavs_dev_data *const dev_data = dev->data;
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	struct stream *strm = &dev_data->rx;
 	void *buffer;
@@ -229,8 +223,8 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg,
 static int i2s_cavs_configure(const struct device *dev, enum i2s_dir dir,
 			      const struct i2s_config *i2s_cfg)
 {
-	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
-	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_cavs_config *const dev_cfg = dev->config;
+	struct i2s_cavs_dev_data *const dev_data = dev->data;
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	volatile struct i2s_cavs_mn_div *const mn_div = dev_cfg->mn_regs;
 	struct dma_block_config *dma_block;
@@ -592,7 +586,7 @@ static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 	unsigned int key;
 
 	/*
-	 * Enable transmit undderrun interrupt to allow notification
+	 * Enable transmit underrun interrupt to allow notification
 	 * upon transmit FIFO being emptied.
 	 * Defer disabling of TX to the underrun processing in ISR
 	 */
@@ -635,8 +629,8 @@ static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 static int i2s_cavs_trigger(const struct device *dev, enum i2s_dir dir,
 			    enum i2s_trigger_cmd cmd)
 {
-	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
-	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_cavs_config *const dev_cfg = dev->config;
+	struct i2s_cavs_dev_data *const dev_data = dev->data;
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	struct stream *strm;
 	unsigned int key;
@@ -699,7 +693,7 @@ static int i2s_cavs_trigger(const struct device *dev, enum i2s_dir dir,
 static int i2s_cavs_read(const struct device *dev, void **mem_block,
 			 size_t *size)
 {
-	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
+	struct i2s_cavs_dev_data *const dev_data = dev->data;
 	struct stream *strm = &dev_data->rx;
 	void *buffer;
 	int ret = 0;
@@ -723,7 +717,7 @@ static int i2s_cavs_read(const struct device *dev, void **mem_block,
 static int i2s_cavs_write(const struct device *dev, void *mem_block,
 			  size_t size)
 {
-	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
+	struct i2s_cavs_dev_data *const dev_data = dev->data;
 	struct stream *strm = &dev_data->tx;
 	int ret;
 
@@ -748,9 +742,9 @@ static int i2s_cavs_write(const struct device *dev, void *mem_block,
 /* clear IRQ sources atm */
 static void i2s_cavs_isr(const struct device *dev)
 {
-	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
+	const struct i2s_cavs_config *const dev_cfg = dev->config;
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
-	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
+	struct i2s_cavs_dev_data *const dev_data = dev->data;
 	uint32_t status;
 
 	/* clear interrupts */
@@ -771,8 +765,8 @@ static void i2s_cavs_isr(const struct device *dev)
 
 static int i2s_cavs_initialize(const struct device *dev)
 {
-	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
-	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
+	const struct i2s_cavs_config *const dev_cfg = dev->config;
+	struct i2s_cavs_dev_data *const dev_data = dev->data;
 
 	if (!device_is_ready(dev_cfg->dev_dma)) {
 		LOG_ERR("%s device not ready", dev_cfg->dev_dma->name);
@@ -795,7 +789,7 @@ static int i2s_cavs_initialize(const struct device *dev)
 	dev_data->tx.state = I2S_STATE_NOT_READY;
 	dev_data->rx.state = I2S_STATE_NOT_READY;
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
 }

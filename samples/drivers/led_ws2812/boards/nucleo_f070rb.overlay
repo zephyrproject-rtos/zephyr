@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 #include "../f070rb-bindings.h"
 
@@ -19,6 +19,7 @@
 		/* SPI */
 		reg = <0>; /* ignored, but necessary for SPI bindings */
 		spi-max-frequency = <B1414_SPI_FREQ>;
+		frame-format = <32768>; /* SPI_FRAME_FORMAT_TI */
 
 		/* B1414 */
 		chain-length = <18>; /* arbitrary; change at will */

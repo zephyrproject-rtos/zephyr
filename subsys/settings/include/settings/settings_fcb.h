@@ -8,7 +8,7 @@
 #ifndef __SETTINGS_FCB_H_
 #define __SETTINGS_FCB_H_
 
-#include <fs/fcb.h>
+#include <zephyr/fs/fcb.h>
 #include "settings/settings.h"
 
 #ifdef __cplusplus

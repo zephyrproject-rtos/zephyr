@@ -7,29 +7,28 @@
 #define DT_DRV_COMPAT nxp_kinetis_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include <soc.h>
 #include <fsl_i2c.h>
 #include <fsl_clock.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <logging/log.h>
+#include <zephyr/drivers/pinctrl.h>
+
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_mcux);
 
 #include "i2c-priv.h"
 
-#define DEV_CFG(dev) \
-	((const struct i2c_mcux_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2c_mcux_data * const)(dev)->data)
 #define DEV_BASE(dev) \
-	((I2C_Type *)(DEV_CFG(dev))->base)
+	((I2C_Type *)((const struct i2c_mcux_config * const)(dev)->config)->base)
 
 struct i2c_mcux_config {
 	I2C_Type *base;
 	clock_name_t clock_source;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct i2c_mcux_data {
@@ -43,8 +42,8 @@ static int i2c_mcux_configure(const struct device *dev,
 			      uint32_t dev_config_raw)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_mcux_data *data = DEV_DATA(dev);
-	const struct i2c_mcux_config *config = DEV_CFG(dev);
+	struct i2c_mcux_data *data = dev->data;
+	const struct i2c_mcux_config *config = dev->config;
 	uint32_t clock_freq;
 	uint32_t baudrate;
 
@@ -110,7 +109,7 @@ static int i2c_mcux_transfer(const struct device *dev, struct i2c_msg *msgs,
 			     uint8_t num_msgs, uint16_t addr)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_mcux_data *data = DEV_DATA(dev);
+	struct i2c_mcux_data *data = dev->data;
 	i2c_master_transfer_t transfer;
 	status_t status;
 	int ret = 0;
@@ -178,7 +177,7 @@ static int i2c_mcux_transfer(const struct device *dev, struct i2c_msg *msgs,
 static void i2c_mcux_isr(const struct device *dev)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	struct i2c_mcux_data *data = DEV_DATA(dev);
+	struct i2c_mcux_data *data = dev->data;
 
 	I2C_MasterTransferHandleIRQ(base, &data->handle);
 }
@@ -186,8 +185,8 @@ static void i2c_mcux_isr(const struct device *dev)
 static int i2c_mcux_init(const struct device *dev)
 {
 	I2C_Type *base = DEV_BASE(dev);
-	const struct i2c_mcux_config *config = DEV_CFG(dev);
-	struct i2c_mcux_data *data = DEV_DATA(dev);
+	const struct i2c_mcux_config *config = dev->config;
+	struct i2c_mcux_data *data = dev->data;
 	uint32_t clock_freq, bitrate_cfg;
 	i2c_master_config_t master_config;
 	int error;
@@ -202,6 +201,11 @@ static int i2c_mcux_init(const struct device *dev)
 				       i2c_mcux_master_transfer_callback, data);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
+
+	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (error) {
+		return error;
+	}
 
 	error = i2c_mcux_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (error) {
@@ -219,6 +223,8 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 };
 
 #define I2C_DEVICE_INIT_MCUX(n)			\
+	PINCTRL_DT_INST_DEFINE(n);					\
+									\
 	static void i2c_mcux_config_func_ ## n(const struct device *dev); \
 									\
 	static const struct i2c_mcux_config i2c_mcux_config_ ## n = {	\
@@ -226,15 +232,16 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 		.clock_source = I2C ## n ## _CLK_SRC,			\
 		.irq_config_func = i2c_mcux_config_func_ ## n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
 	static struct i2c_mcux_data i2c_mcux_data_ ## n;		\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			&i2c_mcux_init, NULL,				\
+	I2C_DEVICE_DT_INST_DEFINE(n,					\
+			i2c_mcux_init, NULL,				\
 			&i2c_mcux_data_ ## n,				\
 			&i2c_mcux_config_ ## n, POST_KERNEL,		\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			CONFIG_I2C_INIT_PRIORITY,			\
 			&i2c_mcux_driver_api);				\
 									\
 	static void i2c_mcux_config_func_ ## n(const struct device *dev) \

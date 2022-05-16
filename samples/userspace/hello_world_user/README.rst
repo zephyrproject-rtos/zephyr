@@ -7,6 +7,9 @@ Overview
 ********
 A simple Hello World example that can be used with any supported board and
 prints 'Hello World from UserSpace!' to the console.
+If unavailable or unconfigured then 'Hello World from privileged mode.'
+is printed instead.
+
 This application can be built into modes:
 
 * single thread

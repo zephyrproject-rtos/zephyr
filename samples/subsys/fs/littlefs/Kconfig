@@ -8,4 +8,17 @@ config APP_WIPE_STORAGE
 	help
 	  Use this to force an existing file system to be created.
 
+choice
+	prompt "Storage backend type used by the application"
+	default APP_LITTLEFS_STORAGE_FLASH
+	help
+	  Specify the type of storage backend.
+
+config APP_LITTLEFS_STORAGE_FLASH
+	bool "Use flash memory backend"
+
+config APP_LITTLEFS_STORAGE_BLK_SDMMC
+	bool "Use block device (e.g. SD MMC) backend"
+endchoice
+
 source "Kconfig.zephyr"

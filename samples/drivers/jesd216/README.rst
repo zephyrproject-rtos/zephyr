@@ -15,7 +15,7 @@ Building and Running
 
 The application will build only for a target that has a devicetree entry
 with ``jedec,spi-nor`` as a compatible, and for which the driver
-supports :kconfig:`CONFIG_FLASH_JESD216_API`.
+supports :kconfig:option:`CONFIG_FLASH_JESD216_API`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/jesd216

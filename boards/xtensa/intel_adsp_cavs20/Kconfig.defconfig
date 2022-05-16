@@ -1,11 +1,12 @@
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2020,2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_INTEL_ADSP_CAVS20
+if BOARD_INTEL_ADSP_CAVS20 || BOARD_INTEL_ADSP_CAVS20_JSL
 
 config BOARD
-	default "intel_adsp_cavs20"
+	default "intel_adsp_cavs20" if BOARD_INTEL_ADSP_CAVS20
+	default "intel_adsp_cavs20_jsl" if BOARD_INTEL_ADSP_CAVS20_JSL
 
 config CAVS_ICTL_0_OFFSET
 	default 6
@@ -35,12 +36,4 @@ config 2ND_LVL_ISR_TBL_OFFSET
 config CAVS_ISR_TBL_OFFSET
 	default 2ND_LVL_ISR_TBL_OFFSET
 
-config DMA_DW
-	default y
-	depends on DMA
-
-config I2S_CAVS
-	default y
-	depends on I2S
-
-endif # BOARD_INTEL_ADSP_CAVS20
+endif # BOARD_INTEL_ADSP_CAVS20 || BOARD_INTEL_ADSP_CAVS20_JSL

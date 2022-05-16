@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_virtual_ipip, CONFIG_NET_L2_IPIP_LOG_LEVEL);
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <errno.h>
 
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/virtual.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/virtual.h>
 
 #include "ipv4.h"
 #include "ipv6.h"
@@ -329,7 +329,7 @@ static enum net_verdict interface_input(struct net_if *input_iface,
 		}
 
 		/* RFC4213 chapter 3.6 */
-		iface = net_if_ipv6_select_src_iface(&hdr->dst);
+		iface = net_if_ipv6_select_src_iface((struct in6_addr *)hdr->dst);
 		if (iface == NULL) {
 			NET_DBG("DROP: not for me (dst %s)",
 				net_sprint_ipv6_addr(&hdr->dst));
@@ -368,7 +368,7 @@ static enum net_verdict interface_input(struct net_if *input_iface,
 			return NET_DROP;
 		}
 
-		iface = net_if_ipv4_select_src_iface(&hdr->dst);
+		iface = net_if_ipv4_select_src_iface((struct in_addr *)hdr->dst);
 		if (iface == NULL) {
 			NET_DBG("DROP: not for me (dst %s)",
 				net_sprint_ipv4_addr(&hdr->dst));
@@ -560,13 +560,13 @@ static const struct virtual_interface_api ipip_iface_api = {
 
 #define NET_IPIP_DATA(x, _)						\
 	static struct ipip_context ipip_context_data_##x = {		\
-	};
+	}
 
 #define NET_IPIP_INTERFACE_INIT(x, _)					\
 	NET_VIRTUAL_INTERFACE_INIT(ipip##x, "IP_TUNNEL" #x, ipip_init,	\
 				   NULL, &ipip_context_data_##x, NULL,	\
 				   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-				   &ipip_iface_api, IPIPV4_MTU);
+				   &ipip_iface_api, IPIPV4_MTU)
 
-UTIL_LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_DATA, _)
-UTIL_LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_INTERFACE_INIT, _)
+LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_DATA, (;), _);
+LISTIFY(CONFIG_NET_L2_IPIP_TUNNEL_COUNT, NET_IPIP_INTERFACE_INIT, (;), _);

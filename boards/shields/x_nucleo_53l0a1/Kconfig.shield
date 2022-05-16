@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_X_NUCLEO_53L0A1
+	def_bool $(shields_list_contains,x_nucleo_53l0a1)

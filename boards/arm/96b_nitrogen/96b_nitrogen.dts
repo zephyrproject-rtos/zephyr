@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
 #include "96b_lscon.dtsi"
+#include "96b_nitrogen-pinctrl.dtsi"
 
 / {
 	model = "Seeed Studio Nitrogen 96board";
@@ -66,25 +67,25 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <13>;
-	rx-pin = <15>;
-	rts-pin = <12>;
-	cts-pin = <14>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <20>;
-	scl-pin = <22>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <26>;
-	mosi-pin = <23>;
-	miso-pin = <25>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &flash0 {

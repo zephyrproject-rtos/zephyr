@@ -10,7 +10,7 @@ DT_COMPAT_ST_STM32_DMA_V2BIS := st,stm32-dma-v2bis
 DT_COMPAT_ST_STM32_DMAMUX := st,stm32-dmamux
 
 config DMA_STM32
-	bool "Enable STM32 DMA driver"
+	bool "STM32 DMA driver"
 	select USE_STM32_LL_DMA
 	depends on SOC_FAMILY_STM32
 	help

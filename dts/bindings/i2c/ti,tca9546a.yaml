@@ -1,46 +1,10 @@
-# Copyright (c) 2020, Innoseis BV
-# SPDX-License-Identifier: Apache-2.0
+#Binding for TI TCA9546A, compatible with NXP PCA9546A
 
-description: |
-  TCA9546a I2C switch
-
-  Each channel is represented by a separate devicetree child node
-  with a "ti,tca9546a-channel" compatible.
-  The channel node can then be used as a standard i2c bus controller
-  like in the following simplified example:
-
-      /* The tca9546a node must be a child of an i2c controller */
-      mux: tca9546a@77 {
-          compatible = "ti,tca9546a";
-          reg = <0x77>;
-
-          mux_i2c@0 {
-              compatible = "ti,tca9546a-channel";
-              reg = <0>;
-
-              temp_sens_0: tmp116@49 {
-                  compatible = "ti,tmp116";
-                  reg = <0x49>;
-              };
-          };
-
-          mux_i2c@1 {
-              compatible = "ti,tca9546a-channel";
-              reg = <1>;
-
-              temp_sens_1: tmp116@49 {
-                  compatible = "ti,tmp116";
-                  reg = <0x49>;
-              };
-          };
-      };
+description: Texas Instruments TCA9546A binding
 
 compatible: "ti,tca9546a"
 
-include: [i2c-device.yaml]
+include: ti,tca954x-base.yaml
 
 child-binding:
-  description: TCA9546a I2C switch channel node
   compatible: "ti,tca9546a-channel"
-  include: [i2c-controller.yaml]
-  on-bus: i2c

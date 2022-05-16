@@ -13,14 +13,13 @@
 
 OUTPUT_ARCH(xtensa)
 
-#include <devicetree.h>
+#include <zephyr/devicetree.h>
 #include <xtensa/config/core-isa.h>
 #include <soc/memory.h>
-#include <autoconf.h>
-#include <linker/sections.h>
+#include <zephyr/linker/sections.h>
 
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 PROVIDE(__memctl_default = 0x00000000);
 PROVIDE(_MemErrorHandler = 0x00000000);
@@ -173,7 +172,7 @@ EXTERN(ext_man_fw_ver)
 SECTIONS
 {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
   .ResetVector.text : ALIGN(4)
   {
     _ResetVector_text_start = ABSOLUTE(.);
@@ -340,7 +339,7 @@ SECTIONS
   .module_init : ALIGN(4)
   {
    _module_init_start = ABSOLUTE(.);
-    *(*.module_init)
+    *(*.initcall)
     _module_init_end = ABSOLUTE(.);
   } >sdram0 :sdram0_phdr
 
@@ -361,7 +360,7 @@ SECTIONS
     _etext = .;
   } >sdram0 :sdram0_phdr
 
-#include <linker/common-rom.ld>
+#include <zephyr/linker/common-rom.ld>
 
   .fw_ready : ALIGN(4)
   {
@@ -390,6 +389,9 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     KEEP(*(.jcr))
+    _trace_ctx_start = ABSOLUTE(.);
+    *(.trace_ctx)
+    _trace_ctx_end = ABSOLUTE(.);
     . = ALIGN(4);
     *(.gna_model)
     _data_end = ABSOLUTE(.);
@@ -405,7 +407,7 @@ SECTIONS
     _lit4_end = ABSOLUTE(.);
   } >sdram0 :sdram0_phdr
 
-#include <linker/common-ram.ld>
+#include <zephyr/linker/common-ram.ld>
 
   .bss (NOLOAD) : ALIGN(8)
   {
@@ -494,7 +496,7 @@ SECTIONS
     KEEP (*(.gnu.linkonce.xt.profile_files.*))
   }
 #ifdef CONFIG_GEN_ISR_TABLES
-#include <linker/intlist.ld>
+#include <zephyr/linker/intlist.ld>
 #endif
 
   .static_uuid_entries (COPY) : ALIGN(1024)

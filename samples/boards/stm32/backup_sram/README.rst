@@ -16,7 +16,7 @@ VBAT is preserved, the incremented value will be shown on the next power-cycle.
 .. note::
 
     On most boards VBAT is typically connected to VDD thanks to a jumper.
-    To excercise this sample with an independent VBAT source, you will need to
+    To exercise this sample with an independent VBAT source, you will need to
     remove the jumper.
 
 Building and Running

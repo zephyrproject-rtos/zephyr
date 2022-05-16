@@ -13,104 +13,46 @@ config NUM_IRQS
 
 config CORTEX_M_SYSTICK
 	default !NPCX_ITIM_TIMER
-	help
-	  Disable Cortex-M system tick if NPCX_ITIM_TIMER is enabled.
 
 config CLOCK_CONTROL_NPCX
 	default y
 	depends on CLOCK_CONTROL
-	help
-	  Enable support for NPCX clock controller driver.
 
 config UART_NPCX
 	default y
 	depends on SERIAL
-	help
-	  Enable support for NPCX UART driver.
 
 config GPIO_NPCX
 	default y
 	depends on GPIO
-	help
-	  Enable support for NPCX GPIO driver.
 
 config PWM_NPCX
 	default y
 	depends on PWM
-	help
-	  Enable support for NPCX PWM driver.
 
 config ADC_NPCX
 	default y
 	depends on ADC
-	help
-	  Enable support for NPCX ADC driver. In NPCX7 series, it includes a
-	  10-bit resolution Analog-to-Digital Converter (ADC). Up to 10 voltage
-	  inputs can be measured and a internal voltage reference (VREF), 2.816V
-	  (typical) is used for measurement.
 
 config WDT_NPCX
 	default y
 	depends on WATCHDOG
-	help
-	  Enable support for NPCX Watchdog driver. Besides watchdog
-	  functionality, it also provides the protection mechanism over software
-	  execution. After setting the configuration registers, the software can
-	  lock it to provide a higher level of protection against subsequent
-	  erroneous software action. Once a section of the TWD is locked, only
-	  reset or the unlock sequence releases it.
 
 config ESPI_NPCX
 	default y
 	depends on ESPI
-	help
-	  Enable support for NPCX ESPI driver. The Intel Enhanced Serial
-	  Peripheral Interface (eSPI) provides a path for migrating host
-	  sub-devices via LPC to a lower pin count, higher bandwidth bus.
-	  So far, this driver supports all of functionalities beside flash
-	  channel support. It will be supported in the future. Please refer
-	  https://www.intel.com/content/www/us/en/support/articles/000020952/
-	  software/chipset-software.html for more detail.
 
 config I2C_NPCX
 	default y
 	depends on I2C
-	help
-	  Enable support for NPCX I2C driver. The NPCX SMB/I2C modules provides
-	  full support for a two-wire SMBus/I2C synchronous serial interface.
-	  Each interface is a two-wire serial interface that is compatible with
-	  both Intel SMBus and Philips I2C physical layer. There are 8 SMBus
-	  modules and 10 buses in NPCX7 series.
 
 config TACH_NPCX
 	default y
 	depends on SENSOR
-	help
-	  Enable support for NPCX tachometer sensor driver. The NPCX7 series
-	  contains two tachometer (TACH) modules that contains two counters
-	  (counter A and B). They are used to capture/compare a counter value
-	  when an event is generated on comparison of signals match.
-
-if SOC_POWER_MANAGEMENT
-
-config PM
-	default y if SYS_CLOCK_EXISTS
-	help
-	  Enable the kernel handles extra power management policies whenever
-	  system enters idle state.
-
-config PM_DEVICE
-	default y
-	help
-	  Enable device power management support.
-
-endif # SOC_POWER_MANAGEMENT
 
 config SPI_NPCX_FIU
 	default y
 	depends on SPI
-	help
-	  Enable support fot NPCX SPI (FIU) driver for the NOR SPI flash access.
 
 source "soc/arm/nuvoton_npcx/npcx7/Kconfig.defconfig.npcx7*"
 

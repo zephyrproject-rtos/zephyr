@@ -6,25 +6,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/atomic.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
-#include <debug/stack.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/debug/stack.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <drivers/bluetooth/hci_driver.h>
-#include <bluetooth/l2cap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/l2cap.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_RFCOMM)
 #define LOG_MODULE_NAME bt_rfcomm
 #include "common/log.h"
 
-#include <bluetooth/rfcomm.h>
+#include <zephyr/bluetooth/rfcomm.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -46,7 +46,6 @@
 #define RFCOMM_IDLE_TIMEOUT     K_SECONDS(2)
 
 #define DLC_RTX(_w) CONTAINER_OF(_w, struct bt_rfcomm_dlc, rtx_work)
-
 #define SESSION_RTX(_w) CONTAINER_OF(_w, struct bt_rfcomm_session, rtx_work)
 
 static struct bt_rfcomm_server *servers;
@@ -782,7 +781,7 @@ static enum security_result rfcomm_dlc_security(struct bt_rfcomm_dlc *dlc)
 
 	/* If current security level is greater than or equal to required
 	 * security level  then return SUCCESS.
-	 * For SSP devices the current security will be atleast MEDIUM
+	 * For SSP devices the current security will be at least MEDIUM
 	 * since L2CAP is enforcing it
 	 */
 	if (conn->sec_level >= dlc->required_sec_level) {
@@ -1647,7 +1646,7 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 			break;
 		}
 		chan = &session->br_chan.chan;
-		chan->required_sec_level = dlc->required_sec_level;
+		BR_CHAN(chan)->required_sec_level = dlc->required_sec_level;
 		ret = bt_l2cap_chan_connect(conn, chan, BT_L2CAP_PSM_RFCOMM);
 		if (ret < 0) {
 			session->state = BT_RFCOMM_STATE_IDLE;

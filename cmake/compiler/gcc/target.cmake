@@ -5,7 +5,14 @@ set_ifndef(C++ g++)
 # Configures CMake for using GCC, this script is re-used by several
 # GCC-based toolchains
 
-find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+if("${SPARSE}" STREQUAL "y")
+  find_program(CMAKE_C_COMPILER cgcc)
+  find_program(REAL_CC ${CROSS_COMPILE}${CC} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+  set(ENV{REAL_CC} ${REAL_CC})
+else()
+  find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+endif()
+
 if(${CMAKE_C_COMPILER} STREQUAL CMAKE_C_COMPILER-NOTFOUND)
   message(FATAL_ERROR "C compiler ${CROSS_COMPILE}${CC} not found - Please check your toolchain installation")
 endif()
@@ -44,6 +51,7 @@ foreach(file_name include/stddef.h include-fixed/limits.h)
 endforeach()
 
 include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
+include(${ZEPHYR_BASE}/cmake/gcc-m-fpu.cmake)
 
 if("${ARCH}" STREQUAL "arm")
   include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
@@ -59,6 +67,8 @@ elseif("${ARCH}" STREQUAL "x86")
   include(${CMAKE_CURRENT_LIST_DIR}/target_x86.cmake)
 elseif("${ARCH}" STREQUAL "sparc")
   include(${CMAKE_CURRENT_LIST_DIR}/target_sparc.cmake)
+elseif("${ARCH}" STREQUAL "mips")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_mips.cmake)
 endif()
 
 # This libgcc code is partially duplicated in compiler/*/target.cmake
@@ -94,7 +104,7 @@ endif()
 # link a dummy C file.
 #
 # CMake checks compiler flags with check_c_compiler_flag() (Which we
-# wrap with target_cc_option() in extentions.cmake)
+# wrap with target_cc_option() in extensions.cmake)
 foreach(isystem_include_dir ${NOSTDINC})
   list(APPEND isystem_include_flags -isystem "\"${isystem_include_dir}\"")
 endforeach()

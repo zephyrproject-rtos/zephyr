@@ -8,12 +8,12 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_AT_ESP_H_
 #define ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_AT_ESP_H_
 
-#include <kernel.h>
-#include <net/net_context.h>
-#include <net/net_if.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/wifi_mgmt.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 #include "modem_context.h"
 #include "modem_cmd_handler.h"
@@ -59,7 +59,7 @@ extern "C" {
 #define ESP_PROTO_PASSIVE(proto) 0
 #endif /* CONFIG_WIFI_ESP_AT_PASSIVE_MODE */
 
-#define ESP_BUS DT_BUS(DT_DRV_INST(0))
+#define ESP_BUS DT_INST_BUS(0)
 
 #if DT_PROP(ESP_BUS, hw_flow_control) == 1
 #define _FLOW_CONTROL "3"
@@ -107,8 +107,11 @@ extern "C" {
 #define ESP_MODE_AP		2
 #define ESP_MODE_STA_AP		3
 
-#define ESP_CMD_CWMODE(mode) \
-	"AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7) || defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
+#define ESP_CMD_CWMODE(mode) "AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))
+#else
+#define ESP_CMD_CWMODE(mode) "AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))",0"
+#endif
 
 #define ESP_CWDHCP_MODE_STATION		"1"
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
@@ -247,6 +250,7 @@ struct esp_data {
 	struct k_work_delayable ip_addr_work;
 	struct k_work scan_work;
 	struct k_work connect_work;
+	struct k_work disconnect_work;
 	struct k_work mode_switch_work;
 	struct k_work dns_work;
 

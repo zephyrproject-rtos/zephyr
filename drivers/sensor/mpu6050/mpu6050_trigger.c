@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 #include "mpu6050.h"
 
 LOG_MODULE_DECLARE(MPU6050, CONFIG_SENSOR_LOG_LEVEL);

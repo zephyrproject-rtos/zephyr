@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
-#include <arch/arc/v2/aux_regs.h>
-#include <arch/arc/v2/mpu/arc_mpu.h>
-#include <arch/arc/v2/mpu/arc_core_mpu.h>
-#include <linker/linker-defs.h>
+#include <zephyr/arch/arc/v2/aux_regs.h>
+#include <zephyr/arch/arc/v2/mpu/arc_mpu.h>
+#include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
+#include <zephyr/linker/linker-defs.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpu);
 
 /**

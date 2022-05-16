@@ -6,14 +6,14 @@
 
 #include <fcntl.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <string.h>
-#include <net/socket.h>
-#include <sys/util.h>
-#include <posix/unistd.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/posix/unistd.h>
 
 #include <ztest_assert.h>
 
@@ -49,7 +49,7 @@ void test_socketpair_write_nonblock(void)
 		/* then, try to write one more byte */
 		res = write(sv[i], "x", 1);
 		zassert_equal(res, -1, "expected write to fail");
-		zassert_equal(errno, EAGAIN, "errno: exected: EAGAIN "
+		zassert_equal(errno, EAGAIN, "errno: expected: EAGAIN "
 			"actual: %d", errno);
 	}
 
@@ -77,7 +77,7 @@ void test_socketpair_read_nonblock(void)
 		/* then, try to read one byte */
 		res = read(sv[i], &c, 1);
 		zassert_equal(res, -1, "expected read to fail");
-		zassert_equal(errno, EAGAIN, "errno: exected: EAGAIN "
+		zassert_equal(errno, EAGAIN, "errno: expected: EAGAIN "
 			"actual: %d", errno);
 	}
 

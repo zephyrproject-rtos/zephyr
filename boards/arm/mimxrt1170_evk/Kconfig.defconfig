@@ -14,4 +14,55 @@ choice CODE_LOCATION
 	default CODE_SRAM0 if BOARD_MIMXRT1170_EVK_CM4
 endchoice
 
+if DISK_DRIVERS
+
+config DISK_DRIVER_SDMMC
+	default y
+
+config IMX_USDHC_DAT3_PWR_TOGGLE
+	default y
+
+endif # DISK_DRIVERS
+
+if FLASH
+
+config FLASH_MCUX_FLEXSPI_NOR
+	default y
+
+choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM if CPU_CORTEX_M7
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM if CPU_CORTEX_M4
+endchoice
+
+endif #FLASH
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if CPU_CORTEX_M7 # No cache memory support is required for driver
+
+config ETH_MCUX_PHY_RESET
+	default y
+
+endif # NETWORKING
+
+if DISPLAY
+
+config MIPI_DSI
+	default y
+
+# Adjust the memory pool block size for a 720x1280 display
+config MCUX_ELCDIF_POOL_BLOCK_MAX
+	default 0x1C3000
+
+# Memory from the heap pool is used to allocate display buffers.
+# Adjust HEAP_MEM_POOL_SIZE.
+config HEAP_MEM_POOL_SIZE
+	default 4194304
+
+config REGULATOR
+	default y
+
+endif # DISPLAY
+
 endif # BOARD_MIMXRT1170_EVK_CM7 || BOARD_MIMXRT1170_EVK_CM4

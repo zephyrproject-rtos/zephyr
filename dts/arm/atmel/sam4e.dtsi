@@ -5,10 +5,8 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
-
-#include "sam4e-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	aliases {
@@ -80,7 +78,6 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pa4a_twi0_twck0 &pa3a_twi0_twd0>;
 		};
 
 		twi1: i2c@400ac000 {
@@ -93,7 +90,6 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pb5a_twi1_twck1 &pb4a_twi1_twd1>;
 		};
 
 		spi0: spi@40088000 {
@@ -105,7 +101,6 @@
 			peripheral-id = <19>;
 			label = "SPI_0";
 			status = "disabled";
-			pinctrl-0 = <&pa12a_spi_miso &pa13a_spi_mosi &pa14a_spi_spck>;
 		};
 
 		uart0: uart@400e0600 {
@@ -115,7 +110,6 @@
 			peripheral-id = <7>;
 			status = "disabled";
 			label = "UART_0";
-			pinctrl-0 = <&pa9a_uart0_urxd0 &pa10a_uart0_utxd0>;
 		};
 
 		uart1: uart@40060600 {
@@ -125,7 +119,6 @@
 			peripheral-id = <45>;
 			status = "disabled";
 			label = "UART_1";
-			pinctrl-0 = <&pa5c_uart1_urxd1 &pa6c_uart1_utxd1>;
 		};
 
 		usart0: usart@400a0000 {
@@ -156,16 +149,6 @@
 			phy-connection-type = "mii";
 			label = "GMAC";
 			status = "disabled";
-			/* Default to MII config */
-			pinctrl-0 = <&pd0a_gmac_gtxck &pd1a_gmac_gtxen
-				     &pd2a_gmac_gtx0 &pd3a_gmac_gtx1
-				     &pd15a_gmac_gtx2 &pd16a_gmac_gtx3
-				     &pd4a_gmac_grxdv &pd7a_gmac_grxer
-				     &pd14a_gmac_grxck &pd5a_gmac_grx0
-				     &pd6a_gmac_grx1 &pd11a_gmac_grx2
-				     &pd12a_gmac_grx3 &pd13a_gmac_gcol
-				     &pd10a_gmac_gcrs &pd8a_gmac_gmdc
-				     &pd9a_gmac_gmdio>;
 
 			mdio: mdio {
 				compatible = "atmel,sam-mdio";
@@ -174,11 +157,13 @@
 			};
 		};
 
-		pinctrl@400e0e00 {
+		pinctrl: pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x400e0e00 0x400e0e00 0xa00>;
+			status = "okay";
+			label = "PINCTRL";
 
 			pioa: gpio@400e0e00 {
 				compatible = "atmel,sam-gpio";
@@ -245,7 +230,6 @@
 			peripheral-id = <21 22 23>;
 			status = "disabled";
 			label = "TC0";
-			pinctrl-0 = <>;
 		};
 
 		tc1: tc@40094000 {
@@ -257,7 +241,6 @@
 			peripheral-id = <24 25 26>;
 			status = "disabled";
 			label = "TC1";
-			pinctrl-0 = <>;
 		};
 
 		tc2: tc@40098000 {
@@ -269,7 +252,6 @@
 			peripheral-id = <27 28 29>;
 			status = "disabled";
 			label = "TC2";
-			pinctrl-0 = <>;
 		};
 	};
 };

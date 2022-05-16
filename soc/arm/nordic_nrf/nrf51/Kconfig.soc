@@ -9,86 +9,11 @@ choice
 
 config SOC_NRF51822_QFAA
 	bool "NRF51822_QFAA"
-	select HAS_HW_NRF_ADC
-	select HAS_HW_NRF_CCM
-	select HAS_HW_NRF_CLOCK
-	select HAS_HW_NRF_ECB
-	select HAS_HW_NRF_GPIO0
-	select HAS_HW_NRF_GPIOTE
-	select HAS_HW_NRF_LPCOMP
-	select HAS_HW_NRF_MPU
-	select HAS_HW_NRF_QDEC
-	select HAS_HW_NRF_POWER
-	select HAS_HW_NRF_PPI
-	select HAS_HW_NRF_RNG
-	select HAS_HW_NRF_RTC0
-	select HAS_HW_NRF_RTC1
-	select HAS_HW_NRF_SPI0
-	select HAS_HW_NRF_SPI1
-	select HAS_HW_NRF_SPIS1
-	select HAS_HW_NRF_TEMP
-	select HAS_HW_NRF_TIMER0
-	select HAS_HW_NRF_TIMER1
-	select HAS_HW_NRF_TIMER2
-	select HAS_HW_NRF_TWI0
-	select HAS_HW_NRF_TWI1
-	select HAS_HW_NRF_UART0
-	select HAS_HW_NRF_WDT
 
 config SOC_NRF51822_QFAB
 	bool "NRF51822_QFAB"
-	select HAS_HW_NRF_ADC
-	select HAS_HW_NRF_CCM
-	select HAS_HW_NRF_CLOCK
-	select HAS_HW_NRF_ECB
-	select HAS_HW_NRF_GPIO0
-	select HAS_HW_NRF_GPIOTE
-	select HAS_HW_NRF_LPCOMP
-	select HAS_HW_NRF_MPU
-	select HAS_HW_NRF_QDEC
-	select HAS_HW_NRF_POWER
-	select HAS_HW_NRF_PPI
-	select HAS_HW_NRF_RNG
-	select HAS_HW_NRF_RTC0
-	select HAS_HW_NRF_RTC1
-	select HAS_HW_NRF_SPI0
-	select HAS_HW_NRF_SPI1
-	select HAS_HW_NRF_SPIS1
-	select HAS_HW_NRF_TEMP
-	select HAS_HW_NRF_TIMER0
-	select HAS_HW_NRF_TIMER1
-	select HAS_HW_NRF_TIMER2
-	select HAS_HW_NRF_TWI0
-	select HAS_HW_NRF_TWI1
-	select HAS_HW_NRF_UART0
-	select HAS_HW_NRF_WDT
 
 config SOC_NRF51822_QFAC
 	bool "NRF51822_QFAC"
-	select HAS_HW_NRF_ADC
-	select HAS_HW_NRF_CCM
-	select HAS_HW_NRF_CLOCK
-	select HAS_HW_NRF_ECB
-	select HAS_HW_NRF_GPIO0
-	select HAS_HW_NRF_GPIOTE
-	select HAS_HW_NRF_LPCOMP
-	select HAS_HW_NRF_MPU
-	select HAS_HW_NRF_QDEC
-	select HAS_HW_NRF_POWER
-	select HAS_HW_NRF_PPI
-	select HAS_HW_NRF_RNG
-	select HAS_HW_NRF_RTC0
-	select HAS_HW_NRF_RTC1
-	select HAS_HW_NRF_SPI0
-	select HAS_HW_NRF_SPI1
-	select HAS_HW_NRF_SPIS1
-	select HAS_HW_NRF_TEMP
-	select HAS_HW_NRF_TIMER0
-	select HAS_HW_NRF_TIMER1
-	select HAS_HW_NRF_TIMER2
-	select HAS_HW_NRF_TWI0
-	select HAS_HW_NRF_TWI1
-	select HAS_HW_NRF_UART0
-	select HAS_HW_NRF_WDT
 
 endchoice

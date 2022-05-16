@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/mesh.h>
 #include "net.h"
 #include "rpl.h"
 #include "access.h"
@@ -33,6 +33,15 @@ static struct bt_mesh_hb_sub sub;
 static struct k_work_delayable sub_timer;
 static struct k_work_delayable pub_timer;
 
+static void notify_pub_sent(void)
+{
+	STRUCT_SECTION_FOREACH(bt_mesh_hb_cb, cb) {
+		if (cb->pub_sent) {
+			cb->pub_sent(&pub);
+		}
+	}
+}
+
 static int64_t sub_remaining(void)
 {
 	if (sub.dst == BT_MESH_ADDR_UNASSIGNED) {
@@ -53,6 +62,10 @@ static void hb_publish_end_cb(int err, void *cb_data)
 
 	if (pub.count != 0xffff) {
 		pub.count--;
+	}
+
+	if (!err) {
+		notify_pub_sent();
 	}
 }
 
@@ -338,8 +351,19 @@ void bt_mesh_hb_sub_get(struct bt_mesh_hb_sub *get)
 	get->remaining = sub_remaining();
 }
 
+static void hb_unsolicited_pub_end_cb(int err, void *cb_data)
+{
+	if (!err) {
+		notify_pub_sent();
+	}
+}
+
 void bt_mesh_hb_feature_changed(uint16_t features)
 {
+	static const struct bt_mesh_send_cb pub_cb = {
+		.end = hb_unsolicited_pub_end_cb,
+	};
+
 	if (pub.dst == BT_MESH_ADDR_UNASSIGNED) {
 		return;
 	}
@@ -348,7 +372,7 @@ void bt_mesh_hb_feature_changed(uint16_t features)
 		return;
 	}
 
-	heartbeat_send(NULL, NULL);
+	heartbeat_send(&pub_cb, NULL);
 }
 
 void bt_mesh_hb_init(void)

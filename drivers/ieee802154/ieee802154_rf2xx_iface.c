@@ -9,16 +9,16 @@
 #define LOG_MODULE_NAME ieee802154_rf2xx_iface
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
 
-#include <device.h>
-#include <drivers/spi.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
 
-#include <net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 #include "ieee802154_rf2xx.h"
 #include "ieee802154_rf2xx_regs.h"
@@ -27,30 +27,28 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 void rf2xx_iface_phy_rst(const struct device *dev)
 {
 	const struct rf2xx_config *conf = dev->config;
-	const struct rf2xx_context *ctx = dev->data;
 
 	/* Ensure control lines have correct levels. */
-	gpio_pin_set(ctx->reset_gpio, conf->reset.pin, 0);
-	gpio_pin_set(ctx->slptr_gpio, conf->slptr.pin, 0);
+	gpio_pin_set_dt(&conf->reset_gpio, 0);
+	gpio_pin_set_dt(&conf->slptr_gpio, 0);
 
 	/* Wait typical time of timer TR1. */
 	k_busy_wait(330);
 
-	gpio_pin_set(ctx->reset_gpio, conf->reset.pin, 1);
+	gpio_pin_set_dt(&conf->reset_gpio, 1);
 	k_busy_wait(10);
-	gpio_pin_set(ctx->reset_gpio, conf->reset.pin, 0);
+	gpio_pin_set_dt(&conf->reset_gpio, 0);
 }
 void rf2xx_iface_phy_tx_start(const struct device *dev)
 {
 	const struct rf2xx_config *conf = dev->config;
-	const struct rf2xx_context *ctx = dev->data;
 
 	/* Start TX transmission at rise edge */
-	gpio_pin_set(ctx->slptr_gpio, conf->slptr.pin, 1);
+	gpio_pin_set_dt(&conf->slptr_gpio, 1);
 	/* 16.125[μs] delay to detect signal */
 	k_busy_wait(20);
 	/* restore initial pin state */
-	gpio_pin_set(ctx->slptr_gpio, conf->slptr.pin, 0);
+	gpio_pin_set_dt(&conf->slptr_gpio, 0);
 }
 
 uint8_t rf2xx_iface_reg_read(const struct device *dev,

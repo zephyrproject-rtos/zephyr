@@ -8,27 +8,39 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <init.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
-#include <sys/check.h>
+#include <zephyr/sys/check.h>
 
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_obj_manager_internal.h"
 #include "ots_dir_list_internal.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
+
+#if defined(CONFIG_BT_OTS_OACP_CREATE_SUPPORT)
+#define OACP_FEAT_BIT_CREATE BIT(BT_OTS_OACP_FEAT_CREATE)
+#else
+#define OACP_FEAT_BIT_CREATE 0
+#endif
+
+#if defined(CONFIG_BT_OTS_OACP_DELETE_SUPPORT)
+#define OACP_FEAT_BIT_DELETE BIT(BT_OTS_OACP_FEAT_DELETE)
+#else
+#define OACP_FEAT_BIT_DELETE 0
+#endif
 
 #if defined(CONFIG_BT_OTS_OACP_READ_SUPPORT)
 #define OACP_FEAT_BIT_READ BIT(BT_OTS_OACP_FEAT_READ)
@@ -50,6 +62,8 @@ LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 
 /* OACP features supported by Kconfig */
 #define OACP_FEAT (		\
+	OACP_FEAT_BIT_CREATE |	\
+	OACP_FEAT_BIT_DELETE |	\
 	OACP_FEAT_BIT_READ |	\
 	OACP_FEAT_BIT_WRITE |	\
 	OACP_FEAT_BIT_PATCH)
@@ -173,13 +187,13 @@ ssize_t ots_obj_name_write(struct bt_conn *conn,
 		rc = bt_gatt_ots_obj_manager_next_obj_get(ots->obj_manager, obj, &obj);
 	}
 
-	/* Update real object name after no duplicate detected */
-	strcpy(ots->cur_obj->metadata.name, name);
-
+	/* No duplicate detected, notify application and update real object name */
 	if (ots->cb->obj_name_written) {
 		ots->cb->obj_name_written(ots, conn, ots->cur_obj->id,
-					  ots->cur_obj->metadata.name);
+					  ots->cur_obj->metadata.name, name);
 	}
+
+	strcpy(ots->cur_obj->metadata.name, name);
 
 	return len;
 }
@@ -200,14 +214,17 @@ static ssize_t ots_obj_type_read(struct bt_conn *conn,
 	}
 
 	obj_meta = &ots->cur_obj->metadata;
-	if (obj_meta->type.uuid.type == BT_UUID_TYPE_128) {
-		return bt_gatt_attr_read(conn, attr, buf, len, offset,
-					 obj_meta->type.uuid_128.val,
-					 sizeof(obj_meta->type.uuid_128.val));
-	} else {
+	switch (obj_meta->type.uuid.type) {
+	case BT_UUID_TYPE_16:
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
 					 &obj_meta->type.uuid_16.val,
 					 sizeof(obj_meta->type.uuid_16.val));
+	case BT_UUID_TYPE_128:
+		return bt_gatt_attr_read(conn, attr, buf, len, offset,
+					 obj_meta->type.uuid_128.val,
+					 sizeof(obj_meta->type.uuid_128.val));
+	default:
+		return -EINVAL;
 	}
 }
 
@@ -271,61 +288,99 @@ static ssize_t ots_obj_prop_read(struct bt_conn *conn,
 				 sizeof(ots->cur_obj->metadata.props));
 }
 
-int bt_ots_obj_add(struct bt_ots *ots,
-			    struct bt_ots_obj_metadata *obj_init)
+int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
+			    const struct bt_ots_obj_add_param *param,
+			    struct bt_gatt_ots_object **obj)
 {
 	int err;
-	struct bt_gatt_ots_object *obj;
-	size_t name_len;
+	struct bt_gatt_ots_object *new_obj;
+	struct bt_ots_obj_created_desc created_desc;
 
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list &&
-	    ots->dir_list->dir_list_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+	    !bt_ots_dir_list_is_idle(ots->dir_list)) {
 		LOG_DBG("Directory Listing Object is being read");
 		return -EBUSY;
 	}
 
-	name_len = strlen(obj_init->name);
-
-	CHECKIF(name_len == 0 || name_len > CONFIG_BT_OTS_OBJ_MAX_NAME_LEN) {
-		LOG_DBG("Invalid name length %zu", name_len);
-		return -EINVAL;
-	}
-
-	CHECKIF(!ots_obj_validate_prop_against_oacp(obj_init->props, ots->features.oacp)) {
-		LOG_DBG("Object properties (0x%04X) are not a subset of OACP (0x%04X)",
-				obj_init->props, ots->features.oacp);
-		return -ENOTSUP;
-	}
-
-	err = bt_gatt_ots_obj_manager_obj_add(ots->obj_manager, &obj);
+	err = bt_gatt_ots_obj_manager_obj_add(ots->obj_manager, &new_obj);
 	if (err) {
 		LOG_ERR("No space available in the object manager");
 		return err;
 	}
 
-	/* Initialize object. */
-	memcpy(&obj->metadata, obj_init, sizeof(obj->metadata));
+	(void)memset(&created_desc, 0, sizeof(created_desc));
 
-	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
-		bt_ots_dir_list_obj_add(ots->dir_list, ots->obj_manager, ots->cur_obj, obj);
-	}
-
-	/* Request object data. */
 	if (ots->cb->obj_created) {
-		err = ots->cb->obj_created(ots, NULL, obj->id, obj_init);
-		if (err) {
-			bt_gatt_ots_obj_manager_obj_delete(obj);
+		err = ots->cb->obj_created(ots, NULL, new_obj->id, param, &created_desc);
 
-			if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
-				bt_ots_dir_list_obj_remove(ots->dir_list, ots->obj_manager,
-							   ots->cur_obj, obj);
-			}
+		if (err) {
+			(void)bt_gatt_ots_obj_manager_obj_delete(new_obj);
 
 			return err;
 		}
+
+		if (!ots_obj_validate_prop_against_oacp(created_desc.props, ots->features.oacp)) {
+			LOG_ERR("Object properties (0x%04X) are not a subset of OACP (0x%04X)",
+				created_desc.props, ots->features.oacp);
+
+			(void)bt_ots_obj_delete(ots, new_obj->id);
+			return -ECANCELED;
+		}
+
+		if (created_desc.name == NULL) {
+			LOG_ERR("Object name must be set by application after object creation.");
+
+			(void)bt_ots_obj_delete(ots, new_obj->id);
+			return -ECANCELED;
+		}
+
+		if (created_desc.size.alloc < param->size) {
+			LOG_ERR("Object allocated size must >= requested size.");
+
+			(void)bt_ots_obj_delete(ots, new_obj->id);
+			return -ECANCELED;
+		}
+	}
+
+	new_obj->metadata.type = param->type;
+	new_obj->metadata.name = created_desc.name;
+	new_obj->metadata.size = created_desc.size;
+	new_obj->metadata.props = created_desc.props;
+
+	if (obj) {
+		*obj = new_obj;
 	}
 
 	return 0;
+}
+
+int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param)
+{
+	int err;
+	size_t name_len;
+	struct bt_gatt_ots_object *obj;
+
+	err = bt_ots_obj_add_internal(ots, NULL, param, &obj);
+	if (err) {
+		return err;
+	}
+
+	name_len = strlen(obj->metadata.name);
+	if (name_len == 0 || name_len > CONFIG_BT_OTS_OBJ_MAX_NAME_LEN) {
+		LOG_ERR("Invalid name length %zu", name_len);
+
+		(void)bt_ots_obj_delete(ots, obj->id);
+		return -ECANCELED;
+	}
+
+	if (obj->metadata.size.cur > param->size) {
+		LOG_ERR("Object current size must be less than or equal to requested size.");
+
+		(void)bt_ots_obj_delete(ots, obj->id);
+		return -ECANCELED;
+	}
+
+	return obj->id;
 }
 
 int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
@@ -338,17 +393,21 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 		return err;
 	}
 
-	if (ots->cur_obj == obj) {
-		if (obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
-			return -EBUSY;
-		}
-		ots->cur_obj = NULL;
+	if (obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+		return -EBUSY;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list &&
-	    ots->dir_list->dir_list_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+	    !bt_ots_dir_list_is_idle(ots->dir_list)) {
 		LOG_DBG("Directory Listing Object is being read");
 		return -EBUSY;
+	}
+
+	if (ots->cb->obj_deleted) {
+		err = ots->cb->obj_deleted(ots, NULL, obj->id);
+		if (err) {
+			return err;
+		}
 	}
 
 	err = bt_gatt_ots_obj_manager_obj_delete(obj);
@@ -356,12 +415,8 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 		return err;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
-		bt_ots_dir_list_obj_remove(ots->dir_list, ots->obj_manager, ots->cur_obj, obj);
-	}
-
-	if (ots->cb->obj_deleted) {
-		ots->cb->obj_deleted(ots, NULL, obj->id);
+	if (ots->cur_obj == obj) {
+		ots->cur_obj = NULL;
 	}
 
 	return 0;
@@ -385,6 +440,9 @@ int bt_ots_init(struct bt_ots *ots,
 
 	__ASSERT(ots_init->cb->obj_created,
 		 "Callback for object creation is not set");
+	__ASSERT(ots_init->cb->obj_deleted ||
+		 !BT_OTS_OACP_GET_FEAT_CREATE(ots_init->features.oacp),
+		 "Callback for object deletion is not set and object creation is enabled");
 	__ASSERT(ots_init->cb->obj_read ||
 		 !BT_OTS_OACP_GET_FEAT_READ(ots_init->features.oacp),
 		 "Callback for object reading is not set");
@@ -399,6 +457,10 @@ int bt_ots_init(struct bt_ots *ots,
 	if (ots_init->features.oacp & (~((uint32_t) OACP_FEAT))) {
 		return -ENOTSUP;
 	}
+
+	__ASSERT(!BT_OTS_OACP_GET_FEAT_CREATE(ots_init->features.oacp) ||
+		 BT_OTS_OACP_GET_FEAT_WRITE(ots_init->features.oacp),
+		 "Object creation requires object write to be supported");
 
 	ots->features.oacp = ots_init->features.oacp;
 	LOG_DBG("OACP features: 0x%04X", ots->features.oacp);
@@ -494,6 +556,64 @@ static uint32_t instance_cnt;
 BT_GATT_SERVICE_INSTANCE_DEFINE(ots_service_list, ots_instances,
 				CONFIG_BT_OTS_MAX_INST_CNT,
 				BT_GATT_OTS_ATTRS);
+
+static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *conn)
+{
+	char id_str[BT_OTS_OBJ_ID_STR_LEN];
+	struct bt_gatt_ots_object *obj;
+	struct bt_gatt_ots_object *next_obj;
+	int err;
+
+	err = bt_gatt_ots_obj_manager_first_obj_get(ots->obj_manager, &next_obj);
+	while (!err) {
+		obj = next_obj;
+
+		/* Get the next object before we potentially delete the current object and
+		 * no longer can get the next object
+		 */
+		err = bt_gatt_ots_obj_manager_next_obj_get(ots->obj_manager, obj, &next_obj);
+
+		if (strlen(obj->metadata.name) == 0) {
+			bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
+			LOG_DBG("Deleting object with %s ID due to empty name", log_strdup(id_str));
+
+			if (ots->cb && ots->cb->obj_deleted) {
+				ots->cb->obj_deleted(ots, conn, obj->id);
+			}
+
+			if (bt_gatt_ots_obj_manager_obj_delete(obj)) {
+				LOG_ERR("Failed to remove object with %s ID from object manager",
+					log_strdup(id_str));
+			}
+		}
+	}
+}
+
+static void ots_conn_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	uint32_t index;
+	struct bt_ots *instance;
+
+	for (instance = BT_GATT_OTS_INSTANCE_LIST_START, index = 0;
+	     index < instance_cnt;
+	     instance++, index++) {
+
+		LOG_DBG("Processing disconnect for OTS instance %u", index);
+
+		if (instance->cur_obj != NULL) {
+			__ASSERT(instance->cur_obj->state.type == BT_GATT_OTS_OBJECT_IDLE_STATE,
+				"The current object is expected to be in idle state as part "
+				"of cleanup of the L2CAP channel connection close.");
+			instance->cur_obj = NULL;
+		}
+
+		ots_delete_empty_name_objects(instance, conn);
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = ots_conn_disconnected,
+};
 
 struct bt_ots *bt_ots_free_instance_get(void)
 {

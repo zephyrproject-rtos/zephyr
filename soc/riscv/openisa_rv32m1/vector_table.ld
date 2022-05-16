@@ -14,7 +14,7 @@
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 	/*
 	 * For CONFIG_BOOTLOADER_MCUBOOT, the vector table is located at the
-	 * end of the image header of the MCUboot. After the tagert image is
+	 * end of the image header of the MCUboot. After the target image is
 	 * boot, the register Machine Trap-Vector Base Address (MTVEC) is
 	 * set with the value of _vector_start in the reset handler.
 	 */

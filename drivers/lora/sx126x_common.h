@@ -10,9 +10,9 @@
 #define ZEPHYR_DRIVERS_SX126X_COMMON_H_
 
 #include <zephyr/types.h>
-#include <drivers/gpio.h>
-#include <drivers/lora.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/lora.h>
+#include <zephyr/drivers/spi.h>
 
 #include <sx126x/sx126x.h>
 
@@ -29,38 +29,28 @@
 #error No SX126x instance in device tree.
 #endif
 
-#define HAVE_GPIO_CS		DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 #define HAVE_GPIO_ANTENNA_ENABLE			\
 	DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
 #define HAVE_GPIO_TX_ENABLE	DT_INST_NODE_HAS_PROP(0, tx_enable_gpios)
 #define HAVE_GPIO_RX_ENABLE	DT_INST_NODE_HAS_PROP(0, rx_enable_gpios)
 
-#define GPIO_CS_LABEL		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0)
-#define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
-#define GPIO_CS_FLAGS		DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
-
-#define GPIO_ANTENNA_ENABLE_PIN	DT_INST_GPIO_PIN(0, antenna_enable_gpios)
-#define GPIO_TX_ENABLE_PIN	DT_INST_GPIO_PIN(0, tx_enable_gpios)
-#define GPIO_RX_ENABLE_PIN	DT_INST_GPIO_PIN(0, rx_enable_gpios)
+struct sx126x_config {
+	struct spi_dt_spec bus;
+#if HAVE_GPIO_ANTENNA_ENABLE
+	struct gpio_dt_spec antenna_enable;
+#endif
+#if HAVE_GPIO_TX_ENABLE
+	struct gpio_dt_spec tx_enable;
+#endif
+#if HAVE_GPIO_RX_ENABLE
+	struct gpio_dt_spec rx_enable;
+#endif
+};
 
 struct sx126x_data {
 	struct gpio_callback dio1_irq_callback;
 	struct k_work dio1_irq_work;
 	DioIrqHandler *radio_dio_irq;
-#if HAVE_GPIO_ANTENNA_ENABLE
-	const struct device *antenna_enable;
-#endif
-#if HAVE_GPIO_TX_ENABLE
-	const struct device *tx_enable;
-#endif
-#if HAVE_GPIO_RX_ENABLE
-	const struct device *rx_enable;
-#endif
-	const struct device *spi;
-	struct spi_config spi_cfg;
-#if HAVE_GPIO_CS
-	struct spi_cs_control spi_cs;
-#endif
 	RadioOperatingModes_t mode;
 };
 

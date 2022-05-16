@@ -37,7 +37,7 @@ Hardware
   - Temperature/Pressure: STMicro LPS22HB
   - ALS: Intersil ISL29034
   - Proximity: STMicro VL53L0X
-  - Acclerometer/Gyroscope: STMicro LSM6DSL
+  - Accelerometer/Gyroscope: STMicro LSM6DSL
   - Geomagnetic: STMicro LIS2MDL
   - AMR Hall sensor: MRMS501A
   - Microphone: STMicro MP34DT05

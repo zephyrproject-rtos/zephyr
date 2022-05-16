@@ -13,10 +13,10 @@
 #ifndef __NET_6LO_H
 #define __NET_6LO_H
 
-#include <sys/slist.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
-#include <net/net_pkt.h>
+#include <zephyr/net/net_pkt.h>
 #include "icmpv6.h"
 
 /**

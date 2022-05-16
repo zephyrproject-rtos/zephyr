@@ -13,9 +13,8 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
-#include <autoconf.h>
-#include <devicetree.h>
-#include <toolchain.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/toolchain.h>
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
@@ -223,7 +222,7 @@
  */
 #define OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE_NO_DTLS (4 * sizeof(void *))
 
-/* Disable software srouce address matching. */
+/* Disable software source address matching. */
 
 /**
  * @def RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM
@@ -273,38 +272,6 @@
 #define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM 0
 
 /**
- * @def OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME
- *
- * The platform logging function for openthread.
- *
- */
-#define _OT_CONF_PLAT_LOG_FUN_NARGS__IMPL(		\
-		_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,\
-		_11, _12, _13, _14, N, ...) N
-
-#define _OT_CONF_PLAT_LOG_FUN_NARGS__GET(...) \
-		_OT_CONF_PLAT_LOG_FUN_NARGS__IMPL(__VA_ARGS__,\
-		15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
-
-#define OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS(aLogLevel, unused, \
-							aFormat, ...) \
-	do { \
-		ARG_UNUSED(unused); \
-		otPlatLog( \
-		  aLogLevel, \
-		  (otLogRegion)_OT_CONF_PLAT_LOG_FUN_NARGS__GET(__VA_ARGS__),\
-		  aFormat, ##__VA_ARGS__); \
-	} while (false)
-
-#ifdef OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME
-#error OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME \
-	"OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME mustn't be defined before"
-#endif
-
-#define OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME \
-	OPENTHREAD_CONFIG_PLAT_LOG_MACRO_NAME__COUNT_ARGS
-
-/**
  * @def OPENTHREAD_CONFIG_RADIO_LINK_IEEE_802_15_4_ENABLE
  *
  * Set to 1 to enable support for IEEE802.15.4 radio link.
@@ -325,17 +292,6 @@
 #define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE \
 	CONFIG_OPENTHREAD_RADIO_LINK_TREL_ENABLE
 #endif /* CONFIG_OPENTHREAD_RADIO_LINK_TREL_ENABLE */
-
-/**
- * @def OPENTHREAD_CONFIG_CSL_SAMPLE_WINDOW
- *
- * CSL sample window in units of 10 symbols.
- *
- */
-#ifdef CONFIG_OPENTHREAD_CSL_SAMPLE_WINDOW
-#define OPENTHREAD_CONFIG_CSL_SAMPLE_WINDOW \
-	CONFIG_OPENTHREAD_CSL_SAMPLE_WINDOW
-#endif /* CONFIG_OPENTHREAD_CSL_SAMPLE_WINDOW */
 
 /**
  * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
@@ -380,6 +336,17 @@
 #ifdef CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH
 #define OPENTHREAD_CONFIG_CLI_MAX_LINE_LENGTH CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH
 #endif /* CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH */
+
+/**
+ * @def OPENTHREAD_CONFIG_CLI_PROMPT_ENABLE
+ *
+ * Enable CLI prompt.
+ *
+ * When enabled, the CLI will print prompt on the output after processing a command.
+ * Otherwise, no prompt is added to the output.
+ *
+ */
+#define OPENTHREAD_CONFIG_CLI_PROMPT_ENABLE 0
 
 /**
  * @def OPENTHREAD_CONFIG_IP6_MAX_EXT_UCAST_ADDRS
@@ -435,6 +402,16 @@
  */
 #ifdef CONFIG_OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
 #define OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_KEYS_EXPORTABLE_ENABLE
+ *
+ * Set to 1 if you want to make MAC keys exportable.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_KEYS_EXPORTABLE_ENABLE 1
 #endif
 
 #endif  /* OPENTHREAD_CORE_ZEPHYR_CONFIG_H_ */

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_udp, CONFIG_NET_UDP_LOG_LEVEL);
 
 #include "net_private.h"

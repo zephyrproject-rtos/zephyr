@@ -4,7 +4,7 @@ sample:
 tests:
   sample.display.shield.adafruit_2_8_tft_touch_v2:
     depends_on: arduino_gpio arduino_i2c arduino_spi
-    platform_exclude: reel_board reel_board_v2 ubx_evkannab1_nrf52832
+    platform_exclude: reel_board reel_board_v2 ubx_evkannab1_nrf52832 stm32f769i_disco
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: display shield
     harness: console
@@ -30,6 +30,12 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+  sample.display.shield.waveshare_epaper_gdew042t2:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: SHIELD=waveshare_epaper_gdew042t2
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.st7789v_tl019fqv01:
     platform_allow: nrf52dk_nrf52832
     extra_args: SHIELD=st7789v_tl019fqv01
@@ -40,6 +46,20 @@ tests:
   sample.display.st7789v_waveshare_240x240:
     platform_allow: nrf52dk_nrf52832
     extra_args: SHIELD=st7789v_waveshare_240x240
+    tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.ls013b7dh03:
+    platform_allow: nrf52dk_nrf52832
+    extra_args: SHIELD=ls013b7dh03
+    tags: display shield
+    harness: console
+    harness_config:
+      fixture: fixture_display
+  sample.display.st7735r_ada_160x128:
+    platform_allow: nrf52dk_nrf52832
+    extra_args: SHIELD=st7735r_ada_160x128
     tags: display shield
     harness: console
     harness_config:
@@ -56,6 +76,7 @@ tests:
     tags: display
   sample.display.dummy:
     platform_allow: native_posix
+    extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
         - CONFIG_DUMMY_DISPLAY=y
         - CONFIG_SDL_DISPLAY=n

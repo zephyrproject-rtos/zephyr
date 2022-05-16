@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/same5xx20.dtsi>
+#include "atsame54_xpro-pinctrl.dtsi"
 
 / {
 	model = "SAM E54 Xplained Pro";
@@ -37,7 +38,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		pwm_led0: pwm_led_0 {
-			pwms = <&tcc0 2>;
+			pwms = <&tcc0 2 PWM_MSEC(20)>;
 		};
 	};
 
@@ -55,7 +56,10 @@
 	compatible = "atmel,sam0-tcc-pwm";
 	/* Gives a maximum period of 1.1s for 120MHz main clock */
 	prescaler = <8>;
-	#pwm-cells = <1>;
+	#pwm-cells = <2>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
 };
 
 &sercom2 {
@@ -67,7 +71,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	pinctrl-0 = <&pb25d_sercom2_pad1 &pb24d_sercom2_pad0>;
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
 };
 
 &sercom4 {
@@ -78,6 +83,9 @@
 	label = "SPI_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom4_spi_default>;
+	pinctrl-names = "default";
 };
 
 &sercom7 {
@@ -87,6 +95,9 @@
 	label = "I2C_0";
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom7_i2c_default>;
+	pinctrl-names = "default";
 };
 
 &adc0 {
@@ -99,11 +110,17 @@
 
 zephyr_udc0: &usb0 {
 	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
 };
 
 &gmac {
 	status = "okay";
 	zephyr,random-mac-address;
+
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
 
 	phy: phy {
 		compatible = "ethernet-phy";
@@ -115,4 +132,7 @@ zephyr_udc0: &usb0 {
 
 &mdio {
 	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
 };

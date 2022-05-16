@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci_vs.h>
-#include <bluetooth/buf.h>
-#include <drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #include "hci_core.h"
 #include "id.h"
@@ -453,7 +453,7 @@ static void rpa_timeout(struct k_work *work)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 		struct bt_conn *conn =
 			bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-						BT_CONN_CONNECT_SCAN);
+						BT_CONN_CONNECTING_SCAN);
 
 		if (conn) {
 			bt_conn_unref(conn);
@@ -507,7 +507,7 @@ bool bt_id_scan_random_addr_check(void)
 	 * valid and only updated on RPA timeout.
 	 */
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		/* Cannot start scannor or initiator if the random address is
+		/* Cannot start scanner or initiator if the random address is
 		 * used by the advertiser for an RPA with a different identity
 		 * or for a random static identity address.
 		 */
@@ -644,6 +644,10 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 	struct bt_hci_cp_le_add_dev_to_rl *cp;
 	struct net_buf *buf;
 
+	if (id >= CONFIG_BT_ID_MAX) {
+		return -EINVAL;
+	}
+
 	BT_DBG("addr %s", bt_addr_le_str(addr));
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_RL, sizeof(*cp));
@@ -711,7 +715,7 @@ void bt_id_add(struct bt_keys *keys)
 		return;
 	}
 
-	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECT);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECTING);
 	if (conn) {
 		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
 		bt_conn_unref(conn);
@@ -853,7 +857,7 @@ void bt_id_del(struct bt_keys *keys)
 		return;
 	}
 
-	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECT);
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECTING);
 	if (conn) {
 		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
 		bt_conn_unref(conn);
@@ -1614,7 +1618,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 			struct bt_conn *conn;
 
 			conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
-						       BT_CONN_CONNECT_SCAN);
+						       BT_CONN_CONNECTING_SCAN);
 			if (conn) {
 				/* Cannot set new RPA while creating
 				 * connections.
@@ -1686,7 +1690,7 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 
 				conn = bt_conn_lookup_state_le(
 					BT_ID_DEFAULT, NULL,
-					BT_CONN_CONNECT_SCAN);
+					BT_CONN_CONNECTING_SCAN);
 
 				if (conn) {
 					/* Cannot set new RPA while creating

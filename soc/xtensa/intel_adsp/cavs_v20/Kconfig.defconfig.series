@@ -18,6 +18,13 @@ config SOC
 config SMP
        default y
 
+# FIXME: these DSPs can have more cores, but Zephyr only supports up to 2 cores on them
+config MP_NUM_CPUS
+	default 2
+
+config SCHED_IPI_SUPPORTED
+	default y
+
 config XTENSA_TIMER
 	default n
 
@@ -31,14 +38,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 50000
 
-config IRQ_OFFLOAD_INTNUM
-	default 0
-
-# This series does not have MISC0.
-# Since EXCSAVE7 is unused by Zephyr, use it instead.
-config XTENSA_KERNEL_CPU_PTR_SR
-	default "EXCSAVE2"
-
 config KERNEL_ENTRY
 	default "_MainEntry"
 
@@ -51,36 +50,11 @@ config 2ND_LEVEL_INTERRUPTS
 config DYNAMIC_INTERRUPTS
 	default y
 
-config LOG
-	default y
-
-# To prevent test uses TEST_LOGGING_MINIMAL
-config TEST_LOGGING_DEFAULTS
-	default n
-	depends on TEST
-
 if LOG
 
 config LOG_BACKEND_ADSP
 	default y
 
 endif # LOG
-
-if SMP
-
-# FIXME: these DSPs can have more cores, but Zephyr only supports up to 2 cores on them
-config MP_NUM_CPUS
-	default 2
-
-config IPM
-	default y
-
-config IPM_CAVS_IDC
-	default y if IPM
-
-config SCHED_IPI_SUPPORTED
-	default y if IPM_CAVS_IDC
-
-endif # SMP
 
 endif # SOC_SERIES_INTEL_CAVS_V20

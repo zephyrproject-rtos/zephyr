@@ -2,7 +2,7 @@ description: STM32 LPUART
 
 compatible: "st,stm32-lpuart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -14,12 +14,22 @@ properties:
     clocks:
       required: true
 
-    pinctrl-0:
-      type: phandles
+    tx-invert:
+      type: boolean
       required: false
       description: |
-        GPIO pin configuration for serial signals (RX, TX, RTS, CTS).  We expect
-        that the phandles will reference pinctrl nodes.
+        Invert the binary logic of tx pin. When enabled, physical logic levels are inverted and
+        we use 1=Low, 0=High instead of 1=High, 0=Low.
 
-        For example the USART1 would be
-           pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+    rx-invert:
+      type: boolean
+      required: false
+      description: |
+        Invert the binary logic of rx pin. When enabled, physical logic levels are inverted and
+        we use 1=Low, 0=High instead of 1=High, 0=Low.
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true

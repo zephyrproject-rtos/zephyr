@@ -10,13 +10,13 @@ config DNS_RESOLVER
 if DNS_RESOLVER
 
 config MDNS_RESOLVER
-	bool "Enable mDNS support"
+	bool "MDNS support"
 	help
 	  This option enables multicast DNS client side support.
 	  See RFC 6762 for details.
 
 config LLMNR_RESOLVER
-	bool "Enable LLMNR support"
+	bool "LLMNR support"
 	help
 	  This option enables link local multicast name resolution client side
 	  support. See RFC 4795 for details. LLMNR is typically used by Windows
@@ -126,6 +126,8 @@ config MDNS_RESPONDER
 	bool "mDNS responder"
 	select NET_IPV4_IGMP if NET_IPV4
 	select NET_IPV6_MLD if NET_IPV6
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the mDNS responder support for Zephyr.
@@ -151,7 +153,7 @@ config MDNS_RESPONDER_INIT_PRIO
 	  should be bigger than its value.
 
 config MDNS_RESPONDER_DNS_SD
-	bool "Enable DNS Service Discovery via mDNS"
+	bool "DNS Service Discovery via mDNS"
 	default y
 	depends on DNS_SD
 	help
@@ -162,7 +164,7 @@ config MDNS_RESPONDER_DNS_SD
 
 if MDNS_RESPONDER_DNS_SD
 config MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION
-	bool "Enable DNS SD Service Type Enumeration"
+	bool "DNS SD Service Type Enumeration"
 	default y
 	help
 	  Selecting this option ensures that the MDNS Responder
@@ -189,6 +191,8 @@ config LLMNR_RESPONDER
 	bool "LLMNR responder"
 	select NET_IPV4_IGMP if NET_IPV4
 	select NET_IPV6_MLD if NET_IPV6
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	depends on NET_HOSTNAME_ENABLE
 	help
 	  This option enables the LLMNR responder support for Zephyr.
@@ -232,7 +236,7 @@ config LLMNR_RESOLVER_ADDITIONAL_BUF_CTR
 endif # LLMNR_RESPONDER
 
 config DNS_SD
-	bool "Enable DNS Service Discovery"
+	bool "DNS Service Discovery"
 	help
 	  This option enables DNS Service Discovery for Zephyr. It can
 	  be enabled for virtually any network service with only a few

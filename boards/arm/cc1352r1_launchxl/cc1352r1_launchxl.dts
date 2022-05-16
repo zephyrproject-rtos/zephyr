@@ -8,13 +8,7 @@
 
 #include <ti/cc1352r.dtsi>
 #include "boosterpack_connector.dtsi"
-
-/*
- * Define some constants from driverlib/ioc.h in TI HAL,
- * since we don't have a way to include the file directly.
- */
-#define IOC_PORT_MCU_UART0_TX 0x00000010
-#define IOC_PORT_MCU_UART0_RX 0x0000000F
+#include "cc1352r1_launchxl-pinctrl.dtsi"
 
 #define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
 
@@ -92,22 +86,22 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <13 IOC_PORT_MCU_UART0_TX>;
-	rx-pin = <12 IOC_PORT_MCU_UART0_RX>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
 };
 
 &i2c0 {
 	status = "okay";
-	scl-pin = <4>;
-	sda-pin = <5>;
+	pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
+	pinctrl-1 = <&i2c0_scl_sleep &i2c0_sda_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi0 {
 	status = "okay";
-	sck-pin = <10>;
-	mosi-pin = <9>;
-	miso-pin = <8>;
-	cs-pin = <11>;
+	pinctrl-0 = <&spi0_sck_default &spi0_mosi_default
+				 &spi0_miso_default &spi0_cs_default>;
+	pinctrl-names = "default";
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 };
 

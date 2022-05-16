@@ -6,18 +6,18 @@
  */
 
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <sys/byteorder.h>
-#include <net/ieee802154_radio.h>
-#include <net/ieee802154.h>
-#include <net/net_pkt.h>
-#include <random/rand32.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/ieee802154.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/random/rand32.h>
 #include <string.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <driverlib/rf_ieee_mailbox.h>
 #include <driverlib/rfc.h>
@@ -59,12 +59,6 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 	struct ieee802154_cc13xx_cc26xx_data *drv_data);
 static int ieee802154_cc13xx_cc26xx_stop(const struct device *dev);
 
-static inline struct ieee802154_cc13xx_cc26xx_data *
-get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
-
 /* TODO remove when rf driver bugfix is pulled in */
 static void update_saved_cmdhandle(RF_CmdHandle ch, RF_CmdHandle *saved)
 {
@@ -77,7 +71,7 @@ static void cmd_ieee_csma_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 	ARG_UNUSED(h);
 
 	const struct device *dev = &DEVICE_NAME_GET(ieee802154_cc13xx_cc26xx);
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);
 
@@ -93,7 +87,7 @@ static void cmd_ieee_rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 	ARG_UNUSED(h);
 
 	const struct device *dev = &DEVICE_NAME_GET(ieee802154_cc13xx_cc26xx);
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);
 
@@ -135,7 +129,7 @@ ieee802154_cc13xx_cc26xx_get_capabilities(const struct device *dev)
 
 static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
 {
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 	RF_Stat status;
 
 	status = RF_runImmediateCmd(drv_data->rf_handle,
@@ -161,7 +155,7 @@ static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 	int r;
 	RF_Stat status;
 	RF_CmdHandle cmd_handle;
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	/* TODO Support sub-GHz for CC13xx */
 	if (channel < 11 || channel > 26) {
@@ -210,7 +204,7 @@ static int ieee802154_cc13xx_cc26xx_reset_channel(
 	const struct device *dev)
 {
 	uint8_t channel;
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	/* extract the channel from cmd_ieee_rx */
 	channel = drv_data->cmd_ieee_rx.channel;
@@ -227,7 +221,7 @@ ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
 				enum ieee802154_filter_type type,
 				const struct ieee802154_filter *filter)
 {
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	if (!set) {
 		return -ENOTSUP;
@@ -253,7 +247,7 @@ static int ieee802154_cc13xx_cc26xx_set_txpower(const struct device *dev,
 {
 	RF_Stat status;
 	const RF_TxPowerTable_Entry *table;
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	/* TODO Support sub-GHz for CC13xx */
 	table = txPowerTable_2_4;
@@ -285,7 +279,7 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 	RF_ScheduleCmdParams sched_params = {
 		.allowDelay = true,
 	};
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 	bool ack = ieee802154_is_ar_flag_set(frag);
 	int retry = CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_TX_RETRIES;
 
@@ -453,7 +447,7 @@ static int ieee802154_cc13xx_cc26xx_start(const struct device *dev)
 
 static int ieee802154_cc13xx_cc26xx_stop(const struct device *dev)
 {
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	RF_Stat status;
 
@@ -480,7 +474,7 @@ ieee802154_cc13xx_cc26xx_configure(const struct device *dev,
 
 static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 {
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 	uint8_t *mac;
 
 	if (sys_read32(CCFG_BASE + CCFG_O_IEEE_MAC_0) != 0xFFFFFFFF &&
@@ -517,7 +511,7 @@ static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 static void ieee802154_cc13xx_cc26xx_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	net_if_set_link_addr(iface, drv_data->mac, sizeof(drv_data->mac),
 			     NET_LINK_IEEE802154);
@@ -549,7 +543,7 @@ static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 		.rfMode      = RF_MODE_MULTIPLE,
 		.cpePatchFxn = &rf_patch_cpe_multi_protocol,
 	};
-	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
+	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
 	/* Initialize driver data */
 	ieee802154_cc13xx_cc26xx_data_init(dev);

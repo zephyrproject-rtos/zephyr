@@ -14,8 +14,8 @@
  * and exiting a C exception handler.
  */
 
-#include <arch/x86/ia32/asm.h>
-#include <arch/x86/ia32/arch.h> /* For MK_ISR_NAME */
+#include <zephyr/arch/x86/ia32/asm.h>
+#include <zephyr/arch/x86/ia32/arch.h> /* For MK_ISR_NAME */
 #include <offsets_short.h>
 
 
@@ -44,8 +44,6 @@
  * Host-based tools and the target-based GDB agent depend on the stack frame
  * created by this routine to determine the locations of volatile registers.
  * These tools must be updated to reflect any changes to the stack frame.
- *
- * @return N/A
  *
  * C function prototype:
  *

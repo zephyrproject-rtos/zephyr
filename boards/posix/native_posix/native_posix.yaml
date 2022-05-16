@@ -8,11 +8,13 @@ toolchain:
   - host
   - llvm
 supported:
+  - can
   - eeprom
   - netif:eth
   - usb_device
   - adc
   - i2c
   - spi
+  - gpio
 testing:
   default: true

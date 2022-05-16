@@ -67,7 +67,7 @@ static void test_make_unique(void)
 	zassert_equal(make_unique_data::dtors, 1, "dtor count not incremented");
 }
 
-#if defined(CONFIG_EXCEPTIONS)
+#if defined(CONFIG_EXCEPTIONS) && !defined(CONFIG_BOARD_M2GL025_MIV)
 static void throw_exception(void)
 {
 	throw 42;

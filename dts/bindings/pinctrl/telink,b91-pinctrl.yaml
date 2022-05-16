@@ -1,0 +1,103 @@
+# Copyright (c) 2022, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The Telink B91 pin controller is a singleton node responsible for
+    controlling pin function selection and pin properties. For example, you can
+    use this node to route UART0 TX to pin PB2 and enable the pull-up resistor
+    on the pin.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+      /* include pre-defined pins and functions for the SoC used by the board */
+      #include <dt-bindings/pinctrl/b91-pinctrl.h>
+
+      &pinctrl {
+        /* configuration for UART0 TX default state */
+        uart0_tx_pb2_default: uart0_tx_pb2_default {
+          /* configure PB2 as B91_FUNC_C */
+          pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_2, B91_FUNC_C)>;
+        };
+        /* configuration for UART0 RX default state */
+        uart0_rx_pb3_default: uart0_rx_pb3_default {
+          /* configure PB2 as B91_FUNC_C */
+          pinmux = <B91_PINMUX_SET(B91_PORT_B, B91_PIN_3, B91_FUNC_C)>;
+        };
+      };
+
+    The 'uart0_tx_pb2_default' child node encodes the pin configurations
+    for a particular state of a device; in this case, the default
+    (that is, active) sate. You would specify the low-power configuration for
+    the same device in a separate child node.
+
+    A pin configuration can also specify pin properties such as the
+    'bias-pull-up' property. Here is a list of supported standard pin
+    properties:
+
+    - bias-disable
+    - bias-pull-down
+    - bias-pull-up
+
+    To link pin configurations with a device, use a pinctrl-N property for some
+    number N, like this example you could place in your board's DTS file:
+
+      #include "board-pinctrl.dtsi"
+
+      &uart0 {
+        pinctrl-0 = <&uart0_tx_pb2_default &uart0_rx_pb3_default>;
+        pinctrl-1 = <&uart0_tx_pb2_sleep &uart0_rx_pb3_sleep>;
+        pinctrl-names = "default", "sleep";
+      };
+
+compatible: "telink,b91-pinctrl"
+
+include:
+    - name: base.yaml
+    - name: pincfg-node.yaml
+      child-binding:
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    pad-mul-sel:
+      type: int
+      required: true
+      description: |
+          PinMux pad_mul_sel register value. Pin functions depend on it.
+
+          For instance:
+          Function C of PB2 configs the pin to UART0_TX if pad_mul_sel is set to <1>.
+          But, the same function configs the same pin to DAC_I_DAT2_I if pad_mul_sel is set to <0>.
+
+          Refer to the Telink TLSR9 specs to get more information about pins configuration.
+
+child-binding:
+    description: |
+        This binding gives a base representation of the Telink B91 pins configration.
+
+    properties:
+        pinmux:
+          required: true
+          type: int
+          description: |
+              Telink B91 pin's configuration (port, pin and function).

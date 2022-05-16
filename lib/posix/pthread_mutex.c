@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <posix/pthread.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/posix/pthread.h>
 
 struct k_spinlock z_pthread_spinlock;
 
@@ -85,7 +85,7 @@ int pthread_mutex_timedlock(pthread_mutex_t *m,
 }
 
 /**
- * @brief Intialize POSIX mutex.
+ * @brief Initialize POSIX mutex.
  *
  * See IEEE 1003.1
  */

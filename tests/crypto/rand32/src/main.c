@@ -15,7 +15,7 @@
 
 #include <ztest.h>
 #include <kernel_internal.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 
 #define N_VALUES 10
 
@@ -24,8 +24,6 @@
  *
  * @brief Regression test's entry point
  *
- *
- * @return N/A
  */
 
 void test_rand32(void)

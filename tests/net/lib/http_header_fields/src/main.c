@@ -19,11 +19,11 @@
  * IN THE SOFTWARE.
  */
 
-#include <net/http_parser.h>
+#include <zephyr/net/http_parser.h>
 #include <string.h>
 #include <errno.h>
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <tc_util.h>
 #include <ztest.h>
 

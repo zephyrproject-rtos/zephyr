@@ -17,7 +17,7 @@ tests:
     tags: ci_build
     extra_args: OVERLAY_CONFIG=overlay-usb-nrf-br.conf
                 DTC_OVERLAY_FILE="usb.overlay"
-  samples.openthread.coprocessor.rcp:
+  sample.openthread.coprocessor.rcp:
     build_only: true
     platform_allow: nrf52840dk_nrf52840 nrf52833dk_nrf52833 tlsr9518adk80d
     tags: ci_build

@@ -244,7 +244,8 @@
 #define MBEDTLS_SHA1_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA256_ENABLED)
+#if defined(CONFIG_MBEDTLS_MAC_SHA256_ENABLED) || \
+	defined(CONFIG_MBEDTLS_HASH_SHA256_ENABLED)
 #define MBEDTLS_SHA224_C
 #define MBEDTLS_SHA256_C
 #endif
@@ -253,7 +254,8 @@
 #define MBEDTLS_SHA256_SMALLER
 #endif
 
-#if defined(CONFIG_MBEDTLS_MAC_SHA512_ENABLED)
+#if defined(CONFIG_MBEDTLS_MAC_SHA512_ENABLED) || \
+	defined(CONFIG_MBEDTLS_HASH_SHA512_ENABLED)
 #define MBEDTLS_SHA512_C
 #endif
 
@@ -422,7 +424,6 @@
 #if defined(CONFIG_MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED)
 #define MBEDTLS_MPI_WINDOW_SIZE            1 /**< Maximum windows size used. */
 #define MBEDTLS_MPI_MAX_SIZE              32 /**< Maximum number of bytes for usable MPIs. */
-#define MBEDTLS_ECP_MAX_BITS             256 /**< Maximum bit size of groups */
 #define MBEDTLS_ECP_WINDOW_SIZE            2 /**< Maximum window size used */
 #define MBEDTLS_ECP_FIXED_POINT_OPTIM      0 /**< Enable fixed-point speed-up */
 #define MBEDTLS_ENTROPY_MAX_SOURCES        1 /**< Maximum number of sources supported */
@@ -431,6 +432,12 @@
 #if defined(CONFIG_MBEDTLS_SERVER_NAME_INDICATION) && \
     defined(MBEDTLS_X509_CRT_PARSE_C)
 #define MBEDTLS_SSL_SERVER_NAME_INDICATION
+#endif
+
+#if defined(CONFIG_MBEDTLS_SSL_CACHE_C)
+#define MBEDTLS_SSL_CACHE_C
+#define MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT CONFIG_MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT
+#define MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES CONFIG_MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
 #endif
 
 /* User config file */

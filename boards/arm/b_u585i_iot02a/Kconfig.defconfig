@@ -17,4 +17,8 @@ choice STM32_LPTIM_CLOCK
 	depends on STM32_LPTIM_TIMER
 endchoice
 
+# Get flash configuration for NS image from dts flash partition
+config USE_DT_CODE_PARTITION
+	default y if TRUSTED_EXECUTION_NONSECURE
+
 endif # BOARD_B_U585I_IOT02A

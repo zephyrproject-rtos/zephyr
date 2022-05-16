@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf51822_qfaa.dtsi>
+#include "nrf51_blenano-pinctrl.dtsi"
 
 / {
 	model = "Redbear BLE Nano";
@@ -44,8 +45,7 @@
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <9>;
-	rx-pin = <11>;
-	rts-pin = <8>;
-	cts-pin = <10>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };

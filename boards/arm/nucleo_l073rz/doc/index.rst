@@ -94,9 +94,13 @@ The Zephyr nucleo_l073rz board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | Random Number Generator             |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
@@ -130,6 +134,7 @@ Default Zephyr Peripheral Mapping:
 - USER_PB   : PC13
 - LD2       : PA5
 - DAC       : PA4
+- PWM_2_CH1 : PA5 (might conflict with SPI1)
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 

@@ -6,7 +6,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
-#include <sys/cbprintf.h>
+#include <zephyr/sys/cbprintf.h>
 
 int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...)
 {

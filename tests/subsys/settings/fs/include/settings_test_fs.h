@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ztest.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 #include "settings/settings.h"
 
@@ -44,7 +44,7 @@ int settings_test_file_strstr(const char *fname, char const *string,
 			      size_t str_len);
 
 
-void config_empty_lookups(void);
+void test_config_empty_lookups(void);
 void test_config_insert(void);
 void test_config_getset_unknown(void);
 void test_config_getset_int(void);

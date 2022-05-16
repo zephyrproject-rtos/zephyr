@@ -1,0 +1,41 @@
+# NXP MIMXRT5XX platform configuration options
+
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT595S_CM33
+
+config SOC
+	default "mimxrt595s_cm33"
+
+config PINMUX_MCUX_LPC
+	default y
+	depends on PINMUX
+
+config GPIO_MCUX_LPC
+	default y
+	depends on GPIO
+
+config UART_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on SERIAL
+
+config CLOCK_CONTROL_MCUX_SYSCON
+	default y if HAS_MCUX_SYSCON
+	depends on CLOCK_CONTROL
+
+if MCUX_OS_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+endif # MCUX_OS_TIMER
+
+if CORTEX_M_SYSTICK
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 250105263
+
+endif # CORTEX_M_SYSTICK
+
+endif # SOC_MIMXRT685S_CM33

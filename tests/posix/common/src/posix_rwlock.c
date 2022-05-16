@@ -6,10 +6,10 @@
 
 #include <ztest.h>
 #include <pthread.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define N_THR 3
-#define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 K_THREAD_STACK_ARRAY_DEFINE(stack, N_THR, STACKSZ);
 pthread_rwlock_t rwlock;
@@ -80,7 +80,7 @@ void test_posix_rw_lock(void)
 	zassert_false(pthread_rwlock_timedwrlock(&rwlock, &time),
 		      "Failed to acquire write lock");
 
-	/* Creating N premptive threads in increasing order of priority */
+	/* Creating N preemptive threads in increasing order of priority */
 	for (i = 0; i < N_THR; i++) {
 		zassert_equal(pthread_attr_init(&attr[i]), 0,
 			      "Unable to create pthread object attrib");

@@ -9,12 +9,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <zephyr.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <drivers/adc.h>
-#include <drivers/sensor.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "battery.h"
 

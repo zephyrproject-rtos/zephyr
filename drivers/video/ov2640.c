@@ -5,15 +5,15 @@
  */
 
 #define DT_DRV_COMPAT ovti_ov2640
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
-#include <drivers/video.h>
-#include <drivers/i2c.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/video.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ov2640);
 
 /* DSP register bank FF=0x00*/
@@ -343,7 +343,7 @@ static const struct ov2640_reg default_regs[] = {
 
 static const struct ov2640_reg uxga_regs[] = {
 	{ BANK_SEL, BANK_SEL_SENSOR },
-	/* DSP input image resoultion and window size control */
+	/* DSP input image resolution and window size control */
 	{ COM7,    COM7_RES_UXGA},
 	{ COM1,    0x0F }, /* UXGA=0x0F, SVGA=0x0A, CIF=0x06 */
 	{ REG32,   REG32_UXGA }, /* UXGA=0x36, SVGA/CIF=0x09 */
@@ -373,7 +373,7 @@ static const struct ov2640_reg uxga_regs[] = {
 
 	{ RESET,   RESET_DVP },
 	{ HSIZE8,  (UXGA_HSIZE>>3)}, /* Image Horizontal Size HSIZE[10:3] */
-	{ VSIZE8,  (UXGA_VSIZE>>3)}, /* Image Vertiacl Size VSIZE[10:3] */
+	{ VSIZE8,  (UXGA_VSIZE>>3)}, /* Image Vertical Size VSIZE[10:3] */
 
 	/* {HSIZE[11], HSIZE[2:0], VSIZE[2:0]} */
 	{ SIZEL,   ((UXGA_HSIZE>>6)&0x40) | ((UXGA_HSIZE&0x7)<<3) | (UXGA_VSIZE&0x7)},
@@ -392,7 +392,7 @@ static const struct ov2640_reg uxga_regs[] = {
 
 	/* H_DIVIDER/V_DIVIDER */
 	{ CTRLI,   CTRLI_LP_DP | 0x00},
-	/* DVP prescalar */
+	/* DVP prescaler */
 	{ R_DVP_SP, R_DVP_SP_AUTO_MODE | 0x04},
 
 	{ R_BYPASS, R_BYPASS_DSP_EN },

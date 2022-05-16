@@ -12,11 +12,19 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 class BlackMagicProbeRunner(ZephyrBinaryRunner):
     '''Runner front-end for Black Magic probe.'''
 
-    def __init__(self, cfg, gdb_serial):
+    def __init__(self, cfg, gdb_serial, connect_srst=False):
         super().__init__(cfg)
         self.gdb = [cfg.gdb] if cfg.gdb else None
         self.elf_file = cfg.elf_file
         self.gdb_serial = gdb_serial
+        if connect_srst:
+            self.connect_srst_enable_arg = [
+                    '-ex', "monitor connect_srst enable"]
+            self.connect_srst_disable_arg = [
+                    '-ex', "monitor connect_srst disable"]
+        else:
+            self.connect_srst_enable_arg = []
+            self.connect_srst_disable_arg = []
 
     @classmethod
     def name(cls):
@@ -28,20 +36,24 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
-        return BlackMagicProbeRunner(cfg, args.gdb_serial)
+        return BlackMagicProbeRunner(cfg, args.gdb_serial, args.connect_srst)
 
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--gdb-serial', default='/dev/ttyACM0',
                             help='GDB serial port')
+        parser.add_argument('--connect-srst', action='store_true',
+                            help='Assert SRST during connect? (default: no)')
 
     def bmp_flash(self, command, **kwargs):
         if self.elf_file is None:
             raise ValueError('Cannot debug; elf file is missing')
         command = (self.gdb +
                    ['-ex', "set confirm off",
-                    '-ex', "target extended-remote {}".format(self.gdb_serial),
-                    '-ex', "monitor swdp_scan",
+                    '-ex', "target extended-remote {}".format(
+                        self.gdb_serial)] +
+                    self.connect_srst_enable_arg +
+                   ['-ex', "monitor swdp_scan",
                     '-ex', "attach 1",
                     '-ex', "load {}".format(self.elf_file),
                     '-ex', "kill",
@@ -61,15 +73,17 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
             command = (self.gdb +
                        ['-ex', "set confirm off",
                         '-ex', "target extended-remote {}".format(
-                            self.gdb_serial),
-                        '-ex', "monitor swdp_scan",
+                            self.gdb_serial)] +
+                        self.connect_srst_disable_arg +
+                       ['-ex', "monitor swdp_scan",
                         '-ex', "attach 1"])
         else:
             command = (self.gdb +
                        ['-ex', "set confirm off",
                         '-ex', "target extended-remote {}".format(
-                            self.gdb_serial),
-                        '-ex', "monitor swdp_scan",
+                            self.gdb_serial)] +
+                        self.connect_srst_disable_arg +
+                       ['-ex', "monitor swdp_scan",
                         '-ex', "attach 1",
                         '-ex', "file {}".format(self.elf_file)])
         self.check_call_ignore_sigint(command)
@@ -79,8 +93,10 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
             raise ValueError('Cannot debug; elf file is missing')
         command = (self.gdb +
                    ['-ex', "set confirm off",
-                    '-ex', "target extended-remote {}".format(self.gdb_serial),
-                    '-ex', "monitor swdp_scan",
+                    '-ex', "target extended-remote {}".format(
+                        self.gdb_serial)] +
+                    self.connect_srst_enable_arg +
+                   ['-ex', "monitor swdp_scan",
                     '-ex', "attach 1",
                     '-ex', "file {}".format(self.elf_file),
                     '-ex', "load {}".format(self.elf_file)])

@@ -110,7 +110,7 @@ config SOC_GECKO_TRNG
 	  Set if the SoC has a True Random Number Generator (TRNG) module.
 
 config SOC_GECKO_EMU_DCDC
-	bool "Enable SoC DC/DC regulator"
+	bool "SoC DC/DC regulator"
 	select SOC_GECKO_EMU
 	help
 	  Enable the on chip DC/DC regulator

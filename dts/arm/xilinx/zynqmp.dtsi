@@ -6,8 +6,8 @@
 
 #include <mem.h>
 #include <arm/armv7-r.dtsi>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <dt-bindings/ethernet/xlnx_gem.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
 
 / {
 	soc {
@@ -21,6 +21,12 @@
 			reg = <0 DT_SIZE_M(64)>;
 		};
 
+		ocm: memory@fffc0000 {
+			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
+			reg = <0xfffc0000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "OCM";
+		};
+
 		uart0: uart@ff000000 {
 			compatible = "xlnx,xuartps";
 			reg = <0xff000000 0x4c>;
@@ -29,6 +35,16 @@
 					IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
 			label = "UART_0";
+		};
+
+		uart1: uart@ff010000 {
+			compatible = "xlnx,xuartps";
+			reg = <0xff010000 0x4c>;
+			status = "disabled";
+			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			label = "UART_1";
 		};
 
 		ttc0: timer@ff110000 {
@@ -197,6 +213,80 @@
 			discard-rx-fcs;
 			unicast-hash;
 			full-duplex;
+		};
+
+		psgpio: gpio@ff0a0000 {
+			compatible = "xlnx,ps-gpio";
+			status = "disabled";
+			reg = <0xff0a0000 0x1000>;
+			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			label = "psgpio";
+
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			psgpio_bank0: psgpio_bank@0 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x0>;
+				label = "psgpio_bank0_mio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <26>;
+				status = "okay";
+			};
+
+			psgpio_bank1: psgpio_bank@1 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x1>;
+				label = "psgpio_bank1_mio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <26>;
+				status = "okay";
+			};
+
+			psgpio_bank2: psgpio_bank@2 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x2>;
+				label = "psgpio_bank2_mio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <26>;
+				status = "okay";
+			};
+
+			psgpio_bank3: psgpio_bank@3 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x3>;
+				label = "psgpio_bank3_emio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+
+			psgpio_bank4: psgpio_bank@4 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x4>;
+				label = "psgpio_bank4_emio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+
+			psgpio_bank5: psgpio_bank@5 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x5>;
+				label = "psgpio_bank5_emio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
 		};
 	};
 };

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lib_extensions, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -151,12 +151,6 @@ double atof(const char *str)
 {
 	/* XXX good enough for civetweb uses */
 	return (double)atoi(str);
-}
-
-long long strtoll(const char *str, char **endptr, int base)
-{
-	/* XXX good enough for civetweb uses */
-	return (long long)strtol(str, endptr, base);
 }
 
 /*

@@ -1,0 +1,11 @@
+# Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_GD32VF103
+
+source "soc/riscv/riscv-privilege/gd32vf103/Kconfig.defconfig.gd32vf103*"
+
+config SOC_SERIES
+	default "gd32vf103"
+
+endif # SOC_SERIES_GD32VF103

@@ -6,17 +6,17 @@
 
 #define DT_DRV_COMPAT ti_tmp007
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <sys/util.h>
-#include <kernel.h>
-#include <drivers/sensor.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "tmp007.h"
 
 extern struct tmp007_data tmp007_driver;
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline void setup_int(const struct device *dev,

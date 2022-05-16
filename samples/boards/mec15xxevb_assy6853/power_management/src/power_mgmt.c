@@ -5,11 +5,11 @@
  */
 
 #include <errno.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <pm/pm.h>
-#include <logging/log.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/logging/log.h>
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(pwrmgmt_test);
 
@@ -49,8 +49,8 @@ static bool checks_enabled;
 struct pm_counter pm_counters[SLP_STATES_SUPPORTED];
 
 static const struct pm_state_info residency_info[] =
-	PM_STATE_INFO_DT_ITEMS_LIST(DT_NODELABEL(cpu0));
-static size_t residency_info_len = PM_STATE_DT_ITEMS_LEN(DT_NODELABEL(cpu0));
+	PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
+static size_t residency_info_len = DT_NUM_CPU_POWER_STATES(DT_NODELABEL(cpu0));
 
 
 /* Instrumentation to measure latency and track entry exit via gpios
@@ -265,7 +265,7 @@ int test_pwr_mgmt_multithread(bool use_logging, uint8_t cycles)
 {
 	uint8_t iterations = cycles;
 	/* Ensure we can enter deep sleep when stopping threads
-	 * No UART output should occurr when threads are suspended
+	 * No UART output should occur when threads are suspended
 	 * Test to verify Zephyr RTOS issue #20033
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/20033
 	 */

@@ -7,10 +7,10 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/controller.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/controller.h>
 
 #include "util/util.h"
 #include "util/memq.h"

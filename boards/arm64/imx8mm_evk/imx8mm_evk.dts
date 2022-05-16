@@ -1,0 +1,38 @@
+/*
+ * Copyright 2020 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8mm_a53.dtsi>
+#include "imx8mm_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX8MM A53";
+	compatible = "fsl,imx8mm";
+
+	aliases {
+		uart-2 = &uart2;
+		uart-4 = &uart4;
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+		label = "PSCI";
+	};
+
+	sram0: memory@40000000 {
+		reg = <0x93c00000 DT_SIZE_M(1)>;
+	};
+
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arch/arm/aarch32/arch.h>
-#include <kernel.h>
-#include <sys_clock.h>
-#include <timing/timing.h>
+#include <zephyr/arch/arm/aarch32/arch.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/timing/timing.h>
 #include <soc.h>
 
 void soc_timing_init(void)

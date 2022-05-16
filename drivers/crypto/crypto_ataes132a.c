@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <string.h>
-#include <device.h>
-#include <drivers/i2c.h>
-#include <sys/__assert.h>
-#include <crypto/cipher.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/crypto/crypto.h>
 
 #include "crypto_ataes132a_priv.h"
 
@@ -22,7 +22,7 @@
 #define CRYPTO_MAX_SESSION 16
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ataes132a);
 
 static struct ataes132a_driver_state ataes132a_state[CRYPTO_MAX_SESSION];
@@ -890,9 +890,9 @@ const struct ataes132a_device_config ataes132a_config = {
 };
 
 static struct crypto_driver_api crypto_enc_funcs = {
-	.begin_session = ataes132a_session_setup,
-	.free_session = ataes132a_session_free,
-	.crypto_async_callback_set = NULL,
+	.cipher_begin_session = ataes132a_session_setup,
+	.cipher_free_session = ataes132a_session_free,
+	.cipher_async_callback_set = NULL,
 	.query_hw_caps = ataes132a_query_caps,
 };
 

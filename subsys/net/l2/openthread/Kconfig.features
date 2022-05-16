@@ -3,8 +3,9 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-choice
+choice OPENTHREAD_STACK_VERSION
 	prompt "OpenThread stack version"
+	default OPENTHREAD_THREAD_VERSION_1_1
 	help
 	  This option selects version of Thread stack
 
@@ -21,31 +22,34 @@ config OPENTHREAD_THREAD_VERSION
 	default "unknown"
 
 config OPENTHREAD_BACKBONE_ROUTER
-	bool "Enable Backbone Router functionality"
+	bool "Backbone Router functionality"
 
 config OPENTHREAD_BORDER_AGENT
-	bool "Enable Border Agent support"
+	bool "Border Agent support"
 
 config OPENTHREAD_BORDER_ROUTER
-	bool "Enable Border Router support"
+	bool "Border Router support"
+
+config OPENTHREAD_BORDER_ROUTING_NAT64
+	bool "Border routing NAT64 support"
 
 config OPENTHREAD_COAP
-	bool "Enable OpenThread CoAP support"
+	bool "OpenThread CoAP support"
 	help
 	  Enable CoAP API for the application with use of OpenThread stack
 
 config OPENTHREAD_COAPS
-	bool "Enable Secure CoAP API support"
+	bool "Secure CoAP API support"
 	depends on OPENTHREAD_COAP
 
 config OPENTHREAD_COAP_BLOCK
-	bool "Enable CoAP Block-wise option support"
+	bool "CoAP Block-wise option support"
 
 config OPENTHREAD_COAP_OBSERVE
-	bool "Enable CoAP Observe option support"
+	bool "CoAP Observe option support"
 
 config OPENTHREAD_COMMISSIONER
-	bool "Enable Commissioner functions support"
+	bool "Commissioner functions support"
 	help
 	  Enable commissioner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
@@ -53,59 +57,65 @@ config OPENTHREAD_COMMISSIONER
 	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
 config OPENTHREAD_CHANNEL_MANAGER
-	bool "Enable channel manager support"
+	bool "Channel manager support"
 	depends on OPENTHREAD_CHANNEL_MONITOR
 
 config OPENTHREAD_CHANNEL_MONITOR
-	bool "Enable channel monitor support"
+	bool "Channel monitor support"
 
 config OPENTHREAD_CHILD_SUPERVISION
-	bool "Enable child supervision support"
+	bool "Child supervision support"
 
 config OPENTHREAD_CSL_RECEIVER
-	bool "Enable CSL Receiver support"
+	bool "CSL Receiver support"
 	help
 	  Enable CSL Receiver support for Thread 1.2
 
 config OPENTHREAD_DHCP6_CLIENT
-	bool "Enable DHCPv6 client support"
+	bool "DHCPv6 client support"
 
 config OPENTHREAD_DHCP6_SERVER
-	bool "Enable DHCPv6 server support"
+	bool "DHCPv6 server support"
 
 config OPENTHREAD_DIAG
-	bool "Enable Diagnostic functions support"
+	bool "Diagnostic functions support"
 	help
 	  Enable OpenThread CLI diagnostic commands
 
 config OPENTHREAD_DNS_CLIENT
-	bool "Enable DNS client support"
+	bool "DNS client support"
+
+config OPENTHREAD_DNS_DSO
+	bool "DNS Stateful Operations (DSO) support"
 
 config OPENTHREAD_DNSSD_SERVER
-	bool "Enable DNS-SD server support"
+	bool "DNS-SD server support"
 
 config OPENTHREAD_DUA
-	bool "Enable Domain Unicast Address support"
+	bool "Domain Unicast Address support"
 	help
 	  Enable Domain Unicast Address feature for Thread 1.2
 
 config OPENTHREAD_LOG_LEVEL_DYNAMIC
-	bool "Enable dynamic log level control"
+	bool "Dynamic log level control"
 
 config OPENTHREAD_ECDSA
-	bool "Enable ECDSA support"
+	bool "ECDSA support"
+
+config OPENTHREAD_EXCLUDE_TCPLP_LIB
+	bool "Exclude TCPlp library from build"
 
 config OPENTHREAD_EXTERNAL_HEAP
-	bool "Enable external heap support"
+	bool "External heap support"
 
 config OPENTHREAD_IP6_FRAGM
-	bool "Enable IPv6 fragmentation support"
+	bool "IPv6 fragmentation support"
 
 config OPENTHREAD_JAM_DETECTION
-	bool "Enable Jam detection support"
+	bool "Jam detection support"
 
 config OPENTHREAD_JOINER
-	bool "Enable Joiner functions support"
+	bool "Joiner functions support"
 	help
 	  Enable joiner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
@@ -113,89 +123,98 @@ config OPENTHREAD_JOINER
 	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
 config OPENTHREAD_LEGACY
-	bool "Enable legacy network support"
+	bool "Legacy network support"
 
 config OPENTHREAD_RAW
-	bool "Enable raw Link support"
+	bool "Raw Link support"
 
 config OPENTHREAD_MAC_FILTER
-	bool "Enable MAC filter support"
+	bool "MAC filter support"
 
 config OPENTHREAD_MLE_LONG_ROUTES
-	bool "Enable MLE long routes extension (experimental)"
+	bool "MLE long routes extension (experimental)"
 	help
 	  Enable MLE long routes extension (experimental, breaks Thread conformance)
 
 config OPENTHREAD_MLR
-	bool "Enable Multicast Listener Registration support"
+	bool "Multicast Listener Registration support"
 	help
 	  Enable Multicast Listener Registration support for Thread 1.2
 
 config OPENTHREAD_MTD_NETDIAG
-	bool "Enable TMF network diagnostics on MTDs"
+	bool "TMF network diagnostics on MTDs"
 
 config OPENTHREAD_MULTIPLE_INSTANCE
-	bool "Enable OpenThread multiple instances"
+	bool "OpenThread multiple instances"
 
 config OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT
-	bool "Enable neighbor discovery agent support"
+	bool "Neighbor discovery agent support"
 
 config OPENTHREAD_NETDATA_PUBLISHER
-	bool "Enable Thread Network Data publisher"
+	bool "Thread Network Data publisher"
 
 config OPENTHREAD_PING_SENDER
-	bool "Enable ping sender support"
+	bool "Ping sender support"
 
 config OPENTHREAD_PLATFORM_UDP
-	bool "Enable platform UDP support"
+	bool "Platform UDP support"
 
 config OPENTHREAD_PLATFORM_NETIF
-	bool "Enable platform netif support"
+	bool "Platform netif support"
 
 config OPENTHREAD_REFERENCE_DEVICE
-	bool "Enable Reference Device support"
+	bool "Reference Device support"
 	help
 	  Enable Thread Certification reference device support in OpenThread stack
 
 config OPENTHREAD_ENABLE_SERVICE
-	bool "Enable Service support"
+	bool "Service support"
 	help
 	  Enable Thread Services capability in OpenThread stack
 
 config OPENTHREAD_SLAAC
-	bool "Enable SLAAC support"
+	bool "SLAAC support"
 
 config OPENTHREAD_SNTP_CLIENT
-	bool "Enable SNTP Client support"
+	bool "SNTP Client support"
 
 config OPENTHREAD_TIME_SYNC
-	bool "Enable the time synchronization service feature"
+	bool "The time synchronization service feature"
 
 config OPENTHREAD_TREL
-	bool "Enable TREL radio link for Thread over Infrastructure feature"
+	bool "TREL radio link for Thread over Infrastructure feature"
 
 config OPENTHREAD_UDP_FORWARD
-	bool "Enable UDP forward support"
+	bool "UDP forward support"
 
 config OPENTHREAD_SETTINGS_RAM
-	bool "Enable volatile-only storage of settings"
+	bool "Volatile-only storage of settings"
 
 config OPENTHREAD_OTNS
-	bool "Enable OTNS support"
+	bool "OTNS support"
 
 config OPENTHREAD_FULL_LOGS
-	bool "Enable OpenThread full logs"
+	bool "OpenThread full logs"
 
 config OPENTHREAD_LINK_METRICS_INITIATOR
-	bool "Enable Link Metrics initiator"
+	bool "Link Metrics initiator"
 
 config OPENTHREAD_LINK_METRICS_SUBJECT
-	bool "Enable Link Metrics subject"
+	bool "Link Metrics subject"
 
 config OPENTHREAD_SRP_CLIENT
-	bool "Enable SRP Client support"
+	bool "SRP Client support"
 	select OPENTHREAD_ECDSA
 
 config OPENTHREAD_SRP_SERVER
-	bool "Enable SRP Server support"
+	bool "SRP Server support"
 	select OPENTHREAD_ECDSA
+
+config OPENTHREAD_CSL_DEBUG
+	bool "CSL debugging"
+
+config OPENTHREAD_DATSET_UPDATER
+	bool "Dataset updater"
+
+config OPENTHREAD_UPTIME
+	bool "Openthread uptime counter"

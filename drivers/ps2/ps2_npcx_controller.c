@@ -15,11 +15,11 @@
  * The hardware accelerator mechanism is shared by four PS/2 channels.
  */
 
-#include <drivers/clock_control.h>
-#include <drivers/ps2.h>
-#include <dt-bindings/clock/npcx_clock.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/ps2.h>
+#include <zephyr/dt-bindings/clock/npcx_clock.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ps2_npcx_ctrl, CONFIG_PS2_LOG_LEVEL);
 
 #define NPCX_PS2_CH_COUNT 4
@@ -65,11 +65,8 @@ struct ps2_npcx_ctrl_data {
 };
 
 /* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct ps2_npcx_ctrl_config *)(dev)->config)
-
-#define DRV_DATA(dev) ((struct ps2_npcx_ctrl_data *)(dev)->data)
-
-#define HAL_PS2_INSTANCE(dev) (struct ps2_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_PS2_INSTANCE(dev)                                                                      \
+	((struct ps2_reg *)((const struct ps2_npcx_ctrl_config *)(dev)->config)->base)
 
 static uint8_t ps2_npcx_ctrl_get_ch_clk_mask(uint8_t channel_id)
 {
@@ -79,7 +76,7 @@ static uint8_t ps2_npcx_ctrl_get_ch_clk_mask(uint8_t channel_id)
 int ps2_npcx_ctrl_configure(const struct device *dev, uint8_t channel_id,
 			    ps2_callback_t callback_isr)
 {
-	struct ps2_npcx_ctrl_data *const data = DRV_DATA(dev);
+	struct ps2_npcx_ctrl_data *const data = dev->data;
 
 	if (channel_id >= NPCX_PS2_CH_COUNT) {
 		LOG_ERR("unexpected channel ID: %d", channel_id);
@@ -100,7 +97,7 @@ int ps2_npcx_ctrl_configure(const struct device *dev, uint8_t channel_id,
 int ps2_npcx_ctrl_enable_interface(const struct device *dev, uint8_t channel_id,
 				   bool enable)
 {
-	struct ps2_npcx_ctrl_data *const data = DRV_DATA(dev);
+	struct ps2_npcx_ctrl_data *const data = dev->data;
 	struct ps2_reg *const inst = HAL_PS2_INSTANCE(dev);
 	uint8_t ch_clk_mask;
 
@@ -155,7 +152,7 @@ static int ps2_npcx_ctrl_bus_busy(const struct device *dev)
 int ps2_npcx_ctrl_write(const struct device *dev, uint8_t channel_id,
 			uint8_t value)
 {
-	struct ps2_npcx_ctrl_data *const data = DRV_DATA(dev);
+	struct ps2_npcx_ctrl_data *const data = dev->data;
 	struct ps2_reg *const inst = HAL_PS2_INSTANCE(dev);
 	int i = 0;
 
@@ -242,7 +239,7 @@ static void ps2_npcx_ctrl_isr(const struct device *dev)
 {
 	uint8_t active_ch, mask;
 	struct ps2_reg *const inst = HAL_PS2_INSTANCE(dev);
-	struct ps2_npcx_ctrl_data *const data = DRV_DATA(dev);
+	struct ps2_npcx_ctrl_data *const data = dev->data;
 
 	/*
 	 * ACH = 1 : Channel 0
@@ -326,8 +323,8 @@ DEVICE_DT_INST_DEFINE(0, &ps2_npcx_ctrl_init, NULL, &ps2_npcx_ctrl_data_0,
 
 static int ps2_npcx_ctrl_init(const struct device *dev)
 {
-	const struct ps2_npcx_ctrl_config *const config = DRV_CONFIG(dev);
-	struct ps2_npcx_ctrl_data *const data = DRV_DATA(dev);
+	const struct ps2_npcx_ctrl_config *const config = dev->config;
+	struct ps2_npcx_ctrl_data *const data = dev->data;
 	struct ps2_reg *const inst = HAL_PS2_INSTANCE(dev);
 	const struct device *clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;

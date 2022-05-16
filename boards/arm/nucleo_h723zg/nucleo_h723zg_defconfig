@@ -18,11 +18,11 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# Enable Pinmux
-CONFIG_PINMUX=y
-
 # Enable GPIO
 CONFIG_GPIO=y
 
 # Enable Clock
 CONFIG_CLOCK_CONTROL=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

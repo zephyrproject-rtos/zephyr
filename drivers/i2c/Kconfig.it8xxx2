@@ -1,10 +1,22 @@
 # Copyright (c) 2020 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_ITE_IT8XXX2_I2C := ite,it8xxx2-i2c
+DT_COMPAT_ITE_ENHANCE_I2C := ite,enhance-i2c
+
 config I2C_ITE_IT8XXX2
 	bool "ITE IT8XXX2 I2C driver"
 	depends on SOC_IT8XXX2
+	default $(dt_compat_enabled,$(DT_COMPAT_ITE_IT8XXX2_I2C))
 	help
 	  Enable I2C support on it8xxx2_evb.
 	  Supported Speeds: 100kHz, 400kHz and 1MHz.
 	  This driver supports repeated start.
+
+config I2C_ITE_ENHANCE
+	bool "ITE IT8XXX2 I2C enhance driver"
+	depends on SOC_IT8XXX2
+	default $(dt_compat_enabled,$(DT_COMPAT_ITE_ENHANCE_I2C))
+	help
+	  This option can enable the enhance I2C
+	  of IT8XXX2 and support three channels.

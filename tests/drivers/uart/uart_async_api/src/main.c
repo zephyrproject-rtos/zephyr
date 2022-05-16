@@ -24,6 +24,8 @@ void test_main(void)
 	ztest_test_suite(uart_async_test,
 			 ztest_unit_test(test_single_read_setup),
 			 ztest_user_unit_test(test_single_read),
+			 ztest_unit_test(test_multiple_rx_enable_setup),
+			 ztest_user_unit_test(test_multiple_rx_enable),
 			 ztest_unit_test(test_chained_read_setup),
 			 ztest_user_unit_test(test_chained_read),
 			 ztest_unit_test(test_double_buffer_setup),

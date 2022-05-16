@@ -77,7 +77,7 @@ choice CSPRNG_GENERATOR_CHOICE
 
 	  If the hardware entropy support of the platform has sufficient
 	  performance to support CSRNG then select that. Otherwise, select
-	  CTR-DRBG CSPRNG as that is a FIPS140-2 recommmended CSPRNG.
+	  CTR-DRBG CSPRNG as that is a FIPS140-2 recommended CSPRNG.
 
 config HARDWARE_DEVICE_CS_GENERATOR
 	bool "Use hardware random driver for CS random numbers"

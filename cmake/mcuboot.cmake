@@ -20,11 +20,13 @@ function(zephyr_mcuboot_tasks)
   set(keyfile "${CONFIG_MCUBOOT_SIGNATURE_KEY_FILE}")
   set(keyfile_enc "${CONFIG_MCUBOOT_ENCRYPTION_KEY_FILE}")
 
-  # Check for misconfiguration.
-  if("${keyfile}" STREQUAL "")
-    # No signature key file, no signed binaries. No error, though:
-    # this is the documented behavior.
-    return()
+  if(NOT "${CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE}")
+    # Check for misconfiguration.
+    if("${keyfile}" STREQUAL "")
+      # No signature key file, no signed binaries. No error, though:
+      # this is the documented behavior.
+      return()
+    endif()
   endif()
 
   if(NOT WEST)
@@ -39,7 +41,7 @@ function(zephyr_mcuboot_tasks)
         set(${file} "${WEST_TOPDIR}/${${file}}")
       endif()
 
-      if(NOT EXISTS "${${file}}")
+      if(NOT EXISTS "${${file}}" AND NOT "${CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE}")
         message(FATAL_ERROR "west sign can't find file ${${file}} (Note: Relative paths are relative to the west workspace topdir \"${WEST_TOPDIR}\")")
       elseif(NOT (CONFIG_BUILD_OUTPUT_BIN OR CONFIG_BUILD_OUTPUT_HEX))
         message(FATAL_ERROR "Can't sign images for MCUboot: Neither CONFIG_BUILD_OUTPUT_BIN nor CONFIG_BUILD_OUTPUT_HEX is enabled, so there's nothing to sign.")
@@ -84,7 +86,12 @@ function(zephyr_mcuboot_tasks)
   else()
     set(imgtool_extra)
   endif()
-  set(imgtool_args -- --key "${keyfile}" ${imgtool_extra})
+
+  if(NOT "${keyfile}" STREQUAL "")
+    set(imgtool_extra --key "${keyfile}" ${imgtool_extra})
+  endif()
+
+  set(imgtool_args -- ${imgtool_extra})
 
   # Extensionless prefix of any output file.
   set(output ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME})

@@ -18,6 +18,11 @@ menuconfig NET_PPP
 
 if NET_PPP
 
+config NET_PPP_ASYNC_UART
+	bool "Asynchronous UART API is used"
+	depends on UART_ASYNC_API
+	depends on !GSM_MUX
+
 config NET_PPP_UART_NAME
 	string "UART device name the PPP is connected to"
 	depends on !MODEM_GSM_PPP
@@ -89,6 +94,32 @@ config PPP_NET_IF_NO_AUTO_START
 	  This option allows user to disable autostarting of the PPP interface
 	  immediately after initialization.
 
+if NET_PPP_ASYNC_UART
+
+config NET_PPP_ASYNC_UART_TX_BUF_LEN
+	int "Buffer length from where the write to async UART is done"
+	default 2048
+	help
+	  This options sets the size of the UART TX buffer where data
+	  is being written from to UART.
+
+config NET_PPP_ASYNC_UART_RX_RECOVERY_TIMEOUT
+	int "UART RX recovery timeout in milliseconds"
+	default 200
+	help
+	  The time that UART RX is in disabled state in case
+	  when we cannot receive more data from UART.
+
+config NET_PPP_ASYNC_UART_RX_ENABLE_TIMEOUT
+	int "A timeout for uart_rx_enable() in milliseconds"
+	default 100
+
+config NET_PPP_ASYNC_UART_TX_TIMEOUT
+	int "A timeout for uart_tx() in milliseconds"
+	default 100
+
+endif # NET_PPP_ASYNC_UART
+
 module = NET_PPP
 module-dep = LOG
 module-str = Log level for ppp driver
@@ -151,6 +182,12 @@ menuconfig NET_LOOPBACK
 	select NET_L2_DUMMY
 
 if NET_LOOPBACK
+
+config NET_LOOPBACK_SIMULATE_PACKET_DROP
+	bool "Controlable packet drop"
+	help
+	  Enable interface to have a controlable packet drop rate, only for
+	  testing, should not be enabled for normal applications
 
 module = NET_LOOPBACK
 module-dep = LOG

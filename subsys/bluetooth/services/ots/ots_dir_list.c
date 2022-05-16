@@ -8,22 +8,66 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/dlist.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_obj_manager_internal.h"
 #include "ots_dir_list_internal.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 
 static struct bt_ots_dir_list dir_lists[CONFIG_BT_OTS_MAX_INST_CNT];
 
-static void dir_list_object_encode(struct bt_gatt_ots_object *obj,
-				   struct net_buf_simple *net_buf)
+static size_t dir_list_object_record_size(const struct bt_gatt_ots_object *obj)
+{
+	uint16_t len;
+	size_t obj_name_len;
+
+	/* Record Length */
+	len = sizeof(len);
+
+	/* ID */
+	len += BT_OTS_OBJ_ID_SIZE;
+
+	/* Name length (single octect is used for the name length) */
+	len += sizeof(uint8_t);
+
+	/* Name */
+	obj_name_len = strlen(obj->metadata.name);
+	__ASSERT(obj_name_len > 0 && obj_name_len <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
+		 "Dir list object len is incorrect %zu", obj_name_len);
+	len += obj_name_len;
+
+	/* Flags */
+	len += sizeof(uint8_t);
+
+	/* Object type */
+	if (obj->metadata.type.uuid.type == BT_UUID_TYPE_16) {
+		len += BT_UUID_SIZE_16;
+	} else {
+		len += BT_UUID_SIZE_128;
+	}
+
+	/* Object Current size */
+	len += sizeof(obj->metadata.size.cur);
+
+	/* Object properties */
+	len += sizeof(obj->metadata.props);
+
+	__ASSERT(len >= DIR_LIST_OBJ_RECORD_MIN_SIZE,
+		 "Dir list object len is too small %u", len);
+	__ASSERT(len <= DIR_LIST_OBJ_RECORD_MAX_SIZE,
+		 "Dir list object len is too large %u", len);
+
+	return len;
+}
+
+static void dir_list_object_encode(const struct bt_gatt_ots_object *obj,
+				     struct net_buf_simple *net_buf)
 {
 	uint8_t flags = 0;
 	uint8_t *start;
@@ -37,7 +81,7 @@ static void dir_list_object_encode(struct bt_gatt_ots_object *obj,
 	}
 
 	/* skip 16bits at the beginning of the record for the record's length */
-	start = net_buf_simple_add(net_buf, sizeof(uint16_t));
+	start = net_buf_simple_add(net_buf, sizeof(len));
 
 	/* ID */
 	net_buf_simple_add_le48(net_buf, obj->id);
@@ -49,8 +93,7 @@ static void dir_list_object_encode(struct bt_gatt_ots_object *obj,
 	net_buf_simple_add_u8(net_buf, obj_name_len);
 
 	/* Name */
-	net_buf_simple_add_mem(net_buf, obj->metadata.name,
-			       strlen(obj->metadata.name));
+	net_buf_simple_add_mem(net_buf, obj->metadata.name, obj_name_len);
 
 	/* Flags */
 	net_buf_simple_add_u8(net_buf, flags);
@@ -80,115 +123,133 @@ static void dir_list_object_encode(struct bt_gatt_ots_object *obj,
 	sys_put_le16(len, start);
 }
 
-void bt_ots_dir_list_obj_add(struct bt_ots_dir_list *dir_list, void *obj_manager,
-			     struct bt_gatt_ots_object *cur_obj, struct bt_gatt_ots_object *obj)
+static void bt_ots_dir_list_reset_anchor(struct bt_ots_dir_list *dir_list, void *obj_manager)
 {
-	__ASSERT(dir_list->dir_list_obj != obj,
-		 "Cannot add Directory Listing Object");
-
-	__ASSERT(bt_gatt_ots_obj_manager_obj_contains(obj_manager, obj),
-		 "Object not part of OTS instance");
-
-	if (dir_list->dir_list_obj != cur_obj) {
-		/* We only need to update the object directory listing if it is currently selected,
-		 * as we otherwise only create it when it is selected.
-		 */
-		return;
-	}
-
-	dir_list_object_encode(obj, &dir_list->net_buf);
-
-	/*re-encode the Directory Listing Object size with the is new size*/
-	sys_put_le16(dir_list->net_buf.len, dir_list->net_buf.data);
-
-	/* Update Directory Listing Object metadata size */
-	dir_list->dir_list_obj->metadata.size.cur = dir_list->net_buf.len;
+	dir_list->anchor_offset = 0;
+	bt_gatt_ots_obj_manager_first_obj_get(obj_manager, &dir_list->anchor_object);
 }
 
-void bt_ots_dir_list_obj_remove(struct bt_ots_dir_list *dir_list, void *obj_manager,
-				struct bt_gatt_ots_object *cur_obj, struct bt_gatt_ots_object *obj)
+static int bt_ots_dir_list_search_forward(struct bt_ots_dir_list *dir_list, void *obj_manager,
+					  off_t offset)
 {
-	uint16_t offset = 0;
+	int err;
+	char id_str[BT_OTS_OBJ_ID_STR_LEN];
+	struct bt_gatt_ots_object *obj = dir_list->anchor_object;
+	size_t rec_len = dir_list_object_record_size(obj);
 
-	__ASSERT(dir_list->dir_list_obj != obj,
-		 "Cannot remove Directory Listing Object");
+	bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
+	LOG_DBG("Searching forward for offset %ld starting at %ld with object ID %s",
+		(long)offset, (long)dir_list->anchor_offset, log_strdup(id_str));
 
-	__ASSERT(bt_gatt_ots_obj_manager_obj_contains(obj_manager, obj),
-		 "Object not part of OTS instance");
+	while (dir_list->anchor_offset + rec_len <= offset) {
 
-	if (dir_list->dir_list_obj != cur_obj) {
-		/* We only need to update the object directory listing if it is currently selected,
-		 * as we otherwise only create it when it is selected.
-		 */
-		return;
-	}
-
-	while (offset < dir_list->net_buf.len) {
-		uint16_t len;
-		uint64_t id;
-
-		__ASSERT((DIR_LIST_OBJ_RECORD_MIN_SIZE + offset) <= dir_list->net_buf.len,
-			 "Invalid dir_list buf length %u, expected at least %u",
-			 dir_list->net_buf.len, DIR_LIST_OBJ_RECORD_MIN_SIZE + offset);
-
-		len = sys_get_le16(dir_list->net_buf.data + offset);
-		id = sys_get_le64(dir_list->net_buf.data + offset + sizeof(len));
-
-		__ASSERT(len, "Invalid object length");
-		__ASSERT((len + offset) <= dir_list->net_buf.len,
-			 "Invalid dir_list buf length %u, expected at least %u",
-			 dir_list->net_buf.len, len + offset);
-
-		if (id == obj->id) {
-			/* Delete object by moving memory after the object to
-			 * the objects current location
-			 */
-			memmove(dir_list->net_buf.data + offset,
-				dir_list->net_buf.data + offset + len,
-				dir_list->net_buf.len - (offset + len));
-			/* Decrement net_buf len to new length */
-			dir_list->net_buf.len -= len;
-			break;
+		err = bt_gatt_ots_obj_manager_next_obj_get(obj_manager, obj, &obj);
+		if (err) {
+			return err;
 		}
 
-		offset += len;
+		dir_list->anchor_offset += rec_len;
+		dir_list->anchor_object = obj;
+
+		rec_len = dir_list_object_record_size(obj);
 	}
 
-	__ASSERT(offset <= dir_list->net_buf.len, "Object was not removed");
-
-	/*re-encode the Directory Listing Object size with the is new size*/
-	sys_put_le16(dir_list->net_buf.len, dir_list->net_buf.data);
-
-	/* Update Directory Listing Object metadata size */
-	dir_list->dir_list_obj->metadata.size.cur = dir_list->net_buf.len;
+	return 0;
 }
 
-static void dir_list_encode(struct bt_ots_dir_list *dir_list, void *obj_manager)
+static int bt_ots_dir_list_search_backward(struct bt_ots_dir_list *dir_list, void *obj_manager,
+					   off_t offset)
+{
+	int err;
+	char id_str[BT_OTS_OBJ_ID_STR_LEN];
+	struct bt_gatt_ots_object *obj = dir_list->anchor_object;
+
+	bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
+	LOG_DBG("Searching backward for offset %ld starting at %ld with object ID %s",
+		(long)offset, (long)dir_list->anchor_offset, log_strdup(id_str));
+
+	while (dir_list->anchor_offset > offset) {
+
+		err = bt_gatt_ots_obj_manager_prev_obj_get(obj_manager, obj, &obj);
+		if (err) {
+			return err;
+		}
+
+		dir_list->anchor_offset -= dir_list_object_record_size(obj);
+		dir_list->anchor_object = obj;
+	}
+
+	return 0;
+}
+
+static int bt_ots_dir_list_search(struct bt_ots_dir_list *dir_list, void *obj_manager, off_t offset)
+{
+	int err = 0;
+	char id_str[BT_OTS_OBJ_ID_STR_LEN];
+
+	/* decide start location and direction of movement based on offset, we can only choose
+	 * current anchor point, beginning, or end as those are the only places where we know
+	 * the associated object that builds up the record.
+	 */
+	if (offset >= dir_list->anchor_offset) {
+		const size_t last = dir_list->dir_list_obj->metadata.size.cur;
+		const size_t mid = dir_list->anchor_offset + (last - dir_list->anchor_offset) / 2;
+
+		if (offset < mid) {
+			err = bt_ots_dir_list_search_forward(dir_list, obj_manager, offset);
+		} else {
+			size_t rec_len;
+
+			LOG_DBG("Offset %ld is closer to %zu than %ld, start from end",
+				(long)offset, last, (long)dir_list->anchor_offset);
+			bt_gatt_ots_obj_manager_last_obj_get(obj_manager, &dir_list->anchor_object);
+			rec_len = dir_list_object_record_size(dir_list->anchor_object);
+			dir_list->anchor_offset = last - rec_len;
+			err = bt_ots_dir_list_search_backward(dir_list, obj_manager, offset);
+		}
+	} else {
+		const size_t mid = dir_list->anchor_offset / 2;
+
+		if (offset < mid) {
+			LOG_DBG("Offset %ld is closer to 0 than %ld, start from beginning",
+				(long)offset, (long)dir_list->anchor_offset);
+			bt_ots_dir_list_reset_anchor(dir_list, obj_manager);
+			err = bt_ots_dir_list_search_forward(dir_list, obj_manager, offset);
+		} else {
+			err = bt_ots_dir_list_search_backward(dir_list, obj_manager, offset);
+		}
+	}
+
+	if (err) {
+		return err;
+	}
+
+	bt_ots_obj_id_to_str(dir_list->anchor_object->id, id_str, sizeof(id_str));
+	LOG_DBG("Found offset %ld starting at %ld in object with ID %s",
+		(long)offset, (long)dir_list->anchor_offset, log_strdup(id_str));
+
+	return 0;
+}
+
+static void dir_list_update_size(struct bt_ots_dir_list *dir_list, void *obj_manager)
 {
 	struct bt_gatt_ots_object *obj;
 	int err;
+	size_t len = 0;
 
 	err = bt_gatt_ots_obj_manager_first_obj_get(obj_manager, &obj);
 
 	__ASSERT(err == 0 && obj == dir_list->dir_list_obj,
 		 "Expecting first object to be the Directory Listing Object");
 
-	/* Init with len = 0 to reset data */
-	net_buf_simple_init_with_data(&dir_list->net_buf, dir_list->_content,
-				      sizeof(dir_list->_content));
-	dir_list->net_buf.len = 0;
-
 	do {
-		dir_list_object_encode(obj, &dir_list->net_buf);
+		len += dir_list_object_record_size(obj);
 
 		err = bt_gatt_ots_obj_manager_next_obj_get(obj_manager, obj, &obj);
 	} while (!err);
 
-	/*re-encode the Directory Listing Object size with the is new size*/
-	sys_put_le16(dir_list->net_buf.len, dir_list->net_buf.data);
-
-	/* Update Directory Listing Object metadata size */
-	dir_list->dir_list_obj->metadata.size.cur = dir_list->net_buf.len;
+	LOG_DBG("Update directory listing current size to 0x%zx", len);
+	dir_list->dir_list_obj->metadata.size.cur = len;
 }
 
 void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manager,
@@ -201,7 +262,8 @@ void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manage
 		return;
 	}
 
-	dir_list_encode(dir_list, obj_manager);
+	bt_ots_dir_list_reset_anchor(dir_list, obj_manager);
+	dir_list_update_size(dir_list, obj_manager);
 }
 
 void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
@@ -212,7 +274,7 @@ void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
 
 	__ASSERT(*dir_list == NULL, "Already initialized");
 
-	for (int i = 0; i < ARRAY_SIZE(dir_lists); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(dir_lists); i++) {
 		if (!dir_lists[i].dir_list_obj) {
 			*dir_list = &dir_lists[i];
 		}
@@ -230,26 +292,68 @@ void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
 
 	memset(&dir_list_obj->metadata, 0, sizeof(dir_list_obj->metadata));
 	dir_list_obj->metadata.name = dir_list_obj_name;
-	dir_list_obj->metadata.size.alloc = sizeof((*dir_list)->_content);
+	dir_list_obj->metadata.size.alloc = DIR_LIST_MAX_SIZE;
 	dir_list_obj->metadata.type.uuid.type = BT_UUID_TYPE_16;
 	dir_list_obj->metadata.type.uuid_16.val = BT_UUID_OTS_DIRECTORY_LISTING_VAL;
 	BT_OTS_OBJ_SET_PROP_READ(dir_list_obj->metadata.props);
 
 	(*dir_list)->dir_list_obj = dir_list_obj;
 
-	/* Set size in dir_list_encode */
-	dir_list_encode(*dir_list, obj_manager);
+	bt_ots_dir_list_reset_anchor(*dir_list, obj_manager);
+	dir_list_update_size(*dir_list, obj_manager);
 }
 
-ssize_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void **data,
-				size_t len, off_t offset)
+ssize_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void *obj_manager,
+				    void **data, size_t len, off_t offset)
 {
-	if (offset >= dir_list->net_buf.len) {
-		*data = NULL;
-		return 0;
+	int err;
+	size_t last_rec_len;
+	size_t rec_len;
+	off_t rec_offset;
+	struct bt_gatt_ots_object *obj;
+
+	err = bt_ots_dir_list_search(dir_list, obj_manager, offset);
+	if (err) {
+		return err;
 	}
 
-	*data = dir_list->net_buf.data + offset;
+	net_buf_simple_init_with_data(&dir_list->net_buf, dir_list->_content,
+				      sizeof(dir_list->_content));
+	net_buf_simple_reset(&dir_list->net_buf);
 
-	return MIN(len, dir_list->net_buf.len - offset);
+	obj = dir_list->anchor_object;
+	rec_offset = dir_list->anchor_offset;
+
+	last_rec_len = 0;
+	rec_len = dir_list_object_record_size(obj);
+	while (net_buf_simple_tailroom(&dir_list->net_buf) >= rec_len) {
+
+		dir_list_object_encode(obj, &dir_list->net_buf);
+
+		dir_list->anchor_object = obj;
+		dir_list->anchor_offset += last_rec_len;
+
+		if (dir_list->net_buf.len - (offset - rec_offset) >= len) {
+			/* we have encoded as much data as the client has asked */
+			break;
+		}
+
+		err = bt_gatt_ots_obj_manager_next_obj_get(obj_manager, obj, &obj);
+		if (err) {
+			/* there are no more objects to encode */
+			break;
+		}
+
+		last_rec_len = rec_len;
+		rec_len = dir_list_object_record_size(obj);
+	}
+
+	*data = dir_list->net_buf.data + (offset - rec_offset);
+
+	return MIN(len, dir_list->net_buf.len - (offset - rec_offset));
+}
+
+bool bt_ots_dir_list_is_idle(const struct bt_ots_dir_list *dir_list)
+{
+	return dir_list->dir_list_obj->state.type == BT_GATT_OTS_OBJECT_IDLE_STATE;
 }

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config INTC_ESP32C3
-	bool "Enables ESP32C3 interrupt controller driver"
+	bool "ESP32C3 interrupt controller driver"
 	depends on SOC_ESP32C3
 	default y
 	help
@@ -10,7 +10,7 @@ config INTC_ESP32C3
 	  management at SoC level.
 
 config INTC_ESP32C3_DECISIONS_LOG
-	bool "Enables Espressif's interrupt allocator logging"
+	bool "Espressif's interrupt allocator logging"
 	depends on INTC_ESP32C3
 	select LOG
 	help

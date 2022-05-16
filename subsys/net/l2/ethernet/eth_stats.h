@@ -9,9 +9,9 @@
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 
-#include <net/net_ip.h>
-#include <net/net_stats.h>
-#include <net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_if.h>
 
 static inline void eth_stats_update_bytes_rx(struct net_if *iface,
 					     uint32_t bytes)

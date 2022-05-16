@@ -12,10 +12,10 @@ the received data is printed to the console. When sending the data back,
 it blocks until the data are read by the remote side.
 
 The i.MX Messaging Unit peripheral consists of four 32-bit transmit and receive
-registers. The sample uses the option :kconfig:`CONFIG_IPM_IMX_MAX_DATA_SIZE_4`,
+registers. The sample uses the option :kconfig:option:`CONFIG_IPM_IMX_MAX_DATA_SIZE_4`,
 which effectively creates four IPM channels. Selecting the option
-:kconfig:`CONFIG_IPM_IMX_MAX_DATA_SIZE_8` or
-:kconfig:`CONFIG_IPM_IMX_MAX_DATA_SIZE_16` would result in two 64-bit channels
+:kconfig:option:`CONFIG_IPM_IMX_MAX_DATA_SIZE_8` or
+:kconfig:option:`CONFIG_IPM_IMX_MAX_DATA_SIZE_16` would result in two 64-bit channels
 or a single 128-bit channel respectively.
 
 Note that this is just a simple demo to demonstrate the i.MX IPM functionality

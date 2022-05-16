@@ -3,23 +3,10 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig PS2_XEC
+config PS2_XEC
 	bool "XEC Microchip PS2 driver"
 	depends on SOC_FAMILY_MEC && ESPI_PERIPHERAL_8042_KBC
 	help
 	  Enable the Microchip XEC PS2 IO driver. The driver also
-	  depends on the KBC 8042 keyboard controller.
-
-if PS2_XEC
-
-config PS2_XEC_0
-	bool "PS2_XEC_0"
-	help
-	  Enable PS2 0.
-
-config PS2_XEC_1
-	bool "PS2_XEC_1"
-	help
-	  Enable PS2 1.
-
-endif # PS2_XEC
+	  depends on the KBC 8042 keyboard controller. Note, MEC15xx
+	  series has two controllers and MEC172x series has one.

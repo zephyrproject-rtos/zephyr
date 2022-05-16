@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #define DUMMY_PARENT_NAME	"dummy_parent"
 
 #define DUMMY_PARENT_RD		0

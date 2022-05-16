@@ -6,11 +6,11 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <init.h>
-#include <device.h>
-#include <drivers/gpio.h>
-#include <pm/pm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/pm.h>
 
 #include <driverlib/ioc.h>
 
@@ -67,7 +67,13 @@ void main(void)
 	/*
 	 * Force the SOFT_OFF state.
 	 */
-	pm_power_state_force(0u, (struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+	pm_state_force(0u, &(struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0});
+
+	/* Now we need to go sleep. This will let the idle thread runs and
+	 * the pm subsystem will use the forced state. To confirm that the
+	 * forced state is used, lets set the same timeout used previously.
+	 */
+	k_sleep(K_SECONDS(SLEEP_S));
 
 	printk("ERROR: System off failed\n");
 	while (true) {

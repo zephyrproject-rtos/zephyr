@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf51822_qfac.dtsi>
+#include "96b_carbon_nrf51-pinctrl.dtsi"
 
 / {
 	model = "Seeed Studio Carbon nRF51 96board";
@@ -30,26 +31,26 @@
 
 &i2c0 {
 	status = "okay";
-	sda-pin = <28>;
-	scl-pin = <2>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
-	tx-pin = <29>;
-	rx-pin = <11>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spis";
 	status = "okay";
-	sck-pin = <7>;
-	mosi-pin = <0>;
-	miso-pin = <30>;
-	csn-pin = <25>;
 	def-char = <0x00>;
 
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
 	bt-hci@0 {
 		compatible = "zephyr,bt-hci-spi-slave";
 		reg = <0>;

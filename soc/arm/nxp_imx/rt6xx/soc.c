@@ -12,13 +12,13 @@
  * hardware for the nxp_lpc55s69 platform.
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/uart.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <aarch32/cortex_m/exc.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
@@ -105,7 +105,8 @@ __imx_boot_ivt_section void (* const image_vector_table[])(void)  = {
 	z_arm_debug_monitor,	/* 0x30 */
 	(void (*)())image_vector_table,		/* 0x34, imageLoadAddress. */
 	z_arm_pendsv,						/* 0x38 */
-#if defined(CONFIG_SYS_CLOCK_EXISTS)
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && \
+	defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
 	sys_clock_isr,						/* 0x3C */
 #else
 	z_arm_exc_spurious,
@@ -171,11 +172,7 @@ static void usb_device_clock_init(void)
 #endif
 
 /**
- *
  * @brief Initialize the system clock
- *
- * @return N/A
- *
  */
 static ALWAYS_INLINE void clock_init(void)
 {
@@ -224,7 +221,9 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Set FRGPLLCLKDIV divider to value 12 */
 	CLOCK_SetClkDiv(kCLOCK_DivPllFrgClk, 12U);
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM0);
+#endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
 	usb_device_clock_init();
@@ -232,6 +231,10 @@ static ALWAYS_INLINE void clock_init(void)
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_i2c, okay)
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM2);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pmic_i2c), nxp_lpc_i2c, okay)
+	CLOCK_AttachClk(kFFRO_to_FLEXCOMM15);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_usart, okay)
@@ -260,7 +263,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
 	/* Make sure USDHC ram buffer has been power up*/
 	POWER_DisablePD(kPDRUNCFG_APD_USDHC0_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USDHC0_SRAM);
@@ -280,10 +283,15 @@ static ALWAYS_INLINE void clock_init(void)
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC)
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC)
 
 void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
 	uint32_t speed, uint32_t strength)
+{
+
+}
+
+void imxrt_usdhc_dat3_pull(bool pullup)
 {
 
 }

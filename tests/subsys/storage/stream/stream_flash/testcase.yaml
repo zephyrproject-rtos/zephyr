@@ -12,5 +12,5 @@ tests:
     tags: stream_flash
   storage.stream_flash.mpu_allow_flash_write:
     extra_args: OVERLAY_CONFIG=mpu_allow_flash_write.overlay
-    platform_allow:  nrf52840_pca10056
+    platform_allow: nrf52840dk_nrf52840
     tags: stream_flash

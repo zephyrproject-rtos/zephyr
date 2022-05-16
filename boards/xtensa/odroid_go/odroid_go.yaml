@@ -1,12 +1,17 @@
-identifier: odroid-go
+identifier: odroid_go
 name: ODROID-GO
 type: mcu
 arch: xtensa
 toolchain:
-  - espressif
+  - zephyr
 supported:
   - gpio
   - i2c
   - watchdog
   - uart
   - pinmux
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

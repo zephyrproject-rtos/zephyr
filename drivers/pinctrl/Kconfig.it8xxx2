@@ -1,0 +1,11 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ITE_IT8XXX2_PINCTRL := ite,it8xxx2-pinctrl
+
+config PINCTRL_ITE_IT8XXX2
+	bool "ITE IT8XXX2 pin controller driver"
+	depends on SOC_FAMILY_RISCV_ITE
+	default $(dt_compat_enabled,$(DT_COMPAT_ITE_IT8XXX2_PINCTRL))
+	help
+	  Enable IT8XXX2 pin controller driver.

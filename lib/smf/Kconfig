@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SMF
-	bool "Enable Hierarchical State Machine"
+	bool "Hierarchical State Machine"
 	help
 	  This option enables the Hierarchical State Machine library
 
 if SMF
 
 config SMF_ANCESTOR_SUPPORT
-	bool "Enable states to have 1 or more ancestors"
+	bool "States to have 1 or more ancestors"
 	help
 	   If y, then the state machine framework includes ancestor state support
 

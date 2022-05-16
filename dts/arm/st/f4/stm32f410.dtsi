@@ -81,6 +81,12 @@
 			st,prescaler = <0>;
 			status = "disabled";
 			label = "TIMERS_6";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+				label = "COUNTER_6";
+			};
 		};
 
 		dac1: dac@40007400 {

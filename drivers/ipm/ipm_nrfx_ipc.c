@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT nordic_nrf_ipc
 
 #include <string.h>
-#include <drivers/ipm.h>
+#include <zephyr/drivers/ipm.h>
 #include <nrfx_ipc.h>
 #include "ipm_nrfx_ipc.h"
 
 #define LOG_LEVEL CONFIG_IPM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ipm_nrfx_ipc);
 
 struct ipm_nrf_data {
@@ -231,9 +231,9 @@ DEVICE_DEFINE(vipm_nrf_##_idx, "IPM_"#_idx,				\
 		    &vipm_nrf_##_idx##_driver_api)
 
 #define VIPM_DEVICE(_idx, _)						\
-	IF_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_ENABLE, (VIPM_DEVICE_1(_idx);))
+	IF_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_ENABLE, (VIPM_DEVICE_1(_idx)))
 
-UTIL_LISTIFY(NRFX_IPC_ID_MAX_VALUE, VIPM_DEVICE, _);
+LISTIFY(NRFX_IPC_ID_MAX_VALUE, VIPM_DEVICE, (;), _);
 
 #endif
 

@@ -1,12 +1,15 @@
-# Reneas R-Car UART configuration options
+# Renesas R-Car UART configuration options
 
 # Copyright (c) 2021 IoT.bzh
 # SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_RENESAS_RCAR_SCIF := renesas,rcar-scif
 
 config UART_RCAR
 	bool "Renesas R-Car UART Driver"
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	depends on SOC_FAMILY_RCAR
+	default $(dt_compat_enabled,$(DT_COMPAT_RENESAS_RCAR_SCIF))
 	help
 	  Enable Renesas R-Car UART Driver.

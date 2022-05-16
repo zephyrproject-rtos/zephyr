@@ -4,11 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+struct lll_sync_iso_stream {
+	uint8_t big_handle;
+	struct ll_iso_datapath *dp;
+};
+
 struct lll_sync_iso {
 	struct lll_hdr hdr;
 
 	uint8_t seed_access_addr[4];
 	uint8_t base_crc_init[2];
+
+	uint16_t iso_interval;
 
 	uint16_t latency_prepare;
 	uint16_t latency_event;
@@ -21,7 +28,7 @@ struct lll_sync_iso {
 	uint64_t cssn_curr:3;
 	uint64_t cssn_next:3;
 
-	uint8_t data_chan_map[5];
+	uint8_t data_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t data_chan_count:6;
 	uint8_t num_bis:5;
 	uint8_t bn:3;
@@ -44,12 +51,19 @@ struct lll_sync_iso {
 	uint8_t bn_curr:3;
 	uint8_t bis_curr:5;
 
+	uint8_t chm_chan_map[PDU_CHANNEL_MAP_SIZE];
+	uint8_t chm_chan_count:6;
+
 	uint8_t term_reason;
 
 	uint8_t ctrl_chan_use;
 	uint16_t ctrl_instant;
 
-	struct node_rx_pdu *payload[PDU_BIG_PAYLOAD_COUNT_MAX];
+	uint8_t stream_count;
+	uint16_t stream_handle[BT_CTLR_SYNC_ISO_STREAM_MAX];
+
+	struct node_rx_pdu *payload[BT_CTLR_SYNC_ISO_STREAM_MAX]
+				   [PDU_BIG_PAYLOAD_COUNT_MAX];
 	uint8_t payload_count_max;
 	uint8_t payload_head;
 	uint8_t payload_tail;
@@ -67,3 +81,5 @@ void lll_sync_iso_create_prepare(void *param);
 void lll_sync_iso_prepare(void *param);
 
 extern uint8_t ull_sync_iso_lll_handle_get(struct lll_sync_iso *lll);
+extern void ll_iso_rx_put(memq_link_t *link, void *rx);
+extern void ll_rx_sched(void);

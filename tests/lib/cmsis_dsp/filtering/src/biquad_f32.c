@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -26,20 +26,31 @@ static void test_arm_biquad_cascade_df1_f32_default(void)
 	const float32_t *ref = (const float32_t *)ref_default;
 	float32_t *state, *output_buf, *output;
 	arm_biquad_casd_df1_inst_f32 inst;
+#if defined(CONFIG_ARMV8_1_M_MVEF) && defined(CONFIG_FPU)
+	arm_biquad_mod_coef_f32 *coeff_mod;
+#endif
 
 	/* Allocate buffers */
-	state = malloc(128 * sizeof(float32_t));
+	state = calloc(128, sizeof(float32_t));
 	zassert_not_null(state, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
-	output_buf = malloc(length * sizeof(float32_t));
+#if defined(CONFIG_ARMV8_1_M_MVEF) && defined(CONFIG_FPU)
+	coeff_mod = calloc(47, sizeof(arm_biquad_mod_coef_f32)); /* 47 stages */
+	zassert_not_null(coeff_mod, ASSERT_MSG_BUFFER_ALLOC_FAILED);
+#endif
+
+	/* FIXME: `length + 2` is required here because of ARM-software/CMSIS_5#1475 */
+	output_buf = calloc(length + 2, sizeof(float32_t));
 	zassert_not_null(output_buf, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output = output_buf;
 
 	/* Initialise instance */
+#if defined(CONFIG_ARMV8_1_M_MVEF) && defined(CONFIG_FPU)
+	arm_biquad_cascade_df1_mve_init_f32(&inst, 3, coeff, coeff_mod, state);
+#else
 	arm_biquad_cascade_df1_init_f32(&inst, 3, coeff, state);
-
-	/* TODO: Add MVEF support */
+#endif
 
 	/* Enumerate blocks */
 	for (index = 0; index < 2; index++) {
@@ -125,12 +136,20 @@ static void test_arm_biquad_cascade_df1_f32_rand(void)
 	const float32_t *ref = (const float32_t *)ref_rand_mono;
 	float32_t *state, *output_buf, *output;
 	arm_biquad_casd_df1_inst_f32 inst;
+#if defined(CONFIG_ARMV8_1_M_MVEF) && defined(CONFIG_FPU)
+	arm_biquad_mod_coef_f32 *coeff_mod;
+#endif
 
 	/* Allocate buffers */
-	state = malloc(128 * sizeof(float32_t));
+	state = calloc(128, sizeof(float32_t));
 	zassert_not_null(state, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
-	output_buf = malloc(length * sizeof(float32_t));
+#if defined(CONFIG_ARMV8_1_M_MVEF) && defined(CONFIG_FPU)
+	coeff_mod = calloc(47, sizeof(arm_biquad_mod_coef_f32)); /* 47 stages */
+	zassert_not_null(coeff_mod, ASSERT_MSG_BUFFER_ALLOC_FAILED);
+#endif
+
+	output_buf = calloc(length, sizeof(float32_t));
 	zassert_not_null(output_buf, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output = output_buf;
@@ -142,10 +161,11 @@ static void test_arm_biquad_cascade_df1_f32_rand(void)
 		block_size = config[1];
 
 		/* Initialise instance */
-		arm_biquad_cascade_df1_init_f32(
-			&inst, stage_count, coeff, state);
-
-		/* TODO: Add MVEF support */
+#if defined(CONFIG_ARMV8_1_M_MVEF) && defined(CONFIG_FPU)
+		arm_biquad_cascade_df1_mve_init_f32(&inst, stage_count, coeff, coeff_mod, state);
+#else
+		arm_biquad_cascade_df1_init_f32(&inst, stage_count, coeff, state);
+#endif
 
 		/* Run test function */
 		arm_biquad_cascade_df1_f32(&inst, input, output, block_size);

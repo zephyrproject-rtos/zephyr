@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/*
+		 * shared memory reserved for the inter-processor communication
+		 */
+		zephyr,ipc_shm = &sramx;
+		zephyr,ipc = &mhu0;
+	};
+
+	sramx: memory@28180000 {
+		compatible = "mmio-sram";
+		reg = <0x28180000 0x8000>;
+	};
+};

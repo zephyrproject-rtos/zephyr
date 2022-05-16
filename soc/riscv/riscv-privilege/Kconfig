@@ -18,5 +18,10 @@ config RISCV_HAS_PLIC
 	help
 	  Does the SOC provide support for a Platform Level Interrupt Controller
 
+config RISCV_MTVEC_VECTORED_MODE
+	bool "Should the SOC use mtvec in vectored mode"
+	depends on SOC_FAMILY_RISCV_PRIVILEGE
+	help
+	  Should the SOC use mtvec in vectored mode
 
 source "soc/riscv/riscv-privilege/*/Kconfig.soc"

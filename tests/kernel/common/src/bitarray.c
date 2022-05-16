@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <arch/cpu.h>
+#include <zephyr/arch/cpu.h>
 
 #include <tc_util.h>
-#include <sys/bitarray.h>
-#include <sys/util.h>
+#include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_BIG_ENDIAN
 #define BIT_INDEX(bit)  ((3 - ((bit >> 3) & 0x3)) + 4*(bit >> 5))
@@ -87,7 +87,7 @@ void test_bitarray_declare(void)
 	SYS_BITARRAY_DEFINE(ba_128_bit, 128);
 	SYS_BITARRAY_DEFINE(ba_129_bit, 129);
 
-	/* Test SYS_BITFIELD_DECLARE by asserting that a sufficent number of uint32_t
+	/* Test SYS_BITFIELD_DECLARE by asserting that a sufficient number of uint32_t
 	 * in the declared array are set as free to represent the number of bits
 	 */
 
@@ -381,7 +381,7 @@ void alloc_and_free_loop(int divisor)
 	for (bit = 0U; bit < ba.num_bits; ++bit) {
 		cur_popcnt = get_bitarray_popcnt(&ba);
 		zassert_equal(cur_popcnt, expected_popcnt,
-			      "bit count expeceted %u, got %u (at bit %u)",
+			      "bit count expected %u, got %u (at bit %u)",
 			      expected_popcnt, cur_popcnt, bit);
 
 		/* Allocate half of remaining bits */
@@ -405,7 +405,7 @@ void alloc_and_free_loop(int divisor)
 
 		cur_popcnt = get_bitarray_popcnt(&ba);
 		zassert_equal(cur_popcnt, expected_popcnt,
-			      "bit count expeceted %u, got %u (at bit %u)",
+			      "bit count expected %u, got %u (at bit %u)",
 			      expected_popcnt, cur_popcnt, bit);
 
 		/* Free all but the first bit of allocated region */
@@ -459,14 +459,14 @@ void alloc_and_free_interval(void)
 				      ret, cnt);
 
 			zassert_equal(offset, expected_offset,
-				      "offset expeceted %u, got %u (cnt %u)",
+				      "offset expected %u, got %u (cnt %u)",
 				      expected_offset, offset, cnt);
 
 			expected_popcnt += 4;
 
 			cur_popcnt = get_bitarray_popcnt(&ba);
 			zassert_equal(cur_popcnt, expected_popcnt,
-				      "bit count expeceted %u, got %u (cnt %u)",
+				      "bit count expected %u, got %u (cnt %u)",
 				      expected_popcnt, cur_popcnt, cnt);
 
 
@@ -618,8 +618,8 @@ void test_bitarray_region_set_clear(void)
 /**
  * @brief Test find MSB and LSB operations
  *
- * @details Verify the functions that find out the most significiant
- * bit and least significiant bit work as expected.
+ * @details Verify the functions that find out the most significant
+ * bit and least significant bit work as expected.
  *
  * @see find_msb_set(), find_lsb_set()
  */

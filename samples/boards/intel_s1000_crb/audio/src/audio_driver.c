@@ -5,17 +5,17 @@
  */
 
 #define LOG_LEVEL LOG_LEVEL_INF
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(audio_io);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include <soc.h>
-#include <device.h>
-#include <drivers/i2s.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2s.h>
 
-#include <audio/codec.h>
-#include <audio/dmic.h>
+#include <zephyr/audio/codec.h>
+#include <zephyr/audio/dmic.h>
 #include "audio_core.h"
 
 #define DMIC_DEV_NAME		"PDM"

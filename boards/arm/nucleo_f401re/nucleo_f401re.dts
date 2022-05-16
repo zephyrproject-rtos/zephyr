@@ -33,7 +33,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm2 1 0 PWM_POLARITY_NORMAL>;
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -77,24 +77,28 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	cs-gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
@@ -102,6 +106,7 @@
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
 		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -114,7 +119,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
+			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
 
@@ -125,15 +130,15 @@
 
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00020000 0x00020000>;
+			reg = <0x00020000 DT_SIZE_K(128)>;
 		};
 		slot1_partition: partition@40000 {
 			label = "image-1";
-			reg = <0x00040000 0x00020000>;
+			reg = <0x00040000 DT_SIZE_K(128)>;
 		};
 		scratch_partition: partition@60000 {
 			label = "image-scratch";
-			reg = <0x00060000 0x00020000>;
+			reg = <0x00060000 DT_SIZE_K(128)>;
 		};
 	};
 };
@@ -144,6 +149,7 @@
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa5>;
+		pinctrl-names = "default";
 	};
 };
 
@@ -153,6 +159,7 @@
 
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

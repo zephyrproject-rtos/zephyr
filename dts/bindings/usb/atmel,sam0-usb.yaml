@@ -3,7 +3,9 @@ description: |
 
 compatible: "atmel,sam0-usb"
 
-include: usb-ep.yaml
+include:
+    - name: usb-ep.yaml
+    - name: pinctrl-device.yaml
 
 properties:
     reg:

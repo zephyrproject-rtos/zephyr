@@ -2,7 +2,7 @@ Title: Test to verify code fault handling in ISR execution context
        and the behavior of irq_lock() and irq_unlock() when invoked
        from User Mode. An additional test case verifies that null
        pointer dereferencing attempts are detected and interpreted
-       as CPU fauls. Tests supported only on Cortex-M architecture.
+       as CPU faults. Tests supported only on Cortex-M architecture.
 
 Description:
 

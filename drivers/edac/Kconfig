@@ -11,13 +11,13 @@ menuconfig EDAC
 if EDAC
 
 config EDAC_ERROR_INJECT
-	bool "Enable EDAC Error Injection mechanism"
+	bool "EDAC Error Injection mechanism"
 	help
 	  Enable Error injection capability for test error checking
 	  and reporting. Should not be enabled in production system.
 
 config EDAC_SHELL
-	bool "Enable EDAC Shell"
+	bool "EDAC Shell"
 	depends on SHELL
 	default y if SHELL
 	help

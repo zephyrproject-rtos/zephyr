@@ -7,7 +7,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
 
 #include <ksched.h>
-#include <spinlock.h>
+#include <zephyr/spinlock.h>
 #include <kernel_arch_func.h>
 
 #ifdef CONFIG_STACK_SENTINEL
@@ -106,9 +106,6 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	new_thread = z_swap_next_thread();
 
 	if (new_thread != old_thread) {
-#ifdef CONFIG_TIMESLICING
-		z_reset_time_slice();
-#endif
 		z_sched_usage_switch(new_thread);
 
 #ifdef CONFIG_SMP
@@ -122,6 +119,10 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_thread_mark_switched_out();
 		wait_for_switch(new_thread);
 		_current_cpu->current = new_thread;
+
+#ifdef CONFIG_TIMESLICING
+		z_reset_time_slice(new_thread);
+#endif
 
 #ifdef CONFIG_SPIN_VALIDATE
 		z_spin_lock_set_owner(&sched_spinlock);
@@ -224,6 +225,11 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 #endif
 #ifdef CONFIG_USERSPACE
 	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
+#endif
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	k_thread_system_pool_assign(dummy_thread);
+#else
+	dummy_thread->resource_pool = NULL;
 #endif
 
 	_current_cpu->current = dummy_thread;

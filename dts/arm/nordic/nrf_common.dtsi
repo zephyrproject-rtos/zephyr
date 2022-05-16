@@ -4,8 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/nrf-adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 #include <arm/nordic/override.dtsi>
 /*
@@ -15,6 +19,22 @@
 #ifndef NRF_DEFAULT_IRQ_PRIORITY
 #define NRF_DEFAULT_IRQ_PRIORITY 1
 #endif
+
+/ {
+	pinctrl: pin-controller {
+		/* Pin controller is a "virtual" device since nRF SoCs do pin
+		 * control in a distributed way (GPIO registers and PSEL
+		 * registers on each peripheral).
+		 */
+		compatible = "nordic,nrf-pinctrl";
+	};
+
+	rng_hci: entropy_bt_hci {
+		compatible = "zephyr,bt-hci-entropy";
+		label = "bt_hci_entropy";
+		status = "okay";
+	};
+};
 
 &systick {
 	/*

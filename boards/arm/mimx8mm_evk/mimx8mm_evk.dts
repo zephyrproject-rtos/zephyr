@@ -8,6 +8,8 @@
 
 #include <nxp/nxp_imx8mm_m4.dtsi>
 
+#include "mimx8mm_evk-pinctrl.dtsi"
+
 / {
 	model = "NXP i.MX8M Mini EVK board";
 	compatible = "nxp,mimx8mm_evk";
@@ -27,4 +29,10 @@
 &uart4 {
 	status = "okay";
 	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+&mailbox0 {
+	status = "okay";
 };

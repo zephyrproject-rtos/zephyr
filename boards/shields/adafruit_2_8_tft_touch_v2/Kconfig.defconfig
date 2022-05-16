@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2
+if SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2 || SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2_NANO
 
 config GPIO
 	default y
@@ -9,9 +9,6 @@ config GPIO
 if DISPLAY
 
 config SPI
-	default y
-
-config ILI9340
 	default y
 
 if KSCAN
@@ -30,41 +27,32 @@ endif # KSCAN
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "ILI9340"
-
-config LVGL_HOR_RES_MAX
-	default 320
-
-config LVGL_VER_RES_MAX
-	default 240
-
-config LVGL_VDB_SIZE
+config LV_Z_VDB_SIZE
 	default 64
 
-config LVGL_BITS_PER_PIXEL
+config LV_Z_BITS_PER_PIXEL
 	default 24
 
-choice LVGL_COLOR_DEPTH
-	default LVGL_COLOR_DEPTH_32
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_32
 endchoice
 
 config KSCAN
 	default y
 
-config LVGL_POINTER_KSCAN
+config LV_Z_POINTER_KSCAN
 	default y
 
-config LVGL_POINTER_KSCAN_DEV_NAME
+config LV_Z_POINTER_KSCAN_DEV_NAME
 	default "FT5336"
 
-config LVGL_POINTER_KSCAN_SWAP_XY
+config LV_Z_POINTER_KSCAN_SWAP_XY
 	default y
 
-config LVGL_POINTER_KSCAN_INVERT_X
+config LV_Z_POINTER_KSCAN_INVERT_X
 	default y
 
-config LVGL_POINTER_KSCAN_INVERT_Y
+config LV_Z_POINTER_KSCAN_INVERT_Y
 	default y
 
 endif # LVGL

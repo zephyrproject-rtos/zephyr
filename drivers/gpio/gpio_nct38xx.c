@@ -6,24 +6,20 @@
 
 #define DT_DRV_COMPAT nuvoton_nct38xx_gpio
 
-#include <device.h>
-#include <drivers/gpio.h>
-#include <drivers/gpio/gpio_nct38xx.h>
-#include <kernel.h>
-#include <sys/util_macro.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_nct38xx.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "gpio_nct38xx.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_ntc38xx, CONFIG_GPIO_LOG_LEVEL);
-
-/* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct gpio_nct38xx_config *)(dev)->config)
-#define DRV_DATA(dev) ((struct gpio_nct38xx_data *)(dev)->data)
 
 void nct38xx_gpio_alert_handler(const struct device *dev)
 {
-	const struct gpio_nct38xx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_nct38xx_config *const config = dev->config;
 
 	for (int i = 0; i < config->sub_gpio_port_num; i++) {
 		gpio_nct38xx_dispatch_port_isr(config->sub_gpio_dev[i]);
@@ -65,7 +61,7 @@ static int nct38xx_init_interrupt(const struct device *dev)
 
 static int nct38xx_gpio_init(const struct device *dev)
 {
-	const struct gpio_nct38xx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_nct38xx_config *const config = dev->config;
 
 	/* Check I2C is ready  */
 	if (!device_is_ready(config->i2c_dev.bus)) {

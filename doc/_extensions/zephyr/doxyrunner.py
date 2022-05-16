@@ -31,6 +31,9 @@ Configuration options
 - ``doxyrunner_doxyfile``: Path to Doxyfile.
 - ``doxyrunner_outdir``: Doxygen build output directory (inserted to
   ``OUTPUT_DIRECTORY``)
+- ``doxyrunner_outdir_var``: Variable representing the Doxygen build output
+  directory, as used by ``OUTPUT_DIRECTORY``. This can be useful if other
+  Doxygen variables reference to the output directory.
 - ``doxyrunner_fmt``: Flag to indicate if Doxyfile should be formatted.
 - ``doxyrunner_fmt_vars``: Format variables dictionary (name: value).
 - ``doxyrunner_fmt_pattern``: Format pattern.
@@ -132,6 +135,7 @@ def process_doxyfile(
     fmt: bool = False,
     fmt_pattern: Optional[str] = None,
     fmt_vars: Optional[Dict[str, str]] = None,
+    outdir_var: Optional[str] = None,
 ) -> str:
     """Process Doxyfile.
 
@@ -146,6 +150,7 @@ def process_doxyfile(
         fmt: If Doxyfile should be formatted.
         fmt_pattern: Format pattern.
         fmt_vars: Format variables.
+        outdir_var: Variable representing output directory.
 
      Returns:
         Processed Doxyfile content.
@@ -178,6 +183,10 @@ def process_doxyfile(
     if fmt:
         if not fmt_pattern or not fmt_vars:
             raise ValueError("Invalid formatting pattern or variables")
+
+        if outdir_var:
+            fmt_vars = fmt_vars.copy()
+            fmt_vars[outdir_var] = outdir.as_posix()
 
         for var, value in fmt_vars.items():
             content = content.replace(fmt_pattern.format(var), value)
@@ -349,6 +358,7 @@ def doxygen_build(app: Sphinx) -> None:
         app.config.doxyrunner_fmt,
         app.config.doxyrunner_fmt_pattern,
         app.config.doxyrunner_fmt_vars,
+        app.config.doxyrunner_outdir_var,
     )
 
     logger.info("Checking if Doxygen needs to be run...")
@@ -374,6 +384,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("doxyrunner_doxygen", "doxygen", "env")
     app.add_config_value("doxyrunner_doxyfile", None, "env")
     app.add_config_value("doxyrunner_outdir", None, "env")
+    app.add_config_value("doxyrunner_outdir_var", None, "env")
     app.add_config_value("doxyrunner_fmt", False, "env")
     app.add_config_value("doxyrunner_fmt_vars", {}, "env")
     app.add_config_value("doxyrunner_fmt_pattern", "@{}@", "env")

@@ -14,7 +14,7 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 bool ull_sync_setup_sid_match(struct ll_scan_set *scan, uint8_t sid);
 void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		    struct node_rx_hdr *node_rx, struct pdu_adv_sync_info *si);
-void ull_sync_setup_complete(struct ll_scan_set *scan);
+void ull_sync_setup_reset(struct ll_scan_set *scan);
 void ull_sync_established_report(memq_link_t *link, struct node_rx_hdr *rx);
 void ull_sync_done(struct node_rx_event_done *done);
 void ull_sync_chm_update(uint8_t sync_handle, uint8_t *acad, uint8_t acad_len);

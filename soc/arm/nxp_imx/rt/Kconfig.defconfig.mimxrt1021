@@ -20,7 +20,13 @@ config AHB_DIV
 config IPG_DIV
 	default 3
 
+config DCDC_VALUE
+	default 0x12
+
 config GPIO
 	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 500000000 if CORTEX_M_SYSTICK
 
 endif # SOC_MIMXRT1021

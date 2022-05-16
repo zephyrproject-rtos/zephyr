@@ -6,37 +6,54 @@
 
 /*
  * Copyright (c) 2018 Bosch Sensortec GmbH
+ * Copyright (c) 2022, Leonard Pollak
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT bosch_bme680
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
 
 #include "bme680.h"
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <init.h>
-#include <kernel.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <drivers/sensor.h>
 
-#include <logging/log.h>
 LOG_MODULE_REGISTER(bme680, CONFIG_SENSOR_LOG_LEVEL);
 
-static int bme680_reg_read(const struct device *dev, uint8_t start,
-			   uint8_t *buf, int size)
+
+#if BME680_BUS_SPI
+static inline bool bme680_is_on_spi(const struct device *dev)
 {
 	const struct bme680_config *config = dev->config;
 
-	return i2c_burst_read_dt(&config->bus, start, buf, size);
+	return config->bus_io == &bme680_bus_io_spi;
+}
+#endif
+
+static inline int bme680_bus_check(const struct device *dev)
+{
+	const struct bme680_config *config = dev->config;
+
+	return config->bus_io->check(&config->bus);
 }
 
-static int bme680_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
+static inline int bme680_reg_read(const struct device *dev,
+				  uint8_t start, uint8_t *buf, int size)
 {
 	const struct bme680_config *config = dev->config;
 
-	return i2c_reg_write_byte_dt(&config->bus, reg, val);
+	return config->bus_io->read(dev, start, buf, size);
+}
+
+static inline int bme680_reg_write(const struct device *dev, uint8_t reg,
+				   uint8_t val)
+{
+	const struct bme680_config *config = dev->config;
+
+	return config->bus_io->write(dev, reg, val);
 }
 
 static void bme680_calc_temp(struct bme680_data *data, uint32_t adc_temp)
@@ -292,7 +309,7 @@ static int bme680_read_compensation(const struct device *dev)
 	}
 
 	err = bme680_reg_read(dev, BME680_REG_COEFF2, &buff[BME680_LEN_COEFF1],
-			      16);
+			      BME680_LEN_COEFF2);
 	if (err < 0) {
 		return err;
 	}
@@ -342,10 +359,25 @@ static int bme680_read_compensation(const struct device *dev)
 	return 0;
 }
 
-static int bme680_chip_init(const struct device *dev)
+static int bme680_init(const struct device *dev)
 {
-	struct bme680_data *data = (struct bme680_data *)dev->data;
+	struct bme680_data *data = dev->data;
 	int err;
+
+	err = bme680_bus_check(dev);
+	if (err < 0) {
+		LOG_ERR("Bus not ready for '%s'", dev->name);
+		return err;
+	}
+
+#if BME680_BUS_SPI
+	if (bme680_is_on_spi(dev)) {
+		err = bme680_reg_read(dev, BME680_REG_MEM_PAGE, &data->mem_page, 1);
+		if (err < 0) {
+			return err;
+		}
+	}
+#endif
 
 	err = bme680_reg_read(dev, BME680_REG_CHIP_ID, &data->chip_id, 1);
 	if (err < 0) {
@@ -355,7 +387,7 @@ static int bme680_chip_init(const struct device *dev)
 	if (data->chip_id == BME680_CHIP_ID) {
 		LOG_DBG("BME680 chip detected");
 	} else {
-		LOG_ERR("Bad BME680 chip id 0x%x", data->chip_id);
+		LOG_ERR("Bad BME680 chip id: 0x%x", data->chip_id);
 		return -ENOTSUP;
 	}
 
@@ -394,27 +426,8 @@ static int bme680_chip_init(const struct device *dev)
 
 	err = bme680_reg_write(dev, BME680_REG_CTRL_MEAS,
 			       BME680_CTRL_MEAS_VAL);
-	if (err < 0) {
-		return err;
-	}
 
-	return 0;
-}
-
-static int bme680_init(const struct device *dev)
-{
-	const struct bme680_config *config = dev->config;
-
-	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C master %s not ready", config->bus.bus->name);
-		return -EINVAL;
-	}
-
-	if (bme680_chip_init(dev) < 0) {
-		return -EINVAL;
-	}
-
-	return 0;
+	return err;
 }
 
 static const struct sensor_driver_api bme680_api_funcs = {
@@ -422,12 +435,39 @@ static const struct sensor_driver_api bme680_api_funcs = {
 	.channel_get = bme680_channel_get,
 };
 
-static struct bme680_data bme680_data;
+/* Initializes a struct bme680_config for an instance on a SPI bus. */
+#define BME680_CONFIG_SPI(inst)				\
+	{						\
+		.bus.spi = SPI_DT_SPEC_INST_GET(	\
+			inst, BME680_SPI_OPERATION, 0),	\
+		.bus_io = &bme680_bus_io_spi,		\
+	}
 
-static const struct bme680_config bme680_config = {
-	.bus = I2C_DT_SPEC_INST_GET(0)
-};
+/* Initializes a struct bme680_config for an instance on an I2C bus. */
+#define BME680_CONFIG_I2C(inst)			       \
+	{					       \
+		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
+		.bus_io = &bme680_bus_io_i2c,	       \
+	}
 
-DEVICE_DT_INST_DEFINE(0, bme680_init, NULL, &bme680_data,
-		      &bme680_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		      &bme680_api_funcs);
+/*
+ * Main instantiation macro, which selects the correct bus-specific
+ * instantiation macros for the instance.
+ */
+#define BME680_DEFINE(inst)						\
+	static struct bme680_data bme680_data_##inst;			\
+	static const struct bme680_config bme680_config_##inst =	\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+			    (BME680_CONFIG_SPI(inst)),			\
+			    (BME680_CONFIG_I2C(inst)));			\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			 bme680_init,					\
+			 NULL,						\
+			 &bme680_data_##inst,				\
+			 &bme680_config_##inst,				\
+			 POST_KERNEL,					\
+			 CONFIG_SENSOR_INIT_PRIORITY,			\
+			 &bme680_api_funcs);
+
+/* Create the struct device for every status "okay" node in the devicetree. */
+DT_INST_FOREACH_STATUS_OKAY(BME680_DEFINE)

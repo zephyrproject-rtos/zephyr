@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <sys/onoff.h>
+#include <zephyr/sys/onoff.h>
 
 static struct onoff_client cli;
 struct onoff_transitions transitions;
@@ -818,7 +818,7 @@ static void test_multi_reset(void)
 	int rc;
 	struct onoff_client cli2 = {};
 
-	/* Verify multiple reset requests are statisfied when reset
+	/* Verify multiple reset requests are satisfied when reset
 	 * transition completes.
 	 */
 	setup_test();

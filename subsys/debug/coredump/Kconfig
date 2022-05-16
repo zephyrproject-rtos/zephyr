@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig DEBUG_COREDUMP
-	bool "Enable Core Dump"
+	bool "Core Dump"
 	depends on ARCH_SUPPORTS_COREDUMP
 	help
 	  Enable core dump so it can be used for offline debugging.
@@ -27,6 +27,11 @@ config DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
 	help
 	  Core dump is saved to a flash partition with DTS alias
 	  "coredump-partition".
+
+config DEBUG_COREDUMP_BACKEND_OTHER
+	bool "Backend subsystem for coredump defined out of tree"
+	help
+	  Core dump is done via custom mechanism defined out of tree
 
 endchoice
 
@@ -57,7 +62,7 @@ config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 endchoice
 
 config DEBUG_COREDUMP_SHELL
-	bool "Enable Coredump shell"
+	bool "Coredump shell"
 	default y
 	depends on SHELL
 	help

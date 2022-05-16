@@ -68,7 +68,7 @@ def analyze_headers(multiple_directories):
             files.sort()
             for fn in files:
 
-                # toolchain/common.h has the definitions of these tagswhich we
+                # toolchain/common.h has the definitions of these tags which we
                 # don't want to trip over
                 path = os.path.join(root, fn)
                 if (not (path.endswith(".h") or path.endswith(".c")) or

@@ -15,11 +15,11 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# Enable pinmux
-CONFIG_PINMUX=y
-
 # Enable GPIO
 CONFIG_GPIO=y
 
 # Clock configuration
 CONFIG_CLOCK_CONTROL=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

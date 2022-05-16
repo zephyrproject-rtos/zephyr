@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <sys/libc-hooks.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/logging/log.h>
 
 #include "sample_driver.h"
-#include "main.h"
+#include "app_shared.h"
 #include "app_a.h"
 #include "app_syscall.h"
 
@@ -189,6 +189,7 @@ static void writeback_entry(void *p1, void *p2, void *p3)
 /* Supervisor mode setup function for application A */
 void app_a_entry(void *p1, void *p2, void *p3)
 {
+	int ret;
 	struct k_mem_partition *parts[] = {
 #if Z_LIBC_PARTITION_EXISTS
 		&z_libc_partition,
@@ -207,7 +208,10 @@ void app_a_entry(void *p1, void *p2, void *p3)
 	 * partition, the shared partition, and any common libc partition
 	 * if it exists.
 	 */
-	k_mem_domain_init(&app_a_domain, ARRAY_SIZE(parts), parts);
+	ret = k_mem_domain_init(&app_a_domain, ARRAY_SIZE(parts), parts);
+	__ASSERT(ret == 0, "k_mem_domain_init failed %d", ret);
+	ARG_UNUSED(ret);
+
 	k_mem_domain_add_thread(&app_a_domain, k_current_get());
 
 	/* Assign a resource pool to serve for kernel-side allocations on
@@ -227,7 +231,7 @@ void app_a_entry(void *p1, void *p2, void *p3)
 	 * This child thread automatically inherits the memory domain of
 	 * this thread that created it; it will be a member of app_a_domain.
 	 *
-	 * Initiailize this thread with K_FOREVER timeout so we can
+	 * Initialize this thread with K_FOREVER timeout so we can
 	 * modify its permissions and then start it.
 	 */
 	k_thread_create(&writeback_thread, writeback_stack,

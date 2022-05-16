@@ -2,7 +2,7 @@ description: Kinetis LPUART
 
 compatible: "nxp,kinetis-lpuart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -10,3 +10,10 @@ properties:
 
     interrupts:
       required: true
+
+    nxp,loopback:
+      type: boolean
+      description: |
+        Enable loopback mode on LPUART peripheral. When present, RX pin is
+        disconnected, and transmitter output is internally connected to
+        the receiver input.

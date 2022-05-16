@@ -6,13 +6,14 @@
 
 #define DT_DRV_COMPAT neorv32_uart
 
-#include <device.h>
-#include <drivers/syscon.h>
-#include <drivers/uart.h>
-#include <sys/sys_io.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/sys_io.h>
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(uart_neorv32, CONFIG_LOG_DEFAULT_LEVEL);
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 
 /* NEORV32 UART registers offsets */
 #define NEORV32_UART_CTRL_OFFSET 0x00
@@ -533,7 +534,7 @@ static const struct uart_driver_api neorv32_uart_driver_api = {
 	PM_DEVICE_DT_DEFINE(node_id, neorv32_uart_pm_action);		\
 									\
 	DEVICE_DT_DEFINE(node_id, &neorv32_uart_init,			\
-			 PM_DEVICE_DT_REF(node_id),			\
+			 PM_DEVICE_DT_GET(node_id),			\
 			 &neorv32_uart_##n##_data,			\
 			 &neorv32_uart_##n##_config,			\
 			 PRE_KERNEL_1,					\

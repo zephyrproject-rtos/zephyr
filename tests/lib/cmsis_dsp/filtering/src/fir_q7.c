@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -15,6 +15,8 @@
 
 #define SNR_ERROR_THRESH	((float32_t)10)
 #define ABS_ERROR_THRESH_Q7	((q7_t)2)
+
+#define COEFF_PADDING		(16)
 
 static void test_arm_fir_q7(void)
 {
@@ -28,6 +30,10 @@ static void test_arm_fir_q7(void)
 	const q7_t *ref = (const q7_t *)ref_val;
 	q7_t *state, *output_buf, *output;
 	arm_fir_instance_q7 inst;
+#if defined(CONFIG_ARMV8_1_M_MVEI) && defined(CONFIG_FPU)
+	q7_t coeff_padded[32];
+	int round;
+#endif
 
 	/* Allocate buffers */
 	state = malloc(47 * sizeof(q7_t));
@@ -44,10 +50,24 @@ static void test_arm_fir_q7(void)
 		block_size = config[0];
 		tap_count = config[1];
 
-		/* Initialise instance */
-		arm_fir_init_q7(&inst, tap_count, coeff, state, block_size);
+#if defined(CONFIG_ARMV8_1_M_MVEI) && defined(CONFIG_FPU)
+		/* Copy coefficients and pad to zero */
+		memset(coeff_padded, 127, sizeof(coeff_padded));
+		round = tap_count / COEFF_PADDING;
+		if ((round * COEFF_PADDING) < tap_count) {
+			round++;
+		}
+		round = round * COEFF_PADDING;
+		memset(coeff_padded, 0, round * sizeof(q7_t));
+		memcpy(coeff_padded, coeff, tap_count * sizeof(q7_t));
+#endif
 
-		/* TODO: Add MEVI support */
+		/* Initialise instance */
+#if defined(CONFIG_ARMV8_1_M_MVEI) && defined(CONFIG_FPU)
+		arm_fir_init_q7(&inst, tap_count, coeff_padded, state, block_size);
+#else
+		arm_fir_init_q7(&inst, tap_count, coeff, state, block_size);
+#endif
 
 		/* Reset input pointer */
 		input = (const q7_t *)in_val;

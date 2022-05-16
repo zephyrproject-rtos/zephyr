@@ -11,14 +11,14 @@
  * @brief LP503x LED controller
  */
 
-#include <drivers/i2c.h>
-#include <drivers/led.h>
-#include <drivers/led/lp503x.h>
-#include <device.h>
-#include <zephyr.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/drivers/led/lp503x.h>
+#include <zephyr/device.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lp503x);
 
 #define LP503X_DEVICE_CONFIG0		0
@@ -59,12 +59,8 @@ LOG_MODULE_REGISTER(lp503x);
 /* Expose channels starting from the bank registers. */
 #define LP503X_CHANNEL_BASE		LP503X_BANK_BRIGHTNESS
 
-#define DEV_CFG(dev)	((const struct lp503x_config *) ((dev)->config))
-#define DEV_DATA(dev)	((struct lp503x_data *) ((dev)->data))
-
 struct lp503x_config {
-	char *i2c_bus_label;
-	uint8_t i2c_addr;
+	struct i2c_dt_spec bus;
 	uint8_t num_leds;
 	bool log_scale_en;
 	bool max_curr_opt;
@@ -72,7 +68,6 @@ struct lp503x_config {
 };
 
 struct lp503x_data {
-	const struct device *i2c;
 	uint8_t *chan_buf;
 };
 
@@ -92,7 +87,7 @@ lp503x_led_to_info(const struct lp503x_config *config, uint32_t led)
 static int lp503x_get_info(const struct device *dev, uint32_t led,
 			   const struct led_info **info)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
+	const struct lp503x_config *config = dev->config;
 	const struct led_info *led_info = lp503x_led_to_info(config, led);
 
 	if (!led_info) {
@@ -107,8 +102,7 @@ static int lp503x_get_info(const struct device *dev, uint32_t led,
 static int lp503x_set_brightness(const struct device *dev,
 				 uint32_t led, uint8_t value)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
-	struct lp503x_data *data = DEV_DATA(dev);
+	const struct lp503x_config *config = dev->config;
 	const struct led_info *led_info = lp503x_led_to_info(config, led);
 	uint8_t buf[2];
 
@@ -119,7 +113,7 @@ static int lp503x_set_brightness(const struct device *dev,
 	buf[0] = LP503X_LED_BRIGHTNESS_BASE + led_info->index;
 	buf[1] = (value * 0xff) / 100;
 
-	return i2c_write(data->i2c, buf, sizeof(buf), config->i2c_addr);
+	return i2c_write_dt(&config->bus, buf, sizeof(buf));
 }
 
 static int lp503x_on(const struct device *dev, uint32_t led)
@@ -135,8 +129,7 @@ static int lp503x_off(const struct device *dev, uint32_t led)
 static int lp503x_set_color(const struct device *dev, uint32_t led,
 			    uint8_t num_colors, const uint8_t *color)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
-	struct lp503x_data *data = DEV_DATA(dev);
+	const struct lp503x_config *config = dev->config;
 	const struct led_info *led_info = lp503x_led_to_info(config, led);
 	uint8_t buf[4];
 
@@ -149,15 +142,15 @@ static int lp503x_set_color(const struct device *dev, uint32_t led,
 	buf[2] = color[1];
 	buf[3] = color[2];
 
-	return i2c_write(data->i2c, buf, sizeof(buf), config->i2c_addr);
+	return i2c_write_dt(&config->bus, buf, sizeof(buf));
 }
 
 static int lp503x_write_channels(const struct device *dev,
 				 uint32_t start_channel,
 				 uint32_t num_channels, const uint8_t *buf)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
-	struct lp503x_data *data = DEV_DATA(dev);
+	const struct lp503x_config *config = dev->config;
+	struct lp503x_data *data = dev->data;
 
 	if (start_channel >= LP503X_NUM_CHANNELS ||
 	    start_channel + num_channels > LP503X_NUM_CHANNELS) {
@@ -171,21 +164,17 @@ static int lp503x_write_channels(const struct device *dev,
 	data->chan_buf[0] = LP503X_CHANNEL_BASE + start_channel;
 	memcpy(data->chan_buf + 1, buf, num_channels);
 
-	return i2c_write(data->i2c, data->chan_buf,
-			 num_channels + 1, config->i2c_addr);
+	return i2c_write_dt(&config->bus, data->chan_buf, num_channels + 1);
 }
 
 static int lp503x_init(const struct device *dev)
 {
-	const struct lp503x_config *config = DEV_CFG(dev);
-	struct lp503x_data *data = DEV_DATA(dev);
+	const struct lp503x_config *config = dev->config;
 	uint8_t buf[3];
 	int err;
 
-	data->i2c = device_get_binding(config->i2c_bus_label);
-	if (data->i2c == NULL) {
-		LOG_ERR("%s: device %s not found",
-			dev->name, config->i2c_bus_label);
+	if (!device_is_ready(config->bus.bus)) {
+		LOG_ERR("I2C device not ready");
 		return -ENODEV;
 	}
 	if (config->num_leds > LP503X_MAX_LEDS) {
@@ -204,7 +193,7 @@ static int lp503x_init(const struct device *dev)
 	buf[0] = LP503X_LED_CONFIG0;
 	buf[1] = 0;
 	buf[2] = 0;
-	err = i2c_write(data->i2c, buf, 3, config->i2c_addr);
+	err = i2c_write_dt(&config->bus, buf, 3);
 	if (err < 0) {
 		return err;
 	}
@@ -212,7 +201,7 @@ static int lp503x_init(const struct device *dev)
 	/* Enable LED controller. */
 	buf[0] = LP503X_DEVICE_CONFIG0;
 	buf[1] = CONFIG0_CHIP_EN;
-	err = i2c_write(data->i2c, buf, 2, config->i2c_addr);
+	err = i2c_write_dt(&config->bus, buf, 2);
 	if (err < 0) {
 		return err;
 	}
@@ -228,7 +217,7 @@ static int lp503x_init(const struct device *dev)
 		buf[1] |= CONFIG1_LOG_SCALE_EN;
 	}
 
-	return i2c_write(data->i2c, buf, 2, config->i2c_addr);
+	return i2c_write_dt(&config->bus, buf, 2);
 }
 
 static const struct led_driver_api lp503x_led_api = {
@@ -263,9 +252,8 @@ const struct led_info lp503x_leds_##id[] = {			\
 								\
 static uint8_t lp503x_chan_buf_##id[LP503X_NUM_CHANNELS + 1];	\
 								\
-static struct lp503x_config lp503x_config_##id = {		\
-	.i2c_bus_label	= DT_INST_BUS_LABEL(id),		\
-	.i2c_addr	= DT_INST_REG_ADDR(id),			\
+static const struct lp503x_config lp503x_config_##id = {	\
+	.bus		= I2C_DT_SPEC_INST_GET(id),		\
 	.num_leds	= ARRAY_SIZE(lp503x_leds_##id),		\
 	.max_curr_opt	= DT_INST_PROP(id, max_curr_opt),	\
 	.log_scale_en	= DT_INST_PROP(id, log_scale_en),	\

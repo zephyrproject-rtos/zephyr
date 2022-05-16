@@ -9,6 +9,12 @@ menuconfig MBOX
 
 if MBOX
 
+config MBOX_INIT_PRIORITY
+	int "MBOX init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  MBOX driver device initialization priority.
+
 config MBOX_NRFX_IPC
 	bool "MBOX NRF IPC driver"
 	depends on HAS_HW_NRF_IPC

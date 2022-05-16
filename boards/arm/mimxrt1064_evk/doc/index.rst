@@ -124,6 +124,8 @@ features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
 | HWINFO    | on-chip    | Unique device serial number         |
@@ -277,8 +279,8 @@ The MIMXRT1064 SoC has four pairs of pinmux/gpio controllers.
 System Clock
 ============
 
-The MIMXRT1064 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 600 MHz core clock.
+The MIMXRT1064 SoC is configured to use the 32 KHz low frequency oscillator on
+the board as a source for the GPT timer to generate a system clock.
 
 Serial Port
 ===========
@@ -294,6 +296,11 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 Configuring a Debug Probe
 =========================
+
+.. note::
+	When the device transitions into low power states, the debugger may be
+	unable to access the chip. Use caution when enabling ``CONFIG_PM``, and
+	if the debugger cannot flash the part, see :ref:`Troubleshooting RT1064`
 
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
@@ -368,12 +375,15 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! mimxrt1064_evk
 
+
+.. _Troubleshooting RT1064:
+
 Troubleshooting
 ===============
 
 If the debug probe fails to connect with the following error, it's possible
 that the boot header in QSPI flash is invalid or corrupted. The boot header is
-configured by :kconfig:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
+configured by :kconfig:option:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
 
 .. code-block:: console
 

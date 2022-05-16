@@ -10,8 +10,8 @@
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #endif
 
 struct flash_stm32_priv {
@@ -34,7 +34,7 @@ struct flash_stm32_priv {
 #endif
 
 /* Differentiate between arm trust-zone non-secure/secure, and others. */
-#if defined(FLASH_NSSR_NSBSY)		/* For mcu w. TZ in non-secure mode */
+#if defined(FLASH_NSSR_NSBSY) || defined(FLASH_NSSR_BSY) /* For mcu w. TZ in non-secure mode */
 #define FLASH_SECURITY_NS
 #define FLASH_STM32_SR		NSSR
 #elif defined(FLASH_SECSR_SECBSY)	/* For mcu w. TZ  in secured mode */
@@ -52,7 +52,34 @@ struct flash_stm32_priv {
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
 
 
-/* Redefintions of flags and masks to harmonize stm32 series: */
+/* Redefinitions of flags and masks to harmonize stm32 series: */
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+#define FLASH_STM32_NSLOCK FLASH_NSCR_LOCK
+#define FLASH_STM32_DBANK FLASH_OPTR_DUALBANK
+#define FLASH_STM32_NSPG FLASH_NSCR_PG
+#define FLASH_STM32_NSBKER_MSK FLASH_NSCR_BKER_Msk
+#define FLASH_STM32_NSBKER FLASH_NSCR_BKER
+#define FLASH_STM32_NSPER FLASH_NSCR_PER
+#define FLASH_STM32_NSPNB_MSK FLASH_NSCR_PNB_Msk
+#define FLASH_STM32_NSPNB_POS FLASH_NSCR_PNB_Pos
+#define FLASH_STM32_NSPNB FLASH_NSCR_PNB
+#define FLASH_STM32_NSSTRT FLASH_NSCR_STRT
+#define FLASH_PAGE_SIZE_128_BITS FLASH_PAGE_SIZE
+#elif defined(CONFIG_SOC_SERIES_STM32L5X)
+#define FLASH_STM32_NSLOCK FLASH_NSCR_NSLOCK
+#define FLASH_STM32_NSPG FLASH_NSCR_NSPG
+#define FLASH_STM32_NSBKER_MSK FLASH_NSCR_NSBKER_Pos
+#define FLASH_STM32_NSBKER FLASH_NSCR_NSBKER
+#define FLASH_STM32_NSPER FLASH_NSCR_NSPER
+#define FLASH_STM32_NSPNB_MSK FLASH_NSCR_NSPNB_Msk
+#define FLASH_STM32_NSPNB_POS FLASH_NSCR_NSPNB_Pos
+#define FLASH_STM32_NSPNB FLASH_NSCR_NSPNB
+#define FLASH_STM32_NSSTRT FLASH_NSCR_NSSTRT
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
+#if defined(FLASH_OPTR_DBANK)
+#define FLASH_STM32_DBANK FLASH_OPTR_DBANK
+#endif /* FLASH_OPTR_DBANK */
+
 #if defined(CONFIG_SOC_SERIES_STM32G0X)
 #if defined(FLASH_FLAG_BSY2)
 #define FLASH_STM32_SR_BUSY	(FLASH_FLAG_BSY1 | FLASH_FLAG_BSY2);

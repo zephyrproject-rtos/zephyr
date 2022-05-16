@@ -1,15 +1,14 @@
 tests:
   arch.x86.info:
     arch_allow: x86
-    platform_allow: qemu_x86 ehl_crb up_squared
     harness: console
     harness_config:
         type: one_line
         regex:
           - "info: complete"
+    filter: CONFIG_X86_PC_COMPATIBLE
   arch.x86.info.userspace:
     arch_allow: x86
-    platform_allow: qemu_x86 ehl_crb up_squared
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
     harness: console
@@ -17,3 +16,4 @@ tests:
         type: one_line
         regex:
           - "info: complete"
+    filter: CONFIG_X86_PC_COMPATIBLE

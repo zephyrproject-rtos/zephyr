@@ -21,9 +21,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config CACHE_MANAGEMENT
 	default y
 
-config HARVARD
-	default y
-
 config ARC_CONNECT
 	default y
 

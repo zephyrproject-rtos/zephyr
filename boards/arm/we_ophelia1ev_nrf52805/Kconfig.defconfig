@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_WE_OPHELIA1EV_NRF52805
+
+config BOARD
+	default "we_ophelia1ev_nrf52805"
+
+config BT_CTLR
+	default BT
+
+endif

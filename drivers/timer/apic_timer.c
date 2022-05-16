@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
-#include <spinlock.h>
-#include <drivers/interrupt_controller/loapic.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/drivers/interrupt_controller/loapic.h>
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "APIC timer doesn't support SMP");
 
@@ -213,7 +214,7 @@ uint32_t sys_clock_cycle_get_32(void)
 
 #endif
 
-int sys_clock_driver_init(const struct device *dev)
+static int sys_clock_driver_init(const struct device *dev)
 {
 	uint32_t val;
 
@@ -240,3 +241,6 @@ int sys_clock_driver_init(const struct device *dev)
 
 	return 0;
 }
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

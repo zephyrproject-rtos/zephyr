@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
-#include <sw_isr_table.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <drivers/interrupt_controller/gic.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sw_isr_table.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
 
@@ -235,8 +235,12 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 	/* Extract affinity fields from target */
 	aff1 = MPIDR_AFFLVL(target_aff, 1);
 	aff2 = MPIDR_AFFLVL(target_aff, 2);
+#if defined(CONFIG_ARM)
+	/* There is no Aff3 in AArch32 MPIDR */
+	aff3 = 0;
+#else
 	aff3 = MPIDR_AFFLVL(target_aff, 3);
-
+#endif
 	sgi_val = GICV3_SGIR_VALUE(aff3, aff2, aff1, sgi_id,
 				   SGIR_IRM_TO_AFF, target_list);
 
@@ -324,19 +328,19 @@ static void gicv3_cpuif_init(void)
 	mem_addr_t base = gic_get_rdist() + GICR_SGI_BASE_OFF;
 
 	/* Disable all sgi ppi */
-	sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG), ICENABLER(base, 0));
+	sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), ICENABLER(base, 0));
 	/* Any sgi/ppi intid ie. 0-31 will select GICR_CTRL */
 	gic_wait_rwp(0);
 
 	/* Clear pending */
-	sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG), ICPENDR(base, 0));
+	sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), ICPENDR(base, 0));
 
 	/* Configure all SGIs/PPIs as G1S or G1NS depending on Zephyr
 	 * is run in EL1S or EL1NS respectively.
 	 * All interrupts will be delivered as irq
 	 */
 	sys_write32(IGROUPR_VAL, IGROUPR(base, 0));
-	sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG), IGROUPMODR(base, 0));
+	sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), IGROUPMODR(base, 0));
 
 	/*
 	 * Configure default priorities for SGI 0:15 and PPI 0:15.
@@ -407,13 +411,13 @@ static void gicv3_dist_init(void)
 	     intid += GIC_NUM_INTR_PER_REG) {
 		idx = intid / GIC_NUM_INTR_PER_REG;
 		/* Disable interrupt */
-		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG),
 			    ICENABLER(base, idx));
 		/* Clear pending */
-		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG),
 			    ICPENDR(base, idx));
 		sys_write32(IGROUPR_VAL, IGROUPR(base, idx));
-		sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG),
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG),
 			    IGROUPMODR(base, idx));
 
 	}
@@ -483,7 +487,7 @@ int arm_gic_init(const struct device *unused)
 
 	return 0;
 }
-SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY);
 
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)

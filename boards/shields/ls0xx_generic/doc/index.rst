@@ -18,7 +18,7 @@ high during driver initialization. Display blanking apis can be used
 to control it.
 
 Sharp memory displays require toggling the VCOM signal periodically
-to prevent a DC bias ocurring in the panel as mentioned in the `appnote`_
+to prevent a DC bias occurring in the panel as mentioned in the `appnote`_
 and `datasheet`_. The DC bias can damage the LCD and reduce the life.
 This signal must be supplied from either serial input (sw) or an external
 signal on the EXTCOMIN pin.

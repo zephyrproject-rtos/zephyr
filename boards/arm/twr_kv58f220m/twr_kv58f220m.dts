@@ -6,7 +6,8 @@
 
 /dts-v1/;
 
-#include <nxp/MKV58F1M0VLQ24.dtsi>
+#include <nxp/nxp_kv58f1m0vlx24.dtsi>
+#include "twr_kv58f220m-pinctrl.dtsi"
 
 / {
 	model = "NXP Kinetis KV58 MCU Tower System Module";
@@ -131,7 +132,7 @@
 
 &i2c1 {
 	status = "okay";
-	pinctrl-0 = <&I2C1_SCL_PTD8 &I2C1_SDA_PTD9>;
+	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 
 	fxos8700@1c {
@@ -143,17 +144,9 @@
 	};
 };
 
-&I2C1_SCL_PTD8 {
-	drive-open-drain;
-};
-
-&I2C1_SDA_PTD9 {
-	drive-open-drain;
-};
-
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&UART0_RX_PTB0 &UART0_TX_PTB1>;
+	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 };

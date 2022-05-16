@@ -5,11 +5,11 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
-#include <syscall_handler.h>
+#include <zephyr/irq_offload.h>
+#include <zephyr/syscall_handler.h>
 #include <ztest_error_hook.h>
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define THREAD_TEST_PRIORITY 5
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
@@ -49,7 +49,7 @@ __no_optimization static void trigger_fault_illegal_instruction(void)
 {
 	void *a = NULL;
 
-	/* execute an illeagal instruction */
+	/* execute an illegal instruction */
 	((void(*)(void))&a)();
 }
 
@@ -66,7 +66,7 @@ __no_optimization static void trigger_fault_access(void)
 	 * address instead to trigger exception. See issue #31419.
 	 */
 	void *a = (void *)0xFFFFFFFF;
-#elif defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_CORTEX_R) || \
+#elif defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_AARCH32_CORTEX_R) || \
 	defined(CONFIG_CPU_AARCH64_CORTEX_R)
 	/* As this test case only runs when User Mode is enabled,
 	 * accessing _current always triggers a memory access fault,
@@ -120,7 +120,7 @@ __no_optimization static void trigger_fault_divide_zero(void)
 	defined(CONFIG_BOARD_QEMU_CORTEX_A53) || defined(CONFIG_SOC_QEMU_ARC) || \
 	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_R5) || \
-	defined(CONFIG_BOARD_FVP_BASER_AEMV8R)
+	defined(CONFIG_BOARD_FVP_BASER_AEMV8R) || defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEMV8A)
 	ztest_test_skip();
 #endif
 }
@@ -162,7 +162,7 @@ void ztest_post_fatal_error_hook(unsigned int reason,
 		break;
 
 	/* Unfortunately, the case of trigger a fatal error
-	 * inside ISR context still cannot be dealed with,
+	 * inside ISR context still cannot be dealt with,
 	 * So please don't use it this way.
 	 */
 	case ZTEST_CATCH_FATAL_IN_ISR:
@@ -256,7 +256,7 @@ static int run_trigger_thread(int i)
 }
 
 /**
- * @brief Test if a fatal error can be catched
+ * @brief Test if a fatal error can be caught
  *
  * @details Valid a fatal error we triggered in thread context works.
  * If the fatal error happened and the program enter assert_post_handler,
@@ -267,7 +267,14 @@ void test_catch_fatal_error(void)
 #if defined(CONFIG_USERSPACE)
 	run_trigger_thread(ZTEST_CATCH_FATAL_ACCESS);
 	run_trigger_thread(ZTEST_CATCH_FATAL_ILLEAGAL_INSTRUCTION);
+#if !defined(CONFIG_RISCV)
+	/*
+	 * Because RISC-V Arch doesn't trigger exception for division-by-zero,
+	 * this test couldn't support RISC-V.
+	 * (RISC-V ISA Manual v2.2, Ch6.2 Division Operation)
+	 */
 	run_trigger_thread(ZTEST_CATCH_FATAL_DIVIDE_ZERO);
+#endif
 #endif
 	run_trigger_thread(ZTEST_CATCH_FATAL_K_PANIC);
 	run_trigger_thread(ZTEST_CATCH_FATAL_K_OOPS);

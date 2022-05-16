@@ -9,11 +9,12 @@ sensors and LED wearables to sophisticated embedded controllers, smart
 watches, and IoT wireless applications.
 
 The Zephyr kernel supports multiple architectures, including:
- - ARC EM and HS
+ - ARCv2 (EM and HS) and ARCv3 (HS6X)
  - ARMv6-M, ARMv7-M, and ARMv8-M (Cortex-M)
  - ARMv7-A and ARMv8-A (Cortex-A, 32- and 64-bit)
  - ARMv7-R, ARMv8-R (Cortex-R, 32- and 64-bit)
  - Intel x86 (32- and 64-bit)
+ - MIPS (MIPS32 Release 1 specification)
  - NIOS II Gen 2
  - RISC-V (32- and 64-bit)
  - SPARC V8

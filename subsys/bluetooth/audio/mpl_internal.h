@@ -10,28 +10,27 @@
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MPL_INTERNAL_
 #define ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MPL_INTERNAL_
 
-#include <bluetooth/audio/media_proxy.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /* Offset into a segment/track before the "previous" command goes to start of */
 /* current segment/track instead to previous */
 #define PREV_MARGIN           500  /* 500 * 0.01 = 5 seconds */
 
 /* Increase/decrease in seeking sped factor for fast rewind/forward commands
+ * The media control specification has a requirement that the speed factor
+ * shall be [-64, -4], 0, [4, 64].  I.e., values between 0 and +/- 4 are not allowed.
  * Set this equal to the minimum speed factor, to ensure only valid speed factors
  * are used when changing to/from zero
  */
-#define MPL_SEEKING_SPEED_FACTOR_STEP  BT_MCS_SEEKING_SPEED_FACTOR_MIN
+#define MPL_SEEKING_SPEED_FACTOR_STEP  4
 
 
 /* Track segments */
 struct mpl_tseg {
 	uint8_t            name_len;
-	char		   name[CONFIG_BT_MCS_SEGMENT_NAME_MAX];
+	char		   name[CONFIG_BT_MPL_SEGMENT_NAME_MAX];
 	int32_t            pos;
 	struct mpl_tseg   *prev;
 	struct mpl_tseg   *next;
@@ -39,25 +38,25 @@ struct mpl_tseg {
 
 /* Tracks */
 struct mpl_track {
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+#if defined(CONFIG_BT_MPL_OBJECTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t             id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	char                 title[CONFIG_BT_MCS_TRACK_TITLE_MAX];
+#endif /* CONFIG_BT_MPL_OBJECTS || CONFIG_BT_OTS_CLIENT */
+	char                 title[CONFIG_BT_MPL_TRACK_TITLE_MAX];
 	int32_t              duration;
 	struct mpl_tseg     *segment;
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+#if defined(CONFIG_BT_MPL_OBJECTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t             segments_id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MPL_OBJECTS || CONFIG_BT_OTS_CLIENT */
 	struct mpl_track    *prev;
 	struct mpl_track    *next;
 };
 
 /* Groups */
 struct mpl_group {
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+#if defined(CONFIG_BT_MPL_OBJECTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t             id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	char                 title[CONFIG_BT_MCS_GROUP_TITLE_MAX];
+#endif /* CONFIG_BT_MPL_OBJECTS || CONFIG_BT_OTS_CLIENT */
+	char                 title[CONFIG_BT_MPL_GROUP_TITLE_MAX];
 	struct mpl_track    *track;
 	struct mpl_group    *parent;
 	struct mpl_group    *prev;
@@ -66,11 +65,11 @@ struct mpl_group {
 
 /** @brief Media Player */
 struct mpl_mediaplayer   {
-	char                name[CONFIG_BT_MCS_MEDIA_PLAYER_NAME_MAX];
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+	char                name[CONFIG_BT_MPL_MEDIA_PLAYER_NAME_MAX];
+#if defined(CONFIG_BT_MPL_OBJECTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t            icon_id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	char                icon_url[CONFIG_BT_MCS_ICON_URL_MAX];
+#endif /* CONFIG_BT_MPL_OBJECTS || CONFIG_BT_OTS_CLIENT */
+	char                icon_url[CONFIG_BT_MPL_ICON_URL_MAX];
 	struct mpl_group   *group;
 	int32_t             track_pos;
 	uint8_t             state;
@@ -79,9 +78,9 @@ struct mpl_mediaplayer   {
 	uint8_t             playing_order;
 	uint16_t            playing_orders_supported;
 	uint32_t            opcodes_supported;
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
+#if defined(CONFIG_BT_MPL_OBJECTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t            search_results_id;
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
+#endif /* CONFIG_BT_MPL_OBJECTS || CONFIG_BT_OTS_CLIENT */
 	uint8_t             content_ctrl_id;
 	struct media_proxy_pl_calls calls;
 
@@ -131,7 +130,7 @@ void mpl_test_current_group_id_changed_cb(void);
 /* Trigger parent group id changed callback */
 void mpl_test_parent_group_id_changed_cb(void);
 
-/* Trigger playinge order changed callback */
+/* Trigger playing order changed callback */
 void mpl_test_playing_order_changed_cb(void);
 
 /* Trigger media state changed callback */

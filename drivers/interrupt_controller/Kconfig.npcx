@@ -9,5 +9,5 @@ config NPCX_MIWU
 	depends on SOC_FAMILY_NPCX
 	help
 	  This option enables the Multi-Input Wake-Up Unit (MIWU) driver
-	  for NPCX family ofprocessors.
+	  for NPCX family of processors.
 	  This is required for GPIO, RTC, LPC/eSPI interrupt support.

@@ -1,0 +1,28 @@
+description: Specialization of Bosch m_can CAN-FD controller for Atmel SAM
+
+compatible: "atmel,sam-can"
+
+include:
+    - name: can-fd-controller.yaml
+    - name: pinctrl-device.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    peripheral-id:
+      type: int
+      required: true
+      description: peripheral ID
+
+    divider:
+      type: int
+      required: true
+      enum:
+        - 6
+        - 12
+        - 24
+      description: Clock divider for the CAN core clock

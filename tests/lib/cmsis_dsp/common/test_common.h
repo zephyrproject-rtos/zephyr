@@ -9,7 +9,7 @@
 #define ZEPHYR_TESTS_LIB_CMSIS_DSP_COMMON_TEST_COMMON_H_
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #ifdef CONFIG_CMSIS_DSP_FLOAT16
@@ -26,6 +26,49 @@
 #define ASSERT_MSG_ERROR_LIMIT_EXCEED		"error limit exceeded"
 #define ASSERT_MSG_INCORRECT_COMP_RESULT	"incorrect computation result"
 
+#if defined(CONFIG_ZTEST_NEW_API)
+#define DEFINE_TEST_VARIANT1(suite, name, variant, a1)                                             \
+	ZTEST(suite, test_##name##_##variant)                                                      \
+	{                                                                                          \
+		test_##name(a1);                                                                   \
+	}
+
+#define DEFINE_TEST_VARIANT2(suite, name, variant, a1, a2)                                         \
+	ZTEST(suite, test_##name##_##variant)                                                      \
+	{                                                                                          \
+		test_##name(a1, a2);                                                               \
+	}
+
+#define DEFINE_TEST_VARIANT3(suite, name, variant, a1, a2, a3)                                     \
+	ZTEST(suite, test_##name##_##variant)                                                      \
+	{                                                                                          \
+		test_##name(a1, a2, a3);                                                           \
+	}
+
+#define DEFINE_TEST_VARIANT4(suite, name, variant, a1, a2, a3, a4)                                 \
+	ZTEST(suite, test_##name##_##variant)                                                      \
+	{                                                                                          \
+		test_##name(a1, a2, a3, a4);                                                       \
+	}
+
+#define DEFINE_TEST_VARIANT5(suite, name, variant, a1, a2, a3, a4, a5)                             \
+	ZTEST(suite, test_##name##_##variant)                                                      \
+	{                                                                                          \
+		test_##name(a1, a2, a3, a4, a5);                                                   \
+	}
+
+#define DEFINE_TEST_VARIANT6(suite, name, variant, a1, a2, a3, a4, a5, a6)                         \
+	ZTEST(suite, test_##name##_##variant)                                                      \
+	{                                                                                          \
+		test_##name(a1, a2, a3, a4, a5, a6);                                               \
+	}
+
+#define DEFINE_TEST_VARIANT7(suite, name, variant, a1, a2, a3, a4, a5, a6, a7)                     \
+	ZTEST(suite, test_##name##_##variant)                                                      \
+	{                                                                                          \
+		test_##name(a1, a2, a3, a4, a5, a6, a7);                                           \
+	}
+#else /* !defined(CONFIG_ZTEST_NEW_API) */
 #define DEFINE_TEST_VARIANT1(name, variant, a1)		\
 	static void test_##name##_##variant(void)	\
 	{						\
@@ -67,6 +110,7 @@
 	{								\
 		test_##name(a1, a2, a3, a4, a5, a6, a7);		\
 	}
+#endif /* !defined(CONFIG_ZTEST_NEW_API) */
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -193,7 +237,7 @@ static inline bool test_near_equal_f32(
 	size_t index;
 
 	for (index = 0; index < length; index++) {
-		if (fabs(a[index] - b[index]) > threshold) {
+		if (fabsf(a[index] - b[index]) > threshold) {
 			return false;
 		}
 	}
@@ -209,7 +253,7 @@ static inline bool test_near_equal_f16(
 	size_t index;
 
 	for (index = 0; index < length; index++) {
-		if (fabs(a[index] - b[index]) > threshold) {
+		if (fabsf((float)a[index] - (float)b[index]) > (float)threshold) {
 			return false;
 		}
 	}
@@ -305,8 +349,8 @@ static inline bool test_rel_error_f32(
 	float32_t rel, delta, average;
 
 	for (index = 0; index < length; index++) {
-		delta = fabs(a[index] - b[index]);
-		average = (fabs(a[index]) + fabs(b[index])) / 2.0f;
+		delta = fabsf(a[index] - b[index]);
+		average = (fabsf(a[index]) + fabsf(b[index])) / 2.0f;
 
 		if (average != 0) {
 			rel = delta / average;
@@ -329,8 +373,8 @@ static inline bool test_rel_error_f16(
 	float32_t rel, delta, average;
 
 	for (index = 0; index < length; index++) {
-		delta = fabs(a[index] - b[index]);
-		average = (fabs(a[index]) + fabs(b[index])) / 2.0f;
+		delta = fabsf((float)a[index] - (float)b[index]);
+		average = (fabsf((float)a[index]) + fabsf((float)b[index])) / 2.0f;
 
 		if (average != 0) {
 			rel = delta / average;
@@ -368,8 +412,8 @@ static inline bool test_close_error_f32(
 	size_t index;
 
 	for (index = 0; index < length; index++) {
-		if (fabs(val[index] - ref[index]) >
-			(abs_threshold + rel_threshold * fabs(ref[index]))) {
+		if (fabsf(val[index] - ref[index]) >
+			(abs_threshold + rel_threshold * fabsf(ref[index]))) {
 			return false;
 		}
 	}
@@ -385,8 +429,8 @@ static inline bool test_close_error_f16(
 	size_t index;
 
 	for (index = 0; index < length; index++) {
-		if (fabs(val[index] - ref[index]) >
-			(abs_threshold + rel_threshold * fabs(ref[index]))) {
+		if (fabsf((float)val[index] - (float)ref[index]) >
+			(abs_threshold + rel_threshold * fabsf((float)ref[index]))) {
 			return false;
 		}
 	}

@@ -5,19 +5,9 @@ description: Sharp memory display controller
 
 compatible: "sharp,ls0xx"
 
-include: spi-device.yaml
+include: [spi-device.yaml, display-controller.yaml]
 
 properties:
-    height:
-      type: int
-      required: true
-      description: Height in pixel of the panel driven by the controller
-
-    width:
-      type: int
-      required: true
-      description: Width in pixel of the panel driven by the controller
-
     extcomin-gpios:
       type: phandle-array
       required: false

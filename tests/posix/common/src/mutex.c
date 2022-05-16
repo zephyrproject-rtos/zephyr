@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <pthread.h>
 
-#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 
@@ -34,7 +34,7 @@ void *normal_mutex_entry(void *p1)
 	zassert_false(rc, "try lock failed");
 	TC_PRINT("mutex lock is taken\n");
 	zassert_false(pthread_mutex_unlock(&mutex1),
-		      "mutex unlock is falied");
+		      "mutex unlock is failed");
 	return NULL;
 }
 
@@ -43,7 +43,7 @@ void *recursive_mutex_entry(void *p1)
 	zassert_false(pthread_mutex_lock(&mutex2), "mutex is not taken");
 	zassert_false(pthread_mutex_lock(&mutex2),
 		      "mutex is not taken 2nd time");
-	TC_PRINT("recrusive mutex lock is taken\n");
+	TC_PRINT("recursive mutex lock is taken\n");
 	zassert_false(pthread_mutex_unlock(&mutex2),
 		      "mutex is not unlocked");
 	zassert_false(pthread_mutex_unlock(&mutex2),

@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_L2_IEEE802154
-	bool "Enable IEEE 802.15.4 Radio"
+	bool "IEEE 802.15.4 Radio"
+	select NET_L2_PHY_IEEE802154
 	help
 	  Add support for low rate WPAN IEEE 802.15.4 technology.
 
@@ -27,7 +28,7 @@ module-help = Enables IEEE 802.15.4 code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
-	bool "Enable IEEE 802.15.4 packet display"
+	bool "IEEE 802.15.4 packet display"
 	depends on NET_LOG
 	help
 	  Enable printing out in/out 802.15.4 packets. This is extremely
@@ -56,7 +57,7 @@ config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_TX
 endchoice
 
 config NET_L2_IEEE802154_ACK_REPLY
-	bool "Enable IEEE 802.15.4 ACK reply logic"
+	bool "IEEE 802.15.4 ACK reply logic"
 	help
 	  Enable inner stack's logic on handling ACK request. Note that
 	  if the hw driver has an AUTOACK feature, this is then unnecessary.
@@ -80,7 +81,7 @@ config NET_L2_IEEE802154_RFD
 endchoice
 
 config NET_L2_IEEE802154_SHELL
-	bool "Enable IEEE 802.15.4 shell module"
+	bool "IEEE 802.15.4 shell module"
 	select SHELL
 	depends on NET_L2_IEEE802154_RFD
 	help
@@ -88,7 +89,7 @@ config NET_L2_IEEE802154_SHELL
 	  a shell module named "ieee15_4".
 
 config NET_L2_IEEE802154_FRAGMENT
-	bool "Enable 802.15.4 fragmentation support"
+	bool "802.15.4 fragmentation support"
 	default y
 	depends on NET_6LO
 	help
@@ -114,7 +115,7 @@ config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 	  Otherwise all accumulated fragments are dropped.
 
 config NET_L2_IEEE802154_SECURITY
-	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"
+	bool "IEEE 802.15.4 security [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enable 802.15.4 frame security handling, in order to bring data

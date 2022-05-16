@@ -7,12 +7,12 @@
  * passed in input as IPC message.
  */
 
-#include <ipc/ipc_service_backend.h>
+#include <zephyr/ipc/ipc_service_backend.h>
 
-#include <logging/log.h>
-#include <sys/util_macro.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 
 #define DT_DRV_COMPAT		ipc_service_backend
 

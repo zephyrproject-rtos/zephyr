@@ -11,7 +11,7 @@
 #include "dma_stm32.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32_v2);
 
 

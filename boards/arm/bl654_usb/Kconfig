@@ -4,7 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ENABLE_DCDC
-	bool "Enable DCDC mode"
+	bool "DCDC mode"
 	select SOC_DCDC_NRF52X
 	default y
 	depends on BOARD_BL654_USB
+
+config BL654_USB_SERIAL_BACKEND_CDCACM
+	bool "Use CDC ACM UART as backend for BL654 USB adapter"
+	default y if !USB_DEVICE_BLUETOOTH
+	help
+	  Use CDC ACM UART as backend for console or shell.

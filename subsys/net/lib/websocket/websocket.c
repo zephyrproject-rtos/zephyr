@@ -10,25 +10,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <strings.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <sys/fdtable.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/http_client.h>
-#include <net/websocket.h>
+#include <zephyr/sys/fdtable.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/http_client.h>
+#include <zephyr/net/websocket.h>
 
-#include <random/rand32.h>
-#include <sys/byteorder.h>
-#include <sys/base64.h>
+#include <zephyr/random/rand32.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/base64.h>
 #include <mbedtls/sha1.h>
 
 #include "net_private.h"
@@ -282,7 +282,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 					sizeof("Sec-Websocket-Key: "),
 			    &olen, sec_accept_key,
 			    /* We are only interested in 16 first bytes so
-			     * substract 4 from the SHA-1 length
+			     * subtract 4 from the SHA-1 length
 			     */
 			    sizeof(sec_accept_key) - 4);
 	if (ret) {
@@ -443,7 +443,7 @@ static inline int websocket_poll_offload(struct zsock_pollfd *fds, int nfds,
 	int ret = 0;
 	int i;
 
-	/* Overwrite websocket file decriptors with underlying ones. */
+	/* Overwrite websocket file descriptors with underlying ones. */
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
 
@@ -518,6 +518,46 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	return 0;
 }
 
+#if !defined(CONFIG_NET_TEST)
+static int sendmsg_all(int sock, const struct msghdr *message, int flags)
+{
+	int ret, i;
+	size_t offset = 0;
+	size_t total_len = 0;
+
+	for (i = 0; i < message->msg_iovlen; i++) {
+		total_len += message->msg_iov[i].iov_len;
+	}
+
+	while (offset < total_len) {
+		ret = zsock_sendmsg(sock, message, flags);
+		if (ret < 0) {
+			return -errno;
+		}
+
+		offset += ret;
+		if (offset >= total_len) {
+			break;
+		}
+
+		/* Update msghdr for the next iteration. */
+		for (i = 0; i < message->msg_iovlen; i++) {
+			if (ret < message->msg_iov[i].iov_len) {
+				message->msg_iov[i].iov_len -= ret;
+				message->msg_iov[i].iov_base =
+					(uint8_t *)message->msg_iov[i].iov_base + ret;
+				break;
+			}
+
+			ret -= message->msg_iov[i].iov_len;
+			message->msg_iov[i].iov_len = 0;
+		}
+	}
+
+	return total_len;
+}
+#endif /* !defined(CONFIG_NET_TEST) */
+
 static int websocket_prepare_and_send(struct websocket_context *ctx,
 				      uint8_t *header, size_t header_len,
 				      uint8_t *payload, size_t payload_len,
@@ -553,8 +593,8 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 		tout = K_MSEC(timeout);
 	}
 
-	return sendmsg(ctx->real_sock, &msg,
-		       K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
+	return sendmsg_all(ctx->real_sock, &msg,
+			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
 #endif /* CONFIG_NET_TEST */
 }
 

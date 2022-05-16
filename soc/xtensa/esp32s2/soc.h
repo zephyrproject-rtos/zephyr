@@ -18,8 +18,10 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
-#include <arch/xtensa/arch.h>
+#include <zephyr/arch/xtensa/arch.h>
 #include <stdlib.h>
+
+void __esp_platform_start(void);
 
 extern void esp_rom_uart_attach(void);
 extern void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
@@ -55,6 +57,9 @@ extern void esp_rom_Cache_Enable_DCache(uint32_t autoload);
 
 extern void esp_rom_Cache_Set_DCache_Mode(cache_size_t cache_size, cache_ways_t ways,
 					cache_line_size_t cache_line_size);
+
+extern int esp_rom_Cache_Ibus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr,
+					uint32_t psize, uint32_t num, uint32_t fixed);
 
 /* ROM information related to SPI Flash chip timing and device */
 extern esp_rom_spiflash_chip_t g_rom_flashchip;

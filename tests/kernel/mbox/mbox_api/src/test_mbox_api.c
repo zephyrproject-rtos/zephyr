@@ -8,9 +8,9 @@
 
 #define TIMEOUT K_MSEC(100)
 #if !defined(CONFIG_BOARD_QEMU_X86)
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #else
-#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #endif
 #define MAIL_LEN 64
 
@@ -555,7 +555,7 @@ void test_mbox_get_put_block_data(void)
  * @brief Test mailbox enhance capabilities
  *
  * @details
- * - Define and initilized a message queue and a mailbox
+ * - Define and initialized a message queue and a mailbox
  * - Verify the capability of message queue and mailbox
  * - with same data.
  *

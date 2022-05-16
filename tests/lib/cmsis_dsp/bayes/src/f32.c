@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -15,7 +15,9 @@
 
 #define REL_ERROR_THRESH	(5.0e-6)
 
-void test_gaussian_naive_bayes_predict_f32(void)
+ZTEST_SUITE(bayes_f32, NULL, NULL, NULL, NULL, NULL);
+
+ZTEST(bayes_f32, test_gaussian_naive_bayes_predict_f16)
 {
 	arm_gaussian_naive_bayes_instance_f32 inst;
 
@@ -79,13 +81,4 @@ void test_gaussian_naive_bayes_predict_f32(void)
 	/* Free output buffers */
 	free(output_probs_buf);
 	free(output_preds_buf);
-}
-
-void test_bayes_f32(void)
-{
-	ztest_test_suite(bayes_f32,
-		ztest_unit_test(test_gaussian_naive_bayes_predict_f32)
-		);
-
-	ztest_run_test_suite(bayes_f32);
 }

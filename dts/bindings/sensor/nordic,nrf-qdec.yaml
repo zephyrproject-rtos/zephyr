@@ -5,7 +5,7 @@ description: Nordic nRF quadrature decoder (QDEC) node
 
 compatible: "nordic,nrf-qdec"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -16,8 +16,11 @@ properties:
 
     a-pin:
       type: int
-      required: true
+      required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The A pin to use.
 
         For pins P0.0 through P0.31, use the pin number. For example,
@@ -32,8 +35,11 @@ properties:
 
     b-pin:
       type: int
-      required: true
+      required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The B pin to use. The pin numbering scheme is the same as
         the a-pin property's.
 
@@ -41,6 +47,9 @@ properties:
       type: int
       required: false
       description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
         The LED pin to use for a light based QDEC device. The pin
         numbering scheme is the same as the a-pin property's.
 

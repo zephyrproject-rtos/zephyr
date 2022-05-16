@@ -12,14 +12,14 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
 
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
 #define TEST_AUTOMOUNT DT_PROP(DT_DRV_INST(0), automount)
 #if !TEST_AUTOMOUNT
-#include <fs/littlefs.h>
+#include <zephyr/fs/littlefs.h>
 #define PARTITION_NODE DT_NODELABEL(lfs1)
 FS_FSTAB_DECLARE_ENTRY(PARTITION_NODE);
 #endif
@@ -91,7 +91,7 @@ static void test_log_fs_file_content(void)
 	int rc;
 	struct fs_file_t file;
 	char log_read[MAX_PATH_LEN];
-	uint8_t to_log[] = "Corect Log 1";
+	uint8_t to_log[] = "Correct Log 1";
 	static char fname[MAX_PATH_LEN];
 
 	fs_file_t_init(&file);

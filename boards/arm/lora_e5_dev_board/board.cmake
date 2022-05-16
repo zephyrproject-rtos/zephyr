@@ -5,6 +5,7 @@ board_runner_args(pyocd "--flash-opt=-O reset_type=hw")
 board_runner_args(pyocd "--flash-opt=-O connect_mode=under-reset")
 board_runner_args(jlink "--device=STM32WLE5JC" "--speed=4000" "--reset-after-load")
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset=hw")
+board_runner_args(blackmagicprobe "--gdb-serial=/dev/ttyBmpGdb" "--connect-srst")
 
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)

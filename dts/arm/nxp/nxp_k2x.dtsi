@@ -6,10 +6,10 @@
 
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/clock/kinetis_sim.h>
-#include <dt-bindings/clock/kinetis_mcg.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/kinetis_sim.h>
+#include <zephyr/dt-bindings/clock/kinetis_mcg.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -42,13 +42,20 @@
 	 * https://sourceware.org/ml/binutils/2017-02/msg00250.html
 	 */
 	sram_l: memory@1fff0000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x1fff0000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAML";
 	};
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
 		reg = <0x20000000 DT_SIZE_K(64)>;
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
 	};
 
 	soc {

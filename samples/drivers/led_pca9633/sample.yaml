@@ -3,5 +3,6 @@ sample:
   name: PCA9633 sample
 tests:
   sample.drivers.led.pca9633:
-    platform_allow: stm32373c_eval
+    depends_on: arduino_i2c
+    build_only: true
     tags: LED

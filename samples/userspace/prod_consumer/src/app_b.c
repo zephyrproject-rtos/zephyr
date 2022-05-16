@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <sys/libc-hooks.h>
-#include <logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/logging/log.h>
 
-#include "main.h"
+#include "app_shared.h"
 #include "app_b.h"
 
 LOG_MODULE_REGISTER(app_b);
@@ -76,12 +76,27 @@ static void processor_thread(void *p1, void *p2, void *p3)
 
 void app_b_entry(void *p1, void *p2, void *p3)
 {
+	int ret;
+
 	/* Much like how we are reusing the main thread as this application's
 	 * processor thread, we will re-use the default memory domain as the
 	 * domain for application B.
 	 */
-	k_mem_domain_add_partition(&k_mem_domain_default, &app_b_partition);
-	k_mem_domain_add_partition(&k_mem_domain_default, &shared_partition);
+	ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					 &app_b_partition);
+	if (ret != 0) {
+		LOG_ERR("Failed to add app_b_partition to mem domain (%d)",
+			ret);
+		k_oops();
+	}
+
+	ret = k_mem_domain_add_partition(&k_mem_domain_default,
+					 &shared_partition);
+	if (ret != 0) {
+		LOG_ERR("Failed to add shared_partition to mem domain (%d)",
+			ret);
+		k_oops();
+	}
 
 	/* Assign a resource pool to serve for kernel-side allocations on
 	 * behalf of application A. Needed for k_queue_alloc_append().

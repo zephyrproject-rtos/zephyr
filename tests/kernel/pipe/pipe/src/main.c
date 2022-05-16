@@ -17,8 +17,10 @@ extern void test_pipe_get_invalid_size(void);
 extern void test_pipe_get_min_xfer(void);
 extern void test_pipe_put_min_xfer(void);
 extern void test_pipe_define_at_runtime(void);
+extern void test_pipe_flush(void);
 
 extern struct k_pipe test_pipe;
+extern struct k_pipe small_pipe;
 extern struct k_sem put_sem, get_sem, sync_sem, multiple_send_sem;
 extern struct k_stack stack_1;
 extern struct k_thread get_single_tid;
@@ -27,7 +29,7 @@ extern struct k_thread get_single_tid;
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(),
-			      &test_pipe, &put_sem, &get_sem,
+			      &test_pipe, &small_pipe, &put_sem, &get_sem,
 			      &sync_sem, &multiple_send_sem,
 			      &get_single_tid, &stack_1);
 
@@ -42,7 +44,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_pipe_get_invalid_size),
 			 ztest_user_unit_test(test_pipe_get_min_xfer),
 			 ztest_user_unit_test(test_pipe_put_min_xfer),
-			 ztest_unit_test(test_pipe_define_at_runtime)
+			 ztest_unit_test(test_pipe_define_at_runtime),
+			 ztest_unit_test(test_pipe_flush)
 			 );
 
 	ztest_run_test_suite(test_pipe);

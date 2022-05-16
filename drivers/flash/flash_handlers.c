@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <syscall_handler.h>
-#include <drivers/flash.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/drivers/flash.h>
 
 static inline int z_vrfy_flash_read(const struct device *dev, off_t offset,
 				    void *data, size_t len)
@@ -27,15 +27,6 @@ static inline int z_vrfy_flash_write(const struct device *dev, off_t offset,
 				  (const void *)data, len);
 }
 #include <syscalls/flash_write_mrsh.c>
-
-static inline int z_vrfy_flash_write_protection_set(const struct device *dev,
-						    bool enable)
-{
-	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, write_protection));
-	return z_impl_flash_write_protection_set((const struct device *)dev,
-						 enable);
-}
-#include <syscalls/flash_write_protection_set_mrsh.c>
 
 static inline size_t z_vrfy_flash_get_write_block_size(const struct device *dev)
 {

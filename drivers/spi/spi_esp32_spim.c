@@ -10,46 +10,19 @@
 #include <hal/spi_hal.h>
 #include <esp_attr.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include <soc.h>
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #ifndef CONFIG_SOC_ESP32C3
-#include <drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
-#include <drivers/interrupt_controller/intc_esp32c3.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #endif
-#include <drivers/gpio/gpio_esp32.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
-
-/* pins, signals and interrupts shall be placed into dts */
-#if defined(CONFIG_SOC_ESP32)
-#define MISO_IDX_2 HSPIQ_IN_IDX
-#define MISO_IDX_3 VSPIQ_IN_IDX
-#define MOSI_IDX_2 HSPID_OUT_IDX
-#define MOSI_IDX_3 VSPID_OUT_IDX
-#define SCLK_IDX_2 HSPICLK_OUT_IDX
-#define SCLK_IDX_3 VSPICLK_OUT_IDX
-#define CSEL_IDX_2 HSPICS0_OUT_IDX
-#define CSEL_IDX_3 VSPICS0_OUT_IDX
-#elif defined(CONFIG_SOC_ESP32S2)
-#define MISO_IDX_2 FSPIQ_IN_IDX
-#define MISO_IDX_3 SPI3_Q_IN_IDX
-#define MOSI_IDX_2 FSPID_OUT_IDX
-#define MOSI_IDX_3 SPI3_D_OUT_IDX
-#define SCLK_IDX_2 FSPICLK_OUT_MUX_IDX
-#define SCLK_IDX_3 SPI3_CLK_OUT_MUX_IDX
-#define CSEL_IDX_2 FSPICS0_OUT_IDX
-#define CSEL_IDX_3 SPI3_CS0_OUT_IDX
-#elif defined(CONFIG_SOC_ESP32C3)
-#define MISO_IDX_2 FSPIQ_IN_IDX
-#define MOSI_IDX_2 FSPID_OUT_IDX
-#define SCLK_IDX_2 FSPICLK_OUT_IDX
-#define CSEL_IDX_2 FSPICS0_OUT_IDX
-#endif
 
 #ifdef CONFIG_SOC_ESP32C3
 #define ISR_HANDLER isr_handler_t
@@ -157,42 +130,6 @@ static int spi_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static int spi_esp32_configure_pin(gpio_pin_t pin, int pin_sig,
-				   bool use_iomux,
-				   gpio_flags_t pin_mode)
-{
-	const char *device_name = gpio_esp32_get_gpio_for_pin(pin);
-	const struct device *gpio;
-	int ret;
-
-	if (!device_name) {
-		LOG_ERR("Could not find GPIO node on devicetree");
-		return -EINVAL;
-	}
-
-	gpio = device_get_binding(device_name);
-	if (!gpio) {
-		LOG_ERR("Could not bind to GPIO device");
-		return -EIO;
-	}
-
-	if (use_iomux) {
-		ret = gpio_pin_configure(gpio, pin, pin_mode);
-		if (ret < 0) {
-			LOG_ERR("SPI pin configuration failed");
-			return ret;
-		}
-	}
-
-	if (pin_mode == GPIO_INPUT) {
-		esp_rom_gpio_matrix_in(pin, pin_sig, false);
-	} else {
-		esp_rom_gpio_matrix_out(pin, pin_sig, false, false);
-	}
-
-	return 0;
-}
-
 static inline spi_ll_io_mode_t spi_esp32_get_io_mode(uint16_t operation)
 {
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
@@ -233,6 +170,8 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return -EIO;
 	}
 
+	spi_ll_master_init(hal->hw);
+
 	ctx->config = spi_cfg;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
@@ -250,31 +189,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	spi_esp32_configure_pin(cfg->pins.miso,
-				cfg->signals.miso_s,
-				cfg->use_iomux,
-				GPIO_INPUT);
-
-	spi_esp32_configure_pin(cfg->pins.mosi,
-				cfg->signals.mosi_s,
-				cfg->use_iomux,
-				GPIO_OUTPUT_LOW);
-
-	spi_esp32_configure_pin(cfg->pins.sclk,
-				cfg->signals.sclk_s,
-				cfg->use_iomux,
-				GPIO_OUTPUT);
-
-	if (ctx->config->cs == NULL) {
-		hal_dev->cs_setup = 1;
-		hal_dev->cs_hold = 1;
-		hal_dev->cs_pin_id = 0;
-
-		spi_esp32_configure_pin(cfg->pins.csel,
-					cfg->signals.csel_s,
-					cfg->use_iomux,
-					GPIO_OUTPUT | GPIO_ACTIVE_LOW);
-	}
+	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	/* input parameters to calculate timing configuration */
 	spi_hal_timing_param_t timing_param = {
@@ -414,66 +329,46 @@ static const struct spi_driver_api spi_api = {
 };
 
 #ifdef CONFIG_SOC_ESP32
-#define GET_AS_CS(idx) .as_cs = DT_PROP(DT_NODELABEL(spi##idx), clk_as_cs),
+#define GET_AS_CS(idx) .as_cs = DT_INST_PROP(idx, clk_as_cs),
 #else
 #define GET_AS_CS(idx)
 #endif
 
 #define ESP32_SPI_INIT(idx)	\
+				\
+	PINCTRL_DT_INST_DEFINE(idx);	\
 										\
 	static struct spi_esp32_data spi_data_##idx = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_NODELABEL(spi##idx), ctx)	\
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)	\
 		.hal = {	\
-			.hw = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
+			.hw = (spi_dev_t *)DT_INST_REG_ADDR(idx),	\
 		},	\
 		.dev_config = {	\
-			.half_duplex = DT_PROP(DT_NODELABEL(spi##idx), half_duplex),	\
+			.half_duplex = DT_INST_PROP(idx, half_duplex),	\
 			GET_AS_CS(idx)							\
-			.positive_cs = DT_PROP(DT_NODELABEL(spi##idx), positive_cs),	\
-			.no_compensate = DT_PROP(DT_NODELABEL(spi##idx), dummy_comp),	\
-			.sio = DT_PROP(DT_NODELABEL(spi##idx), sio)	\
+			.positive_cs = DT_INST_PROP(idx, positive_cs),	\
+			.no_compensate = DT_INST_PROP(idx, dummy_comp),	\
+			.sio = DT_INST_PROP(idx, sio)	\
 		}	\
 	};	\
 		\
 	static const struct spi_esp32_config spi_config_##idx = {	\
-		.spi = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
+		.spi = (spi_dev_t *)DT_INST_REG_ADDR(idx),	\
 			\
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(spi##idx))),	\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),	\
 		.duty_cycle = 0, \
 		.input_delay_ns = 0, \
-		.irq_source = DT_IRQN(DT_NODELABEL(spi##idx)), \
-		.use_iomux = DT_PROP(DT_NODELABEL(spi##idx), use_iomux), \
-		.signals = {	\
-			.miso_s = MISO_IDX_##idx,	\
-			.mosi_s = MOSI_IDX_##idx,	\
-			.sclk_s = SCLK_IDX_##idx,	\
-			.csel_s = CSEL_IDX_##idx	\
-		},	\
-			\
-		.pins = {	\
-			  .miso = DT_PROP(DT_NODELABEL(spi##idx), miso_pin),	\
-			  .mosi = DT_PROP(DT_NODELABEL(spi##idx), mosi_pin),	\
-			  .sclk = DT_PROP(DT_NODELABEL(spi##idx), sclk_pin),	\
-			  .csel = DT_PROP(DT_NODELABEL(spi##idx), csel_pin)	\
-		},	\
-			\
+		.irq_source = DT_INST_IRQN(idx), \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
 		.clock_subsys =	\
-			(clock_control_subsys_t)DT_CLOCKS_CELL(	\
-				DT_NODELABEL(spi##idx), offset),	\
-					\
+			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
 	};	\
 		\
-	DEVICE_DT_DEFINE(DT_NODELABEL(spi##idx), &spi_esp32_init,	\
+	DEVICE_DT_INST_DEFINE(idx, &spi_esp32_init,	\
 			      NULL, &spi_data_##idx,	\
 			      &spi_config_##idx, POST_KERNEL,	\
 			      CONFIG_SPI_INIT_PRIORITY, &spi_api);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi2), okay)
-ESP32_SPI_INIT(2);
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi3), okay)
-ESP32_SPI_INIT(3);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(ESP32_SPI_INIT)

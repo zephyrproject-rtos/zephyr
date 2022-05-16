@@ -5,8 +5,8 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -85,10 +85,18 @@
 			label = "RTIMER";
 			girqs = <23 10>;
 		};
+		bbram: bb-ram@4000a800 {
+			compatible = "microchip,xec-bbram";
+			reg = <0x4000a800 0x80>;
+			reg-names = "memory";
+			label = "BBRAM";
+		};
 		wdog: watchdog@40000400 {
 			compatible = "microchip,xec-watchdog";
 			reg = <0x40000400 0x400>;
 			interrupts = <171 0>;
+			girqs = <21 2>;
+			pcrs = <1 9>;
 			label = "WDT_0";
 		};
 		uart0: uart@400f2400 {
@@ -312,86 +320,95 @@
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009000 0x40>;
 			interrupts = <100 1>;
+			girqs = <18 10>;
+			pcrs = <3 5>;
 			label = "PS2_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			girq = <18>;
-			girq-bit = <10>;
 		};
 		ps2_1: ps2@40009040 {
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009040 0x40>;
 			interrupts = <101 1>;
+			girqs = <18 11>;
+			pcrs = <3 6>;
 			label = "PS2_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
-			girq = <18>;
-			girq-bit = <11>;
 		};
 		pwm0: pwm@40005800 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005800 0x20>;
+			pcrs = <1 4>;
 			label = "PWM_0";
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm1: pwm@40005810 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005810 0x20>;
+			pcrs = <1 20>;
 			label = "PWM_1";
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm2: pwm@40005820 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005820 0x20>;
+			pcrs = <1 21>;
 			label = "PWM_2";
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm3: pwm@40005830 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005830 0x20>;
+			pcrs = <1 22>;
 			label = "PWM_3";
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm4: pwm@40005840 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005840 0x20>;
+			pcrs = <1 23>;
 			label = "PWM_4";
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm5: pwm@40005850 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005850 0x20>;
+			pcrs = <1 24>;
 			label = "PWM_5";
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm6: pwm@40005860 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005860 0x20>;
+			pcrs = <1 25>;
 			label = "PWM_6";
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm7: pwm@40005870 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005870 0x20>;
+			pcrs = <1 26>;
 			label = "PWM_7";
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		pwm8: pwm@40005880 {
 			compatible = "microchip,xec-pwm";
 			reg = <0x40005880 0x20>;
+			pcrs = <1 27>;
 			label = "PWM_8";
 			status = "disabled";
-			#pwm-cells = <1>;
+			#pwm-cells = <2>;
 		};
 		adc0: adc@40007c00 {
 			compatible = "microchip,xec-adc";
@@ -400,11 +417,14 @@
 			label = "ADC_0";
 			status = "disabled";
 			#io-channel-cells = <1>;
+			clktime = <32>;
 		};
 		kscan0: kscan@40009c00 {
 			compatible = "microchip,xec-kscan";
 			reg = <0x40009c00 0x18>;
 			interrupts = <135 0>;
+			girqs = <21 25>;
+			pcrs = <3 11>;
 			label = "KSCAN";
 			status = "disabled";
 			#address-cells = <1>;
@@ -414,6 +434,8 @@
 			compatible = "microchip,xec-peci";
 			reg = <0x40006400 0x80>;
 			interrupts = <70 4>;
+			girqs = <17 0>;
+			pcrs = <1 1>;
 			label = "PECI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -440,6 +462,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006000 0x10>;
 			interrupts = <71 4>;
+			girqs = <17 1>;
+			pcrs = <1 2>;
 			label = "TACH_0";
 			status = "disabled";
 			#address-cells = <1>;
@@ -449,6 +473,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006010 0x10>;
 			interrupts = <72 4>;
+			girqs = <17 2>;
+			pcrs = <1 11>;
 			label = "TACH_1";
 			status = "disabled";
 			#address-cells = <1>;
@@ -458,6 +484,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006020 0x10>;
 			interrupts = <73 4>;
+			girqs = <17 3>;
+			pcrs = <1 12>;
 			label = "TACH_2";
 			status = "disabled";
 			#address-cells = <1>;
@@ -467,6 +495,8 @@
 			compatible = "microchip,xec-tach";
 			reg = <0x40006030 0x10>;
 			interrupts = <159 4>;
+			girqs = <17 4>;
+			pcrs = <1 13>;
 			label = "TACH_3";
 			status = "disabled";
 			#address-cells = <1>;

@@ -11,18 +11,18 @@
 #ifndef ZEPHYR_DRIVERS_CAN_CAN_UTILS_H_
 #define ZEPHYR_DRIVERS_CAN_CAN_UTILS_H_
 
-static inline uint8_t can_utils_filter_match(const struct zcan_frame *msg,
+static inline uint8_t can_utils_filter_match(const struct zcan_frame *frame,
 					     struct zcan_filter *filter)
 {
-	if (msg->id_type != filter->id_type) {
+	if (frame->id_type != filter->id_type) {
 		return 0;
 	}
 
-	if ((msg->rtr ^ filter->rtr) & filter->rtr_mask) {
+	if ((frame->rtr ^ filter->rtr) & filter->rtr_mask) {
 		return 0;
 	}
 
-	if ((msg->id ^ filter->id) & filter->id_mask) {
+	if ((frame->id ^ filter->id) & filter->id_mask) {
 		return 0;
 	}
 

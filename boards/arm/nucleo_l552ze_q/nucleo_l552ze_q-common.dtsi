@@ -64,15 +64,25 @@
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
 };
 
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pc0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pg7 &lpuart1_rx_pg8>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -80,5 +90,6 @@
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
 			&spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	status = "okay";
 };

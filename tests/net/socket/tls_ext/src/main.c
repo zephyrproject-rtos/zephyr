@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-#include <net/net_core.h>
-#include <net/net_ip.h>
-#include <net/socket.h>
-#include <net/tls_credentials.h>
-#include <posix/unistd.h>
-#include <sys/util.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/tls_credentials.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/sys/util.h>
 #include <ztest.h>
 
 LOG_MODULE_REGISTER(tls_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(tls_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
  * @brief Application-dependent TLS credential identifiers
  *
  * Since both the server and client exist in the same test
- * application in this case, both the server and client credendtials
+ * application in this case, both the server and client credentials
  * are loaded together.
  *
  * The server would normally need

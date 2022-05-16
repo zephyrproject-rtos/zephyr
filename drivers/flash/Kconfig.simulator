@@ -27,7 +27,7 @@ config FLASH_SIMULATOR_DOUBLE_WRITES
 	 Keep in mind that write operations can only pull bits to zero, regardless.
 
 config FLASH_SIMULATOR_SIMULATE_TIMING
-	bool "Enable hardware timing simulation"
+	bool "Hardware timing simulation"
 
 if FLASH_SIMULATOR_SIMULATE_TIMING
 

@@ -1,3 +1,5 @@
+.. _hawkbit-api-sample:
+
 Hawkbit Direct Device Integration API sample
 ############################################
 
@@ -23,7 +25,7 @@ Caveats
 *******
 
 * The Zephyr port of ``Hawkbit`` is configured to run on a
-  :ref: `Freedom-K64F <frdm_k64f>` MCU by default. The application should
+  :ref:`Freedom-K64F <frdm_k64f>` MCU by default. The application should
   build and run for other platforms with support internet connection. Some
   platforms need some modification. Overlay files would be needed to support
   BLE 6lowpan, 802.15.4 or OpenThread configurations as well as the
@@ -155,7 +157,7 @@ following command:
    hawkbit run
 
 And then wait. The board will ping the server, check if there are any new
-updates, and then download the update you've just created. If everyting goes
+updates, and then download the update you've just created. If everything goes
 fine the message ``Image flashed successfully, you can reboot now`` will be
 printed on the terminal.
 
@@ -196,7 +198,7 @@ to support https.
    openssl req -new -key server.key -out server.csr
 
 Once you run the command, it will prompt you to enter your Country,
-State, City, Company name and enter the Comman Name field with
+State, City, Company name and enter the Command Name field with
 ``<your-ip-address>``.
 
 * Generate the self-signed x509 certificate suitable to use on web server.

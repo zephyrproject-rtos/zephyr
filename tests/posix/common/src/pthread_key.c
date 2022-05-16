@@ -5,19 +5,20 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <pthread.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define N_THR 2
 #define N_KEY 2
-#define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define BUFFSZ 48
 
 K_THREAD_STACK_ARRAY_DEFINE(stackp, N_THR, STACKSZ);
 
 pthread_key_t key, keys[N_KEY];
-static pthread_once_t key_once, keys_once;
+static pthread_once_t key_once = PTHREAD_ONCE_INIT;
+static pthread_once_t keys_once = PTHREAD_ONCE_INIT;
 
 void *thread_top(void *p1)
 {

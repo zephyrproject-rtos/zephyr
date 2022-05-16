@@ -41,6 +41,10 @@ config CLOCK_CONTROL_MCUX_SYSCON
 	default y if HAS_MCUX_SYSCON
 	depends on CLOCK_CONTROL
 
+config IMX_USDHC
+	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
+	depends on SDHC
+
 if MCUX_OS_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC

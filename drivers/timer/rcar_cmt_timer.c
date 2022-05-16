@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/timer/system_timer.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/rcar_clock_control.h>
 
 #define DT_DRV_COMPAT renesas_rcar_cmt
 
@@ -66,19 +67,30 @@ static void cmt_isr(void *arg)
 	sys_clock_announce(1);
 }
 
+uint32_t sys_clock_elapsed(void)
+{
+	/* Always return 0 for tickful operation */
+	return 0;
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	return sys_read32(TIMER_BASE_ADDR + CMCNT1_OFFSET);
+}
+
 /*
  * Initialize both channels at same frequency,
  * Set the first one to generates interrupt at CYCLES_PER_TICK.
  * The second one is used for cycles count, the match value is set
  * at max uint32_t.
  */
-int sys_clock_driver_init(const struct device *device)
+static int sys_clock_driver_init(const struct device *dev)
 {
 	const struct device *clk;
 	uint32_t reg_val;
 	int i, ret;
 
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 	clk = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
 	if (clk == NULL) {
 		return -ENODEV;
@@ -140,13 +152,5 @@ int sys_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-uint32_t sys_clock_elapsed(void)
-{
-	/* Always return 0 for tickful operation */
-	return 0;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return sys_read32(TIMER_BASE_ADDR + CMCNT1_OFFSET);
-}
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

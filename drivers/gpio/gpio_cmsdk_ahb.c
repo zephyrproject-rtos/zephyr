@@ -6,14 +6,14 @@
 
 #define DT_DRV_COMPAT arm_cmsdk_gpio
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/gpio.h>
-#include <init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/clock_control/arm_clock_control.h>
+#include <zephyr/drivers/clock_control/arm_clock_control.h>
 
 #include "gpio_cmsdk_ahb.h"
 #include "gpio_utils.h"
@@ -178,7 +178,7 @@ static int gpio_cmsdk_ahb_pin_interrupt_configure(const struct device *dev,
 			cfg->port->inttypeclr = BIT(pin);
 		}
 
-		/* Level High or Edge Risising */
+		/* Level High or Edge Rising */
 		if (trig == GPIO_INT_TRIG_HIGH) {
 			cfg->port->intpolset = BIT(pin);
 		} else {
@@ -277,7 +277,7 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 			    NULL,						\
 			    &gpio_cmsdk_port_##n##_data,			\
 			    &gpio_cmsdk_port_## n ##_config,			\
-			    POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,		\
+			    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,	\
 			    &gpio_cmsdk_ahb_drv_api_funcs);			\
 										\
 	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev)	\

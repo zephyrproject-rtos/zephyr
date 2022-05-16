@@ -9,7 +9,7 @@ Overview
 The MEC15xxEVB_ASSY6853 kit is a future development platform to evaluate the
 Microchip MEC15XX series microcontrollers. This board needs to be mated with
 part number MEC1501 144WFBA SOLDER DC ASSY 6860(cpu board) in order to operate.
-The MEC152x has superceded the MEC1501 in production. MEC152x is identical to
+The MEC152x has superseded the MEC1501 in production. MEC152x is identical to
 MEC150x except for an enhanced Boot-ROM SPI loader. The SPI image format has
 been updated requiring a new SPI image tool. MEC1501 and MEC152x SPI image
 formats are not compatible with each other. Evaluation and cpu boards are
@@ -401,7 +401,7 @@ Flashing
          :alt: SPI DONGLE ASSY 6791 Connected
 
 
-   .. note:: If you dont't want to press Reset button every time, you can disconnect
+   .. note:: If you don't want to press Reset button every time, you can disconnect
     SPI Dongle ASSY 6791 from the EVB during the west flash programming.
     Then connect it back to the ``J44`` header and apply power to the EVB.
     Result will be the same.

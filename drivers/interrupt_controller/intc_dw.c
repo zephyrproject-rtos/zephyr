@@ -13,8 +13,8 @@
  * This implementation works only when sw_isr_table is enabled in zephyr
  */
 
-#include <device.h>
-#include <irq_nextlevel.h>
+#include <zephyr/device.h>
+#include <zephyr/irq_nextlevel.h>
 #include "intc_dw.h"
 #include <soc.h>
 
@@ -52,11 +52,11 @@ static void dw_ictl_isr(const struct device *dev)
 	volatile struct dw_ictl_registers * const regs =
 			(struct dw_ictl_registers *)config->base_addr;
 
-	dw_ictl_dispatch_child_isrs(regs->irq_maskstatus_l,
+	dw_ictl_dispatch_child_isrs(regs->irq_finalstatus_l,
 				    config->isr_table_offset);
 
 	if (config->numirqs > 32) {
-		dw_ictl_dispatch_child_isrs(regs->irq_maskstatus_h,
+		dw_ictl_dispatch_child_isrs(regs->irq_finalstatus_h,
 					    config->isr_table_offset + 32);
 	}
 }

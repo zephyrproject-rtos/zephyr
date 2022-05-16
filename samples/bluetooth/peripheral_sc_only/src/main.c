@@ -10,15 +10,15 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -118,6 +118,9 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.cancel = auth_cancel,
+};
+
+static struct bt_conn_auth_info_cb auth_cb_info = {
 	.pairing_complete = pairing_complete,
 	.pairing_failed = pairing_failed,
 };
@@ -136,6 +139,7 @@ void main(void)
 
 
 	bt_conn_auth_cb_register(&auth_cb_display);
+	bt_conn_auth_info_cb_register(&auth_cb_info);
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {

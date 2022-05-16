@@ -7,10 +7,10 @@
 #define DT_DRV_COMPAT microchip_xec_adc
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_mchp_xec);
 
-#include <drivers/adc.h>
+#include <zephyr/drivers/adc.h>
 #include <soc.h>
 #include <errno.h>
 
@@ -278,10 +278,17 @@ struct adc_driver_api adc_xec_api = {
 	.ref_internal = XEC_ADC_VREF_ANALOG,
 };
 
+/* ADC Config Register */
+#define XEC_ADC_CFG_CLK_VAL(clk_time)	(		\
+	(clk_time << MCHP_ADC_CFG_CLK_LO_TIME_POS) |	\
+	(clk_time << MCHP_ADC_CFG_CLK_HI_TIME_POS))
+
 static int adc_xec_init(const struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
 	struct adc_xec_data *data = dev->data;
+
+	adc_regs->config_reg = XEC_ADC_CFG_CLK_VAL(DT_INST_PROP(0, clktime));
 
 	adc_regs->control_reg =  XEC_ADC_CTRL_ACTIVATE
 		| XEC_ADC_CTRL_POWER_SAVER_DIS

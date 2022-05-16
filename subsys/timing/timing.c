@@ -5,9 +5,9 @@
  */
 
 #include <stdbool.h>
-#include <kernel.h>
-#include <sys/atomic.h>
-#include <timing/timing.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/timing/timing.h>
 
 static bool has_inited;
 static atomic_val_t started_ref;

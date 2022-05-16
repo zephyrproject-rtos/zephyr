@@ -46,7 +46,7 @@ Building and Running for FRDM-K64F
 ==================================
 The :ref:`frdm_k64f` board does not come with an onboard CAN
 transceiver. In order to use the CAN bus on the FRDM-K64F board, an
-external CAN bus tranceiver must be connected to ``PTB18``
+external CAN bus transceiver must be connected to ``PTB18``
 (``CAN0_TX``) and ``PTB19`` (``CAN0_RX``). This board supports CANopen
 LED indicators (red and green LEDs)
 
@@ -60,6 +60,44 @@ The sample can be built and executed for the FRDM-K64F as follows:
 
 Pressing the button labelled ``SW3`` will increment the button press
 counter object at index ``0x2102`` in the object dictionary.
+
+Building and Running for STM32F072RB Discovery
+==============================================
+The :ref:`stm32f072b_disco_board` board does not come with an onboard CAN
+transceiver. In order to use the CAN bus on the STM32F072RB Discovery board, an
+external CAN bus transceiver must be connected to ``PB8`` (``CAN_RX``) and
+``PB9`` (``CAN_TX``). This board supports CANopen LED indicators (red and green
+LEDs)
+
+The sample can be built and executed for the STM32F072RB Discovery as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/canopennode
+   :board: stm32f072b_disco
+   :goals: build flash
+   :compact:
+
+Pressing the button labelled ``USER`` will increment the button press counter
+object at index ``0x2102`` in the object dictionary.
+
+Building and Running for STM32F3 Discovery
+==========================================
+The :ref:`stm32f3_disco_board` board does not come with an onboard CAN
+transceiver. In order to use the CAN bus on the STM32F3 Discovery board, an
+external CAN bus transceiver must be connected to ``PD1`` (``CAN_TX``) and
+``PD0`` (``CAN_RX``). This board supports CANopen LED indicators (red and green
+LEDs)
+
+The sample can be built and executed for the STM32F3 Discovery as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/canopennode
+   :board: stm32f3_disco
+   :goals: build flash
+   :compact:
+
+Pressing the button labelled ``USER`` will increment the button press counter
+object at index ``0x2102`` in the object dictionary.
 
 Building and Running for boards without storage partition
 =========================================================
@@ -129,8 +167,9 @@ accomplished using the following Python code:
    import time
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -176,8 +215,9 @@ name) can be accomplished using the following Python code:
    import os
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -209,8 +249,9 @@ can be accomplished using the following Python code:
    import os
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()
@@ -282,8 +323,9 @@ press counter) can be accomplished using the following Python code:
    import os
 
    ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'subsys', 'canbus', 'canopen',
-                      'objdict', 'objdict.eds')
+   EDS = os.path.join(ZEPHYR_BASE, 'samples', 'modules', 'canopennode',
+                   'objdict', 'objdict.eds')
+
    NODEID = 10
 
    network = canopen.Network()

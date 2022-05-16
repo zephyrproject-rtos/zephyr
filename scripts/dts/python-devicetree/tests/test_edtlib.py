@@ -158,6 +158,20 @@ def test_hierarchy():
 
     assert edt.get_node("/parent/child-1").children == {}
 
+def test_child_index():
+    '''Test Node.child_index.'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    parent, child_1, child_2 = [edt.get_node(path) for path in
+                                ("/parent",
+                                 "/parent/child-1",
+                                 "/parent/child-2")]
+    assert parent.child_index(child_1) == 0
+    assert parent.child_index(child_2) == 1
+    with pytest.raises(KeyError):
+        parent.child_index(parent)
+
 def test_include():
     '''Test 'include:' and the legacy 'inherits: !include ...' in bindings'''
     with from_here():

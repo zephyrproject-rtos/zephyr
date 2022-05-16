@@ -9,6 +9,11 @@
 &mikrobus_spi {
 	status = "okay";
 
+	cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
+		   <&gpio1 1 GPIO_ACTIVE_LOW>,
+		   <&gpio1 12 GPIO_ACTIVE_LOW>,
+		   <&gpio1 26 GPIO_ACTIVE_LOW>;
+
     /* LPCXpresso55xxx boards all use SSEL1. */
 	eth_click: eth_click@1 {
 		compatible = "microchip,enc28j60";

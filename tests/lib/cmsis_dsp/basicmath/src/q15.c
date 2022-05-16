@@ -6,7 +6,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include "../../common/test_common.h"
@@ -44,12 +44,13 @@ static void test_arm_add_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_add_q15, 7, in_com1, in_com2, ref_add, 7);
-DEFINE_TEST_VARIANT4(arm_add_q15, 16, in_com1, in_com2, ref_add, 16);
-DEFINE_TEST_VARIANT4(arm_add_q15, 23, in_com1, in_com2, ref_add, 23);
-DEFINE_TEST_VARIANT4(arm_add_q15, possat, in_maxpos, in_maxpos, ref_add_possat, 17);
-DEFINE_TEST_VARIANT4(arm_add_q15, negsat, in_maxneg, in_maxneg, ref_add_negsat, 17);
-DEFINE_TEST_VARIANT4(arm_add_q15, long, in_com1, in_com2, ref_add, ARRAY_SIZE(in_com1));
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_add_q15, 7, in_com1, in_com2, ref_add, 7);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_add_q15, 16, in_com1, in_com2, ref_add, 16);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_add_q15, 23, in_com1, in_com2, ref_add, 23);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_add_q15, possat, in_maxpos, in_maxpos, ref_add_possat, 17);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_add_q15, negsat, in_maxneg, in_maxneg, ref_add_negsat, 17);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_add_q15, long, in_com1, in_com2, ref_add,
+		     ARRAY_SIZE(in_com1));
 
 static void test_arm_sub_q15(
 	const q15_t *input1, const q15_t *input2, const q15_t *ref,
@@ -77,12 +78,13 @@ static void test_arm_sub_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_sub_q15, 7, in_com1, in_com2, ref_sub, 7);
-DEFINE_TEST_VARIANT4(arm_sub_q15, 16, in_com1, in_com2, ref_sub, 16);
-DEFINE_TEST_VARIANT4(arm_sub_q15, 23, in_com1, in_com2, ref_sub, 23);
-DEFINE_TEST_VARIANT4(arm_sub_q15, possat, in_maxpos, in_maxneg, ref_sub_possat, 17);
-DEFINE_TEST_VARIANT4(arm_sub_q15, negsat, in_maxneg, in_maxpos, ref_sub_negsat, 17);
-DEFINE_TEST_VARIANT4(arm_sub_q15, long, in_com1, in_com2, ref_sub, ARRAY_SIZE(in_com1));
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_sub_q15, 7, in_com1, in_com2, ref_sub, 7);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_sub_q15, 16, in_com1, in_com2, ref_sub, 16);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_sub_q15, 23, in_com1, in_com2, ref_sub, 23);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_sub_q15, possat, in_maxpos, in_maxneg, ref_sub_possat, 17);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_sub_q15, negsat, in_maxneg, in_maxpos, ref_sub_negsat, 17);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_sub_q15, long, in_com1, in_com2, ref_sub,
+		     ARRAY_SIZE(in_com1));
 
 static void test_arm_mult_q15(
 	const q15_t *input1, const q15_t *input2, const q15_t *ref,
@@ -110,11 +112,13 @@ static void test_arm_mult_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_mult_q15, 7, in_com1, in_com2, ref_mult, 7);
-DEFINE_TEST_VARIANT4(arm_mult_q15, 16, in_com1, in_com2, ref_mult, 16);
-DEFINE_TEST_VARIANT4(arm_mult_q15, 23, in_com1, in_com2, ref_mult, 23);
-DEFINE_TEST_VARIANT4(arm_mult_q15, possat, in_maxneg2, in_maxneg2, ref_mult_possat, 17);
-DEFINE_TEST_VARIANT4(arm_mult_q15, long, in_com1, in_com2, ref_mult, ARRAY_SIZE(in_com1));
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_mult_q15, 7, in_com1, in_com2, ref_mult, 7);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_mult_q15, 16, in_com1, in_com2, ref_mult, 16);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_mult_q15, 23, in_com1, in_com2, ref_mult, 23);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_mult_q15, possat, in_maxneg2, in_maxneg2, ref_mult_possat,
+		     17);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_mult_q15, long, in_com1, in_com2, ref_mult,
+		     ARRAY_SIZE(in_com1));
 
 static void test_arm_negate_q15(
 	const q15_t *input1, const q15_t *ref, size_t length)
@@ -141,11 +145,12 @@ static void test_arm_negate_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_negate_q15, 7, in_com1, ref_negate, 7);
-DEFINE_TEST_VARIANT3(arm_negate_q15, 16, in_com1, ref_negate, 16);
-DEFINE_TEST_VARIANT3(arm_negate_q15, 23, in_com1, ref_negate, 23);
-DEFINE_TEST_VARIANT3(arm_negate_q15, possat, in_maxneg2, ref_negate_possat, 17);
-DEFINE_TEST_VARIANT3(arm_negate_q15, long, in_com1, ref_negate, ARRAY_SIZE(in_com1));
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_negate_q15, 7, in_com1, ref_negate, 7);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_negate_q15, 16, in_com1, ref_negate, 16);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_negate_q15, 23, in_com1, ref_negate, 23);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_negate_q15, possat, in_maxneg2, ref_negate_possat, 17);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_negate_q15, long, in_com1, ref_negate,
+		     ARRAY_SIZE(in_com1));
 
 static void test_arm_offset_q15(
 	const q15_t *input1, q15_t scalar, const q15_t *ref, size_t length)
@@ -172,12 +177,15 @@ static void test_arm_offset_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_offset_q15, 0p5_7, in_com1, 0x4000, ref_offset, 7);
-DEFINE_TEST_VARIANT4(arm_offset_q15, 0p5_16, in_com1, 0x4000, ref_offset, 16);
-DEFINE_TEST_VARIANT4(arm_offset_q15, 0p5_23, in_com1, 0x4000, ref_offset, 23);
-DEFINE_TEST_VARIANT4(arm_offset_q15, possat, in_maxpos, 0x7333, ref_offset_possat, 17);
-DEFINE_TEST_VARIANT4(arm_offset_q15, negsat, in_maxneg, 0x8ccd, ref_offset_negsat, 17);
-DEFINE_TEST_VARIANT4(arm_offset_q15, long, in_com1, 0x4000, ref_offset, ARRAY_SIZE(in_com1));
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_offset_q15, 0p5_7, in_com1, 0x4000, ref_offset, 7);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_offset_q15, 0p5_16, in_com1, 0x4000, ref_offset, 16);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_offset_q15, 0p5_23, in_com1, 0x4000, ref_offset, 23);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_offset_q15, possat, in_maxpos, 0x7333, ref_offset_possat,
+		     17);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_offset_q15, negsat, in_maxneg, 0x8ccd, ref_offset_negsat,
+		     17);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_offset_q15, long, in_com1, 0x4000, ref_offset,
+		     ARRAY_SIZE(in_com1));
 
 static void test_arm_scale_q15(
 	const q15_t *input1, q15_t scalar, const q15_t *ref, size_t length)
@@ -204,11 +212,13 @@ static void test_arm_scale_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_scale_q15, 0p5_7, in_com1, 0x4000, ref_scale, 7);
-DEFINE_TEST_VARIANT4(arm_scale_q15, 0p5_16, in_com1, 0x4000, ref_scale, 16);
-DEFINE_TEST_VARIANT4(arm_scale_q15, 0p5_23, in_com1, 0x4000, ref_scale, 23);
-DEFINE_TEST_VARIANT4(arm_scale_q15, possat, in_maxneg2, 0x8000, ref_scale_possat, 17);
-DEFINE_TEST_VARIANT4(arm_scale_q15, long, in_com1, 0x4000, ref_scale, ARRAY_SIZE(in_com1));
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_scale_q15, 0p5_7, in_com1, 0x4000, ref_scale, 7);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_scale_q15, 0p5_16, in_com1, 0x4000, ref_scale, 16);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_scale_q15, 0p5_23, in_com1, 0x4000, ref_scale, 23);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_scale_q15, possat, in_maxneg2, 0x8000, ref_scale_possat,
+		     17);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_scale_q15, long, in_com1, 0x4000, ref_scale,
+		     ARRAY_SIZE(in_com1));
 
 static void test_arm_dot_prod_q15(
 	const q15_t *input1, const q15_t *input2, const q63_t *ref,
@@ -236,10 +246,10 @@ static void test_arm_dot_prod_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_dot_prod_q15, 7, in_com1, in_com2, ref_dot_prod_3, 7);
-DEFINE_TEST_VARIANT4(arm_dot_prod_q15, 16, in_com1, in_com2, ref_dot_prod_4, 16);
-DEFINE_TEST_VARIANT4(arm_dot_prod_q15, 23, in_com1, in_com2, ref_dot_prod_4n1, 23);
-DEFINE_TEST_VARIANT4(arm_dot_prod_q15, long, in_com1, in_com2, ref_dot_prod_long,
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_dot_prod_q15, 7, in_com1, in_com2, ref_dot_prod_3, 7);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_dot_prod_q15, 16, in_com1, in_com2, ref_dot_prod_4, 16);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_dot_prod_q15, 23, in_com1, in_com2, ref_dot_prod_4n1, 23);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_dot_prod_q15, long, in_com1, in_com2, ref_dot_prod_long,
 		     ARRAY_SIZE(in_com1));
 
 static void test_arm_abs_q15(
@@ -267,10 +277,10 @@ static void test_arm_abs_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_abs_q15, 7, in_com1, ref_abs, 7);
-DEFINE_TEST_VARIANT3(arm_abs_q15, 16, in_com1, ref_abs, 16);
-DEFINE_TEST_VARIANT3(arm_abs_q15, 23, in_com1, ref_abs, 23);
-DEFINE_TEST_VARIANT3(arm_abs_q15, long, in_com1, ref_abs, ARRAY_SIZE(in_com1));
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_abs_q15, 7, in_com1, ref_abs, 7);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_abs_q15, 16, in_com1, ref_abs, 16);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_abs_q15, 23, in_com1, ref_abs, 23);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_abs_q15, long, in_com1, ref_abs, ARRAY_SIZE(in_com1));
 
 static void test_arm_shift_q15(
 	const q15_t *input1, const q15_t *ref, size_t length)
@@ -297,9 +307,9 @@ static void test_arm_shift_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_shift_q15, rand, in_rand, ref_shift, 17);
-DEFINE_TEST_VARIANT3(arm_shift_q15, possat, in_maxpos, ref_shift_possat, 17);
-DEFINE_TEST_VARIANT3(arm_shift_q15, negsat, in_maxneg, ref_shift_negsat, 17);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_shift_q15, rand, in_rand, ref_shift, 17);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_shift_q15, possat, in_maxpos, ref_shift_possat, 17);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_shift_q15, negsat, in_maxneg, ref_shift_negsat, 17);
 
 static void test_arm_and_u16(
 	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
@@ -323,9 +333,9 @@ static void test_arm_and_u16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_and_u16, 7, in_bitwise1, in_bitwise2, ref_and, 7);
-DEFINE_TEST_VARIANT4(arm_and_u16, 16, in_bitwise1, in_bitwise2, ref_and, 16);
-DEFINE_TEST_VARIANT4(arm_and_u16, 23, in_bitwise1, in_bitwise2, ref_and, 23);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_and_u16, 7, in_bitwise1, in_bitwise2, ref_and, 7);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_and_u16, 16, in_bitwise1, in_bitwise2, ref_and, 16);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_and_u16, 23, in_bitwise1, in_bitwise2, ref_and, 23);
 
 static void test_arm_or_u16(
 	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
@@ -349,9 +359,9 @@ static void test_arm_or_u16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_or_u16, 7, in_bitwise1, in_bitwise2, ref_or, 7);
-DEFINE_TEST_VARIANT4(arm_or_u16, 16, in_bitwise1, in_bitwise2, ref_or, 16);
-DEFINE_TEST_VARIANT4(arm_or_u16, 23, in_bitwise1, in_bitwise2, ref_or, 23);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_or_u16, 7, in_bitwise1, in_bitwise2, ref_or, 7);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_or_u16, 16, in_bitwise1, in_bitwise2, ref_or, 16);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_or_u16, 23, in_bitwise1, in_bitwise2, ref_or, 23);
 
 static void test_arm_not_u16(
 	const uint16_t *input1, const uint16_t *ref, size_t length)
@@ -374,9 +384,9 @@ static void test_arm_not_u16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT3(arm_not_u16, 7, in_bitwise1, ref_not, 7);
-DEFINE_TEST_VARIANT3(arm_not_u16, 16, in_bitwise1, ref_not, 16);
-DEFINE_TEST_VARIANT3(arm_not_u16, 23, in_bitwise1, ref_not, 23);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_not_u16, 7, in_bitwise1, ref_not, 7);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_not_u16, 16, in_bitwise1, ref_not, 16);
+DEFINE_TEST_VARIANT3(basic_math_q15, arm_not_u16, 23, in_bitwise1, ref_not, 23);
 
 static void test_arm_xor_u16(
 	const uint16_t *input1, const uint16_t *input2, const uint16_t *ref,
@@ -400,9 +410,9 @@ static void test_arm_xor_u16(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT4(arm_xor_u16, 7, in_bitwise1, in_bitwise2, ref_xor, 7);
-DEFINE_TEST_VARIANT4(arm_xor_u16, 16, in_bitwise1, in_bitwise2, ref_xor, 16);
-DEFINE_TEST_VARIANT4(arm_xor_u16, 23, in_bitwise1, in_bitwise2, ref_xor, 23);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_xor_u16, 7, in_bitwise1, in_bitwise2, ref_xor, 7);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_xor_u16, 16, in_bitwise1, in_bitwise2, ref_xor, 16);
+DEFINE_TEST_VARIANT4(basic_math_q15, arm_xor_u16, 23, in_bitwise1, in_bitwise2, ref_xor, 23);
 
 static void test_arm_clip_q15(
 	const q15_t *input, const q15_t *ref, q15_t min, q15_t max, size_t length)
@@ -425,76 +435,11 @@ static void test_arm_clip_q15(
 	free(output);
 }
 
-DEFINE_TEST_VARIANT5(arm_clip_q15, c000_f333, in_clip, ref_clip1,
+DEFINE_TEST_VARIANT5(basic_math_q15, arm_clip_q15, c000_f333, in_clip, ref_clip1,
 		     0xc000, 0xf333, ARRAY_SIZE(ref_clip1));
-DEFINE_TEST_VARIANT5(arm_clip_q15, c000_4000, in_clip, ref_clip2,
+DEFINE_TEST_VARIANT5(basic_math_q15, arm_clip_q15, c000_4000, in_clip, ref_clip2,
 		     0xc000, 0x4000, ARRAY_SIZE(ref_clip2));
-DEFINE_TEST_VARIANT5(arm_clip_q15, 0ccd_4000, in_clip, ref_clip3,
+DEFINE_TEST_VARIANT5(basic_math_q15, arm_clip_q15, 0ccd_4000, in_clip, ref_clip3,
 		     0x0ccd, 0x4000, ARRAY_SIZE(ref_clip3));
 
-void test_basicmath_q15(void)
-{
-	ztest_test_suite(basicmath_q15,
-		ztest_unit_test(test_arm_add_q15_7),
-		ztest_unit_test(test_arm_add_q15_16),
-		ztest_unit_test(test_arm_add_q15_23),
-		ztest_unit_test(test_arm_sub_q15_7),
-		ztest_unit_test(test_arm_sub_q15_16),
-		ztest_unit_test(test_arm_sub_q15_23),
-		ztest_unit_test(test_arm_mult_q15_7),
-		ztest_unit_test(test_arm_mult_q15_16),
-		ztest_unit_test(test_arm_mult_q15_23),
-		ztest_unit_test(test_arm_negate_q15_7),
-		ztest_unit_test(test_arm_negate_q15_16),
-		ztest_unit_test(test_arm_negate_q15_23),
-		ztest_unit_test(test_arm_offset_q15_0p5_7),
-		ztest_unit_test(test_arm_offset_q15_0p5_16),
-		ztest_unit_test(test_arm_offset_q15_0p5_23),
-		ztest_unit_test(test_arm_scale_q15_0p5_7),
-		ztest_unit_test(test_arm_scale_q15_0p5_16),
-		ztest_unit_test(test_arm_scale_q15_0p5_23),
-		ztest_unit_test(test_arm_dot_prod_q15_7),
-		ztest_unit_test(test_arm_dot_prod_q15_16),
-		ztest_unit_test(test_arm_dot_prod_q15_23),
-		ztest_unit_test(test_arm_abs_q15_7),
-		ztest_unit_test(test_arm_abs_q15_16),
-		ztest_unit_test(test_arm_abs_q15_23),
-		ztest_unit_test(test_arm_shift_q15_rand),
-		ztest_unit_test(test_arm_add_q15_possat),
-		ztest_unit_test(test_arm_add_q15_negsat),
-		ztest_unit_test(test_arm_sub_q15_possat),
-		ztest_unit_test(test_arm_sub_q15_negsat),
-		ztest_unit_test(test_arm_mult_q15_possat),
-		ztest_unit_test(test_arm_negate_q15_possat),
-		ztest_unit_test(test_arm_offset_q15_possat),
-		ztest_unit_test(test_arm_offset_q15_negsat),
-		ztest_unit_test(test_arm_scale_q15_possat),
-		ztest_unit_test(test_arm_shift_q15_possat),
-		ztest_unit_test(test_arm_shift_q15_negsat),
-		ztest_unit_test(test_arm_and_u16_7),
-		ztest_unit_test(test_arm_and_u16_16),
-		ztest_unit_test(test_arm_and_u16_23),
-		ztest_unit_test(test_arm_or_u16_7),
-		ztest_unit_test(test_arm_or_u16_16),
-		ztest_unit_test(test_arm_or_u16_23),
-		ztest_unit_test(test_arm_not_u16_7),
-		ztest_unit_test(test_arm_not_u16_16),
-		ztest_unit_test(test_arm_not_u16_23),
-		ztest_unit_test(test_arm_xor_u16_7),
-		ztest_unit_test(test_arm_xor_u16_16),
-		ztest_unit_test(test_arm_xor_u16_23),
-		ztest_unit_test(test_arm_add_q15_long),
-		ztest_unit_test(test_arm_sub_q15_long),
-		ztest_unit_test(test_arm_mult_q15_long),
-		ztest_unit_test(test_arm_negate_q15_long),
-		ztest_unit_test(test_arm_offset_q15_long),
-		ztest_unit_test(test_arm_scale_q15_long),
-		ztest_unit_test(test_arm_dot_prod_q15_long),
-		ztest_unit_test(test_arm_abs_q15_long),
-		ztest_unit_test(test_arm_clip_q15_c000_f333),
-		ztest_unit_test(test_arm_clip_q15_c000_4000),
-		ztest_unit_test(test_arm_clip_q15_0ccd_4000)
-		);
-
-	ztest_run_test_suite(basicmath_q15);
-}
+ZTEST_SUITE(basic_math_q15, NULL, NULL, NULL, NULL, NULL);

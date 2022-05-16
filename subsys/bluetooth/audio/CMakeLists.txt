@@ -32,12 +32,27 @@ if (CONFIG_BT_CSIS OR CONFIG_BT_CSIS_CLIENT)
 	zephyr_library_sources(csis_crypto.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_BT_OTC otc.c)
+zephyr_library_sources_ifdef(CONFIG_BT_TBS tbs.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_TBS_CLIENT tbs_client.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MCC mcc.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MCS mcs.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MCS mpl.c)
+zephyr_library_sources_ifdef(CONFIG_BT_MPL mpl.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MCS media_proxy.c)
+zephyr_library_sources_ifdef(CONFIG_MCTL media_proxy.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_ASCS ascs.c)
+zephyr_library_sources_ifdef(CONFIG_BT_PACS pacs.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_STREAM stream.c codec.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_UNICAST_SERVER unicast_server.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_CAPABILITY capabilities.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_UNICAST_CLIENT unicast_client.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_BROADCAST_SOURCE broadcast_source.c)
+zephyr_library_sources_ifdef(CONFIG_BT_AUDIO_BROADCAST_SINK broadcast_sink.c)
+zephyr_library_sources_ifdef(CONFIG_BT_BASS bass.c)
+zephyr_library_sources_ifdef(CONFIG_BT_BASS_CLIENT bass_client.c)
+zephyr_library_sources_ifdef(CONFIG_BT_HAS has.c)
+zephyr_library_sources_ifdef(CONFIG_BT_HAS_CLIENT has_client.c)

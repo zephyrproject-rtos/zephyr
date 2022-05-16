@@ -14,16 +14,16 @@
 #include <string.h>
 #include <errno.h>
 
-#include <zephyr.h>
-#include <drivers/sensor.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #ifdef CONFIG_TEMP_NRF5
 static const struct device *temp_dev = DEVICE_DT_GET_ANY(nordic_nrf_temp);
@@ -118,7 +118,7 @@ gatt_indicate:
 		mantissa = (uint32_t)(temperature * 100);
 		exponent = (uint8_t)-2;
 
-		htm[0] = 0; /* temperature in celcius */
+		htm[0] = 0; /* temperature in celsius */
 		sys_put_le24(mantissa, (uint8_t *)&htm[1]);
 		htm[4] = exponent;
 

@@ -20,7 +20,7 @@
 
 #else
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,8 +99,10 @@ static inline int z_arm_dwt_init_cycle_counter(void)
 	DWT->CYCCNT = 0;
 	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
-	/* Assert that the cycle counter is indeed implemented. */
-	__ASSERT((DWT->CTRL & DWT_CTRL_NOCYCCNT_Msk) != 0,
+	/* Assert that the cycle counter is indeed implemented.
+	 * The field is called NOCYCCNT. So 1 means there is no cycle counter.
+	 */
+	__ASSERT((DWT->CTRL & DWT_CTRL_NOCYCCNT_Msk) == 0,
 		"DWT implements no cycle counter. "
 		"Cannot be used for cycle counting\n");
 
@@ -123,8 +125,6 @@ static inline uint32_t z_arm_dwt_get_cycles(void)
  * @brief Reset and start the DWT cycle counter
  *
  * This routine starts the cycle counter and resets its value to zero.
- *
- * @return N/A
  */
 static inline void z_arm_dwt_cycle_count_start(void)
 {
@@ -138,8 +138,6 @@ static inline void z_arm_dwt_cycle_count_start(void)
  * This routine enables the DebugMonitor handler to service
  * data watchpoint events coming from DWT. The routine sets
  * the DebugMonitor exception priority to highest possible.
- *
- * @return N/A
  */
 static inline void z_arm_dwt_enable_debug_monitor(void)
 {

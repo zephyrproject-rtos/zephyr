@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_mgmt.h>
-#include <net/openthread.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/openthread.h>
 
 #include <net_private.h>
 
-#include <init.h>
-#include <sys/util.h>
-#include <sys/__assert.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
 #include <version.h>
 
 #include <openthread/cli.h>
@@ -31,7 +31,6 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/dataset.h>
 #include <openthread/joiner.h>
 #include <openthread-system.h>
-#include <openthread-config-generic.h>
 #include <utils/uart.h>
 
 #include <platform-zephyr.h>
@@ -123,10 +122,14 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
+	if (cb->info == NULL || cb->info_length != sizeof(struct in6_addr)) {
+		return;
+	}
+
 	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
-		add_ipv6_addr_to_ot(ot_context);
+		add_ipv6_addr_to_ot(ot_context, (const struct in6_addr *)cb->info);
 	} else if (mgmt_event == NET_EVENT_IPV6_MADDR_ADD) {
-		add_ipv6_maddr_to_ot(ot_context);
+		add_ipv6_maddr_to_ot(ot_context, (const struct in6_addr *)cb->info);
 	}
 }
 #endif
@@ -297,8 +300,20 @@ static void openthread_process(struct k_work *work)
 	openthread_api_mutex_unlock(ot_context);
 }
 
-static enum net_verdict openthread_recv(struct net_if *iface,
-					struct net_pkt *pkt)
+static bool is_ipv6_frag(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct net_ipv6_hdr *hdr;
+
+	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
+	if (!hdr) {
+		return false;
+	}
+
+	return hdr->nexthdr == NET_IPV6_NEXTHDR_FRAG ? true : false;
+}
+
+static enum net_verdict openthread_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
@@ -308,6 +323,10 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 
 		if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
 			net_pkt_hexdump(pkt, "Injected IPv6 packet");
+		}
+
+		if (IS_ENABLED(CONFIG_OPENTHREAD_IP6_FRAGM) && is_ipv6_frag(pkt)) {
+			return NET_DROP;
 		}
 
 		return NET_CONTINUE;
@@ -516,7 +535,7 @@ void ieee802154_init(struct net_if *iface)
 
 static enum net_l2_flags openthread_flags(struct net_if *iface)
 {
-	return NET_L2_MULTICAST;
+	return NET_L2_MULTICAST | NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE;
 }
 
 static int openthread_enable(struct net_if *iface, bool state)

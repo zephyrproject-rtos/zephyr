@@ -118,7 +118,7 @@ static inline bool feature_phy_coded(struct ll_conn *conn)
 }
 
 /*
- * for assymetric features we can check either if we support it
+ * for asymmetric features we can check either if we support it
  * or if the peer supports it
  */
 static inline bool feature_smi_rx(struct ll_conn *conn)

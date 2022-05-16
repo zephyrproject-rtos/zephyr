@@ -6,3 +6,8 @@ sample:
 tests:
    sample.driver.lora.send:
      platform_allow: 96b_wistrio rak4631_nrf52840 nucleo_wl55jc
+     harness: console
+     harness_config:
+      type: one_line
+      regex:
+        - "<inf> lora_send: Data sent!"

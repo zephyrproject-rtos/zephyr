@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <ctype.h>
-#include <logging/log.h>
-#include <sys/printk.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
 
 #define HEXDUMP_BYTES_IN_LINE 8U
 

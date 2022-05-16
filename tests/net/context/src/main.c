@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -15,19 +15,19 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
-#include <random/rand32.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/random/rand32.h>
 
 #include <tc_util.h>
 
-#include <net/ethernet.h>
-#include <net/dummy.h>
-#include <net/buf.h>
-#include <net/net_ip.h>
-#include <net/net_if.h>
-#include <net/net_context.h>
-#include <net/udp.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/udp.h>
 
 #include "net_private.h"
 
@@ -914,17 +914,17 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		if (net_pkt_family(pkt) == AF_INET6) {
 			struct in6_addr addr;
 
-			net_ipaddr_copy(&addr, &NET_IPV6_HDR(pkt)->src);
-			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-					&NET_IPV6_HDR(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
+			net_ipv6_addr_copy_raw((uint8_t *)&addr, NET_IPV6_HDR(pkt)->src);
+			net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->src,
+					       NET_IPV6_HDR(pkt)->dst);
+			net_ipv6_addr_copy_raw(NET_IPV6_HDR(pkt)->dst, (uint8_t *)&addr);
 		} else {
 			struct in_addr addr;
 
-			net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
-			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
-					&NET_IPV4_HDR(pkt)->dst);
-			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
+			net_ipv4_addr_copy_raw((uint8_t *)&addr, NET_IPV4_HDR(pkt)->src);
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->src,
+					       NET_IPV4_HDR(pkt)->dst);
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(pkt)->dst, (uint8_t *)&addr);
 		}
 
 		udp_hdr = net_udp_get_hdr(pkt, &hdr);

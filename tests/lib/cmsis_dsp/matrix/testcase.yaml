@@ -1,14 +1,10 @@
-common:
-  # TODO: Remove when QEMU 6.2 is released with MVE emulation (see #37694).
-  platform_exclude: mps3_an547
-
 tests:
   libraries.cmsis_dsp.matrix:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     tags: cmsis_dsp
     skip: true
   libraries.cmsis_dsp.matrix.unary_q7:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -21,9 +17,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q7=y
   libraries.cmsis_dsp.matrix.unary_q7.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 128
     min_ram: 64
@@ -32,7 +29,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q7=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.unary_q15:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -45,9 +42,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q15=y
   libraries.cmsis_dsp.matrix.unary_q15.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 128
     min_ram: 64
@@ -56,7 +54,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q15=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.unary_q31:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -69,9 +67,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q31=y
   libraries.cmsis_dsp.matrix.unary_q31.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 128
     min_ram: 64
@@ -80,12 +79,11 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_Q31=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.unary_f16:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
     tags: cmsis_dsp
     min_flash: 128
     min_ram: 64
@@ -93,9 +91,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F16=y
   libraries.cmsis_dsp.matrix.unary_f16.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 128
     min_ram: 64
@@ -104,7 +103,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F16=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.unary_f32:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -117,9 +116,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F32=y
   libraries.cmsis_dsp.matrix.unary_f32.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 128
     min_ram: 64
@@ -128,7 +128,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F32=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.unary_f64:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -141,9 +141,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F64=y
   libraries.cmsis_dsp.matrix.unary_f64.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 128
     min_ram: 64
@@ -152,7 +153,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_UNARY_F64=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.binary_q7:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -166,9 +167,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q7=y
   libraries.cmsis_dsp.matrix.binary_q7.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     platform_exclude: frdm_kw41z
     min_flash: 128
@@ -178,7 +180,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q7=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.binary_q15:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -192,9 +194,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q15=y
   libraries.cmsis_dsp.matrix.binary_q15.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     platform_exclude: frdm_kw41z
     min_flash: 128
@@ -204,7 +207,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q15=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.binary_q31:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -218,9 +221,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q31=y
   libraries.cmsis_dsp.matrix.binary_q31.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     platform_exclude: frdm_kw41z
     min_flash: 128
@@ -230,12 +234,11 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_Q31=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.binary_f16:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
     tags: cmsis_dsp
     min_flash: 128
     min_ram: 144
@@ -243,9 +246,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_F16=y
   libraries.cmsis_dsp.matrix.binary_f16.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 128
     min_ram: 144
@@ -254,7 +258,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_F16=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.binary_f32:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -268,9 +272,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_F32=y
   libraries.cmsis_dsp.matrix.binary_f32.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     platform_exclude: frdm_kw41z
     min_flash: 128
@@ -280,7 +285,7 @@ tests:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_F32=y
       - CONFIG_FPU=y
   libraries.cmsis_dsp.matrix.binary_f64:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -294,9 +299,10 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_MATRIX_BINARY_F64=y
   libraries.cmsis_dsp.matrix.binary_f64.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     platform_exclude: frdm_kw41z
     min_flash: 128

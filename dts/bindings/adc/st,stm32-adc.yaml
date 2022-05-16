@@ -6,7 +6,7 @@ description: ST STM32 family ADC
 
 compatible: "st,stm32-adc"
 
-include: adc-controller.yaml
+include: [adc-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -15,19 +15,31 @@ properties:
     clocks:
       required: true
 
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        GPIO pin configuration for ADC input. The phandles are
-        expected to reference pinctrl nodes, e.g.
-           pinctrl-0 = <&adc_in0_pa0 &adc_in1_pa1>;
-
     interrupts:
       required: true
 
     "#io-channel-cells":
       const: 1
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
+
+    vref_mv:
+      type: int
+      required: false
+      default: 3300
+      description: Indicates the reference voltage of the ADC in mV.
+
+    has-temp-channel:
+      type: boolean
+      description: Indicates if the ADC has a dedicated internal temperature sensor channel.
+
+    has-vref-channel:
+      type: boolean
+      description: Indicates if the ADC has a dedicated internal voltage reference channel.
 
 io-channel-cells:
     - input

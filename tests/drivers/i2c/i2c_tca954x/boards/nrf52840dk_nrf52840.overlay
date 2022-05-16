@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2020 Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+	mux: tca9546a@77 {
+		compatible = "ti,tca9546a";
+		reg = <0x77>;
+		status = "okay";
+		label = "i2c_mux";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ch0: mux_i2c@0 {
+			compatible = "ti,tca9546a-channel";
+			label = "mux_dw_0";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		ch1: mux_i2c@1 {
+			compatible = "ti,tca9546a-channel";
+			label = "mux_dw_1";
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+        };
+	};
+};
+
+/{
+	aliases {
+		i2c-channel-0 = &ch0;
+		i2c-channel-1 = &ch1;
+	};
+};

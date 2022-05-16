@@ -1,0 +1,15 @@
+# i.MX8ML M7 core series
+
+# Copyright (c) 2021, Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMX8ML_M7
+	bool "i.MX8ML M7 Core Series"
+	select ARM
+	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_CACHE
+	select SOC_FAMILY_IMX
+	select CPU_HAS_FPU
+	select INIT_VIDEO_PLL
+	help
+	  Enable support for i.MX8ML M7 MCU series

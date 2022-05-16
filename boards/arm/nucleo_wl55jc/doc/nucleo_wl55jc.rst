@@ -204,6 +204,10 @@ features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC Controller                      |
++-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -231,6 +235,8 @@ Default Zephyr Peripheral Mapping:
 - SPI_1_SCK : PA5 (arduino_spi)
 - SPI_1_MISO : PA6 (arduino_spi)
 - SPI_1_MOSI : PA7 (arduino_spi)
+- ADC1_IN5 : PB1 (Arduino pin A0)
+- DAC1_OUT1 : PA10 (Arduino pin A2)
 
 System Clock
 ------------
@@ -287,6 +293,15 @@ You should see the following message on the console:
 .. code-block:: console
 
    Hello World! arm
+
+.. Note:
+
+   Nucleo WL55JC board is provided with a stock firmware which demonstrates
+   sleep mode. Unfortunately, default openocd configuration, which is debug
+   compatible, doesn't allow flashing when SoC is in sleep mode.
+   As a consequence, when flashing Nucleo WL55JC board over a stock firmware,
+   please update board's openocd.cfg configuration file to select sleep mode
+   compatible configuration.
 
 Debugging
 =========

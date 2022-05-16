@@ -5,9 +5,8 @@
 
 config MICROBIT_DISPLAY
 	bool "BBC micro:bit 5x5 LED Display support"
-	depends on BOARD_BBC_MICROBIT
+	depends on BOARD_BBC_MICROBIT || BOARD_BBC_MICROBIT_V2
 	depends on PRINTK
-	depends on GPIO
 	help
 	  Enable this to be able to display images and text on the 5x5
 	  LED matrix display on the BBC micro:bit.

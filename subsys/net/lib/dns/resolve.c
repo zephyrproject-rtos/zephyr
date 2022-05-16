@@ -10,20 +10,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #include <zephyr/types.h>
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 
-#include <sys/crc.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/net_mgmt.h>
-#include <net/dns_resolve.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/dns_resolve.h>
 #include "dns_pack.h"
 #include "dns_internal.h"
 
@@ -1058,8 +1058,9 @@ int dns_resolve_cancel(struct dns_resolve_context *ctx, uint16_t dns_id)
 
 static void query_timeout(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct dns_pending_query *pending_query =
-		CONTAINER_OF(work, struct dns_pending_query, timer);
+		CONTAINER_OF(dwork, struct dns_pending_query, timer);
 	int ret;
 
 	/* We have to take the lock as we're inspecting protected content

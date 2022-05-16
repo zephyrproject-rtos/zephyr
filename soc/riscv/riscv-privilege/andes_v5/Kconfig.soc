@@ -45,16 +45,16 @@ config DOUBLE_PRECISION_FPU
 endchoice
 
 config CACHE_ENABLE
-	bool "Enable cache"
+	bool "Cache"
 	default n
 
 config SOC_ANDES_V5_L2_CACHE
-	bool "Enable Andes V5 L2 cache controller"
+	bool "Andes V5 L2 cache controller"
 	depends on CACHE_ENABLE
 	default y
 
 config SOC_ANDES_V5_HWDSP
-	bool "Enable AndeStar V5 DSP ISA"
+	bool "AndeStar V5 DSP ISA"
 	select RISCV_SOC_CONTEXT_SAVE
 	depends on !RISCV_GENERIC_TOOLCHAIN
 	help
@@ -62,7 +62,7 @@ config SOC_ANDES_V5_HWDSP
 		support using the DSP instructions.
 
 config SOC_ANDES_V5_PFT
-	bool "Enable Andes V5 PowerBrake extension"
+	bool "Andes V5 PowerBrake extension"
 	default y
 	select RISCV_SOC_CONTEXT_SAVE
 	help
@@ -70,7 +70,7 @@ config SOC_ANDES_V5_PFT
 		executing rate.
 
 config SOC_ANDES_V5_PMA
-	bool "Enable Andes V5 Physical Memory Attribute (PMA)"
+	bool "Andes V5 Physical Memory Attribute (PMA)"
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 		This option enables the Andes V5 PMA, in order to support SW to

@@ -7,7 +7,7 @@ Overview
 ********
 
 This sample application creates a sample virtual network interface for
-demostrative purposes, it does not do anything useful here.
+demonstrative purposes, it does not do anything useful here.
 There are total 4 network interfaces.
 Ethernet network interface is providing the real network interface and
 all the virtual interfaces are running on top of it.

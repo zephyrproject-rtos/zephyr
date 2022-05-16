@@ -8,10 +8,11 @@ tests:
     harness_config:
       type: multi_line
       regex:
+        - "parent suspending\\.\\."
+        - "child suspending\\.\\."
         - "Device PM sample app start"
         - "parent resuming\\.\\."
         - "child resuming\\.\\."
-        - "Async wakeup request queued"
         - "Dummy device resumed"
         - "child suspending\\.\\."
         - "parent suspending\\.\\."

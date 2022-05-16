@@ -33,11 +33,11 @@ config FLASH_LOAD_SIZE
 if TRUSTED_EXECUTION_NONSECURE || BOARD_LPCXPRESSO55S69_CPU1
 
 config FLASH_LOAD_OFFSET
-	default 0x50000 if !TFM_BL2
+	default 0x50000 if (!TFM_BL2 && BUILD_WITH_TFM)
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 config FLASH_LOAD_SIZE
-	default 0x40000 if !TFM_BL2
+	default 0x40000 if (!TFM_BL2 && BUILD_WITH_TFM)
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 
 endif # TRUSTED_EXECUTION_NONSECURE || BOARD_LPCXPRESSO55S69_CPU1
@@ -46,6 +46,10 @@ choice TFM_PROFILE_TYPE
 	depends on BUILD_WITH_TFM
 	default TFM_PROFILE_TYPE_MEDIUM
 endchoice
+
+# Enable SD subsystem driver if disk driver is required
+config DISK_DRIVER_SDMMC
+	default y if DISK_DRIVERS
 
 endif # BOARD_LPCXPRESSO55S69_CPU0 || BOARD_LPCXPRESSO55S69_CPU1
 

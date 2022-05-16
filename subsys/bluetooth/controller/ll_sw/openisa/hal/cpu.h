@@ -15,7 +15,7 @@ static inline void cpu_sleep(void)
 static inline void cpu_dmb(void)
 {
 	/* FIXME: Add necessary host machine required Data Memory Barrier
-	 *        instruction alongwith the below defined compiler memory
+	 *        instruction along with the below defined compiler memory
 	 *        clobber.
 	 */
 	__asm__ volatile ("" : : : "memory");

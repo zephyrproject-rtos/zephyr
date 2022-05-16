@@ -1,0 +1,23 @@
+# Copyright (c) 2020 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: PCIe Controller in ECAM mode
+
+compatible: "pci-host-ecam-generic"
+
+include: pcie-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    msi-parent:
+      type: phandle
+
+    ranges:
+      type: array
+      required: true
+      description: |
+        As described in IEEE Std 1275-1994, but must provide at least a
+        definition of non-prefetchable memory. One or both of prefetchable Memory
+        and IO Space may also be provided.

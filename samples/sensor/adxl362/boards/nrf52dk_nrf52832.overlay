@@ -4,11 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&pinctrl {
+	spi1_default_alt: spi1_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 25)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 23)>,
+				<NRF_PSEL(SPIM_MISO, 0, 24)>;
+		};
+	};
+
+	spi1_sleep_alt: spi1_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 25)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 23)>,
+				<NRF_PSEL(SPIM_MISO, 0, 24)>;
+			low-power-enable;
+		};
+	};
+};
+
 &spi1 {
 	status = "okay";
-	sck-pin = <25>;
-	mosi-pin = <23>;
-	miso-pin = <24>;
+	pinctrl-0 = <&spi1_default_alt>;
+	pinctrl-1 = <&spi1_sleep_alt>;
+	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 
 	adxl362@0 {

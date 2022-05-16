@@ -8,7 +8,7 @@
 
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "arm,mps2";
@@ -20,6 +20,7 @@
 		led1 = &led_1;
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
+		uart-1 = &uart1;
 		watchdog0 = &wdog0;
 	};
 
@@ -80,13 +81,15 @@
 	 */
 
 	sram1: memory@10000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x10000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2_3: memory@38000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x38000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SRAM2_3";
 	};
 
 	psram: memory@80000000 {
@@ -107,4 +110,8 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+};
+
+&uart1 {
+	status = "okay";
 };

@@ -251,7 +251,7 @@
 /* Offset 0x58 I2C FSM read-only */
 #define MCHP_I2C_SMB_I2C_FSM_OFS	0x58u
 
-/* Offset 0x5C SMB Netork layer FSM read-only */
+/* Offset 0x5C SMB Network layer FSM read-only */
 #define MCHP_I2C_SMB_FSM_OFS		0x5cu
 
 /* Offset 0x60 Wake Status register */

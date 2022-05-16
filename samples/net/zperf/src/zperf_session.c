@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <net/net_pkt.h>
-#include <net/udp.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/udp.h>
 
 #include "zperf_session.h"
 
@@ -48,9 +48,9 @@ struct session *get_session(struct net_pkt *pkt,
 	port = udp_hdr->src_port;
 
 	if (net_pkt_family(pkt) == AF_INET6) {
-		net_ipaddr_copy(&ipv6, &ip_hdr->ipv6->src);
+		net_ipv6_addr_copy_raw((uint8_t *)&ipv6, ip_hdr->ipv6->src);
 	} else if (net_pkt_family(pkt) == AF_INET) {
-		net_ipaddr_copy(&ipv4, &ip_hdr->ipv4->src);
+		net_ipv4_addr_copy_raw((uint8_t *)&ipv4, ip_hdr->ipv4->src);
 	} else {
 		printk("Error! unsupported protocol %d\n",
 		       net_pkt_family(pkt));

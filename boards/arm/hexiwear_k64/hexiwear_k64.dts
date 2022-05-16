@@ -2,8 +2,9 @@
 
 /dts-v1/;
 
-#include <nxp/MK64FN1M0VDC12.dtsi>
-#include <dt-bindings/pwm/pwm.h>
+#include <nxp/nxp_k6x.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "hexiwear_k64-pinctrl.dtsi"
 
 / {
 	model = "Hexiwear K64 board";
@@ -57,6 +58,30 @@
 			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
 		};
 	};
+
+	en_bat_sens: enable-battery-sense {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "en_bat_sens";
+		regulator-name = "en_bat_sens";
+		enable-gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
+
+	en_ldo: enable-ldo {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "en_ldo";
+		regulator-name = "en_ldo";
+		enable-gpios = <&gpioa 29 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	en_3v3b: enable-3v3b {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "en_3v3b";
+		regulator-name = "en_3v3b";
+		enable-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
 };
 
 &sim {
@@ -80,13 +105,13 @@
 	status = "okay";
 	compatible = "nxp,kinetis-ftm-pwm";
 	#pwm-cells = <3>;
-	pinctrl-0 = <&FTM3_CH4_PTC8 &FTM3_CH5_PTC9 &FTM3_CH0_PTD0>;
+	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
 };
 
 &i2c0 {
 	status = "okay";
-	pinctrl-0 = <&I2C0_SCL_PTB0 &I2C0_SDA_PTB1>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 
 	max30101@57 {
@@ -97,17 +122,9 @@
 	};
 };
 
-&I2C0_SCL_PTB0 {
-	drive-open-drain;
-};
-
-&I2C0_SDA_PTB1 {
-	drive-open-drain;
-};
-
 &i2c1 {
 	status = "okay";
-	pinctrl-0 = <&I2C1_SCL_PTC10 &I2C1_SDA_PTC11>;
+	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 
 	fxos8700@1e {
@@ -127,26 +144,22 @@
 	};
 };
 
-&I2C1_SCL_PTC10 {
-	drive-open-drain;
-};
-
-&I2C1_SDA_PTC11 {
-	drive-open-drain;
-};
-
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&UART0_RX_PTB16 &UART0_TX_PTB17>;
+	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 };
 
 &uart4 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&UART4_RX_PTE25 &UART4_TX_PTE24>;
+	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
+};
+
+&gpioa {
+	status = "okay";
 };
 
 &gpiob {

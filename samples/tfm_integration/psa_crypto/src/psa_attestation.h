@@ -33,7 +33,7 @@ psa_status_t att_get_pub_key(void);
  * data points used to uniquely identify this device to an external
  * verification entity (the IAT consumer).
  *
- * The generated IAT should be crytographically verrifiable by the IAT consumer.
+ * The generated IAT should be cryptographically verifiable by the IAT consumer.
  *
  * For details on IAT see https://tools.ietf.org/html/draft-mandyam-eat-01
  *

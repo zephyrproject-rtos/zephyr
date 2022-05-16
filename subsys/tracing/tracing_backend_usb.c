@@ -9,11 +9,11 @@
  */
 #define DISABLE_SYSCALL_TRACING
 
-#include <sys/util.h>
-#include <sys/atomic.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <usb/usb_device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/usb/usb_device.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_backend.h>
@@ -127,8 +127,7 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 	},
 };
 
-USBD_CFG_DATA_DEFINE(primary, tracing_backend_usb)
-struct usb_cfg_data tracing_backend_usb_config = {
+USBD_DEFINE_CFG_DATA(tracing_backend_usb_config) = {
 	.usb_device_description = NULL,
 	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = dev_status_cb,
@@ -151,7 +150,7 @@ static void tracing_backend_usb_output(const struct tracing_backend *backend,
 		transfer_state = USB_TRANSFER_ONGOING;
 
 		/*
-		 * make sure every USB tansfer no need ZLP at all
+		 * make sure every USB transfer no need ZLP at all
 		 * because we are in lowest priority thread content
 		 * there are no deterministic time between real USB
 		 * packet and ZLP

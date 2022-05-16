@@ -13,12 +13,12 @@
 #define DT_DRV_COMPAT intel_dmic
 
 #include <errno.h>
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/dma.h>
+#include <zephyr/drivers/dma.h>
 
-#include <audio/dmic.h>
+#include <zephyr/audio/dmic.h>
 #include "intel_dmic.h"
 #include "decimation/pdm_decim_fir.h"
 
@@ -26,7 +26,7 @@
 #define DMA_CHANNEL_DMIC_RXB DT_INST_DMAS_CELL_BY_NAME(0, rx_b, channel)
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(audio_dmic);
 
 /*
@@ -86,7 +86,7 @@ struct dmic_configuration {
 #define DMIC_HIGH_RATE_MIN_FS	64000
 #define DMIC_HIGH_RATE_OSR_MIN	40
 
-/* Used for scaling FIR coeffcients for HW */
+/* Used for scaling FIR coefficients for HW */
 #define DMIC_HW_FIR_COEF_MAX ((1 << (DMIC_HW_BITS_FIR_COEF - 1)) - 1)
 #define DMIC_HW_FIR_COEF_Q (DMIC_HW_BITS_FIR_COEF - 1)
 
@@ -218,7 +218,7 @@ int norm_int32(int32_t val)
 
 /* This function returns a raw list of potential microphone clock and decimation
  * modes for achieving requested sample rates. The search is constrained by
- * decimation HW capabililies and setup parameters. The parameters such as
+ * decimation HW capabilities and setup parameters. The parameters such as
  * microphone clock min/max and duty cycle requirements need be checked from
  * used microphone component datasheet.
  */
@@ -518,7 +518,7 @@ static int fir_coef_scale(int32_t *fir_scale, int *fir_shift, int add_shift,
  * Note: If there is no filter available an error is returned. The parameters
  * should be reviewed for such case. If still a filter is missing it should be
  * added into the included set. FIR decimation with a high factor usually
- * needs compromizes into specifications and is not desirable.
+ * needs compromises into specifications and is not desirable.
  */
 static int select_mode(struct dmic_configuration *cfg,
 	struct matched_modes *modes)
@@ -676,7 +676,7 @@ static int source_ipm_helper(struct pdm_chan_cfg *config, uint32_t *source_mask,
 	 * is checked whether the controller should operate as stereo or mono
 	 * left (A) or mono right (B) mode. Mono right mode is setup as channel
 	 * swapped mono left. The function returns also in array source[] the
-	 * indice of enabled pdm controllers to be used for IPM configuration.
+	 * indices of enabled pdm controllers to be used for IPM configuration.
 	 */
 	for (chan_ix = 0U; chan_ix < config->req_num_chan; chan_ix++) {
 

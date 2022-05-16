@@ -6,15 +6,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
-#include <settings/settings.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/settings/settings.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_keys_br
@@ -144,7 +144,7 @@ void bt_keys_link_key_store(struct bt_keys_link_key *link_key)
 		err = settings_save_one(key, link_key->storage_start,
 					BT_KEYS_LINK_KEY_STORAGE_LEN);
 		if (err) {
-			BT_ERR("Failed to svae link key (err %d)", err);
+			BT_ERR("Failed to save link key (err %d)", err);
 		}
 	}
 }
@@ -205,13 +205,8 @@ static int link_key_set(const char *name, size_t len_rd,
 	return 0;
 }
 
-static int link_key_commit(void)
-{
-	return 0;
-}
-
 SETTINGS_STATIC_HANDLER_DEFINE(bt_link_key, "bt/link_key", NULL, link_key_set,
-			       link_key_commit, NULL);
+			       NULL, NULL);
 
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 void bt_keys_link_key_update_usage(const bt_addr_t *addr)

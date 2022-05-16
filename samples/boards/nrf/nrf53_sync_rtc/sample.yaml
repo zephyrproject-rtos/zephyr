@@ -1,0 +1,17 @@
+sample:
+    description: This app shows how RTCs are synchronized
+        on nrf53 cores.
+    name: nRF53 Synchronized RTC sample
+tests:
+    sample.boards.nrf.nrf53_sync_rtc:
+        platform_allow: nrf5340dk_nrf5340_cpuapp
+        integration_platforms:
+          - nrf5340dk_nrf5340_cpuapp
+        build_only: true
+    sample.boards.nrf.nrf53_sync_rtc_mbox:
+        platform_allow: nrf5340dk_nrf5340_cpuapp
+        integration_platforms:
+          - nrf5340dk_nrf5340_cpuapp
+        build_only: true
+        extra_args: OVERLAY_CONFIG="boards/nrf5340dk_nrf5340_cpuapp_mbox.conf"
+          NET_OVERLAY_CONF="boards/nrf5340dk_nrf5340_cpunet_mbox.conf"

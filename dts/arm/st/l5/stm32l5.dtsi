@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021 The Chromium OS Authors
  * Copyright (c) 2020 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -6,10 +7,12 @@
 
 
 #include <arm/armv8-m.dtsi>
-#include <dt-bindings/clock/stm32_clock.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/clock/stm32l4_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <freq.h>
 
 / {
@@ -64,8 +67,9 @@
 
 		clk_lse: clk-lse {
 			#clock-cells = <0>;
-			compatible = "fixed-clock";
+			compatible = "st,stm32-lse-clock";
 			clock-frequency = <32768>;
+			driving-capability = <0>;
 			status = "disabled";
 		};
 
@@ -113,6 +117,7 @@
 			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x40021000 0x400>;
+			undershoot-prevention;
 		};
 
 		exti: interrupt-controller@4000f400 {
@@ -333,6 +338,19 @@
 			label= "I2C_1";
 		};
 
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40005800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			interrupts = <57 0>, <58 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label = "I2C_2";
+		};
+
 		spi1: spi@40013000 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
@@ -352,6 +370,7 @@
 			label = "DAC_1";
 			#io-channel-cells = <1>;
 		};
+
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
@@ -374,11 +393,24 @@
 			label = "SPI_3";
 		};
 
+		octospi1: octospi@44021000 {
+			compatible = "st,stm32-ospi";
+			reg = <0x44021000 0x400>;
+			interrupts = <76 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			label= "OCTOSPI1";
+		};
+
 		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
 			reg = <0x420c0800 0x400>;
 			interrupts = <94 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			health-test-magic = <0x17590abc>;
+			health-test-config = <0xa2b3>;
 			status = "disabled";
 			label = "RNG";
 		};
@@ -553,6 +585,8 @@
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;
+			has-temp-channel;
+			has-vref-channel;
 		};
 
 		adc2: adc@42028100 {
@@ -578,12 +612,33 @@
 			label = "USB";
 		};
 
+		ucpd1: ucpd@4000dc00 {
+			compatible = "st,stm32-ucpd";
+			reg = <0x4000dc00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
+			interrupts = <106 0>;
+			status = "disabled";
+			label = "UCPD_1";
+		};
 	};
 
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
 		label = "USB_FS_PHY";
+	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp-cal";
+		ts-cal1-addr = <0x0BFA05A8>;
+		ts-cal2-addr = <0x0BFA05CA>;
+		ts-cal1-temp = <30>;
+		ts-cal2-temp = <110>;
+		ts-cal-vrefanalog = <3000>;
+		ts-cal-offset = <30>;
+		io-channels = <&adc1 17>;
+		status = "disabled";
+		label = "DIE_TEMP";
 	};
 };
 

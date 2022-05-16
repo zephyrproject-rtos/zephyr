@@ -190,11 +190,18 @@
 #define SW_SWITCH_TIMER_EVTS_COMP_BASE 0
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
-#define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 static inline void hal_radio_reset(void)
 {
+	/* TODO: Add any required setup for each radio event
+	 */
+}
+
+static inline void hal_radio_stop(void)
+{
+	/* TODO: Add any required cleanup of actions taken in hal_radio_reset()
+	 */
 }
 
 static inline void hal_radio_ram_prio_setup(void)

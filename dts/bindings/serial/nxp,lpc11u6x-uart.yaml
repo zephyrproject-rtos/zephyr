@@ -2,7 +2,7 @@ description: LPC11U6X UART
 
 compatible: "nxp,lpc11u6x-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
@@ -14,12 +14,8 @@ properties:
     clocks:
       required: true
 
-    pinmuxs:
-      type: phandle-array
+    pinctrl-0:
       required: true
-      description: RX and TX pinmux
 
-    pinmux-names:
-      type: string-array
+    pinctrl-names:
       required: true
-      description: UART pins names

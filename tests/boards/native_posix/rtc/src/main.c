@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -161,7 +161,7 @@ static void test_rtc_offset(void)
 
 	diff = native_rtc_gettime_us(RTC_CLOCK_REALTIME) - start_rtc_time[0];
 
-	zassert_true(diff == offset, "Offseting RTC failed\n");
+	zassert_true(diff == offset, "Offsetting RTC failed\n");
 }
 
 void test_main(void)

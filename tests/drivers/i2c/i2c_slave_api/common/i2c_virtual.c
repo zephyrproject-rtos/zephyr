@@ -4,18 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(main);
-
-#define DEV_DATA(dev) ((struct i2c_virtual_data * const)(dev)->data)
 
 struct i2c_virtual_data {
 	sys_slist_t slaves;
@@ -50,7 +48,7 @@ static struct i2c_slave_config *find_address(struct i2c_virtual_data *data,
 int i2c_virtual_slave_register(const struct device *dev,
 			       struct i2c_slave_config *config)
 {
-	struct i2c_virtual_data *data = DEV_DATA(dev);
+	struct i2c_virtual_data *data = dev->data;
 
 	if (!config) {
 		return -EINVAL;
@@ -71,7 +69,7 @@ int i2c_virtual_slave_register(const struct device *dev,
 int i2c_virtual_slave_unregister(const struct device *dev,
 				 struct i2c_slave_config *config)
 {
-	struct i2c_virtual_data *data = DEV_DATA(dev);
+	struct i2c_virtual_data *data = dev->data;
 
 	if (!config) {
 		return -EINVAL;
@@ -151,7 +149,7 @@ static int i2c_virtual_msg_read(const struct device *dev, struct i2c_msg *msg,
 static int i2c_virtual_transfer(const struct device *dev, struct i2c_msg *msg,
 				uint8_t num_msgs, uint16_t slave)
 {
-	struct i2c_virtual_data *data = DEV_DATA(dev);
+	struct i2c_virtual_data *data = dev->data;
 	struct i2c_msg *current, *next;
 	struct i2c_slave_config *cfg;
 	bool is_write = false;
@@ -215,7 +213,7 @@ static const struct i2c_driver_api api_funcs = {
 
 static int i2c_virtual_init(const struct device *dev)
 {
-	struct i2c_virtual_data *data = DEV_DATA(dev);
+	struct i2c_virtual_data *data = dev->data;
 
 	sys_slist_init(&data->slaves);
 

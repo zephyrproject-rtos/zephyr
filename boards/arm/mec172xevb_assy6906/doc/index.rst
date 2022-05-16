@@ -1,4 +1,4 @@
-.. _mec17sxevb_assy6906:
+.. _mec172xevb_assy6906:
 
 MEC172xEVB ASSY6906
 ###################
@@ -8,13 +8,18 @@ Overview
 
 The MEC172xEVB_ASSY6906 kit is a future development platform to evaluate the
 Microchip MEC172X series microcontrollers. This board needs to be mated with
-part number MEC1723 176WFBA SOLDER DC ASSY 6915(cpu board) in order to operate.
+part number MEC172x 144WFBGA SOLDER DC ASSY 6914 (cpu board) in order to operate.
 MEC172x and MEC152x SPI image formats are not compatible with each other.
+
+.. image:: ./mec172xevb_assy6906.png
+     :width: 600px
+     :align: center
+     :alt: MEC172X EVB ASSY 6906
 
 Hardware
 ********
 
-- MEC1723NB0SZ ARM Cortex-M4 Processor
+- MEC172x ARM Cortex-M4 Processor
 - 416 KB RAM and 128 KB boot ROM
 - Keyboard interface
 - ADC & GPIO headers
@@ -25,11 +30,9 @@ Hardware
 - PECI interface 3.0
 - I2C voltage translator
 - 10 SMBUS headers
-- 4 SGPIO headers
 - VCI interface
-- 2 independent Hardware Driven PS/2 Ports
+- 1 Hardware Driven PS/2 Port
 - eSPI header
-- 3 Breathing/Blinking LEDs
 - 2 Sockets for SPI NOR chips
 - One reset and VCC_PWRDGD pushbuttons
 - One external PCA9555 I/O port with jumper selectable I2C address.
@@ -68,10 +71,7 @@ features:
 | RPMFAN    | on-chip    | Fan speed controller                |
 +-----------+------------+-------------------------------------+
 
-
-
-
-Other hardware features are not currently supported by Zephyr (at the moment)
+Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the
 :zephyr_file:`boards/arm/mec172xevb_assy6906/mec172xevb_assy6906_defconfig` Kconfig file.
@@ -82,7 +82,7 @@ Connections and IOs
 This evaluation board kit is comprised of the following HW blocks:
 
 - MEC172x EVB ASSY 6906 Rev A `MEC172x EVB Schematic`_
-- MEC1723 176WFBA SOLDER DC ASSY 6915 with MEC172x silicon `MEC172x Daughter Card Schematic`_
+- MEC172x 144WFBGA SOLDER DC ASSY 6914 with MEC172x silicon `MEC172x Daughter Card Schematic`_
 - SPI DONGLE ASSY 6791 `SPI Dongle Schematic`_
 
 System Clock
@@ -110,128 +110,167 @@ Jumper setting for MEC172x EVB Assy 6906 Rev A1p0
 Power-related jumpers
 ---------------------
 
-If you wish to power from +5V power brick, then connect to barrel connector ``P11``
-(5.5mm OD, 2.1mm ID) and move the jumper to ``JP88 5-6``.
+If you wish to power from +5V power brick, then connect to barrel connector ``P1``
+(5.5mm OD, 2.1mm ID) and move the jumper to ``JP30 5-6``.
 
-If you wish to power from micro-USB type A/B connector ``P12``, move the
-jumper to ``JP88 7-8``.
+If you wish to power from micro-USB type A/B connector ``P2``, move the
+jumper to ``JP30 7-8``.
 
 
-.. note:: A single jumper is required in JP88.
+.. note:: A single jumper is required in ``JP30``.
 
-+-------+------+------+------+------+------+------+------+------+------+------+
-| JP22  | JP32 | JP33 | JP37 | JP43 | JP47 | JP54 | JP56 | JP58 | JP64 | JP65 |
-+=======+======+======+======+======+======+======+======+======+======+======+
-| 1-2   | 1-2  | 1-2  | 1-2  |  1-2 | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  |
-+-------+------+------+------+------+------+------+------+------+------+------+
++------+-------+-------+------+------+
+| JP31 | JP158 | JP159 | JP40 | JP42 |
++======+=======+=======+======+======+
+| 2-3  |  2-3  |  2-3  | 1-2  | 1-2  |
++------+-------+-------+------+------+
 
-+------+------+------+------+------+------+------+------+------+------+
-| JP72 | JP73 | JP76 | JP79 | JP80 | JP81 | JP82 | JP84 | JP87 | JP89 |
-+======+======+======+======+======+======+======+======+======+======+
-| 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  |
-+------+------+------+------+------+------+------+------+------+------+
++------+------+------+------+------+------+------+
+| JP36 | JP37 | JP38 | JP39 | JP41 | JP43 | JP44 |
++======+======+======+======+======+======+======+
+| 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  |
++------+------+------+------+------+------+------+
 
-+------+------+-------+-------+-------+
-| JP90 | JP91 | JP100 | JP101 | JP118 |
-+======+======+=======+=======+=======+
-| 1-2  | 1-2  | 1-2   | 1-2   | 2-3   |
-+------+------+-------+-------+-------+
++------+------+------+------+------+------+------+------+------+
+| JP45 | JP46 | JP47 | JP50 | JP51 | JP52 | JP55 | JP56 | JP57 |
++======+======+======+======+======+======+======+======+======+
+| 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  |
++------+------+------+------+------+------+------+------+------+
 
-These jumpers configure VCC Power good, nRESETI and JTAG_STRAP respectively.
++------+------+------+------+------+------+------+
+| JP59 | JP60 | JP61 | JP62 | JP63 | JP65 | JP66 |
++======+======+======+======+======+======+======+
+| 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  | 1-2  |
++------+------+------+------+------+------+------+
 
-+------------------+-----------+--------------+
-| JP5              | JP4       | JP45         |
-| (VCC Power good) | (nRESETI) | (JTAG_STRAP) |
-+==================+===========+==============+
-| 1-2              | 1-2       | 2-3          |
-+------------------+-----------+--------------+
+These jumpers configure VCC Power good and nRESET_IN.
 
-Boot-ROM Straps.
-----------------
++------------------+-------------+
+| JP32             | JP33        |
+| (VCC Power good) | (nRESET_IN) |
++==================+=============+
+| 1-2              | 1-2         |
++------------------+-------------+
 
-These jumpers configure MEC1501 Boot-ROM straps.
+Boot-ROM Straps
+---------------
 
-+-------------+------------+--------------+-------------+
-| JP93        | JP11       | JP46         | JP96        |
-| (CMP_STRAP) | (CR_STRAP) | (VTR2_STRAP) | (BSS_STRAP) |
-+=============+============+==============+=============+
-| 2-3         | 1-2        | 2-3          | 1-2         |
-+-------------+------------+--------------+-------------+
+These jumpers configure MEC172x Boot-ROM straps.
 
-``JP96 1-2`` pulls SHD SPI CS0# up to VTR2. MEC172x Boot-ROM samples
++------------+--------------+-------------+-------------+---------------+
+| JP1        | JP2          | JP3         | JP7         | JP160         |
+| (CR_STRAP) | (JTAG_STRAP) | (CMP_STRAP) | (BSS_STRAP) | (UART_BSTRAP) |
++============+==============+=============+=============+===============+
+| 1-2        | 2-3          | 2-3         | 1-2         | 1-2           |
++------------+--------------+-------------+-------------+---------------+
+
+``JP7 1-2`` pulls SHD SPI CS0# up to VTR2. MEC172x Boot-ROM samples
 SHD SPI CS0# and if high, it loads code from SHD SPI.
 
 Peripheral Routing Jumpers
 --------------------------
 
-Each column of the following table illustrates how to enable UART1, SWD,
-PVT SPI, SHD SPI and LED0-2 respectively.
+Each column of the following table illustrates how to enable UART0, UART1, SHD SPI
+and SWD, respectively.
 
-+----------+----------+--------+-----------+----------+---------+
-|  JP48    |  JP9     | JP9    | JP38      | JP98     | JP41    |
-|  (UART1) |  (UART1) | (SWD)  | (PVT SPI) | (SHD SPI)| (LED0-2)|
-+==========+==========+========+===========+==========+=========+
-|  1-2     |          | 2-3    | 2-3       | 2-3      | 1-2     |
-+----------+----------+--------+-----------+----------+---------+
-|  4-5     |  4-5     |        | 5-6       | 5-6      | 3-4     |
-+----------+----------+--------+-----------+----------+---------+
-|  7-8     |          | 8-9    | 8-9       | 8-9      | 5-6     |
-+----------+----------+--------+-----------+----------+---------+
-|  10-11   |  10-11   |        | 11-12     | 11-12    |         |
-+----------+----------+--------+-----------+----------+---------+
-|          |          |        | 14-15     | 14-15    |         |
-+----------+----------+--------+-----------+----------+---------+
-|          |          |        | 17-18     | 20-21    |         |
-+----------+----------+--------+-----------+----------+---------+
++-------+-------+------+------+------+------+------+
+|                   UART0 (P11)                    |
++-------+-------+------+------+------+------+------+
+| JP13  | JP17  | JP19 | JP22 | JP88 | JP89 | JP93 |
++=======+=======+======+======+======+======+======+
+| 2-3   | 2-3   | 1-2  | 1-2  | 2-3  | 2-3  | 1-3  |
++-------+-------+------+------+------+------+------+
+| 5-6   | 5-6   | 4-5  | 4-5  |      |      | 2-4  |
++-------+-------+------+------+------+------+------+
+| 8-9   | 8-9   |      |      |      |      |      |
++-------+-------+------+------+------+------+------+
+| 11-12 | 11-12 |      |      |      |      |      |
++-------+-------+------+------+------+------+------+
+| 14-15 | 14-15 |      |      |      |      |      |
++-------+-------+------+------+------+------+------+
+| 17-18 | 17-18 |      |      |      |      |      |
++-------+-------+------+------+------+------+------+
+|       | 20-21 |      |      |      |      |      |
++-------+-------+------+------+------+------+------+
+|       | 23-24 |      |      |      |      |      |
++-------+-------+------+------+------+------+------+
 
-.. note:: For UART1 make sure JP39 have jumpers connected 1-2, 3-4.
++------+------+-------+-------+------+------+-------+-----+--------+------+------+------+-------+
+|                                             UART1                                             |
++---------------------------------------------------+-------------------------------------------+
+|                      (P12)                        |                    (P2)                   |
++------+------+-------+-------+------+------+-------+------+-------+------+------+------+-------+
+| JP11 | JP14 | JP19  | JP24  | JP90 | JP94 | JP157 | JP11 | JP19  | JP24 | JP90 | JP94 | JP157 |
++======+======+=======+=======+======+======+=======+======+=======+======+======+======+=======+
+| 1-2  | 1-2  | 20-21 |  2-3  | 2-3  | 1-3  |  1-2  | 1-2  | 11-12 | 5-6  | 2-3  | 1-3  |  1-3  |
++------+------+-------+-------+------+------+-------+------+-------+------+------+------+-------+
+| 4-5  |      |       |  5-6  |      | 2-4  |  4-5  | 4-5  |       | 8-9  |      | 2-4  |  4-6  |
++------+------+-------+-------+------+------+-------+------+-------+------+------+------+-------+
+| 8-9  |      |       |  8-9  |      |      |  7-8  |      |       |17-18 |      |      |  7-9  |
++------+------+-------+-------+------+------+-------+------+-------+------+------+------+-------+
+|      |      |       | 11-12 |      |      | 10-11 |      |       |23-24 |      |      | 10-12 |
++------+------+-------+-------+------+------+-------+------+-------+------+------+------+-------+
+|      |      |       | 14-15 |      |      |       |      |       |      |      |      |       |
++------+------+-------+-------+------+------+-------+------+-------+------+------+------+-------+
+|      |      |       | 17-18 |      |      |       |      |       |      |      |      |       |
++------+------+-------+-------+------+------+-------+------+-------+------+------+------+-------+
 
-To receive UART1 serial output, please refer to the picture below
-to make sure that JP9 configured for UART1 output.
+NOTE: The "Hello World" example outputs at ``UART1 P12`` .
 
-Jumper settings for MEC172x 176WFBGA Socket DC Assy 6915 Rev B1p0
++----------------------+-------+--------+
+|        SHD_SPI       |  SWD  | LED4-5 |
++-------+------+-------+-------+--------+
+| JP23  | JP25 | JP156 |  J18  |  JP21  |
++=======+======+=======+=======+========+
+|  2-3  | 1-2  |  1-2  |  8-9  |  4-5   |
++-------+------+-------+-------+--------+
+|  8-9  |      |       | 11-12 | 16-17  |
++-------+------+-------+-------+--------+
+| 14-15 |      |       |       |        |
++-------+------+-------+-------+--------+
+| 17-18 |      |       |       |        |
++-------+------+-------+-------+--------+
+
+Jumper settings for MEC172x 144WFBGA Socket DC Assy 6914 Rev A0p1
 =================================================================
 
 The jumper configuration explained above covers the base board. The ASSY
-6915 MEC1723 CPU board provides capability for an optional, external 32KHz
+6914 MEC172x CPU board provides capability for an optional, external 32KHz
 clock source. The card includes a 32KHz crystal oscillator. The card can
 also be configured to use an external 50% duty cycle 32KHz source on the
 XTAL2/32KHZ_IN pin. Note, firmware must set the MEC172x clock enable
 register to select the external source matching the jumper settings. If
-using the MEC15xx internal silicon oscillator then the 32K jumper settings
-are don't cares. ``JP1`` is for scoping test clock outputs. Please refer to
-the schematic in reference section below.
+using the MEC172x internal silicon oscillator then the 32K jumper settings
+are don't cares. ``JP1`` on DC is for scoping test clock outputs. Please
+refer to the schematic in reference section below.
 
 Parallel 32KHz crystal configuration
 ------------------------------------
+
 +-------+-------+
-| JP2   | JP3   |
+| JP1   | JP2   |
 +=======+=======+
 | 1-2   | 2-3   |
 +-------+-------+
 
 External 32KHz 50% duty cycle configuration
 -------------------------------------------
+
 +-------+-------+
 | JP2   | JP3   |
 +=======+=======+
 | NC    | 1-2   |
 +-------+-------+
 
+NOTE: ``JP121 3-4`` on base board also needs to be loaded.
 
-Jumper settings for MEC1723 176WFBGA Socket DC Assy 6915 Rev B1p0
-=================================================================
-
-The MEC1723 ASSY 6915 CPU card does not include an onboard external
-32K crystal or oscillator. The one jumper block ``JP1`` is for scoping
-test clock outputs not for configuration. Please refer to schematic
-in reference section below.
 
 Programming and Debugging
 *************************
 
 Setup
 =====
+
 #. If you use Dediprog SF100 programmer, then setup it.
 
    Windows version can be found at the `SF100 Product page`_.
@@ -262,8 +301,9 @@ Setup
 
    Note that the tools for Linux and Windows have different file names.
 
-#. If needed, a custom SPI image configuration file can be specified
-   to override the default one.
+#. The default MEC172X_SPI_CFG file is spi_cfg.txt located in ${BOARD_DIR}/support.
+   If needed, a custom SPI image configuration file can be specified to override the
+   default one.
 
    .. code-block:: console
 
@@ -271,11 +311,22 @@ Setup
 
 Wiring
 ========
+
 #. Connect the SPI Dongle ASSY 6791 to ``J34`` in the EVB.
 
-#. Connect programmer to the header J6 on the Assy6791 board, it will flash the SPI NOR chip ``U3``
-   Make sure that your programmer's offset is 0x0.
+   .. image:: ./spidongle_assy6791.png
+        :width: 337px
+        :align: center
+        :alt: SPI DONGLE ASSY 6791 Connected
+
+#. Connect programmer to the header J6 on the Assy6791 board, it will flash the SPI NOR chip
+   ``U3``. Make sure that your programmer's offset is 0x0.
    For programming you can use Dediprog SF100 or a similar tool for flashing SPI chips.
+
+   .. image:: ./dediprog_connector.png
+        :width: 800px
+        :align: center
+        :alt: SF100 Connected
 
 
    .. note:: Remember that SPI MISO/MOSI are swapped on Dediprog headers!
@@ -303,12 +354,16 @@ Wiring
    to your host computer using the RS232 cable.
 
 #. Apply power to the board via a micro-USB cable.
-   Configure this option by using a jumper between ``JP88 7-8``.
+   Configure this option by using a jumper between ``JP30 7-8``.
 
-#. Final wiring for the board should look like this:
+   .. image:: ./jp30_power_options.png
+        :width: 600px
+        :align: center
+        :alt: Power Connection
 
 Building
 ========
+
 #. Build :ref:`hello_world` application as you would normally do.
 
 #. The file :file:`spi_image.bin` will be created if the build system
@@ -317,6 +372,7 @@ Building
 
 Flashing
 ========
+
 #. Run your favorite terminal program to listen for output.
    Under Linux the terminal should be :code:`/dev/ttyUSB0`. Do not close it.
 
@@ -341,11 +397,15 @@ Flashing
 
       $ west flash
 
-   .. note:: When west process started press Reset button and do not release it
+   .. note:: When west process started press Reset button ``S2`` and do not release it
     till the whole west process will not be finished successfully.
 
+   .. image:: ./Reset_Button.png
+        :width: 600px
+        :align: center
+        :alt: Reset Button
 
-   .. note:: If you dont't want to press Reset button every time, you can disconnect
+   .. note:: If you don't want to press Reset button every time, you can disconnect
     SPI Dongle ASSY 6791 from the EVB during the west flash programming.
     Then connect it back to the ``J34`` header and apply power to the EVB.
     Result will be the same.
@@ -356,22 +416,25 @@ Flashing
 
 Debugging
 =========
+
 This board comes with a Cortex ETM port which facilitates tracing and debugging
 using a single physical connection.  In addition, it comes with sockets for
 JTAG only sessions.
 
 Troubleshooting
 ===============
-#. In case you don't see your application running, please make sure ``LED7``, ``LED8``, and ``LED1``
+
+#. In case you don't see your application running, please make sure ``LED1`` and ``LED2``
    are lit. If one of these is off, then check the power-related jumpers again.
 
 #. If you can't program the board using Dediprog, disconnect the Assy6791
-   from the main board Assy6853 and try again.
+   from the main board Assy6906 and try again.
 
 #. If Dediprog can't detect the onboard flash, press the board's Reset button and try again.
 
 References
 **********
+
 .. target-notes::
 
 .. _MEC172x Reference Manual:
@@ -379,7 +442,7 @@ References
 .. _MEC172x EVB Schematic:
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC172x/MEC172X-EVB-Assy_6906-A1p0-SCH.pdf
 .. _MEC172x Daughter Card Schematic:
-    https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC172x/MEC172X-176WFBGA-Socket-DC-Assy6915-Rev-B-SCH.pdf
+    https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC172x/MEC172X-144WFBGA-Socket-DC-Assy6914-Rev-A-SCH.pdf
 .. _SPI Dongle Schematic:
     https://github.com/MicrochipTech/CPGZephyrDocs/blob/master/MEC1501/SPI%20Dongles%20and%20Aardvark%20Interposer%20Assy%206791%20Rev%20A1p1%20-%20SCH.pdf
 .. _MEC172x SPI Image Gen:

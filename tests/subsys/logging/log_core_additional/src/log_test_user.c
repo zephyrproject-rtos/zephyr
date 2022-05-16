@@ -12,11 +12,11 @@
 
 #include <tc_util.h>
 #include <stdbool.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <logging/log_backend.h>
-#include <logging/log_ctrl.h>
-#include <logging/log.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log.h>
 
 /* Interfaces tested in these cases have been tested in kernel space.
  * Test cases in this file run in user space to improve test coverage

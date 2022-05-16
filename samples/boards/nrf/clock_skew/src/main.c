@@ -5,11 +5,11 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
-#include <sys/timeutil.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/nrf_clock_control.h>
-#include <drivers/counter.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/timeutil.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/counter.h>
 #include <nrfx_clock.h>
 
 #define TIMER_NODE DT_NODELABEL(timer0)
@@ -186,7 +186,7 @@ static void sync_work_handler(struct k_work *work)
 			       us_to_text(ref_to_us(rec_ref)));
 			printf("%c%s\n", err_sign, us_to_text(err_us));
 
-			printf("Skew %f ; err %d ppb\n", skew,
+			printf("Skew %f ; err %d ppb\n", (double)skew,
 			       timeutil_sync_skew_to_ppb(skew));
 		} else if (rc < 0) {
 			printf("Sync update error: %d\n", rc);

@@ -9,10 +9,10 @@
  */
 
 
-#include <kernel.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <errno.h>
-#include <crypto/cipher.h>
+#include <zephyr/crypto/crypto.h>
 
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
@@ -26,11 +26,14 @@
 #endif
 #include <mbedtls/aes.h>
 
+#include <mbedtls/sha256.h>
+#include <mbedtls/sha512.h>
+
 #define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
 		      CAP_NO_IV_PREFIX)
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbedtls);
 
 struct mtls_shim_session {
@@ -40,9 +43,14 @@ struct mtls_shim_session {
 		mbedtls_gcm_context mtls_gcm;
 #endif
 		mbedtls_aes_context mtls_aes;
+		mbedtls_sha256_context mtls_sha256;
+		mbedtls_sha512_context mtls_sha512;
 	};
 	bool in_use;
-	enum cipher_mode mode;
+	union {
+		enum cipher_mode mode;
+		enum hash_algo algo;
+	};
 };
 
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_MBEDTLS_SHIM_MAX_SESSION
@@ -57,6 +65,9 @@ struct mtls_shim_session mtls_sessions[CRYPTO_MAX_SESSION];
 
 #define MTLS_GET_CTX(c, m) \
 	(&((struct mtls_shim_session *)c->drv_sessn_state)->mtls_ ## m)
+
+#define MTLS_GET_ALGO(c) \
+	(((struct mtls_shim_session *)c->drv_sessn_state)->algo)
 
 int mtls_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
@@ -451,6 +462,138 @@ static int mtls_session_free(const struct device *dev, struct cipher_ctx *ctx)
 	return 0;
 }
 
+static int mtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
+			       bool finish)
+{
+	int ret;
+	mbedtls_sha256_context *sha256_ctx = MTLS_GET_CTX(ctx, sha256);
+
+
+	if (!ctx->started) {
+		ret = mbedtls_sha256_starts(sha256_ctx,
+					    MTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA224);
+		if (ret != 0) {
+			LOG_ERR("Could not compute the hash");
+			return -EINVAL;
+		}
+		ctx->started = true;
+	}
+
+	ret = mbedtls_sha256_update(sha256_ctx, pkt->in_buf, pkt->in_len);
+	if (ret != 0) {
+		LOG_ERR("Could not update the hash");
+		ctx->started = false;
+		return -EINVAL;
+	}
+
+	if (finish) {
+		ctx->started = false;
+		ret = mbedtls_sha256_finish(sha256_ctx, pkt->out_buf);
+		if (ret != 0) {
+			LOG_ERR("Could not compute the hash");
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+static int mtls_sha512_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
+			       bool finish)
+{
+	int ret;
+	mbedtls_sha512_context *sha512_ctx = MTLS_GET_CTX(ctx, sha512);
+
+	if (!ctx->started) {
+		ret = mbedtls_sha512_starts(sha512_ctx,
+					    MTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA384);
+		if (ret != 0) {
+			LOG_ERR("Could not compute the hash");
+			return -EINVAL;
+		}
+		ctx->started = true;
+	}
+
+	ret = mbedtls_sha512_update(sha512_ctx, pkt->in_buf, pkt->in_len);
+	if (ret != 0) {
+		LOG_ERR("Could not update the hash");
+		ctx->started = false;
+		return -EINVAL;
+	}
+
+	if (finish) {
+		ctx->started = false;
+		ret = mbedtls_sha512_finish(sha512_ctx, pkt->out_buf);
+		if (ret != 0) {
+			LOG_ERR("Could not compute the hash");
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+static int mtls_hash_session_setup(const struct device *dev,
+				   struct hash_ctx *ctx,
+				   enum hash_algo algo)
+{
+	int ctx_idx;
+
+	if (ctx->flags & ~(MTLS_SUPPORT)) {
+		LOG_ERR("Unsupported flag");
+		return -EINVAL;
+	}
+
+	if ((algo != CRYPTO_HASH_ALGO_SHA224) &&
+	    (algo != CRYPTO_HASH_ALGO_SHA256) &&
+	    (algo != CRYPTO_HASH_ALGO_SHA384) &&
+	    (algo != CRYPTO_HASH_ALGO_SHA512)) {
+		LOG_ERR("Unsupported algo: %d", algo);
+		return -EINVAL;
+	}
+
+	ctx_idx = mtls_get_unused_session_index();
+	if (ctx_idx < 0) {
+		LOG_ERR("No free session for now");
+		return -ENOSPC;
+	}
+
+	mtls_sessions[ctx_idx].algo = algo;
+	ctx->drv_sessn_state = &mtls_sessions[ctx_idx];
+	ctx->started = false;
+
+	if ((algo == CRYPTO_HASH_ALGO_SHA224) ||
+	    (algo == CRYPTO_HASH_ALGO_SHA256)) {
+		mbedtls_sha256_context *sha256_ctx =
+			&mtls_sessions[ctx_idx].mtls_sha256;
+		mbedtls_sha256_init(sha256_ctx);
+		ctx->hash_hndlr = mtls_sha256_compute;
+	} else {
+		mbedtls_sha512_context *sha512_ctx =
+			&mtls_sessions[ctx_idx].mtls_sha512;
+		mbedtls_sha512_init(sha512_ctx);
+		ctx->hash_hndlr = mtls_sha512_compute;
+	}
+
+	return 0;
+}
+
+static int mtls_hash_session_free(const struct device *dev, struct hash_ctx *ctx)
+{
+	struct mtls_shim_session *mtls_session =
+		(struct mtls_shim_session *)ctx->drv_sessn_state;
+
+	if (mtls_session->algo == CRYPTO_HASH_ALGO_SHA256) {
+		mbedtls_sha256_free(&mtls_session->mtls_sha256);
+	} else {
+		mbedtls_sha512_free(&mtls_session->mtls_sha512);
+	}
+	mtls_session->in_use = false;
+
+	return 0;
+}
+
+
 static int mtls_query_caps(const struct device *dev)
 {
 	return MTLS_SUPPORT;
@@ -462,9 +605,11 @@ static int mtls_shim_init(const struct device *dev)
 }
 
 static struct crypto_driver_api mtls_crypto_funcs = {
-	.begin_session = mtls_session_setup,
-	.free_session = mtls_session_free,
-	.crypto_async_callback_set = NULL,
+	.cipher_begin_session = mtls_session_setup,
+	.cipher_free_session = mtls_session_free,
+	.cipher_async_callback_set = NULL,
+	.hash_begin_session = mtls_hash_session_setup,
+	.hash_free_session = mtls_hash_session_free,
 	.query_hw_caps = mtls_query_caps,
 };
 

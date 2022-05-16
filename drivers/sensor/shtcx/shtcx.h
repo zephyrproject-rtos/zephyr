@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_SHTCX_SHTCX_H_
 #define ZEPHYR_DRIVERS_SENSOR_SHTCX_SHTCX_H_
 
-#include <device.h>
-#include <devicetree.h>
-#include <kernel.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 
 /* common cmds */
 #define SHTCX_CMD_READ_ID		0xEFC8

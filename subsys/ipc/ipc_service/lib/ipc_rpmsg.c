@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <ipc/ipc_rpmsg.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/ipc/ipc_rpmsg.h>
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ep)
 {
@@ -26,6 +26,12 @@ static void ns_bind_cb(struct rpmsg_device *rdev, const char *name, uint32_t des
 		ept = &instance->endpoint[i];
 
 		if (strcmp(name, ept->name) == 0) {
+			/*
+			 * The destination address is 'dest' so ns_bind_cb() is
+			 * *NOT* called on the REMOTE side. The bound_cb()
+			 * function will eventually take care of notifying the
+			 * REMOTE side if needed.
+			 */
 			err = rpmsg_create_ept(&ept->ep, rdev, name, RPMSG_ADDR_ANY,
 					       dest, instance->cb, rpmsg_service_unbind);
 			if (err != 0) {
@@ -52,6 +58,10 @@ int ipc_rpmsg_register_ept(struct ipc_rpmsg_instance *instance, unsigned int rol
 	rdev = rpmsg_virtio_get_rpmsg_device(&instance->rvdev);
 
 	if (role == RPMSG_REMOTE) {
+		/*
+		 * The destination address is RPMSG_ADDR_ANY, this will trigger
+		 * the ns_bind_cb() callback function on the HOST side.
+		 */
 		return rpmsg_create_ept(&ept->ep, rdev, ept->name, RPMSG_ADDR_ANY,
 					RPMSG_ADDR_ANY, instance->cb, rpmsg_service_unbind);
 	}
@@ -76,7 +86,7 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 		bind_cb = ns_bind_cb;
 	}
 
-	if (role == RPMSG_MASTER) {
+	if (role == RPMSG_HOST) {
 		rpmsg_virtio_init_shm_pool(&instance->shm_pool, shb, size);
 		return rpmsg_init_vdev(&instance->rvdev, vdev, bind_cb,
 				       shm_io, &instance->shm_pool);

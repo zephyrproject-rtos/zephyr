@@ -10,17 +10,18 @@
 #include <string.h>
 #include <errno.h>
 
-#include <toolchain.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/uuid.h>
-#include <sys/byteorder.h>
-#include <sys/printk.h>
-#include <sys/__assert.h>
-#include <net/buf.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/net/buf.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_gatt
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -29,6 +30,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CONTROLLER_INDEX 0
 #define MAX_BUFFER_SIZE 2048
 #define MAX_UUID_LEN 16
+
+#define MAX_SUBSCRIPTIONS 2
+
+#define UNUSED_SUBSCRIBE_CCC_HANDLE 0x0000
 
 /* This masks Permission bits from GATT API */
 #define GATT_PERM_MASK			(BT_GATT_PERM_READ | \
@@ -1391,6 +1396,51 @@ static uint8_t read_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_CONTINUE;
 }
 
+static uint8_t read_uuid_cb(struct bt_conn *conn, uint8_t err,
+		       struct bt_gatt_read_params *params, const void *data,
+		       uint16_t length)
+{
+	struct gatt_read_uuid_rp *rp = (void *)gatt_buf.buf;
+	struct gatt_char_value value;
+
+	/* Respond to the Lower Tester with ATT Error received */
+	if (err) {
+		rp->att_response = err;
+	}
+
+	/* read complete */
+	if (!data) {
+		tester_send(BTP_SERVICE_ID_GATT, btp_opcode, CONTROLLER_INDEX,
+			    gatt_buf.buf, gatt_buf.len);
+		read_destroy(params);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	value.handle = params->by_uuid.start_handle;
+	value.data_len = length;
+
+	if (!gatt_buf_add(&value, sizeof(struct gatt_char_value))) {
+		tester_rsp(BTP_SERVICE_ID_GATT, btp_opcode,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		read_destroy(params);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	if (!gatt_buf_add(data, length)) {
+		tester_rsp(BTP_SERVICE_ID_GATT, btp_opcode,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+		read_destroy(params);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	rp->values_count++;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
 static void read_data(uint8_t *data, uint16_t len)
 {
 	const struct gatt_read_cmd *cmd = (void *) data;
@@ -1444,7 +1494,7 @@ static void read_uuid(uint8_t *data, uint16_t len)
 		goto fail;
 	}
 
-	if (!gatt_buf_reserve(sizeof(struct gatt_read_rp))) {
+	if (!gatt_buf_reserve(sizeof(struct gatt_read_uuid_rp))) {
 		goto fail;
 	}
 
@@ -1452,7 +1502,7 @@ static void read_uuid(uint8_t *data, uint16_t len)
 	read_params.handle_count = 0;
 	read_params.by_uuid.start_handle = sys_le16_to_cpu(cmd->start_handle);
 	read_params.by_uuid.end_handle = sys_le16_to_cpu(cmd->end_handle);
-	read_params.func = read_cb;
+	read_params.func = read_uuid_cb;
 
 	btp_opcode = GATT_READ_UUID;
 
@@ -1655,10 +1705,23 @@ fail:
 		   BTP_STATUS_FAILED);
 }
 
-static struct bt_gatt_subscribe_params subscribe_params;
+static struct bt_gatt_subscribe_params subscriptions[MAX_SUBSCRIPTIONS];
 
-/* ev header + default MTU_ATT-3 */
-static uint8_t ev_buf[33];
+static struct bt_gatt_subscribe_params *find_subscription(uint16_t ccc_handle)
+{
+	for (int i = 0; i < MAX_SUBSCRIPTIONS; i++) {
+		if (subscriptions[i].ccc_handle == ccc_handle) {
+			return &subscriptions[i];
+		}
+	}
+
+	return NULL;
+}
+
+/* TODO there should be better way of determining max supported MTU */
+#define MAX_NOTIF_DATA (MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU) - 3)
+
+static uint8_t ev_buf[sizeof(struct gatt_notification_ev) + MAX_NOTIF_DATA];
 
 static uint8_t notify_func(struct bt_conn *conn,
 			   struct bt_gatt_subscribe_params *params,
@@ -1673,8 +1736,11 @@ static uint8_t notify_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 	addr = bt_conn_get_dst(conn);
-	ev->type = (uint8_t) subscribe_params.value;
-	ev->handle = sys_cpu_to_le16(subscribe_params.value_handle);
+	ev->type = (uint8_t)params->value;
+	ev->handle = sys_cpu_to_le16(params->value_handle);
+
+	length = MIN(length, MAX_NOTIF_DATA);
+
 	ev->data_length = sys_cpu_to_le16(length);
 	memcpy(ev->data, data, length);
 	memcpy(ev->address, addr->a.val, sizeof(ev->address));
@@ -1689,42 +1755,53 @@ static uint8_t notify_func(struct bt_conn *conn,
 static void discover_complete(struct bt_conn *conn,
 			      struct bt_gatt_discover_params *params)
 {
+	struct bt_gatt_subscribe_params *subscription;
 	uint8_t op, status;
 
+	subscription = find_subscription(discover_params.end_handle);
+	__ASSERT_NO_MSG(subscription);
+
 	/* If no value handle it means that chrc has not been found */
-	if (!subscribe_params.value_handle) {
+	if (!subscription->value_handle) {
 		status = BTP_STATUS_FAILED;
 		goto fail;
 	}
 
-	if (bt_gatt_subscribe(conn, &subscribe_params) < 0) {
+	if (bt_gatt_subscribe(conn, subscription) < 0) {
 		status = BTP_STATUS_FAILED;
 		goto fail;
 	}
 
 	status = BTP_STATUS_SUCCESS;
 fail:
-	op = subscribe_params.value == BT_GATT_CCC_NOTIFY ? GATT_CFG_NOTIFY :
-							    GATT_CFG_INDICATE;
+	op = subscription->value == BT_GATT_CCC_NOTIFY ? GATT_CFG_NOTIFY :
+							 GATT_CFG_INDICATE;
 
 	if (status == BTP_STATUS_FAILED) {
-		(void)memset(&subscribe_params, 0, sizeof(subscribe_params));
+		(void)memset(subscription, 0, sizeof(*subscription));
 	}
 
 	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
+
+	(void)memset(params, 0, sizeof(*params));
 }
 
 static uint8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
 {
+	struct bt_gatt_subscribe_params *subscription;
+
 	if (!attr) {
 		discover_complete(conn, params);
 		return BT_GATT_ITER_STOP;
 	}
 
+	subscription = find_subscription(discover_params.end_handle);
+	__ASSERT_NO_MSG(subscription);
+
 	/* Characteristic Value Handle is the next handle beyond declaration */
-	subscribe_params.value_handle = attr->handle + 1;
+	subscription->value_handle = attr->handle + 1;
 
 	/*
 	 * Continue characteristic discovery to get last characteristic
@@ -1736,10 +1813,17 @@ static uint8_t discover_func(struct bt_conn *conn,
 static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 			       uint16_t value)
 {
-	/* Fail if there is another subscription enabled */
-	if (subscribe_params.ccc_handle) {
-		LOG_ERR("Another subscription already enabled");
-		return -EEXIST;
+	struct bt_gatt_subscribe_params *subscription;
+
+	/* find unused subscription */
+	subscription = find_subscription(UNUSED_SUBSCRIBE_CCC_HANDLE);
+	if (!subscription) {
+		return -ENOMEM;
+	}
+
+	/* if discovery is busy fail */
+	if (discover_params.start_handle) {
+		return -EBUSY;
 	}
 
 	/* Discover Characteristic Value this CCC Descriptor refers to */
@@ -1748,26 +1832,32 @@ static int enable_subscription(struct bt_conn *conn, uint16_t ccc_handle,
 	discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	discover_params.func = discover_func;
 
-	subscribe_params.ccc_handle = ccc_handle;
-	subscribe_params.value = value;
-	subscribe_params.notify = notify_func;
+	subscription->ccc_handle = ccc_handle;
+	subscription->value = value;
+	subscription->notify = notify_func;
+
+	/* require security level from time of subscription */
+	subscription->min_security = bt_conn_get_security(conn);
 
 	return bt_gatt_discover(conn, &discover_params);
 }
 
 static int disable_subscription(struct bt_conn *conn, uint16_t ccc_handle)
 {
+	struct bt_gatt_subscribe_params *subscription;
+
 	/* Fail if CCC handle doesn't match */
-	if (ccc_handle != subscribe_params.ccc_handle) {
+	subscription = find_subscription(ccc_handle);
+	if (!subscription) {
 		LOG_ERR("CCC handle doesn't match");
 		return -EINVAL;
 	}
 
-	if (bt_gatt_unsubscribe(conn, &subscribe_params) < 0) {
+	if (bt_gatt_unsubscribe(conn, subscription) < 0) {
 		return -EBUSY;
 	}
 
-	subscribe_params.ccc_handle = 0U;
+	(void)memset(subscription, 0, sizeof(*subscription));
 
 	return 0;
 }

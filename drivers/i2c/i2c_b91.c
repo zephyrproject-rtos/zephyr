@@ -9,19 +9,17 @@
 #include "i2c.h"
 #include "clock.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_telink);
 
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include "i2c-priv.h"
-#include <drivers/pinmux.h>
-#include <dt-bindings/pinctrl/b91-pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 /* I2C configuration structure */
 struct i2c_b91_cfg {
 	uint32_t bitrate;
-	const uint32_t *pinctrl_list;
-	size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 /* I2C data structure */
@@ -124,7 +122,6 @@ static int i2c_b91_transfer(const struct device *dev,
 static int i2c_b91_init(const struct device *dev)
 {
 	int status = 0;
-	const struct device *pinmux;
 	const struct i2c_b91_cfg *cfg = dev->config;
 	struct i2c_b91_data *data = dev->data;
 	uint32_t dev_config = (I2C_MODE_MASTER | i2c_map_dt_bitrate(cfg->bitrate));
@@ -139,16 +136,11 @@ static int i2c_b91_init(const struct device *dev)
 		return status;
 	}
 
-	/* get pinmux driver */
-	pinmux = DEVICE_DT_GET(DT_NODELABEL(pinmux));
-	if (!device_is_ready(pinmux)) {
-		return -ENODEV;
-	}
-
-	/* config pins */
-	for (int i = 0; i < cfg->pinctrl_list_size; i++) {
-		pinmux_pin_set(pinmux, B91_PINMUX_GET_PIN(cfg->pinctrl_list[i]),
-			       B91_PINMUX_GET_FUNC(cfg->pinctrl_list[i]));
+	/* configure pins */
+	status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (status < 0) {
+		LOG_ERR("Failed to configure I2C pins");
+		return status;
 	}
 
 	return 0;
@@ -164,25 +156,23 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "unsupported I2C instance");
 
 /* I2C driver registration */
-#define I2C_B91_INIT(inst)					  \
-								  \
-	static const uint32_t i2c_pins_##inst[] =		  \
-		B91_PINMUX_DT_INST_GET_ARRAY(inst, 0);		  \
-								  \
-	static struct i2c_b91_data i2c_b91_data_##inst;		  \
-								  \
-	static struct i2c_b91_cfg i2c_b91_cfg_##inst = {	  \
-		.bitrate = DT_INST_PROP(inst, clock_frequency),	  \
-		.pinctrl_list_size = ARRAY_SIZE(i2c_pins_##inst), \
-		.pinctrl_list = i2c_pins_##inst			  \
-	};							  \
-								  \
-	DEVICE_DT_INST_DEFINE(inst, i2c_b91_init,		  \
-			      NULL,				  \
-			      &i2c_b91_data_##inst,		  \
-			      &i2c_b91_cfg_##inst,		  \
-			      POST_KERNEL,			  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			      &i2c_b91_api);
+#define I2C_B91_INIT(inst)					      \
+								      \
+	PINCTRL_DT_INST_DEFINE(inst);				      \
+								      \
+	static struct i2c_b91_data i2c_b91_data_##inst;		      \
+								      \
+	static struct i2c_b91_cfg i2c_b91_cfg_##inst = {	      \
+		.bitrate = DT_INST_PROP(inst, clock_frequency),	      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	      \
+	};							      \
+								      \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_b91_init,		      \
+				  NULL,				      \
+				  &i2c_b91_data_##inst,		      \
+				  &i2c_b91_cfg_##inst,		      \
+				  POST_KERNEL,			      \
+				  CONFIG_I2C_INIT_PRIORITY,	      \
+				  &i2c_b91_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_B91_INIT)

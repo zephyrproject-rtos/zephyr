@@ -34,13 +34,24 @@
 		};
 		user_button_2: button_1 {
 			label = "User SW2";
-			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 31 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		user_button_3: button_2 {
 			label = "User SW3";
-			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
+};
+
+/*
+ * Default for this board is to allocate SRAM0-1 to M4 CPU but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-3 differently.
+ *
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(128)>;
 };
 
 &cpu0 {

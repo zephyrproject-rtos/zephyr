@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT quicklogic_eos_s3_gpio
 
 #include <errno.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 #include <eoss3_hal_gpio.h>
 #include <eoss3_hal_pads.h>
@@ -403,6 +403,6 @@ DEVICE_DT_INST_DEFINE(0,
 		    NULL,
 		    &gpio_eos_s3_data,
 		    &gpio_eos_s3_config,
-		    POST_KERNEL,
+		    PRE_KERNEL_1,
 		    CONFIG_GPIO_INIT_PRIORITY,
 		    &gpio_eos_s3_driver_api);

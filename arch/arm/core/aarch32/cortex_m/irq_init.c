@@ -10,8 +10,8 @@
  *
  */
 
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 /**
  *
@@ -21,7 +21,6 @@
  * not 0, which they have it set to when coming out of reset. This ensures that
  * interrupt locking via BASEPRI works as expected.
  *
- * @return N/A
  */
 
 void z_arm_interrupt_init(void)

@@ -54,7 +54,7 @@ config IIS3DHHC_THREAD_STACK_SIZE
 menu "Attributes"
 
 config IIS3DHHC_NORM_MODE
-	bool "Enable Sensor at 1KHz"
+	bool "Sensor at 1KHz"
 	default y
 
 config IIS3DHHC_DRDY_INT1

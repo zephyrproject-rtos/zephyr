@@ -8,7 +8,7 @@
 #include <ztest_error_hook.h>
 
 /* Macro declarations */
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define SEM_INIT_VAL (0U)
 #define SEM_MAX_VAL  (3U)
 #define TOTAL_MAX (4U)
@@ -37,7 +37,7 @@ static void sem_thread_give_uninit(void *p1, void *p2, void *p3)
 {
 	ztest_set_fault_valid(true);
 
-	/* use sem without initialse */
+	/* use sem without initialise */
 	k_sem_give(&uninit_sem);
 
 	ztest_test_fail();
@@ -70,7 +70,7 @@ static void thread_high_prio_sem_take(void *p1, void *p2, void *p3)
  *
  * @details Using semaphore with some situations
  * - Use a uninitialized semaphore
- * - Use semphore normally
+ * - Use semaphore normally
  * - Use semaphore with different priority threads
  *
  * @ingroup kernel_sys_sem_tests

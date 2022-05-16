@@ -1,0 +1,8 @@
+sample:
+  description: Bluetooth Low Energy Audio Unicast Server sample
+  name: Bluetooth Low Energy Audio Unicast Server sample
+tests:
+  sample.bluetooth.audio_unicast_server:
+    harness: bluetooth
+    platform_allow: qemu_cortex_m3 qemu_x86
+    tags: bluetooth

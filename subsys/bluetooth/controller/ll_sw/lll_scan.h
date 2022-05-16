@@ -27,14 +27,17 @@ struct lll_scan {
 	uint8_t  is_stop:1;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* Reference to aux context when scanning auxiliary PDU */
+	struct lll_scan_aux *lll_aux;
+
 	uint16_t duration_reload;
 	uint16_t duration_expire;
 	uint8_t  phy:3;
 	uint8_t  is_adv_ind:1;
 	uint8_t  is_aux_sched:1;
-
-	/* temporary storage when aux scan was scheduled from LLL */
-	struct lll_scan_aux *lll_aux;
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+	uint8_t  is_sync:1;
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -68,10 +71,6 @@ struct lll_scan_aux {
 
 	uint32_t window_size_us;
 
-#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
-	int8_t tx_pwr_lvl;
-#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
-
 #if defined(CONFIG_BT_CENTRAL)
 	struct node_rx_pdu *node_conn_rx;
 #endif /* CONFIG_BT_CENTRAL */
@@ -90,3 +89,4 @@ int lll_scan_reset(void);
 void lll_scan_prepare(void *param);
 
 extern uint8_t ull_scan_lll_handle_get(struct lll_scan *lll);
+extern struct lll_scan *ull_scan_lll_is_valid_get(struct lll_scan *lll);

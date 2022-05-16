@@ -1,6 +1,8 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+source "lib/posix/getopt/Kconfig"
+
 config POSIX_MAX_FDS
 	int "Maximum number of open file descriptors"
 	default 16 if POSIX_API
@@ -56,7 +58,7 @@ config MAX_TIMER_COUNT
 	  Mention maximum number of timers in POSIX compliant application.
 
 config POSIX_MQUEUE
-	bool "Enable POSIX message queue"
+	bool "POSIX message queue"
 	default y if POSIX_API
 	help
 	  This enabled POSIX message queue related APIs.
@@ -85,7 +87,7 @@ config MQUEUE_NAMELEN_MAX
 endif
 
 config POSIX_FS
-	bool "Enable POSIX file system API support"
+	bool "POSIX file system API support"
 	default y if POSIX_API
 	depends on FILE_SYSTEM
 	help
@@ -109,7 +111,7 @@ config APP_LINK_WITH_POSIX_SUBSYS
 	  Add POSIX subsystem header files to the 'app' include path.
 
 config EVENTFD
-	bool "Enable support for eventfd"
+	bool "Support for eventfd"
 	depends on !ARCH_POSIX
 	help
 	  Enable support for event file descriptors, eventfd. An eventfd can

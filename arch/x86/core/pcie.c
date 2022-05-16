@@ -4,18 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/device_mmio.h>
-#include <drivers/pcie/pcie.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/device_mmio.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
 #ifdef CONFIG_ACPI
-#include <arch/x86/acpi.h>
+#include <zephyr/arch/x86/acpi.h>
 #endif
 
 #ifdef CONFIG_PCIE_MSI
 #include <kernel_arch_func.h>
-#include <device.h>
-#include <drivers/pcie/msi.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pcie/msi.h>
+#include <zephyr/drivers/interrupt_controller/sysapic.h>
+#include <zephyr/arch/x86/cpuid.h>
 #endif
 
 /* PCI Express Extended Configuration Mechanism (MMIO) */
@@ -159,135 +161,125 @@ void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 
 #ifdef CONFIG_INTEL_VTD_ICTL
 
-#include <drivers/interrupt_controller/intel_vtd.h>
+#include <zephyr/drivers/interrupt_controller/intel_vtd.h>
+#include <zephyr/arch/x86/acpi.h>
 
-static const struct device *vtd;
-
-static bool get_vtd(void)
-{
-	if (vtd != NULL) {
-		return true;
-	}
-#define DT_DRV_COMPAT intel_vt_d
-	vtd = device_get_binding(DT_INST_LABEL(0));
-#undef DT_DRV_COMPAT
-
-	return vtd == NULL ? false : true;
-}
+static const struct device *vtd = DEVICE_DT_GET_ONE(intel_vt_d);
 
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
 /* these functions are explained in include/drivers/pcie/msi.h */
 
+#define MSI_MAP_DESTINATION_ID_SHIFT 12
+#define MSI_RH BIT(3)
+
 uint32_t pcie_msi_map(unsigned int irq,
-		      msi_vector_t *vector)
+		      msi_vector_t *vector,
+		      uint8_t n_vector)
 {
-	uint32_t map;
+	uint32_t dest_id;
 
 	ARG_UNUSED(irq);
-#if defined(CONFIG_INTEL_VTD_ICTL)
-#if !defined(CONFIG_PCIE_MSI_X)
-	if (vector != NULL) {
-		map = vtd_remap_msi(vtd, vector);
-	} else
-#else
-	if (vector != NULL && !vector->msix) {
-		map = vtd_remap_msi(vtd, vector);
-	} else
-#endif
-#endif
-	{
-		map = 0xFEE00000U; /* standard delivery to BSP local APIC */
-	}
 
-	return map;
+#if defined(CONFIG_INTEL_VTD_ICTL)
+	if (vector != NULL && n_vector > 0) {
+		return vtd_remap_msi(vtd, vector, n_vector);
+	}
+#endif
+
+	dest_id = z_x86_cpuid_get_current_physical_apic_id() <<
+		MSI_MAP_DESTINATION_ID_SHIFT;
+
+	/* Directing to current physical CPU (may not be BSP)
+	 * Destination ID - RH 1 - DM 0
+	 */
+	return 0xFEE00000U | dest_id | MSI_RH;
 }
 
 uint16_t pcie_msi_mdr(unsigned int irq,
 		      msi_vector_t *vector)
 {
-#ifdef CONFIG_PCIE_MSI_X
-	if ((vector != NULL) && (vector->msix)) {
-		return 0x4000U | vector->arch.vector;
-	}
+	if (vector != NULL) {
+		if (IS_ENABLED(CONFIG_INTEL_VTD_ICTL)) {
+			return 0;
+		}
+
+#if defined(CONFIG_PCIE_MSI_X)
+		if (vector->msix) {
+			return 0x4000U | vector->arch.vector;
+		}
 #endif
-
-	if (vector == NULL) {
-		/* edge triggered */
-		return 0x4000U | Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 	}
 
-	/* VT-D requires it to be 0, so let's return 0 by default */
-	return 0;
+	return 0x4000U | Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 }
 
 #if defined(CONFIG_INTEL_VTD_ICTL) || defined(CONFIG_PCIE_MSI_X)
-
-static inline uint32_t _read_pcie_irq_data(pcie_bdf_t bdf)
-{
-	uint32_t data;
-
-	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
-
-	pcie_conf_write(bdf, PCIE_CONF_INTR, data | PCIE_CONF_INTR_IRQ_NONE);
-
-	return data;
-}
-
-static inline void _write_pcie_irq_data(pcie_bdf_t bdf, uint32_t data)
-{
-	pcie_conf_write(bdf, PCIE_CONF_INTR, data);
-}
 
 uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				       msi_vector_t *vectors,
 				       uint8_t n_vector)
 {
-	if (n_vector > 1) {
-		int prev_vector = -1;
-		int i;
+	int prev_vector = -1;
+	int i, irq, vector;
+
+	if (vectors == NULL || n_vector == 0) {
+		return 0;
+	}
+
+
 #ifdef CONFIG_INTEL_VTD_ICTL
-#ifdef CONFIG_PCIE_MSI_X
-		if (!vectors[0].msix)
-#endif
-		{
-			int irte;
+	{
+		int irte;
 
-			if (!get_vtd()) {
-				return 0;
-			}
-
-			irte = vtd_allocate_entries(vtd, n_vector);
-			if (irte < 0) {
-				return 0;
-			}
-
-			for (i = irte; i < (irte + n_vector); i++) {
-				vectors[i].arch.irte = i;
-				vectors[i].arch.remap = true;
-			}
+		if (!device_is_ready(vtd)) {
+			return 0;
 		}
+
+		irte = vtd_allocate_entries(vtd, n_vector);
+		if (irte < 0) {
+			return 0;
+		}
+
+		for (i = 0; i < n_vector; i++, irte++) {
+			vectors[i].arch.irte = irte;
+			vectors[i].arch.remap = true;
+		}
+	}
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
-		for (i = 0; i < n_vector; i++) {
-			uint32_t data;
-
-			data = _read_pcie_irq_data(vectors[i].bdf);
-
-			vectors[i].arch.irq = pcie_alloc_irq(vectors[i].bdf);
-
-			_write_pcie_irq_data(vectors[i].bdf, data);
-
-			vectors[i].arch.vector =
-				z_x86_allocate_vector(priority, prev_vector);
-			if (vectors[i].arch.vector < 0) {
-				return 0;
-			}
-
-			prev_vector = vectors[i].arch.vector;
+	for (i = 0; i < n_vector; i++) {
+		if (n_vector == 1) {
+			/* This path is taken by PCIE device with fixed
+			 * or single MSI: IRQ has been already allocated
+			 * and/or set on the PCIe bus. Thus we only require
+			 * to get it.
+			 */
+			irq = pcie_get_irq(vectors->bdf);
+		} else {
+			irq = arch_irq_allocate();
 		}
-	} else {
-		vectors[0].arch.vector = z_x86_allocate_vector(priority, -1);
+
+		if ((irq == PCIE_CONF_INTR_IRQ_NONE) || (irq == -1)) {
+			return -1;
+		}
+
+		vector = z_x86_allocate_vector(priority, prev_vector);
+		if (vector < 0) {
+			return 0;
+		}
+
+		vectors[i].arch.irq = irq;
+		vectors[i].arch.vector = vector;
+
+#ifdef CONFIG_INTEL_VTD_ICTL
+		vtd_set_irte_vector(vtd, vectors[i].arch.irte,
+				    vectors[i].arch.vector);
+		vtd_set_irte_irq(vtd, vectors[i].arch.irte,
+				 vectors[i].arch.irq);
+		vtd_set_irte_msi(vtd, vectors[i].arch.irte, true);
+#endif
+		prev_vector = vectors[i].arch.vector;
 	}
 
 	return n_vector;
@@ -300,16 +292,23 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 {
 #ifdef CONFIG_INTEL_VTD_ICTL
 	if (vector->arch.remap) {
-		if (!get_vtd()) {
+		union acpi_dmar_id id;
+
+		if (!device_is_ready(vtd)) {
 			return false;
 		}
 
-		vtd_remap(vtd, vector);
+		id.bits.bus = PCIE_BDF_TO_BUS(vector->bdf);
+		id.bits.device = PCIE_BDF_TO_DEV(vector->bdf);
+		id.bits.function = PCIE_BDF_TO_FUNC(vector->bdf);
+
+		vtd_remap(vtd, vector->arch.irte, vector->arch.vector,
+			  flags, id.raw);
 	}
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
 	z_x86_irq_connect_on_vector(vector->arch.irq, vector->arch.vector,
-				    routine, parameter, flags);
+				    routine, parameter);
 
 	return true;
 }

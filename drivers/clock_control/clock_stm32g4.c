@@ -10,11 +10,10 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
-
 
 #if STM32_SYSCLK_SRC_PLL
 
@@ -26,19 +25,53 @@
 #define pllr(v) z_pllr(v)
 
 /**
- * @brief fill in pll configuration structure
+ * @brief Return PLL source
  */
-void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
+__unused
+static uint32_t get_pll_source(void)
 {
-	pllinit->PLLM = pllm(STM32_PLL_M_DIVISOR);
-	pllinit->PLLN = STM32_PLL_N_MULTIPLIER;
-	pllinit->PLLR = pllr(STM32_PLL_R_DIVISOR);
+	/* Configure PLL source */
+	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+		return LL_RCC_PLLSOURCE_HSI;
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
+		return LL_RCC_PLLSOURCE_HSE;
+	}
 
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+
+/**
+ * @brief Set up pll configuration
+ */
+__unused
+void config_pll_sysclock(void)
+{
 	/* set power boost mode for sys clock greater than 150MHz */
 	if (sys_clock_hw_cycles_per_sec() >= MHZ(150)) {
 		LL_PWR_EnableRange1BoostMode();
 	}
+
+	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
+				    pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER,
+				    pllr(STM32_PLL_R_DIVISOR));
+
+	LL_RCC_PLL_EnableDomain_SYS();
 }
+
+/**
+ * @brief Return pllout frequency
+ */
+__unused
+uint32_t get_pllout_frequency(void)
+{
+	return __LL_RCC_CALC_PLLCLK_FREQ(get_pll_source(),
+					 pllm(STM32_PLL_M_DIVISOR),
+					 STM32_PLL_N_MULTIPLIER,
+					 pllr(STM32_PLL_R_DIVISOR));
+}
+
 #endif /* STM32_SYSCLK_SRC_PLL */
 
 /**
@@ -48,30 +81,4 @@ void config_enable_default_clocks(void)
 {
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
-#if STM32_LSE_CLOCK
-	/* LSE belongs to the back-up domain, enable access.*/
-
-	/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
-	LL_PWR_EnableBkUpAccess();
-	while (!LL_PWR_IsEnabledBkUpAccess()) {
-		/* Wait for Backup domain access */
-	}
-
-	/* Enable LSE Oscillator (32.768 kHz) */
-	LL_RCC_LSE_Enable();
-	while (!LL_RCC_LSE_IsReady()) {
-		/* Wait for LSE ready */
-	}
-
-	LL_PWR_DisableBkUpAccess();
-#endif
-}
-
-/**
- * @brief Function kept for driver genericity
- */
-void LL_RCC_MSI_Disable(void)
-{
-	/* Do nothing */
 }

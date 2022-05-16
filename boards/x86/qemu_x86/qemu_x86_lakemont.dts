@@ -15,7 +15,7 @@
 #define DT_DRAM_SIZE		DT_SIZE_K(4096)
 #endif
 
-#include <lakemont.dtsi>
+#include <intel/lakemont.dtsi>
 
 / {
 	model = "QEMU X86 (Lakemont) emulator";

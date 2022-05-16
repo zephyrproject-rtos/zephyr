@@ -71,7 +71,7 @@ following hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `EVK-ANNA-B1 product page`_ and `ANNA-B1 Data Sheet`_
 for a complete list of EVK ANNA-B1 hardware features.
 

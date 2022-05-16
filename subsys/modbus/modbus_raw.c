@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modbus_raw, CONFIG_MODBUS_LOG_LEVEL);
 
-#include <kernel.h>
-#include <sys/byteorder.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
 #include <modbus_internal.h>
 
 #define MODBUS_ADU_LENGTH_DEVIATION	2
@@ -147,7 +147,17 @@ int modbus_raw_backend_txn(const int iface, struct modbus_adu *adu)
 	err = modbus_tx_wait_rx_adu(ctx);
 
 	if (err == 0) {
+		/*
+		 * Serial line does not use transaction and protocol IDs.
+		 * Temporarily store transaction and protocol IDs, and write it
+		 * back if the transfer was successful.
+		 */
+		uint16_t trans_id = adu->trans_id;
+		uint16_t proto_id = adu->proto_id;
+
 		memcpy(adu, &ctx->rx_adu, sizeof(struct modbus_adu));
+		adu->trans_id = trans_id;
+		adu->proto_id = proto_id;
 	} else {
 		modbus_set_exception(adu, MODBUS_EXC_GW_TARGET_FAILED_TO_RESP);
 	}

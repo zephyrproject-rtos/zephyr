@@ -9,15 +9,15 @@
  * @brief Driver for Atmel AT24 I2C and Atmel AT25 SPI EEPROMs.
  */
 
-#include <drivers/eeprom.h>
-#include <drivers/gpio.h>
-#include <drivers/i2c.h>
-#include <drivers/spi.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/drivers/eeprom.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
 #define LOG_LEVEL CONFIG_EEPROM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eeprom_at2x);
 
 /* AT25 instruction set */
@@ -34,6 +34,10 @@ LOG_MODULE_REGISTER(eeprom_at2x);
 #define EEPROM_AT25_STATUS_BP0 BIT(2) /* Block Protection 0 (RW) */
 #define EEPROM_AT25_STATUS_BP1 BIT(3) /* Block Protection 1 (RW) */
 
+#define HAS_WP_OR(id) DT_NODE_HAS_PROP(id, wp_gpios) ||
+#define ANY_INST_HAS_WP_GPIOS (DT_FOREACH_STATUS_OKAY(atmel_at24, HAS_WP_OR) \
+			       DT_FOREACH_STATUS_OKAY(atmel_at25, HAS_WP_OR) 0)
+
 struct eeprom_at2x_config {
 	union {
 #ifdef CONFIG_EEPROM_AT24
@@ -43,7 +47,9 @@ struct eeprom_at2x_config {
 		struct spi_dt_spec spi;
 #endif /* CONFIG_EEPROM_AT25 */
 	} bus;
+#if ANY_INST_HAS_WP_GPIOS
 	struct gpio_dt_spec wp_gpio;
+#endif /* ANY_INST_HAS_WP_GPIOS */
 	size_t size;
 	size_t pagesize;
 	uint8_t addr_width;
@@ -58,6 +64,7 @@ struct eeprom_at2x_data {
 	struct k_mutex lock;
 };
 
+#if ANY_INST_HAS_WP_GPIOS
 static inline int eeprom_at2x_write_protect(const struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config;
@@ -79,6 +86,7 @@ static inline int eeprom_at2x_write_enable(const struct device *dev)
 
 	return gpio_pin_set_dt(&config->wp_gpio, 0);
 }
+#endif /* ANY_INST_HAS_WP_GPIOS */
 
 static int eeprom_at2x_read(const struct device *dev, off_t offset, void *buf,
 			    size_t len)
@@ -163,18 +171,22 @@ static int eeprom_at2x_write(const struct device *dev, off_t offset,
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
+#if ANY_INST_HAS_WP_GPIOS
 	ret = eeprom_at2x_write_enable(dev);
 	if (ret) {
 		LOG_ERR("failed to write-enable EEPROM (err %d)", ret);
 		k_mutex_unlock(&data->lock);
 		return ret;
 	}
+#endif /* ANY_INST_HAS_WP_GPIOS */
 
 	while (len) {
 		ret = config->write_fn(dev, offset, pbuf, len);
 		if (ret < 0) {
 			LOG_ERR("failed to write to EEPROM (err %d)", ret);
+#if ANY_INST_HAS_WP_GPIOS
 			eeprom_at2x_write_protect(dev);
+#endif /* ANY_INST_HAS_WP_GPIOS */
 			k_mutex_unlock(&data->lock);
 			return ret;
 		}
@@ -184,10 +196,14 @@ static int eeprom_at2x_write(const struct device *dev, off_t offset,
 		len -= ret;
 	}
 
+#if ANY_INST_HAS_WP_GPIOS
 	ret = eeprom_at2x_write_protect(dev);
 	if (ret) {
 		LOG_ERR("failed to write-protect EEPROM (err %d)", ret);
 	}
+#else
+	ret = 0;
+#endif /* ANY_INST_HAS_WP_GPIOS */
 
 	k_mutex_unlock(&data->lock);
 
@@ -550,7 +566,6 @@ static int eeprom_at2x_init(const struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->data;
-	int err;
 
 	k_mutex_init(&data->lock);
 
@@ -559,7 +574,9 @@ static int eeprom_at2x_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+#if ANY_INST_HAS_WP_GPIOS
 	if (config->wp_gpio.port) {
+		int err;
 		if (!device_is_ready(config->wp_gpio.port)) {
 			LOG_ERR("wp gpio device not ready");
 			return -EINVAL;
@@ -571,6 +588,7 @@ static int eeprom_at2x_init(const struct device *dev)
 			return err;
 		}
 	}
+#endif /* ANY_INST_HAS_WP_GPIOS */
 
 	return 0;
 }
@@ -607,6 +625,10 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 				 SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
 				 SPI_WORD_SET(8), 0) }
 
+#define EEPROM_AT2X_WP_GPIOS(id)					\
+	IF_ENABLED(DT_NODE_HAS_PROP(id, wp_gpios),			\
+		   (.wp_gpio = GPIO_DT_SPEC_GET(id, wp_gpios),))
+
 #define EEPROM_AT2X_DEVICE(n, t) \
 	ASSERT_PAGESIZE_IS_POWER_OF_2(DT_PROP(INST_DT_AT2X(n, t), pagesize)); \
 	ASSERT_SIZE_PAGESIZE_VALID(DT_PROP(INST_DT_AT2X(n, t), size), \
@@ -615,7 +637,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 					    address_width)); \
 	static const struct eeprom_at2x_config eeprom_at##t##_config_##n = { \
 		.bus = EEPROM_AT##t##_BUS(n, t), \
-		.wp_gpio = GPIO_DT_SPEC_GET_OR(INST_DT_AT2X(n, t), wp_gpios, {0}), \
+		EEPROM_AT2X_WP_GPIOS(INST_DT_AT2X(n, t)) \
 		.size = DT_PROP(INST_DT_AT2X(n, t), size), \
 		.pagesize = DT_PROP(INST_DT_AT2X(n, t), pagesize), \
 		.addr_width = DT_PROP(INST_DT_AT2X(n, t), address_width), \
@@ -638,8 +660,8 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 #define CALL_WITH_ARG(arg, expr) expr(arg);
 
 #define INST_DT_AT2X_FOREACH(t, inst_expr) \
-	UTIL_LISTIFY(DT_NUM_INST_STATUS_OKAY(atmel_at##t),	\
-		     CALL_WITH_ARG, inst_expr)
+	LISTIFY(DT_NUM_INST_STATUS_OKAY(atmel_at##t),	\
+		CALL_WITH_ARG, (), inst_expr)
 
 #ifdef CONFIG_EEPROM_AT24
 INST_DT_AT2X_FOREACH(24, EEPROM_AT24_DEVICE);

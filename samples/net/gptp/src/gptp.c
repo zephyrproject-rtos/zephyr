@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_gptp_sample);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdlib.h>
 
-#include <net/net_core.h>
-#include <net/gptp.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/gptp.h>
 
 #include "ethernet/gptp/gptp_messages.h"
 #include "ethernet/gptp/gptp_data_set.h"

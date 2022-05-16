@@ -1,0 +1,23 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigaDevice GD32 PWM
+
+compatible: "gd,gd32-pwm"
+
+include: [base.yaml, pwm-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

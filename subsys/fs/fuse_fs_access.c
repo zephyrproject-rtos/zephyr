@@ -18,8 +18,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#include <zephyr.h>
-#include <fs/fs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/fs/fs.h>
 
 #include "cmdline.h"
 #include "soc.h"

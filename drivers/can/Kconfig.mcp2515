@@ -6,7 +6,6 @@
 config CAN_MCP2515
 	bool "MCP2515 CAN Driver"
 	depends on SPI
-	select CAN_AUTO_BUS_OFF_RECOVERY
 	help
 	  Enable MCP2515 CAN Driver
 

@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT gaisler_apbuart
 
-#include <drivers/uart.h>
+#include <zephyr/drivers/uart.h>
 #include <errno.h>
 
 /* APBUART registers
@@ -134,20 +134,17 @@ struct apbuart_dev_data {
 #endif
 };
 
-#define DEV_CFG(dev) \
-	((const struct apbuart_dev_cfg *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct apbuart_dev_data *const)(dev)->data)
-
 /*
  * This routine waits for the TX holding register or TX FIFO to be ready and
  * then it writes a character to the data register.
  */
 static void apbuart_poll_out(const struct device *dev, unsigned char x)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	struct apbuart_dev_data *data = dev->data;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 
-	if (DEV_DATA(dev)->usefifo) {
+	if (data->usefifo) {
 		/* Transmitter FIFO full flag is available. */
 		while (regs->status & APBUART_STATUS_TF) {
 			;
@@ -167,7 +164,8 @@ static void apbuart_poll_out(const struct device *dev, unsigned char x)
 
 static int apbuart_poll_in(const struct device *dev, unsigned char *c)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 
 	if ((regs->status & APBUART_STATUS_DR) == 0) {
 		return -1;
@@ -179,7 +177,8 @@ static int apbuart_poll_in(const struct device *dev, unsigned char *c)
 
 static int apbuart_err_check(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 	const uint32_t status = regs->status;
 	int err = 0;
 
@@ -233,7 +232,8 @@ static void set_baud(volatile struct apbuart_regs *const regs, uint32_t baud)
 static int apbuart_configure(const struct device *dev,
 			     const struct uart_config *cfg)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 	uint32_t ctrl = 0;
 	uint32_t newctrl = 0;
 
@@ -279,7 +279,8 @@ static int apbuart_configure(const struct device *dev,
 
 static int apbuart_config_get(const struct device *dev, struct uart_config *cfg)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 	const uint32_t ctrl = regs->ctrl;
 
 	cfg->parity = UART_CFG_PARITY_NONE;
@@ -311,10 +312,12 @@ static void apbuart_isr(const struct device *dev);
 static int apbuart_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 			     int size)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	struct apbuart_dev_data *data = dev->data;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 	int i;
 
-	if (DEV_DATA(dev)->usefifo) {
+	if (data->usefifo) {
 		/* Transmitter FIFO full flag is available. */
 		for (
 			i = 0;
@@ -335,7 +338,8 @@ static int apbuart_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 static int apbuart_fifo_read(const struct device *dev, uint8_t *rx_data,
 			     const int size)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 	int i;
 
 	for (i = 0; (i < size) && (regs->status & APBUART_STATUS_DR); i++) {
@@ -347,10 +351,12 @@ static int apbuart_fifo_read(const struct device *dev, uint8_t *rx_data,
 
 static void apbuart_irq_tx_enable(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	struct apbuart_dev_data *data = dev->data;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 	unsigned int key;
 
-	if (DEV_DATA(dev)->usefifo) {
+	if (data->usefifo) {
 		/* Enable the FIFO level interrupt */
 		regs->ctrl |= APBUART_CTRL_TF;
 		return;
@@ -375,16 +381,19 @@ static void apbuart_irq_tx_enable(const struct device *dev)
 
 static void apbuart_irq_tx_disable(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 
 	regs->ctrl &= ~(APBUART_CTRL_TF | APBUART_CTRL_TI);
 }
 
 static int apbuart_irq_tx_ready(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	struct apbuart_dev_data *data = dev->data;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 
-	if (DEV_DATA(dev)->usefifo) {
+	if (data->usefifo) {
 		return !(regs->status & APBUART_STATUS_TF);
 	}
 	return !!(regs->status & APBUART_STATUS_TE);
@@ -392,35 +401,41 @@ static int apbuart_irq_tx_ready(const struct device *dev)
 
 static int apbuart_irq_tx_complete(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 
 	return !!(regs->status & APBUART_STATUS_TS);
 }
 
 static void apbuart_irq_rx_enable(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 
 	regs->ctrl |= APBUART_CTRL_RI;
 }
 
 static void apbuart_irq_rx_disable(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 
 	regs->ctrl &= ~APBUART_CTRL_RI;
 }
 
 static int apbuart_irq_rx_ready(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 
 	return !!(regs->status & APBUART_STATUS_DR);
 }
 
 static int apbuart_irq_is_pending(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	struct apbuart_dev_data *data = dev->data;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 	uint32_t status = regs->status;
 	uint32_t ctrl = regs->ctrl;
 
@@ -428,7 +443,7 @@ static int apbuart_irq_is_pending(const struct device *dev)
 		return 1;
 	}
 
-	if (DEV_DATA(dev)->usefifo) {
+	if (data->usefifo) {
 		/* TH is the TX FIFO half-empty flag */
 		if (status & APBUART_STATUS_TH) {
 			return 1;
@@ -451,7 +466,7 @@ static void apbuart_irq_callback_set(const struct device *dev,
 				     uart_irq_callback_user_data_t cb,
 				     void *cb_data)
 {
-	struct apbuart_dev_data *const dev_data = DEV_DATA(dev);
+	struct apbuart_dev_data *const dev_data = dev->data;
 
 	dev_data->cb = cb;
 	dev_data->cb_data = cb_data;
@@ -459,7 +474,7 @@ static void apbuart_irq_callback_set(const struct device *dev,
 
 static void apbuart_isr(const struct device *dev)
 {
-	struct apbuart_dev_data *const dev_data = DEV_DATA(dev);
+	struct apbuart_dev_data *const dev_data = dev->data;
 
 	if (dev_data->cb) {
 		dev_data->cb(dev, dev_data->cb_data);
@@ -469,13 +484,15 @@ static void apbuart_isr(const struct device *dev)
 
 static int apbuart_init(const struct device *dev)
 {
-	volatile struct apbuart_regs *regs = (void *) DEV_CFG(dev)->regs;
+	const struct apbuart_dev_cfg *config = dev->config;
+	struct apbuart_dev_data *data = dev->data;
+	volatile struct apbuart_regs *regs = (void *) config->regs;
 	const uint32_t APBUART_DEBUG_MASK = APBUART_CTRL_DB | APBUART_CTRL_FL;
 	uint32_t dm;
 	uint32_t ctrl;
 
 	ctrl = regs->ctrl;
-	DEV_DATA(dev)->usefifo = !!(ctrl & APBUART_CTRL_FA);
+	data->usefifo = !!(ctrl & APBUART_CTRL_FA);
 	/* NOTE: CTRL_FL has reset value 0. CTRL_DB has no reset value. */
 	dm = ctrl & APBUART_DEBUG_MASK;
 	if (dm == APBUART_DEBUG_MASK) {
@@ -488,9 +505,9 @@ static int apbuart_init(const struct device *dev)
 	regs->status = 0;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	irq_connect_dynamic(DEV_CFG(dev)->interrupt,
+	irq_connect_dynamic(config->interrupt,
 			    0, (void (*)(const void *))apbuart_isr, dev, 0);
-	irq_enable(DEV_CFG(dev)->interrupt);
+	irq_enable(config->interrupt);
 #endif
 
 	return 0;

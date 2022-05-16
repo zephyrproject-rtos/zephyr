@@ -72,12 +72,14 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
@@ -90,7 +92,7 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00002000>;
+			reg = <0x00000000 DT_SIZE_K(8)>;
 			read-only;
 		};
 
@@ -101,15 +103,15 @@
 
 		slot0_partition: partition@4000 {
 			label = "image-0";
-			reg = <0x00004000 0x00004000>;
+			reg = <0x00004000 DT_SIZE_K(16)>;
 		};
 		slot1_partition: partition@8000 {
 			label = "image-1";
-			reg = <0x00008000 0x00004000>;
+			reg = <0x00008000 DT_SIZE_K(16)>;
 		};
 		scratch_partition: partition@c000 {
 			label = "image-scratch";
-			reg = <0x0000C000 0x00004000>;
+			reg = <0x0000C000 DT_SIZE_K(16)>;
 		};
 	};
 };

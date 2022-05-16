@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
-#include <net/buf.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_BEACON)
 #define LOG_MODULE_NAME bt_mesh_beacon
@@ -39,7 +39,7 @@
 
 static struct k_work_delayable beacon_timer;
 
-static int cache_check(struct bt_mesh_subnet *sub, void *beacon_data)
+static bool beacon_cache_match(struct bt_mesh_subnet *sub, void *beacon_data)
 {
 	return !memcmp(sub->beacon_cache, beacon_data, 21);
 }
@@ -47,6 +47,11 @@ static int cache_check(struct bt_mesh_subnet *sub, void *beacon_data)
 static void cache_add(uint8_t data[21], struct bt_mesh_subnet *sub)
 {
 	memcpy(sub->beacon_cache, data, 21);
+}
+
+void bt_mesh_beacon_cache_clear(struct bt_mesh_subnet *sub)
+{
+	(void)memset(sub->beacon_cache, 0, 21);
 }
 
 static void beacon_complete(int err, void *user_data)
@@ -88,7 +93,7 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 #define BEACON_THRESHOLD(sub) \
 	((10 * ((sub)->beacons_last + 1)) * MSEC_PER_SEC - (5 * MSEC_PER_SEC))
 
-static int secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
+static bool secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	static const struct bt_mesh_send_cb send_cb = {
 		.end = beacon_complete,
@@ -96,19 +101,23 @@ static int secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 	uint32_t now = k_uptime_get_32();
 	struct net_buf *buf;
 	uint32_t time_diff;
+	uint32_t time_since_last_recv;
 
 	BT_DBG("");
 
 	time_diff = now - sub->beacon_sent;
+	time_since_last_recv = now - sub->beacon_recv;
 	if (time_diff < (600 * MSEC_PER_SEC) &&
-		time_diff < BEACON_THRESHOLD(sub)) {
-		return 0;
+		(time_diff < BEACON_THRESHOLD(sub) ||
+		 time_since_last_recv < (10 * MSEC_PER_SEC))) {
+		return false;
 	}
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, PROV_XMIT, K_NO_WAIT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, BT_MESH_LOCAL_ADV,
+				 PROV_XMIT, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("Unable to allocate beacon buffer");
-		return -ENOMEM;
+		return true; /* Bail out */
 	}
 
 	bt_mesh_beacon_create(sub, &buf->b);
@@ -116,7 +125,7 @@ static int secure_beacon_send(struct bt_mesh_subnet *sub, void *cb_data)
 	bt_mesh_adv_send(buf, &send_cb, sub);
 	net_buf_unref(buf);
 
-	return 0;
+	return false;
 }
 
 static int unprovisioned_beacon_send(void)
@@ -128,7 +137,8 @@ static int unprovisioned_beacon_send(void)
 
 	BT_DBG("");
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, UNPROV_XMIT, K_NO_WAIT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, BT_MESH_LOCAL_ADV,
+				 UNPROV_XMIT, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("Unable to allocate beacon buffer");
 		return -ENOBUFS;
@@ -154,8 +164,8 @@ static int unprovisioned_beacon_send(void)
 	if (prov->uri) {
 		size_t len;
 
-		buf = bt_mesh_adv_create(BT_MESH_ADV_URI, UNPROV_XMIT,
-					 K_NO_WAIT);
+		buf = bt_mesh_adv_create(BT_MESH_ADV_URI, BT_MESH_LOCAL_ADV,
+					 UNPROV_XMIT, K_NO_WAIT);
 		if (!buf) {
 			BT_ERR("Unable to allocate URI buffer");
 			return -ENOBUFS;
@@ -219,7 +229,7 @@ static void update_beacon_observation(void)
 
 	/* Observation period is 20 seconds, whereas the beacon timer
 	 * runs every 10 seconds. We process what's happened during the
-	 * window only after the seconnd half.
+	 * window only after the second half.
 	 */
 	first_half = !first_half;
 	if (first_half) {
@@ -287,7 +297,7 @@ static bool auth_match(struct bt_mesh_subnet_keys *keys,
 	return true;
 }
 
-static int subnet_by_id(struct bt_mesh_subnet *sub, void *cb_data)
+static bool subnet_by_id(struct bt_mesh_subnet *sub, void *cb_data)
 {
 	struct beacon_params *params = cb_data;
 
@@ -312,7 +322,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 		return;
 	}
 
-	sub = bt_mesh_subnet_find(cache_check, buf->data);
+	sub = bt_mesh_subnet_find(beacon_cache_match, buf->data);
 	if (sub) {
 		/* We've seen this beacon before - just update the stats */
 		goto update_stats;
@@ -367,6 +377,7 @@ update_stats:
 	if (bt_mesh_beacon_enabled() &&
 	    sub->beacons_cur < 0xff) {
 		sub->beacons_cur++;
+		sub->beacon_recv = k_uptime_get_32();
 	}
 }
 

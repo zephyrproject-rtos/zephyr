@@ -6,19 +6,18 @@
 
 #define DT_DRV_COMPAT atmel_at24
 
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include <string.h>
-#include <drivers/i2c/slave/eeprom.h>
+#include <zephyr/drivers/i2c/slave/eeprom.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_slave);
 
 struct i2c_eeprom_slave_data {
-	const struct device *i2c_controller;
 	struct i2c_slave_config config;
 	uint32_t buffer_size;
 	uint8_t *buffer;
@@ -27,18 +26,10 @@ struct i2c_eeprom_slave_data {
 };
 
 struct i2c_eeprom_slave_config {
-	char *controller_dev_name;
-	uint8_t address;
+	struct i2c_dt_spec bus;
 	uint32_t buffer_size;
 	uint8_t *buffer;
 };
-
-/* convenience defines */
-#define DEV_CFG(dev)							\
-	((const struct i2c_eeprom_slave_config * const)			\
-		(dev)->config)
-#define DEV_DATA(dev)							\
-	((struct i2c_eeprom_slave_data * const)(dev)->data)
 
 int eeprom_slave_program(const struct device *dev, const uint8_t *eeprom_data,
 			 unsigned int length)
@@ -159,16 +150,18 @@ static int eeprom_slave_stop(struct i2c_slave_config *config)
 
 static int eeprom_slave_register(const struct device *dev)
 {
+	const struct i2c_eeprom_slave_config *cfg = dev->config;
 	struct i2c_eeprom_slave_data *data = dev->data;
 
-	return i2c_slave_register(data->i2c_controller, &data->config);
+	return i2c_slave_register(cfg->bus.bus, &data->config);
 }
 
 static int eeprom_slave_unregister(const struct device *dev)
 {
+	const struct i2c_eeprom_slave_config *cfg = dev->config;
 	struct i2c_eeprom_slave_data *data = dev->data;
 
-	return i2c_slave_unregister(data->i2c_controller, &data->config);
+	return i2c_slave_unregister(cfg->bus.bus, &data->config);
 }
 
 static const struct i2c_slave_driver_api api_funcs = {
@@ -186,20 +179,17 @@ static const struct i2c_slave_callbacks eeprom_callbacks = {
 
 static int i2c_eeprom_slave_init(const struct device *dev)
 {
-	struct i2c_eeprom_slave_data *data = DEV_DATA(dev);
-	const struct i2c_eeprom_slave_config *cfg = DEV_CFG(dev);
+	struct i2c_eeprom_slave_data *data = dev->data;
+	const struct i2c_eeprom_slave_config *cfg = dev->config;
 
-	data->i2c_controller =
-		device_get_binding(cfg->controller_dev_name);
-	if (!data->i2c_controller) {
-		LOG_ERR("i2c controller not found: %s",
-			    cfg->controller_dev_name);
-		return -EINVAL;
+	if (!device_is_ready(cfg->bus.bus)) {
+		LOG_ERR("I2C controller device not ready");
+		return -ENODEV;
 	}
 
 	data->buffer_size = cfg->buffer_size;
 	data->buffer = cfg->buffer;
-	data->config.address = cfg->address;
+	data->config.address = cfg->bus.addr;
 	data->config.callbacks = &eeprom_callbacks;
 
 	return 0;
@@ -214,8 +204,7 @@ static int i2c_eeprom_slave_init(const struct device *dev)
 									\
 	static const struct i2c_eeprom_slave_config			\
 		i2c_eeprom_slave_##inst##_cfg = {			\
-		.controller_dev_name = DT_INST_BUS_LABEL(inst),		\
-		.address = DT_INST_REG_ADDR(inst),			\
+		.bus = I2C_DT_SPEC_INST_GET(inst),			\
 		.buffer_size = DT_INST_PROP(inst, size),		\
 		.buffer = i2c_eeprom_slave_##inst##_buffer		\
 	};								\

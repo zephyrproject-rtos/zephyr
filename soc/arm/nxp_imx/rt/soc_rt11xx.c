@@ -4,26 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <linker/sections.h>
-#include <linker/linker-defs.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/linker/linker-defs.h>
 #include <fsl_clock.h>
 #include <fsl_gpc.h>
 #include <fsl_pmu.h>
 #include <fsl_dcdc.h>
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <fsl_flexspi_nor_boot.h>
+#include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
 #include "usb_dc_mcux.h"
 #endif
 
-#if CONFIG_USB_DC_NXP_EHCI /* USB PHY condfiguration */
-#define BOARD_USB_PHY_D_CAL (0x0CU)
+#if CONFIG_USB_DC_NXP_EHCI /* USB PHY configuration */
+#define BOARD_USB_PHY_D_CAL (0x07U)
 #define BOARD_USB_PHY_TXCAL45DP (0x06U)
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
@@ -120,11 +121,7 @@ const __imx_boot_ivt_section ivt image_vector_table = {
 #endif
 
 /**
- *
  * @brief Initialize the system clock
- *
- * @return N/A
- *
  */
 static ALWAYS_INLINE void clock_init(void)
 {
@@ -134,7 +131,7 @@ static ALWAYS_INLINE void clock_init(void)
 	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P15V);
 #endif
 
-/* RT1160 does not have Foward Body Biasing on the CM7 core */
+/* RT1160 does not have Forward Body Biasing on the CM7 core */
 #if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
 	/* Check if FBB need to be enabled in OverDrive(OD) mode */
 	if (((OCOTP->FUSEN[7].FUSE & 0x10U) >> 4U) != 1) {
@@ -251,7 +248,11 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
 
 	/* Init System Pll2 pfd3. */
+#ifdef CONFIG_ETH_MCUX
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 24);
+#else
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 32);
+#endif
 
 	/* Init Sys Pll3. */
 	CLOCK_InitSysPll3();
@@ -294,16 +295,26 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	/* Configure BUS using SYS_PLL3_CLK */
-#if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+#ifdef CONFIG_ETH_MCUX
+	/* Configure root bus clock at 198M */
+	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll2Pfd3;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
+#elif defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+	/* Keep root bus clock at default 240M */
 	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
 #endif
 
 	/* Configure BUS_LPSR using SYS_PLL3_CLK */
-#if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1166_CM4)
+#if defined(CONFIG_SOC_MIMXRT1176_CM4)
 	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
+#elif defined(CONFIG_SOC_MIMXRT1166_CM4)
+	rootCfg.mux = kCLOCK_BUS_LPSR_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 4;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus_Lpsr, &rootCfg);
 #endif
 
@@ -355,6 +366,24 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c5, &rootCfg);
 #endif
 
+
+#ifdef CONFIG_ETH_MCUX
+	/* 50 MHz ENET clock */
+	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet1, &rootCfg);
+	/* Set ENET_REF_CLK as an output driven by ENET1_CLK_ROOT */
+	IOMUXC_GPR->GPR4 |= (IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U) |
+		IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U));
+#endif
+
+#ifdef CONFIG_PTP_CLOCK_MCUX
+	/* 24MHz PTP clock */
+	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer1, &rootCfg);
+#endif
+
 #ifdef CONFIG_SPI_MCUX_LPSPI
 	/* Configure lpspi using Osc48MDiv2 */
 	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc48MDiv2;
@@ -363,16 +392,63 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
-	/* Configure CAN3 using OSC_RC_400M */
-	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxOscRc400M;
-	rootCfg.div = 5;
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay)
+	/* Configure CAN1 using Osc48MDiv2 */
+	rootCfg.mux = kCLOCK_CAN1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Can1, &rootCfg);
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan3), okay)
+	/* Configure CAN1 using Osc48MDiv2 */
+	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Can3, &rootCfg);
+#endif
+#endif
+
+#ifdef CONFIG_DISPLAY_MCUX_ELCDIF
+	rootCfg.mux = kCLOCK_LCDIF_ClockRoot_MuxSysPll2Out;
+	rootCfg.div = 9;
+	CLOCK_SetRootClock(kCLOCK_Root_Lcdif, &rootCfg);
 #endif
 
 #ifdef CONFIG_COUNTER_MCUX_GPT
 	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
+	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
+	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay) && CONFIG_USB_DC_NXP_EHCI
+	CLOCK_EnableUsbhs1PhyPllClock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
+	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
+	USB_EhciPhyInit(kUSB_ControllerEhci1, CPU_XTAL_CLK_HZ, &usbPhyConfig);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
+	/* Configure USDHC1 using  SysPll2Pfd2*/
+	rootCfg.mux = kCLOCK_USDHC1_ClockRoot_MuxSysPll2Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Usdhc1, &rootCfg);
+	CLOCK_EnableClock(kCLOCK_Usdhc1);
+#endif
+
+#if !(defined(CONFIG_CODE_FLEXSPI) || defined(CONFIG_CODE_FLEXSPI2)) && \
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && \
+	DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
+	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */
+	rootCfg.mux = kCLOCK_FLEXSPI1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
 	/* Keep core clock ungated during WFI */
@@ -385,13 +461,99 @@ static ALWAYS_INLINE void clock_init(void)
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_0, false);
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_1, false);
 
-#ifdef CONFIG_SEGGER_RTT_SECTION_DTCM
+#if !defined(CONFIG_PM)
 	/* Enable the AHB clock while the CM7 is sleeping to allow debug access
 	 * to TCM
 	 */
 	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_CM7_FORCE_HCLK_EN_MASK;
 #endif
 }
+
+#if CONFIG_I2S_MCUX_SAI
+void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
+					uint32_t clk_pre_div, uint32_t clk_src_div)
+{
+	ARG_UNUSED(clk_pre_div);
+
+	switch (clock_name) {
+	case IMX_CCM_SAI1_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai1, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai1, clk_src_div);
+		break;
+	case IMX_CCM_SAI2_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai2, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai2, clk_src_div);
+		break;
+	case IMX_CCM_SAI3_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai3, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai3, clk_src_div);
+		break;
+	case IMX_CCM_SAI4_CLK:
+		CLOCK_SetRootClockMux(kCLOCK_Root_Sai4, clk_src);
+		CLOCK_SetRootClockDiv(kCLOCK_Root_Sai4, clk_src_div);
+		break;
+	default:
+		return;
+	}
+}
+#endif
+
+#if CONFIG_MIPI_DSI
+void imxrt_pre_init_display_interface(void)
+{
+	/* elcdif output to MIPI DSI */
+	CLOCK_EnableClock(kCLOCK_Video_Mux);
+	VIDEO_MUX->VID_MUX_CTRL.CLR = VIDEO_MUX_VID_MUX_CTRL_MIPI_DSI_SEL_MASK;
+
+	/* Power on and isolation off. */
+	PGMC_BPC4->BPC_POWER_CTRL |= (PGMC_BPC_BPC_POWER_CTRL_PSW_ON_SOFT_MASK |
+				PGMC_BPC_BPC_POWER_CTRL_ISO_OFF_SOFT_MASK);
+
+	/* Assert MIPI reset. */
+	IOMUXC_GPR->GPR62 &= ~(IOMUXC_GPR_GPR62_MIPI_DSI_PCLK_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_ESC_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_BYTE_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_DPI_SOFT_RESET_N_MASK);
+
+	/* setup clock */
+	const clock_root_config_t mipiEscClockConfig = {
+		.clockOff = false,
+		.mux = 4,
+		.div = 11,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_Mipi_Esc, &mipiEscClockConfig);
+
+	/* TX esc clock */
+	const clock_group_config_t mipiEscClockGroupConfig = {
+		.clockOff = false,
+		.resetDiv = 2,
+		.div0 = 2,
+	};
+
+	CLOCK_SetGroupConfig(kCLOCK_Group_MipiDsi, &mipiEscClockGroupConfig);
+
+	const clock_root_config_t mipiDphyRefClockConfig = {
+		.clockOff = false,
+		.mux = 1,
+		.div = 1,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_Mipi_Ref, &mipiDphyRefClockConfig);
+
+	/* Deassert PCLK and ESC reset. */
+	IOMUXC_GPR->GPR62 |= (IOMUXC_GPR_GPR62_MIPI_DSI_PCLK_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_ESC_SOFT_RESET_N_MASK);
+}
+
+void imxrt_post_init_display_interface(void)
+{
+	/* deassert BYTE and DBI reset */
+	IOMUXC_GPR->GPR62 |= (IOMUXC_GPR_GPR62_MIPI_DSI_BYTE_SOFT_RESET_N_MASK |
+			IOMUXC_GPR_GPR62_MIPI_DSI_DPI_SOFT_RESET_N_MASK);
+}
+
+#endif
 
 /**
  *
@@ -474,5 +636,19 @@ static int imxrt_init(const struct device *arg)
 	irq_unlock(oldLevel);
 	return 0;
 }
+
+#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+void z_arm_platform_init(void)
+{
+#if (DT_DEP_ORD(DT_NODELABEL(ocram)) != DT_DEP_ORD(DT_CHOSEN(zephyr_sram))) && \
+	CONFIG_OCRAM_NOCACHE
+	/* Copy data from flash to OCRAM */
+	memcpy(&__ocram_data_start, &__ocram_data_load_start,
+		(&__ocram_data_end - &__ocram_data_start));
+	/* Zero BSS region */
+	memset(&__ocram_bss_start, 0, (&__ocram_bss_end - &__ocram_bss_start));
+#endif
+}
+#endif
 
 SYS_INIT(imxrt_init, PRE_KERNEL_1, 0);

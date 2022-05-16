@@ -7,23 +7,23 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_LIS2DH_LIS2DH_H_
 #define ZEPHYR_DRIVERS_SENSOR_LIS2DH_LIS2DH_H_
 
-#include <kernel.h>
-#include <device.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <stdint.h>
-#include <drivers/gpio.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 #include <string.h>
 
 #define LIS2DH_REG_WAI			0x0f
 #define LIS2DH_CHIP_ID			0x33
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <drivers/spi.h>
+#include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 #define LIS2DH_AUTOINCREMENT_ADDR	BIT(7)
@@ -48,6 +48,8 @@
 #else
 	#define LIS2DH_LP_EN_BIT	0
 #endif
+
+#define LIS2DH_SUSPEND			0
 
 #define LIS2DH_ODR_1			1
 #define LIS2DH_ODR_2			2
@@ -117,11 +119,15 @@
 
 #define LIS2DH_REG_CTRL5		0x24
 #define LIS2DH_LIR_INT2_SHIFT		1
+#define LIS2DH_LIR_INT1_SHIFT		3
 #define LIS2DH_EN_LIR_INT2		BIT(LIS2DH_LIR_INT2_SHIFT)
+#define LIS2DH_EN_LIR_INT1		BIT(LIS2DH_LIR_INT1_SHIFT)
 
 #define LIS2DH_REG_CTRL6		0x25
 #define LIS2DH_EN_INT2_INT2_SHIFT	5
 #define LIS2DH_EN_INT2_INT2		BIT(LIS2DH_EN_INT2_INT2_SHIFT)
+#define LIS2DH_EN_INT1_INT1_SHIFT	6
+#define LIS2DH_EN_INT1_INT1		BIT(LIS2DH_EN_INT1_INT1_SHIFT)
 
 #define LIS2DH_REG_REFERENCE		0x26
 
@@ -145,7 +151,14 @@
 #define LIS2DH_REG_ACCEL_Z_MSB		0x2D
 
 #define LIS2DH_REG_INT1_CFG		0x30
+#define LIS2DH_REG_INT1_SRC		0x31
+#define LIS2DH_REG_INT1_THS		0x32
+#define LIS2DH_REG_INT1_DUR		0x33
 #define LIS2DH_REG_INT2_CFG		0x34
+#define LIS2DH_REG_INT2_SRC		0x35
+#define LIS2DH_REG_INT2_THS		0x36
+#define LIS2DH_REG_INT2_DUR		0x37
+
 #define LIS2DH_AOI_CFG			BIT(7)
 #define LIS2DH_INT_CFG_ZHIE_ZUPE	BIT(5)
 #define LIS2DH_INT_CFG_ZLIE_ZDOWNE	BIT(4)
@@ -153,12 +166,6 @@
 #define LIS2DH_INT_CFG_YLIE_YDOWNE	BIT(2)
 #define LIS2DH_INT_CFG_XHIE_XUPE	BIT(1)
 #define LIS2DH_INT_CFG_XLIE_XDOWNE	BIT(0)
-
-#define LIS2DH_REG_INT2_SRC		0x35
-
-#define LIS2DH_REG_INT2_THS		0x36
-
-#define LIS2DH_REG_INT2_DUR		0x37
 
 /* sample buffer size includes status register */
 #define LIS2DH_BUF_SZ			7
@@ -173,20 +180,13 @@ union lis2dh_sample {
 	} __packed;
 };
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-struct lis2dh_spi_cfg {
-	struct spi_config spi_conf;
-	const char *cs_gpios_label;
-};
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-
 union lis2dh_bus_cfg {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	uint16_t i2c_slv_addr;
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	const struct lis2dh_spi_cfg *spi_cfg;
+	struct spi_dt_spec spi;
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
@@ -205,8 +205,11 @@ struct lis2dh_config {
 	const struct gpio_dt_spec gpio_drdy;
 	const struct gpio_dt_spec gpio_int;
 #endif /* CONFIG_LIS2DH_TRIGGER */
-	bool is_lsm303agr_dev;
-	bool disc_pull_up;
+	struct {
+		bool is_lsm303agr_dev : 1;
+		bool disc_pull_up : 1;
+		bool anym_on_int1 : 1;
+	} hw;
 #ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
 	const struct temperature temperature;
 #endif
@@ -237,6 +240,10 @@ struct lis2dh_data {
 	struct sensor_value temperature;
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+	uint8_t reg_ctrl1_active_val;
+#endif
+
 #ifdef CONFIG_LIS2DH_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_int1_cb;
@@ -256,10 +263,6 @@ struct lis2dh_data {
 #endif
 
 #endif /* CONFIG_LIS2DH_TRIGGER */
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_cs_control cs_ctrl;
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)

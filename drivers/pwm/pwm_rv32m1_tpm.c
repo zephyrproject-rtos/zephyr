@@ -9,15 +9,18 @@
 
 #define DT_DRV_COMPAT openisa_rv32m1_tpm
 
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <errno.h>
-#include <drivers/pwm.h>
+#include <zephyr/drivers/pwm.h>
 #include <soc.h>
 #include <fsl_tpm.h>
 #include <fsl_clock.h>
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_rv32m1_tpm);
 
 #define MAX_CHANNELS ARRAY_SIZE(TPM0->CONTROLS)
@@ -30,6 +33,9 @@ struct rv32m1_tpm_config {
 	tpm_clock_prescale_t prescale;
 	uint8_t channel_count;
 	tpm_pwm_mode_t mode;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 struct rv32m1_tpm_data {
@@ -38,32 +44,31 @@ struct rv32m1_tpm_data {
 	tpm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
 };
 
-static int rv32m1_tpm_pin_set(const struct device *dev, uint32_t pwm,
-			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
+				 uint32_t period_cycles, uint32_t pulse_cycles,
+				 pwm_flags_t flags)
 {
 	const struct rv32m1_tpm_config *config = dev->config;
 	struct rv32m1_tpm_data *data = dev->data;
 	uint8_t duty_cycle;
 
-	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
-		LOG_ERR("Invalid combination: period_cycles=%d, "
-			    "pulse_cycles=%d", period_cycles, pulse_cycles);
-		return -EINVAL;
+	if (period_cycles == 0U) {
+		LOG_ERR("Channel can not be set to inactive level");
+		return -ENOTSUP;
 	}
 
-	if (pwm >= config->channel_count) {
+	if (channel >= config->channel_count) {
 		LOG_ERR("Invalid channel");
 		return -ENOTSUP;
 	}
 
 	duty_cycle = pulse_cycles * 100U / period_cycles;
-	data->channel[pwm].dutyCyclePercent = duty_cycle;
+	data->channel[channel].dutyCyclePercent = duty_cycle;
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0) {
-		data->channel[pwm].level = kTPM_HighTrue;
+		data->channel[channel].level = kTPM_HighTrue;
 	} else {
-		data->channel[pwm].level = kTPM_LowTrue;
+		data->channel[channel].level = kTPM_LowTrue;
 	}
 
 	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d, flags=%d",
@@ -106,9 +111,9 @@ static int rv32m1_tpm_pin_set(const struct device *dev, uint32_t pwm,
 		}
 		TPM_StartTimer(config->base, config->tpm_clock_source);
 	} else {
-		TPM_UpdateChnlEdgeLevelSelect(config->base, pwm,
-					      data->channel[pwm].level);
-		TPM_UpdatePwmDutycycle(config->base, pwm, config->mode,
+		TPM_UpdateChnlEdgeLevelSelect(config->base, channel,
+					      data->channel[channel].level);
+		TPM_UpdatePwmDutycycle(config->base, channel, config->mode,
 				       duty_cycle);
 	}
 
@@ -116,8 +121,7 @@ static int rv32m1_tpm_pin_set(const struct device *dev, uint32_t pwm,
 }
 
 static int rv32m1_tpm_get_cycles_per_sec(const struct device *dev,
-					 uint32_t pwm,
-					 uint64_t *cycles)
+					 uint32_t channel, uint64_t *cycles)
 {
 	const struct rv32m1_tpm_config *config = dev->config;
 	struct rv32m1_tpm_data *data = dev->data;
@@ -133,6 +137,9 @@ static int rv32m1_tpm_init(const struct device *dev)
 	struct rv32m1_tpm_data *data = dev->data;
 	tpm_chnl_pwm_signal_param_t *channel = data->channel;
 	tpm_config_t tpm_config;
+#ifdef CONFIG_PINCTRL
+	int err;
+#endif
 	int i;
 
 	if (config->channel_count > ARRAY_SIZE(data->channel)) {
@@ -159,6 +166,13 @@ static int rv32m1_tpm_init(const struct device *dev)
 		channel++;
 	}
 
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif
+
 	TPM_GetDefaultConfig(&tpm_config);
 	tpm_config.prescale = config->prescale;
 
@@ -168,11 +182,20 @@ static int rv32m1_tpm_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api rv32m1_tpm_driver_api = {
-	.pin_set = rv32m1_tpm_pin_set,
+	.set_cycles = rv32m1_tpm_set_cycles,
 	.get_cycles_per_sec = rv32m1_tpm_get_cycles_per_sec,
 };
 
+#ifdef CONFIG_PINCTRL
+#define PINCTRL_INIT(n) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
+#else
+#define PINCTRL_DEFINE(n)
+#define PINCTRL_INIT(n)
+#endif
+
 #define TPM_DEVICE(n) \
+	PINCTRL_DEFINE(n) \
 	static const struct rv32m1_tpm_config rv32m1_tpm_config_##n = { \
 		.base =	(TPM_Type *) \
 			DT_INST_REG_ADDR(n), \
@@ -184,6 +207,7 @@ static const struct pwm_driver_api rv32m1_tpm_driver_api = {
 		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \
 			DT_INST_REG_ADDR(n)), \
 		.mode = kTPM_EdgeAlignedPwm, \
+		PINCTRL_INIT(n) \
 	}; \
 	static struct rv32m1_tpm_data rv32m1_tpm_data_##n; \
 	DEVICE_DT_INST_DEFINE(n, &rv32m1_tpm_init, NULL, \

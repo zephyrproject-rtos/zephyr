@@ -2,10 +2,14 @@
 
 if(CONFIG_THREAD_LOCAL_STORAGE)
   zephyr_linker_section(NAME .tdata LMA FLASH NOINPUT)
+  zephyr_linker_section_configure(SECTION .tdata INPUT ".tdata")
+  zephyr_linker_section_configure(SECTION .tdata INPUT ".tdata.*")
   zephyr_linker_section_configure(SECTION .tdata INPUT ".gnu.linkonce.td.*")
   # GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
   zephyr_linker_section(NAME .tbss LMA FLASH NOINPUT)
+  zephyr_linker_section_configure(SECTION .tbss INPUT ".tbss")
+  zephyr_linker_section_configure(SECTION .tbss INPUT ".tbss.*")
   zephyr_linker_section_configure(SECTION .tbss INPUT ".gnu.linkonce.tb.*")
   zephyr_linker_section_configure(SECTION .tbss INPUT ".tcommon")
   # GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

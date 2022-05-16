@@ -7,12 +7,12 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_ESWIFI_ESWIFI_H_
 #define ZEPHYR_DRIVERS_WIFI_ESWIFI_ESWIFI_H_
 
-#include <zephyr.h>
-#include <kernel.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 
-#include <net/wifi_mgmt.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 #include "eswifi_offload.h"
 
@@ -130,6 +130,9 @@ struct eswifi_dev *eswifi_by_iface_idx(uint8_t iface);
 int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp);
 void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len);
 void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len);
+int eswifi_socket_create(int family, int type, int proto);
+
+int eswifi_socket_type_from_zephyr(int proto, enum eswifi_transport_type *type);
 
 int __eswifi_socket_free(struct eswifi_dev *eswifi,
 			 struct eswifi_off_socket *socket);

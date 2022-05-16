@@ -10,5 +10,5 @@ config KSCAN_SDL
 config SDL_POINTER_KSCAN_DEV_NAME
 	string "SDL kscan device name"
 	depends on KSCAN_SDL
-	default LVGL_POINTER_KSCAN_DEV_NAME if LVGL
+	default LV_Z_POINTER_KSCAN_DEV_NAME if LVGL
 	default "SDL_KSCAN"

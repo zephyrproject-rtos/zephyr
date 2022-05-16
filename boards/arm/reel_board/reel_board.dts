@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "reel_board.dtsi"
+#include "reel_board-pinctrl.dtsi"
 
 / {
 	model = "reel board";
@@ -22,6 +23,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &ssd16xx;
 	};
 
 	leds {
@@ -35,7 +37,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		back_pwm_led: pwm_led_3 {
-			pwms = <&pwm0 13>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -45,19 +47,15 @@
 	};
 };
 
-&pwm0 {
-	ch0-inverted;
-};
-
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	sck-pin = <19>;
-	mosi-pin = <20>;
-	miso-pin = <21>;
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 
-	ssd16xxfb@0 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+	ssd16xx: ssd16xxfb@0 {
 		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b1";
 		label = "SSD16XX";
 		spi-max-frequency = <4000000>;

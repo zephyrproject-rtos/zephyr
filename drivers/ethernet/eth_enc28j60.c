@@ -10,18 +10,18 @@
 #define LOG_MODULE_NAME eth_enc28j60
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <zephyr.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <errno.h>
-#include <drivers/gpio.h>
-#include <drivers/spi.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/ethernet.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
 #include "eth_enc28j60_priv.h"

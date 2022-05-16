@@ -8,8 +8,9 @@
 #define DT_DRV_COMPAT nxp_kinetis_gpio
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/nxp-kinetis-gpio.h>
 #include <soc.h>
 #include <fsl_common.h>
 #include <fsl_port.h>
@@ -98,12 +99,12 @@ static int gpio_mcux_configure(const struct device *dev,
 
 #if defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH
 	/* Determine the drive strength */
-	switch (flags & GPIO_DS_MASK) {
-	case GPIO_DS_DFLT:
+	switch (flags & KINETIS_GPIO_DS_MASK) {
+	case KINETIS_GPIO_DS_DFLT:
 		/* Default is low drive strength */
 		mask |= PORT_PCR_DSE_MASK;
 		break;
-	case GPIO_DS_ALT:
+	case KINETIS_GPIO_DS_ALT:
 		/* Alternate is high drive strength */
 		pcr |= PORT_PCR_DSE_MASK;
 		break;

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 /* CDCG register structure check */
@@ -50,10 +50,10 @@ NPCX_REG_OFFSET_CHECK(pwm_reg, DCR, 0x006);
 NPCX_REG_OFFSET_CHECK(pwm_reg, PWMCTLEX, 0x00c);
 
 /* ADC register structure check */
-NPCX_REG_SIZE_CHECK(adc_reg, 0x54);
-NPCX_REG_OFFSET_CHECK(adc_reg, THRCTL1, 0x014);
+NPCX_REG_SIZE_CHECK(adc_reg, 0x028);
+NPCX_REG_OFFSET_CHECK(adc_reg, THRCTS, 0x01a);
 NPCX_REG_OFFSET_CHECK(adc_reg, ADCCNF2, 0x020);
-NPCX_REG_OFFSET_CHECK(adc_reg, CHNDAT, 0x040);
+NPCX_REG_OFFSET_CHECK(adc_reg, MEAST, 0x026);
 
 /* TWD register structure check */
 NPCX_REG_SIZE_CHECK(twd_reg, 0x012);
@@ -64,6 +64,7 @@ NPCX_REG_OFFSET_CHECK(twd_reg, WDCP, 0x010);
 /* ESPI register structure check */
 NPCX_REG_SIZE_CHECK(espi_reg, 0x500);
 NPCX_REG_OFFSET_CHECK(espi_reg, FLASHCFG, 0x034);
+NPCX_REG_OFFSET_CHECK(espi_reg, NPCX_ONLY_ESPI_REG1, 0x0f0);
 NPCX_REG_OFFSET_CHECK(espi_reg, VWEVMS, 0x140);
 NPCX_REG_OFFSET_CHECK(espi_reg, VWCTL, 0x2fc);
 NPCX_REG_OFFSET_CHECK(espi_reg, OOBTXBUF, 0x380);

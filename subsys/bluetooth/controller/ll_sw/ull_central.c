@@ -4,15 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <soc.h>
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "util/util.h"
 #include "util/memq.h"
 #include "util/mem.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -269,15 +270,26 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
 #endif /* CONFIG_BT_CTLR_CONN_META */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	conn_lll->df_rx_cfg.is_initialized = 0U;
+	conn_lll->df_rx_cfg.hdr.elem_size = sizeof(struct lll_df_conn_rx_params);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+	conn_lll->df_tx_cfg.is_initialized = 0U;
+	conn_lll->df_tx_cfg.cte_rsp_en = 0U;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+
 	conn->connect_expire = CONN_ESTAB_COUNTDOWN;
 	conn->supervision_expire = 0U;
 	conn_interval_us = (uint32_t)interval * CONN_INT_UNIT_US;
 	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U,
 							 conn_interval_us);
 
+#if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	conn->procedure_expire = 0U;
 	conn->procedure_reload = RADIO_CONN_EVENTS(40000000,
 						       conn_interval_us);
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	conn->apto_expire = 0U;
@@ -351,6 +363,9 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	/* Re-initialize the control procedure data structures */
 	ull_llcp_init(conn);
 
+	/* Setup the PRT reload */
+	ull_cp_prt_reload_set(conn, conn_interval_us);
+
 	conn->central.terminate_ack = 0U;
 
 	conn->llcp_terminate.reason_final = 0U;
@@ -363,6 +378,10 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->phy_pref_tx = ull_conn_default_phy_tx_get();
 	conn->phy_pref_rx = ull_conn_default_phy_rx_get();
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	conn->pause_rx_data = 0U;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* Re-initialize the Tx Q */
 	ull_tx_q_init(&conn->tx_q);
@@ -641,6 +660,8 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand_num,
 
 		pdu_data_tx = (void *)tx->pdu;
 
+		ull_pdu_data_init(pdu_data_tx);
+
 		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
 
 		if (!conn->lll.enc_rx && !conn->lll.enc_tx) {
@@ -807,6 +828,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	struct ll_conn *conn;
 	memq_link_t *link;
 	uint8_t chan_sel;
+	void *node;
 
 	/* Get reference to Tx-ed CONNECT_IND PDU */
 	pdu_tx = (void *)((struct node_rx_pdu *)rx)->pdu;
@@ -820,8 +842,14 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	/* This is the chan sel bit from the received adv pdu */
 	chan_sel = pdu_tx->chan_sel;
 
+	/* Check for pdu field being aligned before populating connection
+	 * complete event.
+	 */
+	node = pdu_tx;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_cc));
+
 	/* Populate the fields required for connection complete event */
-	cc = (void *)pdu_tx;
+	cc = node;
 	cc->status = 0U;
 	cc->role = 0U;
 

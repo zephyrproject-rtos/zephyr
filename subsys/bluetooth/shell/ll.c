@@ -11,13 +11,13 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #include "../controller/util/memq.h"
 #include "../controller/include/ll.h"
@@ -58,7 +58,7 @@ int cmd_ll_addr_read(const struct shell *sh, size_t argc, char *argv[])
 int cmd_test_tx(const struct shell *sh, size_t  argc, char *argv[])
 {
 	uint8_t chan, len, type, phy;
-	uint32_t err;
+	uint8_t err;
 
 	if (argc < 5) {
 		return -EINVAL;
@@ -69,7 +69,9 @@ int cmd_test_tx(const struct shell *sh, size_t  argc, char *argv[])
 	type = strtoul(argv[3], NULL, 16);
 	phy  = strtoul(argv[4], NULL, 16);
 
-	err = ll_test_tx(chan, len, type, phy);
+	err = ll_test_tx(chan, len, type, phy, BT_HCI_LE_TEST_CTE_DISABLED,
+			 BT_HCI_LE_TEST_CTE_TYPE_ANY, BT_HCI_LE_TEST_SWITCH_PATTERN_LEN_ANY,
+			 NULL, BT_HCI_TX_TEST_POWER_MAX_SET);
 	if (err) {
 		return -EINVAL;
 	}
@@ -82,7 +84,7 @@ int cmd_test_tx(const struct shell *sh, size_t  argc, char *argv[])
 int cmd_test_rx(const struct shell *sh, size_t  argc, char *argv[])
 {
 	uint8_t chan, phy, mod_idx;
-	uint32_t err;
+	uint8_t err;
 
 	if (argc < 4) {
 		return -EINVAL;
@@ -92,7 +94,9 @@ int cmd_test_rx(const struct shell *sh, size_t  argc, char *argv[])
 	phy     = strtoul(argv[2], NULL, 16);
 	mod_idx = strtoul(argv[3], NULL, 16);
 
-	err = ll_test_rx(chan, phy, mod_idx);
+	err = ll_test_rx(chan, phy, mod_idx, BT_HCI_LE_TEST_CTE_DISABLED,
+			 BT_HCI_LE_TEST_CTE_TYPE_ANY, BT_HCI_LE_TEST_SLOT_DURATION_ANY,
+			 BT_HCI_LE_TEST_SWITCH_PATTERN_LEN_ANY, NULL);
 	if (err) {
 		return -EINVAL;
 	}
@@ -105,7 +109,7 @@ int cmd_test_rx(const struct shell *sh, size_t  argc, char *argv[])
 int cmd_test_end(const struct shell *sh, size_t  argc, char *argv[])
 {
 	uint16_t num_rx;
-	uint32_t err;
+	uint8_t err;
 
 	err = ll_test_end(&num_rx);
 	if (err) {

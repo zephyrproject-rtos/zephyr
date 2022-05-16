@@ -8,10 +8,10 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <ztest.h>
-#include <drivers/flash.h>
-#include <settings/settings.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/settings/settings.h>
 
-#include <storage/stream_flash.h>
+#include <zephyr/storage/stream_flash.h>
 
 #define BUF_LEN 512
 #define MAX_PAGE_SIZE 0x1000 /* Max supported page size to run test on */
@@ -19,13 +19,12 @@
 #define TESTBUF_SIZE (MAX_PAGE_SIZE * MAX_NUM_PAGES)
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 #define FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
-#define FLASH_NAME DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
 
 /* so that we don't overwrite the application when running on hw */
-#define FLASH_BASE (64*1024)
+#define FLASH_BASE (128*1024)
 #define FLASH_AVAILABLE (FLASH_SIZE-FLASH_BASE)
 
-static const struct device *fdev;
+static const struct device *fdev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static const struct flash_driver_api *api;
 static const struct flash_pages_layout *layout;
 static size_t layout_size;
@@ -240,7 +239,7 @@ static void test_stream_flash_bytes_written(void)
 
 	init_target();
 
-	/* Verify that the offset is retained across failed downolads */
+	/* Verify that the offset is retained across failed downloads */
 	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN + 128, false);
 	zassert_equal(rc, 0, "expected success");
 
@@ -338,7 +337,7 @@ static void test_stream_flash_buffered_write_callback(void)
 	fake_api.write = fake_write;
 	fake_dev.api = &fake_api;
 	bad_ctx.fdev = &fake_dev;
-	/* Triger erase attempt */
+	/* Trigger erase attempt */
 	cmp_ctx = bad_ctx;
 	/* Just flush buffer */
 	rc = stream_flash_buffered_write(&bad_ctx, write_buf, 0, true);
@@ -372,7 +371,7 @@ static void test_stream_flash_flush(void)
 
 	init_target();
 
-	/* Perform flush with NULL data pointer and 0 lentgth */
+	/* Perform flush with NULL data pointer and 0 length */
 	rc = stream_flash_buffered_write(&ctx, NULL, 0, true);
 	zassert_equal(rc, 0, "expected success");
 }
@@ -646,7 +645,8 @@ static void test_stream_flash_progress_clear(void)
 
 void test_main(void)
 {
-	fdev = device_get_binding(FLASH_NAME);
+	__ASSERT_NO_MSG(device_is_ready(fdev));
+
 	api = fdev->api;
 	api->page_layout(fdev, &layout, &layout_size);
 

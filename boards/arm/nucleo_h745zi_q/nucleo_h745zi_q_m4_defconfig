@@ -6,9 +6,6 @@ CONFIG_SOC_STM32H745XX=y
 # Board config should be specified since there are 2 possible targets
 CONFIG_BOARD_NUCLEO_H745ZI_Q_M4=y
 
-# Enable Pinmux
-CONFIG_PINMUX=y
-
 # Enable GPIO
 CONFIG_GPIO=y
 
@@ -23,3 +20,6 @@ CONFIG_CLOCK_CONTROL=y
 # Console
 #CONFIG_CONSOLE=y
 #CONFIG_UART_CONSOLE=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

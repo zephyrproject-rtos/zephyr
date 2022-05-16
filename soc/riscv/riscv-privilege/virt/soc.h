@@ -8,10 +8,10 @@
 #define __RISCV_VIRT_SOC_H_
 
 #include <soc_common.h>
-#include <devicetree.h>
 
 #define SIFIVE_SYSCON_TEST           0x00100000
 #define RISCV_MTIME_BASE             0x0200BFF8
 #define RISCV_MTIMECMP_BASE          0x02004000
+#define RISCV_MSIP_BASE              0x02000000
 
 #endif

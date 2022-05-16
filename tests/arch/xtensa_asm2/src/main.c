@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <xtensa-asm2.h>
 
 #ifdef CONFIG_MULTITHREADING
@@ -486,7 +486,7 @@ int interrupt_test(void)
 		 * main thread calling functions that don't involve
 		 * exceptions.  By experiment, calling spill_fn with a
 		 * first (depth) argument of 6 or 7 results in a
-		 * shallow call tree that won't throw exepctions.  At
+		 * shallow call tree that won't throw exceptions.  At
 		 * least we're executing real code which depends on
 		 * its register state and validating that interrupts
 		 * don't hurt.

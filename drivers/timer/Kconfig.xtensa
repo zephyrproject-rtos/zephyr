@@ -1,0 +1,25 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config XTENSA_TIMER
+	bool "Xtensa timer support"
+	depends on XTENSA
+	default y
+	select TICKLESS_CAPABLE
+	help
+	  Enables a system timer driver for Xtensa based on the CCOUNT
+	  and CCOMPARE special registers.
+
+config XTENSA_TIMER_ID
+	int "System timer CCOMPAREn register index"
+	default 0
+	depends on XTENSA_TIMER
+	help
+	  Index of the CCOMPARE register (and associated interrupt)
+	  used for the system timer.  Xtensa CPUs have hard-configured
+	  interrupt priorities associated with each timer, and some of
+	  them can be unmaskable (and thus not usable by OS code that
+	  need synchronization, like the timer subsystem!).  In
+	  general timer zero is guaranteed to be present and usable.

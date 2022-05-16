@@ -16,7 +16,7 @@ menuconfig FLASH_MAP
 if FLASH_MAP
 
 config FLASH_MAP_SHELL
-	bool "Enable flash map shell interface"
+	bool "Flash map shell interface"
 	depends on SHELL
 	help
 	  This enables shell commands to list and test flash maps.
@@ -29,11 +29,33 @@ config FLASH_MAP_CUSTOM
 	  if had enabled this option.
 
 config FLASH_AREA_CHECK_INTEGRITY
-	bool "Enable flash check functions"
-	select TINYCRYPT
-	select TINYCRYPT_SHA256
+	bool "Flash check functions"
 	help
 	  If enabled, there will be available the backend to check flash
 	  integrity using SHA-256 verification algorithm.
+
+if FLASH_AREA_CHECK_INTEGRITY
+choice
+	prompt "Crypto backend for the flash check functions"
+	default FLASH_AREA_CHECK_INTEGRITY_TC
+
+config FLASH_AREA_CHECK_INTEGRITY_TC
+	bool "Use TinyCrypt"
+	select TINYCRYPT
+	select TINYCRYPT_SHA256
+	help
+	  Use TinyCrypt library to perform the integrity check.
+
+config FLASH_AREA_CHECK_INTEGRITY_MBEDTLS
+	bool "Use MBEDTLS"
+	select MBEDTLS
+	select MBEDTLS_MD
+	select MBEDTLS_MAC_SHA256_ENABLED
+	select MBEDTLS_ENABLE_HEAP
+	help
+	  Use MBEDTLS library to perform the integrity check.
+
+endchoice
+endif
 
 endif

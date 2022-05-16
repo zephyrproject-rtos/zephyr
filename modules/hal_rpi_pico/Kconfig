@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_RPI_PICO
+	bool
+
+config PICOSDK_USE_UART
+	bool
+	help
+	  Use the UART driver from pico-sdk
+
+config PICOSDK_USE_GPIO
+	bool
+	help
+	  Use the GPIO driver from pico-sdk
+
+config PICOSDK_USE_FLASH
+	bool
+	help
+	  Use the flash driver from pico-sdk

@@ -6,9 +6,9 @@
 
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/rdc/imx_rdc.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/rdc/imx_rdc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -267,6 +267,17 @@
 			status = "disabled";
 		};
 
+		iomuxc: iomuxc@420e0000 {
+			compatible = "nxp,imx-iomuxc";
+			reg = <0x420e0000 0x4000>;
+			status = "okay";
+			pinctrl: pinctrl {
+				status = "okay";
+				/* iMX6 has same IOMUXC IP block as RT10xx series */
+				compatible = "nxp,mcux-rt-pinctrl";
+			};
+		};
+
 		epit2:epit@420d4000 {
 			compatible = "nxp,imx-epit";
 			reg = <0x420d4000 0x4000>;
@@ -339,9 +350,315 @@
 			label = "I2C_4";
 			status = "disabled";
 		};
+
+		pwm1: pwm@42080000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x42080000 0x4000>;
+			interrupts = <83 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_1";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@42084000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x42084000 0x4000>;
+			interrupts = <84 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_2";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@42088000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x42088000 0x4000>;
+			interrupts = <85 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_3";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm4: pwm@4208c000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x4208c000 0x4000>;
+			interrupts = <86 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_4";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+
+		pwm5: pwm@422a4000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422a4000 0x4000>;
+			interrupts = <83 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_5";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm6: pwm@422a8000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422a8000 0x4000>;
+			interrupts = <84 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_6";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm7: pwm@422ac000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422ac000 0x4000>;
+			interrupts = <85 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_7";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm8: pwm@422ab000 {
+			compatible = "fsl,imx6sx-pwm", "fsl,imx27-pwm";
+			reg = <0x422ab000 0x4000>;
+			interrupts = <86 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_8";
+			prescaler = <0>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
 	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <4>;
+};
+
+/*
+ * GPIO pinmux options. These options define the pinmux settings
+ * for GPIO ports on the package, so that the GPIO driver can
+ * select GPIO mux options during GPIO configuration.
+ */
+
+&gpio1 {
+	pinmux = <&mx6sx_pad_gpio1_io00__gpio1_io_0>,
+	<&mx6sx_pad_gpio1_io01__gpio1_io_1>,
+	<&mx6sx_pad_gpio1_io02__gpio1_io_2>,
+	<&mx6sx_pad_gpio1_io03__gpio1_io_3>,
+	<&mx6sx_pad_gpio1_io04__gpio1_io_4>,
+	<&mx6sx_pad_gpio1_io05__gpio1_io_5>,
+	<&mx6sx_pad_gpio1_io06__gpio1_io_6>,
+	<&mx6sx_pad_gpio1_io07__gpio1_io_7>,
+	<&mx6sx_pad_gpio1_io08__gpio1_io_8>,
+	<&mx6sx_pad_gpio1_io09__gpio1_io_9>,
+	<&mx6sx_pad_gpio1_io10__gpio1_io_10>,
+	<&mx6sx_pad_gpio1_io11__gpio1_io_11>,
+	<&mx6sx_pad_gpio1_io12__gpio1_io_12>,
+	<&mx6sx_pad_gpio1_io13__gpio1_io_13>,
+	<&mx6sx_pad_csi_data00__gpio1_io_14>,
+	<&mx6sx_pad_csi_data01__gpio1_io_15>,
+	<&mx6sx_pad_csi_data02__gpio1_io_16>,
+	<&mx6sx_pad_csi_data03__gpio1_io_17>,
+	<&mx6sx_pad_csi_data04__gpio1_io_18>,
+	<&mx6sx_pad_csi_data05__gpio1_io_19>,
+	<&mx6sx_pad_csi_data06__gpio1_io_20>,
+	<&mx6sx_pad_csi_data07__gpio1_io_21>,
+	<&mx6sx_pad_csi_hsync__gpio1_io_22>,
+	<&mx6sx_pad_csi_mclk__gpio1_io_23>,
+	<&mx6sx_pad_csi_pixclk__gpio1_io_24>,
+	<&mx6sx_pad_csi_vsync__gpio1_io_25>;
+};
+
+&gpio2 {
+	pinmux = <&mx6sx_pad_enet1_col__gpio2_io_0>,
+	<&mx6sx_pad_enet1_crs__gpio2_io_1>,
+	<&mx6sx_pad_enet1_mdc__gpio2_io_2>,
+	<&mx6sx_pad_enet1_mdio__gpio2_io_3>,
+	<&mx6sx_pad_enet1_rx_clk__gpio2_io_4>,
+	<&mx6sx_pad_enet1_tx_clk__gpio2_io_5>,
+	<&mx6sx_pad_enet2_col__gpio2_io_6>,
+	<&mx6sx_pad_enet2_crs__gpio2_io_7>,
+	<&mx6sx_pad_enet2_rx_clk__gpio2_io_8>,
+	<&mx6sx_pad_enet2_tx_clk__gpio2_io_9>,
+	<&mx6sx_pad_key_col0__gpio2_io_10>,
+	<&mx6sx_pad_key_col1__gpio2_io_11>,
+	<&mx6sx_pad_key_col2__gpio2_io_12>,
+	<&mx6sx_pad_key_col3__gpio2_io_13>,
+	<&mx6sx_pad_key_col4__gpio2_io_14>,
+	<&mx6sx_pad_key_row0__gpio2_io_15>,
+	<&mx6sx_pad_key_row1__gpio2_io_16>,
+	<&mx6sx_pad_key_row2__gpio2_io_17>,
+	<&mx6sx_pad_key_row3__gpio2_io_18>,
+	<&mx6sx_pad_key_row4__gpio2_io_19>;
+};
+
+&gpio3 {
+	pinmux = <&mx6sx_pad_lcd1_clk__gpio3_io_0>,
+	<&mx6sx_pad_lcd1_data00__gpio3_io_1>,
+	<&mx6sx_pad_lcd1_data01__gpio3_io_2>,
+	<&mx6sx_pad_lcd1_data02__gpio3_io_3>,
+	<&mx6sx_pad_lcd1_data03__gpio3_io_4>,
+	<&mx6sx_pad_lcd1_data04__gpio3_io_5>,
+	<&mx6sx_pad_lcd1_data05__gpio3_io_6>,
+	<&mx6sx_pad_lcd1_data06__gpio3_io_7>,
+	<&mx6sx_pad_lcd1_data07__gpio3_io_8>,
+	<&mx6sx_pad_lcd1_data08__gpio3_io_9>,
+	<&mx6sx_pad_lcd1_data09__gpio3_io_10>,
+	<&mx6sx_pad_lcd1_data10__gpio3_io_11>,
+	<&mx6sx_pad_lcd1_data11__gpio3_io_12>,
+	<&mx6sx_pad_lcd1_data12__gpio3_io_13>,
+	<&mx6sx_pad_lcd1_data13__gpio3_io_14>,
+	<&mx6sx_pad_lcd1_data14__gpio3_io_15>,
+	<&mx6sx_pad_lcd1_data15__gpio3_io_16>,
+	<&mx6sx_pad_lcd1_data16__gpio3_io_17>,
+	<&mx6sx_pad_lcd1_data17__gpio3_io_18>,
+	<&mx6sx_pad_lcd1_data18__gpio3_io_19>,
+	<&mx6sx_pad_lcd1_data19__gpio3_io_20>,
+	<&mx6sx_pad_lcd1_data20__gpio3_io_21>,
+	<&mx6sx_pad_lcd1_data21__gpio3_io_22>,
+	<&mx6sx_pad_lcd1_data22__gpio3_io_23>,
+	<&mx6sx_pad_lcd1_data23__gpio3_io_24>,
+	<&mx6sx_pad_lcd1_enable__gpio3_io_25>,
+	<&mx6sx_pad_lcd1_hsync__gpio3_io_26>,
+	<&mx6sx_pad_lcd1_reset__gpio3_io_27>,
+	<&mx6sx_pad_lcd1_vsync__gpio3_io_28>;
+};
+
+&gpio4 {
+	pinmux = <&mx6sx_pad_nand_ale__gpio4_io_0>,
+	<&mx6sx_pad_nand_ce0_b__gpio4_io_1>,
+	<&mx6sx_pad_nand_ce1_b__gpio4_io_2>,
+	<&mx6sx_pad_nand_cle__gpio4_io_3>,
+	<&mx6sx_pad_nand_data00__gpio4_io_4>,
+	<&mx6sx_pad_nand_data01__gpio4_io_5>,
+	<&mx6sx_pad_nand_data02__gpio4_io_6>,
+	<&mx6sx_pad_nand_data03__gpio4_io_7>,
+	<&mx6sx_pad_nand_data04__gpio4_io_8>,
+	<&mx6sx_pad_nand_data05__gpio4_io_9>,
+	<&mx6sx_pad_nand_data06__gpio4_io_10>,
+	<&mx6sx_pad_nand_data07__gpio4_io_11>,
+	<&mx6sx_pad_nand_re_b__gpio4_io_12>,
+	<&mx6sx_pad_nand_ready_b__gpio4_io_13>,
+	<&mx6sx_pad_nand_we_b__gpio4_io_14>,
+	<&mx6sx_pad_nand_wp_b__gpio4_io_15>,
+	<&mx6sx_pad_qspi1a_data0__gpio4_io_16>,
+	<&mx6sx_pad_qspi1a_data1__gpio4_io_17>,
+	<&mx6sx_pad_qspi1a_data2__gpio4_io_18>,
+	<&mx6sx_pad_qspi1a_data3__gpio4_io_19>,
+	<&mx6sx_pad_qspi1a_dqs__gpio4_io_20>,
+	<&mx6sx_pad_qspi1a_sclk__gpio4_io_21>,
+	<&mx6sx_pad_qspi1a_ss0_b__gpio4_io_22>,
+	<&mx6sx_pad_qspi1a_ss1_b__gpio4_io_23>,
+	<&mx6sx_pad_qspi1b_data0__gpio4_io_24>,
+	<&mx6sx_pad_qspi1b_data1__gpio4_io_25>,
+	<&mx6sx_pad_qspi1b_data2__gpio4_io_26>,
+	<&mx6sx_pad_qspi1b_data3__gpio4_io_27>,
+	<&mx6sx_pad_qspi1b_dqs__gpio4_io_28>,
+	<&mx6sx_pad_qspi1b_sclk__gpio4_io_29>,
+	<&mx6sx_pad_qspi1b_ss0_b__gpio4_io_30>,
+	<&mx6sx_pad_qspi1b_ss1_b__gpio4_io_31>;
+};
+
+&gpio5 {
+	pinmux = <&mx6sx_pad_rgmii1_rd0__gpio5_io_0>,
+	<&mx6sx_pad_rgmii1_rd1__gpio5_io_1>,
+	<&mx6sx_pad_rgmii1_rd2__gpio5_io_2>,
+	<&mx6sx_pad_rgmii1_rd3__gpio5_io_3>,
+	<&mx6sx_pad_rgmii1_rx_ctl__gpio5_io_4>,
+	<&mx6sx_pad_rgmii1_rxc__gpio5_io_5>,
+	<&mx6sx_pad_rgmii1_td0__gpio5_io_6>,
+	<&mx6sx_pad_rgmii1_td1__gpio5_io_7>,
+	<&mx6sx_pad_rgmii1_td2__gpio5_io_8>,
+	<&mx6sx_pad_rgmii1_td3__gpio5_io_9>,
+	<&mx6sx_pad_rgmii1_tx_ctl__gpio5_io_10>,
+	<&mx6sx_pad_rgmii1_txc__gpio5_io_11>,
+	<&mx6sx_pad_rgmii2_rd0__gpio5_io_12>,
+	<&mx6sx_pad_rgmii2_rd1__gpio5_io_13>,
+	<&mx6sx_pad_rgmii2_rd2__gpio5_io_14>,
+	<&mx6sx_pad_rgmii2_rd3__gpio5_io_15>,
+	<&mx6sx_pad_rgmii2_rx_ctl__gpio5_io_16>,
+	<&mx6sx_pad_rgmii2_rxc__gpio5_io_17>,
+	<&mx6sx_pad_rgmii2_td0__gpio5_io_18>,
+	<&mx6sx_pad_rgmii2_td1__gpio5_io_19>,
+	<&mx6sx_pad_rgmii2_td2__gpio5_io_20>,
+	<&mx6sx_pad_rgmii2_td3__gpio5_io_21>,
+	<&mx6sx_pad_rgmii2_tx_ctl__gpio5_io_22>,
+	<&mx6sx_pad_rgmii2_txc__gpio5_io_23>;
+};
+
+&gpio6 {
+	pinmux = <&mx6sx_pad_sd1_clk__gpio6_io_0>,
+	<&mx6sx_pad_sd1_cmd__gpio6_io_1>,
+	<&mx6sx_pad_sd1_data0__gpio6_io_2>,
+	<&mx6sx_pad_sd1_data1__gpio6_io_3>,
+	<&mx6sx_pad_sd1_data2__gpio6_io_4>,
+	<&mx6sx_pad_sd1_data3__gpio6_io_5>,
+	<&mx6sx_pad_sd2_clk__gpio6_io_6>,
+	<&mx6sx_pad_sd2_cmd__gpio6_io_7>,
+	<&mx6sx_pad_sd2_data0__gpio6_io_8>,
+	<&mx6sx_pad_sd2_data1__gpio6_io_9>,
+	<&mx6sx_pad_sd2_data2__gpio6_io_10>,
+	<&mx6sx_pad_sd2_data3__gpio6_io_11>,
+	<&mx6sx_pad_sd4_clk__gpio6_io_12>,
+	<&mx6sx_pad_sd4_cmd__gpio6_io_13>,
+	<&mx6sx_pad_sd4_data0__gpio6_io_14>,
+	<&mx6sx_pad_sd4_data1__gpio6_io_15>,
+	<&mx6sx_pad_sd4_data2__gpio6_io_16>,
+	<&mx6sx_pad_sd4_data3__gpio6_io_17>,
+	<&mx6sx_pad_sd4_data4__gpio6_io_18>,
+	<&mx6sx_pad_sd4_data5__gpio6_io_19>,
+	<&mx6sx_pad_sd4_data6__gpio6_io_20>,
+	<&mx6sx_pad_sd4_data7__gpio6_io_21>,
+	<&mx6sx_pad_sd4_reset_b__gpio6_io_22>;
+};
+
+&gpio7 {
+	pinmux = <&mx6sx_pad_sd3_clk__gpio7_io_0>,
+	<&mx6sx_pad_sd3_cmd__gpio7_io_1>,
+	<&mx6sx_pad_sd3_data0__gpio7_io_2>,
+	<&mx6sx_pad_sd3_data1__gpio7_io_3>,
+	<&mx6sx_pad_sd3_data2__gpio7_io_4>,
+	<&mx6sx_pad_sd3_data3__gpio7_io_5>,
+	<&mx6sx_pad_sd3_data4__gpio7_io_6>,
+	<&mx6sx_pad_sd3_data5__gpio7_io_7>,
+	<&mx6sx_pad_sd3_data6__gpio7_io_8>,
+	<&mx6sx_pad_sd3_data7__gpio7_io_9>,
+	<&mx6sx_pad_usb_h_data__gpio7_io_10>,
+	<&mx6sx_pad_usb_h_strobe__gpio7_io_11>;
 };

@@ -10,80 +10,26 @@
  * @brief Pipes
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <init.h>
-#include <syscall_handler.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/init.h>
+#include <zephyr/syscall_handler.h>
 #include <kernel_internal.h>
-#include <sys/check.h>
+#include <zephyr/sys/check.h>
 
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */
 	size_t bytes_to_xfer;            /* # bytes left to transfer */
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	struct k_mem_block *block;       /* Pointer to memory block */
-	struct k_mem_block  copy_block;  /* For backwards compatibility */
-	struct k_sem *sem;               /* Semaphore to give if async */
-#endif
 };
 
-struct k_pipe_async {
-	struct _thread_base thread;   /* Dummy thread object */
-	struct k_pipe_desc  desc;     /* Pipe message descriptor */
-};
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-/* stack of unused asynchronous message descriptors */
-K_STACK_DEFINE(pipe_async_msgs, CONFIG_NUM_PIPE_ASYNC_MSGS);
-#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-
-/*
- * Do run-time initialization of pipe object subsystem.
- */
-static int init_pipes_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* Array of asynchronous message descriptors */
-	static struct k_pipe_async __noinit async_msg[CONFIG_NUM_PIPE_ASYNC_MSGS];
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	/*
-	 * Create pool of asynchronous pipe message descriptors.
-	 *
-	 * A dummy thread requires minimal initialization, since it never gets
-	 * to execute. The _THREAD_DUMMY flag is sufficient to distinguish a
-	 * dummy thread from a real one. The threads are *not* added to the
-	 * kernel's list of known threads.
-	 *
-	 * Once initialized, the address of each descriptor is added to a stack
-	 * that governs access to them.
-	 */
-
-	for (int i = 0; i < CONFIG_NUM_PIPE_ASYNC_MSGS; i++) {
-		async_msg[i].thread.thread_state = _THREAD_DUMMY;
-		async_msg[i].thread.swap_data = &async_msg[i].desc;
-
-		z_init_thread_timeout(&async_msg[i].thread);
-
-		k_stack_push(&pipe_async_msgs, (stack_data_t)&async_msg[i]);
-	}
-#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
-
-	/* Complete initialization of statically defined mailboxes. */
-
-	return 0;
-}
-
-SYS_INIT(init_pipes_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS */
+static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
+			     void *data, size_t bytes_to_read,
+			     size_t *bytes_read, size_t min_xfer,
+			     k_timeout_t timeout);
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
@@ -137,12 +83,65 @@ static inline int z_vrfy_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 #include <syscalls/k_pipe_alloc_init_mrsh.c>
 #endif
 
+void z_impl_k_pipe_flush(struct k_pipe *pipe)
+{
+	size_t  bytes_read;
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, flush, pipe);
+
+	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+
+	(void) pipe_get_internal(key, pipe, NULL, (size_t) -1, &bytes_read, 0,
+				 K_NO_WAIT);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, flush, pipe);
+}
+
+#ifdef CONFIG_USERSPACE
+void z_vrfy_k_pipe_flush(struct k_pipe *pipe)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+
+	z_impl_k_pipe_flush(pipe);
+}
+#include <syscalls/k_pipe_flush_mrsh.c>
+#endif
+
+void z_impl_k_pipe_buffer_flush(struct k_pipe *pipe)
+{
+	size_t  bytes_read;
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, buffer_flush, pipe);
+
+	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+
+	if (pipe->buffer != NULL) {
+		(void) pipe_get_internal(key, pipe, NULL, pipe->size,
+					 &bytes_read, 0, K_NO_WAIT);
+	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, buffer_flush, pipe);
+}
+
+#ifdef CONFIG_USERSPACE
+void z_vrfy_k_pipe_buffer_flush(struct k_pipe *pipe)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+
+	z_impl_k_pipe_buffer_flush(pipe);
+}
+#endif
+
 int k_pipe_cleanup(struct k_pipe *pipe)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, cleanup, pipe);
 
+	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+
 	CHECKIF(z_waitq_head(&pipe->wait_q.readers) != NULL ||
 			z_waitq_head(&pipe->wait_q.writers) != NULL) {
+		k_spin_unlock(&pipe->lock, key);
+
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, -EAGAIN);
 
 		return -EAGAIN;
@@ -151,8 +150,20 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 	if ((pipe->flags & K_PIPE_FLAG_ALLOC) != 0U) {
 		k_free(pipe->buffer);
 		pipe->buffer = NULL;
+
+		/*
+		 * Freeing the buffer changes the pipe into a bufferless
+		 * pipe. Reset the pipe's counters to prevent malfunction.
+		 */
+
+		pipe->size = 0;
+		pipe->bytes_used = 0;
+		pipe->read_index = 0;
+		pipe->write_index = 0;
 		pipe->flags &= ~K_PIPE_FLAG_ALLOC;
 	}
+
+	k_spin_unlock(&pipe->lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, 0);
 
@@ -169,6 +180,11 @@ static size_t pipe_xfer(unsigned char *dest, size_t dest_size,
 {
 	size_t num_bytes = MIN(dest_size, src_size);
 	const unsigned char *end = src + num_bytes;
+
+	if (dest == NULL) {
+		/* Data is being flushed. Pretend the data was copied. */
+		return num_bytes;
+	}
 
 	while (src != end) {
 		*dest = *src;
@@ -230,16 +246,19 @@ static size_t pipe_buffer_get(struct k_pipe *pipe,
 	size_t  bytes_copied;
 	size_t  run_length;
 	size_t  num_bytes_read = 0;
+	size_t  dest_off;
 	int     i;
 
 	for (i = 0; i < 2; i++) {
 		run_length = MIN(pipe->bytes_used,
 				 pipe->size - pipe->read_index);
 
-		bytes_copied = pipe_xfer(dest + num_bytes_read,
-					  dest_size - num_bytes_read,
-					  pipe->buffer + pipe->read_index,
-					  run_length);
+		dest_off = (dest == NULL) ? 0 : num_bytes_read;
+
+		bytes_copied = pipe_xfer(dest + dest_off,
+					 dest_size - num_bytes_read,
+					 pipe->buffer + pipe->read_index,
+					 run_length);
 
 		num_bytes_read += bytes_copied;
 		pipe->bytes_used -= bytes_copied;
@@ -373,42 +392,15 @@ static int pipe_return_code(size_t min_xfer, size_t bytes_remaining,
 	return -EAGAIN;
 }
 
-/**
- * @brief Ready a pipe thread
- *
- * If the pipe thread is a real thread, then add it to the ready queue.
- * If it is a dummy thread, then finish the asynchronous work.
- *
- * @return N/A
- */
-static void pipe_thread_ready(struct k_thread *thread)
-{
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	if ((thread->base.thread_state & _THREAD_DUMMY) != 0U) {
-		return;
-	}
-#endif
-
-	z_ready_thread(thread);
-}
-
-/**
- * @brief Internal API used to send data to a pipe
- */
-int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
-			 unsigned char *data, size_t bytes_to_write,
-			 size_t *bytes_written, size_t min_xfer,
-			 k_timeout_t timeout)
+int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+		     size_t *bytes_written, size_t min_xfer,
+		      k_timeout_t timeout)
 {
 	struct k_thread    *reader;
 	struct k_pipe_desc *desc;
 	sys_dlist_t    xfer_list;
 	size_t         num_bytes_written = 0;
 	size_t         bytes_copied;
-
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS == 0)
-	ARG_UNUSED(async_desc);
-#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, put, pipe, timeout);
 
@@ -458,7 +450,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	while (thread != NULL) {
 		desc = (struct k_pipe_desc *)thread->base.swap_data;
 		bytes_copied = pipe_xfer(desc->buffer, desc->bytes_to_xfer,
-					  data + num_bytes_written,
+					  (uint8_t *)data + num_bytes_written,
 					  bytes_to_write - num_bytes_written);
 
 		num_bytes_written   += bytes_copied;
@@ -478,7 +470,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	if (reader != NULL) {
 		desc = (struct k_pipe_desc *)reader->base.swap_data;
 		bytes_copied = pipe_xfer(desc->buffer, desc->bytes_to_xfer,
-					  data + num_bytes_written,
+					 (uint8_t *)data + num_bytes_written,
 					  bytes_to_write - num_bytes_written);
 
 		num_bytes_written   += bytes_copied;
@@ -492,7 +484,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	 */
 
 	num_bytes_written +=
-		pipe_buffer_put(pipe, data + num_bytes_written,
+		pipe_buffer_put(pipe, (uint8_t *)data + num_bytes_written,
 				 bytes_to_write - num_bytes_written);
 
 	if (num_bytes_written == bytes_to_write) {
@@ -519,7 +511,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 
 	struct k_pipe_desc  pipe_desc;
 
-	pipe_desc.buffer         = data + num_bytes_written;
+	pipe_desc.buffer         = (uint8_t *)data + num_bytes_written;
 	pipe_desc.bytes_to_xfer  = bytes_to_write - num_bytes_written;
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -531,7 +523,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		k_spinlock_key_t key2 = k_spin_lock(&pipe->lock);
 		z_sched_unlock_no_reschedule();
 		(void)z_pend_curr(&pipe->lock, key2,
-				 &pipe->wait_q.writers, timeout);
+				  &pipe->wait_q.writers, timeout);
 	} else {
 		k_sched_unlock();
 	}
@@ -539,46 +531,52 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	*bytes_written = bytes_to_write - pipe_desc.bytes_to_xfer;
 
 	int ret = pipe_return_code(min_xfer, pipe_desc.bytes_to_xfer,
-				 bytes_to_write);
+				   bytes_to_write);
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, ret);
 	return ret;
 }
 
-int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
-		     size_t *bytes_read, size_t min_xfer, k_timeout_t timeout)
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+		     size_t *bytes_written, size_t min_xfer,
+		      k_timeout_t timeout)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
+
+	return z_impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
+				bytes_to_write, bytes_written, min_xfer,
+				timeout);
+}
+#include <syscalls/k_pipe_put_mrsh.c>
+#endif
+
+static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
+			     void *data, size_t bytes_to_read,
+			     size_t *bytes_read, size_t min_xfer,
+			     k_timeout_t timeout)
 {
 	struct k_thread    *writer;
 	struct k_pipe_desc *desc;
 	sys_dlist_t    xfer_list;
 	size_t         num_bytes_read = 0;
+	size_t         data_off;
 	size_t         bytes_copied;
-
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, get, pipe, timeout);
-
-	CHECKIF((min_xfer > bytes_to_read) || bytes_read == NULL) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, -EINVAL);
-
-		return -EINVAL;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
 
 	/*
 	 * Create a list of "working readers" into which the data will be
 	 * directly copied.
 	 */
+
 	if (!pipe_xfer_prepare(&xfer_list, &writer, &pipe->wait_q.writers,
 				pipe->bytes_used, bytes_to_read,
 				min_xfer, timeout)) {
 		k_spin_unlock(&pipe->lock, key);
 		*bytes_read = 0;
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, -EIO);
-
 		return -EIO;
 	}
-
-	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, get, pipe, timeout);
 
 	z_sched_lock();
 	k_spin_unlock(&pipe->lock, key);
@@ -603,7 +601,8 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 				  sys_dlist_get(&xfer_list);
 	while ((thread != NULL) && (num_bytes_read < bytes_to_read)) {
 		desc = (struct k_pipe_desc *)thread->base.swap_data;
-		bytes_copied = pipe_xfer((uint8_t *)data + num_bytes_read,
+		data_off = (data == NULL) ? 0 : num_bytes_read;
+		bytes_copied = pipe_xfer((uint8_t *)data + data_off,
 					  bytes_to_read - num_bytes_read,
 					  desc->buffer, desc->bytes_to_xfer);
 
@@ -620,14 +619,15 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		if (num_bytes_read == bytes_to_read) {
 			break;
 		}
-		pipe_thread_ready(thread);
+		z_ready_thread(thread);
 
 		thread = (struct k_thread *)sys_dlist_get(&xfer_list);
 	}
 
 	if ((writer != NULL) && (num_bytes_read < bytes_to_read)) {
 		desc = (struct k_pipe_desc *)writer->base.swap_data;
-		bytes_copied = pipe_xfer((uint8_t *)data + num_bytes_read,
+		data_off = (data == NULL) ? 0 : num_bytes_read;
+		bytes_copied = pipe_xfer((uint8_t *)data + data_off,
 					  bytes_to_read - num_bytes_read,
 					  desc->buffer, desc->bytes_to_xfer);
 
@@ -650,7 +650,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		desc->bytes_to_xfer  -= bytes_copied;
 
 		/* Write request has been satisfied */
-		pipe_thread_ready(thread);
+		z_ready_thread(thread);
 
 		thread = (struct k_thread *)sys_dlist_get(&xfer_list);
 	}
@@ -669,8 +669,6 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 		*bytes_read = num_bytes_read;
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, 0);
-
 		return 0;
 	}
 
@@ -681,12 +679,21 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 		*bytes_read = num_bytes_read;
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, 0);
-
 		return 0;
 	}
 
-	/* Not all data was read */
+	/*
+	 * Not all data was read. It is important to note that when this
+	 * routine is invoked by either of the flush routines() both the <data>
+	 * and <timeout> parameters are set to NULL and K_NO_WAIT respectively.
+	 * Consequently, neither k_pipe_flush() nor k_pipe_buffer_flush()
+	 * will block.
+	 *
+	 * However, this routine may also be invoked by k_pipe_get() and there
+	 * is no enforcement of <data> being non-NULL when called from
+	 * kernel-space. That restriction is enforced when called from
+	 * user-space.
+	 */
 
 	struct k_pipe_desc  pipe_desc;
 
@@ -694,6 +701,8 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	pipe_desc.bytes_to_xfer = bytes_to_read - num_bytes_read;
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, get, pipe, timeout);
+
 		_current->base.swap_data = &pipe_desc;
 		k_spinlock_key_t key2 = k_spin_lock(&pipe->lock);
 
@@ -707,8 +716,30 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	*bytes_read = bytes_to_read - pipe_desc.bytes_to_xfer;
 
 	int ret = pipe_return_code(min_xfer, pipe_desc.bytes_to_xfer,
-				 bytes_to_read);
+				   bytes_to_read);
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, ret);
+	return ret;
+}
+
+int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
+		     size_t *bytes_read, size_t min_xfer, k_timeout_t timeout)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, get, pipe, timeout);
+
+	CHECKIF((min_xfer > bytes_to_read) || bytes_read == NULL) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe,
+					       timeout, -EINVAL);
+
+		return -EINVAL;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&pipe->lock);
+
+	int ret = pipe_get_internal(key, pipe, data, bytes_to_read, bytes_read,
+				    min_xfer, timeout);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, ret);
+
 	return ret;
 }
 
@@ -725,31 +756,6 @@ int z_vrfy_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 				timeout);
 }
 #include <syscalls/k_pipe_get_mrsh.c>
-#endif
-
-int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
-		     size_t *bytes_written, size_t min_xfer,
-		      k_timeout_t timeout)
-{
-	return z_pipe_put_internal(pipe, NULL, data,
-				    bytes_to_write, bytes_written,
-				    min_xfer, timeout);
-}
-
-#ifdef CONFIG_USERSPACE
-int z_vrfy_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
-		     size_t *bytes_written, size_t min_xfer,
-		      k_timeout_t timeout)
-{
-	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
-	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
-
-	return z_impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
-				bytes_to_write, bytes_written, min_xfer,
-				timeout);
-}
-#include <syscalls/k_pipe_put_mrsh.c>
 #endif
 
 size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)

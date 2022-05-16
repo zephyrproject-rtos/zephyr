@@ -1,6 +1,6 @@
 # SMP over console
 
-This document specifies how the mcumgr Simple Management Procotol (SMP) is
+This document specifies how the mcumgr Simple Management Protocol (SMP) is
 transmitted over text consoles.
 
 ## Overview

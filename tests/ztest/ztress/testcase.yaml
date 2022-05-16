@@ -1,0 +1,8 @@
+common:
+  tags: test_framework
+  platform_type:
+    - qemu
+tests:
+  testing.ztest.ztress:
+    integration_platforms:
+      - qemu_x86

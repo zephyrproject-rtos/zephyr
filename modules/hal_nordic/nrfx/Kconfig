@@ -8,415 +8,408 @@ menu "nrfx drivers"
 	depends on HAS_NRFX
 
 config NRFX_ADC
-	bool "Enable ADC driver"
-	depends on HAS_HW_NRF_ADC
+	bool "ADC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_ADC))
 
 config NRFX_CLOCK
-	bool "Enable CLOCK driver"
-	depends on HAS_HW_NRF_CLOCK
+	bool "CLOCK driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_CLOCK))
 
 config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
-	bool "Enable two stage start sequence of the low frequency clock"
+	bool "Two stage start sequence of the low frequency clock"
 	depends on NRFX_CLOCK
 
 config NRFX_COMP
-	bool "Enable COMP driver"
-	depends on HAS_HW_NRF_COMP
+	bool "COMP driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_COMP))
 
 config NRFX_DPPI
-	bool "Enable DPPI allocator"
-	depends on HAS_HW_NRF_DPPIC
+	bool "DPPI allocator"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_DPPIC))
 
 config NRFX_EGU
-	bool "Enable EGU driver"
-	depends on HAS_HW_NRF_EGU0 || HAS_HW_NRF_EGU1 || HAS_HW_NRF_EGU2 || \
-		   HAS_HW_NRF_EGU3 || HAS_HW_NRF_EGU4 || HAS_HW_NRF_EGU5
+	bool
 
 config NRFX_EGU0
-	bool "Enable EGU0 instance"
-	depends on HAS_HW_NRF_EGU0
+	bool "EGU0 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu0,$(DT_COMPAT_NORDIC_NRF_EGU))
 	select NRFX_EGU
 
 config NRFX_EGU1
-	bool "Enable EGU1 instance"
-	depends on HAS_HW_NRF_EGU1
+	bool "EGU1 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu1,$(DT_COMPAT_NORDIC_NRF_EGU))
 	select NRFX_EGU
 
 config NRFX_EGU2
-	bool "Enable EGU2 instance"
-	depends on HAS_HW_NRF_EGU2
+	bool "EGU2 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu2,$(DT_COMPAT_NORDIC_NRF_EGU))
 	select NRFX_EGU
 
 config NRFX_EGU3
-	bool "Enable EGU3 instance"
-	depends on HAS_HW_NRF_EGU3
+	bool "EGU3 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu3,$(DT_COMPAT_NORDIC_NRF_EGU))
 	select NRFX_EGU
 
 config NRFX_EGU4
-	bool "Enable EGU4 instance"
-	depends on HAS_HW_NRF_EGU4
+	bool "EGU4 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu4,$(DT_COMPAT_NORDIC_NRF_EGU))
 	select NRFX_EGU
 
 config NRFX_EGU5
-	bool "Enable EGU5 instance"
-	depends on HAS_HW_NRF_EGU5
+	bool "EGU5 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu5,$(DT_COMPAT_NORDIC_NRF_EGU))
 	select NRFX_EGU
 
 config NRFX_GPIOTE
-	bool "Enable GPIOTE driver"
-	depends on HAS_HW_NRF_GPIOTE
+	bool "GPIOTE driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+
+config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
+	int "Number of event handlers"
+	depends on NRFX_GPIOTE
+	range 1 15
+	help
+	  Specifies number of handlers that can be registered to nrfx_gpiote driver
+	  by the user.
 
 config NRFX_I2S
-	bool "Enable I2S driver"
-	depends on HAS_HW_NRF_I2S
+	bool "I2S driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_I2S))
 
 config NRFX_IPC
-	bool "Enable IPC driver"
-	depends on HAS_HW_NRF_IPC
+	bool "IPC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_IPC))
 
 config NRFX_LPCOMP
-	bool "Enable LPCOMP driver"
-	depends on HAS_HW_NRF_LPCOMP
+	bool "LPCOMP driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_LPCOMP))
 
 config NRFX_NFCT
-	bool "Enable NFCT driver"
-	depends on HAS_HW_NRF_NFCT
+	bool "NFCT driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
 	select NRFX_TIMER4 if SOC_SERIES_NRF52X
 	select NRFX_TIMER2 if SOC_SERIES_NRF53X
 
 config NRFX_NVMC
-	bool "Enable NVMC driver"
+	bool "NVMC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF51_FLASH_CONTROLLER)) \
+		|| $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF52_FLASH_CONTROLLER)) \
+		|| $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF53_FLASH_CONTROLLER)) \
+		|| $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF91_FLASH_CONTROLLER))
 
 config NRFX_PDM
-	bool "Enable PDM driver"
-	depends on HAS_HW_NRF_PDM
+	bool "PDM driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PDM))
 
 config NRFX_POWER
-	bool "Enable POWER driver"
-	depends on HAS_HW_NRF_POWER
+	bool "POWER driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_POWER))
 	# On SoCs featuring the USBREG peripheral, the POWER driver uses
 	# internally the USBREG driver.
-	select NRFX_USBREG if HAS_HW_NRF_USBREG
+	select NRFX_USBREG if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBREG))
 
 config NRFX_PPI
-	bool "Enable PPI allocator"
-	depends on HAS_HW_NRF_PPI
+	bool "PPI allocator"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PPI))
 
 config NRFX_PWM
-	bool "Enable PWM driver"
-	depends on HAS_HW_NRF_PWM0 || HAS_HW_NRF_PWM1 || \
-		   HAS_HW_NRF_PWM2 || HAS_HW_NRF_PWM3
+	bool
 
 config NRFX_PWM0
-	bool "Enable PWM0 instance"
-	depends on HAS_HW_NRF_PWM0
+	bool "PWM0 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm0,$(DT_COMPAT_NORDIC_NRF_PWM))
 	select NRFX_PWM
 
 config NRFX_PWM1
-	bool "Enable PWM1 instance"
-	depends on HAS_HW_NRF_PWM1
+	bool "PWM1 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm1,$(DT_COMPAT_NORDIC_NRF_PWM))
 	select NRFX_PWM
 
 config NRFX_PWM2
-	bool "Enable PWM2 instance"
-	depends on HAS_HW_NRF_PWM2
+	bool "PWM2 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm2,$(DT_COMPAT_NORDIC_NRF_PWM))
 	select NRFX_PWM
 
 config NRFX_PWM3
-	bool "Enable PWM3 instance"
-	depends on HAS_HW_NRF_PWM3
+	bool "PWM3 driver instance"
+	depends on $(dt_nodelabel_has_compat,pwm3,$(DT_COMPAT_NORDIC_NRF_PWM))
 	select NRFX_PWM
 
 config NRFX_QDEC
-	bool "Enable QDEC driver"
-	depends on HAS_HW_NRF_QDEC || HAS_HW_NRF_QDEC0
+	bool "QDEC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_QDEC))
 
 config NRFX_QSPI
-	bool "Enable QSPI driver"
-	depends on HAS_HW_NRF_QSPI
+	bool "QSPI driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_QSPI))
 
 config NRFX_RNG
-	bool "Enable RNG driver"
-	depends on HAS_HW_NRF_RNG
+	bool "RNG driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RNG))
 
 config NRFX_RTC
-	bool "Enable RTC driver"
-	depends on HAS_HW_NRF_RTC0 || HAS_HW_NRF_RTC1 || HAS_HW_NRF_RTC2
+	bool
 
 config NRFX_RTC0
-	bool "Enable RTC0 instance"
-	depends on HAS_HW_NRF_RTC0
+	bool "RTC0 driver instance"
+	depends on $(dt_nodelabel_has_compat,rtc0,$(DT_COMPAT_NORDIC_NRF_RTC))
 	select NRFX_RTC
 
 config NRFX_RTC1
-	bool "Enable RTC1 instance"
-	depends on HAS_HW_NRF_RTC1
+	bool "RTC1 driver instance"
+	depends on $(dt_nodelabel_has_compat,rtc1,$(DT_COMPAT_NORDIC_NRF_RTC))
 	select NRFX_RTC
 
 config NRFX_RTC2
-	bool "Enable RTC2 instance"
-	depends on HAS_HW_NRF_RTC2
+	bool "RTC2 driver instance"
+	depends on $(dt_nodelabel_has_compat,rtc2,$(DT_COMPAT_NORDIC_NRF_RTC))
 	select NRFX_RTC
 
 config NRFX_SAADC
-	bool "Enable SAADC driver"
-	depends on HAS_HW_NRF_SAADC
+	bool "SAADC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SAADC))
 
 config NRFX_SPI
-	bool "Enable SPI driver"
-	depends on HAS_HW_NRF_SPI0 || HAS_HW_NRF_SPI1 || HAS_HW_NRF_SPI2
+	bool
 
 config NRFX_SPI0
-	bool "Enable SPI0 instance"
-	depends on HAS_HW_NRF_SPI0
+	bool "SPI0 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPI))
 	select NRFX_SPI
 
 config NRFX_SPI1
-	bool "Enable SPI1 instance"
-	depends on HAS_HW_NRF_SPI1
+	bool "SPI1 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPI))
 	select NRFX_SPI
 
 config NRFX_SPI2
-	bool "Enable SPI2 instance"
-	depends on HAS_HW_NRF_SPI2
+	bool "SPI2 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPI))
 	select NRFX_SPI
 
 config NRFX_SPIM
-	bool "Enable SPIM driver"
-	depends on HAS_HW_NRF_SPIM0 || HAS_HW_NRF_SPIM1 || \
-		   HAS_HW_NRF_SPIM2 || HAS_HW_NRF_SPIM3 || HAS_HW_NRF_SPIM4
+	bool
 
 config NRFX_SPIM0
-	bool "Enable SPIM0 instance"
-	depends on HAS_HW_NRF_SPIM0
+	bool "SPIM0 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	select NRFX_SPIM
 
 config NRFX_SPIM1
-	bool "Enable SPIM1 instance"
-	depends on HAS_HW_NRF_SPIM1
+	bool "SPIM1 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	select NRFX_SPIM
 
 config NRFX_SPIM2
-	bool "Enable SPIM2 instance"
-	depends on HAS_HW_NRF_SPIM2
+	bool "SPIM2 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	select NRFX_SPIM
 
 config NRFX_SPIM3
-	bool "Enable SPIM3 instance"
-	depends on HAS_HW_NRF_SPIM3
+	bool "SPIM3 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	select NRFX_SPIM
 
 config NRFX_SPIM4
-	bool "Enable SPIM4 instance"
-	depends on HAS_HW_NRF_SPIM4
+	bool "SPIM4 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi4,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	select NRFX_SPIM
 
 config NRFX_SPIS
-	bool "Enable SPIS driver"
-	depends on HAS_HW_NRF_SPIS0 || HAS_HW_NRF_SPIS1 || \
-		   HAS_HW_NRF_SPIS2 || HAS_HW_NRF_SPIS3
+	bool
 
 config NRFX_SPIS0
-	bool "Enable SPIS0 instance"
-	depends on HAS_HW_NRF_SPIS0
+	bool "SPIS0 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	select NRFX_SPIS
 
 config NRFX_SPIS1
-	bool "Enable SPIS1 instance"
-	depends on HAS_HW_NRF_SPIS1
+	bool "SPIS1 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	select NRFX_SPIS
 
 config NRFX_SPIS2
-	bool "Enable SPIS2 instance"
-	depends on HAS_HW_NRF_SPIS2
+	bool "SPIS2 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	select NRFX_SPIS
 
 config NRFX_SPIS3
-	bool "Enable SPIS3 instance"
-	depends on HAS_HW_NRF_SPIS3
+	bool "SPIS3 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIS))
 	select NRFX_SPIS
 
 config NRFX_SYSTICK
-	bool "Enable SYSTICK driver"
+	bool "SYSTICK driver"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
 
 config NRFX_TEMP
-	bool "Enable TEMP driver"
-	depends on HAS_HW_NRF_TEMP
+	bool "TEMP driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TEMP))
 
 config NRFX_TIMER
-	bool "Enable TIMER driver"
-	depends on HAS_HW_NRF_TIMER0 || HAS_HW_NRF_TIMER1 || \
-		   HAS_HW_NRF_TIMER2 || HAS_HW_NRF_TIMER3 || \
-		   HAS_HW_NRF_TIMER4
+	bool
 
 config NRFX_TIMER0
-	bool "Enable TIMER0 instance"
-	depends on HAS_HW_NRF_TIMER0
+	bool "TIMER0 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer0,$(DT_COMPAT_NORDIC_NRF_TIMER))
 	select NRFX_TIMER
 
 config NRFX_TIMER1
-	bool "Enable TIMER1 instance"
-	depends on HAS_HW_NRF_TIMER1
+	bool "TIMER1 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer1,$(DT_COMPAT_NORDIC_NRF_TIMER))
 	select NRFX_TIMER
 
 config NRFX_TIMER2
-	bool "Enable TIMER2 instance"
-	depends on HAS_HW_NRF_TIMER2
+	bool "TIMER2 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer2,$(DT_COMPAT_NORDIC_NRF_TIMER))
 	select NRFX_TIMER
 
 config NRFX_TIMER3
-	bool "Enable TIMER3 instance"
-	depends on HAS_HW_NRF_TIMER3
+	bool "TIMER3 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer3,$(DT_COMPAT_NORDIC_NRF_TIMER))
 	select NRFX_TIMER
 
 config NRFX_TIMER4
-	bool "Enable TIMER4 instance"
-	depends on HAS_HW_NRF_TIMER4
+	bool "TIMER4 driver instance"
+	depends on $(dt_nodelabel_has_compat,timer4,$(DT_COMPAT_NORDIC_NRF_TIMER))
 	select NRFX_TIMER
 
 config NRFX_TWI
-	bool "Enable TWI driver"
-	depends on HAS_HW_NRF_TWI0 || HAS_HW_NRF_TWI1
+	bool
 
 config NRFX_TWI0
-	bool "Enable TWI0 instance"
-	depends on HAS_HW_NRF_TWI0
+	bool "TWI0 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWI))
 	select NRFX_TWI
 
 config NRFX_TWI1
-	bool "Enable TWI1 instance"
-	depends on HAS_HW_NRF_TWI1
+	bool "TWI1 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWI))
 	select NRFX_TWI
 
 config NRFX_TWIM
-	bool "Enable TWIM driver"
-	depends on HAS_HW_NRF_TWIM0 || HAS_HW_NRF_TWIM1 || \
-		   HAS_HW_NRF_TWIM2 || HAS_HW_NRF_TWIM3
+	bool
 
 config NRFX_TWIM0
-	bool "Enable TWIM0 instance"
-	depends on HAS_HW_NRF_TWIM0
+	bool "TWIM0 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM
 
 config NRFX_TWIM1
-	bool "Enable TWIM1 instance"
-	depends on HAS_HW_NRF_TWIM1
+	bool "TWIM1 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM
 
 config NRFX_TWIM2
-	bool "Enable TWIM2 instance"
-	depends on HAS_HW_NRF_TWIM2
+	bool "TWIM2 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM
 
 config NRFX_TWIM3
-	bool "Enable TWIM3 instance"
-	depends on HAS_HW_NRF_TWIM3
+	bool "TWIM3 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM
 
 config NRFX_TWIS
-	bool "Enable TWIS driver"
-	depends on HAS_HW_NRF_TWIS0 || HAS_HW_NRF_TWIS1 || \
-		   HAS_HW_NRF_TWIS2 || HAS_HW_NRF_TWIS3
+	bool
 
 config NRFX_TWIS0
-	bool "Enable TWIS0 instance"
-	depends on HAS_HW_NRF_TWIS0
+	bool "TWIS0 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIS))
 	select NRFX_TWIS
 
 config NRFX_TWIS1
-	bool "Enable TWIS1 instance"
-	depends on HAS_HW_NRF_TWIS1
+	bool "TWIS1 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIS))
 	select NRFX_TWIS
 
 config NRFX_TWIS2
-	bool "Enable TWIS2 instance"
-	depends on HAS_HW_NRF_TWIS2
+	bool "TWIS2 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIS))
 	select NRFX_TWIS
 
 config NRFX_TWIS3
-	bool "Enable TWIS3 instance"
-	depends on HAS_HW_NRF_TWIS3
+	bool "TWIS3 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIS))
 	select NRFX_TWIS
 
 config NRFX_UART
-	bool "Enable UART driver"
-	depends on HAS_HW_NRF_UART0
+	bool
 
 config NRFX_UART0
-	bool "Enable UART0 instance"
-	depends on HAS_HW_NRF_UART0
+	bool "UART0 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UART))
 	select NRFX_UART
 
 config NRFX_UARTE
-	bool "Enable UARTE driver"
-	depends on HAS_HW_NRF_UARTE0 || HAS_HW_NRF_UARTE1 || \
-		   HAS_HW_NRF_UARTE2 || HAS_HW_NRF_UARTE3
+	bool
 
 config NRFX_UARTE0
-	bool "Enable UARTE0 instance"
-	depends on HAS_HW_NRF_UARTE0
+	bool "UARTE0 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	select NRFX_UARTE
 
 config NRFX_UARTE1
-	bool "Enable UARTE1 instance"
-	depends on HAS_HW_NRF_UARTE1
+	bool "UARTE1 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart1,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	select NRFX_UARTE
 
 config NRFX_UARTE2
-	bool "Enable UARTE2 instance"
-	depends on HAS_HW_NRF_UARTE2
+	bool "UARTE2 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart2,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	select NRFX_UARTE
 
 config NRFX_UARTE3
-	bool "Enable UARTE3 instance"
-	depends on HAS_HW_NRF_UARTE3
+	bool "UARTE3 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart3,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	select NRFX_UARTE
 
 config NRFX_USBD
-	bool "Enable USBD driver"
-	depends on HAS_HW_NRF_USBD
-	select NRFX_SYSTICK
+	bool "USBD driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBD))
 
 config NRFX_USBREG
-	bool "Enable USBREG driver"
-	depends on HAS_HW_NRF_USBREG
+	bool "USBREG driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBREG))
 
 config NRFX_WDT
-	bool "Enable WDT driver"
-	depends on HAS_HW_NRF_WDT || HAS_HW_NRF_WDT0 || HAS_HW_NRF_WDT1
+	bool
 
 config NRFX_WDT0
-	bool "Enable WDT0 instance"
-	depends on HAS_HW_NRF_WDT || HAS_HW_NRF_WDT0
+	bool "WDT0 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt0,$(DT_COMPAT_NORDIC_NRF_WDT))
 	select NRFX_WDT
 
 config NRFX_WDT1
-	bool "Enable WDT1 instance"
-	depends on HAS_HW_NRF_WDT1
+	bool "WDT1 driver instance"
+	depends on $(dt_nodelabel_has_compat,wdt1,$(DT_COMPAT_NORDIC_NRF_WDT))
 	select NRFX_WDT
 
+menu "Peripheral Resource Sharing module"
+
 config NRFX_PRS
-	bool "Enable Peripheral Resource Sharing module"
+	bool
 
 config NRFX_PRS_BOX_0
-	bool "Enable PRS box 0"
+	bool "PRS box 0"
 	select NRFX_PRS
 
 config NRFX_PRS_BOX_1
-	bool "Enable PRS box 1"
+	bool "PRS box 1"
 	select NRFX_PRS
 
 config NRFX_PRS_BOX_2
-	bool "Enable PRS box 2"
+	bool "PRS box 2"
 	select NRFX_PRS
 
 config NRFX_PRS_BOX_3
-	bool "Enable PRS box 3"
+	bool "PRS box 3"
 	select NRFX_PRS
 
 config NRFX_PRS_BOX_4
-	bool "Enable PRS box 4"
+	bool "PRS box 4"
 	select NRFX_PRS
 
 endmenu
+
+endmenu # "nrfx drivers"

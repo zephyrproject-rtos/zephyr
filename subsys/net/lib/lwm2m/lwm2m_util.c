@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <inttypes.h>
+#include "lwm2m_object.h"
 #include "lwm2m_util.h"
 
 #define SHIFT_LEFT(v, o, m) (((v) << (o)) & (m))
@@ -355,6 +357,7 @@ int lwm2m_atof(const char *input, double *out)
 	val2 = 0;
 
 	if (!pos) {
+		*out = (double)val1;
 		return 0;
 	}
 
@@ -377,7 +380,8 @@ int lwm2m_ftoa(double *input, char *out, size_t outlen, int8_t dec_limit)
 	int64_t val1 = (int64_t)*input;
 	int64_t val2 = (*input - (int64_t)*input) * PRECISION64;
 
-	len = snprintk(buf, sizeof(buf), "%0*lld", PRECISION64_LEN, llabs(val2));
+	len = snprintk(buf, sizeof(buf), "%0*lld", PRECISION64_LEN,
+		       (long long)llabs(val2));
 	if (len != PRECISION64_LEN) {
 		strcpy(buf, "0");
 	} else {
@@ -417,5 +421,133 @@ int lwm2m_ftoa(double *input, char *out, size_t outlen, int8_t dec_limit)
 
 	return snprintk(out, outlen, "%s%lld.%s",
 			/* handle negative val2 when val1 is 0 */
-			(val1 == 0 && val2 < 0) ? "-" : "", val1, buf);
+			(val1 == 0 && val2 < 0) ? "-" : "", (long long)val1, buf);
+}
+
+int lwm2m_path_to_string(char *buf, size_t buf_size, struct lwm2m_obj_path *input, int level_max)
+{
+	size_t fpl = 0; /* Length of the formed path */
+	int level;
+	int w;
+
+	if (!buf || buf_size < sizeof("/") || !input) {
+		return -EINVAL;
+	}
+
+	memset(buf, '\0', buf_size);
+
+	level = MIN(input->level, level_max);
+
+	/* Write path element at a time and leave space for the terminating NULL */
+	for (int idx = LWM2M_PATH_LEVEL_NONE; idx <= level; idx++) {
+		switch (idx) {
+		case LWM2M_PATH_LEVEL_NONE:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "/");
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "/", input->obj_id);
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT_INST:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "/",
+				     input->obj_inst_id);
+			break;
+		case LWM2M_PATH_LEVEL_RESOURCE:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "%" PRIu16 "", input->res_id);
+			break;
+		case LWM2M_PATH_LEVEL_RESOURCE_INST:
+			w = snprintk(&(buf[fpl]), buf_size - fpl, "/%" PRIu16 "",
+				     input->res_inst_id);
+			break;
+		default:
+			__ASSERT_NO_MSG(false);
+			return -EINVAL;
+		}
+
+		if (w < 0 || w >= buf_size - fpl) {
+			return -ENOBUFS;
+		}
+
+		/* Next path element, overwrites terminating NULL */
+		fpl += w;
+	}
+
+	return fpl;
+}
+
+uint16_t lwm2m_atou16(const uint8_t *buf, uint16_t buflen, uint16_t *len)
+{
+	uint16_t val = 0U;
+	uint16_t pos = 0U;
+
+	/* we should get a value first - consume all numbers */
+	while (pos < buflen && isdigit(buf[pos])) {
+		val = val * 10U + (buf[pos] - '0');
+		pos++;
+	}
+
+	*len = pos;
+	return val;
+}
+
+int lwm2m_string_to_path(const char *pathstr, struct lwm2m_obj_path *path,
+			  char delim)
+{
+	uint16_t value, len;
+	int i, tokstart = -1, toklen;
+	int end_index = strlen(pathstr) - 1;
+
+	(void)memset(path, 0, sizeof(*path));
+	for (i = 0; i <= end_index; i++) {
+		/* search for first numeric */
+		if (tokstart == -1) {
+			if (!isdigit((unsigned char)pathstr[i])) {
+				continue;
+			}
+
+			tokstart = i;
+		}
+
+		/* find delimiter char or end of string */
+		if (pathstr[i] == delim || i == end_index) {
+			toklen = i - tokstart + 1;
+
+			/* don't process delimiter char */
+			if (pathstr[i] == delim) {
+				toklen--;
+			}
+
+			if (toklen <= 0) {
+				continue;
+			}
+
+			value = lwm2m_atou16(&pathstr[tokstart], toklen, &len);
+			/* increase the path level for each token found */
+			path->level++;
+			switch (path->level) {
+			case LWM2M_PATH_LEVEL_OBJECT:
+				path->obj_id = value;
+				break;
+
+			case LWM2M_PATH_LEVEL_OBJECT_INST:
+				path->obj_inst_id = value;
+				break;
+
+			case LWM2M_PATH_LEVEL_RESOURCE:
+				path->res_id = value;
+				break;
+
+			case LWM2M_PATH_LEVEL_RESOURCE_INST:
+				path->res_inst_id = value;
+				break;
+
+			default:
+				return -EINVAL;
+
+			}
+
+			tokstart = -1;
+		}
+	}
+
+	return 0;
 }

@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <net/socket.h>
+#include <zephyr/net/socket.h>
 #include <poll.h>
 #include <sys/eventfd.h>
 

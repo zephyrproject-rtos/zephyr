@@ -5,7 +5,7 @@ config ADC_EMUL
 	bool "ADC emulator"
 	help
 	  Enable the ADC emulator driver. This is a fake driver in that it
-	  does not talk to real hardware. It prenteds to be actual ADC. It
+	  does not talk to real hardware. It pretends to be actual ADC. It
 	  is used for testing higher-level API for ADC devices.
 
 if ADC_EMUL

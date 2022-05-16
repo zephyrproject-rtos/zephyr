@@ -45,6 +45,16 @@
 		interrupts = <24 1>;
 	};
 
+	uart@f0002000 {
+		compatible = "ns16550";
+		clock-frequency = <10000000>;
+		reg = <0xf0002000 0x400>;
+		current-speed = <115200>;
+		label = "UART_1";
+		interrupt-parent = <&intc>;
+		interrupts = <25 1>;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;

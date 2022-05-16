@@ -22,8 +22,10 @@
 	};
 
 	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "SDRAM2";
 	};
 
 	leds {
@@ -89,7 +91,7 @@
 		/* Set 2KB of storage at the end of first 1MB flash */
 		storage_partition: partition@ff800 {
 			label = "storage";
-			reg = <0x000ff800 0x00000800>;
+			reg = <0x000ff800 DT_SIZE_K(2)>;
 		};
 	};
 };
@@ -113,6 +115,7 @@
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
 		     &eth_txd1_pg12>;
+	pinctrl-names = "default";
 };
 
 &rng {
@@ -136,6 +139,7 @@
 		     &fmc_d23_ph15 &fmc_d24_pi0 &fmc_d25_pi1 &fmc_d26_pi2
 		     &fmc_d27_pi3 &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9
 		     &fmc_d31_pi10>;
+	pinctrl-names = "default";
 
 	sdram {
 		status = "okay";
@@ -166,6 +170,7 @@
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 			&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
 };
 

@@ -11,8 +11,8 @@
  */
 
 #include <zephyr/types.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "modem_context.h"
 
@@ -50,7 +50,8 @@ int modem_pin_config(struct modem_context *ctx, uint32_t pin, bool enable)
 
 int modem_pin_init(struct modem_context *ctx)
 {
-	int i, ret;
+	int ret;
+	size_t i;
 
 	/* setup port devices and pin directions */
 	for (i = 0; i < ctx->pins_len; i++) {

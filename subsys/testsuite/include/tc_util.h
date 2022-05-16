@@ -9,13 +9,13 @@
 #ifndef ZEPHYR_TESTSUITE_INCLUDE_TC_UTIL_H_
 #define ZEPHYR_TESTSUITE_INCLUDE_TC_UTIL_H_
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 #include <string.h>
 #ifdef CONFIG_SHELL
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 #endif
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 
 #if defined CONFIG_ZTEST_TC_UTIL_USER_OVERRIDE
 #include <tc_util_user_override.h>
@@ -157,7 +157,7 @@ static inline void test_time_ms(void)
 #ifndef TC_SUITE_START
 #define TC_SUITE_START(name)					\
 	do {							\
-		TC_PRINT("Running test suite %s\n", name);	\
+		TC_PRINT("Running TESTSUITE %s\n", name);	\
 		PRINT_LINE;					\
 	} while (0)
 #endif
@@ -166,15 +166,19 @@ static inline void test_time_ms(void)
 #define TC_SUITE_END(name, result)				\
 	do {								\
 		if (result == TC_PASS) {					\
-			TC_PRINT("Test suite %s succeeded\n", name);	\
+			TC_PRINT("TESTSUITE %s succeeded\n", name);	\
 		} else {						\
-			TC_PRINT("Test suite %s failed.\n", name);	\
+			TC_PRINT("TESTSUITE %s failed.\n", name);	\
 		}							\
 	} while (0)
 #endif
 
 #if defined(CONFIG_ARCH_POSIX)
-#define TC_END_POST(result) posix_exit(result)
+#include <zephyr/logging/log_ctrl.h>
+#define TC_END_POST(result) do { \
+	LOG_PANIC(); \
+	posix_exit(result); \
+} while (0)
 #else
 #define TC_END_POST(result)
 #endif /* CONFIG_ARCH_POSIX */

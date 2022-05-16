@@ -12,10 +12,10 @@
 #ifndef __IEEE802154_FRAME_H__
 #define __IEEE802154_FRAME_H__
 
-#include <kernel.h>
-#include <net/net_pkt.h>
-#include <net/ieee802154.h>
-#include <toolchain.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/ieee802154.h>
+#include <zephyr/toolchain.h>
 
 #define IEEE802154_MTU				127
 #define IEEE802154_MIN_LENGTH			3
@@ -445,7 +445,7 @@ struct ieee802154_mpdu {
 		struct ieee802154_command *command;
 	};
 	struct ieee802154_mfr *mfr;
-} __packed;
+};
 
 /** Frame build parameters */
 struct ieee802154_frame_params {

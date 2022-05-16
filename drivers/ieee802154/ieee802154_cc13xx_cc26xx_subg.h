@@ -8,8 +8,8 @@
 #ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC13XX_CC26XX_SUBG_H_
 #define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC13XX_CC26XX_SUBG_H_
 
-#include <kernel.h>
-#include <net/net_if.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_if.h>
 
 #include <ti/drivers/rf/RF.h>
 

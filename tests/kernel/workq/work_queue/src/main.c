@@ -9,16 +9,16 @@
 /* This test covers deprecated API.  Avoid inappropriate diagnostics
  * about the use of that API.
  */
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #undef __deprecated
 #define __deprecated
 #undef __DEPRECATED_MACRO
 #define __DEPRECATED_MACRO
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #define NUM_TEST_ITEMS          6
 /* Each work item takes 100ms */
@@ -33,7 +33,7 @@
  * preempt thread submit alternatively.
  */
 #define SUBMIT_WAIT	50
-#define STACK_SIZE      (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE      (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 /* How long to wait for the full test suite to complete.  Allow for a
  * little slop
@@ -62,6 +62,28 @@ static struct triggered_test_item triggered_tests[NUM_TEST_ITEMS];
 static int results[NUM_TEST_ITEMS];
 static int num_results;
 static int expected_poll_result;
+
+#define MSG_PROVIDER_THREAD_STACK_SIZE 0x400U
+#define MSG_CONSUMER_WORKQ_STACK_SIZE 0x400U
+
+#define MSG_PROVIDER_THREAD_PRIO K_PRIO_PREEMPT(8)
+#define MSG_CONSUMER_WORKQ_PRIO K_PRIO_COOP(7)
+#define MSG_SIZE 16U
+
+static K_THREAD_STACK_DEFINE(provider_thread_stack, MSG_PROVIDER_THREAD_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(consumer_workq_stack, MSG_CONSUMER_WORKQ_STACK_SIZE);
+
+struct triggered_from_msgq_test_item {
+	k_tid_t tid;
+	struct k_thread msg_provider_thread;
+	struct k_work_q msg_consumer_workq;
+	struct k_work_poll work;
+	char msgq_buf[1][MSG_SIZE];
+	struct k_msgq msgq;
+	struct k_poll_event event;
+};
+
+static struct triggered_from_msgq_test_item triggered_from_msgq_test;
 
 static void work_handler(struct k_work *work)
 {
@@ -701,11 +723,85 @@ static void test_triggered_wait_expired(void)
 	reset_results();
 }
 
+
+static void msg_provider_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	char msg[MSG_SIZE];
+
+	k_msgq_put(&triggered_from_msgq_test.msgq, &msg, K_NO_WAIT);
+}
+
+static void triggered_from_msgq_work_handler(struct k_work *work)
+{
+	char msg[MSG_SIZE];
+
+	k_msgq_get(&triggered_from_msgq_test.msgq, &msg, K_NO_WAIT);
+}
+
+static void test_triggered_from_msgq_init(void)
+{
+	struct triggered_from_msgq_test_item *const ctx = &triggered_from_msgq_test;
+
+	ctx->tid = k_thread_create(&ctx->msg_provider_thread,
+				   provider_thread_stack,
+				   MSG_PROVIDER_THREAD_STACK_SIZE,
+				   msg_provider_thread,
+				   NULL, NULL, NULL,
+				   MSG_PROVIDER_THREAD_PRIO, 0, K_FOREVER);
+	k_work_queue_init(&ctx->msg_consumer_workq);
+	k_msgq_init(&ctx->msgq,
+		    (char *)ctx->msgq_buf,
+		    MSG_SIZE, 1U);
+	k_work_poll_init(&ctx->work, triggered_from_msgq_work_handler);
+	k_poll_event_init(&ctx->event, K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, &ctx->msgq);
+
+	k_work_queue_start(&ctx->msg_consumer_workq, consumer_workq_stack,
+			   MSG_CONSUMER_WORKQ_STACK_SIZE, MSG_CONSUMER_WORKQ_PRIO,
+			   NULL);
+	k_work_poll_submit_to_queue(&ctx->msg_consumer_workq, &ctx->work,
+				    &ctx->event, 1U, K_FOREVER);
+}
+
+static void test_triggered_from_msgq_start(void)
+{
+	k_thread_start(triggered_from_msgq_test.tid);
+}
+/**
+ * @brief Test triggered work item, triggered by a msgq message.
+ *
+ * Regression test for issue #45267:
+ *
+ * When an object availability event triggers a k_work_poll item,
+ * the object lock should not be held anymore during the execution
+ * of the work callback.
+ *
+ * Tested with msgq with K_POLL_TYPE_MSGQ_DATA_AVAILABLE.
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_poll_init(), k_work_poll_submit()
+ *
+ */
+static void test_triggered_from_msgq(void)
+{
+	TC_PRINT("Starting triggered from msgq test\n");
+
+	TC_PRINT(" - Initializing kernel objects\n");
+	test_triggered_from_msgq_init();
+
+	TC_PRINT(" - Starting the thread\n");
+	test_triggered_from_msgq_start();
+
+	reset_results();
+}
+
 /**
  * @brief Test delayed work queue define macro.
- *
- * The macro should initialize the k_delayed_work exactly the same as
- * @ref k_delayed_work_init does.
  *
  * @ingroup kernel_workqueue_tests
  *
@@ -773,6 +869,7 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_triggered_no_wait_expired),
 			 ztest_1cpu_unit_test(test_triggered_wait),
 			 ztest_1cpu_unit_test(test_triggered_wait_expired),
+			 ztest_1cpu_unit_test(test_triggered_from_msgq),
 			 ztest_1cpu_unit_test(test_delayed_work_define),
 			 ztest_1cpu_unit_test(test_triggered_cancel)
 			 );

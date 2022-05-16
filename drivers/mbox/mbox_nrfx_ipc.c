@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/mbox.h>
+#include <zephyr/drivers/mbox.h>
 #include <nrfx_ipc.h>
 
 #define LOG_LEVEL CONFIG_MBOX_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbox_nrfx_ipc);
 
 #define DT_DRV_COMPAT nordic_mbox_nrf_ipc
@@ -89,7 +89,7 @@ static int mbox_nrf_register_callback(const struct device *dev, uint32_t channel
 {
 	struct mbox_nrf_data *data = dev->data;
 
-	if (!is_rx_channel_valid(dev, channel)) {
+	if (channel >= IPC_CONF_NUM) {
 		return -EINVAL;
 	}
 
@@ -121,6 +121,10 @@ static int mbox_nrf_set_enabled(const struct device *dev, uint32_t channel, bool
 	if ((enable == 0 && (!(data->enabled_mask & BIT(channel)))) ||
 	    (enable != 0 &&   (data->enabled_mask & BIT(channel)))) {
 		return -EALREADY;
+	}
+
+	if (enable && (data->cb[channel] == NULL)) {
+		LOG_WRN("Enabling channel without a registered callback\n");
 	}
 
 	if (enable && data->enabled_mask == 0) {
@@ -198,5 +202,5 @@ static const struct mbox_driver_api mbox_nrf_driver_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, mbox_nrf_init, NULL, &nrfx_mbox_data, &nrfx_mbox_conf,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,
 		    &mbox_nrf_driver_api);

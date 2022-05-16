@@ -32,7 +32,7 @@ Hardware
 - On board sensors:
 
   - Temperature/Pressure: STMicro LPS22HB
-  - Acclerometer/Gyroscope: STMicro LSM6DS3H
+  - Accelerometer/Gyroscope: STMicro LSM6DS3H
   - Magnetometer: STMicro LIS3MDL
   - Microphone: STMicro MP34DT01
 

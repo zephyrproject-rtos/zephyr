@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <gigadevice/gd32vf103Xb.dtsi>
+#include "longan_nano-pinctrl.dtsi"
+#include "longan_nano-common.dtsi"
+
+/ {
+	model = "Sipeed Longan Nano";
+	compatible = "sipeed,longan_nano";
+};

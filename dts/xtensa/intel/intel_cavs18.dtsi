@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa/xtensa.dtsi>
-#include <dt-bindings/i2c/i2c.h>
+#include <xtensa/intel/intel_cavs.dtsi>
 #include <mem.h>
 
 / {
@@ -15,25 +14,25 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx4";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx4";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <1>;
 		};
 
 		cpu2: cpu@2 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx4";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <2>;
 		};
 
 		cpu3: cpu@3 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx4";
+			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <3>;
 		};
 	};
@@ -47,15 +46,37 @@
 	sram1: memory@be800000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0xbe800000 DT_SIZE_K(128)>;
+		reg = <0xbe800000 DT_SIZE_K(64)>;
 	};
 
 	soc {
+		shim: shim@71f00 {
+			compatible = "intel,cavs-shim";
+			reg = <0x71f00 0x100>;
+		};
+
+		win: win@71a00 {
+			compatible = "intel,cavs-win";
+			reg = <0x71a00 0x20>;
+		};
+
+		l2lm: l2lm@71d00 {
+			compatible = "intel,cavs-l2lm";
+			reg = <0x71d00 0x20>;
+		};
+
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
 			reg = <0x00 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
+		};
+
+		cavs_host_ipc: cavs_host_ipc@71e00 {
+			compatible = "intel,cavs-host-ipc";
+			reg = <0x71e00 0x30>;
+			interrupts = <7 0 0>;
+			interrupt-parent = <&cavs0>;
 		};
 
 		cavs0: cavs@78800  {
@@ -104,13 +125,6 @@
 			reg = <0x1200 0x80>;
 			interrupts = <8 0 0>;
 			interrupt-parent = <&cavs0>;
-		};
-		mailbox: mailbox@71e00 {
-			compatible = "intel,intel-adsp-mailbox";
-			reg = <0x71E00 0x20>;
-			interrupts = <0x7 0 3>;
-			interrupt-parent = <&cavs0>;
-			label = "IPM_0";
 		};
 	};
 };

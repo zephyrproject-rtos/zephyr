@@ -29,7 +29,7 @@ SOFTWARE.
 
 html {
     /* side nav width. MUST be = `TREEVIEW_WIDTH`.
-     * Make sure it is wide enought to contain the page title (logo + title + version)
+     * Make sure it is wide enough to contain the page title (logo + title + version)
      */
     --side-nav-fixed-width: 340px;
     --menu-display: none;

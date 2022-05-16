@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <ztest.h>
 #include <strings.h>
 #include <errno.h>

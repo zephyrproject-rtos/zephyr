@@ -60,7 +60,7 @@ The OLIMEX STM32-H103 supports the following hardware features:
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================
@@ -211,7 +211,7 @@ Programming and Debugging
 
 This board does not include any embedded debug tool interface, instead you
 will have to use an external probe connected to the available 20-pin JTAG
-connector to progran and debug the board. Both JTAG and SWD are supported.
+connector to program and debug the board. Both JTAG and SWD are supported.
 
 By default when using ``west debug`` ST-Link will be used with OpenOCD's
 SWD transport, but it is also possible to use JTAG with the Olimex ARM-USB-OCD-H

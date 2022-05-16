@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <devicetree.h>
-#include <drivers/sensor.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/sensor.h>
 
 #define MAX17262 DT_INST(0, maxim_max17262)
 
@@ -41,7 +41,7 @@ void main(void)
 		i_avg = avg_current.val1 + (avg_current.val2 / 1000000.0);
 
 		printk("V: %d.%06d V; I: %f mA; T: %d.%06d °C\n",
-		      voltage.val1, voltage.val2, i_avg,
+		      voltage.val1, voltage.val2, (double)i_avg,
 		      temperature.val1, temperature.val2);
 
 		k_sleep(K_MSEC(1000));

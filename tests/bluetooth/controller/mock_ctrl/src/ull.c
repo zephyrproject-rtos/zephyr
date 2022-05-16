@@ -6,7 +6,7 @@
 
 #include <zephyr/types.h>
 
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/hci.h>
 
 #include "hal/cpu_vendor_hal.h"
 #include "hal/ccm.h"
@@ -14,6 +14,7 @@
 #include "util/mem.h"
 #include "util/mfifo.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 #include "util.h"
 
 #include "pdu.h"
@@ -29,6 +30,8 @@
 #include "lll_sync.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+
+#include "ull_conn_internal.h"
 
 #define EVENT_DONE_MAX 3
 /* Backing storage for elements in mfifo_done */
@@ -61,12 +64,14 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
 #define NODE_RX_STRUCT_OVERHEAD (NODE_RX_HEADER_SIZE)
 
-#define PDU_ADVERTIZE_SIZE (PDU_AC_LL_SIZE_MAX + PDU_AC_LL_SIZE_EXTRA)
+#define PDU_ADV_SIZE  MAX(PDU_AC_LL_SIZE_MAX, \
+			  (PDU_AC_LL_HEADER_SIZE + LL_EXT_OCTETS_RX_MAX))
+
 #define PDU_DATA_SIZE (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define PDU_RX_NODE_POOL_ELEMENT_SIZE                                                              \
 	MROUND(NODE_RX_STRUCT_OVERHEAD +                                                           \
-	       MAX(MAX(PDU_ADVERTIZE_SIZE, PDU_DATA_SIZE), PDU_RX_USER_PDU_OCTETS_MAX))
+	       MAX(MAX(PDU_ADV_SIZE, PDU_DATA_SIZE), PDU_RX_USER_PDU_OCTETS_MAX))
 
 /*
  * just a big number
@@ -288,6 +293,11 @@ static inline int init_reset(void)
 	/* Allocate rx free buffers */
 	mem_link_rx.quota_pdu = RX_CNT;
 	rx_alloc(UINT8_MAX);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	/* Reset CPR mutex */
+	cpr_active_reset();
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	return 0;
 }

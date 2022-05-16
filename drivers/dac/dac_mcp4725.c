@@ -5,10 +5,10 @@
  */
 #define DT_DRV_COMPAT microchip_mcp4725
 
-#include <zephyr.h>
-#include <drivers/i2c.h>
-#include <drivers/dac.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/dac.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(dac_mcp4725, CONFIG_DAC_LOG_LEVEL);
 
@@ -82,7 +82,7 @@ static int mcp4725_channel_setup(const struct device *dev,
 static int mcp4725_write_value(const struct device *dev, uint8_t channel,
 				uint32_t value)
 {
-	const struct mcp4725_config *config = (struct mcp4725_config *)dev->config;
+	const struct mcp4725_config *config = dev->config;
 	uint8_t tx_data[2];
 	int ret;
 

@@ -6,19 +6,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/atomic.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/buf.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
 #define LOG_MODULE_NAME bt_keys
@@ -494,11 +494,13 @@ void bt_keys_show_sniffer_info(struct bt_keys *keys, void *data)
 		BT_INFO("SC LTK: 0x%s", bt_hex(ltk, keys->enc_size));
 	}
 
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 	if (keys->keys & BT_KEYS_PERIPH_LTK) {
 		sys_memcpy_swap(ltk, keys->periph_ltk.val, keys->enc_size);
 		BT_INFO("Legacy LTK: 0x%s (peripheral)",
 			bt_hex(ltk, keys->enc_size));
 	}
+#endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
 
 	if (keys->keys & BT_KEYS_LTK) {
 		sys_memcpy_swap(ltk, keys->ltk.val, keys->enc_size);

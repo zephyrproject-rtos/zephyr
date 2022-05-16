@@ -12,7 +12,7 @@ config SOC_FAMILY
 	default "nuvoton_npcx"
 
 menuconfig NPCX_HEADER
-	bool "Enable the output binary with NPCX binary header"
+	bool "The output binary with NPCX binary header"
 	help
 	  On NPCX series chip, the NPCX ROM code loads firmware image from flash
 	  to RAM by the firmware binary header setting. Enable this to invoke
@@ -41,6 +41,7 @@ config NPCX_HEADER_CHIP
 	default "npcx7m7" if SOC_NPCX7M7FC
 	default "npcx9m3" if SOC_NPCX9M3F
 	default "npcx9m6" if SOC_NPCX9M6F
+	default "npcx9m7" if SOC_NPCX9M7F
 
 choice NPCX_HEADER_SPI_MAX_CLOCK_CHOICE
 	prompt "Clock rate to use for SPI flash"
@@ -124,13 +125,13 @@ config NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO
 	default 2 if NPCX_HEADER_CORE_CLOCK_SPI_CLOCK_RATIO_2
 
 config NPCX_HEADER_ENABLE_HEADER_CRC
-	bool "Enable header crc check"
+	bool "Header crc check"
 	help
 	  When enabled, the header will be verified at boot using a crc
 	  checksum.
 
 config NPCX_HEADER_ENABLE_FIRMWARE_CRC
-	bool "Enable firmware image crc check"
+	bool "Firmware image crc check"
 	help
 	  When enabled, the firmware image will be verified at boot using a
 	  crc checksum.
@@ -182,19 +183,9 @@ endif # NPCX_HEADER
 # Select SoC Part No. and configuration options
 source "soc/arm/nuvoton_npcx/*/Kconfig.soc"
 
-config SOC_POWER_MANAGEMENT
-	bool "System Power Management in NPCX family"
-	depends on SOC_FAMILY_NPCX
-	help
-	  This option enables the board to implement SoC-specific power
-	  management policies whenever the kernel becomes idle. The power
-	  management subsystem will restore to the active state until an
-	  wake-up event is received no matter the system timer is expired or
-	  the other signals occurred such as GPIO, host access, and so on.
-
-config SOC_POWER_MANAGEMENT_TRACE
+config NPCX_PM_TRACE
 	bool "Trace System Power Management in NPCX family"
-	depends on SOC_POWER_MANAGEMENT
+	depends on PM
 	help
 	  Internal config to enable runtime power management traces.
 

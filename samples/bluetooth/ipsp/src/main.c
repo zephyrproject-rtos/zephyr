@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 LOG_MODULE_REGISTER(ipsp);
@@ -14,16 +14,16 @@ LOG_MODULE_REGISTER(ipsp);
 /* Preventing log module registration in net_core.h */
 #define NET_LOG_ENABLED	0
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 #include <errno.h>
 #include <stdio.h>
 
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-#include <net/net_core.h>
-#include <net/net_context.h>
-#include <net/udp.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/udp.h>
 
 /* Define my IP address where to expect messages */
 #define MY_IP6ADDR { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
@@ -166,8 +166,8 @@ static inline void set_dst_addr(sa_family_t family,
 				struct net_udp_hdr *udp_hdr,
 				struct sockaddr *dst_addr)
 {
-	net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
-			&ipv6_hdr->src);
+	net_ipv6_addr_copy_raw((uint8_t *)&net_sin6(dst_addr)->sin6_addr,
+			       ipv6_hdr->src);
 	net_sin6(dst_addr)->sin6_family = AF_INET6;
 	net_sin6(dst_addr)->sin6_port = udp_hdr->src_port;
 }
@@ -226,7 +226,7 @@ static void tcp_received(struct net_context *context,
 {
 	static char dbg[MAX_DBG_PRINT + 1];
 	sa_family_t family;
-	int ret;
+	int ret, len;
 
 	if (!pkt) {
 		/* EOF condition */
@@ -234,6 +234,7 @@ static void tcp_received(struct net_context *context,
 	}
 
 	family = net_pkt_family(pkt);
+	len = net_pkt_remaining_data(pkt);
 
 	snprintf(dbg, MAX_DBG_PRINT, "TCP IPv%c",
 		 family == AF_INET6 ? '6' : '4');
@@ -244,6 +245,7 @@ static void tcp_received(struct net_context *context,
 		return;
 	}
 
+	(void)net_context_update_recv_wnd(context, len);
 	net_pkt_unref(pkt);
 
 	ret = net_context_send(context, buf_tx, ret, pkt_sent,

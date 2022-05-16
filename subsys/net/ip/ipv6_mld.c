@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <errno.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_stats.h>
-#include <net/net_context.h>
-#include <net/net_mgmt.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_stats.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_mgmt.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -55,7 +55,7 @@ static int mld_create(struct net_pkt *pkt,
 	mld->aux_data_len = 0U;
 	mld->num_sources = htons(num_sources);
 
-	net_ipaddr_copy(&mld->mcast_address, addr);
+	net_ipv6_addr_copy_raw(mld->mcast_address, (uint8_t *)addr);
 
 	if (net_pkt_set_data(pkt, &mld_access)) {
 		return -ENOBUFS;
@@ -332,8 +332,8 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 	}
 
 	/* Currently we only support an unspecified address query. */
-	if (!net_ipv6_addr_cmp(&mld_query->mcast_address,
-			       net_ipv6_unspecified_address())) {
+	if (!net_ipv6_addr_cmp_raw(mld_query->mcast_address,
+				   (uint8_t *)net_ipv6_unspecified_address())) {
 		NET_DBG("DROP: only supporting unspecified address query");
 		goto drop;
 	}

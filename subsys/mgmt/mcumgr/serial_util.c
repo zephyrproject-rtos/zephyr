@@ -5,16 +5,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/__assert.h>
+#include <zephyr/sys/__assert.h>
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
-#include <sys/crc.h>
-#include <sys/byteorder.h>
-#include <net/buf.h>
-#include <sys/base64.h>
-#include <mgmt/mcumgr/buf.h>
-#include <mgmt/mcumgr/serial.h>
+#include <zephyr/sys/crc.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/base64.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
+#include <zephyr/mgmt/mcumgr/serial.h>
 
 static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 {
@@ -26,7 +26,7 @@ static void mcumgr_serial_free_rx_ctxt(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 
 static uint16_t mcumgr_serial_calc_crc(const uint8_t *data, int len)
 {
-	return crc16(data, len, 0x1021, 0, true);
+	return crc16_itu_t(0x0000, data, len);
 }
 
 static int mcumgr_serial_extract_len(struct mcumgr_serial_rx_ctxt *rx_ctxt)
@@ -215,7 +215,8 @@ int mcumgr_serial_tx_frame(const uint8_t *data, bool first, int len,
 	 * byte long is paired with first byte of input buffer to form triplet for Base64 encoding.
 	 */
 	if (first) {
-		u16 = sys_cpu_to_be16(len);
+		/* The size of the CRC16 should be added to packet length */
+		u16 = sys_cpu_to_be16(len + 2);
 		memcpy(raw, &u16, sizeof(u16));
 		raw[2] = data[0];
 

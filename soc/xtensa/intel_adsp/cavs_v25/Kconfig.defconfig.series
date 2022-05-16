@@ -35,14 +35,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 50000
 
-config IRQ_OFFLOAD_INTNUM
-	default 0
-
-# This series does not have MISC0.
-# Since EXCSAVE7 is unused by Zephyr, use it instead.
-config XTENSA_KERNEL_CPU_PTR_SR
-	default "EXCSAVE2"
-
 config KERNEL_ENTRY
 	default "_MainEntry"
 
@@ -55,19 +47,45 @@ config 2ND_LEVEL_INTERRUPTS
 config DYNAMIC_INTERRUPTS
 	default y
 
-config LOG
-	default y
+config CAVS_ICTL_0_OFFSET
+	default 6
+config CAVS_ICTL_1_OFFSET
+	default 10
+config CAVS_ICTL_2_OFFSET
+	default 13
+config CAVS_ICTL_3_OFFSET
+	default 16
 
-# To prevent test uses TEST_LOGGING_MINIMAL
-config TEST_LOGGING_DEFAULTS
-	default n
-	depends on TEST
+config 2ND_LVL_INTR_00_OFFSET
+	default CAVS_ICTL_0_OFFSET
+config 2ND_LVL_INTR_01_OFFSET
+	default CAVS_ICTL_1_OFFSET
+config 2ND_LVL_INTR_02_OFFSET
+	default CAVS_ICTL_2_OFFSET
+config 2ND_LVL_INTR_03_OFFSET
+	default CAVS_ICTL_3_OFFSET
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 4
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 21
+
+config CAVS_ISR_TBL_OFFSET
+	default 2ND_LVL_ISR_TBL_OFFSET
 
 if LOG
-
 config LOG_BACKEND_ADSP
 	default y
 
 endif # LOG
+
+if KERNEL_VM_SUPPORT
+
+config KERNEL_VM_SIZE
+	default 0x800000
+
+endif
 
 endif # SOC_SERIES_INTEL_CAVS_V25

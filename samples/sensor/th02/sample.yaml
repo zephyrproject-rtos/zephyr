@@ -5,4 +5,4 @@ tests:
     harness: sensor
     tags: sensors
     depends_on: i2c
-    filter: dt_compat_enabled("hoperf,th02")
+    filter: dt_compat_enabled("hoperf,th02") and dt_compat_enabled("seeed,grove-lcd-rgb")

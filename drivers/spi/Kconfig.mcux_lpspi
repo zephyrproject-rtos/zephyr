@@ -8,3 +8,12 @@ config SPI_MCUX_LPSPI
 	depends on HAS_MCUX_LPSPI && CLOCK_CONTROL
 	help
 	  Enable support for mcux spi driver.
+
+if SPI_MCUX_LPSPI
+config SPI_MCUX_LPSPI_DMA
+	bool "MCUX LPSPI SPI DMA Support"
+	select DMA
+	help
+	  Enable the SPI DMA mode for SPI instances
+	  that enable dma channels in their device tree node.
+endif # SPI_MCUX_LPSPI

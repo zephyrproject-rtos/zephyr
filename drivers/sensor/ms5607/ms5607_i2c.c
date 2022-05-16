@@ -7,12 +7,12 @@
 #define DT_DRV_COMPAT meas_ms5607
 
 #include <string.h>
-#include <drivers/i2c.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/byteorder.h>
 #include "ms5607.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ms5607);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)

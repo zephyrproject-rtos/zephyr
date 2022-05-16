@@ -7,9 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
 #include "mem_protect.h"
@@ -62,7 +62,7 @@ void test_main(void)
 		ztest_unit_test(test_kobject_grant_access_kobj),
 		ztest_unit_test(test_kobject_grant_access_kobj_invalid),
 		ztest_unit_test(test_kobject_release_from_user),
-		ztest_unit_test(test_kobject_release_null),
+		ztest_unit_test(test_kobject_invalid),
 		ztest_unit_test(test_kobject_access_all_grant),
 		ztest_unit_test(test_thread_has_residual_permissions),
 		ztest_unit_test(test_kobject_access_grant_to_invalid_thread),

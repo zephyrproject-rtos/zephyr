@@ -12,13 +12,13 @@
 #include <esp32/rom/gpio.h>
 #include <soc/gpio_sig_map.h>
 #include <soc/ledc_reg.h>
-#include <drivers/gpio/gpio_esp32.h>
+#include <zephyr/drivers/gpio/gpio_esp32.h>
 
 #include <soc.h>
 #include <errno.h>
-#include <drivers/pwm.h>
-#include <kernel.h>
-#include <drivers/gpio.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 
 #define PWM_ESP32_HSCH_HPOINT(i) (LEDC_HSCH0_HPOINT_REG + (0x14 * i))
@@ -294,9 +294,9 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 }
 
 /* period_cycles is not used, set frequency on menuconfig instead. */
-static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
-					uint32_t pwm, uint32_t period_cycles,
-					uint32_t pulse_cycles, pwm_flags_t flags)
+static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel,
+				    uint32_t period_cycles,
+				    uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	int speed_mode;
 	int channel;
@@ -312,7 +312,7 @@ static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
+	channel = pwm_led_esp32_get_gpio_config(channel, config->ch_cfg);
 	if (channel < 0) {
 		return -EINVAL;
 	}
@@ -338,7 +338,7 @@ static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
 	}
 
 	/* Set channel */
-	ret = pwm_led_esp32_channel_set(pwm, speed_mode, channel, 0, timer);
+	ret = pwm_led_esp32_channel_set(channel, speed_mode, channel, 0, timer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -349,8 +349,7 @@ static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
 }
 
 static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
-					    uint32_t pwm,
-					    uint64_t *cycles)
+					    uint32_t channel, uint64_t *cycles)
 {
 	const struct pwm_led_esp32_config *config;
 	int channel;
@@ -359,7 +358,7 @@ static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
 
 	config = (const struct pwm_led_esp32_config *) dev->config;
 
-	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
+	channel = pwm_led_esp32_get_gpio_config(channel, config->ch_cfg);
 	if (channel < 0) {
 		return -EINVAL;
 	}
@@ -374,7 +373,7 @@ static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
 }
 
 static const struct pwm_driver_api pwm_led_esp32_api = {
-	.pin_set = pwm_led_esp32_pin_set_cycles,
+	.set_cycles = pwm_led_esp32_set_cycles,
 	.get_cycles_per_sec = pwm_led_esp32_get_cycles_per_sec,
 };
 
@@ -384,8 +383,8 @@ int pwm_led_esp32_init(const struct device *dev)
 }
 
 /* Initialization for PWM_LED_ESP32 */
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
 #define CH_HS_TIMER(i) ((CONFIG_PWM_LED_ESP32_HS_CH ## i ## _TIMER) & 0x2)
 #define CH_HS_GPIO(i) ((CONFIG_PWM_LED_ESP32_HS_CH ## i ## _GPIO) & 0xfff)

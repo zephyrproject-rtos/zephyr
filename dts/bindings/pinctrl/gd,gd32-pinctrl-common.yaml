@@ -1,0 +1,26 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+    - name: base.yaml
+    - name: pincfg-node-group.yaml
+      child-binding:
+        child-binding:
+          property-allowlist:
+            - drive-push-pull
+            - drive-open-drain
+            - bias-disable
+            - bias-pull-down
+            - bias-pull-up
+
+child-binding:
+  child-binding:
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using pre-defined macros or, alternatively, using the
+          GD32_PINMUX_AF or GD32_PINMUX_AFIO utility macros depending on the
+          pinmux model used by the SoC series.

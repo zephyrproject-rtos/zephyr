@@ -25,14 +25,13 @@
 #ifdef CONFIG_64BIT
 /* Interrupt Mask */
 #define SOC_MCAUSE_IRQ_MASK          (1 << 63)
-/* Exception code Mask */
-#define SOC_MCAUSE_EXP_MASK          0x7FFFFFFFFFFFFFFF
 #else
 /* Interrupt Mask */
 #define SOC_MCAUSE_IRQ_MASK          (1 << 31)
-/* Exception code Mask */
-#define SOC_MCAUSE_EXP_MASK          0x7FFFFFFF
 #endif
+
+/* Exception code Mask */
+#define SOC_MCAUSE_EXP_MASK          CONFIG_RISCV_SOC_MCAUSE_EXCEPTION_MASK
 
 /* SOC-Specific EXIT ISR command */
 #define SOC_ERET                     mret
@@ -49,6 +48,13 @@ void riscv_plic_irq_disable(uint32_t irq);
 int riscv_plic_irq_is_enabled(uint32_t irq);
 void riscv_plic_set_priority(uint32_t irq, uint32_t priority);
 int riscv_plic_get_irq(void);
+#endif
+
+#if defined(CONFIG_NUCLEI_ECLIC)
+void nuclei_eclic_irq_enable(uint32_t irq);
+void nuclei_eclic_irq_disable(uint32_t irq);
+int nuclei_eclic_irq_is_enabled(uint32_t irq);
+void nuclei_eclic_set_priority(uint32_t irq, uint32_t priority);
 #endif
 
 #endif /* !_ASMLANGUAGE */

@@ -7,25 +7,21 @@
 #define DT_DRV_COMPAT silabs_gecko_i2c
 
 #include <errno.h>
-#include <drivers/i2c.h>
-#include <sys/util.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/util.h>
 #include <em_cmu.h>
 #include <em_i2c.h>
 #include <em_gpio.h>
 #include <soc.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_gecko);
 
 #include "i2c-priv.h"
 
-#define DEV_CFG(dev) \
-	((const struct i2c_gecko_config * const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct i2c_gecko_data * const)(dev)->data)
 #define DEV_BASE(dev) \
-	((I2C_TypeDef *)(DEV_CFG(dev))->base)
+	((I2C_TypeDef *)((const struct i2c_gecko_config * const)(dev)->config)->base)
 
 struct i2c_gecko_config {
 	I2C_TypeDef *base;
@@ -51,7 +47,7 @@ void i2c_gecko_config_pins(const struct device *dev,
 			   const struct soc_gpio_pin *pin_scl)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
-	const struct i2c_gecko_config *config = DEV_CFG(dev);
+	const struct i2c_gecko_config *config = dev->config;
 
 	soc_gpio_configure(pin_scl);
 	soc_gpio_configure(pin_sda);
@@ -78,7 +74,7 @@ static int i2c_gecko_configure(const struct device *dev,
 			       uint32_t dev_config_raw)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
-	struct i2c_gecko_data *data = DEV_DATA(dev);
+	struct i2c_gecko_data *data = dev->data;
 	I2C_Init_TypeDef i2cInit = I2C_INIT_DEFAULT;
 	uint32_t baudrate;
 
@@ -112,7 +108,7 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
-	struct i2c_gecko_data *data = DEV_DATA(dev);
+	struct i2c_gecko_data *data = dev->data;
 	I2C_TransferSeq_TypeDef seq;
 	I2C_TransferReturn_TypeDef ret = -EIO;
 	uint32_t timeout = 300000U;
@@ -174,7 +170,7 @@ finish:
 
 static int i2c_gecko_init(const struct device *dev)
 {
-	const struct i2c_gecko_config *config = DEV_CFG(dev);
+	const struct i2c_gecko_config *config = dev->config;
 	uint32_t bitrate_cfg;
 	int error;
 
@@ -226,10 +222,10 @@ static const struct i2c_gecko_config i2c_gecko_config_##idx = { \
 \
 static struct i2c_gecko_data i2c_gecko_data_##idx; \
 \
-DEVICE_DT_INST_DEFINE(idx, &i2c_gecko_init, \
+I2C_DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, \
 		 NULL, \
 		 &i2c_gecko_data_##idx, &i2c_gecko_config_##idx, \
-		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+		 POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
 		 &i2c_gecko_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_INIT)

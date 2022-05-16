@@ -86,7 +86,7 @@ void test_clock_uptime(void)
  * @brief Test 32-bit clock cycle functionality
  *
  * @details
- * Test Objectve:
+ * Test Objective:
  * - The kernel architecture provide a 32bit monotonically increasing
  *   cycle counter
  * - This routine tests the k_cycle_get_32() and k_uptime_get_32()
@@ -109,9 +109,9 @@ void test_clock_uptime(void)
  * - Success if cycles increase monotonically, failure otherwise.
  *
  * Test Procedure:
- * -# At mili-second boundary, get cycles repeatedly by k_cycle_get_32()
+ * -# At milli-second boundary, get cycles repeatedly by k_cycle_get_32()
  *  till cycles increased
- * -# At mili-second boundary, get cycles repeatedly by k_uptime_get_32()
+ * -# At milli-second boundary, get cycles repeatedly by k_uptime_get_32()
  *  till cycles increased
  * -# Cross check cycles gotten by k_cycle_get_32() and k_uptime_get_32(),
  *  the delta cycle should be greater than 1 milli-second.
@@ -246,7 +246,7 @@ void test_ms_time_duration(void)
 	zassert_true(tdata.stop_count == 0,
 		     "stop %u not 0", tdata.stop_count);
 
-	/** cleanup environemtn */
+	/** cleanup environment */
 	k_timer_stop(&ktimer);
 }
 /**

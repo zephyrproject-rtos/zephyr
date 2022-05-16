@@ -3,18 +3,15 @@
 # Copyright (c) 2019 Alexander Wachter
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_ZEPHYR_CAN_LOOPBACK := zephyr,can-loopback
+
 config CAN_LOOPBACK
-	bool "Loopback CAN driver"
+	bool "Emulated CAN loopback driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_CAN_LOOPBACK))
 	help
-	  This is a dummy driver that can only loopback messages.
+	  This is an emulated driver that can only loopback messages.
 
 if CAN_LOOPBACK
-
-config CAN_LOOPBACK_DEV_NAME
-	string "CAN loopback device name"
-	default "CAN_LOOPBACK"
-	help
-	  "Device name for the loopback device"
 
 config CAN_MAX_FILTER
 	int "Maximum number of concurrent active filters"

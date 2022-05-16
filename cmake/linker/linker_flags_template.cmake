@@ -12,5 +12,5 @@ check_set_linker_property(TARGET linker APPEND PROPERTY sanitize_undefined)
 # Set this flag if the linker supports reporting of memusage as part of link,
 # such as ls --print-memory-usage flag.
 # If memory reporting is a post build command, please use
-# cmake/bintools/bintools.cmake insted.
+# cmake/bintools/bintools.cmake instead.
 check_set_linker_property(TARGET linker PROPERTY memusage)

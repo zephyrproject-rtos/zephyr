@@ -1,9 +1,16 @@
-tests:
-  drivers.gpio.2pin:
+common:
     tags: drivers gpio
     depends_on: gpio
-    min_flash: 34
-    filter: dt_compat_enabled("test-gpio-basic-api")
     harness: ztest
     harness_config:
       fixture: gpio_loopback
+
+tests:
+  drivers.gpio.2pin:
+    min_flash: 34
+    filter: dt_compat_enabled("test-gpio-basic-api")
+
+  drivers.gpio.nrf_sense_edge:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
+                 boards/nrf52840dk_nrf52840_sense_edge.overlay"

@@ -172,9 +172,9 @@ Kernel
   * This allows variables declared with ``__thread`` keyword to be allocated
     on a per-thread basis, and every thread has its own copy of these
     variables.
-  * Enable via :kconfig:`CONFIG_THREAD_LOCAL_STORAGE`.
-  * ``errno`` can be stored inside TLS if :kconfig:`CONFIG_ERRNO_IN_TLS`
-    is enabled (together with :kconfig:`CONFIG_ERRNO`). This allow user
+  * Enable via :kconfig:option:`CONFIG_THREAD_LOCAL_STORAGE`.
+  * ``errno`` can be stored inside TLS if :kconfig:option:`CONFIG_ERRNO_IN_TLS`
+    is enabled (together with :kconfig:option:`CONFIG_ERRNO`). This allow user
     threads to access the value of ``errno`` without making a system call.
 
 * Memory Management
@@ -272,8 +272,8 @@ Architectures
 
     * This allows a smaller virtual address space thus requiring a smaller
       paging structure.
-    * Only the kernel image is mapped when :kconfig:`CONFIG_ACPI` is not enabled.
-    * When :kconfig:`CONFIG_ACPI` is enabled, the previous behavior to map
+    * Only the kernel image is mapped when :kconfig:option:`CONFIG_ACPI` is not enabled.
+    * When :kconfig:option:`CONFIG_ACPI` is enabled, the previous behavior to map
       all physical memory is retained as platforms with ACPI are usually not
       memory constrained and can accommodate bigger paging structure.
 
@@ -824,7 +824,7 @@ Libraries / Subsystems
       :c:type:`fs_dir_t` objects.
 
   * ``CONFIG_FS_LITTLEFS_FC_MEM_POOL`` has been deprecated and
-    should be replaced by :kconfig:`CONFIG_FS_LITTLEFS_FC_HEAP_SIZE`.
+    should be replaced by :kconfig:option:`CONFIG_FS_LITTLEFS_FC_HEAP_SIZE`.
 
 * Management
 
@@ -832,7 +832,7 @@ Libraries / Subsystems
 
     * Added support for flash devices that have non-0xff erase value.
     * Added optional verification, enabled via
-      :kconfig:`CONFIG_IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT`, of an uploaded
+      :kconfig:option:`CONFIG_IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT`, of an uploaded
       Direct-XIP binary, which will reject any binary that is not able to boot
       from base address of offered upload slot.
 
@@ -1004,7 +1004,7 @@ release:
 * :github:`31944` - flashing not working with openocd runner
 * :github:`31938` - Invalid SPDX license identifier used in file
 * :github:`31937` - sample.bluetooth.peripheral_hr_rv32m1_vega_ri5cy does not build
-* :github:`31930` - uart_nrfx_uarte: `CONFIG_UART_ASYNC_API` with `CONFIG_PM_DEVICE` breaks
+* :github:`31930` - uart_nrfx_uarte: ``CONFIG_UART_ASYNC_API`` with ``CONFIG_PM_DEVICE`` breaks
 * :github:`31928` - usb loopback not work on nrf52840
 * :github:`31924` - IVSHMEM with ACRN not working
 * :github:`31921` - west flash not working with pyocd
@@ -1632,7 +1632,7 @@ release:
 * :github:`28870` - Peripheral initiated connection parameter update is ignored
 * :github:`28867` - ARM Cortex-M4: Semaphores could not be used in ISRs with priority 0?
 * :github:`28865` - Doc: Generate documentation using dts bindings
-* :github:`28854` - `CONFIG_STACK_POINTER_RANDOM` may be undefined
+* :github:`28854` - ``CONFIG_STACK_POINTER_RANDOM`` may be undefined
 * :github:`28847` - code_relocation sample does not work on windows
 * :github:`28844` - Double quote prepended when exporting CMAKE compile option using zephyr_get_compile_options_for_lang()
 * :github:`28833` - STM32: SPI DMA Driver - HW CS handling not compatible with spi_nor (Winbond W25Q)

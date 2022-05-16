@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/flash.h>
-#include <device.h>
-#include <devicetree.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -22,6 +22,9 @@
 #elif DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_qspi_nor), okay)
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, st_stm32_qspi_nor))
 #define FLASH_NAME "JEDEC QSPI-NOR"
+#elif DT_NODE_HAS_STATUS(DT_INST(0, st_stm32_ospi_nor), okay)
+#define FLASH_DEVICE DT_LABEL(DT_INST(0, st_stm32_ospi_nor))
+#define FLASH_NAME "JEDEC OSPI-NOR"
 #else
 #error Unsupported flash driver
 #endif
@@ -67,6 +70,7 @@ void main(void)
 	 */
 	printf("\nTest 1: Flash erase\n");
 
+	/* full flash erase if FLASH_TEST_REGION_OFFSET = 0  FLASH_SECTOR_SIZE = flash size */
 	rc = flash_erase(flash_dev, FLASH_TEST_REGION_OFFSET,
 			 FLASH_SECTOR_SIZE);
 	if (rc != 0) {

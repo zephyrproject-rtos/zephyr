@@ -318,7 +318,7 @@ class CANopenProgramDownloader(object):
         array.add_member(member)
         objdict.add_object(array)
 
-        array = canopen.objectdictionary.Array('Program sofware ID', 0x1f56)
+        array = canopen.objectdictionary.Array('Program software ID', 0x1f56)
         member = canopen.objectdictionary.Variable('', 0x1f56, subindex=1)
         member.data_type = canopen.objectdictionary.UNSIGNED32
         array.add_member(member)

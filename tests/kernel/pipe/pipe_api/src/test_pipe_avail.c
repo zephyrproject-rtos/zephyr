@@ -143,7 +143,7 @@ void test_pipe_avail_w_lt_r(void)
  * @ref k_pipe.bytes_used is zero.
  *
  * In this case, @ref k_pipe.bytes_used is relevant because the read and
- * write indeces are equal.
+ * write indices are equal.
  *
  *            r
  *            w
@@ -186,7 +186,7 @@ void test_pipe_avail_r_eq_w_empty(void)
  * @ref k_pipe.bytes_used is equal to @ref k_pipe.size.
  *
  * In this case, @ref k_pipe.bytes_used is relevant because the read and
- * write indeces are equal.
+ * write indices are equal.
  *
  *            r
  *            w

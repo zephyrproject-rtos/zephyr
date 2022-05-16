@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_arch_interface.h>
 #include <string.h>
 
@@ -25,6 +25,9 @@ extern "C" {
 #endif
 
 /* Early boot functions */
+
+void z_early_memset(void *dst, int c, size_t n);
+void z_early_memcpy(void *dst, const void *src, size_t n);
 
 void z_bss_zero(void);
 #ifdef CONFIG_XIP
@@ -160,6 +163,9 @@ K_KERNEL_PINNED_STACK_ARRAY_EXTERN(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 #endif
 
+/* Calculate stack usage. */
+int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
+
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack);
 
@@ -188,7 +194,7 @@ struct gdb_ctx;
 /* Should be called by the arch layer. This is the gdbstub main loop
  * and synchronously communicate with gdb on host.
  */
-extern int z_gdb_main_loop(struct gdb_ctx *ctx, bool start);
+extern int z_gdb_main_loop(struct gdb_ctx *ctx);
 #endif
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
@@ -261,8 +267,7 @@ bool pm_system_suspend(int32_t ticks);
  * those cases, the ISR would be invoked immediately after the event wakes up
  * the CPU, before code following the CPU wait, gets a chance to execute. This
  * can be ignored if no operation needs to be done at the wake event
- * notification. Alternatively pm_idle_exit_notification_disable() can
- * be called in pm_system_suspend to disable this notification.
+ * notification.
  */
 void pm_system_resume(void);
 

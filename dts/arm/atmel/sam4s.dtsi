@@ -6,10 +6,8 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
-
-#include "sam4s-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	aliases {
@@ -81,7 +79,6 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pa4a_twi0_twck0 &pa3a_twi0_twd0>;
 		};
 
 		twi1: i2c@4001c000 {
@@ -94,7 +91,6 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-0 = <&pb5a_twi1_twck1 &pb4a_twi1_twd1>;
 		};
 
 		spi0: spi@40008000 {
@@ -106,7 +102,6 @@
 			peripheral-id = <21>;
 			label = "SPI_0";
 			status = "disabled";
-			pinctrl-0 = <&pa12a_spi_miso &pa13a_spi_mosi &pa14a_spi_spck>;
 		};
 
 		uart0: uart@400e0600 {
@@ -116,7 +111,6 @@
 			peripheral-id = <8>;
 			status = "disabled";
 			label = "UART_0";
-			pinctrl-0 = <&pa9a_uart0_urxd0 &pa10a_uart0_utxd0>;
 		};
 
 		uart1: uart@400e0800 {
@@ -126,7 +120,6 @@
 			peripheral-id = <9>;
 			status = "disabled";
 			label = "UART_1";
-			pinctrl-0 = <&pb2a_uart1_urxd1 &pb3a_uart1_utxd1>;
 		};
 
 		usart0: usart@40024000 {
@@ -147,11 +140,13 @@
 			label = "USART_1";
 		};
 
-		pinctrl@400e0e00 {
+		pinctrl: pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x400e0e00 0x400e0e00 0x600>;
+			status = "okay";
+			label = "PINCTRL";
 
 			pioa: gpio@400e0e00 {
 				compatible = "atmel,sam-gpio";
@@ -196,7 +191,6 @@
 			peripheral-id = <23 24 25>;
 			status = "disabled";
 			label = "TC0";
-			pinctrl-0 = <>;
 		};
 
 		tc1: tc@40014000 {
@@ -208,7 +202,14 @@
 			peripheral-id = <26 27 28>;
 			status = "disabled";
 			label = "TC1";
-			pinctrl-0 = <>;
+		};
+
+		rstc: rstc@400e1400 {
+			compatible = "atmel,sam-rstc";
+			reg = <0x400e1400 0x10>;
+			peripheral-id = <1>;
+			label = "RSTC";
+			user-nrst;
 		};
 	};
 };

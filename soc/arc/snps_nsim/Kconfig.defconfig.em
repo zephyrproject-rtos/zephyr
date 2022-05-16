@@ -44,10 +44,13 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 2048
 
-config ZTEST_STACKSIZE
+config ZTEST_STACK_SIZE
 	default 2048
 	depends on ZTEST
 
 endif # ARC_MPU_VER
+
+config ARC_HAS_ACCL_REGS
+	default y
 
 endif # SOC_NSIM_EM

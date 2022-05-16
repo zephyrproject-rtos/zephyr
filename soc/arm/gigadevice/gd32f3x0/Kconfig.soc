@@ -1,0 +1,10 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "GigaDevice GD32F3X0 MCU Selection"
+	depends on SOC_SERIES_GD32F3X0
+
+	config SOC_GD32F350
+		bool "gd32f350"
+endchoice

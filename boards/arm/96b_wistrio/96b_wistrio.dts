@@ -37,6 +37,22 @@
 		eeprom-0 = &eeprom;
 		lora0 = &lora;
 	};
+
+	rf_switch: rf-switch {
+		compatible = "qorvo,rfsw8001";
+		rf1-gpios = <&gpioa 4 GPIO_PULL_UP>;
+		rf2-gpios = <&gpiob 6 GPIO_PULL_UP>;
+		rf3-gpios = <&gpiob 7 GPIO_PULL_UP>;
+	};
+
+	/* regulator controlling SX oscillator enable */
+	sx-osc-enable {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "sx-osc-enable";
+		regulator-name = "sx-osc-enable";
+		enable-gpios = <&gpioh 1 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
 };
 
 &clk_hsi {
@@ -60,18 +76,21 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
 	status = "okay";
 
 	lis3dh@32 {
@@ -83,10 +102,11 @@
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
 
-	lora: sx1276@0 {
+	lora: lora@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
 		label = "sx1276";

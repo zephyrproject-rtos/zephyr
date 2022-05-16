@@ -12,18 +12,6 @@ menuconfig SDL_DISPLAY
 
 if SDL_DISPLAY
 
-config SDL_DISPLAY_DEV_NAME
-	string "SDL display device name"
-	default "SDL_DISPLAY"
-
-config SDL_DISPLAY_X_RES
-	int "X resolution for SDL display"
-	default 320
-
-config SDL_DISPLAY_Y_RES
-	int "Y resolution for SDL display"
-	default 240
-
 choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
 	prompt "Default pixel format"
 	default SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888

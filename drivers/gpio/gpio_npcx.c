@@ -6,16 +6,16 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_gpio
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <soc.h>
 
 #include "gpio_utils.h"
 #include "soc_gpio.h"
 #include "soc_miwu.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_npcx, LOG_LEVEL_ERR);
 
 /* GPIO module instances declarations */
@@ -43,11 +43,8 @@ struct gpio_npcx_data {
 };
 
 /* Driver convenience defines */
-#define DRV_CONFIG(dev) ((const struct gpio_npcx_config *)(dev)->config)
-
-#define DRV_DATA(dev) ((struct gpio_npcx_data *)(dev)->data)
-
-#define HAL_INSTANCE(dev) (struct gpio_reg *)(DRV_CONFIG(dev)->base)
+#define HAL_INSTANCE(dev)                                                                          \
+	((struct gpio_reg *)((const struct gpio_npcx_config *)(dev)->config)->base)
 
 /* Platform specific GPIO functions */
 const struct device *npcx_get_gpio_dev(int port)
@@ -60,11 +57,11 @@ const struct device *npcx_get_gpio_dev(int port)
 
 void npcx_gpio_enable_io_pads(const struct device *dev, int pin)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	/*
-	 * If this pin is configurred as a GPIO interrupt source, do not
+	 * If this pin is configured as a GPIO interrupt source, do not
 	 * implement bypass. Or ec cannot wake up via this event.
 	 */
 	if (pin < NPCX_GPIO_PORT_PIN_NUM && !npcx_miwu_irq_get_state(io_wui)) {
@@ -74,11 +71,11 @@ void npcx_gpio_enable_io_pads(const struct device *dev, int pin)
 
 void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	/*
-	 * If this pin is configurred as a GPIO interrupt source, do not
+	 * If this pin is configured as a GPIO interrupt source, do not
 	 * implement bypass. Or ec cannot wake up via this event.
 	 */
 	if (pin < NPCX_GPIO_PORT_PIN_NUM && !npcx_miwu_irq_get_state(io_wui)) {
@@ -90,7 +87,7 @@ void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 static int gpio_npcx_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 	struct gpio_reg *const inst = HAL_INSTANCE(dev);
 	uint32_t mask = BIT(pin);
 
@@ -214,7 +211,7 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_mode mode,
 					     enum gpio_int_trig trig)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 
 	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {
 		LOG_ERR("Cannot configure GPIO(%x, %d)", config->port, pin);
@@ -272,7 +269,7 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 static int gpio_npcx_manage_callback(const struct device *dev,
 				      struct gpio_callback *callback, bool set)
 {
-	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct gpio_npcx_config *const config = dev->config;
 	struct miwu_io_callback *miwu_cb = (struct miwu_io_callback *)callback;
 	int pin = find_lsb_set(callback->pin_mask) - 1;
 
@@ -311,8 +308,9 @@ int gpio_npcx_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	__ASSERT(DRV_CONFIG(dev)->wui_size == NPCX_GPIO_PORT_PIN_NUM,
-			"wui_maps array size must equal to its pin number");
+	__ASSERT(((const struct gpio_npcx_config *)dev->config)->wui_size ==
+			 NPCX_GPIO_PORT_PIN_NUM,
+		 "wui_maps array size must equal to its pin number");
 	return 0;
 }
 
@@ -335,7 +333,7 @@ int gpio_npcx_init(const struct device *dev)
 			    NULL,					       \
 			    &gpio_npcx_data_##inst,                            \
 			    &gpio_npcx_cfg_##inst,                             \
-			    POST_KERNEL,                                       \
+			    PRE_KERNEL_1,                                       \
 			    CONFIG_GPIO_INIT_PRIORITY,                         \
 			    &gpio_npcx_driver);
 

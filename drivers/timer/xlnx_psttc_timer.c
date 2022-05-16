@@ -7,8 +7,9 @@
 
 #define DT_DRV_COMPAT xlnx_ttcps
 
+#include <zephyr/device.h>
 #include <soc.h>
-#include <drivers/timer/system_timer.h>
+#include <zephyr/drivers/timer/system_timer.h>
 #include "xlnx_psttc_timer_priv.h"
 
 #define TIMER_INDEX		CONFIG_XLNX_PSTTC_TIMER_INDEX
@@ -96,7 +97,50 @@ static void ttc_isr(const void *arg)
 	sys_clock_announce(ticks);
 }
 
-int sys_clock_driver_init(const struct device *dev)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
+{
+#ifdef CONFIG_TICKLESS_KERNEL
+	uint32_t cycles;
+	uint32_t next_cycles;
+
+	/* Read counter value */
+	cycles = read_count();
+
+	/* Calculate timeout counter value */
+	if (ticks == K_TICKS_FOREVER) {
+		next_cycles = cycles + CYCLES_NEXT_MAX;
+	} else {
+		next_cycles = cycles + ((uint32_t)ticks * CYCLES_PER_TICK);
+	}
+
+	/* Set match value for the next interrupt */
+	update_match(cycles, next_cycles);
+#endif
+}
+
+uint32_t sys_clock_elapsed(void)
+{
+#ifdef CONFIG_TICKLESS_KERNEL
+	uint32_t cycles;
+
+	/* Read counter value */
+	cycles = read_count();
+
+	/* Return the number of ticks since last announcement */
+	return (cycles - last_cycles) / CYCLES_PER_TICK;
+#else
+	/* Always return 0 for tickful operation */
+	return 0;
+#endif
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	/* Return the current counter value */
+	return read_count();
+}
+
+static int sys_clock_driver_init(const struct device *dev)
 {
 	uint32_t reg_val;
 	ARG_UNUSED(dev);
@@ -153,45 +197,5 @@ int sys_clock_driver_init(const struct device *dev)
 	return 0;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
-{
-#ifdef CONFIG_TICKLESS_KERNEL
-	uint32_t cycles;
-	uint32_t next_cycles;
-
-	/* Read counter value */
-	cycles = read_count();
-
-	/* Calculate timeout counter value */
-	if (ticks == K_TICKS_FOREVER) {
-		next_cycles = cycles + CYCLES_NEXT_MAX;
-	} else {
-		next_cycles = cycles + ((uint32_t)ticks * CYCLES_PER_TICK);
-	}
-
-	/* Set match value for the next interrupt */
-	update_match(cycles, next_cycles);
-#endif
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-#ifdef CONFIG_TICKLESS_KERNEL
-	uint32_t cycles;
-
-	/* Read counter value */
-	cycles = read_count();
-
-	/* Return the number of ticks since last announcement */
-	return (cycles - last_cycles) / CYCLES_PER_TICK;
-#else
-	/* Always return 0 for tickful operation */
-	return 0;
-#endif
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	/* Return the current counter value */
-	return read_count();
-}
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

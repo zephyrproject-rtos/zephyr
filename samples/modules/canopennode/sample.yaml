@@ -2,8 +2,10 @@ sample:
   name: CANopenNode sample
 common:
   tags: can canopen
+  modules:
+    - canopennode
   depends_on: can
-  platform_allow: twr_ke18f frdm_k64f
+  filter: dt_chosen_enabled("zephyr,canbus")
   harness: console
   harness_config:
     type: one_line
@@ -11,9 +13,17 @@ common:
       - "(.*)CANopen stack initialized"
 tests:
   sample.modules.canopennode:
-    tags: introduction
+    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") and
+            dt_chosen_enabled("zephyr,flash-controller") and
+            CONFIG_FLASH_HAS_DRIVER_ENABLED
   sample.modules.canopennode.program_download:
     build_only: true
+    platform_exclude: native_posix native_posix_64 rcar_h3ulcb_cr7
+    filter: dt_label_with_parent_compat_enabled("slot0_partition", "fixed-partitions") and
+            dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions") and
+            dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") and
+            dt_chosen_enabled("zephyr,flash-controller") and
+            CONFIG_FLASH_HAS_DRIVER_ENABLED
     extra_configs:
       - CONFIG_BOOTLOADER_MCUBOOT=y
   sample.modules.canopennode.no_storage:

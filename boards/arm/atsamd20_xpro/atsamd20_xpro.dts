@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/samd20.dtsi>
+#include "atsamd20_xpro-pinctrl.dtsi"
 
 / {
 	model = "SAM D20 Xplained Pro";
@@ -53,6 +54,9 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	cs-gpios = <&porta 5 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&sercom0_spi_default>;
+	pinctrl-names = "default";
 };
 
 &sercom2 {
@@ -61,6 +65,9 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+
+	pinctrl-0 = <&sercom2_i2c_default>;
+	pinctrl-names = "default";
 };
 
 &sercom3 {
@@ -70,7 +77,8 @@
 	rxpo = <3>;
 	txpo = <1>;
 
-	pinctrl-0 = <&pa25c_sercom3_pad3 &pa24c_sercom3_pad2>;
+	pinctrl-0 = <&sercom3_uart_default>;
+	pinctrl-names = "default";
 };
 
 &sercom4 {
@@ -80,7 +88,8 @@
 	rxpo = <1>;
 	txpo = <0>;
 
-	pinctrl-0 = <&pb9d_sercom4_pad1 &pb8d_sercom4_pad0>;
+	pinctrl-0 = <&sercom4_uart_default>;
+	pinctrl-names = "default";
 };
 
 &flash0 {

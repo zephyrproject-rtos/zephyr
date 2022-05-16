@@ -36,11 +36,11 @@ struct sntp_pkt {
 	uint32_t ref_tm_s;
 	uint32_t ref_tm_f;
 	uint32_t orig_tm_s;	/* Originate timestamp seconds */
-	uint32_t orig_tm_f;	/* Originate timsstamp seconds fraction */
+	uint32_t orig_tm_f;	/* Originate timestamp seconds fraction */
 	uint32_t rx_tm_s;		/* Receive timestamp seconds */
 	uint32_t rx_tm_f;		/* Receive timestamp seconds fraction */
-	uint32_t tx_tm_s;		/* Transimit timestamp seconds */
-	uint32_t tx_tm_f;		/* Transimit timestamp seconds fraction */
+	uint32_t tx_tm_s;		/* Transmit timestamp seconds */
+	uint32_t tx_tm_f;		/* Transmit timestamp seconds fraction */
 } __packed;
 
 #endif

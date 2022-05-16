@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT honeywell_hmc5883l
 
-#include <drivers/i2c.h>
-#include <init.h>
-#include <sys/__assert.h>
-#include <sys/byteorder.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/sensor.h>
 #include <string.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "hmc5883l.h"
 
@@ -65,7 +65,7 @@ static int hmc5883l_sample_fetch(const struct device *dev,
 	if (i2c_burst_read(drv_data->i2c,
 			   DT_INST_REG_ADDR(0),
 			   HMC5883L_REG_DATA_START, (uint8_t *)buf, 6) < 0) {
-		LOG_ERR("Failed to fetch megnetometer sample.");
+		LOG_ERR("Failed to fetch magnetometer sample.");
 		return -EIO;
 	}
 

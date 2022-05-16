@@ -8,12 +8,15 @@
 #define DT_DRV_COMPAT nxp_lpc_i2s
 
 #include <string.h>
-#include <drivers/dma.h>
-#include <drivers/i2s.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/drivers/clock_control.h>
 #include <fsl_i2s.h>
 #include <fsl_dma.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 LOG_MODULE_REGISTER(i2s_mcux_flexcomm);
 
@@ -25,6 +28,9 @@ struct i2s_mcux_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config)(const struct device *dev);
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 };
 
 struct stream {
@@ -414,7 +420,7 @@ static void i2s_mcux_config_dma_blocks(const struct device *dev,
 static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 				uint32_t channel, int status)
 {
-	const struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct i2s_mcux_data *dev_data = dev->data;
 	struct stream *stream = &dev_data->tx;
 	void *buffer;
@@ -453,7 +459,7 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 			/*
 			 * DMA encountered an error (status != 0)
 			 * or
-			 * No bufers in input queue
+			 * No buffers in input queue
 			 */
 			LOG_DBG("DMA status %08x channel %u k_msgq_get ret %d",
 				status, channel, ret);
@@ -474,7 +480,7 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 static void i2s_mcux_dma_rx_callback(const struct device *dma_dev, void *arg,
 				uint32_t channel, int status)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct i2s_mcux_data *dev_data = dev->data;
 	struct stream *stream = &dev_data->rx;
 	void *buffer;
@@ -591,7 +597,7 @@ static int i2s_mcux_rx_stream_start(const struct device *dev)
 	num_of_bufs = k_mem_slab_num_free_get(stream->cfg.mem_slab);
 
 	/*
-	 * Need at least two bffers on the RX memory slab for
+	 * Need at least two buffers on the RX memory slab for
 	 * reliable DMA reception.
 	 */
 	if (num_of_bufs <= 1) {
@@ -824,6 +830,14 @@ static int i2s_mcux_init(const struct device *dev)
 {
 	const struct i2s_mcux_config *cfg = dev->config;
 	struct i2s_mcux_data *const data = dev->data;
+#ifdef CONFIG_PINCTRL
+	int err;
+
+	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+#endif
 
 	cfg->irq_config(dev);
 
@@ -859,6 +873,15 @@ static int i2s_mcux_init(const struct device *dev)
 	return 0;
 }
 
+
+#ifdef CONFIG_PINCTRL
+#define I2S_MCUX_FLEXCOMM_PINCTRL_DEFINE(id) PINCTRL_DT_INST_DEFINE(id);
+#define I2S_MCUX_FLEXCOMM_PINCTRL_INIT(id) .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),
+#else
+#define I2S_MCUX_FLEXCOMM_PINCTRL_DEFINE(id)
+#define I2S_MCUX_FLEXCOMM_PINCTRL_INIT(id)
+#endif
+
 #define I2S_DMA_CHANNELS(id)				\
 	.tx = {						\
 		.dev_dma = UTIL_AND(		\
@@ -890,6 +913,7 @@ static int i2s_mcux_init(const struct device *dev)
 	}
 
 #define I2S_MCUX_FLEXCOMM_DEVICE(id)					\
+	I2S_MCUX_FLEXCOMM_PINCTRL_DEFINE(id)				\
 	static void i2s_mcux_config_func_##id(const struct device *dev); \
 	static const struct i2s_mcux_config i2s_mcux_config_##id = {	\
 		.base =							\
@@ -898,6 +922,7 @@ static int i2s_mcux_init(const struct device *dev)
 		.clock_subsys =				\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
 		.irq_config = i2s_mcux_config_func_##id,		\
+		I2S_MCUX_FLEXCOMM_PINCTRL_INIT(id)			\
 	};								\
 	static struct i2s_mcux_data i2s_mcux_data_##id = {		\
 		I2S_DMA_CHANNELS(id)					\
@@ -908,7 +933,7 @@ static int i2s_mcux_init(const struct device *dev)
 			    &i2s_mcux_data_##id,			\
 			    &i2s_mcux_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    CONFIG_I2S_INIT_PRIORITY,			\
 			    &i2s_mcux_driver_api);			\
 	static void i2s_mcux_config_func_##id(const struct device *dev)	\
 	{								\

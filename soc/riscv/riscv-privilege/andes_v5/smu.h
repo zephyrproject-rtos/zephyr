@@ -11,6 +11,9 @@
 #ifndef SOC_RISCV_ANDES_V5_SMU_H_
 #define SOC_RISCV_ANDES_V5_SMU_H_
 
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/util_macro.h>
+
 /*
  * SMU Register Base Address
  */

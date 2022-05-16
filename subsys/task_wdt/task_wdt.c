@@ -6,13 +6,13 @@
 
 #include "task_wdt/task_wdt.h"
 
-#include <drivers/watchdog.h>
-#include <sys/reboot.h>
-#include <device.h>
+#include <zephyr/drivers/watchdog.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/device.h>
 #include <errno.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(task_wdt);
 
 /*
@@ -50,7 +50,7 @@ static int hw_wdt_channel;
 static bool hw_wdt_started;
 #endif
 
-static void schedule_next_timeout(uint32_t current_ticks)
+static void schedule_next_timeout(int64_t current_ticks)
 {
 	int next_channel_id;	/* channel which will time out next */
 	int64_t next_timeout;   /* timeout in absolute ticks of this channel */

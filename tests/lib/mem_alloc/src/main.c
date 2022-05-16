@@ -16,7 +16,7 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <stdlib.h>
 #include <errno.h>

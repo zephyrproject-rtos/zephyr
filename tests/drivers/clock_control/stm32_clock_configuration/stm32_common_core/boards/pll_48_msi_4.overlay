@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after wb_clear_clocks.overlay file.
+ * It applies to the stm32xx where the msi is 4MHz
+ */
+
+&clk_msi {
+	status = "okay";
+	msi-range = <6>; /* default value */
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <24>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+};

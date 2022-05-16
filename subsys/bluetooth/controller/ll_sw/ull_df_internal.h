@@ -20,4 +20,6 @@ void ull_df_rx_iq_report_alloc(uint8_t max);
 /* Initialized DF sync configuration. */
 void ull_df_sync_cfg_init(struct lll_df_sync *cfg);
 /* Returns information if CTE sampling for periodic sync is requested to disable. */
-uint8_t ull_df_sync_cfg_is_disabled_or_requested_to_disable(struct lll_df_sync *df_cfg);
+bool ull_df_sync_cfg_is_not_enabled(struct lll_df_sync *df_cfg);
+/* Returns information if CTE sampling for a connection is not enabled. */
+bool ull_df_conn_cfg_is_not_enabled(struct lll_df_conn_rx_cfg *rx_cfg);

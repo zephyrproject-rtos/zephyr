@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT bosch_bma280
 
-#include <drivers/i2c.h>
-#include <init.h>
-#include <drivers/sensor.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "bma280.h"
 

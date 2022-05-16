@@ -27,11 +27,11 @@
  * "
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
 
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 
 #define GPIO_OUT_PIN            23
 #define GPIO_INT_PIN            24
@@ -45,7 +45,7 @@
 #define PRIORITY                7
 
 /* delay between greetings (in ms) */
-#define SLEEPTIME               500
+#define SLEEPTIME               K_MSEC(500)
 
 extern struct k_sem thread_sem;
 

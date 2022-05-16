@@ -7,14 +7,14 @@
 #define DT_DRV_COMPAT renesas_rcar_i2c
 
 #include <errno.h>
-#include <device.h>
-#include <devicetree.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <soc.h>
-#include <drivers/i2c.h>
-#include <drivers/clock_control.h>
-#include <drivers/clock_control/rcar_clock_control.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/rcar_clock_control.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_rcar);
 
 #include "i2c-priv.h"
@@ -75,12 +75,6 @@ struct i2c_rcar_data {
 
 #define MAX_WAIT_US 100
 
-/* Helper macros for I2C */
-#define DEV_I2C_CFG(dev) \
-	((const struct i2c_rcar_cfg *)(dev)->config)
-#define DEV_I2C_DATA(dev) \
-	((struct i2c_rcar_data *)(dev)->data)
-
 static uint32_t i2c_rcar_read(const struct i2c_rcar_cfg *config,
 			      uint32_t offs)
 {
@@ -95,8 +89,8 @@ static void i2c_rcar_write(const struct i2c_rcar_cfg *config,
 
 static void i2c_rcar_isr(const struct device *dev)
 {
-	const struct i2c_rcar_cfg *config = DEV_I2C_CFG(dev);
-	struct i2c_rcar_data *data = DEV_I2C_DATA(dev);
+	const struct i2c_rcar_cfg *config = dev->config;
+	struct i2c_rcar_data *data = dev->data;
 
 	if (((i2c_rcar_read(config, RCAR_I2C_ICMSR)) & data->status_mask) ==
 	    data->status_mask) {
@@ -107,8 +101,8 @@ static void i2c_rcar_isr(const struct device *dev)
 
 static int i2c_rcar_wait_for_state(const struct device *dev, uint8_t mask)
 {
-	const struct i2c_rcar_cfg *config = DEV_I2C_CFG(dev);
-	struct i2c_rcar_data *data = DEV_I2C_DATA(dev);
+	const struct i2c_rcar_cfg *config = dev->config;
+	struct i2c_rcar_data *data = dev->data;
 
 	data->status_mask = mask;
 
@@ -124,7 +118,7 @@ static int i2c_rcar_wait_for_state(const struct device *dev, uint8_t mask)
 
 static int i2c_rcar_finish(const struct device *dev)
 {
-	const struct i2c_rcar_cfg *config = DEV_I2C_CFG(dev);
+	const struct i2c_rcar_cfg *config = dev->config;
 	int ret;
 
 	/* Enable STOP generation */
@@ -144,7 +138,7 @@ static int i2c_rcar_finish(const struct device *dev)
 static int i2c_rcar_set_addr(const struct device *dev,
 			     uint8_t chip, uint8_t read)
 {
-	const struct i2c_rcar_cfg *config = DEV_I2C_CFG(dev);
+	const struct i2c_rcar_cfg *config = dev->config;
 
 	/* Set slave address & transfer mode */
 	i2c_rcar_write(config, RCAR_I2C_ICMAR, (chip << 1) | read);
@@ -163,7 +157,7 @@ static int i2c_rcar_set_addr(const struct device *dev,
 
 static int i2c_rcar_transfer_msg(const struct device *dev, struct i2c_msg *msg)
 {
-	const struct i2c_rcar_cfg *config = DEV_I2C_CFG(dev);
+	const struct i2c_rcar_cfg *config = dev->config;
 	uint32_t i, reg;
 	int ret = 0;
 
@@ -217,7 +211,7 @@ static int i2c_rcar_transfer(const struct device *dev,
 			     struct i2c_msg *msgs, uint8_t num_msgs,
 			     uint16_t addr)
 {
-	const struct i2c_rcar_cfg *config = DEV_I2C_CFG(dev);
+	const struct i2c_rcar_cfg *config = dev->config;
 	uint16_t timeout = 0;
 	int ret;
 
@@ -272,7 +266,7 @@ static int i2c_rcar_transfer(const struct device *dev,
 
 static int i2c_rcar_configure(const struct device *dev, uint32_t dev_config)
 {
-	const struct i2c_rcar_cfg *config = DEV_I2C_CFG(dev);
+	const struct i2c_rcar_cfg *config = dev->config;
 	uint8_t cdf, scgd;
 
 	/* We only support Master mode */
@@ -320,8 +314,8 @@ static int i2c_rcar_configure(const struct device *dev, uint32_t dev_config)
 
 static int i2c_rcar_init(const struct device *dev)
 {
-	const struct i2c_rcar_cfg *config = DEV_I2C_CFG(dev);
-	struct i2c_rcar_data *data = DEV_I2C_DATA(dev);
+	const struct i2c_rcar_cfg *config = dev->config;
+	struct i2c_rcar_data *data = dev->data;
 	uint32_t bitrate_cfg;
 	int ret;
 
@@ -367,12 +361,12 @@ static const struct i2c_driver_api i2c_rcar_driver_api = {
 									       \
 	static struct i2c_rcar_data i2c_rcar_data_##n;			       \
 									       \
-	DEVICE_DT_INST_DEFINE(n,					       \
+	I2C_DEVICE_DT_INST_DEFINE(n,					       \
 			      i2c_rcar_init,				       \
 			      NULL,					       \
 			      &i2c_rcar_data_##n,			       \
 			      &i2c_rcar_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	       \
 			      &i2c_rcar_driver_api			       \
 			      );					       \
 	static void i2c_rcar_##n##_init(const struct device *dev)	       \

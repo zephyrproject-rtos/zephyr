@@ -25,7 +25,7 @@ config CONSOLE_HAS_DRIVER
 	  that some kind of console exists.
 
 config CONSOLE_HANDLER
-	bool "Enable console input handler"
+	bool "Console input handler"
 	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
 	help
@@ -58,7 +58,7 @@ config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	  code handle them if they are of no special significance to it.
 
 config UART_CONSOLE_MCUMGR
-	bool "Enable UART console mcumgr passthrough"
+	bool "UART console mcumgr passthrough"
 	depends on UART_CONSOLE
 	help
 	  Enables the UART console to receive mcumgr frames for image upgrade
@@ -67,7 +67,7 @@ config UART_CONSOLE_MCUMGR
 	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
 
 config UART_CONSOLE_INPUT_EXPIRED
-	bool "Enable support for UART console input expired mechanism"
+	bool "Support for UART console input expired mechanism"
 	default y
 	depends on UART_CONSOLE && PM
 	help
@@ -86,6 +86,15 @@ config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
 	help
 	  Fixed amount of time which unit is milliseconds to keep the UART
 	  console in use flag true.
+
+config JAILHOUSE_DEBUG_CONSOLE
+	bool "Use JAILHOUSE_DEBUG console"
+	select CONSOLE_HAS_DRIVER
+	depends on ARM64
+	help
+	  Emit console messages to a jailhouse hypervisor debug console.
+	  Useful in board bring-up if there aren't any working serial
+	  drivers.
 
 config RAM_CONSOLE
 	bool "Use RAM console"
@@ -190,7 +199,7 @@ config IPM_CONSOLE_LINE_BUF_LEN
 	  where characters are stored before sending the whole line.
 
 config UART_PIPE
-	bool "Enable pipe UART driver"
+	bool "Pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable pipe UART driver. This driver allows application to communicate
@@ -211,7 +220,7 @@ config UART_PIPE_ON_DEV_NAME
 	  for pipe UART.
 
 config UART_MCUMGR
-	bool "Enable mcumgr UART driver"
+	bool "Mcumgr UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable the mcumgr UART driver. This driver allows the application to
@@ -289,16 +298,10 @@ config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 config SEMIHOST_CONSOLE
 	bool "Use semihosting for console"
 	select CONSOLE_HAS_DRIVER
-	depends on CPU_CORTEX_M || ARM64
+	depends on SEMIHOST
 	help
 	  Enable this option to use semihosting for console.
-	  Semihosting is a mechanism that enables code running on an ARM target
-	  to communicate and use the Input/Output facilities on a host computer
-	  that is running a debugger.
-	  Additional information can be found in:
-	  https://developer.arm.com/docs/dui0471/k/what-is-semihosting/what-is-semihosting
-	  This option is compatible with hardware and with QEMU, through the
-	  (automatic) use of the -semihosting-config switch when invoking it.
+	  See SEMIHOST for a more complete description of semihosting.
 
 module = UART_CONSOLE
 module-str = UART console
@@ -307,7 +310,7 @@ source "subsys/logging/Kconfig.template.log_config"
 source "drivers/console/Kconfig.gsm_mux"
 
 config UART_MUX
-	bool "Enable UART muxing (GSM 07.10) support [EXPERIMENTAL]"
+	bool "UART muxing (GSM 07.10) support [EXPERIMENTAL]"
 	depends on SERIAL_SUPPORT_INTERRUPT && GSM_MUX
 	select UART_INTERRUPT_DRIVEN
 	select EXPERIMENTAL

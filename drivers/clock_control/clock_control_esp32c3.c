@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT espressif_esp32_rtc
 
-#include <dt-bindings/clock/esp32c3_clock.h>
+#include <zephyr/dt-bindings/clock/esp32c3_clock.h>
 #include <hal/clk_gate_ll.h>
 #include <soc/soc_caps.h>
 #include <soc/soc.h>
@@ -14,7 +14,7 @@
 #include <rtc_clk_common.h>
 
 #include <soc.h>
-#include <drivers/clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <driver/periph_ctrl.h>
 
 static int clock_control_esp32_on(const struct device *dev,

@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fs/fs.h>
+#include <zephyr/fs/fs.h>
+#include <errno.h>
+#include <zephyr/mgmt/mcumgr/buf.h>
 #include <mgmt/mgmt.h>
 #include <fs_mgmt/fs_mgmt_impl.h>
 
@@ -15,7 +17,12 @@ fs_mgmt_impl_filelen(const char *path, size_t *out_len)
 	int rc;
 
 	rc = fs_stat(path, &dirent);
-	if (rc != 0) {
+
+	if (rc == -EINVAL) {
+		return MGMT_ERR_EINVAL;
+	} else if (rc == -ENOENT) {
+		return MGMT_ERR_ENOENT;
+	} else if (rc != 0) {
 		return MGMT_ERR_EUNKNOWN;
 	}
 
@@ -57,37 +64,8 @@ fs_mgmt_impl_read(const char *path, size_t offset, size_t len,
 done:
 	fs_close(&file);
 
-	if (rc != 0) {
+	if (rc < 0) {
 		return MGMT_ERR_EUNKNOWN;
-	} else {
-		return 0;
-	}
-}
-
-static int
-zephyr_fs_mgmt_truncate(const char *path)
-{
-	size_t len;
-	int rc;
-
-	/* Attempt to get the length of the file at the specified path.  This is a
-	 * quick way to determine if there is already a file there.
-	 */
-	rc = fs_mgmt_impl_filelen(path, &len);
-	if (rc == 0) {
-		/* There is already a file with the specified path.  Unlink it to
-		 * simulate a truncate operation.
-		 *
-		 * XXX: This isn't perfect - if the file is currently open, the unlink
-		 * operation won't actually delete the file.  Consequently, the file
-		 * will get partially overwritten rather than truncated.  The NFFS port
-		 * doesn't support the truncate operation, so this is an imperfect
-		 * workaround.
-		 */
-		rc = fs_unlink(path);
-		if (rc != 0) {
-			return MGMT_ERR_EUNKNOWN;
-		}
 	}
 
 	return 0;
@@ -104,8 +82,12 @@ fs_mgmt_impl_write(const char *path, size_t offset, const void *data,
 	 * properly handle an overwrite of an existing file
 	 */
 	if (offset == 0) {
-		rc = zephyr_fs_mgmt_truncate(path);
-		if (rc != 0) {
+		/* Try to truncate file; this will return -ENOENT if file
+		 * does not exist so ignore it. Fs may log error -2 here,
+		 * just ignore it.
+		 */
+		rc = fs_unlink(path);
+		if (rc < 0 && rc != -ENOENT) {
 			return rc;
 		}
 	}
@@ -126,14 +108,12 @@ fs_mgmt_impl_write(const char *path, size_t offset, const void *data,
 		goto done;
 	}
 
-	rc = 0;
-
 done:
 	fs_close(&file);
 
-	if (rc != 0) {
+	if (rc < 0) {
 		return MGMT_ERR_EUNKNOWN;
-	} else {
-		return 0;
 	}
+
+	return 0;
 }

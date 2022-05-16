@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2021 BrainCo Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			clock-frequency = <108000000>;
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		fmc: flash-controller@40022000 {
+			compatible = "gd,gd32-flash-controller";
+			label = "FMC";
+			reg = <0x40022000 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_0";
+			};
+		};
+
+		usart0: usart@40013800 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40013800 0x400>;
+			interrupts = <27 0>;
+			rcu-periph-clock = <0x060e>;
+			status = "disabled";
+			label = "USART_0";
+		};
+
+		usart1: usart@40004400 {
+			compatible = "gd,gd32-usart";
+			reg = <0x40004400 0x400>;
+			interrupts = <28 0>;
+			rcu-periph-clock = <0x0711>;
+			status = "disabled";
+			label = "USART_1";
+		};
+
+		pinctrl: pin-controller@48000000 {
+			compatible = "gd,gd32-pinctrl-af";
+			reg = <0x48000000 0x1800>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+			label = "PINCTRL";
+
+			gpioa: gpio@48000000 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000000 0x400>;
+				rcu-periph-clock = <0x511>;
+				status = "disabled";
+				label = "GPIOA";
+			};
+
+			gpiob: gpio@48000400 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000400 0x400>;
+				rcu-periph-clock = <0x512>;
+				status = "disabled";
+				label = "GPIOB";
+			};
+
+			gpioc: gpio@48000800 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000800 0x400>;
+				rcu-periph-clock = <0x513>;
+				status = "disabled";
+				label = "GPIOC";
+			};
+
+			gpiod: gpio@48000c00 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48000c00 0x400>;
+				rcu-periph-clock = <0x514>;
+				status = "disabled";
+				label = "GPIOD";
+			};
+
+			gpiof: gpio@48001400 {
+				compatible = "gd,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48001400 0x400>;
+				rcu-periph-clock = <0x516>;
+				status = "disabled";
+				label = "GPIOF";
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

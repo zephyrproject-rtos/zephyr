@@ -8,16 +8,16 @@
  * @brief Mailboxes.
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 #include <string.h>
 #include <ksched.h>
-#include <wait_q.h>
-#include <sys/dlist.h>
-#include <init.h>
+#include <zephyr/wait_q.h>
+#include <zephyr/sys/dlist.h>
+#include <zephyr/init.h>
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 
@@ -158,8 +158,6 @@ static int mbox_message_match(struct k_mbox_msg *tx_msg,
  * then notifies the sender that message processing is complete.
  *
  * @param rx_msg Pointer to receive message descriptor.
- *
- * @return N/A
  */
 static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 {

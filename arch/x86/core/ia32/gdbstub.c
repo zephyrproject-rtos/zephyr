@@ -4,15 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <ia32/exception.h>
 #include <inttypes.h>
-#include <debug/gdbstub.h>
+#include <zephyr/debug/gdbstub.h>
 
 
 static struct gdb_ctx ctx;
-static bool start;
 
 /**
  * Currently we just handle vectors 1 and 3 but lets keep it generic
@@ -100,8 +99,7 @@ static void z_gdb_interrupt(unsigned int vector, z_arch_esf_t *esf)
 	ctx.registers[GDB_FS] = esf->fs;
 	ctx.registers[GDB_GS] = esf->gs;
 
-	z_gdb_main_loop(&ctx, start);
-	start = false;
+	z_gdb_main_loop(&ctx);
 
 	esf->eax = ctx.registers[GDB_EAX];
 	esf->ecx = ctx.registers[GDB_ECX];
@@ -133,6 +131,91 @@ void arch_gdb_step(void)
 	ctx.registers[GDB_EFLAGS] |= BIT(8);
 }
 
+size_t arch_gdb_reg_readall(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen)
+{
+	size_t ret;
+
+	if (buflen < (sizeof(ctx->registers) * 2)) {
+		ret = 0;
+	} else {
+		ret = bin2hex((const uint8_t *)&(ctx->registers),
+			      sizeof(ctx->registers), buf, buflen);
+	}
+
+	return ret;
+}
+
+size_t arch_gdb_reg_writeall(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen)
+{
+	size_t ret;
+
+	if (hexlen != (sizeof(ctx->registers) * 2)) {
+		ret = 0;
+	} else {
+		ret = hex2bin(hex, hexlen,
+			      (uint8_t *)&(ctx->registers),
+			      sizeof(ctx->registers));
+	}
+
+	return ret;
+}
+
+size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
+			    uint32_t regno)
+{
+	size_t ret;
+
+	if (buflen < (sizeof(unsigned int) * 2)) {
+		/* Make sure there is enough space to write hex string */
+		ret = 0;
+	} else if (regno >= GDB_STUB_NUM_REGISTERS) {
+		/* Return hex string "xx" to tell GDB that this register
+		 * is not available. So GDB will continue probing other
+		 * registers instead of stopping in the middle of
+		 * "info registers all".
+		 */
+		if (buflen >= 2) {
+			strncpy(buf, "xx", 2);
+			ret = 2;
+		} else {
+			ret = 0;
+		}
+	} else {
+		ret = bin2hex((const uint8_t *)&(ctx->registers[regno]),
+			      sizeof(ctx->registers[regno]),
+			      buf, buflen);
+	}
+
+	return ret;
+}
+
+size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
+			     uint32_t regno)
+{
+	size_t ret;
+
+	if (regno == GDB_ORIG_EAX) {
+		/* GDB requires orig_eax that seems to be
+		 * Linux specific. Unfortunately if we just
+		 * return error, GDB will stop working.
+		 * So just fake an OK response by saying
+		 * that we have processed the hex string.
+		 */
+		ret = hexlen;
+	} else if (regno >= GDB_STUB_NUM_REGISTERS) {
+		ret = 0;
+	} else if (hexlen != (sizeof(unsigned int) * 2)) {
+		/* Make sure the input hex string matches register size */
+		ret = 0;
+	} else {
+		ret = hex2bin(hex, hexlen,
+			      (uint8_t *)&(ctx->registers[regno]),
+			      sizeof(ctx->registers[regno]));
+	}
+
+	return ret;
+}
+
 static __used void z_gdb_debug_isr(z_arch_esf_t *esf)
 {
 	z_gdb_interrupt(IV_DEBUG, esf);
@@ -145,7 +228,6 @@ static __used void z_gdb_break_isr(z_arch_esf_t *esf)
 
 void arch_gdb_init(void)
 {
-	start = true;
 	__asm__ volatile ("int3");
 }
 

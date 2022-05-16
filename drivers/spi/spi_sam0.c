@@ -6,15 +6,16 @@
 #define DT_DRV_COMPAT atmel_sam0_spi
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_sam0);
 
 #include "spi_context.h"
 #include <errno.h>
-#include <device.h>
-#include <drivers/spi.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
-#include <drivers/dma.h>
 
 #ifndef SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val
 #define SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val (0x3)
@@ -24,6 +25,7 @@ LOG_MODULE_REGISTER(spi_sam0);
 struct spi_sam0_config {
 	SercomSpi *regs;
 	uint32_t pads;
+	const struct pinctrl_dev_config *pcfg;
 #ifdef MCLK
 	volatile uint32_t *mclk;
 	uint32_t mclk_mask;
@@ -217,36 +219,16 @@ static void spi_sam0_fast_rx(SercomSpi *regs, const struct spi_buf *rx_buf)
 		return;
 	}
 
-	/* See the comment in spi_sam0_fast_txrx re: interleaving. */
-
-	/* Write the first byte */
-	regs->DATA.reg = 0;
-	len--;
-
-	/* Ensure the data register has shifted to the shift register before
-	 * continuing.	Later writes are synchronised by waiting for the receive
-	 * to complete.
-	 */
-	while (!regs->INTFLAG.bit.DRE) {
-	}
-
 	while (len) {
-		/* Load byte N+1 into the transmit register */
+		/* Send the next byte */
 		regs->DATA.reg = 0;
 		len--;
 
-		/* Read byte N+0 from the receive register */
+		/* Wait for completion, and read */
 		while (!regs->INTFLAG.bit.RXC) {
 		}
-
 		*rx++ = regs->DATA.reg;
 	}
-
-	/* Read the final incoming byte */
-	while (!regs->INTFLAG.bit.RXC) {
-	}
-
-	*rx = regs->DATA.reg;
 
 	spi_sam0_finish(regs);
 }
@@ -265,38 +247,15 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 		return;
 	}
 
-	/*
-	 * The code below interleaves the transmit writes with the
-	 * receive reads to keep the bus fully utilised.  The code is
-	 * equivalent to:
-	 *
-	 * Transmit byte 0
-	 * Loop:
-	 * - Transmit byte n+1
-	 * - Receive byte n
-	 * Receive the final byte
-	 */
-
-	/* Write the first byte */
-	regs->DATA.reg = *tx++;
-
 	while (tx != txend) {
+		/* Send the next byte */
+		regs->DATA.reg = *tx++;
 
-		/* Read byte N+0 from the receive register */
+		/* Wait for completion, and read */
 		while (!regs->INTFLAG.bit.RXC) {
 		}
-
 		*rx++ = regs->DATA.reg;
-
-		/* We just received the response, send the next byte */
-		regs->DATA.reg = *tx++;
 	}
-
-	/* Read the final incoming byte */
-	while (!regs->INTFLAG.bit.RXC) {
-	}
-
-	*rx = regs->DATA.reg;
 
 	spi_sam0_finish(regs);
 }
@@ -704,6 +663,11 @@ static int spi_sam0_init(const struct device *dev)
 	regs->INTENCLR.reg = SERCOM_SPI_INTENCLR_MASK;
 	wait_synchronization(regs);
 
+	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+
 #ifdef CONFIG_SPI_ASYNC
 	if (!device_is_ready(cfg->dma_dev)) {
 		return -ENODEV;
@@ -755,7 +719,8 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
 	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
 	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
-	.pads = SPI_SAM0_SERCOM_PADS(n)					\
+	.pads = SPI_SAM0_SERCOM_PADS(n),				\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)			\
 }
 #else
 #define SPI_SAM0_DEFINE_CONFIG(n)					\
@@ -764,11 +729,13 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
 	.pads = SPI_SAM0_SERCOM_PADS(n),				\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	SPI_SAM0_DMA_CHANNELS(n)					\
 }
 #endif /* MCLK */
 
 #define SPI_SAM0_DEVICE_INIT(n)						\
+	PINCTRL_DT_INST_DEFINE(n);					\
 	SPI_SAM0_DEFINE_CONFIG(n);					\
 	static struct spi_sam0_data spi_sam0_dev_data_##n = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),	\

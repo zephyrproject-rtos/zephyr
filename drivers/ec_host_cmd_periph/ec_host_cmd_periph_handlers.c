@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/ec_host_cmd_periph.h>
-#include <syscall_handler.h>
+#include <zephyr/drivers/ec_host_cmd_periph.h>
+#include <zephyr/syscall_handler.h>
 
 static inline void
 z_vrfy_ec_host_cmd_periph_init(const struct device *dev,
@@ -30,7 +30,7 @@ z_vrfy_ec_host_cmd_periph_send(const struct device *dev,
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_EC_HOST_CMD_PERIPH_API));
 	Z_OOPS(z_user_from_copy(&local_tx_buf, tx_buf, sizeof(*tx_buf)));
 
-	/* Ensure that user thread has acces to read buffer since
+	/* Ensure that user thread has access to read buffer since
 	 * device will read from this memory location.
 	 */
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(local_tx_buf.buf, local_tx_buf.size));

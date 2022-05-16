@@ -17,6 +17,13 @@ properties:
     "#gpio-cells":
       const: 2
 
+    sense-edge-mask:
+      required: false
+      type: int
+      description: |
+        Mask of pins that use the GPIO sense mechanism for edge detection.
+        Pins not included in the mask use GPIOTE channels in the event mode.
+
     port:
       type: int
       required: true

@@ -1,0 +1,8 @@
+# Olimex ESP32-EVB board configuration
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OLIMEX_ESP32_EVB
+	bool "Olimex ESP32-EVB"
+	depends on SOC_ESP32

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
-#include <drivers/pinmux.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/pinmux.h>
 
 #include "soc.h"
 
@@ -280,7 +280,7 @@ static int board_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portb, MCHP_GPIO_073, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
-#ifdef CONFIG_PS2_XEC_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_0), okay)
 	/* Set muxing for PS20B*/
 	mchp_pcr_periph_slp_ctrl(PCR_PS2_0, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(porta, MCHP_GPIO_007, MCHP_GPIO_CTRL_MUX_F2 |
@@ -289,7 +289,7 @@ static int board_pinmux_init(const struct device *dev)
 		       MCHP_GPIO_CTRL_BUFT_OPENDRAIN);
 #endif
 
-#ifdef CONFIG_PS2_XEC_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ps2_1), okay)
 	/* Set muxing for PS21B*/
 	mchp_pcr_periph_slp_ctrl(PCR_PS2_1, MCHP_PCR_SLEEP_DIS);
 	pinmux_pin_set(portd, MCHP_GPIO_154, MCHP_GPIO_CTRL_MUX_F2 |

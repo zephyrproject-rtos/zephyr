@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, STMICROLECTRONICS
+ * Copyright (c) 2020, STMICROELECTRONICS
  *
  * SPDX-License-Identifier: Apache-2.0
  */

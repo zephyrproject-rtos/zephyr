@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 
 struct sample_data {

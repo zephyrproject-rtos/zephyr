@@ -13,14 +13,12 @@
 #ifndef _SOC__H_
 #define _SOC__H_
 
-#include <sys/util.h>
+#include <zephyr/sys/util.h>
 
 #ifndef _ASMLANGUAGE
 
 #include <em_common.h>
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
 
 #include "soc_pinmap.h"
 #include "../common/soc_gpio.h"

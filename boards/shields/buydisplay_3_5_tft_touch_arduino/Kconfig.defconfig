@@ -8,9 +8,6 @@ if DISPLAY
 config SPI
 	default y
 
-config ILI9488
-	default y
-
 if KSCAN
 
 config I2C
@@ -27,41 +24,32 @@ endif # KSCAN
 
 if LVGL
 
-config LVGL_DISPLAY_DEV_NAME
-	default "DISPLAY"
-
-config LVGL_HOR_RES_MAX
-	default 320
-
-config LVGL_VER_RES_MAX
-	default 480
-
-config LVGL_VDB_SIZE
+config LV_Z_VDB_SIZE
 	default 32
 
-config LVGL_BITS_PER_PIXEL
+config LV_Z_BITS_PER_PIXEL
 	default 24
 
-choice LVGL_COLOR_DEPTH
-	default LVGL_COLOR_DEPTH_16
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
 endchoice
 
 config KSCAN
 	default y
 
-config LVGL_POINTER_KSCAN
+config LV_Z_POINTER_KSCAN
 	default y
 
-config LVGL_POINTER_KSCAN_DEV_NAME
+config LV_Z_POINTER_KSCAN_DEV_NAME
 	default "TOUCH"
 
-config LVGL_POINTER_KSCAN_SWAP_XY
+config LV_Z_POINTER_KSCAN_SWAP_XY
 	default y
 
-config LVGL_POINTER_KSCAN_INVERT_X
+config LV_Z_POINTER_KSCAN_INVERT_X
 	default y
 
-config LVGL_POINTER_KSCAN_INVERT_Y
+config LV_Z_POINTER_KSCAN_INVERT_Y
 	default y
 
 endif # LVGL

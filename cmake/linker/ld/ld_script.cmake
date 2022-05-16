@@ -74,11 +74,11 @@ function(symbol_to_string)
   get_property(subalign GLOBAL PROPERTY ${STRING_SYMBOL}_SUBALIGN)
 
   string(REPLACE "\\" "" expr "${expr}")
-  string(REGEX MATCHALL "%([^%]*)%" match_res ${expr})
+  string(REGEX MATCHALL "@([^@]*)@" match_res ${expr})
 
   foreach(match ${match_res})
-    string(REPLACE "%" "" match ${match})
-    string(REPLACE "%${match}%" "${match}" expr ${expr})
+    string(REPLACE "@" "" match ${match})
+    string(REPLACE "@${match}@" "${match}" expr ${expr})
   endforeach()
 
   set(${STRING_STRING} "${${STRING_STRING}}\n${symbol} = ${expr};\n" PARENT_SCOPE)
@@ -311,6 +311,7 @@ function(section_to_string)
 
   if(NOT nosymbols)
     set(TEMP "${TEMP}\n__${name_clean}_size = __${name_clean}_end - __${name_clean}_start;")
+    set(TEMP "${TEMP}\nPROVIDE(__${name_clean}_align = ALIGNOF(${name}));")
     set(TEMP "${TEMP}\n__${name_clean}_load_start = LOADADDR(${name});")
   endif()
 

@@ -27,12 +27,12 @@ def yaml_load(filename):
     """
     Safely load a YAML document
 
-    Follows recomendations from
+    Follows recommendations from
     https://security.openstack.org/guidelines/dg_avoid-dangerous-input-parsing-libraries.html.
 
     :param str filename: filename to load
     :raises yaml.scanner: On YAML scan issues
-    :raises: any other exception on file access erors
+    :raises: any other exception on file access errors
     :return: dictionary representing the YAML document
     """
     try:
@@ -46,7 +46,7 @@ def yaml_load(filename):
                   e.note, cmark.name, cmark.line, cmark.column, e.context)
         raise
 
-# If pykwalify is installed, then the validate functionw ill work --
+# If pykwalify is installed, then the validate function will work --
 # otherwise, it is a stub and we'd warn about it.
 try:
     import pykwalify.core
@@ -67,7 +67,7 @@ except ImportError as e:
 def yaml_load_verify(filename, schema):
     """
     Safely load a testcase/sample yaml document and validate it
-    against the YAML schema, returing in case of success the YAML data.
+    against the YAML schema, returning in case of success the YAML data.
 
     :param str filename: name of the file to load and process
     :param dict schema: loaded YAML schema (can load with :func:`yaml_load`)

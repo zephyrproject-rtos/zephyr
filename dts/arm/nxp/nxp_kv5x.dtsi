@@ -5,10 +5,10 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/clock/kinetis_sim.h>
-#include <dt-bindings/clock/kinetis_mcg.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/kinetis_sim.h>
+#include <zephyr/dt-bindings/clock/kinetis_mcg.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -24,6 +24,12 @@
 			compatible = "arm,cortex-m7";
 			reg = <0>;
 		};
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
 	};
 
 	soc {

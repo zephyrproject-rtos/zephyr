@@ -6,36 +6,46 @@
 
 #include <stddef.h>
 #include <errno.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <sys/util.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/direction.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/direction.h>
 
 #define DEVICE_NAME     CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define NAME_LEN        30
-#define TIMEOUT_SYNC_CREATE K_SECONDS(10)
+#define PEER_NAME_LEN_MAX 30
+/* BT Core 5.3 Vol 6, Part B section 4.4.5.1 Periodic Advertising Trains allows controller to wait
+ * 6 periodic advertising events for synchronization establishment, hence timeout must be longer
+ * than that.
+ */
+#define SYNC_CREATE_TIMEOUT_INTERVAL_NUM 7
+/* Maximum length of advertising data represented in hexadecimal format */
+#define ADV_DATA_HEX_STR_LEN_MAX (BT_GAP_ADV_MAX_EXT_ADV_DATA_LEN * 2 + 1)
 
 static struct bt_le_per_adv_sync_param sync_create_param;
 static struct bt_le_per_adv_sync *sync;
 static bt_addr_le_t per_addr;
 static bool per_adv_found;
 static bool scan_enabled;
+static bool sync_wait;
+static bool sync_terminated;
 static uint8_t per_sid;
+static uint32_t sync_create_timeout_ms;
 
 static K_SEM_DEFINE(sem_per_adv, 0, 1);
 static K_SEM_DEFINE(sem_per_sync, 0, 1);
 static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
 
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+#if defined(CONFIG_BT_DF_CTE_RX_AOA)
 const static uint8_t ant_patterns[] = { 0x1, 0x2, 0x3, 0x4, 0x5,
 					0x6, 0x7, 0x8, 0x9, 0xA };
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
+#endif /* CONFIG_BT_DF_CTE_RX_AOA */
 
 static bool data_cb(struct bt_data *data, void *user_data);
 static void create_sync(void);
@@ -65,6 +75,11 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv,
 };
+
+static uint32_t sync_create_timeout_get(uint16_t interval)
+{
+	return BT_GAP_PER_ADV_INTERVAL_TO_MS(interval) * SYNC_CREATE_TIMEOUT_INTERVAL_NUM;
+}
 
 static const char *phy2str(uint8_t phy)
 {
@@ -141,15 +156,20 @@ static void term_cb(struct bt_le_per_adv_sync *sync,
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr);
 
-	k_sem_give(&sem_per_sync_lost);
+	if (sync_wait) {
+		sync_terminated = true;
+		k_sem_give(&sem_per_sync);
+	} else {
+		k_sem_give(&sem_per_sync_lost);
+	}
 }
 
 static void recv_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_recv_info *info,
 		    struct net_buf_simple *buf)
 {
+	static char data_str[ADV_DATA_HEX_STR_LEN_MAX];
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char data_str[129];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
@@ -195,6 +215,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       info->interval, info->interval * 5 / 4, info->sid);
 
 	if (!per_adv_found && info->interval != 0) {
+		sync_create_timeout_ms = sync_create_timeout_get(info->interval);
 		per_adv_found = true;
 		per_sid = info->sid;
 		bt_addr_le_copy(&per_addr, info->addr);
@@ -243,14 +264,14 @@ static void enable_cte_rx(void)
 
 	const struct bt_df_per_adv_sync_cte_rx_param cte_rx_params = {
 		.max_cte_count = 5,
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
-		.cte_type = BT_DF_CTE_TYPE_ALL,
+#if defined(CONFIG_BT_DF_CTE_RX_AOA)
+		.cte_types = BT_DF_CTE_TYPE_ALL,
 		.slot_durations = 0x2,
 		.num_ant_ids = ARRAY_SIZE(ant_patterns),
 		.ant_ids = ant_patterns,
 #else
-		.cte_type = BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US,
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
+		.cte_types = BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US,
+#endif /* CONFIG_BT_DF_CTE_RX_AOA */
 	};
 
 	printk("Enable receiving of CTE...\n");
@@ -342,19 +363,31 @@ void main(void)
 		}
 		printk("success. Found periodic advertising.\n");
 
+		sync_wait = true;
+		sync_terminated = false;
+
 		create_sync();
 
 		printk("Waiting for periodic sync...\n");
-		err = k_sem_take(&sem_per_sync, TIMEOUT_SYNC_CREATE);
-		if (err != 0) {
-			printk("failed (err %d)\n", err);
+		err = k_sem_take(&sem_per_sync, K_MSEC(sync_create_timeout_ms));
+		if (err != 0 || sync_terminated) {
+			if (err != 0) {
+				printk("failed (err %d)\n", err);
+			} else {
+				printk("terminated\n");
+			}
+
+			sync_wait = false;
+
 			err = delete_sync();
 			if (err != 0) {
 				return;
 			}
+
 			continue;
 		}
 		printk("success. Periodic sync established.\n");
+		sync_wait = false;
 
 		enable_cte_rx();
 

@@ -4,16 +4,52 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ctype.h>
-#include <device.h>
+#include <zephyr/device.h>
+#include <stdlib.h>
 #include "shell_utils.h"
 #include "shell_wildcard.h"
 
-extern const struct shell_cmd_entry __shell_root_cmds_start[];
-extern const struct shell_cmd_entry __shell_root_cmds_end[];
+extern const union shell_cmd_entry __shell_root_cmds_start[];
+extern const union shell_cmd_entry __shell_root_cmds_end[];
 
-static inline const struct shell_cmd_entry *shell_root_cmd_get(uint32_t id)
+extern const union shell_cmd_entry __shell_dynamic_subcmds_start[];
+extern const union shell_cmd_entry __shell_dynamic_subcmds_end[];
+
+extern const union shell_cmd_entry __shell_subcmds_start[];
+extern const union shell_cmd_entry __shell_subcmds_end[];
+
+/* Macro creates empty entry at the bottom of the memory section with subcommands
+ * it is used to detect end of subcommand set that is located before this marker.
+ */
+#define Z_SHELL_SUBCMD_END_MARKER_CREATE()				\
+	static const struct shell_static_entry z_shell_subcmd_end_marker\
+	__attribute__ ((section("."					\
+			STRINGIFY(Z_SHELL_SUBCMD_NAME(999)))))		\
+	__attribute__((used))
+
+Z_SHELL_SUBCMD_END_MARKER_CREATE();
+
+static inline const union shell_cmd_entry *shell_root_cmd_get(uint32_t id)
 {
 	return &__shell_root_cmds_start[id];
+}
+
+/* Determine if entry is a dynamic command by checking if address is within
+ * dynamic commands memory section.
+ */
+static inline bool is_dynamic_cmd(const union shell_cmd_entry *entry)
+{
+	return (entry >= __shell_dynamic_subcmds_start) &&
+		(entry < __shell_dynamic_subcmds_end);
+}
+
+/* Determine if entry is a section command by checking if address is within
+ * subcommands memory section.
+ */
+static inline bool is_section_cmd(const union shell_cmd_entry *entry)
+{
+	return (entry >= __shell_subcmds_start) &&
+		(entry < __shell_subcmds_end);
 }
 
 /* Calculates relative line number of given position in buffer */
@@ -225,19 +261,19 @@ static inline uint32_t shell_root_cmd_count(void)
 {
 	return ((uint8_t *)__shell_root_cmds_end -
 			(uint8_t *)__shell_root_cmds_start)/
-				sizeof(struct shell_cmd_entry);
+				sizeof(union shell_cmd_entry);
 }
 
 /* Function returning pointer to parent command matching requested syntax. */
 const struct shell_static_entry *root_cmd_find(const char *syntax)
 {
 	const size_t cmd_count = shell_root_cmd_count();
-	const struct shell_cmd_entry *cmd;
+	const union shell_cmd_entry *cmd;
 
 	for (size_t cmd_idx = 0; cmd_idx < cmd_count; ++cmd_idx) {
 		cmd = shell_root_cmd_get(cmd_idx);
-		if (strcmp(syntax, cmd->u.entry->syntax) == 0) {
-			return cmd->u.entry;
+		if (strcmp(syntax, cmd->entry->syntax) == 0) {
+			return cmd->entry;
 		}
 	}
 
@@ -253,20 +289,32 @@ const struct shell_static_entry *z_shell_cmd_get(
 
 	if (parent == NULL) {
 		return  (idx < shell_root_cmd_count()) ?
-				shell_root_cmd_get(idx)->u.entry : NULL;
+				shell_root_cmd_get(idx)->entry : NULL;
 	}
 
 	__ASSERT_NO_MSG(dloc != NULL);
 
 	if (parent->subcmd) {
-		if (parent->subcmd->is_dynamic) {
-			parent->subcmd->u.dynamic_get(idx, dloc);
+		if (is_dynamic_cmd(parent->subcmd)) {
+			parent->subcmd->dynamic_get(idx, dloc);
 			if (dloc->syntax != NULL) {
 				res = dloc;
 			}
 		} else {
-			if (parent->subcmd->u.entry[idx].syntax != NULL) {
-				res = &parent->subcmd->u.entry[idx];
+			const struct shell_static_entry *entry_list;
+
+			if (is_section_cmd(parent->subcmd)) {
+				/* First element is null */
+				entry_list =
+					(const struct shell_static_entry *)parent->subcmd;
+				idx++;
+			} else {
+				entry_list = parent->subcmd->entry;
+			}
+
+
+			if (entry_list[idx].syntax != NULL) {
+				res = &entry_list[idx];
 			}
 		}
 	}
@@ -470,4 +518,58 @@ const struct device *shell_device_lookup(size_t idx,
 	}
 
 	return NULL;
+}
+
+long shell_strtol(const char *str, int base, int *err)
+{
+	long val;
+	char *endptr = NULL;
+
+	errno = 0;
+	val = strtol(str, &endptr, base);
+	if (errno == ERANGE) {
+		*err = -ERANGE;
+		return 0;
+	} else if (errno || endptr == str || *endptr) {
+		*err = -EINVAL;
+		return 0;
+	}
+
+	return val;
+}
+
+unsigned long shell_strtoul(const char *str, int base, int *err)
+{
+	unsigned long val;
+	char *endptr = NULL;
+
+	if (*str == '-') {
+		*err = -EINVAL;
+		return 0;
+	}
+
+	errno = 0;
+	val = strtoul(str, &endptr, base);
+	if (errno == ERANGE) {
+		*err = -ERANGE;
+		return 0;
+	} else if (errno || endptr == str || *endptr) {
+		*err = -EINVAL;
+		return 0;
+	}
+
+	return val;
+}
+
+bool shell_strtobool(const char *str, int base, int *err)
+{
+	if (!strcmp(str, "on") || !strcmp(str, "enable") || !strcmp(str, "true")) {
+		return true;
+	}
+
+	if (!strcmp(str, "off") || !strcmp(str, "disable") || !strcmp(str, "false")) {
+		return false;
+	}
+
+	return shell_strtoul(str, base, err);
 }

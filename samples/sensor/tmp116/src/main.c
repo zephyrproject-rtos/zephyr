@@ -4,15 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/printk.h>
-#include <sys/__assert.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/eeprom.h>
+#include <zephyr/drivers/sensor/tmp116.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/__assert.h>
+
+static uint8_t eeprom_content[EEPROM_TMP116_SIZE];
 
 void main(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET(DT_INST(0, ti_tmp116));
+	const struct device *eeprom = DEVICE_DT_GET(DT_INST(0, ti_tmp116_eeprom));
 	struct sensor_value temp_value;
 
 	/* offset to be added to the temperature
@@ -21,10 +26,21 @@ void main(void)
 	struct sensor_value offset_value;
 	int ret;
 
-	dev = device_get_binding(DT_LABEL(DT_INST(0, ti_tmp116)));
-	__ASSERT(dev != NULL, "Failed to get TMP116 device binding");
+	__ASSERT(device_is_ready(dev), "TMP116 device not ready");
+	__ASSERT(device_is_ready(eeprom), "TMP116 eeprom device not ready");
 
 	printk("Device %s - %p is ready\n", dev->name, dev);
+
+	ret = eeprom_read(eeprom, 0, eeprom_content, sizeof(eeprom_content));
+	if (ret == 0) {
+		printk("eeprom content %02x%02x%02x%02x%02x%02x%02x%02x\n",
+		       eeprom_content[0], eeprom_content[1],
+		       eeprom_content[2], eeprom_content[3],
+		       eeprom_content[4], eeprom_content[5],
+		       eeprom_content[6], eeprom_content[7]);
+	} else {
+		printk("Failed to get eeprom content\n");
+	}
 
 	/*
 	 * if an offset of 2.5 oC is to be added,

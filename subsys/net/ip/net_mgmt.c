@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_mgmt, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 
-#include <kernel.h>
-#include <toolchain.h>
-#include <linker/sections.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/linker/sections.h>
 
-#include <sys/util.h>
-#include <sys/slist.h>
-#include <net/net_mgmt.h>
-#include <debug/stack.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/debug/stack.h>
 
 #include "net_private.h"
 
@@ -34,7 +34,7 @@ struct mgmt_event_wait {
 };
 
 static K_SEM_DEFINE(network_event, 0, K_SEM_MAX_LIMIT);
-static K_SEM_DEFINE(net_mgmt_lock, 1, 1);
+static K_MUTEX_DEFINE(net_mgmt_lock);
 
 K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct k_thread mgmt_thread_data;
@@ -54,7 +54,7 @@ static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
 	ARG_UNUSED(length);
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 
-	k_sem_take(&net_mgmt_lock, K_FOREVER);
+	(void)k_mutex_lock(&net_mgmt_lock, K_FOREVER);
 
 	i_idx = in_event + 1;
 	if (i_idx == CONFIG_NET_MGMT_EVENT_QUEUE_SIZE) {
@@ -69,7 +69,7 @@ static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
 		} else {
 			NET_ERR("Event info length %zu > max size %zu",
 				length, NET_EVENT_INFO_MAX_SIZE);
-			k_sem_give(&net_mgmt_lock);
+			(void)k_mutex_unlock(&net_mgmt_lock);
 
 			return;
 		}
@@ -97,7 +97,7 @@ static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
 
 	in_event = i_idx;
 
-	k_sem_give(&net_mgmt_lock);
+	(void)k_mutex_unlock(&net_mgmt_lock);
 }
 
 static inline struct mgmt_event_entry *mgmt_pop_event(void)
@@ -226,7 +226,7 @@ static void mgmt_thread(void)
 
 	while (1) {
 		k_sem_take(&network_event, K_FOREVER);
-		k_sem_take(&net_mgmt_lock, K_FOREVER);
+		(void)k_mutex_lock(&net_mgmt_lock, K_FOREVER);
 
 		NET_DBG("Handling events, forwarding it relevantly");
 
@@ -240,7 +240,7 @@ static void mgmt_thread(void)
 				k_sem_count_get(&network_event));
 
 			k_sem_init(&network_event, 0, K_SEM_MAX_LIMIT);
-			k_sem_give(&net_mgmt_lock);
+			(void)k_mutex_unlock(&net_mgmt_lock);
 
 			continue;
 		}
@@ -249,7 +249,7 @@ static void mgmt_thread(void)
 
 		mgmt_clean_event(mgmt_event);
 
-		k_sem_give(&net_mgmt_lock);
+		(void)k_mutex_unlock(&net_mgmt_lock);
 
 		k_yield();
 	}
@@ -312,26 +312,26 @@ void net_mgmt_add_event_callback(struct net_mgmt_event_callback *cb)
 {
 	NET_DBG("Adding event callback %p", cb);
 
-	k_sem_take(&net_mgmt_lock, K_FOREVER);
+	(void)k_mutex_lock(&net_mgmt_lock, K_FOREVER);
 
 	sys_slist_prepend(&event_callbacks, &cb->node);
 
 	mgmt_add_event_mask(cb->event_mask);
 
-	k_sem_give(&net_mgmt_lock);
+	(void)k_mutex_unlock(&net_mgmt_lock);
 }
 
 void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 {
 	NET_DBG("Deleting event callback %p", cb);
 
-	k_sem_take(&net_mgmt_lock, K_FOREVER);
+	(void)k_mutex_lock(&net_mgmt_lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&event_callbacks, &cb->node);
 
 	mgmt_rebuild_global_event_mask();
 
-	k_sem_give(&net_mgmt_lock);
+	(void)k_mutex_unlock(&net_mgmt_lock);
 }
 
 void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,

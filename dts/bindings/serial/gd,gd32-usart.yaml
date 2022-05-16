@@ -5,10 +5,13 @@ description: GigaDevice USART
 
 compatible: "gd,gd32-usart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
+      required: true
+
+    interrupts:
       required: true
 
     rcu-periph-clock:

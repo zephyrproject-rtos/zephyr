@@ -21,6 +21,12 @@
 		reg = <0x200C0000 DT_SIZE_K(62)>;
 	};
 
+	/* RAM space used by Booter */
+	bootloader_ram: memory@200cf800 {
+		compatible = "mmio-sram";
+		reg = <0x200CF800 DT_SIZE_K(2)>;
+	};
+
 	soc-id {
 		device-id = <0x29>;
 	};

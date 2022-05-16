@@ -2,8 +2,9 @@
  * Copyright (c) 2020 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
-#include <arch/x86/acpi.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/x86/acpi.h>
+#include <zephyr/arch/x86/efi.h>
 
 static struct acpi_rsdp *rsdp;
 static bool is_rsdp_searched;
@@ -27,11 +28,24 @@ static void find_rsdp(void)
 	uint8_t *bda_seg, *zero_page_base;
 	uint64_t *search;
 	uintptr_t search_phys, rsdp_phys = 0U;
-	size_t search_length, rsdp_length;
+	size_t search_length = 0U, rsdp_length;
 
 	if (is_rsdp_searched) {
 		/* Looking up for RSDP has already been done */
 		return;
+	}
+
+	/* Let's first get it from EFI, if enabled */
+	if (IS_ENABLED(CONFIG_X86_EFI)) {
+		rsdp_phys = (uintptr_t)efi_get_acpi_rsdp();
+		if (rsdp_phys != 0UL) {
+			/* See at found label why this is required */
+			search_length = sizeof(struct acpi_rsdp);
+			z_phys_map((uint8_t **)&search, rsdp_phys, search_length, 0);
+			rsdp = (struct acpi_rsdp *)search;
+
+			goto found;
+		}
 	}
 
 	/* We never identity map the NULL page, so need to map it before
@@ -41,7 +55,7 @@ static void find_rsdp(void)
 
 	/* Physical (real mode!) address 0000:040e stores a (real
 	 * mode!!) segment descriptor pointing to the 1kb Extended
-	 * BIOS Data Area.  Look there first.
+	 * BIOS Data Area.
 	 *
 	 * We had to memory map this segment descriptor since it is in
 	 * the NULL page. The remaining structures (EBDA etc) are identity
@@ -91,10 +105,6 @@ static void find_rsdp(void)
 
 	z_phys_unmap((uint8_t *)search, search_length);
 
-	/* Now we're supposed to look in the UEFI system table, which
-	 * is passed as a function argument to the bootloader and long
-	 * forgotten by now...
-	 */
 	rsdp = NULL;
 
 	is_rsdp_searched = true;
@@ -113,7 +123,9 @@ found:
 	}
 
 	/* Need to unmap search since it is still mapped */
-	z_phys_unmap((uint8_t *)search, search_length);
+	if (search_length != 0U) {
+		z_phys_unmap((uint8_t *)search, search_length);
+	}
 
 	/* Now map the RSDP */
 	z_phys_map((uint8_t **)&rsdp, rsdp_phys, rsdp_length, 0);
@@ -149,7 +161,12 @@ void *z_acpi_find_table(uint32_t signature)
 
 			uint32_t *end = (uint32_t *)((char *)rsdt + rsdt->sdt.length);
 
-			for (uint32_t *tp = &rsdt->table_ptrs[0]; tp < end; tp++) {
+			/* Extra indirection required to avoid
+			 * -Waddress-of-packed-member
+			 */
+			void *table_ptrs = &rsdt->table_ptrs[0];
+
+			for (uint32_t *tp = table_ptrs; tp < end; tp++) {
 				t_phys = (long)*tp;
 				z_phys_map(&mapped_tbl, t_phys, sizeof(*t), 0);
 				t = (void *)mapped_tbl;
@@ -186,7 +203,12 @@ void *z_acpi_find_table(uint32_t signature)
 
 			uint64_t *end = (uint64_t *)((char *)xsdt + xsdt->sdt.length);
 
-			for (uint64_t *tp = &xsdt->table_ptrs[0]; tp < end; tp++) {
+			/* Extra indirection required to avoid
+			 * -Waddress-of-packed-member
+			 */
+			void *table_ptrs = &xsdt->table_ptrs[0];
+
+			for (uint64_t *tp = table_ptrs; tp < end; tp++) {
 				t_phys = (long)*tp;
 				z_phys_map(&mapped_tbl, t_phys, sizeof(*t), 0);
 				t = (void *)mapped_tbl;
@@ -372,4 +394,56 @@ z_acpi_get_dev_scope_paths(struct acpi_dmar_dev_scope *dev_scope, int *n)
 		ACPI_DMAR_DEV_PATH_SIZE;
 
 	return dev_scope->path;
+}
+
+uint16_t z_acpi_get_dev_id_from_dmar(uint8_t dev_scope_type)
+{
+	struct acpi_drhd *drhd;
+	int n_drhd;
+
+	find_dmar();
+
+	if (dmar == NULL) {
+		return USHRT_MAX;
+	}
+
+	drhd = z_acpi_find_drhds(&n_drhd);
+
+	for (; n_drhd > 0; n_drhd--) {
+		struct acpi_dmar_dev_scope *dev_scope;
+		int n_ds;
+
+		dev_scope = z_acpi_get_drhd_dev_scopes(drhd, &n_ds);
+		for (; n_ds > 0; n_ds--) {
+			if (dev_scope->type == dev_scope_type) {
+				struct acpi_dmar_dev_path *path;
+				int n_path;
+
+				path = z_acpi_get_dev_scope_paths(dev_scope,
+								  &n_path);
+				if (n_path > 0) {
+					union acpi_dmar_id id;
+
+					/* Let's over simplify for now:
+					 * we don't look for secondary bus
+					 * and extra paths. We just stop here.
+					 */
+
+					id.bits.bus = dev_scope->start_bus_num;
+					id.bits.device = path->device;
+					id.bits.function = path->function;
+
+					return id.raw;
+				}
+			}
+
+			dev_scope = (struct acpi_dmar_dev_scope *)(
+				POINTER_TO_UINT(dev_scope) + dev_scope->length);
+		}
+
+		drhd = (struct acpi_drhd *)(POINTER_TO_UINT(drhd) +
+					    drhd->entry.length);
+	}
+
+	return USHRT_MAX;
 }

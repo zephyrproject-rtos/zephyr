@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/onoff.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/onoff.h>
 #include <stdio.h>
 
 #define SERVICE_REFS_MAX UINT16_MAX
@@ -46,7 +46,7 @@ BUILD_ASSERT((ONOFF_FLAG_ERROR | ONOFF_FLAG_ONOFF | ONOFF_FLAG_TRANSITION)
  *   the top invocation.
  * * RECHECK indicates that a state transition has completed but
  *   process_events() must re-check the overall state to confirm no
- *   additional transitions are required.  This is used to simplfy the
+ *   additional transitions are required.  This is used to simplify the
  *   logic when, for example, a request is received during a
  *   transition to off, which means that when the transition completes
  *   a transition to on must be initiated if the request is still

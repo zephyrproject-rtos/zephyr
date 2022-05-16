@@ -10,15 +10,16 @@ description: |
 
   System clock source should be selected amongst the clock nodes available in "clocks"
   node (typically 'clk_hse, clk_hsi', 'pll', ...).
-  As part of this node configuration, SYSCLK frequency should also be defined, using
-  "clock-frequency" property.
-  Last, bus clocks (typically HCLK, PCLK1, PCLK2) should be configured using matching
+  Core clock frequency should also be defined, using "clock-frequency" property.
+  Note:
+          Core clock frequency  = SYSCLK / AHB prescaler
+  Last, peripheral bus clocks (typically PCLK1, PCLK2) should be configured using matching
   prescaler properties.
   Here is an example of correctly configured rcc node:
   &rcc {
-           clocks = <&pll>;  /* Set pll as SYSCLK source */
-           clock-frequency = <DT_FREQ_M(80)>; /* SYSCLK runs at 80MHz */
-           ahb-prescaler = <1>;
+           clocks = <&pll>;  /* Select 80MHz pll as SYSCLK source */
+           ahb-prescaler = <2>;
+           clock-frequency = <DT_FREQ_M(40)>; /* = SYSCLK / AHB prescaler */
            apb1-presacler = <1>;
            apb2-presacler = <1>;
   }
@@ -35,6 +36,20 @@ description: |
   After the phandle referring to rcc node, the first index specifies the registers of
   the bus controlling the peripheral and the second index specifies the bit used to
   control the peripheral clock in that bus register.
+
+  Specifying an alternate clock source:
+
+  Specifying an alternate source clock could be done by adding a clock specifier to the
+  clock property:
+  ... {
+           ...
+           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>,
+                        <&rcc STM32_SRC_HSI I2C1_SEL(2)>;
+           ...
+  }
+  In this example I2C1 device is assigned HSI as clock source.
+  It is device driver's responsibility to querry and use clock source information in
+  accordance with clock_control API specifications.
 
 compatible: "st,stm32-rcc"
 
@@ -67,8 +82,8 @@ properties:
         - 256
         - 512
       description: |
-          AHB prescaler. Sets a HCLK frequency (feeding Cortex-M Systick)
-          lower than SYSCLK frequency (actual core frequency).
+          AHB prescaler. Defines actual core clock frequency (HCLK)
+          based on system frequency input.
           The HCLK clocks CPU, AHB, memories and DMA.
 
     apb1-prescaler:
@@ -90,6 +105,16 @@ properties:
         - 4
         - 8
         - 16
+
+    undershoot-prevention:
+      type: boolean
+      required: false
+      description: |
+        On some parts, it could be required to set up highest core frequencies
+        (>80MHz) in two steps in order to prevent undershoot.
+        This is done by applying an intermediate AHB prescaler before switching
+        System Clock source to PLL. Once done, prescaler is set back to expected
+        value.
 
 clock-cells:
   - bus

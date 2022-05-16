@@ -6,7 +6,7 @@
 
 
 #include <sys/types.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include "jesd216.h"
 #include "spi_nor.h"
 
@@ -167,7 +167,7 @@ int jesd216_bfp_erase_type_times(const struct jesd216_param_header *php,
 	 *
 	 * The entries start with ET1 at bit 4.  The low four bits
 	 * encode a value that is offset and scaled to produce a
-	 * multipler to convert from typical time to maximum time.
+	 * multiplier to convert from typical time to maximum time.
 	 */
 	unsigned int count = 1 + ((dw10 >> (4 + (idx - 1) * 7)) & 0x1F);
 	unsigned int units = ((dw10 >> (4 + 5 + (idx - 1) * 7)) & 0x03);

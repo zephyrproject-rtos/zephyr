@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <ztest.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -63,7 +63,7 @@ extern void test_kobject_access_grant_error(void);
 extern void test_kobject_access_grant_error_user(void);
 extern void test_kobject_access_grant_error_user_null(void);
 extern void test_kobject_access_all_grant_error(void);
-extern void test_kobject_release_null(void);
+extern void test_kobject_invalid(void);
 extern void test_kobject_free_error(void);
 extern void test_kobject_init_error(void);
 extern void test_kobj_create_out_of_memory(void);
@@ -96,7 +96,7 @@ static inline void set_fault_valid(bool valid)
 #define MSG_Q_MAX_NUM_MSGS (10)
 #define MSG_Q_ALIGN (2)
 #define PRIORITY 5
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define BLK_SIZE_MIN 16
 #define BLK_SIZE_MAX 64
 #define BLK_NUM_MIN 8
@@ -113,7 +113,7 @@ static inline void set_fault_valid(bool valid)
 #define BLK_NUM_MAX_MD 4
 #define BLK_ALIGN_MD BLK_SIZE_MIN_MD
 #define DESC_SIZE	sizeof(struct sys_mem_pool_block)
-#define STACK_SIZE_MD (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE_MD (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define PRIORITY_MD 5
 
 #if defined(CONFIG_X86)
@@ -132,11 +132,12 @@ static inline void set_fault_valid(bool valid)
 #define MEM_DOMAIN_ALIGNMENT __aligned(MEM_REGION_ALLOC)
 
 /* for kobject.c */
-#define KOBJECT_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define KOBJECT_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 
 
-#if defined(CONFIG_X86_64) || defined(CONFIG_ARM64)
+#if (defined(CONFIG_X86_64) || defined(CONFIG_ARM64) || \
+	(defined(CONFIG_RISCV) && defined(CONFIG_64BIT)))
 #define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 1024
 #define MAX_OBJ 512
 #else

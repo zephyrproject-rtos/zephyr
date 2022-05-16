@@ -54,4 +54,4 @@ If needed,the full coverage html report can be generated in every run of "pytest
 - test_twister.py : Contains basic testcases for environment variables, verifying testcase & platform schema's.
 - test_testsuite_class.py : Contains testcases for Testsuite class (except reporting functionality) in twisterlib.py.
 - test_testinstance.py : Contains testcases for Testinstance and Testcase class.
-- test_reporting_testsuite.py : Contains testcases for reporting fucntionality of Testsuite class of twister.
+- test_reporting_testsuite.py : Contains testcases for reporting functionality of Testsuite class of twister.

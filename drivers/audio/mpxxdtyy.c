@@ -6,10 +6,12 @@
 
 #define DT_DRV_COMPAT st_mpxxdtyy
 
+#include <zephyr/devicetree.h>
+
 #include "mpxxdtyy.h"
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpxxdtyy);
 
 #define CHANNEL_MASK	0x55
@@ -47,7 +49,7 @@ static uint8_t right_channel(uint8_t a, uint8_t b)
 
 uint16_t sw_filter_lib_init(const struct device *dev, struct dmic_cfg *cfg)
 {
-	struct mpxxdtyy_data *const data = DEV_DATA(dev);
+	struct mpxxdtyy_data *const data = dev->data;
 	TPDMFilter_InitStruct *pdm_filter = &data->pdm_filter[0];
 	uint16_t factor;
 	uint32_t audio_freq = cfg->streams->pcm_rate;
@@ -150,21 +152,23 @@ static const struct _dmic_ops mpxxdtyy_driver_api = {
 
 static int mpxxdtyy_initialize(const struct device *dev)
 {
-	struct mpxxdtyy_data *const data = DEV_DATA(dev);
+	const struct mpxxdtyy_config *config = dev->config;
+	struct mpxxdtyy_data *const data = dev->data;
 
-	data->comm_master = device_get_binding(DT_INST_BUS_LABEL(0));
-
-	if (data->comm_master == NULL) {
-		LOG_ERR("master %s not found", DT_INST_BUS_LABEL(0));
-		return -EINVAL;
+	if (!device_is_ready(config->comm_master)) {
+		return -ENODEV;
 	}
 
 	data->state = DMIC_STATE_INITIALIZED;
 	return 0;
 }
 
+static const struct mpxxdtyy_config mpxxdtyy_config = {
+	.comm_master = DEVICE_DT_GET(DT_INST_BUS(0)),
+};
+
 static struct mpxxdtyy_data mpxxdtyy_data;
 
-DEVICE_DT_INST_DEFINE(0, mpxxdtyy_initialize, NULL, &mpxxdtyy_data, NULL,
-		POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,
-		&mpxxdtyy_driver_api);
+DEVICE_DT_INST_DEFINE(0, mpxxdtyy_initialize, NULL, &mpxxdtyy_data,
+		      &mpxxdtyy_config, POST_KERNEL,
+		      CONFIG_AUDIO_DMIC_INIT_PRIORITY, &mpxxdtyy_driver_api);

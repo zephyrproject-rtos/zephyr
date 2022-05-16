@@ -7,7 +7,7 @@
 # Author: Sathish Kuttan <sathish.k.kuttan@intel.com>
 
 # This file defines device class that contains functions to
-# setup/cconfigure SPI master device and GPIO pins required
+# setup/configure SPI master device and GPIO pins required
 # to communicate with the target.
 # Member functions are provided to send and receive messages
 # over the SPI bus

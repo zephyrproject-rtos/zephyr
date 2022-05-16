@@ -8,15 +8,15 @@
 
 #define DT_DRV_COMPAT st_lsm9ds0_gyro
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
 
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 #include "lsm9ds0_gyro.h"
 
@@ -161,7 +161,7 @@ static inline void lsm9ds0_gyro_convert(struct sensor_value *val, int raw_val,
 {
 	double dval;
 
-	dval = (double)(raw_val) * numerator / 1000.0 * DEG2RAD;
+	dval = (double)(raw_val) * (double)numerator / 1000.0 * DEG2RAD;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }

@@ -9,18 +9,18 @@
  *
  */
 
-#include <drivers/clock_control/stm32_clock_control.h>
-#include <drivers/clock_control.h>
-#include <sys/util.h>
-#include <kernel.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <stm32_ll_i2c.h>
 #include <errno.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include "i2c_ll_stm32.h"
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 
 #include "i2c-priv.h"
@@ -31,8 +31,8 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 			    uint8_t *next_msg_flags, uint16_t slave,
 			    uint32_t transfer)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	if (LL_I2C_IsEnabledReloadMode(i2c)) {
@@ -71,7 +71,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 
 static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	LL_I2C_DisableIT_TX(i2c);
@@ -84,7 +84,7 @@ static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
 
 static void stm32_i2c_enable_transfer_interrupts(const struct device *dev)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	LL_I2C_EnableIT_STOP(i2c);
@@ -95,8 +95,8 @@ static void stm32_i2c_enable_transfer_interrupts(const struct device *dev)
 
 static void stm32_i2c_master_mode_end(const struct device *dev)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	stm32_i2c_disable_transfer_interrupts(dev);
@@ -115,8 +115,8 @@ static void stm32_i2c_master_mode_end(const struct device *dev)
 #if defined(CONFIG_I2C_SLAVE)
 static void stm32_i2c_slave_event(const struct device *dev)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	const struct i2c_slave_callbacks *slave_cb =
 		data->slave_cfg->callbacks;
@@ -181,8 +181,8 @@ static void stm32_i2c_slave_event(const struct device *dev)
 int i2c_stm32_slave_register(const struct device *dev,
 			     struct i2c_slave_config *config)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	uint32_t bitrate_cfg;
 	int ret;
@@ -227,8 +227,8 @@ int i2c_stm32_slave_register(const struct device *dev,
 int i2c_stm32_slave_unregister(const struct device *dev,
 			       struct i2c_slave_config *config)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	if (!data->slave_attached) {
@@ -261,8 +261,8 @@ int i2c_stm32_slave_unregister(const struct device *dev,
 
 static void stm32_i2c_event(const struct device *dev)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 #if defined(CONFIG_I2C_SLAVE)
@@ -324,8 +324,8 @@ end:
 
 static int stm32_i2c_error(const struct device *dev)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 #if defined(CONFIG_I2C_SLAVE)
@@ -383,8 +383,8 @@ void stm32_i2c_error_isr(void *arg)
 int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			uint8_t *next_msg_flags, uint16_t slave)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	bool is_timeout = false;
 
@@ -441,8 +441,8 @@ error:
 int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		       uint8_t *next_msg_flags, uint16_t slave)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	bool is_timeout = false;
 
@@ -500,7 +500,7 @@ error:
 #else /* !CONFIG_I2C_STM32_INTERRUPT */
 static inline int check_errors(const struct device *dev, const char *funcname)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
@@ -538,7 +538,7 @@ error:
 static inline int msg_done(const struct device *dev,
 			   unsigned int current_msg_flags)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	/* Wait for transfer to complete */
@@ -563,7 +563,7 @@ static inline int msg_done(const struct device *dev,
 int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 			uint8_t *next_msg_flags, uint16_t slave)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
 	unsigned int len = 0U;
 	uint8_t *buf = msg->buf;
@@ -593,7 +593,7 @@ int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		       uint8_t *next_msg_flags, uint16_t slave)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
 	unsigned int len = 0U;
 	uint8_t *buf = msg->buf;
@@ -619,8 +619,8 @@ int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 
 int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 {
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	struct i2c_stm32_data *data = DEV_DATA(dev);
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	uint32_t i2c_hold_time_min, i2c_setup_time_min;
 	uint32_t i2c_h_min_time, i2c_l_min_time;

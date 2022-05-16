@@ -2,7 +2,7 @@ description: stm32 sdmmc disk access
 
 compatible: "st,stm32-sdmmc"
 
-include: mmc.yaml
+include: [mmc.yaml, pinctrl-device.yaml]
 
 properties:
     clocks:
@@ -14,6 +14,12 @@ properties:
     reg:
         required: true
 
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
+
     cd-gpios:
         type: phandle-array
         required: false
@@ -23,15 +29,3 @@ properties:
         type: phandle-array
         required: false
         description: Power pin
-
-    pinctrl-0:
-      type: phandles
-      required: false
-      description: |
-        Pin configuration for SDMMC signals.
-        We expect that the phandles will reference pinctrl nodes.
-
-        For example
-        pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
-                     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
-                     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;

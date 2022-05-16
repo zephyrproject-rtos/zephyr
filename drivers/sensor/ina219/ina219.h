@@ -38,8 +38,8 @@
 
 /* Others */
 #define INA219_SIGN_BIT(x)	((x) >> 15) & 0x1
-#define INA219_V_BUS_MUL	0.004f
-#define INA219_SI_MUL		0.00001f
+#define INA219_V_BUS_MUL	0.004
+#define INA219_SI_MUL		0.00001
 #define INA219_POWER_MUL	20
 #define INA219_WAIT_STARTUP	40
 #define INA219_WAIT_MSR_RETRY	100

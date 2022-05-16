@@ -20,8 +20,8 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# Pinmux Driver
-CONFIG_PINMUX=y
-
 # GPIO Controller
 CONFIG_GPIO=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

@@ -1,0 +1,19 @@
+# Raspberry Pi RP2XXX MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2021 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RP2XXX
+	bool "Raspberry Pi RP2 series MCU"
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_RPI_PICO
+	select HAS_RPI_PICO
+	select HAS_I2C_DW if I2C
+	select XIP
+	help
+	  Enable support for Raspberry Pi RP2 MCU series

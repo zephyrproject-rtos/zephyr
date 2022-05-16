@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 
 extern void test_filtering_biquad_q15(void);
 extern void test_filtering_biquad_q31(void);

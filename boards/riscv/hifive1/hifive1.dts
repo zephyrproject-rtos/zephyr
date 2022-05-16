@@ -3,7 +3,8 @@
 
 /dts-v1/;
 
-#include <riscv32-fe310.dtsi>
+#include <sifive/riscv32-fe310.dtsi>
+#include "hifive1-pinctrl.dtsi"
 
 / {
 	model = "SiFive HiFive 1";
@@ -24,15 +25,15 @@
 	leds {
 		compatible = "pwm-leds";
 		led0: led_0 {
-			pwms = <&pwm1 1 0>;
+			pwms = <&pwm1 1 PWM_MSEC(20)>;
 			label = "Green LED";
 		};
 		led1: led_1 {
-			pwms = <&pwm1 2 0>;
+			pwms = <&pwm1 2 PWM_MSEC(20)>;
 			label = "Blue LED";
 		};
 		led2: led_2 {
-			pwms = <&pwm1 3 0>;
+			pwms = <&pwm1 3 PWM_MSEC(20)>;
 			label = "Red LED";
 		};
 	};
@@ -45,16 +46,12 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	clock-frequency = <16000000>;
-};
-
-&uart1 {
-	clock-frequency = <16000000>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
 };
 
 &spi0 {
 	status = "okay";
-	clock-frequency = <16000000>;
 
 	reg = <0x10014000 0x1000 0x20400000 0xc00000>;
 	flash0: flash@0 {
@@ -69,25 +66,27 @@
 
 &spi1 {
 	status = "okay";
-	clock-frequency = <16000000>;
+	pinctrl-0 = <&spi1_cs0_default &spi1_cs2_default &spi1_cs3_default
+		     &spi1_mosi_default &spi1_miso_default &spi1_sck_default>;
+	pinctrl-names = "default";
 };
 
 &spi2 {
 	status = "okay";
-	clock-frequency = <16000000>;
 };
 
 &pwm0 {
 	status = "okay";
-	clock-frequency = <16000000>;
 };
 
 &pwm1 {
 	status = "okay";
-	clock-frequency = <16000000>;
+	pinctrl-0 = <&pwm1_1_default &pwm1_2_default &pwm1_3_default>;
+	pinctrl-names = "default";
 };
 
 &pwm2 {
 	status = "okay";
-	clock-frequency = <16000000>;
+	pinctrl-0 = <&pwm2_1_default &pwm2_2_default &pwm2_3_default>;
+	pinctrl-names = "default";
 };

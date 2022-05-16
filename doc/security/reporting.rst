@@ -10,13 +10,10 @@ Vulnerabilities to the Zephyr project may be reported via email to the
 vulnerabilities@zephyrproject.org mailing list.  These reports will be
 acknowledged and analyzed by the security response team within 1 week.
 Each vulnerability will be entered into the Zephyr Project security
-tracking JIRA_.  The original submitter will be granted permission to
+advisory GitHub_.  The original submitter will be granted permission to
 view the issues that they have reported.
 
-.. _JIRA: https://zephyrprojectsec.atlassian.net/
-
-Reporters may also submit reports by directly submitting them to the
-Zephyr Product security tracking JIRA.
+.. _GitHub: https://github.com/zephyrproject-rtos/zephyr/security
 
 Security Issue Management
 =========================
@@ -24,7 +21,33 @@ Security Issue Management
 Issues within this bug tracking system will transition through a
 number of states according to this diagram:
 
-.. figure:: media/zepsec-workflow.png
+.. graphviz::
+
+   digraph {
+      node [style = rounded];
+      init [shape = point];
+      New [shape = box];
+      Triage [shape = box];
+      {
+        rank = same;
+        rankdir = LR;
+        Assigned [shape = box];
+        Rejected [shape = box];
+      }
+      Review [shape = box];
+      Accepted [shape = box];
+      Public [shape = box];
+
+      init -> New;
+      New -> Triage;
+      Triage -> Rejected [dir = both];
+      Triage -> Assigned;
+      Assigned -> Review [dir = both];
+      Review -> Accepted;
+      Review -> Rejected;
+      Accepted -> Public;
+
+   }
 
 - New: This state represents new reports that have been entered
   directly by a reporter.  When entered by the response team in
@@ -33,7 +56,7 @@ number of states according to this diagram:
 
 - Triage: This issue is awaiting Triage by the response team.  The
   response team will analyze the issue, determine a responsible
-  entity, assign the JIRA ticket to that individual, and move the
+  entity, assign it to that individual, and move the
   issue to the Assigned state.  Part of triage will be to set the
   issue's priority.
 
@@ -47,14 +70,12 @@ number of states according to this diagram:
 - Accepted: Indicates that this issue has been merged into the
   appropriate branch within Zephyr.
 
-- Release: The PR has been included in a released version of Zephyr.
-
 - Public: The embargo period has ended.  The issue will be made
   publicly visible, the associated CVE updated, and the
   vulnerabilities page in the docs updated to include the detailed
   information.
 
-The issues created in this JIRA instance are kept private, due to the
+The security advisories created are kept private, due to the
 sensitive nature of security reports.  The issues are only visible to
 certain parties:
 
@@ -78,9 +99,7 @@ need to be embargoed.
 The guideline for embargo will be based on: 1. Severity of the issue,
 and 2. Exploitability of the issue.  Issues that the subcommittee
 decides do not need an embargo will be reproduced in the regular
-Zephyr project bug tracking system, and a comment added to the JIRA
-issue pointing to the bug tracking issue.  These issues will be marked
-as being tracked within the Zephyr bug tracking system.
+Zephyr project bug tracking system.
 
 Security sensitive vulnerabilities shall be made public after an
 embargo period of at most 90 days.  The intent is to allow 30 days
@@ -95,10 +114,11 @@ numbers that have been assigned to the issue.  The developer instead
 should merely describe what has been fixed.
 
 The security subcommittee will maintain information mapping embargoed
-CVEs to these PRs (this information is within the JIRA issues), and
-produce regular reports of the state of security issues.
+CVEs to these PRs (this information is within the Github security
+advisories), and produce regular reports of the state of security
+issues.
 
-Each JIRA issue that is considered a security vulnerability shall be
+Each issue that is considered a security vulnerability shall be
 assigned a CVE number.  As fixes are created, it may be necessary to
 allocate additional CVE numbers, or to retire numbers that were
 assigned.
@@ -119,7 +139,7 @@ This list will be seeded initially with a contact from each project
 member.  Additional parties can request to join this list by filling
 out the form at the `Vulnerability Registry`_.  These parties will be
 vetted by the project director to determine that they have a
-legimitate interest in knowing about security vulnerabilities during
+legitimate interest in knowing about security vulnerabilities during
 the embargo period.
 
 .. _Vulnerability Registry: https://www.zephyrproject.org/vulnerability-registry/ 
@@ -132,7 +152,7 @@ trees.
 
 When issues have been triaged, this list will be informed of:
 
-- The Zephyr Project security JIRA link (ZEPSEC).
+- The Zephyr Project security advisory link (GitHub).
 
 - The CVE number assigned.
 
@@ -162,8 +182,7 @@ backports, and apply them to any of the above listed release branches,
 unless the fix does not apply (the vulnerability was introduced after
 this release was made).
 
-Backports will be tracked on the security JIRA instance using a
-subtask issue of type "backport".
+Backports will be tracked on the security advisory.
 
 Need to Know
 ============

@@ -6,4 +6,4 @@ tests:
     depends_on: adc
     tags: sensors
     build_only: true
-    platform_allow: nucleo_f401re stm32f103_mini
+    platform_allow: nucleo_f401re stm32f103_mini stm32l562e_dk

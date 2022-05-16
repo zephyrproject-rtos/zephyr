@@ -11,14 +11,16 @@
 
 #define DT_DRV_COMPAT atmel_sam0_tcc_pwm
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <errno.h>
-#include <drivers/pwm.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 /* Static configuration */
 struct pwm_sam0_config {
 	Tcc *regs;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t channels;
 	uint8_t counter_size;
 	uint16_t prescaler;
@@ -34,8 +36,6 @@ struct pwm_sam0_config {
 #endif
 };
 
-#define DEV_CFG(dev) ((const struct pwm_sam0_config *const)(dev)->config)
-
 /* Wait for the peripheral to finish all commands */
 static void wait_synchronization(Tcc *regs)
 {
@@ -43,12 +43,12 @@ static void wait_synchronization(Tcc *regs)
 	}
 }
 
-static int pwm_sam0_get_cycles_per_sec(const struct device *dev, uint32_t ch,
-				       uint64_t *cycles)
+static int pwm_sam0_get_cycles_per_sec(const struct device *dev,
+				       uint32_t channel, uint64_t *cycles)
 {
-	const struct pwm_sam0_config *const cfg = DEV_CFG(dev);
+	const struct pwm_sam0_config *const cfg = dev->config;
 
-	if (ch >= cfg->channels) {
+	if (channel >= cfg->channels) {
 		return -EINVAL;
 	}
 	*cycles = cfg->freq;
@@ -56,18 +56,18 @@ static int pwm_sam0_get_cycles_per_sec(const struct device *dev, uint32_t ch,
 	return 0;
 }
 
-static int pwm_sam0_pin_set(const struct device *dev, uint32_t ch,
-			    uint32_t period_cycles, uint32_t pulse_cycles,
-			    pwm_flags_t flags)
+static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel,
+			       uint32_t period_cycles, uint32_t pulse_cycles,
+			       pwm_flags_t flags)
 {
-	const struct pwm_sam0_config *const cfg = DEV_CFG(dev);
+	const struct pwm_sam0_config *const cfg = dev->config;
 	Tcc *regs = cfg->regs;
 	uint32_t top = 1 << cfg->counter_size;
-	uint32_t invert_mask = 1 << ch;
+	uint32_t invert_mask = 1 << channel;
 	bool invert = ((flags & PWM_POLARITY_INVERTED) != 0);
 	bool inverted = ((regs->DRVCTRL.vec.INVEN & invert_mask) != 0);
 
-	if (ch >= cfg->channels) {
+	if (channel >= cfg->channels) {
 		return -EINVAL;
 	}
 	if (period_cycles >= top || pulse_cycles >= top) {
@@ -80,11 +80,11 @@ static int pwm_sam0_pin_set(const struct device *dev, uint32_t ch,
 	 */
 #ifdef TCC_PERBUF_PERBUF
 	/* SAME51 naming */
-	regs->CCBUF[ch].reg = TCC_CCBUF_CCBUF(pulse_cycles);
+	regs->CCBUF[channel].reg = TCC_CCBUF_CCBUF(pulse_cycles);
 	regs->PERBUF.reg = TCC_PERBUF_PERBUF(period_cycles);
 #else
 	/* SAMD21 naming */
-	regs->CCB[ch].reg = TCC_CCB_CCB(pulse_cycles);
+	regs->CCB[channel].reg = TCC_CCB_CCB(pulse_cycles);
 	regs->PERB.reg = TCC_PERB_PERB(period_cycles);
 #endif
 
@@ -102,8 +102,9 @@ static int pwm_sam0_pin_set(const struct device *dev, uint32_t ch,
 
 static int pwm_sam0_init(const struct device *dev)
 {
-	const struct pwm_sam0_config *const cfg = DEV_CFG(dev);
+	const struct pwm_sam0_config *const cfg = dev->config;
 	Tcc *regs = cfg->regs;
+	int retval;
 
 	/* Enable the clocks */
 #ifdef MCLK
@@ -115,6 +116,11 @@ static int pwm_sam0_init(const struct device *dev)
 			    GCLK_CLKCTRL_CLKEN;
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
 #endif
+
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
 
 	regs->CTRLA.bit.SWRST = 1;
 	wait_synchronization(regs);
@@ -130,7 +136,7 @@ static int pwm_sam0_init(const struct device *dev)
 }
 
 static const struct pwm_driver_api pwm_sam0_driver_api = {
-	.pin_set = pwm_sam0_pin_set,
+	.set_cycles = pwm_sam0_set_cycles,
 	.get_cycles_per_sec = pwm_sam0_get_cycles_per_sec,
 };
 
@@ -146,8 +152,10 @@ static const struct pwm_driver_api pwm_sam0_driver_api = {
 #endif
 
 #define PWM_SAM0_INIT(inst)						       \
+	PINCTRL_DT_INST_DEFINE(inst);					       \
 	static const struct pwm_sam0_config pwm_sam0_config_##inst = {	       \
 		.regs = (Tcc *)DT_INST_REG_ADDR(inst),			       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		       \
 		.channels = DT_INST_PROP(inst, channels),		       \
 		.counter_size = DT_INST_PROP(inst, counter_size),	       \
 		.prescaler = UTIL_CAT(TCC_CTRLA_PRESCALER_DIV,		       \

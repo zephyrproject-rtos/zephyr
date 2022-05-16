@@ -238,7 +238,7 @@ struct rtmr_regs {
 #define MCHP_WKTMR_SWKC_AUTO_RELOAD		\
 	BIT(MCHP_WKTMR_SWKC_AUTO_RELOAD_POS)
 
-/* Sub-weeek alarm counter at +0x18 */
+/* Sub-week alarm counter at +0x18 */
 #define MCHP_WKTMR_SWAC_MASK			0x1ff01ffu
 #define MCHP_WKTMR_SWAC_LOAD_POS		0
 #define MCHP_WKTMR_SWAC_CNT_RO_POS		16

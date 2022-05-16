@@ -21,7 +21,8 @@ except ImportError:
 
 def get_github_rev():
     try:
-        output = subprocess.check_output('git describe --exact-match', shell=True)
+        output = subprocess.check_output('git describe --exact-match',
+                                         shell=True, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
         return 'main'
 

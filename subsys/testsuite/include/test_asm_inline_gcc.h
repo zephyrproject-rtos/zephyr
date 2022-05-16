@@ -24,20 +24,20 @@ static inline void timestamp_serialize(void)
 	: "%eax", "%ebx", "%ecx", "%edx");
 }
 #elif defined(CONFIG_CPU_CORTEX_M)
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 static inline void timestamp_serialize(void)
 {
 	/* isb is available in all Cortex-M  */
 	__ISB();
 }
-#elif defined(CONFIG_CPU_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-#include <arch/arm/aarch32/cortex_a_r/cpu.h>
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#include <zephyr/arch/arm/aarch32/cortex_a_r/cpu.h>
 static inline void timestamp_serialize(void)
 {
 	__ISB();
 }
 #elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_AARCH64_CORTEX_R)
-#include <arch/arm64/cpu.h>
+#include <zephyr/arch/arm64/cpu.h>
 static inline void timestamp_serialize(void)
 {
 	__ISB();
@@ -53,6 +53,8 @@ static inline void timestamp_serialize(void)
 #elif defined(CONFIG_RISCV)
 #define timestamp_serialize()
 #elif defined(CONFIG_SPARC)
+#define timestamp_serialize()
+#elif defined(CONFIG_MIPS)
 #define timestamp_serialize()
 #else
 #error implementation of timestamp_serialize() not provided for your CPU target

@@ -8,13 +8,13 @@
 
 #define DT_DRV_COMPAT st_lps25hb_press
 
-#include <drivers/sensor.h>
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
 
 #include "lps25hb.h"
 

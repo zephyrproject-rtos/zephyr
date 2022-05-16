@@ -290,7 +290,7 @@ int c3_handle_export(int (*cb)(const char *name,
 	return 0;
 }
 
-void config_empty_lookups(void);
+void test_config_empty_lookups(void);
 void test_config_insert(void);
 void test_config_getset_unknown(void);
 void test_config_getset_int(void);
@@ -301,7 +301,7 @@ void test_main(void)
 {
 	ztest_test_suite(test_config_nvs,
 			 /* Config tests */
-			 ztest_unit_test(config_empty_lookups),
+			 ztest_unit_test(test_config_empty_lookups),
 			 ztest_unit_test(test_config_insert),
 			 ztest_unit_test(test_config_getset_unknown),
 			 ztest_unit_test(test_config_getset_int),

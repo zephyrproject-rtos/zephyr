@@ -5,14 +5,14 @@
  */
 
 #include <ztest.h>
-#include <kernel.h>
-#include <kernel_structs.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/libc-hooks.h>
-#include <sys/util.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/sys/util.h>
 
 #define NUM_THREADS	3
-#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE	(512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #define STATIC_DATA8	0x7FU
 #define STATIC_DATA32	0xABCDEF00U
@@ -209,6 +209,7 @@ void test_tls_userspace(void)
 void test_main(void)
 {
 #ifdef CONFIG_USERSPACE
+	int ret;
 	unsigned int i;
 
 	struct k_mem_partition *parts[] = {
@@ -220,7 +221,11 @@ void test_main(void)
 	};
 
 	parts[0] = &part_common;
-	k_mem_domain_init(&dom_common, ARRAY_SIZE(parts), parts);
+
+	ret = k_mem_domain_init(&dom_common, ARRAY_SIZE(parts), parts);
+	__ASSERT(ret == 0, "k_mem_domain_init() failed %d", ret);
+	ARG_UNUSED(ret);
+
 	k_mem_domain_add_thread(&dom_common, k_current_get());
 
 	for (i = 0; i < NUM_THREADS; i++) {

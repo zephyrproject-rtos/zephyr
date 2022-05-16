@@ -19,34 +19,16 @@
 #define MQTT_OS_H_
 
 #include <stddef.h>
-#include <kernel.h>
-#include <sys/mutex.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/mutex.h>
 
-#include <net/net_core.h>
+#include <zephyr/net/net_core.h>
 
 #include "mqtt_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**@brief Method to get trace logs from the module. */
-#define MQTT_TRC(...) NET_DBG(__VA_ARGS__)
-
-/**@brief Method to error logs from the module. */
-#define MQTT_ERR(...) NET_ERR(__VA_ARGS__)
-
-/**@brief Method to hexdump trace logs from the module. */
-#define MQTT_HEXDUMP_TRC(_data, _length, _str) NET_HEXDUMP_DBG(_data, _length, _str)
-
-/**@brief Method to hexdump error logs from the module. */
-#define MQTT_HEXDUMP_ERR(_data, _length, _str) NET_HEXDUMP_ERR(_data, _length, _str)
-
-/**@brief Method to hexdump warning logs from the module. */
-#define MQTT_HEXDUMP_WARN(_data, _length, _str) NET_HEXDUMP_WARN(_data, _length, _str)
-
-/**@brief Method to hexdump info logs from the module. */
-#define MQTT_HEXDUMP_INFO(_data, _length, _str) NETHEXDUMP_INFO(_data, _length, _str)
 
 /**@brief Initialize the mutex for the module, if any.
  *

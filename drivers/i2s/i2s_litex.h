@@ -7,9 +7,9 @@
 #ifndef _I2S_LITEI2S__H
 #define _I2S_LITEI2S__H
 
-#include <device.h>
-#include <drivers/i2s.h>
-#include <devicetree.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2s.h>
+#include <zephyr/devicetree.h>
 
 /* i2s register offsets*/
 #define I2S_EV_STATUS_REG_OFFSET 0x0

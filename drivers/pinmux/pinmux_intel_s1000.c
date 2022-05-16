@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT intel_s1000_pinmux
 
-#include <kernel.h>
-#include <drivers/pinmux.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/pinmux.h>
 #include <iomux.h>
 
 static volatile uint32_t *iomux_ctrl_regs = (volatile uint32_t *)DT_INST_REG_ADDR(0);

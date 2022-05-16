@@ -5,10 +5,9 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/i2c/i2c.h>
-
-#include "samd5x-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -243,7 +242,7 @@
 			clock-names = "GCLK", "MCLK";
 		};
 
-		pinctrl@41008000 {
+		pinctrl: pinctrl@41008000 {
 			compatible = "atmel,sam0-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;

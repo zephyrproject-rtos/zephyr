@@ -58,8 +58,15 @@ The board configuration supports the following hardware features:
 +-----------+------------+-----------------------+
 | Interface | Controller | Driver/Component      |
 +===========+============+=======================+
+| EXTI      | on-chip    | EXTI interrupt        |
+|           |            | controller            |
++-----------+------------+-----------------------+
+| GPIO      | on-chip    | gpio                  |
++-----------+------------+-----------------------+
 | NVIC      | on-chip    | nested vectored       |
 |           |            | interrupt controller  |
++-----------+------------+-----------------------+
+| PWM       | on-chip    | PWM                   |
 +-----------+------------+-----------------------+
 | SYSTICK   | on-chip    | system clock          |
 +-----------+------------+-----------------------+

@@ -8,25 +8,16 @@
  * @file Sample app to demonstrate PWM-based servomotor control
  */
 
-#include <zephyr.h>
-#include <sys/printk.h>
-#include <device.h>
-#include <drivers/pwm.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pwm.h>
 
-#define PWM_NODE DT_ALIAS(pwm_servo)
+static const struct pwm_dt_spec servo = PWM_DT_SPEC_GET(DT_NODELABEL(servo));
+static const uint32_t min_pulse = DT_PROP(DT_NODELABEL(servo), min_pulse);
+static const uint32_t max_pulse = DT_PROP(DT_NODELABEL(servo), max_pulse);
 
-#if !DT_NODE_HAS_STATUS(PWM_NODE, okay)
-#error "Unsupported board: pwm-servo devicetree alias is not defined or enabled"
-#endif
-
-/*
- * Unlike pulse width, the PWM period is not a critical parameter for
- * motor control. 20 ms is commonly used.
- */
-#define PERIOD_USEC	(20U * USEC_PER_MSEC)
-#define STEP_USEC	100
-#define MIN_PULSE_USEC	700
-#define MAX_PULSE_USEC	2300
+#define STEP PWM_USEC(100)
 
 enum direction {
 	DOWN,
@@ -35,39 +26,37 @@ enum direction {
 
 void main(void)
 {
-	const struct device *pwm;
-	uint32_t pulse_width = MIN_PULSE_USEC;
+	uint32_t pulse_width = min_pulse;
 	enum direction dir = UP;
 	int ret;
 
 	printk("Servomotor control\n");
 
-	pwm = DEVICE_DT_GET(PWM_NODE);
-	if (!device_is_ready(pwm)) {
-		printk("Error: PWM device %s is not ready\n", pwm->name);
+	if (!device_is_ready(servo.dev)) {
+		printk("Error: PWM device %s is not ready\n", servo.dev->name);
 		return;
 	}
 
 	while (1) {
-		ret = pwm_pin_set_usec(pwm, 0, PERIOD_USEC, pulse_width, 0);
+		ret = pwm_set_pulse_dt(&servo, pulse_width);
 		if (ret < 0) {
 			printk("Error %d: failed to set pulse width\n", ret);
 			return;
 		}
 
 		if (dir == DOWN) {
-			if (pulse_width <= MIN_PULSE_USEC) {
+			if (pulse_width <= min_pulse) {
 				dir = UP;
-				pulse_width = MIN_PULSE_USEC;
+				pulse_width = min_pulse;
 			} else {
-				pulse_width -= STEP_USEC;
+				pulse_width -= STEP;
 			}
 		} else {
-			pulse_width += STEP_USEC;
+			pulse_width += STEP;
 
-			if (pulse_width >= MAX_PULSE_USEC) {
+			if (pulse_width >= max_pulse) {
 				dir = DOWN;
-				pulse_width = MAX_PULSE_USEC;
+				pulse_width = max_pulse;
 			}
 		}
 

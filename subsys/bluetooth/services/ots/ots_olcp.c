@@ -8,17 +8,17 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/ots.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_obj_manager_internal.h"
 #include "ots_dir_list_internal.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 
@@ -156,54 +156,40 @@ static enum bt_gatt_ots_olcp_res_code olcp_proc_execute(
 	}
 };
 
-static enum bt_gatt_ots_olcp_res_code olcp_command_decode(
-	const uint8_t *buf, struct bt_gatt_ots_olcp_proc *proc)
+static int olcp_command_decode(const uint8_t *buf, uint16_t len,
+			       struct bt_gatt_ots_olcp_proc *proc)
 {
+	if (len < OLCP_PROC_TYPE_SIZE) {
+		return -ENODATA;
+	}
+
 	memset(proc, 0, sizeof(*proc));
 
 	proc->type = *buf++;
+	len -= OLCP_PROC_TYPE_SIZE;
 
 	switch (proc->type) {
 	case BT_GATT_OTS_OLCP_PROC_FIRST:
 	case BT_GATT_OTS_OLCP_PROC_LAST:
 	case BT_GATT_OTS_OLCP_PROC_PREV:
 	case BT_GATT_OTS_OLCP_PROC_NEXT:
-		break;
+		if (len != 0) {
+			return -EBADMSG;
+		}
+
+		return 0;
 	case BT_GATT_OTS_OLCP_PROC_GOTO:
+		if (len != BT_GATT_OTS_OLCP_GOTO_PARAMS_SIZE) {
+			return -EBADMSG;
+		}
 		proc->goto_params.id = sys_get_le48(buf);
-		break;
+
+		return 0;
 	default:
-		LOG_WRN("OLCP unsupported procedure type");
-		return BT_GATT_OTS_OLCP_RES_PROC_NOT_SUP;
+		break;
 	}
 
-	return BT_GATT_OTS_OLCP_RES_SUCCESS;
-}
-
-static bool olcp_command_len_verify(enum bt_gatt_ots_olcp_proc_type type,
-				    uint16_t len)
-{
-	uint16_t ref_len = OLCP_PROC_TYPE_SIZE;
-
-	switch (type) {
-	case BT_GATT_OTS_OLCP_PROC_FIRST:
-	case BT_GATT_OTS_OLCP_PROC_LAST:
-	case BT_GATT_OTS_OLCP_PROC_PREV:
-	case BT_GATT_OTS_OLCP_PROC_NEXT:
-	case BT_GATT_OTS_OLCP_PROC_REQ_NUM_OBJS:
-	case BT_GATT_OTS_OLCP_PROC_CLEAR_MARKING:
-		break;
-	case BT_GATT_OTS_OLCP_PROC_GOTO:
-		ref_len += BT_OTS_OBJ_ID_SIZE;
-		break;
-	case BT_GATT_OTS_OLCP_PROC_ORDER:
-		ref_len += sizeof(uint8_t);
-		break;
-	default:
-		return true;
-	}
-
-	return (len == ref_len);
+	return -ENOTSUP;
 }
 
 static void olcp_ind_cb(struct bt_conn *conn,
@@ -246,6 +232,7 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 {
 	struct bt_gatt_ots_object *old_obj;
 	enum bt_gatt_ots_olcp_res_code olcp_status;
+	int decode_status;
 	struct bt_gatt_ots_olcp_proc olcp_proc;
 	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
 
@@ -261,36 +248,46 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	olcp_status = olcp_command_decode(buf, &olcp_proc);
+	old_obj = ots->cur_obj;
 
-	if (!olcp_command_len_verify(olcp_proc.type, len)) {
+	decode_status = olcp_command_decode(buf, len, &olcp_proc);
+	switch (decode_status) {
+	case 0:
+		olcp_status = olcp_proc_execute(ots, &olcp_proc);
+		if (olcp_status != BT_GATT_OTS_OLCP_RES_SUCCESS) {
+			LOG_WRN("OLCP Write error status: 0x%02X", olcp_status);
+		} else if (old_obj != ots->cur_obj) {
+			char id[BT_OTS_OBJ_ID_STR_LEN];
+
+			bt_ots_obj_id_to_str(ots->cur_obj->id, id,
+						sizeof(id));
+			LOG_DBG("Selecting a new Current Object with id: %s",
+				log_strdup(id));
+
+			if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+				bt_ots_dir_list_selected(ots->dir_list, ots->obj_manager,
+							 ots->cur_obj);
+			}
+
+			if (ots->cb->obj_selected) {
+				ots->cb->obj_selected(ots, conn, ots->cur_obj->id);
+			}
+		}
+		break;
+	case -ENOTSUP:
+		olcp_status = BT_GATT_OTS_OLCP_RES_PROC_NOT_SUP;
+		LOG_WRN("OLCP unsupported procedure type: 0x%02X", olcp_proc.type);
+		break;
+	case -EBADMSG:
 		LOG_ERR("Invalid length of OLCP Write Request for 0x%02X "
 			"Op Code", olcp_proc.type);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	}
-
-	old_obj = ots->cur_obj;
-	if (olcp_status == BT_GATT_OTS_OLCP_RES_SUCCESS) {
-		olcp_status = olcp_proc_execute(ots, &olcp_proc);
-	}
-
-	if (olcp_status != BT_GATT_OTS_OLCP_RES_SUCCESS) {
-		LOG_WRN("OLCP Write error status: 0x%02X", olcp_status);
-	} else if (old_obj != ots->cur_obj) {
-		char id[BT_OTS_OBJ_ID_STR_LEN];
-
-		bt_ots_obj_id_to_str(ots->cur_obj->id, id,
-					      sizeof(id));
-		LOG_DBG("Selecting a new Current Object with id: %s",
-			log_strdup(id));
-
-		if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
-			bt_ots_dir_list_selected(ots->dir_list, ots->obj_manager, ots->cur_obj);
-		}
-
-		if (ots->cb->obj_selected) {
-			ots->cb->obj_selected(ots, conn, ots->cur_obj->id);
-		}
+	case -ENODATA:
+		LOG_ERR("Invalid size of OLCP Write Request");
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	default:
+		LOG_ERR("Invalid return code from olcp_command_decode: %d", decode_status);
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
 	olcp_ind_send(attr, olcp_proc.type, olcp_status);

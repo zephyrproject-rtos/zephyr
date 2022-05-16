@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <drivers/ipm.h>
-#include <sys/printk.h>
-#include <device.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/device.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #include <openamp/open_amp.h>
 #include <metal/device.h>
@@ -226,7 +226,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 		return;
 	}
 
-	vdev.role = RPMSG_MASTER;
+	vdev.role = RPMSG_HOST;
 	vdev.vrings_num = VRING_COUNT;
 	vdev.func = &dispatch;
 	rvrings[0].io = io;

@@ -53,7 +53,7 @@ from the Google Cloud Platform itself:
 From these values, the config values can be set using the following
 template:
 
-.. code-block: kconfig
+.. code-block:: kconfig
 
    CLOUD_CLIENT_ID="projects/PROJECT_ID/locations/REGION/registries/REGISTRY_ID/devices/DEVICE_ID"
    CLOUD_AUDIENCE="PROJECT_ID"

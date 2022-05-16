@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT sbs_sbs_gauge
 
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "sbs_gauge.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sbs_gauge, CONFIG_SENSOR_LOG_LEVEL);
 
 static int sbs_cmd_reg_read(const struct device *dev,
@@ -23,7 +23,7 @@ static int sbs_cmd_reg_read(const struct device *dev,
 	uint8_t i2c_data[2];
 	int status;
 
-	cfg = (struct sbs_gauge_config *)dev->config;
+	cfg = dev->config;
 	status = i2c_burst_read(cfg->i2c_dev, cfg->i2c_addr, reg_addr,
 				i2c_data, ARRAY_SIZE(i2c_data));
 	if (status < 0) {
@@ -48,7 +48,7 @@ static int sbs_gauge_channel_get(const struct device *dev,
 	struct sbs_gauge_data *data;
 	int32_t int_temp;
 
-	data = (struct sbs_gauge_data *)dev->data;
+	data = dev->data;
 	val->val2 = 0;
 
 	switch (chan) {
@@ -128,7 +128,7 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
 	struct sbs_gauge_data *data;
 	int status = 0;
 
-	data = (struct sbs_gauge_data *)dev->data;
+	data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
@@ -260,9 +260,9 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
  */
 static int sbs_gauge_init(const struct device *dev)
 {
-	struct sbs_gauge_config *cfg;
+	const struct sbs_gauge_config *cfg;
 
-	cfg = (struct sbs_gauge_config *)dev->config;
+	cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c_dev)) {
 		LOG_ERR("%s device is not ready", cfg->i2c_dev->name);

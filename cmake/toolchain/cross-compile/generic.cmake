@@ -4,7 +4,7 @@
 # toolchain with a single environment variable.
 #
 # It is a legacy mechanism that will in Zephyr translate to
-# specififying ZEPHYR_TOOLCHAIN_VARIANT to 'cross-compile' with the location
+# specifying ZEPHYR_TOOLCHAIN_VARIANT to 'cross-compile' with the location
 # 'CROSS_COMPILE'.
 #
 # New users should set the env var 'ZEPHYR_TOOLCHAIN_VARIANT' to

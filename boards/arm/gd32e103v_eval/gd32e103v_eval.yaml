@@ -1,0 +1,13 @@
+# Copyright (c) 2021, YuLong Yao <feilongphone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: gd32e103v_eval
+name: GigaDevice GD32E103V Evaluation Kit
+type: mcu
+arch: arm
+ram: 32
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools

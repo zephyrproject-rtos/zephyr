@@ -31,15 +31,15 @@
 		compatible = "gpio-keys";
 		user_button_1: button_0 {
 			label = "User SW1";
-			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 		};
 		user_button_2: button_1 {
 			label = "User SW2";
-			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 		user_button_3: button_2 {
 			label = "User SW3";
-			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
 };
@@ -80,6 +80,8 @@
 
 &adc0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
 };
 
 &dma0 {

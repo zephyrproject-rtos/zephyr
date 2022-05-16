@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-#include <zephyr.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/zephyr.h>
 
 #include "sx126x_common.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(sx126x, CONFIG_LORA_LOG_LEVEL);
 
 static const struct gpio_dt_spec sx126x_gpio_reset = GPIO_DT_SPEC_INST_GET(
@@ -67,8 +67,7 @@ int sx126x_variant_init(const struct device *dev)
 
 	if (gpio_pin_configure_dt(&sx126x_gpio_reset, GPIO_OUTPUT_ACTIVE) ||
 	    gpio_pin_configure_dt(&sx126x_gpio_busy, GPIO_INPUT) ||
-	    gpio_pin_configure_dt(&sx126x_gpio_dio1,
-				  GPIO_INPUT | GPIO_INT_DEBOUNCE)) {
+	    gpio_pin_configure_dt(&sx126x_gpio_dio1, GPIO_INPUT)) {
 		LOG_ERR("GPIO configuration failed.");
 		return -EIO;
 	}

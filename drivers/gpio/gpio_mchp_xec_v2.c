@@ -7,10 +7,11 @@
 #define DT_DRV_COMPAT microchip_xec_gpio_v2
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/gpio.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
 #include <soc.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #include "gpio_utils.h"
 
@@ -368,6 +369,7 @@ static void gpio_gpio_xec_port_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, girq_result);
 }
 
+/* GPIO driver official API table */
 static const struct gpio_driver_api gpio_xec_driver_api = {
 	.pin_configure = gpio_xec_configure,
 	.port_get_raw = gpio_xec_port_get_raw,
@@ -380,12 +382,12 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 };
 
 #define XEC_GPIO_PORT_FLAGS(n)						\
-	((DT_IRQ_HAS_CELL(DT_DRV_INST(n), irq)) ? GPIO_INT_ENABLE : 0)
+	((DT_INST_IRQ_HAS_CELL(n, irq)) ? GPIO_INT_ENABLE : 0)
 
 #define XEC_GPIO_PORT(n)						\
 	static int gpio_xec_port_init_##n(const struct device *dev)	\
 	{								\
-		if (!(DT_IRQ_HAS_CELL(DT_DRV_INST(n), irq))) {		\
+		if (!(DT_INST_IRQ_HAS_CELL(n, irq))) {			\
 			return 0;					\
 		}							\
 									\
@@ -420,7 +422,7 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(n, gpio_xec_port_init_##n, NULL,		\
 		&gpio_xec_port_data_##n, &xec_gpio_config_##n,		\
-		POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,			\
+		PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,			\
 		&gpio_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_GPIO_PORT)

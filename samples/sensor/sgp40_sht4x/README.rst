@@ -57,7 +57,7 @@ Sample Output
 
         *** Booting Zephyr OS build v2.6.0-rc1-315-g50d8d1187138  ***
         SHT4X: 23.64 Temp. [C] ; 30.74 RH [%] -- SGP40: 30531 Gas [a.u.]
-        [00:00:00.250,000] <dbg> SGP40.sgp40_init: SGP40: Selftest succeded!
+        [00:00:00.250,000] <dbg> SGP40.sgp40_init: SGP40: Selftest succeeded!
         SHT4X: 23.66 Temp. [C] ; 32.16 RH [%] -- SGP40: 30541 Gas [a.u.]
         SHT4X: 23.63 Temp. [C] ; 30.83 RH [%] -- SGP40: 30522 Gas [a.u.]
 

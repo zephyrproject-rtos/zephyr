@@ -4,28 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <display/cfb.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/display/cfb.h>
+#include <zephyr/sys/printk.h>
 
 #include "cfb_font_dice.h"
 
-#if defined(CONFIG_SSD1306)
-#define DISPLAY_NODE DT_INST(0, solomon_ssd1306fb)
-#elif defined(CONFIG_SSD16XX)
-#define DISPLAY_NODE DT_INST(0, solomon_ssd16xxfb)
-#else
-#error Unsupported board
-#endif
-
 void main(void)
 {
-	const struct device *display = DEVICE_DT_GET(DISPLAY_NODE);
+	const struct device *display = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	int err;
 
 	if (!device_is_ready(display)) {
 		printk("Display device not ready\n");
+	}
+
+	if (display_set_pixel_format(display, PIXEL_FORMAT_MONO10) != 0) {
+		printk("Failed to set required pixel format\n");
+		return;
 	}
 
 	err = cfb_framebuffer_init(display);

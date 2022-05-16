@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/buf.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/buf.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #define LOG_MODULE_NAME bt_br
@@ -118,7 +118,7 @@ static void bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 	}
 
 	sco_conn->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
+	bt_conn_set_state(sco_conn, BT_CONN_CONNECTING);
 	bt_conn_unref(sco_conn);
 }
 
@@ -143,7 +143,7 @@ void bt_hci_conn_req(struct net_buf *buf)
 
 	accept_conn(&evt->bdaddr);
 	conn->role = BT_HCI_ROLE_PERIPHERAL;
-	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	bt_conn_set_state(conn, BT_CONN_CONNECTING);
 	bt_conn_unref(conn);
 }
 
@@ -321,7 +321,7 @@ static int request_name(const bt_addr_t *addr, uint8_t pscan, uint16_t offset)
 
 	bt_addr_copy(&cp->bdaddr, addr);
 	cp->pscan_rep_mode = pscan;
-	cp->reserved = 0x00; /* reserver, should be set to 0x00 */
+	cp->reserved = 0x00; /* reserved, should be set to 0x00 */
 	cp->clock_offset = offset;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_REQUEST, buf, NULL);

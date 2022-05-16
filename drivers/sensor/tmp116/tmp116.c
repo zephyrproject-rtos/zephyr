@@ -6,16 +6,21 @@
 
 #define DT_DRV_COMPAT ti_tmp116
 
-#include <device.h>
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
-#include <logging/log.h>
-#include <kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/tmp116.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 
 #include "tmp116.h"
+
+#define  EEPROM_SIZE_REG sizeof(uint16_t)
+#define  EEPROM_TMP117_RESERVED (2 * sizeof(uint16_t))
+#define  EEPROM_MIN_BUSY_MS 7
 
 LOG_MODULE_REGISTER(TMP116, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -42,6 +47,94 @@ static int tmp116_reg_write(const struct device *dev, uint8_t reg,
 
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
+
+static bool check_eeprom_bounds(const struct device *dev, off_t offset,
+			       size_t len)
+{
+	struct tmp116_data *drv_data = dev->data;
+
+	if ((offset + len) > EEPROM_TMP116_SIZE ||
+	    offset % EEPROM_SIZE_REG != 0 ||
+	    len % EEPROM_SIZE_REG != 0) {
+		return false;
+	}
+
+	/* TMP117 uses EEPROM[2] as temperature offset register */
+	if (drv_data->id == TMP117_DEVICE_ID &&
+	    offset <= EEPROM_TMP117_RESERVED &&
+	    (offset + len) > EEPROM_TMP117_RESERVED) {
+		return false;
+	}
+
+	return true;
+}
+
+int tmp116_eeprom_write(const struct device *dev, off_t offset,
+			const void *data, size_t len)
+{
+	uint8_t reg;
+	const uint16_t *src = data;
+	int res;
+
+	if (!check_eeprom_bounds(dev, offset, len)) {
+		return -EINVAL;
+	}
+
+	res = tmp116_reg_write(dev, TMP116_REG_EEPROM_UL, TMP116_EEPROM_UL_UNLOCK);
+	if (res) {
+		return res;
+	}
+
+	for (reg = (offset / 2); reg < offset / 2 + len / 2; reg++) {
+		uint16_t val = *src;
+
+		res = tmp116_reg_write(dev, reg + TMP116_REG_EEPROM1, val);
+		if (res != 0) {
+			break;
+		}
+
+		k_sleep(K_MSEC(EEPROM_MIN_BUSY_MS));
+
+		do {
+			res = tmp116_reg_read(dev, TMP116_REG_EEPROM_UL, &val);
+			if (res != 0) {
+				break;
+			}
+		} while (val & TMP116_EEPROM_UL_BUSY);
+		src++;
+
+		if (res != 0) {
+			break;
+		}
+	}
+
+	res = tmp116_reg_write(dev, TMP116_REG_EEPROM_UL, 0);
+
+	return res;
+}
+
+int tmp116_eeprom_read(const struct device *dev, off_t offset, void *data,
+		       size_t len)
+{
+	uint8_t reg;
+	uint16_t *dst = data;
+	int res = 0;
+
+	if (!check_eeprom_bounds(dev, offset, len)) {
+		return -EINVAL;
+	}
+
+	for (reg = (offset / 2); reg < offset / 2 + len / 2; reg++) {
+		res = tmp116_reg_read(dev, reg + TMP116_REG_EEPROM1, dst);
+		if (res != 0) {
+			break;
+		}
+		dst++;
+	}
+
+	return res;
+}
+
 
 /**
  * @brief Check the Device ID

@@ -6,21 +6,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_ICMPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <linker/sections.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/linker/sections.h>
 
 #include <tc_util.h>
 
-#include <net/buf.h>
-#include <net/ethernet.h>
-#include <net/dummy.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
 
 #include "net_private.h"
 #include "icmpv4.h"
@@ -263,7 +263,7 @@ static int verify_echo_reply_with_opts(struct net_pkt *pkt)
 	payload_len = sizeof(icmpv4_echo_req_opt) -
 		      NET_IPV4H_LEN - NET_ICMPH_LEN - opts_len;
 	if (payload_len != net_pkt_remaining_data(pkt)) {
-		zassert_true(false, "echo_reply_opts invalid paylaod len");
+		zassert_true(false, "echo_reply_opts invalid payload len");
 	}
 
 	ret = net_pkt_read(pkt, buf, payload_len);

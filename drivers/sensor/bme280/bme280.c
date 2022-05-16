@@ -8,14 +8,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <drivers/sensor.h>
-#include <init.h>
-#include <drivers/gpio.h>
-#include <sys/byteorder.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/__assert.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 #include "bme280.h"
 
@@ -61,11 +62,6 @@ struct bme280_config {
 	union bme280_bus bus;
 	const struct bme280_bus_io *bus_io;
 };
-
-static inline struct bme280_data *to_data(const struct device *dev)
-{
-	return dev->data;
-}
 
 static inline int bme280_bus_check(const struct device *dev)
 {
@@ -173,7 +169,7 @@ static int bme280_wait_until_ready(const struct device *dev)
 static int bme280_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
-	struct bme280_data *data = to_data(dev);
+	struct bme280_data *data = dev->data;
 	uint8_t buf[8];
 	int32_t adc_press, adc_temp, adc_humidity;
 	int size = 6;
@@ -227,7 +223,7 @@ static int bme280_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct bme280_data *data = to_data(dev);
+	struct bme280_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
@@ -271,7 +267,7 @@ static const struct sensor_driver_api bme280_api_funcs = {
 
 static int bme280_read_compensation(const struct device *dev)
 {
-	struct bme280_data *data = to_data(dev);
+	struct bme280_data *data = dev->data;
 	uint16_t buf[12];
 	uint8_t hbuf[7];
 	int err = 0;
@@ -324,7 +320,7 @@ static int bme280_read_compensation(const struct device *dev)
 
 static int bme280_chip_init(const struct device *dev)
 {
-	struct bme280_data *data = to_data(dev);
+	struct bme280_data *data = dev->data;
 	int err;
 
 	err = bme280_bus_check(dev);
@@ -452,7 +448,7 @@ static int bme280_pm_action(const struct device *dev,
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			 bme280_chip_init,				\
-			 PM_DEVICE_DT_INST_REF(inst),			\
+			 PM_DEVICE_DT_INST_GET(inst),			\
 			 &bme280_data_##inst,				\
 			 &bme280_config_##inst,				\
 			 POST_KERNEL,					\

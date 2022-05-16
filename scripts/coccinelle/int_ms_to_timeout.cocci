@@ -1,5 +1,5 @@
 // Copyright (c) 2019-2020 Nordic Semiconductor ASA
-// SPDX-License-Identifer: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 
 // Convert legacy integer timeouts to timeout API
 //

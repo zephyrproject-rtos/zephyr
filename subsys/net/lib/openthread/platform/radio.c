@@ -13,7 +13,7 @@
 
 #define LOG_MODULE_NAME net_otPlat_radio
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include <stdbool.h>
@@ -21,11 +21,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <stdint.h>
 #include <string.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <net/ieee802154_radio.h>
-#include <net/net_pkt.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/net/ieee802154_radio.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/sys/__assert.h>
 
 #include <openthread/ip6.h>
 #include <openthread-system.h>
@@ -53,6 +53,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #else
 #define OT_WORKER_PRIORITY K_PRIO_PREEMPT(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 #endif
+
+#define CHANNEL_COUNT OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN + 1
 
 enum pending_events {
 	PENDING_EVENT_FRAME_TO_SEND, /* There is a tx frame to send  */
@@ -88,6 +90,8 @@ static uint16_t energy_detection_time;
 static uint8_t energy_detection_channel;
 static int16_t energy_detected_value;
 
+static int8_t max_tx_power_table[CHANNEL_COUNT];
+
 ATOMIC_DEFINE(pending_events, PENDING_EVENT_COUNT);
 K_KERNEL_STACK_DEFINE(ot_task_stack,
 		      CONFIG_OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE);
@@ -97,6 +101,26 @@ static otError tx_result;
 
 K_FIFO_DEFINE(rx_pkt_fifo);
 K_FIFO_DEFINE(tx_pkt_fifo);
+
+static int8_t get_transmit_power_for_channel(uint8_t aChannel)
+{
+	int8_t channel_max_power = OT_RADIO_POWER_INVALID;
+	int8_t power = 0; /* 0 dbm as default value */
+
+	if (aChannel >= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN &&
+	    aChannel <= OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX) {
+		channel_max_power =
+			max_tx_power_table[aChannel - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN];
+	}
+
+	if (tx_power != OT_RADIO_POWER_INVALID) {
+		power = (channel_max_power < tx_power) ? channel_max_power : tx_power;
+	} else if (channel_max_power != OT_RADIO_POWER_INVALID) {
+		power = channel_max_power;
+	}
+
+	return power;
+}
 
 static inline bool is_pending_event_set(enum pending_events event)
 {
@@ -220,6 +244,10 @@ static void dataInit(void)
 	net_pkt_append_buffer(tx_pkt, tx_payload);
 
 	sTransmitFrame.mPsdu = tx_payload->data;
+
+	for (size_t i = 0; i < CHANNEL_COUNT; i++) {
+		max_tx_power_table[i] = OT_RADIO_POWER_INVALID;
+	}
 }
 
 void platformRadioInit(void)
@@ -270,7 +298,7 @@ void transmit_message(struct k_work *tx_job)
 	channel = sTransmitFrame.mChannel;
 
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
-	radio_api->set_txpower(radio_dev, tx_power);
+	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
 
 	net_pkt_set_ieee802154_frame_secured(tx_pkt,
 					     sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed);
@@ -336,18 +364,8 @@ static inline void handle_tx_done(otInstance *aInstance)
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioTransmitDone(aInstance, &sTransmitFrame, tx_result);
 	} else {
-		if (sTransmitFrame.mPsdu[0] & IEEE802154_AR_FLAG_SET) {
-			if (ack_frame.mLength == 0) {
-				LOG_DBG("No ACK received.");
-				otPlatRadioTxDone(aInstance, &sTransmitFrame,
-						  NULL, OT_ERROR_NO_ACK);
-			} else {
-				otPlatRadioTxDone(aInstance, &sTransmitFrame,
-						  &ack_frame, tx_result);
-			}
-		} else {
-			otPlatRadioTxDone(aInstance, &sTransmitFrame, NULL, tx_result);
-		}
+		otPlatRadioTxDone(aInstance, &sTransmitFrame, ack_frame.mLength ? &ack_frame : NULL,
+				  tx_result);
 		ack_frame.mLength = 0;
 	}
 }
@@ -356,6 +374,7 @@ static void openthread_handle_received_frame(otInstance *instance,
 					     struct net_pkt *pkt)
 {
 	otRadioFrame recv_frame;
+	memset(&recv_frame, 0, sizeof(otRadioFrame));
 
 	recv_frame.mPsdu = net_buf_frag_last(pkt->buffer)->data;
 	/* Length inc. CRC. */
@@ -620,7 +639,7 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 	channel = aChannel;
 
 	radio_api->set_channel(radio_dev, aChannel);
-	radio_api->set_txpower(radio_dev, tx_power);
+	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
 	radio_api->start(radio_dev);
 	sState = OT_RADIO_STATE_RECEIVE;
 
@@ -1010,8 +1029,24 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 			  const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
 {
 	ARG_UNUSED(aInstance);
-	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
 	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE)
+	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_KEY_REF);
+	size_t keyLen;
+
+	__ASSERT_NO_MSG(otPlatCryptoExportKey(aPrevKey->mKeyMaterial.mKeyRef,
+					      (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8,
+					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+	__ASSERT_NO_MSG(otPlatCryptoExportKey(aCurrKey->mKeyMaterial.mKeyRef,
+					      (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8,
+					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+	__ASSERT_NO_MSG(otPlatCryptoExportKey(aNextKey->mKeyMaterial.mKeyRef,
+					      (uint8_t *)aNextKey->mKeyMaterial.mKey.m8,
+					      OT_MAC_KEY_SIZE, &keyLen) == OT_ERROR_NONE);
+#else
+	__ASSERT_NO_MSG(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
+#endif
 
 	uint8_t key_id_mode = aKeyIdMode >> 3;
 
@@ -1115,6 +1150,15 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 
 	return radio_api->get_sch_acc(radio_dev);
 }
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT)
+uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return CONFIG_OPENTHREAD_PLATFORM_CSL_UNCERT;
+}
+#endif
 
 #if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
 /**
@@ -1232,3 +1276,22 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 }
 
 #endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
+
+otError otPlatRadioSetChannelMaxTransmitPower(otInstance *aInstance, uint8_t aChannel,
+					      int8_t aMaxPower)
+{
+	ARG_UNUSED(aInstance);
+
+	if (aChannel < OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN ||
+	    aChannel > OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX) {
+		return OT_ERROR_INVALID_ARGS;
+	}
+
+	max_tx_power_table[aChannel - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN] = aMaxPower;
+
+	if (aChannel == channel) {
+		radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(aChannel));
+	}
+
+	return OT_ERROR_NONE;
+}

@@ -1,8 +1,0 @@
-# Zephyr 0.11 SDK Toolchain
-
-# Copyright (c) 2020 Linaro Limited.
-# SPDX-License-Identifier: Apache-2.0
-
-config TOOLCHAIN_ZEPHYR_0_11
-	def_bool y
-	select HAS_NEWLIB_LIBC_NANO if (ARC || ARM || RISCV)

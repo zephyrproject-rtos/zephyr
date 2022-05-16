@@ -1,0 +1,31 @@
+# Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Set SoC present on the board
+CONFIG_SOC_SERIES_STM32H7X=y
+CONFIG_SOC_STM32H7B3XXQ=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable serial
+CONFIG_SERIAL=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable clocks
+CONFIG_CLOCK_CONTROL=y
+
+# Enable pinctrl
+CONFIG_PINCTRL=y
+
+# Enable SMPS
+CONFIG_POWER_SUPPLY_DIRECT_SMPS=y

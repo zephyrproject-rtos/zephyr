@@ -1,0 +1,11 @@
+# Copyright (c) 2021 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_GD32_I2C := gd,gd32-i2c
+
+config I2C_GD32
+	bool "GigaDevice GD32 I2C driver"
+	depends on (SOC_FAMILY_GD32 || SOC_SERIES_GD32VF103)
+	default $(dt_compat_enabled,$(DT_COMPAT_GD32_I2C))
+	help
+	  Enables GigaDevice GD32 I2C driver

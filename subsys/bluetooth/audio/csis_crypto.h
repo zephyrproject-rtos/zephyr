@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 
-#include <bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csis.h>
 
 #define BT_CSIS_CRYPTO_KEY_SIZE   16
 #define BT_CSIS_CRYPTO_SALT_SIZE  16

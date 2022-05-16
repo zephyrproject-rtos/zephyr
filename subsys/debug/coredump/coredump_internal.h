@@ -7,7 +7,7 @@
 #ifndef DEBUG_COREDUMP_INTERNAL_H_
 #define DEBUG_COREDUMP_INTERNAL_H_
 
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -52,31 +52,6 @@ void z_coredump_start(void);
  * For example, backend may need to flush the output.
  */
 void z_coredump_end(void);
-
-typedef void (*z_coredump_backend_start_t)(void);
-typedef void (*z_coredump_backend_end_t)(void);
-typedef void (*z_coredump_backend_buffer_output_t)(uint8_t *buf, size_t buflen);
-typedef int (*coredump_backend_query_t)(enum coredump_query_id query_id,
-					void *arg);
-typedef int (*coredump_backend_cmd_t)(enum coredump_cmd_id cmd_id,
-				      void *arg);
-
-struct z_coredump_backend_api {
-	/* Signal to backend of the start of coredump. */
-	z_coredump_backend_start_t		start;
-
-	/* Signal to backend of the end of coredump. */
-	z_coredump_backend_end_t		end;
-
-	/* Raw buffer output */
-	z_coredump_backend_buffer_output_t	buffer_output;
-
-	/* Perform query on backend */
-	coredump_backend_query_t		query;
-
-	/* Perform command on backend */
-	coredump_backend_cmd_t			cmd;
-};
 
 /**
  * @endcond

@@ -72,7 +72,7 @@ features:
 | RTT       | on-chip    | console                              |
 +-----------+------------+--------------------------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `Nordic Semiconductor Infocenter`_ for a complete list of nRF52-based
 board hardware features.
 

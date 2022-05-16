@@ -1,10 +1,6 @@
-common:
-  # TODO: Remove when QEMU 6.2 is released with MVE emulation (see #37694).
-  platform_exclude: mps3_an547
-
 tests:
   libraries.cmsis_dsp.statistics:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - frdm_k64f
       - sam_e70_xplained
@@ -14,9 +10,10 @@ tests:
     min_flash: 128
     min_ram: 64
   libraries.cmsis_dsp.statistics.fpu:
-    filter: ((CONFIG_CPU_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
+    filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
+      - mps3_an547
     tags: cmsis_dsp fpu
     min_flash: 128
     min_ram: 64

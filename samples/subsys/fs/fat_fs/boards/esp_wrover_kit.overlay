@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+
+	spim2_miso_gpio2: spim2_miso_gpio2 {
+		pinmux = <SPIM2_MISO_GPIO2>;
+	};
+
+	spim2_mosi_gpio15: spim2_mosi_gpio15 {
+		pinmux = <SPIM2_MOSI_GPIO15>;
+	};
+
+	spim2_sclk_gpio14: spim2_sclk_gpio14 {
+		pinmux = <SPIM2_SCLK_GPIO14>;
+	};
+
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spim2_miso_gpio2 &spim2_mosi_gpio15 &spim2_sclk_gpio14>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,mmc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		label = "SDHC";
+		spi-max-frequency = <400000>;
+        };
+};

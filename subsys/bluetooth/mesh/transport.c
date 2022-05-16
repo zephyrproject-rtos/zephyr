@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/util.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <net/buf.h>
+#include <zephyr/net/buf.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/mesh.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_TRANS)
 #define LOG_MODULE_NAME bt_mesh_transport
@@ -92,10 +92,11 @@ struct va_val {
 
 static struct seg_tx {
 	struct bt_mesh_subnet *sub;
-	void                  *seg[CONFIG_BT_MESH_TX_SEG_MAX];
+	void                  *seg[BT_MESH_TX_SEG_MAX];
 	uint64_t              seq_auth;
 	uint16_t              src;
 	uint16_t              dst;
+	uint16_t              ack_src;
 	uint16_t              len;
 	uint8_t               hdr;
 	uint8_t               xmit;
@@ -118,7 +119,7 @@ static struct seg_tx {
 
 static struct seg_rx {
 	struct bt_mesh_subnet   *sub;
-	void                    *seg[CONFIG_BT_MESH_RX_SEG_MAX];
+	void                    *seg[BT_MESH_RX_SEG_MAX];
 	uint64_t                    seq_auth;
 	uint16_t                    src;
 	uint16_t                    dst;
@@ -144,7 +145,8 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 {
 	struct net_buf *buf;
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, tx->xmit, BUF_TIMEOUT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+				 tx->xmit, BUF_TIMEOUT);
 	if (!buf) {
 		BT_ERR("Out of network buffers");
 		return -ENOBUFS;
@@ -262,6 +264,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 	tx->sub = NULL;
 	tx->src = BT_MESH_ADDR_UNASSIGNED;
 	tx->dst = BT_MESH_ADDR_UNASSIGNED;
+	tx->ack_src = BT_MESH_ADDR_UNASSIGNED;
 	tx->blocked = false;
 
 	for (i = 0; i <= tx->seg_n && tx->nack_count; i++) {
@@ -412,8 +415,8 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 			continue;
 		}
 
-		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, tx->xmit,
-					 BUF_TIMEOUT);
+		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+					 tx->xmit, BUF_TIMEOUT);
 		if (!seg) {
 			BT_DBG("Allocating segment failed");
 			goto end;
@@ -438,6 +441,11 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 	tx->attempts--;
 
 end:
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
+	    bt_mesh_lpn_established()) {
+		bt_mesh_lpn_poll();
+	}
+
 	if (!tx->seg_pending) {
 		k_work_reschedule(&tx->retransmit,
 				  K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
@@ -448,7 +456,8 @@ end:
 
 static void seg_retransmit(struct k_work *work)
 {
-	struct seg_tx *tx = CONTAINER_OF(work, struct seg_tx, retransmit);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct seg_tx *tx = CONTAINER_OF(dwork, struct seg_tx, retransmit);
 
 	seg_tx_send_unacked(tx);
 }
@@ -591,11 +600,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	}
 
 	seg_tx_send_unacked(tx);
-
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    bt_mesh_lpn_established()) {
-		bt_mesh_lpn_poll();
-	}
 
 	return 0;
 }
@@ -796,8 +800,8 @@ static struct seg_tx *seg_tx_lookup(uint16_t seq_zero, uint8_t obo, uint16_t add
 		 * acknowledgement, assume it's a Friend that's
 		 * responding and therefore accept the message.
 		 */
-		if (obo && tx->nack_count == tx->seg_n + 1) {
-			tx->dst = addr;
+		if (obo && (tx->nack_count == tx->seg_n + 1 || tx->ack_src == addr)) {
+			tx->ack_src = addr;
 			return tx;
 		}
 	}
@@ -1128,7 +1132,8 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 
 static void seg_ack(struct k_work *work)
 {
-	struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, ack);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct seg_rx *rx = CONTAINER_OF(dwork, struct seg_rx, ack);
 	int32_t timeout;
 
 	if (!rx->in_use || rx->block == BLOCK_COMPLETE(rx->seg_n)) {
@@ -1163,7 +1168,7 @@ static void seg_ack(struct k_work *work)
 
 static inline bool sdu_len_is_ok(bool ctl, uint8_t seg_n)
 {
-	return (seg_n < CONFIG_BT_MESH_RX_SEG_MAX);
+	return (seg_n < BT_MESH_RX_SEG_MAX);
 }
 
 static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,
@@ -1417,7 +1422,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 	/* Look for free slot for a new RX session */
 	rx = seg_rx_alloc(net_rx, hdr, seq_auth, seg_n);
 	if (!rx) {
-		/* Warn but don't cancel since the existing slots willl
+		/* Warn but don't cancel since the existing slots will
 		 * eventually be freed up and we'll be able to process
 		 * this one.
 		 */

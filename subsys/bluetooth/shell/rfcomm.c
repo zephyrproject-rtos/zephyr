@@ -15,25 +15,25 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/zephyr.h>
 
-#include <settings/settings.h>
+#include <zephyr/settings/settings.h>
 
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/l2cap.h>
-#include <bluetooth/rfcomm.h>
-#include <bluetooth/sdp.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/rfcomm.h>
+#include <zephyr/bluetooth/sdp.h>
 
-#include <shell/shell.h>
+#include <zephyr/shell/shell.h>
 
 #include "bt.h"
 
 #define DATA_MTU 48
 
-NET_BUF_POOL_FIXED_DEFINE(pool, 1, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(pool, 1, DATA_MTU, 8, NULL);
 
 static struct bt_sdp_attribute spp_attrs[] = {
 	BT_SDP_NEW_SERVICE,

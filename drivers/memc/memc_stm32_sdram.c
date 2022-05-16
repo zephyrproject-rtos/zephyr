@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT st_stm32_fmc_sdram
 
-#include <device.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(memc_stm32_sdram, CONFIG_MEMC_LOG_LEVEL);
 
 /** SDRAM controller register offset. */
@@ -119,7 +119,7 @@ static const struct memc_stm32_sdram_bank_config bank_config[] = {
 
 /** SDRAM configuration. */
 static const struct memc_stm32_sdram_config config = {
-	.sdram = (FMC_SDRAM_TypeDef *)(DT_REG_ADDR(DT_PARENT(DT_DRV_INST(0))) +
+	.sdram = (FMC_SDRAM_TypeDef *)(DT_REG_ADDR(DT_INST_PARENT(0)) +
 				       SDRAM_OFFSET),
 	.power_up_delay = DT_INST_PROP(0, power_up_delay),
 	.num_auto_refresh = DT_INST_PROP(0, num_auto_refresh),

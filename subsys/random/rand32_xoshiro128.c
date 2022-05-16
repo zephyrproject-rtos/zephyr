@@ -26,13 +26,15 @@
  * The state must be seeded so that it is not everywhere zero.
  */
 
-#include <init.h>
-#include <device.h>
-#include <drivers/entropy.h>
-#include <kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 
+static const struct device *entropy_driver;
 static uint32_t state[4];
+static bool initialized;
 
 static inline uint32_t rotl(const uint32_t x, int k)
 {
@@ -41,26 +43,34 @@ static inline uint32_t rotl(const uint32_t x, int k)
 
 static int xoshiro128_initialize(const struct device *dev)
 {
-	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-	if (!dev) {
-		return -EINVAL;
+	entropy_driver = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+	if (!device_is_ready(entropy_driver)) {
+		return -ENODEV;
 	}
-
-	int32_t rc = entropy_get_entropy_isr(dev, (uint8_t *)&state,
-					     sizeof(state), ENTROPY_BUSYWAIT);
-
-	if (rc == -ENOTSUP) {
-		/* Driver does not provide an ISR-specific API, assume it can
-		 * be called from ISR context
-		 */
-		rc = entropy_get_entropy(dev, (uint8_t *)&state, sizeof(state));
-	}
-
-	if (rc < 0) {
-		return -EINVAL;
-	}
-
 	return 0;
+}
+
+static void xoshiro128_init_state(void)
+{
+	int rc;
+
+	/* This is not thread safe but it doesn't matter as we will just end
+	 * up with a mix of random bytes from both threads.
+	 */
+	rc = entropy_get_entropy(entropy_driver, (uint8_t *)&state, sizeof(state));
+	if (rc == 0) {
+		initialized = true;
+	} else {
+		/* Entropy device failed or is not yet ready.
+		 * Reseed the PRNG state with pseudo-random data until it can
+		 * be properly seeded. This may be needed if random numbers are
+		 * requested before the backing entropy device has been enabled.
+		 */
+		state[0] = k_cycle_get_32();
+		state[1] = k_cycle_get_32() ^ 0x9b64c2b0;
+		state[2] = k_cycle_get_32() ^ 0x86d3d2d4;
+		state[3] = k_cycle_get_32() ^ 0xa00ae278;
+	}
 }
 
 static uint32_t xoshiro128_next(void)
@@ -83,11 +93,11 @@ static uint32_t xoshiro128_next(void)
 
 uint32_t z_impl_sys_rand32_get(void)
 {
-	uint32_t ret;
+	if (unlikely(!initialized)) {
+		xoshiro128_init_state();
+	}
 
-	ret = xoshiro128_next();
-
-	return ret;
+	return xoshiro128_next();
 }
 
 void z_impl_sys_rand_get(void *dst, size_t outlen)
@@ -96,6 +106,10 @@ void z_impl_sys_rand_get(void *dst, size_t outlen)
 	size_t rem = (outlen - (blocks * sizeof(uint32_t)));
 	uint32_t *unaligned = dst;
 	uint32_t ret;
+
+	if (unlikely(!initialized)) {
+		xoshiro128_init_state();
+	}
 
 	/* Write all full 32bit chunks */
 	while (blocks--) {

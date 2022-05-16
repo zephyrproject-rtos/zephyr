@@ -6,10 +6,10 @@
  */
 
 #include <inttypes.h>
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <string.h>
-#include <sys/printk.h>
-#include <logging/log.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hello_world, 4);
 
@@ -27,6 +27,7 @@ void main(void)
 	uint64_t u64 = 65;
 	char c = '!';
 	char *s = "static str";
+	char *s1 = "c str";
 	char vs0[32];
 	char vs1[32];
 	void *p = s;
@@ -49,7 +50,7 @@ void main(void)
 	snprintk(&vs1[0], sizeof(vs1), "%s", "another dynamic str");
 
 	LOG_DBG("char %c", c);
-	LOG_DBG("s str %s", s);
+	LOG_DBG("s str %s %s", s, s1);
 	LOG_DBG("d str %s", vs0);
 	LOG_DBG("mixed str %s %s %s %s %s %s %s", vs0, "---", vs0, "---", vs1, "---", vs1);
 	LOG_DBG("mixed c/s %c %s %s %s %c", c, s, vs0, s, c);
@@ -62,7 +63,7 @@ void main(void)
 	float f = 66.67;
 	double d = 68.69;
 
-	LOG_DBG("float %f, double %f", f, d);
+	LOG_DBG("float %f, double %f", (double)f, d);
 #ifdef CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
 	long double ld = 70.71;
 

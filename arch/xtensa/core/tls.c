@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <kernel_structs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kernel_tls.h>
-#include <app_memory/app_memdomain.h>
-#include <sys/util.h>
+#include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/sys/util.h>
 
 #if XCHAL_HAVE_THREADPTR == 0
 #error SoC does not support THREADPTR for thread local storage.

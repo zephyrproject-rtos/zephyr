@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/i2c.h>
-#include <drivers/sensor.h>
-#include <sys/byteorder.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max17055, CONFIG_SENSOR_LOG_LEVEL);
 
 #include "max17055.h"
@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(max17055, CONFIG_SENSOR_LOG_LEVEL);
  *
  * @param priv Private data for the driver
  * @param reg_addr Register address to read
- * @param val Place to put the value on success
+ * @param valp Place to put the value on success
  * @return 0 if successful, or negative error code from I2C API
  */
 static int max17055_reg_read(struct max17055_data *priv, int reg_addr,
@@ -44,11 +44,12 @@ static int max17055_reg_read(struct max17055_data *priv, int reg_addr,
 static int max17055_reg_write(struct max17055_data *priv, int reg_addr,
 			      uint16_t val)
 {
-	uint8_t i2c_data[2];
+	uint8_t buf[3];
 
-	sys_put_le16(val, i2c_data);
+	buf[0] = (uint8_t)reg_addr;
+	sys_put_le16(val, &buf[1]);
 
-	return i2c_burst_write(priv->i2c, DT_INST_REG_ADDR(0), reg_addr, i2c_data, 2);
+	return i2c_write(priv->i2c, buf, sizeof(buf), DT_INST_REG_ADDR(0));
 }
 
 /**

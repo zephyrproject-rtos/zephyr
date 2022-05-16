@@ -4,19 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/reboot.h>
-#include <kernel.h>
-#include <sys/printk.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 
 extern void sys_arch_reboot(int type);
-extern void sys_clock_disable(void);
 
 FUNC_NORETURN void sys_reboot(int type)
 {
 	(void)irq_lock();
-#ifdef CONFIG_SYS_CLOCK_EXISTS
 	sys_clock_disable();
-#endif
 
 	sys_arch_reboot(type);
 

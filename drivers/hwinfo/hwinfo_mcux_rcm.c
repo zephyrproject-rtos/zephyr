@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/hwinfo.h>
-#include <logging/log.h>
+#include <zephyr/drivers/hwinfo.h>
+#include <zephyr/logging/log.h>
 #include <fsl_rcm.h>
 
 LOG_MODULE_REGISTER(hwinfo_rcm, CONFIG_HWINFO_LOG_LEVEL);

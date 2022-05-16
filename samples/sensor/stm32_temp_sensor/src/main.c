@@ -4,18 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <device.h>
-#include <drivers/sensor.h>
-#include <sys/printk.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/printk.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
+#define TEMP_NODE DT_INST(0, st_stm32_temp)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
+#define TEMP_NODE DT_INST(0, st_stm32_temp_cal)
+#else
+#error "Could not find a compatible temperature sensor"
+#endif
 
 void main(void)
 {
 	struct sensor_value val;
 	int rc;
-	const struct device *dev =
-		DEVICE_DT_GET(DT_INST(0, st_stm32_temp));
+	const struct device *dev = DEVICE_DT_GET(TEMP_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("Temperature sensor is not ready\n");
@@ -40,7 +46,6 @@ void main(void)
 			continue;
 		}
 
-		printk("Current temperature: %.1f °C\n",
-					sensor_value_to_double(&val));
+		printk("Current temperature: %.1f °C\n", sensor_value_to_double(&val));
 	}
 }

@@ -7,9 +7,9 @@
 #include <soc.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_rcc.h>
-#include <drivers/hwinfo.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <string.h>
-#include <sys/byteorder.h>
+#include <zephyr/sys/byteorder.h>
 
 struct stm32_uid {
 	uint32_t id[3];

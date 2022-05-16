@@ -8,9 +8,12 @@ if  BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 config BOARD
 	default "nrf5340dk_nrf5340_cpuapp" if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
-# By default, if we build for a Non-Secure version of the board,
-# force building with TF-M as the Secure Execution Environment.
+config ENTROPY_BT_HCI
+	default y if BT_HCI_HOST
+	depends on ENTROPY_GENERATOR
 
+# By default, if we build for a Non-Secure version of the board,
+# enable building with TF-M as the Secure Execution Environment.
 config BUILD_WITH_TFM
 	default y if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
@@ -76,3 +79,68 @@ endif # BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
 config BOARD
 	default "nrf5340dk_nrf5340_cpunet" if BOARD_NRF5340DK_NRF5340_CPUNET
+
+config IPM_NRFX
+	default IPM
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+config RPMSG_SERVICE_DUAL_IPM_SUPPORT
+	default RPMSG_SERVICE
+
+if RPMSG_SERVICE_DUAL_IPM_SUPPORT
+
+config IPM_MSG_CH_0_ENABLE
+	default y
+
+config IPM_MSG_CH_1_ENABLE
+	default y
+
+config RPMSG_SERVICE_IPM_TX_NAME
+	default "IPM_0" if RPMSG_SERVICE_MODE_MASTER
+	default "IPM_1" if RPMSG_SERVICE_MODE_REMOTE
+
+config RPMSG_SERVICE_IPM_RX_NAME
+	default "IPM_1" if RPMSG_SERVICE_MODE_MASTER
+	default "IPM_0" if RPMSG_SERVICE_MODE_REMOTE
+
+config IPM_MSG_CH_0_TX
+	default RPMSG_SERVICE_MODE_MASTER
+
+config IPM_MSG_CH_0_RX
+	default RPMSG_SERVICE_MODE_REMOTE
+
+config IPM_MSG_CH_1_TX
+	default RPMSG_SERVICE_MODE_REMOTE
+
+config IPM_MSG_CH_1_RX
+	default RPMSG_SERVICE_MODE_MASTER
+
+endif # RPMSG_SERVICE_DUAL_IPM_SUPPORT
+
+if BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
+
+choice BT_HCI_BUS_TYPE
+	default BT_RPMSG if BT
+endchoice
+
+config HEAP_MEM_POOL_SIZE
+	default 4096 if BT_RPMSG
+
+config BT_HCI_VS
+	default y if BT
+
+endif #  BOARD_NRF5340DK_NRF5340_CPUAPP || BOARD_NRF5340DK_NRF5340_CPUAPP_NS
+
+if BOARD_NRF5340DK_NRF5340_CPUNET
+
+# BT_CTLR depends on BT. When BT is enabled we should default to also
+# enabling the controller.
+config BT_CTLR
+	default y if BT
+
+config BT_ECC
+	default y if BT
+
+endif # BOARD_NRF5340DK_NRF5340_CPUNET

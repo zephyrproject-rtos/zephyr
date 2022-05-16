@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <sys/speculation.h>
-#include <syscall_handler.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/speculation.h>
+#include <zephyr/syscall_handler.h>
 #include <kernel_arch_func.h>
 #include <ksched.h>
 #include <x86_mmu.h>
@@ -23,7 +23,7 @@
  * we go through z_x86_trampoline_to_user.
  *
  * We don't need to update the privilege mode initial stack pointer either,
- * privilege elevation always lands on the trampoline stack and the irq/sycall
+ * privilege elevation always lands on the trampoline stack and the irq/syscall
  * code has to manually transition off of it to the appropriate stack after
  * switching page tables.
  */

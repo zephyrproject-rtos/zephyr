@@ -21,6 +21,7 @@ supported:
   - vl53l0x
   - watchdog
   - adc
+  - dac
   - dma
 ram: 96
 flash: 1024

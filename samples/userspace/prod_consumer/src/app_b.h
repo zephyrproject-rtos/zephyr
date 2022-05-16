@@ -7,8 +7,8 @@
 #ifndef PROD_CONSUMER_APP_B_H
 #define PROD_CONSUMER_APP_B_H
 
-#include <kernel.h>
-#include <app_memory/app_memdomain.h>
+#include <zephyr/kernel.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
 void app_b_entry(void *p1, void *p2, void *p3);
 

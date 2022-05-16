@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(websocket_server_handlers, LOG_LEVEL_DBG);
 
 #include "websocket_server_handlers.h"
@@ -137,7 +137,7 @@ __code_decl int this_data_handler(struct mg_connection *conn, int bits,
 		/* TODO: Maybe need we close WS connection here?! */
 		LOG_ERR("Unknown ERROR: ret_state = %d", ret_state);
 	} else if (ret_state == 0) {
-		LOG_DBG("Close WS sonnection: ret_state = %d", ret_state);
+		LOG_DBG("Close WS connection: ret_state = %d", ret_state);
 	}
 
 	return ret_state;

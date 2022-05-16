@@ -42,7 +42,7 @@ All of the Nordic Semiconductor examples for the nRF52840 DK
 (nrf52840dk_nrf52840) may be used without modification.
 
 ..note::
-	The BMD-340 and BMD-341 are identical except for the antennna.
+	The BMD-340 and BMD-341 are identical except for the antenna.
 	Throughout this board support package, the filenames utilize
 	the ubx_bmd340eval_nrf52840.
 
@@ -102,7 +102,7 @@ the following hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See the `u-blox website`_ for a complete list of BMD-340-EVAL
 and BMD-341-EVAL hardware features.
 
@@ -461,21 +461,38 @@ more than one UART for connecting peripheral devices:
 1. Add device tree overlay file to the main directory of your
    application:
 
-   .. code-block:: console
+   .. code-block:: devicetree
 
-      $ cat ubx_bmd340eval_nrf52840.overlay
+      &pinctrl {
+         uart1_default: uart1_default {
+            group1 {
+               psels = <NRF_PSEL(UART_TX, 0, 14)>,
+                       <NRF_PSEL(UART_RX, 0, 16)>;
+            };
+         };
+         /* required if CONFIG_PM_DEVICE=y */
+         uart1_sleep: uart1_sleep {
+            group1 {
+               psels = <NRF_PSEL(UART_TX, 0, 14)>,
+                       <NRF_PSEL(UART_RX, 0, 16)>;
+               low-power-enable;
+            };
+         };
+      };
+
       &uart1 {
         compatible = "nordic,nrf-uarte";
         current-speed = <115200>;
         status = "okay";
-        tx-pin = <14>;
-        rx-pin = <16>;
+        pinctrl-0 = <&uart1_default>;
+        pinctrl-1 = <&uart1_sleep>;
+        pinctrl-names = "default", "sleep";
       };
 
    In the overlay file above, pin P0.16 is used for RX and P0.14 is
    used for TX
 
-2. Use the UART1 as ``device_get_binding("UART_1")``
+2. Use the UART1 as ``DEVICE_DT_GET(DT_NODELABEL(uart1))``
 
 Overlay file naming
 ===================
@@ -486,25 +503,13 @@ compiler.
 
 Selecting the pins
 ==================
-To select the pin numbers for tx-pin and rx-pin:
 
-.. code-block:: console
-
-   tx-pin = <pin_no>
-
-Open the data sheet for the BMD-340 at the `u-blox website`_, Section 2
+Pins can be configured in the board pinctrl file. To see the available mappings,
+open the data sheet for the BMD-340 at the `u-blox website`_, Section 2
 'Pin definition'. In the table 3 select the pins marked 'GPIO'.
 Note that pins marked as 'Standard drive, low frequency I/O only
 (<10 kH' can only be used in under-10KHz applications.
 They are not suitable for 115200 speed of UART.
-
-Translate 'Pin' into number for Device tree by using the following
-formula::
-
-   pin_no = b\*32 + a
-
-where ``a`` and ``b`` are from the Pin value in the table (Pb.a).
-For example, for P0.1, ``pin_no = 1`` and for P1.0, ``pin_no = 32``.
 
 .. note:
   Pins are defined according to the "nRF52" pin number, not the module

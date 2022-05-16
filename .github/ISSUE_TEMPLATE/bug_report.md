@@ -9,7 +9,12 @@ assignees: ''
 
 **Describe the bug**
 A clear and concise description of what the bug is.
-What have you tried to diagnose or workaround this issue?
+
+Please also mention any information which could help others to understand
+the problem you're facing:
+ - What target platform are you using?
+ - What have you tried to diagnose or workaround this issue?
+ - ...
 
 **To Reproduce**
 Steps to reproduce the behavior:
@@ -35,6 +40,6 @@ explain the issue. (if unable to obtain text log, add a screenshot)
  - Toolchain (e.g Zephyr SDK, ...)
  - Commit SHA or Version used
 
-
 **Additional context**
-Add any other context about the problem here.
+Add any other context that could be relevant to your issue, such as pin setting,
+target configuration, ...

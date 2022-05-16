@@ -12,21 +12,21 @@ menuconfig LSM9DS0_MFD
 if LSM9DS0_MFD
 
 config LSM9DS0_MFD_ACCEL_ENABLE
-	bool "Enable accelerometer"
+	bool "Accelerometer"
 	default y
 	help
 	  Enable/disable accelerometer totally by stripping everything related
 	  in driver.
 
 config LSM9DS0_MFD_MAGN_ENABLE
-	bool "Enable magnetometer"
+	bool "Magnetometer"
 	default y
 	help
 	  Enable/disable magnetometer totally by stripping everything related in
 	  driver.
 
 config LSM9DS0_MFD_TEMP_ENABLE
-	bool "Enable temperature sensor"
+	bool "Temperature sensor"
 	help
 	  Enable/disable temperature sensor totally by stripping everything
 	  related in driver.
@@ -76,7 +76,7 @@ config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_1600
 endchoice
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_RUNTIME
-	bool "Enable dynamic sampling rate for accelerometer"
+	bool "Dynamic sampling rate for accelerometer"
 	depends on LSM9DS0_MFD_ACCEL_ENABLE
 	help
 	  Enable alteration of accelerometer sampling rate attribute at
@@ -107,24 +107,24 @@ config LSM9DS0_MFD_ACCEL_FULL_SCALE_16
 endchoice
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME
-	bool "Enable dynamic full-scale for accelerometer"
+	bool "Dynamic full-scale for accelerometer"
 	depends on LSM9DS0_MFD_ACCEL_ENABLE
 	help
 	  Enable alteration of accelerometer full-scale attribute at
 	  runtime.
 
 config LSM9DS0_MFD_ACCEL_ENABLE_X
-	bool "Enable accelerometer X axis"
+	bool "Accelerometer X axis"
 	depends on LSM9DS0_MFD_ACCEL_ENABLE
 	default y
 
 config LSM9DS0_MFD_ACCEL_ENABLE_Y
-	bool "Enable accelerometer Y axis"
+	bool "Accelerometer Y axis"
 	depends on LSM9DS0_MFD_ACCEL_ENABLE
 	default y
 
 config LSM9DS0_MFD_ACCEL_ENABLE_Z
-	bool "Enable accelerometer Z axis"
+	bool "Accelerometer Z axis"
 	depends on LSM9DS0_MFD_ACCEL_ENABLE
 	default y
 
@@ -156,7 +156,7 @@ config LSM9DS0_MFD_MAGN_SAMPLING_RATE_100
 endchoice
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_RUNTIME
-	bool "Enable dynamic sampling rate for magnetometer"
+	bool "Dynamic sampling rate for magnetometer"
 	depends on LSM9DS0_MFD_MAGN_ENABLE
 	help
 	  Enable alteration of magnetometer sampling rate attribute at
@@ -184,7 +184,7 @@ config LSM9DS0_MFD_MAGN_FULL_SCALE_12
 endchoice
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME
-	bool "Enable dynamic full-scale for magnetometer"
+	bool "Dynamic full-scale for magnetometer"
 	depends on LSM9DS0_MFD_MAGN_ENABLE
 	help
 	  Enable alteration of magnetometer full-scale attribute at

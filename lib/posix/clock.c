@@ -3,11 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
-#include <posix/time.h>
-#include <posix/sys/time.h>
-#include <syscall_handler.h>
+#include <zephyr/posix/time.h>
+#include <zephyr/posix/sys/time.h>
+#include <zephyr/syscall_handler.h>
+#include <zephyr/spinlock.h>
 
 /*
  * `k_uptime_get` returns a timestamp based on an always increasing
@@ -17,6 +18,7 @@
  * set from a real time clock, if such hardware is present.
  */
 static struct timespec rt_clock_base;
+static struct k_spinlock rt_clock_base_lock;
 
 /**
  * @brief Get clock time specified by clock_id.
@@ -25,8 +27,8 @@ static struct timespec rt_clock_base;
  */
 int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
-	uint64_t elapsed_nsecs;
 	struct timespec base;
+	k_spinlock_key_t key;
 
 	switch (clock_id) {
 	case CLOCK_MONOTONIC:
@@ -35,7 +37,9 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 		break;
 
 	case CLOCK_REALTIME:
+		key = k_spin_lock(&rt_clock_base_lock);
 		base = rt_clock_base;
+		k_spin_unlock(&rt_clock_base_lock, key);
 		break;
 
 	default:
@@ -43,9 +47,13 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 		return -1;
 	}
 
-	elapsed_nsecs = k_ticks_to_ns_floor64(k_uptime_ticks());
-	ts->tv_sec = (int32_t) (elapsed_nsecs / NSEC_PER_SEC);
-	ts->tv_nsec = (int32_t) (elapsed_nsecs % NSEC_PER_SEC);
+	uint64_t ticks = k_uptime_ticks();
+	uint64_t elapsed_secs = k_ticks_to_ms_floor64(ticks) / MSEC_PER_SEC;
+	uint64_t nremainder = ticks - k_ms_to_ticks_floor64(MSEC_PER_SEC * elapsed_secs);
+
+	ts->tv_sec = (time_t) elapsed_secs;
+	/* For ns 32 bit conversion can be used since its smaller than 1sec. */
+	ts->tv_nsec = (int32_t) k_ticks_to_ns_floor32(nremainder);
 
 	ts->tv_sec += base.tv_sec;
 	ts->tv_nsec += base.tv_nsec;
@@ -77,6 +85,7 @@ int z_vrfy_clock_gettime(clockid_t clock_id, struct timespec *ts)
 int clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
 	struct timespec base;
+	k_spinlock_key_t key;
 
 	if (clock_id != CLOCK_REALTIME) {
 		errno = EINVAL;
@@ -90,7 +99,9 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 	base.tv_sec = delta / NSEC_PER_SEC;
 	base.tv_nsec = delta % NSEC_PER_SEC;
 
+	key = k_spin_lock(&rt_clock_base_lock);
 	rt_clock_base = base;
+	k_spin_unlock(&rt_clock_base_lock, key);
 
 	return 0;
 }

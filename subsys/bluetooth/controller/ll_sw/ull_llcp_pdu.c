@@ -6,16 +6,17 @@
 
 #include <zephyr/types.h>
 
-#include <bluetooth/hci.h>
-#include <sys/byteorder.h>
-#include <sys/slist.h>
-#include <sys/util.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/ccm.h"
 
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/dbuf.h"
 
 #include "pdu.h"
 #include "ll.h"
@@ -328,9 +329,12 @@ void llcp_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	memcpy(p->rand, ctx->data.enc.rand, sizeof(p->rand));
 	p->ediv[0] = ctx->data.enc.ediv[0];
 	p->ediv[1] = ctx->data.enc.ediv[1];
-	/* TODO(thoh): Optimize getting random data */
-	csrand_get(p->skdm, sizeof(p->skdm));
-	csrand_get(p->ivm, sizeof(p->ivm));
+	/* Optimal getting random data, p->ivm is packed right after p->skdm */
+	BUILD_ASSERT(offsetof(struct pdu_data_llctrl_enc_req, ivm) ==
+		     offsetof(struct pdu_data_llctrl_enc_req, skdm) + sizeof(p->skdm),
+		     "Member IVM must be after member SKDM");
+	csrand_get(p->skdm, sizeof(p->skdm) + sizeof(p->ivm));
+
 }
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -360,9 +364,11 @@ void llcp_pdu_encode_enc_rsp(struct pdu_data *pdu)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 
 	p = &pdu->llctrl.enc_rsp;
-	/* TODO(thoh): Optimize getting random data */
-	csrand_get(p->skds, sizeof(p->skds));
-	csrand_get(p->ivs, sizeof(p->ivs));
+	/* Optimal getting random data, p->ivs is packed right after p->skds */
+	BUILD_ASSERT(offsetof(struct pdu_data_llctrl_enc_rsp, ivs) ==
+		     offsetof(struct pdu_data_llctrl_enc_rsp, skds) + sizeof(p->skds),
+		     "Member IVS must be after member SKDS");
+	csrand_get(p->skds, sizeof(p->skds) + sizeof(p->ivs));
 }
 
 void llcp_pdu_encode_start_enc_req(struct pdu_data *pdu)
@@ -498,6 +504,7 @@ void llcp_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /*
  * Connection Update Procedure Helper
  */
@@ -586,6 +593,7 @@ void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 	ctx->data.cu.offset4 = sys_le16_to_cpu(p->offset4);
 	ctx->data.cu.offset5 = sys_le16_to_cpu(p->offset5);
 }
+#endif /* defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) */
 
 void llcp_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
@@ -726,27 +734,46 @@ void llcp_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	p->cte_type_req = ctx->data.cte_req.type;
 }
 
-void llcp_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
+void llcp_pdu_decode_cte_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu)
+{
+	if (pdu->cp == 0U || pdu->cte_info.time == 0U) {
+		ctx->data.cte_remote_rsp.has_cte = false;
+	} else {
+		ctx->data.cte_remote_rsp.has_cte = true;
+	}
+}
+
+void llcp_ntf_encode_cte_req(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len =
 		offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
 
-	/* TODO add handling of IQ samples forwarding */
-}
-
-void llcp_pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	conn->llcp.cte_req.min_cte_len = pdu->llctrl.cte_req.min_cte_len_req;
-	conn->llcp.cte_req.cte_type = pdu->llctrl.cte_req.cte_type_req;
-}
-
-void llcp_pdu_encode_cte_rsp(struct pdu_data *pdu)
-{
-	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len =
-		offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
-	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
+	/* Received LL_CTE_RSP PDU didn't have CTE */
+	pdu->cp = 0U;
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+void llcp_pdu_decode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.cte_remote_req.min_cte_len = pdu->llctrl.cte_req.min_cte_len_req;
+	ctx->data.cte_remote_req.cte_type = pdu->llctrl.cte_req.cte_type_req;
+}
+
+void llcp_pdu_encode_cte_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len =
+		 offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
+
+	/* Set content of a PDU header first byte, that is not changed by LLL */
+	pdu->cp = 1U;
+	pdu->rfu = 0U;
+
+	pdu->cte_info.time = ctx->data.cte_remote_req.min_cte_len;
+	pdu->cte_info.type = ctx->data.cte_remote_req.cte_type;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */

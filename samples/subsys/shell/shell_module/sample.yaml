@@ -1,14 +1,13 @@
 sample:
   name: Shell Sample
-common:
-  integration_platforms:
-    - native_posix
 tests:
   sample.shell.shell_module:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: keyboard
     min_ram: 40
+    integration_platforms:
+      - native_posix
   sample.shell.shell_module.usb:
     depends_on: usb_device
     tags: shell usb
@@ -16,13 +15,20 @@ tests:
     min_ram: 40
     extra_args: OVERLAY_CONFIG="overlay-usb.conf"
                 DTC_OVERLAY_FILE="usb.overlay"
+    integration_platforms:
+      - native_posix
   sample.shell.shell_module.minimal:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal.conf"
+    integration_platforms:
+      - native_posix
   sample.shell.shell_module.getopt:
-    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
+    integration_platforms:
+      - qemu_x86
+    platform_exclude: native_posix native_posix_64
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart") and not CONFIG_NEWLIB_LIBC
     tags: shell
     harness: keyboard
     min_ram: 40
@@ -32,9 +38,13 @@ tests:
     tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal_rtt.conf"
+    integration_platforms:
+      - nrf52833dk_nrf52833
   sample.shell.shell_module.login:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: keyboard
     min_ram: 40
     extra_args: CONF_FILE="prj_login.conf"
+    integration_platforms:
+      - native_posix

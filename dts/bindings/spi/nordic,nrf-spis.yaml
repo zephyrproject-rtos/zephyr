@@ -10,10 +10,13 @@ include: nordic,nrf-spi-common.yaml
 properties:
     csn-pin:
       type: int
-      required: true
-      description:  |
-          The CSN pin to use. The pin numbering scheme is the same as
-          the sck-pin property's.
+      required: false
+      description: |
+        IMPORTANT: This option will only be used if the new pin control driver
+        is not enabled. It will be deprecated in the future.
+
+        The CSN pin to use. The pin numbering scheme is the same as
+        the sck-pin property's.
 
     def-char:
       type: int

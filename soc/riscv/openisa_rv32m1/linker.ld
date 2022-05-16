@@ -12,12 +12,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <devicetree.h>
-#include <autoconf.h>
+#include <zephyr/devicetree.h>
 
-#include <linker/sections.h>
-#include <linker/linker-defs.h>
-#include <linker/linker-tool.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/linker/linker-tool.h>
 
 /*
  * Extra efforts would need to be taken to ensure the IRQ handlers are within
@@ -86,7 +85,7 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 SECTIONS
     {
 
-#include <linker/rel-sections.ld>
+#include <zephyr/linker/rel-sections.ld>
 
     SECTION_PROLOGUE(.plt,,)
 	{
@@ -121,8 +120,8 @@ SECTIONS
 
     __rodata_region_start = .;
 
-#include <linker/common-rom.ld>
-#include <linker/thread-local-storage.ld>
+#include <zephyr/linker/common-rom.ld>
+#include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -140,7 +139,7 @@ SECTIONS
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-#include <linker/cplusplus-rom.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
 
     __rodata_region_end = .;
     __rom_region_end = .;
@@ -185,8 +184,8 @@ SECTIONS
 	__data_size = __data_end - __data_start;
 	__data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
-#include <linker/common-ram.ld>
-#include <linker/cplusplus-ram.ld>
+#include <zephyr/linker/common-ram.ld>
+#include <zephyr/linker/cplusplus-ram.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -246,10 +245,10 @@ SECTIONS
 
 #ifdef CONFIG_GEN_ISR_TABLES
 /* Bogus section, post-processed during the build to initialize interrupts. */
-#include <linker/intlist.ld>
+#include <zephyr/linker/intlist.ld>
 #endif
 
-#include <linker/debug-sections.ld>
+#include <zephyr/linker/debug-sections.ld>
 
     SECTION_PROLOGUE(.riscv.attributes, 0,)
 	{

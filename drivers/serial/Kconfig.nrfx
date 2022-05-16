@@ -17,19 +17,25 @@ menuconfig UART_NRFX
 
 if UART_NRFX
 
-# Workaround for not being able to have commas in macro arguments
-DT_COMPAT_NORDIC_NRF_UART  := nordic,nrf-uart
-DT_COMPAT_NORDIC_NRF_UARTE := nordic,nrf-uarte
+config UART_ASYNC_TX_CACHE_SIZE
+	int "TX cache buffer size"
+	depends on UART_ASYNC_API
+	depends on NRF_UARTE_PERIPHERAL
+	default 8
+	help
+	  For UARTE, TX cache buffer is used when provided TX buffer is not located
+	  in RAM, because EasyDMA in UARTE peripherals can only transfer data
+	  from RAM.
 
 # ----------------- port 0 -----------------
 config UART_0_NRF_UART
-	def_bool $(dt_nodelabel_has_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UART))
+	def_bool HAS_HW_NRF_UART0
 	select NRF_UART_PERIPHERAL
 	help
 	  Enable nRF UART without EasyDMA on port 0.
 
 config UART_0_NRF_UARTE
-	def_bool $(dt_nodelabel_has_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	def_bool HAS_HW_NRF_UARTE0
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 0.
@@ -45,21 +51,21 @@ config UART_0_ENHANCED_POLL_OUT
 	  Feature uses a PPI channel.
 
 config UART_0_INTERRUPT_DRIVEN
-	bool "Enable interrupt support on port 0"
+	bool "Interrupt support on port 0"
 	depends on UART_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 0.
 
 config UART_0_ASYNC
-	bool "Enable Asynchronous API support on port 0"
+	bool "Asynchronous API support on port 0"
 	depends on UART_ASYNC_API && !UART_0_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART Asynchronous API support on port 0.
 
 config UART_0_NRF_PARITY_BIT
-	bool "Enable parity bit"
+	bool "Parity bit"
 	help
 	  Enable parity bit.
 
@@ -97,7 +103,7 @@ config UART_0_NRF_HW_ASYNC_TIMER
 	depends on UART_0_NRF_HW_ASYNC
 
 config UART_0_GPIO_MANAGEMENT
-	bool "Enable GPIO management on port 0"
+	bool "GPIO management on port 0"
 	depends on PM_DEVICE
 	default y
 	help
@@ -109,7 +115,7 @@ endif # UART_0_NRF_UART || UART_0_NRF_UARTE
 
 # ----------------- port 1 -----------------
 config UART_1_NRF_UARTE
-	def_bool $(dt_nodelabel_has_compat,uart1,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	def_bool HAS_HW_NRF_UARTE1
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 1.
@@ -117,14 +123,14 @@ config UART_1_NRF_UARTE
 if UART_1_NRF_UARTE
 
 config UART_1_INTERRUPT_DRIVEN
-	bool "Enable interrupt support on port 1"
+	bool "Interrupt support on port 1"
 	depends on UART_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 1.
 
 config UART_1_ASYNC
-	bool "Enable Asynchronous API support on port 1"
+	bool "Asynchronous API support on port 1"
 	depends on UART_ASYNC_API && !UART_1_INTERRUPT_DRIVEN
 	default y
 	help
@@ -138,7 +144,7 @@ config UART_1_ENHANCED_POLL_OUT
 	  Feature uses a PPI channel.
 
 config UART_1_NRF_PARITY_BIT
-	bool "Enable parity bit"
+	bool "Parity bit"
 	help
 	  Enable parity bit.
 
@@ -174,7 +180,7 @@ config UART_1_NRF_HW_ASYNC_TIMER
 	depends on UART_1_NRF_HW_ASYNC
 
 config UART_1_GPIO_MANAGEMENT
-	bool "Enable GPIO management on port 1"
+	bool "GPIO management on port 1"
 	depends on PM_DEVICE
 	default y
 	help
@@ -186,7 +192,7 @@ endif # UART_1_NRF_UARTE
 
 # ----------------- port 2 -----------------
 config UART_2_NRF_UARTE
-	def_bool $(dt_nodelabel_has_compat,uart2,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	def_bool HAS_HW_NRF_UARTE2
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 2.
@@ -194,14 +200,14 @@ config UART_2_NRF_UARTE
 if UART_2_NRF_UARTE
 
 config UART_2_INTERRUPT_DRIVEN
-	bool "Enable interrupt support on port 2"
+	bool "Interrupt support on port 2"
 	depends on UART_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 2.
 
 config UART_2_ASYNC
-	bool "Enable Asynchronous API support on port 2"
+	bool "Asynchronous API support on port 2"
 	depends on UART_ASYNC_API && !UART_2_INTERRUPT_DRIVEN
 	default y
 	help
@@ -215,7 +221,7 @@ config UART_2_ENHANCED_POLL_OUT
 	  Feature uses a PPI channel.
 
 config UART_2_NRF_PARITY_BIT
-	bool "Enable parity bit"
+	bool "Parity bit"
 	help
 	  Enable parity bit.
 
@@ -250,7 +256,7 @@ config UART_2_NRF_HW_ASYNC_TIMER
 	depends on UART_2_NRF_HW_ASYNC
 
 config UART_2_GPIO_MANAGEMENT
-	bool "Enable GPIO management on port 2"
+	bool "GPIO management on port 2"
 	depends on PM_DEVICE
 	default y
 	help
@@ -262,7 +268,7 @@ endif # UART_2_NRF_UARTE
 
 # ----------------- port 3 -----------------
 config UART_3_NRF_UARTE
-	def_bool $(dt_nodelabel_has_compat,uart3,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	def_bool HAS_HW_NRF_UARTE3
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 3.
@@ -270,14 +276,14 @@ config UART_3_NRF_UARTE
 if UART_3_NRF_UARTE
 
 config UART_3_INTERRUPT_DRIVEN
-	bool "Enable interrupt support on port 3"
+	bool "Interrupt support on port 3"
 	depends on UART_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART interrupt support on port 3.
 
 config UART_3_ASYNC
-	bool "Enable Asynchronous API support on port 3"
+	bool "Asynchronous API support on port 3"
 	depends on UART_ASYNC_API && !UART_3_INTERRUPT_DRIVEN
 	default y
 	help
@@ -291,7 +297,7 @@ config UART_3_ENHANCED_POLL_OUT
 	  Feature uses a PPI channel.
 
 config UART_3_NRF_PARITY_BIT
-	bool "Enable parity bit"
+	bool "Parity bit"
 	help
 	  Enable parity bit.
 
@@ -326,7 +332,7 @@ config UART_3_NRF_HW_ASYNC_TIMER
 	depends on UART_3_NRF_HW_ASYNC
 
 config UART_3_GPIO_MANAGEMENT
-	bool "Enable GPIO management on port 3"
+	bool "GPIO management on port 3"
 	depends on PM_DEVICE
 	default y
 	help
@@ -339,59 +345,57 @@ endif # UART_3_NRF_UARTE
 
 config NRFX_TIMER0
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 0 || UART_1_NRF_HW_ASYNC_TIMER = 0 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 0 || UART_2_NRF_HW_ASYNC_TIMER = 0
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 0 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 0 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 0 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 0
 
 config NRFX_TIMER1
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 1 || UART_1_NRF_HW_ASYNC_TIMER = 1 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 1 || UART_2_NRF_HW_ASYNC_TIMER = 1
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 1 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 1
 
 config NRFX_TIMER2
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 2 || UART_1_NRF_HW_ASYNC_TIMER = 2 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 2 || UART_2_NRF_HW_ASYNC_TIMER = 2
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 2 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 2
 
 config NRFX_TIMER3
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 3 || UART_1_NRF_HW_ASYNC_TIMER = 3 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 3 || UART_2_NRF_HW_ASYNC_TIMER = 3
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 3 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 3
 
 config NRFX_TIMER4
 	default y
-	depends on UART_0_NRF_HW_ASYNC_TIMER = 4 || UART_1_NRF_HW_ASYNC_TIMER = 4 || \
-		   UART_3_NRF_HW_ASYNC_TIMER = 4 || UART_2_NRF_HW_ASYNC_TIMER = 4
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 4 \
+		|| UART_1_NRF_HW_ASYNC_TIMER = 4 \
+		|| UART_2_NRF_HW_ASYNC_TIMER = 4 \
+		|| UART_3_NRF_HW_ASYNC_TIMER = 4
 
-
-if UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC || UART_3_NRF_HW_ASYNC
-
-config NRFX_TIMER
-	default y
-
-config NRFX_PPI
-	depends on HAS_HW_NRF_PPI
-	default y
-
-config NRFX_DPPI
-	depends on HAS_HW_NRF_DPPIC
-	default y
 
 config UARTE_NRF_HW_ASYNC
-	bool
-	default y
-
-endif
-
-if UART_0_ENHANCED_POLL_OUT || UART_1_ENHANCED_POLL_OUT || \
-	UART_2_ENHANCED_POLL_OUT || UART_3_ENHANCED_POLL_OUT
-
-config UART_ENHANCED_POLL_OUT
-	bool
-	default y
+	def_bool y
+	depends on UART_0_NRF_HW_ASYNC \
+		|| UART_1_NRF_HW_ASYNC \
+		|| UART_2_NRF_HW_ASYNC \
+		|| UART_3_NRF_HW_ASYNC
 	select NRFX_PPI if HAS_HW_NRF_PPI
 	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 
-endif
+config UART_ENHANCED_POLL_OUT
+	def_bool y
+	depends on UART_0_ENHANCED_POLL_OUT \
+		|| UART_1_ENHANCED_POLL_OUT \
+		|| UART_2_ENHANCED_POLL_OUT \
+		|| UART_3_ENHANCED_POLL_OUT
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 
 config NRF_UART_PERIPHERAL
 	bool

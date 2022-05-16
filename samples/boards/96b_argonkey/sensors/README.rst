@@ -15,7 +15,7 @@ Requirements
 This sample just requires the ArgonKey board. The board can be powered
 in either one of the following two ways:
 
-- mezzanine mode, plugging the ArgonKey to HiKey board thru its 96Board
+- mezzanine mode, plugging the ArgonKey to HiKey board through its 96Board
   low-speed connector
 - standalone mode, supplying 5V directly on P1 connector
 

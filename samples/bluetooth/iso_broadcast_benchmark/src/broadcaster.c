@@ -6,12 +6,12 @@
 
 #include <ctype.h>
 #include <stdlib.h>
-#include <console/console.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/iso.h>
-#include <sys/byteorder.h>
+#include <zephyr/console/console.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/byteorder.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(iso_broadcast_broadcaster, LOG_LEVEL_DBG);
 
 #define DEFAULT_BIS_RTN         2
@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(iso_broadcast_broadcaster, LOG_LEVEL_DBG);
 #define DEFAULT_BIS_COUNT       CONFIG_BT_ISO_MAX_CHAN
 
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 
 static K_SEM_DEFINE(sem_big_complete, 0, 1);
 static K_SEM_DEFINE(sem_big_term, 0, 1);

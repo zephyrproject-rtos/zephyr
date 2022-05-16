@@ -6,15 +6,15 @@
 
 #define DT_DRV_COMPAT ti_cc13xx_cc26xx_trng
 
-#include <kernel.h>
-#include <device.h>
-#include <drivers/entropy.h>
-#include <irq.h>
-#include <pm/pm.h>
-#include <pm/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/entropy.h>
+#include <zephyr/irq.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
 
-#include <sys/ring_buffer.h>
-#include <sys/sys_io.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <driverlib/prcm.h>
 #include <driverlib/trng.h>
@@ -37,12 +37,6 @@ struct entropy_cc13xx_cc26xx_data {
 	bool constrained;
 #endif
 };
-
-static inline struct entropy_cc13xx_cc26xx_data *
-get_dev_data(const struct device *dev)
-{
-	return dev->data;
-}
 
 static void start_trng(struct entropy_cc13xx_cc26xx_data *data)
 {
@@ -100,14 +94,14 @@ static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
 					     uint8_t *buf,
 					     uint16_t len)
 {
-	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
+	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 	uint32_t cnt;
 
 #ifdef CONFIG_PM
 	unsigned int key = irq_lock();
 
 	if (!data->constrained) {
-		pm_constraint_set(PM_STATE_STANDBY);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 		data->constrained = true;
 	}
 	irq_unlock(key);
@@ -131,9 +125,9 @@ static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
 	return 0;
 }
 
-static void entropy_cc13xx_cc26xx_isr(const void *arg)
+static void entropy_cc13xx_cc26xx_isr(const struct device *dev)
 {
-	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(arg);
+	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 	uint32_t src = 0;
 	uint32_t cnt;
 	uint32_t num[2];
@@ -152,8 +146,9 @@ static void entropy_cc13xx_cc26xx_isr(const void *arg)
 		if (cnt != sizeof(num)) {
 #ifdef CONFIG_PM
 			if (data->constrained) {
-				pm_constraint_release(
-					PM_STATE_STANDBY);
+				pm_policy_state_lock_put(
+					PM_STATE_STANDBY,
+					PM_ALL_SUBSTATES);
 				data->constrained = false;
 			}
 #endif
@@ -163,8 +158,8 @@ static void entropy_cc13xx_cc26xx_isr(const void *arg)
 		k_sem_give(&data->sync);
 	}
 
-	/* Change the shutdown FROs' oscillating frequncy in an attempt to
-	 * prevent further locking on to the sampling clock frequncy.
+	/* Change the shutdown FROs' oscillating frequency in an attempt to
+	 * prevent further locking on to the sampling clock frequency.
 	 */
 	if (src & TRNG_FRO_SHUTDOWN) {
 		handle_shutdown_ovf();
@@ -175,7 +170,7 @@ static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev,
 						 uint8_t *buf, uint16_t len,
 						 uint32_t flags)
 {
-	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
+	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 	uint16_t cnt;
 	uint16_t read = len;
 	uint32_t src;
@@ -255,7 +250,7 @@ static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
 
 		if (Power_getDependencyCount(res_id) != 0) {
 			/* Reconfigure and enable TRNG only if powered */
-			start_trng(get_dev_data(dev));
+			start_trng(dev->data);
 		}
 	}
 
@@ -267,7 +262,7 @@ static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
 static int entropy_cc13xx_cc26xx_pm_action(const struct device *dev,
 					   enum pm_device_action action)
 {
-	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
+	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -288,7 +283,7 @@ static int entropy_cc13xx_cc26xx_pm_action(const struct device *dev,
 
 static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 {
-	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
+	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 
 	/* Initialize driver data */
 	ring_buf_init(&data->pool, sizeof(data->data), data->data);
@@ -296,7 +291,7 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 #if defined(CONFIG_PM)
 	Power_setDependency(PowerCC26XX_PERIPH_TRNG);
 	/* Stay out of standby until buffer is filled with entropy */
-	pm_constraint_set(PM_STATE_STANDBY);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	data->constrained = true;
 	/* Register notification function */
 	Power_registerNotify(&data->post_notify,
@@ -353,7 +348,7 @@ PM_DEVICE_DT_INST_DEFINE(0, entropy_cc13xx_cc26xx_pm_action);
 
 DEVICE_DT_INST_DEFINE(0,
 		entropy_cc13xx_cc26xx_init,
-		PM_DEVICE_DT_INST_REF(0),
+		PM_DEVICE_DT_INST_GET(0),
 		&entropy_cc13xx_cc26xx_data, NULL,
 		PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
 		&entropy_cc13xx_cc26xx_driver_api);

@@ -7,8 +7,8 @@
 #define DT_DRV_COMPAT snps_creg_gpio_mux_hsdk
 
 #include <errno.h>
-#include <device.h>
-#include <drivers/pinmux.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/pinmux.h>
 #include <soc.h>
 
 #define creg_gpio_mux_reg	(*(volatile uint32_t *)DT_INST_REG_ADDR(0))

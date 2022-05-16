@@ -8,15 +8,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_icmpv6, CONFIG_NET_ICMPV6_LOG_LEVEL);
 
 #include <errno.h>
-#include <sys/slist.h>
-#include <sys/byteorder.h>
-#include <net/net_core.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_if.h>
 #include "net_private.h"
 #include "icmpv6.h"
 #include "ipv6.h"
@@ -132,11 +132,11 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (net_ipv6_is_addr_mcast(&ip_hdr->dst)) {
+	if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst)) {
 		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  &ip_hdr->dst);
+						  (struct in6_addr *)ip_hdr->dst);
 	} else {
-		src = &ip_hdr->dst;
+		src = (struct in6_addr *)ip_hdr->dst;
 	}
 
 	/* We must not set the destination ll address here but trust
@@ -146,7 +146,7 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 	net_pkt_lladdr_dst(reply)->addr = NULL;
 	net_pkt_lladdr_src(reply)->addr = NULL;
 
-	if (net_ipv6_create(reply, src, &ip_hdr->src)) {
+	if (net_ipv6_create(reply, src, (struct in6_addr *)ip_hdr->src)) {
 		NET_DBG("DROP: wrong buffer");
 		goto drop;
 	}
@@ -279,14 +279,14 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_dst(orig)->len;
 	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
-	if (net_ipv6_is_addr_mcast(&ip_hdr->dst)) {
+	if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst)) {
 		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  &ip_hdr->dst);
+						  (struct in6_addr *)ip_hdr->dst);
 	} else {
-		src = &ip_hdr->dst;
+		src = (struct in6_addr *)ip_hdr->dst;
 	}
 
-	if (net_ipv6_create(pkt, src, &ip_hdr->src) ||
+	if (net_ipv6_create(pkt, src, (struct in6_addr *)ip_hdr->src) ||
 	    net_icmpv6_create(pkt, type, code)) {
 		goto drop;
 	}

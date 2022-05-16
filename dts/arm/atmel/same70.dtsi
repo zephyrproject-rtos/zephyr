@@ -6,10 +6,9 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/gpio/gpio.h>
-
-#include "same70-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	aliases {
@@ -87,7 +86,6 @@
 			peripheral-id = <19>;
 			label = "I2C_0";
 			status = "disabled";
-			pinctrl-0 = <&pa4a_twihs0_twck0 &pa3a_twihs0_twd0>;
 		};
 
 		twihs1: i2c@4001c000 {
@@ -100,7 +98,6 @@
 			peripheral-id = <20>;
 			label = "I2C_1";
 			status = "disabled";
-			pinctrl-0 = <&pb5a_twihs1_twck1 &pb4a_twihs1_twd1>;
 		};
 
 		twihs2: i2c@40060000 {
@@ -113,7 +110,6 @@
 			peripheral-id = <41>;
 			label = "I2C_2";
 			status = "disabled";
-			pinctrl-0 = <&pd28c_twihs2_twck2 &pd27c_twihs2_twd2>;
 		};
 
 		spi0: spi@40008000 {
@@ -125,7 +121,6 @@
 			peripheral-id = <21>;
 			label = "SPI_0";
 			status = "disabled";
-			pinctrl-0 = <&pd20b_spi0_miso &pd21b_spi0_mosi &pd22b_spi0_spck>;
 		};
 
 		spi1: spi@40058000 {
@@ -137,7 +132,6 @@
 			peripheral-id = <42>;
 			label = "SPI_1";
 			status = "disabled";
-			pinctrl-0 = <&pc26c_spi1_miso &pc27c_spi1_mosi &pc24c_spi1_spck>;
 		};
 
 		uart0: uart@400e0800 {
@@ -147,7 +141,6 @@
 			peripheral-id = <7>;
 			status = "disabled";
 			label = "UART_0";
-			pinctrl-0 = <&pa9a_uart0_urxd0 &pa10a_uart0_utxd0>;
 		};
 
 		uart1: uart@400e0a00 {
@@ -193,7 +186,6 @@
 			peripheral-id = <13>;
 			status = "disabled";
 			label = "USART_0";
-			pinctrl-0 = <&pb0c_usart0_rxd0 &pb1c_usart0_txd0>;
 		};
 
 		usart1: usart@40028000 {
@@ -203,7 +195,6 @@
 			peripheral-id = <14>;
 			status = "disabled";
 			label = "USART_1";
-			pinctrl-0 = <&pa21a_usart1_rxd1 &pb4d_usart1_txd1>;
 		};
 
 		usart2: usart@4002c000 {
@@ -213,7 +204,6 @@
 			peripheral-id = <15>;
 			status = "disabled";
 			label = "USART_2";
-			pinctrl-0 = <&pd15b_usart2_rxd2 &pd16b_usart2_txd2>;
 		};
 
 		afec0: adc@4003c000 {
@@ -224,7 +214,6 @@
 			status = "disabled";
 			label = "ADC_0";
 			#io-channel-cells = <1>;
-			pinctrl-0 = <&pa8b_afec0_adtrg>;
 		};
 
 		afec1: adc@40064000 {
@@ -235,7 +224,6 @@
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;
-			pinctrl-0 = <&pd9c_afec1_adtrg>;
 		};
 
 		dacc: dacc@40040000 {
@@ -248,7 +236,7 @@
 			#io-channel-cells = <1>;
 		};
 
-		pinctrl@400e0e00 {
+		pinctrl: pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -341,7 +329,7 @@
 			reg = <0x40038000 0x4000>;
 			interrupts = <34 0>;
 			interrupt-names = "usbhs";
-			maximum-speed = "full-speed";
+			maximum-speed = "high-speed";
 			num-bidir-endpoints = <10>;
 			peripheral-id = <34>;
 			status = "disabled";
@@ -358,17 +346,11 @@
 			local-mac-address = [00 00 00 00 00 00];
 			label = "GMAC";
 			status = "disabled";
-			/* Default to RMII config */
-			pinctrl-0 = <&pd0a_gmac_gtxck &pd1a_gmac_gtxen
-				     &pd2a_gmac_gtx0 &pd3a_gmac_gtx1
-				     &pd4a_gmac_grxdv &pd5a_gmac_grx0
-				     &pd6a_gmac_grx1 &pd7a_gmac_grxer>;
 
 			mdio: mdio {
 				compatible = "atmel,sam-mdio";
 				label = "MDIO";
 				status = "disabled";
-				pinctrl-0 = <&pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
 			};
 		};
 
@@ -381,7 +363,6 @@
 			peripheral-id = <23 24 25>;
 			status = "disabled";
 			label = "TC0";
-			pinctrl-0 = <>;
 		};
 
 		tc1: tc@40010000 {
@@ -393,7 +374,6 @@
 			peripheral-id = <26 27 28>;
 			status = "disabled";
 			label = "TC1";
-			pinctrl-0 = <>;
 		};
 
 		tc2: tc@40014000 {
@@ -405,7 +385,6 @@
 			peripheral-id = <47 48 49>;
 			status = "disabled";
 			label = "TC2";
-			pinctrl-0 = <>;
 		};
 
 		tc3: tc@40054000 {
@@ -417,7 +396,6 @@
 			peripheral-id = <50 51 52>;
 			status = "disabled";
 			label = "TC3";
-			pinctrl-0 = <>;
 		};
 
 		trng: random@40070000 {
@@ -445,6 +423,58 @@
 			peripheral-id = <22>;
 			label = "SSC_0";
 			status = "disabled";
+		};
+
+		can {
+			compatible = "bosch,m_can-base";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			std-filter-elements = <28>;
+			ext-filter-elements = <8>;
+			rx-fifo0-elements = <3>;
+			rx-fifo1-elements = <3>;
+			rx-buffer-elements = <0>;
+			tx-buffer-elements = <1>;
+
+			can0: can@40030000 {
+				compatible = "atmel,sam-can";
+				reg = <0x40030000 0x100>;
+				reg-names = "m_can";
+				interrupts = <35 0>, <36 0>;
+				interrupt-names = "LINE_0", "LINE_1";
+				peripheral-id = <35>;
+				divider = <6>;
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+				status = "disabled";
+				label = "CAN_0";
+			};
+
+			can1: can@40034000 {
+				compatible = "atmel,sam-can";
+				reg = <0x40034000 0x100>;
+				reg-names = "m_can";
+				interrupts = <37 0>, <38 0>;
+				interrupt-names = "LINE_0", "LINE_1";
+				peripheral-id = <37>;
+				divider = <6>;
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+				status = "disabled";
+				label = "CAN_1";
+			};
+		};
+
+		rstc: rstc@400e1800 {
+			compatible = "atmel,sam-rstc";
+			reg = <0x400e1800 0x10>;
+			peripheral-id = <1>;
+			label = "RSTC";
+			user-nrst;
 		};
 	};
 };

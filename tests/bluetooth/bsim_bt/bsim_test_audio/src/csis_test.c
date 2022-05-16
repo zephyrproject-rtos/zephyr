@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifdef CONFIG_BT_CSIS
-#include <bluetooth/audio/csis.h>
+#include <zephyr/bluetooth/audio/csis.h>
 
 #include "common.h"
 
@@ -128,7 +128,7 @@ static void test_force_release(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	WAIT_FOR(g_locked);
+	WAIT_FOR_COND(g_locked);
 	printk("Force releasing set\n");
 	bt_csis_lock(csis, false, true);
 }

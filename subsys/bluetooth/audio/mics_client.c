@@ -7,18 +7,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
 
-#include <sys/check.h>
+#include <zephyr/sys/check.h>
 
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/audio/mics.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/audio/mics.h>
 
 #include "mics_internal.h"
 
@@ -60,7 +60,13 @@ static uint8_t mute_notify_handler(struct bt_conn *conn,
 				   const void *data, uint16_t length)
 {
 	uint8_t *mute_val;
-	struct bt_mics *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics *mics_inst;
+
+	if (conn == NULL) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	mics_inst = &mics_insts[bt_conn_index(conn)];
 
 	if (data != NULL) {
 		if (length == sizeof(*mute_val)) {
@@ -361,12 +367,34 @@ static void mics_client_reset(struct bt_mics *mics)
 	mics->cli.mute_handle = 0;
 	mics->cli.aics_inst_cnt = 0;
 
-	/* It's okay if this fails */
 	if (mics->cli.conn != NULL) {
-		(void)bt_gatt_unsubscribe(mics->cli.conn,
-					  &mics->cli.mute_sub_params);
+		struct bt_conn *conn = mics->cli.conn;
+
+		/* It's okay if this fails. In case of disconnect, we can't
+		 * unsubscribe and it will just fail.
+		 * In case that we reset due to another call of the discover
+		 * function, we will unsubscribe (regardless of bonding state)
+		 * to accommodate the new discovery values.
+		 */
+		(void)bt_gatt_unsubscribe(conn, &mics->cli.mute_sub_params);
+
+		bt_conn_unref(conn);
+		mics->cli.conn = NULL;
 	}
 }
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_mics *mics = &mics_insts[bt_conn_index(conn)];
+
+	if (mics->cli.conn == conn) {
+		mics_client_reset(mics);
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
 
 int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics)
 {
@@ -380,7 +408,7 @@ int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics)
 	 * 1) Primary discover for the MICS
 	 * 2) Characteristic discover of the MICS
 	 * 3) Discover services included in MICS (AICS)
-	 * 4) For each included service found; discovery of the characteristiscs
+	 * 4) For each included service found; discovery of the characteristics
 	 * 5) When everything above have been discovered, the callback is called
 	 */
 
@@ -411,7 +439,7 @@ int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics)
 		}
 	}
 
-	mics_inst->cli.conn = conn;
+	mics_inst->cli.conn = bt_conn_ref(conn);
 	mics_inst->client_instance = true;
 	mics_inst->cli.discover_params.func = primary_discover_func;
 	mics_inst->cli.discover_params.uuid = mics_uuid;

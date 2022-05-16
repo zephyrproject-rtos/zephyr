@@ -1,0 +1,11 @@
+common:
+  tags: drivers i2c
+  depends_on: i2c adc
+  filter: dt_compat_enabled("regulator-pmic")
+  harness: ztest
+  harness_config:
+    fixture: regulator_pmic
+
+tests:
+  drivers.regulator.i2c.onoff:
+    depends_on: i2c adc

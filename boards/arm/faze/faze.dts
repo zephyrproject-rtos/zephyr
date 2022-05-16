@@ -7,8 +7,9 @@
 /dts-v1/;
 
 #include <nxp/nxp_lpc11u67.dtsi>
-#include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
-#include <dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+#include "faze-pinctrl.dtsi"
 
 / {
 	model = "Seagate FireCuda Gaming SSD (FaZe)";
@@ -50,16 +51,16 @@
 };
 
 &uart0 {
-	pinmuxs = <&pinmux0 18 IOCON_FUNC1>, <&pinmux0 19 IOCON_FUNC1>;
-	pinmux-names = "RXD", "TXD";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c0 {
-	pinmuxs = <&pinmux0 4 IOCON_FUNC1>,
-		  <&pinmux0 5 IOCON_FUNC1>;
-	pinmux-names = "SCL", "SDA";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_fast>;
+	pinctrl-names = "default", "fast-plus";
 	status = "okay";
 
 	asm2364: asm2364@30 {
@@ -70,9 +71,9 @@
 };
 
 &i2c1 {
-	pinmuxs =  <&pinmux0 7 (IOCON_FUNC3| IOCON_OPENDRAIN_EN)>,
-		   <&pinmux1 24 (IOCON_FUNC2 | IOCON_OPENDRAIN_EN)>;
-	pinmux-names = "SCL", "SDA";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_fast>;
+	pinctrl-names = "default", "fast-plus";
 	status = "okay";
 
 	/* TI LP5030 LED controller connected to I2C1. */
@@ -130,6 +131,11 @@
 				<LED_COLOR_ID_BLUE>;
 		};
 	};
+};
+
+&syscon {
+	pinctrl-0 = <&syscon_default>;
+	pinctrl-names = "default";
 };
 
 &cpu0 {

@@ -6,9 +6,6 @@ CONFIG_SOC_STM32H747XX=y
 # Board config should be specified since there are 2 possible targets
 CONFIG_BOARD_STM32H747I_DISCO_M4=y
 
-# enable pinmux
-CONFIG_PINMUX=y
-
 # enable GPIO
 CONFIG_GPIO=y
 
@@ -27,3 +24,6 @@ CONFIG_SERIAL=y
 # By default CONSOLE is assigned to m7
 #CONFIG_CONSOLE=y
 #CONFIG_UART_CONSOLE=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

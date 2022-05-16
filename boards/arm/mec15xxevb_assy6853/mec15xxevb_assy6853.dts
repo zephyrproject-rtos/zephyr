@@ -25,6 +25,7 @@
 		pwm-0 = &pwm0;
 		peci-0 = &peci0;
 		i2c0 = &i2c_smb_0;
+		i2c-0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
 		i2c7 = &i2c_smb_2;
 		kscan0 = &kscan0;
@@ -87,6 +88,8 @@
 	status = "okay";
 	label = "I2C0";
 	port_sel = <0>;
+	sda-gpios = <&gpio_000_036 3 0>;
+	scl-gpios = <&gpio_000_036 4 0>;
 
 	pca9555@26 {
 		compatible = "nxp,pca95xx";
@@ -110,12 +113,16 @@
 	status = "okay";
 	label = "I2C1";
 	port_sel = <1>;
+	sda-gpios = <&gpio_100_136 24 0>;
+	scl-gpios = <&gpio_100_136 25 0>;
 };
 
 &i2c_smb_2 {
 	status = "okay";
 	label = "I2C7";
 	port_sel = <7>;
+	sda-gpios = <&gpio_000_036 10 0>;
+	scl-gpios = <&gpio_000_036 11 0>;
 };
 
 &espi0 {

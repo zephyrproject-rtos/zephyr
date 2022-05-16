@@ -1,0 +1,20 @@
+/ {
+	test_reg_0: test_reg_0 {
+		compatible = "power-domain-gpio";
+		label = "test-reg-0";
+		enable-gpios = <&gpio0 0 0>;
+	};
+
+	test_reg_1: test_reg_1 {
+		compatible = "power-domain-gpio";
+		label = "test-reg-1";
+		enable-gpios = <&gpio0 1 0>;
+	};
+
+	test_reg_chained: test_reg_chained {
+		compatible = "power-domain-gpio";
+		label = "test-reg-chained";
+		enable-gpios = <&gpio0 2 0>;
+		power-domain = <&test_reg_0>;
+	};
+};

@@ -12,7 +12,7 @@ menuconfig NANOPB
 if NANOPB
 
 config NANOPB_ENABLE_MALLOC
-	bool "Enable malloc usage"
+	bool "Malloc usage"
 	help
 	  This option enables dynamic allocation support in the decoder.
 

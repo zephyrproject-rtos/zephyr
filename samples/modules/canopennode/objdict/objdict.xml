@@ -23,7 +23,7 @@ bit 7: manufacturer specific</description>
 bit 0-7: Zero can be written to erase error history
 
 Standard Error Field
-bit  0-15: Error code as transmited in the Emergency object
+bit  0-15: Error code as transmitted in the Emergency object
 bit 16-31: Manufacturer specific additional information</description>
       <CANopenSubObject subIndex="00" name="Number of errors" objectType="VAR" dataType="0x05" accessType="rw" PDOmapping="no" defaultValue="0x00" TPDOdetectCOS="false">
         <description />
@@ -64,7 +64,7 @@ bit    31: set to 0</description>
       <description>bit 0-31:  period of SYNC transmission in µs (0 = no transmission, no checking)</description>
     </CANopenObject>
     <CANopenObject index="1007" name="Synchronous window length" objectType="VAR" memoryType="ROM" dataType="0x07" accessType="rw" PDOmapping="no" defaultValue="0" subNumber="0" disabled="false" TPDOdetectCOS="false">
-      <description>bit 0-31:  window leghth after SYNC when PDOS must be transmited in µs, (0 = not used)</description>
+      <description>bit 0-31:  window length after SYNC when PDOS must be transmitted in µs, (0 = not used)</description>
     </CANopenObject>
     <CANopenObject index="1008" name="Manufacturer device name" objectType="VAR" memoryType="ROM" dataType="0x09" accessType="const" PDOmapping="no" defaultValue="Zephyr RTOS/CANopenNode" subNumber="0" disabled="false" TPDOdetectCOS="false">
       <description>Name of the manufacturer as string</description>
@@ -302,7 +302,7 @@ bit 30:    0(1) - rtr are allowed (are NOT allowed) for PDO
 bit 31:    0(1) - node uses (does NOT use) PDO
 
 Transmission type
-value = 0-240:   reciving is synchronous, process after next reception of SYNC object
+value = 0-240:   receiving is synchronous, process after next reception of SYNC object
 value = 241-253: not used
 value = 254:     manufacturer specific
 value = 255:     asynchronous</description>
@@ -552,12 +552,12 @@ bit 30:    0(1) - rtr are allowed (are NOT allowed) for PDO
 bit 31:    0(1) - node uses (does NOT use) PDO
 
 Transmission type
-value = 0:       transmiting is synchronous, specification in device profile
-value = 1-240:   transmiting is synchronous after every N-th SYNC object
+value = 0:       transmitting is synchronous, specification in device profile
+value = 1-240:   transmitting is synchronous after every N-th SYNC object
 value = 241-251: not used
-value = 252-253: Transmited only on reception of Remote Transmission Request
+value = 252-253: Transmitted only on reception of Remote Transmission Request
 value = 254:     manufacturer specific
-value = 255:     asinchronous, specification in device profile
+value = 255:     asynchronous, specification in device profile
 
 inhibit time
 bit 0-15:  Minimum time between transmissions of the PDO in 100µs. Zero disables functionality.

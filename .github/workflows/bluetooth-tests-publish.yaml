@@ -1,0 +1,29 @@
+name: Publish Bluetooth Tests Results
+
+on:
+  workflow_run:
+    workflows: ["Bluetooth Tests"]
+    types:
+      - completed
+jobs:
+  bluetooth-test-results:
+    name: "Publish Bluetooth Test Results"
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion != 'skipped'
+
+    steps:
+      - name: Download artifacts
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: bluetooth-tests.yaml
+          run_id: ${{ github.event.workflow_run.id }}
+
+      - name: Publish Bluetooth Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          check_name: Bluetooth Test Results
+          comment_mode: off
+          commit: ${{ github.event.workflow_run.head_sha }}
+          event_file: event/event.json
+          event_name: ${{ github.event.workflow_run.event }}
+          files: "bluetooth-test-results/**/bsim_results.xml"

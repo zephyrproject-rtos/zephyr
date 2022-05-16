@@ -51,7 +51,7 @@ config LIS2DS12_THREAD_STACK_SIZE
 	  Stack size of thread used by the driver to handle interrupts.
 
 config LIS2DS12_ENABLE_TEMP
-	bool "Enable temperature"
+	bool "Temperature"
 	help
 	  Enable/disable temperature
 

@@ -1,0 +1,20 @@
+# Copyright (c) 2022, CSIRO.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POWER_DOMAIN
+	bool "Power domain drivers"
+	help
+	  Include drivers for power domains in system config
+
+if POWER_DOMAIN
+
+module = POWER_DOMAIN
+module-str = power_domain
+source "subsys/logging/Kconfig.template.log_config"
+
+config POWER_DOMAIN_GPIO
+	bool "GPIO controlled power domain"
+	depends on GPIO
+	depends on TIMEOUT_64BIT
+
+endif

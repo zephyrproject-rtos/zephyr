@@ -8,11 +8,11 @@
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/flash.h>
+#include <zephyr/drivers/flash.h>
 #include <string.h>
 #include <nrfx_nvmc.h>
 #include <nrf_erratas.h>
@@ -20,7 +20,7 @@
 #include "soc_flash_nrf.h"
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_nrf);
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf51_flash_controller), okay)
@@ -94,32 +94,23 @@ static inline bool is_aligned_32(uint32_t data)
 	return (data & 0x3) ? false : true;
 }
 
-static inline bool is_regular_addr_valid(off_t addr, size_t len)
+static inline bool is_within_bounds(off_t addr, size_t len, off_t boundary_start,
+				    size_t boundary_size)
 {
-	size_t flash_size = nrfx_nvmc_flash_size_get();
-
-	if (addr >= flash_size ||
-	    addr < 0 ||
-	    len > flash_size ||
-	    (addr) + len > flash_size) {
-		return false;
-	}
-
-	return true;
+	return (addr >= boundary_start &&
+			(addr < (boundary_start + boundary_size)) &&
+			(len <= (boundary_start + boundary_size - addr)));
 }
 
+static inline bool is_regular_addr_valid(off_t addr, size_t len)
+{
+	return is_within_bounds(addr, len, 0, nrfx_nvmc_flash_size_get());
+}
 
 static inline bool is_uicr_addr_valid(off_t addr, size_t len)
 {
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
-	if (addr >= (off_t)NRF_UICR + sizeof(*NRF_UICR) ||
-	    addr < (off_t)NRF_UICR ||
-	    len > sizeof(*NRF_UICR) ||
-	    addr + len > (off_t)NRF_UICR + sizeof(*NRF_UICR)) {
-		return false;
-	}
-
-	return true;
+	return is_within_bounds(addr, len, (off_t)NRF_UICR, sizeof(*NRF_UICR));
 #else
 	return false;
 #endif /* CONFIG_SOC_FLASH_NRF_UICR */
@@ -289,7 +280,7 @@ static int nrf_flash_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0, nrf_flash_init, NULL,
 		 NULL, NULL,
-		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		 POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
 		 &flash_nrf_api);
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE

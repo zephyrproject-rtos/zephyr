@@ -125,6 +125,8 @@ The Zephyr Disco L475 IoT board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | QSPI NOR  | on-chip    | off-chip flash                      |
@@ -166,6 +168,7 @@ Default Zephyr Peripheral Mapping:
 - ADC123_IN4 : PC3
 - ADC12_IN13 : PC4
 - ADC12_IN14 : PC5
+- DAC1_OUT1 : PA4
 
 System Clock
 ------------

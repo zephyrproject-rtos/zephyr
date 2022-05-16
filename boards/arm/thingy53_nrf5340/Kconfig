@@ -3,13 +3,6 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config THINGY53_MISO_WORKAROUND
-	bool "MISO workaround"
-	default SPI
-	help
-	  Workaround SPI bus MISO issues. The workaround sets dedicated pin
-	  high in order to avoid voltage drops on the SPI MISO line.
-
 config THINGY53_INIT_PRIORITY
 	int "Init priority"
 	default 79
@@ -18,6 +11,9 @@ config THINGY53_INIT_PRIORITY
 
 config IPM_NRFX
 	default IPM
+
+config MBOX_NRFX_IPC
+	default MBOX
 
 config RPMSG_SERVICE_DUAL_IPM_SUPPORT
 	default RPMSG_SERVICE
@@ -55,22 +51,22 @@ endif # RPMSG_SERVICE_DUAL_IPM_SUPPORT
 if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
 
 config BOARD_ENABLE_DCDC_APP
-	bool "Enable Application MCU DCDC converter"
+	bool "Application MCU DCDC converter"
 	select SOC_DCDC_NRF53X_APP
 	default y
 
 config BOARD_ENABLE_DCDC_NET
-	bool "Enable Network MCU DCDC converter"
+	bool "Network MCU DCDC converter"
 	select SOC_DCDC_NRF53X_NET
 	default y
 
 config BOARD_ENABLE_DCDC_HV
-	bool "Enable High Voltage DCDC converter"
+	bool "High Voltage DCDC converter"
 	select SOC_DCDC_NRF53X_HV
 	default y
 
 config BOARD_ENABLE_CPUNET
-	bool "Enable nRF53 Network MCU"
+	bool "NRF53 Network MCU"
 	help
 	  This option enables releasing the Network 'force off' signal, which
 	  as a consequence will power up the Network MCU during system boot.

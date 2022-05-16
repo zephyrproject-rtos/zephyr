@@ -14,4 +14,7 @@ config NUM_IRQS
 config GPIO
 	default y
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 400000000 if CORTEX_M_SYSTICK
+
 endif # SOC_MIMXRT1170_CM4

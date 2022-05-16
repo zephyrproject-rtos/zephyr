@@ -8,10 +8,10 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <ztest.h>
 
-#include <bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 void test_ctrl_user_ext(void)
 {

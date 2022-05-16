@@ -6,10 +6,10 @@
 
 #include "rpmsg_backend.h"
 
-#include <zephyr.h>
-#include <drivers/ipm.h>
-#include <device.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/drivers/ipm.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 
 #include <openamp/open_amp.h>
 #include <metal/device.h>
@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 
 #if MASTER
 #define VIRTQUEUE_ID 0
-#define RPMSG_ROLE RPMSG_MASTER
+#define RPMSG_ROLE RPMSG_HOST
 #else
 #define VIRTQUEUE_ID 1
 #define RPMSG_ROLE RPMSG_REMOTE
@@ -41,12 +41,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 #define VRING_SIZE		    16
 
 #define IPM_WORK_QUEUE_STACK_SIZE CONFIG_RPMSG_SERVICE_WORK_QUEUE_STACK_SIZE
-
-#if IS_ENABLED(CONFIG_COOP_ENABLED)
-#define IPM_WORK_QUEUE_PRIORITY -1
-#else
-#define IPM_WORK_QUEUE_PRIORITY 0
-#endif
+#define IPM_WORK_QUEUE_PRIORITY   K_HIGHEST_APPLICATION_THREAD_PRIO
 
 K_THREAD_STACK_DEFINE(ipm_stack_area, IPM_WORK_QUEUE_STACK_SIZE);
 

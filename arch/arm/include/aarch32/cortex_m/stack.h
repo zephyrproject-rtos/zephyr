@@ -20,7 +20,7 @@
 
 #else
 
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +36,6 @@ K_KERNEL_STACK_ARRAY_EXTERN(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
  * On Cortex-M, the interrupt stack is registered in the MSP (main stack
  * pointer) register, and switched to automatically when taking an exception.
  *
- * @return N/A
  */
 static ALWAYS_INLINE void z_arm_interrupt_stack_setup(void)
 {

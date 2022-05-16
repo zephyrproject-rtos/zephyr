@@ -44,3 +44,6 @@ properties:
         description:
           External 1 reference voltage in mV. If not provided or set to zero,
           channel setup with ADC_REF_EXTERNAL1 will fail.
+
+io-channel-cells:
+    - input

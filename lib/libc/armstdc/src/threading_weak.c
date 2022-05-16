@@ -17,7 +17,7 @@
  * CONFIG_MULTITHREADING=n to ensure proper linking.
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 
 int __weak z_impl_k_mutex_init(struct k_mutex *mutex)
 {

@@ -12,15 +12,14 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# enable USB
+# enable USB (for CDC ACM console)
 CONFIG_USB_DEVICE_STACK=y
 
 # additional board options
 CONFIG_GPIO=y
 CONFIG_GPIO_AS_PINRESET=y
 
-# I2C
-CONFIG_I2C=y
+# required to enable 3V3 power rail and Vin1 monitor
+CONFIG_REGULATOR=y
 
-# ADC
-CONFIG_ADC=y
+CONFIG_PINCTRL=y

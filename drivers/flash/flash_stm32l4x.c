@@ -8,14 +8,14 @@
 
 #define LOG_DOMAIN flash_stm32l4
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
-#include <kernel.h>
-#include <device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <string.h>
-#include <drivers/flash.h>
-#include <init.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/init.h>
 #include <soc.h>
 
 #include "flash_stm32.h"
@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32L4X_PAGE_SHIFT	12
 #endif
 
-#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_OPTR_DBANK)
+#if defined(FLASH_OPTR_DUALBANK) || defined(FLASH_STM32_DBANK)
 #define CONTROL_DCACHE
 #endif
 
@@ -45,7 +45,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 	if (regs->ACR & FLASH_ACR_DCEN) {
 		regs->ACR &= ~FLASH_ACR_DCEN;
 		/* Datasheet: DCRST: Data cache reset
-		 * This bit can be written only when thes data cache is disabled
+		 * This bit can be written only when the data cache is disabled
 		 */
 		regs->ACR |= FLASH_ACR_DCRST;
 		regs->ACR &= ~FLASH_ACR_DCRST;
@@ -149,7 +149,7 @@ static int erase_page(const struct device *dev, unsigned int page)
 	uint16_t pages_per_bank;
 	int rc;
 
-#if !defined(FLASH_OPTR_DUALBANK) && !defined(FLASH_OPTR_DBANK)
+#if !defined(FLASH_OPTR_DUALBANK) && !defined(FLASH_STM32_DBANK)
 	/* Single bank device. Each page is of 2KB size */
 	pages_per_bank = SOC_NV_FLASH_SIZE >> 11;
 #elif defined(FLASH_OPTR_DUALBANK)
@@ -164,9 +164,9 @@ static int erase_page(const struct device *dev, unsigned int page)
 		/* Not supported for now. */
 		return -ENOTSUP;
 	}
-#elif defined(FLASH_OPTR_DBANK)
+#elif defined(FLASH_STM32_DBANK)
 	/* L4+ series (4K page size) with configurable Dual Bank (default y)*/
-	if (regs->OPTR & FLASH_OPTR_DBANK) {
+	if (regs->OPTR & FLASH_STM32_DBANK) {
 		/* Dual Bank configuration (nbre pags = flash size / 2 / 4K) */
 		pages_per_bank = SOC_NV_FLASH_SIZE >> 13;
 	} else {

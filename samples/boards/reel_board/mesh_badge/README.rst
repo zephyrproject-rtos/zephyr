@@ -47,4 +47,4 @@ text, and make it connectable over GATT):
 
 #. Keep the user button pressed when powering on (or press the reset button
    when powered)
-#. Wait until "Reseting Device" is shown
+#. Wait until "Resetting Device" is shown

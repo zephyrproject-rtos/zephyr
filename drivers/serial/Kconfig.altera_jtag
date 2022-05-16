@@ -9,3 +9,7 @@ config UART_ALTERA_JTAG
 	help
 	  Enable the Altera JTAG UART driver, built in to many Nios II CPU
 	  designs.
+
+config UART_ALTERA_JTAG_HAL
+	bool "JTAG UART driver using Altera HAL API"
+	depends on UART_ALTERA_JTAG

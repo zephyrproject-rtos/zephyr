@@ -92,6 +92,8 @@ The Zephyr nucleo_f091rc board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c controller                      |
@@ -136,8 +138,9 @@ Default Zephyr Peripheral Mapping:
 - SPI1 SCK/MISO/MOSI : PA5/PA6/PA7 (Arduino SPI)
 - SPI2 SCK/MISO/MOSI : PB13/PB14/PB15
 - USER_PB : PC13
-- LD1 : PA5
+- LD2 : PA5
 - DAC_OUT1 : PA4
+- PWM_2_CH1 : PA5 (might conflict with SPI1)
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 

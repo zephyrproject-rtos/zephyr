@@ -4,20 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT qemu_ivshmem
+
 #define LOG_LEVEL CONFIG_IVSHMEM_LOG_LEVEL
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ivshmem);
 
 #include <errno.h>
 
-#include <kernel.h>
-#include <arch/cpu.h>
+#include <zephyr/kernel.h>
+#include <zephyr/arch/cpu.h>
 
 #include <soc.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 
-#include <drivers/virtualization/ivshmem.h>
+#include <zephyr/drivers/virtualization/ivshmem.h>
 #include "virt_ivshmem.h"
 
 #ifdef CONFIG_IVSHMEM_DOORBELL
@@ -223,25 +225,42 @@ static const struct ivshmem_driver_api ivshmem_api = {
 static int ivshmem_init(const struct device *dev)
 {
 	struct ivshmem *data = dev->data;
+	static bool bdf_lookup_done;
 
-	data->bdf = pcie_bdf_lookup(PCIE_ID(IVSHMEM_VENDOR_ID,
-					    IVSHMEM_DEVICE_ID));
-	if (data->bdf == PCIE_BDF_NONE) {
-		LOG_WRN("ivshmem device not found");
+	if ((data->bdf == PCIE_BDF_NONE) && bdf_lookup_done) {
+		LOG_ERR("One instance of ivshmem with pcie_bdf_lookup() already initialized.\n"
+			"Using more than one with PCIE_BDF_NONE parameter might conflict\n"
+			"with already initialized instances.");
 		return -ENOTSUP;
 	}
-
+	if ((data->bdf == PCIE_BDF_NONE) && !bdf_lookup_done) {
+		if (data->dev_ven_id) {
+			data->bdf = pcie_bdf_lookup(data->dev_ven_id);
+		} else {
+			data->bdf = pcie_bdf_lookup(PCIE_ID(IVSHMEM_VENDOR_ID, IVSHMEM_DEVICE_ID));
+		}
+		if (data->bdf == PCIE_BDF_NONE) {
+			LOG_WRN("ivshmem device not found");
+			return -ENOTSUP;
+		}
+	}
 	LOG_DBG("ivshmem found at bdf 0x%x", data->bdf);
+	bdf_lookup_done = true;
 
 	if (!ivshmem_configure(dev)) {
 		return -EIO;
 	}
-
 	return 0;
 }
 
-static struct ivshmem ivshmem_data;
+#define IVSHMEM_DEVICE_INIT(n) \
+	static struct ivshmem ivshmem_data_##n = { \
+		.bdf = DT_INST_REG_ADDR_BY_IDX(n, 0), \
+		.dev_ven_id = DT_INST_REG_SIZE_BY_IDX(n, 0) \
+	}; \
+	DEVICE_DT_INST_DEFINE(n, &ivshmem_init, NULL, \
+			      &ivshmem_data_##n, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      &ivshmem_api);
 
-DEVICE_DEFINE(ivshmem, CONFIG_IVSHMEM_DEV_NAME,
-	      ivshmem_init, NULL, &ivshmem_data, NULL,
-	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ivshmem_api);
+DT_INST_FOREACH_STATUS_OKAY(IVSHMEM_DEVICE_INIT)

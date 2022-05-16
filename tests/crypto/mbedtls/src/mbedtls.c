@@ -7,15 +7,15 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #define  MBEDTLS_PRINT (int(*)(const char *, ...)) printk
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <zephyr.h>
-#include <linker/sections.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/sections.h>
 #include <errno.h>
 
 #include <tc_util.h>
@@ -71,7 +71,7 @@
 #include "mbedtls/memory_buffer_alloc.h"
 #endif
 
-static int test_snprintf(size_t n, const char ref_buf[10], int ref_ret)
+static int test_snprintf(size_t n, const char *ref_buf, int ref_ret)
 {
 	int ret;
 	char buf[10] = "xxxxxxxxx";

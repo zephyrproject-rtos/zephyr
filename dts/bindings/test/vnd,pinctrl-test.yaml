@@ -28,7 +28,7 @@ child-binding:
       /* node representing default state for test_device0 */
       test_device0_default: test_device0_default {
         /* group 1 (name is arbitrary) */
-        pins1 {
+        group1 {
           /* configure pins 0 and 1 */
           pins = <0>, <1>;
           /* both pins 0 and 1 have pull-up enabled */
@@ -36,7 +36,7 @@ child-binding:
         };
         ...
         /* group N (name is arbitrary) */
-        pinsN {
+        groupN {
           /* configure pin M */
           pins = <M>;
           /* pin M has pull-down enabled */

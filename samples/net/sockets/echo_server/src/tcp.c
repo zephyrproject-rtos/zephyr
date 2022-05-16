@@ -7,15 +7,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 
-#include <zephyr.h>
+#include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdio.h>
 
-#include <net/socket.h>
-#include <net/tls_credentials.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/tls_credentials.h>
 
 #include "common.h"
 #include "certificate.h"
@@ -347,7 +347,8 @@ static void process_tcp6(void)
 
 static void print_stats(struct k_work *work)
 {
-	struct data *data = CONTAINER_OF(work, struct data, tcp.stats_print);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct data *data = CONTAINER_OF(dwork, struct data, tcp.stats_print);
 	int total_received = atomic_get(&data->tcp.bytes_received);
 
 	if (total_received) {

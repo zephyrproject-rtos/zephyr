@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BT_AUDIO
-
 #################### Coordinated Set Identification Service ####################
 
 config BT_CSIS
@@ -50,7 +48,6 @@ config BT_CSIS_MAX_INSTANCE_COUNT
 
 config BT_DEBUG_CSIS
 	bool "Coordinated Set Identification Service debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Coordinated Set Identification Service debug
 	  logs for the Bluetooth Audio functionality.
@@ -100,7 +97,6 @@ config BT_CSIS_CLIENT_ENC_SIRK_SUPPORT
 
 config BT_DEBUG_CSIS_CLIENT
 	bool "Coordinated Set Identification Profile debug"
-	depends on BT_AUDIO_DEBUG
 	help
 	  Use this option to enable Coordinated Set Identification Profile debug
 	  logs for the Bluetooth Audio functionality.
@@ -109,10 +105,7 @@ endif # BT_CSIS_CLIENT
 
 config BT_DEBUG_CSIS_CRYPTO
 	bool "Coordinated Set Identification Service crypto functions debug"
-	depends on BT_AUDIO_DEBUG
 	depends on BT_CSIS_CLIENT || BT_CSIS
 	help
 	  Use this option to enable Coordinated Set Identification Service
 	  crypto functions debug logs for the Bluetooth Audio functionality.
-
-endif # BT_AUDIO

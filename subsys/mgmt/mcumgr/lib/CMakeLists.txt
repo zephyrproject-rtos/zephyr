@@ -8,12 +8,10 @@ zephyr_interface_library_named(MCUMGR)
 
 target_include_directories(MCUMGR INTERFACE
     mgmt/include
-    cborattr/include
     util/include
     smp/include
 )
 
-add_subdirectory(cborattr)
 add_subdirectory(cmd)
 add_subdirectory(mgmt)
 add_subdirectory(smp)

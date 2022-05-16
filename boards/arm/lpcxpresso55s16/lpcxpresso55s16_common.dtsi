@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "lpcxpresso55s16-pinctrl.dtsi"
+
 / {
 	chosen {
 		zephyr,sram = &sram0;
@@ -12,6 +14,7 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;
+		zephyr,canbus = &can0;
 	};
 
 	aliases{
@@ -114,6 +117,8 @@
 	status = "okay";
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
 };
 
 &flexcomm4 {
@@ -122,17 +127,33 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
 
 	fxos8700@1e {
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";
-		int1-gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
+		int1-gpios = <&gpio1 26 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	};
+};
+
+&can0 {
+	status = "okay";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+	pinctrl-0 = <&pinmux_can0>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
 	};
 };
 
 &hs_lspi {
 	status = "okay";
+	pinctrl-0 = <&pinmux_hs_lspi>;
+	pinctrl-names = "default";
 };
 
 arduino_i2c: &flexcomm4 {};

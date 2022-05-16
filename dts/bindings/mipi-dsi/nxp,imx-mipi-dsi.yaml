@@ -1,0 +1,72 @@
+#
+# Copyright 2022, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+description: NXP MCUX MIPI DSI
+
+compatible: "nxp,imx-mipi-dsi"
+
+include: mipi-dsi-host.yaml
+
+properties:
+    interrupts:
+      required: true
+
+    nxp,lcdif:
+      type: phandle
+      required: true
+      description:
+        Instance of the LCDIF peripheral.
+
+    dpi-color-coding:
+      type: string
+      enum:
+        - "16-bit-config-1"
+        - "16-bit-config-2"
+        - "16-bit-config-3"
+        - "18-bit-config-1"
+        - "18-bit-config-2"
+        - "24-bit"
+      description:
+        MIPI DPI interface color coding. Sets the distribution of RGB bits within
+        the 24-bit d bus, as specified by the DPI specification.
+
+    dpi-pixel-packet:
+      type: string
+      enum:
+        - "16-bit"
+        - "18-bit"
+        - "18-bit-loose"
+        - "24-bit"
+      description:
+        MIPI DSI pixel packet type send through DPI interface.
+
+    dpi-video-mode:
+      type: string
+      enum:
+        - "non-burst-sync-pulse"
+        - "non-burst-sync-event"
+        - "burst"
+      description:
+        DPI video mode.
+
+    dpi-bllp-mode:
+      type: string
+      enum:
+        - "low-power"
+        - "blank"
+        - "null"
+      description:
+        Behavior in BLLP (Blanking or Low-Power Interval).
+
+    autoinsert-eotp:
+      type: boolean
+      description:
+        Automatically insert an EoTp short packet when switching from HS to LP mode.
+
+    dphy-ref-frequency:
+      type: int
+      required: true
+      description:
+        Maximum clock speed supported by the device, in Hz.

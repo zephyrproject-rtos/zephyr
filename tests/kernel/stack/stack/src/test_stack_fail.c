@@ -5,11 +5,11 @@
  */
 
 #include <ztest.h>
-#include <irq_offload.h>
+#include <zephyr/irq_offload.h>
 #include <ztest_error_hook.h>
 
 #define TIMEOUT K_MSEC(100)
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define STACK_LEN 2
 
 static ZTEST_BMEM stack_data_t data[STACK_LEN];
@@ -85,7 +85,7 @@ void test_stack_push_full(void)
 	for (int i = 0; i < STACK_LEN; i++) {
 		zassert_true(k_stack_push(&stack, tx_data[i]) == 0, "push data into stack failed");
 	}
-	/* Verify that push a data in the full stack, a nagetive value will be met */
+	/* Verify that push a data in the full stack, a negative value will be met */
 	zassert_true(k_stack_push(&stack, data_tmp) == -ENOMEM, "push data successful");
 }
 

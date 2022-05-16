@@ -16,20 +16,33 @@
 #define ZEPHYR_ARCH_RISCV_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #include <kernel_arch_data.h>
+#include <pmp.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
+
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_USERSPACE
+	csr_write(mscratch, 0);
+#endif
+#ifdef CONFIG_RISCV_PMP
+	z_riscv_pmp_init();
+#endif
 }
 
 static ALWAYS_INLINE void
-arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
+arch_switch(void *switch_to, void **switched_from)
 {
-	thread->arch.swap_return_value = value;
+	extern void z_riscv_switch(struct k_thread *new, struct k_thread *old);
+	struct k_thread *new = switch_to;
+	struct k_thread *old = CONTAINER_OF(switched_from, struct k_thread,
+					    switch_handle);
+
+	z_riscv_switch(new, old);
 }
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
@@ -37,7 +50,15 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 
 static inline bool arch_is_in_isr(void)
 {
+#ifdef CONFIG_SMP
+	unsigned int key = arch_irq_lock();
+	bool ret = arch_curr_cpu()->nested != 0U;
+
+	arch_irq_unlock(key);
+	return ret;
+#else
 	return _kernel.cpus[0].nested != 0U;
+#endif
 }
 
 extern FUNC_NORETURN void z_riscv_userspace_enter(k_thread_entry_t user_entry,

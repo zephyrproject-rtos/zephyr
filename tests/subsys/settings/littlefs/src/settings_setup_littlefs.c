@@ -5,9 +5,9 @@
  */
 
 #include "settings_test.h"
-#include <device.h>
-#include <fs/fs.h>
-#include <fs/littlefs.h>
+#include <zephyr/device.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
 
 /* NFFS work area strcut */
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
@@ -18,7 +18,7 @@ static struct fs_mount_t littlefs_mnt = {
 	.mnt_point = TEST_FS_MPTR,
 };
 
-void config_setup_littlefs(void)
+void test_config_setup_littlefs(void)
 {
 	int rc;
 	const struct flash_area *fap;

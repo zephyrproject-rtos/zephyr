@@ -33,15 +33,15 @@ class Message:
 
     def __init__(self):
         """
-        Intialize a byte array of 64 bytes for command messages
-        Intialize another byte array of 4096 bytes for bulk messages
+        Initialize a byte array of 64 bytes for command messages
+        Initialize another byte array of 4096 bytes for bulk messages
         """
         self.tx_data = bytearray(64)
         self.tx_bulk_data = bytearray(4096)
 
     def init_tx_data(self):
         """
-        Intialize transmit message buffers to zeros
+        Initialize transmit message buffers to zeros
         """
         for index in range(len(self.tx_data)):
             self.tx_data[index] = 0
@@ -194,7 +194,7 @@ class Message:
 
     def create_execfw_cmd(self):
         """
-        Creates a command to excute firmware
+        Creates a command to execute firmware
         """
         cmd = 'Execute'
         print('CMD >>> %s.' % cmd)

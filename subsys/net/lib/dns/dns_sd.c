@@ -12,16 +12,16 @@
 #include <string.h>
 #include <strings.h>
 
-#include <net/net_context.h>
-#include <net/net_core.h>
-#include <net/dns_sd.h>
-#include <sys/util.h>
-#include <zephyr.h>
+#include <zephyr/net/net_context.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/dns_sd.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/zephyr.h>
 
 #include "dns_pack.h"
 #include "dns_sd.h"
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_dns_sd, CONFIG_DNS_SD_LOG_LEVEL);
 
 const char dns_sd_empty_txt[1];

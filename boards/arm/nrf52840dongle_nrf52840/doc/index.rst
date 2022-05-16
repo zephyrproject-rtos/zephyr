@@ -82,7 +82,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 See `nRF52840 Dongle website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF52840 Dongle board hardware features.
 
@@ -264,7 +264,7 @@ name.
 .. note::
 
    This board supports building other Zephyr applications for flashing with
-   MCUboot in this way also. Just make sure :kconfig:`CONFIG_BOOTLOADER_MCUBOOT`
+   MCUboot in this way also. Just make sure :kconfig:option:`CONFIG_BOOTLOADER_MCUBOOT`
    is set when building your application. For example, to compile blinky for
    loading by MCUboot, use this:
 

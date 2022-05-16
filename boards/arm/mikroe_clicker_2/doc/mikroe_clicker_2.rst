@@ -52,11 +52,11 @@ The Zephyr MikroE Clicker 2 configuration supports the following hardware featur
 | USB       | on-chip    | usb                                 |
 +-----------+------------+-------------------------------------+
 
-Other hardware features are not supported by the Zephyr kernel.
+Other hardware features have not been enabled yet for this board.
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/mikroe_clicker_2/mikroe_cliker_2_defconfig``
+	``boards/arm/mikroe_clicker_2/mikroe_clicker_2_defconfig``
 
 Connections and IOs
 ===================

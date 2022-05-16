@@ -7,7 +7,7 @@
 #ifndef TESTS_SUBSYS_PM_DEVICE_RUNTIME_TEST_DRIVER_H_
 #define TESTS_SUBSYS_PM_DEVICE_RUNTIME_TEST_DRIVER_H_
 
-#include <device.h>
+#include <zephyr/device.h>
 
 /**
  * @brief Put test driver in async test mode.

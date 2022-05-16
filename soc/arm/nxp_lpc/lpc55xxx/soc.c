@@ -12,19 +12,21 @@
  * hardware for the nxp_lpc55s69 platform.
  */
 
-#include <kernel.h>
-#include <device.h>
-#include <init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <soc.h>
-#include <drivers/uart.h>
-#include <linker/sections.h>
-#include <arch/cpu.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/linker/sections.h>
+#include <zephyr/arch/cpu.h>
 #include <aarch32/cortex_m/exc.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
+#endif
 #if CONFIG_USB_DC_NXP_LPCIP3511
 #include "usb_phy.h"
 #include "usb_dc_mcux.h"
@@ -52,14 +54,12 @@ const pll_setup_t pll0Setup = {
  *
  * @brief Initialize the system clock
  *
- * @return N/A
- *
  */
 
 static ALWAYS_INLINE void clock_init(void)
 {
-#if defined(CONFIG_SOC_LPC55S16) || defined(CONFIG_SOC_LPC55S28) || \
-	defined(CONFIG_SOC_LPC55S69_CPU0)
+#if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
+	defined(CONFIG_SOC_LPC55S28) || defined(CONFIG_SOC_LPC55S69_CPU0)
     /*!< Set up the clock sources */
     /*!< Configure FRO192M */
 	/*!< Ensure FRO is on  */
@@ -142,7 +142,7 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Put PHY powerdown under software control */
 	*((uint32_t *)(USBHSH_BASE + 0x50)) = USBHSH_PORTMODE_SW_PDCOM_MASK;
 	/*
-	 * According to reference mannual, device mode setting has to be set by
+	 * According to reference manual, device mode setting has to be set by
 	 * access usb host register
 	 */
 	*((uint32_t *)(USBHSH_BASE + 0x50)) |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
@@ -171,6 +171,12 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay))
 	/* attach PLL0 clock to FLEXCOMM6 */
 	CLOCK_AttachClk(kPLL0_DIV_to_FLEXCOMM7);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can0), nxp_lpc_mcan, okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCanClk, 1U, false);
+	CLOCK_AttachClk(kMCAN_DIV_to_MCAN);
+	RESET_PeripheralReset(kMCAN_RST_SHIFT_RSTn);
 #endif
 
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */
@@ -226,7 +232,9 @@ SYS_INIT(nxp_lpc55xxx_init, PRE_KERNEL_1, 0);
  * @brief Second Core Init
  *
  * This routine boots the secondary core
- * @return N/A
+ *
+ * @retval 0 on success.
+ *
  */
 /* This function is also called at deep sleep resume. */
 int _second_core_init(const struct device *arg)
@@ -240,7 +248,7 @@ int _second_core_init(const struct device *arg)
 	 * The second core first boots from flash (address 0x00000000)
 	 * and then detects its identity (Core no. 1, second) and checks
 	 * registers CPBOOT and use them to continue the boot process.
-	 * Make sure the startup code for first core is
+	 * Make sure the startup code for the first core is
 	 * appropriate and shareable with the second core!
 	 */
 	SYSCON->CPUCFG |= SYSCON_CPUCFG_CPU1ENABLE_MASK;

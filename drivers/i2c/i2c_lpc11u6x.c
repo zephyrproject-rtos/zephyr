@@ -6,16 +6,12 @@
 
 #define DT_DRV_COMPAT nxp_lpc11u6x_i2c
 
-#include <kernel.h>
-#include <drivers/i2c.h>
-#include <drivers/pinmux.h>
-#include <drivers/clock_control.h>
-#include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/clock_control.h>
 #include "i2c_lpc11u6x.h"
 
-#define DEV_CFG(dev) ((dev)->config)
-#define DEV_BASE(dev) (((struct lpc11u6x_i2c_config *) DEV_CFG((dev)))->base)
-#define DEV_DATA(dev) ((dev)->data)
+#define DEV_BASE(dev) (((struct lpc11u6x_i2c_config *)(dev->config))->base)
 
 static void lpc11u6x_i2c_set_bus_speed(const struct lpc11u6x_i2c_config *cfg,
 				       const struct device *clk_dev,
@@ -34,10 +30,12 @@ static void lpc11u6x_i2c_set_bus_speed(const struct lpc11u6x_i2c_config *cfg,
 static int lpc11u6x_i2c_configure(const struct device *dev,
 				  uint32_t dev_config)
 {
-	const struct lpc11u6x_i2c_config *cfg = DEV_CFG(dev);
-	struct lpc11u6x_i2c_data *data = DEV_DATA(dev);
-	const struct device *clk_dev, *pinmux_dev;
-	uint32_t speed, flags = 0;
+	const struct lpc11u6x_i2c_config *cfg = dev->config;
+	struct lpc11u6x_i2c_data *data = dev->data;
+	const struct device *clk_dev;
+	uint32_t speed;
+	int ret;
+	uint8_t mux_selection = PINCTRL_STATE_DEFAULT;
 
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
@@ -47,7 +45,7 @@ static int lpc11u6x_i2c_configure(const struct device *dev,
 		speed = 400000;
 		break;
 	case I2C_SPEED_FAST_PLUS:
-		flags |= IOCON_FASTI2C_EN;
+		mux_selection = PINCTRL_STATE_FAST_PLUS;
 		speed = 1000000;
 		break;
 	case I2C_SPEED_HIGH:
@@ -69,36 +67,21 @@ static int lpc11u6x_i2c_configure(const struct device *dev,
 	k_mutex_lock(&data->mutex, K_FOREVER);
 	lpc11u6x_i2c_set_bus_speed(cfg, clk_dev, speed);
 
-	if (!flags) {
-		goto exit;
+	ret = pinctrl_apply_state(cfg->pincfg, mux_selection);
+	if (ret) {
+		k_mutex_unlock(&data->mutex);
+		return ret;
 	}
-
-	pinmux_dev = device_get_binding(cfg->scl_pinmux_drv);
-	if (!pinmux_dev) {
-		goto err;
-	}
-	pinmux_pin_set(pinmux_dev, cfg->scl_pin, cfg->scl_flags | flags);
-
-	pinmux_dev = device_get_binding(cfg->sda_pinmux_drv);
-	if (!pinmux_dev) {
-		goto err;
-	}
-	pinmux_pin_set(pinmux_dev, cfg->sda_pin, cfg->sda_flags | flags);
-
-exit:
 	k_mutex_unlock(&data->mutex);
 	return 0;
-err:
-	k_mutex_unlock(&data->mutex);
-	return -EINVAL;
 }
 
 static int lpc11u6x_i2c_transfer(const struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr)
 {
-	const struct lpc11u6x_i2c_config *cfg = DEV_CFG(dev);
-	struct lpc11u6x_i2c_data *data = DEV_DATA(dev);
+	const struct lpc11u6x_i2c_config *cfg = dev->config;
+	struct lpc11u6x_i2c_data *data = dev->data;
 	int ret = 0;
 
 	if (!num_msgs) {
@@ -140,8 +123,8 @@ static int lpc11u6x_i2c_transfer(const struct device *dev,
 static int lpc11u6x_i2c_slave_register(const struct device *dev,
 				       struct i2c_slave_config *cfg)
 {
-	const struct lpc11u6x_i2c_config *dev_cfg = DEV_CFG(dev);
-	struct lpc11u6x_i2c_data *data = DEV_DATA(dev);
+	const struct lpc11u6x_i2c_config *dev_cfg = dev->config;
+	struct lpc11u6x_i2c_data *data = dev->data;
 	int ret = 0;
 
 	if (!cfg) {
@@ -174,8 +157,8 @@ exit:
 static int lpc11u6x_i2c_slave_unregister(const struct device *dev,
 					 struct i2c_slave_config *cfg)
 {
-	const struct lpc11u6x_i2c_config *dev_cfg = DEV_CFG(dev);
-	struct lpc11u6x_i2c_data *data = DEV_DATA(dev);
+	const struct lpc11u6x_i2c_config *dev_cfg = dev->config;
+	struct lpc11u6x_i2c_data *data = dev->data;
 
 	if (!cfg) {
 		return -EINVAL;
@@ -192,10 +175,10 @@ static int lpc11u6x_i2c_slave_unregister(const struct device *dev,
 	return 0;
 }
 
-static void lpc11u6x_i2c_isr(const void *arg)
+static void lpc11u6x_i2c_isr(const struct device *dev)
 {
-	struct lpc11u6x_i2c_data *data = DEV_DATA((const struct device *)arg);
-	struct lpc11u6x_i2c_regs *i2c = DEV_BASE((const struct device *) arg);
+	struct lpc11u6x_i2c_data *data = dev->data;
+	struct lpc11u6x_i2c_regs *i2c = DEV_BASE(dev);
 	struct lpc11u6x_i2c_current_transfer *transfer = &data->transfer;
 	uint32_t clear = LPC11U6X_I2C_CONTROL_SI;
 	uint32_t set = 0;
@@ -328,22 +311,15 @@ static void lpc11u6x_i2c_isr(const void *arg)
 
 static int lpc11u6x_i2c_init(const struct device *dev)
 {
-	const struct lpc11u6x_i2c_config *cfg = DEV_CFG(dev);
-	struct lpc11u6x_i2c_data *data = DEV_DATA(dev);
-	const struct device *pinmux_dev, *clk_dev;
+	const struct lpc11u6x_i2c_config *cfg = dev->config;
+	struct lpc11u6x_i2c_data *data = dev->data;
+	const struct device *clk_dev;
+	int err;
 
-	/* Configure SCL and SDA pins */
-	pinmux_dev = device_get_binding(cfg->scl_pinmux_drv);
-	if (!pinmux_dev) {
-		return -EINVAL;
+	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
 	}
-	pinmux_pin_set(pinmux_dev, cfg->scl_pin, cfg->scl_flags);
-
-	pinmux_dev = device_get_binding(cfg->sda_pinmux_drv);
-	if (!pinmux_dev) {
-		return -EINVAL;
-	}
-	pinmux_pin_set(pinmux_dev, cfg->sda_pin, cfg->sda_flags);
 
 	/* Configure clock and de-assert reset for I2Cx */
 	clk_dev = device_get_binding(cfg->clock_drv);
@@ -379,33 +355,26 @@ static const struct i2c_driver_api i2c_api = {
 
 #define LPC11U6X_I2C_INIT(idx)						      \
 									      \
-static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev);	              \
+static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev);	      \
+									      \
+PINCTRL_DT_INST_DEFINE(idx);                                                  \
 									      \
 static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {		      \
 	.base =								      \
 	(struct lpc11u6x_i2c_regs *) DT_INST_REG_ADDR(idx),		      \
 	.clock_drv = DT_LABEL(DT_INST_PHANDLE(idx, clocks)),		      \
-	.scl_pinmux_drv =						      \
-	DT_LABEL(DT_INST_PHANDLE_BY_NAME(idx, pinmuxs, scl)),		      \
-	.sda_pinmux_drv =						      \
-	DT_LABEL(DT_INST_PHANDLE_BY_NAME(idx, pinmuxs, sda)),		      \
 	.irq_config_func = lpc11u6x_i2c_isr_config_##idx,		      \
-	.scl_flags =							      \
-	DT_INST_PHA_BY_NAME(idx, pinmuxs, scl, function),		      \
-	.sda_flags =							      \
-	DT_INST_PHA_BY_NAME(idx, pinmuxs, sda, function),		      \
-	.scl_pin = DT_INST_PHA_BY_NAME(idx, pinmuxs, scl, pin),		      \
-	.sda_pin = DT_INST_PHA_BY_NAME(idx, pinmuxs, sda, pin),		      \
+	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                        \
 	.clkid = DT_INST_PHA_BY_IDX(idx, clocks, 0, clkid),		      \
 };									      \
 									      \
 static struct lpc11u6x_i2c_data i2c_data_##idx;			              \
 									      \
-DEVICE_DT_INST_DEFINE(idx,						      \
-		    &lpc11u6x_i2c_init,					      \
+I2C_DEVICE_DT_INST_DEFINE(idx,						      \
+		    lpc11u6x_i2c_init,					      \
 		    NULL,						      \
 		    &i2c_data_##idx, &i2c_cfg_##idx,			      \
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	      \
+		    PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY,		      \
 		    &i2c_api);						      \
 									      \
 static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev)		      \

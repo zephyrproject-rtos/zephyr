@@ -97,15 +97,6 @@
 };
 
 &flash0 {
-	/*
-	 * If the chosen node has no zephyr,code-partition property, the
-	 * application image link uses the entire flash device. If a
-	 * zephyr,code-partition property is defined, the application link
-	 * will be restricted to that partition.
-	 *
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

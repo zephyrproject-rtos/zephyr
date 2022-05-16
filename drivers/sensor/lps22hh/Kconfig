@@ -52,24 +52,4 @@ config LPS22HH_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-menu "Attributes"
-
-config LPS22HH_SAMPLING_RATE
-	int "Output data rate"
-	range 0 7
-	default 0
-	help
-	  Sensor output data rate expressed in samples per second.
-	  Data rates supported by the chip are:
-	  0: ODR selected at runtime
-	  1: 1Hz
-	  2: 10Hz
-	  3: 25Hz
-	  4: 50Hz
-	  5: 75Hz
-	  6: 100Hz
-	  7: 200Hz
-
-endmenu
-
 endif # LPS22HH
