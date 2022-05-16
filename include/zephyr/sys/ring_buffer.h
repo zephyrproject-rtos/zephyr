@@ -78,8 +78,8 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, int32_t value)
 		RING_BUFFER_SIZE_ASSERT_MSG); \
 	static uint8_t __noinit _ring_buffer_data_##name[size8]; \
 	struct ring_buf name = { \
-		.size = size8, \
-		.buffer = _ring_buffer_data_##name \
+		.buffer = _ring_buffer_data_##name, \
+		.size = size8 \
 	}
 
 /**
