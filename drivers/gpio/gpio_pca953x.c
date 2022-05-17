@@ -428,7 +428,7 @@ static int gpio_pca953x_init(const struct device *dev)
 
 		k_work_init(&drv_data->work, gpio_pca953x_work_handler);
 
-		rc = gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT);
+		rc = gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT | GPIO_ACTIVE_LOW);
 		if (rc) {
 			goto out;
 		}
