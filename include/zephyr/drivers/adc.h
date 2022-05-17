@@ -368,6 +368,19 @@ struct adc_dt_spec {
 	ADC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx), \
 			   DT_IO_CHANNELS_INPUT_BY_IDX(node_id, idx))
 
+/** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
+ *         instance.
+ *
+ * @see ADC_DT_SPEC_GET_BY_IDX()
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx Channel index.
+ *
+ * @return Static initializer for an adc_dt_spec structure.
+ */
+#define ADC_DT_SPEC_INST_GET_BY_IDX(inst, idx) \
+	ADC_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
+
 /**
  * @brief Equivalent to ADC_DT_SPEC_GET_BY_IDX(node_id, 0).
  *
@@ -378,6 +391,16 @@ struct adc_dt_spec {
  * @return Static initializer for an adc_dt_spec structure.
  */
 #define ADC_DT_SPEC_GET(node_id) ADC_DT_SPEC_GET_BY_IDX(node_id, 0)
+
+/** @brief Equivalent to ADC_DT_SPEC_INST_GET_BY_IDX(inst, 0).
+ *
+ * @see ADC_DT_SPEC_GET()
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ *
+ * @return Static initializer for an adc_dt_spec structure.
+ */
+#define ADC_DT_SPEC_INST_GET(inst) ADC_DT_SPEC_GET(DT_DRV_INST(inst))
 
 /**
  * @brief Convert a raw ADC value to millivolts.
