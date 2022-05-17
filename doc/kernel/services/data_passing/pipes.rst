@@ -200,9 +200,6 @@ All data in the pipe is flushed by calling :c:func:`k_pipe_flush`.
 The following code builds on the examples above, and flushes all the
 data in the pipe.
 
-Suggested uses
-**************
-
 .. code-block:: c
 
     void monitor_thread(void)
@@ -214,6 +211,16 @@ Suggested uses
             ...
         }
     }
+
+
+Suggested uses
+**************
+
+Use a pipe to send streams of data between threads.
+
+.. note::
+    A pipe can be used to transfer long streams of data if desired. However it is often preferable to send pointers to large data items to avoid copying the data.
+
 
 Configuration Options
 *********************
