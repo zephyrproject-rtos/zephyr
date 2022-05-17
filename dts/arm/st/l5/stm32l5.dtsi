@@ -218,7 +218,7 @@
 			reg = <0x40002C00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
 			label = "WWDG";
-			interrupts = <0 7>;
+			interrupts = <0 6>;
 			status = "disabled";
 		};
 
