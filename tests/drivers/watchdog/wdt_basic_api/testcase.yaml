@@ -4,7 +4,7 @@ common:
 tests:
   drivers.watchdog:
     filter: not (CONFIG_WDT_SAM or dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog"))
-    platform_exclude: mec15xxevb_assy6853 mimxrt685_evk_cm33
+    platform_exclude: mec15xxevb_assy6853 mimxrt685_evk_cm33 mimxrt595_evk_cm33
   drivers.watchdog.stm32wwdg:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
