@@ -108,4 +108,12 @@ config NET_ETHERNET_BRIDGE_DEFAULT
 	  Say y if this is the case. If you only want to inspect
 	  existing bridge instances then say n.
 
+config NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE
+	bool "Forward unrecognized EtherType frames further into net stack"
+	default y if NET_SOCKETS_PACKET
+	help
+	  When enabled, the Ethernet L2 will forward even those frames for which
+	  it does not recognize the EtherType in the header. By default, such
+	  frames are dropped at the L2 processing.
+
 endif # NET_L2_ETHERNET
