@@ -108,6 +108,8 @@ The Zephyr nucleo_g0b1re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | dac                                 |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 

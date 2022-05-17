@@ -208,6 +208,8 @@ features:
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

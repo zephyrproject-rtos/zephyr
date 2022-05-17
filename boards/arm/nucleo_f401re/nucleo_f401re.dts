@@ -164,6 +164,10 @@
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &wwdg {
 	status = "okay";
 };

@@ -129,6 +129,8 @@ features:
 +-------------+------------+-------------------------------------+
 | CAN/CANFD   | on-chip    | canbus                              |
 +-------------+------------+-------------------------------------+
+| die-temp    | on-chip    | die temperature sensor              |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

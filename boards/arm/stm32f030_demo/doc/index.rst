@@ -56,6 +56,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr porting.
 
