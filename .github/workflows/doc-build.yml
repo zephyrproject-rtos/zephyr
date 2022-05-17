@@ -104,7 +104,7 @@ jobs:
         DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/"
 
         echo "${PR_NUM}" > pr_num
-        echo "::notice:: Documentation will be available shortly at: ${DOC_URL}"
+        echo "Documentation will be available shortly at: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
 
     - name: upload-pr-number
       uses: actions/upload-artifact@v2
