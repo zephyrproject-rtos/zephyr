@@ -978,7 +978,7 @@ static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
 
 static bool tcp_window_full(struct tcp *conn)
 {
-	bool window_full = !(conn->unacked_len < conn->send_win);
+	bool window_full = (conn->send_data_total >= conn->send_win);
 
 	NET_DBG("conn: %p window_full=%hu", conn, window_full);
 
