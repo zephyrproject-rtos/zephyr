@@ -88,6 +88,7 @@ enum sm_engine_state {
 	ENGINE_BOOTSTRAP_TRANS_DONE,
 #endif
 	ENGINE_DO_REGISTRATION,
+	ENGINE_DO_FULL_REGISTRATION,
 	ENGINE_REGISTRATION_SENT,
 	ENGINE_REGISTRATION_DONE,
 	ENGINE_REGISTRATION_DONE_RX_OFF,
@@ -882,7 +883,7 @@ static void sm_handle_registration_update_failure(void)
 	}
 }
 
-static int sm_do_registration(void)
+static void sm_do_registration(void)
 {
 	int ret = 0;
 
@@ -897,7 +898,7 @@ static int sm_do_registration(void)
 	if (ret < 0) {
 		LOG_ERR("Unable to find a valid security instance.");
 		set_sm_state(ENGINE_INIT);
-		return -EINVAL;
+		return;
 	}
 
 	ret = sm_select_server_inst(client.ctx->sec_obj_inst,
@@ -906,7 +907,7 @@ static int sm_do_registration(void)
 	if (ret < 0) {
 		LOG_ERR("Unable to find a valid server instance.");
 		set_sm_state(ENGINE_INIT);
-		return -EINVAL;
+		return;
 	}
 
 	LOG_INF("RD Client started with endpoint '%s' with client lifetime %d",
@@ -916,8 +917,15 @@ static int sm_do_registration(void)
 	if (ret < 0) {
 		LOG_ERR("Cannot init LWM2M engine (%d)", ret);
 		set_sm_state(ENGINE_NETWORK_ERROR);
-		return ret;
+		return;
 	}
+
+	set_sm_state(ENGINE_DO_FULL_REGISTRATION);
+}
+
+static void sm_do_full_registration(void)
+{
+	int ret;
 
 	ret = sm_send_registration(true,
 				   do_registration_reply_cb,
@@ -1091,6 +1099,10 @@ static void lwm2m_rd_client_service(struct k_work *work)
 
 		case ENGINE_DO_REGISTRATION:
 			sm_do_registration();
+			break;
+
+		case ENGINE_DO_FULL_REGISTRATION:
+			sm_do_full_registration();
 			break;
 
 		case ENGINE_DO_UPDATE_REGISTRATION:
