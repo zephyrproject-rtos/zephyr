@@ -23,4 +23,8 @@ config PECI_XEC
 	default y
 	depends on PECI
 
+config EEPROM_XEC
+	default y
+	depends on EEPROM
+
 endif # SOC_MEC172X_NSZ
