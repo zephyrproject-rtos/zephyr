@@ -113,14 +113,14 @@ static const struct can_driver_api can_stm32h7_driver_api = {
 	 * (FDCAN_NBTP).
 	 */
 	.timing_min = {
-		.sjw = 0x00,
+		.sjw = 0x01,
 		.prop_seg = 0x00,
-		.phase_seg1 = 0x00,
-		.phase_seg2 = 0x00,
-		.prescaler = 0x00
+		.phase_seg1 = 0x01,
+		.phase_seg2 = 0x01,
+		.prescaler = 0x01
 	},
 	.timing_max = {
-		.sjw = 0x7f,
+		.sjw = 0x80,
 		.prop_seg = 0x00,
 		.phase_seg1 = 0x100,
 		.phase_seg2 = 0x80,
@@ -133,11 +133,11 @@ static const struct can_driver_api can_stm32h7_driver_api = {
 	 * register (FDCAN_DBTP).
 	 */
 	.timing_data_min = {
-		.sjw = 0x00,
+		.sjw = 0x01,
 		.prop_seg = 0x00,
-		.phase_seg1 = 0x00,
-		.phase_seg2 = 0x00,
-		.prescaler = 0x00
+		.phase_seg1 = 0x01,
+		.phase_seg2 = 0x01,
+		.prescaler = 0x01
 	},
 	.timing_data_max = {
 		.sjw = 0x10,
