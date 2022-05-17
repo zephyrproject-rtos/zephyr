@@ -121,7 +121,7 @@ struct fcb {
 	/**< writes to flash have to aligned to this, internal state */
 
 	const struct flash_area *fap;
-	/**< Flash area used by the fcb instance, , internal state.
+	/**< Flash area used by the fcb instance, internal state.
 	 * This can be transfer to FCB user
 	 */
 
