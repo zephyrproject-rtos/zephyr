@@ -1,0 +1,4 @@
+tests:
+  lib.spsc_pbuf:
+    integration_platforms:
+      - native_posix

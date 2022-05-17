@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_IPC_SERVICE_IPC_ICMSG_BUF_H_
-#define ZEPHYR_INCLUDE_IPC_SERVICE_IPC_ICMSG_BUF_H_
+#ifndef ZEPHYR_INCLUDE_SYS_SPSC_PBUF_H_
+#define ZEPHYR_INCLUDE_SYS_SPSC_PBUF_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief IPC Service ICMsg buffer API
- * @ingroup ipc_service_icmsg_buffer_api IPC service ICMsg buffer API
+ * @brief Single producer, single consumer packet buffer API
+ * @ingroup kernel_apis
  * @{
  */
 
@@ -29,7 +29,7 @@ extern "C" {
  * is encapsulated to a message.
  *
  */
-struct icmsg_buf {
+struct spsc_pbuf {
 	uint32_t len;		/* Length of data[] in bytes. */
 	uint32_t wr_idx;	/* Index of the first free byte in data[] */
 	uint32_t rd_idx;	/* Index of the first valid byte in data[] */
@@ -37,9 +37,9 @@ struct icmsg_buf {
 };
 
 /**
- * @brief Initialize inter core messaging buffer.
+ * @brief Initialize the packet buffer.
  *
- * This function initializes inter core messaging buffer on top of dedicated
+ * This function initializes the packet buffer on top of a dedicated
  * memory region.
  *
  * @param buf			Pointer to a memory region on which buffer is
@@ -48,39 +48,39 @@ struct icmsg_buf {
  *				contain the internal structure and at least two
  *				bytes of data (one is reserved for written
  *				messages length).
- * @retval struct icmsg_buf*	Pointer to the created buffer. The pointer
+ * @retval struct spsc_pbuf*	Pointer to the created buffer. The pointer
  *				points to the same address as buf.
  */
-struct icmsg_buf *icmsg_buf_init(void *buf, size_t blen);
+struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen);
 
 /**
- * @brief Write specified amount of data to the inter core messaging buffer.
+ * @brief Write specified amount of data to the packet buffer.
  *
- * @param ib	A icmsg buffer to which to write.
- * @param buf	Pointer to the data to be written to icmsg buffer.
- * @param len	Number of bytes to be written to the icmsg buffer.
+ * @param pb	A buffer to which to write.
+ * @param buf	Pointer to the data to be written to the buffer.
+ * @param len	Number of bytes to be written to the buffer.
  * @retval int	Number of bytes written, negative error code on fail.
  *		-EINVAL, if len == 0.
- *		-ENOMEM, if len is bigger than the icmsg buffer can fit.
+ *		-ENOMEM, if len is bigger than the buffer can fit.
  */
-int icmsg_buf_write(struct icmsg_buf *ib, const char *buf, uint16_t len);
+int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len);
 
 /**
- * @brief Read specified amount of data from the inter core messaging buffer.
+ * @brief Read specified amount of data from the packet buffer.
  *
  * Single read allows to read the message send by the single write.
  * The provided buf must be big enough to store the whole message.
  *
- * @param ib		A icmsg buffer to which data are to be written
+ * @param pb		A buffer from which data is to be read.
  * @param buf		Data pointer to which read data will be written.
  *			If NULL, len of stored message is returned.
- * @param len		Number of bytes to be read from the icmsg buffer.
+ * @param len		Number of bytes to be read from the buffer.
  * @retval int		Bytes read, negative error code on fail.
  *			Bytes to be read, if buf == NULL.
  *			-ENOMEM, if message can not fit in provided buf.
  *			-EAGAIN, if not whole message is ready yet.
  */
-int icmsg_buf_read(struct icmsg_buf *ib, char *buf, uint16_t len);
+int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
 
 
 /**
@@ -91,4 +91,4 @@ int icmsg_buf_read(struct icmsg_buf *ib, char *buf, uint16_t len);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_IPC_SERVICE_IPC_ICMSG_BUF_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_SPSC_PBUF_H_ */

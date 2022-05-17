@@ -38,6 +38,13 @@ config MPSC_PBUF
 	  storing variable length packets in a circular way and operate directly
 	  on the buffer memory.
 
+config SPSC_PBUF
+	bool "Single producer, single consumer packet buffer"
+	help
+	  Enable usage of spsc packet buffer. Packet buffer is capable of
+	  storing variable length packets in a circular way and operate directly
+	  on the buffer memory.
+
 config SHARED_MULTI_HEAP
 	bool "Shared multi-heap manager"
 	help
