@@ -40,6 +40,10 @@ config COUNTER_MCUX_CTIMER
 	default y
 	depends on COUNTER
 
+config WDT_MCUX_WWDT
+	default y
+	depends on WATCHDOG
+
 if MCUX_OS_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
