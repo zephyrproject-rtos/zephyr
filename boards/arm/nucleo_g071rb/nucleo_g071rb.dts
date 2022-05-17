@@ -157,6 +157,10 @@
 	pinctrl-names = "default";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

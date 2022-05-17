@@ -109,6 +109,8 @@ features:
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | Direct Memory Access                |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 

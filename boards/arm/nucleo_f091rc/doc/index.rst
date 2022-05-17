@@ -106,6 +106,8 @@ The Zephyr nucleo_f091rc board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | Direct Memory Access                |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 

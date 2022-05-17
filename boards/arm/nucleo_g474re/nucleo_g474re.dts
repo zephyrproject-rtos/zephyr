@@ -170,6 +170,10 @@
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &dac1 {
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";

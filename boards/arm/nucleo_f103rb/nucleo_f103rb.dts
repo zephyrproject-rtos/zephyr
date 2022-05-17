@@ -125,6 +125,10 @@
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &dma1 {
 	status = "okay";
 };

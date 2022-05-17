@@ -87,6 +87,8 @@ The Zephyr nucleo_401re board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | System Window Watchdog              |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
