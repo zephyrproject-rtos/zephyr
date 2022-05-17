@@ -91,6 +91,7 @@ enum sm_engine_state {
 	ENGINE_REGISTRATION_SENT,
 	ENGINE_REGISTRATION_DONE,
 	ENGINE_REGISTRATION_DONE_RX_OFF,
+	ENGINE_DO_UPDATE_REGISTRATION,
 	ENGINE_UPDATE_SENT,
 	ENGINE_DEREGISTER,
 	ENGINE_DEREGISTER_SENT,
@@ -931,11 +932,37 @@ static int sm_do_registration(void)
 	return ret;
 }
 
-static int sm_registration_done(void)
+static void sm_do_update_registration(void)
 {
 	int ret = 0;
 	bool update_objects;
 
+	update_objects = client.update_objects;
+	client.update_objects = false;
+
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+	ret = lwm2m_engine_connection_resume(client.ctx);
+	if (ret) {
+		lwm2m_engine_context_close(client.ctx);
+		/* perform full registration */
+		set_sm_state(ENGINE_DO_REGISTRATION);
+		return;
+	}
+#endif
+
+	ret = sm_send_registration(update_objects, do_update_reply_cb, do_update_timeout_cb);
+	if (!ret) {
+		set_sm_state(ENGINE_UPDATE_SENT);
+	} else {
+		LOG_ERR("Registration update err: %d", ret);
+		lwm2m_engine_context_close(client.ctx);
+		/* perform full registration */
+		set_sm_state(ENGINE_DO_REGISTRATION);
+	}
+}
+
+static void sm_registration_done(void)
+{
 	/*
 	 * check for lifetime seconds - SECONDS_TO_UPDATE_EARLY
 	 * so that we can update early and avoid lifetime timeout
@@ -944,30 +971,8 @@ static int sm_registration_done(void)
 	    (client.trigger_update ||
 	     ((client.lifetime - SECONDS_TO_UPDATE_EARLY) <=
 	      (k_uptime_get() - client.last_update) / 1000))) {
-		update_objects = client.update_objects;
 		client.trigger_update = false;
-		client.update_objects = false;
-#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
-		ret = lwm2m_engine_connection_resume(client.ctx);
-		if (ret) {
-			lwm2m_engine_context_close(client.ctx);
-			/* perform full registration */
-			set_sm_state(ENGINE_DO_REGISTRATION);
-			return ret;
-		}
-#endif
-
-		ret = sm_send_registration(update_objects,
-					   do_update_reply_cb,
-					   do_update_timeout_cb);
-		if (!ret) {
-			set_sm_state(ENGINE_UPDATE_SENT);
-		} else {
-			LOG_ERR("Registration update err: %d", ret);
-			lwm2m_engine_context_close(client.ctx);
-			/* perform full registration */
-			set_sm_state(ENGINE_DO_REGISTRATION);
-		}
+		set_sm_state(ENGINE_DO_UPDATE_REGISTRATION);
 	}
 
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED) &&
@@ -976,8 +981,6 @@ static int sm_registration_done(void)
 	     CONFIG_LWM2M_QUEUE_MODE_UPTIME)) {
 		set_sm_state(ENGINE_REGISTRATION_DONE_RX_OFF);
 	}
-
-	return ret;
 }
 
 static int sm_do_deregister(void)
@@ -1088,6 +1091,10 @@ static void lwm2m_rd_client_service(struct k_work *work)
 
 		case ENGINE_DO_REGISTRATION:
 			sm_do_registration();
+			break;
+
+		case ENGINE_DO_UPDATE_REGISTRATION:
+			sm_do_update_registration();
 			break;
 
 		case ENGINE_REGISTRATION_SENT:
