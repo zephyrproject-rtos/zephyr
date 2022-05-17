@@ -21,6 +21,7 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		usart-0 = &flexcomm0;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
@@ -217,6 +218,10 @@ arduino_serial: &flexcomm12 {
 };
 
 &ctimer4 {
+	status = "okay";
+};
+
+&wwdt0 {
 	status = "okay";
 };
 
