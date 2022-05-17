@@ -487,12 +487,12 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
 
 	for (i = 0; i < dma_ctx->dma_channels; i++) {
 		if (!atomic_test_and_set_bit(dma_ctx->atomic, i)) {
-			channel = i;
 			if (api->chan_filter &&
-			    !api->chan_filter(dev, channel, filter_param)) {
-				atomic_clear_bit(dma_ctx->atomic, channel);
+			    !api->chan_filter(dev, i, filter_param)) {
+				atomic_clear_bit(dma_ctx->atomic, i);
 				continue;
 			}
+			channel = i;
 			break;
 		}
 	}
