@@ -17,24 +17,42 @@ extern "C" {
  * @{
  */
 
+/**@defgroup SPSC_PBUF_FLAGS MPSC packet buffer flags
+ * @{
+ */
+
+/** @brief Flag indicating that cache shall be handled. */
+#define SPSC_PBUF_CACHE BIT(0)
+
+/**@} */
+
 /**
- * @brief Inter core messaging buffer
+ * @brief Single producer, single consumer packet buffer
  *
- * The inter core messaging buffer implements lightweight unidirectional
- * messaging buffer with read/write semantics on top of a memory region shared
- * by the reader and writer. It embeds cache and memory barier management to
- * ensure correct data access.
+ * The SPSC packet buffer implements lightweight unidirectional packet buffer
+ * with read/write semantics on top of a memory region shared
+ * by the reader and writer. It optionally embeds cache and memory barier
+ * management to ensure correct data access.
  *
- * This structure supports single writter and reader. Data stored in the buffer
- * is encapsulated to a message.
+ * This structure supports single writer and reader. Data stored in the buffer
+ * is encapsulated to a message (with length header).
  *
  */
 struct spsc_pbuf {
 	uint32_t len;		/* Length of data[] in bytes. */
 	uint32_t wr_idx;	/* Index of the first free byte in data[] */
 	uint32_t rd_idx;	/* Index of the first valid byte in data[] */
+	uint32_t flags;		/* Flags. See @ref SPSC_PBUF_FLAGS */
 	uint8_t data[];		/* Buffer data. */
 };
+
+/** @brief Get buffer capacity.
+ *
+ * @param blen Length of the buffer dedicated for the packet buffer.
+ *
+ * @return Packet buffer capacity.
+ */
+#define SPSC_PBUF_CAPACITY(blen) ((blen) - offsetof(struct spsc_pbuf, data))
 
 /**
  * @brief Initialize the packet buffer.
@@ -48,10 +66,11 @@ struct spsc_pbuf {
  *				contain the internal structure and at least two
  *				bytes of data (one is reserved for written
  *				messages length).
+ * @param flags			Option flags. See @ref SPSC_PBUF_FLAGS.
  * @retval struct spsc_pbuf*	Pointer to the created buffer. The pointer
  *				points to the same address as buf.
  */
-struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen);
+struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen, uint32_t flags);
 
 /**
  * @brief Write specified amount of data to the packet buffer.
