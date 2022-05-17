@@ -236,6 +236,11 @@ static void lp_comm_complete_cte_req(struct ll_conn *conn, struct proc_ctx *ctx)
 				if (conn->llcp.cte_req.req_interval != 0U) {
 					conn->llcp.cte_req.req_expire =
 						conn->llcp.cte_req.req_interval;
+				} else {
+					/* Disable the CTE request procedure when it is completed in
+					 * case it was executed as non-periodic.
+					 */
+					conn->llcp.cte_req.is_enabled = 0U;
 				}
 				ctx->state = LP_COMMON_STATE_IDLE;
 			} else if (llcp_ntf_alloc_is_available()) {
