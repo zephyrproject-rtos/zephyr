@@ -924,7 +924,8 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 	SETUP_CMD("AT+QCCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
 #endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
-	SETUP_CMD_NOHANDLE("AT+QICSGP=1,1,\"" MDM_APN "\",\"" MDM_USERNAME "\", \"" MDM_PASSWORD "\",1"),
+	SETUP_CMD_NOHANDLE("AT+QICSGP=1,1,\"" MDM_APN "\",\""
+			   MDM_USERNAME "\",\"" MDM_PASSWORD "\",1"),
 };
 
 /* Func: modem_pdp_context_active
