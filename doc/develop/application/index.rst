@@ -73,7 +73,11 @@ Application types
 *****************
 
 Based on where the source code of the application is located we can distinguish
-between three basic application types.
+between three basic application types:
+
+* Zephyr repository application
+* Zephyr workspace application
+* Zephyr freestanding application
 
 You can find out more about how the build system supports all the application
 types described in this section in the :ref:`cmake_pkg` section.
@@ -83,8 +87,10 @@ types described in this section in the :ref:`cmake_pkg` section.
 Zephyr repository application
 =============================
 
-The default Zephyr :ref:`west workspace <west-workspaces>` has the following
-structure:
+An application located within the ``zephyr`` folder in a Zephyr :ref:`west workspace <west-workspaces>` is referred to as a Zephyr
+repository application.
+In the following example, the ``hello_world`` :ref:`sample <hello_world>` is a Zephyr
+repository application:
 
 .. code-block:: none
 
@@ -101,17 +107,14 @@ structure:
         ├── tests/
         └── ...
 
-Any application located within the ``zephyr`` folder is referred to as a Zephyr
-repository application.
-For example, the ``hello_world`` :ref:`sample <hello_world>` is a Zephyr
-repository application.
-
 .. _zephyr-workspace-app:
 
 Zephyr workspace application
 ============================
 
-A Zephyr :ref:`workspace <west-workspaces>` has the following overall structure:
+An application located within a workspace, but outside the Zephyr repository
+itself, is referred to as a Zephyr workspace application.
+In the following example, ``app`` is a Zephyr workspace application:
 
 .. code-block:: none
 
@@ -126,17 +129,14 @@ A Zephyr :ref:`workspace <west-workspaces>` has the following overall structure:
    └─── applications/
         └── app/
 
-Any application located within a workspace, but outside the Zephyr repository
-itself, is referred to as a Zephyr workspace application.
-In this example ``app`` is a Zephyr workspace application.
-
 .. _zephyr-freestanding-app:
 
 Zephyr freestanding application
 ===============================
 
-A Zephyr freestanding application is a Zephyr application located outside of a
-Zephyr :ref:`workspace <west-workspaces>`.
+A Zephyr application located outside of a Zephyr :ref:`workspace <west-workspaces>`
+is referred to as a Zephyr freestanding application.
+In the following example, ``app`` is a Zephyr freestanding application:
 
 .. code-block:: none
 
@@ -154,8 +154,6 @@ Zephyr :ref:`workspace <west-workspaces>`.
         ├── prj.conf
         └── src/
             └── main.c
-
-In this example ``app`` is a Zephyr freestanding application.
 
 Example workspace application
 ******************************
