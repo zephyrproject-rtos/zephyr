@@ -59,6 +59,7 @@ struct bt_audio_ep {
 };
 
 struct bt_audio_unicast_group {
+	bool allocated;
 	/* QoS used to create the CIG */
 	struct bt_codec_qos *qos;
 	struct bt_iso_cig *cig;

@@ -994,7 +994,7 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams[],
 	unicast_group = NULL;
 	for (index = 0; index < ARRAY_SIZE(unicast_groups); index++) {
 		/* Find free entry */
-		if (sys_slist_is_empty(&unicast_groups[index].streams)) {
+		if (!unicast_groups[index].allocated) {
 			unicast_group = &unicast_groups[index];
 			break;
 		}
@@ -1005,6 +1005,7 @@ int bt_audio_unicast_group_create(struct bt_audio_stream *streams[],
 		return -ENOMEM;
 	}
 
+	unicast_group->allocated = true;
 	for (size_t i = 0; i < num_stream; i++) {
 		sys_slist_t *group_streams = &unicast_group->streams;
 		struct bt_audio_stream *stream;
@@ -1127,8 +1128,8 @@ int bt_audio_unicast_group_remove_streams(struct bt_audio_unicast_group *unicast
 	 * that would start the ISO connection procedure
 	 */
 	cig = unicast_group->cig;
-	if (cig != NULL && cig->state != BT_ISO_CIG_STATE_CONFIGURED) {
-		BT_DBG("At least one unicast group stream is started");
+	if (cig != NULL) {
+		BT_DBG("At least one unicast group stream has configured QoS");
 		return -EBADMSG;
 	}
 
