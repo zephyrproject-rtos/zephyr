@@ -85,6 +85,8 @@ features:
 +-----------+------------+-------------------------------------+
 | WDT       | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | OctalSPI Flash                      |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
