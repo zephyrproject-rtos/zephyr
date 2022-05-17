@@ -161,6 +161,10 @@
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &aes {
 	status = "okay";
 };

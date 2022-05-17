@@ -211,6 +211,16 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&adc4 {
+	pinctrl-0 = <&adc4_in19_pb1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
 &dac1 {
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";

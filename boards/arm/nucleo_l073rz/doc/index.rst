@@ -102,6 +102,8 @@ The Zephyr nucleo_l073rz board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | Random Number Generator             |
 +-----------+------------+-------------------------------------+
+| die-temp  | on-chip    | die temperature sensor              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 

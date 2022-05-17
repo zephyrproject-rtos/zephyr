@@ -106,6 +106,8 @@ The Zephyr nucleo_207zg board configuration supports the following hardware feat
 +-------------+------------+-------------------------------------+
 | DMA         | on-chip    | Direct Memory Access                |
 +-------------+------------+-------------------------------------+
+| die-temp    | on-chip    | die temperature sensor              |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

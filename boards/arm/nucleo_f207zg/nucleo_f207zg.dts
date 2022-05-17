@@ -151,6 +151,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&die_temp {
+	status = "okay";
+};
+
 &dma2 {
 	status = "okay";
 };

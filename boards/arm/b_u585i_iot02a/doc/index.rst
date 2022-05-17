@@ -191,6 +191,7 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 | USB       | on-chip    | usb_device                          |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
+| die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
