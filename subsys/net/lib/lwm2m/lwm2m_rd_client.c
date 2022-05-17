@@ -120,6 +120,8 @@ struct lwm2m_rd_client_info {
 
 	bool trigger_update : 1;
 	bool update_objects : 1;
+
+	bool has_registration : 1;
 } client;
 
 /* Allocate some data for queries and updates. Make sure it's large enough to
@@ -214,6 +216,7 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 		if (client.engine_state == ENGINE_REGISTRATION_SENT) {
 			event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE;
 		} else if (client.engine_state == ENGINE_UPDATE_SENT) {
+			client.has_registration = false;
 			event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE;
 		} else if (client.engine_state == ENGINE_DEREGISTER_SENT) {
 			event = LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE;
@@ -241,6 +244,7 @@ static void sm_handle_failure_state(enum sm_engine_state sm_state)
 	if (client.engine_state == ENGINE_REGISTRATION_SENT) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE;
 	} else if (client.engine_state == ENGINE_UPDATE_SENT) {
+		client.has_registration = false;
 		sm_handle_registration_update_failure();
 		return;
 	} else if (client.engine_state == ENGINE_DEREGISTER_SENT) {
@@ -400,6 +404,7 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 		memcpy(client.server_ep, options[1].value,
 		       options[1].len);
 		client.server_ep[options[1].len] = '\0';
+		client.has_registration = true;
 		set_sm_state(ENGINE_REGISTRATION_DONE);
 		LOG_INF("Registration Done (EP='%s')",
 			log_strdup(client.server_ep));
@@ -920,7 +925,11 @@ static void sm_do_registration(void)
 		return;
 	}
 
-	set_sm_state(ENGINE_DO_FULL_REGISTRATION);
+	if (client.has_registration) {
+		set_sm_state(ENGINE_DO_UPDATE_REGISTRATION);
+	} else {
+		set_sm_state(ENGINE_DO_FULL_REGISTRATION);
+	}
 }
 
 static void sm_do_full_registration(void)
@@ -952,6 +961,7 @@ static void sm_do_update_registration(void)
 	ret = lwm2m_engine_connection_resume(client.ctx);
 	if (ret) {
 		lwm2m_engine_context_close(client.ctx);
+		client.has_registration = false;
 		/* perform full registration */
 		set_sm_state(ENGINE_DO_REGISTRATION);
 		return;
@@ -964,6 +974,7 @@ static void sm_do_update_registration(void)
 	} else {
 		LOG_ERR("Registration update err: %d", ret);
 		lwm2m_engine_context_close(client.ctx);
+		client.has_registration = false;
 		/* perform full registration */
 		set_sm_state(ENGINE_DO_REGISTRATION);
 	}
