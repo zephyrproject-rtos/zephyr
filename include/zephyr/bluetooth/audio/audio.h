@@ -1596,9 +1596,7 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
  *  This function can be used to remove streams from a bt_audio_unicast_group.
  *
  *  This can be called at any time before any of the streams in the
- *  group has been started (see bt_audio_stream_ops.started()).
- *  This can also be called after the streams have been stopped
- *  (see bt_audio_stream_ops.stopped()).
+ *  group has been QoS configured (see bt_audio_stream_ops.qos_set()).
  *
  *  @param unicast_group  Pointer to the unicast group
  *  @param streams        Array of stream object pointers removed from the
