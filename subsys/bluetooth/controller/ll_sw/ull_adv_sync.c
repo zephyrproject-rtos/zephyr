@@ -455,11 +455,13 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	uint8_t ter_idx;
 	uint8_t err;
 
+	/* Check for valid advertising set */
 	adv =  ull_adv_is_created_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
+	/* Check for advertising set type */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
 		uint8_t err;
 
@@ -469,9 +471,17 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		}
 	}
 
+	/* Check if periodic advertising is associated with advertising set */
 	lll_sync = adv->lll.sync;
 	if (!lll_sync) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	sync = HDR_LLL2ULL(lll_sync);
+
+	/* Reject setting fragment when periodic advertising is enabled */
+	if (sync->is_enabled && (op <= BT_HCI_LE_EXT_ADV_OP_LAST_FRAG)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
@@ -511,12 +521,10 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		return err;
 	}
 
-	sync = HDR_LLL2ULL(lll_sync);
-
 	/* Parameter validation, if operation is 0x04 (unchanged data)
 	 * - periodic advertising is disabled, or
 	 * - periodic advertising contains no data, or
-	 * - Advertising Data Length is zero
+	 * - Advertising Data Length is not zero
 	 */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
 	    (op == BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA) &&
