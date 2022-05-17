@@ -30,7 +30,7 @@
 
 static struct bt_has has;
 
-#if CONFIG_BT_HAS_PRESET_COUNT > 0
+#if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
 static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				   const void *data, uint16_t len, uint16_t offset, uint8_t flags);
 
@@ -46,7 +46,12 @@ static ssize_t read_active_preset_index(struct bt_conn *conn, const struct bt_ga
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &has.active_index,
 				 sizeof(has.active_index));
 }
-#endif /* CONFIG_BT_HAS_PRESET_COUNT > 0 */
+
+static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+{
+	BT_DBG("attr %p value 0x%04x", attr, value);
+}
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
@@ -61,17 +66,12 @@ static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *at
 				 sizeof(has.features));
 }
 
-static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
-{
-	BT_DBG("attr %p value 0x%04x", attr, value);
-}
-
 /* Hearing Access Service GATT Attributes */
 BT_GATT_SERVICE_DEFINE(has_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HAS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HAS_HEARING_AID_FEATURES, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ_ENCRYPT, read_features, NULL, NULL),
-#if CONFIG_BT_HAS_PRESET_COUNT > 0
+#if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
 	BT_GATT_CHARACTERISTIC(BT_UUID_HAS_PRESET_CONTROL_POINT,
 #if defined(CONFIG_BT_EATT)
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_INDICATE | BT_GATT_CHRC_NOTIFY,
@@ -84,10 +84,10 @@ BT_GATT_SERVICE_DEFINE(has_svc,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_READ_ENCRYPT,
 			       read_active_preset_index, NULL, NULL),
 	BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
-#endif /* CONFIG_BT_HAS_PRESET_COUNT > 0 */
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 );
 
-#if CONFIG_BT_HAS_PRESET_COUNT > 0
+#if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
 #define PRESET_CONTROL_POINT_ATTR &has_svc.attrs[4]
 
 static struct has_client {
@@ -706,7 +706,7 @@ void bt_has_preset_foreach(uint8_t index, bt_has_preset_func_t func, void *user_
 
 	preset_foreach(start_index, end_index, bt_has_preset_foreach_func, &data);
 }
-#endif /* CONFIG_BT_HAS_PRESET_COUNT > 0 */
+#endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 static int has_init(const struct device *dev)
 {

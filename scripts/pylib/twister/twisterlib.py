@@ -718,9 +718,10 @@ class DeviceHandler(Handler):
                 serial_line = ser.readline()
             except TypeError:
                 pass
+            # ignore SerialException which may happen during the serial device
+            # power off/on process.
             except serial.SerialException:
-                ser.close()
-                break
+                pass
 
             # Just because ser_fileno has data doesn't mean an entire line
             # is available yet.
@@ -1761,6 +1762,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.skip = False
         self.platform_exclude = None
         self.platform_allow = None
+        self.platform_type = []
         self.toolchain_exclude = None
         self.toolchain_allow = None
         self.ts_filter = None
@@ -3012,6 +3014,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                        "extra_sections": {"type": "list", "default": []},
                        "integration_platforms": {"type": "list", "default": []},
                        "testcases": {"type": "list", "default": []},
+                       "platform_type": {"type": "list", "default": []},
                        "platform_exclude": {"type": "set"},
                        "platform_allow": {"type": "set"},
                        "toolchain_exclude": {"type": "set"},
@@ -3389,6 +3392,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                         ts.skip = ts_dict["skip"]
                         ts.platform_exclude = ts_dict["platform_exclude"]
                         ts.platform_allow = ts_dict["platform_allow"]
+                        ts.platform_type = ts_dict["platform_type"]
                         ts.toolchain_exclude = ts_dict["toolchain_exclude"]
                         ts.toolchain_allow = ts_dict["toolchain_allow"]
                         ts.ts_filter = ts_dict["filter"]
@@ -3672,6 +3676,9 @@ class TestPlan(DisablePyTestCollectionMixin):
 
                 if ts.platform_allow and plat.name not in ts.platform_allow:
                     discards[instance] = discards.get(instance, "Not in testsuite platform allow list")
+
+                if ts.platform_type and plat.type not in ts.platform_type:
+                    discards[instance] = discards.get(instance, "Not in testsuite platform type list")
 
                 if ts.toolchain_allow and toolchain not in ts.toolchain_allow:
                     discards[instance] = discards.get(instance, "Not in testsuite toolchain allow list")
@@ -4633,7 +4640,7 @@ class HardwareMap:
             with open(hwm_file, 'r') as yaml_file:
                 hwm = yaml.load(yaml_file, Loader=SafeLoader)
                 if hwm:
-                    hwm.sort(key=lambda x: x.get('serial', ''))
+                    hwm.sort(key=lambda x: x.get('id', ''))
 
                     # disconnect everything
                     for h in hwm:

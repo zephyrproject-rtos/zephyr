@@ -90,7 +90,7 @@ jobs:
           else
             echo "TWISTER_NODES=${MATRIX_SIZE}" >> $GITHUB_ENV
           fi
-          rm -f testplan.csv .testplan
+          rm -f testplan.json .testplan
 
       - name: Determine matrix size
         id: output-services
@@ -226,11 +226,11 @@ jobs:
       - if: github.event_name == 'pull_request_target'
         name: Run Tests with Twister (Pull Request)
         run: |
-          rm -f testplan.csv
+          rm -f testplan.json
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
           python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request
-          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.csv ${TWISTER_COMMON} ${PR_OPTIONS}
+          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
           if [ "${{matrix.subset}}" = "1" -a ${{needs.twister-build-prep.outputs.fullrun}} = 'True' ]; then
             ./scripts/zephyr_module.py --twister-out module_tests.args
             if [ -s module_tests.args ]; then
@@ -263,7 +263,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             twister-out/twister.xml
-            testplan.csv
+            testplan.json
 
   twister-test-results:
     name: "Publish Unit Tests Results"

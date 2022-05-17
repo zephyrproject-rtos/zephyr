@@ -33,6 +33,9 @@
 #define FOR_EACH_DFE_GPIO(fn, sep) \
 	FOR_EACH(fn, sep, 0, 1, 2, 3, 4, 5, 6, 7)
 
+/* Index of antenna id in antenna switching pattern used for GUARD and REFERENCE period */
+#define GUARD_REF_ANTENNA_PATTERN_IDX 1U
+
 /* Direction Finding antenna matrix configuration */
 struct df_ant_cfg {
 	uint8_t ant_num;
@@ -105,6 +108,15 @@ void radio_df_ant_switch_pattern_set(const uint8_t *patterns, uint8_t len)
 	for (uint8_t idx = 0; idx < len; ++idx) {
 		NRF_RADIO->SWITCHPATTERN = patterns[idx];
 	}
+
+	/* Store antenna id used for GUARD and REFERENCE period at the end of SWITCHPATTERN buffer.
+	 * It is required to apply reference antenna id when user provided switchpattern is
+	 * exhausted.
+	 * Maximum length of the switch pattern provided to this function is at maximum lower by one
+	 * than capacity of SWITCHPATTERN buffer. Hence there is always space for reference antenna
+	 * id after end of switch pattern.
+	 */
+	NRF_RADIO->SWITCHPATTERN = patterns[GUARD_REF_ANTENNA_PATTERN_IDX];
 }
 
 /*

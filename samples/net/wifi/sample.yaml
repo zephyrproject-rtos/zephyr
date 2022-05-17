@@ -7,6 +7,9 @@ sample:
 tests:
   sample.net.wifi:
     platform_allow: cc3220sf_launchxl disco_l475_iot1
+  sample.net.wifi.mikroe_wifi_bt_click:
+    extra_args: SHIELD=mikroe_wifi_bt_click_mikrobus
+    platform_allow: lpcxpresso55s69_cpu0
   sample.net.wifi.esp_8266:
     extra_args: SHIELD=esp_8266
     platform_allow: sam4e_xpro

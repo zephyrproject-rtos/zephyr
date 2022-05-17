@@ -70,7 +70,7 @@ zephyr_library_sources_ifdef(
   media_controller.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_HAS
+  CONFIG_BT_HAS_PRESET_SUPPORT
   has.c
   )
 zephyr_library_sources_ifdef(

@@ -85,7 +85,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		return;
 	}
 
-	arm64_cpu_boot_params.sp = Z_THREAD_STACK_BUFFER(stack) + sz;
+	arm64_cpu_boot_params.sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
 	arm64_cpu_boot_params.fn = fn;
 	arm64_cpu_boot_params.arg = arg;
 	arm64_cpu_boot_params.cpu_num = cpu_num;
@@ -213,9 +213,9 @@ void flush_fpu_ipi_handler(const void *unused)
 
 void z_arm64_flush_fpu_ipi(unsigned int cpu)
 {
-	const uint64_t mpidr = GET_MPIDR();
+	const uint64_t mpidr = cpu_node_list[cpu];
 
-	gic_raise_sgi(SGI_FPU_IPI, mpidr, (1 << cpu));
+	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << MPIDR_TO_CORE(mpidr));
 }
 #endif
 

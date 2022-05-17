@@ -703,6 +703,22 @@ struct bt_iso_info {
 	/** The maximum number of subevents in each ISO event */
 	uint8_t  max_subevent;
 
+	/**
+	 * @brief True if the channel is able to send data
+	 *
+	 * This is always true when @p type is BT_ISO_CHAN_TYPE_BROADCASTER,
+	 * and never true when @p type is BT_ISO_CHAN_TYPE_SYNC_RECEIVER.
+	 */
+	bool can_send;
+
+	/**
+	 * @brief True if the channel is able to recv data
+	 *
+	 * This is always true when @p type is BT_ISO_CHAN_TYPE_SYNC_RECEIVER,
+	 * and never true when @p type is BT_ISO_CHAN_TYPE_BROADCASTER.
+	 */
+	bool can_recv;
+
 	/** Connection Type specific Info.*/
 	union {
 #if defined(CONFIG_BT_ISO_UNICAST)

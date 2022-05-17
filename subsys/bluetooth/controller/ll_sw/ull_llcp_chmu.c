@@ -242,7 +242,15 @@ static void rp_chmu_st_wait_rx_channel_map_update_ind(struct ll_conn *conn, stru
 	switch (evt) {
 	case RP_CHMU_EVT_RX_CHAN_MAP_IND:
 		llcp_pdu_decode_chan_map_update_ind(ctx, param);
-		ctx->state = RP_CHMU_STATE_WAIT_INSTANT;
+		if (is_instant_not_passed(ctx->data.chmu.instant,
+					  ull_conn_event_counter(conn))) {
+
+			ctx->state = RP_CHMU_STATE_WAIT_INSTANT;
+		} else {
+			conn->llcp_terminate.reason_final = BT_HCI_ERR_INSTANT_PASSED;
+			llcp_rr_complete(conn);
+			ctx->state = RP_CHMU_STATE_IDLE;
+		}
 		break;
 	default:
 		/* Ignore other evts */

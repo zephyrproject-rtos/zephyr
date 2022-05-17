@@ -1,0 +1,28 @@
+# Copyright (c) 2022 Keiya Nobuta
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_MICROCHIP_CAP1203 := microchip,cap1203
+
+menuconfig KSCAN_CAP1203
+	bool "CAP1203 3-cannel capacitive touch sensor driver"
+	depends on I2C
+	default $(dt_compat_enabled,$(DT_COMPAT_MICROCHIP_CAP1203))
+	help
+	  Enable driver for microchip CAP1203 3-cannel capacitive
+	  touch sensor.
+
+if KSCAN_CAP1203
+
+config KSCAN_CAP1203_POLL
+	bool "Polling"
+	help
+	  Enable polling mode when interrupt GPIO is not specified.
+
+config KSCAN_CAP1203_PERIOD
+	int "Sample period"
+	depends on KSCAN_CAP1203_POLL
+	default 10
+	help
+	  Sample period in milliseconds when in polling mode.
+
+endif # KSCAN_CAP1203

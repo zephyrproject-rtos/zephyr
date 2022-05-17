@@ -226,7 +226,7 @@ enum sync_status lll_sync_cte_is_allowed(uint8_t cte_type_mask, uint8_t filter_p
 	}
 
 	if (!cte_ok) {
-		return filter_policy ? SYNC_STAT_READY_OR_CONT_SCAN : SYNC_STAT_TERM;
+		return filter_policy ? SYNC_STAT_CONT_SCAN : SYNC_STAT_TERM;
 	}
 
 	return SYNC_STAT_ALLOWED;
@@ -814,7 +814,7 @@ static void isr_rx_adv_sync_estab(void *param)
 isr_rx_done:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
 	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
-	isr_rx_done_cleanup(lll, crc_ok, sync_ok == SYNC_STAT_TERM);
+	isr_rx_done_cleanup(lll, crc_ok, sync_ok != SYNC_STAT_ALLOWED);
 #else
 	isr_rx_done_cleanup(lll, crc_ok, false);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING && CONFIG_BT_CTLR_CTEINLINE_SUPPORT */
@@ -869,8 +869,8 @@ static void isr_rx_adv_sync(void *param)
 	 * affect synchronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
-	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, phy_flags_rx,
-		     cte_ready, rssi_ready, SYNC_STAT_READY_OR_CONT_SCAN);
+	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, phy_flags_rx, cte_ready, rssi_ready,
+		     SYNC_STAT_READY);
 	if (err == -EBUSY) {
 		return;
 	}
@@ -938,8 +938,8 @@ static void isr_rx_aux_chain(void *param)
 	 * affect synchronization even when new CTE type is not allowed by sync parameters.
 	 * Hence the SYNC_STAT_READY is set.
 	 */
-	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, phy_flags_rx,
-		     cte_ready, rssi_ready, SYNC_STAT_READY_OR_CONT_SCAN);
+	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, phy_flags_rx, cte_ready, rssi_ready,
+		     SYNC_STAT_READY);
 
 	if (err == -EBUSY) {
 		return;

@@ -1,5 +1,7 @@
 common:
-  filter: CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX
+  platform_type:
+    - qemu
+    - native
   tags: log_api logging
   integration_platforms:
     - native_posix
@@ -130,7 +132,7 @@ tests:
   logging.log2_api_deferred_override_level:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
-    platform_allow: qemu_cortex_m3 qemu_cortex_a9
+    platform_allow: qemu_cortex_m3 qemu_cortex_a9 native_posix
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_OVERRIDE_LEVEL=4
@@ -138,7 +140,7 @@ tests:
   logging.log2_api_deferred_override_level_rt_filtering:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
-    platform_allow: qemu_cortex_m3 qemu_cortex_a9
+    platform_allow: qemu_cortex_m3 qemu_cortex_a9 native_posix
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
@@ -203,7 +205,7 @@ tests:
   logging.log_api_frontend_immediate_override_level:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
-    platform_allow: qemu_cortex_m3 qemu_cortex_a9
+    platform_allow: qemu_cortex_m3 qemu_cortex_a9 native_posix
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -212,7 +214,7 @@ tests:
   logging.log2_api_deferred_override_level_rt_filtering:
     # Testing on selected platforms as it enables all logs in the application
     # and it cannot be handled on many platforms.
-    platform_allow: qemu_cortex_m3 qemu_cortex_a9
+    platform_allow: qemu_cortex_m3 qemu_cortex_a9 native_posix
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
