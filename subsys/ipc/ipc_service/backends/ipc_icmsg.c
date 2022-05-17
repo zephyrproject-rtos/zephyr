@@ -192,7 +192,9 @@ static int backend_init(const struct device *instance)
 
 	__ASSERT_NO_MSG(conf->tx_shm_size > sizeof(struct spsc_pbuf));
 
-	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr, conf->tx_shm_size);
+	dev_data->tx_ib = spsc_pbuf_init((void *)conf->tx_shm_addr,
+					 conf->tx_shm_size,
+					 SPSC_PBUF_CACHE);
 	dev_data->rx_ib = (void *)conf->rx_shm_addr;
 
 	return 0;
