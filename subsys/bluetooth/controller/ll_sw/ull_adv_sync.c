@@ -183,7 +183,7 @@ static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) && ext_hdr->adi != 0) {
 		if (ext_hdr_prev->adi) {
-			memcpy(dptr, dptr_prev, sizeof(struct pdu_adv_adi));
+			(void)memcpy(dptr, dptr_prev, sizeof(struct pdu_adv_adi));
 		}
 		dptr += sizeof(struct pdu_adv_adi);
 	}
@@ -204,7 +204,7 @@ static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
 	/* Copy TxPower, if applicable */
 	if (ext_hdr->tx_pwr) {
 		if (ext_hdr_prev->tx_pwr) {
-			memcpy(dptr, dptr_prev, sizeof(uint8_t));
+			(void)memcpy(dptr, dptr_prev, sizeof(uint8_t));
 		}
 		dptr += sizeof(uint8_t);
 	}
@@ -216,7 +216,7 @@ static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
 
 	/* Copy ACAD */
 	len = com_hdr_prev->ext_hdr_len - (dptr_prev - (uint8_t *)ext_hdr_prev);
-	memcpy(dptr, dptr_prev, len);
+	(void)memcpy(dptr, dptr_prev, len);
 	dptr += len;
 
 	/* Check populated ext header length excluding length itself. If 0, then
@@ -249,7 +249,7 @@ static uint8_t adv_sync_pdu_init_from_prev_pdu(struct pdu_adv *pdu,
 	/* Copy AD */
 	if (!(ext_hdr_flags_rem & ULL_ADV_PDU_HDR_FIELD_AD_DATA)) {
 		len = MIN(len, len_prev);
-		memcpy(dptr, dptr_prev, len);
+		(void)memcpy(dptr, dptr_prev, len);
 		dptr += len;
 	}
 
@@ -278,7 +278,7 @@ uint8_t adv_sync_pdu_ad_data_set(struct pdu_adv *pdu, const uint8_t *data, uint8
 		return BT_HCI_ERR_PACKET_TOO_LONG;
 	}
 
-	memcpy(dptr, data, len);
+	(void)memcpy(dptr, data, len);
 	dptr += len;
 
 	pdu->len = dptr - pdu->payload;
@@ -301,7 +301,7 @@ uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_
 	LL_ASSERT(!ext_hdr->tgt_addr);
 
 	if (ext_hdr->cte_info) {
-		memcpy(dptr, cte_info, sizeof(*cte_info));
+		(void)memcpy(dptr, cte_info, sizeof(*cte_info));
 	}
 
 	return 0;
@@ -667,7 +667,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		 * sync_info structure, followed by pointer to sync_info in the
 		 * PDU.
 		 */
-		memcpy(&sync_info, &value[1], sizeof(sync_info));
+		(void)memcpy(&sync_info, &value[1], sizeof(sync_info));
 		ull_adv_sync_info_fill(sync, sync_info);
 
 		if (lll_aux) {
@@ -1066,8 +1066,8 @@ void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
 	/* Fill the interval, access address and CRC init */
 	si->interval = sys_cpu_to_le16(sync->interval);
 	lll_sync = &sync->lll;
-	memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
-	memcpy(si->crc_init, lll_sync->crc_init, sizeof(si->crc_init));
+	(void)memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
+	(void)memcpy(si->crc_init, lll_sync->crc_init, sizeof(si->crc_init));
 
 	/* NOTE: Filled by secondary prepare */
 	si->evt_cntr = 0U;
@@ -1324,7 +1324,7 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 		*(uint8_t *)hdr_data = acad_len_prev;
 		hdr_data = (uint8_t *)hdr_data + 1;
 		/* return the pointer to ACAD offset */
-		memcpy(hdr_data, &ter_dptr, sizeof(ter_dptr));
+		(void)memcpy(hdr_data, &ter_dptr, sizeof(ter_dptr));
 		hdr_data = (uint8_t *)hdr_data + sizeof(ter_dptr);
 		ter_dptr += acad_len;
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_ACAD)) {
@@ -1497,7 +1497,7 @@ void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
 	 * CTE additional data are just copied to extra_data memory.
 	 */
 	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
-		memcpy(extra_data_new, data, sizeof(struct lll_df_adv_cfg));
+		(void)memcpy(extra_data_new, data, sizeof(struct lll_df_adv_cfg));
 	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
 		   extra_data_prev) {
 		(void)memmove(extra_data_new, extra_data_prev,
