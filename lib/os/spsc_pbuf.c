@@ -24,7 +24,23 @@ static uint32_t idx_cut(uint32_t len, uint32_t idx)
 	return (idx >= len) ? (idx - len) : (idx);
 }
 
-struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen)
+static inline void cache_wb(void *data, size_t len, uint32_t flags)
+{
+	if (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_ALWAYS) ||
+	    (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_FLAG) && (flags & SPSC_PBUF_CACHE))) {
+		sys_cache_data_range(data, len, K_CACHE_WB);
+	}
+}
+
+static inline void cache_inv(void *data, size_t len, uint32_t flags)
+{
+	if (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_ALWAYS) ||
+	    (IS_ENABLED(CONFIG_SPSC_PBUF_CACHE_FLAG) && (flags & SPSC_PBUF_CACHE))) {
+		sys_cache_data_range(data, len, K_CACHE_INVD);
+	}
+}
+
+struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen, uint32_t flags)
 {
 	/* blen must be big enough to contain spsc_pbuf struct, byte of data
 	 * and message len (2 bytes).
@@ -36,9 +52,10 @@ struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen)
 	pb->len = blen - sizeof(*pb);
 	pb->wr_idx = 0;
 	pb->rd_idx = 0;
+	pb->flags = flags;
 
 	__sync_synchronize();
-	sys_cache_data_range(pb, sizeof(*pb), K_CACHE_WB);
+	cache_wb(pb, sizeof(*pb), pb->flags);
 
 	return pb;
 }
@@ -55,7 +72,7 @@ int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len)
 	 */
 	const uint32_t max_len = pblen - 1;
 
-	sys_cache_data_range(pb, sizeof(*pb), K_CACHE_INVD);
+	cache_inv(pb, sizeof(*pb), pb->flags);
 	__sync_synchronize();
 
 	uint32_t wr_idx = pb->wr_idx;
@@ -76,23 +93,23 @@ int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len)
 
 	/* Store info about the message length. */
 	pb->data[wr_idx] = (uint8_t)len;
-	sys_cache_data_range(&pb->data[wr_idx], sizeof(pb->data[wr_idx]), K_CACHE_WB);
+	cache_wb(&pb->data[wr_idx], sizeof(pb->data[wr_idx]), pb->flags);
 	wr_idx = idx_cut(pblen, wr_idx + sizeof(pb->data[wr_idx]));
 
 	pb->data[wr_idx] = (uint8_t)(len >> 8);
-	sys_cache_data_range(&pb->data[wr_idx], sizeof(pb->data[wr_idx]), K_CACHE_WB);
+	cache_wb(&pb->data[wr_idx], sizeof(pb->data[wr_idx]), pb->flags);
 	wr_idx = idx_cut(pblen, wr_idx + sizeof(pb->data[wr_idx]));
 
 	/* Write until the end of the buffer. */
 	uint32_t sz = MIN(len, pblen - wr_idx);
 
 	memcpy(&pb->data[wr_idx], buf, sz);
-	sys_cache_data_range(&pb->data[wr_idx], sz, K_CACHE_WB);
+	cache_wb(&pb->data[wr_idx], sz, pb->flags);
 
 	if (len > sz) {
 		/* Write remaining data at the buffer head. */
 		memcpy(&pb->data[0], buf + sz, len - sz);
-		sys_cache_data_range(&pb->data[0], len - sz, K_CACHE_WB);
+		cache_wb(&pb->data[0], len - sz, pb->flags);
 	}
 
 	/* Update write index - make other side aware data was written. */
@@ -100,7 +117,7 @@ int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len)
 	wr_idx = idx_cut(pblen, wr_idx + len);
 	pb->wr_idx = wr_idx;
 
-	sys_cache_data_range(pb, sizeof(*pb), K_CACHE_WB);
+	cache_wb(pb, sizeof(*pb), pb->flags);
 
 	return len;
 }
@@ -110,7 +127,7 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len)
 	/* The length of buffer is immutable - avoid reloading. */
 	const uint32_t pblen = pb->len;
 
-	sys_cache_data_range(pb, sizeof(*pb), K_CACHE_INVD);
+	cache_inv(pb, sizeof(*pb), pb->flags);
 	__sync_synchronize();
 
 	uint32_t rd_idx = pb->rd_idx;
@@ -124,12 +141,12 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len)
 	uint32_t bytes_stored = idx_occupied(pblen, wr_idx, rd_idx);
 
 	/* Read message len. */
-	sys_cache_data_range(&pb->data[rd_idx], sizeof(pb->data[rd_idx]), K_CACHE_INVD);
+	cache_inv(&pb->data[rd_idx], sizeof(pb->data[rd_idx]), pb->flags);
 	uint16_t mlen = pb->data[rd_idx];
 
 	rd_idx = idx_cut(pblen, rd_idx + sizeof(pb->data[rd_idx]));
 
-	sys_cache_data_range(&pb->data[rd_idx], sizeof(pb->data[rd_idx]), K_CACHE_INVD);
+	cache_inv(&pb->data[rd_idx], sizeof(pb->data[rd_idx]), pb->flags);
 	mlen |= (pb->data[rd_idx] << 8);
 	rd_idx = idx_cut(pblen, rd_idx + sizeof(pb->data[rd_idx]));
 
@@ -152,11 +169,11 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len)
 	/* Read up to the end of the buffer. */
 	uint32_t sz = MIN(len, pblen - rd_idx);
 
-	sys_cache_data_range(&pb->data[rd_idx], sz, K_CACHE_INVD);
+	cache_inv(&pb->data[rd_idx], sz, pb->flags);
 	memcpy(buf, &pb->data[rd_idx], sz);
 	if (len > sz) {
 		/* Read remaining bytes starting from the buffer head. */
-		sys_cache_data_range(&pb->data[0], len - sz, K_CACHE_INVD);
+		cache_inv(&pb->data[0], len - sz, pb->flags);
 		memcpy(&buf[sz], &pb->data[0], len - sz);
 	}
 
@@ -165,7 +182,7 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len)
 	rd_idx = idx_cut(pblen, rd_idx + len);
 	pb->rd_idx = rd_idx;
 
-	sys_cache_data_range(pb, sizeof(*pb), K_CACHE_WB);
+	cache_wb(pb, sizeof(*pb), pb->flags);
 
 	return len;
 }

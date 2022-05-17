@@ -11,7 +11,7 @@
  * 212 - sizeof(struct spsc_pbuf) - 1 = 199.
  * -1 because internal rd/wr_idx is reserved to mean the buffer is empty.
  */
-static uint8_t memory_area[212] __aligned(4);
+static uint8_t memory_area[216] __aligned(4);
 
 static void test_spsc_pbuf_ut(void)
 {
@@ -21,7 +21,7 @@ static void test_spsc_pbuf_ut(void)
 	int rlen;
 	int wlen;
 
-	ib = spsc_pbuf_init(memory_area, sizeof(memory_area));
+	ib = spsc_pbuf_init(memory_area, sizeof(memory_area), 0);
 	zassert_equal_ptr(ib, memory_area, NULL);
 	zassert_equal(ib->len, (sizeof(memory_area) - sizeof(*ib)), NULL);
 	zassert_equal(ib->wr_idx, 0, NULL);
@@ -48,14 +48,16 @@ static void test_spsc_pbuf_ut(void)
 	zassert_equal(ib->wr_idx, (sizeof(message) + sizeof(uint16_t)), NULL);
 	zassert_equal(ib->rd_idx, (sizeof(message) + sizeof(uint16_t)), NULL);
 
-	/* Buffer size is 212 - 12 = 200 Bytes for len, wr_idx, rd_idx.
+	/* Buffer size is 216 - 16 = 200 Bytes for len, wr_idx, rd_idx and flags.
 	 * When writing message of 20 Bytes, actually 22 Bytes are stored,
 	 * (2 Bytes reserved for message len). Test if after 9 writes, 10th write
 	 * would return -ENOMEM. 200 - (9 * 22) = 2 bytes left.
 	 *
 	 * Reset the buffer first.
 	 */
-	ib = spsc_pbuf_init(memory_area, sizeof(memory_area));
+	zassert_equal(SPSC_PBUF_CAPACITY(sizeof(memory_area)), 200, NULL);
+
+	ib = spsc_pbuf_init(memory_area, sizeof(memory_area), 0);
 	zassert_equal_ptr(ib, memory_area, NULL);
 	zassert_equal(ib->len, (sizeof(memory_area) - sizeof(*ib)), NULL);
 	zassert_equal(ib->wr_idx, 0, NULL);
