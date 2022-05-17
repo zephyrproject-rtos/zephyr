@@ -10,6 +10,10 @@
 #include <zephyr/sys/arch_interface.h>
 #include <zephyr/timing/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void soc_timing_init(void);
 void soc_timing_start(void);
 void soc_timing_stop(void);
@@ -176,3 +180,7 @@ static inline uint32_t timing_freq_get_mhz(void)
  */
 
 #endif /* ZEPHYR_INCLUDE_TIMING_TIMING_H_ */
+
+#ifdef __cplusplus
+}
+#endif
