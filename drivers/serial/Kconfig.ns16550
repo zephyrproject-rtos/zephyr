@@ -29,18 +29,23 @@ config UART_NS16550_DRV_CMD
 	  Says n if not sure.
 
 choice
-	prompt "UART type"
-	default UART_NS16750
+	prompt "UART variant"
+	default UART_NS16550_VARIANT_NS16550
 	help
-	  Select UART device type
+	  Select UART device variant
 
-config UART_NS16750
+config UART_NS16550_VARIANT_NS16550
+	bool "UART 16550 (16-bytes FIFO)"
+	help
+	  This enables support for 16-bytes FIFO if UART controller is 16550.
+
+config UART_NS16550_VARIANT_NS16750
 	bool "UART 16750 (64-bytes FIFO and auto flow control)"
 	help
 	  This enables support for 64-bytes FIFO and automatic hardware
 	  flow control if UART controller is 16750.
 
-config UART_NS16950
+config UART_NS16550_VARIANT_NS16950
 	bool "UART 16950 (128-bytes FIFO and auto flow control)"
 	help
 	  This enables support for 128-bytes FIFO and automatic hardware flow control.
