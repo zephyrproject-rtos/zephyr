@@ -348,9 +348,10 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	/* nRF51 supports only 27 byte PDU when using h/w CCM for encryption. */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR) &&
 	    pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) {
-		bits_len = 5U;
-		bits_s1 = 3U;
+		bits_len = RADIO_PKT_CONF_LENGTH_5BIT;
 	}
+	bits_s1 = RADIO_PKT_CONF_LENGTH_8BIT - bits_len;
+
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF52X) || \
 	defined(CONFIG_SOC_SERIES_NRF53X)
 	extra = 0U;
@@ -389,7 +390,7 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 			  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
 #if defined(CONFIG_BT_CTLR_DF)
 		if (RADIO_PKT_CONF_CTE_GET(flags) == RADIO_PKT_CONF_CTE_ENABLED) {
-			bits_s1 = 8U;
+			bits_s1 = RADIO_PKT_CONF_S1_8BIT;
 		} else
 #endif /* CONFIG_BT_CTLR_DF */
 		{
