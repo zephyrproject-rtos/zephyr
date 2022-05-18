@@ -1696,7 +1696,15 @@ enum chip_pll_mode {
 #define IT8XXX2_I2C_IRQ_ST(base)      ECREG(base + 0x0D)
 #define IT8XXX2_I2C_IDR(base)         ECREG(base + 0x06)
 #define IT8XXX2_I2C_TOS(base)         ECREG(base + 0x07)
+#define IT8XXX2_I2C_STR2(base)        ECREG(base + 0x12)
+#define IT8XXX2_I2C_NST(base)         ECREG(base + 0x13)
+#define IT8XXX2_I2C_TO_ARB_ST(base)   ECREG(base + 0x18)
+#define IT8XXX2_I2C_ERR_ST(base)      ECREG(base + 0x19)
+#define IT8XXX2_I2C_FST(base)         ECREG(base + 0x1B)
+#define IT8XXX2_I2C_EM(base)          ECREG(base + 0x1C)
+#define IT8XXX2_I2C_MODE_SEL(base)    ECREG(base + 0x1D)
 #define IT8XXX2_I2C_IDR2(base)        ECREG(base + 0x1F)
+#define IT8XXX2_I2C_CTR2(base)        ECREG(base + 0x20)
 #define IT8XXX2_I2C_RAMHA(base)       ECREG(base + 0x23)
 #define IT8XXX2_I2C_RAMLA(base)       ECREG(base + 0x24)
 #define IT8XXX2_I2C_RAMHA2(base)      ECREG(base + 0x2B)
@@ -1737,7 +1745,17 @@ enum chip_pll_mode {
 #define IT8XXX2_I2C_SCL_IN            BIT(2)
 #define IT8XXX2_I2C_SDA_IN            BIT(0)
 /* 0x0A: Control 1 */
+#define IT8XXX2_I2C_COMQ_EN           BIT(7)
 #define IT8XXX2_I2C_MDL_EN            BIT(1)
+/* 0x13: Nack Status */
+#define IT8XXX2_I2C_NST_CNS           BIT(7)
+#define IT8XXX2_I2C_NST_ID_NACK       BIT(3)
+/* 0x19: Error Status */
+#define IT8XXX2_I2C_ERR_ST_DEV1_EIRQ  BIT(0)
+/* 0x1B: Finish Status */
+#define IT8XXX2_I2C_FST_DEV1_IRQ      BIT(4)
+/* 0x1C: Error Mask */
+#define IT8XXX2_I2C_EM_DEV1_IRQ       BIT(4)
 
 /* --- General Control (GCTRL) --- */
 #define IT83XX_GCTRL_BASE 0x00F02000

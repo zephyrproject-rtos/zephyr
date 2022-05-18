@@ -26,6 +26,34 @@ LOG_MODULE_REGISTER(i2c_ite_enhance, CONFIG_I2C_LOG_LEVEL);
 #define I2C_LINE_SDA_HIGH BIT(1)
 #define I2C_LINE_IDLE (I2C_LINE_SCL_HIGH | I2C_LINE_SDA_HIGH)
 
+#ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
+/* Reserved 5 bytes for ID and CMD_x. */
+#define I2C_CQ_MODE_TX_MAX_PAYLOAD_SIZE  (CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE - 5)
+
+/* Repeat Start. */
+#define I2C_CQ_CMD_L_RS BIT(7)
+/*
+ * R/W (Read/ Write) decides the I2C read or write direction.
+ * 1: read, 0: write
+ */
+#define I2C_CQ_CMD_L_RW BIT(6)
+/* P (STOP) is the I2C STOP condition. */
+#define I2C_CQ_CMD_L_P  BIT(5)
+/* E (End) is this device end flag. */
+#define I2C_CQ_CMD_L_E  BIT(4)
+/* LA (Last ACK) is Last ACK in master receiver. */
+#define I2C_CQ_CMD_L_LA BIT(3)
+/* bit[2:0] are number of transfer out or receive data which depends on R/W. */
+#define I2C_CQ_CMD_L_NUM_BIT_2_0 GENMASK(2, 0)
+
+struct i2c_cq_packet {
+	uint8_t id;
+	uint8_t cmd_l;
+	uint8_t cmd_h;
+	uint8_t wdata[0];
+};
+#endif /* CONFIG_I2C_IT8XXX2_CQ_MODE */
+
 struct i2c_enhance_config {
 	void (*irq_config_func)(void);
 	uint32_t bitrate;
@@ -71,6 +99,16 @@ struct i2c_enhance_data {
 	uint16_t addr_16bit;
 	/* wait for stop bit interrupt */
 	uint8_t stop;
+	/* Number of messages. */
+	uint8_t num_msgs;
+#ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
+	/* Store command queue mode messages. */
+	struct i2c_msg *cq_msgs;
+	/* Command queue tx payload. */
+	uint8_t i2c_cq_mode_tx_dlm[CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE] __aligned(4);
+	/* Command queue rx payload. */
+	uint8_t i2c_cq_mode_rx_dlm[CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE] __aligned(4);
+#endif
 };
 
 enum enhanced_i2c_transfer_direct {
@@ -101,6 +139,8 @@ enum enhanced_i2c_ctl {
 	E_START_ID = (E_INT_EN | E_MODE_SEL | E_ACK | E_START | E_HW_RST),
 	/* Generate stop condition */
 	E_FINISH = (E_INT_EN | E_MODE_SEL | E_ACK | E_STOP | E_HW_RST),
+	/* Start with command queue mode */
+	E_START_CQ = (E_INT_EN | E_MODE_SEL | E_ACK | E_START),
 };
 
 enum enhanced_i2c_host_status {
@@ -482,46 +522,23 @@ static int i2c_transaction(const struct device *dev)
 	return 0;
 }
 
-static int i2c_enhance_transfer(const struct device *dev, struct i2c_msg *msgs,
-				uint8_t num_msgs, uint16_t addr)
+static int i2c_enhance_pio_transfer(const struct device *dev,
+				    struct i2c_msg *msgs)
 {
 	struct i2c_enhance_data *data = dev->data;
 	const struct i2c_enhance_config *config = dev->config;
 	int res;
 
-	/* Lock mutex of i2c controller */
-	k_mutex_lock(&data->mutex, K_FOREVER);
-	/*
-	 * If the transaction of write to read is divided into two
-	 * transfers, the repeat start transfer uses this flag to
-	 * exclude checking bus busy.
-	 */
 	if (data->i2ccs == I2C_CH_NORMAL) {
-		/* Make sure we're in a good state to start */
-		if (i2c_bus_not_available(dev)) {
-			/* Recovery I2C bus */
-			i2c_recover_bus(dev);
-			/*
-			 * After resetting I2C bus, if I2C bus is not available
-			 * (No external pull-up), drop the transaction.
-			 */
-			if (i2c_bus_not_available(dev)) {
-				/* Unlock mutex of i2c controller */
-				k_mutex_unlock(&data->mutex);
-				return -EIO;
-			}
-		}
-
 		msgs->flags |= I2C_MSG_START;
 	}
 
-	for (int i = 0; i < num_msgs; i++) {
+	for (int i = 0; i < data->num_msgs; i++) {
 
 		data->widx = 0;
 		data->ridx = 0;
 		data->err = 0;
 		data->msgs = &(msgs[i]);
-		data->addr_16bit = addr;
 
 		if (msgs->flags & I2C_MSG_START) {
 			data->i2ccs = I2C_CH_NORMAL;
@@ -569,6 +586,293 @@ static int i2c_enhance_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (data->err || (msgs->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+
+	return data->err;
+}
+
+#ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
+static void enhanced_i2c_set_cmd_addr_regs(const struct device *dev)
+{
+	const struct i2c_enhance_config *config = dev->config;
+	struct i2c_enhance_data *data = dev->data;
+	uint32_t dlm_base;
+	uint8_t *base = config->base;
+
+	/* Set "Address Register" to store the I2C data. */
+	dlm_base = (uint32_t)data->i2c_cq_mode_rx_dlm & 0xffffff;
+	IT8XXX2_I2C_RAMH2A(base) = (dlm_base >> 16) & 0xff;
+	IT8XXX2_I2C_RAMHA(base) = (dlm_base >> 8) & 0xff;
+	IT8XXX2_I2C_RAMLA(base) = dlm_base & 0xff;
+
+	/* Set "Command Address Register" to get commands. */
+	dlm_base = (uint32_t)data->i2c_cq_mode_tx_dlm & 0xffffff;
+	IT8XXX2_I2C_CMD_ADDH2(base) = (dlm_base >> 16) & 0xff;
+	IT8XXX2_I2C_CMD_ADDH(base) = (dlm_base >> 8) & 0xff;
+	IT8XXX2_I2C_CMD_ADDL(base) = dlm_base & 0xff;
+}
+
+static void enhanced_i2c_cq_write(const struct device *dev)
+{
+	struct i2c_enhance_data *data = dev->data;
+	struct i2c_cq_packet *i2c_cq_pckt;
+	uint8_t num_bit_2_0 = (data->cq_msgs[0].len - 1) & I2C_CQ_CMD_L_NUM_BIT_2_0;
+	uint8_t num_bit_10_3 = ((data->cq_msgs[0].len - 1) >> 3) & 0xff;
+
+	i2c_cq_pckt = (struct i2c_cq_packet *)data->i2c_cq_mode_tx_dlm;
+	/* Set commands in RAM. */
+	i2c_cq_pckt->id = data->addr_16bit << 1;
+	i2c_cq_pckt->cmd_l = I2C_CQ_CMD_L_P | I2C_CQ_CMD_L_E | num_bit_2_0;
+	i2c_cq_pckt->cmd_h = num_bit_10_3;
+	for (int i = 0; i < data->cq_msgs[0].len; i++) {
+		i2c_cq_pckt->wdata[i] = data->cq_msgs[0].buf[i];
+	}
+}
+
+static void enhanced_i2c_cq_read(const struct device *dev)
+{
+	struct i2c_enhance_data *data = dev->data;
+	struct i2c_cq_packet *i2c_cq_pckt;
+	uint8_t num_bit_2_0 = (data->cq_msgs[0].len - 1) & I2C_CQ_CMD_L_NUM_BIT_2_0;
+	uint8_t num_bit_10_3 = ((data->cq_msgs[0].len - 1) >> 3) & 0xff;
+
+	i2c_cq_pckt = (struct i2c_cq_packet *)data->i2c_cq_mode_tx_dlm;
+	/* Set commands in RAM. */
+	i2c_cq_pckt->id = data->addr_16bit << 1;
+	i2c_cq_pckt->cmd_l = I2C_CQ_CMD_L_RW | I2C_CQ_CMD_L_P |
+				I2C_CQ_CMD_L_E | num_bit_2_0;
+	i2c_cq_pckt->cmd_h = num_bit_10_3;
+}
+
+static void enhanced_i2c_cq_write_to_read(const struct device *dev)
+{
+	struct i2c_enhance_data *data = dev->data;
+	struct i2c_cq_packet *i2c_cq_pckt;
+	uint8_t num_bit_2_0 = (data->cq_msgs[0].len - 1) & I2C_CQ_CMD_L_NUM_BIT_2_0;
+	uint8_t num_bit_10_3 = ((data->cq_msgs[0].len - 1) >> 3) & 0xff;
+	int i;
+
+	i2c_cq_pckt = (struct i2c_cq_packet *)data->i2c_cq_mode_tx_dlm;
+	/* Set commands in RAM. (command byte for write) */
+	i2c_cq_pckt->id = data->addr_16bit << 1;
+	i2c_cq_pckt->cmd_l = num_bit_2_0;
+	i2c_cq_pckt->cmd_h = num_bit_10_3;
+	for (i = 0; i < data->cq_msgs[0].len; i++) {
+		i2c_cq_pckt->wdata[i] = data->cq_msgs[0].buf[i];
+	}
+
+	/* Set commands in RAM. (command byte for read) */
+	num_bit_2_0 = (data->cq_msgs[1].len - 1) & I2C_CQ_CMD_L_NUM_BIT_2_0;
+	num_bit_10_3 = ((data->cq_msgs[1].len - 1) >> 3) & 0xff;
+	i2c_cq_pckt->wdata[i++] = I2C_CQ_CMD_L_RS | I2C_CQ_CMD_L_RW |
+				I2C_CQ_CMD_L_P | I2C_CQ_CMD_L_E | num_bit_2_0;
+	i2c_cq_pckt->wdata[i] = num_bit_10_3;
+}
+
+static int enhanced_i2c_cq_isr(const struct device *dev)
+{
+	struct i2c_enhance_data *data = dev->data;
+	const struct i2c_enhance_config *config = dev->config;
+	uint8_t *base = config->base;
+
+	/* Device 1 finish IRQ. */
+	if (IT8XXX2_I2C_FST(base) & IT8XXX2_I2C_FST_DEV1_IRQ) {
+		uint8_t msgs_idx = data->num_msgs - 1;
+
+		/* Get data if this is a read transaction. */
+		for (int i = 0; i < data->cq_msgs[msgs_idx].len; i++) {
+			data->cq_msgs[msgs_idx].buf[i] =
+			data->i2c_cq_mode_rx_dlm[i];
+		}
+	} else {
+		/* Device 1 error have occurred. eg. nack, timeout... */
+		if (IT8XXX2_I2C_NST(base) & IT8XXX2_I2C_NST_ID_NACK) {
+			data->err = E_HOSTA_ACK;
+		} else {
+			data->err = IT8XXX2_I2C_STR(base) &
+					E_HOSTA_ANY_ERROR;
+		}
+	}
+	/* Reset bus. */
+	IT8XXX2_I2C_CTR(base) = E_STS_AND_HW_RST;
+	IT8XXX2_I2C_CTR1(base) = 0;
+
+	return 0;
+}
+
+static int enhanced_i2c_cmd_queue_trans(const struct device *dev)
+{
+	struct i2c_enhance_data *data = dev->data;
+	const struct i2c_enhance_config *config = dev->config;
+	uint8_t *base = config->base;
+
+	/* State reset and hardware reset. */
+	IT8XXX2_I2C_CTR(base) = E_STS_AND_HW_RST;
+	/* Set "PSR" registers to decide the i2c speed. */
+	i2c_enhanced_port_set_frequency(dev, config->bitrate);
+	/* Set time out register. port D, E, or F clock/data low timeout. */
+	IT8XXX2_I2C_TOR(base) = I2C_CLK_LOW_TIMEOUT;
+
+	if (data->num_msgs == 2) {
+		/* I2C write to read of command queue mode. */
+		enhanced_i2c_cq_write_to_read(dev);
+	} else {
+		/* I2C read of command queue mode. */
+		if (data->cq_msgs[0].flags & I2C_MSG_READ) {
+			enhanced_i2c_cq_read(dev);
+		/* I2C write of command queue mode. */
+		} else {
+			enhanced_i2c_cq_write(dev);
+		}
+	}
+
+	/* Enable i2c module with command queue mode. */
+	IT8XXX2_I2C_CTR1(base) = IT8XXX2_I2C_MDL_EN | IT8XXX2_I2C_COMQ_EN;
+	/* One shot on device 1. */
+	IT8XXX2_I2C_MODE_SEL(base) = 0;
+	IT8XXX2_I2C_CTR2(base) = 1;
+	/* Start */
+	chip_block_idle();
+	IT8XXX2_I2C_CTR(base) = E_START_CQ;
+
+	return 1;
+}
+
+static int i2c_enhance_cq_transfer(const struct device *dev,
+				   struct i2c_msg *msgs)
+{
+	struct i2c_enhance_data *data = dev->data;
+	const struct i2c_enhance_config *config = dev->config;
+	int res = 0;
+
+	data->err = 0;
+	data->cq_msgs = msgs;
+
+	/* Start transaction */
+	if (enhanced_i2c_cmd_queue_trans(dev)) {
+		/* Enable i2c interrupt */
+		irq_enable(config->i2c_irq_base);
+	}
+	/* Wait for the transfer to complete */
+	res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
+
+	irq_disable(config->i2c_irq_base);
+
+	if (res != 0) {
+		data->err = ETIMEDOUT;
+		/* Reset i2c port. */
+		i2c_reset(dev);
+		LOG_ERR("I2C ch%d:0x%X reset cause %d",
+			config->port, data->addr_16bit, I2C_RC_TIMEOUT);
+	}
+
+	chip_permit_idle();
+
+	return data->err;
+}
+
+static bool cq_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
+{
+	struct i2c_enhance_data *data = dev->data;
+
+	/*
+	 * When there is only one message, use the command queue transfer
+	 * directly.
+	 */
+	if (data->num_msgs == 1 && (msgs[0].flags & I2C_MSG_STOP)) {
+		/* Read transfer payload too long, use PIO mode */
+		if (((msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) &&
+		    (msgs[0].len > CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE)) {
+			return false;
+		}
+		/* Write transfer payload too long, use PIO mode */
+		if (((msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) &&
+		    (msgs[0].len > I2C_CQ_MODE_TX_MAX_PAYLOAD_SIZE)) {
+			return false;
+		}
+		/*
+		 * Write of I2C target address without writing data, used by
+		 * cmd_i2c_scan. Use PIO mode.
+		 */
+		if (((msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) &&
+		    (msgs[0].len == 0)) {
+			return false;
+		}
+		return true;
+	}
+	/*
+	 * When there are two messages, we need to judge whether or not there
+	 * is I2C_MSG_RESTART flag from the second message, and then decide to
+	 * do the command queue or PIO mode transfer.
+	 */
+	if (data->num_msgs == 2) {
+		/*
+		 * The first of two messages must be write.
+		 * If the length of write to read transfer is greater than
+		 * command queue payload size, there will execute PIO mode.
+		 */
+		if (((msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) &&
+		    (msgs[0].len <= I2C_CQ_MODE_TX_MAX_PAYLOAD_SIZE)) {
+			/*
+			 * The transfer is i2c_burst_read().
+			 *
+			 * e.g. msg[0].flags = I2C_MSG_WRITE;
+			 *      msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ |
+			 *                     I2C_MSG_STOP;
+			 */
+			if ((msgs[1].flags & I2C_MSG_RESTART) &&
+			    ((msgs[1].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) &&
+			    (msgs[1].flags & I2C_MSG_STOP) &&
+			    (msgs[1].len <= CONFIG_I2C_CQ_MODE_MAX_PAYLOAD_SIZE)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+#endif /* CONFIG_I2C_IT8XXX2_CQ_MODE */
+
+static int i2c_enhance_transfer(const struct device *dev,
+				struct i2c_msg *msgs,
+				uint8_t num_msgs, uint16_t addr)
+{
+	struct i2c_enhance_data *data = dev->data;
+
+	data->num_msgs = num_msgs;
+	data->addr_16bit = addr;
+
+	/* Lock mutex of i2c controller */
+	k_mutex_lock(&data->mutex, K_FOREVER);
+
+	/*
+	 * If the transaction of write to read is divided into two
+	 * transfers, the repeat start transfer uses this flag to
+	 * exclude checking bus busy.
+	 */
+	if (data->i2ccs == I2C_CH_NORMAL) {
+		/* Make sure we're in a good state to start */
+		if (i2c_bus_not_available(dev)) {
+			/* Recovery I2C bus */
+			i2c_recover_bus(dev);
+			/*
+			 * After resetting I2C bus, if I2C bus is not available
+			 * (No external pull-up), drop the transaction.
+			 */
+			if (i2c_bus_not_available(dev)) {
+				return -EIO;
+			}
+		}
+	}
+
+#ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
+	if (cq_mode_allowed(dev, msgs)) {
+		data->err = i2c_enhance_cq_transfer(dev, msgs);
+	} else
+#endif
+	{
+		data->err = i2c_enhance_pio_transfer(dev, msgs);
+	}
+
 	/* Unlock mutex of i2c controller */
 	k_mutex_unlock(&data->mutex);
 
@@ -581,11 +885,23 @@ static void i2c_enhance_isr(void *arg)
 	struct i2c_enhance_data *data = dev->data;
 	const struct i2c_enhance_config *config = dev->config;
 
+#ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
+	uint8_t *base = config->base;
+
 	/* If done doing work, wake up the task waiting for the transfer */
-	if (!i2c_transaction(dev)) {
-		irq_disable(config->i2c_irq_base);
-		k_sem_give(&data->device_sync_sem);
+	if (IT8XXX2_I2C_CTR1(base) & IT8XXX2_I2C_COMQ_EN) {
+		if (enhanced_i2c_cq_isr(dev)) {
+			return;
+		}
+	} else
+#endif
+	{
+		if (i2c_transaction(dev)) {
+			return;
+		}
 	}
+	irq_disable(config->i2c_irq_base);
+	k_sem_give(&data->device_sync_sem);
 }
 
 static int i2c_enhance_init(const struct device *dev)
@@ -614,6 +930,11 @@ static int i2c_enhance_init(const struct device *dev)
 	i2c_reset(dev);
 	/* bit1, Module enable */
 	IT8XXX2_I2C_CTR1(base) = 0;
+
+#ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
+	/* Set command address registers. */
+	enhanced_i2c_set_cmd_addr_regs(dev);
+#endif
 
 	/* Set clock frequency for I2C ports */
 	if (config->bitrate == I2C_BITRATE_STANDARD ||
