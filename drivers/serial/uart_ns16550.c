@@ -448,7 +448,8 @@ static int uart_ns16550_configure(const struct device *dev,
 		uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
 	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
-#if defined(CONFIG_UART_NS16750) || defined(CONFIG_UART_NS16950)
+#if defined(CONFIG_UART_NS16550_VARIANT_NS16750) || \
+	defined(CONFIG_UART_NS16550_VARIANT_NS16950)
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		mdc |= MCR_AFCE;
 	}
@@ -463,15 +464,15 @@ static int uart_ns16550_configure(const struct device *dev,
 	 */
 	OUTBYTE(FCR(dev),
 		FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR
-#ifdef CONFIG_UART_NS16750
+#ifdef CONFIG_UART_NS16550_VARIANT_NS16750
 		| FCR_FIFO_64
 #endif
 		);
 
 	if ((INBYTE(IIR(dev)) & IIR_FE) == IIR_FE) {
-#ifdef CONFIG_UART_NS16750
+#ifdef CONFIG_UART_NS16550_VARIANT_NS16750
 		dev_data->fifo_size = 64;
-#elif defined(CONFIG_UART_NS16950)
+#elif defined(CONFIG_UART_NS16550_VARIANT_NS16950)
 		dev_data->fifo_size = 128;
 #else
 		dev_data->fifo_size = 16;
