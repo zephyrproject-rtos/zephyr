@@ -1071,11 +1071,11 @@ static int eth_initialize(const struct device *dev)
 #endif
 	heth->Init.MACAddr = dev_data->mac_addr;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
 	heth->Init.TxDesc = dma_tx_desc_tab;
 	heth->Init.RxDesc = dma_rx_desc_tab;
 	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 
 	hal_ret = HAL_ETH_Init(heth);
 	if (hal_ret == HAL_TIMEOUT) {
@@ -1099,23 +1099,23 @@ static int eth_initialize(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
 	/* Tx config init: */
 	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
 	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
 				ETH_TX_PACKETS_FEATURES_CRCPAD;
 	tx_config.ChecksumCtrl = ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
 	tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 
 	dev_data->link_up = false;
 
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
 	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 
 	/* Start interruption-poll thread */
 	k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
@@ -1126,7 +1126,15 @@ static int eth_initialize(const struct device *dev)
 
 	k_thread_name_set(&dev_data->rx_thread, "stm_eth");
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+
+	/* prepare tx buffer header */
+	for (uint16_t i = 0; i < ETH_TXBUFNB; ++i) {
+		dma_tx_buffer_header[i].tx_buff.buffer = dma_tx_buffer[i];
+	}
+
+	hal_ret = HAL_ETH_Start_IT(heth);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	for (uint32_t i = 0; i < ETH_RX_DESC_CNT; i++) {
 		hal_ret = HAL_ETH_DescAssignMemory(heth, i, dma_rx_buffer[i],
 						   NULL);
@@ -1145,7 +1153,7 @@ static int eth_initialize(const struct device *dev)
 		&dma_rx_buffer[0][0], ETH_RXBUFNB);
 
 	hal_ret = HAL_ETH_Start(heth);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_Start{_IT} failed");
@@ -1153,7 +1161,7 @@ static int eth_initialize(const struct device *dev)
 
 	disable_mcast_filter(heth);
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
 	/* Adjust MDC clock range depending on HCLK frequency: */
 	HAL_ETH_SetMDIOClockRange(heth);
 
@@ -1165,7 +1173,7 @@ static int eth_initialize(const struct device *dev)
 	mac_config.DuplexMode = ETH_FULLDUPLEX_MODE;
 	mac_config.Speed = ETH_SPEED_100M;
 	HAL_ETH_SetMACConfig(heth, &mac_config);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
