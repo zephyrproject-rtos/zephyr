@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(hda_test, LOG_LEVEL_DBG);
 
-#define IPC_TIMEOUT K_MSEC(500)
+#define IPC_TIMEOUT K_MSEC(1500)
 
 void hda_log_hook(uint32_t written)
 {
