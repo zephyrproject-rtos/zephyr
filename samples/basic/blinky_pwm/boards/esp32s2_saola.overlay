@@ -24,14 +24,16 @@
 };
 
 &pinctrl {
-	ledc0_ch0_gpio2: ledc0_ch0_gpio2 {
-		pinmux = <LEDC_CH0_GPIO2>;
-		output-enable;
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH0_GPIO2>;
+			output-enable;
+		};
 	};
 };
 
 &ledc0 {
-	pinctrl-0 = <&ledc0_ch0_gpio2>;
+	pinctrl-0 = <&ledc0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 	#address-cells = <1>;

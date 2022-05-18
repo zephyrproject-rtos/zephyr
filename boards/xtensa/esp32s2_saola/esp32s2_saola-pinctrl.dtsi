@@ -10,75 +10,58 @@
 
 &pinctrl {
 
-	uart0_tx_gpio43: uart0_tx_gpio43 {
-		pinmux = <UART0_TX_GPIO43>;
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+		};
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
 	};
 
-	uart0_rx_gpio44: uart0_rx_gpio44 {
-		pinmux = <UART0_RX_GPIO44>;
-		bias-pull-up;
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO13>,
+				 <SPIM2_SCLK_GPIO12>,
+				 <SPIM2_CSEL_GPIO10>;
+		};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO11>;
+			output-low;
+		};
 	};
 
-	spim2_miso_gpio13: spim2_miso_gpio13 {
-		pinmux = <SPIM2_MISO_GPIO13>;
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO37>,
+				 <SPIM3_SCLK_GPIO36>,
+				 <SPIM3_CSEL_GPIO34>;
+		};
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO35>;
+			output-low;
+		};
 	};
 
-	spim2_mosi_gpio11: spim2_mosi_gpio11 {
-		pinmux = <SPIM2_MOSI_GPIO11>;
-		output-low;
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO8>,
+				 <I2C0_SCL_GPIO9>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
 	};
 
-	spim2_sclk_gpio12: spim2_sclk_gpio12 {
-		pinmux = <SPIM2_SCLK_GPIO12>;
-	};
-
-	spim2_csel_gpio10: spim2_csel_gpio10 {
-		pinmux = <SPIM2_CSEL_GPIO10>;
-	};
-
-	spim3_miso_gpio37: spim3_miso_gpio37 {
-		pinmux = <SPIM3_MISO_GPIO37>;
-	};
-
-	spim3_mosi_gpio35: spim3_mosi_gpio35 {
-		pinmux = <SPIM3_MOSI_GPIO35>;
-		output-low;
-	};
-
-	spim3_sclk_gpio36: spim3_sclk_gpio36 {
-		pinmux = <SPIM3_SCLK_GPIO36>;
-	};
-
-	spim3_csel_gpio34: spim3_csel_gpio34 {
-		pinmux = <SPIM3_CSEL_GPIO34>;
-	};
-
-	i2c0_sda_gpio8: i2c0_sda_gpio8 {
-		pinmux = <I2C0_SDA_GPIO8>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
-	};
-
-	i2c0_scl_gpio9: i2c0_scl_gpio9 {
-		pinmux = <I2C0_SCL_GPIO9>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
-	};
-
-	i2c1_sda_gpio3: i2c1_sda_gpio3 {
-		pinmux = <I2C1_SDA_GPIO3>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
-	};
-
-	i2c1_scl_gpio4: i2c1_scl_gpio4 {
-		pinmux = <I2C1_SCL_GPIO4>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO3>,
+				 <I2C1_SCL_GPIO4>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
 	};
 
 };
