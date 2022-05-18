@@ -9,7 +9,7 @@
 #include <zephyr/drivers/dma.h>
 #include "tests.h"
 
-#define IPC_TIMEOUT K_MSEC(500)
+#define IPC_TIMEOUT K_MSEC(1500)
 #define DMA_BUF_SIZE 256
 #define TRANSFER_SIZE 256
 #define TRANSFER_COUNT 8
