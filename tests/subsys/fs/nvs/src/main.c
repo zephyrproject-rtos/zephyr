@@ -8,11 +8,11 @@
  * This test is designed to be run using flash-simulator which provide
  * functionality for flash property customization and emulating errors in
  * flash operation in parallel to regular flash API.
- * Test should be run on qemu_x86 target.
+ * Test should be run on qemu_x86 or native_posix target.
  */
 
-#ifndef CONFIG_BOARD_QEMU_X86
-#error "Run on qemu_x86 only"
+#if !defined(CONFIG_BOARD_QEMU_X86) && !defined(CONFIG_BOARD_NATIVE_POSIX)
+#error "Run on qemu_x86 or native_posix only"
 #endif
 
 #include <stdio.h>
@@ -41,7 +41,7 @@ void setup(void)
 	sim_thresholds = stats_group_find("flash_sim_thresholds");
 
 	/* Verify if NVS is initialized. */
-	if (fs.sector_count != 0) {
+	if (fs.ready) {
 		int err;
 
 		err = nvs_clear(&fs);
@@ -700,6 +700,146 @@ void test_nvs_gc_corrupt_ate(void)
 	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 }
 
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+static size_t num_matching_cache_entries(uint32_t addr, bool compare_sector_only)
+{
+	size_t i, num = 0;
+	uint32_t mask = compare_sector_only ? ADDR_SECT_MASK : UINT32_MAX;
+
+	for (i = 0; i < CONFIG_NVS_LOOKUP_CACHE_SIZE; i++) {
+		if ((fs.lookup_cache[i] & mask) == addr) {
+			num++;
+		}
+	}
+
+	return num;
+}
+#endif
+
+/*
+ * Test that NVS lookup cache is properly rebuilt on nvs_mount(), or initialized
+ * to NVS_LOOKUP_CACHE_NO_ADDR if the store is empty.
+ */
+void test_nvs_cache_init(void)
+{
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	int err;
+	size_t num;
+	uint32_t ate_addr;
+	uint8_t data = 0;
+
+	/* Test cache initialization when the store is empty */
+
+	fs.sector_count = 3;
+	err = nvs_mount(&fs);
+	zassert_true(err == 0, "nvs_init call failure: %d", err);
+
+	num = num_matching_cache_entries(NVS_LOOKUP_CACHE_NO_ADDR, false);
+	zassert_equal(num, CONFIG_NVS_LOOKUP_CACHE_SIZE, "uninitialized cache");
+
+	/* Test cache update after nvs_write() */
+
+	ate_addr = fs.ate_wra;
+	err = nvs_write(&fs, 1, &data, sizeof(data));
+	zassert_equal(err, sizeof(data), "nvs_write call failure: %d", err);
+
+	num = num_matching_cache_entries(NVS_LOOKUP_CACHE_NO_ADDR, false);
+	zassert_equal(num, CONFIG_NVS_LOOKUP_CACHE_SIZE - 1, "cache not updated after write");
+
+	num = num_matching_cache_entries(ate_addr, false);
+	zassert_equal(num, 1, "invalid cache entry after write");
+
+	/* Test cache initialization when the store is non-empty */
+
+	memset(fs.lookup_cache, 0xAA, sizeof(fs.lookup_cache));
+	err = nvs_mount(&fs);
+	zassert_true(err == 0, "nvs_init call failure: %d", err);
+
+	num = num_matching_cache_entries(NVS_LOOKUP_CACHE_NO_ADDR, false);
+	zassert_equal(num, CONFIG_NVS_LOOKUP_CACHE_SIZE - 1, "uninitialized cache after restart");
+
+	num = num_matching_cache_entries(ate_addr, false);
+	zassert_equal(num, 1, "invalid cache entry after restart");
+#endif
+}
+
+/*
+ * Test that even after writing more NVS IDs than the number of NVS lookup cache
+ * entries they all can be read correctly.
+ */
+void test_nvs_cache_collission(void)
+{
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	int err;
+	uint16_t id;
+	uint16_t data;
+
+	fs.sector_count = 3;
+	err = nvs_mount(&fs);
+	zassert_true(err == 0, "nvs_init call failure: %d", err);
+
+	for (id = 0; id < CONFIG_NVS_LOOKUP_CACHE_SIZE + 1; id++) {
+		data = id;
+		err = nvs_write(&fs, id, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "nvs_write call failure: %d", err);
+	}
+
+	for (id = 0; id < CONFIG_NVS_LOOKUP_CACHE_SIZE + 1; id++) {
+		err = nvs_read(&fs, id, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "nvs_read call failure: %d", err);
+		zassert_equal(data, id, "incorrect data read");
+	}
+#endif
+}
+
+/*
+ * Test that NVS lookup cache does not contain any address from gc-ed sector
+ */
+void test_nvs_cache_gc(void)
+{
+#ifdef CONFIG_NVS_LOOKUP_CACHE
+	int err;
+	size_t num;
+	uint16_t data = 0;
+
+	fs.sector_count = 3;
+	err = nvs_mount(&fs);
+	zassert_true(err == 0, "nvs_init call failure: %d", err);
+
+	/* Fill the first sector with writes of ID 1 */
+
+	while (fs.data_wra + sizeof(data) <= fs.ate_wra) {
+		++data;
+		err = nvs_write(&fs, 1, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "nvs_write call failure: %d", err);
+	}
+
+	/* Verify that cache contains a single entry for sector 0 */
+
+	num = num_matching_cache_entries(0 << ADDR_SECT_SHIFT, true);
+	zassert_equal(num, 1, "invalid cache content after filling sector 0");
+
+	/* Fill the second sector with writes of ID 2 */
+
+	while ((fs.ate_wra >> ADDR_SECT_SHIFT) != 2) {
+		++data;
+		err = nvs_write(&fs, 2, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "nvs_write call failure: %d", err);
+	}
+
+	/*
+	 * At this point sector 0 should have been gc-ed. Verify that action is
+	 * reflected by the cache content.
+	 */
+
+	num = num_matching_cache_entries(0 << ADDR_SECT_SHIFT, true);
+	zassert_equal(num, 0, "not invalidated cache entries aftetr gc");
+
+	num = num_matching_cache_entries(2 << ADDR_SECT_SHIFT, true);
+	zassert_equal(num, 2, "invalid cache content after gc");
+#endif
+}
+
 void test_main(void)
 {
 	__ASSERT_NO_MSG(device_is_ready(flash_dev));
@@ -725,7 +865,13 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(
 				 test_nvs_gc_corrupt_close_ate, setup, teardown),
 			 ztest_unit_test_setup_teardown(
-				 test_nvs_gc_corrupt_ate, setup, teardown)
+				 test_nvs_gc_corrupt_ate, setup, teardown),
+			 ztest_unit_test_setup_teardown(
+				 test_nvs_cache_init, setup, teardown),
+			 ztest_unit_test_setup_teardown(
+				 test_nvs_cache_collission, setup, teardown),
+			 ztest_unit_test_setup_teardown(
+				 test_nvs_cache_gc, setup, teardown)
 			);
 
 	ztest_run_test_suite(test_nvs);
