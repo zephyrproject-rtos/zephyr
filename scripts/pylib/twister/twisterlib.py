@@ -2025,7 +2025,7 @@ Tests should reference the category and subsystem with a dot as a separator.
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
 
-        for filename in glob.glob(os.path.join(path, "*.c")):
+        for filename in glob.glob(os.path.join(src_dir_path, "*.c")):
             try:
                 result: ScanPathResult = self.scan_file(filename)
                 if result.warnings:
