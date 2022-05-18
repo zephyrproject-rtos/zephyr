@@ -21,6 +21,10 @@ config WEBSOCKET_MAX_CONTEXTS
 	help
 	  How many Websockets can be created in the system.
 
+config WS_CLIENT_SOCKET_POLL_TIMEOUT_MS
+	int "Timeout in milliseconds for polling socket when sending data"
+	default 2000
+
 module = NET_WEBSOCKET
 module-dep = NET_LOG
 module-str = Log level for Websocket

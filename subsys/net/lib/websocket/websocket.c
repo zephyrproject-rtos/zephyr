@@ -531,7 +531,20 @@ static int sendmsg_all(int sock, const struct msghdr *message, int flags)
 
 	while (offset < total_len) {
 		ret = zsock_sendmsg(sock, message, flags);
-		if (ret < 0) {
+
+		if ((ret == 0) || (ret < 0 && errno == EAGAIN)) {
+			struct zsock_pollfd pfd;
+			int pollres;
+
+			pfd.fd = sock;
+			pfd.events = ZSOCK_POLLOUT;
+			pollres = zsock_poll(&pfd, 1, CONFIG_WS_CLIENT_SOCKET_POLL_TIMEOUT_MS);
+			if (pollres >= 0) {
+				continue;
+			} else {
+				return -errno;
+			}
+		} else if (ret < 0) {
 			return -errno;
 		}
 
