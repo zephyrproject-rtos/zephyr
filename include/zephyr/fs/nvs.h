@@ -55,6 +55,9 @@ struct nvs_fs {
 	struct k_mutex nvs_lock;
 	const struct device *flash_device;
 	const struct flash_parameters *flash_parameters;
+#if CONFIG_NVS_LOOKUP_CACHE
+	uint32_t lookup_cache[CONFIG_NVS_LOOKUP_CACHE_SIZE];
+#endif
 };
 
 /**
