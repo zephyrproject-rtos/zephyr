@@ -1257,15 +1257,30 @@ struct bt_gatt_discover_params;
  *  Only the following fields of the attribute contains valid information:
  *   - uuid      UUID representing the type of attribute.
  *   - handle    Handle in the remote database.
- *   - user_data The value of the attribute.
- *               Will be NULL when discovering descriptors
+ *   - user_data The value of the attribute, if the discovery type maps to an
+ *               ATT operation that provides this information. NULL otherwise.
+ *               See below.
  *
- *  To be able to read the value of the discovered attribute the user_data
- *  must be cast to an appropriate type.
- *   - @ref bt_gatt_service_val when UUID is @ref BT_UUID_GATT_PRIMARY or
- *     @ref BT_UUID_GATT_SECONDARY.
- *   - @ref bt_gatt_include when UUID is @ref BT_UUID_GATT_INCLUDE.
- *   - @ref bt_gatt_chrc when UUID is @ref BT_UUID_GATT_CHRC.
+ *  The effective type of @c attr->user_data is determined by @c params. Note
+ *  that the fields @c params->type and @c params->uuid are left unchanged by
+ *  the discovery procedure.
+ *
+ *  @c params->type                      | @c params->uuid         | Type of @c attr->user_data
+ *  -------------------------------------|-------------------------|---------------------------
+ *  @ref BT_GATT_DISCOVER_PRIMARY        | any                     | @ref bt_gatt_service_val
+ *  @ref BT_GATT_DISCOVER_SECONDARY      | any                     | @ref bt_gatt_service_val
+ *  @ref BT_GATT_DISCOVER_INCLUDE        | any                     | @ref bt_gatt_include
+ *  @ref BT_GATT_DISCOVER_CHARACTERISTIC | any                     | @ref bt_gatt_chrc
+ *  @ref BT_GATT_DISCOVER_STD_CHAR_DESC  | @ref BT_UUID_GATT_CEP   | @ref bt_gatt_cep
+ *  @ref BT_GATT_DISCOVER_STD_CHAR_DESC  | @ref BT_UUID_GATT_CCC   | @ref bt_gatt_ccc
+ *  @ref BT_GATT_DISCOVER_STD_CHAR_DESC  | @ref BT_UUID_GATT_SCC   | @ref bt_gatt_scc
+ *  @ref BT_GATT_DISCOVER_STD_CHAR_DESC  | @ref BT_UUID_GATT_CPF   | @ref bt_gatt_cpf
+ *  @ref BT_GATT_DISCOVER_DESCRIPTOR     | any                     | NULL
+ *  @ref BT_GATT_DISCOVER_ATTRIBUTE      | any                     | NULL
+ *
+ *  Also consider if using read-by-type instead of discovery is more convenient.
+ *  See @ref bt_gatt_read with @ref bt_gatt_read_params.handle_count set to
+ *  @c 0.
  *
  *  @return BT_GATT_ITER_CONTINUE to continue discovery procedure.
  *  @return BT_GATT_ITER_STOP to stop discovery procedure.
