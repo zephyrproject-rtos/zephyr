@@ -30,6 +30,10 @@ config HTTP_CLIENT
 	help
 	  HTTP client API
 
+config HTTP_CLIENT_SOCKET_POLL_TIMEOUT_MS
+	int "Timeout in milliseconds for polling socket when sending data"
+	default 2000
+
 module = NET_HTTP
 module-dep = NET_LOG
 module-str = Log level for HTTP client library
