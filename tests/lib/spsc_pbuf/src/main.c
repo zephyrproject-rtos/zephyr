@@ -13,7 +13,7 @@
  */
 static uint8_t memory_area[216] __aligned(4);
 
-static void test_spsc_pbuf_ut(void)
+ZTEST(test_spsc_pbuf, test_spsc_pbuf_ut)
 {
 	static uint8_t rbuf[198];
 	static uint8_t message[20] = {'a'};
@@ -99,10 +99,4 @@ static void test_spsc_pbuf_ut(void)
 	zassert_equal(message[0], 'a', NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(spsc_pbuf,
-			ztest_unit_test(test_spsc_pbuf_ut)
-			);
-	ztest_run_test_suite(spsc_pbuf);
-}
+ZTEST_SUITE(test_spsc_pbuf, NULL, NULL, NULL, NULL, NULL);
