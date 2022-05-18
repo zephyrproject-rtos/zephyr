@@ -14,7 +14,6 @@ void test_get_sensor_value_not_supp(int16_t channel);
 
 void test_get_gauge_voltage(void);
 void test_get_gauge_current(void);
-void test_get_stdby_current(void);
 void test_get_max_load_current(void);
 void test_get_temperature(void);
 void test_get_soc(void);
@@ -22,11 +21,9 @@ void test_get_full_charge_capacity(void);
 void test_get_rem_charge_capacity(void);
 void test_get_nom_avail_capacity(void);
 void test_get_full_avail_capacity(void);
-void test_get_average_power(void);
 void test_get_average_time_to_empty(void);
 void test_get_average_time_to_full(void);
 void test_get_cycle_count(void);
-void test_get_design_voltage(void);
 void test_get_desired_voltage(void);
 void test_get_desired_chg_current(void);
 
