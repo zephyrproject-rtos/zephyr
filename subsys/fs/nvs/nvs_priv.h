@@ -28,6 +28,8 @@ extern "C" {
 
 #define NVS_BLOCK_SIZE 32
 
+#define NVS_LOOKUP_CACHE_NO_ADDR 0xFFFFFFFF
+
 /* Allocation Table Entry */
 struct nvs_ate {
 	uint16_t id;	/* data id */

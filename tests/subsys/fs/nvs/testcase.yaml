@@ -6,3 +6,6 @@ tests:
   filesystem.nvs_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
     platform_allow: qemu_x86
+  filesystem.nvs_cache:
+    extra_args: CONFIG_NVS_LOOKUP_CACHE=y CONFIG_NVS_LOOKUP_CACHE_SIZE=64
+    platform_allow: native_posix
