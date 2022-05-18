@@ -853,7 +853,11 @@ static int eth_rx(struct eth_context *context)
 			ptpTimeData.second--;
 		}
 
-		pkt->timestamp.nanosecond = ts;
+		/* The offset added corresponds to the time it takes for the packet 
+		* to transit between the phy and the mac. This constant is board dependant 
+		* but is working accross with both mimxrt1170_evk and imxrt1050_evkb
+		*/
+		pkt->timestamp.nanosecond = ts-840;
 		pkt->timestamp.second = ptpTimeData.second;
 	} else {
 		/* Invalid value. */
@@ -898,8 +902,11 @@ static inline void ts_register_tx_event(struct eth_context *context,
 			if (frameinfo->isTsAvail) {
 				k_mutex_lock(&context->ptp_mutex, K_FOREVER);
 
+				/* The offset added corresponds to the time it takes for the packet 
+				* to transit between the mac and the phy 
+				*/
 				pkt->timestamp.nanosecond =
-					frameinfo->timeStamp.nanosecond;
+					frameinfo->timeStamp.nanosecond+840;
 				pkt->timestamp.second =
 					frameinfo->timeStamp.second;
 
