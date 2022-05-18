@@ -208,7 +208,6 @@ static int w5500_tx(const struct device *dev, struct net_pkt *pkt)
 
 static void w5500_rx(const struct device *dev)
 {
-	uint8_t mask = 0;
 	uint8_t header[2];
 	uint8_t tmp[2];
 	uint16_t off;
@@ -221,8 +220,6 @@ static void w5500_rx(const struct device *dev)
 	struct w5500_runtime *ctx = dev->data;
 	const struct w5500_config *config = dev->config;
 
-	/* disable interrupt */
-	w5500_spi_write(dev, W5500_SIMR, &mask, 1);
 	w5500_spi_read(dev, W5500_S0_RX_RSR, tmp, 2);
 	rx_buf_len = sys_get_be16(tmp);
 
@@ -280,34 +277,36 @@ static void w5500_rx(const struct device *dev)
 	w5500_command(dev, S0_CR_RECV);
 }
 
-static void w5500_isr(const struct device *dev)
+static void w5500_thread(const struct device *dev)
 {
 	uint8_t ir;
-	uint8_t mask = 0;
 	struct w5500_runtime *ctx = dev->data;
+	const struct w5500_config *config = dev->config;
 
 	while (true) {
 		k_sem_take(&ctx->int_sem, K_FOREVER);
 
-		w5500_spi_read(dev, W5500_S0_IR, &ir, 1);
-		if (!ir) {
-			goto done;
-		}
+		while (gpio_pin_get_dt(&(config->interrupt))) {
+			/* Read interrupt */
+			w5500_spi_read(dev, W5500_S0_IR, &ir, 1);
 
-		w5500_spi_write(dev, W5500_S0_IR, &ir, 1);
+			if (ir) {
+				/* Clear interrupt */
+				w5500_spi_write(dev, W5500_S0_IR, &ir, 1);
 
-		if (ir & S0_IR_SENDOK) {
-			k_sem_give(&ctx->tx_sem);
-			LOG_DBG("TX Done");
-		}
+				LOG_DBG("IR received");
 
-		if (ir & S0_IR_RECV) {
-			w5500_rx(dev);
+				if (ir & S0_IR_SENDOK) {
+					k_sem_give(&ctx->tx_sem);
+					LOG_DBG("TX Done");
+				}
+
+				if (ir & S0_IR_RECV) {
+					w5500_rx(dev);
+					LOG_DBG("RX Done");
+				}
+			}
 		}
-done:
-		/* enable interrupt */
-		mask = IR_S0;
-		w5500_spi_write(dev, W5500_SIMR, &mask, 1);
 	}
 }
 
@@ -530,7 +529,7 @@ static int w5500_init(const struct device *dev)
 
 	k_thread_create(&ctx->thread, ctx->thread_stack,
 			CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)w5500_isr,
+			(k_thread_entry_t)w5500_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_W5500_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
