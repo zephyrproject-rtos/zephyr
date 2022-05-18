@@ -1413,7 +1413,9 @@ int shell_start(const struct shell *shell)
 		z_shell_vt100_color_set(shell, SHELL_NORMAL);
 	}
 
-	z_shell_raw_fprintf(shell->fprintf_ctx, "\n\n");
+	if (z_shell_strlen(shell->default_prompt) > 0) {
+		z_shell_raw_fprintf(shell->fprintf_ctx, "\n\n");
+	}
 	state_set(shell, SHELL_STATE_ACTIVE);
 
 	k_mutex_unlock(&shell->ctx->wr_mtx);
