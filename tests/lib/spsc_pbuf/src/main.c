@@ -92,10 +92,6 @@ static void test_spsc_pbuf_ut(void)
 	/* Write message that would be wrapped around. */
 	wlen = spsc_pbuf_write(ib, message, sizeof(message));
 	zassert_equal(wlen, sizeof(message), NULL);
-	/* Have to store 22 bytes in total.
-	 * 2 Bytes left in tail of the buffer 20 bytes go in front.
-	 */
-	zassert_equal(ib->wr_idx, 20, NULL);
 
 	/* Read wrapped message. */
 	rlen = spsc_pbuf_read(ib, rbuf, sizeof(rbuf));
