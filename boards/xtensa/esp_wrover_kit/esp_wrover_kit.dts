@@ -81,7 +81,7 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 };
 
@@ -98,7 +98,7 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	sda-pin = <21>;
 	scl-pin = <22>;
-	pinctrl-0 = <&i2c0_sda_gpio21 &i2c0_scl_gpio22>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
 
@@ -106,8 +106,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	pinctrl-0 = <&spim2_miso_gpio12 &spim2_mosi_gpio13
-		     &spim2_sclk_gpio14 &spim2_csel_gpio15>;
+	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 };
 
@@ -115,8 +114,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	pinctrl-0 = <&spim3_miso_gpio25 &spim3_mosi_gpio23
-		     &spim3_sclk_gpio19 &spim3_csel_gpio22>;
+	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
 
 	ili9341: ili9341@0 {
@@ -134,7 +132,7 @@
 };
 
 &ledc0 {
-	pinctrl-0 = <&ledc0_ch0_gpio0 &ledc0_ch1_gpio2 &ledc0_ch2_gpio4>;
+	pinctrl-0 = <&ledc0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 	#address-cells = <1>;
