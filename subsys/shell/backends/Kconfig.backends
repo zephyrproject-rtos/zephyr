@@ -37,7 +37,8 @@ config SHELL_PROMPT_UART
 	string "Displayed prompt name"
 	default "uart:~$ "
 	help
-	  Displayed prompt name for UART backend.
+	  Displayed prompt name for UART backend. If prompt is set, the shell will
+	  send two newlines during initialization.
 
 # Internal config to enable UART interrupts if supported.
 config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
@@ -133,7 +134,8 @@ config SHELL_PROMPT_RTT
 	string "Displayed prompt name"
 	default "rtt:~$ "
 	help
-	  Displayed prompt name for RTT backend.
+	  Displayed prompt name for RTT backend. If prompt is set, the shell will
+	  send two newlines during initialization.
 
 config SHELL_RTT_RX_POLL_PERIOD
 	int "RX polling period (in milliseconds)"
@@ -296,7 +298,8 @@ config SHELL_PROMPT_TELNET
 	string "Displayed prompt name"
 	default "~$ "
 	help
-	  Displayed prompt name for TELNET backend.
+	  Displayed prompt name for TELNET backend. If prompt is set, the shell will
+	  send two newlines during initialization.
 
 config SHELL_TELNET_PORT
 	int "Telnet port number"
@@ -390,7 +393,8 @@ config SHELL_PROMPT_DUMMY
 	string "Displayed prompt name"
 	default "~$ "
 	help
-	  Displayed prompt name for DUMMY backend.
+	  Displayed prompt name for DUMMY backend. If prompt is set, the shell will
+	  send two newlines during initialization.
 
 config SHELL_BACKEND_DUMMY_BUF_SIZE
 	int "Size of dummy buffer size"
