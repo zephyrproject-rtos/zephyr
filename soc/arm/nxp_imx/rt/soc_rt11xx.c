@@ -379,8 +379,8 @@ static ALWAYS_INLINE void clock_init(void)
 
 #ifdef CONFIG_PTP_CLOCK_MCUX
 	/* 24MHz PTP clock */
-	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxOscRc48MDiv2;
-	rootCfg.div = 1;
+	rootCfg.mux = kCLOCK_ENET_TIMER1_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 5;
 	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer1, &rootCfg);
 #endif
 
