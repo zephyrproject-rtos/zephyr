@@ -155,6 +155,27 @@ void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t 
 		*pEnd = header;
 	}
 }
+
+/* Called by HAL_ETH_ReleaseTxPacket */
+void HAL_ETH_TxFreeCallback(uint32_t *buff)
+{
+	__ASSERT_NO_MSG(buff != NULL);
+
+	/* buff is the user context in tx_config.pData */
+	struct eth_stm32_tx_context *ctx = (struct eth_stm32_tx_context *)buff;
+	struct eth_stm32_tx_buffer_header *buffer_header =
+		&dma_tx_buffer_header[ctx->first_tx_buffer_index];
+
+	while (buffer_header != NULL) {
+		buffer_header->used = false;
+		if (buffer_header->tx_buff.next != NULL) {
+			buffer_header = CONTAINER_OF(buffer_header->tx_buff.next,
+				struct eth_stm32_tx_buffer_header, tx_buff);
+		} else {
+			buffer_header = NULL;
+		}
+	}
+}
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -166,12 +187,12 @@ static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
 						uint32_t PHYReg,
 						uint32_t *RegVal)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
 	return HAL_ETH_ReadPHYRegister(heth, PHYAddr, PHYReg, RegVal);
 #else
 	ARG_UNUSED(PHYAddr);
 	return HAL_ETH_ReadPHYRegister(heth, PHYReg, RegVal);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
 }
 
 static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
@@ -237,6 +258,17 @@ static bool eth_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
 
 	return true;
 }
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
+{
+	struct eth_stm32_tx_context *ctx = (struct eth_stm32_tx_context *)buff;
+
+	ctx->pkt->timestamp.second = timestamp->TimeStampHigh;
+	ctx->pkt->timestamp.nanosecond = timestamp->TimeStampLow;
+
+	net_if_add_tx_timestamp(ctx->pkt);
+}
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 static int eth_tx(const struct device *dev, struct net_pkt *pkt)
@@ -755,7 +787,7 @@ static void eth_isr(const struct device *dev)
 
 	HAL_ETH_IRQHandler(heth);
 }
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
 void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
 {
 	__ASSERT_NO_MSG(heth_handle != NULL);
@@ -768,6 +800,9 @@ void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
 	k_sem_give(&dev_data->tx_int_sem);
 
 }
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_ETH_STM32_HAL_API_V2 */
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
 /* DMA and MAC errors callback only appear in H7 series */
 void HAL_ETH_DMAErrorCallback(ETH_HandleTypeDef *heth_handle)
 {
