@@ -6,3 +6,8 @@ tests:
     filter: dt_compat_enabled("sbs,sbs-gauge")
     integration_platforms:
       - nucleo_f070rb
+  drivers.sbs_gauge.emulated:
+    tags: test_framework
+    filter: dt_compat_enabled("sbs,sbs-gauge")
+    platform_allow:
+      native_posix
