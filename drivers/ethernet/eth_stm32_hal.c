@@ -91,7 +91,32 @@ static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
 static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
 static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+
+BUILD_ASSERT(ETH_STM32_RX_BUF_SIZE % 4 == 0, "Rx buffer size must be a multiple of 4");
+
+struct eth_stm32_rx_buffer_header {
+	struct eth_stm32_rx_buffer_header *next;
+	uint16_t size;
+	bool used;
+};
+
+struct eth_stm32_tx_buffer_header {
+	ETH_BufferTypeDef tx_buff;
+	bool used;
+};
+
+struct eth_stm32_tx_context {
+	struct net_pkt *pkt;
+	uint16_t first_tx_buffer_index;
+};
+
+static struct eth_stm32_rx_buffer_header dma_rx_buffer_header[ETH_RXBUFNB];
+static struct eth_stm32_tx_buffer_header dma_tx_buffer_header[ETH_TXBUFNB];
+
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
 static ETH_TxPacketConfig tx_config;
 #endif
 
