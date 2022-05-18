@@ -243,7 +243,7 @@ manifest:
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
-      revision: 12bfe3f0a9fcbfe3edab7eabc9678b6c62875d34
+      revision: fc979a8dcb74169c69b02835927bff8f070d6325
 
   group-filter:
     - -ci
