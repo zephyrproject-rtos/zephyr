@@ -15,7 +15,7 @@
 #define HDA_REGBLOCK_SIZE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_out), reg, 1)
 #include <cavs_hda.h>
 
-#define IPC_TIMEOUT K_MSEC(500)
+#define IPC_TIMEOUT K_MSEC(1500)
 #define STREAM_ID 3U
 #define HDA_BUF_SIZE 256
 #define TRANSFER_COUNT 8
