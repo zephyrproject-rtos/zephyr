@@ -115,7 +115,7 @@ manifest:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 191f5ba46fda49523cdaaef27583d1c875ba2c36
+      revision: a094c060e0c2d43c7f9d8f5c06cc0665117e0c18
       groups:
         - hal
     - name: hal_silabs
