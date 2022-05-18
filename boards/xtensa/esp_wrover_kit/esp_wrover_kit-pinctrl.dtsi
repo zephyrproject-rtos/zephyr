@@ -10,91 +10,57 @@
 
 &pinctrl {
 
-	uart0_tx_gpio1: uart0_tx_gpio1 {
-		pinmux = <UART0_TX_GPIO1>;
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO1>;
+		};
+		group2 {
+			pinmux = <UART0_RX_GPIO3>;
+			bias-pull-up;
+		};
 	};
 
-	uart0_rx_gpio3: uart0_rx_gpio3 {
-		pinmux = <UART0_RX_GPIO3>;
-		bias-pull-up;
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO12>,
+				 <SPIM2_SCLK_GPIO14>,
+				 <SPIM2_CSEL_GPIO15>;
+		};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO13>;
+			output-low;
+		};
 	};
 
-	spim2_miso_gpio12: spim2_miso_gpio12 {
-		pinmux = <SPIM2_MISO_GPIO12>;
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO25>,
+				 <SPIM3_SCLK_GPIO19>,
+				 <SPIM3_CSEL_GPIO22>;
+		};
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO23>;
+			output-low;
+		};
 	};
 
-	spim2_mosi_gpio13: spim2_mosi_gpio13 {
-		pinmux = <SPIM2_MOSI_GPIO13>;
-		output-low;
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO21>,
+				 <I2C0_SCL_GPIO22>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
 	};
 
-	spim2_sclk_gpio14: spim2_sclk_gpio14 {
-		pinmux = <SPIM2_SCLK_GPIO14>;
-	};
-
-	spim2_csel_gpio15: spim2_csel_gpio15 {
-		pinmux = <SPIM2_CSEL_GPIO15>;
-	};
-
-	spim3_miso_gpio25: spim3_miso_gpio25 {
-		pinmux = <SPIM3_MISO_GPIO25>;
-	};
-
-	spim3_mosi_gpio23: spim3_mosi_gpio23 {
-		pinmux = <SPIM3_MOSI_GPIO23>;
-		output-low;
-	};
-
-	spim3_sclk_gpio19: spim3_sclk_gpio19 {
-		pinmux = <SPIM3_SCLK_GPIO19>;
-	};
-
-	spim3_csel_gpio22: spim3_csel_gpio22 {
-		pinmux = <SPIM3_CSEL_GPIO22>;
-	};
-
-	i2c0_sda_gpio21: i2c0_sda_gpio21 {
-		pinmux = <I2C0_SDA_GPIO21>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
-	};
-
-	i2c0_scl_gpio22: i2c0_scl_gpio22 {
-		pinmux = <I2C0_SCL_GPIO22>;
-		bias-pull-up;
-		drive-open-drain;
-		output-high;
-	};
-
-	ledc0_ch0_gpio0: ledc0_ch0_gpio0 {
-		pinmux = <LEDC_CH0_GPIO0>;
-		output-enable;
-	};
-
-	ledc0_ch1_gpio2: ledc0_ch1_gpio2 {
-		pinmux = <LEDC_CH1_GPIO2>;
-		output-enable;
-	};
-
-	ledc0_ch2_gpio4: ledc0_ch2_gpio4 {
-		pinmux = <LEDC_CH2_GPIO4>;
-		output-enable;
-	};
-
-	ledc0_ch8_gpio0: ledc0_ch8_gpio0 {
-		pinmux = <LEDC_CH8_GPIO0>;
-		output-enable;
-	};
-
-	ledc0_ch9_gpio2: ledc0_ch9_gpio2 {
-		pinmux = <LEDC_CH9_GPIO2>;
-		output-enable;
-	};
-
-	ledc0_ch10_gpio4: ledc0_ch10_gpio4 {
-		pinmux = <LEDC_CH10_GPIO4>;
-		output-enable;
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH0_GPIO0>,
+				 <LEDC_CH1_GPIO2>,
+				 <LEDC_CH2_GPIO4>;
+			output-enable;
+		};
 	};
 
 };
