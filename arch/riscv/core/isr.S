@@ -212,13 +212,13 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	sr t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
 	/* Save MSTATUS register */
-	csrr t4, mstatus
-	sr t4, __z_arch_esf_t_mstatus_OFFSET(sp)
+	csrr t2, mstatus
+	sr t2, __z_arch_esf_t_mstatus_OFFSET(sp)
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
 	li t1, MSTATUS_FS_INIT
-	and t0, t4, t1
+	and t0, t2, t1
 	beqz t0, skip_store_fp_caller_saved
 	DO_FP_CALLER_SAVED(fsr, sp)
 skip_store_fp_caller_saved:
@@ -336,10 +336,10 @@ do_irq_offload:
 	lr a0, __z_arch_esf_t_a1_OFFSET(sp)
 
 	/* Increment _current_cpu->nested */
-	lw t3, ___cpu_t_nested_OFFSET(s0)
-	addi t4, t3, 1
-	sw t4, ___cpu_t_nested_OFFSET(s0)
-	bnez t3, 1f
+	lw t1, ___cpu_t_nested_OFFSET(s0)
+	addi t2, t1, 1
+	sw t2, ___cpu_t_nested_OFFSET(s0)
+	bnez t1, 1f
 
 	/* Switch to interrupt stack */
 	mv t0, sp
@@ -403,10 +403,10 @@ valid_syscall_id:
 
 	slli t1, a7, RV_REGSHIFT	# Determine offset from indice value
 	add t0, t0, t1			# Table addr + offset = function addr
-	lr t3, 0(t0)			# Load function address
+	lr t2, 0(t0)			# Load function address
 
 	/* Execute syscall function */
-	jalr ra, t3, 0
+	jalr ra, t2, 0
 
 	/* Update a0 (return value) on the stack */
 	sr a0, __z_arch_esf_t_a0_OFFSET(sp)
@@ -441,10 +441,10 @@ is_interrupt:
 #endif
 
 	/* Increment _current_cpu->nested */
-	lw t3, ___cpu_t_nested_OFFSET(s0)
-	addi t4, t3, 1
-	sw t4, ___cpu_t_nested_OFFSET(s0)
-	bnez t3, on_irq_stack
+	lw t1, ___cpu_t_nested_OFFSET(s0)
+	addi t2, t1, 1
+	sw t2, ___cpu_t_nested_OFFSET(s0)
+	bnez t1, on_irq_stack
 
 	/* Switch to interrupt stack */
 	mv t0, sp
@@ -554,16 +554,16 @@ no_reschedule:
 	csrw mepc, t0
 
 	/* Restore MSTATUS register */
-	lr t4, __z_arch_esf_t_mstatus_OFFSET(sp)
-	csrrw t5, mstatus, t4
+	lr t2, __z_arch_esf_t_mstatus_OFFSET(sp)
+	csrrw t0, mstatus, t2
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/*
 	 * Determine if we need to restore FP regs based on the previous
-	 * (before the csr above) mstatus value available in t5.
+	 * (before the csr above) mstatus value available in t0.
 	 */
 	li t1, MSTATUS_FS_INIT
-	and t0, t5, t1
+	and t0, t0, t1
 	beqz t0, no_fp
 
 	/* make sure FP is enabled in the restored mstatus */
@@ -583,7 +583,7 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	 * the stack pointer to be used with the next exception to come.
 	 */
 	li t1, MSTATUS_MPP
-	and t0, t4, t1
+	and t0, t2, t1
 	bnez t0, 1f
 
 #ifdef CONFIG_PMP_STACK_GUARD
