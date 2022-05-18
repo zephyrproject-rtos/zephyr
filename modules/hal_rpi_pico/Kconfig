@@ -23,3 +23,8 @@ config PICOSDK_USE_PWM
 	bool
 	help
 	  Use the PWM driver from pico-sdk
+
+config PICOSDK_USE_ADC
+	bool
+	help
+	  Use the ADC driver from pico-sdk
