@@ -176,6 +176,26 @@ BUILD_ASSERT(CONFIG_FLASH_INIT_PRIORITY < CONFIG_IT8XXX2_PLL_SEQUENCE_PRIORITY,
 	"CONFIG_FLASH_INIT_PRIORITY must be less than CONFIG_IT8XXX2_PLL_SEQUENCE_PRIORITY");
 #endif /* CONFIG_SOC_IT8XXX2_PLL_FLASH_48M */
 
+#ifdef CONFIG_SOC_IT8XXX2_CPU_IDLE_GATING
+/* Preventing CPU going into idle mode during command queue. */
+static atomic_t cpu_idle_disabled;
+
+void chip_permit_idle(void)
+{
+	atomic_dec(&cpu_idle_disabled);
+}
+
+void chip_block_idle(void)
+{
+	atomic_inc(&cpu_idle_disabled);
+}
+
+bool cpu_idle_not_allowed(void)
+{
+	return !!(atomic_get(&cpu_idle_disabled));
+}
+#endif
+
 /* The routine must be called with interrupts locked */
 void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 {
@@ -214,7 +234,20 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 
 void arch_cpu_idle(void)
 {
-	riscv_idle(CHIP_PLL_DOZE, MSTATUS_IEN);
+#ifdef CONFIG_SOC_IT8XXX2_CPU_IDLE_GATING
+	/*
+	 * The EC processor(CPU) cannot be in the k_cpu_idle() during
+	 * the transactions with the CQ mode(DMA mode). Otherwise,
+	 * the EC processor would be clock gated.
+	 */
+	if (cpu_idle_not_allowed()) {
+		/* Restore global interrupt lockout state */
+		irq_unlock(MSTATUS_IEN);
+	} else
+#endif
+	{
+		riscv_idle(CHIP_PLL_DOZE, MSTATUS_IEN);
+	}
 }
 
 void arch_cpu_atomic_idle(unsigned int key)
