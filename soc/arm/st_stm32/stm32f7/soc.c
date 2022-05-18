@@ -37,8 +37,11 @@ static int st_stm32f7_init(const struct device *arg)
 	key = irq_lock();
 
 	SCB_EnableICache();
-	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
-		SCB_EnableDCache();
+
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
+			SCB_EnableDCache();
+		}
 	}
 
 	/* Install default handler that simply resets the CPU
