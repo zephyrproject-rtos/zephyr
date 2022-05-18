@@ -321,7 +321,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "Send frame with ID 0x%x (%s ID) and %d data bytes",
 		    frame.id, ext ? "extended" : "standard", frame.dlc);
 
-	ret = can_send(can_dev, &frame, K_FOREVER, NULL, NULL);
+	ret = can_send(can_dev, &frame, K_MSEC(100), NULL, NULL);
 	if (ret) {
 		shell_error(sh, "Failed to send frame [%d]", ret);
 		return -EIO;
