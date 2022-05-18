@@ -261,8 +261,6 @@ int settings_load_subtree(const char *subtree);
  *                        @ref settings_load_subtree_direct function.
  *
  * @return When nonzero value is returned, further subtree searching is stopped.
- *         Use with care as some settings backends would iterate through old
- *         values, and the current value is returned last.
  */
 typedef int (*settings_load_direct_cb)(
 	const char      *key,
