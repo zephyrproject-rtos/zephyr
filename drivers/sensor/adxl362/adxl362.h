@@ -177,6 +177,7 @@ struct adxl362_config {
 	uint8_t int1_config;
 	uint8_t int2_config;
 #endif
+	uint8_t power_ctl;
 };
 
 struct adxl362_data {
