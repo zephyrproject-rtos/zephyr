@@ -261,6 +261,7 @@ static int wait_completion(const struct device *dev)
 		/* Is Lost arbitration ? */
 		status = MCHP_I2C_SMB_STS_RO(ba);
 		if (status & MCHP_I2C_SMB_STS_LAB) {
+			recover_from_error(dev);
 			return -EPERM;
 		}
 
