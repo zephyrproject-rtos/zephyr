@@ -1,7 +1,7 @@
 /*
  * Xilinx Processor System Gigabit Ethernet controller (GEM) driver
  *
- * Copyright (c) 2021, Weidmueller Interface GmbH & Co. KG
+ * Copyright (c) 2021-2022, Weidmueller Interface GmbH & Co. KG
  * SPDX-License-Identifier: Apache-2.0
  *
  * Known current limitations / TODOs:
@@ -12,11 +12,10 @@
  * - Wake-on-LAN interrupt not supported.
  * - Send function is not SMP-capable (due to single TX done semaphore).
  * - Interrupt-driven PHY management not supported - polling only.
- * - No explicit placement of the DMA memory area(s) in either a
- *   specific memory section or at a fixed memory location yet. This
- *   is not an issue as long as the controller is used in conjunction
- *   with the Cortex-R5 QEMU target or an actual R5 running without the
- *   MPU enabled.
+ * - Auto-placement of the DMA memory area(s) in the OCM selected via
+ *   the corresponding "chosen" entry in the target SoC's DT. No manual
+ *   placement option, as the DMA should reside in an area which is
+ *   properly configured for DMA use by either an MMU or an MPU.
  * - No detailed error handling when evaluating the Interrupt Status,
  *   RX Status and TX Status registers.
  */
@@ -280,7 +279,10 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 	 * comp. Zynq-7000 TRM, Chapter B.18, p. 1289/1290.
 	 * If the respective condition's handling is configured to be deferred
 	 * to the work queue thread, submit the corresponding job to the work
-	 * queue, otherwise, handle the condition immediately.
+	 * queue, otherwise, handle the condition immediately. Until then,
+	 * disable the respective interrupt source and clear its pending status
+	 * bit, the interrupt source will be re-enabled once RX/TX handling is
+	 * complete.
 	 */
 	if ((reg_val & ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT) != 0) {
 		sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
@@ -680,8 +682,7 @@ static void eth_xlnx_gem_reset_hw(const struct device *dev)
 	 */
 
 	/* Clear the NWCTRL register */
-	sys_write32(0x00000000,
-		    dev_conf->base_addr + ETH_XLNX_GEM_NWCTRL_OFFSET);
+	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_NWCTRL_OFFSET);
 
 	/* Clear the statistics counters */
 	sys_write32(ETH_XLNX_GEM_STATCLR_MASK,
@@ -698,13 +699,11 @@ static void eth_xlnx_gem_reset_hw(const struct device *dev)
 		    dev_conf->base_addr + ETH_XLNX_GEM_IDR_OFFSET);
 
 	/* Clear the buffer queues */
-	sys_write32(0x00000000,
-		    dev_conf->base_addr + ETH_XLNX_GEM_RXQBASE_OFFSET);
-	sys_write32(0x00000000,
-		    dev_conf->base_addr + ETH_XLNX_GEM_TXQBASE_OFFSET);
+	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_RXQBASE_OFFSET);
+	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_TXQBASE_OFFSET);
 #if defined(CONFIG_SOC_XILINX_ZYNQMP)
 	/* UltraScale+ specific: clear transmit_q1_ptr */
-	sys_write32(0, dev_conf->base_addr + ETH_XLNX_GEM_TXQ1BASE_OFFSET);
+	sys_write32(0x00000000, dev_conf->base_addr + ETH_XLNX_GEM_TXQ1BASE_OFFSET);
 #endif
 }
 
