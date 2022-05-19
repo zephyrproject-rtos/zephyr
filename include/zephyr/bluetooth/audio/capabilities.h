@@ -230,8 +230,6 @@ struct bt_audio_capability_ops {
 struct bt_audio_capability {
 	/** Capability direction */
 	enum bt_audio_dir dir;
-	/** Supported Audio Contexts */
-	uint16_t context;
 	/** Capability codec reference */
 	struct bt_codec *codec;
 	/** Capability preferences */
