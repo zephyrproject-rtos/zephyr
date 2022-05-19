@@ -73,8 +73,7 @@ const char *ztest_relative_filename(const char *file)
 	char buf[200];
 
 	cwd = getcwd(buf, sizeof(buf));
-	if (cwd && strlen(file) > strlen(cwd) &&
-	    !strncmp(file, cwd, strlen(cwd)))
+	if (cwd && strlen(file) > strlen(cwd) && !strncmp(file, cwd, strlen(cwd)))
 		return file + strlen(cwd) + 1; /* move past the trailing '/' */
 #endif
 	return file;
@@ -98,12 +97,10 @@ static int cleanup_test(struct ztest_unit_test *test)
 #endif
 
 	if (!ret && mock_status == 1) {
-		PRINT("Test %s failed: Unused mock parameter values\n",
-		      test->name);
+		PRINT("Test %s failed: Unused mock parameter values\n", test->name);
 		ret = TC_FAIL;
 	} else if (!ret && mock_status == 2) {
-		PRINT("Test %s failed: Unused mock return values\n",
-		      test->name);
+		PRINT("Test %s failed: Unused mock return values\n", test->name);
 		ret = TC_FAIL;
 	} else {
 		;
@@ -161,8 +158,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	 * logic views it as one "job") and cause other test failures.
 	 */
 	dt = k_uptime_get_32() - start_ms;
-	zassert_true(dt < 3000,
-		     "1cpu test took too long (%d ms)", dt);
+	zassert_true(dt < 3000, "1cpu test took too long (%d ms)", dt);
 	arch_irq_unlock(key);
 }
 
@@ -180,11 +176,10 @@ void z_impl_z_test_1cpu_start(void)
 	 * to flag the following loop as DEADCODE so suppress the warning.
 	 */
 	/* coverity[DEADCODE] */
-	for (int i = 0; i < NUM_CPUHOLD; i++)  {
-		k_thread_create(&cpuhold_threads[i],
-				cpuhold_stacks[i], CPUHOLD_STACK_SZ,
-				(k_thread_entry_t) cpu_hold, NULL, NULL, NULL,
-				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+	for (int i = 0; i < NUM_CPUHOLD; i++) {
+		k_thread_create(&cpuhold_threads[i], cpuhold_stacks[i], CPUHOLD_STACK_SZ,
+				(k_thread_entry_t)cpu_hold, NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO,
+				0, K_NO_WAIT);
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", i);
 			k_thread_name_set(&cpuhold_threads[i], tname);
@@ -201,7 +196,7 @@ void z_impl_z_test_1cpu_stop(void)
 	 * to flag the following loop as DEADCODE so suppress the warning.
 	 */
 	/* coverity[DEADCODE] */
-	for (int i = 0; i < NUM_CPUHOLD; i++)  {
+	for (int i = 0; i < NUM_CPUHOLD; i++) {
 		k_thread_abort(&cpuhold_threads[i]);
 	}
 }
@@ -457,8 +452,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 
 	/* Flush all logs in case deferred mode and default logging thread are used. */
 	while (IS_ENABLED(CONFIG_TEST_LOGGING_FLUSH_AFTER_TEST) &&
-	       IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) &&
-	       log_data_pending()) {
+	       IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) && log_data_pending()) {
 		k_msleep(100);
 	}
 
@@ -710,12 +704,10 @@ void main(void)
 	 * placed in this partition if no other memory domain configuration
 	 * is made.
 	 */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &ztest_mem_partition);
+	k_mem_domain_add_partition(&k_mem_domain_default, &ztest_mem_partition);
 #ifdef Z_MALLOC_PARTITION_EXISTS
 	/* Allow access to malloc() memory */
-	k_mem_domain_add_partition(&k_mem_domain_default,
-				   &z_malloc_partition);
+	k_mem_domain_add_partition(&k_mem_domain_default, &z_malloc_partition);
 #endif
 #endif /* CONFIG_USERSPACE */
 
@@ -736,8 +728,7 @@ void main(void)
 		}
 		state.boots += 1;
 		if (test_status == 0) {
-			PRINT("Reset board #%u to test again\n",
-				state.boots);
+			PRINT("Reset board #%u to test again\n", state.boots);
 			k_msleep(10);
 			sys_reboot(SYS_REBOOT_COLD);
 		} else {
