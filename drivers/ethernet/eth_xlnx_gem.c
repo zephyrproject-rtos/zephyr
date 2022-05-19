@@ -825,6 +825,7 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR0_SHIFT) |
 			((div1 & ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR_MASK) <<
 			ETH_XLNX_SLCR_GEMX_CLK_CTRL_DIVISOR1_SHIFT);
+	clk_ctrl_reg |= ETH_XLNX_SLCR_GEMX_CLK_CTRL_CLKACT_BIT;
 
 	sys_write32(clk_ctrl_reg, dev_conf->clk_ctrl_reg_address);
 #endif /* CONFIG_SOC_XILINX_ZYNQMP / CONFIG_SOC_FAMILY_XILINX_ZYNQ7000 */
