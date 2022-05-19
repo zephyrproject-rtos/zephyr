@@ -18,5 +18,6 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - arduino_serial
+  - dma
   - gpio
   - i2c
