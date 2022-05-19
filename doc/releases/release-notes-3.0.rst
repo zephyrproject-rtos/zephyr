@@ -24,9 +24,9 @@ Issues Fixed
 These GitHub issues were addressed since the previous 3.0.0 tagged
 release:
 
-.. comment  List derived from GitHub Issue query: ...
-   * :github:`issuenumber` - issue title
-
+* :github:`43309` - arm64: Fix booting issue with FVP BaseR v8R (version >= 11.16.16)
+* :github:`43576` - arm64: Fix the broadcast ipi issue when Zephyr SMP runs on Xen
+* :github:`43845` - arm/arm64: Armv8r misc fix
 
 Security Vulnerability Related
 ******************************
