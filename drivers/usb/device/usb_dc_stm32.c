@@ -1099,7 +1099,7 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	}
 }
 
-#if (defined(USB) || defined(USB_DRD_FS)) && defined(CONFIG_USB_DC_STM32_DISCONN_ENABLE)
+#if (defined(USB) || defined(USB_DRD_FS)) && DT_INST_NODE_HAS_PROP(0, disconnect_gpios)
 void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
 	const struct device *usb_disconnect;
@@ -1112,4 +1112,4 @@ void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 			   DT_GPIO_FLAGS(DT_INST(0, st_stm32_usb), disconnect_gpios) |
 			   (state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
-#endif /* USB && CONFIG_USB_DC_STM32_DISCONN_ENABLE */
+#endif /* USB && DT_INST_NODE_HAS_PROP(0, disconnect_gpios) */
