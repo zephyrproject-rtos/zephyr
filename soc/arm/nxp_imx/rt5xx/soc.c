@@ -25,6 +25,12 @@
 /* Core clock frequency: 198000000Hz */
 #define CLOCK_INIT_CORE_CLOCK                     198000000U
 
+#define CTIMER_CLOCK_SOURCE(node_id) \
+	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
+#define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
+#define TO_CLOCK_ATTACH_ID(inst, val) CLKCTL1_TUPLE_MUXA(CT32BIT##inst##FCLKSEL_OFFSET, val)
+#define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
+
 const clock_sys_pll_config_t g_sysPllConfig_clock_init = {
 	/* OSC clock */
 	.sys_pll_src = kCLOCK_SysPllXtalIn,
@@ -197,6 +203,8 @@ void clock_init(void)
 #endif
 	/* Switch CLKOUT to FRO_DIV2 */
 	CLOCK_AttachClk(kFRO_DIV2_to_CLKOUT);
+
+	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 	/* Set up dividers. */
 	/* Set AUDIOPLLCLKDIV divider to value 15 */
