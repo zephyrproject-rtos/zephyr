@@ -114,6 +114,47 @@ struct eth_stm32_tx_context {
 static struct eth_stm32_rx_buffer_header dma_rx_buffer_header[ETH_RXBUFNB];
 static struct eth_stm32_tx_buffer_header dma_tx_buffer_header[ETH_TXBUFNB];
 
+void HAL_ETH_RxAllocateCallback(uint8_t **buf)
+{
+	for (size_t i = 0; i < ETH_RXBUFNB; ++i) {
+		if (!dma_rx_buffer_header[i].used) {
+			dma_rx_buffer_header[i].next = NULL;
+			dma_rx_buffer_header[i].size = 0;
+			dma_rx_buffer_header[i].used = true;
+			*buf = dma_rx_buffer[i];
+			return;
+		}
+	}
+	*buf = NULL;
+}
+
+/* Pointer to an array of ETH_STM32_RX_BUF_SIZE uint8_t's */
+typedef uint8_t (*RxBufferPtr)[ETH_STM32_RX_BUF_SIZE];
+
+/* called by HAL_ETH_ReadData() */
+void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t Length)
+{
+	/* buff points to the begin on one of the rx buffers,
+	 * so we can compute the index of the given buffer
+	 */
+	size_t index = (RxBufferPtr)buff - &dma_rx_buffer[0];
+	struct eth_stm32_rx_buffer_header *header = &dma_rx_buffer_header[index];
+
+	__ASSERT_NO_MSG(index < ETH_RXBUFNB);
+
+	header->size = Length;
+
+	if (!*pStart) {
+		/* first packet, set head pointer of linked list */
+		*pStart = header;
+		*pEnd = header;
+	} else {
+		__ASSERT_NO_MSG(*pEnd != NULL);
+		/* not the first packet, add to list and adjust tail pointer */
+		((struct eth_stm32_rx_buffer_header *)*pEnd)->next = header;
+		*pEnd = header;
+	}
+}
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_ETH_STM32_HAL_API_V2)
