@@ -522,9 +522,9 @@ static int eth_xlnx_gem_start_device(const struct device *dev)
 	dev_data->started = true;
 
 	/* Disable & clear all the MAC interrupts */
-	sys_write32(ETH_XLNX_GEM_IXR_ALL_MASK,
+	sys_write32(ETH_XLNX_GEM_IDRCLR_MASK,
 		    dev_conf->base_addr + ETH_XLNX_GEM_IDR_OFFSET);
-	sys_write32(ETH_XLNX_GEM_IXR_ALL_MASK,
+	sys_write32(ETH_XLNX_GEM_IDRCLR_MASK,
 		    dev_conf->base_addr + ETH_XLNX_GEM_ISR_OFFSET);
 
 	/* Clear RX & TX status registers */
@@ -537,7 +537,7 @@ static int eth_xlnx_gem_start_device(const struct device *dev)
 	sys_write32(reg_val, dev_conf->base_addr + ETH_XLNX_GEM_NWCTRL_OFFSET);
 
 	/* Enable all the MAC interrupts */
-	sys_write32(ETH_XLNX_GEM_IXR_ALL_MASK,
+	sys_write32(ETH_XLNX_GEM_IXR_ALL_RELEVANT_MASK,
 		    dev_conf->base_addr + ETH_XLNX_GEM_IER_OFFSET);
 
 	/* Submit the delayed work for polling the link state */
@@ -581,9 +581,9 @@ static int eth_xlnx_gem_stop_device(const struct device *dev)
 	sys_write32(reg_val, dev_conf->base_addr + ETH_XLNX_GEM_NWCTRL_OFFSET);
 
 	/* Disable & clear all the MAC interrupts */
-	sys_write32(ETH_XLNX_GEM_IXR_ALL_MASK,
+	sys_write32(ETH_XLNX_GEM_IDRCLR_MASK,
 		    dev_conf->base_addr + ETH_XLNX_GEM_IDR_OFFSET);
-	sys_write32(ETH_XLNX_GEM_IXR_ALL_MASK,
+	sys_write32(ETH_XLNX_GEM_IDRCLR_MASK,
 		    dev_conf->base_addr + ETH_XLNX_GEM_ISR_OFFSET);
 
 	/* Clear RX & TX status registers */
