@@ -233,11 +233,34 @@ static void set_location(void)
 	printk("Location successfully set\n");
 }
 
+static void set_available_contexts(void)
+{
+	int err;
+
+	err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
+						BT_AUDIO_CONTEXT_TYPE_MEDIA |
+						BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL);
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK) && err != 0) {
+		FAIL("Failed to set sink available contexts (err %d)\n", err);
+		return;
+	}
+
+	err = bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+						BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS);
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC) && err != 0) {
+		FAIL("Failed to set source available contexts (err %d)\n", err);
+		return;
+	}
+
+	printk("Available contexts successfully set\n");
+}
+
 static void test_main(void)
 {
 	init();
 
 	set_location();
+	set_available_contexts();
 
 	/* TODO: When babblesim supports ISO, wait for audio stream to pass */
 
