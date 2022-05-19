@@ -542,20 +542,40 @@ static int prt_elapse(uint16_t *expire, uint16_t elapsed_event)
 	return 0;
 }
 
-int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event)
+int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event, uint8_t *error_code)
 {
 	int loc_ret;
 	int rem_ret;
 
 	loc_ret = prt_elapse(&conn->llcp.local.prt_expire, elapsed_event);
-	rem_ret = prt_elapse(&conn->llcp.remote.prt_expire, elapsed_event);
+	if (loc_ret == -ETIMEDOUT) {
+		/* Local Request Machine timed out */
 
-	if (loc_ret == -ETIMEDOUT || rem_ret == -ETIMEDOUT) {
-		/* One of the timers expired */
+		struct proc_ctx *ctx;
+
+		ctx = llcp_lr_peek(conn);
+		LL_ASSERT(ctx);
+
+		if (ctx->proc == PROC_TERMINATE) {
+			/* Active procedure is ACL Termination */
+			*error_code = ctx->data.term.error_code;
+		} else {
+			*error_code = BT_HCI_ERR_LL_RESP_TIMEOUT;
+		}
+
+		return -ETIMEDOUT;
+	}
+
+	rem_ret = prt_elapse(&conn->llcp.remote.prt_expire, elapsed_event);
+	if (rem_ret == -ETIMEDOUT) {
+		/* Remote Request Machine timed out */
+
+		*error_code = BT_HCI_ERR_LL_RESP_TIMEOUT;
 		return -ETIMEDOUT;
 	}
 
 	/* Both timers are still running */
+	*error_code = BT_HCI_ERR_SUCCESS;
 	return 0;
 }
 

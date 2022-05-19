@@ -1592,8 +1592,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 		}
 	}
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-	if (-ETIMEDOUT == ull_cp_prt_elapse(conn, elapsed_event)) {
-		conn_cleanup(conn, BT_HCI_ERR_LL_RESP_TIMEOUT);
+	uint8_t error_code;
+
+	if (-ETIMEDOUT == ull_cp_prt_elapse(conn, elapsed_event, &error_code)) {
+		conn_cleanup(conn, error_code);
 
 		return;
 	}
