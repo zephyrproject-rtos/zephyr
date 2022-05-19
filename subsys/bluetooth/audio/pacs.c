@@ -123,23 +123,67 @@ static ssize_t pac_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 read_buf.len);
 }
 
-static void context_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void available_context_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("attr %p value 0x%04x", attr, value);
 }
 
-static ssize_t context_read(struct bt_conn *conn,
-			    const struct bt_gatt_attr *attr, void *buf,
-			    uint16_t len, uint16_t offset)
+static int available_contexts_get(struct bt_conn *conn, struct bt_pacs_context *context)
 {
-	struct bt_pacs_context context = {
-		/* TODO: This should reflect the ongoing channel contexts */
-		.snk = 0x0001,
-		.src = 0x0001,
-	};
+	enum bt_audio_context context_snk, context_src;
+	int err;
+
+	if (unicast_server_cb == NULL ||
+	    unicast_server_cb->get_available_contexts == NULL) {
+		BT_WARN("No callback for get_available_contexts");
+		return -ENODATA;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		err = unicast_server_cb->get_available_contexts(conn,
+								BT_AUDIO_DIR_SINK,
+								&context_snk);
+		if (err) {
+			return err;
+		}
+	} else {
+		/* Server is not available to receive audio for any Context */
+		context_snk = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		err = unicast_server_cb->get_available_contexts(conn,
+								BT_AUDIO_DIR_SOURCE,
+								&context_src);
+		if (err) {
+			return err;
+		}
+	} else {
+		/* Server is not available to send audio for any Context */
+		context_src = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	}
+
+	context->snk = sys_cpu_to_le16((uint16_t)context_snk);
+	context->src = sys_cpu_to_le16((uint16_t)context_src);
+
+	return 0;
+}
+
+static ssize_t available_contexts_read(struct bt_conn *conn,
+				       const struct bt_gatt_attr *attr, void *buf,
+				       uint16_t len, uint16_t offset)
+{
+	struct bt_pacs_context context;
+	int err;
 
 	BT_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len,
 	       offset);
+
+	err = available_contexts_get(NULL, &context);
+	if (err) {
+		BT_DBG("get_available_contexts returned %d", err);
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &context,
 				 sizeof(context));
@@ -155,12 +199,19 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	struct bt_pacs_context context = {
-		.snk = COND_CODE_1(CONFIG_BT_PAC_SNK,
-				   (sys_cpu_to_le16(CONFIG_BT_PACS_SNK_CONTEXT)), (0)),
-		.src = COND_CODE_1(CONFIG_BT_PAC_SRC,
-				   (sys_cpu_to_le16(CONFIG_BT_PACS_SRC_CONTEXT)), (0)),
-	};
+	struct bt_pacs_context context;
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		context.snk = sys_cpu_to_le16(CONFIG_BT_PACS_SNK_CONTEXT);
+	} else {
+		context.snk = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		context.src = sys_cpu_to_le16(CONFIG_BT_PACS_SRC_CONTEXT);
+	} else {
+		context.src = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	}
 
 	BT_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len,
 	       offset);
@@ -438,8 +489,8 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_AVAILABLE_CONTEXT,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ_ENCRYPT,
-			       context_read, NULL, NULL),
-	BT_GATT_CCC(context_cfg_changed,
+			       available_contexts_read, NULL, NULL),
+	BT_GATT_CCC(available_context_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
 	BT_GATT_CHARACTERISTIC(BT_UUID_PACS_SUPPORTED_CONTEXT,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
@@ -598,3 +649,35 @@ int bt_pacs_location_changed(enum bt_audio_dir dir)
 	return 0;
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
+
+static void available_contexts_notify(struct k_work *work)
+{
+	struct bt_pacs_context context;
+	int err;
+
+	err = available_contexts_get(NULL, &context);
+	if (err) {
+		BT_DBG("get_available_contexts returned %d, won't notify", err);
+		return;
+	}
+
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_PACS_AVAILABLE_CONTEXT, pacs_svc.attrs,
+				  &context, sizeof(context));
+	if (err) {
+		BT_WARN("Available Audio Contexts notify failed: %d", err);
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(available_contexts_work, available_contexts_notify);
+
+int bt_pacs_available_contexts_changed(void)
+{
+	int err;
+
+	err = k_work_reschedule(&available_contexts_work, PAC_NOTIFY_TIMEOUT);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
+}
