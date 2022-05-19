@@ -231,8 +231,8 @@ def parse_arguments():
                                             """
 Artificially long but functional example:
     $ ./scripts/twister -v     \\
-      --testcase-root tests/ztest/base    \\
-      --testcase-root tests/kernel   \\
+      --testsuite-root tests/ztest/base    \\
+      --testsuite-root tests/kernel   \\
       --test      tests/ztest/base/testing.ztest.verbose_0  \\
       --test      tests/kernel/fifo/fifo_api/kernel.fifo
 
@@ -284,7 +284,7 @@ Artificially long but functional example:
 
     case_select.add_argument("--list-tests", action="store_true",
                              help="""List of all sub-test functions recursively found in
-        all --testcase-root arguments. Note different sub-tests can share
+        all --testsuite-root arguments. Note different sub-tests can share
         the same section name and come from different directories.
         The output is flattened and reports --sub-test names only,
         not their directories. For instance net.socket.getaddrinfo_ok
