@@ -232,7 +232,7 @@ int fcb_walk(struct fcb *fcb, struct flash_sector *sector, fcb_walk_cb cb,
  */
 int fcb_getnext(struct fcb *fcb, struct fcb_entry *loc);
 
-/*
+/**
  * Rotate fcb sectors
  *
  * Function erases the data from oldest sector. Upon that the next sector
@@ -242,7 +242,7 @@ int fcb_getnext(struct fcb *fcb, struct fcb_entry *loc);
  */
 int fcb_rotate(struct fcb *fcb);
 
-/*
+/**
  * Start using the scratch block.
  *
  * Take one of the scratch blocks into use. So a scratch sector becomes
