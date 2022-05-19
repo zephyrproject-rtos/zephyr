@@ -609,7 +609,7 @@ enum eth_xlnx_amba_dbus_width {
  *
  * Enumeration type containing the supported clock divider values
  * used to generate the MDIO interface clock (MDC) from either the
- * cpu_1x clock (Zynq-7000) or the LPD LSBUS clock (UltraScale).
+ * cpu_1x clock (Zynq-7000) or the IOU_SWITCH_CLK clock (UltraScale).
  * This is a configuration item in the controller's net_cfg register.
  */
 enum eth_xlnx_mdc_clock_divider {
@@ -618,13 +618,10 @@ enum eth_xlnx_mdc_clock_divider {
 	MDC_DIVIDER_16,
 	MDC_DIVIDER_32,
 	MDC_DIVIDER_48,
-#ifdef CONFIG_SOC_FAMILY_XILINX_ZYNQ7000
-	/* Dividers > 48 are only available in the Zynq-7000 */
 	MDC_DIVIDER_64,
 	MDC_DIVIDER_96,
 	MDC_DIVIDER_128,
 	MDC_DIVIDER_224
-#endif
 };
 
 /**

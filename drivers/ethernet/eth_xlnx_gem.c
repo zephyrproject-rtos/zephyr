@@ -114,18 +114,11 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 		 "%s invalid max./nominal link speed value %u",
 		 dev->name, (uint32_t)dev_conf->max_link_speed);
 
-	/* MDC clock divider validity check, SoC dependent */
-#if defined(CONFIG_SOC_XILINX_ZYNQMP)
-	__ASSERT(dev_conf->mdc_divider <= MDC_DIVIDER_48,
-		 "%s invalid MDC clock divider value %u, must be in "
-		 "range 0 to %u", dev->name, dev_conf->mdc_divider,
-		 (uint32_t)MDC_DIVIDER_48);
-#elif defined(CONFIG_SOC_FAMILY_XILINX_ZYNQ7000)
+	/* MDC clock divider validity check */
 	__ASSERT(dev_conf->mdc_divider <= MDC_DIVIDER_224,
 		 "%s invalid MDC clock divider value %u, must be in "
 		 "range 0 to %u", dev->name, dev_conf->mdc_divider,
 		 (uint32_t)MDC_DIVIDER_224);
-#endif
 
 	/* AMBA AHB configuration options */
 	__ASSERT((dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_32BIT ||
