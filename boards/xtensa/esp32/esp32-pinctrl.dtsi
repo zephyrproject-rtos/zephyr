@@ -20,20 +20,20 @@
 	};
 
 	uart1_tx_gpio10: uart1_tx_gpio10 {
-		pinmux = <UART0_TX_GPIO10>;
+		pinmux = <UART1_TX_GPIO10>;
 	};
 
 	uart1_rx_gpio9: uart1_rx_gpio9 {
-		pinmux = <UART0_RX_GPIO9>;
+		pinmux = <UART1_RX_GPIO9>;
 		bias-pull-up;
 	};
 
 	uart2_tx_gpio17: uart2_tx_gpio17 {
-		pinmux = <UART0_TX_GPIO17>;
+		pinmux = <UART2_TX_GPIO17>;
 	};
 
 	uart2_rx_gpio16: uart2_rx_gpio16 {
-		pinmux = <UART0_RX_GPIO16>;
+		pinmux = <UART2_RX_GPIO16>;
 		bias-pull-up;
 	};
 
