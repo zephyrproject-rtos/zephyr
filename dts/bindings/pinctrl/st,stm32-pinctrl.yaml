@@ -76,7 +76,7 @@ child-binding:
 
             To simplify the usage, macro is available to generate "pinmux" field.
             This macro is available here:
-              -include/dt-bindings/pinctrl/stm32-pinctrl-common.h
+              -include/zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h
             Some examples of macro usage:
                GPIO A9 set as alernate function 2
             ... {
