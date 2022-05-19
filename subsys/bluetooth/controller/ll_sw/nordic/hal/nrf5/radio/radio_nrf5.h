@@ -29,6 +29,9 @@
 #define RADIO_EVENTS_PHYEND_DELAY_US 16
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
+/* Delay of CCM TASKS_CRYPT start in number of bits for Radio Bit counter */
+#define CCM_TASKS_CRYPT_DELAY_BITS 3
+
 /* EVENTS_TIMER capture register used for sampling TIMER time-stamps. */
 #define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 3
 #define HAL_EVENT_TIMER_SAMPLE_TASK NRF_TIMER_TASK_CAPTURE3
