@@ -128,7 +128,7 @@ Created: {datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
 
     # write other license info, if any
     if len(doc.customLicenseIDs) > 0:
-        for lic in list(doc.customLicenseIDs).sort():
+        for lic in sorted(list(doc.customLicenseIDs)):
             writeOtherLicenseSPDX(f, lic)
 
 # Open SPDX document file for writing, write the document, and calculate
