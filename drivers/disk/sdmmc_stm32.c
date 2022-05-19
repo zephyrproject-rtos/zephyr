@@ -495,10 +495,19 @@ static void stm32_sdmmc_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
+#if DT_INST_PROP(0, bus_width) == 1
+#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_1B
+#elif DT_INST_PROP(0, bus_width) == 4
+#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_4B
+#elif DT_INST_PROP(0, bus_width) == 8
+#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_8B
+#endif /* DT_INST_PROP(0, bus_width) */
+
 static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.irq_config = stm32_sdmmc_irq_config_func,
 	.hsd = {
 		.Instance = (MMC_TypeDef *)DT_INST_REG_ADDR(0),
+		.Init.BusWide = SDMMC_BUS_WIDTH,
 	},
 #if DT_INST_NODE_HAS_PROP(0, cd_gpios)
 	.cd = {
