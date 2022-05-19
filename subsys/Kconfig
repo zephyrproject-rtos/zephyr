@@ -20,6 +20,8 @@ source "subsys/disk/Kconfig"
 
 source "subsys/emul/Kconfig"
 
+source "subsys/factory_data/Kconfig"
+
 source "subsys/fb/Kconfig"
 
 source "subsys/fs/Kconfig"

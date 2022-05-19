@@ -1,0 +1,99 @@
+# Copyright (c) 2022 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FACTORY_DATA
+	bool "Per-device factory data"
+	help
+	  The factory data subsystem allows its users to store device specific data,
+	  e.g. MAC addresses, during manufacturing. Later on, the productive firmwares
+	  contain only code to read the factory data.
+
+if FACTORY_DATA
+
+choice FACTORY_DATA_BACKEND
+	prompt "Factory data back-end"
+	default FACTORY_DATA_FCB if FCB
+	default FACTORY_DATA_LV
+	depends on FACTORY_DATA
+	help
+	  Storage back-end to be used by the factory data subsystem.
+
+config FACTORY_DATA_FCB
+	bool "FCB"
+	depends on FCB
+	help
+	  Use FCB as a factory data storage back-end.
+
+config FACTORY_DATA_LV
+	bool "LV"
+	help
+	  Use length-value data structures as factory data storage back-end.
+
+config FACTORY_DATA_DUMMY
+	bool "Dummy implementation"
+	help
+	  Minimalistic, non-functional factory data storage back-end stubs. Serves as baseline when
+	  comparing the code size of different implementations.
+
+config FACTORY_DATA_CUSTOM
+	bool "CUSTOM"
+	help
+	  Use a custom settings storage back-end.
+endchoice
+
+config FACTORY_DATA_FCB_MAGIC
+	hex "FCB magic number for the factory data subsystem"
+	default 0xfac70fcb
+	depends on FACTORY_DATA_FCB
+	help
+	  Magic 32-bit word for to identify valid FCB factory data area
+
+config FACTORY_DATA_FCB_NUM_AREAS
+	int "Number of flash areas used by the factory data FCB subsystem"
+	default 1
+	depends on FACTORY_DATA_FCB
+	help
+	  Number of areas to allocate in the factory data FCB. A smaller number is
+	  used if the flash hardware cannot support this value.
+
+config FACTORY_DATA_LV_MAGIC
+	hex "FCB magic number for the factory data subsystem"
+	default 0xfac70715
+	depends on FACTORY_DATA_LV
+	help
+	  Magic 32-bit word for to identify valid LV factory data area
+
+config FACTORY_DATA_WRITE
+	bool "Factory data write API."
+	default n
+	depends on FACTORY_DATA
+	help
+	  Enable code to write factory data.
+
+config FACTORY_DATA_SHELL
+	bool "Factory data shell support"
+	default y
+	depends on FACTORY_DATA && SHELL
+	select FACTORY_DATA_WRITE
+	help
+	  Enable factory data shell, the (currently) only way to write factory data.
+
+config FACTORY_DATA_NAME_LEN_MAX
+	int "Max name length in bytes"
+	default 32
+	depends on FACTORY_DATA
+	help
+	  Maximum size in bytes for factory data value names. The bigger the more stack space gets
+	  used on data load.
+
+config FACTORY_DATA_VALUE_LEN_MAX
+	int "Max value length in bytes"
+	default 512
+	depends on FACTORY_DATA
+	help
+	  Maximum size in bytes for factory data value payloads. The bigger the more stack space
+	  gets used on data load.
+
+
+endif

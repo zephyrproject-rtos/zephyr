@@ -1,0 +1,6 @@
+tests:
+  samples.factory_data:
+    platform_allow: >
+      native_posix
+      native_posix_64
+    tags: factory_data

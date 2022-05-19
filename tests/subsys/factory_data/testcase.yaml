@@ -1,0 +1,21 @@
+tests:
+  system.factory_data.fcb:
+    platform_allow: >
+      native_posix
+      native_posix_64
+      nrf52840dk_nrf52840
+    tags: factory_data
+    extra_args: OVERLAY_CONFIG=fcb.conf
+  system.factory_data.lv:
+    platform_allow: >
+      native_posix
+      native_posix_64
+      nrf52840dk_nrf52840
+    tags: factory_data
+    extra_args: CONFIG_FACTORY_DATA_LV=y
+  system.factory_data.dummy:
+    platform_allow: >
+      nrf52840dk_nrf52840
+    tags: factory_data
+    extra_args: CONFIG_FACTORY_DATA_DUMMY=y
+    build_only: true

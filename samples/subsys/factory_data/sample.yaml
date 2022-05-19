@@ -1,0 +1,17 @@
+sample:
+  name: Factory data sample
+common:
+    tags: factory_data
+    build_only: true
+
+tests:
+  sample.subsys.factory_data.read_write:
+    platform_allow: >
+      gd32f450i_eval
+      native_posix
+      native_posix_64
+  sample.subsys.factory_data.read_only:
+    extra_args: CONF_FILE=read_only.conf
+    platform_allow:
+      native_posix
+      native_posix_64
