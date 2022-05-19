@@ -1357,6 +1357,12 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		bt_audio_capability_register(&caps[i]);
 	}
 
+	/* Mark all supported contexts as available */
+	bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
+						   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+						   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
 	for (i = 0; i < ARRAY_SIZE(streams); i++) {
 		bt_audio_stream_cb_register(&streams[i], &stream_ops);
 	}
