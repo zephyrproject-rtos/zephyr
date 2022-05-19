@@ -1441,12 +1441,26 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		reg_val = sys_read32(reg_ctrl);
 		if ((reg_val & ETH_XLNX_GEM_RXBD_START_OF_FRAME_BIT) == 0) {
 			/*
-			 * Although the current BD is marked as 'used', it
-			 * doesn't contain the SOF bit.
+			 * Although the current BD is marked as 'used', it doesn't
+			 * contain the SOF bit.
+			 *
+			 * -> Unless we move the current RX BD pointer forward,
+			 * we'll be stuck on this invalid entry - at least until
+			 * the RX BDs wrap around to the next use of the current
+			 * RX BD entry. Clear the 'used' bit before moving on.
 			 */
 			LOG_ERR("%s unexpected missing SOF bit in RX BD [%u]",
 				dev->name, first_bd_idx);
-			break;
+
+			reg_val = sys_read32(reg_addr);
+			reg_val &= ~ETH_XLNX_GEM_RXBD_USED_BIT;
+			sys_write32(reg_val, reg_addr);
+
+			dev_data->rxbd_ring.next_to_process =
+				(dev_data->rxbd_ring.next_to_process + 1) %
+				dev_conf->rxbd_count;
+
+			continue;
 		}
 
 		/*
