@@ -6,9 +6,9 @@
 
 description: |
     TI INA237 Bidirectional Current and Power Monitor.
-    The <include/dt-bindings/sensor/ina237.h> file should be included
-    in the DeviceTree and it provides macros that can be used for
-    initializing the configuration registers.
+    The <zephyr/dt-bindings/sensor/ina237.h> file should be included in the
+    DeviceTree and it provides macros that can be used for initializing the
+    configuration registers.
 
 compatible: "ti,ina237"
 
