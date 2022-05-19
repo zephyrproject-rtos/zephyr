@@ -47,7 +47,7 @@ description: |
     Each group can specify a list of pin function selections in the 'psels'
     property. The NRF_PSEL macro is used to specify a pin function selection.
     Available pin functions can be found in the
-    include/dt-bindings/pinctrl/nrf-pinctrl.h header file.
+    include/zephyr/dt-bindings/pinctrl/nrf-pinctrl.h header file.
 
     A group can also specify shared pin properties common to all the specified
     pins, such as the 'bias-pull-up' property in group 2. Here is a list of
