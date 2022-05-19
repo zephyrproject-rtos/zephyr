@@ -27,7 +27,8 @@ properties:
     required: true
     description: |
       Select the scan interval for all comparator channel.
-      Check include/dt-bindings/sensor/it8xxx2_vcmp.h file for pre-defined values.
+      Check include/zephyr/dt-bindings/sensor/it8xxx2_vcmp.h file for
+      pre-defined values.
 
   comparison:
     type: int
@@ -35,14 +36,16 @@ properties:
     description: |
       Determines the condition to be met between ADC data and
       threshold assert value that will trigger comparator interrupt.
-      Check include/dt-bindings/sensor/it8xxx2_vcmp.h file for pre-defined values.
+      Check include/zephyr/dt-bindings/sensor/it8xxx2_vcmp.h file for
+      pre-defined values.
 
   threshold-mv:
     type: int
     required: true
     description: |
       16-bit value in milli-volts present on ADC data as threshold assert.
-      Check include/dt-bindings/sensor/it8xxx2_vcmp.h file for pre-defined values.
+      Check include/zephyr/dt-bindings/sensor/it8xxx2_vcmp.h file for
+      pre-defined values.
 
   io-channels:
     type: phandle-array
