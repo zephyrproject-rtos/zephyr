@@ -126,7 +126,7 @@ void test_main(void)
 	ztest_test_suite(common,
 			 ztest_unit_test(test_bootdelay),
 			 ztest_unit_test(test_irq_offload),
-			 ztest_unit_test(test_nested_irq_offload),
+			 ztest_1cpu_unit_test(test_nested_irq_offload),
 			 ztest_unit_test(test_byteorder_memcpy_swap),
 			 ztest_unit_test(test_byteorder_mem_swap),
 			 ztest_unit_test(test_sys_get_be64),
