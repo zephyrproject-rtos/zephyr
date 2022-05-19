@@ -2078,15 +2078,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_PACS_SRC_LOC \
 	BT_UUID_DECLARE_16(BT_UUID_PACS_SRC_LOC_VAL)
-/** @def BT_UUID_PACS_CONTEXT_VAL
+/** @def BT_UUID_PACS_AVAILABLE_CONTEXT_VAL
  *  @brief Available Audio Contexts Characteristic value
  */
-#define BT_UUID_PACS_CONTEXT_VAL 0x2BCD
-/** @def BT_UUID_PACS_CONTEXT
+#define BT_UUID_PACS_AVAILABLE_CONTEXT_VAL 0x2BCD
+/** @def BT_UUID_PACS_AVAILABLE_CONTEXT
  *  @brief Available Audio Contexts Characteristic
  */
-#define BT_UUID_PACS_CONTEXT \
-	BT_UUID_DECLARE_16(BT_UUID_PACS_CONTEXT_VAL)
+#define BT_UUID_PACS_AVAILABLE_CONTEXT \
+	BT_UUID_DECLARE_16(BT_UUID_PACS_AVAILABLE_CONTEXT_VAL)
 /** @def BT_UUID_PACS_SUPPORTED_CONTEXT_VAL
  *  @brief Supported Audio Context Characteristic value
  */
