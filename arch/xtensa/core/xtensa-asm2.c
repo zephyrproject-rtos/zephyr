@@ -151,6 +151,12 @@ static ALWAYS_INLINE void usage_stop(void)
 #endif
 }
 
+static inline void *return_to(void *interrupted)
+{
+	return _current_cpu->nested <= 1 ?
+		z_get_next_switch_handle(interrupted) : interrupted;
+}
+
 /* The wrapper code lives here instead of in the python script that
  * generates _xtensa_handle_one_int*().  Seems cleaner, still kind of
  * ugly.
@@ -170,7 +176,7 @@ __unused void *xtensa_int##l##_c(void *interrupted_stack)	\
 		irqs ^= m;					\
 		__asm__ volatile("wsr.intclear %0" : : "r"(m)); \
 	}							\
-	return z_get_next_switch_handle(interrupted_stack);		\
+	return return_to(interrupted_stack);		\
 }
 
 #if XCHAL_NMILEVEL >= 2
@@ -254,7 +260,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 				     (void *)interrupted_stack);
 	}
 
-	return z_get_next_switch_handle(interrupted_stack);
+	return return_to(interrupted_stack);
 }
 
 #if defined(CONFIG_GDBSTUB)
@@ -264,7 +270,7 @@ void *xtensa_debugint_c(int *interrupted_stack)
 
 	z_gdb_isr((void *)interrupted_stack);
 
-	return z_get_next_switch_handle(interrupted_stack);
+	return return_to(interrupted_stack);
 }
 #endif
 
