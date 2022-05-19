@@ -3173,7 +3173,11 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 	return 0;
 }
 
-BT_L2CAP_CHANNEL_DEFINE(att_fixed_chan, BT_L2CAP_CID_ATT, bt_att_accept, NULL);
+/* The L2CAP channel section is sorted lexicographically. Make sure that ATT fixed channel will be
+ * placed as the last one to ensure that SMP channel is properly initialized before bt_att_connected
+ * tries to send security request.
+ */
+BT_L2CAP_CHANNEL_DEFINE(z_att_fixed_chan, BT_L2CAP_CID_ATT, bt_att_accept, NULL);
 
 #if defined(CONFIG_BT_EATT)
 static k_timeout_t credit_based_connection_delay(struct bt_conn *conn)
