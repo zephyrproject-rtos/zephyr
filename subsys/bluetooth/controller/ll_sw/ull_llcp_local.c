@@ -128,6 +128,11 @@ void llcp_lr_prt_restart(struct ll_conn *conn)
 	conn->llcp.local.prt_expire = conn->llcp.prt_reload;
 }
 
+void llcp_lr_prt_restart_with_value(struct ll_conn *conn, uint16_t value)
+{
+	conn->llcp.local.prt_expire = value;
+}
+
 void llcp_lr_prt_stop(struct ll_conn *conn)
 {
 	conn->llcp.local.prt_expire = 0U;

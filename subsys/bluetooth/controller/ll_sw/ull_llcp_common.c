@@ -162,7 +162,16 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	llcp_tx_enqueue(conn, tx);
 
 	/* Restart procedure response timeout timer */
-	llcp_lr_prt_restart(conn);
+	if (ctx->proc != PROC_TERMINATE) {
+		/* Use normal timeout value of 40s */
+		llcp_lr_prt_restart(conn);
+	} else {
+		/* Use supervision timeout value
+		 * NOTE: As the supervision timeout is at most 32s the normal procedure response
+		 * timeout of 40s will never come into play for the ACL Termination procedure.
+		 */
+		llcp_lr_prt_restart_with_value(conn, conn->supervision_reload);
+	}
 }
 
 static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *ctx,
