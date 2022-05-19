@@ -7988,10 +7988,10 @@ static inline void dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 	rx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select);
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	tx_time = MIN(conn->lll.dle.local.max_tx_time,
+	tx_time = MIN(conn->lll.dle.default_tx_time,
 		      PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select));
 #else /* !CONFIG_BT_CTLR_PHY */
-	tx_time = PDU_DC_MAX_US(conn->lll.dle.local.max_tx_octets, phy_select);
+	tx_time = PDU_DC_MAX_US(conn->lll.dle.default_tx_octets, phy_select);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	/*
@@ -8062,13 +8062,14 @@ uint8_t ull_dle_update_eff(struct ll_conn *conn)
 
 void ull_dle_local_tx_update(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time)
 {
-	conn->lll.dle.local.max_tx_octets = tx_octets;
+	conn->lll.dle.default_tx_octets = tx_octets;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	conn->lll.dle.local.max_tx_time = tx_time;
+	conn->lll.dle.default_tx_time = tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	dle_max_time_get(conn, &conn->lll.dle.local.max_rx_time, &conn->lll.dle.local.max_tx_time);
+	conn->lll.dle.local.max_tx_octets = conn->lll.dle.default_tx_octets;
 }
 
 void ull_dle_init(struct ll_conn *conn, uint8_t phy)

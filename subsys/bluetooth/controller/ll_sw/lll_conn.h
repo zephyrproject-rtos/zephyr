@@ -102,6 +102,8 @@ struct lll_conn {
 		struct data_pdu_length local;
 		struct data_pdu_length remote;
 		struct data_pdu_length eff;
+		uint16_t default_tx_time;
+		uint16_t default_tx_octets;
 		uint8_t update;
 	} dle;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
