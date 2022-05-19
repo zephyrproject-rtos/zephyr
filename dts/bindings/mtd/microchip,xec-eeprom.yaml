@@ -5,7 +5,7 @@ description: Microchip on-chip EEPROM
 
 compatible: "microchip,xec-eeprom"
 
-include: eeprom-base.yaml
+include: [eeprom-base.yaml, pinctrl-device.yaml]
 
 properties:
     reg:
