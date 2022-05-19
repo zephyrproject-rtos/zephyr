@@ -103,6 +103,13 @@
 #define HAL_USED_PPI_CHANNELS_7 0
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+#define HAL_USED_PPI_CHANNELS_8 \
+	BIT(HAL_TRIGGER_CRYPT_DELAY_PPI)
+#else
+#define HAL_USED_PPI_CHANNELS_8 0
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+
 /* Mask with all (D)PPI groups used by the bluetooth controller. */
 #if defined(SW_SWITCH_TIMER_TASK_GROUP_BASE)
 #define BT_CTLR_USED_PPI_GROUPS \
