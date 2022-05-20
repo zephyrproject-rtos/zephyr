@@ -201,11 +201,6 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sys);
 
-	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
-		return -ENOTSUP;
-	}
-
 	/*
 	 * Get AHB Clock (= SystemCoreClock = SYSCLK/prescaler)
 	 * SystemCoreClock is preferred to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
