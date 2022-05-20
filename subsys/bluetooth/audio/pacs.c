@@ -31,7 +31,6 @@
 
 #define PAC_NOTIFY_TIMEOUT	K_MSEC(10)
 
-#if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, CONFIG_BT_L2CAP_TX_MTU);
 
 static void pac_data_add(struct net_buf_simple *buf, uint8_t num,
@@ -157,12 +156,10 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 				      void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_pacs_context context = {
-#if defined(CONFIG_BT_PAC_SNK)
-		.snk = sys_cpu_to_le16(CONFIG_BT_PACS_SNK_CONTEXT),
-#endif
-#if defined(CONFIG_BT_PAC_SRC)
-		.src = sys_cpu_to_le16(CONFIG_BT_PACS_SRC_CONTEXT),
-#endif
+		.snk = COND_CODE_1(CONFIG_BT_PAC_SNK,
+				   (sys_cpu_to_le16(CONFIG_BT_PACS_SNK_CONTEXT)), (0)),
+		.src = COND_CODE_1(CONFIG_BT_PAC_SRC,
+				   (sys_cpu_to_le16(CONFIG_BT_PACS_SRC_CONTEXT)), (0)),
 	};
 
 	BT_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len,
@@ -194,7 +191,6 @@ static int get_pac_loc(struct bt_conn *conn, enum bt_audio_dir dir,
 	return 0;
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
-#endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 
 #if defined(CONFIG_BT_PAC_SNK)
 static struct k_work_delayable snks_work;
@@ -389,7 +385,6 @@ static void src_loc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 #endif /* CONFIG_BT_PAC_SRC */
 
-#if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
 BT_GATT_SERVICE_DEFINE(pacs_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_PACS),
 #if defined(CONFIG_BT_PAC_SNK)
@@ -453,7 +448,6 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 	BT_GATT_CCC(supported_context_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
 );
-#endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 
 static struct k_work_delayable *bt_pacs_get_work(enum bt_audio_dir dir)
 {
@@ -490,7 +484,6 @@ static struct k_work_delayable *bt_pacs_get_loc_work(enum bt_audio_dir dir)
 
 static void pac_notify_loc(struct k_work *work)
 {
-#if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
 	uint32_t location;
 	struct bt_uuid *uuid;
 	enum bt_audio_dir dir;
@@ -523,13 +516,11 @@ static void pac_notify_loc(struct k_work *work)
 	if (err != 0) {
 		BT_WARN("PACS notify failed: %d", err);
 	}
-#endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
 
 static void pac_notify(struct k_work *work)
 {
-#if defined(CONFIG_BT_PAC_SNK) || defined(CONFIG_BT_PAC_SRC)
 	struct bt_uuid *uuid;
 	enum bt_audio_dir dir;
 	int err;
@@ -556,7 +547,6 @@ static void pac_notify(struct k_work *work)
 	if (err != 0) {
 		BT_WARN("PACS notify failed: %d", err);
 	}
-#endif /* CONFIG_BT_PAC_SNK || CONFIG_BT_PAC_SRC */
 }
 
 void bt_pacs_add_capability(enum bt_audio_dir dir)
