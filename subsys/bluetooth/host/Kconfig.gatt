@@ -24,6 +24,14 @@ config BT_ATT_PREPARE_COUNT
 	  Number of buffers available for ATT prepare write, setting
 	  this to 0 disables GATT long/reliable writes.
 
+config BT_ATT_RETRY_ON_SEC_ERR
+	bool "Automatic security elevation and retry on security errors"
+	default y
+	depends on BT_SMP
+	help
+	  If an ATT request fails due to insufficient security, the host will
+	  try to elevate the security level and retry the ATT request.
+
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
 	depends on BT_L2CAP_ECRED

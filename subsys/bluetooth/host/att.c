@@ -2241,7 +2241,7 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 #endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_GATT_CLIENT)
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
 static int att_change_security(struct bt_conn *conn, uint8_t err)
 {
 	bt_security_t sec;
@@ -2301,7 +2301,7 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 
 	return bt_conn_set_security(conn, sec);
 }
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_ATT_RETRY_ON_SEC_ERR */
 
 static uint8_t att_error_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 {
@@ -2320,13 +2320,13 @@ static uint8_t att_error_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	err = rsp->error;
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
 	/* Check if error can be handled by elevating security. */
 	if (!att_change_security(chan->chan.chan.conn, err)) {
 		chan->req->retrying = true;
 		return 0;
 	}
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_ATT_RETRY_ON_SEC_ERR */
 
 done:
 	return att_handle_rsp(chan, NULL, 0, err);
