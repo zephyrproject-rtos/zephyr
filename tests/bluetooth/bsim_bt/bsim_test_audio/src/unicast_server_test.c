@@ -221,7 +221,7 @@ static void set_location(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
-		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
+		err = bt_audio_capability_set_location(BT_AUDIO_DIR_SOURCE,
 						       (BT_AUDIO_LOCATION_FRONT_LEFT |
 							BT_AUDIO_LOCATION_FRONT_RIGHT));
 		if (err != 0) {
