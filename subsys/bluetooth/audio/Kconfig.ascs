@@ -8,7 +8,6 @@
 
 config BT_ASCS
 	bool "Audio Stream Control Service Support"
-	depends on BT_PACS
 	select BT_SMP_SC_PAIR_ONLY
 	help
 	  This option enables support for Audio Stream Control Service.
@@ -29,4 +28,12 @@ config BT_ASCS_ASE_SRC_COUNT
 	help
 	  An ASE Source characteristic represents the state of an ASE, which is
 	  coupled to a single direction of a unicast Audio Stream.
+
+config BT_ASCS_ASE_SNK
+	def_bool BT_ASCS_ASE_SNK_COUNT > 0
+	select BT_PAC_SNK
+
+config BT_ASCS_ASE_SRC
+	def_bool BT_ASCS_ASE_SRC_COUNT > 0
+	select BT_PAC_SRC
 endif # BT_ASCS
