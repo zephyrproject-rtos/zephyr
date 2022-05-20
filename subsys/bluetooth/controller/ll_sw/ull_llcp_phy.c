@@ -175,9 +175,24 @@ static void pu_reset_timing_restrict(struct ll_conn *conn)
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
+static inline bool phy_valid(uint8_t phy)
+{
+	/* This is equivalent to:
+	 * maximum one bit set, and no bit set is rfu's
+	 */
+	return (phy < 5 && phy != 3);
+}
+
 static uint8_t pu_check_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	uint8_t ret = 0;
+
+	/* Check if either phy selected is invalid */
+	if (!phy_valid(ctx->data.pu.c_to_p_phy) || !phy_valid(ctx->data.pu.p_to_c_phy)) {
+		/* more than one or any rfu bit selected in either phy */
+		ctx->data.pu.error = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		ret = 1;
+	}
 
 	/* Both tx and rx PHY unchanged */
 	if (!((ctx->data.pu.c_to_p_phy | ctx->data.pu.p_to_c_phy) & 0x07)) {
@@ -199,29 +214,41 @@ static uint8_t pu_check_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct lll_conn *lll = &conn->lll;
+	uint8_t phy_bitmask = PHY_1M;
+	const uint8_t old_tx = lll->phy_tx;
+	const uint8_t old_rx = lll->phy_rx;
+
+#if defined(CONFIG_BT_CTLR_PHY_2M)
+	phy_bitmask |= PHY_2M;
+#endif
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	phy_bitmask |= PHY_CODED;
+#endif
+	const uint8_t p_to_c_phy = ctx->data.pu.p_to_c_phy & phy_bitmask;
+	const uint8_t c_to_p_phy = ctx->data.pu.c_to_p_phy & phy_bitmask;
 
 	if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 	} else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
-		if (ctx->data.pu.p_to_c_phy) {
-			lll->phy_tx = ctx->data.pu.p_to_c_phy;
+		if (p_to_c_phy) {
+			lll->phy_tx = p_to_c_phy;
 		}
-		if (ctx->data.pu.c_to_p_phy) {
-			lll->phy_rx = ctx->data.pu.c_to_p_phy;
+		if (c_to_p_phy) {
+			lll->phy_rx = c_to_p_phy;
 		}
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 	} else if (lll->role == BT_HCI_ROLE_CENTRAL) {
-		if (ctx->data.pu.p_to_c_phy) {
-			lll->phy_rx = ctx->data.pu.p_to_c_phy;
+		if (p_to_c_phy) {
+			lll->phy_rx = p_to_c_phy;
 		}
-		if (ctx->data.pu.c_to_p_phy) {
-			lll->phy_tx = ctx->data.pu.c_to_p_phy;
+		if (c_to_p_phy) {
+			lll->phy_tx = c_to_p_phy;
 		}
 #endif /* CONFIG_BT_CENTRAL */
 	}
 
-	return (ctx->data.pu.c_to_p_phy || ctx->data.pu.p_to_c_phy);
+	return ((old_tx != lll->phy_tx) || (old_rx != lll->phy_rx));
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -313,8 +340,9 @@ static void pu_prepare_instant(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Set instance only in case there is actual PHY change. Otherwise the instant should be
 	 * set to 0.
 	 */
-	if (ctx->data.pu.c_to_p_phy  != 0 || ctx->data.pu.p_to_c_phy != 0) {
-		ctx->data.pu.instant = ull_conn_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
+	if (ctx->data.pu.c_to_p_phy != 0 || ctx->data.pu.p_to_c_phy != 0) {
+		ctx->data.pu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
+			PHY_UPDATE_INSTANT_DELTA;
 	} else {
 		ctx->data.pu.instant = 0;
 	}
@@ -650,6 +678,10 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
 			llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+			if (ctx->data.pu.error != BT_HCI_ERR_SUCCESS) {
+				/* Mark the connection for termination */
+				conn->llcp_terminate.reason_final = ctx->data.pu.error;
+			}
 			ctx->data.pu.ntf_pu = ctx->data.pu.host_initiated;
 			lp_pu_complete(conn, ctx, evt, param);
 		}
@@ -1045,8 +1077,12 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 			 */
 			llcp_rr_prt_stop(conn);
 
-			ctx->state = LP_PU_STATE_WAIT_INSTANT;
+			ctx->state = RP_PU_STATE_WAIT_INSTANT;
 		} else {
+			if (ctx->data.pu.error == BT_HCI_ERR_INSTANT_PASSED) {
+				/* Mark the connection for termination */
+				conn->llcp_terminate.reason_final = BT_HCI_ERR_INSTANT_PASSED;
+			}
 			rp_pu_complete(conn, ctx, evt, param);
 		}
 		break;
