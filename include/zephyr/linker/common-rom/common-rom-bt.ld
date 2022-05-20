@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 	ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, 4)
+	ITERABLE_SECTION_ROM(l2cap_userdata_destroy, 4)
+	ITERABLE_SECTION_ROM(conn_userdata_destroy, 4)
 
 #if defined(CONFIG_BT_BREDR)
 	ITERABLE_SECTION_ROM(bt_l2cap_br_fixed_chan, 4)

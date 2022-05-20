@@ -55,19 +55,31 @@ K_FIFO_DEFINE(free_tx);
 
 static void tx_free(struct bt_conn_tx *tx);
 
+static void do_destroy(void *data)
+{
+	STRUCT_SECTION_FOREACH(conn_userdata_destroy, destroyer)
+	{
+		if (destroyer->destroy) {
+			if (destroyer->destroy(data)) {
+				return;
+			}
+		}
+	}
+}
+
 static void conn_tx_destroy(struct bt_conn_tx *tx)
 {
 	__ASSERT_NO_MSG(tx);
 #if defined(CONFIG_BT_CONN)
 	if (PART_OF_ARRAY(conn_tx, tx)) {
 		if (tx->user_data) {
-			l2cap_tx_destroy(tx->user_data);
+			do_destroy(tx->user_data);
 		}
 
 		tx_free(tx);
 	} else {
 		/* Not conn metadata, let L2CAP handle it */
-		l2cap_tx_destroy((void *)tx);
+		do_destroy((void *)tx);
 	}
 #endif /* CONFIG_BT_CONN */
 }

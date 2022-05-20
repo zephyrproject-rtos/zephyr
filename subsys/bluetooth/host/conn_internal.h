@@ -424,3 +424,10 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 /* k_poll related helpers for the TX thread */
 int bt_conn_prepare_events(struct k_poll_event events[]);
 void bt_conn_process_tx(struct bt_conn *conn);
+
+struct conn_userdata_destroy {
+	bool (*destroy)(void *user_data);
+};
+
+#define CONN_USERDATA_DESTROY(_name)                                                               \
+	STRUCT_SECTION_ITERABLE(conn_userdata_destroy, _CONCAT(conn_userdata_destroy_, _name))

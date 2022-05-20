@@ -2991,7 +2991,19 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
-void l2cap_tx_destroy(void *meta_data)
+static void do_destroy(void *data)
+{
+	STRUCT_SECTION_FOREACH(l2cap_userdata_destroy, destroyer)
+	{
+		if (destroyer->destroy) {
+			if (destroyer->destroy(data)) {
+				return;
+			}
+		}
+	}
+}
+
+static bool l2cap_tx_destroy(void *meta_data)
 {
 	__ASSERT_NO_MSG(meta_data);
 
@@ -3000,15 +3012,21 @@ void l2cap_tx_destroy(void *meta_data)
 		struct l2cap_tx_meta_data *data = meta_data;
 
 		if (data->user_data) {
-			att_tx_destroy(data->user_data);
+			do_destroy(data->user_data);
 		}
 
 		free_tx_meta_data(data);
 
-		return;
+		return true;
 	}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 	/* Not L2CAP metadata, let ATT handle it */
-	att_tx_destroy(meta_data);
+	do_destroy(meta_data);
+
+	return true;
 }
+
+CONN_USERDATA_DESTROY(_2_meta_destroy) = {
+	.destroy = l2cap_tx_destroy,
+};

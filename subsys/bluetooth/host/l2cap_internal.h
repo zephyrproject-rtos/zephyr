@@ -380,4 +380,9 @@ struct bt_l2cap_ecred_cb {
 /* Register callbacks for Enhanced Credit based Flow Control */
 void bt_l2cap_register_ecred_cb(const struct bt_l2cap_ecred_cb *cb);
 
-void l2cap_tx_destroy(void *meta_data);
+struct l2cap_userdata_destroy {
+	bool (*destroy)(void *user_data);
+};
+
+#define L2CAP_USERDATA_DESTROY(_name)                                                              \
+	STRUCT_SECTION_ITERABLE(l2cap_userdata_destroy, _CONCAT(l2cap_userdata_destroy_, _name))

@@ -3612,11 +3612,18 @@ bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_conn_tx_cb_t func,
 		(bt_att_tx_meta_data(buf)->user_data == user_data));
 }
 
-void att_tx_destroy(void *meta_data)
+static bool att_tx_destroy(void *meta_data)
 {
 	__ASSERT_NO_MSG(meta_data);
 
 	if (PART_OF_ARRAY(tx_meta_data, (struct bt_att_tx_meta_data *)meta_data)) {
 		tx_meta_data_free(meta_data);
+		return true;
 	}
+
+	return false;
 }
+
+L2CAP_USERDATA_DESTROY(meta_destroy) = {
+	.destroy = att_tx_destroy,
+};
