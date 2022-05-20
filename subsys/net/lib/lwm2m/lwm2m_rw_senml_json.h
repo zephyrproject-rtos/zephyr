@@ -12,8 +12,6 @@
 extern const struct lwm2m_writer senml_json_writer;
 extern const struct lwm2m_reader senml_json_reader;
 
-/* Init Context format for coap blocking */
-void lwm2m_senml_json_context_init(struct lwm2m_senml_json_context *ctx);
 /* General Read single Path operation */
 int do_read_op_senml_json(struct lwm2m_message *msg);
 /* General Write single Path operation */
