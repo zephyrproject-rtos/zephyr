@@ -16,6 +16,44 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CQ15=y
+    testcases:
+      - arm_cfft_q15_noisy_16
+      - arm_cifft_q15_noisy_16
+      - arm_cfft_q15_noisy_32
+      - arm_cifft_q15_noisy_32
+      - arm_cfft_q15_noisy_64
+      - arm_cifft_q15_noisy_64
+      - arm_cfft_q15_noisy_128
+      - arm_cifft_q15_noisy_128
+      - arm_cfft_q15_noisy_256
+      - arm_cifft_q15_noisy_256
+      - arm_cfft_q15_noisy_512
+      - arm_cifft_q15_noisy_512
+      - arm_cfft_q15_noisy_1024
+      - arm_cifft_q15_noisy_1024
+      - arm_cfft_q15_noisy_2048
+      - arm_cifft_q15_noisy_2048
+      - arm_cfft_q15_noisy_4096
+      - arm_cifft_q15_noisy_4096
+      - arm_cfft_q15_step_16
+      - arm_cifft_q15_step_16
+      - arm_cfft_q15_step_32
+      - arm_cifft_q15_step_32
+      - arm_cfft_q15_step_64
+      - arm_cifft_q15_step_64
+      - arm_cfft_q15_step_128
+      - arm_cifft_q15_step_128
+      - arm_cfft_q15_step_256
+      - arm_cifft_q15_step_256
+      - arm_cfft_q15_step_512
+      - arm_cifft_q15_step_512
+      - arm_cfft_q15_step_1024
+      - arm_cifft_q15_step_1024
+      - arm_cfft_q15_step_2048
+      - arm_cifft_q15_step_2048
+      - arm_cfft_q15_step_4096
+      - arm_cifft_q15_step_4096
+
   libraries.cmsis_dsp.transform.cq15.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -28,6 +66,44 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CQ15=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_cfft_q15_noisy_16
+      - arm_cifft_q15_noisy_16
+      - arm_cfft_q15_noisy_32
+      - arm_cifft_q15_noisy_32
+      - arm_cfft_q15_noisy_64
+      - arm_cifft_q15_noisy_64
+      - arm_cfft_q15_noisy_128
+      - arm_cifft_q15_noisy_128
+      - arm_cfft_q15_noisy_256
+      - arm_cifft_q15_noisy_256
+      - arm_cfft_q15_noisy_512
+      - arm_cifft_q15_noisy_512
+      - arm_cfft_q15_noisy_1024
+      - arm_cifft_q15_noisy_1024
+      - arm_cfft_q15_noisy_2048
+      - arm_cifft_q15_noisy_2048
+      - arm_cfft_q15_noisy_4096
+      - arm_cifft_q15_noisy_4096
+      - arm_cfft_q15_step_16
+      - arm_cifft_q15_step_16
+      - arm_cfft_q15_step_32
+      - arm_cifft_q15_step_32
+      - arm_cfft_q15_step_64
+      - arm_cifft_q15_step_64
+      - arm_cfft_q15_step_128
+      - arm_cifft_q15_step_128
+      - arm_cfft_q15_step_256
+      - arm_cifft_q15_step_256
+      - arm_cfft_q15_step_512
+      - arm_cifft_q15_step_512
+      - arm_cfft_q15_step_1024
+      - arm_cifft_q15_step_1024
+      - arm_cfft_q15_step_2048
+      - arm_cifft_q15_step_2048
+      - arm_cfft_q15_step_4096
+      - arm_cifft_q15_step_4096
+
   libraries.cmsis_dsp.transform.rq15:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -41,6 +117,30 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RQ15=y
+    testcases:
+      - arm_rfft_q15_noisy_32
+      - arm_rifft_q15_noisy_32
+      - arm_rfft_q15_noisy_64
+      - arm_rifft_q15_noisy_64
+      - arm_rfft_q15_noisy_128
+      - arm_rifft_q15_noisy_128
+      - arm_rfft_q15_noisy_256
+      - arm_rfft_q15_noisy_512
+      - arm_rfft_q15_noisy_1024
+      - arm_rfft_q15_noisy_2048
+      - arm_rfft_q15_noisy_4096
+      - arm_rfft_q15_step_32
+      - arm_rifft_q15_step_32
+      - arm_rfft_q15_step_64
+      - arm_rifft_q15_step_64
+      - arm_rfft_q15_step_128
+      - arm_rifft_q15_step_128
+      - arm_rfft_q15_step_256
+      - arm_rfft_q15_step_512
+      - arm_rfft_q15_step_1024
+      - arm_rfft_q15_step_2048
+      - arm_rfft_q15_step_4096
+
   libraries.cmsis_dsp.transform.rq15.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -53,6 +153,30 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RQ15=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_rfft_q15_noisy_32
+      - arm_rifft_q15_noisy_32
+      - arm_rfft_q15_noisy_64
+      - arm_rifft_q15_noisy_64
+      - arm_rfft_q15_noisy_128
+      - arm_rifft_q15_noisy_128
+      - arm_rfft_q15_noisy_256
+      - arm_rfft_q15_noisy_512
+      - arm_rfft_q15_noisy_1024
+      - arm_rfft_q15_noisy_2048
+      - arm_rfft_q15_noisy_4096
+      - arm_rfft_q15_step_32
+      - arm_rifft_q15_step_32
+      - arm_rfft_q15_step_64
+      - arm_rifft_q15_step_64
+      - arm_rfft_q15_step_128
+      - arm_rifft_q15_step_128
+      - arm_rfft_q15_step_256
+      - arm_rfft_q15_step_512
+      - arm_rfft_q15_step_1024
+      - arm_rfft_q15_step_2048
+      - arm_rfft_q15_step_4096
+
   libraries.cmsis_dsp.transform.cq31:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -66,6 +190,44 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CQ31=y
+    testcases:
+      - arm_cfft_q31_noisy_16
+      - arm_cifft_q31_noisy_16
+      - arm_cfft_q31_noisy_32
+      - arm_cifft_q31_noisy_32
+      - arm_cfft_q31_noisy_64
+      - arm_cifft_q31_noisy_64
+      - arm_cfft_q31_noisy_128
+      - arm_cifft_q31_noisy_128
+      - arm_cfft_q31_noisy_256
+      - arm_cifft_q31_noisy_256
+      - arm_cfft_q31_noisy_512
+      - arm_cifft_q31_noisy_512
+      - arm_cfft_q31_noisy_1024
+      - arm_cifft_q31_noisy_1024
+      - arm_cfft_q31_noisy_2048
+      - arm_cifft_q31_noisy_2048
+      - arm_cfft_q31_noisy_4096
+      - arm_cifft_q31_noisy_4096
+      - arm_cfft_q31_step_16
+      - arm_cifft_q31_step_16
+      - arm_cfft_q31_step_32
+      - arm_cifft_q31_step_32
+      - arm_cfft_q31_step_64
+      - arm_cifft_q31_step_64
+      - arm_cfft_q31_step_128
+      - arm_cifft_q31_step_128
+      - arm_cfft_q31_step_256
+      - arm_cifft_q31_step_256
+      - arm_cfft_q31_step_512
+      - arm_cifft_q31_step_512
+      - arm_cfft_q31_step_1024
+      - arm_cifft_q31_step_1024
+      - arm_cfft_q31_step_2048
+      - arm_cifft_q31_step_2048
+      - arm_cfft_q31_step_4096
+      - arm_cifft_q31_step_4096
+
   libraries.cmsis_dsp.transform.cq31.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -78,6 +240,44 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CQ31=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_cfft_q31_noisy_16
+      - arm_cifft_q31_noisy_16
+      - arm_cfft_q31_noisy_32
+      - arm_cifft_q31_noisy_32
+      - arm_cfft_q31_noisy_64
+      - arm_cifft_q31_noisy_64
+      - arm_cfft_q31_noisy_128
+      - arm_cifft_q31_noisy_128
+      - arm_cfft_q31_noisy_256
+      - arm_cifft_q31_noisy_256
+      - arm_cfft_q31_noisy_512
+      - arm_cifft_q31_noisy_512
+      - arm_cfft_q31_noisy_1024
+      - arm_cifft_q31_noisy_1024
+      - arm_cfft_q31_noisy_2048
+      - arm_cifft_q31_noisy_2048
+      - arm_cfft_q31_noisy_4096
+      - arm_cifft_q31_noisy_4096
+      - arm_cfft_q31_step_16
+      - arm_cifft_q31_step_16
+      - arm_cfft_q31_step_32
+      - arm_cifft_q31_step_32
+      - arm_cfft_q31_step_64
+      - arm_cifft_q31_step_64
+      - arm_cfft_q31_step_128
+      - arm_cifft_q31_step_128
+      - arm_cfft_q31_step_256
+      - arm_cifft_q31_step_256
+      - arm_cfft_q31_step_512
+      - arm_cifft_q31_step_512
+      - arm_cfft_q31_step_1024
+      - arm_cifft_q31_step_1024
+      - arm_cfft_q31_step_2048
+      - arm_cifft_q31_step_2048
+      - arm_cfft_q31_step_4096
+      - arm_cifft_q31_step_4096
+
   libraries.cmsis_dsp.transform.rq31:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -91,6 +291,40 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RQ31=y
+    testcases:
+      - arm_rfft_q31_noisy_32
+      - arm_rifft_q31_noisy_32
+      - arm_rfft_q31_noisy_64
+      - arm_rifft_q31_noisy_64
+      - arm_rfft_q31_noisy_128
+      - arm_rifft_q31_noisy_128
+      - arm_rfft_q31_noisy_256
+      - arm_rifft_q31_noisy_256
+      - arm_rfft_q31_noisy_512
+      - arm_rifft_q31_noisy_512
+      - arm_rfft_q31_noisy_1024
+      - arm_rifft_q31_noisy_1024
+      - arm_rfft_q31_noisy_2048
+      - arm_rifft_q31_noisy_2048
+      - arm_rfft_q31_noisy_4096
+      - arm_rifft_q31_noisy_4096
+      - arm_rfft_q31_step_32
+      - arm_rifft_q31_step_32
+      - arm_rfft_q31_step_64
+      - arm_rifft_q31_step_64
+      - arm_rfft_q31_step_128
+      - arm_rifft_q31_step_128
+      - arm_rfft_q31_step_256
+      - arm_rifft_q31_step_256
+      - arm_rfft_q31_step_512
+      - arm_rifft_q31_step_512
+      - arm_rfft_q31_step_1024
+      - arm_rifft_q31_step_1024
+      - arm_rfft_q31_step_2048
+      - arm_rifft_q31_step_2048
+      - arm_rfft_q31_step_4096
+      - arm_rifft_q31_step_4096
+
   libraries.cmsis_dsp.transform.rq31.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -103,6 +337,40 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RQ31=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_rfft_q31_noisy_32
+      - arm_rifft_q31_noisy_32
+      - arm_rfft_q31_noisy_64
+      - arm_rifft_q31_noisy_64
+      - arm_rfft_q31_noisy_128
+      - arm_rifft_q31_noisy_128
+      - arm_rfft_q31_noisy_256
+      - arm_rifft_q31_noisy_256
+      - arm_rfft_q31_noisy_512
+      - arm_rifft_q31_noisy_512
+      - arm_rfft_q31_noisy_1024
+      - arm_rifft_q31_noisy_1024
+      - arm_rfft_q31_noisy_2048
+      - arm_rifft_q31_noisy_2048
+      - arm_rfft_q31_noisy_4096
+      - arm_rifft_q31_noisy_4096
+      - arm_rfft_q31_step_32
+      - arm_rifft_q31_step_32
+      - arm_rfft_q31_step_64
+      - arm_rifft_q31_step_64
+      - arm_rfft_q31_step_128
+      - arm_rifft_q31_step_128
+      - arm_rfft_q31_step_256
+      - arm_rifft_q31_step_256
+      - arm_rfft_q31_step_512
+      - arm_rifft_q31_step_512
+      - arm_rfft_q31_step_1024
+      - arm_rifft_q31_step_1024
+      - arm_rfft_q31_step_2048
+      - arm_rifft_q31_step_2048
+      - arm_rfft_q31_step_4096
+      - arm_rifft_q31_step_4096
+
   libraries.cmsis_dsp.transform.cf16:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
@@ -115,6 +383,44 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF16=y
+    testcases:
+      - arm_cfft_f16_cmplx_noisy_16
+      - arm_cifft_f16_cmplx_noisy_16
+      - arm_cfft_f16_cmplx_noisy_32
+      - arm_cifft_f16_cmplx_noisy_32
+      - arm_cfft_f16_cmplx_noisy_64
+      - arm_cifft_f16_cmplx_noisy_64
+      - arm_cfft_f16_cmplx_noisy_128
+      - arm_cifft_f16_cmplx_noisy_128
+      - arm_cfft_f16_cmplx_noisy_256
+      - arm_cifft_f16_cmplx_noisy_256
+      - arm_cfft_f16_cmplx_noisy_512
+      - arm_cifft_f16_cmplx_noisy_512
+      - arm_cfft_f16_cmplx_noisy_1024
+      - arm_cifft_f16_cmplx_noisy_1024
+      - arm_cfft_f16_cmplx_noisy_2048
+      - arm_cifft_f16_cmplx_noisy_2048
+      - arm_cfft_f16_cmplx_noisy_4096
+      - arm_cifft_f16_cmplx_noisy_4096
+      - arm_cfft_f16_cmplx_step_16
+      - arm_cifft_f16_cmplx_step_16
+      - arm_cfft_f16_cmplx_step_32
+      - arm_cifft_f16_cmplx_step_32
+      - arm_cfft_f16_cmplx_step_64
+      - arm_cifft_f16_cmplx_step_64
+      - arm_cfft_f16_cmplx_step_128
+      - arm_cifft_f16_cmplx_step_128
+      - arm_cfft_f16_cmplx_step_256
+      - arm_cifft_f16_cmplx_step_256
+      - arm_cfft_f16_cmplx_step_512
+      - arm_cifft_f16_cmplx_step_512
+      - arm_cfft_f16_cmplx_step_1024
+      - arm_cifft_f16_cmplx_step_1024
+      - arm_cfft_f16_cmplx_step_2048
+      - arm_cifft_f16_cmplx_step_2048
+      - arm_cfft_f16_cmplx_step_4096
+      - arm_cifft_f16_cmplx_step_4096
+
   libraries.cmsis_dsp.transform.cf16.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
@@ -127,6 +433,44 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF16=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_cfft_f16_cmplx_noisy_16
+      - arm_cifft_f16_cmplx_noisy_16
+      - arm_cfft_f16_cmplx_noisy_32
+      - arm_cifft_f16_cmplx_noisy_32
+      - arm_cfft_f16_cmplx_noisy_64
+      - arm_cifft_f16_cmplx_noisy_64
+      - arm_cfft_f16_cmplx_noisy_128
+      - arm_cifft_f16_cmplx_noisy_128
+      - arm_cfft_f16_cmplx_noisy_256
+      - arm_cifft_f16_cmplx_noisy_256
+      - arm_cfft_f16_cmplx_noisy_512
+      - arm_cifft_f16_cmplx_noisy_512
+      - arm_cfft_f16_cmplx_noisy_1024
+      - arm_cifft_f16_cmplx_noisy_1024
+      - arm_cfft_f16_cmplx_noisy_2048
+      - arm_cifft_f16_cmplx_noisy_2048
+      - arm_cfft_f16_cmplx_noisy_4096
+      - arm_cifft_f16_cmplx_noisy_4096
+      - arm_cfft_f16_cmplx_step_16
+      - arm_cifft_f16_cmplx_step_16
+      - arm_cfft_f16_cmplx_step_32
+      - arm_cifft_f16_cmplx_step_32
+      - arm_cfft_f16_cmplx_step_64
+      - arm_cifft_f16_cmplx_step_64
+      - arm_cfft_f16_cmplx_step_128
+      - arm_cifft_f16_cmplx_step_128
+      - arm_cfft_f16_cmplx_step_256
+      - arm_cifft_f16_cmplx_step_256
+      - arm_cfft_f16_cmplx_step_512
+      - arm_cifft_f16_cmplx_step_512
+      - arm_cfft_f16_cmplx_step_1024
+      - arm_cifft_f16_cmplx_step_1024
+      - arm_cfft_f16_cmplx_step_2048
+      - arm_cifft_f16_cmplx_step_2048
+      - arm_cfft_f16_cmplx_step_4096
+      - arm_cifft_f16_cmplx_step_4096
+
   libraries.cmsis_dsp.transform.rf16:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
@@ -139,6 +483,40 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF16=y
+    testcases:
+      - arm_rfft_f16_real_noisy_32
+      - arm_rifft_f16_real_noisy_32
+      - arm_rfft_f16_real_noisy_64
+      - arm_rifft_f16_real_noisy_64
+      - arm_rfft_f16_real_noisy_128
+      - arm_rifft_f16_real_noisy_128
+      - arm_rfft_f16_real_noisy_256
+      - arm_rifft_f16_real_noisy_256
+      - arm_rfft_f16_real_noisy_512
+      - arm_rifft_f16_real_noisy_512
+      - arm_rfft_f16_real_noisy_1024
+      - arm_rifft_f16_real_noisy_1024
+      - arm_rfft_f16_real_noisy_2048
+      - arm_rifft_f16_real_noisy_2048
+      - arm_rfft_f16_real_noisy_4096
+      - arm_rifft_f16_real_noisy_4096
+      - arm_rfft_f16_real_step_32
+      - arm_rifft_f16_real_step_32
+      - arm_rfft_f16_real_step_64
+      - arm_rifft_f16_real_step_64
+      - arm_rfft_f16_real_step_128
+      - arm_rifft_f16_real_step_128
+      - arm_rfft_f16_real_step_256
+      - arm_rifft_f16_real_step_256
+      - arm_rfft_f16_real_step_512
+      - arm_rifft_f16_real_step_512
+      - arm_rfft_f16_real_step_1024
+      - arm_rifft_f16_real_step_1024
+      - arm_rfft_f16_real_step_2048
+      - arm_rifft_f16_real_step_2048
+      - arm_rfft_f16_real_step_4096
+      - arm_rifft_f16_real_step_4096
+
   libraries.cmsis_dsp.transform.rf16.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1)
     integration_platforms:
@@ -151,6 +529,40 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF16=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_rfft_f16_real_noisy_32
+      - arm_rifft_f16_real_noisy_32
+      - arm_rfft_f16_real_noisy_64
+      - arm_rifft_f16_real_noisy_64
+      - arm_rfft_f16_real_noisy_128
+      - arm_rifft_f16_real_noisy_128
+      - arm_rfft_f16_real_noisy_256
+      - arm_rifft_f16_real_noisy_256
+      - arm_rfft_f16_real_noisy_512
+      - arm_rifft_f16_real_noisy_512
+      - arm_rfft_f16_real_noisy_1024
+      - arm_rifft_f16_real_noisy_1024
+      - arm_rfft_f16_real_noisy_2048
+      - arm_rifft_f16_real_noisy_2048
+      - arm_rfft_f16_real_noisy_4096
+      - arm_rifft_f16_real_noisy_4096
+      - arm_rfft_f16_real_step_32
+      - arm_rifft_f16_real_step_32
+      - arm_rfft_f16_real_step_64
+      - arm_rifft_f16_real_step_64
+      - arm_rfft_f16_real_step_128
+      - arm_rifft_f16_real_step_128
+      - arm_rfft_f16_real_step_256
+      - arm_rifft_f16_real_step_256
+      - arm_rfft_f16_real_step_512
+      - arm_rifft_f16_real_step_512
+      - arm_rfft_f16_real_step_1024
+      - arm_rifft_f16_real_step_1024
+      - arm_rfft_f16_real_step_2048
+      - arm_rifft_f16_real_step_2048
+      - arm_rfft_f16_real_step_4096
+      - arm_rifft_f16_real_step_4096
+
   libraries.cmsis_dsp.transform.cf32:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -164,6 +576,45 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF32=y
+    testcases:
+      - arm_cfft_f32_cmplx_noisy_16
+      - arm_cifft_f32_cmplx_noisy_16
+      - arm_cfft_f32_cmplx_noisy_32
+      - arm_cifft_f32_cmplx_noisy_32
+      - arm_cfft_f32_cmplx_noisy_64
+      - arm_cifft_f32_cmplx_noisy_64
+      - arm_cfft_f32_cmplx_noisy_128
+      - arm_cifft_f32_cmplx_noisy_128
+      - arm_cfft_f32_cmplx_noisy_256
+      - arm_cifft_f32_cmplx_noisy_256
+      - arm_cfft_f32_cmplx_noisy_512
+      - arm_cifft_f32_cmplx_noisy_512
+      - arm_cfft_f32_cmplx_noisy_1024
+      - arm_cifft_f32_cmplx_noisy_1024
+      - arm_cfft_f32_cmplx_noisy_2048
+      - arm_cifft_f32_cmplx_noisy_2048
+      - arm_cfft_f32_cmplx_noisy_4096
+      - arm_cifft_f32_cmplx_noisy_4096
+      - arm_cfft_f32_cmplx_step_16
+      - arm_cifft_f32_cmplx_step_16
+      - arm_cfft_f32_cmplx_step_32
+      - arm_cifft_f32_cmplx_step_32
+      - arm_cfft_f32_cmplx_step_64
+      - arm_cifft_f32_cmplx_step_64
+      - arm_cfft_f32_cmplx_step_128
+      - arm_cifft_f32_cmplx_step_128
+      - arm_cfft_f32_cmplx_step_256
+      - arm_cifft_f32_cmplx_step_256
+      - arm_cfft_f32_cmplx_step_512
+      - arm_cifft_f32_cmplx_step_512
+      - arm_cfft_f32_cmplx_step_1024
+      - arm_cifft_f32_cmplx_step_1024
+      - arm_cfft_f32_cmplx_step_2048
+      - arm_cifft_f32_cmplx_step_2048
+      - arm_cfft_f32_cmplx_step_4096
+      - arm_cifft_f32_cmplx_step_4096
+
+
   libraries.cmsis_dsp.transform.cf32.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -176,6 +627,44 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF32=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_cfft_f32_cmplx_noisy_16
+      - arm_cifft_f32_cmplx_noisy_16
+      - arm_cfft_f32_cmplx_noisy_32
+      - arm_cifft_f32_cmplx_noisy_32
+      - arm_cfft_f32_cmplx_noisy_64
+      - arm_cifft_f32_cmplx_noisy_64
+      - arm_cfft_f32_cmplx_noisy_128
+      - arm_cifft_f32_cmplx_noisy_128
+      - arm_cfft_f32_cmplx_noisy_256
+      - arm_cifft_f32_cmplx_noisy_256
+      - arm_cfft_f32_cmplx_noisy_512
+      - arm_cifft_f32_cmplx_noisy_512
+      - arm_cfft_f32_cmplx_noisy_1024
+      - arm_cifft_f32_cmplx_noisy_1024
+      - arm_cfft_f32_cmplx_noisy_2048
+      - arm_cifft_f32_cmplx_noisy_2048
+      - arm_cfft_f32_cmplx_noisy_4096
+      - arm_cifft_f32_cmplx_noisy_4096
+      - arm_cfft_f32_cmplx_step_16
+      - arm_cifft_f32_cmplx_step_16
+      - arm_cfft_f32_cmplx_step_32
+      - arm_cifft_f32_cmplx_step_32
+      - arm_cfft_f32_cmplx_step_64
+      - arm_cifft_f32_cmplx_step_64
+      - arm_cfft_f32_cmplx_step_128
+      - arm_cifft_f32_cmplx_step_128
+      - arm_cfft_f32_cmplx_step_256
+      - arm_cifft_f32_cmplx_step_256
+      - arm_cfft_f32_cmplx_step_512
+      - arm_cifft_f32_cmplx_step_512
+      - arm_cfft_f32_cmplx_step_1024
+      - arm_cifft_f32_cmplx_step_1024
+      - arm_cfft_f32_cmplx_step_2048
+      - arm_cifft_f32_cmplx_step_2048
+      - arm_cfft_f32_cmplx_step_4096
+      - arm_cifft_f32_cmplx_step_4096
+
   libraries.cmsis_dsp.transform.rf32:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -189,6 +678,40 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF32=y
+    testcases:
+      - arm_rfft_f32_real_noisy_32
+      - arm_rifft_f32_real_noisy_32
+      - arm_rfft_f32_real_noisy_64
+      - arm_rifft_f32_real_noisy_64
+      - arm_rfft_f32_real_noisy_128
+      - arm_rifft_f32_real_noisy_128
+      - arm_rfft_f32_real_noisy_256
+      - arm_rifft_f32_real_noisy_256
+      - arm_rfft_f32_real_noisy_512
+      - arm_rifft_f32_real_noisy_512
+      - arm_rfft_f32_real_noisy_1024
+      - arm_rifft_f32_real_noisy_1024
+      - arm_rfft_f32_real_noisy_2048
+      - arm_rifft_f32_real_noisy_2048
+      - arm_rfft_f32_real_noisy_4096
+      - arm_rifft_f32_real_noisy_4096
+      - arm_rfft_f32_real_step_32
+      - arm_rifft_f32_real_step_32
+      - arm_rfft_f32_real_step_64
+      - arm_rifft_f32_real_step_64
+      - arm_rfft_f32_real_step_128
+      - arm_rifft_f32_real_step_128
+      - arm_rfft_f32_real_step_256
+      - arm_rifft_f32_real_step_256
+      - arm_rfft_f32_real_step_512
+      - arm_rifft_f32_real_step_512
+      - arm_rfft_f32_real_step_1024
+      - arm_rifft_f32_real_step_1024
+      - arm_rfft_f32_real_step_2048
+      - arm_rifft_f32_real_step_2048
+      - arm_rfft_f32_real_step_4096
+      - arm_rifft_f32_real_step_4096
+
   libraries.cmsis_dsp.transform.rf32.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -201,6 +724,40 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF32=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_rfft_f32_real_noisy_32
+      - arm_rifft_f32_real_noisy_32
+      - arm_rfft_f32_real_noisy_64
+      - arm_rifft_f32_real_noisy_64
+      - arm_rfft_f32_real_noisy_128
+      - arm_rifft_f32_real_noisy_128
+      - arm_rfft_f32_real_noisy_256
+      - arm_rifft_f32_real_noisy_256
+      - arm_rfft_f32_real_noisy_512
+      - arm_rifft_f32_real_noisy_512
+      - arm_rfft_f32_real_noisy_1024
+      - arm_rifft_f32_real_noisy_1024
+      - arm_rfft_f32_real_noisy_2048
+      - arm_rifft_f32_real_noisy_2048
+      - arm_rfft_f32_real_noisy_4096
+      - arm_rifft_f32_real_noisy_4096
+      - arm_rfft_f32_real_step_32
+      - arm_rifft_f32_real_step_32
+      - arm_rfft_f32_real_step_64
+      - arm_rifft_f32_real_step_64
+      - arm_rfft_f32_real_step_128
+      - arm_rifft_f32_real_step_128
+      - arm_rfft_f32_real_step_256
+      - arm_rifft_f32_real_step_256
+      - arm_rfft_f32_real_step_512
+      - arm_rifft_f32_real_step_512
+      - arm_rfft_f32_real_step_1024
+      - arm_rifft_f32_real_step_1024
+      - arm_rfft_f32_real_step_2048
+      - arm_rifft_f32_real_step_2048
+      - arm_rfft_f32_real_step_4096
+      - arm_rifft_f32_real_step_4096
+
   libraries.cmsis_dsp.transform.cf64:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -214,6 +771,44 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF64=y
+    testcases:
+      - arm_cfft_f64_cmplx_noisy_4096
+      - arm_cifft_f64_cmplx_noisy_4096
+      - arm_cfft_f64_cmplx_noisy_2048
+      - arm_cifft_f64_cmplx_noisy_2048
+      - arm_cfft_f64_cmplx_noisy_1024
+      - arm_cifft_f64_cmplx_noisy_1024
+      - arm_cfft_f64_cmplx_noisy_512
+      - arm_cifft_f64_cmplx_noisy_512
+      - arm_cfft_f64_cmplx_noisy_256
+      - arm_cifft_f64_cmplx_noisy_256
+      - arm_cfft_f64_cmplx_noisy_128
+      - arm_cifft_f64_cmplx_noisy_128
+      - arm_cfft_f64_cmplx_noisy_64
+      - arm_cifft_f64_cmplx_noisy_64
+      - arm_cfft_f64_cmplx_noisy_32
+      - arm_cifft_f64_cmplx_noisy_32
+      - arm_cfft_f64_cmplx_noisy_16
+      - arm_cifft_f64_cmplx_noisy_16
+      - arm_cfft_f64_cmplx_step_4096
+      - arm_cifft_f64_cmplx_step_4096
+      - arm_cfft_f64_cmplx_step_2048
+      - arm_cifft_f64_cmplx_step_2048
+      - arm_cfft_f64_cmplx_step_1024
+      - arm_cifft_f64_cmplx_step_1024
+      - arm_cfft_f64_cmplx_step_512
+      - arm_cifft_f64_cmplx_step_512
+      - arm_cfft_f64_cmplx_step_256
+      - arm_cifft_f64_cmplx_step_256
+      - arm_cfft_f64_cmplx_step_128
+      - arm_cifft_f64_cmplx_step_128
+      - arm_cfft_f64_cmplx_step_64
+      - arm_cifft_f64_cmplx_step_64
+      - arm_cfft_f64_cmplx_step_32
+      - arm_cifft_f64_cmplx_step_32
+      - arm_cfft_f64_cmplx_step_16
+      - arm_cifft_f64_cmplx_step_16
+
   libraries.cmsis_dsp.transform.cf64.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -226,6 +821,44 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CF64=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_cfft_f64_cmplx_noisy_4096
+      - arm_cifft_f64_cmplx_noisy_4096
+      - arm_cfft_f64_cmplx_noisy_2048
+      - arm_cifft_f64_cmplx_noisy_2048
+      - arm_cfft_f64_cmplx_noisy_1024
+      - arm_cifft_f64_cmplx_noisy_1024
+      - arm_cfft_f64_cmplx_noisy_512
+      - arm_cifft_f64_cmplx_noisy_512
+      - arm_cfft_f64_cmplx_noisy_256
+      - arm_cifft_f64_cmplx_noisy_256
+      - arm_cfft_f64_cmplx_noisy_128
+      - arm_cifft_f64_cmplx_noisy_128
+      - arm_cfft_f64_cmplx_noisy_64
+      - arm_cifft_f64_cmplx_noisy_64
+      - arm_cfft_f64_cmplx_noisy_32
+      - arm_cifft_f64_cmplx_noisy_32
+      - arm_cfft_f64_cmplx_noisy_16
+      - arm_cifft_f64_cmplx_noisy_16
+      - arm_cfft_f64_cmplx_step_4096
+      - arm_cifft_f64_cmplx_step_4096
+      - arm_cfft_f64_cmplx_step_2048
+      - arm_cifft_f64_cmplx_step_2048
+      - arm_cfft_f64_cmplx_step_1024
+      - arm_cifft_f64_cmplx_step_1024
+      - arm_cfft_f64_cmplx_step_512
+      - arm_cifft_f64_cmplx_step_512
+      - arm_cfft_f64_cmplx_step_256
+      - arm_cifft_f64_cmplx_step_256
+      - arm_cfft_f64_cmplx_step_128
+      - arm_cifft_f64_cmplx_step_128
+      - arm_cfft_f64_cmplx_step_64
+      - arm_cifft_f64_cmplx_step_64
+      - arm_cfft_f64_cmplx_step_32
+      - arm_cifft_f64_cmplx_step_32
+      - arm_cfft_f64_cmplx_step_16
+      - arm_cifft_f64_cmplx_step_16
+
   libraries.cmsis_dsp.transform.rf64:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -239,6 +872,40 @@ tests:
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF64=y
+    testcases:
+      - arm_rfft_f64_real_noisy_32
+      - arm_rifft_f64_real_noisy_32
+      - arm_rfft_f64_real_noisy_64
+      - arm_rifft_f64_real_noisy_64
+      - arm_rfft_f64_real_noisy_128
+      - arm_rifft_f64_real_noisy_128
+      - arm_rfft_f64_real_noisy_256
+      - arm_rifft_f64_real_noisy_256
+      - arm_rfft_f64_real_noisy_512
+      - arm_rifft_f64_real_noisy_512
+      - arm_rfft_f64_real_noisy_1024
+      - arm_rifft_f64_real_noisy_1024
+      - arm_rfft_f64_real_noisy_2048
+      - arm_rifft_f64_real_noisy_2048
+      - arm_rfft_f64_real_noisy_4096
+      - arm_rifft_f64_real_noisy_4096
+      - arm_rfft_f64_real_step_32
+      - arm_rifft_f64_real_step_32
+      - arm_rfft_f64_real_step_64
+      - arm_rifft_f64_real_step_64
+      - arm_rfft_f64_real_step_128
+      - arm_rifft_f64_real_step_128
+      - arm_rfft_f64_real_step_256
+      - arm_rifft_f64_real_step_256
+      - arm_rfft_f64_real_step_512
+      - arm_rifft_f64_real_step_512
+      - arm_rfft_f64_real_step_1024
+      - arm_rifft_f64_real_step_1024
+      - arm_rfft_f64_real_step_2048
+      - arm_rifft_f64_real_step_2048
+      - arm_rfft_f64_real_step_4096
+      - arm_rifft_f64_real_step_4096
+
   libraries.cmsis_dsp.transform.rf64.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -251,3 +918,36 @@ tests:
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF64=y
       - CONFIG_FPU=y
+    testcases:
+      - arm_rfft_f64_real_noisy_32
+      - arm_rifft_f64_real_noisy_32
+      - arm_rfft_f64_real_noisy_64
+      - arm_rifft_f64_real_noisy_64
+      - arm_rfft_f64_real_noisy_128
+      - arm_rifft_f64_real_noisy_128
+      - arm_rfft_f64_real_noisy_256
+      - arm_rifft_f64_real_noisy_256
+      - arm_rfft_f64_real_noisy_512
+      - arm_rifft_f64_real_noisy_512
+      - arm_rfft_f64_real_noisy_1024
+      - arm_rifft_f64_real_noisy_1024
+      - arm_rfft_f64_real_noisy_2048
+      - arm_rifft_f64_real_noisy_2048
+      - arm_rfft_f64_real_noisy_4096
+      - arm_rifft_f64_real_noisy_4096
+      - arm_rfft_f64_real_step_32
+      - arm_rifft_f64_real_step_32
+      - arm_rfft_f64_real_step_64
+      - arm_rifft_f64_real_step_64
+      - arm_rfft_f64_real_step_128
+      - arm_rifft_f64_real_step_128
+      - arm_rfft_f64_real_step_256
+      - arm_rifft_f64_real_step_256
+      - arm_rfft_f64_real_step_512
+      - arm_rifft_f64_real_step_512
+      - arm_rfft_f64_real_step_1024
+      - arm_rifft_f64_real_step_1024
+      - arm_rfft_f64_real_step_2048
+      - arm_rifft_f64_real_step_2048
+      - arm_rfft_f64_real_step_4096
+      - arm_rifft_f64_real_step_4096
