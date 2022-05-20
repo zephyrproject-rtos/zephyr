@@ -231,14 +231,14 @@
 			};
 		};
 
-		iwdg1: watchdog@58004800 {
+		iwdg: iwdg1: watchdog@58004800 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x58004800 0x400>;
 			label = "IWDG_1";
 			status = "disabled";
 		};
 
-		wwdg1: watchdog@50003000 {
+		wwdg: wwdg1: watchdog@50003000 {
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x50003000 0x1000>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>;
