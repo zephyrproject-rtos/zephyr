@@ -16,6 +16,7 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 #include "util/dbuf.h"
+#include "util/mem.h"
 
 #include "ticker/ticker.h"
 
