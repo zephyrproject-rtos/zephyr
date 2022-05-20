@@ -79,6 +79,14 @@ static MFIFO_DEFINE(iq_report_free, sizeof(void *), IQ_REPORT_CNT);
 static uint8_t mem_link_iq_report_quota_pdu;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX || CONFIG_BT_CTLR_DF_CONN_CTE_RX*/
 
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+/* Make sure the configuration follows BT Core 5.3. Vol 4 Part E section 7.8.82 about
+ * max CTE count sampled in periodic advertising chain.
+ */
+BUILD_ASSERT(CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX <= BT_HCI_LE_SAMPLE_CTE_COUNT_MAX,
+	     "Max advertising CTE count exceed BT_HCI_LE_SAMPLE_CTE_COUNT_MAX");
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 /* ToDo:
  * - Add release of df_adv_cfg when adv_sync is released.
  *   Open question, should df_adv_cfg be released when Adv. CTE is disabled?
@@ -87,6 +95,12 @@ static uint8_t mem_link_iq_report_quota_pdu;
  */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+/* Make sure the configuration follows BT Core 5.3. Vol 4 Part E section 7.8.80 about
+ * max CTE count in a periodic advertising chain.
+ */
+BUILD_ASSERT(CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX <= BT_HCI_LE_CTE_COUNT_MAX,
+	     "Max advertising CTE count exceed BT_HCI_LE_CTE_COUNT_MAX");
+
 static struct lll_df_adv_cfg lll_df_adv_cfg_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *df_adv_cfg_free;
 static uint8_t cte_info_clear(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cfg,
@@ -221,11 +235,11 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
-	/* ToDo: Check if there is a limit of per. adv. pdu that may be
-	 * sent. This affects number of CTE that may be requested.
+	/* Max number of CTE in a single periodic advertising event is limited
+	 * by configuration. It shall not be greater than BT_HCI_LE_CTE_COUNT_MAX.
 	 */
 	if (cte_count < BT_HCI_LE_CTE_COUNT_MIN ||
-	    cte_count > BT_HCI_LE_CTE_COUNT_MAX) {
+	    cte_count > CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX) {
 		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
@@ -429,7 +443,7 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 		/* max_cte_count equal to 0x0 has special meaning - sample and
 		 * report continuously until there are CTEs received.
 		 */
-		if (max_cte_count > BT_HCI_LE_SAMPLE_CTE_COUNT_MAX) {
+		if (max_cte_count > CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX) {
 			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
 
