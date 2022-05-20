@@ -90,7 +90,18 @@ struct emul {
 extern const struct emul __emul_list_start[];
 extern const struct emul __emul_list_end[];
 
-/* Use the devicetree node identifier as a unique name. */
+/**
+ * @brief Use the devicetree node identifier as a unique name.
+ *
+ * @param node_id A devicetree node identifier
+ */
+#define EMUL_DT_NAME_GET(node_id) (_CONCAT(__emulreg_, node_id))
+
+/**
+ * @brief Use the devicetree node identifier as a unique name.
+ *
+ * @deprecated Use EMUL_DT_NAME_GET instead
+ */
 #define EMUL_REG_NAME(node_id) (_CONCAT(__emulreg_, node_id))
 
 /* Get a unique identifier based on the given _dev_node_id's reg property and
@@ -135,6 +146,10 @@ extern const struct emul __emul_list_end[];
 		.bus = {.Z_EMUL_BUS(node_id, i2c, espi, spi) =                                     \
 				&(Z_EMUL_REG_BUS_IDENTIFIER(node_id))},                            \
 	};
+
+#define Z_MAYBE_EMUL_DECLARE_INTERNAL(node_id) extern const struct emul EMUL_DT_NAME_GET(node_id);
+
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
 
 /**
  * Set up a list of emulators
