@@ -287,7 +287,7 @@ static void stream_recv_lc3_codec(struct bt_audio_stream *stream,
 		return;
 	}
 
-	if (info->flags != BT_ISO_FLAGS_VALID) {
+	if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
 		printk("Bad packet: 0x%02X\n", info->flags);
 
 		in_buf = NULL;
