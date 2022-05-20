@@ -420,9 +420,6 @@ struct lwm2m_senml_json_context {
 struct lwm2m_block_context {
 	struct coap_block_context ctx;
 	struct lwm2m_opaque_context opaque;
-#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
-struct lwm2m_senml_json_context senml_json_ctx;
-#endif
 	int64_t timestamp;
 	uint32_t expected;
 	uint8_t token[8];
