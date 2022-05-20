@@ -289,9 +289,6 @@ static int init_block_ctx(const uint8_t *token, uint8_t tkl,
 	(*ctx)->timestamp = timestamp;
 	(*ctx)->expected = 0;
 	(*ctx)->last_block = false;
-#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
-	lwm2m_senml_json_context_init(&(*ctx)->senml_json_ctx);
-#endif
 	memset(&(*ctx)->opaque, 0, sizeof((*ctx)->opaque));
 
 	return 0;
