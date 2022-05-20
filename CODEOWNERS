@@ -575,7 +575,7 @@
 /include/zephyr/arch/xtensa/                     @andyross @dcpleung
 /include/zephyr/arch/sparc/                      @martin-aberg
 /include/zephyr/sys/atomic.h                     @andyross
-/include/zephyr/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
+/include/zephyr/bluetooth/                       @alwa-nordic @jhedberg @Vudentz @sjanc
 /include/zephyr/bluetooth/audio/                 @alwa-nordic @jhedberg @Vudentz @Thalley @asbjornsabo
 /include/zephyr/cache.h                          @carlocaione @andyross
 /include/zephyr/canbus/                          @alexanderwachter @henrikbrixandersen
@@ -649,7 +649,7 @@
 /samples/                                 @nashif
 /samples/basic/minimal/                   @carlescufi
 /samples/basic/servo_motor/boards/*microbit* @jhe
-/samples/bluetooth/                       @jhedberg @Vudentz @alwa-nordic
+/samples/bluetooth/                       @jhedberg @Vudentz @alwa-nordic @sjanc
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/compression/                     @Navin-Sankar
 /samples/drivers/can/                     @alexanderwachter @henrikbrixandersen
@@ -721,8 +721,9 @@ scripts/gen_image_info.py                 @tejlmand
 /share/zephyr-package/                    @tejlmand
 /share/zephyrunittest-package/            @tejlmand
 /subsys/bluetooth/                        @alwa-nordic @jhedberg @Vudentz
-/subsys/bluetooth/audio/                  @jhedberg @Vudentz @Thalley @asbjornsabo
+/subsys/bluetooth/audio/                  @jhedberg @Vudentz @Thalley @asbjornsabo @sjanc
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa
+/subsys/bluetooth/host/                   @alwa-nordic @jhedberg @Vudentz @sjanc
 /subsys/bluetooth/mesh/                   @jhedberg @PavelVPV @Vudentz @LingaoM
 /subsys/canbus/                           @alexanderwachter @henrikbrixandersen
 /subsys/debug/                            @nashif
@@ -785,7 +786,7 @@ scripts/gen_image_info.py                 @tejlmand
 /tests/benchmarks/cmsis_dsp/              @stephanosio
 /tests/boards/native_posix/               @aescolar @daor-oti
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
-/tests/bluetooth/                         @alwa-nordic @jhedberg @Vudentz
+/tests/bluetooth/                         @alwa-nordic @jhedberg @Vudentz @sjanc
 /tests/bluetooth/controller/              @cvinayak @thoh-ot @kruithofa @erbr-ot @sjanc @ppryga
 /tests/bluetooth/bsim_bt/                 @alwa-nordic @jhedberg @Vudentz @wopu-ot
 /tests/bluetooth/bsim_bt/bsim_test_audio/ @alwa-nordic @jhedberg @Vudentz @wopu-ot @Thalley @asbjornsabo
