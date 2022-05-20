@@ -156,9 +156,9 @@
 			};
 		};
 
-		wwdg1: watchdog@4000a000 {
+		wwdg: wwdg1: watchdog@4000a000 {
 			compatible = "st,stm32-window-watchdog";
-			reg = <0x4000A000 0x400>;
+			reg = <0x4000a000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000800>;
 			label = "WWDG_1";
 			interrupts = <0 7>;
