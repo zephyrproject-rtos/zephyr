@@ -49,4 +49,7 @@ void test_config_save_one_fcb(void)
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb read error");
 	zassert_true(val8 == 44U, "bad value read");
+
+	zassert_equal(-EINVAL, test_config_save_one_byte_value("myfoo/mybar=", 45),
+		      "Reject equal sign in name");
 }

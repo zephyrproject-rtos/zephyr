@@ -360,6 +360,14 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 	}
 
 	/*
+	 * Equal signs is used internally as separator between name and value. Reject in order to
+	 * not corrupt the saved value.
+	 */
+	if (strchr(name, '=')) {
+		return -EINVAL;
+	}
+
+	/*
 	 * Check if we're writing the same value again.
 	 */
 	cdca.name = name;
