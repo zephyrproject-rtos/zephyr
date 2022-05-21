@@ -1051,9 +1051,18 @@ static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
 	/* For LL_REJECT_IND there is no simple way of confirming protocol validity of the PDU
 	 * for the given procedure, so simply pass it on and let procedure engine deal with it
 	 */
-	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) &&
-		 (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) ||
-		(pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
+	return (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND);
+}
+
+static bool pdu_is_reject_ext(struct pdu_data *pdu, struct proc_ctx *ctx)
+{
+	return ((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) &&
+		(ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode));
+}
+
+static bool pdu_is_any_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
+{
+	return (pdu_is_reject_ext(pdu, ctx) || pdu_is_reject(pdu, ctx));
 }
 
 static bool pdu_is_terminate(struct pdu_data *pdu)
@@ -1500,14 +1509,13 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 			/* Local active procedure
 			 * Remote active procedure
 			 */
-
 			unexpected_l = !(pdu_is_expected(pdu, ctx_l) ||
 					 pdu_is_unknown(pdu, ctx_l) ||
-					 pdu_is_reject(pdu, ctx_l));
+					 pdu_is_any_reject(pdu, ctx_l));
 
 			unexpected_r = !(pdu_is_expected(pdu, ctx_r) ||
 					 pdu_is_unknown(pdu, ctx_r) ||
-					 pdu_is_reject(pdu, ctx_r));
+					 pdu_is_reject_ext(pdu, ctx_r));
 
 			if (unexpected_l && unexpected_r) {
 				/* Local active procedure
@@ -1553,7 +1561,7 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 
 			unexpected_l = !(pdu_is_expected(pdu, ctx_l) ||
 					 pdu_is_unknown(pdu, ctx_l) ||
-					 pdu_is_reject(pdu, ctx_l));
+					 pdu_is_any_reject(pdu, ctx_l));
 
 			if (unexpected_l) {
 				/* Local active procedure
