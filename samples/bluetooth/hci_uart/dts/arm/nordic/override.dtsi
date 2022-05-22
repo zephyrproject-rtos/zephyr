@@ -1,0 +1,2 @@
+/* ARM Cortex-M0 lowest priority value of 3 */
+#define NRF_DEFAULT_IRQ_PRIORITY 3

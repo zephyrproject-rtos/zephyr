@@ -1,0 +1,4 @@
+/* ARM Cortex-M4 lowest priority value of 5, i.e. considering Zephyr reserved 2
+ * levels for Exceptions and ZLI (if enabled).
+ */
+#define NRF_DEFAULT_IRQ_PRIORITY 5
