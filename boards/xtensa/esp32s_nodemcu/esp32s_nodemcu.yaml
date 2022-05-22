@@ -1,0 +1,17 @@
+identifier: esp32s_nodemcu
+name: ESP32S NodeMCU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - pinmux
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

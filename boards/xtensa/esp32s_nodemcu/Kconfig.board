@@ -1,0 +1,8 @@
+# ESP32S NodeMCU board configuration
+
+# Copyright (c) 2022 Niklas Salminen <xcb3djok@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32S_NODEMCU
+	bool "ESP32S NodeMCU Development Board"
+	depends on SOC_ESP32

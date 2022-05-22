@@ -1,0 +1,25 @@
+# ESP32S NodeMCU board configuration
+
+# Copyright (c) 2022 Niklas Salminen <xcb3djok@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "esp32s_nodemcu"
+	depends on BOARD_ESP32S_NODEMCU
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+config ENTROPY_GENERATOR
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT
