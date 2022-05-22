@@ -215,10 +215,6 @@ config BT_SETTINGS_USE_PRINTK
 	  printk is enabled then the program memory footprint will be larger.
 endif # BT_SETTINGS
 
-config BT_WHITELIST
-	bool "DEPRECATED: Use BT_FILTER_ACCEPT_LIST instead"
-	select BT_FILTER_ACCEPT_LIST
-
 config BT_FILTER_ACCEPT_LIST
 	bool "Filter accept list support"
 	help
@@ -233,9 +229,6 @@ config BT_FILTER_ACCEPT_LIST
 	  A scanner can filter advertisers for which it will generate
 	  advertising reports.
 	  Connections can be established automatically for accepted peers.
-
-	  This options deprecates the bt_le_set_auto_conn API in favor of the
-	  bt_conn_create_auto_le API.
 
 config BT_LIM_ADV_TIMEOUT
 	int "Timeout for limited advertising in 1s units"
