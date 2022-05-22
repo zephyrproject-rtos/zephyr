@@ -1890,10 +1890,7 @@ struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, k_timeout_t timeout)
 	clone_pkt->buffer = pkt->buffer;
 	buf = pkt->buffer;
 
-	while (buf) {
-		net_pkt_frag_ref(buf);
-		buf = buf->frags;
-	}
+	net_pkt_frag_ref(buf);
 
 	if (pkt->buffer) {
 		/* The link header pointers are only usable if there is
