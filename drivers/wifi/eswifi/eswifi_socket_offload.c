@@ -46,12 +46,11 @@ static void __process_received(struct net_context *context,
 	struct eswifi_off_socket *socket = user_data;
 
 	if (!pkt) {
+		k_fifo_cancel_wait(&socket->fifo);
 		return;
 	}
 
-	eswifi_lock(eswifi);
 	k_fifo_put(&socket->fifo, pkt);
-	eswifi_unlock(eswifi);
 }
 
 static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
@@ -93,6 +92,29 @@ static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
 	return ret;
 }
 
+static int eswifi_socket_listen(void *obj, int backlog)
+{
+	struct eswifi_off_socket *socket;
+	int sock = OBJ_TO_SD(obj);
+	int ret;
+
+	eswifi_lock(eswifi);
+	socket = &eswifi->socket[sock];
+
+	ret = __eswifi_listen(eswifi, socket, backlog);
+	eswifi_unlock(eswifi);
+
+	return ret;
+}
+
+void __eswifi_socket_accept_cb(struct net_context *context, struct sockaddr *addr,
+			       unsigned int len, int val, void *data)
+{
+	struct sockaddr *addr_target = data;
+
+	memcpy(addr_target, addr, len);
+}
+
 static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
 				  socklen_t *addrlen)
 {
@@ -109,9 +131,16 @@ static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
 	socket = &eswifi->socket[sock];
 
 	ret = __eswifi_accept(eswifi, socket);
+	socket->accept_cb = __eswifi_socket_accept_cb;
+	socket->accept_data = addr;
+	k_sem_reset(&socket->accept_sem);
 	eswifi_unlock(eswifi);
 
-	return ret;
+	*addrlen = sizeof(struct sockaddr_in);
+
+	k_sem_take(&socket->accept_sem, K_FOREVER);
+
+	return 0;
 }
 
 static int eswifi_socket_accept(void *obj, struct sockaddr *addr,
@@ -310,11 +339,26 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 		goto skip_wait;
 	}
 
-	pkt = k_fifo_get(&socket->fifo, K_NO_WAIT);
-	if (!pkt) {
-		errno = EAGAIN;
-		len = -EAGAIN;
-		goto done;
+	ret = k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Rescheduling socket read error");
+		errno = -ret;
+		len = -1;
+	}
+
+	if (flags & ZSOCK_MSG_DONTWAIT) {
+		pkt = k_fifo_get(&socket->fifo, K_NO_WAIT);
+		if (!pkt) {
+			errno = EAGAIN;
+			len = -1;
+			goto done;
+		}
+	} else {
+		eswifi_unlock(eswifi);
+		pkt = k_fifo_get(&socket->fifo, K_FOREVER);
+		if (!pkt)
+			return 0; /* EOF */
+		eswifi_lock(eswifi);
 	}
 
 skip_wait:
@@ -406,6 +450,7 @@ static int eswifi_socket_open(int family, int type, int proto)
 	socket = &eswifi->socket[idx];
 	k_fifo_init(&socket->fifo);
 	k_sem_init(&socket->read_sem, 0, 200);
+	k_sem_init(&socket->accept_sem, 1, 1);
 	socket->prev_pkt_rem = NULL;
 	socket->recv_cb = __process_received;
 	socket->recv_data = socket;
@@ -452,7 +497,17 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 
 	eswifi_lock(eswifi);
 	socket = &eswifi->socket[sock];
+
+	ret = k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Rescheduling socket read error");
+		errno = -ret;
+		eswifi_unlock(eswifi);
+		return -1;
+	}
+
 	eswifi_unlock(eswifi);
+
 	if (socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
 		errno = EINVAL;
 		return -1;
@@ -581,6 +636,7 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 	},
 	.bind = eswifi_socket_bind,
 	.connect = eswifi_socket_connect,
+	.listen = eswifi_socket_listen,
 	.accept = eswifi_socket_accept,
 	.sendto = eswifi_socket_sendto,
 	.recvfrom = eswifi_socket_recvfrom,
