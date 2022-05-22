@@ -476,16 +476,16 @@ endif # BT_CONN
 
 config BT_CTLR_FILTER_ACCEPT_LIST
 	bool "Filter Accept List Support"
-	default y
+	default y if BT_HCI_RAW || BT_FILTER_ACCEPT_LIST
 	help
 	  Enable support for controller Filter Accept List feature
 
 config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
 	depends on BT_CTLR_PRIVACY_SUPPORT
-	default y
 	select BT_CTLR_FILTER_ACCEPT_LIST if BT_LL_SW_SPLIT
 	select BT_RPA
+	default y if BT_HCI_RAW || BT_SMP
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
 	  in the Controller.
