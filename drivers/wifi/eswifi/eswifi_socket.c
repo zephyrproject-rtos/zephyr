@@ -227,6 +227,25 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	return 0;
 }
 
+int __eswifi_listen(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket, int backlog)
+{
+	int err;
+
+	__select_socket(eswifi, socket->index);
+
+	/* Set backlog */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P8=%d\r", backlog);
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to start set listen backlog");
+		err = -EIO;
+	}
+
+	socket->is_server = true;
+
+	return 0;
+}
+
 int __eswifi_accept(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 {
 	char cmd[] = "P5=1\r";
