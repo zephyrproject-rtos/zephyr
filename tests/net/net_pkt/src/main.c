@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "kernel.h"
+#include "ztest_assert.h"
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -1061,6 +1063,37 @@ void test_net_pkt_remove_tail(void)
 	net_pkt_unref(pkt);
 }
 
+void test_net_pkt_shallow_clone_noleak_buf(void)
+{
+	const int bufs_to_allocate = 3;
+	const size_t pkt_size = CONFIG_NET_BUF_DATA_SIZE * bufs_to_allocate;
+	struct net_pkt *pkt, *shallow_pkt;
+	struct net_buf_pool *tx_data;
+
+	pkt = net_pkt_alloc_with_buffer(NULL, pkt_size,
+					AF_UNSPEC, 0, K_NO_WAIT);
+
+	zassert_true(pkt != NULL, "Pkt not allocated");
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count - bufs_to_allocate,
+		      "Incorrect net buf allocation");
+
+	shallow_pkt = net_pkt_shallow_clone(pkt, K_NO_WAIT);
+	zassert_true(shallow_pkt != NULL, "Pkt not allocated");
+	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count - bufs_to_allocate,
+		      "Incorrect available net buf count");
+
+	net_pkt_unref(pkt);
+	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count - bufs_to_allocate,
+		      "Incorrect available net buf count");
+
+	net_pkt_unref(shallow_pkt);
+	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count,
+		      "Leak detected");
+
+}
+
 void test_main(void)
 {
 	eth_if = net_if_get_default();
@@ -1077,7 +1110,8 @@ void test_main(void)
 			 ztest_unit_test(test_net_pkt_headroom),
 			 ztest_unit_test(test_net_pkt_headroom_copy),
 			 ztest_unit_test(test_net_pkt_get_contiguous_len),
-			 ztest_unit_test(test_net_pkt_remove_tail)
+			 ztest_unit_test(test_net_pkt_remove_tail),
+			 ztest_unit_test(test_net_pkt_shallow_clone_noleak_buf)
 		);
 
 	ztest_run_test_suite(net_pkt_tests);
