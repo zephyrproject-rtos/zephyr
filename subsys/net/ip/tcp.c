@@ -1107,20 +1107,12 @@ static int tcp_send_queued_data(struct tcp *conn)
 		(void)k_sem_take(&conn->tx_sem, K_NO_WAIT);
 	}
 
-	if (conn->unacked_len) {
+	if (conn->send_data_total) {
 		subscribe = true;
 	}
 
 	if (k_work_delayable_remaining_get(&conn->send_data_timer)) {
 		subscribe = false;
-	}
-
-	/* If we have out-of-bufs case, then do not start retransmit timer
-	 * yet. The socket layer will catch this and resend data if needed.
-	 */
-	if (ret == -ENOBUFS) {
-		NET_DBG("No bufs, cancelling retransmit timer");
-		k_work_cancel_delayable(&conn->send_data_timer);
 	}
 
 	if (subscribe) {
@@ -2369,6 +2361,18 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		} else {
 			pkt->buffer = conn->send_data->buffer;
 			conn->send_data->buffer = NULL;
+		}
+
+		/* If we have out-of-bufs case, and the send_data buffer has
+		 * become empty, till the retransmit timer, as there is no
+		 * data to retransmit.
+		 * The socket layer will catch this and resend data if needed.
+		 * Only perform this when it is just the newly added packet,
+		 * otherwise it can disrupt any pending transmission
+		 */
+		if (conn->send_data_total == 0) {
+			NET_DBG("No bufs, cancelling retransmit timer");
+			k_work_cancel_delayable(&conn->send_data_timer);
 		}
 	} else {
 		/* We should not free the pkt if there was an error. It will be
