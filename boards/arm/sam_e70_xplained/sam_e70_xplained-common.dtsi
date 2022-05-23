@@ -156,7 +156,7 @@ zephyr_udc0: &usbhs {
 		/* From sector 1 to sector 7 (included): slot0 (896 kbytes) */
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x0020000 0x000e0000>;
+			reg = <0x00020000 0x000e0000>;
 		};
 
 		/* From sector 8 to sector 14 (included): slot1 (896 kbytes) */
