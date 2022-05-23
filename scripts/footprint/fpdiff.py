@@ -18,6 +18,7 @@ from anytree.importer import DictImporter
 from anytree import PreOrderIter
 from anytree.search  import find
 
+import colorama
 from colorama import Fore
 import json
 import argparse
@@ -33,6 +34,8 @@ def parse_args():
     return parser.parse_args()
 
 def main():
+    colorama.init()
+
     args = parse_args()
 
     with open(args.file1, "r") as f:
