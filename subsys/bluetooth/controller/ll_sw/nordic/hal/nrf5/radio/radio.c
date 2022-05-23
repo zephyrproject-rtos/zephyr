@@ -1626,6 +1626,7 @@ uint32_t radio_ccm_mic_is_valid(void)
 	return (NRF_CCM->MICSTATUS != 0);
 }
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 static uint8_t MALIGN(4) _aar_scratch[3];
 
 void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
@@ -1750,6 +1751,7 @@ void radio_ar_resolve(const uint8_t *addr)
 			  AAR_ENABLE_ENABLE_Msk;
 
 }
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_DF_SUPPORT) && !defined(CONFIG_ZTEST)
 /* @brief Function configures CTE inline register to start sampling of CTE
