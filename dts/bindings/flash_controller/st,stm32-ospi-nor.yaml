@@ -46,12 +46,15 @@ properties:
        The width of (Octo)SPI bus to which flash memory is connected.
 
        Possible values are :
-        - OSPI_SPI_MODE <1> = SPI mode on 1 data line
-        - OSPI_OPI_MODE <8> = Octo SPI mode on 8 data lines
+        - OSPI_SPI_MODE  <1> = SPI mode on 1 data line
+        - OSPI_DUAL_MODE <2> = Dual mode on 2 data lines
+        - OSPI_QUAD_MODE <4> = Quad mode on 4 data lines
+        - OSPI_OPI_MODE  <8> = Octo mode on 8 data lines
       enum:
         - 1
+        - 2
+        - 4
         - 8
-
     data-rate:
       type: int
       required: true
