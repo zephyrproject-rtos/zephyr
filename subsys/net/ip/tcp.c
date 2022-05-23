@@ -692,6 +692,29 @@ end:
 	return result;
 }
 
+/**
+ * @brief Update TCP receive window
+ *
+ * @param conn TCP network connection
+ * @param delta Receive window delta
+ *
+ * @return 0 on success, -EINVAL
+ *         if the receive window delta is out of bounds
+ */
+static int tcp_update_recv_wnd(struct tcp *conn, int32_t delta)
+{
+	int32_t new_win;
+
+	new_win = conn->recv_win + delta;
+	if (new_win < 0 || new_win > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	conn->recv_win = new_win;
+
+	return 0;
+}
+
 static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 				     size_t len)
 {
@@ -747,7 +770,7 @@ static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size_t *len)
 
 		net_pkt_skip(up, net_pkt_get_len(up) - *len);
 
-		net_context_update_recv_wnd(conn->context, -*len);
+		tcp_update_recv_wnd(conn, -*len);
 
 		/* Do not pass data to application with TCP conn
 		 * locked as there could be an issue when the app tries
@@ -2250,21 +2273,12 @@ int net_tcp_listen(struct net_context *context)
 
 int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta)
 {
-	int32_t new_win;
-
 	if (!context->tcp) {
 		NET_ERR("context->tcp == NULL");
 		return -EPROTOTYPE;
 	}
 
-	new_win = ((struct tcp *)context->tcp)->recv_win + delta;
-	if (new_win < 0 || new_win > UINT16_MAX) {
-		return -EINVAL;
-	}
-
-	((struct tcp *)context->tcp)->recv_win = new_win;
-
-	return 0;
+	return tcp_update_recv_wnd((struct tcp *)context->tcp, delta);
 }
 
 /* net_context queues the outgoing data for the TCP connection */
