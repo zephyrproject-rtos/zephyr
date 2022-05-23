@@ -1192,6 +1192,8 @@ static void tcp_resend_data(struct k_work *work)
 		}
 
 		goto out;
+	} else if (ret == -ENOBUFS) {
+		NET_ERR("TCP failed to allocate buffer in retransmission");
 	}
 
 	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
