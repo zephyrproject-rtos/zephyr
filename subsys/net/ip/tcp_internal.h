@@ -38,9 +38,9 @@ extern "C" {
  * @return Maximum Segment Size
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-uint16_t net_tcp_get_recv_mss(const struct tcp *conn);
+uint16_t net_tcp_get_supported_mss(const struct tcp *conn);
 #else
-static inline uint16_t net_tcp_get_recv_mss(const struct tcp *conn)
+static inline uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 {
 	ARG_UNUSED(conn);
 	return 0;

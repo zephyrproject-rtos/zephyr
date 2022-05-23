@@ -112,7 +112,8 @@
 
 #define conn_mss(_conn)					\
 	((_conn)->recv_options.mss_found ?		\
-	 (_conn)->recv_options.mss : (uint16_t)NET_IPV6_MTU)
+	 MIN((_conn)->recv_options.mss, \
+	 net_tcp_get_supported_mss(_conn)) : net_tcp_get_supported_mss(_conn))
 
 #define conn_state(_conn, _s)						\
 ({									\
