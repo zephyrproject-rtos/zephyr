@@ -67,10 +67,18 @@
 		};
 		spi0: spi@e0002000 {
 			compatible = "litex,spi";
-			interrupt-parent = <&intc0>;
-			interrupts = <5 0>;
-			reg = <0xe0002000 0x34>;
-			reg-names = "control";
+			reg = <0xe0002000 0x4
+				0xe0002004 0x4
+				0xe0002008 0x4
+				0xe000200c 0x4
+				0xe0002010 0x4
+				0xe0002014 0x4>;
+			reg-names = "control",
+				"status",
+				"mosi",
+				"miso",
+				"cs",
+				"loopback";
 			label = "spi0";
 			status = "disabled";
 			#address-cells = <1>;
