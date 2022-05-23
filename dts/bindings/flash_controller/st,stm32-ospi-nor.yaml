@@ -67,3 +67,27 @@ properties:
       enum:
         - 1
         - 2
+    writeoc:
+      type: string
+      required: false
+      enum:
+        - "PP"            # Page program, PP (0x02) up to 256 bytes
+        - "PP_1_1_2"      # Dual page program, PP 1-1-2 (0xA2)
+        - "PP_1_1_4"      # Quad data line SPI, PP 1-1-4 (0x32)
+        - "PP_1_4_4"      # Quad data line SPI, PP 1-4-4 (0x38)
+      description: |
+        The value encodes number of I/O lines used for the opcode,
+        address, and data.
+
+        There is no info about quad page program opcodes in the SFDP
+        tables, hence it has been assumed that NOR flash memory
+        supporting 1-4-4 mode also would support fast page programming.
+
+        Intended for modes other than OSPI_OPI_MODE.
+
+        If absent, then program page opcode is determined by the
+        `spi-bus-width`:
+
+        * OSPI_SPI_MODE -> PP 1-1-1 (0x02)
+        * OSPI_DUAL_MODE -> PP 1-1-2 (0xA2)
+        * OSPI_QUAD_MODE -> PP 1-4-4 (0x38)
