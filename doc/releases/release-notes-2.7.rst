@@ -2,12 +2,109 @@
 
 .. _zephyr_2.7:
 
-.. _zephyr_2.7.1:
+.. _zephyr_2.7.2:
 
-Zephyr 2.7.1
+Zephyr 2.7.2
 ####################
 
 This is an LTS maintenance release with fixes.
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 2.7.1 tagged
+release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+* :github:`23419` - posix: clock: No thread safety clock_getime / clock_settime
+* :github:`30367` - TCP2 does not send our MSS to peer
+* :github:`37389` - nucleo_g0b1re: Swapping image in mcuboot results in hard fault and softbricks the device
+* :github:`38268` - Multiple defects in "Multi Producer Single Consumer Packet Buffer" library
+* :github:`38576` - net shell: self-connecting to TCP might lead to a crash
+* :github:`39184` - HawkBit hash mismatch
+* :github:`39242` - net: sockets: Zephyr Fatal in dns_resolve_cb if dns request was attempted in offline state
+* :github:`39399` - linker: Missing align __itcm_load_start / __dtcm_data_load_start linker symbols
+* :github:`39608` - stm32: lpuart: 9600 baudrate doesn't work
+* :github:`39609` - spi: slave: division by zero in timeout calculation
+* :github:`39660` - poll() not notified when a TLS/TCP connection is closed without TLS close_notify
+* :github:`39687` - sensor: qdec_nrfx: PM callback has incorrect signature
+* :github:`39774` - modem: uart mux reading optimization never used
+* :github:`39882` - Bluetooth Host qualification on 2.7 branch
+* :github:`40163` - Use correct clock frequency for systick+DWT
+* :github:`40464` - Dereferencing NULL with getsockname() on TI Simplelink Platform
+* :github:`40578` - MODBUS RS-485 transceiver support broken on several platforms due to DE race condition
+* :github:`40614` - poll: the code judgment condition is always true
+* :github:`40640` - drivers: usb_dc_native_posix: segfault when using composite USB device
+* :github:`40730` - More power supply modes on STM32H7XX
+* :github:`40775` - stm32: multi-threading broken after #40173
+* :github:`40795` - Timer signal thread execution loop break SMP on ARM64
+* :github:`40925` - mesh_badge not working reel_board_v2
+* :github:`40985` - net: icmpv6: Add support for Route Info option in Router Advertisement
+* :github:`41026` - LoRa: sx126x: DIO1 interrupt left enabled in sleep mode
+* :github:`41077` - console: gsm_mux: could not send more than 128 bytes of data on dlci
+* :github:`41089` - power modes for STM32H7
+* :github:`41095` - libc: newlib: 'gettimeofday' causes stack overflow on non-POSIX builds
+* :github:`41237` - drivers: ieee802154_dw1000: use dedicated workqueue
+* :github:`41240` - logging can get messed up when messages are dropped
+* :github:`41284` - pthread_cond_wait return value incorrect
+* :github:`41339` - stm32, Unable to read UART while checking from Framing error.
+* :github:`41488` - Stall logging on nrf52840
+* :github:`41499` - drivers: iwdg: stm32: WDT_OPT_PAUSE_HALTED_BY_DBG might not work
+* :github:`41503` - including net/socket.h fails with redefinition of struct zsock_timeval (sometimes :-) )
+* :github:`41529` - documentation: generate Doxygen tag file
+* :github:`41536` - Backport STM32 SMPS Support to v2.7.0
+* :github:`41582` - stm32h7: CSI as PLL source is broken
+* :github:`41683` - http_client: Unreliable rsp->body_start pointer
+* :github:`41915` - regression: Build fails after switching logging to V2
+* :github:`41942` - k_delayable_work being used as k_work in work's handler
+* :github:`41952` - Log timestamp overflows when using LOGv2
+* :github:`42164` - tests/bluetooth/tester broken after switch to logging v2
+* :github:`42271` - drivers: can: m_can: The can_set_bitrate() function doesn't work.
+* :github:`42299` - spi: nRF HAL driver asserts when PM is used
+* :github:`42373` - add k_spin_lock() to doxygen prior to v3.0 release
+* :github:`42581` - include: drivers: clock_control: stm32 incorrect DT_PROP is used for xtpre
+* :github:`42615` - Bluetooth: Controller: Missing ticks slot offset calculation in Periodic Advertising event scheduling
+* :github:`42622` - pm: pm_device structure bigger than nessecary when PM_DEVICE_RUNTIME not set
+* :github:`42631` - Unable to identify owner of net_mgmt_lock easily
+* :github:`42825` - MQTT client disconnection (EAGAIN) on publish with big payload
+* :github:`42862` - Bluetooth: L2CAP: Security check on l2cap request is wrong
+* :github:`43117` - Not possible to create more than one shield.
+* :github:`43130` - STM32WL ADC idles / doesn't work
+* :github:`43176` - net/icmpv4: client possible to ddos itself when there's an error for the broadcasted packet
+* :github:`43177` - net: shell: errno not cleared before calling the strtol
+* :github:`43178` - net: ip: route: log_strdup misuse
+* :github:`43179` - net: tcp: forever loop in tcp_resend_data
+* :github:`43180` - net: tcp: possible deadlock in tcp_conn_unref()
+* :github:`43181` - net: sockets: net_pkt leak in accept
+* :github:`43182` - net: arp: ARP retransmission source address selection
+* :github:`43183` - net: mqtt: setsockopt leak on failure
+* :github:`43184` - arm: Wrong macro used for z_interrupt_stacks declaration in stack.h
+* :github:`43185` - arm: cortex-m: uninitialised ptr_esf in get_esf() in fault.c
+* :github:`43470` - wifi: esp_at: race condition on mutex's leading to deadlock
+* :github:`43490` - net: sockets: userspace accept() crashes with NULL addr/addrlen pointer
+* :github:`43548` - gen_relocate_app truncates files on incremental builds
+* :github:`43572` - stm32: wrong clock the LSI freq for stm32l0x mcus
+* :github:`43580` - hl7800: tcp stack freezes on slow response from modem
+* :github:`43807` - Test "cpp.libcxx.newlib.exception" failed on platforms which use zephyr.bin to run tests.
+* :github:`43839` - Bluetooth: controller: missing NULL assign to df_cfg in ll_adv_set
+* :github:`43853` - X86 MSI messages always get to BSP core (need a fix to be backported)
+* :github:`43858` - mcumgr seems to lock up when it receives command for group that does not exist
+* :github:`44107` - The SMP nsim boards are started incorrectly when launching on real HW
+* :github:`44310` - net: gptp: type mismatch calculation error in gptp_mi
+* :github:`44336` - nucleo_wb55rg: stm32cubeprogrammer runner is missing for twister tests
+* :github:`44337` - twister: Miss sn option to stm32cubeprogrgammer runner
+* :github:`44352` - stm32l5x boards missing the openocd runner
+* :github:`44497` - Add guide for disabling MSD on JLink OB devices and link to from smp_svr page
+* :github:`44531` - bl654_usb without mcuboot maximum image size is not limited
+* :github:`44886` - Unable to boot Zephyr on FVP_BaseR_AEMv8R
+* :github:`44902` - x86: FPU registers are not initialised for userspace (eager FPU sharing)
+* :github:`45869` - doc: update requirements
+* :github:`45870` - drivers: virt_ivshmem: Allow multiple instances of ivShMem devices
+* :github:`45871` - ci: split Bluetooth workflow
+* :github:`45872` - ci: make git credentials non-persistent
+* :github:`45873` - soc: esp32: use PYTHON_EXECUTABLE from build system
 
 Security Vulnerability Related
 ******************************
@@ -15,10 +112,19 @@ Security Vulnerability Related
 The following security vulnerabilities (CVEs) were addressed in this
 release:
 
-* (N/A)
+* CVE-2021-3966: `Zephyr project bug tracker GHSA-hfxq-3w6x-fv2m
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hfxq-3w6x-fv2m>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+
+.. _zephyr_2.7.1:
+
+Zephyr 2.7.1
+####################
+
+This is an LTS maintenance release with fixes.
 
 Issues Fixed
 ************
