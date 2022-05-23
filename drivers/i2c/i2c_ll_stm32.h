@@ -61,9 +61,9 @@ struct i2c_stm32_data {
 		unsigned int len;
 		uint8_t *buf;
 	} current;
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	bool master_active;
-	struct i2c_slave_config *slave_cfg;
+	struct i2c_target_config *slave_cfg;
 	bool slave_attached;
 #endif
 };
@@ -83,11 +83,9 @@ void stm32_i2c_error_isr(void *arg);
 void stm32_i2c_combined_isr(void *arg);
 #endif
 
-#ifdef CONFIG_I2C_SLAVE
-int i2c_stm32_slave_register(const struct device *dev,
-			     struct i2c_slave_config *config);
-int i2c_stm32_slave_unregister(const struct device *dev,
-			       struct i2c_slave_config *config);
+#ifdef CONFIG_I2C_TARGET
+int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config *config);
+int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_config *config);
 #endif
 
 #endif	/* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */

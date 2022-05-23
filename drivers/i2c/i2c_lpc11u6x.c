@@ -121,7 +121,7 @@ static int lpc11u6x_i2c_transfer(const struct device *dev,
 }
 
 static int lpc11u6x_i2c_slave_register(const struct device *dev,
-				       struct i2c_slave_config *cfg)
+				       struct i2c_target_config *cfg)
 {
 	const struct lpc11u6x_i2c_config *dev_cfg = dev->config;
 	struct lpc11u6x_i2c_data *data = dev->data;
@@ -131,7 +131,7 @@ static int lpc11u6x_i2c_slave_register(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (cfg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS) {
+	if (cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) {
 		return -ENOTSUP;
 	}
 
@@ -155,7 +155,7 @@ exit:
 
 
 static int lpc11u6x_i2c_slave_unregister(const struct device *dev,
-					 struct i2c_slave_config *cfg)
+					 struct i2c_target_config *cfg)
 {
 	const struct lpc11u6x_i2c_config *dev_cfg = dev->config;
 	struct lpc11u6x_i2c_data *data = dev->data;
@@ -349,8 +349,8 @@ static int lpc11u6x_i2c_init(const struct device *dev)
 static const struct i2c_driver_api i2c_api = {
 	.configure = lpc11u6x_i2c_configure,
 	.transfer = lpc11u6x_i2c_transfer,
-	.slave_register = lpc11u6x_i2c_slave_register,
-	.slave_unregister = lpc11u6x_i2c_slave_unregister,
+	.target_register = lpc11u6x_i2c_slave_register,
+	.target_unregister = lpc11u6x_i2c_slave_unregister,
 };
 
 #define LPC11U6X_I2C_INIT(idx)						      \

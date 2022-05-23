@@ -196,7 +196,7 @@ static void run_tests_on_eeprom(const char *label_eeprom, const char *label_i2c)
 		if (i2c != NULL) {
 			/* If the test is using I2C, configure it */
 			k_object_access_grant(i2c, k_current_get());
-			i2c_configure(i2c, I2C_MODE_MASTER |
+			i2c_configure(i2c, I2C_MODE_CONTROLLER |
 					I2C_SPEED_SET(I2C_SPEED_STANDARD));
 		}
 	}
