@@ -93,6 +93,8 @@ static struct bt_scan_filter {
 	bool name_set;
 	char addr[18]; /* fits xx:xx:xx:xx:xx:xx\0 */
 	bool addr_set;
+	int8_t rssi;
+	bool rssi_set;
 } scan_filter;
 
 
@@ -160,6 +162,10 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	}
 
 	if (scan_filter.addr_set && !is_substring(scan_filter.addr, le_addr)) {
+		return;
+	}
+
+	if (scan_filter.rssi_set && (scan_filter.rssi > info->rssi)) {
 		return;
 	}
 
@@ -1072,6 +1078,32 @@ static int cmd_scan_filter_set_addr(const struct shell *sh, size_t argc,
 	scan_filter.addr_set = true;
 
 	return 0;
+}
+
+static int cmd_scan_filter_set_rssi(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	long rssi;
+
+	rssi = shell_strtol(argv[1], 10, &err);
+
+	if (!err) {
+		if (IN_RANGE(rssi, INT8_MIN, INT8_MAX)) {
+			scan_filter.rssi = (int8_t)rssi;
+			scan_filter.rssi_set = true;
+			shell_print(sh, "RSSI cutoff set at %d dB", scan_filter.rssi);
+
+			return 0;
+		}
+
+		shell_print(sh, "value out of bounds (%d to %d)", INT8_MIN, INT8_MAX);
+		err = -ERANGE;
+	}
+
+	shell_print(sh, "error %d", err);
+	shell_help(sh);
+
+	return SHELL_CMD_HELP_PRINTED;
 }
 
 static int cmd_scan_filter_clear_all(const struct shell *sh, size_t argc,
@@ -3244,6 +3276,7 @@ static int cmd_auth_oob_tk(const struct shell *sh, size_t argc, char *argv[])
 SHELL_STATIC_SUBCMD_SET_CREATE(bt_scan_filter_set_cmds,
 	SHELL_CMD_ARG(name, NULL, "<name>", cmd_scan_filter_set_name, 2, 0),
 	SHELL_CMD_ARG(addr, NULL, "<addr>", cmd_scan_filter_set_addr, 2, 0),
+	SHELL_CMD_ARG(rssi, NULL, "<rssi>", cmd_scan_filter_set_rssi, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 
