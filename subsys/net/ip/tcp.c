@@ -836,7 +836,7 @@ static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 		return -ENOBUFS;
 	}
 
-	recv_mss = net_tcp_get_recv_mss(conn);
+	recv_mss = net_tcp_get_supported_mss(conn);
 	recv_mss |= (NET_TCP_MSS_OPT << 24) | (NET_TCP_MSS_SIZE << 16);
 
 	UNALIGNED_PUT(htonl(recv_mss), (uint32_t *)mss);
@@ -2916,7 +2916,7 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	k_mutex_unlock(&tcp_lock);
 }
 
-uint16_t net_tcp_get_recv_mss(const struct tcp *conn)
+uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 {
 	sa_family_t family = net_context_get_family(conn->context);
 
