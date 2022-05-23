@@ -13,8 +13,9 @@
 #define ZEPHYR_INCLUDE_DRIVERS_HOST_CMD_PERIPH_H_
 
 #include <zephyr/sys/__assert.h>
-#include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
