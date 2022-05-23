@@ -14,9 +14,13 @@
  *  OPI mode in DTR transfer rate
  */
 
-/* OSPI mode operating on 1 line or 8 lines */
+/* OSPI mode operating on 1 line, 2 lines, 4 lines or 8 lines */
 /* 1 Cmd Line, 1 Address Line and 1 Data Line    */
 #define OSPI_SPI_MODE                     1
+/* 2 Cmd Lines, 2 Address Lines and 2 Data Lines */
+#define OSPI_DUAL_MODE                    2
+/* 4 Cmd Lines, 4 Address Lines and 4 Data Lines */
+#define OSPI_QUAD_MODE                    4
 /* 8 Cmd Lines, 8 Address Lines and 8 Data Lines */
 #define OSPI_OPI_MODE                     8
 
