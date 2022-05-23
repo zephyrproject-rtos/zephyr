@@ -14,6 +14,7 @@ version 1 databases.
 import logging
 import math
 import struct
+import colorama
 from colorama import Fore
 
 from .log_parser import LogParser
@@ -468,3 +469,5 @@ class LogParserV1(LogParser):
                 return False
 
         return True
+
+colorama.init()
