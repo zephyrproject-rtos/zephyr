@@ -1663,6 +1663,11 @@ static int context_sendto(struct net_context *context,
 	tmp_len = net_pkt_available_payload_buffer(
 				pkt, net_context_get_ip_proto(context));
 	if (tmp_len < len) {
+		if (net_context_get_type(context) == SOCK_DGRAM) {
+			NET_ERR("Available payload buffer (%zu) is not enough for requested DGRAM (%zu)",
+				tmp_len, len);
+			return -ENOMEM;
+		}
 		len = tmp_len;
 	}
 
