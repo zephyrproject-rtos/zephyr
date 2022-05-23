@@ -456,6 +456,16 @@ uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags)
 	return radio_rx_ready_delay_get(phy, flags);
 }
 
+void lll_isr_status_reset(void)
+{
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+		radio_ar_status_reset();
+	}
+	radio_rssi_status_reset();
+}
 
 static int init_reset(void)
 {
