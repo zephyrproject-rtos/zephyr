@@ -114,7 +114,7 @@ static int i2c_emul_init(const struct device *dev)
 	rc = emul_init_for_bus_from_list(dev, list);
 
 	/* Set config to an uninitialized state */
-	data->config = (I2C_MODE_MASTER | i2c_map_dt_bitrate(data->bitrate));
+	data->config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(data->bitrate));
 
 	return rc;
 }

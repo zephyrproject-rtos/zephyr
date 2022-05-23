@@ -16,7 +16,7 @@
 LOG_MODULE_DECLARE(main);
 
 struct i2c_virtual_data {
-	sys_slist_t slaves;
+	sys_slist_t targets;
 };
 
 int i2c_virtual_runtime_configure(const struct device *dev, uint32_t config)
@@ -24,17 +24,17 @@ int i2c_virtual_runtime_configure(const struct device *dev, uint32_t config)
 	return 0;
 }
 
-static struct i2c_slave_config *find_address(struct i2c_virtual_data *data,
+static struct i2c_target_config *find_address(struct i2c_virtual_data *data,
 					     uint16_t address, bool is_10bit)
 {
-	struct i2c_slave_config *cfg = NULL;
+	struct i2c_target_config *cfg = NULL;
 	sys_snode_t *node;
 	bool search_10bit;
 
-	SYS_SLIST_FOR_EACH_NODE(&data->slaves, node) {
-		cfg = CONTAINER_OF(node, struct i2c_slave_config, node);
+	SYS_SLIST_FOR_EACH_NODE(&data->targets, node) {
+		cfg = CONTAINER_OF(node, struct i2c_target_config, node);
 
-		search_10bit = (cfg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS);
+		search_10bit = (cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS);
 
 		if (cfg->address == address && search_10bit == is_10bit) {
 			return cfg;
@@ -44,9 +44,9 @@ static struct i2c_slave_config *find_address(struct i2c_virtual_data *data,
 	return NULL;
 }
 
-/* Attach I2C slaves */
-int i2c_virtual_slave_register(const struct device *dev,
-			       struct i2c_slave_config *config)
+/* Attach I2C targets */
+int i2c_virtual_target_register(const struct device *dev,
+			       struct i2c_target_config *config)
 {
 	struct i2c_virtual_data *data = dev->data;
 
@@ -56,18 +56,18 @@ int i2c_virtual_slave_register(const struct device *dev,
 
 	/* Check the address is unique */
 	if (find_address(data, config->address,
-			 (config->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS))) {
+			 (config->flags & I2C_TARGET_FLAGS_ADDR_10_BITS))) {
 		return -EINVAL;
 	}
 
-	sys_slist_append(&data->slaves, &config->node);
+	sys_slist_append(&data->targets, &config->node);
 
 	return 0;
 }
 
 
-int i2c_virtual_slave_unregister(const struct device *dev,
-				 struct i2c_slave_config *config)
+int i2c_virtual_target_unregister(const struct device *dev,
+				 struct i2c_target_config *config)
 {
 	struct i2c_virtual_data *data = dev->data;
 
@@ -75,7 +75,7 @@ int i2c_virtual_slave_unregister(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (!sys_slist_find_and_remove(&data->slaves, &config->node)) {
+	if (!sys_slist_find_and_remove(&data->targets, &config->node)) {
 		return -EINVAL;
 	}
 
@@ -84,7 +84,7 @@ int i2c_virtual_slave_unregister(const struct device *dev,
 
 static int i2c_virtual_msg_write(const struct device *dev,
 				 struct i2c_msg *msg,
-				 struct i2c_slave_config *config,
+				 struct i2c_target_config *config,
 				 bool prev_write)
 {
 	unsigned int len = 0U;
@@ -118,7 +118,7 @@ error:
 }
 
 static int i2c_virtual_msg_read(const struct device *dev, struct i2c_msg *msg,
-				struct i2c_slave_config *config)
+				struct i2c_target_config *config)
 {
 	unsigned int len = msg->len;
 	uint8_t *buf = msg->buf;
@@ -147,15 +147,15 @@ static int i2c_virtual_msg_read(const struct device *dev, struct i2c_msg *msg,
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
 static int i2c_virtual_transfer(const struct device *dev, struct i2c_msg *msg,
-				uint8_t num_msgs, uint16_t slave)
+				uint8_t num_msgs, uint16_t target)
 {
 	struct i2c_virtual_data *data = dev->data;
 	struct i2c_msg *current, *next;
-	struct i2c_slave_config *cfg;
+	struct i2c_target_config *cfg;
 	bool is_write = false;
 	int ret = 0;
 
-	cfg = find_address(data, slave, (msg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS));
+	cfg = find_address(data, target, (msg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS));
 	if (!cfg) {
 		return -EIO;
 	}
@@ -207,15 +207,15 @@ static int i2c_virtual_transfer(const struct device *dev, struct i2c_msg *msg,
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_virtual_runtime_configure,
 	.transfer = i2c_virtual_transfer,
-	.slave_register = i2c_virtual_slave_register,
-	.slave_unregister = i2c_virtual_slave_unregister,
+	.target_register = i2c_virtual_target_register,
+	.target_unregister = i2c_virtual_target_unregister,
 };
 
 static int i2c_virtual_init(const struct device *dev)
 {
 	struct i2c_virtual_data *data = dev->data;
 
-	sys_slist_init(&data->slaves);
+	sys_slist_init(&data->targets);
 
 	return 0;
 }

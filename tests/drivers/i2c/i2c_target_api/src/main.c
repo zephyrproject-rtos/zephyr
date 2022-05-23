@@ -14,7 +14,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/i2c/slave/eeprom.h>
+#include <zephyr/drivers/i2c/target/eeprom.h>
 
 #include <ztest.h>
 
@@ -132,7 +132,7 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 	return 0;
 }
 
-void test_eeprom_slave(void)
+void test_eeprom_target(void)
 {
 	const char *label_0 = DT_LABEL(NODE_EP0);
 	const struct device *eeprom_0 = device_get_binding(label_0);
@@ -167,29 +167,29 @@ void test_eeprom_slave(void)
 	/* Program differentiable data into the two devices through a back door
 	 * that doesn't use I2C.
 	 */
-	ret = eeprom_slave_program(eeprom_0, eeprom_0_data, TEST_DATA_SIZE);
+	ret = eeprom_target_program(eeprom_0, eeprom_0_data, TEST_DATA_SIZE);
 	zassert_equal(ret, 0, "Failed to program EEPROM %s", label_0);
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
-		ret = eeprom_slave_program(eeprom_1, eeprom_1_data,
+		ret = eeprom_target_program(eeprom_1, eeprom_1_data,
 					   TEST_DATA_SIZE);
 		zassert_equal(ret, 0, "Failed to program EEPROM %s", label_1);
 	}
 
-	/* Attach each EEPROM to its owning bus as a slave device. */
-	ret = i2c_slave_driver_register(eeprom_0);
+	/* Attach each EEPROM to its owning bus as a target device. */
+	ret = i2c_target_driver_register(eeprom_0);
 	zassert_equal(ret, 0, "Failed to register EEPROM %s", label_0);
 
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
-		ret = i2c_slave_driver_register(eeprom_1);
+		ret = i2c_target_driver_register(eeprom_1);
 		zassert_equal(ret, 0, "Failed to register EEPROM %s", label_1);
 	}
 
-	/* The simulated EP0 is configured to be accessed as a slave device
+	/* The simulated EP0 is configured to be accessed as a target device
 	 * at addr_0 on i2c_0 and should expose eeprom_0_data.  The validation
 	 * uses i2c_1 as a bus master to access this device, which works because
 	 * i2c_0 and i2_c have their SDA (SCL) pins shorted (they are on the
 	 * same physical bus).  Thus in these calls i2c_1 is a master device
-	 * operating on the slave address addr_0.
+	 * operating on the target address addr_0.
 	 *
 	 * Similarly validation of EP1 uses i2c_0 as a master with addr_1 and
 	 * eeprom_1_data for validation.
@@ -226,11 +226,11 @@ void test_eeprom_slave(void)
 	}
 
 	/* Detach EEPROM */
-	ret = i2c_slave_driver_unregister(eeprom_0);
+	ret = i2c_target_driver_unregister(eeprom_0);
 	zassert_equal(ret, 0, "Failed to unregister EEPROM %s", label_0);
 
 	if (IS_ENABLED(CONFIG_APP_DUAL_ROLE_I2C)) {
-		ret = i2c_slave_driver_unregister(eeprom_1);
+		ret = i2c_target_driver_unregister(eeprom_1);
 		zassert_equal(ret, 0, "Failed to unregister EEPROM %s",
 			      label_1);
 	}
@@ -238,6 +238,6 @@ void test_eeprom_slave(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_eeprom_slave, ztest_unit_test(test_eeprom_slave));
-	ztest_run_test_suite(test_eeprom_slave);
+	ztest_test_suite(test_eeprom_target, ztest_unit_test(test_eeprom_target));
+	ztest_run_test_suite(test_eeprom_target);
 }

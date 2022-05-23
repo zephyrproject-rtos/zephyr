@@ -105,7 +105,7 @@ static int i2c_sam_twihs_configure(const struct device *dev, uint32_t config)
 	uint32_t bitrate;
 	int ret;
 
-	if (!(config & I2C_MODE_MASTER)) {
+	if (!(config & I2C_MODE_CONTROLLER)) {
 		LOG_ERR("Master Mode is not enabled");
 		return -EIO;
 	}
@@ -303,7 +303,7 @@ static int i2c_sam_twihs_initialize(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(dev_cfg->bitrate);
 
-	ret = i2c_sam_twihs_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	ret = i2c_sam_twihs_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize %s device", dev->name);
 		return ret;
