@@ -117,26 +117,35 @@
 			interrupt-parent = <&intc0>;
 			interrupts = <3 0>;
 			reg = <0xe0009800 0x4
-				0xe0009804 0x8
+				0xe0009804 0x4
+				0xe0009808 0x4
+				0xe000980c 0x4
+				0xe0009810 0x4
+				0xe0009814 0x4
+				0xe0009818 0x4
+				0xe000981c 0x4
+				0xe0009820 0x4
+				0xe0009824 0x4
 				0xe0009828 0x4
 				0xe000982c 0x4
 				0xe0009830 0x4
 				0xe0009834 0x4
-				0xe000983c 0x4
-				0xe0009840 0x8
-				0xe000984c 0x4
 				0xb0000000 0x2000>;
 			local-mac-address = [10 e2 d5 00 00 02];
-			reg-names =
-				"rx_slot",
+			reg-names = "rx_slot",
 				"rx_length",
+				"rx_errors",
+				"rx_ev_status",
 				"rx_ev_pending",
 				"rx_ev_enable",
 				"tx_start",
 				"tx_ready",
+				"tx_level",
 				"tx_slot",
 				"tx_length",
+				"tx_ev_status",
 				"tx_ev_pending",
+				"tx_ev_enable",
 				"buffers";
 			label = "eth0";
 			status = "disabled";
