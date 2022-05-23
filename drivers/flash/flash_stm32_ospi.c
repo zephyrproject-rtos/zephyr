@@ -73,6 +73,7 @@ struct flash_stm32_ospi_data {
 	uint8_t read_dummy;
 	uint32_t read_opcode;
 	enum jesd216_mode_type read_mode;
+	enum jesd216_dw15_qer_type qer_type;
 	int cmd_status;
 };
 
@@ -1180,6 +1181,158 @@ static int setup_pages_layout(const struct device *dev)
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+static int stm32_ospi_read_status_register(const struct device *dev, uint8_t reg_num, uint8_t *reg)
+{
+	OSPI_RegularCmdTypeDef s_command = {
+		.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
+		.DataMode = HAL_OSPI_DATA_1_LINE,
+	};
+
+	switch (reg_num) {
+	case 1U:
+		s_command.Instruction = SPI_NOR_CMD_RDSR;
+		break;
+	case 2U:
+		s_command.Instruction = SPI_NOR_CMD_RDSR2;
+		break;
+	case 3U:
+		s_command.Instruction = SPI_NOR_CMD_RDSR3;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ospi_read_access(dev, &s_command, reg, sizeof(*reg));
+}
+
+static int stm32_ospi_write_status_register(const struct device *dev, uint8_t reg_num, uint8_t reg)
+{
+	struct flash_stm32_ospi_data *data = dev->data;
+	OSPI_RegularCmdTypeDef s_command = {
+		.Instruction = SPI_NOR_CMD_WRSR,
+		.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
+		.DataMode = HAL_OSPI_DATA_1_LINE
+	};
+	size_t size;
+	uint8_t regs[4] = { 0 };
+	uint8_t *regs_p;
+	int ret;
+
+	if (reg_num == 1U) {
+		size = 1U;
+		regs[0] = reg;
+		regs_p = &regs[0];
+		/* 1 byte write clears SR2, write SR2 as well */
+		if (data->qer_type == JESD216_DW15_QER_S2B1v1) {
+			ret = stm32_ospi_read_status_register(dev, 2, &regs[1]);
+			if (ret < 0) {
+				return ret;
+			}
+			size = 2U;
+		}
+	} else if (reg_num == 2U) {
+		s_command.Instruction = SPI_NOR_CMD_WRSR2;
+		size = 1U;
+		regs[1] = reg;
+		regs_p = &regs[1];
+		/* if SR2 write needs SR1 */
+		if ((data->qer_type == JESD216_DW15_QER_VAL_S2B1v1) ||
+		    (data->qer_type == JESD216_DW15_QER_VAL_S2B1v4) ||
+		    (data->qer_type == JESD216_DW15_QER_VAL_S2B1v5)) {
+			ret = stm32_ospi_read_status_register(dev, 1, &regs[0]);
+			if (ret < 0) {
+				return ret;
+			}
+			s_command.Instruction = SPI_NOR_CMD_WRSR;
+			size = 2U;
+			regs_p = &regs[0];
+		}
+	} else if (reg_num == 3U) {
+		s_command.Instruction = SPI_NOR_CMD_WRSR3;
+		size = 1U;
+		regs[2] = reg;
+		regs_p = &regs[2];
+	} else {
+		return -EINVAL;
+	}
+
+	return ospi_write_access(dev, &s_command, regs_p, size);
+}
+
+static int stm32_ospi_enable_qe(const struct device *dev)
+{
+	struct flash_stm32_ospi_data *data = dev->data;
+	uint8_t qe_reg_num;
+	uint8_t qe_bit;
+	uint8_t reg;
+	int ret;
+
+	switch (data->qer_type) {
+	case JESD216_DW15_QER_NONE:
+		/* no QE bit, device detects reads based on opcode */
+		return 0;
+	case JESD216_DW15_QER_S1B6:
+		qe_reg_num = 1U;
+		qe_bit = BIT(6U);
+		break;
+	case JESD216_DW15_QER_S2B7:
+		qe_reg_num = 2U;
+		qe_bit = BIT(7U);
+		break;
+	case JESD216_DW15_QER_S2B1v1:
+		__fallthrough;
+	case JESD216_DW15_QER_S2B1v4:
+		__fallthrough;
+	case JESD216_DW15_QER_S2B1v5:
+		__fallthrough;
+	case JESD216_DW15_QER_S2B1v6:
+		qe_reg_num = 2U;
+		qe_bit = BIT(1U);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	ret = stm32_ospi_read_status_register(dev, qe_reg_num, &reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* exit early if QE bit is already set */
+	if ((reg & qe_bit) != 0U) {
+		return 0;
+	}
+
+	ret = stm32_ospi_write_enable(&data->hospi, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
+	if (ret < 0) {
+		return ret;
+	}
+
+	reg |= qe_bit;
+
+	ret = stm32_ospi_write_status_register(dev, qe_reg_num, reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = stm32_ospi_mem_ready(&data->hospi, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* validate that QE bit is set */
+	ret = stm32_ospi_read_status_register(dev, qe_reg_num, &reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((reg & qe_bit) == 0U) {
+		LOG_ERR("Status Register %u [0x%02x] not set", qe_reg_num, reg);
+		ret = -EIO;
+	}
+
+	return ret;
+}
 
 static void spi_nor_process_bfp_addrbytes(const struct device *dev, const uint8_t jesd216_bfp_addrbytes) {
 	struct flash_stm32_ospi_data *data = dev->data;
@@ -1225,6 +1378,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	size_t idx;
 	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
 	struct jesd216_instr read_instr = { 0 };
+	struct jesd216_bfp_dw15 dw15;
 
 	if (flash_size != dev_cfg->flash_size) {
 		LOG_DBG("Unexpected flash size: %u", flash_size);
@@ -1284,6 +1438,24 @@ static int spi_nor_process_bfp(const struct device *dev,
 				return -ENOTSUP;
 			}
 			data->read_opcode = spi_nor_convert_read_to_4b(data->read_opcode);
+		/* enable quad mode (if required) */
+		if (dev_cfg->data_mode == OSPI_QUAD_MODE) {
+			if (jesd216_bfp_decode_dw15(php, bfp, &dw15) < 0) {
+				/* will use QER from DTS or default (refer to device data) */
+				LOG_WRN("Unable to decode QE requirement [DW15]");
+			} else {
+				/* bypass DTS QER value */
+				data->qer_type = dw15.qer;
+			}
+
+			LOG_DBG("QE requirement mode: %x", data->qer_type);
+
+			if (stm32_ospi_enable_qe(dev) < 0) {
+				LOG_ERR("Failed to enable QUAD mode");
+				return -EIO;
+			}
+
+			LOG_DBG("QUAD mode enabled");
 		}
 	}
 
@@ -1429,6 +1601,13 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Initialize semaphores */
+	k_sem_init(&dev_data->sem, 1, 1);
+	k_sem_init(&dev_data->sync, 0, 1);
+
+	/* Run IRQ init */
+	dev_cfg->irq_config(dev);
+
 	/* Send the instruction to read the SFDP  */
 	const uint8_t decl_nph = 2;
 	union {
@@ -1494,18 +1673,17 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-	/* Initialize semaphores */
-	k_sem_init(&dev_data->sem, 1, 1);
-	k_sem_init(&dev_data->sync, 0, 1);
-
-	/* Run IRQ init */
-	dev_cfg->irq_config(dev);
-
 	return 0;
 }
 
 #define OSPI_FLASH_MODULE(drv_id, flash_id)				\
 		(DT_DRV_INST(drv_id), ospi_nor_flash_##flash_id)
+
+#define DT_QER_PROP_OR(inst, default_value)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements),			\
+		    (_CONCAT(JESD216_DW15_QER_VAL_,						\
+			     DT_STRING_TOKEN(DT_DRV_INST(inst), quad_enable_requirements))),	\
+		    ((default_value)))
 
 static void flash_stm32_ospi_irq_config_func(const struct device *dev);
 
@@ -1543,6 +1721,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 			.ClockMode = HAL_OSPI_CLOCK_MODE_0,
 			},
 	},
+	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 };
 
 DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL,
