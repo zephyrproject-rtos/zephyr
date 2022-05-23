@@ -461,9 +461,9 @@ struct device {
 	/** Address of the API structure exposed by the device instance */
 	const void *api;
 	/** Address of the common device state */
-	struct device_state * const state;
+	struct device_state *state;
 	/** Address of the device instance private data */
-	void * const data;
+	void *data;
 	/** optional pointer to handles associated with the device.
 	 *
 	 * This encodes a sequence of sets of device handles that have
@@ -471,11 +471,11 @@ struct device {
 	 * extracted with dedicated API, such as
 	 * device_required_handles_get().
 	 */
-	Z_DEVICE_HANDLES_CONST device_handle_t * const handles;
+	Z_DEVICE_HANDLES_CONST device_handle_t *handles;
 
 #ifdef CONFIG_PM_DEVICE
 	/** Reference to the device PM resources. */
-	struct pm_device * const pm;
+	struct pm_device *pm;
 #endif
 };
 
