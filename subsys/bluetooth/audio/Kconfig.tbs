@@ -126,20 +126,6 @@ config BT_TBS_AUTHORIZATION
 	  If set to true, then any writable characteristics will require
 	  authorization per connection.
 
-config BT_TBS_MAX_URI_LENGTH
-	int "The maximum length of the call URI supported"
-	default 30
-	range 4 253
-	help
-	  Sets the maximum length of the call URI supported. Note that if this
-	  value is lower than a call URI, the call request will be rejected.
-
-config BT_TBS_MAX_PROVIDER_NAME_LENGTH
-	int "The maximum length of the bearer provider name"
-	default 30
-	range 0 512
-	help
-	  Sets the maximum length of the bearer provider name.
 
 ############# DEBUG #############
 
@@ -184,21 +170,6 @@ config BT_TBS_CLIENT_MAX_TBS_INSTANCES
 	  Sets the maximum number of Telephone Bearer Service (TBS)
 	  instances to setup and use.
 
-config BT_TBS_CLIENT_MAX_URI_LENGTH
-	int "The maximum length of the call URI supported"
-	default 30
-	range 4 253
-	help
-	  Sets the maximum length of the call URI supported. Note that if this
-	  value is lower than a call URI, the call request will be rejected.
-
-config BT_TBS_CLIENT_MAX_PROVIDER_NAME_LENGTH
-	int "The maximum length of the bearer provider name"
-	default 30
-	range 0 512
-	help
-	  Sets the maximum length of the bearer provider name.
-
 ############# DEBUG #############
 
 config BT_DEBUG_TBS_CLIENT
@@ -208,5 +179,24 @@ config BT_DEBUG_TBS_CLIENT
 	  for the Bluetooth Audio functionality.
 
 endif # BT_TBS_CLIENT
+
+if BT_TBS || BT_TBS_CLIENT
+
+config BT_TBS_MAX_URI_LENGTH
+	int "The maximum length of the call URI supported"
+	default 30
+	range 4 253
+	help
+	  Sets the maximum length of the call URI supported. Note that if this
+	  value is lower than a call URI, the call request will be rejected.
+
+config BT_TBS_MAX_PROVIDER_NAME_LENGTH
+	int "The maximum length of the bearer provider name"
+	default 30
+	range 0 512
+	help
+	  Sets the maximum length of the bearer provider name.
+
+endif # BT_TBS || BT_TBS_CLIENT
 
 endif # BT_AUDIO
