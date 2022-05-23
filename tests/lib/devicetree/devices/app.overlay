@@ -71,7 +71,7 @@
 
 					test_p0: partition@0 {
 						label = "partition-0";
-						reg = <0x000000000 0x0000C000>;
+						reg = <0x00000000 0x0000C000>;
 					};
 					test_p1: partition@c000 {
 						label = "partition-1";

@@ -205,7 +205,7 @@ arduino_spi: &spi3 {
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0xC000>;
+			reg = <0x00000000 0xC000>;
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
