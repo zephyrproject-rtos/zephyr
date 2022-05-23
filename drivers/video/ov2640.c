@@ -1048,7 +1048,7 @@ static int ov2640_init_0(const struct device *dev)
 		return -EINVAL;
 	}
 
-	uint32_t i2c_cfg = I2C_MODE_MASTER |
+	uint32_t i2c_cfg = I2C_MODE_CONTROLLER |
 					I2C_SPEED_SET(I2C_SPEED_STANDARD);
 
 	if (i2c_configure(drv_data->i2c, i2c_cfg)) {

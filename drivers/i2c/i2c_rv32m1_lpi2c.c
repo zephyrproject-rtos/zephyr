@@ -50,7 +50,7 @@ static int rv32m1_lpi2c_configure(const struct device *dev,
 	uint32_t clk_freq;
 	int err;
 
-	if (!(I2C_MODE_MASTER & dev_config)) {
+	if (!(I2C_MODE_CONTROLLER & dev_config)) {
 		/* Slave mode not supported - yet */
 		LOG_ERR("Slave mode not supported");
 		return -ENOTSUP;
@@ -236,7 +236,7 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 					 data);
 
 	dev_cfg = i2c_map_dt_bitrate(config->bitrate);
-	err = rv32m1_lpi2c_configure(dev, dev_cfg | I2C_MODE_MASTER);
+	err = rv32m1_lpi2c_configure(dev, dev_cfg | I2C_MODE_CONTROLLER);
 	if (err) {
 		LOG_ERR("Could not configure controller (err %d)", err);
 		return err;

@@ -35,9 +35,9 @@ struct mcux_flexcomm_data {
 	i2c_master_handle_t handle;
 	struct k_sem device_sync_sem;
 	status_t callback_status;
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	i2c_slave_handle_t target_handle;
-	struct i2c_slave_config *target_cfg;
+	struct i2c_target_config *target_cfg;
 	bool target_attached;
 	bool first_read;
 	bool first_write;
@@ -53,7 +53,7 @@ static int mcux_flexcomm_configure(const struct device *dev,
 	uint32_t clock_freq;
 	uint32_t baudrate;
 
-	if (!(I2C_MODE_MASTER & dev_config_raw)) {
+	if (!(I2C_MODE_CONTROLLER & dev_config_raw)) {
 		return -EINVAL;
 	}
 
@@ -179,12 +179,12 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 	return 0;
 }
 
-#if defined(CONFIG_I2C_SLAVE)
+#if defined(CONFIG_I2C_TARGET)
 static void i2c_target_transfer_callback(I2C_Type *base,
 		volatile i2c_slave_transfer_t *transfer, void *userData)
 {
 	struct mcux_flexcomm_data *data = userData;
-	const struct i2c_slave_callbacks *target_cb = data->target_cfg->callbacks;
+	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
 	static uint8_t rxVal, txVal;
 
 	ARG_UNUSED(base);
@@ -239,7 +239,7 @@ static void i2c_target_transfer_callback(I2C_Type *base,
 }
 
 int mcux_flexcomm_target_register(const struct device *dev,
-			     struct i2c_slave_config *target_config)
+			     struct i2c_target_config *target_config)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
@@ -282,7 +282,7 @@ int mcux_flexcomm_target_register(const struct device *dev,
 }
 
 int mcux_flexcomm_target_unregister(const struct device *dev,
-			       struct i2c_slave_config *target_config)
+			       struct i2c_target_config *target_config)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
@@ -307,7 +307,7 @@ static void mcux_flexcomm_isr(const struct device *dev)
 	struct mcux_flexcomm_data *data = dev->data;
 	I2C_Type *base = config->base;
 
-#if defined(CONFIG_I2C_SLAVE)
+#if defined(CONFIG_I2C_TARGET)
 	if (data->target_attached) {
 		I2C_SlaveTransferHandleIRQ(base, &data->target_handle);
 		return;
@@ -349,7 +349,7 @@ static int mcux_flexcomm_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
-	error = mcux_flexcomm_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	error = mcux_flexcomm_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (error) {
 		return error;
 	}
@@ -362,9 +362,9 @@ static int mcux_flexcomm_init(const struct device *dev)
 static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 	.configure = mcux_flexcomm_configure,
 	.transfer = mcux_flexcomm_transfer,
-#if defined(CONFIG_I2C_SLAVE)
-	.slave_register = mcux_flexcomm_target_register,
-	.slave_unregister = mcux_flexcomm_target_unregister,
+#if defined(CONFIG_I2C_TARGET)
+	.target_register = mcux_flexcomm_target_register,
+	.target_unregister = mcux_flexcomm_target_unregister,
 #endif
 };
 

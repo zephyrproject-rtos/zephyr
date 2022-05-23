@@ -62,7 +62,7 @@ struct i2c_xec_data {
 	uint32_t speed_id;
 	const struct device *sda_gpio;
 	const struct device *scl_gpio;
-	struct i2c_slave_config *slave_cfg;
+	struct i2c_target_config *slave_cfg;
 	bool slave_attached;
 	bool slave_read;
 };
@@ -177,7 +177,7 @@ static void cleanup_registers(uint32_t ba)
 	cfg &= ~MCHP_I2C_SMB_CFG_FLUSH_SRBUF_WO;
 }
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 static void restart_slave(uint32_t ba)
 {
 	MCHP_I2C_SMB_CTRL_WO(ba) = MCHP_I2C_SMB_CTRL_PIN |
@@ -328,7 +328,7 @@ static int i2c_xec_configure(const struct device *dev,
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->data);
 
-	if (!(dev_config_raw & I2C_MODE_MASTER)) {
+	if (!(dev_config_raw & I2C_MODE_CONTROLLER)) {
 		return -ENOTSUP;
 	}
 
@@ -658,7 +658,7 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 {
 	int ret = 0;
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	struct i2c_xec_data *data = dev->data;
 
 	if (data->slave_attached) {
@@ -689,11 +689,11 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 static void i2c_xec_bus_isr(const struct device *dev)
 {
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	const struct i2c_xec_config *config =
 		(const struct i2c_xec_config *const) (dev->config);
 	struct i2c_xec_data *data = dev->data;
-	const struct i2c_slave_callbacks *slave_cb = data->slave_cfg->callbacks;
+	const struct i2c_target_callbacks *slave_cb = data->slave_cfg->callbacks;
 	uint32_t ba = config->base_addr;
 
 	uint32_t status;
@@ -773,9 +773,9 @@ clear_iag:
 #endif
 }
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 static int i2c_xec_slave_register(const struct device *dev,
-				  struct i2c_slave_config *config)
+				  struct i2c_target_config *config)
 {
 	const struct i2c_xec_config *cfg = dev->config;
 	struct i2c_xec_data *data = dev->data;
@@ -818,7 +818,7 @@ static int i2c_xec_slave_register(const struct device *dev,
 }
 
 static int i2c_xec_slave_unregister(const struct device *dev,
-				    struct i2c_slave_config *config)
+				    struct i2c_target_config *config)
 {
 	const struct i2c_xec_config *cfg = dev->config;
 	struct i2c_xec_data *data = dev->data;
@@ -838,7 +838,7 @@ static int i2c_xec_slave_unregister(const struct device *dev,
 static const struct i2c_driver_api i2c_xec_driver_api = {
 	.configure = i2c_xec_configure,
 	.transfer = i2c_xec_transfer,
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	.slave_register = i2c_xec_slave_register,
 	.slave_unregister = i2c_xec_slave_unregister,
 #endif
@@ -868,14 +868,14 @@ static int i2c_xec_init(const struct device *dev)
 
 	/* Default configuration */
 	ret = i2c_xec_configure(dev,
-				I2C_MODE_MASTER |
+				I2C_MODE_CONTROLLER |
 				I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	if (ret) {
 		LOG_ERR("%s configure failed %d", dev->name, ret);
 		return ret;
 	}
 
-#ifdef CONFIG_I2C_SLAVE
+#ifdef CONFIG_I2C_TARGET
 	const struct i2c_xec_config *config =
 	(const struct i2c_xec_config *const) (dev->config);
 

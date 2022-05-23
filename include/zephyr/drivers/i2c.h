@@ -58,8 +58,11 @@ extern "C" {
 /** Use 10-bit addressing. DEPRECATED - Use I2C_MSG_ADDR_10_BITS instead. */
 #define I2C_ADDR_10_BITS		BIT(0)
 
-/** Controller to act as Controller. */
-#define I2C_MODE_MASTER			BIT(4)
+/** Peripheral to act as Controller. */
+#define I2C_MODE_CONTROLLER		BIT(4)
+
+/** @deprecated Use I2C_MODE_CONTROLLER instead. */
+#define I2C_MODE_MASTER	__DEPRECATED_MACRO BIT(4)
 
 /**
  * @brief Complete I2C DT information
@@ -162,7 +165,7 @@ struct i2c_msg {
  * These are for internal use only, so skip these in
  * public documentation.
  */
-struct i2c_slave_config;
+struct i2c_target_config;
 
 typedef int (*i2c_api_configure_t)(const struct device *dev,
 				   uint32_t dev_config);
@@ -172,27 +175,27 @@ typedef int (*i2c_api_full_io_t)(const struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs,
 				 uint16_t addr);
-typedef int (*i2c_api_slave_register_t)(const struct device *dev,
-					struct i2c_slave_config *cfg);
-typedef int (*i2c_api_slave_unregister_t)(const struct device *dev,
-					  struct i2c_slave_config *cfg);
+typedef int (*i2c_api_target_register_t)(const struct device *dev,
+					struct i2c_target_config *cfg);
+typedef int (*i2c_api_target_unregister_t)(const struct device *dev,
+					  struct i2c_target_config *cfg);
 typedef int (*i2c_api_recover_bus_t)(const struct device *dev);
 
 __subsystem struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_get_config_t get_config;
 	i2c_api_full_io_t transfer;
-	i2c_api_slave_register_t slave_register;
-	i2c_api_slave_unregister_t slave_unregister;
+	i2c_api_target_register_t target_register;
+	i2c_api_target_unregister_t target_unregister;
 	i2c_api_recover_bus_t recover_bus;
 };
 
-typedef int (*i2c_slave_api_register_t)(const struct device *dev);
-typedef int (*i2c_slave_api_unregister_t)(const struct device *dev);
+typedef int (*i2c_target_api_register_t)(const struct device *dev);
+typedef int (*i2c_target_api_unregister_t)(const struct device *dev);
 
-struct i2c_slave_driver_api {
-	i2c_slave_api_register_t driver_register;
-	i2c_slave_api_unregister_t driver_unregister;
+struct i2c_target_driver_api {
+	i2c_target_api_register_t driver_register;
+	i2c_target_api_unregister_t driver_unregister;
 };
 
 /**
@@ -200,7 +203,7 @@ struct i2c_slave_driver_api {
  */
 
 /** Target device responds to 10-bit addressing. */
-#define I2C_SLAVE_FLAGS_ADDR_10_BITS	BIT(0)
+#define I2C_TARGET_FLAGS_ADDR_10_BITS	BIT(0)
 
 /** @brief Function called when a write to the device is initiated.
  *
@@ -217,8 +220,8 @@ struct i2c_slave_driver_api {
  *
  * @return 0 if the write is accepted, or a negative error code.
  */
-typedef int (*i2c_slave_write_requested_cb_t)(
-		struct i2c_slave_config *config);
+typedef int (*i2c_target_write_requested_cb_t)(
+		struct i2c_target_config *config);
 
 /** @brief Function called when a write to the device is continued.
  *
@@ -238,8 +241,8 @@ typedef int (*i2c_slave_write_requested_cb_t)(
  * @return 0 if more data can be accepted, or a negative error
  * code.
  */
-typedef int (*i2c_slave_write_received_cb_t)(
-		struct i2c_slave_config *config, uint8_t val);
+typedef int (*i2c_target_write_received_cb_t)(
+		struct i2c_target_config *config, uint8_t val);
 
 /** @brief Function called when a read from the device is initiated.
  *
@@ -260,8 +263,8 @@ typedef int (*i2c_slave_write_received_cb_t)(
  *
  * @return 0 if more data can be requested, or a negative error code.
  */
-typedef int (*i2c_slave_read_requested_cb_t)(
-		struct i2c_slave_config *config, uint8_t *val);
+typedef int (*i2c_target_read_requested_cb_t)(
+		struct i2c_target_config *config, uint8_t *val);
 
 /** @brief Function called when a read from the device is continued.
  *
@@ -282,8 +285,8 @@ typedef int (*i2c_slave_read_requested_cb_t)(
  *
  * @return 0 if data has been provided, or a negative error code.
  */
-typedef int (*i2c_slave_read_processed_cb_t)(
-		struct i2c_slave_config *config, uint8_t *val);
+typedef int (*i2c_target_read_processed_cb_t)(
+		struct i2c_target_config *config, uint8_t *val);
 
 /** @brief Function called when a stop condition is observed after a
  * start condition addressed to a particular device.
@@ -299,7 +302,7 @@ typedef int (*i2c_slave_read_processed_cb_t)(
  *
  * @return Ignored.
  */
-typedef int (*i2c_slave_stop_cb_t)(struct i2c_slave_config *config);
+typedef int (*i2c_target_stop_cb_t)(struct i2c_target_config *config);
 
 /** @brief Structure providing callbacks to be implemented for devices
  * that supports the I2C target API.
@@ -307,37 +310,37 @@ typedef int (*i2c_slave_stop_cb_t)(struct i2c_slave_config *config);
  * This structure may be shared by multiple devices that implement the
  * same API at different addresses on the bus.
  */
-struct i2c_slave_callbacks {
-	i2c_slave_write_requested_cb_t write_requested;
-	i2c_slave_read_requested_cb_t read_requested;
-	i2c_slave_write_received_cb_t write_received;
-	i2c_slave_read_processed_cb_t read_processed;
-	i2c_slave_stop_cb_t stop;
+struct i2c_target_callbacks {
+	i2c_target_write_requested_cb_t write_requested;
+	i2c_target_read_requested_cb_t read_requested;
+	i2c_target_write_received_cb_t write_received;
+	i2c_target_read_processed_cb_t read_processed;
+	i2c_target_stop_cb_t stop;
 };
 
 /** @brief Structure describing a device that supports the I2C
  * target API.
  *
- * Instances of this are passed to the i2c_slave_register() and
- * i2c_slave_unregister() functions to indicate addition and removal
+ * Instances of this are passed to the i2c_target_register() and
+ * i2c_target_unregister() functions to indicate addition and removal
  * of a target device, respective.
  *
  * Fields other than @c node must be initialized by the module that
  * implements the device behavior prior to passing the object
- * reference to i2c_slave_register().
+ * reference to i2c_target_register().
  */
-struct i2c_slave_config {
+struct i2c_target_config {
 	/** Private, do not modify */
 	sys_snode_t node;
 
-	/** Flags for the target device defined by I2C_SLAVE_FLAGS_* constants */
+	/** Flags for the target device defined by I2C_TARGET_FLAGS_* constants */
 	uint8_t flags;
 
 	/** Address for this target device */
 	uint16_t address;
 
 	/** Callback functions */
-	const struct i2c_slave_callbacks *callbacks;
+	const struct i2c_target_callbacks *callbacks;
 };
 
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
@@ -668,17 +671,17 @@ static inline int z_impl_i2c_recover_bus(const struct device *dev)
  * @retval -EIO General input / output error.
  * @retval -ENOSYS If target mode is not implemented
  */
-static inline int i2c_slave_register(const struct device *dev,
-				     struct i2c_slave_config *cfg)
+static inline int i2c_target_register(const struct device *dev,
+				     struct i2c_target_config *cfg)
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->api;
 
-	if (api->slave_register == NULL) {
+	if (api->target_register == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->slave_register(dev, cfg);
+	return api->target_register(dev, cfg);
 }
 
 /**
@@ -697,24 +700,24 @@ static inline int i2c_slave_register(const struct device *dev,
  * @retval -EINVAL If parameters are invalid
  * @retval -ENOSYS If target mode is not implemented
  */
-static inline int i2c_slave_unregister(const struct device *dev,
-				       struct i2c_slave_config *cfg)
+static inline int i2c_target_unregister(const struct device *dev,
+				       struct i2c_target_config *cfg)
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->api;
 
-	if (api->slave_unregister == NULL) {
+	if (api->target_unregister == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->slave_unregister(dev, cfg);
+	return api->target_unregister(dev, cfg);
 }
 
 /**
  * @brief Instructs the I2C Target device to register itself to the I2C Controller
  *
  * This routine instructs the I2C Target device to register itself to the I2C
- * Controller via its parent controller's i2c_slave_register() API.
+ * Controller via its parent controller's i2c_target_register() API.
  *
  * @param dev Pointer to the device structure for the I2C target
  * device (not itself an I2C controller).
@@ -723,12 +726,12 @@ static inline int i2c_slave_unregister(const struct device *dev,
  * @retval -EINVAL If parameters are invalid
  * @retval -EIO General input / output error.
  */
-__syscall int i2c_slave_driver_register(const struct device *dev);
+__syscall int i2c_target_driver_register(const struct device *dev);
 
-static inline int z_impl_i2c_slave_driver_register(const struct device *dev)
+static inline int z_impl_i2c_target_driver_register(const struct device *dev)
 {
-	const struct i2c_slave_driver_api *api =
-		(const struct i2c_slave_driver_api *)dev->api;
+	const struct i2c_target_driver_api *api =
+		(const struct i2c_target_driver_api *)dev->api;
 
 	return api->driver_register(dev);
 }
@@ -738,7 +741,7 @@ static inline int z_impl_i2c_slave_driver_register(const struct device *dev)
  * Controller
  *
  * This routine instructs the I2C Target device to unregister itself from the I2C
- * Controller via its parent controller's i2c_slave_register() API.
+ * Controller via its parent controller's i2c_target_register() API.
  *
  * @param dev Pointer to the device structure for the I2C target
  * device (not itself an I2C controller).
@@ -746,12 +749,12 @@ static inline int z_impl_i2c_slave_driver_register(const struct device *dev)
  * @retval 0 Is successful
  * @retval -EINVAL If parameters are invalid
  */
-__syscall int i2c_slave_driver_unregister(const struct device *dev);
+__syscall int i2c_target_driver_unregister(const struct device *dev);
 
-static inline int z_impl_i2c_slave_driver_unregister(const struct device *dev)
+static inline int z_impl_i2c_target_driver_unregister(const struct device *dev)
 {
-	const struct i2c_slave_driver_api *api =
-		(const struct i2c_slave_driver_api *)dev->api;
+	const struct i2c_target_driver_api *api =
+		(const struct i2c_target_driver_api *)dev->api;
 
 	return api->driver_unregister(dev);
 }
@@ -1203,19 +1206,19 @@ void i2c_dump_msgs(const char *name, const struct i2c_msg *msgs,
 		   uint8_t num_msgs, uint16_t addr);
 
 struct i2c_client_config {
-	char *i2c_master;
+	char *i2c_controller;
 	uint16_t i2c_addr;
 };
 
 #define I2C_DECLARE_CLIENT_CONFIG	struct i2c_client_config i2c_client
 
-#define I2C_CLIENT(_master, _addr)		\
+#define I2C_CLIENT(_controller, _addr)		\
 	.i2c_client = {				\
-		.i2c_master = (_master),	\
+		.i2c_controller = (_controller),	\
 		.i2c_addr = (_addr),		\
 	}
 
-#define I2C_GET_MASTER(_conf)		((_conf)->i2c_client.i2c_master)
+#define I2C_GET_CONTROLLER(_conf)		((_conf)->i2c_client.i2c_controller)
 #define I2C_GET_ADDR(_conf)		((_conf)->i2c_client.i2c_addr)
 
 #ifdef __cplusplus

@@ -28,7 +28,7 @@ void test_i2c_pca95xx(void)
 {
 	int32_t ret;
 	uint8_t datas[3];
-	uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
+	uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
 
 	/* get i2c device */
 	const struct device *i2c_dev = device_get_binding(I2C_DEV_NAME);

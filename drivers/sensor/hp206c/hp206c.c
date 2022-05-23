@@ -26,7 +26,7 @@ static inline int hp206c_bus_config(const struct device *dev)
 	const struct hp206c_device_config *cfg = dev->config;
 	uint32_t i2c_cfg;
 
-	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(I2C_SPEED_STANDARD);
+	i2c_cfg = I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD);
 
 	return i2c_configure(cfg->i2c.bus, i2c_cfg);
 }

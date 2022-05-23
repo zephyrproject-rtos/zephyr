@@ -26,7 +26,7 @@
 #error "Please set the correct I2C device"
 #endif
 
-uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
+uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
 
 static int test_gy271(void)
 {

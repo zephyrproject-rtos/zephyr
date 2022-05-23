@@ -6,6 +6,12 @@ I2C
 Overview
 ********
 
+.. note::
+
+   The terminology used in Zephyr I2C APIs follows that of the
+   `NXP I2C Bus Specification Rev 7.0 <i2c-specification>`_. These changed
+   from previous revisions as of its release October 1, 2021.
+
 `I2C <i2c-specification>`_ (Inter-Integrated Circuit, pronounced "eye
 squared see") is a commonly-used two-signal shared peripheral interface
 bus.  Many system-on-chip solutions provide controllers that communicate
