@@ -1,0 +1,7 @@
+sample:
+  description: Demonstration of the IS31FL3194 LED driver
+  name: IS31FL3194 sample
+tests:
+  sample.drivers.led.is31fl3194:
+    platform_allow: arduino_nicla_sense_me
+    tags: LED
