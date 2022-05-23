@@ -337,7 +337,7 @@
 		/* 7MB */
 		lfs_partition: partition@100000 {
 			label = "lfs_storage";
-			reg = <0x00100000 0x000700000>;
+			reg = <0x00100000 0x00700000>;
 		};
 	};
 };
