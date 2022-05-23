@@ -265,7 +265,7 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 
 	rc = img_mgmt_impl_erase_slot();
 
-	if (!rc) {
+	if (rc != 0) {
 		img_mgmt_dfu_stopped();
 	}
 
