@@ -1536,8 +1536,9 @@ static uint8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 	return 0;
 }
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 
-#if defined(CONFIG_BT_EATT)
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
 static uint8_t read_vl_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			  void *user_data)
 {
@@ -1631,8 +1632,7 @@ static uint8_t att_read_mult_vl_req(struct bt_att_chan *chan, struct net_buf *bu
 
 	return 0;
 }
-#endif /* CONFIG_BT_EATT */
-#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
 
 struct read_group_data {
 	struct bt_att_chan *chan;
@@ -2381,7 +2381,9 @@ static uint8_t att_handle_read_mult_rsp(struct bt_att_chan *chan,
 	return att_handle_rsp(chan, buf->data, buf->len, 0);
 }
 
-#if defined(CONFIG_BT_EATT)
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
 static uint8_t att_handle_read_mult_vl_rsp(struct bt_att_chan *chan,
 					struct net_buf *buf)
 {
@@ -2389,8 +2391,7 @@ static uint8_t att_handle_read_mult_vl_rsp(struct bt_att_chan *chan,
 
 	return att_handle_rsp(chan, buf->data, buf->len, 0);
 }
-#endif /* CONFIG_BT_EATT */
-#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
 
 static uint8_t att_handle_read_group_rsp(struct bt_att_chan *chan,
 				      struct net_buf *buf)
@@ -2509,13 +2510,13 @@ static const struct att_handler {
 		BT_ATT_READ_MULT_MIN_LEN_REQ,
 		ATT_REQUEST,
 		att_read_mult_req },
-#if defined(CONFIG_BT_EATT)
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
 	{ BT_ATT_OP_READ_MULT_VL_REQ,
 		BT_ATT_READ_MULT_MIN_LEN_REQ,
 		ATT_REQUEST,
 		att_read_mult_vl_req },
-#endif /* CONFIG_BT_EATT */
-#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
 	{ BT_ATT_OP_READ_GROUP_REQ,
 		sizeof(struct bt_att_read_group_req),
 		ATT_REQUEST,
@@ -2581,13 +2582,13 @@ static const struct att_handler {
 		0,
 		ATT_RESPONSE,
 		att_handle_read_mult_rsp },
-#if defined(CONFIG_BT_EATT)
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
 	{ BT_ATT_OP_READ_MULT_VL_RSP,
 		sizeof(struct bt_att_read_mult_vl_rsp),
 		ATT_RESPONSE,
 		att_handle_read_mult_vl_rsp },
-#endif /* CONFIG_BT_EATT */
-#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
 	{ BT_ATT_OP_READ_GROUP_RSP,
 		sizeof(struct bt_att_read_group_rsp),
 		ATT_RESPONSE,

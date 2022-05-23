@@ -4245,7 +4245,15 @@ static int gatt_read_mult(struct bt_conn *conn,
 			     params->handle_count * sizeof(uint16_t));
 }
 
-#if defined(CONFIG_BT_EATT)
+#else
+static int gatt_read_mult(struct bt_conn *conn,
+			      struct bt_gatt_read_params *params)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
 static void gatt_read_mult_vl_rsp(struct bt_conn *conn, uint8_t err,
 				  const void *pdu, uint16_t length,
 				  void *user_data)
@@ -4309,23 +4317,14 @@ static int gatt_read_mult_vl(struct bt_conn *conn,
 			     BT_ATT_OP_READ_MULT_VL_REQ,
 			     params->handle_count * sizeof(uint16_t));
 }
-#endif /* CONFIG_BT_EATT */
 
 #else
-static int gatt_read_mult(struct bt_conn *conn,
-			      struct bt_gatt_read_params *params)
-{
-	return -ENOTSUP;
-}
-#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
-
-#if !defined(CONFIG_BT_GATT_READ_MULTIPLE) || !defined(CONFIG_BT_EATT)
 static int gatt_read_mult_vl(struct bt_conn *conn,
 			     struct bt_gatt_read_params *params)
 {
 	return -ENOTSUP;
 }
-#endif
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
 
 static int gatt_read_encode(struct net_buf *buf, size_t len, void *user_data)
 {
