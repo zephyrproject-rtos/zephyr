@@ -347,6 +347,8 @@ MCUboot
 Trusted Firmware-m
 ******************
 
+* Updated to TF-M 1.6.0
+
 Documentation
 *************
 
