@@ -15,3 +15,4 @@
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*struct in_addr.*'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*struct in6_addr.*'.*
 .*Duplicate C declaration.*\n.*'\.\. c:.*:: .*struct net_if.*'.*
+.*Duplicate C declaration.*\n.*'\.\. c:struct:: bt_ots_init'.*
