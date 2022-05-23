@@ -805,6 +805,9 @@ static int espi_it8xxx2_read_lpc_request(const struct device *dev,
 			*data = (uint32_t)&h2ram_pool[
 				CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM];
 			break;
+		case ECUSTOM_HOST_CMD_GET_PARAM_MEMORY_SIZE:
+			*data = CONFIG_ESPI_IT8XXX2_HC_H2RAM_SIZE;
+			break;
 		default:
 			return -EINVAL;
 		}
