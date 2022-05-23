@@ -65,7 +65,7 @@
 			compatible = "zephyr,power-state";
 			power-state-name="runtime-idle";
 			substate-id = <IMX_SPC_SET_POINT_1_WAIT>;
-			min-residency-us = <10>;
+			min-residency-us = <100>;
 		};
 
 		suspend: set_point_10_suspend {
@@ -74,6 +74,7 @@
 			power-state-name="suspend-to-idle";
 			substate-id = <IMX_SPC_SET_POINT_10_SUSPEND>;
 			min-residency-us = <5000>;
+			exit-latency-us = <500>;
 		};
 	};
 
