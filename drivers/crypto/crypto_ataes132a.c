@@ -178,7 +178,7 @@ int ataes132a_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	i2c_cfg = I2C_MODE_MASTER | I2C_SPEED_SET(ATAES132A_BUS_SPEED);
+	i2c_cfg = I2C_MODE_CONTROLLER | I2C_SPEED_SET(ATAES132A_BUS_SPEED);
 
 	i2c_configure(ataes132a->i2c, i2c_cfg);
 

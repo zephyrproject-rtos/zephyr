@@ -668,7 +668,7 @@ static int i2c_sam0_configure(const struct device *dev, uint32_t config)
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
-	if (!(config & I2C_MODE_MASTER)) {
+	if (!(config & I2C_MODE_CONTROLLER)) {
 		return -EINVAL;
 	}
 

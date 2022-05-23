@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @brief Public APIs for the I2C EEPROM Slave driver.
+ * @brief Public APIs for the I2C EEPROM Target driver.
  */
 
 /*
@@ -9,12 +9,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_SLAVE_EEPROM_H_
-#define ZEPHYR_INCLUDE_DRIVERS_I2C_SLAVE_EEPROM_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_TARGET_EEPROM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_I2C_TARGET_EEPROM_H_
 
 /**
- * @brief I2C EEPROM Slave Driver API
- * @defgroup i2c_eeprom_slave_api I2C EEPROM Slave Driver API
+ * @brief I2C EEPROM Target Driver API
+ * @defgroup i2c_eeprom_target_api I2C EEPROM Target Driver API
  * @ingroup io_interfaces
  * @{
  */
@@ -29,7 +29,7 @@
  * @retval 0 If successful.
  * @retval -EINVAL Invalid data size
  */
-int eeprom_slave_program(const struct device *dev, const uint8_t *eeprom_data,
+int eeprom_target_program(const struct device *dev, const uint8_t *eeprom_data,
 			 unsigned int length);
 
 /**
@@ -42,11 +42,11 @@ int eeprom_slave_program(const struct device *dev, const uint8_t *eeprom_data,
  * @retval 0 If successful.
  * @retval -EINVAL Invalid data pointer or offset
  */
-int eeprom_slave_read(const struct device *dev, uint8_t *eeprom_data,
+int eeprom_target_read(const struct device *dev, uint8_t *eeprom_data,
 		      unsigned int offset);
 
 /**
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_SLAVE_EEPROM_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_TARGET_EEPROM_H_ */
