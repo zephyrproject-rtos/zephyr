@@ -38,6 +38,9 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_OSPI_SUBSECTOR_4K_ERASE_MAX_TIME  400U
 #define STM32_OSPI_WRITE_REG_MAX_TIME           40U
 
+/* used as default value for DTS writeoc */
+#define SPI_NOR_WRITEOC_NONE 0xFF
+
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct flash_stm32_ospi_config {
@@ -72,6 +75,7 @@ struct flash_stm32_ospi_data {
 	/* Read operation dummy cycles */
 	uint8_t read_dummy;
 	uint32_t read_opcode;
+	uint32_t write_opcode;
 	enum jesd216_mode_type read_mode;
 	enum jesd216_dw15_qer_type qer_type;
 	int cmd_status;
@@ -921,6 +925,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *dev_data = dev->data;
+	size_t to_write;
 	int ret = 0;
 
 	if (!ospi_address_is_valid(dev, addr, size)) {
@@ -937,13 +942,49 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	/* page program for STR or DTR mode */
 	OSPI_RegularCmdTypeDef cmd_pp = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
-	cmd_pp.DummyCycles = 0;
+	cmd_pp.Instruction = dev_data->write_opcode;
 
-	LOG_INF("OSPI: write %u data", size);
+	if (dev_cfg->data_mode != OSPI_OPI_MODE) {
+		switch (cmd_pp.Instruction) {
+		case SPI_NOR_CMD_PP_4B:
+			__fallthrough;
+		case SPI_NOR_CMD_PP: {
+			cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+			cmd_pp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+			cmd_pp.DataMode = HAL_OSPI_DATA_1_LINE;
+			break;
+		}
+		case SPI_NOR_CMD_PP_1_1_4_4B:
+			__fallthrough;
+		case SPI_NOR_CMD_PP_1_1_4: {
+			cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+			cmd_pp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+			cmd_pp.DataMode = HAL_OSPI_DATA_4_LINES;
+			break;
+		}
+		case SPI_NOR_CMD_PP_1_4_4_4B:
+			__fallthrough;
+		case SPI_NOR_CMD_PP_1_4_4: {
+			cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+			cmd_pp.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
+			cmd_pp.DataMode = HAL_OSPI_DATA_4_LINES;
+			break;
+		}
+		default:
+			/* use the mode from ospi_prepare_cmd */
+			break;
+		}
+	}
+
+	cmd_pp.Address = addr;
+	cmd_pp.AddressSize = stm32_ospi_hal_address_size(dev);
+	cmd_pp.DummyCycles = 0U;
+
+	LOG_DBG("OSPI: write %zu data", size);
 	ospi_lock_thread(dev);
 
 	while ((size > 0) && (ret == 0)) {
-		size_t to_write = size;
+		to_write = size;
 
 		ret = stm32_ospi_mem_ready(&dev_data->hospi,
 						 dev_cfg->data_mode, dev_cfg->data_rate);
@@ -968,10 +1009,6 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 						(addr % SPI_NOR_PAGE_SIZE);
 		}
 
-		cmd_pp.Instruction = (dev_cfg->data_mode == OSPI_SPI_MODE)
-				? SPI_NOR_CMD_PP_4B
-				: SPI_NOR_OCMD_PAGE_PRG;
-		cmd_pp.Address = addr;
 		ret = ospi_write_access(dev, &cmd_pp, data, to_write);
 		if (ret != 0) {
 			break;
@@ -1334,7 +1371,9 @@ static int stm32_ospi_enable_qe(const struct device *dev)
 	return ret;
 }
 
-static void spi_nor_process_bfp_addrbytes(const struct device *dev, const uint8_t jesd216_bfp_addrbytes) {
+static void spi_nor_process_bfp_addrbytes(const struct device *dev,
+					  const uint8_t jesd216_bfp_addrbytes)
+{
 	struct flash_stm32_ospi_data *data = dev->data;
 
 	if (jesd216_bfp_addrbytes == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B) {
@@ -1357,6 +1396,21 @@ static inline uint8_t spi_nor_convert_read_to_4b(const uint8_t opcode)
 		return SPI_NOR_CMD_QREAD_4B;
 	case SPI_NOR_CMD_4READ:
 		return SPI_NOR_CMD_4READ_4B;
+	default:
+		/* use provided */
+		return opcode;
+	}
+}
+
+static inline uint8_t spi_nor_convert_write_to_4b(const uint8_t opcode)
+{
+	switch (opcode) {
+	case SPI_NOR_CMD_PP:
+		return SPI_NOR_CMD_PP_4B;
+	case SPI_NOR_CMD_PP_1_1_4:
+		return SPI_NOR_CMD_PP_1_1_4_4B;
+	case SPI_NOR_CMD_PP_1_4_4:
+		return SPI_NOR_CMD_PP_1_4_4_4B;
 	default:
 		/* use provided */
 		return opcode;
@@ -1401,6 +1455,24 @@ static int spi_nor_process_bfp(const struct device *dev,
 	spi_nor_process_bfp_addrbytes(dev, jesd216_bfp_addrbytes(bfp));
 	LOG_DBG("Address width: %u Bytes", data->address_width);
 
+	/* use PP opcode based on configured data mode if nothing is set in DTS */
+	if (data->write_opcode == SPI_NOR_WRITEOC_NONE) {
+		switch (dev_cfg->data_mode) {
+		case OSPI_OPI_MODE:
+			data->write_opcode = SPI_NOR_OCMD_PAGE_PRG;
+			break;
+		case OSPI_QUAD_MODE:
+			data->write_opcode = SPI_NOR_CMD_PP_1_4_4;
+			break;
+		case OSPI_DUAL_MODE:
+			data->write_opcode = SPI_NOR_CMD_PP_1_1_2;
+			break;
+		default:
+			data->write_opcode = SPI_NOR_CMD_PP;
+			break;
+		}
+	}
+
 	if (dev_cfg->data_mode != OSPI_OPI_MODE) {
 		/* determine supported read modes, begin from the slowest */
 		data->read_mode = JESD216_MODE_111;
@@ -1438,6 +1510,9 @@ static int spi_nor_process_bfp(const struct device *dev,
 				return -ENOTSUP;
 			}
 			data->read_opcode = spi_nor_convert_read_to_4b(data->read_opcode);
+			data->write_opcode = spi_nor_convert_write_to_4b(data->write_opcode);
+		}
+
 		/* enable quad mode (if required) */
 		if (dev_cfg->data_mode == OSPI_QUAD_MODE) {
 			if (jesd216_bfp_decode_dw15(php, bfp, &dw15) < 0) {
@@ -1465,6 +1540,8 @@ static int spi_nor_process_bfp(const struct device *dev,
 	LOG_DBG("Flash size %zu bytes", flash_size);
 	LOG_DBG("Using read mode: %d, instr: 0x%X, dummy cycles: %u",
 		data->read_mode, data->read_opcode, data->read_dummy);
+	LOG_DBG("Using write instr: 0x%X", data->write_opcode);
+
 	return 0;
 }
 
@@ -1679,6 +1756,11 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #define OSPI_FLASH_MODULE(drv_id, flash_id)				\
 		(DT_DRV_INST(drv_id), ospi_nor_flash_##flash_id)
 
+#define DT_WRITEOC_PROP_OR(inst, default_value)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),					\
+		    (_CONCAT(SPI_NOR_CMD_, DT_STRING_TOKEN(DT_DRV_INST(inst), writeoc))),	\
+		    ((default_value)))
+
 #define DT_QER_PROP_OR(inst, default_value)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements),			\
 		    (_CONCAT(JESD216_DW15_QER_VAL_,						\
@@ -1722,6 +1804,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 			},
 	},
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
+	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
 };
 
 DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL,
