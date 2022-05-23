@@ -10,9 +10,8 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 
-#if !DT_HAS_CHOSEN(zephyr_ec_host_interface)
-#error Must chose zephyr,ec-host-interface in device tree
-#endif
+BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_ec_host_interface),
+	"Must choose zephyr,ec-host-interface in device tree");
 
 #define DT_HOST_CMD_DEV DT_CHOSEN(zephyr_ec_host_interface)
 
@@ -82,9 +81,10 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 			 */
 			send_error_response(ec_host_cmd_dev,
 					    EC_HOST_CMD_ERROR);
+			continue;
 		}
-		/* rx buf and len now have valid incoming data */
 
+		/* rx buf and len now have valid incoming data */
 		if (*rx.len < RX_HEADER_SIZE) {
 			send_error_response(ec_host_cmd_dev,
 					    EC_HOST_CMD_REQUEST_TRUNCATED);
@@ -182,6 +182,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 		tx_header->prtcl_ver = 3;
 		tx_header->result = EC_HOST_CMD_SUCCESS;
 		tx_header->data_len = args.output_buf_size;
+		tx_header->reserved = 0;
 
 		const uint16_t tx_valid_data_size =
 			tx_header->data_len + TX_HEADER_SIZE;
@@ -192,6 +193,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 		}
 
 		/* Calculate checksum */
+		tx_header->checksum = 0;
 		tx_header->checksum =
 			cal_checksum(tx_buffer, tx_valid_data_size);
 
@@ -199,6 +201,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 			.buf = tx_buffer,
 			.len = tx_valid_data_size,
 		};
+
 		ec_host_cmd_periph_send(ec_host_cmd_dev, &tx);
 	}
 }
