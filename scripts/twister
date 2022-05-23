@@ -173,6 +173,7 @@ import shutil
 from collections import OrderedDict
 import multiprocessing
 from itertools import islice
+import colorama
 from colorama import Fore
 from pathlib import Path
 from multiprocessing.managers import BaseManager
@@ -831,6 +832,8 @@ def setup_logging(outdir, log_file, verbose, timestamps):
 
 def main():
     start_time = time.time()
+
+    colorama.init()
 
     options = parse_arguments()
 
