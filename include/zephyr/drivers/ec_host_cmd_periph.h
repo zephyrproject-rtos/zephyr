@@ -82,11 +82,8 @@ __subsystem struct ec_host_cmd_periph_api {
  *
  * @retval 0 if successful
  */
-__syscall int ec_host_cmd_periph_init(const struct device *dev,
-				      struct ec_host_cmd_periph_rx_ctx *rx_ctx);
-
 static inline int
-z_impl_ec_host_cmd_periph_init(const struct device *dev,
+ec_host_cmd_periph_init(const struct device *dev,
 			       struct ec_host_cmd_periph_rx_ctx *rx_ctx)
 {
 	const struct ec_host_cmd_periph_api *api =
@@ -106,11 +103,7 @@ z_impl_ec_host_cmd_periph_init(const struct device *dev,
  *
  * @retval 0 if successful
  */
-__syscall int ec_host_cmd_periph_send(
-	const struct device *dev,
-	const struct ec_host_cmd_periph_tx_buf *tx_buf);
-
-static inline int z_impl_ec_host_cmd_periph_send(
+static inline int ec_host_cmd_periph_send(
 	const struct device *dev,
 	const struct ec_host_cmd_periph_tx_buf *tx_buf)
 {
@@ -127,7 +120,5 @@ static inline int z_impl_ec_host_cmd_periph_send(
 #ifdef __cplusplus
 }
 #endif
-
-#include <syscalls/ec_host_cmd_periph.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HOST_CMD_PERIPH_H_ */
