@@ -14,6 +14,7 @@
 
 #include "sd_utils.h"
 #include "sdmmc_priv.h"
+#include "sdio_priv.h"
 
 
 LOG_MODULE_REGISTER(sd, CONFIG_SD_LOG_LEVEL);
@@ -160,71 +161,6 @@ static int sd_init_io(struct sd_card *card)
 }
 
 /*
- * Sends CMD5 to SD card, and uses response to determine if card
- * is SDIO or SDMMC card. Return 0 if SDIO card, positive value if not, or
- * negative errno on error
- */
-int sd_test_sdio(struct sd_card *card)
-{
-	struct sdhc_command cmd = {0};
-	int ret;
-
-	cmd.opcode = SDIO_SEND_OP_COND;
-	cmd.arg = 0;
-	cmd.response_type = (SD_RSP_TYPE_R4 | SD_SPI_RSP_TYPE_R4);
-	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
-	ret = sdhc_request(card->sdhc, &cmd, NULL);
-	if (ret) {
-		/*
-		 * We are just probing card, and it is likely an SD.
-		 * return error
-		 */
-		card->type = CARD_SDMMC;
-		return SD_NOT_SDIO;
-	}
-	/* Check the number of I/O functions */
-	card->num_io = ((cmd.response[0] & SDIO_OCR_IO_NUMBER)
-			>> SDIO_OCR_IO_NUMBER_SHIFT);
-	if ((card->num_io == 0) | ((cmd.response[0] & SDIO_IO_OCR_MASK) == 0)) {
-		if (cmd.response[0] & SDIO_OCR_MEM_PRESENT_FLAG) {
-			/* Card is not an SDIO card. */
-			card->type = CARD_SDMMC;
-			return SD_NOT_SDIO;
-		}
-		/* Card is not a valid SD device. We do not support it */
-		return -ENOTSUP;
-	}
-	/* Since we got a valid OCR response,
-	 * we know this card is an SDIO card.
-	 */
-	card->type = CARD_SDIO;
-	return 0;
-}
-
-/*
- * Check SD card type
- * Uses SDIO OCR response to determine what type of card is present.
- */
-static int sd_check_card_type(struct sd_card *card)
-{
-	int ret;
-
-	/* Test if the card response to CMD5 (only SDIO cards will) */
-	/* Note that CMD5 can take many retries */
-	ret = sd_test_sdio(card);
-	if ((ret == SD_NOT_SDIO) && card->type == CARD_SDMMC) {
-		LOG_INF("Detected SD card");
-		return 0;
-	} else if ((ret == 0) && card->type == CARD_SDIO) {
-		LOG_INF("Detected SDIO card");
-		return 0;
-	}
-	LOG_ERR("No usable card type was found");
-	return -ENOTSUP;
-}
-
-
-/*
  * Performs init flow described in section 3.6 of SD specification.
  */
 static int sd_command_init(struct sd_card *card)
@@ -243,33 +179,20 @@ static int sd_command_init(struct sd_card *card)
 	if (ret) {
 		return ret;
 	}
-	/* Use CMD5 to determine card type */
-	ret = sd_check_card_type(card);
-	if (ret) {
-		LOG_ERR("Unusable card");
-		return -ENOTSUP;
+#ifdef CONFIG_SDIO_STACK
+	/* Attempt to initialize SDIO card */
+	if (!sdio_card_init(card)) {
+		return 0;
 	}
-	if (card->type == CARD_SDMMC) {
-		/*
-		 * Reset the card first- CMD5 sent to see if it is SDIO card
-		 * may have left it in error state
-		 */
-		ret = sd_common_init(card);
-		if (ret) {
-			LOG_ERR("Init after CMD5 failed");
-			return ret;
-		}
-		/* Perform memory card initialization */
-		ret = sdmmc_card_init(card);
-	} else if (card->type == CARD_SDIO) {
-		LOG_ERR("SDIO cards not currently supported");
-		return -ENOTSUP;
+#endif /* CONFIG_SDIO_STACK */
+#ifdef CONFIG_SDMMC_STACK
+	/* Attempt to initialize SDMMC card */
+	if (!sdmmc_card_init(card)) {
+		return 0;
 	}
-	if (ret) {
-		LOG_ERR("Card init failed");
-		return ret;
-	}
-	return 0;
+#endif /* CONFIG_SDIO_STACK */
+	/* Unknown card type */
+	return -ENOTSUP;
 }
 
 /* Initializes SD/SDIO card */
