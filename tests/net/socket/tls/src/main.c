@@ -90,6 +90,21 @@ static void test_send(int sock, const void *buf, size_t len, int flags)
 		      "send failed");
 }
 
+static void test_sendmsg(int sock, const struct msghdr *msg, int flags)
+{
+	size_t total_len = 0;
+
+	for (int i = 0; i < msg->msg_iovlen; i++) {
+		struct iovec *vec = msg->msg_iov + i;
+
+		total_len += vec->iov_len;
+	}
+
+	zassert_equal(sendmsg(sock, msg, flags),
+		      total_len,
+		      "sendmsg failed");
+}
+
 static void test_accept(int sock, int *new_sock, struct sockaddr *addr,
 			socklen_t *addrlen)
 {
@@ -471,6 +486,131 @@ void test_v6_msg_trunc(void)
 		       (struct sockaddr *)&server_addr, sizeof(server_addr));
 }
 
+struct test_sendmsg_data {
+	struct k_work_delayable tx_work;
+	int sock;
+	const struct msghdr *msg;
+};
+
+static void test_sendmsg_tx_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct test_sendmsg_data *test_data =
+		CONTAINER_OF(dwork, struct test_sendmsg_data, tx_work);
+
+	test_sendmsg(test_data->sock, test_data->msg, 0);
+}
+
+static void test_dtls_sendmsg(int sock_c, int sock_s, struct sockaddr *addr_c,
+			      socklen_t addrlen_c, struct sockaddr *addr_s,
+			      socklen_t addrlen_s)
+{
+	int rv;
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
+	int role = TLS_DTLS_ROLE_SERVER;
+	struct iovec iov[3] = {
+		{},
+		{
+			.iov_base = TEST_STR_SMALL,
+			.iov_len = sizeof(TEST_STR_SMALL) - 1,
+		},
+		{},
+	};
+	struct msghdr msg = {};
+	struct test_sendmsg_data test_data = {
+		.msg = &msg,
+	};
+
+	test_config_psk(sock_s, sock_c);
+
+	rv = setsockopt(sock_s, SOL_TLS, TLS_DTLS_ROLE, &role, sizeof(role));
+	zassert_equal(rv, 0, "failed to set DTLS server role");
+
+	rv = bind(sock_s, addr_s, addrlen_s);
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(sock_c, addr_c, addrlen_c);
+	zassert_equal(rv, 0, "client bind failed");
+
+	rv = connect(sock_c, addr_s, addrlen_s);
+	zassert_equal(rv, 0, "connect failed");
+
+	test_data.sock = sock_c;
+	k_work_init_delayable(&test_data.tx_work, test_sendmsg_tx_work_handler);
+
+	/* sendmsg() with single fragment */
+
+	msg.msg_iov = &iov[1];
+	msg.msg_iovlen = 1,
+
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	rv = recv(sock_s, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "recv failed");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, "invalid rx data");
+
+	/* sendmsg() with single non-empty fragment */
+
+	msg.msg_iov = iov;
+	msg.msg_iovlen = ARRAY_SIZE(iov);
+
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	rv = recv(sock_s, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(rv, sizeof(TEST_STR_SMALL) - 1, "recv failed");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, "invalid rx data");
+
+	/* sendmsg() with multiple non-empty fragments */
+
+	iov[0].iov_base = TEST_STR_SMALL;
+	iov[0].iov_len = sizeof(TEST_STR_SMALL) - 1;
+
+	rv = sendmsg(sock_c, &msg, 0);
+	zassert_equal(rv, -1, "sendmsg succeeded");
+	zassert_equal(errno, EMSGSIZE, "incorrect errno value");
+
+	rv = close(sock_c);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(sock_s);
+	zassert_equal(rv, 0, "close failed");
+}
+
+void test_v4_dtls_sendmsg(void)
+{
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+
+	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			     &client_sock, &client_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			     &server_sock, &server_addr, IPPROTO_DTLS_1_2);
+
+	test_dtls_sendmsg(client_sock, server_sock,
+			  (struct sockaddr *)&client_addr, sizeof(client_addr),
+			  (struct sockaddr *)&server_addr, sizeof(server_addr));
+}
+
+void test_v6_dtls_sendmsg(void)
+{
+	int client_sock;
+	int server_sock;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+
+	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			     &client_sock, &client_addr, IPPROTO_DTLS_1_2);
+	prepare_sock_dtls_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			     &server_sock, &server_addr, IPPROTO_DTLS_1_2);
+
+	test_dtls_sendmsg(client_sock, server_sock,
+			  (struct sockaddr *)&client_addr, sizeof(client_addr),
+			  (struct sockaddr *)&server_addr, sizeof(server_addr));
+}
+
 void test_main(void)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
@@ -487,7 +627,9 @@ void test_main(void)
 		ztest_unit_test(test_v4_msg_waitall),
 		ztest_unit_test(test_v6_msg_waitall),
 		ztest_unit_test(test_v4_msg_trunc),
-		ztest_unit_test(test_v6_msg_trunc)
+		ztest_unit_test(test_v6_msg_trunc),
+		ztest_unit_test(test_v4_dtls_sendmsg),
+		ztest_unit_test(test_v6_dtls_sendmsg)
 		);
 
 	ztest_run_test_suite(socket_tls);
