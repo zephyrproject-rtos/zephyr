@@ -37,6 +37,8 @@ static struct bt_audio_unicast_group *default_unicast_group;
 static struct bt_codec *rcodecs[2][CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 static struct bt_audio_ep *snks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_audio_ep *srcs[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
+
+static uint8_t stream_dir(const struct bt_audio_stream *stream);
 #endif /* CONFIG_BT_AUDIO_UNICAST_CLIENT */
 #endif /* CONFIG_BT_AUDIO_UNICAST */
 
@@ -758,15 +760,20 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (default_unicast_group == NULL) {
-		err = bt_audio_unicast_group_create(&default_stream, 1, &default_unicast_group);
+		struct bt_audio_unicast_group_param params = {
+			.stream = default_stream,
+			.qos = &default_preset->preset.qos,
+			.dir = stream_dir(default_stream)
+		};
+
+		err = bt_audio_unicast_group_create(&params, 1, &default_unicast_group);
 		if (err != 0) {
 			shell_error(sh, "Unable to create default unicast group: %d", err);
 			return -ENOEXEC;
 		}
 	}
 
-	err = bt_audio_stream_qos(default_conn, default_unicast_group,
-				  &named_preset->preset.qos);
+	err = bt_audio_stream_qos(default_conn, default_unicast_group);
 	if (err) {
 		shell_error(sh, "Unable to setup QoS");
 		return -ENOEXEC;

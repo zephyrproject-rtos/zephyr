@@ -54,9 +54,18 @@ void bt_unicast_client_ep_detach(struct bt_audio_ep *ep, struct bt_audio_stream 
  *
  * @return An audio_iso struct fit for the stream, or NULL.
  */
-struct bt_audio_iso *bt_unicast_client_new_audio_iso(const struct bt_audio_stream *stream);
+struct bt_audio_iso *bt_unicast_client_new_audio_iso(
+	const struct bt_audio_unicast_group *unicast_group,
+	const struct bt_audio_stream *stream,
+	enum bt_audio_dir dir);
+
+struct bt_audio_iso *bt_unicast_client_audio_iso_by_stream(const struct bt_audio_stream *stream);
+
+void bt_unicast_client_stream_bind_audio_iso(struct bt_audio_stream *stream,
+					     struct bt_audio_iso *audio_iso,
+					     enum bt_audio_dir dir);
+void bt_unicast_client_stream_unbind_audio_iso(struct bt_audio_stream *stream);
 
 void bt_unicast_client_ep_bind_audio_iso(struct bt_audio_ep *ep,
-					 struct bt_audio_iso *iso);
-
+					 struct bt_audio_iso *audio_iso);
 void bt_unicast_client_ep_unbind_audio_iso(struct bt_audio_ep *ep);

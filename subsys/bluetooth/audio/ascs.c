@@ -80,27 +80,28 @@ static void ase_status_changed(struct bt_audio_ep *ep, uint8_t old_state,
 static void ascs_ep_unbind_audio_iso(struct bt_audio_ep *ep)
 {
 	struct bt_audio_iso *audio_iso = ep->iso;
-	struct bt_iso_chan_qos *qos;
-	const uint8_t dir = ep->dir;
+	struct bt_audio_stream *stream = ep->stream;
 
-	BT_DBG("ep %p, dir %u audio_iso %p", ep, dir, audio_iso);
+	if (audio_iso != NULL) {
+		struct bt_iso_chan_qos *qos;
 
-	if (audio_iso == NULL) {
-		return;
+		qos = audio_iso->iso_chan.qos;
+
+		BT_ASSERT_MSG(stream != NULL, "Stream was NULL");
+
+		stream->iso = NULL;
+		if (audio_iso->sink_stream == stream) {
+			audio_iso->sink_stream = NULL;
+			qos->rx = NULL;
+		} else if (audio_iso->source_stream == stream) {
+			audio_iso->source_stream = NULL;
+			qos->tx = NULL;
+		} else {
+			BT_ERR("Stream %p not linked to audio_iso %p", stream, audio_iso);
+		}
 	}
 
 	ep->iso = NULL;
-	qos = audio_iso->iso_chan.qos;
-
-	if (dir == BT_AUDIO_DIR_SOURCE) {
-		audio_iso->source_ep = NULL;
-		qos->tx = NULL;
-	} else if (dir == BT_AUDIO_DIR_SINK) {
-		audio_iso->sink_ep = NULL;
-		qos->rx = NULL;
-	} else {
-		__ASSERT(false, "Invalid dir: %u", dir);
-	}
 }
 
 void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
@@ -323,23 +324,26 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *ep = audio_iso->sink_ep;
+	struct bt_audio_stream *stream = audio_iso->sink_stream;
 	const struct bt_audio_stream_ops *ops;
 
-	if (ep == NULL) {
-		BT_ERR("Could not lookup ep by iso %p", chan);
+	if (stream == NULL) {
+		BT_ERR("Could not lookup stream by iso %p", chan);
+		return;
+	} else if (stream->ep == NULL) {
+		BT_ERR("Stream not associated with an ep");
 		return;
 	}
 
-	ops = ep->stream->ops;
+	ops = stream->ops;
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
 		BT_DBG("stream %p ep %p len %zu",
-		       chan, ep, net_buf_frags_len(buf));
+		       stream, stream->ep, net_buf_frags_len(buf));
 	}
 
 	if (ops != NULL && ops->recv != NULL) {
-		ops->recv(ep->stream, info, buf);
+		ops->recv(stream, info, buf);
 	} else {
 		BT_WARN("No callback for recv set");
 	}
@@ -349,13 +353,13 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *ep = audio_iso->source_ep;
-	struct bt_audio_stream_ops *ops = ep->stream->ops;
+	struct bt_audio_stream *stream = audio_iso->source_stream;
+	struct bt_audio_stream_ops *ops = stream->ops;
 
-	BT_DBG("stream %p ep %p", chan, ep);
+	BT_DBG("stream %p ep %p", stream, stream->ep);
 
 	if (ops != NULL && ops->sent != NULL) {
-		ops->sent(ep->stream);
+		ops->sent(stream);
 	}
 }
 
@@ -363,22 +367,28 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *source_ep = audio_iso->source_ep;
-	struct bt_audio_ep *sink_ep = audio_iso->sink_ep;
+	struct bt_audio_stream *source_stream = audio_iso->source_stream;
+	struct bt_audio_stream *sink_stream = audio_iso->sink_stream;
+	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
 
-	if (&sink_ep->iso->iso_chan == chan) {
-		ep = sink_ep;
+	if (sink_stream->iso == chan) {
+		stream = sink_stream;
 	} else {
-		ep = source_ep;
+		stream = source_stream;
 	}
 
-	if (ep == NULL) {
-		BT_ERR("Could not lookup ep by iso %p", chan);
+	if (stream == NULL) {
+		BT_ERR("Could not lookup stream by iso %p", chan);
+		return;
+	} else if (stream->ep == NULL) {
+		BT_ERR("Stream not associated with an ep");
 		return;
 	}
 
-	BT_DBG("stream %p ep %p dir %u", chan, ep, ep != NULL ? ep->dir : 0);
+	ep = stream->ep;
+
+	BT_DBG("stream %p ep %p dir %u", stream, ep, ep->dir);
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		BT_DBG("endpoint not in enabling state: %s",
@@ -393,27 +403,29 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
 						      iso_chan);
-	struct bt_audio_ep *source_ep = audio_iso->source_ep;
-	struct bt_audio_ep *sink_ep = audio_iso->sink_ep;
+	struct bt_audio_stream *source_stream = audio_iso->source_stream;
+	struct bt_audio_stream *sink_stream = audio_iso->sink_stream;
 	const struct bt_audio_stream_ops *ops;
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
 
-	if (&sink_ep->iso->iso_chan == chan) {
-		ep = sink_ep;
+	if (sink_stream->iso == chan) {
+		stream = sink_stream;
 	} else {
-		ep = source_ep;
+		stream = source_stream;
 	}
 
-	if (ep == NULL) {
-		BT_ERR("Could not lookup ep by iso %p", chan);
+	if (stream == NULL) {
+		BT_ERR("Could not lookup stream by iso %p", chan);
+		return;
+	} else if (stream->ep == NULL) {
+		BT_ERR("Stream not associated with an ep");
 		return;
 	}
 
-	ops = ep->stream->ops;
-	stream = ep->stream;
+	ops = stream->ops;
 
-	BT_DBG("stream %p ep %p reason 0x%02x", chan, ep, reason);
+	BT_DBG("stream %p ep %p reason 0x%02x", stream, stream->ep, reason);
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream);
@@ -421,6 +433,7 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		BT_WARN("No callback for stopped set");
 	}
 
+	ep = stream->ep;
 	if (ep->status.state == BT_AUDIO_EP_STATE_RELEASING) {
 		ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_CODEC_CONFIGURED);
 	} else {
@@ -759,45 +772,49 @@ struct bt_audio_iso *ascs_new_audio_iso(const struct bt_audio_stream *stream,
 					uint8_t cig_id,
 					uint8_t cis_id)
 {
-	struct bt_conn *acl_conn = stream->conn;
-	struct bt_audio_iso *free_audio_iso;
+	const enum bt_audio_dir dir = stream->ep->dir;
+	struct bt_audio_iso *free_audio_iso = NULL;
 
-	BT_DBG("stream %p ascs %p", stream, ascs);
+	BT_DBG("stream %p dir %u ascs %p", stream, dir, ascs);
 
-	free_audio_iso = NULL;
+	/* Look through the audio_isos and find a free one, or one for the same
+	 * ACL connection where the opposite direction is what we want, and is
+	 * free.
+	 *
+	 * The returned audio_iso is either an unused one, or one where @p
+	 * stream can be used in the opposite direction.
+	 */
 	for (size_t i = 0; i < ARRAY_SIZE(ascs->isos); i++) {
 		struct bt_audio_iso *audio_iso = &ascs->isos[i];
-		struct bt_audio_ep *ep;
+		const struct bt_conn *acl_conn = stream->conn;
+		const struct bt_audio_stream *paired_stream;
+		const struct bt_audio_stream *tmp_stream;
 
-		switch (stream->ep->dir) {
+		switch (dir) {
 		case BT_AUDIO_DIR_SINK:
-			ep = audio_iso->sink_ep;
-
-			if (ep == NULL) {
-				if (free_audio_iso == NULL) {
-					free_audio_iso = audio_iso;
-				}
-			} else if (ep->cig_id == cig_id &&
-				   ep->cis_id == cis_id &&
-				   ep->stream->conn == acl_conn) {
-				return audio_iso;
-			}
+			tmp_stream = audio_iso->sink_stream;
+			paired_stream = audio_iso->source_stream;
 			break;
 		case BT_AUDIO_DIR_SOURCE:
-			ep = audio_iso->source_ep;
-
-			if (ep == NULL) {
-				if (free_audio_iso == NULL) {
-					free_audio_iso = audio_iso;
-				}
-			} else if (ep->cig_id == cig_id &&
-				   ep->cis_id == cis_id &&
-				   ep->stream->conn == acl_conn) {
-				return audio_iso;
-			}
+			tmp_stream = audio_iso->source_stream;
+			paired_stream = audio_iso->sink_stream;
 			break;
 		default:
 			return NULL;
+		}
+
+		if (tmp_stream == NULL) {
+			if (free_audio_iso == NULL) {
+				free_audio_iso = audio_iso;
+			}
+		} else if (paired_stream != NULL &&
+			   paired_stream->ep->cig_id == cig_id &&
+			   paired_stream->ep->cis_id == cis_id &&
+			   paired_stream->ep->stream->conn == acl_conn) {
+			BT_DBG("Use existing audio_iso %p together with stream %p",
+			       audio_iso, paired_stream);
+
+			return audio_iso;
 		}
 	}
 
@@ -931,40 +948,39 @@ static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void ascs_ep_bind_audio_iso(struct bt_audio_ep *ep,
-				   struct bt_audio_iso *audio_iso)
+static void ascs_ep_stream_bind_audio_iso(struct bt_audio_stream *stream,
+					  struct bt_audio_iso *audio_iso)
 {
+	const enum bt_audio_dir dir = stream->ep->dir;
 	struct bt_iso_chan *iso_chan;
 	struct bt_iso_chan_qos *qos;
-	const uint8_t dir = ep->dir;
 
-	BT_DBG("ep %p, dir %u audio_iso %p", ep, dir, audio_iso);
+	BT_DBG("stream %p, dir %u audio_iso %p", stream, dir, audio_iso);
 
-	ep->iso = audio_iso;
-
-	iso_chan = &ep->iso->iso_chan;
+	iso_chan = &audio_iso->iso_chan;
 
 	iso_chan->ops = &ascs_iso_ops;
-	qos = iso_chan->qos = &ep->iso->iso_qos;
+	qos = iso_chan->qos = &audio_iso->iso_qos;
 
 	if (dir == BT_AUDIO_DIR_SOURCE) {
-		audio_iso->source_ep = ep;
-		qos->tx = &ep->iso_io_qos;
+		audio_iso->source_stream = stream;
+		qos->tx = &audio_iso->source_io_qos;
 	} else if (dir == BT_AUDIO_DIR_SINK) {
-		audio_iso->sink_ep = ep;
-		qos->rx = &ep->iso_io_qos;
+		audio_iso->sink_stream = stream;
+		qos->rx = &audio_iso->sink_io_qos;
 	} else {
 		__ASSERT(false, "Invalid dir: %u", dir);
 	}
 
-	ep->stream->iso = iso_chan;
+	stream->iso = iso_chan;
+	stream->ep->iso = audio_iso;
 }
 
 void ascs_ep_init(struct bt_audio_ep *ep, uint8_t id)
 {
 	BT_DBG("ep %p id 0x%02x", ep, id);
 
-	memset(ep, 0, sizeof(*ep));
+	(void)memset(ep, 0, sizeof(*ep));
 	ep->status.id = id;
 	ep->dir = ASE_DIR(id);
 }
@@ -1348,9 +1364,10 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 	struct bt_audio_iso *audio_iso;
 	struct bt_audio_ep *ep;
 
-	BT_DBG("stream %p qos %p", stream, qos);
+	BT_DBG("stream %p ep %p qos %p", stream, stream->ep, qos);
 
 	if (stream == NULL || stream->ep == NULL || qos == NULL) {
+		BT_DBG("Invalid input stream, ep or qos pointers");
 		return -EINVAL;
 	}
 
@@ -1381,12 +1398,14 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 
 		err = unicast_server_cb->qos(stream, qos);
 		if (err != 0) {
+			BT_DBG("Application returned error: %d", err);
 			return err;
 		}
 	}
 
 	audio_iso = ascs_new_audio_iso(stream, ascs, cig_id, cis_id);
 	if (audio_iso == NULL) {
+		BT_DBG("Could not allocated new audio_iso");
 		return -ENOMEM;
 	}
 
@@ -1394,7 +1413,7 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 
 	ascs_ep_set_state(ep, BT_AUDIO_EP_STATE_QOS_CONFIGURED);
 
-	ascs_ep_bind_audio_iso(ep, audio_iso);
+	ascs_ep_stream_bind_audio_iso(stream, audio_iso);
 	bt_audio_stream_iso_listen(stream);
 
 	return 0;
