@@ -272,11 +272,9 @@ static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 	for (int i = 0; i < codec->data_count; i++) {
 		const struct bt_data *codec_data = &codec->data[i].data;
 
-		net_buf_simple_add_u8(buf, codec_data->data_len);
+		net_buf_simple_add_u8(buf, codec_data->data_len + sizeof(codec_data->type));
 		net_buf_simple_add_u8(buf, codec_data->type);
-		net_buf_simple_add_mem(buf, codec_data->data,
-				       codec_data->data_len -
-					sizeof(codec_data->type));
+		net_buf_simple_add_mem(buf, codec_data->data, codec_data->data_len);
 
 	}
 	/* Calculate length of codec config data */
@@ -289,11 +287,9 @@ static void bt_audio_encode_base(const struct bt_audio_broadcast_source *source,
 	for (int i = 0; i < codec->meta_count; i++) {
 		const struct bt_data *metadata = &codec->meta[i].data;
 
-		net_buf_simple_add_u8(buf, metadata->data_len);
+		net_buf_simple_add_u8(buf, metadata->data_len + sizeof(metadata->type));
 		net_buf_simple_add_u8(buf, metadata->type);
-		net_buf_simple_add_mem(buf, metadata->data,
-				       metadata->data_len -
-					sizeof(metadata->type));
+		net_buf_simple_add_mem(buf, metadata->data, metadata->data_len);
 	}
 	/* Calculate length of codec config data */
 	len = net_buf_simple_tail(buf) - start - sizeof(len);
