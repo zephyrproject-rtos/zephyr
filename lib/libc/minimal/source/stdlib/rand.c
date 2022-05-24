@@ -6,9 +6,6 @@
 
 #include <stdlib.h>
 #include <zephyr/sys/libc-hooks.h>
-#include <zephyr/app_memory/app_memdomain.h>
-
-#define LIBC_DATA K_APP_DMEM(z_libc_partition)
 
 #define OUTPUT_BITS (0x7fffffffU)
 #define MULTIPLIER (1103515245U)
@@ -22,7 +19,7 @@ int rand_r(unsigned int *seed)
 }
 
 #ifdef CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
-static LIBC_DATA unsigned int srand_seed = 1;
+static Z_LIBC_DATA unsigned int srand_seed = 1;
 
 void srand(unsigned int s)
 {
