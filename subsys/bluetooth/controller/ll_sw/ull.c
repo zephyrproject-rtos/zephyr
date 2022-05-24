@@ -849,6 +849,9 @@ void ll_reset(void)
 	err = ull_df_reset();
 	LL_ASSERT(!err);
 #endif
+
+	/* clear static random address */
+	(void)ll_addr_set(1U, NULL);
 }
 
 /**
