@@ -15,6 +15,17 @@ module = SD
 module-str = SD stack
 source "subsys/logging/Kconfig.template.log_config"
 
+config SDMMC_STACK
+	bool "SDMMC protocol support"
+	help
+	  Enable SDMMC protocol support. Required for SD memory cards to
+	  function.
+
+config SDIO_STACK
+	bool "SDIO protocol support"
+	help
+	  Enable SDIO protocol support. Required for SD I/O cards to function.
+
 config SD_INIT_TIMEOUT
 	int "Timeout while initializing SD card"
 	default 1500

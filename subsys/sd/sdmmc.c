@@ -230,31 +230,15 @@ static int sdmmc_app_command(struct sd_card *card, int relative_card_address)
 	return 0;
 }
 
-/* Reads OCR from SPI mode card using CMD58 */
-static int sdmmc_spi_send_ocr(struct sd_card *card, uint32_t arg)
-{
-	struct sdhc_command cmd;
-	int ret;
-
-	cmd.opcode = SD_SPI_READ_OCR;
-	cmd.arg = arg;
-	cmd.response_type = SD_SPI_RSP_TYPE_R3;
-
-	ret = sdhc_request(card->sdhc, &cmd, NULL);
-
-	card->ocr = cmd.response[1];
-	return ret;
-}
-
 /* Sends OCR to card using ACMD41 */
-static int sdmmc_send_ocr(struct sd_card *card, int ocr_arg)
+static int sdmmc_send_ocr(struct sd_card *card, int ocr)
 {
 	struct sdhc_command cmd;
 	int ret;
 	int retries;
 
 	cmd.opcode = SD_APP_SEND_OP_COND;
-	cmd.arg = ocr_arg;
+	cmd.arg = ocr;
 	cmd.response_type = (SD_RSP_TYPE_R3 | SD_SPI_RSP_TYPE_R1);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	/* Send initialization ACMD41 */
@@ -271,7 +255,7 @@ static int sdmmc_send_ocr(struct sd_card *card, int ocr_arg)
 			/* OCR failed */
 			return ret;
 		}
-		if (ocr_arg == 0) {
+		if (ocr == 0) {
 			/* Just probing, don't wait for card to exit busy state */
 			return 0;
 		}
@@ -962,52 +946,39 @@ int sdmmc_card_init(struct sd_card *card)
 	int ret;
 	uint32_t ocr_arg = 0U;
 
-	if (card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
-		/* SD card needs CMD58 before ACMD41 to read OCR */
-		ret = sdmmc_spi_send_ocr(card, 0);
-		if (ret) {
-			/* Card is not an SD card */
-			return ret;
+	/* First send a probing OCR using ACMD41. Note that SPI cards also
+	 * accept CMD58 at this point, but we skip this command as it is not
+	 * required by the spec.
+	 */
+	ret = sdmmc_send_ocr(card, ocr_arg);
+	if (ret) {
+		return ret;
+	}
+	/* Card responded to ACMD41, type is SDMMC */
+	card->type = CARD_SDMMC;
+
+	if (card->flags & SD_SDHC_FLAG) {
+		/* High capacity card. See if host supports 1.8V */
+		if (card->host_props.host_caps.vol_180_support) {
+			ocr_arg |= SD_OCR_SWITCH_18_REQ_FLAG;
 		}
-		if (card->flags & SD_SDHC_FLAG) {
-			ocr_arg |= SD_OCR_HOST_CAP_FLAG;
-		}
-		ret = sdmmc_send_ocr(card, ocr_arg);
-		if (ret) {
-			return ret;
-		}
-		/* Send second CMD58 to get CCS bit */
-		ret = sdmmc_spi_send_ocr(card, ocr_arg);
-	} else if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE)) {
-		/* Send initial probing OCR */
-		ret = sdmmc_send_ocr(card, 0);
-		if (ret) {
-			/* Card is not an SD card */
-			return ret;
-		}
-		if (card->flags & SD_SDHC_FLAG) {
-			/* High capacity card. See if host supports 1.8V */
-			if (card->host_props.host_caps.vol_180_support) {
-				ocr_arg |= SD_OCR_SWITCH_18_REQ_FLAG;
-			}
-			/* Set host high capacity support flag */
-			ocr_arg |= SD_OCR_HOST_CAP_FLAG;
-		}
+		/* Set host high capacity support flag */
+		ocr_arg |= SD_OCR_HOST_CAP_FLAG;
+	}
+	if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE)) {
 		/* Set voltage window */
 		if (card->host_props.host_caps.vol_300_support) {
 			ocr_arg |= SD_OCR_VDD29_30FLAG;
 		}
 		ocr_arg |= (SD_OCR_VDD32_33FLAG | SD_OCR_VDD33_34FLAG);
-		/* Momentary delay before initialization OCR. Some cards will
-		 * never leave busy state if init OCR is sent too soon after
-		 * probing OCR
-		 */
-		k_busy_wait(100);
-		/* Send SD OCR to card to initialize it */
-		ret = sdmmc_send_ocr(card, ocr_arg);
-	} else {
-		return -ENOTSUP;
 	}
+	/* Momentary delay before initialization OCR. Some cards will
+	 * never leave busy state if init OCR is sent too soon after
+	 * probing OCR
+	 */
+	k_busy_wait(100);
+	/* Send SD OCR to card to initialize it */
+	ret = sdmmc_send_ocr(card, ocr_arg);
 	if (ret) {
 		LOG_ERR("Failed to query card OCR");
 		return ret;
