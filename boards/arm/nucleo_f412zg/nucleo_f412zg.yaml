@@ -18,3 +18,5 @@ supported:
   - gpio
   - usb_device
   - counter
+  - can
+  - canfd
