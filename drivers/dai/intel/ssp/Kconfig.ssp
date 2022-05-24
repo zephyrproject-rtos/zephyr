@@ -12,3 +12,7 @@ config DAI_INTEL_SSP
 	help
 	  Enable Inter Sound (I2S) bus driver based on
 	  Synchronous Serial Port (SSP) module.
+
+config DAI_SSP_HAS_POWER_CONTROL
+	bool "DAI ssp pm_runtime en/dis ssp power"
+	depends on DAI_INTEL_SSP
