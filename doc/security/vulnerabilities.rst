@@ -1156,3 +1156,18 @@ This has been fixed in main for v3.0.0
 
 - `PR 42167 fix for v2.7.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/42167>`_
+
+CVE-2022-1041
+--------------
+
+Under embargo until 2022/06/19
+
+CVE-2022-1042
+--------------
+
+Under embargo until 2022/06/19
+
+CVE-2022-1841
+--------------
+
+Under embargo until 2022/08/18
