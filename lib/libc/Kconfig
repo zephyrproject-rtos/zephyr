@@ -182,6 +182,18 @@ config MINIMAL_LIBC_RAND
 	  In order to make use of the non-reentrant rand() and srand(), it is
 	  necessary to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
 
+config MINIMAL_LIBC_TIME
+	bool "Time functions"
+	default y
+	help
+	  Enable time() and gmtime_r() for the minimal libc.
+
+	  time() requires CONFIG_POSIX_CLOCK=y because it relies on the POSIX
+	  clock_gettime() function.
+
+	  In order to make use of the non-reentrant gmtime(), it is necessary
+	  to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
+
 endif # MINIMAL_LIBC
 
 config STDOUT_CONSOLE
