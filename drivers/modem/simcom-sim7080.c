@@ -468,8 +468,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 				if (ret == -EAGAIN) {
 					k_sleep(K_SECONDS(1));
 				} else {
-					sent = ret;
-					break;
+					return ret;
 				}
 			} else {
 				sent += ret;
