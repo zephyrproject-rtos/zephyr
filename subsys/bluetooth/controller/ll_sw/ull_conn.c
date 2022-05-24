@@ -684,14 +684,30 @@ uint8_t ll_version_ind_send(uint16_t handle)
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+static bool ll_len_validate(uint16_t tx_octets, uint16_t tx_time)
+{
+	/* validate if within HCI allowed range */
+	if (!IN_RANGE(tx_octets, PDU_DC_PAYLOAD_SIZE_MIN,
+		      PDU_DC_PAYLOAD_SIZE_MAX)) {
+		return false;
+	}
+
+	/* validate if within HCI allowed range */
+	if (!IN_RANGE(tx_time, PDU_DC_PAYLOAD_TIME_MIN,
+		      PDU_DC_PAYLOAD_TIME_MAX_CODED)) {
+		return false;
+	}
+
+	return true;
+}
+
 uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets,
 			    uint16_t tx_time)
 {
 	struct ll_conn *conn;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-	    ((tx_octets > LL_LENGTH_OCTETS_TX_MAX) ||
-	     (tx_time > PDU_DC_PAYLOAD_TIME_MAX_CODED))) {
+	    !ll_len_validate(tx_octets, tx_time)) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
@@ -778,7 +794,10 @@ void ll_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
 
 uint32_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
 {
-	/* TODO: parameter check (for BT 5.0 compliance) */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
+	    !ll_len_validate(max_tx_octets, max_tx_time)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	default_tx_octets = max_tx_octets;
 	default_tx_time = max_tx_time;
@@ -8156,8 +8175,31 @@ uint8_t ull_dle_update_eff(struct ll_conn *conn)
 	return dle_changed;
 }
 
+static void ull_len_data_length_trim(uint16_t *tx_octets, uint16_t *tx_time)
+{
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	uint16_t tx_time_max =
+			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_CODED);
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+	uint16_t tx_time_max =
+			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
+	/* trim to supported values */
+	if (*tx_octets > LL_LENGTH_OCTETS_TX_MAX) {
+		*tx_octets = LL_LENGTH_OCTETS_TX_MAX;
+	}
+
+	if (*tx_time > tx_time_max) {
+		*tx_time = tx_time_max;
+	}
+}
+
 void ull_dle_local_tx_update(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time)
 {
+	/* Trim to supported values */
+	ull_len_data_length_trim(&tx_octets, &tx_time);
+
 	conn->lll.dle.default_tx_octets = tx_octets;
 
 #if defined(CONFIG_BT_CTLR_PHY)
