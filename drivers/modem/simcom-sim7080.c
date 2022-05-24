@@ -447,6 +447,7 @@ exit:
  */
 static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
+	struct modem_socket *sock = obj;
 	ssize_t sent = 0;
 	const char *buf;
 	size_t len;
@@ -456,6 +457,17 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 	if (get_state() != SIM7080_STATE_NETWORKING) {
 		LOG_ERR("Modem currently not attached to the network!");
 		return -EAGAIN;
+	}
+
+	if (sock->type == SOCK_DGRAM) {
+		/*
+		 * Current implementation only handles single contiguous fragment at a time, so
+		 * prevent sending multiple datagrams.
+		 */
+		if (msghdr_non_empty_iov_count(msg) > 1) {
+			errno = EMSGSIZE;
+			return -1;
+		}
 	}
 
 	for (int i = 0; i < msg->msg_iovlen; i++) {
