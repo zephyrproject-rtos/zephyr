@@ -91,6 +91,7 @@ struct ipc_rpmsg_instance {
  *
  *  @param instance Pointer to the RPMsg instance struct.
  *  @param role Host / Remote role.
+ *  @param buffer_size Size of the buffer used to send data between host and remote.
  *  @param shm_io SHM IO region pointer.
  *  @param vdev VirtIO device pointer.
  *  @param shb Shared memory region pointer.
@@ -105,6 +106,7 @@ struct ipc_rpmsg_instance {
  */
 int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 		   unsigned int role,
+		   unsigned int buffer_size,
 		   struct metal_io_region *shm_io,
 		   struct virtio_device *vdev,
 		   void *shb, size_t size,

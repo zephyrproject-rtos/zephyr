@@ -42,6 +42,7 @@
 			mbox-names = "tx", "rx";
 			role = "host";
 			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
 			status = "okay";
 		};
 	};

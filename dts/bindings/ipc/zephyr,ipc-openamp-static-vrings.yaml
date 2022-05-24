@@ -44,3 +44,10 @@ properties:
 
       When this property is missing a default priority of <0 PRIO_COOP> is
       assumed.
+
+  zephyr,buffer-size:
+    type: int
+    required: false
+    description: |
+      The size of the buffer used to send data between host and remote. Default
+      value is RPMSG_BUFFER_SIZE. This property must be the same for host and remote.

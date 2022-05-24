@@ -56,6 +56,7 @@ struct backend_config_t {
 	unsigned int wq_prio_type;
 	unsigned int wq_prio;
 	unsigned int id;
+	unsigned int buffer_size;
 };
 
 static void rpmsg_service_unbind(struct rpmsg_endpoint *ep)
@@ -226,15 +227,15 @@ static int vr_shm_configure(struct ipc_static_vrings *vr, const struct backend_c
 {
 	unsigned int num_desc;
 
-	num_desc = optimal_num_desc(conf->shm_size);
+	num_desc = optimal_num_desc(conf->shm_size, conf->buffer_size);
 	if (num_desc == 0) {
 		return -ENOMEM;
 	}
 
 	vr->shm_addr = conf->shm_addr + VDEV_STATUS_SIZE;
-	vr->shm_size = shm_size(num_desc) - VDEV_STATUS_SIZE;
+	vr->shm_size = shm_size(num_desc, conf->buffer_size) - VDEV_STATUS_SIZE;
 
-	vr->rx_addr = vr->shm_addr + VRING_COUNT * vq_ring_size(num_desc);
+	vr->rx_addr = vr->shm_addr + VRING_COUNT * vq_ring_size(num_desc, conf->buffer_size);
 	vr->tx_addr = vr->rx_addr + vring_size(num_desc, VRING_ALIGNMENT);
 
 	vr->status_reg_addr = conf->shm_addr;
@@ -473,7 +474,8 @@ static int open(const struct device *instance)
 	rpmsg_inst->bound_cb = bound_cb;
 	rpmsg_inst->cb = ept_cb;
 
-	err = ipc_rpmsg_init(rpmsg_inst, data->role, data->vr.shm_io, &data->vr.vdev,
+	err = ipc_rpmsg_init(rpmsg_inst, data->role, conf->buffer_size,
+			     data->vr.shm_io, &data->vr.vdev,
 			     (void *) data->vr.shm_device.regions->virt,
 			     data->vr.shm_device.regions->size, ns_bind_cb);
 	if (err != 0) {
@@ -619,6 +621,8 @@ static int backend_init(const struct device *instance)
 		.wq_prio_type = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
 			   (DT_INST_PROP_BY_IDX(i, zephyr_priority, 1)),		\
 			   (PRIO_COOP)),						\
+		.buffer_size = DT_INST_PROP_OR(i, zephyr_buffer_size,			\
+					       RPMSG_BUFFER_SIZE),			\
 		.id = i,								\
 	};										\
 											\
