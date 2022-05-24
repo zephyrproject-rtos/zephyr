@@ -358,7 +358,7 @@ static int bt_audio_cig_create(struct bt_audio_unicast_group *group,
 	BT_DBG("group %p qos %p", group, qos);
 
 	cis_count = 0;
-	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		if (stream->iso != NULL) {
 			bool already_added = false;
 
@@ -401,7 +401,7 @@ static int bt_audio_cig_reconfigure(struct bt_audio_unicast_group *group,
 	BT_DBG("group %p qos %p", group, qos);
 
 	cis_count = 0U;
-	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		group->cis[cis_count++] = stream->iso;
 	}
 
@@ -425,7 +425,7 @@ static void audio_stream_qos_cleanup(const struct bt_conn *conn,
 {
 	struct bt_audio_stream *stream;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		if (stream->conn != conn && stream->ep != NULL) {
 			/* Channel not part of this ACL, skip */
 			continue;
@@ -481,13 +481,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 	cig_connected = false;
 
 	/* Validate streams before starting the QoS execution */
-	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
-		if (stream->conn != conn) {
-			/* Channel not part of this ACL, skip */
-			continue;
-		}
-		conn_stream_found = true;
-
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		if (stream->conn != conn) {
 			/* Channel not part of this ACL, skip */
 			continue;
@@ -542,7 +536,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 	}
 
 	/* Setup endpoints before starting the QoS execution */
-	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		struct bt_audio_iso *audio_iso;
 
 		if (stream->conn != conn) {
@@ -563,7 +557,7 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 
 	(void)memset(op, 0, sizeof(*op));
 	ep = NULL; /* Needed to find the control point handle */
-	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		if (stream->conn != conn) {
 			/* Channel not part of this ACL, skip */
 			continue;
@@ -715,7 +709,7 @@ static void unicast_group_param_cleanup(struct bt_audio_unicast_group *group,
 					size_t num_param)
 {
 	for (size_t i = 0U; i < num_param; i++) {
-		if (!sys_slist_find_and_remove(&group->streams, &params[i].stream->node)) {
+		if (!sys_slist_find_and_remove(&group->streams, &params[i].stream->_node)) {
 			/* We can stop once `sys_slist_find_and_remove` fails as
 			 * that means that the this and the following streams
 			 * were never added to the group
@@ -829,7 +823,7 @@ int bt_audio_unicast_group_create(struct bt_audio_unicast_group_param params[],
 		bt_audio_codec_qos_to_iso_qos(io, params[i].qos);
 		stream->unicast_group = unicast_group;
 		stream->qos = params[i].qos;
-		sys_slist_append(group_streams, &stream->node);
+		sys_slist_append(group_streams, &stream->_node);
 
 		BT_DBG("Added stream %p to group %p", stream, unicast_group);
 	}
@@ -896,7 +890,7 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 	}
 
 	total_stream_cnt = num_param;
-	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, tmp_stream, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, tmp_stream, _node) {
 		total_stream_cnt++;
 	}
 
@@ -921,7 +915,7 @@ int bt_audio_unicast_group_add_streams(struct bt_audio_unicast_group *unicast_gr
 		struct bt_audio_stream *stream = params[i].stream;
 
 		stream->unicast_group = unicast_group;
-		sys_slist_append(group_streams, &stream->node);
+		sys_slist_append(group_streams, &stream->_node);
 
 		BT_DBG("Added stream %p to group %p", stream, unicast_group);
 	}
@@ -957,9 +951,9 @@ int bt_audio_unicast_group_delete(struct bt_audio_unicast_group *unicast_group)
 		}
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_group->streams, stream, tmp, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_group->streams, stream, tmp, _node) {
 		stream->unicast_group = NULL;
-		sys_slist_remove(&unicast_group->streams, NULL, &stream->node);
+		sys_slist_remove(&unicast_group->streams, NULL, &stream->_node);
 		bt_unicast_client_stream_unbind_audio_iso(stream);
 	}
 
