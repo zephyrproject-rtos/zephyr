@@ -234,7 +234,6 @@ struct tcp { /* TCP connection */
 	};
 	struct k_mutex lock;
 	struct k_sem connect_sem; /* semaphore for blocking connect */
-	struct k_sem tx_sem; /* Semaphore indicating if transfers are blocked . */
 	struct k_fifo recv_data;  /* temp queue before passing data to app */
 	struct tcp_options recv_options;
 	struct tcp_options send_options;
