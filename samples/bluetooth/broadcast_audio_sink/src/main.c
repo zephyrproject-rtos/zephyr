@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/capabilities.h>
@@ -47,7 +48,7 @@ static void stream_recv_cb(struct bt_audio_stream *stream,
 	}
 }
 
-struct bt_audio_stream_ops stream_ops = {
+static struct bt_audio_stream_ops stream_ops = {
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
 	.recv = stream_recv_cb
@@ -177,6 +178,8 @@ static int init(void)
 
 static void reset(void)
 {
+	int err;
+
 	bis_index_bitfield = 0U;
 
 	k_sem_reset(&sem_broadcaster_found);
@@ -186,7 +189,12 @@ static void reset(void)
 	k_sem_reset(&sem_pa_sync_lost);
 
 	if (broadcast_sink != NULL) {
-		bt_audio_broadcast_sink_delete(broadcast_sink);
+		err = bt_audio_broadcast_sink_delete(broadcast_sink);
+		if (err) {
+			printk("Deleting broadcast sink failed (err %d)\n", err);
+			return;
+		}
+
 		broadcast_sink = NULL;
 	}
 }
@@ -225,21 +233,21 @@ void main(void)
 		}
 		printk("Broadcast source found, waiting for PA sync\n");
 
-		k_sem_take(&sem_pa_synced, SEM_TIMEOUT);
+		err = k_sem_take(&sem_pa_synced, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("sem_pa_synced timed out, resetting\n");
 			continue;
 		}
 		printk("Broadcast source PA synced, waiting for BASE\n");
 
-		k_sem_take(&sem_base_received, SEM_TIMEOUT);
+		err = k_sem_take(&sem_base_received, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("sem_base_received timed out, resetting\n");
 			continue;
 		}
 		printk("BASE received, waiting for syncable\n");
 
-		k_sem_take(&sem_syncable, SEM_TIMEOUT);
+		err = k_sem_take(&sem_syncable, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("sem_syncable timed out, resetting\n");
 			continue;
