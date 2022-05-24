@@ -28,6 +28,7 @@ config SDMMC_VOLUME_NAME
 config SDMMC_SUBSYS
 	bool "SDMMC access via SD subsystem"
 	select SD_STACK
+	select SDMMC_STACK
 	select SDHC
 	default y
 	depends on DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED
