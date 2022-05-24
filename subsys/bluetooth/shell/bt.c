@@ -87,6 +87,13 @@ static const char *phy2str(uint8_t phy)
 }
 #endif
 
+#if defined(CONFIG_BT_CENTRAL)
+static struct bt_auto_connect {
+	bt_addr_le_t addr;
+	bool addr_set;
+} auto_connect;
+#endif
+
 #if defined(CONFIG_BT_OBSERVER)
 static struct bt_scan_filter {
 	char name[NAME_LEN];
@@ -181,6 +188,12 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		    phy2str(info->primary_phy), phy2str(info->secondary_phy),
 		    info->interval, BT_CONN_INTERVAL_TO_MS(info->interval),
 		    info->sid);
+
+	/* Store address for later use */
+#if defined(CONFIG_BT_CENTRAL)
+	auto_connect.addr_set = true;
+	bt_addr_le_copy(&auto_connect.addr, info->addr);
+#endif
 }
 
 static void scan_timeout(void)
@@ -2030,6 +2043,18 @@ static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
 	struct bt_conn *conn;
 	uint32_t options = 0;
 
+	/* When no arguments are specified, connect to the last scanned device. */
+	if (argc == 1) {
+		if (auto_connect.addr_set) {
+			bt_addr_le_copy(&addr, &auto_connect.addr);
+		} else {
+			shell_error(sh, "No connectable adv stored, please trigger a scan first.");
+			shell_help(sh);
+
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
 	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 	if (err) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
@@ -3377,7 +3402,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE EXT_ADV_SCAN_OPT,
-		      cmd_connect_le, 3, 3),
+		      cmd_connect_le, 1, 3),
 #if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
 	SHELL_CMD_ARG(auto-conn, NULL, HELP_ADDR_LE, cmd_auto_conn, 3, 0),
 #endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
