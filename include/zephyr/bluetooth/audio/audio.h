@@ -1286,7 +1286,6 @@ struct bt_audio_stream {
 	struct bt_iso_chan *iso;
 	/** Audio stream operations */
 	struct bt_audio_stream_ops *ops;
-	sys_snode_t node;
 
 	union {
 		void *group;
@@ -1297,6 +1296,9 @@ struct bt_audio_stream {
 
 	/** Stream user data */
 	void *user_data;
+
+	/* Internally used list node */
+	sys_snode_t _node;
 };
 
 /** Unicast Server callback structure */
@@ -1606,7 +1608,7 @@ struct bt_audio_broadcast_sink_cb {
 	void (*pa_sync_lost)(struct bt_audio_broadcast_sink *sink);
 
 	/* Internally used list node */
-	sys_snode_t node;
+	sys_snode_t _node;
 };
 
 /** @brief Stream operation. */
