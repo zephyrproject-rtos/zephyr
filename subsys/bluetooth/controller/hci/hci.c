@@ -932,6 +932,23 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	/* LE Read Antenna Information */
 	rp->commands[40] |= BIT(4);
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+	/* LE Set Connection CTE Transmit Parameters */
+	rp->commands[40] |= BIT(1);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	/* LE Set Connection CTE Receive Parameters */
+	rp->commands[40] |= BIT(0);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	/* LE Connection CTE Request Enable */
+	rp->commands[40] |= BIT(2);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	/* LE Connection CTE Response Enable */
+	rp->commands[40] |= BIT(3);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
 #endif /* CONFIG_BT_CTLR_DF */
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
