@@ -251,6 +251,7 @@ int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len);
  *		 backend.
  *  @retval -EINVAL when instance or endpoint is invalid.
  *  @retval -ENOTSUP when the operation is not supported by backend.
+ *  @retval -ENOBUFS when there are no TX buffers available.
  *
  *  @retval size TX buffer size on success.
  *  @retval other errno codes depending on the implementation of the backend.

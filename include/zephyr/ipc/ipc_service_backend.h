@@ -80,6 +80,7 @@ struct ipc_service_backend {
 	 *
 	 *  @retval -EINVAL when instance is invalid.
 	 *  @retval -ENOTSUP when the operation is not supported.
+	 *  @retval -ENOBUFS when there are no TX buffers available.
 	 *
 	 *  @retval size TX buffer size on success.
 	 *  @retval other errno codes depending on the implementation of the

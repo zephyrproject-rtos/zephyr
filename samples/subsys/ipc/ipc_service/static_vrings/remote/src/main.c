@@ -255,7 +255,7 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 
 		printk("REMOTE [1]: %d\n", *((unsigned char *) recv_data));
 
-		ret = ipc_service_get_tx_buffer(&ipc1_ept, &data, &len, K_FOREVER);
+		ret = ipc_service_get_tx_buffer(&ipc1_ept, &data, &len, K_NO_WAIT);
 		if (ret < 0) {
 			printk("ipc_service_get_tx_buffer failed with ret %d\n", ret);
 			break;

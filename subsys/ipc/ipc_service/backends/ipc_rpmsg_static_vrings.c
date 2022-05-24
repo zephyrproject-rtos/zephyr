@@ -501,7 +501,13 @@ static int get_tx_buffer_size(const struct device *instance, void *token)
 	rdev = rpmsg_virtio_get_rpmsg_device(&rpmsg_inst->rvdev);
 
 	size = rpmsg_virtio_get_buffer_size(rdev);
-	if (size < 0) {
+	if (size == RPMSG_ERR_NO_BUFF) {
+		/*
+		 * This should only happens for REMOTE when there are no
+		 * buffers available
+		 */
+		return -ENOBUFS;
+	} else if (size < 0) {
 		return -EIO;
 	}
 
@@ -521,8 +527,21 @@ static int get_tx_buffer(const struct device *instance, void *token,
 		return -EINVAL;
 	}
 
-	/* OpenAMP only supports a binary wait / no-wait */
-	if (!K_TIMEOUT_EQ(wait, K_FOREVER) && !K_TIMEOUT_EQ(wait, K_NO_WAIT)) {
+	/*
+	 * XXX: Only deal with K_NO_WAIT. If the user wants to implement a
+	 * timeout that must be done by the caller with a retry function or
+	 * similar.
+	 *
+	 * This is because we have two kind of issues with the timeout
+	 * parameter when using the OpenAMP backend:
+	 *
+	 * - For REMOTE rpmsg_virtio_get_buffer_size() immediately returns when
+	 *   there are no buffers available if a certain size was requested
+	 *
+	 * - For HOST and REMOTE the maximum waiting time on
+	 *   rpmsg_get_tx_payload_buffer() is hardcoded to 15 seconds
+	 */
+	if (!K_TIMEOUT_EQ(wait, K_NO_WAIT)) {
 		return -ENOTSUP;
 	}
 
@@ -530,7 +549,7 @@ static int get_tx_buffer(const struct device *instance, void *token,
 	if (*size) {
 		buf_size = get_tx_buffer_size(instance, token);
 		if (buf_size < 0) {
-			return -EIO;
+			return buf_size;
 		}
 
 		/* Too big to fit */
@@ -540,9 +559,13 @@ static int get_tx_buffer(const struct device *instance, void *token,
 		}
 	}
 
-	payload = rpmsg_get_tx_payload_buffer(&rpmsg_ept->ep, size, K_TIMEOUT_EQ(wait, K_FOREVER));
+	payload = rpmsg_get_tx_payload_buffer(&rpmsg_ept->ep, size, 0);
 	if (!payload) {
-		return -EIO;
+		/*
+		 * We can be reasonably sure that when the call fails it is
+		 * because there are no TX buffers available.
+		 */
+		return -ENOBUFS;
 	}
 
 	(*r_data) = payload;
