@@ -10,6 +10,15 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
+The following CVEs are addressed by this release:
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+* CVE-2022-1841: Under embargo until 2022-08-18
+* CVE-2022-1042: Under embargo until 2022-06-19
+* CVE-2022-1041: Under embargo until 2022-06-19
+
 Known issues
 ************
 
