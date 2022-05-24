@@ -110,7 +110,7 @@ jobs:
           if [ -s testplan.json ]; then
             echo "::set-output name=report_needed::1";
             # Full twister but with options based on changes
-            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
+            ./scripts/twister --force-color --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
           else
             # if nothing is run, skip reporting step
             echo "::set-output name=report_needed::0";
