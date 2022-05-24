@@ -3596,7 +3596,7 @@ static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt)
 
 	phys = cmd->phys;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-	    (phys > phys_bitmask)) {
+	    (((phys & phys_bitmask) == 0) || (phys & ~phys_bitmask))) {
 		*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 
 		return;
@@ -3932,7 +3932,7 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 
 	phys = cmd->phys;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-	    (phys > phys_bitmask)) {
+	    (((phys & phys_bitmask) == 0) || (phys & ~phys_bitmask))) {
 		*evt = cmd_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 
 		return;
