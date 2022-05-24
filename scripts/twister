@@ -205,6 +205,7 @@ except ImportError:
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
+import twisterlib
 from twisterlib import HardwareMap, TestPlan, SizeCalculator, CoverageTool, ExecutionCounter
 
 logger = logging.getLogger('twister')
@@ -492,6 +493,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         built and if a test is runnable (emulation or a connected device), it
         is run. This option allows for example to only build tests that can
         actually be run. Runnable is a subset of buildable.""")
+
+    parser.add_argument("--force-color", action="store_true",
+                        help="Always output ANSI color escape sequences "
+                             "even when the output is redirected (not a tty)")
 
     parser.add_argument("--force-toolchain", action="store_true",
                         help="Do not filter based on toolchain, use the set "
@@ -833,9 +838,13 @@ def setup_logging(outdir, log_file, verbose, timestamps):
 def main():
     start_time = time.time()
 
-    colorama.init()
-
     options = parse_arguments()
+
+    # Configure color output
+    color_strip = False if options.force_color else None
+
+    colorama.init(strip=color_strip)
+    twisterlib.init(colorama_strip=color_strip)
 
     previous_results = None
     # Cleanup
