@@ -4716,4 +4716,5 @@ class HardwareMap:
 
         print(tabulate(table, headers=header, tablefmt="github"))
 
-colorama.init()
+def init(colorama_strip):
+    colorama.init(strip=colorama_strip)
