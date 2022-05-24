@@ -7,11 +7,6 @@ tests:
       - mps2_an385
       - qemu_x86
       - sam_e70_xplained
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "SYS-T RAW DATA: "
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_ENABLE=y
       - CONFIG_LOG_BACKEND_MOCK_OUTPUT_SYST=y
