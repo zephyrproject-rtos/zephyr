@@ -972,6 +972,8 @@ class DeviceHandler(Handler):
                 self.instance.reason = "Failed"
         else:
             self.instance.execution_time = handler_time
+            self.instance.status = "error"
+            self.instance.reason = "No Console Output(Timeout)"
 
         self._final_handle_actions(harness, handler_time)
 
