@@ -10,7 +10,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/atomic.h>
-#include "mgmt/mcumgr/smp_shell.h"
+#include <zephyr/mgmt/mcumgr/smp_shell.h>
 
 #ifdef __cplusplus
 extern "C" {
