@@ -327,6 +327,11 @@ static ssize_t send_socket_data(void *obj,
 	 * the socket in one command
 	 */
 	if (buf_len > MDM_MAX_DATA_LENGTH) {
+		if (sock->type == SOCK_DGRAM) {
+			errno = EMSGSIZE;
+			return -1;
+		}
+
 		buf_len = MDM_MAX_DATA_LENGTH;
 	}
 
