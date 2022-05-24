@@ -103,6 +103,9 @@ static void configure_rng(void)
 {
 	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
 
+#ifdef STM32_CONDRST_SUPPORT
+	LL_RNG_EnableCondReset(rng);
+#endif /* STM32_CONDRST_SUPPORT */
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)
 	/* Write Magic number before writing configuration
@@ -113,7 +116,12 @@ static void configure_rng(void)
 	/* Write RNG HTCR configuration */
 	LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_config));
 #endif
-
+#ifdef STM32_CONDRST_SUPPORT
+	LL_RNG_DisableCondReset(rng);
+	/* Wait for conditioning reset process to be completed */
+	while (LL_RNG_IsEnabledCondReset(rng) == 1) {
+	}
+#endif /* STM32_CONDRST_SUPPORT */
 	LL_RNG_Enable(rng);
 	LL_RNG_EnableIT(rng);
 }
