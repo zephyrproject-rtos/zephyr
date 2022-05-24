@@ -612,6 +612,13 @@ Libraries / Subsystems
 
 * Management
 
+  * MCUMGR has been migrated from using TinyCBOR, for CBOR encoding, to zcbor.
+  * MCUMGR :kconfig:option:`CONFIG_FS_MGMT_UL_CHUNK_SIZE` and
+    :kconfig:option:`CONFIG_IMG_MGMT_UL_CHUNK_SIZE` have been deprecated as,
+    with the introduction of zcbor, it is no longer needed to use an intermediate
+    buffer to copy data out of CBOR encoded buffer. The file/image chunk size
+    is now limited by :kconfig:option:`CONFIG_MCUMGR_BUF_SIZE` minus all the
+    other command required variables.
   * Added support for MCUMGR Parameters command, which can be used to obtain
     MCUMGR parameters; :kconfig:option:`CONFIG_OS_MGMT_MCUMGR_PARAMS` enables
     the command.
