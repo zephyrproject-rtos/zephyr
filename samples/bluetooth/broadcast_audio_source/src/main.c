@@ -77,7 +77,7 @@ static void stream_sent_cb(struct bt_audio_stream *stream)
 	}
 }
 
-struct bt_audio_stream_ops stream_ops = {
+static struct bt_audio_stream_ops stream_ops = {
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
 	.sent = stream_sent_cb
