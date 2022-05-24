@@ -42,6 +42,7 @@
 			mbox-names = "rx", "tx";
 			role = "remote";
 			zephyr,priority = <2 PRIO_PREEMPT>;
+			zephyr,buffer-size = <128>;
 			status = "okay";
 		};
 	};
