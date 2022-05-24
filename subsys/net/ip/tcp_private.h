@@ -242,8 +242,6 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable recv_queue_timer;
 	struct k_work_delayable send_data_timer;
 	struct k_work_delayable timewait_timer;
-	struct k_work_delayable persist_timer;
-
 	union {
 		/* Because FIN and establish timers are never happening
 		 * at the same time, share the timer between them to
