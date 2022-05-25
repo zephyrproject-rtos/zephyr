@@ -48,6 +48,7 @@ void abort(void);
 
 #ifdef CONFIG_MINIMAL_LIBC_RAND
 #define RAND_MAX INT_MAX
+int rand_r(unsigned int *seed);
 int rand(void);
 void srand(unsigned int seed);
 #endif /* CONFIG_MINIMAL_LIBC_RAND */
