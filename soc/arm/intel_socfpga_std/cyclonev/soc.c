@@ -6,12 +6,12 @@
  * creating function to reserve the vector memory area
  */
 
-#include <device.h>
-#include <devicetree.h>
-#include <init.h>
-#include <sys/util.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/util.h>
 #include <mmu.h>
-#include <arch/arm/aarch32/mmu/arm_mmu.h>
+#include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
 #include "soc.h"
 
 void arch_reserved_pages_update(void)

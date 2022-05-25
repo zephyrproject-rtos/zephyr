@@ -9,12 +9,12 @@
 #include <stdio.h>
 #include <stddef.h>
 
-#include "kernel.h"
+#include <zephyr/kernel.h>
 #include "zephyr/types.h"
 #include "errno.h"
-#include "zephyr.h"
+#include <zephyr/zephyr.h>
 
-#include "bluetooth/mesh.h"
+#include <zephyr/bluetooth/mesh.h>
 #include "argparse.h"
 
 #define LOG_MODULE_NAME settings_test_backend

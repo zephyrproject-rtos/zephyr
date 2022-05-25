@@ -16,7 +16,7 @@
 #include <zephyr/drivers/console/uart_mcumgr.h>
 #include "mgmt/mgmt.h"
 #include <zephyr/mgmt/mcumgr/serial.h>
-#include "mgmt/mcumgr/smp.h"
+#include <zephyr/mgmt/mcumgr/smp.h>
 
 struct device;
 

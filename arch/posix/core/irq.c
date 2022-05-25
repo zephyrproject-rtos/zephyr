@@ -8,7 +8,7 @@
 #include "board_irq.h"
 
 #ifdef CONFIG_IRQ_OFFLOAD
-#include "irq_offload.h"
+#include <zephyr/irq_offload.h>
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {

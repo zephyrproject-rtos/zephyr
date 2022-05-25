@@ -11,7 +11,7 @@
 #include "hw_models_top.h"
 #include "irq_ctrl.h"
 #include "irq_handler.h"
-#include "arch/posix/arch.h" /* for find_lsb_set() */
+#include <zephyr/arch/posix/arch.h> /* for find_lsb_set() */
 #include "board_soc.h"
 #include "posix_soc.h"
 #include "zephyr/types.h"

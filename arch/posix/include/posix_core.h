@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CORE_H_
 #define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CORE_H_
 
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
