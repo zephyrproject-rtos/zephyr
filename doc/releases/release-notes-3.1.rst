@@ -344,6 +344,9 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * Keyestudio CAN-BUS Shield (KS0411)
+  * MikroElektronika WIFI and BLE Shield
+  * X-NUCLEO-53L0A1 ranging and gesture detection sensor expansion board
 
 Drivers and Sensors
 *******************
