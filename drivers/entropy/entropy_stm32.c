@@ -104,24 +104,49 @@ static void configure_rng(void)
 	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
 
 #ifdef STM32_CONDRST_SUPPORT
-	LL_RNG_EnableCondReset(rng);
-#endif /* STM32_CONDRST_SUPPORT */
+	uint32_t desired_nist_cfg = DT_INST_PROP_OR(0, nist_config, 0U);
+	uint32_t desired_htcr = DT_INST_PROP_OR(0, health_test_config, 0U);
+	uint32_t cur_nist_cfg = 0U;
+	uint32_t cur_htcr = 0U;
+
+#if DT_INST_NODE_HAS_PROP(0, nist_config)
+	/*
+	 * Configure the RNG_CR in compliance with the NIST SP800.
+	 * The nist-config is direclty copied from the DTS.
+	 * The RNG clock must be 48MHz else the clock DIV is not adpated.
+	 * The RNG_CR_CONDRST is set to 1 at the same time the RNG_CR is written
+	 */
+	cur_nist_cfg = READ_BIT(rng->CR,
+				(RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
+				RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
+#if defined(RNG_CR_ARDIS)
+				| RNG_CR_ARDIS
+	/* For STM32U5 series, the ARDIS bit7 is considered in the nist-config */
+#endif /* RNG_CR_ARDIS */
+			));
+#endif /* nist_config */
+
+#if DT_INST_NODE_HAS_PROP(0, health_test_config)
+	cur_htcr = LL_RNG_GetHealthConfig(rng);
+#endif /* health_test_config */
+
+	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr) {
+		MODIFY_REG(rng->CR, cur_nist_cfg, (desired_nist_cfg | RNG_CR_CONDRST));
+
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)
-	/* Write Magic number before writing configuration
-	 * Not all stm32 series have a Magic number
-	 */
-	LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
-#endif
-	/* Write RNG HTCR configuration */
-	LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_config));
-#endif
-#ifdef STM32_CONDRST_SUPPORT
-	LL_RNG_DisableCondReset(rng);
-	/* Wait for conditioning reset process to be completed */
-	while (LL_RNG_IsEnabledCondReset(rng) == 1) {
+		LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
+#endif /* health_test_magic */
+		LL_RNG_SetHealthConfig(rng, desired_htcr);
+#endif /* health_test_config */
+
+		LL_RNG_DisableCondReset(rng);
+		/* Wait for conditioning reset process to be completed */
+		while (LL_RNG_IsEnabledCondReset(rng) == 1) {
+		}
 	}
 #endif /* STM32_CONDRST_SUPPORT */
+
 	LL_RNG_Enable(rng);
 	LL_RNG_EnableIT(rng);
 }
