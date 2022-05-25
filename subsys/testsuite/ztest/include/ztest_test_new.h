@@ -56,7 +56,7 @@ struct ztest_suite_stats {
  */
 struct ztest_suite_node {
 	/** The name of the test suite. */
-	const char * const name;
+	const char *const name;
 	/**
 	 * Setup function to run before running this suite
 	 *
@@ -90,13 +90,12 @@ struct ztest_suite_node {
 	 */
 	bool (*const predicate)(const void *state);
 	/** Stats */
-	struct ztest_suite_stats * const stats;
+	struct ztest_suite_stats *const stats;
 };
 
 extern struct ztest_suite_node _ztest_suite_node_list_start[];
 extern struct ztest_suite_node _ztest_suite_node_list_end[];
 #define ZTEST_SUITE_COUNT (_ztest_suite_node_list_end - _ztest_suite_node_list_start)
-
 
 /**
  * Create and register a ztest suite. Using this macro creates a new test suite (using
@@ -112,17 +111,17 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  * @param after_fn The function to call after each unit test in this suite
  * @param teardown_fn The function to call after running all the tests in this suite
  */
-#define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)  \
-	struct ztest_suite_stats UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME);        \
-	static const STRUCT_SECTION_ITERABLE(ztest_suite_node,				\
-				       UTIL_CAT(z_ztest_test_node_, SUITE_NAME)) = {    \
-		.name = STRINGIFY(SUITE_NAME),                                          \
-		.setup = (setup_fn),                                                    \
-		.before = (before_fn),                                                  \
-		.after = (after_fn),                                                    \
-		.teardown = (teardown_fn),                                              \
-		.predicate = PREDICATE,                                                 \
-		.stats = &UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME),               \
+#define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)             \
+	struct ztest_suite_stats UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME);                   \
+	static const STRUCT_SECTION_ITERABLE(ztest_suite_node,                                     \
+					     UTIL_CAT(z_ztest_test_node_, SUITE_NAME)) = {         \
+		.name = STRINGIFY(SUITE_NAME),                                                     \
+		.setup = (setup_fn),                                                               \
+		.before = (before_fn),                                                             \
+		.after = (after_fn),                                                               \
+		.teardown = (teardown_fn),                                                         \
+		.predicate = PREDICATE,                                                            \
+		.stats = &UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME),                          \
 	}
 /**
  * Default entry point for running or listing registered unit tests.
