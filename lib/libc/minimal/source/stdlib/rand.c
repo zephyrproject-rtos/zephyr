@@ -14,7 +14,14 @@
 #define MULTIPLIER (1103515245U)
 #define INCREMENT (12345U)
 
-static LIBC_DATA unsigned long srand_seed = 1;
+static LIBC_DATA unsigned int srand_seed = 1;
+
+int rand_r(unsigned int *seed)
+{
+	*seed = (MULTIPLIER * *seed + INCREMENT) & OUTPUT_BITS;
+
+	return *seed;
+}
 
 void srand(unsigned int s)
 {
@@ -23,7 +30,5 @@ void srand(unsigned int s)
 
 int rand(void)
 {
-	srand_seed = (MULTIPLIER * srand_seed + INCREMENT) & OUTPUT_BITS;
-
-	return srand_seed;
+	return rand_r(&srand_seed);
 }
