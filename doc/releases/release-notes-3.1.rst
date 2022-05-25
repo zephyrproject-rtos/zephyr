@@ -964,6 +964,13 @@ Libraries / Subsystems
     report this error when the SMP response failed to fit into a buffer;
     now when encoding of response fails ``MGMT_ERR_EMSGSIZE`` will be
     reported. This addresses issue :github:`44535`.
+  * Added :kconfig:option:`CONFIG_IMG_MGMT_USE_HEAP_FOR_FLASH_IMG_CONTEXT` that
+    allows user to select whether the heap will be used for flash image context,
+    when heap pool is configured. Previously usage of heap has been implicit,
+    with no control from a developer, causing issues reported by :github:`44214`.
+    The default, implicit, behaviour has not been kept and the above
+    Kconfig option needs to be selected to keep previous behaviour.
+
 
 * SD Subsystem
 
