@@ -357,26 +357,40 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_LSTATR_DATA_LEN) {
 			break;
 		}
-		if (buf[pos++]) {
-			SET_FLAG(pd, PD_FLAG_TAMPER);
-		} else {
-			CLEAR_FLAG(pd, PD_FLAG_TAMPER);
-		}
-		if (buf[pos++]) {
-			SET_FLAG(pd, PD_FLAG_POWER);
-		} else {
-			CLEAR_FLAG(pd, PD_FLAG_POWER);
-		}
+		pd->status.power = buf[pos++];
+		pd->status.tamper = buf[pos++];
 		ret = 0;
 		break;
 	case REPLY_RSTATR:
-		if (len != REPLY_RSTATR_DATA_LEN) {
+		t1 = OSDP_PD_CAP_READERS;
+		if (len != pd->cap[t1].num_items || len > OSDP_RTMAPER_STATUS_MAX_LEN) {
 			break;
 		}
-		if (buf[pos++]) {
-			SET_FLAG(pd, PD_FLAG_R_TAMPER);
-		} else {
-			CLEAR_FLAG(pd, PD_FLAG_R_TAMPER);
+		pd->status.rtampers = 0;
+		for (uint8_t n = 0; n < len; ++n) {
+			pd->status.rtampers |= (buf[n] & 0x03) << 2 * n;
+		}
+		ret = 0;
+		break;
+	case REPLY_ISTATR:
+		t1 = OSDP_PD_CAP_CONTACT_STATUS_MONITORING;
+		if (len != pd->cap[t1].num_items || len > OSDP_IO_STATUS_MAX_LEN) {
+			break;
+		}
+		pd->status.inputs = 0;
+		for (i = 0; i < len; i++) {
+			pd->status.inputs |= buf[pos++] << i;
+		}
+		ret = 0;
+		break;
+	case REPLY_OSTATR:
+		t1 = OSDP_PD_CAP_OUTPUT_CONTROL;
+		if (len != pd->cap[t1].num_items || len > OSDP_IO_STATUS_MAX_LEN) {
+			break;
+		}
+		pd->status.outputs = 0;
+		for (i = 0; i < len; i++) {
+			pd->status.outputs |= buf[pos++] << i;
 		}
 		ret = 0;
 		break;

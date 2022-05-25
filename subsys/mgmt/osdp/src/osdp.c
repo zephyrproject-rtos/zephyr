@@ -133,7 +133,7 @@ static struct osdp *osdp_build_ctx(struct osdp_channel *channel)
 	int i;
 	struct osdp *ctx;
 	struct osdp_pd *pd;
-	int pd_adddres[CONFIG_OSDP_NUM_CONNECTED_PD] = {0};
+	int pd_adddres[CONFIG_OSDP_NUM_CONNECTED_PD] = { 0 };
 
 #ifdef CONFIG_OSDP_MODE_PD
 	pd_adddres[0] = CONFIG_OSDP_PD_ADDRESS;
@@ -178,7 +178,7 @@ void osdp_refresh(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static int osdp_init(const struct device *arg)
+static int osdp_init_internal(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 	int len;
@@ -212,6 +212,7 @@ static int osdp_init(const struct device *arg)
 	p->dev_config.parity = UART_CFG_PARITY_NONE;
 	p->dev_config.stop_bits = UART_CFG_STOP_BITS_1;
 	p->dev_config.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+
 	uart_configure(p->dev, &p->dev_config);
 
 	uart_irq_rx_disable(p->dev);
@@ -264,4 +265,7 @@ static int osdp_init(const struct device *arg)
 	return 0;
 }
 
-SYS_INIT(osdp_init, POST_KERNEL, 10);
+int osdp_init(void)
+{
+	return osdp_init_internal(NULL);
+}

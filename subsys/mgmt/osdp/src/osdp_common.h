@@ -71,7 +71,7 @@
 #define CMD_SCRYPT              0x77
 #define CMD_CONT                0x79
 #define CMD_ABORT               0x7A
-#define CMD_MAXREPLY            0x7B
+#define CMD_ACURXSIZE 			0x7B
 #define CMD_MFG                 0x80
 #define CMD_SCDONE              0xA0
 #define CMD_XWR                 0xA1
@@ -350,6 +350,23 @@ struct osdp_pd_id {
 	uint32_t firmware_version;
 };
 
+/**
+ * @brief PD status.
+ *
+ * @param inputs Inputs status 
+ * @param outputs Outputs status
+ * @param rtampers Connected readers tamper status
+ * @param power Power status
+ * @param tamper Tamper status
+ */
+struct osdp_pd_status {
+	uint32_t inputs;
+	uint32_t outputs;
+	uint32_t rtampers;
+	uint8_t power;
+	uint8_t tamper;
+};
+
 struct osdp_channel {
 	/**
 	 * @brief pointer to a block of memory that will be passed to the
@@ -422,6 +439,8 @@ struct osdp_pd {
 	int baud_rate;
 	int address;
 	int seq_number;
+
+	struct osdp_pd_status status;
 	struct osdp_pd_cap cap[OSDP_PD_CAP_SENTINEL];
 	struct osdp_pd_id id;
 
@@ -441,8 +460,19 @@ struct osdp_pd {
 	int reply_id;
 	uint8_t cmd_data[OSDP_COMMAND_DATA_MAX_LEN];
 
+	uint16_t peer_rx_size; /* Receieve buffer size of the peer PD/CP */
+
 	struct osdp_channel channel;
+
+	union {
 	struct osdp_cmd_queue cmd;
+		struct osdp_cmd_queue event;
+	};
+
+	/* PD command callback to app with opaque arg pointer as passed by app */
+	void *command_callback_arg;
+	pd_commnand_callback_t command_callback;
+
 #ifdef CONFIG_OSDP_SC_ENABLED
 	int64_t sc_tstamp;
 	struct osdp_secure_channel sc;
@@ -466,6 +496,13 @@ struct osdp {
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t sc_master_key[16];
 #endif
+	/* OSDP defined command complete callback subscription */
+	osdp_command_complete_callback_t command_complete_callback;
+};
+
+struct osdp_event_node {
+	sys_snode_t node;
+	struct osdp_event event;
 };
 
 /* from osdp_phy.c */
@@ -482,11 +519,17 @@ int64_t osdp_millis_now(void);
 int64_t osdp_millis_since(int64_t last);
 void osdp_dump(const char *head, uint8_t *buf, int len);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
+
 struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd);
 void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd);
 void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd);
 int osdp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd);
 struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd);
+
+struct osdp_event_node *osdp_event_alloc(struct osdp_pd *pd);
+void osdp_event_free(struct osdp_pd *pd, struct osdp_event_node *cmd);
+void osdp_event_enqueue(struct osdp_pd *pd, struct osdp_event_node *cmd);
+int osdp_event_dequeue(struct osdp_pd *pd, struct osdp_event_node **cmd);
 
 /* from osdp.c */
 struct osdp *osdp_get_ctx();

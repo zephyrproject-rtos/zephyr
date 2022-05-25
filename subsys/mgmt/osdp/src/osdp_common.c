@@ -80,6 +80,39 @@ struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd)
 	return (struct osdp_cmd *)sys_slist_peek_tail(&pd->cmd.queue);
 }
 
+struct osdp_event_node *osdp_event_alloc(struct osdp_pd *pd)
+{
+	struct osdp_event_node *evt = NULL;
+
+	if (k_mem_slab_alloc(&pd->event.slab, (void **)&evt, K_MSEC(100))) {
+		LOG_ERR("Memory allocation time-out");
+		return NULL;
+	}
+	return evt;
+}
+
+void osdp_event_free(struct osdp_pd *pd, struct osdp_event_node *evt)
+{
+	k_mem_slab_free(&pd->event.slab, (void **)&evt);
+}
+
+void osdp_event_enqueue(struct osdp_pd *pd, struct osdp_event_node *evt)
+{
+	sys_slist_append(&pd->event.queue, &evt->node);
+}
+
+int osdp_event_dequeue(struct osdp_pd *pd, struct osdp_event_node **evt)
+{
+	sys_snode_t *node;
+	node = sys_slist_peek_head(&pd->event.queue);
+	if (node == NULL) {
+		return -1;
+	}
+	sys_slist_remove(&pd->event.queue, NULL, node);
+	*evt = CONTAINER_OF(node, struct osdp_event_node, node);
+	return 0;
+}
+
 #ifdef CONFIG_OSDP_SC_ENABLED
 
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
