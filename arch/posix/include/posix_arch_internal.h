@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_ARCH_INTERNAL_H_
 #define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_ARCH_INTERNAL_H_
 
-#include "toolchain.h"
+#include <zephyr/toolchain.h>
 
 #define PC_SAFE_CALL(a) pc_safe_call(a, #a)
 

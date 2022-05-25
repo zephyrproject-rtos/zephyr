@@ -5,7 +5,7 @@
  */
 
 #ifdef CONFIG_BT_HAS_CLIENT
-#include "bluetooth/audio/has.h"
+#include <zephyr/bluetooth/audio/has.h>
 
 #include "common.h"
 

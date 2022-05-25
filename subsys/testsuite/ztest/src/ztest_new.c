@@ -21,7 +21,7 @@ static struct k_thread ztest_thread;
 #endif
 
 #ifdef CONFIG_ZTEST_SHUFFLE
-#include <random/rand32.h>
+#include <zephyr/random/rand32.h>
 #include <stdlib.h>
 #include <time.h>
 #define NUM_ITER_PER_SUITE CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
