@@ -1,7 +1,53 @@
 # Copyright (c) 2020, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ILI9488 320x480 display controller
+description: |
+    ILI9488 320x480 display controller
+
+    - 320 (RGB) (H) x 480 (V) resolution
+    - a-Si TFT LCD Single Chip Driver
+    - Display color modes:
+      - Full color modes
+        - 16.7M colors with dithering function (24-bit data, R: 8-bit, G: 8-bit, B: 8-bit)
+      - Reduced color modes:
+        - 262K colors (18-bit data, R: 6-bit, G: 6-bit, B: 6-bit)
+        - 65K colors(16-bit data, R: 5-bit, G: 6-bit, B: 5-bit)
+        - 8 colors (3-bit data, R: 1-bit, G: 1-bit, B: 1-bit)
+    - Display module:
+      - On-chip Frame Memory size 345,600 bytes, 320 (RGB) (H) x 480 (V) x 18 bits
+      - Supports 960 source channel outputs
+      - Supports up to a maximum of 480 gate lines
+      - Supports 24-bits input image function
+      - Supports column/1-/2-dot inversion
+      - On-module DC VCOM control (-2 to 0V common electrode output voltage range)
+    - Display Interface types:
+      - MIPI-DBI (Display Bus Interface)
+        - Type B (i-80 system), 8-/9-/16-/18-/24-bit bus
+        - Type C (Serial data transfer interface, 3/4-line SPI)
+      - MIPI-DPI (Display Pixel Interface)
+        - Supports 24 bit/pixel (R: 8-bit, G: 8-bit, B: 8-bit)
+        - Supports 18 bit/pixel (R: 6-bit, G: 6-bit, B: 6-bit)
+        - Supports 16 bit/pixel (R: 5-bit, G: 6-bit, B: 5-bit)
+      - MIPI-DSI (Display Serial Interface)
+        - Supports one data lane/maximum speed 500Mbps
+        - Supports DSI version 1.01
+        - Supports D-PHY version 1.00
+    - Power saving modes:
+      - Deep-standby mode
+      - Sleep mode
+    - Other on-chip functions/Miscellaneous
+      - Supports partial display mode
+      - Supports inversion mode
+      - Oscillator for display clock generation
+      - LVD function (GAS bit) prevents image sticking for abnormal power off
+      - Supports DC VCOM driving
+      - DC VCOM voltage generator and adjustment
+      - OTP memory store initialization register settings (MATCDL, VRH1, VRH2 and BT)
+      - MTP (provides 4 times OTP to store DC VCOM setting, ID1/ID2/ID3 setting)
+      - Supports CABC function
+      - Supports 3-Gamma DGC function
+      - Supports dither function. (The dither function is only available in Bypass mode of DPI 24-bit and MIPI-DSI.)
+      - Supports color enhancement function
 
 compatible: "ilitek,ili9488"
 

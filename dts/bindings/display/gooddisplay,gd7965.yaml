@@ -1,7 +1,18 @@
 # Copyright (c) 2020, Phytec Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-description: GD7965 EPD display controller
+description: |
+    GD7965 electronic paper display (EPD) controller
+
+    - System-on-chip (SOC) for EPD (e-paper display)
+    - Timing controller supports several resolutions
+    - Up to 800 source x 600 gate resolution + 1 border + 1 VCOM
+    - 1 bit for white/black and 1 bit for red per pixel
+    - Cascade 2 or more chips cascade mode
+    - Memory (Max.) 800 x 600 x 2 bits SRAM
+    - 3-wire/4-wire (SPI) serial interface
+    - Clock rate up to 20MHz
+    - On-Chip Temperature sensor -25 ~ 50°C  2.0°C / 8-bit status
 
 compatible: "gooddisplay,gd7965"
 

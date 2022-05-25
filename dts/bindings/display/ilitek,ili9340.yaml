@@ -2,7 +2,27 @@
 # Copyright (c) 2020, Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ILI9340 320x240 display controller
+description: |
+    ILI9340 320x240 display controller
+
+    - 240 x RGB](H) x 320(V) resolution
+    - a-TFT LCD driver with on-chip full display, RAM 172,800 bytes
+    - System Interfaces
+      - 8-bits, 9-bits, 16-bits, 18-bits interface with 8080-I/8080-II series MCU
+      - 6-bits, 16-bits, 18-bits RGB interface with graphic controller
+      - 3-line / 4-line serial interface
+    - Modes
+      - Full color mode (Idle mode OFF), 262K-color (selectable color depth mode by software)
+      - Reduce color mode (Idle mode ON), 8-color
+      - Power saving sleep mode
+    - On chip functions
+      - VCOM generator and adjustment
+      - Timing generator
+      - Oscillator
+      - DC/DC converter
+      - Line/frame inversion
+      - 4 preset Gamma curves with separate RGB Gamma correction
+    - Dynamic backlight control
 
 compatible: "ilitek,ili9340"
 

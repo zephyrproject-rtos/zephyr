@@ -1,7 +1,26 @@
 # Copyright (c) 2020, Marco Peter
 # SPDX-License-Identifier: Apache-2.0
 
-description: SSD1306 128x64 dot-matrix display controller on SPI bus
+description: |
+    SSD1306 128x64 dot-matrix display controller on SPI bus
+
+    - Resolution: 128 x 64 dot matrix panel
+    - For matrix display
+      - OLED driving output voltage, 15V maximum
+      - Segment maximum source current: 100uA
+      - Common maximum sink current: 15mA
+      - 256 step contrast brightness current control
+    - Embedded 128 x 64 bit SRAM display buffer
+    - Pin selectable MCU Interfaces:
+      - 8-bit 6800/8080-series parallel interface
+      - 3 /4 wire Serial Peripheral Interface
+      - I2C Interface
+    - Screen saving continuous scrolling function in both horizontal and vertical direction
+    - RAM write synchronization signal
+    - Programmable Frame Rate and Multiplexing Ratio
+    - Row Re-mapping and Column Re-mapping
+    - On-Chip Oscillator
+    - Chip layout for COG & COF
 
 compatible: "solomon,ssd1306fb"
 

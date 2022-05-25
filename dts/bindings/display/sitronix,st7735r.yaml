@@ -1,7 +1,43 @@
 # Copyright (c) 2020, Kim Bøndergaard <kim@fam-boendergaard.dk>
 # SPDX-License-Identifier: Apache-2.0
 
-description: ST7735R 160x128 display controller
+description: |
+    ST7735R 160x128 display controller
+
+    - 132 (H) x RGB x 162 (V) bits
+    - LCD Driver Output Circuits:
+      - Source Outputs: 132 RGB channels
+      - Gate Outputs: 162 channels
+      - Common electrode output
+    - Display Colors (Color Mode)
+      - Full Color: 262K, RGB=(666) max., Idle Mode OFF
+      - Color Reduce: 8-color, RGB=(111), Idle Mode ON
+    - Programmable Pixel Color Format (Color Depth) for
+      Various Display Data input Format
+      - 12-bit/pixel: RGB=(444) using the 384k-bit frame memory
+        and LUT
+      - 16-bit/pixel: RGB=(565) using the 384k-bit frame memory
+        and LUT
+      - 18-bit/pixel: RGB=(666) using the 384k-bit frame memory
+        and LUT
+    - Various Interfaces
+      - Parallel 8080-series MCU Interface
+        (8-bit, 9-bit, 16-bit & 18-bit)
+      - Parallel 6800-series MCU Interface
+        (8-bit, 9-bit, 16-bit & 18-bit)
+      - 3-line serial interface
+      - 4-line serial interface
+    - Display Features
+      - Support both normal-black & normal-white LC
+      - Software programmable color depth mode
+    - Built-in Circuits
+      - DC/DC converter
+      - Adjustable VCOM generation
+      - Non-volatile (NV) memory to store initial register setting
+      - Oscillator for display clock generation
+      - Factory default value (module ID, module version, etc) are
+        stored in NV memory
+      - Timing controller
 
 compatible: "sitronix,st7735r"
 

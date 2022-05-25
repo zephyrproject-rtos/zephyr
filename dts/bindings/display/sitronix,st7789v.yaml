@@ -2,7 +2,49 @@
 # Copyright (c) 2019, PHYTEC Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-description: ST7789V 320x240 display controller
+description: |
+  ST7789V 320x240 display controller
+
+  - Single chip TFT-LCD Controller/Driver with On-chip Frame Memory (FM)
+  - Display Resolution: 240*RGB (H) *320(V)
+  - Frame Memory Size: 240 x 320 x 18-bit = 1,382,400 bits
+  - LCD Driver Output Circuits
+    - Source Outputs: 240 RGB Channels
+    - Gate Outputs: 320 Channels
+    - Common Electrode Output
+  - Display Colors (Color Mode)
+    - Full Color: 262K, RGB=(666) max., Idle Mode Off
+    - Color Reduce: 8-color, RGB=(111), Idle Mode On
+  - Programmable Pixel Color Format (Color Depth) for Various Display Data input Format
+    - 12-bit/pixel: RGB=(444)
+    - 16-bit/pixel: RGB=(565)
+    - 18-bit/pixel: RGB=(666)
+  - MCU Interface
+    - Parallel 8080-series MCU Interface (8-bit, 9-bit, 16-bit & 18-bit)
+    - 6/16/18 RGB Interface(VSYNC, HSYNC, DOTCLK, ENABLE, DB[17:0])
+    - Serial Peripheral Interface(SPI Interface)
+    - VSYNC Interface
+  - Display Features
+    - Programmable Partial Display Duty
+    - CABC for saving current consumption
+    - Color enhancement
+  - On Chip Build-In Circuits
+    - DC/DC Converter
+    - Adjustable VCOM Generation
+    - Non-Volatile (NV) Memory to Store Initial Register Setting and Factory Default Value (Module ID,
+      Module Version, etc)
+    - Timing Controller
+    - 4 preset Gamma curve with separated RGB Gamma setting
+  - Build-In NV Memory for LCD Initial Register Setting
+    - 8-bits for ID1 setting
+    - 8-bits for ID2 setting
+    - 8-bits for ID3 setting
+    - 6-bits for VCOM Offset adjustment
+  - Driving Algorithm
+    - Dot Inversion
+    - Column Inversion
+  - Lower Power Consumption
+
 
 compatible: "sitronix,st7789v"
 

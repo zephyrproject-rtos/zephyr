@@ -1,7 +1,24 @@
 # Copyright (c) 2018, Phytec Messtechnik GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-description: SSD16XX 250x150 EPD display controller
+description: |
+    SSD16XX 250x150 electronic paper display (EPD) controller
+
+    - SSD1633:      160 x 160, Gate Mono Black/White Active Matrix EPD Display Driver with Controller
+                    Build in Ram, waveform control, booster
+    - SSD1681:      200 x 200, Gate Mono Black/White, Mono 3-color Active Matrix EPD Display Driver with Controller
+                    Build in Ram, waveform control, booster
+    - SSD1675B      160 x 296, Gate Mono Black/White, Mono 3-color Active Matrix EPD Display Driver with Controller
+                    Build in Ram, waveform control, booster
+    - SSD1680/80A:  176 x 296, Gate Mono Black/White, Mono 3-color Active Matrix EPD Display Driver with Controller
+                    Build in Ram, waveform control, booster
+    - SSD1619A:     400 x 300, Gate Active Matrix Bi-stable Display Driver with Controller
+                    Build in Ram, waveform control, booster
+    - SSD1683:      400 x 300, Gate Mono Black/White, Mono 3-color Active Matrix EPD Display Driver with Controller
+                    Build in Ram, waveform control, booster
+    - SSD1677:      960 x 680, Gate Mono Black/White, Mono 3-color Active Matrix EPD Display Driver with Controller
+                    Build in Ram, waveform control, booster
+    - SSD1603:      132 x 64, Passive Matrix Cholesteric Display Driver, Built in RAM, waveform control, charge pump
 
 compatible: "solomon,ssd16xxfb"
 

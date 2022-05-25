@@ -1,7 +1,19 @@
 # Copyright (c) 2019, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: Rocktech LCD module with LED backlight and capacitive touch panel
+description: |
+    Rocktech LCD module with LED backlight and capacitive touch panel
+
+    - Display Mode: Normally White transmissive
+    - Viewing Direction: 12 O’CLOCK
+    - Input Signals: RGB 24 bit
+    - Outside Dimensions: 105.5 (W) x67.2(H) x4.35(D) Max With CTP
+    - Active Area: 95.04mm(W)×53.86mm(H)
+    - Number of Pixels: 480(RGB)×272
+    - Dot Pitch 0.198mm(H)×0.198mm(W)
+    - Pixel Arrangement RGB Vertical stripes
+    - Drive IC: OTA5180A
+    - CTP IC: FT5336GQQ
 
 compatible: "rocktech,rk043fn02h-ct"
 

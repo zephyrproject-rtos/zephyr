@@ -1,7 +1,33 @@
 # Copyright (c) 2022, Byte-Lab d.o.o. <dev@byte-lab.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 LCD-TFT display controller
+description: |
+    STM32 LCD-TFT display controller (LTDC)
+
+    - 24-bit RGB Parallel Pixel Output; 8 bits-per-pixel (RGB888)
+    - 2 display layers with dedicated FIFO (64x32-bit)
+    - Color Look-Up Table (CLUT) up to 256 color (256x24-bit) per layer
+    - Supports up to XGA (1024x768) resolution
+    - Programmable timings for different display panels
+    - Programmable Background color
+    - Programmable polarity for HSync, VSync and Data Enable
+    - Up to 8 Input color formats selectable per layer
+      – ARGB8888
+      – RGB888
+      – RGB565
+      – ARGB1555
+      – ARGB4444
+      – L8 (8-bit Luminance or CLUT)
+      – AL44 (4-bit alpha + 4-bit luminance)
+      – AL88 (8-bit alpha + 8-bit luminance)
+    - Pseudo-random dithering output for low bits per channel
+      – Dither width 2-bits for Red, Green, Blue
+    - Flexible blending between two layers using alpha value (per pixel or constant)
+    - Color Keying (transparency color)
+    - Programmable Window position and size
+    - Supports thin film transistor (TFT) color displays
+    - AHB master interface with burst of 16 words
+    - Up to 4 programmable interrupt events
 
 compatible: "st,stm32-ltdc"
 

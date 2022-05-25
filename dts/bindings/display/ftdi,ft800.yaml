@@ -1,7 +1,28 @@
 # Copyright (c) 2020 Hubert Miś <hubert.mis@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: FTDI FT800 graphic controller
+description: |
+    FTDI FT800 graphic controller
+
+    - Single chip for Display, Audio and Resistive Touch control
+    - Up to 512 x 512 pixel resolution
+    - 262K colours (6 Red, 6 Green, 6 Blue)
+    - Anti-Aliasing
+    - 2-bit colour dither
+    - Programmable HSYNC/VSYNC timing
+    - Backlight control
+    - Resistive touch control
+    - Object oriented programming approach
+    - Embedded widgets to assist with creating complex images
+    - Mono audio output
+    - 64 in-built polyphonic tones
+    - Decode for mono 8-bit linear PCM, 4-bit ADPCM and μ-Law coding format at sampling frequencies from 8kHz to 48kHz
+    - SPI/I2C interface to host MCU
+    - 1.8V to 3.3V IO levels to host MCU
+    - 3V3 levels on RGB pins
+    - Extended operating temperature range -40°C to 85°C
+    - Available in QFN-48 package (RoHS compliant)
+
 
 compatible: "ftdi,ft800"
 

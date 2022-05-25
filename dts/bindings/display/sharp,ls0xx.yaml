@@ -1,7 +1,30 @@
 # Copyright (c) 2020, Rohit Gujarathi
 # SPDX-License-Identifier: Apache-2.0
 
-description: Sharp memory display controller
+description: |
+  Sharp memory display controller
+
+  - LS013B7DH03
+    - Reflective active-matrix with slightly transmissive panel of white and black.
+    - 1.28” screen has 128 x 128 resolusion. (16384 pixels stripe array)
+    - Display control by serial data signal communication.
+    - Arbitrary line data renewable.
+    - 1bit internal memory for data storage within the panel.
+    - Thin, light-weight and compact module with monolithic technology.
+    - Super low power consumption TFT panel.
+    - Front polarizer surface is Antiglare
+  - Other models:
+    Type:         Size:   Res. H x V:
+    LS010B7DH04   1,03    128 x 128
+    LS011B7DH03   1,08    160 x 68
+    LS012B7DD01   1.17    184 x 38
+    LS012B7DD06   1,19    240 x 240
+    LS012B7DD06A  1,19    240 x 240
+    LS013B7DH03   1.28    128 x 128
+    LS013B7DH05   1.26    144 x 168
+    LS018B7DH02   1,80    230 x 303
+    LS027B7DH01   2.7     400 x 240
+    LS027B7DH01A  2.7     400 x 240
 
 compatible: "sharp,ls0xx"
 
