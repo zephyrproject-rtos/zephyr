@@ -156,7 +156,7 @@ fs_mgmt_file_download(struct mgmt_ctxt *ctxt)
 	     ((off != 0)							||
 		(zcbor_tstr_put_lit(zse, "len") && zcbor_uint64_put(zse, file_len)));
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**
@@ -248,7 +248,7 @@ fs_mgmt_file_upload(struct mgmt_ctxt *ctxt)
 
 	/* Send the response. */
 	return fs_mgmt_file_rsp(zse, MGMT_ERR_EOK, fs_mgmt_ctxt.off) ?
-			MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+			MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 #if defined(CONFIG_FS_MGMT_FILE_STATUS)
@@ -297,10 +297,10 @@ fs_mgmt_file_status(struct mgmt_ctxt *ctxt)
 	}
 
 	if (!ok) {
-		return MGMT_ERR_ENOMEM;
+		return MGMT_ERR_EMSGSIZE;
 	}
 
-	return 0;
+	return MGMT_ERR_EOK;
 }
 #endif
 
@@ -438,7 +438,7 @@ fs_mgmt_file_hash_checksum(struct mgmt_ctxt *ctxt)
 	}
 
 	if (!ok) {
-		return MGMT_ERR_ENOMEM;
+		return MGMT_ERR_EMSGSIZE;
 	}
 
 	return MGMT_ERR_EOK;

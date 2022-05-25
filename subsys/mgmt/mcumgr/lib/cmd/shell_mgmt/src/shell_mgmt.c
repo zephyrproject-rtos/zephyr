@@ -115,7 +115,7 @@ shell_mgmt_exec(struct mgmt_ctxt *ctxt)
 
 	zcbor_map_end_decode(zsd);
 
-	return ok ? 0 : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 static struct mgmt_handler shell_mgmt_handlers[] = {
