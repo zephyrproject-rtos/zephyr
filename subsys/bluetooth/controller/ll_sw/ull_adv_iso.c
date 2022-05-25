@@ -460,9 +460,6 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	lll_adv_sync = lll_adv->sync;
 	adv = HDR_LLL2ULL(lll_adv);
 
-	/* Remove Periodic Advertising association */
-	lll_adv_sync->iso = NULL;
-
 	/* Allocate next PDU */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
 				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
@@ -720,6 +717,10 @@ void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso)
 		mem_release(stream, &stream_free);
 	}
 
+	/* Remove Periodic Advertising association */
+	lll->adv->sync->iso = NULL;
+
+	/* Remove Extended Advertising association */
 	lll->adv = NULL;
 }
 
