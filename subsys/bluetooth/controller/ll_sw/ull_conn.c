@@ -1464,9 +1464,11 @@ void ull_conn_done(struct node_rx_event_done *done)
 			    (((conn->llcp_terminate.req -
 			       conn->llcp_terminate.ack) & 0xFF) ==
 			     TERM_ACKED) ||
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 			    conn->central.terminate_ack ||
 			    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
+#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+			    1
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 #else /* CONFIG_BT_CENTRAL */
 			    1
 #endif /* CONFIG_BT_CENTRAL */
