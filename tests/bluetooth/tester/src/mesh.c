@@ -2200,7 +2200,7 @@ fail:
 static void health_fault_test(uint8_t *data, uint16_t len)
 {
 	struct mesh_health_fault_test_cmd *cmd = (void *)data;
-	struct net_buf_simple *buf = NET_BUF_SIMPLE(6);
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(19);
 	size_t fault_count = 16;
 	uint8_t faults[fault_count];
 	uint8_t test_id;
