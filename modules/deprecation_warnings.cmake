@@ -11,9 +11,4 @@
 # This is done in a separate CMake file because the modules.cmake file
 # in this same directory is evaluated before Kconfig runs.
 
-if(CONFIG_CIVETWEB)
-  message(WARNING "The civetweb module is deprecated. \
-                   Unless someone volunteers to maintain this module, \
-                   support for it will be removed in Zephyr v3.2."
-    )
-endif()
+# (No modules are currently deprecated.)
