@@ -258,7 +258,7 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 		     zcbor_int32_put(zse, 0);
 	}
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**

@@ -272,7 +272,7 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 	ok = zcbor_tstr_put_lit(zse, "rc")	&&
 	     zcbor_int32_put(zse, rc);
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 static int
@@ -286,7 +286,7 @@ img_mgmt_upload_good_rsp(struct mgmt_ctxt *ctxt)
 	     zcbor_tstr_put_lit(zse, "off")			&&
 	     zcbor_int32_put(zse,  g_img_mgmt_state.off);
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**
