@@ -14,14 +14,15 @@
 #define MULTIPLIER (1103515245U)
 #define INCREMENT (12345U)
 
-static LIBC_DATA unsigned int srand_seed = 1;
-
 int rand_r(unsigned int *seed)
 {
 	*seed = (MULTIPLIER * *seed + INCREMENT) & OUTPUT_BITS;
 
 	return *seed;
 }
+
+#ifdef CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
+static LIBC_DATA unsigned int srand_seed = 1;
 
 void srand(unsigned int s)
 {
@@ -32,3 +33,4 @@ int rand(void)
 {
 	return rand_r(&srand_seed);
 }
+#endif /* CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS */
