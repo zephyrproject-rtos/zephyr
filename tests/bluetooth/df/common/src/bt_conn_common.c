@@ -14,7 +14,7 @@
 
 #include <hal/ccm.h>
 
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/hci.h>
 #include <pdu.h>
 #include <lll.h>
 #include <lll/lll_df_types.h>

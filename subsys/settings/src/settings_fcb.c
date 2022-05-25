@@ -10,7 +10,7 @@
 #include <zephyr/fs/fcb.h>
 #include <string.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 #include "settings/settings_fcb.h"
 #include "settings_priv.h"
 

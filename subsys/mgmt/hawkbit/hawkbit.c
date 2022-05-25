@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 #include "hawkbit_priv.h"
 #include "hawkbit_device.h"
-#include "mgmt/hawkbit.h"
+#include <zephyr/mgmt/hawkbit.h>
 #include "hawkbit_firmware.h"
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)

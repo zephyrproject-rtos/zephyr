@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "arch/xtensa/cache.h"
+#include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/kernel.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
