@@ -1992,16 +1992,6 @@ West:
         - manifest-canopennode
         - "area: CAN"
 
-"West project: civetweb":
-    status: obsolete
-    files:
-        - samples/net/civetweb/
-        - modules/Kconfig.civetweb
-    labels:
-        - manifest-civetweb
-        - "area: Networking"
-        - "area: civetweb"
-
 "West project: cmsis":
     status: maintained
     maintainers:
