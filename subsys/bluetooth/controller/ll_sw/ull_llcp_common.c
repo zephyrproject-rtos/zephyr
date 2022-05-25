@@ -514,6 +514,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
+			ctx->data.term.error_code = BT_HCI_ERR_LOCALHOST_TERM_CONN;
 			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
 		}
 		break;
