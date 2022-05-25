@@ -43,6 +43,12 @@ def _dt_units_to_scale(unit):
         return 20
     if unit in {'g', 'G'}:
         return 30
+    if unit in {'kb', 'Kb'}:
+        return 13
+    if unit in {'mb', 'Mb'}:
+        return 23
+    if unit in {'gb', 'Gb'}:
+        return 33
 
 
 def dt_chosen_label(kconf, _, chosen):
@@ -198,6 +204,9 @@ def _node_int_prop(node, prop, unit=None):
         'k' or 'K'  divide by 1024 (1 << 10)
         'm' or 'M'  divide by 1,048,576 (1 << 20)
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+        'kb' or 'Kb'  divide by 8192 (1 << 13)
+        'mb' or 'Mb'  divide by 8,388,608 (1 << 23)
+        'gb' or 'Gb'  divide by 8,589,934,592 (1 << 33)
     """
     if not node:
         return 0
@@ -249,6 +258,9 @@ def _dt_chosen_reg_addr(kconf, chosen, index=0, unit=None):
         'k' or 'K'  divide by 1024 (1 << 10)
         'm' or 'M'  divide by 1,048,576 (1 << 20)
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+        'kb' or 'Kb'  divide by 8192 (1 << 13)
+        'mb' or 'Mb'  divide by 8,388,608 (1 << 23)
+        'gb' or 'Gb'  divide by 8,589,934,592 (1 << 33)
     """
     if doc_mode or edt is None:
         return 0
@@ -270,6 +282,9 @@ def _dt_chosen_reg_size(kconf, chosen, index=0, unit=None):
         'k' or 'K'  divide by 1024 (1 << 10)
         'm' or 'M'  divide by 1,048,576 (1 << 20)
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+        'kb' or 'Kb'  divide by 8192 (1 << 13)
+        'mb' or 'Mb'  divide by 8,388,608 (1 << 23)
+        'gb' or 'Gb'  divide by 8,589,934,592 (1 << 33)
     """
     if doc_mode or edt is None:
         return 0
@@ -305,6 +320,9 @@ def _dt_node_reg_addr(kconf, path, index=0, unit=None):
         'k' or 'K'  divide by 1024 (1 << 10)
         'm' or 'M'  divide by 1,048,576 (1 << 20)
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+        'kb' or 'Kb'  divide by 8192 (1 << 13)
+        'mb' or 'Mb'  divide by 8,388,608 (1 << 23)
+        'gb' or 'Gb'  divide by 8,589,934,592 (1 << 33)
     """
     if doc_mode or edt is None:
         return 0
@@ -328,6 +346,9 @@ def _dt_node_reg_size(kconf, path, index=0, unit=None):
         'k' or 'K'  divide by 1024 (1 << 10)
         'm' or 'M'  divide by 1,048,576 (1 << 20)
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+        'kb' or 'Kb'  divide by 8192 (1 << 13)
+        'mb' or 'Mb'  divide by 8,388,608 (1 << 23)
+        'gb' or 'Gb'  divide by 8,589,934,592 (1 << 33)
     """
     if doc_mode or edt is None:
         return 0
@@ -460,6 +481,9 @@ def dt_node_int_prop(kconf, name, path, prop, unit=None):
         'k' or 'K'  divide by 1024 (1 << 10)
         'm' or 'M'  divide by 1,048,576 (1 << 20)
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+        'kb' or 'Kb'  divide by 8192 (1 << 13)
+        'mb' or 'Mb'  divide by 8,388,608 (1 << 23)
+        'gb' or 'Gb'  divide by 8,589,934,592 (1 << 33)
     """
     if doc_mode or edt is None:
         return "0"
