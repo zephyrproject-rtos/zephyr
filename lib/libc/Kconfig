@@ -121,6 +121,16 @@ endif # NEWLIB_LIBC
 
 if MINIMAL_LIBC
 
+config MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
+	bool "Non-reentrant functions"
+	default y if !USERSPACE
+	select NEED_LIBC_MEM_PARTITION
+	help
+	  Enable non-reentrant functions that make use of the globals; e.g.
+	  rand() and gmtime(). The globals must be put into a dedicated C
+	  library memory partition when CONFIG_USERSPACE=y, and enabling this
+	  option may require an additional memory protection region.
+
 config MINIMAL_LIBC_MALLOC
 	bool "Minimal libc malloc implementation"
 	default y
@@ -166,16 +176,11 @@ config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 
 config MINIMAL_LIBC_RAND
 	bool "Rand and srand functions"
-	select NEED_LIBC_MEM_PARTITION
 	help
-	  Enable rand() and srand() for the minimal libc. The
-	  functions implicitly access global/static data.  Such data
-	  must be put into a memory partition if CONFIG_USERSPACE=y,
-	  and disabling this option may save an entry for application
-	  defining many custom partitions.
+	  Enable rand_r() for the minimal libc.
 
-	  Say 'Y' here if you need rand() and srand(). This might require
-	  an additional memory partition.
+	  In order to make use of the non-reentrant rand() and srand(), it is
+	  necessary to set CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y.
 
 endif # MINIMAL_LIBC
 
