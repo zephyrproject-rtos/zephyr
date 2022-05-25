@@ -140,7 +140,7 @@ os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 	ok = zcbor_tstr_put_lit(zse, "stksiz")		&&
 	     zcbor_uint64_put(zse, stack_size)		&&
 	     zcbor_tstr_put_lit(zse, "stkuse")		&&
-	     zcbor_uint64_put(zse, stack_unused);
+	     zcbor_uint64_put(zse, stack_used);
 
 	return ok;
 #else
