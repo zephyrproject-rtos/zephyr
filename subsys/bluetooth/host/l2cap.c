@@ -1408,6 +1408,12 @@ static void le_ecred_reconf_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	result = sys_le16_to_cpu(rsp->result);
 
 	while ((ch = l2cap_lookup_ident(conn, ident))) {
+		/* Stop timer started on REQ send. The timer is only set on one
+		 * of the channels, but we don't want to make assumptions on
+		 * which one it is.
+		 */
+		k_work_cancel_delayable(&ch->rtx_work);
+
 		if (result == BT_L2CAP_LE_SUCCESS) {
 			ch->rx.mtu = ch->pending_rx_mtu;
 		}
@@ -2852,7 +2858,10 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 		net_buf_add_le16(buf, ch->rx.cid);
 	};
 
-	/* we use first channel for sending and timeouting */
+	/* We set the RTX timer on one of the supplied channels, but when the
+	 * request resolves or times out we will act on all the channels in the
+	 * supplied array, using the ident field to find them.
+	 */
 	l2cap_chan_send_req(chans[0], buf, L2CAP_CONN_TIMEOUT);
 
 	return 0;
