@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015 Intel Corporation.
  * Copyright (c) 2020 Norbit ODM AS
+ * Copyright 2022 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -263,14 +264,13 @@ static int setup_pin_dir(const struct device *dev, uint32_t pin, int flags)
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
 			reg_out &= ~BIT(pin);
 		}
+		ret = update_output_regs(dev, reg_out);
+		if (ret != 0) {
+			return ret;
+		}
 		reg_dir &= ~BIT(pin);
 	} else {
 		reg_dir |= BIT(pin);
-	}
-
-	ret = update_output_regs(dev, reg_out);
-	if (ret != 0) {
-		return ret;
 	}
 
 	ret = update_direction_regs(dev, reg_dir);
