@@ -30,6 +30,7 @@
 #include "lll/lll_adv_pdu.h"
 #include "lll_conn.h"
 #include "lll_adv_iso.h"
+#include "lll_iso_tx.h"
 
 #include "ull_adv_types.h"
 
@@ -702,11 +703,11 @@ void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso)
 	lll = &adv_iso->lll;
 	while (lll->num_bis--) {
 		struct lll_adv_iso_stream *stream;
+		uint16_t stream_handle;
 		memq_link_t *link;
-		uint16_t handle;
 
-		handle = lll->stream_handle[lll->num_bis];
-		stream = ull_adv_iso_stream_get(handle);
+		stream_handle = lll->stream_handle[lll->num_bis];
+		stream = ull_adv_iso_stream_get(stream_handle);
 
 		LL_ASSERT(!stream->link_tx_free);
 		link = memq_deinit(&stream->memq_tx.head,
@@ -1175,17 +1176,41 @@ static void tx_lll_flush(void *param)
 	struct lll_adv_iso *lll;
 	struct node_rx_pdu *rx;
 	memq_link_t *link;
+	uint8_t num_bis;
 
 	/* Get reference to ULL context */
 	lll = param;
-	adv_iso = HDR_LLL2ULL(lll);
 
-	/* TODO: Flush TX */
+	/* Flush TX */
+	num_bis = lll->num_bis;
+	while (num_bis--) {
+		struct lll_adv_iso_stream *stream;
+		struct node_tx_iso *tx;
+		uint16_t stream_handle;
+		memq_link_t *link;
+		uint16_t handle;
+
+		stream_handle = lll->stream_handle[num_bis];
+		handle = stream_handle + BT_CTLR_ADV_ISO_STREAM_HANDLE_BASE;
+		stream = ull_adv_iso_stream_get(stream_handle);
+
+		link = memq_dequeue(stream->memq_tx.tail, &stream->memq_tx.head,
+				    (void **)&tx);
+		while (link) {
+			tx->next = link;
+			ull_iso_lll_ack_enqueue(handle, tx);
+
+			link = memq_dequeue(stream->memq_tx.tail,
+					    &stream->memq_tx.head,
+					    (void **)&tx);
+		}
+	}
 
 	/* Get the terminate structure reserved in the ISO context.
 	 * The terminate reason and connection handle should already be
 	 * populated before this mayfly function was scheduled.
 	 */
+	adv_iso = HDR_LLL2ULL(lll);
 	rx = (void *)&adv_iso->node_rx_terminate;
 	link = rx->hdr.link;
 	LL_ASSERT(link);
