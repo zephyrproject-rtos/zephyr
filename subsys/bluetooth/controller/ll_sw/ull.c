@@ -2478,24 +2478,61 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 	defined(CONFIG_BT_CTLR_CONN_ISO)
 		} else if (IS_CIS_HANDLE(tx->handle) ||
 			   IS_ADV_ISO_HANDLE(tx->handle)) {
-			struct node_tx_iso *tx_node_iso;
-			struct pdu_data *p;
+			struct node_tx_iso *tx_node;
+			uint8_t sdu_fragments;
 
-			tx_node_iso = tx->node;
-			p = (void *)tx_node_iso->pdu;
+			/* NOTE: tx_cmplt_get() is permitted to be called
+			 *       multiple times before the tx_ack queue which is
+			 *       associated with Rx queue is changed by the
+			 *       dequeue of Rx node.
+			 *
+			 *       Tx node is released early without waiting for
+			 *       any dependency on Rx queue. Released Tx node
+			 *       reference is overloaded to store the Tx
+			 *       fragments count.
+			 *
+			 *       A hack is used here that depends on the fact
+			 *       that memory addresses have a value greater than
+			 *       0xFF, to determined if a node Tx has been
+			 *       released in a prior iteration of this function.
+			 */
 
-			if (IS_ADV_ISO_HANDLE(tx->handle)) {
-				/* FIXME: ADV_ISO shall be updated to use ISOAL for
-				 * TX. Until then, assume 1 node equals 1 fragment.
+			/* We must count each SDU HCI fragment */
+			tx_node = tx->node;
+			if ((uint32_t)tx_node & ~0xFF) {
+				if (IS_ADV_ISO_HANDLE(tx->handle)) {
+					/* FIXME: ADV_ISO shall be updated to
+					 * use ISOAL for TX. Until then, assume
+					 * 1 node equals 1 fragment.
+					 */
+					sdu_fragments = 1U;
+				} else {
+					/* We count each SDU fragment completed
+					 * by this PDU.
+					 */
+					sdu_fragments = tx_node->sdu_fragments;
+				}
+
+				/* Replace node reference with fragments
+				 * count
 				 */
-				cmplt += 1;
+				tx->node = (void *)(uint32_t)sdu_fragments;
+
+				/* Release node as its a reference and not
+				 * fragments count.
+				 */
+				ll_iso_link_tx_release(tx_node->link);
+				ll_iso_tx_mem_release(tx_node);
 			} else {
-				/* We count each SDU fragment completed by this PDU */
-				cmplt += tx_node_iso->sdu_fragments;
+				/* Get SDU fragments count from the encoded
+				 * node reference value.
+				 */
+				sdu_fragments = (uint32_t)tx_node;
 			}
 
-			ll_iso_link_tx_release(tx_node_iso->link);
-			ll_iso_tx_mem_release(tx_node_iso);
+			/* Accumulate the tx acknowledgements */
+			cmplt += sdu_fragments;
+
 			goto next_ack;
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
@@ -2504,21 +2541,36 @@ static uint8_t tx_cmplt_get(uint16_t *handle, uint8_t *first, uint8_t last)
 			struct node_tx *tx_node;
 			struct pdu_data *p;
 
+			/* NOTE: tx_cmplt_get() is permitted to be called
+			 *       multiple times before the tx_ack queue which is
+			 *       associated with Rx queue is changed by the
+			 *       dequeue of Rx node.
+			 *
+			 *       Tx node is released early without waiting for
+			 *       any dependency on Rx queue. Released Tx node
+			 *       reference is overloaded to store whether
+			 *       packet with data or control was released.
+			 *
+			 *       A hack is used here that depends on the fact
+			 *       that memory addresses have a value greater than
+			 *       0x03, to determined if a node Tx has been
+			 *       released in a prior iteration of this function.
+			 */
 			tx_node = tx->node;
 			p = (void *)tx_node->pdu;
-			if (!tx_node || (tx_node == (void *)1) ||
-			    (((uint32_t)tx_node & ~3) &&
+			if (!tx_node || (tx_node == (void *)0x01) ||
+			    (((uint32_t)tx_node & ~0x03) &&
 			     (p->ll_id == PDU_DATA_LLID_DATA_START ||
 			      p->ll_id == PDU_DATA_LLID_DATA_CONTINUE))) {
 				/* data packet, hence count num cmplt */
-				tx->node = (void *)1;
+				tx->node = (void *)0x01;
 				cmplt++;
 			} else {
 				/* ctrl packet or flushed, hence dont count num cmplt */
-				tx->node = (void *)2;
+				tx->node = (void *)0x02;
 			}
 
-			if (((uint32_t)tx_node & ~3)) {
+			if (((uint32_t)tx_node & ~0x03)) {
 				ll_tx_mem_release(tx_node);
 			}
 #endif /* CONFIG_BT_CONN */
