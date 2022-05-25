@@ -114,9 +114,9 @@ LINKER_SECTION_SEQ_MPU = """
 
 SOURCE_CODE_INCLUDES = """
 /* Auto generated code. Do not modify.*/
-#include <zephyr.h>
-#include <linker/linker-defs.h>
-#include <kernel_structs.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 """
 
