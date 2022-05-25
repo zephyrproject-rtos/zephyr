@@ -212,6 +212,15 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetMux(kCLOCK_CanMux, 2); /* Set Can clock source. */
 #endif
 
+#ifdef CONFIG_LOG_BACKEND_SWO
+	/* Enable ARM trace clock to enable SWO output */
+	CLOCK_EnableClock(kCLOCK_Trace);
+	/* Divide root clock output by 3 */
+	CLOCK_SetDiv(kCLOCK_TraceDiv, 3);
+	/* Source clock from 528MHz system PLL */
+	CLOCK_SetMux(kCLOCK_TraceMux, 0);
+#endif
+
 	/* Keep the system clock running so SYSTICK can wake up the system from
 	 * wfi.
 	 */
