@@ -299,13 +299,14 @@ static void IRAM_ATTR i2c_esp32_reset_fifo(const struct device *dev)
 static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	int ret = 0;
 
-	/* start the transfer */
+	/* Start transmission*/
 	i2c_hal_update_config(&data->hal);
 	i2c_hal_trans_start(&data->hal);
+	data->cmd_idx = 0;
 
-	int ret = k_sem_take(&data->cmd_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC));
-
+	ret = k_sem_take(&data->cmd_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC));
 	if (ret != 0) {
 		/* If the I2C slave is powered off or the SDA/SCL is */
 		/* connected to ground, for example, I2C hw FSM would get */
@@ -319,25 +320,41 @@ static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 		ret = -ETIMEDOUT;
 	} else if (data->status == I2C_STATUS_ACK_ERROR) {
 		ret = -EFAULT;
-	} else {
-		ret = 0;
 	}
 
 	return ret;
 }
 
-static void IRAM_ATTR i2c_esp32_write_addr(const struct device *dev, uint16_t addr)
+
+static void IRAM_ATTR i2c_esp32_master_start(const struct device *dev)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
-	uint8_t addr_len = 1;
-	uint8_t addr_byte = addr & 0xFF;
 
 	i2c_hw_cmd_t cmd = {
 		.op_code = I2C_LL_CMD_RESTART
 	};
 
-	/* write re-start command */
 	i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+}
+
+static void IRAM_ATTR i2c_esp32_master_stop(const struct device *dev)
+{
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+
+	i2c_hw_cmd_t cmd = {
+		.op_code = I2C_LL_CMD_STOP
+	};
+
+	i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+}
+
+static int IRAM_ATTR i2c_esp32_write_addr(const struct device *dev, uint16_t addr)
+{
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	uint8_t addr_len = 1;
+	uint8_t addr_byte = addr & 0xFF;
+
+	data->status = I2C_STATUS_WRITE;
 
 	/* write address value in tx buffer */
 	i2c_hal_write_txfifo(&data->hal, &addr_byte, 1);
@@ -347,57 +364,60 @@ static void IRAM_ATTR i2c_esp32_write_addr(const struct device *dev, uint16_t ad
 		addr_len++;
 	}
 
-	cmd = (i2c_hw_cmd_t) {
+	const i2c_hw_cmd_t cmd_end = {
+		.op_code = I2C_LL_CMD_END,
+	};
+
+	i2c_hw_cmd_t cmd = {
 		.op_code = I2C_LL_CMD_WRITE,
 		.ack_en = true,
 		.byte_num = addr_len,
 	};
 
 	i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+	i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
+	i2c_hal_enable_master_tx_it(&data->hal);
+
+	return i2c_esp32_transmit(dev);
 }
 
-static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
-	struct i2c_msg *msg, uint16_t addr)
+static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_msg *msg)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+
 	uint8_t rd_filled = 0;
 	uint8_t *read_pr = NULL;
 	int ret = 0;
 
-	/* reset command index and set status as read operation */
-	data->cmd_idx = 0;
 	data->status = I2C_STATUS_READ;
 
 	i2c_hw_cmd_t cmd = {
-		.op_code = I2C_LL_CMD_READ
+		.op_code = I2C_LL_CMD_READ,
 	};
-
-	i2c_hw_cmd_t hw_end_cmd = {
+	const i2c_hw_cmd_t cmd_end = {
 		.op_code = I2C_LL_CMD_END,
 	};
 
-	/* Set the R/W bit to R */
-	addr |= BIT(0);
-
-	if (msg->flags & I2C_MSG_RESTART) {
-		/* write restart command and address */
-		i2c_esp32_write_addr(dev, addr);
-	}
-
 	while (msg->len) {
 		rd_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : (msg->len - 1);
+
 		read_pr = msg->buf;
+		msg->buf += rd_filled;
 		msg->len -= rd_filled;
 
 		if (rd_filled) {
-			cmd = (i2c_hw_cmd_t) {
-				.op_code = I2C_LL_CMD_READ,
-				.ack_en = false,
-				.ack_val = 0,
-				.byte_num = rd_filled
-			};
+			cmd.ack_val = 0,
+			cmd.byte_num = rd_filled;
 
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
+			i2c_hal_enable_master_rx_it(&data->hal);
+			ret = i2c_esp32_transmit(dev);
+			if (ret < 0) {
+				return ret;
+			}
+			i2c_hal_read_rxfifo(&data->hal, read_pr, rd_filled);
+			msg->buf += rd_filled;
 		}
 
 		/* I2C master won't acknowledge the last byte read from the
@@ -405,40 +425,98 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 		 * recommended by the ESP32 Technical Reference Manual.
 		 */
 		if (msg->len == 1) {
-			cmd = (i2c_hw_cmd_t)  {
-				.op_code = I2C_LL_CMD_READ,
-				.byte_num = 1,
-				.ack_val = 1,
-			};
+			cmd.ack_val = 1,
+			cmd.byte_num = 1,
 			msg->len = 0;
 			rd_filled++;
+
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
+			i2c_hal_enable_master_rx_it(&data->hal);
+			ret = i2c_esp32_transmit(dev);
+			if (ret < 0) {
+				return ret;
+			}
+			i2c_hal_read_rxfifo(&data->hal, read_pr, rd_filled);
+			msg->buf += rd_filled;
 		}
+	}
+	return 0;
 
-		if (msg->len == 0) {
-			cmd = (i2c_hw_cmd_t)  {
-				.op_code = I2C_LL_CMD_STOP,
-				.byte_num = 0,
-				.ack_val = 0,
-				.ack_en = 0
-			};
-			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+}
+
+static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
+	struct i2c_msg *msg, uint16_t addr)
+{
+	int ret = 0;
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+
+	/* Set the R/W bit to R */
+	addr |= BIT(0);
+
+	if (msg->flags & I2C_MSG_RESTART) {
+		i2c_esp32_master_start(dev);
+		ret = i2c_esp32_write_addr(dev, addr);
+		if (ret < 0) {
+			LOG_ERR("I2C transfer error: %d", ret);
+			return ret;
 		}
+	}
 
-		i2c_hal_write_cmd_reg(&data->hal, hw_end_cmd, data->cmd_idx++);
-		i2c_hal_enable_master_rx_it(&data->hal);
+	ret = i2c_esp32_master_read(dev, msg);
+	if (ret < 0) {
+		LOG_ERR("I2C transfer error: %d", ret);
+		return ret;
+	}
 
+	if (msg->flags & I2C_MSG_STOP) {
+		i2c_esp32_master_stop(dev);
 		ret = i2c_esp32_transmit(dev);
 		if (ret < 0) {
 			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
 		}
+	}
 
-		i2c_hal_read_rxfifo(&data->hal, msg->buf, rd_filled);
-		msg->buf += rd_filled;
+	return 0;
+}
 
-		/* reset fifo read pointer */
-		data->cmd_idx = 0;
+static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c_msg *msg)
+{
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	uint8_t wr_filled = 0;
+	uint8_t *write_pr = NULL;
+	int ret = 0;
+
+	data->status = I2C_STATUS_WRITE;
+
+	i2c_hw_cmd_t cmd = {
+		.op_code = I2C_LL_CMD_WRITE,
+		.ack_en = true,
+	};
+
+	const i2c_hw_cmd_t cmd_end = {
+		.op_code = I2C_LL_CMD_END,
+	};
+
+	while (msg->len) {
+		wr_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : msg->len;
+
+		write_pr = msg->buf;
+		msg->buf += wr_filled;
+		msg->len -= wr_filled;
+		cmd.byte_num = wr_filled;
+
+		if (wr_filled > 0) {
+			i2c_hal_write_txfifo(&data->hal, write_pr, wr_filled);
+			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
+			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
+			i2c_hal_enable_master_tx_it(&data->hal);
+			ret = i2c_esp32_transmit(dev);
+			if (ret < 0) {
+				return ret;
+			}
+		}
 	}
 
 	return 0;
@@ -448,65 +526,25 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 		struct i2c_msg *msg, uint16_t addr)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
-	uint8_t wr_filled = 0;
-	uint8_t *write_pr = NULL;
 	int ret = 0;
 
-	/* reset command index and set status as write operation */
-	data->cmd_idx = 0;
-	data->status = I2C_STATUS_WRITE;
-
-	i2c_hw_cmd_t cmd = {
-		.op_code = I2C_LL_CMD_WRITE,
-		.ack_en = true
-	};
-
-	i2c_hw_cmd_t hw_end_cmd = {
-		.op_code = I2C_LL_CMD_END,
-	};
-
 	if (msg->flags & I2C_MSG_RESTART) {
-		/* write restart command and address */
-		i2c_esp32_write_addr(dev, addr);
-	}
-
-	for (;;) {
-		wr_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : msg->len;
-		write_pr = msg->buf;
-		msg->buf += wr_filled;
-		msg->len -= wr_filled;
-		cmd.byte_num = wr_filled;
-
-		if (wr_filled > 0) {
-			i2c_hal_write_txfifo(&data->hal, write_pr, wr_filled);
-			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
-			i2c_hal_write_cmd_reg(&data->hal, hw_end_cmd, data->cmd_idx++);
-
-			i2c_hal_enable_master_tx_it(&data->hal);
-
-			ret = i2c_esp32_transmit(dev);
-			if (ret < 0) {
-				LOG_ERR("I2C transfer error: %d", ret);
-				return ret;
-			}
-
-			data->cmd_idx = 0;
-		}
-
-		if (msg->len == 0) {
-			break;
+		i2c_esp32_master_start(dev);
+		ret = i2c_esp32_write_addr(dev, addr);
+		if (ret < 0) {
+			LOG_ERR("I2C transfer error: %d", ret);
+			return ret;
 		}
 	}
 
-	/* add stop command in a new transmission */
-	if (msg->len == 0 && (msg->flags & I2C_MSG_STOP)) {
-		cmd = (i2c_hw_cmd_t) {
-			.op_code = I2C_LL_CMD_STOP,
-			.ack_en = false,
-			.byte_num = 0
-		};
-		i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx);
-		i2c_hal_enable_master_tx_it(&data->hal);
+	ret = i2c_esp32_master_write(dev, msg);
+	if (ret < 0) {
+		LOG_ERR("I2C transfer error: %d", ret);
+		return ret;
+	}
+
+	if (msg->flags & I2C_MSG_STOP) {
+		i2c_esp32_master_stop(dev);
 		ret = i2c_esp32_transmit(dev);
 		if (ret < 0) {
 			LOG_ERR("I2C transfer error: %d", ret);
