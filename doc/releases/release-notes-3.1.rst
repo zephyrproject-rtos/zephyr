@@ -298,10 +298,14 @@ Bluetooth
 
 * HCI Driver
 
+  * Implemented :c:func:`close` on stm32wb HCI driver.
+
 Boards & SoC Support
 ********************
 
 * Added support for these SoC series:
+
+  * Added support for STM32H725/STM32H730/STM32H73B SoC variants
 
 * Removed support for these SoC series:
 
@@ -312,6 +316,9 @@ Boards & SoC Support
 * Changes for ARC boards:
 
 * Added support for these ARM boards:
+
+  * b_g474e_dpow1
+  * stm32f401_mini
 
 * Added support for these ARM64 boards:
 
@@ -340,6 +347,7 @@ Drivers and Sensors
 * ADC
 
   * Atmel SAM0: Fixed adc voltage reference
+  * STM32: Added support for :c:enumerator:`adc_reference.ADC_REF_INTERNAL`.
 
 * CAN
 
@@ -352,11 +360,29 @@ Drivers and Sensors
   * Added CAN transceiver support.
   * Added generic SocketCAN network interface and removed driver-specific implementations.
 
+* Clock_control
+
+  * STM32: Driver was cleaned up and overhauled for easier maintenance with a deeper integration
+    of device tree inputs. Driver now takes into account individual activation of clock sources
+    (High/Medium/Low Internal/external speed clocks, PLLs, ...)
+  * STM32: Additionally to above change it is now possible for clock consumers to select an alternate
+    source clock (Eg: LSE) by adding it to its 'clocks' property and then configure it using new
+    clock_control_configure() API.
+    See :dtcompatible:`st,stm32-rcc`, :dtcompatible:`st,stm32h7-rcc` and :dtcompatible:`st,stm32u5-rcc`
+    for more information.
+
 * Counter
 
 * DAC
 
+  *  support for ST STM32F1 to the ST STM32 DAC driver.
+
 * Disk
+
+* Display
+
+  * STM32: Added basic support for LTDC driver. Currently supported on F4, F7, H7, L4+
+    and MP1 series.
 
 * DMA
 
@@ -364,9 +390,18 @@ Drivers and Sensors
 
 * Entropy
 
+  * STM32: Prevent  core to enter stop modes during entropy operations.
+
 * Ethernet
 
 * Flash
+
+  * Added STM32 OCTOSPI driver: For now supports L5 and U5 series. Interrupt driven mode.
+    Supports 1 and 8 lines in Single or Dual Transfer Modes.
+  * STM32L5: Added support for Single Bank.
+  * STM32 QSPI driver was extended with with QER (SFDP, DTS), custom quad write opcode
+    and 1-1-4 read mode
+  * Added support for STM32U5 series.
 
 * GPIO
 
@@ -383,6 +418,8 @@ Drivers and Sensors
 * MBOX
 
 * MEMC
+
+  * STM32: Extend FMC driver to support NOR/PSRAM. See :dtcompatible:`st,stm32-fmc-nor-psram.yaml`.
 
 * Pin control
 
@@ -402,12 +439,20 @@ Drivers and Sensors
     * Telink B91
     * TI CC13XX/CC26XX
 
+  * STM32: It is now possible to configure plain GPIO pins using pinctrl API.
+    See :dtcompatible:`st,stm32-pinctrl` and :dtcompatible:`st,stm32f1-pinctrl` for
+    more information.
+
 * PWM
 
   * Added :c:struct:`pwm_dt_spec` and associated helpers, e.g.
     :c:macro:`PWM_DT_SPEC_GET` or :c:func:`pwm_set_dt`. This addition makes it
     easier to use the PWM API when the PWM channel, period and flags are taken
     from a Devicetree PWM cell.
+  * STM32: Enabled complementary output for timer channel. A PWM consumer can now use
+    :c:macro:`PWM_STM32_COMPLEMENTARY` to specify that PWM output should happen on a
+    complementary channel pincfg (eg:``tim1_ch2n_pb14``).
+  * STM32: Added counter mode support. See :dtcompatible:`st,stm32-timers`.
 
 * Reset
 
@@ -431,6 +476,8 @@ Drivers and Sensors
   * Added MAX31875 temperature sensor driver.
 
 * Serial
+
+  * STM32: Add tx/rx pin swap  and rx invert / tx invert capabilities.
 
 * SPI
 
@@ -661,6 +708,16 @@ HALs
   * Fixed GD32_REMAP_MSK macro
   * Fixed gd32f403z pc3 missing pincodes
 
+* STM32:
+
+  * Updated stm32f4 to new STM32cube version V1.27.0
+  * Updated stm32f7 to new STM32cube version V1.16.2
+  * Updated stm32g4 to new STM32cube version V1.5.0
+  * Updated stm32h7 to new STM32cube version V1.10.0
+  * Updated stm32l4 to new STM32cube version V1.17.1
+  * Updated stm32u5 to new STM32cube version V1.1.0
+  * Updated stm32wb to new STM32cube version V1.13.2 (including hci lib)
+
 MCUboot
 *******
 
@@ -684,6 +741,8 @@ Documentation
 
 Tests and Samples
 *****************
+
+  * A dedicated framework was added to test STM32 clock_control driver.
 
 Issue Related Items
 *******************
