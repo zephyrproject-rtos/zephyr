@@ -18,7 +18,7 @@ static int board_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return gpio_pin_configure_dt(&pull_up, GPIO_OUTPUT_INIT_HIGH);
+	return gpio_pin_configure_dt(&pull_up, GPIO_OUTPUT_HIGH);
 }
 
 SYS_INIT(board_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
