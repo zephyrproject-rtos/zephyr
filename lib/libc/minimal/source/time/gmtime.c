@@ -96,9 +96,11 @@ struct tm *gmtime_r(const time_t *ZRESTRICT timep,
 	return result;
 }
 
+#ifdef CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
 struct tm *gmtime(const time_t *timep)
 {
 	static struct tm shared;
 
 	return gmtime_r(timep, &shared);
 }
+#endif /* CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS */
