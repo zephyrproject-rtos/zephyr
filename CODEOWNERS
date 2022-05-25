@@ -664,7 +664,6 @@
 /samples/net/mqtt_publisher/              @rlubos
 /samples/net/sockets/coap_*/              @rlubos
 /samples/net/sockets/                     @rlubos @tbursztyka @pfalcon
-/samples/net/*civetweb*                   @Nukersson
 /samples/sensor/                          @MaureenHelm
 /samples/shields/                         @avisconti
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
