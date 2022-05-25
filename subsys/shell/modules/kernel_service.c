@@ -15,6 +15,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
+#include <stdlib.h>
 
 static int cmd_kernel_version(const struct shell *shell,
 			      size_t argc, char **argv)
@@ -218,6 +219,27 @@ static int cmd_kernel_stacks(const struct shell *shell,
 }
 #endif
 
+static int cmd_kernel_sleep(const struct shell *sh,
+			    size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+
+	uint32_t ms;
+	int err = 0;
+
+	ms = shell_strtoul(argv[2], 10, &err);
+
+	if (!err) {
+		k_msleep(ms);
+	} else {
+		shell_error(sh, "Unable to parse input (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_REBOOT)
 static int cmd_kernel_reboot_warm(const struct shell *shell,
 				  size_t argc, char **argv)
@@ -262,6 +284,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel,
 #endif
 	SHELL_CMD(uptime, NULL, "Kernel uptime.", cmd_kernel_uptime),
 	SHELL_CMD(version, NULL, "Kernel version.", cmd_kernel_version),
+	SHELL_CMD_ARG(sleep, NULL, "ms", cmd_kernel_sleep, 2, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
