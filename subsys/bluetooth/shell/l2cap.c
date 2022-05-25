@@ -345,7 +345,18 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	len = MIN(l2ch_chan.ch.tx.mtu, len);
 
 	while (count--) {
-		buf = net_buf_alloc(&data_tx_pool, K_FOREVER);
+		shell_print(sh, "Rem %d", count);
+		buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
+		if (!buf) {
+			if (l2ch_chan.ch.state != BT_L2CAP_CONNECTED) {
+				shell_print(sh, "Channel disconnected, stopping TX");
+
+				return -EAGAIN;
+			}
+			shell_print(sh, "Allocation timeout, stopping TX");
+
+			return -EAGAIN;
+		}
 		net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len);
