@@ -719,9 +719,9 @@ header = """%compare-lengths
 %global-table
 %struct-type
 %{
-#include <kernel.h>
-#include <toolchain.h>
-#include <syscall_handler.h>
+#include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/syscall_handler.h>
 #include <string.h>
 %}
 struct z_object;
