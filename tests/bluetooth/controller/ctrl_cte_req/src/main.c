@@ -24,6 +24,7 @@
 #include "ll_settings.h"
 
 #include "lll.h"
+#include "ll_feat.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
 
@@ -44,6 +45,18 @@ static void setup(void)
 
 	/* Set CTE request enable as if it was called by Host */
 	conn.llcp.cte_req.is_enabled = 1U;
+}
+
+static void fex_setup(void)
+{
+	setup();
+
+	/* Emulate valid feature exchange and all features valid for local and peer devices */
+	memset(&conn.llcp.fex, 0, sizeof(conn.llcp.fex));
+	conn.llcp.fex.features_used = LL_FEAT;
+	conn.llcp.fex.features_peer = LL_FEAT;
+
+	conn.llcp.fex.valid = 1;
 }
 
 /* Tests of successful execution of CTE Request Procedure */
@@ -790,10 +803,6 @@ static uint16_t pu_event_counter(struct ll_conn *conn)
 
 static void phy_update_setup(void)
 {
-	test_setup(&conn);
-	/* Set CTE request enable as if it was called by Host */
-	conn.llcp.cte_req.is_enabled = 1U;
-
 	/* Emulate initial conn state */
 	conn.phy_pref_rx = PHY_PREFER_ANY;
 	conn.phy_pref_tx = PHY_PREFER_ANY;
@@ -803,8 +812,10 @@ static void phy_update_setup(void)
 	conn.lll.phy_tx = PHY_1M;
 
 	/* Init DLE data */
-	ull_conn_default_tx_octets_set(251);
-	ull_conn_default_tx_time_set(2120);
+	ull_conn_default_tx_octets_set(PDU_DC_PAYLOAD_SIZE_MAX);
+	/* PHY Coded support is enabled hence it limits the max TX time */
+	ull_conn_default_tx_time_set(PDU_DC_PAYLOAD_TIME_MAX_CODED);
+	/* Initialize with defauly PHY1M */
 	ull_dle_init(&conn, PHY_1M);
 	/* Emulate different remote numbers to trigger update of effective max TX octets and time.
 	 * Numbers are taken arbitrary.
@@ -1492,59 +1503,61 @@ void test_main(void)
 {
 	ztest_test_suite(
 		cte_req,
-		ztest_unit_test_setup_teardown(test_cte_req_central_local, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_peripheral_local, setup,
+		ztest_unit_test_setup_teardown(test_cte_req_central_local, fex_setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_central_remote, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_peripheral_remote, setup,
+		ztest_unit_test_setup_teardown(test_cte_req_peripheral_local, fex_setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_cte_req_central_remote, fex_setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_cte_req_peripheral_remote, fex_setup,
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_rejected_inv_ll_param_central_local,
-					       setup, unit_test_noop),
+					       fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_rejected_inv_ll_param_peripheral_local,
-					       setup, unit_test_noop),
+					       fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_reject_inv_ll_param_central_remote,
-					       setup, unit_test_noop),
+					       fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_reject_inv_ll_param_peripheral_remote,
-					       setup, unit_test_noop),
+					       fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_ll_unknown_rsp_central_local, setup,
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_ll_unknown_rsp_peripheral_local, setup,
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_local_cte_req_wait_for_phy_update_complete_and_disable, setup,
+			test_central_local_cte_req_wait_for_phy_update_complete_and_disable,
+			fex_setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_central_local_cte_req_wait_for_phy_update_complete_and_disable,
+			fex_setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_central_local_cte_req_wait_for_phy_update_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_local_cte_req_wait_for_phy_update_complete_and_disable, setup,
+			test_central_local_phy_update_wait_for_cte_req_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_local_cte_req_wait_for_phy_update_complete, setup,
+			test_peripheral_local_phy_update_wait_for_cte_req_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_local_phy_update_wait_for_cte_req_complete, setup,
+			test_peripheral_local_cte_req_wait_for_phy_update_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_peripheral_local_phy_update_wait_for_cte_req_complete, setup,
+			test_central_phy_update_wait_for_remote_cte_req_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_peripheral_local_cte_req_wait_for_phy_update_complete, setup,
+			test_peripheral_phy_update_wait_for_remote_cte_req_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_phy_update_wait_for_remote_cte_req_complete, setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_peripheral_phy_update_wait_for_remote_cte_req_complete, setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_central_cte_req_wait_for_remote_phy_update_complete_and_disable, setup,
-			unit_test_noop),
+			test_central_cte_req_wait_for_remote_phy_update_complete_and_disable,
+			fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(
 			test_peripheral_cte_req_wait_for_remote_phy_update_complete_and_disable,
-			setup, unit_test_noop),
+			fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_cte_req_wait_for_remote_phy_update_complete, setup,
+			test_central_cte_req_wait_for_remote_phy_update_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_peripheral_cte_req_wait_for_remote_phy_update_complete, setup,
+			test_peripheral_cte_req_wait_for_remote_phy_update_complete, fex_setup,
 			unit_test_noop));
 	ztest_run_test_suite(cte_req);
 }
