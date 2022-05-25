@@ -21,7 +21,14 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
-			swo-ref-frequency = <32000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv7m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <32000000>;
+			};
 		};
 	};
 
