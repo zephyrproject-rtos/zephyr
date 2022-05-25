@@ -443,6 +443,110 @@ Drivers and Sensors
 Networking
 **********
 
+* CoAP:
+
+  * Changed :c:struct:`coap_pending` allocation criteria - use data pointer
+    instead of timestamp, which does not give 100% guarantee that structure
+    is not in use already.
+
+* HTTP:
+
+  * Removed a limitation, where the maximum content length was limited up to
+    100000 bytes.
+  * Fixed :c:func:`http_client_req` return value, the function did not report
+    number of bytes sent correctly.
+  * Clarify the expected behavior in case of empty response from the server.
+  * Make use of :c:func:`shutdown` to tear down HTTP connection instead of
+    closing the socket from a system work queue.
+
+* LwM2M:
+
+  * Various improvements towards LwM2M 1.1 support:
+
+    * Added LwM2M 1.1 Discovery support.
+    * Added attribute handling for Resource Instances.
+    * Added support for Send, Read-composite, Write-composite, Observe-composite
+      operations.
+    * Added new content formats: SenML JSON, CBOR, SenML CBOR.
+    * Added v1.1 implementation of core LwM2M objects.
+
+  * Added support for dynamic Resource Instance allocation.
+  * Added support for LwM2M Portfolio object (Object ID 16).
+  * Added LwM2M shell module.
+  * Added option to utilize DTLS session cache in queue mode.
+  * Added :c:func:`lwm2m_engine_path_is_observed` API function.
+  * Fixed a bug with hostname verification setting, which prevented DTLS
+    connection in certain mbedTLS configurations.
+  * Fixed a bug which could cause a socket descriptor leak, in case
+    :c:func:`lwm2m_rd_client_start` was called immediately after
+    :c:func:`lwm2m_rd_client_stop`.
+  * Added error reporting from :c:func:`lwm2m_rd_client_start` and
+    :c:func:`lwm2m_rd_client_stop`.
+
+* Misc:
+
+  * Added :c:func:`net_if_set_default` function which allows to set a default
+    network interface at runtime.
+  * Added :kconfig:option:`NET_DEFAULT_IF_UP` option which allows to make the
+    first interface which is up the default choice.
+  * Fixed packet leak in network shell TCP receive handler.
+  * Added :c:func:`net_pkt_rx_clone` which allows to allocated packet from
+    correct packet pool when cloning. This is used at the loopback interface.
+  * Added :kconfig:option:`NET_LOOPBACK_SIMULATE_PACKET_DROP` option which
+    allows to simulate packet drop at the loopback interface. This is used by
+    certain test cases.
+
+* MQTT:
+
+  * Removed custom logging macros from MQTT implementation, in favour of the
+    common networking logging.
+
+* OpenThread:
+
+  * Updated OpenThread revision up to commit ``130afd9bb6d02f2a07e86b824fb7a79e9fca5fe0``.
+  * Implemented ``otPlatCryptoRand`` platform API for OpenThread.
+  * Added support for PSA MAC keys.
+  * Multiple minor fixes/improvements to align with upstream OpenThread changes.
+
+* Sockets:
+
+  * Added support for :c:func:`shutdown` function.
+  * Fixed :c:func:`sendmsg` operation when TCP reported full transmission window.
+  * Added support for :c:func:`getpeername` function.
+  * Fixed userspace :c:func:`accept` argument validation.
+  * Added support for :c:macro:`SO_SNDBUF` and :c:macro:`SO_RCVBUF` socket
+    options.
+  * Implemented :c:macro:`POLLOUT` reporting from :c:func:`poll` for STREAM
+    sockets.
+  * Implemented socket dispatcher for offloaded sockets. This module allows to
+    use multiple offloaded socket implementations at the same time.
+  * Introduced a common socket priority for offloaded sockets
+    (:kconfig:option:`CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY`).
+  * Moved socket offloading out of experimental.
+
+* TCP:
+
+  * Implemented receive window handling.
+  * Implemented zero-window probe processing and sending.
+  * Improved TCP stack throughput over loopback interface.
+  * Fixed possible transmission window overflow in case of TCP retransmissions.
+    This could led to TX buffer starvation when TCP entered retransmission mode.
+  * Updated :c:macro:`FIN_TIMEOUT` delay to correctly reflect time needed for
+    all FIN packet retransmissions.
+  * Added proper error reporting from TCP to upper layers. This solves the
+    problem of connection errors being reported to the application as graceful
+    connection shutdown.
+  * Added a mechanism which allows upper layers to monitor the TCP transmission
+    window availability. This allows to improve throughput greatly in low-buffer
+    scenarios.
+
+* TLS:
+
+  * Added :c:macro:`TLS_SESSION_CACHE` and :c:macro:`TLS_SESSION_CACHE_PURGE`
+    socket options which allow to control session caching on a socket.
+  * Fixed :c:macro:`TLS_CIPHERSUITE_LIST` socket option, which did not set the
+    cipher list on a socket correctly.
+
 USB
 ***
 
