@@ -33,6 +33,12 @@
 				reg = <0xe000ed90 0x40>;
 				arm,num-mpu-regions = <16>;
 			};
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv7m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <132000000>;
+			};
 		};
 	};
 

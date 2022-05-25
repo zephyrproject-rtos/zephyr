@@ -64,6 +64,10 @@ config IMX_USDHC
 	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
 	depends on SDHC
 
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 7500000
+	depends on LOG_BACKEND_SWO
+
 if FLASH_MCUX_FLEXSPI_XIP
 
 # Avoid RWW hazards by defaulting logging to disabled
