@@ -393,7 +393,7 @@ img_mgmt_impl_write_image_data(unsigned int offset, const void *data, unsigned i
 		}
 	}
 
-	if (offset != ctx->stream.bytes_written + ctx->stream.buf_bytes) {
+	if (offset != flash_img_bytes_written(ctx) + ctx->stream.buf_bytes) {
 		rc = MGMT_ERR_EUNKNOWN;
 		goto out;
 	}
