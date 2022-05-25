@@ -8,7 +8,7 @@
 #ifndef BOARDS_POSIX_NRF52_BSIM_BOARD_IRQ_H
 #define BOARDS_POSIX_NRF52_BSIM_BOARD_IRQ_H
 
-#include "sw_isr_table.h"
+#include <zephyr/sw_isr_table.h>
 #include "zephyr/types.h"
 
 #ifdef __cplusplus

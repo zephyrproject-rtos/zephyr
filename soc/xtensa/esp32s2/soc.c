@@ -25,7 +25,7 @@
 #include "hal/cpu_ll.h"
 #include "esp_err.h"
 #include "esp32s2/spiram.h"
-#include "sys/printk.h"
+#include <zephyr/sys/printk.h>
 
 extern void rtc_clk_cpu_freq_set_xtal(void);
 

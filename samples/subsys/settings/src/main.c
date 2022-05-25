@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 
 #include <errno.h>
 #include <zephyr/sys/printk.h>
