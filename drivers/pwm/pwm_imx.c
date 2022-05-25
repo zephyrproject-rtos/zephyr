@@ -8,7 +8,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <soc.h>
 #include <device_imx.h>
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>

@@ -13,9 +13,9 @@
 
 #define DT_DRV_COMPAT zephyr_native_posix_rng
 
-#include "device.h"
+#include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
-#include "init.h"
+#include <zephyr/init.h>
 #include <zephyr/sys/util.h>
 #include <stdlib.h>
 #include <string.h>

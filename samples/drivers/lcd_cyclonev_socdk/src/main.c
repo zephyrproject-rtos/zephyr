@@ -5,10 +5,10 @@
  * Example to use LCD Display in Cyclone V SoC FPGA devkit
  */
 
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #include <stdio.h>
 #include <string.h>
-#include <drivers/i2c.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 #include "commands.h"
 #define I2C_INST DT_NODELABEL(i2c0)

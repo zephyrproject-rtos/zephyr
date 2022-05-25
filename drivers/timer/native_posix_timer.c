@@ -11,10 +11,10 @@
  * POSIX arch and InfClock SOC
  */
 #include "zephyr/types.h"
-#include "irq.h"
-#include "device.h"
+#include <zephyr/irq.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include "sys_clock.h"
+#include <zephyr/sys_clock.h>
 #include "timer_model.h"
 #include "soc.h"
 #include <zephyr/arch/posix/posix_trace.h>

@@ -10,7 +10,7 @@
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
 #include "smp/smp.h"
-#include "mgmt/mcumgr/smp.h"
+#include <zephyr/mgmt/mcumgr/smp.h>
 #include "smp_reassembly.h"
 
 #include <zephyr/logging/log.h>

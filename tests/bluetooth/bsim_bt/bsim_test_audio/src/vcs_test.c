@@ -5,7 +5,7 @@
  */
 
 #ifdef CONFIG_BT_VCS
-#include "bluetooth/audio/vcs.h"
+#include <zephyr/bluetooth/audio/vcs.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;

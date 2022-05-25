@@ -14,13 +14,13 @@
 #include <zephyr/net/buf.h>
 #include <zephyr/mgmt/mcumgr/buf.h>
 #include "mgmt/mgmt.h"
-#include "mgmt/mcumgr/serial.h"
-#include "mgmt/mcumgr/smp.h"
-#include "mgmt/mcumgr/smp_shell.h"
-#include "drivers/uart.h"
+#include <zephyr/mgmt/mcumgr/serial.h>
+#include <zephyr/mgmt/mcumgr/smp.h>
+#include <zephyr/mgmt/mcumgr/smp_shell.h>
+#include <zephyr/drivers/uart.h>
 #include "syscalls/uart.h"
-#include "shell/shell.h"
-#include "shell/shell_uart.h"
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_uart.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smp_shell);

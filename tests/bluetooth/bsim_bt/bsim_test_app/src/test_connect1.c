@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"

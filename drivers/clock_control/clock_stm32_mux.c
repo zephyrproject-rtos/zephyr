@@ -5,11 +5,11 @@
  *
  */
 
-#include <drivers/clock_control.h>
-#include <sys/util.h>
-#include <drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <soc.h>
 
 #define DT_DRV_COMPAT st_stm32_clock_mux

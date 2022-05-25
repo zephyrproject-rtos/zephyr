@@ -27,7 +27,7 @@
 #include "esp_spi_flash.h"
 #include "esp_err.h"
 #include "esp32/spiram.h"
-#include "sys/printk.h"
+#include <zephyr/sys/printk.h>
 
 /*
  * This is written in C rather than assembly since, during the port bring up,

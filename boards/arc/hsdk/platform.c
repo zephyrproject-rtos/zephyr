@@ -5,7 +5,7 @@
  */
 
 #include <soc.h>
-#include <init.h>
+#include <zephyr/init.h>
 
 #define HSDK_CREG_GPIO_MUX_REG	0xf0001484
 #define HSDK_CREG_GPIO_MUX_VAL	0x00000400

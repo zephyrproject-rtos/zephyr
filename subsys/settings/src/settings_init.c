@@ -11,7 +11,7 @@
 
 #include <errno.h>
 
-#include "settings/settings.h"
+#include <zephyr/settings/settings.h>
 #include "settings/settings_file.h"
 #include <zephyr/zephyr.h>
 

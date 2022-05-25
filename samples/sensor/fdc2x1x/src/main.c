@@ -8,7 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/sensor.h>
-#include "drivers/sensor/fdc2x1x.h"
+#include <zephyr/drivers/sensor/fdc2x1x.h>
 #include <stdio.h>
 
 #define CH_BUF_INIT(m)          {},

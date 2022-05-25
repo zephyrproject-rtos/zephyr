@@ -13,10 +13,10 @@
  *
  */
 
-#include "kernel.h"
+#include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include "posix_core.h"
-#include "irq.h"
+#include <zephyr/irq.h>
 #include "kswap.h"
 #include <zephyr/pm/pm.h>
 

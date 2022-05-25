@@ -11,7 +11,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
-#include "bluetooth/addr.h"
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include "app_conf.h"

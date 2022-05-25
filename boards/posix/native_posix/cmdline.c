@@ -12,7 +12,7 @@
 #include "hw_models_top.h"
 #include "timer_model.h"
 #include "cmdline.h"
-#include "toolchain.h"
+#include <zephyr/toolchain.h>
 #include <zephyr/arch/posix/posix_trace.h>
 #include "native_tracing.h"
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <zephyr/kernel.h>
 #include <ztest.h>
 
 ZTEST_USER(framework_tests, test_userspace_is_user)

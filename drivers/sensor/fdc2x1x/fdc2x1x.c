@@ -15,7 +15,7 @@
 #include <math.h>
 
 #include "fdc2x1x.h"
-#include "drivers/sensor/fdc2x1x.h"
+#include <zephyr/drivers/sensor/fdc2x1x.h>
 
 LOG_MODULE_REGISTER(FDC2X1X, CONFIG_SENSOR_LOG_LEVEL);
 
