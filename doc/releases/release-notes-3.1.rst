@@ -294,6 +294,10 @@ Drivers and Sensors
     easier to use the PWM API when the PWM channel, period and flags are taken
     from a Devicetree PWM cell.
 
+* Reset
+
+  * Added reset controller driver API.
+
 * Sensor
 
 * Serial
