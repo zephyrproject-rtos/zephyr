@@ -26,9 +26,6 @@ config ZCBOR_STOP_ON_ERROR
 config ZCBOR_VERBOSE
 	bool "Make zcbor code print messages"
 
-	# TODO: FIXME: Remove when Minimal LIBC has been fixed.
-	depends on !MINIMAL_LIBC # Because Minimal LIBC doesn't have PRIuFAST32 and PRIxFAST32.
-
 config ZCBOR_ASSERT
 	def_bool ASSERT
 
