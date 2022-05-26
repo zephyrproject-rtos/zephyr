@@ -1781,6 +1781,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.extra_sections = None
         self.integration_platforms = []
         self.ztest_suite_names = []
+        self.has_explicit_testcases_in_yaml = False
 
 
     def add_testcase(self, name):
@@ -2723,6 +2724,12 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.add_missing_testscases("blocked", self.instance.reason)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
+                    # amend test instance
+                    if not self.instance.testsuite.has_explicit_testcases_in_yaml:
+                        logger.debug(f"amending test instnace: {self.instance.name}")
+                        self.amend_test_instance(results)
+                    else:
+                        logger.debug(f"explicit testcases in yaml: {self.instance.name}")
                     pipeline.put({"op": "gather_metrics", "test": self.instance})
 
         elif op == "gather_metrics":
@@ -2766,6 +2773,42 @@ class ProjectBuilder(FilterBuilder):
                 self.cleanup_device_testing_artifacts()
             else:
                 self.cleanup_artifacts()
+
+    def amend_test_instance(self, results):
+        lst_file = os.path.join(self.build_dir, "zephyr", "zephyr.lst")
+        if os.path.isfile(lst_file):
+            logger.debug(f"zephyr.lst located: {lst_file}")
+        else:
+            # no zephyr.lst file, cannot do symbol-based amending
+            logger.debug(f"zephyr.lst NOT located: {lst_file}")
+            return
+
+        yaml_testsuite_name = self.instance.testsuite.id
+        logger.debug(f"amending yaml test suite: {yaml_testsuite_name}")
+
+        with open(lst_file, 'r') as fp:
+            lst_content = fp.read()
+            logger.debug(f"test instance {self.instance.name} has {len(self.instance.testcases)} cases.")
+            for testcase in self.instance.testcases:
+                # identifier is "yaml_testsuite.test_function" or just "yaml_testsuite"
+                identifier = testcase.name
+                if identifier == yaml_testsuite_name:
+                    # Sometimes twsiter add yaml test suite name to a test instance as a test case.
+                    # Such test case has no real test function.
+                    # Skip it to make stats right
+                    continue
+
+                test_func_name = f"test_{identifier.split('.')[-1]}"
+                # If the .lst file exists and the test case function not in it,
+                # it should be an un-intended test function for this test instance build.
+                # If this is an old test plan and contains test cases collected at runtime
+                # by checking the log, such test cases may not have functions in .lst file.
+                # Also amend them here, which should be OK because they will be updated again at runtime.
+                if test_func_name not in lst_content:
+                    testcase.status = "skipped"
+                    testcase.reason = "Skipped due to an inaccurate test plan"
+                    results.skipped_runtime += 1
+                    continue
 
     def cleanup_artifacts(self, additional_keep=[]):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
@@ -3417,6 +3460,7 @@ class TestPlan(DisablePyTestCollectionMixin):
 
                         testcases = ts_dict.get("testcases", [])
                         if testcases:
+                            ts.has_explicit_testcases_in_yaml = True
                             for tc in testcases:
                                 ts.add_testcase(name=f"{name}.{tc}")
                         else:
