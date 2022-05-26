@@ -236,7 +236,12 @@ Boards & SoC Support
 
 * Added support for these RISC-V boards:
 
+  * GigaDevice GD32VF103C-EVAL
+
 * Made these changes in other boards:
+
+  * gd32e103v_eval: Add prescaler to timer
+  * longan_nano: Add support for TF-Card slot
 
 * Added support for these following shields:
 
@@ -363,6 +368,11 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* GigaDevice
+
+  * Fixed GD32_REMAP_MSK macro
+  * Fixed gd32f403z pc3 missing pincodes
 
 MCUboot
 *******
