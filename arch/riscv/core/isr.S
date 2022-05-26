@@ -126,8 +126,6 @@ GTEXT(__irq_wrapper)
 
 /*
  * Handler called upon each exception/interrupt/fault
- * In this architecture, system call (ECALL) is used to perform context
- * switching or IRQ offloading (when enabled).
  */
 SECTION_FUNC(exception.entry, __irq_wrapper)
 
