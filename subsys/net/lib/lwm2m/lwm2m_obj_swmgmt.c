@@ -700,8 +700,8 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	INIT_OBJ_RES(SWMGMT_PACKAGE_URI_ID, res[index], res_idx, res_inst[index], res_inst_idx, 1,
-		     true, false, instance->package_uri, PACKAGE_URI_LEN, NULL, NULL,
-		     package_uri_write_cb, NULL, NULL);
+		     true, true, instance->package_uri, PACKAGE_URI_LEN, NULL, NULL, NULL,
+		     package_uri_write_cb, NULL);
 #else
 	INIT_OBJ_RES_OPT(SWMGMT_PACKAGE_URI_ID, res[index], res_idx, res_inst[index], res_inst_idx,
 			 1, true, false, NULL, NULL, package_uri_write_cb, NULL, NULL);
