@@ -194,6 +194,7 @@
 		sw1 = &button2;
 		sw2 = &mag1;
 		mcuboot-button0 = &button1;
+		mcuboot-led0 = &led1;
 	};
 };
 

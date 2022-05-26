@@ -46,6 +46,7 @@
 		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		mcuboot-button0 = &button0;
+		mcuboot-led0 = &blue_led;
 	};
 
 	/* Used for accessing other pins */
