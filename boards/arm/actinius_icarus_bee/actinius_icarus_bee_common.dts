@@ -74,6 +74,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
 		bootloader-led0 = &green_pwm_led;
+		mcuboot-button0 = &button0;
 	};
 
 	sim_select: sim-select {

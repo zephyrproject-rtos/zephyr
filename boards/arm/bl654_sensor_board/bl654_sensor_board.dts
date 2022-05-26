@@ -43,6 +43,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button1;
+		mcuboot-button0 = &button1;
 	};
 };
 
