@@ -519,6 +519,11 @@ static int cp_send_command(struct osdp_pd *pd)
 		return OSDP_CP_ERR_GENERIC;
 	}
 
+	/* flush rx to remove any invalid data. */
+	if (pd->channel.flush) {
+		pd->channel.flush(pd->channel.data);
+	}
+
 	ret = pd->channel.send(pd->channel.data, pd->rx_buf, len);
 	if (ret != len) {
 		LOG_ERR("Channel send for %d bytes failed! ret: %d", len, ret);
@@ -604,14 +609,9 @@ static inline void cp_set_state(struct osdp_pd *pd, enum osdp_cp_state_e state)
 	CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
 }
 
-static void cp_reset_channel(struct osdp_pd *pd)
-{
-	pd->rx_buf_len = 0;
-	if (pd->channel.flush) {
-		pd->channel.flush(pd->channel.data);
-	}
-}
-
+/**
+ * Note: This method must not dequeue cmd unless it reaches an invalid state.
+ */
 static int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int rc, ret = OSDP_CP_ERR_CAN_YIELD;
@@ -629,7 +629,6 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		pd->cmd_id = cmd->id;
 		memcpy(pd->cmd_data, cmd, sizeof(struct osdp_cmd));
 		osdp_cmd_free(pd, cmd);
-		cp_reset_channel(pd);
 		/* fall-thru */
 	case OSDP_CP_PHY_STATE_SEND_CMD:
 		if ((cp_send_command(pd)) < 0) {
@@ -672,7 +671,6 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
 		break;
 	case OSDP_CP_PHY_STATE_ERR:
-		cp_reset_channel(pd);
 		cp_flush_command_queue(pd);
 		pd->phy_state = OSDP_CP_PHY_STATE_ERR_WAIT;
 		ret = OSDP_CP_ERR_GENERIC;

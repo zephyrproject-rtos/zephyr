@@ -630,6 +630,11 @@ static int pd_send_reply(struct osdp_pd *pd)
 		return OSDP_PD_ERR_GENERIC;
 	}
 
+	/* flush rx to remove any invalid data. */
+	if (pd->channel.flush) {
+		pd->channel.flush(pd->channel.data);
+	}
+
 	ret = pd->channel.send(pd->channel.data, pd->rx_buf, len);
 	if (ret != len) {
 		LOG_ERR("Channel send for %d bytes failed! ret: %d", len, ret);
