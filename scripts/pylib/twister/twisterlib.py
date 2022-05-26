@@ -402,8 +402,8 @@ class HarnessImporter:
     def __init__(self, name):
         sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
         module = __import__("harness")
-        if name:
-            my_class = getattr(module, name)
+        if name == "pytest":
+            my_class = getattr(module, "Pytest")
         else:
             my_class = getattr(module, "Test")
 
@@ -666,7 +666,10 @@ class BinaryHandler(Handler):
         elif harness.state:
             self.instance.status = harness.state
             if harness.state == "failed":
-                self.instance.reason = "Failed"
+                if not harness.console_state:
+                    self.instance.reason = "Console Failed"
+                else:
+                    self.instance.reason = "Failed"
         else:
             self.instance.status = "failed"
             self.instance.reason = "Timeout"
@@ -972,7 +975,10 @@ class DeviceHandler(Handler):
         if harness.state:
             self.instance.status = harness.state
             if harness.state == "failed":
-                self.instance.reason = "Failed"
+                if not harness.console_state:
+                    self.instance.reason = "Console Failed"
+                else:
+                    self.instance.reason = "Failed"
         else:
             self.instance.status = "error"
             self.instance.reason = "No Console Output(Timeout)"
@@ -1145,7 +1151,10 @@ class QEMUHandler(Handler):
             handler.instance.reason = "Timeout"
         elif out_state == "failed":
             handler.instance.status = "failed"
-            handler.instance.reason = "Failed"
+            if not harness.console_state:
+                handler.instance.reason = "Console Failed"
+            else:
+                handler.instance.reason = "Failed"
         elif out_state in ['unexpected eof', 'unexpected byte']:
             handler.instance.status = "failed"
             handler.instance.reason = out_state

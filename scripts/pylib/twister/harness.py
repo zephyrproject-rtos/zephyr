@@ -53,12 +53,15 @@ class Harness:
         self.instance = None
         self.testcase_output = ""
         self._match = False
+        self.console = False
+        self.console_state = True
 
     def configure(self, instance):
         self.instance = instance
         config = instance.testsuite.harness_config
         self.id = instance.testsuite.id
         self.run_id = instance.run_id
+        harness = instance.testsuite.harness
         if "ignore_faults" in instance.testsuite.tags:
             self.fail_on_fault = False
 
@@ -69,7 +72,16 @@ class Harness:
             self.ordered = config.get('ordered', True)
             self.record = config.get('record', {})
 
+        if harness == "console":
+            self.console = True
+
     def process_test(self, line):
+
+        if self.console:
+            if self.state == "passed":
+                self.console_state = True
+            else:
+                self.console_state = False
 
         runid_match = re.search(self.run_id_pattern, line)
         if runid_match:
@@ -80,6 +92,8 @@ class Harness:
 
         if self.RUN_PASSED in line:
             if self.fault:
+                self.state = "failed"
+            elif not self.console_state:
                 self.state = "failed"
             else:
                 self.state = "passed"
@@ -100,12 +114,13 @@ class Console(Harness):
 
     def configure(self, instance):
         super(Console, self).configure(instance)
-        if self.type == "one_line":
-            self.pattern = re.compile(self.regex[0])
-        elif self.type == "multi_line":
-            self.patterns = []
-            for r in self.regex:
-                self.patterns.append(re.compile(r))
+        if self.console:
+            if self.type == "one_line":
+                self.pattern = re.compile(self.regex[0])
+            elif self.type == "multi_line":
+                self.patterns = []
+                for r in self.regex:
+                    self.patterns.append(re.compile(r))
 
     def handle(self, line):
         if self.type == "one_line":
@@ -149,14 +164,6 @@ class Console(Harness):
                 for k,v in match.groupdict().items():
                     csv.append(v.strip())
                 self.recording.append(csv)
-
-        self.process_test(line)
-
-        tc = self.instance.get_case_or_create(self.id)
-        if self.state == "passed":
-            tc.status = "passed"
-        else:
-            tc.status = "failed"
 
 class Pytest(Harness):
     def configure(self, instance):
@@ -251,7 +258,7 @@ class Pytest(Harness):
         log.close()
 
 
-class Test(Harness):
+class Test(Console):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     test_suite_start_pattern = r"Running TESTSUITE (?P<suite_name>.*)"
@@ -260,6 +267,7 @@ class Test(Harness):
     def handle(self, line):
         test_suite_match = re.search(self.test_suite_start_pattern, line)
         if test_suite_match:
+            self.ztest = True
             suite_name = test_suite_match.group("suite_name")
             self.detected_suite_names.append(suite_name)
 
@@ -283,7 +291,9 @@ class Test(Harness):
                 tc.output = self.testcase_output
             self.testcase_output = ""
             self._match = False
-            self.ztest = True
+
+        if self.console:
+            super().handle(line)
 
         self.process_test(line)
 
