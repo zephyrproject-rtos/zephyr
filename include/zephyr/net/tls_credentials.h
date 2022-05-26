@@ -35,8 +35,11 @@ enum tls_credential_type {
 	TLS_CREDENTIAL_CA_CERTIFICATE,
 
 	/** A public server certificate. Use this to register your own server
-	 *  certificate. Should be registered together with a corresponding
-	 *  private key. Used with certificate-based ciphersuites.
+	 *  certificate, such as a certificate identifying the client device
+	 *  when enabling mutual TLS authentication with a certificate and private
+	 *  key on each side of the TLS connection. Should be registered together
+	 *  with a corresponding private key. Used with certificate-based
+	 *  ciphersuites.
 	 */
 	TLS_CREDENTIAL_SERVER_CERTIFICATE,
 
