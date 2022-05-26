@@ -388,6 +388,11 @@ Libraries / Subsystems
     allowed or declined.
   * Made the img mgmt ``img_mgmt_vercmp`` function public to allow application-
     level comparison of image versions.
+  * mcumgr will now only return `MGMT_ERR_ENOMEM` when it fails to allocate
+    a memory buffer for request processing, when previously it would wrongly
+    report this error when the SMP response failed to fit into a buffer;
+    now when encoding of response fails `MGMT_ERR_EMSGSIZE` will be
+    reported. This addresses issue :github:`44535`.
 
 * SD Subsystem
 
