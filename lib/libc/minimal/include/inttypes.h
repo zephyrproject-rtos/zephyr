@@ -22,6 +22,7 @@
 #define	PRIdLEAST16		"d"		/* int_least16_t */
 #define	PRIdLEAST32		"d"		/* int_least32_t */
 #define	PRIdLEAST64		"lld"		/* int_least64_t */
+#define	PRIdMAX			"lld"		/* intmax_t */
 #define	PRIdPTR			"ld"		/* intptr_t */
 
 #define	PRIi8			"i"		/* int8_t */
@@ -36,6 +37,7 @@
 #define	PRIiLEAST16		"i"		/* int_least16_t */
 #define	PRIiLEAST32		"i"		/* int_least32_t */
 #define	PRIiLEAST64		"lli"		/* int_least64_t */
+#define	PRIiMAX			"lli"		/* intmax_t */
 #define	PRIiPTR			"li"		/* intptr_t */
 
 #define	PRIo8			"o"		/* int8_t */
@@ -50,6 +52,7 @@
 #define	PRIoLEAST16		"o"		/* int_least16_t */
 #define	PRIoLEAST32		"o"		/* int_least32_t */
 #define	PRIoLEAST64		"llo"		/* int_least64_t */
+#define	PRIoMAX			"llo"		/* intmax_t */
 #define	PRIoPTR			"lo"		/* intptr_t */
 
 #define	PRIu8			"u"		/* uint8_t */
@@ -64,6 +67,7 @@
 #define	PRIuLEAST16		"u"		/* uint_least16_t */
 #define	PRIuLEAST32		"u"		/* uint_least32_t */
 #define	PRIuLEAST64		"llu"		/* uint_least64_t */
+#define	PRIuMAX			"llu"		/* uintmax_t */
 #define	PRIuPTR			"lu"		/* uintptr_t */
 
 #define	PRIx8			"x"		/* uint8_t */
@@ -78,6 +82,7 @@
 #define	PRIxLEAST16		"x"		/* uint_least16_t */
 #define	PRIxLEAST32		"x"		/* uint_least32_t */
 #define	PRIxLEAST64		"llx"		/* uint_least64_t */
+#define	PRIxMAX			"llx"		/* uintmax_t */
 #define	PRIxPTR			"lx"		/* uintptr_t */
 
 #define	PRIX8			"X"		/* uint8_t */
@@ -92,6 +97,7 @@
 #define	PRIXLEAST16		"X"		/* uint_least16_t */
 #define	PRIXLEAST32		"X"		/* uint_least32_t */
 #define	PRIXLEAST64		"llX"		/* uint_least64_t */
+#define	PRIXMAX			"llX"		/* uintmax_t */
 #define	PRIXPTR			"lX"		/* uintptr_t */
 
 #endif
