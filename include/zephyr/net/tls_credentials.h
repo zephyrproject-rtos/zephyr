@@ -61,11 +61,10 @@ enum tls_credential_type {
  * Secure tag can be used to reference credential after it was registered
  * in the system.
  *
- * @note Some TLS credentials come in pairs:
+ * @note Some TLS credentials come in pairs, and must be assigned the same
+ *    secure tag to be correctly handled in the system:
  *    - TLS_CREDENTIAL_SERVER_CERTIFICATE with TLS_CREDENTIAL_PRIVATE_KEY,
  *    - TLS_CREDENTIAL_PSK with TLS_CREDENTIAL_PSK_ID.
- *    Such pairs of credentials must be assigned the same secure tag to be
- *    correctly handled in the system.
  */
 typedef int sec_tag_t;
 
