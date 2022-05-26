@@ -12,8 +12,8 @@ control over their reset input signals, including the ability to assert,
 deassert and toggle those signals. Also, the reset status of the reset input
 signal can be checked.
 
-Mainly, the assert and deassert API functions are optional because in most
-cases we want to toggle the reset signals.
+Mainly, the line_assert and line_deassert API functions are optional because
+in most cases we want to toggle the reset signals.
 
 Configuration Options
 *********************
