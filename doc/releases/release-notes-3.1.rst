@@ -224,6 +224,8 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * Added Atmel SAM UPLL clock support
+
 * Changes for ARC boards:
 
 * Added support for these ARM boards:
@@ -240,6 +242,9 @@ Boards & SoC Support
 
 * Made these changes in other boards:
 
+  * sam4s_xplained: Add support for HWINFO
+  * sam_e70_xlained: Add support for HWINFO and CAN-FD
+  * sam_v71_xult: Add support for HWINFO and CAN-FD
   * gd32e103v_eval: Add prescaler to timer
   * longan_nano: Add support for TF-Card slot
 
@@ -250,6 +255,8 @@ Drivers and Sensors
 *******************
 
 * ADC
+
+  * Atmel SAM0: Fixed adc voltage reference
 
 * CAN
 
@@ -280,6 +287,10 @@ Drivers and Sensors
 
 * GPIO
 
+* HWINFO
+
+  * Atmel SAM: Added RSTC support
+
 * I2C
 
 * I2S
@@ -291,6 +302,10 @@ Drivers and Sensors
 * MEMC
 
 * Pin control
+
+  * New platforms added to ``pinctrl`` state-based API:
+
+    * Atmel SAM/SAM0
 
 * PWM
 
@@ -368,6 +383,16 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* Atmel
+
+  * Added dt-bindings, documentation and scripts to support state-based pin
+    control (``pinctrl``) API.
+  * Imported new SoCs header files:
+
+    * SAML21
+    * SAMR34
+    * SAMR35
 
 * GigaDevice
 
