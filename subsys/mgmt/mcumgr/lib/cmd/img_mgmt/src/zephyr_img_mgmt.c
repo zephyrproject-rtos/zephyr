@@ -530,7 +530,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 
 	memset(action, 0, sizeof(*action));
 
-	if (req->off == -1) {
+	if (req->off == SIZE_MAX) {
 		/* Request did not include an `off` field. */
 		IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
 		return MGMT_ERR_EINVAL;
@@ -544,7 +544,7 @@ img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
 			return MGMT_ERR_EINVAL;
 		}
 
-		if (req->size == -1) {
+		if (req->size == SIZE_MAX) {
 			/* Request did not include a `len` field. */
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
 			return MGMT_ERR_EINVAL;
