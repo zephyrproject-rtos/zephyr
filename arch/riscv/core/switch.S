@@ -129,4 +129,5 @@ no_fp:
 1:
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
+	/* Return to arch_switch() or _irq_wrapper() */
 	ret
