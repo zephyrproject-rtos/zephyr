@@ -295,25 +295,25 @@
 				status = "disabled";
 			};
 		};
-		clock0: clock@82005000 {
+		clock0: clock@e0004800 {
 			compatible = "litex,clk";
 			label = "clock0";
 			reg = <0xe0004800 0x4
-			       0xe0004804 0x4
-			       0xe0004808 0x4
-			       0xe000480c 0x4
-			       0xe0004810 0x4
-			       0xe0004814 0x4
-			       0xe0004818 0x4
-			       0xe000481c 0x4>;
+				0xe0004804 0x4
+				0xe0004808 0x4
+				0xe000480c 0x4
+				0xe0004810 0x4
+				0xe0004814 0x4
+				0xe0004818 0x4
+				0xe000481c 0x4>;
 			reg-names = "drp_reset",
-				    "drp_locked",
-				    "drp_read",
-				    "drp_write",
-				    "drp_drdy",
-				    "drp_adr",
-				    "drp_dat_w",
-				    "drp_dat_r";
+				"drp_locked",
+				"drp_read",
+				"drp_write",
+				"drp_drdy",
+				"drp_adr",
+				"drp_dat_w",
+				"drp_dat_r";
 			#clock-cells = <1>;
 			clocks = <&clk0 0>, <&clk1 1>;
 			clock-output-names = "CLK_0", "CLK_1";
