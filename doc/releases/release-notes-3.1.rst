@@ -389,6 +389,18 @@ Drivers and Sensors
   * New platforms added to ``pinctrl`` state-based API:
 
     * Atmel SAM/SAM0
+    * Espressif ESP32
+    * ITE IT8XXX2
+    * Microchip XEC
+    * Nordic nRF (completed support)
+    * Nuvoton NPCX Embedded Controller (EC)
+    * NXP iMX
+    * NXP Kinetis
+    * NXP LPC
+    * RV32M1
+    * SiFive Freedom
+    * Telink B91
+    * TI CC13XX/CC26XX
 
 * PWM
 
