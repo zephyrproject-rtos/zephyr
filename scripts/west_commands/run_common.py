@@ -127,6 +127,9 @@ def add_parser_common(command, parser_adder=None, parser=None):
         etc.'''))
     group.add_argument('-H', '--context', action='store_true',
                        help='print runner- and build-specific help')
+    if command.name == "flash":
+        group.add_argument('-f', '--force', action='store_true',
+                help='force download with command line ignore load error')
     # Options used to override RunnerConfig values in runners.yaml.
     # TODO: is this actually useful?
     group.add_argument('--board-dir', metavar='DIR', help='board directory')
@@ -145,7 +148,7 @@ def add_parser_common(command, parser_adder=None, parser=None):
 
     return parser
 
-def do_run_common(command, user_args, user_runner_args):
+def do_run_common(command, user_args, user_runner_args, die_on_error=True):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
 
@@ -154,20 +157,20 @@ def do_run_common(command, user_args, user_runner_args):
         return
 
     command_name = command.name
-    build_dir = get_build_dir(user_args)
-    cache = load_cmake_cache(build_dir, user_args)
+    build_dir = get_build_dir(user_args, die_on_error)
+    cache = load_cmake_cache(build_dir, user_args, die_on_error)
     board = cache['CACHED_BOARD']
     if not user_args.skip_rebuild:
         rebuild(command, build_dir, user_args)
 
     # Load runners.yaml.
-    yaml_path = runners_yaml_path(build_dir, board)
-    runners_yaml = load_runners_yaml(yaml_path)
+    yaml_path = runners_yaml_path(build_dir, board, die_on_error)
+    runners_yaml = load_runners_yaml(yaml_path, die_on_error)
 
     # Get a concrete ZephyrBinaryRunner subclass to use based on
     # runners.yaml and command line arguments.
     runner_cls = use_runner_cls(command, board, user_args, runners_yaml,
-                                cache)
+                                cache, False)
     runner_name = runner_cls.name()
 
     # Set up runner logging to delegate to west.log commands.
@@ -183,7 +186,10 @@ def do_run_common(command, user_args, user_runner_args):
     #
     # - runner-specific runners.yaml arguments
     # - user-provided command line arguments
-    final_argv = runners_yaml['args'][runner_name] + runner_args
+    if 'args' in runners_yaml:
+        final_argv = runners_yaml['args'][runner_name] + runner_args
+    else:
+        final_argv = runner_args
 
     # 'user_args' contains parsed arguments which are:
     #
@@ -263,12 +269,19 @@ def get_build_dir(args, die_if_none=True):
     else:
         return None
 
-def load_cmake_cache(build_dir, args):
-    cache_file = path.join(build_dir, args.cmake_cache or zcmake.DEFAULT_CACHE)
+def load_cmake_cache(build_dir, args, die_if_none=True):
     try:
+        cache_file = path.join(build_dir, args.cmake_cache or zcmake.DEFAULT_CACHE)
         return zcmake.CMakeCache(cache_file)
     except FileNotFoundError:
-        log.die(f'no CMake cache found (expected one at {cache_file})')
+        if die_if_none:
+            log.die(f'no CMake cache found (expected one at {cache_file})')
+        else:
+            log.wrn(f'no CMake cache found (expected one at {cache_file})')
+            return {'CACHED_BOARD' : ""}
+    except TypeError:
+        log.wrn(f'no CMake cache found')
+        return {'CACHED_BOARD' : ""}
 
 def rebuild(command, build_dir, args):
     _banner(f'west {command.name}: rebuilding')
@@ -280,22 +293,26 @@ def rebuild(command, build_dir, args):
         else:
             log.die(f're-build in {build_dir} failed (no --build-dir given)')
 
-def runners_yaml_path(build_dir, board):
+def runners_yaml_path(build_dir, board, die_if_none=True):
     ret = Path(build_dir) / 'zephyr' / 'runners.yaml'
-    if not ret.is_file():
+    if not ret.is_file() and die_if_none:
         log.die(f'either a pristine build is needed, or board {board} '
                 "doesn't support west flash/debug "
                 '(no ZEPHYR_RUNNERS_YAML in CMake cache)')
     return ret
 
-def load_runners_yaml(path):
+def load_runners_yaml(path, die_if_none=True):
     # Load runners.yaml and convert to Python object.
 
     try:
         with open(path, 'r') as f:
             content = yaml.safe_load(f.read())
     except FileNotFoundError:
-        log.die(f'runners.yaml file not found: {path}')
+        if die_if_none:
+            log.die(f'runners.yaml file not found: {path}')
+        else:
+            # give an empty one
+            content = {'runners' : ['']}
 
     if not content.get('runners'):
         log.wrn(f'no pre-configured runners in {path}; '
@@ -303,7 +320,7 @@ def load_runners_yaml(path):
 
     return content
 
-def use_runner_cls(command, board, args, runners_yaml, cache):
+def use_runner_cls(command, board, args, runners_yaml, cache, die_on_error=True):
     # Get the ZephyrBinaryRunner class from its name, and make sure it
     # supports the command. Print a message about the choice, and
     # return the class.
@@ -321,10 +338,11 @@ def use_runner_cls(command, board, args, runners_yaml, cache):
             board_cmake = Path(cache['BOARD_DIR']) / 'board.cmake'
         else:
             board_cmake = 'board.cmake'
-        log.err(f'board {board} does not support runner {runner}',
-                fatal=True)
-        log.inf(f'To fix, configure this runner in {board_cmake} and rebuild.')
-        sys.exit(1)
+        if die_on_error:
+            log.err(f'board {board} does not support runner {runner}',
+                    fatal=True)
+            log.inf(f'To fix, configure this runner in {board_cmake} and rebuild.')
+            sys.exit(1)
     try:
         runner_cls = get_runner_cls(runner)
     except ValueError as e:
@@ -337,7 +355,10 @@ def use_runner_cls(command, board, args, runners_yaml, cache):
 def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
     # Get a RunnerConfig object for the current run. yaml_config is
     # runners.yaml's config: map, and args are the command line arguments.
-    yaml_config = runners_yaml['config']
+    if 'config' in runners_yaml:
+        yaml_config = runners_yaml['config']
+    else:
+        yaml_config = {'board_dir' : ''}
     yaml_dir = yaml_path.parent
     if args is None:
         args = argparse.Namespace()
