@@ -759,3 +759,41 @@ dependencies between test cases.  For native_posix platforms, you can provide
 the seed to the random number generator by providing ``-seed=value`` as an
 argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
 details.
+
+Running test only mode
+**********************
+Enable prebuild binary to be used to test with twister scripts in given test plan.
+
+- Step 1
+
+Create a test plan with below command line.
+
+``
+scripts/twister -p <your platform> -T <test application path> -s <test case name> --build-only --save-tests <path to your saved plan.json>
+``
+
+e.g.
+
+``
+scripts/twister -p frdm_k64f -T tests/kernel/common/ -s "tests/kernel/common/kernel.common"  --build-only --save-tests testplan.json
+``
+
+- Step 2
+
+Put your prebuild zephyr application .bin or .elf or .hex somewhare e.g. ./zephyr.bin
+This file need to pass to west flash with '--bin-file', see below.
+or change to --elf-file, --hex-file, accordigly.
+
+- Step 3
+
+Create your board .config file which only need copy one build from hello_world.
+Put the .config to you run machine e.g. ~/zephyr_runner/zephyr/.config
+And this will be used as --force-board-config-path for west to reference
+
+- Step 4
+
+run below command to download your pre-build binary. e.g.
+
+``
+scripts/twister -p frdm_k64f --device-testing --hardware-map ~/frdm_k64f.yml --test-only --load-tests testplan.json --west-flash="--device=MK64FN1M0xxx12,--bin-file=./zephyr.bin" --force-board-config-path=~/zephyr_runner/
+``
