@@ -64,7 +64,7 @@ a cross-compiler and related tools which are different from the compiler
 and tools used for developing software that runs natively on your host
 operating system.
 
-You can install the :ref:`Zephyr SDK <zephyr_sdk>` to get toolchains for all
+You can install the :ref:`Zephyr SDK <toolchain_zephyr_sdk>` to get toolchains for all
 supported architectures, or install an :ref:`alternate toolchain <toolchains>`
 recommended by the SoC vendor or a specific board (check your specific
 :ref:`board-level documentation <boards>`).

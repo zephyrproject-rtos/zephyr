@@ -190,7 +190,7 @@ DTC (Device Tree Compiler)
 A :ref:`recent DTC version <install-required-tools>` is required. Check what
 version you have by using ``dtc --version``. If you have an older version,
 either install a more recent one by building from source, or use the one that is
-bundled in the :ref:`Zephyr SDK <zephyr_sdk>` by installing it.
+bundled in the :ref:`Zephyr SDK <toolchain_zephyr_sdk>` by installing it.
 
 Python
 ======
@@ -204,8 +204,6 @@ manager channels if one is available. Isolating this Python in a virtual
 environment is recommended to avoid interfering with your system Python.
 
 .. _pyenv: https://github.com/pyenv/pyenv
-
-.. _zephyr_sdk:
 
 Install the Zephyr Software Development Kit (SDK)
 *************************************************

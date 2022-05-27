@@ -138,7 +138,7 @@ pieces of hardware are required.
   standalone, the universal switching power adaptor (110-240V AC to 5V DC),
   provided in the package, can be used to power the board.
 
-* :ref:`The Zephyr SDK <zephyr_sdk>`
+* :ref:`The Zephyr SDK <toolchain_zephyr_sdk>`
 
 * Terminal emulator software for use with the USB-UART. Suggestion:
   `Putty Website`_.

@@ -155,7 +155,7 @@ Prerequisites:
 #. Install OpenOCD
 
    You can obtain OpenOCD by following these
-   :ref:`installing the latest Zephyr SDK instructions <zephyr_sdk>`.
+   :ref:`installing the latest Zephyr SDK instructions <toolchain_zephyr_sdk>`.
 
    After the installation, add the directory containing the OpenOCD executable
    to your environment's PATH variable. For example, use this command in Linux:
