@@ -18,3 +18,8 @@ zephyr_library_sources_ifdef(
   CONFIG_I3C_IBI_WORKQUEUE
   i3c_ibi_workq.c
 )
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3C_MCUX
+  i3c_mcux.c
+)
