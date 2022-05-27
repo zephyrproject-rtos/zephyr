@@ -169,16 +169,6 @@
 extern "C" {
 #endif
 
-#define STACK_ROUND_UP(x) ROUND_UP(x, ARCH_STACK_PTR_ALIGN)
-
-/* macros convert value of its argument to a string */
-#define DO_TOSTR(s) #s
-#define TOSTR(s) DO_TOSTR(s)
-
-/* concatenate the values of the arguments into one */
-#define DO_CONCAT(x, y) x ## y
-#define CONCAT(x, y) DO_CONCAT(x, y)
-
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).
  *
