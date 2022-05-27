@@ -273,6 +273,8 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 	if (!data) {
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
+	} else {
+		shell_hexdump(ctx_shell, data, length);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
