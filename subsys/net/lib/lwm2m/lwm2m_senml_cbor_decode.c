@@ -51,8 +51,8 @@ static bool decode_repeated_record_union(zcbor_state_t *state, struct record_uni
 	bool tmp_result = (((zcbor_union_start_code(state) && (int_res = (
 			((((zcbor_uint32_expect_union(state, (2)))) &&
 				(zcbor_int64_decode(state, (&(*result)._union_vi)))	&&
-				((((*result)._union_vi >= -9223372036854775807LL)	&&
-				((*result)._union_vi <= 9223372036854775807LL)) ||
+				((((*result)._union_vi >= INT64_MIN)	&&
+				((*result)._union_vi <= INT64_MAX)) ||
 				(zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) &&
 				(((*result)._record_union_choice = _union_vi) || 1))	||
 			((((zcbor_uint32_expect_union(state, (2))))	&&
@@ -87,8 +87,8 @@ static bool decode_value(zcbor_state_t *state, struct value_ *result)
 			(((zcbor_bstr_decode(state, (&(*result)._value_bstr)))) &&
 				(((*result)._value_choice = _value_bstr) || 1)) ||
 			(((zcbor_int64_decode(state, (&(*result)._value_int))) &&
-				((((*result)._value_int >= -9223372036854775807LL) &&
-				((*result)._value_int <= 9223372036854775807LL)) ||
+				((((*result)._value_int >= INT64_MIN) &&
+				((*result)._value_int <= INT64_MAX)) ||
 				(zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) &&
 				(((*result)._value_choice = _value_int) || 1)) ||
 			(((zcbor_float_decode(state, (&(*result)._value_float)))) &&
