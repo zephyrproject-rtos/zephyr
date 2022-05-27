@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NXP_MCUX_I3C := nxp,mcux-i3c
+
+module = I3C_MCUX
+module-str = i3c-mcux
+source "subsys/logging/Kconfig.template.log_config"
+
+config I3C_MCUX
+	bool "MCUX I3C driver"
+	depends on HAS_MCUX
+	depends on DT_HAS_NXP_MCUX_I3C_ENABLED
+	select PINCTRL
+	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	default y
+	help
+	  Enable mcux I3C driver.
