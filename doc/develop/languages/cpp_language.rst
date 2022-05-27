@@ -1,9 +1,12 @@
-.. _cxx_support_v2:
+.. _language_cpp:
 
-C++ Support for Applications
-############################
+C++ Language Support
+####################
 
-The kernel supports applications written in both C and C++. However, to
+C++ is a general-purpose object-oriented programming language that is based on
+the C language.
+
+Zephyr supports applications written in both C and C++. However, to
 use C++ in an application you must configure the kernel to include C++
 support and the build system must select the correct compiler.
 
