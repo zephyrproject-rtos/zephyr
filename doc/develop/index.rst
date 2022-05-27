@@ -16,4 +16,5 @@ Developing with Zephyr
    modules.rst
    west/index
    test/index
+   toolchains/index
    tools/index
