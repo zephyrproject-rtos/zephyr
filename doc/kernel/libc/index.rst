@@ -20,7 +20,7 @@ tree.
 
 The second one is `newlib`_, a complete C library implementation written for
 embedded systems. Newlib is separate open source project and is not included in
-source code form with Zephyr. Instead, the :ref:`zephyr_sdk` comes with a
+source code form with Zephyr. Instead, the :ref:`toolchain_zephyr_sdk` comes with a
 precompiled library for each supported architecture (:file:`libc.a` and
 :file:`libm.a`). Other 3rd-party toolchains, such as :ref:`toolchain_gnuarmemb`,
 also bundle newlib as a precompiled library.

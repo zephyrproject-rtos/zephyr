@@ -8,6 +8,8 @@ Guides on how to set up toolchains for Zephyr development.
 .. toctree::
    :maxdepth: 1
 
+   zephyr_sdk.rst
+
    arm_compiler.rst
    cadence_xcc.rst
    designware_arc_mwdt.rst
