@@ -569,7 +569,7 @@ static int get_objlnk(struct lwm2m_input_context *in,
 		errno = 0;
 		id = strtoul(idp, &end, 10);
 
-		idp = end;
+		idp = end + 1;
 
 		if ((id == 0 && errno == ERANGE) || id > 65535) {
 			LOG_WRN("decoded id %lu out of range[0..65535]", id);
