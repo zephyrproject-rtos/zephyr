@@ -320,6 +320,21 @@ Drivers and Sensors
 
 * Sensor
 
+  * Added NCPX ADC comparator driver.
+  * Enhanced the BME680 driver to support SPI.
+  * Enhanced the LIS2DW12 driver to support additional filtering and interrupt
+    modes.
+  * Added ICM42670 6-axis accelerometer driver.
+  * Enhanced the VL53L0X driver to support reprogramming its I2C address.
+  * Enhanced the Microchip XEC TACH driver to support pin control and MEC172x.
+  * Added ITE IT8XXX2 voltage comparator driver.
+  * Fixed register definitions in the LSM6DSL driver.
+  * Fixed argument passing bug in the ICM42605 driver.
+  * Removed redundant DEV_NAME helpers in various drivers.
+  * Enhanced the LIS2DH driver to support device power management.
+  * Fixed overflow issue in sensor_value_from_double().
+  * Added MAX31875 temperature sensor driver.
+
 * Serial
 
 * SPI
