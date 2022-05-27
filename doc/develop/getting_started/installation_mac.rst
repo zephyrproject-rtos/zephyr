@@ -27,7 +27,7 @@ get around this issue you can take two different approaches:
 
 Note that this section does **not** apply to executables installed with
 Homebrew, since those are automatically un-quarantined by ``brew`` itself. This
-is however relevant for most :ref:`third_party_x_compilers`.
+is however relevant for most :ref:`toolchains`.
 
 .. _macOS Gatekeeper: https://en.wikipedia.org/wiki/Gatekeeper_(macOS)
 
