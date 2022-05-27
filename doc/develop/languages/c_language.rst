@@ -1,13 +1,20 @@
-.. _libc_api:
+.. _language_c:
 
-C standard library
+C Language Support
 ##################
 
-.. contents::
-    :local:
-    :depth: 2
+C is a general-purpose low-level programming language that is widely used for
+writing code for embedded systems.
 
-The `C standard library`_ is an integral part of any C program, and Zephyr
+Zephyr is primarily written in C and natively supports applications written in
+the C language.
+
+.. _libc:
+
+C Standard Library
+******************
+
+The `C Standard Library`_ is an integral part of any C program, and Zephyr
 provides two implementations for the application to choose from.
 
 The first one, named "minimal libc" is part of the Zephyr code base and provides
@@ -24,13 +31,13 @@ source code form with Zephyr. Instead, the :ref:`toolchain_zephyr_sdk` comes wit
 precompiled library for each supported architecture (:file:`libc.a` and
 :file:`libm.a`). Other 3rd-party toolchains, such as :ref:`toolchain_gnuarmemb`,
 also bundle newlib as a precompiled library.
+
 Newlib can be enabled by selecting the :kconfig:option:`CONFIG_NEWLIB_LIBC` in the
 application configuration file. Part of the support for ``newlib`` is a set of
 hooks available under :file:`lib/libc/newlib/libc-hooks.c` which integrates
 the C standard library with basic kernel services.
 
-
-.. _`C standard library`: https://en.wikipedia.org/wiki/C_standard_library
+.. _`C Standard Library`: https://en.wikipedia.org/wiki/C_standard_library
 .. _`newlib`: https://sourceware.org/newlib/
 
 API Reference
