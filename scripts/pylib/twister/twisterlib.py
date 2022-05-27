@@ -808,7 +808,13 @@ class DeviceHandler(Handler):
         logger.debug(f"Using serial device {serial_device} @ {hardware.baud} baud")
 
         if (self.testplan.west_flash is not None) or runner:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+            if self.testplan.force_run:
+                os.makedirs(self.build_dir, exist_ok=True)
+                command = ["west", "flash", "-f", "--skip-rebuild",
+                    "-d", self.testplan.force_board_config_path]
+            else:
+                # binary will provide by command line through --west-flash
+                command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             command_extra_args = []
 
             # There are three ways this option is used.

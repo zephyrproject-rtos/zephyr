@@ -498,6 +498,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         help="Always output ANSI color escape sequences "
                              "even when the output is redirected (not a tty)")
 
+    parser.add_argument(
+        "--force-board-config-path",
+        help="force to use gien board config path "
+             " need use with --force-run.")
+
     parser.add_argument("--force-toolchain", action="store_true",
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
@@ -942,6 +947,9 @@ def main():
     tplan.suite_name_check = not options.disable_suite_name_check
     tplan.seed = options.seed
     tplan.detailed_skipped_report = options.detailed_skipped_report
+    if options.force_board_config_path is not None:
+        tplan.force_run = True
+        tplan.force_board_config_path = os.path.expanduser(options.force_board_config_path)
 
     # get all enabled west projects
     west_proj = west_projects()
