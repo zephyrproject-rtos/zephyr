@@ -50,8 +50,8 @@ static bool encode_repeated_record_union(zcbor_state_t *state, const struct reco
 	bool tmp_result =
 		(((((*input)._record_union_choice == _union_vi) ?
 			(((zcbor_uint32_put(state, (2)))) &&
-			((((*input)._union_vi >= -9223372036854775807LL) &&
-			((*input)._union_vi <= 9223372036854775807LL)) ||
+			((((*input)._union_vi >= INT64_MIN) &&
+			((*input)._union_vi <= INT64_MAX)) ||
 			(zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)) &&
 			(zcbor_int64_encode(state, (&(*input)._union_vi)))) :
 		(((*input)._record_union_choice == _union_vf) ?
@@ -83,8 +83,8 @@ static bool encode_value(zcbor_state_t *state, const struct value_ *input)
 		(((*input)._value_choice == _value_bstr) ?
 			((zcbor_bstr_encode(state, (&(*input)._value_bstr)))) :
 		(((*input)._value_choice == _value_int) ?
-			(((((*input)._value_int >= -9223372036854775807LL) &&
-			((*input)._value_int <= 9223372036854775807LL)) ||
+			(((((*input)._value_int >= INT64_MIN) &&
+			((*input)._value_int <= INT64_MAX)) ||
 			(zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)) &&
 			(zcbor_int64_encode(state, (&(*input)._value_int)))) :
 		(((*input)._value_choice == _value_float) ?
