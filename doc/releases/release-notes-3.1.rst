@@ -548,6 +548,16 @@ HALs
 MCUboot
 *******
 
+- Added initial support for devices with a write alignment larger than 8B.
+- Addeed optiona for enter to the serial recovery mode with timeout, see ``CONFIG_BOOT_SERIAL_WAIT_FOR_DFU``.
+- Use a smaller sha256 implementation.
+- Added support for the echo command in serial recovery, see ``CONFIG_BOOT_MGMT_ECHO``.
+- Fixed image decryption for any SoC flash of the pages size which not fitted in 1024 B in single loader mode.
+- Fixed possible output buffer overflow in serial recovery.
+- Added GH workflow for verifying integration with the Zephyr.
+- Removed deprecated ``DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL``.
+- Fixed usage of ``CONFIG_LOG_IMMEDIATE``.
+
 Trusted Firmware-m
 ******************
 
