@@ -47,11 +47,37 @@ extern void z_arm_nmi_init(void);
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+/*
+ * GPREGRET bits [0:4] are use for retain the reset type.
+ */
+#define SOC_MCUBOOT_RESET_TYPE_Pos (0UL)
+#define SOC_MCUBOOT_RESET_TYPE_Msk (0x1FUL << SOC_MCUBOOT_RESET_TYPE_Pos)
+
+static void soc_retention_reg_mask_set(uint8_t value, uint8_t mask, uint8_t pos)
+{
+	uint8_t x = nrf_power_gpregret_get(NRF_POWER);
+
+	x &= ~mask;
+	x |= (value << pos) & mask;
+
+	nrf_power_gpregret_set(NRF_POWER, x);
+}
+
+uint8_t soc_retention_reg_mask_get(uint8_t mask, uint8_t pos)
+{
+	uint8_t x = nrf_power_gpregret_get(NRF_POWER);
+
+	nrf_power_gpregret_set(NRF_POWER, x & ~mask);
+
+	return (x & mask) >> pos;
+}
+
 /* Overrides the weak ARM implementation:
    Set general purpose retention register and reboot */
 void sys_arch_reboot(int type)
 {
-	nrf_power_gpregret_set(NRF_POWER, (uint8_t)type);
+	soc_retention_reg_mask_set(type, SOC_MCUBOOT_RESET_TYPE_Msk,
+				   SOC_MCUBOOT_RESET_TYPE_Pos);
 	NVIC_SystemReset();
 }
 
