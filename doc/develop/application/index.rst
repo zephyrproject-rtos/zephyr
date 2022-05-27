@@ -1312,7 +1312,7 @@ Generate and Import an Eclipse Project
 ======================================
 
 #. Set up a GNU Arm Embedded toolchain as described in
-   :ref:`third_party_x_compilers`.
+   :ref:`toolchain_gnuarmemb`.
 
 #. Navigate to a folder outside of the Zephyr tree to build your application.
 
