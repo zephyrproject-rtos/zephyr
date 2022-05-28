@@ -417,7 +417,7 @@ struct osdp_secure_channel {
 
 struct osdp_pd {
 	void *__parent;
-	int offset;
+	int idx;
 	uint32_t flags;
 
 	/* OSDP specified data */
