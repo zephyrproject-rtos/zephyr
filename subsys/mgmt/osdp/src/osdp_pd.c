@@ -38,6 +38,9 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 #define REPLY_NAK_LEN                  2
 #define REPLY_CCRYPT_LEN               33
 #define REPLY_RMAC_I_LEN               17
+#define REPLY_KEYPAD_LEN               2
+#define REPLY_RAW_LEN                  4
+#define REPLY_FMT_LEN                  3
 
 enum osdp_pd_error_e {
 	OSDP_PD_ERR_NONE = 0,
@@ -569,6 +572,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	int ret = OSDP_PD_ERR_GENERIC;
 	int i, data_off, len = 0;
 	struct osdp_cmd *cmd;
+	struct osdp_event *event;
 
 	data_off = osdp_phy_packet_get_data_offset(pd, buf);
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -633,6 +637,46 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		assert_buf_len(REPLY_RSTATR_LEN, max_len);
 		buf[len++] = pd->reply_id;
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_R_TAMPER);
+		ret = OSDP_PD_ERR_NONE;
+		break;
+	case REPLY_KEYPPAD:
+		event = (struct osdp_event *)pd->ephemeral_data;
+		assert_buf_len(REPLY_KEYPAD_LEN + event->keypress.length, max_len);
+		buf[len++] = pd->reply_id;
+		buf[len++] = (uint8_t)event->keypress.reader_no;
+		buf[len++] = (uint8_t)event->keypress.length;
+		for (i = 0; i < event->keypress.length; i++) {
+			buf[len++] = event->keypress.data[i];
+		}
+		ret = OSDP_PD_ERR_NONE;
+		break;
+	case REPLY_RAW: {
+		int len_bytes;
+
+		event = (struct osdp_event *)pd->ephemeral_data;
+		len_bytes = (event->cardread.length + 7) / 8;
+		assert_buf_len(REPLY_RAW_LEN + len_bytes, max_len);
+		buf[len++] = pd->reply_id;
+		buf[len++] = (uint8_t)event->cardread.reader_no;
+		buf[len++] = (uint8_t)event->cardread.format;
+		buf[len++] = BYTE_0(event->cardread.length);
+		buf[len++] = BYTE_1(event->cardread.length);
+		for (i = 0; i < len_bytes; i++) {
+			buf[len++] = event->cardread.data[i];
+		}
+		ret = OSDP_PD_ERR_NONE;
+		break;
+	}
+	case REPLY_FMT:
+		event = (struct osdp_event *)pd->ephemeral_data;
+		assert_buf_len(REPLY_FMT_LEN + event->cardread.length, max_len);
+		buf[len++] = pd->reply_id;
+		buf[len++] = (uint8_t)event->cardread.reader_no;
+		buf[len++] = (uint8_t)event->cardread.direction;
+		buf[len++] = (uint8_t)event->cardread.length;
+		for (i = 0; i < event->cardread.length; i++) {
+			buf[len++] = event->cardread.data[i];
+		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_COM:
