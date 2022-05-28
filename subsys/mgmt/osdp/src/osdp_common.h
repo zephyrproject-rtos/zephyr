@@ -119,6 +119,8 @@
 #define PD_FLAG_SC_USE_SCBKD    0x00000080 /* in this SC attempt, use SCBKD */
 #define PD_FLAG_SC_ACTIVE       0x00000100 /* secure channel is active */
 #define PD_FLAG_SC_SCBKD_DONE   0x00000200 /* SCBKD check is done */
+#define PD_FLAG_PKT_HAS_MARK    0x00000400 /* Packet has mark byte */
+#define PD_FLAG_PKT_SKIP_MARK   0x00000800 /* CONFIG_OSDP_SKIP_MARK_BYTE */
 #define PD_FLAG_INSTALL_MODE    0x40000000 /* PD is in install mode */
 #define PD_FLAG_PD_MODE         0x80000000 /* device is setup as PD */
 

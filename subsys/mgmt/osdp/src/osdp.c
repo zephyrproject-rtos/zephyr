@@ -152,6 +152,9 @@ static struct osdp *osdp_build_ctx(struct osdp_channel *channel)
 		pd->osdp_ctx = ctx;
 		pd->address = pd_adddres[i];
 		pd->baud_rate = CONFIG_OSDP_UART_BAUD_RATE;
+		if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
+			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
+		}
 		memcpy(&pd->channel, channel, sizeof(struct osdp_channel));
 		k_mem_slab_init(&pd->cmd.slab,
 				pd->cmd.slab_buf, sizeof(struct osdp_cmd),
