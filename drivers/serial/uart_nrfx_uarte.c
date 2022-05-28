@@ -191,7 +191,23 @@ static void uarte_nrfx_pins_configure(const struct device *dev, bool sleep)
 	if (!sleep) {
 		if (cfg->tx_pin != NRF_UARTE_PSEL_DISCONNECTED) {
 			nrf_gpio_pin_write(cfg->tx_pin, 1);
+			/* FIXME: This is a cheap workaround needed because Ninebot made the
+			 * scooter UART multi-drop. We should make it prettier, somehow. */
+#if defined(CONFIG_BOARD_WOLFENSTEIN) || defined(CONFIG_BOARD_DOOM)
+			if (cfg->tx_pin ==
+			    DT_PROP(DT_ALIAS(scooter_uart), tx_pin)) {
+				nrf_gpio_cfg(cfg->tx_pin,
+					     NRF_GPIO_PIN_DIR_OUTPUT,
+					     NRF_GPIO_PIN_INPUT_DISCONNECT,
+					     NRF_GPIO_PIN_PULLUP,
+					     NRF_GPIO_PIN_S0D1,
+					     NRF_GPIO_PIN_NOSENSE);
+			} else {
+				nrf_gpio_cfg_output(cfg->tx_pin);
+			}
+#else /* defined(CONFIG_BOARD_WOLFENSTEIN) || defined(CONFIG_BOARD_DOOM) */
 			nrf_gpio_cfg_output(cfg->tx_pin);
+#endif /* defined(CONFIG_BOARD_WOLFENSTEIN) || defined(CONFIG_BOARD_DOOM) */
 		}
 
 		if (cfg->rx_pin != NRF_UARTE_PSEL_DISCONNECTED) {
