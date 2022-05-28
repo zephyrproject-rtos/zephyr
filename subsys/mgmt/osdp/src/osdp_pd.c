@@ -306,7 +306,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		 * For CMD_KEYSET to be accepted, PD must be
 		 * ONLINE and SC_ACTIVE.
 		 */
-		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) == 0) {
+		if (!sc_is_active(pd)) {
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
 			LOG_ERR("Keyset with SC inactive");
@@ -346,7 +346,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		osdp_sc_init(pd);
-		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+		sc_deactivate(pd);
 		for (i = 0; i < 8; i++) {
 			pd->sc.cp_random[i] = buf[pos++];
 		}
@@ -535,7 +535,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			return -1;
 		}
 		osdp_fill_random(pd->sc.pd_random, 8);
-		osdp_compute_session_keys(TO_CTX(pd));
+		osdp_compute_session_keys(pd);
 		osdp_compute_pd_cryptogram(pd);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < 8; i++) {
@@ -569,7 +569,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		smb[1] = SCS_14;  /* type */
 		if (osdp_verify_cp_cryptogram(pd) == 0) {
 			smb[2] = 1;  /* CP auth succeeded */
-			SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+			sc_activate(pd);
 			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 				LOG_WRN("SC Active with SCBK-D");
 			} else {
@@ -585,7 +585,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 
 #ifdef CONFIG_OSDP_SC_ENABLED
-	if (smb && (smb[1] > SCS_14) && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+	if (smb && (smb[1] > SCS_14) && sc_is_active(pd)) {
 		smb[0] = 2; /* length */
 		smb[1] = (len > 1) ? SCS_18 : SCS_16;
 	}
@@ -709,14 +709,14 @@ static int pd_receve_packet(struct osdp_pd *pd)
 void osdp_update(struct osdp *ctx)
 {
 	int ret;
-	struct osdp_pd *pd = TO_PD(ctx, 0);
+	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
 
 	switch (pd->state) {
 	case OSDP_PD_STATE_IDLE:
 		ret = pd_receve_packet(pd);
-		if (ret == OSDP_PD_ERR_GENERIC || ((pd->rx_buf_len > 0 ||
-		    ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) &&
-		    osdp_millis_since(pd->tstamp) > OSDP_RESP_TOUT_MS)) {
+		if (ret == OSDP_PD_ERR_GENERIC ||
+		    ((pd->rx_buf_len > 0 || sc_is_active(pd)) &&
+		     osdp_millis_since(pd->tstamp) > OSDP_RESP_TOUT_MS)) {
 			/**
 			 * When we receive a command from PD after a timeout,
 			 * any established secure channel must be discarded.
@@ -781,10 +781,10 @@ int osdp_setup(struct osdp *ctx, uint8_t *key)
 	ARG_UNUSED(key);
 	struct osdp_pd *pd;
 
-	if (ctx->cp->num_pd != 1) {
+	if (NUM_PD(ctx) != 1) {
 		return -1;
 	}
-	pd = TO_PD(ctx, 0);
+	pd = osdp_to_pd(ctx, 0);
 	osdp_pd_set_attributes(pd, osdp_pd_cap, &osdp_pd_id);
 	SET_FLAG(pd, PD_FLAG_PD_MODE);
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -804,7 +804,7 @@ int osdp_setup(struct osdp *ctx, uint8_t *key)
 int osdp_pd_get_cmd(struct osdp_cmd *cmd)
 {
 	struct osdp_cmd *c;
-	struct osdp_pd *pd = TO_PD(osdp_get_ctx(), 0);
+	struct osdp_pd *pd = osdp_to_pd(osdp_get_ctx(), 0);
 
 	if (osdp_cmd_dequeue(pd, &c)) {
 		return -1;

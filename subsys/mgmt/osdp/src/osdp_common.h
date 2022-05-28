@@ -24,22 +24,15 @@
 #define BYTE_2(x)                      (uint8_t)(((x) >> 16) & 0xFF)
 #define BYTE_3(x)                      (uint8_t)(((x) >> 24) & 0xFF)
 
-/* casting helpers */
-#define TO_OSDP(p)                     ((struct osdp *)p)
-#define TO_CP(p)                       (((struct osdp *)(p))->cp)
-#define TO_PD(p, i)                    (((struct osdp *)(p))->pd + i)
-#define TO_CTX(p)                      ((struct osdp *)p->__parent)
-
-#define GET_CURRENT_PD(p)              (TO_CP(p)->current_pd)
+#define GET_CURRENT_PD(p)              ((p)->current_pd)
 #define SET_CURRENT_PD(p, i)                                    \
 	do {                                                    \
-		TO_CP(p)->current_pd = TO_PD(p, i);             \
-		TO_CP(p)->pd_offset = i;                        \
+		(p)->current_pd = osdp_to_pd(p, i);             \
 	} while (0)
 #define PD_MASK(ctx) \
-	(uint32_t)((1 << (TO_CP(ctx)->num_pd)) - 1)
+	(uint32_t)((1 << ((ctx)->num_pd)) - 1)
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))
-#define NUM_PD(ctx)                    (TO_CP(ctx)->num_pd)
+#define NUM_PD(ctx)                    ((ctx)->num_pd)
 #define OSDP_COMMAND_DATA_MAX_LEN      sizeof(struct osdp_cmd)
 
 /**
@@ -414,7 +407,7 @@ struct osdp_secure_channel {
 #endif
 
 struct osdp_pd {
-	void *__parent;
+	void *osdp_ctx;
 	int idx;
 	uint32_t flags;
 
@@ -449,23 +442,16 @@ struct osdp_pd {
 #endif
 };
 
-struct osdp_cp {
-	void *__parent;
-	uint32_t flags;
-	int num_pd;
-	struct osdp_pd *current_pd;	/* current operational pd's pointer */
-	int pd_offset;			/* current pd's offset into ctx->pd */
-	struct osdp_notifiers notifier;
-};
-
 struct osdp {
 	int magic;
 	uint32_t flags;
-	struct osdp_cp *cp;
+	int num_pd;
+	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	struct osdp_pd *pd;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t sc_master_key[16];
 #endif
+	struct osdp_notifiers notifier;
 };
 
 /* from osdp_phy.c */
@@ -503,7 +489,7 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 
 /* from osdp_sc.c */
 void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk);
-void osdp_compute_session_keys(struct osdp *ctx);
+void osdp_compute_session_keys(struct osdp_pd *pd);
 void osdp_compute_cp_cryptogram(struct osdp_pd *pd);
 int osdp_verify_cp_cryptogram(struct osdp_pd *pd);
 void osdp_compute_pd_cryptogram(struct osdp_pd *pd);
@@ -519,5 +505,45 @@ void osdp_fill_random(uint8_t *buf, int len);
 /* must be implemented by CP or PD */
 int osdp_setup(struct osdp *ctx, uint8_t *key);
 void osdp_update(struct osdp *ctx);
+
+static inline struct osdp *pd_to_osdp(struct osdp_pd *pd)
+{
+	return pd->osdp_ctx;
+}
+
+static inline struct osdp_pd *osdp_to_pd(struct osdp *ctx, int pd_idx)
+{
+	return ctx->pd + pd_idx;
+}
+
+static inline bool is_pd_mode(struct  osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_PD_MODE);
+}
+
+static inline bool is_cp_mode(struct  osdp_pd *pd)
+{
+	return !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
+}
+
+static inline bool sc_is_capable(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE);
+}
+
+static inline bool sc_is_active(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
+
+static inline void sc_activate(struct osdp_pd *pd)
+{
+	SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
+
+static inline void sc_deactivate(struct osdp_pd *pd)
+{
+	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
 
 #endif	/* _OSDP_COMMON_H_ */
