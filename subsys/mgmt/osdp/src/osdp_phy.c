@@ -17,7 +17,6 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 #define PKT_CONTROL_SCB                0x08
 
 struct osdp_packet_header {
-	uint8_t mark;
 	uint8_t som;
 	uint8_t pd_address;
 	uint8_t len_lsb;
@@ -25,6 +24,20 @@ struct osdp_packet_header {
 	uint8_t control;
 	uint8_t data[];
 } __packed;
+
+static inline bool packet_has_mark(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+}
+
+static inline void packet_set_mark(struct osdp_pd *pd, bool mark)
+{
+	if (mark) {
+		SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+	} else {
+		CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+	}
+}
 
 uint8_t osdp_compute_checksum(uint8_t *msg, int length)
 {
@@ -53,15 +66,19 @@ static int osdp_phy_get_seq_number(struct osdp_pd *pd, int do_inc)
 
 int osdp_phy_packet_get_data_offset(struct osdp_pd *pd, const uint8_t *buf)
 {
-	int sb_len = 0;
+	int sb_len = 0, mark_byte_len = 0;
 	struct osdp_packet_header *pkt;
 
 	ARG_UNUSED(pd);
+	if (packet_has_mark(pd)) {
+		mark_byte_len = 1;
+		buf += 1;
+	}
 	pkt = (struct osdp_packet_header *)buf;
 	if (pkt->control & PKT_CONTROL_SCB) {
 		sb_len = pkt->data[0];
 	}
-	return sizeof(struct osdp_packet_header) + sb_len;
+	return mark_byte_len + sizeof(struct osdp_packet_header) + sb_len;
 }
 
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *pd, const uint8_t *buf)
@@ -69,6 +86,9 @@ uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *pd, const uint8_t *buf)
 	struct osdp_packet_header *pkt;
 
 	ARG_UNUSED(pd);
+	if (packet_has_mark(pd)) {
+		buf += 1;
+	}
 	pkt = (struct osdp_packet_header *)buf;
 	if (pkt->control & PKT_CONTROL_SCB) {
 		return pkt->data;
@@ -87,7 +107,7 @@ int osdp_phy_in_sc_handshake(int is_reply, int id)
 
 int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	int exp_len, sb_len, id;
+	int exp_len, id, scb_len = 0, mark_byte_len = 0;
 	struct osdp_packet_header *pkt;
 
 	exp_len = sizeof(struct osdp_packet_header) + 64; /* 64 is estimated */
@@ -96,9 +116,20 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		return OSDP_ERR_PKT_FMT;
 	}
 
+	/**
+	 * In PD mode just follow what we received from CP. In CP mode, as we
+	 * initiate the transaction, choose based on CONFIG_OSDP_SKIP_MARK_BYTE.
+	 */
+	if ((is_pd_mode(pd) && packet_has_mark(pd)) ||
+	    (is_cp_mode(pd) && !ISSET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK))) {
+		buf[0] = OSDP_PKT_MARK;
+		buf++;
+		mark_byte_len = 1;
+		packet_set_mark(pd, true);
+	}
+
 	/* Fill packet header */
 	pkt = (struct osdp_packet_header *)buf;
-	pkt->mark = OSDP_PKT_MARK;
 	pkt->som = OSDP_PKT_SOM;
 	pkt->pd_address = pd->address & 0x7F;	/* Use only the lower 7 bits */
 	if (is_pd_mode(pd)) {
@@ -111,18 +142,17 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	pkt->control = osdp_phy_get_seq_number(pd, is_cp_mode(pd));
 	pkt->control |= PKT_CONTROL_CRC;
 
-	sb_len = 0;
 	if (sc_is_active(pd)) {
 		pkt->control |= PKT_CONTROL_SCB;
-		pkt->data[0] = sb_len = 2;
+		pkt->data[0] = scb_len = 2;
 		pkt->data[1] = SCS_15;
 	} else if (osdp_phy_in_sc_handshake(is_pd_mode(pd), id)) {
 		pkt->control |= PKT_CONTROL_SCB;
-		pkt->data[0] = sb_len = 3;
+		pkt->data[0] = scb_len = 3;
 		pkt->data[1] = SCS_11;
 	}
 
-	return sizeof(struct osdp_packet_header) + sb_len;
+	return mark_byte_len + sizeof(struct osdp_packet_header) + scb_len;
 }
 
 int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
@@ -131,16 +161,33 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	uint16_t crc16;
 	struct osdp_packet_header *pkt;
 
-	/* Do a sanity check only as we expect expect header to be prefilled */
-	if (buf[0] != OSDP_PKT_MARK || buf[1] != OSDP_PKT_SOM) {
+	/* Do a sanity check only; we expect header to be pre-filled */
+	if ((unsigned long)len <= sizeof(struct osdp_packet_header)) {
 		LOG_ERR("PKT_F: Invalid header");
 		return OSDP_ERR_PKT_FMT;
 	}
-	pkt = (struct osdp_packet_header *)buf;
 
-	/* len: with 2 byte CRC; without 1 byte mark */
-	pkt->len_lsb = BYTE_0(len - 1 + 2);
-	pkt->len_msb = BYTE_1(len - 1 + 2);
+	if (packet_has_mark(pd)) {
+		if (buf[0] != OSDP_PKT_MARK) {
+			LOG_ERR("PKT_F: MARK validation failed! ID: 0x%02x",
+				is_cp_mode(pd) ? pd->cmd_id : pd->reply_id);
+			return OSDP_ERR_PKT_FMT;
+		}
+		/* temporarily get rid of mark byte */
+		buf += 1;
+		len -= 1;
+		max_len -= 1;
+	}
+	pkt = (struct osdp_packet_header *)buf;
+	if (pkt->som != OSDP_PKT_SOM) {
+		LOG_ERR("PKT_F: header SOM validation failed! ID: 0x%02x",
+			is_cp_mode(pd) ? pd->cmd_id : pd->reply_id);
+		return OSDP_ERR_PKT_FMT;
+	}
+
+	/* len: with 2 byte CRC */
+	pkt->len_lsb = BYTE_0(len + 2);
+	pkt->len_msb = BYTE_1(len + 2);
 
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t *data;
@@ -164,7 +211,7 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 			/**
 			 * check if the passed buffer can hold the encrypted
 			 * data where length may be rounded up to the nearest
-			 * 16 byte block bondary.
+			 * 16 byte block boundary.
 			 */
 			if (AES_PAD_LEN(data_len + 1) > max_len) {
 				/* data_len + 1 for OSDP_SC_EOM_MARKER */
@@ -177,12 +224,12 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 			goto out_of_space_error;
 		}
 
-		/* len: without 1 mark byte; with 2 byte CRC; with 4 byte MAC */
-		pkt->len_lsb = BYTE_0(len - 1 + 2 + 4);
-		pkt->len_msb = BYTE_1(len - 1 + 2 + 4);
+		/* len: with 2 byte CRC; with 4 byte MAC */
+		pkt->len_lsb = BYTE_0(len + 2 + 4);
+		pkt->len_msb = BYTE_1(len + 2 + 4);
 
 		/* compute and extend the buf with 4 MAC bytes */
-		osdp_compute_mac(pd, is_cp_mode(pd), buf + 1, len - 1);
+		osdp_compute_mac(pd, is_cp_mode(pd), buf, len);
 		data = is_cp_mode(pd) ? pd->sc.c_mac : pd->sc.r_mac;
 		for (i = 0; i < 4; i++) {
 			buf[len + i] = data[i];
@@ -195,10 +242,14 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	if (len + 2 > max_len) {
 		goto out_of_space_error;
 	}
-	crc16 = osdp_compute_crc16(buf + 1, len - 1);  /* excluding mark byte */
+	crc16 = osdp_compute_crc16(buf, len);
 	buf[len + 0] = BYTE_0(crc16);
 	buf[len + 1] = BYTE_1(crc16);
 	len += 2;
+
+	if (packet_has_mark(pd)) {
+		len += 1; /* put back mark byte */
+	}
 
 	return len;
 
@@ -214,17 +265,24 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	int pkt_len, pd_addr, mac_offset;
 	struct osdp_packet_header *pkt;
 
-	pkt = (struct osdp_packet_header *)buf;
-
 	/* wait till we have the header */
 	if ((unsigned long)len < sizeof(struct osdp_packet_header)) {
 		/* incomplete data */
 		return OSDP_ERR_PKT_WAIT;
 	}
 
+	packet_set_mark(pd, false);
+	if (buf[0] == OSDP_PKT_MARK) {
+		buf += 1;
+		len -= 1;
+		packet_set_mark(pd, true);
+	}
+
+	pkt = (struct osdp_packet_header *)buf;
+
 	/* validate packet header */
-	if (pkt->mark != OSDP_PKT_MARK || pkt->som != OSDP_PKT_SOM) {
-		LOG_ERR("invalid MARK/SOM");
+	if (pkt->som != OSDP_PKT_SOM) {
+		LOG_ERR("Invalid SOM 0x%02x", pkt->som);
 		return OSDP_ERR_PKT_FMT;
 	}
 
@@ -235,7 +293,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	/* validate packet length */
 	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
-	if (pkt_len != len - 1) {
+	if (len < pkt_len) {
 		/* wait for more data? */
 		return OSDP_ERR_PKT_WAIT;
 	}
@@ -354,10 +412,10 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	if (sc_is_active(pd) &&
 	    pkt->control & PKT_CONTROL_SCB && pkt->data[1] >= SCS_15) {
 		/* validate MAC */
-		is_cmd = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
-		osdp_compute_mac(pd, is_cmd, buf + 1, mac_offset);
+		is_cmd = is_pd_mode(pd);
+		osdp_compute_mac(pd, is_cmd, buf, mac_offset);
 		mac = is_cmd ? pd->sc.c_mac : pd->sc.r_mac;
-		if (memcmp(buf + 1 + mac_offset, mac, 4) != 0) {
+		if (memcmp(buf + mac_offset, mac, 4) != 0) {
 			LOG_ERR("Invalid MAC; discarding SC");
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
