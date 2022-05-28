@@ -189,7 +189,7 @@ uint32_t osdp_get_sc_status_mask(void)
 	struct osdp *ctx = osdp_get_ctx();
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = TO_PD(ctx, i);
+		pd = osdp_to_pd(ctx, i);
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 			mask |= 1 << i;
 		}
