@@ -189,6 +189,69 @@ static bool do_command_callback(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	return true;
 }
 
+static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	struct osdp_pd_cap *cap = NULL;
+
+	/* Validate the cmd_id against a PD capabilities where applicable */
+	switch (pd->cmd_id) {
+	case CMD_ISTAT:
+		cap = &pd->cap[OSDP_PD_CAP_CONTACT_STATUS_MONITORING];
+		if (cap->num_items == 0 || cap->compliance_level == 0) {
+			break;
+		}
+		return 0; /* Remove this when REPLY_ISTATR is supported */
+	case CMD_OSTAT:
+		cap = &pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL];
+		if (cap->num_items == 0 || cap->compliance_level == 0) {
+			break;
+		}
+		return 0; /* Remove this when REPLY_OSTATR is supported */
+	case CMD_OUT:
+		cap = &pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL];
+		if (!cmd || cap->compliance_level == 0 ||
+		    cmd->output.output_no + 1 > cap->num_items) {
+			break;
+		}
+		return 1;
+	case CMD_LED:
+		cap = &pd->cap[OSDP_PD_CAP_READER_LED_CONTROL];
+		if (!cmd || cap->compliance_level == 0 ||
+		    cmd->led.led_number + 1 > cap->num_items) {
+			break;
+		}
+		return 1;
+	case CMD_BUZ:
+		cap = &pd->cap[OSDP_PD_CAP_READER_AUDIBLE_OUTPUT];
+		if (cap->num_items == 0 || cap->compliance_level == 0) {
+			break;
+		}
+		return 1;
+	case CMD_TEXT:
+		cap = &pd->cap[OSDP_PD_CAP_READER_TEXT_OUTPUT];
+		if (cap->num_items == 0 || cap->compliance_level == 0) {
+			break;
+		}
+		return 1;
+	case CMD_CHLNG:
+	case CMD_SCRYPT:
+	case CMD_KEYSET:
+		cap = &pd->cap[OSDP_PD_CAP_COMMUNICATION_SECURITY];
+		if (cap->compliance_level == 0) {
+			pd->reply_id = REPLY_NAK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_UNSUP;
+			return 0;
+		}
+		return 1;
+	}
+
+	pd->reply_id = REPLY_NAK;
+	pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
+	LOG_ERR("PD is not capable of handling CMD(%02x); "
+		"Reply with NAK_CMD_UNKNOWN", pd->cmd_id);
+	return 0;
+}
+
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int ret = OSDP_PD_ERR_GENERIC;
@@ -226,11 +289,19 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_ISTAT_DATA_LEN) {
 			break;
 		}
+		if (!pd_cmd_cap_ok(pd, NULL)) {
+			ret = OSDP_PD_ERR_REPLY;
+			break;
+		}
 		pd->reply_id = REPLY_ISTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_OSTAT:
 		if (len != CMD_OSTAT_DATA_LEN) {
+			break;
+		}
+		if (!pd_cmd_cap_ok(pd, NULL)) {
+			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
 		pd->reply_id = REPLY_OSTATR;
@@ -269,6 +340,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.output.timer_count = buf[pos++];
 		cmd.output.timer_count |= buf[pos++] << 8;
 		ret = OSDP_PD_ERR_REPLY;
+		if (!pd_cmd_cap_ok(pd, &cmd)) {
+			break;
+		}
 		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
@@ -297,6 +371,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.led.permanent.on_color = buf[pos++];
 		cmd.led.permanent.off_color = buf[pos++];
 		ret = OSDP_PD_ERR_REPLY;
+		if (!pd_cmd_cap_ok(pd, &cmd)) {
+			break;
+		}
 		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
@@ -314,6 +391,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.buzzer.off_count = buf[pos++];
 		cmd.buzzer.rep_count = buf[pos++];
 		ret = OSDP_PD_ERR_REPLY;
+		if (!pd_cmd_cap_ok(pd, &cmd)) {
+			break;
+		}
 		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
@@ -340,6 +420,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			cmd.text.data[i] = buf[pos++];
 		}
 		ret = OSDP_PD_ERR_REPLY;
+		if (!pd_cmd_cap_ok(pd, &cmd)) {
+			break;
+		}
 		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
@@ -380,6 +463,10 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_KEYSET_DATA_LEN) {
 			break;
 		}
+		if (!pd_cmd_cap_ok(pd, NULL)) {
+			ret = OSDP_PD_ERR_REPLY;
+			break;
+		}
 		/**
 		 * For CMD_KEYSET to be accepted, PD must be
 		 * ONLINE and SC_ACTIVE.
@@ -413,14 +500,12 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
-	case CMD_CHLNG: {
-		int tmp = OSDP_PD_CAP_COMMUNICATION_SECURITY;
-		if (pd->cap[tmp].compliance_level == 0) {
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_UNSUP;
+	case CMD_CHLNG:
+		if (len != CMD_CHLNG_DATA_LEN) {
 			break;
 		}
-		if (len != CMD_CHLNG_DATA_LEN) {
+		ret = OSDP_PD_ERR_REPLY;
+		if (!pd_cmd_cap_ok(pd, NULL)) {
 			break;
 		}
 		osdp_sc_init(pd);
@@ -431,12 +516,15 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_CCRYPT;
 		ret = OSDP_PD_ERR_NONE;
 		break;
-	}
 	case CMD_SCRYPT:
 		if (len != CMD_SCRYPT_DATA_LEN) {
 			break;
 		}
-		for (i = 0; i < 16; i++) {
+		if (!pd_cmd_cap_ok(pd, NULL)) {
+			ret = OSDP_PD_ERR_REPLY;
+			break;
+		}
+		for (i = 0; i < CMD_SCRYPT_DATA_LEN; i++) {
 			pd->sc.cp_cryptogram[i] = buf[pos++];
 		}
 		pd->reply_id = REPLY_RMAC_I;
