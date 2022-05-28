@@ -150,7 +150,7 @@ static struct osdp *osdp_build_ctx(struct osdp_channel *channel)
 
 	for (i = 0; i < CONFIG_OSDP_NUM_CONNECTED_PD; i++) {
 		pd = TO_PD(ctx, i);
-		pd->offset = i;
+		pd->idx = i;
 		pd->seq_number = -1;
 		pd->__parent = ctx;
 		pd->address = pd_adddres[i];
