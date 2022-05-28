@@ -92,6 +92,7 @@ static struct gsm_modem {
 	bool setup_done : 1;
 	bool attached : 1;
 	bool modem_info_queried : 1;
+	bool eps_registered : 1;
 
 	void *user_data;
 
@@ -320,6 +321,17 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cereg)
 		LOG_INF("lac: %u, cellid: %u",
 			gsm.context.data_lac,
 			gsm.context.data_cellid);
+	}
+
+	/* Expected response is "+CEREG: urc_enabled,status"
+	 * Status values:
+	 * 1 - registered, home network
+	 * 5 - registered, roaming
+	 */
+	const int status = atoi(argv[1]);
+	if (argc > 1 && (status == 1 || status == 5)) {
+		gsm.eps_registered = true;
+		LOG_INF("EPS network registered: %d.", status);
 	}
 
 	return 0;
@@ -739,6 +751,20 @@ attaching:
 
 	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
 
+#if defined(CONFIG_BOARD_WOLFENSTEIN) || defined(CONFIG_BOARD_DOOM)
+	/* For Quectel, dump the network info (LTE/WCDMA/etc) for debugging */
+	(void)modem_cmd_send_nolock(&gsm->context.iface,
+				    &gsm->context.cmd_handler, NULL, 0,
+				    "AT+QNWINFO", &gsm->sem_response,
+				    K_SECONDS(2));
+	if (!gsm->eps_registered) {
+		(void)modem_cmd_send_nolock(&gsm->context.iface,
+					    &gsm->context.cmd_handler, NULL, 0,
+					    "AT+CGACT=1,1", &gsm->sem_response,
+					    K_SECONDS(2));
+	}
+#endif
+
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
 						  connect_cmds,
@@ -1050,6 +1076,12 @@ void gsm_ppp_start(const struct device *dev)
 		LOG_ERR("modem_iface_uart_init returned %d", r);
 		return;
 	}
+
+	gsm->attach_retries = 0;
+	gsm->setup_done = false;
+	gsm->attached = false;
+	gsm->modem_info_queried = false;
+	gsm->eps_registered = false;
 
 	k_work_init_delayable(&gsm->gsm_configure_work, gsm_configure);
 	(void)gsm_work_reschedule(&gsm->gsm_configure_work, K_NO_WAIT);
