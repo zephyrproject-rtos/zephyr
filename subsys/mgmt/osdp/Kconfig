@@ -58,6 +58,16 @@ config OSDP_PACKET_TRACE
 	  Prints bytes sent/received over OSDP to console for debugging.
 	  LOG_HEXDUMP_DBG() is used to achieve this and can be very verbose.
 
+config OSDP_SKIP_MARK_BYTE
+	bool "Skip sending the initial marking byte (0xFF)"
+	help
+	  As per the OSDP specification, the first byte in the channel has
+	  to be a MARK byte which is 0xFF. Since this is not stated in the
+	  packet structure definition, some commercial CPs and PDs do not
+	  handle the initial mark byte correctly. This option can be used to
+	  completely disable sending/expecting a mark byte to work with
+	  such non-conforming devices.
+
 config OSDP_SC_ENABLED
 	bool "OSDP Secure Channel"
 	depends on CSPRING_ENABLED
