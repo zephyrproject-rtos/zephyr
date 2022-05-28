@@ -407,7 +407,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (cp->notifier.keypress) {
 			for (i = 0; i < t1; i++) {
 				t2 = buf[pos + i]; /* key data */
-				cp->notifier.keypress(pd->offset, t2);
+				cp->notifier.keypress(pd->idx, t2);
 			}
 		}
 		ret = OSDP_CP_ERR_NONE;
@@ -424,7 +424,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		if (cp->notifier.cardread) {
-			cp->notifier.cardread(pd->offset, t1, buf + pos, t2);
+			cp->notifier.cardread(pd->idx, t1, buf + pos, t2);
 		}
 		ret = OSDP_CP_ERR_NONE;
 		break;
@@ -439,7 +439,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		if (cp->notifier.cardread) {
-			cp->notifier.cardread(pd->offset, OSDP_CARD_FMT_ASCII,
+			cp->notifier.cardread(pd->idx, OSDP_CARD_FMT_ASCII,
 					      buf + pos, t1);
 		}
 		ret = OSDP_CP_ERR_NONE;
