@@ -21,7 +21,7 @@ static const uint8_t osdp_scbk_default[16] = {
 void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk)
 {
 	int i;
-	struct osdp *ctx = TO_CTX(pd);
+	struct osdp *ctx = pd_to_osdp(pd);
 
 	memcpy(scbk, pd->sc.pd_client_uid, 8);
 	for (i = 8; i < 16; i++) {
@@ -30,10 +30,9 @@ void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk)
 	osdp_encrypt(ctx->sc_master_key, NULL, scbk, 16);
 }
 
-void osdp_compute_session_keys(struct osdp *ctx)
+void osdp_compute_session_keys(struct osdp_pd *pd)
 {
 	int i;
-	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
 	if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 		memcpy(pd->sc.scbk, osdp_scbk_default, 16);
@@ -231,7 +230,7 @@ void osdp_sc_init(struct osdp_pd *pd)
 	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
 		memcpy(pd->sc.scbk, key, 16);
 	}
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+	if (is_pd_mode(pd)) {
 		pd->sc.pd_client_uid[0] = BYTE_0(pd->id.vendor_code);
 		pd->sc.pd_client_uid[1] = BYTE_1(pd->id.vendor_code);
 		pd->sc.pd_client_uid[2] = BYTE_0(pd->id.model);
