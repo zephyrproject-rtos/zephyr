@@ -272,14 +272,14 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		 */
 		LOG_ERR("seq-repeat/reply-resend feature not supported!");
 		pd->reply_id = REPLY_NAK;
-		pd->cmd_data[0] = OSDP_PD_NAK_SEQ_NUM;
+		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
 		return OSDP_ERR_PKT_FMT;
 	}
 	comp = osdp_phy_get_seq_number(pd, is_pd_mode(pd));
 	if (comp != cur && !ISSET_FLAG(pd, PD_FLAG_SKIP_SEQ_CHECK)) {
 		LOG_ERR("packet seq mismatch %d/%d", comp, cur);
 		pd->reply_id = REPLY_NAK;
-		pd->cmd_data[0] = OSDP_PD_NAK_SEQ_NUM;
+		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
 		return OSDP_ERR_PKT_FMT;
 	}
 	len -= sizeof(struct osdp_packet_header); /* consume header */
@@ -291,7 +291,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (comp != cur) {
 			LOG_ERR("invalid crc 0x%04x/0x%04x", comp, cur);
 			pd->reply_id = REPLY_NAK;
-			pd->cmd_data[0] = OSDP_PD_NAK_MSG_CHK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_MSG_CHK;
 			return OSDP_ERR_PKT_FMT;
 		}
 		mac_offset = pkt_len - 4 - 2;
@@ -301,7 +301,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (comp != buf[len - 1]) {
 			LOG_ERR("invalid checksum %02x/%02x", comp, cur);
 			pd->reply_id = REPLY_NAK;
-			pd->cmd_data[0] = OSDP_PD_NAK_MSG_CHK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_MSG_CHK;
 			return OSDP_ERR_PKT_FMT;
 		}
 		mac_offset = pkt_len - 4 - 1;
@@ -318,13 +318,13 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (is_pd_mode(pd) && !sc_is_capable(pd)) {
 			LOG_ERR("PD is not SC capable");
 			pd->reply_id = REPLY_NAK;
-			pd->cmd_data[0] = OSDP_PD_NAK_SC_UNSUP;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_UNSUP;
 			return OSDP_ERR_PKT_FMT;
 		}
 		if (pkt->data[1] < SCS_11 || pkt->data[1] > SCS_18) {
 			LOG_ERR("Invalid SB Type");
 			pd->reply_id = REPLY_NAK;
-			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_FMT;
 		}
 		if (pkt->data[1] == SCS_11 || pkt->data[1] == SCS_13) {
@@ -346,7 +346,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (sc_is_active(pd)) {
 			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;
-			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_FMT;
 		}
 	}
@@ -360,7 +360,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (memcmp(buf + 1 + mac_offset, mac, 4) != 0) {
 			LOG_ERR("Invalid MAC; discarding SC");
 			pd->reply_id = REPLY_NAK;
-			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_FMT;
 		}
 		len -= 4; /* consume MAC */
@@ -381,7 +381,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 			if (len <= 0) {
 				LOG_ERR("Failed at decrypt; discarding SC");
 				pd->reply_id = REPLY_NAK;
-				pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
+				pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 				return OSDP_ERR_PKT_FMT;
 			}
 			len += 1; /* put back cmd/reply ID */

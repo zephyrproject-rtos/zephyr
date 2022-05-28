@@ -10,7 +10,10 @@
 #include <zephyr/mgmt/osdp.h>
 #include <zephyr/sys/__assert.h>
 
-#define STR(x) #x
+#ifdef CONFIG_OSDP_SC_ENABLED
+#include <zephyr/crypto/crypto.h>
+#include <zephyr/random/rand32.h>
+#endif
 
 #define OSDP_RESP_TOUT_MS              (200)
 
@@ -37,7 +40,6 @@
 	(uint32_t)((1 << ((ctx)->num_pd)) - 1)
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))
 #define NUM_PD(ctx)                    ((ctx)->num_pd)
-#define OSDP_COMMAND_DATA_MAX_LEN      sizeof(struct osdp_cmd)
 
 /**
  * @brief OSDP reserved commands
@@ -320,6 +322,7 @@ union osdp_ephemeral_data {
 	struct osdp_cmd cmd;
 	struct osdp_event event;
 };
+#define OSDP_EPHEMERAL_DATA_MAX_LEN sizeof(union osdp_ephemeral_data)
 
 /**
  * @brief PD capability structure. Each PD capability has a 3 byte
@@ -437,7 +440,7 @@ struct osdp_pd {
 
 	int cmd_id;
 	int reply_id;
-	uint8_t cmd_data[OSDP_COMMAND_DATA_MAX_LEN];
+	uint8_t ephemeral_data[OSDP_EPHEMERAL_DATA_MAX_LEN];
 
 	struct osdp_channel channel;
 
