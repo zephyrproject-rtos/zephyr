@@ -523,8 +523,14 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_SCRYPT_DATA_LEN) {
 			break;
 		}
+		ret = OSDP_PD_ERR_REPLY;
 		if (!pd_cmd_cap_ok(pd, NULL)) {
-			ret = OSDP_PD_ERR_REPLY;
+			break;
+		}
+		if (sc_is_active(pd)) {
+			pd->reply_id = REPLY_NAK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			LOG_ERR("Out of order CMD_SCRYPT; has CP gone rogue?");
 			break;
 		}
 		for (i = 0; i < CMD_SCRYPT_DATA_LEN; i++) {

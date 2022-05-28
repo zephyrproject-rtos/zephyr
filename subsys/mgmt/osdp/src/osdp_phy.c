@@ -385,6 +385,12 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_FMT;
 		}
+		if (!sc_is_active(pd) && pkt->data[1] > SCS_14) {
+			LOG_ERR("Received invalid secure message!");
+			pd->reply_id = REPLY_NAK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			return OSDP_ERR_PKT_FMT;
+		}
 		if (pkt->data[1] == SCS_11 || pkt->data[1] == SCS_13) {
 			/**
 			 * CP signals PD to use SCBKD by setting SB data byte
