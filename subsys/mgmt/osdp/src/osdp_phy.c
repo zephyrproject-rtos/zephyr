@@ -87,10 +87,9 @@ int osdp_phy_in_sc_handshake(int is_reply, int id)
 
 int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	int exp_len, pd_mode, sb_len, id;
+	int exp_len, sb_len, id;
 	struct osdp_packet_header *pkt;
 
-	pd_mode = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 	exp_len = sizeof(struct osdp_packet_header) + 64; /* 64 is estimated */
 	if (max_len < exp_len) {
 		LOG_ERR("packet_init: out of space! CMD: %02x", pd->cmd_id);
@@ -102,22 +101,22 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	pkt->mark = OSDP_PKT_MARK;
 	pkt->som = OSDP_PKT_SOM;
 	pkt->pd_address = pd->address & 0x7F;	/* Use only the lower 7 bits */
-	if (pd_mode) {
+	if (is_pd_mode(pd)) {
 		/* PD must reply with MSB of it's address set */
 		pkt->pd_address |= 0x80;
 		id = pd->reply_id;
 	} else {
 		id = pd->cmd_id;
 	}
-	pkt->control = osdp_phy_get_seq_number(pd, !pd_mode);
+	pkt->control = osdp_phy_get_seq_number(pd, is_cp_mode(pd));
 	pkt->control |= PKT_CONTROL_CRC;
 
 	sb_len = 0;
-	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+	if (sc_is_active(pd)) {
 		pkt->control |= PKT_CONTROL_SCB;
 		pkt->data[0] = sb_len = 2;
 		pkt->data[1] = SCS_15;
-	} else if (osdp_phy_in_sc_handshake(pd_mode, id)) {
+	} else if (osdp_phy_in_sc_handshake(is_pd_mode(pd), id)) {
 		pkt->control |= PKT_CONTROL_SCB;
 		pkt->data[0] = sb_len = 3;
 		pkt->data[1] = SCS_11;
@@ -145,12 +144,10 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t *data;
-	int i, is_cmd, data_len;
+	int i, data_len;
 
-	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
-	    pkt->control & PKT_CONTROL_SCB &&
-	    pkt->data[1] >= SCS_15) {
-		is_cmd = !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
+	if (sc_is_active(pd) &&
+	    (pkt->control & PKT_CONTROL_SCB) && pkt->data[1] >= SCS_15)
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
 			/**
 			 * Only the data portion of message (after id byte)
@@ -161,8 +158,8 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 			 * SCS_15/SCS_16 and send them.
 			 */
 			data = pkt->data + pkt->data[0] + 1;
-			data_len = len - (sizeof(struct osdp_packet_header)
-					  + pkt->data[0] + 1);
+			data_len = len - (sizeof(struct osdp_packet_header) +
+					  pkt->data[0] + 1);
 			len -= data_len;
 			/**
 			 * check if the passed buffer can hold the encrypted
@@ -173,7 +170,7 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 				/* data_len + 1 for OSDP_SC_EOM_MARKER */
 				goto out_of_space_error;
 			}
-			len += osdp_encrypt_data(pd, is_cmd, data, data_len);
+			len += osdp_encrypt_data(pd, is_cp_mode(pd), data, data_len);
 		}
 		/* len: with 4bytes MAC; with 2 byte CRC; without 1 byte mark */
 		if (len + 4 > max_len) {
@@ -185,8 +182,8 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 		pkt->len_msb = BYTE_1(len - 1 + 2 + 4);
 
 		/* compute and extend the buf with 4 MAC bytes */
-		osdp_compute_mac(pd, is_cmd, buf + 1, len - 1);
-		data = is_cmd ? pd->sc.c_mac : pd->sc.r_mac;
+		osdp_compute_mac(pd, is_cp_mode(pd), buf + 1, len - 1);
+		data = is_cp_mode(pd) ? pd->sc.c_mac : pd->sc.r_mac;
 		for (i = 0; i < 4; i++) {
 			buf[len + i] = data[i];
 		}
@@ -214,10 +211,9 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	uint8_t *data;
 	uint16_t comp, cur;
-	int pkt_len, pd_mode, pd_addr, mac_offset;
+	int pkt_len, pd_addr, mac_offset;
 	struct osdp_packet_header *pkt;
 
-	pd_mode = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 	pkt = (struct osdp_packet_header *)buf;
 
 	/* wait till we have the header */
@@ -232,7 +228,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		return OSDP_ERR_PKT_FMT;
 	}
 
-	if (!pd_mode && !(pkt->pd_address & 0x80)) {
+	if (is_cp_mode(pd) && !(pkt->pd_address & 0x80)) {
 		LOG_ERR("Reply without address MSB set!");
 		return OSDP_ERR_PKT_FMT;
 	}
@@ -248,7 +244,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	pd_addr = pkt->pd_address & 0x7F;
 	if (pd_addr != pd->address && pd_addr != 0x7F) {
 		/* not addressed to us and was not broadcasted */
-		if (!pd_mode) {
+		if (is_cp_mode(pd)) {
 			LOG_ERR("Invalid pd address %d", pd_addr);
 			return OSDP_ERR_PKT_FMT;
 		}
@@ -258,7 +254,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	/* validate sequence number */
 	cur = pkt->control & PKT_CONTROL_SQN;
-	if (pd_mode && cur == 0) {
+	if (is_pd_mode(pd) && cur == 0) {
 		/**
 		 * CP is trying to restart communication by sending a 0. The
 		 * current PD implementation does not hold any state between
@@ -269,7 +265,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->seq_number = -1;
 		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 	}
-	if (pd_mode && cur == pd->seq_number) {
+	if (is_pd_mode(pd) && cur == pd->seq_number) {
 		/**
 		 * TODO: PD must resend the last response if CP send the same
 		 * sequence number again.
@@ -279,7 +275,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->cmd_data[0] = OSDP_PD_NAK_SEQ_NUM;
 		return OSDP_ERR_PKT_FMT;
 	}
-	comp = osdp_phy_get_seq_number(pd, pd_mode);
+	comp = osdp_phy_get_seq_number(pd, is_pd_mode(pd));
 	if (comp != cur && !ISSET_FLAG(pd, PD_FLAG_SKIP_SEQ_CHECK)) {
 		LOG_ERR("packet seq mismatch %d/%d", comp, cur);
 		pd->reply_id = REPLY_NAK;
@@ -319,7 +315,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	int is_cmd;
 
 	if (pkt->control & PKT_CONTROL_SCB) {
-		if (pd_mode && !ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
+		if (is_pd_mode(pd) && !sc_is_capable(pd)) {
 			LOG_ERR("PD is not SC capable");
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_UNSUP;
@@ -347,7 +343,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		data = pkt->data + pkt->data[0];
 		len -= pkt->data[0]; /* consume security block */
 	} else {
-		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+		if (sc_is_active(pd)) {
 			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
@@ -355,9 +351,8 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 	}
 
-	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
-	    pkt->control & PKT_CONTROL_SCB &&
-	    pkt->data[1] >= SCS_15) {
+	if (sc_is_active(pd) &&
+	    pkt->control & PKT_CONTROL_SCB && pkt->data[1] >= SCS_15) {
 		/* validate MAC */
 		is_cmd = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 		osdp_compute_mac(pd, is_cmd, buf + 1, mac_offset);
