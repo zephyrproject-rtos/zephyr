@@ -7,6 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 
+#include <unistd.h>
 #include <zephyr/zephyr.h>
 
 #include <zephyr/logging/log_ctrl.h>

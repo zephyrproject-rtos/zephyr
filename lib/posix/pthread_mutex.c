@@ -6,8 +6,8 @@
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
+#include <pthread.h>
 #include <zephyr/wait_q.h>
-#include <zephyr/posix/pthread.h>
 
 struct k_spinlock z_pthread_spinlock;
 

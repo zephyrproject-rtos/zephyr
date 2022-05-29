@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 #include <ksched.h>
 #include <zephyr/wait_q.h>
 

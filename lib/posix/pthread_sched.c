@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sched.h>
+
 #include <zephyr/kernel.h>
-#include <zephyr/posix/posix_sched.h>
 
 static bool valid_posix_policy(int policy)
 {

@@ -10,7 +10,7 @@
 #ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
 #include <zephyr/net/socket.h>
 #else
-#include <zephyr/posix/netdb.h>
+#include <netdb.h>
 #endif
 
 /**

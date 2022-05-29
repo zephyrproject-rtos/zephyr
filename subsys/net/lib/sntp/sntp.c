@@ -8,6 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sntp, CONFIG_SNTP_LOG_LEVEL);
 
+#include <unistd.h>
 #include <zephyr/net/sntp.h>
 #include "sntp_pkt.h"
 

@@ -7,6 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_http_client_sample, LOG_LEVEL_DBG);
 
+#include <unistd.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>

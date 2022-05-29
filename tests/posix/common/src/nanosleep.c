@@ -6,9 +6,14 @@
 
 #include <zephyr/ztest.h>
 #include <errno.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <stdint.h>
 #include <zephyr/sys_clock.h>
+
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
+#endif
 
 /** req and rem are both NULL */
 ZTEST(posix_apis, test_nanosleep_NULL_NULL)

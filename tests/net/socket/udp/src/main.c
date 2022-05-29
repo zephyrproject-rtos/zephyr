@@ -176,9 +176,9 @@ ZTEST(net_socket_udp, test_02_v4_sendto_recvfrom)
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -206,9 +206,9 @@ ZTEST(net_socket_udp, test_03_v6_sendto_recvfrom)
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -240,9 +240,9 @@ ZTEST(net_socket_udp, test_04_v4_bind_sendto)
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -274,9 +274,9 @@ ZTEST(net_socket_udp, test_05_v6_bind_sendto)
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -311,9 +311,9 @@ ZTEST(net_socket_udp, test_01_send_recv_2_sock)
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
 	zassert_mem_equal(buf, BUF_AND_SIZE(TEST_STR_SMALL), "Wrong data");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -345,9 +345,9 @@ ZTEST(net_socket_udp, test_07_so_priority)
 			sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -470,9 +470,9 @@ ZTEST_USER(net_socket_udp, test_12_v4_sendmsg_recvfrom)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -518,9 +518,9 @@ ZTEST_USER(net_socket_udp, test_13_v4_sendmsg_recvfrom_no_aux_data)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -578,9 +578,9 @@ ZTEST_USER(net_socket_udp, test_14_v6_sendmsg_recvfrom)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -641,9 +641,9 @@ ZTEST_USER(net_socket_udp, test_15_v4_sendmsg_recvfrom_connected)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -703,9 +703,9 @@ ZTEST_USER(net_socket_udp, test_06_v6_sendmsg_recvfrom_connected)
 			      (struct sockaddr *)&server_addr,
 			      sizeof(server_addr));
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(server_sock);
+	rv = zsock_close(server_sock);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -732,9 +732,9 @@ ZTEST(net_socket_udp, test_06_so_type)
 	zassert_equal(optval, SOCK_DGRAM, "getsockopt got invalid type");
 	zassert_equal(optsize, sizeof(optval), "getsockopt got invalid size");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -781,9 +781,9 @@ ZTEST(net_socket_udp, test_08_so_txtime)
 		      optlen, sizeof(optval));
 	zassert_equal(optval, false, "getsockopt txtime");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -844,9 +844,9 @@ ZTEST(net_socket_udp, test_09_so_rcvtimeo)
 	zassert_true(time_diff >= 2000, "Expected timeout after 2000ms but "
 			"was %dms", time_diff);
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -881,9 +881,9 @@ ZTEST(net_socket_udp, test_10_so_sndtimeo)
 			sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -910,9 +910,9 @@ ZTEST(net_socket_udp, test_11_so_protocol)
 	zassert_equal(optval, IPPROTO_UDP, "getsockopt got invalid protocol");
 	zassert_equal(optsize, sizeof(optval), "getsockopt got invalid size");
 
-	rv = close(sock1);
+	rv = zsock_close(sock1);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock2);
+	rv = zsock_close(sock2);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -1117,7 +1117,7 @@ ZTEST_USER(net_socket_udp, test_18_v6_sendmsg_with_txtime)
 				 sizeof(client_addr),
 				 &msg);
 
-	rv = close(client_sock);
+	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
 
 	if (sys_mutex_lock(&wait_data, WAIT_TIME)) {
@@ -1177,9 +1177,9 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL),
 			  "invalid rx data");
 
-	rv = close(sock_c);
+	rv = zsock_close(sock_c);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s);
+	rv = zsock_close(sock_s);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -1237,9 +1237,9 @@ static void test_dgram_overflow(int sock_c, int sock_s,
 	zassert_equal(rv, -1, "send succeeded");
 	zassert_equal(errno, ENOMEM, "incorrect errno value");
 
-	rv = close(sock_c);
+	rv = zsock_close(sock_c);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s);
+	rv = zsock_close(sock_s);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -1267,9 +1267,9 @@ static void test_dgram_fragmented(int sock_c, int sock_s,
 	zassert_equal(rv, buf_size, "recv failed");
 	zassert_mem_equal(rx_buf, buf, buf_size, "wrong data");
 
-	rv = close(sock_c);
+	rv = zsock_close(sock_c);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s);
+	rv = zsock_close(sock_s);
 	zassert_equal(rv, 0, "close failed");
 }
 

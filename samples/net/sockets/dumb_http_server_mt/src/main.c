@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_dumb_http_srv_mt_sample);
 
 #include <zephyr/zephyr.h>
 #include <errno.h>
+#include <unistd.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>

@@ -185,8 +185,8 @@ static void server_thread_fn(void *arg0, void *arg1, void *arg2)
 	zassert_equal(r, SECRET_SIZE, "expected: %zu actual: %d", SECRET_SIZE, r);
 
 	NET_DBG("closing client fd");
-	r = close(client_fd);
-	zassert_not_equal(r, -1, "close() failed on the server fd (%d)", errno);
+	r = zsock_close(client_fd);
+	zassert_not_equal(r, -1, "zsock_close() failed on the server fd (%d)", errno);
 }
 
 static void test_common(int peer_verify)
@@ -388,12 +388,12 @@ static void test_common(int peer_verify)
 	 */
 
 	NET_DBG("closing client fd");
-	r = close(client_fd);
-	zassert_not_equal(-1, r, "close() failed on the client fd (%d)", errno);
+	r = zsock_close(client_fd);
+	zassert_not_equal(-1, r, "zsock_close() failed on the client fd (%d)", errno);
 
 	NET_DBG("closing server fd");
-	r = close(server_fd);
-	zassert_not_equal(-1, r, "close() failed on the server fd (%d)", errno);
+	r = zsock_close(server_fd);
+	zassert_not_equal(-1, r, "zsock_close() failed on the server fd (%d)", errno);
 
 	r = k_thread_join(&server_thread, K_FOREVER);
 	zassert_equal(0, r, "k_thread_join() failed (%d)", r);

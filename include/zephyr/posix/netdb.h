@@ -8,11 +8,22 @@
 
 #include <zephyr/net/socket.h>
 
+#define addrinfo zsock_addrinfo
+
+#define EAI_BADFLAGS DNS_EAI_BADFLAGS
+#define EAI_NONAME DNS_EAI_NONAME
+#define EAI_AGAIN DNS_EAI_AGAIN
+#define EAI_FAIL DNS_EAI_FAIL
+#define EAI_NODATA DNS_EAI_NODATA
+#define EAI_MEMORY DNS_EAI_MEMORY
+#define EAI_SYSTEM DNS_EAI_SYSTEM
+#define EAI_SERVICE DNS_EAI_SERVICE
+#define EAI_SOCKTYPE DNS_EAI_SOCKTYPE
+#define EAI_FAMILY DNS_EAI_FAMILY
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define addrinfo zsock_addrinfo
 
 static inline int getaddrinfo(const char *host, const char *service,
 			      const struct zsock_addrinfo *hints,
@@ -38,6 +49,14 @@ static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 	return zsock_getnameinfo(addr, addrlen, host, hostlen,
 				 serv, servlen, flags);
 }
+
+#ifndef CONFIG_ARCH_POSIX
+/* Avoid static declaration of 'gethostname' follows non-static declaration */
+static inline int gethostname(char *buf, size_t len)
+{
+	return zsock_gethostname(buf, len);
+}
+#endif
 
 #ifdef __cplusplus
 }

@@ -3,10 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+#define _POSIX_MONOTONIC_CLOCK
+#endif
+
 #include <zephyr/ztest.h>
-#include <zephyr/posix/time.h>
-#include <zephyr/posix/sys/time.h>
-#include <zephyr/posix/unistd.h>
+#include <time.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+int clock_gettime(clockid_t clock_id, struct timespec *tp);
+int clock_settime(clockid_t clock_id, const struct timespec *tp);
+#endif
 
 #define SLEEP_SECONDS 1
 #define CLOCK_INVALID -1

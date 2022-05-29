@@ -12,6 +12,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/random/rand32.h>
 
+#include <unistd.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_if.h>

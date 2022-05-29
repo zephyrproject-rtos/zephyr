@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/modbus/modbus.h>
 
+#include <unistd.h>
 #include <zephyr/net/socket.h>
 
 #include <zephyr/logging/log.h>

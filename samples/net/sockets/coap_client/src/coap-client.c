@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 
 #include <errno.h>
+#include <unistd.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/zephyr.h>
@@ -23,7 +24,7 @@ LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 #define PEER_PORT 5683
 #define MAX_COAP_MSG_LEN 256
 
-/* CoAP socket fd */
+	  /* CoAP socket fd */
 static int sock;
 
 struct pollfd fds[1];

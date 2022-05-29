@@ -9,7 +9,7 @@
 #include <zephyr/sys/atomic.h>
 #include <ksched.h>
 #include <zephyr/wait_q.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 #include <zephyr/sys/slist.h>
 
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE

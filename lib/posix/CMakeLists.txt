@@ -3,8 +3,23 @@
 
 zephyr_interface_library_named(posix_subsys)
 
-if(CONFIG_POSIX_API)
-  target_include_directories(posix_subsys INTERFACE ${ZEPHYR_BASE}/include/zephyr/posix)
+if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_CLOCK
+    OR CONFIG_POSIX_MQUEUE OR CONFIG_POSIX_FS OR CONFIG_EVENTFD
+    OR CONFIG_GETOPT OR CONFIG_NET_SOCKETS_POSIX_NAMES)
+  zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
+  if(CONFIG_NEWLIB_LIBC)
+    # Avoid "error: conflicting types for.. sys/_pthreadtypes.h .. previous declaration was here"
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-D_SYS__PTHREADTYPES_H_>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:-D_SYS__PTHREADTYPES_H_>)
+    # Avoid "error: conflicting types for.. sys/_pthreadtypes.h .. previous declaration was here"
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-DMISSING_SYSCALL_NAMES>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:-DMISSING_SYSCALL_NAMES>)
+    if(CONFIG_POSIX_CLOCK)
+      # Allow newlib's <time.h> to define clock_settime() et al
+      zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-D_POSIX_TIMERS -D_POSIX_MONOTONIC_CLOCK>)
+      zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:-D_POSIX_TIMERS -D_POSIX_MONOTONIC_CLOCK>)
+    endif()
+  endif()
 endif()
 
 zephyr_library()
@@ -25,10 +40,6 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
 add_subdirectory_ifdef(CONFIG_GETOPT getopt)
-
-if(NOT (CONFIG_BOARD_NATIVE_POSIX OR CONFIG_BOARD_NATIVE_POSIX_64BIT))
-zephyr_library_sources(nanosleep.c)
-endif()
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include

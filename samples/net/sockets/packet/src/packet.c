@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_pkt_sock_sample, LOG_LEVEL_DBG);
 #include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>

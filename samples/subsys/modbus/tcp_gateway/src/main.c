@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <unistd.h>
 #include <zephyr/zephyr.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/modbus/modbus.h>

@@ -13,6 +13,7 @@ LOG_MODULE_DECLARE(net_echo_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>

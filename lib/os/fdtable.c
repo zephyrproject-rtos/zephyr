@@ -16,6 +16,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <zephyr/kernel.h>
+#include <zephyr/posix/sys/ioctl_calls.h>
+#include <zephyr/posix/unistd_calls.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/speculation.h>
 #include <zephyr/syscall_handler.h>
@@ -28,12 +30,12 @@ struct fd_entry {
 	struct k_mutex lock;
 };
 
-#ifdef CONFIG_POSIX_API
+#if defined(CONFIG_POSIX_API) || defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 static const struct fd_op_vtable stdinout_fd_op_vtable;
 #endif
 
 static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
-#ifdef CONFIG_POSIX_API
+#if defined(CONFIG_POSIX_API) || defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 	/*
 	 * Predefine entries for stdin/stdout/stderr.
 	 */
@@ -157,6 +159,26 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
 		*lock = &entry->lock;
 	}
 
+#ifdef CONFIG_USERSPACE
+	if (z_is_in_user_syscall()) {
+		struct z_object *zo;
+
+		zo = z_object_find(entry->obj);
+		if (zo != NULL && zo->type == K_OBJ_NET_SOCKET) {
+			int res = z_object_validate(zo, K_OBJ_NET_SOCKET, _OBJ_INIT_TRUE);
+
+			if (res != 0) {
+				z_dump_object_error(res, entry->obj, zo, K_OBJ_NET_SOCKET);
+				/* Invalidate the context, the caller doesn't have
+				 * sufficient permission or there was some other
+				 * problem with the net socket object
+				 */
+				return NULL;
+			}
+		}
+	}
+#endif /* CONFIG_USERSPACE */
+
 	return entry->obj;
 }
 
@@ -224,65 +246,81 @@ int z_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
 	return fd;
 }
 
-#ifdef CONFIG_POSIX_API
+#if (defined(CONFIG_POSIX_API) || \
+	defined(CONFIG_NET_SOCKETS_POSIX_NAMES))
+ssize_t z_impl_zephyr_read(int fd, void *buf, size_t sz)
+{
+	void *ctx;
+	ssize_t res;
+	struct k_mutex *lock;
+	const struct fd_op_vtable *vtable;
+
+	ctx = z_get_fd_obj_and_vtable(fd, &vtable, &lock);
+	if (ctx == NULL) {
+		return -1;
+	}
+
+	(void)k_mutex_lock(lock, K_FOREVER);
+
+	res = vtable->read(ctx, buf, sz);
+
+	k_mutex_unlock(lock);
+
+	return res;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline ssize_t z_vrfy_zephyr_read(int fd, void *buf, size_t sz)
+{
+	Z_SYSCALL_MEMORY_WRITE(buf, sz);
+	return z_impl_zephyr_read(fd, buf, sz);
+}
+#include <syscalls/zephyr_read_mrsh.c>
+#endif
 
 ssize_t read(int fd, void *buf, size_t sz)
 {
-	ssize_t res;
-
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
-
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-
-	res = fdtable[fd].vtable->read(fdtable[fd].obj, buf, sz);
-
-	k_mutex_unlock(&fdtable[fd].lock);
-
-	return res;
+	return zephyr_read(fd, buf, sz);
 }
 FUNC_ALIAS(read, _read, ssize_t);
 
-ssize_t write(int fd, const void *buf, size_t sz)
+ssize_t z_impl_zephyr_write(int fd, const void *buf, size_t sz)
 {
+	void *ctx;
 	ssize_t res;
+	struct k_mutex *lock;
+	const struct fd_op_vtable *vtable;
 
-	if (_check_fd(fd) < 0) {
+	ctx = z_get_fd_obj_and_vtable(fd, &vtable, &lock);
+	if (ctx == NULL) {
 		return -1;
 	}
 
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
+	(void)k_mutex_lock(lock, K_FOREVER);
 
-	res = fdtable[fd].vtable->write(fdtable[fd].obj, buf, sz);
+	res = vtable->write(ctx, buf, sz);
 
-	k_mutex_unlock(&fdtable[fd].lock);
+	k_mutex_unlock(lock);
 
 	return res;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline ssize_t z_vrfy_zephyr_write(int fd, const void *buf, size_t sz)
+{
+	Z_SYSCALL_MEMORY_READ(buf, sz);
+	return z_impl_zephyr_write(fd, buf, sz);
+}
+#include <syscalls/zephyr_write_mrsh.c>
+#endif
+
+ssize_t write(int fd, const void *buf, size_t sz)
+{
+	return zephyr_write(fd, buf, sz);
 }
 FUNC_ALIAS(write, _write, ssize_t);
 
-int close(int fd)
-{
-	int res;
-
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
-
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-
-	res = fdtable[fd].vtable->close(fdtable[fd].obj);
-
-	k_mutex_unlock(&fdtable[fd].lock);
-
-	z_free_fd(fd);
-
-	return res;
-}
-FUNC_ALIAS(close, _close, int);
-
-int fsync(int fd)
+int z_impl_zephyr_fsync(int fd)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -291,7 +329,20 @@ int fsync(int fd)
 	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
 }
 
-off_t lseek(int fd, off_t offset, int whence)
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_zephyr_fsync(int fd)
+{
+	return z_impl_zephyr_fsync(fd);
+}
+#include <syscalls/zephyr_fsync_mrsh.c>
+#endif
+
+int fsync(int fd)
+{
+	return zephyr_fsync(fd);
+}
+
+off_t z_impl_zephyr_lseek(int fd, off_t offset, int whence)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -300,32 +351,62 @@ off_t lseek(int fd, off_t offset, int whence)
 	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_LSEEK,
 			  offset, whence);
 }
-FUNC_ALIAS(lseek, _lseek, off_t);
 
-int ioctl(int fd, unsigned long request, ...)
+#ifdef CONFIG_USERSPACE
+static inline off_t z_vrfy_zephyr_lseek(int fd, off_t offset, int whence)
 {
-	va_list args;
+	return z_impl_zephyr_lseek(fd, offset, whence);
+}
+#include <syscalls/zephyr_lseek_mrsh.c>
+#endif
+
+off_t lseek(int fd, off_t offset, int whence)
+{
+	return zephyr_lseek(fd, offset, whence);
+}
+#ifndef CONFIG_ARCH_POSIX
+FUNC_ALIAS(lseek, _lseek, off_t);
+#endif
+
+int z_impl_zephyr_ioctl(int fd, unsigned long request, va_list args)
+{
 	int res;
 
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
-	va_start(args, request);
 	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+
+	return res;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_zephyr_ioctl(int fd, unsigned long request, va_list args)
+{
+	return z_impl_zephyr_ioctl(fd, request, args);
+}
+#include <syscalls/zephyr_ioctl_mrsh.c>
+#endif
+
+int ioctl(int fd, unsigned long request, ...)
+{
+	int res;
+	va_list args;
+
+	va_start(args, request);
+	res = zephyr_ioctl(fd, request, args);
 	va_end(args);
 
 	return res;
 }
 
-int fcntl(int fd, int cmd, ...)
+int z_impl_zephyr_fcntl(int fd, int cmd, va_list args)
 {
-	va_list args;
-	int res;
-
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
+	void *ctx;
+	ssize_t res;
+	struct k_mutex *lock;
+	const struct fd_op_vtable *vtable;
 
 	/* Handle fdtable commands. */
 	if (cmd == F_DUPFD) {
@@ -334,9 +415,36 @@ int fcntl(int fd, int cmd, ...)
 		return -1;
 	}
 
+	ctx = z_get_fd_obj_and_vtable(fd, &vtable, &lock);
+	if (ctx == NULL) {
+		return -1;
+	}
+
+	(void)k_mutex_lock(lock, K_FOREVER);
+
 	/* The rest of commands are per-fd, handled by ioctl vmethod. */
+	res = vtable->ioctl(ctx, cmd, args);
+
+	k_mutex_unlock(lock);
+
+	return res;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_zephyr_fcntl(int sock, int cmd, va_list args)
+{
+	return z_impl_zephyr_fcntl(sock, cmd, args);
+}
+#include <syscalls/zephyr_fcntl_mrsh.c>
+#endif
+
+int fcntl(int fd, int cmd, ...)
+{
+	int res;
+	va_list args;
+
 	va_start(args, cmd);
-	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	res = zephyr_fcntl(fd, cmd, args);
 	va_end(args);
 
 	return res;
@@ -377,4 +485,55 @@ static const struct fd_op_vtable stdinout_fd_op_vtable = {
 	.ioctl = stdinout_ioctl_vmeth,
 };
 
-#endif /* CONFIG_POSIX_API */
+#endif /* defined(CONFIG_POSIX_API) || defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
+
+/*
+ * Must implement close() on CONFIG_ARCH_POSIX, otherwise we are unable to
+ * properly run tests in tests/net/socket/poll. The reason, is that we
+ * no longer have a wrapper pointing close() to zsock_close() but we still
+ * desire that behaviour. Without the wrapper, we link in close() from the
+ * system libc, which results in -1, errno == EBADF.
+ */
+#if defined(CONFIG_POSIX_API) || defined(CONFIG_NET_SOCKETS_POSIX_NAMES) ||                        \
+	defined(CONFIG_ARCH_POSIX)
+int z_impl_zephyr_close(int fd)
+{
+	void *ctx;
+	ssize_t res;
+	struct k_mutex *lock;
+	const struct fd_op_vtable *vtable;
+
+	ctx = z_get_fd_obj_and_vtable(fd, &vtable, &lock);
+	if (ctx == NULL) {
+		return -1;
+	}
+
+	(void)k_mutex_lock(lock, K_FOREVER);
+
+	res = vtable->close(ctx);
+
+	k_mutex_unlock(lock);
+
+	z_free_fd(fd);
+
+	return res;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_zephyr_close(int fd)
+{
+	return z_impl_zephyr_close(fd);
+}
+#include <syscalls/zephyr_close_mrsh.c>
+#endif
+
+int close(int fd)
+{
+	return zephyr_close(fd);
+}
+FUNC_ALIAS(close, _close, int);
+
+#endif
+/* defined(CONFIG_POSIX_API) || defined(CONFIG_NET_SOCKETS_POSIX_NAMES) ||
+ * defined(CONFIG_ARCH_POSIX)
+ */

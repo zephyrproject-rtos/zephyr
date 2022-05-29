@@ -6,8 +6,8 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/wait_q.h>
-#include <zephyr/posix/sys/eventfd.h>
-#include <zephyr/net/socket.h>
+#include <sys/eventfd.h>
+#include <poll.h>
 #include <ksched.h>
 
 struct eventfd {
@@ -23,11 +23,11 @@ K_MUTEX_DEFINE(eventfd_mtx);
 static struct eventfd efds[CONFIG_EVENTFD_MAX];
 
 static int eventfd_poll_prepare(struct eventfd *efd,
-				struct zsock_pollfd *pfd,
+				struct pollfd *pfd,
 				struct k_poll_event **pev,
 				struct k_poll_event *pev_end)
 {
-	if (pfd->events & ZSOCK_POLLIN) {
+	if (pfd->events & POLLIN) {
 		if (*pev == pev_end) {
 			errno = ENOMEM;
 			return -1;
@@ -40,7 +40,7 @@ static int eventfd_poll_prepare(struct eventfd *efd,
 		(*pev)++;
 	}
 
-	if (pfd->events & ZSOCK_POLLOUT) {
+	if (pfd->events & POLLOUT) {
 		if (*pev == pev_end) {
 			errno = ENOMEM;
 			return -1;
@@ -57,21 +57,21 @@ static int eventfd_poll_prepare(struct eventfd *efd,
 }
 
 static int eventfd_poll_update(struct eventfd *efd,
-			       struct zsock_pollfd *pfd,
+			       struct pollfd *pfd,
 			       struct k_poll_event **pev)
 {
 	ARG_UNUSED(efd);
 
-	if (pfd->events & ZSOCK_POLLIN) {
+	if (pfd->events & POLLIN) {
 		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
-			pfd->revents |= ZSOCK_POLLIN;
+			pfd->revents |= POLLIN;
 		}
 		(*pev)++;
 	}
 
-	if (pfd->events & ZSOCK_POLLOUT) {
+	if (pfd->events & POLLOUT) {
 		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
-			pfd->revents |= ZSOCK_POLLOUT;
+			pfd->revents |= POLLOUT;
 		}
 		(*pev)++;
 	}
@@ -212,11 +212,11 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 	}
 
 	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
+		struct pollfd *pfd;
 		struct k_poll_event **pev;
 		struct k_poll_event *pev_end;
 
-		pfd = va_arg(args, struct zsock_pollfd *);
+		pfd = va_arg(args, struct pollfd *);
 		pev = va_arg(args, struct k_poll_event **);
 		pev_end = va_arg(args, struct k_poll_event *);
 
@@ -224,10 +224,10 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 	}
 
 	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
+		struct pollfd *pfd;
 		struct k_poll_event **pev;
 
-		pfd = va_arg(args, struct zsock_pollfd *);
+		pfd = va_arg(args, struct pollfd *);
 		pev = va_arg(args, struct k_poll_event **);
 
 		return eventfd_poll_update(obj, pfd, pev);

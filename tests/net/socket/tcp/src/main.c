@@ -134,7 +134,7 @@ static void test_shutdown(int sock, int how)
 
 static void test_close(int sock)
 {
-	zassert_equal(close(sock),
+	zassert_equal(zsock_close(sock),
 		      0,
 		      "close failed");
 }
@@ -1499,7 +1499,7 @@ static void child_entry(void *p1, void *p2, void *p3)
 {
 	int sock = POINTER_TO_INT(p1);
 
-	result = close(sock);
+	result = zsock_close(sock);
 }
 
 static void spawn_child(int sock)

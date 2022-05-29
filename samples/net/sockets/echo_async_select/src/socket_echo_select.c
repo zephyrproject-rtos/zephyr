@@ -8,15 +8,15 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
-#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
+#if defined(CONFIG_POSIX_API) || defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 /* Generic read()/write() is available in POSIX config, so use it. */
 #define READ(fd, buf, sz) read(fd, buf, sz)

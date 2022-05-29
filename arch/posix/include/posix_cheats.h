@@ -58,7 +58,7 @@ void zephyr_app_main(void);
 }
 #endif
 
-#ifdef CONFIG_POSIX_API
+#if defined(CONFIG_POSIX_API) || defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 
 /*
  * The defines below in this header exist only to enable the Zephyr POSIX API
@@ -220,6 +220,7 @@ void zephyr_app_main(void);
 #define unlink		zap_unlink
 #define stat		zap_stat
 #define mkdir		zap_mkdir
+#define fcntl		zap_fcntl
 
 /* eventfd */
 #define eventfd		zap_eventfd

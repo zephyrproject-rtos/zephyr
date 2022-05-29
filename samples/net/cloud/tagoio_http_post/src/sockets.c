@@ -7,6 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(tagoio_http_post, CONFIG_TAGOIO_HTTP_POST_LOG_LEVEL);
 
+#include <unistd.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socketutils.h>

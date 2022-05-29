@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_txtime_sample, LOG_LEVEL_DBG);
 #include <zephyr/zephyr.h>
 #include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <inttypes.h>
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/shell/shell.h>

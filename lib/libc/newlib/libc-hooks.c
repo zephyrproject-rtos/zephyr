@@ -211,7 +211,7 @@ static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 #include <syscalls/zephyr_write_stdout_mrsh.c>
 #endif
 
-#ifndef CONFIG_POSIX_API
+#if !(defined(CONFIG_POSIX_API) || defined(CONFIG_NET_SOCKETS_POSIX_NAMES))
 int _read(int fd, char *buf, int nbytes)
 {
 	ARG_UNUSED(fd);

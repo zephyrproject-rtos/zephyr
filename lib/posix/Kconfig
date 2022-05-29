@@ -6,7 +6,7 @@ source "lib/posix/getopt/Kconfig"
 config POSIX_MAX_FDS
 	int "Maximum number of open file descriptors"
 	default 16 if POSIX_API
-	default 4
+	default 7
 	help
 	  Maximum number of open file descriptors, this includes
 	  files, sockets, special devices, etc.

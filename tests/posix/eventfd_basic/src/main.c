@@ -9,11 +9,7 @@
 
 #include <zephyr/net/socket.h>
 
-#ifdef CONFIG_POSIX_API
 #include <sys/eventfd.h>
-#else
-#include <zephyr/posix/sys/eventfd.h>
-#endif
 
 ZTEST_SUITE(test_eventfd_basic, NULL, NULL, NULL, NULL, NULL);
 

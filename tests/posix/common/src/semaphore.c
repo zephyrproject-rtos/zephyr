@@ -4,10 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+#define _POSIX_MONOTONIC_CLOCK
+#endif
+
 #include <zephyr/ztest.h>
 #include <errno.h>
 #include <pthread.h>
+#include <time.h>
 #include <semaphore.h>
+
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+int clock_gettime(clockid_t clock_id, struct timespec *tp);
+#endif
 
 #define STACK_SIZE 1024
 

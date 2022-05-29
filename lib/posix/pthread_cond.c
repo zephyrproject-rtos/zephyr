@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/wait_q.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 
 extern struct k_spinlock z_pthread_spinlock;
 

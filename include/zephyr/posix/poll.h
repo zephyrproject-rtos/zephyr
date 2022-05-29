@@ -8,10 +8,6 @@
 
 #include <zephyr/net/socket.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define pollfd zsock_pollfd
 
 #define POLLIN ZSOCK_POLLIN
@@ -19,6 +15,10 @@ extern "C" {
 #define POLLERR ZSOCK_POLLERR
 #define POLLHUP ZSOCK_POLLHUP
 #define POLLNVAL ZSOCK_POLLNVAL
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static inline int poll(struct pollfd *fds, int nfds, int timeout)
 {

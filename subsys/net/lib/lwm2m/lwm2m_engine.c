@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <zephyr/init.h>
 #include <zephyr/net/http_parser_url.h>

@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <cmsis_os.h>
+#include <sys_clock.h>
 
 #define MAX_VALID_SIGNAL_VAL	((1 << osFeature_Signals) - 1)
 

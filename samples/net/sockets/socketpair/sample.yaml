@@ -1,7 +1,8 @@
 sample:
-  description: BSD Sockets API TCP socketpair sample
-  name: socket_socketpair
+  description: socketpair
+  name: socketpair
 tests:
   sample.net.sockets.socketpair:
-    harness: net
-    tags: net socket
+    # Until #45100 is resolved
+    platform_exclude: native_posix native_posix_64
+    tags: socket

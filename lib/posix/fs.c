@@ -7,8 +7,8 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <limits.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/dirent.h>
+#include <unistd.h>
+#include <dirent.h>
 #include <string.h>
 #include <zephyr/sys/fdtable.h>
 #include <sys/stat.h>

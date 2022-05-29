@@ -4,12 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+#define _POSIX_MONOTONIC_CLOCK
+#endif
+
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/wait_q.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 
 #ifdef CONFIG_POSIX_CLOCK
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+int clock_gettime(clockid_t clock_id, struct timespec *tp);
+#endif
+
 int64_t timespec_to_timeoutms(const struct timespec *abstime)
 {
 	int64_t milli_secs, secs, nsecs;

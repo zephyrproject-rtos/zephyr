@@ -7,15 +7,18 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 #define ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 
-#include <zephyr/kernel.h>
-#include <zephyr/wait_q.h>
-#include <zephyr/posix/time.h>
-#include <zephyr/posix/unistd.h>
-#include "posix_types.h"
-#include "posix_sched.h"
-#include <zephyr/posix/pthread_key.h>
+#include <time.h>
+#include <unistd.h>
+#include <sched.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/wait_q.h>
+
+#include "pthread_key.h"
+#include "posix_types.h"
 
 #ifdef __cplusplus
 extern "C" {

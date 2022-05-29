@@ -4,8 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+#define _POSIX_MONOTONIC_CLOCK
+#endif
+
 #include <errno.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
+#include <signal.h>
+#include <time.h>
+
+#include "ts_to_ms.h"
+
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+int clock_gettime(clockid_t clock_id, struct timespec *tp);
+
+int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid);
+int timer_delete(timer_t timerid);
+int timer_gettime(timer_t timerid, struct itimerspec *its);
+int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
+		  struct itimerspec *ovalue);
+#endif
 
 /**
  * @brief Destroy semaphore.

@@ -8,7 +8,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/init.h>
 #include <string.h>
-#include <zephyr/posix/time.h>
+#include <time.h>
 #include <zephyr/sys/timeutil.h>
 
 #define HELP_NONE      "[none]"

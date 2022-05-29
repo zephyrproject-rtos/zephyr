@@ -18,6 +18,7 @@
 #include <zephyr/net/socket.h>
 #endif
 #include <errno.h>
+#include <unistd.h>
 #include <mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp_udp.h>
 #include <zephyr/mgmt/mcumgr/buf.h>

@@ -116,7 +116,7 @@ static void test_accept(int sock, int *new_sock, struct sockaddr *addr,
 
 static void test_close(int sock)
 {
-	zassert_equal(close(sock),
+	zassert_equal(zsock_close(sock),
 		      0,
 		      "close failed");
 }
@@ -446,9 +446,9 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 
 	/* MSG_PEEK not supported by DTLS socket */
 
-	rv = close(sock_c);
+	rv = zsock_close(sock_c);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s);
+	rv = zsock_close(sock_s);
 	zassert_equal(rv, 0, "close failed");
 }
 
@@ -571,9 +571,9 @@ static void test_dtls_sendmsg(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, -1, "sendmsg succeeded");
 	zassert_equal(errno, EMSGSIZE, "incorrect errno value");
 
-	rv = close(sock_c);
+	rv = zsock_close(sock_c);
 	zassert_equal(rv, 0, "close failed");
-	rv = close(sock_s);
+	rv = zsock_close(sock_s);
 	zassert_equal(rv, 0, "close failed");
 }
 

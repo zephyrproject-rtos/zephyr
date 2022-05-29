@@ -4,9 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+#define _POSIX_MONOTONIC_CLOCK
+#endif
+
 #include <zephyr/ztest.h>
+#include <signal.h>
 #include <time.h>
 #include <unistd.h>
+
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+int clock_gettime(clockid_t clock_id, struct timespec *tp);
+
+int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid);
+int timer_delete(timer_t timerid);
+int timer_gettime(timer_t timerid, struct itimerspec *its);
+int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
+		  struct itimerspec *ovalue);
+#endif
 
 #define SECS_TO_SLEEP 2
 #define DURATION_SECS 1

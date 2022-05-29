@@ -3,11 +3,30 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+#define _POSIX_MONOTONIC_CLOCK
+#endif
+
 #include <zephyr/kernel.h>
 #include <errno.h>
+#include <signal.h>
 #include <string.h>
+#include <time.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/posix/time.h>
+
+#ifdef CONFIG_PICOLIBC
+/* FIXME: Please see Issue #46910 */
+int clock_gettime(clockid_t clock_id, struct timespec *tp);
+
+int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid);
+int timer_delete(timer_t timerid);
+int timer_gettime(timer_t timerid, struct itimerspec *its);
+int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
+		  struct itimerspec *ovalue);
+#endif
+
+#include "ts_to_ms.h"
 
 #define ACTIVE 1
 #define NOT_ACTIVE 0
@@ -83,6 +102,16 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	return 0;
 }
 
+static inline int32_t get_remaining(struct timer_obj *timer)
+{
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	/* FIXME: convert to a build-time error inside of include/kernel.h */
+	return k_timer_remaining_get(&timer->ztimer);
+#else
+	return 0;
+#endif
+}
+
 /**
  * @brief Get amount of time left for expiration on a per-process timer.
  *
@@ -100,7 +129,7 @@ int timer_gettime(timer_t timerid, struct itimerspec *its)
 	}
 
 	if (timer->status == ACTIVE) {
-		remaining = k_timer_remaining_get(&timer->ztimer);
+		remaining = get_remaining(timer);
 		secs =  remaining / MSEC_PER_SEC;
 		leftover = remaining - (secs * MSEC_PER_SEC);
 		nsecs = (int64_t)leftover * NSEC_PER_MSEC;
@@ -160,7 +189,7 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 	/* Calculate timer duration */
 	duration = _ts_to_ms(&(value->it_value));
 	if ((flags & TIMER_ABSTIME) != 0) {
-		current = k_timer_remaining_get(&timer->ztimer);
+		current = get_remaining(timer);
 
 		if (current >= duration) {
 			duration = 0U;

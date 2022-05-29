@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#ifndef __ZEPHYR__
+#if defined(CONFIG_POSIX_API) || defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 
 #include <netinet/in.h>
 #include <sys/socket.h>

@@ -1,8 +1,10 @@
 common:
   tags: net socket userspace
-  filter: TOOLCHAIN_HAS_NEWLIB == 1
-  platform_exclude: intel_adsp_cavs15
   depends_on: netif
 tests:
   net.socket.socketpair:
     min_ram: 21
+  net.socket.socketpair.newlib:
+    min_ram: 21
+    extra_configs:
+    - CONFIG_NEWLIB_LIBC=y
