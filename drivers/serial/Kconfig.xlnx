@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_XLNX_PS
-	bool "Xilinx serial driver for MPSoC"
+	bool "Xilinx Zynq 7000/ZynqMP serial driver"
 	depends on SOC_XILINX_ZYNQMP || SOC_FAMILY_XILINX_ZYNQ7000
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
