@@ -200,7 +200,8 @@ static void tx_notify(struct bt_conn *conn)
 			break;
 		}
 
-		tx = (void *)sys_slist_get_not_empty(&conn->tx_complete);
+		tx = CONTAINER_OF(sys_slist_get_not_empty(&conn->tx_complete),
+				  struct bt_conn_tx, node);
 		irq_unlock(key);
 
 		BT_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
