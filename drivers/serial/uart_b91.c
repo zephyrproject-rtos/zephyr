@@ -35,6 +35,9 @@
 #define UART_STOP_BIT_1P5  BIT(4)
 #define UART_STOP_BIT_2    BIT(5)
 
+/* TX RX reset bits */
+#define UART_RX_RESET_BIT BIT(6)
+#define UART_TX_RESET_BIT BIT(7)
 
 /* B91 UART registers structure */
 struct uart_b91_t {
@@ -304,6 +307,12 @@ static int uart_b91_driver_init(const struct device *dev)
 	uint8_t bwpc = 0u;
 	volatile struct uart_b91_t *uart = GET_UART(dev);
 	const struct uart_b91_config *cfg = dev->config;
+	struct uart_b91_data *data = dev->data;
+
+	/* Reset Tx, Rx status before usage */
+	uart->status |= UART_RX_RESET_BIT | UART_TX_RESET_BIT;
+	data->rx_byte_index = 0;
+	data->tx_byte_index = 0;
 
 	/* configure pins */
 	status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
