@@ -372,10 +372,6 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
-		bt_hci_ecc_init();
-	}
-
 	err = drv->open();
 	if (err) {
 		BT_ERR("HCI driver open failed (%d)", err);
