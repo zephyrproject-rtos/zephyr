@@ -50,4 +50,7 @@ config TEST_EXTRA_STACK_SIZE
 	int
 	default 1024
 
+config HAS_FLASH_LOAD_OFFSET
+	default y if BOOTLOADER_MCUBOOT
+
 endif # SOC_SERIES_RISCV_TELINK_B91
