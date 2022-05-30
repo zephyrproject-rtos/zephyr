@@ -1,4 +1,13 @@
 # This is the Jenkins ci variant of the .github/labler.yaml
+"CI-iot-zephyr-lwm2m-test":
+  - "drivers/console/**/*"
+  - "drivers/flash/**/*"
+  - "subsys/dfu/boot/**/*"
+  - "subsys/net/ip/**/*"
+  - "subsys/net/lib/http/**/*"
+  - "subsys/net/lib/lwm2m//**/*"
+  - "subsys/net/**/*"
+
 "CI-iot-samples-test":
   - "boards/arm/nrf9160dk_nrf9160/**/*"
   - "dts/arm/nordic/nrf9160*"
