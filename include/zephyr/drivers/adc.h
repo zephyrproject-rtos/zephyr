@@ -402,44 +402,6 @@ struct adc_dt_spec {
  */
 #define ADC_DT_SPEC_INST_GET(inst) ADC_DT_SPEC_GET(DT_DRV_INST(inst))
 
-/**
- * @brief Convert a raw ADC value to millivolts.
- *
- * This function performs the necessary conversion to transform a raw
- * ADC measurement to a voltage in millivolts.
- *
- * @param ref_mv the reference voltage used for the measurement, in
- * millivolts.  This may be from adc_ref_internal() or a known
- * external reference.
- *
- * @param gain the ADC gain configuration used to sample the input
- *
- * @param resolution the number of bits in the absolute value of the
- * sample.  For differential sampling this may be one less than the
- * resolution in struct adc_sequence.
- *
- * @param valp pointer to the raw measurement value on input, and the
- * corresponding millivolt value on successful conversion.  If
- * conversion fails the stored value is left unchanged.
- *
- * @retval 0 on successful conversion
- * @retval -EINVAL if the gain is not reversible
- */
-static inline int adc_raw_to_millivolts(int32_t ref_mv,
-					enum adc_gain gain,
-					uint8_t resolution,
-					int32_t *valp)
-{
-	int32_t adc_mv = *valp * ref_mv;
-	int ret = adc_gain_invert(gain, &adc_mv);
-
-	if (ret == 0) {
-		*valp = (adc_mv >> resolution);
-	}
-
-	return ret;
-}
-
 /* Forward declaration of the adc_sequence structure. */
 struct adc_sequence;
 
@@ -645,6 +607,24 @@ static inline int z_impl_adc_channel_setup(const struct device *dev,
 }
 
 /**
+ * @brief Configure an ADC channel from a struct adc_dt_spec.
+ *
+ * @param spec ADC specification from Devicetree.
+ *
+ * @return A value from adc_channel_setup() or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see adc_channel_setup()
+ */
+static inline int adc_channel_setup_dt(const struct adc_dt_spec *spec)
+{
+	if (!spec->channel_cfg_dt_node_exists) {
+		return -ENOTSUP;
+	}
+
+	return adc_channel_setup(spec->dev, &spec->channel_cfg);
+}
+
+/**
  * @brief Set a read request.
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -729,6 +709,119 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
 				(const struct adc_driver_api *)dev->api;
 
 	return api->ref_internal;
+}
+
+/**
+ * @brief Convert a raw ADC value to millivolts.
+ *
+ * This function performs the necessary conversion to transform a raw
+ * ADC measurement to a voltage in millivolts.
+ *
+ * @param ref_mv the reference voltage used for the measurement, in
+ * millivolts.  This may be from adc_ref_internal() or a known
+ * external reference.
+ *
+ * @param gain the ADC gain configuration used to sample the input
+ *
+ * @param resolution the number of bits in the absolute value of the
+ * sample.  For differential sampling this may be one less than the
+ * resolution in struct adc_sequence.
+ *
+ * @param valp pointer to the raw measurement value on input, and the
+ * corresponding millivolt value on successful conversion.  If
+ * conversion fails the stored value is left unchanged.
+ *
+ * @retval 0 on successful conversion
+ * @retval -EINVAL if the gain is not reversible
+ */
+static inline int adc_raw_to_millivolts(int32_t ref_mv,
+					enum adc_gain gain,
+					uint8_t resolution,
+					int32_t *valp)
+{
+	int32_t adc_mv = *valp * ref_mv;
+	int ret = adc_gain_invert(gain, &adc_mv);
+
+	if (ret == 0) {
+		*valp = (adc_mv >> resolution);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Convert a raw ADC value to millivolts using information stored
+ * in a struct adc_dt_spec.
+ *
+ * @param[in] spec ADC specification from Devicetree.
+ * @param[in,out] valp Pointer to the raw measurement value on input, and the
+ * corresponding millivolt value on successful conversion. If conversion fails
+ * the stored value is left unchanged.
+ *
+ * @return A value from adc_raw_to_millivolts() or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see adc_raw_to_millivolts()
+ */
+static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec *spec,
+					   int32_t *valp)
+{
+	int32_t vref_mv;
+	uint8_t resolution;
+
+	if (!spec->channel_cfg_dt_node_exists) {
+		return -ENOTSUP;
+	}
+
+	if (spec->channel_cfg.reference == ADC_REF_INTERNAL) {
+		vref_mv = (int32_t)adc_ref_internal(spec->dev);
+	} else {
+		vref_mv = spec->vref_mv;
+	}
+
+	resolution = spec->resolution;
+
+	/*
+	 * For differential channels, one bit less needs to be specified
+	 * for resolution to achieve correct conversion.
+	 */
+	if (spec->channel_cfg.differential) {
+		resolution -= 1U;
+	}
+
+	return adc_raw_to_millivolts(vref_mv, spec->channel_cfg.gain,
+				     resolution, valp);
+}
+
+/**
+ * @brief Initialize a struct adc_sequence from information stored in
+ * struct adc_dt_spec.
+ *
+ * Note that this function only initializes the following fields:
+ *
+ * - @ref adc_sequence.channels
+ * - @ref adc_sequence.resolution
+ * - @ref adc_sequence.oversampling
+ *
+ * Other fields should be initialized by the caller.
+ *
+ * @param[in] spec ADC specification from Devicetree.
+ * @param[out] seq Sequence to initialize.
+ *
+ * @retval 0 On success
+ * @retval -ENOTSUP If @p spec does not have valid channel configuration
+ */
+static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
+				       struct adc_sequence *seq)
+{
+	if (!spec->channel_cfg_dt_node_exists) {
+		return -ENOTSUP;
+	}
+
+	seq->channels = BIT(spec->channel_id);
+	seq->resolution = spec->resolution;
+	seq->oversampling = spec->oversampling;
+
+	return 0;
 }
 
 /**
