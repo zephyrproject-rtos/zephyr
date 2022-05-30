@@ -4,9 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/zephyr.h>
-#include <zephyr/sys/printk.h>
+#include <inttypes.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || \
 	!DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
@@ -25,30 +32,30 @@ static const struct adc_dt_spec adc_channels[] = {
 void main(void)
 {
 	int err;
-	int16_t sample_buffer[1];
+	int16_t buf;
 	struct adc_sequence sequence = {
-		.buffer      = sample_buffer,
+		.buffer = &buf,
 		/* buffer size in bytes, not number of samples */
-		.buffer_size = sizeof(sample_buffer),
+		.buffer_size = sizeof(buf),
 	};
 
 	/* Configure channels individually prior to sampling. */
-	for (uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 		if (!device_is_ready(adc_channels[i].dev)) {
-			printk("ADC device not found\n");
+			printk("ADC controller device not ready\n");
 			return;
 		}
 
 		err = adc_channel_setup_dt(&adc_channels[i]);
 		if (err < 0) {
-			printk("Could not setup channel (%d)\n", err);
+			printk("Could not setup channel #%d (%d)\n", i, err);
 			return;
 		}
 	}
 
 	while (1) {
 		printk("ADC reading:\n");
-		for (uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 			int32_t val_mv;
 
 			printk("- %s, channel %d: ",
@@ -59,20 +66,20 @@ void main(void)
 
 			err = adc_read(adc_channels[i].dev, &sequence);
 			if (err < 0) {
-				printk("error %d\n", err);
+				printk("Could not read (%d)\n", err);
 				continue;
 			} else {
-				printk("%d", sample_buffer[0]);
+				printk("%"PRId16, buf);
 			}
 
 			/* conversion to mV may not be supported, skip if not */
-			val_mv = sample_buffer[0];
+			val_mv = buf;
 			err = adc_raw_to_millivolts_dt(&adc_channels[i],
 						       &val_mv);
 			if (err < 0) {
 				printk(" (value in mV not available)\n");
 			} else {
-				printk(" = %d mV\n", val_mv);
+				printk(" = %"PRId32" mV\n", val_mv);
 			}
 		}
 
