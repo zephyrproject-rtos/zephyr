@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the Arm Ethos-U NPU
+  name: Arm Ethos-U NPU sample
+tests:
+  sample.drivers.tflm_ethosu:
+    tags: NPU
+    filter: dt_compat_enabled("arm,ethos-u")
+    build_only: true
