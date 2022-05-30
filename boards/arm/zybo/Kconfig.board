@@ -1,0 +1,8 @@
+# Digilent Zybo board configuration
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ZYBO
+	bool "Digilent Zybo"
+	depends on SOC_XILINX_XC7Z010
