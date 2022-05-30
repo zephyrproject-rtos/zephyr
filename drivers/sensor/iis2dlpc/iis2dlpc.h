@@ -99,6 +99,9 @@ struct iis2dlpc_data {
 	sensor_trigger_handler_t tap_handler;
 	sensor_trigger_handler_t double_tap_handler;
 #endif /* CONFIG_IIS2DLPC_TAP */
+#ifdef CONFIG_IIS2DLPC_ACTIVITY
+	sensor_trigger_handler_t activity_handler;
+#endif /* CONFIG_IIS2DLPC_ACTIVITY */
 #if defined(CONFIG_IIS2DLPC_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_IIS2DLPC_THREAD_STACK_SIZE);
 	struct k_thread thread;
