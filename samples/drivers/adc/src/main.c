@@ -22,15 +22,6 @@ static const struct adc_dt_spec adc_channels[] = {
 			     DT_SPEC_AND_COMMA)
 };
 
-#define LABEL_AND_COMMA(node_id, prop, idx) \
-	DT_LABEL(DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx)),
-
-/* Labels of ADC controllers referenced by the above io-channels. */
-static const char *const adc_labels[] = {
-	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
-			     LABEL_AND_COMMA)
-};
-
 /*
  * Common settings supported by most ADCs.
  * If for a given channel a configuration is available in devicetree, values
@@ -142,7 +133,8 @@ void main(void)
 		printk("ADC reading:\n");
 		for (uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++) {
 			printk("- %s, channel %d: ",
-				adc_labels[i], adc_channels[i].channel_id);
+			       adc_channels[i].dev->name,
+			       adc_channels[i].channel_id);
 
 			prepare_sequence(&sequence, &adc_channels[i]);
 
