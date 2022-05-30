@@ -967,16 +967,9 @@ static bool skip_auto_phy_update_on_conn_establishment(struct bt_conn *conn)
 	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
 	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		int err;
-
-		err = hci_le_read_phy(conn);
-		if (err) {
-			BT_WARN("Failed to read PHY (%d)", err);
-		} else {
-			if (conn->le.phy.tx_phy == BT_HCI_LE_PHY_2M &&
-			    conn->le.phy.rx_phy == BT_HCI_LE_PHY_2M) {
-				return true;
-			}
+		if (conn->le.phy.tx_phy == BT_HCI_LE_PHY_2M &&
+		    conn->le.phy.rx_phy == BT_HCI_LE_PHY_2M) {
+			return true;
 		}
 	}
 #else
@@ -1331,6 +1324,18 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 					&bt_dev.id_addr[conn->id]);
 		}
 	}
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		int err;
+
+		err = hci_le_read_phy(conn);
+		if (err) {
+			BT_WARN("Failed to read PHY (%d)", err);
+		}
+	}
+#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
