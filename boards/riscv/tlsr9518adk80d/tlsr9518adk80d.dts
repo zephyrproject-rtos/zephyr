@@ -16,6 +16,8 @@
 	aliases {
 		led0 = &led_blue;
 		led1 = &led_green;
+		led2 = &led_white;
+		led3 = &led_red;
 		sw0 = &key_1;
 		pwm-led0 = &pwm_led_blue;
 		pwm-0 = &pwm0;
@@ -69,6 +71,7 @@
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &flash_mspi;
 		zephyr,entropy = &trng0;
+		zephyr,code-partition = &slot0_partition;
 	};
 };
 
@@ -86,6 +89,34 @@
 
 &flash {
 	reg = <0x20000000 0x100000>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 0x70000>;
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x80000 0x70000>;
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0xf0000 0x4000>;
+		};
+		storage_partition: partition@f4000 {
+			label = "storage";
+			reg = <0xf4000 0x0000b000>;
+		/* region <0xff000 0x1000> is reserved for Telink B91 SDK's data */
+		};
+	};
 };
 
 &gpiob {
@@ -138,36 +169,4 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c_scl_pe1_default &i2c_sda_pe3_default>;
 	pinctrl-names = "default";
-};
-
-&flash_mspi {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x8000>;
-		};
-		slot0_partition: partition@8000 {
-			label = "image-0";
-			reg = <0x00008000 0x1a000>;
-		};
-		slot1_partition: partition@22000 {
-			label = "image-1";
-			reg = <0x00022000 0x1a000>;
-		};
-		scratch_partition: partition@3c000 {
-			label = "image-scratch";
-			reg = <0x0003c000 0x2000>;
-		};
-		storage_partition: partition@f0000 {
-			label = "storage";
-			reg = <0x000f0000 0x00008000>;
-			/* region 0x000f8000 .. 0x000FFFFF
-			 * is reserved for factory calibration
-			 */
-		};
-	};
 };
