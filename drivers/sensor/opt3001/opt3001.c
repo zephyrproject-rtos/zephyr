@@ -11,6 +11,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "opt3001.h"
 
@@ -61,6 +62,50 @@ static int opt3001_reg_update(const struct device *dev, uint8_t reg,
 	return opt3001_reg_write(dev, reg, new_val);
 }
 
+#if defined(CONFIG_OPT3001_TRIGGER)
+static int opt3001_attr_set_low_th(const struct device *dev,
+				   const struct sensor_value *value)
+{
+	return opt3001_set_th(dev, value->val1, 0x02);
+}
+
+static int opt3001_attr_set_high_th(const struct device *dev,
+				    const struct sensor_value *value)
+{
+	return opt3001_set_th(dev, value->val1, 0x03);
+}
+
+static int opt3001_attr_set_threshold(const struct device *dev,
+				  enum sensor_channel chan,
+				  enum sensor_attribute attr,
+				  const struct sensor_value *val)
+{
+	ARG_UNUSED(chan);
+
+	switch (attr) {
+	case SENSOR_ATTR_LOWER_THRESH:
+		return opt3001_attr_set_low_th(dev, val);
+	case SENSOR_ATTR_UPPER_THRESH:
+		return opt3001_attr_set_high_th(dev, val);
+	default:
+		return -EINVAL;
+	}
+}
+
+static int opt3001_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	switch (chan) {
+	case SENSOR_CHAN_LIGHT:
+		return opt3001_attr_set_threshold(dev, chan, attr, val);
+	default:
+		return -EINVAL;
+	}
+}
+#endif /* CONFIG_OPT3001_TRIGGER */
+
 static int opt3001_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
@@ -110,6 +155,10 @@ static int opt3001_channel_get(const struct device *dev,
 static const struct sensor_driver_api opt3001_driver_api = {
 	.sample_fetch = opt3001_sample_fetch,
 	.channel_get = opt3001_channel_get,
+#if CONFIG_OPT3001_TRIGGER
+	.trigger_set = opt3001_trigger_set,
+	.attr_set = opt3001_attr_set
+#endif /* CONFIG_OPT3001_TRIGGER */
 };
 
 static int opt3001_chip_init(const struct device *dev)
@@ -147,6 +196,13 @@ static int opt3001_chip_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_OPT3001_TRIGGER
+	if (opt3001_trigger_init(dev)) {
+		LOG_ERR("Failed to setup interrupt");
+		return -EIO;
+	}
+#endif /* CONFIG_OPT3001_TRIGGER */
+
 	return 0;
 }
 
@@ -164,10 +220,13 @@ int opt3001_init(const struct device *dev)
 												\
 	static const struct opt3001_config opt3001_config_##inst = {				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		.irq_spec = COND_CODE_1(IS_ENABLED(CONFIG_OPT3001_TRIGGER),			\
+				(GPIO_DT_SPEC_INST_GET(inst, irq_gpios)),			\
+				({}))								\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, opt3001_init, NULL,						\
 			      &opt3001_data_##inst, &opt3001_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);		\
+			      CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OPT3001_DEFINE)
