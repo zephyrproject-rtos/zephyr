@@ -6,5 +6,5 @@ Language Support
 .. toctree::
    :maxdepth: 2
 
-   c_language.rst
+   c/index.rst
    cpp_language.rst
