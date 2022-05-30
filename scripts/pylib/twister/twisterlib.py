@@ -966,12 +966,12 @@ class DeviceHandler(Handler):
         # so fill the results as blocked
         self.instance.add_missing_testscases("blocked")
 
+        self.instance.execution_time = handler_time
         if harness.state:
             self.instance.status = harness.state
             if harness.state == "failed":
                 self.instance.reason = "Failed"
         else:
-            self.instance.execution_time = handler_time
             self.instance.status = "error"
             self.instance.reason = "No Console Output(Timeout)"
 
