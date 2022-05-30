@@ -12,7 +12,7 @@
 
 /* Timer configuration */
 #define RISCV_MTIME_BASE				0x0200BFF8ULL
-#define RISCV_MTIMECMP_BASE				(0x02004000ULL + (8ULL * 0))
+#define RISCV_MTIMECMP_BASE             (0x02004000ULL + (8ULL * CONFIG_SMP_BASE_CPU))
 #define RISCV_MTIMECMP_BY_HART(h)		(0x02004000ULL + (8ULL * (h)))
 #define RISCV_MSIP_BASE					0x02000000
 
