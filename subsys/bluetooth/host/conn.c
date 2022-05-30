@@ -189,20 +189,21 @@ static void tx_notify(struct bt_conn *conn)
 	BT_DBG("conn %p", conn);
 
 	while (1) {
-		struct bt_conn_tx *tx;
+		struct bt_conn_tx *tx = NULL;
 		unsigned int key;
 		bt_conn_tx_cb_t cb;
 		void *user_data;
 
 		key = irq_lock();
-		if (sys_slist_is_empty(&conn->tx_complete)) {
-			irq_unlock(key);
-			break;
+		if (!sys_slist_is_empty(&conn->tx_complete)) {
+			tx = CONTAINER_OF(sys_slist_get_not_empty(&conn->tx_complete),
+					  struct bt_conn_tx, node);
 		}
-
-		tx = CONTAINER_OF(sys_slist_get_not_empty(&conn->tx_complete),
-				  struct bt_conn_tx, node);
 		irq_unlock(key);
+
+		if (!tx) {
+			return;
+		}
 
 		BT_DBG("tx %p cb %p user_data %p", tx, tx->cb, tx->user_data);
 
