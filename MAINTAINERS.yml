@@ -1822,6 +1822,20 @@ TI Platforms:
     labels:
         - "platform: TI"
 
+Xilinx Platforms:
+  status: odd fixes
+  collaborators:
+    - henrikbrixandersen
+    - ibirnbaum
+  files:
+    - drivers/*/*xlnx*
+    - dts/*/xilinx/
+    - dts/bindings/*/*xlnx*
+    - include/zephyr/*/*/*xlnx*
+    - soc/arm/xilinx*/
+  labels:
+    - "platform: Xilinx"
+
 Storage:
     status: maintained
     maintainers:
