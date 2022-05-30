@@ -7,4 +7,4 @@ Language Support
    :maxdepth: 2
 
    c/index.rst
-   cpp_language.rst
+   cpp/index.rst
