@@ -27,12 +27,11 @@ a devicetree overlay. The example overlay in the ``boards`` subdirectory for
 the ``nucleo_l073rz`` board can be easily adjusted for other boards.
 
 Configuration of channels (settings like gain, reference, or acquisition time)
-can be specified in devicetree, in ADC controller child nodes. Also the ADC
-resolution and oversampling setting to be used for particular channels can
-be specified there. See :zephyr_file:`boards/nrf52840dk_nrf52840.overlay
+also needs to be specified in devicetree, in ADC controller child nodes. Also
+the ADC resolution and oversampling setting (if used) need to be specified
+there. See :zephyr_file:`boards/nrf52840dk_nrf52840.overlay
 <samples/drivers/adc/boards/nrf52840dk_nrf52840.overlay>` for an example of
-such setup. If these parameters are not specified in devicetree, default values,
-supposed to be supported by most ADCs, are used instead.
+such setup.
 
 Building and Running for ST Nucleo L073RZ
 =========================================
@@ -56,6 +55,7 @@ You should get a similar output as below, repeated every second:
 
 .. code-block:: console
 
-   ADC reading(s): 42 (raw)
+   ADC reading:
+   - ADC_0, channel 7: 36 = 65mV
 
 .. note:: If the ADC is not supported, the output will be an error message.
