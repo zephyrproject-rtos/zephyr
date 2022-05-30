@@ -837,6 +837,10 @@ static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
 	LL_ADC_SetSamplingTimeCommonChannels(adc,
 		table_samp_time[acq_time_index]);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	/* Errata ES0418 and more: ADC sampling time might be one cycle longer */
+	if (acq_time_index  < 2) {
+		acq_time_index = 2;
+	}
 	LL_ADC_SetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_1,
 		table_samp_time[acq_time_index]);
 #else
