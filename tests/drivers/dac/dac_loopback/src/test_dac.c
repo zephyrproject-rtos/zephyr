@@ -52,7 +52,8 @@
 
 #elif defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
 	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
-	defined(CONFIG_BOARD_NUCLEO_F746ZG)
+	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
+	defined(CONFIG_BOARD_NUCLEO_G071RB)
 /*
  * DAC output on PA4
  * ADC input read from PA0
