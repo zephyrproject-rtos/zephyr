@@ -55,6 +55,17 @@ void sys_arch_reboot(int type)
 	NVIC_SystemReset();
 }
 
+int sys_arch_get_reboot_type(void)
+{
+	uint8_t type;
+
+	type = nrf_power_gpregret_get(NRF_POWER);
+	nrf_power_gpregret_set(NRF_POWER, 0);
+
+	return type;
+
+}
+
 static int nordicsemi_nrf52_init(const struct device *arg)
 {
 	uint32_t key;
