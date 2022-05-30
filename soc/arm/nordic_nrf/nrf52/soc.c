@@ -81,6 +81,13 @@ void sys_arch_reboot(int type)
 	NVIC_SystemReset();
 }
 
+int nrf_sys_get_reboot_type(void)
+{
+	return soc_retention_reg_mask_get(SOC_MCUBOOT_RESET_TYPE_Msk,
+					  SOC_MCUBOOT_RESET_TYPE_Pos);
+
+}
+
 static int nordicsemi_nrf52_init(const struct device *arg)
 {
 	uint32_t key;

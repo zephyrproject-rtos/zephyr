@@ -236,6 +236,21 @@
 		DT_NODE_PATH(node_id) " has pinctrl states defined"	\
 			" although PINCTRL is not enabled")
 
+/**
+ * @brief Obtain SW defined reboot type
+ *
+ * Fetch reboot type which caused system startup.
+ * This call extracts the reboot type value which was used in a previous call to the
+ * sys_rebot() call if the platform allows to storing of this.
+ *
+ * @note This function is intended to be replaced in the feature when better
+ *	 common API will come. This nRF specific API is needed as temporarily
+ *	 solution for zephyr-rtos based applications.
+ *
+ * @retval reboot type
+ */
+int nrf_sys_get_reboot_type(void);
+
 #endif /* !_ASMLANGUAGE */
 
 #endif
