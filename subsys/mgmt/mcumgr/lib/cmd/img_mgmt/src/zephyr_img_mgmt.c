@@ -463,14 +463,6 @@ end:
 	return rc;
 }
 
-#if CONFIG_IMG_ERASE_PROGRESSIVELY
-int img_mgmt_impl_erase_if_needed(uint32_t off, uint32_t len)
-{
-	/* This is done internally to the flash_img API. */
-	return 0;
-}
-#endif
-
 int
 img_mgmt_impl_swap_type(int slot)
 {

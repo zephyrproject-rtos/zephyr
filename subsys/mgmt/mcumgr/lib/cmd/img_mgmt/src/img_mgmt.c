@@ -443,15 +443,6 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 
 	/* Write the image data to flash. */
 	if (req.img_data.len != 0) {
-#if CONFIG_IMG_ERASE_PROGRESSIVELY
-		/* erase as we cross sector boundaries */
-		if (img_mgmt_impl_erase_if_needed(req.off, action.write_bytes) != 0) {
-			rc = MGMT_ERR_EUNKNOWN;
-			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
-				img_mgmt_err_str_flash_erase_failed);
-			goto end;
-		}
-#endif
 		/* If this is the last chunk */
 		if (g_img_mgmt_state.off + req.img_data.len == g_img_mgmt_state.size) {
 			last = true;
