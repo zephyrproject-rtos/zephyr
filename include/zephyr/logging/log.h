@@ -418,10 +418,10 @@ void z_log_vprintk(const char *fmt, va_list ap);
 				Z_LOG_RESOLVED_LEVEL(level, 0)
 
 /*
- * Eclipse CDT parser is sometimes confused by logging API code and freezes the
- * whole IDE. Following lines hides LOG_x macros from CDT.
+ * Eclipse CDT or JetBrains Clion parser is sometimes confused by logging API
+ * code and freezes the whole IDE. Following lines hides LOG_x macros from them.
  */
-#if defined(__CDT_PARSER__)
+#if defined(__CDT_PARSER__) || defined(__JETBRAINS_IDE__)
 #undef LOG_ERR
 #undef LOG_WRN
 #undef LOG_INF
