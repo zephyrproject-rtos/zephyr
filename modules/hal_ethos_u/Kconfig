@@ -1,0 +1,45 @@
+# Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ARM_ETHOS_U
+	bool "Ethos-U core driver"
+	default n
+	depends on MULTITHREADING
+	help
+	  This option enables the Arm Ethos-U core driver.
+
+menu "Arm Ethos-U NPU configuration"
+choice  ARM_ETHOS_U_NPU_CONFIG
+	prompt "Arm Ethos-U NPU configuration"
+	depends on ARM_ETHOS_U
+	default ARM_ETHOS_U55_128
+config ARM_ETHOS_U55_64
+	bool "using Ethos-U55 with 64 macs"
+config ARM_ETHOS_U55_128
+	bool "using Ethos-U55 with 128 macs"
+config ARM_ETHOS_U55_256
+	bool "using Ethos-U55 with 256 macs"
+config ARM_ETHOS_U65_128
+	bool "using Ethos-U65 with 128 macs"
+config ARM_ETHOS_U65_256
+	bool "using Ethos-U65 with 256 macs"
+config ARM_ETHOS_U65_512
+	bool "using Ethos-U65 with 512 macs"
+endchoice
+endmenu
+
+config ARM_ETHOS_U_NPU_NAME
+	string
+	default "ethos-u55-64" if ARM_ETHOS_U55_64
+	default "ethos-u55-128" if ARM_ETHOS_U55_128
+	default "ethos-u55-256" if ARM_ETHOS_U55_256
+	default "ethos-u65-128" if ARM_ETHOS_U65_128
+	default "ethos-u65-256" if ARM_ETHOS_U65_256
+	default "ethos-u65-512" if ARM_ETHOS_U65_512
+	help
+		Name of the used Arm NPU
+
+module = ARM_ETHOS_U
+module-str = arm_ethos_u
+source "subsys/logging/Kconfig.template.log_config"
