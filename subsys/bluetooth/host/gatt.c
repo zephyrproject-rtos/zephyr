@@ -44,6 +44,7 @@
 #include "smp.h"
 #include "settings.h"
 #include "gatt_internal.h"
+#include "long_wq.h"
 
 #define SC_TIMEOUT	K_MSEC(10)
 #define CCC_STORE_DELAY	K_SECONDS(1)
@@ -1307,7 +1308,11 @@ void bt_gatt_init(void)
 	/* Submit work to Generate initial hash as there could be static
 	 * services already in the database.
 	 */
-	k_work_schedule(&db_hash.work, DB_HASH_TIMEOUT);
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		bt_long_wq_schedule(&db_hash.work, DB_HASH_TIMEOUT);
+	} else {
+		k_work_schedule(&db_hash.work, DB_HASH_TIMEOUT);
+	}
 #endif /* CONFIG_BT_GATT_CACHING */
 
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
@@ -1377,7 +1382,12 @@ static void db_changed(void)
 	int i;
 
 	atomic_clear_bit(gatt_sc.flags, DB_HASH_VALID);
-	k_work_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
+
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		bt_long_wq_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
+	} else {
+		k_work_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
+	}
 
 	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
 		struct gatt_cf_cfg *cfg = &cf_cfg[i];
@@ -5586,9 +5596,12 @@ static int db_hash_commit(void)
 	/* Reschedule work to calculate and compare against the Hash value
 	 * loaded from flash.
 	 */
-	k_work_reschedule(&db_hash.work, K_NO_WAIT);
+	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+		return bt_long_wq_reschedule(&db_hash.work, K_NO_WAIT);
+	} else {
+		return k_work_reschedule(&db_hash.work, K_NO_WAIT);
+	}
 
-	return 0;
 }
 
 SETTINGS_STATIC_HANDLER_DEFINE(bt_hash, "bt/hash", NULL, db_hash_set,
