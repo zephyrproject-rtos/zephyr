@@ -36,9 +36,10 @@
 #else
 #include "hci_core.h"
 #endif
+#include "long_wq.h"
 
-static struct k_thread ecc_thread_data;
-static K_KERNEL_STACK_DEFINE(ecc_thread_stack, CONFIG_BT_HCI_ECC_STACK_SIZE);
+static void ecc_process(struct k_work *work);
+K_WORK_DEFINE(ecc_work, ecc_process);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const uint8_t debug_private_key_be[BT_PRIV_KEY_LEN] = {
@@ -59,8 +60,6 @@ enum {
 };
 
 static ATOMIC_DEFINE(flags, NUM_FLAGS);
-
-static K_SEM_DEFINE(cmd_sem, 0, 1);
 
 static struct {
 	uint8_t private_key_be[BT_PRIV_KEY_LEN];
@@ -208,18 +207,14 @@ static void emulate_le_generate_dhkey(void)
 	bt_recv(buf);
 }
 
-static void ecc_thread(void *p1, void *p2, void *p3)
+static void ecc_process(struct k_work *work)
 {
-	while (true) {
-		k_sem_take(&cmd_sem, K_FOREVER);
-
-		if (atomic_test_bit(flags, PENDING_PUB_KEY)) {
-			emulate_le_p256_public_key_cmd();
-		} else if (atomic_test_bit(flags, PENDING_DHKEY)) {
-			emulate_le_generate_dhkey();
-		} else {
-			__ASSERT(0, "Unhandled ECC command");
-		}
+	if (atomic_test_bit(flags, PENDING_PUB_KEY)) {
+		emulate_le_p256_public_key_cmd();
+	} else if (atomic_test_bit(flags, PENDING_DHKEY)) {
+		emulate_le_generate_dhkey();
+	} else {
+		__ASSERT(0, "Unhandled ECC command");
 	}
 }
 
@@ -261,7 +256,7 @@ static uint8_t le_gen_dhkey(uint8_t *key, uint8_t key_type)
 	atomic_set_bit_to(flags, USE_DEBUG_KEY,
 			  key_type == BT_HCI_LE_KEY_TYPE_DEBUG);
 
-	k_sem_give(&cmd_sem);
+	bt_long_wq_submit(&ecc_work);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -301,7 +296,7 @@ static void le_p256_pub_key(struct net_buf *buf)
 	} else if (atomic_test_and_set_bit(flags, PENDING_PUB_KEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
 	} else {
-		k_sem_give(&cmd_sem);
+		bt_long_wq_submit(&ecc_work);
 		status = BT_HCI_ERR_SUCCESS;
 	}
 
@@ -350,17 +345,4 @@ void bt_hci_ecc_supported_commands(uint8_t *supported_commands)
 int default_CSPRNG(uint8_t *dst, unsigned int len)
 {
 	return !bt_rand(dst, len);
-}
-
-void bt_hci_ecc_init(void)
-{
-	k_thread_create(&ecc_thread_data, ecc_thread_stack,
-			K_KERNEL_STACK_SIZEOF(ecc_thread_stack), ecc_thread,
-			NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
-	k_thread_name_set(&ecc_thread_data, "BT ECC");
-}
-
-void bt_hci_ecc_deinit(void)
-{
-	k_thread_abort(&ecc_thread_data);
 }
