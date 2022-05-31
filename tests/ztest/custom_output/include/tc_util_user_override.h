@@ -21,16 +21,16 @@
 } while (0)
 
 /* Example: Change result string output formats. */
-#define TC_PASS_STR "(PASS)"
-#define TC_FAIL_STR "[FAILED]"
-#define TC_SKIP_STR "{SKIPPED}"
+#define TC_PASS_STR "Customized PASS"
+#define TC_FAIL_STR "Customized FAIL"
+#define TC_SKIP_STR "Customized SKIP"
 
 /* Example: Also count the number of pass/fail/skips and display it. */
 #define Z_TC_END_RESULT(result, s) do { \
 	static int result_keeper[3] = {0}; \
 	result_keeper[result]++; \
-	printk(" reported %s no. %d\n", \
-		TC_RESULT_TO_STR(result), \
+	printk(" reported %s - %s in 0 seconds(No time counted) no. %d\n", \
+		TC_RESULT_TO_STR(result), s,\
 		result_keeper[result]); \
 } while (0)
 
