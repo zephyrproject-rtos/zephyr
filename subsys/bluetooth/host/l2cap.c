@@ -1767,7 +1767,7 @@ static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 	k_work_submit(&ch->tx_work);
 }
 
-static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
+static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	uint16_t cid = POINTER_TO_UINT(user_data);
 	struct bt_l2cap_chan *chan;
@@ -1784,10 +1784,14 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
 		chan->ops->sent(chan);
 	}
 
+	if (cb) {
+		cb(conn, cb_user_data, 0);
+	}
+
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 }
 
-static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data)
+static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	uint16_t cid = POINTER_TO_UINT(user_data);
 	struct bt_l2cap_chan *chan;

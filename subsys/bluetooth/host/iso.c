@@ -74,7 +74,7 @@ struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 	return buf;
 }
 
-static void bt_iso_send_cb(struct bt_conn *iso, void *user_data)
+static void bt_iso_send_cb(struct bt_conn *iso, void *user_data, int err)
 {
 	struct bt_iso_chan *chan = iso->iso.chan;
 	struct bt_iso_chan_ops *ops;
@@ -83,7 +83,7 @@ static void bt_iso_send_cb(struct bt_conn *iso, void *user_data)
 
 	ops = chan->ops;
 
-	if (ops != NULL && ops->sent != NULL) {
+	if (!err && ops != NULL && ops->sent != NULL) {
 		ops->sent(chan);
 	}
 }

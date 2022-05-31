@@ -330,7 +330,7 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	(void)process_queue(chan, &att->tx_queue);
 }
 
-static void chan_cfm_sent(struct bt_att_chan *chan)
+static void chan_cfm_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	BT_DBG("chan %p", chan);
 
@@ -339,7 +339,7 @@ static void chan_cfm_sent(struct bt_att_chan *chan)
 	}
 }
 
-static void chan_rsp_sent(struct bt_att_chan *chan)
+static void chan_rsp_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	BT_DBG("chan %p", chan);
 
@@ -348,7 +348,7 @@ static void chan_rsp_sent(struct bt_att_chan *chan)
 	}
 }
 
-static void chan_req_sent(struct bt_att_chan *chan)
+static void chan_req_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	BT_DBG("chan %p chan->req %p", chan, chan->req);
 
@@ -358,9 +358,30 @@ static void chan_req_sent(struct bt_att_chan *chan)
 	}
 }
 
-static bt_att_chan_sent_t chan_cb(struct net_buf *buf)
+static void chan_tx_complete(struct bt_conn *conn, void *user_data, int err)
 {
-	switch (att_op_get_type(buf->data[0])) {
+	struct bt_att_tx_meta_data *data = user_data;
+	struct bt_att_chan *chan = data->att_chan;
+
+	BT_DBG("TX Complete chan %p CID 0x%04X", chan, chan->chan.tx.cid);
+
+	if (!err && data->func) {
+		data->func(conn, data->user_data);
+	}
+
+	tx_meta_data_free(data);
+}
+
+static void chan_unknown(struct bt_conn *conn, void *user_data, int err)
+{
+	tx_meta_data_free(user_data);
+}
+
+static bt_conn_tx_cb_t chan_cb(const struct net_buf *buf)
+{
+	const att_type_t op_type = att_op_get_type(buf->data[0]);
+
+	switch (op_type) {
 	case ATT_RESPONSE:
 		return chan_rsp_sent;
 	case ATT_CONFIRMATION:
@@ -373,45 +394,57 @@ static bt_att_chan_sent_t chan_cb(struct net_buf *buf)
 	}
 }
 
-static void att_cfm_sent(struct bt_conn *conn, void *user_data)
+static void att_cfm_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	struct bt_l2cap_chan *ch = user_data;
-	struct bt_att_chan *chan = ATT_CHAN(ch);
+	if (!err) {
+		att_sent(conn, user_data);
+	}
 
-	BT_DBG("conn %p chan %p", conn, chan);
-
-	chan->sent = chan_cfm_sent;
-
-	att_sent(conn, user_data);
+	chan_cfm_sent(conn, user_data, err);
 }
 
-static void att_rsp_sent(struct bt_conn *conn, void *user_data)
+static void att_rsp_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	struct bt_l2cap_chan *ch = user_data;
-	struct bt_att_chan *chan = ATT_CHAN(ch);
+	if (!err) {
+		att_sent(conn, user_data);
+	}
 
-	BT_DBG("conn %p chan %p", conn, chan);
-
-	chan->sent = chan_rsp_sent;
-
-	att_sent(conn, user_data);
+	chan_rsp_sent(conn, user_data, err);
 }
 
-static void att_req_sent(struct bt_conn *conn, void *user_data)
+static void att_req_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	struct bt_l2cap_chan *ch = user_data;
-	struct bt_att_chan *chan = ATT_CHAN(ch);
+	if (!err) {
+		att_sent(conn, user_data);
+	}
 
-	BT_DBG("conn %p chan %p", conn, chan);
-
-	chan->sent = chan_req_sent;
-
-	att_sent(conn, user_data);
+	chan_req_sent(conn, user_data, err);
 }
 
-static bt_conn_tx_cb_t att_cb(bt_att_chan_sent_t cb)
+static void att_tx_complete(struct bt_conn *conn, void *user_data, int err)
 {
-	if (cb == chan_rsp_sent) {
+	if (!err) {
+		att_sent(conn, user_data);
+	}
+
+	chan_tx_complete(conn, user_data, err);
+}
+
+static void att_unknown(struct bt_conn *conn, void *user_data, int err)
+{
+	if (!err) {
+		att_sent(conn, user_data);
+	}
+
+	chan_unknown(conn, user_data, err);
+}
+
+static bt_conn_tx_cb_t att_cb(const struct net_buf *buf)
+{
+	const att_type_t op_type = att_op_get_type(buf->data[0]);
+
+	switch (op_type) {
+	case ATT_RESPONSE:
 		return att_rsp_sent;
 	} else if (cb == chan_cfm_sent) {
 		return att_cfm_sent;
@@ -3175,71 +3208,6 @@ void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req)
 
 	bt_att_req_free(req);
 }
-<<<<<<< HEAD
-=======
-
-struct bt_att_req *bt_att_find_req_by_user_data(struct bt_conn *conn, const void *user_data)
-{
-	struct bt_att *att;
-	struct bt_att_chan *chan;
-	struct bt_att_req *req;
-
-	att = att_get(conn);
-	if (!att) {
-		return NULL;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		if (chan->req->user_data == user_data) {
-			return chan->req;
-		}
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&att->reqs, req, node) {
-		if (req->user_data == user_data) {
-			return req;
-		}
-	}
-
-	return NULL;
-}
-
-bool bt_att_fixed_chan_only(struct bt_conn *conn)
-{
-#if defined(CONFIG_BT_EATT)
-	return bt_eatt_count(conn) == 0;
-#else
-	return true;
-#endif /* CONFIG_BT_EATT */
-}
-
-void bt_att_clear_out_of_sync_sent(struct bt_conn *conn)
-{
-	struct bt_att *att = att_get(conn);
-	struct bt_att_chan *chan;
-
-	if (!att) {
-		return;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
-		atomic_clear_bit(chan->flags, ATT_OUT_OF_SYNC_SENT);
-	}
-}
-
-bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn)
-{
-	struct bt_l2cap_chan *l2cap_chan;
-	struct bt_att_chan *att_chan;
-
-	l2cap_chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
-	if (!l2cap_chan) {
-		return false;
-	}
-
-	att_chan = ATT_CHAN(l2cap_chan);
-	return atomic_test_bit(att_chan->flags, ATT_OUT_OF_SYNC_SENT);
-}
 
 void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, void *user_data)
 {
@@ -3255,4 +3223,3 @@ bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_
 	return ((bt_att_tx_meta_data(buf)->func == func) &&
 		(bt_att_tx_meta_data(buf)->user_data == user_data));
 }
->>>>>>> 03f941ccb0 (Bluetooth: Host: Use correct type for func in ATT metadata)
