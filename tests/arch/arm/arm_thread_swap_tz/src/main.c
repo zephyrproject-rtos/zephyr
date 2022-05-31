@@ -30,7 +30,7 @@ static void do_hash(char *hash)
 	psa_status_t status = psa_hash_compute(PSA_ALG_SHA_512, dummy_string,
 			sizeof(dummy_string), hash, HASH_LEN, &len);
 
-	zassert_equal(PSA_SUCCESS, status, "psa_hash_compute_fail\n");
+	zassert_equal(PSA_SUCCESS, status, "psa_hash_compute_fail: %d\n", status);
 	zassert_equal(HASH_LEN, len, "hash length not correct\n");
 }
 
