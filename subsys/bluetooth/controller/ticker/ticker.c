@@ -807,6 +807,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 				(lazy_next - ticker_next->priority) >
 				(lazy_current - ticker->priority);
 
+#if defined(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD)
 			/* Can the current ticker with ticks_slot_window be
 			 * scheduled after the colliding ticker?
 			 */
@@ -829,6 +830,10 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 					   ticker_next->ext_data->ticks_slot_window -
 					   ticker_next->ticks_slot) <
 					  ticker->ticks_slot));
+#else /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
+			uint8_t curr_has_ticks_slot_window = 0U;
+			uint8_t next_not_ticks_slot_window = 1U;
+#endif /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
 
 			/* Check if next node is within this reservation slot
 			 * and wins conflict resolution
