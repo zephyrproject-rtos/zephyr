@@ -27,7 +27,6 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/irq.h>
-#include "irq_sources.h"
 #include <nrfx.h>
 #include "cmsis.h"
 
