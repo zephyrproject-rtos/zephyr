@@ -10,6 +10,7 @@
 #include <zephyr/sys/printk.h>
 
 extern void sys_arch_reboot(int type);
+extern int sys_arch_get_reboot_type(void);
 
 FUNC_NORETURN void sys_reboot(int type)
 {
@@ -23,4 +24,14 @@ FUNC_NORETURN void sys_reboot(int type)
 	for (;;) {
 		k_cpu_idle();
 	}
+}
+
+int __weak sys_arch_get_reboot_type(void)
+{
+	return SYS_REBOOT_WARM;
+}
+
+int sys_get_reboot_type(void)
+{
+	return sys_arch_get_reboot_type();
 }
