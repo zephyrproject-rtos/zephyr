@@ -76,10 +76,18 @@
 #endif /* CONFIG_RISCV_ISA_RV32E */
 
 #ifdef CONFIG_SMP
+#if CONFIG_SMP_BASE_CPU > 0
+#define GET_CURRENT_CPU(dst, tmp) \
+	csrr tmp, mhartid				;\
+	addi tmp, tmp, -CONFIG_SMP_BASE_CPU 	;\
+	la dst, _kernel + ___kernel_t_cpus_OFFSET	;\
+	shiftmul_add dst, tmp, ___cpu_t_SIZEOF
+#else
 #define GET_CURRENT_CPU(dst, tmp) \
 	csrr tmp, mhartid				;\
 	la dst, _kernel + ___kernel_t_cpus_OFFSET	;\
 	shiftmul_add dst, tmp, ___cpu_t_SIZEOF
+#endif
 #else
 #define GET_CURRENT_CPU(dst, tmp) \
 	la dst, _kernel + ___kernel_t_cpus_OFFSET
