@@ -5,7 +5,7 @@
 
 menuconfig ETH_SAM_GMAC
 	bool "Atmel SAM Ethernet driver"
-	depends on SOC_FAMILY_SAM0 || SOC_FAMILY_SAM
+	depends on (SOC_FAMILY_SAM0 || SOC_FAMILY_SAM) && !SOC_SERIES_SAMV70
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select MDIO
 	help

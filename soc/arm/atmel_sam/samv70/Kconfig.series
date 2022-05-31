@@ -1,0 +1,22 @@
+# Atmel SAM V70 MCU series
+
+# Copyright (c) 2019 Gerson Fernando Budke
+# Copyright (c) 2016 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAMV70
+	bool "Atmel SAMV70 MCU"
+	select ARM
+	select CPU_CORTEX_M7
+	select SOC_FAMILY_SAM
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_CORTEX_M_HAS_CACHE
+	select CPU_CORTEX_M_HAS_DWT
+	select ASF
+	select XIP
+	select CPU_HAS_ARM_MPU
+	select HAS_SWO
+	help
+	  Enable support for Atmel SAM V70 ARM Cortex-M7 Microcontrollers.
+	  Part No.: SAMV70J19, SAMV70J20, SAMV70N19, SAMV70N20, SAMV70Q19, SAMV70Q20,
+	  SAMV70J19B, SAMV70J20B, SAMV70N19B, SAMV70N20B, SAMV70Q19B, SAMV70Q20B
