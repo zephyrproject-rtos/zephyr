@@ -451,6 +451,49 @@ Libraries / Subsystems
     This subsystem uses the :ref:`SDHC api <sdhc_api>` to interact with the SD
     host controller the SD device is connected to.
 
+* Power management
+
+  * Added :kconfig:option:`CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC`.
+    This option enables support for dynamically bind devices to a Power Domain. The
+    memory required to dynamically bind devices is pre-allocated at build time and
+    is based on the number of devices set in
+    :kconfig:option:`CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM`. The API introduced
+    to use this feature are:
+
+    * :c:func:`pm_device_power_domain_add()`
+    * :c:func:`pm_device_power_domain_remove()`
+
+  * The default policy was renamed from `PM_POLICY_RESIDENCY` to `PM_POLICY_DEFAULT`,
+    and the `PM_POLICY_APP` to `PM_POLICY_CUSTOM`.
+
+  * The following functions were renamed:
+
+    * :c:func:`pm_power_state_next_get()` with :c:func:`pm_state_next_get()`
+    * :c:func:`pm_power_state_force()` with :c:func:`pm_state_force()`
+
+  * Removed the deprecated function :c:func:`pm_device_state_set()`.
+
+  * The state constraint APIs were moved (and renamed) to the policy
+    API and accounts substates.
+
+    * :c:func:`pm_constraint_get()` with :c:func:`pm_policy_state_lock_is_active()`
+    * :c:func:`pm_constraint_set()` with :c:func:`pm_policy_state_lock_get()`
+    * :c:func:`pm_constraint_release()` with :c:func:`pm_policy_state_lock_put()`
+
+  * New API to set maximum latency requirements. The `DEFAULT` policy will account
+    the latency when computing the next state.
+
+    * :c:func:`pm_policy_latency_request_add()`
+    * :c:func:`pm_policy_latency_request_update()`
+    * :c:func:`pm_policy_latency_request_remove()`
+
+  * The API to set a device initial state was changed to be usable independently of
+    whether :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`
+
+    * :c:func:`pm_device_runtime_init_suspended()` with :c:func:`pm_device_init_suspended()`
+    * :c:func:`pm_device_runtime_init_off()` with :c:func:`pm_device_init_off()`
+
+
 HALs
 ****
 
