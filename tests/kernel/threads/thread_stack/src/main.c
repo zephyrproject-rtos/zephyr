@@ -393,8 +393,8 @@ void test_stack_buffer(void)
 	printk("CONFIG_ISR_STACK_SIZE %zu\n", (size_t)CONFIG_ISR_STACK_SIZE);
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		printk("irq stack %d: %p size %zu\n",
-		       i, &z_interrupt_stacks[i],
-		       sizeof(z_interrupt_stacks[i]));
+		       i, &z_interrupt_stacks[i + CONFIG_SMP_BASE_CPU],
+		       sizeof(z_interrupt_stacks[i + CONFIG_SMP_BASE_CPU]));
 	}
 
 	printk("Provided stack size: %u\n", STEST_STACKSIZE);

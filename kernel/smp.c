@@ -96,7 +96,7 @@ static void start_cpu(int id, atomic_t *start_flag)
 {
 	z_init_cpu(id);
 	(void)atomic_clear(&ready_flag);
-	arch_start_cpu(id, z_interrupt_stacks[id], CONFIG_ISR_STACK_SIZE,
+	arch_start_cpu(id, z_interrupt_stacks[id + CONFIG_SMP_BASE_CPU], CONFIG_ISR_STACK_SIZE,
 		       smp_init_top, start_flag);
 	while (!atomic_get(&ready_flag)) {
 		local_delay();

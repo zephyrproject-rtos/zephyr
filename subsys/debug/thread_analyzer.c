@@ -126,14 +126,21 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	cb(&info);
 }
 
+#if (CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS)
+	extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_TOTAL_NUM_CPUS,
+					   CONFIG_ISR_STACK_SIZE);
+#else /* CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS */
 extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
+#endif /* CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS */
 
 static void isr_stacks(void)
 {
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		const uint8_t *buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
-		size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
+		const uint8_t *buf =
+			Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i + CONFIG_SMP_BASE_CPU]);
+		size_t size =
+			K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i + CONFIG_SMP_BASE_CPU]);
 		size_t unused;
 		int err;
 

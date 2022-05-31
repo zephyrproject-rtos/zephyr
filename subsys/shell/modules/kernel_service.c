@@ -184,8 +184,13 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 		      size, unused, size - unused, size, pcnt);
 }
 
+#if (CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS)
+extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_TOTAL_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
+#else /* CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS */
 extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
+#endif /* CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS */
 
 static int cmd_kernel_stacks(const struct shell *shell,
 			     size_t argc, char **argv)
@@ -200,8 +205,10 @@ static int cmd_kernel_stacks(const struct shell *shell,
 	 */
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		size_t unused;
-		const uint8_t *buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
-		size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
+		const uint8_t *buf =
+			Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i + CONFIG_SMP_BASE_CPU]);
+		size_t size =
+			K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i + CONFIG_SMP_BASE_CPU]);
 		int err = z_stack_space_get(buf, size, &unused);
 
 		(void)err;
@@ -209,7 +216,7 @@ static int cmd_kernel_stacks(const struct shell *shell,
 
 		shell_print(shell,
 			"%p IRQ %02d     (real size %zu):\tunused %zu\tusage %zu / %zu (%zu %%)",
-			      &z_interrupt_stacks[i], i, size, unused,
+			      &z_interrupt_stacks[i + CONFIG_SMP_BASE_CPU], i, size, unused,
 			      size - unused, size,
 			      ((size - unused) * 100U) / size);
 	}

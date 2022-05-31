@@ -61,9 +61,15 @@ static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
  * of this area is safe since interrupts are disabled until the kernel context
  * switches to the init thread.
  */
+#if (CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS)
+K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
+				   CONFIG_MP_TOTAL_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
+#else /* CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS */
 K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
 				   CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
+#endif /* CONFIG_MP_TOTAL_NUM_CPUS > CONFIG_MP_NUM_CPUS */
 
 extern void idle(void *unused1, void *unused2, void *unused3);
 
@@ -291,8 +297,8 @@ void z_init_cpu(int id)
 	_kernel.cpus[id].idle_thread = &z_idle_threads[id];
 	_kernel.cpus[id].id = id;
 	_kernel.cpus[id].irq_stack =
-		(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
-		 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[id]));
+		(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[id + CONFIG_SMP_BASE_CPU]) +
+		 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[id + CONFIG_SMP_BASE_CPU]));
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	_kernel.cpus[id].usage.track_usage =
 		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
