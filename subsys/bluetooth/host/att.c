@@ -139,7 +139,7 @@ static k_tid_t att_handle_rsp_thread;
 
 struct bt_att_tx_meta_data {
 	struct bt_att_chan *att_chan;
-	bt_conn_tx_cb_t func;
+	bt_gatt_complete_func_t func;
 	void *user_data;
 };
 
@@ -3719,7 +3719,7 @@ bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn)
 	return atomic_test_bit(att_chan->flags, ATT_OUT_OF_SYNC_SENT);
 }
 
-void bt_att_set_tx_meta_data(struct net_buf *buf, bt_conn_tx_cb_t func, void *user_data)
+void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, void *user_data)
 {
 	struct bt_att_tx_meta_data *data = bt_att_tx_meta_data(buf);
 
@@ -3727,7 +3727,7 @@ void bt_att_set_tx_meta_data(struct net_buf *buf, bt_conn_tx_cb_t func, void *us
 	data->user_data = user_data;
 }
 
-bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_conn_tx_cb_t func,
+bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
 			       const void *user_data)
 {
 	return ((bt_att_tx_meta_data(buf)->func == func) &&
