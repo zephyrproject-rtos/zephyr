@@ -1944,10 +1944,8 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 
 	len = seg->len - sdu_hdr_len;
 
-	/* Set a callback if there is no data left in the buffer and sent
-	 * callback has been set.
-	 */
-	if ((buf == seg || !buf->len) && ch->chan.ops->sent) {
+	/* Set a callback if there is no data left in the buffer */
+	if (buf == seg || !buf->len) {
 		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
 				       l2cap_chan_sdu_sent,
 				       l2cap_tx_meta_data(buf));
