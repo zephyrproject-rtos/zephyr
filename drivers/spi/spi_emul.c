@@ -46,8 +46,7 @@ uint32_t spi_emul_get_config(const struct device *dev)
  * @return emulator to use
  * @return NULL if not found
  */
-static struct spi_emul *spi_emul_find(const struct device *dev,
-				      unsigned int chipsel)
+static struct spi_emul *spi_emul_find(const struct device *dev, unsigned int chipsel)
 {
 	struct spi_emul_data *data = dev->data;
 	sys_snode_t *node;
@@ -64,10 +63,8 @@ static struct spi_emul *spi_emul_find(const struct device *dev,
 	return NULL;
 }
 
-static int spi_emul_io(const struct device *dev,
-		       const struct spi_config *config,
-		       const struct spi_buf_set *tx_bufs,
-		       const struct spi_buf_set *rx_bufs)
+static int spi_emul_io(const struct device *dev, const struct spi_config *config,
+		       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	struct spi_emul *emul;
 	const struct spi_emul_api *api;
@@ -99,8 +96,7 @@ static int spi_emul_init(const struct device *dev)
 	return emul_init_for_bus_from_list(dev, list);
 }
 
-int spi_emul_register(const struct device *dev, const char *name,
-		      struct spi_emul *emul)
+int spi_emul_register(const struct device *dev, const char *name, struct spi_emul *emul)
 {
 	struct spi_emul_data *data = dev->data;
 
@@ -117,26 +113,20 @@ static struct spi_driver_api spi_emul_api = {
 	.transceive = spi_emul_io,
 };
 
-#define EMUL_LINK_AND_COMMA(node_id) {		\
-	.label = DT_LABEL(node_id),		\
-},
+#define EMUL_LINK_AND_COMMA(node_id)                                                               \
+	{                                                                                          \
+		.label = DT_LABEL(node_id),                                                        \
+	},
 
-#define SPI_EMUL_INIT(n) \
-	static const struct emul_link_for_bus emuls_##n[] = { \
-		DT_FOREACH_CHILD(DT_DRV_INST(0), EMUL_LINK_AND_COMMA) \
-	}; \
-	static struct emul_list_for_bus spi_emul_cfg_##n = { \
-		.children = emuls_##n, \
-		.num_children = ARRAY_SIZE(emuls_##n), \
-	}; \
-	static struct spi_emul_data spi_emul_data_##n; \
-	DEVICE_DT_INST_DEFINE(n, \
-			    spi_emul_init, \
-			    NULL, \
-			    &spi_emul_data_##n, \
-			    &spi_emul_cfg_##n, \
-			    POST_KERNEL, \
-			    CONFIG_SPI_INIT_PRIORITY, \
-			    &spi_emul_api);
+#define SPI_EMUL_INIT(n)                                                                           \
+	static const struct emul_link_for_bus emuls_##n[] = { DT_FOREACH_CHILD(                    \
+		DT_DRV_INST(0), EMUL_LINK_AND_COMMA) };                                            \
+	static struct emul_list_for_bus spi_emul_cfg_##n = {                                       \
+		.children = emuls_##n,                                                             \
+		.num_children = ARRAY_SIZE(emuls_##n),                                             \
+	};                                                                                         \
+	static struct spi_emul_data spi_emul_data_##n;                                             \
+	DEVICE_DT_INST_DEFINE(n, spi_emul_init, NULL, &spi_emul_data_##n, &spi_emul_cfg_##n,       \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_EMUL_INIT)
