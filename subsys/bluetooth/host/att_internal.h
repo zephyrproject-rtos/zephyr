@@ -317,7 +317,9 @@ void bt_att_clear_out_of_sync_sent(struct bt_conn *conn);
 /* Check if BT_ATT_ERR_DB_OUT_OF_SYNC has been sent on the fixed ATT channel */
 bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn);
 
-void bt_att_set_tx_meta_data(struct net_buf *buf, bt_conn_tx_cb_t func, void *user_data);
 
-bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_conn_tx_cb_t func,
+typedef void (*bt_gatt_complete_func_t) (struct bt_conn *conn, void *user_data);
+void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, void *user_data);
+
+bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
 			       const void *user_data);
