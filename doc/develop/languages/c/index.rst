@@ -62,3 +62,39 @@ application.
    newlib.rst
 
 .. _`C Standard Library`: https://en.wikipedia.org/wiki/C_standard_library
+
+.. _c_library_dynamic_mem:
+
+Dynamic Memory Management
+*************************
+
+C defines a standard dynamic memory management interface (for example,
+:c:func:`malloc` and :c:func:`free`) and these functions are implemented by the
+C standard libraries.
+
+While the details of the dynamic memory management implementation varies across
+different C standard libraries, all supported libraries must conform to the
+following conventions. Every supported C standard library shall:
+
+* manage its own memory heap either internally or by invoking the hook
+  functions (for example, :c:func:`sbrk`) implemented in :file:`libc-hooks.c`.
+
+* maintain the architecture- and memory region-specific alignment requirements
+  for the memory blocks allocated by the standard dynamic memory allocation
+  interface (for example, :c:func:`malloc`).
+
+* allocate memory blocks inside the ``z_malloc_partition`` memory partition
+  when userspace is enabled. See :ref:`memory_domain_predefined_partitions`.
+
+For more details regarding the C standard library-specific memory management
+implementation, refer to each C standard library documentation.
+
+.. note::
+   Native Zephyr applications should use the :ref:`memory management API
+   <memory_management_api>` supported by the Zephyr kernel such as
+   :c:func:`k_malloc` in order to take advantage of the advanced features
+   that they offer.
+
+   C standard dynamic memory management interface functions such as
+   :c:func:`malloc` should be used only by the portable applications and
+   libraries that target multiple operating systems.
