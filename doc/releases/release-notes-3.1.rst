@@ -200,6 +200,15 @@ Architectures
 
 * Xtensa
 
+  * Reworked IRQ offload logic so that the software interrupt is selected
+    automatically, eliminating the need to manually specific such interrupt.
+
+  * Cache management is optimized to avoid flushing and reloading cache lines
+    if the thread is running on the same CPU before and after context switch.
+
+  * Fixed return context for nested interrupts so that it returns to the ISR
+    that has been interrupted.
+
 Bluetooth
 *********
 
