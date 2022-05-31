@@ -16,7 +16,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
-#include <soc.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/arm64/mm.h>
 #include <zephyr/arch/cpu.h>
