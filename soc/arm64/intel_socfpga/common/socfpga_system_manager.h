@@ -7,9 +7,8 @@
 #ifndef SOCFPGA_SYSTEMMANAGER_H
 #define SOCFPGA_SYSTEMMANAGER_H
 
-#include <soc.h>
-
 /* System Manager Register Map */
+#define SOCFPGA_SYSMGR_REG_BASE			0xffd12000
 
 #define SOCFPGA_SYSMGR_SDMMC			0x28
 
