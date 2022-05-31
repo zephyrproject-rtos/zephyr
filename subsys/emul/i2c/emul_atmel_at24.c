@@ -161,7 +161,7 @@ static int emul_atmel_at24_init(const struct emul *target, const struct device *
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 		.addr_width = 8,                                                                   \
 	};                                                                                         \
-	EMUL_DEFINE(&emul_atmel_at24_init, DT_DRV_INST(n), &at24_emul_cfg_##n,                     \
-		    &at24_emul_data_##n, &bus_api)
+	EMUL_DT_INST_DEFINE(n, emul_atmel_at24_init, &at24_emul_data_##n, &at24_emul_cfg_##n,      \
+			    &bus_api)
 
 DT_INST_FOREACH_STATUS_OKAY(EEPROM_AT24_EMUL)
