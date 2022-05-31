@@ -213,6 +213,12 @@ Kernel
 Architectures
 *************
 
+* ARC
+
+  * Add ARCv3 32 bit (HS5x) support - both GNU and MWDT toolchains, both UP and SMP
+  * Workaround debug_select interference with MDB debugger
+  * Switch to hs6x mcpu usage (GNU toolchain) for HS6x
+
 * ARM
 
   * AARCH32
@@ -318,6 +324,15 @@ Boards & SoC Support
   * Added Atmel SAM UPLL clock support
 
 * Changes for ARC boards:
+
+  * Add nsim_hs5x and nsim_hs5x_smp boards with ARCv3 32bit HS5x CPU
+  * Add MWDT toolchain support for nsim_hs6x and nsim_hs6x_smp
+  * Do memory layout overhaul for nSIM boards. Add the mechanism to switch between
+    ICCM/DCCM memory layout and flat memory layout (i.e DDR).
+  * Do required platform setup so nsim_hs5x, nsim_hs5x_smp, nsim_hs6x, nsim_hs6x_smp
+    can be run on real HW (HAPS FPGA) with minimum additional configuration
+  * Enable MWDT toolchain support for hsdk_2cores board
+  * Adjust test duration for SMP nSIM boards with timeout_multiplier
 
 * Added support for these ARM boards:
 
