@@ -658,10 +658,25 @@ static int do_write_op_item(struct lwm2m_message *msg, struct record *rec)
 
 	ret = lwm2m_engine_get_create_res_inst(&msg->path, &res, &res_inst);
 	if (ret < 0) {
-		return -ENOENT;
+		/* if OPTIONAL and BOOTSTRAP-WRITE or CREATE use ENOTSUP */
+		if ((msg->ctx->bootstrap_mode ||
+		     msg->operation == LWM2M_OP_CREATE) &&
+		    LWM2M_HAS_PERM(obj_field, BIT(LWM2M_FLAG_OPTIONAL))) {
+			ret = -ENOTSUP;
+			return ret;
+		}
+
+		ret = -ENOENT;
+		return ret;
 	}
 
-	return lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
+	ret = lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
+	if (ret == -EACCES || ret == -ENOENT) {
+		/* if read-only or non-existent data buffer move on */
+		ret = 0;
+	}
+
+	return ret;
 }
 
 const struct lwm2m_writer senml_cbor_writer = {
@@ -889,16 +904,23 @@ int do_write_op_senml_cbor(struct lwm2m_message *msg)
 write:
 		ret = do_write_op_item(msg, rec);
 
-		/* Write isn't supposed to fail */
-		if (ret < 0) {
-			break;
+		/*
+		 * ignore errors for CREATE op
+		 * for OP_CREATE and BOOTSTRAP WRITE: errors on
+		 * optional resources are ignored (ENOTSUP)
+		 */
+		if (ret < 0 && !((ret == -ENOTSUP) &&
+				 (msg->ctx->bootstrap_mode || msg->operation == LWM2M_OP_CREATE))) {
+			goto error;
 		}
 	}
+
+	ret = 0;
 
 error:
 	clear_in_fmt_data(msg);
 
-	return ret < 0 ?  ret : decoded_sz;
+	return ret;
 }
 
 int do_composite_observe_parse_path_senml_cbor(struct lwm2m_message *msg,
