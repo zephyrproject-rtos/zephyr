@@ -58,8 +58,8 @@ struct i2c_emul {
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*i2c_emul_transfer_t)(struct i2c_emul *emul, struct i2c_msg *msgs,
-				   int num_msgs, int addr);
+typedef int (*i2c_emul_transfer_t)(struct i2c_emul *emul, struct i2c_msg *msgs, int num_msgs,
+				   int addr);
 
 /**
  * Register an emulated device on the controller
@@ -69,8 +69,7 @@ typedef int (*i2c_emul_transfer_t)(struct i2c_emul *emul, struct i2c_msg *msgs,
  * @param emul I2C emulator to use
  * @return 0 indicating success (always)
  */
-int i2c_emul_register(const struct device *dev, const char *name,
-		      struct i2c_emul *emul);
+int i2c_emul_register(const struct device *dev, const char *name, struct i2c_emul *emul);
 
 /** Definition of the emulator API */
 struct i2c_emul_api {

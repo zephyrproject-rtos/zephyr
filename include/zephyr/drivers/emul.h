@@ -45,8 +45,7 @@ struct emul_list_for_bus {
  * @param emul Emulator to init
  * @param parent Parent device that is using the emulator
  */
-typedef int (*emul_init_t)(const struct emul *emul,
-			   const struct device *parent);
+typedef int (*emul_init_t)(const struct emul *emul, const struct device *parent);
 
 /** An emulator instance */
 struct emul {
@@ -99,8 +98,7 @@ extern const struct emul __emul_list_end[];
  * @return 0 if OK
  * @return negative value on error
  */
-int emul_init_for_bus_from_list(const struct device *dev,
-				const struct emul_list_for_bus *list);
+int emul_init_for_bus_from_list(const struct device *dev, const struct emul_list_for_bus *list);
 
 /**
  * @brief Retrieve the emul structure for an emulator by name
