@@ -48,6 +48,23 @@ struct tx_meta {
 #define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
 K_FIFO_DEFINE(free_tx);
 
+static void tx_free(struct bt_conn_tx *tx);
+
+static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
+{
+	__ASSERT_NO_MSG(tx);
+
+	bt_conn_tx_cb_t cb = tx->cb;
+	void *user_data = tx->user_data;
+
+	/* Free up TX metadata before calling callback in case the callback
+	 * tries to allocate metadata
+	 */
+	tx_free(tx);
+
+	cb(conn, user_data, -ESHUTDOWN);
+}
+
 #if defined(CONFIG_BT_CONN_TX)
 static void tx_complete_work(struct k_work *work);
 #endif /* CONFIG_BT_CONN_TX */
@@ -537,7 +554,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 fail:
 	k_sem_give(bt_conn_get_pkts(conn));
 	if (tx) {
-		tx_free(tx);
+		conn_tx_destroy(conn, tx);
 	}
 
 	if (always_consume) {
@@ -650,7 +667,7 @@ static void conn_cleanup(struct bt_conn *conn)
 	/* Give back any allocated buffers */
 	while ((buf = net_buf_get(&conn->tx_queue, K_NO_WAIT))) {
 		if (tx_data(buf)->tx) {
-			tx_free(tx_data(buf)->tx);
+			conn_tx_destroy(conn, tx_data(buf)->tx);
 		}
 
 		net_buf_unref(buf);
@@ -778,7 +795,7 @@ static void process_unack_tx(struct bt_conn *conn)
 		tx->pending_no_cb = 0U;
 		irq_unlock(key);
 
-		tx_free(tx);
+		conn_tx_destroy(conn, tx);
 
 		k_sem_give(bt_conn_get_pkts(conn));
 	}
