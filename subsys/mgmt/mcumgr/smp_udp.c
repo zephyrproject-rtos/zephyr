@@ -11,7 +11,12 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/init.h>
+#if defined(CONFIG_POSIX_API)
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/sys/socket.h>
+#else
 #include <zephyr/net/socket.h>
+#endif
 #include <errno.h>
 #include <mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp_udp.h>
