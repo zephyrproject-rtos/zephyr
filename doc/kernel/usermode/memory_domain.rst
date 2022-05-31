@@ -290,6 +290,8 @@ For Zephyr libraries created using ``zephyr_library`` or ``zephyr_library_named`
 the ``zephyr_library_app_memory`` function can be used to specify the memory
 partition where all globals in the library should be placed.
 
+.. _memory_domain_predefined_partitions:
+
 Pre-defined Memory Partitions
 -----------------------------
 
