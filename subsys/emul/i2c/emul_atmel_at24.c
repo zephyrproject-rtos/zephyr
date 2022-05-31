@@ -52,8 +52,7 @@ struct at24_emul_cfg {
  * @retval 0 If successful
  * @retval -EIO General input / output error
  */
-static int at24_emul_transfer(struct i2c_emul *emul, struct i2c_msg *msgs,
-			      int num_msgs, int addr)
+static int at24_emul_transfer(struct i2c_emul *emul, struct i2c_msg *msgs, int num_msgs, int addr)
 {
 	struct at24_emul_data *data;
 	const struct at24_emul_cfg *cfg;
@@ -65,8 +64,7 @@ static int at24_emul_transfer(struct i2c_emul *emul, struct i2c_msg *msgs,
 	cfg = emul->parent->cfg;
 
 	if (cfg->addr != addr) {
-		LOG_ERR("Address mismatch, expected %02x, got %02x", cfg->addr,
-			addr);
+		LOG_ERR("Address mismatch, expected %02x, got %02x", cfg->addr, addr);
 		return -EIO;
 	}
 
@@ -135,8 +133,7 @@ static struct i2c_emul_api at24_emul_api = {
  * @param parent Device to emulate (must use AT24 driver)
  * @return 0 indicating success (always)
  */
-static int emul_atmel_at24_init(const struct emul *emul,
-				const struct device *parent)
+static int emul_atmel_at24_init(const struct emul *emul, const struct device *parent)
 {
 	const struct at24_emul_cfg *cfg = emul->cfg;
 	struct at24_emul_data *data = emul->data;
