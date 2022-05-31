@@ -203,15 +203,65 @@ Architectures
 Bluetooth
 *********
 
+* Extended and Periodic advertising are no longer experimental
+* Direction Finding is no longer experimental
+* Added support for disabling Bluetooth, including a new ``bt_disable()`` API
+  call
+
 * Audio
+
+  * Changed the implementation of PACS to indicate instead of notifying
+  * Added support for the Broadcast Audio Scan Service (BASS)
+  * Added support for the Hearing Access Service (HAS)
+  * Added support for the Telephone Bearer Service (TBS)
 
 * Direction Finding
 
+  * Added sampling and switching offset configuration
+
 * Host
+
+  * Added new Kconfig options to select ISO Central and Peripheral role support
+    separately
+  * Added a new ``bt_get_appearance()`` API call
+  * Implemented support for dynamic appearance, including a new
+    ``bt_set_appearance()`` API call
+  * Implemented support for L2CAP collision mitigation
+  * Changed the scheduling of auto-initiated HCI commands so that they execute
+    synchronously
+  * Added a new ``bt_is_ready()`` API call to find out if Bluetooth is
+    currently enabled and initialized
+  * Added support for automatic MTU exchange right after a connection is
+    established
+  * Created a new ``auth_info_cb`` to group the security-related callbacks under
+    a single struct
+  * Optimized the memory usage of the Object Transfer Service
+  * Added a new ``bt_hci_le_rand()`` API call to obtain a random number from the
+    LE Controller
+  * Added a new public API to connect EATT channels, ``bt_eatt_connect()``
+  * Optimized L2CAP channels resource usage when not using dynamic channels
+  * Added the ability to run the Bluetooth RX context from a workqueue, in order
+    to optimize RAM usage. See ``CONFIG_BT_RECV_CONTEXT``
+  * Added support for TX complete callback on EATT channels
+  * Corrected the calling of the MTU callback to happen on any reconfiguration
 
 * Mesh
 
+  * Added support for Proxy Client
+  * Added support for Provisioners over PB-GATT
+  * Added a new heartbeat publication callback option
+
 * Controller
+
+  * Added support for the full ISO TX data path, including ISOAL
+  * Added support for ISO Broadcast Channel Map Update
+  * Added support for ISO Synchronized Receiver Channel Map Update
+  * The new implementation of LL Control Procedures is now the default whenever
+    Direction Finding is enabled
+  * Added support for all missing v3 and v4 DTM commands
+  * Implemented ISO-AL TX unframed fragmentation
+  * Added support for back-to-back receiving of PDUs on nRF5x platforms
+  * Increased the maximum number of simultaneous connections to 250
 
 * HCI Driver
 
