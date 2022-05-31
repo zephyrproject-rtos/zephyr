@@ -304,3 +304,9 @@ int bt_eatt_connect(struct bt_conn *conn, uint8_t num_channels);
 
 /* Disconnect EATT channels */
 int bt_eatt_disconnect(struct bt_conn *conn);
+
+typedef void (*bt_gatt_complete_func_t) (struct bt_conn *conn, void *user_data);
+void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, void *user_data);
+
+bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
+			       const void *user_data);

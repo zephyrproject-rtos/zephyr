@@ -114,8 +114,36 @@ static struct bt_att_req cancel;
 
 typedef void (*bt_att_chan_sent_t)(struct bt_att_chan *chan);
 
-static bt_att_chan_sent_t chan_cb(struct net_buf *buf);
-static bt_conn_tx_cb_t att_cb(bt_att_chan_sent_t cb);
+struct bt_att_tx_meta_data {
+	struct bt_att_chan *att_chan;
+	bt_gatt_complete_func_t func;
+	void *user_data;
+};
+
+struct bt_att_tx_meta {
+	struct bt_att_tx_meta_data *data;
+};
+
+#define bt_att_tx_meta_data(buf) (((struct bt_att_tx_meta *)net_buf_user_data(buf))->data)
+
+static struct bt_att_tx_meta_data tx_meta_data[CONFIG_BT_CONN_TX_MAX];
+K_FIFO_DEFINE(free_att_tx_meta_data);
+
+static struct bt_att_tx_meta_data *tx_meta_data_alloc(void)
+{
+	return k_fifo_get(&free_att_tx_meta_data, K_NO_WAIT);
+}
+
+static inline void tx_meta_data_free(struct bt_att_tx_meta_data *data)
+{
+	__ASSERT_NO_MSG(data);
+
+	(void)memset(data, 0, sizeof(*data));
+	k_fifo_put(&free_att_tx_meta_data, data);
+}
+
+static bt_conn_tx_cb_t chan_cb(const struct net_buf *buf);
+static bt_conn_tx_cb_t att_cb(const struct net_buf *buf);
 
 static void att_chan_mtu_updated(struct bt_att_chan *updated_chan);
 static void bt_att_disconnected(struct bt_l2cap_chan *chan);
@@ -3147,3 +3175,84 @@ void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req)
 
 	bt_att_req_free(req);
 }
+<<<<<<< HEAD
+=======
+
+struct bt_att_req *bt_att_find_req_by_user_data(struct bt_conn *conn, const void *user_data)
+{
+	struct bt_att *att;
+	struct bt_att_chan *chan;
+	struct bt_att_req *req;
+
+	att = att_get(conn);
+	if (!att) {
+		return NULL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
+		if (chan->req->user_data == user_data) {
+			return chan->req;
+		}
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->reqs, req, node) {
+		if (req->user_data == user_data) {
+			return req;
+		}
+	}
+
+	return NULL;
+}
+
+bool bt_att_fixed_chan_only(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_EATT)
+	return bt_eatt_count(conn) == 0;
+#else
+	return true;
+#endif /* CONFIG_BT_EATT */
+}
+
+void bt_att_clear_out_of_sync_sent(struct bt_conn *conn)
+{
+	struct bt_att *att = att_get(conn);
+	struct bt_att_chan *chan;
+
+	if (!att) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
+		atomic_clear_bit(chan->flags, ATT_OUT_OF_SYNC_SENT);
+	}
+}
+
+bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *l2cap_chan;
+	struct bt_att_chan *att_chan;
+
+	l2cap_chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
+	if (!l2cap_chan) {
+		return false;
+	}
+
+	att_chan = ATT_CHAN(l2cap_chan);
+	return atomic_test_bit(att_chan->flags, ATT_OUT_OF_SYNC_SENT);
+}
+
+void bt_att_set_tx_meta_data(struct net_buf *buf, bt_gatt_complete_func_t func, void *user_data)
+{
+	struct bt_att_tx_meta_data *data = bt_att_tx_meta_data(buf);
+
+	data->func = func;
+	data->user_data = user_data;
+}
+
+bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_t func,
+			       const void *user_data)
+{
+	return ((bt_att_tx_meta_data(buf)->func == func) &&
+		(bt_att_tx_meta_data(buf)->user_data == user_data));
+}
+>>>>>>> 03f941ccb0 (Bluetooth: Host: Use correct type for func in ATT metadata)
