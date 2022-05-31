@@ -11,8 +11,11 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/init.h>
 #include <zephyr/device.h>
-#include <soc.h>
 #include <zephyr/drivers/uart.h>
+
+#ifdef CONFIG_CPU_CORTEX_M
+#include <cmsis_compiler.h>
+#endif
 
 /*
  * UART PL011 register map structure
