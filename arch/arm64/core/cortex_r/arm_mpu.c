@@ -9,7 +9,6 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <kernel_arch_func.h>
-#include <soc.h>
 #include <zephyr/arch/arm64/mm.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
