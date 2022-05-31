@@ -898,6 +898,15 @@ class DeviceHandler(Handler):
 
         ser.flush()
 
+        # turns out the ser.flush() is not enough to clear serial leftover from last case
+        # explicitly readline() can do it reliably
+        old_timeout = ser.timeout
+        ser.timeout = 1 # wait for 1s if no serial output
+        leftover_lines = ser.readlines(1000) # or read 1000 lines at most
+        for line in leftover_lines:
+            logger.debug(f"leftover log of previous test: {line}")
+        ser.timeout = old_timeout
+
         harness_name = self.instance.testsuite.harness.capitalize()
         harness_import = HarnessImporter(harness_name)
         harness = harness_import.instance
