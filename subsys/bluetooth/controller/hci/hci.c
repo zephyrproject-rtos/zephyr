@@ -7087,6 +7087,15 @@ no_ext_hdr:
 				 * mark as partial data.
 				 */
 				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
+			} else if (ftr->aux_sched &&
+				   (data_len_total == CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX) &&
+				   (cte_type != BT_HCI_LE_NO_CTE)) {
+				/* No data left but: have AuxPtr, scheduled aux scan and CTE is
+				 * included in a PDU, there is another chained PDU that is empty
+				 * but has CTE.
+				 */
+				data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
+
 			} else {
 				/* No data left, have AuxPtr but not aux scan scheduled,
 				 * mark as incomplete data.
