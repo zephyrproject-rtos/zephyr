@@ -262,7 +262,7 @@ static int emul_host_init(const struct emul *emul, const struct device *bus)
 	static const struct espi_host_emul_cfg espi_host_emul_cfg_##n = {                          \
 		.chipsel = DT_INST_REG_ADDR(n),                                                    \
 	};                                                                                         \
-	EMUL_DEFINE(emul_host_init, DT_DRV_INST(n), &espi_host_emul_cfg_##n,                       \
-		    &espi_host_emul_data_##n, &ap_emul_api)
+	EMUL_DT_INST_DEFINE(n, emul_host_init, &espi_host_emul_data_##n, &espi_host_emul_cfg_##n,  \
+			    &ap_emul_api)
 
 DT_INST_FOREACH_STATUS_OKAY(HOST_EMUL)
