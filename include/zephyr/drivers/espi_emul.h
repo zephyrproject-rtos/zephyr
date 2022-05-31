@@ -44,8 +44,7 @@ struct espi_emul;
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*emul_espi_api_set_vw)(struct espi_emul *emul,
-				    enum espi_vwire_signal vw,
+typedef int (*emul_espi_api_set_vw)(struct espi_emul *emul, enum espi_vwire_signal vw,
 				    uint8_t level);
 
 /**
@@ -59,8 +58,7 @@ typedef int (*emul_espi_api_set_vw)(struct espi_emul *emul,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*emul_espi_api_get_vw)(struct espi_emul *emul,
-				    enum espi_vwire_signal vw,
+typedef int (*emul_espi_api_get_vw)(struct espi_emul *emul, enum espi_vwire_signal vw,
 				    uint8_t *level);
 
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
@@ -85,8 +83,7 @@ typedef uintptr_t (*emul_espi_api_get_acpi_shm)(struct espi_emul *emul);
  * @return emulator to use
  * @return NULL if not found
  */
-typedef struct espi_emul *(*emul_find_emul)(const struct device *dev,
-					    unsigned int chipsel);
+typedef struct espi_emul *(*emul_find_emul)(const struct device *dev, unsigned int chipsel);
 
 /**
  * Triggers an event on the emulator of eSPI controller side which causes
@@ -98,8 +95,7 @@ typedef struct espi_emul *(*emul_find_emul)(const struct device *dev,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*emul_trigger_event)(const struct device *dev,
-				  struct espi_event *evt);
+typedef int (*emul_trigger_event)(const struct device *dev, struct espi_event *evt);
 
 /** Definition of the eSPI device emulator API */
 struct emul_espi_device_api {
@@ -140,8 +136,7 @@ struct emul_espi_driver_api {
  * @param emul eSPI emulator to use
  * @return 0 indicating success (always)
  */
-int espi_emul_register(const struct device *dev, const char *name,
-		       struct espi_emul *emul);
+int espi_emul_register(const struct device *dev, const char *name, struct espi_emul *emul);
 
 /**
  * Sets the eSPI virtual wire on the host side, which will
@@ -154,8 +149,7 @@ int espi_emul_register(const struct device *dev, const char *name,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-int emul_espi_host_send_vw(const struct device *espi_dev,
-			   enum espi_vwire_signal vw, uint8_t level);
+int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal vw, uint8_t level);
 
 /**
  * Perform port80 write on the emulated host side, which will
@@ -179,7 +173,6 @@ int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data);
  */
 uintptr_t emul_espi_host_get_acpi_shm(const struct device *espi_dev);
 #endif
-
 
 #ifdef __cplusplus
 }

@@ -61,10 +61,8 @@ struct spi_emul {
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-typedef int (*spi_emul_io_t)(struct spi_emul *emul,
-			     const struct spi_config *config,
-			     const struct spi_buf_set *tx_bufs,
-			     const struct spi_buf_set *rx_bufs);
+typedef int (*spi_emul_io_t)(struct spi_emul *emul, const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs);
 
 /**
  * Register an emulated device on the controller
@@ -74,8 +72,7 @@ typedef int (*spi_emul_io_t)(struct spi_emul *emul,
  * @param emul SPI emulator to use
  * @return 0 indicating success (always)
  */
-int spi_emul_register(const struct device *dev, const char *name,
-		      struct spi_emul *emul);
+int spi_emul_register(const struct device *dev, const char *name, struct spi_emul *emul);
 
 /** Definition of the emulator API */
 struct spi_emul_api {

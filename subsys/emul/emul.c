@@ -26,8 +26,7 @@ const struct emul *emul_get_binding(const char *name)
 	return NULL;
 }
 
-int emul_init_for_bus_from_list(const struct device *dev,
-				const struct emul_list_for_bus *list)
+int emul_init_for_bus_from_list(const struct device *dev, const struct emul_list_for_bus *list)
 {
 	const struct emul_list_for_bus *cfg = dev->config;
 
@@ -36,11 +35,9 @@ int emul_init_for_bus_from_list(const struct device *dev,
 	 * initialise it.
 	 */
 	const struct emul_link_for_bus *elp;
-	const struct emul_link_for_bus *const end =
-		cfg->children + cfg->num_children;
+	const struct emul_link_for_bus *const end = cfg->children + cfg->num_children;
 
-	LOG_INF("Registering %d emulator(s) for %s", cfg->num_children,
-		dev->name);
+	LOG_INF("Registering %d emulator(s) for %s", cfg->num_children, dev->name);
 	for (elp = cfg->children; elp < end; elp++) {
 		const struct emul *emul = emul_get_binding(elp->label);
 
@@ -49,8 +46,7 @@ int emul_init_for_bus_from_list(const struct device *dev,
 		int rc = emul->init(emul, dev);
 
 		if (rc != 0) {
-			LOG_WRN("Init %s emulator failed: %d\n",
-				 elp->label, rc);
+			LOG_WRN("Init %s emulator failed: %d\n", elp->label, rc);
 		}
 	}
 

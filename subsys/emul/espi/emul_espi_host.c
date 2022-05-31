@@ -31,33 +31,33 @@ struct vw_data {
 
 /** Declare the default state of virtual wires */
 const static struct vw_data vw_state_default[] = {
-	{ ESPI_VWIRE_SIGNAL_SLP_S3,        0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_S4,        0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_S5,        0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SUS_STAT,      0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_PLTRST,        0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_OOB_RST_WARN,  0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_OOB_RST_ACK,   0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_WAKE,          0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_PME,           0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SLP_S3, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_S4, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_S5, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SUS_STAT, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_PLTRST, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_OOB_RST_WARN, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_OOB_RST_ACK, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_WAKE, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_PME, 0, ESPI_SLAVE_TO_MASTER },
 	{ ESPI_VWIRE_SIGNAL_SLV_BOOT_DONE, 0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_ERR_FATAL,     0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_ERR_FATAL, 0, ESPI_SLAVE_TO_MASTER },
 	{ ESPI_VWIRE_SIGNAL_ERR_NON_FATAL, 0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_SLV_BOOT_STS,  0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_SCI,           0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_SMI,           0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_RST_CPU_INIT,  0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_HOST_RST_ACK,  0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SLV_BOOT_STS, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SCI, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SMI, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_RST_CPU_INIT, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_HOST_RST_ACK, 0, ESPI_SLAVE_TO_MASTER },
 	{ ESPI_VWIRE_SIGNAL_HOST_RST_WARN, 0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SUS_ACK,       0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_DNX_ACK,       0, ESPI_SLAVE_TO_MASTER },
-	{ ESPI_VWIRE_SIGNAL_SUS_WARN,      0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SUS_ACK, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_DNX_ACK, 0, ESPI_SLAVE_TO_MASTER },
+	{ ESPI_VWIRE_SIGNAL_SUS_WARN, 0, ESPI_MASTER_TO_SLAVE },
 	{ ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK, 0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_A,         0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_LAN,       0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_SLP_WLAN,      0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_HOST_C10,      0, ESPI_MASTER_TO_SLAVE },
-	{ ESPI_VWIRE_SIGNAL_DNX_WARN,      0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_A, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_LAN, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_SLP_WLAN, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_HOST_C10, 0, ESPI_MASTER_TO_SLAVE },
+	{ ESPI_VWIRE_SIGNAL_DNX_WARN, 0, ESPI_MASTER_TO_SLAVE },
 };
 
 #define NUMBER_OF_VWIRES ARRAY_SIZE(vw_state_default)
@@ -111,8 +111,7 @@ static void emul_host_init_vw_state(struct espi_host_emul_data *data)
  * @return index in the array
  * @return -1 if not found
  */
-static int emul_host_find_index(struct espi_host_emul_data *data,
-				enum espi_vwire_signal vw)
+static int emul_host_find_index(struct espi_host_emul_data *data, enum espi_vwire_signal vw)
 {
 	int idx;
 
@@ -125,8 +124,7 @@ static int emul_host_find_index(struct espi_host_emul_data *data,
 	return -1;
 }
 
-static int emul_host_set_vw(struct espi_emul *emul, enum espi_vwire_signal vw,
-			    uint8_t level)
+static int emul_host_set_vw(struct espi_emul *emul, enum espi_vwire_signal vw, uint8_t level)
 {
 	struct espi_host_emul_data *data;
 	int idx;
@@ -144,8 +142,7 @@ static int emul_host_set_vw(struct espi_emul *emul, enum espi_vwire_signal vw,
 	return 0;
 }
 
-static int emul_host_get_vw(struct espi_emul *emul, enum espi_vwire_signal vw,
-			    uint8_t *level)
+static int emul_host_get_vw(struct espi_emul *emul, enum espi_vwire_signal vw, uint8_t *level)
 {
 	struct espi_host_emul_data *data;
 	int idx;
@@ -163,8 +160,7 @@ static int emul_host_get_vw(struct espi_emul *emul, enum espi_vwire_signal vw,
 	return 0;
 }
 
-int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal vw,
-			   uint8_t level)
+int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal vw, uint8_t level)
 {
 	struct espi_emul *emul_espi;
 	struct espi_event evt;
@@ -220,8 +216,7 @@ int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data)
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
 static uintptr_t emul_espi_dev_get_acpi_shm(struct espi_emul *emul)
 {
-	struct espi_host_emul_data *data =
-		CONTAINER_OF(emul, struct espi_host_emul_data, emul);
+	struct espi_host_emul_data *data = CONTAINER_OF(emul, struct espi_host_emul_data, emul);
 
 	return (uintptr_t)data->shm_acpi_mmap;
 }
@@ -233,7 +228,7 @@ uintptr_t emul_espi_host_get_acpi_shm(const struct device *espi_dev)
 
 	__ASSERT_NO_MSG(rc == 0);
 
-	return (uintptr_t) shm;
+	return (uintptr_t)shm;
 }
 #endif
 
