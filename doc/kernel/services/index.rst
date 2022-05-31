@@ -92,13 +92,7 @@ argument.
 Memory Management
 *****************
 
-These pages cover memory allocation and management services.
-
-.. toctree::
-   :maxdepth: 1
-
-   memory/heap.rst
-   memory/slabs.rst
+See :ref:`memory_management_api`.
 
 Timing
 ******
