@@ -34,6 +34,17 @@ extern "C" {
  */
 extern FUNC_NORETURN void sys_reboot(int type);
 
+/**
+ * @brief Obtain reboot type
+ *
+ * Fetch reboot type which caused system startup.
+ * This call extract reboot type vale which was used in previous call to the
+ * sys_rebot() call if the platform allow to store the value.
+ *
+ * @retval reboot type
+ */
+int sys_get_reboot_type(void);
+
 #ifdef __cplusplus
 }
 #endif
