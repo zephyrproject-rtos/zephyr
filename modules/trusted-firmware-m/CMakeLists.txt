@@ -332,7 +332,9 @@ if (CONFIG_BUILD_WITH_TFM)
     interface/interface.c
     )
   # Non-Secure interface to request system reboot
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM src/reboot.c)
+  if (CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
+    zephyr_library_sources(src/reboot.c)
+  endif()
   zephyr_library_sources_ifndef(CONFIG_TFM_PSA_TEST_NONE src/zephyr_tfm_psa_test.c)
 
   zephyr_include_directories(
