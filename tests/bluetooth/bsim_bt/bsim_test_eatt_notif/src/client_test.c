@@ -163,7 +163,9 @@ static void gatt_discover(void)
 BT_GATT_SERVICE_DEFINE(g_svc,
 	BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 	BT_GATT_CHARACTERISTIC(TEST_CHRC_UUID, BT_GATT_CHRC_NOTIFY,
-			       0x00, NULL, NULL, NULL));
+			       BT_GATT_PERM_READ, NULL, NULL, NULL),
+	BT_GATT_CCC(NULL,
+		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
 
 static void test_main(void)
 {
@@ -202,7 +204,11 @@ static void test_main(void)
 		k_sleep(K_TICKS(1));
 	}
 
+	printk("Waiting for sync\n");
+	device_sync_wait();
+
 	local_attr = &g_svc.attrs[1];
+
 	printk("############# Notification test\n");
 	for (int idx = 0; idx < NUM_NOTIF; idx++) {
 		printk("Notification %d\n", idx);
@@ -235,7 +241,7 @@ static void test_main(void)
 		send_notification();
 	}
 
-	printk("Send sync to contine\n");
+	printk("Sending final sync\n");
 	device_sync_send();
 
 	PASS("Client Passed\n");
