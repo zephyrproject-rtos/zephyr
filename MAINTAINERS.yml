@@ -172,6 +172,7 @@ Bluetooth:
         - Vudentz
         - Thalley
         - asbjornsabo
+        - sjanc
     files:
         - doc/connectivity/bluetooth/
         - drivers/bluetooth/
@@ -244,6 +245,7 @@ Bluetooth Audio:
         - Casper-Bonde-Bose
         - MariuszSkamra
         - rymanluk
+        - sjanc
     files:
         - subsys/bluetooth/audio/
         - include/zephyr/bluetooth/audio/
