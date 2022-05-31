@@ -189,6 +189,25 @@ New APIs in this release
 Kernel
 ******
 
+* Aborting an essential thread now causes a kernel panic, as the
+  documentation has always promised but the kernel has never
+  implemented.
+
+* The k_timer handler can now correct itself for lost time due to very
+  late-arriving interrupts.
+
+* Defer SMP interprocessor interrupts so that they are sent only at
+  schedule points and not synchronously when the scheduler state
+  changes.  This prevents IPI "storms" with code that does many
+  scheduler operations at once (e.g. waking up a bunch of threads).
+
+* The timeslicing API now allows slice times to be controlled
+  independently for each thread, and provides a callback to the app
+  when a thread timeslice has expired.  The intent is that this will
+  allow apps the tools to implement CPU resource control algorithms
+  (e.g. fairness or interactivity metrics, budget tracking) that are
+  out of scope for Zephyr's deterministic RTOS scheduler.
+
 Architectures
 *************
 
@@ -199,6 +218,20 @@ Architectures
   * AARCH64
 
 * Xtensa
+
+  * Optimize context switches when KERNEL_COHERENCE is enabled to
+    avoid needless stack invalidations for threads that have not
+    migrated between CPUs.
+
+  * Fix bug that could return directly into a thread context from a
+    nested interrupt instead of properly returning to the preempted
+    ISR.
+
+* x64_64
+
+  * UEFI devices can now use the firmware-initialized system console
+    API as a printk/logging backend, simplifying platform bringup on
+    devices without known-working serial port configurations.
 
 Bluetooth
 *********
