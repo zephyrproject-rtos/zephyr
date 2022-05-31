@@ -418,14 +418,17 @@ static void chan_tx_complete(struct bt_conn *conn, void *user_data, int err)
 {
 	struct bt_att_tx_meta_data *data = user_data;
 	struct bt_att_chan *chan = data->att_chan;
+	bt_gatt_complete_func_t func = data->func;
+	void *ud = data->user_data;
 
 	BT_DBG("TX Complete chan %p CID 0x%04X", chan, chan->chan.tx.cid);
 
-	if (!err && data->func) {
-		data->func(conn, data->user_data);
+	tx_meta_data_free(data);
+
+	if (!err && func) {
+		func(conn, ud);
 	}
 
-	tx_meta_data_free(data);
 }
 
 static void chan_unknown(struct bt_conn *conn, void *user_data, int err)
