@@ -7,7 +7,7 @@
 #ifndef	HANDOFF_H
 #define	HANDOFF_H
 
-#include <soc.h>
+#include <stdint.h>
 
 #define PLAT_HANDOFF_OFFSET		0xFFE3F000
 
