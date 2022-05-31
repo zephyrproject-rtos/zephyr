@@ -2188,6 +2188,15 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 		return -EPERM;
 	}
 
+	/* Check if client has subscribed before sending notifications.
+	 * This is not really required in the Bluetooth specification, but
+	 * follows its spirit.
+	 */
+	if (!bt_gatt_is_subscribed(conn, params->attr, BT_GATT_CCC_NOTIFY)) {
+		BT_WARN("Device is not subscribed to characteristic");
+		return -EINVAL;
+	}
+
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
 	if (gatt_cf_notify_multi(conn)) {
 		return gatt_notify_mult(conn, handle, params);
@@ -2318,6 +2327,15 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 		return -EPERM;
 	}
 
+	/* Check if client has subscribed before sending notifications.
+	 * This is not really required in the Bluetooth specification, but
+	 * follows its spirit.
+	 */
+	if (!bt_gatt_is_subscribed(conn, params->attr, BT_GATT_CCC_INDICATE)) {
+		BT_WARN("Device is not subscribed to characteristic");
+		return -EINVAL;
+	}
+
 	len = sizeof(*ind) + params->len;
 
 	req = gatt_req_alloc(gatt_indicate_rsp, params, NULL,
@@ -2431,15 +2449,19 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		 * Client Characteristic Configuration descriptor may occur
 		 * in any position within the characteristic definition after
 		 * the Characteristic Value.
+		 * Only notify or indicate devices which are subscribed.
 		 */
-		if (data->type == BT_GATT_CCC_INDICATE) {
-			err = gatt_indicate(conn, data->handle,
-					    data->ind_params);
+		if ((data->type == BT_GATT_CCC_INDICATE) &&
+		    (cfg->value & BT_GATT_CCC_INDICATE)) {
+			err = gatt_indicate(conn, data->handle, data->ind_params);
 			if (err == 0) {
 				data->ind_params->_ref++;
 			}
-		} else {
+		} else if ((data->type == BT_GATT_CCC_NOTIFY) &&
+			   (cfg->value & BT_GATT_CCC_NOTIFY)) {
 			err = gatt_notify(conn, data->handle, data->nfy_params);
+		} else {
+			err = 0;
 		}
 
 		bt_conn_unref(conn);
@@ -2904,11 +2926,13 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 		}
 
 		attr = bt_gatt_attr_next(attr);
+		__ASSERT(attr, "No more attributes\n");
 	}
 
 	/* Check if attribute is a characteristic value */
 	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) != 0) {
 		attr = bt_gatt_attr_next(attr);
+		__ASSERT(attr, "No more attributes\n");
 	}
 
 	/* Check if the attribute is the CCC Descriptor */
