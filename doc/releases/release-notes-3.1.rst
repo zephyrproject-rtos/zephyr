@@ -158,6 +158,8 @@ Bluetooth
     function has been deprecated.  A :c:func:`subscribe` callback
     function has been added to replace it.
 
+  * :c:func:`bt_disable` was added to enable caller to disable bluetooth stack.
+
 New APIs in this release
 ========================
 
@@ -298,7 +300,9 @@ Bluetooth
 
 * HCI Driver
 
-  * Implemented :c:func:`close` on stm32wb HCI driver.
+  * Added support for a new optional :c:member:`bt_hci_driver.close` API which
+    closes HCI transport.
+  * Implemented :c:member:`bt_hci_driver.close` on stm32wb HCI driver.
 
 Boards & SoC Support
 ********************
