@@ -8,8 +8,6 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 
-#define SZ_1K	1024
-
 static const struct arm_mmu_region mmu_regions[] = {
 
 	MMU_REGION_FLAT_ENTRY("GIC",
