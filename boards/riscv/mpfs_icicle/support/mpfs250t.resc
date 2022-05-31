@@ -8,7 +8,6 @@ mach create $name
 machine LoadPlatformDescription @platforms/boards/mpfs-icicle-kit.repl
 
 showAnalyzer mmuart0
-e51 PerformanceInMips 80
 
 macro reset
 """
