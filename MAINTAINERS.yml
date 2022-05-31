@@ -2405,7 +2405,8 @@ West:
     status: maintained
     maintainers:
         - microbuilder
-    files: []
+    files:
+        - samples/zscilib/
     labels:
         - manifest-zscilib
 

@@ -1,0 +1,15 @@
+sample:
+  description: Demonstrates matrix multiplication using zscilib.
+  name: zscilib matrix multiply
+tests:
+  sample.mtx_mult:
+    tags: zscilib
+    platform_allow: mps2_an521 mps3_an547
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "14.000000 17.000000 20.000000 23.000000"
+        - "35.000000 44.000000 53.000000 62.000000"
+        - "56.000000 71.000000 86.000000 101.000000"
+        - "7.000000 9.000000 11.000000 13.000000"
