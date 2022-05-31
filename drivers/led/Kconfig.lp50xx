@@ -1,0 +1,10 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# Copyright (c) 2022 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+config LP50XX
+	bool "LP50XX LED controller"
+	depends on I2C
+	help
+	  Enable driver for the Texas Instruments LP50XX I2C LED
+	  controllers. It supports: LP5030, LP5036, LP5009 and LP5012.
