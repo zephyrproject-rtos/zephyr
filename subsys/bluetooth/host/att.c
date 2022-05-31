@@ -371,7 +371,7 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	(void)process_queue(chan, &att->tx_queue);
 }
 
-static void chan_cfm_sent(struct bt_conn *conn, void *user_data)
+static void chan_cfm_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	struct bt_att_tx_meta_data *data = user_data;
 	struct bt_att_chan *chan = data->att_chan;
@@ -385,7 +385,7 @@ static void chan_cfm_sent(struct bt_conn *conn, void *user_data)
 	tx_meta_data_free(data);
 }
 
-static void chan_rsp_sent(struct bt_conn *conn, void *user_data)
+static void chan_rsp_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	struct bt_att_tx_meta_data *data = user_data;
 	struct bt_att_chan *chan = data->att_chan;
@@ -399,7 +399,7 @@ static void chan_rsp_sent(struct bt_conn *conn, void *user_data)
 	tx_meta_data_free(data);
 }
 
-static void chan_req_sent(struct bt_conn *conn, void *user_data)
+static void chan_req_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	struct bt_att_tx_meta_data *data = user_data;
 	struct bt_att_chan *chan = data->att_chan;
@@ -414,21 +414,21 @@ static void chan_req_sent(struct bt_conn *conn, void *user_data)
 	tx_meta_data_free(user_data);
 }
 
-static void chan_tx_complete(struct bt_conn *conn, void *user_data)
+static void chan_tx_complete(struct bt_conn *conn, void *user_data, int err)
 {
 	struct bt_att_tx_meta_data *data = user_data;
 	struct bt_att_chan *chan = data->att_chan;
 
 	BT_DBG("TX Complete chan %p CID 0x%04X", chan, chan->chan.tx.cid);
 
-	if (data->func) {
+	if (!err && data->func) {
 		data->func(conn, data->user_data);
 	}
 
 	tx_meta_data_free(data);
 }
 
-static void chan_unknown(struct bt_conn *conn, void *user_data)
+static void chan_unknown(struct bt_conn *conn, void *user_data, int err)
 {
 	tx_meta_data_free(user_data);
 }
@@ -455,34 +455,49 @@ static bt_conn_tx_cb_t chan_cb(const struct net_buf *buf)
 	return chan_unknown;
 }
 
-static void att_cfm_sent(struct bt_conn *conn, void *user_data)
+static void att_cfm_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	att_sent(conn, user_data);
-	chan_cfm_sent(conn, user_data);
+	if (!err) {
+		att_sent(conn, user_data);
+	}
+
+	chan_cfm_sent(conn, user_data, err);
 }
 
-static void att_rsp_sent(struct bt_conn *conn, void *user_data)
+static void att_rsp_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	att_sent(conn, user_data);
-	chan_rsp_sent(conn, user_data);
+	if (!err) {
+		att_sent(conn, user_data);
+	}
+
+	chan_rsp_sent(conn, user_data, err);
 }
 
-static void att_req_sent(struct bt_conn *conn, void *user_data)
+static void att_req_sent(struct bt_conn *conn, void *user_data, int err)
 {
-	att_sent(conn, user_data);
-	chan_req_sent(conn, user_data);
+	if (!err) {
+		att_sent(conn, user_data);
+	}
+
+	chan_req_sent(conn, user_data, err);
 }
 
-static void att_tx_complete(struct bt_conn *conn, void *user_data)
+static void att_tx_complete(struct bt_conn *conn, void *user_data, int err)
 {
-	att_sent(conn, user_data);
-	chan_tx_complete(conn, user_data);
+	if (!err) {
+		att_sent(conn, user_data);
+	}
+
+	chan_tx_complete(conn, user_data, err);
 }
 
-static void att_unknown(struct bt_conn *conn, void *user_data)
+static void att_unknown(struct bt_conn *conn, void *user_data, int err)
 {
-	att_sent(conn, user_data);
-	chan_unknown(conn, user_data);
+	if (!err) {
+		att_sent(conn, user_data);
+	}
+
+	chan_unknown(conn, user_data, err);
 }
 
 static bt_conn_tx_cb_t att_cb(const struct net_buf *buf)

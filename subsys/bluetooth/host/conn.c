@@ -194,7 +194,7 @@ static void tx_notify(struct bt_conn *conn)
 		 * allocate new buffers since the TX should have been
 		 * unblocked by tx_free.
 		 */
-		cb(conn, user_data);
+		cb(conn, user_data, 0);
 	}
 }
 
