@@ -252,6 +252,8 @@ static int emul_host_init(const struct emul *emul, const struct device *bus)
 {
 	struct espi_host_emul_data *data = emul->data;
 
+	ARG_UNUSED(bus);
+
 	emul_host_init_vw_state(data);
 
 	return 0;

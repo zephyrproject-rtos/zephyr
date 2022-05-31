@@ -46,7 +46,7 @@ struct bmi160_emul_cfg {
 /* Names for the PMU components */
 static const char *const pmu_name[] = { "acc", "gyr", "mag", "INV" };
 
-static void sample_read(struct bmi160_emul_data *data, union bmi160_sample *buf)
+static void sample_read(union bmi160_sample *buf)
 {
 	/*
 	 * Use hard-coded scales to get values just above 0, 1, 2 and
@@ -175,6 +175,8 @@ static int bmi160_emul_io_spi(const struct emul *emulator, const struct spi_conf
 	unsigned int regn, val;
 	int count;
 
+	ARG_UNUSED(config);
+
 	data = emulator->data;
 
 	__ASSERT_NO_MSG(tx_bufs || rx_bufs);
@@ -206,7 +208,7 @@ static int bmi160_emul_io_spi(const struct emul *emulator, const struct spi_conf
 				break;
 			case BMI160_SAMPLE_SIZE:
 				if (regn & BMI160_REG_READ) {
-					sample_read(data, rxd->buf);
+					sample_read(rxd->buf);
 				} else {
 					LOG_INF("Unknown sample write");
 				}
@@ -263,7 +265,7 @@ static int bmi160_emul_transfer_i2c(const struct emul *emulator, struct i2c_msg 
 				msgs->buf[0] = val;
 				break;
 			case BMI160_SAMPLE_SIZE:
-				sample_read(data, (void *)msgs->buf);
+				sample_read((void *)msgs->buf);
 				break;
 			default:
 				LOG_ERR("Unexpected msg1 length %d", msgs->len);
@@ -304,6 +306,8 @@ static int emul_bosch_bmi160_init(const struct emul *target, const struct device
 	const struct bmi160_emul_cfg *cfg = target->cfg;
 	struct bmi160_emul_data *data = target->data;
 	uint8_t *reg = cfg->reg;
+
+	ARG_UNUSED(parent);
 
 	data->pmu_status = 0;
 

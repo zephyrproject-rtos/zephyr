@@ -91,6 +91,8 @@ static int espi_emul_read_lpc_request(const struct device *dev, enum lpc_periphe
 	struct espi_emul *emul;
 	struct espi_emul_data *emul_data = dev->data;
 
+	ARG_UNUSED(data);
+
 	if (!(emul_data->cfg.channel_caps & ESPI_CHANNEL_VWIRE)) {
 		LOG_ERR("bad channel vwire");
 		return -EINVAL;
@@ -122,6 +124,8 @@ static int espi_emul_write_lpc_request(const struct device *dev, enum lpc_periph
 				       uint32_t *data)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(op);
+	ARG_UNUSED(data);
 
 	return -EINVAL;
 }
