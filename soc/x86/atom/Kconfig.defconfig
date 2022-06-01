@@ -19,4 +19,7 @@ config UART_PIPE_ON_DEV_NAME
 
 endif
 
+config UART_NS16550_ACCESS_IOPORT
+	default y if UART_NS16550
+
 endif
