@@ -250,6 +250,11 @@ struct mdm_hl7800_polte_location_data {
 typedef void (*mdm_hl7800_event_callback_t)(enum mdm_hl7800_event event,
 					    void *event_data);
 
+struct mdm_hl7800_callback_agent {
+	sys_snode_t node;
+	mdm_hl7800_event_callback_t event_callback;
+};
+
 /**
  * @brief Power off the HL7800
  *
@@ -346,10 +351,18 @@ bool mdm_hl7800_valid_rat(uint8_t value);
 
 /**
  * @brief Register a function that is called when a modem event occurs.
+ * Multiple users registering for callbacks is supported.
  *
- * @param cb event callback
+ * @param agent event callback agent
  */
-void mdm_hl7800_register_event_callback(mdm_hl7800_event_callback_t cb);
+void mdm_hl7800_register_event_callback(struct mdm_hl7800_callback_agent *agent);
+
+/**
+ * @brief Unregister a callback event function
+ *
+ * @param agent event callback agent
+ */
+void mdm_hl7800_unregister_event_callback(struct mdm_hl7800_callback_agent *agent);
 
 /**
  * @brief Force modem module to generate status events.
