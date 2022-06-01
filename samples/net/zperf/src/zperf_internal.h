@@ -79,7 +79,7 @@ int zperf_get_ipv4_addr(const struct shell *shell, char *host,
 struct sockaddr_in *zperf_get_sin(void);
 
 extern void zperf_udp_upload(const struct shell *shell,
-			     struct net_context *context,
+			     int sock,
 			     int port,
 			     unsigned int duration_in_ms,
 			     unsigned int packet_size,
@@ -91,7 +91,7 @@ extern void zperf_udp_receiver_init(const struct shell *shell, int port);
 extern void zperf_tcp_receiver_init(const struct shell *shell, int port);
 extern void zperf_tcp_uploader_init(struct k_fifo *tx_queue);
 extern void zperf_tcp_upload(const struct shell *shell,
-			     struct net_context *net_context,
+			     int sock,
 			     unsigned int duration_in_ms,
 			     unsigned int packet_size,
 			     struct zperf_results *results);

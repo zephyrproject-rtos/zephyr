@@ -12,9 +12,7 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 
-#include <zephyr/net/net_pkt.h>
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_core.h>
+#include <zephyr/net/socket.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"
@@ -22,7 +20,7 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 static char sample_packet[PACKET_SIZE_MAX];
 
 void zperf_tcp_upload(const struct shell *shell,
-		      struct net_context *ctx,
+		      int sock,
 		      unsigned int duration_in_ms,
 		      unsigned int packet_size,
 		      struct zperf_results *results)
@@ -58,19 +56,17 @@ void zperf_tcp_upload(const struct shell *shell,
 		int ret = 0;
 
 		/* Send the packet */
-		ret = net_context_send(ctx, sample_packet,
-				       packet_size, NULL,
-				       K_NO_WAIT, NULL);
+		ret = send(sock, sample_packet, packet_size, 0);
 		if (ret < 0) {
 			if (nb_errors == 0 && ret != -ENOMEM) {
 				shell_fprintf(shell, SHELL_WARNING,
-				      "Failed to send the packet (%d)\n",
-				      ret);
+					      "Failed to send the packet (%d)\n",
+					      errno);
 			}
 
 			nb_errors++;
 
-			if (ret == -ENOMEM) {
+			if (errno == -ENOMEM) {
 				/* Ignore memory errors as we just run out of
 				 * buffers which is kind of expected if the
 				 * buffer count is not optimized for the test
@@ -111,6 +107,4 @@ void zperf_tcp_upload(const struct shell *shell,
 			      "options.\n",
 			      alloc_errors);
 	}
-
-	net_context_put(ctx);
 }
