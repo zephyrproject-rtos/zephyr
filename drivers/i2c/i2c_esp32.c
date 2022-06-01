@@ -402,7 +402,6 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_
 		rd_filled = (msg->len > SOC_I2C_FIFO_LEN) ? SOC_I2C_FIFO_LEN : (msg->len - 1);
 
 		read_pr = msg->buf;
-		msg->buf += rd_filled;
 		msg->len -= rd_filled;
 
 		if (rd_filled) {
@@ -428,7 +427,7 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_
 			cmd.ack_val = 1,
 			cmd.byte_num = 1,
 			msg->len = 0;
-			rd_filled++;
+			read_pr = msg->buf;
 
 			i2c_hal_write_cmd_reg(&data->hal, cmd, data->cmd_idx++);
 			i2c_hal_write_cmd_reg(&data->hal, cmd_end, data->cmd_idx++);
@@ -437,8 +436,8 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_
 			if (ret < 0) {
 				return ret;
 			}
-			i2c_hal_read_rxfifo(&data->hal, read_pr, rd_filled);
-			msg->buf += rd_filled;
+			i2c_hal_read_rxfifo(&data->hal, read_pr, 1);
+			msg->buf += 1;
 		}
 	}
 	return 0;
