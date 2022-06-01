@@ -92,7 +92,7 @@ be accessed from the user mode threads.
 The amount of memory space available for the Newlib heap depends on the system
 configurations:
 
-* When MMU is enabled (:kconfig:option:`CONFIG_MMU`is selected), the amount of
+* When MMU is enabled (:kconfig:option:`CONFIG_MMU` is selected), the amount of
   memory space reserved for the Newlib heap is set by the size of the free
   memory space returned by the :c:func:`k_mem_free_get` function or the
   :kconfig:option:`CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE`, whichever is the
