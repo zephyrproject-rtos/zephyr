@@ -184,14 +184,17 @@ static inline bool size_mul_overflow(size_t a, size_t b, size_t *result)
  * check after inlining the call to u32_count_trailing_zeros().
  */
 
-#if use_builtin(__builtin_clz)
 static inline int u32_count_leading_zeros(uint32_t x)
 {
-	return x == 0 ? 32 : __builtin_clz(x);
-}
-#else /* !use_builtin(__builtin_clz) */
-static inline int u32_count_leading_zeros(uint32_t x)
-{
+	if (x == 0) {
+		return 32;
+	}
+	/* Need to use long builtin when int is 16-bit */
+#if use_builtin(__builtin_clzl) && (UINT_MAX < UINT32_MAX)
+	return __builtin_clzl(x);
+#elif use_builtin(__builtin_clz)
+	return __builtin_clz(x);
+#else
 	int b;
 
 	for (b = 0; b < 32 && (x >> 31) == 0; b++) {
@@ -199,33 +202,33 @@ static inline int u32_count_leading_zeros(uint32_t x)
 	}
 
 	return b;
+#endif
 }
-#endif /* use_builtin(__builtin_clz) */
 
+static inline int u64_count_leading_zeros(uint64_t x)
+{
 #if use_builtin(__builtin_clzll)
-static inline int u64_count_leading_zeros(uint64_t x)
-{
 	return x == 0 ? 64 : __builtin_clzll(x);
-}
 #else /* !use_builtin(__builtin_clzll) */
-static inline int u64_count_leading_zeros(uint64_t x)
-{
 	if (x == (uint32_t)x) {
 		return 32 + u32_count_leading_zeros((uint32_t)x);
 	} else {
 		return u32_count_leading_zeros(x >> 32);
 	}
-}
 #endif /* use_builtin(__builtin_clzll) */
-
-#if use_builtin(__builtin_ctz)
-static inline int u32_count_trailing_zeros(uint32_t x)
-{
-	return x == 0 ? 32 : __builtin_ctz(x);
 }
-#else /* !use_builtin(__builtin_ctz) */
+
 static inline int u32_count_trailing_zeros(uint32_t x)
 {
+	if (x == 0) {
+		return 32;
+	}
+	/* Need to use long builtin when int is 16-bit */
+#if use_builtin(__builtin_ctzl) && (UINT_MAX < UINT32_MAX)
+	return __builtin_ctzl(x);
+#elif use_builtin(__builtin_ctz)
+	return __builtin_ctz(x);
+#else
 	int b;
 
 	for (b = 0; b < 32 && (x & 1) == 0; b++) {
@@ -233,23 +236,20 @@ static inline int u32_count_trailing_zeros(uint32_t x)
 	}
 
 	return b;
+#endif
 }
-#endif /* use_builtin(__builtin_ctz) */
 
+static inline int u64_count_trailing_zeros(uint64_t x)
+{
 #if use_builtin(__builtin_ctzll)
-static inline int u64_count_trailing_zeros(uint64_t x)
-{
 	return x == 0 ? 64 : __builtin_ctzll(x);
-}
 #else /* !use_builtin(__builtin_ctzll) */
-static inline int u64_count_trailing_zeros(uint64_t x)
-{
 	if ((uint32_t)x) {
 		return u32_count_trailing_zeros((uint32_t)x);
 	} else {
 		return 32 + u32_count_trailing_zeros(x >> 32);
 	}
-}
 #endif /* use_builtin(__builtin_ctzll) */
+}
 
 #undef use_builtin
