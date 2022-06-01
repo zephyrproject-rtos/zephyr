@@ -366,6 +366,48 @@ ZTEST(test_spsc_pbuf, test_largest_alloc)
 	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN - 1, 0, 1, 12);
 }
 
+ZTEST(test_spsc_pbuf, test_utilization)
+{
+	static uint8_t buffer[64] __aligned(MAX(CONFIG_SPSC_PBUF_CACHE_LINE, 4));
+	struct spsc_pbuf *pb;
+	uint32_t capacity;
+	uint16_t len1, len2, len3;
+	int u;
+
+	pb = spsc_pbuf_init(buffer, sizeof(buffer), 0);
+
+	if (!IS_ENABLED(CONFIG_SPSC_PBUF_UTILIZATION)) {
+		zassert_equal(spsc_pbuf_get_utilization(pb), -ENOTSUP, NULL);
+		return;
+	}
+	capacity = spsc_pbuf_capacity(pb);
+
+	len1 = 10;
+	PACKET_WRITE(pb, len1, len1, 0, len1);
+	u = spsc_pbuf_get_utilization(pb);
+	zassert_equal(u, 0, NULL);
+
+	PACKET_CONSUME(pb, len1, 0);
+	u = spsc_pbuf_get_utilization(pb);
+	zassert_equal(u, ROUND_UP(len1, sizeof(uint32_t)) + sizeof(uint32_t), NULL);
+
+	len2 = 11;
+	PACKET_WRITE(pb, len2, len2, 1, len2);
+	PACKET_CONSUME(pb, len2, 1);
+	u = spsc_pbuf_get_utilization(pb);
+	zassert_equal(u, ROUND_UP(len2, sizeof(uint32_t)) + sizeof(uint32_t), NULL);
+
+	len3 = capacity - ROUND_UP(len1, sizeof(uint32_t)) - ROUND_UP(len2, sizeof(uint32_t))
+		- 3 * sizeof(uint32_t) + sizeof(uint32_t);
+	PACKET_WRITE(pb, SPSC_PBUF_MAX_LEN, len3, 2, len3);
+	PACKET_CONSUME(pb, len3, 2);
+
+	u = spsc_pbuf_get_utilization(pb);
+	int exp_u = ROUND_UP(len3, sizeof(uint32_t)) + sizeof(uint32_t);
+
+	zassert_equal(u, exp_u, NULL);
+}
+
 struct stress_data {
 	struct spsc_pbuf *pbuf;
 	uint32_t capacity;
