@@ -24,6 +24,12 @@ extern "C" {
 /** @brief Flag indicating that cache shall be handled. */
 #define SPSC_PBUF_CACHE BIT(0)
 
+/** @brief Size of the field which stores maximum utilization. */
+#define SPSC_PBUF_UTILIZATION_BITS 24
+
+/** @brief Offset of the field which stores maximum utilization. */
+#define SPSC_PBUF_UTILIZATION_OFFSET 8
+
 /**@} */
 
 #ifndef CONFIG_SPSC_PBUF_CACHE_LINE
@@ -223,6 +229,18 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf);
  */
 void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len);
 
+/**
+ * @brief Get maximum utilization of the packet buffer.
+ *
+ * Function can be used to tune the buffer size. Feature is enabled by
+ * CONFIG_SPSC_PBUF_UTILIZATION. Utilization is updated by the consumer.
+ *
+ * @param pb	A packet buffer.
+ *
+ * @retval -ENOTSUP	Feature not enabled.
+ * @retval non-negative	Maximum utilization.
+ */
+int spsc_pbuf_get_utilization(struct spsc_pbuf *pb);
 /**
  * @}
  */
