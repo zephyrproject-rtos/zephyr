@@ -324,8 +324,8 @@ int fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
  * @param[in] fcb    FCB instance structure.
  * @param[in] sector FCB sector.
  * @param[in] off    Write offset form sector begin.
- * @param[out] src   Source buffer.
- * @param[in] len    Read-out size.
+ * @param[in] src    Source buffer.
+ * @param[in] len    Write size.
  *
  * @return  0 on success, negative errno code on fail.
  */
