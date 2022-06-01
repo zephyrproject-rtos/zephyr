@@ -14,11 +14,11 @@
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 #ifdef CONFIG_SMP
-	uint32_t hartid;
+	ulong_t hartid;
 
 	__asm__ volatile("csrr %0, mhartid" : "=r" (hartid));
 
-	return &_kernel.cpus[hartid];
+	return &_kernel.cpus[hartid - CONFIG_SMP_BASE_CPU];
 #else
 	return &_kernel.cpus[0];
 #endif /* CONFIG_SMP */
