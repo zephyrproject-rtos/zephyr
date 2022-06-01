@@ -406,6 +406,7 @@ static uint8_t mdm_recv_buf[MDM_MAX_DATA_LENGTH];
 
 static K_SEM_DEFINE(hl7800_RX_lock_sem, 1, 1);
 static K_SEM_DEFINE(hl7800_TX_lock_sem, 1, 1);
+static K_MUTEX_DEFINE(cb_lock);
 
 /* RX thread structures */
 K_THREAD_STACK_DEFINE(hl7800_rx_stack, CONFIG_MODEM_HL7800_RX_STACK_SIZE);
@@ -557,7 +558,6 @@ struct hl7800_iface_ctx {
 	enum hl7800_lpm low_power_mode;
 	enum mdm_hl7800_network_state network_state;
 	enum net_operator_status operator_status;
-	void (*event_callback)(enum mdm_hl7800_event event, void *event_data);
 	struct tm local_time;
 	int32_t local_time_offset;
 	bool local_time_valid;
@@ -577,6 +577,9 @@ struct cmd_handler {
 	uint16_t cmd_len;
 	bool (*func)(struct net_buf **buf, uint16_t len);
 };
+
+static sys_slist_t hl7800_event_callback_list =
+	SYS_SLIST_STATIC_INIT(&hl7800_event_callback_list);
 
 static struct hl7800_iface_ctx ictx;
 
@@ -962,9 +965,17 @@ static void allow_sleep(bool allow)
 
 static void event_handler(enum mdm_hl7800_event event, void *event_data)
 {
-	if (ictx.event_callback != NULL) {
-		ictx.event_callback(event, event_data);
+	sys_snode_t *node;
+	struct mdm_hl7800_callback_agent *agent;
+
+	k_mutex_lock(&cb_lock, K_FOREVER);
+	SYS_SLIST_FOR_EACH_NODE(&hl7800_event_callback_list, node) {
+		agent = CONTAINER_OF(node, struct mdm_hl7800_callback_agent, node);
+		if (agent->event_callback != NULL) {
+			agent->event_callback(event, event_data);
+		}
 	}
+	k_mutex_unlock(&cb_lock);
 }
 
 void mdm_hl7800_get_signal_quality(int *rsrp, int *sinr)
@@ -5476,12 +5487,21 @@ int32_t mdm_hl7800_power_off(void)
 	return rc;
 }
 
-void mdm_hl7800_register_event_callback(mdm_hl7800_event_callback_t cb)
+void mdm_hl7800_register_event_callback(struct mdm_hl7800_callback_agent *agent)
 {
-	int key = irq_lock();
+	k_mutex_lock(&cb_lock, K_FOREVER);
+	if (!agent->event_callback) {
+		LOG_WRN("event_callback is NULL");
+	}
+	sys_slist_append(&hl7800_event_callback_list, &agent->node);
+	k_mutex_unlock(&cb_lock);
+}
 
-	ictx.event_callback = cb;
-	irq_unlock(key);
+void mdm_hl7800_unregister_event_callback(struct mdm_hl7800_callback_agent *agent)
+{
+	k_mutex_lock(&cb_lock, K_FOREVER);
+	(void)sys_slist_find_and_remove(&hl7800_event_callback_list, &agent->node);
+	k_mutex_unlock(&cb_lock);
 }
 
 /*** OFFLOAD FUNCTIONS ***/
