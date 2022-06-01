@@ -26,11 +26,8 @@
 #include <zephyr/irq_offload.h>
 #include <zephyr/sys_clock.h>
 
-/*
- * Include soc.h from platform to get IRQ number.
- * NOTE: Cortex-M does not need IRQ numbers
- */
-#if !defined(CONFIG_CPU_CORTEX_M) && !defined(CONFIG_XTENSA)
+#if defined(CONFIG_SOC_POSIX) || defined(CONFIG_ARC)
+/* TIMER_TICK_IRQ <soc.h> header for certain platforms */
 #include <soc.h>
 #endif
 
