@@ -450,6 +450,20 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	return 0;
 }
 
+/*
+ * Disable ADC peripheral, and wait until it is disabled
+ */
+static inline void adc_stm32_disable(ADC_TypeDef *adc)
+{
+	if (LL_ADC_IsEnabled(adc) != 1UL) {
+		return;
+	}
+
+	LL_ADC_Disable(adc);
+	while (LL_ADC_IsEnabled(adc) == 1UL) {
+	}
+}
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
@@ -550,11 +564,7 @@ static int start_read(const struct device *dev,
 	 * Writing ADC_CFGR1 register while ADEN bit is set
 	 * resets RES[1:0] bitfield. We need to disable and enable adc.
 	 */
-	if (LL_ADC_IsEnabled(adc) == 1UL) {
-		LL_ADC_Disable(adc);
-	}
-	while (LL_ADC_IsEnabled(adc) == 1UL) {
-	}
+	adc_stm32_disable(adc);
 	LL_ADC_SetResolution(adc, resolution);
 	adc_stm32_enable(adc);
 #elif !defined(CONFIG_SOC_SERIES_STM32F1X) && \
@@ -568,9 +578,7 @@ static int start_read(const struct device *dev,
 	 * setting OVS bits is conditioned to ADC state: ADC must be disabled
 	 * or enabled without conversion on going : disable it, it will stop
 	 */
-	LL_ADC_Disable(adc);
-	while (LL_ADC_IsEnabled(adc) == 1UL) {
-	}
+	adc_stm32_disable(adc);
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32G0X) || \
@@ -643,9 +651,7 @@ static int start_read(const struct device *dev,
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
 
 		/* we cannot calibrate the ADC while the ADC is enabled */
-		LL_ADC_Disable(adc);
-		while (LL_ADC_IsEnabled(adc) == 1UL) {
-		}
+		adc_stm32_disable(adc);
 		adc_stm32_calib(dev);
 		/* re-enable ADC after calibration */
 		adc_stm32_enable(adc);
