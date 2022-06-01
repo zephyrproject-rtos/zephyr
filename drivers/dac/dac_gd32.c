@@ -9,7 +9,9 @@
 #include <errno.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/dac.h>
-#include <soc.h>
+
+#include <gd32_dac.h>
+#include <gd32_rcu.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dac_gd32, CONFIG_DAC_LOG_LEVEL);
