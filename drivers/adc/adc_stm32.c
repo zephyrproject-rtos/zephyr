@@ -566,7 +566,6 @@ static int start_read(const struct device *dev,
 	 */
 	adc_stm32_disable(adc);
 	LL_ADC_SetResolution(adc, resolution);
-	adc_stm32_enable(adc);
 #elif !defined(CONFIG_SOC_SERIES_STM32F1X) && \
 	!defined(STM32F3X_ADC_V2_5)
 	LL_ADC_SetResolution(adc, resolution);
@@ -633,8 +632,6 @@ static int start_read(const struct device *dev,
 		adc_stm32_enable(adc);
 		return -EINVAL;
 	}
-	/* re-enable ADC after changing the OVS */
-	adc_stm32_enable(adc);
 #else
 	if (sequence->oversampling) {
 		LOG_ERR("Oversampling not supported");
@@ -653,13 +650,18 @@ static int start_read(const struct device *dev,
 		/* we cannot calibrate the ADC while the ADC is enabled */
 		adc_stm32_disable(adc);
 		adc_stm32_calib(dev);
-		/* re-enable ADC after calibration */
-		adc_stm32_enable(adc);
 #else
 		LOG_ERR("Calibration not supported");
 		return -ENOTSUP;
 #endif
 	}
+
+	/*
+	 * Make sure the ADC is enabled as it might have been disabled earlier
+	 * to set the resolution, to set the oversampling or to perform the
+	 * calibration.
+	 */
+	adc_stm32_enable(adc);
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(STM32F3X_ADC_V1_1) || \
@@ -673,10 +675,8 @@ static int start_read(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_EnableIT_EOC(adc);
-#elif defined(CONFIG_SOC_SERIES_STM32F1X)
-	LL_ADC_EnableIT_EOS(adc);
-#elif defined(STM32F3X_ADC_V2_5)
-	adc_stm32_enable(adc);
+#elif defined(STM32F3X_ADC_V2_5) || \
+	defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_ADC_EnableIT_EOS(adc);
 #else
 	LL_ADC_EnableIT_EOCS(adc);
