@@ -10,7 +10,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
-#include <soc.h>
+
+#include <gd32_rcu.h>
+#include <gd32_spi.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_gd32);

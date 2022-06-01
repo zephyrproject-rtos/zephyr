@@ -5,7 +5,9 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
-#include <soc.h>
+
+#include <gd32_gpio.h>
+#include <gd32_rcu.h>
 
 BUILD_ASSERT((GD32_PUPD_NONE == GPIO_PUPD_NONE) &&
 	     (GD32_PUPD_PULLUP == GPIO_PUPD_PULLUP) &&
