@@ -497,7 +497,7 @@ function(zephyr_library_compile_options item)
   # zephyr_interface will be the first interface library that flags
   # are taken from.
 
-  string(MD5 uniqueness ${item})
+  string(MD5 uniqueness "${ARGV}")
   set(lib_name options_interface_lib_${uniqueness})
 
   if (NOT TARGET ${lib_name})
