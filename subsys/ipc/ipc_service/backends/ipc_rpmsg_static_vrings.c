@@ -623,7 +623,7 @@ static int backend_init(const struct device *instance)
 			   (0)),							\
 		.wq_prio_type = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
 			   (DT_INST_PROP_BY_IDX(i, zephyr_priority, 1)),		\
-			   (PRIO_COOP)),						\
+			   (PRIO_PREEMPT)),						\
 		.buffer_size = DT_INST_PROP_OR(i, zephyr_buffer_size,			\
 					       RPMSG_BUFFER_SIZE),			\
 		.id = i,								\
