@@ -14,6 +14,14 @@
 #define LEN_SZ sizeof(uint32_t)
 #define PADDING_MARK 0xFF
 
+#define GET_UTILIZATION(flags) \
+	(((flags) >> SPSC_PBUF_UTILIZATION_OFFSET) & BIT_MASK(SPSC_PBUF_UTILIZATION_BITS))
+
+#define SET_UTILIZATION(flags, val) \
+	((flags & ~(BIT_MASK(SPSC_PBUF_UTILIZATION_BITS) << \
+			     SPSC_PBUF_UTILIZATION_OFFSET)) | \
+			((val) << SPSC_PBUF_UTILIZATION_OFFSET))
+
 /*
  * In order to allow allocation of continuous buffers (in zero copy manner) buffer
  * is handling wrapping. When it is detected that request space cannot be allocated
@@ -254,6 +262,17 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 
 	uint32_t bytes_stored = idx_occupied(pblen, wr_idx, rd_idx);
 
+	/* Utilization is calculated at claiming to handle cache case when flags
+	 * and rd_idx is in the same cache line thus it should be modified only
+	 * by the consumer.
+	 */
+	if (IS_ENABLED(CONFIG_SPSC_PBUF_UTILIZATION) && (bytes_stored > GET_UTILIZATION(flags))) {
+		__ASSERT_NO_MSG(bytes_stored <= BIT_MASK(SPSC_PBUF_UTILIZATION_BITS));
+		pb->common.flags = SET_UTILIZATION(flags, bytes_stored);
+		__sync_synchronize();
+		cache_wb(&pb->common.flags, sizeof(pb->common.flags), flags);
+	}
+
 	/* Read message len. */
 	uint16_t len;
 
@@ -325,4 +344,16 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len)
 	spsc_pbuf_free(pb, plen);
 
 	return plen;
+}
+
+int spsc_pbuf_get_utilization(struct spsc_pbuf *pb)
+{
+	if (!IS_ENABLED(CONFIG_SPSC_PBUF_UTILIZATION)) {
+		return -ENOTSUP;
+	}
+
+	cache_inv(&pb->common.flags, sizeof(pb->common.flags), pb->common.flags);
+	__sync_synchronize();
+
+	return GET_UTILIZATION(pb->common.flags);
 }
