@@ -22,12 +22,6 @@
 #include <zephyr/random/rand32.h>
 #endif
 
-/*
- * UART
- */
-#define UART_NS16550_ACCESS_IOPORT 0x3f8
-
-
 /* PCI definitions */
 /* FIXME: The values below copied from generic ia32 soc, we need to get the
  * correct numbers for Atom and the minnowboard
