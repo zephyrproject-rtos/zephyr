@@ -222,7 +222,7 @@ at build time via:
 
 .. code-block:: bash
 
-   $ west build -b mps3_an547 samples/hello°world -DEMU_PLATFORM=qemu -t run
+   $ west build -b mps3_an547 samples/hello_world -DEMU_PLATFORM=qemu -t run
 
 
 Note, however, that the Ethos-U55 NPU is not available in QEMU. If you require
