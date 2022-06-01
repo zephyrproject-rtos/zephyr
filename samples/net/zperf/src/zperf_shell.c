@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_zperf_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/socket.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"
@@ -52,7 +53,6 @@ static const char *CONFIG =
 #define MY_SRC_PORT 50000
 #define DEF_PORT 5001
 #define DEF_PORT_STR STRINGIFY(DEF_PORT)
-#define WAIT_CONNECT K_SECONDS(2) /* in ms */
 
 static struct in6_addr ipv6;
 
@@ -451,27 +451,24 @@ static void shell_tcp_upload_print_stats(const struct shell *shell,
 	}
 }
 
-static int setup_contexts(const struct shell *shell,
-			  struct net_context **context6,
-			  struct net_context **context4,
-			  sa_family_t family,
-			  struct sockaddr_in6 *ipv6,
-			  struct sockaddr_in *ipv4,
-			  int port,
-			  bool is_udp,
-			  char *argv0)
+static int setup_upload_sockets(const struct shell *shell,
+				int *sock6,
+				int *sock4,
+				sa_family_t family,
+				struct sockaddr_in6 *ipv6,
+				struct sockaddr_in *ipv4,
+				int port,
+				bool is_udp,
+				char *argv0)
 {
-	int ret;
-
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		ret = net_context_get(AF_INET6,
-				      is_udp ? SOCK_DGRAM : SOCK_STREAM,
-				      is_udp ? IPPROTO_UDP : IPPROTO_TCP,
-				      context6);
-		if (ret < 0) {
+		*sock6 = socket(AF_INET6,
+				is_udp ? SOCK_DGRAM : SOCK_STREAM,
+				is_udp ? IPPROTO_UDP : IPPROTO_TCP);
+		if (*sock6 < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
-				      "Cannot get IPv6 network context (%d)\n",
-				      ret);
+				      "Cannot create IPv6 network socket (%d)\n",
+				      errno);
 			return -ENOEXEC;
 		}
 
@@ -480,14 +477,13 @@ static int setup_contexts(const struct shell *shell,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = net_context_get(AF_INET,
-				      is_udp ? SOCK_DGRAM : SOCK_STREAM,
-				      is_udp ? IPPROTO_UDP : IPPROTO_TCP,
-				      context4);
-		if (ret < 0) {
+		*sock4 = socket(AF_INET,
+				is_udp ? SOCK_DGRAM : SOCK_STREAM,
+				is_udp ? IPPROTO_UDP : IPPROTO_TCP);
+		if (*sock4 < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
-				      "Cannot get IPv4 network context (%d)\n",
-				      ret);
+				      "Cannot create IPv4 network socket (%d)\n",
+				      errno);
 			return -ENOEXEC;
 		}
 
@@ -495,33 +491,9 @@ static int setup_contexts(const struct shell *shell,
 		ipv4->sin_family = AF_INET;
 	}
 
-	if (family == AF_INET6 && *context6) {
-		ret = net_context_bind(*context6,
-				       (struct sockaddr *)ipv6,
-				       sizeof(struct sockaddr_in6));
-		if (ret < 0) {
-			shell_fprintf(shell, SHELL_NORMAL,
-				      "Cannot bind IPv6 port %d (%d)",
-				      ntohs(ipv6->sin6_port), ret);
-			return -ENOEXEC;
-		}
-	}
-
-	if (family == AF_INET && *context4) {
-		ret = net_context_bind(*context4,
-				       (struct sockaddr *)ipv4,
-				       sizeof(struct sockaddr_in));
-		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Cannot bind IPv4 port %d (%d)",
-				      ntohs(ipv4->sin_port), ret);
-			return -ENOEXEC;
-		}
-	}
-
-	if (!(*context6) && !(*context4)) {
+	if ((*sock6 < 0) && (*sock4 < 0)) {
 		shell_fprintf(shell, SHELL_WARNING,
-			      "Fail to retrieve network context(s)\n");
+			      "Fail to create network socket(s)\n");
 		return -ENOEXEC;
 	}
 
@@ -529,8 +501,8 @@ static int setup_contexts(const struct shell *shell,
 }
 
 static int execute_upload(const struct shell *shell,
-			  struct net_context *context6,
-			  struct net_context *context4,
+			  int sock6,
+			  int sock4,
 			  sa_family_t family,
 			  struct sockaddr_in6 *ipv6,
 			  struct sockaddr_in *ipv4,
@@ -554,7 +526,7 @@ static int execute_upload(const struct shell *shell,
 		      rate_in_kbps);
 	shell_fprintf(shell, SHELL_NORMAL, "Starting...\n");
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6 && context6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6 && sock6 >= 0) {
 		/* For IPv6, we should make sure that neighbor discovery
 		 * has been done for the peer. So send ping here, wait
 		 * some time and start the test after that.
@@ -570,40 +542,34 @@ static int execute_upload(const struct shell *shell,
 		print_number(shell, rate_in_kbps, KBPS, KBPS_UNIT);
 		shell_fprintf(shell, SHELL_NORMAL, "\n");
 
-		if (family == AF_INET6 && context6) {
-			ret = net_context_connect(context6,
-						  (struct sockaddr *)ipv6,
-						  sizeof(*ipv6),
-						  NULL,
-						  K_NO_WAIT,
-						  NULL);
+		if (family == AF_INET6 && sock6 >= 0) {
+			ret = connect(sock6,
+				      (struct sockaddr *)ipv6,
+				      sizeof(*ipv6));
 			if (ret < 0) {
 				shell_fprintf(shell, SHELL_WARNING,
 					      "IPv6 connect failed (%d)\n",
-					      ret);
+					      errno);
 				goto out;
 			}
 
-			zperf_udp_upload(shell, context6, port, duration_in_ms,
+			zperf_udp_upload(shell, sock6, port, duration_in_ms,
 					 packet_size, rate_in_kbps, &results);
 			shell_udp_upload_print_stats(shell, &results);
 		}
 
-		if (family == AF_INET && context4) {
-			ret = net_context_connect(context4,
-						  (struct sockaddr *)ipv4,
-						  sizeof(*ipv4),
-						  NULL,
-						  K_NO_WAIT,
-						  NULL);
+		if (family == AF_INET && sock4 >= 0) {
+			ret = connect(sock4,
+				      (struct sockaddr *)ipv4,
+				      sizeof(*ipv4));
 			if (ret < 0) {
 				shell_fprintf(shell, SHELL_NORMAL,
 					      "IPv4 connect failed (%d)\n",
-					      ret);
+					      errno);
 				goto out;
 			}
 
-			zperf_udp_upload(shell, context4, port, duration_in_ms,
+			zperf_udp_upload(shell, sock4, port, duration_in_ms,
 					 packet_size, rate_in_kbps, &results);
 			shell_udp_upload_print_stats(shell, &results);
 		}
@@ -615,59 +581,51 @@ static int execute_upload(const struct shell *shell,
 	}
 
 	if (!is_udp && IS_ENABLED(CONFIG_NET_TCP)) {
-		if (family == AF_INET6 && context6) {
-			ret = net_context_connect(context6,
-						  (struct sockaddr *)ipv6,
-						  sizeof(*ipv6),
-						  NULL,
-						  WAIT_CONNECT,
-						  NULL);
+		if (family == AF_INET6 && sock6 >= 0) {
+			ret = connect(sock6,
+				      (struct sockaddr *)ipv6,
+				      sizeof(*ipv6));
 			if (ret < 0) {
 				shell_fprintf(shell, SHELL_WARNING,
 					      "IPv6 connect failed (%d)\n",
-					      ret);
+					      errno);
 				goto out;
 			}
 
 			/* We either upload using IPv4 or IPv6, not both at
 			 * the same time.
 			 */
-			if (IS_ENABLED(CONFIG_NET_IPV4)) {
-				net_context_put(context4);
+			if (IS_ENABLED(CONFIG_NET_IPV4) && sock4 >= 0) {
+				(void)close(sock4);
+				sock4 = -1;
 			}
 
-			zperf_tcp_upload(shell, context6, duration_in_ms,
+			zperf_tcp_upload(shell, sock6, duration_in_ms,
 					 packet_size, &results);
 
 			shell_tcp_upload_print_stats(shell, &results);
-
-			return 0;
 		}
 
-		if (family == AF_INET && context4) {
-			ret = net_context_connect(context4,
-						  (struct sockaddr *)ipv4,
-						  sizeof(*ipv4),
-						  NULL,
-						  WAIT_CONNECT,
-						  NULL);
+		if (family == AF_INET && sock4 >= 0) {
+			ret = connect(sock4,
+				      (struct sockaddr *)ipv4,
+				      sizeof(*ipv4));
 			if (ret < 0) {
 				shell_fprintf(shell, SHELL_WARNING,
 					      "IPv4 connect failed (%d)\n",
-					      ret);
+					      errno);
 				goto out;
 			}
 
-			if (IS_ENABLED(CONFIG_NET_IPV6)) {
-				net_context_put(context6);
+			if (IS_ENABLED(CONFIG_NET_IPV6) && sock6 >= 0) {
+				(void)close(sock6);
+				sock6 = -1;
 			}
 
-			zperf_tcp_upload(shell, context4, duration_in_ms,
+			zperf_tcp_upload(shell, sock4, duration_in_ms,
 					 packet_size, &results);
 
 			shell_tcp_upload_print_stats(shell, &results);
-
-			return 0;
 		}
 	} else {
 		if (!IS_ENABLED(CONFIG_NET_TCP)) {
@@ -677,11 +635,14 @@ static int execute_upload(const struct shell *shell,
 	}
 
 out:
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		net_context_put(context6);
+	if (IS_ENABLED(CONFIG_NET_IPV6) && sock6 >= 0) {
+		(void)close(sock6);
+		sock6 = -1;
 	}
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		net_context_put(context4);
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && sock4 >= 0) {
+		(void)close(sock4);
+		sock4 = -1;
 	}
 
 	return 0;
@@ -692,7 +653,7 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 {
 	struct sockaddr_in6 ipv6 = { .sin6_family = AF_INET6 };
 	struct sockaddr_in ipv4 = { .sin_family = AF_INET };
-	struct net_context *context6 = NULL, *context4 = NULL;
+	int sock6 = -1, sock4 = -1;
 	sa_family_t family = AF_UNSPEC;
 	unsigned int duration_in_ms, packet_size, rate_in_kbps;
 	char *port_str;
@@ -786,8 +747,8 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 		}
 	}
 
-	if (setup_contexts(shell, &context6, &context4, family, &in6_addr_my,
-			   &in4_addr_my, port, is_udp, argv[start]) < 0) {
+	if (setup_upload_sockets(shell, &sock6, &sock4, family, &in6_addr_my,
+				 &in4_addr_my, port, is_udp, argv[start]) < 0) {
 		return -ENOEXEC;
 	}
 
@@ -812,7 +773,7 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 		rate_in_kbps = 10U;
 	}
 
-	return execute_upload(shell, context6, context4, family, &ipv6, &ipv4,
+	return execute_upload(shell, sock6, sock4, family, &ipv6, &ipv4,
 			      is_udp, port, argv[start], duration_in_ms,
 			      packet_size, rate_in_kbps);
 }
@@ -834,7 +795,7 @@ static int cmd_udp_upload(const struct shell *shell, size_t argc, char *argv[])
 static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 			     char *argv[], enum net_ip_protocol proto)
 {
-	struct net_context *context6 = NULL, *context4 = NULL;
+	int sock6 = -1, sock4 = -1;
 	uint16_t port = DEF_PORT;
 	unsigned int duration_in_ms, packet_size, rate_in_kbps;
 	sa_family_t family;
@@ -906,8 +867,8 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 			      net_sprint_ipv4_addr(&in4_addr_dst.sin_addr));
 	}
 
-	if (setup_contexts(shell, &context6, &context4, family, &in6_addr_my,
-			   &in4_addr_my, port, is_udp, argv[start]) < 0) {
+	if (setup_upload_sockets(shell, &sock6, &sock4, family, &in6_addr_my,
+				 &in4_addr_my, port, is_udp, argv[start]) < 0) {
 		return -ENOEXEC;
 	}
 
@@ -932,7 +893,7 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 		rate_in_kbps = 10U;
 	}
 
-	return execute_upload(shell, context6, context4, family, &in6_addr_dst,
+	return execute_upload(shell, sock6, sock4, family, &in6_addr_dst,
 			      &in4_addr_dst, is_udp, port, argv[start],
 			      duration_in_ms, packet_size, rate_in_kbps);
 }
