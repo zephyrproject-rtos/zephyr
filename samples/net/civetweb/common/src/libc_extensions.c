@@ -11,10 +11,22 @@ LOG_MODULE_REGISTER(lib_extensions, LOG_LEVEL_DBG);
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "libc_extensions.h"
 
 #define FN_MISSING() LOG_DBG("[IMPLEMENTATION MISSING : %s]\n", __func__)
+
+int fileno(FILE *stream)
+{
+	errno = EBADF;
+	return -1;
+}
+
+int ferror(FILE *stream)
+{
+	return -1;
+}
 
 int iscntrl(int c)
 {
