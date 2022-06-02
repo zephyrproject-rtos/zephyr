@@ -651,6 +651,24 @@ Build and Infrastructure
 Libraries / Subsystems
 **********************
 
+* C Library
+
+  * Minimal libc
+
+    * Added ``[U]INT_{FAST,LEAST}N_{MIN,MAX}`` minimum and maximum value
+      macros in ``stdint.h``.
+    * Added ``PRIx{FAST,LEAST}N`` and ``PRIxMAX`` format specifier macros in
+      ``inttypes.h``.
+    * Fixed :c:func:`gmtime` access fault when userspace is enabled and
+      :c:func:`gmtime` is called from a user mode thread. This function can be
+      safely called from both kernel and user mode threads.
+
+  * Newlib
+
+    * Fixed access fault when calling the newlib math functions from a user
+      mode thread. All ``libm.a`` globals are now placed into the
+      ``z_libc_partition`` when userspace is enabled.
+
 * C++ Subsystem
 
   * Renamed all C++ source and header files to use the ``cpp`` and ``hpp``
