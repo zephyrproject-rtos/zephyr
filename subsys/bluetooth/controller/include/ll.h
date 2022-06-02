@@ -6,6 +6,7 @@
  */
 
 int ll_init(struct k_sem *sem_rx);
+int ll_deinit(void);
 void ll_reset(void);
 
 uint8_t ll_set_host_feature(uint8_t bit_number, uint8_t bit_value);
