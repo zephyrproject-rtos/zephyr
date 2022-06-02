@@ -118,13 +118,26 @@ static void stm32_i2c_slave_event(const struct device *dev)
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
-	const struct i2c_target_callbacks *slave_cb =
-		data->slave_cfg->callbacks;
+	const struct i2c_target_callbacks *slave_cb;
+	struct i2c_target_config *slave_cfg;
+	uint8_t slave_address;
+
+	/* Choose the right slave from the address match code */
+	slave_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
+	if (slave_address == data->slave_cfg->address) {
+		slave_cfg = data->slave_cfg;
+	} else if (slave_address == data->slave2_cfg->address) {
+		slave_cfg = data->slave2_cfg;
+	} else {
+		__ASSERT_NO_MSG(0);
+		return;
+	}
+	slave_cb = slave_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
 		uint8_t val;
 
-		slave_cb->read_processed(data->slave_cfg, &val);
+		slave_cb->read_processed(slave_cfg, &val);
 		LL_I2C_TransmitData8(i2c, val);
 		return;
 	}
@@ -132,7 +145,7 @@ static void stm32_i2c_slave_event(const struct device *dev)
 	if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
 		uint8_t val = LL_I2C_ReceiveData8(i2c);
 
-		if (slave_cb->write_received(data->slave_cfg, val)) {
+		if (slave_cb->write_received(slave_cfg, val)) {
 			LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
 		}
 		return;
@@ -150,7 +163,7 @@ static void stm32_i2c_slave_event(const struct device *dev)
 
 		LL_I2C_ClearFlag_STOP(i2c);
 
-		slave_cb->stop(data->slave_cfg);
+		slave_cb->stop(slave_cfg);
 
 		/* Prepare to ACK next transmissions address byte */
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
@@ -163,12 +176,12 @@ static void stm32_i2c_slave_event(const struct device *dev)
 
 		dir = LL_I2C_GetTransferDirection(i2c);
 		if (dir == LL_I2C_DIRECTION_WRITE) {
-			slave_cb->write_requested(data->slave_cfg);
+			slave_cb->write_requested(slave_cfg);
 			LL_I2C_EnableIT_RX(i2c);
 		} else {
 			uint8_t val;
 
-			slave_cb->read_requested(data->slave_cfg, &val);
+			slave_cb->read_requested(slave_cfg, &val);
 			LL_I2C_TransmitData8(i2c, val);
 			LL_I2C_EnableIT_TX(i2c);
 		}
@@ -191,7 +204,7 @@ int i2c_stm32_target_register(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (data->slave_attached) {
+	if (data->slave_cfg && data->slave2_cfg) {
 		return -EBUSY;
 	}
 
@@ -207,17 +220,26 @@ int i2c_stm32_target_register(const struct device *dev,
 		return ret;
 	}
 
-	data->slave_cfg = config;
-
 	LL_I2C_Enable(i2c);
 
-	LL_I2C_SetOwnAddress1(i2c, config->address << 1,
-			      LL_I2C_OWNADDRESS1_7BIT);
-	LL_I2C_EnableOwnAddress1(i2c);
+	if (!data->slave_cfg) {
+		data->slave_cfg = config;
+
+		LL_I2C_SetOwnAddress1(i2c, config->address << 1U,
+				      LL_I2C_OWNADDRESS1_7BIT);
+		LL_I2C_EnableOwnAddress1(i2c);
+
+		LOG_DBG("i2c: slave #1 registered");
+	} else {
+		data->slave2_cfg = config;
+
+		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
+				      LL_I2C_OWNADDRESS2_NOMASK);
+		LL_I2C_EnableOwnAddress2(i2c);
+		LOG_DBG("i2c: slave #2 registered");
+	}
 
 	data->slave_attached = true;
-
-	LOG_DBG("i2c: slave registered");
 
 	LL_I2C_EnableIT_ADDR(i2c);
 
@@ -239,8 +261,26 @@ int i2c_stm32_target_unregister(const struct device *dev,
 		return -EBUSY;
 	}
 
-	LL_I2C_DisableOwnAddress1(i2c);
+	if (config == data->slave_cfg) {
+		LL_I2C_DisableOwnAddress1(i2c);
+		data->slave_cfg = NULL;
 
+		LOG_DBG("i2c: slave #1 unregistered");
+	} else if (config == data->slave2_cfg) {
+		LL_I2C_DisableOwnAddress2(i2c);
+		data->slave2_cfg = NULL;
+
+		LOG_DBG("i2c: slave #2 unregistered");
+	} else {
+		return -EINVAL;
+	}
+
+	/* Return if there is a slave remaining */
+	if (!data->slave_cfg || !data->slave2_cfg) {
+		return 0;
+	}
+
+	/* Otherwise disable I2C */
 	LL_I2C_DisableIT_ADDR(i2c);
 	stm32_i2c_disable_transfer_interrupts(dev);
 
@@ -251,8 +291,6 @@ int i2c_stm32_target_unregister(const struct device *dev,
 	LL_I2C_Disable(i2c);
 
 	data->slave_attached = false;
-
-	LOG_DBG("i2c: slave unregistered");
 
 	return 0;
 }
