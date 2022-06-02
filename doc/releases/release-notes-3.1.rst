@@ -619,8 +619,11 @@ Networking
 USB
 ***
 
-Build and Infrastructure
-************************
+Build System
+************
+
+Devicetree
+**********
 
 Libraries / Subsystems
 **********************
