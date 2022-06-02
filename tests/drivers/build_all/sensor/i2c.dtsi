@@ -666,6 +666,13 @@ test_i2c_fdc2x1x: fdc2x1x@2a {
 	};
 };
 
+test_i2c_bmp180: bmp180@77 {
+	compatible = "bosch,bmp180";
+	reg = <0x77>;
+	label = "BMP180";
+	pressure_oversampling_level = <0x03>;
+};
+
 test_i2c_bmp388: bmp388@4c {
 	compatible = "bosch,bmp388";
 	label = "BMP388";

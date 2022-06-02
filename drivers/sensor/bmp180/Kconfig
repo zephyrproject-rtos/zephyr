@@ -1,0 +1,11 @@
+# BMP180 temperature and pressure sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2017 IpTronix S.r.l.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMP180
+	bool "BMP180 sensor"
+	depends on I2C
+	help
+	  Enable driver for BMP180 I2C-based temperature and pressure sensor.

@@ -1,0 +1,18 @@
+description: BMP180 integrated environmental sensor
+
+compatible: "bosch,bmp180"
+
+include: i2c-device.yaml
+
+properties:
+  pressure_oversampling_level:
+    type: int
+    required: true
+    description: |
+      controls the oversampling ratio of the pressure measurement(0x00: single,
+      0x01: 2 times, 0x02: 4 times, 0x03: 8 times)
+    enum:
+      - 0x00
+      - 0x01
+      - 0x02
+      - 0x03
