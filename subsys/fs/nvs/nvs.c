@@ -712,7 +712,7 @@ static int nvs_startup(struct nvs_fs *fs)
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 	/* step through the sectors to find a open sector following
-	 * a closed sector, this is where NVS can to write.
+	 * a closed sector, this is where NVS can write.
 	 */
 	for (i = 0; i < fs->sector_count; i++) {
 		addr = (i << ADDR_SECT_SHIFT) +
