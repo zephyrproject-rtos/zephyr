@@ -1,0 +1,15 @@
+sample:
+  name: LPS22HH Temperature and Pressure Monitor (using I3C)
+tests:
+  sample.sensor.lps22hh.i3c:
+    harness: console
+    tags: sensors
+    depends_on: i3c
+    filter: dt_compat_enabled("st,lps22hh")
+    build_only: true
+    harness_config:
+        type: multi_line
+        ordered: yes
+        regex:
+            - "Temperature: (.*)"
+            - "Pressure: (.*)"
