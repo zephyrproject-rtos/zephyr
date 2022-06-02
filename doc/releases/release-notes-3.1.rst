@@ -330,6 +330,10 @@ Boards & SoC Support
 * Made these changes in other SoC series:
 
   * Added Atmel SAM UPLL clock support
+  * Raspberry Pi Pico: Added HWINFO support
+  * Raspberry Pi Pico: Added I2C support
+  * Raspberry Pi Pico: Added reset controller support
+  * Raspberry Pi Pico: Added USB support
 
 * Changes for ARC boards:
 
@@ -451,6 +455,7 @@ Drivers and Sensors
 * HWINFO
 
   * Atmel SAM: Added RSTC support
+  * Raspberry Pi Pico: Added Unique ID and reset cause driver
 
 * I2C
 
@@ -505,6 +510,7 @@ Drivers and Sensors
 * Reset
 
   * Added reset controller driver API.
+  * Raspberry Pi Pico: Added reset controller driver
 
 * Sensor
 
@@ -532,6 +538,8 @@ Drivers and Sensors
 * Timer
 
 * USB
+
+  * Raspberry Pi Pico: Added USB driver
 
 * Watchdog
 
