@@ -158,7 +158,6 @@ static int nvs_flash_rd(struct nvs_fs *fs, uint32_t addr, void *data,
 
 	rc = flash_read(fs->flash_device, offset, data, len);
 	return rc;
-
 }
 
 /* allocation entry write */
@@ -378,7 +377,6 @@ static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
 	}
 
 	return 1;
-
 }
 
 /* nvs_close_ate_valid validates an sector close ate: a valid sector close ate:
@@ -577,6 +575,7 @@ static int nvs_add_gc_done_ate(struct nvs_fs *fs)
 
 	return nvs_flash_ate_wrt(fs, &gc_done_ate);
 }
+
 /* garbage collection: the address ate_wra has been updated to the new sector
  * that has just been started. The data to gc is in the sector after this new
  * sector.
@@ -760,7 +759,6 @@ static int nvs_startup(struct nvs_fs *fs)
 	if (rc) {
 		goto end;
 	}
-
 
 	/* addr contains address of the last valid ate in the most recent sector
 	 * search for the first ate containing all cells erased, in the process
@@ -1237,7 +1235,6 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 		if (step_addr == fs->ate_wra) {
 			break;
 		}
-
 	}
 	return free_space;
 }
