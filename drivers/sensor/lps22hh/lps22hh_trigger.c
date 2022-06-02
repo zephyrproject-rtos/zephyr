@@ -80,11 +80,30 @@ static void lps22hh_handle_interrupt(const struct device *dev)
 		lps22hh->handler_drdy(dev, &drdy_trigger);
 	}
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	if (cfg->i3c.bus != NULL) {
+		/*
+		 * I3C IBI does not rely on GPIO.
+		 * So no need to enable GPIO pin for interrupt trigger.
+		 */
+		return;
+	}
+#endif
+
 	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("%s: Not able to configure pin_int", dev->name);
 	}
+}
+
+static void lps22hh_intr_callback(struct lps22hh_data *lps22hh)
+{
+#if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
+	k_sem_give(&lps22hh->intr_sem);
+#elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)
+	k_work_submit(&lps22hh->work);
+#endif /* CONFIG_LPS22HH_TRIGGER_OWN_THREAD */
 }
 
 static void lps22hh_gpio_callback(const struct device *dev,
@@ -102,18 +121,14 @@ static void lps22hh_gpio_callback(const struct device *dev,
 		LOG_ERR("%s: Not able to configure pin_int", dev->name);
 	}
 
-#if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
-	k_sem_give(&lps22hh->gpio_sem);
-#elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)
-	k_work_submit(&lps22hh->work);
-#endif /* CONFIG_LPS22HH_TRIGGER_OWN_THREAD */
+	lps22hh_intr_callback(lps22hh);
 }
 
 #ifdef CONFIG_LPS22HH_TRIGGER_OWN_THREAD
 static void lps22hh_thread(struct lps22hh_data *lps22hh)
 {
 	while (1) {
-		k_sem_take(&lps22hh->gpio_sem, K_FOREVER);
+		k_sem_take(&lps22hh->intr_sem, K_FOREVER);
 		lps22hh_handle_interrupt(lps22hh->dev);
 	}
 }
@@ -129,6 +144,21 @@ static void lps22hh_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD */
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+static int lps22hh_ibi_cb(struct i3c_device_desc *target,
+			  struct i3c_ibi_payload *payload)
+{
+	const struct device *dev = target->dev;
+	struct lps22hh_data *lps22hh = dev->data;
+
+	ARG_UNUSED(payload);
+
+	lps22hh_intr_callback(lps22hh);
+
+	return 0;
+}
+#endif
+
 int lps22hh_init_interrupt(const struct device *dev)
 {
 	struct lps22hh_data *lps22hh = dev->data;
@@ -137,7 +167,11 @@ int lps22hh_init_interrupt(const struct device *dev)
 	int ret;
 
 	/* setup data ready gpio interrupt */
-	if (!device_is_ready(cfg->gpio_int.port)) {
+	if (!device_is_ready(cfg->gpio_int.port)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	    && (cfg->i3c.bus == NULL)
+#endif
+	   ) {
 		if (cfg->gpio_int.port) {
 			LOG_ERR("%s: device %s is not ready", dev->name,
 						cfg->gpio_int.port->name);
@@ -151,7 +185,7 @@ int lps22hh_init_interrupt(const struct device *dev)
 	lps22hh->dev = dev;
 
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
-	k_sem_init(&lps22hh->gpio_sem, 0, K_SEM_MAX_LIMIT);
+	k_sem_init(&lps22hh->intr_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lps22hh->thread, lps22hh->thread_stack,
 		       CONFIG_LPS22HH_THREAD_STACK_SIZE,
@@ -162,29 +196,48 @@ int lps22hh_init_interrupt(const struct device *dev)
 	lps22hh->work.handler = lps22hh_work_cb;
 #endif /* CONFIG_LPS22HH_TRIGGER_OWN_THREAD */
 
-	ret = gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT);
-	if (ret < 0) {
-		LOG_ERR("Could not configure gpio");
-		return ret;
-	}
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	if (cfg->i3c.bus == NULL)
+#endif
+	{
+		ret = gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Could not configure gpio");
+			return ret;
+		}
 
-	LOG_INF("%s: int on %s.%02u", dev->name, cfg->gpio_int.port->name,
-				      cfg->gpio_int.pin);
+		LOG_INF("%s: int on %s.%02u", dev->name, cfg->gpio_int.port->name,
+					      cfg->gpio_int.pin);
 
-	gpio_init_callback(&lps22hh->gpio_cb,
-			   lps22hh_gpio_callback,
-			   BIT(cfg->gpio_int.pin));
+		gpio_init_callback(&lps22hh->gpio_cb,
+				   lps22hh_gpio_callback,
+				   BIT(cfg->gpio_int.pin));
 
-	ret = gpio_add_callback(cfg->gpio_int.port, &lps22hh->gpio_cb);
-	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback");
-		return ret;
+		ret = gpio_add_callback(cfg->gpio_int.port, &lps22hh->gpio_cb);
+		if (ret < 0) {
+			LOG_ERR("Could not set gpio callback");
+			return ret;
+		}
 	}
 
 	/* enable interrupt in pulse mode */
 	if (lps22hh_int_notification_set(ctx, LPS22HH_INT_PULSED) < 0) {
 		return -EIO;
 	}
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	if (cfg->i3c.bus != NULL) {
+		/* I3C IBI does not utilize GPIO interrupt. */
+		lps22hh->i3c_dev->ibi_cb = lps22hh_ibi_cb;
+
+		if (i3c_ibi_enable(lps22hh->i3c_dev) != 0) {
+			LOG_DBG("Could not enable I3C IBI");
+			return -EIO;
+		}
+
+		return 0;
+	}
+#endif
 
 	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					       GPIO_INT_EDGE_TO_ACTIVE);
