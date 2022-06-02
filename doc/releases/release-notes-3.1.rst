@@ -225,6 +225,14 @@ Architectures
 
   * AARCH64
 
+    * Add support for GICv3 for the ARMv8 Xen Virtual Machine
+    * Fix SMP boot code to take into account multiple cores booting at the same time
+    * Add more memory mapping types for device memory
+    * Simplify and optimize switching and user mode transition code
+    * Add support for CONFIG_IRQ_OFFLOAD_NESTED
+    * Fix booting issue with FVP V8R >= 11.16.16
+    * Switch to the IRQ stack during ISR execution
+
 * Xtensa
 
   * Optimize context switches when KERNEL_COHERENCE is enabled to
@@ -340,6 +348,9 @@ Boards & SoC Support
   * stm32f401_mini
 
 * Added support for these ARM64 boards:
+
+  * NXP i.MX8MP EVK (i.MX8M Plus LPDDR4 EVK board)
+  * NXP i.MX8MM EVK (i.MX8M Mini LPDDR4 EVK board)
 
 * Removed support for these ARM boards:
 
@@ -728,6 +739,16 @@ Libraries / Subsystems
     * :c:func:`pm_device_runtime_init_suspended()` with :c:func:`pm_device_init_suspended()`
     * :c:func:`pm_device_runtime_init_off()` with :c:func:`pm_device_init_off()`
 
+* IPC
+
+  * static_vrings: Fixed WQ initialization
+  * static_vrings: Introduced atomic helpers when accessing atomic_t variables
+  * static_vrings: Moved to one WQ per instance
+  * static_vrings: Added "zephyr,priority" property in the DT to set the WQ priority of the instance
+  * static_vrings: Added configuration parameter to initialize shared memory to zero
+  * Extended API with NOCOPY functions
+  * static_vrings: Added support for NOCOPY operations
+  * Introduced inter core messaging backend (icmsg) that relies on simple inter core messaging buffer
 
 HALs
 ****
