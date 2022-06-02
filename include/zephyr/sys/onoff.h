@@ -10,7 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <zephyr/sys/notify.h>
+#include <zephyr/sys/async.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -224,36 +224,6 @@ int onoff_manager_init(struct onoff_manager *mgr,
 struct onoff_client;
 
 /**
- * @brief Signature used to notify an on-off service client of the
- * completion of an operation.
- *
- * These functions may be invoked from any context including
- * pre-kernel, ISR, or cooperative or pre-emptible threads.
- * Compatible functions must be isr-ok and not sleep.
- *
- * @param mgr the manager for which the operation was initiated.  This may be
- * null if the on-off service uses synchronous transitions.
- *
- * @param cli the client structure passed to the function that
- * initiated the operation.
- *
- * @param state the state of the machine at the time of completion,
- * restricted by ONOFF_STATE_MASK.  ONOFF_FLAG_ERROR must be checked
- * independently of whether res is negative as a machine error may
- * indicate that all future operations except onoff_reset() will fail.
- *
- * @param res the result of the operation.  Expected values are
- * service-specific, but the value shall be non-negative if the
- * operation succeeded, and negative if the operation failed.  If res
- * is negative ONOFF_FLAG_ERROR will be set in state, but if res is
- * non-negative ONOFF_FLAG_ERROR may still be set in state.
- */
-typedef void (*onoff_client_callback)(struct onoff_manager *mgr,
-				      struct onoff_client *cli,
-				      uint32_t state,
-				      int res);
-
-/**
  * @brief State associated with a client of an on-off service.
  *
  * Objects of this type are allocated by a client, which is
@@ -280,22 +250,9 @@ struct onoff_client {
 	sys_snode_t node;
 
 	/** @brief Notification configuration. */
-	struct sys_notify notify;
+	async_callback_t cb;
+	void *user_data;
 };
-
-/**
- * @brief Identify region of sys_notify flags available for
- * containing services.
- *
- * Bits of the flags field of the sys_notify structure contained
- * within the queued_operation structure at and above this position
- * may be used by extensions to the onoff_client structure.
- *
- * These bits are intended for use by containing service
- * implementations to record client-specific information and are
- * subject to other conditions of use specified on the sys_notify API.
- */
-#define ONOFF_CLIENT_EXTENSION_POS SYS_NOTIFY_EXTENSION_POS
 
 /**
  * @brief Test whether an on-off service has recorded an error.

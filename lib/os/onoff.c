@@ -119,24 +119,6 @@ static void set_state(struct onoff_manager *mgr,
 		     | (mgr->flags & ~ONOFF_STATE_MASK);
 }
 
-static int validate_args(const struct onoff_manager *mgr,
-			 struct onoff_client *cli)
-{
-	if ((mgr == NULL) || (cli == NULL)) {
-		return -EINVAL;
-	}
-
-	int rv = sys_notify_validate(&cli->notify);
-
-	if ((rv == 0)
-	    && ((cli->notify.flags
-		 & ~BIT_MASK(ONOFF_CLIENT_EXTENSION_POS)) != 0)) {
-		rv = -EINVAL;
-	}
-
-	return rv;
-}
-
 int onoff_manager_init(struct onoff_manager *mgr,
 		       const struct onoff_transitions *transitions)
 {
@@ -167,20 +149,15 @@ static void notify_monitors(struct onoff_manager *mgr,
 
 static void notify_one(struct onoff_manager *mgr,
 		       struct onoff_client *cli,
-		       uint32_t state,
 		       int res)
 {
-	onoff_client_callback cb =
-		(onoff_client_callback)sys_notify_finalize(&cli->notify, res);
-
-	if (cb) {
-		cb(mgr, cli, state, res);
+	if (cli->cb) {
+		cli->cb(mgr, res, cli->user_data);
 	}
 }
 
 static void notify_all(struct onoff_manager *mgr,
 		       sys_slist_t *list,
-		       uint32_t state,
 		       int res)
 {
 	while (!sys_slist_is_empty(list)) {
@@ -190,7 +167,7 @@ static void notify_all(struct onoff_manager *mgr,
 				     struct onoff_client,
 				     node);
 
-		notify_one(mgr, cli, state, res);
+		notify_one(mgr, cli, res);
 	}
 }
 
@@ -387,7 +364,7 @@ static void process_event(struct onoff_manager *mgr,
 			}
 
 			if (!sys_slist_is_empty(&clients)) {
-				notify_all(mgr, &clients, state, res);
+				notify_all(mgr, &clients, res);
 			}
 
 			if (transit != NULL) {
@@ -422,14 +399,12 @@ out:
 int onoff_request(struct onoff_manager *mgr,
 		  struct onoff_client *cli)
 {
+	__ASSERT_NO_MSG(mgr != NULL);
+	__ASSERT_NO_MSG(cli != NULL);
 	bool add_client = false;        /* add client to pending list */
 	bool start = false;             /* trigger a start transition */
 	bool notify = false;            /* do client notification */
-	int rv = validate_args(mgr, cli);
-
-	if (rv < 0) {
-		return rv;
-	}
+	int rv;
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
 	uint32_t state = mgr->flags & ONOFF_STATE_MASK;
@@ -469,7 +444,7 @@ out:
 		k_spin_unlock(&mgr->lock, key);
 
 		if (notify) {
-			notify_one(mgr, cli, state, 0);
+			notify_one(mgr, cli, 0);
 		}
 	}
 
@@ -510,16 +485,13 @@ out:
 int onoff_reset(struct onoff_manager *mgr,
 		struct onoff_client *cli)
 {
+	__ASSERT_NO_MSG(mgr != NULL);
+	__ASSERT_NO_MSG(cli != NULL);
 	bool reset = false;
-	int rv = validate_args(mgr, cli);
+	int rv;
 
-	if ((rv >= 0)
-	    && (mgr->transitions->reset == NULL)) {
-		rv = -ENOTSUP;
-	}
-
-	if (rv < 0) {
-		return rv;
+	if (mgr->transitions->reset == NULL) {
+		return -ENOTSUP;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
@@ -649,7 +621,7 @@ int onoff_sync_finalize(struct onoff_sync_service *srv,
 		 * to off, so no client should have been passed.
 		 */
 		__ASSERT_NO_MSG(on);
-		notify_one(NULL, cli, state, res);
+		notify_one(NULL, cli, res);
 	}
 
 	return rv;
