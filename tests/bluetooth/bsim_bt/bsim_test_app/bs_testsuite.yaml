@@ -1,0 +1,76 @@
+common:
+  extra_args:
+    - "-DCMAKE_C_FLAGS='-Werror'"
+    - "-DCONFIG_COVERAGE=y"
+    - "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+
+tests:
+  bluetooth.bsim.app_split:
+    extra_args:
+      - "-DCONF_FILE=prj_split.conf"
+    bsim_config:
+      built_exe_name: "bs_nrf52_bsim_bluetooth_bsim_app_split"
+      devices:
+        - testid: peripheral
+          extra_run_args:
+            - "-RealEncryption=0"
+            - "-rs=23"
+        - testid: central
+          extra_run_args:
+            - "-RealEncryption=0"
+            - "-rs=6"
+      physical_layer:
+        name: bs_2G4_phy_v1
+        sim_length: 20e6
+
+  bluetooth.bsim.app_split_encrypted:
+    extra_args:
+      - "-DCONF_FILE=prj_split.conf"
+    bsim_config:
+      built_exe_name: "bs_nrf52_bsim_bluetooth_bsim_app_split"
+      devices:
+        - testid: peripheral
+          extra_run_args:
+            - "-RealEncryption=1"
+            - "-rs=23"
+        - testid: central_encrypted
+          extra_run_args:
+            - "-RealEncryption=1"
+            - "-rs=6"
+      physical_layer:
+        name: bs_2G4_phy_v1
+        sim_length: 20e6
+
+  bluetooth.bsim.app_split_low_lat:
+    extra_args:
+      - "-DCONF_FILE=prj_split_low_lat.conf"
+    bsim_config:
+      devices:
+        - testid: peripheral
+          extra_run_args:
+            - "-RealEncryption=0"
+            - "-rs=23"
+        - testid: central
+          extra_run_args:
+            - "-RealEncryption=0"
+            - "-rs=6"
+      physical_layer:
+        name: bs_2G4_phy_v1
+        sim_length: 20e6
+
+  bluetooth.bsim.app_split_privacy_encrypted:
+    extra_args:
+      - "-DCONF_FILE=prj_split_privacy.conf"
+    bsim_config:
+      devices:
+        - testid: peripheral
+          extra_run_args:
+            - "-RealEncryption=1"
+            - "-rs=23"
+        - testid: central_encrypted
+          extra_run_args:
+            - "-RealEncryption=1"
+            - "-rs=6"
+      physical_layer:
+        name: bs_2G4_phy_v1
+        sim_length: 20e6

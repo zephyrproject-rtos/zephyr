@@ -1,0 +1,49 @@
+common:
+  extra_args:
+    - "-DCMAKE_C_FLAGS='-Werror'"
+    - "-DCONFIG_COVERAGE=y"
+    - "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+  bsim_config:
+    devices:
+      - testid: central
+      - testid: peripheral
+    physical_layer:
+      name: bs_2G4_phy_v1
+      sim_length: 200e6
+
+tests:
+  bluetooth.bsim.eatt_encryption:
+    extra_args:
+      - "-DCONF_FILE=prj_encryption.conf"
+
+  bluetooth.bsim.eatt_collision:
+    extra_args:
+      - "-DCONF_FILE=prj_collision.conf"
+
+  bluetooth.bsim.eatt_multiple_conn:
+    extra_args:
+      - "-DCONF_FILE=prj_multiple_conn.conf"
+
+  bluetooth.bsim.eatt_autoconnect:
+    extra_args:
+      - "-DCONF_FILE=prj_autoconnect.conf"
+    bsim_config:
+      built_exe_name: "bs_nrf52_bsim_bluetooth_bsim_eatt_autoconnect"
+      devices:
+        - testid: central_autoconnect
+        - testid: peripheral_autoconnect
+      physical_layer:
+        name: bs_2G4_phy_v1
+        sim_length: 200e6
+
+  bluetooth.bsim.eatt_reconfigure:
+    extra_args:
+      - "-DCONF_FILE=prj_autoconnect.conf"
+    bsim_config:
+      built_exe_name: "bs_nrf52_bsim_bluetooth_bsim_eatt_autoconnect"
+      devices:
+        - testid: central_reconfigure
+        - testid: peripheral_reconfigure
+      physical_layer:
+        name: bs_2G4_phy_v1
+        sim_length: 60e6
