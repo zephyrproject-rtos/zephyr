@@ -401,6 +401,10 @@ Drivers and Sensors
 
 * Disk
 
+  * Added generic SDMMC disk driver, that uses the SD subsystem to interact with
+    disk devices. This disk driver will be used with any disk device declared
+    with the :dtcompatible:`zephyr,sdmmc-disk` compatible string
+
 * Display
 
   * STM32: Added basic support for LTDC driver. Currently supported on F4, F7, H7, L4+
