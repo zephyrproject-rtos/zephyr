@@ -70,7 +70,7 @@ void test_isr_dynamic(void)
  */
 #if defined(CONFIG_X86)
 #define IV_IRQS 32	/* start of vectors available for x86 IRQs */
-#define TEST_IRQ_DYN_LINE 16
+#define TEST_IRQ_DYN_LINE 25
 
 #elif defined(CONFIG_ARCH_POSIX)
 #define TEST_IRQ_DYN_LINE 5
