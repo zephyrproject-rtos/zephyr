@@ -160,18 +160,17 @@ static int w5500_command(const struct device *dev, uint8_t cmd)
 	uint64_t end = sys_clock_timeout_end_calc(K_MSEC(100));
 
 	w5500_spi_write(dev, W5500_S0_CR, &cmd, 1);
-	do {
+	while (1) {
+		w5500_spi_read(dev, W5500_S0_CR, &reg, 1);
+		if (!reg) {
+			break;
+			}
 		int64_t remaining = end - sys_clock_tick_get();
-
 		if (remaining <= 0) {
 			return -EIO;
+			}
+		k_busy_wait(W5500_PHY_ACCESS_DELAY);
 		}
-
-		w5500_spi_read(dev, W5500_S0_CR, &reg, 1);
-
-		k_msleep(1);
-	} while (reg != 0);
-
 	return 0;
 }
 
