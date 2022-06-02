@@ -651,6 +651,12 @@ Build and Infrastructure
 Libraries / Subsystems
 **********************
 
+* C++ Subsystem
+
+  * Renamed all C++ source and header files to use the ``cpp`` and ``hpp``
+    extensions, respectively. All Zephyr upstream C++ source and header files
+    are now required to use these extensions.
+
 * Management
 
   * MCUMGR has been migrated from using TinyCBOR, for CBOR encoding, to zcbor.
