@@ -23,7 +23,7 @@ static void start_scan(void);
 static struct bt_conn *default_conn;
 static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
-static uint32_t sn;
+static uint32_t seq_num;
 static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8,
 			  NULL);
@@ -62,7 +62,7 @@ static void iso_timer_timeout(struct k_work *work)
 
 	net_buf_add_mem(buf, buf_data, len_to_send);
 
-	ret = bt_iso_chan_send(&iso_chan, buf, sn++, BT_ISO_TIMESTAMP_NONE);
+	ret = bt_iso_chan_send(&iso_chan, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
 
 	if (ret < 0) {
 		printk("Failed to send ISO data (%d)\n", ret);
@@ -130,7 +130,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
 
-	sn = 0U;
+	seq_num = 0U;
 
 	/* Start send timer */
 	k_work_schedule(&iso_send_work, K_MSEC(0));

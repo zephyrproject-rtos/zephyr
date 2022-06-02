@@ -598,7 +598,7 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		flags = bt_iso_pkt_flags(len);
 		len = bt_iso_pkt_len(len);
 		pkt_seq_no = sys_le16_to_cpu(hdr->sn);
-		iso_info(buf)->sn = pkt_seq_no;
+		iso_info(buf)->seq_num = pkt_seq_no;
 		if (flags == BT_ISO_DATA_VALID) {
 			iso_info(buf)->flags |= BT_ISO_FLAGS_VALID;
 		} else if (flags == BT_ISO_DATA_INVALID) {
@@ -702,7 +702,7 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 
 #if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
-		     uint32_t sn, uint32_t ts)
+		     uint32_t seq_num, uint32_t ts)
 {
 	struct bt_conn *iso_conn;
 
@@ -730,20 +730,20 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 	 * the sequence number which should provide ample room to handle
 	 * applications that does not send an SDU every interval.
 	 */
-	if (sn <= iso_conn->iso.seq_num &&
+	if (seq_num <= iso_conn->iso.seq_num &&
 	    iso_conn->iso.seq_num < BT_ISO_MAX_SEQ_NUM) {
-		BT_DBG("Invalid sn %u - Shall be > than %u",
-		       sn, iso_conn->iso.seq_num);
+		BT_DBG("Invalid seq_num %u - Shall be > than %u",
+		       seq_num, iso_conn->iso.seq_num);
 		return -EINVAL;
 	}
 
-	iso_conn->iso.seq_num = sn;
+	iso_conn->iso.seq_num = seq_num;
 
 	if (ts == BT_ISO_TIMESTAMP_NONE) {
 		struct bt_hci_iso_data_hdr *hdr;
 
 		hdr = net_buf_push(buf, sizeof(*hdr));
-		hdr->sn = sys_cpu_to_le16((uint16_t)sn);
+		hdr->sn = sys_cpu_to_le16((uint16_t)seq_num);
 		hdr->slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(net_buf_frags_len(buf)
 								- sizeof(*hdr),
 								BT_ISO_DATA_VALID));
@@ -752,7 +752,7 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
 
 		hdr = net_buf_push(buf, sizeof(*hdr));
 		hdr->ts = ts;
-		hdr->data.sn = sys_cpu_to_le16((uint16_t)sn);
+		hdr->data.sn = sys_cpu_to_le16((uint16_t)seq_num);
 		hdr->data.slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(net_buf_frags_len(buf)
 								     - sizeof(*hdr),
 								     BT_ISO_DATA_VALID));

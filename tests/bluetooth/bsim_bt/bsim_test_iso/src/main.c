@@ -86,7 +86,7 @@ static struct bt_iso_chan bis_iso_chan = {
 
 #define BIS_ISO_CHAN_COUNT 1
 static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = { &bis_iso_chan };
-static uint32_t sn;
+static uint32_t seq_num;
 
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
@@ -109,7 +109,7 @@ static isoal_status_t test_sink_sdu_alloc(const struct isoal_sink    *sink_ctx,
 static isoal_status_t test_sink_sdu_emit(const struct isoal_sink         *sink_ctx,
 					 const struct isoal_sdu_produced *valid_sdu)
 {
-	printk("Vendor sink SDU len %u, sn %u, ts %u\n",
+	printk("Vendor sink SDU len %u, seq_num %u, ts %u\n",
 		sink_ctx->sdu_production.sdu_written, valid_sdu->seqn,
 		valid_sdu->timestamp);
 	is_iso_vs_emitted = true;
@@ -257,7 +257,7 @@ static void test_iso_main(void)
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	sys_put_le32(++iso_send_count, iso_data);
 	net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-	err = bt_iso_chan_send(&bis_iso_chan, buf, sn++, BT_ISO_TIMESTAMP_NONE);
+	err = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
 	if (err < 0) {
 		net_buf_unref(buf);
 		FAIL("Unable to broadcast data (%d)", err);
@@ -346,15 +346,15 @@ static const char *phy2str(uint8_t phy)
 static void iso_recv(struct bt_iso_chan *chan,
 		     const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
-	printk("Incoming data channel %p len %u, flags %u, sn %u, ts %u\n",
-		chan, buf->len, info->flags, info->sn, info->ts);
+	printk("Incoming data channel %p len %u, flags %u, seq_num %u, ts %u\n",
+		chan, buf->len, info->flags, info->seq_num, info->ts);
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
 
-	sn = 0U;
+	seq_num = 0U;
 	is_iso_connected = true;
 }
 

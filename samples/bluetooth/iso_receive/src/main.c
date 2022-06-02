@@ -221,9 +221,9 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	}
 
 	str_len = bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
-	printk("Incoming data channel %p flags 0x%x sn %u ts %u len %u: %s "
-	       "(counter value %u)\n", chan, info->flags, info->sn, info->ts,
-	       buf->len, data_str, count);
+	printk("Incoming data channel %p flags 0x%x seq_num %u ts %u len %u: "
+	       "%s (counter value %u)\n", chan, info->flags, info->seq_num,
+	       info->ts, buf->len, data_str, count);
 }
 
 static void iso_connected(struct bt_iso_chan *chan)

@@ -371,7 +371,7 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 
 	BT_DBG("stream %p ep %p dir %u", chan, ep, ep != NULL ? ep->dir : 0);
 
-	ep->sn = 0U;
+	ep->seq_num = 0U;
 
 	if (ep->status.state != BT_AUDIO_EP_STATE_ENABLING) {
 		BT_DBG("endpoint not in enabling state: %s",

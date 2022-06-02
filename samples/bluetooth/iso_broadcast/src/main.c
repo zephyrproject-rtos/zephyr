@@ -17,13 +17,13 @@ NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
 static K_SEM_DEFINE(sem_big_cmplt, 0, 1);
 static K_SEM_DEFINE(sem_big_term, 0, 1);
 
-static uint32_t sn;
+static uint32_t seq_num;
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
 	printk("ISO Channel %p connected\n", chan);
 
-	sn = 0U;
+	seq_num = 0U;
 
 	k_sem_give(&sem_big_cmplt);
 }
@@ -138,7 +138,7 @@ void main(void)
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 		sys_put_le32(++iso_send_count, iso_data);
 		net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-		ret = bt_iso_chan_send(&bis_iso_chan, buf, sn++,
+		ret = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++,
 				       BT_ISO_TIMESTAMP_NONE);
 		if (ret < 0) {
 			printk("Unable to broadcast data: %d", ret);

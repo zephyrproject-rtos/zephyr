@@ -64,7 +64,7 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 		struct net_buf *buf)
 {
 	shell_print(ctx_shell, "Incoming data channel %p len %u, seq: %d, ts: %d",
-		    chan, buf->len, info->sn, info->ts);
+		    chan, buf->len, info->seq_num, info->ts);
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
