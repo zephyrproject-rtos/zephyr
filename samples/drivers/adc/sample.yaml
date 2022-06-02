@@ -15,4 +15,4 @@ tests:
       type: multi_line
       regex:
         - "ADC reading:"
-        - " - .+, channel \\d+: \\d+"
+        - "- .+, channel \\d+: -?\\d+"

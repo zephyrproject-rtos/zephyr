@@ -141,7 +141,7 @@ void main(void)
 	while (1) {
 		printk("ADC reading:\n");
 		for (uint8_t i = 0; i < ARRAY_SIZE(adc_channels); i++) {
-			printk(" - %s, channel %d: ",
+			printk("- %s, channel %d: ",
 				adc_labels[i], adc_channels[i].channel_id);
 
 			prepare_sequence(&sequence, &adc_channels[i]);
