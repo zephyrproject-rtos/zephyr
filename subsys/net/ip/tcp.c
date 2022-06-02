@@ -1020,6 +1020,11 @@ static int tcp_unsent_len(struct tcp *conn)
 	}
 
 	unsent_len = conn->send_data_total - conn->unacked_len;
+	if (conn->unacked_len >= conn->send_win) {
+		unsent_len = 0;
+	} else {
+		unsent_len = MIN(unsent_len, conn->send_win - conn->unacked_len);
+	}
  out:
 	NET_DBG("unsent_len=%d", unsent_len);
 
@@ -1092,19 +1097,10 @@ static int tcp_send_queued_data(struct tcp *conn)
 	}
 
 	while (tcp_unsent_len(conn) > 0) {
-		if (tcp_window_full(conn)) {
-			subscribe = true;
-			break;
-		}
-
 		ret = tcp_send_data(conn);
 		if (ret < 0) {
 			break;
 		}
-	}
-
-	if (tcp_window_full(conn)) {
-		(void)k_sem_take(&conn->tx_sem, K_NO_WAIT);
 	}
 
 	if (conn->send_data_total) {
@@ -2070,6 +2066,10 @@ next_state:
 				close_status = ret;
 				break;
 			}
+
+			if (tcp_window_full(conn)) {
+				(void)k_sem_take(&conn->tx_sem, K_NO_WAIT);
+			}
 		}
 
 		if (th) {
@@ -2377,6 +2377,10 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 			k_work_cancel_delayable(&conn->send_data_timer);
 		}
 	} else {
+		if (tcp_window_full(conn)) {
+			(void)k_sem_take(&conn->tx_sem, K_NO_WAIT);
+		}
+
 		/* We should not free the pkt if there was an error. It will be
 		 * freed in net_context.c:context_sendto()
 		 */
