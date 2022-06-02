@@ -1,0 +1,17 @@
+# SCD4x co2, temperature, and humidity sensor configuration options
+
+# Copyright (c) 2022 Stephen Oliver
+# SPDX-License-Identifier: Apache-2.0
+
+config SCD4X
+	bool "SCD4x CO2/Temperature/Humidity Sensor"
+	depends on I2C
+	help
+	  Enable driver for SCD4x co2, temperature, and humidity sensors.
+
+config SCD4X_POWER_DOWN_SINGLE_SHOT_MEASUREMENT
+	bool "SCD41 only: power down sensor between single-shot measurements"
+	depends on SCD4X
+	help
+	  Will send the power_down command to the sensor after a measurement, and wake it up again
+	  before the next measurement. Only works on SCD41 model.

@@ -1,0 +1,61 @@
+#
+# Copyright (c) 2022, Stephen Oliver
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion SCD4x co2, humidity, and temperature sensor
+
+compatible: "sensirion,scd4x"
+
+include: i2c-device.yaml
+
+properties:
+  model:
+    type: string
+    required: true
+    description: |
+      The sensor model in use
+    enum:
+        - "scd40"
+        - "scd41"
+  measure-mode:
+    type: string
+    required: true
+    description: |
+      Normal: Background measurement produces a new sample every 5 seconds
+
+      Low power mode (SCD41 only): Similar to normal mode, sensor uses 3mA
+      rather than 13-18mA. Produces a new sample every 30 seconds.
+
+      Single-shot mode (SCD41 only): Similar to low-power mode but samples immediately
+      after sensor_sample_fetch() is called. See scd4x driver Kconfig options to
+      put sensor to sleep between samples.
+    enum:
+        - "normal"
+        - "low-power"
+        - "single-shot"
+  auto-calibration:
+    type: boolean
+    required: false
+    description: |
+       Recalibrates the sensor's 400ppm reference level to match lowest CO2 level seen in
+       past 7 days (assumed to be outdoor air). Disable if the sensor is never exposed to
+       outdoor air to avoid severe accuracy drift.
+  temperature-offset:
+    type: int
+    required: true
+    default: 4
+    description: |
+      Degrees centigrade. Sensor subtracts this from temperature before calculating
+      humidity. Does not affect CO2 sample. Use when sensor is inside a device that
+      is hotter than ambient temperature.
+  altitude:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Meters above sea level, improves CO2 accuracy. Sensor uses it to calculate
+      ambient pressure.
+      
+      The scd4x_set_ambient_pressure() function in the driver can be called at any
+      time to update the sensor calculations, which will override the altitude setting.
