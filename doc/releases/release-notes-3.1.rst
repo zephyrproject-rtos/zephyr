@@ -433,8 +433,6 @@ Drivers and Sensors
   * Adds support for Intel HDA for audio device and host streams.
   * Fixes for NXP eDMA to pass scatter gather tests
 
-* EEPROM
-
 * Entropy
 
   * STM32: Prevent  core to enter stop modes during entropy operations.
