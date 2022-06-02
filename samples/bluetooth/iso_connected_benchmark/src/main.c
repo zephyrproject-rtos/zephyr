@@ -52,7 +52,7 @@ struct iso_chan_work {
 	struct bt_iso_chan chan;
 	struct k_work_delayable send_work;
 	struct bt_iso_info info;
-	uint32_t sn;
+	uint32_t seq_num;
 } iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 
 static enum benchmark_role role;
@@ -172,7 +172,7 @@ static void iso_send(struct bt_iso_chan *chan)
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, iso_data, iso_tx_qos.sdu);
 
-	ret = bt_iso_chan_send(chan, buf, chan_work->sn++,
+	ret = bt_iso_chan_send(chan, buf, chan_work->seq_num++,
 			       BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		LOG_ERR("Unable to send data: %d", ret);
@@ -279,7 +279,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 	iso_conn_start_time = k_uptime_get();
 
 	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
-	chan_work->sn = 0U;
+	chan_work->seq_num = 0U;
 
 	k_sem_give(&sem_iso_connected);
 }
