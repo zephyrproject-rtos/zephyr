@@ -223,6 +223,8 @@ Architectures
 
   * AARCH32
 
+    * Added Cortex-R floating point support
+
   * AARCH64
 
 * Xtensa
