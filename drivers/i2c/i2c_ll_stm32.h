@@ -64,6 +64,9 @@ struct i2c_stm32_data {
 #ifdef CONFIG_I2C_TARGET
 	bool master_active;
 	struct i2c_target_config *slave_cfg;
+#ifdef CONFIG_I2C_STM32_V2
+	struct i2c_target_config *slave2_cfg;
+#endif
 	bool slave_attached;
 #endif
 };
