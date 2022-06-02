@@ -46,7 +46,7 @@
 #include "posix_arch_internal.h"
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include "kernel_internal.h"
-#include "kernel_structs.h"
+#include <zephyr/kernel_structs.h>
 #include "ksched.h"
 #include "kswap.h"
 

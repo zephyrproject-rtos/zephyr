@@ -849,6 +849,9 @@ void ll_reset(void)
 	err = ull_df_reset();
 	LL_ASSERT(!err);
 #endif
+
+	/* clear static random address */
+	(void)ll_addr_set(1U, NULL);
 }
 
 /**
@@ -1947,13 +1950,19 @@ void *ull_prepare_dequeue_iter(uint8_t *idx)
 
 void ull_prepare_dequeue(uint8_t caller_id)
 {
+	void *param_resume_head = NULL;
+	void *param_resume_next = NULL;
 	struct lll_event *next;
 
 	next = ull_prepare_dequeue_get();
 	while (next) {
+		void *param = next->prepare_param.param;
 		uint8_t is_aborted = next->is_aborted;
 		uint8_t is_resume = next->is_resume;
 
+		/* Let LLL invoke the `prepare` interface if radio not in active
+		 * use. Otherwise, enqueue at end of the prepare pipeline queue.
+		 */
 		if (!is_aborted) {
 			static memq_link_t link;
 			static struct mayfly mfy = {0, 0, &link, NULL,
@@ -1968,10 +1977,46 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 		MFIFO_DEQUEUE(prep);
 
+		/* Check for anymore more prepare elements in queue */
 		next = ull_prepare_dequeue_get();
-
-		if (!next || (!is_aborted && (!is_resume || next->is_resume))) {
+		if (!next) {
 			break;
+		}
+
+		/* A valid prepare element has its `prepare` invoked or was
+		 * enqueued back into prepare pipeline.
+		 */
+		if (!is_aborted) {
+			/* The prepare element was not a resume event, it would
+			 * use the radio or was enqueued back into prepare
+			 * pipeline with a preempt timeout being set.
+			 */
+			if (!is_resume) {
+				break;
+			}
+
+			/* Remember the first encountered resume and the next
+			 * resume element in the prepare pipeline so that we do
+			 * not infinitely loop through the resume events in
+			 * prepare pipeline.
+			 */
+			if (!param_resume_head) {
+				param_resume_head = param;
+			} else if (!param_resume_next) {
+				param_resume_next = param;
+			}
+
+			/* Stop traversing the prepare pipeline when we reach
+			 * back to the first or next resume event where we
+			 * initially started processing the prepare pipeline.
+			 */
+			if (next->is_resume &&
+			    ((next->prepare_param.param ==
+			      param_resume_head) ||
+			     (next->prepare_param.param ==
+			      param_resume_next))) {
+				break;
+			}
 		}
 	}
 }

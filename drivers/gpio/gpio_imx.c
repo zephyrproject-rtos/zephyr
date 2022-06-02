@@ -14,7 +14,7 @@
 #include <gpio_imx.h>
 #include <string.h>
 #ifdef CONFIG_PINCTRL
-#include <drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl.h>
 #endif
 
 #include "gpio_utils.h"

@@ -141,17 +141,17 @@
 		/* 96K */
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x00018000>;
+			reg = <0x00000000 0x00018000>;
 		};
 		/* 396K */
 		slot0_partition: partition@18000 {
 			label = "image-0";
-			reg = <0x00018000 0x000063000>;
+			reg = <0x00018000 0x00063000>;
 		};
 		/* 396K */
 		slot1_partition: partition@7b000 {
 			label = "image-1";
-			reg = <0x0007b000 0x000063000>;
+			reg = <0x0007b000 0x00063000>;
 		};
 		/* 8K */
 		scratch_partition: partition@de000 {

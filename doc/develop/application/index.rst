@@ -917,7 +917,7 @@ again.
 
 .. note::
 
-   If the (Linux only) :ref:`Zephyr SDK <zephyr_sdk>` is installed, the ``run``
+   If the (Linux only) :ref:`Zephyr SDK <toolchain_zephyr_sdk>` is installed, the ``run``
    target will use the SDK's QEMU binary by default. To use another version of
    QEMU, :ref:`set the environment variable <env_vars>` :envvar:`QEMU_BIN_PATH`
    to the path of the QEMU binary you want to use instead.
@@ -1312,7 +1312,7 @@ Generate and Import an Eclipse Project
 ======================================
 
 #. Set up a GNU Arm Embedded toolchain as described in
-   :ref:`third_party_x_compilers`.
+   :ref:`toolchain_gnuarmemb`.
 
 #. Navigate to a folder outside of the Zephyr tree to build your application.
 

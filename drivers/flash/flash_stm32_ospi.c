@@ -8,7 +8,7 @@
 
 #include <errno.h>
 #include <zephyr/kernel.h>
-#include <toolchain.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/arch/common/ffs.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>

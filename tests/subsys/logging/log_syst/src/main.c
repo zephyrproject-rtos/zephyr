@@ -9,14 +9,14 @@
  * @brief Test log message
  */
 
-#include <zephyr.h>
-#include <logging/log.h>
+#include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
 #include "mock_backend.h"
-#include <sys/printk.h>
-#include <logging/log_backend.h>
-#include <logging/log_backend_std.h>
-#include <logging/log_ctrl.h>
-#include <logging/log_output.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_backend_std.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/logging/log_output.h>
 #include <tc_util.h>
 #include <stdbool.h>
 #include <ztest.h>

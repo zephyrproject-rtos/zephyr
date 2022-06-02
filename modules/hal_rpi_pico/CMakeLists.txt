@@ -36,10 +36,10 @@ if(CONFIG_HAS_RPI_PICO)
         -DPYTHON_EXECUTABLE=${Python3_EXECUTABLE}
         -DCONFIG_LEGACY_INCLUDE_PATH=$<BOOL:${CONFIG_LEGACY_INCLUDE_PATH}>
       INSTALL_COMMAND "" # No installation needed
-      BUILD_BYPRODUCTS ${rp2_bootloader_prefix}/boot_stage2.S
+      BUILD_BYPRODUCTS ${rp2_bootloader_prefix}/boot_stage2
       BUILD_ALWAYS TRUE
       )
-    zephyr_library_sources(${rp2_bootloader_prefix}/boot_stage2.S)
+    zephyr_library_sources(${rp2_bootloader_prefix}/boot_stage2)
   endif()
 
   # Pico sources and headers necessary for every build.
