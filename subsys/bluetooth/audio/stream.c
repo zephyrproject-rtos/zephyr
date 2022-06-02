@@ -76,7 +76,7 @@ int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf)
 	/* TODO: Add checks for broadcast sink */
 
 	/* TODO: Ensure that the sequence number is incremented per SDU interval */
-	return bt_iso_chan_send(stream->iso, buf, ep->sn++,
+	return bt_iso_chan_send(stream->iso, buf, ep->seq_num++,
 				BT_ISO_TIMESTAMP_NONE);
 }
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
