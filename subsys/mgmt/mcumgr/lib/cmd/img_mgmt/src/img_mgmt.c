@@ -435,7 +435,6 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 		if (action.erase) {
 			rc = img_mgmt_impl_erase_image_data(0, req.size);
 			if (rc != 0) {
-				rc = MGMT_ERR_EUNKNOWN;
 				IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 					img_mgmt_err_str_flash_erase_failed);
 				goto end;
