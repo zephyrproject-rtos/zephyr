@@ -202,12 +202,34 @@ int lll_init(void)
 	irq_enable(RADIO_IRQn);
 	irq_enable(RTC0_IRQn);
 	irq_enable(HAL_SWI_RADIO_IRQ);
-#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
-	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
-	irq_enable(HAL_SWI_JOB_IRQ);
-#endif
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) ||
+		(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+		irq_enable(HAL_SWI_JOB_IRQ);
+	}
 
 	radio_setup();
+
+	return 0;
+}
+
+int lll_deinit(void)
+{
+	int err;
+
+	/* Release clocks */
+	err = lll_clock_deinit();
+	if (err < 0) {
+		return err;
+	}
+
+	/* Disable IRQs */
+	irq_disable(RADIO_IRQn);
+	irq_disable(RTC0_IRQn);
+	irq_disable(HAL_SWI_RADIO_IRQ);
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) ||
+		(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+		irq_disable(HAL_SWI_JOB_IRQ);
+	}
 
 	return 0;
 }

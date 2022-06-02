@@ -155,13 +155,27 @@ int lll_init(void)
 	irq_enable(LL_RADIO_IRQn);
 	irq_enable(LL_RTC0_IRQn);
 	irq_enable(HAL_SWI_RADIO_IRQ);
-#if defined(CONFIG_BT_CTLR_LOW_LAT) || \
-	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
-	irq_enable(HAL_SWI_JOB_IRQ);
-#endif
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) ||
+	    (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+		irq_enable(HAL_SWI_JOB_IRQ);
+	}
 
 	/* Call it after IRQ enable to be able to measure ISR latency */
 	radio_setup();
+
+	return 0;
+}
+
+int lll_deinit(void)
+{
+	/* Disable IRQs */
+	irq_disable(LL_RADIO_IRQn);
+	irq_disable(LL_RTC0_IRQn);
+	irq_disable(HAL_SWI_RADIO_IRQ);
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) ||
+	    (CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+		irq_disable(HAL_SWI_JOB_IRQ);
+	}
 
 	return 0;
 }

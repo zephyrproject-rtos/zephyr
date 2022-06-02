@@ -699,6 +699,12 @@ int ll_init(struct k_sem *sem_rx)
 	return  0;
 }
 
+int ll_deinit(void)
+{
+	ll_reset();
+	return lll_deinit();
+}
+
 void ll_reset(void)
 {
 	int err;

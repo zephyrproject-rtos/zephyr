@@ -64,6 +64,14 @@ int lll_clock_init(void)
 	return onoff_request(mgr, &lf_cli);
 }
 
+int lll_clock_deinit(void)
+{
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
+
+	return onoff_release(mgr);
+}
+
 int lll_clock_wait(void)
 {
 	struct onoff_manager *mgr;
