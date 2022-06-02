@@ -784,10 +784,23 @@ out:
 	return paths;
 }
 
+int do_composite_read_op_for_parsed_path_senml_cbor(struct lwm2m_message *msg,
+						    sys_slist_t *lwm_path_list)
+{
+	int ret;
+
+	setup_out_fmt_data(msg);
+
+	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SENML_CBOR, lwm_path_list);
+
+	clear_out_fmt_data(msg);
+
+	return ret;
+}
+
 
 int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 {
-	int ret;
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm_path_list;
 	sys_slist_t lwm_path_free_list;
@@ -807,13 +820,7 @@ int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 
 	lwm2m_engine_clear_duplicate_path(&lwm_path_list, &lwm_path_free_list);
 
-	setup_out_fmt_data(msg);
-
-	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SENML_CBOR, &lwm_path_list);
-
-	clear_out_fmt_data(msg);
-
-	return ret;
+	return do_composite_read_op_for_parsed_path_senml_cbor(msg, &lwm_path_free_list);
 }
 
 
