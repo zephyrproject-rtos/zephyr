@@ -1,0 +1,15 @@
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	scd4x@62 {
+		status = "okay";
+		compatible = "sensirion,scd4x";
+		reg = <0x62>;
+		label = "SCD4X";
+        model = "scd40";
+        altitude = <0>;
+        measure-mode = "normal";
+        temperature-offset = <4>;
+		auto-calibration;
+	};
+};

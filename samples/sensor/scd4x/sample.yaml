@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2022 Stephen Oliver
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: SCD4X Sensor Sample
+tests:
+  sample.sensor.scd4x:
+    build_only: true
+    platform_allow: esp32
+    tags: sensors

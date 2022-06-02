@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2022 Stephen Oliver
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "SCD4X sample application"
+
+config APP_USE_FAHRENHEIT
+	bool "Display fahrenheit temperature in console"
+	default n
+	help
+		Converts temperature value from sensor before logging
+
+source "Kconfig.zephyr"
