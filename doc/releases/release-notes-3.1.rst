@@ -454,6 +454,11 @@ Drivers and Sensors
 
 * I2C
 
+  * Arbitrary i2c clock speed support with :c:macro:`I2C_SPEED_DT`
+  * NXP flexcomm supports target (slave) mode
+  * Fixes for Atmel SAM/SAM0 exclusive bus access
+  * Added ITE support
+
 * I2S
 
 * Interrupt Controller
