@@ -1008,6 +1008,18 @@ Trusted Firmware-m
 Documentation
 *************
 
+* Reorganised and consolidated documentation for improved readability and
+  user experience.
+* Replaced the existing statically rendered Kconfig documentation with the new
+  Kconfig documentation engine that dynamically renders the Kconfig contents
+  for improved search performance.
+* Added 'Language Support' sub-category under the 'Developing with Zephyr'
+  category that provides details regarding C and C++ language and standard
+  library support status.
+* Added 'Toolchain' sub-category under the 'Developing with Zephyr' category
+  that lists all supported toolchains and the instructions on how to configure
+  and use them.
+
 Tests and Samples
 *****************
 
