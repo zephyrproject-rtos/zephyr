@@ -5,6 +5,7 @@ import shutil
 import pytest
 import json
 from test_utils.TestsuiteYamlParser import TestsuiteYamlParser
+from test_utils.BabbleSimBuild import BabbleSimBuild
 from test_utils.BabbleSimError import BabbleSimError
 
 LOGGER_NAME = "bsim_plugin"
@@ -197,6 +198,15 @@ class YamlItem(pytest.Item):
         logger.info("Start test: %s", self.name)
 
         os.makedirs(self.test_out_path)
+
+        bs_builder = BabbleSimBuild(
+            self.test_src_path,
+            self.test_out_path,
+            self.build_info_file_path,
+            self.general_exe_name,
+            self.extra_build_args
+        )
+        bs_builder.build()
 
     def repr_failure(self, excinfo, style=None):
         """Called when self.runtest() raises an exception."""
