@@ -121,7 +121,7 @@ static void test_onoff_interrupted(void)
 		zassert_equal(err, 0, NULL);
 		backoff = 3 * rand;
 
-		sys_notify_init_spinwait(&cli.notify);
+		cli.cb = NULL;
 		err = onoff_request(hf_mgr, &cli);
 		zassert_true(err >= 0, NULL);
 
@@ -164,7 +164,7 @@ static void onoff_timeout_handler(struct k_timer *timer)
 		zassert_true(err >= 0, NULL);
 	} else {
 		on = true;
-		sys_notify_init_spinwait(&cli.notify);
+		cli.cb = NULL;
 		err = onoff_request(hf_mgr, &cli);
 		zassert_true(err >= 0, "%d: Unexpected err: %d", cnt, err);
 	}

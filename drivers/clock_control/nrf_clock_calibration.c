@@ -41,12 +41,8 @@ static volatile int total_cnt; /* Total number of calibrations. */
 static volatile int total_skips_cnt; /* Total number of skipped calibrations. */
 
 
-static void cal_hf_callback(struct onoff_manager *mgr,
-			    struct onoff_client *cli,
-			    uint32_t state, int res);
-static void cal_lf_callback(struct onoff_manager *mgr,
-			    struct onoff_client *cli,
-			    uint32_t state, int res);
+static void cal_hf_callback(void *mgr, int res, void *user_data);
+static void cal_lf_callback(void *mgr, int res, void *user_data);
 
 static struct onoff_client cli;
 static struct onoff_manager *mgrs;
@@ -60,11 +56,11 @@ static void timeout_handler(struct k_timer *timer);
 static K_TIMER_DEFINE(backoff_timer, timeout_handler, NULL);
 
 static void clk_request(struct onoff_manager *mgr, struct onoff_client *cli,
-			onoff_client_callback callback)
+			async_callback_t callback)
 {
 	int err;
 
-	sys_notify_init_callback(&cli->notify, callback);
+	cli->cb = callback;
 	err = onoff_request(mgr, cli);
 	__ASSERT_NO_MSG(err >= 0);
 }
@@ -97,10 +93,11 @@ static void lf_release(void)
 	clk_release(&mgrs[CLOCK_CONTROL_NRF_TYPE_LFCLK]);
 }
 
-static void cal_lf_callback(struct onoff_manager *mgr,
-			    struct onoff_client *cli,
-			    uint32_t state, int res)
+static void cal_lf_callback(void *mgr, int res, void *user_data)
 {
+	ARG_UNUSED(mgr);
+	ARG_UNUSED(res);
+	ARG_UNUSED(user_data);
 	hf_request();
 }
 
@@ -153,10 +150,12 @@ static void timeout_handler(struct k_timer *timer)
 /* Called when HFCLK XTAL is on. Schedules temperature measurement or triggers
  * calibration.
  */
-static void cal_hf_callback(struct onoff_manager *mgr,
-			    struct onoff_client *cli,
-			    uint32_t state, int res)
+static void cal_hf_callback(void *mgr, int res, void *user_data)
 {
+	ARG_UNUSED(mgr);
+	ARG_UNUSED(res);
+	ARG_UNUSED(user_data);
+
 	if ((temp_sensor == NULL) || !IS_ENABLED(CONFIG_MULTITHREADING)) {
 		start_hw_cal();
 	} else {

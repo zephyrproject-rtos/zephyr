@@ -29,11 +29,9 @@ struct lll_clock_state {
 static struct onoff_client lf_cli;
 static atomic_val_t hf_refcnt;
 
-static void clock_ready(struct onoff_manager *mgr, struct onoff_client *cli,
-			uint32_t state, int res)
+static void clock_ready(void *mgr, int res, void *user_data)
 {
-	struct lll_clock_state *clk_state =
-		CONTAINER_OF(cli, struct lll_clock_state, cli);
+	struct lll_clock_state *clk_state = (struct lll_clock_state *)user_data;
 
 	k_sem_give(&clk_state->sem);
 }
@@ -45,7 +43,8 @@ static int blocking_on(struct onoff_manager *mgr, uint32_t timeout)
 	int err;
 
 	k_sem_init(&state.sem, 0, 1);
-	sys_notify_init_callback(&state.cli.notify, clock_ready);
+	state.cli.cb = clock_ready;
+	state.cli.user_data = &state;
 	err = onoff_request(mgr, &state.cli);
 	if (err < 0) {
 		return err;
@@ -59,7 +58,7 @@ int lll_clock_init(void)
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
 
-	sys_notify_init_spinwait(&lf_cli.notify);
+	lf_cli.cb = NULL;
 
 	return onoff_request(mgr, &lf_cli);
 }

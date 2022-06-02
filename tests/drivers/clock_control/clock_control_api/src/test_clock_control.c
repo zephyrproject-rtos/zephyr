@@ -87,6 +87,11 @@ static void setup_instance(const char *dev_name, clock_control_subsys_t subsys)
 	LOG_INF("setup done");
 }
 
+static void clk_cb(void *mgr, int res, void *user_data)
+{
+	*(volatile bool *)user_data = true;
+}
+
 static void tear_down_instance(const char *dev_name,
 				clock_control_subsys_t subsys)
 {
@@ -98,17 +103,19 @@ static void tear_down_instance(const char *dev_name,
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_LF);
 	int err;
+	volatile bool clk_started = false;
 
 	if (clock_control_get_status(clk, CLOCK_CONTROL_NRF_SUBSYS_LF) !=
 		CLOCK_CONTROL_STATUS_OFF) {
 		return;
 	}
 
-	sys_notify_init_spinwait(&cli.notify);
+	cli.cb = clk_cb;
+	cli.user_data = (void *)&clk_started;
 	err = onoff_request(mgr, &cli);
 	zassert_true(err >= 0, "");
 
-	while (sys_notify_fetch_result(&cli.notify, &err) < 0) {
+	while (!clk_started) {
 		/*empty*/
 	}
 	zassert_true(err >= 0, "");

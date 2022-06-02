@@ -672,13 +672,9 @@ static int start_transfer(struct i2s_nrfx_drv_data *drv_data)
 	return ret;
 }
 
-static void clock_started_callback(struct onoff_manager *mgr,
-				   struct onoff_client *cli,
-				   uint32_t state,
-				   int res)
+static void clock_started_callback(void *mgr, int res, void *user_data)
 {
-	struct i2s_nrfx_drv_data *drv_data =
-		CONTAINER_OF(cli, struct i2s_nrfx_drv_data, clk_cli);
+	struct i2s_nrfx_drv_data *drv_data = (struct i2s_nrfx_drv_data *)user_data;
 
 	/* The driver state can be set back to READY at this point if the DROP
 	 * command was triggered before the clock has started. Do not start
@@ -686,7 +682,7 @@ static void clock_started_callback(struct onoff_manager *mgr,
 	 */
 	if (drv_data->state == I2S_STATE_READY) {
 		nrfx_i2s_uninit();
-		(void)onoff_release(drv_data->clk_mgr);
+		(void)onoff_release((struct onoff_manager *)mgr);
 	} else {
 		(void)start_transfer(drv_data);
 	}
@@ -721,8 +717,8 @@ static int trigger_start(const struct device *dev)
 	 * first. If not, start the transfer directly.
 	 */
 	if (drv_data->request_clock) {
-		sys_notify_init_callback(&drv_data->clk_cli.notify,
-					 clock_started_callback);
+		drv_data->clk_cli.cb = clock_started_callback;
+		drv_data->clk_cli.user_data = drv_data;
 		ret = onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
 		if (ret < 0) {
 			nrfx_i2s_uninit();

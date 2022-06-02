@@ -34,19 +34,26 @@ static void clock_off(void)
 	} while (!clock_is_off());
 }
 
+static void clk_cb(void *mgr, int res, void *user_data)
+{
+	*(volatile bool *)user_data = true;
+}
+
 void test_clock_blocking_on(void)
 {
 	struct onoff_client cli;
 	struct onoff_manager *mgr = get_mgr();
+	volatile bool clk_started = false;
 	int err;
 
 	clock_off();
 
-	sys_notify_init_spinwait(&cli.notify);
+	cli.cb = clk_cb;
+	cli.user_data = (void *)&clk_started;
 	err = onoff_request(mgr, &cli);
 	zassert_true(err >= 0, "");
 
-	while (sys_notify_fetch_result(&cli.notify, &err) < 0) {
+	while (!clk_started) {
 		/* empty */
 	}
 	zassert_true(err >= 0, "");
@@ -66,7 +73,7 @@ void test_clock_spinwait_release_before_start(void)
 	clock_off();
 	k_busy_wait(10000);
 
-	sys_notify_init_spinwait(&cli.notify);
+	cli.cb = NULL;
 	err = onoff_request(mgr, &cli);
 	zassert_true(err >= 0, "err: %d", err);
 
@@ -79,12 +86,12 @@ void test_clock_spinwait_release_before_start(void)
 	zassert_true(clock_is_off(), "");
 }
 
-static void request_cb(struct onoff_manager *mgr, struct onoff_client *cli,
-			uint32_t state, int res)
+static void request_cb(void *mgr, int res, void *user_data)
 {
 	int err;
 
-	err = onoff_cancel_or_release(mgr, cli);
+	err = onoff_cancel_or_release((struct onoff_manager *)mgr,
+				      (struct onoff_client *)user_data);
 	zassert_true(err >= 0, "err: %d", err);
 }
 
@@ -101,7 +108,8 @@ void test_clock_release_from_callback(void)
 	clock_off();
 	k_busy_wait(100);
 
-	sys_notify_init_callback(&cli.notify, request_cb);
+	cli.cb = request_cb;
+	cli.user_data = &cli;
 	err = onoff_request(mgr, &cli);
 	zassert_true(err >= 0, "err: %d", err);
 

@@ -27,10 +27,7 @@ void nrf_802154_clock_deinit(void)
 	/* Intentionally empty. */
 }
 
-static void hfclk_on_callback(struct onoff_manager *mgr,
-			      struct onoff_client  *cli,
-			      uint32_t state,
-			      int res)
+static void hfclk_on_callback(void *mgr, int res, void *user_data)
 {
 	hfclk_is_running = true;
 	nrf_802154_clock_hfclk_ready();
@@ -44,8 +41,7 @@ void nrf_802154_clock_hfclk_start(void)
 
 	__ASSERT_NO_MSG(mgr != NULL);
 
-	sys_notify_init_callback(&hfclk_cli.notify, hfclk_on_callback);
-
+	hfclk_cli.cb = hfclk_on_callback;
 	ret = onoff_request(mgr, &hfclk_cli);
 	__ASSERT_NO_MSG(ret >= 0);
 }
@@ -68,10 +64,7 @@ bool nrf_802154_clock_hfclk_is_running(void)
 	return hfclk_is_running;
 }
 
-static void lfclk_on_callback(struct onoff_manager *mgr,
-			      struct onoff_client  *cli,
-			      uint32_t state,
-			      int res)
+static void lfclk_on_callback(void *mgr, int res, void *user_data)
 {
 	lfclk_is_running = true;
 	nrf_802154_clock_lfclk_ready();
@@ -85,8 +78,7 @@ void nrf_802154_clock_lfclk_start(void)
 
 	__ASSERT_NO_MSG(mgr != NULL);
 
-	sys_notify_init_callback(&lfclk_cli.notify, lfclk_on_callback);
-
+	lfclk_cli.cb = lfclk_on_callback;
 	ret = onoff_request(mgr, &lfclk_cli);
 	__ASSERT_NO_MSG(ret >= 0);
 }

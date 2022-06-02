@@ -29,10 +29,7 @@ struct temp_nrf5_data {
 	struct onoff_manager *clk_mgr;
 };
 
-static void hfclk_on_callback(struct onoff_manager *mgr,
-			      struct onoff_client *cli,
-			      uint32_t state,
-			      int res)
+static void hfclk_on_callback(void *mgr, int res, void *user_data)
 {
 	nrf_temp_task_trigger(NRF_TEMP, NRF_TEMP_TASK_START);
 }
@@ -55,7 +52,7 @@ static int temp_nrf5_sample_fetch(const struct device *dev,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	sys_notify_init_callback(&cli.notify, hfclk_on_callback);
+	cli.cb = hfclk_on_callback;
 	r = onoff_request(data->clk_mgr, &cli);
 	__ASSERT_NO_MSG(r >= 0);
 

@@ -19,20 +19,26 @@ LOG_MODULE_REGISTER(test);
 
 extern void mock_temp_nrf5_value_set(struct sensor_value *val);
 
+static void clk_cb(void *mgr, int res, void *user_data)
+{
+	*(volatile bool *)user_data = true;
+}
+
 static void turn_on_clock(const struct device *dev,
 			  clock_control_subsys_t subsys)
 {
 	int err;
-	int res;
 	struct onoff_client cli;
 	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(subsys);
+	volatile bool clk_started = false;
 
-	sys_notify_init_spinwait(&cli.notify);
+	cli.cb = clk_cb;
+	cli.user_data = (void *)&clk_started;
 	err = onoff_request(mgr, &cli);
 	if (err < 0) {
 		zassert_false(true, "Failed to start clock");
 	}
-	while (sys_notify_fetch_result(&cli.notify, &res) != 0) {
+	while (!clk_started) {
 	}
 }
 

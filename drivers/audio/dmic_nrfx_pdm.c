@@ -402,20 +402,17 @@ static int start_transfer(struct dmic_nrfx_pdm_drv_data *drv_data)
 	return ret;
 }
 
-static void clock_started_callback(struct onoff_manager *mgr,
-				   struct onoff_client *cli,
-				   uint32_t state,
-				   int res)
+static void clock_started_callback(void *mgr, int res, void *user_data)
 {
 	struct dmic_nrfx_pdm_drv_data *drv_data =
-		CONTAINER_OF(cli, struct dmic_nrfx_pdm_drv_data, clk_cli);
+			(struct dmic_nrfx_pdm_drv_data *)user_data;
 
 	/* The driver can turn out to be inactive at this point if the STOP
 	 * command was triggered before the clock has started. Do not start
 	 * the actual transfer in such case.
 	 */
 	if (!drv_data->active) {
-		(void)onoff_release(drv_data->clk_mgr);
+		(void)onoff_release((struct onoff_manager *)mgr);
 	} else {
 		(void)start_transfer(drv_data);
 	}
@@ -432,8 +429,9 @@ static int trigger_start(const struct device *dev)
 	 * first. If not, start the transfer directly.
 	 */
 	if (drv_data->request_clock) {
-		sys_notify_init_callback(&drv_data->clk_cli.notify,
-					 clock_started_callback);
+		drv_data->clk_cli.cb = clock_started_callback;
+		drv_data->clk_cli.user_data = drv_data;
+
 		ret = onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
 		if (ret < 0) {
 			drv_data->active = false;

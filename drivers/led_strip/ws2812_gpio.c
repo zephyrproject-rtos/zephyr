@@ -87,6 +87,13 @@ struct ws2812_gpio_cfg {
 			[r] "l" (base),		\
 			[p] "l" (pin)); } while (0)
 
+static void clk_started_callback(void *mgr, int res, void *user_data)
+{
+	if (res >= 0) {
+		*(volatile bool *)user_data = true;
+	}
+}
+
 static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct ws2812_gpio_cfg *config = dev->config;
@@ -97,14 +104,16 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 	struct onoff_client cli;
 	unsigned int key;
 	int rc;
+	volatile bool clk_started;
 
-	sys_notify_init_spinwait(&cli.notify);
+	cli.user_data = (void *)&clk_started;
+	cli.cb = clk_started_callback;
 	rc = onoff_request(mgr, &cli);
 	if (rc < 0) {
 		return rc;
 	}
 
-	while (sys_notify_fetch_result(&cli.notify, &rc)) {
+	while (!clk_started) {
 		/* pend until clock is up and running */
 	}
 

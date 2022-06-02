@@ -539,7 +539,7 @@ void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 				get_onoff_manager(CLOCK_DEVICE,
 						  CLOCK_CONTROL_NRF_TYPE_LFCLK);
 
-		sys_notify_init_spinwait(&cli.notify);
+		cli.cb = NULL;
 		err = onoff_request(mgr, &cli);
 		__ASSERT_NO_MSG(err >= 0);
 	}

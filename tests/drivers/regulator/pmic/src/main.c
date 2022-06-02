@@ -52,35 +52,26 @@ struct adc_sequence sequence = {
 
 static struct onoff_client cli;
 static struct onoff_manager *callback_srv;
-static struct onoff_client *callback_cli;
-static uint32_t callback_state;
-static int callback_res;
-static onoff_client_callback callback_fn;
+static volatile int callback_res;
+static async_callback_t callback_fn;
 
-static void callback(struct onoff_manager *srv,
-		     struct onoff_client *cli,
-		     uint32_t state,
-		     int res)
+static void callback(void *srv, int res, void *user_data)
 {
-	onoff_client_callback cb = callback_fn;
+	async_callback_t cb = callback_fn;
 
 	callback_srv = srv;
-	callback_cli = cli;
-	callback_state = state;
 	callback_res = res;
 	callback_fn = NULL;
 
 	if (cb != NULL) {
-		cb(srv, cli, state, res);
+		cb(srv, res, user_data);
 	}
 }
 
 static void reset_callback(void)
 {
 	callback_srv = NULL;
-	callback_cli = NULL;
-	callback_state = INT_MIN;
-	callback_res = 0;
+	callback_res = -EAGAIN;
 	callback_fn = NULL;
 }
 
@@ -88,7 +79,7 @@ static void reset_client(void)
 {
 	cli = (struct onoff_client){};
 	reset_callback();
-	sys_notify_init_callback(&cli.notify, callback);
+	cli.cb = callback;
 }
 
 /* Returns voltage level of ADC in mV, or negative value on error */
@@ -134,18 +125,13 @@ static void test_basic(void)
 		     "first enable failed: %d", rc);
 
 	/* Wait for regulator to start */
-	while (sys_notify_fetch_result(&cli.notify, &rc) == -EAGAIN) {
+	while (callback_res == -EAGAIN) {
 		k_yield();
 	}
-	rc = sys_notify_fetch_result(&cli.notify, &rc);
-	zassert_true(rc == 0, "Could not fetch regulator enable result");
+	zassert_true(callback_res == 0, "Could not fetch regulator enable result");
 
-	zassert_equal(callback_cli, &cli,
-		      "callback not invoked");
 	zassert_equal(callback_res, 0,
 		      "callback res: %d", callback_res);
-	zassert_equal(callback_state, ONOFF_STATE_ON,
-		      "callback state: 0x%x", callback_res);
 
 	/* Read adc to ensure regulator actually booted */
 	adc_reading = adc_get_reading(adc_dev);
@@ -160,12 +146,8 @@ static void test_basic(void)
 	zassert_true(rc >= 0,
 		     "second enable failed: %d", rc);
 
-	zassert_equal(callback_cli, &cli,
-		      "callback not invoked");
 	zassert_true(callback_res >= 0,
 		      "callback res: %d", callback_res);
-	zassert_equal(callback_state, ONOFF_STATE_ON,
-		      "callback state: 0x%x", callback_res);
 
 	/* Make sure it's still on */
 

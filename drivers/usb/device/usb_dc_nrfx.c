@@ -539,8 +539,7 @@ static int hfxo_stop(struct nrf_usbd_ctx *ctx)
 static int hfxo_start(struct nrf_usbd_ctx *ctx)
 {
 	if (atomic_cas(&ctx->clk_requested, 0, 1)) {
-		sys_notify_init_spinwait(&ctx->hfxo_cli.notify);
-
+		ctx->hfxo_cli.cb = NULL;
 		return onoff_request(ctx->hfxo_mgr, &ctx->hfxo_cli);
 	}
 
