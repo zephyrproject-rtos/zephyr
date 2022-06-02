@@ -31,3 +31,16 @@ set(ARMFVP_FLAGS
   -C gic_distributor.ITS-device-bits=16
   -C cache_state_modelled=0
   )
+
+if(CONFIG_BUILD_WITH_TFA)
+  set(TFA_PLAT "fvp")
+
+  if(CONFIG_TFA_MAKE_BUILD_TYPE_DEBUG)
+    set(FVP_SECURE_FLASH_FILE ${TFA_BINARY_DIR}/fvp/debug/bl1.bin)
+    set(FVP_FLASH_FILE ${TFA_BINARY_DIR}/fvp/debug/fip.bin)
+  else()
+    set(FVP_SECURE_FLASH_FILE ${TFA_BINARY_DIR}/fvp/release/bl1.bin)
+    set(FVP_FLASH_FILE ${TFA_BINARY_DIR}/fvp/release/fip.bin)
+  endif()
+
+endif()
