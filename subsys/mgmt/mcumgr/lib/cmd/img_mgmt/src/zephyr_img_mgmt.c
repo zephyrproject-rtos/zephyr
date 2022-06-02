@@ -370,11 +370,6 @@ img_mgmt_impl_write_image_data(unsigned int offset, const void *data, unsigned i
 		}
 	}
 
-	if (offset != flash_img_bytes_written(ctx) + ctx->stream.buf_bytes) {
-		rc = MGMT_ERR_EUNKNOWN;
-		goto out;
-	}
-
 	if (flash_img_buffered_write(ctx, data, num_bytes, last) != 0) {
 		rc = MGMT_ERR_EUNKNOWN;
 		goto out;
@@ -400,10 +395,6 @@ img_mgmt_impl_write_image_data(unsigned int offset, const void *data, unsigned i
 		if (flash_img_init_id(&ctx, g_img_mgmt_state.area_id) != 0) {
 			return MGMT_ERR_EUNKNOWN;
 		}
-	}
-
-	if (offset != ctx.stream.bytes_written + ctx.stream.buf_bytes) {
-		return MGMT_ERR_EUNKNOWN;
 	}
 
 	if (flash_img_buffered_write(&ctx, data, num_bytes, last) != 0) {
