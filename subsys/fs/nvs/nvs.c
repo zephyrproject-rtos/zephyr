@@ -410,9 +410,6 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 {
 	int rc;
 	struct nvs_ate entry;
-	size_t ate_size;
-
-	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
 	entry.id = id;
 	entry.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
