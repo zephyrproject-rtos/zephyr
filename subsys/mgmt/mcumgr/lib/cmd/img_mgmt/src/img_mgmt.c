@@ -454,19 +454,22 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 
 		rc = img_mgmt_impl_write_image_data(req.off, req.img_data.value, action.write_bytes,
 						    last);
-		if (rc != 0) {
-			rc = MGMT_ERR_EUNKNOWN;
+		if (rc == 0) {
+			g_img_mgmt_state.off += action.write_bytes;
+		} else {
+			/* Write failed, currently not able to recover from this */
+			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+			g_img_mgmt_state.area_id = -1;
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 				img_mgmt_err_str_flash_write_failed);
 			goto end;
-		} else {
-			g_img_mgmt_state.off += action.write_bytes;
-			if (g_img_mgmt_state.off == g_img_mgmt_state.size) {
-				/* Done */
-				img_mgmt_dfu_pending();
-				cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
-				g_img_mgmt_state.area_id = -1;
-			}
+		}
+
+		if (g_img_mgmt_state.off == g_img_mgmt_state.size) {
+			/* Done */
+			img_mgmt_dfu_pending();
+			cmd_status_arg.status = IMG_MGMT_ID_UPLOAD_STATUS_COMPLETE;
+			g_img_mgmt_state.area_id = -1;
 		}
 	}
 end:
