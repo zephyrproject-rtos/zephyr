@@ -21,6 +21,9 @@ int do_write_op_senml_json(struct lwm2m_message *msg);
 int do_send_op_senml_json(struct lwm2m_message *msg, sys_slist_t *lwm2m_path_list);
 /* API for call composite READ from engine */
 int do_composite_read_op_senml_json(struct lwm2m_message *msg);
+/* API for call composite READ for parsed path list from engine  */
+int do_composite_read_op_for_parsed_list_senml_json(struct lwm2m_message *msg,
+						    sys_slist_t *path_list);
 /* API for call composite READ path list from engine */
 int do_composite_observe_parse_path_senml_json(struct lwm2m_message *msg,
 					       sys_slist_t *lwm2m_path_list,

@@ -1414,10 +1414,23 @@ static uint8_t json_parse_composite_read_paths(struct lwm2m_message *msg,
 	return valid_path_cnt;
 }
 
-int do_composite_read_op_senml_json(struct lwm2m_message *msg)
+int do_composite_read_op_for_parsed_list_senml_json(struct lwm2m_message *msg,
+						    sys_slist_t *path_list)
 {
 	int ret;
 	struct json_out_formatter_data fd;
+
+	(void)memset(&fd, 0, sizeof(fd));
+	engine_set_out_user_data(&msg->out, &fd);
+
+	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SEML_JSON, path_list);
+	engine_clear_out_user_data(&msg->out);
+
+	return ret;
+}
+
+int do_composite_read_op_senml_json(struct lwm2m_message *msg)
+{
 	struct lwm2m_obj_path_list path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t path_list;
 	sys_slist_t free_list;
@@ -1437,13 +1450,7 @@ int do_composite_read_op_senml_json(struct lwm2m_message *msg)
 	/* Clear path which are part are part of recursive path /1 will include /1/0/1 */
 	lwm2m_engine_clear_duplicate_path(&path_list, &free_list);
 
-	(void)memset(&fd, 0, sizeof(fd));
-	engine_set_out_user_data(&msg->out, &fd);
-
-	ret = lwm2m_perform_composite_read_op(msg, LWM2M_FORMAT_APP_SEML_JSON, &path_list);
-	engine_clear_out_user_data(&msg->out);
-
-	return ret;
+	return do_composite_read_op_for_parsed_list_senml_json(msg, &path_list);
 }
 
 int do_send_op_senml_json(struct lwm2m_message *msg, sys_slist_t *lwm2m_path_list)
