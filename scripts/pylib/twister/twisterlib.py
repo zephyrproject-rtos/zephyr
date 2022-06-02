@@ -508,6 +508,9 @@ class Handler:
                 for tc in self.instance.testcases:
                     tc.status = "failed"
 
+        if not self.instance.missing_testcase_check:
+            self.instance.add_missing_testscases(self.instance.status, "disable missing testcase check")
+
         self.record(harness)
 
 
@@ -2105,6 +2108,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.handler = None
         self.outdir = outdir
         self.execution_time = 0
+        self.missing_testcase_check = True
 
         self.name = os.path.join(platform.name, testsuite.name)
         self.run_id = self._get_run_id()
@@ -3068,6 +3072,7 @@ class TestPlan(DisablePyTestCollectionMixin):
         self.retry_build_errors = False
         self.suite_name_check = True
         self.seed = 0
+        self.missing_testcase_check = True
 
         # Keep track of which test cases we've filtered out and why
         self.testsuites = {}
@@ -3614,6 +3619,8 @@ class TestPlan(DisablePyTestCollectionMixin):
             instance_list = []
             for plat in platform_scope:
                 instance = TestInstance(ts, plat, self.outdir)
+                if not self.missing_testcase_check:
+                    instance.missing_testcase_check = False
                 if runnable:
                     tfilter = 'runnable'
                 else:

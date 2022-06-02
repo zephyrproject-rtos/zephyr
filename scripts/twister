@@ -460,6 +460,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "of Ztest test. This option could be useful for tests or "
              "platforms, which from some reasons cannot print early logs.")
 
+    parser.add_argument(
+        "--disable-missing-testcase-check", action="store_true", default=False,
+        help="Disable status check of missing testcases."
+             "Set the status with test suite's status.")
+
     parser.add_argument("-e", "--exclude-tag", action="append",
                         help="Specify tags of tests that should not run. "
                              "Default is to run all tests with all tags.")
@@ -942,6 +947,7 @@ def main():
     tplan.suite_name_check = not options.disable_suite_name_check
     tplan.seed = options.seed
     tplan.detailed_skipped_report = options.detailed_skipped_report
+    tplan.missing_testcase_check = not options.disable_missing_testcase_check
 
     # get all enabled west projects
     west_proj = west_projects()
