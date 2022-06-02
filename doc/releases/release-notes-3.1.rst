@@ -657,6 +657,162 @@ Build System
 Devicetree
 **********
 
+* API
+
+  * New macros for creating tokens in C from strings in the devicetree:
+    :c:macro:`DT_STRING_UPPER_TOKEN_OR`, :c:macro:`DT_INST_STRING_TOKEN`,
+    :c:macro:`DT_INST_STRING_UPPER_TOKEN`,
+    :c:macro:`DT_INST_STRING_UPPER_TOKEN_OR`
+
+  * :ref:`devicetree-can-api`: new
+
+* Bindings
+
+  * Several new bindings were created to support :ref:`Pin Control
+    <pinctrl-guide>` driver API implementations. This also affected many
+    peripheral bindings, which now support ``pinctrl-0``, ``pinctrl-1``, ...,
+    and ``pinctrl-names`` properties used to configure peripheral pin
+    assignments in different system states, such as active and low-power
+    states.
+
+    In some cases, this resulted in the removal of old bindings, or other
+    backwards incompatible changes affecting users of the old bindings. These
+    changes include:
+
+    * :dtcompatible:`atmel,sam-pinctrl` and :dtcompatible:`atmel,sam0-pinctrl`
+      have been adapted to the new pinctrl bindings interface
+    * :dtcompatible:`espressif,esp32-pinctrl` has replaced ``espressif,esp32-pinmux``
+    * :dtcompatible:`ite,it8xxx2-pinctrl` and
+      :dtcompatible:`ite,it8xxx2-pinctrl-func` have replaced
+      ``ite,it8xxx2-pinmux`` and ``ite,it8xxx2-pinctrl-conf``
+    * :dtcompatible:`microchip,xec-pinctrl`: new
+    * :dtcompatible:`nuvoton,npcx-pinctrl`: new
+    * :dtcompatible:`nxp,kinetis-pinctrl` has replaced the ``nxp,kinetis-port-pins`` property found in the ``nxp,kinetis-pinmux`` binding.
+    * :dtcompatible:`nxp,mcux-rt-pinctrl`,
+      :dtcompatible:`nxp,mcux-rt11xx-pinctrl`,
+      :dtcompatible:`nxp,lpc-iocon-pinctrl`, :dtcompatible:`nxp,rt-iocon-pinctrl`,
+      :dtcompatible:`nxp,lpc11u6x-pinctrl`, :dtcompatible:`nxp,imx7d-pinctrl`,
+      :dtcompatible:`nxp,imx8m-pinctrl`, :dtcompatible:`nxp,imx8mp-pinctrl` and
+      :dtcompatible:`nxp,imx-iomuxc`: new
+    * :dtcompatible:`openisa,rv32m1-pinctrl`: new
+    * :dtcompatible:`sifive,pinctrl` has replaced ``sifive,iof``
+    * :dtcompatible:`telink,b91-pinctrl` has replaced ``telink,b91-pinmux``
+    * :dtcompatible:`ti,cc13xx-cc26xx-pinctrl` has replaced ``ti,cc13xx-cc26xx-pinmux``
+
+  * PWM bindings now generally have ``#pwm-cells`` set to 3, not 2 as it was in
+    previous releases. This was done to follow the Linux convention that each
+    PWM specifier should contain a channel, period, and flags cell, in that
+    order. See pull request `#44523
+    <https://github.com/zephyrproject-rtos/zephyr/pull/44523>`_ for more
+    details on this change and its purpose.
+
+  * Some bindings had their :ref:`compatible properties <dt-important-props>`
+    renamed:
+
+    * :dtcompatible:`nxp,imx-elcdif` has replaced ``fsl,imx6sx-lcdif``
+    * :dtcompatible:`nxp,imx-gpr` has replaced ``nxp,imx-pinmux``
+    * :dtcompatible:`nordic,nrf-wdt` has replaced ``nordic,nrf-watchdog``
+    * :dtcompatible:`bosch,m_can-base` has replaced ``bosch,m-can-base``
+    * :dtcompatible:`nxp,imx-usdhc` has replaced ``nxp,imx-sdhc``
+
+  * Bindings with ``resets`` (and optionally ``reset-names``) properties were
+    added to support the :ref:`reset_api` API. See the list of new bindings
+    below for some examples.
+
+  * The ``zephyr,memory-region-mpu`` property can be set to generate MPU
+    regions from devicetree nodes. See commit `b91d21d32c
+    <https://github.com/zephyrproject-rtos/zephyr/commit/b91d21d32ccc312558babe2cc363afbe44ea2de2>`_
+
+  * The generic :zephyr_file:`dts/bindings/can/can-controller.yaml` include
+    file used for defining CAN controller bindings no longer contains a ``bus:
+    yaml`` statement. This was unused in upstream Zephyr; out of tree bindings
+    relying on this will need updates.
+
+  * Bindings for ADC controller nodes can now use a child binding to specify
+    the initial configuration of individual channels in devicetree. See pull
+    request `43030 <https://github.com/zephyrproject-rtos/zephyr/pull/43030>`_
+    for details.
+
+  * New bindings for the following compatible properties were added:
+
+    * :dtcompatible:`arduino-nano-header-r3`
+    * :dtcompatible:`arm,cortex-r52`
+    * :dtcompatible:`atmel,sam-rstc`
+    * :dtcompatible:`can-transceiver-gpio` (see also :ref:`devicetree-can-api`)
+    * :dtcompatible:`gd,gd32-spi`
+    * :dtcompatible:`hynitron,cst816s`
+    * :dtcompatible:`intel,cavs-gpdma`
+    * :dtcompatible:`intel,cavs-hda-host-in` and :dtcompatible:`intel,cavs-hda-host-out`
+    * :dtcompatible:`intel,cavs-hda-link-in` and :dtcompatible:`intel,cavs-hda-link-out`
+    * :dtcompatible:`intel,ssp-dai`
+    * :dtcompatible:`intel,ssp-sspbase`
+    * :dtcompatible:`invensense,icm42670`
+    * :dtcompatible:`ite,enhance-i2c`
+    * :dtcompatible:`ite,it8xxx2-vcmp`
+    * :dtcompatible:`ite,it8xxx2-wuc` and :dtcompatible:`ite,it8xxx2-wuc-map`
+    * :dtcompatible:`ite,peci-it8xxx2`
+    * :dtcompatible:`maxim,max31875`
+    * :dtcompatible:`microchip,cap1203`
+    * :dtcompatible:`microchip,mcp4728`
+    * :dtcompatible:`microchip,mpfs-qspi`
+    * :dtcompatible:`microchip,xec-bbram`
+    * :dtcompatible:`motorola,mc146818`
+    * :dtcompatible:`nordic,nrf-acl`
+    * :dtcompatible:`nordic,nrf-bprot`
+    * :dtcompatible:`nordic,nrf-ccm`
+    * :dtcompatible:`nordic,nrf-comp`
+    * :dtcompatible:`nordic,nrf-ctrlapperi`
+    * :dtcompatible:`nordic,nrf-dcnf`
+    * :dtcompatible:`nordic,nrf-gpio-forwarder`
+    * :dtcompatible:`nordic,nrf-lpcomp`
+    * :dtcompatible:`nordic,nrf-mpu`
+    * :dtcompatible:`nordic,nrf-mutex`
+    * :dtcompatible:`nordic,nrf-mwu`
+    * :dtcompatible:`nordic,nrf-nfct`
+    * :dtcompatible:`nordic,nrf-oscillators`
+    * :dtcompatible:`nordic,nrf-ppi`
+    * :dtcompatible:`nordic,nrf-reset`
+    * :dtcompatible:`nordic,nrf-swi`
+    * :dtcompatible:`nordic,nrf-usbreg`
+    * :dtcompatible:`nuvoton,adc-cmp`
+    * :dtcompatible:`nxp,imx-mipi-dsi`
+    * :dtcompatible:`nxp,imx-qtmr`
+    * :dtcompatible:`nxp,imx-tmr`
+    * :dtcompatible:`raspberrypi,pico-reset`
+    * :dtcompatible:`raspberrypi,pico-usbd`
+    * :dtcompatible:`raydium,rm68200`
+    * :dtcompatible:`riscv,sifive-e31`, :dtcompatible:`riscv,sifive-e51`,
+      and :dtcompatible:`riscv,sifive-s7` CPU bindings
+    * :dtcompatible:`seeed,grove-lcd-rgb`
+    * :dtcompatible:`st,lsm6dso32`
+    * :dtcompatible:`st,stm32-clock-mux`
+    * :dtcompatible:`st,stm32-fmc-nor-psram`
+    * :dtcompatible:`st,stm32-lse-clock`
+    * :dtcompatible:`st,stm32-ltdc`
+    * :dtcompatible:`st,stm32-ospi` and :dtcompatible:`st,stm32-ospi-nor`
+    * :dtcompatible:`st,stm32h7-fmc`
+    * TI ADS ADCs: :dtcompatible:`ti,ads1013`, :dtcompatible:`ti,ads1015`,
+      :dtcompatible:`ti,ads1113`, :dtcompatible:`ti,ads1114`,
+      :dtcompatible:`ti,ads1115`, :dtcompatible:`ti,ads1014`
+    * :dtcompatible:`ti,tlc5971`
+    * :dtcompatible:`xlnx,fpga`
+    * :dtcompatible:`xlnx,ps-gpio` and :dtcompatible:`xlnx,ps-gpio-bank`
+    * :dtcompatible:`zephyr,bt-hci-entropy`
+    * :dtcompatible:`zephyr,ipc-icmsg`
+    * :dtcompatible:`zephyr,memory-region`
+    * :dtcompatible:`zephyr,sdhc-spi-slot`
+
+  * Bindings for the following compatible properties were removed:
+
+    * ``bosch,m-can``
+    * ``nxp,imx-usdhc``
+    * ``shared-multi-heap``
+    * ``snps,creg-gpio-mux-hsdk``
+    * ``snps,designware-pwm``
+    * ``zephyr,mmc-spi-slot``
+
+  * Numerous other additional properties were added to bindings throughout the tree.
+
 Libraries / Subsystems
 **********************
 
