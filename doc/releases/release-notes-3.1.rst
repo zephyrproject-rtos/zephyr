@@ -412,6 +412,12 @@ Drivers and Sensors
 
 * DMA
 
+  * Adds a scatter gather test for DMAs that support it
+  * Cleanly share Synopsis DW-DMA driver and Intel cAVS GPDMA driver code.
+  * Adds support for Synposis DW-DMA transfer lists.
+  * Adds support for Intel HDA for audio device and host streams.
+  * Fixes for NXP eDMA to pass scatter gather tests
+
 * EEPROM
 
 * Entropy
