@@ -26,5 +26,6 @@ OS Services
    task_wdt/index.rst
    tfm/index
    usb/index.rst
+   senss/index.rst
    virtualization/index.rst
    misc.rst
