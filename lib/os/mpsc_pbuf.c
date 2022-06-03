@@ -425,11 +425,10 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 	do {
 		uint32_t a;
 		k_spinlock_key_t key;
-		bool wrap;
 
 		cont = false;
 		key = k_spin_lock(&buffer->lock);
-		wrap = available(buffer, &a);
+		(void)available(buffer, &a);
 		item = (union mpsc_pbuf_generic *)
 			&buffer->buf[buffer->tmp_rd_idx];
 
