@@ -85,6 +85,7 @@ static void bt_iso_send_cb(struct bt_conn *iso, void *user_data, int err)
 }
 #endif /* CONFIG_BT_ISO_UNICAST || CONFIG_BT_ISO_BROADCASTER */
 
+
 void hci_iso(struct net_buf *buf)
 {
 	struct bt_hci_iso_hdr *hdr;
