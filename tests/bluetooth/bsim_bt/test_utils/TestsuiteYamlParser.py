@@ -1,3 +1,6 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
 import logging
 from strictyaml import load as strictyaml_load
 from strictyaml import Map, MapPattern, Optional, Seq, Str, YAMLError
