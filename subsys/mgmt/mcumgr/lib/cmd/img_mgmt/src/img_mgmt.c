@@ -426,11 +426,7 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
 		memset(&g_img_mgmt_state.data_sha[req.data_sha.len], 0,
 			   IMG_MGMT_DATA_SHA_LEN - req.data_sha.len);
 
-#if CONFIG_IMG_ERASE_PROGRESSIVELY
-		/* setup for lazy sector by sector erase */
-		g_img_mgmt_state.sector_id = -1;
-		g_img_mgmt_state.sector_end = 0;
-#else
+#ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
 		/* erase the entire req.size all at once */
 		if (action.erase) {
 			rc = img_mgmt_impl_erase_image_data(0, req.size);

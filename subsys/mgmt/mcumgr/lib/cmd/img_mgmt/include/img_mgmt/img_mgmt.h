@@ -84,10 +84,6 @@ struct img_mgmt_state {
 	/** Hash of image data; used for resumption of a partial upload. */
 	uint8_t data_sha_len;
 	uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
-#if CONFIG_IMG_ERASE_PROGRESSIVELY
-	int sector_id;
-	uint32_t sector_end;
-#endif
 };
 
 /** Describes what to do during processing of an upload request. */
