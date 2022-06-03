@@ -941,6 +941,8 @@ static int ascs_ep_stream_bind_audio_iso(struct bt_audio_stream *stream,
 		audio_iso->iso_chan.ops = &ascs_iso_ops;
 		audio_iso->iso_chan.qos = &audio_iso->iso_qos;
 		audio_iso->iso_chan.qos->tx = &audio_iso->source_io_qos;
+		audio_iso->iso_chan.qos->rx->path = &audio_iso->sink_path;
+		audio_iso->iso_chan.qos->rx->path->cc = audio_iso->source_path_cc;
 	} else if (dir == BT_AUDIO_DIR_SINK) {
 		if (audio_iso->sink_stream == NULL) {
 			audio_iso->sink_stream = stream;
@@ -952,6 +954,8 @@ static int ascs_ep_stream_bind_audio_iso(struct bt_audio_stream *stream,
 		audio_iso->iso_chan.ops = &ascs_iso_ops;
 		audio_iso->iso_chan.qos = &audio_iso->iso_qos;
 		audio_iso->iso_chan.qos->rx = &audio_iso->sink_io_qos;
+		audio_iso->iso_chan.qos->rx->path = &audio_iso->sink_path;
+		audio_iso->iso_chan.qos->rx->path->cc = audio_iso->sink_path_cc;
 	} else {
 		__ASSERT(false, "Invalid dir: %u", dir);
 	}
@@ -1416,8 +1420,9 @@ static int ase_stream_qos(struct bt_audio_stream *stream,
 
 static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 {
-	struct bt_audio_stream *stream = ase->ep.stream;
-	struct bt_codec_qos *cqos = &ase->ep.qos;
+	struct bt_audio_ep *ep = &ase->ep;
+	struct bt_audio_stream *stream = ep->stream;
+	struct bt_codec_qos *cqos = &ep->qos;
 	const uint8_t cig_id = qos->cig;
 	const uint8_t cis_id = qos->cis;
 	int err;
@@ -1468,10 +1473,22 @@ static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_QOS_OP,
 				      err, reason);
 		return;
+	} else {
+		/* We setup the data path here, as this is the earliest where
+		 * we have the ISO <-> EP coupling completed (due to setting
+		 * the CIS ID in the QoS procedure).
+		 */
+		if (ep->dir == BT_AUDIO_DIR_SINK) {
+			bt_audio_codec_to_iso_path(&ep->iso->sink_path,
+						   stream->codec);
+		} else {
+			bt_audio_codec_to_iso_path(&ep->iso->source_path,
+						   stream->codec);
+		}
 	}
 
-	ase->ep.cig_id = cig_id;
-	ase->ep.cis_id = cis_id;
+	ep->cig_id = cig_id;
+	ep->cis_id = cis_id;
 
 	ascs_cp_rsp_success(ASE_ID(ase), BT_ASCS_QOS_OP);
 }

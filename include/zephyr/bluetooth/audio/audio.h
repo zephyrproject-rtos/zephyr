@@ -205,6 +205,8 @@ struct bt_codec_data {
  */
 #define BT_CODEC(_id, _cid, _vid, _data, _meta) \
 	{ \
+		/* Use HCI data path as default, can be overwritten by application */ \
+		.path_id = BT_ISO_DATA_PATH_HCI, \
 		.id = _id, \
 		.cid = _cid, \
 		.vid = _vid, \
@@ -251,6 +253,12 @@ enum bt_audio_location {
 
 /** @brief Codec structure. */
 struct bt_codec {
+	/** Data path ID
+	 *
+	 * @ref BT_ISO_DATA_PATH_HCI for HCI path, or any other value for
+	 * vendor specific ID.
+	 */
+	uint8_t path_id;
 	/** Codec ID */
 	uint8_t  id;
 	/** Codec Company ID */
