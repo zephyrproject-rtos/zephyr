@@ -22,5 +22,6 @@ tests:
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf
     # FIXME: See issue #39948
+    arch_exclude: riscv32 riscv64 xtensa
     platform_exclude: qemu_cortex_a9
     tags: kernel ignore_faults
