@@ -123,6 +123,12 @@ Deprecated in this release
 * The TinyCBOR module has been deprecated in favor of the new zcbor CBOR
   library, included with Zephyr in this release.
 
+* GPIO
+
+  * Deprecated the ``GPIO_INT_DEBOUNCE`` flag and the ``GPIO_DS_*`` and
+    ``GPIO_VOLTAGE_*`` groups of flags. Controller/SoC specific flags
+    should now be used instead.
+
 * SPI
 
   * Deprecated the `gpio_dev`, `gpio_pin` and `gpio_dt_flags` members from
@@ -459,6 +465,13 @@ Drivers and Sensors
 
 * GPIO
 
+  * Refactored GPIO flags. Upper 8 bits of ``gpio_dt_flags_t`` is now reserved
+    for controller/SoC specific flags and certain hardware-specific flags
+    defined as common so far (IO voltage level, drive strength, debounce filter)
+    were replaced with ones defined in this controller/SoC specific space.
+  * Added Xilinx PS MIO/EMIO GPIO controller driver.
+  * Extended the NXP PCA95XX driver to support also PCAL95XX.
+
 * HWINFO
 
   * Atmel SAM: Added RSTC support
@@ -472,6 +485,10 @@ Drivers and Sensors
   * Added ITE support
 
 * I2S
+
+  * Ported I2S drivers to pinctrl.
+  * Fixed multiple bugs in the NXP I2S (SAI) driver, including problems with
+    DMA transmission and FIFO under/overruns.
 
 * Interrupt Controller
 
