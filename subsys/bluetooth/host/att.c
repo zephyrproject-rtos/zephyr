@@ -152,9 +152,9 @@ struct bt_att_tx_meta {
 static struct bt_att_tx_meta_data tx_meta_data[CONFIG_BT_CONN_TX_MAX];
 K_FIFO_DEFINE(free_att_tx_meta_data);
 
-static struct bt_att_tx_meta_data *tx_meta_data_alloc(void)
+static struct bt_att_tx_meta_data *tx_meta_data_alloc(k_timeout_t timeout)
 {
-	return k_fifo_get(&free_att_tx_meta_data, K_NO_WAIT);
+	return k_fifo_get(&free_att_tx_meta_data, timeout);
 }
 
 static inline void tx_meta_data_free(struct bt_att_tx_meta_data *data)
@@ -531,6 +531,7 @@ struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t op,
 	struct bt_att_hdr *hdr;
 	struct net_buf *buf;
 	struct bt_att_tx_meta_data *data;
+	k_timeout_t timeout;
 
 	if (len + sizeof(op) > chan->chan.tx.mtu) {
 		BT_WARN("ATT MTU exceeded, max %u, wanted %zu",
@@ -542,18 +543,19 @@ struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t op,
 	case ATT_RESPONSE:
 	case ATT_CONFIRMATION:
 		/* Use a timeout only when responding/confirming */
-		buf = bt_l2cap_create_pdu_timeout(NULL, 0, BT_ATT_TIMEOUT);
+		timeout = BT_ATT_TIMEOUT;
 		break;
 	default:
-		buf = bt_l2cap_create_pdu(NULL, 0);
+		timeout = K_FOREVER;
 	}
 
+	buf = bt_l2cap_create_pdu_timeout(NULL, 0, timeout);
 	if (!buf) {
 		BT_ERR("Unable to allocate buffer for op 0x%02x", op);
 		return NULL;
 	}
 
-	data = tx_meta_data_alloc();
+	data = tx_meta_data_alloc(timeout);
 	if (!data) {
 		BT_WARN("Unable to allocate ATT TX meta");
 		net_buf_unref(buf);
