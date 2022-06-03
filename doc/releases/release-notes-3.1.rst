@@ -575,7 +575,7 @@ Drivers and Sensors
 
 * USB
 
-  * Raspberry Pi Pico: Added USB driver
+  * Added RP2040 (Raspberry Pi Pico) USB device controller driver
 
 * Watchdog
 
@@ -694,6 +694,9 @@ Networking
 
 USB
 ***
+
+* Moved USB device stack code to own directory in preparation for upcoming
+  rework of USB support.
 
 Build System
 ************
