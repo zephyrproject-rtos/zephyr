@@ -502,7 +502,8 @@ void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan,
 		}
 		break;
 	case BT_ISO_STATE_DISCONNECTING:
-		if (chan->state != BT_ISO_STATE_CONNECTED) {
+		if (chan->state != BT_ISO_STATE_CONNECTING &&
+		    chan->state != BT_ISO_STATE_CONNECTED) {
 			BT_WARN("%s()%d: invalid transition", func, line);
 		}
 		break;
