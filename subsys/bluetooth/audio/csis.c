@@ -842,11 +842,6 @@ static bool valid_register_param(const struct bt_csis_register_param *param)
 		return false;
 	}
 
-	if (param->set_size > 0 && param->set_size < BT_CSIS_MINIMUM_SET_SIZE) {
-		BT_DBG("Invalid set size: %u", param->set_size);
-		return false;
-	}
-
 #if CONFIG_BT_CSIS_MAX_INSTANCE_COUNT > 1
 	if (param->parent == NULL) {
 		BT_DBG("Parent service not provided");
