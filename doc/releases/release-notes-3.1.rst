@@ -547,6 +547,9 @@ Drivers and Sensors
 
 * Timer
 
+  * Ported timer drivers to use pinctrl
+  * LiteX: Ported the timer driver to use the HAL
+
 * USB
 
   * Raspberry Pi Pico: Added USB driver
