@@ -211,9 +211,8 @@ Changes in this release
     * The previous ``CAN_SILENT_LOOPBACK_MODE`` can be set using the bitmask ``(CAN_MODE_LISTENONLY |
       CAN_MODE_LOOPBACK)``.
 
-  * STM32H7 The `CONFIG_NOCACHE_MEMORY` no longer is responsible for disabling
-    data cache when defined. Now the newly introduced `CONFIG_DCACHE=n` explicitly
-    does that.
+  * STM32H7: :kconfig:option:`CONFIG_NOCACHE_MEMORY` is no longer responsible for disabling
+    data cache when defined. Use ``CONFIG_DCACHE=n`` instead.
 
   * Converted the STM32F1 pin nodes configuration names to include remap information (in
     cases other than NO_REMAP/REMAP_0)
@@ -262,17 +261,19 @@ Deprecated in this release
 
 * SPI
 
-  * Deprecated the `gpio_dev`, `gpio_pin` and `gpio_dt_flags` members from
-    spi_cs_control struct in favor of `gpio_dt_spec` gpio.
+  * Deprecated the ``gpio_dev``, ``gpio_pin``, and ``gpio_dt_flags`` members in
+    struct :c:struct:`spi_cs_control` in favor of a new struct
+    :c:struct:`gpio_dt_spec` member named ``gpio``.
 
 * PWM
 
   * The ``pin`` prefix has been removed from all PWM API calls. So for example,
     ``pwm_pin_set_cycles`` is now ``pwm_set_cycles``. The old API calls are
-    still provided but marked as deprecated.
-  * The PWM period is now always set in nanoseconds, so the ``_nsec`` and
-    ``_usec`` set functions have been deprecated. Other units can be specified
-    using, e.g. ``PWM_USEC()`` macros, which convert down to nanoseconds.
+    still provided, but are now deprecated.
+  * PWM periods are now always set in nanoseconds, so ``_nsec`` and ``_usec``
+    set functions such as ``pwm_pin_set_nsec()`` and ``pwm_pin_set_usec()``
+    have been deprecated. Other units can be specified using, e.g.
+    ``PWM_USEC()`` macros, which convert other units to nanoseconds.
 
 * Utilities
 
@@ -286,20 +287,21 @@ Bluetooth
 
 * Host
 
-  * The enum bt_l2cap_chan_state values BT_L2CAP_CONNECT and BT_L2CAP_DISCONNECT
-    has been renamed to BT_L2CAP_CONNECTING and BT_L2CAP_DISCONNECTING.
+  * The :c:enum:`bt_l2cap_chan_state` values ``BT_L2CAP_CONNECT`` and
+    ``BT_L2CAP_DISCONNECT`` have been renamed to ``BT_L2CAP_CONNECTING`` and
+    ``BT_L2CAP_DISCONNECTING`` respectively.
 
-  * Moved the callbacks :c:func:`pairing_complete`, :c:func:`pairing_failed` and
-    :c:func:`bond_delete` from the `struct bt_auth_cb` to a newly created
-    informational-only callback `struct bt_auth_info_cb`.
+  * The callbacks :c:func:`pairing_complete`, :c:func:`pairing_failed`, and
+    :c:func:`bond_delete` have been moved from struct :c:struct:`bt_auth_cb` to a
+    newly created informational-only callback struct :c:struct:`bt_conn_auth_info_cb`.
 
-  * The :c:macro:bt_conn_index function now takes a `const struct bt_conn`.
+  * :c:func:`bt_conn_index` now takes a ``const struct bt_conn*`` argument.
 
-  * The `struct bt_gatt_subscribe_params` :c:func:`write` callback
-    function has been deprecated.  A :c:func:`subscribe` callback
-    function has been added to replace it.
+  * The :c:struct:`bt_gatt_subscribe_params` structure's ``write`` callback
+    function has been deprecated.  Use the new ``subscribe`` callback
+    instead.
 
-  * :c:func:`bt_disable` was added to enable caller to disable bluetooth stack.
+  * :c:func:`bt_disable` was added to enable the caller to disable the Bluetooth stack.
 
 New APIs in this release
 ========================
@@ -339,8 +341,8 @@ Kernel
 * The k_timer handler can now correct itself for lost time due to very
   late-arriving interrupts.
 
-* Defer SMP interprocessor interrupts so that they are sent only at
-  schedule points and not synchronously when the scheduler state
+* SMP interprocessor interrupts are deferred so that they are sent only at
+  schedule points, and not synchronously when the scheduler state
   changes.  This prevents IPI "storms" with code that does many
   scheduler operations at once (e.g. waking up a bunch of threads).
 
@@ -356,9 +358,9 @@ Architectures
 
 * ARC
 
-  * Add ARCv3 32 bit (HS5x) support - both GNU and MWDT toolchains, both UP and SMP
-  * Workaround debug_select interference with MDB debugger
-  * Switch to hs6x mcpu usage (GNU toolchain) for HS6x
+  * Added ARCv3 32 bit (HS5x) support - both GNU and MWDT toolchains, both UP and SMP
+  * Worked around debug_select interference with MDB debugger
+  * Switched to hs6x mcpu usage (GNU toolchain) for HS6x
 
 * ARM
 
@@ -368,21 +370,21 @@ Architectures
 
   * AARCH64
 
-    * Add support for GICv3 for the ARMv8 Xen Virtual Machine
-    * Fix SMP boot code to take into account multiple cores booting at the same time
-    * Add more memory mapping types for device memory
-    * Simplify and optimize switching and user mode transition code
-    * Add support for CONFIG_IRQ_OFFLOAD_NESTED
-    * Fix booting issue with FVP V8R >= 11.16.16
-    * Switch to the IRQ stack during ISR execution
+    * Added support for GICv3 for the ARMv8 Xen Virtual Machine
+    * Fixed SMP boot code to take into account multiple cores booting at the same time
+    * Added more memory mapping types for device memory
+    * Simplified and optimize switching and user mode transition code
+    * Added support for CONFIG_IRQ_OFFLOAD_NESTED
+    * Fixed booting issue with FVP V8R >= 11.16.16
+    * Switched to the IRQ stack during ISR execution
 
 * Xtensa
 
-  * Optimize context switches when KERNEL_COHERENCE is enabled to
+  * Optimized context switches when KERNEL_COHERENCE is enabled to
     avoid needless stack invalidations for threads that have not
     migrated between CPUs.
 
-  * Fix bug that could return directly into a thread context from a
+  * Fixed a bug that could return directly into a thread context from a
     nested interrupt instead of properly returning to the preempted
     ISR.
 
@@ -415,25 +417,25 @@ Bluetooth
 
   * Added new Kconfig options to select ISO Central and Peripheral role support
     separately
-  * Added a new ``bt_get_appearance()`` API call
+  * Added a new :c:func:`bt_get_appearance()` API call
   * Implemented support for dynamic appearance, including a new
-    ``bt_set_appearance()`` API call
+    :c:func:`bt_set_appearance()` API call
   * Implemented support for L2CAP collision mitigation
   * Changed the scheduling of auto-initiated HCI commands so that they execute
     synchronously
-  * Added a new ``bt_is_ready()`` API call to find out if Bluetooth is
+  * Added a new :c:func:`bt_is_ready()` API call to find out if Bluetooth is
     currently enabled and initialized
   * Added support for automatic MTU exchange right after a connection is
     established
-  * Created a new ``auth_info_cb`` to group the security-related callbacks under
-    a single struct
+  * Created a new :c:struct:`bt_conn_auth_info_cb` to group the
+    security-related callbacks under a single struct
   * Optimized the memory usage of the Object Transfer Service
-  * Added a new ``bt_hci_le_rand()`` API call to obtain a random number from the
-    LE Controller
-  * Added a new public API to connect EATT channels, ``bt_eatt_connect()``
+  * Added a new :c:func:`bt_hci_le_rand()` API call to obtain a random number
+    from the LE Controller
+  * Added a new public API to connect EATT channels, :c:func:`bt_eatt_connect()`
   * Optimized L2CAP channels resource usage when not using dynamic channels
   * Added the ability to run the Bluetooth RX context from a workqueue, in order
-    to optimize RAM usage. See ``CONFIG_BT_RECV_CONTEXT``
+    to optimize RAM usage. See :kconfig:option:`CONFIG_BT_RECV_CONTEXT`.
   * Added support for TX complete callback on EATT channels
   * Corrected the calling of the MTU callback to happen on any reconfiguration
 
@@ -466,9 +468,7 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
-  * Added support for STM32H725/STM32H730/STM32H73B SoC variants
-
-* Removed support for these SoC series:
+  * STM32H725/STM32H730/STM32H73B SoC variants
 
 * Made these changes in other SoC series:
 
@@ -480,14 +480,14 @@ Boards & SoC Support
 
 * Changes for ARC boards:
 
-  * Add nsim_hs5x and nsim_hs5x_smp boards with ARCv3 32bit HS5x CPU
-  * Add MWDT toolchain support for nsim_hs6x and nsim_hs6x_smp
-  * Do memory layout overhaul for nSIM boards. Add the mechanism to switch between
+  * Added nsim_hs5x and nsim_hs5x_smp boards with ARCv3 32bit HS5x CPU
+  * Added MWDT toolchain support for nsim_hs6x and nsim_hs6x_smp
+  * Overhauled memory layout for nSIM boards. Added a mechanism to switch between
     ICCM/DCCM memory layout and flat memory layout (i.e DDR).
-  * Do required platform setup so nsim_hs5x, nsim_hs5x_smp, nsim_hs6x, nsim_hs6x_smp
+  * Did required platform setup so nsim_hs5x, nsim_hs5x_smp, nsim_hs6x, nsim_hs6x_smp
     can be run on real HW (HAPS FPGA) with minimum additional configuration
-  * Enable MWDT toolchain support for hsdk_2cores board
-  * Adjust test duration for SMP nSIM boards with timeout_multiplier
+  * Enabled MWDT toolchain support for hsdk_2cores board
+  * Adjusted test duration for SMP nSIM boards with timeout_multiplier
 
 * Added support for these ARM boards:
 
@@ -499,21 +499,17 @@ Boards & SoC Support
   * NXP i.MX8MP EVK (i.MX8M Plus LPDDR4 EVK board)
   * NXP i.MX8MM EVK (i.MX8M Mini LPDDR4 EVK board)
 
-* Removed support for these ARM boards:
-
-* Removed support for these X86 boards:
-
 * Added support for these RISC-V boards:
 
   * GigaDevice GD32VF103C-EVAL
 
 * Made these changes in other boards:
 
-  * sam4s_xplained: Add support for HWINFO
-  * sam_e70_xlained: Add support for HWINFO and CAN-FD
-  * sam_v71_xult: Add support for HWINFO and CAN-FD
-  * gd32e103v_eval: Add prescaler to timer
-  * longan_nano: Add support for TF-Card slot
+  * sam4s_xplained: Added support for HWINFO
+  * sam_e70_xlained: Added support for HWINFO and CAN-FD
+  * sam_v71_xult: Added support for HWINFO and CAN-FD
+  * gd32e103v_eval: Added prescaler to timer
+  * longan_nano: Added support for TF-Card slot
 
 * Added support for these following shields:
 
@@ -560,13 +556,13 @@ Drivers and Sensors
 
 * DAC
 
-  *  support for ST STM32F1 to the ST STM32 DAC driver.
+  * Added support for STM32F1 SoCs to the STM32 DAC driver.
 
 * Disk
 
-  * Added generic SDMMC disk driver, that uses the SD subsystem to interact with
+  * Added a generic SDMMC disk driver, that uses the SD subsystem to interact with
     disk devices. This disk driver will be used with any disk device declared
-    with the :dtcompatible:`zephyr,sdmmc-disk` compatible string
+    with the ``zephyr,sdmmc-disk`` compatible string.
 
 * Display
 
@@ -575,20 +571,20 @@ Drivers and Sensors
 
 * DMA
 
-  * Adds a scatter gather test for DMAs that support it
-  * Cleanly share Synopsis DW-DMA driver and Intel cAVS GPDMA driver code.
-  * Adds support for Synposis DW-DMA transfer lists.
-  * Adds support for Intel HDA for audio device and host streams.
+  * Added a scatter gather test for DMAs that support it
+  * Cleanly shared Synopsis DW-DMA driver and Intel cAVS GPDMA driver code.
+  * Added support for Synposis DW-DMA transfer lists.
+  * Added support for Intel HDA for audio device and host streams.
   * Fixes for NXP eDMA to pass scatter gather tests
 
 * Entropy
 
-  * STM32: Prevent  core to enter stop modes during entropy operations.
+  * STM32: Prevented the core from entering stop modes during entropy operations.
 
 * Ethernet
 
   * eth_native_posix: Added support for setting MAC address.
-  * eth_stm32_hal: Fixed a bug, which caused segfault in case of failed RX
+  * eth_stm32_hal: Fixed a bug which caused a segfault in case of a failed RX
     buffer allocation.
   * eth_mcux: Added support for resetting PHY.
   * eth_liteeth: Refactored driver to use LiteX HAL.
@@ -596,19 +592,21 @@ Drivers and Sensors
 
 * Flash
 
-  * Added STM32 OCTOSPI driver: For now supports L5 and U5 series. Interrupt driven mode.
-    Supports 1 and 8 lines in Single or Dual Transfer Modes.
+  * Added STM32 OCTOSPI driver. Initial support is provided for L5 and U5
+    series. Interrupt driven mode. Supports 1 and 8 lines in Single or Dual
+    Transfer Modes.
   * STM32L5: Added support for Single Bank.
   * STM32 QSPI driver was extended with with QER (SFDP, DTS), custom quad write opcode
-    and 1-1-4 read mode
+    and 1-1-4 read mode.
   * Added support for STM32U5 series.
 
 * GPIO
 
-  * Refactored GPIO flags. Upper 8 bits of ``gpio_dt_flags_t`` is now reserved
-    for controller/SoC specific flags and certain hardware-specific flags
-    defined as common so far (IO voltage level, drive strength, debounce filter)
-    were replaced with ones defined in this controller/SoC specific space.
+  * Refactored GPIO devicetree flags. The upper 8 bits of ``gpio_dt_flags_t``
+    are now reserved for controller/SoC specific flags. Certain
+    hardware-specific flags previously defined as common configuration (IO
+    voltage level, drive strength, and debounce filter) were replaced with ones
+    defined in this controller/SoC specific space.
   * Added Xilinx PS MIO/EMIO GPIO controller driver.
   * Extended the NXP PCA95XX driver to support also PCAL95XX.
 
@@ -619,9 +617,9 @@ Drivers and Sensors
 
 * I2C
 
-  * Arbitrary i2c clock speed support with :c:macro:`I2C_SPEED_DT`
-  * NXP flexcomm supports target (slave) mode
-  * Fixes for Atmel SAM/SAM0 exclusive bus access
+  * Added arbitrary I2C clock speed support with :c:macro:`I2C_SPEED_DT`
+  * NXP flexcomm now supports target (slave) mode
+  * Fixed Atmel SAM/SAM0 exclusive bus access
   * Added ITE support
 
 * I2S
@@ -630,17 +628,13 @@ Drivers and Sensors
   * Fixed multiple bugs in the NXP I2S (SAI) driver, including problems with
     DMA transmission and FIFO under/overruns.
 
-* Interrupt Controller
-
-* MBOX
-
 * MEMC
 
-  * STM32: Extend FMC driver to support NOR/PSRAM. See :dtcompatible:`st,stm32-fmc-nor-psram.yaml`.
+  * STM32: Extended FMC driver to support NOR/PSRAM. See :dtcompatible:`st,stm32-fmc-nor-psram.yaml`.
 
 * Pin control
 
-  * New platforms added to ``pinctrl`` state-based API:
+  * Platform support was added for:
 
     * Atmel SAM/SAM0
     * Espressif ESP32
@@ -656,7 +650,7 @@ Drivers and Sensors
     * Telink B91
     * TI CC13XX/CC26XX
 
-  * STM32: It is now possible to configure plain GPIO pins using pinctrl API.
+  * STM32: It is now possible to configure plain GPIO pins using the pinctrl API.
     See :dtcompatible:`st,stm32-pinctrl` and :dtcompatible:`st,stm32f1-pinctrl` for
     more information.
 
@@ -665,7 +659,7 @@ Drivers and Sensors
   * Added :c:struct:`pwm_dt_spec` and associated helpers, e.g.
     :c:macro:`PWM_DT_SPEC_GET` or :c:func:`pwm_set_dt`. This addition makes it
     easier to use the PWM API when the PWM channel, period and flags are taken
-    from a Devicetree PWM cell.
+    from a devicetree PWM cell.
   * STM32: Enabled complementary output for timer channel. A PWM consumer can now use
     :c:macro:`PWM_STM32_COMPLEMENTARY` to specify that PWM output should happen on a
     complementary channel pincfg (eg:``tim1_ch2n_pb14``).
@@ -702,7 +696,7 @@ Drivers and Sensors
 
 * Serial
 
-  * STM32: Add tx/rx pin swap  and rx invert / tx invert capabilities.
+  * STM32: Added tx/rx pin swap and rx invert / tx invert capabilities.
 
 * SPI
 
@@ -718,31 +712,30 @@ Drivers and Sensors
 
   * Added RP2040 (Raspberry Pi Pico) USB device controller driver
 
-* Watchdog
-
 Networking
 **********
 
 * CoAP:
 
-  * Changed :c:struct:`coap_pending` allocation criteria - use data pointer
-    instead of timestamp, which does not give 100% guarantee that structure
-    is not in use already.
+  * Changed :c:struct:`coap_pending` allocation criteria. This now uses a data
+    pointer instead of a timestamp, which does not give a 100% guarantee that
+    structure is not in use already.
 
 * Ethernet:
 
-  * Added :kconfig:option:`NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE` option
-    which allows to forward frames with unrecognised EtherType to the netowrk
-    stack.
+  * Added a
+    :kconfig:option:`CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE`
+    option, which allows to forward frames with unrecognised EtherType to the
+    netowrk stack.
 
 * HTTP:
 
-  * Removed a limitation, where the maximum content length was limited up to
+  * Removed a limitation where the maximum content length was limited up to
     100000 bytes.
-  * Fixed :c:func:`http_client_req` return value, the function did not report
-    number of bytes sent correctly.
-  * Clarify the expected behavior in case of empty response from the server.
-  * Make use of :c:func:`shutdown` to tear down HTTP connection instead of
+  * Fixed ``http_client_req()`` return value. The function now correctly
+    reports the number of bytes sent.
+  * Clarified the expected behavior in case of empty response from the server.
+  * Made use of ``shutdown`` to tear down HTTP connection instead of
     closing the socket from a system work queue.
 
 * LwM2M:
@@ -773,12 +766,12 @@ Networking
 
   * Added :c:func:`net_if_set_default` function which allows to set a default
     network interface at runtime.
-  * Added :kconfig:option:`NET_DEFAULT_IF_UP` option which allows to make the
+  * Added :kconfig:option:`CONFIG_NET_DEFAULT_IF_UP` option which allows to make the
     first interface which is up the default choice.
   * Fixed packet leak in network shell TCP receive handler.
   * Added :c:func:`net_pkt_rx_clone` which allows to allocated packet from
     correct packet pool when cloning. This is used at the loopback interface.
-  * Added :kconfig:option:`NET_LOOPBACK_SIMULATE_PACKET_DROP` option which
+  * Added :kconfig:option:`CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP` option which
     allows to simulate packet drop at the loopback interface. This is used by
     certain test cases.
 
@@ -796,13 +789,13 @@ Networking
 
 * Sockets:
 
-  * Added support for :c:func:`shutdown` function.
-  * Fixed :c:func:`sendmsg` operation when TCP reported full transmission window.
-  * Added support for :c:func:`getpeername` function.
-  * Fixed userspace :c:func:`accept` argument validation.
+  * Added support for ``shutdown()`` function.
+  * Fixed ``sendmsg()`` operation when TCP reported full transmission window.
+  * Added support for ``getpeername()`` function.
+  * Fixed userspace ``accept()`` argument validation.
   * Added support for :c:macro:`SO_SNDBUF` and :c:macro:`SO_RCVBUF` socket
     options.
-  * Implemented :c:macro:`POLLOUT` reporting from :c:func:`poll` for STREAM
+  * Implemented ``POLLOUT`` reporting from ``poll()`` for STREAM
     sockets.
   * Implemented socket dispatcher for offloaded sockets. This module allows to
     use multiple offloaded socket implementations at the same time.
@@ -817,7 +810,7 @@ Networking
   * Improved TCP stack throughput over loopback interface.
   * Fixed possible transmission window overflow in case of TCP retransmissions.
     This could led to TX buffer starvation when TCP entered retransmission mode.
-  * Updated :c:macro:`FIN_TIMEOUT` delay to correctly reflect time needed for
+  * Updated ``FIN_TIMEOUT`` delay to correctly reflect time needed for
     all FIN packet retransmissions.
   * Added proper error reporting from TCP to upper layers. This solves the
     problem of connection errors being reported to the application as graceful
@@ -1043,8 +1036,8 @@ Libraries / Subsystems
       macros in ``stdint.h``.
     * Added ``PRIx{FAST,LEAST}N`` and ``PRIxMAX`` format specifier macros in
       ``inttypes.h``.
-    * Fixed :c:func:`gmtime` access fault when userspace is enabled and
-      :c:func:`gmtime` is called from a user mode thread. This function can be
+    * Fixed ``gmtime()`` access fault when userspace is enabled and
+      ``gmtime()`` is called from a user mode thread. This function can be
       safely called from both kernel and user mode threads.
 
   * Newlib
@@ -1095,12 +1088,12 @@ Libraries / Subsystems
   * Added supplied image header to mcumgr img upload callback parameter list
     which allows the application to inspect it to determine if it should be
     allowed or declined.
-  * Made the img mgmt ``img_mgmt_vercmp`` function public to allow application-
+  * Made the ``img_mgmt_vercmp()`` function public to allow application-
     level comparison of image versions.
-  * mcumgr will now only return `MGMT_ERR_ENOMEM` when it fails to allocate
+  * mcumgr will now only return ``MGMT_ERR_ENOMEM`` when it fails to allocate
     a memory buffer for request processing, when previously it would wrongly
     report this error when the SMP response failed to fit into a buffer;
-    now when encoding of response fails `MGMT_ERR_EMSGSIZE` will be
+    now when encoding of response fails ``MGMT_ERR_EMSGSIZE`` will be
     reported. This addresses issue :github:`44535`.
 
 * SD Subsystem
@@ -1122,39 +1115,40 @@ Libraries / Subsystems
     * :c:func:`pm_device_power_domain_add()`
     * :c:func:`pm_device_power_domain_remove()`
 
-  * The default policy was renamed from `PM_POLICY_RESIDENCY` to `PM_POLICY_DEFAULT`,
-    and the `PM_POLICY_APP` to `PM_POLICY_CUSTOM`.
+  * The default policy was renamed from ``PM_POLICY_RESIDENCY`` to
+    ``PM_POLICY_DEFAULT``, and ``PM_POLICY_APP`` was renamed to
+    ``PM_POLICY_CUSTOM``.
 
   * The following functions were renamed:
 
-    * :c:func:`pm_power_state_next_get()` with :c:func:`pm_state_next_get()`
-    * :c:func:`pm_power_state_force()` with :c:func:`pm_state_force()`
+    * :c:func:`pm_power_state_next_get()` is now :c:func:`pm_state_next_get()`
+    * :c:func:`pm_power_state_force()` is now :c:func:`pm_state_force()`
 
   * Removed the deprecated function :c:func:`pm_device_state_set()`.
 
   * The state constraint APIs were moved (and renamed) to the policy
     API and accounts substates.
 
-    * :c:func:`pm_constraint_get()` with :c:func:`pm_policy_state_lock_is_active()`
-    * :c:func:`pm_constraint_set()` with :c:func:`pm_policy_state_lock_get()`
-    * :c:func:`pm_constraint_release()` with :c:func:`pm_policy_state_lock_put()`
+    * :c:func:`pm_constraint_get()` is now :c:func:`pm_policy_state_lock_is_active()`
+    * :c:func:`pm_constraint_set()` is now :c:func:`pm_policy_state_lock_get()`
+    * :c:func:`pm_constraint_release()` is now :c:func:`pm_policy_state_lock_put()`
 
-  * New API to set maximum latency requirements. The `DEFAULT` policy will account
-    the latency when computing the next state.
+  * Added a new API to set maximum latency requirements. The ``DEFAULT`` policy
+    will account for latency when computing the next state.
 
     * :c:func:`pm_policy_latency_request_add()`
     * :c:func:`pm_policy_latency_request_update()`
     * :c:func:`pm_policy_latency_request_remove()`
 
   * The API to set a device initial state was changed to be usable independently of
-    whether :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`
+    :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`.
 
-    * :c:func:`pm_device_runtime_init_suspended()` with :c:func:`pm_device_init_suspended()`
-    * :c:func:`pm_device_runtime_init_off()` with :c:func:`pm_device_init_off()`
+    * :c:func:`pm_device_runtime_init_suspended()` is now :c:func:`pm_device_init_suspended()`
+    * :c:func:`pm_device_runtime_init_off()` is now :c:func:`pm_device_init_off()`
 
 * IPC
 
-  * static_vrings: Fixed WQ initialization
+  * static_vrings: Fixed work queue (WQ) initialization
   * static_vrings: Introduced atomic helpers when accessing atomic_t variables
   * static_vrings: Moved to one WQ per instance
   * static_vrings: Added "zephyr,priority" property in the DT to set the WQ priority of the instance
@@ -1182,9 +1176,9 @@ HALs
 
 * Atmel
 
-  * Added dt-bindings, documentation and scripts to support state-based pin
-    control (``pinctrl``) API.
-  * Imported new SoCs header files:
+  * Added devicetree bindings, documentation, and scripts to support
+    state-based pin control (``pinctrl``) API.
+  * Imported new SoC header files for:
 
     * SAML21
     * SAMR34
@@ -1209,12 +1203,12 @@ MCUboot
 *******
 
 - Added initial support for devices with a write alignment larger than 8B.
-- Addeed optiona for enter to the serial recovery mode with timeout, see ``CONFIG_BOOT_SERIAL_WAIT_FOR_DFU``.
-- Use a smaller sha256 implementation.
-- Added support for the echo command in serial recovery, see ``CONFIG_BOOT_MGMT_ECHO``.
-- Fixed image decryption for any SoC flash of the pages size which not fitted in 1024 B in single loader mode.
-- Fixed possible output buffer overflow in serial recovery.
-- Added GH workflow for verifying integration with the Zephyr.
+- Added an option for entering serial recovery mode with a timeout. See ``CONFIG_BOOT_SERIAL_WAIT_FOR_DFU``.
+- Used a smaller sha256 implementation.
+- Added support for the echo command in serial recovery. See ``CONFIG_BOOT_MGMT_ECHO``.
+- Fixed image decryption for SoC flash with page sizes larger than 1024 B in single loader mode.
+- Fixed a possible output buffer overflow in serial recovery.
+- Added a GitHub workflow for verifying integration with Zephyr.
 - Removed deprecated ``DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL``.
 - Fixed usage of ``CONFIG_LOG_IMMEDIATE``.
 
@@ -1231,17 +1225,17 @@ Documentation
 * Replaced the existing statically rendered Kconfig documentation with the new
   Kconfig documentation engine that dynamically renders the Kconfig contents
   for improved search performance.
-* Added 'Language Support' sub-category under the 'Developing with Zephyr'
+* Added a 'Language Support' sub-category under the 'Developing with Zephyr'
   category that provides details regarding C and C++ language and standard
   library support status.
-* Added 'Toolchain' sub-category under the 'Developing with Zephyr' category
-  that lists all supported toolchains and the instructions on how to configure
+* Added a 'Toolchain' sub-category under the 'Developing with Zephyr' category
+  that lists all supported toolchains along with instructions for how to configure
   and use them.
 
 Tests and Samples
 *****************
 
-  * A dedicated framework was added to test STM32 clock_control driver.
+  * A dedicated framework was added to test the STM32 clock_control driver.
 
 Issue Related Items
 *******************
