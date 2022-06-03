@@ -324,6 +324,9 @@ void ll_iso_tx_mem_release(void *tx);
 int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx, void *link);
 void ll_iso_link_tx_release(void *link);
 
+uint8_t ll_conn_iso_accept_timeout_get(uint16_t *timeout);
+uint8_t ll_conn_iso_accept_timeout_set(uint16_t timeout);
+
 /* External co-operation */
 void ll_timeslice_ticker_id_get(uint8_t * const instance_index,
 				uint8_t * const ticker_id);

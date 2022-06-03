@@ -75,6 +75,12 @@ static void *cis_free;
 static struct ll_conn_iso_group cig_pool[CONFIG_BT_CTLR_CONN_ISO_GROUPS];
 static void *cig_free;
 
+/* BT. 5.3 Spec - Vol 4, Part E, Sect 6.7 */
+#define CONN_ACCEPT_TIMEOUT_DEFAULT 0x1F40
+#define CONN_ACCEPT_TIMEOUT_MAX     0xB540
+#define CONN_ACCEPT_TIMEOUT_MIN     0x0001
+static uint16_t conn_accept_timeout;
+
 struct ll_conn_iso_group *ll_conn_iso_group_acquire(void)
 {
 	return mem_acquire(&cig_free);
@@ -228,6 +234,25 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_gr
 	}
 
 	return NULL;
+}
+
+uint8_t ll_conn_iso_accept_timeout_get(uint16_t *timeout)
+{
+	*timeout = conn_accept_timeout;
+
+	return 0;
+}
+
+uint8_t ll_conn_iso_accept_timeout_set(uint16_t timeout)
+{
+	if (!IN_RANGE(timeout, CONN_ACCEPT_TIMEOUT_MIN,
+			       CONN_ACCEPT_TIMEOUT_MAX)) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	conn_accept_timeout = timeout;
+
+	return 0;
 }
 
 void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis)
@@ -477,6 +502,8 @@ static int init_reset(void)
 		cis->cis_id = 0;
 		cis->group  = NULL;
 	}
+
+	conn_accept_timeout = CONN_ACCEPT_TIMEOUT_DEFAULT;
 
 	/* Initialize LLL */
 	err = lll_conn_iso_init();
