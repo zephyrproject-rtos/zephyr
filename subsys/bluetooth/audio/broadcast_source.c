@@ -270,8 +270,11 @@ static int bt_audio_broadcast_source_setup_stream(uint8_t index,
 	bt_audio_stream_attach(NULL, stream, ep, codec);
 	ep->iso->source_stream = stream;
 	stream->qos = qos;
+	stream->iso->qos->tx->path = &ep->iso->source_path;
+	stream->iso->qos->tx->path->cc = ep->iso->source_path_cc;
 	stream->iso->qos->rx = NULL;
 	bt_audio_codec_qos_to_iso_qos(stream->iso->qos->tx, qos);
+	bt_audio_codec_to_iso_path(stream->iso->qos->tx->path, codec);
 
 	return 0;
 }
