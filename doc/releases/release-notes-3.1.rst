@@ -282,27 +282,6 @@ Deprecated in this release
 Stable API changes in this release
 ==================================
 
-Bluetooth
-*********
-
-* Host
-
-  * The :c:enum:`bt_l2cap_chan_state` values ``BT_L2CAP_CONNECT`` and
-    ``BT_L2CAP_DISCONNECT`` have been renamed to ``BT_L2CAP_CONNECTING`` and
-    ``BT_L2CAP_DISCONNECTING`` respectively.
-
-  * The callbacks :c:func:`pairing_complete`, :c:func:`pairing_failed`, and
-    :c:func:`bond_delete` have been moved from struct :c:struct:`bt_auth_cb` to a
-    newly created informational-only callback struct :c:struct:`bt_conn_auth_info_cb`.
-
-  * :c:func:`bt_conn_index` now takes a ``const struct bt_conn*`` argument.
-
-  * The :c:struct:`bt_gatt_subscribe_params` structure's ``write`` callback
-    function has been deprecated.  Use the new ``subscribe`` callback
-    instead.
-
-  * :c:func:`bt_disable` was added to enable the caller to disable the Bluetooth stack.
-
 New APIs in this release
 ========================
 
@@ -330,6 +309,27 @@ New APIs in this release
     * :c:func:`can_get_timing_data_max()`
 
   * Added support for enabling/disabling CAN-FD mode at runtime using :c:macro:`CAN_MODE_FD`.
+
+Bluetooth
+*********
+
+* Host
+
+  * The :c:enum:`bt_l2cap_chan_state` values ``BT_L2CAP_CONNECT`` and
+    ``BT_L2CAP_DISCONNECT`` have been renamed to ``BT_L2CAP_CONNECTING`` and
+    ``BT_L2CAP_DISCONNECTING`` respectively.
+
+  * The callbacks :c:func:`pairing_complete`, :c:func:`pairing_failed`, and
+    :c:func:`bond_delete` have been moved from struct :c:struct:`bt_auth_cb` to a
+    newly created informational-only callback struct :c:struct:`bt_conn_auth_info_cb`.
+
+  * :c:func:`bt_conn_index` now takes a ``const struct bt_conn*`` argument.
+
+  * The :c:struct:`bt_gatt_subscribe_params` structure's ``write`` callback
+    function has been deprecated.  Use the new ``subscribe`` callback
+    instead.
+
+  * :c:func:`bt_disable` was added to enable the caller to disable the Bluetooth stack.
 
 Kernel
 ******
