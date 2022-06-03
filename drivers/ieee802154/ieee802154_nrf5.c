@@ -1139,9 +1139,9 @@ void nrf_802154_energy_detection_failed(nrf_802154_ed_error_t error)
 }
 
 #if defined(CONFIG_NRF_802154_SER_HOST)
-void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *p_err)
+void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *err)
 {
-	__ASSERT(false, "802.15.4 serialization error");
+	__ASSERT(false, "802.15.4 serialization error: %d", err->reason);
 }
 #endif
 
