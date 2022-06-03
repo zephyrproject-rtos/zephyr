@@ -542,6 +542,9 @@ Drivers and Sensors
 
 * SPI
 
+  * Ported all SPI drivers to pinctrl
+  * Added support for SPI on the GD32 family
+
 * Timer
 
 * USB
