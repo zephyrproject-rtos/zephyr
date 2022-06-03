@@ -45,6 +45,12 @@ Changes in this release
   with SD cards. See :ref:`the disk access api <disk_access_api>` for an
   example of the new devicetree binding format required.
 
+* Kconfig preprocessor function ``dt_nodelabel_has_compat`` was redefined, for
+  consistency with the ``dt_nodelabel_has_prop`` function and devicetree macros
+  like :c:func:`DT_NODE_HAS_COMPAT`. Now the function does not take into account
+  the status of the checked node. Its former functionality is provided by the
+  newly introduced ``dt_nodelabel_enabled_with_compat`` function.
+
 * CAN
 
   * Added ``const struct device`` parameter to the following CAN callback function signatures:
