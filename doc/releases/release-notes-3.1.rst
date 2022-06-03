@@ -701,6 +701,37 @@ USB
 Build System
 ************
 
+* The build system's internals have been completely overhauled for increased
+  modularity. This makes it easier to reuse individual components through the
+  Zephyr CMake package mechanism.
+
+  With the improved Zephyr CMake package, the following examples are now possible:
+
+  * ``find_package(Zephyr)``: load a standard build system, as before
+  * ``find_package(Zephyr COMPONENTS unittest)``: load a specific unittest
+    build component
+  * ``find_package(Zephyr COMPONENTS dts)``: only load the dts module and its
+    direct dependencies
+  * ``find_package(Zephyr COMPONENTS extensions west zephyr_module)``: load
+    multiple specific modules and their dependencies
+
+  Some use cases that this work intends to enable are:
+
+  * The sysbuild proposal: `Zephyr sysbuild / multi image #40555
+    <https://github.com/zephyrproject-rtos/zephyr/pull/40555>`_
+  * Running Zephyr CMake configure stages individually. One example is only
+    processing the devicetree steps of the build system, while skipping the
+    rest. This is a required feature for extending twister to do test case
+    filtering based on the devicetree contents without invoking a complete
+    CMake configuration.
+
+  For more details, see :zephyr_file:`cmake/package_helper.cmake`.
+
+* A new Zephyr SDK has been created which now supports macOS and Windows in
+  addition to Linux platforms.
+
+  For more information, see: https://github.com/zephyrproject-rtos/sdk-ng
+
 Devicetree
 **********
 
