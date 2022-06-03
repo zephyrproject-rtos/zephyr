@@ -132,10 +132,15 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 	}
 #endif /* CONFIG_BT_BREDR */
 #if defined(CONFIG_BT_ISO)
-	if (conn->type == BT_CONN_TYPE_ISO || bt_dev.le.iso_mtu) {
-		if (bt_dev.le.iso_pkts.limit) {
+	/* Use ISO pkts semaphore if LE Read Buffer Size command returned
+	 * dedicated ISO buffers.
+	 */
+	if (conn->type == BT_CONN_TYPE_ISO) {
+		if (bt_dev.le.iso_mtu && bt_dev.le.iso_pkts.limit) {
 			return &bt_dev.le.iso_pkts;
 		}
+
+		return NULL;
 	}
 #endif /* CONFIG_BT_ISO */
 #if defined(CONFIG_BT_CONN)
