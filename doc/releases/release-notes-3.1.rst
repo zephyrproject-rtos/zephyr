@@ -2,8 +2,8 @@
 
 .. _zephyr_3.1:
 
-Zephyr 3.1.0 (Working Draft)
-############################
+Zephyr 3.1.0
+############
 
 The following sections provide detailed lists of changes by component.
 
