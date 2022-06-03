@@ -13,7 +13,6 @@ float sqrtf(float square)
 	float root, last, diff;
 
 	root = square / 3.0;
-	diff = 1;
 
 	if (square <= 0) {
 		return 0;
