@@ -77,8 +77,6 @@ uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint32_t baud_rate)
 #endif /* USART_PRESC_PRESCALER */
 #endif /* HAS_LPUART_1 */
 
-#define TIMEOUT 1000
-
 #ifdef CONFIG_PM
 static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
 {
