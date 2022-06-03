@@ -199,7 +199,6 @@ static void fix_extra_red(struct rbnode **stack, int stacksz)
 
 		if (parent_side != side) {
 			rotate(stack, stacksz);
-			node = stack[stacksz - 1];
 		}
 
 		/* Rotate the grandparent with parent, swapping colors */
