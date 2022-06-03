@@ -397,6 +397,9 @@ Drivers and Sensors
 
   * Atmel SAM0: Fixed adc voltage reference
   * STM32: Added support for :c:enumerator:`adc_reference.ADC_REF_INTERNAL`.
+  * Added the :c:struct:`adc_dt_spec` structure and associated helper macros,
+    e.g. :c:macro:`ADC_DT_SPEC_GET`, to facilitate getting configuration of
+    ADC channels from devicetree nodes.
 
 * CAN
 
@@ -536,6 +539,13 @@ Drivers and Sensors
     :c:macro:`PWM_STM32_COMPLEMENTARY` to specify that PWM output should happen on a
     complementary channel pincfg (eg:``tim1_ch2n_pb14``).
   * STM32: Added counter mode support. See :dtcompatible:`st,stm32-timers`.
+  * Aligned nRF PWM drivers (pwm_nrfx and pwm_nrf5_sw) with the updated PWM API.
+    In particular, this means that the :c:func:`pwm_set` and
+    :c:func:`pwm_set_cycles` functions need to be called with a PWM channel
+    as a parameter, not with a pin number like it was for the deprecated
+    ``pwm_pin_set_*`` functions. Also, the ``flags`` parameter is now supported
+    by the drivers, so either the :c:macro:`PWM_POLARITY_INVERTED` or
+    :c:macro:`PWM_POLARITY_NORMAL` flag must be provided in each call.
 
 * Reset
 
