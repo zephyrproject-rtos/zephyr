@@ -1153,10 +1153,8 @@ Known bugs
 - :github:`41822` - BLE IPSP sample cannot handle large ICMPv6 Echo Request
 - :github:`42030` - can: "bosch,m-can-base": Warning "missing or empty reg/ranges property"
 - :github:`42134` - TLS handshake error using DTLS on updatehub
-- :github:`42207` - [v2.7] LOG2 + Systemview leads to kernel panic.
 - :github:`42574` - i2c: No support for bus recovery imx.rt and or timeout on bus busy
 - :github:`42629` - stm32g0: Device hang/hard fault with AT45 + ``CONFIG_PM_DEVICE``
-- :github:`42653` - [ 2.7.1] STM32 Hangs sending TCP packets
 - :github:`42842` - BBRAM API is missing a documentation reference page
 - :github:`43115` - Data corruption in STM32 SPI driver in Slave Mode
 - :github:`43246` - Bluetooth: Host: Deadlock with Mesh and Ext Adv on native_posix
@@ -1254,20 +1252,6 @@ Addressed issues
 ================
 
 * :github:`46241` - Bluetooth: Controller: ISO: Setting CONFIG_BT_CTLR_ISO_TX_BUFFERS=4 breaks non-ISO data
-* :github:`46223` - Release notes for v3.1.0: USB
-* :github:`46222` - Release notes for v3.1.0: timer
-* :github:`46220` - Release notes for v3.1.0: documentation
-* :github:`46219` - Release notes for v3.1.0: DT
-* :github:`46218` - Release notes for v3.1.0: SPI
-* :github:`46217` - Release notes for v3.1.0: I2S
-* :github:`46216` - Release notes for v3.1.0: I2C
-* :github:`46215` - Release notes for v3.1.0: GPIO
-* :github:`46214` - Release notes for v3.1.0: ethernet
-* :github:`46213` - Release notes for v3.1.0: eeprom
-* :github:`46212` - Release notes for v3.1.0: dma
-* :github:`46211` - Release notes for v3.1.0: disk
-* :github:`46210` - Release notes for v3.1.0: arm64
-* :github:`46209` - Release notes for v3.1.0: counter
 * :github:`46140` - Custom driver offload socket creation failing
 * :github:`46138` - Problem with building zephyr/samples/subsys/mgmt/mcumgr/smp_svr  using atsame70
 * :github:`46137` - RFC: Integrate u8g2 monochrome graphcial library as module to Zephyr OS (https://github.com/olikraus/u8g2)
@@ -1302,7 +1286,6 @@ Addressed issues
 * :github:`45883` - Bluetooth: Controller: CCM reads data before Radio stores them when DF enabled on PHY 1M
 * :github:`45882` - Zephyr minimal C library contains files licensed with BSD-4-Clause-UC
 * :github:`45878` - doc: release: Update release notes with CVE
-* :github:`45877` - version bump to 2.7.1
 * :github:`45876` - boards: h747/h745: Update dual core flash and debug instructions
 * :github:`45875` - bluetooth: hci_raw: avoid possible memory overflow in bt_buf_get_tx()
 * :github:`45873` - soc: esp32: use PYTHON_EXECUTABLE from build system
@@ -1310,7 +1293,6 @@ Addressed issues
 * :github:`45871` - ci: split Bluetooth workflow
 * :github:`45870` - drivers: virt_ivshmem: Allow multiple instances of ivShMem devices
 * :github:`45869` - doc: update requirements
-* :github:`45868` - v2.7-branch: bump version to 2.7.2-rc1
 * :github:`45865` - CODEOWNERS has errors
 * :github:`45862` - USB ECM/RNDIS Can't receive broadcast messages
 * :github:`45856` - blinky built with asserts on arduino nano
@@ -1359,7 +1341,6 @@ Addressed issues
 * :github:`45593` - tests: newlib:  test_malloc_thread_safety fails on nrf9160dk_nrf9160_ns
 * :github:`45583` - Typo in definition of lsm6ds0.h
 * :github:`45580` - ESP32-C3: CONFIG_ESP32_PHY_MAX_TX_POWER undeclared error when building with CONFIG_BT=y
-* :github:`45579` - [v2.7.x] Application defined Shell Command not registered
 * :github:`45578` - cmake: gcc --print-multi-directory doesn't print full path and checks fails
 * :github:`45577` - STM32L4: USB MSC doesn't work with SD card
 * :github:`45568` - STM32H7xx: Driver for internal flash memory partially uses a fixed flash program word size, which doesn't fit for all STM32H7xx SOCs (e.g. STM32H7A3, STM32H7B0, STM32H7B3) leading to potential flash data corruption
@@ -1379,10 +1360,6 @@ Addressed issues
 * :github:`45468` - Is uart_poll_in() blocking or not?
 * :github:`45463` - null function pointer called when using shell logger backend under heavy load
 * :github:`45458` - it8xxx2_evb: tests/drivers/pwm/pwm_api assertion fail
-* :github:`45455` - [backport v2.7-auditable-branch] backport of #45400 failed
-* :github:`45454` - [backport v2.7-branch] backport of #45400 failed
-* :github:`45451` - [backport v3.0-branch] backport of #43845 failed
-* :github:`45448` - Request for backporting to 3.0.0
 * :github:`45443` - SAMD21: Wrong voltage reference set by enum adc_reference
 * :github:`45440` - Intel CAVS: intel_adsp_hda testsuite is failing due to time out on intel_adsp_cavs15
 * :github:`45431` - Bluetooth: Controller: df: Wrong antenna identifier inserted after switch pattern exhausted
@@ -1404,7 +1381,6 @@ Addressed issues
 * :github:`45359` - USB DFU sample does not work on RT series boards
 * :github:`45355` - Twister fails when west is not present
 * :github:`45345` - Make FCB work with sectors larger than 16K
-* :github:`45341` - [backport] Backport adding new EHL SKUs for IBECC
 * :github:`45337` - timing: missing extern "C" in timing.h
 * :github:`45336` - newlib: PRIx8 inttype incorrectly resolves to ``hh`` with newlib-nano
 * :github:`45324` - NET_TCP_BACKLOG_SIZE is unused, it has to be either implemented or deleted
@@ -1478,11 +1454,8 @@ Addressed issues
 * :github:`44830` - Unable to set compiler warnings on app exclusively
 * :github:`44822` - STM32F103 Custom Board Clock Config Error
 * :github:`44811` - STRINGIFY does not work with mcumgr
-* :github:`44807` - [backport v2.7-branch] backport of #43845 failed
-* :github:`44805` - [backport v2.7-branch] backport of #43576 failed
 * :github:`44798` - promote Michael to the Triage permission level
 * :github:`44797` - x86: Interrupt handling not working for cores <> core0 - VMs not having core 0 assigned cannot handle IRQ events.
-* :github:`44788` - [backport v2.7-branch] backport of #43008 failed
 * :github:`44778` - stdint types not recognized in soc_common.h
 * :github:`44777` - disco_l475_iot1 default CONFIG_BOOT_MAX_IMG_SECTORS should be 512 not 256
 * :github:`44758` - intel_adsp: kernel.common tests are failing
@@ -1511,10 +1484,6 @@ Addressed issues
 * :github:`44672` - tests-ci : drivers: counter: basic_api test failed
 * :github:`44659` - Enhancement to k_thread_state_str()
 * :github:`44621` - ASCS: Sink ASE stuck in Releasing state
-* :github:`44620` - Backport 'boards: bl654_usb: Fix non-mcuboot builds not limiting size' to 2.7
-* :github:`44619` - Backport 'samples: subsys: mgmt: smp_svr: Fix dupicate fs mgmt registration' to 2.7
-* :github:`44618` - Backport 'doc: Add link to J-Link virtual MSD disable for SMP' to 2.7
-* :github:`44615` - Backport request
 * :github:`44600` - NMI testcase fails on tests/arch/arm/arm_interrupt with twister
 * :github:`44586` - nrf5340: Random crashes when a lot of interrupts is triggered
 * :github:`44584` - SWO log output does not compile for STM32WB55
@@ -1553,19 +1522,14 @@ Addressed issues
 * :github:`44386` - Zephyr SDK 0.14.0 does not contain a sysroots directory
 * :github:`44374` - Twister: Non-intact handler.log files when running tests and samples folders
 * :github:`44361` - drivers: can: missing syscall verifier for can_set_mode()
-* :github:`44352` - [v2.7.0] stm32l5x boards missing the openocd runner
 * :github:`44349` - Nordic BLE fails assertion when logging is enabled
 * :github:`44348` - drivers: can: z_vrfy_can_recover() does not compile
 * :github:`44347` - ACRN: multiple tests failed due to incomplete log
 * :github:`44345` - drivers: can: M_CAN bus recovery function has the wrong signature
 * :github:`44344` - drivers: can: mcp2515 introduces a hard dependency on CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 * :github:`44338` - intel_adsp_cavs18: multiple tests failed due to non-intact log
-* :github:`44337` - [v2.7.0] twister: Miss sn option to stm32cubeprogrgammer runner
-* :github:`44336` - [v2.7.0] nucleo_wb55rg: stm32cubeprogrammer runner is missing for twister tests
 * :github:`44314` - rddrone_fmuk66: fatal error upon running basic samples
-* :github:`44310` - [v2.7] net: gptp: type mismatch calculation error in gptp_mi
 * :github:`44307` - LE Audio: unicast stream/ep or ACL disconnect reset should not terminate the CIG
-* :github:`44299` - [backport v2.7-branch] drivers: virt_ivshmem: Allow multiple instances of ivShMem devices
 * :github:`44296` - Bluetooth: Controller: DF: IQ sample of CTE signals are not valid if PHY is 1M
 * :github:`44295` - Proposal for subsystem for media
 * :github:`44284` - LE Audio: Missing recv_info for BAP recv
@@ -1602,11 +1566,8 @@ Addressed issues
 * :github:`44101` - a build error when CONFIG_MULTITHREADING=n
 * :github:`44092` - rand32_ctr_drbg fails to call the respective initialization routing
 * :github:`44089` - logging: shell backend: null-deref when logs are dropped
-* :github:`44084` - [v2.7] build: multiple unused static function
-* :github:`44074` - [backport v3.0-branch] backport of #43951 failed
 * :github:`44072` - mcumgr smp source is checking variable without it being set and causing automated test failures
 * :github:`44070` - west spdx TypeError: 'NoneType' object is not iterable
-* :github:`44049` - [backport v2.7-branch] backport of #43861 failed
 * :github:`44043` - Usage fault when running flash shell sample on RT1064 EVK
 * :github:`44029` - Unexpected behavior of CONFIG_LOG_OVERRIDE_LEVEL
 * :github:`44018` - net: tcp: Running out of buffers by packet loss
@@ -1642,10 +1603,7 @@ Addressed issues
 * :github:`43864` - mec172xevb_assy6906: tests/drivers/pwm/pwm_loopback  test case failed to build
 * :github:`43858` - mcumgr seems to lock up when it receives command for group that does not exist
 * :github:`43856` - mec172xevb_assy6906: tests/drivers/i2c/i2c_api  i2c_test failed
-* :github:`43854` - [v2.7-auditable branch]: X86 MSI messages always get to BSP core (need a fix to be backported)
-* :github:`43853` - 2.7 branch: X86 MSI messages always get to BSP core (need a fix to be backported)
 * :github:`43851` - LE Audio: Make PACS location optional
-* :github:`43839` - [v2.7] Bluetooth: controller: missing NULL assign to df_cfg in ll_adv_set
 * :github:`43838` - mec172xevb_assy6906: tests/drivers/adc/adc_dma  test case build fail
 * :github:`43842` - tests-ci : libraries: encoding: jwt test Timeout
 * :github:`43841` - tests-ci : net: socket: tls.preempt test Timeout
@@ -1660,7 +1618,6 @@ Addressed issues
 * :github:`43793` - Alllow callbacks to CDC_ACM events
 * :github:`43792` - mimxrt1050_evk: failed to run tests/net/socket/tls and tests/subsys/jwt
 * :github:`43786` - [Logging] log context redefined with XCC when use zephyr logging api with SOF
-* :github:`43775` - [Backport v3.0-branch] stm32: wrong clock the LSI freq for stm32l0x mcus
 * :github:`43757` - it8xxx2_evb: k_busy_wait is not working accurately for ITE RISC-V
 * :github:`43756` - drivers: gpio: pca95xx does not compile with CONFIG_GPIO_PCA95XX_INTERRUPT
 * :github:`43750` - ADC Driver build is broken for STM32L412
@@ -1676,10 +1633,7 @@ Addressed issues
 * :github:`43702` - samples/arch/smp/pktqueue not working on ESP32
 * :github:`43700` - mgmt/mcumgr: Strange Kconfig names for MCUMGR_GRP_ZEPHYR_BASIC log levels
 * :github:`43699` - Bluetooth Mesh working with legacy and extended advertising simultaneously
-* :github:`43694` - [backport v2.7-branch] backport of #43652 failed
 * :github:`43693` - LE Audio: Rename enum bt_audio_pac_type
-* :github:`43688` - [backport v2.7-auditable-branch] backport of #42480 failed
-* :github:`43680` - [backport v2.7-branch] backport of #43483 failed
 * :github:`43669` - LSM6DSL IMU driver - incorrect register definitions
 * :github:`43663` - stm32f091 test   tests/kernel/context/ test_kernel_cpu_idle  fails
 * :github:`43661` - Newlib math library not working with user mode threads
@@ -1691,19 +1645,14 @@ Addressed issues
 * :github:`43636` - Documentation incorrectly states that C++ new and delete operators are unsupported
 * :github:`43630` - Zperf tcp download stalls with window size becoming 0 on Zephyr side
 * :github:`43618` - Invalid thread indexes out of userspace generation
-* :github:`43602` - [v2.7] Bluetooth: controller: Missing NULL assign to df_cfg in ll_adv_set
 * :github:`43600` - tests: mec15xxevb_assy6853: most of the test cases failed
-* :github:`43597` - [backport v2.7-branch] backport of #43367 failed
-* :github:`43595` - [backport v2.7-branch] backport of #43364 failed
 * :github:`43587` - arm: trustzone: Interrupts using FPU causes usage fault when ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS is disabled
 * :github:`43580` - hl7800: tcp stack freezes on slow response from modem
 * :github:`43573` - return const struct device \* for device_get_binding(const char \*name)
-* :github:`43572` - [Backport v2.7-branch] stm32: wrong clock the LSI freq for stm32l0x mcus
 * :github:`43568` - ITE eSPI driver expecting OOB header also along with OOB data from app code - espi_it8xxx2_send_oob() & espi_it8xxx2_receive_oob
 * :github:`43567` - Bluetooth: Controller: ISO data packet dropped on payload array wraparound
 * :github:`43553` - Request to configure SPBTLE-1S of STEVAL-MKSBOX1V1
 * :github:`43552` - samples: bluetooth: direction_finding: Sample fails on nrf5340
-* :github:`43548` - [v2.7] gen_relocate_app truncates files on incremental builds
 * :github:`43543` - RFC: API Change: Bluetooth: struct bt_auth_cb field removal
 * :github:`43525` - Default network interface selection by up-state
 * :github:`43518` - 'DT_N_S_soc_S_timers_40012c00_S_pwm' undeclared
@@ -1755,28 +1704,16 @@ Addressed issues
 * :github:`43271` - tests: acrn_ehl_crb:  tests/arch/x86/info failed
 * :github:`43268` - LE Audio: Add stream ops callbacks for unicast server
 * :github:`43258` - HCI core data buffer overflow with ESP32-C3 in Peripheral HR sample
-* :github:`43257` - can_sam.c
 * :github:`43248` - Bluetooth: Mesh: Unable used with ext adv on native_posix
 * :github:`43235` - STM32 platform does not handle large i2c_write() correctly
 * :github:`43230` - Deprecate DT_CHOSEN_ZEPHYR_ENTROPY_LABEL
 * :github:`43229` - nvs: change nvs_init to accept a device reference
-* :github:`43224` - [backport v2.7-branch] backport of #43147 failed
 * :github:`43218` - nucleo_wb55rg: Partition update required to use 0.13.0 BLE firmware
 * :github:`43205` - UART console broken since 099850e916ad86e99b3af6821b8c9eb73ba91abf
 * :github:`43203` - BLE: With BT_SETTINGS and BT_SMP, second connection blocks the system in connection event notification
 * :github:`43192` - lvgl: upgrade LVGL to 8.1 build error
 * :github:`43190` - Bluetooth: audio: HCI command timeout on LE Setup Isochronous Data Path
 * :github:`43186` - Bluetooth: import nrf ble_db_discovery library to zephyr
-* :github:`43185` - [v2.7] arm: cortex-m: uninitialised ptr_esf in get_esf() in fault.c
-* :github:`43184` - [v2.7] arm: Wrong macro used for z_interrupt_stacks declaration in stack.h
-* :github:`43183` - [v2.7] net: mqtt: setsockopt leak on failure
-* :github:`43182` - [v2.7] net: arp: ARP retransmission source address selection
-* :github:`43181` - [v2.7] net: sockets: net_pkt leak in accept
-* :github:`43180` - [v2.7] net: tcp: possible deadlock in tcp_conn_unref()
-* :github:`43179` - [v2.7] net: tcp: forever loop in tcp_resend_data
-* :github:`43178` - [v2.7] net: ip: route: log_strdup misuse
-* :github:`43177` - [v2.7] net: shell: errno not cleared before calling the strtol
-* :github:`43176` - [v2.7] net/icmpv4: client possible to ddos itself when there's an error for the broadcasted packet
 * :github:`43172` - CONFIG_BT_MESH_ADV_EXT doesn't build without CONFIG_BT_MESH_RELAY
 * :github:`43163` - Applications not pulling LVGL cannot be configured or compiled
 * :github:`43159` - hal: stm32: ltdc pins should be very-high-speed
@@ -1788,7 +1725,6 @@ Addressed issues
 * :github:`43117` - Not possible to create more than one shield.
 * :github:`43109` - drivers:peci:xec: PECI Command 'Ping' does not work properly
 * :github:`43099` - CMake: ARCH roots issue
-* :github:`43096` - [backport v2.7-branch] backport of #42480 failed
 * :github:`43095` - Inconsistent logging config result resulted from menuconfig.
 * :github:`43094` - CMake stack overflow after changing the build/zephyr/.config, even just timestamp.
 * :github:`43090` - mimxrt685_evk_cm33: USB examples not working on Zephyr v3.0.0
@@ -1806,11 +1742,8 @@ Addressed issues
 * :github:`42988` - Specify and standardize undefined behavior on empty response from server for http_client
 * :github:`42960` - Bluetooth: Audio: Codec config parsing and documentation
 * :github:`42953` - it8xxx2_evb: Test in tests/kernel/timer/timer_api fail.
-* :github:`42943` - [backport v2.7-branch] backport of #42457 failed
 * :github:`42940` - Please add zsock_getpeername
 * :github:`42928` - CSIS: Invalid usage of bt_conn_auth_cb callbacks
-* :github:`42919` - [backport v2.6-branch] backport of #42422 failed
-* :github:`42915` - [backport v2.7-branch] backport of #41716 failed
 * :github:`42888` - Bluetooth: Controller: Extended Advertising - Advertising Privacy Support
 * :github:`42881` - Arduino due missing 'arduino_i2c' alias.
 * :github:`42877` -  k_cycle_get_32 returns 0 on start-up on native_posix
@@ -1835,16 +1768,12 @@ Addressed issues
 * :github:`42702` - upsquared: drivers.counter.cmos.seconds_rate is failing with busted maximum bound when run multiple times
 * :github:`42685` - Socket echo server sample code not working in Litex Vexriscv cpu (Xilinx AC701 board)
 * :github:`42680` - Missing bt_conn_(un)ref for LE Audio and tests
-* :github:`42672` - [backport v2.7-branch] backport of #38603 failed
-* :github:`42631` - v2.7: Unable to identify owner of net_mgmt_lock easily
-* :github:`42622` - [ 2.7.1 ] pm: pm_device structure bigger than nessecary when PM_DEVICE_RUNTIME not set
 * :github:`42599` - tests: kernel: mem_protect: mem_protect fails after reset on stm32wb55 nucleo
 * :github:`42588` - lsm6dso
 * :github:`42587` - LE Audio: BAP Unicast API use array of pointers instead of array of streams
 * :github:`42559` - 6LoCAN samples fail due to null pointer dereference
 * :github:`42548` - acrn_ehl_crb:  twister failed to run tests/subsys/logging due to UnicodeEncodeError after switching to log v2
 * :github:`42544` - Bluetooth: controller: llcp: handling of remote procedures with and without instant
-* :github:`42535` - [backport v2.7-branch] backport of #42371 failed
 * :github:`42534` - BLE Testing functions do not work properly
 * :github:`42530` - Possibility to define pinmux item for Pin Control as a plain input/output
 * :github:`42524` - Wrong implementation of SPI driver
@@ -1857,13 +1786,11 @@ Addressed issues
 * :github:`42436` - NXP eDMA overrun errors on SAI RX
 * :github:`42434` - NXP I2S (SAI) driver bugs
 * :github:`42432` - i2c: unable to configure SAMD51 i2c clock frequency for standard (100 KHz) speeds
-* :github:`42431` - [backport v2.7-branch] backport of #41962 failed
 * :github:`42425` - i2c: sam0 driver does not prevent simultaneous transactions
 * :github:`42351` - stm32H743 nucleo board cannot flash after tests/drivers/flash
 * :github:`42343` - LE Audio: PACS: Server change location
 * :github:`42342` - LE Audio: PACS notify changes to locations
 * :github:`42333` - Cannot write to qspi flash in adafruit feather nrf52840, device tree is wrong
-* :github:`42327` - question: increased power consumption after updating from zephyr 2.4 to zephyr 2.7 on nrf52840
 * :github:`42310` - Support for TCA6408A gpio expander, which existing driver as a base?
 * :github:`42306` - Bluetooth: Host: More than ``CONFIG_BT_EATT_MAX`` EATT channels may be created
 * :github:`42290` - ESP32 - Heltec Wifi - Possibly invalid CONFIG_ESP32_XTAL_FREQ setting (40MHz). Detected 26 MHz
@@ -1914,13 +1841,9 @@ Addressed issues
 * :github:`41593` - LE Audio: Upstream BASS
 * :github:`41592` - Object Transfer Service Client made "official"
 * :github:`41590` - LE Audio: CAP API - Acceptor
-* :github:`41522` - [backport v2.7-branch] backport of #41481 failed
 * :github:`41517` - Hard fault if ``CONFIG_LOG2_MODE_DEFERRED`` is enabled
 * :github:`41472` - Unable to mount fat file system on nucleo_f429zi
-* :github:`41456` - [backport v2.7-branch] backport of #41105 failed
 * :github:`41449` - PWM capture with STM32
-* :github:`41411` - [backport v2.7-branch] backport of #40678 failed
-* :github:`41410` - [backport v2.7-branch] backport of #40674 failed
 * :github:`41408` - Low power states for STM32 H7
 * :github:`41388` - tests: coverage: test code coverage report failed on mps2_an385
 * :github:`41382` - nordic nrf52/nrf53 and missing cpu-power-states (dts) for automatic device PM control
@@ -1941,7 +1864,6 @@ Addressed issues
 * :github:`41169` - twister: program get stuck when serial in hardware map is empty string
 * :github:`41151` - RFC: Provide k_realloc()
 * :github:`41093` - Kconfig.defconfig:11: error: couldn't parse 'default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)'
-* :github:`41004` - [backport v2.7-branch] backport of #40127 failed
 * :github:`40970` - Upgrade qemu to fix breakage in mps3-an547
 * :github:`40920` - Bluetooth audio: client/server naming scheme
 * :github:`40901` - RFC: API Change: update LVGL from v7 to v8
