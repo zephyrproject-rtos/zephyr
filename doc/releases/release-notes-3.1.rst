@@ -143,6 +143,10 @@ Deprecated in this release
     ``_usec`` set functions have been deprecated. Other units can be specified
     using, e.g. ``PWM_USEC()`` macros, which convert down to nanoseconds.
 
+* Utilities
+
+  * :c:macro:`UTIL_LISTIFY` has been deprecated. Use :c:macro:`LISTIFY` instead.
+
 Stable API changes in this release
 ==================================
 
