@@ -22,6 +22,131 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 Known issues
 ************
 
+The following open bugs were filed at the time of the 3.1.0 release.
+
+- :github:`23302` - Poor TCP performance
+- :github:`25917` - Bluetooth: Deadlock with TX of ACL data and HCI commands (command blocked by data)
+- :github:`30348` - XIP can't be enabled with ARC MWDT toolchain
+- :github:`31298` - tests/kernel/gen_isr_table failed on hsdk and nsim_hs_smp sometimes
+- :github:`33747` - gptp does not work well on NXP rt series platform
+- :github:`34226` - Compile error when building civetweb samples for posix_native
+- :github:`34600` - Bluetooth: L2CAP: Deadlock when there are no free buffers while transmitting on multiple channels
+- :github:`36358` - Potential issue with CMAKE_OBJECT_PATH_MAX
+- :github:`37193` - mcumgr: Probably incorrect error handling with udp backend
+- :github:`37704` - hello world doesn't work on qemu_arc_em when CONFIG_ISR_STACK_SIZE=1048510
+- :github:`37731` - Bluetooth: hci samples: Unable to allocate command buffer
+- :github:`38041` - Logging-related tests fails on qemu_arc_hs6x
+- :github:`38544` - drivers: wifi: esWIFI: Regression due to 35815
+- :github:`38654` - drivers: modem: bg9x: Has no means to update size of received packet.
+- :github:`38880` - ARC: ARCv2: qemu_arc_em / qemu_arc_hs don't work with XIP disabled
+- :github:`38947` - Issue with SMP commands sent over the UART
+- :github:`39347` - Static object constructors do not execute on the NATIVE_POSIX_64 target
+- :github:`39888` - STM32L4: usb-hid: regression in hal 1.17.0
+- :github:`40023` - Build fails for ``native_posix`` board when using C++ <atomic> header
+- :github:`41281` - Style Requirements Seem to Be Inconsistent with Uncrustify Configuration
+- :github:`41286` - Bluetooth SDP: When the SDP attribute length is greater than SDP_MTU, the attribute is discarded
+- :github:`41606` - stm32u5: Re-implement VCO input and EPOD configuration
+- :github:`41622` - Infinite mutual recursion when SMP and ATOMIC_OPERATIONS_C are set
+- :github:`41822` - BLE IPSP sample cannot handle large ICMPv6 Echo Request
+- :github:`42030` - can: "bosch,m-can-base": Warning "missing or empty reg/ranges property"
+- :github:`42134` - TLS handshake error using DTLS on updatehub
+- :github:`42207` - [v2.7] LOG2 + Systemview leads to kernel panic.
+- :github:`42574` - i2c: No support for bus recovery imx.rt and or timeout on bus busy
+- :github:`42629` - stm32g0: Device hang/hard fault with AT45 + ``CONFIG_PM_DEVICE``
+- :github:`42653` - [ 2.7.1] STM32 Hangs sending TCP packets
+- :github:`42842` - BBRAM API is missing a documentation reference page
+- :github:`43115` - Data corruption in STM32 SPI driver in Slave Mode
+- :github:`43246` - Bluetooth: Host: Deadlock with Mesh and Ext Adv on native_posix
+- :github:`43249` - MBEDTLS_ECP_C not build when MBEDTLS_USE_PSA_CRYPTO
+- :github:`43308` - driver: serial: stm32: uart will lost data when use dma mode[async mode]
+- :github:`43390` - gPTP broken in Zephyr 3.0
+- :github:`43515` - reel_board: failed to run tests/kernel/workq/work randomly
+- :github:`43555` - Variables not properly initialized when using data relocation with SDRAM
+- :github:`43562` - Setting and/or documentation of Timer and counter use/requirements for Nordic Bluetooth driver
+- :github:`43646` - mgmt/mcumgr/lib: OS taskstat may give shorter list than expected
+- :github:`43655` - esp32c3: Connection fail loop
+- :github:`43811` - ble: gatt: db_hash_work runs for too long and makes serial communication fail
+- :github:`43828` - Intel CAVS: multiple tests under tests/boards/intel_adsp/smoke are failing
+- :github:`43836` - stm32: g0b1: RTT doesn't work properly after stop mode
+- :github:`43887` - SystemView tracing with STM32L0x fails to compile
+- :github:`43910` - civetweb/http_server - DEBUG_OPTIMIZATIONS enabled
+- :github:`43928` - pm: going to PM_STATE_SOFT_OFF in pm_policy_next_state causes assert in some cases
+- :github:`43933` - llvm: twister: multiple errors with set but unused variables
+- :github:`44062` - Need a way to deal with stack size needed when running coverage report.
+- :github:`44214` - mgmt/mcumgr/lib: Parasitic use of CONFIG_HEAP_MEM_POOL_SIZE in image management
+- :github:`44219` - mgmt/mcumgr/lib: Incorrect processing of img_mgmt_impl_write_image_data leaves mcumgr in broken state in case of error
+- :github:`44228` - drivers: modem: bg9x: bug on cmd AT+QICSGP
+- :github:`44324` - Compile error in byteorder.h
+- :github:`44377` - ISO Broadcast/Receive sample not working with coded PHY
+- :github:`44403` - MPU fault and ``CONFIG_CMAKE_LINKER_GENERATOR``
+- :github:`44410` - drivers: modem: shell: ``modem send`` doesn't honor line ending in modem cmd handler
+- :github:`44579` - MCC: Discovery cannot complete with success
+- :github:`44622` - Microbit v2 board dts file for lsm303agr int line
+- :github:`44725` - drivers: can: stm32: can_add_rx_filter() does not respect CONFIG_CAN_MAX_FILTER
+- :github:`44898` - mgmt/mcumgr: Fragmentation of responses may cause mcumgr to drop successfully processed response
+- :github:`44925` - intel_adsp_cavs25: multiple tests failed after running tests/boards/intel_adsp
+- :github:`44948` - cmsis_dsp: transofrm: error during building cf64.fpu and rf64.fpu for mps2_an521_remote
+- :github:`44996` - logging: transient strings are no longer duplicated correctly
+- :github:`44998` - SMP shell exec command causes BLE stack breakdown if buffer size is too small to hold response
+- :github:`45105` - ACRN: failed to run testcase tests/kernel/fifo/fifo_timeout/
+- :github:`45117` - drivers: clock_control: clock_control_nrf
+- :github:`45157` - cmake: Use of -ffreestanding disables many useful optimizations and compiler warnings
+- :github:`45168` - rcar_h3ulcb: failed to run test case tests/drivers/can/timing
+- :github:`45169` - rcar_h3ulcb: failed to run test case tests/drivers/can/api
+- :github:`45218` - rddrone_fmuk66: I2C configuration incorrect
+- :github:`45222` - drivers: peci: user space handlers not building correctly
+- :github:`45241` - (Probably) unnecessary branches in several modules
+- :github:`45270` - CMake - TEST_BIG_ENDIAN
+- :github:`45304` - drivers: can: CAN interfaces are brought up with default bitrate at boot, causing error frames if bus bitrate differs
+- :github:`45315` - drivers: timer: nrf_rtc_timer: NRF boards take a long time to boot application in CONFIG_TICKLESS_KERNEL=n mode after OTA update
+- :github:`45349` - ESP32: fails to chain-load sample/board/esp32/wifi_station from MCUboot
+- :github:`45374` - Creating the unicast group before both ISO connections have been configured might cause issue
+- :github:`45441` - SPI NOR driver assume all SPI controller HW is implemnted in an identical way
+- :github:`45509` - ipc: ipc_icmsg: Can silently drop buffer if message is too big
+- :github:`45532` - uart_msp432p4xx_poll_in() seems to be a blocking function
+- :github:`45564` - Zephyr does not boot with CONFIG_PM=y
+- :github:`45581` - samples: usb: mass: Sample.usb.mass_flash_fatfs fails on non-secure nrf5340dk
+- :github:`45596` - samples: Code relocation nocopy sample has some unusual failure on nrf5340dk
+- :github:`45647` - test: drivers: counter: Test passes even when no instances are found
+- :github:`45666` - Building samples about BLE audio with nrf5340dk does not work
+- :github:`45675` - testing.ztest.customized_output: mismatch twister results in json/xml file
+- :github:`45678` - Lorawan: Devnonce has already been used
+- :github:`45760` - Running twister on new board files
+- :github:`45774` - drivers: gpio: pca9555: Driver is writting to output port despite all pins been configured as input
+- :github:`45802` - Some tests reported as PASSED (device) but they were only build
+- :github:`45807` - CivetWeb doesn't build for CC3232SF
+- :github:`45814` - Armclang build fails due to missing source file
+- :github:`45842` - drivers: modem: uart_mux errors after second call to gsm_ppp_start
+- :github:`45844` - Not all bytes are downloaded with HTTP request
+- :github:`45845` - tests: The failure test case number increase significantly in CMSIS DSP tests on ARM boards.
+- :github:`45848` - tests: console harness: inaccuracy testcases report
+- :github:`45866` - drivers/entropy: stm32: non-compliant RNG configuration on some MCUs
+- :github:`45914` - test: tests/kernel/usage/thread_runtime_stats/ test fail
+- :github:`45929` - up_squared：failed to run test case tests/posix/common
+- :github:`45951` - modem: ublox-sara-r4: outgoing datagrams are truncated if they do not fit MTU
+- :github:`45953` - modem: simcom-sim7080: sendmsg() should result in single outgoing datagram
+- :github:`46008` - stm32h7: gptp sample does not work at all
+- :github:`46049` - Usage faults on semaphore usage in driver (stm32l1)
+- :github:`46066` - TF-M: Unable to trigger NMI interrupt from non-secure
+- :github:`46072` - [ESP32] Debug log error in hawkbit example "CONFIG_LOG_STRDUP_MAX_STRING"
+- :github:`46073` - IPSP (IPv6 over BLE) example stop working after a short time
+- :github:`46121` - Bluetooth: Controller: hci: Wrong periodic advertising report data status
+- :github:`46124` - stm32g071 ADC drivers apply errata during sampling config
+- :github:`46126` - pm_device causes assertion error in sched.c with lis2dh
+- :github:`46157` - ACRN: some cases still failed because of the log missing
+- :github:`46158` - frdm_k64f：failed to run test case tests/subsys/modbus/modbus.rtu/server_setup_low_none
+- :github:`46167` - esp32: Unable to select GPIO for PWM LED driver channel
+- :github:`46170` - ipc_service: open-amp backend may never leave
+- :github:`46173` - nRF UART callback is not passed correct index via evt->data.rx.offset sometimes
+- :github:`46186` - ISO Broadcaster fails silently on unsupported RTN/SDU_Interval combination
+- :github:`46199` - LIS2DW12 I2C driver uses invalid write command
+- :github:`46206` - it8xxx2_evb: tests/kernel/fatal/exception/ assertion failed -- "thread was not aborted"
+- :github:`46208` - it8xxx2_evb: tests/kernel/sleep failed, elapsed_ms = 2125
+- :github:`46234` - samples: lsm6dso: prints incorrect anglular velocity units
+- :github:`46235` - subsystem: Bluetooth LLL: ASSERTION FAIL [!link->next]
+- :github:`46255` - imxrt1010 wrong device tree addresses
+- :github:`46263` - Regulator Control
+
 API Changes
 ***********
 
