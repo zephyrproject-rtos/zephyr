@@ -45,6 +45,9 @@ struct backend_data_t {
 	/* General */
 	unsigned int role;
 	atomic_t state;
+
+	/* TX buffer size */
+	int tx_buffer_size;
 };
 
 struct backend_config_t {
@@ -445,6 +448,7 @@ static int open(const struct device *instance)
 	const struct backend_config_t *conf = instance->config;
 	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_instance *rpmsg_inst;
+	struct rpmsg_device *rdev;
 	int err;
 
 	if (!atomic_cas(&data->state, STATE_READY, STATE_BUSY)) {
@@ -482,6 +486,14 @@ static int open(const struct device *instance)
 		goto error;
 	}
 
+	rdev = rpmsg_virtio_get_rpmsg_device(&rpmsg_inst->rvdev);
+
+	data->tx_buffer_size = rpmsg_virtio_get_buffer_size(rdev);
+	if (data->tx_buffer_size < 0) {
+		err = -EINVAL;
+		goto error;
+	}
+
 	atomic_set(&data->state, STATE_INITED);
 	return 0;
 
@@ -495,27 +507,16 @@ error:
 static int get_tx_buffer_size(const struct device *instance, void *token)
 {
 	struct backend_data_t *data = instance->data;
-	struct ipc_rpmsg_instance *rpmsg_inst;
-	struct rpmsg_device *rdev;
-	int size;
 
-	rpmsg_inst = &data->rpmsg_inst;
-	rdev = rpmsg_virtio_get_rpmsg_device(&rpmsg_inst->rvdev);
-
-	size = rpmsg_virtio_get_buffer_size(rdev);
-	if (size < 0) {
-		return -EIO;
-	}
-
-	return size;
+	return data->tx_buffer_size;
 }
 
 static int get_tx_buffer(const struct device *instance, void *token,
 			 void **r_data, uint32_t *size, k_timeout_t wait)
 {
+	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_ept *rpmsg_ept;
 	void *payload;
-	int buf_size;
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
 
@@ -529,22 +530,24 @@ static int get_tx_buffer(const struct device *instance, void *token,
 	}
 
 	/* The user requested a specific size */
-	if (*size) {
-		buf_size = get_tx_buffer_size(instance, token);
-		if (buf_size < 0) {
-			return -EIO;
-		}
-
+	if ((*size) && (*size > data->tx_buffer_size)) {
 		/* Too big to fit */
-		if (*size > buf_size) {
-			*size = buf_size;
-			return -ENOMEM;
-		}
+		*size = data->tx_buffer_size;
+		return -ENOMEM;
 	}
 
-	payload = rpmsg_get_tx_payload_buffer(&rpmsg_ept->ep, size, K_TIMEOUT_EQ(wait, K_FOREVER));
+	/*
+	 * OpenAMP doesn't really have the concept of forever but instead it
+	 * gives up after 15 seconds.  In that case, just keep retrying.
+	 */
+	do {
+		payload = rpmsg_get_tx_payload_buffer(&rpmsg_ept->ep, size,
+						      K_TIMEOUT_EQ(wait, K_FOREVER));
+	} while ((!payload) && K_TIMEOUT_EQ(wait, K_FOREVER));
+
+	/* This should really only be valid for K_NO_WAIT */
 	if (!payload) {
-		return -EIO;
+		return -ENOBUFS;
 	}
 
 	(*r_data) = payload;
