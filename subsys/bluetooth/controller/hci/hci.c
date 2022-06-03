@@ -647,6 +647,34 @@ static void configure_data_path(struct net_buf *buf,
 }
 #endif /* CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO */
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+static void read_conn_accept_timeout(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_read_conn_accept_timeout *rp;
+	uint16_t timeout;
+
+	ARG_UNUSED(buf);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	rp->status = ll_conn_iso_accept_timeout_get(&timeout);
+	rp->conn_accept_timeout = sys_cpu_to_le16(timeout);
+}
+
+static void write_conn_accept_timeout(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_write_conn_accept_timeout *cmd = (void *)buf->data;
+	struct bt_hci_rp_write_conn_accept_timeout *rp;
+	uint16_t timeout;
+
+	timeout = sys_le16_to_cpu(cmd->conn_accept_timeout);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	rp->status = ll_conn_iso_accept_timeout_set(timeout);
+}
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
 #if defined(CONFIG_BT_CONN)
 static void read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
@@ -684,6 +712,16 @@ static int ctrl_bb_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_SET_EVENT_MASK_PAGE_2):
 		set_event_mask_page_2(cmd, evt);
 		break;
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	case BT_OCF(BT_HCI_OP_READ_CONN_ACCEPT_TIMEOUT):
+		read_conn_accept_timeout(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT):
+		write_conn_accept_timeout(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CONN)
 	case BT_OCF(BT_HCI_OP_READ_TX_POWER_LEVEL):
@@ -757,6 +795,12 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #endif
 	/* Set Event Mask, and Reset. */
 	rp->commands[5] |= BIT(6) | BIT(7);
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	/* Read/Write Connection Accept Timeout */
+	rp->commands[7] |= BIT(2) | BIT(3);
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
 	/* Read TX Power Level. */
 	rp->commands[10] |= BIT(2);
 
