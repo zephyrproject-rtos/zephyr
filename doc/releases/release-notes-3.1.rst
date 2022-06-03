@@ -422,6 +422,8 @@ Drivers and Sensors
 
 * Counter
 
+  * Added driver for NXP QTMR.
+
 * DAC
 
   *  support for ST STM32F1 to the ST STM32 DAC driver.
