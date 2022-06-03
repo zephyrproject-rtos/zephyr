@@ -441,6 +441,13 @@ Drivers and Sensors
 
 * Ethernet
 
+  * eth_native_posix: Added support for setting MAC address.
+  * eth_stm32_hal: Fixed a bug, which caused segfault in case of failed RX
+    buffer allocation.
+  * eth_mcux: Added support for resetting PHY.
+  * eth_liteeth: Refactored driver to use LiteX HAL.
+  * eth_w5500: Fixed possible deadlock due to incorrect IRQ processing.
+
 * Flash
 
   * Added STM32 OCTOSPI driver: For now supports L5 and U5 series. Interrupt driven mode.
@@ -551,6 +558,12 @@ Networking
   * Changed :c:struct:`coap_pending` allocation criteria - use data pointer
     instead of timestamp, which does not give 100% guarantee that structure
     is not in use already.
+
+* Ethernet:
+
+  * Added :kconfig:option:`NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE` option
+    which allows to forward frames with unrecognised EtherType to the netowrk
+    stack.
 
 * HTTP:
 
