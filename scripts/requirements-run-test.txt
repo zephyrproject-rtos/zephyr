@@ -16,3 +16,9 @@ cbor>=1.0.0
 
 # use for twister
 psutil
+
+# used by Pytest plugin for BabbleSim to yaml parsing and validation
+strictyaml
+
+# used by Pytest plugin for BabbleSim during run tests in parallel
+filelock
