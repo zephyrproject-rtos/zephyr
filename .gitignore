@@ -36,6 +36,7 @@ doc/themes/zephyr-docs-theme
 sanity-out*
 twister-out*
 bsim_bt_out
+bsim_tests_out*
 scripts/grub
 doc/reference/kconfig/*.rst
 doc/doc.warnings
