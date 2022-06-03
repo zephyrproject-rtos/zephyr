@@ -440,7 +440,7 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 {
 	struct bass_recv_state_internal *state = bass_lookup_pa_sync(sync);
 
-	if (state != NULL || state->biginfo_received) {
+	if (state == NULL || state->biginfo_received) {
 		return;
 	}
 
