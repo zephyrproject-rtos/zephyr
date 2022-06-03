@@ -988,6 +988,20 @@ Libraries / Subsystems
   * static_vrings: Added support for NOCOPY operations
   * Introduced inter core messaging backend (icmsg) that relies on simple inter core messaging buffer
 
+* Logging
+
+  * Added UART frontend which supports binary dictionary logging.
+  * Added support for MIPI SyS-T catalog messages.
+  * Added cAVS HDA backend.
+
+* Shell
+
+  * Added API for creating subcommands from multiple files using memory section approach:
+
+    * :c:macro:`SHELL_SUBCMD_SET_CREATE` for creating a subcommand set.
+    * :c:macro:`SHELL_SUBCMD_COND_ADD` and :c:macro:`SHELL_SUBCMD_ADD` for adding subcommands
+      to the set.
+
 HALs
 ****
 
