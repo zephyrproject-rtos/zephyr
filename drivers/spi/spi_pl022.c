@@ -218,6 +218,9 @@ LOG_MODULE_REGISTER(spi_pl022);
 #define SCR_MIN 0x00
 #define SCR_MAX 0xFF
 
+/* Fifo depth */
+#define SSP_FIFO_DEPTH 8
+
 /*
  * Register READ/WRITE macros
  */
@@ -243,6 +246,9 @@ struct spi_pl022_cfg {
 	const uint32_t pclk;
 #if IS_ENABLED(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
+#endif
+#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
+	void (*irq_config)(const struct device *port);
 #endif
 };
 
@@ -343,6 +349,11 @@ static int spi_pl022_configure(const struct device *dev,
 	SSP_WRITE_REG(SSP_CR0(cfg->reg), cr0);
 	SSP_WRITE_REG(SSP_CR1(cfg->reg), cr1);
 
+#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
+	SSP_WRITE_REG(SSP_IMSC(cfg->reg),
+			SSP_IMSC_MASK_RORIM | SSP_IMSC_MASK_RTIM | SSP_IMSC_MASK_RXIM);
+#endif
+
 	data->ctx.config = spicfg;
 
 	return 0;
@@ -352,6 +363,104 @@ static inline bool spi_pl022_transfer_ongoing(struct spi_pl022_data *data)
 {
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
+
+#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
+
+static void spi_pl022_async_xfer(const struct device *dev)
+{
+	const struct spi_pl022_cfg *cfg = dev->config;
+	struct spi_pl022_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	/* Process by per chunk */
+	size_t chunk_len = spi_context_max_continuous_chunk(ctx);
+	uint32_t txrx;
+
+	/* Read RX FIFO */
+	while (SSP_RX_FIFO_NOT_EMPTY(cfg->reg) && (data->rx_count < chunk_len)) {
+		txrx = SSP_READ_REG(SSP_DR(cfg->reg));
+
+		/* Discard received data if rx buffer not assigned */
+		if (ctx->rx_buf) {
+			*(((uint8_t *)ctx->rx_buf) + data->rx_count) = (uint8_t)txrx;
+		}
+		data->rx_count++;
+	}
+
+	/* Check transfer finished.
+	 * The transmission of this chunk is complete if both the tx_count
+	 * and the rx_count reach greater than or equal to the chunk_len.
+	 * chunk_len is zero here means the transfer is already complete.
+	 */
+	if (MIN(data->tx_count, data->rx_count) >= chunk_len && chunk_len > 0) {
+		spi_context_update_tx(ctx, 1, chunk_len);
+		spi_context_update_rx(ctx, 1, chunk_len);
+		if (spi_pl022_transfer_ongoing(data)) {
+			/* Next chunk is available, reset the count and continue processing */
+			data->tx_count = 0;
+			data->rx_count = 0;
+			chunk_len = spi_context_max_continuous_chunk(ctx);
+		} else {
+			/* All data is processed, complete the process */
+			spi_context_complete(ctx, 0);
+			return;
+		}
+	}
+
+	/* Fill up TX FIFO */
+	for (uint32_t i = 0; i < SSP_FIFO_DEPTH; i++) {
+		if ((data->tx_count < chunk_len) && SSP_TX_FIFO_NOT_FULL(cfg->reg)) {
+			/* Send 0 in the case of read only operation */
+			txrx = 0;
+
+			if (ctx->tx_buf) {
+				txrx = *(((uint8_t *)ctx->tx_buf) + data->tx_count);
+			}
+			SSP_WRITE_REG(SSP_DR(cfg->reg), txrx);
+			data->tx_count++;
+		} else {
+			break;
+		}
+	}
+}
+
+static void spi_pl022_start_async_xfer(const struct device *dev)
+{
+	const struct spi_pl022_cfg *cfg = dev->config;
+	struct spi_pl022_data *data = dev->data;
+
+	/* Ensure writable */
+	while (!SSP_TX_FIFO_EMPTY(cfg->reg))
+		;
+	/* Drain RX FIFO */
+	while (SSP_RX_FIFO_NOT_EMPTY(cfg->reg))
+		SSP_READ_REG(SSP_DR(cfg->reg));
+
+	data->tx_count = 0;
+	data->rx_count = 0;
+
+	SSP_WRITE_REG(SSP_ICR(cfg->reg), SSP_ICR_MASK_RORIC | SSP_ICR_MASK_RTIC);
+
+	spi_pl022_async_xfer(dev);
+}
+
+static void spi_pl022_isr(const struct device *dev)
+{
+	const struct spi_pl022_cfg *cfg = dev->config;
+	struct spi_pl022_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	uint32_t mis = SSP_READ_REG(SSP_MIS(cfg->reg));
+
+	if (mis & SSP_MIS_MASK_RORMIS) {
+		SSP_WRITE_REG(SSP_IMSC(cfg->reg), 0);
+		spi_context_complete(ctx, -EIO);
+	} else {
+		spi_pl022_async_xfer(dev);
+	}
+
+	SSP_WRITE_REG(SSP_ICR(cfg->reg), SSP_ICR_MASK_RORIC | SSP_ICR_MASK_RTIC);
+}
+
+#else
 
 static void spi_pl022_xfer(const struct device *dev)
 {
@@ -396,6 +505,8 @@ static void spi_pl022_xfer(const struct device *dev)
 	}
 }
 
+#endif
+
 static int spi_pl022_transceive_impl(const struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
@@ -417,6 +528,10 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 
 	spi_context_cs_control(ctx, true);
 
+#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
+	spi_pl022_start_async_xfer(dev);
+	ret = spi_context_wait_for_completion(ctx);
+#else
 	do {
 		spi_pl022_xfer(dev);
 		spi_context_update_tx(ctx, 1, data->tx_count);
@@ -425,6 +540,7 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 
 #ifdef CONFIG_SPI_ASYNC
 	spi_context_complete(&data->ctx, ret);
+#endif
 #endif
 
 	spi_context_cs_control(ctx, false);
@@ -497,6 +613,10 @@ static int spi_pl022_init(const struct device *dev)
 	}
 #endif
 
+#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
+	cfg->irq_config(dev);
+#endif
+
 	ret = spi_pl022_configure(dev, &spicfg);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure spi");
@@ -523,8 +643,24 @@ static int spi_pl022_init(const struct device *dev)
 #define PINCTRL_INIT(n)
 #endif /* CONFIG_PINCTRL */
 
+#if IS_ENABLED(CONFIG_SPI_PL022_INTERRUPT)
+#define DECLARE_IRQ_CONFIGURE(idx)					 \
+	static void spi_pl022_irq_config_##idx(const struct device *dev) \
+	{								 \
+		IRQ_CONNECT(DT_INST_IRQN(idx),				 \
+			    DT_INST_IRQ(idx, priority),			 \
+			    spi_pl022_isr, DEVICE_DT_INST_GET(idx), 0);	 \
+		irq_enable(DT_INST_IRQN(idx));				 \
+	}
+#define IRQ_HANDLER(idx) .irq_config = spi_pl022_irq_config_##idx,
+#else
+#define DECLARE_IRQ_CONFIGURE(idx)
+#define IRQ_HANDLER(idx)
+#endif
+
 #define SPI_PL022_INIT(idx)						       \
 	PINCTRL_DEFINE(idx)						       \
+	DECLARE_IRQ_CONFIGURE(idx)					       \
 	static struct spi_pl022_data spi_pl022_data_##idx = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_pl022_data_##idx, ctx),	       \
 		SPI_CONTEXT_INIT_SYNC(spi_pl022_data_##idx, ctx),	       \
@@ -533,6 +669,7 @@ static int spi_pl022_init(const struct device *dev)
 	static struct spi_pl022_cfg spi_pl022_cfg_##idx = {		       \
 		.reg = DT_INST_REG_ADDR(idx),				       \
 		.pclk = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency), \
+		IRQ_HANDLER(idx)					       \
 		PINCTRL_INIT(idx)					       \
 	};								       \
 	DEVICE_DT_INST_DEFINE(idx,					       \
