@@ -963,11 +963,6 @@ class DeviceHandler(Handler):
         if harness.is_pytest:
             harness.pytest_run(self.log)
 
-        # sometimes a test instance hasn't been executed successfully with no
-        # status, in order to include it into final report,
-        # so fill the results as blocked
-        self.instance.add_missing_testscases("blocked")
-
         self.instance.execution_time = handler_time
         if harness.state:
             self.instance.status = harness.state
