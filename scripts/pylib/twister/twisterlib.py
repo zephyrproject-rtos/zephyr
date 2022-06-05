@@ -915,7 +915,7 @@ class DeviceHandler(Handler):
             stdout = stderr = None
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
                 try:
-                    (stdout, stderr) = proc.communicate(timeout=30)
+                    (stdout, stderr) = proc.communicate(timeout=60)
                     # ignore unencodable unicode chars
                     logger.debug(stdout.decode(errors = "ignore"))
 
@@ -926,6 +926,7 @@ class DeviceHandler(Handler):
                             dlog_fp.write(stderr.decode())
                         os.write(write_pipe, b'x')  # halt the thread
                 except subprocess.TimeoutExpired:
+                    logger.warning("Flash operation timed out.")
                     proc.kill()
                     (stdout, stderr) = proc.communicate()
                     self.instance.status = "error"
@@ -957,9 +958,6 @@ class DeviceHandler(Handler):
 
         handler_time = time.time() - start_time
 
-        if self.instance.status == "error":
-            self.instance.add_missing_testscases("blocked", self.instance.reason)
-
         if harness.is_pytest:
             harness.pytest_run(self.log)
 
@@ -971,6 +969,9 @@ class DeviceHandler(Handler):
         else:
             self.instance.status = "error"
             self.instance.reason = "No Console Output(Timeout)"
+
+        if self.instance.status == "error":
+            self.instance.add_missing_testscases("blocked", self.instance.reason)
 
         self._final_handle_actions(harness, handler_time)
 
