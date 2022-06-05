@@ -1705,6 +1705,7 @@ class ScanPathResult:
                  sorted(other.ztest_suite_names)))
 
 class TestCase(DisablePyTestCollectionMixin):
+
     def __init__(self, name=None, testsuite=None):
         self.duration = 0
         self.name = name
@@ -1712,6 +1713,7 @@ class TestCase(DisablePyTestCollectionMixin):
         self.reason = None
         self.testsuite = testsuite
         self.output = ""
+        self.freeform = False
 
     def __lt__(self, other):
         return self.name < other.name
@@ -1781,8 +1783,9 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.ztest_suite_names = []
 
 
-    def add_testcase(self, name):
+    def add_testcase(self, name, freeform=False):
         tc = TestCase(name=name, testsuite=self)
+        tc.freeform = freeform
         self.testcases.append(tc)
 
     @staticmethod
@@ -2058,7 +2061,7 @@ Tests should reference the category and subsystem with a dot as a separator.
                 self.add_testcase(name)
 
             if not subcases:
-                self.add_testcase(self.id)
+                self.add_testcase(self.id, freeform=True)
 
         self.ztest_suite_names = ztest_suite_names
 
@@ -2113,7 +2116,7 @@ class TestInstance(DisablePyTestCollectionMixin):
     # Fix an issue with copying objects from testsuite, need better solution.
     def init_cases(self):
         for c in self.testsuite.testcases:
-            self.add_testcase(c.name)
+            self.add_testcase(c.name, freeform=c.freeform)
 
     def _get_run_id(self):
         """ generate run id from instance unique identifier and a random
@@ -2150,8 +2153,9 @@ class TestInstance(DisablePyTestCollectionMixin):
             tc.reason = reason
         return tc
 
-    def add_testcase(self, name):
+    def add_testcase(self, name, freeform=False):
         tc = TestCase(name=name)
+        tc.freeform = freeform
         self.testcases.append(tc)
         return tc
 
@@ -4124,7 +4128,6 @@ class TestPlan(DisablePyTestCollectionMixin):
             if instance.status is not None:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
 
-
             testcases = []
 
             if len(instance.testcases) == 1:
@@ -4133,6 +4136,12 @@ class TestPlan(DisablePyTestCollectionMixin):
                 single_case_duration = 0
 
             for case in instance.testcases:
+                # freeform was set when no sub testcases were parsed, however,
+                # if we discover those at runtime, the fallback testcase wont be
+                # needed anymore and can be removed from the output, it does
+                # not have a status and would otherwise be reported as skipped.
+                if case.freeform and case.status is None and len(instance.testcases) > 1:
+                    continue
                 testcase = {}
                 testcase['identifier'] = case.name
                 if instance.status:
