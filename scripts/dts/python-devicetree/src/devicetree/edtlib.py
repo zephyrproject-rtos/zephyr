@@ -643,8 +643,14 @@ class Node:
 
     bus:
       If the node is a bus node (has a 'bus:' key in its binding), then this
-      attribute holds the bus type, e.g. "i2c" or "spi". If the node is not a
-      bus node, then this attribute is None.
+      attribute holds the bus type, e.g. "i2c", "spi", or ["i3c", "i2c"]. If
+      the node is not a bus node, then this attribute is None.
+
+    bounded_bus:
+      If the node is a bus node (has a 'bus:' key in its binding), then this
+      attribute holds the bus type it bounded with. e.g. If the bus type is a
+      list ["i3c", "i2c"], then this will be the bus it binded with, "i3c" or
+      "i2c"
 
     on_bus:
       The bus the node appears on, e.g. "i2c" or "spi". The bus is determined
@@ -783,6 +789,16 @@ class Node:
         return None
 
     @property
+    def bounded_bus(self):
+        "See the class docstring"
+        # Some devices many not have a binding for an on-bus but
+        # will still be on a node with a bus defined. Retrieve the
+        # bus node as a fallback
+        if self._binding and self._binding.on_bus:
+            return self._binding.on_bus
+        return self.on_bus
+
+    @property
     def on_bus(self):
         "See the class docstring"
         bus_node = self.bus_node
@@ -861,7 +877,20 @@ class Node:
                 # specified bus (if any) and then against any bus. This is so
                 # that matching against bindings which do not specify a bus
                 # works the same way in Zephyr as it does elsewhere.
-                if (compat, on_bus) in self.edt._compat2binding:
+                if isinstance(on_bus, list) \
+                    and (any((compat, elem) in self.edt._compat2binding for elem in on_bus)):
+                    for elem in on_bus:
+                        if (compat, elem) in self.edt._compat2binding:
+                            # When matching, the preference is encoded in to
+                            # bus list order, and it is to match the first one
+                            # available. i.e. if the bus is defined as
+                            # ["i3c", "i2c"], and there are bindings for both
+                            # "i3c" and "i2c", then it will select "i3c" as that
+                            # is first in the list
+                            binding = self.edt._compat2binding[compat, elem]
+                            break
+                elif isinstance(on_bus, str) \
+                    and (compat, on_bus) in self.edt._compat2binding:
                     binding = self.edt._compat2binding[compat, on_bus]
                 elif (compat, None) in self.edt._compat2binding:
                     binding = self.edt._compat2binding[compat, None]
@@ -1944,10 +1973,18 @@ class Binding:
                 _err(f"unknown key '{key}' in {self.path}, "
                      "expected one of {', '.join(ok_top)}, or *-cells")
 
-        for bus_key in "bus", "on-bus":
-            if bus_key in raw and \
-               not isinstance(raw[bus_key], str):
-                _err(f"malformed '{bus_key}:' value in {self.path}, "
+        if "bus" in raw:
+            bus = raw["bus"]
+            if not isinstance(bus, str) and \
+                not isinstance(bus, list) and \
+                not all(isinstance(elem, str) for elem in bus):
+                _err(f"malformed 'bus: {bus}:' value in {self.path}, "
+                     "expected string or list of strings")
+
+        if "on-bus" in raw:
+            on_bus = raw["on-bus"]
+            if not isinstance(on_bus, str):
+                _err(f"malformed 'on-bus: {on_bus}:' value in {self.path}, "
                      "expected string")
 
         self._check_properties()

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Device also on bar bus
+
+compatible: "also-on-bus"
+
+on-bus: "bar"

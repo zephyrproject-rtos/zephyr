@@ -355,8 +355,8 @@ def write_bus(node):
     if not bus.label:
         err(f"missing 'label' property on bus node {bus!r}")
 
-    out_comment(f"Bus info (controller: '{bus.path}', type: '{node.on_bus}')")
-    out_dt_define(f"{node.z_path_id}_BUS_{str2ident(node.on_bus)}", 1)
+    out_comment(f"Bus info (controller: '{bus.path}', type: '{node.bounded_bus}')")
+    out_dt_define(f"{node.z_path_id}_BUS_{str2ident(node.bounded_bus)}", 1)
     out_dt_define(f"{node.z_path_id}_BUS", f"DT_{bus.z_path_id}")
 
 
@@ -861,7 +861,7 @@ def write_global_compat_info(edt):
     compat2buses = defaultdict(list)  # just for "okay" nodes
     for compat, okay_nodes in edt.compat2okay.items():
         for node in okay_nodes:
-            bus = node.on_bus
+            bus = node.bounded_bus
             if bus is not None and bus not in compat2buses[compat]:
                 compat2buses[compat].append(bus)
 

@@ -15,9 +15,9 @@ from devicetree import edtlib
 #
 # Run it using pytest (https://docs.pytest.org/en/stable/usage.html):
 #
-#   $ pytest testedtlib.py
+#   $ pytest test_edtlib.py
 #
-# See the comment near the top of testdtlib.py for additional pytest advice.
+# See the comment near the top of test_edtlib.py for additional pytest advice.
 #
 # test.dts is the main test file. test-bindings/ and test-bindings-2/ has
 # bindings. The tests mostly use string comparisons via the various __repr__()
@@ -311,6 +311,15 @@ def test_bus():
     assert edt.get_node("/buses/foo-bus/node1/nested").on_bus == "foo"
     assert str(edt.get_node("/buses/foo-bus/node1/nested").binding_path) == \
         hpath("test-bindings/device-on-foo-bus.yaml")
+
+    # Some buses can support other bus types, ensure that the priority is
+    # maintained in the ordering with a device that can support multiple
+    # bus types
+    assert str(edt.get_node("/buses/bazbar-bus/node1").binding_path) == \
+        hpath("test-bindings/device-on-baz-bus.yaml")
+    # ensure that a node with only the latter bus will bind
+    assert str(edt.get_node("/buses/bazbar-bus/node2").binding_path) == \
+        hpath("test-bindings/device-also-on-bar-bus.yaml")
 
 def test_child_binding():
     '''Test 'child-binding:' in bindings'''

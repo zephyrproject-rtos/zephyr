@@ -452,6 +452,15 @@
 				compatible = "on-bus";
 			};
 		};
+		bazbar-bus {
+			compatible = "bazbar-bus";
+			node1 {
+				compatible = "on-bus";
+			};
+			node2 {
+				compatible = "also-on-bus";
+			};
+		};
 		no-bus-node {
 			compatible = "on-any-bus";
 		};

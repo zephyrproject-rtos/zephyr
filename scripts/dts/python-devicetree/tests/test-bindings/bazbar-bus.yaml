@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Bazbar bus controller
+
+compatible: "bazbar-bus"
+
+bus: ["baz", "bar"]
