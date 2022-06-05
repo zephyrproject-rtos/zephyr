@@ -118,6 +118,9 @@ struct modem_cmd_handler_data {
 	/* locks */
 	struct k_sem sem_tx_lock;
 	struct k_sem sem_parse_lock;
+
+	/* user data */
+	void *user_data;
 };
 
 /**
