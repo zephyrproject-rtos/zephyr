@@ -78,11 +78,11 @@ Here's a quick summary of resources to help you find your way around:
 .. _supported boards: http://docs.zephyrproject.org/latest/boards/index.html
 .. _Zephyr Documentation: http://docs.zephyrproject.org
 .. _Introduction to Zephyr: http://docs.zephyrproject.org/latest/introduction/index.html
-.. _Getting Started Guide: http://docs.zephyrproject.org/latest/getting_started/index.html
+.. _Getting Started Guide: http://docs.zephyrproject.org/latest/develop/getting_started/index.html
 .. _Contribution Guide: http://docs.zephyrproject.org/latest/contribute/index.html
 .. _Zephyr GitHub wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
 .. _Zephyr Development mailing list: https://lists.zephyrproject.org/g/devel
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
 .. _Sample and Demo Code Examples: http://docs.zephyrproject.org/latest/samples/index.html
 .. _Security: http://docs.zephyrproject.org/latest/security/index.html
-.. _Asking for Help Tips: https://docs.zephyrproject.org/latest/getting_started/index.html#asking-for-help
+.. _Asking for Help Tips: https://docs.zephyrproject.org/latest/develop/getting_started/index.html#asking-for-help
