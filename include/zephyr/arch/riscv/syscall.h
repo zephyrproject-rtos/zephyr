@@ -46,12 +46,12 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 	register ulong_t a3 __asm__ ("a3") = arg4;
 	register ulong_t a4 __asm__ ("a4") = arg5;
 	register ulong_t a5 __asm__ ("a5") = arg6;
-	register ulong_t a7 __asm__ ("a7") = call_id;
+	register ulong_t t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
 			  : "r" (a1), "r" (a2), "r" (a3), "r" (a4), "r" (a5),
-			  "r" (a7)
+			  "r" (t0)
 			  : "memory");
 	return a0;
 }
@@ -66,11 +66,11 @@ static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 	register ulong_t a2 __asm__ ("a2") = arg3;
 	register ulong_t a3 __asm__ ("a3") = arg4;
 	register ulong_t a4 __asm__ ("a4") = arg5;
-	register ulong_t a7 __asm__ ("a7") = call_id;
+	register ulong_t t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
-			  : "r" (a1), "r" (a2), "r" (a3), "r" (a4), "r" (a7)
+			  : "r" (a1), "r" (a2), "r" (a3), "r" (a4), "r" (t0)
 			  : "memory");
 	return a0;
 }
@@ -83,11 +83,11 @@ static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 	register ulong_t a1 __asm__ ("a1") = arg2;
 	register ulong_t a2 __asm__ ("a2") = arg3;
 	register ulong_t a3 __asm__ ("a3") = arg4;
-	register ulong_t a7 __asm__ ("a7") = call_id;
+	register ulong_t t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
-			  : "r" (a1), "r" (a2), "r" (a3), "r" (a7)
+			  : "r" (a1), "r" (a2), "r" (a3), "r" (t0)
 			  : "memory");
 	return a0;
 }
@@ -99,11 +99,11 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 	register ulong_t a0 __asm__ ("a0") = arg1;
 	register ulong_t a1 __asm__ ("a1") = arg2;
 	register ulong_t a2 __asm__ ("a2") = arg3;
-	register ulong_t a7 __asm__ ("a7") = call_id;
+	register ulong_t t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
-			  : "r" (a1), "r" (a2), "r" (a7)
+			  : "r" (a1), "r" (a2), "r" (t0)
 			  : "memory");
 	return a0;
 }
@@ -113,11 +113,11 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 {
 	register ulong_t a0 __asm__ ("a0") = arg1;
 	register ulong_t a1 __asm__ ("a1") = arg2;
-	register ulong_t a7 __asm__ ("a7") = call_id;
+	register ulong_t t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
-			  : "r" (a1), "r" (a7)
+			  : "r" (a1), "r" (t0)
 			  : "memory");
 	return a0;
 }
@@ -125,11 +125,11 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1, uintptr_t call_id)
 {
 	register ulong_t a0 __asm__ ("a0") = arg1;
-	register ulong_t a7 __asm__ ("a7") = call_id;
+	register ulong_t t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
-			  : "r" (a7)
+			  : "r" (t0)
 			  : "memory");
 	return a0;
 }
@@ -137,11 +137,11 @@ static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1, uintptr_t call_id)
 static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 {
 	register ulong_t a0 __asm__ ("a0");
-	register ulong_t a7 __asm__ ("a7") = call_id;
+	register ulong_t t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
 			  : "=r" (a0)
-			  : "r" (a7)
+			  : "r" (t0)
 			  : "memory");
 	return a0;
 }
@@ -168,7 +168,7 @@ static inline bool arch_is_user_context(void)
 	 * and omit the volatile to give the compiler a chance to cache
 	 * the result.
 	 */
-	register ulong_t is_user __asm__ ("t0");
+	register ulong_t is_user __asm__ ("t1");
 	__asm__ ("csrr %0, mscratch" : "=r" (is_user));
 	return is_user != 0;
 #else

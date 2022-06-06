@@ -303,16 +303,16 @@ is_kernel_syscall:
 	csrs mstatus, t1
 #endif
 
-	/* Determine what to do. Operation code is in a7. */
-	lr a7, __z_arch_esf_t_a7_OFFSET(sp)
+	/* Determine what to do. Operation code is in t0. */
+	lr t0, __z_arch_esf_t_t0_OFFSET(sp)
 
 	ASSUME_EQUAL(RV_ECALL_RUNTIME_EXCEPT, 0)
-	beqz a7, do_fault
+	beqz t0, do_fault
 
 #if defined(CONFIG_IRQ_OFFLOAD)
-	addi a7, a7, -1
+	addi t0, t0, -1
 	ASSUME_EQUAL(RV_ECALL_IRQ_OFFLOAD, 1)
-	beqz a7, do_irq_offload
+	beqz t0, do_irq_offload
 #endif
 
 	/* default fault code is K_ERR_KERNEL_OOPS */
@@ -386,24 +386,24 @@ is_user_syscall:
 	lr a3, __z_arch_esf_t_a3_OFFSET(sp)
 	lr a4, __z_arch_esf_t_a4_OFFSET(sp)
 	lr a5, __z_arch_esf_t_a5_OFFSET(sp)
+	lr t0, __z_arch_esf_t_t0_OFFSET(sp)
 	mv a6, sp
-	lr a7, __z_arch_esf_t_a7_OFFSET(sp)
 
 	/* validate syscall limit */
-	li t0, K_SYSCALL_LIMIT
-	bltu a7, t0, valid_syscall_id
+	li t1, K_SYSCALL_LIMIT
+	bltu t0, t1, valid_syscall_id
 
 	/* bad syscall id.  Set arg1 to bad id and set call_id to SYSCALL_BAD */
-	mv a0, a7
-	li a7, K_SYSCALL_BAD
+	mv a0, t0
+	li t0, K_SYSCALL_BAD
 
 valid_syscall_id:
 
-	la t0, _k_syscall_table
+	la t2, _k_syscall_table
 
-	slli t1, a7, RV_REGSHIFT	# Determine offset from indice value
-	add t0, t0, t1			# Table addr + offset = function addr
-	lr t2, 0(t0)			# Load function address
+	slli t1, t0, RV_REGSHIFT	# Determine offset from indice value
+	add t2, t2, t1			# Table addr + offset = function addr
+	lr t2, 0(t2)			# Load function address
 
 	/* Execute syscall function */
 	jalr ra, t2, 0
