@@ -4,8 +4,7 @@
  */
 
 #include <zephyr/init.h>
-#include <fsl_iopctl.h>
-#include <soc.h>
+#include <fsl_device_registers.h>
 
 static int mimxrt685_evk_init(const struct device *dev)
 {
