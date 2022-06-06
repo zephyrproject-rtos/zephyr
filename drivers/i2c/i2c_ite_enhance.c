@@ -382,8 +382,6 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 				i2c_pio_trans_data(dev, RX_DIRECT,
 					data->addr_16bit << 1, 1);
 			}
-			/* Turn on irq before next direct read */
-			irq_enable(config->i2c_irq_base);
 		} else {
 			if (data->ridx < data->msgs->len) {
 				/* read data */
@@ -434,7 +432,6 @@ static int enhanced_i2c_tran_write(const struct device *dev)
 			i2c_pio_trans_data(dev, TX_DIRECT, out_data, 0);
 			if (data->i2ccs == I2C_CH_WAIT_NEXT_XFER) {
 				data->i2ccs = I2C_CH_NORMAL;
-				irq_enable(config->i2c_irq_base);
 			}
 		} else {
 			/* done */
@@ -462,10 +459,14 @@ static int i2c_transaction(const struct device *dev)
 	/* no error */
 	if (!(enhanced_i2c_error(dev))) {
 		if (!data->stop) {
-			/* i2c read */
+			/*
+			 * The return value indicates if there is more data
+			 * to be read or written. If the return value = 1,
+			 * it means that the interrupt cannot be disable and
+			 * continue to transmit data.
+			 */
 			if (data->msgs->flags & I2C_MSG_READ) {
 				return enhanced_i2c_tran_read(dev);
-			/* i2c write */
 			} else {
 				return enhanced_i2c_tran_write(dev);
 			}
@@ -523,11 +524,17 @@ static int i2c_enhance_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 		if (msgs->flags & I2C_MSG_START) {
 			data->i2ccs = I2C_CH_NORMAL;
-			/* enable i2c interrupt */
+		}
+
+		/*
+		 * Start transaction.
+		 * The return value indicates if the initial configuration
+		 * of I2C transaction for read or write has been completed.
+		 */
+		if (i2c_transaction(dev)) {
+			/* Enable I2C interrupt. */
 			irq_enable(config->i2c_irq_base);
 		}
-		/* Start transaction */
-		i2c_transaction(dev);
 		/* Wait for the transfer to complete */
 		/* TODO: the timeout should be adjustable */
 		res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
@@ -575,8 +582,8 @@ static void i2c_enhance_isr(void *arg)
 
 	/* If done doing work, wake up the task waiting for the transfer */
 	if (!i2c_transaction(dev)) {
-		k_sem_give(&data->device_sync_sem);
 		irq_disable(config->i2c_irq_base);
+		k_sem_give(&data->device_sync_sem);
 	}
 }
 
