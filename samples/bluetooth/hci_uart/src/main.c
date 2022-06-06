@@ -27,6 +27,10 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
 
+#if defined(CONFIG_VS_HCI_SYSTEM_FATAL_ERROR_HANDLER)
+#include <zephyr/logging/log_ctrl.h>
+#endif /* CONFIG_VS_HCI_SYSTEM_FATAL_ERROR_HANDLER */
+
 #define LOG_MODULE_NAME hci_uart
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -323,6 +327,64 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 	}
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
+
+#if defined(CONFIG_VS_HCI_SYSTEM_FATAL_ERROR_HANDLER)
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+{
+	/* 0xAA + r0/a1 + 0xAA + r1/a2 + 0xAA + r2/a3 + 0xAA + r3/a4 + 0xAA + r12/ip +
+	 * 0xAA + r14/lp + 0xAA + XPSR
+	 */
+	uint32_t len = 7 * (1 + 4);
+
+	/* Disable interrupts, this is unrecoverable */
+	(void)irq_lock();
+
+	uart_irq_rx_disable(hci_uart_dev);
+	uart_irq_tx_disable(hci_uart_dev);
+
+	if (esf != NULL) {
+		uart_poll_out(hci_uart_dev, H4_EVT);
+		/* Vendor-Specific debug event */
+		uart_poll_out(hci_uart_dev, 0xff);
+
+		uart_poll_out(hci_uart_dev, len);
+		uart_poll_out(hci_uart_dev, 0xAA);
+
+		net_buf_add_u8(buf, 0xAA);
+		uart_poll_out(hci_uart_dev, esf->basic.a1);
+
+		net_buf_add_u8(buf, 0xAA);
+		uart_poll_out(hci_uart_dev, esf->basic.a2);
+
+		net_buf_add_u8(buf, 0xAA);
+		uart_poll_out(hci_uart_dev, esf->basic.a3);
+
+		net_buf_add_u8(buf, 0xAA);
+		uart_poll_out(hci_uart_dev, esf->basic.a4);
+
+		net_buf_add_u8(buf, 0xAA);
+		uart_poll_out(hci_uart_dev, esf->basic.ip);
+
+		net_buf_add_u8(buf, 0xAA);
+		uart_poll_out(hci_uart_dev, esf->basic.lr);
+
+		net_buf_add_u8(buf, 0xAA);
+		uart_poll_out(hci_uart_dev, esf->basic.xpsr);
+
+		/* Send the event over rpmsg */
+		hci_rpmsg_send(buf);
+	}
+
+	LOG_PANIC();
+	LOG_ERR("Halting system");
+
+	for (;;) {
+		/* Spin endlessly */
+	}
+
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_VS_HCI_SYSTEM_FATAL_ERROR_HANDLER */
 
 static int hci_uart_init(const struct device *unused)
 {

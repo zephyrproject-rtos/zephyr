@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "HCI UART sample"
+
+config VS_HCI_SYSTEM_FATAL_ERROR_HANDLER
+	bool "Enable generation of vendor specific HCI event for system fatal error"
+	depends on CONFIG_CPU_CORTEX_M
+	default y
+endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
