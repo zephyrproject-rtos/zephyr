@@ -17,7 +17,7 @@ This documentation describes how to run the intel_adsp_cavs boards. Including:
 Set up the environment
 **********************
 
-1. Copy soc/xtensa/intel_adsp/tools/cavstool_server.py to the target
+1. Copy soc/xtensa/intel_adsp/tools/cavstool.py to the target
    host machine (DUT).
 
 2. In your build machine, install the rimage tool, the signed key and
@@ -34,7 +34,7 @@ Build and run the tests
 
 .. code-block:: console
 
-   sudo ./cavstool_server.py
+   sudo ./cavstool.py
 
 2. Build the application. Take semaphore as an example:
 

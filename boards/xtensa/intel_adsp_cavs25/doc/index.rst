@@ -364,13 +364,13 @@ the Crouton environment installed above.  Copy them:
 
 .. code-block:: console
 
-    dev$ scp boards/xtensa/intel_adsp_cavs15/tools/cavstool_server.py user@crouton:
+    dev$ scp boards/xtensa/intel_adsp_cavs15/tools/cavstool.py user@crouton:
 
 Then start the service in the Crouton environment:
 
 .. code-block:: console
 
-    crouton$ sudo ./cavstool_server.py user@crouton:
+    crouton$ sudo ./cavstool.py user@crouton:
 
 
 Build and Sign Zephyr App
