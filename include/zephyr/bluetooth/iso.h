@@ -192,8 +192,8 @@ struct bt_iso_chan_path {
 	uint32_t			delay;
 	/** Codec Configuration length*/
 	uint8_t				cc_len;
-	/** Codec Configuration */
-	uint8_t				cc[0];
+	/** Pointer to an array containing the Codec Configuration */
+	uint8_t				*cc;
 };
 
 /** ISO packet status flag bits */

@@ -194,6 +194,18 @@ static int hci_le_setup_iso_data_path(const struct bt_conn *iso, uint8_t dir,
 	uint8_t *cc;
 	int err;
 
+	__ASSERT(dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR ||
+		 dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST,
+		 "invalid ISO data path dir: %u", dir);
+
+	if ((path->cc == NULL && path->cc_len != 0) ||
+	    (path->cc != NULL && path->cc_len == 0)) {
+		BT_DBG("Invalid ISO data path CC: %p %u",
+		       path->cc, path->cc_len);
+
+		return -EINVAL;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SETUP_ISO_PATH, sizeof(*cp));
 	if (!buf) {
 		return -ENOBUFS;
