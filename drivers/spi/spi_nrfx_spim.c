@@ -15,7 +15,7 @@
 #include <nrfx_spim.h>
 #include <hal/nrf_clock.h>
 #include <string.h>
-#include <linker/devicetree_regions.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
