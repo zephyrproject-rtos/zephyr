@@ -198,9 +198,37 @@ enum osdp_cp_state_e {
 };
 
 enum osdp_pkt_errors_e {
-	OSDP_ERR_PKT_FMT   = -1,
-	OSDP_ERR_PKT_WAIT  = -2,
-	OSDP_ERR_PKT_SKIP  = -3
+	OSDP_ERR_PKT_NONE = 0,
+	/**
+	 * Fatal packet formatting issues. The phy layer was unable to find a
+	 * valid OSDP packet or the length of the packet was too long/incorrect.
+	 */
+	OSDP_ERR_PKT_FMT = -1,
+	/**
+	 * Not enough data in buffer; wait for more data (or timeout).
+	 */
+	OSDP_ERR_PKT_WAIT = -2,
+	/**
+	 * Message to/from an foreign device that can be safely ignored
+	 * without altering the state of this PD.
+	 */
+	OSDP_ERR_PKT_SKIP = -3,
+	/**
+	 * Packet was valid but does not match some conditions. ie., only this
+	 * packet is faulty, rest of the buffer may still be intact.
+	 */
+	OSDP_ERR_PKT_CHECK = -4,
+	/**
+	 * Discovered a busy packet. In CP mode, it should retry this command
+	 * after some time.
+	 */
+	OSDP_ERR_PKT_BUSY = -5,
+	/**
+	 * Phy layer found a reason to send NACK to the CP that produced
+	 * this packet; pd->reply_id is set REPLY_NAK and the reason code is
+	 * also filled.
+	 */
+	OSDP_ERR_PKT_NACK = -6,
 };
 
 /**
@@ -472,6 +500,8 @@ struct osdp {
 int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);
 int osdp_phy_packet_finalize(struct osdp_pd *p, uint8_t *buf,
 			       int len, int max_len);
+int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
+			  int *one_pkt_len);
 int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len);
 void osdp_phy_state_reset(struct osdp_pd *pd);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
