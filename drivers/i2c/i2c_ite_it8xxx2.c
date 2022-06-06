@@ -359,7 +359,6 @@ static int i2c_tran_read(const struct device *dev)
 				IT8XXX2_SMB_HOSTA(base) = HOSTA_NEXT_BYTE;
 			}
 			data->i2ccs = I2C_CH_NORMAL;
-			irq_enable(config->i2c_irq_base);
 		} else if (IT8XXX2_SMB_HOSTA(base) & HOSTA_BDS) {
 			if (data->ridx < data->msgs->len) {
 				/* To get received data. */
@@ -435,7 +434,6 @@ static int i2c_tran_write(const struct device *dev)
 
 				if (data->i2ccs == I2C_CH_REPEAT_START) {
 					data->i2ccs = I2C_CH_NORMAL;
-					irq_enable(config->i2c_irq_base);
 				}
 			} else {
 				/* done */
@@ -470,6 +468,12 @@ static int i2c_transaction(const struct device *dev)
 		data->err = (IT8XXX2_SMB_HOSTA(base) & HOSTA_ANY_ERROR);
 	} else {
 		if (!data->stop) {
+			/*
+			 * The return value indicates if there is more data
+			 * to be read or written. If the return value = 1,
+			 * it means that the interrupt cannot be disable and
+			 * continue to transmit data.
+			 */
 			if (data->msgs->flags & I2C_MSG_READ) {
 				return i2c_tran_read(dev);
 			} else {
@@ -534,11 +538,17 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 		if (msgs->flags & I2C_MSG_START) {
 			data->i2ccs = I2C_CH_NORMAL;
-			/* enable i2c interrupt */
+		}
+
+		/*
+		 * Start transaction.
+		 * The return value indicates if the initial configuration
+		 * of I2C transaction for read or write has been completed.
+		 */
+		if (i2c_transaction(dev)) {
+			/* Enable I2C interrupt. */
 			irq_enable(config->i2c_irq_base);
 		}
-		/* Start transaction */
-		i2c_transaction(dev);
 		/* Wait for the transfer to complete */
 		/* TODO: the timeout should be adjustable */
 		res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
@@ -585,8 +595,8 @@ static void i2c_it8xxx2_isr(const struct device *dev)
 
 	/* If done doing work, wake up the task waiting for the transfer */
 	if (!i2c_transaction(dev)) {
-		k_sem_give(&data->device_sync_sem);
 		irq_disable(config->i2c_irq_base);
+		k_sem_give(&data->device_sync_sem);
 	}
 }
 
