@@ -435,8 +435,6 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 	while (bit_idx <= off_end) {
 		if (match_region(bitarray, bit_idx, num_bits, false,
 				 &bd, &mismatch)) {
-			off_end = bit_idx + num_bits - 1;
-
 			set_region(bitarray, bit_idx, num_bits, true, &bd);
 
 			*offset = bit_idx;
