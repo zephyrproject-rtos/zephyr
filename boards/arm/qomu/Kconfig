@@ -1,0 +1,10 @@
+# QuickLogic Qomu board
+
+# Copyright (c) 2022 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INIT_PRIORITY
+	int
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Board initialization priority.

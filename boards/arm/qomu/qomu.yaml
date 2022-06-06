@@ -1,0 +1,12 @@
+identifier: qomu
+name: QuickLogic Qomu
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
