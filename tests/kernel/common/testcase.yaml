@@ -26,3 +26,9 @@ tests:
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_FULL_INTEGRAL=y
+  kernel.common.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_ALIGNED_HEAP_SIZE=8192
