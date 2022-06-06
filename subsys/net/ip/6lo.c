@@ -1624,7 +1624,6 @@ int net_6lo_uncompress_hdr_diff(struct net_pkt *pkt)
 		}
 
 		nhc_inline_size = get_udp_nhc_inlined_size(nhc);
-		compressed_hdr_size += sizeof(uint8_t) + nhc_inline_size;
 		diff += sizeof(struct net_udp_hdr) - sizeof(uint8_t) -
 			nhc_inline_size;
 	}
