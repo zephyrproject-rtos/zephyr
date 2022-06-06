@@ -87,4 +87,11 @@ config XTENSA_UNCACHED_REGION
 	  As for XTENSA_CACHED_REGION, this specifies which 512M
 	  region (0-7) contains the "uncached" mapping.
 
+config XTENSA_CCOUNT_HZ
+	int "CCOUNT cycle rate"
+	default 1000000
+	help
+	  Rate in HZ of the Xtensa core as measured by the value of
+	  the CCOUNT register.
+
 endmenu
