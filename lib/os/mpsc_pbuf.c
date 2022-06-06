@@ -44,6 +44,7 @@ void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
 
 	err = k_sem_init(&buffer->sem, 0, 1);
 	__ASSERT_NO_MSG(err == 0);
+	ARG_UNUSED(err);
 }
 
 static inline bool free_space(struct mpsc_pbuf_buffer *buffer, uint32_t *res)
