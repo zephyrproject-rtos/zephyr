@@ -623,6 +623,18 @@ static void cp_flush_command_queue(struct osdp_pd *pd)
 	}
 }
 
+static inline void cp_set_state(struct osdp_pd *pd, enum osdp_cp_state_e state)
+{
+	pd->state = state;
+	CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
+}
+
+static inline void cp_set_online(struct osdp_pd *pd)
+{
+	cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+	pd->tstamp = 0;
+}
+
 static inline void cp_set_offline(struct osdp_pd *pd)
 {
 	sc_deactivate(pd);
@@ -634,12 +646,6 @@ static inline void cp_reset_state(struct osdp_pd *pd)
 {
 	pd->state = OSDP_CP_STATE_INIT;
 	osdp_phy_state_reset(pd);
-}
-
-static inline void cp_set_state(struct osdp_pd *pd, enum osdp_cp_state_e state)
-{
-	pd->state = state;
-	CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
 }
 
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -819,7 +825,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 #endif /* CONFIG_OSDP_SC_ENABLED */
-		cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+		cp_set_online(pd);
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case OSDP_CP_STATE_SC_INIT:
@@ -834,7 +840,7 @@ static int state_update(struct osdp_pd *pd)
 			if (ISSET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE)) {
 				LOG_INF("SC Failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
-				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+				cp_set_online(pd);
 				break;
 			}
 			SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
@@ -847,7 +853,7 @@ static int state_update(struct osdp_pd *pd)
 		if (pd->reply_id != REPLY_CCRYPT) {
 			LOG_ERR("CHLNG failed. Online without SC");
 			pd->sc_tstamp = osdp_millis_now();
-			cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			cp_set_online(pd);
 			break;
 		}
 		cp_set_state(pd, OSDP_CP_STATE_SC_SCRYPT);
@@ -859,7 +865,7 @@ static int state_update(struct osdp_pd *pd)
 		if (pd->reply_id != REPLY_RMAC_I) {
 			LOG_ERR("SCRYPT failed. Online without SC");
 			pd->sc_tstamp = osdp_millis_now();
-			cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			cp_set_online(pd);
 			break;
 		}
 		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
@@ -869,7 +875,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		LOG_INF("SC Active");
 		pd->sc_tstamp = osdp_millis_now();
-		cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+		cp_set_online(pd);
 		break;
 	case OSDP_CP_STATE_SET_SCBK:
 		if (cp_cmd_dispatcher(pd, CMD_KEYSET) != 0) {
@@ -877,7 +883,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		if (pd->reply_id == REPLY_NAK) {
 			LOG_WRN("Failed to set SCBK; continue with SCBK-D");
-			cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			cp_set_online(pd);
 			break;
 		}
 		LOG_INF("SCBK set; restarting SC to verify new SCBK");
