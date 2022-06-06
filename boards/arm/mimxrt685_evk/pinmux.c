@@ -46,5 +46,4 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	return 0;
 }
 
-/* priority set to CONFIG_PINMUX_INIT_PRIORITY value */
-SYS_INIT(mimxrt685_evk_pinmux_init, PRE_KERNEL_1, 45);
+SYS_INIT(mimxrt685_evk_pinmux_init, PRE_KERNEL_1, CONFIG_BOARD_INIT_PRIORITY);
