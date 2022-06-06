@@ -603,14 +603,6 @@ static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 	BT_DBG("Disconnected: %s (reason %u)",
 	       bt_addr_le_str(bt_conn_get_dst(conn)), reason);
 
-	/*
-	 * If lock was taken by non-bonded device, set lock to released value,
-	 * and notify other connections.
-	 */
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-		return;
-	}
-
 	for (int i = 0; i < ARRAY_SIZE(csis_insts); i++) {
 		handle_csis_disconnect(&csis_insts[i], conn);
 	}
