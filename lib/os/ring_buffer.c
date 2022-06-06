@@ -189,7 +189,7 @@ int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 	uint8_t *dst, *data = (uint8_t *)data32;
 	struct ring_element *header;
 	uint32_t space, size, partial_size, total_size;
-	int ret;
+	int err;
 
 	space = ring_buf_space_get(buf);
 	size = size32 * 4;
@@ -197,8 +197,8 @@ int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 		return -EMSGSIZE;
 	}
 
-	ret = ring_buf_put_claim(buf, &dst, sizeof(struct ring_element));
-	__ASSERT_NO_MSG(ret == sizeof(struct ring_element));
+	err = ring_buf_put_claim(buf, &dst, sizeof(struct ring_element));
+	__ASSERT_NO_MSG(err == sizeof(struct ring_element));
 
 	header = (struct ring_element *)dst;
 	header->type = type;
@@ -215,9 +215,9 @@ int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 	} while (size && partial_size);
 	__ASSERT_NO_MSG(size == 0);
 
-	ret = ring_buf_put_finish(buf, total_size);
-	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	err = ring_buf_put_finish(buf, total_size);
+	__ASSERT_NO_MSG(err == 0);
+	ARG_UNUSED(err);
 
 	return 0;
 }
@@ -228,14 +228,14 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 	uint8_t *src, *data = (uint8_t *)data32;
 	struct ring_element *header;
 	uint32_t size, partial_size, total_size;
-	int ret;
+	int err;
 
 	if (ring_buf_is_empty(buf)) {
 		return -EAGAIN;
 	}
 
-	ret = ring_buf_get_claim(buf, &src, sizeof(struct ring_element));
-	__ASSERT_NO_MSG(ret == sizeof(struct ring_element));
+	err = ring_buf_get_claim(buf, &src, sizeof(struct ring_element));
+	__ASSERT_NO_MSG(err == sizeof(struct ring_element));
 
 	header = (struct ring_element *)src;
 
@@ -262,9 +262,9 @@ int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 		size -= partial_size;
 	} while (size && partial_size);
 
-	ret = ring_buf_get_finish(buf, total_size);
-	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	err = ring_buf_get_finish(buf, total_size);
+	__ASSERT_NO_MSG(err == 0);
+	ARG_UNUSED(err);
 
 	return 0;
 }
