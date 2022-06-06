@@ -502,7 +502,8 @@ int osdp_phy_packet_finalize(struct osdp_pd *p, uint8_t *buf,
 			       int len, int max_len);
 int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			  int *one_pkt_len);
-int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len);
+int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len,
+			   uint8_t **pkt_start);
 void osdp_phy_state_reset(struct osdp_pd *pd);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);

@@ -850,7 +850,7 @@ static int pd_receve_packet(struct osdp_pd *pd)
 
 	pd->reply_id = 0;    /* reset past reply ID so phy can send NAK */
 	pd->ephemeral_data[0] = 0; /* reset past NAK reason */
-	ret = osdp_phy_decode_packet(pd, pd->rx_buf, pd->rx_buf_len);
+	ret = osdp_phy_decode_packet(pd, pd->rx_buf, pd->rx_buf_len, &buf);
 	if (ret == OSDP_ERR_PKT_FMT) {
 		if (pd->reply_id != 0) {
 			pd->reply_id = REPLY_NAK;
