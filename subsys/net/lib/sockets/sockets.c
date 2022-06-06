@@ -1852,6 +1852,12 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 		}
+	case IPPROTO_TCP:
+		switch (optname) {
+		case TCP_NODELAY:
+			ret = net_tcp_get_option(ctx, TCP_OPT_NODELAY, optval, optlen);
+			return ret;
+		}
 	}
 
 	errno = ENOPROTOOPT;
@@ -2099,10 +2105,9 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 	case IPPROTO_TCP:
 		switch (optname) {
 		case TCP_NODELAY:
-			/* Ignore for now. Provided to let port
-			 * existing apps.
-			 */
-			return 0;
+			ret = net_tcp_set_option(ctx,
+						 TCP_OPT_NODELAY, optval, optlen);
+			return ret;
 		}
 		break;
 

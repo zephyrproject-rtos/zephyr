@@ -269,6 +269,7 @@ struct tcp { /* TCP connection */
 	bool in_retransmission : 1;
 	bool in_connect : 1;
 	bool in_close : 1;
+	bool tcp_nodelay : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
