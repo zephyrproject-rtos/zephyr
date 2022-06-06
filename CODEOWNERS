@@ -328,10 +328,10 @@
 /drivers/misc/                            @tejlmand
 /drivers/misc/ft8xx/                      @hubertmis
 /drivers/mm/                              @dcpleung
-/drivers/modem/hl7800.c                   @LairdCP/zephyr
+/drivers/modem/hl7800.c                   @rerickson1
 /drivers/modem/simcom-sim7080.c           @lgehreke
 /drivers/modem/simcom-sim7080.h           @lgehreke
-/drivers/modem/Kconfig.hl7800             @LairdCP/zephyr
+/drivers/modem/Kconfig.hl7800             @rerickson1
 /drivers/modem/Kconfig.simcom-sim7080     @lgehreke
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @sjvasanth1
@@ -508,7 +508,7 @@
 /dts/bindings/can/                        @alexanderwachter @henrikbrixandersen
 /dts/bindings/i2c/zephyr*i2c-emul*.yaml   @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
-/dts/bindings/modem/*hl7800.yaml          @LairdCP/zephyr
+/dts/bindings/modem/*hl7800.yaml          @rerickson1
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
 /dts/bindings/*/*gd32*                    @nandojve
@@ -546,7 +546,7 @@
 /include/zephyr/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/zephyr/drivers/interrupt_controller/    @dcpleung @nashif
 /include/zephyr/drivers/interrupt_controller/gic.h @stephanosio
-/include/zephyr/drivers/modem/hl7800.h           @LairdCP/zephyr
+/include/zephyr/drivers/modem/hl7800.h           @rerickson1
 /include/zephyr/drivers/pcie/                    @dcpleung
 /include/zephyr/drivers/hwinfo.h                 @alexanderwachter
 /include/zephyr/drivers/led.h                    @Mani-Sadhasivam
