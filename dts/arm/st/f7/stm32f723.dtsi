@@ -20,6 +20,12 @@
 		zephyr,memory-region = "DTCM";
 	};
 
+	itcm: memory@0 {
+		compatible = "zephyr,memory-region", "arm,itcm";
+		reg = <0x00000000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "ITCM";
+	};
+
 	soc {
 		usbphyc: usbphyc@40017c00 {
 			compatible = "st,stm32-usbphyc";
