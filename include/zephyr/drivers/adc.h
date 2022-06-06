@@ -724,7 +724,7 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
  * @param gain the ADC gain configuration used to sample the input
  *
  * @param resolution the number of bits in the absolute value of the
- * sample.  For differential sampling this may be one less than the
+ * sample.  For differential sampling this needs to be one less than the
  * resolution in struct adc_sequence.
  *
  * @param valp pointer to the raw measurement value on input, and the
