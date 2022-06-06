@@ -2119,8 +2119,6 @@ int net_context_recv(struct net_context *context,
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		int ret;
-
 		/* Make sure we have the lock, then the
 		 * net_context_packet_received() callback will release the
 		 * semaphore when data has been received.
