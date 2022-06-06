@@ -171,7 +171,8 @@
 		group0 {
 			pinmux = <SCT0_OUT7_PIO0_27>,
 				<SCT0_OUT0_PIO0_14>,
-				<SCT0_OUT6_PIO0_26>;
+				<SCT0_OUT6_PIO0_26>,
+				<SCT0_OUT6_PIO0_31>;
 			slew-rate = "normal";
 			drive-strength = "normal";
 		};
