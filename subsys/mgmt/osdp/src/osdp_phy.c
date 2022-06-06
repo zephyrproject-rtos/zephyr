@@ -388,7 +388,8 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 	return OSDP_ERR_PKT_NONE;
 }
 
-int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
+int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
+			   uint8_t **pkt_start)
 {
 	uint8_t *data;
 	int mac_offset;
@@ -493,7 +494,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 #endif /* CONFIG_OSDP_SC_ENABLED */
 
-	memmove(buf, data, len);
+	*pkt_start = data;
 	return len;
 }
 
