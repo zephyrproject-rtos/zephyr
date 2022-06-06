@@ -530,10 +530,10 @@ static void csis_connected(struct bt_conn *conn, uint8_t err)
 		for (int i = 0; i < ARRAY_SIZE(csis_insts); i++) {
 			struct bt_csis *csis = &csis_insts[i];
 
-			csis->srv.conn_cnt++;
+			__ASSERT(csis->srv.conn_cnt < CONFIG_BT_MAX_CONN,
+				 "conn_cnt is %d", CONFIG_BT_MAX_CONN);
 
-			__ASSERT(csis->srv.conn_cnt <= CONFIG_BT_MAX_CONN,
-				"Invalid csis->srv.conn_cnt value");
+			csis->srv.conn_cnt++;
 		}
 	}
 }
@@ -557,13 +557,14 @@ static void disconnect_adv(struct k_work *work)
 static void handle_csis_disconnect(struct bt_csis *csis, struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_EXT_ADV)
-	__ASSERT(csis->srv.conn_cnt != 0, "Invalid csis->srv.conn_cnt value");
+	__ASSERT(csis->srv.conn_cnt > 0, "conn_cnt is 0");
 
 	if (csis->srv.conn_cnt == CONFIG_BT_MAX_CONN &&
 	    csis->srv.adv_enabled) {
 		/* A connection spot opened up */
 		k_work_submit(&csis->srv.work);
 	}
+
 	csis->srv.conn_cnt--;
 #endif /* CONFIG_BT_EXT_ADV */
 
