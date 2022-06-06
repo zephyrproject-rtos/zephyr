@@ -1099,6 +1099,10 @@ void arch_timing_init(void);
  * Signal to the timing subsystem that timing information
  * will be gathered from this point forward.
  *
+ * @note Any call to arch_timing_counter_get() must be done between
+ * calls to arch_timing_start() and arch_timing_stop(), and on the
+ * same CPU core.
+ *
  * @see timing_start()
  */
 void arch_timing_start(void);
@@ -1109,12 +1113,27 @@ void arch_timing_start(void);
  * Signal to the timing subsystem that timing information
  * is no longer being gathered from this point forward.
  *
+ * @note Any call to arch_timing_counter_get() must be done between
+ * calls to arch_timing_start() and arch_timing_stop(), and on the
+ * same CPU core.
+ *
  * @see timing_stop()
  */
 void arch_timing_stop(void);
 
 /**
  * @brief Return timing counter.
+ *
+ * @note Any call to arch_timing_counter_get() must be done between
+ * calls to arch_timing_start() and arch_timing_stop(), and on the
+ * same CPU core.
+ *
+ * @note Not all platforms have a timing counter with 64 bit precision.  It
+ * is possible to see this value "go backwards" due to internal
+ * rollover.  Timing code must be prepared to address the rollover
+ * (with platform-dependent code, e.g. by casting to a uint32_t before
+ * subtraction) or by using arch_timing_cycles_get() which is required
+ * to understand the distinction.
  *
  * @return Timing counter.
  *
@@ -1125,8 +1144,10 @@ timing_t arch_timing_counter_get(void);
 /**
  * @brief Get number of cycles between @p start and @p end.
  *
- * For some architectures or SoCs, the raw numbers from counter
- * need to be scaled to obtain actual number of cycles.
+ * For some architectures or SoCs, the raw numbers from counter need
+ * to be scaled to obtain actual number of cycles, or may roll over
+ * internally.  This function computes a positive-definite interval
+ * between two returned cycle values.
  *
  * @param start Pointer to counter at start of a measured execution.
  * @param end Pointer to counter at stop of a measured execution.
