@@ -255,6 +255,17 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	latency_pdu = max_latency * USEC_PER_MSEC * lll_adv_iso->bn / bn;
 	latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
 			  lll_adv_iso->num_bis;
+	if (latency_packing > sdu_interval) {
+		/* SDU interval too small to fit the calculated BIG event
+		 * timing required for the supplied BIG create parameters.
+		 */
+
+		/* Release allocated link buffers */
+		ll_rx_link_release(link_cmplt);
+		ll_rx_link_release(link_term);
+
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	/* Based on packing requested, sequential or interleaved */
 	if (packing) {
@@ -314,6 +325,14 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
 				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
 	if (err) {
+		/* Insufficient Advertising PDU buffers to allocate new PDU
+		 * to add BIGInfo into the ACAD of the Periodic Advertising.
+		 */
+
+		/* Release allocated link buffers */
+		ll_rx_link_release(link_cmplt);
+		ll_rx_link_release(link_term);
+
 		return err;
 	}
 
@@ -328,6 +347,11 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 					 ULL_ADV_PDU_HDR_FIELD_ACAD, 0U,
 					 &hdr_data);
 	if (err) {
+		/* Failed to add BIGInfo into the ACAD of the Periodic
+		 * Advertising.
+		 */
+
+		/* Release allocated link buffers */
 		ll_rx_link_release(link_cmplt);
 		ll_rx_link_release(link_term);
 
@@ -386,7 +410,17 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	/* Start sending BIS empty data packet for each BIS */
 	ret = adv_iso_start(adv_iso, iso_interval_us);
 	if (ret) {
-		/* FIXME: release resources */
+		/* Failed to schedule BIG events */
+
+		/* Reset the association of ISO instance with the Extended
+		 * Advertising Instance
+		 */
+		lll_adv_iso->adv = NULL;
+
+		/* Release allocated link buffers */
+		ll_rx_link_release(link_cmplt);
+		ll_rx_link_release(link_term);
+
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
