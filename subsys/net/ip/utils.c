@@ -234,7 +234,6 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 
 		if (needcolon) {
 			*ptr++ = ':';
-			needcolon = false;
 		}
 
 		value = (uint32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
