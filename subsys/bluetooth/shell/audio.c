@@ -1327,11 +1327,13 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 #endif /* CONFIG_BT_AUDIO_UNICAST || CONFIG_BT_AUDIO_BROADCAST_SOURCE */
 
-	/* Mark all supported contexts as available */
-	bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
-						   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
-	bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-						   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	if (IS_ENABLED(CONFIG_BT_AUDIO_CAPABILITY)) {
+		/* Mark all supported contexts as available */
+		bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
+							   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+		bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+							   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	}
 
 #if defined(CONFIG_BT_AUDIO_UNICAST)
 	for (i = 0; i < ARRAY_SIZE(streams); i++) {
