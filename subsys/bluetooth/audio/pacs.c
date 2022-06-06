@@ -201,17 +201,17 @@ static ssize_t supported_context_read(struct bt_conn *conn,
 {
 	struct bt_pacs_context context;
 
-	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
-		context.snk = sys_cpu_to_le16(CONFIG_BT_PACS_SNK_CONTEXT);
-	} else {
-		context.snk = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-	}
+#if defined(CONFIG_BT_PAC_SNK)
+	context.snk = sys_cpu_to_le16(CONFIG_BT_PACS_SNK_CONTEXT);
+#else
+	context.snk = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+#endif
 
-	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
-		context.src = sys_cpu_to_le16(CONFIG_BT_PACS_SRC_CONTEXT);
-	} else {
-		context.src = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-	}
+#if defined(CONFIG_BT_PAC_SRC)
+	context.src = sys_cpu_to_le16(CONFIG_BT_PACS_SRC_CONTEXT);
+#else
+	context.src = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+#endif
 
 	BT_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len,
 	       offset);
