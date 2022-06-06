@@ -621,6 +621,12 @@ that are used to emulate, flash and debug Zephyr applications.
             You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
             the initial setup.
 
+.. note::
+
+   You might need to set the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` and
+   :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variables. See the
+   :ref:`toolchain_zephyr_sdk` section for details.
+
 .. _getting_started_run_sample:
 
 .. rst-class:: numbered-step
