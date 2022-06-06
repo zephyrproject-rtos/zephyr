@@ -16,7 +16,7 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <helpers/nrfx_gppi.h>
-#include <linker/devicetree_regions.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
