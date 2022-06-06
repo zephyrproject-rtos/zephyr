@@ -787,6 +787,19 @@ else:
     HOST = get_host_ip()
 
 if __name__ == "__main__":
+
+    # When fw_file is assigned or in log_only mode, it will
+    # not serve as a daemon. That mean it just run load
+    # firmware or read the log directly.
+    if args.fw_file or args.log_only:
+        start_output = True
+        try:
+            asyncio.get_event_loop().run_until_complete(_main(None))
+        except KeyboardInterrupt:
+            start_output = False
+        finally:
+            sys.exit(0)
+
     # Launch the command request service
     socketserver.TCPServer.allow_reuse_address = True
     req_server = socketserver.TCPServer((HOST, PORT_REQ), adsp_request_handler)
