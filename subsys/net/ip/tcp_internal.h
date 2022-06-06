@@ -30,6 +30,10 @@ extern "C" {
 
 #include "tcp_private.h"
 
+enum tcp_conn_option {
+	TCP_OPT_NODELAY	= 1,
+};
+
 /**
  * @brief Calculates and returns the MSS for a given TCP context
  *
@@ -365,6 +369,57 @@ static inline int net_tcp_put(struct net_context *context)
 void net_tcp_init(void);
 #else
 #define net_tcp_init(...)
+#endif
+
+/**
+ * @brief Set tcp specific options of a socket
+ *
+ * @param context Network context
+ *
+ * @return 0 on success, -EINVAL if the value is not allowed
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_set_option(struct net_context *context,
+		       enum tcp_conn_option option,
+		       const void *value, size_t len);
+#else
+static inline int net_tcp_set_option(struct net_context *context,
+				     enum tcp_conn_option option,
+				     const void *value, size_t len)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(option);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+
+/**
+ * @brief Obtain tcp specific options of a socket
+ *
+ * @param context Network context
+ *
+ * @return 0 on success
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_get_option(struct net_context *context,
+		       enum tcp_conn_option option,
+		       void *value, size_t *len);
+#else
+static inline int net_tcp_get_option(struct net_context *context,
+				     enum tcp_conn_option option,
+				     void *value, size_t *len)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(option);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -EPROTONOSUPPORT;
+}
 #endif
 
 /**

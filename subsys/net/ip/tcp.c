@@ -848,6 +848,37 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 	return -EINVAL;
 }
 
+static int set_tcp_nodelay(struct tcp *conn, const void *value, size_t len)
+{
+	int no_delay_int;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	no_delay_int = *(int *)value;
+
+	if ((no_delay_int < 0) || (no_delay_int > 1)) {
+		return -EINVAL;
+	}
+
+	conn->tcp_nodelay = (bool)no_delay_int;
+
+	return 0;
+}
+
+static int get_tcp_nodelay(struct tcp *conn, void *value, size_t *len)
+{
+	int no_delay_int = (int)conn->tcp_nodelay;
+
+	*((int *)value) = no_delay_int;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+	return 0;
+}
+
 static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(mss_opt_access, struct tcp_mss_option);
@@ -1097,6 +1128,19 @@ static int tcp_send_queued_data(struct tcp *conn)
 	}
 
 	while (tcp_unsent_len(conn) > 0) {
+		/* Implement Nagle's algorithm */
+		if ((conn->tcp_nodelay == false) && (conn->unacked_len > 0)) {
+			/* If there is already pending data */
+			if (tcp_unsent_len(conn) < conn_mss(conn)) {
+				/* The number of bytes to be transmitted is less than an MSS,
+				 * skip transmission for now.
+				 * Wait for more data to be transmitted or all pending data
+				 * being acknowledged.
+				 */
+				break;
+			}
+		}
+
 		ret = tcp_send_data(conn);
 		if (ret < 0) {
 			break;
@@ -1301,6 +1345,7 @@ static struct tcp *tcp_conn_alloc(struct net_context *context)
 	conn->in_connect = false;
 	conn->state = TCP_LISTEN;
 	conn->recv_win = tcp_window;
+	conn->tcp_nodelay = false;
 
 	/* Set the recv_win with the rcvbuf configured for the socket. */
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF) &&
@@ -2992,6 +3037,56 @@ uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 #endif /* CONFIG_NET_IPV6 */
 
 	return 0;
+}
+
+int net_tcp_set_option(struct net_context *context,
+		       enum tcp_conn_option option,
+		       const void *value, size_t len)
+{
+	int ret = 0;
+
+	NET_ASSERT(context);
+
+	struct tcp *conn = context->tcp;
+
+	NET_ASSERT(conn);
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	switch (option) {
+	case TCP_OPT_NODELAY:
+		ret = set_tcp_nodelay(conn, value, len);
+		break;
+	}
+
+	k_mutex_unlock(&conn->lock);
+
+	return ret;
+}
+
+int net_tcp_get_option(struct net_context *context,
+		       enum tcp_conn_option option,
+		       void *value, size_t *len)
+{
+	int ret = 0;
+
+	NET_ASSERT(context);
+
+	struct tcp *conn = context->tcp;
+
+	NET_ASSERT(conn);
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	switch (option) {
+	case TCP_OPT_NODELAY:
+		ret = get_tcp_nodelay(conn, value, len);
+		break;
+	}
+
+	k_mutex_unlock(&conn->lock);
+
+	return ret;
 }
 
 const char *net_tcp_state_str(enum tcp_state state)
