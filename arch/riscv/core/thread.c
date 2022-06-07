@@ -41,10 +41,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->a2 = (ulong_t)p2;
 	stack_init->a3 = (ulong_t)p3;
 
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
-	thread->callee_saved.tp = (ulong_t)thread->tls;
-#endif
-
 	/*
 	 * Following the RISC-V architecture,
 	 * the MSTATUS register (used to globally enable/disable interrupt),
@@ -89,11 +85,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* the unwound stack pointer upon exiting exception */
 	stack_init->sp = (ulong_t)(stack_init + 1);
 #endif /* CONFIG_USERSPACE */
-
-#if defined(CONFIG_THREAD_LOCAL_STORAGE)
-	stack_init->tp = thread->tls;
-	thread->callee_saved.tp = thread->tls;
-#endif
 
 	/* Assign thread entry point and mstatus.MPRV mode. */
 	if (IS_ENABLED(CONFIG_USERSPACE)
