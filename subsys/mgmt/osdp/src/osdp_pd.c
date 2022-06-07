@@ -569,11 +569,10 @@ static inline void assert_buf_len(int need, int have)
 static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	int ret = OSDP_PD_ERR_GENERIC;
-	int i, data_off, len = 0;
+	int i, len = 0;
 	struct osdp_cmd *cmd;
 	struct osdp_event *event;
-
-	data_off = osdp_phy_packet_get_data_offset(pd, buf);
+	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
 #endif
