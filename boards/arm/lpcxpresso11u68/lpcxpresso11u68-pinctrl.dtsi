@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/lpc11u6x-pinctrl.h>
 
 &pinctrl {
 	uart0_default: uart0_default {

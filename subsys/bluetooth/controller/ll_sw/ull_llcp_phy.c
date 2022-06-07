@@ -244,16 +244,19 @@ static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct lll_conn *lll = &conn->lll;
 	uint16_t eff_tx_time = lll->dle.eff.max_tx_time;
 	uint16_t eff_rx_time = lll->dle.eff.max_rx_time;
+	uint16_t max_rx_time, max_tx_time;
+
+	ull_dle_max_time_get(conn, &max_rx_time, &max_tx_time);
 
 	if ((ctx->data.pu.p_to_c_phy && (lll->role == BT_HCI_ROLE_PERIPHERAL)) ||
 	    (ctx->data.pu.c_to_p_phy && (lll->role == BT_HCI_ROLE_CENTRAL))) {
-		eff_tx_time = pu_calc_eff_time(lll->dle.eff.max_tx_octets, lll->phy_tx,
-					       lll->dle.local.max_tx_time);
+		eff_tx_time =
+			pu_calc_eff_time(lll->dle.eff.max_tx_octets, lll->phy_tx, max_tx_time);
 	}
 	if ((ctx->data.pu.p_to_c_phy && (lll->role == BT_HCI_ROLE_CENTRAL)) ||
 	    (ctx->data.pu.c_to_p_phy && (lll->role == BT_HCI_ROLE_PERIPHERAL))) {
-		eff_rx_time = pu_calc_eff_time(lll->dle.eff.max_rx_octets, lll->phy_rx,
-					       lll->dle.local.max_rx_time);
+		eff_rx_time =
+			pu_calc_eff_time(lll->dle.eff.max_rx_octets, lll->phy_rx, max_rx_time);
 	}
 
 	if ((eff_tx_time != lll->dle.eff.max_tx_time) ||

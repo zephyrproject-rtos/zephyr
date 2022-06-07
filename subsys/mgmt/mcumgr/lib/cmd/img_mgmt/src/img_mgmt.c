@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
+#include <zephyr/toolchain.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -265,14 +266,14 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
 
 	rc = img_mgmt_impl_erase_slot();
 
-	if (!rc) {
+	if (rc != 0) {
 		img_mgmt_dfu_stopped();
 	}
 
 	ok = zcbor_tstr_put_lit(zse, "rc")	&&
 	     zcbor_int32_put(zse, rc);
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 static int
@@ -286,7 +287,7 @@ img_mgmt_upload_good_rsp(struct mgmt_ctxt *ctxt)
 	     zcbor_tstr_put_lit(zse, "off")			&&
 	     zcbor_int32_put(zse,  g_img_mgmt_state.off);
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 /**

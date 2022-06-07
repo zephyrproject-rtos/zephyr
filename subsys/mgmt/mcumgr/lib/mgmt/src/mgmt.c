@@ -138,7 +138,7 @@ mgmt_write_rsp_status(struct mgmt_ctxt *ctxt, int errcode)
 	}
 #endif
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
 void

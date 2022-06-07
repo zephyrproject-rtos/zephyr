@@ -72,7 +72,7 @@ os_mgmt_echo(struct mgmt_ctxt *ctxt)
 	ok = zcbor_tstr_put_lit(zse, "r")		&&
 	     zcbor_tstr_encode(zse, &value);
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 #endif
 
@@ -140,7 +140,7 @@ os_mgmt_taskstat_encode_stack_info(zcbor_state_t *zse,
 	ok = zcbor_tstr_put_lit(zse, "stksiz")		&&
 	     zcbor_uint64_put(zse, stack_size)		&&
 	     zcbor_tstr_put_lit(zse, "stkuse")		&&
-	     zcbor_uint64_put(zse, stack_unused);
+	     zcbor_uint64_put(zse, stack_used);
 
 	return ok;
 #else
@@ -224,7 +224,7 @@ static int os_mgmt_taskstat_read(struct mgmt_ctxt *ctxt)
 	}
 
 	if (!ok || !zcbor_map_end_encode(zse, CONFIG_OS_MGMT_TASKSTAT_MAX_NUM_THREADS)) {
-		return MGMT_ERR_ENOMEM;
+		return MGMT_ERR_EMSGSIZE;
 	}
 
 	return 0;
@@ -265,7 +265,7 @@ os_mgmt_mcumgr_params(struct mgmt_ctxt *ctxt)
 	     zcbor_tstr_put_lit(zse, "buf_count")		&&
 	     zcbor_uint32_put(zse, CONFIG_MCUMGR_BUF_COUNT);
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 #endif
 

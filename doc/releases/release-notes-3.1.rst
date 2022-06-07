@@ -10,6 +10,15 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
+The following CVEs are addressed by this release:
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+* CVE-2022-1841: Under embargo until 2022-08-18
+* CVE-2022-1042: Under embargo until 2022-06-19
+* CVE-2022-1041: Under embargo until 2022-06-19
+
 Known issues
 ************
 
@@ -71,9 +80,15 @@ Changes in this release
     * The previous ``CAN_SILENT_LOOPBACK_MODE`` can be set using the bitmask ``(CAN_MODE_LISTENONLY |
       CAN_MODE_LOOPBACK)``.
 
-* STM32H7 The `CONFIG_NOCACHE_MEMORY` no longer is responsible for disabling
-  data cache when defined. Now the newly introduced `CONFIG_DCACHE=n` explicitly
-  does that.
+  * STM32H7 The `CONFIG_NOCACHE_MEMORY` no longer is responsible for disabling
+    data cache when defined. Now the newly introduced `CONFIG_DCACHE=n` explicitly
+    does that.
+
+  * Converted the STM32F1 pin nodes configuration names to include remap information (in
+    cases other than NO_REMAP/REMAP_0)
+    For instance:
+
+    * ``i2c1_scl_pb8`` renamed to ``i2c1_scl_remap1_pb8``
 
 Removed APIs in this release
 ============================
@@ -143,6 +158,8 @@ Bluetooth
     function has been deprecated.  A :c:func:`subscribe` callback
     function has been added to replace it.
 
+  * :c:func:`bt_disable` was added to enable caller to disable bluetooth stack.
+
 New APIs in this release
 ========================
 
@@ -174,8 +191,33 @@ New APIs in this release
 Kernel
 ******
 
+* Aborting an essential thread now causes a kernel panic, as the
+  documentation has always promised but the kernel has never
+  implemented.
+
+* The k_timer handler can now correct itself for lost time due to very
+  late-arriving interrupts.
+
+* Defer SMP interprocessor interrupts so that they are sent only at
+  schedule points and not synchronously when the scheduler state
+  changes.  This prevents IPI "storms" with code that does many
+  scheduler operations at once (e.g. waking up a bunch of threads).
+
+* The timeslicing API now allows slice times to be controlled
+  independently for each thread, and provides a callback to the app
+  when a thread timeslice has expired.  The intent is that this will
+  allow apps the tools to implement CPU resource control algorithms
+  (e.g. fairness or interactivity metrics, budget tracking) that are
+  out of scope for Zephyr's deterministic RTOS scheduler.
+
 Architectures
 *************
+
+* ARC
+
+  * Add ARCv3 32 bit (HS5x) support - both GNU and MWDT toolchains, both UP and SMP
+  * Workaround debug_select interference with MDB debugger
+  * Switch to hs6x mcpu usage (GNU toolchain) for HS6x
 
 * ARM
 
@@ -185,33 +227,117 @@ Architectures
 
 * Xtensa
 
+  * Optimize context switches when KERNEL_COHERENCE is enabled to
+    avoid needless stack invalidations for threads that have not
+    migrated between CPUs.
+
+  * Fix bug that could return directly into a thread context from a
+    nested interrupt instead of properly returning to the preempted
+    ISR.
+
+* x64_64
+
+  * UEFI devices can now use the firmware-initialized system console
+    API as a printk/logging backend, simplifying platform bringup on
+    devices without known-working serial port configurations.
+
 Bluetooth
 *********
 
+* Extended and Periodic advertising are no longer experimental
+* Direction Finding is no longer experimental
+* Added support for disabling Bluetooth, including a new ``bt_disable()`` API
+  call
+
 * Audio
+
+  * Changed the implementation of PACS to indicate instead of notifying
+  * Added support for the Broadcast Audio Scan Service (BASS)
+  * Added support for the Hearing Access Service (HAS)
+  * Added support for the Telephone Bearer Service (TBS)
 
 * Direction Finding
 
+  * Added sampling and switching offset configuration
+
 * Host
+
+  * Added new Kconfig options to select ISO Central and Peripheral role support
+    separately
+  * Added a new ``bt_get_appearance()`` API call
+  * Implemented support for dynamic appearance, including a new
+    ``bt_set_appearance()`` API call
+  * Implemented support for L2CAP collision mitigation
+  * Changed the scheduling of auto-initiated HCI commands so that they execute
+    synchronously
+  * Added a new ``bt_is_ready()`` API call to find out if Bluetooth is
+    currently enabled and initialized
+  * Added support for automatic MTU exchange right after a connection is
+    established
+  * Created a new ``auth_info_cb`` to group the security-related callbacks under
+    a single struct
+  * Optimized the memory usage of the Object Transfer Service
+  * Added a new ``bt_hci_le_rand()`` API call to obtain a random number from the
+    LE Controller
+  * Added a new public API to connect EATT channels, ``bt_eatt_connect()``
+  * Optimized L2CAP channels resource usage when not using dynamic channels
+  * Added the ability to run the Bluetooth RX context from a workqueue, in order
+    to optimize RAM usage. See ``CONFIG_BT_RECV_CONTEXT``
+  * Added support for TX complete callback on EATT channels
+  * Corrected the calling of the MTU callback to happen on any reconfiguration
 
 * Mesh
 
+  * Added support for Proxy Client
+  * Added support for Provisioners over PB-GATT
+  * Added a new heartbeat publication callback option
+
 * Controller
 
+  * Added support for the full ISO TX data path, including ISOAL
+  * Added support for ISO Broadcast Channel Map Update
+  * Added support for ISO Synchronized Receiver Channel Map Update
+  * The new implementation of LL Control Procedures is now the default whenever
+    Direction Finding is enabled
+  * Added support for all missing v3 and v4 DTM commands
+  * Implemented ISO-AL TX unframed fragmentation
+  * Added support for back-to-back receiving of PDUs on nRF5x platforms
+  * Increased the maximum number of simultaneous connections to 250
+
 * HCI Driver
+
+  * Added support for a new optional :c:member:`bt_hci_driver.close` API which
+    closes HCI transport.
+  * Implemented :c:member:`bt_hci_driver.close` on stm32wb HCI driver.
 
 Boards & SoC Support
 ********************
 
 * Added support for these SoC series:
 
+  * Added support for STM32H725/STM32H730/STM32H73B SoC variants
+
 * Removed support for these SoC series:
 
 * Made these changes in other SoC series:
 
+  * Added Atmel SAM UPLL clock support
+
 * Changes for ARC boards:
 
+  * Add nsim_hs5x and nsim_hs5x_smp boards with ARCv3 32bit HS5x CPU
+  * Add MWDT toolchain support for nsim_hs6x and nsim_hs6x_smp
+  * Do memory layout overhaul for nSIM boards. Add the mechanism to switch between
+    ICCM/DCCM memory layout and flat memory layout (i.e DDR).
+  * Do required platform setup so nsim_hs5x, nsim_hs5x_smp, nsim_hs6x, nsim_hs6x_smp
+    can be run on real HW (HAPS FPGA) with minimum additional configuration
+  * Enable MWDT toolchain support for hsdk_2cores board
+  * Adjust test duration for SMP nSIM boards with timeout_multiplier
+
 * Added support for these ARM boards:
+
+  * b_g474e_dpow1
+  * stm32f401_mini
 
 * Added support for these ARM64 boards:
 
@@ -221,15 +347,29 @@ Boards & SoC Support
 
 * Added support for these RISC-V boards:
 
+  * GigaDevice GD32VF103C-EVAL
+
 * Made these changes in other boards:
+
+  * sam4s_xplained: Add support for HWINFO
+  * sam_e70_xlained: Add support for HWINFO and CAN-FD
+  * sam_v71_xult: Add support for HWINFO and CAN-FD
+  * gd32e103v_eval: Add prescaler to timer
+  * longan_nano: Add support for TF-Card slot
 
 * Added support for these following shields:
 
+  * Keyestudio CAN-BUS Shield (KS0411)
+  * MikroElektronika WIFI and BLE Shield
+  * X-NUCLEO-53L0A1 ranging and gesture detection sensor expansion board
 
 Drivers and Sensors
 *******************
 
 * ADC
+
+  * Atmel SAM0: Fixed adc voltage reference
+  * STM32: Added support for :c:enumerator:`adc_reference.ADC_REF_INTERNAL`.
 
 * CAN
 
@@ -242,11 +382,29 @@ Drivers and Sensors
   * Added CAN transceiver support.
   * Added generic SocketCAN network interface and removed driver-specific implementations.
 
+* Clock_control
+
+  * STM32: Driver was cleaned up and overhauled for easier maintenance with a deeper integration
+    of device tree inputs. Driver now takes into account individual activation of clock sources
+    (High/Medium/Low Internal/external speed clocks, PLLs, ...)
+  * STM32: Additionally to above change it is now possible for clock consumers to select an alternate
+    source clock (Eg: LSE) by adding it to its 'clocks' property and then configure it using new
+    clock_control_configure() API.
+    See :dtcompatible:`st,stm32-rcc`, :dtcompatible:`st,stm32h7-rcc` and :dtcompatible:`st,stm32u5-rcc`
+    for more information.
+
 * Counter
 
 * DAC
 
+  *  support for ST STM32F1 to the ST STM32 DAC driver.
+
 * Disk
+
+* Display
+
+  * STM32: Added basic support for LTDC driver. Currently supported on F4, F7, H7, L4+
+    and MP1 series.
 
 * DMA
 
@@ -254,11 +412,24 @@ Drivers and Sensors
 
 * Entropy
 
+  * STM32: Prevent  core to enter stop modes during entropy operations.
+
 * Ethernet
 
 * Flash
 
+  * Added STM32 OCTOSPI driver: For now supports L5 and U5 series. Interrupt driven mode.
+    Supports 1 and 8 lines in Single or Dual Transfer Modes.
+  * STM32L5: Added support for Single Bank.
+  * STM32 QSPI driver was extended with with QER (SFDP, DTS), custom quad write opcode
+    and 1-1-4 read mode
+  * Added support for STM32U5 series.
+
 * GPIO
+
+* HWINFO
+
+  * Atmel SAM: Added RSTC support
 
 * I2C
 
@@ -270,7 +441,29 @@ Drivers and Sensors
 
 * MEMC
 
+  * STM32: Extend FMC driver to support NOR/PSRAM. See :dtcompatible:`st,stm32-fmc-nor-psram.yaml`.
+
 * Pin control
+
+  * New platforms added to ``pinctrl`` state-based API:
+
+    * Atmel SAM/SAM0
+    * Espressif ESP32
+    * ITE IT8XXX2
+    * Microchip XEC
+    * Nordic nRF (completed support)
+    * Nuvoton NPCX Embedded Controller (EC)
+    * NXP iMX
+    * NXP Kinetis
+    * NXP LPC
+    * RV32M1
+    * SiFive Freedom
+    * Telink B91
+    * TI CC13XX/CC26XX
+
+  * STM32: It is now possible to configure plain GPIO pins using pinctrl API.
+    See :dtcompatible:`st,stm32-pinctrl` and :dtcompatible:`st,stm32f1-pinctrl` for
+    more information.
 
 * PWM
 
@@ -278,10 +471,35 @@ Drivers and Sensors
     :c:macro:`PWM_DT_SPEC_GET` or :c:func:`pwm_set_dt`. This addition makes it
     easier to use the PWM API when the PWM channel, period and flags are taken
     from a Devicetree PWM cell.
+  * STM32: Enabled complementary output for timer channel. A PWM consumer can now use
+    :c:macro:`PWM_STM32_COMPLEMENTARY` to specify that PWM output should happen on a
+    complementary channel pincfg (eg:``tim1_ch2n_pb14``).
+  * STM32: Added counter mode support. See :dtcompatible:`st,stm32-timers`.
+
+* Reset
+
+  * Added reset controller driver API.
 
 * Sensor
 
+  * Added NCPX ADC comparator driver.
+  * Enhanced the BME680 driver to support SPI.
+  * Enhanced the LIS2DW12 driver to support additional filtering and interrupt
+    modes.
+  * Added ICM42670 6-axis accelerometer driver.
+  * Enhanced the VL53L0X driver to support reprogramming its I2C address.
+  * Enhanced the Microchip XEC TACH driver to support pin control and MEC172x.
+  * Added ITE IT8XXX2 voltage comparator driver.
+  * Fixed register definitions in the LSM6DSL driver.
+  * Fixed argument passing bug in the ICM42605 driver.
+  * Removed redundant DEV_NAME helpers in various drivers.
+  * Enhanced the LIS2DH driver to support device power management.
+  * Fixed overflow issue in sensor_value_from_double().
+  * Added MAX31875 temperature sensor driver.
+
 * Serial
+
+  * STM32: Add tx/rx pin swap  and rx invert / tx invert capabilities.
 
 * SPI
 
@@ -294,6 +512,110 @@ Drivers and Sensors
 Networking
 **********
 
+* CoAP:
+
+  * Changed :c:struct:`coap_pending` allocation criteria - use data pointer
+    instead of timestamp, which does not give 100% guarantee that structure
+    is not in use already.
+
+* HTTP:
+
+  * Removed a limitation, where the maximum content length was limited up to
+    100000 bytes.
+  * Fixed :c:func:`http_client_req` return value, the function did not report
+    number of bytes sent correctly.
+  * Clarify the expected behavior in case of empty response from the server.
+  * Make use of :c:func:`shutdown` to tear down HTTP connection instead of
+    closing the socket from a system work queue.
+
+* LwM2M:
+
+  * Various improvements towards LwM2M 1.1 support:
+
+    * Added LwM2M 1.1 Discovery support.
+    * Added attribute handling for Resource Instances.
+    * Added support for Send, Read-composite, Write-composite, Observe-composite
+      operations.
+    * Added new content formats: SenML JSON, CBOR, SenML CBOR.
+    * Added v1.1 implementation of core LwM2M objects.
+
+  * Added support for dynamic Resource Instance allocation.
+  * Added support for LwM2M Portfolio object (Object ID 16).
+  * Added LwM2M shell module.
+  * Added option to utilize DTLS session cache in queue mode.
+  * Added :c:func:`lwm2m_engine_path_is_observed` API function.
+  * Fixed a bug with hostname verification setting, which prevented DTLS
+    connection in certain mbedTLS configurations.
+  * Fixed a bug which could cause a socket descriptor leak, in case
+    :c:func:`lwm2m_rd_client_start` was called immediately after
+    :c:func:`lwm2m_rd_client_stop`.
+  * Added error reporting from :c:func:`lwm2m_rd_client_start` and
+    :c:func:`lwm2m_rd_client_stop`.
+
+* Misc:
+
+  * Added :c:func:`net_if_set_default` function which allows to set a default
+    network interface at runtime.
+  * Added :kconfig:option:`NET_DEFAULT_IF_UP` option which allows to make the
+    first interface which is up the default choice.
+  * Fixed packet leak in network shell TCP receive handler.
+  * Added :c:func:`net_pkt_rx_clone` which allows to allocated packet from
+    correct packet pool when cloning. This is used at the loopback interface.
+  * Added :kconfig:option:`NET_LOOPBACK_SIMULATE_PACKET_DROP` option which
+    allows to simulate packet drop at the loopback interface. This is used by
+    certain test cases.
+
+* MQTT:
+
+  * Removed custom logging macros from MQTT implementation, in favour of the
+    common networking logging.
+
+* OpenThread:
+
+  * Updated OpenThread revision up to commit ``130afd9bb6d02f2a07e86b824fb7a79e9fca5fe0``.
+  * Implemented ``otPlatCryptoRand`` platform API for OpenThread.
+  * Added support for PSA MAC keys.
+  * Multiple minor fixes/improvements to align with upstream OpenThread changes.
+
+* Sockets:
+
+  * Added support for :c:func:`shutdown` function.
+  * Fixed :c:func:`sendmsg` operation when TCP reported full transmission window.
+  * Added support for :c:func:`getpeername` function.
+  * Fixed userspace :c:func:`accept` argument validation.
+  * Added support for :c:macro:`SO_SNDBUF` and :c:macro:`SO_RCVBUF` socket
+    options.
+  * Implemented :c:macro:`POLLOUT` reporting from :c:func:`poll` for STREAM
+    sockets.
+  * Implemented socket dispatcher for offloaded sockets. This module allows to
+    use multiple offloaded socket implementations at the same time.
+  * Introduced a common socket priority for offloaded sockets
+    (:kconfig:option:`CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY`).
+  * Moved socket offloading out of experimental.
+
+* TCP:
+
+  * Implemented receive window handling.
+  * Implemented zero-window probe processing and sending.
+  * Improved TCP stack throughput over loopback interface.
+  * Fixed possible transmission window overflow in case of TCP retransmissions.
+    This could led to TX buffer starvation when TCP entered retransmission mode.
+  * Updated :c:macro:`FIN_TIMEOUT` delay to correctly reflect time needed for
+    all FIN packet retransmissions.
+  * Added proper error reporting from TCP to upper layers. This solves the
+    problem of connection errors being reported to the application as graceful
+    connection shutdown.
+  * Added a mechanism which allows upper layers to monitor the TCP transmission
+    window availability. This allows to improve throughput greatly in low-buffer
+    scenarios.
+
+* TLS:
+
+  * Added :c:macro:`TLS_SESSION_CACHE` and :c:macro:`TLS_SESSION_CACHE_PURGE`
+    socket options which allow to control session caching on a socket.
+  * Fixed :c:macro:`TLS_CIPHERSUITE_LIST` socket option, which did not set the
+    cipher list on a socket correctly.
+
 USB
 ***
 
@@ -305,6 +627,13 @@ Libraries / Subsystems
 
 * Management
 
+  * MCUMGR has been migrated from using TinyCBOR, for CBOR encoding, to zcbor.
+  * MCUMGR :kconfig:option:`CONFIG_FS_MGMT_UL_CHUNK_SIZE` and
+    :kconfig:option:`CONFIG_IMG_MGMT_UL_CHUNK_SIZE` have been deprecated as,
+    with the introduction of zcbor, it is no longer needed to use an intermediate
+    buffer to copy data out of CBOR encoded buffer. The file/image chunk size
+    is now limited by :kconfig:option:`CONFIG_MCUMGR_BUF_SIZE` minus all the
+    other command required variables.
   * Added support for MCUMGR Parameters command, which can be used to obtain
     MCUMGR parameters; :kconfig:option:`CONFIG_OS_MGMT_MCUMGR_PARAMS` enables
     the command.
@@ -334,6 +663,11 @@ Libraries / Subsystems
     allowed or declined.
   * Made the img mgmt ``img_mgmt_vercmp`` function public to allow application-
     level comparison of image versions.
+  * mcumgr will now only return `MGMT_ERR_ENOMEM` when it fails to allocate
+    a memory buffer for request processing, when previously it would wrongly
+    report this error when the SMP response failed to fit into a buffer;
+    now when encoding of response fails `MGMT_ERR_EMSGSIZE` will be
+    reported. This addresses issue :github:`44535`.
 
 * SD Subsystem
 
@@ -342,20 +676,102 @@ Libraries / Subsystems
     This subsystem uses the :ref:`SDHC api <sdhc_api>` to interact with the SD
     host controller the SD device is connected to.
 
+* Power management
+
+  * Added :kconfig:option:`CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC`.
+    This option enables support for dynamically bind devices to a Power Domain. The
+    memory required to dynamically bind devices is pre-allocated at build time and
+    is based on the number of devices set in
+    :kconfig:option:`CONFIG_PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM`. The API introduced
+    to use this feature are:
+
+    * :c:func:`pm_device_power_domain_add()`
+    * :c:func:`pm_device_power_domain_remove()`
+
+  * The default policy was renamed from `PM_POLICY_RESIDENCY` to `PM_POLICY_DEFAULT`,
+    and the `PM_POLICY_APP` to `PM_POLICY_CUSTOM`.
+
+  * The following functions were renamed:
+
+    * :c:func:`pm_power_state_next_get()` with :c:func:`pm_state_next_get()`
+    * :c:func:`pm_power_state_force()` with :c:func:`pm_state_force()`
+
+  * Removed the deprecated function :c:func:`pm_device_state_set()`.
+
+  * The state constraint APIs were moved (and renamed) to the policy
+    API and accounts substates.
+
+    * :c:func:`pm_constraint_get()` with :c:func:`pm_policy_state_lock_is_active()`
+    * :c:func:`pm_constraint_set()` with :c:func:`pm_policy_state_lock_get()`
+    * :c:func:`pm_constraint_release()` with :c:func:`pm_policy_state_lock_put()`
+
+  * New API to set maximum latency requirements. The `DEFAULT` policy will account
+    the latency when computing the next state.
+
+    * :c:func:`pm_policy_latency_request_add()`
+    * :c:func:`pm_policy_latency_request_update()`
+    * :c:func:`pm_policy_latency_request_remove()`
+
+  * The API to set a device initial state was changed to be usable independently of
+    whether :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME`
+
+    * :c:func:`pm_device_runtime_init_suspended()` with :c:func:`pm_device_init_suspended()`
+    * :c:func:`pm_device_runtime_init_off()` with :c:func:`pm_device_init_off()`
+
+
 HALs
 ****
+
+* Atmel
+
+  * Added dt-bindings, documentation and scripts to support state-based pin
+    control (``pinctrl``) API.
+  * Imported new SoCs header files:
+
+    * SAML21
+    * SAMR34
+    * SAMR35
+
+* GigaDevice
+
+  * Fixed GD32_REMAP_MSK macro
+  * Fixed gd32f403z pc3 missing pincodes
+
+* STM32:
+
+  * Updated stm32f4 to new STM32cube version V1.27.0
+  * Updated stm32f7 to new STM32cube version V1.16.2
+  * Updated stm32g4 to new STM32cube version V1.5.0
+  * Updated stm32h7 to new STM32cube version V1.10.0
+  * Updated stm32l4 to new STM32cube version V1.17.1
+  * Updated stm32u5 to new STM32cube version V1.1.0
+  * Updated stm32wb to new STM32cube version V1.13.2 (including hci lib)
 
 MCUboot
 *******
 
+- Added initial support for devices with a write alignment larger than 8B.
+- Addeed optiona for enter to the serial recovery mode with timeout, see ``CONFIG_BOOT_SERIAL_WAIT_FOR_DFU``.
+- Use a smaller sha256 implementation.
+- Added support for the echo command in serial recovery, see ``CONFIG_BOOT_MGMT_ECHO``.
+- Fixed image decryption for any SoC flash of the pages size which not fitted in 1024 B in single loader mode.
+- Fixed possible output buffer overflow in serial recovery.
+- Added GH workflow for verifying integration with the Zephyr.
+- Removed deprecated ``DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL``.
+- Fixed usage of ``CONFIG_LOG_IMMEDIATE``.
+
 Trusted Firmware-m
 ******************
+
+* Updated to TF-M 1.6.0
 
 Documentation
 *************
 
 Tests and Samples
 *****************
+
+  * A dedicated framework was added to test STM32 clock_control driver.
 
 Issue Related Items
 *******************

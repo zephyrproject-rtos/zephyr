@@ -10,7 +10,7 @@ GNU-based cross toolchain.
 Examples of such "other cross compilers" are cross toolchains that your Linux
 distribution packaged, that you compiled on your own, or that you downloaded
 from the net. Unlike toolchains specifically listed in
-:ref:`third_party_x_compilers`, the Zephyr build system may not have been
+:ref:`toolchains`, the Zephyr build system may not have been
 tested with them, and doesn't officially support them. (Nonetheless, the
 toolchain set-up mechanism itself is supported.)
 

@@ -514,6 +514,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
+			ctx->data.term.error_code = BT_HCI_ERR_LOCALHOST_TERM_CONN;
 			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
 		}
 		break;
@@ -644,6 +645,13 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		llcp_pdu_decode_feature_rsp(conn, pdu);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY)
+		/* If Coded PHY is now supported we must update local max tx/rx times to reflect */
+		if (feature_phy_coded(conn)) {
+			ull_dle_max_time_get(conn, &conn->lll.dle.local.max_rx_time,
+					     &conn->lll.dle.local.max_tx_time);
+		}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH && CONFIG_BT_CTLR_PHY */
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
@@ -795,6 +803,13 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 	case PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG:
 #endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL */
 		llcp_pdu_decode_feature_req(conn, pdu);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY)
+		/* If Coded PHY is now supported we must update local max tx/rx times to reflect */
+		if (feature_phy_coded(conn)) {
+			ull_dle_max_time_get(conn, &conn->lll.dle.local.max_rx_time,
+					     &conn->lll.dle.local.max_tx_time);
+		}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH && CONFIG_BT_CTLR_PHY */
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:

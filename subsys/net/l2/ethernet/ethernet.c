@@ -254,6 +254,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		goto drop;
 #endif
 	default:
+		if (IS_ENABLED(CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE)) {
+			family = AF_UNSPEC;
+			break;
+		}
+
 		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
 		goto drop;
 	}

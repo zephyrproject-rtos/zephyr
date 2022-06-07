@@ -7,6 +7,13 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PWM_PWM_H_
 
 /**
+ * @brief PWM Interface
+ * @defgroup pwm_interface PWM Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
+/**
  * @name PWM period set helpers
  * The period cell in the PWM specifier needs to be provided in nanoseconds.
  * However, in some applications it is more convenient to use another scale.
@@ -45,6 +52,8 @@
 /** @cond INTERNAL_HIDDEN */
 #define PWM_POLARITY_MASK	0x1
 /** @endcond */
+/** @} */
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PWM_PWM_H_ */

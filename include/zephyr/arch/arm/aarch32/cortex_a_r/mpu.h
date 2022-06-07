@@ -24,7 +24,7 @@
 #define MPU_RASR_TEX_Msk                (0x7UL << MPU_RASR_TEX_Pos)
 
 #define MPU_RASR_S_Pos                  2
-#define MPU_RASR_S_Msk                  (1UL << MPU_RASR_C_Pos)
+#define MPU_RASR_S_Msk                  (1UL << MPU_RASR_S_Pos)
 
 #define MPU_RASR_C_Pos                  1
 #define MPU_RASR_C_Msk                  (1UL << MPU_RASR_C_Pos)
