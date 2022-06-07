@@ -93,14 +93,16 @@ static const uint32_t table_resolution[] = {
 #if defined(CONFIG_SOC_SERIES_STM32F1X) || \
 	defined(STM32F3X_ADC_V2_5)
 	RES(12),
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	RES(8),
+	RES(10),
+	RES(12),
+	RES(14),
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	RES(6),
 	RES(8),
 	RES(10),
 	RES(12),
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	RES(14),
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #else
 	RES(8),
 	RES(10),
@@ -597,6 +599,19 @@ static int start_read(const struct device *dev,
 	case 12:
 		resolution = table_resolution[0];
 		break;
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	case 8:
+		resolution = table_resolution[0];
+		break;
+	case 10:
+		resolution = table_resolution[1];
+		break;
+	case 12:
+		resolution = table_resolution[2];
+		break;
+	case 14:
+		resolution = table_resolution[3];
+		break;
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	case 6:
 		resolution = table_resolution[0];
@@ -610,11 +625,6 @@ static int start_read(const struct device *dev,
 	case 12:
 		resolution = table_resolution[3];
 		break;
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	case 14:
-		resolution = table_resolution[4];
-		break;
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
 #else
 	case 8:
 		resolution = table_resolution[0];
@@ -666,7 +676,13 @@ static int start_read(const struct device *dev,
 		LL_ADC_SetChannelPreselection(adc, channel);
 	}
 #endif
-
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	/*
+	 * Each channel in the sequence must be previously enabled in PCSEL.
+	 * This register controls the analog switch integrated in the IO level.
+	 */
+	LL_ADC_SetChannelPreselection(adc, channel);
+#endif
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_REG_SetSequencerChannels(adc, channel);
@@ -676,6 +692,7 @@ static int start_read(const struct device *dev,
 	LL_ADC_REG_SetSequencerChannels(adc, channel);
 	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 	}
+	LL_ADC_ClearFlag_CCRDY(adc);	
 #else
 	LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
 	LL_ADC_REG_SetSequencerLength(adc, table_seq_len[0]);
