@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BOARD
+	default "qemu_riscv32e" if BOARD_QEMU_RISCV32E
+
+# Use thread local storage by default so that
+# this feature gets more CI coverage.
+config THREAD_LOCAL_STORAGE
+	default y
