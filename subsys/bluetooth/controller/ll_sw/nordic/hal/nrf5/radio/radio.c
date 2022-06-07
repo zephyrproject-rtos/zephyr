@@ -1721,8 +1721,10 @@ uint32_t radio_ar_has_match(void)
 	return 0U;
 }
 
-void radio_ar_resolve(const uint8_t *addr)
+uint8_t radio_ar_resolve(const uint8_t *addr)
 {
+	uint8_t retval;
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 
@@ -1748,8 +1750,13 @@ void radio_ar_resolve(const uint8_t *addr)
 
 	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
 
+	retval = (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) ?
+		 1U : 0U;
+
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
+
+	return retval;
 
 }
 #endif /* CONFIG_BT_CTLR_PRIVACY */
