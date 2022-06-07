@@ -11,7 +11,10 @@
 #include <zephyr/sys/__assert.h>
 
 #define OSDP_RESP_TOUT_MS              (200)
+#define OSDP_ONLINE_RETRY_WAIT_MAX_MS  (300 * 1000)
+#define OSDP_PACKET_BUF_SIZE           CONFIG_OSDP_UART_BUFFER_LENGTH
 #define OSDP_PD_SC_TIMEOUT_MS          (800)
+#define OSDP_ONLINE_RETRY_WAIT_MAX_MS  (300 * 1000)
 
 #define OSDP_QUEUE_SLAB_SIZE \
 	(sizeof(union osdp_ephemeral_data) * CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE)
@@ -182,8 +185,6 @@ enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_REPLY_WAIT,
 	OSDP_CP_PHY_STATE_WAIT,
 	OSDP_CP_PHY_STATE_ERR,
-	OSDP_CP_PHY_STATE_ERR_WAIT,
-	OSDP_CP_PHY_STATE_CLEANUP,
 };
 
 enum osdp_cp_state_e {
@@ -456,10 +457,11 @@ struct osdp_pd {
 #else
 	enum osdp_cp_state_e state;
 	enum osdp_cp_phy_state_e phy_state;
+	uint32_t wait_ms;
 	int64_t phy_tstamp;
 #endif
 	int64_t tstamp;
-	uint8_t rx_buf[CONFIG_OSDP_UART_BUFFER_LENGTH];
+	uint8_t rx_buf[OSDP_PACKET_BUF_SIZE];
 	int rx_buf_len;
 
 	int cmd_id;
