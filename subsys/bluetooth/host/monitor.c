@@ -64,17 +64,76 @@ static struct {
 	atomic_t other;
 } drops;
 
+static void drop_add(uint16_t opcode)
+{
+	switch (opcode) {
+	case BT_MONITOR_COMMAND_PKT:
+		atomic_inc(&drops.cmd);
+		break;
+	case BT_MONITOR_EVENT_PKT:
+		atomic_inc(&drops.evt);
+		break;
+	case BT_MONITOR_ACL_TX_PKT:
+		atomic_inc(&drops.acl_tx);
+		break;
+	case BT_MONITOR_ACL_RX_PKT:
+		atomic_inc(&drops.acl_rx);
+		break;
+#if defined(CONFIG_BT_BREDR)
+	case BT_MONITOR_SCO_TX_PKT:
+		atomic_inc(&drops.sco_tx);
+		break;
+	case BT_MONITOR_SCO_RX_PKT:
+		atomic_inc(&drops.sco_rx);
+		break;
+#endif
+	default:
+		atomic_inc(&drops.other);
+		break;
+	}
+}
+
 #if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
 #include <SEGGER_RTT.h>
 
 #define RTT_BUFFER_NAME CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_NAME
 #define RTT_BUF_SIZE CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
 
-static uint8_t rtt_buf[RTT_BUF_SIZE];
-
 static void monitor_send(const void *data, size_t len)
 {
-	SEGGER_RTT_Write(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER, data, len);
+	static uint8_t rtt_buf[RTT_BUF_SIZE];
+	static size_t rtt_buf_offset;
+	struct bt_monitor_hdr *hdr;
+	unsigned int cnt = 0;
+	bool drop;
+
+	/* Drop any packet which cannot fit the buffer */
+	drop = rtt_buf_offset + len > sizeof(rtt_buf);
+	if (!drop) {
+		(void)memcpy(rtt_buf + rtt_buf_offset, data, len);
+	}
+
+	rtt_buf_offset += len;
+
+	/* Check if the packet is complete */
+	hdr = (struct bt_monitor_hdr *)rtt_buf;
+	if (rtt_buf_offset < sizeof(hdr->data_len) + hdr->data_len) {
+		return;
+	}
+
+	if (!drop) {
+		SEGGER_RTT_LOCK();
+		cnt = SEGGER_RTT_WriteNoLock(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
+					     rtt_buf, rtt_buf_offset);
+		SEGGER_RTT_UNLOCK();
+	}
+
+	if (!cnt) {
+		drop_add(hdr->opcode);
+	}
+
+	/* Prepare for the next packet */
+	rtt_buf_offset = 0;
 }
 
 static void poll_out(char c)
@@ -141,35 +200,6 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint32_t timestamp,
 	encode_drops(hdr, BT_MONITOR_OTHER_DROPS, &drops.other);
 
 	hdr->data_len = sys_cpu_to_le16(4 + hdr->hdr_len + len);
-}
-
-static void drop_add(uint16_t opcode)
-{
-	switch (opcode) {
-	case BT_MONITOR_COMMAND_PKT:
-		atomic_inc(&drops.cmd);
-		break;
-	case BT_MONITOR_EVENT_PKT:
-		atomic_inc(&drops.evt);
-		break;
-	case BT_MONITOR_ACL_TX_PKT:
-		atomic_inc(&drops.acl_tx);
-		break;
-	case BT_MONITOR_ACL_RX_PKT:
-		atomic_inc(&drops.acl_rx);
-		break;
-#if defined(CONFIG_BT_BREDR)
-	case BT_MONITOR_SCO_TX_PKT:
-		atomic_inc(&drops.sco_tx);
-		break;
-	case BT_MONITOR_SCO_RX_PKT:
-		atomic_inc(&drops.sco_rx);
-		break;
-#endif
-	default:
-		atomic_inc(&drops.other);
-		break;
-	}
 }
 
 void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
@@ -382,8 +412,10 @@ static int bt_monitor_init(const struct device *d)
 	ARG_UNUSED(d);
 
 #if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
+	static uint8_t rtt_up_buf[RTT_BUF_SIZE];
+
 	SEGGER_RTT_ConfigUpBuffer(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
-				  RTT_BUFFER_NAME, rtt_buf, RTT_BUF_SIZE,
+				  RTT_BUFFER_NAME, rtt_up_buf, RTT_BUF_SIZE,
 				  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 #elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
 	monitor_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_mon_uart));
