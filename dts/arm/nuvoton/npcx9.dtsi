@@ -22,7 +22,7 @@
 
 / {
 	def-io-conf-list {
-		pinctrl-0 = <&alt0_gpio_no_spip
+		pinmux = <&alt0_gpio_no_spip
 			   &alt0_gpio_no_fpip
 			   &alt1_no_pwrgd
 			   &alta_no_peci_en
