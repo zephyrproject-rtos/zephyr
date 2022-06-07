@@ -94,7 +94,7 @@ To load basic sample via GDB:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: quickfeather
+   :board: quick_feather
    :goals: build
 
 - Connect to the target using either OpenOCD or JLink
