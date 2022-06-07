@@ -79,9 +79,12 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 	__asm__ volatile ("trap");
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
+#elif defined(CONFIG_RISCV)
+	/* Illegal instruction on RISCV. */
+	__asm__ volatile (".word 0x77777777");
 #else
-	/* Triggers usage fault on ARM, illegal instruction on RISCV
-	 * and xtensa, TLB exception (instruction fetch) on MIPS.
+	/* Triggers usage fault on ARM, illegal instruction on
+	 * xtensa, TLB exception (instruction fetch) on MIPS.
 	 */
 	{
 		volatile long illegal = 0;
