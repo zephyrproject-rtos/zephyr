@@ -508,8 +508,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (!pd_cmd_cap_ok(pd, NULL)) {
 			break;
 		}
-		osdp_sc_init(pd);
 		sc_deactivate(pd);
+		osdp_sc_setup(pd);
 		memcpy(pd->sc.cp_random, buf + pos, 8);
 		pd->reply_id = REPLY_CCRYPT;
 		ret = OSDP_PD_ERR_NONE;
@@ -739,6 +739,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (osdp_verify_cp_cryptogram(pd) == 0) {
 			smb[2] = 1;  /* CP auth succeeded */
 			sc_activate(pd);
+			pd->sc_tstamp = osdp_millis_now();
 			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 				LOG_WRN("SC Active with SCBK-D");
 			} else {

@@ -18,31 +18,30 @@ static const uint8_t osdp_scbk_default[16] = {
 	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
 };
 
-void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk)
+void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *master_key, uint8_t *scbk)
 {
 	int i;
-	struct osdp *ctx = pd_to_osdp(pd);
 
 	memcpy(scbk, pd->sc.pd_client_uid, 8);
 	for (i = 8; i < 16; i++) {
 		scbk[i] = ~scbk[i - 8];
 	}
-	osdp_encrypt(ctx->sc_master_key, NULL, scbk, 16);
+	osdp_encrypt(master_key, NULL, scbk, 16);
 }
 
 void osdp_compute_session_keys(struct osdp_pd *pd)
 {
 	int i;
+	struct osdp *ctx = pd_to_osdp(pd);
+	uint8_t scbk[16];
 
 	if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
-		memcpy(pd->sc.scbk, osdp_scbk_default, 16);
+		memcpy(scbk, osdp_scbk_default, 16);
 	} else {
-		/**
-		 * Compute SCBK only in CP mode. PD mode, expect to already have
-		 * the SCBK (sent from application layer).
-		 */
-		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) == 0) {
-			osdp_compute_scbk(pd, pd->sc.scbk);
+		if (is_cp_mode(pd) && !ISSET_FLAG(pd, PD_FLAG_HAS_SCBK)) {
+			osdp_compute_scbk(pd, ctx->sc_master_key, scbk);
+		} else {
+			memcpy(scbk, pd->sc.scbk, 16);
 		}
 	}
 
@@ -63,9 +62,9 @@ void osdp_compute_session_keys(struct osdp_pd *pd)
 		pd->sc.s_mac2[i] = pd->sc.cp_random[i - 2];
 	}
 
-	osdp_encrypt(pd->sc.scbk, NULL, pd->sc.s_enc,  16);
-	osdp_encrypt(pd->sc.scbk, NULL, pd->sc.s_mac1, 16);
-	osdp_encrypt(pd->sc.scbk, NULL, pd->sc.s_mac2, 16);
+	osdp_encrypt(scbk, NULL, pd->sc.s_enc, 16);
+	osdp_encrypt(scbk, NULL, pd->sc.s_mac1, 16);
+	osdp_encrypt(scbk, NULL, pd->sc.s_mac2, 16);
 }
 
 void osdp_compute_cp_cryptogram(struct osdp_pd *pd)
@@ -222,16 +221,17 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 	return 0;
 }
 
-void osdp_sc_init(struct osdp_pd *pd)
+void osdp_sc_setup(struct osdp_pd *pd)
 {
-	uint8_t key[16];
+	uint8_t scbk[16];
+	bool preserve_scbk = is_pd_mode(pd) || ISSET_FLAG(pd, PD_FLAG_HAS_SCBK);
 
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
-		memcpy(key, pd->sc.scbk, 16);
+	if (preserve_scbk) {
+		memcpy(scbk, pd->sc.scbk, 16);
 	}
 	memset(&pd->sc, 0, sizeof(struct osdp_secure_channel));
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
-		memcpy(pd->sc.scbk, key, 16);
+	if (preserve_scbk) {
+		memcpy(pd->sc.scbk, scbk, 16);
 	}
 	if (is_pd_mode(pd)) {
 		pd->sc.pd_client_uid[0] = BYTE_0(pd->id.vendor_code);
@@ -242,5 +242,7 @@ void osdp_sc_init(struct osdp_pd *pd)
 		pd->sc.pd_client_uid[5] = BYTE_1(pd->id.serial_number);
 		pd->sc.pd_client_uid[6] = BYTE_2(pd->id.serial_number);
 		pd->sc.pd_client_uid[7] = BYTE_3(pd->id.serial_number);
+	} else {
+		osdp_fill_random(pd->sc.cp_random, 8);
 	}
 }
