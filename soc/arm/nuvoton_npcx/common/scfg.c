@@ -26,15 +26,22 @@ struct npcx_scfg_config {
  * Get io list which default functionality are not IOs. Then switch them to
  * GPIO in pin-mux init function.
  *
- * def_io_conf: def-io-conf-list {
- *               compatible = "nuvoton,npcx-pinctrl-def";
- *               pinctrl-0 = <&alt0_gpio_no_spip
- *                            &alt0_gpio_no_fpip
- *                            ...>;
+ * def-io-conf-list {
+ *               pinmux = <&alt0_gpio_no_spip
+ *                         &alt0_gpio_no_fpip
+ *                         ...>;
  *               };
  */
-static const struct npcx_alt def_alts[] =
-			NPCX_DT_IO_ALT_ITEMS_LIST(nuvoton_npcx_pinctrl_def, 0);
+#define NPCX_NO_GPIO_ALT_ITEM(node_id, prop, idx) {				\
+	  .group = DT_PHA(DT_PROP_BY_IDX(node_id, prop, idx), alts, group),	\
+	  .bit = DT_PHA(DT_PROP_BY_IDX(node_id, prop, idx), alts, bit),		\
+	  .inverted = DT_PHA(DT_PROP_BY_IDX(node_id, prop, idx), alts, inv),	\
+	},
+
+static const struct npcx_alt def_alts[] = {
+	DT_FOREACH_PROP_ELEM(DT_INST(0, nuvoton_npcx_pinctrl_def), pinmux,
+				NPCX_NO_GPIO_ALT_ITEM)
+};
 
 static const struct npcx_lvol def_lvols[] = NPCX_DT_IO_LVOL_ITEMS_DEF_LIST;
 
@@ -73,16 +80,6 @@ static void npcx_pinctrl_alt_sel(const struct npcx_alt *alt, int alt_func)
 }
 
 /* Platform specific pin-control functions */
-void npcx_pinctrl_mux_configure(const struct npcx_alt *alts_list,
-		      uint8_t alts_size, int altfunc)
-{
-	int i;
-
-	for (i = 0; i < alts_size; i++, alts_list++) {
-		npcx_pinctrl_alt_sel(alts_list, altfunc);
-	}
-}
-
 void npcx_lvol_pads_configure(void)
 {
 	const uint32_t scfg_base = npcx_scfg_cfg.base_scfg;
@@ -229,7 +226,9 @@ static int npcx_scfg_init(const struct device *dev)
 	}
 
 	/* Change all pads whose default functionality isn't IO to GPIO */
-	npcx_pinctrl_mux_configure(def_alts, ARRAY_SIZE(def_alts), 0);
+	for (int i = 0; i < ARRAY_SIZE(def_alts); i++) {
+		npcx_pinctrl_alt_sel(&def_alts[i], 0);
+	}
 
 	/* Configure default low-voltage pads */
 	npcx_lvol_pads_configure();
