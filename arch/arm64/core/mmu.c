@@ -862,7 +862,7 @@ static void sync_domains(uintptr_t virt, size_t size)
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	struct arm_mmu_ptables *ptables;
-	uint32_t entry_flags = MT_SECURE | MT_P_RX_U_NA;
+	uint32_t entry_flags = MT_DEFAULT_SECURE_STATE | MT_P_RX_U_NA;
 
 	/* Always map in the kernel page tables */
 	ptables = &kernel_ptables;
@@ -911,7 +911,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	}
 
 	if ((flags & K_MEM_PERM_USER) != 0U) {
-		return -ENOTSUP;
+		entry_flags |= MT_RW_AP_ELx;
 	}
 
 	return add_map(ptables, "generic", phys, (uintptr_t)virt, size, entry_flags);
