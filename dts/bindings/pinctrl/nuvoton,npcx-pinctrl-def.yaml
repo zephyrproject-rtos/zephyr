@@ -8,7 +8,7 @@ compatible: "nuvoton,npcx-pinctrl-def"
 include: [base.yaml]
 
 properties:
-    pinctrl-0:
+    pinmux:
         type: phandles
         required: true
         description: list of configurations of pinmux controllers need to set
