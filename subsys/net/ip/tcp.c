@@ -2351,6 +2351,19 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		goto out;
 	}
 
+	if ((ret == -ENOBUFS) &&
+		(conn->send_data_total < (conn->unacked_len + len))) {
+		/* Some of the data has been sent, we cannot remove the
+		 * whole chunk, the remainder portion is already
+		 * in the send_data and will be transmitted upon a
+		 * received ack or the next send call
+		 *
+		 * Set the return code back to 0 to pretend we just
+		 * transmitted the chunk
+		 */
+		ret = 0;
+	}
+
 	if (ret == -ENOBUFS) {
 		/* Restore the original data so that we do not resend the pkt
 		 * data multiple times.
