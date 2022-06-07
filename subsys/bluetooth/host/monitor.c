@@ -27,16 +27,6 @@
 
 #include "monitor.h"
 
-#ifdef CONFIG_BT_DEBUG_MONITOR_RTT
-#include <SEGGER_RTT.h>
-
-#define RTT_BUFFER_NAME CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_NAME
-#define RTT_BUF_SIZE CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
-static uint8_t rtt_buf[RTT_BUF_SIZE];
-#elif CONFIG_BT_DEBUG_MONITOR_UART
-static const struct device *monitor_dev;
-#endif
-
 /* This is the same default priority as for other console handlers,
  * except that we're not exporting it as a Kconfig variable until a
  * clear need arises.
@@ -74,18 +64,40 @@ static struct {
 	atomic_t other;
 } drops;
 
+#if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
+#include <SEGGER_RTT.h>
+
+#define RTT_BUFFER_NAME CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_NAME
+#define RTT_BUF_SIZE CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
+
+static uint8_t rtt_buf[RTT_BUF_SIZE];
+
 static void monitor_send(const void *data, size_t len)
 {
-#ifdef CONFIG_BT_DEBUG_MONITOR_RTT
 	SEGGER_RTT_Write(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER, data, len);
-#elif CONFIG_BT_DEBUG_MONITOR_UART
+}
+
+static void poll_out(char c)
+{
+	monitor_send(&c, sizeof(c));
+}
+#elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
+static const struct device *monitor_dev;
+
+static void poll_out(char c)
+{
+	uart_poll_out(monitor_dev, c);
+}
+
+static void monitor_send(const void *data, size_t len)
+{
 	const uint8_t *buf = data;
 
 	while (len--) {
-		uart_poll_out(monitor_dev, *buf++);
+		poll_out(*buf++);
 	}
-#endif
 }
+#endif /* CONFIG_BT_DEBUG_MONITOR_UART */
 
 static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
 			 atomic_t *val)
@@ -191,19 +203,7 @@ void bt_monitor_new_index(uint8_t type, uint8_t bus, bt_addr_t *addr,
 	bt_monitor_send(BT_MONITOR_NEW_INDEX, &pkt, sizeof(pkt));
 }
 
-#ifdef CONFIG_BT_DEBUG_MONITOR_RTT
-static int bt_monitor_init(const struct device *d)
-{
-	ARG_UNUSED(d);
-
-	SEGGER_RTT_ConfigUpBuffer(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
-							  RTT_BUFFER_NAME, rtt_buf, RTT_BUF_SIZE,
-							  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
-	return 0;
-}
-#elif CONFIG_BT_DEBUG_MONITOR_UART
-
-#if !defined(CONFIG_UART_CONSOLE) && !defined(CONFIG_LOG_PRINTK)
+#if !defined(CONFIG_UART_CONSOLE) && !defined(CONFIG_RTT_CONSOLE) && !defined(CONFIG_LOG_PRINTK)
 static int monitor_console_out(int c)
 {
 	static char buf[MONITOR_MSG_MAX];
@@ -231,7 +231,7 @@ static int monitor_console_out(int c)
 
 extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
-#endif /* !CONFIG_UART_CONSOLE */
+#endif /* !CONFIG_UART_CONSOLE && !CONFIG_RTT_CONSOLE && !CONFIG_LOG_PRINTK */
 
 #ifndef CONFIG_LOG_MODE_MINIMAL
 struct monitor_log_ctx {
@@ -316,7 +316,7 @@ static void monitor_log_put(const struct log_backend *const backend,
 	monitor_send(ctx.msg, ctx.total_len);
 
 	/* Terminate the string with null */
-	uart_poll_out(monitor_dev, '\0');
+	poll_out('\0');
 
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
@@ -353,7 +353,7 @@ static void monitor_log_process(const struct log_backend *const backend,
 	monitor_send(ctx.msg, ctx.total_len);
 
 	/* Terminate the string with null */
-	uart_poll_out(monitor_dev, '\0');
+	poll_out('\0');
 
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
@@ -381,6 +381,11 @@ static int bt_monitor_init(const struct device *d)
 {
 	ARG_UNUSED(d);
 
+#if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
+	SEGGER_RTT_ConfigUpBuffer(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
+				  RTT_BUFFER_NAME, rtt_buf, RTT_BUF_SIZE,
+				  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+#elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
 	monitor_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_mon_uart));
 
 	__ASSERT_NO_MSG(device_is_ready(monitor_dev));
@@ -388,15 +393,15 @@ static int bt_monitor_init(const struct device *d)
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	uart_irq_rx_disable(monitor_dev);
 	uart_irq_tx_disable(monitor_dev);
-#endif
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_BT_DEBUG_MONITOR_UART */
 
-#if !defined(CONFIG_UART_CONSOLE) && !defined(CONFIG_LOG_PRINTK)
+#if !defined(CONFIG_UART_CONSOLE) && !defined(CONFIG_RTT_CONSOLE) && !defined(CONFIG_LOG_PRINTK)
 	__printk_hook_install(monitor_console_out);
 	__stdout_hook_install(monitor_console_out);
-#endif
+#endif /* !CONFIG_UART_CONSOLE && !CONFIG_RTT_CONSOLE && !CONFIG_LOG_PRINTK */
 
 	return 0;
 }
-#endif /* CONFIG_BT_DEBUG_MONITOR_UART */
 
 SYS_INIT(bt_monitor_init, PRE_KERNEL_1, MONITOR_INIT_PRIORITY);
