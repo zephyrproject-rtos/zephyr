@@ -55,10 +55,12 @@ struct __esf {
 	ulong_t t0;		/* Caller-saved temporary register */
 	ulong_t t1;		/* Caller-saved temporary register */
 	ulong_t t2;		/* Caller-saved temporary register */
+#if !defined(CONFIG_RISCV_ISA_RV32E)
 	ulong_t t3;		/* Caller-saved temporary register */
 	ulong_t t4;		/* Caller-saved temporary register */
 	ulong_t t5;		/* Caller-saved temporary register */
 	ulong_t t6;		/* Caller-saved temporary register */
+#endif /* !CONFIG_RISCV_ISA_RV32E */
 
 	ulong_t a0;		/* function argument/return value */
 	ulong_t a1;		/* function argument */
@@ -66,8 +68,10 @@ struct __esf {
 	ulong_t a3;		/* function argument */
 	ulong_t a4;		/* function argument */
 	ulong_t a5;		/* function argument */
+#if !defined(CONFIG_RISCV_ISA_RV32E)
 	ulong_t a6;		/* function argument */
 	ulong_t a7;		/* function argument */
+#endif /* !CONFIG_RISCV_ISA_RV32E */
 
 	ulong_t mepc;		/* machine exception program counter */
 	ulong_t mstatus;	/* machine status register */

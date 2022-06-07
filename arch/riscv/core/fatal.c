@@ -35,11 +35,17 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("     a0: " PR_REG "    t0: " PR_REG, esf->a0, esf->t0);
 		LOG_ERR("     a1: " PR_REG "    t1: " PR_REG, esf->a1, esf->t1);
 		LOG_ERR("     a2: " PR_REG "    t2: " PR_REG, esf->a2, esf->t2);
+#if defined(CONFIG_RISCV_ISA_RV32E)
+		LOG_ERR("     a3: " PR_REG, esf->a3);
+		LOG_ERR("     a4: " PR_REG, esf->a4);
+		LOG_ERR("     a5: " PR_REG, esf->a5);
+#else
 		LOG_ERR("     a3: " PR_REG "    t3: " PR_REG, esf->a3, esf->t3);
 		LOG_ERR("     a4: " PR_REG "    t4: " PR_REG, esf->a4, esf->t4);
 		LOG_ERR("     a5: " PR_REG "    t5: " PR_REG, esf->a5, esf->t5);
 		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
 		LOG_ERR("     a7: " PR_REG, esf->a7);
+#endif /* CONFIG_RISCV_ISA_RV32E */
 #ifdef CONFIG_USERSPACE
 		LOG_ERR("     sp: " PR_REG, esf->sp);
 #endif

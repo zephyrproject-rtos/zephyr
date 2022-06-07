@@ -30,7 +30,11 @@
 #elif defined(__aarch64__)
 #define VA_STACK_MIN_ALIGN	8
 #elif defined(__riscv)
+#ifdef CONFIG_RISCV_ISA_RV32E
+#define VA_STACK_ALIGN(type)	4
+#else
 #define VA_STACK_MIN_ALIGN	(__riscv_xlen / 8)
+#endif /* CONFIG_RISCV_ISA_RV32E */
 #endif
 
 /*
