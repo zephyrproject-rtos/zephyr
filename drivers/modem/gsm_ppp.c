@@ -830,7 +830,7 @@ attaching:
 #endif
 	}
 
-	LOG_DBG("modem RSSI: %d, %s", *gsm->context.data_rssi, "enable PPP");
+	LOG_DBG("modem RSSI: %d, %s", gsm->minfo.mdm_rssi, "enable PPP");
 
 	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
 						  &gsm->context.cmd_handler,
