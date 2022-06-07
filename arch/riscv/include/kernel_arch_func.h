@@ -26,6 +26,9 @@ extern "C" {
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	__asm__ volatile ("li tp, 0");
+#endif
 #ifdef CONFIG_USERSPACE
 	csr_write(mscratch, 0);
 #endif
