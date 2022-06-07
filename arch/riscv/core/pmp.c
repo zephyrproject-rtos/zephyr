@@ -434,15 +434,6 @@ void z_riscv_pmp_usermode_prepare(struct k_thread *thread)
 	/* Retrieve pmpcfg0 partial content from global entries */
 	thread->arch.u_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
 
-#if !defined(CONFIG_SMP)
-	/* Map the is_user_mode variable */
-	extern uint32_t is_user_mode;
-
-	set_pmp_entry(&index, PMP_R,
-		      (uintptr_t) &is_user_mode, sizeof(is_user_mode),
-		      PMP_U_MODE(thread));
-#endif
-
 	/* Map the usermode stack */
 	set_pmp_entry(&index, PMP_R | PMP_W,
 		      thread->stack_info.start, thread->stack_info.size,
@@ -541,11 +532,6 @@ int arch_mem_domain_max_partitions_get(void)
 
 	/* remove those slots dedicated to global entries */
 	available_pmp_slots -= global_pmp_end_index;
-
-#if !defined(CONFIG_SMP)
-	/* One slot needed to map the is_user_mode variable */
-	available_pmp_slots -= 1;
-#endif
 
 	/* At least one slot to map the user thread's stack */
 	available_pmp_slots -= 1;

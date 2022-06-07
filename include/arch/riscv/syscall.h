@@ -148,11 +148,19 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 }
 
 #ifdef CONFIG_USERSPACE
+register ulong_t riscv_tp_reg __asm__ ("tp");
+
 static inline bool arch_is_user_context(void)
 {
+	/* don't try accessing TLS variables if tp is not initialized */
+	if (riscv_tp_reg == 0) {
+		return false;
+	}
+
 	/* Defined in arch/riscv/core/thread.c */
-	extern uint32_t is_user_mode;
-	return is_user_mode;
+	extern __thread uint8_t is_user_mode;
+
+	return is_user_mode != 0;
 }
 #endif
 

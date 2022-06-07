@@ -13,10 +13,9 @@
 
 #ifdef CONFIG_USERSPACE
 /*
- * Glogal variable used to know the current mode running.
- * Is not boolean because it must match the PMP granularity of the arch.
+ * Per-thread (TLS) variable indicating whether execution is in user mode.
  */
-uint32_t is_user_mode;
+__thread uint8_t is_user_mode;
 #endif
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,

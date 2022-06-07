@@ -160,15 +160,14 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	/* save stack value to be restored later */
 	sr t0, __z_arch_esf_t_sp_OFFSET(sp)
 
-#if defined(CONFIG_THREAD_LOCAL_STORAGE)
 	/* Make sure tls pointer is sane */
 	lr t0, ___cpu_t_current_OFFSET(s0)
 	lr tp, _thread_offset_to_tls(t0)
-#endif
 
-	/* Clear user mode variable */
-	la t0, is_user_mode
-	sw zero, 0(t0)
+	/* Clear our per-thread usermode flag */
+	lui t0, %tprel_hi(is_user_mode)
+	add t0, t0, tp, %tprel_add(is_user_mode)
+	sb zero, %tprel_lo(is_user_mode)(t0)
 #endif
 
 	/* Save MEPC register */
@@ -563,11 +562,11 @@ no_fp:	/* make sure this is reflected in the restored mstatus */
 	call z_riscv_pmp_usermode_enable
 #endif
 
-#if !defined(CONFIG_SMP)
-	/* Set user mode variable */
-	li t0, 1
-	la t1, is_user_mode
-	sw t0, 0(t1)
+	/* Set our per-thread usermode flag */
+	li t1, 1
+	lui t0, %tprel_hi(is_user_mode)
+	add t0, t0, tp, %tprel_add(is_user_mode)
+	sb t1, %tprel_lo(is_user_mode)(t0)
 
 	/* load scratch reg with stack pointer for next exception entry */
 	add t0, sp, __z_arch_esf_t_SIZEOF
