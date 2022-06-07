@@ -44,7 +44,7 @@ struct virtual_test_context {
 static void virtual_test_iface_init(struct net_if *iface)
 {
 	struct virtual_test_context *ctx = net_if_get_device(iface)->data;
-	char name[16];
+	char name[sizeof("VirtualTest-+##########")];
 	static int count;
 
 	if (ctx->init_done) {
