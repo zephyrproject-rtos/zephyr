@@ -52,7 +52,7 @@ K_MEM_SLAB_DEFINE_STATIC(tcp_conns_slab, sizeof(struct tcp),
 static struct k_work_q tcp_work_q;
 static K_KERNEL_STACK_DEFINE(work_q_stack, CONFIG_NET_TCP_WORKQ_STACK_SIZE);
 
-static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
+static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt);
 static bool is_destination_local(struct net_pkt *pkt);
 static void tcp_out(struct tcp *conn, uint8_t flags);
 
@@ -769,9 +769,9 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 	return pending_len;
 }
 
-static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size_t *len)
+static enum net_verdict tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size_t *len)
 {
-	int ret = 0;
+	enum net_verdict ret = NET_DROP;
 
 	if (tcp_recv_cb) {
 		tcp_recv_cb(conn, pkt);
@@ -779,22 +779,15 @@ static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size_t *len)
 	}
 
 	if (conn->context->recv_cb) {
-		struct net_pkt *up = tcp_pkt_clone(pkt);
-
-		if (!up) {
-			ret = -ENOBUFS;
-			goto out;
-		}
-
 		/* If there is any out-of-order pending data, then pass it
 		 * to the application here.
 		 */
-		*len += tcp_check_pending_data(conn, up, *len);
+		*len += tcp_check_pending_data(conn, pkt, *len);
 
-		net_pkt_cursor_init(up);
-		net_pkt_set_overwrite(up, true);
+		net_pkt_cursor_init(pkt);
+		net_pkt_set_overwrite(pkt, true);
 
-		net_pkt_skip(up, net_pkt_get_len(up) - *len);
+		net_pkt_skip(pkt, net_pkt_get_len(pkt) - *len);
 
 		tcp_update_recv_wnd(conn, -*len);
 
@@ -804,7 +797,9 @@ static int tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size_t *len)
 		 * data is placed in fifo which is flushed in tcp_in()
 		 * after unlocking the conn
 		 */
-		k_fifo_put(&conn->recv_data, up);
+		k_fifo_put(&conn->recv_data, pkt);
+
+		ret = NET_OK;
 	}
  out:
 	return ret;
@@ -1488,6 +1483,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 {
 	struct tcp *conn;
 	struct tcphdr *th;
+	enum net_verdict verdict = NET_DROP;
 
 	ARG_UNUSED(net_conn);
 	ARG_UNUSED(proto);
@@ -1514,10 +1510,10 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	}
  in:
 	if (conn) {
-		tcp_in(conn, pkt);
+		verdict = tcp_in(conn, pkt);
 	}
 
-	return NET_DROP;
+	return verdict;
 }
 
 static uint32_t seq_scale(uint32_t seq)
@@ -1817,16 +1813,16 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 	}
 }
 
-static bool tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
-			      size_t *len)
+static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
+					  size_t *len)
 {
+	enum net_verdict ret;
+
 	if (*len == 0) {
-		return false;
+		return NET_DROP;
 	}
 
-	if (tcp_data_get(conn, pkt, len) < 0) {
-		return false;
-	}
+	ret = tcp_data_get(conn, pkt, len);
 
 	net_stats_update_tcp_seg_recv(conn->iface);
 	conn_ack(conn, *len);
@@ -1842,7 +1838,7 @@ static bool tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
 		tcp_out(conn, ACK);
 	}
 
-	return true;
+	return ret;
 }
 
 static void tcp_out_of_order_data(struct tcp *conn, struct net_pkt *pkt,
@@ -1867,7 +1863,7 @@ static void tcp_out_of_order_data(struct tcp *conn, struct net_pkt *pkt,
 }
 
 /* TCP state machine, everything happens here */
-static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
+static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
 	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
 	uint8_t next = 0, fl = 0;
@@ -1882,6 +1878,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	int ret;
 	int sndbuf_opt = 0;
 	int close_status = 0;
+	enum net_verdict verdict = NET_DROP;
 
 	if (th) {
 		/* Currently we ignore ECN and CWR flags */
@@ -1910,7 +1907,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		if (!tcp_validate_seq(conn, th)) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
 			k_mutex_unlock(&conn->lock);
-			return;
+			return verdict;
 		}
 
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
@@ -2023,9 +2020,8 @@ next_state:
 			}
 
 			if (len) {
-				if (tcp_data_get(conn, pkt, &len) < 0) {
-					break;
-				}
+				verdict = tcp_data_get(conn, pkt, &len);
+
 				conn_ack(conn, + len);
 				tcp_out(conn, ACK);
 			}
@@ -2040,9 +2036,8 @@ next_state:
 			tcp_send_timer_cancel(conn);
 			conn_ack(conn, th_seq(th) + 1);
 			if (len) {
-				if (tcp_data_get(conn, pkt, &len) < 0) {
-					break;
-				}
+				verdict = tcp_data_get(conn, pkt, &len);
+
 				conn_ack(conn, + len);
 			}
 
@@ -2081,9 +2076,7 @@ next_state:
 		} else if (th && FL(&fl, ==, (FIN | ACK | PSH),
 				    th_seq(th) == conn->ack)) {
 			if (len) {
-				if (tcp_data_get(conn, pkt, &len) < 0) {
-					break;
-				}
+				verdict = tcp_data_get(conn, pkt, &len);
 			}
 
 			conn_ack(conn, + len + 1);
@@ -2164,9 +2157,7 @@ next_state:
 
 		if (th) {
 			if (th_seq(th) == conn->ack) {
-				if (!tcp_data_received(conn, pkt, &len)) {
-					break;
-				}
+				verdict = tcp_data_received(conn, pkt, &len);
 			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
 				tcp_out(conn, ACK); /* peer has resent */
 
@@ -2294,6 +2285,8 @@ next_state:
 	if (do_close) {
 		tcp_conn_unref(conn, close_status);
 	}
+
+	return verdict;
 }
 
 /* Active connection close: send FIN and go to FIN_WAIT_1 state */
@@ -2628,7 +2621,7 @@ int net_tcp_connect(struct net_context *context,
 	 * a TCP connection to be established
 	 */
 	conn->in_connect = !IS_ENABLED(CONFIG_NET_TEST_PROTOCOL);
-	tcp_in(conn, NULL);
+	(void)tcp_in(conn, NULL);
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
 		if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
@@ -2794,6 +2787,7 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 				  void *user_data)
 {
 	struct tcphdr *th = th_get(pkt);
+	enum net_verdict verdict = NET_DROP;
 
 	if (th) {
 		struct tcp *conn = tcp_conn_search(pkt);
@@ -2814,11 +2808,11 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 
 		if (conn) {
 			conn->iface = pkt->iface;
-			tcp_in(conn, pkt);
+			verdict = tcp_in(conn, pkt);
 		}
 	}
 
-	return NET_DROP;
+	return verdict;
 }
 
 static size_t tp_tcp_recv_cb(struct tcp *conn, struct net_pkt *pkt)
@@ -2883,6 +2877,7 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 	enum tp_type type;
 	bool responded = false;
 	static char buf[512];
+	enum net_verdict verdict = NET_DROP;
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
@@ -2931,7 +2926,7 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 				tcp_conn_ref(conn);
 			}
 			conn->seq = tp->seq;
-			tcp_in(conn, NULL);
+			verdict = tcp_in(conn, NULL);
 		}
 		if (is("CLOSE", tp->op)) {
 			tp_trace = false;
@@ -3011,7 +3006,7 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 		tp_output(pkt->family, pkt->iface, buf, 1);
 	}
 
-	return NET_DROP;
+	return verdict;
 }
 
 static void test_cb_register(sa_family_t family, uint8_t proto, uint16_t remote_port,
