@@ -392,8 +392,7 @@ bool lll_scan_aux_addr_match_get(const struct lll_scan *lll,
 
 			(void)ull_filter_lll_irks_get(&count);
 			if (count) {
-				radio_ar_resolve(adva);
-				*irkmatch_ok = radio_ar_has_match();
+				*irkmatch_ok = radio_ar_resolve(adva);
 				*irkmatch_id = radio_ar_match_get();
 			}
 		}
