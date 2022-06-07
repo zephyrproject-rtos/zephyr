@@ -50,12 +50,15 @@ void osdp_compute_session_keys(struct osdp_pd *pd)
 	memset(pd->sc.s_mac1, 0, 16);
 	memset(pd->sc.s_mac2, 0, 16);
 
-	pd->sc.s_enc[0]  = 0x01;  pd->sc.s_enc[1]  = 0x82;
-	pd->sc.s_mac1[0] = 0x01;  pd->sc.s_mac1[1] = 0x01;
-	pd->sc.s_mac2[0] = 0x01;  pd->sc.s_mac2[1] = 0x02;
+	pd->sc.s_enc[0] = 0x01;
+	pd->sc.s_enc[1] = 0x82;
+	pd->sc.s_mac1[0] = 0x01;
+	pd->sc.s_mac1[1] = 0x01;
+	pd->sc.s_mac2[0] = 0x01;
+	pd->sc.s_mac2[1] = 0x02;
 
 	for (i = 2; i < 8; i++) {
-		pd->sc.s_enc[i]  = pd->sc.cp_random[i - 2];
+		pd->sc.s_enc[i] = pd->sc.cp_random[i - 2];
 		pd->sc.s_mac1[i] = pd->sc.cp_random[i - 2];
 		pd->sc.s_mac2[i] = pd->sc.cp_random[i - 2];
 	}
@@ -143,7 +146,6 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 	uint8_t iv[16];
 
 	if (length % 16 != 0) {
-		LOG_ERR("decrypt_pkt invalid len:%d", length);
 		return -1;
 	}
 
@@ -154,15 +156,16 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 
 	osdp_decrypt(pd->sc.s_enc, iv, data, length);
 
-	while (data[length - 1] == 0x00) {
+	length--;
+	while (length && data[length] == 0x00) {
 		length--;
 	}
-	if (data[length - 1] != OSDP_SC_EOM_MARKER) {
+	if (data[length] != OSDP_SC_EOM_MARKER) {
 		return -1;
 	}
-	data[length - 1] = 0;
+	data[length] = 0;
 
-	return length - 1;
+	return length;
 }
 
 int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
