@@ -515,6 +515,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		memcpy(pd->sc.scbk, cmd.keyset.data, 16);
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 		CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
+		sc_deactivate(pd);
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -532,9 +533,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_CHLNG_DATA_LEN) {
 			break;
 		}
-		osdp_sc_init(pd);
 		sc_deactivate(pd);
-		for (i = 0; i < 8; i++) {
+		osdp_sc_setup(pd);
+		for (i = 0; i < CMD_CHLNG_DATA_LEN; i++) {
 			pd->sc.cp_random[i] = buf[pos++];
 		}
 		pd->reply_id = REPLY_CCRYPT;
@@ -773,6 +774,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (osdp_verify_cp_cryptogram(pd) == 0) {
 			smb[2] = 1;  /* CP auth succeeded */
 			sc_activate(pd);
+			pd->sc_tstamp = osdp_millis_now();
 			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 				LOG_WRN("SC Active with SCBK-D");
 			} else {
