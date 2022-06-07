@@ -18,6 +18,9 @@ The sample also includes a full end-to-end workflow of training
 a model and converting it for use with TensorFlow Lite Micro for
 running inference on a microcontroller.
 
+The sample comes in two flavors. One with TensorFlow Lite Micro
+reference kernels and one with CMSIS-NN optimized kernels.
+
 .. Note::
    This README and sample have been modified from
    `the TensorFlow Hello World sample for Zephyr`_.
@@ -28,10 +31,10 @@ running inference on a microcontroller.
 Building and Running
 ********************
 
-This sample should work on most boards since it does not rely
+The sample should work on most boards since it does not rely
 on any sensors.
 
-This application can be built and executed on QEMU as follows:
+The reference kernel application can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/tensorflow/hello_world
@@ -41,6 +44,23 @@ This application can be built and executed on QEMU as follows:
    :compact:
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
+The CMSIS-NN kernel application can be built and executed on any Arm(R) Cortex(R)-M core based platform,
+for example based on Arm Corstone(TM)-300 software. A reference implementation of Corstone-300
+can be downloaded either as a FPGA bitfile for the
+[MPS3 FPGA prototyping board](https://developer.arm.com/tools-and-software/development-boards/fpga-prototyping-boards/mps3),
+or as a
+[Fixed Virtual Platform](https://developer.arm.com/tools-and-software/open-source-software/arm-platforms-software/arm-ecosystem-fvps)
+that can be emulated on a host machine.
+
+Assuming that the Corstone-300 FVP has been downloaded, installed and added to
+the `PATH` variable, then building and testing can be done with following
+commands.
+
+```
+$ west build -p auto -b mps3_an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
+$ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
+```
 
 Sample Output
 =============
@@ -76,6 +96,14 @@ TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
     CONFIG_CPLUSPLUS=y
     CONFIG_NEWLIB_LIBC=y
     CONFIG_TENSORFLOW_LITE_MICRO=y
+
+Note that the CMSIS-NN kernel sample demonstrates how to use CMSIS-NN optimized kernels with
+TensorFlow Lite Micro, in that is sets below Kconfig option. Note also that this
+Kconfig option is only set for Arm Cortex-M cores, i.e. option CPU_CORTEX_M is set.
+
+.. code-block:: kconfig
+
+    CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y
 
 Training
 ********
