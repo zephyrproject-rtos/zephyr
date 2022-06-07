@@ -38,7 +38,7 @@ static int esp_listen(struct net_context *context, int backlog)
 
 static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 {
-	char connect_msg[sizeof("AT+CIPSTART=0,\"TCP\",\"\",65535,7200") +
+	char connect_msg[sizeof("AT+CIPSTART=000,\"TCP\",\"\",65535,7200") +
 			 NET_IPV4_ADDR_LEN];
 	char addr_str[NET_IPV4_ADDR_LEN];
 	struct sockaddr dst;
@@ -482,7 +482,7 @@ void esp_recvdata_work(struct k_work *work)
 	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
 					       recvdata_work);
 	struct esp_data *data = esp_socket_to_dev(sock);
-	char cmd[sizeof("AT+CIPRECVDATA=0,"STRINGIFY(CIPRECVDATA_MAX_LEN))];
+	char cmd[sizeof("AT+CIPRECVDATA=000,"STRINGIFY(CIPRECVDATA_MAX_LEN))];
 	static const struct modem_cmd cmds[] = {
 		MODEM_CMD_DIRECT(_CIPRECVDATA, on_cmd_ciprecvdata),
 	};
