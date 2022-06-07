@@ -28,7 +28,6 @@
 /* struct _callee_saved member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);
 GEN_OFFSET_SYM(_callee_saved_t, ra);
-GEN_OFFSET_SYM(_callee_saved_t, tp);
 GEN_OFFSET_SYM(_callee_saved_t, s0);
 GEN_OFFSET_SYM(_callee_saved_t, s1);
 #if !defined(CONFIG_RISCV_ISA_RV32E)
@@ -85,8 +84,6 @@ GEN_OFFSET_SYM(z_arch_esf_t, mepc);
 GEN_OFFSET_SYM(z_arch_esf_t, mstatus);
 
 GEN_OFFSET_SYM(z_arch_esf_t, s0);
-
-GEN_OFFSET_SYM(z_arch_esf_t, tp);
 
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(z_arch_esf_t, sp);
