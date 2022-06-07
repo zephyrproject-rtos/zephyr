@@ -11,6 +11,7 @@
 #include <zephyr/sys/__assert.h>
 
 #define OSDP_RESP_TOUT_MS              (200)
+#define OSDP_PD_SC_TIMEOUT_MS          (800)
 
 #define OSDP_QUEUE_SLAB_SIZE \
 	(sizeof(union osdp_ephemeral_data) * CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE)
