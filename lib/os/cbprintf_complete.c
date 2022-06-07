@@ -1514,7 +1514,7 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 				break;
 			}
 			if (length_mod == LENGTH_HH) {
-				value->sint = (char)value->sint;
+				value->sint = (signed char)value->sint;
 			} else if (length_mod == LENGTH_H) {
 				value->sint = (short)value->sint;
 			}
