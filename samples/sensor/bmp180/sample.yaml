@@ -1,0 +1,12 @@
+sample:
+  name: Bosch pressure and temperature BMP180 sensor sample
+tests:
+  sample.sensor.bmp180:
+  build_only: true
+    harness: sensor
+    tags: samples sensors
+    platform_allow: nrf52840dk_nrf52840
+    integration_platforms:
+      -     platform_allow: nrf52840dk_nrf52840
+    depends_on: gpio i2c bmp180
+    filter: dt_compat_enabled("bosch,bmp180")

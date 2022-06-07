@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2019, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+    bmp180@77 {
+		compatible = "bosch,bmp180";
+		reg = <0x77>;
+		label = "BMP180_I2C";
+		pressure_oversampling_level = <0x03>;
+	};
+};
