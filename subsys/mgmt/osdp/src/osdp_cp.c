@@ -722,6 +722,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int rc, ret = OSDP_CP_ERR_CAN_YIELD;
 	struct osdp_cmd *cmd = NULL;
+	struct osdp *ctx = pd_to_osdp(pd);
 
 	switch (pd->phy_state) {
 	case OSDP_CP_PHY_STATE_ERR_WAIT:
@@ -757,6 +758,9 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 	case OSDP_CP_PHY_STATE_REPLY_WAIT:
 		rc = cp_process_reply(pd);
 		if (rc == OSDP_CP_ERR_NONE) {
+			if (ctx->command_complete_callback) {
+				ctx->command_complete_callback(pd->cmd_id);
+			}
 			pd->phy_state = OSDP_CP_PHY_STATE_CLEANUP;
 			break;
 		}

@@ -1003,6 +1003,9 @@ void osdp_update(struct osdp *ctx)
 		return;
 	}
 
+	if (ctx->command_complete_callback) {
+		ctx->command_complete_callback(pd->cmd_id);
+	}
 }
 
 static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,

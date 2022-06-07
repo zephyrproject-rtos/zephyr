@@ -159,3 +159,10 @@ uint32_t osdp_get_sc_status_mask(void)
 }
 
 #endif /* CONFIG_OSDP_SC_ENABLED */
+
+void osdp_set_command_complete_callback(osdp_command_complete_callback_t cb)
+{
+	struct osdp *ctx = osdp_get_ctx();
+
+	ctx->command_complete_callback = cb;
+}

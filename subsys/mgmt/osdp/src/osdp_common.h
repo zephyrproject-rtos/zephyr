@@ -502,6 +502,7 @@ struct osdp {
 	/* CP event callback to app with opaque arg pointer as passed by app */
 	void *event_callback_arg;
 	cp_event_callback_t event_callback;
+	osdp_command_complete_callback_t command_complete_callback;
 };
 
 /* from osdp_phy.c */
