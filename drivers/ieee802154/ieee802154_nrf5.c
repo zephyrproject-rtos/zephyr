@@ -132,6 +132,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 	struct net_pkt *pkt;
 	struct nrf5_802154_rx_frame *rx_frame;
 	uint8_t pkt_len;
+	uint8_t *psdu;
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -195,8 +196,9 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			goto drop;
 		}
 
-		nrf_802154_buffer_free_raw(rx_frame->psdu);
+		psdu = rx_frame->psdu;
 		rx_frame->psdu = NULL;
+		nrf_802154_buffer_free_raw(psdu);
 
 		if (LOG_LEVEL >= LOG_LEVEL_DBG) {
 			log_stack_usage(&nrf5_radio->rx_thread);
@@ -205,8 +207,9 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		continue;
 
 drop:
-		nrf_802154_buffer_free_raw(rx_frame->psdu);
+		psdu = rx_frame->psdu;
 		rx_frame->psdu = NULL;
+		nrf_802154_buffer_free_raw(psdu);
 
 		net_pkt_unref(pkt);
 	}
