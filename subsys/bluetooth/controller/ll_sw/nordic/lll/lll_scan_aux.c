@@ -753,19 +753,14 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		crc_ok = radio_crc_is_valid();
 		devmatch_ok = radio_filter_has_match();
 		devmatch_id = radio_filter_match_get();
-		if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
-			irkmatch_ok = radio_ar_has_match();
-			irkmatch_id = radio_ar_match_get();
-		} else {
-			irkmatch_ok = 0U;
-			irkmatch_id = FILTER_IDX_NONE;
-		}
+		irkmatch_ok = radio_ar_has_match();
+		irkmatch_id = radio_ar_match_get();
 		rssi_ready = radio_rssi_is_ready();
 		phy_aux_flags_rx = radio_phy_flags_rx_get();
 	} else {
 		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready =
 			phy_aux_flags_rx = 0U;
-		devmatch_id = irkmatch_id = FILTER_IDX_NONE;
+		devmatch_id = irkmatch_id = 0xFF;
 	}
 
 	/* Clear radio rx status and events */
@@ -1436,16 +1431,11 @@ static void isr_rx_connect_rsp(void *param)
 	trx_done = radio_is_done();
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
-		if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
-			irkmatch_ok = radio_ar_has_match();
-			irkmatch_id = radio_ar_match_get();
-		} else {
-			irkmatch_ok = 0U;
-			irkmatch_id = FILTER_IDX_NONE;
-		}
+		irkmatch_ok = radio_ar_has_match();
+		irkmatch_id = radio_ar_match_get();
 	} else {
 		crc_ok = irkmatch_ok = 0U;
-		irkmatch_id = FILTER_IDX_NONE;
+		irkmatch_id = 0xFF;
 	}
 
 	/* Clear radio rx status and events */

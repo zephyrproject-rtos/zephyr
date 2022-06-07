@@ -50,7 +50,7 @@ These steps will produce an HTML coverage report for a single application.
 
    .. zephyr-app-commands::
       :board: mps2_an385
-      :gen-args: -DCONFIG_COVERAGE=y -DCONFIG_COVERAGE_DUMP=y
+      :gen-args: -DCONFIG_COVERAGE=y
       :goals: build
       :compact:
 

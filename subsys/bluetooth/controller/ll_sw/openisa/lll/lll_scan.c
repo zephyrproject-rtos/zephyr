@@ -368,21 +368,20 @@ static void isr_rx(void *param)
 		crc_ok = radio_crc_is_valid();
 		devmatch_ok = radio_filter_has_match();
 		devmatch_id = radio_filter_match_get();
-		if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
-			irkmatch_ok = radio_ar_has_match();
-			irkmatch_id = radio_ar_match_get();
-		} else {
-			irkmatch_ok = 0U;
-			irkmatch_id = FILTER_IDX_NONE;
-		}
+		irkmatch_ok = radio_ar_has_match();
+		irkmatch_id = radio_ar_match_get();
 		rssi_ready = radio_rssi_is_ready();
 	} else {
 		crc_ok = devmatch_ok = irkmatch_ok = rssi_ready = 0U;
-		devmatch_id = irkmatch_id = FILTER_IDX_NONE;
+		devmatch_id = irkmatch_id = 0xFF;
 	}
 
 	/* Clear radio status and events */
-	lll_isr_status_reset();
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	radio_ar_status_reset();
+	radio_rssi_status_reset();
 
 	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
 	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
@@ -484,7 +483,11 @@ static void isr_common_done(void *param)
 
 	/* TODO: MOVE to a common interface, isr_lll_radio_status? */
 	/* Clear radio status and events */
-	lll_isr_status_reset();
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	radio_ar_status_reset();
+	radio_rssi_status_reset();
 
 	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
 	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {
@@ -566,7 +569,11 @@ static void isr_window(void *param)
 static void isr_abort(void *param)
 {
 	/* Clear radio status and events */
-	lll_isr_status_reset();
+	radio_status_reset();
+	radio_tmr_status_reset();
+	radio_filter_status_reset();
+	radio_ar_status_reset();
+	radio_rssi_status_reset();
 
 	if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
 	    IS_ENABLED(HAL_RADIO_GPIO_HAVE_LNA_PIN)) {

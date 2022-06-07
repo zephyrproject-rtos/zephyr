@@ -52,17 +52,9 @@ uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const bdaddr)
 	}
 
 	if (addr_type) {
-		if (bdaddr) {
-			(void)memcpy(rnd_addr, bdaddr, BDADDR_SIZE);
-		} else {
-			(void)memset(rnd_addr, 0, BDADDR_SIZE);
-		}
+		memcpy(rnd_addr, bdaddr, BDADDR_SIZE);
 	} else {
-		if (bdaddr) {
-			(void)memcpy(pub_addr, bdaddr, BDADDR_SIZE);
-		} else {
-			(void)memset(pub_addr, 0, BDADDR_SIZE);
-		}
+		memcpy(pub_addr, bdaddr, BDADDR_SIZE);
 	}
 
 	return 0;

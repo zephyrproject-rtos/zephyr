@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <fsl_uart.h>
 #include <soc.h>
-#include <zephyr/drivers/pinctrl.h>
+#include <drivers/pinctrl.h>
 
 struct mcux_iuart_config {
 	UART_Type *base;

@@ -38,11 +38,10 @@ config IMG_MGMT_UPDATABLE_IMAGE_NUMBER
 	  by that library.
 
 config IMG_MGMT_VERBOSE_ERR
-	bool "Verbose error responses when uploading application image"
+	bool "Verbose logging when uploading a new image"
 	select MGMT_VERBOSE_ERR_RESPONSE
 	help
-	  Add additional "rsn" key to SMP responses, where provided, explaining
-	  non-0 "rc" codes.
+	  Enable verbose logging during a firmware upgrade.
 
 config IMG_MGMT_DUMMY_HDR
 	bool "Return dummy image header data for imgr functions"

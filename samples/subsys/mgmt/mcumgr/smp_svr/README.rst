@@ -130,8 +130,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -b nrf52840dk_nrf52840 \
             samples/subsys/mgmt/mcumgr/smp_svr \
             -- \
-            -DOVERLAY_CONFIG=overlay-cdc.conf \
-            -DDTC_OVERLAY_FILE=usb.overlay
+            -DOVERLAY_CONFIG=overlay-cdc.conf
 
    .. group-tab:: Shell
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/dma.h>
+#include "drivers/dma.h"
 #define DT_DRV_COMPAT intel_cavs_gpdma
 
 #define GPDMA_CTL_OFFSET 0x0004

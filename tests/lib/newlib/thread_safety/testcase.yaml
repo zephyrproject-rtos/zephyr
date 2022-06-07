@@ -1,9 +1,9 @@
 common:
   filter: TOOLCHAIN_HAS_NEWLIB == 1
+  min_ram: 64
 tests:
   libraries.libc.newlib.thread_safety:
     tags: clib newlib
-    min_ram: 64
     testcases:
     - sfp_lock
     - env_lock
@@ -17,7 +17,6 @@ tests:
     - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
     slow: true
     tags: clib newlib
-    min_ram: 192
     testcases:
     - sfp_lock
     - env_lock
@@ -31,7 +30,6 @@ tests:
     extra_args: CONF_FILE=prj_userspace.conf
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: clib newlib userspace
-    min_ram: 64
     testcases:
     - sfp_lock
     - env_lock
@@ -48,7 +46,6 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     slow: true
     tags: clib newlib userspace
-    min_ram: 192
     testcases:
     - sfp_lock
     - env_lock
@@ -64,7 +61,6 @@ tests:
     - CONFIG_NEWLIB_LIBC_NANO=y
     filter: CONFIG_HAS_NEWLIB_LIBC_NANO
     tags: clib newlib
-    min_ram: 64
     testcases:
     - sfp_lock
     - env_lock
@@ -80,7 +76,6 @@ tests:
     filter: CONFIG_HAS_NEWLIB_LIBC_NANO
     slow: true
     tags: clib newlib
-    min_ram: 192
     testcases:
     - sfp_lock
     - env_lock
@@ -96,7 +91,6 @@ tests:
     - CONFIG_NEWLIB_LIBC_NANO=y
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_HAS_NEWLIB_LIBC_NANO
     tags: clib newlib userspace
-    min_ram: 64
     testcases:
     - sfp_lock
     - env_lock
@@ -114,7 +108,6 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_HAS_NEWLIB_LIBC_NANO
     slow: true
     tags: clib newlib userspace
-    min_ram: 192
     testcases:
     - sfp_lock
     - env_lock

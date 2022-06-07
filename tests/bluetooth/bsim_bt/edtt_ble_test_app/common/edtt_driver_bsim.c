@@ -13,7 +13,7 @@
 #include <errno.h>
 
 #include "edtt_driver.h"
-#include <zephyr/kernel.h>
+#include "kernel.h"
 #include "soc.h"
 
 #include "bs_tracing.h"

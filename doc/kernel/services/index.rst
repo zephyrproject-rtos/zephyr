@@ -92,7 +92,13 @@ argument.
 Memory Management
 *****************
 
-See :ref:`memory_management_api`.
+These pages cover memory allocation and management services.
+
+.. toctree::
+   :maxdepth: 1
+
+   memory/heap.rst
+   memory/slabs.rst
 
 Timing
 ******
@@ -115,6 +121,7 @@ These pages cover other kernel services.
 
    other/atomic.rst
    other/float.rst
+   other/cxx_support.rst
    other/version.rst
    other/fatal.rst
    other/thread_local_storage.rst

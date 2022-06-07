@@ -74,6 +74,4 @@ struct socket_op_vtable {
 			   socklen_t *addrlen);
 };
 
-size_t msghdr_non_empty_iov_count(const struct msghdr *msg);
-
 #endif /* _SOCKETS_INTERNAL_H_ */

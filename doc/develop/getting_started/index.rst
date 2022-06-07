@@ -465,16 +465,15 @@ reason it is suggested to use `Python virtual environments`_.
 
 .. rst-class:: numbered-step
 
-Install Zephyr SDK
-******************
+Install a Toolchain
+*******************
 
-The :ref:`Zephyr Software Development Kit (SDK) <toolchain_zephyr_sdk>`
-contains toolchains for each of Zephyr's supported architectures, which
-include a compiler, assembler, linker and other programs required to build
-Zephyr applications.
+A toolchain provides a compiler, assembler, linker, and other programs required
+to build Zephyr applications.
 
-It also contains additional host tools, such as custom QEMU and OpenOCD builds
-that are used to emulate, flash and debug Zephyr applications.
+The Zephyr Software Development Kit (SDK) contains toolchains for each of
+Zephyr's supported architectures. It also includes additional host tools, such
+as custom QEMU and OpenOCD builds.
 
 .. tabs::
 

@@ -6,7 +6,6 @@
 
 #include <assert.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/toolchain.h>
 
 #include <string.h>
 #include <zcbor_common.h>
@@ -259,7 +258,7 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 		     zcbor_int32_put(zse, 0);
 	}
 
-	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_ENOMEM;
 }
 
 /**

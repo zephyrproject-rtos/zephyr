@@ -10,7 +10,7 @@
 #ifndef ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 #define ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 
-#include <zephyr/kernel.h>
+#include "kernel.h"
 
 #include "bs_types.h"
 #include "bs_tracing.h"

@@ -511,7 +511,8 @@ img_mgmt_impl_swap_type(int slot)
 	case BOOT_SWAP_TYPE_REVERT:
 		return IMG_MGMT_SWAP_TYPE_REVERT;
 	default:
-		return IMG_MGMT_SWAP_TYPE_UNKNOWN;
+		assert(0);
+		return IMG_MGMT_SWAP_TYPE_NONE;
 	}
 }
 

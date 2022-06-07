@@ -9,7 +9,7 @@
 #define __SETTINGS_NVS_H_
 
 #include <zephyr/fs/nvs.h>
-#include <zephyr/settings/settings.h>
+#include "settings/settings.h"
 
 #ifdef __cplusplus
 extern "C" {

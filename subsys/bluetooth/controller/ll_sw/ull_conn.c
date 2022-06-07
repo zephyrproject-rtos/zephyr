@@ -648,11 +648,20 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets,
 {
 	struct ll_conn *conn;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-	    ((tx_octets > LL_LENGTH_OCTETS_TX_MAX) ||
-	     (tx_time > PDU_DC_PAYLOAD_TIME_MAX_CODED))) {
+#if defined(CONFIG_BT_CTLR_PARAM_CHECK)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	uint16_t tx_time_max =
+			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_CODED);
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+	uint16_t tx_time_max =
+			PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
+	if ((tx_octets > LL_LENGTH_OCTETS_TX_MAX) ||
+	    (tx_time > tx_time_max)) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
+#endif /* CONFIG_BT_CTLR_PARAM_CHECK */
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -665,20 +674,6 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets,
 	     !(conn->llcp_feature.features_conn & BIT64(BT_LE_FEAT_BIT_DLE)))) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
-
-#if defined(CONFIG_BT_CTLR_PHY)
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	const uint16_t tx_time_max =
-		PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_CODED);
-#else /* !CONFIG_BT_CTLR_PHY_CODED */
-	const uint16_t tx_time_max =
-		PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY_1M);
-#endif /* !CONFIG_BT_CTLR_PHY_CODED */
-
-	if (tx_time > tx_time_max) {
-		tx_time = tx_time_max;
-	}
-#endif /* CONFIG_BT_CTLR_PHY */
 
 	if (conn->llcp_length.req != conn->llcp_length.ack) {
 		switch (conn->llcp_length.state) {
@@ -1469,11 +1464,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 			    (((conn->llcp_terminate.req -
 			       conn->llcp_terminate.ack) & 0xFF) ==
 			     TERM_ACKED) ||
+#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 			    conn->central.terminate_ack ||
 			    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
-#else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-			    1
-#endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 #else /* CONFIG_BT_CENTRAL */
 			    1
 #endif /* CONFIG_BT_CENTRAL */
@@ -4678,7 +4671,6 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct lll_conn *lll = &conn->lll;
 		struct node_rx_pdu *rx;
 		uint8_t old_tx, old_rx;
-		uint8_t phy_bitmask;
 
 		/* Acquire additional rx node for Data length notification as
 		 * a peripheral.
@@ -4708,15 +4700,6 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 			conn->llcp_ack = conn->llcp_req;
 		}
 
-		/* supported PHYs mask */
-		phy_bitmask = PHY_1M;
-		if (IS_ENABLED(CONFIG_BT_CTLR_PHY_2M)) {
-			phy_bitmask |= PHY_2M;
-		}
-		if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
-			phy_bitmask |= PHY_CODED;
-		}
-
 		/* apply new phy */
 		old_tx = lll->phy_tx;
 		old_rx = lll->phy_rx;
@@ -4730,10 +4713,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 		if (conn->llcp.phy_upd_ind.tx) {
-			if (conn->llcp.phy_upd_ind.tx & phy_bitmask) {
-				lll->phy_tx = conn->llcp.phy_upd_ind.tx &
-					      phy_bitmask;
-			}
+			lll->phy_tx = conn->llcp.phy_upd_ind.tx;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 			eff_tx_time = calc_eff_time(lll->max_tx_octets,
@@ -4743,10 +4723,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
 		if (conn->llcp.phy_upd_ind.rx) {
-			if (conn->llcp.phy_upd_ind.rx & phy_bitmask) {
-				lll->phy_rx = conn->llcp.phy_upd_ind.rx &
-					      phy_bitmask;
-			}
+			lll->phy_rx = conn->llcp.phy_upd_ind.rx;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 			eff_rx_time =
@@ -8011,10 +7988,10 @@ static inline void dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 	rx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select);
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	tx_time = MIN(conn->lll.dle.default_tx_time,
+	tx_time = MIN(conn->lll.dle.local.max_tx_time,
 		      PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select));
 #else /* !CONFIG_BT_CTLR_PHY */
-	tx_time = PDU_DC_MAX_US(conn->lll.dle.default_tx_octets, phy_select);
+	tx_time = PDU_DC_MAX_US(conn->lll.dle.local.max_tx_octets, phy_select);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	/*
@@ -8085,14 +8062,13 @@ uint8_t ull_dle_update_eff(struct ll_conn *conn)
 
 void ull_dle_local_tx_update(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time)
 {
-	conn->lll.dle.default_tx_octets = tx_octets;
+	conn->lll.dle.local.max_tx_octets = tx_octets;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	conn->lll.dle.default_tx_time = tx_time;
+	conn->lll.dle.local.max_tx_time = tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	dle_max_time_get(conn, &conn->lll.dle.local.max_rx_time, &conn->lll.dle.local.max_tx_time);
-	conn->lll.dle.local.max_tx_octets = conn->lll.dle.default_tx_octets;
 }
 
 void ull_dle_init(struct ll_conn *conn, uint8_t phy)

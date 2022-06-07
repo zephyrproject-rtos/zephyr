@@ -11,7 +11,6 @@
  */
 
 #include <time.h>
-#include <zephyr/sys/libc-hooks.h>
 
 /* A signed type with the representation of time_t without its
  * implications.
@@ -97,11 +96,9 @@ struct tm *gmtime_r(const time_t *ZRESTRICT timep,
 	return result;
 }
 
-#ifdef CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS
-static Z_LIBC_DATA struct tm gmtime_result;
-
 struct tm *gmtime(const time_t *timep)
 {
-	return gmtime_r(timep, &gmtime_result);
+	static struct tm shared;
+
+	return gmtime_r(timep, &shared);
 }
-#endif /* CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS */

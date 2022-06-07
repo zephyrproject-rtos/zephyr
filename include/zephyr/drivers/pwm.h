@@ -145,8 +145,6 @@ struct pwm_dt_spec {
  *             the node's pwm-names property.
  *
  * @return Static initializer for a struct pwm_dt_spec for the property.
- *
- * @see PWM_DT_SPEC_INST_GET_BY_NAME
  */
 #define PWM_DT_SPEC_GET_BY_NAME(node_id, name)				       \
 	{								       \
@@ -155,21 +153,6 @@ struct pwm_dt_spec {
 		.period = DT_PWMS_PERIOD_BY_NAME(node_id, name),	       \
 		.flags = DT_PWMS_FLAGS_BY_NAME(node_id, name),		       \
 	}
-
-/**
- * @brief Static initializer for a struct pwm_dt_spec from a DT_DRV_COMPAT
- *        instance.
- *
- * @param inst DT_DRV_COMPAT instance number
- * @param name Lowercase-and-underscores name of a pwms element as defined by
- *             the node's pwm-names property.
- *
- * @return Static initializer for a struct pwm_dt_spec for the property.
- *
- * @see PWM_DT_SPEC_GET_BY_NAME
- */
-#define PWM_DT_SPEC_INST_GET_BY_NAME(inst, name)			       \
-	PWM_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
  * @brief Like PWM_DT_SPEC_GET_BY_NAME(), with a fallback to a default value.
@@ -186,30 +169,11 @@ struct pwm_dt_spec {
  *
  * @return Static initializer for a struct pwm_dt_spec for the property,
  *         or @p default_value if the node or property do not exist.
- *
- * @see PWM_DT_SPEC_INST_GET_BY_NAME_OR
  */
 #define PWM_DT_SPEC_GET_BY_NAME_OR(node_id, name, default_value)	       \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, pwms),			       \
 		    (PWM_DT_SPEC_GET_BY_NAME(node_id, name)),		       \
 		    (default_value))
-
-/**
- * @brief Like PWM_DT_SPEC_INST_GET_BY_NAME(), with a fallback to a default
- *        value.
- *
- * @param inst DT_DRV_COMPAT instance number
- * @param name Lowercase-and-underscores name of a pwms element as defined by
- *             the node's pwm-names property.
- * @param default_value Fallback value to expand to.
- *
- * @return Static initializer for a struct pwm_dt_spec for the property,
- *         or @p default_value if the node or property do not exist.
- *
- * @see PWM_DT_SPEC_GET_BY_NAME_OR
- */
-#define PWM_DT_SPEC_INST_GET_BY_NAME_OR(inst, name, default_value)	       \
-	PWM_DT_SPEC_GET_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
  * @brief Static initializer for a struct pwm_dt_spec
@@ -250,8 +214,6 @@ struct pwm_dt_spec {
  * @param idx Logical index into 'pwms' property.
  *
  * @return Static initializer for a struct pwm_dt_spec for the property.
- *
- * @see PWM_DT_SPEC_INST_GET_BY_IDX
  */
 #define PWM_DT_SPEC_GET_BY_IDX(node_id, idx)				       \
 	{								       \
@@ -260,20 +222,6 @@ struct pwm_dt_spec {
 		.period = DT_PWMS_PERIOD_BY_IDX(node_id, idx),		       \
 		.flags = DT_PWMS_FLAGS_BY_IDX(node_id, idx),		       \
 	}
-
-/**
- * @brief Static initializer for a struct pwm_dt_spec from a DT_DRV_COMPAT
- *        instance.
- *
- * @param inst DT_DRV_COMPAT instance number
- * @param idx Logical index into 'pwms' property.
- *
- * @return Static initializer for a struct pwm_dt_spec for the property.
- *
- * @see PWM_DT_SPEC_GET_BY_IDX
- */
-#define PWM_DT_SPEC_INST_GET_BY_IDX(inst, idx)				       \
-	PWM_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
  * @brief Like PWM_DT_SPEC_GET_BY_IDX(), with a fallback to a default value.
@@ -289,29 +237,11 @@ struct pwm_dt_spec {
  *
  * @return Static initializer for a struct pwm_dt_spec for the property,
  *         or @p default_value if the node or property do not exist.
- *
- * @see PWM_DT_SPEC_INST_GET_BY_IDX_OR
  */
 #define PWM_DT_SPEC_GET_BY_IDX_OR(node_id, idx, default_value)		       \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, pwms),			       \
 		    (PWM_DT_SPEC_GET_BY_IDX(node_id, idx)),		       \
 		    (default_value))
-
-/**
- * @brief Like PWM_DT_SPEC_INST_GET_BY_IDX(), with a fallback to a default
- *        value.
- *
- * @param inst DT_DRV_COMPAT instance number
- * @param idx Logical index into 'pwms' property.
- * @param default_value Fallback value to expand to.
- *
- * @return Static initializer for a struct pwm_dt_spec for the property,
- *         or @p default_value if the node or property do not exist.
- *
- * @see PWM_DT_SPEC_GET_BY_IDX_OR
- */
-#define PWM_DT_SPEC_INST_GET_BY_IDX_OR(inst, idx, default_value)	       \
-	PWM_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), idx, default_value)
 
 /**
  * @brief Equivalent to <tt>PWM_DT_SPEC_GET_BY_IDX(node_id, 0)</tt>.
@@ -320,22 +250,9 @@ struct pwm_dt_spec {
  *
  * @return Static initializer for a struct pwm_dt_spec for the property.
  *
- * @see PWM_DT_SPEC_GET_BY_IDX
- * @see PWM_DT_SPEC_INST_GET
+ * @see PWM_DT_SPEC_GET_BY_IDX()
  */
 #define PWM_DT_SPEC_GET(node_id) PWM_DT_SPEC_GET_BY_IDX(node_id, 0)
-
-/**
- * @brief Equivalent to <tt>PWM_DT_SPEC_INST_GET_BY_IDX(inst, 0)</tt>.
- *
- * @param inst DT_DRV_COMPAT instance number
- *
- * @return Static initializer for a struct pwm_dt_spec for the property.
- *
- * @see PWM_DT_SPEC_INST_GET_BY_IDX
- * @see PWM_DT_SPEC_GET
- */
-#define PWM_DT_SPEC_INST_GET(inst) PWM_DT_SPEC_GET(DT_DRV_INST(inst))
 
 /**
  * @brief Equivalent to
@@ -346,26 +263,10 @@ struct pwm_dt_spec {
  *
  * @return Static initializer for a struct pwm_dt_spec for the property.
  *
- * @see PWM_DT_SPEC_GET_BY_IDX_OR
- * @see PWM_DT_SPEC_INST_GET_OR
+ * @see PWM_DT_SPEC_GET_BY_IDX_OR()
  */
 #define PWM_DT_SPEC_GET_OR(node_id, default_value)			       \
 	PWM_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
-
-/**
- * @brief Equivalent to
- *        <tt>PWM_DT_SPEC_INST_GET_BY_IDX_OR(inst, 0, default_value)</tt>.
- *
- * @param inst DT_DRV_COMPAT instance number
- * @param default_value Fallback value to expand to.
- *
- * @return Static initializer for a struct pwm_dt_spec for the property.
- *
- * @see PWM_DT_SPEC_INST_GET_BY_IDX_OR
- * @see PWM_DT_SPEC_GET_OR
- */
-#define PWM_DT_SPEC_INST_GET_OR(inst, default_value)			       \
-	PWM_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
 
 /**
  * @brief PWM capture callback handler function signature

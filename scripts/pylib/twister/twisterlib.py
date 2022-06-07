@@ -966,14 +966,12 @@ class DeviceHandler(Handler):
         # so fill the results as blocked
         self.instance.add_missing_testscases("blocked")
 
-        self.instance.execution_time = handler_time
         if harness.state:
             self.instance.status = harness.state
             if harness.state == "failed":
                 self.instance.reason = "Failed"
         else:
-            self.instance.status = "error"
-            self.instance.reason = "No Console Output(Timeout)"
+            self.instance.execution_time = handler_time
 
         self._final_handle_actions(harness, handler_time)
 
@@ -4718,5 +4716,4 @@ class HardwareMap:
 
         print(tabulate(table, headers=header, tablefmt="github"))
 
-def init(colorama_strip):
-    colorama.init(strip=colorama_strip)
+colorama.init()
