@@ -38,3 +38,6 @@ config SOC_RISCV_TELINK_B91
 	select INCLUDE_RESET_VECTOR
 
 endchoice
+
+config PM_DEVICE
+	default y if PM
