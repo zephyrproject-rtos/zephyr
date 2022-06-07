@@ -43,7 +43,6 @@
 
 #define DO_CALLER_SAVED(op) \
 	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
-	op tp, __z_arch_esf_t_tp_OFFSET(sp)		;\
 	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
 	op t1, __z_arch_esf_t_t1_OFFSET(sp)		;\
 	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
@@ -160,6 +159,12 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 1:
 	/* save stack value to be restored later */
 	sr t0, __z_arch_esf_t_sp_OFFSET(sp)
+
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* Make sure tls pointer is sane */
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lr tp, _thread_offset_to_tls(t0)
+#endif
 
 	/* Clear user mode variable */
 	la t0, is_user_mode

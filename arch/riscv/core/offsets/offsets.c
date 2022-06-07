@@ -28,7 +28,6 @@
 /* struct _callee_saved member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);
 GEN_OFFSET_SYM(_callee_saved_t, ra);
-GEN_OFFSET_SYM(_callee_saved_t, tp);
 GEN_OFFSET_SYM(_callee_saved_t, s0);
 GEN_OFFSET_SYM(_callee_saved_t, s1);
 GEN_OFFSET_SYM(_callee_saved_t, s2);

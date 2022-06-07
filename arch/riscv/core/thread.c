@@ -41,10 +41,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->a2 = (ulong_t)p2;
 	stack_init->a3 = (ulong_t)p3;
 
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
-	stack_init->tp = (ulong_t)thread->tls;
-#endif
-
 	/*
 	 * Following the RISC-V architecture,
 	 * the MSTATUS register (used to globally enable/disable interrupt),
