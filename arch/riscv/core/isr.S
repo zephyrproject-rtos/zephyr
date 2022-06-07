@@ -59,7 +59,6 @@
 	RV_E(	op a5, __z_arch_esf_t_a5_OFFSET(sp)	);\
 	RV_I(	op a6, __z_arch_esf_t_a6_OFFSET(sp)	);\
 	RV_I(	op a7, __z_arch_esf_t_a7_OFFSET(sp)	);\
-	RV_E(	op tp, __z_arch_esf_t_tp_OFFSET(sp)	);\
 	RV_E(	op ra, __z_arch_esf_t_ra_OFFSET(sp)	)
 
 #ifdef CONFIG_SMP
@@ -199,6 +198,12 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 1:
 	/* save stack value to be restored later */
 	sr t0, __z_arch_esf_t_sp_OFFSET(sp)
+
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* Make sure tls pointer is sane */
+	lr t0, ___cpu_t_current_OFFSET(s0)
+	lr tp, _thread_offset_to_tls(t0)
+#endif
 
 #if !defined(CONFIG_SMP)
 	/* Clear user mode variable */
