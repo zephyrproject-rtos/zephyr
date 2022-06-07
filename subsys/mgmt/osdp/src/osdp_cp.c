@@ -123,7 +123,7 @@ static inline void assert_buf_len(int need, int have)
 static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	struct osdp_cmd *cmd = NULL;
-	int ret = -1, len = 0;
+	int len = 0;
 	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
@@ -139,45 +139,37 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	case CMD_POLL:
 		assert_buf_len(CMD_POLL_LEN, max_len);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_LSTAT:
 		assert_buf_len(CMD_LSTAT_LEN, max_len);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_ISTAT:
 		assert_buf_len(CMD_ISTAT_LEN, max_len);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_OSTAT:
 		assert_buf_len(CMD_OSTAT_LEN, max_len);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_RSTAT:
 		assert_buf_len(CMD_RSTAT_LEN, max_len);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_ID:
 		assert_buf_len(CMD_ID_LEN, max_len);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
-		ret = 0;
 		break;
 	case CMD_CAP:
 		assert_buf_len(CMD_CAP_LEN, max_len);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
-		ret = 0;
 		break;
 	case CMD_DIAG:
 		assert_buf_len(CMD_DIAG_LEN, max_len);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
-		ret = 0;
 		break;
 	case CMD_OUT:
 		assert_buf_len(CMD_OUT_LEN, max_len);
@@ -187,7 +179,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->output.control_code;
 		buf[len++] = BYTE_0(cmd->output.timer_count);
 		buf[len++] = BYTE_1(cmd->output.timer_count);
-		ret = 0;
 		break;
 	case CMD_LED:
 		assert_buf_len(CMD_LED_LEN, max_len);
@@ -209,7 +200,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->led.permanent.off_count;
 		buf[len++] = cmd->led.permanent.on_color;
 		buf[len++] = cmd->led.permanent.off_color;
-		ret = 0;
 		break;
 	case CMD_BUZ:
 		assert_buf_len(CMD_BUZ_LEN, max_len);
@@ -220,7 +210,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->buzzer.on_count;
 		buf[len++] = cmd->buzzer.off_count;
 		buf[len++] = cmd->buzzer.rep_count;
-		ret = 0;
 		break;
 	case CMD_TEXT:
 		cmd = (struct osdp_cmd *)pd->ephemeral_data;
@@ -234,7 +223,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->text.length;
 		memcpy(buf + len, cmd->text.data, cmd->text.length);
 		len += cmd->text.length;
-		ret = 0;
 		break;
 	case CMD_COMSET:
 		assert_buf_len(CMD_COMSET_LEN, max_len);
@@ -245,7 +233,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_1(cmd->comset.baud_rate);
 		buf[len++] = BYTE_2(cmd->comset.baud_rate);
 		buf[len++] = BYTE_3(cmd->comset.baud_rate);
-		ret = 0;
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
@@ -259,12 +246,12 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = 16; /* key length in bytes */
 		osdp_compute_scbk(pd, buf + len);
 		len += 16;
-		ret = 0;
 		break;
 	case CMD_CHLNG:
 		assert_buf_len(CMD_CHLNG_LEN, max_len);
 		if (smb == NULL) {
-			break;
+			LOG_ERR("Invalid secure message block!");
+			return -1;
 		}
 		osdp_fill_random(pd->sc.cp_random, 8);
 		smb[0] = 3;       /* length */
@@ -273,12 +260,12 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		memcpy(buf + len, pd->sc.cp_random, 8);
 		len += 8;
-		ret = 0;
 		break;
 	case CMD_SCRYPT:
 		assert_buf_len(CMD_SCRYPT_LEN, max_len);
 		if (smb == NULL) {
-			break;
+			LOG_ERR("Invalid secure message block!");
+			return -1;
 		}
 		osdp_compute_cp_cryptogram(pd);
 		smb[0] = 3;       /* length */
@@ -287,7 +274,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		memcpy(buf + len, pd->sc.cp_cryptogram, 16);
 		len += 16;
-		ret = 0;
 		break;
 #endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
@@ -306,10 +292,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		smb[1] = (len > 1) ? SCS_17 : SCS_15;
 	}
 #endif /* CONFIG_OSDP_SC_ENABLED */
-	if (ret < 0) {
-		LOG_ERR("Unable to build CMD(%02x)", pd->cmd_id);
-		return OSDP_CP_ERR_GENERIC;
-	}
 
 	return len;
 }
