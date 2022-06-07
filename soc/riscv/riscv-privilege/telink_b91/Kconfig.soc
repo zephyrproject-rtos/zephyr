@@ -42,3 +42,6 @@ endchoice
 config FLASH_BASE_ADDRESS
 	hex
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config PM_DEVICE
+	default y if PM

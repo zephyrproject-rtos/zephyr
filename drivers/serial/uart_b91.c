@@ -11,7 +11,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
-
+#include <zephyr/pm/device.h>
 
 /* Driver dts compatibility: telink,b91_uart */
 #define DT_DRV_COMPAT telink_b91_uart
@@ -41,7 +41,7 @@
 #define UART_TX_RESET_BIT BIT(7)
 
 /* B91 UART registers structure */
-struct uart_b91_t {
+struct __packed uart_b91_t {
 	uint8_t data_buf[UART_DATA_SIZE];
 	uint16_t clk_div;
 	uint8_t ctrl0;
@@ -103,6 +103,10 @@ enum {
 	UART_RX_ERR_STATUS      = BIT(7),
 };
 
+/* txrx_status register enums */
+enum {
+	UART_TXRX_STATUS_TX_DONE = BIT(0)
+};
 
 /* Get tx fifo count */
 static inline uint8_t uart_b91_get_tx_bufcnt(volatile struct uart_b91_t *uart)
@@ -338,10 +342,13 @@ static void uart_b91_poll_out(const struct device *dev, uint8_t c)
 	struct uart_b91_data *data = dev->data;
 
 	while (uart_b91_get_tx_bufcnt(uart) >= UART_TX_BUF_CNT) {
-	};
+	}
 
 	uart->data_buf[data->tx_byte_index] = c;
 	data->tx_byte_index = (data->tx_byte_index + 1) % ARRAY_SIZE(uart->data_buf);
+
+	while (!(uart->txrx_status & UART_TXRX_STATUS_TX_DONE)) {
+	}
 }
 
 /* API implementation: poll_in */
@@ -377,6 +384,7 @@ static int uart_b91_fifo_fill(const struct device *dev,
 {
 	int i = 0;
 	volatile struct uart_b91_t *uart = GET_UART(dev);
+	struct uart_b91_data *data = dev->data;
 
 	if (size > UART_DATA_SIZE) {
 		size = UART_DATA_SIZE;
@@ -387,7 +395,11 @@ static int uart_b91_fifo_fill(const struct device *dev,
 			break;
 		}
 
-		uart_b91_poll_out(dev, tx_data[i]);
+		while (uart_b91_get_tx_bufcnt(uart) >= UART_TX_BUF_CNT) {
+		}
+
+		uart->data_buf[data->tx_byte_index] = tx_data[i];
+		data->tx_byte_index = (data->tx_byte_index + 1) % ARRAY_SIZE(uart->data_buf);
 	}
 
 	return i;
@@ -400,13 +412,15 @@ static int uart_b91_fifo_read(const struct device *dev,
 {
 	int rx_count;
 	volatile struct uart_b91_t *uart = GET_UART(dev);
+	struct uart_b91_data *data = dev->data;
 
 	for (rx_count = 0; rx_count < size; rx_count++) {
 		if (uart_b91_get_rx_bufcnt(uart) == 0) {
 			break;
 		}
 
-		uart_b91_poll_in(dev, &rx_data[rx_count]);
+		rx_data[rx_count] = uart->data_buf[data->rx_byte_index];
+		data->rx_byte_index = (data->rx_byte_index + 1) % ARRAY_SIZE(uart->data_buf);
 	}
 
 	return rx_count;
@@ -519,6 +533,33 @@ static void uart_b91_irq_callback_set(const struct device *dev,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_PM_DEVICE
+
+static int uart_b91_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	volatile struct uart_b91_t *uart = GET_UART(dev);
+	struct uart_b91_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* reset TX/RX byte index */
+		data->tx_byte_index = 0;
+		data->rx_byte_index = 0;
+		uart->status |= UART_RX_RESET_BIT | UART_TX_RESET_BIT;
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_PM_DEVICE */
+
 static const struct uart_driver_api uart_b91_driver_api = {
 	.poll_in = uart_b91_poll_in,
 	.poll_out = uart_b91_poll_out,
@@ -546,6 +587,8 @@ static const struct uart_driver_api uart_b91_driver_api = {
 
 #define UART_B91_INIT(n)							    \
 										    \
+	PM_DEVICE_DT_INST_DEFINE(n, uart_b91_pm_action);			    \
+										    \
 	static void uart_b91_irq_connect_##n(void);				    \
 										    \
 	PINCTRL_DT_INST_DEFINE(n);						    \
@@ -561,7 +604,7 @@ static const struct uart_driver_api uart_b91_driver_api = {
 	static struct uart_b91_data uart_b91_data_##n;				    \
 										    \
 	DEVICE_DT_INST_DEFINE(n, uart_b91_driver_init,				    \
-			      NULL,						    \
+			      PM_DEVICE_DT_INST_GET(n),				    \
 			      &uart_b91_data_##n,				    \
 			      &uart_b91_cfg_##n,				    \
 			      PRE_KERNEL_1,					    \
