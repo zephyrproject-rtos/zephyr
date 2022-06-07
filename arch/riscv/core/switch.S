@@ -16,7 +16,6 @@
 
 #define DO_CALLEE_SAVED(op, reg) \
 	RV_E(	op ra, _thread_offset_to_ra(reg)	);\
-	RV_E(	op tp, _thread_offset_to_tp(reg)	);\
 	RV_E(	op s0, _thread_offset_to_s0(reg)	);\
 	RV_E(	op s1, _thread_offset_to_s1(reg)	);\
 	RV_I(	op s2, _thread_offset_to_s2(reg)	);\
@@ -74,6 +73,11 @@ skip_store_fp_callee_saved:
 
 	/* Get the new thread's stack pointer */
 	lr sp, _thread_offset_to_sp(a0)
+
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* Get the new thread's tls pointer */
+	lr tp, _thread_offset_to_tls(a0)
+#endif
 
 #if defined(CONFIG_PMP_STACK_GUARD)
 	/*

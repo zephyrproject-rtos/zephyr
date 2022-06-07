@@ -78,7 +78,6 @@ struct __esf {
 
 	ulong_t s0;		/* callee-saved s0 */
 
-	ulong_t tp;		/* thread pointer */
 #ifdef CONFIG_USERSPACE
 	ulong_t sp;		/* preserved (user or kernel) stack pointer */
 #endif
