@@ -45,6 +45,18 @@
 	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
 	op t1, __z_arch_esf_t_t1_OFFSET(sp)
 
+#if defined(CONFIG_RISCV_ISA_RV32E)
+#define DO_CALLER_SAVED_REST(op) \
+	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
+	op a0, __z_arch_esf_t_a0_OFFSET(sp)		;\
+	op a1, __z_arch_esf_t_a1_OFFSET(sp)		;\
+	op a2, __z_arch_esf_t_a2_OFFSET(sp)		;\
+	op a3, __z_arch_esf_t_a3_OFFSET(sp)		;\
+	op a4, __z_arch_esf_t_a4_OFFSET(sp)		;\
+	op a5, __z_arch_esf_t_a5_OFFSET(sp)		;\
+	op tp, __z_arch_esf_t_tp_OFFSET(sp)             ;\
+	op ra, __z_arch_esf_t_ra_OFFSET(sp)
+#else
 #define DO_CALLER_SAVED_REST(op) \
 	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
 	op t3, __z_arch_esf_t_t3_OFFSET(sp)		;\
@@ -61,6 +73,7 @@
 	op a7, __z_arch_esf_t_a7_OFFSET(sp)		;\
 	op tp, __z_arch_esf_t_tp_OFFSET(sp)             ;\
 	op ra, __z_arch_esf_t_ra_OFFSET(sp)
+#endif /* CONFIG_RISCV_ISA_RV32E */
 
 #ifdef CONFIG_SMP
 #define GET_CURRENT_CPU(dst, tmp) \
@@ -387,7 +400,14 @@ is_user_syscall:
 	lr a4, __z_arch_esf_t_a4_OFFSET(sp)
 	lr a5, __z_arch_esf_t_a5_OFFSET(sp)
 	lr t0, __z_arch_esf_t_t0_OFFSET(sp)
+#if defined(CONFIG_RISCV_ISA_RV32E)
+	/* Stack alignment for RV32E is 4 bytes */
+	addi sp, sp, -4
+	mv t1, sp
+	sw t1, 0(sp)
+#else
 	mv a6, sp
+#endif /* CONFIG_RISCV_ISA_RV32E */
 
 	/* validate syscall limit */
 	li t1, K_SYSCALL_LIMIT
@@ -407,6 +427,10 @@ valid_syscall_id:
 
 	/* Execute syscall function */
 	jalr ra, t2, 0
+
+#if defined(CONFIG_RISCV_ISA_RV32E)
+	addi sp, sp, 4
+#endif /* CONFIG_RISCV_ISA_RV32E */
 
 	/* Update a0 (return value) on the stack */
 	sr a0, __z_arch_esf_t_a0_OFFSET(sp)

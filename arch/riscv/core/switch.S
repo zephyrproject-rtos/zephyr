@@ -14,6 +14,13 @@
 
 /* Convenience macros for loading/storing register states. */
 
+#if defined(CONFIG_RISCV_ISA_RV32E)
+#define DO_CALLEE_SAVED(op, reg) \
+	op ra, _thread_offset_to_ra(reg)	;\
+	op tp, _thread_offset_to_tp(reg)	;\
+	op s0, _thread_offset_to_s0(reg)	;\
+	op s1, _thread_offset_to_s1(reg)
+#else
 #define DO_CALLEE_SAVED(op, reg) \
 	op ra, _thread_offset_to_ra(reg)	;\
 	op tp, _thread_offset_to_tp(reg)	;\
@@ -29,6 +36,7 @@
 	op s9, _thread_offset_to_s9(reg)	;\
 	op s10, _thread_offset_to_s10(reg)	;\
 	op s11, _thread_offset_to_s11(reg)
+#endif /* CONFIG_RISCV_ISA_RV32E */
 
 #define DO_FP_CALLEE_SAVED(op, reg) \
 	op fs0, _thread_offset_to_fs0(reg)	;\
