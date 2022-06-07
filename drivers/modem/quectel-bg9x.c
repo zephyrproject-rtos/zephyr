@@ -688,7 +688,9 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	uint16_t	    dst_port  = 0;
 	char		    *protocol = "TCP";
 	struct modem_cmd    cmd[]     = { MODEM_CMD("+QIOPEN: ", on_cmd_atcmdinfo_sockopen, 2U, ",") };
-	char		    buf[sizeof("AT+QIOPEN=#,##,###,####.####.####.####,######")] = {0};
+	char		    buf[sizeof("AT+QIOPEN=#,#,'###','###',"
+				       "####.####.####.####.####.####.####.####,######,"
+				       "0,0")] = {0};
 	int		    ret;
 	char		    ip_str[NET_IPV6_ADDR_LEN];
 
