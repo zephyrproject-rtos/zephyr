@@ -1230,7 +1230,7 @@ int32_t mdm_hl7800_get_functionality(void)
 int32_t mdm_hl7800_set_functionality(enum mdm_hl7800_functionality mode)
 {
 	int ret;
-	char buf[sizeof("AT+CFUN=0,0")] = { 0 };
+	char buf[sizeof("AT+CFUN=###,0")] = { 0 };
 
 	hl7800_lock();
 	wakeup_hl7800();
@@ -3829,7 +3829,7 @@ done:
 
 static int delete_socket(struct hl7800_socket *sock, enum net_sock_type type, uint8_t id)
 {
-	char cmd[sizeof("AT+KUDPCLOSE=##")];
+	char cmd[sizeof("AT+KUDPCLOSE=###")];
 
 	if (type == SOCK_STREAM) {
 		snprintk(cmd, sizeof(cmd), "AT+KTCPDEL=%d", id);
@@ -4105,7 +4105,7 @@ done:
 
 static int start_socket_rx(struct hl7800_socket *sock, uint16_t rx_size)
 {
-	char sendbuf[sizeof("AT+KTCPRCV=##,####")];
+	char sendbuf[sizeof("AT+KTCPRCV=+#########,#####")];
 
 	if ((sock->socket_id <= 0) || (sock->rx_size <= 0)) {
 		LOG_WRN("Cannot start socket RX, ID: %d rx size: %d",
