@@ -11,12 +11,11 @@
 #include <stdio.h>
 #include <pmp.h>
 
-#if defined(CONFIG_USERSPACE) && !defined(CONFIG_SMP)
+#ifdef CONFIG_USERSPACE
 /*
- * Glogal variable used to know the current mode running.
- * Is not boolean because it must match the PMP granularity of the arch.
+ * Per-thread (TLS) variable indicating whether execution is in user mode.
  */
-uint32_t is_user_mode;
+__thread uint8_t is_user_mode;
 #endif
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
@@ -246,9 +245,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* exception stack has to be in mscratch */
 	csr_write(mscratch, top_of_priv_stack);
 
-#if !defined(CONFIG_SMP)
 	is_user_mode = true;
-#endif
 
 	register void *a0 __asm__("a0") = user_entry;
 	register void *a1 __asm__("a1") = p1;
