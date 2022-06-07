@@ -912,7 +912,7 @@ static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 	size_t out_len;
 	char *delim1, *delim2;
 	char value[sizeof("#,#,#####\r")];
-	char sendbuf[sizeof("AT@SOCKREAD=#,#####\r")];
+	char sendbuf[sizeof("AT@SOCKREAD=-#####,-#####\r")];
 	struct wncm14a2a_socket *sock = NULL;
 
 	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
@@ -1519,7 +1519,7 @@ static int offload_get(sa_family_t family,
 		       struct net_context **context)
 {
 	int ret;
-	char buf[sizeof("AT@SOCKCREAT=#,#\r")];
+	char buf[sizeof("AT@SOCKCREAT=###,#\r")];
 	struct wncm14a2a_socket *sock = NULL;
 
 	/* new socket */
