@@ -189,7 +189,7 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 		     const uint8_t *data, int len)
 {
 	int pad_len;
-	uint8_t buf[CONFIG_OSDP_UART_BUFFER_LENGTH] = { 0 };
+	uint8_t buf[OSDP_PACKET_BUF_SIZE] = { 0 };
 	uint8_t iv[16];
 
 	memcpy(buf, data, len);

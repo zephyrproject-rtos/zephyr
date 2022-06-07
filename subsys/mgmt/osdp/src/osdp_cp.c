@@ -324,11 +324,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	int i, ret = OSDP_CP_ERR_GENERIC, pos = 0, t1, t2;
 	struct osdp_event event;
 
-	if (len < 1) {
-		LOG_ERR("response must have at least one byte");
-		return OSDP_CP_ERR_GENERIC;
-	}
-
 	pd->reply_id = buf[pos++];
 	len--;		/* consume reply id from the head */
 
@@ -691,6 +686,7 @@ static inline void cp_set_state(struct osdp_pd *pd, enum osdp_cp_state_e state)
 static inline void cp_set_online(struct osdp_pd *pd)
 {
 	cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+	pd->wait_ms = 0;
 	pd->tstamp = 0;
 }
 
@@ -699,12 +695,14 @@ static inline void cp_set_offline(struct osdp_pd *pd)
 	sc_deactivate(pd);
 	pd->state = OSDP_CP_STATE_OFFLINE;
 	pd->tstamp = osdp_millis_now();
-}
-
-static inline void cp_reset_state(struct osdp_pd *pd)
-{
-	pd->state = OSDP_CP_STATE_INIT;
-	osdp_phy_state_reset(pd);
+	if (pd->wait_ms == 0) {
+		pd->wait_ms = 1000; /* retry after 1 second initially */
+	} else {
+		pd->wait_ms <<= 1;
+		if (pd->wait_ms > OSDP_ONLINE_RETRY_WAIT_MAX_MS) {
+			pd->wait_ms = OSDP_ONLINE_RETRY_WAIT_MAX_MS;
+		}
+	}
 }
 
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -715,17 +713,22 @@ static inline bool cp_sc_should_retry(struct osdp_pd *pd)
 }
 #endif
 
-/**
- * Note: This method must not dequeue cmd unless it reaches an invalid state.
- */
 static int cp_phy_state_update(struct osdp_pd *pd)
 {
+	int64_t elapsed;
 	int rc, ret = OSDP_CP_ERR_CAN_YIELD;
 	struct osdp_cmd *cmd = NULL;
 	struct osdp *ctx = pd_to_osdp(pd);
 
 	switch (pd->phy_state) {
-	case OSDP_CP_PHY_STATE_ERR_WAIT:
+	case OSDP_CP_PHY_STATE_WAIT:
+		elapsed = osdp_millis_since(pd->phy_tstamp);
+		if (elapsed < OSDP_CMD_RETRY_WAIT_MS) {
+			break;
+		}
+		pd->phy_state = OSDP_CP_PHY_STATE_SEND_CMD;
+		break;
+	case OSDP_CP_PHY_STATE_ERR:
 		ret = OSDP_CP_ERR_GENERIC;
 		break;
 	case OSDP_CP_PHY_STATE_IDLE:
@@ -761,7 +764,12 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			if (ctx->command_complete_callback) {
 				ctx->command_complete_callback(pd->cmd_id);
 			}
-			pd->phy_state = OSDP_CP_PHY_STATE_CLEANUP;
+#ifdef CONFIG_OSDP_SC_ENABLED
+			if (sc_is_active(pd)) {
+				pd->sc_tstamp = osdp_millis_now();
+			}
+#endif
+			pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
 			break;
 		}
 		if (rc == OSDP_CP_ERR_RETRY_CMD) {
@@ -770,30 +778,22 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
 			break;
 		}
-		if (rc == OSDP_CP_ERR_GENERIC) {
+		if (rc == OSDP_CP_ERR_GENERIC || rc == OSDP_CP_ERR_UNKNOWN ||
+		    osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
+			if (rc != OSDP_CP_ERR_GENERIC) {
+				LOG_ERR("Response timeout for CMD(%02x)",
+					pd->cmd_id);
+			}
+			pd->rx_buf_len = 0;
+			if (pd->channel.flush) {
+				pd->channel.flush(pd->channel.data);
+			}
+			cp_flush_command_queue(pd);
 			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
 			ret = OSDP_CP_ERR_GENERIC;
 			break;
 		}
-		if (osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
-			LOG_ERR("CMD: %02x - response timeout", pd->cmd_id);
-			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
-		}
-		break;
-	case OSDP_CP_PHY_STATE_WAIT:
-		if (osdp_millis_since(pd->phy_tstamp) < OSDP_CMD_RETRY_WAIT_MS) {
-			break;
-		}
-		pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
-		break;
-	case OSDP_CP_PHY_STATE_ERR:
-		cp_flush_command_queue(pd);
-		pd->phy_state = OSDP_CP_PHY_STATE_ERR_WAIT;
-		ret = OSDP_CP_ERR_GENERIC;
-		break;
-	case OSDP_CP_PHY_STATE_CLEANUP:
-		pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
-		ret = OSDP_CP_ERR_CAN_YIELD; /* in between commands */
+		ret = OSDP_CP_ERR_INPROG;
 		break;
 	}
 
@@ -822,7 +822,8 @@ static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 
 static int state_update(struct osdp_pd *pd)
 {
-	int phy_state, soft_fail;
+	bool soft_fail;
+	int phy_state;
 
 	phy_state = cp_phy_state_update(pd);
 	if (phy_state == OSDP_CP_ERR_INPROG ||
@@ -859,11 +860,15 @@ static int state_update(struct osdp_pd *pd)
 		}
 		break;
 	case OSDP_CP_STATE_OFFLINE:
-		if (osdp_millis_since(pd->tstamp) > OSDP_CMD_RETRY_WAIT_MS) {
-			cp_reset_state(pd);
+		if (osdp_millis_since(pd->tstamp) > pd->wait_ms) {
+			cp_set_state(pd, OSDP_CP_STATE_INIT);
+			osdp_phy_state_reset(pd);
 		}
 		break;
 	case OSDP_CP_STATE_INIT:
+		if (cp_cmd_dispatcher(pd, CMD_POLL) != 0) {
+			break;
+		}
 		cp_set_state(pd, OSDP_CP_STATE_IDREQ);
 		__fallthrough;
 	case OSDP_CP_STATE_IDREQ:
@@ -872,8 +877,9 @@ static int state_update(struct osdp_pd *pd)
 		}
 		if (pd->reply_id != REPLY_PDID) {
 			LOG_ERR("Unexpected REPLY(%02x) for cmd "
-				STR(CMD_CAP), pd->reply_id);
+				STR(CMD_ID), pd->reply_id);
 			cp_set_offline(pd);
+			break;
 		}
 		cp_set_state(pd, OSDP_CP_STATE_CAPDET);
 		__fallthrough;
@@ -885,6 +891,7 @@ static int state_update(struct osdp_pd *pd)
 			LOG_ERR("Unexpected REPLY(%02x) for cmd "
 				STR(CMD_CAP), pd->reply_id);
 			cp_set_offline(pd);
+			break;
 		}
 #ifdef CONFIG_OSDP_SC_ENABLED
 		if (sc_is_capable(pd)) {
@@ -905,14 +912,14 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (phy_state < 0) {
-			if (ISSET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE)) {
+			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 				LOG_INF("SC Failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
+				osdp_phy_state_reset(pd);
 				cp_set_online(pd);
 				break;
 			}
 			SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
-			SET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE);
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			pd->phy_state = 0; /* soft reset phy state */
 			LOG_WRN("SC Failed. Retry with SCBK-D");
@@ -921,6 +928,7 @@ static int state_update(struct osdp_pd *pd)
 		if (pd->reply_id != REPLY_CCRYPT) {
 			LOG_ERR("CHLNG failed. Online without SC");
 			pd->sc_tstamp = osdp_millis_now();
+			osdp_phy_state_reset(pd);
 			cp_set_online(pd);
 			break;
 		}
@@ -932,6 +940,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		if (pd->reply_id != REPLY_RMAC_I) {
 			LOG_ERR("SCRYPT failed. Online without SC");
+			osdp_phy_state_reset(pd);
 			pd->sc_tstamp = osdp_millis_now();
 			cp_set_online(pd);
 			break;
