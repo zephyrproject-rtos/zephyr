@@ -953,6 +953,88 @@ void test_close_obstructed(void)
 		      "packets after close");
 }
 
+void test_close_partially_obstructed(void)
+{
+	/* Test if socket recovery even when there is not communication
+	 * initially not possible any more
+	 */
+	uint32_t start_time, time_diff;
+	int count_before = 0, count_after = 0;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	int dropped_packets_before = 0;
+	int dropped_packets_after = 0;
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	zassert_equal(connect(c_sock, (struct sockaddr *)&s_saddr,
+				sizeof(s_saddr)),
+				0, "connect not succeed");
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	test_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	test_recv(new_sock, 0);
+
+	/* We should have two contexts open now */
+	net_context_foreach(calc_net_context, &count_before);
+
+	/* Break the communication */
+	loopback_set_packet_drop_ratio(1.0f);
+
+	dropped_packets_before = loopback_get_num_dropped_packets();
+
+	test_close(c_sock);
+
+	/* to ensure at least the first packet is lost */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT / 2));
+
+	dropped_packets_after = loopback_get_num_dropped_packets();
+	int dropped_packets = dropped_packets_after - dropped_packets_before;
+
+	/* At least some packet should have been dropped */
+	zassert_not_equal(dropped_packets,
+			0,
+			"At least some packets mush have been dropped, got %i", dropped_packets);
+
+	/* Restore the communication */
+	loopback_set_packet_drop_ratio(0.0f);
+
+	start_time = k_uptime_get_32();
+
+	/* After the client socket closing, the context count should be 1 less */
+	net_context_foreach(calc_net_context, &count_after);
+
+	time_diff = k_uptime_get_32() - start_time;
+
+	/* Eventually the client socket should be cleaned up */
+	while ((count_before == count_after) && (time_diff < TCP_CLOSE_FAILURE_TIMEOUT)) {
+		count_after = 0;
+		net_context_foreach(calc_net_context, &count_after);
+		k_sleep(K_MSEC(50));
+		time_diff = k_uptime_get_32() - start_time;
+	}
+
+	zassert_true(time_diff < CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT * 2,
+			"Socket must have been closed within 2 times the RTO");
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+
 void test_v4_accept_timeout(void)
 {
 	/* Test if accept() will timeout properly */
@@ -1520,6 +1602,7 @@ void test_main(void)
 		 restore_packet_loss_ratio, restore_packet_loss_ratio),
 		ztest_unit_test_setup_teardown(test_close_obstructed,
 		 restore_packet_loss_ratio, restore_packet_loss_ratio),
+		ztest_unit_test(test_close_partially_obstructed),
 		ztest_user_unit_test(test_v4_accept_timeout),
 		ztest_unit_test(test_so_type),
 		ztest_unit_test(test_so_protocol),
