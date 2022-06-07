@@ -23,6 +23,16 @@
 			reg = <0>;
 			clock-frequency = <24000000>;
 			compatible ="telink,b91", "riscv";
+			cpu-power-states = <&state0>;
+		};
+	};
+
+	power-states {
+		state0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <3000>;
+			exit-latency-us = <1000>;
 		};
 	};
 

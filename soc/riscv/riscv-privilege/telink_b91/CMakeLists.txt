@@ -7,6 +7,10 @@ zephyr_sources(
 	soc.c
 )
 
+zephyr_sources_ifdef(CONFIG_PM
+	power.c
+)
+
 # Force using BFD-LD
 zephyr_ld_options(-fuse-ld=bfd)
 
