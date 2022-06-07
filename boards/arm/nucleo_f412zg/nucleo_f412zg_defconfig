@@ -8,18 +8,20 @@ CONFIG_ARM_MPU=y
 
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
-
 CONFIG_SERIAL=y
 
-# console
+# Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# enable GPIO
+# Enable GPIO
 CONFIG_GPIO=y
 
 # Enable Clocks
 CONFIG_CLOCK_CONTROL=y
 
-# enable pin controller
+# Enable pin controller
 CONFIG_PINCTRL=y
+
+# Enable CAN
+CONFIG_CAN=y
