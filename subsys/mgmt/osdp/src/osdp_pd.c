@@ -497,6 +497,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		memcpy(pd->sc.scbk, cmd.keyset.data, 16);
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 		CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
+		sc_deactivate(pd);
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;

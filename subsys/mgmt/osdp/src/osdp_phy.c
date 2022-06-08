@@ -446,6 +446,21 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		data = pkt->data + pkt->data[0];
 		len -= pkt->data[0]; /* consume security block */
 	} else {
+		/**
+		 * If the current packet is an ACK for a KEYSET, the PD might
+		 * have discarded the secure channel session keys in favour of
+		 * the new key we sent and hence this packet may reach us in
+		 * plain text. To work with such PDs, we must also discard our
+		 * secure session.
+		 *
+		 * The way we do this is by calling osdp_keyset_complete() which
+		 * copies the key in ephemeral_data to the current SCBK.
+		 */
+		if (is_cp_mode(pd) && pd->cmd_id == CMD_KEYSET &&
+		    pkt->data[0] == REPLY_ACK) {
+			osdp_keyset_complete(pd);
+		}
+
 		if (sc_is_active(pd)) {
 			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;
