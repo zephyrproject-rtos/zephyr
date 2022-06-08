@@ -176,7 +176,7 @@ enum ec_host_cmd_status {
 	EC_HOST_CMD_INVALID_RESPONSE = 5,
 	/** Host command id version unsupported. */
 	EC_HOST_CMD_INVALID_VERSION = 6,
-	/** Checksum did not match */
+	/** Checksum did not match. */
 	EC_HOST_CMD_INVALID_CHECKSUM = 7,
 	/** A host command is currently being processed. */
 	EC_HOST_CMD_IN_PROGRESS = 8,
@@ -196,8 +196,16 @@ enum ec_host_cmd_status {
 	EC_HOST_CMD_BUS_ERROR = 15,
 	/** System busy. Should retry later. */
 	EC_HOST_CMD_BUSY = 16,
+	/** Header version invalid. */
+	EC_HOST_CMD_INVALID_HEADER_VERSION = 17,
+	/** Header CRC invalid. */
+	EC_HOST_CMD_INVALID_HEADER_CRC = 18,
+	/** Data CRC invalid. */
+	EC_HOST_CMD_INVALID_DATA_CRC = 19,
+	/** Can't resend response. */
+	EC_HOST_CMD_DUP_UNAVAILABLE = 20,
 
-	EC_HOST_CMD_MAX = UINT16_MAX /* Force enum to be 16 bits */
+	EC_HOST_CMD_MAX = UINT16_MAX /* Force enum to be 16 bits. */
 } __packed;
 
 /**
