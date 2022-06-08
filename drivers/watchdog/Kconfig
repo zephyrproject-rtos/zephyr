@@ -6,7 +6,6 @@
 
 menuconfig WATCHDOG
 	bool "Watchdog Support"
-	select HAS_DTS_WDT
 	help
 	  Include support for watchdogs.
 
