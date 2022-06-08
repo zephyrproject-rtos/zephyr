@@ -1031,6 +1031,24 @@ Documentation:
     labels:
         - "area: Wifi"
 
+Xen Platform:
+    status: maintained
+    maintainers:
+        - povergoing
+    collaborators:
+        - SgrrZhf
+        - lorc
+        - firscity
+        - luca-fancellu
+    files:
+        - include/zephyr/xen/
+        - drivers/xen/
+        - arch/arm64/core/xen/
+        - soc/arm64/xenvm/
+        - boards/arm64/xenvm/
+    labels:
+        - "area: Xen Platform"
+
 Filesystems:
     status: maintained
     maintainers:
