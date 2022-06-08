@@ -20,42 +20,15 @@
 
 LOG_MODULE_REGISTER(ADS1X1X, CONFIG_ADC_LOG_LEVEL);
 
-#define ADS1X1X_GEN_MASK(shift, size) (BIT_MASK(size) << shift)
-
-#define ADS1X1X_CONFIG_SHIFT_COMP_QUE 0
-#define ADS1X1X_CONFIG_SIZE_COMP_QUE 2
-#define ADS1X1X_CONFIG_MASK_COMP_QUE                                                               \
-	ADS1X1X_GEN_MASK(ADS1X1X_CONFIG_SHIFT_COMP_QUE, ADS1X1X_CONFIG_SIZE_COMP_QUE)
-#define ADS1X1X_CONFIG_SHIFT_COMP_LAT 2
-#define ADS1X1X_CONFIG_SIZE_COMP_LAT 1
-#define ADS1X1X_CONFIG_MASK_COMP_LAT                                                               \
-	ADS1X1X_GEN_MASK(ADS1X1X_CONFIG_SHIFT_COMP_LAT, ADS1X1X_CONFIG_SIZE_COMP_LAT)
-#define ADS1X1X_CONFIG_SHIFT_COMP_POL 3
-#define ADS1X1X_CONFIG_SIZE_COMP_POL 1
-#define ADS1X1X_CONFIG_MASK_COMP_POL                                                               \
-	ADS1X1X_GEN_MASK(ADS1X1X_CONFIG_SHIFT_COMP_POL, ADS1X1X_CONFIG_SIZE_COMP_POL)
-#define ADS1X1X_CONFIG_SHIFT_COMP_MODE 4
-#define ADS1X1X_CONFIG_SIZE_COMP_MODE 1
-#define ADS1X1X_CONFIG_MASK_COMP_MODE                                                              \
-	ADS1X1X_GEN_MASK(ADS1X1X_CONFIG_SHIFT_COMP_MODE, ADS1X1X_CONFIG_SIZE_COMP_MODE)
-#define ADS1X1X_CONFIG_SHIFT_DR 5
-#define ADS1X1X_CONFIG_SIZE_DR 3
-#define ADS1X1X_CONFIG_MASK_DR ADS1X1X_GEN_MASK(ADS1X1X_CONFIG_SHIFT_DR, ADS1X1X_CONFIG_SIZE_DR)
-#define ADS1X1X_CONFIG_SHIFT_MODE 8
-#define ADS1X1X_CONFIG_SIZE_MODE 1
-#define ADS1X1X_CONFIG_MASK_MODE                                                                   \
-	ADS1X1X_GEN_MASK(ADS1X1X_CONFIG_SHIFT_MODE, ADS1X1X_CONFIG_SIZE_MODE)
-#define ADS1X1X_CONFIG_SHIFT_PGA 9
-#define ADS1X1X_CONFIG_SIZE_PGA 3
-#define ADS1X1X_CONFIG_MASK_PGA ADS1X1X_GEN_MASK(ADS1X1X_CONFIG_SHIFT_PGA, ADS1X1X_CONFIG_SIZE_PGA)
-#define ADS1X1X_CONFIG_SHIFT_MUX 12
-#define ADS1X1X_CONFIG_SIZE_MUX 3
-#define ADS1X1X_CONFIG_MASK_MUX ADS1X1X_GEN_MASK(ADS1X1X_CONFIG_SHIFT_MUX, ADS1X1X_CONFIG_SIZE_MUX)
-#define ADS1X1X_CONFIG_SHIFT_OS 15
-#define ADS1X1X_CONFIG_SIZE_OS 1
-#define ADS1X1X_CONFIG_MASK_OS ADS1X1X_GEN_MASK(ADS1X1X_CONFIG_SHIFT_OS, ADS1X1X_CONFIG_SIZE_OS)
-
-#define ADS1X1X_CONFIG(flag, n) (ADS1X1X_CONFIG_MASK_##flag & ((n) << ADS1X1X_CONFIG_SHIFT_##flag))
+#define ADS1X1X_CONFIG_OS BIT(15)
+#define ADS1X1X_CONFIG_MUX(x) ((x) << 12)
+#define ADS1X1X_CONFIG_PGA(x) ((x) << 9)
+#define ADS1X1X_CONFIG_MODE BIT(8)
+#define ADS1X1X_CONFIG_DR(x) ((x) << 5)
+#define ADS1X1X_CONFIG_COMP_MODE BIT(4)
+#define ADS1X1X_CONFIG_COMP_POL BIT(3)
+#define ADS1X1X_CONFIG_COMP_LAT BIT(2)
+#define ADS1X1X_CONFIG_COMP_QUE(x) (x)
 
 enum ads1x1x_reg {
 	ADS1X1X_REG_CONV = 0x00,
@@ -214,7 +187,7 @@ static int ads1x1x_start_conversion(const struct device *dev)
 	uint16_t config;
 
 	ads1x1x_read_reg(dev, ADS1X1X_REG_CONFIG, &config);
-	config |= ADS1X1X_CONFIG(OS, 1);
+	config |= ADS1X1X_CONFIG_OS;
 	ads1x1x_write_reg(dev, ADS1X1X_REG_CONFIG, config);
 
 	return 0;
@@ -301,7 +274,7 @@ static int ads1x1x_wait_data_ready(const struct device *dev)
 		return rc;
 	}
 
-	while (!(status & ADS1X1X_CONFIG_MASK_OS)) {
+	while (!(status & ADS1X1X_CONFIG_OS)) {
 		k_sleep(K_USEC(100));
 		rc = ads1x1x_read_reg(dev, ADS1X1X_REG_CONFIG, &status);
 		if (rc != 0) {
@@ -335,16 +308,16 @@ static int ads1x1x_channel_setup(const struct device *dev,
 		/* the device has an input multiplexer */
 		if (channel_cfg->differential) {
 			if (channel_cfg->input_positive == 0 && channel_cfg->input_negative == 1) {
-				config |= ADS1X1X_CONFIG(MUX, ADS1X15_CONFIG_MUX_DIFF_0_1);
+				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_DIFF_0_1);
 			} else if (channel_cfg->input_positive == 0 &&
 				   channel_cfg->input_negative == 3) {
-				config |= ADS1X1X_CONFIG(MUX, ADS1X15_CONFIG_MUX_DIFF_0_3);
+				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_DIFF_0_3);
 			} else if (channel_cfg->input_positive == 1 &&
 				   channel_cfg->input_negative == 3) {
-				config |= ADS1X1X_CONFIG(MUX, ADS1X15_CONFIG_MUX_DIFF_1_3);
+				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_DIFF_1_3);
 			} else if (channel_cfg->input_positive == 2 &&
 				   channel_cfg->input_negative == 3) {
-				config |= ADS1X1X_CONFIG(MUX, ADS1X15_CONFIG_MUX_DIFF_2_3);
+				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_DIFF_2_3);
 			} else {
 				LOG_ERR("unsupported input positive '%d' and input negative '%d'",
 					channel_cfg->input_positive, channel_cfg->input_negative);
@@ -352,13 +325,13 @@ static int ads1x1x_channel_setup(const struct device *dev,
 			}
 		} else {
 			if (channel_cfg->input_positive == 0) {
-				config |= ADS1X1X_CONFIG(MUX, ADS1X15_CONFIG_MUX_SINGLE_0);
+				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_SINGLE_0);
 			} else if (channel_cfg->input_positive == 1) {
-				config |= ADS1X1X_CONFIG(MUX, ADS1X15_CONFIG_MUX_SINGLE_1);
+				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_SINGLE_1);
 			} else if (channel_cfg->input_positive == 2) {
-				config |= ADS1X1X_CONFIG(MUX, ADS1X15_CONFIG_MUX_SINGLE_2);
+				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_SINGLE_2);
 			} else if (channel_cfg->input_positive == 3) {
-				config |= ADS1X1X_CONFIG(MUX, ADS1X15_CONFIG_MUX_SINGLE_3);
+				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_SINGLE_3);
 			} else {
 				LOG_ERR("unsupported input positive '%d'",
 					channel_cfg->input_positive);
@@ -384,28 +357,28 @@ static int ads1x1x_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	config |= ADS1X1X_CONFIG(DR, dr);
+	config |= ADS1X1X_CONFIG_DR(dr);
 
 	if (ads_config->pga) {
 		/* programmable gain amplifier support */
 		switch (channel_cfg->gain) {
 		case ADC_GAIN_2_3:
-			config |= ADS1X1X_CONFIG(PGA, ADS1X1X_CONFIG_PGA_6144);
+			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_6144);
 			break;
 		case ADC_GAIN_1:
-			config |= ADS1X1X_CONFIG(PGA, ADS1X1X_CONFIG_PGA_4096);
+			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_4096);
 			break;
 		case ADC_GAIN_2:
-			config |= ADS1X1X_CONFIG(PGA, ADS1X1X_CONFIG_PGA_2048);
+			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_2048);
 			break;
 		case ADC_GAIN_4:
-			config |= ADS1X1X_CONFIG(PGA, ADS1X1X_CONFIG_PGA_1024);
+			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_1024);
 			break;
 		case ADC_GAIN_8:
-			config |= ADS1X1X_CONFIG(PGA, ADS1X1X_CONFIG_PGA_512);
+			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_512);
 			break;
 		case ADC_GAIN_16:
-			config |= ADS1X1X_CONFIG(PGA, ADS1X1X_CONFIG_PGA_256);
+			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_256);
 			break;
 		default:
 			LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
@@ -420,10 +393,10 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	}
 
 	/* Only single shot supported */
-	config |= ADS1X1X_CONFIG(MODE, ADS1X1X_CONFIG_MODE_SINGLE_SHOT);
+	config |= ADS1X1X_CONFIG_MODE;
 
-	 /* disable comparator */
-	config |= ADS1X1X_CONFIG(COMP_QUE, ADS1X1X_CONFIG_COMP_QUEUE_NONE);
+	/* disable comparator */
+	config |= ADS1X1X_CONFIG_COMP_MODE;
 
 	return ads1x1x_write_reg(dev, ADS1X1X_REG_CONFIG, config);
 }
