@@ -1039,8 +1039,6 @@ int net_context_connect(struct net_context *context,
 
 		/* FIXME - Add multicast and broadcast address check */
 
-		addr4 = (struct sockaddr_in *)&context->remote;
-
 		memcpy(&addr4->sin_addr, &net_sin(addr)->sin_addr,
 		       sizeof(struct in_addr));
 
