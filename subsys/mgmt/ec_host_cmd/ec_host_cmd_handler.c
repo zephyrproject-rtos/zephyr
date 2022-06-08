@@ -19,8 +19,12 @@
 #define RX_HEADER_SIZE (sizeof(struct ec_host_cmd_request_header))
 #define TX_HEADER_SIZE (sizeof(struct ec_host_cmd_response_header))
 
-/** Used by host command handlers for their response before going over wire */
-uint8_t tx_buffer[CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER];
+/**
+ * Used by host command handlers for their response before going over wire.
+ * Host commands handlers will cast this to respective response structures that may have fields of
+ * uint32_t or uint64_t, so this buffer must be aligned to protect against the unaligned access.
+ */
+static uint8_t tx_buffer[CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER] __aligned(8);
 
 static uint8_t cal_checksum(const uint8_t *const buffer, const uint16_t size)
 {
@@ -134,15 +138,6 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 			continue;
 		}
 
-		/*
-		 * Ensure that RX/TX buffers are cleared between each host
-		 * command to ensure subsequent host command handlers cannot
-		 * read data from previous host command runs.
-		 */
-		memset(&rx.buf[rx_valid_data_size], 0,
-		       *rx.len - rx_valid_data_size);
-		memset(tx_buffer, 0, sizeof(tx_buffer));
-
 		struct ec_host_cmd_handler_args args = {
 			.input_buf = rx.buf + RX_HEADER_SIZE,
 			.input_buf_size = rx_header->data_len,
@@ -207,4 +202,4 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 
 K_THREAD_DEFINE(ec_host_cmd_handler_tid, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE,
 		handle_host_cmds_entry, NULL, NULL, NULL,
-		K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
+		CONFIG_EC_HOST_CMD_HANDLER_PRIO, 0, 0);
