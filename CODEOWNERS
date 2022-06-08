@@ -329,6 +329,8 @@
 /drivers/misc/ft8xx/                      @hubertmis
 /drivers/mm/                              @dcpleung
 /drivers/modem/hl7800.c                   @rerickson1
+/drivers/modem/Kconfig.ublox-sara-n310    @Jeff-H2 @alissakruiniger @sappigeninja
+/drivers/modem/ublox-sara-n310.c          @Jeff-H2 @alissakruiniger @sappigeninja
 /drivers/modem/simcom-sim7080.c           @lgehreke
 /drivers/modem/simcom-sim7080.h           @lgehreke
 /drivers/modem/Kconfig.hl7800             @rerickson1

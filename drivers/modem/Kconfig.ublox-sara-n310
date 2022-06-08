@@ -1,0 +1,30 @@
+# u-blox SARA N310 driver options
+
+# Copyright (c) 2021 Abel Sensors
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_UBLOX_SARA_N310
+	bool "Enable u-blox SARA N310 driver"
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select MODEM_IFACE_UART
+	select MODEM_SOCKET
+	select NET_OFFLOAD
+	select NET_SOCKETS_OFFLOAD
+	imply GPIO
+	help
+	  Choose this setting to enable u-blox SARA-N310
+	  driver.
+
+if MODEM_UBLOX_SARA_N310
+
+config MODEM_UBLOX_SARA_N310_INIT_PRIORITY
+	int "u-blox SARA-N310 driver init priority"
+	default 80
+	help
+	  u-blox SARA-N310 device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+endif # MODEM_UBLOX_SARA_N310

@@ -185,6 +185,7 @@ config MODEM_CELL_INFO
 	  Query for numerical operator id, location area code and cell id.
 
 source "drivers/modem/Kconfig.ublox-sara-r4"
+source "drivers/modem/Kconfig.ublox-sara-n310"
 source "drivers/modem/Kconfig.quectel-bg9x"
 source "drivers/modem/Kconfig.wncm14a2a"
 source "drivers/modem/Kconfig.gsm"

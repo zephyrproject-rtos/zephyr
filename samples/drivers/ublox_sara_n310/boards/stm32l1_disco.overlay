@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2021 Abel Sensors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SRAM and FLASH sizes are increased to match that of the stm32l152c */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(32)>;
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(256)>;
+};
+
+&usart2 {
+    status = "okay";
+    current-speed = <57600>;
+
+    saran310 {
+        compatible = "ublox,sara-n310";
+        label = "SARAN310";
+        mdm-power-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>; /* PC1 */
+        mdm-vint-gpios = <&gpioc 3 0>; /* PC3 */
+		mdm-last-gasp-gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>; /* PC2 */
+    };
+};

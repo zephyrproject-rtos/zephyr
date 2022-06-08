@@ -41,3 +41,8 @@ if (CONFIG_MODEM_SIM7080)
 	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 	zephyr_library_sources(simcom-sim7080.c)
 endif()
+
+if(CONFIG_MODEM_UBLOX_SARA_N310)
+	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
+	zephyr_library_sources(ublox-sara-n310.c)
+endif()
