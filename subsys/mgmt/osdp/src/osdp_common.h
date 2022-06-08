@@ -461,10 +461,8 @@ struct osdp_pd {
 	struct osdp_pd_id id;
 
 	/* PD state management */
-#ifdef CONFIG_OSDP_MODE_PD
-	enum osdp_pd_state_e state;
-#else
-	enum osdp_cp_state_e state;
+	int state;
+#ifdef CONFIG_OSDP_MODE_CP
 	enum osdp_cp_phy_state_e phy_state;
 	uint32_t wait_ms;
 	int64_t phy_tstamp;

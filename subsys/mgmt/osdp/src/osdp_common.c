@@ -165,6 +165,28 @@ void osdp_get_sc_status_mask(uint8_t *bitmask)
 
 #endif /* CONFIG_OSDP_SC_ENABLED */
 
+void osdp_get_status_mask(uint8_t *bitmask)
+{
+	int i, pos;
+	uint8_t *mask = bitmask;
+	struct osdp_pd *pd;
+	struct osdp *ctx = osdp_get_ctx();
+
+	*mask = 0;
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pos = i & 0x07;
+		if (i && pos == 0) {
+			mask++;
+			*mask = 0;
+		}
+		pd = osdp_to_pd(ctx, i);
+		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) ||
+		    pd->state == OSDP_CP_STATE_ONLINE) {
+			*mask |= 1 << pos;
+		}
+	}
+}
+
 void osdp_set_command_complete_callback(osdp_command_complete_callback_t cb)
 {
 	struct osdp *ctx = osdp_get_ctx();

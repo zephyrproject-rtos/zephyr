@@ -369,6 +369,14 @@ void osdp_cp_set_event_callback(cp_event_callback_t cb, void *arg);
 
 #endif /* CONFIG_OSDP_MODE_PD */
 
+/**
+ * @brief Get a bit mask of number of PD that are online currently.
+ *
+ * @param bitmask pointer to an array of bytes. must be as large as
+ *                (num_pds + 7 / 8).
+ */
+void osdp_get_status_mask(uint8_t *bitmask);
+
 #ifdef CONFIG_OSDP_SC_ENABLED
 
 /**
