@@ -20,21 +20,25 @@
  * @brief Arguments passed into every installed host command handler
  */
 struct ec_host_cmd_handler_args {
+	/** Reserved for compatibility. */
+	void *reserved;
+	/** Command identifier. */
+	uint16_t command;
+	/**
+	 * The version of the host command that is being requested. This will
+	 * be a value that has been static registered as valid for the handler.
+	 */
+	const uint8_t version;
 	/** The incoming data that can be cast to the handlers request type. */
 	const void *const input_buf;
 	/** The number of valid bytes that can be read from @a input_buf. */
 	const uint16_t input_buf_size;
 	/** The data written to this buffer will be send to the host. */
 	void *const output_buf;
-	/** [in/out] Upon entry, this is the maximum number of bytes that can
-	 *  be written to the @a output_buf. Upon exit, this should be
-	 *  the number of bytes of @a output_buf to send to the host.
-	 */
+	/** Maximum number of bytes that can be written to the @a output_buf. */
+	uint16_t output_buf_max;
+	/** Number of bytes of @a output_buf to send to the host. */
 	uint16_t output_buf_size;
-	/** The version of the host command that is being requested. This will
-	 *  be a value that has been static registered as valid for the handler.
-	 */
-	const uint8_t version;
 };
 
 typedef enum ec_host_cmd_status (*ec_host_cmd_handler_cb)(
@@ -69,15 +73,15 @@ struct ec_host_cmd_handler {
  * Helper macro to statically define and register a host command handler that
  * has a compile-time-fixed sizes for its both request and response structures.
  *
- * @param _function Name of handler function.
  * @param _id Id of host command to handle request for.
+ * @param _function Name of handler function.
  * @param _version_mask The bitfield of all versions that the @a _function
  *        supports. E.g. BIT(0) corresponds to version 0.
  * @param _request_type The datatype of the request parameters for @a _function.
  * @param _response_type The datatype of the response parameters for
  *        @a _function.
  */
-#define EC_HOST_CMD_HANDLER(_function, _id, _version_mask, _request_type,      \
+#define EC_HOST_CMD_HANDLER(_id, _function, _version_mask, _request_type,      \
 			    _response_type)                                    \
 	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {     \
 		.id = _id,                                                     \
@@ -94,12 +98,12 @@ struct ec_host_cmd_handler {
  * Helper macro to statically define and register a host command handler whose
  * request or response structure size is not known as compile time.
  *
- * @param _function Name of handler function.
  * @param _id Id of host command to handle request for.
+ * @param _function Name of handler function.
  * @param _version_mask The bitfield of all versions that the @a _function
  *        supports. E.g. BIT(0) corresponds to version 0.
  */
-#define EC_HOST_CMD_HANDLER_UNBOUND(_function, _id, _version_mask)             \
+#define EC_HOST_CMD_HANDLER_UNBOUND(_id, _function, _version_mask)             \
 	const STRUCT_SECTION_ITERABLE(ec_host_cmd_handler, __cmd##_id) = {     \
 		.id = _id,                                                     \
 		.handler = _function,                                          \
