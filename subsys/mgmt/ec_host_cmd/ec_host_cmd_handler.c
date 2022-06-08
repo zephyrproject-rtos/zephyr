@@ -139,11 +139,14 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 		}
 
 		struct ec_host_cmd_handler_args args = {
+			.reserved = NULL,
+			.command = rx_header->cmd_id,
+			.version = rx_header->cmd_ver,
 			.input_buf = rx.buf + RX_HEADER_SIZE,
 			.input_buf_size = rx_header->data_len,
 			.output_buf = tx_buffer + TX_HEADER_SIZE,
-			.output_buf_size = sizeof(tx_buffer) - TX_HEADER_SIZE,
-			.version = rx_header->cmd_ver,
+			.output_buf_max = sizeof(tx_buffer) - TX_HEADER_SIZE,
+			.output_buf_size = 0,
 		};
 
 		if (found_handler->min_rqt_size > args.input_buf_size) {
@@ -152,7 +155,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 			continue;
 		}
 
-		if (found_handler->min_rsp_size > args.output_buf_size) {
+		if (found_handler->min_rsp_size > args.output_buf_max) {
 			send_error_response(ec_host_cmd_dev,
 					    EC_HOST_CMD_INVALID_RESPONSE);
 			continue;

@@ -162,7 +162,7 @@ ec_host_cmd_add(struct ec_host_cmd_handler_args *args)
 	args->output_buf_size = sizeof(*response);
 	return EC_HOST_CMD_SUCCESS;
 }
-EC_HOST_CMD_HANDLER(ec_host_cmd_add, EC_CMD_HELLO, BIT(0) | BIT(1) | BIT(2),
+EC_HOST_CMD_HANDLER(EC_CMD_HELLO, ec_host_cmd_add, BIT(0) | BIT(1) | BIT(2),
 		    struct ec_params_add, struct ec_response_add);
 
 ZTEST(ec_host_cmd, test_add)
@@ -372,7 +372,7 @@ ec_host_cmd_unbounded(struct ec_host_cmd_handler_args *args)
 	}
 
 	/* Version 0 (and 2) write request bytes if it can fit */
-	if (request->bytes_to_write > args->output_buf_size) {
+	if (request->bytes_to_write > args->output_buf_max) {
 		return EC_HOST_CMD_OVERFLOW;
 	}
 
@@ -384,7 +384,7 @@ ec_host_cmd_unbounded(struct ec_host_cmd_handler_args *args)
 	args->output_buf_size = request->bytes_to_write;
 	return EC_HOST_CMD_SUCCESS;
 }
-EC_HOST_CMD_HANDLER_UNBOUND(ec_host_cmd_unbounded, EC_CMD_UNBOUNDED,
+EC_HOST_CMD_HANDLER_UNBOUND(EC_CMD_UNBOUNDED, ec_host_cmd_unbounded,
 			    BIT(0) | BIT(1) | BIT(2));
 
 ZTEST(ec_host_cmd, test_unbounded_handler_error_return)
@@ -421,7 +421,7 @@ ec_host_cmd_too_big(struct ec_host_cmd_handler_args *args)
 {
 	return EC_HOST_CMD_SUCCESS;
 }
-EC_HOST_CMD_HANDLER(ec_host_cmd_too_big, EC_CMD_TOO_BIG, BIT(0), uint32_t,
+EC_HOST_CMD_HANDLER(EC_CMD_TOO_BIG, ec_host_cmd_too_big, BIT(0), uint32_t,
 		    struct ec_response_too_big);
 
 ZTEST(ec_host_cmd, test_response_always_too_big)
