@@ -20,18 +20,23 @@ extern "C" {
 #define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
 #define OSDP_EVENT_MAX_DATALEN         64
 
+
+/* ------------------------------- */
+/*         OSDP Commands           */
+/* ------------------------------- */
+
 /**
  * @brief Command sent from CP to Control digital output of PD.
  *
  * @param output_no 0 = First Output, 1 = Second Output, etc.
  * @param control_code One of the following:
- *   0 - NOP – do not alter this output
- *   1 - set the permanent state to OFF, abort timed operation (if any)
- *   2 - set the permanent state to ON, abort timed operation (if any)
- *   3 - set the permanent state to OFF, allow timed operation to complete
- *   4 - set the permanent state to ON, allow timed operation to complete
- *   5 - set the temporary state to ON, resume perm state on timeout
- *   6 - set the temporary state to OFF, resume permanent state on timeout
+ *        0 - NOP – do not alter this output
+ *        1 - set the permanent state to OFF, abort timed operation (if any)
+ *        2 - set the permanent state to ON, abort timed operation (if any)
+ *        3 - set the permanent state to OFF, allow timed operation to complete
+ *        4 - set the permanent state to ON, allow timed operation to complete
+ *        5 - set the temporary state to ON, resume perm state on timeout
+ *        6 - set the temporary state to OFF, resume permanent state on timeout
  * @param timer_count Time in units of 100 ms
  */
 struct osdp_cmd_output {
@@ -56,14 +61,14 @@ enum osdp_led_color_e {
  * @brief LED params sub-structure. Part of LED command. See struct osdp_cmd_led
  *
  * @param control_code One of the following:
- * Temporary Control Code:
- *   0 - NOP - do not alter this LED's temporary settings
- *   1 - Cancel any temporary operation and display this LED's permanent state
- *       immediately
- *   2 - Set the temporary state as given and start timer immediately
- * Permanent Control Code:
- *   0 - NOP - do not alter this LED's permanent settings
- *   1 - Set the permanent state as given
+ *        Temporary Control Code:
+ *           0 - NOP - do not alter this LED's temporary settings
+ *           1 - Cancel any temporary operation and display this LED's permanent
+ *               state immediately
+ *           2 - Set the temporary state as given and start timer immediately
+ *        Permanent Control Code:
+ *           0 - NOP - do not alter this LED's permanent settings
+ *           1 - Set the permanent state as given
  * @param on_count The ON duration of the flash, in units of 100 ms
  * @param off_count The OFF duration of the flash, in units of 100 ms
  * @param on_color Color to set during the ON timer (enum osdp_led_color_e)
@@ -116,10 +121,10 @@ struct osdp_cmd_buzzer {
  *
  * @param reader 0 = First Reader, 1 = Second Reader, etc.
  * @param control_code One of the following:
- *   1 - permanent text, no wrap
- *   2 - permanent text, with wrap
- *   3 - temp text, no wrap
- *   4 - temp text, with wrap
+ *        1 - permanent text, no wrap
+ *        2 - permanent text, with wrap
+ *        3 - temp text, no wrap
+ *        4 - temp text, with wrap
  * @param temp_time duration to display temporary text, in seconds
  * @param offset_row row to display the first character (1 indexed)
  * @param offset_col column to display the first character (1 indexed)
@@ -141,8 +146,8 @@ struct osdp_cmd_text {
  * PD. Must be stored in PD non-volatile memory.
  *
  * @param address Unit ID to which this PD will respond after the change takes
- *             effect.
- * @param baud_rate baud rate value 9600/38400/115200
+ *        effect.
+ * @param baud_rate baud rate value 9600/19200/38400/115200/230400
  */
 struct osdp_cmd_comset {
 	uint8_t address;
@@ -192,14 +197,18 @@ struct osdp_cmd {
 	sys_snode_t node;
 	enum osdp_cmd_e id;
 	union {
-		struct osdp_cmd_led    led;
+		struct osdp_cmd_led led;
 		struct osdp_cmd_buzzer buzzer;
-		struct osdp_cmd_text   text;
+		struct osdp_cmd_text text;
 		struct osdp_cmd_output output;
 		struct osdp_cmd_comset comset;
 		struct osdp_cmd_keyset keyset;
 	};
 };
+
+/* ------------------------------- */
+/*          OSDP Events            */
+/* ------------------------------- */
 
 /**
  * @brief Various card formats that a PD can support. This is sent to CP
@@ -319,6 +328,10 @@ typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
  */
 typedef void (*osdp_command_complete_callback_t)(int id);
 
+/* ------------------------------- */
+/*            PD Methods           */
+/* ------------------------------- */
+
 #ifdef CONFIG_OSDP_MODE_PD
 
 /**
@@ -342,6 +355,10 @@ void osdp_pd_set_command_callback(pd_command_callback_t cb, void *arg);
 int osdp_pd_notify_event(struct osdp_event *event);
 
 #else /* CONFIG_OSDP_MODE_PD */
+
+/* ------------------------------- */
+/*            CP Methods           */
+/* ------------------------------- */
 
 /**
  * @brief Generic command enqueue API.
@@ -368,6 +385,10 @@ int osdp_cp_send_command(int pd, struct osdp_cmd *cmd);
 void osdp_cp_set_event_callback(cp_event_callback_t cb, void *arg);
 
 #endif /* CONFIG_OSDP_MODE_PD */
+
+/* ------------------------------- */
+/*          Common Methods         */
+/* ------------------------------- */
 
 /**
  * @brief Get a bit mask of number of PD that are online currently.
@@ -396,6 +417,7 @@ void osdp_get_sc_status_mask(uint8_t *bitmask);
  * such as changing the baud rate of the underlying channel after a COMSET
  * command was acknowledged/issued by a peer.
  *
+ * @param cb Callback to be invoked when a command is completed.
  */
 void osdp_set_command_complete_callback(osdp_command_complete_callback_t cb);
 
