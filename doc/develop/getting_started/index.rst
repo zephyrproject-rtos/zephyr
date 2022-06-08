@@ -627,12 +627,6 @@ that are used to emulate, flash and debug Zephyr applications.
             You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
             the initial setup.
 
-.. note::
-
-   You might need to set the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` and
-   :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variables. See the
-   :ref:`toolchain_zephyr_sdk` section for details.
-
 .. _getting_started_run_sample:
 
 .. rst-class:: numbered-step
@@ -713,6 +707,24 @@ Here are some next steps for exploring Zephyr:
 * Check out :ref:`beyond-GSG` for additional setup alternatives and ideas
 * Discover :ref:`project-resources` for getting help from the Zephyr
   community
+
+.. _troubleshooting_installation:
+
+Troubleshooting Installation
+****************************
+
+Here are some tips for fixing some issues related to the installation process.
+
+.. _toolchain_zephyr_sdk_update:
+
+Double Check the Zephyr SDK Variables When Updating
+===================================================
+
+When updating Zephyr SDK, check whether the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`
+or :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variables are already set.
+See :ref:`gs_toolchain_update` for more information.
+
+For more information about these environment variables in Zephyr, see :ref:`env_vars_important`.
 
 .. _help:
 
