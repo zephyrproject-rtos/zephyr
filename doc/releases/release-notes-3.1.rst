@@ -1222,7 +1222,7 @@ Known bugs
 - :github:`45675` - testing.ztest.customized_output: mismatch twister results in json/xml file
 - :github:`45678` - Lorawan: Devnonce has already been used
 - :github:`45760` - Running twister on new board files
-- :github:`45774` - drivers: gpio: pca9555: Driver is writting to output port despite all pins been configured as input
+- :github:`45774` - drivers: gpio: pca9555: Driver is writing to output port despite all pins having been configured as input
 - :github:`45802` - Some tests reported as PASSED (device) but they were only build
 - :github:`45807` - CivetWeb doesn't build for CC3232SF
 - :github:`45814` - Armclang build fails due to missing source file
