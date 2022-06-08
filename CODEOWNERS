@@ -216,6 +216,7 @@
 /drivers/*/*andes*                        @cwshu @kevinwang821020 @jimmyzhe
 /drivers/*/*neorv32*                      @henrikbrixandersen
 /drivers/adc/                             @anangl
+/drivers/adc/adc_ads1x1x.c                @XenuIsWatching
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/audio/*nrfx*                     @anangl
 /drivers/bbram/*                          @yperess @sjg20 @jackrosenthal
