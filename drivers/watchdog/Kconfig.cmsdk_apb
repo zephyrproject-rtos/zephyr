@@ -5,7 +5,6 @@
 
 config WDOG_CMSDK_APB
 	bool "CMSDK APB Watchdog Driver for ARM family of MCUs"
-	depends on SOC_FAMILY_ARM
 	depends on RUNTIME_NMI
 	help
 	  Enable CMSDK APB Watchdog (WDOG_CMSDK_APB) Driver for ARM
