@@ -143,6 +143,7 @@
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
 	status = "okay";
+	vref-mv = <3300>;
 };
 
 &dac1 {
