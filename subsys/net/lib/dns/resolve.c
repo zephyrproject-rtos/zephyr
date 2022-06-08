@@ -1000,7 +1000,7 @@ static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
 unlock:
 	k_mutex_unlock(&ctx->lock);
 
-	return 0;
+	return ret;
 }
 
 int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
