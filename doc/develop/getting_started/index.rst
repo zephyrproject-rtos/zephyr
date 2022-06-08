@@ -234,6 +234,12 @@ reason it is suggested to use `Python virtual environments`_.
 
          .. group-tab:: Install within virtual environment
 
+            #. Use ``apt`` to install Python ``venv`` package:
+
+               .. code-block:: bash
+
+                  sudo apt install python3-venv
+
             #. Create a new virtual environment:
 
                .. code-block:: bash
