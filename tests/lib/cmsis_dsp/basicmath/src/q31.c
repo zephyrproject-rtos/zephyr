@@ -425,6 +425,8 @@ static void test_arm_clip_q31(
 
 	/* Free output buffer */
 	free(output);
+
+	/* Dummy change */
 }
 
 DEFINE_TEST_VARIANT5(basic_math_q31, arm_clip_q31, c0000000_f3333333, in_clip, ref_clip1,
