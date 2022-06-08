@@ -6,7 +6,6 @@
 menuconfig GPIO_MCP23S17
 	bool "MCP23S17 SPI-based GPIO chip"
 	depends on SPI
-	select HAS_DTS_GPIO
 	help
 	  Enable driver for MCP23S17 SPI-based GPIO chip.
 
