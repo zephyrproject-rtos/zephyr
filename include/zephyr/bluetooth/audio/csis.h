@@ -50,6 +50,9 @@ extern "C" {
 /** Size of the Set Identification Resolving Key (SIRK) */
 #define BT_CSIS_SET_SIRK_SIZE 16
 
+/** Size of the Resolvable Set Identifier (RSI) */
+#define BT_CSIS_RSI_SIZE                        6
+
 /* Coordinate Set Identification Service Error codes */
 /** Service is already locked */
 #define BT_CSIS_ERROR_LOCK_DENIED               0x80
@@ -93,6 +96,15 @@ struct bt_csis_cb {
 	 * @return A BT_CSIS_READ_SIRK_REQ_RSP_* response code.
 	 */
 	uint8_t (*sirk_read_req)(struct bt_conn *conn, struct bt_csis *csis);
+
+	/**
+	 * @brief Callback whenever the RSI changes.
+	 *
+	 * If this callback is not set, the stack will handle advertising of the RSI.
+	 *
+	 * @param rsi Pointer to the new 6-octet RSI data to be advertised.
+	 */
+	void (*rsi_changed)(const uint8_t rsi[BT_CSIS_RSI_SIZE]);
 };
 
 /** Register structure for Coordinated Set Identification Service */

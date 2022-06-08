@@ -16,8 +16,8 @@
 /**
  * @brief Private Set Unique identifier hash function sih.
  *
- * The PSRI hash function sih is used to generate a hash value that is
- * used in PSRIs - Used by the Coordinated Set Identification service and
+ * The RSI hash function sih is used to generate a hash value that is
+ * used in RSIs - Used by the Coordinated Set Identification service and
  * profile.
  *
  * @param sirk The 16-byte SIRK

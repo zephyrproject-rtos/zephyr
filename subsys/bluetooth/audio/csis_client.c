@@ -643,7 +643,7 @@ bool bt_csis_client_is_set_member(uint8_t set_sirk[BT_CSIS_SET_SIRK_SIZE],
 				  struct bt_data *data)
 {
 	if (data->type == BT_DATA_CSIS_RSI &&
-	    data->data_len == BT_CSIS_PSRI_SIZE) {
+	    data->data_len == BT_CSIS_RSI_SIZE) {
 		uint8_t err;
 
 		uint32_t hash = sys_get_le24(data->data);
