@@ -152,6 +152,7 @@ ARM64 arch:
     collaborators:
         - npitre
         - povergoing
+        - sgrrzhf
     files:
         - arch/arm64/
         - include/zephyr/arch/arm64/
