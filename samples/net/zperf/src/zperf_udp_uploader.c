@@ -20,7 +20,7 @@ static uint8_t sample_packet[sizeof(struct zperf_udp_datagram) +
 			     sizeof(struct zperf_client_hdr_v1) +
 			     PACKET_SIZE_MAX];
 
-static inline void zperf_upload_decode_stat(const struct shell *shell,
+static inline void zperf_upload_decode_stat(const struct shell *sh,
 					    const uint8_t *data,
 					    size_t datalen,
 					    struct zperf_results *results)
@@ -29,7 +29,7 @@ static inline void zperf_upload_decode_stat(const struct shell *shell,
 
 	if (datalen < sizeof(struct zperf_udp_datagram) +
 		      sizeof(struct zperf_server_hdr)) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Network packet too short\n");
 	}
 
@@ -47,7 +47,7 @@ static inline void zperf_upload_decode_stat(const struct shell *shell,
 		ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
 }
 
-static inline void zperf_upload_fin(const struct shell *shell,
+static inline void zperf_upload_fin(const struct shell *sh,
 				    int sock,
 				    uint32_t nb_packets,
 				    uint64_t end_time,
@@ -94,7 +94,7 @@ static inline void zperf_upload_fin(const struct shell *shell,
 		/* Send the packet */
 		ret = send(sock, sample_packet, packet_size, 0);
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",
 				      errno);
 			continue;
@@ -104,7 +104,7 @@ static inline void zperf_upload_fin(const struct shell *shell,
 		ret = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &rcvtimeo,
 				 sizeof(rcvtimeo));
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "setsockopt error (%d)\n",
 				      errno);
 			continue;
@@ -112,10 +112,10 @@ static inline void zperf_upload_fin(const struct shell *shell,
 
 		ret = recv(sock, stats, sizeof(stats), 0);
 		if (ret == -EAGAIN) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 					"Stats receive timeout\n");
 		} else if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 					"Failed to receive packet (%d)\n",
 					errno);
 		}
@@ -123,7 +123,7 @@ static inline void zperf_upload_fin(const struct shell *shell,
 
 	/* Decode statistics */
 	if (ret > 0) {
-		zperf_upload_decode_stat(shell, stats, ret, results);
+		zperf_upload_decode_stat(sh, stats, ret, results);
 	}
 
 	/* Drain RX */
@@ -133,12 +133,12 @@ static inline void zperf_upload_fin(const struct shell *shell,
 			break;
 		}
 
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Drain one spurious stat packet!\n");
 	}
 }
 
-void zperf_udp_upload(const struct shell *shell,
+void zperf_udp_upload(const struct shell *sh,
 		      int sock,
 		      int port,
 		      unsigned int duration_in_ms,
@@ -157,23 +157,23 @@ void zperf_udp_upload(const struct shell *shell,
 	int64_t remaining, print_info;
 
 	if (packet_size > PACKET_SIZE_MAX) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Packet size too large! max size: %u\n",
 			      PACKET_SIZE_MAX);
 		packet_size = PACKET_SIZE_MAX;
 	} else if (packet_size < sizeof(struct zperf_udp_datagram)) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Packet size set to the min size: %zu\n",
 			      sizeof(struct zperf_udp_datagram));
 		packet_size = sizeof(struct zperf_udp_datagram);
 	}
 
 	if (packet_duration > 1000U) {
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "Packet duration %u ms\n",
 			      (unsigned int)(packet_duration / 1000U));
 	} else {
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "Packet duration %u us\n",
 			      (unsigned int)packet_duration);
 	}
@@ -240,7 +240,7 @@ void zperf_udp_upload(const struct shell *shell,
 		/* Send the packet */
 		ret = send(sock, sample_packet, packet_size, 0);
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",
 				      errno);
 			break;
@@ -251,7 +251,7 @@ void zperf_udp_upload(const struct shell *shell,
 		/* Print log every seconds */
 		print_info = print_interval - k_uptime_ticks();
 		if (print_info <= 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				    "nb_packets=%u\tdelay=%u\tadjust=%d\n",
 				      nb_packets, (unsigned int)delay,
 				      (int)adjust);
@@ -276,7 +276,7 @@ void zperf_udp_upload(const struct shell *shell,
 
 	end_time = k_uptime_ticks();
 
-	zperf_upload_fin(shell, sock, nb_packets, end_time, packet_size,
+	zperf_upload_fin(sh, sock, nb_packets, end_time, packet_size,
 			 results);
 
 	/* Add result coming from the client */
