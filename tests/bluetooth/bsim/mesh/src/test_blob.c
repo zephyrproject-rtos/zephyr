@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define SYNC_CHAN 0
 #define CLI_DEV 0
 #define SRV1_DEV 1
+#define IMPOSTER_MODEL_ID 0xe000
 
 static bool is_pull_mode;
 
@@ -163,10 +164,12 @@ static void blob_cli_suspended(struct bt_mesh_blob_cli *b)
 }
 
 static struct k_sem blob_cli_end_sem;
+static bool cli_end_success;
 
 static void blob_cli_end(struct bt_mesh_blob_cli *b, const struct bt_mesh_blob_xfer *xfer,
 			 bool success)
 {
+	cli_end_success = success;
 	k_sem_give(&blob_cli_end_sem);
 }
 
@@ -301,7 +304,7 @@ static void blob_srv_prov_and_conf(uint16_t addr)
 
 	err = bt_mesh_cfg_cli_mod_app_bind(0, addr, addr, 0, BT_MESH_MODEL_ID_BLOB_SRV, &status);
 	if (err || status) {
-		FAIL("Model %#4x bind failed (err %d, status %u)", BT_MESH_MODEL_ID_BLOB_CLI, err,
+		FAIL("Model %#4x bind failed (err %d, status %u)", BT_MESH_MODEL_ID_BLOB_SRV, err,
 		     status);
 		return;
 	}
@@ -309,7 +312,7 @@ static void blob_srv_prov_and_conf(uint16_t addr)
 	err = bt_mesh_cfg_cli_mod_sub_add(0, addr, addr, BLOB_GROUP_ADDR, BT_MESH_MODEL_ID_BLOB_SRV,
 					  &status);
 	if (err || status) {
-		FAIL("Model %#4x sub add failed (err %d, status %u)", BT_MESH_MODEL_ID_BLOB_CLI,
+		FAIL("Model %#4x sub add failed (err %d, status %u)", BT_MESH_MODEL_ID_BLOB_SRV,
 		     err, status);
 		return;
 	}
@@ -1011,6 +1014,173 @@ static void test_srv_trans_resume(void)
 	PASS();
 }
 
+/* Makes device unresponsive after I/O is opened */
+static int fail_on_io_open(const struct bt_mesh_blob_io *io,
+			const struct bt_mesh_blob_xfer *xfer,
+			enum bt_mesh_blob_io_mode mode)
+{
+	bt_mesh_scan_disable();
+	return 0;
+}
+
+/* Makes device unresponsive after receiving block start msg */
+static int fail_on_block_start(const struct bt_mesh_blob_io *io,
+			 const struct bt_mesh_blob_xfer *xfer,
+		     const struct bt_mesh_blob_block *block)
+{
+	bt_mesh_scan_disable();
+	return 0;
+}
+
+static void test_cli_fail_on_persistency(void)
+{
+	int err;
+
+	tm_set_phy_max_resync_offset(100000);
+	bt_mesh_test_cfg_set(NULL, 800);
+	bt_mesh_device_setup(&prov, &cli_comp);
+	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	/** Test that Push mode BLOB transfer persists as long as at
+	 * least one target is still active. During the test multiple
+	 * servers will become unresponsive at different phases of the
+	 * transfer:
+	 * - Srv 0x0002 will not respond to Block start msg.
+	 * - Srv 0x0003 will not respond to Block get msg.
+	 * - Srv 0x0004 will not respond to Xfer get msg.
+	 * - Srv 0x0005 is responsive all the way
+	 * - Srv 0x0006 is a non-existing unresponsive node
+	 */
+	(void)target_srv_add(BLOB_CLI_ADDR + 1, true);
+	(void)target_srv_add(BLOB_CLI_ADDR + 2, true);
+	(void)target_srv_add(BLOB_CLI_ADDR + 3, true);
+	(void)target_srv_add(BLOB_CLI_ADDR + 4, false);
+	(void)target_srv_add(BLOB_CLI_ADDR + 5, true);
+
+	k_sem_init(&blob_caps_sem, 0, 1);
+	k_sem_init(&lost_target_sem, 0, 1);
+	k_sem_init(&blob_cli_end_sem, 0, 1);
+	k_sem_init(&blob_cli_suspend_sem, 0, 1);
+
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+	blob_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 1;
+	blob_cli_xfer.xfer.id = 1;
+	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.chunk_size = 377;
+	blob_cli_xfer.inputs.timeout_base = 10;
+
+	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
+				    &blob_cli_xfer.xfer, &blob_io);
+	if (err) {
+		FAIL("BLOB send failed (err: %d)", err);
+	}
+
+	if (k_sem_take(&blob_cli_end_sem, K_SECONDS(750))) {
+		FAIL("Lost targets CB did not trigger for all expected lost targets");
+	}
+
+	ASSERT_TRUE(cli_end_success);
+
+	if (k_sem_take(&lost_target_sem, K_NO_WAIT)) {
+		FAIL("Lost targets CB did not trigger for all expected lost targets");
+	}
+
+	PASS();
+}
+
+static void common_fail_on_srv_init(const struct bt_mesh_comp *comp)
+{
+	tm_set_phy_max_resync_offset(100000);
+
+	bt_mesh_test_cfg_set(NULL, 800);
+	bt_mesh_device_setup(&prov, comp);
+	blob_srv_prov_and_conf(bt_mesh_test_own_addr_get(BLOB_CLI_ADDR));
+
+	k_sem_init(&first_block_wr_sem, 0, 1);
+	k_sem_init(&blob_srv_end_sem, 0, 1);
+	k_sem_init(&blob_srv_suspend_sem, 0, 1);
+}
+
+static void test_srv_fail_on_block_start(void)
+{
+	common_fail_on_srv_init(&srv_comp);
+
+	static const struct bt_mesh_blob_io io = {
+		.open = fail_on_io_open,
+		.rd = blob_chunk_rd,
+		.wr = blob_chunk_wr,
+	};
+
+	bt_mesh_blob_srv_recv(&blob_srv, 1, &io, 0, 1);
+
+	PASS();
+}
+
+static void test_srv_fail_on_block_get(void)
+{
+	common_fail_on_srv_init(&srv_comp);
+
+	static const struct bt_mesh_blob_io io = {
+		.open = blob_io_open,
+		.rd = blob_chunk_rd,
+		.wr = blob_chunk_wr,
+		.block_start = fail_on_block_start,
+	};
+
+	bt_mesh_blob_srv_recv(&blob_srv, 1, &io, 0, 1);
+
+	PASS();
+}
+
+static int dummy_xfer_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+				struct net_buf_simple *buf)
+{
+	return 0;
+}
+
+static const struct bt_mesh_model_op model_op2[] = {
+	{ BT_MESH_BLOB_OP_XFER_GET, 0, dummy_xfer_get },
+	BT_MESH_MODEL_OP_END
+};
+
+/** Composition data for BLOB server where we intercept the
+ * BT_MESH_BLOB_OP_XFER_GET message handler through an imposter
+ * model. This is done to emulate a BLOB server that becomes
+ * unresponsive at the later stage of a BLOB transfer.
+ */
+static const struct bt_mesh_comp srv_broken_comp = {
+	.elem =
+		(struct bt_mesh_elem[]){
+			BT_MESH_ELEM(1,
+				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
+						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
+								 model_op2, NULL, NULL, NULL),
+						BT_MESH_MODEL_BLOB_SRV(&blob_srv)),
+				     BT_MESH_MODEL_NONE),
+		},
+	.elem_count = 1,
+};
+
+static void test_srv_fail_on_xfer_get(void)
+{
+	common_fail_on_srv_init(&srv_broken_comp);
+
+	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 5);
+
+	PASS();
+}
+
+static void test_srv_fail_on_nothing(void)
+{
+	common_fail_on_srv_init(&srv_comp);
+
+	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 5);
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "blob_" #role "_" #name,          \
@@ -1030,10 +1200,15 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(cli, broadcast_unicast_seq, "Test broadcast with unicast addr (Sequential)"),
 	TEST_CASE(cli, broadcast_unicast, "Test broadcast with unicast addr"),
 	TEST_CASE(cli, trans_resume, "Resume BLOB transfer after srv suspension (Default: Push)"),
+	TEST_CASE(cli, fail_on_persistency, "BLOB Client doesn't give up BLOB Transfer"),
 
 	TEST_CASE(srv, caps_standard, "Standard responsive blob server"),
 	TEST_CASE(srv, caps_no_rsp, "Non-responsive blob server"),
 	TEST_CASE(srv, trans_resume, "Self suspending server after first received block"),
+	TEST_CASE(srv, fail_on_block_start, "Server failing right before first block start msg"),
+	TEST_CASE(srv, fail_on_block_get, "Server failing right before first block get msg"),
+	TEST_CASE(srv, fail_on_xfer_get, "Server failing right before first xfer get msg"),
+	TEST_CASE(srv, fail_on_nothing, "Non-failing server"),
 
 	BSTEST_END_MARKER
 };
