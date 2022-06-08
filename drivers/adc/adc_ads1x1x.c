@@ -299,8 +299,7 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("unsupported channel reference type '%d'",
-			channel_cfg->reference);
+		LOG_ERR("unsupported channel reference type '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 
@@ -341,7 +340,7 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	} else {
 		/* only differential supported without multiplexer */
 		if (!((channel_cfg->differential) &&
-			  (channel_cfg->input_positive == 0 && channel_cfg->input_negative == 1))) {
+		      (channel_cfg->input_positive == 0 && channel_cfg->input_negative == 1))) {
 			LOG_ERR("unsupported input positive '%d' and input negative '%d'",
 				channel_cfg->input_positive, channel_cfg->input_negative);
 			return -ENOTSUP;
@@ -581,21 +580,21 @@ static const struct adc_driver_api ads1x1x_api = {
 
 #define DT_INST_ADS1X1X(inst, t) DT_INST(inst, ti_ads##t)
 
-#define ADS1X1X_INIT(t, n, odr_delay_us, res, mux, pgab) \
-	static const struct ads1x1x_config ads##t##_config_##n = { \
-		.bus = I2C_DT_SPEC_GET(DT_INST_ADS1X1X(n, t)), \
-		.odr_delay = odr_delay_us, \
-		.resolution = res, \
-		.multiplexer = mux, \
-		.pga = pgab, \
-	}; \
-	static struct ads1x1x_data ads##t##_data_##n = { \
-		ADC_CONTEXT_INIT_LOCK(ads##t##_data_##n, ctx), \
-		ADC_CONTEXT_INIT_TIMER(ads##t##_data_##n, ctx), \
-		ADC_CONTEXT_INIT_SYNC(ads##t##_data_##n, ctx), \
-	}; \
-	DEVICE_DT_DEFINE(DT_INST_ADS1X1X(n, t), ads1x1x_init, NULL, &ads##t##_data_##n, \
-			 &ads##t##_config_##n, POST_KERNEL, CONFIG_ADC_ADS1X1X_INIT_PRIORITY, \
+#define ADS1X1X_INIT(t, n, odr_delay_us, res, mux, pgab)                                           \
+	static const struct ads1x1x_config ads##t##_config_##n = {                                 \
+		.bus = I2C_DT_SPEC_GET(DT_INST_ADS1X1X(n, t)),                                     \
+		.odr_delay = odr_delay_us,                                                         \
+		.resolution = res,                                                                 \
+		.multiplexer = mux,                                                                \
+		.pga = pgab,                                                                       \
+	};                                                                                         \
+	static struct ads1x1x_data ads##t##_data_##n = {                                           \
+		ADC_CONTEXT_INIT_LOCK(ads##t##_data_##n, ctx),                                     \
+		ADC_CONTEXT_INIT_TIMER(ads##t##_data_##n, ctx),                                    \
+		ADC_CONTEXT_INIT_SYNC(ads##t##_data_##n, ctx),                                     \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(DT_INST_ADS1X1X(n, t), ads1x1x_init, NULL, &ads##t##_data_##n,            \
+			 &ads##t##_config_##n, POST_KERNEL, CONFIG_ADC_ADS1X1X_INIT_PRIORITY,      \
 			 &ads1x1x_api);
 
 /* The ADS111X provides 16 bits of data in binary two's complement format
@@ -611,9 +610,9 @@ static const struct adc_driver_api ads1x1x_api = {
  * used for the initial delay when polling for data ready.
  * {8 SPS, 16 SPS, 32 SPS, 64 SPS, 128 SPS (default), 250 SPS, 475 SPS, 860 SPS}
  */
-#define ADS111X_ODR_DELAY_US \
-	{ \
-		125000, 62500, 31250, 15625, 7813, 4000, 2105, 1163 \
+#define ADS111X_ODR_DELAY_US                                                                       \
+	{                                                                                          \
+		125000, 62500, 31250, 15625, 7813, 4000, 2105, 1163                                \
 	}
 
 /*
@@ -635,7 +634,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1114_INIT)
 /*
  * ADS1113: 16 bit, no multiplexer, no programmable gain amplifier
  */
-#define ADS1113_INIT(n) \
+#define ADS1113_INIT(n)                                                                            \
 	ADS1X1X_INIT(1113, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, false, false)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1113
@@ -654,9 +653,9 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
  * used for the initial delay when polling for data ready.
  * {128 SPS, 250 SPS, 490 SPS, 920 SPS, 1600 SPS (default), 2400 SPS, 3300 SPS, 3300 SPS}
  */
-#define ADS101X_ODR_DELAY_US \
-	{ \
-		7813, 4000, 2041, 1087, 625, 417, 303, 303 \
+#define ADS101X_ODR_DELAY_US                                                                       \
+	{                                                                                          \
+		7813, 4000, 2041, 1087, 625, 417, 303, 303                                         \
 	}
 
 /*
@@ -678,7 +677,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1014_INIT)
 /*
  * ADS1013: 12 bit, no multiplexer, no programmable gain amplifier
  */
-#define ADS1013_INIT(n) \
+#define ADS1013_INIT(n)                                                                            \
 	ADS1X1X_INIT(1013, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, false, false)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1013
