@@ -415,69 +415,6 @@ ZTEST(ec_host_cmd, test_unbounded_handler_response_too_big)
 	verify_tx_error(EC_HOST_CMD_INVALID_RESPONSE);
 }
 
-ZTEST(ec_host_cmd, test_rx_buffer_cleared_foreach_hostcommand)
-{
-	host_to_dut->header.prtcl_ver = 3;
-	host_to_dut->header.cmd_id = EC_CMD_UNBOUNDED;
-	host_to_dut->header.cmd_ver = 2;
-	host_to_dut->header.reserved = 0;
-	host_to_dut->header.data_len = sizeof(host_to_dut->unbounded);
-	host_to_dut->unbounded.bytes_to_write = 5;
-
-	/* Write data after the entire request message. The host command handler
-	 * always assert that this data is cleared upon receipt.
-	 */
-	host_to_dut->raw[4] = 42;
-
-	simulate_rx_data();
-
-	expected_dut_to_host->header.prtcl_ver = 3;
-	expected_dut_to_host->header.result = 0;
-	expected_dut_to_host->header.reserved = 0;
-	expected_dut_to_host->header.data_len = 5;
-	expected_dut_to_host->raw[0] = 0;
-	expected_dut_to_host->raw[1] = 1;
-	expected_dut_to_host->raw[2] = 2;
-	expected_dut_to_host->raw[3] = 3;
-	expected_dut_to_host->raw[4] = 4;
-
-	verify_tx_data();
-}
-
-ZTEST(ec_host_cmd, test_tx_buffer_cleared_foreach_hostcommand)
-{
-	host_to_dut->header.prtcl_ver = 3;
-	host_to_dut->header.cmd_id = EC_CMD_UNBOUNDED;
-	host_to_dut->header.cmd_ver = 2;
-	host_to_dut->header.reserved = 0;
-	host_to_dut->header.data_len = sizeof(host_to_dut->unbounded);
-	host_to_dut->unbounded.bytes_to_write = 5;
-
-	simulate_rx_data();
-
-	expected_dut_to_host->header.prtcl_ver = 3;
-	expected_dut_to_host->header.result = 0;
-	expected_dut_to_host->header.reserved = 0;
-	expected_dut_to_host->header.data_len = 5;
-	expected_dut_to_host->raw[0] = 0;
-	expected_dut_to_host->raw[1] = 1;
-	expected_dut_to_host->raw[2] = 2;
-	expected_dut_to_host->raw[3] = 3;
-	expected_dut_to_host->raw[4] = 4;
-
-	verify_tx_data();
-
-	/* Send second command with less bytes to write. Host command handler
-	 * asserts that the previous output data is zero.
-	 */
-
-	host_to_dut->unbounded.bytes_to_write = 2;
-	simulate_rx_data();
-
-	expected_dut_to_host->header.data_len = 2;
-	verify_tx_data();
-}
-
 #define EC_CMD_TOO_BIG 0x0003
 static enum ec_host_cmd_status
 ec_host_cmd_too_big(struct ec_host_cmd_handler_args *args)
