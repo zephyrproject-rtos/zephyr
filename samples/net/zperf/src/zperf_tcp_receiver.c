@@ -49,7 +49,7 @@ static bool init_done;
 K_THREAD_STACK_DEFINE(tcp_receiver_stack_area, TCP_RECEIVER_STACK_SIZE);
 struct k_thread tcp_receiver_thread_data;
 
-static void tcp_received(const struct shell *shell, int sock, size_t datalen)
+static void tcp_received(const struct shell *sh, int sock, size_t datalen)
 {
 	struct session *session;
 	int64_t time;
@@ -58,7 +58,7 @@ static void tcp_received(const struct shell *shell, int sock, size_t datalen)
 
 	session = get_tcp_session(sock);
 	if (!session) {
-		shell_fprintf(shell, SHELL_WARNING, "Cannot get a session!\n");
+		shell_fprintf(sh, SHELL_WARNING, "Cannot get a session!\n");
 		return;
 	}
 
@@ -66,7 +66,7 @@ static void tcp_received(const struct shell *shell, int sock, size_t datalen)
 	case STATE_COMPLETED:
 		break;
 	case STATE_NULL:
-		shell_fprintf(shell, SHELL_NORMAL,
+		shell_fprintf(sh, SHELL_NORMAL,
 			      "New TCP session started\n");
 		zperf_reset_session_stats(session);
 		session->start_time = k_uptime_ticks();
@@ -95,17 +95,17 @@ static void tcp_received(const struct shell *shell, int sock, size_t datalen)
 				rate_in_kbps = 0U;
 			}
 
-			shell_fprintf(shell, SHELL_NORMAL,
+			shell_fprintf(sh, SHELL_NORMAL,
 				      "TCP session ended\n");
 
-			shell_fprintf(shell, SHELL_NORMAL,
+			shell_fprintf(sh, SHELL_NORMAL,
 				      " Duration:\t\t");
-			print_number(shell, duration, TIME_US, TIME_US_UNIT);
-			shell_fprintf(shell, SHELL_NORMAL, "\n");
+			print_number(sh, duration, TIME_US, TIME_US_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
 
-			shell_fprintf(shell, SHELL_NORMAL, " rate:\t\t\t");
-			print_number(shell, rate_in_kbps, KBPS, KBPS_UNIT);
-			shell_fprintf(shell, SHELL_NORMAL, "\n");
+			shell_fprintf(sh, SHELL_NORMAL, " rate:\t\t\t");
+			print_number(sh, rate_in_kbps, KBPS, KBPS_UNIT);
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 			zperf_tcp_stopped();
 
@@ -117,7 +117,7 @@ static void tcp_received(const struct shell *shell, int sock, size_t datalen)
 	case STATE_LAST_PACKET_RECEIVED:
 		break;
 	default:
-		shell_fprintf(shell, SHELL_WARNING, "Unsupported case\n");
+		shell_fprintf(sh, SHELL_WARNING, "Unsupported case\n");
 	}
 }
 
@@ -126,7 +126,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 	ARG_UNUSED(ptr3);
 
 	static uint8_t buf[TCP_RECEIVER_BUF_SIZE];
-	const struct shell *shell = ptr1;
+	const struct shell *sh = ptr1;
 	int port = POINTER_TO_INT(ptr2);
 	struct pollfd fds[SOCK_ID_MAX] = { 0 };
 	int ret;
@@ -143,17 +143,17 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 		fds[SOCK_ID_IPV4_LISTEN].fd = socket(AF_INET, SOCK_STREAM,
 						     IPPROTO_TCP);
 		if (fds[SOCK_ID_IPV4_LISTEN].fd < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot create IPv4 network socket.\n");
 			goto cleanup;
 		}
 
 		if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
 			/* Use Setting IP */
-			ret = zperf_get_ipv4_addr(shell, MY_IP4ADDR,
+			ret = zperf_get_ipv4_addr(sh, MY_IP4ADDR,
 						  &in4_addr_my->sin_addr);
 			if (ret < 0) {
-				shell_fprintf(shell, SHELL_WARNING,
+				shell_fprintf(sh, SHELL_WARNING,
 					      "Unable to set IPv4\n");
 				goto use_existing_ipv4;
 			}
@@ -162,7 +162,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			/* Use existing IP */
 			in4_addr = zperf_get_default_if_in4_addr();
 			if (!in4_addr) {
-				shell_fprintf(shell, SHELL_WARNING,
+				shell_fprintf(sh, SHELL_WARNING,
 					      "Unable to get IPv4 by default\n");
 				return;
 			}
@@ -172,14 +172,14 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 
 		in4_addr_my->sin_port = htons(port);
 
-		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
+		shell_fprintf(sh, SHELL_NORMAL, "Binding to %s\n",
 			      net_sprint_ipv4_addr(&in4_addr_my->sin_addr));
 
 		ret = bind(fds[SOCK_ID_IPV4_LISTEN].fd,
 			   (struct sockaddr *)in4_addr_my,
 			   sizeof(struct sockaddr_in));
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot bind IPv4 UDP port %d (%d)\n",
 				      ntohs(in4_addr_my->sin_port),
 				      errno);
@@ -188,7 +188,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 
 		ret = listen(fds[SOCK_ID_IPV4_LISTEN].fd, 1);
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot listen IPv4 TCP (%d)", errno);
 			goto cleanup;
 		}
@@ -204,18 +204,18 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 		fds[SOCK_ID_IPV6_LISTEN].fd = socket(AF_INET6, SOCK_STREAM,
 						     IPPROTO_TCP);
 		if (fds[SOCK_ID_IPV6_LISTEN].fd < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot create IPv6 network socket.\n");
 			goto cleanup;
 		}
 
 		if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
 			/* Use Setting IP */
-			ret = zperf_get_ipv6_addr(shell, MY_IP6ADDR,
+			ret = zperf_get_ipv6_addr(sh, MY_IP6ADDR,
 						  MY_PREFIX_LEN_STR,
 						  &in6_addr_my->sin6_addr);
 			if (ret < 0) {
-				shell_fprintf(shell, SHELL_WARNING,
+				shell_fprintf(sh, SHELL_WARNING,
 					      "Unable to set IPv6\n");
 				goto use_existing_ipv6;
 			}
@@ -224,7 +224,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			/* Use existing IP */
 			in6_addr = zperf_get_default_if_in6_addr();
 			if (!in6_addr) {
-				shell_fprintf(shell, SHELL_WARNING,
+				shell_fprintf(sh, SHELL_WARNING,
 					      "Unable to get IPv4 by default\n");
 				return;
 			}
@@ -234,14 +234,14 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 
 		in6_addr_my->sin6_port = htons(port);
 
-		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
+		shell_fprintf(sh, SHELL_NORMAL, "Binding to %s\n",
 			      net_sprint_ipv6_addr(&in6_addr_my->sin6_addr));
 
 		ret = bind(fds[SOCK_ID_IPV6_LISTEN].fd,
 			   (struct sockaddr *)in6_addr_my,
 			   sizeof(struct sockaddr_in6));
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot bind IPv6 UDP port %d (%d)\n",
 				      ntohs(in6_addr_my->sin6_port),
 				      errno);
@@ -250,7 +250,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 
 		ret = listen(fds[SOCK_ID_IPV6_LISTEN].fd, 1);
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot listen IPv6 TCP (%d)", errno);
 			goto cleanup;
 		}
@@ -258,7 +258,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 		fds[SOCK_ID_IPV6_LISTEN].events = POLLIN;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		      "Listening on port %d\n", port);
 
 	/* TODO Investigate started/stopped logic */
@@ -268,7 +268,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 	while (true) {
 		ret = poll(fds, ARRAY_SIZE(fds), -1);
 		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
+			shell_fprintf(sh, SHELL_WARNING,
 				      "TCP receiver poll error (%d)\n",
 				      errno);
 			goto cleanup;
@@ -281,7 +281,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 			if ((fds[i].revents & POLLERR) ||
 			    (fds[i].revents & POLLNVAL)) {
 				shell_fprintf(
-					shell, SHELL_WARNING,
+					sh, SHELL_WARNING,
 					"TCP receiver IPv%d socket error\n",
 					(i <= SOCK_ID_IPV4_DATA) ? 4 : 6);
 				goto cleanup;
@@ -298,7 +298,7 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 
 				if (sock < 0) {
 					shell_fprintf(
-						shell, SHELL_WARNING,
+						sh, SHELL_WARNING,
 						"TCP receiver IPv%d accept error\n",
 						(i <= SOCK_ID_IPV4_DATA) ? 4 : 6);
 					goto cleanup;
@@ -326,14 +326,14 @@ void tcp_receiver_thread(void *ptr1, void *ptr2, void *ptr3)
 				ret = recv(fds[i].fd, buf, sizeof(buf), 0);
 				if (ret < 0) {
 					shell_fprintf(
-						shell, SHELL_WARNING,
+						sh, SHELL_WARNING,
 						"recv failed on IPv%d socket (%d)\n",
 						(i <= SOCK_ID_IPV4_DATA) ? 4 : 6,
 						errno);
 					goto cleanup;
 				}
 
-				tcp_received(shell, fds[i].fd, ret);
+				tcp_received(sh, fds[i].fd, ret);
 
 				if (ret == 0) {
 					close(fds[i].fd);
@@ -353,7 +353,7 @@ cleanup:
 	}
 }
 
-void zperf_tcp_receiver_init(const struct shell *shell, int port)
+void zperf_tcp_receiver_init(const struct shell *sh, int port)
 {
 	if (init_done) {
 		zperf_tcp_started();
@@ -364,7 +364,7 @@ void zperf_tcp_receiver_init(const struct shell *shell, int port)
 			tcp_receiver_stack_area,
 			K_THREAD_STACK_SIZEOF(tcp_receiver_stack_area),
 			tcp_receiver_thread,
-			(void *)shell, INT_TO_POINTER(port), NULL,
+			(void *)sh, INT_TO_POINTER(port), NULL,
 			TCP_RECEIVER_THREAD_PRIORITY,
 			IS_ENABLED(CONFIG_USERSPACE) ? K_USER |
 						       K_INHERIT_PERMS : 0,
