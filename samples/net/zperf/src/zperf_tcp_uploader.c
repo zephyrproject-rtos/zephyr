@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 
 static char sample_packet[PACKET_SIZE_MAX];
 
-void zperf_tcp_upload(const struct shell *shell,
+void zperf_tcp_upload(const struct shell *sh,
 		      int sock,
 		      unsigned int duration_in_ms,
 		      unsigned int packet_size,
@@ -31,7 +31,7 @@ void zperf_tcp_upload(const struct shell *shell,
 	uint32_t alloc_errors = 0U;
 
 	if (packet_size > PACKET_SIZE_MAX) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "Packet size too large! max size: %u\n",
 			      PACKET_SIZE_MAX);
 		packet_size = PACKET_SIZE_MAX;
@@ -41,7 +41,7 @@ void zperf_tcp_upload(const struct shell *shell,
 	start_time = k_uptime_ticks();
 	last_print_time = start_time;
 
-	shell_fprintf(shell, SHELL_NORMAL,
+	shell_fprintf(sh, SHELL_NORMAL,
 		      "New session started\n");
 
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
@@ -59,7 +59,7 @@ void zperf_tcp_upload(const struct shell *shell,
 		ret = send(sock, sample_packet, packet_size, 0);
 		if (ret < 0) {
 			if (nb_errors == 0 && ret != -ENOMEM) {
-				shell_fprintf(shell, SHELL_WARNING,
+				shell_fprintf(sh, SHELL_WARNING,
 					      "Failed to send the packet (%d)\n",
 					      errno);
 			}
@@ -99,7 +99,7 @@ void zperf_tcp_upload(const struct shell *shell,
 	results->nb_packets_errors = nb_errors;
 
 	if (alloc_errors > 0) {
-		shell_fprintf(shell, SHELL_WARNING,
+		shell_fprintf(sh, SHELL_WARNING,
 			      "There was %u network buffer allocation "
 			      "errors during send.\nConsider increasing the "
 			      "value of CONFIG_NET_BUF_TX_COUNT and\n"
