@@ -670,7 +670,7 @@ class BinaryHandler(Handler):
         else:
             self.instance.status = "failed"
             self.instance.reason = "Timeout"
-            self.instance.add_missing_testscases("blocked", "Timeout")
+            self.instance.add_missing_case_status("blocked", "Timeout")
 
         self._final_handle_actions(harness, handler_time)
 
@@ -884,7 +884,7 @@ class DeviceHandler(Handler):
             self.instance.reason = "Serial Device Error"
             logger.error("Serial device error: %s" % (str(e)))
 
-            self.instance.add_missing_testscases("blocked", "Serial Device Error")
+            self.instance.add_missing_case_status("blocked", "Serial Device Error")
             if serial_pty and ser_pty_process:
                 ser_pty_process.terminate()
                 outs, errs = ser_pty_process.communicate()
@@ -980,7 +980,7 @@ class DeviceHandler(Handler):
             self.instance.reason = "No Console Output(Timeout)"
 
         if self.instance.status == "error":
-            self.instance.add_missing_testscases("blocked", self.instance.reason)
+            self.instance.add_missing_case_status("blocked", self.instance.reason)
 
         self._final_handle_actions(harness, handler_time)
 
@@ -1250,7 +1250,7 @@ class QEMUHandler(Handler):
                 self.instance.reason = "Timeout"
             else:
                 self.instance.reason = "Exited with {}".format(self.returncode)
-            self.instance.add_missing_testscases("blocked")
+            self.instance.add_missing_case_status("blocked")
 
         self._final_handle_actions(harness, 0)
 
@@ -2145,7 +2145,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.filter_type = filter_type
 
 
-    def add_missing_testscases(self, status, reason=None):
+    def add_missing_case_status(self, status, reason=None):
         for case in self.testcases:
             if not case.status:
                 case.status = status
@@ -2361,7 +2361,7 @@ class CMake():
 
             self.instance.status = "passed"
             if not self.instance.run:
-                self.instance.add_missing_testscases("skipped", "Test was built only")
+                self.instance.add_missing_case_status("skipped", "Test was built only")
             results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
 
             if out:
@@ -2720,7 +2720,7 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.status = "filtered"
                     self.instance.reason = "runtime filter"
                     results.skipped_runtime += 1
-                    self.instance.add_missing_testscases("skipped")
+                    self.instance.add_missing_case_status("skipped")
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2737,10 +2737,10 @@ class ProjectBuilder(FilterBuilder):
                 # due to ram/rom overflow.
                 if  self.instance.status == "skipped":
                     results.skipped_runtime += 1
-                    self.instance.add_missing_testscases("skipped", self.instance.reason)
+                    self.instance.add_missing_case_status("skipped", self.instance.reason)
 
                 if res.get('returncode', 1) > 0:
-                    self.instance.add_missing_testscases("blocked", self.instance.reason)
+                    self.instance.add_missing_case_status("blocked", self.instance.reason)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "gather_metrics", "test": self.instance})
@@ -3802,7 +3802,7 @@ class TestPlan(DisablePyTestCollectionMixin):
                 filtered_instance.reason += " but is one of the integration platforms"
                 self.instances[filtered_instance.name] = filtered_instance
 
-            filtered_instance.add_missing_testscases(filtered_instance.status)
+            filtered_instance.add_missing_case_status(filtered_instance.status)
 
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
                                       if p.status != "skipped" )
