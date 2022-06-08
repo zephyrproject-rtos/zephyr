@@ -2655,6 +2655,7 @@ static int cmd_connections(const struct shell *sh, size_t argc, char *argv[])
 	int conn_count = 0;
 
 	shell_print(sh, "Connected devices:");
+	ctx_shell = sh;
 	bt_conn_foreach(BT_CONN_TYPE_ALL, connection_info, &conn_count);
 	shell_print(sh, "Total %d", conn_count);
 
