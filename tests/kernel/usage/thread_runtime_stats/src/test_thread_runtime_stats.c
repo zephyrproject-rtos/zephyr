@@ -526,7 +526,7 @@ void test_thread_stats_usage(void)
 
 	zassert_true(stats4.average_cycles > stats3.average_cycles, NULL);
 	zassert_true(stats4.average_cycles > stats5.average_cycles, NULL);
-	zassert_true(stats5.average_cycles > stats3.average_cycles, NULL);
+	zassert_true(stats5.average_cycles >= stats3.average_cycles, NULL);
 #endif
 
 	/* Abort the helper thread */
