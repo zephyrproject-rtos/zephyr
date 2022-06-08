@@ -93,6 +93,7 @@ tests:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
 
   sample.logger.syst.v1.deferred_cpp:
+    toolchain_exclude: xcc
     extra_args: OVERLAY_CONFIG=overlay_deferred.conf
     integration_platforms:
       - mps2_an385
@@ -109,6 +110,7 @@ tests:
       - CONFIG_LOG1=y
       - CONFIG_CPLUSPLUS=y
   sample.logger.syst.v1.immediate_cpp:
+    toolchain_exclude: xcc
     integration_platforms:
       - mps2_an385
       - qemu_x86
