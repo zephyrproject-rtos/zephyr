@@ -1807,7 +1807,7 @@ Addressed issues
 * :github:`42181` - Ethernet PHY imxrt1060 Teensy not working, sample with DHCPv4_client fails
 * :github:`42113` - Modbus RTU allow non-compliant client configuration
 * :github:`42108` - upsquared: isr_dynamic & isr_regular test is failing
-* :github:`42102` - doc: searches for sys_reboot() are inconsistant
+* :github:`42102` - doc: searches for sys_reboot() are inconsistent
 * :github:`42096` - LE Audio: Media: Pass structs by reference and not value
 * :github:`42090` - Bluetooth: Audio: MCS BSIM notification length warning
 * :github:`42083` - Bluetooth: ISO: Packet Sequence Number should be incremented for each channel
@@ -1930,7 +1930,7 @@ Addressed issues
 * :github:`34737` - Can't compile CIVETWEB with CONFIG_NO_OPTIMIZATIONS or CONFIG_DEBUG
 * :github:`34590` - Functions getopt_long and getopt_long_only from the FreeBSD project
 * :github:`34256` - Add support for FVP in CI / SDK
-* :github:`34218` - Civetweb server crashing when trying to access invalid ressource
+* :github:`34218` - Civetweb server crashing when trying to access invalid resource
 * :github:`34204` - nvs_write: Bad documented return value.
 * :github:`33876` - Lora sender sample build error for esp32
 * :github:`32885` - Zephyr C++ support documentation conflicts to the code
@@ -1952,7 +1952,7 @@ Addressed issues
 * :github:`22870` - Add Cortex-M4 testing platform
 * :github:`22455` - How to assign USB endpoint address manually in stm32f4_disco for CDC ACM class driver
 * :github:`22247` - Discussion: Supporting the Arduino ecosystem
-* :github:`22161` - add shell comand for the settings subsystem
+* :github:`22161` - add shell command for the settings subsystem
 * :github:`21994` - Bluetooth: controller: split: Fix procedure complete event generation
 * :github:`21409` - sanitycheck: cmd.exe colorized output
 * :github:`20269` - Add support for opamps in MCUs
