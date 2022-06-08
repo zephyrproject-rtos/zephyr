@@ -371,7 +371,14 @@ void osdp_cp_set_event_callback(cp_event_callback_t cb, void *arg);
 
 #ifdef CONFIG_OSDP_SC_ENABLED
 
-uint32_t osdp_get_sc_status_mask(void);
+/**
+ * @brief Get a bit mask of number of PD that are online and have an active
+ * secure channel currently.
+ *
+ * @param bitmask pointer to an array of bytes. must be as large as
+ *                (num_pds + 7 / 8).
+ */
+void osdp_get_sc_status_mask(uint8_t *bitmask);
 
 #endif
 

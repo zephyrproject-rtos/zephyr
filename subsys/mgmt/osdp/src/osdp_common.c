@@ -142,20 +142,25 @@ void osdp_fill_random(uint8_t *buf, int len)
 	sys_csrand_get(buf, len);
 }
 
-uint32_t osdp_get_sc_status_mask(void)
+void osdp_get_sc_status_mask(uint8_t *bitmask)
 {
-	int i;
-	uint32_t mask = 0;
+	int i, pos;
+	uint8_t *mask = bitmask;
 	struct osdp_pd *pd;
 	struct osdp *ctx = osdp_get_ctx();
 
+	*mask = 0;
 	for (i = 0; i < NUM_PD(ctx); i++) {
+		pos = i & 0x07;
+		if (i && pos == 0) {
+			mask++;
+			*mask = 0;
+		}
 		pd = osdp_to_pd(ctx, i);
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
-			mask |= 1 << i;
+			*mask |= 1 << pos;
 		}
 	}
-	return mask;
 }
 
 #endif /* CONFIG_OSDP_SC_ENABLED */
