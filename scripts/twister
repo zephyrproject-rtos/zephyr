@@ -173,6 +173,7 @@ import shutil
 from collections import OrderedDict
 import multiprocessing
 from itertools import islice
+import colorama
 from colorama import Fore
 from pathlib import Path
 from multiprocessing.managers import BaseManager
@@ -204,6 +205,7 @@ except ImportError:
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
+import twisterlib
 from twisterlib import HardwareMap, TestPlan, SizeCalculator, CoverageTool, ExecutionCounter
 
 logger = logging.getLogger('twister')
@@ -231,8 +233,8 @@ def parse_arguments():
                                             """
 Artificially long but functional example:
     $ ./scripts/twister -v     \\
-      --testcase-root tests/ztest/base    \\
-      --testcase-root tests/kernel   \\
+      --testsuite-root tests/ztest/base    \\
+      --testsuite-root tests/kernel   \\
       --test      tests/ztest/base/testing.ztest.verbose_0  \\
       --test      tests/kernel/fifo/fifo_api/kernel.fifo
 
@@ -284,7 +286,7 @@ Artificially long but functional example:
 
     case_select.add_argument("--list-tests", action="store_true",
                              help="""List of all sub-test functions recursively found in
-        all --testcase-root arguments. Note different sub-tests can share
+        all --testsuite-root arguments. Note different sub-tests can share
         the same section name and come from different directories.
         The output is flattened and reports --sub-test names only,
         not their directories. For instance net.socket.getaddrinfo_ok
@@ -491,6 +493,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         built and if a test is runnable (emulation or a connected device), it
         is run. This option allows for example to only build tests that can
         actually be run. Runnable is a subset of buildable.""")
+
+    parser.add_argument("--force-color", action="store_true",
+                        help="Always output ANSI color escape sequences "
+                             "even when the output is redirected (not a tty)")
 
     parser.add_argument("--force-toolchain", action="store_true",
                         help="Do not filter based on toolchain, use the set "
@@ -833,6 +839,12 @@ def main():
     start_time = time.time()
 
     options = parse_arguments()
+
+    # Configure color output
+    color_strip = False if options.force_color else None
+
+    colorama.init(strip=color_strip)
+    twisterlib.init(colorama_strip=color_strip)
 
     previous_results = None
     # Cleanup

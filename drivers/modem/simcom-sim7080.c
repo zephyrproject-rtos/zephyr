@@ -30,6 +30,9 @@ static K_KERNEL_STACK_DEFINE(modem_rx_stack, CONFIG_MODEM_SIMCOM_SIM7080_RX_STAC
 static K_KERNEL_STACK_DEFINE(modem_workq_stack, CONFIG_MODEM_SIMCOM_SIM7080_RX_WORKQ_STACK_SIZE);
 NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE, 0, NULL);
 
+/* pin settings */
+static const struct gpio_dt_spec power_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_power_gpios);
+
 static void socket_close(struct modem_socket *sock);
 const struct socket_dns_offload offload_dns_ops;
 
@@ -444,6 +447,7 @@ exit:
  */
 static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
+	struct modem_socket *sock = obj;
 	ssize_t sent = 0;
 	const char *buf;
 	size_t len;
@@ -453,6 +457,17 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 	if (get_state() != SIM7080_STATE_NETWORKING) {
 		LOG_ERR("Modem currently not attached to the network!");
 		return -EAGAIN;
+	}
+
+	if (sock->type == SOCK_DGRAM) {
+		/*
+		 * Current implementation only handles single contiguous fragment at a time, so
+		 * prevent sending multiple datagrams.
+		 */
+		if (msghdr_non_empty_iov_count(msg) > 1) {
+			errno = EMSGSIZE;
+			return -1;
+		}
 	}
 
 	for (int i = 0; i < msg->msg_iovlen; i++) {
@@ -465,8 +480,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 				if (ret == -EAGAIN) {
 					k_sleep(K_SECONDS(1));
 				} else {
-					sent = ret;
-					break;
+					return ret;
 				}
 			} else {
 				sent += ret;
@@ -1225,9 +1239,9 @@ error:
 static void modem_pwrkey(void)
 {
 	/* Power pin should be high for 1.5 seconds. */
-	modem_pin_write(&mctx, 0, 1);
+	gpio_pin_set_dt(&power_gpio, 1);
 	k_sleep(K_MSEC(1500));
-	modem_pin_write(&mctx, 0, 0);
+	gpio_pin_set_dt(&power_gpio, 0);
 	k_sleep(K_SECONDS(5));
 }
 
@@ -2371,8 +2385,12 @@ static int modem_init(const struct device *dev)
 #endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
 	mctx.data_rssi = &mdata.mdm_rssi;
 
-	mctx.pins = modem_pins;
-	mctx.pins_len = ARRAY_SIZE(modem_pins);
+	ret = gpio_pin_configure_dt(&power_gpio, GPIO_OUTPUT_LOW);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure %s pin", "power");
+		goto error;
+	}
+
 	mctx.driver_data = &mdata;
 
 	memset(&gnss_data, 0, sizeof(gnss_data));

@@ -6,8 +6,8 @@
 
 #include "mock_backend.h"
 #include <ztest.h>
-#include <logging/log_core.h>
-#include <logging/log_backend_std.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_backend_std.h>
 #include <stdlib.h>
 
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_MOCK_OUTPUT_DEFAULT;

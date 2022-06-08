@@ -66,11 +66,6 @@
 			reg = <0x90000000 0x50000000>;
 		};
 
-		pinctrl: pinctrl@f0001484 {
-			compatible = "snps,creg-gpio-mux-hsdk";
-			reg = <0xf0001484 0x4>;
-		};
-
 		uart0: uart@f0005000 {
 			compatible = "ns16550";
 			clock-frequency = <33333333>;

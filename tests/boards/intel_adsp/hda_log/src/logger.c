@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(hda_test, LOG_LEVEL_DBG);
 
-#define IPC_TIMEOUT K_MSEC(500)
+#define IPC_TIMEOUT K_MSEC(1500)
 
 void hda_log_hook(uint32_t written)
 {
@@ -26,16 +26,19 @@ void hda_log_hook(uint32_t written)
 	 */
 	bool done = false;
 
-	/* Previous message may not be done yet, wait for that */
-	do {
-		done = cavs_ipc_is_complete(CAVS_HOST_DEV);
-	} while (!done);
-
 	/*  Now send the next one */
 	do {
 		done = cavs_ipc_send_message(CAVS_HOST_DEV, IPCCMD_HDA_PRINT,
 					     (written << 8) | CHANNEL);
 	} while (!done);
+
+
+	/* Previous message may not be done yet, wait for that */
+	do {
+		done = cavs_ipc_is_complete(CAVS_HOST_DEV);
+	} while (!done);
+
+
 }
 
 

@@ -425,7 +425,7 @@ config LWM2M_RW_OMA_TLV_SUPPORT
 
 config LWM2M_RW_JSON_SUPPORT
 	bool "support for JSON writer"
-	default y
+	depends on JSON_LIBRARY
 	help
 	  Include support for writing JSON data
 
@@ -433,6 +433,7 @@ config LWM2M_RW_JSON_SUPPORT
 config LWM2M_RW_SENML_JSON_SUPPORT
 	bool "SENML JSON data format"
 	depends on BASE64
+	depends on JSON_LIBRARY
 	help
 	  Include support for write / parse SENML JSON data
 

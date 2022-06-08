@@ -10,7 +10,7 @@ from unittest.mock import call
 import pytest
 
 from runners.mdb import MdbNsimBinaryRunner, MdbHwBinaryRunner
-from conftest import RC_KERNEL_ELF, RC_BOARD_DIR
+from conftest import RC_KERNEL_ELF, RC_BOARD_DIR, RC_BUILD_DIR
 
 
 TEST_DRIVER_CMD = 'mdb'
@@ -156,7 +156,7 @@ def require_patch(program):
 def test_flash_nsim(require, cc, t, gcp, test_case, mdb_nsim):
     mdb_nsim(test_case['i']).run('flash')
     assert require.called
-    cc.assert_called_once_with(test_case['o'])
+    cc.assert_called_once_with(test_case['o'], cwd=RC_BUILD_DIR)
 
 @pytest.mark.parametrize('test_case', TEST_NSIM_DEBUG_CASES)
 @patch('runners.mdb.get_cld_pid', return_value=(False, -1))
@@ -166,7 +166,7 @@ def test_flash_nsim(require, cc, t, gcp, test_case, mdb_nsim):
 def test_debug_nsim(require, pii, t, gcp, test_case, mdb_nsim):
     mdb_nsim(test_case['i']).run('debug')
     assert require.called
-    pii.assert_called_once_with(test_case['o'])
+    pii.assert_called_once_with(test_case['o'], cwd=RC_BUILD_DIR)
 
 @pytest.mark.parametrize('test_case', TEST_NSIM_MULTICORE_CASES)
 @patch('runners.mdb.get_cld_pid', return_value=(False, -1))
@@ -177,9 +177,9 @@ def test_debug_nsim(require, pii, t, gcp, test_case, mdb_nsim):
 def test_multicores_nsim(require, pii, cc, t, gcp, test_case, mdb_nsim):
     mdb_nsim(test_case).run('flash')
     assert require.called
-    cc_calls = [call(TEST_NSIM_CORE1), call(TEST_NSIM_CORE2)]
+    cc_calls = [call(TEST_NSIM_CORE1, cwd=RC_BUILD_DIR), call(TEST_NSIM_CORE2, cwd=RC_BUILD_DIR)]
     cc.assert_has_calls(cc_calls)
-    pii.assert_called_once_with(TEST_NSIM_CORES_LAUNCH)
+    pii.assert_called_once_with(TEST_NSIM_CORES_LAUNCH, cwd=RC_BUILD_DIR)
 
 
 # mdb-hw test cases
@@ -191,7 +191,7 @@ def test_multicores_nsim(require, pii, cc, t, gcp, test_case, mdb_nsim):
 def test_flash_hw(require, cc, t, gcp, test_case, mdb_hw):
     mdb_hw(test_case['i']).run('flash')
     assert require.called
-    cc.assert_called_once_with(test_case['o'])
+    cc.assert_called_once_with(test_case['o'], cwd=RC_BUILD_DIR)
 
 @pytest.mark.parametrize('test_case', TEST_HW_DEBUG_CASES)
 @patch('runners.mdb.get_cld_pid', return_value=(False, -1))
@@ -201,7 +201,7 @@ def test_flash_hw(require, cc, t, gcp, test_case, mdb_hw):
 def test_debug_hw(require, pii, t, gcp, test_case, mdb_hw):
     mdb_hw(test_case['i']).run('debug')
     assert require.called
-    pii.assert_called_once_with(test_case['o'])
+    pii.assert_called_once_with(test_case['o'], cwd=RC_BUILD_DIR)
 
 @pytest.mark.parametrize('test_case', TEST_HW_MULTICORE_CASES)
 @patch('runners.mdb.get_cld_pid', return_value=(False, -1))
@@ -212,6 +212,6 @@ def test_debug_hw(require, pii, t, gcp, test_case, mdb_hw):
 def test_multicores_hw(require, pii, cc, t, gcp, test_case, mdb_hw):
     mdb_hw(test_case).run('flash')
     assert require.called
-    cc_calls = [call(TEST_HW_CORE1), call(TEST_HW_CORE2)]
+    cc_calls = [call(TEST_HW_CORE1, cwd=RC_BUILD_DIR), call(TEST_HW_CORE2, cwd=RC_BUILD_DIR)]
     cc.assert_has_calls(cc_calls)
-    pii.assert_called_once_with(TEST_HW_CORES_LAUNCH)
+    pii.assert_called_once_with(TEST_HW_CORES_LAUNCH, cwd=RC_BUILD_DIR)

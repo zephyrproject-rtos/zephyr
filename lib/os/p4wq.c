@@ -10,7 +10,7 @@
 #include <ksched.h>
 #include <zephyr/init.h>
 
-LOG_MODULE_REGISTER(p4wq);
+LOG_MODULE_REGISTER(p4wq, CONFIG_LOG_DEFAULT_LEVEL);
 
 struct device;
 

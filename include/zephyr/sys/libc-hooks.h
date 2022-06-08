@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_SYS_LIBC_HOOKS_H_
 
 #include <zephyr/toolchain.h>
+#include <zephyr/app_memory/app_memdomain.h>
 #include <stdio.h>
 #include <stddef.h>
 
@@ -84,5 +85,8 @@ extern struct k_mem_partition z_libc_partition;
 #endif /* CONFIG_USERSPACE */
 
 #include <syscalls/libc-hooks.h>
+
+/* C library memory partitions */
+#define Z_LIBC_DATA K_APP_DMEM(z_libc_partition)
 
 #endif /* ZEPHYR_INCLUDE_SYS_LIBC_HOOKS_H_ */

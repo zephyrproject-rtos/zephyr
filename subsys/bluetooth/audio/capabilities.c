@@ -28,6 +28,9 @@
 static sys_slist_t snks;
 static sys_slist_t srcs;
 
+IF_ENABLED(CONFIG_BT_PAC_SNK, (static enum bt_audio_context sink_available_contexts;))
+IF_ENABLED(CONFIG_BT_PAC_SRC, (static enum bt_audio_context source_available_contexts;));
+
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER) && defined(CONFIG_BT_ASCS)
 /* TODO: The unicast server callbacks uses `const` for many of the pointers,
  * wheras the capabilities callbacks do no. The latter should be updated to use
@@ -298,6 +301,28 @@ static int write_location_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
 
+static int get_available_contexts_cb(struct bt_conn *conn, enum bt_audio_dir dir,
+				     enum bt_audio_context *contexts)
+{
+	IF_ENABLED(CONFIG_BT_PAC_SNK, (
+		if (dir == BT_AUDIO_DIR_SINK) {
+			*contexts = sink_available_contexts;
+			return 0;
+		}
+	));
+
+	IF_ENABLED(CONFIG_BT_PAC_SRC, (
+		if (dir == BT_AUDIO_DIR_SOURCE) {
+			*contexts = source_available_contexts;
+			return 0;
+		}
+	));
+
+	BT_ASSERT_PRINT_MSG("Invalid endpoint dir: %u", dir);
+
+	return -EINVAL;
+}
+
 static struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.config = unicast_server_config_cb,
 	.reconfig = unicast_server_reconfig_cb,
@@ -308,6 +333,7 @@ static struct bt_audio_unicast_server_cb unicast_server_cb = {
 	.disable = unicast_server_disable_cb,
 	.stop = unicast_server_stop_cb,
 	.release = unicast_server_release_cb,
+	.get_available_contexts = get_available_contexts_cb,
 	.publish_capability = publish_capability_cb,
 #if defined(CONFIG_BT_PAC_SNK_LOC) || defined(CONFIG_BT_PAC_SRC_LOC)
 	.publish_location = publish_location_cb,
@@ -454,3 +480,46 @@ int bt_audio_capability_set_location(enum bt_audio_dir dir,
 	return 0;
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
+
+static int set_available_contexts(enum bt_audio_dir dir,
+				  enum bt_audio_context contexts)
+{
+	IF_ENABLED(CONFIG_BT_PAC_SNK, (
+		if (dir == BT_AUDIO_DIR_SINK) {
+			sink_available_contexts = contexts;
+			return 0;
+		}
+	));
+
+	IF_ENABLED(CONFIG_BT_PAC_SRC, (
+		if (dir == BT_AUDIO_DIR_SOURCE) {
+			source_available_contexts = contexts;
+			return 0;
+		}
+	));
+
+	BT_ERR("Invalid endpoint dir: %u", dir);
+
+	return -EINVAL;
+}
+
+int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
+					       enum bt_audio_context contexts)
+{
+	int err;
+
+	err = set_available_contexts(dir, contexts);
+	if (err) {
+		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUDIO_UNICAST_SERVER)) {
+		err = bt_audio_unicast_server_available_contexts_changed();
+		if (err) {
+			BT_DBG("Available contexts weren't notified: %d", err);
+			return err;
+		}
+	}
+
+	return 0;
+}

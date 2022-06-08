@@ -41,6 +41,7 @@ extern "C" {
 #define IMG_MGMT_SWAP_TYPE_TEST		1
 #define IMG_MGMT_SWAP_TYPE_PERM		2
 #define IMG_MGMT_SWAP_TYPE_REVERT	3
+#define IMG_MGMT_SWAP_TYPE_UNKNOWN	255
 
 /**
  * Command IDs for image management group.

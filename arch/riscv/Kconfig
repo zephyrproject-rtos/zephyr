@@ -9,18 +9,6 @@ config ARCH
 	default "riscv64" if 64BIT
 	default "riscv32"
 
-config COMPRESSED_ISA
-	bool
-	default y if 64BIT
-
-config RISCV_ATOMICS_ISA
-	bool "RISC-V atomics 'a' extension"
-	default y
-
-config RISCV_MUL_ISA
-	bool "RISC-V HW multiply 'm' extension"
-	default y
-
 config FLOAT_HARD
 	bool "Hard-float calling convention"
 	default y
@@ -41,15 +29,6 @@ config RISCV_GP
 	  using GP relative addressing.
 
 menu "RISCV Processor Options"
-
-config CORE_E31
-	bool "Use E31 core"
-	select RISCV_PMP
-	select ARCH_HAS_USERSPACE
-	select ARCH_HAS_STACK_PROTECTION if PMP_STACK_GUARD
-	default n
-	help
-	  This option signifies the use of a core of the E31 family.
 
 config INCLUDE_RESET_VECTOR
 	bool "Include Reset vector"
@@ -139,11 +118,12 @@ config GEN_IRQ_VECTOR_TABLE
 config NUM_IRQS
 	int
 
-menuconfig RISCV_PMP
+config RISCV_PMP
 	bool "RISC-V PMP Support"
-	default n
 	select THREAD_STACK_INFO
 	select CPU_HAS_MPU
+	select ARCH_HAS_USERSPACE
+	select ARCH_HAS_STACK_PROTECTION
 	select MPU
 	select SRAM_REGION_PERMISSIONS
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
@@ -160,36 +140,44 @@ config PMP_SLOTS
 	  This is the number of PMP entries implemented by the hardware.
 	  Typical values are 8 or 16.
 
-config PMP_STACK_GUARD
-	bool "Thread Stack Guard"
-	help
-	  This implements a trap using the PMP to catch stack overflows
-	  by marking the bottom stack area as not accessible.
-
-config PMP_STACK_GUARD_MIN_SIZE
-	int "Guard size"
-	depends on PMP_STACK_GUARD
-	default 64
-	help
-	  Size of the stack guard area. This should be large enough to
-	  accommodate the stack overflow exception stack usage.
-
 config PMP_POWER_OF_TWO_ALIGNMENT
 	bool "Enforce power-of-two alignment on PMP memory areas"
+	depends on USERSPACE
 	default y if TEST_USERSPACE
 	default y if (PMP_SLOTS = 8)
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	select GEN_PRIV_STACKS
 	help
 	  This option reduces the PMP slot usage but increases
-	  memory consumption.
+	  memory consumption. Useful when enabling userspace mode with
+	  many memory domains and/or few PMP slots available.
 
 endif #RISCV_PMP
+
+config PMP_STACK_GUARD
+	def_bool y
+	depends on HW_STACK_PROTECTION
+
+config PMP_STACK_GUARD_MIN_SIZE
+	int "Stack Guard area size"
+	depends on PMP_STACK_GUARD
+	default 1024 if 64BIT
+	default 512
+	help
+	  The Hardware Stack Protection implements a guard area at the bottom
+	  of the stack using the PMP to catch stack overflows by marking that
+	  guard area not accessible.
+
+	  This is the size of the guard area. This should be large enough to
+	  catch any sudden jump in stack pointer decrement, plus some
+	  wiggle room to accommodate the eventual overflow exception
+	  stack usage.
 
 endmenu
 
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
+	default 2048 if PMP_STACK_GUARD
 
 config TEST_EXTRA_STACK_SIZE
 	default 1024
@@ -199,5 +187,8 @@ config CMSIS_THREAD_MAX_STACK_SIZE
 
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
 	default 1024 if 64BIT
+
+rsource "Kconfig.isa"
+rsource "Kconfig.core"
 
 endmenu

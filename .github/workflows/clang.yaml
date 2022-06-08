@@ -14,7 +14,7 @@ jobs:
     runs-on: zephyr_runner
     needs: clang-build-prep
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -23,7 +23,7 @@ jobs:
       matrix:
         platform: ["native_posix"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
@@ -110,7 +110,7 @@ jobs:
           if [ -s testplan.json ]; then
             echo "::set-output name=report_needed::1";
             # Full twister but with options based on changes
-            ./scripts/twister --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
+            ./scripts/twister --force-color --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
           else
             # if nothing is run, skip reporting step
             echo "::set-output name=report_needed::0";

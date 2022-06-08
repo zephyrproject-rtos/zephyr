@@ -27,7 +27,7 @@ jobs:
     runs-on: zephyr_runner
     needs: twister-build-cleanup
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -39,7 +39,7 @@ jobs:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 80
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       TESTS_PER_BUILDER: 700
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
@@ -120,7 +120,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.23.0
+      image: ghcr.io/zephyrproject-rtos/ci:v0.23.3
       options: '--entrypoint /bin/bash'
       volumes:
         - /home/runners/zephyrproject:/github/cache/zephyrproject
@@ -129,9 +129,9 @@ jobs:
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.14.2
       CLANG_ROOT_DIR: /usr/lib/llvm-12
-      TWISTER_COMMON: ' --inline-logs -v -N -M --retry-failed 3 '
+      TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
       DAILY_OPTIONS: ' -M --build-only --all'
       PR_OPTIONS: ' --clobber-output --integration'
       PUSH_OPTIONS: ' --clobber-output -M'

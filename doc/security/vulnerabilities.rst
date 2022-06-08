@@ -1156,3 +1156,31 @@ This has been fixed in main for v3.0.0
 
 - `PR 42167 fix for v2.7.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/42167>`_
+
+CVE-2022-0553
+-------------
+
+Possible to retrieve unencrypted firmware image
+
+This has been fixed in main for v3.0.0
+
+- `Zephyr project bug tracker GHSA-wrj2-9vj9-rrcp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wrj2-9vj9-rrcp>`_
+
+- `PR 42424 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/42424>`_
+
+CVE-2022-1041
+--------------
+
+Under embargo until 2022/06/19
+
+CVE-2022-1042
+--------------
+
+Under embargo until 2022/06/19
+
+CVE-2022-1841
+--------------
+
+Under embargo until 2022/08/18

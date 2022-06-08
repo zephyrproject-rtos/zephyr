@@ -231,14 +231,14 @@
 			};
 		};
 
-		iwdg1: watchdog@58004800 {
+		iwdg: iwdg1: watchdog@58004800 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x58004800 0x400>;
 			label = "IWDG_1";
 			status = "disabled";
 		};
 
-		wwdg1: watchdog@50003000 {
+		wwdg: wwdg1: watchdog@50003000 {
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x50003000 0x1000>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>;
@@ -388,7 +388,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
+				<&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <35 0>;
 			status = "disabled";
 			label = "SPI_1";
@@ -399,7 +400,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>,
+				<&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <36 0>;
 			status = "disabled";
 			label = "SPI_2";
@@ -410,7 +412,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>,
+				<&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <51 0>;
 			status = "disabled";
 			label = "SPI_3";

@@ -2,14 +2,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "arch/xtensa/cache.h"
+#include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/kernel.h>
 #include <ztest.h>
 #include <cavs_ipc.h>
 #include <zephyr/drivers/dma.h>
 #include "tests.h"
 
-#define IPC_TIMEOUT K_MSEC(500)
+#define IPC_TIMEOUT K_MSEC(1500)
 #define DMA_BUF_SIZE 256
 #define TRANSFER_SIZE 256
 #define TRANSFER_COUNT 8

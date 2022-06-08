@@ -22,7 +22,7 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &flexspi2;
+		zephyr,flash-controller = &is25wp064;
 		zephyr,flash = &w25q32jvwj0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sdram0;

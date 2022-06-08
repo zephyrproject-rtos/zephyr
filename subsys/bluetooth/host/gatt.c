@@ -3258,10 +3258,11 @@ static void gatt_find_type_rsp(struct bt_conn *conn, uint8_t err,
 		value.end_handle = end_handle;
 		value.uuid = params->uuid;
 
-		attr = (struct bt_gatt_attr)BT_GATT_ATTRIBUTE(&uuid_svc.uuid, 0,
-							      NULL, NULL,
-							      &value);
-		attr.handle = start_handle;
+		attr = (struct bt_gatt_attr) {
+			.uuid = &uuid_svc.uuid,
+			.user_data = &value,
+			.handle = start_handle,
+		};
 
 		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 			return;
@@ -3341,6 +3342,7 @@ static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
 	struct bt_gatt_discover_params *params = user_data;
 	struct bt_gatt_include value;
 	struct bt_gatt_attr attr;
+	uint16_t handle;
 	union {
 		struct bt_uuid uuid;
 		struct bt_uuid_128 u128;
@@ -3352,6 +3354,7 @@ static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 
+	handle = params->_included.attr_handle;
 	value.start_handle = params->_included.start_handle;
 	value.end_handle = params->_included.end_handle;
 	value.uuid = &u.uuid;
@@ -3367,9 +3370,11 @@ static void read_included_uuid_cb(struct bt_conn *conn, uint8_t err,
 		goto next;
 	}
 
-	attr = (struct bt_gatt_attr)BT_GATT_ATTRIBUTE(
-		BT_UUID_GATT_INCLUDE, 0, NULL, NULL, &value);
-	attr.handle = params->_included.attr_handle;
+	attr = (struct bt_gatt_attr) {
+		.uuid = BT_UUID_GATT_INCLUDE,
+		.user_data = &value,
+		.handle = handle,
+	};
 
 	if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 		return;
@@ -3474,9 +3479,11 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 			continue;
 		}
 
-		attr = (struct bt_gatt_attr)BT_GATT_ATTRIBUTE(
-			BT_UUID_GATT_INCLUDE, 0, NULL, NULL, &value);
-		attr.handle = handle;
+		attr = (struct bt_gatt_attr) {
+			.uuid = BT_UUID_GATT_INCLUDE,
+			.user_data = &value,
+			.handle = handle,
+		};
 
 		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 			return 0;
@@ -3552,9 +3559,12 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		value = (struct bt_gatt_chrc)BT_GATT_CHRC_INIT(
 			&u.uuid, sys_le16_to_cpu(chrc->value_handle),
 			chrc->properties);
-		attr = (struct bt_gatt_attr)BT_GATT_ATTRIBUTE(
-			BT_UUID_GATT_CHRC, 0, NULL, NULL, &value);
-		attr.handle = handle;
+
+		attr = (struct bt_gatt_attr) {
+			.uuid = BT_UUID_GATT_CHRC,
+			.user_data = &value,
+			.handle = handle,
+		};
 
 		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 			return 0;
@@ -3628,9 +3638,11 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 			goto done;
 		}
 
-		attr = (struct bt_gatt_attr)BT_GATT_ATTRIBUTE(
-			params->uuid, 0, NULL, NULL, &value);
-		attr.handle = handle;
+		attr = (struct bt_gatt_attr) {
+			.uuid = params->uuid,
+			.user_data = &value,
+			.handle = handle,
+		};
 
 		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 			return 0;
@@ -3947,9 +3959,11 @@ static void gatt_find_info_rsp(struct bt_conn *conn, uint8_t err,
 			}
 		}
 
-		attr = (struct bt_gatt_attr)BT_GATT_ATTRIBUTE(
-			&u.uuid, 0, NULL, NULL, NULL);
-		attr.handle = handle;
+		/* No user_data in this case */
+		attr = (struct bt_gatt_attr) {
+			.uuid = &u.uuid,
+			.handle = handle,
+		};
 
 		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
 			return;
@@ -4231,7 +4245,15 @@ static int gatt_read_mult(struct bt_conn *conn,
 			     params->handle_count * sizeof(uint16_t));
 }
 
-#if defined(CONFIG_BT_EATT)
+#else
+static int gatt_read_mult(struct bt_conn *conn,
+			      struct bt_gatt_read_params *params)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+
+#if defined(CONFIG_BT_GATT_READ_MULT_VAR_LEN)
 static void gatt_read_mult_vl_rsp(struct bt_conn *conn, uint8_t err,
 				  const void *pdu, uint16_t length,
 				  void *user_data)
@@ -4295,23 +4317,14 @@ static int gatt_read_mult_vl(struct bt_conn *conn,
 			     BT_ATT_OP_READ_MULT_VL_REQ,
 			     params->handle_count * sizeof(uint16_t));
 }
-#endif /* CONFIG_BT_EATT */
 
 #else
-static int gatt_read_mult(struct bt_conn *conn,
-			      struct bt_gatt_read_params *params)
-{
-	return -ENOTSUP;
-}
-#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
-
-#if !defined(CONFIG_BT_GATT_READ_MULTIPLE) || !defined(CONFIG_BT_EATT)
 static int gatt_read_mult_vl(struct bt_conn *conn,
 			     struct bt_gatt_read_params *params)
 {
 	return -ENOTSUP;
 }
-#endif
+#endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
 
 static int gatt_read_encode(struct net_buf *buf, size_t len, void *user_data)
 {
@@ -4412,6 +4425,8 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 	}
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
+
+	bt_att_set_tx_meta_data(buf, func, user_data);
 
 	return bt_att_send(conn, buf);
 }

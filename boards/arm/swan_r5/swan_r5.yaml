@@ -1,0 +1,19 @@
+identifier: swan_r5
+name: Blues Wireless Swan
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - pwm
+  - spi
+  - i2c
+  - gpio
+  - usb_device
+  - nvs
+  - counter
+  - adc
+ram: 640
+flash: 2048

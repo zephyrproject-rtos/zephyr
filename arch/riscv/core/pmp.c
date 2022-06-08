@@ -61,9 +61,42 @@ static void print_pmp_entries(unsigned int start, unsigned int end,
 
 	LOG_DBG("PMP %s:", banner);
 	for (index = start; index < end; index++) {
-		LOG_DBG("%3d: "PR_ADDR" 0x%02x", index,
-			pmp_addr[index],
-			pmp_n_cfg[index]);
+		ulong_t start, end, tmp;
+
+		switch (pmp_n_cfg[index] & PMP_A) {
+		case PMP_TOR:
+			start = (index == 0) ? 0 : (pmp_addr[index - 1] << 2);
+			end = (pmp_addr[index] << 2) - 1;
+			break;
+		case PMP_NA4:
+			start = pmp_addr[index] << 2;
+			end = start + 3;
+			break;
+		case PMP_NAPOT:
+			tmp = (pmp_addr[index] << 2) | 0x3;
+			start = tmp & (tmp + 1);
+			end   = tmp | (tmp + 1);
+			break;
+		default:
+			start = 0;
+			end = 0;
+			break;
+		}
+
+		if (end == 0) {
+			LOG_DBG("%3d: "PR_ADDR" 0x%02x", index,
+				pmp_addr[index],
+				pmp_n_cfg[index]);
+		} else {
+			LOG_DBG("%3d: "PR_ADDR" 0x%02x --> "
+				PR_ADDR"-"PR_ADDR" %c%c%c%s",
+				index, pmp_addr[index], pmp_n_cfg[index],
+				start, end,
+				(pmp_n_cfg[index] & PMP_R) ? 'R' : '-',
+				(pmp_n_cfg[index] & PMP_W) ? 'W' : '-',
+				(pmp_n_cfg[index] & PMP_X) ? 'X' : '-',
+				(pmp_n_cfg[index] & PMP_L) ? " LOCKED" : "");
+		}
 	}
 }
 
@@ -272,7 +305,7 @@ void z_riscv_pmp_init(void)
 	 * addresses inaccessible. This will never change so we do it here.
 	 */
 	set_pmp_entry(&index, PMP_NONE,
-		      (uintptr_t)_current_cpu->irq_stack - CONFIG_ISR_STACK_SIZE,
+		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
@@ -305,15 +338,18 @@ void z_riscv_pmp_init(void)
 void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 {
 	unsigned int index = global_pmp_end_index;
-	uintptr_t stack_bottom = thread->stack_info.start;
+	uintptr_t stack_bottom;
 
 	/* Retrieve pmpcfg0 partial content from global entries */
 	thread->arch.m_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
 
 	/* make the bottom addresses of our stack inaccessible */
+	stack_bottom = thread->stack_info.start - K_KERNEL_STACK_RESERVED;
 #ifdef CONFIG_USERSPACE
 	if (thread->arch.priv_stack_start != 0) {
 		stack_bottom = thread->arch.priv_stack_start;
+	} else if (z_stack_is_user_capable(thread->stack_obj)) {
+		stack_bottom = thread->stack_info.start - K_THREAD_STACK_RESERVED;
 	}
 #endif
 	set_pmp_entry(&index, PMP_NONE,
@@ -349,6 +385,8 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
  */
 void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 {
+	LOG_DBG("pmp_stackguard_enable for thread %p", thread);
+
 	/*
 	 * Disable (non-locked) PMP entries for m-mode while we update them.
 	 * While at it, also clear MSTATUS_MPP as it must be cleared for
@@ -466,6 +504,8 @@ static void resync_pmp_domain(struct k_thread *thread,
 void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 {
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
+
+	LOG_DBG("pmp_usermode_enable for thread %p with domain %p", thread, domain);
 
 	if (thread->arch.u_mode_pmp_end_index == 0) {
 		/* z_riscv_pmp_usermode_prepare() has not been called yet */

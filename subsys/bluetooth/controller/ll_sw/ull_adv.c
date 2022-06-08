@@ -91,6 +91,7 @@ static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint8_t leg_adv_type_get(uint8_t evt_prop);
 static void adv_max_events_duration_set(struct ll_adv_set *adv,
 					uint16_t duration,
 					uint8_t max_ext_adv_evts);
@@ -255,24 +256,25 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	if (adv_type == PDU_ADV_TYPE_EXT_IND) {
 		/* legacy */
 		if (evt_prop & BT_HCI_LE_ADV_PROP_LEGACY) {
-			/* lookup evt_prop to PDU type in  pdu_adv_type[] */
-			uint8_t const leg_adv_type[] = {
-				0x03, /* PDU_ADV_TYPE_NONCONN_IND */
-				0x04, /* PDU_ADV_TYPE_DIRECT_IND */
-				0x02, /* PDU_ADV_TYPE_SCAN_IND */
-				0x00  /* PDU_ADV_TYPE_ADV_IND */
-			};
-
 			if (evt_prop & BT_HCI_LE_ADV_PROP_ANON) {
 				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 			}
 
-			adv_type = leg_adv_type[evt_prop & 0x03];
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			/* disallow changing to legacy advertising while
+			 * periodic advertising enabled.
+			 */
+			if (adv->lll.sync) {
+				const struct ll_adv_sync_set *sync;
 
-			/* high duty cycle directed */
-			if (evt_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN) {
-				adv_type = 0x01; /* PDU_ADV_TYPE_DIRECT_IND */
+				sync = HDR_LLL2ULL(adv->lll.sync);
+				if (sync->is_enabled) {
+					return BT_HCI_ERR_INVALID_PARAM;
+				}
 			}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+			adv_type = leg_adv_type_get(evt_prop);
 
 			adv->lll.phy_p = PHY_1M;
 		} else {
@@ -287,6 +289,20 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			if (adv->lll.sync &&
+			    (evt_prop & (BT_HCI_LE_ADV_PROP_ANON |
+					 BT_HCI_LE_ADV_PROP_CONN |
+					 BT_HCI_LE_ADV_PROP_SCAN))) {
+				const struct ll_adv_sync_set *sync;
+
+				sync = HDR_LLL2ULL(adv->lll.sync);
+				if (sync->is_enabled) {
+					return BT_HCI_ERR_INVALID_PARAM;
+				}
+			}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
 #if (CONFIG_BT_CTLR_ADV_AUX_SET == 0)
 			/* Connectable or scannable requires aux */
 			if (evt_prop & (BT_HCI_LE_ADV_PROP_CONN |
@@ -295,8 +311,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			}
 #endif
 
-			adv_type = 0x05; /* PDU_ADV_TYPE_EXT_IND in */
-					 /* pdu_adv_type array. */
+			adv_type = 0x05; /* index of PDU_ADV_TYPE_EXT_IND in */
+					 /* pdu_adv_type[] */
 
 			adv->lll.phy_p = phy_p;
 			adv->lll.phy_flags = PHY_FLAGS_S8;
@@ -463,9 +479,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			pri_dptr_prev += BDADDR_SIZE;
 		}
 		if (!pri_com_hdr->adv_mode &&
-		    (!pri_hdr_prev.aux_ptr ||
-		     (!(evt_prop & BT_HCI_LE_ADV_PROP_ANON) &&
-		      (phy_p != PHY_CODED)))) {
+		    !(evt_prop & BT_HCI_LE_ADV_PROP_ANON) &&
+		    (!pri_hdr_prev.aux_ptr || (phy_p != PHY_CODED))) {
 			/* TODO: optional on 1M with Aux Ptr */
 			pri_hdr->adv_addr = 1;
 
@@ -1076,6 +1091,12 @@ uint8_t ll_adv_enable(uint8_t enable)
 		 * terminate ind rx node
 		 */
 		conn->llcp_terminate.node_rx.hdr.link = link;
+
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+		conn->llcp_rx_hold = NULL;
+		conn_lll->rx_hold_req = 0U;
+		conn_lll->rx_hold_ack = 0U;
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		conn_lll->enc_rx = conn_lll->enc_tx = 0U;
@@ -2421,6 +2442,28 @@ static void conn_release(struct ll_adv_set *adv)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint8_t leg_adv_type_get(uint8_t evt_prop)
+{
+	/* We take advantage of the fact that 2 LS bits
+	 * of evt_prop can be used in a lookup to return
+	 * PDU type value in the pdu_adv_type[] lookup.
+	 */
+	uint8_t const leg_adv_type[] = {
+		0x03, /* index of PDU_ADV_TYPE_NONCONN_IND in pdu_adv_type[] */
+		0x04, /* index of PDU_ADV_TYPE_DIRECT_IND in pdu_adv_type[] */
+		0x02, /* index of PDU_ADV_TYPE_SCAN_IND in pdu_adv_type[] */
+		0x00  /* index of PDU_ADV_TYPE_ADV_IND in pdu_adv_type[] */
+	};
+
+	/* if high duty cycle directed */
+	if (evt_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN) {
+		/* index of PDU_ADV_TYPE_DIRECT_IND in pdu_adv_type[] */
+		return 0x01;
+	}
+
+	return leg_adv_type[evt_prop & 0x03];
+}
+
 static void adv_max_events_duration_set(struct ll_adv_set *adv,
 					uint16_t duration,
 					uint8_t max_ext_adv_evts)

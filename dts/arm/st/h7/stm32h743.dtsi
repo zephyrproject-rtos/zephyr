@@ -28,7 +28,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x080000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x80000000>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
 			label= "OTG_FS";
@@ -39,7 +39,7 @@
 			reg = <0x50001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x000000008>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
 			status = "disabled";
 			label = "LTDC";
 		};

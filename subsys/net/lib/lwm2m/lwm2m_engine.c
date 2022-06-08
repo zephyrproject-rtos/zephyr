@@ -177,6 +177,8 @@ static int do_composite_observe_read_path_op(struct lwm2m_message *msg, uint16_t
 					     sys_slist_t *lwm2m_path_list,
 					     sys_slist_t *lwm2m_path_free_list);
 static void lwm2m_engine_free_list(sys_slist_t *path_list, sys_slist_t *free_list);
+static int do_composite_read_op_for_parsed_list(struct lwm2m_message *msg, uint16_t content_format,
+						sys_slist_t *path_list);
 
 /* for debugging: to print IP addresses */
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
@@ -289,9 +291,6 @@ static int init_block_ctx(const uint8_t *token, uint8_t tkl,
 	(*ctx)->timestamp = timestamp;
 	(*ctx)->expected = 0;
 	(*ctx)->last_block = false;
-#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
-	lwm2m_senml_json_context_init(&(*ctx)->senml_json_ctx);
-#endif
 	memset(&(*ctx)->opaque, 0, sizeof((*ctx)->opaque));
 
 	return 0;
@@ -915,7 +914,7 @@ static int engine_add_composite_observer(struct lwm2m_message *msg,
 		LOG_DBG("OBSERVER Composite DUPLICATE [%s]",
 			log_strdup(lwm2m_sprint_ip_addr(&msg->ctx->remote_addr)));
 
-		return 0;
+		return do_composite_read_op_for_parsed_list(msg, format, &lwm2m_path_list);
 	}
 
 	ret = engine_observe_attribute_list_get(&lwm2m_path_list, &attrs, msg->ctx->srv_obj_inst);
@@ -928,7 +927,7 @@ static int engine_add_composite_observer(struct lwm2m_message *msg,
 		return -ENOMEM;
 	}
 	engine_observe_node_init(obs, token, msg->ctx, tkl, format, attrs.pmax);
-	return 0;
+	return do_composite_read_op_for_parsed_list(msg, format, &lwm2m_path_list);
 }
 
 static void remove_observer_from_list(struct lwm2m_ctx *ctx, sys_snode_t *prev_node,
@@ -1002,7 +1001,8 @@ static int engine_remove_composite_observer(struct lwm2m_message *msg, const uin
 
 	LOG_DBG("observer '%s' removed", log_strdup(sprint_token(token, tkl)));
 
-	return 0;
+	return do_composite_read_op_for_parsed_list(msg, format, &lwm2m_path_list);
+
 }
 
 #if defined(CONFIG_LOG)
@@ -3850,6 +3850,28 @@ static int do_composite_read_op(struct lwm2m_message *msg, uint16_t content_form
 	}
 }
 
+static int do_composite_read_op_for_parsed_list(struct lwm2m_message *msg, uint16_t content_format,
+						sys_slist_t *path_list)
+{
+	switch (content_format) {
+
+#if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
+	case LWM2M_FORMAT_APP_SEML_JSON:
+		return do_composite_read_op_for_parsed_list_senml_json(msg, path_list);
+#endif
+
+#if defined(CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT)
+	case LWM2M_FORMAT_APP_SENML_CBOR:
+		return do_composite_read_op_for_parsed_path_senml_cbor(msg, path_list);
+#endif
+
+	default:
+		LOG_ERR("Unsupported content-format: %u", content_format);
+		return -ENOMSG;
+
+	}
+}
+
 static int do_composite_observe_read_path_op(struct lwm2m_message *msg, uint16_t content_format,
 					     sys_slist_t *lwm2m_path_list,
 					     sys_slist_t *lwm2m_path_free_list)
@@ -4893,7 +4915,6 @@ static int handle_request(struct coap_packet *request,
 					if (r < 0) {
 						goto error;
 					}
-					r = do_composite_read_op(msg, accept);
 				}
 			} else {
 				if ((code & COAP_REQUEST_MASK) == COAP_METHOD_GET) {

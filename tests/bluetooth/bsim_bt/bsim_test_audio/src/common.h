@@ -10,7 +10,7 @@
 #ifndef ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 #define ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_
 
-#include "kernel.h"
+#include <zephyr/kernel.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -52,7 +52,7 @@
 #define PASS(...) \
 	do { \
 		bst_result = Passed; \
-		bs_trace_info_time(1, __VA_ARGS__); \
+		bs_trace_info_time(1, "PASSED: " __VA_ARGS__); \
 	} while (0)
 
 #define AD_SIZE 1

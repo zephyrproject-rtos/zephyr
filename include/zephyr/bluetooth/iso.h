@@ -47,9 +47,9 @@ extern "C" {
 #define BT_ISO_DATA_PATH_HCI        0x00
 
 /** Minimum interval value in microseconds */
-#define BT_ISO_INTERVAL_MIN         0x0000FF
+#define BT_ISO_SDU_INTERVAL_MIN     0x0000FFU
 /** Maximum interval value in microseconds */
-#define BT_ISO_INTERVAL_MAX         0x0FFFFF
+#define BT_ISO_SDU_INTERVAL_MAX     0x0FFFFFU
 /** Minimum latency value in milliseconds */
 #define BT_ISO_LATENCY_MIN          0x0005
 /** Maximum latency value in milliseconds */
@@ -86,6 +86,12 @@ extern "C" {
 #define BT_ISO_BIS_INDEX_MIN        0x01
 /** Highest BIS index */
 #define BT_ISO_BIS_INDEX_MAX        0x1F
+/** Omit time stamp when sending to controller
+ *
+ * Using this value will enqueue the ISO SDU in a FIFO manner, instead of
+ * transmitting it at a specified timestamp.
+ */
+#define BT_ISO_TIMESTAMP_NONE 0U
 
 /** @brief Life-span states of ISO channel. Used only by internal APIs
  *  dealing with setting channel to proper state depending on operational
@@ -94,6 +100,8 @@ extern "C" {
 enum bt_iso_state {
 	/** Channel disconnected */
 	BT_ISO_STATE_DISCONNECTED,
+	/** Channel is pending ACL encryption before connecting */
+	BT_ISO_STATE_ENCRYPT_PENDING,
 	/** Channel in connecting state */
 	BT_ISO_STATE_CONNECTING,
 	/** Channel ready for upper layer traffic on it */
@@ -119,7 +127,16 @@ struct bt_iso_chan {
 	/** Channel QoS reference */
 	struct bt_iso_chan_qos		*qos;
 	enum bt_iso_state		state;
+#if defined(CONFIG_BT_SMP)
+	/** @brief The required security level of the channel
+	 *
+	 * This value can be set as the central before connecting a CIS
+	 * with bt_iso_chan_connect().
+	 * The value is overwritten to @ref bt_iso_server::sec_level for the
+	 * peripheral once a channel has been accepted.
+	 */
 	bt_security_t			required_sec_level;
+#endif /* CONFIG_BT_SMP */
 	/** Node used internally by the stack */
 	sys_snode_t node;
 };
@@ -211,7 +228,7 @@ struct bt_iso_recv_info {
 	uint32_t ts;
 
 	/** ISO packet sequence number of the first fragment in the SDU */
-	uint16_t sn;
+	uint16_t seq_num;
 
 	/** ISO packet flags bitfield (BT_ISO_FLAGS_*) */
 	uint8_t flags;
@@ -234,7 +251,7 @@ struct bt_iso_cig_param {
 
 	/** @brief Channel interval in us.
 	 *
-	 *  Value range BT_ISO_INTERVAL_MIN - BT_ISO_INTERVAL_MAX.
+	 *  Value range BT_ISO_SDU_INTERVAL_MIN - BT_ISO_SDU_INTERVAL_MAX.
 	 */
 	uint32_t interval;
 
@@ -291,7 +308,7 @@ struct bt_iso_big_create_param {
 
 	/** @brief Channel interval in us.
 	 *
-	 *  Value range BT_ISO_INTERVAL_MIN - BT_ISO_INTERVAL_MAX.
+	 *  Value range BT_ISO_SDU_INTERVAL_MIN - BT_ISO_SDU_INTERVAL_MAX.
 	 */
 	uint32_t interval;
 
@@ -435,7 +452,7 @@ struct bt_iso_chan_ops {
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  channel is disconnected, including when a connection gets
-	 *  rejected.
+	 *  rejected or when setting security fails.
 	 *
 	 *  @param chan   The channel that has been Disconnected
 	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
@@ -494,8 +511,10 @@ struct bt_iso_accept_info {
 
 /** @brief ISO Server structure. */
 struct bt_iso_server {
+#if defined(CONFIG_BT_SMP)
 	/** Required minimum security level */
 	bt_security_t		sec_level;
+#endif /* CONFIG_BT_SMP */
 
 	/** @brief Server accept callback
 	 *
@@ -614,12 +633,21 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *  @note Buffer ownership is transferred to the stack in case of success, in
  *  case of an error the caller retains the ownership of the buffer.
  *
- *  @param chan Channel object.
- *  @param buf Buffer containing data to be sent.
+ *  @param chan     Channel object.
+ *  @param buf      Buffer containing data to be sent.
+ *  @param seq_num  Packet Sequence number. This value shall be incremented for
+ *                  each call to this function and at least once per SDU
+ *                  interval for a specific channel.
+ *  @param ts       Timestamp of the SDU in microseconds (us).
+ *                  This value can be used to transmit multiple
+ *                  SDUs in the same SDU interval in a CIG or BIG. Can be
+ *                  omitted by using @ref BT_ISO_TIMESTAMP_NONE which will
+ *                  simply enqueue the ISO SDU in a FIFO manner.
  *
  *  @return Bytes sent in case of success or negative value in case of error.
  */
-int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf);
+int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
+		     uint32_t seq_num, uint32_t ts);
 
 struct bt_iso_unicast_tx_info {
 	/** The transport latency in us */

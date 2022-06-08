@@ -38,9 +38,9 @@ extern "C" {
  * @return Maximum Segment Size
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-uint16_t net_tcp_get_recv_mss(const struct tcp *conn);
+uint16_t net_tcp_get_supported_mss(const struct tcp *conn);
 #else
-static inline uint16_t net_tcp_get_recv_mss(const struct tcp *conn)
+static inline uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 {
 	ARG_UNUSED(conn);
 	return 0;
@@ -366,6 +366,16 @@ void net_tcp_init(void);
 #else
 #define net_tcp_init(...)
 #endif
+
+/**
+ * @brief Obtain a semaphore indicating if transfers are blocked (either due to
+ *        filling TX window or entering retransmission mode).
+ *
+ * @param context Network context
+ *
+ * @return semaphore indicating if transfers are blocked
+ */
+struct k_sem *net_tcp_tx_sem_get(struct net_context *context);
 
 #ifdef __cplusplus
 }

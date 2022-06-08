@@ -184,6 +184,32 @@ static inline void hal_trigger_crypt_ppi_config(void)
 	/* No need to configure anything for the pre-programmed channel. */
 }
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+/*******************************************************************************
+ * Trigger encryption task on Bit counter match:
+ * wire the RADIO EVENTS_BCMATCH event to the CCM TASKS_CRYPT task.
+ *
+ * PPI channel HAL_TRIGGER_CRYPT_DELAY_PPI is also used for HAL_TRIGGER-
+ * _RATEOVERRIDE_PPI.
+ * Make sure the same PPI is not configured for both events at once.
+ *
+ *   EEP: RADIO->EVENTS_BCMATCH
+ *   TEP: CCM->TASKS_CRYPT
+ */
+static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
+{
+	/* Configure Bit counter to trigger EVENTS_BCMATCH for CCM_TASKS_CRYPT-
+	 * _DELAY_BITS bit. This is a time required for Radio to store
+	 * received data in memory before the CCM TASKS_CRYPT starts. This
+	 * makes CCM to do not read the memory before Radio stores received
+	 * data.
+	 */
+	nrf_ppi_channel_endpoint_setup(NRF_PPI, HAL_TRIGGER_CRYPT_DELAY_PPI,
+				       (uint32_t)&(NRF_RADIO->EVENTS_BCMATCH),
+				       (uint32_t)&(NRF_CCM->TASKS_CRYPT));
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+
 /*******************************************************************************
  * Trigger automatic address resolution on Bit counter match:
  * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.

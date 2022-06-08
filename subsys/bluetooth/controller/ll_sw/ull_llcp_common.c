@@ -162,7 +162,16 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	llcp_tx_enqueue(conn, tx);
 
 	/* Restart procedure response timeout timer */
-	llcp_lr_prt_restart(conn);
+	if (ctx->proc != PROC_TERMINATE) {
+		/* Use normal timeout value of 40s */
+		llcp_lr_prt_restart(conn);
+	} else {
+		/* Use supervision timeout value
+		 * NOTE: As the supervision timeout is at most 32s the normal procedure response
+		 * timeout of 40s will never come into play for the ACL Termination procedure.
+		 */
+		llcp_lr_prt_restart_with_value(conn, conn->supervision_reload);
+	}
 }
 
 static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *ctx,
@@ -219,12 +228,26 @@ static void lp_comm_ntf_cte_req(struct ll_conn *conn, struct proc_ctx *ctx, stru
 			llcp_ntf_encode_cte_req(pdu);
 		}
 		break;
+	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+		llcp_ntf_encode_unknown_rsp(ctx, pdu);
+		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		llcp_ntf_encode_reject_ext_ind(ctx, pdu);
 		break;
 	default:
 		/* Unexpected PDU, should not get through, so ASSERT */
 		LL_ASSERT(0);
+	}
+}
+
+static void lp_comm_ntf_cte_req_tx(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	if (llcp_ntf_alloc_is_available()) {
+		lp_comm_ntf(conn, ctx);
+		ull_cp_cte_req_set_disable(conn);
+		ctx->state = LP_COMMON_STATE_IDLE;
+	} else {
+		ctx->state = LP_COMMON_STATE_WAIT_NTF;
 	}
 }
 
@@ -236,24 +259,26 @@ static void lp_comm_complete_cte_req(struct ll_conn *conn, struct proc_ctx *ctx)
 				if (conn->llcp.cte_req.req_interval != 0U) {
 					conn->llcp.cte_req.req_expire =
 						conn->llcp.cte_req.req_interval;
+				} else {
+					/* Disable the CTE request procedure when it is completed in
+					 * case it was executed as non-periodic.
+					 */
+					conn->llcp.cte_req.is_enabled = 0U;
 				}
 				ctx->state = LP_COMMON_STATE_IDLE;
-			} else if (llcp_ntf_alloc_is_available()) {
-				lp_comm_ntf(conn, ctx);
-				ull_cp_cte_req_set_disable(conn);
-				ctx->state = LP_COMMON_STATE_IDLE;
 			} else {
-				ctx->state = LP_COMMON_STATE_WAIT_NTF;
+				lp_comm_ntf_cte_req_tx(conn, ctx);
 			}
 		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND &&
-			ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
-			if (llcp_ntf_alloc_is_available()) {
-				lp_comm_ntf(conn, ctx);
-				ull_cp_cte_req_set_disable(conn);
-				ctx->state = LP_COMMON_STATE_IDLE;
-			} else {
-				ctx->state = LP_COMMON_STATE_WAIT_NTF;
-			}
+			   ctx->reject_ext_ind.reject_opcode == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
+			lp_comm_ntf_cte_req_tx(conn, ctx);
+		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP &&
+			   ctx->unknown_response.type == PDU_DATA_LLCTRL_TYPE_CTE_REQ) {
+			/* CTE response is unsupported in peer, so disable locally for this
+			 * connection
+			 */
+			feature_unmask_features(conn, LL_FEAT_BIT_CONNECTION_CTE_REQ);
+			lp_comm_ntf_cte_req_tx(conn, ctx);
 		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNUSED) {
 			/* This path is related with handling disable the CTE REQ when PHY
 			 * has been changed to CODED PHY. BT 5.3 Core Vol 4 Part E 7.8.85
@@ -263,7 +288,9 @@ static void lp_comm_complete_cte_req(struct ll_conn *conn, struct proc_ctx *ctx)
 			ull_cp_cte_req_set_disable(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
 		} else {
-			/* Illegal response opcode */
+			/* Illegal response opcode, internally changes state to
+			 * LP_COMMON_STATE_IDLE
+			 */
 			lp_comm_terminate_invalid_pdu(conn, ctx);
 		}
 	} else {
@@ -487,6 +514,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
 			lp_comm_tx(conn, ctx);
+			ctx->data.term.error_code = BT_HCI_ERR_LOCALHOST_TERM_CONN;
 			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
 		}
 		break;
@@ -617,6 +645,13 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		llcp_pdu_decode_feature_rsp(conn, pdu);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY)
+		/* If Coded PHY is now supported we must update local max tx/rx times to reflect */
+		if (feature_phy_coded(conn)) {
+			ull_dle_max_time_get(conn, &conn->lll.dle.local.max_rx_time,
+					     &conn->lll.dle.local.max_tx_time);
+		}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH && CONFIG_BT_CTLR_PHY */
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
@@ -768,6 +803,13 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 	case PDU_DATA_LLCTRL_TYPE_PER_INIT_FEAT_XCHG:
 #endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL */
 		llcp_pdu_decode_feature_req(conn, pdu);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) && defined(CONFIG_BT_CTLR_PHY)
+		/* If Coded PHY is now supported we must update local max tx/rx times to reflect */
+		if (feature_phy_coded(conn)) {
+			ull_dle_max_time_get(conn, &conn->lll.dle.local.max_rx_time,
+					     &conn->lll.dle.local.max_tx_time);
+		}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH && CONFIG_BT_CTLR_PHY */
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:

@@ -16,8 +16,6 @@
 #include <zephyr/bluetooth/audio/capabilities.h>
 #include <zephyr/sys/byteorder.h>
 
-#define MAX_PAC 1
-
 #define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
 				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
 				 BT_AUDIO_CONTEXT_TYPE_MEDIA | \
@@ -31,13 +29,20 @@
 
 #define CHANNEL_COUNT_1 BIT(0)
 
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_ASE_SRC_COUNT,
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  8, NULL);
+
 static struct bt_codec lc3_codec =
 	BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY, BT_CODEC_LC3_DURATION_10, CHANNEL_COUNT_1, 40u, 120u,
 		     1u, (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA),
 		     BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static struct bt_conn *default_conn;
-static struct bt_audio_stream streams[MAX_PAC];
+static struct k_work_delayable audio_send_work;
+static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bt_audio_stream *source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static size_t configured_source_stream_count;
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
@@ -129,6 +134,66 @@ static void print_qos(struct bt_codec_qos *qos)
 	       qos->rtn, qos->latency, qos->pd);
 }
 
+/**
+ * @brief Send audio data on timeout
+ *
+ * This will send an increasing amount of audio data, starting from 1 octet.
+ * The data is just mock data, and does not actually represent any audio.
+ *
+ * First iteration : 0x00
+ * Second iteration: 0x00 0x01
+ * Third iteration : 0x00 0x01 0x02
+ *
+ * And so on, until it wraps around the configured MTU (CONFIG_BT_ISO_TX_MTU)
+ *
+ * @param work Pointer to the work structure
+ */
+static void audio_timer_timeout(struct k_work *work)
+{
+	int ret;
+	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
+	static bool data_initialized;
+	struct net_buf *buf;
+	static size_t len_to_send = 1;
+
+	if (!data_initialized) {
+		/* TODO: Actually encode some audio data */
+		for (size_t i = 0U; i < ARRAY_SIZE(buf_data); i++) {
+			buf_data[i] = (uint8_t)i;
+		}
+
+		data_initialized = true;
+	}
+
+	/* We configured the sink streams to be first in `streams`, so that
+	 * we can use `stream[i]` to select sink streams (i.e. streams with
+	 * data going to the server)
+	 */
+	for (size_t i = 0; i < configured_source_stream_count; i++) {
+		buf = net_buf_alloc(&tx_pool, K_FOREVER);
+		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+
+		net_buf_add_mem(buf, buf_data, len_to_send);
+
+		ret = bt_audio_stream_send(source_streams[i], buf);
+		if (ret < 0) {
+			printk("Failed to send audio data on streams[%zu]: (%d)\n",
+			       i, ret);
+			net_buf_unref(buf);
+		} else {
+			printk("Sending mock data with len %zu on streams[%zu]\n",
+			       len_to_send, i);
+		}
+	}
+
+	k_work_schedule(&audio_send_work, K_MSEC(1000U));
+
+	len_to_send++;
+	if (len_to_send > ARRAY_SIZE(buf_data)) {
+		len_to_send = 1;
+	}
+}
+
 static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 					  struct bt_audio_ep *ep,
 					  enum bt_audio_dir dir,
@@ -145,6 +210,10 @@ static struct bt_audio_stream *lc3_config(struct bt_conn *conn,
 
 		if (!stream->conn) {
 			printk("ASE Codec Config stream %p\n", stream);
+			if (dir == BT_AUDIO_DIR_SOURCE) {
+				source_streams[configured_source_stream_count++] = stream;
+			}
+
 			return stream;
 		}
 	}
@@ -227,6 +296,13 @@ static int lc3_start(struct bt_audio_stream *stream)
 {
 	printk("Start: stream %p\n", stream);
 
+	if (configured_source_stream_count > 0 &&
+	    !k_work_delayable_is_pending(&audio_send_work)) {
+
+		/* Start send timer */
+		k_work_schedule(&audio_send_work, K_MSEC(0));
+	}
+
 	return 0;
 }
 
@@ -287,7 +363,7 @@ static void stream_recv_lc3_codec(struct bt_audio_stream *stream,
 		return;
 	}
 
-	if (info->flags != BT_ISO_FLAGS_VALID) {
+	if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
 		printk("Bad packet: 0x%02X\n", info->flags);
 
 		in_buf = NULL;
@@ -433,4 +509,7 @@ void main(void)
 	}
 
 	printk("Advertising successfully started\n");
+
+
+	k_work_init_delayable(&audio_send_work, audio_timer_timeout);
 }

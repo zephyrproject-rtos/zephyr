@@ -932,6 +932,23 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	/* LE Read Antenna Information */
 	rp->commands[40] |= BIT(4);
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
+	/* LE Set Connection CTE Transmit Parameters */
+	rp->commands[40] |= BIT(1);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
+	/* LE Set Connection CTE Receive Parameters */
+	rp->commands[40] |= BIT(0);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	/* LE Connection CTE Request Enable */
+	rp->commands[40] |= BIT(2);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	/* LE Connection CTE Response Enable */
+	rp->commands[40] |= BIT(3);
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
 #endif /* CONFIG_BT_CTLR_DF */
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
@@ -3596,7 +3613,7 @@ static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt)
 
 	phys = cmd->phys;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-	    (phys > phys_bitmask)) {
+	    (((phys & phys_bitmask) == 0) || (phys & ~phys_bitmask))) {
 		*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 
 		return;
@@ -3932,7 +3949,7 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 
 	phys = cmd->phys;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-	    (phys > phys_bitmask)) {
+	    (((phys & phys_bitmask) == 0) || (phys & ~phys_bitmask))) {
 		*evt = cmd_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 
 		return;
@@ -7908,7 +7925,11 @@ static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 		le_remote_feat_complete(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
 					    NULL, handle, buf);
 		break;
-
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
+		le_df_cte_req_failed(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, handle, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		BT_WARN("type: 0x%02x",	pdu_data->llctrl.unknown_rsp.type);
 		break;

@@ -230,8 +230,6 @@ struct bt_audio_capability_ops {
 struct bt_audio_capability {
 	/** Capability direction */
 	enum bt_audio_dir dir;
-	/** Supported Audio Contexts */
-	uint16_t context;
 	/** Capability codec reference */
 	struct bt_codec *codec;
 	/** Capability preferences */
@@ -269,6 +267,14 @@ int bt_audio_capability_unregister(struct bt_audio_capability *cap);
  */
 int bt_audio_capability_set_location(enum bt_audio_dir dir,
 				     enum bt_audio_location location);
+
+/** @brief Set the available contexts for an endpoint type
+ *
+ * @param dir      Direction of the endpoints to change location for.
+ * @param contexts The contexts to be set.
+ */
+int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
+					       enum bt_audio_context contexts);
 
 #ifdef __cplusplus
 }

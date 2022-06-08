@@ -24,6 +24,7 @@
 #include "ll_settings.h"
 
 #include "lll.h"
+#include "ll_feat.h"
 #include "lll_df_types.h"
 #include "lll_conn.h"
 
@@ -44,6 +45,18 @@ static void setup(void)
 
 	/* Set CTE request enable as if it was called by Host */
 	conn.llcp.cte_req.is_enabled = 1U;
+}
+
+static void fex_setup(void)
+{
+	setup();
+
+	/* Emulate valid feature exchange and all features valid for local and peer devices */
+	memset(&conn.llcp.fex, 0, sizeof(conn.llcp.fex));
+	conn.llcp.fex.features_used = LL_FEAT;
+	conn.llcp.fex.features_peer = LL_FEAT;
+
+	conn.llcp.fex.valid = 1;
 }
 
 /* Tests of successful execution of CTE Request Procedure */
@@ -110,117 +123,14 @@ void test_cte_req_central_local(void)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_CTE_RSP, &ntf, &remote_cte_rsp);
 
-	/* There should not be a host notifications */
+	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
-
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
-}
-
-/* Tests of invalid rsp execution of CTE Request Procedure */
-
-/* +-----+                     +-------+            +-----+
- * | UT  |                     | LL_A  |            | LT  |
- * +-----+                     +-------+            +-----+
- *    |                            |                   |
- *    | Start initiation           |                   |
- *    | CTE Request Proc.          |                   |
- *    |--------------------------->|                   |
- *    |                            |                   |
- *    |                            | LL_LE_CTE_REQ     |
- *    |                            |------------------>|
- *    |                            |                   |
- *    |                            | LL_<INVALID>_RSP  |
- *    |                            |<------------------|
- *    |                            |                   |
- * ~~~~~~~~~~~~~~~~~  TERMINATE CONNECTION ~~~~~~~~~~~~~~
- *    |                            |                   |
- *    |                            |                   |
- *    |                            |                   |
- */
-void test_cte_req_central_local_invalid_rsp(void)
-{
-	uint8_t err;
-	struct node_tx *tx;
-	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
-		.type = PDU_DATA_LLCTRL_TYPE_CTE_REQ
-	};
-	struct pdu_data_llctrl_reject_ind reject_ind = {
-		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
-	};
-	struct pdu_data_llctrl_cte_req local_cte_req = {
-		.cte_type_req = BT_HCI_LE_AOA_CTE,
-		.min_cte_len_req = BT_HCI_LE_CTE_LEN_MIN,
-	};
-
-	/* Role */
-	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
-
-	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
-
-	/* Initiate an CTE Request Procedure */
-	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_CTE_REQ, &conn, &tx, &local_cte_req);
-	lt_rx_q_is_empty(&conn);
-
-	/* Rx */
-	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
-
-	/* Done */
-	event_done(&conn);
-
-	/* There should not be a host notifications */
-	ut_rx_q_is_empty();
-
-	/* Release tx node */
-	ull_cp_release_tx(&conn, tx);
-
-	/* Termination 'triggered' */
-	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
-		      "Terminate reason %d", conn.llcp_terminate.reason_final);
-
-	/* Clear termination flag for subsequent test cycle */
-	conn.llcp_terminate.reason_final = 0;
-
-	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
-				  "Free CTX buffers %d", ctx_buffers_free());
-
-	/* Initiate another CTE Request Procedure */
-	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-
-	/* Prepare */
-	event_prepare(&conn);
-
-	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_CTE_REQ, &conn, &tx, &local_cte_req);
-	lt_rx_q_is_empty(&conn);
-
-	/* Rx */
-	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
-
-	/* Done */
-	event_done(&conn);
-
-	/* There should not be a host notifications */
-	ut_rx_q_is_empty();
-
-	/* Release tx node */
-	ull_cp_release_tx(&conn, tx);
-
-	/* Termination 'triggered' */
-	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
-		      "Terminate reason %d", conn.llcp_terminate.reason_final);
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
@@ -288,11 +198,14 @@ void test_cte_req_peripheral_local(void)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_CTE_RSP, &ntf, &remote_cte_rsp);
 
+	/* The RX queue should be empty now */
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
-
-	/* There should not be a host notifications */
-	ut_rx_q_is_empty();
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
@@ -504,8 +417,11 @@ void test_cte_req_rejected_inv_ll_param_central_local(void)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_REJECT_EXT_IND, &ntf, &remote_reject_ext_ind);
 
-	/* There should not be a host notifications */
+	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -580,11 +496,14 @@ void test_cte_req_rejected_inv_ll_param_peripheral_local(void)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_REJECT_EXT_IND, &ntf, &remote_reject_ext_ind);
 
+	/* The RX queue should be empty now */
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
-
-	/* There should not be a host notifications */
-	ut_rx_q_is_empty();
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 				  "Free CTX buffers %d", ctx_buffers_free());
@@ -734,6 +653,96 @@ void test_cte_req_reject_inv_ll_param_peripheral_remote(void)
 				  "Free CTX buffers %d", ctx_buffers_free());
 }
 
+/* +-----+                     +-------+                         +-----+
+ * | UT  |                     | LL_A  |                         | LT  |
+ * +-----+                     +-------+                         +-----+
+ *    |                            |                                |
+ *    | Start initiation           |                                |
+ *    | CTE Request Proc.          |                                |
+ *    |--------------------------->|                                |
+ *    |                            |                                |
+ *    |                            | LL_LE_CTE_REQ                  |
+ *    |                            |------------------------------->|
+ *    |                            |                                |
+ *    |                            | LL_UNKNOWN_RSP                 |
+ *    |                            |<-------------------------------|
+ *    |                            |                                |
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                            |                                |
+ *    | LE CTE Request Failed      |                                |
+ *    |<---------------------------|                                |
+ *    |                            |                                |
+ *    |                            |                                |
+ */
+void test_cte_req_ll_unknown_rsp_local(uint8_t role)
+{
+	uint8_t err;
+	struct node_tx *tx;
+
+	struct pdu_data_llctrl_cte_req local_cte_req = {
+		.cte_type_req = BT_HCI_LE_AOD_CTE_1US,
+		.min_cte_len_req = BT_HCI_LE_CTE_LEN_MIN,
+	};
+
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = { .type = PDU_DATA_LLCTRL_TYPE_CTE_REQ };
+	struct node_rx_pdu *ntf;
+
+	/* Role */
+	test_set_role(&conn, role);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an CTE Request Procedure */
+	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CTE_REQ, &conn, &tx, &local_cte_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Receive notification of reception of unknown response. The notification is changed to
+	 * HCI_LE_CTE_Request_Failed before send to host by HCI. This is why it is verified if CTE
+	 * request state machine sends LL_UNKNOWN_RSP towards host.
+	 */
+	ut_rx_pdu(LL_UNKNOWN_RSP, &ntf, &unknown_rsp);
+
+	/* The RX queue should be empty now */
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Release tx node */
+	ull_cp_release_tx(&conn, tx);
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(), "Free CTX buffers %d",
+		      ctx_buffers_free());
+
+	/* Verify that CTE response feature is marked as not supported by peer device */
+	err = ull_cp_cte_req(&conn, local_cte_req.min_cte_len_req, local_cte_req.cte_type_req);
+	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, NULL);
+}
+
+void test_cte_req_ll_unknown_rsp_central_local(void)
+{
+	test_cte_req_ll_unknown_rsp_local(BT_HCI_ROLE_CENTRAL);
+}
+
+void test_cte_req_ll_unknown_rsp_peripheral_local(void)
+{
+	test_cte_req_ll_unknown_rsp_local(BT_HCI_ROLE_PERIPHERAL);
+}
+
 /* Tests related with PHY update procedure and CTE request procedure "collision" */
 
 #define PREFER_S2_CODING 0U
@@ -794,10 +803,6 @@ static uint16_t pu_event_counter(struct ll_conn *conn)
 
 static void phy_update_setup(void)
 {
-	test_setup(&conn);
-	/* Set CTE request enable as if it was called by Host */
-	conn.llcp.cte_req.is_enabled = 1U;
-
 	/* Emulate initial conn state */
 	conn.phy_pref_rx = PHY_PREFER_ANY;
 	conn.phy_pref_tx = PHY_PREFER_ANY;
@@ -807,8 +812,10 @@ static void phy_update_setup(void)
 	conn.lll.phy_tx = PHY_1M;
 
 	/* Init DLE data */
-	ull_conn_default_tx_octets_set(251);
-	ull_conn_default_tx_time_set(2120);
+	ull_conn_default_tx_octets_set(PDU_DC_PAYLOAD_SIZE_MAX);
+	/* PHY Coded support is enabled hence it limits the max TX time */
+	ull_conn_default_tx_time_set(PDU_DC_PAYLOAD_TIME_MAX_CODED);
+	/* Initialize with defauly PHY1M */
 	ull_dle_init(&conn, PHY_1M);
 	/* Emulate different remote numbers to trigger update of effective max TX octets and time.
 	 * Numbers are taken arbitrary.
@@ -844,8 +851,11 @@ static void run_local_cte_req(struct pdu_data_llctrl_cte_req *cte_req)
 	/* Receive notification of sampled CTE response */
 	ut_rx_pdu(LL_CTE_RSP, &ntf, &remote_cte_rsp);
 
-	/* There should not be a host notifications */
+	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
 
 	/* Release tx node */
 	ull_cp_release_tx(&conn, tx);
@@ -924,7 +934,7 @@ void check_phy_update_and_cte_req_complete(bool is_local, struct pdu_data_llctrl
 		ull_cp_release_tx(&conn, tx);
 	}
 
-	/* There should not be a host notifications */
+	/* The RX queue should be empty now */
 	ut_rx_q_is_empty();
 
 	check_current_phy_state(&conn, phy_req->tx_phys, PREFER_S2_CODING, phy_req->tx_phys);
@@ -1493,57 +1503,61 @@ void test_main(void)
 {
 	ztest_test_suite(
 		cte_req,
-		ztest_unit_test_setup_teardown(test_cte_req_central_local, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_central_local_invalid_rsp, setup,
+		ztest_unit_test_setup_teardown(test_cte_req_central_local, fex_setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_peripheral_local, setup,
+		ztest_unit_test_setup_teardown(test_cte_req_peripheral_local, fex_setup,
 					       unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_central_remote, setup, unit_test_noop),
-		ztest_unit_test_setup_teardown(test_cte_req_peripheral_remote, setup,
+		ztest_unit_test_setup_teardown(test_cte_req_central_remote, fex_setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_cte_req_peripheral_remote, fex_setup,
 					       unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_rejected_inv_ll_param_central_local,
-					       setup, unit_test_noop),
+					       fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_rejected_inv_ll_param_peripheral_local,
-					       setup, unit_test_noop),
+					       fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_reject_inv_ll_param_central_remote,
-					       setup, unit_test_noop),
+					       fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_cte_req_reject_inv_ll_param_peripheral_remote,
-					       setup, unit_test_noop),
+					       fex_setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_cte_req_ll_unknown_rsp_central_local, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_cte_req_ll_unknown_rsp_peripheral_local, setup,
+					       unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_local_cte_req_wait_for_phy_update_complete_and_disable, setup,
+			test_central_local_cte_req_wait_for_phy_update_complete_and_disable,
+			fex_setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_central_local_cte_req_wait_for_phy_update_complete_and_disable,
+			fex_setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(
+			test_central_local_cte_req_wait_for_phy_update_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_local_cte_req_wait_for_phy_update_complete_and_disable, setup,
+			test_central_local_phy_update_wait_for_cte_req_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_peripheral_local_cte_req_wait_for_phy_update_complete, setup,
+			test_peripheral_local_phy_update_wait_for_cte_req_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_local_phy_update_wait_for_cte_req_complete, setup,
+			test_peripheral_local_cte_req_wait_for_phy_update_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_peripheral_local_phy_update_wait_for_cte_req_complete, setup,
+			test_central_phy_update_wait_for_remote_cte_req_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_peripheral_local_cte_req_wait_for_phy_update_complete, setup,
+			test_peripheral_phy_update_wait_for_remote_cte_req_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_phy_update_wait_for_remote_cte_req_complete, setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_peripheral_phy_update_wait_for_remote_cte_req_complete, setup,
-			unit_test_noop),
-		ztest_unit_test_setup_teardown(
-			test_central_cte_req_wait_for_remote_phy_update_complete_and_disable, setup,
-			unit_test_noop),
+			test_central_cte_req_wait_for_remote_phy_update_complete_and_disable,
+			fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(
 			test_peripheral_cte_req_wait_for_remote_phy_update_complete_and_disable,
-			setup, unit_test_noop),
+			fex_setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_central_cte_req_wait_for_remote_phy_update_complete, setup,
+			test_central_cte_req_wait_for_remote_phy_update_complete, fex_setup,
 			unit_test_noop),
 		ztest_unit_test_setup_teardown(
-			test_peripheral_cte_req_wait_for_remote_phy_update_complete, setup,
+			test_peripheral_cte_req_wait_for_remote_phy_update_complete, fex_setup,
 			unit_test_noop));
 	ztest_run_test_suite(cte_req);
 }

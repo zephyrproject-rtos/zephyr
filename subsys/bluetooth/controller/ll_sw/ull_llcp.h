@@ -38,9 +38,10 @@ void ull_cp_release_ntf(struct node_rx_pdu *ntf);
 /**
  * @brief Procedure Response Timeout Check
  * @param elapsed_event The number of elapsed events.
+ * @param[out] error_code The error code for this timeout.
  * @return 0 on success, -ETIMEDOUT if timer expired.
  */
-int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event);
+int ull_cp_prt_elapse(struct ll_conn *conn, uint16_t elapsed_event, uint8_t *error_code);
 
 void ull_cp_prt_reload_set(struct ll_conn *conn, uint32_t conn_intv);
 

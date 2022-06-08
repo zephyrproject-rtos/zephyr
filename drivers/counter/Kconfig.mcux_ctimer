@@ -8,3 +8,11 @@ config COUNTER_MCUX_CTIMER
 	depends on HAS_MCUX_CTIMER
 	help
 	  Enable support for MCUX CTIMER driver.
+
+config COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
+	bool "reserve a ctimer channel to set the top value"
+	default y
+	depends on COUNTER_MCUX_CTIMER
+	help
+	  This reserves a CTimer channel to set the top value. Without
+	  this the set top value can be set only to the max counter value.

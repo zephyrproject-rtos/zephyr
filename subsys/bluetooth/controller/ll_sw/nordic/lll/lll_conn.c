@@ -395,6 +395,13 @@ lll_conn_isr_rx_exit:
 
 	is_ull_rx = 0U;
 
+#if defined(CONFIG_BT_CTLR_RX_ENQUEUE_HOLD)
+	if (((lll->rx_hold_req - lll->rx_hold_ack) & RX_HOLD_MASK) ==
+	    RX_HOLD_REQ) {
+		lll->rx_hold_ack--;
+	}
+#endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
+
 	if (tx_release) {
 		LL_ASSERT(lll->handle != 0xFFFF);
 

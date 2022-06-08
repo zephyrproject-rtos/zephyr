@@ -28,6 +28,7 @@ import xml.etree.ElementTree as ET
 import logging
 from pathlib import Path
 from distutils.spawn import find_executable
+import colorama
 from colorama import Fore
 import pickle
 import platform
@@ -846,6 +847,8 @@ class DeviceHandler(Handler):
                         command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
                     elif runner == "stm32cubeprogrammer":
                         command.append("--tool-opt=sn=%s" % (board_id))
+                    elif runner == "intel_adsp":
+                        command.append("--pty")
 
                     # Receive parameters from an runner_params field
                     # of the specified hardware map file.
@@ -912,7 +915,7 @@ class DeviceHandler(Handler):
             stdout = stderr = None
             with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
                 try:
-                    (stdout, stderr) = proc.communicate(timeout=30)
+                    (stdout, stderr) = proc.communicate(timeout=60)
                     # ignore unencodable unicode chars
                     logger.debug(stdout.decode(errors = "ignore"))
 
@@ -923,6 +926,7 @@ class DeviceHandler(Handler):
                             dlog_fp.write(stderr.decode())
                         os.write(write_pipe, b'x')  # halt the thread
                 except subprocess.TimeoutExpired:
+                    logger.warning("Flash operation timed out.")
                     proc.kill()
                     (stdout, stderr) = proc.communicate()
                     self.instance.status = "error"
@@ -954,23 +958,20 @@ class DeviceHandler(Handler):
 
         handler_time = time.time() - start_time
 
-        if self.instance.status == "error":
-            self.instance.add_missing_testscases("blocked", self.instance.reason)
-
         if harness.is_pytest:
             harness.pytest_run(self.log)
 
-        # sometimes a test instance hasn't been executed successfully with no
-        # status, in order to include it into final report,
-        # so fill the results as blocked
-        self.instance.add_missing_testscases("blocked")
-
+        self.instance.execution_time = handler_time
         if harness.state:
             self.instance.status = harness.state
             if harness.state == "failed":
                 self.instance.reason = "Failed"
         else:
-            self.instance.execution_time = handler_time
+            self.instance.status = "error"
+            self.instance.reason = "No Console Output(Timeout)"
+
+        if self.instance.status == "error":
+            self.instance.add_missing_testscases("blocked", self.instance.reason)
 
         self._final_handle_actions(harness, handler_time)
 
@@ -1704,6 +1705,7 @@ class ScanPathResult:
                  sorted(other.ztest_suite_names)))
 
 class TestCase(DisablePyTestCollectionMixin):
+
     def __init__(self, name=None, testsuite=None):
         self.duration = 0
         self.name = name
@@ -1711,6 +1713,7 @@ class TestCase(DisablePyTestCollectionMixin):
         self.reason = None
         self.testsuite = testsuite
         self.output = ""
+        self.freeform = False
 
     def __lt__(self, other):
         return self.name < other.name
@@ -1780,8 +1783,9 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.ztest_suite_names = []
 
 
-    def add_testcase(self, name):
+    def add_testcase(self, name, freeform=False):
         tc = TestCase(name=name, testsuite=self)
+        tc.freeform = freeform
         self.testcases.append(tc)
 
     @staticmethod
@@ -2057,7 +2061,7 @@ Tests should reference the category and subsystem with a dot as a separator.
                 self.add_testcase(name)
 
             if not subcases:
-                self.add_testcase(self.id)
+                self.add_testcase(self.id, freeform=True)
 
         self.ztest_suite_names = ztest_suite_names
 
@@ -2112,7 +2116,7 @@ class TestInstance(DisablePyTestCollectionMixin):
     # Fix an issue with copying objects from testsuite, need better solution.
     def init_cases(self):
         for c in self.testsuite.testcases:
-            self.add_testcase(c.name)
+            self.add_testcase(c.name, freeform=c.freeform)
 
     def _get_run_id(self):
         """ generate run id from instance unique identifier and a random
@@ -2149,8 +2153,9 @@ class TestInstance(DisablePyTestCollectionMixin):
             tc.reason = reason
         return tc
 
-    def add_testcase(self, name):
+    def add_testcase(self, name, freeform=False):
         tc = TestCase(name=name)
+        tc.freeform = freeform
         self.testcases.append(tc)
         return tc
 
@@ -4123,7 +4128,6 @@ class TestPlan(DisablePyTestCollectionMixin):
             if instance.status is not None:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
 
-
             testcases = []
 
             if len(instance.testcases) == 1:
@@ -4132,6 +4136,12 @@ class TestPlan(DisablePyTestCollectionMixin):
                 single_case_duration = 0
 
             for case in instance.testcases:
+                # freeform was set when no sub testcases were parsed, however,
+                # if we discover those at runtime, the fallback testcase wont be
+                # needed anymore and can be removed from the output, it does
+                # not have a status and would otherwise be reported as skipped.
+                if case.freeform and case.status is None and len(instance.testcases) > 1:
+                    continue
                 testcase = {}
                 testcase['identifier'] = case.name
                 if instance.status:
@@ -4640,7 +4650,7 @@ class HardwareMap:
             with open(hwm_file, 'r') as yaml_file:
                 hwm = yaml.load(yaml_file, Loader=SafeLoader)
                 if hwm:
-                    hwm.sort(key=lambda x: x.get('serial', ''))
+                    hwm.sort(key=lambda x: x.get('id', ''))
 
                     # disconnect everything
                     for h in hwm:
@@ -4714,3 +4724,6 @@ class HardwareMap:
                 table.append([platform, p.id, p.serial])
 
         print(tabulate(table, headers=header, tablefmt="github"))
+
+def init(colorama_strip):
+    colorama.init(strip=colorama_strip)

@@ -65,7 +65,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 5a334d5584d030d5773de2f1d489288a8625529c
+      revision: df85671c5d0405c0747c2939c8dfe808b7e4cf38
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -127,13 +127,14 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 6253094a4147cbd30d2b466c975eb4013ac6be90
+      revision: 51b373cd3455b8c2b9babbf6ff41918116a442ac
       path: modules/hal/stm32
       groups:
         - hal
     - name: hal_telink
-      revision: ffcfd6282aa213f1dc0848dbca6279b098f6b143
+      revision: d7b72519dc5288487e6eedf39c08c3b12ce307ff
       path: modules/hal/telink
+      submodules: true
       groups:
         - hal
     - name: hal_ti
@@ -163,7 +164,7 @@ manifest:
       revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 9955c3e1e4f361884e938dc016da5a715a4527fe
+      revision: df717ac87a9fd80246cc8df24554475e59bda21f
       path: modules/lib/gui/lvgl
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
@@ -174,7 +175,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: e86f575f68fdac2cab1898e0a893c8c6d8fd0fa1
+      revision: e7415b555134e671ba04f036b02f55cbc087d0e9
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -243,7 +244,7 @@ manifest:
       path: modules/lib/zcbor
     - name: zscilib
       path: modules/lib/zscilib
-      revision: 12bfe3f0a9fcbfe3edab7eabc9678b6c62875d34
+      revision: fc979a8dcb74169c69b02835927bff8f070d6325
 
   group-filter:
     - -ci

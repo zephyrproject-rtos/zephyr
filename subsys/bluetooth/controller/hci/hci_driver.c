@@ -63,8 +63,8 @@
 
 #include "hci_internal.h"
 
-static K_SEM_DEFINE(sem_prio_recv, 0, K_SEM_MAX_LIMIT);
-static K_FIFO_DEFINE(recv_fifo);
+static struct k_sem sem_prio_recv;
+static struct k_fifo recv_fifo;
 
 struct k_thread prio_recv_thread_data;
 static K_KERNEL_STACK_DEFINE(prio_recv_thread_stack,
@@ -73,8 +73,7 @@ struct k_thread recv_thread_data;
 static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-static struct k_poll_signal hbuf_signal =
-		K_POLL_SIGNAL_INITIALIZER(hbuf_signal);
+static struct k_poll_signal hbuf_signal;
 static sys_slist_t hbuf_pend;
 static int32_t hbuf_count;
 #endif
@@ -734,6 +733,9 @@ static int hci_driver_open(void)
 
 	DEBUG_INIT();
 
+	k_fifo_init(&recv_fifo);
+	k_sem_init(&sem_prio_recv, 0, K_SEM_MAX_LIMIT);
+
 	err = ll_init(&sem_prio_recv);
 	if (err) {
 		BT_ERR("LL initialization failed: %d", err);
@@ -741,6 +743,7 @@ static int hci_driver_open(void)
 	}
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+	k_poll_signal_init(&hbuf_signal);
 	hci_init(&hbuf_signal);
 #else
 	hci_init(NULL);
@@ -763,11 +766,26 @@ static int hci_driver_open(void)
 	return 0;
 }
 
+static int hci_driver_close(void)
+{
+	/* Resetting the LL stops all roles */
+	ll_deinit();
+
+	/* Abort prio RX thread */
+	k_thread_abort(&prio_recv_thread_data);
+
+	/* Abort RX thread */
+	k_thread_abort(&recv_thread_data);
+
+	return 0;
+}
+
 static const struct bt_hci_driver drv = {
 	.name	= "Controller",
 	.bus	= BT_HCI_DRIVER_BUS_VIRTUAL,
 	.quirks = BT_QUIRK_NO_AUTO_DLE,
 	.open	= hci_driver_open,
+	.close	= hci_driver_close,
 	.send	= hci_driver_send,
 };
 

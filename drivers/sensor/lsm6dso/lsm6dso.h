@@ -52,6 +52,8 @@ struct lsm6dso_config {
 	} stmemsc_cfg;
 	uint8_t accel_pm;
 	uint8_t accel_odr;
+#define ACCEL_RANGE_DOUBLE	BIT(7)
+#define ACCEL_RANGE_MASK	BIT_MASK(6)
 	uint8_t accel_range;
 	uint8_t gyro_pm;
 	uint8_t gyro_odr;
@@ -79,7 +81,7 @@ struct lsm6dso_data {
 	int16_t gyro[3];
 	uint32_t gyro_gain;
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-	int temp_sample;
+	int16_t temp_sample;
 #endif
 #if defined(CONFIG_LSM6DSO_SENSORHUB)
 	uint8_t ext_data[2][6];

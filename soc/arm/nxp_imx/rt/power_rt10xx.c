@@ -76,6 +76,15 @@ static void lpm_set_sleep_mode_config(clock_mode_t mode)
 	GPC_DisableIRQ(GPC, GPR_IRQ_IRQn);
 }
 
+static void lpm_enter_soft_off_mode(void)
+{
+	/* Enable the SNVS RTC as a wakeup source from soft-off mode, in case an RTC alarm
+	 * was set.
+	 */
+	GPC_EnableIRQ(GPC, DT_IRQN(DT_INST(0, nxp_imx_snvs_rtc)));
+	SNVS->LPCR |= SNVS_LPCR_TOP_MASK;
+}
+
 static void lpm_enter_sleep_mode(clock_mode_t mode)
 {
 	/* FIXME: When this function is entered the Kernel has disabled
@@ -193,6 +202,10 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		}
 		lpm_set_sleep_mode_config(kCLOCK_ModeWait);
 		lpm_enter_sleep_mode(kCLOCK_ModeWait);
+		break;
+	case PM_STATE_SOFT_OFF:
+		LOG_DBG("Entering PM state soft off");
+		lpm_enter_soft_off_mode();
 		break;
 	default:
 		return;
