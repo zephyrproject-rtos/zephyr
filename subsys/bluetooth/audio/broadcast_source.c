@@ -119,7 +119,9 @@ static void broadcast_source_set_ep_state(struct bt_audio_ep *ep, uint8_t state)
 
 static void broadcast_source_iso_sent(struct bt_iso_chan *chan)
 {
-	struct bt_audio_ep *ep = CONTAINER_OF(chan, struct bt_audio_ep, iso);
+	struct bt_audio_iso *audio_iso = CONTAINER_OF(chan, struct bt_audio_iso,
+						      iso_chan);
+	struct bt_audio_ep *ep = audio_iso->source_ep;
 	struct bt_audio_stream_ops *ops = ep->stream->ops;
 
 	BT_DBG("stream %p ep %p", chan, ep);
