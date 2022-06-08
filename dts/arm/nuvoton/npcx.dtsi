@@ -691,6 +691,12 @@
 			label = "I2C_7_PORT_0";
 			status = "disabled";
 		};
+
+		power_ctrl_psl: power-ctrl-psl {
+			compatible = "nuvoton,npcx-power-psl";
+			label = "POWER_CONTROL_PSL";
+			status = "disabled";
+		};
 	};
 
 	soc-id {
