@@ -48,7 +48,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(shell, "Reading %d bytes from EEPROM, offset %d...", len,
+	shell_print(shell, "Reading %zu bytes from EEPROM, offset %zu...", len,
 		    addr);
 
 	for (upto = 0; upto < len; upto += pending) {
@@ -84,7 +84,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 	len = argc - args_indx.data;
 
 	if (len > sizeof(wr_buf)) {
-		shell_error(shell, "Write buffer size (%d bytes) exceeded",
+		shell_error(shell, "Write buffer size (%zu bytes) exceeded",
 			    sizeof(wr_buf));
 		return -EINVAL;
 	}
@@ -104,7 +104,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(shell, "Writing %d bytes to EEPROM...", len);
+	shell_print(shell, "Writing %zu bytes to EEPROM...", len);
 
 	err = eeprom_write(eeprom, offset, wr_buf, len);
 	if (err) {
@@ -140,7 +140,7 @@ static int cmd_size(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(shell, "%d bytes", eeprom_get_size(eeprom));
+	shell_print(shell, "%zu bytes", eeprom_get_size(eeprom));
 	return 0;
 }
 
@@ -173,7 +173,7 @@ static int cmd_fill(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(shell, "Writing %d bytes of 0x%02lx to EEPROM...", len,
+	shell_print(shell, "Writing %zu bytes of 0x%02lx to EEPROM...", len,
 		    pattern);
 
 	addr = initial_offset;
