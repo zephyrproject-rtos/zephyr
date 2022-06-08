@@ -937,7 +937,7 @@ static int state_update(struct osdp_pd *pd)
 			cp_set_online(pd);
 			break;
 		}
-		osdp_keyset_complete(pd);
+		cp_keyset_complete(pd);
 		pd->seq_number = -1;
 		break;
 #endif /* CONFIG_OSDP_SC_ENABLED */
@@ -991,7 +991,7 @@ static int osdp_cp_send_command_keyset(struct osdp_cmd_keyset *p)
 	return res;
 }
 
-void osdp_keyset_complete(struct osdp_pd *pd)
+void cp_keyset_complete(struct osdp_pd *pd)
 {
 	struct osdp_cmd *c = (struct osdp_cmd *)pd->ephemeral_data;
 

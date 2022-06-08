@@ -501,12 +501,18 @@ struct osdp {
 	cp_event_callback_t event_callback;
 };
 
+#ifdef CONFIG_OSDP_MODE_PD
+static inline void cp_keyset_complete(struct osdp_pd *pd) { }
+#else
+void cp_keyset_complete(struct osdp_pd *pd);
+#endif
+
 void osdp_keyset_complete(struct osdp_pd *pd);
 
 /* from osdp_phy.c */
 int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);
 int osdp_phy_packet_finalize(struct osdp_pd *p, uint8_t *buf,
-			       int len, int max_len);
+			     int len, int max_len);
 int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			  int *one_pkt_len);
 int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len,

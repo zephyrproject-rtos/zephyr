@@ -41,6 +41,11 @@ int64_t osdp_millis_since(int64_t last)
 	return (int64_t) k_uptime_delta(&tmp);
 }
 
+void osdp_keyset_complete(struct osdp_pd *pd)
+{
+	cp_keyset_complete(pd);
+}
+
 #ifdef CONFIG_OSDP_SC_ENABLED
 
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
