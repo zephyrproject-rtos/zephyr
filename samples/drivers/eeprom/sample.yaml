@@ -11,9 +11,20 @@ common:
 tests:
   sample.drivers.eeprom:
     tags: eeprom
-    platform_allow: native_posix gd32f450i_eval
+    platform_allow: >
+      gd32f450i_eval
+      native_posix
+      native_posix_64
     integration_platforms:
-      - native_posix
+      - native_posix_64
+  sample.drivers.eeprom.shell:
+    tags: eeprom
+    platform_allow: >
+      gd32f450i_eval
+      native_posix
+      native_posix_64
+    extra_args: OVERLAY_CONFIG=overlay-shell.conf
+    harness: keyboard
   sample.drivers.eeprom.shield.x_nucleo_eeprma2:
     tags: eeprom shield
     depends_on: arduino_gpio arduino_i2c arduino_spi
