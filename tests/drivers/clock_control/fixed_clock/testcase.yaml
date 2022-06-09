@@ -1,0 +1,4 @@
+tests:
+  drivers.clock.clock_control_fixed_clock:
+    tags: drivers
+    platform_allow: native_posix
