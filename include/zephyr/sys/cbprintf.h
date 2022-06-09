@@ -225,7 +225,7 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
 
 /**@} */
 
-#include <sys/cbprintf_enums.h>
+#include <zephyr/sys/cbprintf_enums.h>
 
 /** @brief Signature for a cbprintf callback function.
  *
