@@ -5365,6 +5365,7 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 		if (!path) {
 			LOG_ERR("Observation node not include path");
 			ret = -EINVAL;
+			goto cleanup;
 		}
 		/* copy path */
 		memcpy(&msg->path, path, sizeof(struct lwm2m_obj_path));
