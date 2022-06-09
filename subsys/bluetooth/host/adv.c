@@ -1102,6 +1102,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	struct net_buf *buf, *rsp;
 	int err;
 	enum adv_name_type name_type;
+	uint16_t props = 0;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, sizeof(*cp));
 	if (!buf) {
@@ -1147,15 +1148,15 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	}
 
 	if (!(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
-		cp->props |= BT_HCI_LE_ADV_PROP_LEGACY;
+		props |= BT_HCI_LE_ADV_PROP_LEGACY;
 	}
 
 	if (param->options & BT_LE_ADV_OPT_USE_TX_POWER) {
-		cp->props |= BT_HCI_LE_ADV_PROP_TX_POWER;
+		props |= BT_HCI_LE_ADV_PROP_TX_POWER;
 	}
 
 	if (param->options & BT_LE_ADV_OPT_ANONYMOUS) {
-		cp->props |= BT_HCI_LE_ADV_PROP_ANON;
+		props |= BT_HCI_LE_ADV_PROP_ANON;
 	}
 
 	if (param->options & BT_LE_ADV_OPT_NOTIFY_SCAN_REQ) {
@@ -1163,28 +1164,28 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	}
 
 	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
-		cp->props |= BT_HCI_LE_ADV_PROP_CONN;
+		props |= BT_HCI_LE_ADV_PROP_CONN;
 		if (!dir_adv && !(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
 			/* When using non-extended adv packets then undirected
 			 * advertising has to be scannable as well.
 			 * We didn't require this option to be set before, so
 			 * it is implicitly set instead in this case.
 			 */
-			cp->props |= BT_HCI_LE_ADV_PROP_SCAN;
+			props |= BT_HCI_LE_ADV_PROP_SCAN;
 		}
 	}
 
 	if ((param->options & BT_LE_ADV_OPT_SCANNABLE) || has_scan_data ||
 	    (name_type == ADV_NAME_TYPE_SD)) {
-		cp->props |= BT_HCI_LE_ADV_PROP_SCAN;
+		props |= BT_HCI_LE_ADV_PROP_SCAN;
 	}
 
-	scannable = !!(cp->props & BT_HCI_LE_ADV_PROP_SCAN);
+	scannable = !!(props & BT_HCI_LE_ADV_PROP_SCAN);
 
 	if (dir_adv) {
-		cp->props |= BT_HCI_LE_ADV_PROP_DIRECT;
+		props |= BT_HCI_LE_ADV_PROP_DIRECT;
 		if (!(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
-			cp->props |= BT_HCI_LE_ADV_PROP_HI_DC_CONN;
+			props |= BT_HCI_LE_ADV_PROP_HI_DC_CONN;
 		}
 
 		bt_addr_le_copy(&cp->peer_addr, param->peer);
@@ -1192,6 +1193,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	cp->sid = param->sid;
 
+	cp->props = sys_cpu_to_le16(props);
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, buf, &rsp);
 	if (err) {
 		return err;
@@ -1726,6 +1728,7 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 	struct bt_hci_cp_le_set_per_adv_param *cp;
 	struct net_buf *buf;
 	int err;
+	uint16_t props = 0;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -1758,9 +1761,10 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 	cp->max_interval = sys_cpu_to_le16(param->interval_max);
 
 	if (param->options & BT_LE_PER_ADV_OPT_USE_TX_POWER) {
-		cp->props |= BT_HCI_LE_ADV_PROP_TX_POWER;
+		props |= BT_HCI_LE_ADV_PROP_TX_POWER;
 	}
 
+	cp->props = sys_cpu_to_le16(props);
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_PARAM, buf, NULL);
 	if (err) {
 		return err;
