@@ -11,8 +11,6 @@
 #include <zephyr/drivers/edac.h>
 #include "ibecc.h"
 
-#define DEVICE_NAME DT_LABEL(DT_NODELABEL(ibecc))
-
 /**
  * EDAC Error Injection interface
  *
@@ -64,9 +62,9 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 	uint64_t error;
 	int err;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
@@ -107,9 +105,9 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 	const struct device *dev;
 	int err;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
@@ -154,9 +152,9 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 	const struct device *dev;
 	int err;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
@@ -199,9 +197,9 @@ static int cmd_inject_trigger(const struct shell *shell, size_t argc,
 {
 	const struct device *dev;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
@@ -247,9 +245,9 @@ static int cmd_inject_error_type_show(const struct shell *shell, size_t argc,
 	uint32_t error_type;
 	int err;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
@@ -269,9 +267,9 @@ static int set_error_type(const struct shell *shell, uint32_t error_type)
 {
 	const struct device *dev;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
@@ -297,11 +295,12 @@ static int cmd_inject_test(const struct shell *shell, size_t argc, char **argv)
 {
 	const struct device *dev;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
+
 	edac_inject_set_param1(dev, 0x1000);
 	edac_inject_set_param2(dev, INJ_ADDR_BASE_MASK_MASK);
 	edac_inject_set_error_type(dev, EDAC_ERROR_TYPE_DRAM_COR);
@@ -342,9 +341,9 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 	uint64_t error;
 	int err;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
@@ -369,9 +368,9 @@ static int cmd_ecc_error_clear(const struct shell *shell, size_t argc,
 	const struct device *dev;
 	int err;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
@@ -400,9 +399,9 @@ static int cmd_parity_error_show(const struct shell *shell, size_t argc,
 	uint64_t error;
 	int err;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
@@ -424,9 +423,9 @@ static int cmd_parity_error_clear(const struct shell *shell, size_t argc,
 	const struct device *dev;
 	int err;
 
-	dev = device_get_binding(DEVICE_NAME);
-	if (dev == NULL) {
-		shell_error(shell, "IBECC device not found");
+	dev = DEVICE_DT_GET(DT_NODELABEL(ibecc));
+	if (!device_is_ready(dev)) {
+		shell_error(shell, "IBECC device not ready");
 		return -ENODEV;
 	}
 
