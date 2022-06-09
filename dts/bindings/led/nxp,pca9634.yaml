@@ -3,3 +3,11 @@ description: NXP PCA9634 LED
 compatible: "nxp,pca9634"
 
 include: i2c-device.yaml
+
+properties:
+  external-driver:
+    type: boolean
+    required: false
+    description: |
+      If enabled, output logic state is inverted,
+      property intended to be used when external driver is used.

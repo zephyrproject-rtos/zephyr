@@ -20,6 +20,10 @@ LOG_MODULE_REGISTER(pca_common);
 
 #include "led_context.h"
 
+#define _DT_PROP_ANY_OR(id, compat, prop) DT_PROP(DT_INST(id, compat), prop) ||
+#define DT_PROP_ANY(compat, prop) \
+	DT_FOREACH_STATUS_OKAY_VARGS(compat, _DT_PROP_ANY_OR, compat, prop) 0
+
 /* PCA963X select registers determine the source that drives LED outputs */
 #define PCA963X_LED_OFF         0x0     /* LED driver off */
 #define PCA963X_LED_ON          0x1     /* LED driver on */
@@ -45,6 +49,7 @@ LOG_MODULE_REGISTER(pca_common);
 /* PCA963X mode register 1 */
 #define PCA963X_MODE1_SLEEP     0x10    /* Sleep Mode */
 /* PCA963X mode register 2 */
+#define PCA963X_MODE2_INVRT	0x10	/* Enable inverted output / external driver */
 #define PCA963X_MODE2_DMBLNK    0x20    /* Enable blinking */
 
 #define PCA963X_MASK            0x03
@@ -68,6 +73,9 @@ struct pca_common_config {
 	uint8_t grppwm;
 	uint8_t grpfreq;
 	uint8_t ledout;
+#if DT_PROP_ANY(nxp_pca9634, external_driver)
+	bool external_driver;
+#endif
 };
 
 static int pca_common_led_blink(const struct device *dev, uint32_t led,
@@ -216,6 +224,19 @@ static int pca_common_led_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if DT_PROP_ANY(nxp_pca9634, external_driver)
+	/* If there is external driver, set invrt bit */
+	if (config->external_driver) {
+		if (i2c_reg_update_byte_dt(&config->i2c,
+					PCA963X_MODE2,
+					PCA963X_MODE2_INVRT,
+					PCA963X_MODE2_INVRT)) {
+			LOG_ERR("LED reg update failed");
+			return -EIO;
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -239,6 +260,9 @@ static const struct led_driver_api pca_common_led_api = {
 		.grppwm = regs ## _GRPPWM,							   \
 		.grpfreq = regs ## _GRPFREQ,							   \
 		.ledout = regs ## _LEDOUT,							   \
+COND_CODE_1(DT_PROP_ANY(nxp9634, external_driver), (						   \
+		.external_driver = DT_PROP(node_id, external_driver),				   \
+), ())												   \
 	};											   \
 												   \
 	DEVICE_DT_DEFINE(node_id, &pca_common_led_init, NULL,					   \
