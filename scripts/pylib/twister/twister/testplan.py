@@ -10,29 +10,21 @@ import sys
 import re
 import subprocess
 import shutil
-
-
 import queue
 import glob
 import logging
 from distutils.spawn import find_executable
 import colorama
-
-
-
 import json
 from multiprocessing import Lock, Process, Value
 from typing import List
 
-from twister.cmakecache import CMakeCache
-from twister.testsuite import TestCase, TestSuite
-from twister.error import TwisterRuntimeError, ConfigurationError, BuildError
-from twister.handlers import BinaryHandler, QEMUHandler, DeviceHandler
+from twister.testsuite import TestSuite
+from twister.error import TwisterRuntimeError
 from twister.platform import Platform
 from twister.config_parser import TwisterConfigParser
-from twister.size_calc import SizeCalculator
 from twister.testinstance import TestInstance
-from twister.runner import ExecutionCounter, ProjectBuilder
+from twister.runner import ProjectBuilder
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
@@ -168,29 +160,8 @@ class TestPlan:
         else:
             self.board_roots = board_root_list
 
+        self.options = env.options
         # Test Plan Options
-        self.coverage_platform = []
-        self.build_only = False
-        self.cmake_only = False
-        self.cleanup = False
-        self.enable_slow = False
-        self.device_testing = False
-        self.fixtures = []
-        self.enable_coverage = False
-        self.enable_ubsan = False
-        self.enable_lsan = False
-        self.enable_asan = False
-        self.enable_valgrind = False
-        self.extra_args = []
-        self.inline_logs = False
-        self.west_flash = None
-        self.west_runner = None
-        self.generator = None
-        self.generator_cmd = None
-        self.warnings_as_errors = True
-        self.overflow_as_errors = False
-        self.quarantine_verify = False
-        self.retry_build_errors = False
         self.suite_name_check = True
         self.seed = 0
 
@@ -205,16 +176,10 @@ class TestPlan:
         self.outdir = os.path.abspath(outdir)
         self.load_errors = 0
         self.instances = dict()
-
-        self.start_time = 0
         self.warnings = 0
 
         # hardcoded for now
         self.duts = []
-
-        # run integration tests only
-        self.integration = False
-
         # used during creating shorter build paths
         self.link_dir_counter = 0
 
@@ -687,14 +652,14 @@ class TestPlan:
                 if ts.get("run_id"):
                     instance.run_id = ts.get("run_id")
 
-                if self.device_testing:
+                if self.options.device_testing:
                     tfilter = 'runnable'
                 else:
                     tfilter = 'buildable'
                 instance.run = instance.check_runnable(
-                    self.enable_slow,
+                    self.options.enable_slow,
                     tfilter,
-                    self.fixtures
+                    self.options.fixture
                 )
 
                 instance.metrics['handler_time'] = ts.get('execution_time', 0)
@@ -708,7 +673,7 @@ class TestPlan:
                     instance.reason = None
                 # test marked as passed (built only) but can run when
                 # --test-only is used. Reset status to capture new results.
-                elif status == 'passed' and instance.run and self.test_only:
+                elif status == 'passed' and instance.run and self.options.test_only:
                     instance.status = None
                     instance.reason = None
                 else:
@@ -730,7 +695,7 @@ class TestPlan:
                             case.output = tc.get('log')
 
 
-                instance.create_overlay(platform, self.enable_asan, self.enable_ubsan, self.enable_coverage, self.coverage_platform)
+                instance.create_overlay(platform, self.options.enable_asan, self.options.enable_ubsan, self.options.enable_coverage, self.options.coverage_platform)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
@@ -788,7 +753,7 @@ class TestPlan:
 
             if ts.build_on_all and not platform_filter:
                 platform_scope = self.platforms
-            elif ts.integration_platforms and self.integration:
+            elif ts.integration_platforms and self.options.integration:
                 self.verify_platforms_existence(
                     ts.integration_platforms, f"{ts_name} - integration_platforms")
                 platform_scope = list(filter(lambda item: item.name in ts.integration_platforms, \
@@ -796,7 +761,7 @@ class TestPlan:
             else:
                 platform_scope = platforms
 
-            integration = self.integration and ts.integration_platforms
+            integration = self.options.integration and ts.integration_platforms
 
             # If there isn't any overlap between the platform_allow list and the platform_scope
             # we set the scope to the platform_allow list
@@ -820,9 +785,9 @@ class TestPlan:
                     tfilter = 'buildable'
 
                 instance.run = instance.check_runnable(
-                    self.enable_slow,
+                    self.options.enable_slow,
                     tfilter,
-                    self.fixtures
+                    self.options.fixture
                 )
                 if runnable and self.duts:
                     for h in self.duts:
@@ -844,7 +809,7 @@ class TestPlan:
                 if runnable and not instance.run:
                     instance.add_filter("Not runnable on device", Filters.PLATFORM)
 
-                if self.integration and ts.integration_platforms and plat.name not in ts.integration_platforms:
+                if self.options.integration and ts.integration_platforms and plat.name not in ts.integration_platforms:
                     instance.add_filter("Not part of integration platforms", Filters.TESTSUITE)
 
                 if ts.skip:
@@ -917,10 +882,10 @@ class TestPlan:
                 test_configuration = ".".join([instance.platform.name,
                                                instance.testsuite.id])
                 # skip quarantined tests
-                if test_configuration in self.quarantine and not self.quarantine_verify:
+                if test_configuration in self.quarantine and not self.options.quarantine_verify:
                     instance.add_filter(f"Quarantine: {self.quarantine[test_configuration]}", Filters.QUARENTINE)
                 # run only quarantined test to verify their statuses (skip everything else)
-                if self.quarantine_verify and test_configuration not in self.quarantine:
+                if self.options.quarantine_verify and test_configuration not in self.quarantine:
                     instance.add_filter("Not under quarantine", Filters.QUARENTINE)
 
                 # if nothing stopped us until now, it means this configuration
@@ -958,14 +923,14 @@ class TestPlan:
                 self.add_instances(instance_list)
 
         for _, case in self.instances.items():
-            case.create_overlay(case.platform, self.enable_asan, self.enable_ubsan, self.enable_coverage, self.coverage_platform)
+            case.create_overlay(case.platform, self.options.enable_asan, self.options.enable_ubsan, self.options.enable_coverage, self.options.coverage_platform)
 
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
 
         filtered_instances = list(filter(lambda item:  item.status == "filtered", self.instances.values()))
         for filtered_instance in filtered_instances:
             # If integration mode is on all skips on integration_platforms are treated as errors.
-            if self.integration and filtered_instance.platform.name in filtered_instance.testsuite.integration_platforms \
+            if self.options.integration and filtered_instance.platform.name in filtered_instance.testsuite.integration_platforms \
                 and "Quarantine" not in filtered_instance.reason:
                 # Do not treat this as error if filter type is command line
                 filters = {t['type'] for t in filtered_instance.filters}
@@ -1008,27 +973,8 @@ class TestPlan:
             except queue.Empty:
                 break
             else:
-                test = task['test']
-                pb = ProjectBuilder(self,
-                                    test,
-                                    lsan=self.enable_lsan,
-                                    asan=self.enable_asan,
-                                    ubsan=self.enable_ubsan,
-                                    coverage=self.enable_coverage,
-                                    extra_args=self.extra_args,
-                                    device_testing=self.device_testing,
-                                    cmake_only=self.cmake_only,
-                                    cleanup=self.cleanup,
-                                    valgrind=self.enable_valgrind,
-                                    inline_logs=self.inline_logs,
-                                    generator=self.generator,
-                                    generator_cmd=self.generator_cmd,
-                                    verbose=self.verbose,
-                                    warnings_as_errors=self.warnings_as_errors,
-                                    overflow_as_errors=self.overflow_as_errors,
-                                    suite_name_check=self.suite_name_check,
-                                    seed=self.seed
-                                    )
+                instance = task['test']
+                pb = ProjectBuilder(self, instance, self.env)
                 pb.process(pipeline, done_queue, task, lock, results)
 
         return True
@@ -1036,8 +982,8 @@ class TestPlan:
     def execute(self, pipeline, done, results):
         lock = Lock()
         logger.info("Adding tasks to the queue...")
-        self.add_tasks_to_queue(pipeline, self.build_only, self.test_only,
-                                retry_build_errors=self.retry_build_errors)
+        self.add_tasks_to_queue(pipeline, self.options.build_only, self.options.test_only,
+                                retry_build_errors=self.options.retry_build_errors)
         logger.info("Added initial list of jobs to queue")
 
         processes = []
@@ -1119,8 +1065,3 @@ class TestPlan:
         instance.build_dir = link_path
 
         self.link_dir_counter += 1
-
-
-
-def init(colorama_strip):
-    colorama.init(strip=colorama_strip)
