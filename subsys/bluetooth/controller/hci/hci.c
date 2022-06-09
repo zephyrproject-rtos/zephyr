@@ -1058,8 +1058,6 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_SET_HOST_FEATURE */
 
 #if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
-	/* Read Supported Codecs */
-	rp->commands[29] |= BIT(5);
 	/* Read Supported Codecs [v2], Codec Capabilities, Controller Delay, Configure Data Path */
 	rp->commands[45] |= BIT(2) | BIT(3) | BIT(4) | BIT(5);
 #endif /* CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO */
@@ -1107,57 +1105,12 @@ uint8_t __weak hci_vendor_read_vs_codecs(
 	return 0;
 }
 
-static void read_codecs(struct net_buf *buf, struct net_buf **evt)
-{
-	struct bt_hci_rp_read_codecs *rp;
-	const struct bt_hci_std_codec_info_v2 *std_codec_info;
-	const struct bt_hci_vs_codec_info_v2 *vs_codec_info;
-	struct bt_hci_std_codecs *std_codecs;
-	struct bt_hci_vs_codecs *vs_codecs;
-	size_t std_codecs_bytes;
-	size_t vs_codecs_bytes;
-	uint8_t num_std_codecs;
-	uint8_t num_vs_codecs;
-	uint8_t i;
-
-	/* read standard codec information */
-	num_std_codecs = hci_vendor_read_std_codecs(&std_codec_info);
-	std_codecs_bytes = sizeof(struct bt_hci_std_codecs) +
-		num_std_codecs * sizeof(struct bt_hci_std_codec_info);
-	/* read vendor-specific codec information */
-	num_vs_codecs = hci_vendor_read_vs_codecs(&vs_codec_info);
-	vs_codecs_bytes = sizeof(struct bt_hci_vs_codecs) +
-		num_vs_codecs *	sizeof(struct bt_hci_vs_codec_info);
-
-	/* allocate response packet */
-	rp = hci_cmd_complete(evt, sizeof(*rp) +
-			      std_codecs_bytes +
-			      vs_codecs_bytes);
-	rp->status = 0x00;
-
-	/* copy standard codec information */
-	std_codecs = (struct bt_hci_std_codecs *)&rp->codecs[0];
-	std_codecs->num_codecs = num_std_codecs;
-	for (i = 0; i < num_std_codecs; i++) {
-		struct bt_hci_std_codec_info *codec;
-
-		codec = &std_codecs->codec_info[i];
-		codec->codec_id = std_codec_info[i].codec_id;
-	}
-
-	/* copy vendor specific codec information */
-	vs_codecs = (struct bt_hci_vs_codecs *)&rp->codecs[std_codecs_bytes];
-	vs_codecs->num_codecs = num_vs_codecs;
-	for (i = 0; i < num_std_codecs; i++) {
-		struct bt_hci_vs_codec_info *codec;
-
-		codec = &vs_codecs->codec_info[i];
-		codec->company_id =
-			sys_cpu_to_le16(vs_codec_info[i].company_id);
-		codec->codec_id = sys_cpu_to_le16(vs_codec_info[i].codec_id);
-	}
-}
-
+/* NOTE: Not implementing the [v1] version.
+ * Refer to BT Spec v5.3 Vol 4, Part E 7.4.8 Read Local Supported Codecs command
+ * The [v1] version of this command shall only return codecs supported on the
+ * BR/EDR physical transport, while the [v2] version shall return codecs
+ * supported on all physical transports.
+ */
 static void read_codecs_v2(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_read_codecs_v2 *rp;
@@ -1343,10 +1296,6 @@ static int info_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 
 #if defined(CONFIG_BT_CTLR_HCI_CODEC_AND_DELAY_INFO)
-	case BT_OCF(BT_HCI_OP_READ_CODECS):
-		read_codecs(cmd, evt);
-		break;
-
 	case BT_OCF(BT_HCI_OP_READ_CODECS_V2):
 		read_codecs_v2(cmd, evt);
 		break;
