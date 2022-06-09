@@ -185,6 +185,15 @@ int soc_adsp_halt_cpu(int id)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_CAVS_TIMER
+	/*
+	 * Mask timer interrupt for this CPU so it won't wake up
+	 * by itself once WFI (wait for interrupt) instruction
+	 * runs.
+	 */
+	CAVS_INTCTRL[id].l2.set = CAVS_L2_DWCT0;
+#endif
+
 	/* Stop sending IPIs to this core */
 	soc_cpus_active[id] = false;
 
