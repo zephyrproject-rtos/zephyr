@@ -77,13 +77,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
                                 "python-devicetree", "src"))
 from devicetree import edtlib  # pylint: disable=unused-import
 
-# Use this for internal comparisons; that's what canonicalization is
-# for. Don't use it when invoking other components of the build system
-# to avoid confusing and hard to trace inconsistencies in error messages
-# and logs, generated Makefiles, etc. compared to when users invoke these
-# components directly.
-# Note "normalization" is different from canonicalization, see os.path.
-canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
+from enviornment import TwisterEnv, canonical_zephyr_base
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
@@ -2030,7 +2024,7 @@ class TestInstance(DisablePyTestCollectionMixin):
     def __repr__(self):
         return "<TestSuite %s on %s>" % (self.testsuite.name, self.platform.name)
 
-class CMake():
+class CMake:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
@@ -2187,49 +2181,6 @@ class CMake():
                 log.write(log_msg)
 
         return results
-
-    @staticmethod
-    def run_cmake_script(args=[]):
-
-        logger.debug("Running cmake script %s" % (args[0]))
-
-        cmake_args = ["-D{}".format(a.replace('"', '')) for a in args[1:]]
-        cmake_args.extend(['-P', args[0]])
-
-        logger.debug("Calling cmake with arguments: {}".format(cmake_args))
-        cmake = shutil.which('cmake')
-        if not cmake:
-            msg = "Unable to find `cmake` in path"
-            logger.error(msg)
-            raise Exception(msg)
-        cmd = [cmake] + cmake_args
-
-        kwargs = dict()
-        kwargs['stdout'] = subprocess.PIPE
-        # CMake sends the output of message() to stderr unless it's STATUS
-        kwargs['stderr'] = subprocess.STDOUT
-
-        p = subprocess.Popen(cmd, **kwargs)
-        out, _ = p.communicate()
-
-        # It might happen that the environment adds ANSI escape codes like \x1b[0m,
-        # for instance if twister is executed from inside a makefile. In such a
-        # scenario it is then necessary to remove them, as otherwise the JSON decoding
-        # will fail.
-        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-        out = ansi_escape.sub('', out.decode())
-
-        if p.returncode == 0:
-            msg = "Finished running  %s" % (args[0])
-            logger.debug(msg)
-            results = {"returncode": p.returncode, "msg": msg, "stdout": out}
-
-        else:
-            logger.error("Cmake script failure: %s" % (args[0]))
-            results = {"returncode": p.returncode, "returnmsg": out}
-
-        return results
-
 
 class FilterBuilder(CMake):
 
@@ -2747,7 +2698,7 @@ class Filters:
     QUARENTINE = 'Quarantine filter'
 
 
-class TestPlan(DisablePyTestCollectionMixin):
+class TestPlan:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
@@ -2790,7 +2741,7 @@ class TestPlan(DisablePyTestCollectionMixin):
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
 
-    def __init__(self, board_root_list=[], testsuite_roots=[], outdir=None):
+    def __init__(self, board_root_list=[], testsuite_roots=[], env=None, outdir=None):
 
         self.roots = testsuite_roots
         if not isinstance(board_root_list, list):
@@ -2853,23 +2804,11 @@ class TestPlan(DisablePyTestCollectionMixin):
         self.link_dir_counter = 0
 
         self.pipeline = None
-        self.version = "NA"
+        self.env = env
 
         self.modules = []
 
         self.timestamp = datetime.now().isoformat()
-
-    def check_zephyr_version(self):
-        try:
-            subproc = subprocess.run(["git", "describe", "--abbrev=12", "--always"],
-                                     stdout=subprocess.PIPE,
-                                     universal_newlines=True,
-                                     cwd=ZEPHYR_BASE)
-            if subproc.returncode == 0:
-                self.version = subproc.stdout.strip()
-                logger.info(f"Zephyr version: {self.version}")
-        except OSError:
-            logger.info("Cannot read zephyr version.")
 
     def get_platform_instances(self, platform):
         filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + os.sep)}
@@ -3042,7 +2981,7 @@ class TestPlan(DisablePyTestCollectionMixin):
 
         if not no_update:
             json_file = filename + ".json"
-            self.json_report(json_file, version=self.version)
+            self.json_report(json_file, version=self.env.version)
             self.xunit_report(json_file, filename + ".xml", full_report=False)
             self.xunit_report(json_file, filename + "_report.xml", full_report=True)
             self.xunit_report_suites(json_file, filename + "_suite_report.xml")
@@ -3094,22 +3033,6 @@ class TestPlan(DisablePyTestCollectionMixin):
                 testcases.append(case)
 
         return testcases
-
-    @staticmethod
-    def get_toolchain():
-        toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/modules/verify-toolchain.cmake')
-        result = CMake.run_cmake_script([toolchain_script, "FORMAT=json"])
-
-        try:
-            if result['returncode']:
-                raise TwisterRuntimeError(f"E: {result['returnmsg']}")
-        except Exception as e:
-            print(str(e))
-            sys.exit(2)
-        toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
-        logger.info(f"Using '{toolchain}' toolchain.")
-
-        return toolchain
 
     def add_testsuites(self, testsuite_filter=[]):
         for root in self.roots:
@@ -3562,7 +3485,7 @@ class TestPlan(DisablePyTestCollectionMixin):
 
     def apply_filters(self, **kwargs):
 
-        toolchain = self.get_toolchain()
+        toolchain = self.env.toolchain
 
         platform_filter = kwargs.get('platform')
         exclude_platform = kwargs.get('exclude_platform', [])
@@ -4093,7 +4016,7 @@ class TestPlan(DisablePyTestCollectionMixin):
         report = {}
         report["environment"] = {"os": os.name,
                                  "zephyr_version": version,
-                                 "toolchain": self.get_toolchain()
+                                 "toolchain": self.env.toolchain
                                  }
         suites = []
 
