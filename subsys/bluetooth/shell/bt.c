@@ -2613,14 +2613,19 @@ static const char *role_str(uint8_t role)
 	return "Unknown";
 }
 
+struct connection_info_data {
+	const struct shell *sh;
+	int conn_count;
+};
+
 static void connection_info(struct bt_conn *conn, void *user_data)
 {
+	struct connection_info_data *data = user_data;
 	char addr[BT_ADDR_LE_STR_LEN];
-	int *conn_count = user_data;
 	struct bt_conn_info info;
 
 	if (bt_conn_get_info(conn, &info) < 0) {
-		shell_error(ctx_shell, "Unable to get info: conn %p", conn);
+		shell_error(data->sh, "Unable to get info: conn %p", conn);
 		return;
 	}
 
@@ -2628,35 +2633,37 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 #if defined(CONFIG_BT_BREDR)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
-		shell_print(ctx_shell, "#%u [BR][%s] %s", info.id,
+		shell_print(data->sh, "#%u [BR][%s] %s", info.id,
 			    role_str(info.role), addr);
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		shell_print(ctx_shell, "#%u [LE][%s] %s: Interval %u latency %u"
+		shell_print(data->sh, "#%u [LE][%s] %s: Interval %u latency %u"
 			    " timeout %u", info.id, role_str(info.role), addr,
 			    info.le.interval, info.le.latency, info.le.timeout);
 		break;
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		shell_print(ctx_shell, "#%u [ISO][%s] %s", info.id,
+		shell_print(data->sh, "#%u [ISO][%s] %s", info.id,
 			    role_str(info.role), addr);
 		break;
 #endif
 	}
 
-	(*conn_count)++;
+	data->conn_count++;
 }
 
 static int cmd_connections(const struct shell *sh, size_t argc, char *argv[])
 {
-	int conn_count = 0;
+	struct connection_info_data data = {
+		.sh = sh,
+	};
 
 	shell_print(sh, "Connected devices:");
-	bt_conn_foreach(BT_CONN_TYPE_ALL, connection_info, &conn_count);
-	shell_print(sh, "Total %d", conn_count);
+	bt_conn_foreach(BT_CONN_TYPE_ALL, connection_info, &data);
+	shell_print(sh, "Total %d", data.conn_count);
 
 	return 0;
 }
