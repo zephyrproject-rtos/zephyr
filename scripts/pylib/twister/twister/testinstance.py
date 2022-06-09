@@ -6,8 +6,14 @@
 import os
 import hashlib
 import random
+import logging
 from twister.testsuite import TestCase, TestSuite
+from twister.handlers import BinaryHandler, QEMUHandler, DeviceHandler
+from distutils.spawn import find_executable
 
+
+logger = logging.getLogger('twister')
+logger.setLevel(logging.DEBUG)
 
 class TestInstance:
     """Class representing the execution of a particular TestSuite on a platform
@@ -121,6 +127,63 @@ class TestInstance:
                 can_run = (fixture in fixtures)
 
         return can_run
+
+    def setup_handler(self, options):
+        if self.handler:
+            return
+
+        args = []
+        handler = None
+        if self.platform.simulation == "qemu":
+            handler = QEMUHandler(self, "qemu")
+            args.append(f"QEMU_PIPE={handler.get_fifo()}")
+        elif self.testsuite.type == "unit":
+            handler = BinaryHandler(self, "unit")
+            handler.binary = os.path.join(self.build_dir, "testbinary")
+            if options.enable_coverage:
+                args.append("COVERAGE=1")
+            handler.call_make_run = False
+        elif self.platform.type == "native":
+            handler = BinaryHandler(self, "native")
+
+            handler.asan = options.enable_asan
+            handler.valgrind = options.enable_valgrind
+            handler.lsan = options.enable_lsan
+            handler.ubsan = options.enable_ubsan
+            handler.coverage = options.enable_coverage
+            handler.call_make_run = False
+            handler.binary = os.path.join(self.build_dir, "zephyr", "zephyr.exe")
+        elif self.platform.simulation == "renode":
+            if find_executable("renode"):
+                handler = BinaryHandler(self, "renode")
+                handler.pid_fn = os.path.join(self.build_dir, "renode.pid")
+        elif self.platform.simulation == "tsim":
+            handler = BinaryHandler(self, "tsim")
+        elif options.device_testing:
+            handler = DeviceHandler(self, "device")
+            handler.coverage = self.enable_coverage
+            handler.call_make_run = False
+        elif self.platform.simulation == "nsim":
+            if find_executable("nsimdrv"):
+                handler = BinaryHandler(self, "nsim")
+        elif self.platform.simulation == "mdb-nsim":
+            if find_executable("mdb"):
+                handler = BinaryHandler(self, "nsim")
+        elif self.platform.simulation == "armfvp":
+            handler = BinaryHandler(self, "armfvp")
+        elif self.platform.simulation == "xt-sim":
+            handler = BinaryHandler(self, "xt-sim")
+
+        if handler:
+            handler.args = args
+            handler.suite_name_check = not options.disable_suite_name_check
+            if options.ninja:
+                handler.generator_cmd = "ninja"
+                handler.generator = "Ninja"
+            else:
+                handler.generator_cmd = "make"
+                handler.generator = "Unix Makefiles"
+        self.handler = handler
 
     # Global testsuite parameters
     def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[]):
