@@ -270,7 +270,7 @@ int bt_audio_capability_set_location(enum bt_audio_dir dir,
 
 /** @brief Set the available contexts for an endpoint type
  *
- * @param dir      Direction of the endpoints to change location for.
+ * @param dir      Direction of the endpoints to change available contexts for.
  * @param contexts The contexts to be set.
  */
 int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
