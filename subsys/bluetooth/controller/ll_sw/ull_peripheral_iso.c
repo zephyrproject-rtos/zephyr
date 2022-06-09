@@ -113,7 +113,7 @@ uint8_t ll_cis_reject(uint16_t handle, uint8_t reason)
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	status = BT_HCI_ERR_CMD_DISALLOWED;
 #else
-	struct ll_conn *acl_conn = ll_cis_reply_ok(handle, &status);
+	struct ll_conn *acl_conn = ll_cis_get_acl_awaiting_reply(handle, &status);
 
 	if (acl_conn) {
 		/* Accept request */
