@@ -3,6 +3,7 @@
 #
 DT_COMPAT_NXP_PCA9633 := nxp,pca9633
 DT_COMPAT_NXP_PCA9634 := nxp,pca9634
+DT_COMPAT_NXP_PCA9956 := nxp,pca9956
 DT_COMPAT_TI_TLC59108 := ti,tlc59108
 
 config PCA_COMMON
@@ -10,10 +11,12 @@ config PCA_COMMON
 	depends on I2C
 	default y if $(dt_compat_enabled,$(DT_COMPAT_NXP_PCA9633))
 	default y if $(dt_compat_enabled,$(DT_COMPAT_NXP_PCA9634))
+	default y if $(dt_compat_enabled,$(DT_COMPAT_NXP_PCA9956))
 	default y if $(dt_compat_enabled,$(DT_COMPAT_TI_TLC59108))
 	help
 	  Enable driver for PCA LED drivers family.
 	  Supports:
 	   * PCA9633 with 4 channels.
 	   * PCA9634 with 8 channels.
+	   * PCA9956 with 24 channels.
 	   * TLC59108 with 8 channels.
