@@ -206,9 +206,10 @@ except ImportError:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 import twisterlib
-from twisterlib import HardwareMap, TestPlan, SizeCalculator, CoverageTool, ExecutionCounter
+from twisterlib import TestPlan, SizeCalculator, CoverageTool, ExecutionCounter
 from enviornment import TwisterEnv, canonical_zephyr_base
 from reports import Reporting
+from hardwaremap import HardwareMap
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
