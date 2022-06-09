@@ -1751,13 +1751,23 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
 				char pad = ' ';
 
 				/* If we're zero-padding we have to emit the
-				 * sign first.
+				 * sign and alternate form prefixes first.
 				 */
 				if (conv->flag_zero) {
 					if (sign != 0) {
 						OUTC(sign);
 						sign = 0;
 					}
+					if (conv->altform_0c | conv->altform_0) {
+						OUTC('0');
+					}
+
+					if (conv->altform_0c) {
+						OUTC(conv->specifier);
+					}
+
+					conv->altform_0 = 0;
+					conv->altform_0c = 0;
 					pad = '0';
 				}
 
