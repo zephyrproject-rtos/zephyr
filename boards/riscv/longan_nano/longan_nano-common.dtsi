@@ -113,7 +113,6 @@
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";
-			label = "SDMMC_0";
 		};
 	};
 };

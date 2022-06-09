@@ -416,7 +416,6 @@ i2s1: &flexcomm3 {
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
-		label = "SDMMC_0";
 	};
 	pinctrl-0 = <&pinmux_usdhc>;
 	pinctrl-names = "default";
