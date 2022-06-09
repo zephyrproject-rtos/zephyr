@@ -157,22 +157,27 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 		}
 
 		for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+			struct net_buf *buf_to_send;
 			int ret;
 
-			ret = bt_audio_stream_send(&streams[i], net_buf_ref(buf));
+			/* Clone the buffer if sending on more than 1 stream */
+			if (i == configured_sink_stream_count - 1) {
+				buf_to_send = buf;
+			} else {
+				buf_to_send = net_buf_clone(buf, K_FOREVER);
+			}
+
+			ret = bt_audio_stream_send(&streams[i], buf_to_send);
 			if (ret < 0) {
 				printk("  Failed to send LC3 audio data on streams[%zu] (%d)\n",
 				       i, ret);
-				net_buf_unref(buf);
+				net_buf_unref(buf_to_send);
 			} else {
 				printk("  TX LC3 l on streams[%zu]: %zu\n",
 				       tx_sdu_len, i);
 				sdu_cnt++;
 			}
 		}
-
-		/* Unref original as we add a reference to each TX */
-		net_buf_unref(buf);
 	}
 }
 
@@ -266,21 +271,26 @@ static void audio_timer_timeout(struct k_work *work)
 	 * data going to the server)
 	 */
 	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
+		struct net_buf *buf_to_send;
 		int ret;
 
-		ret = bt_audio_stream_send(&streams[i], net_buf_ref(buf));
+		/* Clone the buffer if sending on more than 1 stream */
+		if (i == configured_sink_stream_count - 1) {
+			buf_to_send = buf;
+		} else {
+			buf_to_send = net_buf_clone(buf, K_FOREVER);
+		}
+
+		ret = bt_audio_stream_send(&streams[i], buf_to_send);
 		if (ret < 0) {
 			printk("Failed to send audio data on streams[%zu]: (%d)\n",
 			       i, ret);
-			net_buf_unref(buf);
+			net_buf_unref(buf_to_send);
 		} else {
 			printk("Sending mock data with len %zu on streams[%zu]\n",
 			       len_to_send, i);
 		}
 	}
-
-	/* Unref original as we add a reference to each TX */
-	net_buf_unref(buf);
 
 	k_work_schedule(&audio_send_work, K_MSEC(1000));
 
