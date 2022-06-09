@@ -929,7 +929,8 @@
 			compatible = "ite,it8xxx2-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00f01c40 0x0040>;
+			reg = <0x00f01c40 0x0040   /* Base address */
+			       0x00f01c0d 0x0001>; /* MSTFCTRL1 */
 			interrupts = <IT8XXX2_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
@@ -943,7 +944,8 @@
 			compatible = "ite,it8xxx2-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00f01c80 0x0040>;
+			reg = <0x00f01c80 0x0040   /* Base address */
+					0 0x0001>; /* Not supported */
 			interrupts = <IT8XXX2_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
@@ -957,7 +959,8 @@
 			compatible = "ite,it8xxx2-i2c";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x00f01cc0 0x0040>;
+			reg = <0x00f01cc0 0x0040   /* Base address */
+			       0x00f01c0f 0x0001>; /* MSTFCTRL2 */
 			interrupts = <IT8XXX2_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";

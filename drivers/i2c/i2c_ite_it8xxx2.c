@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <soc.h>
 #include <soc_dt.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
@@ -26,10 +27,17 @@ LOG_MODULE_REGISTER(i2c_ite_it8xxx2, CONFIG_I2C_LOG_LEVEL);
 #define I2C_LINE_SDA_HIGH BIT(1)
 #define I2C_LINE_IDLE (I2C_LINE_SCL_HIGH | I2C_LINE_SDA_HIGH)
 
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+#define I2C_FIFO_MODE_MAX_SIZE 32
+#define I2C_FIFO_MODE_TOTAL_LEN 255
+#define I2C_MSG_BURST_READ_MASK (I2C_MSG_RESTART | I2C_MSG_STOP | I2C_MSG_READ)
+#endif
+
 struct i2c_it8xxx2_config {
 	void (*irq_config_func)(void);
 	uint32_t bitrate;
 	uint8_t *base;
+	uint8_t *reg_mstfctrl;
 	uint8_t i2c_irq_base;
 	uint8_t port;
 	/* SCL GPIO cells */
@@ -58,6 +66,14 @@ struct i2c_it8xxx2_data {
 	struct i2c_msg *msgs;
 	struct k_mutex mutex;
 	struct k_sem device_sync_sem;
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+	struct i2c_msg *msgs_list;
+	/* Read or write byte counts. */
+	uint32_t bytecnt;
+	/* Number of messages. */
+	uint8_t num_msgs;
+	uint8_t active_msg_index;
+#endif
 	/* Index into output data */
 	size_t widx;
 	/* Index into input data */
@@ -309,6 +325,391 @@ static void i2c_w2r_change_direction(const struct device *dev)
 	}
 }
 
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+static void i2c_fifo_en_w2r(const struct device *dev, bool enable)
+{
+	const struct i2c_it8xxx2_config *config = dev->config;
+	unsigned int key = irq_lock();
+
+	if (enable) {
+		if (config->port == 0) {
+			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MAIF |
+					       IT8XXX2_SMB_MAIFI;
+		} else if (config->port == 2) {
+			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MBCIF |
+					       IT8XXX2_SMB_MCIFI;
+		}
+	} else {
+		if (config->port == 0) {
+			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MAIF |
+						 IT8XXX2_SMB_MAIFI);
+		} else if (config->port == 2) {
+			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MBCIF |
+						 IT8XXX2_SMB_MCIFI);
+		}
+	}
+
+	irq_unlock(key);
+}
+
+static void i2c_tran_fifo_write_start(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint32_t i;
+	uint8_t *base = config->base;
+	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+
+	/* Clear start flag. */
+	data->msgs->flags &= ~I2C_MSG_START;
+	/* Enable SMB channel in FIFO mode. */
+	*reg_mstfctrl |= IT8XXX2_SMB_FFEN;
+	/* I2C enable. */
+	IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN |
+				   IT8XXX2_SMB_I2C_EN |
+				   IT8XXX2_SMB_SMHEN;
+	/* Set write byte counts. */
+	IT8XXX2_SMB_D0REG(base) = data->msgs->len;
+	/*
+	 * bit[7:1]: Address of the target.
+	 * bit[0]: Direction of the host transfer.
+	 */
+	IT8XXX2_SMB_TRASLA(base) = (uint8_t)data->addr_16bit << 1;
+	/* The maximum fifo size is 32 bytes. */
+	data->bytecnt = MIN(data->msgs->len, I2C_FIFO_MODE_MAX_SIZE);
+
+	for (i = 0; i < data->bytecnt; i++) {
+		/* Set host block data byte. */
+		IT8XXX2_SMB_HOBDB(base) = *(data->msgs->buf++);
+	}
+	/* Calculate the remaining byte counts. */
+	data->bytecnt = data->msgs->len - data->bytecnt;
+	/*
+	 * bit[6] = 1b: Start.
+	 * bit[4:2] = 111b: Extend command.
+	 * bit[0] = 1b: Host interrupt enable.
+	 */
+	IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT |
+				  IT8XXX2_SMB_SMCD_EXTND |
+				  IT8XXX2_SMB_INTREN;
+}
+
+static void i2c_tran_fifo_write_next_block(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint32_t i, _bytecnt;
+	uint8_t *base = config->base;
+	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+
+	/* The maximum fifo size is 32 bytes. */
+	_bytecnt = MIN(data->bytecnt, I2C_FIFO_MODE_MAX_SIZE);
+
+	for (i = 0; i < _bytecnt; i++) {
+		/* Set host block data byte. */
+		IT8XXX2_SMB_HOBDB(base) = *(data->msgs->buf++);
+	}
+	/* Clear FIFO block done status. */
+	*reg_mstfctrl |= IT8XXX2_SMB_BLKDS;
+	/* Calculate the remaining byte counts. */
+	data->bytecnt -= _bytecnt;
+}
+
+static void i2c_tran_fifo_write_finish(const struct device *dev)
+{
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint8_t *base = config->base;
+
+	/* Clear byte count register. */
+	IT8XXX2_SMB_D0REG(base) = 0;
+	/* W/C */
+	IT8XXX2_SMB_HOSTA(base) = HOSTA_ALL_WC_BIT;
+	/* Disable the SMBus host interface. */
+	IT8XXX2_SMB_HOCTL2(base) = 0x00;
+}
+
+static int i2c_tran_fifo_w2r_change_direction(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint8_t *base = config->base;
+
+	if (++data->active_msg_index >= data->num_msgs) {
+		LOG_ERR("Current message index is error.");
+		data->err = EINVAL;
+		/* W/C */
+		IT8XXX2_SMB_HOSTA(base) = HOSTA_ALL_WC_BIT;
+		/* Disable the SMBus host interface. */
+		IT8XXX2_SMB_HOCTL2(base) = 0x00;
+
+		return 0;
+	}
+	/* Set I2C_SW_EN = 1 */
+	IT8XXX2_SMB_HOCTL2(base) |= IT8XXX2_SMB_I2C_SW_EN |
+				    IT8XXX2_SMB_I2C_SW_WAIT;
+	IT8XXX2_SMB_HOCTL2(base) &= ~IT8XXX2_SMB_I2C_SW_WAIT;
+	/* Point to the next msg for the read location. */
+	data->msgs = &data->msgs_list[data->active_msg_index];
+	/* Set read byte counts. */
+	IT8XXX2_SMB_D0REG(base) = data->msgs->len;
+	data->bytecnt = data->msgs->len;
+	/* W/C I2C W2R FIFO interrupt status. */
+	IT8XXX2_SMB_IWRFISTA = BIT(config->port);
+
+	return 1;
+}
+
+static void i2c_tran_fifo_read_start(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint8_t *base = config->base;
+	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+
+	/* Clear start flag. */
+	data->msgs->flags &= ~I2C_MSG_START;
+	/* Enable SMB channel A or C in FIFO mode. */
+	*reg_mstfctrl |= IT8XXX2_SMB_FFEN;
+	/* I2C enable. */
+	IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN |
+				   IT8XXX2_SMB_I2C_EN |
+				   IT8XXX2_SMB_SMHEN;
+	/* Set read byte counts. */
+	IT8XXX2_SMB_D0REG(base) = data->msgs->len;
+	/*
+	 * bit[7:1]: Address of the target.
+	 * bit[0]: Direction of the host transfer.
+	 */
+	IT8XXX2_SMB_TRASLA(base) = (uint8_t)(data->addr_16bit << 1) |
+				   IT8XXX2_SMB_DIR;
+
+	data->bytecnt = data->msgs->len;
+	/*
+	 * bit[6] = 1b: Start.
+	 * bit[4:2] = 111b: Extend command.
+	 * bit[0] = 1b: Host interrupt enable.
+	 */
+	IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT |
+				  IT8XXX2_SMB_SMCD_EXTND |
+				  IT8XXX2_SMB_INTREN;
+}
+
+static void i2c_tran_fifo_read_next_block(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint32_t i;
+	uint8_t *base = config->base;
+	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+
+	for (i = 0; i < I2C_FIFO_MODE_MAX_SIZE; i++) {
+		/* To get received data. */
+		*(data->msgs->buf++) = IT8XXX2_SMB_HOBDB(base);
+	}
+	/* Clear FIFO block done status. */
+	*reg_mstfctrl |= IT8XXX2_SMB_BLKDS;
+	/* Calculate the remaining byte counts. */
+	data->bytecnt -= I2C_FIFO_MODE_MAX_SIZE;
+}
+
+static void i2c_tran_fifo_read_finish(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint32_t i;
+	uint8_t *base = config->base;
+
+	for (i = 0; i < data->bytecnt; i++) {
+		/* To get received data. */
+		*(data->msgs->buf++) = IT8XXX2_SMB_HOBDB(base);
+	}
+	/* Clear byte count register. */
+	IT8XXX2_SMB_D0REG(base) = 0;
+	/* W/C */
+	IT8XXX2_SMB_HOSTA(base) = HOSTA_ALL_WC_BIT;
+	/* Disable the SMBus host interface. */
+	IT8XXX2_SMB_HOCTL2(base) = 0x00;
+
+}
+
+static int i2c_tran_fifo_write_to_read(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint8_t *base = config->base;
+	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+	int ret = 1;
+
+	if (data->msgs->flags & I2C_MSG_START) {
+		/* Enable I2C write to read FIFO mode. */
+		i2c_fifo_en_w2r(dev, 1);
+		i2c_tran_fifo_write_start(dev);
+	} else {
+		/* Check block done status. */
+		if (*reg_mstfctrl & IT8XXX2_SMB_BLKDS) {
+			if (IT8XXX2_SMB_HOCTL2(base) & IT8XXX2_SMB_I2C_SW_EN) {
+				i2c_tran_fifo_read_next_block(dev);
+			} else {
+				i2c_tran_fifo_write_next_block(dev);
+			}
+		} else if (IT8XXX2_SMB_IWRFISTA & BIT(config->port)) {
+			/*
+			 * This function returns 0 on a failure to indicate
+			 * that the current transaction is completed and
+			 * returned the data->err.
+			 */
+			ret = i2c_tran_fifo_w2r_change_direction(dev);
+		} else {
+			/* Wait finish. */
+			if ((IT8XXX2_SMB_HOSTA(base) & HOSTA_FINTR)) {
+				i2c_tran_fifo_read_finish(dev);
+				/* Done doing work. */
+				ret = 0;
+			}
+		}
+	}
+
+	return ret;
+}
+
+static int i2c_tran_fifo_read(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint8_t *base = config->base;
+	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+
+	if (data->msgs->flags & I2C_MSG_START) {
+		i2c_tran_fifo_read_start(dev);
+	} else {
+		/* Check block done status. */
+		if (*reg_mstfctrl & IT8XXX2_SMB_BLKDS) {
+			i2c_tran_fifo_read_next_block(dev);
+		} else {
+			/* Wait finish. */
+			if ((IT8XXX2_SMB_HOSTA(base) & HOSTA_FINTR)) {
+				i2c_tran_fifo_read_finish(dev);
+				/* Done doing work. */
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
+static int i2c_tran_fifo_write(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint8_t *base = config->base;
+	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+
+	if (data->msgs->flags & I2C_MSG_START) {
+		i2c_tran_fifo_write_start(dev);
+	} else {
+		/* Check block done status. */
+		if (*reg_mstfctrl & IT8XXX2_SMB_BLKDS) {
+			i2c_tran_fifo_write_next_block(dev);
+		} else {
+			/* Wait finish. */
+			if ((IT8XXX2_SMB_HOSTA(base) & HOSTA_FINTR)) {
+				i2c_tran_fifo_write_finish(dev);
+				/* Done doing work. */
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
+static int i2c_fifo_transaction(const struct device *dev)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+	uint8_t *base = config->base;
+
+	/* Any error. */
+	if (IT8XXX2_SMB_HOSTA(base) & HOSTA_ANY_ERROR) {
+		data->err = (IT8XXX2_SMB_HOSTA(base) & HOSTA_ANY_ERROR);
+	} else {
+		if (data->num_msgs == 2) {
+			return i2c_tran_fifo_write_to_read(dev);
+		} else if (data->msgs->flags & I2C_MSG_READ) {
+			return i2c_tran_fifo_read(dev);
+		} else {
+			return i2c_tran_fifo_write(dev);
+		}
+	}
+	/* W/C */
+	IT8XXX2_SMB_HOSTA(base) = HOSTA_ALL_WC_BIT;
+	/* Disable the SMBus host interface. */
+	IT8XXX2_SMB_HOCTL2(base) = 0x00;
+
+	return 0;
+}
+
+static bool fifo_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
+{
+	struct i2c_it8xxx2_data *data = dev->data;
+	const struct i2c_it8xxx2_config *config = dev->config;
+
+	/*
+	 * If the transaction of write or read is divided into two
+	 * transfers(not two messages), the FIFO mode does not support.
+	 */
+	if (data->i2ccs != I2C_CH_NORMAL) {
+		return false;
+	}
+	/*
+	 * The I2C controller only supports two 32-bytes FIFOs, channel
+	 * B is not supported.
+	 */
+	if (config->port == 1) {
+		return false;
+	}
+	/*
+	 * When there is only one message, use the FIFO mode transfer
+	 * directly.
+	 * Transfer payload too long (>255 bytes), use PIO mode.
+	 * Write or read of I2C target address without data, used by
+	 * cmd_i2c_scan. Use PIO mode.
+	 */
+	if (data->num_msgs == 1 && (msgs[0].flags & I2C_MSG_STOP) &&
+	    (msgs[0].len <= I2C_FIFO_MODE_TOTAL_LEN) && (msgs[0].len != 0)) {
+		return true;
+	}
+	/*
+	 * When there are two messages, we need to judge whether or not there
+	 * is I2C_MSG_RESTART flag from the second message, and then decide to
+	 * do the FIFO mode or PIO mode transfer.
+	 */
+	if (data->num_msgs == 2) {
+		/*
+		 * The first of two messages must be write.
+		 * Transfer payload too long (>255 bytes), use PIO mode.
+		 */
+		if (((msgs[0].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) &&
+		    (msgs[0].len <= I2C_FIFO_MODE_TOTAL_LEN)) {
+			/*
+			 * The transfer is i2c_burst_read().
+			 *
+			 * e.g. msg[0].flags = I2C_MSG_WRITE;
+			 *      msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ |
+			 *                     I2C_MSG_STOP;
+			 */
+			if ((msgs[1].flags == I2C_MSG_BURST_READ_MASK) &&
+			    (msgs[1].len <= I2C_FIFO_MODE_TOTAL_LEN)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+#endif
+
 static int i2c_tran_read(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
@@ -457,7 +858,7 @@ static int i2c_tran_write(const struct device *dev)
 
 }
 
-static int i2c_transaction(const struct device *dev)
+static int i2c_pio_transaction(const struct device *dev)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -527,7 +928,18 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 		msgs->flags |= I2C_MSG_START;
 	}
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+	/* Store num_msgs to data struct. */
+	data->num_msgs = num_msgs;
+	/* Store msgs to data struct. */
+	data->msgs_list = msgs;
+	bool fifo_mode_enable = fifo_mode_allowed(dev, msgs);
 
+	if (fifo_mode_enable) {
+		/* Block to enter power policy. */
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
 	for (int i = 0; i < num_msgs; i++) {
 
 		data->widx = 0;
@@ -539,15 +951,25 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		if (msgs->flags & I2C_MSG_START) {
 			data->i2ccs = I2C_CH_NORMAL;
 		}
-
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+		data->active_msg_index = 0;
 		/*
 		 * Start transaction.
 		 * The return value indicates if the initial configuration
 		 * of I2C transaction for read or write has been completed.
 		 */
-		if (i2c_transaction(dev)) {
-			/* Enable I2C interrupt. */
-			irq_enable(config->i2c_irq_base);
+		if (fifo_mode_enable) {
+			if (i2c_fifo_transaction(dev)) {
+				/* Enable i2c interrupt */
+				irq_enable(config->i2c_irq_base);
+			}
+		} else
+#endif
+		{
+			if (i2c_pio_transaction(dev)) {
+				/* Enable i2c interrupt */
+				irq_enable(config->i2c_irq_base);
+			}
 		}
 		/* Wait for the transfer to complete */
 		/* TODO: the timeout should be adjustable */
@@ -576,8 +998,31 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			/* If this message is sent fail, drop the transaction. */
 			break;
 		}
-	}
 
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+		/*
+		 * In FIFO mode, messages are compressed into a single
+		 * transaction.
+		 */
+		if (fifo_mode_enable) {
+			break;
+		}
+#endif
+	}
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+	if (fifo_mode_enable) {
+		volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+
+		/* Disable SMB channels in FIFO mode. */
+		*reg_mstfctrl &= ~IT8XXX2_SMB_FFEN;
+		/* Disable I2C write to read FIFO mode. */
+		if (data->num_msgs == 2) {
+			i2c_fifo_en_w2r(dev, 0);
+		}
+		/* Permit to enter power policy. */
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
 	/* reset i2c channel status */
 	if (data->err || (msgs->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
@@ -593,11 +1038,24 @@ static void i2c_it8xxx2_isr(const struct device *dev)
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
 
-	/* If done doing work, wake up the task waiting for the transfer */
-	if (!i2c_transaction(dev)) {
-		irq_disable(config->i2c_irq_base);
-		k_sem_give(&data->device_sync_sem);
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+
+	/* If done doing work, wake up the task waiting for the transfer. */
+	if ((reg_mstfctrl != NULL) &&
+	    (*reg_mstfctrl & IT8XXX2_SMB_FFEN)) {
+		if (i2c_fifo_transaction(dev)) {
+			return;
+		}
+	} else
+#endif
+	{
+		if (i2c_pio_transaction(dev)) {
+			return;
+		}
 	}
+	irq_disable(config->i2c_irq_base);
+	k_sem_give(&data->device_sync_sem);
 }
 
 static int i2c_it8xxx2_init(const struct device *dev)
@@ -645,6 +1103,13 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	/* W/C host status register */
 	IT8XXX2_SMB_HOSTA(base) = HOSTA_ALL_WC_BIT;
 	IT8XXX2_SMB_HOCTL2(base) = 0x00;
+
+#ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
+	volatile uint8_t *reg_mstfctrl = config->reg_mstfctrl;
+
+	/* Select channel C in FIFO 2. */
+	*reg_mstfctrl = IT8XXX2_SMB_FFCHSEL2_C;
+#endif
 
 	/* Set clock frequency for I2C ports */
 	if (config->bitrate == I2C_BITRATE_STANDARD ||
@@ -756,7 +1221,8 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 	static void i2c_it8xxx2_config_func_##inst(void);                       \
 										\
 	static const struct i2c_it8xxx2_config i2c_it8xxx2_cfg_##inst = {       \
-		.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),                    \
+		.base = (uint8_t *)(DT_INST_REG_ADDR_BY_IDX(inst, 0)),          \
+		.reg_mstfctrl = (uint8_t *)(DT_INST_REG_ADDR_BY_IDX(inst, 1)),  \
 		.irq_config_func = i2c_it8xxx2_config_func_##inst,              \
 		.bitrate = DT_INST_PROP(inst, clock_frequency),                 \
 		.i2c_irq_base = DT_INST_IRQN(inst),                             \
