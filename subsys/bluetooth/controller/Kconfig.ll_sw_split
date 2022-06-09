@@ -91,7 +91,6 @@ config BT_LL_SW_LLCP
 	help
 	  Use the new Bluetooth Low Energy Software Link Layer Control Procedure implementation.
 
-
 endchoice
 
 
@@ -557,6 +556,7 @@ config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
 
 config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
 	int "Number of local control procedure contexts to be available across all connections"
+	default 4 if (BT_AUTO_PHY_UPDATE=y || BT_AUTO_DATA_LEN_UPDATE=y) && BT_CTLR_LLCP_CONN < 4
 	default 2 if BT_CTLR_LLCP_CONN = 1
 	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
 	range 2 255
