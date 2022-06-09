@@ -1,8 +1,0 @@
-# Copyright (c) 2021 Sky Hero SA
-# SPDX-License-Identifier: Apache-2.0
-
-config TLC59108
-	bool "TLC59108 LED driver"
-	depends on I2C
-	help
-	  Enable LED driver for TLC59108.

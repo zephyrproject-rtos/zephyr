@@ -55,6 +55,12 @@ LOG_MODULE_REGISTER(pca_common);
 #define PCA963X_MIN_BRIGHTNESS  0U
 #define PCA963X_MAX_BRIGHTNESS  100U
 
+/* TLC59108 parameters */
+#define TLC59108_MIN_PERIOD	41U
+#define TLC59108_MAX_PERIOD	10730U
+#define TLC59108_MIN_BRIGHTNESS	0U
+#define TLC59108_MAX_BRIGHTNESS	100U
+
 struct pca_common_config {
 	struct i2c_dt_spec i2c;
 	struct led_data led_data;
@@ -242,3 +248,4 @@ static const struct led_driver_api pca_common_led_api = {
 
 DT_FOREACH_STATUS_OKAY_VARGS(nxp_pca9633, PCA_DEVICE, pca9633, PCA9633, PCA963X)
 DT_FOREACH_STATUS_OKAY_VARGS(nxp_pca9634, PCA_DEVICE, pca9634, PCA9634, PCA963X)
+DT_FOREACH_STATUS_OKAY_VARGS(ti_tlc59108, PCA_DEVICE, tlc59108, PCA9634, TLC59108)
