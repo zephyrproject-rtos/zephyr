@@ -464,6 +464,15 @@ static struct bt_audio_capability caps[] = {
 				40000, 40000),
 		.codec = &lc3_codec,
 		.ops = &lc3_ops,
+	},
+	{
+		.dir = BT_AUDIO_DIR_SOURCE,
+		.pref = BT_AUDIO_CAPABILITY_PREF(
+				BT_AUDIO_CAPABILITY_UNFRAMED_SUPPORTED,
+				BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000,
+				40000, 40000),
+		.codec = &lc3_codec,
+		.ops = &lc3_ops,
 	}
 };
 
