@@ -1719,6 +1719,17 @@ static void le_set_scan_param(struct net_buf *buf, struct net_buf **evt)
 				    cmd->addr_type, cmd->filter_policy);
 
 	*evt = cmd_complete_status(status);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+	    !status) {
+		/* NOTE: Pass invalid interval value to not start scanning on
+		 *       the coded PHY, if previously coded PHY scanning was
+		 *       enabled using HCI LE Extended Scan Parameters Cmd.
+		 */
+		status = ll_scan_params_set((BT_HCI_LE_EXT_SCAN_PHY_CODED << 1),
+					    0U, 0U, 0U, 0U);
+	}
 }
 
 static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
@@ -4008,7 +4019,7 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 
 			type = (phy << 1);
 			/* NOTE: Pass invalid interval value to not start
-			 *       scanning using this scan instance.
+			 *       scanning on the unselected PHY.
 			 */
 			status = ll_scan_params_set(type, 0, 0, 0, 0);
 		}
