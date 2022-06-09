@@ -5,9 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-from config_parser import TwisterConfigParser
 import scl
-from enviornment import ZEPHYR_BASE
+from twister.config_parser import TwisterConfigParser
+from twister.enviornment import ZEPHYR_BASE
 
 class Platform:
     """Class representing metadata for a particular platform

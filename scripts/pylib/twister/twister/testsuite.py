@@ -6,9 +6,9 @@
 import os
 import sys
 from pathlib import Path
-from mixins import DisablePyTestCollectionMixin
-from enviornment import canonical_zephyr_base
-from error import TwisterException
+from twister.mixins import DisablePyTestCollectionMixin
+from twister.enviornment import canonical_zephyr_base
+from twister.error import TwisterException
 
 class TestCase(DisablePyTestCollectionMixin):
 
