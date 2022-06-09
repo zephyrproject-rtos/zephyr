@@ -22,6 +22,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define IMPOSTER_MODEL_ID 0xe000
 
 static bool is_pull_mode;
+static enum {
+	BLOCK_GET_FAIL = 0,
+	XFER_GET_FAIL = 1
+} msg_fail_type;
 
 static void test_args_parse(int argc, char *argv[])
 {
@@ -32,6 +36,13 @@ static void test_args_parse(int argc, char *argv[])
 			.name = "{0, 1}",
 			.option = "use-pull-mode",
 			.descript = "Set transfer type to pull mode"
+		},
+		{
+			.dest = &msg_fail_type,
+			.type = 'i',
+			.name = "{0, 1}",
+			.option = "msg-fail-type",
+			.descript = "Message type to fail on"
 		},
 	};
 
@@ -1032,14 +1043,30 @@ static int fail_on_block_start(const struct bt_mesh_blob_io *io,
 	return 0;
 }
 
-static void test_cli_fail_on_persistency(void)
+static void cli_common_fail_on_init(void)
 {
-	int err;
-
 	tm_set_phy_max_resync_offset(100000);
 	bt_mesh_test_cfg_set(NULL, 800);
 	bt_mesh_device_setup(&prov, &cli_comp);
 	blob_cli_prov_and_conf(BLOB_CLI_ADDR);
+
+	k_sem_init(&blob_caps_sem, 0, 1);
+	k_sem_init(&lost_target_sem, 0, 1);
+	k_sem_init(&blob_cli_end_sem, 0, 1);
+	k_sem_init(&blob_cli_suspend_sem, 0, 1);
+
+	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
+	blob_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 1;
+	blob_cli_xfer.xfer.id = 1;
+	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.chunk_size = 377;
+	blob_cli_xfer.inputs.timeout_base = 10;
+}
+
+static void test_cli_fail_on_persistency(void)
+{
+	int err;
 
 	/** Test that Push mode BLOB transfer persists as long as at
 	 * least one target is still active. During the test multiple
@@ -1057,18 +1084,7 @@ static void test_cli_fail_on_persistency(void)
 	(void)target_srv_add(BLOB_CLI_ADDR + 4, false);
 	(void)target_srv_add(BLOB_CLI_ADDR + 5, true);
 
-	k_sem_init(&blob_caps_sem, 0, 1);
-	k_sem_init(&lost_target_sem, 0, 1);
-	k_sem_init(&blob_cli_end_sem, 0, 1);
-	k_sem_init(&blob_cli_suspend_sem, 0, 1);
-
-	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
-	blob_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 1;
-	blob_cli_xfer.xfer.id = 1;
-	blob_cli_xfer.xfer.block_size_log = 12;
-	blob_cli_xfer.xfer.chunk_size = 377;
-	blob_cli_xfer.inputs.timeout_base = 10;
+	cli_common_fail_on_init();
 
 	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
 				    &blob_cli_xfer.xfer, &blob_io);
@@ -1077,7 +1093,7 @@ static void test_cli_fail_on_persistency(void)
 	}
 
 	if (k_sem_take(&blob_cli_end_sem, K_SECONDS(750))) {
-		FAIL("Lost targets CB did not trigger for all expected lost targets");
+		FAIL("End CB did not trigger as expected for the cli");
 	}
 
 	ASSERT_TRUE(cli_end_success);
@@ -1181,6 +1197,58 @@ static void test_srv_fail_on_nothing(void)
 	PASS();
 }
 
+static void test_cli_fail_on_no_rsp(void)
+{
+	int err;
+
+	/** Test fail conditions upon non-responsive servers
+	 * during push transfer. Depending on the set
+	 * test message type it tests the following:
+	 *
+	 * msg_fail_type = BLOCK_GET_FAIL - BLOB transfer suspends
+	 * when targets does not respond to Block get.
+	 * msg_fail_type = XFER_GET_FAIL - BLOB transfer stops
+	 * when targets does not respond to Xfer get message.
+	 */
+
+	(void)target_srv_add(BLOB_CLI_ADDR + 1, true);
+	(void)target_srv_add(BLOB_CLI_ADDR + 2, true);
+
+	cli_common_fail_on_init();
+
+	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
+				    &blob_cli_xfer.xfer, &blob_io);
+	if (err) {
+		FAIL("BLOB send failed (err: %d)", err);
+	}
+
+	switch (msg_fail_type) {
+	case BLOCK_GET_FAIL:
+		if (k_sem_take(&blob_cli_suspend_sem, K_SECONDS(750))) {
+			FAIL("Suspend CB did not trigger as expected for the cli");
+		}
+
+		break;
+
+	case XFER_GET_FAIL:
+		if (k_sem_take(&blob_cli_end_sem, K_SECONDS(750))) {
+			FAIL("End CB did not trigger as expected for the cli");
+		}
+
+		ASSERT_FALSE(cli_end_success);
+		break;
+
+	default:
+		FAIL("Did not recognize the message type of the test");
+	}
+
+	if (k_sem_take(&lost_target_sem, K_NO_WAIT)) {
+		FAIL("Lost targets CB did not trigger for all expected lost targets");
+	}
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "blob_" #role "_" #name,          \
@@ -1201,6 +1269,7 @@ static const struct bst_test_instance test_blob[] = {
 	TEST_CASE(cli, broadcast_unicast, "Test broadcast with unicast addr"),
 	TEST_CASE(cli, trans_resume, "Resume BLOB transfer after srv suspension (Default: Push)"),
 	TEST_CASE(cli, fail_on_persistency, "BLOB Client doesn't give up BLOB Transfer"),
+	TEST_CASE(cli, fail_on_no_rsp, "BLOB Client end transfer if no targets rsp to Xfer Get"),
 
 	TEST_CASE(srv, caps_standard, "Standard responsive blob server"),
 	TEST_CASE(srv, caps_no_rsp, "Non-responsive blob server"),
