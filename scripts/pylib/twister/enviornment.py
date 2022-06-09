@@ -32,10 +32,13 @@ canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 
 class TwisterEnv:
 
-    def __init__(self) -> None:
+    def __init__(self, options) -> None:
         self.version = None
         self.toolchain = None
+        self.options = options
 
+
+    def discover(self):
         self.check_zephyr_version()
         self.get_toolchain()
 

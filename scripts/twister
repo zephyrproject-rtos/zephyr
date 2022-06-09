@@ -208,6 +208,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 import twisterlib
 from twisterlib import HardwareMap, TestPlan, SizeCalculator, CoverageTool, ExecutionCounter
 from enviornment import TwisterEnv, canonical_zephyr_base
+from reports import Reporting
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -911,7 +912,8 @@ def main():
             logger.error("You have provided a wrong subset value: %s." % options.subset)
             return
 
-    env = TwisterEnv()
+    env = TwisterEnv(options)
+    env.discover()
     tplan = TestPlan(options.board_root, options.testsuite_root, env, options.outdir)
 
     # Set testplan options from command line.
@@ -940,7 +942,6 @@ def main():
     tplan.overflow_as_errors = options.overflow_as_errors
     tplan.suite_name_check = not options.disable_suite_name_check
     tplan.seed = options.seed
-    tplan.detailed_skipped_report = options.detailed_skipped_report
 
     # get all enabled west projects
     west_proj = west_projects()
@@ -1241,11 +1242,11 @@ def main():
             tplan.instances.update(skipped)
             tplan.instances.update(errors)
 
-
-    tplan.json_report(os.path.join(options.outdir, "testplan.json"))
+    report = Reporting(tplan, env)
+    report.json_report(os.path.join(options.outdir, "testplan.json"))
 
     if options.save_tests:
-        tplan.json_report(options.save_tests)
+        report.json_report(options.save_tests)
         return
 
     if options.device_testing and not options.build_only:
@@ -1319,17 +1320,17 @@ def main():
     elif options.last_metrics:
         report_to_use = previous_results_file
 
-    tplan.footprint_reports(report_to_use,
+    report.footprint_reports(report_to_use,
                             options.show_footprint,
                             options.all_deltas,
                             options.footprint_threshold,
                             options.last_metrics)
 
-    tplan.duration = time.time() - start_time
+    duration = time.time() - start_time
 
     results.summary()
 
-    tplan.summary(results, options.disable_unrecognized_section_test)
+    report.summary(results, options.disable_unrecognized_section_test, duration)
 
     if options.coverage:
         if not options.gcov_tool:
@@ -1365,7 +1366,7 @@ def main():
                 table.append(row)
         print(tabulate(table, headers=header, tablefmt="github"))
 
-    tplan.save_reports(options.report_name,
+    report.save_reports(options.report_name,
                        options.report_suffix,
                        options.report_dir,
                        options.no_update,
