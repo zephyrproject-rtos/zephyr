@@ -1141,6 +1141,56 @@ static void test_p(void)
 	zassert_equal(rc, 12, NULL);
 	zassert_equal(strncmp("/0x00cafe21/", buf, rc), 0, NULL);
 }
+static void test_alternative_form_hex(void)
+{
+	int rc;
+	unsigned val = 0xabcd;
+	TEST_PRF(&rc, "%#010x", val);
+	PRF_CHECK("0x0000abcd", rc);
+
+	TEST_PRF(&rc, "%#10x", val);
+	PRF_CHECK("    0xabcd", rc);
+
+	TEST_PRF(&rc, "%#06x", val);
+	PRF_CHECK("0xabcd", rc);
+
+	TEST_PRF(&rc, "%#6x", val);
+	PRF_CHECK("0xabcd", rc);
+
+	TEST_PRF(&rc, "%#03x", val);
+	PRF_CHECK("0xabcd", rc);
+
+	TEST_PRF(&rc, "%#3x", val);
+	PRF_CHECK("0xabcd", rc);
+}
+
+static void test_alternative_form_oct(void)
+{
+	unsigned int val = 02461;
+	int rc;
+
+	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
+		TC_PRINT("skipped test for nano\n");
+		return;
+	}
+	TEST_PRF(&rc, "%#010o", val);
+	PRF_CHECK("0000002461", rc);
+
+	TEST_PRF(&rc, "%#10o", val);
+	PRF_CHECK("     02461", rc);
+
+	TEST_PRF(&rc, "%#05o", val);
+	PRF_CHECK("02461", rc);
+
+	TEST_PRF(&rc, "%#5o", val);
+	PRF_CHECK("02461", rc);
+
+	TEST_PRF(&rc, "%#03o", val);
+	PRF_CHECK("02461", rc);
+
+	TEST_PRF(&rc, "%#3o", val);
+	PRF_CHECK("02461", rc);
+}
 
 static int out_counter(int c,
 		       void *ctx)
@@ -1464,6 +1514,8 @@ void test_main(void)
 			 ztest_unit_test(test_star_width),
 			 ztest_unit_test(test_star_precision),
 			 ztest_unit_test(test_n),
+			 ztest_unit_test(test_alternative_form_hex),
+			 ztest_unit_test(test_alternative_form_oct),
 			 ztest_unit_test(test_p),
 			 ztest_unit_test(test_libc_substs),
 			 ztest_unit_test(test_cbprintf_package),
@@ -1474,4 +1526,3 @@ void test_main(void)
 			 );
 	ztest_run_test_suite(test_prf);
 }
-
