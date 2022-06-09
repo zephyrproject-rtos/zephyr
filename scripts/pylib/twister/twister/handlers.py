@@ -62,7 +62,7 @@ class Handler:
 
         self.binary = None
         self.pid_fn = None
-        self.call_make_run = False
+        self.call_make_run = True
 
         self.name = instance.name
         self.instance = instance
