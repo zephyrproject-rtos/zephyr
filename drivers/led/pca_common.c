@@ -45,6 +45,10 @@ LOG_MODULE_REGISTER(pca_common);
 
 struct pca_common_config {
 	struct i2c_dt_spec i2c;
+	uint8_t pwm_base;
+	uint8_t grppwm;
+	uint8_t grpfreq;
+	uint8_t ledout;
 };
 
 struct pca_common_data {
@@ -74,7 +78,7 @@ static int pca_common_led_blink(const struct device *dev, uint32_t led,
 	 */
 	gdc = delay_on * 256U / period;
 	if (i2c_reg_write_byte_dt(&config->i2c,
-			       PCA9633_GRPPWM,
+			       config->grppwm,
 			       gdc)) {
 		LOG_ERR("LED reg write failed");
 		return -EIO;
@@ -88,7 +92,7 @@ static int pca_common_led_blink(const struct device *dev, uint32_t led,
 	 */
 	gfrq = (period * 24U / 1000) - 1;
 	if (i2c_reg_write_byte_dt(&config->i2c,
-			       PCA9633_GRPFREQ,
+			       config->grpfreq,
 			       gfrq)) {
 		LOG_ERR("LED reg write failed");
 		return -EIO;
@@ -105,9 +109,9 @@ static int pca_common_led_blink(const struct device *dev, uint32_t led,
 
 	/* Select the GRPPWM source to drive the LED output */
 	if (i2c_reg_update_byte_dt(&config->i2c,
-				PCA9633_LEDOUT,
-				PCA963X_MASK << (led << 1),
-				PCA963X_LED_GRP_PWM << (led << 1))) {
+				config->ledout + (led / 4),
+				PCA963X_MASK << ((led % 4) << 1),
+				PCA963X_LED_GRP_PWM << ((led % 4) << 1))) {
 		LOG_ERR("LED reg update failed");
 		return -EIO;
 	}
@@ -131,7 +135,7 @@ static int pca_common_led_set_brightness(const struct device *dev, uint32_t led,
 	/* Set the LED brightness value */
 	val = (value * 255U) / dev_data->max_brightness;
 	if (i2c_reg_write_byte_dt(&config->i2c,
-			       PCA9633_PWM_BASE + led,
+			       config->pwm_base + led,
 			       val)) {
 		LOG_ERR("LED reg write failed");
 		return -EIO;
@@ -139,9 +143,9 @@ static int pca_common_led_set_brightness(const struct device *dev, uint32_t led,
 
 	/* Set the LED driver to be controlled through its PWMx register. */
 	if (i2c_reg_update_byte_dt(&config->i2c,
-				PCA9633_LEDOUT,
-				PCA963X_MASK << (led << 1),
-				PCA963X_LED_PWM << (led << 1))) {
+				config->ledout + (led / 4),
+				PCA963X_MASK << ((led % 4) << 1),
+				PCA963X_LED_PWM << ((led % 4) << 1))) {
 		LOG_ERR("LED reg update failed");
 		return -EIO;
 	}
@@ -155,9 +159,9 @@ static inline int pca_common_led_on(const struct device *dev, uint32_t led)
 
 	/* Set LED state to ON */
 	if (i2c_reg_update_byte_dt(&config->i2c,
-				PCA9633_LEDOUT,
-				PCA963X_MASK << (led << 1),
-				PCA963X_LED_ON << (led << 1))) {
+				config->ledout + (led / 4),
+				PCA963X_MASK << ((led % 4) << 1),
+				PCA963X_LED_ON << ((led % 4) << 1))) {
 		LOG_ERR("LED reg update failed");
 		return -EIO;
 	}
@@ -171,8 +175,8 @@ static inline int pca_common_led_off(const struct device *dev, uint32_t led)
 
 	/* Set LED state to OFF */
 	if (i2c_reg_update_byte_dt(&config->i2c,
-				PCA9633_LEDOUT,
-				PCA963X_MASK << (led << 1),
+				config->ledout + (led / 4),
+				PCA963X_MASK << ((led % 4) << 1),
 				PCA963X_LED_OFF)) {
 		LOG_ERR("LED reg update failed");
 		return -EIO;
@@ -216,9 +220,13 @@ static const struct led_driver_api pca_common_led_api = {
 	.off = pca_common_led_off,
 };
 
-#define PCA_DEVICE(node_id, prefix)								   \
+#define PCA_DEVICE(node_id, prefix, regs)							   \
 	static const struct pca_common_config _CONCAT(prefix ## _config_, DT_DEP_ORD(node_id)) = { \
 		.i2c = I2C_DT_SPEC_GET(node_id),						   \
+		.pwm_base = regs ## _PWM_BASE,							   \
+		.grppwm = regs ## _GRPPWM,							   \
+		.grpfreq = regs ## _GRPFREQ,							   \
+		.ledout = regs ## _LEDOUT,							   \
 	};											   \
 	static struct pca_common_data _CONCAT(prefix ## _data_, DT_DEP_ORD(node_id));		   \
 												   \
@@ -228,4 +236,4 @@ static const struct led_driver_api pca_common_led_api = {
 			POST_KERNEL, CONFIG_LED_INIT_PRIORITY,					   \
 			&pca_common_led_api);
 
-DT_FOREACH_STATUS_OKAY_VARGS(nxp_pca9633, PCA_DEVICE, pca9633)
+DT_FOREACH_STATUS_OKAY_VARGS(nxp_pca9633, PCA_DEVICE, pca9633, PCA9633)
