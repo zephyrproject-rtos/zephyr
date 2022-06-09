@@ -48,10 +48,10 @@ extern "C" {
 #define MGMT_ERR_EINVAL		3
 #define MGMT_ERR_ETIMEOUT	4
 #define MGMT_ERR_ENOENT		5
-#define MGMT_ERR_EBADSTATE	6	   /* Current state disallows command. */
-#define MGMT_ERR_EMSGSIZE	7	   /* Response too large. */
-#define MGMT_ERR_ENOTSUP	8	   /* Command not supported. */
-#define MGMT_ERR_ECORRUPT	9	   /* Corrupt */
+#define MGMT_ERR_EBADSTATE	6	/* Current state disallows command. */
+#define MGMT_ERR_EMSGSIZE	7	/* Response too large. */
+#define MGMT_ERR_ENOTSUP	8	/* Command not supported. */
+#define MGMT_ERR_ECORRUPT	9	/* Corrupt */
 #define MGMT_ERR_EPERUSER	256
 
 #define MGMT_HDR_SIZE		8
@@ -65,7 +65,7 @@ extern "C" {
 
 struct mgmt_hdr {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	uint8_t  nh_op:3;		   /* MGMT_OP_[...] */
+	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
 	uint8_t  _res1:5;
 #endif
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
