@@ -7,13 +7,15 @@
 import os
 from multiprocessing import Lock, Value
 import re
-from enviornment import ZEPHYR_BASE
+
 import platform
 import yaml
 import scl
 import logging
 from pathlib import Path
 import expr_parser
+
+from twister.enviornment import ZEPHYR_BASE
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.

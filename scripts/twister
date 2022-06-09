@@ -206,10 +206,10 @@ except ImportError:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 import twisterlib
-from twisterlib import TestPlan, SizeCalculator, CoverageTool, ExecutionCounter
-from enviornment import TwisterEnv, canonical_zephyr_base
-from reports import Reporting
-from hardwaremap import HardwareMap
+from twisterlib import TestPlan, CoverageTool, ExecutionCounter
+from twister.enviornment import TwisterEnv, canonical_zephyr_base
+from twister.reports import Reporting
+from twister.hardwaremap import HardwareMap
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -885,6 +885,7 @@ def main():
 
     if options.size:
         for fn in options.size:
+            from twister.size_calc import SizeCalculator
             size_report(SizeCalculator(fn, []))
         return
 

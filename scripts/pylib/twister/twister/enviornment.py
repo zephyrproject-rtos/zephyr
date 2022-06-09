@@ -7,7 +7,6 @@
 import os
 import sys
 from pathlib import Path
-from error import TwisterRuntimeError
 import json
 import logging
 import subprocess
@@ -16,6 +15,8 @@ import re
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
+
+from twister.error import TwisterRuntimeError
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
