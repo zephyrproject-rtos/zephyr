@@ -36,6 +36,12 @@ LOG_MODULE_REGISTER(pca_common);
 #define PCA9633_GRPFREQ         0x07
 #define PCA9633_LEDOUT          0x08
 
+/* PCA9634 control register */
+#define PCA9634_PWM_BASE        0x02	/* Reg 0x02-0x09 for brightness control LED01-08 */
+#define PCA9634_GRPPWM          0x0A
+#define PCA9634_GRPFREQ         0x0B
+#define PCA9634_LEDOUT          0x0C
+
 /* PCA963X mode register 1 */
 #define PCA963X_MODE1_SLEEP     0x10    /* Sleep Mode */
 /* PCA963X mode register 2 */
@@ -235,3 +241,4 @@ static const struct led_driver_api pca_common_led_api = {
 			&pca_common_led_api);
 
 DT_FOREACH_STATUS_OKAY_VARGS(nxp_pca9633, PCA_DEVICE, pca9633, PCA9633, PCA963X)
+DT_FOREACH_STATUS_OKAY_VARGS(nxp_pca9634, PCA_DEVICE, pca9634, PCA9634, PCA963X)

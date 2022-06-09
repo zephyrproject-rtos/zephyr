@@ -6,4 +6,6 @@ config PCA_COMMON
 	depends on I2C
 	help
 	  Enable driver for PCA LED drivers family.
-	  Supports PCA9633 with 4 channels.
+	  Supports:
+	   * PCA9633 with 4 channels.
+	   * PCA9634 with 8 channels.

@@ -1,0 +1,5 @@
+description: NXP PCA9634 LED
+
+compatible: "nxp,pca9634"
+
+include: i2c-device.yaml

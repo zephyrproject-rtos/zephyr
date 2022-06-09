@@ -621,3 +621,9 @@ test_i2c_max31875: max31875@53 {
 	compatible = "maxim,max31875";
 	reg = <0x53>;
 };
+
+test_i2c_pca9634: pca9634@54 {
+	compatible = "nxp,pca9634";
+	label = "PCA9634";
+	reg = <0x54>;
+};
