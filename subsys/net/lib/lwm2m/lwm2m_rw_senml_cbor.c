@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <ctype.h>
 #include <zephyr/sys/util.h>
@@ -455,6 +456,7 @@ static int get_opaque(struct lwm2m_input_context *in,
 			 bool *last_block)
 {
 	struct cbor_in_fmt_data *fd;
+	uint8_t *dest = NULL;
 
 	/* Get the CBOR header only on first read. */
 	if (opaque->remaining == 0) {
@@ -464,21 +466,21 @@ static int get_opaque(struct lwm2m_input_context *in,
 			return -EINVAL;
 		}
 
-		/* TODO: get the opaque data and it's length -
-		 * now plain zero
-		 */
-
 		opaque->len = fd->current->_record_union._union_vd.len;
-		opaque->remaining = fd->current->_record_union._union_vd.len;
 
-		fd->current = NULL;
-		goto not_supported;
+		if (buflen < opaque->len) {
+			LOG_DBG("Write opaque failed, no buffer space");
+			return -ENOMEM;
+		}
+
+		dest = memcpy(value, fd->current->_record_union._union_vd.value, opaque->len);
+		*last_block = true;
+	} else {
+		LOG_DBG("Blockwise transfer not supported with SenML CBOR");
+		__ASSERT_NO_MSG(false);
 	}
 
-	return lwm2m_engine_get_opaque_more(in, value, buflen,
-					    opaque, last_block);
-not_supported:
-	return -ENOTSUP;
+	return dest ? opaque->len : -EINVAL;
 }
 
 static int get_s32(struct lwm2m_input_context *in, int32_t *value)
