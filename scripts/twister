@@ -207,6 +207,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 import twisterlib
 from twisterlib import HardwareMap, TestPlan, SizeCalculator, CoverageTool, ExecutionCounter
+from enviornment import TwisterEnv, canonical_zephyr_base
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -910,10 +911,8 @@ def main():
             logger.error("You have provided a wrong subset value: %s." % options.subset)
             return
 
-    tplan = TestPlan(options.board_root, options.testsuite_root, options.outdir)
-
-    # Check version of zephyr repo
-    tplan.check_zephyr_version()
+    env = TwisterEnv()
+    tplan = TestPlan(options.board_root, options.testsuite_root, env, options.outdir)
 
     # Set testplan options from command line.
     tplan.build_only = options.build_only
