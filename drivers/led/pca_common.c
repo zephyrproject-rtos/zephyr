@@ -43,30 +43,32 @@ LOG_MODULE_REGISTER(pca_common);
 
 #define PCA963X_MASK            0x03
 
+/* PCA963X parameters */
+#define PCA963X_MIN_PERIOD	41U
+#define PCA963X_MAX_PERIOD	10667U
+#define PCA963X_MIN_BRIGHTNESS  0U
+#define PCA963X_MAX_BRIGHTNESS  100U
+
 struct pca_common_config {
 	struct i2c_dt_spec i2c;
+	struct led_data led_data;
 	uint8_t pwm_base;
 	uint8_t grppwm;
 	uint8_t grpfreq;
 	uint8_t ledout;
 };
 
-struct pca_common_data {
-	struct led_data dev_data;
-};
-
 static int pca_common_led_blink(const struct device *dev, uint32_t led,
 			     uint32_t delay_on, uint32_t delay_off)
 {
-	struct pca_common_data *data = dev->data;
 	const struct pca_common_config *config = dev->config;
-	struct led_data *dev_data = &data->dev_data;
+	const struct led_data *led_data = &config->led_data;
 	uint8_t gdc, gfrq;
 	uint32_t period;
 
 	period = delay_on + delay_off;
 
-	if (period < dev_data->min_period || period > dev_data->max_period) {
+	if (period < led_data->min_period || period > led_data->max_period) {
 		return -EINVAL;
 	}
 
@@ -123,17 +125,16 @@ static int pca_common_led_set_brightness(const struct device *dev, uint32_t led,
 				      uint8_t value)
 {
 	const struct pca_common_config *config = dev->config;
-	struct pca_common_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
+	const struct led_data *led_data = &config->led_data;
 	uint8_t val;
 
-	if (value < dev_data->min_brightness ||
-	    value > dev_data->max_brightness) {
+	if (value < led_data->min_brightness ||
+	    value > led_data->max_brightness) {
 		return -EINVAL;
 	}
 
 	/* Set the LED brightness value */
-	val = (value * 255U) / dev_data->max_brightness;
+	val = (value * 255U) / led_data->max_brightness;
 	if (i2c_reg_write_byte_dt(&config->i2c,
 			       config->pwm_base + led,
 			       val)) {
@@ -188,8 +189,6 @@ static inline int pca_common_led_off(const struct device *dev, uint32_t led)
 static int pca_common_led_init(const struct device *dev)
 {
 	const struct pca_common_config *config = dev->config;
-	struct pca_common_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C bus is not ready");
@@ -204,11 +203,6 @@ static int pca_common_led_init(const struct device *dev)
 		LOG_ERR("LED reg update failed");
 		return -EIO;
 	}
-	/* Hardware specific limits */
-	dev_data->min_period = 41U;
-	dev_data->max_period = 10667U;
-	dev_data->min_brightness = 0U;
-	dev_data->max_brightness = 100U;
 
 	return 0;
 }
@@ -220,20 +214,24 @@ static const struct led_driver_api pca_common_led_api = {
 	.off = pca_common_led_off,
 };
 
-#define PCA_DEVICE(node_id, prefix, regs)							   \
+#define PCA_DEVICE(node_id, prefix, regs, params)						   \
 	static const struct pca_common_config _CONCAT(prefix ## _config_, DT_DEP_ORD(node_id)) = { \
 		.i2c = I2C_DT_SPEC_GET(node_id),						   \
+		.led_data = {									   \
+			.min_period = params ## _MIN_PERIOD,					   \
+			.max_period = params ## _MAX_PERIOD,					   \
+			.min_brightness = params ## _MIN_BRIGHTNESS,				   \
+			.max_brightness = params ## _MAX_BRIGHTNESS,				   \
+		},										   \
 		.pwm_base = regs ## _PWM_BASE,							   \
 		.grppwm = regs ## _GRPPWM,							   \
 		.grpfreq = regs ## _GRPFREQ,							   \
 		.ledout = regs ## _LEDOUT,							   \
 	};											   \
-	static struct pca_common_data _CONCAT(prefix ## _data_, DT_DEP_ORD(node_id));		   \
 												   \
 	DEVICE_DT_DEFINE(node_id, &pca_common_led_init, NULL,					   \
-			&_CONCAT(prefix ## _data_, DT_DEP_ORD(node_id)),			   \
-			&_CONCAT(prefix ## _config_, DT_DEP_ORD(node_id)),			   \
+			NULL, &_CONCAT(prefix ## _config_, DT_DEP_ORD(node_id)),		   \
 			POST_KERNEL, CONFIG_LED_INIT_PRIORITY,					   \
 			&pca_common_led_api);
 
-DT_FOREACH_STATUS_OKAY_VARGS(nxp_pca9633, PCA_DEVICE, pca9633, PCA9633)
+DT_FOREACH_STATUS_OKAY_VARGS(nxp_pca9633, PCA_DEVICE, pca9633, PCA9633, PCA963X)
