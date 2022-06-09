@@ -40,12 +40,13 @@ static size_t configured_stream_count;
 static struct bt_audio_lc3_preset codec_configuration = BT_AUDIO_LC3_UNICAST_PRESET_16_2_1;
 
 static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_sink_discovered, 0, 1);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
+static K_SEM_DEFINE(sem_sinks_discovered, 0, 1);
+static K_SEM_DEFINE(sem_sources_discovered, 0, 1);
 static K_SEM_DEFINE(sem_stream_configured, 0, 1);
 static K_SEM_DEFINE(sem_stream_qos, 0, 1);
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
-
 
 #if defined(CONFIG_LIBLC3CODEC)
 
@@ -531,10 +532,10 @@ static void add_remote_codec(struct bt_codec *codec_capabilities, int index,
 	}
 }
 
-static void discover_sink_cb(struct bt_conn *conn,
-			     struct bt_codec *codec,
-			     struct bt_audio_ep *ep,
-			     struct bt_audio_discover_params *params)
+static void discover_sinks_cb(struct bt_conn *conn,
+			      struct bt_codec *codec,
+			      struct bt_audio_ep *ep,
+			      struct bt_audio_discover_params *params)
 {
 	if (params->err != 0) {
 		printk("Discovery failed: %d\n", params->err);
@@ -547,20 +548,44 @@ static void discover_sink_cb(struct bt_conn *conn,
 	}
 
 	if (ep != NULL) {
-		if (params->dir == BT_AUDIO_DIR_SINK) {
-			add_remote_sink(ep, params->num_eps);
-		} else {
-			add_remote_source(ep, params->num_eps);
-		}
+		add_remote_sink(ep, params->num_eps);
 
 		return;
 	}
 
-	printk("Discover complete: err %d\n", params->err);
+	printk("Discover sinks complete: err %d\n", params->err);
 
 	(void)memset(params, 0, sizeof(*params));
 
-	k_sem_give(&sem_sink_discovered);
+	k_sem_give(&sem_sinks_discovered);
+}
+
+static void discover_sources_cb(struct bt_conn *conn,
+				struct bt_codec *codec,
+				struct bt_audio_ep *ep,
+				struct bt_audio_discover_params *params)
+{
+	if (params->err != 0) {
+		printk("Discovery failed: %d\n", params->err);
+		return;
+	}
+
+	if (codec != NULL) {
+		add_remote_codec(codec, params->num_caps, params->dir);
+		return;
+	}
+
+	if (ep != NULL) {
+		add_remote_source(ep, params->num_eps);
+
+		return;
+	}
+
+	printk("Discover sources complete: err %d\n", params->err);
+
+	(void)memset(params, 0, sizeof(*params));
+
+	k_sem_give(&sem_sources_discovered);
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -610,6 +635,16 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
+static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	printk("MTU exchanged: %u/%u\n", tx, rx);
+	k_sem_give(&sem_mtu_exchanged);
+}
+
+static struct bt_gatt_cb gatt_callbacks = {
+	.att_mtu_updated = att_mtu_updated,
+};
+
 static int init(void)
 {
 	int err;
@@ -623,6 +658,8 @@ static int init(void)
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
 		streams[i].ops = &stream_ops;
 	}
+
+	bt_gatt_cb_register(&gatt_callbacks);
 
 #if defined(CONFIG_LIBLC3CODEC)
 	k_work_init_delayable(&audio_send_work, lc3_audio_timer_timeout);
@@ -645,26 +682,55 @@ static int scan_and_connect(void)
 		return err;
 	}
 
+	err = k_sem_take(&sem_mtu_exchanged, K_FOREVER);
+	if (err != 0) {
+		printk("failed to take sem_mtu_exchanged (err %d)\n", err);
+		return err;
+	}
+
 	return 0;
 }
 
-static int discover_sink(void)
+static int discover_sinks(void)
 {
 	static struct bt_audio_discover_params params;
 	int err;
 
-	params.func = discover_sink_cb;
+	params.func = discover_sinks_cb;
 	params.dir = BT_AUDIO_DIR_SINK;
 
 	err = bt_audio_discover(default_conn, &params);
 	if (err != 0) {
-		printk("Failed to discover sink: %d\n", err);
+		printk("Failed to discover sinks: %d\n", err);
 		return err;
 	}
 
-	err = k_sem_take(&sem_sink_discovered, K_FOREVER);
+	err = k_sem_take(&sem_sinks_discovered, K_FOREVER);
 	if (err != 0) {
-		printk("failed to take sem_sink_discovered (err %d)\n", err);
+		printk("failed to take sem_sinks_discovered (err %d)\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int discover_sources(void)
+{
+	static struct bt_audio_discover_params params;
+	int err;
+
+	params.func = discover_sources_cb;
+	params.dir = BT_AUDIO_DIR_SOURCE;
+
+	err = bt_audio_discover(default_conn, &params);
+	if (err != 0) {
+		printk("Failed to discover sources: %d\n", err);
+		return err;
+	}
+
+	err = k_sem_take(&sem_sources_discovered, K_FOREVER);
+	if (err != 0) {
+		printk("failed to take sem_sources_discovered (err %d)\n", err);
 		return err;
 	}
 
@@ -723,7 +789,7 @@ static int configure_streams(void)
 			continue;
 		}
 
-		err = configure_stream(stream, sources[i]);
+		err = configure_stream(stream, ep);
 		if (err != 0) {
 			printk("Could not configure source stream[%zu]: %d\n",
 			       i, err);
@@ -842,12 +908,19 @@ void main(void)
 	}
 	printk("Connected\n");
 
-	printk("Discovering sink\n");
-	err = discover_sink();
+	printk("Discovering sinks\n");
+	err = discover_sinks();
 	if (err != 0) {
 		return;
 	}
-	printk("Sink discovered\n");
+	printk("Sinks discovered\n");
+
+	printk("Discovering sources\n");
+	err = discover_sources();
+	if (err != 0) {
+		return;
+	}
+	printk("Sources discovered\n");
 
 	printk("Configuring streams\n");
 	err = configure_streams();
