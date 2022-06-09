@@ -805,6 +805,10 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     if not options.coverage_platform:
         options.coverage_platform = options.platform
 
+    if options.enable_valgrind and not shutil.which("valgrind"):
+        logger.error("valgrind enabled but valgrind executable not found")
+        sys.exit(1)
+
     return options
 
 def setup_logging(outdir, log_file, verbose, timestamps):
@@ -885,8 +889,8 @@ def main():
     setup_logging(options.outdir, options.log_file, VERBOSE, options.timestamps)
 
     if options.size:
+        from twister.size_calc import SizeCalculator
         for fn in options.size:
-            from twister.size_calc import SizeCalculator
             size_report(SizeCalculator(fn, []))
         return
 
@@ -903,10 +907,6 @@ def main():
         hwm.dump(connected_only=True)
         return
 
-    if options.enable_valgrind and not shutil.which("valgrind"):
-        logger.error("valgrind enabled but valgrind executable not found")
-        sys.exit(1)
-
     if options.subset:
         subset, sets = options.subset.split("/")
         if int(subset) > 0 and int(sets) >= int(subset):
@@ -917,6 +917,7 @@ def main():
 
     env = TwisterEnv(options)
     env.discover()
+
     tplan = TestPlan(options.board_root, options.testsuite_root, env, options.outdir)
 
     # Set testplan options from command line.
