@@ -10,6 +10,22 @@ config I2C_ITE_IT8XXX2
 	  Supported Speeds: 100kHz, 400kHz and 1MHz.
 	  This driver supports repeated start.
 
+if I2C_ITE_IT8XXX2
+
+config I2C_IT8XXX2_FIFO_MODE
+	bool "IT8XXX2 I2C FIFO mode"
+	default y
+	help
+	  This is an option to enable FIFO mode which can reduce
+	  the time between each byte to improve the I2C bus clock
+	  stretching during I2C transaction.
+	  The I2C controller supports two 32-bytes FIFOs, channel
+	  A and channel C are supported now.
+	  I2C FIFO mode of it8xxx2 can support I2C APIs including:
+	  i2c_write(), i2c_read(), i2c_burst_read.
+
+endif # I2C_ITE_IT8XXX2
+
 config I2C_ITE_ENHANCE
 	bool "ITE IT8XXX2 I2C enhance driver"
 	default y
