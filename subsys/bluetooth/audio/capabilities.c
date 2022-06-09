@@ -300,27 +300,13 @@ static int write_location_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 }
 #endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE || CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
 #endif /* CONFIG_BT_PAC_SNK_LOC || CONFIG_BT_PAC_SRC_LOC */
+static int get_available_contexts(enum bt_audio_dir dir,
+				  enum bt_audio_context *contexts);
 
 static int get_available_contexts_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 				     enum bt_audio_context *contexts)
 {
-	IF_ENABLED(CONFIG_BT_PAC_SNK, (
-		if (dir == BT_AUDIO_DIR_SINK) {
-			*contexts = sink_available_contexts;
-			return 0;
-		}
-	));
-
-	IF_ENABLED(CONFIG_BT_PAC_SRC, (
-		if (dir == BT_AUDIO_DIR_SOURCE) {
-			*contexts = source_available_contexts;
-			return 0;
-		}
-	));
-
-	BT_ASSERT_PRINT_MSG("Invalid endpoint dir: %u", dir);
-
-	return -EINVAL;
+	return get_available_contexts(dir, contexts);
 }
 
 static struct bt_audio_unicast_server_cb unicast_server_cb = {
@@ -503,6 +489,28 @@ static int set_available_contexts(enum bt_audio_dir dir,
 	return -EINVAL;
 }
 
+static int get_available_contexts(enum bt_audio_dir dir,
+				  enum bt_audio_context *contexts)
+{
+	IF_ENABLED(CONFIG_BT_PAC_SNK, (
+		if (dir == BT_AUDIO_DIR_SINK) {
+			*contexts = sink_available_contexts;
+			return 0;
+		}
+	));
+
+	IF_ENABLED(CONFIG_BT_PAC_SRC, (
+		if (dir == BT_AUDIO_DIR_SOURCE) {
+			*contexts = source_available_contexts;
+			return 0;
+		}
+	));
+
+	BT_ASSERT_PRINT_MSG("Invalid endpoint dir: %u", dir);
+
+	return -EINVAL;
+}
+
 int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
 					       enum bt_audio_context contexts)
 {
@@ -522,4 +530,17 @@ int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
 	}
 
 	return 0;
+}
+
+enum bt_audio_context bt_audio_capability_get_available_contexts(enum bt_audio_dir dir)
+{
+	enum bt_audio_context contexts;
+	int err;
+
+	err = get_available_contexts(dir, &contexts);
+	if (err < 0) {
+		return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+	}
+
+	return contexts;
 }

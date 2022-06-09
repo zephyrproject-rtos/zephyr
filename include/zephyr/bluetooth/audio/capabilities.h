@@ -276,6 +276,14 @@ int bt_audio_capability_set_location(enum bt_audio_dir dir,
 int bt_audio_capability_set_available_contexts(enum bt_audio_dir dir,
 					       enum bt_audio_context contexts);
 
+/** @brief Get the available contexts for an endpoint type
+ *
+ * @param dir      Direction of the endpoints to get contexts for.
+ *
+ * @return Bitmask of available contexts.
+ */
+enum bt_audio_context bt_audio_capability_get_available_contexts(enum bt_audio_dir dir);
+
 #ifdef __cplusplus
 }
 #endif
