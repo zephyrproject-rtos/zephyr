@@ -76,8 +76,7 @@ config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
 choice BT_LL_SW_LLCP_IMPL
 	prompt "Bluetooth Low Energy Software Link Layer Control Procedure Implementation"
-	default BT_LL_SW_LLCP if BT_CTLR_DF_CONN_CTE_RX || BT_CTLR_DF_CONN_CTE_TX
-	default BT_LL_SW_LLCP_LEGACY
+	default BT_LL_SW_LLCP
 	help
 	  Select the Bluetooth Low Energy Software Link Layer Control Procedure implementation.
 
@@ -88,11 +87,10 @@ config BT_LL_SW_LLCP_LEGACY
 	  Use the Bluetooth Low Energy Software Link Layer Legacy Control Procedure implementation.
 
 config BT_LL_SW_LLCP
-	bool "New implementation, replacing the legacy one [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "State-machine based implementation, replacing the legacy one"
 	help
 	  Use the new Bluetooth Low Energy Software Link Layer Control Procedure implementation.
-	  It is considered experimental because it is still under development and is not qualifiable yet.
+
 
 endchoice
 
