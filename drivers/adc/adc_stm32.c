@@ -686,13 +686,30 @@ static int start_read(const struct device *dev,
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_REG_SetSequencerChannels(adc, channel);
-#elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
+#elif defined(CONFIG_SOC_SERIES_STM32WLX)
 	/* STM32G0 in "not fully configurable" sequencer mode */
 	LL_ADC_REG_SetSequencerChannels(adc, channel);
+	LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_CONFIGURABLE);
 	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 	}
-	LL_ADC_ClearFlag_CCRDY(adc);	
+	LL_ADC_ClearFlag_CCRDY(adc);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	/* STM32G0 in "not fully configurable" sequencer mode */
+	LL_ADC_REG_SetSequencerChannels(adc, channel);
+	LL_ADC_REG_SetSequencerConfigurable(adc, LL_ADC_REG_SEQ_FIXED);
+	while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
+	}
+	LL_ADC_ClearFlag_CCRDY(adc);
+#if defined(CONFIG_SOC_SERIES_STM32WLX)
+	/* Init the the ADC group for REGULAR conversion*/
+	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
+	LL_ADC_REG_SetSequencerLength(adc, LL_ADC_REG_SEQ_SCAN_DISABLE);
+	LL_ADC_REG_SetSequencerDiscont(adc, LL_ADC_REG_SEQ_DISCONT_DISABLE);
+	LL_ADC_REG_SetContinuousMode(adc, LL_ADC_REG_CONV_SINGLE);
+	LL_ADC_REG_SetOverrun(adc, LL_ADC_REG_OVR_DATA_OVERWRITTEN);
+	LL_ADC_REG_SetSequencerRanks(adc, LL_ADC_REG_RANK_1, channel);
+#endif /* CONFIG_SOC_SERIES_STM32WLX */
+
 #else
 	LL_ADC_REG_SetSequencerRanks(adc, table_rank[0], channel);
 	LL_ADC_REG_SetSequencerLength(adc, table_seq_len[0]);
