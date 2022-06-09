@@ -2230,6 +2230,14 @@ next_state:
 		}
 		break;
 	case TCP_TIME_WAIT:
+		/* Acknowledge any FIN attempts, in case retransmission took
+		 * place.
+		 */
+		if (th && (FL(&fl, ==, (FIN | ACK), th_seq(th) + 1 == conn->ack) ||
+			   FL(&fl, ==, FIN, th_seq(th) + 1 == conn->ack))) {
+			tcp_out(conn, ACK);
+		}
+
 		k_work_reschedule_for_queue(
 			&tcp_work_q, &conn->timewait_timer,
 			K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
