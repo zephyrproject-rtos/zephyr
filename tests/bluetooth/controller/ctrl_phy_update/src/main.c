@@ -714,13 +714,13 @@ void test_phy_update_central_loc_collision(void)
 	event_tx_ack(&conn, tx);
 
 	/* Check that data tx is not paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Done */
 	event_done(&conn);
 
 	/* Check that data tx is not paused */
-	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Release Tx */
 	ull_cp_release_tx(&conn, tx);
