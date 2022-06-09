@@ -1,9 +1,14 @@
 # Copyright (c) 2018 Savoir-Faire Linux
 # SPDX-License-Identifier: Apache-2.0
+#
+DT_COMPAT_NXP_PCA9633 := nxp,pca9633
+DT_COMPAT_NXP_PCA9634 := nxp,pca9634
 
 config PCA_COMMON
 	bool "Driver for PCA LED drivers family"
 	depends on I2C
+	default y if $(dt_compat_enabled,$(DT_COMPAT_NXP_PCA9633))
+	default y if $(dt_compat_enabled,$(DT_COMPAT_NXP_PCA9634))
 	help
 	  Enable driver for PCA LED drivers family.
 	  Supports:
