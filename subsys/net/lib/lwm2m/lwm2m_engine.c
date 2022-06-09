@@ -1800,7 +1800,12 @@ static int path_to_objs(const struct lwm2m_obj_path *path,
 	}
 
 	if (!r) {
-		LOG_ERR("resource %d not found", path->res_id);
+		if (LWM2M_HAS_PERM(of, BIT(LWM2M_FLAG_OPTIONAL))) {
+			LOG_DBG("resource %d not found", path->res_id);
+		} else {
+			LOG_ERR("resource %d not found", path->res_id);
+		}
+
 		return -ENOENT;
 	}
 
