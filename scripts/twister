@@ -205,8 +205,7 @@ except ImportError:
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-import twisterlib
-from twisterlib import TestPlan
+from twister.testplan import TestPlan
 from twister.runner import ExecutionCounter
 from twister.enviornment import TwisterEnv, canonical_zephyr_base
 from twister.reports import Reporting
@@ -844,6 +843,12 @@ def setup_logging(outdir, log_file, verbose, timestamps):
     logger.addHandler(fh)
 
 
+
+
+def init_color(colorama_strip):
+    colorama.init(strip=colorama_strip)
+
+
 def main():
     start_time = time.time()
 
@@ -853,7 +858,7 @@ def main():
     color_strip = False if options.force_color else None
 
     colorama.init(strip=color_strip)
-    twisterlib.init(colorama_strip=color_strip)
+    init_color(colorama_strip=color_strip)
 
     previous_results = None
     # Cleanup
@@ -920,34 +925,6 @@ def main():
     env.discover()
 
     tplan = TestPlan(options.board_root, options.testsuite_root, env, options.outdir)
-
-    # Set testplan options from command line.
-    tplan.build_only = options.build_only
-    tplan.cmake_only = options.cmake_only
-    tplan.cleanup = options.runtime_artifact_cleanup
-    tplan.test_only = options.test_only
-    tplan.retry_build_errors = options.retry_build_errors
-    tplan.enable_slow = options.enable_slow
-    tplan.device_testing = options.device_testing
-    tplan.fixtures = options.fixture
-    tplan.enable_asan = options.enable_asan
-    tplan.enable_lsan = options.enable_lsan
-    tplan.enable_ubsan = options.enable_ubsan
-    tplan.enable_coverage = options.enable_coverage
-    tplan.enable_valgrind = options.enable_valgrind
-    tplan.coverage_platform = options.coverage_platform
-    tplan.inline_logs = options.inline_logs
-    tplan.enable_size_report = options.enable_size_report
-    tplan.extra_args = options.extra_args
-    tplan.west_flash = options.west_flash
-    tplan.west_runner = options.west_runner
-    tplan.verbose = VERBOSE
-    tplan.warnings_as_errors = not options.disable_warnings_as_errors
-    tplan.integration = options.integration
-    tplan.overflow_as_errors = options.overflow_as_errors
-    tplan.suite_name_check = not options.disable_suite_name_check
-    tplan.seed = options.seed
-
     # get all enabled west projects
     west_proj = west_projects()
     modules_meta = parse_modules(ZEPHYR_BASE,
@@ -955,13 +932,6 @@ def main():
                                 if west_proj else None, None)
     modules = [module.meta.get('name') for module in modules_meta]
     tplan.modules = modules
-
-    if options.ninja:
-        tplan.generator_cmd = "ninja"
-        tplan.generator = "Ninja"
-    else:
-        tplan.generator_cmd = "make"
-        tplan.generator = "Unix Makefiles"
 
     # Set number of jobs
     if options.jobs:
@@ -1015,9 +985,9 @@ def main():
                              only one platform is allowed""")
 
     # the fixtures given by twister command explicitly should be assigned to each DUTs
-    if tplan.fixtures:
+    if options.fixture:
         for d in tplan.duts:
-            d.fixtures.extend(tplan.fixtures)
+            d.fixtures.extend(options.fixture)
 
     if tplan.load_errors:
         sys.exit(1)

@@ -11,10 +11,9 @@ import subprocess
 import pickle
 import logging
 from colorama import Fore
-from multiprocessing import Lock, Process, Value
+from multiprocessing import Lock, Value
 
 from twister.cmakecache import CMakeCache
-from twister.handlers import BinaryHandler, QEMUHandler, DeviceHandler
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -32,10 +31,7 @@ class ExecutionCounter(object):
         self._failed = Value('i', 0)
         self._total = Value('i', total)
         self._cases = Value('i', 0)
-
-
         self.lock = Lock()
-
 
     def summary(self):
         logger.debug("--------------------------------")
@@ -220,7 +216,7 @@ class CMake:
 
             if log_msg:
                 overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM)' overflowed by", log_msg)
-                if overflow_found and not self.overflow_as_errors:
+                if overflow_found and not self.options.overflow_as_errors:
                     logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
                     self.instance.status = "skipped"
                     self.instance.reason = "{} overflow".format(overflow_found[0])
@@ -237,7 +233,7 @@ class CMake:
 
     def run_cmake(self, args=[]):
 
-        if self.warnings_as_errors:
+        if not self.options.disable_warnings_as_errors:
             ldflags = "-Wl,--fatal-warnings"
             cflags = "-Werror"
             aflags = "-Werror -Wa,--fatal-warnings"
@@ -376,31 +372,25 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, tplan, instance, **kwargs):
+    def __init__(self, tplan, instance, env, **kwargs):
         super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir)
 
         self.log = "build.log"
         self.instance = instance
         self.testplan = tplan
         self.filtered_tests = 0
+        self.options = env.options
 
-        self.lsan = kwargs.get('lsan', False)
-        self.asan = kwargs.get('asan', False)
-        self.ubsan = kwargs.get('ubsan', False)
-        self.valgrind = kwargs.get('valgrind', False)
         self.extra_args = kwargs.get('extra_args', [])
-        self.device_testing = kwargs.get('device_testing', False)
-        self.cmake_only = kwargs.get('cmake_only', False)
-        self.cleanup = kwargs.get('cleanup', False)
-        self.coverage = kwargs.get('coverage', False)
-        self.inline_logs = kwargs.get('inline_logs', False)
-        self.generator = kwargs.get('generator', None)
-        self.generator_cmd = kwargs.get('generator_cmd', None)
         self.verbose = kwargs.get('verbose', None)
-        self.warnings_as_errors = kwargs.get('warnings_as_errors', True)
-        self.overflow_as_errors = kwargs.get('overflow_as_errors', False)
         self.suite_name_check = kwargs.get('suite_name_check', True)
         self.seed = kwargs.get('seed', 0)
+        if self.options.ninja:
+            self.generator_cmd = "ninja"
+            self.generator = "Ninja"
+        else:
+            self.generator_cmd = "make"
+            self.generator = "Unix Makefiles"
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -436,76 +426,18 @@ class ProjectBuilder(FilterBuilder):
         else:
             self.log_info("{}".format(b_log), inline_logs)
 
-    def setup_handler(self):
-
-        instance = self.instance
-        args = []
-
-        # FIXME: Needs simplification
-        if instance.platform.simulation == "qemu":
-            instance.handler = QEMUHandler(instance, "qemu")
-            args.append("QEMU_PIPE=%s" % instance.handler.get_fifo())
-            instance.handler.call_make_run = True
-        elif instance.testsuite.type == "unit":
-            instance.handler = BinaryHandler(instance, "unit")
-            instance.handler.binary = os.path.join(instance.build_dir, "testbinary")
-            if self.coverage:
-                args.append("COVERAGE=1")
-        elif instance.platform.type == "native":
-            handler = BinaryHandler(instance, "native")
-
-            handler.asan = self.asan
-            handler.valgrind = self.valgrind
-            handler.lsan = self.lsan
-            handler.ubsan = self.ubsan
-            handler.coverage = self.coverage
-
-            handler.binary = os.path.join(instance.build_dir, "zephyr", "zephyr.exe")
-            instance.handler = handler
-        elif instance.platform.simulation == "renode":
-            if find_executable("renode"):
-                instance.handler = BinaryHandler(instance, "renode")
-                instance.handler.pid_fn = os.path.join(instance.build_dir, "renode.pid")
-                instance.handler.call_make_run = True
-        elif instance.platform.simulation == "tsim":
-            instance.handler = BinaryHandler(instance, "tsim")
-            instance.handler.call_make_run = True
-        elif self.device_testing:
-            instance.handler = DeviceHandler(instance, "device")
-            instance.handler.coverage = self.coverage
-        elif instance.platform.simulation == "nsim":
-            if find_executable("nsimdrv"):
-                instance.handler = BinaryHandler(instance, "nsim")
-                instance.handler.call_make_run = True
-        elif instance.platform.simulation == "mdb-nsim":
-            if find_executable("mdb"):
-                instance.handler = BinaryHandler(instance, "nsim")
-                instance.handler.call_make_run = True
-        elif instance.platform.simulation == "armfvp":
-            instance.handler = BinaryHandler(instance, "armfvp")
-            instance.handler.call_make_run = True
-        elif instance.platform.simulation == "xt-sim":
-            instance.handler = BinaryHandler(instance, "xt-sim")
-            instance.handler.call_make_run = True
-
-        if instance.handler:
-            instance.handler.args = args
-            instance.handler.generator_cmd = self.generator_cmd
-            instance.handler.generator = self.generator
-            instance.handler.suite_name_check = self.suite_name_check
 
     def process(self, pipeline, done, message, lock, results):
         op = message.get('op')
 
-        if not self.instance.handler:
-            self.setup_handler()
+        self.instance.setup_handler(self.options)
 
         # The build process, call cmake and build with configured generator
         if op == "cmake":
             res = self.cmake()
             if self.instance.status in ["failed", "error"]:
                 pipeline.put({"op": "report", "test": self.instance})
-            elif self.cmake_only:
+            elif self.options.cmake_only:
                 if self.instance.status is None:
                     self.instance.status = "passed"
                 pipeline.put({"op": "report", "test": self.instance})
@@ -571,14 +503,14 @@ class ProjectBuilder(FilterBuilder):
                 done.put(self.instance)
                 self.report_out(results)
 
-            if self.cleanup and not self.coverage and self.instance.status == "passed":
+            if self.options.runtime_artifact_cleanup and not self.options.coverage and self.instance.status == "passed":
                 pipeline.put({
                     "op": "cleanup",
                     "test": self.instance
                 })
 
         elif op == "cleanup":
-            if self.device_testing:
+            if self.options.device_testing:
                 self.cleanup_device_testing_artifacts()
             else:
                 self.cleanup_artifacts()
@@ -666,7 +598,7 @@ class ProjectBuilder(FilterBuilder):
                         Fore.RESET,
                         instance.reason))
             if not self.verbose:
-                self.log_info_file(self.inline_logs)
+                self.log_info_file(self.options.inline_logs)
         elif instance.status in ["skipped", "filtered"]:
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
             results.skipped_configs += 1
@@ -705,7 +637,7 @@ class ProjectBuilder(FilterBuilder):
                 instance.testsuite.name, status, more_info))
 
             if instance.status in ["error", "failed", "timeout"]:
-                self.log_info_file(self.inline_logs)
+                self.log_info_file(self.options.inline_logs)
         else:
             completed_perc = 0
             if total_to_do > 0:
@@ -787,7 +719,7 @@ class ProjectBuilder(FilterBuilder):
         sys.stdout.flush()
 
     def gather_metrics(self, instance):
-        if self.testplan.enable_size_report and not self.testplan.cmake_only:
+        if self.options.enable_size_report and not self.options.cmake_only:
             self.calc_one_elf_size(instance)
         else:
             instance.metrics["ram_size"] = 0
