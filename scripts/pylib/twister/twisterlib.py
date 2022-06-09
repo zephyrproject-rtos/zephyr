@@ -12,26 +12,23 @@ import subprocess
 import shutil
 import hashlib
 
-from datetime import datetime
 import queue
 import glob
 import random
-import xml.etree.ElementTree as ET
 import logging
 from pathlib import Path
 from distutils.spawn import find_executable
 import colorama
 from colorama import Fore
 import pickle
-import platform
-import yaml
+
 import json
 from multiprocessing import Lock, Process, Value
 from typing import List
 
 from cmakecache import CMakeCache
 from testsuite import TestCase, TestSuite
-from error import TwisterRuntimeError
+from error import TwisterRuntimeError, ConfigurationError, BuildError
 from handlers import BinaryHandler, QEMUHandler, DeviceHandler
 
 try:
