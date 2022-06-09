@@ -4009,8 +4009,9 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 			uint8_t type;
 
 			type = (phy << 1);
-			/* NOTE: Pass invalid interval value to not start
-			 *       scanning using this scan instance.
+			/* NOTE: Pass invalid interval value to reset the PHY
+			 *       value in the scan instance so not to start
+			 *       scanning on the unselected PHY.
 			 */
 			status = ll_scan_params_set(type, 0, 0, 0, 0);
 		}
