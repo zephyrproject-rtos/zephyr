@@ -43,9 +43,6 @@ The implementation is optimized for FPGA chips.
 More information about the project can be found on
 `VexRiscv's website <https://github.com/SpinalHDL/VexRiscv>`_.
 
-LiteX VexRiscv
-##############
-
 To run the ZephyrOS on the VexRiscv CPU, it is necessary to prepare the
 bitstream for the FPGA on a Digilent Arty A7-35 Board. This can be achieved
 using the
