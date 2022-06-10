@@ -935,6 +935,8 @@ void hci_le_cis_established(struct net_buf *buf)
 		tx = chan->qos->tx;
 		rx = chan->qos->rx;
 
+		BT_DBG("iso_chan %p tx %p rx %p", chan, tx, rx);
+
 		if (iso->role == BT_HCI_ROLE_PERIPHERAL) {
 			rx = chan->qos->rx;
 			tx = chan->qos->tx;
@@ -1370,6 +1372,10 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 	req->framing = param->framing;
 	req->num_cis = param->num_cis;
 
+	BT_DBG("id %u, latency %u, interval %u, sca %u, packing %u, framing %u, num_cis %u",
+	       cig->id, param->latency, param->interval, param->sca,
+	       param->packing, param->framing, param->num_cis);
+
 	/* Program the cis parameters */
 	for (i = 0; i < param->num_cis; i++) {
 		struct bt_iso_chan *cis = param->cis_channels[i];
@@ -1408,6 +1414,11 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 			cis_param->p_phy = qos->rx->phy;
 			cis_param->p_rtn = qos->rx->rtn;
 		}
+
+		BT_DBG("[%d]: id %u, c_phy %u, c_sdu %u, c_rtn %u, p_phy %u, p_sdu %u, p_rtn %u",
+		       i, cis_param->cis_id, cis_param->c_phy, cis_param->c_sdu,
+		       cis_param->c_rtn, cis_param->p_phy, cis_param->p_sdu,
+		       cis_param->p_rtn);
 	}
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CIG_PARAMS, buf, &rsp);
@@ -1513,9 +1524,21 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param)
 			return false;
 		}
 
+		if (cis->iso != NULL) {
+			BT_DBG("cis_channels[%d]: already allocated", i);
+			return false;
+		}
+
 		if (!valid_chan_qos(cis->qos)) {
 			BT_DBG("cis_channels[%d]: Invalid QOS", i);
 			return false;
+		}
+
+		for (uint8_t j = 0; j < i; j++) {
+			if (cis == param->cis_channels[j]) {
+				BT_DBG("ISO %p duplicated at index %u and %u", cis, i, j);
+				return false;
+			}
 		}
 	}
 
@@ -1589,15 +1612,6 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param,
 	CHECKIF(!valid_cig_param(param)) {
 		BT_DBG("Invalid CIG params");
 		return -EINVAL;
-	}
-
-	for (uint8_t i = 0; i < param->num_cis; i++) {
-		struct bt_iso_chan *cis = param->cis_channels[i];
-
-		if (cis->iso != NULL) {
-			BT_DBG("cis_channels[%d]: already allocated", i);
-			return false;
-		}
 	}
 
 	cig = get_free_cig();
