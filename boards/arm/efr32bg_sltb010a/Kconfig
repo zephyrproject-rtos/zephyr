@@ -1,0 +1,12 @@
+# EFR32BG SLTB010A board
+
+# Copyright (c) 2022, Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EFR32BG_SLTB010A
+
+module = BOARD_EFR32BG22
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BOARD_EFR32BG_SLTB010A
