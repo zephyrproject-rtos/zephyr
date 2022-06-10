@@ -27,6 +27,7 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 #define CMD_KEYSET_DATA_LEN            18
 #define CMD_CHLNG_DATA_LEN             8
 #define CMD_SCRYPT_DATA_LEN            16
+#define CMD_MFG_DATA_LEN               4 /* variable length command */
 
 #define REPLY_ACK_LEN                  1
 #define REPLY_PDID_LEN                 13
@@ -41,6 +42,7 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 #define REPLY_KEYPAD_LEN               2
 #define REPLY_RAW_LEN                  4
 #define REPLY_FMT_LEN                  3
+#define REPLY_MFGREP_LEN               4 /* variable length command */
 
 enum osdp_pd_error_e {
 	OSDP_PD_ERR_NONE = 0,
@@ -469,6 +471,39 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_COM;
 		ret = OSDP_PD_ERR_NONE;
 		break;
+	case CMD_MFG:
+		if (len < CMD_MFG_DATA_LEN || !pd->command_callback) {
+			break;
+		}
+		cmd.id = OSDP_CMD_MFG;
+		cmd.mfg.vendor_code = buf[pos++]; /* vendor_code */
+		cmd.mfg.vendor_code |= buf[pos++] << 8;
+		cmd.mfg.vendor_code |= buf[pos++] << 16;
+		cmd.mfg.command = buf[pos++];
+		cmd.mfg.length = len - CMD_MFG_DATA_LEN;
+		if (cmd.mfg.length > OSDP_CMD_MFG_MAX_DATALEN) {
+			LOG_ERR("cmd length error");
+			break;
+		}
+		for (i = 0; i < cmd.mfg.length; i++) {
+			cmd.mfg.data[i] = buf[pos++];
+		}
+		ret = pd->command_callback(pd->command_callback_arg, &cmd);
+		if (ret < 0) { /* Errors */
+			pd->reply_id = REPLY_NAK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+			ret = OSDP_PD_ERR_REPLY;
+			break;
+		}
+		if (ret > 0) { /* App wants to send a REPLY_MFGREP to the CP */
+			memcpy(pd->ephemeral_data, &cmd,
+			       sizeof(struct osdp_cmd));
+			pd->reply_id = REPLY_MFGREP;
+		} else {
+			pd->reply_id = REPLY_ACK;
+		}
+		ret = OSDP_PD_ERR_NONE;
+		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
 		if (len != CMD_KEYSET_DATA_LEN) {
@@ -733,6 +768,19 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		assert_len(REPLY_NAK_LEN, max_len);
 		buf[len++] = pd->reply_id;
 		buf[len++] = pd->ephemeral_data[0];
+		ret = OSDP_PD_ERR_NONE;
+		break;
+	case REPLY_MFGREP:
+		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		assert_len(REPLY_MFGREP_LEN + cmd->mfg.length, max_len);
+		buf[len++] = pd->reply_id;
+		buf[len++] = BYTE_0(cmd->mfg.vendor_code);
+		buf[len++] = BYTE_1(cmd->mfg.vendor_code);
+		buf[len++] = BYTE_2(cmd->mfg.vendor_code);
+		buf[len++] = cmd->mfg.command;
+		for (i = 0; i < cmd->mfg.length; i++) {
+			buf[len++] = cmd->mfg.data[i];
+		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED

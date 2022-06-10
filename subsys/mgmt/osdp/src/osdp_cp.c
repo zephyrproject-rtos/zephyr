@@ -33,6 +33,7 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 #define CMD_KEYSET_LEN                 19
 #define CMD_CHLNG_LEN                  9
 #define CMD_SCRYPT_LEN                 17
+#define CMD_MFG_LEN                    4 /* variable length command */
 
 #define REPLY_ACK_DATA_LEN             0
 #define REPLY_PDID_DATA_LEN            12
@@ -47,6 +48,7 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 #define REPLY_RAW_DATA_LEN             4   /* variable length command */
 #define REPLY_FMT_DATA_LEN             3   /* variable length command */
 #define REPLY_BUSY_DATA_LEN            0
+#define REPLY_MFGREP_LEN               4 /* variable length command */
 
 enum osdp_cp_error_e {
 	OSDP_CP_ERR_NONE = 0,
@@ -234,6 +236,22 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_1(cmd->comset.baud_rate);
 		buf[len++] = BYTE_2(cmd->comset.baud_rate);
 		buf[len++] = BYTE_3(cmd->comset.baud_rate);
+		break;
+	case CMD_MFG:
+		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		assert_len(CMD_MFG_LEN + cmd->mfg.length, max_len);
+		if (cmd->mfg.length > OSDP_CMD_MFG_MAX_DATALEN) {
+			LOG_ERR("Invalid MFG data length (%d)", cmd->mfg.length);
+			return OSDP_CP_ERR_GENERIC;
+		}
+		buf[len++] = pd->cmd_id;
+		buf[len++] = BYTE_0(cmd->mfg.vendor_code);
+		buf[len++] = BYTE_1(cmd->mfg.vendor_code);
+		buf[len++] = BYTE_2(cmd->mfg.vendor_code);
+		buf[len++] = cmd->mfg.command;
+		for (i = 0; i < cmd->mfg.length; i++) {
+			buf[len++] = cmd->mfg.data[i];
+		}
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
@@ -502,6 +520,26 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		ret = OSDP_CP_ERR_RETRY_CMD;
+		break;
+	case REPLY_MFGREP:
+		if (len < REPLY_MFGREP_LEN || !ctx->event_callback) {
+			break;
+		}
+		event.type = OSDP_EVENT_MFGREP;
+		event.mfgrep.vendor_code = buf[pos++];
+		event.mfgrep.vendor_code |= buf[pos++] << 8;
+		event.mfgrep.vendor_code |= buf[pos++] << 16;
+		event.mfgrep.command = buf[pos++];
+		event.mfgrep.length = len - REPLY_MFGREP_LEN;
+		if (event.mfgrep.length > OSDP_EVENT_MAX_DATALEN) {
+			break;
+		}
+		for (i = 0; i < event.mfgrep.length; i++) {
+			event.mfgrep.data[i] = buf[pos + i];
+		}
+		ctx->event_callback(ctx->event_callback_arg,
+				    pd->idx, &event);
+		ret = OSDP_CP_ERR_NONE;
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case REPLY_CCRYPT:
@@ -1077,17 +1115,18 @@ void osdp_cp_set_event_callback(cp_event_callback_t cb, void *arg)
 	ctx->event_callback_arg = arg;
 }
 
-int osdp_cp_send_command(int pd, struct osdp_cmd *cmd)
+int osdp_cp_send_command(int pd_idx, struct osdp_cmd *cmd)
 {
 	struct osdp *ctx = osdp_get_ctx();
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
 	struct osdp_cmd *p;
 	int cmd_id;
 
-	if (pd < 0 || pd >= NUM_PD(ctx)) {
+	if (pd_idx < 0 || pd_idx >= NUM_PD(ctx)) {
 		LOG_ERR("Invalid PD number");
 		return -1;
 	}
-	if (osdp_to_pd(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+	if (pd->state != OSDP_CP_STATE_ONLINE) {
 		LOG_WRN("PD not online");
 		return -1;
 	}
@@ -1108,6 +1147,9 @@ int osdp_cp_send_command(int pd, struct osdp_cmd *cmd)
 	case OSDP_CMD_COMSET:
 		cmd_id = CMD_COMSET;
 		break;
+	case OSDP_CMD_MFG:
+		cmd_id = CMD_MFG;
+		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case OSDP_CMD_KEYSET:
 		return osdp_cp_send_command_keyset(&cmd->keyset);
@@ -1117,12 +1159,12 @@ int osdp_cp_send_command(int pd, struct osdp_cmd *cmd)
 		return -1;
 	}
 
-	p = cp_cmd_alloc(osdp_to_pd(ctx, pd));
+	p = cp_cmd_alloc(pd);
 	if (p == NULL) {
 		return -1;
 	}
 	memcpy(p, cmd, sizeof(struct osdp_cmd));
 	p->id = cmd_id; /* translate to internal */
-	cp_cmd_enqueue(osdp_to_pd(ctx, pd), p);
+	cp_cmd_enqueue(pd, p);
 	return 0;
 }

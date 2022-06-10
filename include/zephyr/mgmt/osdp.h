@@ -18,6 +18,7 @@ extern "C" {
 
 #define OSDP_CMD_TEXT_MAX_LEN          32
 #define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
+#define OSDP_CMD_MFG_MAX_DATALEN       64
 #define OSDP_EVENT_MAX_DATALEN         64
 
 
@@ -169,6 +170,22 @@ struct osdp_cmd_keyset {
 };
 
 /**
+ * @brief Manufacturer Specific Commands
+ *
+ * @param vendor_code 3-byte IEEE assigned OUI. Most Significat 8-bits are
+ *        unused.
+ * @param command 1-byte manufacturer defined osdp command
+ * @param length Length of command data (optional)
+ * @param data Command data (optional)
+ */
+struct osdp_cmd_mfg {
+	uint32_t vendor_code;
+	uint8_t command;
+	uint8_t length;
+	uint8_t data[OSDP_CMD_MFG_MAX_DATALEN];
+};
+
+/**
  * @brief OSDP application exposed commands
  */
 enum osdp_cmd_e {
@@ -178,6 +195,7 @@ enum osdp_cmd_e {
 	OSDP_CMD_TEXT,
 	OSDP_CMD_KEYSET,
 	OSDP_CMD_COMSET,
+	OSDP_CMD_MFG,
 	OSDP_CMD_SENTINEL
 };
 
@@ -203,6 +221,7 @@ struct osdp_cmd {
 		struct osdp_cmd_output output;
 		struct osdp_cmd_comset comset;
 		struct osdp_cmd_keyset keyset;
+		struct osdp_cmd_mfg mfg;
 	};
 };
 
@@ -262,11 +281,32 @@ struct osdp_event_keypress {
 };
 
 /**
+ * @brief OSDP Event Manufacturer Specific Command
+ *
+ * Note: OSDP spec v2.2 makes this structure fixed at 4 bytes. LibOSDP allows
+ * for some additional data to be passed in this command using the data and
+ * length fields. To be fully compliant with the specification, set the length
+ * field to 0.
+ *
+ * @param vendor_code 3-bytes IEEE assigned OUI of manufacturer
+ * @param command 1-byte reply code
+ * @param length Length of manufacturer data in bytes (optional)
+ * @param data manufacturer data of `length` bytes (optional)
+ */
+struct osdp_event_mfgrep {
+	uint32_t vendor_code;
+	uint8_t command;
+	uint8_t length;
+	uint8_t data[OSDP_EVENT_MAX_DATALEN];
+};
+
+/**
  * @brief OSDP PD Events
  */
 enum osdp_event_type {
 	OSDP_EVENT_CARDREAD,
 	OSDP_EVENT_KEYPRESS,
+	OSDP_EVENT_MFGREP,
 	OSDP_EVENT_SENTINEL
 };
 
@@ -284,6 +324,7 @@ struct osdp_event {
 	union {
 		struct osdp_event_keypress keypress;
 		struct osdp_event_cardread cardread;
+		struct osdp_event_mfgrep mfgrep;
 	};
 };
 
