@@ -103,6 +103,9 @@ static int bt_audio_stream_iso_accept(const struct bt_iso_accept_info *info,
 		    c->ep->cis_id == info->cis_id) {
 			*iso_chan = enabling[i]->iso;
 			enabling[i] = NULL;
+
+			BT_DBG("iso_chan %p", *iso_chan);
+
 			return 0;
 		}
 	}
@@ -410,7 +413,18 @@ static int bt_audio_cig_create(struct bt_audio_unicast_group *group,
 	cis_count = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, node) {
 		if (stream->iso != NULL) {
-			group->cis[cis_count++] = stream->iso;
+			bool already_added = false;
+
+			for (size_t i = 0U; i < cis_count; i++) {
+				if (group->cis[i] == stream->iso) {
+					already_added = true;
+					break;
+				}
+			}
+
+			if (!already_added) {
+				group->cis[cis_count++] = stream->iso;
+			}
 		}
 	}
 
@@ -597,6 +611,9 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 		ep = stream->ep;
 		if (ep->iso != NULL) {
 			/* already setup */
+			BT_DBG("Stream %p ep %p already setup with iso %p",
+			       stream, ep, ep->iso);
+
 			continue;
 		}
 
@@ -615,16 +632,12 @@ int bt_audio_stream_qos(struct bt_conn *conn,
 			 * configure our TX parameters
 			 */
 			io = iso_qos->tx;
-			iso_qos->rx = NULL;
 		} else {
 			/* If the endpoint is a source, then we need to
 			 * configure our RX parameters
 			 */
 			io = iso_qos->rx;
-			iso_qos->tx = NULL;
 		}
-
-		BT_ERR("iso_qos %p, io %p, qos %p", iso_qos, io, qos);
 
 		bt_audio_codec_qos_to_iso_qos(io, qos);
 	}
