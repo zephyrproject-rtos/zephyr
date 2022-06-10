@@ -15,23 +15,23 @@ static int pwr_ctrl_init(const struct device *dev)
 	int    err = -ENODEV;
 
 	/* Get handle of the GPIO device. */
-	gpio = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
+	gpio = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 
-	/* Valid handle? */
-	if (gpio != NULL) {
-
-		/* Configure this pin as output. */
-		err = gpio_pin_configure(gpio, VDD_5V0_PWR_CTRL_GPIO_PIN,
-							GPIO_OUTPUT_ACTIVE);
-		if (err == 0) {
-
-			/* Write "1" to this pin. */
-			err = gpio_pin_set(gpio, VDD_5V0_PWR_CTRL_GPIO_PIN, 1);
-		}
-
-		/* Wait for the rail to come up and stabilize. */
-		k_sleep(K_MSEC(10));
+	if (!device_is_ready(gpio)) {
+		return -ENODEV;
 	}
+
+	/* Configure this pin as output. */
+	err = gpio_pin_configure(gpio, VDD_5V0_PWR_CTRL_GPIO_PIN,
+						GPIO_OUTPUT_ACTIVE);
+	if (err == 0) {
+
+		/* Write "1" to this pin. */
+		err = gpio_pin_set(gpio, VDD_5V0_PWR_CTRL_GPIO_PIN, 1);
+	}
+
+	/* Wait for the rail to come up and stabilize. */
+	k_sleep(K_MSEC(10));
 
 	/* Operation status? */
 	return (err);

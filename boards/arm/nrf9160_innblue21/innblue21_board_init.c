@@ -31,14 +31,15 @@ static int pwr_ctrl_init(const struct device *dev)
 	const struct device *gpio;
 
 	/* Get handle of the GPIO device. */
-	gpio = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
+	gpio = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 
-	/* Valid handle? */
-	if (gpio != NULL) {
-		/* Configure the gpio pin. */
-		config_pin(gpio, VDD_3V3_PWR_CTRL_GPIO_PIN);
-		config_pin(gpio, VDD_5V0_PWR_CTRL_GPIO_PIN);
+	if (!device_is_ready(gpio)) {
+		return -ENODEV;
 	}
+
+	/* Configure the gpio pin. */
+	config_pin(gpio, VDD_3V3_PWR_CTRL_GPIO_PIN);
+	config_pin(gpio, VDD_5V0_PWR_CTRL_GPIO_PIN);
 
 	return 0;
 }
