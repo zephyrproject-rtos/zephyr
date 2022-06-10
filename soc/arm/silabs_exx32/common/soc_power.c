@@ -289,4 +289,4 @@ struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	return (struct pm_state_info *)(&pm_state_active);
 }
 #endif /* CONFIG_PM_POLICY_DEFAULT */
-#endif
+#endif /* CONFIG_SOC_GECKO_DEV_INIT */
