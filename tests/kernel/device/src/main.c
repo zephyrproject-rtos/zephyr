@@ -24,6 +24,7 @@ extern void test_mmio_multiple(void);
 extern void test_mmio_toplevel(void);
 extern void test_mmio_single(void);
 extern void test_mmio_device_map(void);
+extern void test_mmio_multireg(void);
 
 /**
  * @brief Test cases to verify device objects
@@ -364,6 +365,7 @@ void test_main(void)
 			 ztest_unit_test(test_mmio_single),
 			 ztest_unit_test(test_mmio_multiple),
 			 ztest_unit_test(test_mmio_toplevel),
-			 ztest_unit_test(test_mmio_device_map));
+			 ztest_unit_test(test_mmio_device_map),
+			 ztest_unit_test(test_mmio_multireg));
 	ztest_run_test_suite(device);
 }

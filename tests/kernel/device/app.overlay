@@ -42,4 +42,13 @@
 		reg = <0xE4000000 0x2000>;
 		status = "okay";
 	};
+
+	fakedriver_multireg@E5000000 {
+		compatible = "fakedriver_multireg";
+		reg = <0xE5000000 0x1000>,
+		      <0xE6000000 0x1000>;
+		reg-names = "chip",
+			    "dale";
+		status = "okay";
+	};
 };
