@@ -1,7 +1,7 @@
 .. _sam_v71_xplained_ultra:
 
-SAM V71(B) Xplained Ultra
-#########################
+SAM V70/V71 (B) Xplained Ultra
+##############################
 
 Overview
 ********
@@ -9,6 +9,12 @@ Overview
 The SAM V71 Xplained Ultra evaluation kit is a development platform to
 evaluate the Atmel SAM V71 series microcontrollers. The current version
 allows to use both IC variations ATSAMV71Q21A(B).
+
+There are two additional variations of this board, sam_v70_xult and
+sam_v70b_xult. While these are not actually manufactured variations, they exist
+to test the SAM V70 support. These boards are configured with an ATSAMV70Q20(b)
+processor and are functionally identical to the SAM V71 versions, minus
+Ethernet.
 
 .. image:: img/sam_v71_xult.jpg
      :width: 500px

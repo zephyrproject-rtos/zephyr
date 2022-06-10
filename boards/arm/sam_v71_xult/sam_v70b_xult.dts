@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/samv70x20b.dtsi>
+#include <dt-bindings/pinctrl/samv70q-pinctrl.h>
+#include "sam_v7x_xult-pinctrl-common.dtsi"
+#include "sam_v7x_xult-common.dtsi"
+
+/ {
+	model = "Atmel SAM V70B Xplained Ultra board";
+	compatible = "atmel,sam_v70b_xult", "atmel,samv70q20b", "atmel,samv70b";
+};

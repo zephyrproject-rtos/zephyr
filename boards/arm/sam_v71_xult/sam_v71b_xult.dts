@@ -8,6 +8,8 @@
 /dts-v1/;
 
 #include <atmel/samv71q21b.dtsi>
+#include "sam_v71_xult-pinctrl.dtsi"
+#include "sam_v7x_xult-common.dtsi"
 #include "sam_v71_xult-common.dtsi"
 
 / {

@@ -8,12 +8,12 @@
 
 /dts-v1/;
 
-#include <atmel/samv71q21.dtsi>
-#include "sam_v71_xult-pinctrl.dtsi"
+#include <atmel/samv70x20.dtsi>
+#include <dt-bindings/pinctrl/samv70q-pinctrl.h>
+#include "sam_v7x_xult-pinctrl-common.dtsi"
 #include "sam_v7x_xult-common.dtsi"
-#include "sam_v71_xult-common.dtsi"
 
 / {
-	model = "Atmel SAM V71 Xplained Ultra board";
-	compatible = "atmel,sam_v71_xult", "atmel,samv71q21", "atmel,samv71";
+	model = "Atmel SAM V70 Xplained Ultra board";
+	compatible = "atmel,sam_v70_xult", "atmel,samv70x19", "atmel,samv70";
 };

@@ -1,4 +1,4 @@
-# Atmel SMART SAM V71 Xplained Board configuration
+# Atmel SMART SAM V70/V71 Xplained Board configuration
 
 # Copyright (c) 2019 Gerson Fernando Budke
 # Copyright (c) 2016 Piotr Mienkowski
@@ -44,3 +44,10 @@ config ETH_SAM_GMAC
 endif # NETWORKING
 
 endif # BOARD_SAM_V71_XULT
+
+if BOARD_SAM_V70_XULT
+
+config BOARD
+	default "sam_v70_xult"
+
+endif # BOARD_SAM_V70_XULT

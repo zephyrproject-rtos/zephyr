@@ -7,3 +7,7 @@
 config BOARD_SAM_V71_XULT
 	bool "Atmel SMART SAM V71 Xplained Ultra Board"
 	depends on SOC_PART_NUMBER_SAMV71Q21 || SOC_PART_NUMBER_SAMV71Q21B
+
+config BOARD_SAM_V70_XULT
+	bool "Atmel SMART SAM V70 Xplained Ultra Board"
+	depends on SOC_PART_NUMBER_SAMV70Q20 || SOC_PART_NUMBER_SAMV70Q20B
