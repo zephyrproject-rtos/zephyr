@@ -2460,6 +2460,7 @@ struct net_if_api {
 	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
 				   Z_DEVICE_DT_DEV_NAME(node_id),	\
 				   DT_LABEL(node_id), instance,		\
+				   init_fn,				\
 				   pm_action_cb, data, cfg, prio, api,	\
 				   l2, l2_ctx_type, mtu)
 
