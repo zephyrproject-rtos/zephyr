@@ -56,6 +56,8 @@ class Handler:
         """Constructor
 
         """
+        self.options = None
+
         self.state = "waiting"
         self.run = False
         self.type_str = type_str
@@ -325,8 +327,6 @@ class DeviceHandler(Handler):
         """
         super().__init__(instance, type_str)
 
-        self.testplan = None
-
     def monitor_serial(self, ser, halt_fileno, harness):
         if harness.is_pytest:
             harness.handle(None)
@@ -385,7 +385,7 @@ class DeviceHandler(Handler):
     def device_is_available(self, instance):
         device = instance.platform.name
         fixture = instance.testsuite.harness_config.get("fixture")
-        for d in self.testplan.duts:
+        for d in self.duts:
             if fixture and fixture not in d.fixtures:
                 continue
             if d.platform != device or (d.serial is None and d.serial_pty is None):
@@ -403,7 +403,7 @@ class DeviceHandler(Handler):
         return None
 
     def make_device_available(self, serial):
-        for d in self.testplan.duts:
+        for d in self.duts:
             if serial in [d.serial_pty, d.serial]:
                 d.available = 1
 
@@ -430,7 +430,7 @@ class DeviceHandler(Handler):
             time.sleep(1)
             hardware = self.device_is_available(self.instance)
 
-        runner = hardware.runner or self.testplan.west_runner
+        runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
 
         ser_pty_process = None
@@ -448,7 +448,7 @@ class DeviceHandler(Handler):
 
         logger.debug(f"Using serial device {serial_device} @ {hardware.baud} baud")
 
-        if (self.testplan.west_flash is not None) or runner:
+        if (self.options.west_flash is not None) or runner:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
             command_extra_args = []
 
@@ -459,8 +459,8 @@ class DeviceHandler(Handler):
             #    This results in options.west_flash == "--board-id=42"
             # 3) Multiple values: --west-flash="--board-id=42,--erase"
             #    This results in options.west_flash == "--board-id=42 --erase"
-            if self.testplan.west_flash and self.testplan.west_flash != []:
-                command_extra_args.extend(self.testplan.west_flash.split(','))
+            if self.options.west_flash and self.options.west_flash != []:
+                command_extra_args.extend(self.options.west_flash.split(','))
 
             if runner:
                 command.append("--runner")
@@ -493,7 +493,7 @@ class DeviceHandler(Handler):
 
                     # Receive parameters from an runner_params field
                     # of the specified hardware map file.
-                    for d in self.testplan.duts:
+                    for d in self.duts:
                         if (d.platform == self.instance.platform.name) and d.runner_params:
                             for param in d.runner_params:
                                 command.append(param)

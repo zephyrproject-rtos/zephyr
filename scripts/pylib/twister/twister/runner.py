@@ -13,9 +13,12 @@ import logging
 import queue
 import time
 import multiprocessing
+import traceback
 from colorama import Fore
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
+
+from numpy import trace
 
 from twister.cmakecache import CMakeCache
 
@@ -376,14 +379,15 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, tplan, instance, env, **kwargs):
+    def __init__(self, instance, env, **kwargs):
         super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir)
 
         self.log = "build.log"
         self.instance = instance
-        self.testplan = tplan
         self.filtered_tests = 0
         self.options = env.options
+        self.env = env
+        self.duts = None
 
         self.extra_args = kwargs.get('extra_args', [])
         self.verbose = kwargs.get('verbose', None)
@@ -434,7 +438,7 @@ class ProjectBuilder(FilterBuilder):
     def process(self, pipeline, done, message, lock, results):
         op = message.get('op')
 
-        self.instance.setup_handler(self.options)
+        self.instance.setup_handler(self.env)
 
         # The build process, call cmake and build with configured generator
         if op == "cmake":
@@ -489,17 +493,20 @@ class ProjectBuilder(FilterBuilder):
             logger.debug("run test: %s" % self.instance.name)
             self.run()
             logger.debug(f"run status: {self.instance.name} {self.instance.status}")
-
-            # to make it work with pickle
-            self.instance.handler.thread = None
-            self.instance.handler.testplan = None
-            pipeline.put({
-                "op": "report",
-                "test": self.instance,
-                "status": self.instance.status,
-                "reason": self.instance.reason
-                }
-            )
+            try:
+                # to make it work with pickle
+                self.instance.handler.thread = None
+                self.instance.handler.duts = None
+                pipeline.put({
+                    "op": "report",
+                    "test": self.instance,
+                    "status": self.instance.status,
+                    "reason": self.instance.reason
+                    }
+                )
+            except RuntimeError as e:
+                logger.error(f"RuntimeError: {e}")
+                traceback.print_exc()
 
         # Report results and output progress to screen
         elif op == "report":
@@ -710,7 +717,7 @@ class ProjectBuilder(FilterBuilder):
 
         if instance.handler:
             if instance.handler.type_str == "device":
-                instance.handler.testplan = self.testplan
+                instance.handler.duts = self.duts
 
             if(self.seed is not None and instance.platform.name.startswith("native_posix")):
                 self.parse_generated()
@@ -755,6 +762,7 @@ class TwisterRunner:
         self.env = env
         self.instances = instances
         self.suites = suites
+        self.duts = None
         self.jobs = 1
         self.results = None
 
@@ -819,7 +827,6 @@ class TwisterRunner:
             if retries == 0 or (self.results.failed == self.results.error and not self.options.retry_build_errors):
                 break
 
-
     def update_counting(self):
         for instance in self.instances.values():
             self.results.cases += len(instance.testsuite.testcases)
@@ -859,7 +866,8 @@ class TwisterRunner:
                 break
             else:
                 instance = task['test']
-                pb = ProjectBuilder(self, instance, self.env)
+                pb = ProjectBuilder(instance, self.env)
+                pb.duts = self.duts
                 pb.process(pipeline, done_queue, task, lock, results)
 
         return True

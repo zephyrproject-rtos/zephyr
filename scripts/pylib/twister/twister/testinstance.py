@@ -128,10 +128,11 @@ class TestInstance:
 
         return can_run
 
-    def setup_handler(self, options):
+    def setup_handler(self, env):
         if self.handler:
             return
 
+        options = env.options
         args = []
         handler = None
         if self.platform.simulation == "qemu":
@@ -161,7 +162,7 @@ class TestInstance:
             handler = BinaryHandler(self, "tsim")
         elif options.device_testing:
             handler = DeviceHandler(self, "device")
-            handler.coverage = self.enable_coverage
+            handler.coverage = options.enable_coverage
             handler.call_make_run = False
         elif self.platform.simulation == "nsim":
             if find_executable("nsimdrv"):
@@ -172,10 +173,11 @@ class TestInstance:
         elif self.platform.simulation == "armfvp":
             handler = BinaryHandler(self, "armfvp")
         elif self.platform.simulation == "xt-sim":
-            handler = BinaryHandler(self, "xt-sim")
+            handler = BinaryHandler(self,  "xt-sim")
 
         if handler:
             handler.args = args
+            handler.options = options
             handler.suite_name_check = not options.disable_suite_name_check
             if options.ninja:
                 handler.generator_cmd = "ninja"
