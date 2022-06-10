@@ -646,6 +646,22 @@ static int sm_send_bootstrap_registration(void)
 	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
 				  query_buffer, strlen(query_buffer));
 
+
+	if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1)) {
+		int pct = LWM2M_FORMAT_OMA_TLV;
+
+		if (IS_ENABLED(CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT)) {
+			pct = LWM2M_FORMAT_APP_SENML_CBOR;
+		} else if (IS_ENABLED(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)) {
+			pct = LWM2M_FORMAT_APP_SEML_JSON;
+		}
+
+		snprintk(query_buffer, sizeof(query_buffer) - 1, "pct=%d", pct);
+
+		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
+				  query_buffer, strlen(query_buffer));
+	}
+
 	/* log the bootstrap attempt */
 	LOG_DBG("Register ID with bootstrap server as '%s'",
 		log_strdup(query_buffer));
