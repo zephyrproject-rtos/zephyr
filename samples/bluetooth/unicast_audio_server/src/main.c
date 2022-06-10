@@ -169,19 +169,21 @@ static void audio_timer_timeout(struct k_work *work)
 	 * data going to the server)
 	 */
 	for (size_t i = 0; i < configured_source_stream_count; i++) {
+		struct bt_audio_stream *stream = source_streams[i];
+
 		buf = net_buf_alloc(&tx_pool, K_FOREVER);
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len_to_send);
 
-		ret = bt_audio_stream_send(source_streams[i], buf);
+		ret = bt_audio_stream_send(stream, buf);
 		if (ret < 0) {
-			printk("Failed to send audio data on streams[%zu]: (%d)\n",
-			       i, ret);
+			printk("Failed to send audio data on streams[%zu] (%p): (%d)\n",
+			       i, stream, ret);
 			net_buf_unref(buf);
 		} else {
-			printk("Sending mock data with len %zu on streams[%zu]\n",
-			       len_to_send, i);
+			printk("Sending mock data with len %zu on streams[%zu] (%p)\n",
+			       len_to_send, i, stream);
 		}
 	}
 

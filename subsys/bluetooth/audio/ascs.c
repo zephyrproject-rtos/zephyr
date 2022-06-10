@@ -82,6 +82,8 @@ static void ascs_ep_unbind_audio_iso(struct bt_audio_ep *ep)
 	struct bt_iso_chan_qos *qos;
 	const uint8_t dir = ep->dir;
 
+	BT_DBG("ep %p, dir %u audio_iso %p", ep, dir, audio_iso);
+
 	if (audio_iso == NULL) {
 		return;
 	}
@@ -169,7 +171,8 @@ void ascs_ep_set_state(struct bt_audio_ep *ep, uint8_t state)
 		}
 	}
 
-	if (state == BT_AUDIO_EP_STATE_CODEC_CONFIGURED) {
+	if (state == BT_AUDIO_EP_STATE_CODEC_CONFIGURED &&
+	    old_state != BT_AUDIO_EP_STATE_IDLE) {
 		ascs_ep_unbind_audio_iso(ep);
 	} else if (state == BT_AUDIO_EP_STATE_RELEASING) {
 		ascs_ep_unbind_audio_iso(ep);
@@ -739,6 +742,8 @@ struct bt_audio_iso *ascs_new_audio_iso(const struct bt_audio_stream *stream,
 	struct bt_conn *acl_conn = stream->conn;
 	struct bt_audio_iso *free_audio_iso;
 
+	BT_DBG("stream %p ascs %p", stream, ascs);
+
 	free_audio_iso = NULL;
 	for (size_t i = 0; i < ARRAY_SIZE(ascs->isos); i++) {
 		struct bt_audio_iso *audio_iso = &ascs->isos[i];
@@ -913,6 +918,8 @@ static void ascs_ep_bind_audio_iso(struct bt_audio_ep *ep,
 	struct bt_iso_chan_qos *qos;
 	const uint8_t dir = ep->dir;
 
+	BT_DBG("ep %p, dir %u audio_iso %p", ep, dir, audio_iso);
+
 	ep->iso = audio_iso;
 
 	iso_chan = &ep->iso->iso_chan;
@@ -923,51 +930,29 @@ static void ascs_ep_bind_audio_iso(struct bt_audio_ep *ep,
 	if (dir == BT_AUDIO_DIR_SOURCE) {
 		audio_iso->source_ep = ep;
 		qos->tx = &ep->iso_io_qos;
-		qos->rx = NULL;
 	} else if (dir == BT_AUDIO_DIR_SINK) {
 		audio_iso->sink_ep = ep;
-		qos->tx = NULL;
 		qos->rx = &ep->iso_io_qos;
 	} else {
 		__ASSERT(false, "Invalid dir: %u", dir);
 	}
+
+	ep->stream->iso = iso_chan;
 }
 
-void ascs_ep_init(struct bt_audio_ep *ep, struct bt_audio_iso *iso, uint8_t id)
+void ascs_ep_init(struct bt_audio_ep *ep, uint8_t id)
 {
-	struct bt_iso_chan *iso_chan = &ep->iso->iso_chan;
-
 	BT_DBG("ep %p id 0x%02x", ep, id);
 
 	memset(ep, 0, sizeof(*ep));
 	ep->status.id = id;
-	ep->iso = iso;
 	ep->dir = ASE_DIR(id);
-
-	iso_chan = &ep->iso->iso_chan;
-
-	iso_chan->ops = &ascs_iso_ops;
-	iso_chan->qos = &ep->iso->iso_qos;
-
-
-	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
-		iso->source_ep = ep;
-		iso_chan->qos->tx = &ep->iso_io_qos;
-		iso_chan->qos->rx = NULL;
-	} else if (ep->dir == BT_AUDIO_DIR_SINK) {
-		iso->sink_ep = ep;
-		iso_chan->qos->tx = NULL;
-		iso_chan->qos->rx = &ep->iso_io_qos;
-	} else {
-		__ASSERT(false, "Invalid ep->dir: %u", ep->dir);
-	}
 }
 
-static void ase_init(struct bt_ascs_ase *ase, struct bt_audio_iso *iso,
-		     uint8_t id)
+static void ase_init(struct bt_ascs_ase *ase, uint8_t id)
 {
 	memset(ase, 0, sizeof(*ase));
-	ascs_ep_init(&ase->ep, iso, id);
+	ascs_ep_init(&ase->ep, id);
 	bt_gatt_foreach_attr_type(0x0001, 0xffff, ASE_UUID(id),
 				  UINT_TO_POINTER(id), 1, ase_attr_cb, ase);
 	k_work_init(&ase->work, ase_process);
@@ -976,7 +961,6 @@ static void ase_init(struct bt_ascs_ase *ase, struct bt_audio_iso *iso,
 static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 {
 	struct bt_ascs_ase *ase;
-	struct bt_audio_iso *iso;
 	int i;
 
 	if (id) {
@@ -985,13 +969,11 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 		}
 		i = id;
 		ase = &ascs->ases[i - 1];
-		iso = &ascs->isos[i - 1];
 		goto done;
 	}
 
 	for (i = 0; i < ASE_COUNT; i++) {
 		ase = &ascs->ases[i];
-		iso = &ascs->isos[i];
 
 		if (!ase->ep.status.id) {
 			i++;
@@ -1002,7 +984,7 @@ static struct bt_ascs_ase *ase_new(struct bt_ascs *ascs, uint8_t id)
 	return NULL;
 
 done:
-	ase_init(ase, iso, i);
+	ase_init(ase, i);
 	ase->ascs = ascs;
 
 	return ase;
