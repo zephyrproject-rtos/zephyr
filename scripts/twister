@@ -178,6 +178,7 @@ from colorama import Fore
 from pathlib import Path
 from multiprocessing.managers import BaseManager
 import queue
+
 from zephyr_module import west_projects, parse_modules
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
@@ -211,6 +212,7 @@ from twister.enviornment import TwisterEnv, canonical_zephyr_base
 from twister.reports import Reporting
 from twister.hardwaremap import HardwareMap
 from twister.coverage import CoverageTool
+from twister.runner import TwisterRunner
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -933,15 +935,6 @@ def main():
     modules = [module.meta.get('name') for module in modules_meta]
     tplan.modules = modules
 
-    # Set number of jobs
-    if options.jobs:
-        tplan.jobs = options.jobs
-    elif options.build_only:
-        tplan.jobs = multiprocessing.cpu_count() * 2
-    else:
-        tplan.jobs = multiprocessing.cpu_count()
-    logger.info("JOBS: %d" % tplan.jobs)
-
     run_individual_tests = []
 
     if options.test:
@@ -1248,10 +1241,21 @@ def main():
     pipeline = manager.LifoQueue()
     done_queue = manager.LifoQueue()
 
-    tplan.update_counting(results)
+    # Set number of jobs
+    if options.jobs:
+        jobs = options.jobs
+    elif options.build_only:
+        jobs = multiprocessing.cpu_count() * 2
+    else:
+        jobs = multiprocessing.cpu_count()
+    logger.info("JOBS: %d" % jobs)
+
+    runner = TwisterRunner(tplan.instances, jobs, env)
+
+    runner.update_counting(results)
+
     logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
                 (len(tplan.testsuites), len(tplan.instances), results.skipped_configs))
-    tplan.start_time = start_time
 
     while True:
         completed += 1
@@ -1266,7 +1270,7 @@ def main():
             else:
                 results.failed = results.error
 
-        results = tplan.execute(pipeline, done_queue, results)
+        results = runner.execute(pipeline, done_queue, results)
 
         while True:
             try:
