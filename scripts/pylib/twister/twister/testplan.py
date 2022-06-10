@@ -161,6 +161,8 @@ class TestPlan:
             self.board_roots = board_root_list
 
         self.options = env.options
+        self.env = env
+
         # Test Plan Options
         self.suite_name_check = True
         self.seed = 0
@@ -182,10 +184,6 @@ class TestPlan:
         self.duts = []
         # used during creating shorter build paths
         self.link_dir_counter = 0
-
-        self.pipeline = None
-        self.env = env
-
         self.modules = []
 
 
@@ -201,19 +199,6 @@ class TestPlan:
     def info(what):
         sys.stdout.write(what + "\n")
         sys.stdout.flush()
-
-    def update_counting(self, results=None):
-        for instance in self.instances.values():
-            results.cases += len(instance.testsuite.testcases)
-            if instance.status == 'filtered':
-                results.skipped_filter += 1
-                results.skipped_configs += 1
-            elif instance.status == 'passed':
-                results.passed += 1
-                results.done += 1
-            elif instance.status == 'error':
-                results.error += 1
-                results.done += 1
 
 
     def add_configurations(self):
@@ -949,59 +934,6 @@ class TestPlan:
         for instance in instance_list:
             self.instances[instance.name] = instance
 
-    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
-        for instance in self.instances.values():
-            if build_only:
-                instance.run = False
-
-            no_retry_statuses = ['passed', 'skipped', 'filtered']
-            if not retry_build_errors:
-                no_retry_statuses.append("error")
-
-            if instance.status not in no_retry_statuses:
-                logger.debug(f"adding {instance.name}")
-                instance.status = None
-                if test_only and instance.run:
-                    pipeline.put({"op": "run", "test": instance})
-                else:
-                    pipeline.put({"op": "cmake", "test": instance})
-
-    def pipeline_mgr(self, pipeline, done_queue, lock, results):
-        while True:
-            try:
-                task = pipeline.get_nowait()
-            except queue.Empty:
-                break
-            else:
-                instance = task['test']
-                pb = ProjectBuilder(self, instance, self.env)
-                pb.process(pipeline, done_queue, task, lock, results)
-
-        return True
-
-    def execute(self, pipeline, done, results):
-        lock = Lock()
-        logger.info("Adding tasks to the queue...")
-        self.add_tasks_to_queue(pipeline, self.options.build_only, self.options.test_only,
-                                retry_build_errors=self.options.retry_build_errors)
-        logger.info("Added initial list of jobs to queue")
-
-        processes = []
-        for job in range(self.jobs):
-            logger.debug(f"Launch process {job}")
-            p = Process(target=self.pipeline_mgr, args=(pipeline, done, lock, results, ))
-            processes.append(p)
-            p.start()
-
-        try:
-            for p in processes:
-                p.join()
-        except KeyboardInterrupt:
-            logger.info("Execution interrupted")
-            for p in processes:
-                p.terminate()
-
-        return results
 
     def get_testsuite(self, identifier):
         results = []
