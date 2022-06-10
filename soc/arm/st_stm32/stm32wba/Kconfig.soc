@@ -1,0 +1,13 @@
+# ST Microelectronics STM32WBA MCU line
+
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "STM32WBAx MCU Selection"
+depends on SOC_SERIES_STM32WBAX
+
+config SOC_STM32WBA52XX
+	bool "STM32WBA52XX"
+
+endchoice
