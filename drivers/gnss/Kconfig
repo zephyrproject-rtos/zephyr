@@ -1,0 +1,6 @@
+# GNSS configuration options
+
+# Copyright (c) 2022 Abel Sensors
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "ublox-neo-m8/Kconfig"

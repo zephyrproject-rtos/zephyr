@@ -35,6 +35,8 @@ source "drivers/pcie/Kconfig"
 
 source "drivers/gpio/Kconfig"
 
+source "drivers/gnss/Kconfig"
+
 source "drivers/interrupt_controller/Kconfig.shared_irq"
 
 source "drivers/spi/Kconfig"

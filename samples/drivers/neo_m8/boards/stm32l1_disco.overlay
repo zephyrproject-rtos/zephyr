@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2022 Abel Sensors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+    status = "okay";
+    compatible = "st,stm32-i2c-v1";
+
+    neom8: neom8@42 {
+        status = "okay";
+        compatible = "u-blox,neom8";
+        label = "NEOM8";
+        reg = <0x42>;
+    };
+};

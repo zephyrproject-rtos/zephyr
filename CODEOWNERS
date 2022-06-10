@@ -272,6 +272,7 @@
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/flash/*esp32*                    @glaubermaroto
 /drivers/fpga/                            @tgorochowik @kgugala
+/drivers/gnss/ublox-neo-m8/               @rodinhaker
 /drivers/gpio/                            @mnkp
 /drivers/gpio/*b91*                       @yurvyn
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
@@ -509,6 +510,7 @@
 /dts/bindings/modem/*hl7800.yaml          @rerickson1
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp-at.yaml           @mniestroj
+/dts/bindings/gnss/ublox,neom8.yaml       @rodinhaker
 /dts/bindings/*/*gd32*                    @nandojve
 /dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
 /dts/bindings/*/*psoc6*                   @nandojve
@@ -540,6 +542,7 @@
 /include/zephyr/drivers/espi.h                   @albertofloyd @franciscomunoz @sjvasanth1
 /include/zephyr/drivers/bluetooth/               @alwa-nordic @jhedberg @Vudentz
 /include/zephyr/drivers/flash.h                  @nashif @carlescufi @galak @MaureenHelm @nvlsianpu
+/include/zephyr/drivers/gnss/*neo_m8*            @rodinhaker
 /include/zephyr/drivers/i2c_emul.h               @sjg20
 /include/zephyr/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/zephyr/drivers/interrupt_controller/    @dcpleung @nashif
@@ -655,6 +658,7 @@
 /samples/drivers/eeprom/                  @henrikbrixandersen
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
+/samples/drivers/neo_m8/                  @rodinhaker
 /samples/subsys/lorawan/                  @Mani-Sadhasivam
 /samples/modules/canopennode/             @henrikbrixandersen
 /samples/net/                             @rlubos @tbursztyka @pfalcon

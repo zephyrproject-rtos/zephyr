@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2022 Abel Sensors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+sample:
+   description: Demonstration of Neo-M8 GNSS module
+   name: Neo-M8 Sample
+tests:
+   sample.driver.neom8:
+      build_only: true
+      platform_allow: stm32l1_disco

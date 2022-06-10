@@ -1,0 +1,24 @@
+# ublox NEO-M8 GNSS module configuration options
+
+# Copyright (c) 2022 Abel Sensors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NEOM8
+	bool "u-blox NEO-M8 GNSS Module"
+	depends on I2C
+	help
+	  Enable the driver for u-blox NEO-M8 GNSS Module.
+
+if NEOM8
+
+module = NEOM8
+module-str = neom8
+source "subsys/logging/Kconfig.template.log_config"
+
+config NEOM8_INIT_PRIORITY
+	int "Counter init priority"
+	default 80
+	help
+		NEO-M8 driver device initialization priority.
+
+endif # NEOM8
