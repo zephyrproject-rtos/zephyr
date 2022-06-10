@@ -1443,9 +1443,12 @@ Modbus:
     - "area: modbus"
 
 OSDP:
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - sidcha
+  collaborators:
+    - adakus
+    - r2r0
   files:
     - subsys/mgmt/osdp/
     - include/zephyr/mgmt/osdp.h
