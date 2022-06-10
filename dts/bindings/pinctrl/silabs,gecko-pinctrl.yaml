@@ -26,12 +26,12 @@ description: |
           /* group 1 ('group1' name is arbitrary) */
           group1 {
             /* configure P0.1 as UART_TX and P0.2 as UART_RTS */
-            psels = <GECKO_PSEL(UART_TX, 0, 1)>, <GECKO_PSEL(UART_RTS, 0, 2)>;
+            psels = <GECKO_PSEL(UART_TX, GECKO_PORT_A, GECKO_PIN(1))>, <GECKO_PSEL(UART_RTS, GECKO_PORT_A, GECKO_PIN(2))>;
           };
           /* group 2 */
           group2 {
             /* configure P0.3 as UART_RX and P0.4 as UART_CTS */
-            psels = <GECKO_PSEL(UART_RX, 0, 3)>, <GECKO_PSEL(UART_CTS, 0, 4)>;
+            psels = <GECKO_PSEL(UART_RX, GECKO_PORT_A, GECKO_PIN(3))>, <GECKO_PSEL(UART_CTS, GECKO_PORT_A, GECKO_PIN(4))>;
           };
         };
       };

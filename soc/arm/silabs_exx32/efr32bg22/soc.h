@@ -21,9 +21,6 @@
 
 #include "../common/soc_gpio.h"
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
-
 #endif  /* !_ASMLANGUAGE */
 
 #endif  /* EFR32BG22_SOC_H_ */

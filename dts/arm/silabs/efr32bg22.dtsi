@@ -20,7 +20,7 @@
 		standby: standby {
 			compatible = "zephyr,power-state";
 			power-state-name = "standby";
-			min-residency-us = < 50000 >;
+			min-residency-us = <50000>;
 		};
 	};
 	cpus {
@@ -78,9 +78,9 @@
 
 		trng: trng@4c021000 {
 			compatible = "silabs,gecko-trng";
-			reg = < 0x4C021000 0x1000 >;
+			reg = <0x4C021000 0x1000>;
 			status = "disabled";
-			interrupts = < 0x1 0x0 >;
+			interrupts = <0x1 0x0>;
 			label = "TRNG0";
 		};
 
