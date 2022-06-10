@@ -171,12 +171,11 @@ import logging
 import time
 import shutil
 from collections import OrderedDict
-import multiprocessing
 from itertools import islice
 import colorama
 from colorama import Fore
 from pathlib import Path
-from multiprocessing.managers import BaseManager
+
 import queue
 
 from zephyr_module import west_projects, parse_modules
@@ -1230,67 +1229,11 @@ def main():
     if options.short_build_path:
         tplan.create_build_dir_links()
 
-    retries = options.retry_failed + 1
-    completed = 0
 
-    BaseManager.register('LifoQueue', queue.LifoQueue)
-    manager = BaseManager()
-    manager.start()
 
-    results = ExecutionCounter(total=len(tplan.instances))
-    pipeline = manager.LifoQueue()
-    done_queue = manager.LifoQueue()
 
-    # Set number of jobs
-    if options.jobs:
-        jobs = options.jobs
-    elif options.build_only:
-        jobs = multiprocessing.cpu_count() * 2
-    else:
-        jobs = multiprocessing.cpu_count()
-    logger.info("JOBS: %d" % jobs)
-
-    runner = TwisterRunner(tplan.instances, jobs, env)
-
-    runner.update_counting(results)
-
-    logger.info("%d test scenarios (%d configurations) selected, %d configurations discarded due to filters." %
-                (len(tplan.testsuites), len(tplan.instances), results.skipped_configs))
-
-    while True:
-        completed += 1
-
-        if completed > 1:
-            logger.info("%d Iteration:" % (completed))
-            time.sleep(options.retry_interval)  # waiting for the system to settle down
-            results.done = results.total - results.failed
-            if options.retry_build_errors:
-                results.failed = 0
-                results.error = 0
-            else:
-                results.failed = results.error
-
-        results = runner.execute(pipeline, done_queue, results)
-
-        while True:
-            try:
-                inst = done_queue.get_nowait()
-            except queue.Empty:
-                break
-            else:
-                inst.metrics.update(tplan.instances[inst.name].metrics)
-                inst.metrics["handler_time"] = inst.execution_time
-                inst.metrics["unrecognized"] = []
-                tplan.instances[inst.name] = inst
-
-        print("")
-
-        retries = retries - 1
-        # There are cases where failed == error (only build failures),
-        # we do not try build failures.
-        if retries == 0 or (results.failed == results.error and not options.retry_build_errors):
-            break
-
+    runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
+    runner.run()
 
     # figure out which report to use for size comparison
     report_to_use = None
@@ -1307,9 +1250,9 @@ def main():
 
     duration = time.time() - start_time
 
-    results.summary()
+    runner.results.summary()
 
-    report.summary(results, options.disable_unrecognized_section_test, duration)
+    report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
     if options.coverage:
         if not options.gcov_tool:
@@ -1353,7 +1296,7 @@ def main():
                        )
 
     logger.info("Run completed")
-    if results.failed or results.error or (tplan.warnings and options.warnings_as_errors):
+    if runner.results.failed or runner.results.error or (tplan.warnings and options.warnings_as_errors):
         sys.exit(1)
 
 
