@@ -1229,10 +1229,8 @@ def main():
     if options.short_build_path:
         tplan.create_build_dir_links()
 
-
-
-
     runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
+    runner.duts = tplan.duts
     runner.run()
 
     # figure out which report to use for size comparison
