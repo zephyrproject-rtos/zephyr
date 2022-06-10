@@ -54,11 +54,6 @@ struct counter_gecko_data {
 static sl_sleeptimer_timer_handle_t alarm_timer[STIMER_ALARM_NUM];
 static sl_sleeptimer_timer_handle_t top_timer;
 
-#define DEV_NAME(dev) ((dev)->name)
-#define DEV_CFG(dev) \
-	((const struct counter_gecko_config *const)(dev)->config)
-#define DEV_DATA(dev) \
-	((struct counter_gecko_data *const)(dev)->data)
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
 #define ERRATA_RTCC_E201_MESSAGE					     \
@@ -70,7 +65,7 @@ static void alarm_callback(sl_sleeptimer_timer_handle_t *handle, void *data)
 {
 	struct counter_gecko_alarm_data *alarm_data = (struct counter_gecko_alarm_data *)data;
 	uint32_t count = ((sl_sleeptimer_get_tick_count()) %
-					  (DEV_DATA(alarm_data->dev)->top_data.ticks));
+					  (((struct counter_gecko_data *const)(alarm_data->dev)->data)->top_data.ticks));
 
 	if (alarm_data->callback != NULL) {
 		alarm_data->callback(alarm_data->dev, alarm_data->chan_id, count,
@@ -90,7 +85,7 @@ static void top_callback(sl_sleeptimer_timer_handle_t *handle, void *data)
 
 static int counter_gecko_get_value(const struct device *dev, uint32_t *ticks)
 {
-	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
+	struct counter_gecko_data *const dev_data = (struct counter_gecko_data *const)(dev)->data;
 
 	*ticks = ((sl_sleeptimer_get_tick_count()) % (dev_data->top_data.ticks));
 
@@ -114,12 +109,12 @@ static int counter_gecko_stop(const struct device *dev)
 static int counter_gecko_set_top_value(const struct device *dev,
 				       const struct counter_top_cfg *cfg)
 {
-	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
+	struct counter_gecko_data *const dev_data = (struct counter_gecko_data *const)(dev)->data;
 	sl_status_t error_code;
 	bool is_top_timer_running = false;
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
-	const struct counter_gecko_config *const dev_cfg = DEV_CFG(dev);
+	const struct counter_gecko_config *const dev_cfg = (const struct counter_gecko_config *const)(dev)->config;
 
 	if (dev_cfg->prescaler != 1) {
 		LOG_ERR(ERRATA_RTCC_E201_MESSAGE);
@@ -150,7 +145,7 @@ static int counter_gecko_set_top_value(const struct device *dev,
 
 static uint32_t counter_gecko_get_top_value(const struct device *dev)
 {
-	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
+	struct counter_gecko_data *const dev_data = (struct counter_gecko_data *const)(dev)->data;
 
 	return dev_data->top_data.ticks;
 }
@@ -159,7 +154,7 @@ static int counter_gecko_set_alarm(const struct device *dev, uint8_t chan_id,
 				   const struct counter_alarm_cfg *alarm_cfg)
 {
 	bool is_alarm_timer_running = false;
-	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
+	struct counter_gecko_data *const dev_data = (struct counter_gecko_data *const)(dev)->data;
 	sl_status_t error_code;
 	uint32_t now_ticks = 0;
 	uint32_t top_val = counter_gecko_get_top_value(dev);
@@ -214,7 +209,7 @@ static int counter_gecko_set_alarm(const struct device *dev, uint8_t chan_id,
 static int counter_gecko_cancel_alarm(const struct device *dev,
 				      uint8_t chan_id)
 {
-	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
+	struct counter_gecko_data *const dev_data = (struct counter_gecko_data *const)(dev)->data;
 
 	if (chan_id >= STIMER_ALARM_NUM) {
 		LOG_DBG("Alarm timer count exceeded\n");
@@ -240,8 +235,8 @@ static uint32_t counter_gecko_get_pending_int(const struct device *dev)
 
 static int counter_gecko_init(const struct device *dev)
 {
-	const struct counter_gecko_config *const dev_cfg = DEV_CFG(dev);
-	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
+	const struct counter_gecko_config *const dev_cfg = (const struct counter_gecko_config *const)(dev)->config;
+	struct counter_gecko_data *const dev_data = (struct counter_gecko_data *const)(dev)->data;
 
 	sl_sleeptimer_init();
 	dev_data->top_data.ticks = STIMER_MAX_VALUE;
@@ -249,7 +244,7 @@ static int counter_gecko_init(const struct device *dev)
 	/* Configure & enable module interrupts */
 	dev_cfg->irq_config();
 
-	LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", (dev)->name);
 
 	return 0;
 }
