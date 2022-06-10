@@ -45,14 +45,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			/* For olders SOCs with only one pin location */
 			base->ROUTE = USART_ROUTE_RXPEN | USART_ROUTE_TXPEN | (loc << 8);
 #elif defined(GPIO_USART_ROUTEEN_RXPEN) && defined(GPIO_USART_ROUTEEN_TXPEN)
-			GPIO->USARTROUTE[usart_num].ROUTEEN =
-				GPIO_USART_ROUTEEN_TXPEN | GPIO_USART_ROUTEEN_RXPEN;
-			GPIO->USARTROUTE[usart_num].TXROUTE =
-				(txpin.pin << _GPIO_USART_TXROUTE_PIN_SHIFT) |
-				(txpin.port << _GPIO_USART_TXROUTE_PORT_SHIFT);
-			GPIO->USARTROUTE[usart_num].RXROUTE =
-				(rxpin.pin << _GPIO_USART_RXROUTE_PIN_SHIFT) |
-				(rxpin.port << _GPIO_USART_RXROUTE_PORT_SHIFT);
+				GPIO->USARTROUTE[usart_num].ROUTEEN =
+					GPIO_USART_ROUTEEN_TXPEN | GPIO_USART_ROUTEEN_RXPEN;
+				GPIO->USARTROUTE[usart_num].TXROUTE =
+					(txpin.pin << _GPIO_USART_TXROUTE_PIN_SHIFT) |
+					(txpin.port << _GPIO_USART_TXROUTE_PORT_SHIFT);
+				GPIO->USARTROUTE[usart_num].RXROUTE =
+					(rxpin.pin << _GPIO_USART_RXROUTE_PIN_SHIFT) |
+					(rxpin.port << _GPIO_USART_RXROUTE_PORT_SHIFT);
 #endif /* CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION */
 
 #ifdef UART_GECKO_HW_FLOW_CONTROL
