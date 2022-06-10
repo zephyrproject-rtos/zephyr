@@ -480,6 +480,13 @@ static void stream_released(struct bt_audio_stream *stream)
 	printk("Audio Stream %p released\n", stream);
 }
 
+static void stream_recv(struct bt_audio_stream *stream,
+			const struct bt_iso_recv_info *info,
+			struct net_buf *buf)
+{
+	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+}
+
 static struct bt_audio_stream_ops stream_ops = {
 	.configured = stream_configured,
 	.qos_set = stream_qos_set,
@@ -489,6 +496,7 @@ static struct bt_audio_stream_ops stream_ops = {
 	.disabled = stream_disabled,
 	.stopped = stream_stopped,
 	.released = stream_released,
+	.recv = stream_recv
 };
 
 static void add_remote_source(struct bt_audio_ep *ep, uint8_t index)
