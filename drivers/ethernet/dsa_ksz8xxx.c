@@ -1064,8 +1064,7 @@ static struct dsa_api dsa_api_f = {
 	const struct dsa_slave_config dsa_0_slave_##slave##_config = {     \
 		.mac_addr = DT_PROP_OR(slave, local_mac_address, {0})      \
 	};                                                                 \
-	NET_DEVICE_INIT_INSTANCE(dsa_slave_port_##slave,                   \
-	DT_LABEL(slave),                                                   \
+	NET_DEVICE_DT_DEFINE_INSTANCE(slave,                               \
 	n,                                                                 \
 	dsa_port_init,                                                     \
 	NULL,                                                              \
