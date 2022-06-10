@@ -289,6 +289,46 @@ config BT_MESH_CRPL
 	  protection list. This option is similar to the network message
 	  cache size, but has a different purpose.
 
+choice BT_MESH_RPL_STORAGE_MODE
+	prompt "Replay protection list storage mode"
+	default BT_MESH_RPL_STORAGE_MODE_SETTINGS
+
+config BT_MESH_RPL_STORAGE_MODE_SETTINGS
+	bool "Persistent storage of RPL in Settings"
+	help
+	  Persistent storage of RPL in Settings. If BT_SETTINGS is not
+	  enabled this choise will provide a non-persistent implementation
+	  variant of the RPL list.
+
+endchoice
+
+if BT_MESH_RPL_STORAGE_MODE_SETTINGS && BT_SETTINGS
+
+config BT_MESH_RPL_STORE_TIMEOUT
+	int "Minimum interval after which unsaved RPL entries are updated in the settings subsystem"
+	range -1 1000000
+	default 5
+	help
+	  This value defines in seconds how soon unsaved RPL entries
+	  gets written to the persistent storage. Setting this value
+	  to a large number may lead to security vulnerabilities if a node
+	  gets powered off before the timer is fired. When flash is used
+	  as the persistent storage setting this value to a low number
+	  may wear out flash sooner or later. However, if the RPL gets
+	  updated infrequently a value as low as 0 (write immediately)
+	  may make sense. Setting this value to -1 will disable this timer.
+	  In this case, a user is responsible to store pending RPL entries
+	  using @ref bt_mesh_rpl_pending_store. In the mean time, when
+	  IV Index is updated, the outdated RPL entries will still be
+	  stored by @ref BT_MESH_STORE_TIMEOUT. Finding the right balance
+	  between this timeout and calling @ref bt_mesh_rpl_pending_store
+	  may reduce a risk of security vulnerability and flash wear out.
+	  Failure to store the RPL and becoming vulnerable after reboot
+	  will cause the device to not perform the replay protection
+	  required by the spec.
+
+endif # BT_MESH_RPL_STORAGE_MODE_SETTINGS && BT_SETTINGS
+
 config BT_MESH_MSG_CACHE_SIZE
 	int "Network message cache size"
 	default 32
@@ -844,29 +884,6 @@ config BT_MESH_SEQ_STORE_RATE
 	  will add this number to the last stored one, so that it starts
 	  off with a value that's guaranteed to be larger than the last
 	  one used before power off.
-
-config BT_MESH_RPL_STORE_TIMEOUT
-	int "Minimum interval after which unsaved RPL entries are updated in storage"
-	range -1 1000000
-	default 5
-	help
-	  This value defines in seconds how soon unsaved RPL entries
-	  gets written to the persistent storage. Setting this value
-	  to a large number may lead to security vulnerabilities if a node
-	  gets powered off before the timer is fired. When flash is used
-	  as the persistent storage setting this value to a low number
-	  may wear out flash sooner or later. However, if the RPL gets
-	  updated infrequently a value as low as 0 (write immediately)
-	  may make sense. Setting this value to -1 will disable this timer.
-	  In this case, a user is responsible to store pending RPL entries
-	  using @ref bt_mesh_rpl_pending_store. In the mean time, when
-	  IV Index is updated, the outdated RPL entries will still be
-	  stored by @ref BT_MESH_STORE_TIMEOUT. Finding the right balance
-	  between this timeout and calling @ref bt_mesh_rpl_pending_store
-	  may reduce a risk of security vulnerability and flash wear out.
-	  Failure to store the RPL and becoming vulnerable after reboot
-	  will cause the device to not perform the replay protection
-	  required by the spec.
 
 endif # BT_SETTINGS
 
