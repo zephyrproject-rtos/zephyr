@@ -13,6 +13,12 @@
 /* Macro defining the max. counter update latency in ticks */
 #define HAL_TICKER_CNTR_SET_LATENCY 0
 
+/* Macro defines the h/w supported most significant bit */
+#define HAL_TICKER_CNTR_MSBIT 23
+
+/* Macro defining the HW supported counter bits */
+#define HAL_TICKER_CNTR_MASK 0x00FFFFFF
+
 /* Macro to translate microseconds to tick units.
  * NOTE: This returns the floor value.
  */
@@ -22,7 +28,7 @@
 		& HAL_TICKER_CNTR_MASK \
 	)
 
-/* Macro returning remainder in nanoseconds */
+/* Macro returning remainder in picoseconds */
 #define HAL_TICKER_REMAINDER(x) \
 	( \
 		( \
@@ -32,15 +38,29 @@
 		/ 1000UL \
 	)
 
+/* Macro to remove ticks and return positive remainder value in microseconds */
+#define HAL_TICKER_REMOVE_JITTER(t, r) \
+	{ \
+		if ((!(r / 1000000UL)) || (r & BIT(31))) { \
+			t--; \
+			r += 30517578UL; \
+		} \
+		r /= 1000000UL; \
+	}
+
+/* Macro to add ticks and return positive remainder value in microseconds */
+#define HAL_TICKER_ADD_JITTER(t, r) \
+	{ \
+		if ((!(r / 1000000UL)) || (r & BIT(31))) { \
+			t++; \
+			r += 30517578UL; \
+		} \
+		r /= 1000000UL; \
+	}
+
 /* Macro to translate tick units to microseconds. */
 #define HAL_TICKER_TICKS_TO_US(x) \
 	((uint32_t)(((uint64_t)(x) * 30517578125UL) / 1000000000UL))
-
-/* Macro defines the h/w supported most significant bit */
-#define HAL_TICKER_CNTR_MSBIT 23
-
-/* Macro defining the HW supported counter bits */
-#define HAL_TICKER_CNTR_MASK 0x00FFFFFF
 
 /* Macro defining the remainder resolution/range
  * ~ 1000000 * HAL_TICKER_TICKS_TO_US(1)
