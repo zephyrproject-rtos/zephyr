@@ -177,6 +177,17 @@ enum sensor_channel {
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
 
+	/** Latitudal position in decimal degrees (0 to +-180) */
+	SENSOR_CHAN_NAV_LATITUDE,
+	/** Longitudal position in decimal degrees (0 to +-180) */
+	SENSOR_CHAN_NAV_LONGITUDE,
+	/** Tracking angle relative to true north pole in decimal degrees (0 to 360) */
+	SENSOR_CHAN_NAV_TRACKING_ANGLE,
+	/** Speed over ground in meters pr second */
+	SENSOR_CHAN_NAV_SPEED,
+	/** Dilution of precision */
+	SENSOR_CHAN_NAV_DOP,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
