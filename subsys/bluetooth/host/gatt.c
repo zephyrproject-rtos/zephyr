@@ -2096,7 +2096,7 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t num_params,
 			}
 			params[i].attr = data.attr;
 		} else if (!data.handle) {
-				return -ENOENT;
+			return -ENOENT;
 		}
 
 		/* Confirm that the connection has the correct level of security */

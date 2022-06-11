@@ -274,7 +274,7 @@ static void test_main_multi_notify(void)
 	k_sleep(K_MSEC(1000));
 
 	if (num_notifications_sent > NOTIFICATION_COUNT / 2) {
-		FAIL("The notify callback is called more than once per PDU \n");
+		FAIL("The notify callback is called more than once per PDU\n");
 		return;
 	}
 
