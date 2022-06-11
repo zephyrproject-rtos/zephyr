@@ -916,9 +916,10 @@ def main():
             return
 
     env = TwisterEnv(options)
+    env.hwm = hwm
     env.discover()
 
-    tplan = TestPlan(options.board_root, options.testsuite_root, env, options.outdir)
+    tplan = TestPlan(options.board_root, options.testsuite_root, hwm, env, options.outdir)
     try:
         tplan.discover()
     except RuntimeError as e:
@@ -928,7 +929,6 @@ def main():
     if options.device_testing:
         if options.hardware_map:
             hwm.load(options.hardware_map)
-            tplan.duts = hwm.duts
             if not options.platform:
                 options.platform = []
                 for d in hwm.duts:
@@ -950,7 +950,6 @@ def main():
                                                  options.pre_script,
                                                  True)
 
-                tplan.duts = hwm.duts
             else:
                 logger.error("""When --device-testing is used with
                              --device-serial or --device-serial-pty,
@@ -958,7 +957,7 @@ def main():
 
     # the fixtures given by twister command explicitly should be assigned to each DUT
     if options.fixture:
-        for d in tplan.duts:
+        for d in tplan.hwm.duts:
             d.fixtures.extend(options.fixture)
 
     if tplan.load_errors:
@@ -967,43 +966,8 @@ def main():
     if tplan.report() == 0:
         return
 
-    if options.report_suffix:
-        last_run = os.path.join(options.outdir, "twister_{}.json".format(options.report_suffix))
-    else:
-        last_run = os.path.join(options.outdir, "twister.json")
 
-    if options.only_failed:
-        tplan.load_from_file(last_run)
-        tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
-    elif options.load_tests:
-        tplan.load_from_file(options.load_tests)
-        tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
-    elif options.test_only:
-        # Get list of connected hardware and filter tests to only be run on connected hardware
-        # in cases where no platform was specified when running the tests.
-        # If the platform does not exist in the hardware map, just skip it.
-        connected_list = []
-        if not options.platform:
-            for connected in hwm.duts:
-                if connected['connected']:
-                    connected_list.append(connected['platform'])
-
-        tplan.load_from_file(last_run, filter_platform=connected_list)
-        tplan.selected_platforms = set(p.platform.name for p in tplan.instances.values())
-    else:
-        tplan.apply_filters(
-            enable_slow=options.enable_slow,
-            platform=options.platform,
-            exclude_platform=options.exclude_platform,
-            arch=options.arch,
-            tag=options.tag,
-            exclude_tag=options.exclude_tag,
-            force_toolchain=options.force_toolchain,
-            all=options.all,
-            emulation_only=options.emulation_only,
-            runnable=(options.device_testing or options.filter == 'runnable'),
-            force_platform=options.force_platform
-        )
+    tplan.load()
 
     if options.list_tests and options.platform:
         tplan.report_platform_tests(options.platform)
@@ -1052,7 +1016,6 @@ def main():
         tplan.create_build_dir_links()
 
     runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
-    runner.duts = tplan.duts
     runner.run()
 
     # figure out which report to use for size comparison
