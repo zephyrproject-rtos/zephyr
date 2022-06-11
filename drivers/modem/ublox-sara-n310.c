@@ -26,7 +26,8 @@ LOG_MODULE_REGISTER(modem_ublox_sara_n310, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_cmd_handler.h"
 #include "modem_socket.h"
 
-#define MDM_UART_DEV_NAME DT_INST_BUS_LABEL(0)
+#define MDM_UART_NODE DT_INST_BUS(0)
+#define N310_NODE DT_INST(0, ublox_sara_n310)
 #define MDM_MAX_DATA_LENGTH 512
 #define MDM_MAX_SOCKETS 2
 
@@ -1339,7 +1340,7 @@ static int n310_driver_init(const struct device *device)
 
 	/* init iface uart using UART name */
 	ret = modem_iface_uart_init(&mdata.context.iface, &mdata.mdm_data,
-								device_get_binding(MDM_UART_DEV_NAME));
+								DEVICE_DT_GET(MDM_UART_NODE));
 
 	if (ret < 0) {
 		LOG_ERR("iface uart init error: %d", ret);

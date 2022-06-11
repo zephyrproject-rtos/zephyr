@@ -8,9 +8,6 @@ compatible: "ublox,sara-n310"
 include: uart-device.yaml
 
 properties:
-    label:
-      required: true
-
     mdm-power-gpios:
       type: phandle-array
       required: true

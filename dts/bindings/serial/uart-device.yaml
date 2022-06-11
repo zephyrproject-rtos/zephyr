@@ -9,4 +9,4 @@ on-bus: uart
 
 properties:
     label:
-      required: true
+      required: false

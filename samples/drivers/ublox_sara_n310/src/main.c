@@ -6,13 +6,14 @@
 
 #include <zephyr.h>
 #include <net/socket.h>
+#include <zephyr/device.h>
 #include <drivers/modem/ublox-sara-n310.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define N310_DEVICE_LABEL "SARAN310"
+#define N310_NODE DT_INST(0, ublox_sara_n310)
 #define MAX_BUF 512
 
 /* PSM TIME SETTINGS */
@@ -25,9 +26,9 @@ void main(void)
 	struct sockaddr_in addr;
 	int n = 0, sockfd = 0;
 
-	dev_ubloxn3 = device_get_binding(N310_DEVICE_LABEL);
+	dev_ubloxn3 = DEVICE_DT_GET(N310_NODE);
 
-	if (dev_ubloxn3 == NULL) {
+	if (!device_is_ready(dev_ubloxn3)) {
 		LOG_ERR("Failed to get device binding.");
 		return;
 	}
