@@ -28,6 +28,28 @@
 LOG_MODULE_REGISTER(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
+ * lis2dw12_i2c_write - perform a write to a device register
+ * @stmemsc: Pointer to instance of I2C ST MEMS sensor
+ * @reg_addr: Address of the register to be written
+ * @value: Pointer to the value to be written
+ * @len: Unused. Included to match the interface function prototype. Register writes will always be length one (1) on this device.
+ */
+static int lis2dw12_i2c_write(const struct stmemsc_cfg_i2c *stmemsc, uint8_t reg_addr, uint8_t *value, uint8_t len)
+{
+	uint8_t buffer[2];
+	struct i2c_msg msg;
+
+	buffer[0] = reg_addr;
+	buffer[1] = *value;
+
+	msg.buf = (uint8_t *)buffer;
+	msg.len = 2U;
+	msg.flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	return i2c_transfer(stmemsc->bus, &msg, 1, stmemsc->i2c_slv_addr);
+}
+
+/**
  * lis2dw12_set_range - set full scale range for acc
  * @dev: Pointer to instance of struct device (I2C or SPI)
  * @range: Full scale range (2, 4, 8 and 16 G)
@@ -519,7 +541,7 @@ static int lis2dw12_init(const struct device *dev)
 			.read_reg =					\
 			   (stmdev_read_ptr) stmemsc_i2c_read,		\
 			.write_reg =					\
-			   (stmdev_write_ptr) stmemsc_i2c_write,	\
+			   (stmdev_write_ptr) lis2dw12_i2c_write,	\
 			.handle =					\
 			   (void *)&lis2dw12_config_##inst.stmemsc_cfg,	\
 		},							\
