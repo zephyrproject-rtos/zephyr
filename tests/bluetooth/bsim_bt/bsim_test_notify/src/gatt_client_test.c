@@ -12,12 +12,23 @@
 CREATE_FLAG(flag_is_connected);
 CREATE_FLAG(flag_is_encrypted);
 CREATE_FLAG(flag_discover_complete);
+CREATE_FLAG(flag_write_complete);
 CREATE_FLAG(flag_subscribed);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
 static uint16_t long_chrc_handle;
+static uint16_t csf_handle;
 static struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
+
+static void exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
+{
+	if (!err) {
+		printk("MTU exchange done\n");
+	} else {
+		printk("MTU exchange failed (err %" PRIu8 ")\n", err);
+	}
+}
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -33,6 +44,14 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	printk("Connected to %s\n", addr);
 
 	SET_FLAG(flag_is_connected);
+
+	static struct bt_gatt_exchange_params exchange_params;
+
+	exchange_params.func = exchange_func;
+	err = bt_gatt_exchange_mtu(conn, &exchange_params);
+	if (err) {
+		printk("MTU exchange failed (err %d)", err);
+	}
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -142,24 +161,29 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_LONG_CHRC_UUID) == 0) {
 			printk("Found long_chrc\n");
 			long_chrc_handle = chrc->value_handle;
+		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_GATT_CLIENT_FEATURES) == 0) {
+			printk("Found csf\n");
+			csf_handle = chrc->value_handle;
 		}
 	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void gatt_discover(void)
+static void gatt_discover(const struct bt_uuid *uuid, uint8_t type)
 {
 	static struct bt_gatt_discover_params discover_params;
 	int err;
 
 	printk("Discovering services and characteristics\n");
 
-	discover_params.uuid = test_svc_uuid;
+	discover_params.uuid = uuid;
 	discover_params.func = discover_func;
 	discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-	discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+	discover_params.type = type;
+
+	UNSET_FLAG(flag_discover_complete);
 
 	err = bt_gatt_discover(g_conn, &discover_params);
 	if (err != 0) {
@@ -220,6 +244,45 @@ static struct bt_gatt_subscribe_params sub_params_long = {
 	.value = BT_GATT_CCC_NOTIFY,
 };
 
+static void write_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	if (err != BT_ATT_ERR_SUCCESS) {
+		FAIL("Write failed: 0x%02X\n", err);
+	}
+
+	SET_FLAG(flag_write_complete);
+}
+
+static void write_csf(void)
+{
+	/* Client Supported Features Characteristic Value
+	 * Bit 0: Robust Caching
+	 * Bit 1: EATT
+	 * Bit 2: Multiple Handle Value Notifications
+	 */
+	static const uint8_t csf[] = { BIT(2) };
+	static struct bt_gatt_write_params write_params = {
+		.func = write_cb,
+		.offset = 0,
+		.data = csf,
+		.length = sizeof(csf),
+	};
+	int err;
+
+	printk("Writing to Client Supported Features Characteristic\n");
+
+	write_params.handle = csf_handle;
+	UNSET_FLAG(flag_write_complete);
+
+	err = bt_gatt_write(g_conn, &write_params);
+	if (err) {
+		FAIL("bt_gatt_write failed (err %d)\n", err);
+	}
+
+	WAIT_FOR_FLAG(flag_write_complete);
+	printk("Success\n");
+}
+
 static void gatt_subscribe_short(void)
 {
 	int err;
@@ -267,20 +330,9 @@ static void test_main(void)
 
 	WAIT_FOR_FLAG(flag_is_connected);
 
-	err = bt_conn_set_security(g_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Starting encryption procedure failed (%d)\n", err);
-	}
-
-	WAIT_FOR_FLAG(flag_is_encrypted);
-
-	while (bt_eatt_count(g_conn) < CONFIG_BT_EATT_MAX) {
-		k_sleep(K_MSEC(10));
-	}
-
-	printk("EATT connected\n");
-
-	gatt_discover();
+	gatt_discover(test_svc_uuid, BT_GATT_DISCOVER_PRIMARY);
+	gatt_discover(BT_UUID_GATT_CLIENT_FEATURES, BT_GATT_DISCOVER_CHARACTERISTIC);
+	write_csf();
 	gatt_subscribe_short();
 	gatt_subscribe_long();
 
@@ -289,6 +341,8 @@ static void test_main(void)
 	while (num_notifications < NOTIFICATION_COUNT) {
 		k_sleep(K_MSEC(100));
 	}
+
+	k_sleep(K_MSEC(1000));
 
 	PASS("GATT client Passed\n");
 }

@@ -163,6 +163,40 @@ static inline void long_notify(void)
 	} while (err);
 }
 
+static inline void multiple_notify(void)
+{
+	static size_t short_length = CHRC_SIZE;
+	static struct bt_gatt_notify_params params[] = {
+		{
+			.attr = &attr_test_svc[4],
+			.data = long_chrc_data,
+			.len = LONG_CHRC_SIZE,
+			.func = notification_sent,
+			.user_data = &short_length,
+			.uuid = attr_test_svc[4].uuid,
+		},
+		{
+			.attr = &attr_test_svc[1],
+			.data = chrc_data,
+			.len = CHRC_SIZE,
+			.func = notification_sent,
+			.user_data = &short_length,
+			.uuid = NULL,
+		},
+	};
+	int err;
+
+	do {
+		err = bt_gatt_notify_multiple(g_conn, ARRAY_SIZE(params), params);
+
+		if (err == -ENOMEM) {
+			k_sleep(K_MSEC(10));
+		} else if (err) {
+			FAIL("multiple notify failed (err %d)\n", err);
+		}
+	} while (err);
+}
+
 static void test_main(void)
 {
 	int err;
@@ -187,12 +221,6 @@ static void test_main(void)
 	printk("Advertising successfully started\n");
 
 	WAIT_FOR_FLAG(flag_is_connected);
-
-	while (bt_eatt_count(g_conn) < CONFIG_BT_EATT_MAX) {
-		k_sleep(K_MSEC(100));
-	}
-	printk("EATT connected\n");
-
 	WAIT_FOR_FLAG(flag_short_subscribe);
 	WAIT_FOR_FLAG(flag_long_subscribe);
 
@@ -208,12 +236,63 @@ static void test_main(void)
 	PASS("GATT server passed\n");
 }
 
+static void test_main_multi_notify(void)
+{
+	int err;
+	const struct bt_data ad[] = {
+		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	};
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	printk("Bluetooth initialized\n");
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		FAIL("Advertising failed to start (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising successfully started\n");
+
+	WAIT_FOR_FLAG(flag_is_connected);
+	WAIT_FOR_FLAG(flag_short_subscribe);
+	WAIT_FOR_FLAG(flag_long_subscribe);
+
+	for (int i = 0; i < NOTIFICATION_COUNT / 2; i++) {
+		multiple_notify();
+	}
+
+	while (num_notifications_sent < NOTIFICATION_COUNT / 2) {
+		k_sleep(K_MSEC(100));
+	}
+
+	k_sleep(K_MSEC(1000));
+
+	if (num_notifications_sent > NOTIFICATION_COUNT / 2) {
+		FAIL("The notify callback is called more than once per PDU \n");
+		return;
+	}
+
+	PASS("GATT server passed\n");
+}
+
 static const struct bst_test_instance test_gatt_server[] = {
 	{
 		.test_id = "gatt_server",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "gatt_server_multi_notify",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_multi_notify,
 	},
 	BSTEST_END_MARKER,
 };
