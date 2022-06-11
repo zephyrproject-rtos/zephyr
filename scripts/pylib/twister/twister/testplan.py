@@ -18,7 +18,6 @@ import colorama
 import json
 import collections
 from typing import List
-from winreg import QueryValue
 from collections import OrderedDict
 from itertools import islice
 
@@ -190,8 +189,7 @@ class TestPlan:
         self.instances = dict()
         self.warnings = 0
 
-        # hardcoded for now
-        self.duts = []
+        self.hwm = env.hwm
         # used during creating shorter build paths
         self.link_dir_counter = 0
         self.modules = []
@@ -242,7 +240,6 @@ class TestPlan:
             subset = int(subset)
             self.generate_subset(subset, sets)
 
-
     def load(self):
 
         if self.options.report_suffix:
@@ -256,32 +253,20 @@ class TestPlan:
         elif self.options.load_tests:
             self.load_from_file(self.options.load_tests)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
-        elif self.test_only:
+        elif self.options.test_only:
             # Get list of connected hardware and filter tests to only be run on connected hardware
             # in cases where no platform was specified when running the tests.
             # If the platform does not exist in the hardware map, just skip it.
             connected_list = []
             if not self.options.platform:
-                for connected in hwm.duts:
+                for connected in self.hwm.duts:
                     if connected['connected']:
                         connected_list.append(connected['platform'])
 
             self.load_from_file(last_run, filter_platform=connected_list)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         else:
-            self.apply_filters(
-                enable_slow=options.enable_slow,
-                platform=options.platform,
-                exclude_platform=options.exclude_platform,
-                arch=options.arch,
-                tag=options.tag,
-                exclude_tag=options.exclude_tag,
-                force_toolchain=options.force_toolchain,
-                all=options.all,
-                emulation_only=options.emulation_only,
-                runnable=(options.device_testing or options.filter == 'runnable'),
-                force_platform=options.force_platform
-            )
+            self.apply_filters()
 
     def generate_subset(self, subset, sets):
         # Test instances are sorted depending on the context. For CI runs
@@ -942,18 +927,17 @@ class TestPlan:
     def apply_filters(self, **kwargs):
 
         toolchain = self.env.toolchain
-
-        platform_filter = kwargs.get('platform')
-        exclude_platform = kwargs.get('exclude_platform', [])
+        platform_filter = self.options.platform
+        exclude_platform = self.options.exclude_platform
         testsuite_filter = self.run_individual_testsuite
-        arch_filter = kwargs.get('arch')
-        tag_filter = kwargs.get('tag')
-        exclude_tag = kwargs.get('exclude_tag')
-        all_filter = kwargs.get('all')
-        runnable = kwargs.get('runnable')
-        force_toolchain = kwargs.get('force_toolchain')
-        force_platform = kwargs.get('force_platform')
-        emu_filter = kwargs.get('emulation_only')
+        arch_filter = self.options.arch
+        tag_filter = self.options.tag
+        exclude_tag = self.options.exclude_tag
+        all_filter = self.options.all
+        runnable = (self.options.device_testing or self.options.filter == 'runnable')
+        force_toolchain = self.options.force_toolchain
+        force_platform = self.options.force_platform
+        emu_filter = self.options.emulation_only
 
         logger.debug("platform filter: " + str(platform_filter))
         logger.debug("    arch_filter: " + str(arch_filter))
@@ -1029,8 +1013,8 @@ class TestPlan:
                     tfilter,
                     self.options.fixture
                 )
-                if runnable and self.duts:
-                    for h in self.duts:
+                if runnable and self.hwm.duts:
+                    for h in self.hwm.duts:
                         if h.platform == plat.name:
                             if ts.harness_config.get('fixture') in h.fixtures:
                                 instance.run = True
