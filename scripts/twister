@@ -803,6 +803,12 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         logger.error("valgrind enabled but valgrind executable not found")
         sys.exit(1)
 
+    if options.device_testing and (options.device_serial or options.device_serial_pty) and len(options.platform) > 1:
+        logger.error("""When --device-testing is used with
+                        --device-serial or --device-serial-pty,
+                        only one platform is allowed""")
+        sys.exit(1)
+
     return options
 
 def setup_logging(outdir, log_file, verbose, timestamps):
@@ -837,11 +843,8 @@ def setup_logging(outdir, log_file, verbose, timestamps):
     logger.addHandler(fh)
 
 
-
-
 def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
-
 
 def main():
     start_time = time.time()
@@ -910,40 +913,6 @@ def main():
     except RuntimeError as e:
         logger.error(f"{e}")
         sys.exit(1)
-
-    if options.device_testing:
-        if options.hardware_map:
-            hwm.load(options.hardware_map)
-            if not options.platform:
-                options.platform = []
-                for d in hwm.duts:
-                    if d.connected:
-                        options.platform.append(d.platform)
-
-        elif options.device_serial or options.device_serial_pty:
-            if options.platform and len(options.platform) == 1:
-                if options.device_serial:
-                    hwm.add_device(options.device_serial,
-                                   options.platform[0],
-                                   options.pre_script,
-                                   False,
-                                   baud=options.device_serial_baud
-                                   )
-                else:
-                    hwm.add_device(options.device_serial_pty,
-                                                 options.platform[0],
-                                                 options.pre_script,
-                                                 True)
-
-            else:
-                logger.error("""When --device-testing is used with
-                             --device-serial or --device-serial-pty,
-                             only one platform is allowed""")
-
-    # the fixtures given by twister command explicitly should be assigned to each DUT
-    if options.fixture:
-        for d in tplan.hwm.duts:
-            d.fixtures.extend(options.fixture)
 
     if tplan.report() == 0:
         return
