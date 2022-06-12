@@ -133,6 +133,19 @@ class SizeCalculator:
 
         self._calculate_sizes()
 
+
+    def size_report(self):
+        print(self.filename)
+        print("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
+        for v in self.sections:
+            print("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
+                        (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
+                        v["type"]))
+
+        print("Totals: %d bytes (ROM), %d bytes (RAM)" %
+                    (self.rom_size, self.ram_size))
+        print("")
+
     def get_ram_size(self):
         """Get the amount of RAM the application will use up on the device
 
