@@ -14,6 +14,10 @@
 
 #include <drivers/adc.h>
 
+/* From espressif */
+#include "hal/adc_hal.h"
+#include "hal/adc_hal_conf.h"
+
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32);
@@ -43,7 +47,47 @@ static const struct adc_driver_api api_esp32_driver_api = {
 
 static int adc_esp32_init(const struct device *dev)
 {
+	adc_hal_init();
+	return 0;
 }
+
+static int adc_esp32_channel_setup (const struct device *dev,
+				    const struct adc_channel_cfg *channel_cfg)
+{
+#error "Not implemented"
+	adc1_config_width();
+	adc1_config_channel_atten();
+	return 0;
+}
+
+/*
+ * Channels, buffer and resolution are in the sequence param.
+ * Other device-specific stuff is retrieved from the dev param.
+ * Reads samples for the channels specified in the sequence struct.
+ * Stores one sample per channel on the sequence struct buffer.
+ */
+static int adc_esp32_read          (const struct device *dev,
+			            const struct adc_sequence *sequence)
+{
+	int error;
+
+	/* adc1_get_raw(); */
+	/* adc2_get_raw(); */
+	/* Set resolution, according to channel */
+	sequence->buffer[chan_idx] = raw_value;
+
+	return error;
+}
+
+#ifdef CONFIG_ADC_ASYNC
+static int adc_esp32_read_async    (const struct device *dev,
+			            const struct adc_sequence *sequence,
+			            struct k_poll_signal *async)
+{
+#error "Not implemented"
+	return 0;
+}
+#endif /* CONFIG_ADC_ASYNC */
 
 
 /* Footer */
