@@ -389,10 +389,6 @@ class ProjectBuilder(FilterBuilder):
         self.env = env
         self.duts = None
 
-        self.extra_args = kwargs.get('extra_args', [])
-        self.verbose = kwargs.get('verbose', None)
-        self.suite_name_check = kwargs.get('suite_name_check', True)
-        self.seed = kwargs.get('seed', 0)
         if self.options.ninja:
             self.generator_cmd = "ninja"
             self.generator = "Ninja"
@@ -597,7 +593,7 @@ class ProjectBuilder(FilterBuilder):
                 results.error += 1
             else:
                 results.failed += 1
-            if self.verbose:
+            if self.options.verbose:
                 status = Fore.RED + "FAILED " + Fore.RESET + instance.reason
             else:
                 print("")
@@ -608,7 +604,7 @@ class ProjectBuilder(FilterBuilder):
                         Fore.RED,
                         Fore.RESET,
                         instance.reason))
-            if not self.verbose:
+            if not self.options.verbose:
                 self.log_info_file(self.options.inline_logs)
         elif instance.status in ["skipped", "filtered"]:
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
@@ -624,8 +620,8 @@ class ProjectBuilder(FilterBuilder):
             logger.debug(f"Unknown status = {instance.status}")
             status = Fore.YELLOW + "UNKNOWN" + Fore.RESET
 
-        if self.verbose:
-            if self.cmake_only:
+        if self.options.verbose:
+            if self.options.cmake_only:
                 more_info = "cmake"
             elif instance.status in ["skipped", "filtered"]:
                 more_info = instance.reason
@@ -641,7 +637,7 @@ class ProjectBuilder(FilterBuilder):
                 if ( instance.status in ["error", "failed", "timeout", "flash_error"]
                      and hasattr(self.instance.handler, 'seed')
                      and self.instance.handler.seed is not None ):
-                    more_info += "/seed: " + str(self.seed)
+                    more_info += "/seed: " + str(self.options.seed)
 
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
                 results.done + results.skipped_filter, total_tests_width, total_to_do , instance.platform.name,
@@ -674,7 +670,7 @@ class ProjectBuilder(FilterBuilder):
 
         instance = self.instance
         args = self.testsuite.extra_args[:]
-        args += self.extra_args
+        args += self.options.extra_args
 
         if instance.handler:
             args += instance.handler.args
@@ -719,11 +715,11 @@ class ProjectBuilder(FilterBuilder):
             if instance.handler.type_str == "device":
                 instance.handler.duts = self.duts
 
-            if(self.seed is not None and instance.platform.name.startswith("native_posix")):
+            if(self.options.seed is not None and instance.platform.name.startswith("native_posix")):
                 self.parse_generated()
                 if('CONFIG_FAKE_ENTROPY_NATIVE_POSIX' in self.defconfig and
                     self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
-                    instance.handler.seed = self.seed
+                    instance.handler.seed = self.options.seed
 
             instance.handler.handle()
 

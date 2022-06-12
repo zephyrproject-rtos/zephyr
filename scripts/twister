@@ -894,32 +894,17 @@ def main():
             size_report(SizeCalculator(fn, []))
         return
 
-    hwm = HardwareMap()
-    if options.generate_hardware_map:
-        hwm.scan(persistent=options.persistent_hardware_map)
-        hwm.save(options.generate_hardware_map)
-        return
-
-    if not options.device_testing and options.hardware_map:
-        hwm.load(options.hardware_map)
-        logger.info("Available devices:")
-        table = []
-        hwm.dump(connected_only=True)
-        return
-
-    if options.subset:
-        subset, sets = options.subset.split("/")
-        if int(subset) > 0 and int(sets) >= int(subset):
-            logger.info("Running only a subset: %s/%s" % (subset, sets))
-        else:
-            logger.error("You have provided a wrong subset value: %s." % options.subset)
-            return
 
     env = TwisterEnv(options)
-    env.hwm = hwm
     env.discover()
 
-    tplan = TestPlan(options.board_root, options.testsuite_root, hwm, env, options.outdir)
+    hwm = HardwareMap(env)
+    env.hwm = hwm
+    ret = hwm.discover()
+    if ret == 0:
+        return
+
+    tplan = TestPlan(options.board_root, options.testsuite_root, env, options.outdir)
     try:
         tplan.discover()
     except RuntimeError as e:
@@ -960,12 +945,8 @@ def main():
         for d in tplan.hwm.duts:
             d.fixtures.extend(options.fixture)
 
-    if tplan.load_errors:
-        sys.exit(1)
-
     if tplan.report() == 0:
         return
-
 
     tplan.load()
 
@@ -1016,6 +997,7 @@ def main():
         tplan.create_build_dir_links()
 
     runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
+    runner.duts = hwm.duts
     runner.run()
 
     # figure out which report to use for size comparison
