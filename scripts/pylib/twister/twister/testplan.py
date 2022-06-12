@@ -223,6 +223,9 @@ class TestPlan:
         self.find_subtests()
         self.add_configurations()
 
+        if self.load_errors:
+            raise TwisterRuntimeError("Errors while loading configurations")
+
         # handle quarantine
         ql = self.options.quarantine_list
         if ql:
@@ -238,6 +241,11 @@ class TestPlan:
         if self.options.subset:
             subset, sets = self.options.subset.split("/")
             subset = int(subset)
+            if int(subset) > 0 and int(sets) >= int(subset):
+                logger.info("Running only a subset: %s/%s" % (subset, sets))
+            else:
+                logger.error("You have provided a wrong subset value: %s." % self.options.subset)
+                return
             self.generate_subset(subset, sets)
 
     def load(self):
