@@ -13,7 +13,6 @@ import yaml
 import scl
 import logging
 from pathlib import Path
-import expr_parser
 
 from twister.enviornment import ZEPHYR_BASE
 
@@ -139,9 +138,23 @@ class HardwareMap:
         ]
     }
 
-    def __init__(self):
+    def __init__(self, env=None):
         self.detected = []
         self.duts = []
+        self.options = env.options
+
+    def discover(self):
+        if self.options.generate_hardware_map:
+            self.scan(persistent=self.options.persistent_hardware_map)
+            self.save(self.options.generate_hardware_map)
+            return 0
+        if not self.options.device_testing and self.options.hardware_map:
+            self.load(self.options.hardware_map)
+            logger.info("Available devices:")
+            table = []
+            self.dump(connected_only=True)
+            return 0
+        return 1
 
     def add_device(self, serial, platform, pre_script, is_pty, baud=None):
         device = DUT(platform=platform, connected=True, pre_script=pre_script, serial_baud=baud)
