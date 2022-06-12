@@ -144,16 +144,46 @@ class HardwareMap:
         self.options = env.options
 
     def discover(self):
+
         if self.options.generate_hardware_map:
             self.scan(persistent=self.options.persistent_hardware_map)
             self.save(self.options.generate_hardware_map)
             return 0
+
         if not self.options.device_testing and self.options.hardware_map:
             self.load(self.options.hardware_map)
             logger.info("Available devices:")
             table = []
             self.dump(connected_only=True)
             return 0
+
+        if self.options.device_testing:
+            if self.options.hardware_map:
+                self.load(self.options.hardware_map)
+                if not self.options.platform:
+                    self.options.platform = []
+                    for d in self.duts:
+                        if d.connected:
+                            self.options.platform.append(d.platform)
+
+            elif self.options.device_serial or self.options.device_serial_pty:
+                if self.options.device_serial:
+                    self.add_device(self.options.device_serial,
+                                    self.options.platform[0],
+                                    self.options.pre_script,
+                                    False,
+                                    baud=self.options.device_serial_baud
+                                    )
+                else:
+                    self.add_device(self.options.device_serial_pty,
+                                                    self.options.platform[0],
+                                                    self.options.pre_script,
+                                                    True)
+
+            # the fixtures given by twister command explicitly should be assigned to each DUT
+            if self.options.fixture:
+                for d in self.duts:
+                    d.fixtures.extend(self.options.fixture)
         return 1
 
     def add_device(self, serial, platform, pre_script, is_pty, baud=None):
