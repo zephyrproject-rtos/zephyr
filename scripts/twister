@@ -209,18 +209,6 @@ from twister.runner import TwisterRunner
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
-def size_report(sc):
-    logger.info(sc.filename)
-    logger.info("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
-    for v in sc.sections:
-        logger.info("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
-                    (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
-                     v["type"]))
-
-    logger.info("Totals: %d bytes (ROM), %d bytes (RAM)" %
-                (sc.rom_size, sc.ram_size))
-    logger.info("")
-
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -809,6 +797,13 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         only one platform is allowed""")
         sys.exit(1)
 
+    if options.size:
+        from twister.size_calc import SizeCalculator
+        for fn in options.size:
+            sc = SizeCalculator(fn, [])
+            sc.size_report()
+        sys.exit(1)
+
     return options
 
 def setup_logging(outdir, log_file, verbose, timestamps):
@@ -890,13 +885,6 @@ def main():
 
     VERBOSE = options.verbose
     setup_logging(options.outdir, options.log_file, VERBOSE, options.timestamps)
-
-    if options.size:
-        from twister.size_calc import SizeCalculator
-        for fn in options.size:
-            size_report(SizeCalculator(fn, []))
-        return
-
 
     env = TwisterEnv(options)
     env.discover()
