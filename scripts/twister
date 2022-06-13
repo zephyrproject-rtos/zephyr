@@ -239,6 +239,8 @@ Artificially long but functional example:
 
     test_xor_subtest = case_select.add_mutually_exclusive_group()
 
+    test_xor_generator = case_select.add_mutually_exclusive_group()
+
     valgrind_asan_group = parser.add_mutually_exclusive_group()
 
     case_select.add_argument(
@@ -529,10 +531,14 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-M", "--runtime-artifact-cleanup", action="store_true",
         help="Delete artifacts of passing tests.")
 
-    parser.add_argument(
-        "-N", "--ninja", action="store_true",
-        help="Use the Ninja generator with CMake.",
+    test_xor_generator.add_argument(
+        "-N", "--ninja", action="store_true", default="--make" not in sys.argv,
+        help="Use the Ninja generator with CMake. (This is the default)",
         required="--short-build-path" in sys.argv)
+
+    test_xor_generator.add_argument(
+        "-k", "--make", action="store_true",
+        help="Use the unix Makefile generator with CMake.")
 
     parser.add_argument(
         "-n", "--no-clean", action="store_true",

@@ -37,7 +37,13 @@ class TwisterEnv:
         self.version = None
         self.toolchain = None
         self.options = options
-
+        if self.options.ninja:
+            self.generator_cmd = "ninja"
+            self.generator = "Ninja"
+        else:
+            self.generator_cmd = "make"
+            self.generator = "Unix Makefiles"
+        logger.info(f"Using {self.generator}..")
 
     def discover(self):
         self.check_zephyr_version()

@@ -167,8 +167,6 @@ class CMake:
         self.source_dir = source_dir
         self.build_dir = build_dir
         self.log = "build.log"
-        self.generator = None
-        self.generator_cmd = None
 
         self.default_encoding = sys.getdefaultencoding()
 
@@ -258,7 +256,7 @@ class CMake:
             f'-DEXTRA_AFLAGS={aflags}',
             f'-DEXTRA_LDFLAGS={ldflags}',
             f'-DEXTRA_GEN_DEFINES_ARGS={gen_defines_args}',
-            f'-G{self.generator}'
+            f'-G{self.env.generator}'
         ]
 
         args = ["-D{}".format(a.replace('"', '')) for a in args]
@@ -388,13 +386,6 @@ class ProjectBuilder(FilterBuilder):
         self.options = env.options
         self.env = env
         self.duts = None
-
-        if self.options.ninja:
-            self.generator_cmd = "ninja"
-            self.generator = "Ninja"
-        else:
-            self.generator_cmd = "make"
-            self.generator = "Unix Makefiles"
 
     @staticmethod
     def log_info(filename, inline_logs):
