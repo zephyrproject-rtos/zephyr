@@ -19,6 +19,10 @@ config FLASH_MCUX_FLEXSPI_NOR
 
 endif #FLASH
 
+config I2C_MCUX_LPI2C_BUS_RECOVERY
+	default y
+	depends on I2C_MCUX_LPI2C && PINCTRL
+
 if NETWORKING
 
 config NET_L2_ETHERNET
