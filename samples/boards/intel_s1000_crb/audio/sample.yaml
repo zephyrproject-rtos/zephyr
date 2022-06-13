@@ -1,6 +1,0 @@
-sample:
-  name: 2-way Audio Forwarding Sample
-tests:
-  sample.board.intel_s1000_crb.audio:
-    platform_allow: intel_s1000_crb
-    tags: audio
