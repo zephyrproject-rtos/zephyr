@@ -1069,6 +1069,8 @@ Formatted Output:
     status: maintained
     maintainers:
       - nordic-krch
+    collaborators:
+      - dcpleung
     files:
       - include/zephyr/sys/cbprintf*
       - tests/unit/cbprintf/
@@ -1173,6 +1175,7 @@ Logging:
     collaborators:
         - chen-png
         - aasthagr
+        - dcpleung
     files:
         - include/zephyr/logging/
         - samples/subsys/logging/
