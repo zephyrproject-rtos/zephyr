@@ -6,6 +6,3 @@
 config BOARD_XT_SIM
 	bool "Xtensa Development ISS"
 	depends on SIMULATOR_XTENSA
-
-config BOARD_XT_SIM_INTEL_S1000
-	bool "Xtensa Development ISS"
