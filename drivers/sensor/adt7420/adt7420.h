@@ -59,7 +59,6 @@
 #define ADT7420_TEMP_SCALE		15625
 
 struct adt7420_data {
-	const struct device *i2c;
 	int16_t sample;
 #ifdef CONFIG_ADT7420_TRIGGER
 	const struct device *gpio;
@@ -82,8 +81,7 @@ struct adt7420_data {
 };
 
 struct adt7420_dev_config {
-	const char *i2c_port;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 #ifdef CONFIG_ADT7420_TRIGGER
 	gpio_pin_t int_pin;
 	gpio_flags_t int_flags;
