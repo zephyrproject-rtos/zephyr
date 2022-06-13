@@ -54,6 +54,7 @@ endif # LOG_BACKEND_UART
 config LOG_BACKEND_SWO
 	bool "Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
+	depends on !LOG1
 	help
 	  When enabled, backend will use SWO for logging.
 
