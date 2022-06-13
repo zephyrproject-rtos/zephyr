@@ -61,7 +61,6 @@
 struct adt7420_data {
 	int16_t sample;
 #ifdef CONFIG_ADT7420_TRIGGER
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t th_handler;
@@ -83,9 +82,7 @@ struct adt7420_data {
 struct adt7420_dev_config {
 	struct i2c_dt_spec i2c;
 #ifdef CONFIG_ADT7420_TRIGGER
-	gpio_pin_t int_pin;
-	gpio_flags_t int_flags;
-	const char *int_name;
+	struct gpio_dt_spec int_gpio;
 #endif
 };
 
