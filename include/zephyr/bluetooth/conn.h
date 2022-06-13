@@ -1361,6 +1361,22 @@ struct bt_conn_auth_info_cb {
  */
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb);
 
+/** @brief Overlay authentication callbacks used for a given connection.
+ *
+ *  This function can be used only for Bluetooth LE connections.
+ *  The @kconfig{CONFIG_BT_SMP} must be enabled for this function.
+ *
+ *  The authentication callbacks for a given connection cannot be overlaid if
+ *  security procedures in the SMP module have already started. This function
+ *  can be called only once per connection.
+ *
+ *  @param conn	Connection object.
+ *  @param cb	Callback struct.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *cb);
+
 /** @brief Register authentication information callbacks.
  *
  *  Register callbacks to get authenticated pairing information. Multiple
