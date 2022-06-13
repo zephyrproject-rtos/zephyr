@@ -1,6 +1,0 @@
-sample:
-  name: DMIC Audio Sample
-tests:
-  sample.board.intel_s1000_crb.dmic:
-    platform_allow: intel_s1000_crb
-    tags: dmic
