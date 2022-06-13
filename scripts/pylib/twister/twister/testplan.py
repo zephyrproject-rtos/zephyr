@@ -238,16 +238,6 @@ class TestPlan:
                 raise TwisterRuntimeError("No quarantine list given to be verified")
 
 
-        if self.options.subset:
-            subset, sets = self.options.subset.split("/")
-            subset = int(subset)
-            if int(subset) > 0 and int(sets) >= int(subset):
-                logger.info("Running only a subset: %s/%s" % (subset, sets))
-            else:
-                logger.error("You have provided a wrong subset value: %s." % self.options.subset)
-                return
-            self.generate_subset(subset, sets)
-
     def load(self):
 
         if self.options.report_suffix:
@@ -275,6 +265,23 @@ class TestPlan:
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         else:
             self.apply_filters()
+
+        if self.options.subset:
+            s =  self.options.subset
+            try:
+                subset, sets = (int(x) for x in s.split("/"))
+            except ValueError as e:
+                raise TwisterRuntimeError("Bad subset value.")
+
+            if subset > sets:
+                raise TwisterRuntimeError("subset should not exceed the total number of sets")
+
+            if int(subset) > 0 and int(sets) >= int(subset):
+                logger.info("Running only a subset: %s/%s" % (subset, sets))
+            else:
+                raise TwisterRuntimeError(f"You have provided a wrong subset value: {self.options.subset}.")
+
+            self.generate_subset(subset, int(sets))
 
     def generate_subset(self, subset, sets):
         # Test instances are sorted depending on the context. For CI runs
