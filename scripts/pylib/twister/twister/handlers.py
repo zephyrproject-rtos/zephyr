@@ -163,13 +163,6 @@ class BinaryHandler(Handler):
         super().__init__(instance, type_str)
 
         self.call_west_flash = False
-
-        # Tool options
-        self.valgrind = False
-        self.lsan = False
-        self.asan = False
-        self.ubsan = False
-        self.coverage = False
         self.seed = None
 
     def try_kill_process_by_pid(self):
@@ -240,7 +233,7 @@ class BinaryHandler(Handler):
             command = [self.binary]
 
         run_valgrind = False
-        if self.valgrind:
+        if self.options.enable_valgrind:
             command = ["valgrind", "--error-exitcode=2",
                        "--leak-check=full",
                        "--suppressions=" + ZEPHYR_BASE + "/scripts/valgrind.supp",
@@ -260,13 +253,13 @@ class BinaryHandler(Handler):
         start_time = time.time()
 
         env = os.environ.copy()
-        if self.asan:
+        if self.options.enable_asan:
             env["ASAN_OPTIONS"] = "log_path=stdout:" + \
                                   env.get("ASAN_OPTIONS", "")
-            if not self.lsan:
+            if not self.options.enable_lsan:
                 env["ASAN_OPTIONS"] += "detect_leaks=0"
 
-        if self.ubsan:
+        if self.options.enable_ubsan:
             env["UBSAN_OPTIONS"] = "log_path=stdout:halt_on_error=1:" + \
                                   env.get("UBSAN_OPTIONS", "")
 
@@ -285,7 +278,7 @@ class BinaryHandler(Handler):
 
         handler_time = time.time() - start_time
 
-        if self.coverage:
+        if self.options.coverage:
             subprocess.call(["GCOV_PREFIX=" + self.build_dir,
                              "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
 
@@ -337,7 +330,7 @@ class DeviceHandler(Handler):
         ser_fileno = ser.fileno()
         readlist = [halt_fileno, ser_fileno]
 
-        if self.coverage:
+        if self.options.coverage:
             # Set capture_coverage to True to indicate that right after
             # test results we should get coverage data, otherwise we exit
             # from the test.
