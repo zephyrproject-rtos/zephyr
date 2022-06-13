@@ -45,5 +45,13 @@ if(CONFIG_RISCV_ISA_EXT_C)
     string(CONCAT riscv_march ${riscv_march} "c")
 endif()
 
+if(CONFIG_RISCV_ISA_EXT_ZICSR)
+    string(CONCAT riscv_march ${riscv_march} "_zicsr")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_ZIFENCEI)
+    string(CONCAT riscv_march ${riscv_march} "_zifencei")
+endif()
+
 list(APPEND TOOLCHAIN_C_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
 list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT -mabi=${riscv_mabi} -march=${riscv_march})
