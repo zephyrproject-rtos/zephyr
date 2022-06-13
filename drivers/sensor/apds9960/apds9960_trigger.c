@@ -28,7 +28,7 @@ void apds9960_work_cb(struct k_work *work)
 		data->p_th_handler(dev, &data->p_th_trigger);
 	}
 
-	apds9960_setup_int(data, true);
+	apds9960_setup_int(dev->config, true);
 }
 
 int apds9960_attr_set(const struct device *dev,
@@ -69,7 +69,7 @@ int apds9960_trigger_set(const struct device *dev,
 	const struct apds9960_config *config = dev->config;
 	struct apds9960_data *data = dev->data;
 
-	apds9960_setup_int(data, false);
+	apds9960_setup_int(dev->config, false);
 
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
@@ -90,8 +90,8 @@ int apds9960_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	apds9960_setup_int(data, true);
-	if (gpio_pin_get(data->gpio, data->gpio_pin) > 0) {
+	apds9960_setup_int(config, true);
+	if (gpio_pin_get_dt(&config->int_gpio) > 0) {
 		k_work_submit(&data->work);
 	}
 
