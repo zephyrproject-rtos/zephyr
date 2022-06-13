@@ -96,6 +96,8 @@ Bluetooth
 
 * Host
 
+  * Added :c:func:`bt_conn_auth_cb_overlay` to overlay authentication callbacks for a Bluetooth LE connection.
+
 * Mesh
 
 * Controller
