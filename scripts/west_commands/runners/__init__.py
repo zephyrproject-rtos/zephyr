@@ -35,7 +35,6 @@ _names = [
     'hifive1',
     'intel_adsp',
     'intel_cyclonev',
-    'intel_s1000',
     'jlink',
     'mdb',
     'misc',
