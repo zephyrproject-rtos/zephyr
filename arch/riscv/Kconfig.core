@@ -10,6 +10,8 @@ config RISCV_CORE_E31
 	select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
 	help
 	  SiFive E31 Standard Core
 
