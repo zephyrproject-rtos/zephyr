@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 /*
- * Generated using zcbor version 0.4.0
+ * Generated using zcbor version 0.5.1
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
  */
@@ -12,11 +12,12 @@
 #ifndef LWM2M_SENML_CBOR_TYPES_H__
 #define LWM2M_SENML_CBOR_TYPES_H__
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 #include "zcbor_common.h"
+
 
 enum lwm2m_senml_cbor_key {
 	lwm2m_senml_cbor_key_bn = -2,
