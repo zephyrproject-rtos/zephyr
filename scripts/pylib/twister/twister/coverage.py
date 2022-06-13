@@ -207,3 +207,29 @@ class Gcovr(CoverageTool):
                                 "--html-details"] + tracefiles +
                                ["-o", os.path.join(subdir, "index.html")],
                                stdout=coveragelog)
+
+
+
+def run_coverage(testplan, options):
+    if not options.gcov_tool:
+        use_system_gcov = False
+
+        for plat in options.coverage_platform:
+            ts_plat = testplan.get_platform(plat)
+            if ts_plat and (ts_plat.type in {"native", "unit"}):
+                use_system_gcov = True
+
+        if use_system_gcov or "ZEPHYR_SDK_INSTALL_DIR" not in os.environ:
+            options.gcov_tool = "gcov"
+        else:
+            options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
+                                                "x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
+
+    logger.info("Generating coverage files...")
+    coverage_tool = CoverageTool.factory(options.coverage_tool)
+    coverage_tool.gcov_tool = options.gcov_tool
+    coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
+    coverage_tool.add_ignore_file('generated')
+    coverage_tool.add_ignore_directory('tests')
+    coverage_tool.add_ignore_directory('samples')
+    coverage_tool.generate(options.outdir)
