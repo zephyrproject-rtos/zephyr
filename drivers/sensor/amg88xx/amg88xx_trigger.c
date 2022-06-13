@@ -35,7 +35,6 @@ int amg88xx_attr_set(const struct device *dev,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val)
 {
-	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 	int16_t int_level = (val->val1 * 1000000 + val->val2) /
 			  AMG88XX_TREG_LSB_SCALING;
@@ -58,13 +57,13 @@ int amg88xx_attr_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+	if (i2c_reg_write_byte_dt(&config->i2c,
 			       intl_reg, (uint8_t)int_level)) {
 		LOG_DBG("Failed to set INTxL attribute!");
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+	if (i2c_reg_write_byte_dt(&config->i2c,
 			       inth_reg, (uint8_t)(int_level >> 8))) {
 		LOG_DBG("Failed to set INTxH attribute!");
 		return -EIO;
@@ -94,7 +93,7 @@ static void amg88xx_thread_cb(const struct device *dev)
 	const struct amg88xx_config *config = dev->config;
 	uint8_t status;
 
-	if (i2c_reg_read_byte(drv_data->i2c, config->i2c_address,
+	if (i2c_reg_read_byte_dt(&config->i2c,
 			      AMG88XX_STAT, &status) < 0) {
 		return;
 	}
@@ -136,7 +135,7 @@ int amg88xx_trigger_set(const struct device *dev,
 	struct amg88xx_data *drv_data = dev->data;
 	const struct amg88xx_config *config = dev->config;
 
-	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+	if (i2c_reg_write_byte_dt(&config->i2c,
 			       AMG88XX_INTC, AMG88XX_INTC_DISABLED)) {
 		return -EIO;
 	}
@@ -153,7 +152,7 @@ int amg88xx_trigger_set(const struct device *dev,
 
 	amg88xx_setup_int(drv_data, true);
 
-	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+	if (i2c_reg_write_byte_dt(&config->i2c,
 			       AMG88XX_INTC, AMG88XX_INTC_ABS_MODE)) {
 		return -EIO;
 	}
