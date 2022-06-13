@@ -16,6 +16,12 @@
 		led0 = &blue_led;
 		led1 = &green_led;
 		led2 = &red_led;
+		pwm-led0 = &pwm_led_red;
+		pwm-led1 = &pwm_led_green;
+		pwm-led2 = &pwm_led_blue;
+		red-pwm-led = &pwm_led_red;
+		green-pwm-led = &pwm_led_green;
+		blue-pwm-led = &pwm_led_blue;
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
 	};
@@ -44,6 +50,22 @@
 		red_led: led_2 {
 			gpios =  <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "Red - LED2";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led_red: pwm_led_0 {
+			label = "Red PWM LED";
+			pwms = <&ledc0 0 PWM_HZ(100) PWM_POLARITY_NORMAL>;
+		};
+		pwm_led_green: pwm_led_1 {
+			label = "Green PWM LED";
+			pwms = <&ledc0 1 PWM_HZ(100) PWM_POLARITY_NORMAL>;
+		};
+		pwm_led_blue: pwm_led_2 {
+			label = "Blue PWM LED";
+			pwms = <&ledc0 2 PWM_HZ(100) PWM_POLARITY_NORMAL>;
 		};
 	};
 };
@@ -108,6 +130,26 @@
 		rotation = <0>;
 		width = <240>;
 		height = <320>;
+	};
+};
+
+&ledc0 {
+	pinctrl-0 = <&ledc0_ch0_gpio0 &ledc0_ch1_gpio2 &ledc0_ch2_gpio4>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+	channel1@1 {
+		reg = <0x1>;
+		timer = <1>;
+	};
+	channel2@2 {
+		reg = <0x2>;
+		timer = <2>;
 	};
 };
 

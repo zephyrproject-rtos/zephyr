@@ -134,6 +134,16 @@
 			current-speed = <115200>;
 		};
 
+		ledc0: ledc@60019000 {
+			compatible = "espressif,esp32-ledc";
+			pwm-controller;
+			#pwm-cells = <3>;
+			reg = <0x60019000 0x1000>;
+			label = "LEDC_0";
+			clocks = <&rtc ESP32_LEDC_MODULE>;
+			status = "disabled";
+		};
+
 		timer0: counter@6001f000 {
 			compatible = "espressif,esp32-timer";
 			reg = <0x6001F000 DT_SIZE_K(4)>;
