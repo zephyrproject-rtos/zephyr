@@ -41,6 +41,10 @@ static void thread_func(void *p1, void *p2, void *p3)
 	int buf_len = 8*id + 8;
 	uint8_t *buf = alloca(buf_len);
 
+#if defined(CONFIG_INTEL_ADSP_CAVS)
+	k_msleep(1000);
+#endif
+
 	while (1) {
 		LOG_INF("test string printed %d %d %p", 1, 2, k_current_get());
 		LOG_HEXDUMP_INF(buf, buf_len, "data:");
