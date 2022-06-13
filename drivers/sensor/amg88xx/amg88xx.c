@@ -141,9 +141,7 @@ static const struct sensor_driver_api amg88xx_driver_api = {
 static const struct amg88xx_config amg88xx_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
 #ifdef CONFIG_AMG88XX_TRIGGER
-	.gpio_name = DT_INST_GPIO_LABEL(0, int_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 #endif
 };
 
