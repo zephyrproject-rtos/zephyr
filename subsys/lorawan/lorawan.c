@@ -363,28 +363,35 @@ out:
 
 int lorawan_set_class(enum lorawan_class dev_class)
 {
-	LoRaMacStatus_t status;
 	MibRequestConfirm_t mib_req;
+	DeviceClass_t current_class;
+	LoRaMacStatus_t status;
 
 	mib_req.Type = MIB_DEVICE_CLASS;
+	LoRaMacMibGetRequestConfirm(&mib_req);
+	current_class = mib_req.Param.Class;
 
 	switch (dev_class) {
 	case LORAWAN_CLASS_A:
 		mib_req.Param.Class = CLASS_A;
 		break;
 	case LORAWAN_CLASS_B:
-	case LORAWAN_CLASS_C:
-		LOG_ERR("Device class not supported yet!");
+		LOG_ERR("Class B not supported yet!");
 		return -ENOTSUP;
+	case LORAWAN_CLASS_C:
+		mib_req.Param.Class = CLASS_C;
+		break;
 	default:
 		return -EINVAL;
 	}
 
-	status = LoRaMacMibSetRequestConfirm(&mib_req);
-	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("Failed to set device class: %s",
-			lorawan_status2str(status));
-		return lorawan_status2errno(status);
+	if (mib_req.Param.Class != current_class) {
+		status = LoRaMacMibSetRequestConfirm(&mib_req);
+		if (status != LORAMAC_STATUS_OK) {
+			LOG_ERR("Failed to set device class: %s",
+				lorawan_status2str(status));
+			return lorawan_status2errno(status);
+		}
 	}
 
 	return 0;
