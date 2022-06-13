@@ -185,8 +185,8 @@ enum sensor_channel {
 	SENSOR_CHAN_NAV_TRACKING_ANGLE,
 	/** Speed over ground in meters pr second */
 	SENSOR_CHAN_NAV_SPEED,
-	/** Dilution of precision */
-	SENSOR_CHAN_NAV_DOP,
+	/** Accuracy radius in meters within 68% certainty */
+	SENSOR_CHAN_NAV_ACCURACY,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
