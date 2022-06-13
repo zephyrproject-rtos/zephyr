@@ -108,6 +108,16 @@
 			current-speed = <115200>;
 		};
 
+		ledc0: ledc@3f419000 {
+			compatible = "espressif,esp32-ledc";
+			pwm-controller;
+			#pwm-cells = <3>;
+			reg = <0x3f419000 0x1000>;
+			label = "LEDC_0";
+			clocks = <&rtc ESP32_LEDC_MODULE>;
+			status = "disabled";
+		};
+
 		gpio0: gpio@3f404000 {
 			compatible = "espressif,esp32-gpio";
 			gpio-controller;

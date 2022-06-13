@@ -1,15 +1,117 @@
-description: ESP32 LEDC
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+
+  Espressif's LEDC controller Node
+
+  The LEDC controller is primarily designed to control the intensity of LEDs, although it can be used to generate
+  PWM signals for other purposes as well.
+
+  The mapping between the channel and GPIO is done through pinctrl
+
+    &ledc0 {
+      pinctrl-0 = <&ledc0_ch0_gpio0>;
+      pinctrl-names = "default";
+    }
+
+  The 'ledc0_ch0_gpio0' node is defined in <board>-pinctrl.dtsi.
+
+    ledc0_ch0_gpio0: ledc0_ch0_gpio0 {
+      pinmux = <LEDC_CH0_GPIO0>;
+      output-enable;
+    };
+
+  If another mapping is desired, just check if the <board>-pinctrl.dtsi already have it defined, or feel free to include a new node.
+  The 'pinmux' property uses a macro defined in https://github.com/zephyrproject-rtos/hal_espressif/tree/zephyr/include/dt-bindings/pinctrl
+  Before including a new node, check if the desired mapping is available according to the SoC.
+
+  It is possible to include multiple channel's mapping in the 'pinmux' property:
+
+    &ledc0 {
+      pinctrl-0 = <&ledc0_ch0_gpio0 &ledc0_ch9_gpio2 &ledc0_ch10_gpio4>;
+      pinctrl-names = "default";
+    }
+
+  Use the child bindings to configure the desired channel:
+
+    &ledc0 {
+      pinctrl-0 = <&ledc0_ch0_gpio0 &ledc0_ch9_gpio2 &ledc0_ch10_gpio4>;
+      pinctrl-names = "default";
+      status = "okay";
+      #address-cells = <1>;
+      #size-cells = <0>;
+      channel0@0 {
+        reg = <0x0>;
+        timer = <0>;
+      };
+      channel9@9 {
+        reg = <0x9>;
+        timer = <0>;
+      };
+      channel10@a {
+        reg = <0xa>;
+        timer = <1>;
+      };
+    };
+
+    Note: The channel's 'reg' property defines the ID of the channel. It must match the channel used in the 'pinmux'.
+
 
 compatible: "espressif,esp32-ledc"
 
-include: [pwm-controller.yaml, base.yaml]
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
-    label:
-      required: true
+  label:
+    required: true
 
-    "#pwm-cells":
-      const: 3
+  "#pwm-cells":
+    const: 3
+
+child-binding:
+  description: Channel configuration.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+
+      description: |
+        The esp32 has 8 low speed channel and 8 high speed channels.
+        The low speed channel are mapped from channel 0 to 7, and the high speed are mapped from channel 8 to 15.
+
+        High speed channels are only available in the esp32 SoC. Esp32s2 has only 8 available channels, and esp32c3
+        has 6. In these SoCs there is no differentiation between low or high speed.
+
+    timer:
+      type: int
+      required: true
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      description: |
+        Timer selection.
+        For maximum flexibility, the high-speed as well as the low-speed channels can be driven from one of four high-speed/low-speed timers.
 
 pwm-cells:
   - channel

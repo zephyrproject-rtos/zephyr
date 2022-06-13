@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/esp32_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-xtensa-intmux.h>
 #include <dt-bindings/pinctrl/esp32-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -135,10 +136,10 @@
 
 		ledc0: ledc@3ff59000 {
 			compatible = "espressif,esp32-ledc";
-			pwm-controller;
 			#pwm-cells = <3>;
 			reg = <0x3ff59000 0x800>;
 			label = "LEDC_0";
+			clocks = <&rtc ESP32_LEDC_MODULE>;
 			status = "disabled";
 		};
 
