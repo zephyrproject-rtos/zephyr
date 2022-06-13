@@ -2808,6 +2808,11 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve, k_timeout_t timeout)
 }
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+const struct bt_conn_auth_cb *bt_conn_auth_cb_get(void)
+{
+	return bt_auth;
+}
+
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 {
 	if (!cb) {
