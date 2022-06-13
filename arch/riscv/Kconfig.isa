@@ -110,3 +110,39 @@ config RISCV_ISA_EXT_ZIFENCEI
 	  The "Zifencei" extension includes the FENCE.I instruction that
 	  provides explicit synchronization between writes to instruction
 	  memory and instruction fetches on the same hart.
+
+config RISCV_ISA_EXT_ZBA
+	bool
+	help
+	  (Zba) - Zba BitManip Extension
+
+	  The Zba instructions can be used to accelerate the generation of
+	  addresses that index into arrays of basic types (halfword, word,
+	  doubleword) using both unsigned word-sized and XLEN-sized indices: a
+	  shifted index is added to a base address.
+
+config RISCV_ISA_EXT_ZBB
+	bool
+	help
+	  (Zbb) - Zbb BitManip Extension (Basic bit-manipulation)
+
+	  The Zbb instructions can be used for basic bit-manipulation (logical
+	  with negate, count leading / trailing zero bits, count population,
+	  etc...).
+
+config RISCV_ISA_EXT_ZBC
+	bool
+	help
+	  (Zbc) - Zbc BitManip Extension (Carry-less multiplication)
+
+	  The Zbc instructions can be used for carry-less multiplication that
+	  is the multiplication in the polynomial ring over GF(2).
+
+config RISCV_ISA_EXT_ZBS
+	bool
+	help
+	  (Zbs) - Zbs BitManip Extension (Single-bit instructions)
+
+	  The Zbs instructions can be used for single-bit instructions that
+	  provide a mechanism to set, clear, invert, or extract a single bit in
+	  a register.

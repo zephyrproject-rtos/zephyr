@@ -53,5 +53,21 @@ if(CONFIG_RISCV_ISA_EXT_ZIFENCEI)
     string(CONCAT riscv_march ${riscv_march} "_zifencei")
 endif()
 
+if(CONFIG_RISCV_ISA_EXT_ZBA)
+    string(CONCAT riscv_march ${riscv_march} "_zba")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_ZBB)
+    string(CONCAT riscv_march ${riscv_march} "_zbb")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_ZBC)
+    string(CONCAT riscv_march ${riscv_march} "_zbc")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_ZBS)
+    string(CONCAT riscv_march ${riscv_march} "_zbs")
+endif()
+
 list(APPEND TOOLCHAIN_C_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
 list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT -mabi=${riscv_mabi} -march=${riscv_march})
