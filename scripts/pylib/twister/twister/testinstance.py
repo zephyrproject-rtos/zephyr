@@ -171,13 +171,9 @@ class TestInstance:
         if handler:
             handler.args = args
             handler.options = options
+            handler.generator_cmd = env.generator_cmd
+            handler.generator = env.generator
             handler.suite_name_check = not options.disable_suite_name_check
-            if options.ninja:
-                handler.generator_cmd = "ninja"
-                handler.generator = "Ninja"
-            else:
-                handler.generator_cmd = "make"
-                handler.generator = "Unix Makefiles"
         self.handler = handler
 
     # Global testsuite parameters
