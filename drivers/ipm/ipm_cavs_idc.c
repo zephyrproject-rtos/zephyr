@@ -13,11 +13,6 @@
 #include <zephyr/arch/common/sys_io.h>
 
 #include <soc.h>
-
-#ifdef CONFIG_SOC_INTEL_S1000
-#include <soc/shim.h>
-#endif
-
 #include "ipm_cavs_idc.h"
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
