@@ -835,6 +835,16 @@ struct btp_mesh_models_metadata_get_rp {
 	uint8_t data[0];
 } __packed;
 
+#define BTP_MESH_OPCODES_AGGREGATOR_INIT	0x55
+struct btp_mesh_opcodes_aggregator_init_cmd {
+	uint16_t net_idx;
+	uint16_t app_idx;
+	uint16_t dst;
+	uint16_t elem_addr;
+} __packed;
+
+#define BTP_MESH_OPCODES_AGGREGATOR_SEND	0x56
+
 #define BTP_MESH_COMP_CHANGE_PREPARE		0x57
 
 #define BTP_MESH_SET_COMP_ALT			0x58
