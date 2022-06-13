@@ -37,7 +37,6 @@
 			      <0xf1060000 0x20000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
-			label = "GIC";
 			status = "okay";
 		};
 
