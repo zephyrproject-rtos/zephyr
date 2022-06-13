@@ -901,7 +901,7 @@ def main():
 
     env.hwm = hwm
 
-    tplan = TestPlan(options.board_root, options.testsuite_root, env, options.outdir)
+    tplan = TestPlan(env)
     try:
         tplan.discover()
     except RuntimeError as e:
