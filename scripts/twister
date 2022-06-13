@@ -199,11 +199,10 @@ except ImportError:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
 from twister.testplan import TestPlan
-from twister.runner import ExecutionCounter
-from twister.enviornment import TwisterEnv, canonical_zephyr_base
+from twister.enviornment import TwisterEnv
 from twister.reports import Reporting
 from twister.hardwaremap import HardwareMap
-from twister.coverage import CoverageTool
+from twister.coverage import run_coverage
 from twister.runner import TwisterRunner
 
 logger = logging.getLogger('twister')
@@ -890,10 +889,11 @@ def main():
     env.discover()
 
     hwm = HardwareMap(env)
-    env.hwm = hwm
     ret = hwm.discover()
     if ret == 0:
         return
+
+    env.hwm = hwm
 
     tplan = TestPlan(options.board_root, options.testsuite_root, env, options.outdir)
     try:
@@ -977,38 +977,10 @@ def main():
     report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
     if options.coverage:
-        if not options.gcov_tool:
-            use_system_gcov = False
-
-            for plat in options.coverage_platform:
-                ts_plat = tplan.get_platform(plat)
-                if ts_plat and (ts_plat.type in {"native", "unit"}):
-                    use_system_gcov = True
-
-            if use_system_gcov or "ZEPHYR_SDK_INSTALL_DIR" not in os.environ:
-                options.gcov_tool = "gcov"
-            else:
-                options.gcov_tool = os.path.join(os.environ["ZEPHYR_SDK_INSTALL_DIR"],
-                                                 "x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
-
-        logger.info("Generating coverage files...")
-        coverage_tool = CoverageTool.factory(options.coverage_tool)
-        coverage_tool.gcov_tool = options.gcov_tool
-        coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
-        coverage_tool.add_ignore_file('generated')
-        coverage_tool.add_ignore_directory('tests')
-        coverage_tool.add_ignore_directory('samples')
-        coverage_tool.generate(options.outdir)
+        run_coverage(tplan, options)
 
     if options.device_testing and not options.build_only:
-        print("\nHardware distribution summary:\n")
-        table = []
-        header = ['Board', 'ID', 'Counter']
-        for d in hwm.duts:
-            if d.connected and d.platform in tplan.selected_platforms:
-                row = [d.platform, d.id, d.counter]
-                table.append(row)
-        print(tabulate(table, headers=header, tablefmt="github"))
+        hwm.summary(tplan.selected_platforms)
 
     report.save_reports(options.report_name,
                        options.report_suffix,
