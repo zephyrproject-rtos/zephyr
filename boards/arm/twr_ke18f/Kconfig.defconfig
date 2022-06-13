@@ -12,6 +12,10 @@ config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc0)"
 	depends on SENSOR && ADC
 
+config I2C_MCUX_LPI2C_BUS_RECOVERY
+	default y
+	depends on I2C_MCUX_LPI2C && PINCTRL
+
 # The KE1xF has 8 MPU regions, which is not enough for both HW stack protection
 # and userspace. Only enable HW stack protection if userspace is not enabled.
 config HW_STACK_PROTECTION
