@@ -23,10 +23,14 @@ default RV32I_CPU
 config RV32I_CPU
 	bool "RISCV32 CPU ISA"
 	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
 
 config RV64I_CPU
 	bool "RISCV64 CPU ISA"
 	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
 	select 64BIT
 
 endchoice

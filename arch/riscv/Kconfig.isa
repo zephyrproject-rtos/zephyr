@@ -68,8 +68,10 @@ config RISCV_ISA_EXT_G
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_F
 	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
 	help
-	  (MAFD) MAFD extensions
+	  (IMAFDZicsr_Zifencei) IMAFDZicsr_Zifencei extensions
 
 config RISCV_ISA_EXT_Q
 	bool
@@ -91,3 +93,20 @@ config RISCV_ISA_EXT_C
 	  RISC-V standard compressed instruction set extension, named "C",
 	  which reduces static and dynamic code size by adding short 16-bit
 	  instruction encodings for common operations.
+
+config RISCV_ISA_EXT_ZICSR
+	bool
+	help
+	  (Zicsr) - Standard Extension for Control and Status Register (CSR) Instructions
+
+	  The "Zicsr" extension introduces support for the full set of CSR
+	  instructions that operate on CSRs registers.
+
+config RISCV_ISA_EXT_ZIFENCEI
+	bool
+	help
+	  (Zifencei) - Standard Extension for Instruction-Fetch Fence
+
+	  The "Zifencei" extension includes the FENCE.I instruction that
+	  provides explicit synchronization between writes to instruction
+	  memory and instruction fetches on the same hart.
