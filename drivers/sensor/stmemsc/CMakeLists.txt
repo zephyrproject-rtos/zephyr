@@ -7,4 +7,5 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_I2C        stmemsc_i2c.c)
+zephyr_library_sources_ifdef(CONFIG_I3C        stmemsc_i3c.c)
 zephyr_library_sources_ifdef(CONFIG_SPI        stmemsc_spi.c)
