@@ -634,6 +634,12 @@ static struct bt_mesh_model root_models[] = {
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI)
 	BT_MESH_MODEL_LARGE_COMP_DATA_CLI(&lcd_cli),
 #endif
+#if defined(CONFIG_BT_MESH_OP_AGG_SRV)
+	BT_MESH_MODEL_OP_AGG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+	BT_MESH_MODEL_OP_AGG_CLI,
+#endif
 #if defined(CONFIG_BT_MESH_RPR_CLI)
 	BT_MESH_MODEL_RPR_CLI(&rpr_cli),
 #endif
@@ -2491,6 +2497,8 @@ static uint8_t config_model_app_bind(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
+	bt_mesh_cfg_cli_timeout_set(5000);
+
 	err = bt_mesh_cfg_cli_mod_app_bind(sys_le16_to_cpu(cp->net_idx),
 					   sys_le16_to_cpu(cp->address),
 					   sys_le16_to_cpu(cp->elem_address),
@@ -2934,7 +2942,7 @@ static uint8_t health_fault_clear(const void *cmd, uint16_t cmd_len,
 		.addr = sys_le16_to_cpu(cp->address),
 		.app_idx = sys_le16_to_cpu(cp->app_idx),
 	};
-	uint8_t test_id;
+	uint8_t test_id = 0;
 	size_t fault_count = 16;
 	uint8_t faults[fault_count];
 	int err;
@@ -2944,7 +2952,20 @@ static uint8_t health_fault_clear(const void *cmd, uint16_t cmd_len,
 	if (cp->ack) {
 		err = bt_mesh_health_cli_fault_clear(&health_cli, &ctx,
 						     sys_le16_to_cpu(cp->cid),
-						     &test_id, faults,
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+						     bt_mesh_op_agg_cli_seq_is_started() ?
+						     NULL :
+#endif
+						     &test_id,
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+						     bt_mesh_op_agg_cli_seq_is_started() ?
+						     NULL :
+#endif
+						     faults,
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+						     bt_mesh_op_agg_cli_seq_is_started() ?
+						     NULL :
+#endif
 						     &fault_count);
 	} else {
 		err = bt_mesh_health_cli_fault_clear_unack(&health_cli, &ctx,
@@ -2977,20 +2998,37 @@ static uint8_t health_fault_test(const void *cmd, uint16_t cmd_len,
 	};
 	size_t fault_count = 16;
 	uint8_t faults[fault_count];
-	uint8_t test_id;
-	uint16_t cid;
 	int err;
 
 	LOG_DBG("");
 
-	test_id = cp->test_id;
-	cid = sys_le16_to_cpu(cp->cid);
-
 	if (cp->ack) {
-		err = bt_mesh_health_cli_fault_test(&health_cli, &ctx, cid, test_id, faults,
+		err = bt_mesh_health_cli_fault_test(&health_cli, &ctx,
+						    sys_le16_to_cpu(cp->cid),
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+						    bt_mesh_op_agg_cli_seq_is_started() ?
+						    0 :
+#endif
+						    cp->test_id,
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+						    bt_mesh_op_agg_cli_seq_is_started() ?
+						    NULL :
+#endif
+						    faults,
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+						    bt_mesh_op_agg_cli_seq_is_started() ?
+						    NULL :
+#endif
 						    &fault_count);
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+		if (bt_mesh_op_agg_cli_seq_is_started()) {
+			fault_count = 0;
+		}
+#endif
 	} else {
-		err = bt_mesh_health_cli_fault_test_unack(&health_cli, &ctx, cid, test_id);
+		err = bt_mesh_health_cli_fault_test_unack(&health_cli, &ctx,
+							  sys_le16_to_cpu(cp->cid),
+							  cp->test_id);
 	}
 
 	if (err) {
@@ -3001,8 +3039,8 @@ static uint8_t health_fault_test(const void *cmd, uint16_t cmd_len,
 	if (cp->ack) {
 		struct btp_mesh_health_fault_test_rp *rp = rsp;
 
-		rp->test_id = test_id;
-		rp->cid = sys_cpu_to_le16(cid);
+		rp->test_id = cp->test_id;
+		rp->cid = cp->cid;
 		(void)memcpy(rp->faults, faults, fault_count);
 
 		*rsp_len = sizeof(*rp) + fault_count;
@@ -3051,6 +3089,10 @@ static uint8_t health_period_set(const void *cmd, uint16_t cmd_len,
 
 	if (cp->ack) {
 		err = bt_mesh_health_cli_period_set(&health_cli, &ctx, cp->divisor,
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+						    bt_mesh_op_agg_cli_seq_is_started() ?
+						    NULL :
+#endif
 						    &updated_divisor);
 	} else {
 		err = bt_mesh_health_cli_period_set_unack(&health_cli, &ctx, cp->divisor);
@@ -3112,6 +3154,10 @@ static uint8_t health_attention_set(const void *cmd, uint16_t cmd_len,
 
 	if (cp->ack) {
 		err = bt_mesh_health_cli_attention_set(&health_cli, &ctx, cp->attention,
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+						       bt_mesh_op_agg_cli_seq_is_started() ?
+						       NULL :
+#endif
 						       &updated_attention);
 	} else {
 		err = bt_mesh_health_cli_attention_set_unack(&health_cli, &ctx, cp->attention);
@@ -3132,6 +3178,41 @@ static uint8_t health_attention_set(const void *cmd, uint16_t cmd_len,
 
 	return BTP_STATUS_SUCCESS;
 }
+
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+static uint8_t opcodes_aggregator_init(const void *cmd, uint16_t cmd_len,
+				       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_opcodes_aggregator_init_cmd *cp = cmd;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_op_agg_cli_seq_start(cp->net_idx, cp->app_idx, cp->dst, cp->elem_addr);
+	if (err) {
+		LOG_ERR("Failed to init Opcodes Aggregator Context (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t opcodes_aggregator_send(const void *cmd, uint16_t cmd_len,
+				       void *rsp, uint16_t *rsp_len)
+{
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_op_agg_cli_seq_send();
+	if (err) {
+		LOG_ERR("Failed to send Opcodes Aggregator message (err %d)", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif
 
 #if defined(CONFIG_BT_MESH_RPR_CLI)
 static uint8_t rpr_scan_start(const void *cmd, uint16_t cmd_len,
@@ -4425,6 +4506,18 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_MESH_MODELS_METADATA_GET,
 		.expect_len = sizeof(struct btp_mesh_models_metadata_get_cmd),
 		.func = models_metadata_get
+	},
+#endif
+#if defined(CONFIG_BT_MESH_OP_AGG_CLI)
+	{
+		.opcode = BTP_MESH_OPCODES_AGGREGATOR_INIT,
+		.expect_len = sizeof(struct btp_mesh_opcodes_aggregator_init_cmd),
+		.func = opcodes_aggregator_init
+	},
+	{
+		.opcode = BTP_MESH_OPCODES_AGGREGATOR_SEND,
+		.expect_len = 0,
+		.func = opcodes_aggregator_send
 	},
 #endif
 	{
