@@ -214,9 +214,7 @@ static struct adt7420_data adt7420_driver;
 static const struct adt7420_dev_config adt7420_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
 #ifdef CONFIG_ADT7420_TRIGGER
-	.int_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.int_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-	.int_name = DT_INST_GPIO_LABEL(0, int_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 #endif
 };
 
