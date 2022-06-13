@@ -253,6 +253,7 @@ endif # LOG_BACKEND_XTENSA_SIM
 config LOG_BACKEND_NET
 	bool "Networking backend"
 	depends on NETWORKING && NET_UDP && !LOG_MODE_IMMEDIATE
+	depends on !LOG1
 	select NET_CONTEXT_NET_PKT_POOL
 	help
 	  Send syslog messages to network server.
