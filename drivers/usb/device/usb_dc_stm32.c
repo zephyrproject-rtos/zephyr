@@ -305,6 +305,11 @@ static int usb_dc_stm32_clock_enable(void)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Disable ULPI interface (for external high-speed PHY) clock in sleep
+	 * mode.
+	 */
+	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB1OTGHSULPI);
 #else
 	/* Disable ULPI interface (for external high-speed PHY) clock in low
 	 * power mode. It is disabled by default in run power mode, no need to
