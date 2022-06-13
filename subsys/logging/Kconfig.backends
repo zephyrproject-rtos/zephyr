@@ -6,6 +6,7 @@ menu "Backends"
 config LOG_BACKEND_UART
 	bool "UART backend"
 	depends on UART_CONSOLE
+	depends on !LOG1
 	default y if !SHELL_BACKEND_SERIAL
 	help
 	  When enabled backend is using UART to output logs.
