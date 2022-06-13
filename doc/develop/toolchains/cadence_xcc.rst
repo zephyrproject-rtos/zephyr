@@ -36,7 +36,7 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
    * Set :envvar:`TOOLCHAIN_VER` to the Xtensa SDK version.
 
 #. For example, assuming the SDK is installed in ``/opt/xtensa``, and
-   using the SDK for application development on ``intel_s1000_crb``,
+   using the SDK for application development on ``intel_adsp_cavs15``,
    setup the environment using:
 
    .. code-block:: console
