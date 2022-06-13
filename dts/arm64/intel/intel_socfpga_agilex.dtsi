@@ -41,7 +41,6 @@
 			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 26 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		label = "arch_timer";
 	};
 
 	sysmgr: sysmgr@ffd12000 {
