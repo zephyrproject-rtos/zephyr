@@ -313,6 +313,7 @@ endif # LOG_BACKEND_NET
 config LOG_BACKEND_ADSP
 	bool "Intel ADSP buffer backend"
 	depends on SOC_FAMILY_INTEL_ADSP
+	depends on !LOG1
 	help
 	  Enable backend for the host trace protocol of the Intel ADSP
 	  family of audio processors
