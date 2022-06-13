@@ -658,15 +658,44 @@ static int can_rcar_set_timing(const struct device *dev,
 	struct can_rcar_data *data = dev->data;
 	int ret = 0;
 
+	struct reg_backup {
+		uint32_t address;
+		uint8_t value;
+	};
+
+	struct reg_backup regs[3] = { { RCAR_CAN_TCR, 0 }, { RCAR_CAN_TFCR, 0 }
+				      , { RCAR_CAN_RFCR, 0 } };
+
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
-	/* Changing bittiming should be done in reset mode */
+	/* Changing bittiming should be done in reset mode.
+	 * Switching to reset mode is resetting loopback mode (TCR),
+	 * transmit and receive FIFOs (TFCR and RFCR).
+	 * Storing these reg values to restore them once back in halt mode.
+	 */
+	for (int i = 0; i < 3; i++) {
+		regs[i].value = sys_read8(config->reg_addr + regs[i].address);
+	}
+
+	/* Switching to reset mode */
 	ret = can_rcar_enter_reset_mode(config, true);
 	if (ret != 0) {
 		goto unlock;
 	}
 
+	/* Setting bit timing */
 	can_rcar_set_bittiming(config, timing);
+
+	/* Restoring registers must be done in halt mode */
+	ret = can_rcar_enter_halt_mode(config);
+	if (ret) {
+		goto unlock;
+	}
+
+	/* Restoring registers */
+	for (int i = 0; i < 3; i++) {
+		sys_write8(regs[i].value, config->reg_addr + regs[i].address);
+	}
 
 	/* Go back to operation mode */
 	ret = can_rcar_enter_operation_mode(config);
