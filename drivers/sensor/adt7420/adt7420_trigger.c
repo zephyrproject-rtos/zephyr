@@ -48,8 +48,8 @@ static void process_int(const struct device *dev)
 	uint8_t status;
 
 	/* Clear the status */
-	if (i2c_reg_read_byte(drv_data->i2c, cfg->i2c_addr,
-			      ADT7420_REG_STATUS, &status) < 0) {
+	if (i2c_reg_read_byte_dt(&cfg->i2c,
+				 ADT7420_REG_STATUS, &status) < 0) {
 		return;
 	}
 
