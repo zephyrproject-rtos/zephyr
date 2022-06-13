@@ -37,24 +37,21 @@ int apds9960_attr_set(const struct device *dev,
 		      const struct sensor_value *val)
 {
 	const struct apds9960_config *config = dev->config;
-	struct apds9960_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_PROX) {
 		if (attr == SENSOR_ATTR_UPPER_THRESH) {
-			if (i2c_reg_write_byte(data->i2c,
-					       config->i2c_address,
-					       APDS9960_PIHT_REG,
-					       (uint8_t)val->val1)) {
+			if (i2c_reg_write_byte_dt(&config->i2c,
+						  APDS9960_PIHT_REG,
+						  (uint8_t)val->val1)) {
 				return -EIO;
 			}
 
 			return 0;
 		}
 		if (attr == SENSOR_ATTR_LOWER_THRESH) {
-			if (i2c_reg_write_byte(data->i2c,
-					       config->i2c_address,
-					       APDS9960_PILT_REG,
-					       (uint8_t)val->val1)) {
+			if (i2c_reg_write_byte_dt(&config->i2c,
+						  APDS9960_PILT_REG,
+						  (uint8_t)val->val1)) {
 				return -EIO;
 			}
 
@@ -78,11 +75,10 @@ int apds9960_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_THRESHOLD:
 		if (trig->chan == SENSOR_CHAN_PROX) {
 			data->p_th_handler = handler;
-			if (i2c_reg_update_byte(data->i2c,
-						config->i2c_address,
-						APDS9960_ENABLE_REG,
-						APDS9960_ENABLE_PIEN,
-						APDS9960_ENABLE_PIEN)) {
+			if (i2c_reg_update_byte_dt(&config->i2c,
+						   APDS9960_ENABLE_REG,
+						   APDS9960_ENABLE_PIEN,
+						   APDS9960_ENABLE_PIEN)) {
 				return -EIO;
 			}
 		} else {

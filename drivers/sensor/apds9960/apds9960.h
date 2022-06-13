@@ -213,11 +213,10 @@
 #define APDS9960_DEFAULT_GCONF3		0
 
 struct apds9960_config {
-	char *i2c_name;
+	struct i2c_dt_spec i2c;
 	char *gpio_name;
 	uint8_t gpio_pin;
 	unsigned int gpio_flags;
-	uint8_t i2c_address;
 	uint8_t pgain;
 	uint8_t again;
 	uint8_t ppcount;
@@ -225,7 +224,6 @@ struct apds9960_config {
 };
 
 struct apds9960_data {
-	const struct device *i2c;
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_work work;
