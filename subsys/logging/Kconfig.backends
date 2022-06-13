@@ -212,6 +212,7 @@ endif # LOG_BACKEND_SPINEL
 config LOG_BACKEND_NATIVE_POSIX
 	bool "Native backend"
 	depends on ARCH_POSIX
+	depends on !LOG1
 	default y if !SERIAL
 	help
 	  Enable backend in native_posix
