@@ -59,7 +59,6 @@
 /soc/arm/xilinx_zynq7000/                 @ibirnbaum
 /soc/arm/xilinx_zynqmp/                   @stephanosio
 /soc/arm/renesas_rcar/                    @aaillet @pmarzin
-/soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
 /soc/arm64/                               @carlocaione
 /soc/arm64/qemu_cortex_a53/               @carlocaione
 /soc/arm64/bcm_vk/                        @abhishek-brcm
@@ -177,7 +176,6 @@
 /boards/x86/                              @dcpleung @nashif @jenmwms @aasthagr
 /boards/x86/acrn/                         @enjiamai
 /boards/xtensa/                           @nashif @dcpleung
-/boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
 /boards/xtensa/nxp_adsp_imx8/             @iuliana-prodan @dbaluta
 /boards/sparc/                            @martin-aberg
@@ -651,7 +649,6 @@
 /samples/basic/minimal/                   @carlescufi
 /samples/basic/servo_motor/boards/*microbit* @jhe
 /samples/bluetooth/                       @jhedberg @Vudentz @alwa-nordic @sjanc
-/samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/compression/                     @Navin-Sankar
 /samples/drivers/can/                     @alexanderwachter @henrikbrixandersen
 /samples/drivers/clock_control_litex/     @mateusz-holenko @kgugala @pgielda
@@ -786,7 +783,6 @@ scripts/gen_image_info.py                 @tejlmand
 /tests/arch/arm/                          @ioannisg @stephanosio
 /tests/benchmarks/cmsis_dsp/              @stephanosio
 /tests/boards/native_posix/               @aescolar @daor-oti
-/tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @alwa-nordic @jhedberg @Vudentz @sjanc
 /tests/bluetooth/controller/              @cvinayak @thoh-ot @kruithofa @erbr-ot @sjanc @ppryga
 /tests/bluetooth/bsim_bt/                 @alwa-nordic @jhedberg @Vudentz @wopu-ot
