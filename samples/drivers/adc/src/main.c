@@ -115,8 +115,12 @@ void main(void)
 				 */
 				int32_t mv_value = raw_value;
 
-				adc_raw_to_millivolts(adc_vref, ADC_GAIN,
-					ADC_RESOLUTION, &mv_value);
+				/* adc_raw_to_millivolts(adc_vref, ADC_GAIN, */
+				/* 	ADC_RESOLUTION, &mv_value); */
+				adc_raw_to_millivolts(adc_vref,
+						      channel_cfg.gain,
+						      sequence.resolution,
+						      &mv_value);
 				printk(" = %d mV  ", mv_value);
 			}
 		}

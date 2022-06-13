@@ -36,6 +36,12 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32);
 
+#define MIN(a, b)         (((a) < (b)) ? (a) : (b))
+#define MAX(a, b)         (((a) > (b)) ? (a) : (b))
+#define CLIP(min, max, x) (MIN(MAX((min), (x)), (max)))
+
+#define ADC_ESP32_RESOLUTION_OFFSET (9)
+
 struct adc_esp32_cfg;
 
 static int adc_esp32_init          (const struct device *dev);
@@ -55,7 +61,20 @@ static const struct adc_driver_api api_esp32_driver_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async    = adc_esp32_read_async,
 #endif /* CONFIG_ADC_ASYNC */
+	.ref_internal  = 1100; /* this is the default used in
+			          espressif:adc1_example_main.c */
 };
+/* TODO add support for the ref_internal member required for the adc_driver_api.
+ * This value should probably be updated on initialisation and on calibration.
+ *
+ * According to espressif:adc1_example_main.c, adc2_vref_to_gpio is a function
+ * used to measure the internal voltage reference.
+ *
+ * According to the espressif:esp_adc_cal_characterize function, the function
+ * read_efuse_vref can be used to obtained a reading as well, but apparently
+ * the so-called efuse is not always available, this can be checked with
+ * check_efuse_vref.
+ */
 
 enum adc_esp32_devid_e {
 	ADC1 = '1',
@@ -65,8 +84,8 @@ enum adc_esp32_devid_e {
 
 /* To house ESP32-specific stuff */
 struct adc_esp32_devconf {
-	adc_atten_t       atten; /* adc-specific (adc1_config_width) */
-	adc_bits_width_t  width; /* channel-specific (adc1_config_channel_atten) */
+	adc_bits_width_t  width; /* adc-specific (adc1_config_width) */
+	adc_atten_t       atten; /* channel-specific (adc1_config_channel_atten) */
 	uint8_t channel_count; /* maps to adc1_channel_t or adc2_channel_t, must
 				  be set to the relevant ADCn_CHANNEL_MAX from
 				  the devicetree configuration. */
@@ -80,12 +99,21 @@ struct adc_esp32_devconf {
 
 /* Implementation */
 
-static enum adc_esp32_devid helper_get_devid(const struct device  *dev)
+/*
+ * Get the ADC device.
+ *
+ * Returns the ADC device which dev is associated to.
+ */
+static enum adc_esp32_devid
+adc_esp32_get_devid(const struct device  *dev)
 {
 	/* TODO: find a better way of identifying the device that doesn't rely
 	 * on strings. */
 	/* dev->name is either "ADC1" or "ADC2".  To check which ADC the device
 	 * corresponds to, it is only necessary to check character 3. */
+	/* TODO Note that Espressif already defines an enum for this,
+	 * adc_ll_num_t.  We don't currently use that one because it doesn't
+	 * have an entry for an invalid ADC device. */
 	switch (dev->name[3]) {
 	case '1':
 		return ADC1;
@@ -99,20 +127,37 @@ static enum adc_esp32_devid helper_get_devid(const struct device  *dev)
 	}
 }
 
-static int adc_esp32_init(const struct device *dev)
+static int
+adc_esp32_init(const struct device *dev)
 {
 	adc_hal_init();
 	return 0;
 }
 
-static int adc_esp32_channel_setup (const struct device *dev,
-				    const struct adc_channel_cfg *channel_cfg)
+static int
+adc_esp32_channel_setup	(const struct device *dev,
+			 const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_esp32_devconf  *devconf = dev->config;
-	enum adc_esp32_devid             id      = helper_get_devid(dev);
+	enum adc_esp32_devid             id      = adc_esp32_get_devid(dev);
 
 	if (channel_cfg->channel_id >= devconf->channel_count) {
 		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
+		return -EINVAL;
+	}
+
+	if (channel_cfg->differential) {
+		LOG_ERR("Differential channels are not supported");
+		return -EINVAL;
+	}
+
+	if (channel_cfg->gain != ADC_GAIN_1) {
+		LOG_ERR("Invalid channel gain");
+		return -EINVAL;
+	}
+
+	if (channel_cfg->reference != ADC_REF_INTERNAL) {
+		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
 
@@ -123,6 +168,8 @@ static int adc_esp32_channel_setup (const struct device *dev,
 					  devconf->atten);
 		break;
 	case ADC2:
+		/* Width / resolution for the ADC2 is configured with the
+		 * adc2_get_raw function, i.e. at read-time. */
 		adc2_config_channel_atten((adc2_channel_t) channel_cfg->channel_id,
 					  devconf->atten);
 		break;
@@ -150,10 +197,11 @@ static int adc_esp32_channel_setup (const struct device *dev,
  * Reads samples for the channels specified in the sequence struct.
  * Stores one sample per channel on the sequence struct buffer.
  */
-static int adc_esp32_read          (const struct device *dev,
-			            const struct adc_sequence *sequence)
+static int
+adc_esp32_read	(const struct device *dev,
+		 const struct adc_sequence *sequence)
 {
-	enum adc_esp32_devid id = helper_get_devid(dev);
+	enum adc_esp32_devid id = adc_esp32_get_devid(dev);
 
 	if (id == ADC_ID_INVALID) {
 		return -EINVAL;
@@ -172,9 +220,30 @@ static int adc_esp32_read          (const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	/* resolution in Zephyr is width in Espressif. */
+	/* ESP32 supports only resolutions of 9, 10, 11 and 12 bits, which are
+	 * mapped as follows:
+	 * zephyr_resolution : espressif_resolution
+	 * -           9 bit : 0
+	 * -          10 bit : 1
+	 * -          11 bit : 2
+	 * -          12 bit : 3
+	 * i.e., zephyr_resolution - 9 = espressif_resolution
+	 * Other ESP32XX versions may support up to 13 bits of resolution.
+	 */
+	int16_t offset_resolution = (int16_t) sequence->resolution - ADC_ESP32_RESOLUTION_OFFSET;
+	uint8_t esp32_resolution  = (uint8_t) CLIP((int16_t) ADC_WIDTH_BIT_9,
+				                   (int16_t) SOC_ADC_MAX_BITWIDTH,
+				                   (int16_t) offset_resolution);
+	if (offset_resolution != esp32_resolution) {
+		LOG_ERR("Resolution not supported, using nearest: %d bits",
+			esp32_resolution);
+	}
+
 	if (sequence->calibrate) {
-		/* TODO: Find out how to calibrate. */
-		adc_esp32_calibrate();
+		/* TODO: Find out how to calibrate. Possibly, resolution needs
+		 * to be applied before calibration. */
+		LOG_ERR("Calibration not supported yet");
 	}
 
 	/* TODO: Find out if there are equivalent HAL functions for the
@@ -182,25 +251,28 @@ static int adc_esp32_read          (const struct device *dev,
 	int reading;
 	switch (id) {
 	case ADC1:
+		adc1_config_width((adc_bits_width_t) esp32_resolution);
 		reading = adc1_get_raw((adc1_channel_t) channel_cfg->channel_id);
 		break;
 	case ADC2:
-		reading = adc2_get_raw((adc2_channel_t) channel_cfg->channel_id);
+		adc2_get_raw((adc2_channel_t)   channel_cfg->channel_id,
+			     (adc_bits_width_t) esp32_resolution,
+			     &reading);
 		break;
 	default:
-		/* Error already handled by helper_get_devid */
+		/* Error already handled by adc_esp32_get_devid */
 		break;
 	}
-	/* Set resolution, according to channel */
 	sequence->buffer[chan_idx] = raw_value;
 
 	return 0;
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_esp32_read_async    (const struct device *dev,
-			            const struct adc_sequence *sequence,
-			            struct k_poll_signal *async)
+static int
+adc_esp32_read_async	(const struct device *dev,
+			 const struct adc_sequence *sequence,
+			 struct k_poll_signal *async)
 {
 	(void)(dev);
 	(void)(sequence);
