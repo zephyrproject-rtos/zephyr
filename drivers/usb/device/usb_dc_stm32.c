@@ -394,14 +394,11 @@ static int usb_dc_stm32_init(void)
 #endif /* CONFIG_USB_DEVICE_SOF */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/* Currently assuming FS mode. Need to disable the ULPI clock on USB2 and
-	 * enable the FS clock. Need to make this dependent on HS or FS config.
+	/* Currently assuming FS mode. Need to disable the ULPI clock on USB2.
+	 * Need to make this dependent on HS or FS config.
 	 */
 
 	LL_AHB1_GRP1_DisableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHSULPI);
-
-	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
-	LL_AHB1_GRP1_EnableClockSleep(LL_AHB1_GRP1_PERIPH_USB2OTGHS);
 
 	LL_PWR_EnableUSBVoltageDetector();
 
