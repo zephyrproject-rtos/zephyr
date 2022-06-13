@@ -146,12 +146,6 @@ class TestInstance:
             handler.call_make_run = False
         elif self.platform.type == "native":
             handler = BinaryHandler(self, "native")
-
-            handler.asan = options.enable_asan
-            handler.valgrind = options.enable_valgrind
-            handler.lsan = options.enable_lsan
-            handler.ubsan = options.enable_ubsan
-            handler.coverage = options.enable_coverage
             handler.call_make_run = False
             handler.binary = os.path.join(self.build_dir, "zephyr", "zephyr.exe")
         elif self.platform.simulation == "renode":
@@ -162,7 +156,6 @@ class TestInstance:
             handler = BinaryHandler(self, "tsim")
         elif options.device_testing:
             handler = DeviceHandler(self, "device")
-            handler.coverage = options.enable_coverage
             handler.call_make_run = False
         elif self.platform.simulation == "nsim":
             if find_executable("nsimdrv"):
