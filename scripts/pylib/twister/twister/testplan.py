@@ -161,20 +161,17 @@ class TestPlan:
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
 
-    def __init__(self, board_root_list=[], testsuite_roots=[], env=None, outdir=None):
-
-        self.roots = testsuite_roots
-        if not isinstance(board_root_list, list):
-            self.board_roots = [board_root_list]
-        else:
-            self.board_roots = board_root_list
+    def __init__(self, env=None):
 
         self.options = env.options
         self.env = env
 
-        # Test Plan Options
-        self.suite_name_check = True
-        self.seed = 0
+        self.roots = self.options.testsuite_root
+        if not isinstance(self.options.board_root, list):
+            self.board_roots = [self.options.board_root]
+        else:
+            self.board_roots = self.options.board_root
+        self.outdir = os.path.abspath(self.options.outdir)
 
         # Keep track of which test cases we've filtered out and why
         self.testsuites = {}
@@ -184,7 +181,6 @@ class TestPlan:
         self.selected_platforms = []
         self.filtered_platforms = []
         self.default_platforms = []
-        self.outdir = os.path.abspath(outdir)
         self.load_errors = 0
         self.instances = dict()
         self.warnings = 0
