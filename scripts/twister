@@ -911,7 +911,11 @@ def main():
     if tplan.report() == 0:
         return
 
-    tplan.load()
+    try:
+        tplan.load()
+    except RuntimeError as e:
+        logger.error(f"{e}")
+        sys.exit(1)
 
     if options.list_tests and options.platform:
         tplan.report_platform_tests(options.platform)
