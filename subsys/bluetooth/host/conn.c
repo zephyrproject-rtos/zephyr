@@ -2860,6 +2860,26 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 	return 0;
 }
 
+#if defined(CONFIG_BT_SMP)
+int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *cb)
+{
+	/* The cancel callback must always be provided if the app provides
+	 * interactive callbacks.
+	 */
+	if (!cb->cancel &&
+	    (cb->passkey_display || cb->passkey_entry || cb->passkey_confirm ||
+	     cb->pairing_confirm)) {
+		return -EINVAL;
+	}
+
+	if (conn->type == BT_CONN_TYPE_LE) {
+		return bt_smp_auth_cb_overlay(conn, cb);
+	}
+
+	return -ENOTSUP;
+}
+#endif
+
 int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 {
 	CHECKIF(cb == NULL) {
@@ -2886,16 +2906,15 @@ int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb)
 
 int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 {
-	if (!bt_auth) {
-		return -EINVAL;
-	}
-
 	if (IS_ENABLED(CONFIG_BT_SMP) && conn->type == BT_CONN_TYPE_LE) {
-		bt_smp_auth_passkey_entry(conn, passkey);
-		return 0;
+		return bt_smp_auth_passkey_entry(conn, passkey);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+		if (!bt_auth) {
+			return -EINVAL;
+		}
+
 		return bt_ssp_auth_passkey_entry(conn, passkey);
 	}
 
@@ -2904,17 +2923,15 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 
 int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 {
-	if (!bt_auth) {
-		return -EINVAL;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SMP) &&
-	    conn->type == BT_CONN_TYPE_LE) {
+	if (IS_ENABLED(CONFIG_BT_SMP) && conn->type == BT_CONN_TYPE_LE) {
 		return bt_smp_auth_passkey_confirm(conn);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
-	    conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+		if (!bt_auth) {
+			return -EINVAL;
+		}
+
 		return bt_ssp_auth_passkey_confirm(conn);
 	}
 
@@ -2923,41 +2940,36 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn)
 
 int bt_conn_auth_cancel(struct bt_conn *conn)
 {
-	if (!bt_auth) {
-		return -EINVAL;
-	}
-
 	if (IS_ENABLED(CONFIG_BT_SMP) && conn->type == BT_CONN_TYPE_LE) {
 		return bt_smp_auth_cancel(conn);
 	}
 
-#if defined(CONFIG_BT_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
+	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+		if (!bt_auth) {
+			return -EINVAL;
+		}
+
 		return bt_ssp_auth_cancel(conn);
 	}
-#endif /* CONFIG_BT_BREDR */
 
 	return -EINVAL;
 }
 
 int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 {
-	if (!bt_auth) {
-		return -EINVAL;
+	if (IS_ENABLED(CONFIG_BT_SMP) && conn->type == BT_CONN_TYPE_LE) {
+		return bt_smp_auth_pairing_confirm(conn);
 	}
 
-	switch (conn->type) {
-#if defined(CONFIG_BT_SMP)
-	case BT_CONN_TYPE_LE:
-		return bt_smp_auth_pairing_confirm(conn);
-#endif /* CONFIG_BT_SMP */
-#if defined(CONFIG_BT_BREDR)
-	case BT_CONN_TYPE_BR:
+	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+		if (!bt_auth) {
+			return -EINVAL;
+		}
+
 		return bt_ssp_auth_pairing_confirm(conn);
-#endif /* CONFIG_BT_BREDR */
-	default:
-		return -EINVAL;
 	}
+
+	return -EINVAL;
 }
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
