@@ -54,6 +54,33 @@ static int mbc_validate_response_fc(struct modbus_context *ctx,
 	return 0;
 }
 
+static int mbc_validate_fc03_response(struct modbus_context *ctx, uint16_t *ptbl)
+{
+	size_t resp_byte_cnt;
+	size_t req_byte_cnt;
+	uint16_t req_qty;
+	uint8_t *resp_data;
+
+	resp_byte_cnt = ctx->rx_adu.data[0];
+	resp_data = &ctx->rx_adu.data[1];
+	req_qty = sys_get_be16(&ctx->tx_adu.data[2]);
+	req_byte_cnt = req_qty * sizeof(uint16_t);
+
+	if (req_byte_cnt != resp_byte_cnt) {
+		LOG_ERR("Mismatch in the number of registers");
+		return -EINVAL;
+	}
+
+	for (uint16_t i = 0; i < req_qty; i++) {
+		uint16_t reg_val = sys_get_be16(resp_data);
+
+		memcpy(&ptbl[i], &reg_val, sizeof(uint16_t));
+		resp_data += sizeof(uint16_t);
+	}
+
+	return 0;
+}
+
 static int mbc_validate_fc03fp_response(struct modbus_context *ctx, float *ptbl)
 {
 	size_t resp_byte_cnt;
@@ -125,8 +152,12 @@ static int mbc_validate_rd_response(struct modbus_context *ctx,
 		break;
 
 	case MODBUS_FC03_HOLDING_REG_RD:
-		if (IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS) &&
-		    (req_addr >= MODBUS_FP_EXTENSIONS_ADDR)) {
+		if ((req_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
+		    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+			err = mbc_validate_fc03_response(ctx, (uint16_t *)data);
+			break;
+		} else {
+			/* Read floating-point register */
 			err = mbc_validate_fc03fp_response(ctx, (float *)data);
 			break;
 		}
