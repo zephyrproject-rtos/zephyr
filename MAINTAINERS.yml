@@ -1645,7 +1645,6 @@ Intel Platforms (Xtensa):
     files:
         - boards/xtensa/intel_*/
         - soc/xtensa/intel_*/
-        - samples/boards/intel_s1000_crb/
     labels:
         - "platform: Intel CAVS"
 
