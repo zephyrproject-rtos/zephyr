@@ -897,7 +897,7 @@ def main():
     hwm = HardwareMap(env)
     ret = hwm.discover()
     if ret == 0:
-        return
+        return 0
 
     env.hwm = hwm
 
@@ -906,20 +906,20 @@ def main():
         tplan.discover()
     except RuntimeError as e:
         logger.error(f"{e}")
-        sys.exit(1)
+        return 1
 
     if tplan.report() == 0:
-        return
+        return 0
 
     try:
         tplan.load()
     except RuntimeError as e:
         logger.error(f"{e}")
-        sys.exit(1)
+        return 1
 
     if options.list_tests and options.platform:
         tplan.report_platform_tests(options.platform)
-        return
+        return 0
 
     if VERBOSE > 1:
         # if we are using command line platform filter, no need to list every
@@ -941,14 +941,14 @@ def main():
 
     if options.report_excluded:
         tplan.report_excluded_tests()
-        return
+        return 0
 
     report = Reporting(tplan, env)
     report.json_report(os.path.join(options.outdir, "testplan.json"))
 
     if options.save_tests:
         report.json_report(options.save_tests)
-        return
+        return 0
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
@@ -958,7 +958,7 @@ def main():
     if options.dry_run:
         duration = time.time() - start_time
         logger.info("Completed in %d seconds" % (duration))
-        return
+        return 0
 
     if options.short_build_path:
         tplan.create_build_dir_links()
@@ -1001,13 +1001,18 @@ def main():
 
     logger.info("Run completed")
     if runner.results.failed or runner.results.error or (tplan.warnings and options.warnings_as_errors):
-        sys.exit(1)
+        return 1
+
+    return 0
 
 
 if __name__ == "__main__":
+    ret = 0
     try:
-        main()
+        ret = main()
     finally:
         if (os.name != "nt") and os.isatty(1):
             # (OS is not Windows) and (stdout is interactive)
             os.system("stty sane")
+
+    sys.exit(ret)
