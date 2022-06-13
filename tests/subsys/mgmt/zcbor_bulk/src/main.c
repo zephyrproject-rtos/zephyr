@@ -39,8 +39,7 @@ void test_correct(void)
 
 	zassert_true(ok, "Expected to be successful in encoding test pattern");
 
-	zassert_true(zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1),
-		"Failed to init");
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
 
 	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
 
@@ -81,8 +80,7 @@ void test_correct_out_of_order(void)
 
 	zassert_true(ok, "Expected to be successful in encoding test pattern");
 
-	zassert_true(zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1),
-		"Failed to init");
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
 
 	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
 
@@ -121,8 +119,7 @@ void test_not_map(void)
 
 	zassert_true(ok, "Expected to be successful in encoding test pattern");
 
-	zassert_true(zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1),
-		"Failed to init");
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
 
 	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
 
@@ -157,8 +154,7 @@ void test_bad_type(void)
 
 	zassert_true(ok, "Expected to be successful in encoding test pattern");
 
-	zassert_true(zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1),
-		"Failed to init");
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
 
 	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
 
@@ -194,8 +190,7 @@ void test_bad_type_2(void)
 	     zcbor_tstr_put_lit(zsd, "bool_val") && zcbor_true_put(zsd)			&&
 	     zcbor_map_end_encode(zsd, 10);
 
-	zassert_true(zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1),
-		"Failed to init");
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
 
 	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
 
@@ -236,8 +231,7 @@ void test_bad_type_encoded(void)
 
 	zassert_true(ok, "Expected to be successful in encoding test pattern");
 
-	zassert_true(zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1),
-		"Failed to init");
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
 
 	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
 
@@ -272,8 +266,7 @@ void test_duplicate(void)
 	     zcbor_tstr_put_lit(zsd, "hello") && zcbor_tstr_put_lit(zsd, "world")	&&
 	     zcbor_map_end_encode(zsd, 10);
 
-	zassert_true(zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1),
-		"Failed to init");
+	zcbor_new_decode_state(zsd, 4, buffer, ARRAY_SIZE(buffer), 1);
 
 	int rc = zcbor_map_decode_bulk(zsd, dm, ARRAY_SIZE(dm), &decoded);
 

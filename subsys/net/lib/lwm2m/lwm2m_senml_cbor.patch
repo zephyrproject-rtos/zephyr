@@ -1,0 +1,347 @@
+From f4609477c99e5921c1f744d318a3534d3d70530e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=98yvind=20R=C3=B8nningstad?=
+ <oyvind.ronningstad@nordicsemi.no>
+Date: Fri, 1 Jul 2022 09:54:09 +0200
+Subject: [PATCH] patch
+
+---
+ .../net/lib/lwm2m/lwm2m_senml_cbor_decode.c   | 29 ++++++-----
+ .../net/lib/lwm2m/lwm2m_senml_cbor_decode.h   | 16 +++----
+ .../net/lib/lwm2m/lwm2m_senml_cbor_encode.c   | 48 ++++++++++---------
+ .../net/lib/lwm2m/lwm2m_senml_cbor_encode.h   | 16 +++----
+ subsys/net/lib/lwm2m/lwm2m_senml_cbor_types.h | 25 ++++++++--
+ 5 files changed, 78 insertions(+), 56 deletions(-)
+
+diff --git a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_decode.c b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_decode.c
+index 1a64bd3502..8dfa3bb03a 100644
+--- a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_decode.c
++++ b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_decode.c
+@@ -1,20 +1,21 @@
++/*
++ * Copyright (c) 2022 Nordic Semiconductor ASA
++ *
++ * SPDX-License-Identifier: Apache-2.0
++ */
+ /*
+  * Generated using zcbor version 0.5.1
+- * https://github.com/NordicSemiconductor/zcbor
++ * https://github.com/zephyrproject-rtos/zcbor
+  * Generated with a --default-max-qty of 99
+  */
+
+-#include "lwm2m_senml_cbor_decode.h"
+-#include "zcbor_decode.h"
+
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <string.h>
+-
+-#if DEFAULT_MAX_QTY != 99
+-#error "The type file was generated with a different default_max_qty than this file"
+-#endif
++#include "zcbor_decode.h"
++#include "lwm2m_senml_cbor_decode.h"
+
+ static bool decode_repeated_record_bn(zcbor_state_t *state, struct record_bn *result);
+ static bool decode_repeated_record_n(zcbor_state_t *state, struct record_n *result);
+@@ -60,8 +61,8 @@ static bool decode_repeated_record_union(zcbor_state_t *state, struct record_uni
+ 	bool tmp_result = (((zcbor_union_start_code(state) &&
+ 			     (int_res = (((((zcbor_uint32_expect_union(state, (2)))) &&
+ 					   (zcbor_int64_decode(state, (&(*result)._union_vi))) &&
+-					   ((((*result)._union_vi >= -9223372036854775807LL) &&
+-					     ((*result)._union_vi <= 9223372036854775807LL)) ||
++					   ((((*result)._union_vi >= INT64_MIN) &&
++					     ((*result)._union_vi <= INT64_MAX)) ||
+ 					    (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) &&
+ 					  (((*result)._record_union_choice = _union_vi) || 1)) ||
+ 					 ((((zcbor_uint32_expect_union(state, (2)))) &&
+@@ -96,8 +97,8 @@ static bool decode_value(zcbor_state_t *state, struct value_ *result)
+ 			       (((zcbor_bstr_decode(state, (&(*result)._value_bstr)))) &&
+ 				(((*result)._value_choice = _value_bstr) || 1)) ||
+ 			       (((zcbor_int64_decode(state, (&(*result)._value_int))) &&
+-				 ((((*result)._value_int >= -9223372036854775807LL) &&
+-				   ((*result)._value_int <= 9223372036854775807LL)) ||
++				 ((((*result)._value_int >= INT64_MIN) &&
++				   ((*result)._value_int <= INT64_MAX)) ||
+ 				  (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) &&
+ 				(((*result)._value_choice = _value_int) || 1)) ||
+ 			       (((zcbor_float_decode(state, (&(*result)._value_float)))) &&
+@@ -153,7 +154,8 @@ static bool decode_record(zcbor_state_t *state, struct record *result)
+ 		     zcbor_present_decode(&((*result)._record_union_present),
+ 					  (zcbor_decoder_t *)decode_repeated_record_union, state,
+ 					  (&(*result)._record_union)) &&
+-		     zcbor_multi_decode(0, 3, &(*result)._record__key_value_pair_count,
++		     zcbor_multi_decode(0, ARRAY_SIZE(result->_record__key_value_pair),
++					&(*result)._record__key_value_pair_count,
+ 					(zcbor_decoder_t *)decode_repeated_record__key_value_pair,
+ 					state, (&(*result)._record__key_value_pair),
+ 					sizeof(struct record__key_value_pair))) ||
+@@ -172,7 +174,8 @@ static bool decode_lwm2m_senml(zcbor_state_t *state, struct lwm2m_senml *result)
+
+ 	bool tmp_result = ((
+ 		(zcbor_list_start_decode(state) &&
+-		 ((zcbor_multi_decode(1, 99, &(*result)._lwm2m_senml__record_count,
++		 ((zcbor_multi_decode(1, ARRAY_SIZE(result->_lwm2m_senml__record),
++				      &(*result)._lwm2m_senml__record_count,
+ 				      (zcbor_decoder_t *)decode_record, state,
+ 				      (&(*result)._lwm2m_senml__record), sizeof(struct record))) ||
+ 		  (zcbor_list_map_end_force_decode(state), false)) &&
+diff --git a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_decode.h b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_decode.h
+index 1bc78642d3..ddff913391 100644
+--- a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_decode.h
++++ b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_decode.h
+@@ -1,23 +1,23 @@
++/*
++ * Copyright (c) 2022 Nordic Semiconductor ASA
++ *
++ * SPDX-License-Identifier: Apache-2.0
++ */
+ /*
+  * Generated using zcbor version 0.5.1
+- * https://github.com/NordicSemiconductor/zcbor
++ * https://github.com/zephyrproject-rtos/zcbor
+  * Generated with a --default-max-qty of 99
+  */
+
+ #ifndef LWM2M_SENML_CBOR_DECODE_H__
+ #define LWM2M_SENML_CBOR_DECODE_H__
+
+-#include "lwm2m_senml_cbor_types.h"
+-#include "zcbor_decode.h"
+-
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <string.h>
+-
+-#if DEFAULT_MAX_QTY != 99
+-#error "The type file was generated with a different default_max_qty than this file"
+-#endif
++#include "zcbor_decode.h"
++#include "lwm2m_senml_cbor_types.h"
+
+ int cbor_decode_lwm2m_senml(const uint8_t *payload, size_t payload_len, struct lwm2m_senml *result,
+ 			    size_t *payload_len_out);
+diff --git a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_encode.c b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_encode.c
+index 07dc20e3a9..11007bd92f 100644
+--- a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_encode.c
++++ b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_encode.c
+@@ -1,20 +1,21 @@
++/*
++ * Copyright (c) 2022 Nordic Semiconductor ASA
++ *
++ * SPDX-License-Identifier: Apache-2.0
++ */
+ /*
+  * Generated using zcbor version 0.5.1
+- * https://github.com/NordicSemiconductor/zcbor
++ * https://github.com/zephyrproject-rtos/zcbor
+  * Generated with a --default-max-qty of 99
+  */
+
+-#include "lwm2m_senml_cbor_encode.h"
+-#include "zcbor_encode.h"
+-
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <string.h>
+-
+-#if DEFAULT_MAX_QTY != 99
+-#error "The type file was generated with a different default_max_qty than this file"
+-#endif
++#include "zcbor_encode.h"
++#include "lwm2m_senml_cbor_encode.h"
++#include "lwm2m_senml_cbor_types.h"
+
+ static bool encode_repeated_record_bn(zcbor_state_t *state, const struct record_bn *input);
+ static bool encode_repeated_record_n(zcbor_state_t *state, const struct record_n *input);
+@@ -59,8 +60,8 @@ static bool encode_repeated_record_union(zcbor_state_t *state, const struct reco
+ 	bool tmp_result = (((
+ 		((*input)._record_union_choice == _union_vi)
+ 			? (((zcbor_uint32_put(state, (2)))) &&
+-			   ((((*input)._union_vi >= -9223372036854775807LL) &&
+-			     ((*input)._union_vi <= 9223372036854775807LL)) ||
++			   ((((*input)._union_vi >= INT64_MIN) &&
++			     ((*input)._union_vi <= INT64_MAX)) ||
+ 			    (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)) &&
+ 			   (zcbor_int64_encode(state, (&(*input)._union_vi))))
+ 			: (((*input)._record_union_choice == _union_vf)
+@@ -78,8 +79,8 @@ static bool encode_repeated_record_union(zcbor_state_t *state, const struct reco
+ 								    ? (((zcbor_uint32_put(state,
+ 											  (8)))) &&
+ 								       (zcbor_bstr_encode(
+-									       state,
+-									       (&(*input)._union_vd))))
++									state,
++									(&(*input)._union_vd))))
+ 								    : false)))))));
+
+ 	if (!tmp_result)
+@@ -99,9 +100,9 @@ static bool encode_value(zcbor_state_t *state, const struct value_ *input)
+ 				   ? ((zcbor_bstr_encode(state, (&(*input)._value_bstr))))
+ 				   : (((*input)._value_choice == _value_int)
+ 					      ? (((((*input)._value_int >=
+-						    -9223372036854775807LL) &&
++						    INT64_MIN) &&
+ 						   ((*input)._value_int <=
+-						    9223372036854775807LL)) ||
++						    INT64_MAX)) ||
+ 						  (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE),
+ 						   false)) &&
+ 						 (zcbor_int64_encode(state,
+@@ -112,8 +113,8 @@ static bool encode_value(zcbor_state_t *state, const struct value_ *input)
+ 								   (&(*input)._value_float))))
+ 							 : (((*input)._value_choice == _value_bool)
+ 								    ? ((zcbor_bool_encode(
+-									      state,
+-									      (&(*input)._value_bool))))
++									state,
++									(&(*input)._value_bool))))
+ 								    : false)))))));
+
+ 	if (!tmp_result)
+@@ -152,7 +153,9 @@ static bool encode_record(zcbor_state_t *state, const struct record *input)
+ {
+ 	zcbor_print("%s\r\n", __func__);
+
+-	bool tmp_result = (((zcbor_map_start_encode(state, 6) &&
++	int max_keys = ARRAY_SIZE(input->_record__key_value_pair);
++
++	bool tmp_result = (((zcbor_map_start_encode(state, max_keys + 3) &&
+ 			     ((zcbor_present_encode(&((*input)._record_bn_present),
+ 						    (zcbor_encoder_t *)encode_repeated_record_bn,
+ 						    state, (&(*input)._record_bn)) &&
+@@ -163,12 +166,12 @@ static bool encode_record(zcbor_state_t *state, const struct record *input)
+ 						    (zcbor_encoder_t *)encode_repeated_record_union,
+ 						    state, (&(*input)._record_union)) &&
+ 			       zcbor_multi_encode_minmax(
+-				       0, 3, &(*input)._record__key_value_pair_count,
++				       0, max_keys, &(*input)._record__key_value_pair_count,
+ 				       (zcbor_encoder_t *)encode_repeated_record__key_value_pair,
+ 				       state, (&(*input)._record__key_value_pair),
+ 				       sizeof(struct record__key_value_pair))) ||
+ 			      (zcbor_list_map_end_force_encode(state), false)) &&
+-			     zcbor_map_end_encode(state, 6))));
++			     zcbor_map_end_encode(state, max_keys + 3))));
+
+ 	if (!tmp_result)
+ 		zcbor_trace();
+@@ -179,14 +182,15 @@ static bool encode_record(zcbor_state_t *state, const struct record *input)
+ static bool encode_lwm2m_senml(zcbor_state_t *state, const struct lwm2m_senml *input)
+ {
+ 	zcbor_print("%s\r\n", __func__);
++	size_t max_records = ARRAY_SIZE(input->_lwm2m_senml__record);
+
+-	bool tmp_result = (((zcbor_list_start_encode(state, 99) &&
++	bool tmp_result = (((zcbor_list_start_encode(state, max_records) &&
+ 			     ((zcbor_multi_encode_minmax(
+-				      1, 99, &(*input)._lwm2m_senml__record_count,
++				      1, max_records, &(*input)._lwm2m_senml__record_count,
+ 				      (zcbor_encoder_t *)encode_record, state,
+ 				      (&(*input)._lwm2m_senml__record), sizeof(struct record))) ||
+ 			      (zcbor_list_map_end_force_encode(state), false)) &&
+-			     zcbor_list_end_encode(state, 99))));
++			     zcbor_list_end_encode(state, max_records))));
+
+ 	if (!tmp_result)
+ 		zcbor_trace();
+diff --git a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_encode.h b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_encode.h
+index 431bc18760..563b82a917 100644
+--- a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_encode.h
++++ b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_encode.h
+@@ -1,23 +1,23 @@
++/*
++ * Copyright (c) 2022 Nordic Semiconductor ASA
++ *
++ * SPDX-License-Identifier: Apache-2.0
++ */
+ /*
+  * Generated using zcbor version 0.5.1
+- * https://github.com/NordicSemiconductor/zcbor
++ * https://github.com/zephyrproject-rtos/zcbor
+  * Generated with a --default-max-qty of 99
+  */
+
+ #ifndef LWM2M_SENML_CBOR_ENCODE_H__
+ #define LWM2M_SENML_CBOR_ENCODE_H__
+
+-#include "lwm2m_senml_cbor_types.h"
+-#include "zcbor_encode.h"
+-
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <string.h>
+-
+-#if DEFAULT_MAX_QTY != 99
+-#error "The type file was generated with a different default_max_qty than this file"
+-#endif
++#include "zcbor_encode.h"
++#include "lwm2m_senml_cbor_types.h"
+
+ int cbor_encode_lwm2m_senml(uint8_t *payload, size_t payload_len, const struct lwm2m_senml *input,
+ 			    size_t *payload_len_out);
+diff --git a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_types.h b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_types.h
+index f02b7df151..d8e7d3405a 100644
+--- a/subsys/net/lib/lwm2m/lwm2m_senml_cbor_types.h
++++ b/subsys/net/lib/lwm2m/lwm2m_senml_cbor_types.h
+@@ -1,18 +1,33 @@
++/*
++ * Copyright (c) 2022 Nordic Semiconductor ASA
++ *
++ * SPDX-License-Identifier: Apache-2.0
++ */
+ /*
+  * Generated using zcbor version 0.5.1
+- * https://github.com/NordicSemiconductor/zcbor
++ * https://github.com/zephyrproject-rtos/zcbor
+  * Generated with a --default-max-qty of 99
+  */
+
+ #ifndef LWM2M_SENML_CBOR_TYPES_H__
+ #define LWM2M_SENML_CBOR_TYPES_H__
+
+-#include "zcbor_encode.h"
+-
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <string.h>
++#include "zcbor_common.h"
++
++
++enum lwm2m_senml_cbor_key {
++	lwm2m_senml_cbor_key_bn = -2,
++	lwm2m_senml_cbor_key_n  = 0,
++	lwm2m_senml_cbor_key_vi = 2,
++	lwm2m_senml_cbor_key_vf = 2,
++	lwm2m_senml_cbor_key_vs = 3,
++	lwm2m_senml_cbor_key_vb = 4,
++	lwm2m_senml_cbor_key_vd = 8,
++};
+
+ /** Which value for --default-max-qty this file was created with.
+  *
+@@ -21,7 +36,7 @@
+  *
+  *  See `zcbor --help` for more information about --default-max-qty
+  */
+-#define DEFAULT_MAX_QTY 99
++#define DEFAULT_MAX_QTY CONFIG_LWM2M_RW_SENML_CBOR_RECORDS
+
+ struct record_bn {
+ 	struct zcbor_string _record_bn;
+@@ -96,7 +111,7 @@ struct record {
+ };
+
+ struct lwm2m_senml {
+-	struct record _lwm2m_senml__record[99];
++	struct record _lwm2m_senml__record[DEFAULT_MAX_QTY];
+ 	uint_fast32_t _lwm2m_senml__record_count;
+ };
+
+--
+2.37.0
+
