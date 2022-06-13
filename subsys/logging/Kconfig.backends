@@ -364,6 +364,7 @@ endif # LOG_BACKEND_CAVS_HDA
 config LOG_BACKEND_FS
 	bool "File system backend"
 	depends on FILE_SYSTEM
+	depends on !LOG1
 	help
 	  When enabled, backend is using the configured file system to output logs.
 	  As the file system must be mounted for the logging to work, it must be
