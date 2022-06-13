@@ -30,7 +30,5 @@ if(NOT CMAKE_GDB OR GDB_CFG_ERR)
   endif()
 endif()
 
-find_program(CMAKE_GDB     gdb-multiarch           PATHS ${TOOLCHAIN_HOME}                )
-
 # Include bin tool properties
 include(${ZEPHYR_BASE}/cmake/bintools/gnu/target_bintools.cmake)
