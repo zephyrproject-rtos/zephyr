@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(APDS9960, CONFIG_SENSOR_LOG_LEVEL);
 
 static void apds9960_handle_cb(struct apds9960_data *drv_data)
 {
-	apds9960_setup_int(drv_data, false);
+	apds9960_setup_int(drv_data->dev->config, false);
 
 #ifdef CONFIG_APDS9960_TRIGGER
 	k_work_submit(&drv_data->work);
@@ -59,7 +59,7 @@ static int apds9960_sample_fetch(const struct device *dev,
 	}
 
 #ifndef CONFIG_APDS9960_TRIGGER
-	apds9960_setup_int(data, true);
+	apds9960_setup_int(config, true);
 
 #ifdef CONFIG_APDS9960_ENABLE_ALS
 	tmp = APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN;
@@ -360,24 +360,19 @@ static int apds9960_init_interrupt(const struct device *dev)
 	const struct apds9960_config *config = dev->config;
 	struct apds9960_data *drv_data = dev->data;
 
-	/* setup gpio interrupt */
-	drv_data->gpio = device_get_binding(config->gpio_name);
-	if (drv_data->gpio == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
-			config->gpio_name);
-		return -EINVAL;
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("%s: device %s is not ready", dev->name,
+			config->int_gpio.port->name);
+		return -ENODEV;
 	}
 
-	drv_data->gpio_pin = config->gpio_pin;
-
-	gpio_pin_configure(drv_data->gpio, config->gpio_pin,
-			   GPIO_INPUT | config->gpio_flags);
+	gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT | config->int_gpio.dt_flags);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   apds9960_gpio_callback,
-			   BIT(config->gpio_pin));
+			   BIT(config->int_gpio.pin));
 
-	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
+	if (gpio_add_callback(config->int_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
@@ -396,9 +391,9 @@ static int apds9960_init_interrupt(const struct device *dev)
 #else
 	k_sem_init(&drv_data->data_sem, 0, K_SEM_MAX_LIMIT);
 #endif
-	apds9960_setup_int(drv_data, true);
+	apds9960_setup_int(drv_data->dev->config, true);
 
-	if (gpio_pin_get(drv_data->gpio, drv_data->gpio_pin) > 0) {
+	if (gpio_pin_get_dt(&config->int_gpio) > 0) {
 		apds9960_handle_cb(drv_data);
 	}
 
@@ -481,9 +476,7 @@ static const struct sensor_driver_api apds9960_driver_api = {
 
 static const struct apds9960_config apds9960_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
-	.gpio_name = DT_INST_GPIO_LABEL(0, int_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 #if CONFIG_APDS9960_PGAIN_8X
 	.pgain = APDS9960_PGAIN_8X,
 #elif CONFIG_APDS9960_PGAIN_4X
