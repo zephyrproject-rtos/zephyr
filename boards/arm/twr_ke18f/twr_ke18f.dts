@@ -243,6 +243,8 @@
 	status = "okay";
 	pinctrl-0 = <&lpi2c0_default>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 
 	fxos8700: fxos8700@1d {
 		compatible = "nxp,fxos8700";
@@ -256,6 +258,8 @@
 	status = "okay";
 	pinctrl-0 = <&lpi2c1_default>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiod 9 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
 };
 
 &lpspi0 {
