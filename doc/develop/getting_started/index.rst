@@ -24,7 +24,7 @@ Click the operating system you are using.
 
    .. group-tab:: Ubuntu
 
-      This guide covers Ubuntu version 18.04 LTS and later.
+      This guide covers Ubuntu version 18.04 LTS and 20.04 LTS.
 
       .. code-block:: bash
 
