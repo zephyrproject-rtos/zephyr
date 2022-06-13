@@ -37,7 +37,6 @@
 				     <GIC_PPI 10 IRQ_TYPE_EDGE
 					IRQ_DEFAULT_PRIORITY>;
 			reg = <0xf8f00200 0x1C>;
-			label = "arch_timer";
 		};
 
 		gic: interrupt-controller@f8f01000 {

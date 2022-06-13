@@ -49,7 +49,6 @@
 			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		label = "arch_timer";
 	};
 
 	uartclk: apb-pclk {
@@ -71,7 +70,6 @@
 			      <0x00 0x80a0000 0x00 0xf60000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
-			label = "GIC";
 			status = "okay";
 		};
 
