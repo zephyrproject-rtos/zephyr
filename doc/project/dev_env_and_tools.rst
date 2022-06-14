@@ -111,7 +111,7 @@ TSC and Working Groups
 Changes that introduce new features or functionality or change the way the
 overall system works need to be reviewed by the TSC or the responsible Working
 Group. For example for :ref:`stable API changes <stable_api_changes>`, the
-proposal needs to be presented in the API meeting so that the relevant
+proposal needs to be presented in the Architecture meeting so that the relevant
 stakeholders are made aware of the change.
 
 A Pull-Request should have an Assignee
