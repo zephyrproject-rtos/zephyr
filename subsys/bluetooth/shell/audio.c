@@ -1330,9 +1330,9 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	if (IS_ENABLED(CONFIG_BT_AUDIO_CAPABILITY)) {
 		/* Mark all supported contexts as available */
 		bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SINK,
-							   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+							   BT_AUDIO_CONTEXT_TYPE_ANY);
 		bt_audio_capability_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-							   BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+							   BT_AUDIO_CONTEXT_TYPE_ANY);
 	}
 
 #if defined(CONFIG_BT_AUDIO_UNICAST)
