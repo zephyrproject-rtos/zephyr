@@ -28,7 +28,6 @@
  * header file.
  */
 
-#include <zephyr/zephyr.h>
 #include <zephyr/kernel.h>
 #include <cmsis_os2.h>
 #include <zephyr/sys/printk.h>
