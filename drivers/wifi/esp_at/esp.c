@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <stdlib.h>
