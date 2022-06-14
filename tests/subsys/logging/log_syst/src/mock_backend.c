@@ -123,9 +123,9 @@ static void panic(struct log_backend const *const backend)
 }
 
 const struct log_backend_api mock_log_backend_api = {
-	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
+	.process = process,
 	.init = mock_init,
-	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
+	.format_set = format_set,
 	.panic = panic
 };
 
