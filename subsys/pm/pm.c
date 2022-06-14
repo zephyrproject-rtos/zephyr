@@ -201,7 +201,7 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 
 bool pm_system_suspend(int32_t ticks)
 {
-	uint8_t id = _current_cpu->id;
+	uint8_t id = CURRENT_CPU;
 	k_spinlock_key_t key;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
