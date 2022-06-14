@@ -16,6 +16,8 @@
 #include <zephyr/random/rand32.h>
 #include <mbedtls/entropy.h>
 
+#include <mbedtls/debug.h>
+
 #if defined(CONFIG_MBEDTLS)
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
@@ -84,6 +86,10 @@ static int _mbedtls_init(const struct device *device)
 	ARG_UNUSED(device);
 
 	init_heap();
+
+#if defined(CONFIG_MBEDTLS_DEBUG_LEVEL)
+	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
+#endif
 
 	return 0;
 }
