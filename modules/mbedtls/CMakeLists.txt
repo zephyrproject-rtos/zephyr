@@ -9,6 +9,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
   target_include_directories(mbedTLS INTERFACE
     ${ZEPHYR_CURRENT_MODULE_DIR}/include
     configs
+    include
   )
 
   zephyr_library()
@@ -23,6 +24,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
     ${mbedtls_sources}
   )
 
+  zephyr_library_sources_ifdef(CONFIG_MBEDTLS_DEBUG debug.c)
   zephyr_library_sources_ifdef(CONFIG_MBEDTLS_SHELL shell.c)
 
   zephyr_library_app_memory(k_mbedtls_partition)
