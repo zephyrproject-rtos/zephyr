@@ -391,12 +391,6 @@ static void set_up_plls(void)
 	}
 #endif
 
-#if STM32_PLL_Q_DIVISOR
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLP,
-		   STM32_PLL_Q_DIVISOR
-		   << RCC_PLLCFGR_PLLP_Pos);
-#endif
-
 	config_pll_sysclock();
 
 	/* Enable PLL */
