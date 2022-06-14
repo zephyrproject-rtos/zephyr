@@ -11,7 +11,6 @@
  * This module contains routines that are used to initialize the kernel.
  */
 
-#include <zephyr/zephyr.h>
 #include <offsets_short.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
