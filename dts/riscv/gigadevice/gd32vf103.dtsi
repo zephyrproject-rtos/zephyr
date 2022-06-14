@@ -45,8 +45,9 @@
 		};
 
 		eclic: interrupt-controller@d2000000 {
-			#interrupt-cells = <2>;
 			compatible = "nuclei,eclic";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			reg =  <0xd2000000 0x0001
 				0xd2000004 0x0004
@@ -181,6 +182,7 @@
 
 		exti: interrupt-controller@40010400 {
 			compatible = "gd,gd32-exti";
+			#address-cells = <0>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			reg = <0x40010400 0x400>;

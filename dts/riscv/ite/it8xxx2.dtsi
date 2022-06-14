@@ -491,8 +491,9 @@
 		};
 
 		intc: interrupt-controller@f03f00 {
-			#interrupt-cells = <2>;
 			compatible = "ite,it8xxx2-intc";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			reg = <0x00f03f00 0x0100>;
 		};
