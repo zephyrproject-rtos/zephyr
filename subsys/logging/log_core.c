@@ -279,6 +279,10 @@ static inline void msg_finalize(struct log_msg *msg,
 
 void log_0(const char *str, struct log_msg_ids src_level)
 {
+	if (!IS_ENABLED(CONFIG_LOG1)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_0(str, src_level);
 	} else {
@@ -295,6 +299,10 @@ void log_1(const char *str,
 	   log_arg_t arg0,
 	   struct log_msg_ids src_level)
 {
+	if (!IS_ENABLED(CONFIG_LOG1)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_1(str, arg0, src_level);
 	} else {
@@ -312,6 +320,10 @@ void log_2(const char *str,
 	   log_arg_t arg1,
 	   struct log_msg_ids src_level)
 {
+	if (!IS_ENABLED(CONFIG_LOG1)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_2(str, arg0, arg1, src_level);
 	} else {
@@ -331,6 +343,10 @@ void log_3(const char *str,
 	   log_arg_t arg2,
 	   struct log_msg_ids src_level)
 {
+	if (!IS_ENABLED(CONFIG_LOG1)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_3(str, arg0, arg1, arg2, src_level);
 	} else {
@@ -349,6 +365,10 @@ void log_n(const char *str,
 	   uint32_t narg,
 	   struct log_msg_ids src_level)
 {
+	if (!IS_ENABLED(CONFIG_LOG1)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_n(str, args, narg, src_level);
 	} else {
@@ -385,6 +405,10 @@ const struct log_backend *log_format_set_all_active_backends(size_t log_type)
 void log_hexdump(const char *str, const void *data, uint32_t length,
 		 struct log_msg_ids src_level)
 {
+	if (!IS_ENABLED(CONFIG_LOG1)) {
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_hexdump(str, (const uint8_t *)data, length,
 				     src_level);
