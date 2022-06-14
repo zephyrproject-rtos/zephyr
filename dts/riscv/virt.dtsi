@@ -46,9 +46,10 @@
 			compatible = "riscv";
 
 			hlic0: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = < 0x01 >;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 
@@ -59,9 +60,10 @@
 			compatible = "riscv";
 
 			hlic1: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = < 0x01 >;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 
@@ -72,9 +74,10 @@
 			compatible = "riscv";
 
 			hlic2: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = < 0x01 >;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 
@@ -85,9 +88,10 @@
 			compatible = "riscv";
 
 			hlic3: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = < 0x01 >;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 
@@ -98,9 +102,10 @@
 			compatible = "riscv";
 
 			hlic4: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = < 0x01 >;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 
@@ -111,9 +116,10 @@
 			compatible = "riscv";
 
 			hlic5: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = < 0x01 >;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 
@@ -124,9 +130,10 @@
 			compatible = "riscv";
 
 			hlic6: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = < 0x01 >;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 
@@ -137,9 +144,10 @@
 			compatible = "riscv";
 
 			hlic7: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = < 0x01 >;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 	};
@@ -174,8 +182,8 @@
 			>;
 			interrupt-controller;
 			compatible = "sifive,plic-1.0.0";
-			#interrupt-cells = < 0x02 >;
 			#address-cells = < 0x00 >;
+			#interrupt-cells = < 0x02 >;
 		};
 
 		clint@2000000 {
@@ -191,6 +199,7 @@
 			>;
 			reg = < 0x2000000 0x10000 >;
 			compatible = "riscv,clint0";
+			#address-cells = <0>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
 		};
