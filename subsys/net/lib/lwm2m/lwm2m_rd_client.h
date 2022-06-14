@@ -50,5 +50,6 @@ void engine_bootstrap_finish(void);
 int lwm2m_rd_client_connection_resume(struct lwm2m_ctx *client_ctx);
 #endif
 void engine_update_tx_time(void);
+struct lwm2m_message *lwm2m_get_ongoing_rd_msg(void);
 
 #endif /* LWM2M_RD_CLIENT_H */
