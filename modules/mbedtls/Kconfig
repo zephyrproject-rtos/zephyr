@@ -108,6 +108,9 @@ config MBEDTLS_DEBUG_LEVEL
 	  3 Information
 	  4 Verbose
 
+	  This makes Zephyr call mbedtls_debug_set_threshold() function during
+	  mbedTLS initialization, with the configured debug log level.
+
 config MBEDTLS_MEMORY_DEBUG
 	bool "mbed TLS memory debug activation"
 	depends on MBEDTLS_BUILTIN

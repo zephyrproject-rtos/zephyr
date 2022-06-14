@@ -45,7 +45,6 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <mbedtls/ssl.h>
 #include <mbedtls/ssl_cookie.h>
 #include <mbedtls/error.h>
-#include <mbedtls/debug.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/ssl_cache.h>
 #endif /* CONFIG_MBEDTLS */
@@ -311,10 +310,6 @@ static int tls_init(const struct device *unused)
 	(void)memset(client_cache, 0, sizeof(client_cache));
 
 	k_mutex_init(&context_lock);
-
-#if defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG)
-	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
-#endif
 
 #if defined(MBEDTLS_SSL_CACHE_C)
 	mbedtls_ssl_cache_init(&server_cache);
