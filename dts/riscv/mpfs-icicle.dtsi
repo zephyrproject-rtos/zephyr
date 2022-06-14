@@ -81,7 +81,7 @@
 			status = "disabled";
 		};
 
-		qspi0: qspi@21000000 {
+		qspi0: spi@21000000 {
 			compatible = "microchip,mpfs-qspi";
 			#address-cells = <1>;
 			#size-cells = <0>;
