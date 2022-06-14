@@ -1248,7 +1248,9 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 	.ts2 = DT_PROP_OR(DT_NODELABEL(can2), phase_seg2, 0),
 	.one_shot = DT_PROP(DT_NODELABEL(can2), one_shot),
 	.pclken = {
-		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can2), bits),
+		/* can1 (master) clock must be enabled for can2 as well */
+		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can1), bits) |
+		       DT_CLOCKS_CELL(DT_NODELABEL(can2), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),
 	},
 	.config_irq = config_can_2_irq,
