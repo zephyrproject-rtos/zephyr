@@ -266,6 +266,10 @@ int lll_adv_data_init(struct lll_adv_pdu *pdu)
 		return -ENOMEM;
 	}
 
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+	PDU_ADV_NEXT_PTR(p) = NULL;
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+
 	p->len = 0U;
 	pdu->pdu[0] = (void *)p;
 
@@ -518,6 +522,10 @@ int lll_adv_and_extra_data_init(struct lll_adv_pdu *pdu)
 	if (!p) {
 		return -ENOMEM;
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+	PDU_ADV_NEXT_PTR(p) = NULL;
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
 
 	pdu->pdu[0] = (void *)p;
 
