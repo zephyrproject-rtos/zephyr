@@ -21,6 +21,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 
+#define CURRENT_CPU \
+	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
+
 static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_NUM_CPUS);
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 
@@ -160,7 +163,7 @@ static inline void pm_state_notify(bool entering_state)
 
 void pm_system_resume(void)
 {
-	uint8_t id = _current_cpu->id;
+	uint8_t id = CURRENT_CPU;
 
 	/*
 	 * This notification is called from the ISR of the event
