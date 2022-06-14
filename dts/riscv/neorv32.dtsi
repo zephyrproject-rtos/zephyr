@@ -30,6 +30,7 @@
 				#interrupt-cells = <1>;
 
 				firq: firq {
+					#address-cells = <1>;
 					interrupt-map-mask = <0x0 0xffffffff>;
 					interrupt-map = <
 						0  0 &intc 0 16

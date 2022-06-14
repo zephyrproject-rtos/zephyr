@@ -34,8 +34,9 @@
 		compatible = "litex,vexriscv";
 		ranges;
 		intc0: interrupt-controller@bc0 {
-			#interrupt-cells = <2>;
 			compatible = "vexriscv-intc0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			reg = <0xbc0 0x4 0xfc0 0x4>;
 			reg-names = "irq_mask", "irq_pending";

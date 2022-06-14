@@ -47,8 +47,9 @@
 		};
 
 		intc: interrupt-controller@600c2000 {
-			#interrupt-cells = <1>;
 			compatible = "espressif,esp32-intc";
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
 			interrupt-controller;
 			reg = <0x600c2000 0x198>;
 			label = "INTC_0";

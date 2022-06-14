@@ -18,8 +18,9 @@
 			reg = <0>;
 			riscv,isa = "rv32imac";
 			hlic: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
@@ -42,8 +43,9 @@
 		};
 
 		plic: interrupt-controller@40000000 {
-			#interrupt-cells = <2>;
 			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
 			reg = <0x40000000 0x2000

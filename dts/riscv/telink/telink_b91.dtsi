@@ -117,6 +117,7 @@
 
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			reg = < 0xe4000000 0x00001000
