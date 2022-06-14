@@ -5410,11 +5410,6 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 	}
 
 	msg->operation = LWM2M_OP_READ;
-
-	obs->resource_update = false;
-	obs->active_tx_operation = true;
-
-
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_RESPONSE_CODE_CONTENT;
 	msg->mid = coap_next_id();
@@ -5456,6 +5451,8 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 		goto cleanup;
 	}
 
+	obs->active_tx_operation = true;
+	obs->resource_update = false;
 	lwm2m_information_interface_send(msg);
 
 	LOG_DBG("NOTIFY MSG: SENT");
