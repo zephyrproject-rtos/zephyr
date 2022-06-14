@@ -28,6 +28,7 @@ The features include the following:
   - UART
   - ADC
   - DAC
+  - LED PWM with up to 8 channels
 
 System requirements
 *******************
