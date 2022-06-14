@@ -3,13 +3,13 @@ zephyr_interface_library_named(mbedTLS)
 
 if(CONFIG_MBEDTLS_BUILTIN)
   target_compile_definitions(mbedTLS INTERFACE
-	  MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
-	)
+    MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
+  )
 
   target_include_directories(mbedTLS INTERFACE
     ${ZEPHYR_CURRENT_MODULE_DIR}/include
     configs
-	)
+  )
 
   zephyr_library()
 
@@ -41,8 +41,8 @@ elseif (CONFIG_MBEDTLS_LIBRARY)
   # therefore susceptible to bit rot
 
   target_include_directories(mbedTLS INTERFACE
-	${CONFIG_MBEDTLS_INSTALL_PATH}
-	)
+    ${CONFIG_MBEDTLS_INSTALL_PATH}
+  )
 
   zephyr_link_libraries(
     mbedtls_external
