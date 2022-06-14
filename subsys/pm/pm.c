@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/kernel.h>
 #include <zephyr/timeout_q.h>
 #include <zephyr/init.h>
