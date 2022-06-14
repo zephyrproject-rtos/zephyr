@@ -1373,7 +1373,7 @@ def main():
                        )
 
     logger.info("Run completed")
-    if results.failed or (tplan.warnings and options.warnings_as_errors):
+    if results.failed or results.error or (tplan.warnings and options.warnings_as_errors):
         sys.exit(1)
 
 
