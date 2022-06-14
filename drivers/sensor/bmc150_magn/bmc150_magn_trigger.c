@@ -51,12 +51,11 @@ int bmc150_magn_trigger_set(const struct device *dev,
 		data->handler_drdy = handler;
 		data->trigger_drdy = *trig;
 
-		if (i2c_reg_update_byte(data->i2c_master,
-					config->i2c_slave_addr,
-					BMC150_MAGN_REG_INT_DRDY,
-					BMC150_MAGN_MASK_DRDY_EN,
-					state << BMC150_MAGN_SHIFT_DRDY_EN)
-					< 0) {
+		if (i2c_reg_update_byte_dt(&config->i2c,
+					   BMC150_MAGN_REG_INT_DRDY,
+					   BMC150_MAGN_MASK_DRDY_EN,
+					   state << BMC150_MAGN_SHIFT_DRDY_EN)
+					   < 0) {
 			LOG_DBG("failed to set DRDY interrupt");
 			return -EIO;
 		}
@@ -90,10 +89,9 @@ static void bmc150_magn_thread_main(struct bmc150_magn_data *data)
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
 
-		while (i2c_reg_read_byte(data->i2c_master,
-					 config->i2c_slave_addr,
-					 BMC150_MAGN_REG_INT_STATUS,
-					 &reg_val) < 0) {
+		while (i2c_reg_read_byte_dt(&config->i2c,
+					    BMC150_MAGN_REG_INT_STATUS,
+					    &reg_val) < 0) {
 			LOG_DBG("failed to clear data ready interrupt");
 		}
 
@@ -114,10 +112,10 @@ static int bmc150_magn_set_drdy_polarity(const struct device *dev, int state)
 		state = 1;
 	}
 
-	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				   BMC150_MAGN_REG_INT_DRDY,
-				   BMC150_MAGN_MASK_DRDY_DR_POLARITY,
-				   state << BMC150_MAGN_SHIFT_DRDY_DR_POLARITY);
+	return i2c_reg_update_byte_dt(&config->i2c,
+				      BMC150_MAGN_REG_INT_DRDY,
+				      BMC150_MAGN_MASK_DRDY_DR_POLARITY,
+				      state << BMC150_MAGN_SHIFT_DRDY_DR_POLARITY);
 }
 
 int bmc150_magn_init_interrupt(const struct device *dev)
@@ -133,10 +131,10 @@ int bmc150_magn_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
-				BMC150_MAGN_REG_INT_DRDY,
-				BMC150_MAGN_MASK_DRDY_EN,
-				0 << BMC150_MAGN_SHIFT_DRDY_EN) < 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c,
+				   BMC150_MAGN_REG_INT_DRDY,
+				   BMC150_MAGN_MASK_DRDY_EN,
+				   0 << BMC150_MAGN_SHIFT_DRDY_EN) < 0) {
 		LOG_DBG("failed to set data ready interrupt enabled bit");
 		return -EIO;
 	}
