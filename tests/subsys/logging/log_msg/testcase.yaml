@@ -1,7 +1,0 @@
-common:
-  integration_platforms:
-    - native_posix
-
-tests:
-  logging.log_msg:
-    tags: log_msg logging
