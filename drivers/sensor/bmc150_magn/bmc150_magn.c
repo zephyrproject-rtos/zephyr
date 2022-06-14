@@ -587,11 +587,8 @@ static int bmc150_magn_init(const struct device *dev)
 
 static const struct bmc150_magn_config bmc150_magn_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
-#if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	.gpio_drdy_dev_name = DT_INST_GPIO_LABEL(0, drdy_gpios),
-	.gpio_drdy_int_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
-	.gpio_drdy_int_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
-#endif
+	IF_ENABLED(CONFIG_BMC150_MAGN_TRIGGER_DRDY,
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET(0, drdy_gpios),))
 };
 
 static struct bmc150_magn_data bmc150_magn_data;

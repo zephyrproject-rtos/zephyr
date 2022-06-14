@@ -86,9 +86,7 @@
 struct bmc150_magn_config {
 	struct i2c_dt_spec i2c;
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	char *gpio_drdy_dev_name;
-	gpio_pin_t gpio_drdy_int_pin;
-	gpio_dt_flags_t gpio_drdy_int_flags;
+	struct gpio_dt_spec int_gpio;
 #endif
 };
 
