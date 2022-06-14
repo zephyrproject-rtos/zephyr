@@ -14,6 +14,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
     # and if so remove this include path.
     ${ZEPHYR_CURRENT_MODULE_DIR}/library
     configs
+    include
   )
 
   zephyr_library()
@@ -28,6 +29,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
     ${mbedtls_sources}
   )
 
+  zephyr_library_sources_ifdef(CONFIG_MBEDTLS_DEBUG debug.c)
   zephyr_library_sources_ifdef(CONFIG_MBEDTLS_SHELL shell.c)
 
   # mbedTLS v3.1.0 is having unused variables and functions in /library/ssl_msg.c
