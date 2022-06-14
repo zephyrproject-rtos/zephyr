@@ -296,6 +296,7 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
  * we could have non-locked entries here too.
  */
 static ulong_t global_pmp_cfg[1];
+static ulong_t global_pmp_last_addr;
 
 /* End of global PMP entry range */
 static unsigned int global_pmp_end_index;
@@ -333,15 +334,40 @@ void z_riscv_pmp_init(void)
 	if (global_pmp_end_index != 0) {
 		__ASSERT(global_pmp_end_index == index, "");
 		__ASSERT(global_pmp_cfg[0] == pmp_cfg[0], "");
+		__ASSERT(global_pmp_last_addr == pmp_addr[index - 1]);
 	}
 #endif
 
 	global_pmp_cfg[0] = pmp_cfg[0];
+	global_pmp_last_addr = pmp_addr[index - 1];
 	global_pmp_end_index = index;
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("initial register dump");
 	}
+}
+
+/**
+ * @Brief Initialize the per-thread PMP register copy with global values.
+ */
+static inline unsigned int z_riscv_pmp_thread_init(ulong_t *pmp_addr,
+						   ulong_t *pmp_cfg,
+						   unsigned int index_limit)
+{
+	ARG_UNUSED(index_limit);
+
+	/*
+	 * Retrieve pmpcfg0 partial content from global entries.
+	 */
+	pmp_cfg[0] = global_pmp_cfg[0];
+
+	/*
+	 * Retrieve the pmpaddr value matching the last global PMP slot.
+	 * This is so that set_pmp_entry() can safely attempt TOR with it.
+	 */
+	pmp_addr[global_pmp_end_index - 1] = global_pmp_last_addr;
+
+	return global_pmp_end_index;
 }
 
 #ifdef CONFIG_PMP_STACK_GUARD
@@ -353,11 +379,8 @@ void z_riscv_pmp_init(void)
  */
 void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 {
-	unsigned int index = global_pmp_end_index;
+	unsigned int index = z_riscv_pmp_thread_init(PMP_M_MODE(thread));
 	uintptr_t stack_bottom;
-
-	/* Retrieve pmpcfg0 partial content from global entries */
-	thread->arch.m_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
 
 	/* make the bottom addresses of our stack inaccessible */
 	stack_bottom = thread->stack_info.start - K_KERNEL_STACK_RESERVED;
@@ -445,10 +468,7 @@ void z_riscv_pmp_usermode_init(struct k_thread *thread)
  */
 void z_riscv_pmp_usermode_prepare(struct k_thread *thread)
 {
-	unsigned int index = global_pmp_end_index;
-
-	/* Retrieve pmpcfg0 partial content from global entries */
-	thread->arch.u_mode_pmpcfg_regs[0] = global_pmp_cfg[0];
+	unsigned int index = z_riscv_pmp_thread_init(PMP_U_MODE(thread));
 
 	/* Map the usermode stack */
 	set_pmp_entry(&index, PMP_R | PMP_W,
