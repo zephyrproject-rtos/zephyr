@@ -90,7 +90,7 @@
 		#size-cells = <1>;
 
 		/* Reserve 60kB for the bootloader */
-		boot_partition: partition@0000 {
+		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x00000000 0x0000F000>;
 			read-only;
