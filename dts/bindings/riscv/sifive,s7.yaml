@@ -3,6 +3,6 @@
 
 description: SiFive S7 Standard Core CPU
 
-compatible: "riscv,sifive-s7"
+compatible: "sifive,s7"
 
-include: riscv,sifive.yaml
+include: sifive-common.yaml

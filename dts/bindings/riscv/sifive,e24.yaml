@@ -3,6 +3,6 @@
 
 description: SiFive E24 Standard Core CPU
 
-compatible: "riscv,sifive-e24"
+compatible: "sifive,e24"
 
-include: riscv,sifive.yaml
+include: sifive-common.yaml
