@@ -1292,9 +1292,21 @@ static struct lwm2m_message *find_msg(struct coap_pending *pending,
 				      struct coap_reply *reply)
 {
 	size_t i;
+	struct lwm2m_message *msg;
 
 	if (!pending && !reply) {
 		return NULL;
+	}
+
+	msg = lwm2m_get_ongoing_rd_msg();
+	if (msg) {
+		if (pending != NULL && msg->pending == pending) {
+			return msg;
+		}
+
+		if (reply != NULL && msg->reply == reply) {
+			return msg;
+		}
 	}
 
 	for (i = 0; i < CONFIG_LWM2M_ENGINE_MAX_MESSAGES; i++) {
@@ -1326,7 +1338,7 @@ struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx)
 	return NULL;
 }
 
-static void lm2m_message_clear_allocations(struct lwm2m_message *msg)
+void lm2m_message_clear_allocations(struct lwm2m_message *msg)
 {
 	if (msg->pending) {
 		coap_pending_clear(msg->pending);
@@ -1399,7 +1411,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 
 	msg->pending = coap_pending_next_unused(
 				msg->ctx->pendings,
-				CONFIG_LWM2M_ENGINE_MAX_PENDING);
+				ARRAY_SIZE(msg->ctx->pendings));
 	if (!msg->pending) {
 		LOG_ERR("Unable to find a free pending to track "
 			"retransmissions.");
@@ -1418,7 +1430,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	if (msg->reply_cb) {
 		msg->reply = coap_reply_next_unused(
 				msg->ctx->replies,
-				CONFIG_LWM2M_ENGINE_MAX_REPLIES);
+				ARRAY_SIZE(msg->ctx->replies));
 		if (!msg->reply) {
 			LOG_ERR("No resources for waiting for replies.");
 			r = -ENOMEM;
@@ -5094,7 +5106,7 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 	/* Add the packet to the pending list. */
 	msg->pending = coap_pending_next_unused(
 				msg->ctx->pendings,
-				CONFIG_LWM2M_ENGINE_MAX_PENDING);
+				ARRAY_SIZE(msg->ctx->pendings));
 	if (!msg->pending) {
 		LOG_ERR("Unable to find a free pending to track "
 			"retransmissions.");
@@ -5133,7 +5145,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 
 	tkl = coap_header_get_token(&response, token);
 	pending = coap_pending_received(&response, client_ctx->pendings,
-					CONFIG_LWM2M_ENGINE_MAX_PENDING);
+					ARRAY_SIZE(client_ctx->pendings));
 	if (pending && coap_header_get_type(&response) == COAP_TYPE_ACK) {
 		msg = find_msg(pending, NULL);
 		if (msg == NULL) {
@@ -5165,7 +5177,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		log_strdup(lwm2m_sprint_ip_addr(from_addr)));
 	reply = coap_response_received(&response, from_addr,
 				       client_ctx->replies,
-				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
+				       ARRAY_SIZE(client_ctx->replies));
 	if (reply) {
 		msg = find_msg(NULL, reply);
 
@@ -5251,7 +5263,7 @@ static int32_t retransmit_request(struct lwm2m_ctx *client_ctx,
 	int i;
 
 	for (i = 0, p = client_ctx->pendings;
-	     i < CONFIG_LWM2M_ENGINE_MAX_PENDING; i++, p++) {
+	     i < ARRAY_SIZE(client_ctx->pendings); i++, p++) {
 		if (!p->timeout) {
 			continue;
 		}
@@ -5607,9 +5619,10 @@ int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 	}
 
 	coap_pendings_clear(client_ctx->pendings,
-			    CONFIG_LWM2M_ENGINE_MAX_PENDING);
+			    ARRAY_SIZE(client_ctx->pendings));
 	coap_replies_clear(client_ctx->replies,
-			   CONFIG_LWM2M_ENGINE_MAX_REPLIES);
+			   ARRAY_SIZE(client_ctx->replies));
+
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	client_ctx->connection_suspended = false;
 	client_ctx->buffer_client_messages = true;
