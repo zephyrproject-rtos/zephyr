@@ -222,6 +222,11 @@ static inline enum clock_control_status clock_control_get_status(const struct de
  *        instance
  * @param sys A pointer to an opaque data representing the sub-system
  * @param[out] rate Subsystem clock rate
+ * @retval 0 on successful rate reading.
+ * @retval -EAGAIN if rate cannot be read. Some drivers do not support returning the rate when the
+ *         clock is off.
+ * @retval -ENOTSUP if reading the clock rate is not supported for the given sub-system.
+ * @retval -ENOSYS if the interface is not implemented.
  */
 static inline int clock_control_get_rate(const struct device *dev,
 					 clock_control_subsys_t sys,
