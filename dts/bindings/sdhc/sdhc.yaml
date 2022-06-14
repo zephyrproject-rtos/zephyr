@@ -5,6 +5,8 @@
 
 include: base.yaml
 
+bus: sd
+
 properties:
   max-current-330:
     type: int
