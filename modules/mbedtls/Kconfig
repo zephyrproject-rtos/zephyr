@@ -76,19 +76,23 @@ config MBEDTLS_SSL_MAX_CONTENT_LEN
 	  twice this value will be allocated (on mbedTLS own heap, so the
 	  value of MBEDTLS_HEAP_SIZE should accommodate that).
 
+module = MBEDTLS
+module-str = Log level mbedTLS library debug hook
+source "subsys/logging/Kconfig.template.log_config"
+
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
 	depends on MBEDTLS_BUILTIN
 	help
 	  Enable debugging activation for mbed TLS configuration. If you use
-	  mbedTLS/Zephyr integration (e.g. net_app), this will activate debug
-	  logging (of the level configured by MBEDTLS_DEBUG_LEVEL).
+	  mbedTLS/Zephyr integration (e.g. native TLS sockets), this will
+	  activate debug logging.
+
 	  If you use mbedTLS directly instead, you will need to perform
 	  additional configuration yourself: call
-	  mbedtls_ssl_conf_dbg(&mbedtls.conf, my_debug, NULL);
-	  mbedtls_debug_set_threshold(level);
-	  functions in your application, and create the my_debug() function to
-	  actually print something useful.
+	  mbedtls_ssl_conf_dbg(&mbedtls.conf, zephyr_mbedtls_debug, NULL);
+	  function in your application. Alternatively implement your own debug
+	  hook function if zephyr_mbedtls_debug() doesn't suit your needs.
 
 config MBEDTLS_DEBUG_LEVEL
 	int "mbed TLS default debug level"
