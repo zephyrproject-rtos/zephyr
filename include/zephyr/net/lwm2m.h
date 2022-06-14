@@ -113,9 +113,9 @@ struct lwm2m_ctx {
 	/** Destination address storage */
 	struct sockaddr remote_addr;
 
-	/** Private CoAP and networking structures */
-	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
-	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
+	/** Private CoAP and networking structures + 1 is for RD Client own message */
+	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING + 1];
+	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES + 1];
 	sys_slist_t pending_sends;
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	sys_slist_t queued_messages;
