@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 /* Allow for (tcp_retries + 1) transmissions */
 #define FIN_TIMEOUT_MS (tcp_rto * (tcp_retries + 1))
 #define FIN_TIMEOUT K_MSEC(FIN_TIMEOUT_MS)
+#define ACK_DELAY K_MSEC(100)
 
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
@@ -53,6 +54,7 @@ static K_KERNEL_STACK_DEFINE(work_q_stack, CONFIG_NET_TCP_WORKQ_STACK_SIZE);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 static bool is_destination_local(struct net_pkt *pkt);
+static void tcp_out(struct tcp *conn, uint8_t flags);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
@@ -431,6 +433,7 @@ static int tcp_conn_unref(struct tcp *conn, int status)
 	(void)k_work_cancel_delayable(&conn->timewait_timer);
 	(void)k_work_cancel_delayable(&conn->fin_timer);
 	(void)k_work_cancel_delayable(&conn->persist_timer);
+	(void)k_work_cancel_delayable(&conn->ack_timer);
 
 	sys_slist_find_and_remove(&tcp_conns, &conn->next);
 
@@ -692,6 +695,17 @@ end:
 	return result;
 }
 
+static bool tcp_short_window(struct tcp *conn)
+{
+	int32_t threshold = MIN(conn_mss(conn), conn->recv_win_max / 2);
+
+	if (conn->recv_win > threshold) {
+		return false;
+	}
+
+	return true;
+}
+
 /**
  * @brief Update TCP receive window
  *
@@ -704,13 +718,25 @@ end:
 static int tcp_update_recv_wnd(struct tcp *conn, int32_t delta)
 {
 	int32_t new_win;
+	bool short_win_before;
+	bool short_win_after;
 
 	new_win = conn->recv_win + delta;
 	if (new_win < 0 || new_win > UINT16_MAX) {
 		return -EINVAL;
 	}
 
+	short_win_before = tcp_short_window(conn);
+
 	conn->recv_win = new_win;
+
+	short_win_after = tcp_short_window(conn);
+
+	if (short_win_before && !short_win_after &&
+	    conn->state == TCP_ESTABLISHED) {
+		k_work_cancel_delayable(&conn->ack_timer);
+		tcp_out(conn, ACK);
+	}
 
 	return 0;
 }
@@ -1294,6 +1320,18 @@ static void tcp_send_zwp(struct k_work *work)
 	k_mutex_unlock(&conn->lock);
 }
 
+static void tcp_send_ack(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, ack_timer);
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	tcp_out(conn, ACK);
+
+	k_mutex_unlock(&conn->lock);
+}
+
 static void tcp_conn_ref(struct tcp *conn)
 {
 	int ref_count = atomic_inc(&conn->ref_count) + 1;
@@ -1338,16 +1376,18 @@ static struct tcp *tcp_conn_alloc(struct net_context *context)
 
 	conn->in_connect = false;
 	conn->state = TCP_LISTEN;
-	conn->recv_win = tcp_window;
+	conn->recv_win_max = tcp_window;
 	conn->tcp_nodelay = false;
 
 	/* Set the recv_win with the rcvbuf configured for the socket. */
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF) &&
 		net_context_get_option(context, NET_OPT_RCVBUF, &recv_window, &len) == 0) {
 		if (recv_window != 0) {
-			conn->recv_win = recv_window;
+			conn->recv_win_max = recv_window;
 		}
 	}
+
+	conn->recv_win = conn->recv_win_max;
 
 	/* The ISN value will be set when we get the connection attempt or
 	 * when trying to create a connection.
@@ -1362,6 +1402,7 @@ static struct tcp *tcp_conn_alloc(struct net_context *context)
 	k_work_init_delayable(&conn->send_data_timer, tcp_resend_data);
 	k_work_init_delayable(&conn->recv_queue_timer, tcp_cleanup_recv_queue);
 	k_work_init_delayable(&conn->persist_timer, tcp_send_zwp);
+	k_work_init_delayable(&conn->ack_timer, tcp_send_ack);
 
 	tcp_conn_ref(conn);
 
@@ -1789,7 +1830,17 @@ static bool tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
 
 	net_stats_update_tcp_seg_recv(conn->iface);
 	conn_ack(conn, *len);
-	tcp_out(conn, ACK);
+
+	/* Delay ACK response in case of small window or missing PSH,
+	 * as described in RFC 813.
+	 */
+	if (tcp_short_window(conn)) {
+		k_work_schedule_for_queue(&tcp_work_q, &conn->ack_timer,
+					  ACK_DELAY);
+	} else {
+		k_work_cancel_delayable(&conn->ack_timer);
+		tcp_out(conn, ACK);
+	}
 
 	return true;
 }
@@ -2306,12 +2357,21 @@ int net_tcp_listen(struct net_context *context)
 
 int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta)
 {
-	if (!context->tcp) {
+	struct tcp *conn = context->tcp;
+	int ret;
+
+	if (!conn) {
 		NET_ERR("context->tcp == NULL");
 		return -EPROTOTYPE;
 	}
 
-	return tcp_update_recv_wnd((struct tcp *)context->tcp, delta);
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	ret = tcp_update_recv_wnd((struct tcp *)context->tcp, delta);
+
+	k_mutex_unlock(&conn->lock);
+
+	return ret;
 }
 
 /* net_context queues the outgoing data for the TCP connection */
