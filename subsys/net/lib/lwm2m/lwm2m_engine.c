@@ -1326,20 +1326,27 @@ struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx)
 	return NULL;
 }
 
+static void lm2m_message_clear_allocations(struct lwm2m_message *msg)
+{
+	if (msg->pending) {
+		coap_pending_clear(msg->pending);
+		msg->pending = NULL;
+	}
+
+	if (msg->reply) {
+		/* make sure we want to clear the reply */
+		coap_reply_clear(msg->reply);
+		msg->reply = NULL;
+	}
+}
+
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 {
 	if (!msg) {
 		return;
 	}
 
-	if (msg->pending) {
-		coap_pending_clear(msg->pending);
-	}
-
-	if (msg->reply) {
-		/* make sure we want to clear the reply */
-		coap_reply_clear(msg->reply);
-	}
+	lm2m_message_clear_allocations(msg);
 
 	if (msg->ctx) {
 		sys_slist_find_and_remove(&msg->ctx->pending_sends, &msg->node);
@@ -1374,6 +1381,8 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		tokenlen = msg->tkl;
 		token = msg->token;
 	}
+
+	lm2m_message_clear_allocations(msg);
 
 	r = coap_packet_init(&msg->cpkt, msg->msg_data, sizeof(msg->msg_data),
 			     COAP_VERSION_1, msg->type, tokenlen, token,
@@ -5078,6 +5087,10 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 	msg->cpkt.data[2] = msg->mid >> 8;
 	msg->cpkt.data[3] = (uint8_t) msg->mid;
 
+	if (msg->pending) {
+		coap_pending_clear(msg->pending);
+	}
+
 	/* Add the packet to the pending list. */
 	msg->pending = coap_pending_next_unused(
 				msg->ctx->pendings,
@@ -5125,6 +5138,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 		msg = find_msg(pending, NULL);
 		if (msg == NULL) {
 			LOG_DBG("Orphaned pending %p.", pending);
+			coap_pending_clear(pending);
 			return;
 		}
 
