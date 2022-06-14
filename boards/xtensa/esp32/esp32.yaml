@@ -11,6 +11,7 @@ supported:
   - uart
   - pinmux
   - nvs
+  - pwm
 testing:
   ignore_tags:
     - net
