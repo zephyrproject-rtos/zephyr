@@ -48,13 +48,6 @@ struct backend_cb {
 	uint32_t total_drops;
 };
 
-static void put(struct log_backend const *const backend,
-		struct log_msg *msg)
-{
-	log_msg_get(msg);
-	log_msg_put(msg);
-}
-
 static void process(struct log_backend const *const backend,
 		    union log_msg2_generic *msg)
 {
@@ -75,8 +68,7 @@ static void dropped(struct log_backend const *const backend, uint32_t cnt)
 }
 
 const struct log_backend_api log_backend_test_api = {
-	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
-	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
+	.process = process,
 	.panic = panic,
 	.dropped = dropped,
 };
@@ -241,12 +233,9 @@ void test_log_message_with_string(void)
 void test_main(void)
 {
 	PRINT("LOGGING MODE:%s\n", IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? "DEFERRED" : "IMMEDIATE");
-	PRINT("VERSION:v%d\n", IS_ENABLED(CONFIG_LOG1) ? 1 : 2);
 	PRINT("\tOVERWRITE: %d\n", IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW));
 	PRINT("\tBUFFER_SIZE: %d\n", CONFIG_LOG_BUFFER_SIZE);
-	if (!IS_ENABLED(CONFIG_LOG1)) {
-		PRINT("\tSPEED: %d", IS_ENABLED(CONFIG_LOG_SPEED));
-	}
+	PRINT("\tSPEED: %d", IS_ENABLED(CONFIG_LOG_SPEED));
 	ztest_test_suite(test_log_benchmark,
 			 ztest_unit_test(test_log_capacity),
 			 ztest_unit_test(test_log_message_store_time_no_overwrite),
