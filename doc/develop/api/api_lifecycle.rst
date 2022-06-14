@@ -91,8 +91,8 @@ In order to declare an API ``stable``, the following steps need to be followed:
 #. An email must be sent to the ``devel`` mailing list announcing the API
    upgrade request
 #. The Pull Request must be submitted for discussion in the next
-   `Zephyr API meeting`_ where, barring any objections, the Pull Request will be
-   merged
+   `Zephyr Architecture meeting`_ where, barring any objections, the Pull Request
+   will be merged
 
 .. _stable_api_changes:
 
@@ -134,13 +134,14 @@ such a change is considered necessary in order to accept it in the project:
    Instead of a written description of the changes, the RFC issue may link to a
    Pull Request containing those changes in code form.
 #. The RFC issue must be labeled with the GitHub ``Stable API Change`` label
-#. The RFC issue must be submitted for discussion in the next `Zephyr API meeting`_
+#. The RFC issue must be submitted for discussion in the next `Zephyr
+   Architecture meeting`_
 #. An email must be sent to the ``devel`` mailing list with a subject identical
    to the RFC issue title and that links to the RFC issue
 
 The RFC will then receive feedback through issue comments and will also be
-discussed in the Zephyr API meeting, where the stakeholders and the community at
-large will have a chance to discuss it in detail.
+discussed in the Zephyr Architecture meeting, where the stakeholders and the
+community at large will have a chance to discuss it in detail.
 
 Finally, and if not done as part of the first step, a Pull Request must be
 opened on GitHub. It is left to the person proposing the change to decide
@@ -242,4 +243,4 @@ migration and update the roadmap with the aim to remove the API in the next
 release.
 
 .. _`Zephyr TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#technical-steering-committee-tsc
-.. _`Zephyr API meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#zephyr-api-meeting
+.. _`Zephyr Architecture meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Architecture-Working-Group
