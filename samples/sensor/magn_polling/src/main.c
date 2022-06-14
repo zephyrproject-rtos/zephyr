@@ -10,10 +10,16 @@
 #include <zephyr/sys/printk.h>
 #include <stdio.h>
 
-static void do_main(const struct device *dev)
+void main(void)
 {
-	int ret;
+	const struct device *dev = DEVICE_DT_GET_ONE(bosch_bmc150_magn);
 	struct sensor_value value_x, value_y, value_z;
+	int ret;
+
+	if (!device_is_ready(dev)) {
+		printk("sensor: device not ready.\n");
+		return;
+	}
 
 	while (1) {
 		ret = sensor_sample_fetch(dev);
@@ -31,36 +37,5 @@ static void do_main(const struct device *dev)
 		       sensor_value_to_double(&value_z));
 
 		k_sleep(K_MSEC(500));
-	}
-}
-
-const struct device *sensor_search_for_magnetometer()
-{
-	static char *magn_sensors[] = {"bmc150_magn", NULL};
-	const struct device *dev;
-	int i;
-
-	i = 0;
-	while (magn_sensors[i]) {
-		dev = device_get_binding(magn_sensors[i]);
-		if (dev) {
-			return dev;
-		}
-		++i;
-	}
-
-	return NULL;
-}
-
-void main(void)
-{
-	const struct device *dev;
-
-	dev = sensor_search_for_magnetometer();
-	if (dev) {
-		printk("Found device is %p, name is %s\n", dev, dev->name);
-		do_main(dev);
-	} else {
-		printk("There is no available magnetometer device.\n");
 	}
 }
