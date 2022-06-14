@@ -3,6 +3,7 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_BEETLE              beetle_clock_control.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_CAVS                clock_control_cavs.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_ESP32               clock_control_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_LITEX               clock_control_litex.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_LPC11U6X            clock_control_lpc11u6x.c)
