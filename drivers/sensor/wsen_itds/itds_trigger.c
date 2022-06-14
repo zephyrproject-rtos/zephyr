@@ -29,7 +29,7 @@ static int itds_trigger_drdy_set(const struct device *dev,
 		drdy_en = ITDS_MASK_INT_DRDY;
 	}
 
-	ret = i2c_reg_update_byte(ddata->i2c, cfg->i2c_addr, ITDS_REG_CTRL4,
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, ITDS_REG_CTRL4,
 				  ITDS_MASK_INT_DRDY, drdy_en);
 	if (ret) {
 		return ret;
@@ -66,7 +66,7 @@ static void itds_work_handler(struct k_work *work)
 		.chan = SENSOR_CHAN_ACCEL_XYZ,
 	};
 
-	if (i2c_reg_read_byte(ddata->i2c, cfg->i2c_addr, ITDS_REG_STATUS,
+	if (i2c_reg_read_byte_dt(&cfg->i2c, ITDS_REG_STATUS,
 			      &status) < 0) {
 		return;
 	}
@@ -116,6 +116,6 @@ int itds_trigger_mode_init(const struct device *dev)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* enable global interrupt */
-	return i2c_reg_update_byte(ddata->i2c, cfg->i2c_addr, ITDS_REG_CTRL7,
+	return i2c_reg_update_byte_dt(&cfg->i2c, ITDS_REG_CTRL7,
 				   ITDS_MASK_INT_EN, ITDS_MASK_INT_EN);
 }
