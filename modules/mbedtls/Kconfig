@@ -97,7 +97,11 @@ config MBEDTLS_DEBUG
 if MBEDTLS_DEBUG
 
 config MBEDTLS_DEBUG_LEVEL
-	int "mbed TLS default debug level"
+	int
+	default 4 if MBEDTLS_LOG_LEVEL_DBG
+	default 3 if MBEDTLS_LOG_LEVEL_INF
+	default 2 if MBEDTLS_LOG_LEVEL_WRN
+	default 1 if MBEDTLS_LOG_LEVEL_ERR
 	default 0
 	range 0 4
 	help
