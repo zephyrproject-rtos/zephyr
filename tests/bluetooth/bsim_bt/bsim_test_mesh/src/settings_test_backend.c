@@ -12,7 +12,6 @@
 #include <zephyr/kernel.h>
 #include "zephyr/types.h"
 #include "errno.h"
-#include <zephyr/zephyr.h>
 
 #include <zephyr/bluetooth/mesh.h>
 #include "argparse.h"
