@@ -78,7 +78,8 @@
 	};
 
 	xen_hvc: hvc {
-		compatible = "xen,uart_hvc";
+		compatible = "xen,hvc-uart";
 		status = "okay";
+		label = "UART_HVC";
 	};
 };
