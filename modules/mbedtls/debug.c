@@ -29,5 +29,19 @@ void zephyr_mbedtls_debug(void *ctx, int level, const char *file, int line, cons
 		}
 	}
 
-	LOG_DBG("%s:%04d: |%d| %s", basename, line, level, str);
+	switch (level) {
+	case 0:
+	case 1:
+		LOG_ERR("%s:%04d: %s", basename, line, str);
+		break;
+	case 2:
+		LOG_WRN("%s:%04d: %s", basename, line, str);
+		break;
+	case 3:
+		LOG_INF("%s:%04d: %s", basename, line, str);
+		break;
+	default:
+		LOG_DBG("%s:%04d: %s", basename, line, str);
+		break;
+	}
 }
