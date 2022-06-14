@@ -8,7 +8,6 @@
 #define _FOOTPRINT_H_
 
 #include <zephyr/kernel.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/app_memory/app_memdomain.h>
 
 K_THREAD_STACK_EXTERN(my_stack_area);

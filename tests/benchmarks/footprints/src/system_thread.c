@@ -11,7 +11,6 @@
  *
  */
 #include <zephyr/kernel.h>
-#include <zephyr/zephyr.h>
 #include <ksched.h>
 
 #include "footprint.h"

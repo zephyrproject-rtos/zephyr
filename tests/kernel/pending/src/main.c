@@ -5,7 +5,6 @@
  */
 
 #include <tc_util.h>
-#include <zephyr/zephyr.h>
 #include <ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
