@@ -665,6 +665,7 @@ wobo	Wobo
 wolfson	Cirrus Logic, Inc. (formerly Wolfson Microelectronics plc)
 worldsemi	Worldsemi Co., Limited
 x-powers	X-Powers
+xen	Xen Hypervisor
 xes	Extreme Engineering Solutions (X-ES)
 xiaomi	Xiaomi Technology Co., Ltd.
 xillybus	Xillybus Ltd.
