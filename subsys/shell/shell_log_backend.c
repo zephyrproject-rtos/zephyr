@@ -17,33 +17,10 @@ int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-static struct log_msg *msg_from_fifo(const struct shell_log_backend *backend)
-{
-	struct shell_log_backend_msg msg;
-	int err;
-
-	err = k_msgq_get(backend->msgq, &msg, K_NO_WAIT);
-
-	return (err == 0) ? msg.msg : NULL;
-}
-
 /* Set fifo clean state (in case of deferred mode). */
 static void fifo_reset(const struct shell_log_backend *backend)
 {
-	if (IS_ENABLED(CONFIG_LOG2_DEFERRED)) {
-		mpsc_pbuf_init(backend->mpsc_buffer,
-			       backend->mpsc_buffer_config);
-		return;
-	}
-
-	/* Flush pending log messages without processing. */
-	if (IS_ENABLED(CONFIG_LOG1_DEFERRED)) {
-		struct log_msg *msg;
-
-		while ((msg = msg_from_fifo(backend)) != NULL) {
-			log_msg_put(msg);
-		}
-	}
+	mpsc_pbuf_init(backend->mpsc_buffer, backend->mpsc_buffer_config);
 }
 
 void z_shell_log_backend_enable(const struct shell_log_backend *backend,
@@ -70,86 +47,10 @@ void z_shell_log_backend_enable(const struct shell_log_backend *backend,
 	}
 }
 
-static void flush_expired_messages(const struct shell *shell)
-{
-	int err;
-	struct shell_log_backend_msg msg;
-	struct k_msgq *msgq = shell->log_backend->msgq;
-	uint32_t timeout = shell->log_backend->timeout;
-	uint32_t now = k_uptime_get_32();
-
-	while (1) {
-		err = k_msgq_peek(msgq, &msg);
-
-		if (err == 0 && ((now - msg.timestamp) > timeout)) {
-			(void)k_msgq_get(msgq, &msg, K_NO_WAIT);
-			log_msg_put(msg.msg);
-
-			if (IS_ENABLED(CONFIG_SHELL_STATS)) {
-				atomic_inc(&shell->stats->log_lost_cnt);
-			}
-		} else {
-			break;
-		}
-	}
-}
-
-static void msg_to_fifo(const struct shell *shell,
-			struct log_msg *msg)
-{
-	int err;
-	bool cont;
-	struct shell_log_backend_msg t_msg = {
-		.msg = msg,
-		.timestamp = k_uptime_get_32()
-	};
-
-	do {
-		cont = false;
-		err = k_msgq_put(shell->log_backend->msgq, &t_msg,
-				 K_MSEC(shell->log_backend->timeout));
-
-		switch (err) {
-		case 0:
-			break;
-		case -EAGAIN:
-		case -ENOMSG:
-		{
-			/* Attempt to drop old message. */
-			flush_expired_messages(shell);
-
-			/* Retry putting message. */
-			cont = true;
-
-			break;
-		}
-		default:
-			/* Other errors are not expected. */
-			__ASSERT_NO_MSG(0);
-			break;
-		}
-	} while (cont);
-}
-
 void z_shell_log_backend_disable(const struct shell_log_backend *backend)
 {
 	log_backend_disable(backend->backend);
 	backend->control_block->state = SHELL_LOG_BACKEND_DISABLED;
-}
-
-static void msg_process(const struct log_output *log_output,
-			struct log_msg *msg, bool colors)
-{
-	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL |
-		      LOG_OUTPUT_FLAG_TIMESTAMP |
-		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-
-	if (colors) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	log_output_msg_process(log_output, msg, flags);
-	log_msg_put(msg);
 }
 
 bool z_shell_log_backend_process(const struct shell_log_backend *backend)
@@ -176,104 +77,7 @@ bool z_shell_log_backend_process(const struct shell_log_backend *backend)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_LOG2_DEFERRED)) {
-		return process_msg2_from_buffer(shell);
-	}
-
-	struct log_msg *msg = msg_from_fifo(backend);
-
-	if (!msg) {
-		return false;
-	}
-	msg_process(shell->log_backend->log_output, msg, colors);
-
-	return true;
-}
-
-static void put(const struct log_backend *const backend, struct log_msg *msg)
-{
-	const struct shell *shell = (const struct shell *)backend->cb->ctx;
-	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-			z_flag_use_colors_get(shell);
-	struct k_poll_signal *signal;
-
-	log_msg_get(msg);
-
-	switch (shell->log_backend->control_block->state) {
-	case SHELL_LOG_BACKEND_ENABLED:
-		msg_to_fifo(shell, msg);
-
-		if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-			signal = &shell->ctx->signals[SHELL_SIGNAL_LOG_MSG];
-			k_poll_signal_raise(signal, 0);
-		}
-
-		break;
-	case SHELL_LOG_BACKEND_PANIC:
-		z_shell_cmd_line_erase(shell);
-		msg_process(shell->log_backend->log_output, msg, colors);
-
-		break;
-
-	case SHELL_LOG_BACKEND_DISABLED:
-		__fallthrough;
-	default:
-		/* Discard message. */
-		log_msg_put(msg);
-	}
-}
-
-static void put_sync_string(const struct log_backend *const backend,
-			    struct log_msg_ids src_level, uint32_t timestamp,
-			    const char *fmt, va_list ap)
-{
-	const struct shell *shell = (const struct shell *)backend->cb->ctx;
-	uint32_t key;
-	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL |
-		      LOG_OUTPUT_FLAG_TIMESTAMP |
-		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-
-	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	key = irq_lock();
-	if (!z_flag_cmd_ctx_get(shell)) {
-		z_shell_cmd_line_erase(shell);
-	}
-	log_output_string(shell->log_backend->log_output, src_level, timestamp,
-			  fmt, ap, flags);
-	if (!z_flag_cmd_ctx_get(shell)) {
-		z_shell_print_prompt_and_cmd(shell);
-	}
-	irq_unlock(key);
-}
-
-static void put_sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, uint32_t timestamp,
-			 const char *metadata, const uint8_t *data,
-			 uint32_t length)
-{
-	const struct shell *shell = (const struct shell *)backend->cb->ctx;
-	uint32_t key;
-	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL |
-		      LOG_OUTPUT_FLAG_TIMESTAMP |
-		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-
-	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
-		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	key = irq_lock();
-	if (!z_flag_cmd_ctx_get(shell)) {
-		z_shell_cmd_line_erase(shell);
-	}
-	log_output_hexdump(shell->log_backend->log_output, src_level,
-			   timestamp, metadata, data, length, flags);
-	if (!z_flag_cmd_ctx_get(shell)) {
-		z_shell_print_prompt_and_cmd(shell);
-	}
-	irq_unlock(key);
+	return process_msg2_from_buffer(shell);
 }
 
 static void panic(const struct log_backend *const backend)
@@ -300,15 +104,8 @@ static void panic(const struct log_backend *const backend)
 		z_shell_op_cursor_horiz_move(shell,
 					   -shell->ctx->vt100_ctx.cons.cur_x);
 
-		if (IS_ENABLED(CONFIG_LOG2_DEFERRED)) {
-			while (process_msg2_from_buffer(shell)) {
-				/* empty */
-			}
-		} else if (IS_ENABLED(CONFIG_LOG1_DEFERRED)) {
-			while (z_shell_log_backend_process(
-						shell->log_backend)) {
-				/* empty */
-			}
+		while (process_msg2_from_buffer(shell)) {
+			/* empty */
 		}
 	} else {
 		z_shell_log_backend_disable(shell->log_backend);
@@ -405,7 +202,7 @@ static bool process_msg2_from_buffer(const struct shell *shell)
 	return true;
 }
 
-static void log2_process(const struct log_backend *const backend,
+static void process(const struct log_backend *const backend,
 		    union log_msg2_generic *msg)
 {
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
@@ -446,12 +243,7 @@ static void log2_process(const struct log_backend *const backend,
 }
 
 const struct log_backend_api log_backend_shell_api = {
-	.process = IS_ENABLED(CONFIG_LOG2) ? log2_process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? put : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			put_sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			put_sync_hexdump : NULL,
+	.process = process,
 	.dropped = dropped,
 	.panic = panic,
 };
