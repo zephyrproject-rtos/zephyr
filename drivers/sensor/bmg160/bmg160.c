@@ -335,11 +335,8 @@ int bmg160_init(const struct device *dev)
 
 static const struct bmg160_device_config bmg160_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
-#ifdef CONFIG_BMG160_TRIGGER
-	.int_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.int_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
-#endif
+	IF_ENABLED(CONFIG_BMG160_TRIGGER,
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),))
 };
 
 DEVICE_DT_INST_DEFINE(0, bmg160_init, NULL,
