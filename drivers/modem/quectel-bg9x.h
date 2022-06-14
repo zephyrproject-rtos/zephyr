@@ -10,7 +10,6 @@
 #include <zephyr/kernel.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>

@@ -11,7 +11,6 @@
 #include <ctype.h>
 #include <inttypes.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/modem/simcom-sim7080.h>
 #include <zephyr/device.h>

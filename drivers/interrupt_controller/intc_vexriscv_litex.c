@@ -11,7 +11,6 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/device.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/types.h>
 
 #define IRQ_MASK		DT_REG_ADDR_BY_NAME(DT_INST(0, vexriscv_intc0), irq_mask)
