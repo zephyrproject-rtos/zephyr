@@ -530,6 +530,10 @@ static int can_rcar_enter_halt_mode(const struct can_rcar_cfg *config)
 	ctlr &= ~RCAR_CAN_CTLR_CANM_MASK;
 	ctlr |= RCAR_CAN_CTLR_CANM_HALT;
 	can_rcar_write16(config, RCAR_CAN_CTLR, ctlr);
+
+	/* Wait for controller to apply high bit timing settings */
+	k_usleep(1);
+
 	for (i = 0; i < MAX_STR_READS; i++) {
 		if (can_rcar_read16(config, RCAR_CAN_STR) & RCAR_CAN_STR_HLTST) {
 			return 0;
@@ -547,6 +551,9 @@ static int can_rcar_enter_operation_mode(const struct can_rcar_cfg *config)
 	ctlr = can_rcar_read16(config, RCAR_CAN_CTLR);
 	ctlr &= ~RCAR_CAN_CTLR_CANM_MASK;
 	can_rcar_write16(config, RCAR_CAN_CTLR, ctlr);
+
+	/* Wait for controller to apply high bit timing settings */
+	k_usleep(1);
 
 	for (i = 0; i < MAX_STR_READS; i++) {
 		str = can_rcar_read16(config, RCAR_CAN_STR);
