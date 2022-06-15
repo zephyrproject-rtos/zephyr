@@ -54,6 +54,12 @@
 		interrupt-parent = <&intc>;
 	};
 
+	ici: intercore-interrupt-unit {
+		compatible = "snps,archs-ici";
+		interrupts = <19 1>;
+		interrupt-parent = <&intc>;
+	};
+
 	timer0: timer0 {
 		compatible = "snps,arc-timer";
 		interrupts = <16 1>;

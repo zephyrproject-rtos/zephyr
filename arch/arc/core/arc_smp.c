@@ -13,15 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
-#include <soc.h>
 #include <zephyr/init.h>
-
-
-#ifndef IRQ_ICI
-#define IRQ_ICI 19
-#endif
-
-#define ARCV2_ICI_IRQ_PRIORITY 1
 
 #define MP_PRIMARY_CPU_ID 0
 
@@ -112,8 +104,9 @@ void z_arc_slave_start(int cpu_num)
 	z_irq_setup();
 
 	z_arc_connect_ici_clear();
-	z_irq_priority_set(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY, 0);
-	irq_enable(IRQ_ICI);
+	z_irq_priority_set(DT_IRQN(DT_NODELABEL(ici)),
+			   DT_IRQ(DT_NODELABEL(ici), priority), 0);
+	irq_enable(DT_IRQN(DT_NODELABEL(ici)));
 #endif
 	/* call the function set by arch_start_cpu */
 	fn = arc_cpu_init[cpu_num].fn;
@@ -162,10 +155,11 @@ static int arc_smp_init(const struct device *dev)
 	if (bcr.ipi) {
 	/* register ici interrupt, just need master core to register once */
 		z_arc_connect_ici_clear();
-		IRQ_CONNECT(IRQ_ICI, ARCV2_ICI_IRQ_PRIORITY,
-		    sched_ipi_handler, NULL, 0);
+		IRQ_CONNECT(DT_IRQN(DT_NODELABEL(ici)),
+			    DT_IRQ(DT_NODELABEL(ici), priority),
+			    sched_ipi_handler, NULL, 0);
 
-		irq_enable(IRQ_ICI);
+		irq_enable(DT_IRQN(DT_NODELABEL(ici)));
 	} else {
 		__ASSERT(0,
 			"ARC connect has no inter-core interrupt\n");

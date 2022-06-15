@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include "nsim.dtsi"
+#include "nsim-smp.dtsi"
 #include "nsim-flat-mem.dtsi"
 
 / {
