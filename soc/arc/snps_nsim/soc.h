@@ -21,9 +21,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/random/rand32.h>
 
-#define INT_ENABLE_ARC				~(0x00000001 << 8)
-#define INT_ENABLE_ARC_BIT_POS			(8)
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC__H_ */
