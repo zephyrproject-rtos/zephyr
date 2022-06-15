@@ -20,12 +20,12 @@
 			compatible = "snps,arcem";
 			reg = <0>;
 		};
+	};
 
-		intc: arcv2-intc {
-			compatible = "snps,arcv2-intc";
-			interrupt-controller;
-			#interrupt-cells = <2>;
-		};
+	intc: arcv2-intc {
+		compatible = "snps,arcv2-intc";
+		interrupt-controller;
+		#interrupt-cells = <2>;
 	};
 
 	sysclk: system-clock {
