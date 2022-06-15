@@ -31,7 +31,6 @@ if LOG_MIPI_SYST_ENABLE
 
 config LOG_MIPI_SYST_USE_CATALOG
 	bool "Use MIPI Sys-T Catalog for logging"
-	depends on LOG2
 	select LOG2_FMT_SECTION
 	select LOG2_USE_TAGGED_ARGUMENTS
 	help
@@ -82,7 +81,6 @@ endif # LOG_MIPI_SYST_ENABLE
 
 config LOG_DICTIONARY_SUPPORT
 	bool
-	depends on LOG2
 	select LOG_DICTIONARY_DB
 	help
 	  Enable support for dictionary based logging.

@@ -10,7 +10,6 @@
 #include <stddef.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
-#include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <xtensa/simcall.h>
