@@ -501,13 +501,6 @@ static int bt_ipm_ble_init(void)
 	struct net_buf *buf, *rsp;
 	int err;
 
-	/* Send HCI_RESET */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, &rsp);
-	if (err) {
-		return err;
-	}
-	/* TDB: Something to do on reset complete? */
-	net_buf_unref(rsp);
 	err = bt_ipm_set_addr();
 	if (err) {
 		BT_ERR("Can't set BLE UID addr");
@@ -614,7 +607,6 @@ static int bt_ipm_close(void)
 static const struct bt_hci_driver drv = {
 	.name           = "BT IPM",
 	.bus            = BT_HCI_DRIVER_BUS_IPM,
-	.quirks         = BT_QUIRK_NO_RESET,
 	.open           = bt_ipm_open,
 	.close          = bt_ipm_close,
 	.send           = bt_ipm_send,
