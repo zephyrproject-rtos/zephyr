@@ -1007,15 +1007,40 @@ struct bt_gatt_notify_params {
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params);
 
-/** @brief Notify multiple attribute value change.
+/** @brief Send multiple notifications in a single PDU.
  *
- *  This function works in the same way as @ref bt_gatt_notify_cb.
+ *  The GATT Server will send a single ATT_MULTIPLE_HANDLE_VALUE_NTF PDU
+ *  containing all the notifications passed to this API.
  *
- *  @param conn Connection object.
- *  @param num_params Number of notification parameters.
- *  @param params Array of notification parameters.
+ *  All `params` must have the same `func` and `user_data` (due to
+ *  implementation limitation). But `func(user_data)` will be invoked for each
+ *  parameter.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  As this API may block to wait for Bluetooth Host resources, it is not
+ *  recommended to call it from a cooperative thread or a Bluetooth callback.
+ *
+ *  The peer's GATT Client must write to this device's Client Supported Features
+ *  attribute and set the bit for Multiple Handle Value Notifications before
+ *  this API can be used. Consider using `bt_gatt_notify_cb` as a fallback when
+ *  this API returns `-EOPNOTSUPP`.
+ *
+ *  @param conn
+ *    Target client. `NULL` means all currently connected clients.
+ *  @param num_params
+ *    Element count of `params` array.
+ *  @param params
+ *    Array of notification parameters. It is okay to free this after calling
+ *    this function.
+ *
+ *  @retval 0
+ *    Success. The PDU is queued for sending.
+ *  @retval -EINVAL
+ *    Not all `func` were equal or not all `user_data` were equal.
+ *  @retval -ERANGE
+ *    The notifications cannot all fit in a single ATT_MULTIPLE_HANDLE_VALUE_NTF.
+ *    Or they could, but exceed the MTU of all open ATT bearers.
+ *  @retval -EOPNOTSUPP
+ *    The peer hasn't yet communicated that it supports this PDU type.
  */
 int bt_gatt_notify_multiple(struct bt_conn *conn, uint16_t num_params,
 			    struct bt_gatt_notify_params *params);
