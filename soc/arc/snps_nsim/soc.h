@@ -16,9 +16,6 @@
 
 #include <zephyr/sys/util.h>
 
-/* ARC EM Core IRQs */
-#define IRQ_SEC_TIMER0			20
-
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/sys/util.h>
