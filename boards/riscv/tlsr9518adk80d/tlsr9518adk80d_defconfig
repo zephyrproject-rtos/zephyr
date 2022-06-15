@@ -16,3 +16,9 @@ CONFIG_UART_CONSOLE=y
 
 # HW DSP options
 CONFIG_TELINK_B91_HWDSP=n
+
+# Buffer for image writter shall be less(multiple of access alignment) or
+# equal to flash page. tlsr9518adk80d boards use external P25Q16 IC as
+# flesh memory. Flash page size of the IC is 256 bytes. So that, it is
+# maximum image writer buffer size for such kind of boards.
+CONFIG_IMG_BLOCK_BUF_SIZE=256
