@@ -9,7 +9,6 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/arch/arc/v2/aux_regs.h>
-#include <soc.h>
 /*
  * note: This implementation assumes Timer0 is present. Be sure
  * to build the ARC CPU with Timer0.
