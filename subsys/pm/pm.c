@@ -43,7 +43,7 @@ static struct pm_state_info z_cpus_pm_forced_state[] = {
 
 static struct k_spinlock pm_forced_state_lock;
 
-#ifdef CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
 static atomic_t z_cpus_active = ATOMIC_INIT(CONFIG_MP_NUM_CPUS);
 #endif
 static struct k_spinlock pm_notifier_lock;
@@ -52,6 +52,7 @@ static struct k_spinlock pm_notifier_lock;
 #ifdef CONFIG_PM_DEVICE
 extern const struct device *__pm_device_slots_start[];
 
+#if !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
@@ -105,6 +106,7 @@ static void pm_resume_devices(void)
 
 	num_susp = 0;
 }
+#endif  /* !CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE */
 #endif	/* CONFIG_PM_DEVICE */
 
 static inline void pm_exit_pos_ops(struct pm_state_info *info)
@@ -238,7 +240,7 @@ bool pm_system_suspend(int32_t ticks)
 				     true);
 	}
 
-#if CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
 	if ((z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) &&
 			(atomic_sub(&z_cpus_active, 1) == 1)) {
 		if (pm_suspend_devices()) {
@@ -269,7 +271,7 @@ bool pm_system_suspend(int32_t ticks)
 	pm_stats_stop();
 
 	/* Wake up sequence starts here */
-#if CONFIG_PM_DEVICE
+#if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
 	if (atomic_add(&z_cpus_active, 1) == 0) {
 		pm_resume_devices();
 	}
