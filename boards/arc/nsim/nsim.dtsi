@@ -13,12 +13,12 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+	};
 
-		intc: arcv2-intc {
-			compatible = "snps,arcv2-intc";
-			interrupt-controller;
-			#interrupt-cells = <2>;
-		};
+	intc: arcv2-intc {
+		compatible = "snps,arcv2-intc";
+		interrupt-controller;
+		#interrupt-cells = <2>;
 	};
 
 	uart0: uart@f0000000 {
