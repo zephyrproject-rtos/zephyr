@@ -37,13 +37,20 @@
 	};
 
 	zephyr,user {
-		pull-up-gpios = <&gpioe 4 GPIO_PULL_UP>;
-		no-pull-gpios = <&gpioe 6 GPIO_PUSH_PULL>;
+		push-pull-gpios = <&gpioe 6 GPIO_PUSH_PULL>, <&gpioc 6 GPIO_PUSH_PULL>;
 	};
 
 	aliases {
 		led0 = &led0;
 		sw0 = &user_button;
+	};
+
+	pwr_3v3: pwr-3v3-ctrl {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		regulator-name = "pwr-3v3-ctrl";
+		enable-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		status = "okay";
 	};
 };
 
@@ -69,7 +76,7 @@
 	apb2-prescaler = <1>;
 };
 
-&usart1 {
+arduino_serial: &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
@@ -97,7 +104,7 @@
 	status = "okay";
 };
 
-&i2c1 {
+arduino_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
 	status = "okay";

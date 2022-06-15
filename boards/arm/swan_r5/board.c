@@ -9,20 +9,20 @@
 
 static int board_swan_init(const struct device *dev)
 {
-	const struct gpio_dt_spec gpio4 =
-		GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), pull_up_gpios);
-	const struct gpio_dt_spec gpio6 =
-		GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), no_pull_gpios);
+	const struct gpio_dt_spec gpioe =
+		GPIO_DT_SPEC_GET_BY_IDX(DT_PATH(zephyr_user), push_pull_gpios, 0);
+	const struct gpio_dt_spec gpioc =
+		GPIO_DT_SPEC_GET_BY_IDX(DT_PATH(zephyr_user), push_pull_gpios, 1);
 
 	ARG_UNUSED(dev);
 
-	if (!device_is_ready(gpio4.port) ||
-	    !device_is_ready(gpio6.port)) {
+	if (!!device_is_ready(gpioe.port) ||
+	    !device_is_ready(gpioc.port)) {
 		return -ENODEV;
 	}
 
-	(void)gpio_pin_configure_dt(&gpio4, (GPIO_PUSH_PULL | GPIO_SPEED_LOW));
-	(void)gpio_pin_configure_dt(&gpio6, (GPIO_NOPULL | GPIO_MODE_ANALOG));
+	(void)gpio_pin_configure_dt(&gpioe, (GPIO_MODE_ANALOG | GPIO_NOPULL));
+	(void)gpio_pin_configure_dt(&gpioc, (GPIO_MODE_ANALOG | GPIO_NOPULL));
 
 	return 0;
 }
