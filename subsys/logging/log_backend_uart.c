@@ -6,7 +6,6 @@
 
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
-#include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_backend_std.h>

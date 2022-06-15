@@ -10,15 +10,6 @@ config LOG_PRINTK
 	help
 	  LOG_PRINTK messages are formatted in place and logged unconditionally.
 
-config LOG_PRINTK_MAX_STRING_LENGTH
-	int "Maximum string length supported by LOG_PRINTK"
-	depends on LOG_PRINTK
-	depends on (!LOG_MODE_IMMEDIATE || USERSPACE)
-	depends on LOG1
-	default 128
-	help
-	  Array is allocated on the stack.
-
 if LOG_MODE_DEFERRED && !LOG_FRONTEND_ONLY
 
 config LOG_MODE_OVERFLOW
@@ -110,49 +101,6 @@ config LOG_BUFFER_SIZE
 
 endif # LOG_MODE_DEFERRED && !LOG_FRONTEND_ONLY
 
-if LOG1_DEFERRED
-
-config LOG_DETECT_MISSED_STRDUP
-	bool "Detect missed handling of transient strings"
-	default y
-	help
-	  If enabled, logger will assert and log error message is it detects
-	  that string format specifier (%s) and string address which is not from
-	  read only memory section and not from pool used for string duplicates.
-	  String argument must be duplicated in that case using log_strdup().
-	  Detection is performed during log processing thus it does not impact
-	  logging timing.
-
-config LOG_STRDUP_MAX_STRING
-	int "Longest string that can be duplicated using log_strdup()"
-	range 1 8192
-	default 66 if BT
-	default 46 if NETWORKING
-	default 32
-	help
-	  Longer strings are truncated.
-
-config LOG_STRDUP_BUF_COUNT
-	int "Number of buffers in the pool used by log_strdup()"
-	default 8 if BT
-	default 4
-	help
-	  Number of calls to log_strdup() which can be pending before flushed
-	  to output. If "<log_strdup alloc failed>" message is seen in the log
-	  output, it means this value is too small and should be increased.
-	  Each entry takes CONFIG_LOG_STRDUP_MAX_STRING bytes of memory plus
-	  some additional fixed overhead.
-
-config LOG_STRDUP_POOL_PROFILING
-	bool "Profiling of pool used for log_strdup()"
-	help
-	  When enabled, maximal utilization of the pool is tracked. It can
-	  be read out using shell command.
-
-endif # LOG1_DEFERRED
-
-if LOG2
-
 config LOG_TRACE_SHORT_TIMESTAMP
 	bool "Use 24 bit timestamp for tracing"
 	default y
@@ -169,7 +117,6 @@ config LOG_SPEED
 	depends on !LOG_FRONTEND
 	help
 	  If enabled, logging may take more code size to get faster logging.
-endif # LOG2
 
 endif # !LOG_MODE_MINIMAL
 

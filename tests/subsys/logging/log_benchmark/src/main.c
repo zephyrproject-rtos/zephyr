@@ -29,9 +29,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DBG_PRINT(...)
 #endif
 
-typedef void (*custom_put_callback_t)(struct log_backend const *const backend,
-				      struct log_msg *msg, size_t counter);
-
 struct backend_cb {
 	size_t counter;
 	bool panic;
@@ -44,7 +41,6 @@ struct backend_cb {
 	uint32_t exp_nargs[100];
 	bool check_strdup;
 	bool exp_strdup[100];
-	custom_put_callback_t callback;
 	uint32_t total_drops;
 };
 

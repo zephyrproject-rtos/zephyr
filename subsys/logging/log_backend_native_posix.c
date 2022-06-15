@@ -10,7 +10,6 @@
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <zephyr/logging/log_core.h>
-#include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/irq.h>
 #include <zephyr/arch/posix/posix_trace.h>

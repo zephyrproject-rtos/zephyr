@@ -259,41 +259,17 @@ extern "C" {
  * printk functionality.
  *
  * It is less efficient compared to standard logging because static packaging
- * cannot be used. When CONFIG_LOG1 is used string formatting is performed in the
- * call context and not deferred to the log processing context (@ref log_process).
+ * cannot be used.
  *
  * @param fmt Formatted string to output.
  * @param ap  Variable parameters.
  */
 void z_log_vprintk(const char *fmt, va_list ap);
 
-/** @brief Copy transient string to a buffer from internal, logger pool.
- *
- * Function should be used when transient string is intended to be logged.
- * Logger allocates a buffer and copies input string returning a pointer to the
- * copy. Logger ensures that buffer is freed when logger message is freed.
- *
- * Depending on configuration, this function may do nothing and just pass
- * along the supplied string pointer. Do not rely on this function to always
- * make a copy!
- *
- * @param str Transient string.
- *
- * @return Copy of the string or default string if buffer could not be
- *	   allocated. String may be truncated if input string does not fit in
- *	   a buffer from the pool (see CONFIG_LOG_STRDUP_MAX_STRING). In
- *	   some configurations, the original string pointer is returned.
- */
-char *z_log_strdup(const char *str);
+/** @brief Deprecated. */
 static inline char *log_strdup(const char *str)
 {
-	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL) ||
-	    IS_ENABLED(CONFIG_LOG_FRONTEND) ||
-	    IS_ENABLED(CONFIG_LOG2)) {
-		return (char *)str;
-	}
-
-	return z_log_strdup(str);
+	return (char *)str;
 }
 
 #ifdef __cplusplus

@@ -30,7 +30,7 @@ void test_log_from_user(void)
 	LOG_INF("log from user");
 	LOG_INF("log from user %d", d);
 	cnt0 = log_buffered_cnt();
-	while (log_process(false)) {
+	while (log_process()) {
 	}
 	cnt1 = log_buffered_cnt();
 	zassert_true(cnt1 <= cnt0, "no message is handled");
@@ -42,7 +42,7 @@ void test_log_hexdump_from_user(void)
 	int32_t data = 128;
 
 	LOG_HEXDUMP_INF(&data, sizeof(data), "test_hexdump");
-	while (log_process(false)) {
+	while (log_process()) {
 	}
 }
 
@@ -61,7 +61,7 @@ void test_log_generic_user(void)
 	uint32_t source_id = 0;
 
 	call_log_generic(source_id, "log generic\n");
-	while (log_process(false)) {
+	while (log_process()) {
 	}
 }
 

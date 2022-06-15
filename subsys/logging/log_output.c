@@ -57,19 +57,8 @@ struct YMD_date {
 	uint32_t day;
 };
 
-extern void log_output_msg_syst_process(const struct log_output *output,
-				struct log_msg *msg, uint32_t flag);
 extern void log_output_msg2_syst_process(const struct log_output *output,
 				struct log_msg2 *msg, uint32_t flag);
-extern void log_output_string_syst_process(const struct log_output *output,
-				struct log_msg_ids src_level,
-				const char *fmt, va_list ap, uint32_t flag,
-				int16_t source_id);
-extern void log_output_hexdump_syst_process(const struct log_output *output,
-				struct log_msg_ids src_level,
-				const char *metadata,
-				const uint8_t *data, uint32_t length,
-				uint32_t flag, int16_t source_id);
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
  * highest severity and 7 to be the lowest (debugging level) severity.
@@ -367,95 +356,6 @@ static void newline_print(const struct log_output *ctx, uint32_t flags)
 	}
 }
 
-static void std_print(struct log_msg *msg,
-		      const struct log_output *output)
-{
-	const char *str = log_msg_str_get(msg);
-	uint32_t nargs = log_msg_nargs_get(msg);
-	log_arg_t *args = alloca(sizeof(log_arg_t)*nargs);
-	int i;
-
-	for (i = 0; i < nargs; i++) {
-		args[i] = log_msg_arg_get(msg, i);
-	}
-
-	switch (log_msg_nargs_get(msg)) {
-	case 0:
-		print_formatted(output, str);
-		break;
-	case 1:
-		print_formatted(output, str, args[0]);
-		break;
-	case 2:
-		print_formatted(output, str, args[0], args[1]);
-		break;
-	case 3:
-		print_formatted(output, str, args[0], args[1], args[2]);
-		break;
-	case 4:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3]);
-		break;
-	case 5:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4]);
-		break;
-	case 6:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5]);
-		break;
-	case 7:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6]);
-		break;
-	case 8:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6], args[7]);
-		break;
-	case 9:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8]);
-		break;
-	case 10:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9]);
-		break;
-	case 11:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10]);
-		break;
-	case 12:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10], args[11]);
-		break;
-	case 13:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10], args[11], args[12]);
-		break;
-	case 14:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10], args[11], args[12],
-				args[13]);
-		break;
-	case 15:
-		print_formatted(output, str, args[0], args[1], args[2],
-				args[3], args[4], args[5], args[6],  args[7],
-				args[8], args[9], args[10], args[11], args[12],
-				args[13], args[14]);
-		break;
-	default:
-		/* Unsupported number of arguments. */
-		__ASSERT_NO_MSG(true);
-		break;
-	}
-}
-
 static void hexdump_line_print(const struct log_output *output,
 			       const uint8_t *data, uint32_t length,
 			       int prefix_offset, uint32_t flags)
@@ -496,30 +396,6 @@ static void hexdump_line_print(const struct log_output *output,
 	}
 }
 
-static void hexdump_print(struct log_msg *msg,
-			  const struct log_output *output,
-			  int prefix_offset, uint32_t flags)
-{
-	uint32_t offset = 0U;
-	uint8_t buf[HEXDUMP_BYTES_IN_LINE];
-	size_t length;
-
-	print_formatted(output, "%s", log_msg_str_get(msg));
-
-	do {
-		length = sizeof(buf);
-		log_msg_hexdump_data_get(msg, buf, &length, offset);
-
-		if (length) {
-			hexdump_line_print(output, buf, length,
-					   prefix_offset, flags);
-			offset += length;
-		} else {
-			break;
-		}
-	} while (true);
-}
-
 static void log_msg2_hexdump(const struct log_output *output,
 			     uint8_t *data, uint32_t len,
 			     int prefix_offset, uint32_t flags)
@@ -534,35 +410,6 @@ static void log_msg2_hexdump(const struct log_output *output,
 		data += length;
 		len -= length;
 	} while (len);
-}
-
-
-static void raw_string_print(struct log_msg *msg,
-			     const struct log_output *output)
-{
-	__ASSERT_NO_MSG(output->size);
-
-	size_t offset = 0;
-	size_t length;
-	bool eol = false;
-
-	do {
-		length = output->size;
-		/* Sting is stored in a hexdump message. */
-		log_msg_hexdump_data_get(msg, output->buf, &length, offset);
-		output->control_block->offset = length;
-
-		if (length != 0) {
-			eol = (output->buf[length - 1] == '\n');
-		}
-
-		log_output_flush(output);
-		offset += length;
-	} while (length > 0);
-
-	if (eol) {
-		print_formatted(output, "\r");
-	}
 }
 
 static uint32_t prefix_print(const struct log_output *output,
@@ -626,43 +473,6 @@ static void postfix_print(const struct log_output *output,
 	newline_print(output, flags);
 }
 
-void log_output_msg_process(const struct log_output *output,
-			    struct log_msg *msg,
-			    uint32_t flags)
-{
-	bool std_msg = log_msg_is_std(msg);
-	uint32_t timestamp = log_msg_timestamp_get(msg);
-	uint8_t level = (uint8_t)log_msg_level_get(msg);
-	uint8_t domain_id = (uint8_t)log_msg_domain_id_get(msg);
-	int16_t source_id = (int16_t)log_msg_source_id_get(msg);
-	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
-	int prefix_offset;
-
-	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		log_output_msg_syst_process(output, msg, flags);
-		return;
-	}
-
-	prefix_offset = raw_string ?
-			0 : prefix_print(output, flags, std_msg, timestamp,
-					 level, domain_id, source_id);
-
-	if (log_msg_is_std(msg)) {
-		std_print(msg, output);
-	} else if (raw_string) {
-		raw_string_print(msg, output);
-	} else {
-		hexdump_print(msg, output, prefix_offset, flags);
-	}
-
-	if (!raw_string) {
-		postfix_print(output, flags, level);
-	}
-
-	log_output_flush(output);
-}
-
 void log_output_msg2_process(const struct log_output *output,
 			     struct log_msg2 *msg, uint32_t flags)
 {
@@ -706,95 +516,6 @@ void log_output_msg2_process(const struct log_output *output,
 		postfix_print(output, flags, level);
 	}
 
-	log_output_flush(output);
-}
-
-static bool ends_with_newline(const char *fmt)
-{
-	char c = '\0';
-
-	while (*fmt != '\0') {
-		c = *fmt;
-		fmt++;
-	}
-
-	return (c == '\n');
-}
-
-void log_output_string(const struct log_output *output,
-		       struct log_msg_ids src_level, uint32_t timestamp,
-		       const char *fmt, va_list ap, uint32_t flags)
-{
-	int length;
-	uint8_t level = (uint8_t)src_level.level;
-	uint8_t domain_id = (uint8_t)src_level.domain_id;
-	int16_t source_id = (int16_t)src_level.source_id;
-	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
-
-	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		log_output_string_syst_process(output, src_level, fmt, ap,
-					       flags, source_id);
-		return;
-	}
-
-	if (!raw_string) {
-		prefix_print(output, flags, true, timestamp,
-				level, domain_id, source_id);
-	}
-
-	length = cbvprintf(out_func, (void *)output, fmt, ap);
-
-	(void)length;
-
-	if (raw_string) {
-		/* add \r if string ends with newline. */
-		if (ends_with_newline(fmt)) {
-			print_formatted(output, "\r");
-		}
-	} else {
-		postfix_print(output, flags, level);
-	}
-
-	log_output_flush(output);
-}
-
-void log_output_hexdump(const struct log_output *output,
-			     struct log_msg_ids src_level, uint32_t timestamp,
-			     const char *metadata, const uint8_t *data,
-			     uint32_t length, uint32_t flags)
-{
-	uint32_t prefix_offset;
-	uint8_t level = (uint8_t)src_level.level;
-	uint8_t domain_id = (uint8_t)src_level.domain_id;
-	int16_t source_id = (int16_t)src_level.source_id;
-
-	if (IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYST) {
-		log_output_hexdump_syst_process(output, src_level, metadata,
-						data, length, flags,
-						source_id);
-		return;
-	}
-
-	prefix_offset = prefix_print(output, flags, true, timestamp,
-				     level, domain_id, source_id);
-
-	/* Print metadata */
-	print_formatted(output, "%s", metadata);
-
-	while (length != 0U) {
-		uint32_t part_len = length > HEXDUMP_BYTES_IN_LINE ?
-				HEXDUMP_BYTES_IN_LINE : length;
-
-		hexdump_line_print(output, data, part_len,
-				   prefix_offset, flags);
-
-		data += part_len;
-		length -= part_len;
-	}
-
-	postfix_print(output, flags, level);
 	log_output_flush(output);
 }
 

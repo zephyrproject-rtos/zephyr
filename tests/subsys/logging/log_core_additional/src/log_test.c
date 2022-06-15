@@ -158,14 +158,14 @@ static void log_setup(bool backend2_enable)
 	}
 }
 
-static bool log_test_process(bool bypass)
+static bool log_test_process(void)
 {
 	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
 		/* waiting for all logs have been handled */
 		k_sem_take(&log_sem, K_FOREVER);
 		return false;
 	} else {
-		return log_process(bypass);
+		return log_process();
 	}
 }
 
@@ -187,7 +187,7 @@ void test_log_domain_id(void)
 
 	LOG_INF("info message for domain id test");
 
-	while (log_test_process(false)) {
+	while (log_test_process()) {
 	}
 
 	zassert_equal(backend1_cb.total_logs, backend1_cb.counter,
@@ -256,7 +256,7 @@ void test_log_early_logging(void)
 		backend1_cb.total_logs = 3;
 		log_backend_enable(&backend1, &backend1_cb, LOG_LEVEL_DBG);
 
-		while (log_test_process(false)) {
+		while (log_test_process()) {
 		}
 
 		zassert_equal(backend1_cb.total_logs, backend1_cb.counter,
@@ -288,7 +288,7 @@ void test_log_severity(void)
 	LOG_ERR("error message");
 	backend1_cb.total_logs = 3;
 
-	while (log_test_process(false)) {
+	while (log_test_process()) {
 	}
 
 	zassert_equal(backend1_cb.total_logs, backend1_cb.counter,
@@ -336,7 +336,7 @@ void test_log_timestamping(void)
 	LOG_WRN("test timestamp");
 	backend1_cb.total_logs = 3;
 
-	while (log_test_process(false)) {
+	while (log_test_process()) {
 	}
 
 	zassert_equal(backend1_cb.total_logs,
@@ -423,34 +423,28 @@ void test_log_thread(void)
 }
 #endif
 
-static void call_log_generic(uint32_t source_id, const char *fmt, ...)
+static void call_log_generic(const char *fmt, ...)
 {
-	struct log_msg_ids src_level = {
-		.level = LOG_LEVEL_INF,
-		.domain_id = CONFIG_LOG_DOMAIN_ID,
-		.source_id = source_id,
-	};
-
 	va_list ap;
 
 	va_start(ap, fmt);
-	log_generic(src_level, fmt, ap, LOG_STRDUP_EXEC);
+	log2_generic(LOG_LEVEL_INF, fmt, ap);
 	va_end(ap);
 }
 
 void test_log_generic(void)
 {
-	source_id = LOG_CURRENT_MODULE_ID();
 	char *log_msg = "log user space";
+	int i = 100;
 
 	log_setup(false);
 	backend1_cb.total_logs = 4;
 
-	call_log_generic(source_id, "log generic");
-	call_log_generic(source_id, "log generic: %s", log_msg);
-	call_log_generic(source_id, "log generic %d\n", source_id);
-	call_log_generic(source_id, "log generic %d, %d\n", source_id, 1);
-	while (log_test_process(false)) {
+	call_log_generic("log generic");
+	call_log_generic("log generic: %s", log_msg);
+	call_log_generic("log generic %d\n", i);
+	call_log_generic("log generic %d, %d\n", i, 1);
+	while (log_test_process()) {
 	}
 }
 
@@ -475,7 +469,7 @@ void test_log_msg2_create(void)
 			  CONFIG_LOG_DOMAIN_ID, NULL,
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, test_msg_usr);
 
-		while (log_test_process(false)) {
+		while (log_test_process()) {
 		}
 	}
 }
@@ -499,7 +493,7 @@ void test_log_msg2_create_user(void)
 		  CONFIG_LOG_DOMAIN_ID, NULL,
 		  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, test_msg_usr);
 
-	while (log_test_process(false)) {
+	while (log_test_process()) {
 	}
 }
 /* The log process thread has the K_LOWEST_APPLICATION_THREAD_PRIO, adjust it

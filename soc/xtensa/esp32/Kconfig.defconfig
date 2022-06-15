@@ -42,9 +42,6 @@ endif
 config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	default n
 
-config LOG_DETECT_MISSED_STRDUP
-	default n
-
 if GDBSTUB
 
 # ESP32 GDB expects 420 bytes G-packet.

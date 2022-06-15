@@ -123,9 +123,6 @@ allocated.
 
 :kconfig:option:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logging.
 
-:kconfig:option:`CONFIG_LOG_PRINTK_MAX_STRING_LENGTH`: Maximal string length that can
-be processed by printk. Longer strings are trimmed.
-
 :kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
 messages reaches the threshold dedicated thread (see :c:func:`log_thread_set`)
 is waken up. If :kconfig:option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
@@ -140,20 +137,11 @@ after which logging thread is started.
 :kconfig:option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the circular
 packet buffer.
 
-:kconfig:option:`CONFIG_LOG_DETECT_MISSED_STRDUP`: Enable detection of missed transient
-strings handling.
-
-:kconfig:option:`CONFIG_LOG_STRDUP_MAX_STRING`: Longest string that can be duplicated
-using log_strdup().
-
-:kconfig:option:`CONFIG_LOG_STRDUP_BUF_COUNT`: Number of buffers in the pool used by
-log_strdup().
-
 :kconfig:option:`CONFIG_LOG_DOMAIN_ID`: Domain ID. Valid in multi-domain systems.
 
-:kconfig:option`CONFIG_LOG_FRONTEND`: Direct logs to a custom frontend.
+:kconfig:option:`CONFIG_LOG_FRONTEND`: Direct logs to a custom frontend.
 
-:kconfig:option`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
+:kconfig:option:`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
 
 :kconfig:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
 

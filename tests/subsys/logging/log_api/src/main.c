@@ -367,12 +367,6 @@ static size_t get_long_hexdump(void)
 		/* Hexdump message excluding data */
 		ROUND_UP(LOG_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
 			 sizeof(long long)) - 2 * sizeof(int);
-
-	uint32_t msgs_in_buf = (uint32_t)CONFIG_LOG_BUFFER_SIZE / sizeof(union log_msg_chunk);
-
-	return LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK +
-		HEXDUMP_BYTES_CONT_MSG * (msgs_in_buf - 1) -
-		HEXDUMP_BYTES_CONT_MSG;
 }
 
 /*

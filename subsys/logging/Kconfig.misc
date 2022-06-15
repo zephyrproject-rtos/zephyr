@@ -21,7 +21,6 @@ config LOG_TEST_CLEAR_MESSAGE_SPACE
 	bool "Clear message after allocation"
 	default y
 	depends on ZTEST
-	depends on LOG2
 	help
 	  Used in testing to simplify message comparision if message contains
 	  paddings.
@@ -67,7 +66,6 @@ config LOG_MEM_UTILIZATION
 	bool "Tracking maximum memory utilization"
 	depends on LOG_MODE_DEFERRED
 	default y if LOG_CMDS
-	select MEM_SLAB_TRACE_MAX_UTILIZATION if LOG1
 	help
 	  When enabled, maximum usage of memory used for log messages in deferred
 	  mode is tracked. It can be used to trim LOG_BUFFER_SIZE.
