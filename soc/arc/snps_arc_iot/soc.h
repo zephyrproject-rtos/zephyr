@@ -20,8 +20,6 @@
 #define SYSCLK_DEFAULT_IOSC_HZ			MHZ(16)
 
 /* ARC EM Core IRQs */
-#define IRQ_TIMER0				16
-#define IRQ_TIMER1				17
 #include "soc_irq.h"
 
 #define BASE_ADDR_SYSCONFIG		0xF000A000
