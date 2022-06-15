@@ -1,5 +1,3 @@
-/* soc.c - system/hardware module for nsim */
-
 /*
  * Copyright (c) 2016, 2019 Synopsys, Inc. All rights reserved.
  *
@@ -8,7 +6,7 @@
 
 /**
  * This module provides routines to initialize and support board-level hardware
- * for the ARC EM and HS cores in nSIM simulator.
+ * for the ARC EM and HS cores in nSIM simulator when SMP is enabled.
  *
  */
 
@@ -16,8 +14,7 @@
 #include <zephyr/init.h>
 #include "soc.h"
 
-#ifdef CONFIG_SMP
-static int arc_nsim_init(const struct device *dev)
+static int arc_nsim_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -41,5 +38,4 @@ static int arc_nsim_init(const struct device *dev)
 	return 0;
 }
 
-SYS_INIT(arc_nsim_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif /* CONFIG_SMP */
+SYS_INIT(arc_nsim_smp_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
