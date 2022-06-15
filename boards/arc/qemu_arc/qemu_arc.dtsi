@@ -24,6 +24,18 @@
 		#interrupt-cells = <2>;
 	};
 
+	timer0: timer0 {
+		compatible = "snps,arc-timer";
+		interrupts = <16 1>;
+		interrupt-parent = <&intc>;
+	};
+
+	timer1: timer1 {
+		compatible = "snps,arc-timer";
+		interrupts = <17 1>;
+		interrupt-parent = <&intc>;
+	};
+
 	/* We are carving out of DRAM for a pseudo flash and sram region */
 	flash0: flash@80000000 {
 		compatible = "soc-nv-flash";

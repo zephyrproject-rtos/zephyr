@@ -20,8 +20,6 @@
 #define SYSCLK_DEFAULT_IOSC_HZ			MHZ(100)
 
 /* ARC EM Core IRQs */
-#define IRQ_TIMER0				16
-
 #define IRQ_SEC_TIMER0			20
 
 #ifndef _ASMLANGUAGE

@@ -54,6 +54,18 @@
 		interrupt-parent = <&intc>;
 	};
 
+	timer0: timer0 {
+		compatible = "snps,arc-timer";
+		interrupts = <16 1>;
+		interrupt-parent = <&intc>;
+	};
+
+	timer1: timer1 {
+		compatible = "snps,arc-timer";
+		interrupts = <17 1>;
+		interrupt-parent = <&intc>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;

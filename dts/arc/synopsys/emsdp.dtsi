@@ -29,6 +29,12 @@
 		#interrupt-cells = <2>;
 	};
 
+	timer0: timer0 {
+		compatible = "snps,arc-timer";
+		interrupts = <16 1>;
+		interrupt-parent = <&intc>;
+	};
+
 	iccm0: iccm@60000000 {
 		compatible = "arc,iccm";
 		reg = <0x60000000 0x20000>;
