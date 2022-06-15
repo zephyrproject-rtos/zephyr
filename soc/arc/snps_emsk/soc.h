@@ -16,10 +16,6 @@
 
 #include <zephyr/sys/util.h>
 
-/* default system clock */
-/* On the EM Starter Kit board, the peripheral bus clock frequency is 50Mhz */
-#define SYSCLK_DEFAULT_IOSC_HZ			MHZ(50)
-
 #if defined(CONFIG_BOARD_EM_STARTERKIT_R23) && defined(CONFIG_SOC_EMSK_EM7D)
 #define IRQ_CORE_DMA_COMPLETE			22
 #define IRQ_CORE_DMA_ERROR			23

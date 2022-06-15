@@ -16,9 +16,6 @@
 
 #include <zephyr/sys/util.h>
 
-/* default system clock */
-#define SYSCLK_DEFAULT_IOSC_HZ			MHZ(100)
-
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/sys/util.h>
