@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include "nsim_em.dtsi"
+#include "nsim_em-sec.dtsi"
 
 / {
 
