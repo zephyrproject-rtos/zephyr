@@ -10,9 +10,8 @@
  *
  */
 
-#include <zephyr/device.h>
 #include <zephyr/init.h>
-#include "soc.h"
+#include <zephyr/arch/arc/v2/arc_connect.h>
 
 static int arc_nsim_smp_init(const struct device *dev)
 {
