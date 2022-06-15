@@ -16,10 +16,6 @@
 
 #include <zephyr/sys/util.h>
 
-
-/* ARC HS Core IRQs */
-#define IRQ_ICI					19
-
 #ifndef _ASMLANGUAGE
 
 
