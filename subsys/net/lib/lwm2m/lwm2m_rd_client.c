@@ -113,7 +113,6 @@ struct lwm2m_rd_client_info {
 	char ep_name[CLIENT_EP_LEN];
 	char server_ep[CLIENT_EP_LEN];
 
-	lwm2m_ctx_event_cb_t event_cb;
 	bool use_bootstrap : 1;
 
 	bool trigger_update : 1;
@@ -200,8 +199,8 @@ static void set_sm_state(uint8_t sm_state)
 	/* TODO: add locking? */
 	client.engine_state = sm_state;
 
-	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.event_cb) {
-		client.event_cb(client.ctx, event);
+	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.ctx->event_cb) {
+		client.ctx->event_cb(client.ctx, event);
 	}
 }
 
@@ -241,8 +240,8 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 
 	set_sm_state(sm_state);
 
-	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.event_cb) {
-		client.event_cb(client.ctx, event);
+	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.ctx->event_cb) {
+		client.ctx->event_cb(client.ctx, event);
 	}
 }
 
@@ -267,8 +266,8 @@ static void sm_handle_failure_state(enum sm_engine_state sm_state)
 	lwm2m_engine_context_close(client.ctx);
 	set_sm_state(sm_state);
 
-	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.event_cb) {
-		client.event_cb(client.ctx, event);
+	if (event > LWM2M_RD_CLIENT_EVENT_NONE && client.ctx->event_cb) {
+		client.ctx->event_cb(client.ctx, event);
 	}
 }
 
@@ -1190,7 +1189,7 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 	client.ctx->sock_fd = -1;
 	client.ctx->fault_cb = socket_fault_cb;
 	client.ctx->observe_cb = observe_cb;
-	client.event_cb = event_cb;
+	client.ctx->event_cb = event_cb;
 	client.use_bootstrap = flags & LWM2M_RD_CLIENT_FLAG_BOOTSTRAP;
 
 	set_sm_state(ENGINE_INIT);
@@ -1213,7 +1212,7 @@ int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 		return -EPERM;
 	}
 
-	client.event_cb = event_cb;
+	client.ctx->event_cb = event_cb;
 
 	if (sm_is_registered() && deregister) {
 		set_sm_state(ENGINE_DEREGISTER);
