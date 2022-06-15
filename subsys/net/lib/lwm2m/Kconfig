@@ -164,14 +164,14 @@ config LWM2M_CANCEL_OBSERVE_BY_PATH
 config LWM2M_ENGINE_DEFAULT_LIFETIME
 	int "LWM2M engine default server connection lifetime"
 	default 30
-	range 15 65535
+	range 15 4294967295
 	help
 	  Set the default lifetime (in seconds) for the LWM2M library engine
 
 config LWM2M_SECONDS_TO_UPDATE_EARLY
 	int "LWM2M Registration Update transmission time before timeout"
 	default 6
-	range 1 65535
+	range 1 4294967295
 	help
 	  Time in seconds before the registration timeout, when the LWM2M
 	  Registration Update is sent by the engine. In networks with large
