@@ -16,8 +16,6 @@
 
 #include <zephyr/sys/util.h>
 
-#define BASE_ADDR_SYSCONFIG		0xF000A000
-
 #ifndef _ASMLANGUAGE
 
 
