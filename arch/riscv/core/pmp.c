@@ -207,7 +207,8 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
  */
 extern void z_riscv_write_pmp_entries(unsigned int start, unsigned int end,
 				      bool clear_trailing_entries,
-				      ulong_t *pmp_addr, ulong_t *pmp_cfg);
+				      const ulong_t *pmp_addr,
+				      const ulong_t *pmp_cfg);
 
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
@@ -251,6 +252,21 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 	}
 
 	print_pmp_entries(start, end, pmp_addr, pmp_cfg, "register write");
+
+#ifdef CONFIG_QEMU_TARGET
+	/*
+	 * A QEMU bug may create bad transient PMP representations causing
+	 * false access faults to be reported. Work around it by setting
+	 * pmp registers to zero from the update start point to the end
+	 * before updating them with new values.
+	 * The QEMU fix is here with more details about this bug:
+	 * https://lists.gnu.org/archive/html/qemu-devel/2022-06/msg02800.html
+	 */
+	static const ulong_t pmp_zero[CONFIG_PMP_SLOTS] = { 0, };
+
+	z_riscv_write_pmp_entries(start, CONFIG_PMP_SLOTS, false,
+				  pmp_zero, pmp_zero);
+#endif
 
 	z_riscv_write_pmp_entries(start, end, clear_trailing_entries,
 				  pmp_addr, pmp_cfg);
