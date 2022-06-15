@@ -38,4 +38,7 @@ config UART_NS16550
 	default y
 	depends on SERIAL
 
+config UART_NS16550_ACCESS_IOPORT
+	default y
+
 endif # ARC_IOT
