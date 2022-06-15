@@ -186,8 +186,9 @@ To operate bluetooth on Nucleo WB55RG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
 Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/
-To date, interoperability and backward compatibility has been tested and is
-guaranteed up to version 1.5 of STM32Cube package releases.
+For compatibility information with the various versions of these binaries,
+please check `modules/hal/stm32/lib/stm32wb/hci/README <https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README>`__
+in the hal_stm32 repo.
 
 Connections and IOs
 ===================
