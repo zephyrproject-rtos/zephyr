@@ -3,16 +3,10 @@
 if(NOT CONFIG_LOG_MODE_MINIMAL)
   zephyr_sources_ifdef(
     CONFIG_LOG
-    log_list.c
     log_core.c
     log_mgmt.c
-    log_msg.c
-    log_output.c
-  )
-
-  zephyr_sources_ifdef(
-    CONFIG_LOG2
     log_msg2.c
+    log_output.c
   )
 
   # Determine if __auto_type is supported. If not then runtime approach must always
@@ -111,16 +105,4 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
 
 else()
   zephyr_sources(log_minimal.c)
-endif()
-
-if(CONFIG_LOG2_MODE_IMMEDIATE OR CONFIG_LOG2_MODE_DEFERRED)
-  message(WARNING "CONFIG_LOG2_MODE_{IMMEDIATE,DEFERRED} is deprecated. Please \
-                   use CONFIG_LOG_MODE_{IMMEDIATE,DEFERRED} which defaults to v2"
-          )
-endif()
-
-if(CONFIG_LOG1)
-  message(WARNING "Logging v1 has been deprecated. Use v2 instead and adapt \
-                   custom backend to the new backend API"
-          )
 endif()

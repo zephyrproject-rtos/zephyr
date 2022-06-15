@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 
-#include <zephyr/logging/log_msg.h>
+#include <zephyr/logging/log_msg2.h>
 #include <zephyr/sys/util.h>
 #include <stdarg.h>
 #include <zephyr/sys/atomic.h>
@@ -45,11 +45,6 @@ extern "C" {
 /** @brief Flag forcing syslog format specified in RFC 5424
  */
 #define LOG_OUTPUT_FLAG_FORMAT_SYSLOG		BIT(6)
-
-/** @brief Flag forcing syslog format specified in mipi sys-t.
- * This flag is deprecated and can only be used when CONFIG_LOG1 is enabled.
- */
-#define LOG_OUTPUT_FLAG_FORMAT_SYST		BIT(7)
 
 /** @brief Supported backend logging format types for use
  * with log_format_set() API to switch log format at runtime.
@@ -123,19 +118,6 @@ log_format_func_t log_format_func_t_get(uint32_t log_type);
 		.size = _size,						\
 	}
 
-/** @brief Process log messages to readable strings.
- *
- * Function is using provided context with the buffer and output function to
- * process formatted string and output the data.
- *
- * @param output Pointer to the log output instance.
- * @param msg Log message.
- * @param flags Optional flags.
- */
-void log_output_msg_process(const struct log_output *output,
-			    struct log_msg *msg,
-			    uint32_t flags);
-
 /** @brief Process log messages v2 to readable strings.
  *
  * Function is using provided context with the buffer and output function to
@@ -159,42 +141,6 @@ void log_output_msg2_process(const struct log_output *log_output,
  */
 void log_output_msg2_syst_process(const struct log_output *log_output,
 			     struct log_msg2 *msg, uint32_t flag);
-
-/** @brief Process log string
- *
- * Function is formatting provided string adding optional prefixes and
- * postfixes.
- *
- * @param output Pointer to log_output instance.
- * @param src_level  Log source and level structure.
- * @param timestamp  Timestamp.
- * @param fmt        String.
- * @param ap         String arguments.
- * @param flags      Optional flags.
- *
- */
-void log_output_string(const struct log_output *output,
-		       struct log_msg_ids src_level, uint32_t timestamp,
-		       const char *fmt, va_list ap, uint32_t flags);
-
-/** @brief Process log hexdump
- *
- * Function is formatting provided hexdump adding optional prefixes and
- * postfixes.
- *
- * @param output Pointer to log_output instance.
- * @param src_level  Log source and level structure.
- * @param timestamp  Timestamp.
- * @param metadata   String.
- * @param data       Data.
- * @param length     Data length.
- * @param flags      Optional flags.
- *
- */
-void log_output_hexdump(const struct log_output *output,
-			     struct log_msg_ids src_level, uint32_t timestamp,
-			     const char *metadata, const uint8_t *data,
-			     uint32_t length, uint32_t flags);
 
 /** @brief Process dropped messages indication.
  *
