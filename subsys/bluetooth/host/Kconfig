@@ -614,6 +614,7 @@ config BT_ID_MAX
 
 config BT_DF
 	bool "Direction Finding support [EXPERIMENTAL]"
+	depends on !BT_CTLR || BT_CTLR_DF_SUPPORT
 	select EXPERIMENTAL
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding.
@@ -624,24 +625,28 @@ if BT_DF
 
 config BT_DF_CONNECTIONLESS_CTE_RX
 	bool "Support for receive of CTE in connectionless mode"
+	depends on !BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
 
 config BT_DF_CONNECTIONLESS_CTE_TX
 	bool "Support for transmission of CTE in connectionless mode"
+	depends on !BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connectionless mode.
 
 config BT_DF_CONNECTION_CTE_RX
 	bool "Support for receive of CTE in connection mode"
+	depends on !BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connection mode.
 
 config BT_DF_CONNECTION_CTE_TX
 	bool "Support for transmission of CTE in connection mode"
+	depends on !BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connection mode.
