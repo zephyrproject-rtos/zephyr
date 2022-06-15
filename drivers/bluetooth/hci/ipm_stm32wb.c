@@ -72,8 +72,6 @@ struct aci_set_ble_addr {
 static bt_addr_t bd_addr_udn;
 #endif /* CONFIG_BT_HCI_HOST */
 
-#define HCI_CONFIG_DATA_RANDOM_ADDRESS_OFFSET	0x2E
-
 /* Rx thread definitions */
 K_FIFO_DEFINE(ipm_rx_events_fifo);
 static K_KERNEL_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_STM32_IPM_RX_STACK_SIZE);
