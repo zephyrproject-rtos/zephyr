@@ -1,0 +1,226 @@
+#!/usr/bin/env groovy
+def linuxBuildStageLabel = "Linux-Build-${UUID.randomUUID().toString()}"
+def jenkinsSlaveContainerName = 'jnlp'
+def jenkinsSlaveImage = 'amr-registry-pre.caas.intel.com/pse-pswe-software-ba/jenkins/jnlp-slave'
+containerImage =''
+
+def cloudName = 'kubernetes_embedded'
+def containerName = 'embedded'
+
+pipeline {
+    agent {
+        node {
+        label 'LinuxHost'
+        }
+    }
+
+    stages {
+        stage("Init") {
+            agent {
+                kubernetes {
+                    cloud cloudName
+                    label linuxBuildStageLabel
+                    yaml """
+kind: Pod
+apiVersion: v1
+spec:
+  securityContext:
+    runAsUser: 42554
+    runAsGroup: 20927
+    fsGroup: 15902
+  volumes:
+  - name: "sys-gsrd-data"
+    persistentVolumeClaim:
+      claimName: "sys-gsrd-data"
+      readOnly: false
+  - name: "sys-gsrd-home"
+    persistentVolumeClaim:
+      claimName: "sys-gsrd-home"
+      readOnly: false
+  - name: "sys-gsrd-work"
+    persistentVolumeClaim:
+      claimName: "sys-gsrd-work"
+      readOnly: false
+  - name: "swbldarchive2"
+    persistentVolumeClaim:
+      claimName: "swbldarchive2"
+      readOnly: false
+  - name: "swbldreleases1"
+    persistentVolumeClaim:
+      claimName: "swbldreleases1"
+      readOnly: true
+  - name: "etools"
+    persistentVolumeClaim:
+      claimName: "etools"
+      readOnly: true
+  - name: "itoolsubuntu"
+    persistentVolumeClaim:
+      claimName: "itoolsubuntu"
+      readOnly: true
+  - name: "ecnetbatch"
+    persistentVolumeClaim:
+      claimName: "ecnetbatch"
+      readOnly: true
+  - name: "sclocal"
+    persistentVolumeClaim:
+      claimName: "sclocal"
+      readOnly: true
+  - name: "genadm"
+    persistentVolumeClaim:
+      claimName: "genadm"
+      readOnly: true
+  - name: "nbconf"
+    persistentVolumeClaim:
+      claimName: "nbconf"
+      readOnly: true
+  - name: "ctools"
+    persistentVolumeClaim:
+      claimName: "ctools"
+      readOnly: true
+  - name: "swbldreleases2"
+    persistentVolumeClaim:
+      claimName: "swbldreleases2"
+      readOnly: true
+  - name: "swbldreleases5"
+    persistentVolumeClaim:
+      claimName: "swbldreleases5"
+      readOnly: true
+  - name: "flowscommon"
+    persistentVolumeClaim:
+      claimName: "flowscommon"
+      readOnly: true
+  - name: "flowsppe"
+    persistentVolumeClaim:
+      claimName: "flowsppe"
+      readOnly: true
+  - name: "flowssw"
+    persistentVolumeClaim:
+      claimName: "flowssw"
+      readOnly: true
+  - name: "flowshw"
+    persistentVolumeClaim:
+      claimName: "flowshw"
+      readOnly: true
+  - name: "gsrdhome"
+    persistentVolumeClaim:
+      claimName: "gsrdhome"
+      readOnly: false
+  - name: "psgdata"
+    persistentVolumeClaim:
+      claimName: "psgdata"
+      readOnly: false
+  - name: "platvalhub"
+    persistentVolumeClaim:
+      claimName: "platvalhub"
+      readOnly: false
+  - name: "swbldops7"
+    persistentVolumeClaim:
+      claimName: "swbldops7"
+      readOnly: false
+  containers:
+  - name: ${jenkinsSlaveContainerName}
+    image: ${jenkinsSlaveImage}
+    tty: true
+    imagePullPolicy: Always
+  - name: ${containerName}
+    image: 'amr-registry-pre.caas.intel.com/pse-pswe-software-ba/embedded_kw:ubuntu20.04.3-sys-gsrd'
+    tty: true
+    imagePullPolicy: Always
+    restartPolicy: "Never"
+    resources:
+        limits:
+            cpu: "4"
+            memory: 5Gi
+        requests:
+            cpu: "4"
+            memory: 5Gi
+    volumeMounts:
+    - mountPath: "/nfs/site/disks/psg_data_41"
+      name: "sys-gsrd-data"
+      readOnly: false
+    - mountPath: "/nfs/site/home/sys_gsrd"
+      name: "sys-gsrd-home"
+      readOnly: false
+    - mountPath: "/nfs/sc/disks/swuser_work_sys_gsrd"
+      name: "sys-gsrd-work"
+      readOnly: false
+    - mountPath: "/nfs/site/disks/swbld_releases_1"
+      name: "swbldreleases1"
+      readOnly: true
+    - mountPath: "/nfs/site/disks/psg_ctools_1"
+      name: "ctools"
+      readOnly: true
+    - mountPath: "/nfs/site/disks/swbld_releases_2"
+      name: "swbldreleases2"
+      readOnly: true
+    - mountPath: "/nfs/site/disks/swbld_releases_5"
+      name: "swbldreleases5"
+      readOnly: true
+    - mountPath: "/nfs/site/disks/psg_flowscommon_1"
+      name: "flowscommon"
+      readOnly: true
+    - mountPath: "/nfs/sc/disks/psg_flowsppe_1"
+      name: "flowsppe"
+      readOnly: true
+    - mountPath: "/nfs/site/disks/psg_flowssw_1"
+      name: "flowssw"
+      readOnly: true
+    - mountPath: "/nfs/site/disks/psg_flowshw_1"
+      name: "flowshw"
+      readOnly: true
+    - mountPath: "/nfs/site/home/gsrd"
+      name: "gsrdhome"
+      readOnly: false
+    - mountPath: "/nfs/site/disks/psg_data_31"
+      name: "psgdata"
+      readOnly: false
+    - mountPath: "/nfs/sc/disks/swbld_ops_7"
+      name: "swbldops7"
+      readOnly: false
+    - mountPath: "/nfs/sc/disks/psg_lsf_1"
+      name: "nbconf"
+      readOnly: true
+    - mountPath: "/nfs/site/itools"
+      name: "itoolsubuntu"
+      readOnly: true
+    - mountPath: "/nfs/sc/gen/adm"
+      name: "genadm"
+      readOnly: true
+    - mountPath: "/nfs/sc/local"
+      name: "sclocal"
+      readOnly: true
+    - mountPath: "/nfs/sc/disks/ec_netbatch"
+      name: "ecnetbatch"
+      readOnly: true
+    - mountPath: "/nfs/sc/disks/swip_etools_1"
+      name: "etools"
+      readOnly: true
+    - mountPath: "/nfs/site/disks/swbld_archive_2"
+      name: "swbldarchive2"
+      readOnly: true
+    command:
+    - /bin/sh
+    args:
+    - -c
+    - cat
+"""
+                }
+            }
+            steps {
+                container(containerName) {
+                    script{
+                        try {
+                            sh """#!/bin/bash -x
+                            cd $WORKSPACE
+                            chmod 755 .jenkins/buildScript.sh
+                            .jenkins/buildScript.sh
+                            """
+                        } catch (Exception e) {
+                            exit -1
+                        }
+                    }
+                }
+            }
+        }
+	}
+}
