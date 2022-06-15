@@ -72,6 +72,7 @@
 			reg = <0xf0008000 0x1000>;
 			label = "UART_0";
 			interrupt-parent = <&intc>;
+			reg-shift = <2>;
 		};
 
 		uart1: uart@f0009000 {
@@ -80,7 +81,7 @@
 			reg = <0xf0009000 0x1000>;
 			label = "UART_1";
 			interrupt-parent = <&intc>;
-
+			reg-shift = <2>;
 		};
 
 		uart2: uart@f000a000 {
@@ -89,7 +90,7 @@
 			reg = <0xf000a000 0x1000>;
 			label = "UART_2";
 			interrupt-parent = <&intc>;
-
+			reg-shift = <2>;
 		};
 
 		gpio0: gpio@f0002000 {
