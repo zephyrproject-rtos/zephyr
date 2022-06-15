@@ -654,10 +654,10 @@ async def _main(server):
         (last_seq, output) = winstream_read(last_seq)
         if output:
             adsp_log(output, server)
-        if dsp.HIPCTDR & 0x80000000:
-            ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
         if dsp.HIPCIDA & 0x80000000:
             dsp.HIPCIDA = 1<<31 # must ACK any DONE interrupts that arrive!
+        if dsp.HIPCTDR & 0x80000000:
+            ipc_command(dsp.HIPCTDR & ~0x80000000, dsp.HIPCTDD)
 
 class adsp_request_handler(socketserver.BaseRequestHandler):
     """
