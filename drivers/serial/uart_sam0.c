@@ -561,7 +561,7 @@ static int uart_sam0_init(const struct device *dev)
 	if (retval != 0) {
 		return retval;
 	}
-	dev_data->config_cache.data_bits = cfg->baudrate;
+	dev_data->config_cache.baudrate = cfg->baudrate;
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 	cfg->irq_config_func(dev);
