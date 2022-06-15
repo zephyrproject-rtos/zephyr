@@ -1,0 +1,33 @@
+# Copyright (c) 2022, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink B91 ADC node
+
+compatible: "telink,b91-adc"
+
+include: adc-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    "#io-channel-cells":
+      const: 1
+
+    sample-freq:
+      type: string
+      required: true
+      enum:
+        - "ADC_SAMPLE_FREQ_23K"
+        - "ADC_SAMPLE_FREQ_48K"
+        - "ADC_SAMPLE_FREQ_96K"
+
+    vref:
+      type: string
+      required: true
+      enum:
+        - "ADC_VREF_0P9V"
+        - "ADC_VREF_1P2V"
+
+io-channel-cells:
+    - input

@@ -170,3 +170,9 @@
 	pinctrl-0 = <&i2c_scl_pe1_default &i2c_sda_pe3_default>;
 	pinctrl-names = "default";
 };
+
+&adc {
+	status = "okay";
+	vref = "ADC_VREF_1P2V";
+	sample-freq = "ADC_SAMPLE_FREQ_96K";
+};
