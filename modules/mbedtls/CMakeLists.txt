@@ -24,6 +24,10 @@ if(CONFIG_MBEDTLS_BUILTIN)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/*.c
     )
 
+  if(CONFIG_MBEDTLS_DEBUG_EXTRACT_BASENAME_AT_BUILDTIME)
+    zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_CURRENT_MODULE_DIR}/library/=)
+  endif()
+
   zephyr_library_sources(
     zephyr_init.c
     ${mbedtls_sources}
