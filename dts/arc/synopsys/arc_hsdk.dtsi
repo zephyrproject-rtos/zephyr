@@ -72,6 +72,7 @@
 			reg = <0xf0005000 0x1000>;
 			label = "UART_0";
 			interrupts = <30 1>;
+			reg-shift = <2>;
 		};
 
 		uart1: uart@f0026000{
@@ -80,7 +81,7 @@
 			reg = <0xf0026000 0x1000>;
 			label = "UART_1";
 			interrupts = <46 1>;
-
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
@@ -90,7 +91,7 @@
 			reg = <0xf0027000 0x1000>;
 			label = "UART_2";
 			interrupts = <47 1>;
-
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
@@ -100,7 +101,7 @@
 			reg = <0xf0028000 0x1000>;
 			label = "UART_3";
 			interrupts = <48 1>;
-
+			reg-shift = <2>;
 			status = "disabled";
 		};
 

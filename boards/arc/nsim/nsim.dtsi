@@ -29,6 +29,7 @@
 		label = "UART_0";
 		interrupt-parent = <&intc>;
 		interrupts = <24 1>;
+		reg-shift = <2>;
 	};
 
 	chosen {

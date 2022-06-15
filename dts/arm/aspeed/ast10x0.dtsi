@@ -35,6 +35,7 @@
 			interrupts = <8 0>;
 			status = "disabled";
 			label = "UART_5";
+			reg-shift = <2>;
 		};
 	};
 };

@@ -61,6 +61,7 @@
 			compatible = "ns16550";
 
 			reg = <PCIE_BDF(0,0x1e,0) PCIE_ID(0x8086,0x4b28)>;
+			reg-shift = <2>;
 
 			label = "UART_0";
 			clock-frequency = <1843200>;
@@ -74,6 +75,7 @@
 			compatible = "ns16550";
 
 			reg = <PCIE_BDF(0,0x1e,1) PCIE_ID(0x8086,0x4b29)>;
+			reg-shift = <2>;
 
 			label = "UART_1";
 			clock-frequency = <1843200>;
@@ -88,6 +90,7 @@
 			compatible = "ns16550";
 
 			reg = <PCIE_BDF(0,0x19,2) PCIE_ID(0x8086,0x4b4d)>;
+			reg-shift = <2>;
 
 			label = "UART_2";
 			clock-frequency = <1843200>;
@@ -102,6 +105,7 @@
 			compatible = "ns16550";
 
 			reg = <PCIE_BDF(0,0x11,0) PCIE_ID(0x8086,0x4b96)>;
+			reg-shift = <2>;
 
 			label = "UART_PSE_0";
 			clock-frequency = <1843200>;
@@ -116,6 +120,7 @@
 			compatible = "ns16550";
 
 			reg = <PCIE_BDF(0,0x11,1) PCIE_ID(0x8086,0x4b97)>;
+			reg-shift = <2>;
 
 			label = "UART_PSE_1";
 			clock-frequency = <1843200>;
@@ -130,6 +135,7 @@
 			compatible = "ns16550";
 
 			reg = <PCIE_BDF(0,0x11,2) PCIE_ID(0x8086,0x4b98)>;
+			reg-shift = <2>;
 
 			label = "UART_PSE_2";
 			clock-frequency = <1843200>;
@@ -144,6 +150,7 @@
 			compatible = "ns16550";
 
 			reg = <PCIE_BDF(0,0x11,3) PCIE_ID(0x8086,0x4b99)>;
+			reg-shift = <2>;
 
 			label = "UART_PSE_3";
 			clock-frequency = <1843200>;
@@ -158,6 +165,7 @@
 			compatible = "ns16550";
 
 			reg = <PCIE_BDF(0,0x11,4) PCIE_ID(0x8086,0x4b9a)>;
+			reg-shift = <2>;
 
 			label = "UART_PSE_4";
 			clock-frequency = <1843200>;
@@ -172,6 +180,7 @@
 			compatible = "ns16550";
 
 			reg = <PCIE_BDF(0,0x11,5) PCIE_ID(0x8086,0x4b9b)>;
+			reg-shift = <2>;
 
 			label = "UART_PSE_5";
 			clock-frequency = <1843200>;

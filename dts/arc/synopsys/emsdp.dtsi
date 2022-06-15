@@ -59,6 +59,7 @@
 			reg = <0xf0004000 0x1000>;
 			label = "UART_0";
 			interrupt-parent = <&intc>;
+			reg-shift = <2>;
 		};
 
 		gpio0: gpio@f0002000 {
