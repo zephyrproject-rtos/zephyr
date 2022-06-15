@@ -33,6 +33,9 @@ config NET_CONFIG_IEEE802154_DEV_NAME
 config I2C_TELINK_B91
 	default y if I2C
 
+config ADC_TELINK_B91
+	default y if ADC
+
 if BT
 
 # BLE Controller SDK from hal_telink requires
