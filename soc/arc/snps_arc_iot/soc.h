@@ -16,9 +16,6 @@
 
 #include <zephyr/sys/util.h>
 
-/* default system clock */
-#define SYSCLK_DEFAULT_IOSC_HZ			MHZ(16)
-
 /* ARC EM Core IRQs */
 #include "soc_irq.h"
 

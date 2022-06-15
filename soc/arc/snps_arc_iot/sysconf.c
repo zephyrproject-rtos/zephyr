@@ -7,6 +7,8 @@
 #include "soc.h"
 #include "sysconf.h"
 
+/* default system clock */
+#define SYSCLK_DEFAULT_IOSC_HZ			MHZ(16)
 
 #define PLL_CLK_IN	(SYSCLK_DEFAULT_IOSC_HZ / 1000000)  /* PLL clock in */
 
