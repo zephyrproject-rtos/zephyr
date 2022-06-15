@@ -1439,6 +1439,18 @@ int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx)
 
 	if (client_ctx->connection_suspended) {
 		client_ctx->connection_suspended = false;
+		if (client_ctx->sock_fd >= 0) {
+			int ret;
+
+			ret = close(client_ctx->sock_fd);
+			if (ret) {
+				LOG_ERR("Failed to close socket: %d", errno);
+				ret = -errno;
+				return ret;
+			}
+			client_ctx->sock_fd = -1;
+		}
+
 		LOG_DBG("Resume suspended connection");
 		return lwm2m_socket_start(client_ctx);
 	}
@@ -5550,23 +5562,7 @@ int lwm2m_engine_close_socket_connection(struct lwm2m_ctx *client_ctx)
 	}
 
 	if (client_ctx->sock_fd >= 0) {
-		ret = close(client_ctx->sock_fd);
-		if (ret) {
-			LOG_ERR("Failed to close socket: %d", errno);
-			ret = -errno;
-			return ret;
-		}
-		client_ctx->sock_fd = -1;
 		client_ctx->connection_suspended = true;
-	}
-
-	/* Open socket again that Observation and re-send functionality works */
-	client_ctx->sock_fd =
-		socket(client_ctx->remote_addr.sa_family, SOCK_DGRAM, IPPROTO_DTLS_1_2);
-
-	if (client_ctx->sock_fd < 0) {
-		LOG_ERR("Failed to create socket: %d", errno);
-		return -errno;
 	}
 #endif
 
