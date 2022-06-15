@@ -18,7 +18,6 @@ config LOG_BACKEND_$(backend)_OUTPUT_SYST
 
 config LOG_BACKEND_$(backend)_OUTPUT_DICTIONARY
 	bool "Dictionary"
-	depends on LOG2
 	select LOG_DICTIONARY_SUPPORT
 	help
 	  Backend is in dictionary-based logging output mode.

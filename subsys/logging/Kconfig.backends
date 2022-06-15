@@ -6,7 +6,6 @@ menu "Backends"
 config LOG_BACKEND_UART
 	bool "UART backend"
 	depends on UART_CONSOLE
-	depends on !LOG1
 	default y if !SHELL_BACKEND_SERIAL
 	help
 	  When enabled backend is using UART to output logs.
@@ -55,7 +54,6 @@ endif # LOG_BACKEND_UART
 config LOG_BACKEND_SWO
 	bool "Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
-	depends on !LOG1
 	help
 	  When enabled, backend will use SWO for logging.
 
@@ -85,7 +83,6 @@ endif # LOG_BACKEND_SWO
 config LOG_BACKEND_RTT
 	bool "Segger J-Link RTT backend"
 	depends on USE_SEGGER_RTT
-	depends on !LOG1
 	default y if !SHELL_BACKEND_RTT
 	select SEGGER_RTT_CUSTOM_LOCKING
 	help
@@ -191,7 +188,6 @@ endif # LOG_BACKEND_RTT
 config LOG_BACKEND_SPINEL
 	bool "OpenThread dedicated Spinel protocol backend"
 	depends on !LOG_BACKEND_UART
-	depends on !LOG1
 	depends on NET_L2_OPENTHREAD
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
@@ -216,7 +212,6 @@ endif # LOG_BACKEND_SPINEL
 config LOG_BACKEND_NATIVE_POSIX
 	bool "Native backend"
 	depends on ARCH_POSIX
-	depends on !LOG1
 	default y if !SERIAL
 	help
 	  Enable backend in native_posix
@@ -232,7 +227,6 @@ endif # LOG_BACKEND_NATIVE_POSIX
 config LOG_BACKEND_XTENSA_SIM
 	bool "Xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_FAMILY_INTEL_ADSP
-	depends on !LOG1
 	default y if SOC_XTENSA_SAMPLE_CONTROLLER
 	help
 	  Enable backend in xtensa simulator
@@ -258,7 +252,6 @@ endif # LOG_BACKEND_XTENSA_SIM
 config LOG_BACKEND_NET
 	bool "Networking backend"
 	depends on NETWORKING && NET_UDP && !LOG_MODE_IMMEDIATE
-	depends on !LOG1
 	select NET_CONTEXT_NET_PKT_POOL
 	help
 	  Send syslog messages to network server.
@@ -320,7 +313,6 @@ endif # LOG_BACKEND_NET
 config LOG_BACKEND_ADSP
 	bool "Intel ADSP buffer backend"
 	depends on SOC_FAMILY_INTEL_ADSP
-	depends on !LOG1
 	help
 	  Enable backend for the host trace protocol of the Intel ADSP
 	  family of audio processors
@@ -335,7 +327,7 @@ endif # LOG_BACKEND_ADSP
 
 config LOG_BACKEND_CAVS_HDA
 	bool "cAVS HDA backend"
-	depends on SOC_FAMILY_INTEL_ADSP && DMA && DMA_CAVS_HDA && LOG2
+	depends on SOC_FAMILY_INTEL_ADSP && DMA && DMA_CAVS_HDA
 	help
 	  Provide a logging backend which writes to a buffer and
 	  periodically flushes to hardware using ringbuffer like
@@ -371,7 +363,6 @@ endif # LOG_BACKEND_CAVS_HDA
 config LOG_BACKEND_FS
 	bool "File system backend"
 	depends on FILE_SYSTEM
-	depends on !LOG1
 	help
 	  When enabled, backend is using the configured file system to output logs.
 	  As the file system must be mounted for the logging to work, it must be
