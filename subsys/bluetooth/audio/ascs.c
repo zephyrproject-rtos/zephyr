@@ -619,9 +619,6 @@ static void ascs_clear(struct bt_ascs *ascs)
 			ascs_ep_set_state(&ase->ep, BT_AUDIO_EP_STATE_IDLE);
 		}
 	}
-
-	bt_conn_unref(ascs->conn);
-	ascs->conn = NULL;
 }
 
 static void ase_disable(struct bt_ascs_ase *ase)
@@ -695,9 +692,6 @@ static void ascs_detach(struct bt_ascs *ascs)
 			ase_release(ase, true);
 		}
 	}
-
-	bt_conn_unref(ascs->conn);
-	ascs->conn = NULL;
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -707,15 +701,29 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	BT_DBG("");
 
 	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
-		if (sessions[i].conn != conn) {
+		struct bt_ascs *ascs = &sessions[i];
+
+		if (ascs->conn != conn) {
 			continue;
 		}
 
 		/* Release existing ASEs if not bonded */
 		if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-			ascs_clear(&sessions[i]);
+			ascs_clear(ascs);
 		} else {
-			ascs_detach(&sessions[i]);
+			ascs_detach(ascs);
+		}
+
+		bt_conn_unref(ascs->conn);
+		ascs->conn = NULL;
+
+		for (size_t i = 0U; i < ARRAY_SIZE(ascs->ases); i++) {
+			struct bt_audio_stream *stream = ascs->ases[i].ep.stream;
+
+			if (stream != NULL && stream->conn != NULL) {
+				bt_conn_unref(stream->conn);
+				stream->conn = NULL;
+			}
 		}
 	}
 }
