@@ -38,6 +38,7 @@
 			clock-frequency = <25000000>;
 			interrupts = <MCU_AON_UART_INTR 3>;
 			label = "UART_0";
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
@@ -47,6 +48,7 @@
 			clock-frequency = <100000000>;
 			interrupts = <UART0_INTR 3>;
 			label = "UART_1";
+			reg-shift = <2>;
 			status = "disabled";
 		};
 	};
