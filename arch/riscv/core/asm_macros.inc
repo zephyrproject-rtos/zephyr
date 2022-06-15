@@ -76,3 +76,12 @@
 	.endr
 999:
 	.endm
+
+/* lowest common denominator for register availability */
+#if defined(CONFIG_RISCV_ISA_RV32E)
+#define RV_E(op...) op
+#define RV_I(op...) /* unavailable */
+#else
+#define RV_E(op...) op
+#define RV_I(op...) op
+#endif

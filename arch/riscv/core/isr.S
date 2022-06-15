@@ -42,38 +42,25 @@
 	op fa7, __z_arch_esf_t_fa7_OFFSET(reg)	 ;
 
 #define DO_CALLER_SAVED_T0T1(op) \
-	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
-	op t1, __z_arch_esf_t_t1_OFFSET(sp)
+	RV_E(	op t0, __z_arch_esf_t_t0_OFFSET(sp)	);\
+	RV_E(	op t1, __z_arch_esf_t_t1_OFFSET(sp)	)
 
-#if defined(CONFIG_RISCV_ISA_RV32E)
 #define DO_CALLER_SAVED_REST(op) \
-	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
-	op a0, __z_arch_esf_t_a0_OFFSET(sp)		;\
-	op a1, __z_arch_esf_t_a1_OFFSET(sp)		;\
-	op a2, __z_arch_esf_t_a2_OFFSET(sp)		;\
-	op a3, __z_arch_esf_t_a3_OFFSET(sp)		;\
-	op a4, __z_arch_esf_t_a4_OFFSET(sp)		;\
-	op a5, __z_arch_esf_t_a5_OFFSET(sp)		;\
-	op tp, __z_arch_esf_t_tp_OFFSET(sp)             ;\
-	op ra, __z_arch_esf_t_ra_OFFSET(sp)
-#else
-#define DO_CALLER_SAVED_REST(op) \
-	op t2, __z_arch_esf_t_t2_OFFSET(sp)		;\
-	op t3, __z_arch_esf_t_t3_OFFSET(sp)		;\
-	op t4, __z_arch_esf_t_t4_OFFSET(sp)		;\
-	op t5, __z_arch_esf_t_t5_OFFSET(sp)		;\
-	op t6, __z_arch_esf_t_t6_OFFSET(sp)		;\
-	op a0, __z_arch_esf_t_a0_OFFSET(sp)		;\
-	op a1, __z_arch_esf_t_a1_OFFSET(sp)		;\
-	op a2, __z_arch_esf_t_a2_OFFSET(sp)		;\
-	op a3, __z_arch_esf_t_a3_OFFSET(sp)		;\
-	op a4, __z_arch_esf_t_a4_OFFSET(sp)		;\
-	op a5, __z_arch_esf_t_a5_OFFSET(sp)		;\
-	op a6, __z_arch_esf_t_a6_OFFSET(sp)		;\
-	op a7, __z_arch_esf_t_a7_OFFSET(sp)		;\
-	op tp, __z_arch_esf_t_tp_OFFSET(sp)             ;\
-	op ra, __z_arch_esf_t_ra_OFFSET(sp)
-#endif /* CONFIG_RISCV_ISA_RV32E */
+	RV_E(	op t2, __z_arch_esf_t_t2_OFFSET(sp)	);\
+	RV_I(	op t3, __z_arch_esf_t_t3_OFFSET(sp)	);\
+	RV_I(	op t4, __z_arch_esf_t_t4_OFFSET(sp)	);\
+	RV_I(	op t5, __z_arch_esf_t_t5_OFFSET(sp)	);\
+	RV_I(	op t6, __z_arch_esf_t_t6_OFFSET(sp)	);\
+	RV_E(	op a0, __z_arch_esf_t_a0_OFFSET(sp)	);\
+	RV_E(	op a1, __z_arch_esf_t_a1_OFFSET(sp)	);\
+	RV_E(	op a2, __z_arch_esf_t_a2_OFFSET(sp)	);\
+	RV_E(	op a3, __z_arch_esf_t_a3_OFFSET(sp)	);\
+	RV_E(	op a4, __z_arch_esf_t_a4_OFFSET(sp)	);\
+	RV_E(	op a5, __z_arch_esf_t_a5_OFFSET(sp)	);\
+	RV_I(	op a6, __z_arch_esf_t_a6_OFFSET(sp)	);\
+	RV_I(	op a7, __z_arch_esf_t_a7_OFFSET(sp)	);\
+	RV_E(	op tp, __z_arch_esf_t_tp_OFFSET(sp)	);\
+	RV_E(	op ra, __z_arch_esf_t_ra_OFFSET(sp)	)
 
 #ifdef CONFIG_SMP
 #define GET_CURRENT_CPU(dst, tmp) \
