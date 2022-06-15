@@ -105,6 +105,19 @@ enum lwm2m_observe_event {
 typedef void (*lwm2m_observe_cb_t)(enum lwm2m_observe_event event, struct lwm2m_obj_path *path,
 				   void *user_data);
 
+
+struct lwm2m_ctx;
+enum lwm2m_rd_client_event;
+/**
+ * @brief Asynchronous RD client event callback
+ *
+ * @param[in] ctx LwM2M context generating the event
+ * @param[in] event LwM2M RD client event code
+ */
+typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
+				     enum lwm2m_rd_client_event event);
+
+
 /**
  * @brief LwM2M context structure to maintain information for a single
  * LwM2M connection.
@@ -191,6 +204,8 @@ struct lwm2m_ctx {
 	 *  out notifications.
 	 */
 	lwm2m_observe_cb_t observe_cb;
+
+	lwm2m_ctx_event_cb_t event_cb;
 
 	/** Validation buffer. Used as a temporary buffer to decode the resource
 	 *  value before validation. On successful validation, its content is
@@ -1210,15 +1225,6 @@ enum lwm2m_rd_client_event {
  * @brief Run bootstrap procedure in current session.
  */
 #define LWM2M_RD_CLIENT_FLAG_BOOTSTRAP BIT(0)
-
-/**
- * @brief Asynchronous RD client event callback
- *
- * @param[in] ctx LwM2M context generating the event
- * @param[in] event LwM2M RD client event code
- */
-typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
-				     enum lwm2m_rd_client_event event);
 
 /**
  * @brief Start the LwM2M RD (Registration / Discovery) Client
