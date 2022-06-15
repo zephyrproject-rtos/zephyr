@@ -6,6 +6,7 @@
 
 config BT_EXT_ADV
 	bool "Extended Advertising and Scanning support [EXPERIMENTAL]"
+	depends on !BT_CTLR || BT_CTLR_ADV_EXT_SUPPORT
 	select EXPERIMENTAL
 	help
 	  Select this to enable Extended Advertising API support.
