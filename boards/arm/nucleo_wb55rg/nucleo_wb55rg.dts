@@ -17,6 +17,7 @@
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,bt-mon-uart = &lpuart1;
+		zephyr,bt-c2h-uart = &lpuart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -159,7 +160,9 @@
 };
 
 &lpuart1 {
-	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
+	pinctrl-0 = <&lpuart1_tx_pc1 &lpuart1_rx_pc0
+			&lpuart1_cts_pa6 &lpuart1_rts_pb12>;
+	hw-flow-control;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
