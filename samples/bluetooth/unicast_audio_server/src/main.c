@@ -43,6 +43,8 @@ static struct bt_audio_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_A
 static struct bt_audio_stream *source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
+static K_SEM_DEFINE(sem_disconnected, 0, 1);
+
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
@@ -450,6 +452,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
+
+	k_sem_give(&sem_disconnected);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -512,14 +516,29 @@ void main(void)
 		return;
 	}
 
-	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
-		printk("Failed to start advertising set (err %d)\n", err);
-		return;
+	while (true) {
+		struct k_work_sync sync;
+
+		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err) {
+			printk("Failed to start advertising set (err %d)\n", err);
+			return;
+		}
+
+		printk("Advertising successfully started\n");
+
+		k_work_init_delayable(&audio_send_work, audio_timer_timeout);
+
+		err = k_sem_take(&sem_disconnected, K_FOREVER);
+		if (err != 0) {
+			printk("failed to take sem_disconnected (err %d)\n", err);
+			return;
+		}
+
+		/* reset data */
+		(void)memset(source_streams, 0, sizeof(source_streams));
+		configured_source_stream_count = 0U;
+		k_work_cancel_delayable_sync(&audio_send_work, &sync);
+
 	}
-
-	printk("Advertising successfully started\n");
-
-
-	k_work_init_delayable(&audio_send_work, audio_timer_timeout);
 }
