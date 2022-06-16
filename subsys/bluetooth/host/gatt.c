@@ -2106,7 +2106,7 @@ static void notify_mult_process(struct k_work *work)
 	}
 }
 
-K_WORK_DEFINE(nfy_mult_work, notify_mult_process);
+K_WORK_DELAYABLE_DEFINE(nfy_mult_work, notify_mult_process);
 
 static bool gatt_cf_notify_multi(struct bt_conn *conn)
 {
@@ -2158,7 +2158,11 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 	net_buf_add(*buf, params->len);
 	memcpy(nfy->value, params->data, params->len);
 
-	k_work_submit(&nfy_mult_work);
+	/* Use `k_work_schedule` to keep the original deadline, instead of
+	 * re-setting the timeout whenever a new notification is appended.
+	 */
+	k_work_schedule(&nfy_mult_work,
+			K_MSEC(CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS));
 
 	return 0;
 }
