@@ -363,6 +363,7 @@ struct i3c_msg {
  */
 enum i3c_config_type {
 	I3C_CONFIG_CONTROLLER,
+	I3C_CONFIG_TARGET,
 	I3C_CONFIG_CUSTOM,
 };
 
@@ -428,6 +429,7 @@ struct i3c_config_custom {
 struct i3c_device_desc;
 struct i3c_device_id;
 struct i3c_i2c_device_desc;
+struct i3c_target_config;
 
 __subsystem struct i3c_driver_api {
 	/**
@@ -587,6 +589,42 @@ __subsystem struct i3c_driver_api {
 	 */
 	int (*ibi_disable)(const struct device *dev,
 			   struct i3c_device_desc *target);
+
+	/**
+	 * Register config as target device of a controller.
+	 *
+	 * This tells the controller to act as a target device
+	 * on the I3C bus.
+	 *
+	 * Target device only API.
+	 *
+	 * @see i3c_target_register
+	 *
+	 * @param dev Pointer to the controller device driver instance.
+	 * @param cfg I3C target device configuration
+	 *
+	 * @return @see i3c_target_register
+	 */
+	int (*target_register)(const struct device *dev,
+			       struct i3c_target_config *cfg);
+
+	/**
+	 * Unregister config as target device of a controller.
+	 *
+	 * This tells the controller to stop acting as a target device
+	 * on the I3C bus.
+	 *
+	 * Target device only API.
+	 *
+	 * @see i3c_target_unregister
+	 *
+	 * @param dev Pointer to the controller device driver instance.
+	 * @param cfg I3C target device configuration
+	 *
+	 * @return @see i3c_target_unregister
+	 */
+	int (*target_unregister)(const struct device *dev,
+				 struct i3c_target_config *cfg);
 };
 
 /**
@@ -1559,6 +1597,13 @@ int i3c_bus_init(const struct device *dev,
  * @retval -EIO General Input/Output error.
  */
 int i3c_device_basic_info_get(struct i3c_device_desc *target);
+
+/*
+ * This needs to be after declaration of struct i3c_driver_api,
+ * or else compiler complains about undefined type inside
+ * the static inline API wrappers.
+ */
+#include <zephyr/drivers/i3c/target_device.h>
 
 #ifdef __cplusplus
 }
