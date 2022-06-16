@@ -92,9 +92,9 @@ struct itds_accel_range {
 
 struct itds_device_config {
 	struct i2c_dt_spec i2c;
-	const char *gpio_port;
-	gpio_pin_t int_pin;
-	gpio_dt_flags_t int_flags;
+#ifdef	CONFIG_ITDS_TRIGGER
+	struct gpio_dt_spec int_gpio;
+#endif
 	int def_odr;
 	int def_op_mode;
 };
@@ -102,7 +102,6 @@ struct itds_device_config {
 #define ITDS_SAMPLE_SIZE	3
 struct itds_device_data {
 #ifdef	CONFIG_ITDS_TRIGGER
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_work work;
 #endif
