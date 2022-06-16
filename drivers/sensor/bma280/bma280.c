@@ -164,6 +164,8 @@ static struct bma280_data bma280_inst_data;
 
 static const struct bma280_config bma280_inst_config = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+	IF_ENABLED(CONFIG_BMA280_TRIGGER,
+			   (.int1_gpio = GPIO_DT_SPEC_INST_GET(0, int1_gpios),))
 };
 
 DEVICE_DT_INST_DEFINE(0, bma280_init, NULL, &bma280_inst_data,
