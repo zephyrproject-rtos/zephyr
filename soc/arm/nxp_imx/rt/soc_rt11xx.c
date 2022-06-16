@@ -43,6 +43,12 @@ static const clock_arm_pll_config_t armPllConfig = {
 	.postDivider = kCLOCK_PllPostDiv4,
 	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
 	.loopDivider = 200,
+#elif defined(CONFIG_SOC_MIMXRT1165_CM4) || defined(CONFIG_SOC_MIMXRT1165_CM7)
+       /* resulting frequency: 24 * (166/(2 * 4)) = 500MHz */
+       /* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
+       .postDivider = kCLOCK_PllPostDiv4,
+       /* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
+       .loopDivider = 200,
 #else
 	#error "Unknown SOC, no pll configuration defined"
 #endif
