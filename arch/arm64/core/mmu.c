@@ -416,6 +416,16 @@ static int privatize_page_range(struct arm_mmu_ptables *dst_pt,
 	return ret;
 }
 
+/*
+ * GCC 12 and above may report a warning about the potential infinite recursion
+ * in the `discard_table` function.
+ */
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Winfinite-recursion"
+#endif
+
 static void discard_table(uint64_t *table, unsigned int level)
 {
 	unsigned int i;
@@ -432,6 +442,10 @@ static void discard_table(uint64_t *table, unsigned int level)
 	}
 	free_table(table);
 }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 			   uintptr_t virt, size_t size, unsigned int level)
