@@ -208,11 +208,10 @@ static void do_main(const struct device *dev)
 
 void main(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET_ONE(ti_bq274xx);
 
-	dev = device_get_binding(DT_LABEL(DT_INST(0, ti_bq274xx)));
-	if (!dev) {
-		printk("Failed to get device binding");
+	if (!device_is_ready(dev)) {
+		printk("Device %s is not ready\n", dev->name);
 		return;
 	}
 
