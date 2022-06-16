@@ -25,16 +25,16 @@ LOG_MODULE_REGISTER(bmi270, CONFIG_SENSOR_LOG_LEVEL);
 
 static int reg_read(const struct device *dev, uint8_t reg, uint8_t *data, uint16_t length)
 {
-	struct bmi270_data *drv_dev = dev->data;
+	const struct bmi270_dev_config *cfg = dev->config;
 
-	return i2c_burst_read(drv_dev->i2c, drv_dev->i2c_addr, reg, data, length);
+	return i2c_burst_read_dt(&cfg->i2c, reg, data, length);
 }
 
 static int reg_write(const struct device *dev, uint8_t reg, const uint8_t *data, uint16_t length)
 {
-	struct bmi270_data *drv_dev = dev->data;
+	const struct bmi270_dev_config *cfg = dev->config;
 
-	return i2c_burst_write(drv_dev->i2c, drv_dev->i2c_addr, reg, data, length);
+	return i2c_burst_write_dt(&cfg->i2c, reg, data, length);
 }
 
 static int reg_write_with_delay(const struct device *dev, uint8_t reg, const uint8_t *data,
@@ -592,14 +592,11 @@ static int bmi270_init(const struct device *dev)
 	uint8_t tries;
 	uint8_t adv_pwr_save;
 
-	drv_dev->i2c = device_get_binding(cfg->i2c_master_name);
-	if (drv_dev->i2c == NULL) {
-		LOG_ERR("Could not get pointer to %s device",
-			cfg->i2c_master_name);
-		return -EINVAL;
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
-	drv_dev->i2c_addr = cfg->i2c_addr;
 	drv_dev->acc_odr = BMI270_ACC_ODR_100_HZ;
 	drv_dev->acc_range = 8;
 	drv_dev->gyr_odr = BMI270_GYR_ODR_200_HZ;
@@ -700,8 +697,7 @@ static const struct sensor_driver_api bmi270_driver_api = {
 	static struct bmi270_data bmi270_drv_##inst;		       \
 								       \
 	static const struct bmi270_dev_config bmi270_config_##inst = { \
-		.i2c_master_name = DT_INST_BUS_LABEL(inst),	       \
-		.i2c_addr = DT_INST_REG_ADDR(inst),		       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),		       \
 	};							       \
 								       \
 	DEVICE_DT_INST_DEFINE(inst,				       \
