@@ -120,7 +120,6 @@ struct bma280_data {
 
 #ifdef CONFIG_BMA280_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -142,6 +141,9 @@ struct bma280_data {
 
 struct bma280_config {
 	struct i2c_dt_spec i2c;
+#ifdef CONFIG_BMA280_TRIGGER
+	struct gpio_dt_spec int1_gpio;
+#endif
 };
 
 #ifdef CONFIG_BMA280_TRIGGER

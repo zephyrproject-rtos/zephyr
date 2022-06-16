@@ -20,13 +20,10 @@ LOG_MODULE_DECLARE(BMA280, CONFIG_SENSOR_LOG_LEVEL);
 static inline void setup_int1(const struct device *dev,
 			      bool enable)
 {
-	struct bma280_data *data = dev->data;
+	const struct bma280_config *config = dev->config;
 
-	gpio_pin_interrupt_configure(data->gpio,
-				     DT_INST_GPIO_PIN(0, int1_gpios),
-				     (enable
-				      ? GPIO_INT_EDGE_TO_ACTIVE
-				      : GPIO_INT_DISABLE));
+	gpio_pin_interrupt_configure_dt(&config->int1_gpio,
+					(enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE));
 }
 
 int bma280_attr_set(const struct device *dev,
@@ -220,24 +217,18 @@ int bma280_init_interrupt(const struct device *dev)
 	}
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio =
-		device_get_binding(DT_INST_GPIO_LABEL(0, int1_gpios));
-	if (drv_data->gpio == NULL) {
-		LOG_DBG("Cannot get pointer to %s device",
-		    DT_INST_GPIO_LABEL(0, int1_gpios));
-		return -EINVAL;
+	if (!device_is_ready(config->int1_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
-	gpio_pin_configure(drv_data->gpio,
-			   DT_INST_GPIO_PIN(0, int1_gpios),
-			   DT_INST_GPIO_FLAGS(0, int1_gpios)
-			   | GPIO_INPUT);
+	gpio_pin_configure_dt(&config->int1_gpio, GPIO_INPUT);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   bma280_gpio_callback,
-			   BIT(DT_INST_GPIO_PIN(0, int1_gpios)));
+			   BIT(config->int1_gpio.pin));
 
-	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
+	if (gpio_add_callback(config->int1_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
