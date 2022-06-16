@@ -122,6 +122,14 @@ config ETH_STM32_AUTO_NEGOTIATION_ENABLE
 	help
 	  Enable this if using autonegotiation
 
+config ETH_STM32_HW_CHECKSUM
+	bool "Use TX and RX hardware checksum"
+	depends on !SOC_SERIES_STM32H7X
+	help
+	  Enable receive and transmit checksum offload to enhance throughput
+	  performances.
+	  See reference manual for more information on this feature.
+
 if !ETH_STM32_AUTO_NEGOTIATION_ENABLE
 
 config ETH_STM32_SPEED_10M
