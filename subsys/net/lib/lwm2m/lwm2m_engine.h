@@ -203,4 +203,19 @@ int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx);
 #endif
 int  lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmware_uri);
 
+#define MAX_TOKEN_LEN		8
+struct observe_node {
+	sys_snode_t node;
+	sys_slist_t path_list;		/* List of Observation path */
+	uint8_t token[MAX_TOKEN_LEN];	/* Observation Token */
+	int64_t event_timestamp;	/* Timestamp for trig next Notify  */
+	int64_t last_timestamp;		/* Timestamp from last Notify */
+	uint32_t counter;
+	uint16_t format;
+	uint8_t  tkl;
+	bool resource_update : 1;	/* Resource is updated */
+	bool composite : 1;		/* Composite Observation */
+	bool active_tx_operation : 1;	/* Active Notification  process ongoing */
+};
+
 #endif /* LWM2M_ENGINE_H */
