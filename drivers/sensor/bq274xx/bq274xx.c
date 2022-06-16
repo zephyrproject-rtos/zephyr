@@ -28,12 +28,12 @@ static int bq274xx_gauge_configure(const struct device *dev);
 static int bq274xx_command_reg_read(const struct device *dev, uint8_t reg_addr,
 				    int16_t *val)
 {
-	struct bq274xx_data *bq274xx = dev->data;
+	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data[2];
 	int status;
 
-	status = i2c_burst_read(bq274xx->i2c, DT_INST_REG_ADDR(0), reg_addr,
-				i2c_data, 2);
+	status = i2c_burst_read_dt(&config->i2c, reg_addr,
+				   i2c_data, 2);
 	if (status < 0) {
 		LOG_ERR("Unable to read register");
 		return -EIO;
@@ -47,15 +47,15 @@ static int bq274xx_command_reg_read(const struct device *dev, uint8_t reg_addr,
 static int bq274xx_control_reg_write(const struct device *dev,
 				     uint16_t subcommand)
 {
-	struct bq274xx_data *bq274xx = dev->data;
+	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data, reg_addr;
 	int status = 0;
 
 	reg_addr = BQ274XX_COMMAND_CONTROL_LOW;
 	i2c_data = (uint8_t)((subcommand)&0x00FF);
 
-	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0), reg_addr,
-				    i2c_data);
+	status = i2c_reg_write_byte_dt(&config->i2c, reg_addr,
+				       i2c_data);
 	if (status < 0) {
 		LOG_ERR("Failed to write into control low register");
 		return -EIO;
@@ -66,8 +66,8 @@ static int bq274xx_control_reg_write(const struct device *dev,
 	reg_addr = BQ274XX_COMMAND_CONTROL_HIGH;
 	i2c_data = (uint8_t)((subcommand >> 8) & 0x00FF);
 
-	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0), reg_addr,
-				    i2c_data);
+	status = i2c_reg_write_byte_dt(&config->i2c, reg_addr,
+				       i2c_data);
 	if (status < 0) {
 		LOG_ERR("Failed to write into control high register");
 		return -EIO;
@@ -79,15 +79,15 @@ static int bq274xx_control_reg_write(const struct device *dev,
 static int bq274xx_command_reg_write(const struct device *dev, uint8_t command,
 				     uint8_t data)
 {
-	struct bq274xx_data *bq274xx = dev->data;
+	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data, reg_addr;
 	int status = 0;
 
 	reg_addr = command;
 	i2c_data = data;
 
-	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0), reg_addr,
-				    i2c_data);
+	status = i2c_reg_write_byte_dt(&config->i2c, reg_addr,
+				       i2c_data);
 	if (status < 0) {
 		LOG_ERR("Failed to write into control register");
 		return -EIO;
@@ -99,14 +99,14 @@ static int bq274xx_command_reg_write(const struct device *dev, uint8_t command,
 static int bq274xx_read_data_block(const struct device *dev, uint8_t offset,
 				   uint8_t *data, uint8_t bytes)
 {
-	struct bq274xx_data *bq274xx = dev->data;
+	const struct bq274xx_config *config = dev->config;
 	uint8_t i2c_data;
 	int status = 0;
 
 	i2c_data = BQ274XX_EXTENDED_BLOCKDATA_START + offset;
 
-	status = i2c_burst_read(bq274xx->i2c, DT_INST_REG_ADDR(0), i2c_data,
-				data, bytes);
+	status = i2c_burst_read_dt(&config->i2c, i2c_data,
+				   data, bytes);
 	if (status < 0) {
 		LOG_ERR("Failed to read block");
 		return -EIO;
@@ -375,7 +375,6 @@ static int bq274xx_sample_fetch(const struct device *dev,
  */
 static int bq274xx_gauge_init(const struct device *dev)
 {
-	struct bq274xx_data *bq274xx = dev->data;
 	const struct bq274xx_config *const config = dev->config;
 	int status = 0;
 	uint16_t id;
@@ -387,11 +386,9 @@ static int bq274xx_gauge_init(const struct device *dev)
 	}
 #endif
 
-	bq274xx->i2c = device_get_binding(config->bus_name);
-	if (bq274xx->i2c == NULL) {
-		LOG_ERR("Could not get pointer to %s device.",
-			config->bus_name);
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
 	status = bq274xx_get_device_type(dev, &id);
@@ -416,7 +413,6 @@ static int bq274xx_gauge_init(const struct device *dev)
 
 static int bq274xx_gauge_configure(const struct device *dev)
 {
-	struct bq274xx_data *bq274xx = dev->data;
 	const struct bq274xx_config *const config = dev->config;
 	int status = 0;
 	uint8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
@@ -506,8 +502,8 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	tmp_checksum = 255 - tmp_checksum;
 
 	/* Read the block checksum */
-	status = i2c_reg_read_byte(bq274xx->i2c, DT_INST_REG_ADDR(0),
-				   BQ274XX_EXTENDED_CHECKSUM, &checksum_old);
+	status = i2c_reg_read_byte_dt(&config->i2c,
+				      BQ274XX_EXTENDED_CHECKSUM, &checksum_old);
 	if (status < 0) {
 		LOG_ERR("Unable to read block checksum");
 		return -EIO;
@@ -522,67 +518,64 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	taperrate_msb = taperrate >> 8;
 	taperrate_lsb = taperrate & 0x00FF;
 
-	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0),
-				    BQ274XX_EXTENDED_BLOCKDATA_DESIGN_CAP_HIGH,
-				    designcap_msb);
+	status = i2c_reg_write_byte_dt(&config->i2c,
+				       BQ274XX_EXTENDED_BLOCKDATA_DESIGN_CAP_HIGH,
+				       designcap_msb);
 	if (status < 0) {
 		LOG_ERR("Failed to write designCAP MSB");
 		return -EIO;
 	}
 
-	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0),
-				    BQ274XX_EXTENDED_BLOCKDATA_DESIGN_CAP_LOW,
-				    designcap_lsb);
+	status = i2c_reg_write_byte_dt(&config->i2c,
+				       BQ274XX_EXTENDED_BLOCKDATA_DESIGN_CAP_LOW,
+				       designcap_lsb);
 	if (status < 0) {
 		LOG_ERR("Failed to write designCAP LSB");
 		return -EIO;
 	}
 
-	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0),
-				    BQ274XX_EXTENDED_BLOCKDATA_DESIGN_ENR_HIGH,
-				    designenergy_msb);
+	status = i2c_reg_write_byte_dt(&config->i2c,
+				       BQ274XX_EXTENDED_BLOCKDATA_DESIGN_ENR_HIGH,
+				       designenergy_msb);
 	if (status < 0) {
 		LOG_ERR("Failed to write designEnergy MSB");
 		return -EIO;
 	}
 
-	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0),
-				    BQ274XX_EXTENDED_BLOCKDATA_DESIGN_ENR_LOW,
-				    designenergy_lsb);
+	status = i2c_reg_write_byte_dt(&config->i2c,
+				       BQ274XX_EXTENDED_BLOCKDATA_DESIGN_ENR_LOW,
+				       designenergy_lsb);
 	if (status < 0) {
 		LOG_ERR("Failed to write designEnergy LSB");
 		return -EIO;
 	}
 
-	status = i2c_reg_write_byte(
-		bq274xx->i2c, DT_INST_REG_ADDR(0),
-		BQ274XX_EXTENDED_BLOCKDATA_TERMINATE_VOLT_HIGH,
-		terminatevolt_msb);
+	status = i2c_reg_write_byte_dt(&config->i2c,
+				       BQ274XX_EXTENDED_BLOCKDATA_TERMINATE_VOLT_HIGH,
+				       terminatevolt_msb);
 	if (status < 0) {
 		LOG_ERR("Failed to write terminateVolt MSB");
 		return -EIO;
 	}
 
-	status = i2c_reg_write_byte(
-		bq274xx->i2c, DT_INST_REG_ADDR(0),
-		BQ274XX_EXTENDED_BLOCKDATA_TERMINATE_VOLT_LOW,
-		terminatevolt_lsb);
+	status = i2c_reg_write_byte_dt(&config->i2c, BQ274XX_EXTENDED_BLOCKDATA_TERMINATE_VOLT_LOW,
+				       terminatevolt_lsb);
 	if (status < 0) {
 		LOG_ERR("Failed to write terminateVolt LSB");
 		return -EIO;
 	}
 
-	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0),
-				    BQ274XX_EXTENDED_BLOCKDATA_TAPERRATE_HIGH,
-				    taperrate_msb);
+	status = i2c_reg_write_byte_dt(&config->i2c,
+				       BQ274XX_EXTENDED_BLOCKDATA_TAPERRATE_HIGH,
+				       taperrate_msb);
 	if (status < 0) {
 		LOG_ERR("Failed to write taperRate MSB");
 		return -EIO;
 	}
 
-	status = i2c_reg_write_byte(bq274xx->i2c, DT_INST_REG_ADDR(0),
-				    BQ274XX_EXTENDED_BLOCKDATA_TAPERRATE_LOW,
-				    taperrate_lsb);
+	status = i2c_reg_write_byte_dt(&config->i2c,
+				       BQ274XX_EXTENDED_BLOCKDATA_TAPERRATE_LOW,
+				       taperrate_lsb);
 	if (status < 0) {
 		LOG_ERR("Failed to write taperRate LSB");
 		return -EIO;
@@ -612,8 +605,8 @@ static int bq274xx_gauge_configure(const struct device *dev)
 	}
 
 	tmp_checksum = 0;
-	status = i2c_reg_read_byte(bq274xx->i2c, DT_INST_REG_ADDR(0),
-				   BQ274XX_EXTENDED_CHECKSUM, &tmp_checksum);
+	status = i2c_reg_read_byte_dt(&config->i2c,
+				      BQ274XX_EXTENDED_CHECKSUM, &tmp_checksum);
 	if (status < 0) {
 		LOG_ERR("Failed to read checksum");
 		return -EIO;
@@ -769,8 +762,8 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 	static struct bq274xx_data bq274xx_driver_##index;                     \
 									       \
 	static const struct bq274xx_config bq274xx_config_##index = {          \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                            \
 		BQ274XX_INT_CFG(index)                                         \
-		.bus_name = DT_INST_BUS_LABEL(index),                          \
 		.design_voltage = DT_INST_PROP(index, design_voltage),         \
 		.design_capacity = DT_INST_PROP(index, design_capacity),       \
 		.taper_current = DT_INST_PROP(index, taper_current),           \
