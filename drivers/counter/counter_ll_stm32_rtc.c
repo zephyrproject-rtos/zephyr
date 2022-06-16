@@ -52,6 +52,11 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define RTC_EXTI_LINE	LL_EXTI_LINE_17
 #endif
 
+/* Macro to fill up HSE prescaler values */
+#define fn_hse_prescaler(v) LL_RCC_RTC_HSE_DIV_ ## v
+#define hse_prescaler(v) fn_hse_prescaler(v)
+#define LL_RCC_RTC_HSE_DIV_0 LL_RCC_RTC_NOCLOCK
+
 struct rtc_stm32_config {
 	struct counter_config_info counter_info;
 	struct stm32_pclken pclken;
@@ -310,6 +315,16 @@ static int rtc_stm32_init(const struct device *dev)
 
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSI);
 
+#elif defined(CONFIG_COUNTER_RTC_STM32_CLOCK_HSE)
+
+	LL_RCC_SetRTC_HSEPrescaler(hse_prescaler(CONFIG_COUNTER_RTC_STM32_HSE_DIV));
+
+	/* Wait until HSE is ready */
+	while (LL_RCC_HSE_IsReady() != 1) {
+	}
+
+	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_HSE);
+
 #else /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
 
 #if !defined(CONFIG_SOC_SERIES_STM32F4X) &&	\
@@ -396,6 +411,10 @@ static const struct rtc_stm32_config rtc_config = {
 		/* prescaler values for LSI @ 32 KHz */
 		.AsynchPrescaler = 0x7F,
 		.SynchPrescaler = 0x00F9,
+#elif defined(CONFIG_COUNTER_RTC_STM32_CLOCK_HSE)
+		/* prescaler values for divided HSE @ 1 MHz */
+		.AsynchPrescaler = 0x7C,
+		.SynchPrescaler = 0x1F3F,
 #else /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
 		/* prescaler values for LSE @ 32768 Hz */
 		.AsynchPrescaler = 0x7F,
