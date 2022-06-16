@@ -59,8 +59,8 @@ ZTEST_SUITE(fixture_tests, NULL, fixture_tests_setup, NULL, NULL, NULL);
 
 ZTEST_F(fixture_tests, test_fixture_pointer)
 {
-	zassert_equal_ptr(&test_fixture, this, "Test fixture should be at 0x%x but was at 0x%x",
-			  &test_fixture, this);
+	zassert_equal_ptr(&test_fixture, fixture, "Test fixture should be at 0x%x but was at 0x%x",
+			  &test_fixture, fixture);
 }
 
 /***************************************************************************************************
@@ -138,7 +138,8 @@ ZTEST_SUITE(rules_tests, NULL, rule_test_setup, NULL, NULL, rule_test_teardown);
 
 ZTEST_F(rules_tests, test_rules_before_after)
 {
-	zassert_equal(this->state, RULE_STATE_BEFORE_EACH, "Unexpected state");
-	this->state = RULE_STATE_TEST;
-	this->run_count++;
+	zassert_equal(fixture->state, RULE_STATE_BEFORE_EACH,
+		      "Unexpected state");
+	fixture->state = RULE_STATE_TEST;
+	fixture->run_count++;
 }
