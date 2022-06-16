@@ -85,7 +85,8 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: e7415b555134e671ba04f036b02f55cbc087d0e9
+      remote: bittware
+      revision: d32fb85f5b02d3a8a96fae7692a58d135c33a3b6
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
