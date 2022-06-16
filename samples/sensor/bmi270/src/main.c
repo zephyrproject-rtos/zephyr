@@ -11,19 +11,16 @@
 
 void main(void)
 {
-	const struct device *dev;
+	const struct device *dev = DEVICE_DT_GET_ONE(bosch_bmi270);
 	struct sensor_value acc[3], gyr[3];
 	struct sensor_value full_scale, sampling_freq, oversampling;
 
-	dev = device_get_binding(DT_LABEL(DT_INST(0, bosch_bmi270)));
-	if (dev == NULL) {
-		printf("Could not get %s device\n",
-		       DT_LABEL(DT_INST(0, bosch_bmi270)));
+	if (!device_is_ready(dev)) {
+		printf("Device %s is not ready\n", dev->name);
 		return;
 	}
 
-	printf("Device %p name is %s\n", dev,
-	       DT_LABEL(DT_INST(0, bosch_bmi270)));
+	printf("Device %p name is %s\n", dev, dev->name);
 
 	/* Setting scale in G, due to loss of precision if the SI unit m/s^2
 	 * is used
