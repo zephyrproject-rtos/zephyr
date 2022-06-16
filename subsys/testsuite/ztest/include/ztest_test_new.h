@@ -220,7 +220,7 @@ static inline void unit_test_noop(void)
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \
 	static void suite##_##fn(                                                                  \
-		COND_CODE_1(use_fixture, (struct suite##_fixture *this), (void)));                 \
+		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)));              \
 	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test_##suite##_##fn) = {      \
 		.test_suite_name = STRINGIFY(suite),                                               \
 		.name = STRINGIFY(fn),                                                             \
@@ -233,7 +233,7 @@ static inline void unit_test_noop(void)
 			    (ARG_UNUSED(data); suite##_##fn();))                                   \
 	}                                                                                          \
 	static inline void suite##_##fn(                                                           \
-		COND_CODE_1(use_fixture, (struct suite##_fixture *this), (void)))
+		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)))
 
 #define Z_ZTEST(suite, fn, t_options) Z_TEST(suite, fn, t_options, 0)
 #define Z_ZTEST_F(suite, fn, t_options) Z_TEST(suite, fn, t_options, 1)
