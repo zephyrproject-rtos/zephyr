@@ -385,17 +385,22 @@ static const struct sensor_driver_api itds_api = {
 	.channel_get = itds_channel_get,
 };
 
+#ifdef CONFIG_ITDS_TRIGGER
+#define WSEN_ITDS_CFG_IRQ(inst)						\
+	.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),
+#else
+#define WSEN_ITDS_CFG_IRQ(inst)
+#endif
+
 #define WSEN_ITDS_INIT(idx)						\
 									\
 static struct itds_device_data itds_data_##idx;				\
 									\
 static const struct itds_device_config itds_config_##idx = {		\
 	.i2c = I2C_DT_SPEC_INST_GET(idx),				\
-	.gpio_port = DT_INST_GPIO_LABEL(idx, int_gpios),		\
-	.int_pin = DT_INST_GPIO_PIN(idx, int_gpios),			\
-	.int_flags = DT_INST_GPIO_FLAGS(idx, int_gpios),		\
 	.def_odr = DT_INST_ENUM_IDX(idx, odr),				\
 	.def_op_mode = DT_INST_ENUM_IDX(idx, op_mode),			\
+	WSEN_ITDS_CFG_IRQ(idx)						\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(idx, itds_init, NULL,				\
