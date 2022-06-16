@@ -170,7 +170,7 @@ def process_pr(gh, maintainer_file, number):
 
     ms = []
     # assignees
-    if maintainer != 'None':
+    if maintainer != 'None' and not pr.assignee:
         try:
             u = gh.get_user(maintainer)
             ms.append(u)
@@ -181,6 +181,8 @@ def process_pr(gh, maintainer_file, number):
             log(f"Adding assignee {mm}...")
             if not args.dry_run:
                 pr.add_to_assignees(mm)
+    else:
+        log("not setting assignee")
 
     time.sleep(1)
 
