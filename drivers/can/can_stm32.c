@@ -1163,132 +1163,81 @@ static const struct can_driver_api can_api_funcs = {
 	}
 };
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can1), st_stm32_can, okay)
-
-static void config_can_1_irq(CAN_TypeDef *can);
-
-PINCTRL_DT_DEFINE(DT_NODELABEL(can1));
-
-static const struct can_stm32_config can_stm32_cfg_1 = {
-	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
-	.master_can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
-	.bus_speed = DT_PROP(DT_NODELABEL(can1), bus_speed),
-	.sample_point = DT_PROP_OR(DT_NODELABEL(can1), sample_point, 0),
-	.sjw = DT_PROP_OR(DT_NODELABEL(can1), sjw, 1),
-	.prop_ts1 = DT_PROP_OR(DT_NODELABEL(can1), prop_seg, 0) +
-		    DT_PROP_OR(DT_NODELABEL(can1), phase_seg1, 0),
-	.ts2 = DT_PROP_OR(DT_NODELABEL(can1), phase_seg2, 0),
-	.one_shot = DT_PROP(DT_NODELABEL(can1), one_shot),
-	.pclken = {
-		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can1), bits),
-		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can1), bus),
-	},
-	.config_irq = config_can_1_irq,
-	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can1)),
-	.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(DT_NODELABEL(can1), phys)),
-	.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(DT_NODELABEL(can1), 1000000),
-};
-
-static struct can_stm32_data can_stm32_dev_data_1;
-
-CAN_DEVICE_DT_DEFINE(DT_NODELABEL(can1), can_stm32_init, NULL,
-		     &can_stm32_dev_data_1, &can_stm32_cfg_1,
-		     POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,
-		     &can_api_funcs);
-
-static void config_can_1_irq(CAN_TypeDef *can)
-{
-	LOG_DBG("Enable CAN1 IRQ");
 #ifdef CONFIG_SOC_SERIES_STM32F0X
-	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(can1)),
-		    DT_IRQ(DT_NODELABEL(can1), priority),
-		    can_stm32_isr, DEVICE_DT_GET(DT_NODELABEL(can1)), 0);
-	irq_enable(DT_IRQN(DT_NODELABEL(can1)));
-#else
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can1), rx0, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(can1), rx0, priority),
-		    can_stm32_rx_isr, DEVICE_DT_GET(DT_NODELABEL(can1)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can1), rx0, irq));
-
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can1), tx, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(can1), tx, priority),
-		    can_stm32_tx_isr, DEVICE_DT_GET(DT_NODELABEL(can1)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can1), tx, irq));
-
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can1), sce, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(can1), sce, priority),
-		    can_stm32_state_change_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(can1)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can1), sce, irq));
-#endif
-	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |
-		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;
-#ifdef CONFIG_CAN_STATS
-	can->IER |= CAN_IER_LECIE;
-#endif /* CONFIG_CAN_STATS */
+#define CAN_STM32_IRQ_INST(inst)                                     \
+static void config_can_##inst##_irq(CAN_TypeDef *can)                \
+{                                                                    \
+	IRQ_CONNECT(DT_INST_IRQN(inst),                              \
+		    DT_INST_IRQ(inst, priority),                     \
+		    can_stm32_isr, DEVICE_DT_INST_GET(inst), 0);     \
+	irq_enable(DT_INST_IRQN(inst));                              \
+	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 | \
+		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;                  \
+	if (IS_ENABLED(CONFIG_CAN_STATS)) {                          \
+		can->IER |= CAN_IER_LECIE;                           \
+	}                                                            \
 }
+#else
+#define CAN_STM32_IRQ_INST(inst)                                     \
+static void config_can_##inst##_irq(CAN_TypeDef *can)                \
+{                                                                    \
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, rx0, irq),             \
+		    DT_INST_IRQ_BY_NAME(inst, rx0, priority),        \
+		    can_stm32_rx_isr, DEVICE_DT_INST_GET(inst), 0);  \
+	irq_enable(DT_INST_IRQ_BY_NAME(inst, rx0, irq));             \
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, tx, irq),              \
+		    DT_INST_IRQ_BY_NAME(inst, tx, priority),         \
+		    can_stm32_tx_isr, DEVICE_DT_INST_GET(inst), 0);  \
+	irq_enable(DT_INST_IRQ_BY_NAME(inst, tx, irq));              \
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, sce, irq),             \
+		    DT_INST_IRQ_BY_NAME(inst, sce, priority),        \
+		    can_stm32_state_change_isr,                      \
+		    DEVICE_DT_INST_GET(inst), 0);                    \
+	irq_enable(DT_INST_IRQ_BY_NAME(inst, sce, irq));             \
+	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 | \
+		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;                  \
+	if (IS_ENABLED(CONFIG_CAN_STATS)) {                          \
+		can->IER |= CAN_IER_LECIE;                           \
+	}                                                            \
+}
+#endif /* CONFIG_SOC_SERIES_STM32F0X */
 
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can1), okay) */
-
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can2), st_stm32_can, okay)
-
-static void config_can_2_irq(CAN_TypeDef *can);
-
-PINCTRL_DT_DEFINE(DT_NODELABEL(can2));
-
-static const struct can_stm32_config can_stm32_cfg_2 = {
-	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can2)),
-	.master_can = (CAN_TypeDef *)DT_PROP(DT_NODELABEL(can2),
-								master_can_reg),
-	.bus_speed = DT_PROP(DT_NODELABEL(can2), bus_speed),
-	.sample_point = DT_PROP_OR(DT_NODELABEL(can2), sample_point, 0),
-	.sjw = DT_PROP_OR(DT_NODELABEL(can2), sjw, 1),
-	.prop_ts1 = DT_PROP_OR(DT_NODELABEL(can2), prop_seg, 0) +
-		    DT_PROP_OR(DT_NODELABEL(can2), phase_seg1, 0),
-	.ts2 = DT_PROP_OR(DT_NODELABEL(can2), phase_seg2, 0),
-	.one_shot = DT_PROP(DT_NODELABEL(can2), one_shot),
-	.pclken = {
-		/* can1 (master) clock must be enabled for can2 as well */
-		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can1), bits) |
-		       DT_CLOCKS_CELL(DT_NODELABEL(can2), bits),
-		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),
-	},
-	.config_irq = config_can_2_irq,
-	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(can2)),
-	.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(DT_NODELABEL(can2), phys)),
-	.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(DT_NODELABEL(can2), 1000000),
+#define CAN_STM32_CONFIG_INST(inst)                                      \
+PINCTRL_DT_INST_DEFINE(inst);                                            \
+static const struct can_stm32_config can_stm32_cfg_##inst = {            \
+	.can = (CAN_TypeDef *)DT_INST_REG_ADDR(inst),                    \
+	.master_can = (CAN_TypeDef *)DT_INST_PROP_OR(inst,               \
+		master_can_reg, DT_INST_REG_ADDR(inst)),                 \
+	.bus_speed = DT_INST_PROP(inst, bus_speed),                      \
+	.sample_point = DT_INST_PROP_OR(inst, sample_point, 0),          \
+	.sjw = DT_INST_PROP_OR(inst, sjw, 1),                            \
+	.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) +                 \
+		    DT_INST_PROP_OR(inst, phase_seg1, 0),                \
+	.ts2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                     \
+	.one_shot = DT_INST_PROP(inst, one_shot),                        \
+	.pclken = {                                                      \
+		.enr = DT_INST_CLOCKS_CELL(inst, bits),                  \
+		.bus = DT_INST_CLOCKS_CELL(inst, bus),                   \
+	},                                                               \
+	.config_irq = config_can_##inst##_irq,                           \
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	                 \
+	.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(id, phys)),         \
+	.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(id, 1000000), \
 };
 
-static struct can_stm32_data can_stm32_dev_data_2;
+#define CAN_STM32_DATA_INST(inst) \
+static struct can_stm32_data can_stm32_dev_data_##inst;
 
-CAN_DEVICE_DT_DEFINE(DT_NODELABEL(can2), can_stm32_init, NULL,
-		     &can_stm32_dev_data_2, &can_stm32_cfg_2,
-		     POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,
-		     &can_api_funcs);
+#define CAN_STM32_DEFINE_INST(inst)                                      \
+DEVICE_DT_INST_DEFINE(inst, &can_stm32_init, NULL,                       \
+		      &can_stm32_dev_data_##inst, &can_stm32_cfg_##inst, \
+		      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,             \
+		      &can_api_funcs);
 
-static void config_can_2_irq(CAN_TypeDef *can)
-{
-	LOG_DBG("Enable CAN2 IRQ");
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can2), rx0, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(can2), rx0, priority),
-		    can_stm32_rx_isr, DEVICE_DT_GET(DT_NODELABEL(can2)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can2), rx0, irq));
+#define CAN_STM32_INST(inst)      \
+CAN_STM32_IRQ_INST(inst)          \
+CAN_STM32_CONFIG_INST(inst)       \
+CAN_STM32_DATA_INST(inst)         \
+CAN_STM32_DEFINE_INST(inst)
 
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can2), tx, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(can2), tx, priority),
-		    can_stm32_tx_isr, DEVICE_DT_GET(DT_NODELABEL(can2)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can2), tx, irq));
-
-	IRQ_CONNECT(DT_IRQ_BY_NAME(DT_NODELABEL(can2), sce, irq),
-		    DT_IRQ_BY_NAME(DT_NODELABEL(can2), sce, priority),
-		    can_stm32_state_change_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(can2)), 0);
-	irq_enable(DT_IRQ_BY_NAME(DT_NODELABEL(can2), sce, irq));
-	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |
-		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;
-#ifdef CONFIG_CAN_STATS
-	can->IER |= CAN_IER_LECIE;
-#endif /* CONFIG_CAN_STATS */
-}
-
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay) */
+DT_INST_FOREACH_STATUS_OKAY(CAN_STM32_INST)
