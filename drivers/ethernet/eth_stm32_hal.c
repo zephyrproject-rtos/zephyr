@@ -1246,6 +1246,10 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #if defined(CONFIG_NET_LLDP)
 		| ETHERNET_LLDP
 #endif
+#if defined(CONFIG_ETH_STM32_HW_CHECKSUM)
+		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
+		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
+#endif
 		;
 }
 
@@ -1364,7 +1368,11 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 #endif /* !CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE */
 			.PhyAddress = PHY_ADDR,
 			.RxMode = ETH_RXINTERRUPT_MODE,
+#if defined(CONFIG_ETH_STM32_HW_CHECKSUM)
+			.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE,
+#else
 			.ChecksumMode = ETH_CHECKSUM_BY_SOFTWARE,
+#endif
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
 #if defined(CONFIG_ETH_STM32_HAL_MII)
 			.MediaInterface = ETH_MEDIA_INTERFACE_MII,
