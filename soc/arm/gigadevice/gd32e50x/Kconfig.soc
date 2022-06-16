@@ -1,0 +1,11 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "GigaDevice GD32E50X MCU Selection"
+	depends on SOC_SERIES_GD32E50X
+
+	config SOC_GD32E507
+		bool "gd32e507"
+
+endchoice
