@@ -1355,30 +1355,18 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 			.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE,
 #else
 			.AutoNegotiation = ETH_AUTONEGOTIATION_DISABLE,
-#if defined(CONFIG_ETH_STM32_SPEED_10M)
-			.Speed = ETH_SPEED_10M,
-#else
-			.Speed = ETH_SPEED_100M,
-#endif
-#if defined(CONFIG_ETH_STM32_MODE_HALFDUPLEX)
-			.DuplexMode = ETH_MODE_HALFDUPLEX,
-#else
-			.DuplexMode = ETH_MODE_FULLDUPLEX,
-#endif
+			.Speed = IS_ENABLED(CONFIG_ETH_STM32_SPEED_10M) ?
+				 ETH_SPEED_10M : ETH_SPEED_100M,
+			.DuplexMode = IS_ENABLED(CONFIG_ETH_STM32_MODE_HALFDUPLEX) ?
+				      ETH_MODE_HALFDUPLEX : ETH_MODE_FULLDUPLEX,
 #endif /* !CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE */
 			.PhyAddress = PHY_ADDR,
 			.RxMode = ETH_RXINTERRUPT_MODE,
-#if defined(CONFIG_ETH_STM32_HW_CHECKSUM)
-			.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE,
-#else
-			.ChecksumMode = ETH_CHECKSUM_BY_SOFTWARE,
-#endif
+			.ChecksumMode = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
+					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
-#if defined(CONFIG_ETH_STM32_HAL_MII)
-			.MediaInterface = ETH_MEDIA_INTERFACE_MII,
-#else
-			.MediaInterface = ETH_MEDIA_INTERFACE_RMII,
-#endif
+			.MediaInterface = IS_ENABLED(CONFIG_ETH_STM32_HAL_MII) ?
+					  ETH_MEDIA_INTERFACE_MII : ETH_MEDIA_INTERFACE_RMII,
 		},
 	},
 };
