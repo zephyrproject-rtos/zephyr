@@ -2,6 +2,7 @@
 def linuxBuildStageLabel = "Linux-Build-${UUID.randomUUID().toString()}"
 def jenkinsSlaveContainerName = 'jnlp'
 def jenkinsSlaveImage = 'amr-registry-pre.caas.intel.com/pse-pswe-software-ba/jenkins/jnlp-slave'
+def buildNumber = currentBuild.number
 containerImage =''
 
 def cloudName = 'kubernetes_embedded'
@@ -212,8 +213,9 @@ spec:
                         try {
                             sh """#!/bin/bash -x
                             cd $WORKSPACE
-                            chmod 755 .jenkins/buildScript.sh
-                            .jenkins/buildScript.sh
+                            chmod 755 .jenkins/buildScript_agilex.sh
+                            .jenkins/buildScript_agilex.sh ${buildNumber}
+
                             """
                         } catch (Exception e) {
                             exit -1
