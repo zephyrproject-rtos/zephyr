@@ -2075,16 +2075,35 @@ struct notify_data {
 
 static struct net_buf *nfy_mult[CONFIG_BT_MAX_CONN];
 
-static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf **buf)
+static int gatt_notify_mult_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	int ret;
+	uint8_t *pdu = buf->data;
+	/* PDU structure is [Opcode (1)] [Handle (2)] [Length (2)] [Value (Length)] */
+	uint16_t first_attr_len = sys_get_le16(&pdu[3]);
 
-	ret = bt_att_send(conn, *buf);
-	if (ret < 0) {
-		net_buf_unref(*buf);
+	/* Convert to ATT_HANDLE_VALUE_NTF if containing a single handle. */
+	if (buf->len ==
+	    (1 + sizeof(struct bt_att_notify_mult) + first_attr_len)) {
+		/* Store attr handle */
+		uint16_t handle = sys_get_le16(&pdu[1]);
+
+		/* Remove the ATT_MULTIPLE_HANDLE_VALUE_NTF opcode,
+		 * attribute handle and length
+		 */
+		(void)net_buf_pull(buf, 1 + sizeof(struct bt_att_notify_mult));
+
+		/* Add back an ATT_HANDLE_VALUE_NTF opcode and attr handle */
+		/* PDU structure is now [Opcode (1)] [Handle (1)] [Value] */
+		net_buf_push_le16(buf, handle);
+		net_buf_push_u8(buf, BT_ATT_OP_NOTIFY);
+		BT_DBG("Converted BT_ATT_OP_NOTIFY_MULT with single attr to BT_ATT_OP_NOTIFY");
 	}
 
-	*buf = NULL;
+	ret = bt_att_send(conn, buf);
+	if (ret < 0) {
+		net_buf_unref(buf);
+	}
 
 	return ret;
 }
@@ -2100,7 +2119,8 @@ static void notify_mult_process(struct k_work *work)
 		if (*buf) {
 			struct bt_conn *conn = bt_conn_lookup_index(i);
 
-			gatt_notify_mult_send(conn, buf);
+			gatt_notify_mult_send(conn, *buf);
+			*buf = NULL;
 			bt_conn_unref(conn);
 		}
 	}
@@ -2133,7 +2153,8 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 	    !bt_att_tx_meta_data_match(*buf, params->func, params->user_data))) {
 		int ret;
 
-		ret = gatt_notify_mult_send(conn, buf);
+		ret = gatt_notify_mult_send(conn, *buf);
+		*buf = NULL;
 		if (ret < 0) {
 			return ret;
 		}
