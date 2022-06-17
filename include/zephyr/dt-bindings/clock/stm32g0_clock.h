@@ -13,7 +13,7 @@
 #define STM32_CLOCK_BUS_APB2    0x040
 
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_IOP
-#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB1
+#define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB2
 
 /** Peripheral clock sources */
 /* RM0444, §5.4.21/22 Clock configuration register (RCC_CCIPRx) */
