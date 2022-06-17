@@ -58,7 +58,7 @@ manifest:
         - ci
     - name: hal_nxp
       remote: bittware
-      revision: 6acbcaa8766f239de509b7ee4cd8da1570d9e8db
+      revision: 68e2693d15ae262e6a604cd1875c28958312c962
       path: modules/hal/nxp
       groups:
         - hal
