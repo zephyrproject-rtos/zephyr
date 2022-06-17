@@ -734,18 +734,6 @@ static int can_stm32_send(const struct device *dev, const struct zcan_frame *fra
 	return 0;
 }
 
-static inline int can_stm32_check_free(void **arr, int start, int end)
-{
-	int i;
-
-	for (i = start; i <= end; i++) {
-		if (arr[i] != NULL) {
-			return 0;
-		}
-	}
-	return 1;
-}
-
 static int can_stm32_shift_arr(void **arr, int start, int count)
 {
 	void **start_ptr = arr + start;
@@ -759,12 +747,13 @@ static int can_stm32_shift_arr(void **arr, int start, int count)
 		void *move_dest;
 
 		/* Check if nothing used will be overwritten */
-		if (!can_stm32_check_free(arr, CONFIG_CAN_MAX_FILTER - count,
-					       CONFIG_CAN_MAX_FILTER - 1)) {
-			return -ENOSPC;
+		for (int i = CONFIG_CAN_MAX_FILTER - count; i <= CONFIG_CAN_MAX_FILTER - 1; i++) {
+			if (arr[i] != NULL) {
+				return -ENOSPC;
+			}
 		}
 
-		/* No need to shift. Destination is already outside the arr*/
+		/* No need to shift. Destination is already outside the arr */
 		if ((start + count) >= CONFIG_CAN_MAX_FILTER) {
 			return 0;
 		}
@@ -1050,10 +1039,8 @@ done:
 	return filter_id;
 }
 
-static inline int can_stm32_add_rx_filter_unlocked(const struct device *dev,
-						   can_rx_callback_t cb,
-						   void *cb_arg,
-						   const struct zcan_filter *filter)
+static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
+				   void *cb_arg, const struct zcan_filter *filter)
 {
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
@@ -1061,24 +1048,12 @@ static inline int can_stm32_add_rx_filter_unlocked(const struct device *dev,
 	int filter_index = 0;
 	int filter_id;
 
+	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	filter_id = can_stm32_set_filter(filter, data, can, &filter_index);
 	if (filter_id != -ENOSPC) {
 		data->rx_cb[filter_index] = cb;
 		data->cb_arg[filter_index] = cb_arg;
 	}
-
-	return filter_id;
-}
-
-static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
-				   void *cb_arg,
-			    const struct zcan_filter *filter)
-{
-	struct can_stm32_data *data = dev->data;
-	int filter_id;
-
-	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	filter_id = can_stm32_add_rx_filter_unlocked(dev, cb, cb_arg, filter);
 	k_mutex_unlock(&data->inst_mutex);
 
 	return filter_id;
