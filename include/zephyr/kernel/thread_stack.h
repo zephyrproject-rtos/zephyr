@@ -113,14 +113,58 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 
 /**
+ * @brief Declare a reference to a thread stack
+ *
+ * This macro declares the symbol of a thread stack defined elsewhere in the
+ * current scope.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_STACK_DECLARE(sym, size) \
+	extern struct z_thread_stack_element \
+		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+
+/**
+ * @brief Declare a reference to a thread stack array
+ *
+ * This macro declares the symbol of a thread stack array defined elsewhere in
+ * the current scope.
+ *
+ * @param sym Thread stack symbol name
+ * @param nmemb Number of stacks defined
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_STACK_ARRAY_DECLARE(sym, nmemb, size) \
+	extern struct z_thread_stack_element \
+		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+
+/**
+ * @brief Declare a reference to a pinned thread stack array
+ *
+ * This macro declares the symbol of a pinned thread stack array defined
+ * elsewhere in the current scope.
+ *
+ * @param sym Thread stack symbol name
+ * @param nmemb Number of stacks defined
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_PINNED_STACK_ARRAY_DECLARE(sym, nmemb, size) \
+	extern struct z_thread_stack_element \
+		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+
+/**
  * @brief Obtain an extern reference to a stack
  *
  * This macro properly brings the symbol of a thread stack defined
  * elsewhere into scope.
  *
+ * @deprecated Use @c K_KERNEL_STACK_DECLARE() instead.
+ *
  * @param sym Thread stack symbol name
  */
-#define K_KERNEL_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
+#define K_KERNEL_STACK_EXTERN(sym) __DEPRECATED_MACRO \
+	extern k_thread_stack_t sym[]
 
 /**
  * @brief Obtain an extern reference to a stack array
@@ -128,11 +172,13 @@ static inline char *z_stack_ptr_align(char *ptr)
  * This macro properly brings the symbol of a stack array defined
  * elsewhere into scope.
  *
+ * @deprecated Use @c K_KERNEL_STACK_ARRAY_DECLARE() instead.
+ *
  * @param sym Thread stack symbol name
  * @param nmemb Number of stacks defined
  * @param size Size of the stack memory region
  */
-#define K_KERNEL_STACK_ARRAY_EXTERN(sym, nmemb, size) \
+#define K_KERNEL_STACK_ARRAY_EXTERN(sym, nmemb, size) __DEPRECATED_MACRO \
 	extern struct z_thread_stack_element \
 		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
 
@@ -142,11 +188,13 @@ static inline char *z_stack_ptr_align(char *ptr)
  * This macro properly brings the symbol of a pinned stack array
  * defined elsewhere into scope.
  *
+ * @deprecated Use @c K_KERNEL_PINNED_STACK_ARRAY_DECLARE() instead.
+ *
  * @param sym Thread stack symbol name
  * @param nmemb Number of stacks defined
  * @param size Size of the stack memory region
  */
-#define K_KERNEL_PINNED_STACK_ARRAY_EXTERN(sym, nmemb, size) \
+#define K_KERNEL_PINNED_STACK_ARRAY_EXTERN(sym, nmemb, size) __DEPRECATED_MACRO \
 	extern struct z_thread_stack_element \
 		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
 
@@ -292,6 +340,8 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_ARRAY_DEFINE	K_KERNEL_STACK_ARRAY_DEFINE
 #define K_THREAD_STACK_MEMBER		K_KERNEL_STACK_MEMBER
 #define Z_THREAD_STACK_BUFFER		Z_KERNEL_STACK_BUFFER
+#define K_THREAD_STACK_DECLARE		K_KERNEL_STACK_DECLARE
+#define K_THREAD_STACK_ARRAY_DECLARE	K_KERNEL_STACK_ARRAY_DECLARE
 #define K_THREAD_STACK_EXTERN		K_KERNEL_STACK_EXTERN
 #define K_THREAD_STACK_ARRAY_EXTERN	K_KERNEL_STACK_ARRAY_EXTERN
 #define K_THREAD_PINNED_STACK_DEFINE	K_KERNEL_PINNED_STACK_DEFINE
@@ -391,14 +441,44 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  */
 
 /**
+ * @brief Declare a reference to a thread stack
+ *
+ * This macro declares the symbol of a thread stack defined elsewhere in the
+ * current scope.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#define K_THREAD_STACK_DECLARE(sym, size) \
+	extern struct z_thread_stack_element \
+		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
+
+/**
+ * @brief Declare a reference to a thread stack array
+ *
+ * This macro declares the symbol of a thread stack array defined elsewhere in
+ * the current scope.
+ *
+ * @param sym Thread stack symbol name
+ * @param nmemb Number of stacks defined
+ * @param size Size of the stack memory region
+ */
+#define K_THREAD_STACK_ARRAY_DECLARE(sym, nmemb, size) \
+	extern struct z_thread_stack_element \
+		sym[nmemb][K_THREAD_STACK_LEN(size)]
+
+/**
  * @brief Obtain an extern reference to a stack
  *
  * This macro properly brings the symbol of a thread stack defined
  * elsewhere into scope.
  *
+ * @deprecated Use @c K_THREAD_STACK_DECLARE() instead.
+ *
  * @param sym Thread stack symbol name
  */
-#define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
+#define K_THREAD_STACK_EXTERN(sym) __DEPRECATED_MACRO \
+	extern k_thread_stack_t sym[]
 
 /**
  * @brief Obtain an extern reference to a thread stack array
@@ -406,11 +486,13 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * This macro properly brings the symbol of a stack array defined
  * elsewhere into scope.
  *
+ * @deprecated Use @c K_THREAD_STACK_ARRAY_DECLARE() instead.
+ *
  * @param sym Thread stack symbol name
  * @param nmemb Number of stacks defined
  * @param size Size of the stack memory region
  */
-#define K_THREAD_STACK_ARRAY_EXTERN(sym, nmemb, size) \
+#define K_THREAD_STACK_ARRAY_EXTERN(sym, nmemb, size) __DEPRECATED_MACRO \
 	extern struct z_thread_stack_element \
 		sym[nmemb][K_THREAD_STACK_LEN(size)]
 
