@@ -54,8 +54,6 @@
 
 static int init_reset(void);
 static void pdu_free_sem_give(void);
-static void pdu_free_sem_take_all_no_wait(void);
-static int pdu_free_sem_take_all(void);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 static inline void adv_extra_data_release(struct lll_adv_pdu *pdu, int idx);
@@ -412,7 +410,7 @@ struct pdu_adv *lll_adv_pdu_alloc_pdu_adv(void)
 
 	p = MFIFO_DEQUEUE_PEEK(pdu_free);
 	if (p) {
-		pdu_free_sem_take_all_no_wait();
+		k_sem_reset(&sem_pdu_free);
 
 		MFIFO_DEQUEUE(pdu_free);
 
@@ -430,8 +428,10 @@ struct pdu_adv *lll_adv_pdu_alloc_pdu_adv(void)
 		return p;
 	}
 
-	err = pdu_free_sem_take_all();
+	err = k_sem_take(&sem_pdu_free, K_FOREVER);
 	LL_ASSERT(!err);
+
+	k_sem_reset(&sem_pdu_free);
 
 	p = MFIFO_DEQUEUE(pdu_free);
 	LL_ASSERT(p);
@@ -817,33 +817,6 @@ static void pdu_free_sem_give(void)
 }
 #endif /* !CONFIG_BT_CTLR_ZLI */
 
-static void pdu_free_sem_take_all_no_wait(void)
-{
-	int err;
-
-	/* Flush all given semaphore count due to multiple release from LLL
-	 * context.
-	 */
-	do {
-		err = k_sem_take(&sem_pdu_free, K_NO_WAIT);
-	} while (!err);
-}
-
-static int pdu_free_sem_take_all(void)
-{
-	int err;
-
-	/* Wait for first sem give */
-	err = k_sem_take(&sem_pdu_free, K_FOREVER);
-	if (err) {
-		return err;
-	}
-
-	/* Flush all subsequent sem give */
-	pdu_free_sem_take_all_no_wait();
-
-	return 0;
-}
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 static void *adv_extra_data_allocate(struct lll_adv_pdu *pdu, uint8_t last)
 {
