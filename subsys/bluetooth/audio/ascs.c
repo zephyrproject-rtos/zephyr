@@ -1525,49 +1525,6 @@ struct ascs_parse_result {
 	const struct bt_audio_ep *ep;
 };
 
-static bool ascs_valid_metadata_type(uint8_t type, uint8_t len)
-{
-	switch (type) {
-	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
-	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
-		if (len != 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
-		if (len != 3) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (len != 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 1 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 1 - 255 octets */
-		if (len < 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_CCID_LIST: /* 2 - 254 octets */
-		if (len < 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO: /* 0 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
-		return true;
-	default:
-		return false;
-	}
-}
-
 static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 {
 	struct ascs_parse_result *result = user_data;
@@ -1584,12 +1541,6 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		BT_ERR("Not enough buffers for Codec Config Metadata: %zu > %zu",
 		       result->count, CONFIG_BT_CODEC_MAX_METADATA_LEN);
 		result->err = -ENOMEM;
-
-		return false;
-	}
-
-	if (!ascs_valid_metadata_type(data_type, data_len)) {
-		result->err = -EINVAL;
 
 		return false;
 	}
@@ -1720,6 +1671,7 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 			struct bt_ascs_metadata *meta,
 			struct net_buf_simple *buf)
 {
+	struct bt_codec_data metadata_backup[CONFIG_BT_CODEC_MAX_DATA_COUNT];
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
 	uint8_t state;
@@ -1748,7 +1700,8 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 		goto done;
 	}
 
-	/* TODO: We should ask the upper layer for accept before we store it */
+	/* Backup existing metadata */
+	(void)memcpy(metadata_backup, ep->codec.meta, sizeof(metadata_backup));
 	err = ascs_ep_set_metadata(ep, buf, meta->len, &ep->codec);
 	if (err) {
 		if (err < 0) {
@@ -1769,10 +1722,14 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 	}
 
 	if (err) {
+		/* Restore backup */
+		(void)memcpy(ep->codec.meta, metadata_backup,
+			     sizeof(metadata_backup));
+
 		BT_ERR("Metadata failed: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), op, err,
 				      buf->len ? *buf->data : 0x00);
-		return -EFAULT;
+		return err;
 	}
 
 	/* Set the state to the same state to trigger the notifications */

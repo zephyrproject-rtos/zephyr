@@ -333,11 +333,63 @@ static int lc3_start(struct bt_audio_stream *stream)
 	return 0;
 }
 
+static bool valid_metadata_type(uint8_t type, uint8_t len)
+{
+	switch (type) {
+	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
+	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
+		if (len != 2) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
+		if (len != 3) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
+		if (len != 1) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 1 - 255 octets */
+	case BT_AUDIO_METADATA_TYPE_VENDOR: /* 1 - 255 octets */
+		if (len < 1) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_CCID_LIST: /* 2 - 254 octets */
+		if (len < 2) {
+			return false;
+		}
+
+		return true;
+	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO: /* 0 - 255 octets */
+	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
+		return true;
+	default:
+		return false;
+	}
+}
+
 static int lc3_metadata(struct bt_audio_stream *stream,
 			struct bt_codec_data *meta,
 			size_t meta_count)
 {
 	printk("Metadata: stream %p meta_count %u\n", stream, meta_count);
+
+	for (size_t i = 0; i < meta_count; i++) {
+		if (!valid_metadata_type(meta->data.type, meta->data.data_len)) {
+			printk("Invalid metadata type %u or length %u\n",
+			       meta->data.type, meta->data.data_len);
+
+			return -EINVAL;
+		}
+	}
 
 	return 0;
 }
