@@ -38,3 +38,17 @@ properties:
       description: |
         Analog voltage reference (Vref+) voltage with which
         temperature sensor has been calibrated in production
+
+    ts-cal-resolution:
+      type: int
+      required: false
+      description: |
+        Temperature calibration resolution with which the ts-cal1-temp and
+        ts-cal2-temp are measured.
+        For most stm32 series a native 12-bit ADC is embedded in the device,
+        except for H7 on 16-bit and U5 on 14-bit
+      default: 12
+      enum:
+      - 12
+      - 14
+      - 16
