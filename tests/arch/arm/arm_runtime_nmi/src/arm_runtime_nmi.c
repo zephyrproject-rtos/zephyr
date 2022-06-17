@@ -61,6 +61,12 @@ void test_arm_runtime_nmi(void)
 	/* Trigger NMI: Should fire immediately */
 	SCB->ICSR |= SCB_ICSR_NMIPENDSET_Msk;
 
+#ifdef ARM_CACHEL1_ARMV7_H
+	/* Flush Data Cache now if enabled */
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		SCB_CleanDCache();
+	}
+#endif /* ARM_CACHEL1_ARMV7_H */
 	zassert_true(nmi_triggered, "Isr not triggered!\n");
 }
 /**
