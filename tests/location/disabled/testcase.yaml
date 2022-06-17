@@ -1,0 +1,4 @@
+tests:
+  location.api:
+    tags: location_api_only
+    platform_allow: native_posix
