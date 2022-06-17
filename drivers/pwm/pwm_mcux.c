@@ -13,9 +13,8 @@
 #include <fsl_pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_mcux);
+LOG_MODULE_REGISTER(pwm_mcux, CONFIG_PWM_LOG_LEVEL);
 
 #define CHANNEL_COUNT 2
 
