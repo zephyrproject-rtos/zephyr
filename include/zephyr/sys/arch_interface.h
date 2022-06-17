@@ -431,6 +431,28 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter);
 /** Return the CPU struct for the currently executing CPU */
 static inline struct _cpu *arch_curr_cpu(void);
 
+
+/**
+ * @brief Processor hardware ID
+ *
+ * Most multiprocessor architectures have a low-level unique ID value
+ * associated with the current CPU that can be retrieved rapidly and
+ * efficiently in kernel context.  Note that while the numbering of
+ * the CPUs is guaranteed to be unique, the values are
+ * platform-defined. In particular, they are not guaranteed to match
+ * Zephyr's own sequential CPU IDs (even though on some platforms they
+ * do).
+ *
+ * @note There is an inherent race with this API: the system may
+ * preempt the current thread and migrate it to another CPU before the
+ * value is used.  Safe usage requires knowing the migration is
+ * impossible (e.g. because the code is in interrupt context, holds a
+ * spinlock, or cannot migrate due to k_cpu_mask state).
+ *
+ * @return Unique ID for currently-executing CPU
+ */
+static inline uint32_t arch_proc_id(void);
+
 /**
  * Broadcast an interrupt to all CPUs
  *
