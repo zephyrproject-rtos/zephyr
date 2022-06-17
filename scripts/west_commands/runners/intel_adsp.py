@@ -98,9 +98,12 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
             sys.exit(1)
 
     def sign(self, **kwargs):
-        sign_cmd = ['west', 'sign', '-d', f'{self.cfg.build_dir}', '-t', 'rimage', '-p', f'{self.rimage_tool}',
-                '-D', f'{self.config_dir}', '--', '-k', f'{self.key}']
-
+        path_opt = ['-p', f'{self.rimage_tool}'] if self.rimage_tool else []
+        sign_cmd = (
+            ['west', 'sign', '-d', f'{self.cfg.build_dir}', '-t', 'rimage']
+            + path_opt + ['-D', f'{self.config_dir}', '--', '-k', f'{self.key}']
+        )
+        self.logger.info(" ".join(sign_cmd))
         self.check_call(sign_cmd)
 
     def flash(self, **kwargs):
