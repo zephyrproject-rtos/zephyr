@@ -8,8 +8,8 @@
 
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include "em_cmu.h"
-#include "em_timer.h"
+#include <em_cmu.h>
+#include <em_timer.h>
 
 /** PWM configuration. */
 struct pwm_gecko_config {
