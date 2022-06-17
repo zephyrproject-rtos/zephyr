@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="mics"
+SIMULATION_ID="micp"
 VERBOSITY_LEVEL=2
 PROCESS_IDS=""; EXIT_CODE=0
 
@@ -24,10 +24,10 @@ BOARD="${BOARD:-nrf52_bsim}"
 
 cd ${BSIM_OUT_PATH}/bin
 
-printf "\n\n======== Running MICS Server Only (API) test =========\n\n"
+printf "\n\n======== Running MICP Server Only (API) test =========\n\n"
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=mics_server_only -rs=23
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=micp_server_only -rs=23
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
@@ -37,13 +37,13 @@ for PROCESS_ID in $PROCESS_IDS; do
   wait $PROCESS_ID || let "EXIT_CODE=$?"
 done
 
-printf "\n\n======== Running MICS and MICS client test =========\n\n"
+printf "\n\n======== Running MICP and MICP client test =========\n\n"
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=mics -rs=23
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=micp -rs=23
 
 Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=mics_client -rs=46
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=micp_client -rs=46
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
