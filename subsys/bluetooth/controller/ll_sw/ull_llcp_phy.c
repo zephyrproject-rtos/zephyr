@@ -591,6 +591,7 @@ static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *
 				conn, pu_select_phy_timing_restrict(conn, ctx->data.pu.tx));
 			ctx->state = LP_PU_STATE_WAIT_RX_PHY_UPDATE_IND;
 			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 			break;
 #endif /* CONFIG_BT_PERIPHERAL */
 		default:
