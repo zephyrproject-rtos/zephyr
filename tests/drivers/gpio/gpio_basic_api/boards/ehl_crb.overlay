@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2022 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/* By default, EHL_CRB on SBL, SBL locks all gpio registeration configuration.
+ * Please follow up do the following changes:
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B04 -> GPIO Skip -> Disable
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B04 -> PadMode -> GPIO control of the pad
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B04 -> HostSoftPadOwn -> Host ownership to GPIO Driver mode
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B04 -> Direction -> DirOut
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B04 -> LockConfig -> PadUnlock
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B23 -> GPIO Skip -> Disable
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B23 -> PadMode -> GPIO control of the pad
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B23 -> HostSoftPadOwn -> Host ownership to GPIO Driver mode
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B23 -> Direction -> DirIn
+ * GPIO Settings -> GPIO_GPP_B -> GPP_B23 -> LockConfig -> PadUnlock
+ */
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+
+		out-gpios = <&gpio_0_b 4 0>;
+		in-gpios  = <&gpio_0_b 23 0>;
+	};
+};
