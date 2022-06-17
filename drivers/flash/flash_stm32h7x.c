@@ -287,17 +287,11 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-static int wait_write_queue(const struct device *dev, off_t offset)
+static int wait_write_queue(const struct flash_stm32_sector_t *sector)
 {
 	int64_t timeout_time = k_uptime_get() + 100;
-	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
-	if (sector.bank == 0) {
-		LOG_ERR("Offset %ld does not exist", (long) offset);
-		return -EINVAL;
-	}
-
-	while (*(sector.sr) & FLASH_SR_QW) {
+	while (*(sector->sr) & FLASH_SR_QW) {
 		if (k_uptime_get() > timeout_time) {
 			LOG_ERR("Timeout! val: %d", 100);
 			return -EIO;
@@ -353,7 +347,7 @@ static int write_ndwords(const struct device *dev,
 		/* Flush the data write */
 		__DSB();
 
-		wait_write_queue(dev, offset);
+		wait_write_queue(&sector);
 	}
 
 	/* Wait until the BSY bit is cleared */
