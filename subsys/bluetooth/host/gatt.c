@@ -2168,6 +2168,11 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 		}
 
 		bt_att_set_tx_meta_data(*buf, params->func, params->user_data);
+	} else {
+		/* Increment the number of handles, ensuring the notify callback
+		 * gets called once for every attribute.
+		 */
+		bt_att_increment_tx_meta_data_attr_count(*buf, 1);
 	}
 
 	BT_DBG("handle 0x%04x len %u", handle, params->len);
