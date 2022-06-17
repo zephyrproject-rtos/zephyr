@@ -612,6 +612,14 @@
 				#pwm-cells = <3>;
 			};
 		};
+
+		enet: ethernet@40028000 {
+			compatible = "gd,gd32-ethernet";
+			reg = <0x40028000 0x8000>;
+			label = "ETH_0";
+			interrupts = <61 0>;
+			status = "disabled";
+		};
 	};
 };
 

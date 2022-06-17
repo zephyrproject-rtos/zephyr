@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Carbon Robotics
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigaDevice GD32 Ethernet
+
+compatible: "gd,gd32-ethernet"
+
+include: ["ethernet.yaml", "ethernet,fixed-link.yaml", "pinctrl-device.yaml"]
+
+properties:
+    reg:
+      required: true
+    interrupts:
+      required: true
+    pinctrl-0:
+      required: true
+    pinctrl-names:
+      required: true

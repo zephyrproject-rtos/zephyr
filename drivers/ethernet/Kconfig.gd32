@@ -1,0 +1,107 @@
+# Copyright (c) 2022 Carbon Robotics
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_GD_GD32_ETHERNET := gd,gd32-ethernet
+
+menuconfig ETH_GD32_HAL
+	bool "GigaDevice GD32 HAL Ethernet driver"
+	default y if $(dt_compat_enabled,$(DT_COMPAT_GD_GD32_ETHERNET))
+	select USE_GD32_ENET
+	select USE_GD32_SYSCFG
+	help
+	  Enable GigaDevice GD32 HAL based Ethernet driver.
+
+if ETH_GD32_HAL
+
+config ETH_GD32_HAL_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 1500
+	help
+	  RX thread stack size
+
+config ETH_GD32_HAL_RX_NET_PKT_ALLOC_TIMEOUT_MS
+	int "Network interface RX packet allocation timeout"
+	default 100
+	help
+	  Network interface RX net_pkt allocation timeout in milliseconds.
+
+config ETH_GD32_HAL_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 2
+	help
+	  RX thread priority
+
+config ETH_GD32_HAL_PHY_ADDRESS
+	int "PHY address"
+	default 1
+	help
+	  The phy address to use.
+
+choice ETH_GD32_HAL_PHY
+	prompt "PHY chip"
+	default ETH_GD32_HAL_PHY_DP83848
+
+config ETH_GD32_HAL_PHY_DP83848
+	bool "DP83848"
+	help
+	  Use DP83848 PHY.
+
+config ETH_GD32_HAL_PHY_LAN8700
+	bool "LAN8700"
+	help
+	  Use LAN8700 series PHY.
+
+endchoice
+
+config ETH_GD32_HAL_MII
+	bool "Use MII interface"
+	help
+	  Use the MII physical interface instead of RMII.
+
+config ETH_GD32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
+	int "Carrier check timeout period (ms)"
+	default 500
+	range 100 30000
+	help
+	  Set the RX idle timeout period in milliseconds after which the
+	  PHY's carrier status is re-evaluated.
+
+config PTP_CLOCK_GD32_HAL
+	bool "GigaDevice GD32 HAL PTP clock driver support"
+	default y
+	depends on PTP_CLOCK || NET_L2_PTP
+	help
+	  Enable GigaDevice GD32 PTP clock support.
+
+config ETH_GD32_HAL_PTP_CLOCK_SRC_HZ
+	int "Frequency of the clock source for the PTP timer"
+	default 50000000
+	depends on PTP_CLOCK_GD32_HAL
+	help
+	  Set the frequency in Hz sourced to the PTP timer.
+	  If the value is set properly, the timer will be accurate.
+
+config ETH_GD32_HAL_PTP_CLOCK_ADJ_MIN_PCT
+	int "Lower bound of clock frequency adjustment (in percent)"
+	default 90
+	depends on PTP_CLOCK_GD32_HAL
+	help
+	  Specifies lower bound of PTP clock rate adjustment.
+
+config ETH_GD32_HAL_PTP_CLOCK_ADJ_MAX_PCT
+	int "Upper bound of clock frequency adjustment (in percent)"
+	default 110
+	depends on PTP_CLOCK_GD32_HAL
+	help
+	  Specifies upper bound of PTP clock rate adjustment.
+
+config ETH_GD32_HAL_PTP_CLOCK_INIT_PRIO
+	int
+	default 85
+	depends on PTP_CLOCK_GD32_HAL
+	help
+	  GigaDevice GD32 PTP Clock initialization priority level.
+	  There is a dependency from the network stack that this device
+	  initializes before network stack (NET_INIT_PRIO).
+
+endif # ETH_GD32_HAL

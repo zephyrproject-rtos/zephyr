@@ -39,4 +39,14 @@
 				 <SPI5_IO2_PG10>, <SPI5_IO3_PG11>;
 		};
 	};
+
+	enet_default: enet_default {
+		group1 {
+			pinmux = <ETH_RMII_REF_CLK_PA1>, <ETH_MDIO_PA2>,
+				 <ETH_RMII_CRS_DV_PA7>, <ETH_MDC_PC1>,
+				 <ETH_RMII_RXD0_PC4>, <ETH_RMII_RXD1_PC5>,
+				 <ETH_RMII_TX_EN_PB11>, <ETH_RMII_TXD0_PB12>,
+				 <ETH_RMII_TXD1_PB13>;
+		};
+	};
 };
