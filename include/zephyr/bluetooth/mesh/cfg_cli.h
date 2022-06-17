@@ -21,10 +21,34 @@
 extern "C" {
 #endif
 
+struct bt_mesh_cfg_cli;
+
+/** Mesh Configuration Client Status messages callback */
+struct bt_mesh_cfg_cli_cb {
+	/** @brief Optional callback for Model Sub Status messages.
+	 *
+	 *  Handles received Model Sub Status messages from a server.
+	 *
+	 *  @param cli         Client that received the status message.
+	 *  @param addr        Address of the sender.
+	 *  @param status      Status Code for requesting message.
+	 *  @param elem_addr   The unicast address of the element.
+	 *  @param sub_addr    The sub address.
+	 *  @param mod_id      The model ID within the element.
+	 */
+	void (*mod_sub_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
+			     uint8_t status, uint16_t elem_addr,
+			     uint16_t sub_addr, uint32_t mod_id);
+
+};
+
 /** Mesh Configuration Client Model Context */
 struct bt_mesh_cfg_cli {
 	/** Composition data model entry pointer. */
 	struct bt_mesh_model *model;
+
+	/** Optional callback for Mesh Configuration Client Status messages. */
+	const struct bt_mesh_cfg_cli_cb *cb;
 
 	/* Internal parameters for tracking message responses. */
 	struct bt_mesh_msg_ack_ctx ack_ctx;
