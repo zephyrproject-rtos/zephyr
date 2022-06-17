@@ -97,8 +97,8 @@ The VCP implementation supports the following roles
 
 The MICP implementation supports the following roles
 
-* Microphone Input Control Service (MICS) Server
-* Microphone Input Control Service (MICS) Client
+* Microphone Input Control Profile (MICP) Microphone Device (server)
+* Microphone Input Control Profile (MICP) Microphone Controller (client)
 
 The API reference for volume control can be found in
 :ref:`Bluetooth Volume Control <bluetooth_volume>`.

@@ -17,10 +17,10 @@ if (CONFIG_BT_VCS OR CONFIG_BT_VCS_CLIENT)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_VCS_CLIENT vcs_client.c)
 
-if (CONFIG_BT_MICS OR CONFIG_BT_MICS_CLIENT)
+if (CONFIG_BT_MICP OR CONFIG_BT_MICP_CLIENT)
 	zephyr_library_sources(mics.c)
 endif()
-zephyr_library_sources_ifdef(CONFIG_BT_MICS_CLIENT mics_client.c)
+zephyr_library_sources_ifdef(CONFIG_BT_MICP_CLIENT mics_client.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_CCID ccid.c)
 
