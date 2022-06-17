@@ -84,7 +84,7 @@ static const uint32_t max_freq_high_on_div[NUM_DIV_ELEMS] = {
 	3692307,
 	3428571,
 	3200000,
-	3000000
+	3000000,
 };
 
 static const uint32_t max_freq_low_on_div[NUM_DIV_ELEMS] = {
@@ -103,7 +103,7 @@ static const uint32_t max_freq_low_on_div[NUM_DIV_ELEMS] = {
 	7692,
 	7142,
 	6666,
-	6250
+	6250,
 };
 
 static uint32_t xec_compute_frequency(uint32_t clk, uint32_t on, uint32_t off)

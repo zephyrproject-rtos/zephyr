@@ -14,6 +14,7 @@
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(pwm_npcx, LOG_LEVEL_ERR);
 
 /* 16-bit period cycles/prescaler in NPCX PWM modules */

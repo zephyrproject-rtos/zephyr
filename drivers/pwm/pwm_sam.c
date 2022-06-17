@@ -13,6 +13,7 @@
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(pwm_sam, CONFIG_PWM_LOG_LEVEL);
 
 struct sam_pwm_config {

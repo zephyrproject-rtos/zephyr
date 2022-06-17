@@ -12,6 +12,7 @@
 #include <stdbool.h>
 
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_NRFX_CH_POLARITY_MASK          BIT(15)
