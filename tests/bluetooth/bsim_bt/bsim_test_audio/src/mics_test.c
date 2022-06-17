@@ -5,7 +5,7 @@
  */
 
 #ifdef CONFIG_BT_MICS
-#include <zephyr/bluetooth/audio/mics.h>
+#include <zephyr/bluetooth/audio/micp.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;
