@@ -123,7 +123,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define K_KERNEL_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
 
 /**
- * @def K_KERNEL_STACK_ARRAY_EXTERN
  * @brief Obtain an extern reference to a stack array
  *
  * This macro properly brings the symbol of a stack array defined
@@ -138,7 +137,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
 
 /**
- * @def K_KERNEL_PINNED_STACK_ARRAY_EXTERN
  * @brief Obtain an extern reference to a pinned stack array
  *
  * This macro properly brings the symbol of a pinned stack array
@@ -153,7 +151,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
 
 /**
- * @def Z_KERNEL_STACK_DEFINE_IN
  * @brief Define a toplevel kernel stack memory region in specified section
  *
  * This defines a region of memory for use as a thread stack in
@@ -178,7 +175,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
 
 /**
- * @def Z_KERNEL_STACK_ARRAY_DEFINE_IN
  * @brief Define a toplevel array of kernel stack memory regions in specified section
  *
  * @param sym Kernel stack array symbol name
@@ -192,7 +188,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
 
 /**
- * @def K_KERNEL_STACK_DEFINE
  * @brief Define a toplevel kernel stack memory region
  *
  * This defines a region of memory for use as a thread stack, for threads
@@ -217,7 +212,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem)
 
 /**
- * @def K_KERNEL_PINNED_STACK_DEFINE
  * @brief Define a toplevel kernel stack memory region in pinned section
  *
  * See K_KERNEL_STACK_DEFINE() for more information and constraints.
@@ -238,7 +232,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 #endif
 
 /**
- * @def K_KERNEL_STACK_ARRAY_DEFINE
  * @brief Define a toplevel array of kernel stack memory regions
  *
  * Stacks defined with this macro may not host user mode threads.
@@ -251,7 +244,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem)
 
 /**
- * @def K_KERNEL_PINNED_STACK_ARRAY_DEFINE
  * @brief Define a toplevel array of kernel stack memory regions in pinned section
  *
  * See K_KERNEL_STACK_ARRAY_DEFINE() for more information and constraints.
@@ -273,7 +265,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 #endif
 
 /**
- * @def K_KERNEL_STACK_MEMBER
  * @brief Define an embedded stack memory region
  *
  * Used for kernel stacks embedded within other data structures.
@@ -308,7 +299,6 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 					K_KERNEL_PINNED_STACK_ARRAY_DEFINE
 #else
 /**
- * @def K_THREAD_STACK_RESERVED
  * @brief Indicate how much additional memory is reserved for stack objects
  *
  * Any given stack declaration may have additional memory in it for guard
@@ -362,7 +352,6 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #endif /* ARCH_THREAD_STACK_OBJ_ALIGN */
 
 /**
- * @def Z_THREAD_STACK_SIZE_ADJUST
  * @brief Round up a requested stack size to satisfy constraints
  *
  * Given a requested stack buffer size, return an adjusted size value for
