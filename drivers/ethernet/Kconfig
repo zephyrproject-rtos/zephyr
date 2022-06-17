@@ -59,6 +59,7 @@ source "drivers/ethernet/Kconfig.gecko"
 source "drivers/ethernet/Kconfig.w5500"
 source "drivers/ethernet/Kconfig.dsa"
 source "drivers/ethernet/Kconfig.xlnx_gem"
+source "drivers/ethernet/Kconfig.gd32"
 
 source "drivers/ethernet/phy/Kconfig"
 

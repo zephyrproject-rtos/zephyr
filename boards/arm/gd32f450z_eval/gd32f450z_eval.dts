@@ -145,3 +145,9 @@
 		jedec-id = [c8 40 15];
 	};
 };
+
+&enet {
+	status = "okay";
+	pinctrl-0 = <&enet_default>;
+	pinctrl-names = "default";
+};

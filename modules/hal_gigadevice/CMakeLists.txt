@@ -30,6 +30,48 @@ elseif(${CONFIG_GD32_HXTAL_25MHZ})
   zephyr_compile_definitions(HXTAL_VALUE=25000000 HXTAL_VALUE_8M=25000000)
 endif()
 
+# Use enhanced DMA descriptors for ENET.
+zephyr_compile_definitions(SELECT_DESCRIPTORS_ENHANCED_MODE=1)
+
+# PHY configuration.
+zephyr_compile_definitions(_PHY_H_=1)
+# PHY address determined by the hardware
+zephyr_compile_definitions(PHY_ADDRESS=${CONFIG_ETH_GD32_HAL_PHY_ADDRESS})
+# PHY read write timeouts
+zephyr_compile_definitions(PHY_READ_TO=0x0004FFFFU)
+zephyr_compile_definitions(PHY_WRITE_TO=0x0004FFFFU)
+# PHY delay
+zephyr_compile_definitions(PHY_RESETDELAY=0x008FFFFFU)
+zephyr_compile_definitions(PHY_CONFIGDELAY=0x00FFFFFFU)
+# PHY register address
+zephyr_compile_definitions(PHY_REG_BCR=0U)
+zephyr_compile_definitions(PHY_REG_BSR=1U)
+# PHY basic control register
+zephyr_compile_definitions(PHY_RESET=0x8000U)
+zephyr_compile_definitions(PHY_LOOPBACK=0x4000U)
+zephyr_compile_definitions(PHY_FULLDUPLEX_100M=0x2100U)
+zephyr_compile_definitions(PHY_HALFDUPLEX_100M=0x2000U)
+zephyr_compile_definitions(PHY_FULLDUPLEX_10M=0x0100U)
+zephyr_compile_definitions(PHY_HALFDUPLEX_10M=0x0000U)
+zephyr_compile_definitions(PHY_AUTONEGOTIATION=0x1000U)
+zephyr_compile_definitions(PHY_RESTART_AUTONEGOTIATION=0x0200U)
+zephyr_compile_definitions(PHY_POWERDOWN=0x0800U)
+zephyr_compile_definitions(PHY_ISOLATE=0x0400U)
+# PHY basic status register
+zephyr_compile_definitions(PHY_AUTONEGO_COMPLETE=0x0020U)
+zephyr_compile_definitions(PHY_LINKED_STATUS=0x0004U)
+zephyr_compile_definitions(PHY_JABBER_DETECTION=0x0002U)
+# PHY transceiver status register
+if(CONFIG_ETH_GD32_HAL_PHY_LAN8700)
+  zephyr_compile_definitions(PHY_SR=31U)
+  zephyr_compile_definitions(PHY_SPEED_STATUS=0x0004U)
+  zephyr_compile_definitions(PHY_DUPLEX_STATUS=0x0010U)
+elseif(CONFIG_ETH_GD32_HAL_PHY_DP83848)
+  zephyr_compile_definitions(PHY_SR=16U)
+  zephyr_compile_definitions(PHY_SPEED_STATUS=0x0002U)
+  zephyr_compile_definitions(PHY_DUPLEX_STATUS=0x0004U)
+endif()
+
 # Global includes to be used outside hal_gigadevice
 zephyr_include_directories(${gd32_soc_sys_dir}/include)
 zephyr_include_directories(${gd32_std_dir}/include)

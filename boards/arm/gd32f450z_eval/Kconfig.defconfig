@@ -6,4 +6,11 @@ if BOARD_GD32F450Z_EVAL
 config BOARD
 	default "gd32f450z_eval"
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
 endif # BOARD_GD32F450Z_EVAL
