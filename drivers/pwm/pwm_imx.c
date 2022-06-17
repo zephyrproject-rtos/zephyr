@@ -10,9 +10,8 @@
 #include <device_imx.h>
 #include <zephyr/drivers/pinctrl.h>
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_imx);
+LOG_MODULE_REGISTER(pwm_imx, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_PWMSR_FIFOAV_4WORDS	0x4
 

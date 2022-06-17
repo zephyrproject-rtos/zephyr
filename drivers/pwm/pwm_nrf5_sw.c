@@ -14,9 +14,8 @@
 #include <hal/nrf_gpio.h>
 #include <nrf_peripherals.h>
 
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwm_nrf5_sw);
+LOG_MODULE_REGISTER(pwm_nrf5_sw, CONFIG_PWM_LOG_LEVEL);
 
 #define GENERATOR_NODE	DT_INST_PHANDLE(0, generator)
 #define GENERATOR_CC_NUM	DT_PROP(GENERATOR_NODE, cc_num)
