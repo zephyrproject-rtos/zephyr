@@ -564,8 +564,8 @@ __subsystem struct gpio_driver_api {
 			       bool set);
 	uint32_t (*get_pending_int)(const struct device *dev);
 #ifdef CONFIG_GPIO_GET_DIRECTION
-	int (*port_get_direction)(const struct device *port, gpio_port_pins_t *inputs,
-					   gpio_port_pins_t *outputs);
+	int (*port_get_direction)(const struct device *port, gpio_port_pins_t map,
+				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs);
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
@@ -777,7 +777,7 @@ __syscall int gpio_port_get_direction(const struct device *port, gpio_port_pins_
 #ifdef CONFIG_GPIO_GET_DIRECTION
 static inline int z_impl_gpio_port_get_direction(const struct device *port, gpio_port_pins_t map,
 						 gpio_port_pins_t *inputs,
-						 gpio_port_pins_t *outputs);
+						 gpio_port_pins_t *outputs)
 {
 	const struct gpio_driver_api *api = (const struct gpio_driver_api *)port->api;
 
