@@ -24,12 +24,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
-#define STM32H7_FLASH_MAX_ERASE_TIME    4000
-
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32H7_FLASH_TIMEOUT   (2 * STM32H7_FLASH_MAX_ERASE_TIME)
+#define STM32H7_FLASH_TIMEOUT	\
+	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
 #ifdef CONFIG_CPU_CORTEX_M4
 #error Flash driver on M4 core is not supported yet
