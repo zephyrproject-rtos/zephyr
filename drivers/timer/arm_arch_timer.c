@@ -100,8 +100,17 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint64_t curr_cycle = arm_arch_timer_count();
 	uint64_t req_cycle = ticks * CYC_PER_TICK;
 
-	/* Round up to next tick boundary */
-	req_cycle += (curr_cycle - last_cycle) + (CYC_PER_TICK - 1);
+	/*
+	 * Round up to next tick boundary, but an edge case should be handled.
+	 * Fast hardware with slow timer hardware can trigger and enter an
+	 * interrupt and reach this spot before the counter has advanced.
+	 * That defeats the "round up" logic such that we end up scheduling
+	 * timeouts a tick too soon (e.g. if the kernel requests an interrupt
+	 * at the "X" tick, we would end up computing a comparator value
+	 * representing the "X-1" tick!). Choose the bigger one between 1 and
+	 * "curr_cycle - last_cycle" to correct.
+	 */
+	req_cycle += MAX(curr_cycle - last_cycle, 1) + (CYC_PER_TICK - 1);
 
 	req_cycle = (req_cycle / CYC_PER_TICK) * CYC_PER_TICK;
 
