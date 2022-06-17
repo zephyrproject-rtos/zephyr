@@ -11,14 +11,15 @@
 
 ---
 BasedOnStyle: LLVM
-AlignConsecutiveMacros: AcrossComments
-AttributeMacros:
-  - __aligned
-  - __deprecated
-  - __packed
-  - __printf_like
-  - __syscall
-  - __subsystem
+AlignConsecutiveMacros: true
+#AlignConsecutiveMacros: AcrossComments # clang-format >= ?
+#AttributeMacros: # clang-format >= 12.0
+#  - __aligned
+#  - __deprecated
+#  - __packed
+#  - __printf_like
+#  - __syscall
+#  - __subsystem
 BreakBeforeBraces: Linux
 ConstructorInitializerIndentWidth: 8
 ContinuationIndentWidth: 8
@@ -70,6 +71,6 @@ IndentCaseLabels: false
 IndentWidth: 8
 # SpaceBeforeParens: ControlStatementsExceptControlMacros # clang-format >= 13.0
 UseTab: Always
-WhitespaceSensitiveMacros:
-  - STRINGIFY
-  - Z_STRINGIFY
+#WhitespaceSensitiveMacros: # clang-format >= 11.0
+#  - STRINGIFY
+#  - Z_STRINGIFY
