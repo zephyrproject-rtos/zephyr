@@ -26,6 +26,17 @@ config GPIO_INIT_PRIORITY
 	help
 	  GPIO driver device initialization priority.
 
+config GPIO_GET_DIRECTION
+	bool "Support for querying GPIO direction [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable this option if the application does not maintain its own GPIO
+	  direction state.
+
+	  With this option enabled, the application may query GPIO direction
+	  via gpio_port_get_direction(), gpio_pin_is_input(), and
+	  gpio_pin_is_output().
+
 source "drivers/gpio/Kconfig.b91"
 
 source "drivers/gpio/Kconfig.dw"
