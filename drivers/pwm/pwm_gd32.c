@@ -16,6 +16,7 @@
 #include <gd32_timer.h>
 
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(pwm_gd32, CONFIG_PWM_LOG_LEVEL);
 
 /** PWM data. */
