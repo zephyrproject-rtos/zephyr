@@ -34,13 +34,23 @@ LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 #define W5500_SPI_WRITE_CONTROL(addr)   \
 	((W5500_SPI_BLOCK_SELECT(addr) << 3) | BIT(2))
 
+#define MAC_FRAME_LEN_MIN		(60)
+#define MAC_FRAME_LEN_MAX		(1514)
+#define MAC_FRAME_RX_BUF_SIZE	(1518) // 1514 + 3(dummy bytes) + 1 (padding)
+uint8_t rx_frame_buf[MAC_FRAME_RX_BUF_SIZE];
+
+static int w5500_hw_restart(const struct device *dev);
+
 static int w5500_spi_read(const struct device *dev, uint32_t addr,
 			  uint8_t *data, uint32_t len)
 {
 	const struct w5500_config *cfg = dev->config;
 	int ret;
-	/* 3 bytes as 0x010203 during command phase */
-	uint8_t tmp[len + 3];
+	
+	/* Check the payload length of Ethernet frame */
+	if (len > MAC_FRAME_LEN_MAX) {
+		return -EINVAL;
+	}
 
 	uint8_t cmd[3] = {
 		addr >> 8,
@@ -56,8 +66,8 @@ static int w5500_spi_read(const struct device *dev, uint32_t addr,
 		.count = 1,
 	};
 	const struct spi_buf rx_buf = {
-		.buf = tmp,
-		.len = ARRAY_SIZE(tmp),
+		.buf = rx_frame_buf,
+		.len = len + 3,
 	};
 	const struct spi_buf_set rx = {
 		.buffers = &rx_buf,
@@ -68,7 +78,7 @@ static int w5500_spi_read(const struct device *dev, uint32_t addr,
 
 	if (!ret) {
 		/* skip the default dummy 0x010203 */
-		memcpy(data, &tmp[3], len);
+		memcpy(data, &rx_frame_buf[3], len);
 	}
 
 	return ret;
@@ -232,6 +242,20 @@ static void w5500_rx(const struct device *dev)
 	w5500_readbuf(dev, off, header, 2);
 	rx_len = sys_get_be16(header) - 2;
 
+	LOG_INF("RX_RSR: %d, frame len: %d, offset: %04x", rx_buf_len, rx_len, off);
+	if ((rx_len > MAC_FRAME_LEN_MAX) || (rx_len < MAC_FRAME_LEN_MIN)) {
+		LOG_ERR("Invalid frame length: %d", rx_len);
+		/* How to handle this?
+		 * To initialize RX_RSR, RX_RD, RX_WR,
+		 * restart the hardware
+		 */
+		w5500_hw_restart(dev);
+		return;		
+	} else if (rx_len > rx_buf_len - 2) {
+		LOG_ERR("Not ready to read");
+		return;
+	}
+
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_len,
 			AF_UNSPEC, 0, K_MSEC(config->timeout));
 	if (!pkt) {
@@ -388,6 +412,12 @@ static int w5500_hw_stop(const struct device *dev)
 	w5500_command(dev, S0_CR_CLOSE);
 
 	return 0;
+}
+
+static int w5500_hw_restart(const struct device *dev)
+{
+	w5500_hw_stop(dev);
+	w5500_hw_start(dev);
 }
 
 static struct ethernet_api w5500_api_funcs = {
