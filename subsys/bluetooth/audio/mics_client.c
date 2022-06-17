@@ -18,7 +18,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/mics.h>
+#include <zephyr/bluetooth/audio/micp.h>
 
 #include "mics_internal.h"
 

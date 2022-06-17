@@ -7,7 +7,7 @@
 #ifdef CONFIG_BT_MICS_CLIENT
 
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/audio/mics.h>
+#include <zephyr/bluetooth/audio/micp.h>
 
 #include "common.h"
 
