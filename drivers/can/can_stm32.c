@@ -23,11 +23,6 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can1), st_stm32_can, okay) && \
-    DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can2), st_stm32_can, okay)
-#error Simultaneous use of CAN_1 and CAN_2 not supported yet
-#endif
-
 #define DT_DRV_COMPAT st_stm32_can
 
 #define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
@@ -54,6 +49,12 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
  */
 static const uint8_t filter_in_bank[] = {2, 4, 1, 2};
 static const uint8_t reg_demand[] = {2, 1, 4, 2};
+
+/*
+ * Mutex to prevent simultaneous access to filter registers shared between CAN1
+ * and CAN2.
+ */
+static struct k_mutex filter_mutex;
 
 static void can_stm32_signal_tx_complete(const struct device *dev, struct can_mailbox *mb)
 {
@@ -472,12 +473,10 @@ static int can_stm32_init(const struct device *dev)
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->can;
 	struct can_timing timing;
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
-	CAN_TypeDef *master_can = cfg->master_can;
-#endif
 	const struct device *clock;
 	int ret;
 
+	k_mutex_init(&filter_mutex);
 	k_mutex_init(&data->inst_mutex);
 	k_sem_init(&data->tx_int_sem, 0, 1);
 	k_sem_init(&data->mb0.tx_int_sem, 0, 1);
@@ -527,9 +526,6 @@ static int can_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
-	master_can->FMR &= ~CAN_FMR_CAN2SB; /* Assign all filters to CAN2 */
-#endif
 	can->MCR &= ~CAN_MCR_TTCM & ~CAN_MCR_ABOM & ~CAN_MCR_AWUM &
 		    ~CAN_MCR_NART & ~CAN_MCR_RFLM & ~CAN_MCR_TXFP;
 #ifdef CONFIG_CAN_RX_TIMESTAMP
@@ -788,14 +784,16 @@ static enum can_filter_type can_stm32_get_filter_type(int bank_nr, uint32_t mode
 	return type;
 }
 
-static int can_calc_filter_index(int filter_id, uint32_t mode_reg, uint32_t scale_reg)
+static int can_calc_filter_index(int filter_id, int bank_offset, uint32_t mode_reg,
+				 uint32_t scale_reg)
 {
-	int filter_bank = filter_id / 4;
+	int filter_bank = bank_offset + filter_id / 4;
 	int cnt = 0;
 	uint32_t mode_masked, scale_masked;
 	enum can_filter_type filter_type;
-	/*count filters in the banks before */
-	for (int i = 0; i < filter_bank; i++) {
+
+	/* count filters in the banks before this bank */
+	for (int i = bank_offset; i < filter_bank; i++) {
 		filter_type = can_stm32_get_filter_type(i, mode_reg, scale_reg);
 		cnt += filter_in_bank[filter_type];
 	}
@@ -905,20 +903,27 @@ static inline uint32_t can_generate_ext_id(const struct zcan_filter *filter)
 		(1U          << CAN_FIRX_EXT_IDE_POS);
 }
 
-static inline int can_stm32_set_filter(const struct zcan_filter *filter,
-				       struct can_stm32_data *device_data,
-				       CAN_TypeDef *can,
+static inline int can_stm32_set_filter(const struct device *dev, const struct zcan_filter *filter,
 				       int *filter_index)
 {
+	const struct can_stm32_config *cfg = dev->config;
+	struct can_stm32_data *device_data = dev->data;
+	CAN_TypeDef *can = cfg->master_can;
 	uint32_t mask = 0U;
 	uint32_t id = 0U;
 	int filter_id = 0;
 	int filter_index_new = -ENOSPC;
 	int bank_nr;
+	int bank_offset = 0;
 	uint32_t bank_bit;
 	int register_demand;
 	enum can_filter_type filter_type;
 	enum can_filter_type bank_mode;
+
+	if (cfg->can != cfg->master_can) {
+		/* CAN slave instance: start with offset */
+		bank_offset = CAN_NUMBER_OF_FILTER_BANKS;
+	}
 
 	if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
 		id = can_generate_std_id(filter);
@@ -956,16 +961,16 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 		uint64_t usage_demand_mask = (1ULL << register_demand) - 1;
 		bool bank_is_empty;
 
-		bank_nr = filter_id / 4;
+		bank_nr = bank_offset + filter_id / 4;
 		bank_bit = (1U << bank_nr);
 		bank_mode = can_stm32_get_filter_type(bank_nr, can->FM1R,
 						      can->FS1R);
 
 		bank_is_empty = CAN_BANK_IS_EMPTY(device_data->filter_usage,
-						  bank_nr);
+						  bank_nr, bank_offset);
 
 		if (!bank_is_empty && bank_mode != filter_type) {
-			filter_id = (bank_nr + 1) * 4;
+			filter_id = (filter_id / 4 + 1) * 4;
 		} else if (usage_shifted & usage_demand_mask) {
 			device_data->filter_usage &=
 				~(usage_demand_mask << filter_id);
@@ -996,8 +1001,8 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 
 		shift_width = filter_in_bank[filter_type] - filter_in_bank[bank_mode];
 
-		filter_index_new = can_calc_filter_index(filter_id, mode_reg,
-							 scale_reg);
+		filter_index_new = can_calc_filter_index(filter_id, bank_offset,
+							 mode_reg, scale_reg);
 
 		start_index = filter_index_new + filter_in_bank[bank_mode];
 
@@ -1020,8 +1025,8 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 		can->FM1R = mode_reg;
 		can->FS1R = scale_reg;
 	} else {
-		filter_index_new = can_calc_filter_index(filter_id, can->FM1R,
-							 can->FS1R);
+		filter_index_new = can_calc_filter_index(filter_id, bank_offset,
+							 can->FM1R, can->FS1R);
 		if (filter_index_new >= CAN_MAX_NUMBER_OF_FILTERS) {
 			filter_id = -ENOSPC;
 			goto done;
@@ -1033,8 +1038,7 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 done:
 	can->FA1R |= bank_bit;
 	can->FMR &= ~(CAN_FMR_FINIT);
-	LOG_DBG("Filter set! Filter number: %d (index %d)",
-		    filter_id, filter_index_new);
+	LOG_DBG("Filter set: id %d, index %d, bank %d", filter_id, filter_index_new, bank_nr);
 	*filter_index = filter_index_new;
 	return filter_id;
 }
@@ -1042,19 +1046,21 @@ done:
 static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
 				   void *cb_arg, const struct zcan_filter *filter)
 {
-	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
-	CAN_TypeDef *can = cfg->master_can;
 	int filter_index = 0;
 	int filter_id;
 
+	k_mutex_lock(&filter_mutex, K_FOREVER);
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-	filter_id = can_stm32_set_filter(filter, data, can, &filter_index);
+
+	filter_id = can_stm32_set_filter(dev, filter, &filter_index);
 	if (filter_id != -ENOSPC) {
 		data->rx_cb[filter_index] = cb;
 		data->cb_arg[filter_index] = cb_arg;
 	}
+
 	k_mutex_unlock(&data->inst_mutex);
+	k_mutex_unlock(&filter_mutex);
 
 	return filter_id;
 }
@@ -1064,6 +1070,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->master_can;
+	int bank_offset = 0;
 	int bank_nr;
 	int filter_index;
 	uint32_t bank_bit;
@@ -1074,14 +1081,19 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 
 	__ASSERT_NO_MSG(filter_id >= 0 && filter_id < CAN_MAX_NUMBER_OF_FILTERS);
 
+	k_mutex_lock(&filter_mutex, K_FOREVER);
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
-	bank_nr = filter_id / 4;
+	if (cfg->can != cfg->master_can) {
+		bank_offset = CAN_NUMBER_OF_FILTER_BANKS;
+	}
+
+	bank_nr = bank_offset + filter_id / 4;
 	bank_bit = (1U << bank_nr);
 	mode_reg  = can->FM1R;
 	scale_reg = can->FS1R;
 
-	filter_index = can_calc_filter_index(filter_id, mode_reg, scale_reg);
+	filter_index = can_calc_filter_index(filter_id, bank_offset, mode_reg, scale_reg);
 	type = can_stm32_get_filter_type(bank_nr, mode_reg, scale_reg);
 
 	LOG_DBG("Detach filter number %d (index %d), type %d", filter_id,
@@ -1096,7 +1108,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	can_stm32_set_filter_bank(filter_id, &can->sFilterRegister[bank_nr],
 				  type, 0, 0xFFFFFFFF);
 
-	if (!CAN_BANK_IS_EMPTY(data->filter_usage, bank_nr)) {
+	if (!CAN_BANK_IS_EMPTY(data->filter_usage, bank_nr, bank_offset)) {
 		can->FA1R |= bank_bit;
 	} else {
 		LOG_DBG("Bank number %d is empty -> deactivate", bank_nr);
@@ -1107,6 +1119,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	data->cb_arg[filter_index] = NULL;
 
 	k_mutex_unlock(&data->inst_mutex);
+	k_mutex_unlock(&filter_mutex);
 }
 
 static const struct can_driver_api can_api_funcs = {
