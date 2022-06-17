@@ -6,7 +6,6 @@
 
 #define DT_DRV_COMPAT nuvoton_npcx_pwm
 
-#include <assert.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/dt-bindings/clock/npcx_clock.h>
