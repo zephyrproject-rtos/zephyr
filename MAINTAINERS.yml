@@ -670,6 +670,9 @@ Documentation:
     status: maintained
     maintainers:
         - mnkp
+    collaborators:
+        - henrikbrixandersen
+        - cfriedt
     files:
         - doc/hardware/peripherals/gpio.rst
         - drivers/gpio/
