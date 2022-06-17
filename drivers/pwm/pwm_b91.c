@@ -6,8 +6,8 @@
 
 #define DT_DRV_COMPAT telink_b91_pwm
 
-#include "pwm.h"
-#include "clock.h"
+#include <pwm.h>
+#include <clock.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 
