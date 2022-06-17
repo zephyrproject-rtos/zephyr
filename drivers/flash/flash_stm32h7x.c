@@ -239,7 +239,6 @@ static struct flash_stm32_sector_t get_sector(const struct device *dev,
 static int erase_sector(const struct device *dev, int offset)
 {
 	int rc;
-	uint32_t tmp;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
 	if (sector.bank == 0) {
@@ -263,7 +262,7 @@ static int erase_sector(const struct device *dev, int offset)
 		| ((sector.sector_index << FLASH_CR_SNB_Pos) & FLASH_CR_SNB));
 	*(sector.cr) |= FLASH_CR_START;
 	/* flush the register write */
-	tmp = *(sector.cr);
+	__DSB();
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	*(sector.cr) &= ~(FLASH_CR_SER | FLASH_CR_SNB);
@@ -314,7 +313,6 @@ static int write_ndwords(const struct device *dev,
 {
 	volatile uint64_t *flash = (uint64_t *)(offset
 						+ CONFIG_FLASH_BASE_ADDRESS);
-	uint32_t tmp;
 	int rc;
 	int i;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
@@ -346,11 +344,15 @@ static int write_ndwords(const struct device *dev,
 	*(sector.cr) |= FLASH_CR_PG;
 
 	/* Flush the register write */
-	tmp = *(sector.cr);
+	__DSB();
 
 	/* Perform the data write operation at the desired memory address */
 	for (i = 0; i < n; ++i) {
 		flash[i] = data[i];
+
+		/* Flush the data write */
+		__DSB();
+
 		wait_write_queue(dev, offset);
 	}
 
