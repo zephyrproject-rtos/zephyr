@@ -115,7 +115,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 /**
  * @brief Obtain an extern reference to a stack
  *
- * This macro properly brings the symbol of a thread stack declared
+ * This macro properly brings the symbol of a thread stack defined
  * elsewhere into scope.
  *
  * @param sym Thread stack symbol name
@@ -126,11 +126,11 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @def K_KERNEL_STACK_ARRAY_EXTERN
  * @brief Obtain an extern reference to a stack array
  *
- * This macro properly brings the symbol of a stack array declared
+ * This macro properly brings the symbol of a stack array defined
  * elsewhere into scope.
  *
  * @param sym Thread stack symbol name
- * @param nmemb Number of stacks to declare
+ * @param nmemb Number of stacks defined
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_ARRAY_EXTERN(sym, nmemb, size) \
@@ -142,10 +142,10 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @brief Obtain an extern reference to a pinned stack array
  *
  * This macro properly brings the symbol of a pinned stack array
- * declared elsewhere into scope.
+ * defined elsewhere into scope.
  *
  * @param sym Thread stack symbol name
- * @param nmemb Number of stacks to declare
+ * @param nmemb Number of stacks defined
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_PINNED_STACK_ARRAY_EXTERN(sym, nmemb, size) \
@@ -156,7 +156,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @def Z_KERNEL_STACK_DEFINE_IN
  * @brief Define a toplevel kernel stack memory region in specified section
  *
- * This declares a region of memory for use as a thread stack in
+ * This defines a region of memory for use as a thread stack in
  * the specified linker section.
  *
  * It is legal to precede this definition with the 'static' keyword.
@@ -182,7 +182,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @brief Define a toplevel array of kernel stack memory regions in specified section
  *
  * @param sym Kernel stack array symbol name
- * @param nmemb Number of stacks to declare
+ * @param nmemb Number of stacks to define
  * @param size Size of the stack memory region
  * @param lsect Linker section for this array of stacks
  */
@@ -195,11 +195,11 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @def K_KERNEL_STACK_DEFINE
  * @brief Define a toplevel kernel stack memory region
  *
- * This declares a region of memory for use as a thread stack, for threads
+ * This defines a region of memory for use as a thread stack, for threads
  * that exclusively run in supervisor mode. This is also suitable for
  * declaring special stacks for interrupt or exception handling.
  *
- * Stacks declared with this macro may not host user mode threads.
+ * Stacks defined with this macro may not host user mode threads.
  *
  * It is legal to precede this definition with the 'static' keyword.
  *
@@ -241,10 +241,10 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @def K_KERNEL_STACK_ARRAY_DEFINE
  * @brief Define a toplevel array of kernel stack memory regions
  *
- * Stacks declared with this macro may not host user mode threads.
+ * Stacks defined with this macro may not host user mode threads.
  *
  * @param sym Kernel stack array symbol name
- * @param nmemb Number of stacks to declare
+ * @param nmemb Number of stacks to define
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_ARRAY_DEFINE(sym, nmemb, size) \
@@ -261,7 +261,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * put the stack into the same section as K_KERNEL_STACK_ARRAY_DEFINE().
  *
  * @param sym Kernel stack array symbol name
- * @param nmemb Number of stacks to declare
+ * @param nmemb Number of stacks to define
  * @param size Size of the stack memory region
  */
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
@@ -274,11 +274,11 @@ static inline char *z_stack_ptr_align(char *ptr)
 
 /**
  * @def K_KERNEL_STACK_MEMBER
- * @brief Declare an embedded stack memory region
+ * @brief Define an embedded stack memory region
  *
  * Used for kernel stacks embedded within other data structures.
  *
- * Stacks declared with this macro may not host user mode threads.
+ * Stacks defined with this macro may not host user mode threads.
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
  */
@@ -404,7 +404,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 /**
  * @brief Obtain an extern reference to a stack
  *
- * This macro properly brings the symbol of a thread stack declared
+ * This macro properly brings the symbol of a thread stack defined
  * elsewhere into scope.
  *
  * @param sym Thread stack symbol name
@@ -414,11 +414,11 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 /**
  * @brief Obtain an extern reference to a thread stack array
  *
- * This macro properly brings the symbol of a stack array declared
+ * This macro properly brings the symbol of a stack array defined
  * elsewhere into scope.
  *
  * @param sym Thread stack symbol name
- * @param nmemb Number of stacks to declare
+ * @param nmemb Number of stacks defined
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_ARRAY_EXTERN(sym, nmemb, size) \
@@ -442,15 +442,15 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_SIZEOF(sym)	(sizeof(sym) - K_THREAD_STACK_RESERVED)
 
 /**
- * @brief Declare a toplevel thread stack memory region in specified region
+ * @brief Define a toplevel thread stack memory region in specified region
  *
- * This declares a region of memory suitable for use as a thread's stack
+ * This defines a region of memory suitable for use as a thread's stack
  * in specified region.
  *
  * This is the generic, historical definition. Align to Z_THREAD_STACK_OBJ_ALIGN
  * and put in 'noinit' section so that it isn't zeroed at boot
  *
- * The declared symbol will always be a k_thread_stack_t which can be passed to
+ * The defined symbol will always be a k_thread_stack_t which can be passed to
  * k_thread_create(), but should otherwise not be manipulated. If the buffer
  * inside needs to be examined, examine thread->stack_info for the associated
  * thread object to obtain the boundaries.
@@ -475,7 +475,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
 
 /**
- * @brief Declare a toplevel array of thread stack memory regions in specified region
+ * @brief Define a toplevel array of thread stack memory regions in specified region
  *
  * Create an array of equally sized stacks. See Z_THREAD_STACK_DEFINE_IN
  * definition for additional details and constraints.
@@ -484,7 +484,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * and put in specified section so that it isn't zeroed at boot
  *
  * @param sym Thread stack symbol name
- * @param nmemb Number of stacks to declare
+ * @param nmemb Number of stacks to define
  * @param size Size of the stack memory region
  * @param lsect Linker section for this stack
  */
@@ -494,14 +494,14 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 		sym[nmemb][K_THREAD_STACK_LEN(size)]
 
 /**
- * @brief Declare a toplevel thread stack memory region
+ * @brief Define a toplevel thread stack memory region
  *
- * This declares a region of memory suitable for use as a thread's stack.
+ * This defines a region of memory suitable for use as a thread's stack.
  *
  * This is the generic, historical definition. Align to Z_THREAD_STACK_OBJ_ALIGN
  * and put in 'noinit' section so that it isn't zeroed at boot
  *
- * The declared symbol will always be a k_thread_stack_t which can be passed to
+ * The defined symbol will always be a k_thread_stack_t which can be passed to
  * k_thread_create(), but should otherwise not be manipulated. If the buffer
  * inside needs to be examined, examine thread->stack_info for the associated
  * thread object to obtain the boundaries.
@@ -525,12 +525,12 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 /**
  * @brief Define a toplevel thread stack memory region in pinned section
  *
- * This declares a region of memory suitable for use as a thread's stack.
+ * This defines a region of memory suitable for use as a thread's stack.
  *
  * This is the generic, historical definition. Align to Z_THREAD_STACK_OBJ_ALIGN
  * and put in 'noinit' section so that it isn't zeroed at boot
  *
- * The declared symbol will always be a k_thread_stack_t which can be passed to
+ * The defined symbol will always be a k_thread_stack_t which can be passed to
  * k_thread_create(), but should otherwise not be manipulated. If the buffer
  * inside needs to be examined, examine thread->stack_info for the associated
  * thread object to obtain the boundaries.
@@ -578,7 +578,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 		 Z_THREAD_STACK_OBJ_ALIGN(size))
 
 /**
- * @brief Declare a toplevel array of thread stack memory regions
+ * @brief Define a toplevel array of thread stack memory regions
  *
  * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
  * definition for additional details and constraints.
@@ -587,14 +587,14 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * and put in 'noinit' section so that it isn't zeroed at boot
  *
  * @param sym Thread stack symbol name
- * @param nmemb Number of stacks to declare
+ * @param nmemb Number of stacks to define
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	Z_THREAD_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __stackmem)
 
 /**
- * @brief Declare a toplevel array of thread stack memory regions in pinned section
+ * @brief Define a toplevel array of thread stack memory regions in pinned section
  *
  * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
  * definition for additional details and constraints.
@@ -607,7 +607,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * put the stack into the same section as K_THREAD_STACK_DEFINE().
  *
  * @param sym Thread stack symbol name
- * @param nmemb Number of stacks to declare
+ * @param nmemb Number of stacks to define
  * @param size Size of the stack memory region
  */
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
@@ -619,7 +619,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #endif
 
 /**
- * @brief Declare an embedded stack memory region
+ * @brief Define an embedded stack memory region
  *
  * Used for stacks embedded within other data structures. Use is highly
  * discouraged but in some cases necessary. For memory protection scenarios,
@@ -652,7 +652,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * Use with care. The true bounds of the stack buffer are available in the
  * stack_info member of its associated thread.
  *
- * @param sym Declared stack symbol name
+ * @param sym defined stack symbol name
  * @return The buffer itself, a char *
  */
 static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
