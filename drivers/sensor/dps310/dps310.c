@@ -288,9 +288,10 @@ static void dps310_calib_coeff_creation(const uint8_t raw_coef[18],
 }
 
 /* Poll one or multiple bits given by ready_mask in reg_addr */
-static bool poll_rdy(struct dps310_data *data, const struct dps310_cfg *config,
-		     uint8_t reg_addr, uint8_t ready_mask)
+static bool poll_rdy(const struct device *dev, uint8_t reg_addr, uint8_t ready_mask)
 {
+	struct dps310_data *data = dev->data;
+	const struct dps310_cfg *config = dev->config;
 	/* Try only a finite number of times */
 	for (int i = 0; i < POLL_TRIES; i++) {
 		uint8_t reg = 0;
@@ -314,9 +315,11 @@ static bool poll_rdy(struct dps310_data *data, const struct dps310_cfg *config,
 }
 
 /* Trigger a temperature measurement and wait until the result is stored */
-static bool dps310_trigger_temperature(struct dps310_data *data,
-				       const struct dps310_cfg *config)
+static bool dps310_trigger_temperature(const struct device *dev)
 {
+	struct dps310_data *data = dev->data;
+	const struct dps310_cfg *config = dev->config;
+
 	/* command to start temperature measurement */
 	static const uint8_t tmp_meas_cmd[] = {
 		IFX_DPS310_REG_ADDR_MEAS_CFG,
@@ -334,8 +337,7 @@ static bool dps310_trigger_temperature(struct dps310_data *data,
 	/* give the sensor time to store measured values internally */
 	k_msleep(IFX_DPS310_TMP_MEAS_TIME);
 
-	if (!poll_rdy(data, config, IFX_DPS310_REG_ADDR_MEAS_CFG,
-		      IFX_DPS310_REG_ADDR_MEAS_CFG_TMP_RDY)) {
+	if (!poll_rdy(dev, IFX_DPS310_REG_ADDR_MEAS_CFG, IFX_DPS310_REG_ADDR_MEAS_CFG_TMP_RDY)) {
 		LOG_DBG("Poll timeout for temperature");
 		return false;
 	}
@@ -344,9 +346,11 @@ static bool dps310_trigger_temperature(struct dps310_data *data,
 }
 
 /* Trigger a pressure measurement and wait until the result is stored */
-static bool dps310_trigger_pressure(struct dps310_data *data,
-				    const struct dps310_cfg *config)
+static bool dps310_trigger_pressure(const struct device *dev)
 {
+	struct dps310_data *data = dev->data;
+	const struct dps310_cfg *config = dev->config;
+
 	/* command to start pressure measurement */
 	static const uint8_t psr_meas_cmd[] = {
 		IFX_DPS310_REG_ADDR_MEAS_CFG,
@@ -364,8 +368,7 @@ static bool dps310_trigger_pressure(struct dps310_data *data,
 	/* give the sensor time to store measured values internally */
 	k_msleep(IFX_DPS310_PSR_MEAS_TIME);
 
-	if (!poll_rdy(data, config, IFX_DPS310_REG_ADDR_MEAS_CFG,
-		      IFX_DPS310_REG_ADDR_MEAS_CFG_PRS_RDY)) {
+	if (!poll_rdy(dev, IFX_DPS310_REG_ADDR_MEAS_CFG, IFX_DPS310_REG_ADDR_MEAS_CFG_PRS_RDY)) {
 		LOG_DBG("Poll timeout for pressure");
 		return false;
 	}
@@ -378,9 +381,11 @@ static bool dps310_trigger_pressure(struct dps310_data *data,
  * you have this bug if you measure around 60°C when temperature is around 20°C
  * call dps310_hw_bug_fix() directly in the init() function to fix this issue
  */
-static void dps310_hw_bug_fix(struct dps310_data *data,
-			      const struct dps310_cfg *config)
+static void dps310_hw_bug_fix(const struct device *dev)
 {
+	struct dps310_data *data = dev->data;
+	const struct dps310_cfg *config = dev->config;
+
 	/* setup the necessary 5 sequences to fix the hw bug */
 	static const uint8_t hw_bug_fix_sequence[HW_BUG_FIX_SEQUENCE_LEN][2] = {
 		/*
@@ -412,8 +417,9 @@ static void dps310_hw_bug_fix(struct dps310_data *data,
  * The formula is based on the Chapter 4.9.2 in the datasheet and was
  * modified to need only integer arithmetic.
  */
-static void dps310_scale_temperature(int32_t tmp_raw, struct dps310_data *data)
+static void dps310_scale_temperature(const struct device *dev, int32_t tmp_raw)
 {
+	struct dps310_data *data = dev->data;
 	const struct dps310_cal_coeff *comp = &data->comp;
 
 	/* first term, rescaled to micro °C */
@@ -435,9 +441,9 @@ static void dps310_scale_temperature(int32_t tmp_raw, struct dps310_data *data)
  * Scale and temperature compensate the raw pressure measurement value to
  * Kilopascal. The formula is based on the Chapter 4.9.1 in the datasheet.
  */
-static void dps310_scale_pressure(int32_t tmp_raw, int32_t psr_raw,
-				  struct dps310_data *data)
+static void dps310_scale_pressure(const struct device *dev, int32_t tmp_raw, int32_t psr_raw)
 {
+	struct dps310_data *data = dev->data;
 	const struct dps310_cal_coeff *comp = &data->comp;
 
 	float psr = ((float)psr_raw) / IFX_DPS310_SF_PSR;
@@ -472,14 +478,16 @@ static int32_t raw_to_int24(const uint8_t raw[3])
 }
 
 /* perform a single measurement of temperature and pressure */
-static bool dps310_measure_tmp_psr(struct dps310_data *data,
-				   const struct dps310_cfg *config)
+static bool dps310_measure_tmp_psr(const struct device *dev)
 {
-	if (!dps310_trigger_temperature(data, config)) {
+	struct dps310_data *data = dev->data;
+	const struct dps310_cfg *config = dev->config;
+
+	if (!dps310_trigger_temperature(dev)) {
 		return false;
 	}
 
-	if (!dps310_trigger_pressure(data, config)) {
+	if (!dps310_trigger_pressure(dev)) {
 		return false;
 	}
 
@@ -500,8 +508,8 @@ static bool dps310_measure_tmp_psr(struct dps310_data *data,
 
 	data->raw_tmp = raw_to_int24(&value_raw[3]);
 
-	dps310_scale_temperature(data->raw_tmp, data);
-	dps310_scale_pressure(data->raw_tmp, psr_raw, data);
+	dps310_scale_temperature(dev, data->raw_tmp);
+	dps310_scale_pressure(dev, data->raw_tmp, psr_raw);
 
 	return true;
 }
@@ -511,11 +519,13 @@ static bool dps310_measure_tmp_psr(struct dps310_data *data,
  * uses the stored temperature value for sensor temperature compensation
  * temperature must be measured regularly for good temperature compensation
  */
-static bool dps310_measure_psr(struct dps310_data *data,
-			       const struct dps310_cfg *config)
+static bool dps310_measure_psr(const struct device *dev)
 {
+	struct dps310_data *data = dev->data;
+	const struct dps310_cfg *config = dev->config;
+
 	/* measure pressure */
-	if (!dps310_trigger_pressure(data, config)) {
+	if (!dps310_trigger_pressure(dev)) {
 		return false;
 	}
 
@@ -534,17 +544,19 @@ static bool dps310_measure_psr(struct dps310_data *data,
 	/* convert raw data to int */
 	int32_t psr_raw = raw_to_int24(&value_raw[0]);
 
-	dps310_scale_pressure(data->raw_tmp, psr_raw, data);
+	dps310_scale_pressure(dev, data->raw_tmp, psr_raw);
 
 	return true;
 }
 
 /* perform a single temperature measurement */
-static bool dps310_measure_tmp(struct dps310_data *data,
-			       const struct dps310_cfg *config)
+static bool dps310_measure_tmp(const struct device *dev)
 {
+	struct dps310_data *data = dev->data;
+	const struct dps310_cfg *config = dev->config;
+
 	/* measure temperature */
-	if (!dps310_trigger_temperature(data, config)) {
+	if (!dps310_trigger_temperature(dev)) {
 		return false;
 	}
 
@@ -563,7 +575,7 @@ static bool dps310_measure_tmp(struct dps310_data *data,
 	/* convert raw data to int */
 	data->raw_tmp = raw_to_int24(&value_raw[0]);
 
-	dps310_scale_temperature(data->raw_tmp, data);
+	dps310_scale_temperature(dev, data->raw_tmp);
 
 	return true;
 }
@@ -599,8 +611,7 @@ static int dps310_init(const struct device *dev)
 	k_sleep(K_MSEC(40));
 
 	/* wait for the sensor to load the calibration data */
-	if (!poll_rdy(data, config, REG_ADDR_MEAS_CFG,
-		      IFX_DPS310_REG_ADDR_MEAS_CFG_SELF_INIT_OK)) {
+	if (!poll_rdy(dev, REG_ADDR_MEAS_CFG, IFX_DPS310_REG_ADDR_MEAS_CFG_SELF_INIT_OK)) {
 		LOG_DBG("Sensor not ready");
 		return -EIO;
 	}
@@ -653,8 +664,8 @@ static int dps310_init(const struct device *dev)
 		return -EIO;
 	}
 
-	dps310_hw_bug_fix(data, config);
-	dps310_measure_tmp_psr(data, config);
+	dps310_hw_bug_fix(dev);
+	dps310_measure_tmp_psr(dev);
 
 	LOG_DBG("Init OK");
 	return 0;
@@ -664,26 +675,23 @@ static int dps310_init(const struct device *dev)
 static int dps310_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
-	struct dps310_data *data = dev->data;
-	const struct dps310_cfg *config = dev->config;
-
 	LOG_DBG("Fetching sample from DPS310");
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		if (!dps310_measure_tmp(data, config)) {
+		if (!dps310_measure_tmp(dev)) {
 			LOG_ERR("Failed to measure temperature");
 			return -EIO;
 		}
 		break;
 	case SENSOR_CHAN_PRESS:
-		if (!dps310_measure_psr(data, config)) {
+		if (!dps310_measure_psr(dev)) {
 			LOG_ERR("Failed to measure pressure");
 			return -EIO;
 		}
 		break;
 	case SENSOR_CHAN_ALL:
-		if (!dps310_measure_tmp_psr(data, config)) {
+		if (!dps310_measure_tmp_psr(dev)) {
 			LOG_ERR("Failed to measure temperature and pressure");
 			return -EIO;
 		}
