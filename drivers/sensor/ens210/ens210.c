@@ -40,9 +40,9 @@ static uint32_t ens210_crc7(uint32_t bitstream)
 
 #if defined(CONFIG_ENS210_TEMPERATURE_SINGLE) \
 		|| defined(CONFIG_ENS210_HUMIDITY_SINGLE)
-static int ens210_measure(const struct device *i2c_dev,
-			  enum sensor_channel chan)
+static int ens210_measure(const struct device *dev, enum sensor_channel chan)
 {
+	struct ens210_data *drv_data = dev->data;
 	uint8_t buf;
 	int ret;
 	const struct ens210_sens_start sense_start = {
@@ -53,7 +53,7 @@ static int ens210_measure(const struct device *i2c_dev,
 	};
 
 	/* Start measuring */
-	ret = i2c_reg_write_byte(i2c_dev,
+	ret = i2c_reg_write_byte(drv_data->i2c,
 			DT_INST_REG_ADDR(0),
 			ENS210_REG_SENS_START, *(uint8_t *)&sense_start);
 
@@ -66,7 +66,7 @@ static int ens210_measure(const struct device *i2c_dev,
 	/* Wait for measurement to be completed */
 	do {
 		k_sleep(K_MSEC(2));
-		ret = i2c_reg_read_byte(i2c_dev,
+		ret = i2c_reg_read_byte(drv_data->i2c,
 				DT_INST_REG_ADDR(0),
 				ENS210_REG_SENS_START, &buf);
 
@@ -96,7 +96,7 @@ static int ens210_sample_fetch(const struct device *dev,
 
 #if defined(CONFIG_ENS210_TEMPERATURE_SINGLE) \
 		|| defined(CONFIG_ENS210_HUMIDITY_SINGLE)
-	ret = ens210_measure(drv_data->i2c, chan);
+	ret = ens210_measure(dev, chan);
 	if (ret < 0) {
 		LOG_ERR("Failed to measure");
 		return ret;
@@ -190,15 +190,17 @@ static int ens210_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int ens210_sys_reset(const struct device *i2c_dev)
+static int ens210_sys_reset(const struct device *dev)
 {
+	struct ens210_data *drv_data = dev->data;
+
 	const struct ens210_sys_ctrl sys_ctrl = {
 			.low_power = 0,
 			.reset = 1
 	};
 	int ret;
 
-	ret = i2c_reg_write_byte(i2c_dev, DT_INST_REG_ADDR(0),
+	ret = i2c_reg_write_byte(drv_data->i2c, DT_INST_REG_ADDR(0),
 				 ENS210_REG_SYS_CTRL, *(uint8_t *)&sys_ctrl);
 	if (ret < 0) {
 		LOG_ERR("Failed to set SYS_CTRL to 0x%x", *(uint8_t *)&sys_ctrl);
@@ -206,15 +208,17 @@ static int ens210_sys_reset(const struct device *i2c_dev)
 	return ret;
 }
 
-static int ens210_sys_enable(const struct device *i2c_dev, uint8_t low_power)
+static int ens210_sys_enable(const struct device *dev, uint8_t low_power)
 {
+	struct ens210_data *drv_data = dev->data;
+
 	const struct ens210_sys_ctrl sys_ctrl = {
 			.low_power = low_power,
 			.reset = 0
 	};
 	int ret;
 
-	ret = i2c_reg_write_byte(i2c_dev, DT_INST_REG_ADDR(0),
+	ret = i2c_reg_write_byte(drv_data->i2c, DT_INST_REG_ADDR(0),
 				 ENS210_REG_SYS_CTRL, *(uint8_t *)&sys_ctrl);
 	if (ret < 0) {
 		LOG_ERR("Failed to set SYS_CTRL to 0x%x", *(uint8_t *)&sys_ctrl);
@@ -222,14 +226,16 @@ static int ens210_sys_enable(const struct device *i2c_dev, uint8_t low_power)
 	return ret;
 }
 
-static int ens210_wait_boot(const struct device *i2c_dev)
+static int ens210_wait_boot(const struct device *dev)
 {
+	struct ens210_data *drv_data = dev->data;
+
 	int cnt;
 	int ret;
 	struct ens210_sys_stat sys_stat;
 
 	for (cnt = 0; cnt <= CONFIG_ENS210_MAX_STAT_RETRIES; cnt++) {
-		ret =  i2c_reg_read_byte(i2c_dev, DT_INST_REG_ADDR(0),
+		ret =  i2c_reg_read_byte(drv_data->i2c, DT_INST_REG_ADDR(0),
 					 ENS210_REG_SYS_STAT,
 					 (uint8_t *)&sys_stat);
 
@@ -243,10 +249,10 @@ static int ens210_wait_boot(const struct device *i2c_dev)
 		}
 
 		if (cnt == 0) {
-			ens210_sys_reset(i2c_dev);
+			ens210_sys_reset(dev);
 		}
 
-		ens210_sys_enable(i2c_dev, 0);
+		ens210_sys_enable(dev, 0);
 
 		k_sleep(K_MSEC(2));
 	}
@@ -292,7 +298,7 @@ static int ens210_init(const struct device *dev)
 	}
 
 	/* Wait until the device is ready. */
-	ret = ens210_wait_boot(drv_data->i2c);
+	ret = ens210_wait_boot(dev);
 	if (ret < 0) {
 		return -EIO;
 	}
@@ -316,7 +322,7 @@ static int ens210_init(const struct device *dev)
 
 	/* Enable low power mode */
 	if ((ENS210_T_RUN | ENS210_H_RUN) == 0) {
-		ens210_sys_enable(drv_data->i2c, 1);
+		ens210_sys_enable(dev, 1);
 	}
 
 	/* Set measurement mode*/
