@@ -182,15 +182,10 @@ struct fdc2x1x_chx_config {
 
 struct fdc2x1x_config {
 	struct i2c_dt_spec i2c;
-
-	const struct device *sd_gpio;
-	gpio_pin_t sd_pin;
-	gpio_dt_flags_t sd_flags;
+	struct gpio_dt_spec sd_gpio;
 
 #ifdef CONFIG_FDC2X1X_TRIGGER
-	const struct device *intb_gpio;
-	gpio_pin_t intb_pin;
-	gpio_dt_flags_t intb_flags;
+	struct gpio_dt_spec intb_gpio;
 #endif
 
 	bool fdc2x14;
