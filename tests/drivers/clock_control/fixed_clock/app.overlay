@@ -13,5 +13,12 @@
 			#clock-cells = <0>;
 		};
 
+		test_fixed_factor_clk0: clkc {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clock-mult = <0x2>;
+			clock-div = <0x3>;
+			clocks = <&test_fixed_rate_clk0>;
+		};
 	};
 };

@@ -9,3 +9,10 @@ config CLOCK_CONTROL_FIXED_RATE_CLOCK
 	default n
 	help
 	  Enable driver for device-tree defined fixed clocks.
+
+config CLOCK_CONTROL_FIXED_FACTOR_CLOCK
+	bool "Fixed Factor Clock Clock Control"
+	default n
+	depends on CLOCK_CONTROL_FIXED_RATE_CLOCK
+	help
+	  Enable driver for device-tree defined fixed factor clocks.
