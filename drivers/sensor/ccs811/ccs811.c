@@ -19,17 +19,14 @@
 
 #include "ccs811.h"
 
-#define WAKE_PIN DT_INST_GPIO_PIN(0, wake_gpios)
-#define RESET_PIN DT_INST_GPIO_PIN(0, reset_gpios)
-
 LOG_MODULE_REGISTER(CCS811, CONFIG_SENSOR_LOG_LEVEL);
 
 #if DT_INST_NODE_HAS_PROP(0, wake_gpios)
 static void set_wake(const struct device *dev, bool enable)
 {
-	struct ccs811_data *drv_data = dev->data;
+	const struct ccs811_config *config = dev->config;
 
-	gpio_pin_set(drv_data->wake_gpio, WAKE_PIN, enable);
+	gpio_pin_set_dt(&config->wake_gpio, enable);
 	if (enable) {
 		k_busy_wait(50);        /* t_WAKE = 50 us */
 	} else {
@@ -444,11 +441,9 @@ static int ccs811_init(const struct device *dev)
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, wake_gpios)
-	drv_data->wake_gpio = device_get_binding(DT_INST_GPIO_LABEL(0, wake_gpios));
-	if (drv_data->wake_gpio == NULL) {
-		LOG_ERR("Failed to get pointer to WAKE device: %s",
-			DT_INST_GPIO_LABEL(0, wake_gpios));
-		return -EINVAL;
+	if (!device_is_ready(config->wake_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
 	/*
@@ -456,33 +451,26 @@ static int ccs811_init(const struct device *dev)
 	 * any I2C transfer.  If it has been tied to GND by
 	 * default, skip this part.
 	 */
-	gpio_pin_configure(drv_data->wake_gpio, WAKE_PIN,
-			   GPIO_OUTPUT_INACTIVE
-			   | DT_INST_GPIO_FLAGS(0, wake_gpios));
+	gpio_pin_configure_dt(&config->wake_gpio, GPIO_OUTPUT_INACTIVE);
 
 	set_wake(dev, true);
 	k_msleep(1);
 #endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	drv_data->reset_gpio = device_get_binding(DT_INST_GPIO_LABEL(0, reset_gpios));
-	if (drv_data->reset_gpio == NULL) {
-		LOG_ERR("Failed to get pointer to RESET device: %s",
-			DT_INST_GPIO_LABEL(0, reset_gpios));
-		return -EINVAL;
+	if (!device_is_ready(config->reset_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
-	gpio_pin_configure(drv_data->reset_gpio, RESET_PIN,
-			   GPIO_OUTPUT_ACTIVE
-			   | DT_INST_GPIO_FLAGS(0, reset_gpios));
+
+	gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 
 	k_msleep(1);
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, irq_gpios)
-	drv_data->irq_gpio = device_get_binding(DT_INST_GPIO_LABEL(0, irq_gpios));
-	if (drv_data->irq_gpio == NULL) {
-		LOG_ERR("Failed to get pointer to INT device: %s",
-			DT_INST_GPIO_LABEL(0, irq_gpios));
-		return -EINVAL;
+	if (!device_is_ready(config->irq_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 #endif
 
@@ -493,9 +481,9 @@ static int ccs811_init(const struct device *dev)
 	 * after a reset that left the device running.
 	 */
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	gpio_pin_set(drv_data->reset_gpio, RESET_PIN, 1);
+	gpio_pin_set_dt(&config->reset_gpio, 1);
 	k_busy_wait(15);        /* t_RESET */
-	gpio_pin_set(drv_data->reset_gpio, RESET_PIN, 0);
+	gpio_pin_set_dt(&config->reset_gpio, 0);
 #else
 	{
 		static uint8_t const reset_seq[] = {
@@ -587,6 +575,12 @@ static struct ccs811_data ccs811_data_inst;
 
 static const struct ccs811_config ccs811_config_inst = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+	IF_ENABLED(CONFIG_CCS811_TRIGGER,
+		   (.irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios),))
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, reset_gpios),
+		   (.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),))
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, wake_gpios),
+		   (.wake_gpio = GPIO_DT_SPEC_INST_GET(0, wake_gpios),))
 };
 
 DEVICE_DT_INST_DEFINE(0, ccs811_init, NULL,

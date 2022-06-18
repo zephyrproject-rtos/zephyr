@@ -13,8 +13,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(CCS811);
 
-#define IRQ_PIN DT_INST_GPIO_PIN(0, irq_gpios)
-
 int ccs811_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
@@ -48,12 +46,12 @@ int ccs811_attr_set(const struct device *dev,
 static inline void setup_irq(const struct device *dev,
 			     bool enable)
 {
-	struct ccs811_data *data = dev->data;
+	const struct ccs811_config *config = dev->config;
 	unsigned int flags = enable
 			     ? GPIO_INT_LEVEL_ACTIVE
 			     : GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(data->irq_gpio, IRQ_PIN, flags);
+	gpio_pin_interrupt_configure_dt(&config->irq_gpio, flags);
 }
 
 static inline void handle_irq(const struct device *dev)
@@ -120,6 +118,7 @@ int ccs811_trigger_set(const struct device *dev,
 		       sensor_trigger_handler_t handler)
 {
 	struct ccs811_data *drv_data = dev->data;
+	const struct ccs811_config *config = dev->config;
 	uint8_t drdy_thresh = CCS811_MODE_THRESH | CCS811_MODE_DATARDY;
 	int rc;
 
@@ -154,7 +153,7 @@ int ccs811_trigger_set(const struct device *dev,
 		drv_data->trigger = *trig;
 		setup_irq(dev, true);
 
-		if (gpio_pin_get(drv_data->irq_gpio, IRQ_PIN) > 0) {
+		if (gpio_pin_get_dt(&config->irq_gpio) > 0) {
 			handle_irq(dev);
 		}
 	} else {
@@ -168,15 +167,15 @@ int ccs811_trigger_set(const struct device *dev,
 int ccs811_init_interrupt(const struct device *dev)
 {
 	struct ccs811_data *drv_data = dev->data;
+	const struct ccs811_config *config = dev->config;
 
 	drv_data->dev = dev;
 
-	gpio_pin_configure(drv_data->irq_gpio, IRQ_PIN,
-			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, irq_gpios));
+	gpio_pin_configure_dt(&config->irq_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&drv_data->gpio_cb, gpio_callback, BIT(IRQ_PIN));
+	gpio_init_callback(&drv_data->gpio_cb, gpio_callback, BIT(config->irq_gpio.pin));
 
-	if (gpio_add_callback(drv_data->irq_gpio, &drv_data->gpio_cb) < 0) {
+	if (gpio_add_callback(config->irq_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
