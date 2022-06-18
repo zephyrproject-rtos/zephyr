@@ -76,7 +76,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
 EL1_Reset_Handler:
 
 #endif
-#if defined(CONFIG_CPU_HAS_DCLS)
+#if defined(CONFIG_DCLS)
     /*
      * Initialise CPU registers to a defined state if the processor is
      * configured as Dual-redundant Core Lock-step (DCLS). This is required
@@ -194,7 +194,7 @@ EL1_Reset_Handler:
     vmsr fpexc, r1
 #endif /* CONFIG_FPU && CONFIG_CPU_HAS_VFP */
 
-#endif /* CONFIG_CPU_HAS_DCLS */
+#endif /* CONFIG_DCLS */
 
     /*
      * Configure stack.

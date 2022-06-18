@@ -591,7 +591,7 @@ config CPU_HAS_TEE
 config CPU_HAS_DCLS
 	bool
 	help
-	  This option is enabled when the processor hardware is configured in
+	  This option is enabled when the processor hardware has support for
 	  Dual-redundant Core Lock-step (DCLS) topology.
 
 config CPU_HAS_FPU
@@ -651,6 +651,16 @@ config ARCH_MAPS_ALL_RAM
 	  virtual address space. The kernel's page frame ontology will not consider
 	  this mapping at all; non-kernel pages will be considered free (unless marked
 	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
+
+config DCLS
+	bool "Processor is configured in DCLS mode"
+	depends on CPU_HAS_DCLS
+	default y
+	help
+	  This option is enabled when the processor hardware is configured in
+	  Dual-redundant Core Lock-step (DCLS) topology. For the processor that
+	  supports DCLS, but is configured in split-lock mode (by default or
+	  changed at flash time), this option should be disabled.
 
 menuconfig MPU
 	bool "MPU features"
