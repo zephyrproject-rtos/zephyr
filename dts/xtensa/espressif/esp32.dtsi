@@ -63,6 +63,24 @@
 			status = "ok";
 		};
 
+		adc1: adc1 {
+			compatible = "espressif,esp32-adc";
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
+			id = <1>;
+			channel_count = <8>;
+		};
+
+		adc2: adc2 {
+			compatible = "espressif,esp32-adc";
+			status = "disabled";
+			label = "ADC_2";
+			#io-channel-cells = <1>;
+			id = <2>;
+			channel_count = <10>;
+		};
+
 		flash: flash-controller@3ff42000 {
 			compatible = "espressif,esp32-flash-controller";
 			label = "FLASH_CTRL";

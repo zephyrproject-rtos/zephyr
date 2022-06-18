@@ -20,7 +20,8 @@
  */
 
 /*
- * adc_stm32.c has been used as a reference for this implementation.
+ * adc_stm32.c and adc_mcp320x have been used as a reference for this
+ * implementation.
  */
 
 #define DT_DRV_COMPAT espressif_esp32_adc
@@ -43,6 +44,7 @@ LOG_MODULE_REGISTER(adc_esp32);
 #define ADC_ESP32_RESOLUTION_OFFSET (9)
 
 struct adc_esp32_cfg;
+struct adc_esp32_data;
 
 static int adc_esp32_init          (const struct device *dev);
 static int adc_esp32_channel_setup (const struct device *dev,
@@ -77,18 +79,25 @@ static const struct adc_driver_api api_esp32_driver_api = {
  */
 
 enum adc_esp32_devid_e {
-	ADC1 = '1',
-	ADC2 = '2',
+	ADC1 = 1,
+	ADC2 = 2,
 	ADC_ID_INVALID
 };
 
 /* To house ESP32-specific stuff */
-struct adc_esp32_devconf {
-	adc_bits_width_t  width; /* adc-specific (adc1_config_width) */
-	adc_atten_t       atten; /* channel-specific (adc1_config_channel_atten) */
-	uint8_t channel_count; /* maps to adc1_channel_t or adc2_channel_t, must
-				  be set to the relevant ADCn_CHANNEL_MAX from
-				  the devicetree configuration. */
+struct adc_esp32_cfg {
+	enum adc_esp32_devid_e id;
+	uint8_t		       channel_count; /* maps to adc1_channel_t or
+						 adc2_channel_t, must be set to
+						 the relevant ADCn_CHANNEL_MAX
+						 from the devicetree
+						 configuration. */
+	/* TODO instead of channel count, we can have an array in the devicetree
+	 * description, and take its length */
+	adc_bits_width_t       width; /* adc-specific, configurable
+					 (adc1_config_width) */
+	adc_atten_t            atten; /* channel-specific
+					 (adc1_config_channel_atten) */
 	/* From single_read/adc/adc1_example_main.c */
         /*
 	 * adc_bits_width_t width = ADC_WIDTH_BIT_12;
@@ -97,6 +106,21 @@ struct adc_esp32_devconf {
          */
 };
 
+struct adc_esp32_data {
+	uint16_t mes_ref_internal; /* mV, measured */
+};
+
+/*
+ * Things to configure via devicetree
+ * ----------------------------------
+ * - channel arrays on each ADC (channel count)
+ * - supported resolutions (widths in bits)
+ * - reference voltage
+ * - supported gains
+ * - supported acquisition times
+ * - whether differential is supported
+ */
+
 /* Implementation */
 
 /*
@@ -104,7 +128,7 @@ struct adc_esp32_devconf {
  *
  * Returns the ADC device which dev is associated to.
  */
-static enum adc_esp32_devid
+static enum adc_esp32_devid_e
 adc_esp32_get_devid(const struct device  *dev)
 {
 	/* TODO: find a better way of identifying the device that doesn't rely
@@ -114,7 +138,7 @@ adc_esp32_get_devid(const struct device  *dev)
 	/* TODO Note that Espressif already defines an enum for this,
 	 * adc_ll_num_t.  We don't currently use that one because it doesn't
 	 * have an entry for an invalid ADC device. */
-	switch (dev->name[3]) {
+	switch (dev->name[4]) {
 	case '1':
 		return ADC1;
 		break;
@@ -130,7 +154,7 @@ adc_esp32_get_devid(const struct device  *dev)
 static int
 adc_esp32_init(const struct device *dev)
 {
-	adc_hal_init();
+	/* adc_hal_init(); */
 	return 0;
 }
 
@@ -138,30 +162,38 @@ static int
 adc_esp32_channel_setup	(const struct device *dev,
 			 const struct adc_channel_cfg *channel_cfg)
 {
-	const struct adc_esp32_devconf  *devconf = dev->config;
-	enum adc_esp32_devid             id      = adc_esp32_get_devid(dev);
+	const struct adc_esp32_cfg  *devconf =
+		(const struct adc_esp32_cfg *) dev->config;
 
 	if (channel_cfg->channel_id >= devconf->channel_count) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
-		return -EINVAL;
-	}
-
-	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
-		return -EINVAL;
+		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid channel gain");
-		return -EINVAL;
+		LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
+		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Invalid channel reference");
-		return -EINVAL;
+		LOG_ERR("unsupported channel reference '%d'",
+			channel_cfg->reference);
+		return -ENOTSUP;
 	}
 
-	switch (id) {
+	/* TODO Find whether other acquisition times are supported */
+	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
+		LOG_ERR("unsupported acquisition_time '%d'",
+			channel_cfg->acquisition_time);
+		return -ENOTSUP;
+	}
+
+	if (channel_cfg->differential) {
+		LOG_ERR("differential channels are not supported");
+		return -ENOTSUP;
+	}
+
+	switch (devconf->id) {
 	case ADC1:
 		adc1_config_width(devconf->width);
 		adc1_config_channel_atten((adc1_channel_t) channel_cfg->channel_id,
@@ -201,11 +233,8 @@ static int
 adc_esp32_read	(const struct device *dev,
 		 const struct adc_sequence *sequence)
 {
-	enum adc_esp32_devid id = adc_esp32_get_devid(dev);
-
-	if (id == ADC_ID_INVALID) {
-		return -EINVAL;
-	}
+	const struct adc_esp32_cfg *devconf =
+		(const struct adc_esp32_cfg *) dev->config;
 
 	/* the adc_sequence struct member "channels" is a 32-bit bitfield with
 	 * the channels to get a reading for. Possibly in this function we will
@@ -216,7 +245,7 @@ adc_esp32_read	(const struct device *dev,
 	 * at a time.  In the meantime, do what STM32 does. */
 	uint8_t index = find_lsb_set(sequence->channels) - 1;
 	if (sequence->channels > BIT(index)) {
-		LOG_ERR("Only single channel supported");
+		LOG_ERR("multichannel readings unsupported");
 		return -ENOTSUP;
 	}
 
@@ -249,7 +278,7 @@ adc_esp32_read	(const struct device *dev,
 	/* TODO: Find out if there are equivalent HAL functions for the
 	 * readings.  For now, use the ESP-IDF functions. */
 	int reading;
-	switch (id) {
+	switch (devconf->id) {
 	case ADC1:
 		adc1_config_width((adc_bits_width_t) esp32_resolution);
 		reading = adc1_get_raw((adc1_channel_t) channel_cfg->channel_id);
@@ -258,9 +287,6 @@ adc_esp32_read	(const struct device *dev,
 		adc2_get_raw((adc2_channel_t)   channel_cfg->channel_id,
 			     (adc_bits_width_t) esp32_resolution,
 			     &reading);
-		break;
-	default:
-		/* Error already handled by adc_esp32_get_devid */
 		break;
 	}
 	sequence->buffer[chan_idx] = raw_value;
@@ -289,6 +315,8 @@ adc_esp32_read_async	(const struct device *dev,
 
 #define ADC_ESP32_CONFIG(index)						\
 static const struct adc_esp32_cfg adc_esp32_cfg_##index = {		\
+	.id            = DT_PROP(DT_DRV_INST(index), id),		\
+	.channel_count = DT_PROP(DT_DRV_INST(index), channel_count)	\
 };
 
 #define ESP32_ADC_INIT(index)						\
@@ -298,9 +326,9 @@ PINCTRL_DT_INST_DEFINE(index);						\
 ADC_ESP32_CONFIG(index)							\
 									\
 static struct adc_esp32_data adc_esp32_data_##index = {			\
-	ADC_CONTEXT_INIT_TIMER (adc_esp32_data_##index, ctx),		\
-	ADC_CONTEXT_INIT_LOCK  (adc_esp32_data_##index, ctx),		\
-	ADC_CONTEXT_INIT_SYNC  (adc_esp32_data_##index, ctx),		\
+	/* ADC_CONTEXT_INIT_TIMER (adc_esp32_data_##index, ctx), */	\
+	/* ADC_CONTEXT_INIT_LOCK  (adc_esp32_data_##index, ctx), */	\
+	/* ADC_CONTEXT_INIT_SYNC  (adc_esp32_data_##index, ctx), */	\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(index,						\

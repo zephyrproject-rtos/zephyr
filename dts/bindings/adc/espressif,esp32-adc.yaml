@@ -1,0 +1,15 @@
+description: Espressif ESP32 ADC
+
+compatible: "espressif,esp32-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  id:
+    type: int
+    required: true
+
+  channel_count:
+    type: int
+    required: true
+
