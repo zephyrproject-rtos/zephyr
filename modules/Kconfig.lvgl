@@ -6,7 +6,7 @@ config LVGL
 	help
 	  This option enables the LittlevGL GUI library.
 
-if !LVGL
+if LVGL
 
 config LV_Z_POINTER_KSCAN
 	bool
