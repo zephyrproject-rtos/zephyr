@@ -12,10 +12,10 @@
 void main(void)
 {
 	printk("Hello DPS310\n");
-	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, infineon_dps310)));
+	const struct device *dev = DEVICE_DT_GET_ONE(infineon_dps310);
 
-	if (dev == NULL) {
-		printk("Could not get DPS310 device\n");
+	if (!device_is_ready(dev)) {
+		printk("Device %s is not ready\n", dev->name);
 		return;
 	}
 
