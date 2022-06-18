@@ -463,7 +463,7 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
 	const struct fdc2x1x_config *cfg = dev->config;
 	int ret = 0;
 
-	gpio_pin_set(cfg->sd_gpio, cfg->sd_pin, enable);
+	gpio_pin_set_dt(&cfg->sd_gpio, enable);
 
 	if (!enable) {
 		ret = fdc2x1x_restart(dev);
@@ -516,7 +516,7 @@ static int fdc2x1x_device_pm_action(const struct device *dev,
 
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
-		if (cfg->sd_gpio->name) {
+		if (cfg->sd_gpio->port.name) {
 			ret = fdc2x1x_set_shutdown(dev, true);
 		} else {
 			LOG_ERR("SD pin not defined");
@@ -886,13 +886,12 @@ static int fdc2x1x_init_sd_pin(const struct device *dev)
 {
 	const struct fdc2x1x_config *cfg = dev->config;
 
-	if (!device_is_ready(cfg->sd_gpio)) {
-		LOG_ERR("%s: sd_gpio device not ready", cfg->sd_gpio->name);
+	if (!device_is_ready(cfg->sd_gpio.port)) {
+		LOG_ERR("%s: sd_gpio device not ready", cfg->sd_gpio.port->name);
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(cfg->sd_gpio, cfg->sd_pin,
-			   GPIO_OUTPUT_INACTIVE | cfg->sd_flags);
+	gpio_pin_configure_dt(&cfg->sd_gpio, GPIO_OUTPUT_INACTIVE);
 
 	return 0;
 }
@@ -921,7 +920,7 @@ static int fdc2x1x_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (cfg->sd_gpio->name) {
+	if (cfg->sd_gpio.port->name) {
 		if (fdc2x1x_init_sd_pin(dev) < 0) {
 			return -ENODEV;
 		}
@@ -959,18 +958,14 @@ static int fdc2x1x_init(const struct device *dev)
 }
 
 #define FDC2X1X_SD_PROPS(n)						  \
-	.sd_gpio = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(n), sd_gpios)), \
-	.sd_pin = DT_INST_GPIO_PIN(n, sd_gpios),			  \
-	.sd_flags = DT_INST_GPIO_FLAGS(n, sd_gpios),			  \
+	.sd_gpio = GPIO_DT_SPEC_INST_GET(n, sd_gpios),			  \
 
 #define FDC2X1X_SD(n)				       \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, sd_gpios), \
 		   (FDC2X1X_SD_PROPS(n)))
 
 #define FDC2X1X_INTB_PROPS(n)						      \
-	.intb_gpio = DEVICE_DT_GET(DT_GPIO_CTLR(DT_DRV_INST(n), intb_gpios)), \
-	.intb_pin = DT_INST_GPIO_PIN(n, intb_gpios),			      \
-	.intb_flags = DT_INST_GPIO_FLAGS(n, intb_gpios),		      \
+	.intb_gpio = GPIO_DT_SPEC_INST_GET(n, intb_gpios),		      \
 
 #define FDC2X1X_INTB(n)			   \
 	IF_ENABLED(CONFIG_FDC2X1X_TRIGGER, \
