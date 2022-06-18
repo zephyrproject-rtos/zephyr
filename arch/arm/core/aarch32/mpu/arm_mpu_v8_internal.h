@@ -11,6 +11,7 @@
 #include <aarch32/cortex_m/cmse.h>
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/math_extras.h>
 
 /**
  * @brief internal structure holding information of
@@ -368,13 +369,19 @@ static inline int is_enabled_region(uint32_t index)
  */
 static inline int is_in_region(uint32_t rnr, uint32_t start, uint32_t size)
 {
-	uint32_t rbar;
-	uint32_t rlar;
+	uint32_t r_addr_start;
+	uint32_t r_addr_end;
+	uint32_t end;
 
-	rbar = mpu_region_get_base(rnr);
-	rlar = mpu_region_get_last_addr(rnr);
+	r_addr_start = mpu_region_get_base(rnr);
+	r_addr_end = mpu_region_get_last_addr(rnr);
 
-	if ((start >= rbar) && ((start + size) <= rlar)) {
+	size = size == 0U ? 0U : size - 1U;
+	if (u32_add_overflow(start, size, &end)) {
+		return 0;
+	}
+
+	if ((start >= r_addr_start) && (end <= r_addr_end)) {
 		return 1;
 	}
 
