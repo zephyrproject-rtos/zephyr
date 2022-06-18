@@ -415,7 +415,7 @@ static void IRAM_ATTR gpio_esp32_fire_callbacks(const struct device *dev)
 	}
 }
 
-static void IRAM_ATTR gpio_esp32_isr(void *param);
+static void gpio_esp32_isr(void *param);
 
 static int gpio_esp32_init(const struct device *dev)
 {
