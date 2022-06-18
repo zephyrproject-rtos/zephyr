@@ -504,7 +504,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
 		if (len != CMD_KEYSET_DATA_LEN) {
 			break;
@@ -596,7 +595,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_RMAC_I;
 		ret = OSDP_PD_ERR_NONE;
 		break;
-#endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
 		LOG_ERR("Unknown CMD(%02x)", pd->cmd_id);
 		pd->reply_id = REPLY_NAK;
@@ -637,9 +635,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	struct osdp_cmd *cmd;
 	struct osdp_event *event;
 	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
-#ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
-#endif
+
 	buf += data_off;
 	max_len -= data_off;
 
@@ -783,7 +780,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	case REPLY_CCRYPT:
 		if (smb == NULL) {
 			break;
@@ -834,15 +830,12 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
-#endif /* CONFIG_OSDP_SC_ENABLED */
 	}
 
-#ifdef CONFIG_OSDP_SC_ENABLED
 	if (smb && (smb[1] > SCS_14) && sc_is_active(pd)) {
 		smb[0] = 2; /* length */
 		smb[1] = (len > 1) ? SCS_18 : SCS_16;
 	}
-#endif /* CONFIG_OSDP_SC_ENABLED */
 
 	if (ret != 0) {
 		/* catch all errors and report it as a RECORD error to CP */
@@ -1003,7 +996,6 @@ void osdp_update(struct osdp *ctx)
 	int ret;
 	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
 
-#ifdef CONFIG_OSDP_SC_ENABLED
 	/**
 	 * If secure channel is established, we need to make sure that
 	 * the session is valid before accepting a command.
@@ -1013,7 +1005,6 @@ void osdp_update(struct osdp *ctx)
 		LOG_INF("PD SC session timeout!");
 		sc_deactivate(pd);
 	}
-#endif
 
 	ret = pd_receive_and_process_command(pd);
 
@@ -1078,24 +1069,25 @@ static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,
 
 int osdp_setup(struct osdp *ctx, uint8_t *key)
 {
-	ARG_UNUSED(key);
-	struct osdp_pd *pd;
+	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
 
-	if (NUM_PD(ctx) != 1) {
+	if (ctx->num_pd != 1) {
+		LOG_ERR("In PD_MODE found num_pd to be %d", ctx->num_pd);
 		return -1;
 	}
-	pd = osdp_to_pd(ctx, 0);
+
 	osdp_pd_set_attributes(pd, osdp_pd_cap, &osdp_pd_id);
 	SET_FLAG(pd, PD_FLAG_PD_MODE);
-#ifdef CONFIG_OSDP_SC_ENABLED
-	if (key == NULL) {
-		LOG_WRN("SCBK not provided. PD is in INSTALL_MODE");
-		SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
-	} else {
-		memcpy(pd->sc.scbk, key, 16);
+
+	if (sc_is_enabled(pd)) {
+		if (key == NULL) {
+			LOG_WRN("SCBK not provided. PD is in INSTALL_MODE");
+			SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
+		} else {
+			memcpy(pd->sc.scbk, key, 16);
+		}
+		SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
 	}
-	SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
-#endif
 	return 0;
 }
 

@@ -10,12 +10,13 @@ LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
 
 #include "osdp_common.h"
 
+#ifndef CONFIG_OSDP_SC_RETRY_WAIT_SEC
+#define CONFIG_OSDP_SC_RETRY_WAIT_SEC 0
+#endif
+
 #define OSDP_PD_POLL_TIMEOUT_MS        (1000 / CONFIG_OSDP_PD_POLL_RATE)
 #define OSDP_CMD_RETRY_WAIT_MS         (CONFIG_OSDP_CMD_RETRY_WAIT_SEC * 1000)
-
-#ifdef CONFIG_OSDP_SC_ENABLED
 #define OSDP_PD_SC_RETRY_MS            (CONFIG_OSDP_SC_RETRY_WAIT_SEC * 1000)
-#endif
 
 #define CMD_POLL_LEN                   1
 #define CMD_LSTAT_LEN                  1
@@ -127,9 +128,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	struct osdp_cmd *cmd = NULL;
 	int i, len = 0;
 	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
-#ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
-#endif
 
 	buf += data_off;
 	max_len -= data_off;
@@ -253,7 +252,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			buf[len++] = cmd->mfg.data[i];
 		}
 		break;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
 		if (!sc_is_active(pd)) {
 			LOG_ERR("Cannot perform KEYSET without SC!");
@@ -307,13 +305,11 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			buf[len++] = pd->sc.cp_cryptogram[i];
 		}
 		break;
-#endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
 		LOG_ERR("Unknown/Unsupported CMD(%02x)", pd->cmd_id);
 		return OSDP_CP_ERR_GENERIC;
 	}
 
-#ifdef CONFIG_OSDP_SC_ENABLED
 	if (smb && (smb[1] > SCS_14) && sc_is_active(pd)) {
 		/**
 		 * When SC active and current cmd is not a handshake (<= SCS_14)
@@ -323,7 +319,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		smb[0] = 2;
 		smb[1] = (len > 1) ? SCS_17 : SCS_15;
 	}
-#endif /* CONFIG_OSDP_SC_ENABLED */
 
 	return len;
 }
@@ -541,7 +536,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 				    pd->idx, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	case REPLY_CCRYPT:
 		if (len != REPLY_CCRYPT_DATA_LEN) {
 			break;
@@ -572,7 +566,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		sc_activate(pd);
 		ret = OSDP_CP_ERR_NONE;
 		break;
-#endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
 		LOG_WRN("Unexpected REPLY(%02x) for CMD(%02x)",
 			pd->cmd_id, pd->reply_id);
@@ -736,13 +729,11 @@ static inline void cp_set_offline(struct osdp_pd *pd)
 	}
 }
 
-#ifdef CONFIG_OSDP_SC_ENABLED
 static inline bool cp_sc_should_retry(struct osdp_pd *pd)
 {
-	return (sc_is_capable(pd) && !sc_is_active(pd) &&
+	return (sc_is_enabled(pd) && sc_is_capable(pd) && !sc_is_active(pd) &&
 		osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS);
 }
-#endif
 
 static int cp_phy_state_update(struct osdp_pd *pd)
 {
@@ -795,11 +786,9 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			if (ctx->command_complete_callback) {
 				ctx->command_complete_callback(pd->cmd_id);
 			}
-#ifdef CONFIG_OSDP_SC_ENABLED
 			if (sc_is_active(pd)) {
 				pd->sc_tstamp = osdp_millis_now();
 			}
-#endif
 			pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
 			break;
 		}
@@ -860,10 +849,8 @@ static int state_update(struct osdp_pd *pd)
 {
 	bool soft_fail;
 	int phy_state;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_cmd_keyset *keyset;
-#endif
 
 	phy_state = cp_phy_state_update(pd);
 	if (phy_state == OSDP_CP_ERR_INPROG ||
@@ -885,13 +872,11 @@ static int state_update(struct osdp_pd *pd)
 
 	switch (pd->state) {
 	case OSDP_CP_STATE_ONLINE:
-#ifdef CONFIG_OSDP_SC_ENABLED
 		if (cp_sc_should_retry(pd)) {
 			LOG_INF("Retry SC after retry timeout");
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
 		}
-#endif
 		if (osdp_millis_since(pd->tstamp) < OSDP_PD_POLL_TIMEOUT_MS) {
 			break;
 		}
@@ -933,16 +918,13 @@ static int state_update(struct osdp_pd *pd)
 			cp_set_offline(pd);
 			break;
 		}
-#ifdef CONFIG_OSDP_SC_ENABLED
-		if (sc_is_capable(pd)) {
+		if (sc_is_enabled(pd) && sc_is_capable(pd)) {
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
 		}
-#endif /* CONFIG_OSDP_SC_ENABLED */
 		cp_set_online(pd);
 		break;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	case OSDP_CP_STATE_SC_INIT:
 		osdp_sc_setup(pd);
 		cp_set_state(pd, OSDP_CP_STATE_SC_CHLNG);
@@ -1017,7 +999,6 @@ static int state_update(struct osdp_pd *pd)
 		cp_keyset_complete(pd);
 		pd->seq_number = -1;
 		break;
-#endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
 		break;
 	}
@@ -1025,7 +1006,6 @@ static int state_update(struct osdp_pd *pd)
 	return OSDP_CP_ERR_CAN_YIELD;
 }
 
-#ifdef CONFIG_OSDP_SC_ENABLED
 static int osdp_cp_send_command_keyset(struct osdp_cmd_keyset *p)
 {
 	int i, res = 0;
@@ -1078,7 +1058,6 @@ void cp_keyset_complete(struct osdp_pd *pd)
 	cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 	LOG_INF("SCBK set; restarting SC to verify new SCBK");
 }
-#endif /* CONFIG_OSDP_SC_ENABLED */
 
 void osdp_update(struct osdp *ctx)
 {
@@ -1092,16 +1071,17 @@ void osdp_update(struct osdp *ctx)
 
 int osdp_setup(struct osdp *ctx, uint8_t *key)
 {
-	ARG_UNUSED(ctx);
 	ARG_UNUSED(key);
+	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
 
-#ifdef CONFIG_OSDP_SC_ENABLED
-	if (key == NULL) {
+	if (sc_is_enabled(pd) && key == NULL) {
 		LOG_ERR("Master key cannot be null");
 		return -1;
 	}
-	memcpy(ctx->sc_master_key, key, 16);
-#endif
+
+	if (key) {
+		memcpy(ctx->sc_master_key, key, 16);
+	}
 	return 0;
 }
 
@@ -1150,10 +1130,11 @@ int osdp_cp_send_command(int pd_idx, struct osdp_cmd *cmd)
 	case OSDP_CMD_MFG:
 		cmd_id = CMD_MFG;
 		break;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	case OSDP_CMD_KEYSET:
+		if (!sc_is_enabled(pd)) {
+			return -1;
+		}
 		return osdp_cp_send_command_keyset(&cmd->keyset);
-#endif
 	default:
 		LOG_ERR("Invalid CMD_ID:%d", cmd->id);
 		return -1;

@@ -10,11 +10,6 @@
 #include <zephyr/sys/crc.h>
 #include <zephyr/logging/log.h>
 
-#ifdef CONFIG_OSDP_SC_ENABLED
-#include <zephyr/crypto/crypto.h>
-#include <zephyr/random/rand32.h>
-#endif
-
 #include "osdp_common.h"
 
 LOG_MODULE_DECLARE(osdp, CONFIG_OSDP_LOG_LEVEL);
@@ -147,6 +142,8 @@ void osdp_fill_random(uint8_t *buf, int len)
 	sys_csrand_get(buf, len);
 }
 
+#endif /* CONFIG_OSDP_SC_ENABLED */
+
 void osdp_get_sc_status_mask(uint8_t *bitmask)
 {
 	int i, pos;
@@ -162,13 +159,11 @@ void osdp_get_sc_status_mask(uint8_t *bitmask)
 			*mask = 0;
 		}
 		pd = osdp_to_pd(ctx, i);
-		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+		if (sc_is_enabled(pd) && sc_is_active(pd)) {
 			*mask |= 1 << pos;
 		}
 	}
 }
-
-#endif /* CONFIG_OSDP_SC_ENABLED */
 
 void osdp_get_status_mask(uint8_t *bitmask)
 {

@@ -432,7 +432,6 @@ struct osdp_queue {
 	uint8_t slab_buf[OSDP_QUEUE_SLAB_SIZE];
 };
 
-#ifdef CONFIG_OSDP_SC_ENABLED
 struct osdp_secure_channel {
 	uint8_t scbk[16];
 	uint8_t s_enc[16];
@@ -446,7 +445,6 @@ struct osdp_secure_channel {
 	uint8_t cp_cryptogram[16];
 	uint8_t pd_cryptogram[16];
 };
-#endif
 
 struct osdp_pd {
 	void *osdp_ctx;
@@ -486,10 +484,8 @@ struct osdp_pd {
 	void *command_callback_arg;
 	pd_command_callback_t command_callback;
 
-#ifdef CONFIG_OSDP_SC_ENABLED
 	int64_t sc_tstamp;
 	struct osdp_secure_channel sc;
-#endif
 };
 
 struct osdp {
@@ -498,9 +494,8 @@ struct osdp {
 	int num_pd;
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	struct osdp_pd *pd;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t sc_master_key[16];
-#endif
+
 	/* CP event callback to app with opaque arg pointer as passed by app */
 	void *event_callback_arg;
 	cp_event_callback_t event_callback;
@@ -542,8 +537,29 @@ int osdp_extract_address(int *address);
 #endif
 
 #ifdef CONFIG_OSDP_SC_ENABLED
+void osdp_fill_random(uint8_t *buf, int len);
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
+#else
+static inline void osdp_fill_random(uint8_t *buf, int len)
+{
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+}
+static inline void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
+{
+	ARG_UNUSED(key);
+	ARG_UNUSED(iv);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+}
+static inline void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
+{
+	ARG_UNUSED(key);
+	ARG_UNUSED(iv);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+}
 #endif
 
 /* from osdp_sc.c */
@@ -559,7 +575,6 @@ int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int len);
 int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 		     const uint8_t *data, int len);
 void osdp_sc_setup(struct osdp_pd *pd);
-void osdp_fill_random(uint8_t *buf, int len);
 
 /* must be implemented by CP or PD */
 int osdp_setup(struct osdp *ctx, uint8_t *key);
@@ -593,6 +608,16 @@ static inline bool sc_is_capable(struct osdp_pd *pd)
 static inline bool sc_is_active(struct osdp_pd *pd)
 {
 	return ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
+
+static inline bool sc_is_enabled(struct osdp_pd *pd)
+{
+	ARG_UNUSED(pd);
+#ifdef CONFIG_OSDP_SC_ENABLED
+	return true;
+#else
+	return false;
+#endif
 }
 
 static inline void sc_activate(struct osdp_pd *pd)
