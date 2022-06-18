@@ -45,6 +45,11 @@
 	pinctrl-names = "default";
 };
 
+&usb_serial {
+	/* requires resoldering of resistors on the board */
+	status = "okay";
+};
+
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
