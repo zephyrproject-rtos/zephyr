@@ -181,8 +181,7 @@ struct fdc2x1x_chx_config {
 };
 
 struct fdc2x1x_config {
-	const struct device *bus;
-	uint8_t i2c_addr;
+	struct i2c_dt_spec i2c;
 
 	const struct device *sd_gpio;
 	gpio_pin_t sd_pin;
