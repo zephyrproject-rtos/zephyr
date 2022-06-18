@@ -228,7 +228,6 @@ struct dps310_cal_coeff {
 };
 
 struct dps310_data {
-	const struct device *i2c_master;
 	struct dps310_cal_coeff comp;
 	/* Temperature Values */
 	int32_t tmp_val1;
@@ -241,8 +240,7 @@ struct dps310_data {
 };
 
 struct dps310_cfg {
-	char *i2c_bus_name;
-	uint16_t i2c_addr;
+	struct i2c_dt_spec i2c;
 };
 
 /*
@@ -290,13 +288,11 @@ static void dps310_calib_coeff_creation(const uint8_t raw_coef[18],
 /* Poll one or multiple bits given by ready_mask in reg_addr */
 static bool poll_rdy(const struct device *dev, uint8_t reg_addr, uint8_t ready_mask)
 {
-	struct dps310_data *data = dev->data;
 	const struct dps310_cfg *config = dev->config;
 	/* Try only a finite number of times */
 	for (int i = 0; i < POLL_TRIES; i++) {
 		uint8_t reg = 0;
-		int res = i2c_reg_read_byte(data->i2c_master, config->i2c_addr,
-					 reg_addr, &reg);
+		int res = i2c_reg_read_byte_dt(&config->i2c, reg_addr, &reg);
 		if (res < 0) {
 			LOG_WRN("I2C error: %d", res);
 			return false;
@@ -317,7 +313,6 @@ static bool poll_rdy(const struct device *dev, uint8_t reg_addr, uint8_t ready_m
 /* Trigger a temperature measurement and wait until the result is stored */
 static bool dps310_trigger_temperature(const struct device *dev)
 {
-	struct dps310_data *data = dev->data;
 	const struct dps310_cfg *config = dev->config;
 
 	/* command to start temperature measurement */
@@ -327,8 +322,7 @@ static bool dps310_trigger_temperature(const struct device *dev)
 	};
 
 	/* trigger temperature measurement */
-	int res = i2c_write(data->i2c_master, tmp_meas_cmd,
-			    sizeof(tmp_meas_cmd), config->i2c_addr);
+	int res = i2c_write_dt(&config->i2c, tmp_meas_cmd, sizeof(tmp_meas_cmd));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return false;
@@ -348,7 +342,6 @@ static bool dps310_trigger_temperature(const struct device *dev)
 /* Trigger a pressure measurement and wait until the result is stored */
 static bool dps310_trigger_pressure(const struct device *dev)
 {
-	struct dps310_data *data = dev->data;
 	const struct dps310_cfg *config = dev->config;
 
 	/* command to start pressure measurement */
@@ -358,8 +351,7 @@ static bool dps310_trigger_pressure(const struct device *dev)
 	};
 
 	/* trigger pressure measurement */
-	int res = i2c_write(data->i2c_master, psr_meas_cmd,
-			    sizeof(psr_meas_cmd), config->i2c_addr);
+	int res = i2c_write_dt(&config->i2c, psr_meas_cmd, sizeof(psr_meas_cmd));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return false;
@@ -383,7 +375,6 @@ static bool dps310_trigger_pressure(const struct device *dev)
  */
 static void dps310_hw_bug_fix(const struct device *dev)
 {
-	struct dps310_data *data = dev->data;
 	const struct dps310_cfg *config = dev->config;
 
 	/* setup the necessary 5 sequences to fix the hw bug */
@@ -403,8 +394,7 @@ static void dps310_hw_bug_fix(const struct device *dev)
 
 	/* execute sequence for hw bug fix */
 	for (int i = 0; i < HW_BUG_FIX_SEQUENCE_LEN; i++) {
-		int res = i2c_write(data->i2c_master, hw_bug_fix_sequence[i], 2,
-				    config->i2c_addr);
+		int res = i2c_write_dt(&config->i2c, hw_bug_fix_sequence[i], 2);
 		if (res < 0) {
 			LOG_WRN("I2C error: %d", res);
 			return;
@@ -495,9 +485,8 @@ static bool dps310_measure_tmp_psr(const struct device *dev)
 	uint8_t value_raw[6];
 
 	/* read pressure and temperature raw values in one continuous read */
-	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
-				 &REG_ADDR_PSR_B2, 1, &value_raw,
-				 sizeof(value_raw));
+	int res = i2c_write_read_dt(&config->i2c, &REG_ADDR_PSR_B2, 1,
+				    &value_raw, sizeof(value_raw));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return false;
@@ -533,9 +522,8 @@ static bool dps310_measure_psr(const struct device *dev)
 	uint8_t value_raw[3];
 
 	/* read pressure raw values in one continuous read */
-	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
-				 &REG_ADDR_PSR_B2, 1, &value_raw,
-				 sizeof(value_raw));
+	int res = i2c_write_read_dt(&config->i2c, &REG_ADDR_PSR_B2, 1,
+				    &value_raw, sizeof(value_raw));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return false;
@@ -564,9 +552,8 @@ static bool dps310_measure_tmp(const struct device *dev)
 	uint8_t value_raw[3];
 
 	/* read temperature raw values in one continuous read */
-	int res = i2c_write_read(data->i2c_master, config->i2c_addr,
-				 &REG_ADDR_TMP_B2, 1, &value_raw,
-				 sizeof(value_raw));
+	int res = i2c_write_read_dt(&config->i2c, &REG_ADDR_TMP_B2, 1,
+				    &value_raw, sizeof(value_raw));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return false;
@@ -586,15 +573,13 @@ static int dps310_init(const struct device *dev)
 	struct dps310_data *data = dev->data;
 	const struct dps310_cfg *config = dev->config;
 
-	data->i2c_master = device_get_binding(config->i2c_bus_name);
-	if (data->i2c_master == NULL) {
-		LOG_ERR("Failed to get I2C device");
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
 	uint8_t product_id = 0;
-	int res = i2c_reg_read_byte(data->i2c_master, config->i2c_addr,
-				 IFX_DPS310_REG_ADDR_PRODUCT_ID, &product_id);
+	int res = i2c_reg_read_byte_dt(&config->i2c, IFX_DPS310_REG_ADDR_PRODUCT_ID, &product_id);
 
 	if (res < 0) {
 		LOG_ERR("No device found");
@@ -619,8 +604,7 @@ static int dps310_init(const struct device *dev)
 	/* read calibration coefficients */
 	uint8_t raw_coef[18] = { 0 };
 
-	res = i2c_write_read(data->i2c_master, config->i2c_addr,
-			     &REG_ADDR_CALIB_COEFF_0, 1, &raw_coef, 18);
+	res = i2c_write_read_dt(&config->i2c, &REG_ADDR_CALIB_COEFF_0, 1, &raw_coef, 18);
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return -EIO;
@@ -635,8 +619,8 @@ static int dps310_init(const struct device *dev)
 	 */
 	uint8_t tmp_coef_srce = 0;
 
-	res = i2c_write_read(data->i2c_master, config->i2c_addr,
-			     &REG_ADDR_COEF_SRCE, 1, &tmp_coef_srce, sizeof(tmp_coef_srce));
+	res = i2c_write_read_dt(&config->i2c, &REG_ADDR_COEF_SRCE, 1, &tmp_coef_srce,
+				sizeof(tmp_coef_srce));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return -EIO;
@@ -657,8 +641,7 @@ static int dps310_init(const struct device *dev)
 		DPS310_CFG_REG			/* CFG_REG */
 	};
 
-	res = i2c_write(data->i2c_master, config_seq, sizeof(config_seq),
-			config->i2c_addr);
+	res = i2c_write_dt(&config->i2c, config_seq, sizeof(config_seq));
 	if (res < 0) {
 		LOG_WRN("I2C error: %d", res);
 		return -EIO;
@@ -736,8 +719,7 @@ static const struct sensor_driver_api dps310_api_funcs = {
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 static struct dps310_data dps310_data_0;
 static const struct dps310_cfg dps310_cfg_0 = {
-	.i2c_bus_name = DT_INST_BUS_LABEL(0),
-	.i2c_addr = DT_INST_REG_ADDR(0)
+	.i2c = I2C_DT_SPEC_INST_GET(0),
 };
 
 DEVICE_DT_INST_DEFINE(0, dps310_init, NULL,
@@ -748,8 +730,7 @@ DEVICE_DT_INST_DEFINE(0, dps310_init, NULL,
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 static struct dps310_data dps310_data_1;
 static const struct dps310_cfg dps310_cfg_1 = {
-	.i2c_bus_name = DT_INST_BUS_LABEL(1),
-	.i2c_addr = DT_INST_REG_ADDR(1)
+	.i2c = I2C_DT_SPEC_INST_GET(1),
 };
 
 DEVICE_DT_INST_DEFINE(1, dps310_init, NULL,
