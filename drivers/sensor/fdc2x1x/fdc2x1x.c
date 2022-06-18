@@ -75,10 +75,7 @@ static int fdc2x1x_bus_access(const struct device *dev, uint8_t reg,
 	const struct fdc2x1x_config *cfg = dev->config;
 
 	if (reg & FDC2X1X_READ) {
-		return i2c_burst_read(cfg->bus,
-				      cfg->i2c_addr,
-				      FDC2X1X_TO_I2C_REG(reg),
-				      data, length);
+		return i2c_burst_read_dt(&cfg->i2c, FDC2X1X_TO_I2C_REG(reg), data, length);
 	} else {
 		if (length != 2) {
 			return -EINVAL;
@@ -89,8 +86,7 @@ static int fdc2x1x_bus_access(const struct device *dev, uint8_t reg,
 		buf[0] = FDC2X1X_TO_I2C_REG(reg);
 		memcpy(buf + 1, data, sizeof(uint16_t));
 
-		return i2c_write(cfg->bus, buf,
-				 sizeof(buf), cfg->i2c_addr);
+		return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 	}
 }
 
@@ -931,8 +927,8 @@ static int fdc2x1x_init(const struct device *dev)
 		}
 	}
 
-	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("%s: fdc2x1x device not ready", dev->name);
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
 		return -ENODEV;
 	}
 
@@ -1007,8 +1003,7 @@ static int fdc2x1x_init(const struct device *dev)
 	};								   \
 									   \
 	static const struct fdc2x1x_config fdc2x1x_config_##n = {	   \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),			   \
-		.i2c_addr = DT_INST_REG_ADDR(n),			   \
+		.i2c = I2C_DT_SPEC_INST_GET(n),				   \
 		.fdc2x14 = DT_INST_PROP(n, fdc2x14),			   \
 		.autoscan_en = DT_INST_PROP(n, autoscan),		   \
 		.rr_sequence = DT_INST_PROP(n, rr_sequence),		   \
