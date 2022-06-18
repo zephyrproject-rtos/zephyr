@@ -1,22 +1,7 @@
 /*
- * Copyright (c) 2022 Wolter HELLMUND VEGA <wolterhv@gmx.de>
+ * Copyright (c) 2022 Wolter HV <wolterhv@gmx.de>
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/*
- * Zephyr - Espressif mapping
- * adc_channel_setup - adc1_config_width, adc1_config_channel_atten
- * adc_read - adc1_get_raw, adc2_get_raw
- * adc_read_async - (not implemented)
- * adc_atten_t - adc_gain
- *
- * Step 1: implement with non-hal calls.
- * Step 2: implement with hal calls.
- *
- * The channel attenuation is not completely compatible with the concept of ADC
- * gain, apparently. It seems to be something that gets passed on to the
- * hardware.
  */
 
 /*
@@ -29,21 +14,36 @@
 #include <errno.h>
 
 #include <drivers/adc.h>
+#include <device.h>
+#include <kernel.h>
+#include <logging/log.h>
 
-/* From espressif */
 #include <hal/adc_hal.h>
 
+#include "drivers/adc/adc_esp32.h"
+
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32);
 
-#define MIN(a, b)         (((a) < (b)) ? (a) : (b))
-#define MAX(a, b)         (((a) > (b)) ? (a) : (b))
-#define CLIP(min, max, x) (MIN(MAX((min), (x)), (max)))
+#define ADC_ESP32_RESOLUTION_OFFSET     (9)
 
-#define ADC_ESP32_RESOLUTION_OFFSET (9)
+#define MIN(a, b)          (((a) < (b)) ? (a) : (b))
+#define MAX(a, b)          (((a) > (b)) ? (a) : (b))
+#define CLIP(min, max, x)  (MIN(MAX((min), (x)), (max)))
+#define ELEM_COUNT(arr)    (sizeof(arr)/sizeof(arr[0]))
 
-struct adc_esp32_cfg;
+#define ADC_ESP32_LINTERP(x0, y0, x1, y1, x)				\
+((y0) + (((y1)-(y0))*((x)-(x0)))/((x1)-(x0)))
+
+#define ADC_ESP32_DECLARE_CONST_DEVCONF(dev, devconf)			\
+const struct adc_esp32_conf *(devconf) =				\
+	(const struct adc_esp32_conf *) (dev)->config;
+
+#define ADC_ESP32_DECLARE_DEVDATA(dev, devdata)				\
+struct adc_esp32_data *(devdata) =					\
+	(struct adc_esp32_data *) (dev)->data;
+
+struct adc_esp32_conf;
 struct adc_esp32_data;
 
 static int adc_esp32_init          (const struct device *dev);
@@ -57,18 +57,19 @@ static int adc_esp32_read_async    (const struct device *dev,
 			            struct k_poll_signal *async);
 #endif /* CONFIG_ADC_ASYNC */
 
+static int adc_esp32_validate_channel_id(const struct device  *dev,
+					 const uint8_t         channel_id);
+
 static const struct adc_driver_api api_esp32_driver_api = {
 	.channel_setup = adc_esp32_channel_setup,
 	.read          = adc_esp32_read,
 #ifdef CONFIG_ADC_ASYNC
 	.read_async    = adc_esp32_read_async,
 #endif /* CONFIG_ADC_ASYNC */
-	.ref_internal  = 1100; /* this is the default used in
+	.ref_internal  = 1100, /* this is the default used in
 			          espressif:adc1_example_main.c */
 };
-/* TODO add support for the ref_internal member required for the adc_driver_api.
- * This value should probably be updated on initialisation and on calibration.
- *
+/*
  * According to espressif:adc1_example_main.c, adc2_vref_to_gpio is a function
  * used to measure the internal voltage reference.
  *
@@ -78,36 +79,21 @@ static const struct adc_driver_api api_esp32_driver_api = {
  * check_efuse_vref.
  */
 
-enum adc_esp32_devid_e {
-	ADC1 = 1,
-	ADC2 = 2,
-	ADC_ID_INVALID
-};
-
 /* To house ESP32-specific stuff */
-struct adc_esp32_cfg {
-	enum adc_esp32_devid_e id;
-	uint8_t		       channel_count; /* maps to adc1_channel_t or
-						 adc2_channel_t, must be set to
-						 the relevant ADCn_CHANNEL_MAX
-						 from the devicetree
-						 configuration. */
+struct adc_esp32_conf {
+	adc_ll_num_t  adc_num;
+	uint8_t       channel_count; /* maps to adc1_channel_t or
+					adc2_channel_t, must be set to the
+					relevant ADCn_CHANNEL_MAX from the
+					devicetree configuration. */
 	/* TODO instead of channel count, we can have an array in the devicetree
 	 * description, and take its length */
-	adc_bits_width_t       width; /* adc-specific, configurable
-					 (adc1_config_width) */
-	adc_atten_t            atten; /* channel-specific
-					 (adc1_config_channel_atten) */
-	/* From single_read/adc/adc1_example_main.c */
-        /*
-	 * adc_bits_width_t width = ADC_WIDTH_BIT_12;
-	 * adc_channel_t channel = ADC_CHANNEL_6;
-	 * adc_atten_t atten = ADC_ATTEN_DB_11;
-         */
 };
 
 struct adc_esp32_data {
-	uint16_t mes_ref_internal; /* mV, measured */
+	uint16_t      mes_ref_internal; /* mV, measured, update on calibration */
+	uint16_t     *buffer;
+	adc_atten_t   atten[ADC_CHANNEL_MAX];
 };
 
 /*
@@ -121,39 +107,113 @@ struct adc_esp32_data {
  * - whether differential is supported
  */
 
-/* Implementation */
 
-/*
- * Get the ADC device.
- *
- * Returns the ADC device which dev is associated to.
- */
-static enum adc_esp32_devid_e
-adc_esp32_get_devid(const struct device  *dev)
+/* Exposed functions */
+
+int adc_esp32_set_atten(const struct device           *dev,
+			const uint8_t                  channel_id,
+			const enum adc_esp32_atten_e   atten)
 {
-	/* TODO: find a better way of identifying the device that doesn't rely
-	 * on strings. */
-	/* dev->name is either "ADC1" or "ADC2".  To check which ADC the device
-	 * corresponds to, it is only necessary to check character 3. */
-	/* TODO Note that Espressif already defines an enum for this,
-	 * adc_ll_num_t.  We don't currently use that one because it doesn't
-	 * have an entry for an invalid ADC device. */
-	switch (dev->name[4]) {
-	case '1':
-		return ADC1;
+	ADC_ESP32_DECLARE_CONST_DEVCONF(dev, devconf);
+	ADC_ESP32_DECLARE_DEVDATA(dev, devdata);
+	int         err;
+	adc_atten_t esp32_atten;
+
+	err = adc_esp32_validate_channel_id(dev, channel_id);
+	if (err < 0) {
+		return err;
+	}
+
+	switch (atten) {
+	case ADC_ESP32_ATTEN_0:
+		esp32_atten = ADC_ATTEN_DB_0;
 		break;
-	case '2':
-		return ADC2;
+	case ADC_ESP32_ATTEN_1:
+		esp32_atten = ADC_ATTEN_DB_2_5;
+		break;
+	case ADC_ESP32_ATTEN_2:
+		esp32_atten = ADC_ATTEN_DB_6;
+		break;
+	case ADC_ESP32_ATTEN_3:
+		esp32_atten = ADC_ATTEN_DB_11;
 		break;
 	default:
-		return ADC_ID_INVALID;
+		LOG_ERR("invalid attenuation");
+		return -EINVAL;
 		break;
 	}
+
+	devdata->atten[channel_id] = esp32_atten;
+
+	adc_hal_set_atten(devconf->adc_num,
+			  (adc_channel_t) channel_id,
+			  devdata->atten[channel_id]);
+
+	return 0;
 }
 
-static int
-adc_esp32_init(const struct device *dev)
+int adc_esp32_raw_to_millivolts(const struct device  *dev,
+				const uint8_t         channel_id,
+				const uint8_t         resolution,
+				const int32_t         adc_ref_voltage,
+			        int32_t              *valp)
 {
+	ADC_ESP32_DECLARE_DEVDATA(dev, devdata);
+	int err;
+
+	err = adc_esp32_validate_channel_id(dev, channel_id);
+	if (err < 0) {
+		return err;
+	}
+
+	const int x0 =                 0; int y0;
+	const int x1 = (1 << resolution); int y1;
+
+	switch (devdata->atten[channel_id]) {
+	case ADC_ATTEN_DB_0:
+		y0 =  100;
+		y1 =  950;
+		break;
+	case ADC_ATTEN_DB_2_5:
+		y0 =  100;
+		y1 = 1250;
+		break;
+	case ADC_ATTEN_DB_6:
+		y0 =  150;
+		y1 = 1750;
+		break;
+	case ADC_ATTEN_DB_11:
+		y0 =  150;
+		y1 = 2450;
+		break;
+	default:
+		goto invalid_atten;
+		break;
+	}
+
+	*valp = MIN(INT32_MAX,
+		    (adc_ref_voltage * ADC_ESP32_LINTERP(x0, y0, x1, y1, *valp)))
+		/ 1100;
+
+	return 0;
+
+invalid_atten:
+	return -ENOTSUP;
+}
+
+
+/* Driver implementation functions */
+
+static int adc_esp32_init(const struct device *dev)
+{
+	ADC_ESP32_DECLARE_DEVDATA(dev, devdata);
+
+	LOG_DBG("initialising");
+
+	for (uint8_t ch_id = 0; ch_id < ELEM_COUNT(devdata->atten); ch_id++) {
+		devdata->atten[ch_id] = ADC_ATTEN_DB_0;
+	}
+
 	/* adc_hal_init(); */
 	return 0;
 }
@@ -162,12 +222,13 @@ static int
 adc_esp32_channel_setup	(const struct device *dev,
 			 const struct adc_channel_cfg *channel_cfg)
 {
-	const struct adc_esp32_cfg  *devconf =
-		(const struct adc_esp32_cfg *) dev->config;
+	ADC_ESP32_DECLARE_CONST_DEVCONF(dev, devconf);
+	ADC_ESP32_DECLARE_DEVDATA(dev, devdata);
+	int err;
 
-	if (channel_cfg->channel_id >= devconf->channel_count) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
-		return -ENOTSUP;
+	err = adc_esp32_validate_channel_id(dev, channel_cfg->channel_id);
+	if (err < 0) {
+		return err;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
@@ -193,33 +254,11 @@ adc_esp32_channel_setup	(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	switch (devconf->id) {
-	case ADC1:
-		adc1_config_width(devconf->width);
-		adc1_config_channel_atten((adc1_channel_t) channel_cfg->channel_id,
-					  devconf->atten);
-		break;
-	case ADC2:
-		/* Width / resolution for the ADC2 is configured with the
-		 * adc2_get_raw function, i.e. at read-time. */
-		adc2_config_channel_atten((adc2_channel_t) channel_cfg->channel_id,
-					  devconf->atten);
-		break;
-	default:
-		/* The device name is invalid for some reason. */
-		return -EINVAL;
-		break;
-	}
-	/* At some point, a "characterisation" of the ADC may be needed. In the
-	 * example it is called with
-	 * esp_adc_cal_characterize. */
-	/* After this, all that is needed is calling adc1_get_raw or
-	 * adc2_get_raw. */
-	/* To convert a raw value to a physical quantity, use
-	 * esp_adc_cal_raw_to_voltage. */
-	/* In the adc_hal.h, the functions
-	 * adc_ll_set_atten and adc_ll_rtc_enable_channel are used, which
-	 * suggests that these may the HAL ways of setting up a channel. */
+	adc_hal_set_atten(devconf->adc_num,
+			  (adc_channel_t) channel_cfg->channel_id,
+			  devdata->atten[channel_cfg->channel_id]);
+	/* Resolution is set in read call */
+
 	return 0;
 }
 
@@ -233,8 +272,16 @@ static int
 adc_esp32_read	(const struct device *dev,
 		 const struct adc_sequence *sequence)
 {
-	const struct adc_esp32_cfg *devconf =
-		(const struct adc_esp32_cfg *) dev->config;
+	ADC_ESP32_DECLARE_CONST_DEVCONF(dev, devconf);
+	ADC_ESP32_DECLARE_DEVDATA(dev, devdata);
+
+	if ((size_t) devconf->channel_count > sequence->buffer_size) {
+		LOG_ERR("sequence buffer only has space for %u channel values, "
+			"but device has %u channels",
+			(uint16_t) sequence->buffer_size,
+			(uint16_t) devconf->channel_count);
+		return -ENOMEM;
+	}
 
 	/* the adc_sequence struct member "channels" is a 32-bit bitfield with
 	 * the channels to get a reading for. Possibly in this function we will
@@ -243,8 +290,8 @@ adc_esp32_read	(const struct device *dev,
 	 * that's how it gets away with doing just single channel reads. */
 	/* TODO: Find out whether the ESP32 supports reading multiple channels
 	 * at a time.  In the meantime, do what STM32 does. */
-	uint8_t index = find_lsb_set(sequence->channels) - 1;
-	if (sequence->channels > BIT(index)) {
+	uint8_t channel_id = find_lsb_set(sequence->channels) - 1;
+	if (sequence->channels > BIT(channel_id)) {
 		LOG_ERR("multichannel readings unsupported");
 		return -ENOTSUP;
 	}
@@ -260,36 +307,42 @@ adc_esp32_read	(const struct device *dev,
 	 * i.e., zephyr_resolution - 9 = espressif_resolution
 	 * Other ESP32XX versions may support up to 13 bits of resolution.
 	 */
-	int16_t offset_resolution = (int16_t) sequence->resolution - ADC_ESP32_RESOLUTION_OFFSET;
-	uint8_t esp32_resolution  = (uint8_t) CLIP((int16_t) ADC_WIDTH_BIT_9,
-				                   (int16_t) SOC_ADC_MAX_BITWIDTH,
-				                   (int16_t) offset_resolution);
-	if (offset_resolution != esp32_resolution) {
-		LOG_ERR("Resolution not supported, using nearest: %d bits",
-			esp32_resolution);
+	int8_t offset_resolution =   (int8_t) sequence->resolution
+				   - ADC_ESP32_RESOLUTION_OFFSET;
+	adc_bits_width_t esp32_resolution =
+		(adc_bits_width_t) CLIP((int8_t) ADC_WIDTH_BIT_9,
+				        (int8_t) SOC_ADC_MAX_BITWIDTH,
+				        (int8_t) offset_resolution);
+	if (offset_resolution != (int8_t) esp32_resolution) {
+		LOG_ERR("resolution not supported, using nearest: %u bits",
+			(uint8_t) esp32_resolution);
 	}
+	adc_hal_rtc_set_output_format(devconf->adc_num,
+				      esp32_resolution);
+	/* adc_ll_digi_set_output_format() */ /* TODO support later */
 
 	if (sequence->calibrate) {
 		/* TODO: Find out how to calibrate. Possibly, resolution needs
 		 * to be applied before calibration. */
-		LOG_ERR("Calibration not supported yet");
+		LOG_ERR("calibration is not supported");
 	}
 
 	/* TODO: Find out if there are equivalent HAL functions for the
 	 * readings.  For now, use the ESP-IDF functions. */
 	int reading;
-	switch (devconf->id) {
-	case ADC1:
-		adc1_config_width((adc_bits_width_t) esp32_resolution);
-		reading = adc1_get_raw((adc1_channel_t) channel_cfg->channel_id);
-		break;
-	case ADC2:
-		adc2_get_raw((adc2_channel_t)   channel_cfg->channel_id,
-			     (adc_bits_width_t) esp32_resolution,
-			     &reading);
-		break;
-	}
-	sequence->buffer[chan_idx] = raw_value;
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+	adc_hal_hall_disable();
+	adc_hal_amp_disable();
+#endif /* CONFIG_IDF_TARGET_ESP32 */
+	adc_hal_set_controller(devconf->adc_num, ADC_CTRL_RTC);
+	adc_hal_convert(devconf->adc_num, channel_id, &reading);
+#if !CONFIG_IDF_TARGET_ESP32
+	adc_hal_rtc_reset();
+#endif /* !CONFIG_IDF_TARGET_ESP32 */
+
+	devdata->buffer = (uint16_t *) sequence->buffer;
+	devdata->buffer[channel_id] = reading;
 
 	return 0;
 }
@@ -304,37 +357,53 @@ adc_esp32_read_async	(const struct device *dev,
 	(void)(sequence);
 	(void)(async);
 
-	/* TODO: Find out whether this is supported. */
-
 	return -ENOTSUP;
 }
 #endif /* CONFIG_ADC_ASYNC */
 
 
+/* Utility functions */
+
+static int adc_esp32_validate_channel_id(const struct device  *dev,
+					 const uint8_t         channel_id)
+{
+	ADC_ESP32_DECLARE_CONST_DEVCONF(dev, devconf);
+	if (channel_id >= devconf->channel_count) {
+		LOG_ERR("unsupported channel id '%u'", channel_id);
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+
 /* Footer */
 
 #define ADC_ESP32_CONFIG(index)						\
-static const struct adc_esp32_cfg adc_esp32_cfg_##index = {		\
-	.id            = DT_PROP(DT_DRV_INST(index), id),		\
-	.channel_count = DT_PROP(DT_DRV_INST(index), channel_count)	\
+static const struct adc_esp32_conf adc_esp32_conf_##index = {		\
+	.adc_num       = DT_PROP(DT_DRV_INST(index), adc_num),		\
+	.channel_count = DT_PROP(DT_DRV_INST(index), channel_count),	\
 };
 
 #define ESP32_ADC_INIT(index)						\
 									\
-PINCTRL_DT_INST_DEFINE(index);						\
-									\
 ADC_ESP32_CONFIG(index)							\
 									\
 static struct adc_esp32_data adc_esp32_data_##index = {			\
-	/* ADC_CONTEXT_INIT_TIMER (adc_esp32_data_##index, ctx), */	\
-	/* ADC_CONTEXT_INIT_LOCK  (adc_esp32_data_##index, ctx), */	\
-	/* ADC_CONTEXT_INIT_SYNC  (adc_esp32_data_##index, ctx), */	\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
 		      &adc_esp32_init, NULL,				\
-		      &adc_esp32_data_##index, &adc_esp32_cfg_##index	\
-		      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
-		      &api_esp32_driver_api);				\
+		      &adc_esp32_data_##index, &adc_esp32_conf_##index,	\
+		      POST_KERNEL,			\
+		      CONFIG_ADC_INIT_PRIORITY,				\
+		      &api_esp32_driver_api);
+
+#ifndef _SYS_INIT_LEVEL_POST_KERNEL
+#	error "_SYS_INIT_LEVEL_POST_KERNEL is not defined"
+#endif
+
+#ifndef CONFIG_ADC_INIT_PRIORITY
+#	error "CONFIG_ADC_INIT_PRIORITY is not defined"
+#endif
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_ADC_INIT)

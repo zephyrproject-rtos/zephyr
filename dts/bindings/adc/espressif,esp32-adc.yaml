@@ -2,10 +2,10 @@ description: Espressif ESP32 ADC
 
 compatible: "espressif,esp32-adc"
 
-include: [adc-controller.yaml, pinctrl-device.yaml]
+include: [adc-controller.yaml]
 
 properties:
-  id:
+  adc_num:
     type: int
     required: true
 
@@ -13,3 +13,8 @@ properties:
     type: int
     required: true
 
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

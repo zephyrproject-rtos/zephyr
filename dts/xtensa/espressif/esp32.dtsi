@@ -68,7 +68,7 @@
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;
-			id = <1>;
+			adc_num = <0>;
 			channel_count = <8>;
 		};
 
@@ -77,7 +77,7 @@
 			status = "disabled";
 			label = "ADC_2";
 			#io-channel-cells = <1>;
-			id = <2>;
+			adc_num = <1>;
 			channel_count = <10>;
 		};
 

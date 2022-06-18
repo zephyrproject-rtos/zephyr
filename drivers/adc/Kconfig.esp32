@@ -1,6 +1,3 @@
-# ADC configuration options
-
-# Copyright (c) 2022 Wolter HV <wolterhv@gmx.de>
 # SPDX-License-Identifier: Apache-2.0
 
 config ADC_ESP32
