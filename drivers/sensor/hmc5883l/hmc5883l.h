@@ -49,7 +49,6 @@ struct hmc5883l_data {
 
 #ifdef CONFIG_HMC5883L_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -68,6 +67,9 @@ struct hmc5883l_data {
 
 struct hmc5883l_config {
 	struct i2c_dt_spec i2c;
+#ifdef CONFIG_HMC5883L_TRIGGER
+	struct gpio_dt_spec int_gpio;
+#endif
 };
 
 #ifdef CONFIG_HMC5883L_TRIGGER
