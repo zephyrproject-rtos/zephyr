@@ -24,12 +24,12 @@ LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 
 #ifdef CONFIG_LOG2_USE_TAGGED_ARGUMENTS
 /* The extra sizeof(int) is the end of arguments tag. */
-#define LOG2_SIMPLE_MSG_LEN \
+#define LOG_SIMPLE_MSG_LEN \
 	ROUND_UP(sizeof(struct log_msg2_hdr) + \
 		 sizeof(struct cbprintf_package_hdr_ext) + \
 		 sizeof(int), sizeof(long long))
 #else
-#define LOG2_SIMPLE_MSG_LEN \
+#define LOG_SIMPLE_MSG_LEN \
 	ROUND_UP(sizeof(struct log_msg2_hdr) + \
 		 sizeof(struct cbprintf_package_hdr_ext), sizeof(long long))
 #endif
@@ -170,7 +170,6 @@ ZTEST(test_log_api, test_log_various_messages)
 
 	log_setup(false);
 
-#ifdef CONFIG_LOG2
 	unsigned long long ull = 0x1122334455667799;
 	long long ll = -12313213214454545;
 
@@ -208,35 +207,6 @@ ZTEST(test_log_api, test_log_various_messages)
 	LOG_INF(TEST_MSG_1, f, 100, d);
 #endif /* CONFIG_FPU */
 
-#else /* CONFIG_LOG2 */
-
-#define TEST_MSG_0 "%hhd"
-#define TEST_MSG_0_PREFIX "%s: %hhd"
-#define TEST_MSG_1 "%p"
-	if (dbg_enabled()) {
-		/* If prefix is enabled, add function name prefix */
-		if (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG)) {
-			snprintk(str, sizeof(str),
-				 TEST_MSG_0_PREFIX, __func__, i);
-		} else {
-			snprintk(str, sizeof(str), TEST_MSG_0, i);
-		}
-
-		mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_DBG, str);
-		mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-					CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_DBG,
-					exp_timestamp++, str);
-	}
-
-	LOG_DBG(TEST_MSG_0, i);
-
-	snprintk(str, sizeof(str), TEST_MSG_1, &i);
-	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, str);
-	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++, str);
-	LOG_INF(TEST_MSG_1, &i);
-#endif
 	snprintk(str, sizeof(str), "wrn %s", dstr);
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_WRN, str);
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
@@ -364,14 +334,7 @@ ZTEST(test_log_api, test_log_backend_runtime_filtering)
 
 static size_t get_max_hexdump(void)
 {
-	if (IS_ENABLED(CONFIG_LOG2)) {
-		return CONFIG_LOG_BUFFER_SIZE - sizeof(struct log_msg2_hdr);
-	}
-
-	uint32_t msgs_in_buf = CONFIG_LOG_BUFFER_SIZE/sizeof(union log_msg_chunk);
-
-	return LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK +
-			    HEXDUMP_BYTES_CONT_MSG * (msgs_in_buf - 1);
+	return CONFIG_LOG_BUFFER_SIZE - sizeof(struct log_msg2_hdr);
 }
 
 #if defined(CONFIG_ARCH_POSIX)
@@ -382,36 +345,28 @@ static size_t get_max_hexdump(void)
 
 static size_t get_long_hexdump(void)
 {
-	if (IS_ENABLED(CONFIG_LOG2)) {
-		size_t extra_msg_sz = 0;
-		size_t extra_hexdump_sz = 0;
+	size_t extra_msg_sz = 0;
+	size_t extra_hexdump_sz = 0;
 
-		if (IS_ENABLED(CONFIG_LOG2_USE_TAGGED_ARGUMENTS)) {
-			/* First message with 2 arguments => 2 tags */
-			extra_msg_sz = 2 * sizeof(int);
+	if (IS_ENABLED(CONFIG_LOG2_USE_TAGGED_ARGUMENTS)) {
+		/* First message with 2 arguments => 2 tags */
+		extra_msg_sz = 2 * sizeof(int);
 
-			/*
-			 * Hexdump with an implicit "%s" and the "hexdump" string
-			 * as argument => 1 tag.
-			 */
-			extra_hexdump_sz = sizeof(int);
-		}
-
-		return CONFIG_LOG_BUFFER_SIZE -
-			/* First message */
-			ROUND_UP(LOG2_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d %d") +
-				 extra_msg_sz,
-				 sizeof(long long)) -
-			/* Hexdump message excluding data */
-			ROUND_UP(LOG2_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
-				 sizeof(long long)) - 2 * sizeof(int);
+		/*
+		 * Hexdump with an implicit "%s" and the "hexdump" string
+		 * as argument => 1 tag.
+		 */
+		extra_hexdump_sz = sizeof(int);
 	}
 
-	uint32_t msgs_in_buf = (uint32_t)CONFIG_LOG_BUFFER_SIZE / sizeof(union log_msg_chunk);
-
-	return LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK +
-		HEXDUMP_BYTES_CONT_MSG * (msgs_in_buf - 1) -
-		HEXDUMP_BYTES_CONT_MSG;
+	return CONFIG_LOG_BUFFER_SIZE -
+		/* First message */
+		ROUND_UP(LOG_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d %d") +
+			 extra_msg_sz,
+			 sizeof(long long)) -
+		/* Hexdump message excluding data */
+		ROUND_UP(LOG_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
+			 sizeof(long long)) - 2 * sizeof(int);
 }
 
 /*
@@ -473,20 +428,13 @@ ZTEST(test_log_api, test_log_overflow)
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "test");
 	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), CONFIG_LOG_DOMAIN_ID,
 					 LOG_LEVEL_INF, "test", data, hexdump_len + 1);
-	if (IS_ENABLED(CONFIG_LOG2_DEFERRED)) {
-		/* Log2 allocation is not destructive if request exceeds the
-		 * capacity.
-		 */
-		mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-					CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-					exp_timestamp, "test");
-		mock_log_backend_drop_record(&backend1, 1);
-	} else {
-		/* Expect big message to be dropped because it does not fit in.
-		 * First message is also dropped in the process of finding free space.
-		 */
-		mock_log_backend_drop_record(&backend1, 2);
-	}
+	/* Log2 allocation is not destructive if request exceeds the
+	 * capacity.
+	 */
+	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
+				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+				exp_timestamp, "test");
+	mock_log_backend_drop_record(&backend1, 1);
 
 	LOG_INF("test");
 	LOG_HEXDUMP_INF(data, hexdump_len + 1, "test");
@@ -633,17 +581,10 @@ ZTEST(test_log_api, test_log_from_declared_module)
  */
 static size_t get_short_msg_capacity(bool *remainder)
 {
-	if (IS_ENABLED(CONFIG_LOG2)) {
-		*remainder = (CONFIG_LOG_BUFFER_SIZE % LOG2_SIMPLE_MSG_LEN) ?
-				true : false;
-
-		return (CONFIG_LOG_BUFFER_SIZE - sizeof(int)) / LOG2_SIMPLE_MSG_LEN;
-	}
-
-	*remainder = (CONFIG_LOG_BUFFER_SIZE % sizeof(struct log_msg)) ?
+	*remainder = (CONFIG_LOG_BUFFER_SIZE % LOG_SIMPLE_MSG_LEN) ?
 			true : false;
 
-	return CONFIG_LOG_BUFFER_SIZE / sizeof(struct log_msg);
+	return (CONFIG_LOG_BUFFER_SIZE - sizeof(int)) / LOG_SIMPLE_MSG_LEN;
 }
 
 static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
@@ -876,8 +817,6 @@ static void *log_api_suite_setup(void)
 	      (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? "Immediate" : "Deferred"));
 	PRINT("\t Frontend: %s\n",
 	      IS_ENABLED(CONFIG_LOG_FRONTEND) ? "Yes" : "No");
-	PRINT("\t Version: %s\n",
-	      IS_ENABLED(CONFIG_LOG2) ? "v2" : "v1");
 	PRINT("\t Runtime filtering: %s\n",
 	      IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? "yes" : "no");
 	PRINT("\t Overwrite: %s\n",

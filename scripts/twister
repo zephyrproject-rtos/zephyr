@@ -1164,22 +1164,23 @@ def main():
             print(f"Tests found: {count}")
         return
 
-    if VERBOSE > 1 and tplan.discards:
+    if VERBOSE > 1:
         # if we are using command line platform filter, no need to list every
         # other platform as excluded, we know that already.
         # Show only the discards that apply to the selected platforms on the
         # command line
 
-        for i, reason in tplan.discards.items():
-            if options.platform and i.platform.name not in options.platform:
-                continue
-            logger.debug(
-                "{:<25} {:<50} {}SKIPPED{}: {}".format(
-                    i.platform.name,
-                    i.testsuite.name,
-                    Fore.YELLOW,
-                    Fore.RESET,
-                    reason))
+        for i in tplan.instances.values():
+            if i.status == "filtered":
+                if options.platform and i.platform.name not in options.platform:
+                    continue
+                logger.debug(
+                    "{:<25} {:<50} {}SKIPPED{}: {}".format(
+                        i.platform.name,
+                        i.testsuite.name,
+                        Fore.YELLOW,
+                        Fore.RESET,
+                        i.reason))
 
     if options.report_excluded:
         all_tests = tplan.get_all_tests()
@@ -1373,7 +1374,7 @@ def main():
                        )
 
     logger.info("Run completed")
-    if results.failed or (tplan.warnings and options.warnings_as_errors):
+    if results.failed or results.error or (tplan.warnings and options.warnings_as_errors):
         sys.exit(1)
 
 

@@ -1398,12 +1398,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 	if (conn->llcp_rx_hold && rx_hold_is_done(conn)) {
 		rx_hold_flush(conn);
 
-#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-		/* if done events have separate mayfly, explicit trigger of
-		 * rx_demux mayfly is necessary.
+		/* For both CONFIG_BT_CTLR_LOW_LAT_ULL or when done events have
+		 * separate mayfly, explicitly trigger rx_demux mayfly. In the
+		 * later we could be here without any node rx or tx ack being
+		 * processed hence an explicit ll_rx_sched call is necessary.
 		 */
 		ll_rx_sched();
-#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 	}
 #endif /* CONFIG_BT_CTLR_RX_ENQUEUE_HOLD */
 

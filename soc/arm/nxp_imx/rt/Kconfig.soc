@@ -244,6 +244,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_DCDC
 	select HAS_MCUX_PMU
 	select HAS_MCUX_IOMUXC
+	select HAS_MCUX_ADC_ETC
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
@@ -318,6 +319,7 @@ config SOC_MIMXRT1176_CM7
 	select HAS_MCUX_GPC
 	select HAS_MCUX_I2S
 	select HAS_MCUX_USB_EHCI
+	select HAS_MCUX_ACMP
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
 
@@ -346,6 +348,7 @@ config SOC_MIMXRT1176_CM4
 	select HAS_MCUX_ENET
 	select HAS_MCUX_GPC
 	select HAS_MCUX_I2S
+	select HAS_MCUX_ACMP
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
 

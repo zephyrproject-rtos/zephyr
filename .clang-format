@@ -1,76 +1,33 @@
-# SPDX-License-Identifier: GPL-2.0
+# SPDX-License-Identifier: Apache-2.0
 #
-# clang-format configuration file. Intended for clang-format >= 4.
+# Note: The list of ForEachMacros can be obtained using:
 #
-# For more information, see:
+#    git grep -h '^#define [^[:space:]]*FOR_EACH[^[:space:]]*(' include/ \
+#    | sed "s,^#define \([^[:space:]]*FOR_EACH[^[:space:]]*\)(.*$,  - '\1'," \
+#    | sort | uniq
 #
-#   Documentation/process/clang-format.rst
-#   https://clang.llvm.org/docs/ClangFormat.html
-#   https://clang.llvm.org/docs/ClangFormatStyleOptions.html
-#
+# References:
+#   - https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
 ---
-AccessModifierOffset: -4
-AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
-#AlignEscapedNewlines: Left # Unknown to clang-format-4.0
-AlignOperands: true
-AlignTrailingComments: false
-AllowAllParametersOfDeclarationOnNextLine: false
-AllowShortBlocksOnASingleLine: false
-AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: None
-AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
-AlwaysBreakAfterDefinitionReturnType: None
-AlwaysBreakAfterReturnType: None
-AlwaysBreakBeforeMultilineStrings: false
-AlwaysBreakTemplateDeclarations: false
-BinPackArguments: true
-BinPackParameters: true
-BraceWrapping:
-  AfterClass: false
-  AfterControlStatement: false
-  AfterEnum: false
-  AfterFunction: true
-  AfterNamespace: true
-  AfterObjCDeclaration: false
-  AfterStruct: false
-  AfterUnion: false
-  #AfterExternBlock: false # Unknown to clang-format-5.0
-  BeforeCatch: false
-  BeforeElse: false
-  IndentBraces: false
-  #SplitEmptyFunction: true # Unknown to clang-format-4.0
-  #SplitEmptyRecord: true # Unknown to clang-format-4.0
-  #SplitEmptyNamespace: true # Unknown to clang-format-4.0
-BreakBeforeBinaryOperators: None
-BreakBeforeBraces: Custom
-#BreakBeforeInheritanceComma: false # Unknown to clang-format-4.0
-BreakBeforeTernaryOperators: false
-BreakConstructorInitializersBeforeComma: false
-#BreakConstructorInitializers: BeforeComma # Unknown to clang-format-4.0
-BreakAfterJavaFieldAnnotations: false
-BreakStringLiterals: false
-ColumnLimit: 100
-CommentPragmas: '^ IWYU pragma:'
-#CompactNamespaces: false # Unknown to clang-format-4.0
-ConstructorInitializerAllOnOneLineOrOnePerLine: false
+BasedOnStyle: LLVM
+AlignConsecutiveMacros: AcrossComments
+AttributeMacros:
+  - __aligned
+  - __deprecated
+  - __packed
+  - __printf_like
+  - __syscall
+  - __subsystem
+BreakBeforeBraces: Linux
 ConstructorInitializerIndentWidth: 8
 ContinuationIndentWidth: 8
-Cpp11BracedListStyle: false
-DerivePointerAlignment: false
-DisableFormat: false
-ExperimentalAutoDetectBinPacking: false
-#FixNamespaceComments: false # Unknown to clang-format-4.0
-
-# Taken from:
-#   git grep -h '^#define [^[:space:]]*FOR_EACH[^[:space:]]*(' include/ \
-#   | sed "s,^#define \([^[:space:]]*FOR_EACH[^[:space:]]*\)(.*$,  - '\1'," \
-#   | sort | uniq
 ForEachMacros:
   - 'FOR_EACH'
   - 'FOR_EACH_FIXED_ARG'
+  - 'FOR_EACH_IDX'
+  - 'FOR_EACH_IDX_FIXED_ARG'
+  - 'FOR_EACH_NONEMPTY_TERM'
   - 'RB_FOR_EACH'
   - 'RB_FOR_EACH_CONTAINER'
   - 'SYS_DLIST_FOR_EACH_CONTAINER'
@@ -85,61 +42,34 @@ ForEachMacros:
   - 'SYS_SLIST_FOR_EACH_CONTAINER_SAFE'
   - 'SYS_SLIST_FOR_EACH_NODE'
   - 'SYS_SLIST_FOR_EACH_NODE_SAFE'
+  - '_WAIT_Q_FOR_EACH'
+  - 'Z_FOR_EACH'
+  - 'Z_FOR_EACH_ENGINE'
+  - 'Z_FOR_EACH_EXEC'
+  - 'Z_FOR_EACH_FIXED_ARG'
+  - 'Z_FOR_EACH_FIXED_ARG_EXEC'
+  - 'Z_FOR_EACH_IDX'
+  - 'Z_FOR_EACH_IDX_EXEC'
+  - 'Z_FOR_EACH_IDX_FIXED_ARG'
+  - 'Z_FOR_EACH_IDX_FIXED_ARG_EXEC'
   - 'Z_GENLIST_FOR_EACH_CONTAINER'
   - 'Z_GENLIST_FOR_EACH_CONTAINER_SAFE'
   - 'Z_GENLIST_FOR_EACH_NODE'
   - 'Z_GENLIST_FOR_EACH_NODE_SAFE'
-  - '_WAIT_Q_FOR_EACH'
-
-#IncludeBlocks: Preserve # Unknown to clang-format-5.0
+IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '.*'
+  - Regex: '^".*\.h"$'
+    Priority: 0
+  - Regex: '^<(assert|complex|ctype|errno|fenv|float|inttypes|limits|locale|math|setjmp|signal|stdarg|stdbool|stddef|stdint|stdio|stdlib|string|tgmath|time|wchar|wctype)\.h>$'
     Priority: 1
-IncludeIsMainRegex: '(Test)?$'
+  - Regex: '^\<zephyr/.*\.h\>$'
+    Priority: 2
+  - Regex: '.*'
+    Priority: 3
 IndentCaseLabels: false
-#IndentPPDirectives: None # Unknown to clang-format-5.0
 IndentWidth: 8
-IndentWrappedFunctionNames: false
-JavaScriptQuotes: Leave
-JavaScriptWrapImports: true
-KeepEmptyLinesAtTheStartOfBlocks: false
-MacroBlockBegin: ''
-MacroBlockEnd: ''
-MaxEmptyLinesToKeep: 1
-NamespaceIndentation: Inner
-#ObjCBinPackProtocolList: Auto # Unknown to clang-format-5.0
-ObjCBlockIndentWidth: 8
-ObjCSpaceAfterProperty: true
-ObjCSpaceBeforeProtocolList: true
-
-# Taken from git's rules
-#PenaltyBreakAssignment: 10 # Unknown to clang-format-4.0
-PenaltyBreakBeforeFirstCallParameter: 30
-PenaltyBreakComment: 10
-PenaltyBreakFirstLessLess: 0
-PenaltyBreakString: 10
-PenaltyExcessCharacter: 100
-PenaltyReturnTypeOnItsOwnLine: 60
-
-PointerAlignment: Right
-ReflowComments: false
-SortIncludes: false
-#SortUsingDeclarations: false # Unknown to clang-format-4.0
-SpaceAfterCStyleCast: false
-SpaceAfterTemplateKeyword: true
-SpaceBeforeAssignmentOperators: true
-#SpaceBeforeCtorInitializerColon: true # Unknown to clang-format-5.0
-#SpaceBeforeInheritanceColon: true # Unknown to clang-format-5.0
-SpaceBeforeParens: ControlStatements
-#SpaceBeforeRangeBasedForLoopColon: true # Unknown to clang-format-5.0
-SpaceInEmptyParentheses: false
-SpacesBeforeTrailingComments: 1
-SpacesInAngles: false
-SpacesInContainerLiterals: false
-SpacesInCStyleCastParentheses: false
-SpacesInParentheses: false
-SpacesInSquareBrackets: false
-Standard: Cpp03
-TabWidth: 8
+# SpaceBeforeParens: ControlStatementsExceptControlMacros # clang-format >= 13.0
 UseTab: Always
-...
+WhitespaceSensitiveMacros:
+  - STRINGIFY
+  - Z_STRINGIFY

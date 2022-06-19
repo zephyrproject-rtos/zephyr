@@ -43,6 +43,7 @@
 		label = "UART_0";
 		interrupt-parent = <&intc>;
 		interrupts = <24 1>;
+		reg-shift = <2>;
 	};
 
 	uart@f0002000 {
@@ -53,6 +54,7 @@
 		label = "UART_1";
 		interrupt-parent = <&intc>;
 		interrupts = <25 1>;
+		reg-shift = <2>;
 	};
 
 	chosen {

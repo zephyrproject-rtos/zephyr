@@ -24,7 +24,6 @@
 
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
-#include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <soc.h>
@@ -73,15 +72,6 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 }
 
 LOG_OUTPUT_DEFINE(log_output_swo, char_out, buf, sizeof(buf));
-
-static void log_backend_swo_put(const struct log_backend *const backend,
-		struct log_msg *msg)
-{
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
-
-	log_backend_std_put(&log_output_swo, flag, msg);
-}
 
 static void log_backend_swo_process(const struct log_backend *const backend,
 				    union log_msg2_generic *msg)
@@ -137,40 +127,12 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	log_backend_std_dropped(&log_output_swo, cnt);
 }
 
-static void log_backend_swo_sync_string(const struct log_backend *const backend,
-		struct log_msg_ids src_level, uint32_t timestamp,
-		const char *fmt, va_list ap)
-{
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
-
-	log_backend_std_sync_string(&log_output_swo, flag, src_level,
-				    timestamp, fmt, ap);
-}
-
-static void log_backend_swo_sync_hexdump(
-		const struct log_backend *const backend,
-		struct log_msg_ids src_level, uint32_t timestamp,
-		const char *metadata, const uint8_t *data, uint32_t length)
-{
-	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_OUTPUT_SYST) ?
-		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
-
-	log_backend_std_sync_hexdump(&log_output_swo, flag, src_level,
-				     timestamp, metadata, data, length);
-}
-
 const struct log_backend_api log_backend_swo_api = {
-	.process = IS_ENABLED(CONFIG_LOG2) ? log_backend_swo_process : NULL,
-	.put = IS_ENABLED(CONFIG_LOG1_DEFERRED) ? log_backend_swo_put : NULL,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			log_backend_swo_sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG1_IMMEDIATE) ?
-			log_backend_swo_sync_hexdump : NULL,
+	.process = log_backend_swo_process,
 	.panic = log_backend_swo_panic,
 	.init = log_backend_swo_init,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
-	.format_set = IS_ENABLED(CONFIG_LOG1) ? NULL : format_set,
+	.format_set = format_set,
 };
 
 LOG_BACKEND_DEFINE(log_backend_swo, log_backend_swo_api, true);

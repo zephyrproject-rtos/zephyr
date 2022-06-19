@@ -25,7 +25,6 @@ def test_runner_imports():
                     'hifive1',
                     'intel_adsp',
                     'intel_cyclonev',
-                    'intel_s1000',
                     'jlink',
                     'mdb-nsim',
                     'mdb-hw',

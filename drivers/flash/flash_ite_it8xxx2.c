@@ -23,7 +23,7 @@
 LOG_MODULE_REGISTER(flash_ite_it8xxx2);
 
 /* RAM code start address */
-extern char _ram_code_start;
+extern char _ram_code_start[];
 #define FLASH_RAMCODE_START ((uint32_t)&_ram_code_start)
 #define	FLASH_RAMCODE_START_BIT19      BIT(19)
 /* RAM code section */

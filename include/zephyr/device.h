@@ -95,21 +95,6 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_NAME_GET(name) _CONCAT(__device_, name)
 
-/**
- * @def SYS_DEVICE_DEFINE
- *
- * @brief Run an initialization function at boot at specified priority.
- *
- * @deprecated Use SYS_INIT() instead.
- *
- * @param drv_name A string name for the pseudo-device (unused).
- * @param init_fn Pointer to the function which should run at boot time.
- * @param level Initialization level to run the function in.
- * @param prio Function's priority within its initialization level.
- */
-#define SYS_DEVICE_DEFINE(drv_name, init_fn, level, prio)		\
-	__DEPRECATED_MACRO SYS_INIT(init_fn, level, prio)
-
 /* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
  * so synthesize a unique dev_name from the devicetree node.
  *
@@ -822,39 +807,6 @@ __syscall bool device_is_ready(const struct device *dev);
 static inline bool z_impl_device_is_ready(const struct device *dev)
 {
 	return z_device_is_ready(dev);
-}
-
-/**
- * @brief Determine whether a device is ready for use
- *
- * This is equivalent to device_usable_check(), without the overhead of a
- * syscall wrapper.
- *
- * @deprecated Use z_device_is_ready() instead.
- *
- * @param dev Device instance.
- *
- * @retval 0 If device is usable.
- * @retval -ENODEV If device is not usable.
- */
-__deprecated static inline int z_device_usable_check(const struct device *dev)
-{
-	return z_device_is_ready(dev) ? 0 : -ENODEV;
-}
-
-/**
- * @brief Determine whether a device is ready for use
- *
- * @deprecated Use device_is_ready() instead.
- *
- * @param dev Device instance.
- *
- * @retval 0 If device is usable.
- * @retval -ENODEV If device is not usable.
- */
-__deprecated static inline int device_usable_check(const struct device *dev)
-{
-	return device_is_ready(dev) ? 0 : -ENODEV;
 }
 
 /**

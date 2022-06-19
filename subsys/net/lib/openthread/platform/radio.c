@@ -298,7 +298,12 @@ void transmit_message(struct k_work *tx_job)
 	channel = sTransmitFrame.mChannel;
 
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
+
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
+	net_pkt_set_ieee802154_txpwr(tx_pkt, get_transmit_power_for_channel(channel));
+#else
 	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
 
 	net_pkt_set_ieee802154_frame_secured(tx_pkt,
 					     sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed);

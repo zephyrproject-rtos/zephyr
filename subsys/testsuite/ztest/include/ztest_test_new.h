@@ -56,7 +56,7 @@ struct ztest_suite_stats {
  */
 struct ztest_suite_node {
 	/** The name of the test suite. */
-	const char * const name;
+	const char *const name;
 	/**
 	 * Setup function to run before running this suite
 	 *
@@ -90,13 +90,12 @@ struct ztest_suite_node {
 	 */
 	bool (*const predicate)(const void *state);
 	/** Stats */
-	struct ztest_suite_stats * const stats;
+	struct ztest_suite_stats *const stats;
 };
 
 extern struct ztest_suite_node _ztest_suite_node_list_start[];
 extern struct ztest_suite_node _ztest_suite_node_list_end[];
 #define ZTEST_SUITE_COUNT (_ztest_suite_node_list_end - _ztest_suite_node_list_start)
-
 
 /**
  * Create and register a ztest suite. Using this macro creates a new test suite (using
@@ -112,18 +111,25 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  * @param after_fn The function to call after each unit test in this suite
  * @param teardown_fn The function to call after running all the tests in this suite
  */
-#define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)  \
-	struct ztest_suite_stats UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME);        \
-	static const STRUCT_SECTION_ITERABLE(ztest_suite_node,				\
-				       UTIL_CAT(z_ztest_test_node_, SUITE_NAME)) = {    \
-		.name = STRINGIFY(SUITE_NAME),                                          \
-		.setup = (setup_fn),                                                    \
-		.before = (before_fn),                                                  \
-		.after = (after_fn),                                                    \
-		.teardown = (teardown_fn),                                              \
-		.predicate = PREDICATE,                                                 \
-		.stats = &UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME),               \
+#define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)             \
+	struct ztest_suite_stats UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME);                   \
+	static const STRUCT_SECTION_ITERABLE(ztest_suite_node,                                     \
+					     UTIL_CAT(z_ztest_test_node_, SUITE_NAME)) = {         \
+		.name = STRINGIFY(SUITE_NAME),                                                     \
+		.setup = (setup_fn),                                                               \
+		.before = (before_fn),                                                             \
+		.after = (after_fn),                                                               \
+		.teardown = (teardown_fn),                                                         \
+		.predicate = PREDICATE,                                                            \
+		.stats = &UTIL_CAT(z_ztest_test_node_stats_, SUITE_NAME),                          \
 	}
+/**
+ * Default entry point for running or listing registered unit tests.
+ *
+ * @param state The current state of the machine as it relates to the test executable.
+ */
+void ztest_run_all(const void *state);
+
 /**
  * Run the registered unit tests which return true from their pragma function.
  *
@@ -155,6 +161,16 @@ void ztest_verify_all_test_suites_ran(void);
  * @return Negative value if the test suite never ran; otherwise, return the number of failures.
  */
 int z_ztest_run_test_suite(const char *name);
+
+/**
+ * @brief Returns next test within suite.
+ *
+ * @param suite Name of suite to get next test from.
+ * @param prev  Previous unit test acquired from suite, use NULL to return first
+ *		unit test.
+ * @return struct ztest_unit_test*
+ */
+struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_unit_test *prev);
 
 /**
  * @defgroup ztest_test Ztest testing macros
@@ -204,7 +220,7 @@ static inline void unit_test_noop(void)
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \
 	static void suite##_##fn(                                                                  \
-		COND_CODE_1(use_fixture, (struct suite##_fixture *this), (void)));                 \
+		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)));              \
 	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test_##suite##_##fn) = {      \
 		.test_suite_name = STRINGIFY(suite),                                               \
 		.name = STRINGIFY(fn),                                                             \
@@ -217,7 +233,7 @@ static inline void unit_test_noop(void)
 			    (ARG_UNUSED(data); suite##_##fn();))                                   \
 	}                                                                                          \
 	static inline void suite##_##fn(                                                           \
-		COND_CODE_1(use_fixture, (struct suite##_fixture *this), (void)))
+		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)))
 
 #define Z_ZTEST(suite, fn, t_options) Z_TEST(suite, fn, t_options, 0)
 #define Z_ZTEST_F(suite, fn, t_options) Z_TEST(suite, fn, t_options, 1)
@@ -355,6 +371,16 @@ extern struct k_mem_partition ztest_mem_partition;
  * @param suite Test suite to run.
  */
 #define ztest_run_test_suite(suite) z_ztest_run_test_suite(STRINGIFY(suite))
+
+/**
+ * @brief Structure for architecture specific APIs
+ *
+ */
+struct ztest_arch_api {
+	void (*run_all)(const void *state);
+	bool (*should_suite_run)(const void *state, struct ztest_suite_node *suite);
+	bool (*should_test_run)(const char *suite, const char *test);
+};
 
 /**
  * @}

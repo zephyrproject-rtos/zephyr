@@ -389,33 +389,23 @@ various samples with advanced features that can't run in QEMU.
 We highly recommend you run these tests locally to avoid any CI
 failures.
 
-uncrustify
-==========
+clang-format
+============
 
-The `uncrustify tool <https://sourceforge.net/projects/uncrustify>`_ can
+The `clang-format tool <https://clang.llvm.org/docs/ClangFormat.html>`_ can
 be helpful to quickly reformat large amounts of new source code to our
-`Coding Style`_
-standards together with a configuration file we've provided:
+`Coding Style`_ standards together with the ``.clang-format`` configuration file
+provided in the repository. ``clang-format`` is well integrated into most
+editors, but you can also run it manually like this:
 
 .. code-block:: bash
 
-   # On Linux/macOS
-   uncrustify --replace --no-backup -l C -c $ZEPHYR_BASE/.uncrustify.cfg my_source_file.c
-   # On Windows
-   uncrustify --replace --no-backup -l C -c %ZEPHYR_BASE%\.uncrustify.cfg my_source_file.c
+   clang-format -i my_source_file.c
 
-But note that you should not use uncrustify to reformat existing Zephyr code,
-or to modify files in which you only introduce a small fix. This would create a
-lot of unwelcome extra changed lines.
-
-On Linux systems, you can install uncrustify with
-
-.. code-block:: bash
-
-   sudo apt install uncrustify
-
-For Windows installation instructions see the `sourceforge listing for
-uncrustify <https://sourceforge.net/projects/uncrustify>`_.
+``clang-format`` is part of LLVM, which can be downloaded from the project
+`releases page <https://github.com/llvm/llvm-project/releases>`. Note that if
+you are a Linux user, ``clang-format`` will likely be available as a package in
+your distribution repositories.
 
 .. _coding_style:
 

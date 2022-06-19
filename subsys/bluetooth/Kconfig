@@ -154,12 +154,14 @@ config BT_REMOTE_VERSION
 config BT_PHY_UPDATE
 	bool "PHY Update"
 	default y
+	depends on !BT_CTLR || BT_CTLR_PHY_UPDATE_SUPPORT
 	help
 	  Enable support for Bluetooth 5.0 PHY Update Procedure.
 
 config BT_DATA_LEN_UPDATE
 	bool "Data Length Update"
 	default y
+	depends on !BT_CTLR || BT_CTLR_DATA_LEN_UPDATE_SUPPORT
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
 endif # BT_CONN

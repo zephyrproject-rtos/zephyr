@@ -16,8 +16,6 @@
 #define BT_CSIS_RELEASE_VALUE                   0x01
 #define BT_CSIS_LOCK_VALUE                      0x02
 
-#define BT_CSIS_PSRI_SIZE                       6
-
 struct csis_pending_notifications {
 	bt_addr_le_t addr;
 	bool pending;
@@ -62,10 +60,11 @@ struct bt_csis_client_svc_inst {
 /* TODO: Rename to bt_csis_svc_inst */
 struct bt_csis_server {
 	struct bt_csis_set_sirk set_sirk;
-	uint8_t psri[BT_CSIS_PSRI_SIZE];
+	uint8_t rsi[BT_CSIS_RSI_SIZE];
 	uint8_t set_size;
 	uint8_t set_lock;
 	uint8_t rank;
+	struct bt_csis_cb *cb;
 	bool adv_enabled;
 	struct k_work_delayable set_lock_timer;
 	bt_addr_le_t lock_client_addr;

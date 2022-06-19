@@ -456,7 +456,7 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 			       snk_loc_write,
 #else
 			       NULL,
-#endif /* BT_PAC_SRC_LOC_WRITEABLE */
+#endif /* CONFIG_BT_PAC_SNK_LOC_WRITEABLE */
 			       NULL),
 	BT_GATT_CCC(snk_loc_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
@@ -476,11 +476,11 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 			       BT_GATT_PERM_READ_ENCRYPT |
 			       BT_GATT_PERM_WRITE_ENCRYPT,
 			       src_loc_read,
-#if defined(BT_PAC_SRC_LOC_WRITEABLE)
+#if defined(CONFIG_BT_PAC_SRC_LOC_WRITEABLE)
 			       src_loc_write,
 #else
 			       NULL,
-#endif /* BT_PAC_SRC_LOC_WRITEABLE */
+#endif /* CONFIG_BT_PAC_SRC_LOC_WRITEABLE */
 			       NULL),
 	BT_GATT_CCC(src_loc_cfg_changed,
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT),
@@ -510,7 +510,7 @@ static struct k_work_delayable *bt_pacs_get_work(enum bt_audio_dir dir)
 #if defined(CONFIG_BT_PAC_SRC)
 	case BT_AUDIO_DIR_SOURCE:
 		return &srcs_work;
-#endif /* CONFIG_BT_PAC_SNK */
+#endif /* CONFIG_BT_PAC_SRC */
 	default:
 		return NULL;
 	}
@@ -527,7 +527,7 @@ static struct k_work_delayable *bt_pacs_get_loc_work(enum bt_audio_dir dir)
 #if defined(CONFIG_BT_PAC_SRC)
 	case BT_AUDIO_DIR_SOURCE:
 		return &srcs_loc_work;
-#endif /* CONFIG_BT_PAC_SNK */
+#endif /* CONFIG_BT_PAC_SRC */
 	default:
 		return NULL;
 	}

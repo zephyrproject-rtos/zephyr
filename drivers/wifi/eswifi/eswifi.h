@@ -7,7 +7,6 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_ESWIFI_ESWIFI_H_
 #define ZEPHYR_DRIVERS_WIFI_ESWIFI_ESWIFI_H_
 
-#include <zephyr/zephyr.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/kernel_structs.h>

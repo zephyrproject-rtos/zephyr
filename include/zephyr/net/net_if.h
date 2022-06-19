@@ -2459,7 +2459,8 @@ struct net_if_api {
 				      api, l2, l2_ctx_type, mtu)	\
 	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
 				   Z_DEVICE_DT_DEV_NAME(node_id),	\
-				   DT_LABEL(node_id), instance,		\
+				   DT_PROP_OR(node_id, label, ""),	\
+				   instance, init_fn,			\
 				   pm_action_cb, data, cfg, prio, api,	\
 				   l2, l2_ctx_type, mtu)
 
@@ -2536,7 +2537,7 @@ struct net_if_api {
 #define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm_action_cb,	\
 				   data, cfg, prio, api, mtu)		\
 	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_NAME(node_id), \
-				  DT_PROP_OR(node_id, label, NULL),	\
+				  DT_PROP_OR(node_id, label, ""),	\
 				  init_fn, pm_action_cb, data, cfg,	\
 				  prio, api, mtu)
 

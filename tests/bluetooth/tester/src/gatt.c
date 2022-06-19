@@ -11,6 +11,7 @@
 #include <errno.h>
 
 #include <zephyr/toolchain.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -218,6 +219,7 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	tester_set_bit(cmds, GATT_GET_ATTRIBUTE_VALUE);
 	tester_set_bit(cmds, GATT_DISC_ALL_PRIM);
 	tester_set_bit(cmds, GATT_READ_MULTIPLE_VAR);
+	tester_set_bit(cmds, GATT_EATT_CONNECT);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (uint8_t *) rp, sizeof(cmds));
@@ -2061,6 +2063,30 @@ static void get_attr_val(uint8_t *data, uint16_t len)
 	}
 }
 
+static void eatt_connect(uint8_t *data, uint16_t len)
+{
+	const struct gatt_eatt_connect_cmd *cmd = (void *)data;
+	struct bt_conn *conn;
+	uint8_t status = BTP_STATUS_SUCCESS;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)cmd);
+	if (!conn) {
+		status = BTP_STATUS_FAILED;
+		goto response;
+	}
+
+	err = bt_eatt_connect(conn, cmd->num_channels);
+	if (err) {
+		status = BTP_STATUS_FAILED;
+	}
+
+	bt_conn_unref(conn);
+
+response:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_EATT_CONNECT, CONTROLLER_INDEX, status);
+}
+
 void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 			 uint16_t len)
 {
@@ -2144,6 +2170,9 @@ void tester_handle_gatt(uint8_t opcode, uint8_t index, uint8_t *data,
 		return;
 	case GATT_GET_ATTRIBUTE_VALUE:
 		get_attr_val(data, len);
+		return;
+	case GATT_EATT_CONNECT:
+		eatt_connect(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,

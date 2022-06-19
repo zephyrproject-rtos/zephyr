@@ -1338,18 +1338,13 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 		chan = bt_l2cap_le_lookup_tx_cid(conn, scid);
 		if (!chan) {
 			result = BT_L2CAP_RECONF_INVALID_CID;
-			continue;
+			goto response;
 		}
 
-		/* If the MTU value is decreased for any of the included
-		 * channels, then the receiver shall disconnect all
-		 * included channels.
-		 */
 		if (BT_L2CAP_LE_CHAN(chan)->tx.mtu > mtu) {
 			BT_ERR("chan %p decreased MTU %u -> %u", chan,
 			       BT_L2CAP_LE_CHAN(chan)->tx.mtu, mtu);
 			result = BT_L2CAP_RECONF_INVALID_MTU;
-			bt_l2cap_chan_disconnect(chan);
 			goto response;
 		}
 

@@ -17,10 +17,6 @@
  *
  * Before individual UART port can be used, uart_ns16550_port_init() has to be
  * called to setup the port.
- *
- * - the following macro for the number of bytes between register addresses:
- *
- *  UART_REG_ADDR_INTERVAL
  */
 
 #include <errno.h>
@@ -40,15 +36,11 @@
 
 #define INST_HAS_PCP_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, pcp) ||
 #define INST_HAS_DLF_HELPER(inst) DT_INST_NODE_HAS_PROP(inst, dlf) ||
-#define INST_HAS_REG_SHIFT_HELPER(inst) \
-	DT_INST_NODE_HAS_PROP(inst, reg_shift) ||
 
 #define UART_NS16550_PCP_ENABLED \
 	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_PCP_HELPER) 0)
 #define UART_NS16550_DLF_ENABLED \
 	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_DLF_HELPER) 0)
-#define UART_NS16550_REG_INTERVAL_ENABLED \
-	(DT_INST_FOREACH_STATUS_OKAY(INST_HAS_REG_SHIFT_HELPER) 0)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
@@ -239,9 +231,7 @@ struct uart_ns16550_device_config {
 #if UART_NS16550_PCP_ENABLED
 	uint32_t pcp;
 #endif
-#if UART_NS16550_REG_INTERVAL_ENABLED
 	uint8_t reg_interval;
-#endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	bool pcie;
 	pcie_bdf_t pcie_bdf;
@@ -273,28 +263,12 @@ struct uart_ns16550_dev_data {
 #endif
 };
 
-#if defined(UART_REG_ADDR_INTERVAL)
-#define DEFAULT_REG_INTERVAL UART_REG_ADDR_INTERVAL
-#elif defined(CONFIG_UART_NS16550_ACCESS_IOPORT)
-#define DEFAULT_REG_INTERVAL 1
-#else
-#define DEFAULT_REG_INTERVAL 4
-#endif
-
-#if UART_NS16550_REG_INTERVAL_ENABLED
 static inline uint8_t reg_interval(const struct device *dev)
 {
 	const struct uart_ns16550_device_config *config = dev->config;
 
-	if (config->reg_interval) {
-		return config->reg_interval;
-	}
-
-	return DEFAULT_REG_INTERVAL;
+	return config->reg_interval;
 }
-#else
-#define reg_interval(dev) DEFAULT_REG_INTERVAL
-#endif
 
 static const struct uart_driver_api uart_ns16550_driver_api;
 
@@ -1114,12 +1088,6 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_CONFIG_PCP_INIT(n)
 #endif
 
-#define DEV_CONFIG_REG_INT0(n)
-#define DEV_CONFIG_REG_INT1(n) \
-	.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),
-#define DEV_CONFIG_REG_INT_INIT(n) \
-	_CONCAT(DEV_CONFIG_REG_INT, DT_INST_NODE_HAS_PROP(n, reg_shift))(n)
-
 #define DEV_CONFIG_PCIE0(n)
 #define DEV_CONFIG_PCIE1(n)              \
 	.pcie = true,                    \
@@ -1146,7 +1114,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		.sys_clk_freq = DT_INST_PROP(n, clock_frequency),                    \
 		DEV_CONFIG_IRQ_FUNC_INIT(n)                                          \
 		DEV_CONFIG_PCP_INIT(n)                                               \
-		DEV_CONFIG_REG_INT_INIT(n)                                           \
+		.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),                   \
 		DEV_CONFIG_PCIE_INIT(n)                                              \
 	};                                                                           \
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \

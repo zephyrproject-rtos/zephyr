@@ -12,7 +12,6 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <ctype.h>
 #include <errno.h>
-#include <zephyr/zephyr.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -291,7 +290,9 @@ static ssize_t send_socket_data(void *obj,
 				k_timeout_t timeout)
 {
 	int ret;
-	char send_buf[sizeof("AT+USO**=#,!###.###.###.###!,#####,####\r\n")];
+	char send_buf[sizeof("AT+USO**=###,"
+			     "!####.####.####.####.####.####.####.####!,"
+			     "#####,#########\r\n")];
 	uint16_t dst_port = 0U;
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	const struct modem_cmd handler_cmds[] = {
@@ -1530,7 +1531,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret;
-	char buf[sizeof("AT+USOCO=#,!###.###.###.###!,#####,#\r")];
+	char buf[sizeof("AT+USOCO=###,!####.####.####.####.####.####.####.####!,#####,#\r")];
 	uint16_t dst_port = 0U;
 	char ip_str[NET_IPV6_ADDR_LEN];
 
