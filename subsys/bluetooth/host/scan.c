@@ -1608,7 +1608,8 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 {
 	struct bt_hci_cp_le_per_adv_sync_transfer *cp;
 	struct net_buf *buf;
-
+	struct net_buf *rsp;
+	int err;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -1629,8 +1630,18 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->service_data = sys_cpu_to_le16(service_data);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf,
-				    NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf,
+				    &rsp);
+
+	if (err) {
+		return err;
+	}
+
+	if (rsp) {
+		net_buf_unref(rsp);
+	}
+
+	return err;
 }
 
 static bool valid_past_param(
@@ -1650,6 +1661,8 @@ static int past_param_set(const struct bt_conn *conn, uint8_t mode,
 {
 	struct bt_hci_cp_le_past_param *cp;
 	struct net_buf *buf;
+	struct net_buf *rsp;
+	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_PAST_PARAM, sizeof(*cp));
 	if (!buf) {
@@ -1665,7 +1678,17 @@ static int past_param_set(const struct bt_conn *conn, uint8_t mode,
 	cp->timeout = sys_cpu_to_le16(timeout);
 	cp->cte_type = cte_type;
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PAST_PARAM, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PAST_PARAM, buf, &rsp);
+
+	if (err) {
+		return err;
+	}
+
+	if (rsp) {
+		net_buf_unref(rsp);
+	}
+
+	return err;
 }
 
 static int default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout,

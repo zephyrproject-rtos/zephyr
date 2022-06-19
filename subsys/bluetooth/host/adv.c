@@ -1862,7 +1862,8 @@ int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
 {
 	struct bt_hci_cp_le_per_adv_set_info_transfer *cp;
 	struct net_buf *buf;
-
+	struct net_buf *rsp;
+	int err;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -1883,8 +1884,18 @@ int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
 	cp->adv_handle = adv->handle;
 	cp->service_data = sys_cpu_to_le16(service_data);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER, buf,
-				    NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER, buf,
+				    &rsp);
+
+	if (err) {
+		return err;
+	}
+
+	if (rsp) {
+		net_buf_unref(rsp);
+	}
+
+	return err;
 }
 #endif /* CONFIG_BT_CONN */
 #endif /* CONFIG_BT_PER_ADV */
