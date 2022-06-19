@@ -16,13 +16,13 @@ static void fxas21002_gpio_callback(const struct device *dev,
 {
 	struct fxas21002_data *data =
 		CONTAINER_OF(cb, struct fxas21002_data, gpio_cb);
+	const struct fxas21002_config *config = data->dev->config;
 
-	if ((pin_mask & BIT(data->gpio_pin)) == 0U) {
+	if ((pin_mask & BIT(config->int_gpio.pin)) == 0U) {
 		return;
 	}
 
-	gpio_pin_interrupt_configure(data->gpio, data->gpio_pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_FXAS21002_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -67,8 +67,7 @@ static void fxas21002_handle_int(const struct device *dev)
 		fxas21002_handle_drdy_int(dev);
 	}
 
-	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_FXAS21002_TRIGGER_OWN_THREAD
@@ -191,31 +190,25 @@ int fxas21002_trigger_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Get the GPIO device */
-	data->gpio = device_get_binding(config->gpio_name);
-	if (data->gpio == NULL) {
-		LOG_ERR("Could not find GPIO device");
-		return -EINVAL;
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
-	data->gpio_pin = config->gpio_pin;
-
-	ret = gpio_pin_configure(data->gpio, config->gpio_pin,
-				 GPIO_INPUT | config->gpio_flags);
+	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
 		return ret;
 	}
 
 	gpio_init_callback(&data->gpio_cb, fxas21002_gpio_callback,
-			   BIT(config->gpio_pin));
+			   BIT(config->int_gpio.pin));
 
-	ret = gpio_add_callback(data->gpio, &data->gpio_cb);
+	ret = gpio_add_callback(config->int_gpio.port, &data->gpio_cb);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
-					   GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		return ret;
 	}
