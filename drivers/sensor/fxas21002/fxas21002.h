@@ -57,20 +57,18 @@ enum fxas21002_channel {
 };
 
 struct fxas21002_config {
-	char *i2c_name;
+	struct i2c_dt_spec i2c;
 #ifdef CONFIG_FXAS21002_TRIGGER
 	char *gpio_name;
 	uint8_t gpio_pin;
 	gpio_dt_flags_t gpio_flags;
 #endif
-	uint8_t i2c_address;
 	uint8_t whoami;
 	enum fxas21002_range range;
 	uint8_t dr;
 };
 
 struct fxas21002_data {
-	const struct device *i2c;
 	struct k_sem sem;
 #ifdef CONFIG_FXAS21002_TRIGGER
 	const struct device *dev;
