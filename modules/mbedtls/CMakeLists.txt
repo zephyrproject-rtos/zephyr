@@ -12,6 +12,10 @@ if(CONFIG_MBEDTLS_BUILTIN)
 	)
 
   zephyr_library()
+  zephyr_include_directories(
+    ${ZEPHYR_CURRENT_MODULE_DIR}/include
+    configs
+  )
 
   file(GLOB
     mbedtls_sources # This is an output parameter
