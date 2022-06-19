@@ -387,33 +387,31 @@ static int fxos8700_init(const struct device *dev)
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
 	struct sensor_value odr = {.val1 = 6, .val2 = 250000};
-	const struct device *rst;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C bus device not ready");
 		return -ENODEV;
 	}
 
-	if (config->reset_name) {
+	if (config->reset_gpio.port) {
 		/* Pulse RST pin high to perform a hardware reset of
 		 * the sensor.
 		 */
-		rst = device_get_binding(config->reset_name);
-		if (!rst) {
-			LOG_ERR("Could not find reset GPIO device");
-			return -EINVAL;
+
+		if (!device_is_ready(config->reset_gpio.port)) {
+			LOG_ERR("GPIO device not ready");
+			return -ENODEV;
 		}
 
-		gpio_pin_configure(rst, config->reset_pin,
-				   GPIO_OUTPUT_INACTIVE | config->reset_flags);
+		gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 
-		gpio_pin_set(rst, config->reset_pin, 1);
+		gpio_pin_set_dt(&config->reset_gpio, 1);
 		/* The datasheet does not mention how long to pulse
 		 * the RST pin high in order to reset. Stay on the
 		 * safe side and pulse for 1 millisecond.
 		 */
 		k_busy_wait(USEC_PER_MSEC);
-		gpio_pin_set(rst, config->reset_pin, 0);
+		gpio_pin_set_dt(&config->reset_gpio, 0);
 	} else {
 		/* Software reset the sensor. Upon issuing a software
 		 * reset command over the I2C interface, the sensor
@@ -555,9 +553,7 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 		    (FXOS8700_MODE_PROPS_HYBRID))))
 
 #define FXOS8700_RESET_PROPS(n)						\
-	.reset_name = DT_INST_GPIO_LABEL(n, reset_gpios),		\
-	.reset_pin = DT_INST_GPIO_PIN(n, reset_gpios),			\
-	.reset_flags = DT_INST_GPIO_FLAGS(n, reset_gpios),
+	.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),
 
 #define FXOS8700_RESET(n)						\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, reset_gpios),		\
@@ -565,9 +561,7 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 		    ())
 
 #define FXOS8700_INTM_PROPS(n, m)					\
-	.gpio_name = DT_INST_GPIO_LABEL(n, int##m##_gpios),		\
-	.gpio_pin = DT_INST_GPIO_PIN(n, int##m##_gpios),		\
-	.gpio_flags = DT_INST_GPIO_FLAGS(n, int##m##_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(n, int##m##_gpios),
 
 #define FXOS8700_INT_PROPS(n)						\
 	COND_CODE_1(CONFIG_FXOS8700_DRDY_INT1,				\
