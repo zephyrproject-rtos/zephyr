@@ -16,13 +16,13 @@ static void fxos8700_gpio_callback(const struct device *dev,
 {
 	struct fxos8700_data *data =
 		CONTAINER_OF(cb, struct fxos8700_data, gpio_cb);
+	const struct fxos8700_config *config = data->dev->config;
 
-	if ((pin_mask & BIT(data->gpio_pin)) == 0U) {
+	if ((pin_mask & BIT(config->int_gpio.pin)) == 0U) {
 		return;
 	}
 
-	gpio_pin_interrupt_configure(data->gpio, data->gpio_pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_FXOS8700_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -179,8 +179,7 @@ static void fxos8700_handle_int(const struct device *dev)
 	}
 #endif
 
-	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
@@ -451,31 +450,25 @@ int fxos8700_trigger_init(const struct device *dev)
 	}
 #endif
 
-	/* Get the GPIO device */
-	data->gpio = device_get_binding(config->gpio_name);
-	if (data->gpio == NULL) {
-		LOG_ERR("Could not find GPIO device");
-		return -EINVAL;
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
-	data->gpio_pin = config->gpio_pin;
-
-	ret = gpio_pin_configure(data->gpio, config->gpio_pin,
-				 GPIO_INPUT | config->gpio_flags);
+	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
 		return ret;
 	}
 
 	gpio_init_callback(&data->gpio_cb, fxos8700_gpio_callback,
-			   BIT(config->gpio_pin));
+			   BIT(config->int_gpio.pin));
 
-	ret = gpio_add_callback(data->gpio, &data->gpio_cb);
+	ret = gpio_add_callback(config->int_gpio.port, &data->gpio_cb);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
-					   GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		return ret;
 	}
