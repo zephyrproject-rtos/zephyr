@@ -284,13 +284,9 @@ static const struct fxas21002_config fxas21002_config = {
 	.dr = CONFIG_FXAS21002_DR,
 #ifdef CONFIG_FXAS21002_TRIGGER
 #ifdef CONFIG_FXAS21002_DRDY_INT1
-	.gpio_name = DT_INST_GPIO_LABEL(0, int1_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int1_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int1_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int1_gpios),
 #else
-	.gpio_name = DT_INST_GPIO_LABEL(0, int2_gpios),
-	.gpio_pin = DT_INST_GPIO_PIN(0, int2_gpios),
-	.gpio_flags = DT_INST_GPIO_FLAGS(0, int2_gpios),
+	.int_gpio = GPIO_DT_SPEC_INST_GET(0, int2_gpios),
 #endif
 #endif
 };
