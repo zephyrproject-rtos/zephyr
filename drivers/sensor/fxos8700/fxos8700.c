@@ -22,7 +22,6 @@ static int fxos8700_set_odr(const struct device *dev,
 		const struct sensor_value *val)
 {
 	const struct fxos8700_config *config = dev->config;
-	struct fxos8700_data *data = dev->data;
 	uint8_t dr;
 	enum fxos8700_power power;
 
@@ -87,10 +86,9 @@ static int fxos8700_set_odr(const struct device *dev,
 	}
 
 	/* Change the attribute and restore power mode. */
-	return i2c_reg_update_byte(data->i2c, config->i2c_address,
-		FXOS8700_REG_CTRLREG1,
-		FXOS8700_CTRLREG1_DR_MASK | FXOS8700_CTRLREG1_ACTIVE_MASK,
-		dr | power);
+	return i2c_reg_update_byte_dt(&config->i2c, FXOS8700_REG_CTRLREG1,
+				      FXOS8700_CTRLREG1_DR_MASK | FXOS8700_CTRLREG1_ACTIVE_MASK,
+				      dr | power);
 }
 
 static int fxos8700_set_mt_ths(const struct device *dev,
@@ -98,7 +96,6 @@ static int fxos8700_set_mt_ths(const struct device *dev,
 {
 #ifdef CONFIG_FXOS8700_MOTION
 	const struct fxos8700_config *config = dev->config;
-	struct fxos8700_data *data = dev->data;
 	uint64_t micro_ms2 = abs(val->val1 * 1000000LL + val->val2);
 	uint64_t ths = micro_ms2 / FXOS8700_FF_MT_THS_SCALE;
 
@@ -109,9 +106,8 @@ static int fxos8700_set_mt_ths(const struct device *dev,
 
 	LOG_DBG("Set FF_MT_THS to %d", (uint8_t)ths);
 
-	return i2c_reg_update_byte(data->i2c, config->i2c_address,
-				   FXOS8700_REG_FF_MT_THS,
-				   FXOS8700_FF_MT_THS_MASK, (uint8_t)ths);
+	return i2c_reg_update_byte_dt(&config->i2c, FXOS8700_REG_FF_MT_THS,
+				      FXOS8700_FF_MT_THS_MASK, (uint8_t)ths);
 #else
 	return -ENOTSUP;
 #endif
@@ -163,8 +159,8 @@ static int fxos8700_sample_fetch(const struct device *dev,
 
 	__ASSERT(num_bytes <= sizeof(buffer), "Too many bytes to read");
 
-	if (i2c_burst_read(data->i2c, config->i2c_address, config->start_addr,
-			   buffer, num_bytes)) {
+	if (i2c_burst_read_dt(&config->i2c, config->start_addr, buffer,
+			      num_bytes)) {
 		LOG_ERR("Could not fetch sample");
 		ret = -EIO;
 		goto exit;
@@ -185,8 +181,8 @@ static int fxos8700_sample_fetch(const struct device *dev,
 	}
 
 #ifdef CONFIG_FXOS8700_TEMP
-	if (i2c_reg_read_byte(data->i2c, config->i2c_address, FXOS8700_REG_TEMP,
-			      &data->temp)) {
+	if (i2c_reg_read_byte_dt(&config->i2c, FXOS8700_REG_TEMP,
+				 &data->temp)) {
 		LOG_ERR("Could not fetch temperature");
 		ret = -EIO;
 		goto exit;
@@ -366,12 +362,9 @@ static int fxos8700_channel_get(const struct device *dev,
 int fxos8700_get_power(const struct device *dev, enum fxos8700_power *power)
 {
 	const struct fxos8700_config *config = dev->config;
-	struct fxos8700_data *data = dev->data;
 	uint8_t val = *power;
 
-	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
-			      FXOS8700_REG_CTRLREG1,
-			      &val)) {
+	if (i2c_reg_read_byte_dt(&config->i2c, FXOS8700_REG_CTRLREG1, &val)) {
 		LOG_ERR("Could not get power setting");
 		return -EIO;
 	}
@@ -384,12 +377,9 @@ int fxos8700_get_power(const struct device *dev, enum fxos8700_power *power)
 int fxos8700_set_power(const struct device *dev, enum fxos8700_power power)
 {
 	const struct fxos8700_config *config = dev->config;
-	struct fxos8700_data *data = dev->data;
 
-	return i2c_reg_update_byte(data->i2c, config->i2c_address,
-				   FXOS8700_REG_CTRLREG1,
-				   FXOS8700_CTRLREG1_ACTIVE_MASK,
-				   power);
+	return i2c_reg_update_byte_dt(&config->i2c, FXOS8700_REG_CTRLREG1,
+				      FXOS8700_CTRLREG1_ACTIVE_MASK, power);
 }
 
 static int fxos8700_init(const struct device *dev)
@@ -399,11 +389,9 @@ static int fxos8700_init(const struct device *dev)
 	struct sensor_value odr = {.val1 = 6, .val2 = 250000};
 	const struct device *rst;
 
-	/* Get the I2C device */
-	data->i2c = device_get_binding(config->i2c_name);
-	if (data->i2c == NULL) {
-		LOG_ERR("Could not find I2C device");
-		return -EINVAL;
+	if (!device_is_ready(config->i2c.bus)) {
+		LOG_ERR("I2C bus device not ready");
+		return -ENODEV;
 	}
 
 	if (config->reset_name) {
@@ -434,9 +422,8 @@ static int fxos8700_init(const struct device *dev)
 		 * master. Therefore, do not check the return code of
 		 * the I2C transaction.
 		 */
-		i2c_reg_write_byte(data->i2c, config->i2c_address,
-				   FXOS8700_REG_CTRLREG2,
-				   FXOS8700_CTRLREG2_RST_MASK);
+		i2c_reg_write_byte_dt(&config->i2c, FXOS8700_REG_CTRLREG2,
+				      FXOS8700_CTRLREG2_RST_MASK);
 	}
 
 	/* The sensor requires us to wait 1 ms after a reset before
@@ -449,8 +436,8 @@ static int fxos8700_init(const struct device *dev)
 	 * compatible device and not some other type of device that happens to
 	 * have the same I2C address.
 	 */
-	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
-			      FXOS8700_REG_WHOAMI, &data->whoami)) {
+	if (i2c_reg_read_byte_dt(&config->i2c, FXOS8700_REG_WHOAMI,
+				 &data->whoami)) {
 		LOG_ERR("Could not get WHOAMI value");
 		return -EIO;
 	}
@@ -479,19 +466,17 @@ static int fxos8700_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-				FXOS8700_REG_CTRLREG2,
-				FXOS8700_CTRLREG2_MODS_MASK,
-				config->power_mode)) {
+	if (i2c_reg_update_byte_dt(&config->i2c, FXOS8700_REG_CTRLREG2,
+				   FXOS8700_CTRLREG2_MODS_MASK,
+				   config->power_mode)) {
 		LOG_ERR("Could not set power scheme");
 		return -EIO;
 	}
 
 	/* Set the mode (accel-only, mag-only, or hybrid) */
-	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-				FXOS8700_REG_M_CTRLREG1,
-				FXOS8700_M_CTRLREG1_MODE_MASK,
-				config->mode)) {
+	if (i2c_reg_update_byte_dt(&config->i2c, FXOS8700_REG_M_CTRLREG1,
+				   FXOS8700_M_CTRLREG1_MODE_MASK,
+				   config->mode)) {
 		LOG_ERR("Could not set mode");
 		return -EIO;
 	}
@@ -499,19 +484,17 @@ static int fxos8700_init(const struct device *dev)
 	/* Set hybrid autoincrement so we can read accel and mag channels in
 	 * one I2C transaction.
 	 */
-	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-				FXOS8700_REG_M_CTRLREG2,
-				FXOS8700_M_CTRLREG2_AUTOINC_MASK,
-				FXOS8700_M_CTRLREG2_AUTOINC_MASK)) {
+	if (i2c_reg_update_byte_dt(&config->i2c, FXOS8700_REG_M_CTRLREG2,
+				   FXOS8700_M_CTRLREG2_AUTOINC_MASK,
+				   FXOS8700_M_CTRLREG2_AUTOINC_MASK)) {
 		LOG_ERR("Could not set hybrid autoincrement");
 		return -EIO;
 	}
 
 	/* Set the full-scale range */
-	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-				FXOS8700_REG_XYZ_DATA_CFG,
-				FXOS8700_XYZ_DATA_CFG_FS_MASK,
-				RANGE2FS(config->range))) {
+	if (i2c_reg_update_byte_dt(&config->i2c, FXOS8700_REG_XYZ_DATA_CFG,
+				   FXOS8700_XYZ_DATA_CFG_FS_MASK,
+				   RANGE2FS(config->range))) {
 		LOG_ERR("Could not set range");
 		return -EIO;
 	}
@@ -622,8 +605,7 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 
 #define FXOS8700_INIT(n)						\
 	static const struct fxos8700_config fxos8700_config_##n = {	\
-		.i2c_name = DT_INST_BUS_LABEL(n),			\
-		.i2c_address = DT_INST_REG_ADDR(n),			\
+		.i2c = I2C_DT_SPEC_INST_GET(n),				\
 		.power_mode = DT_INST_PROP(n, power_mode),		\
 		.range = DT_INST_PROP(n, range),			\
 		FXOS8700_RESET(n)					\
