@@ -177,17 +177,17 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
         # prepare base command
         cmd = [str(self._cli)]
+        cmd += ["--connect"]
 
-        connect_opts = f"port={self._port}"
+        cmd += [f"port={self._port}"]
         if self._frequency:
-            connect_opts += f" freq={self._frequency}"
+            cmd += [f"freq={self._frequency}"]
         if self._reset_mode:
             reset_mode = STM32CubeProgrammerBinaryRunner._RESET_MODES[self._reset_mode]
-            connect_opts += f" reset={reset_mode}"
+            cmd += [f"reset={reset_mode}"]
         if self._conn_modifiers:
-            connect_opts += f" {self._conn_modifiers}"
+            cmd += self._conn_modifiers.split()
 
-        cmd += ["--connect", connect_opts]
         cmd += self._tool_opt
 
         # erase first if requested
