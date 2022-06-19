@@ -158,6 +158,8 @@ static struct hmc5883l_data hmc5883l_data_inst;
 
 static const struct hmc5883l_config hmc5883l_config_inst = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+	IF_ENABLED(CONFIG_HMC5883L_TRIGGER,
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),))
 };
 
 DEVICE_DT_INST_DEFINE(0, hmc5883l_init, NULL, &hmc5883l_data_inst,
