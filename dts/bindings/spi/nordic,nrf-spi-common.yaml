@@ -12,6 +12,13 @@ properties:
     interrupts:
       required: true
 
+    max-frequency:
+      type: int
+      required: true
+      description: |
+        Maximum data rate the SPI peripheral can be driven at, in Hz. This
+        property must be set at SoC level DTS files.
+
     sck-pin:
       type: int
       deprecated: true

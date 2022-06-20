@@ -111,6 +111,7 @@
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
+			max-frequency = <DT_FREQ_M(8)>;
 			status = "disabled";
 			label = "SPI_0";
 		};
