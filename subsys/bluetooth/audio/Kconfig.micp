@@ -56,7 +56,7 @@ if BT_MICP_CLIENT
 config BT_MICP_CLIENT_MAX_AICS_INST
 	int "Maximum number of Audio Input Control Service instances to setup"
 	default 0
-	range 0 3
+	range 0 BT_AICS_CLIENT_MAX_INSTANCE_COUNT
 	help
 	  Sets the maximum number of Audio Input Control Service (AICS)
 	  instances to setup and use.

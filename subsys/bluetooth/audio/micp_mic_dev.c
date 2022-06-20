@@ -105,6 +105,7 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static struct bt_gatt_attr mics_attrs[] = { BT_MICP_SERVICE_DEFINITION };
 static struct bt_gatt_service mics_svc;
 
+#if defined(CONFIG_BT_MICP_AICS)
 static int prepare_aics_inst(struct bt_micp_register_param *param)
 {
 	int i;
@@ -140,6 +141,7 @@ static int prepare_aics_inst(struct bt_micp_register_param *param)
 
 	return 0;
 }
+#endif /* CONFIG_BT_MICP_AICS */
 
 /****************************** PUBLIC API ******************************/
 int bt_micp_register(struct bt_micp_register_param *param,
@@ -155,9 +157,14 @@ int bt_micp_register(struct bt_micp_register_param *param,
 
 	__ASSERT(param, "MICS register parameter cannot be NULL");
 
-	if (CONFIG_BT_MICP_AICS_INSTANCE_COUNT > 0) {
-		prepare_aics_inst(param);
+#if defined(CONFIG_BT_MICP_AICS)
+	err = prepare_aics_inst(param);
+	if (err != 0) {
+		BT_DBG("Failed to prepare AICS instances: %d", err);
+
+		return err;
 	}
+#endif /* CONFIG_BT_MICP_AICS */
 
 	mics_svc = (struct bt_gatt_service)BT_GATT_SERVICE(mics_attrs);
 	micp_inst.srv.service_p = &mics_svc;
@@ -173,52 +180,6 @@ int bt_micp_register(struct bt_micp_register_param *param,
 	registered = true;
 
 	return err;
-}
-
-int bt_micp_aics_deactivate(struct bt_micp *micp, struct bt_aics *inst)
-{
-	CHECKIF(micp == NULL) {
-		BT_DBG("NULL micp");
-		return -EINVAL;
-	}
-
-	CHECKIF(inst == NULL) {
-		return -EINVAL;
-	}
-
-	if (micp->client_instance) {
-		BT_DBG("Can only deactivate AICS on a server instance");
-		return -EINVAL;
-	}
-
-	if (CONFIG_BT_MICP_AICS_INSTANCE_COUNT > 0) {
-		return bt_aics_deactivate(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_activate(struct bt_micp *micp, struct bt_aics *inst)
-{
-	CHECKIF(micp == NULL) {
-		BT_DBG("NULL micp");
-		return -EINVAL;
-	}
-
-	CHECKIF(inst == NULL) {
-		return -EINVAL;
-	}
-
-	if (micp->client_instance) {
-		BT_DBG("Can only activate AICS on a server instance");
-		return -EINVAL;
-	}
-
-	if (CONFIG_BT_MICP_AICS_INSTANCE_COUNT > 0) {
-		return bt_aics_activate(inst);
-	}
-
-	return -EOPNOTSUPP;
 }
 
 int bt_micp_mute_disable(struct bt_micp *micp)
@@ -238,30 +199,6 @@ int bt_micp_mute_disable(struct bt_micp *micp)
 
 #endif /* CONFIG_BT_MICP */
 
-static bool valid_aics_inst(struct bt_micp *micp, struct bt_aics *aics)
-{
-	if (micp == NULL) {
-		return false;
-	}
-
-	if (aics == NULL) {
-		return false;
-	}
-
-	if (micp->client_instance) {
-		return false;
-	}
-
-#if defined(CONFIG_BT_MICP)
-	for (int i = 0; i < ARRAY_SIZE(micp_inst.srv.aics_insts); i++) {
-		if (micp_inst.srv.aics_insts[i] == aics) {
-			return true;
-		}
-	}
-#endif /* CONFIG_BT_MICP */
-	return false;
-}
-
 int bt_micp_included_get(struct bt_micp *micp,
 			 struct bt_micp_included *included)
 {
@@ -276,18 +213,20 @@ int bt_micp_included_get(struct bt_micp *micp,
 	}
 
 
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT) && micp->client_instance) {
+	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT) &&
+	    IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
+	    micp->client_instance) {
 		return bt_micp_client_included_get(micp, included);
 	}
 
-#if defined(CONFIG_BT_MICP)
+#if defined(CONFIG_BT_MICP) && defined(CONFIG_BT_MICP_AICS)
 	included->aics_cnt = ARRAY_SIZE(micp_inst.srv.aics_insts);
 	included->aics = micp_inst.srv.aics_insts;
 
 	return 0;
 #else
 	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_MICP */
+#endif /* CONFIG_BT_MICP && CONFIG_BT_MICP_AICS */
 }
 
 int bt_micp_unmute(struct bt_micp *micp)
@@ -352,175 +291,4 @@ int bt_micp_mute_get(struct bt_micp *micp)
 #else
 	return -EOPNOTSUPP;
 #endif /* CONFIG_BT_MICP */
-}
-
-int bt_micp_aics_state_get(struct bt_micp *micp, struct bt_aics *inst)
-{
-	CHECKIF(micp == NULL) {
-		BT_DBG("NULL micp pointer");
-		return -EINVAL;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_state_get(inst);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_state_get(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_gain_setting_get(struct bt_micp *micp, struct bt_aics *inst)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_gain_setting_get(inst);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_gain_setting_get(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_type_get(struct bt_micp *micp, struct bt_aics *inst)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_type_get(inst);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_type_get(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_status_get(struct bt_micp *micp, struct bt_aics *inst)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_status_get(inst);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_status_get(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-int bt_micp_aics_unmute(struct bt_micp *micp, struct bt_aics *inst)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_unmute(inst);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_unmute(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_mute(struct bt_micp *micp, struct bt_aics *inst)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_mute(inst);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_mute(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_manual_gain_set(struct bt_micp *micp, struct bt_aics *inst)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_manual_gain_set(inst);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_manual_gain_set(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_automatic_gain_set(struct bt_micp *micp, struct bt_aics *inst)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_automatic_gain_set(inst);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_automatic_gain_set(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_gain_set(struct bt_micp *micp, struct bt_aics *inst,
-			  int8_t gain)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_gain_set(inst, gain);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_gain_set(inst, gain);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_description_get(struct bt_micp *micp, struct bt_aics *inst)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_description_get(inst);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_description_get(inst);
-	}
-
-	return -EOPNOTSUPP;
-}
-
-int bt_micp_aics_description_set(struct bt_micp *micp, struct bt_aics *inst,
-				 const char *description)
-{
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    bt_micp_client_valid_aics_inst(micp, inst)) {
-		return bt_aics_description_set(inst, description);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS) &&
-	    valid_aics_inst(micp, inst)) {
-		return bt_aics_description_set(inst, description);
-	}
-
-	return -EOPNOTSUPP;
 }

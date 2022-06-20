@@ -237,7 +237,7 @@ static int test_aics(void)
 
 	printk("Getting AICS state\n");
 	g_cb = false;
-	err = bt_micp_aics_state_get(micp, micp_included.aics[0]);
+	err = bt_aics_state_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
@@ -247,7 +247,7 @@ static int test_aics(void)
 
 	printk("Getting AICS gain setting\n");
 	g_cb = false;
-	err = bt_micp_aics_gain_setting_get(micp, micp_included.aics[0]);
+	err = bt_aics_gain_setting_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
@@ -258,7 +258,7 @@ static int test_aics(void)
 	printk("Getting AICS input type\n");
 	expected_input_type = BT_AICS_INPUT_TYPE_DIGITAL;
 	g_cb = false;
-	err = bt_micp_aics_type_get(micp, micp_included.aics[0]);
+	err = bt_aics_type_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS input type (err %d)\n", err);
 		return err;
@@ -269,7 +269,7 @@ static int test_aics(void)
 
 	printk("Getting AICS status\n");
 	g_cb = false;
-	err = bt_micp_aics_status_get(micp, micp_included.aics[0]);
+	err = bt_aics_status_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
@@ -279,7 +279,7 @@ static int test_aics(void)
 
 	printk("Getting AICS description\n");
 	g_cb = false;
-	err = bt_micp_aics_description_get(micp, micp_included.aics[0]);
+	err = bt_aics_description_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
@@ -290,7 +290,7 @@ static int test_aics(void)
 	printk("Setting AICS mute\n");
 	expected_input_mute = BT_AICS_STATE_MUTED;
 	g_write_complete = g_cb = false;
-	err = bt_micp_aics_mute(micp, micp_included.aics[0]);
+	err = bt_aics_mute(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
@@ -302,7 +302,7 @@ static int test_aics(void)
 	printk("Setting AICS unmute\n");
 	expected_input_mute = BT_AICS_STATE_UNMUTED;
 	g_write_complete = g_cb = false;
-	err = bt_micp_aics_unmute(micp, micp_included.aics[0]);
+	err = bt_aics_unmute(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
@@ -314,7 +314,7 @@ static int test_aics(void)
 	printk("Setting AICS auto mode\n");
 	expected_mode = BT_AICS_MODE_AUTO;
 	g_write_complete = g_cb = false;
-	err = bt_micp_aics_automatic_gain_set(micp, micp_included.aics[0]);
+	err = bt_aics_automatic_gain_set(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
@@ -325,7 +325,7 @@ static int test_aics(void)
 	printk("Setting AICS manual mode\n");
 	expected_mode = BT_AICS_MODE_MANUAL;
 	g_write_complete = g_cb = false;
-	err = bt_micp_aics_manual_gain_set(micp, micp_included.aics[0]);
+	err = bt_aics_manual_gain_set(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
@@ -336,7 +336,7 @@ static int test_aics(void)
 	printk("Setting AICS gain\n");
 	expected_gain = g_aics_gain_max - 1;
 	g_write_complete = g_cb = false;
-	err = bt_micp_aics_gain_set(micp, micp_included.aics[0], expected_gain);
+	err = bt_aics_gain_set(micp_included.aics[0], expected_gain);
 	if (err != 0) {
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
@@ -349,7 +349,7 @@ static int test_aics(void)
 		sizeof(expected_aics_desc));
 	expected_aics_desc[sizeof(expected_aics_desc) - 1] = '\0';
 	g_cb = false;
-	err = bt_micp_aics_description_set(micp, micp_included.aics[0],
+	err = bt_aics_description_set(micp_included.aics[0],
 					   expected_aics_desc);
 	if (err != 0) {
 		FAIL("Could not set AICS Description (err %d)\n", err);

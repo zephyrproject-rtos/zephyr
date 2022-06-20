@@ -43,6 +43,11 @@ static void micp_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
 	g_cb = true;
 }
 
+static struct bt_micp_cb micp_cb = {
+	.mute = micp_mute_cb,
+};
+
+#if defined(CONFIG_BT_MICP_AICS)
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
 {
@@ -108,10 +113,6 @@ static void aics_description_cb(struct bt_aics *inst, int err,
 	g_cb = true;
 }
 
-static struct bt_micp_cb micp_cb = {
-	.mute = micp_mute_cb,
-};
-
 static struct bt_aics_cb aics_cb = {
 	.state = aics_state_cb,
 	.gain_setting = aics_gain_setting_cb,
@@ -119,6 +120,7 @@ static struct bt_aics_cb aics_cb = {
 	.status = aics_status_cb,
 	.description = aics_description_cb
 };
+#endif /* CONFIG_BT_MICP_AICS */
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -153,7 +155,7 @@ static int test_aics_server_only(void)
 
 	printk("Deactivating AICS\n");
 	expected_aics_active = false;
-	err = bt_micp_aics_deactivate(micp, micp_included.aics[0]);
+	err = bt_aics_deactivate(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not deactivate AICS (err %d)\n", err);
 		return err;
@@ -163,7 +165,7 @@ static int test_aics_server_only(void)
 
 	printk("Activating AICS\n");
 	expected_aics_active = true;
-	err = bt_micp_aics_activate(micp, micp_included.aics[0]);
+	err = bt_aics_activate(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not activate AICS (err %d)\n", err);
 		return err;
@@ -173,7 +175,7 @@ static int test_aics_server_only(void)
 
 	printk("Getting AICS state\n");
 	g_cb = false;
-	err = bt_micp_aics_state_get(micp, micp_included.aics[0]);
+	err = bt_aics_state_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
@@ -183,7 +185,7 @@ static int test_aics_server_only(void)
 
 	printk("Getting AICS gain setting\n");
 	g_cb = false;
-	err = bt_micp_aics_gain_setting_get(micp, micp_included.aics[0]);
+	err = bt_aics_gain_setting_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
@@ -194,7 +196,7 @@ static int test_aics_server_only(void)
 	printk("Getting AICS input type\n");
 	g_cb = false;
 	expected_input_type = BT_AICS_INPUT_TYPE_DIGITAL;
-	err = bt_micp_aics_type_get(micp, micp_included.aics[0]);
+	err = bt_aics_type_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS input type (err %d)\n", err);
 		return err;
@@ -205,7 +207,7 @@ static int test_aics_server_only(void)
 
 	printk("Getting AICS status\n");
 	g_cb = false;
-	err = bt_micp_aics_status_get(micp, micp_included.aics[0]);
+	err = bt_aics_status_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
@@ -215,7 +217,7 @@ static int test_aics_server_only(void)
 
 	printk("Getting AICS description\n");
 	g_cb = false;
-	err = bt_micp_aics_description_get(micp, micp_included.aics[0]);
+	err = bt_aics_description_get(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
@@ -226,7 +228,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS mute\n");
 	g_cb = false;
 	expected_input_mute = BT_AICS_STATE_MUTED;
-	err = bt_micp_aics_mute(micp, micp_included.aics[0]);
+	err = bt_aics_mute(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
@@ -237,7 +239,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS unmute\n");
 	g_cb = false;
 	expected_input_mute = BT_AICS_STATE_UNMUTED;
-	err = bt_micp_aics_unmute(micp, micp_included.aics[0]);
+	err = bt_aics_unmute(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
@@ -248,7 +250,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS auto mode\n");
 	g_cb = false;
 	expected_mode = BT_AICS_MODE_AUTO;
-	err = bt_micp_aics_automatic_gain_set(micp, micp_included.aics[0]);
+	err = bt_aics_automatic_gain_set(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
@@ -259,7 +261,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS manual mode\n");
 	g_cb = false;
 	expected_mode = BT_AICS_MODE_MANUAL;
-	err = bt_micp_aics_manual_gain_set(micp, micp_included.aics[0]);
+	err = bt_aics_manual_gain_set(micp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
@@ -270,7 +272,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS gain\n");
 	g_cb = false;
 	expected_gain = g_aics_gain_max - 1;
-	err = bt_micp_aics_gain_set(micp, micp_included.aics[0], expected_gain);
+	err = bt_aics_gain_set(micp_included.aics[0], expected_gain);
 	if (err != 0) {
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
@@ -283,7 +285,7 @@ static int test_aics_server_only(void)
 	strncpy(expected_aics_desc, "New Input Description",
 		sizeof(expected_aics_desc));
 	expected_aics_desc[sizeof(expected_aics_desc) - 1] = '\0';
-	err = bt_micp_aics_description_set(micp, micp_included.aics[0], expected_aics_desc);
+	err = bt_aics_description_set(micp_included.aics[0], expected_aics_desc);
 	if (err != 0) {
 		FAIL("Could not set AICS Description (err %d)\n", err);
 		return err;
@@ -299,7 +301,6 @@ static void test_server_only(void)
 {
 	int err;
 	struct bt_micp_register_param micp_param;
-	char input_desc[CONFIG_BT_MICP_AICS_INSTANCE_COUNT][16];
 	uint8_t expected_mute;
 
 	err = bt_enable(NULL);
@@ -311,6 +312,9 @@ static void test_server_only(void)
 	printk("Bluetooth initialized\n");
 
 	(void)memset(&micp_param, 0, sizeof(micp_param));
+
+#if defined(CONFIG_BT_MICP_AICS)
+	char input_desc[CONFIG_BT_MICP_AICS_INSTANCE_COUNT][16];
 
 	for (int i = 0; i < ARRAY_SIZE(micp_param.aics_param); i++) {
 		micp_param.aics_param[i].desc_writable = true;
@@ -324,6 +328,8 @@ static void test_server_only(void)
 		micp_param.aics_param[i].max_gain = 100;
 		micp_param.aics_param[i].cb = &aics_cb;
 	}
+#endif /* CONFIG_BT_MICP_AICS */
+
 	micp_param.cb = &micp_cb;
 
 	err = bt_micp_register(&micp_param, &micp);
@@ -332,10 +338,12 @@ static void test_server_only(void)
 		return;
 	}
 
-	err = bt_micp_included_get(micp, &micp_included);
-	if (err != 0) {
-		FAIL("MICP get failed (err %d)\n", err);
-		return;
+	if (IS_ENABLED(CONFIG_BT_MICP_AICS)) {
+		err = bt_micp_included_get(micp, &micp_included);
+		if (err != 0) {
+			FAIL("MICP get failed (err %d)\n", err);
+			return;
+		}
 	}
 
 	printk("MICP initialized\n");
@@ -393,7 +401,6 @@ static void test_main(void)
 {
 	int err;
 	struct bt_micp_register_param micp_param;
-	char input_desc[CONFIG_BT_MICP_AICS_INSTANCE_COUNT][16];
 
 	err = bt_enable(NULL);
 	if (err != 0) {
@@ -404,6 +411,9 @@ static void test_main(void)
 	printk("Bluetooth initialized\n");
 
 	(void)memset(&micp_param, 0, sizeof(micp_param));
+
+#if defined(CONFIG_BT_MICP_AICS)
+	char input_desc[CONFIG_BT_MICP_AICS_INSTANCE_COUNT][16];
 
 	for (int i = 0; i < ARRAY_SIZE(micp_param.aics_param); i++) {
 		micp_param.aics_param[i].desc_writable = true;
@@ -418,6 +428,8 @@ static void test_main(void)
 		micp_param.aics_param[i].max_gain = 100;
 		micp_param.aics_param[i].cb = &aics_cb;
 	}
+#endif /* CONFIG_BT_MICP_AICS */
+
 	micp_param.cb = &micp_cb;
 
 	err = bt_micp_register(&micp_param, &micp);
@@ -426,10 +438,12 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_micp_included_get(micp, &micp_included);
-	if (err != 0) {
-		FAIL("MICP get failed (err %d)\n", err);
-		return;
+	if (IS_ENABLED(CONFIG_BT_MICP_AICS)) {
+		err = bt_micp_included_get(micp, &micp_included);
+		if (err != 0) {
+			FAIL("MICP get failed (err %d)\n", err);
+			return;
+		}
 	}
 
 	printk("MICP initialized\n");
