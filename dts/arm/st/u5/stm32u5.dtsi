@@ -360,7 +360,8 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x420d1400 0x400>;
 			interrupts = <76 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000010>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000010>,
+				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -371,7 +372,8 @@
 			compatible = "st,stm32-ospi";
 			reg = <0x420d2400 0x400>;
 			interrupts = <120 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2_2 0x00000100>,
+				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
