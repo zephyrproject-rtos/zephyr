@@ -65,7 +65,11 @@
 	defined(CONFIG_BOARD_UBX_EVKNINAB4_NRF52833) || \
 	defined(CONFIG_BOARD_WE_PROTEUS2EV_NRF52832) || \
 	defined(CONFIG_BOARD_WE_PROTEUS3EV_NRF52840) || \
-	defined(CONFIG_BOARD_BT610)
+	defined(CONFIG_BOARD_BT610) || \
+	defined(CONFIG_BOARD_PAN1780_EVB) || \
+	defined(CONFIG_BOARD_PAN1781_EVB) || \
+	defined(CONFIG_BOARD_PAN1782_EVB) || \
+	defined(CONFIG_BOARD_PAN1770_EVB)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, nordic_nrf_saadc))
