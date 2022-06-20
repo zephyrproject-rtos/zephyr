@@ -17,7 +17,6 @@
 #include "bt.h"
 
 static struct bt_micp *micp;
-static struct bt_micp_included micp_included;
 
 static void micp_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
 {
@@ -27,6 +26,13 @@ static void micp_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
 		shell_print(ctx_shell, "Mute value %u", mute);
 	}
 }
+
+static struct bt_micp_cb micp_cbs = {
+	.mute = micp_mute_cb,
+};
+
+#if defined(CONFIG_BT_MICP_AICS)
+static struct bt_micp_included micp_included;
 
 static void micp_aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			       uint8_t mute, uint8_t mode)
@@ -89,10 +95,6 @@ static void micp_aics_description_cb(struct bt_aics *inst, int err,
 	}
 }
 
-static struct bt_micp_cb micp_cbs = {
-	.mute = micp_mute_cb,
-};
-
 static struct bt_aics_cb aics_cb = {
 	.state = micp_aics_state_cb,
 	.gain_setting = micp_aics_gain_setting_cb,
@@ -100,18 +102,21 @@ static struct bt_aics_cb aics_cb = {
 	.status = micp_aics_status_cb,
 	.description = micp_aics_description_cb,
 };
+#endif /* CONFIG_BT_MICP_AICS */
 
 static int cmd_micp_param(const struct shell *sh, size_t argc, char **argv)
 {
 	int result;
 	struct bt_micp_register_param micp_param;
-	char input_desc[CONFIG_BT_MICP_AICS_INSTANCE_COUNT][16];
 
 	if (ctx_shell == NULL) {
 		ctx_shell = sh;
 	}
 
 	(void)memset(&micp_param, 0, sizeof(micp_param));
+
+#if defined(CONFIG_BT_MICP_AICS)
+	char input_desc[CONFIG_BT_MICP_AICS_INSTANCE_COUNT][16];
 
 	for (int i = 0; i < ARRAY_SIZE(micp_param.aics_param); i++) {
 		micp_param.aics_param[i].desc_writable = true;
@@ -126,6 +131,7 @@ static int cmd_micp_param(const struct shell *sh, size_t argc, char **argv)
 		micp_param.aics_param[i].max_gain = 100;
 		micp_param.aics_param[i].cb = &aics_cb;
 	}
+#endif /* CONFIG_BT_MICP_AICS */
 
 	micp_param.cb = &micp_cbs;
 
@@ -137,10 +143,12 @@ static int cmd_micp_param(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "MICP initialized: %d", result);
 
+#if defined(CONFIG_BT_MICP_AICS)
 	result = bt_micp_included_get(NULL, &micp_included);
 	if (result != 0) {
 		shell_error(sh, "MICP get failed: %d", result);
 	}
+#endif /* CONFIG_BT_MICP_AICS */
 
 	return result;
 }
@@ -190,6 +198,7 @@ static int cmd_micp_mute_disable(const struct shell *sh, size_t argc,
 	return result;
 }
 
+#if defined(CONFIG_BT_MICP_AICS)
 static int cmd_micp_aics_deactivate(const struct shell *sh, size_t argc,
 				    char **argv)
 {
@@ -202,7 +211,7 @@ static int cmd_micp_aics_deactivate(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_deactivate(micp, micp_included.aics[index]);
+	result = bt_aics_deactivate(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -222,7 +231,7 @@ static int cmd_micp_aics_activate(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_activate(micp, micp_included.aics[index]);
+	result = bt_aics_activate(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -242,7 +251,7 @@ static int cmd_micp_aics_input_state_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_state_get(NULL, micp_included.aics[index]);
+	result = bt_aics_state_get(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -262,7 +271,7 @@ static int cmd_micp_aics_gain_setting_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_gain_setting_get(NULL, micp_included.aics[index]);
+	result = bt_aics_gain_setting_get(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -282,7 +291,7 @@ static int cmd_micp_aics_input_type_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_type_get(NULL, micp_included.aics[index]);
+	result = bt_aics_type_get(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -302,7 +311,7 @@ static int cmd_micp_aics_input_status_get(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_status_get(NULL, micp_included.aics[index]);
+	result = bt_aics_status_get(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -322,7 +331,7 @@ static int cmd_micp_aics_input_unmute(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_unmute(NULL, micp_included.aics[index]);
+	result = bt_aics_unmute(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -342,7 +351,7 @@ static int cmd_micp_aics_input_mute(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_mute(NULL, micp_included.aics[index]);
+	result = bt_aics_mute(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -362,7 +371,7 @@ static int cmd_micp_aics_manual_input_gain_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_manual_gain_set(NULL, micp_included.aics[index]);
+	result = bt_aics_manual_gain_set(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -382,7 +391,7 @@ static int cmd_micp_aics_automatic_input_gain_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_automatic_gain_set(NULL, micp_included.aics[index]);
+	result = bt_aics_automatic_gain_set(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -409,7 +418,7 @@ static int cmd_micp_aics_gain_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_gain_set(NULL, micp_included.aics[index], gain);
+	result = bt_aics_gain_set(micp_included.aics[index], gain);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -429,7 +438,7 @@ static int cmd_micp_aics_input_description_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_description_get(NULL, micp_included.aics[index]);
+	result = bt_aics_description_get(micp_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -450,7 +459,7 @@ static int cmd_micp_aics_input_description_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	result = bt_micp_aics_description_set(NULL, micp_included.aics[index],
+	result = bt_aics_description_set(micp_included.aics[index],
 					      description);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
@@ -458,6 +467,7 @@ static int cmd_micp_aics_input_description_set(const struct shell *sh,
 
 	return result;
 }
+#endif /* CONFIG_BT_MICP_AICS */
 
 static int cmd_micp(const struct shell *sh, size_t argc, char **argv)
 {
@@ -487,6 +497,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(micp_cmds,
 	SHELL_CMD_ARG(mute_disable, NULL,
 		      "Disable the MICP mute",
 		      cmd_micp_mute_disable, 1, 0),
+#if defined(CONFIG_BT_MICP_AICS)
 	SHELL_CMD_ARG(aics_deactivate, NULL,
 		      "Deactivates a AICS instance <inst_index>",
 		      cmd_micp_aics_deactivate, 2, 0),
@@ -531,6 +542,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(micp_cmds,
 		      "Set the input description of a AICS instance "
 		      "<inst_index> <description>",
 		      cmd_micp_aics_input_description_set, 3, 0),
+#endif /* CONFIG_BT_MICP_AICS */
 	SHELL_SUBCMD_SET_END
 );
 

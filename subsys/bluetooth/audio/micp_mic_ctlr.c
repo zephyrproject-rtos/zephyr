@@ -32,29 +32,6 @@ static struct bt_micp_cb *micp_client_cb;
 static struct bt_micp micp_insts[CONFIG_BT_MAX_CONN];
 static struct bt_uuid *mics_uuid = BT_UUID_MICS;
 
-bool bt_micp_client_valid_aics_inst(struct bt_micp *micp, struct bt_aics *aics)
-{
-	if (micp == NULL) {
-		return false;
-	}
-
-	if (aics == NULL) {
-		return false;
-	}
-
-	if (!micp->client_instance) {
-		return false;
-	}
-
-	for (int i = 0; i < ARRAY_SIZE(micp->cli.aics); i++) {
-		if (micp->cli.aics[i] == aics) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 static uint8_t mute_notify_handler(struct bt_conn *conn,
 				   struct bt_gatt_subscribe_params *params,
 				   const void *data, uint16_t length)
@@ -398,7 +375,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 int bt_micp_discover(struct bt_conn *conn, struct bt_micp **micp)
 {
-	static bool initialized;
 	struct bt_micp *micp_inst;
 	int err;
 
@@ -423,21 +399,24 @@ int bt_micp_discover(struct bt_conn *conn, struct bt_micp **micp)
 		     sizeof(micp_inst->cli.discover_params));
 	micp_client_reset(micp_inst);
 
-	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) &&
-	    CONFIG_BT_MICP_CLIENT_MAX_AICS_INST > 0) {
+#if defined(CONFIG_BT_MICP_CLIENT_AICS)
+	static bool initialized;
+
+	if (!initialized) {
 		for (int i = 0; i < ARRAY_SIZE(micp_inst->cli.aics); i++) {
-			if (!initialized) {
-				micp_inst->cli.aics[i] = bt_aics_client_free_instance_get();
+			micp_inst->cli.aics[i] = bt_aics_client_free_instance_get();
 
-				if (micp_inst->cli.aics[i] == NULL) {
-					return -ENOMEM;
-				}
-
-				bt_aics_client_cb_register(micp_inst->cli.aics[i],
-							   &micp_client_cb->aics_cb);
+			if (micp_inst->cli.aics[i] == NULL) {
+				return -ENOMEM;
 			}
+
+			bt_aics_client_cb_register(micp_inst->cli.aics[i],
+						   &micp_client_cb->aics_cb);
 		}
 	}
+
+	initialized = true;
+#endif /* CONFIG_BT_MICP_CLIENT_AICS */
 
 	micp_inst->cli.conn = bt_conn_ref(conn);
 	micp_inst->client_instance = true;
@@ -446,8 +425,6 @@ int bt_micp_discover(struct bt_conn *conn, struct bt_micp **micp)
 	micp_inst->cli.discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	micp_inst->cli.discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	micp_inst->cli.discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
-
-	initialized = true;
 
 	err = bt_gatt_discover(conn, &micp_inst->cli.discover_params);
 	if (err == 0) {
