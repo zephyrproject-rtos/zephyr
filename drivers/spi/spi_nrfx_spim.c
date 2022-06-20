@@ -507,8 +507,9 @@ static int spim_nrfx_pm_action(const struct device *dev,
 #define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)				\
 	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,				\
 		(.dcx_pin = NRFX_SPIM_PIN_NOT_USED,			\
-		 IF_ENABLED(SPIM##idx##_FEATURE_RXDELAY_PRESENT,	\
-			(.rx_delay = CONFIG_SPI_##idx##_NRF_RX_DELAY,))	\
+		 COND_CODE_1(SPIM_PROP(idx, rx_delay_supported),	\
+			     (.rx_delay = SPIM_PROP(idx, rx_delay),),	\
+			     ())					\
 		))
 
 #define SPI_NRFX_SPIM_PIN_CFG(idx)					\

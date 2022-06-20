@@ -511,6 +511,8 @@
 			reg = <0x4002f000 0x1000>;
 			interrupts = <47 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(32)>;
+			rx-delay-supported;
+			rx-delay = <2>;
 			status = "disabled";
 			label = "SPI_3";
 		};

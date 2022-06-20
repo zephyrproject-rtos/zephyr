@@ -320,7 +320,6 @@ static int spi_nrfx_pm_action(const struct device *dev,
  * Current factors requiring use of DT_NODELABEL:
  *
  * - NRFX_SPI_INSTANCE() requires an SoC instance number
- * - soc-instance-numbered kconfig enables
  */
 
 #define SPI(idx)			DT_NODELABEL(spi##idx)
