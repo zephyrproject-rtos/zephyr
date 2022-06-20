@@ -418,6 +418,9 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 			return -EINVAL;
 		}
 
+		/* remember the last reg time */
+		client.last_update = k_uptime_get();
+
 		memcpy(client.server_ep, options[1].value,
 		       options[1].len);
 		client.server_ep[options[1].len] = '\0';
@@ -459,6 +462,8 @@ static int do_update_reply_cb(const struct coap_packet *response,
 	/* If NOT_FOUND just continue on */
 	if ((code == COAP_RESPONSE_CODE_CHANGED) ||
 	    (code == COAP_RESPONSE_CODE_CREATED)) {
+		/* remember the last reg time */
+		client.last_update = k_uptime_get();
 		set_sm_state(ENGINE_REGISTRATION_DONE);
 		LOG_INF("Update Done");
 		return 0;
@@ -622,6 +627,7 @@ static int sm_do_init(void)
 	client.trigger_update = false;
 	client.lifetime = 0U;
 	client.retries = 0U;
+	client.last_update = 0U;
 
 	/* Do bootstrap or registration */
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
@@ -774,9 +780,6 @@ static int sm_send_registration(bool send_obj_support_data,
 		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
-
-	/* remember the last reg time */
-	client.last_update = k_uptime_get();
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_POST;
