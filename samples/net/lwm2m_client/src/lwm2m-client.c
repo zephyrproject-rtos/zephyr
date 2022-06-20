@@ -487,20 +487,20 @@ static void observe_cb(enum lwm2m_observe_event event,
 	switch (event) {
 
 	case LWM2M_OBSERVE_EVENT_OBSERVER_ADDED:
-		LOG_INF("Observer added for %s", lwm2m_path_log_strdup(buf, path));
+		LOG_INF("Observer added for %s", lwm2m_path_log_buf(buf, path));
 		break;
 
 	case LWM2M_OBSERVE_EVENT_OBSERVER_REMOVED:
-		LOG_INF("Observer removed for %s", lwm2m_path_log_strdup(buf, path));
+		LOG_INF("Observer removed for %s", lwm2m_path_log_buf(buf, path));
 		break;
 
 	case LWM2M_OBSERVE_EVENT_NOTIFY_ACK:
-		LOG_INF("Notify acknowledged for %s", lwm2m_path_log_strdup(buf, path));
+		LOG_INF("Notify acknowledged for %s", lwm2m_path_log_buf(buf, path));
 		break;
 
 	case LWM2M_OBSERVE_EVENT_NOTIFY_TIMEOUT:
 		LOG_INF("Notify timeout for %s, trying registration update",
-			lwm2m_path_log_strdup(buf, path));
+			lwm2m_path_log_buf(buf, path));
 
 		lwm2m_rd_client_update();
 		break;

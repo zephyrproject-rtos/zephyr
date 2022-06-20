@@ -69,7 +69,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 
 	LOG_DBG("link %d, ip_proto %s, addr %s", sock->link_id,
 		esp_socket_ip_proto(sock) == IPPROTO_TCP ? "TCP" : "UDP",
-		log_strdup(addr_str));
+		addr_str);
 
 	ret = esp_cmd_send(dev, NULL, 0, connect_msg, ESP_CMD_TIMEOUT);
 	if (ret == 0) {
@@ -430,7 +430,7 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 	if (endptr == &cmd_buf[len] ||
 	    (*endptr == 0 && match_len >= CIPRECVDATA_CMD_MAX_LEN) ||
 	    *data_len > CIPRECVDATA_MAX_LEN) {
-		LOG_ERR("Invalid cmd: %s", log_strdup(cmd_buf));
+		LOG_ERR("Invalid cmd: %s", cmd_buf);
 		return -EBADMSG;
 	} else if (*endptr == 0) {
 		return -EAGAIN;

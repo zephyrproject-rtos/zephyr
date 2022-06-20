@@ -125,9 +125,9 @@ enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 	}
 
 	NET_DBG("Conflict detected from %s for %s, state %d",
-		log_strdup(net_sprint_ll_addr((uint8_t *)&arp_hdr->src_hwaddr,
-					      arp_hdr->hwlen)),
-		log_strdup(net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr)),
+		net_sprint_ll_addr((uint8_t *)&arp_hdr->src_hwaddr,
+					      arp_hdr->hwlen),
+		net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr),
 		cfg->ipv4auto.state);
 
 	cfg->ipv4auto.conflict_cnt++;

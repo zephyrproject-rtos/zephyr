@@ -297,7 +297,7 @@ end:
 
 static void tcp_send(struct net_pkt *pkt)
 {
-	NET_DBG("%s", log_strdup(tcp_th(pkt)));
+	NET_DBG("%s", tcp_th(pkt));
 
 	tcp_pkt_ref(pkt);
 
@@ -471,7 +471,7 @@ static bool tcp_send_process_no_lock(struct tcp *conn)
 		goto out;
 	}
 
-	NET_DBG("%s %s", log_strdup(tcp_th(pkt)), conn->in_retransmission ?
+	NET_DBG("%s %s", tcp_th(pkt), conn->in_retransmission ?
 		"in_retransmission" : "");
 
 	if (conn->in_retransmission) {
@@ -553,7 +553,7 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 		struct net_pkt *pkt = tcp_slist(conn, &conn->send_queue, get,
 						struct net_pkt, next);
 		if (pkt) {
-			NET_DBG("%s", log_strdup(tcp_th(pkt)));
+			NET_DBG("%s", tcp_th(pkt));
 			tcp_pkt_unref(pkt);
 		}
 	}
@@ -991,7 +991,7 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		goto out;
 	}
 
-	NET_DBG("%s", log_strdup(tcp_th(pkt)));
+	NET_DBG("%s", tcp_th(pkt));
 
 	if (tcp_send_cb) {
 		ret = tcp_send_cb(pkt);
@@ -1267,7 +1267,7 @@ static void tcp_timewait_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, timewait_timer);
 
-	NET_DBG("conn: %p %s", conn, log_strdup(tcp_conn_state(conn, NULL)));
+	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 
 	/* Extra unref from net_tcp_put() */
 	net_context_unref(conn->context);
@@ -1276,7 +1276,7 @@ static void tcp_timewait_timeout(struct k_work *work)
 static void tcp_establish_timeout(struct tcp *conn)
 {
 	NET_DBG("Did not receive %s in %dms", "ACK", ACK_TIMEOUT_MS);
-	NET_DBG("conn: %p %s", conn, log_strdup(tcp_conn_state(conn, NULL)));
+	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 
 	(void)tcp_conn_unref(conn, -ETIMEDOUT);
 }
@@ -1292,7 +1292,7 @@ static void tcp_fin_timeout(struct k_work *work)
 	}
 
 	NET_DBG("Did not receive %s in %dms", "FIN", FIN_TIMEOUT_MS);
-	NET_DBG("conn: %p %s", conn, log_strdup(tcp_conn_state(conn, NULL)));
+	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 
 	/* Extra unref from net_tcp_put() */
 	net_context_unref(conn->context);
@@ -1649,10 +1649,10 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	}
 
 	NET_DBG("conn: src: %s, dst: %s",
-		log_strdup(net_sprint_addr(conn->src.sa.sa_family,
-				(const void *)&conn->src.sin.sin_addr)),
-		log_strdup(net_sprint_addr(conn->dst.sa.sa_family,
-				(const void *)&conn->dst.sin.sin_addr)));
+		net_sprint_addr(conn->src.sa.sa_family,
+				(const void *)&conn->src.sin.sin_addr),
+		net_sprint_addr(conn->dst.sa.sa_family,
+				(const void *)&conn->dst.sin.sin_addr));
 
 	memcpy(&context->remote, &conn->dst, sizeof(context->remote));
 	context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
@@ -1689,12 +1689,10 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	}
 
 	NET_DBG("context: local: %s, remote: %s",
-		log_strdup(net_sprint_addr(
-		      local_addr.sa_family,
-		      (const void *)&net_sin(&local_addr)->sin_addr)),
-		log_strdup(net_sprint_addr(
-		      context->remote.sa_family,
-		      (const void *)&net_sin(&context->remote)->sin_addr)));
+		net_sprint_addr(local_addr.sa_family,
+				(const void *)&net_sin(&local_addr)->sin_addr),
+		net_sprint_addr(context->remote.sa_family,
+				(const void *)&net_sin(&context->remote)->sin_addr));
 
 	ret = net_conn_register(IPPROTO_TCP, af,
 				&context->remote, &local_addr,
@@ -1893,7 +1891,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
-	NET_DBG("%s", log_strdup(tcp_conn_state(conn, pkt)));
+	NET_DBG("%s", tcp_conn_state(conn, pkt));
 
 	if (th && th_off(th) < 5) {
 		tcp_out(conn, RST);
@@ -2300,10 +2298,10 @@ int net_tcp_put(struct net_context *context)
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
-	NET_DBG("%s", conn ? log_strdup(tcp_conn_state(conn, NULL)) : "");
+	NET_DBG("%s", conn ? tcp_conn_state(conn, NULL) : "");
 	NET_DBG("context %p %s", context,
-		log_strdup(({ const char *state = net_context_state(context);
-					state ? state : "<unknown>"; })));
+		({ const char *state = net_context_state(context);
+					state ? state : "<unknown>"; }));
 
 	if (conn && conn->state == TCP_ESTABLISHED) {
 		/* Send all remaining data if possible. */
@@ -2526,12 +2524,10 @@ int net_tcp_connect(struct net_context *context,
 	int ret = 0;
 
 	NET_DBG("context: %p, local: %s, remote: %s", context,
-		log_strdup(net_sprint_addr(
-			    local_addr->sa_family,
-			    (const void *)&net_sin(local_addr)->sin_addr)),
-		log_strdup(net_sprint_addr(
-			    remote_addr->sa_family,
-			    (const void *)&net_sin(remote_addr)->sin_addr)));
+		net_sprint_addr(local_addr->sa_family,
+				(const void *)&net_sin(local_addr)->sin_addr),
+		net_sprint_addr(remote_addr->sa_family,
+				(const void *)&net_sin(remote_addr)->sin_addr));
 
 	conn = context->tcp;
 	conn->iface = net_context_get_iface(context);
@@ -2600,10 +2596,10 @@ int net_tcp_connect(struct net_context *context,
 	}
 
 	NET_DBG("conn: %p src: %s, dst: %s", conn,
-		log_strdup(net_sprint_addr(conn->src.sa.sa_family,
-				(const void *)&conn->src.sin.sin_addr)),
-		log_strdup(net_sprint_addr(conn->dst.sa.sa_family,
-				(const void *)&conn->dst.sin.sin_addr)));
+		net_sprint_addr(conn->src.sa.sa_family,
+				(const void *)&conn->src.sin.sin_addr),
+		net_sprint_addr(conn->dst.sa.sa_family,
+				(const void *)&conn->dst.sin.sin_addr));
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 

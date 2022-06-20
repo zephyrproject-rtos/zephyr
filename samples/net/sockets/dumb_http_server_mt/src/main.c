@@ -321,7 +321,7 @@ static int process_tcp(int *sock, int *accepted)
 
 		LOG_DBG("[%d] Connection #%d from %s",
 			client, ++counter,
-			log_strdup(addr_str));
+			addr_str);
 	}
 
 	return 0;

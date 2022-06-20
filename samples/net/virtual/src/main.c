@@ -374,18 +374,15 @@ void main(void)
 
 	LOG_INF("My example tunnel interface %d (%s / %p)",
 		net_if_get_by_iface(ud.my_iface),
-		log_strdup(net_virtual_get_name(ud.my_iface, buf,
-						sizeof(buf))),
+		net_virtual_get_name(ud.my_iface, buf, sizeof(buf)),
 		ud.my_iface);
 	LOG_INF("Tunnel interface %d (%s / %p)",
 		net_if_get_by_iface(ud.ip_tunnel_1),
-		log_strdup(net_virtual_get_name(ud.ip_tunnel_1, buf,
-						sizeof(buf))),
+		net_virtual_get_name(ud.ip_tunnel_1, buf, sizeof(buf)),
 		ud.ip_tunnel_1);
 	LOG_INF("Tunnel interface %d (%s / %p)",
 		net_if_get_by_iface(ud.ip_tunnel_2),
-		log_strdup(net_virtual_get_name(ud.ip_tunnel_2, buf,
-						sizeof(buf))),
+		net_virtual_get_name(ud.ip_tunnel_2, buf, sizeof(buf)),
 		ud.ip_tunnel_2);
 	LOG_INF("IPIP interface %d (%p)",
 		net_if_get_by_iface(ud.ipip), ud.ipip);

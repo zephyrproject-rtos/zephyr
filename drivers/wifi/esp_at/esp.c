@@ -333,12 +333,12 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 		}
 
 		servers[i] = str_unquote(servers[i]);
-		LOG_DBG("DNS[%zu]: %s", i, log_strdup(servers[i]));
+		LOG_DBG("DNS[%zu]: %s", i, servers[i]);
 
 		err = net_addr_pton(AF_INET, servers[i], &addrs[i].sin_addr);
 		if (err) {
 			LOG_ERR("Invalid DNS address: %s",
-				log_strdup(servers[i]));
+				servers[i]);
 			addrs[i].sin_addr.s_addr = 0;
 			break;
 		}
@@ -431,7 +431,7 @@ MODEM_CMD_DEFINE(on_cmd_cipsta)
 	} else if (!strcmp(argv[0], "netmask")) {
 		net_addr_pton(AF_INET, ip, &dev->nm);
 	} else {
-		LOG_WRN("Unknown IP type %s", log_strdup(argv[0]));
+		LOG_WRN("Unknown IP type %s", argv[0]);
 	}
 
 	return 0;
@@ -573,7 +573,7 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 
 	ipd_buf[match_len] = 0;
 	if (ipd_buf[len] != ',' || ipd_buf[len + 2] != ',') {
-		LOG_ERR("Invalid IPD: %s", log_strdup(ipd_buf));
+		LOG_ERR("Invalid IPD: %s", ipd_buf);
 		return -EBADMSG;
 	}
 
@@ -583,7 +583,7 @@ static int cmd_ipd_parse_hdr(struct net_buf *buf, uint16_t len,
 
 	if (endptr == &ipd_buf[len + 3] ||
 	    (*endptr == 0 && match_len >= MAX_IPD_LEN)) {
-		LOG_ERR("Invalid IPD len: %s", log_strdup(ipd_buf));
+		LOG_ERR("Invalid IPD len: %s", ipd_buf);
 		return -EBADMSG;
 	} else if (*endptr == 0) {
 		return -EAGAIN;

@@ -90,7 +90,7 @@ uint8_t vocs_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 
 		memcpy(desc, data, length);
 		desc[length] = '\0';
-		BT_DBG("Inst %p: Output description: %s", inst, log_strdup(desc));
+		BT_DBG("Inst %p: Output description: %s", inst, desc);
 		if (inst->cli.cb && inst->cli.cb->description) {
 			inst->cli.cb->description(inst, 0, desc);
 		}
@@ -324,7 +324,7 @@ static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
 			memcpy(desc, data, length);
 		}
 		desc[length] = '\0';
-		BT_DBG("Output description: %s", log_strdup(desc));
+		BT_DBG("Output description: %s", desc);
 	}
 
 	if (inst->cli.cb && inst->cli.cb->description) {

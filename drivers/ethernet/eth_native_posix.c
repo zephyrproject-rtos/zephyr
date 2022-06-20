@@ -473,7 +473,7 @@ static void eth_iface_init(struct net_if *iface)
 		ctx->if_name = ETH_NATIVE_POSIX_DRV_NAME;
 	}
 
-	LOG_DBG("Interface %p using \"%s\"", iface, log_strdup(ctx->if_name));
+	LOG_DBG("Interface %p using \"%s\"", iface, ctx->if_name);
 
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);

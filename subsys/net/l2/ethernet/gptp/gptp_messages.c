@@ -46,7 +46,7 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 				ann->root_system_id.clk_quality.clock_class, \
 				ann->root_system_id.clk_quality.clock_accuracy,\
 				ann->root_system_id.grand_master_prio2,	\
-				log_strdup(output));			\
+				output);			\
 		} else {						\
 			NET_DBG("Sending %s seq %d pkt %p",		\
 				msg,					\

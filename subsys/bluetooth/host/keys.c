@@ -302,7 +302,7 @@ void bt_keys_clear(struct bt_keys *keys)
 					       &keys->addr, NULL);
 		}
 
-		BT_DBG("Deleting key %s", log_strdup(key));
+		BT_DBG("Deleting key %s", key);
 		settings_delete(key);
 	}
 
@@ -333,7 +333,7 @@ int bt_keys_store(struct bt_keys *keys)
 	}
 
 	BT_DBG("Stored keys for %s (%s)", bt_addr_le_str(&keys->addr),
-	       log_strdup(key));
+	       key);
 
 	return 0;
 }
@@ -360,7 +360,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -EINVAL;
 	}
 
-	BT_DBG("name %s val %s", log_strdup(name),
+	BT_DBG("name %s val %s", name,
 	       (len) ? bt_hex(val, sizeof(val)) : "(null)");
 
 	err = bt_settings_decode_key(name, &addr);

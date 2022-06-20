@@ -573,8 +573,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		if (!iface) {
 			NET_ERR("Cannot bind to %s",
-				log_strdup(net_sprint_ipv6_addr(
-						   &addr6->sin6_addr)));
+				net_sprint_ipv6_addr(&addr6->sin6_addr));
 
 			return -EADDRNOTAVAIL;
 		}
@@ -617,7 +616,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			context,
 			net_proto2str(AF_INET6,
 				      net_context_get_ip_proto(context)),
-			log_strdup(net_sprint_ipv6_addr(ptr)),
+			net_sprint_ipv6_addr(ptr),
 			ntohs(addr6->sin6_port),
 			net_if_get_by_iface(iface), iface);
 
@@ -672,8 +671,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		if (!iface) {
 			NET_ERR("Cannot bind to %s",
-				log_strdup(net_sprint_ipv4_addr(
-						   &addr4->sin_addr)));
+				net_sprint_ipv4_addr(&addr4->sin_addr));
 
 			return -EADDRNOTAVAIL;
 		}
@@ -716,7 +714,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			context,
 			net_proto2str(AF_INET,
 				      net_context_get_ip_proto(context)),
-			log_strdup(net_sprint_ipv4_addr(ptr)),
+			net_sprint_ipv4_addr(ptr),
 			ntohs(addr4->sin_port),
 			net_if_get_by_iface(iface), iface);
 
@@ -773,9 +771,9 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		NET_DBG("Context %p bind to type 0x%04x iface[%d] %p addr %s",
 			context, htons(net_context_get_ip_proto(context)),
 			ll_addr->sll_ifindex, iface,
-			log_strdup(net_sprint_ll_addr(
+			net_sprint_ll_addr(
 				net_sll_ptr(&context->local)->sll_addr,
-				net_sll_ptr(&context->local)->sll_halen)));
+				net_sll_ptr(&context->local)->sll_halen));
 
 		k_mutex_unlock(&context->lock);
 

@@ -218,12 +218,12 @@ int settings_call_set_handler(const char *name,
 
 		if (rc != 0) {
 			LOG_ERR("set-value failure. key: %s error(%d)",
-				log_strdup(name), rc);
+				name, rc);
 			/* Ignoring the error */
 			rc = 0;
 		} else {
 			LOG_DBG("set-value OK. key: %s",
-				log_strdup(name));
+				name);
 		}
 	}
 	return rc;

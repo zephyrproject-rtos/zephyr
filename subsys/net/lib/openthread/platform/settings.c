@@ -54,11 +54,11 @@ static int ot_setting_delete_cb(const char *key, size_t len,
 		       key ? "/" : "", key ? key : "");
 	__ASSERT(ret < sizeof(path), "Setting path buffer too small.");
 
-	LOG_DBG("Removing: %s", log_strdup(path));
+	LOG_DBG("Removing: %s", path);
 
 	ret = settings_delete(path);
 	if (ret != 0) {
-		LOG_ERR("Failed to remove setting %s, ret %d", log_strdup(path),
+		LOG_ERR("Failed to remove setting %s, ret %d", path,
 			ret);
 		__ASSERT_NO_MSG(false);
 	}

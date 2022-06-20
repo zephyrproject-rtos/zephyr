@@ -1287,7 +1287,7 @@ void lwm2m_rd_client_update(void);
  *
  * @return Resulting formatted path string
  */
-char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path);
+char *lwm2m_path_log_buf(char *buf, struct lwm2m_obj_path *path);
 
 /** 
  * @brief LwM2M SEND operation to given path list

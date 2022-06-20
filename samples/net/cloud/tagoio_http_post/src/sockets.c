@@ -67,9 +67,9 @@ int tagoio_connect(struct tagoio_context *ctx)
 
 	LOG_DBG("%s address: %s",
 		(addr->ai_family == AF_INET ? "IPv4" : "IPv6"),
-		log_strdup(net_addr_ntop(addr->ai_family,
-					 &net_sin(addr->ai_addr)->sin_addr,
-					 hr_addr, sizeof(hr_addr))));
+		net_addr_ntop(addr->ai_family,
+			      &net_sin(addr->ai_addr)->sin_addr,
+			      hr_addr, sizeof(hr_addr)));
 
 	ctx->sock = socket(hints.ai_family,
 			   hints.ai_socktype,

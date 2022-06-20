@@ -702,8 +702,7 @@ static void iface_router_notify_deletion(struct net_if_router *router,
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    router->address.family == AF_INET6) {
 		NET_DBG("IPv6 router %s %s",
-			log_strdup(net_sprint_ipv6_addr(
-					   net_if_router_ipv6(router))),
+			net_sprint_ipv6_addr(net_if_router_ipv6(router)),
 			delete_reason);
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_ROUTER_DEL,
@@ -713,8 +712,7 @@ static void iface_router_notify_deletion(struct net_if_router *router,
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   router->address.family == AF_INET) {
 		NET_DBG("IPv4 router %s %s",
-			log_strdup(net_sprint_ipv4_addr(
-					   net_if_router_ipv4(router))),
+			net_sprint_ipv4_addr(net_if_router_ipv4(router)),
 			delete_reason);
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ROUTER_DEL,
@@ -841,8 +839,7 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 
 			NET_DBG("interface %p router %s lifetime %u default %d "
 				"added", iface,
-				log_strdup(net_sprint_ipv6_addr(
-						   (struct in6_addr *)addr)),
+				net_sprint_ipv6_addr((struct in6_addr *)addr),
 				lifetime, routers[i].is_default);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 			memcpy(net_if_router_ipv4(&routers[i]), addr,
@@ -856,8 +853,7 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 
 			NET_DBG("interface %p router %s lifetime %u default %d "
 				"added", iface,
-				log_strdup(net_sprint_ipv4_addr(
-						   (struct in_addr *)addr)),
+				net_sprint_ipv4_addr((struct in_addr *)addr),
 				lifetime, is_default);
 		}
 
@@ -1082,7 +1078,7 @@ static void join_mcast_allnodes(struct net_if *iface)
 	ret = net_ipv6_mld_join(iface, &addr);
 	if (ret < 0 && ret != -EALREADY) {
 		NET_ERR("Cannot join all nodes address %s (%d)",
-			log_strdup(net_sprint_ipv6_addr(&addr)), ret);
+			net_sprint_ipv6_addr(&addr), ret);
 	}
 }
 
@@ -1098,7 +1094,7 @@ static void join_mcast_solicit_node(struct net_if *iface,
 	ret = net_ipv6_mld_join(iface, &addr);
 	if (ret < 0 && ret != -EALREADY) {
 		NET_ERR("Cannot join solicit node address %s (%d)",
-			log_strdup(net_sprint_ipv6_addr(&addr)), ret);
+			net_sprint_ipv6_addr(&addr), ret);
 	}
 }
 
@@ -1172,8 +1168,7 @@ static void dad_timeout(struct k_work *work)
 		sys_slist_remove(&active_dad_timers, NULL, &ifaddr->dad_node);
 
 		NET_DBG("DAD succeeded for %s",
-			log_strdup(net_sprint_ipv6_addr(
-					   &ifaddr->address.in6_addr)));
+			net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 		ifaddr->addr_state = NET_ADDR_PREFERRED;
 
@@ -1213,11 +1208,10 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 	if (net_if_is_up(iface)) {
 		NET_DBG("Interface %p ll addr %s tentative IPv6 addr %s",
 			iface,
-			log_strdup(net_sprint_ll_addr(
+			net_sprint_ll_addr(
 					   net_if_get_link_addr(iface)->addr,
-					   net_if_get_link_addr(iface)->len)),
-			log_strdup(net_sprint_ipv6_addr(
-					   &ifaddr->address.in6_addr)));
+					   net_if_get_link_addr(iface)->len),
+			net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 		ifaddr->dad_count = 1U;
 
@@ -1234,8 +1228,7 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 	} else {
 		NET_DBG("Interface %p is down, starting DAD for %s later.",
 			iface,
-			log_strdup(net_sprint_ipv6_addr(
-					   &ifaddr->address.in6_addr)));
+			net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 	}
 }
 
@@ -1268,7 +1261,7 @@ void net_if_start_dad(struct net_if *iface)
 	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
 	if (!ifaddr) {
 		NET_ERR("Cannot add %s address to interface %p, DAD fails",
-			log_strdup(net_sprint_ipv6_addr(&addr)), iface);
+			net_sprint_ipv6_addr(&addr), iface);
 	}
 
 	/* Start DAD for all the addresses that were added earlier when
@@ -1299,7 +1292,7 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 	ifaddr = net_if_ipv6_addr_lookup(addr, &iface);
 	if (!ifaddr) {
 		NET_ERR("Cannot find %s address in interface %p",
-			log_strdup(net_sprint_ipv6_addr(addr)), iface);
+			net_sprint_ipv6_addr(addr), iface);
 		goto out;
 	}
 
@@ -1555,7 +1548,7 @@ static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(
 static void address_expired(struct net_if_addr *ifaddr)
 {
 	NET_DBG("IPv6 address %s is deprecated",
-		log_strdup(net_sprint_ipv6_addr(&ifaddr->address.in6_addr)));
+		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 	ifaddr->addr_state = NET_ADDR_DEPRECATED;
 
@@ -1626,7 +1619,7 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 	k_mutex_lock(&lock, K_FOREVER);
 
 	NET_DBG("Updating expire time of %s by %u secs",
-		log_strdup(net_sprint_ipv6_addr(&ifaddr->address.in6_addr)),
+		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 		vlifetime);
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -1673,7 +1666,7 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 		ifaddr->is_infinite = false;
 
 		NET_DBG("Expiring %s in %u secs",
-			log_strdup(net_sprint_ipv6_addr(addr)),
+			net_sprint_ipv6_addr(addr),
 			vlifetime);
 
 		net_if_ipv6_addr_update_lifetime(ifaddr, vlifetime);
@@ -1711,7 +1704,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 				 vlifetime);
 
 		NET_DBG("[%d] interface %p address %s type %s added", i,
-			iface, log_strdup(net_sprint_ipv6_addr(addr)),
+			iface, net_sprint_ipv6_addr(addr),
 			net_addr_type2str(addr_type));
 
 		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
@@ -1798,7 +1791,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 		net_if_ipv6_maddr_rm(iface, &maddr);
 
 		NET_DBG("[%d] interface %p address %s type %s removed",
-			i, iface, log_strdup(net_sprint_ipv6_addr(addr)),
+			i, iface, net_sprint_ipv6_addr(addr),
 			net_addr_type2str(ipv6->unicast[i].addr_type));
 
 		/* Using the IPv6 address pointer here can give false
@@ -1910,13 +1903,13 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 
 	if (!net_ipv6_is_addr_mcast(addr)) {
 		NET_DBG("Address %s is not a multicast address.",
-			log_strdup(net_sprint_ipv6_addr(addr)));
+			net_sprint_ipv6_addr(addr));
 		goto out;
 	}
 
 	if (net_if_ipv6_maddr_lookup(addr, &iface)) {
 		NET_WARN("Multicast address %s is is already registered.",
-			log_strdup(net_sprint_ipv6_addr(addr)));
+			net_sprint_ipv6_addr(addr));
 		goto out;
 	}
 
@@ -1930,7 +1923,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		memcpy(&ipv6->mcast[i].address.in6_addr, addr, 16);
 
 		NET_DBG("[%d] interface %p address %s added", i, iface,
-			log_strdup(net_sprint_ipv6_addr(addr)));
+			net_sprint_ipv6_addr(addr));
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV6_MADDR_ADD, iface,
@@ -1973,7 +1966,7 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 		ipv6->mcast[i].is_used = false;
 
 		NET_DBG("[%d] interface %p address %s removed",
-			i, iface, log_strdup(net_sprint_ipv6_addr(addr)));
+			i, iface, net_sprint_ipv6_addr(addr));
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV6_MADDR_DEL, iface,
@@ -2086,7 +2079,7 @@ static void prefix_lifetime_expired(struct net_if_ipv6_prefix *ifprefix)
 	struct net_if_ipv6 *ipv6;
 
 	NET_DBG("Prefix %s/%d expired",
-		log_strdup(net_sprint_ipv6_addr(&ifprefix->prefix)),
+		net_sprint_ipv6_addr(&ifprefix->prefix),
 		ifprefix->len);
 
 	ifprefix->is_used = false;
@@ -2110,7 +2103,7 @@ static void prefix_timer_remove(struct net_if_ipv6_prefix *ifprefix)
 	k_mutex_lock(&lock, K_FOREVER);
 
 	NET_DBG("IPv6 prefix %s/%d removed",
-		log_strdup(net_sprint_ipv6_addr(&ifprefix->prefix)),
+		net_sprint_ipv6_addr(&ifprefix->prefix),
 		ifprefix->len);
 
 	sys_slist_find_and_remove(&active_prefix_lifetime_timers,
@@ -2249,7 +2242,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 					len, lifetime);
 
 		NET_DBG("[%d] interface %p prefix %s/%d added", i, iface,
-			log_strdup(net_sprint_ipv6_addr(prefix)), len);
+			net_sprint_ipv6_addr(prefix), len);
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV6_PREFIX_ADD, iface,
@@ -2460,7 +2453,7 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 					uint16_t lifetime)
 {
 	NET_DBG("Updating expire time of %s by %u secs",
-		log_strdup(net_sprint_ipv6_addr(&router->address.in6_addr)),
+		net_sprint_ipv6_addr(&router->address.in6_addr),
 		lifetime);
 
 	router->life_start = k_uptime_get_32();
@@ -3520,7 +3513,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 		NET_DBG("[%d] interface %p address %s type %s added", i, iface,
-			log_strdup(net_sprint_ipv4_addr(addr)),
+			net_sprint_ipv4_addr(addr),
 			net_addr_type2str(addr_type));
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_ADD, iface,
@@ -3561,7 +3554,7 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 		ipv4->unicast[i].is_used = false;
 
 		NET_DBG("[%d] interface %p address %s removed",
-			i, iface, log_strdup(net_sprint_ipv4_addr(addr)));
+			i, iface, net_sprint_ipv4_addr(addr));
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV4_ADDR_DEL, iface,
@@ -3695,7 +3688,7 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 
 	if (!net_ipv4_is_addr_mcast(addr)) {
 		NET_DBG("Address %s is not a multicast address.",
-			log_strdup(net_sprint_ipv4_addr(addr)));
+			net_sprint_ipv4_addr(addr));
 		goto out;
 	}
 
@@ -3706,7 +3699,7 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 		maddr->address.in_addr.s4_addr32[0] = addr->s4_addr32[0];
 
 		NET_DBG("interface %p address %s added", iface,
-			log_strdup(net_sprint_ipv4_addr(addr)));
+			net_sprint_ipv4_addr(addr));
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV4_MADDR_ADD, iface,
@@ -3732,7 +3725,7 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr)
 		maddr->is_used = false;
 
 		NET_DBG("interface %p address %s removed",
-			iface, log_strdup(net_sprint_ipv4_addr(addr)));
+			iface, net_sprint_ipv4_addr(addr));
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV4_MADDR_DEL, iface,

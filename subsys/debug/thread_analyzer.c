@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 #else
 #define THREAD_ANALYZER_PRINT(...) LOG_INF(__VA_ARGS__)
 #define THREAD_ANALYZER_FMT(str)   str
-#define THREAD_ANALYZER_VSTR(str)  log_strdup(str)
+#define THREAD_ANALYZER_VSTR(str)  str
 #endif
 
 /* @brief Maximum length of the pointer when converted to string

@@ -116,9 +116,9 @@ void add_ipv6_addr_to_zephyr(struct openthread_context *context)
 			char buf[NET_IPV6_ADDR_LEN];
 
 			NET_DBG("Adding %s",
-				log_strdup(net_addr_ntop(AF_INET6,
+				net_addr_ntop(AF_INET6,
 				       (struct in6_addr *)(&address->mAddress),
-				       buf, sizeof(buf))));
+				       buf, sizeof(buf)));
 		}
 
 		/* Thread and SLAAC are clearly AUTOCONF, handle
@@ -217,9 +217,7 @@ void add_ipv6_addr_to_ot(struct openthread_context *context,
 		char buf[NET_IPV6_ADDR_LEN];
 
 		NET_DBG("Added %s",
-			log_strdup(net_addr_ntop(AF_INET6,
-						 &addr.mAddress, buf,
-						 sizeof(buf))));
+			net_addr_ntop(AF_INET6, &addr.mAddress, buf, sizeof(buf)));
 	}
 }
 
@@ -238,8 +236,7 @@ void add_ipv6_maddr_to_ot(struct openthread_context *context,
 		char buf[NET_IPV6_ADDR_LEN];
 
 		NET_DBG("Added multicast %s",
-			log_strdup(net_addr_ntop(AF_INET6, &addr,
-						 buf, sizeof(buf))));
+			net_addr_ntop(AF_INET6, &addr, buf, sizeof(buf)));
 	}
 }
 
@@ -260,10 +257,10 @@ void add_ipv6_maddr_to_zephyr(struct openthread_context *context)
 			char buf[NET_IPV6_ADDR_LEN];
 
 			NET_DBG("Adding multicast %s",
-				log_strdup(net_addr_ntop(AF_INET6,
-							 (struct in6_addr *)
-							 (&maddress->mAddress),
-							 buf, sizeof(buf))));
+				net_addr_ntop(AF_INET6,
+					      (struct in6_addr *)
+					      (&maddress->mAddress),
+					      buf, sizeof(buf)));
 		}
 
 		zmaddr = net_if_ipv6_maddr_add(context->iface,
@@ -318,9 +315,9 @@ void rm_ipv6_addr_from_zephyr(struct openthread_context *context)
 				char buf[NET_IPV6_ADDR_LEN];
 
 				NET_DBG("Removing %s",
-					log_strdup(net_addr_ntop(AF_INET6,
+					net_addr_ntop(AF_INET6,
 					      &zephyr_addr->address.in6_addr,
-					      buf, sizeof(buf))));
+					      buf, sizeof(buf)));
 			}
 
 			net_if_ipv6_addr_rm(context->iface,
@@ -366,9 +363,9 @@ void rm_ipv6_maddr_from_zephyr(struct openthread_context *context)
 				char buf[NET_IPV6_ADDR_LEN];
 
 				NET_DBG("Removing multicast %s",
-					log_strdup(net_addr_ntop(AF_INET6,
+					net_addr_ntop(AF_INET6,
 					      &zephyr_addr->address.in6_addr,
-					      buf, sizeof(buf))));
+					      buf, sizeof(buf)));
 			}
 
 			net_if_ipv6_maddr_rm(context->iface,

@@ -71,13 +71,11 @@ void conn_register_debug(struct net_conn *conn,
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    conn->family == AF_INET6) {
 			snprintk(dst, sizeof(dst), "%s",
-				 log_strdup(net_sprint_ipv6_addr(
-				    &net_sin6(&conn->remote_addr)->sin6_addr)));
+				 net_sprint_ipv6_addr(&net_sin6(&conn->remote_addr)->sin6_addr));
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   conn->family == AF_INET) {
 			snprintk(dst, sizeof(dst), "%s",
-				 log_strdup(net_sprint_ipv4_addr(
-				    &net_sin(&conn->remote_addr)->sin_addr)));
+				 net_sprint_ipv4_addr(&net_sin(&conn->remote_addr)->sin_addr));
 		} else {
 			snprintk(dst, sizeof(dst), "%s", "?");
 		}
@@ -89,13 +87,11 @@ void conn_register_debug(struct net_conn *conn,
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    conn->family == AF_INET6) {
 			snprintk(src, sizeof(src), "%s",
-				 log_strdup(net_sprint_ipv6_addr(
-				    &net_sin6(&conn->local_addr)->sin6_addr)));
+				 net_sprint_ipv6_addr(&net_sin6(&conn->local_addr)->sin6_addr));
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   conn->family == AF_INET) {
 			snprintk(src, sizeof(src), "%s",
-				 log_strdup(net_sprint_ipv4_addr(
-				    &net_sin(&conn->local_addr)->sin_addr)));
+				 net_sprint_ipv4_addr(&net_sin(&conn->local_addr)->sin_addr));
 		} else {
 			snprintk(src, sizeof(src), "%s", "?");
 		}
@@ -105,9 +101,9 @@ void conn_register_debug(struct net_conn *conn,
 
 	NET_DBG("[%p/%d/%u/0x%02x] remote %s/%u ",
 		conn, conn->proto, conn->family, conn->flags,
-		log_strdup(dst), remote_port);
+		dst, remote_port);
 	NET_DBG("  local %s/%u cb %p ud %p",
-		log_strdup(src), local_port, conn->cb, conn->user_data);
+		src, local_port, conn->cb, conn->user_data);
 }
 #else
 #define conn_register_debug(...)
