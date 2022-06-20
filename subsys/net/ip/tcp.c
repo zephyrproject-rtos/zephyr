@@ -2373,11 +2373,6 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		goto out;
 	}
 
-	if (conn->data_mode == TCP_DATA_MODE_RESEND) {
-		ret = -EAGAIN;
-		goto out;
-	}
-
 	len = net_pkt_get_len(pkt);
 
 	if (conn->send_data->buffer) {
