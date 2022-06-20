@@ -1157,6 +1157,21 @@ Base OS:
     labels:
         - "area: Base OS"
 
+Laird Connectivity platforms:
+    status: maintained
+    maintainers:
+        - rerickson1
+    collaborators:
+        - greg-leach
+    files:
+        - boards/arm/bl5340_dvk/
+        - boards/arm/bl65*/
+        - boards/arm/bt510/
+        - boards/arm/bt610/
+        - boards/arm/pinnacle_100_dvk/
+    labels:
+        - "platform: Laird Connectivity"
+
 Little FS:
     status: odd fixes
     files:
