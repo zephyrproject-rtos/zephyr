@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#include <freq.h>
 #include <arm/armv6-m.dtsi>
 #include "nrf_common.dtsi"
 
@@ -79,6 +80,7 @@
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			max-frequency = <DT_FREQ_M(8)>;
 			status = "disabled";
 			label = "SPI_0";
 		};
@@ -106,6 +108,7 @@
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
+			max-frequency = <DT_FREQ_M(8)>;
 			status = "disabled";
 			label = "SPI_1";
 		};

@@ -77,6 +77,7 @@ spi0: spi@8000 {
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
+	max-frequency = <DT_FREQ_M(8)>;
 	status = "disabled";
 	label = "SPI_0";
 };
@@ -136,6 +137,7 @@ spi4: spi@a000 {
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
 	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
+	max-frequency = <DT_FREQ_M(32)>;
 	status = "disabled";
 	label = "SPI_4";
 };
@@ -169,6 +171,7 @@ spi2: spi@b000 {
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
+	max-frequency = <DT_FREQ_M(8)>;
 	status = "disabled";
 	label = "SPI_2";
 };
@@ -210,6 +213,7 @@ spi3: spi@c000 {
 	#size-cells = <0>;
 	reg = <0xc000 0x1000>;
 	interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
+	max-frequency = <DT_FREQ_M(8)>;
 	status = "disabled";
 	label = "SPI_3";
 };

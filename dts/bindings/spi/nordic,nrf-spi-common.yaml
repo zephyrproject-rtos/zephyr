@@ -12,6 +12,12 @@ properties:
     interrupts:
       required: true
 
+    max-frequency:
+      type: int
+      required: true
+      description: |
+        Maximum data rate the SPI peripheral can be driven at, in Hz.
+
     sck-pin:
       type: int
       required: false
