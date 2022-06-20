@@ -999,7 +999,7 @@ NET_SOCKET_REGISTER(ublox_sara_n310, 40, AF_UNSPEC,
 /* turn on module, returns < 0 when module failed to turn on */
 static int turn_on_module(void)
 {
-	int ret = 0, timeout = 0;
+	int timeout = 0;
 
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 	gpio_pin_set_dt(&power_gpio, MDM_POWER_ENABLE);
@@ -1014,9 +1014,7 @@ static int turn_on_module(void)
 	}
 
 	if (timeout >= 5) {
-		ret = -timeout;
-
-		return ret;
+		return -timeout;
 	}
 
 	return 0;
