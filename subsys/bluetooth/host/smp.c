@@ -5284,6 +5284,48 @@ static inline int smp_self_test(void)
 }
 #endif
 
+bool can_update_auth_cb(atomic_t *flags)
+{
+	if (atomic_test_bit(flags, SMP_FLAG_PAIRING)) {
+		return false;
+	}
+
+	if (atomic_test_bit(flags, SMP_FLAG_ENC_PENDING)) {
+		return false;
+	}
+
+	if (atomic_test_bit(flags, SMP_FLAG_SEC_REQ)) {
+		return false;
+	}
+
+	return true;
+}
+
+bool bt_smp_auth_can_update_auth_cb(void)
+{
+	bool can_update = true;
+
+	for (size_t i = 0; (i < ARRAY_SIZE(bt_smp_pool) && can_update); i++) {
+		struct bt_smp *smp = &bt_smp_pool[i];
+
+		if (!can_update_auth_cb(smp->flags)) {
+			can_update = false;
+		}
+	}
+
+#if defined(CONFIG_BT_BREDR)
+	for (size_t i = 0; (i < ARRAY_SIZE(bt_smp_br_pool)) && can_update; i++) {
+		struct bt_smp_br *smp = &bt_smp_br_pool[i];
+
+		if (!can_update_auth_cb(smp->flags)) {
+			can_update = false;
+		}
+	}
+#endif /* CONFIG_BT_BREDR */
+
+	return can_update;
+}
+
 int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey)
 {
 	struct bt_smp *smp;

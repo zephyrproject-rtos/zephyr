@@ -2810,6 +2810,10 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve, k_timeout_t timeout)
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 {
+	if (IS_ENABLED(CONFIG_BT_SMP) && !bt_smp_auth_can_update_auth_cb()) {
+		return -EBUSY;
+	}
+
 	if (!cb) {
 		bt_auth = NULL;
 		return 0;

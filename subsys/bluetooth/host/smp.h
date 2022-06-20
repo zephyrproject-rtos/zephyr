@@ -141,6 +141,7 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn);
 
 int bt_smp_init(void);
 
+bool bt_smp_auth_can_update_auth_cb(void);
 int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
 int bt_smp_auth_passkey_confirm(struct bt_conn *conn);
 int bt_smp_auth_pairing_confirm(struct bt_conn *conn);

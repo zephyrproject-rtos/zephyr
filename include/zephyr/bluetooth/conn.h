@@ -1354,7 +1354,10 @@ struct bt_conn_auth_info_cb {
  *
  *  @param cb Callback struct.
  *
- *  @return Zero on success or negative error code otherwise
+ *  @retval 0		Success.
+ *  @retval -EALREADY	Callbacks are already registered.
+ *  @retval -EBUSY	Callbacks are in use and cannot be modified.
+ *  @retval -EINVAL	Invalid callback struct.
  */
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb);
 
