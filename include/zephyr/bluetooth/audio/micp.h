@@ -46,8 +46,10 @@ struct bt_micp;
 
 /** @brief Register parameters structure for Microphone Input Control Profile instance */
 struct bt_micp_register_param {
+#if defined(CONFIG_BT_MICP_AICS)
 	/** Register parameter structure for Audio Input Control Services */
 	struct bt_aics_register_param aics_param[BT_MICP_AICS_CNT];
+#endif /* CONFIG_BT_MICP_AICS */
 
 	/** Microphone Input Control Profile callback structure. */
 	struct bt_micp_cb *cb;
@@ -90,6 +92,9 @@ int bt_micp_register(struct bt_micp_register_param *param,
  * Returns a pointer to a struct that contains information about the
  * Microphone Input Control Profile included services instances, such as
  * pointers to the Audio Input Control Service instances.
+ *
+ * Requires that @kconfig{CONFIG_BT_MICP_AICS} or
+ * @kconfig{CONFIG_BT_MICP_CLIENT_AICS} is enabled.
  *
  * @param      micp     Microphone Input Control Profile instance pointer.
  * @param[out] included Pointer to store the result in.
@@ -155,8 +160,10 @@ struct bt_micp_cb {
 	bt_micp_mute_write_cb           mute_write;
 	bt_micp_mute_write_cb           unmute_write;
 
+#if defined(CONFIG_BT_MICP_CLIENT_AICS)
 	/** Audio Input Control Service client callback */
 	struct bt_aics_cb               aics_cb;
+#endif /* CONFIG_BT_MICP_CLIENT_AICS */
 #endif /* CONFIG_BT_MICP_CLIENT */
 };
 
@@ -215,149 +222,6 @@ int bt_micp_mute_disable(struct bt_micp *micp);
  * @return 0 on success, GATT error value on fail.
  */
 int bt_micp_mute_get(struct bt_micp *micp);
-
-/**
- * @brief Read the Audio Input Control Service input state.
- *
- * @param micp          Microphone Input Control Profile instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_state_get(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Read the Audio Input Control Service gain settings.
- *
- * @param micp          Microphone Input Control Profile instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_gain_setting_get(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Read the Audio Input Control Service input type.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_type_get(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Read the Audio Input Control Service input status.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_status_get(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Unmute the Audio Input Control Service input.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_unmute(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Mute the Audio Input Control Service input.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_mute(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Set Audio Input Control Service gain mode to manual.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_manual_gain_set(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Set Audio Input Control Service gain mode to automatic.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_automatic_gain_set(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Set Audio Input Control Service input gain.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- * @param gain          The gain in dB to set (-128 to 127).
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_gain_set(struct bt_micp *micp, struct bt_aics *inst,
-			  int8_t gain);
-
-/**
- * @brief Read the Audio Input Control Service description.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_description_get(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Set the Audio Input Control Service description.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- * @param description	 The description to set.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_micp_aics_description_set(struct bt_micp *micp, struct bt_aics *inst,
-				 const char *description);
-
-/**
- * @brief Deactivates a Audio Input Control Service instance.
- *
- * Audio Input Control Services are activated by default, but this will allow
- * the server to deactivate a Audio Input Control Service.
- * This can only be done as the server.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 if success, errno on failure.
- */
-int bt_micp_aics_deactivate(struct bt_micp *micp, struct bt_aics *inst);
-
-/**
- * @brief Activates a Audio Input Control Service instance.
- *
- * Audio Input Control Services are activated by default, but this will allow
- * the server to reactivate a Audio Input Control Service instance after it has
- * been deactivated with @ref bt_micp_aics_deactivate.
- * This can only be done as the server.
- *
- * @param micp          Microphone Input Control Profile instance instance pointer.
- * @param inst          Pointer to the Audio Input Control Service instance.
- *
- * @return 0 if success, errno on failure.
- */
-int bt_micp_aics_activate(struct bt_micp *micp, struct bt_aics *inst);
 
 /**
  * @brief Registers the callbacks used by Microphone Input Control Profile client.
