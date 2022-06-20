@@ -568,7 +568,7 @@ static int spim_nrfx_pm_action(const struct device *dev,
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spim = NRFX_SPIM_INSTANCE(idx),			       \
 		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
-		.max_freq = SPIM##idx##_MAX_DATARATE * 1000000,		       \
+		.max_freq = SPIM_PROP(idx, max_frequency),		       \
 		.def_config = {						       \
 			SPI_NRFX_SPIM_PIN_CFG(idx)			       \
 			.ss_pin = NRFX_SPIM_PIN_NOT_USED,		       \
