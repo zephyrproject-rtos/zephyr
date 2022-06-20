@@ -20,11 +20,38 @@ struct spi_nrfx_data {
 
 struct spi_nrfx_config {
 	nrfx_spis_t spis;
-	size_t      max_buf_len;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
 };
+
+/* Maximum buffer length (depends on the EasyDMA bits, SoC dependent) */
+#define BITS2LEN(bits) ((1U << (bits)) - 1U)
+
+#if defined(SOC_NRF51822_QFAA) || defined(SOC_NRF51822_QFAB) || \
+	defined(SOC_NRF51822_QFAC)
+#define MAX_BUF_LEN BITS2LEN(8)
+#if defined(CONFIG_SOC_NRF52805)
+#define MAX_BUF_LEN BITS2LEN(14U)
+#elif defined(CONFIG_SOC_NRF52810)
+#define MAX_BUF_LEN BITS2LEN(10U)
+#elif defined(CONFIG_SOC_NRF52811)
+#define MAX_BUF_LEN BITS2LEN(14U)
+#elif defined(CONFIG_SOC_NRF52820)
+#define MAX_BUF_LEN BITS2LEN(15U)
+#elif defined(CONFIG_SOC_NRF52832)
+#define MAX_BUF_LEN BITS2LEN(8U)
+#elif defined(CONFIG_SOC_NRF52833)
+#define MAX_BUF_LEN BITS2LEN(16U)
+#elif defined(CONFIG_SOC_NRF52840)
+#define MAX_BUF_LEN BITS2LEN(16U)
+#elif defined(CONFIG_SOC_NRF5340_CPUAPP)
+#define MAX_BUF_LEN BITS2LEN(16U)
+#elif defined(CONFIG_SOC_NRF9160)
+#define MAX_BUF_LEN BITS2LEN(13U)
+#else
+#error "Unsupported SoC"
+#endif
 
 static inline nrf_spis_mode_t get_nrf_spis_mode(uint16_t operation)
 {
@@ -112,8 +139,7 @@ static void prepare_for_transfer(const struct device *dev,
 	const struct spi_nrfx_config *dev_config = dev->config;
 	int status;
 
-	if (tx_buf_len > dev_config->max_buf_len ||
-	    rx_buf_len > dev_config->max_buf_len) {
+	if (tx_buf_len > MAX_BUF_LEN || rx_buf_len > MAX_BUF_LEN) {
 		LOG_ERR("Invalid buffer sizes: Tx %d/Rx %d",
 			tx_buf_len, rx_buf_len);
 		status = -EINVAL;
@@ -298,7 +324,6 @@ static int init_spis(const struct device *dev,
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPIS(idx))));	       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spis = NRFX_SPIS_INSTANCE(idx),			       \
-		.max_buf_len = BIT_MASK(SPIS##idx##_EASYDMA_MAXCNT_SIZE),      \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),))       \
 	};								       \
