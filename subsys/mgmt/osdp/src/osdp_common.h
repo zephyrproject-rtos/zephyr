@@ -10,10 +10,12 @@
 #include <zephyr/mgmt/osdp.h>
 #include <zephyr/sys/__assert.h>
 
+#define STR(x) #x
+
 #define OSDP_RESP_TOUT_MS              (200)
 
-#define OSDP_CMD_SLAB_BUF_SIZE \
-	(sizeof(struct osdp_cmd) * CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE)
+#define OSDP_QUEUE_SLAB_SIZE \
+	(sizeof(union osdp_ephemeral_data) * CONFIG_OSDP_PD_COMMAND_QUEUE_SIZE)
 
 #define ISSET_FLAG(p, f)               (((p)->flags & (f)) == (f))
 #define SET_FLAG(p, f)                 ((p)->flags |= (f))
@@ -311,6 +313,12 @@ enum osdp_pd_cap_function_code_e {
 	OSDP_PD_CAP_SENTINEL
 };
 
+/* Unused type only to estimate ephemeral_data size */
+union osdp_ephemeral_data {
+	struct osdp_cmd cmd;
+	struct osdp_event event;
+};
+
 /**
  * @brief PD capability structure. Each PD capability has a 3 byte
  * representation.
@@ -379,15 +387,10 @@ struct osdp_channel {
 	void (*flush)(void *data);
 };
 
-struct osdp_cmd_queue {
+struct osdp_queue {
 	sys_slist_t queue;
 	struct k_mem_slab slab;
-	uint8_t slab_buf[OSDP_CMD_SLAB_BUF_SIZE];
-};
-
-struct osdp_notifiers {
-	int (*keypress)(int address, uint8_t key);
-	int (*cardread)(int address, int format, uint8_t *data, int len);
+	uint8_t slab_buf[OSDP_QUEUE_SLAB_SIZE];
 };
 
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -435,7 +438,16 @@ struct osdp_pd {
 	uint8_t cmd_data[OSDP_COMMAND_DATA_MAX_LEN];
 
 	struct osdp_channel channel;
-	struct osdp_cmd_queue cmd;
+
+	union {
+		struct osdp_queue cmd;    /* Command queue (CP Mode only) */
+		struct osdp_queue event;  /* Command queue (PD Mode only) */
+	};
+
+	/* PD command callback to app with opaque arg pointer as passed by app */
+	void *command_callback_arg;
+	pd_command_callback_t command_callback;
+
 #ifdef CONFIG_OSDP_SC_ENABLED
 	int64_t sc_tstamp;
 	struct osdp_secure_channel sc;
@@ -451,7 +463,9 @@ struct osdp {
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t sc_master_key[16];
 #endif
-	struct osdp_notifiers notifier;
+	/* CP event callback to app with opaque arg pointer as passed by app */
+	void *event_callback_arg;
+	cp_event_callback_t event_callback;
 };
 
 /* from osdp_phy.c */
@@ -468,11 +482,6 @@ int64_t osdp_millis_now(void);
 int64_t osdp_millis_since(int64_t last);
 void osdp_dump(const char *head, uint8_t *buf, int len);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
-struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd);
-void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd);
-void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd);
-int osdp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd);
-struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd);
 
 /* from osdp.c */
 struct osdp *osdp_get_ctx();
