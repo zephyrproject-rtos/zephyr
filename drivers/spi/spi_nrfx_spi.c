@@ -346,7 +346,7 @@ static int spi_nrfx_pm_action(const struct device *dev,
 					 NRFX_SPI_PIN_NOT_USED),	\
 		 .miso_pull = SPI_NRFX_MISO_PULL(idx),))
 
-#define SPI_NRFX_SPI_DEVICE(idx)					       \
+#define SPI_NRFX_SPI_DEFINE(idx)					       \
 	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPI(idx), 1,			       \
 				     sck_pin, mosi_pin, miso_pin);	       \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			       \
@@ -406,13 +406,13 @@ static int spi_nrfx_pm_action(const struct device *dev,
 		      &spi_nrfx_driver_api)
 
 #ifdef CONFIG_SPI_0_NRF_SPI
-SPI_NRFX_SPI_DEVICE(0);
+SPI_NRFX_SPI_DEFINE(0);
 #endif
 
 #ifdef CONFIG_SPI_1_NRF_SPI
-SPI_NRFX_SPI_DEVICE(1);
+SPI_NRFX_SPI_DEFINE(1);
 #endif
 
 #ifdef CONFIG_SPI_2_NRF_SPI
-SPI_NRFX_SPI_DEVICE(2);
+SPI_NRFX_SPI_DEFINE(2);
 #endif
