@@ -190,31 +190,6 @@ config NRFX_SPI2
 config NRFX_SPIM
 	bool
 
-config NRFX_SPIM0
-	bool "SPIM0 driver instance"
-	depends on $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIM))
-	select NRFX_SPIM
-
-config NRFX_SPIM1
-	bool "SPIM1 driver instance"
-	depends on $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIM))
-	select NRFX_SPIM
-
-config NRFX_SPIM2
-	bool "SPIM2 driver instance"
-	depends on $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIM))
-	select NRFX_SPIM
-
-config NRFX_SPIM3
-	bool "SPIM3 driver instance"
-	depends on $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIM))
-	select NRFX_SPIM
-
-config NRFX_SPIM4
-	bool "SPIM4 driver instance"
-	depends on $(dt_nodelabel_has_compat,spi4,$(DT_COMPAT_NORDIC_NRF_SPIM))
-	select NRFX_SPIM
-
 config NRFX_SPIS
 	bool
 

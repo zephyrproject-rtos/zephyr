@@ -345,86 +345,70 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPI_IRQ_HANDLER(idx)				\
 	_CONCAT(_CONCAT(nrfx_spi_, idx), _irq_handler)
 
-/*
- * Current factors requiring use of DT_NODELABEL:
- */
-
-#define SPI(idx)			DT_NODELABEL(spi##idx)
-
-#define SPI_NRFX_MISO_PULL(idx)				\
-	(DT_PROP(SPI(idx), miso_pull_up)		\
-		? DT_PROP(SPI(idx), miso_pull_down)	\
+#define SPI_NRFX_MISO_PULL(inst)			\
+	(DT_INST_PROP(inst, miso_pull_up)		\
+		? DT_INST_PROP(inst, miso_pull_down)	\
 			? -1 /* invalid configuration */\
 			: NRF_GPIO_PIN_PULLUP		\
-		: DT_PROP(SPI(idx), miso_pull_down)	\
+		: DT_INST_PROP(inst, miso_pull_down)	\
 			? NRF_GPIO_PIN_PULLDOWN		\
 			: NRF_GPIO_PIN_NOPULL)
 
-#define SPI_NRFX_SPI_PIN_CFG(idx)					\
+#define SPI_NRFX_SPI_PIN_CFG(inst)					\
 	COND_CODE_1(CONFIG_PINCTRL,					\
 		(.skip_gpio_cfg = true,					\
 		 .skip_psel_cfg = true,),				\
-		(.sck_pin   = DT_PROP(SPI(idx), sck_pin),		\
-		 .mosi_pin  = DT_PROP_OR(SPI(idx), mosi_pin,		\
-					 NRFX_SPI_PIN_NOT_USED),	\
-		 .miso_pin  = DT_PROP_OR(SPI(idx), miso_pin,		\
-					 NRFX_SPI_PIN_NOT_USED),	\
-		 .miso_pull = SPI_NRFX_MISO_PULL(idx),))
+		(.sck_pin   = DT_INST_PROP(inst, sck_pin),		\
+		 .mosi_pin  = DT_INST_PROP_OR(inst, mosi_pin,		\
+					      NRFX_SPI_PIN_NOT_USED),	\
+		 .miso_pin  = DT_INST_PROP_OR(inst, miso_pin,		\
+					      NRFX_SPI_PIN_NOT_USED),	\
+		 .miso_pull = SPI_NRFX_MISO_PULL(inst),))
 
-#define SPI_NRFX_SPI_DEFINE(idx)					       \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPI(idx), 1,			       \
+#define SPI_NRFX_SPI_DEFINE(inst)					       \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(inst), 1,		       \
 				     sck_pin, mosi_pin, miso_pin);	       \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			       \
-		     !(DT_PROP(SPI(idx), miso_pull_up) &&		       \
-		       DT_PROP(SPI(idx), miso_pull_down)),		       \
-		"SPI"#idx						       \
+		     !(DT_INST_PROP(inst, miso_pull_up) &&		       \
+		       DT_INST_PROP(inst, miso_pull_down)),		       \
+		"SPI"#inst						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
-	static void irq_connect##idx(void)				       \
+	static void irq_connect##inst(void)				       \
 	{								       \
-		IRQ_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),   \
 			    nrfx_isr,					       \
-			    SPI_IRQ_HANDLER(DT_PROP(SPI(idx), periph_idx)),    \
+			    SPI_IRQ_HANDLER(DT_INST_PROP(inst, periph_idx)),   \
 			    0);						       \
 	}								       \
-	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPI(idx), ctx)		       \
-		.dev  = DEVICE_DT_GET(SPI(idx)),			       \
+	static struct spi_nrfx_data spi_##inst##_data = {		       \
+		SPI_CONTEXT_INIT_LOCK(spi_##inst##_data, ctx),		       \
+		SPI_CONTEXT_INIT_SYNC(spi_##inst##_data, ctx),		       \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	       \
+		.dev  = DEVICE_DT_INST_GET(inst),			       \
 		.busy = false,						       \
 	};								       \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPI(idx))));	       \
-	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(inst)));	       \
+	static const struct spi_nrfx_config spi_##inst##z_config = {	       \
 		.spi = {						       \
-			.p_reg = (NRF_SPI_Type *)DT_REG_ADDR(SPI(idx)),	       \
-			.drv_inst_idx = DT_PROP(SPI(idx), periph_idx),	       \
+			.p_reg = (NRF_SPI_Type *)DT_INST_REG_ADDR(inst),       \
+			.drv_inst_idx = DT_INST_PROP(inst, periph_idx),	       \
 		},							       \
 		.def_config = {						       \
-			SPI_NRFX_SPI_PIN_CFG(idx)			       \
+			SPI_NRFX_SPI_PIN_CFG(inst)			       \
 			.ss_pin = NRFX_SPI_PIN_NOT_USED,		       \
-			.orc    = DT_PROP(SPI(idx), overrun_character),	       \
+			.orc    = DT_INST_PROP(inst, overrun_character),       \
 		},							       \
-		.irq_connect = irq_connect##idx,			       \
+		.irq_connect = irq_connect##inst,			       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
-			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPI(idx)),))	       \
+			(.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),))       \
 	};								       \
-	PM_DEVICE_DT_DEFINE(SPI(idx), spi_nrfx_pm_action);		       \
-	DEVICE_DT_DEFINE(SPI(idx),					       \
-		      spi_nrfx_init,					       \
-		      PM_DEVICE_DT_GET(SPI(idx)),			       \
-		      &spi_##idx##_data,				       \
-		      &spi_##idx##z_config,				       \
-		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
-		      &spi_nrfx_driver_api)
+	PM_DEVICE_DT_INST_DEFINE(inst, spi_nrfx_pm_action);		       \
+	DEVICE_DT_INST_DEFINE(inst,					       \
+			      spi_nrfx_init,				       \
+			      PM_DEVICE_DT_INST_GET(inst),		       \
+			      &spi_##inst##_data,			       \
+			      &spi_##inst##z_config,			       \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	       \
+			      &spi_nrfx_driver_api);
 
-#ifdef CONFIG_SPI_0_NRF_SPI
-SPI_NRFX_SPI_DEFINE(0);
-#endif
-
-#ifdef CONFIG_SPI_1_NRF_SPI
-SPI_NRFX_SPI_DEFINE(1);
-#endif
-
-#ifdef CONFIG_SPI_2_NRF_SPI
-SPI_NRFX_SPI_DEFINE(2);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(SPI_NRFX_SPI_DEFINE)

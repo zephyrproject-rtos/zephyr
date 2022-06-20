@@ -282,79 +282,57 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPI_IRQ_HANDLER(idx)				\
 	_CONCAT(_CONCAT(nrfx_spis_, idx), _irq_handler)
 
-/*
- * Current factors requiring use of DT_NODELABEL:
- *
- * - soc-instance-numbered kconfig enables
- */
-
-#define SPIS(idx) DT_NODELABEL(spi##idx)
-
-#define SPI_NRFX_SPIS_PIN_CFG(idx)					\
+#define SPI_NRFX_SPIS_PIN_CFG(inst)					\
 	COND_CODE_1(CONFIG_PINCTRL,					\
 		(.skip_gpio_cfg = true,					\
 		 .skip_psel_cfg = true,),				\
-		(.sck_pin    = DT_PROP(SPIS(idx), sck_pin),		\
-		 .mosi_pin   = DT_PROP_OR(SPIS(idx), mosi_pin,		\
-					  NRFX_SPIS_PIN_NOT_USED),	\
-		 .miso_pin   = DT_PROP_OR(SPIS(idx), miso_pin,		\
-					  NRFX_SPIS_PIN_NOT_USED),	\
-		 .csn_pin    = DT_PROP(SPIS(idx), csn_pin),		\
+		(.sck_pin    = DT_INST_PROP(inst, sck_pin),		\
+		 .mosi_pin   = DT_INST_PROP_OR(inst, mosi_pin,		\
+					       NRFX_SPIS_PIN_NOT_USED),	\
+		 .miso_pin   = DT_INST_PROP_OR(inst, miso_pin,		\
+					       NRFX_SPIS_PIN_NOT_USED),	\
+		 .csn_pin    = DT_INST_PROP(inst, csn_pin),		\
 		 .csn_pullup = NRF_GPIO_PIN_NOPULL,			\
 		 .miso_drive = NRF_GPIO_PIN_S0S1,))
 
-#define SPI_NRFX_SPIS_DEFINE(idx)					       \
-	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPIS(idx), 0,			       \
+#define SPI_NRFX_SPIS_DEFINE(inst)					       \
+	NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(inst), 0,		       \
 				     sck_pin, mosi_pin, miso_pin, csn_pin);    \
-	static void irq_connect##idx(void)				       \
+	static void irq_connect##inst(void)				       \
 	{								       \
-		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),   \
 			    nrfx_isr,					       \
-			    SPI_IRQ_HANDLER(DT_PROP(SPIS(idx), periph_idx)),   \
+			    SPI_IRQ_HANDLER(DT_INST_PROP(inst, periph_idx)),   \
 			    0);						       \
 	}								       \
-	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+	static struct spi_nrfx_data spi_##inst##_data = {		       \
+		SPI_CONTEXT_INIT_LOCK(spi_##inst##_data, ctx),		       \
+		SPI_CONTEXT_INIT_SYNC(spi_##inst##_data, ctx),		       \
 	};								       \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPIS(idx))));	       \
-	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(inst)));	       \
+	static const struct spi_nrfx_config spi_##inst##z_config = {	       \
 		.spis = {						       \
-			.p_reg = (NRF_SPIS_Type *)DT_REG_ADDR(SPIS(idx)),      \
-			.drv_inst_idx = DT_PROP(SPIS(idx), periph_idx),	       \
+			.p_reg = (NRF_SPIS_Type *)DT_INST_REG_ADDR(inst),      \
+			.drv_inst_idx = DT_INST_PROP(inst, periph_idx),	       \
 		},							       \
 		.config = {						       \
-			SPI_NRFX_SPIS_PIN_CFG(idx)			       \
+			SPI_NRFX_SPIS_PIN_CFG(inst)			       \
 			.mode      = NRF_SPIS_MODE_0,			       \
 			.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
-			.orc       = DT_PROP(SPIS(idx), overrun_character),    \
-			.def       = DT_PROP(SPIS(idx), def_char),	       \
+			.orc       = DT_INST_PROP(inst, overrun_character),    \
+			.def       = DT_INST_PROP(inst, def_char),	       \
 		},							       \
-		.irq_connect = irq_connect##idx,			       \
+		.irq_connect = irq_connect##inst,			       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
-			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),))       \
+			(.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),))       \
 	};								       \
-	DEVICE_DT_DEFINE(SPIS(idx),					       \
-			    spi_nrfx_init,				       \
-			    NULL,					       \
-			    &spi_##idx##_data,				       \
-			    &spi_##idx##z_config,			       \
-			    POST_KERNEL,				       \
-			    CONFIG_SPI_INIT_PRIORITY,			       \
-			    &spi_nrfx_driver_api)
+	DEVICE_DT_INST_DEFINE(inst,					       \
+			     spi_nrfx_init,				       \
+			     NULL,					       \
+			     &spi_##inst##_data,			       \
+			     &spi_##inst##z_config,			       \
+			     POST_KERNEL,				       \
+			     CONFIG_SPI_INIT_PRIORITY,			       \
+			     &spi_nrfx_driver_api);
 
-#ifdef CONFIG_SPI_0_NRF_SPIS
-SPI_NRFX_SPIS_DEFINE(0);
-#endif
-
-#ifdef CONFIG_SPI_1_NRF_SPIS
-SPI_NRFX_SPIS_DEFINE(1);
-#endif
-
-#ifdef CONFIG_SPI_2_NRF_SPIS
-SPI_NRFX_SPIS_DEFINE(2);
-#endif
-
-#ifdef CONFIG_SPI_3_NRF_SPIS
-SPI_NRFX_SPIS_DEFINE(3);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(SPI_NRFX_SPIS_DEFINE)

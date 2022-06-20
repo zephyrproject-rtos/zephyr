@@ -198,40 +198,50 @@
 #define NRFX_SAADC_ENABLED 1
 #endif
 
+#define SPI0_NODE DT_NODELABEL(spi0)
+#define SPI1_NODE DT_NODELABEL(spi1)
+#define SPI2_NODE DT_NODELABEL(spi2)
 #define SPI3_NODE DT_NODELABEL(spi3)
 #define SPI4_NODE DT_NODELABEL(spi4)
 
 #ifdef CONFIG_NRFX_SPI
 #define NRFX_SPI_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_SPI0
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI0, nordic_nrf_spi, okay)
 #define NRFX_SPI0_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_SPI1
+#if DT_NODE_HAS_COMPAT_STATUS(SPI1, nordic_nrf_spi, okay)
 #define NRFX_SPI1_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_SPI2
+#if DT_NODE_HAS_COMPAT_STATUS(SPI2, nordic_nrf_spi, okay)
 #define NRFX_SPI2_ENABLED 1
 #endif
 
+#endif /* CONFIG_NRFX_SPI */
+
 #ifdef CONFIG_NRFX_SPIM
 #define NRFX_SPIM_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_SPIM0
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI0, nordic_nrf_spim, okay)
 #define NRFX_SPIM0_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_SPIM1
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI1, nordic_nrf_spim, okay)
 #define NRFX_SPIM1_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_SPIM2
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI2, nordic_nrf_spim, okay)
 #define NRFX_SPIM2_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_SPIM3
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI3, nordic_nrf_spim, okay)
 #define NRFX_SPIM3_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_SPIM4
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI4, nordic_nrf_spim, okay)
 #define NRFX_SPIM4_ENABLED 1
 #endif
+
 #if ((DT_NODE_HAS_COMPAT_STATUS(SPI3, nordic_nrf_spim, okay) &&                \
       DT_PROP(SPI3, rx_delay)) ||                                              \
      (DT_NODE_HAS_COMPAT_STATUS(SPI4, nordic_nrf_spim, okay) &&                \
@@ -239,21 +249,28 @@
 #define NRFX_SPIM_EXTENDED_ENABLED 1
 #endif
 
+#endif /* CONFIG_NRFX_SPIM */
+
 #ifdef CONFIG_NRFX_SPIS
 #define NRFX_SPIS_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_SPIS0
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI0, nordic_nrf_spis, okay)
 #define NRFX_SPIS0_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_SPIS1
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI1, nordic_nrf_spis, okay)
 #define NRFX_SPIS1_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_SPIS2
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI2, nordic_nrf_spis, okay)
 #define NRFX_SPIS2_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_SPIS3
+
+#if DT_NODE_HAS_COMPAT_STATUS(SPI3, nordic_nrf_spis, okay)
 #define NRFX_SPIS3_ENABLED 1
 #endif
+
+#endif /* CONFIG_NRFX_SPIS */
 
 #ifdef CONFIG_NRFX_SYSTICK
 #define NRFX_SYSTICK_ENABLED 1
