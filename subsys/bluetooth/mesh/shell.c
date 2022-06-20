@@ -2166,6 +2166,7 @@ static int mod_pub_set(const struct shell *sh, uint16_t addr, bool is_va,
 
 	if (!is_va) {
 		pub.addr = shell_strtoul(argv[0], 0, &err);
+		pub.uuid = NULL;
 	} else {
 		len = hex2bin(argv[0], strlen(argv[0]), uuid, sizeof(uuid));
 		memset(uuid + len, 0, sizeof(uuid) - len);
