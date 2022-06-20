@@ -421,9 +421,9 @@ static void store_cdb_node(const struct bt_mesh_cdb_node *node)
 
 	err = settings_save_one(path, &val, sizeof(val));
 	if (err) {
-		BT_ERR("Failed to store Node %s value", log_strdup(path));
+		BT_ERR("Failed to store Node %s value", path);
 	} else {
-		BT_DBG("Stored Node %s value", log_strdup(path));
+		BT_DBG("Stored Node %s value", path);
 	}
 }
 
@@ -498,9 +498,9 @@ static void store_cdb_app_key(const struct bt_mesh_cdb_app_key *app)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		BT_ERR("Failed to store AppKey %s value", log_strdup(path));
+		BT_ERR("Failed to store AppKey %s value", path);
 	} else {
-		BT_DBG("Stored AppKey %s value", log_strdup(path));
+		BT_DBG("Stored AppKey %s value", path);
 	}
 }
 

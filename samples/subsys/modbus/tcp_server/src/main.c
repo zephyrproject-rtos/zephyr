@@ -158,7 +158,7 @@ static int init_modbus_server(void)
 
 	if (server_iface < 0) {
 		LOG_ERR("Failed to get iface index for %s",
-			log_strdup(iface_name));
+			iface_name);
 		return -ENODEV;
 	}
 
@@ -272,7 +272,7 @@ void main(void)
 		inet_ntop(client_addr.sin_family, &client_addr.sin_addr,
 			  addr_str, sizeof(addr_str));
 		LOG_INF("Connection #%d from %s",
-			counter++, log_strdup(addr_str));
+			counter++, addr_str);
 
 		do {
 			rc = modbus_tcp_connection(client);
@@ -280,6 +280,6 @@ void main(void)
 
 		close(client);
 		LOG_INF("Connection from %s closed, errno %d",
-			log_strdup(addr_str), rc);
+			addr_str, rc);
 	}
 }

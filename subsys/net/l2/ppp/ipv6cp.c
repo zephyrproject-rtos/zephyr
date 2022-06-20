@@ -107,7 +107,7 @@ static int ipv6cp_interface_identifier_parse(struct ppp_fsm *fsm,
 				       iid_str, sizeof(iid_str));
 
 		NET_DBG("[%s/%p] Received %siid %s",
-			fsm->name, fsm, "peer ", log_strdup(iid_str));
+			fsm->name, fsm, "peer ", iid_str);
 	}
 
 	data->iface_id_present = true;
@@ -179,7 +179,7 @@ static int ipv6cp_config_info_ack(struct ppp_fsm *fsm,
 				       iid_str, sizeof(iid_str));
 
 		NET_DBG("[%s/%p] Received %siid %s",
-			fsm->name, fsm, "", log_strdup(iid_str));
+			fsm->name, fsm, "", iid_str);
 	}
 
 	return 0;
@@ -227,7 +227,7 @@ static void add_iid_address(struct net_if *iface, uint8_t *iid)
 	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
 	if (!ifaddr) {
 		NET_ERR("Cannot add %s address to interface %p",
-			log_strdup(net_sprint_ipv6_addr(&addr)), iface);
+			net_sprint_ipv6_addr(&addr), iface);
 	} else {
 		/* As DAD is disabled, we need to mark the address
 		 * as a preferred one.
@@ -271,8 +271,7 @@ static void ipv6cp_up(struct ppp_fsm *fsm)
 	if (!nbr) {
 		NET_ERR("[%s/%p] Cannot add peer %s to nbr table",
 			fsm->name, fsm,
-			log_strdup(net_sprint_addr(AF_INET6,
-						   (const void *)&peer_addr)));
+			net_sprint_addr(AF_INET6, (const void *)&peer_addr));
 	} else {
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
@@ -287,8 +286,8 @@ static void ipv6cp_up(struct ppp_fsm *fsm)
 						 sizeof(dst));
 
 			NET_DBG("[%s/%p] Peer %s [%s] %s nbr cache",
-				fsm->name, fsm, log_strdup(addr_str),
-				log_strdup(iid_str), "added to");
+				fsm->name, fsm, addr_str,
+				iid_str, "added to");
 		}
 	}
 }
@@ -327,8 +326,7 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 	if (!ret) {
 		NET_ERR("[%s/%p] Cannot rm peer %s from nbr table",
 			fsm->name, fsm,
-			log_strdup(net_sprint_addr(AF_INET6,
-						   (const void *)&peer_addr)));
+			net_sprint_addr(AF_INET6, (const void *)&peer_addr));
 	} else {
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
@@ -343,8 +341,8 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 						 sizeof(dst));
 
 			NET_DBG("[%s/%p] Peer %s [%s] %s nbr cache",
-				fsm->name, fsm, log_strdup(addr_str),
-				log_strdup(iid_str), "removed from");
+				fsm->name, fsm, addr_str,
+				iid_str, "removed from");
 		}
 	}
 }

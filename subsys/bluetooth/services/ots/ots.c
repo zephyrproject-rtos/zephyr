@@ -265,7 +265,7 @@ static ssize_t ots_obj_id_read(struct bt_conn *conn,
 
 	bt_ots_obj_id_to_str(ots->cur_obj->id, id_str,
 				      sizeof(id_str));
-	LOG_DBG("Current Object ID: %s", log_strdup(id_str));
+	LOG_DBG("Current Object ID: %s", id_str);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, id, sizeof(id));
 }
@@ -575,7 +575,7 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
 
 		if (strlen(obj->metadata.name) == 0) {
 			bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
-			LOG_DBG("Deleting object with %s ID due to empty name", log_strdup(id_str));
+			LOG_DBG("Deleting object with %s ID due to empty name", id_str);
 
 			if (ots->cb && ots->cb->obj_deleted) {
 				ots->cb->obj_deleted(ots, conn, obj->id);
@@ -583,7 +583,7 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
 
 			if (bt_gatt_ots_obj_manager_obj_delete(obj)) {
 				LOG_ERR("Failed to remove object with %s ID from object manager",
-					log_strdup(id_str));
+					id_str);
 			}
 		}
 	}

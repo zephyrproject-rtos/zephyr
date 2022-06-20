@@ -131,23 +131,23 @@ static void print_info(struct net_pkt *pkt)
 		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
 			LOG_INF("%s %s (%zd) %s:%u -> %s:%u",
 				"IPv4", proto, len,
-				log_strdup(src_addr), src_port,
-				log_strdup(dst_addr), dst_port);
+				src_addr, src_port,
+				dst_addr, dst_port);
 		} else {
 			LOG_INF("%s %s (%zd) %s -> %s", "IPv4", proto,
-				len, log_strdup(src_addr),
-				log_strdup(dst_addr));
+				len, src_addr,
+				dst_addr);
 		}
 	} else {
 		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
 			LOG_INF("%s %s (%zd) [%s]:%u -> [%s]:%u",
 				"IPv6", proto, len,
-				log_strdup(src_addr), src_port,
-				log_strdup(dst_addr), dst_port);
+				src_addr, src_port,
+				dst_addr, dst_port);
 		} else {
 			LOG_INF("%s %s (%zd) %s -> %s", "IPv6", proto,
-				len, log_strdup(src_addr),
-				log_strdup(dst_addr));
+				len, src_addr,
+				dst_addr);
 		}
 	}
 }
