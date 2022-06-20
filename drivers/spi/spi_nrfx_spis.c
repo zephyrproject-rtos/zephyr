@@ -272,7 +272,7 @@ static int init_spis(const struct device *dev,
 		 .csn_pullup = NRF_GPIO_PIN_NOPULL,			\
 		 .miso_drive = NRF_GPIO_PIN_S0S1,))
 
-#define SPI_NRFX_SPIS_DEVICE(idx)					       \
+#define SPI_NRFX_SPIS_DEFINE(idx)					       \
 	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPIS(idx), 0,			       \
 				     sck_pin, mosi_pin, miso_pin, csn_pin);    \
 	static int spi_##idx##_init(const struct device *dev)		       \
@@ -319,17 +319,17 @@ static int init_spis(const struct device *dev,
 			    &spi_nrfx_driver_api)
 
 #ifdef CONFIG_SPI_0_NRF_SPIS
-SPI_NRFX_SPIS_DEVICE(0);
+SPI_NRFX_SPIS_DEFINE(0);
 #endif
 
 #ifdef CONFIG_SPI_1_NRF_SPIS
-SPI_NRFX_SPIS_DEVICE(1);
+SPI_NRFX_SPIS_DEFINE(1);
 #endif
 
 #ifdef CONFIG_SPI_2_NRF_SPIS
-SPI_NRFX_SPIS_DEVICE(2);
+SPI_NRFX_SPIS_DEFINE(2);
 #endif
 
 #ifdef CONFIG_SPI_3_NRF_SPIS
-SPI_NRFX_SPIS_DEVICE(3);
+SPI_NRFX_SPIS_DEFINE(3);
 #endif
