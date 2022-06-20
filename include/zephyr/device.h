@@ -421,19 +421,19 @@ typedef int16_t device_handle_t;
  * before they are accessed.
  */
 struct device_context {
-	/** Non-negative result of initializing the device.
-	 *
-	 * The absolute value returned when the device initialization
-	 * function was invoked, or `UINT8_MAX` if the value exceeds
-	 * an 8-bit integer. If initialized is also set, a zero value
-	 * indicates initialization succeeded.
-	 */
-	unsigned int init_res : 8;
-
 	/** Indicates the device initialization function has been
 	 * invoked.
 	 */
-	bool initialized : 1;
+	uint32_t initialized : 1;
+	/** Non-negative result of initializing the device.
+	 *
+	 * Stores the absolute value returned by the device initialization
+	 * function, or `UINT8_MAX` if the value exceeds an 8-bit integer.
+	 * A value of 0 indicates the initalization succeeded.
+	 */
+	uint32_t init_res    : 8;
+
+	uint32_t _reserved   : 23;
 };
 
 struct pm_device;
