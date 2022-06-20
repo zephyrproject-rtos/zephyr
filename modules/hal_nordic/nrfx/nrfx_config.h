@@ -7,6 +7,7 @@
 #ifndef NRFX_CONFIG_H__
 #define NRFX_CONFIG_H__
 
+#include <zephyr/devicetree.h>
 
 /*
  * These are mappings of Kconfig options enabling nrfx drivers and particular
@@ -197,6 +198,9 @@
 #define NRFX_SAADC_ENABLED 1
 #endif
 
+#define SPI3_NODE DT_NODELABEL(spi3)
+#define SPI4_NODE DT_NODELABEL(spi4)
+
 #ifdef CONFIG_NRFX_SPI
 #define NRFX_SPI_ENABLED 1
 #endif
@@ -228,7 +232,10 @@
 #ifdef CONFIG_NRFX_SPIM4
 #define NRFX_SPIM4_ENABLED 1
 #endif
-#if defined(CONFIG_SPI_3_NRF_RX_DELAY) || defined(CONFIG_SPI_4_NRF_RX_DELAY)
+#if ((DT_NODE_HAS_COMPAT_STATUS(SPI3, nordic_nrf_spim, okay) &&                \
+      DT_PROP(SPI3, rx_delay)) ||                                              \
+     (DT_NODE_HAS_COMPAT_STATUS(SPI4, nordic_nrf_spim, okay) &&                \
+      DT_PROP(SPI4, rx_delay)))
 #define NRFX_SPIM_EXTENDED_ENABLED 1
 #endif
 
