@@ -322,7 +322,7 @@ static ssize_t write_description(struct bt_conn *conn,
 		}
 	}
 
-	BT_DBG("%s", log_strdup(inst->srv.description));
+	BT_DBG("%s", inst->srv.description);
 
 	return len;
 }
@@ -334,7 +334,7 @@ static ssize_t read_description(struct bt_conn *conn,
 {
 	struct bt_aics *inst = attr->user_data;
 
-	BT_DBG("%s", log_strdup(inst->srv.description));
+	BT_DBG("%s", inst->srv.description);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &inst->srv.description, strlen(inst->srv.description));
@@ -433,7 +433,7 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 		if (IS_ENABLED(CONFIG_BT_DEBUG_AICS) &&
 		    strcmp(aics->srv.description, param->description)) {
 			BT_DBG("Input desc clipped to %s",
-			       log_strdup(aics->srv.description));
+			       aics->srv.description);
 		}
 	}
 

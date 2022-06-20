@@ -61,7 +61,7 @@ static void ns_bind_cb(struct rpmsg_device *rdev,
 
 			if (err != 0) {
 				LOG_ERR("Creating remote endpoint %s"
-					" failed wirh error %d", log_strdup(name), err);
+					" failed wirh error %d", name, err);
 			} else {
 				endpoints[i].bound = true;
 			}
@@ -70,7 +70,7 @@ static void ns_bind_cb(struct rpmsg_device *rdev,
 		}
 	}
 
-	LOG_ERR("Remote endpoint %s not registered locally", log_strdup(name));
+	LOG_ERR("Remote endpoint %s not registered locally", name);
 }
 
 #endif
@@ -146,7 +146,7 @@ int rpmsg_service_register_endpoint(const char *name, rpmsg_ept_cb cb)
 		}
 	}
 
-	LOG_ERR("No free slots to register endpoint %s", log_strdup(name));
+	LOG_ERR("No free slots to register endpoint %s", name);
 
 	return -ENOMEM;
 }

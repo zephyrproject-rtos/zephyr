@@ -229,13 +229,13 @@ static inline void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
 	char pkt_str[sizeof("0x") + sizeof(intptr_t) * 2];
 
 	if (str && str[0]) {
-		LOG_DBG("%s", log_strdup(str));
+		LOG_DBG("%s", str);
 	}
 
 	snprintk(pkt_str, sizeof(pkt_str), "%p", pkt);
 
 	while (buf) {
-		LOG_HEXDUMP_DBG(buf->data, buf->len, log_strdup(pkt_str));
+		LOG_HEXDUMP_DBG(buf->data, buf->len, pkt_str);
 		buf = buf->frags;
 	}
 }

@@ -120,7 +120,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 #endif
 
 	LOG_ERR("Current thread: %p (%s)", thread,
-		log_strdup(thread_name_get(thread)));
+		thread_name_get(thread));
 
 	coredump(reason, esf, thread);
 

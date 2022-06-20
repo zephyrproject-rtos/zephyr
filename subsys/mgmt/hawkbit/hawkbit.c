@@ -354,7 +354,7 @@ static void hawkbit_update_sleep(struct hawkbit_ctl_res *hawkbit_res)
 	const char *sleep = hawkbit_res->config.polling.sleep;
 
 	if (strlen(sleep) != HAWKBIT_SLEEP_LENGTH) {
-		LOG_ERR("Invalid poll sleep: %s", log_strdup(sleep));
+		LOG_ERR("Invalid poll sleep: %s", sleep);
 	} else {
 		sleep_time = hawkbit_time2sec(sleep);
 		if (sleep_time > 0 && poll_sleep != (MSEC_PER_SEC * sleep_time)) {
@@ -382,14 +382,14 @@ static int hawkbit_find_cancelAction_base(struct hawkbit_ctl_res *res, char *can
 	helper = strstr(href, "cancelAction/");
 	if (!helper) {
 		/* A badly formatted cancel base is a server error */
-		LOG_ERR("Missing cancelBase/ in href %s", log_strdup(href));
+		LOG_ERR("Missing cancelBase/ in href %s", href);
 		return -EINVAL;
 	}
 
 	len = strlen(helper);
 	if (len > CANCEL_BASE_SIZE - 1) {
 		/* Lack of memory is an application error */
-		LOG_ERR("cancelBase %s is too big (len %zu, max %zu)", log_strdup(helper), len,
+		LOG_ERR("cancelBase %s is too big (len %zu, max %zu)", helper, len,
 			CANCEL_BASE_SIZE - 1);
 		return -ENOMEM;
 	}
@@ -434,14 +434,14 @@ static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res, char *deplo
 	helper = strstr(href, "deploymentBase/");
 	if (!helper) {
 		/* A badly formatted deployment base is a server error */
-		LOG_ERR("Missing deploymentBase/ in href %s", log_strdup(href));
+		LOG_ERR("Missing deploymentBase/ in href %s", href);
 		return -EINVAL;
 	}
 
 	len = strlen(helper);
 	if (len > DEPLOYMENT_BASE_SIZE - 1) {
 		/* Lack of memory is an application error */
-		LOG_ERR("deploymentBase %s is too big (len %zu, max %zu)", log_strdup(helper), len,
+		LOG_ERR("deploymentBase %s is too big (len %zu, max %zu)", helper, len,
 			DEPLOYMENT_BASE_SIZE - 1);
 		return -ENOMEM;
 	}
@@ -481,7 +481,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res, int32_t *json_a
 
 	chunk = &res->deployment.chunks[0];
 	if (strcmp("bApp", chunk->part)) {
-		LOG_ERR("Only part 'bApp' is supported; got %s", log_strdup(chunk->part));
+		LOG_ERR("Only part 'bApp' is supported; got %s", chunk->part);
 		return -EINVAL;
 	}
 
@@ -516,7 +516,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res, int32_t *json_a
 
 	helper = strstr(href, "/DEFAULT/controller/v1");
 	if (!helper) {
-		LOG_ERR("Unexpected download-http href format: %s", log_strdup(helper));
+		LOG_ERR("Unexpected download-http href format: %s", helper);
 		return -EINVAL;
 	}
 
@@ -525,7 +525,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res, int32_t *json_a
 		LOG_ERR("Empty download-http");
 		return -EINVAL;
 	} else if (len > DOWNLOAD_HTTP_SIZE - 1) {
-		LOG_ERR("download-http %s is too big (len: %zu, max: %zu)", log_strdup(helper), len,
+		LOG_ERR("download-http %s is too big (len: %zu, max: %zu)", helper, len,
 			DOWNLOAD_HTTP_SIZE - 1);
 		return -ENOMEM;
 	}
@@ -538,10 +538,10 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res, int32_t *json_a
 
 static void hawkbit_dump_base(struct hawkbit_ctl_res *r)
 {
-	LOG_DBG("config.polling.sleep=%s", log_strdup(r->config.polling.sleep));
-	LOG_DBG("_links.deploymentBase.href=%s", log_strdup(r->_links.deploymentBase.href));
-	LOG_DBG("_links.configData.href=%s", log_strdup(r->_links.configData.href));
-	LOG_DBG("_links.cancelAction.href=%s", log_strdup(r->_links.cancelAction.href));
+	LOG_DBG("config.polling.sleep=%s", r->config.polling.sleep);
+	LOG_DBG("_links.deploymentBase.href=%s", r->_links.deploymentBase.href);
+	LOG_DBG("_links.configData.href=%s", r->_links.configData.href);
+	LOG_DBG("_links.cancelAction.href=%s", r->_links.cancelAction.href);
 }
 
 static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
@@ -550,19 +550,19 @@ static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
 	struct hawkbit_dep_res_arts *a = &c->artifacts[0];
 	struct hawkbit_dep_res_links *l = &a->_links;
 
-	LOG_DBG("id=%s", log_strdup(d->id));
-	LOG_DBG("download=%s", log_strdup(d->deployment.download));
-	LOG_DBG("update=%s", log_strdup(d->deployment.update));
-	LOG_DBG("chunks[0].part=%s", log_strdup(c->part));
-	LOG_DBG("chunks[0].name=%s", log_strdup(c->name));
-	LOG_DBG("chunks[0].version=%s", log_strdup(c->version));
-	LOG_DBG("chunks[0].artifacts[0].filename=%s", log_strdup(a->filename));
-	LOG_DBG("chunks[0].artifacts[0].hashes.sha1=%s", log_strdup(a->hashes.sha1));
-	LOG_DBG("chunks[0].artifacts[0].hashes.md5=%s", log_strdup(a->hashes.md5));
-	LOG_DBG("chunks[0].artifacts[0].hashes.sha256=%s", log_strdup(a->hashes.sha256));
+	LOG_DBG("id=%s", d->id);
+	LOG_DBG("download=%s", d->deployment.download);
+	LOG_DBG("update=%s", d->deployment.update);
+	LOG_DBG("chunks[0].part=%s", c->part);
+	LOG_DBG("chunks[0].name=%s", c->name);
+	LOG_DBG("chunks[0].version=%s", c->version);
+	LOG_DBG("chunks[0].artifacts[0].filename=%s", a->filename);
+	LOG_DBG("chunks[0].artifacts[0].hashes.sha1=%s", a->hashes.sha1);
+	LOG_DBG("chunks[0].artifacts[0].hashes.md5=%s", a->hashes.md5);
+	LOG_DBG("chunks[0].artifacts[0].hashes.sha256=%s", a->hashes.sha256);
 	LOG_DBG("chunks[0].size=%d", a->size);
-	LOG_DBG("download-http=%s", log_strdup(l->download_http.href));
-	LOG_DBG("md5sum =%s", log_strdup(l->md5sum_http.href));
+	LOG_DBG("download-http=%s", l->download_http.href);
+	LOG_DBG("md5sum =%s", l->md5sum_http.href);
 }
 
 int hawkbit_init(void)

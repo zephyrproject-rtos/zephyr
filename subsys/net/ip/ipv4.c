@@ -319,8 +319,8 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	net_pkt_set_family(pkt, PF_INET);
 
 	NET_DBG("IPv4 packet received from %s to %s",
-		log_strdup(net_sprint_ipv4_addr(&hdr->src)),
-		log_strdup(net_sprint_ipv4_addr(&hdr->dst)));
+		net_sprint_ipv4_addr(&hdr->src),
+		net_sprint_ipv4_addr(&hdr->dst));
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
