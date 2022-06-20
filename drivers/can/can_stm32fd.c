@@ -89,6 +89,8 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 	}
 
 	FDCAN_CONFIG->CKDIV = CAN_STM32FD_CLOCK_DIVISOR >> 1;
+
+	return 0;
 }
 
 static int can_stm32fd_init(const struct device *dev)
