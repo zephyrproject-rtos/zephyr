@@ -22,14 +22,15 @@ int lis3mdl_trigger_set(const struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct lis3mdl_data *drv_data = dev->data;
+	const struct lis3mdl_config *config = dev->config;
 	int16_t buf[3];
 	int ret;
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
 	/* dummy read: re-trigger interrupt */
-	ret = i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
-			     LIS3MDL_REG_SAMPLE_START, (uint8_t *)buf, 6);
+	ret = i2c_burst_read_dt(&config->i2c, LIS3MDL_REG_SAMPLE_START,
+				(uint8_t *)buf, 6);
 	if (ret != 0) {
 		return ret;
 	}
