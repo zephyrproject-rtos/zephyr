@@ -569,7 +569,10 @@ static int spim_nrfx_pm_action(const struct device *dev,
 	};								       \
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPIM(idx))));	       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
-		.spim = NRFX_SPIM_INSTANCE(idx),			       \
+		.spim = {						       \
+			.p_reg = (NRF_SPIM_Type *)DT_REG_ADDR(SPIM(idx)),      \
+			.drv_inst_idx = NRFX_SPIM##idx##_INST_IDX,	       \
+		},							       \
 		.max_freq = SPIM_PROP(idx, max_frequency),		       \
 		.def_config = {						       \
 			SPI_NRFX_SPIM_PIN_CFG(idx)			       \
