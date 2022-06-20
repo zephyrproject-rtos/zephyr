@@ -18,6 +18,14 @@ properties:
       description: |
         Maximum data rate the SPI peripheral can be driven at, in Hz.
 
+    overrun-character:
+      type: int
+      default: 0xff
+      description: |
+        The overrun character is used when all bytes from the TX buffer are
+        sent, but the transfer continues due to RX. Defaults to 0xff
+        (line high), the most common value used in SPI transfers.
+
     sck-pin:
       type: int
       required: false

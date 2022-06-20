@@ -249,7 +249,6 @@ static int init_spis(const struct device *dev,
  *
  * - NRFX_SPIS_INSTANCE() requires an SoC instance number
  * - soc-instance-numbered kconfig enables
- * - ORC is a SoC-instance-numbered kconfig option instead of a DT property
  */
 
 #define SPIS(idx) DT_NODELABEL(spi##idx)
@@ -279,7 +278,7 @@ static int init_spis(const struct device *dev,
 			SPI_NRFX_SPIS_PIN_CFG(idx)			       \
 			.mode      = NRF_SPIS_MODE_0,			       \
 			.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
-			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	       \
+			.orc       = SPIS_PROP(idx, overrun_character),	       \
 			.def       = SPIS_PROP(idx, def_char),		       \
 		};							       \
 		IF_ENABLED(CONFIG_PINCTRL, (				       \
