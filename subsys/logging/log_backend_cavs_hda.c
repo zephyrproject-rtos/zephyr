@@ -8,6 +8,7 @@
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
+#include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_backend_std.h>
 #include <zephyr/logging/log_backend_cavs_hda.h>
 #include <zephyr/drivers/dma.h>
@@ -180,7 +181,11 @@ static inline void dropped(const struct log_backend *const backend,
 {
 	ARG_UNUSED(backend);
 
-	log_output_dropped_process(&log_output_cavs_hda, cnt);
+	if (IS_ENABLED(CONFIG_LOG_DICTIONARY_SUPPORT)) {
+		log_dict_output_dropped_process(&log_output_cavs_hda, cnt);
+	} else {
+		log_output_dropped_process(&log_output_cavs_hda, cnt);
+	}
 }
 
 static void panic(struct log_backend const *const backend)
