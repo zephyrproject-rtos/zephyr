@@ -116,7 +116,6 @@ struct lis3mdl_data {
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -135,6 +134,9 @@ struct lis3mdl_data {
 
 struct lis3mdl_config {
 	struct i2c_dt_spec i2c;
+#ifdef CONFIG_LIS3MDL_TRIGGER
+	struct gpio_dt_spec irq_gpio;
+#endif
 };
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
