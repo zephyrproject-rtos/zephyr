@@ -572,7 +572,7 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		.def_config = {						       \
 			SPI_NRFX_SPIM_PIN_CFG(idx)			       \
 			.ss_pin = NRFX_SPIM_PIN_NOT_USED,		       \
-			.orc    = CONFIG_SPI_##idx##_NRF_ORC,		       \
+			.orc    = SPIM_PROP(idx, overrun_character),	       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		},							       \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \

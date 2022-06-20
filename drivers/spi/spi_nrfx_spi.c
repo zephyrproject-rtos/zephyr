@@ -321,7 +321,6 @@ static int spi_nrfx_pm_action(const struct device *dev,
  *
  * - NRFX_SPI_INSTANCE() requires an SoC instance number
  * - soc-instance-numbered kconfig enables
- * - ORC is a SoC-instance-numbered kconfig option instead of a DT property
  */
 
 #define SPI(idx)			DT_NODELABEL(spi##idx)
@@ -389,7 +388,7 @@ static int spi_nrfx_pm_action(const struct device *dev,
 		.def_config = {						       \
 			SPI_NRFX_SPI_PIN_CFG(idx)			       \
 			.ss_pin = NRFX_SPI_PIN_NOT_USED,		       \
-			.orc    = CONFIG_SPI_##idx##_NRF_ORC,		       \
+			.orc    = SPI_PROP(idx, overrun_character),	       \
 		},							       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPI(idx)),))	       \
