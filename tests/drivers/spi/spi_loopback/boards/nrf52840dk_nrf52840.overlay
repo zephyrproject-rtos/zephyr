@@ -6,4 +6,5 @@
 
 &spi3 {
 	overrun-character = <0x00>;
+	rx-delay = <1>;
 };
