@@ -113,7 +113,7 @@ static struct osdp_pd_cap osdp_pd_cap[] = {
 
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
-	int i, ret = OSDP_PD_ERR_GENERIC, pos = 0;
+	int i, ret = OSDP_PD_ERR_GENERIC, pos = 0, tmp;
 	struct osdp_cmd *cmd;
 
 	pd->reply_id = 0;
@@ -298,7 +298,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
 		if (len != CMD_KEYSET_DATA_LEN) {
-			LOG_ERR("CMD_KEYSET length mismatch! %d/18", len);
 			break;
 		}
 		/**
@@ -334,17 +333,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_CHLNG:
-		/* Workaround for error: a label can only be part of a
-		 * statement and a declaration is not a statement */
-		;
-		int tmp = OSDP_PD_CAP_COMMUNICATION_SECURITY;
+		tmp = OSDP_PD_CAP_COMMUNICATION_SECURITY;
 		if (pd->cap[tmp].compliance_level == 0) {
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_UNSUP;
 			break;
 		}
 		if (len != CMD_CHLNG_DATA_LEN) {
-			LOG_ERR("CMD_CHLNG length mismatch! %d/8", len);
 			break;
 		}
 		osdp_sc_init(pd);
@@ -357,7 +352,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	case CMD_SCRYPT:
 		if (len != CMD_SCRYPT_DATA_LEN) {
-			LOG_ERR("CMD_SCRYPT length mismatch! %d/16", len);
 			break;
 		}
 		for (i = 0; i < 16; i++) {
@@ -374,11 +368,12 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		return OSDP_PD_ERR_REPLY;
 	}
 
-	if (ret != 0) {
-		LOG_ERR("Invalid command structure. CMD: %02x, Len: %d",
-			pd->cmd_id, len);
+	if (ret == OSDP_PD_ERR_GENERIC) {
+		LOG_ERR("Failed to decode command: CMD(%02x) Len:%d ret:%d",
+			pd->cmd_id, len, ret);
 		pd->reply_id = REPLY_NAK;
 		pd->cmd_data[0] = OSDP_PD_NAK_CMD_LEN;
+		ret = OSDP_PD_ERR_REPLY;
 	}
 
 	if (pd->cmd_id != CMD_POLL) {
@@ -386,6 +381,12 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 
 	return ret;
+}
+
+static inline void assert_len(int need, int have)
+{
+	__ASSERT(need < have, "OOM at build command: need:%d have:%d",
+		 need, have);
 }
 
 /**
@@ -404,25 +405,15 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 #endif
 	buf += data_off;
 	max_len -= data_off;
-	if (max_len <= 0) {
-		LOG_ERR("Out of buffer space!");
-		return -1;
-	}
 
 	switch (pd->reply_id) {
 	case REPLY_ACK:
-		if (max_len < REPLY_ACK_LEN) {
-			LOG_ERR("Out of buffer space!");
-			break;
-		}
+		assert_len(REPLY_ACK_LEN, max_len);
 		buf[len++] = pd->reply_id;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_PDID:
-		if (max_len < REPLY_PDID_LEN) {
-			LOG_ERR("Out of buffer space!");
-			break;
-		}
+		assert_len(REPLY_PDID_LEN, max_len);
 		buf[len++] = pd->reply_id;
 
 		buf[len++] = BYTE_0(pd->id.vendor_code);
@@ -443,10 +434,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_PDCAP:
-		if (max_len < REPLY_PDCAP_LEN) {
-			LOG_ERR("Out of buffer space!");
-			break;
-		}
+		assert_len(REPLY_PDCAP_LEN, max_len);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < OSDP_PD_CAP_SENTINEL; i++) {
 			if (pd->cap[i].function_code != i) {
@@ -464,29 +452,20 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_LSTATR:
-		if (max_len < REPLY_LSTATR_LEN) {
-			LOG_ERR("Out of buffer space!");
-			break;
-		}
+		assert_len(REPLY_LSTATR_LEN, max_len);
 		buf[len++] = pd->reply_id;
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_TAMPER);
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_POWER);
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_RSTATR:
-		if (max_len < REPLY_RSTATR_LEN) {
-			LOG_ERR("Out of buffer space!");
-			break;
-		}
+		assert_len(REPLY_RSTATR_LEN, max_len);
 		buf[len++] = pd->reply_id;
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_R_TAMPER);
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_COM:
-		if (max_len < REPLY_COM_LEN) {
-			LOG_ERR("Out of buffer space!");
-			break;
-		}
+		assert_len(REPLY_COM_LEN, max_len);
 		/**
 		 * If COMSET succeeds, the PD must reply with the old params and
 		 * then switch to the new params from then then on. We have the
@@ -517,10 +496,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_NAK:
-		if (max_len < REPLY_NAK_LEN) {
-			LOG_ERR("Fatal: insufficent space for sending NAK");
-			return -1;
-		}
+		assert_len(REPLY_NAK_LEN, max_len);
 		buf[len++] = pd->reply_id;
 		buf[len++] = pd->cmd_data[0];
 		ret = OSDP_PD_ERR_NONE;
@@ -530,10 +506,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (smb == NULL) {
 			break;
 		}
-		if (max_len < REPLY_CCRYPT_LEN) {
-			LOG_ERR("Out of buffer space!");
-			return -1;
-		}
+		assert_len(REPLY_CCRYPT_LEN, max_len);
 		osdp_fill_random(pd->sc.pd_random, 8);
 		osdp_compute_session_keys(pd);
 		osdp_compute_pd_cryptogram(pd);
@@ -556,10 +529,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (smb == NULL) {
 			break;
 		}
-		if (max_len < REPLY_RMAC_I_LEN) {
-			LOG_ERR("Out of buffer space!");
-			return -1;
-		}
+		assert_len(REPLY_RMAC_I_LEN, max_len);
 		osdp_compute_rmac_i(pd);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < 16; i++) {
@@ -595,10 +565,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		/* catch all errors and report it as a RECORD error to CP */
 		LOG_ERR("Failed to build REPLY(%02x); Sending NAK instead!",
 			pd->reply_id);
-		if (max_len < REPLY_NAK_LEN) {
-			LOG_ERR("Fatal: insufficent space for sending NAK");
-			return -1;
-		}
+		assert_len(REPLY_NAK_LEN, max_len);
 		buf[0] = REPLY_NAK;
 		buf[1] = OSDP_PD_NAK_RECORD;
 		len = 2;
