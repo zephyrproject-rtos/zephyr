@@ -608,6 +608,22 @@ config WARN_EXPERIMENTAL
 	  Print a warning when the Kconfig tree is parsed if any experimental
 	  features are enabled.
 
+config ENFORCE_ZEPHYR_STDINT
+	bool
+	prompt "Enforce Zephyr convention for stdint"
+	depends on !ARCH_POSIX
+	default y
+	help
+	  This enforces the Zephyr stdint convention where int32_t = int,
+	  int64_t = long long, and intptr_t = long so that short string
+	  format length modifiers can be used universally across ILP32
+	  and LP64 architectures. Sometimes this is not possible e.g. when
+	  linking against a binary-only C++ library whose type mangling
+	  is incompatible with the Zephyr convention, or if the build
+	  environment doesn't allow such enforcement, in which case this
+	  should be turned off with the caveat that argument type validation
+	  on Zephyr code will be skipped.
+
 endmenu
 
 
