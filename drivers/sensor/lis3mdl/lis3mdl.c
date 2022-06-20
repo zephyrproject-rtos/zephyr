@@ -165,6 +165,8 @@ static struct lis3mdl_data lis3mdl_data_inst;
 
 static struct lis3mdl_config lis3mdl_config_inst = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+	IF_ENABLED(CONFIG_LIS3MDL_TRIGGER,
+		   (.irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios),))
 };
 
 DEVICE_DT_INST_DEFINE(0, lis3mdl_init, NULL, &lis3mdl_data_inst,
