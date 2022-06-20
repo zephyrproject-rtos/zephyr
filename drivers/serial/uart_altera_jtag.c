@@ -81,7 +81,7 @@ static int uart_altera_jtag_init(const struct device *dev)
 	uint32_t ctrl_val = sys_read32(config->base + UART_ALTERA_JTAG_CTRL_OFFSET);
 
 	ctrl_val &= ~(UART_IE_TX | UART_IE_RX);
-	sys_write32(ctrl_val, sys_read32(config->base + UART_ALTERA_JTAG_CTRL_OFFSET));
+	sys_write32(ctrl_val, config->base + UART_ALTERA_JTAG_CTRL_OFFSET);
 #endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 	return 0;
 }
