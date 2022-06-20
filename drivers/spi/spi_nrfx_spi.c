@@ -319,7 +319,8 @@ static int spi_nrfx_pm_action(const struct device *dev,
 /*
  * Current factors requiring use of DT_NODELABEL:
  *
- * - NRFX_SPI_INSTANCE() requires an SoC instance number
+ * - HAL design (requirement of drv_inst_idx in nrfx_spi_t)
+ * - Name-based HAL IRQ handlers, e.g. nrfx_spi_0_irq_handler
  */
 
 #define SPI(idx)			DT_NODELABEL(spi##idx)
@@ -383,7 +384,10 @@ static int spi_nrfx_pm_action(const struct device *dev,
 	};								       \
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPI(idx))));	       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
-		.spi = NRFX_SPI_INSTANCE(idx),				       \
+		.spi = {						       \
+			.p_reg = (NRF_SPI_Type *)DT_REG_ADDR(SPI(idx)),	       \
+			.drv_inst_idx = NRFX_SPI##idx##_INST_IDX,	       \
+		},							       \
 		.def_config = {						       \
 			SPI_NRFX_SPI_PIN_CFG(idx)			       \
 			.ss_pin = NRFX_SPI_PIN_NOT_USED,		       \
