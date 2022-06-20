@@ -147,6 +147,8 @@ static struct isl29035_driver_data isl29035_data_inst;
 
 static const struct isl29035_config isl29035_config_inst = {
 	.i2c = I2C_DT_SPEC_INST_GET(0),
+	IF_ENABLED(CONFIG_ISL29035_TRIGGER,
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),))
 };
 
 DEVICE_DT_INST_DEFINE(0, &isl29035_init, NULL, &isl29035_data_inst,
