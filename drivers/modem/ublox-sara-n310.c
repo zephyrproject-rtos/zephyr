@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_n310, CONFIG_MODEM_LOG_LEVEL);
 #define MDM_POWER_DISABLE 1
 
 /* forward declaration */
-static int is_awake(void);
+static bool is_awake(void);
 static int turn_on_module(void);
 
 /* pin settings */
@@ -169,7 +169,7 @@ static int send_at_command(struct modem_iface *iface,
 	int ret = 0;
 
 	/* wake module if asleep */
-	if (is_awake() == 0) {
+	if (!is_awake()) {
 		ret = turn_on_module();
 
 		if (ret < 0) {
@@ -1035,9 +1035,18 @@ static int turn_off_module(void)
 }
 
 /* Check if module is awake by checking V_INT value */
-static int is_awake(void)
+static bool is_awake(void)
 {
-	return gpio_pin_get_dt(&vint_gpio);
+  int ret = 0;
+
+  ret = gpio_pin_get_dt(&vint_gpio);
+  if (ret < 0) {
+	LOG_ERR("Failed to get status vint_gpio: %d", ret);
+
+	return false;
+  }
+
+	return ret;
 }
 
 /* PSM functions, exposed to application through header */
@@ -1157,7 +1166,7 @@ static int pin_init(void)
 	turn_off_module();
 
 	/* wait until power is off */
-	while (is_awake() > 0) {
+	while (is_awake()) {
 		k_sleep(K_MSEC(100));
 	}
 
