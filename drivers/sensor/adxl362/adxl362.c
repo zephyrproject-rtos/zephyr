@@ -354,7 +354,7 @@ static int adxl362_fifo_setup(const struct device *dev, uint8_t mode,
 		return ret;
 	}
 
-	ret = adxl362_set_reg(dev, water_mark_lvl, ADXL362_REG_FIFO_SAMPLES, 2);
+	ret = adxl362_set_reg(dev, water_mark_lvl, ADXL362_REG_FIFO_SAMPLES, 1);
 	if (ret) {
 		return ret;
 	}
