@@ -24,7 +24,7 @@
 #define PSM_RESET 2
 
 /* Signal quality callback data */
-struct signal_quality {
+struct n310_signal_quality {
   int rssi;
   int quality;
 };
@@ -93,6 +93,6 @@ char *n310_get_ip(void);
 int n310_get_network_state(void);
 int n310_get_jamming_state(void);
 int n310_get_antenna_load(void);
-int n310_get_signal_quality(struct signal_quality *buffer);
+int n310_get_signal_quality(struct n310_signal_quality *buffer);
 
 #endif /* UBLOX_SARA_N310_H_ */

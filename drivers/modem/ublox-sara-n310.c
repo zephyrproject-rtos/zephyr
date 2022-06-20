@@ -117,7 +117,7 @@ struct modem_data {
 	enum n310_network_state network_state;
 	enum n310_jamming_state jamming_state;
 	enum n310_antenna_load antenna_load;
-  struct signal_quality signal_quality;
+	struct n310_signal_quality signal_quality;
 
 	/* socket data */
 	struct modem_socket_config socket_config;
@@ -236,7 +236,7 @@ int n310_get_antenna_load(void)
 	return mdata.antenna_load;
 }
 
-int n310_get_signal_quality(struct signal_quality *buffer)
+int n310_get_signal_quality(struct n310_signal_quality *buffer)
 {
 	int ret = 0;
 

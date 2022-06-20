@@ -49,7 +49,7 @@ void main(void)
 	int antenna_load = n310_get_antenna_load();
 	LOG_INF("Antenna load: %d", antenna_load);
 
-	struct signal_quality buffer;
+	struct n310_signal_quality buffer;
 	n310_get_signal_quality(&buffer);
 	LOG_INF("Signal quality: %d, %d", buffer.rssi, buffer.quality);
 
