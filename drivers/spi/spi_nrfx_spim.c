@@ -511,31 +511,29 @@ static int spim_nrfx_pm_action(const struct device *dev,
  * it won't work.
  */
 #define SPIM(idx)			DT_NODELABEL(spi##idx)
-#define SPIM_PROP(idx, prop)		DT_PROP(SPIM(idx), prop)
-#define SPIM_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(SPIM(idx), prop)
 
 #define SPIM_NRFX_MISO_PULL(idx)			\
-	(SPIM_PROP(idx, miso_pull_up)			\
-		? SPIM_PROP(idx, miso_pull_down)	\
+	(DT_PROP(SPIM(idx), miso_pull_up)		\
+		? DT_PROP(SPIM(idx), miso_pull_down)	\
 			? -1 /* invalid configuration */\
 			: NRF_GPIO_PIN_PULLUP		\
-		: SPIM_PROP(idx, miso_pull_down)	\
+		: DT_PROP(SPIM(idx), miso_pull_down)	\
 			? NRF_GPIO_PIN_PULLDOWN		\
 			: NRF_GPIO_PIN_NOPULL)
 
 #define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)				\
 	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,				\
 		(.dcx_pin = NRFX_SPIM_PIN_NOT_USED,			\
-		 COND_CODE_1(SPIM_HAS_PROP(idx, has_rx_delay),		\
-			     (.rx_delay = SPIM_PROP(idx, rx_delay),),	\
-			     ())					\
+		 COND_CODE_1(DT_NODE_HAS_PROP(SPIM(idx), has_rx_delay),	\
+			     (.rx_delay = DT_PROP(SPIM(idx), rx_delay),),\
+			     ()) 					\
 		))
 
 #define SPI_NRFX_SPIM_PIN_CFG(idx)					\
 	COND_CODE_1(CONFIG_PINCTRL,					\
 		(.skip_gpio_cfg = true,					\
 		 .skip_psel_cfg = true,),				\
-		(.sck_pin   = SPIM_PROP(idx, sck_pin),			\
+		(.sck_pin   = DT_PROP(SPIM(idx), sck_pin),		\
 		 .mosi_pin  = DT_PROP_OR(SPIM(idx), mosi_pin,		\
 					 NRFX_SPIM_PIN_NOT_USED),	\
 		 .miso_pin  = DT_PROP_OR(SPIM(idx), miso_pin,		\
@@ -546,8 +544,8 @@ static int spim_nrfx_pm_action(const struct device *dev,
 	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPIM(idx), 1,			       \
 				     sck_pin, mosi_pin, miso_pin);	       \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			       \
-		     !(SPIM_PROP(idx, miso_pull_up) &&			       \
-		       SPIM_PROP(idx, miso_pull_down)),			       \
+		     !(DT_PROP(SPIM(idx), miso_pull_up) &&		       \
+		       DT_PROP(SPIM(idx), miso_pull_down)),		       \
 		"SPIM"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
@@ -590,18 +588,18 @@ static int spim_nrfx_pm_action(const struct device *dev,
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spim = {						       \
 			.p_reg = (NRF_SPIM_Type *)DT_REG_ADDR(SPIM(idx)),      \
-			.drv_inst_idx = SPIM_PROP(idx, periph_idx),	       \
+			.drv_inst_idx = DT_PROP(SPIM(idx), periph_idx),	       \
 		},							       \
-		.max_freq = SPIM_PROP(idx, max_frequency),		       \
+		.max_freq = DT_PROP(SPIM(idx), max_frequency),		       \
 		.def_config = {						       \
 			SPI_NRFX_SPIM_PIN_CFG(idx)			       \
 			.ss_pin = NRFX_SPIM_PIN_NOT_USED,		       \
-			.orc    = SPIM_PROP(idx, overrun_character),	       \
+			.orc    = DT_PROP(SPIM(idx), overrun_character),       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		},							       \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 			(.anomaly_58_workaround =			       \
-				SPIM_PROP(idx, anomaly_58_workaround),),       \
+				DT_PROP(SPIM(idx), anomaly_58_workaround),),   \
 			())						       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),))       \
@@ -616,7 +614,7 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		      &spi_nrfx_driver_api)
 
 #define SPIM_MEMORY_SECTION(idx)					       \
-	COND_CODE_1(SPIM_HAS_PROP(idx, memory_regions),			       \
+	COND_CODE_1(DT_NODE_HAS_PROP(SPIM(idx), memory_regions),	       \
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	       \
 			DT_PHANDLE(SPIM(idx), memory_regions)))))),	       \
 		())

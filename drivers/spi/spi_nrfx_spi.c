@@ -321,14 +321,13 @@ static int spi_nrfx_pm_action(const struct device *dev,
  */
 
 #define SPI(idx)			DT_NODELABEL(spi##idx)
-#define SPI_PROP(idx, prop)		DT_PROP(SPI(idx), prop)
 
 #define SPI_NRFX_MISO_PULL(idx)				\
-	(SPI_PROP(idx, miso_pull_up)			\
-		? SPI_PROP(idx, miso_pull_down)		\
+	(DT_PROP(SPI(idx), miso_pull_up)		\
+		? DT_PROP(SPI(idx), miso_pull_down)	\
 			? -1 /* invalid configuration */\
 			: NRF_GPIO_PIN_PULLUP		\
-		: SPI_PROP(idx, miso_pull_down)		\
+		: DT_PROP(SPI(idx), miso_pull_down)	\
 			? NRF_GPIO_PIN_PULLDOWN		\
 			: NRF_GPIO_PIN_NOPULL)
 
@@ -336,7 +335,7 @@ static int spi_nrfx_pm_action(const struct device *dev,
 	COND_CODE_1(CONFIG_PINCTRL,					\
 		(.skip_gpio_cfg = true,					\
 		 .skip_psel_cfg = true,),				\
-		(.sck_pin   = SPI_PROP(idx, sck_pin),			\
+		(.sck_pin   = DT_PROP(SPI(idx), sck_pin),		\
 		 .mosi_pin  = DT_PROP_OR(SPI(idx), mosi_pin,		\
 					 NRFX_SPI_PIN_NOT_USED),	\
 		 .miso_pin  = DT_PROP_OR(SPI(idx), miso_pin,		\
@@ -347,8 +346,8 @@ static int spi_nrfx_pm_action(const struct device *dev,
 	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPI(idx), 1,			       \
 				     sck_pin, mosi_pin, miso_pin);	       \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_PINCTRL) ||			       \
-		     !(SPI_PROP(idx, miso_pull_up) &&			       \
-		       SPI_PROP(idx, miso_pull_down)),			       \
+		     !(DT_PROP(SPI(idx), miso_pull_up) &&		       \
+		       DT_PROP(SPI(idx), miso_pull_down)),		       \
 		"SPI"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(const struct device *dev)		       \
@@ -383,12 +382,12 @@ static int spi_nrfx_pm_action(const struct device *dev,
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spi = {						       \
 			.p_reg = (NRF_SPI_Type *)DT_REG_ADDR(SPI(idx)),	       \
-			.drv_inst_idx = SPI_PROP(idx, periph_idx),	       \
+			.drv_inst_idx = DT_PROP(SPI(idx), periph_idx),	       \
 		},							       \
 		.def_config = {						       \
 			SPI_NRFX_SPI_PIN_CFG(idx)			       \
 			.ss_pin = NRFX_SPI_PIN_NOT_USED,		       \
-			.orc    = SPI_PROP(idx, overrun_character),	       \
+			.orc    = DT_PROP(SPI(idx), overrun_character),	       \
 		},							       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPI(idx)),))	       \

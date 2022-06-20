@@ -277,18 +277,17 @@ static int init_spis(const struct device *dev,
  */
 
 #define SPIS(idx) DT_NODELABEL(spi##idx)
-#define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
 
 #define SPI_NRFX_SPIS_PIN_CFG(idx)					\
 	COND_CODE_1(CONFIG_PINCTRL,					\
 		(.skip_gpio_cfg = true,					\
 		 .skip_psel_cfg = true,),				\
-		(.sck_pin    = SPIS_PROP(idx, sck_pin),			\
+		(.sck_pin    = DT_PROP(SPIS(idx), sck_pin),		\
 		 .mosi_pin   = DT_PROP_OR(SPIS(idx), mosi_pin,		\
 					  NRFX_SPIS_PIN_NOT_USED),	\
 		 .miso_pin   = DT_PROP_OR(SPIS(idx), miso_pin,		\
 					  NRFX_SPIS_PIN_NOT_USED),	\
-		 .csn_pin    = SPIS_PROP(idx, csn_pin),			\
+		 .csn_pin    = DT_PROP(SPIS(idx), csn_pin),		\
 		 .csn_pullup = NRF_GPIO_PIN_NOPULL,			\
 		 .miso_drive = NRF_GPIO_PIN_S0S1,))
 
@@ -303,8 +302,8 @@ static int init_spis(const struct device *dev,
 			SPI_NRFX_SPIS_PIN_CFG(idx)			       \
 			.mode      = NRF_SPIS_MODE_0,			       \
 			.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
-			.orc       = SPIS_PROP(idx, overrun_character),	       \
-			.def       = SPIS_PROP(idx, def_char),		       \
+			.orc       = DT_PROP(SPIS(idx), overrun_character),    \
+			.def       = DT_PROP(SPIS(idx), def_char),	       \
 		};							       \
 		IF_ENABLED(CONFIG_PINCTRL, (				       \
 			const struct spi_nrfx_config *dev_config = dev->config;\
@@ -324,7 +323,7 @@ static int init_spis(const struct device *dev,
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spis = {						       \
 			.p_reg = (NRF_SPIS_Type *)DT_REG_ADDR(SPIS(idx)),      \
-			.drv_inst_idx = SPIS_PROP(idx, periph_idx),	       \
+			.drv_inst_idx = DT_PROP(SPIS(idx), periph_idx),	       \
 		},							       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),))       \
