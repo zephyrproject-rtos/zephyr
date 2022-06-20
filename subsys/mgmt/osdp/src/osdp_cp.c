@@ -80,6 +80,12 @@ int osdp_extract_address(int *address)
 	return (pd_offset == CONFIG_OSDP_NUM_CONNECTED_PD) ? 0 : -1;
 }
 
+static inline void assert_buf_len(int need, int have)
+{
+	__ASSERT(need < have, "OOM at build command: need:%d have:%d",
+		 need, have);
+}
+
 static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	struct osdp_cmd *cmd = NULL;
@@ -97,45 +103,50 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	switch (pd->cmd_id) {
 	case CMD_POLL:
-		__fallthrough;
+		assert_buf_len(CMD_POLL_LEN, max_len);
+		buf[len++] = pd->cmd_id;
+		ret = 0;
+		break;
 	case CMD_LSTAT:
-		__fallthrough;
+		assert_buf_len(CMD_LSTAT_LEN, max_len);
+		buf[len++] = pd->cmd_id;
+		ret = 0;
+		break;
 	case CMD_ISTAT:
-		__fallthrough;
+		assert_buf_len(CMD_ISTAT_LEN, max_len);
+		buf[len++] = pd->cmd_id;
+		ret = 0;
+		break;
 	case CMD_OSTAT:
-		__fallthrough;
+		assert_buf_len(CMD_OSTAT_LEN, max_len);
+		buf[len++] = pd->cmd_id;
+		ret = 0;
+		break;
 	case CMD_RSTAT:
+		assert_buf_len(CMD_RSTAT_LEN, max_len);
 		buf[len++] = pd->cmd_id;
 		ret = 0;
 		break;
 	case CMD_ID:
-		if (max_len < CMD_ID_LEN) {
-			break;
-		}
+		assert_buf_len(CMD_ID_LEN, max_len);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
 		ret = 0;
 		break;
 	case CMD_CAP:
-		if (max_len < CMD_CAP_LEN) {
-			break;
-		}
+		assert_buf_len(CMD_CAP_LEN, max_len);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
 		ret = 0;
 		break;
 	case CMD_DIAG:
-		if (max_len < CMD_DIAG_LEN) {
-			break;
-		}
+		assert_buf_len(CMD_DIAG_LEN, max_len);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
 		ret = 0;
 		break;
 	case CMD_OUT:
-		if (max_len < CMD_OUT_LEN) {
-			break;
-		}
+		assert_buf_len(CMD_OUT_LEN, max_len);
 		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->output.output_no;
@@ -145,9 +156,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = 0;
 		break;
 	case CMD_LED:
-		if (max_len < CMD_LED_LEN) {
-			break;
-		}
+		assert_buf_len(CMD_LED_LEN, max_len);
 		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->led.reader;
@@ -169,9 +178,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = 0;
 		break;
 	case CMD_BUZ:
-		if (max_len < CMD_BUZ_LEN) {
-			break;
-		}
+		assert_buf_len(CMD_BUZ_LEN, max_len);
 		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->buzzer.reader;
@@ -183,9 +190,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 	case CMD_TEXT:
 		cmd = (struct osdp_cmd *)pd->cmd_data;
-		if (max_len < (CMD_TEXT_LEN + cmd->text.length)) {
-			break;
-		}
+		assert_buf_len(CMD_TEXT_LEN + cmd->text.length, max_len);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->text.reader;
 		buf[len++] = cmd->text.control_code;
@@ -199,9 +204,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = 0;
 		break;
 	case CMD_COMSET:
-		if (max_len < CMD_COMSET_LEN) {
-			break;
-		}
+		assert_buf_len(CMD_COMSET_LEN, max_len);
 		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->comset.address;
@@ -217,9 +220,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			LOG_ERR("Cannot perform KEYSET without SC!");
 			return OSDP_CP_ERR_GENERIC;
 		}
-		if (max_len < CMD_KEYSET_LEN) {
-			break;
-		}
+		assert_buf_len(CMD_KEYSET_LEN, max_len);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 1;  /* key type (1: SCBK) */
 		buf[len++] = 16; /* key length in bytes */
@@ -228,7 +229,8 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = 0;
 		break;
 	case CMD_CHLNG:
-		if (smb == NULL || max_len < CMD_CHLNG_LEN) {
+		assert_buf_len(CMD_CHLNG_LEN, max_len);
+		if (smb == NULL) {
 			break;
 		}
 		osdp_fill_random(pd->sc.cp_random, 8);
@@ -242,7 +244,8 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = 0;
 		break;
 	case CMD_SCRYPT:
-		if (smb == NULL || max_len < CMD_SCRYPT_LEN) {
+		assert_buf_len(CMD_SCRYPT_LEN, max_len);
+		if (smb == NULL) {
 			break;
 		}
 		osdp_compute_cp_cryptogram(pd);
@@ -487,6 +490,11 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		LOG_WRN("Unexpected REPLY(%02x) for CMD(%02x)",
 			pd->cmd_id, pd->reply_id);
 		return OSDP_CP_ERR_UNKNOWN;
+	}
+
+	if (ret != OSDP_CP_ERR_NONE) {
+		LOG_ERR("Failed to decode response: REPLY(%02x) for CMD(%02x)",
+			pd->cmd_id, pd->reply_id);
 	}
 
 	if (pd->cmd_id != CMD_POLL) {
