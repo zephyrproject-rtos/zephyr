@@ -76,6 +76,73 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
+		pinctrl: pin-controller@40081000 {
+			compatible = "microchip,xec-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40081000 0x1000>;
+
+			gpio_000_036: gpio@40081000 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081000 0x80 0x40081300 0x04
+					0x40081380 0x04 0x400813fc 0x04>;
+				interrupts = <3 2>;
+				gpio-controller;
+				port-id = <0>;
+				girq-id = <11>;
+				#gpio-cells=<2>;
+			};
+			gpio_040_076: gpio@40081080 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081080 0x80 0x40081304 0x04
+					0x40081384 0x04 0x400813f8 0x4>;
+				interrupts = <2 2>;
+				gpio-controller;
+				port-id = <1>;
+				girq-id = <10>;
+				#gpio-cells=<2>;
+			};
+			gpio_100_136: gpio@40081100 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081100 0x80 0x40081308 0x04
+					0x40081388 0x04 0x400813f4 0x04>;
+				gpio-controller;
+				interrupts = <1 2>;
+				port-id = <2>;
+				girq-id = <9>;
+				#gpio-cells=<2>;
+			};
+			gpio_140_176: gpio@40081180 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081180 0x80 0x4008130c 0x04
+					0x4008138c 0x04 0x400813f0 0x04>;
+				gpio-controller;
+				interrupts = <0 2>;
+				port-id = <3>;
+				girq-id = <8>;
+				#gpio-cells=<2>;
+			};
+			gpio_200_236: gpio@40081200 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081200 0x80 0x40081310 0x04
+					0x40081390 0x04 0x400813ec 0x04>;
+				gpio-controller;
+				interrupts = <4 2>;
+				port-id = <4>;
+				girq-id = <12>;
+				#gpio-cells=<2>;
+			};
+			gpio_240_276: gpio@40081280 {
+				compatible = "microchip,xec-gpio";
+				reg = < 0x40081280 0x80 0x40081314 0x04
+					0x40081394 0x04 0x400813e8 0x04>;
+				gpio-controller;
+				interrupts = <17 2>;
+				port-id = <5>;
+				girq-id = <26>;
+				#gpio-cells=<2>;
+			};
+		};
 		rtimer: timer@40007400 {
 			compatible = "microchip,xec-rtos-timer";
 			reg = <0x40007400 0x10>;
@@ -120,48 +187,6 @@
 			current-speed = <38400>;
 			reg-shift = <0>;
 			status = "disabled";
-		};
-		gpio_000_036: gpio@40081000 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081000 0x80>;
-			interrupts = <3 2>;
-			gpio-controller;
-			#gpio-cells=<2>;
-		};
-		gpio_040_076: gpio@40081080 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081080 0x80>;
-			interrupts = <2 2>;
-			gpio-controller;
-			#gpio-cells=<2>;
-		};
-		gpio_100_136: gpio@40081100 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081100 0x80>;
-			gpio-controller;
-			interrupts = <1 2>;
-			#gpio-cells=<2>;
-		};
-		gpio_140_176: gpio@40081180 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081180 0x80>;
-			gpio-controller;
-			interrupts = <0 2>;
-			#gpio-cells=<2>;
-		};
-		gpio_200_236: gpio@40081200 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081200 0x80>;
-			gpio-controller;
-			interrupts = <4 2>;
-			#gpio-cells=<2>;
-		};
-		gpio_240_276: gpio@40081280 {
-			compatible = "microchip,xec-gpio";
-			reg = <0x40081280 0x80>;
-			gpio-controller;
-			interrupts = <17 2>;
-			#gpio-cells=<2>;
 		};
 
 		i2c_smb_0: i2c@40004000 {

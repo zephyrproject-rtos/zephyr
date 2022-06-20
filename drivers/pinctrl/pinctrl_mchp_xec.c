@@ -10,7 +10,142 @@
 #define DT_DRV_COMPAT microchip_xec_pinctrl
 
 #include <zephyr/drivers/pinctrl.h>
-#include <soc.h>
+
+/** @brief All GPIO register as arrays of registers */
+struct gpio_regs {
+	volatile uint32_t  CTRL[174];
+	uint32_t  RESERVED[18];
+	volatile uint32_t  PARIN[6];
+	uint32_t  RESERVED1[26];
+	volatile uint32_t  PAROUT[6];
+	uint32_t  RESERVED2[20];
+	volatile uint32_t  LOCK[6];
+	uint32_t  RESERVED3[64];
+	volatile uint32_t  CTRL2[174];
+};
+
+#define NUM_MCHP_GPIO_PORTS	6u
+
+/* GPIO Control register field definitions. */
+
+/* bits[1:0] internal pull up/down selection */
+#define MCHP_GPIO_CTRL_PUD_POS		0
+#define MCHP_GPIO_CTRL_PUD_MASK0	0x03u
+#define MCHP_GPIO_CTRL_PUD_MASK		0x03u
+#define MCHP_GPIO_CTRL_PUD_NONE		0x00u
+#define MCHP_GPIO_CTRL_PUD_PU		0x01u
+#define MCHP_GPIO_CTRL_PUD_PD		0x02u
+/* Repeater(keeper) mode */
+#define MCHP_GPIO_CTRL_PUD_RPT		0x03u
+
+/* bits[3:2] power gating */
+#define MCHP_GPIO_CTRL_PWRG_POS		2
+#define MCHP_GPIO_CTRL_PWRG_MASK0	0x03u
+#define MCHP_GPIO_CTRL_PWRG_VTR_IO	0
+#define MCHP_GPIO_CTRL_PWRG_VCC_IO	SHLU32(1, MCHP_GPIO_CTRL_PWRG_POS)
+#define MCHP_GPIO_CTRL_PWRG_OFF		SHLU32(2, MCHP_GPIO_CTRL_PWRG_POS)
+#define MCHP_GPIO_CTRL_PWRG_RSVD	SHLU32(3, MCHP_GPIO_CTRL_PWRG_POS)
+#define MCHP_GPIO_CTRL_PWRG_MASK	SHLU32(3, MCHP_GPIO_CTRL_PWRG_POS)
+
+/* bit[8] output buffer type: push-pull or open-drain */
+#define MCHP_GPIO_CTRL_BUFT_POS		8
+#define MCHP_GPIO_CTRL_BUFT_MASK	BIT(MCHP_GPIO_CTRL_BUFT_POS)
+#define MCHP_GPIO_CTRL_BUFT_OPENDRAIN	BIT(MCHP_GPIO_CTRL_BUFT_POS)
+#define MCHP_GPIO_CTRL_BUFT_PUSHPULL	0
+
+/* bit[9] direction */
+#define MCHP_GPIO_CTRL_DIR_POS		9
+#define MCHP_GPIO_CTRL_DIR_MASK		BIT(MCHP_GPIO_CTRL_DIR_POS)
+#define MCHP_GPIO_CTRL_DIR_OUTPUT	BIT(MCHP_GPIO_CTRL_DIR_POS)
+#define MCHP_GPIO_CTRL_DIR_INPUT	0
+
+/*
+ * bit[10] Alternate output disable. Default==0(alternate output enabled)
+ * GPIO output value is controlled by bit[16] of this register.
+ * Set bit[10]=1 if you wish to control pin output using the parallel
+ * GPIO output register bit for this pin.
+ */
+#define MCHP_GPIO_CTRL_AOD_POS		10
+#define MCHP_GPIO_CTRL_AOD_MASK		BIT(MCHP_GPIO_CTRL_AOD_POS)
+#define MCHP_GPIO_CTRL_AOD_DIS		BIT(MCHP_GPIO_CTRL_AOD_POS)
+
+/* bit[11] GPIO function output polarity */
+#define MCHP_GPIO_CTRL_POL_POS		11
+#define MCHP_GPIO_CTRL_POL_INVERT	BIT(MCHP_GPIO_CTRL_POL_POS)
+
+/* bits[14:12] pin mux (function) */
+#define MCHP_GPIO_CTRL_MUX_POS		12
+#define MCHP_GPIO_CTRL_MUX_MASK0	0x07u
+#define MCHP_GPIO_CTRL_MUX_MASK		SHLU32(7, MCHP_GPIO_CTRL_MUX_POS)
+#define MCHP_GPIO_CTRL_MUX_F0		0
+#define MCHP_GPIO_CTRL_MUX_GPIO		MCHP_GPIO_CTRL_MUX_F0
+#define MCHP_GPIO_CTRL_MUX_F1		SHLU32(1, MCHP_GPIO_CTRL_MUX_POS)
+#define MCHP_GPIO_CTRL_MUX_F2		SHLU32(2, MCHP_GPIO_CTRL_MUX_POS)
+#define MCHP_GPIO_CTRL_MUX_F3		SHLU32(3, MCHP_GPIO_CTRL_MUX_POS)
+#define MCHP_GPIO_CTRL_MUX_F4		SHLU32(4, MCHP_GPIO_CTRL_MUX_POS)
+#define MCHP_GPIO_CTRL_MUX_F5		SHLU32(5, MCHP_GPIO_CTRL_MUX_POS)
+#define MCHP_GPIO_CTRL_MUX_F6		SHLU32(6, MCHP_GPIO_CTRL_MUX_POS)
+#define MCHP_GPIO_CTRL_MUX_F7		SHLU32(7, MCHP_GPIO_CTRL_MUX_POS)
+#define MCHP_GPIO_CTRL_MUX(n) SHLU32(((n) & 0x7u), MCHP_GPIO_CTRL_MUX_POS)
+
+/*
+ * bit[15] Disables input pad leaving output pad enabled
+ * Useful for reducing power consumption of output only pins.
+ */
+#define MCHP_GPIO_CTRL_INPAD_DIS_POS	15
+#define MCHP_GPIO_CTRL_INPAD_DIS_MASK	BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS)
+#define MCHP_GPIO_CTRL_INPAD_DIS	BIT(MCHP_GPIO_CTRL_INPAD_DIS_POS)
+
+/* bit[16]: Alternate output pin value. Enabled when bit[10]==0(default) */
+#define MCHP_GPIO_CTRL_OUTVAL_POS	16
+#define MCHP_GPIO_CTRL_OUTV_HI		BIT(MCHP_GPIO_CTRL_OUTVAL_POS)
+
+/* bit[24] Input pad value. Always live unless input pad is powered down */
+#define MCHP_GPIO_CTRL_INPAD_VAL_POS	24
+#define MCHP_GPIO_CTRL_INPAD_VAL_HI	BIT(MCHP_GPIO_CTRL_INPAD_VAL_POS)
+
+#define MCHP_GPIO_CTRL_DRIVE_OD_HI				     \
+	(MCHP_GPIO_CTRL_BUFT_OPENDRAIN + MCHP_GPIO_CTRL_DIR_OUTPUT + \
+	 MCHP_GPIO_CTRL_MUX_GPIO + MCHP_GPIO_CTRL_OUTV_HI)
+
+/*
+ * Each GPIO pin implements a second control register.
+ * GPIO Control 2 register selects pin drive strength and slew rate.
+ * bit[0] = slew rate: 0=slow, 1=fast
+ * bits[5:4] = drive strength
+ * 00b = 2mA (default)
+ * 01b = 4mA
+ * 10b = 8mA
+ * 11b = 12mA
+ */
+#define MCHP_GPIO_CTRL2_OFFSET		0x0500u
+#define MCHP_GPIO_CTRL2_SLEW_POS	0
+#define MCHP_GPIO_CTRL2_SLEW_MASK	0x01u
+#define MCHP_GPIO_CTRL2_SLEW_SLOW	0
+#define MCHP_GPIO_CTRL2_SLEW_FAST	BIT(MCHP_GPIO_CTRL2_SLEW_POS)
+#define MCHP_GPIO_CTRL2_DRV_STR_POS	4
+#define MCHP_GPIO_CTRL2_DRV_STR_MASK	0x30u
+#define MCHP_GPIO_CTRL2_DRV_STR_2MA	0
+#define MCHP_GPIO_CTRL2_DRV_STR_4MA	0x10u
+#define MCHP_GPIO_CTRL2_DRV_STR_8MA	0x20u
+#define MCHP_GPIO_CTRL2_DRV_STR_12MA	0x30u
+
+#define MCHP_XEC_NO_PULL	0x0
+#define MCHP_XEC_PULL_UP	0x1
+#define MCHP_XEC_PULL_DOWN	0x2
+#define MCHP_XEC_REPEATER	0x3
+#define MCHP_XEC_PUSH_PULL	0x0
+#define MCHP_XEC_OPEN_DRAIN	0x1
+#define MCHP_XEC_NO_OVAL	0x0
+#define MCHP_XEC_OVAL_LOW	0x1
+#define MCHP_XEC_OVAL_HIGH	0x2
+#define MCHP_XEC_DRVSTR_NONE	0x0
+#define MCHP_XEC_DRVSTR_2MA	0x1
+#define MCHP_XEC_DRVSTR_4MA	0x2
+#define MCHP_XEC_DRVSTR_8MA	0x3
+#define MCHP_XEC_DRVSTR_12MA	0x4
+
+#define SHLU32(v, n)			((uint32_t)(v) << (n))
 
 /* Microchip XEC: each GPIO pin has two 32-bit control register.
  * The first 32-bit register contains all pin features except
