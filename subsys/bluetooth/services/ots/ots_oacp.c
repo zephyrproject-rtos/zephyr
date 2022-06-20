@@ -62,7 +62,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_create_proc_validate(
 
 	bt_uuid_to_str(&param.type.uuid, str, BT_UUID_STR_LEN);
 	LOG_DBG("Validating Create procedure with size: 0x%08X and "
-		"type: %s", param.size, log_strdup(str));
+		"type: %s", param.size, str);
 
 	if (!BT_OTS_OACP_GET_FEAT_CREATE(ots->features.oacp)) {
 		LOG_DBG("Create Procedure is not supported.");

@@ -291,7 +291,7 @@ static void provider_name_notify_handler(struct bt_conn *conn,
 	const char *name = parse_string_value(data, length,
 					      CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
 
-	BT_DBG("%s", log_strdup(name));
+	BT_DBG("%s", name);
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->bearer_provider_name != NULL) {
 		tbs_client_cbs->bearer_provider_name(conn, 0, tbs_inst->index, name);
@@ -401,7 +401,7 @@ static void incoming_uri_notify_handler(struct bt_conn *conn,
 	const char *uri = parse_string_value(data, length,
 					     CONFIG_BT_TBS_MAX_URI_LENGTH);
 
-	BT_DBG("%s", log_strdup(uri));
+	BT_DBG("%s", uri);
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->call_uri != NULL) {
 		tbs_client_cbs->call_uri(conn, 0, tbs_inst->index, uri);
@@ -493,7 +493,7 @@ static void in_call_notify_handler(struct bt_conn *conn,
 	const char *uri = parse_string_value(data, length,
 					     CONFIG_BT_TBS_MAX_URI_LENGTH);
 
-	BT_DBG("%s", log_strdup(uri));
+	BT_DBG("%s", uri);
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->remote_uri != NULL) {
 		tbs_client_cbs->remote_uri(conn, 0, tbs_inst->index, uri);
@@ -507,7 +507,7 @@ static void friendly_name_notify_handler(struct bt_conn *conn,
 	const char *name = parse_string_value(data, length,
 					      CONFIG_BT_TBS_MAX_URI_LENGTH);
 
-	BT_DBG("%s", log_strdup(name));
+	BT_DBG("%s", name);
 
 	if (tbs_client_cbs != NULL && tbs_client_cbs->friendly_name != NULL) {
 		tbs_client_cbs->friendly_name(conn, 0, tbs_inst->index, name);
@@ -625,7 +625,7 @@ static uint8_t read_bearer_provider_name_cb(struct bt_conn *conn, uint8_t err,
 			provider_name =
 				parse_string_value(data, length,
 					CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
-			BT_DBG("%s", log_strdup(provider_name));
+			BT_DBG("%s", provider_name);
 		}
 
 		inst->busy = false;
@@ -661,7 +661,7 @@ static uint8_t read_bearer_uci_cb(struct bt_conn *conn, uint8_t err,
 		} else if (data != NULL) {
 			bearer_uci = parse_string_value(data, length,
 							BT_TBS_MAX_UCI_SIZE);
-			BT_DBG("%s", log_strdup(bearer_uci));
+			BT_DBG("%s", bearer_uci);
 		}
 
 		inst->busy = false;
@@ -740,7 +740,7 @@ static uint8_t read_uri_list_cb(struct bt_conn *conn, uint8_t err,
 		} else if (data != NULL) {
 			uri_scheme_list = parse_string_value(data, length,
 						MAX_URI_SCHEME_LIST_SIZE);
-			BT_DBG("%s", log_strdup(uri_scheme_list));
+			BT_DBG("%s", uri_scheme_list);
 		}
 
 		inst->busy = false;
@@ -1038,7 +1038,7 @@ static uint8_t read_call_uri_cb(struct bt_conn *conn, uint8_t err,
 			in_target_uri = parse_string_value(
 						data, length,
 						CONFIG_BT_TBS_MAX_URI_LENGTH);
-			BT_DBG("%s", log_strdup(in_target_uri));
+			BT_DBG("%s", in_target_uri);
 		}
 
 		inst->busy = false;
@@ -1208,7 +1208,7 @@ static uint8_t read_remote_uri_cb(struct bt_conn *conn, uint8_t err,
 		} else if (data != NULL) {
 			remote_uri = parse_string_value(data, length,
 							CONFIG_BT_TBS_MAX_URI_LENGTH);
-			BT_DBG("%s", log_strdup(remote_uri));
+			BT_DBG("%s", remote_uri);
 		}
 
 		inst->busy = false;
@@ -1245,7 +1245,7 @@ static uint8_t read_friendly_name_cb(struct bt_conn *conn, uint8_t err,
 		} else if (data != NULL) {
 			friendly_name = parse_string_value(data, length,
 							   CONFIG_BT_TBS_MAX_URI_LENGTH);
-			BT_DBG("%s", log_strdup(friendly_name));
+			BT_DBG("%s", friendly_name);
 		}
 		inst->busy = false;
 
@@ -1603,7 +1603,7 @@ int bt_tbs_client_originate_call(struct bt_conn *conn, uint8_t inst_index,
 	} else if (!valid_inst_index(conn, inst_index)) {
 		return -EINVAL;
 	} else if (!bt_tbs_valid_uri(uri)) {
-		BT_DBG("Invalid URI: %s", log_strdup(uri));
+		BT_DBG("Invalid URI: %s", uri);
 		return -EINVAL;
 	}
 

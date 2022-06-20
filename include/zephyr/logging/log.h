@@ -266,12 +266,6 @@ extern "C" {
  */
 void z_log_vprintk(const char *fmt, va_list ap);
 
-/** @brief Deprecated. */
-static inline char *log_strdup(const char *str)
-{
-	return (char *)str;
-}
-
 #ifdef __cplusplus
 }
 #define LOG_IN_CPLUSPLUS 1

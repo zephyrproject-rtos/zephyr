@@ -415,7 +415,7 @@ static int interface_attach(struct net_if *iface, struct net_if *lower_iface)
 					      0);
 		if (!ifaddr) {
 			NET_ERR("Cannot add %s address to interface %p",
-				log_strdup(net_sprint_ipv6_addr(&iid)),
+				net_sprint_ipv6_addr(&iid),
 				iface);
 		}
 	}
@@ -456,7 +456,7 @@ static int interface_set_config(struct net_if *iface,
 
 			NET_DBG("Interface %d peer address %s attached to %d",
 				net_if_get_by_iface(iface),
-				log_strdup(addr_str),
+				addr_str,
 				net_if_get_by_iface(ctx->attached_to));
 
 			ctx->my4addr = NULL;
@@ -485,7 +485,7 @@ static int interface_set_config(struct net_if *iface,
 
 			NET_DBG("Interface %d peer address %s attached to %d",
 				net_if_get_by_iface(iface),
-				log_strdup(addr_str),
+				addr_str,
 				net_if_get_by_iface(ctx->attached_to));
 
 			ctx->my6addr = NULL;

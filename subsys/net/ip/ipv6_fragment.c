@@ -205,8 +205,8 @@ static bool reassembly_cancel(uint32_t id,
 static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 {
 	NET_DBG("%s id 0x%x src %s dst %s remain %d ms", str, reass->id,
-		log_strdup(net_sprint_ipv6_addr(&reass->src)),
-		log_strdup(net_sprint_ipv6_addr(&reass->dst)),
+		net_sprint_ipv6_addr(&reass->src),
+		net_sprint_ipv6_addr(&reass->dst),
 		k_ticks_to_ms_ceil32(
 			k_work_delayable_remaining_get(&reass->timer)));
 }
