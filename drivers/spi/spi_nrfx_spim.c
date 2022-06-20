@@ -532,8 +532,7 @@ static int spim_nrfx_pm_action(const struct device *dev,
 	{								       \
 		struct spi_nrfx_data *dev_data = dev->data;		       \
 		int err;						       \
-		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
-			    DT_IRQ(SPIM(idx), priority),		       \
+		IRQ_CONNECT(DT_IRQN(SPIM(idx)), DT_IRQ(SPIM(idx), priority),   \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
 		IF_ENABLED(CONFIG_PINCTRL, (				       \
 			const struct spi_nrfx_config *dev_config = dev->config;\
