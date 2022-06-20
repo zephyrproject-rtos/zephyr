@@ -492,9 +492,6 @@ static int spim_nrfx_pm_action(const struct device *dev,
 #define SPIM_PROP(idx, prop)		DT_PROP(SPIM(idx), prop)
 #define SPIM_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(SPIM(idx), prop)
 
-#define SPIM_NRFX_MISO_PULL_DOWN(idx)	DT_PROP(SPIM(idx), miso_pull_down)
-#define SPIM_NRFX_MISO_PULL_UP(idx)	DT_PROP(SPIM(idx), miso_pull_up)
-
 #define SPIM_NRFX_MISO_PULL(idx)			\
 	(SPIM_PROP(idx, miso_pull_up)			\
 		? SPIM_PROP(idx, miso_pull_down)	\
