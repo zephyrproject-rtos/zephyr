@@ -12,6 +12,13 @@ properties:
     interrupts:
       required: true
 
+    periph-idx:
+      type: int
+      required: true
+      description: |
+        Index of the SPI peripheral instance. For example, 0 for spi0, 1 for
+        spi1, etc. This property must be set at SoC level DTS files.
+
     max-frequency:
       type: int
       required: true

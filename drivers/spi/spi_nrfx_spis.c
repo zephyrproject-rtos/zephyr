@@ -273,7 +273,6 @@ static int init_spis(const struct device *dev,
 /*
  * Current factors requiring use of DT_NODELABEL:
  *
- * - NRFX_SPIS_INSTANCE() requires an SoC instance number
  * - soc-instance-numbered kconfig enables
  */
 
@@ -323,7 +322,10 @@ static int init_spis(const struct device *dev,
 	};								       \
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_DEFINE(SPIS(idx))));	       \
 	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
-		.spis = NRFX_SPIS_INSTANCE(idx),			       \
+		.spis = {						       \
+			.p_reg = (NRF_SPIS_Type *)DT_REG_ADDR(SPIS(idx)),      \
+			.drv_inst_idx = SPIS_PROP(idx, periph_idx),	       \
+		},							       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),))       \
 	};								       \
