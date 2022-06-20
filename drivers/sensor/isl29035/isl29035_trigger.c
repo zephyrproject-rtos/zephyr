@@ -20,15 +20,13 @@ LOG_MODULE_DECLARE(ISL29035, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline void setup_int(const struct device *dev, bool enable)
 {
-	struct isl29035_driver_data *drv_data = dev->data;
+	const struct isl29035_config *config = dev->config;
 
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
 
-	gpio_pin_interrupt_configure(drv_data->gpio,
-				     DT_INST_GPIO_PIN(0, int_gpios),
-				     flags);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, flags);
 }
 
 static inline void handle_int(const struct device *dev)
@@ -145,6 +143,7 @@ int isl29035_trigger_set(const struct device *dev,
 			 sensor_trigger_handler_t handler)
 {
 	struct isl29035_driver_data *drv_data = dev->data;
+	const struct isl29035_config *config = dev->config;
 
 	/* disable interrupt callback while changing parameters */
 	setup_int(dev, false);
@@ -154,8 +153,7 @@ int isl29035_trigger_set(const struct device *dev,
 
 	/* enable interrupt callback */
 	setup_int(dev, true);
-	if (gpio_pin_get(drv_data->gpio,
-			 DT_INST_GPIO_PIN(0, int_gpios)) > 0) {
+	if (gpio_pin_get_dt(&config->int_gpio) > 0) {
 		handle_int(dev);
 	}
 
@@ -176,22 +174,18 @@ int isl29035_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	/* setup gpio interrupt */
-	drv_data->gpio =
-		device_get_binding(DT_INST_GPIO_LABEL(0, int_gpios));
-	if (drv_data->gpio == NULL) {
-		LOG_DBG("Failed to get GPIO device.");
-		return -EINVAL;
+	if (!device_is_ready(config->int_gpio.port)) {
+		LOG_ERR("GPIO device not ready");
+		return -ENODEV;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_GPIO_PIN(0, int_gpios),
-			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, int_gpios));
+	gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   isl29035_gpio_callback,
-			   BIT(DT_INST_GPIO_PIN(0, int_gpios)));
+			   BIT(config->int_gpio.pin));
 
-	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
+	if (gpio_add_callback(config->int_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback.");
 		return -EIO;
 	}

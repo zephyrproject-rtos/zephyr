@@ -114,7 +114,6 @@ struct isl29035_driver_data {
 
 #if CONFIG_ISL29035_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger th_trigger;
@@ -133,6 +132,9 @@ struct isl29035_driver_data {
 
 struct isl29035_config {
 	struct i2c_dt_spec i2c;
+#if CONFIG_ISL29035_TRIGGER
+	struct gpio_dt_spec int_gpio;
+#endif
 };
 
 #ifdef CONFIG_ISL29035_TRIGGER
