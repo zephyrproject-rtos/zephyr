@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT swir_hl7800
 
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 LOG_MODULE_REGISTER(modem_hl7800, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -1384,6 +1385,20 @@ void mdm_hl7800_generate_status_events(void)
 	event_handler(HL7800_EVENT_ACTIVE_BANDS, ictx.mdm_active_bands_string);
 	event_handler(HL7800_EVENT_REVISION, ictx.mdm_revision);
 	hl7800_unlock();
+}
+
+uint32_t mdm_hl7800_log_filter_set(uint32_t level)
+{
+	uint32_t new_log_level = 0;
+
+#ifdef CONFIG_LOG
+	new_log_level =
+		log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID,
+			       log_source_id_get(STRINGIFY(LOG_MODULE_NAME)),
+			       level);
+#endif
+
+	return new_log_level;
 }
 
 static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
