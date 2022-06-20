@@ -111,14 +111,93 @@ static struct osdp_pd_cap osdp_pd_cap[] = {
 	{ -1, 0, 0 } /* Sentinel */
 };
 
+static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
+{
+	struct osdp_event *event = NULL;
+
+	if (k_mem_slab_alloc(&pd->event.slab, (void **)&event, K_MSEC(100))) {
+		LOG_ERR("Memory allocation time-out");
+		return NULL;
+	}
+	return event;
+}
+
+static void pd_event_free(struct osdp_pd *pd, struct osdp_event *event)
+{
+	k_mem_slab_free(&pd->event.slab, (void **)&event);
+}
+
+static void pd_event_enqueue(struct osdp_pd *pd, struct osdp_event *event)
+{
+	sys_slist_append(&pd->event.queue, &event->node);
+}
+
+static int pd_event_dequeue(struct osdp_pd *pd, struct osdp_event **event)
+{
+	sys_snode_t *node;
+
+	node = sys_slist_peek_head(&pd->event.queue);
+	if (node == NULL) {
+		return -1;
+	}
+	sys_slist_remove(&pd->event.queue, NULL, node);
+	*event = CONTAINER_OF(node, struct osdp_event, node);
+	return 0;
+}
+
+static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
+{
+	int reply_code = 0;
+
+	switch (event->type) {
+	case OSDP_EVENT_CARDREAD:
+		if (event->cardread.format == OSDP_CARD_FMT_RAW_UNSPECIFIED ||
+		    event->cardread.format == OSDP_CARD_FMT_RAW_WIEGAND) {
+			reply_code = REPLY_RAW;
+		} else if (event->cardread.format == OSDP_CARD_FMT_ASCII) {
+			reply_code = REPLY_FMT;
+		} else {
+			LOG_ERR("Event: cardread; Error: unknown format");
+			break;
+		}
+		break;
+	case OSDP_EVENT_KEYPRESS:
+		reply_code = REPLY_KEYPPAD;
+		break;
+	default:
+		LOG_ERR("Unknown event type %d", event->type);
+		break;
+	}
+	if (reply_code == 0) {
+		/* POLL command cannot fail even when there are errors here */
+		return REPLY_ACK;
+	}
+	memcpy(pd->cmd_data, event, sizeof(struct osdp_event));
+	return reply_code;
+}
+
+static bool do_command_callback(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	int ret;
+
+	ret = pd->command_callback(pd->command_callback_arg, cmd);
+	if (ret != 0) {
+		pd->reply_id = REPLY_NAK;
+		pd->cmd_data[0] = OSDP_PD_NAK_RECORD;
+		return false;
+	}
+	return true;
+}
+
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int ret = OSDP_PD_ERR_GENERIC;
 	int i, pos = 0;
-	struct osdp_cmd *cmd;
+	struct osdp_cmd cmd;
+	struct osdp_event *event;
 
 	pd->reply_id = 0;
-	pd->cmd_id = buf[pos++];
+	pd->cmd_id = cmd.id = buf[pos++];
 	len--;
 
 	switch (pd->cmd_id) {
@@ -126,7 +205,14 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_POLL_DATA_LEN) {
 			break;
 		}
-		pd->reply_id = REPLY_ACK;
+		/* Check if we have external events in the queue */
+		if (pd_event_dequeue(pd, &event) == 0) {
+			ret = pd_translate_event(pd, event);
+			pd->reply_id = ret;
+			pd_event_free(pd, event);
+		} else {
+			pd->reply_id = REPLY_ACK;
+		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_LSTAT:
@@ -174,125 +260,118 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_OUT:
-		if (len != CMD_OUT_DATA_LEN) {
+		if (len != CMD_OUT_DATA_LEN || !pd->command_callback) {
 			break;
 		}
-		cmd = osdp_cmd_alloc(pd);
-		if (cmd == NULL) {
-			LOG_ERR("cmd alloc error");
+		cmd.id = OSDP_CMD_OUTPUT;
+		cmd.output.output_no = buf[pos++];
+		cmd.output.control_code = buf[pos++];
+		cmd.output.timer_count = buf[pos++];
+		cmd.output.timer_count |= buf[pos++] << 8;
+		ret = OSDP_PD_ERR_REPLY;
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
-		cmd->id = OSDP_CMD_OUTPUT;
-		cmd->output.output_no    = buf[pos++];
-		cmd->output.control_code = buf[pos++];
-		cmd->output.timer_count  = buf[pos++];
-		cmd->output.timer_count |= buf[pos++] << 8;
-		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_LED:
-		if (len != CMD_LED_DATA_LEN) {
+		if (len != CMD_LED_DATA_LEN || !pd->command_callback) {
 			break;
 		}
-		cmd = osdp_cmd_alloc(pd);
-		if (cmd == NULL) {
-			LOG_ERR("cmd alloc error");
+		cmd.id = OSDP_CMD_LED;
+		cmd.led.reader = buf[pos++];
+		cmd.led.led_number = buf[pos++];
+
+		cmd.led.temporary.control_code = buf[pos++];
+		cmd.led.temporary.on_count = buf[pos++];
+		cmd.led.temporary.off_count = buf[pos++];
+		cmd.led.temporary.on_color = buf[pos++];
+		cmd.led.temporary.off_color = buf[pos++];
+		cmd.led.temporary.timer_count = buf[pos++];
+		cmd.led.temporary.timer_count |= buf[pos++] << 8;
+
+		cmd.led.permanent.control_code = buf[pos++];
+		cmd.led.permanent.on_count = buf[pos++];
+		cmd.led.permanent.off_count = buf[pos++];
+		cmd.led.permanent.on_color = buf[pos++];
+		cmd.led.permanent.off_color = buf[pos++];
+		ret = OSDP_PD_ERR_REPLY;
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
-		cmd->id = OSDP_CMD_LED;
-		cmd->led.reader = buf[pos++];
-		cmd->led.led_number = buf[pos++];
-
-		cmd->led.temporary.control_code = buf[pos++];
-		cmd->led.temporary.on_count     = buf[pos++];
-		cmd->led.temporary.off_count    = buf[pos++];
-		cmd->led.temporary.on_color     = buf[pos++];
-		cmd->led.temporary.off_color    = buf[pos++];
-		cmd->led.temporary.timer_count  = buf[pos++];
-		cmd->led.temporary.timer_count |= buf[pos++] << 8;
-
-		cmd->led.permanent.control_code = buf[pos++];
-		cmd->led.permanent.on_count     = buf[pos++];
-		cmd->led.permanent.off_count    = buf[pos++];
-		cmd->led.permanent.on_color     = buf[pos++];
-		cmd->led.permanent.off_color    = buf[pos++];
-		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_BUZ:
-		if (len != CMD_BUZ_DATA_LEN) {
+		if (len != CMD_BUZ_DATA_LEN || !pd->command_callback) {
 			break;
 		}
-		cmd = osdp_cmd_alloc(pd);
-		if (cmd == NULL) {
-			LOG_ERR("cmd alloc error");
+		cmd.id = OSDP_CMD_BUZZER;
+		cmd.buzzer.reader = buf[pos++];
+		cmd.buzzer.control_code = buf[pos++];
+		cmd.buzzer.on_count = buf[pos++];
+		cmd.buzzer.off_count = buf[pos++];
+		cmd.buzzer.rep_count = buf[pos++];
+		ret = OSDP_PD_ERR_REPLY;
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
-		cmd->id = OSDP_CMD_BUZZER;
-		cmd->buzzer.reader       = buf[pos++];
-		cmd->buzzer.control_code = buf[pos++];
-		cmd->buzzer.on_count     = buf[pos++];
-		cmd->buzzer.off_count    = buf[pos++];
-		cmd->buzzer.rep_count    = buf[pos++];
-		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_TEXT:
-		if (len < CMD_TEXT_DATA_LEN) {
+		if (len < CMD_TEXT_DATA_LEN || !pd->command_callback) {
 			break;
 		}
-		cmd = osdp_cmd_alloc(pd);
-		if (cmd == NULL) {
-			LOG_ERR("cmd alloc error");
+		cmd.id = OSDP_CMD_TEXT;
+		cmd.text.reader = buf[pos++];
+		cmd.text.control_code = buf[pos++];
+		cmd.text.temp_time = buf[pos++];
+		cmd.text.offset_row = buf[pos++];
+		cmd.text.offset_col = buf[pos++];
+		cmd.text.length = buf[pos++];
+		if (cmd.text.length > OSDP_CMD_TEXT_MAX_LEN ||
+		    ((len - CMD_TEXT_DATA_LEN) < cmd.text.length) ||
+		    cmd.text.length > OSDP_CMD_TEXT_MAX_LEN) {
 			break;
 		}
-		cmd->id = OSDP_CMD_TEXT;
-		cmd->text.reader       = buf[pos++];
-		cmd->text.control_code = buf[pos++];
-		cmd->text.temp_time    = buf[pos++];
-		cmd->text.offset_row   = buf[pos++];
-		cmd->text.offset_col   = buf[pos++];
-		cmd->text.length       = buf[pos++];
-		if (cmd->text.length > OSDP_CMD_TEXT_MAX_LEN ||
-		    ((len - CMD_TEXT_DATA_LEN) < cmd->text.length) ||
-		    cmd->text.length > OSDP_CMD_TEXT_MAX_LEN) {
-			osdp_cmd_free(pd, cmd);
+		for (i = 0; i < cmd.text.length; i++) {
+			cmd.text.data[i] = buf[pos++];
+		}
+		ret = OSDP_PD_ERR_REPLY;
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
-		for (i = 0; i < cmd->text.length; i++) {
-			cmd->text.data[i] = buf[pos++];
-		}
-		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_COMSET:
-		if (len != CMD_COMSET_DATA_LEN) {
+		if (len != CMD_COMSET_DATA_LEN || !pd->command_callback) {
 			break;
 		}
-		cmd = osdp_cmd_alloc(pd);
-		if (cmd == NULL) {
-			LOG_ERR("cmd alloc error");
-			break;
-		}
-		cmd->id = OSDP_CMD_COMSET;
-		cmd->comset.address    = buf[pos++];
-		cmd->comset.baud_rate  = buf[pos++];
-		cmd->comset.baud_rate |= buf[pos++] << 8;
-		cmd->comset.baud_rate |= buf[pos++] << 16;
-		cmd->comset.baud_rate |= buf[pos++] << 24;
-		if (cmd->comset.address >= 0x7F ||
-		    (cmd->comset.baud_rate != 9600 &&
-		     cmd->comset.baud_rate != 38400 &&
-		     cmd->comset.baud_rate != 115200)) {
+		cmd.id = OSDP_CMD_COMSET;
+		cmd.comset.address = buf[pos++];
+		cmd.comset.baud_rate = buf[pos++];
+		cmd.comset.baud_rate |= buf[pos++] << 8;
+		cmd.comset.baud_rate |= buf[pos++] << 16;
+		cmd.comset.baud_rate |= buf[pos++] << 24;
+		if (cmd.comset.address >= 0x7F ||
+		    (cmd.comset.baud_rate != 9600 &&
+		     cmd.comset.baud_rate != 19200 &&
+		     cmd.comset.baud_rate != 38400 &&
+		     cmd.comset.baud_rate != 115200 &&
+		     cmd.comset.baud_rate != 230400)) {
 			LOG_ERR("COMSET Failed! command discarded");
-			cmd->comset.address = pd->address;
-			cmd->comset.baud_rate = pd->baud_rate;
+			cmd.comset.address = pd->address;
+			cmd.comset.baud_rate = pd->baud_rate;
+			break;
 		}
-		osdp_cmd_enqueue(pd, cmd);
+		if (!do_command_callback(pd, &cmd)) {
+			ret = OSDP_PD_ERR_REPLY;
+			break;
+		}
+		memcpy(pd->cmd_data, &cmd, sizeof(struct osdp_cmd));
 		pd->reply_id = REPLY_COM;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -317,17 +396,18 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 				buf[pos], buf[pos + 1]);
 			break;
 		}
-		cmd = osdp_cmd_alloc(pd);
-		if (cmd == NULL) {
-			LOG_ERR("cmd alloc error");
+		cmd.id = OSDP_CMD_KEYSET;
+		cmd.keyset.type = buf[pos++];
+		cmd.keyset.length = buf[pos++];
+		memcpy(cmd.keyset.data, buf + pos, 16);
+		if (!pd->command_callback) {
+			LOG_ERR("Keyset without a command callback! The SC new "
+				"SCBK will be lost when the PD reboots.");
+		} else if (!do_command_callback(pd, &cmd)) {
+			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		cmd->id = OSDP_CMD_KEYSET;
-		cmd->keyset.type   = buf[pos++];
-		cmd->keyset.length = buf[pos++];
-		memcpy(cmd->keyset.data, buf + pos, 16);
-		memcpy(pd->sc.scbk, buf + pos, 16);
-		osdp_cmd_enqueue(pd, cmd);
+		memcpy(pd->sc.scbk, cmd.keyset.data, 16);
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 		CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
 		pd->reply_id = REPLY_ACK;
@@ -479,12 +559,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		 * TODO: Persist pd->address and pd->baud_rate via
 		 * subsys/settings
 		 */
-		cmd = osdp_cmd_get_last(pd);
-		if (cmd == NULL || cmd->id != OSDP_CMD_COMSET) {
-			LOG_ERR("Failed to fetch queue tail for COMSET");
-			break;
-		}
-
+		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->reply_id;
 		buf[len++] = cmd->comset.address;
 		buf[len++] = BYTE_0(cmd->comset.baud_rate);
@@ -771,15 +846,25 @@ int osdp_setup(struct osdp *ctx, uint8_t *key)
 
 /* --- Exported Methods --- */
 
-int osdp_pd_get_cmd(struct osdp_cmd *cmd)
+void osdp_pd_set_command_callback(pd_command_callback_t cb, void *arg)
 {
-	struct osdp_cmd *c;
 	struct osdp_pd *pd = osdp_to_pd(osdp_get_ctx(), 0);
 
-	if (osdp_cmd_dequeue(pd, &c)) {
+	pd->command_callback_arg = arg;
+	pd->command_callback = cb;
+}
+
+int osdp_pd_notify_event(const struct osdp_event *event)
+{
+	struct osdp_event *ev;
+	struct osdp_pd *pd = osdp_to_pd(osdp_get_ctx(), 0);
+
+	ev = pd_event_alloc(pd);
+	if (ev == NULL) {
 		return -1;
 	}
-	memcpy(cmd, c, sizeof(struct osdp_cmd));
-	osdp_cmd_free(pd, c);
+
+	memcpy(ev, event, sizeof(struct osdp_event));
+	pd_event_enqueue(pd, ev);
 	return 0;
 }
