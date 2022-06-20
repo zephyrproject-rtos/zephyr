@@ -20,6 +20,8 @@ struct spi_nrfx_data {
 
 struct spi_nrfx_config {
 	nrfx_spis_t spis;
+	nrfx_spis_config_t config;
+	void (*irq_connect)(void);
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
@@ -227,18 +229,27 @@ static void event_handler(const nrfx_spis_evt_t *p_event, void *p_context)
 	}
 }
 
-static int init_spis(const struct device *dev,
-		     const nrfx_spis_config_t *config)
+static int spi_nrfx_init(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_nrfx_data *dev_data = dev->data;
+	nrfx_err_t result;
+
+#ifdef CONFIG_PINCTRL
+	int err;
+
+	err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+#endif
+
 	/* This sets only default values of mode and bit order. The ones to be
 	 * actually used are set in configure() when a transfer is prepared.
 	 */
-	nrfx_err_t result = nrfx_spis_init(&dev_config->spis,
-					   config,
-					   event_handler,
-					   dev_data);
+	result = nrfx_spis_init(&dev_config->spis, &dev_config->config,
+				event_handler, dev_data);
+
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EBUSY;
@@ -275,26 +286,10 @@ static int init_spis(const struct device *dev,
 #define SPI_NRFX_SPIS_DEFINE(idx)					       \
 	NRF_DT_CHECK_PIN_ASSIGNMENTS(SPIS(idx), 0,			       \
 				     sck_pin, mosi_pin, miso_pin, csn_pin);    \
-	static int spi_##idx##_init(const struct device *dev)		       \
+	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority),   \
 			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);       \
-		const nrfx_spis_config_t config = {			       \
-			SPI_NRFX_SPIS_PIN_CFG(idx)			       \
-			.mode      = NRF_SPIS_MODE_0,			       \
-			.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
-			.orc       = SPIS_PROP(idx, overrun_character),	       \
-			.def       = SPIS_PROP(idx, def_char),		       \
-		};							       \
-		IF_ENABLED(CONFIG_PINCTRL, (				       \
-			const struct spi_nrfx_config *dev_config = dev->config;\
-			int err = pinctrl_apply_state(dev_config->pcfg,	       \
-						      PINCTRL_STATE_DEFAULT);  \
-			if (err < 0) {					       \
-				return err;				       \
-			}						       \
-		))							       \
-		return init_spis(dev, &config);				       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
@@ -306,11 +301,19 @@ static int init_spis(const struct device *dev,
 			.p_reg = (NRF_SPIS_Type *)DT_REG_ADDR(SPIS(idx)),      \
 			.drv_inst_idx = NRFX_SPIS##idx##_INST_IDX,	       \
 		},							       \
+		.config = {						       \
+			SPI_NRFX_SPIS_PIN_CFG(idx)			       \
+			.mode      = NRF_SPIS_MODE_0,			       \
+			.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,	       \
+			.orc       = SPIS_PROP(idx, overrun_character),	       \
+			.def       = SPIS_PROP(idx, def_char),		       \
+		},							       \
+		.irq_connect = irq_connect##idx,			       \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
 			(.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),))       \
 	};								       \
 	DEVICE_DT_DEFINE(SPIS(idx),					       \
-			    spi_##idx##_init,				       \
+			    spi_nrfx_init,				       \
 			    NULL,					       \
 			    &spi_##idx##_data,				       \
 			    &spi_##idx##z_config,			       \

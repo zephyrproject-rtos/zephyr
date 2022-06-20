@@ -49,6 +49,7 @@ struct spi_nrfx_config {
 	nrfx_spim_t	   spim;
 	uint32_t	   max_freq;
 	nrfx_spim_config_t def_config;
+	void (*irq_connect)(void);
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
@@ -482,6 +483,35 @@ static int spim_nrfx_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
+
+static int spi_nrfx_init(const struct device *dev)
+{
+	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
+	int err;
+
+#ifdef CONFIG_PINCTRL
+	err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (err < 0) {
+		return err;
+	}
+#endif
+
+	dev_config->irq_connect();
+
+	err = spi_context_cs_configure_all(&dev_data->ctx);
+	if (err < 0) {
+		return err;
+	}
+
+	spi_context_unlock_unconditionally(&dev_data->ctx);
+
+#ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+	return anomaly_58_workaround_init(dev);
+#else
+	return 0;
+#endif
+}
 /*
  * We use NODELABEL here because the nrfx API requires us to call
  * functions which are named according to SoC peripheral instance
@@ -528,28 +558,10 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		       SPIM_PROP(idx, miso_pull_down)),			       \
 		"SPIM"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
-	static int spi_##idx##_init(const struct device *dev)		       \
+	static void irq_connect##idx(void)				       \
 	{								       \
-		struct spi_nrfx_data *dev_data = dev->data;		       \
-		int err;						       \
 		IRQ_CONNECT(DT_IRQN(SPIM(idx)), DT_IRQ(SPIM(idx), priority),   \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
-		IF_ENABLED(CONFIG_PINCTRL, (				       \
-			const struct spi_nrfx_config *dev_config = dev->config;\
-			err = pinctrl_apply_state(dev_config->pcfg,	       \
-						  PINCTRL_STATE_DEFAULT);      \
-			if (err < 0) {					       \
-				return err;				       \
-			}						       \
-		))							       \
-		err = spi_context_cs_configure_all(&dev_data->ctx);	       \
-		if (err < 0) {						       \
-			return err;					       \
-		}							       \
-		spi_context_unlock_unconditionally(&dev_data->ctx);	       \
-		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
-		(return anomaly_58_workaround_init(dev);),		       \
-		(return 0;))						       \
 	}								       \
 	IF_ENABLED(SPI_BUFFER_IN_RAM,					       \
 		(static uint8_t spim_##idx##_buffer			       \
@@ -577,6 +589,7 @@ static int spim_nrfx_pm_action(const struct device *dev,
 			.orc    = SPIM_PROP(idx, overrun_character),	       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		},							       \
+		.irq_connect = irq_connect##idx,			       \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 			(.anomaly_58_workaround =			       \
 				SPIM_PROP(idx, anomaly_58_workaround),),       \
@@ -586,7 +599,7 @@ static int spim_nrfx_pm_action(const struct device *dev,
 	};								       \
 	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
 	DEVICE_DT_DEFINE(SPIM(idx),					       \
-		      spi_##idx##_init,					       \
+		      spi_nrfx_init,					       \
 		      PM_DEVICE_DT_GET(SPIM(idx)),			       \
 		      &spi_##idx##_data,				       \
 		      &spi_##idx##z_config,				       \
