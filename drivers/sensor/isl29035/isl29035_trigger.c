@@ -60,7 +60,7 @@ int isl29035_attr_set(const struct device *dev,
 		      enum sensor_attribute attr,
 		      const struct sensor_value *val)
 {
-	struct isl29035_driver_data *drv_data = dev->data;
+	const struct isl29035_config *config = dev->config;
 	uint8_t lsb_reg, msb_reg;
 	uint16_t raw_val;
 
@@ -76,10 +76,10 @@ int isl29035_attr_set(const struct device *dev,
 
 	raw_val = isl29035_lux_processed_to_raw(val);
 
-	if (i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-			       lsb_reg, raw_val & 0xFF) < 0 ||
-	    i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-			       msb_reg, raw_val >> 8) < 0) {
+	if (i2c_reg_write_byte_dt(&config->i2c,
+				  lsb_reg, raw_val & 0xFF) < 0 ||
+	    i2c_reg_write_byte_dt(&config->i2c,
+				  msb_reg, raw_val >> 8) < 0) {
 		LOG_DBG("Failed to set attribute.");
 		return -EIO;
 	}
@@ -101,11 +101,12 @@ static void isl29035_gpio_callback(const struct device *dev,
 static void isl29035_thread_cb(const struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->data;
+	const struct isl29035_config *config = dev->config;
 	uint8_t val;
 
 	/* clear interrupt */
-	if (i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-			      ISL29035_COMMAND_I_REG, &val) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c,
+				 ISL29035_COMMAND_I_REG, &val) < 0) {
 		LOG_ERR("isl29035: Error reading command register");
 		return;
 	}
@@ -164,12 +165,13 @@ int isl29035_trigger_set(const struct device *dev,
 int isl29035_init_interrupt(const struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->data;
+	const struct isl29035_config *config = dev->config;
 
 	/* set interrupt persistence */
-	if (i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-				ISL29035_COMMAND_I_REG,
-				ISL29035_INT_PRST_MASK,
-				ISL29035_INT_PRST_BITS) < 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c,
+				   ISL29035_COMMAND_I_REG,
+				   ISL29035_INT_PRST_MASK,
+				   ISL29035_INT_PRST_BITS) < 0) {
 		LOG_DBG("Failed to set interrupt persistence cycles.");
 		return -EIO;
 	}
