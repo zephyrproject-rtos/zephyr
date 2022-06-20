@@ -56,6 +56,5 @@ int bt_micp_client_included_get(struct bt_micp *micp,
 int bt_micp_client_mute_get(struct bt_micp *micp);
 int bt_micp_client_mute(struct bt_micp *micp);
 int bt_micp_client_unmute(struct bt_micp *micp);
-bool bt_micp_client_valid_aics_inst(struct bt_micp *micp, struct bt_aics *aics);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICS_INTERNAL_ */
