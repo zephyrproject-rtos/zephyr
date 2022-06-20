@@ -208,27 +208,17 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 	return 0;
 }
 
-static uint32_t format_flags(void)
-{
-	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	return flags;
-}
-
 static volatile uint32_t counter;
 
 static void process(const struct log_backend *const backend,
 		union log_msg_generic *msg)
 {
 	ARG_UNUSED(backend);
+	uint32_t flags = log_backend_std_get_flags();
 
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
 
-	log_output_func(&log_output_cavs_hda, &msg->log, format_flags());
+	log_output_func(&log_output_cavs_hda, &msg->log, flags);
 }
 
 /**
