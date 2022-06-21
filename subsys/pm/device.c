@@ -383,7 +383,8 @@ bool pm_device_is_powered(const struct device *dev)
 	 */
 	return (pm == NULL) ||
 	       (pm->domain == NULL) ||
-	       (pm->domain->pm->state == PM_DEVICE_STATE_ACTIVE);
+	       (device_is_ready(pm->domain) &&
+		(pm->domain->pm->state == PM_DEVICE_STATE_ACTIVE));
 #else
 	return true;
 #endif
