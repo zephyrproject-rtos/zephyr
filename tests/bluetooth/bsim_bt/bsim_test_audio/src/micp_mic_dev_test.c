@@ -16,7 +16,6 @@ extern enum bst_result_t bst_result;
 #define AICS_DESC_SIZE 0
 #endif /* CONFIG_BT_AICS */
 
-static struct bt_micp *micp;
 static struct bt_micp_included micp_included;
 
 static volatile uint8_t g_mute;
@@ -32,7 +31,7 @@ static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
 static bool g_is_connected;
 
-static void micp_mute_cb(struct bt_micp *micp, uint8_t mute)
+static void micp_mute_cb(uint8_t mute)
 {
 	g_mute = mute;
 	g_cb = true;
@@ -327,14 +326,14 @@ static void test_mic_dev_only(void)
 
 	micp_param.cb = &micp_cb;
 
-	err = bt_micp_mic_dev_register(&micp_param, &micp);
+	err = bt_micp_mic_dev_register(&micp_param);
 	if (err != 0) {
 		FAIL("MICP init failed (err %d)\n", err);
 		return;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MICP_MIC_DEV_AICS)) {
-		err = bt_micp_mic_dev_included_get(micp, &micp_included);
+		err = bt_micp_mic_dev_included_get(&micp_included);
 		if (err != 0) {
 			FAIL("MICP get failed (err %d)\n", err);
 			return;
@@ -345,7 +344,7 @@ static void test_mic_dev_only(void)
 
 	printk("Getting MICP mute\n");
 	g_cb = false;
-	err = bt_micp_mic_dev_mute_get(micp);
+	err = bt_micp_mic_dev_mute_get();
 	if (err != 0) {
 		FAIL("Could not get MICP mute (err %d)\n", err);
 		return;
@@ -355,7 +354,7 @@ static void test_mic_dev_only(void)
 
 	printk("Setting MICP mute\n");
 	expected_mute = BT_MICP_MUTE_MUTED;
-	err = bt_micp_mic_dev_mute(micp);
+	err = bt_micp_mic_dev_mute();
 	if (err != 0) {
 		FAIL("MICP mute failed (err %d)\n", err);
 		return;
@@ -365,7 +364,7 @@ static void test_mic_dev_only(void)
 
 	printk("Setting MICP unmute\n");
 	expected_mute = BT_MICP_MUTE_UNMUTED;
-	err = bt_micp_mic_dev_unmute(micp);
+	err = bt_micp_mic_dev_unmute();
 	if (err != 0) {
 		FAIL("MICP unmute failed (err %d)\n", err);
 		return;
@@ -375,7 +374,7 @@ static void test_mic_dev_only(void)
 
 	printk("Setting MICP disable\n");
 	expected_mute = BT_MICP_MUTE_DISABLED;
-	err = bt_micp_mic_dev_disable(micp);
+	err = bt_micp_mic_dev_disable();
 	if (err != 0) {
 		FAIL("MICP disable failed (err %d)\n", err);
 		return;
@@ -427,14 +426,14 @@ static void test_main(void)
 
 	micp_param.cb = &micp_cb;
 
-	err = bt_micp_mic_dev_register(&micp_param, &micp);
+	err = bt_micp_mic_dev_register(&micp_param);
 	if (err != 0) {
 		FAIL("MICP init failed (err %d)\n", err);
 		return;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MICP_MIC_DEV_AICS)) {
-		err = bt_micp_mic_dev_included_get(micp, &micp_included);
+		err = bt_micp_mic_dev_included_get(&micp_included);
 		if (err != 0) {
 			FAIL("MICP get failed (err %d)\n", err);
 			return;
