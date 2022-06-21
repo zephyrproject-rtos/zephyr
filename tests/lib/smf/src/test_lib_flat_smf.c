@@ -36,8 +36,8 @@
 #define STATE_C_EXIT_BIT        (1 << 8)
 
 #define TEST_ENTRY_VALUE_NUM     0
-#define TEST_RUN_VALUE_NUM       4
-#define TEST_EXIT_VALUE_NUM      8
+#define TEST_RUN_VALUE_NUM       1
+#define TEST_EXIT_VALUE_NUM      2
 #define TEST_VALUE_NUM           9
 
 static uint32_t test_value[] = {
@@ -102,6 +102,11 @@ static void state_a_run(void *obj)
 	zassert_equal(o->transition_bits, test_value[o->tv_idx],
 		      "Test State A run failed");
 
+	if (o->terminate == RUN) {
+		smf_set_terminate(obj, -1);
+		return;
+	}
+
 	o->transition_bits |= STATE_A_RUN_BIT;
 
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_B]);
@@ -114,6 +119,11 @@ static void state_a_exit(void *obj)
 	o->tv_idx++;
 	zassert_equal(o->transition_bits, test_value[o->tv_idx],
 		      "Test State A exit failed");
+
+	if (o->terminate == EXIT) {
+		smf_set_terminate(obj, -1);
+		return;
+	}
 
 	o->transition_bits |= STATE_A_EXIT_BIT;
 }
@@ -263,8 +273,6 @@ void test_smf_flat(void)
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
 	ret = smf_run_state((struct smf_ctx *)&test_obj);
-	zassert_equal(0, ret, "Incorrect smf_run_state return value");
-	ret = smf_run_state((struct smf_ctx *)&test_obj);
 	zassert_equal(-1, ret, "Incorrect smf_run_state return value");
 
 	zassert_equal(TEST_RUN_VALUE_NUM, test_obj.tv_idx,
@@ -278,10 +286,6 @@ void test_smf_flat(void)
 	test_obj.terminate = EXIT;
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
-	ret = smf_run_state((struct smf_ctx *)&test_obj);
-	zassert_equal(0, ret, "Incorrect smf_run_state return value");
-	ret = smf_run_state((struct smf_ctx *)&test_obj);
-	zassert_equal(0, ret, "Incorrect smf_run_state return value");
 	ret = smf_run_state((struct smf_ctx *)&test_obj);
 	zassert_equal(-1, ret, "Incorrect smf_run_state return value");
 
