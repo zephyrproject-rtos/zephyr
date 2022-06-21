@@ -9,6 +9,9 @@
 
 #include <zephyr/zephyr.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(CONFIG_ZTEST_FATAL_HOOK)
 /**
@@ -66,6 +69,10 @@ __syscall void ztest_set_assert_valid(bool valid);
  */
 void ztest_post_assert_fail_hook(void);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #if defined(CONFIG_ZTEST_FATAL_HOOK) || defined(CONFIG_ZTEST_ASSERT_HOOK)
