@@ -31,7 +31,7 @@ if(NO_PHY)
 endif()
 
 project(bluetooth_ull_llcp_unsupported)
-find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
+find_package(Zephyr COMPONENTS unittest HINTS $ENV{ZEPHYR_BASE})
 include(${ZEPHYR_BASE}/tests/bluetooth/controller/common/defaults_cmake.txt)
 
 # Remove ull_llcp_enc.c from compile
