@@ -4,6 +4,7 @@
 
 DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
 DT_COMPAT_ZEPHYR_MMC := zephyr,sdmmc-disk
+DT_STM32_SDMMC_HAS_DMA := $(dt_nodelabel_has_prop,sdmmc,dmas)
 
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
@@ -40,6 +41,7 @@ config SDMMC_STM32
 	select USE_STM32_HAL_SD_EX if SOC_SERIES_STM32L4X
 	select USE_STM32_LL_SDMMC
 	select USE_STM32_HAL_DMA if (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32F4X)
+	select DMA if ($(DT_STM32_SDMMC_HAS_DMA) && SOC_SERIES_STM32F4X)
 	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_SDMMC))
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.
