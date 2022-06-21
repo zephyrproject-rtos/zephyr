@@ -9,14 +9,14 @@
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#if defined(CONFIG_BT_MICP)
+#if defined(CONFIG_BT_MICP_MIC_DEV)
 struct bt_micp_server {
 	uint8_t mute;
-	struct bt_micp_cb *cb;
+	struct bt_micp_mic_dev_cb *cb;
 	struct bt_gatt_service *service_p;
-	struct bt_aics *aics_insts[CONFIG_BT_MICP_AICS_INSTANCE_COUNT];
+	struct bt_aics *aics_insts[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT];
 };
-#endif /* CONFIG_BT_MICP */
+#endif /* CONFIG_BT_MICP_MIC_DEV */
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
 struct bt_micp_mic_ctlr {
@@ -42,9 +42,9 @@ struct bt_micp_mic_ctlr {
 struct bt_micp {
 	bool client_instance;
 	union {
-#if defined(CONFIG_BT_MICP)
+#if defined(CONFIG_BT_MICP_MIC_DEV)
 		struct bt_micp_server srv;
-#endif /* CONFIG_BT_MICP */
+#endif /* CONFIG_BT_MICP_MIC_DEV */
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
 		struct bt_micp_mic_ctlr cli;
 #endif /* CONFIG_BT_MICP_MIC_CTLR */

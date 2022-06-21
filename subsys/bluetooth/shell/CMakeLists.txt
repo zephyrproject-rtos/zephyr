@@ -34,7 +34,7 @@ zephyr_library_sources_ifdef(
   vcs_client.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MICP
+  CONFIG_BT_MICP_MIC_DEV
   micp_mic_dev.c
   )
 zephyr_library_sources_ifdef(

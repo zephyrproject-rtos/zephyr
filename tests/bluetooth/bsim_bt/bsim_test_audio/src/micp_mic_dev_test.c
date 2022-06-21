@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_MICP
+#ifdef CONFIG_BT_MICP_MIC_DEV
 #include <zephyr/bluetooth/audio/micp.h>
 #include "common.h"
 
@@ -32,22 +32,17 @@ static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
 static bool g_is_connected;
 
-static void micp_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
+static void micp_mute_cb(struct bt_micp *micp, uint8_t mute)
 {
-	if (err != 0) {
-		FAIL("MICP mute cb err (%d)", err);
-		return;
-	}
-
 	g_mute = mute;
 	g_cb = true;
 }
 
-static struct bt_micp_cb micp_cb = {
+static struct bt_micp_mic_dev_cb micp_cb = {
 	.mute = micp_mute_cb,
 };
 
-#if defined(CONFIG_BT_MICP_AICS)
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
 {
@@ -120,7 +115,7 @@ static struct bt_aics_cb aics_cb = {
 	.status = aics_status_cb,
 	.description = aics_description_cb
 };
-#endif /* CONFIG_BT_MICP_AICS */
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -297,10 +292,10 @@ static int test_aics_server_only(void)
 	return 0;
 }
 
-static void test_server_only(void)
+static void test_mic_dev_only(void)
 {
 	int err;
-	struct bt_micp_register_param micp_param;
+	struct bt_micp_mic_dev_register_param micp_param;
 	uint8_t expected_mute;
 
 	err = bt_enable(NULL);
@@ -313,8 +308,8 @@ static void test_server_only(void)
 
 	(void)memset(&micp_param, 0, sizeof(micp_param));
 
-#if defined(CONFIG_BT_MICP_AICS)
-	char input_desc[CONFIG_BT_MICP_AICS_INSTANCE_COUNT][16];
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
+	char input_desc[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT][16];
 
 	for (int i = 0; i < ARRAY_SIZE(micp_param.aics_param); i++) {
 		micp_param.aics_param[i].desc_writable = true;
@@ -328,18 +323,18 @@ static void test_server_only(void)
 		micp_param.aics_param[i].max_gain = 100;
 		micp_param.aics_param[i].cb = &aics_cb;
 	}
-#endif /* CONFIG_BT_MICP_AICS */
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
 	micp_param.cb = &micp_cb;
 
-	err = bt_micp_register(&micp_param, &micp);
+	err = bt_micp_mic_dev_register(&micp_param, &micp);
 	if (err != 0) {
 		FAIL("MICP init failed (err %d)\n", err);
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS)) {
-		err = bt_micp_included_get(micp, &micp_included);
+	if (IS_ENABLED(CONFIG_BT_MICP_MIC_DEV_AICS)) {
+		err = bt_micp_mic_dev_included_get(micp, &micp_included);
 		if (err != 0) {
 			FAIL("MICP get failed (err %d)\n", err);
 			return;
@@ -350,7 +345,7 @@ static void test_server_only(void)
 
 	printk("Getting MICP mute\n");
 	g_cb = false;
-	err = bt_micp_mute_get(micp);
+	err = bt_micp_mic_dev_mute_get(micp);
 	if (err != 0) {
 		FAIL("Could not get MICP mute (err %d)\n", err);
 		return;
@@ -360,7 +355,7 @@ static void test_server_only(void)
 
 	printk("Setting MICP mute\n");
 	expected_mute = BT_MICP_MUTE_MUTED;
-	err = bt_micp_mute(micp);
+	err = bt_micp_mic_dev_mute(micp);
 	if (err != 0) {
 		FAIL("MICP mute failed (err %d)\n", err);
 		return;
@@ -370,7 +365,7 @@ static void test_server_only(void)
 
 	printk("Setting MICP unmute\n");
 	expected_mute = BT_MICP_MUTE_UNMUTED;
-	err = bt_micp_unmute(micp);
+	err = bt_micp_mic_dev_unmute(micp);
 	if (err != 0) {
 		FAIL("MICP unmute failed (err %d)\n", err);
 		return;
@@ -380,7 +375,7 @@ static void test_server_only(void)
 
 	printk("Setting MICP disable\n");
 	expected_mute = BT_MICP_MUTE_DISABLED;
-	err = bt_micp_mute_disable(micp);
+	err = bt_micp_mic_dev_disable(micp);
 	if (err != 0) {
 		FAIL("MICP disable failed (err %d)\n", err);
 		return;
@@ -388,19 +383,19 @@ static void test_server_only(void)
 	WAIT_FOR_COND(expected_mute == g_mute);
 	printk("MICP disable set\n");
 
-	if (CONFIG_BT_MICP_AICS_INSTANCE_COUNT > 0) {
+	if (CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT > 0) {
 		if (test_aics_server_only()) {
 			return;
 		}
 	}
 
-	PASS("MICP passed\n");
+	PASS("MICP mic_dev passed\n");
 }
 
 static void test_main(void)
 {
 	int err;
-	struct bt_micp_register_param micp_param;
+	struct bt_micp_mic_dev_register_param micp_param;
 
 	err = bt_enable(NULL);
 	if (err != 0) {
@@ -412,8 +407,8 @@ static void test_main(void)
 
 	(void)memset(&micp_param, 0, sizeof(micp_param));
 
-#if defined(CONFIG_BT_MICP_AICS)
-	char input_desc[CONFIG_BT_MICP_AICS_INSTANCE_COUNT][16];
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
+	char input_desc[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT][16];
 
 	for (int i = 0; i < ARRAY_SIZE(micp_param.aics_param); i++) {
 		micp_param.aics_param[i].desc_writable = true;
@@ -428,18 +423,18 @@ static void test_main(void)
 		micp_param.aics_param[i].max_gain = 100;
 		micp_param.aics_param[i].cb = &aics_cb;
 	}
-#endif /* CONFIG_BT_MICP_AICS */
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
 	micp_param.cb = &micp_cb;
 
-	err = bt_micp_register(&micp_param, &micp);
+	err = bt_micp_mic_dev_register(&micp_param, &micp);
 	if (err != 0) {
 		FAIL("MICP init failed (err %d)\n", err);
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MICP_AICS)) {
-		err = bt_micp_included_get(micp, &micp_included);
+	if (IS_ENABLED(CONFIG_BT_MICP_MIC_DEV_AICS)) {
+		err = bt_micp_mic_dev_included_get(micp, &micp_included);
 		if (err != 0) {
 			FAIL("MICP get failed (err %d)\n", err);
 			return;
@@ -458,18 +453,18 @@ static void test_main(void)
 
 	WAIT_FOR_COND(g_is_connected);
 
-	PASS("MICP passed\n");
+	PASS("MICP mic_dev passed\n");
 }
 
 static const struct bst_test_instance test_micp[] = {
 	{
-		.test_id = "micp_server_only",
+		.test_id = "micp_mic_dev_only",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_server_only
+		.test_main_f = test_mic_dev_only
 	},
 	{
-		.test_id = "micp",
+		.test_id = "micp_mic_dev",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
@@ -487,4 +482,4 @@ struct bst_test_list *test_micp_install(struct bst_test_list *tests)
 	return tests;
 }
 
-#endif /* CONFIG_BT_MICP */
+#endif /* CONFIG_BT_MICP_MIC_DEV */
