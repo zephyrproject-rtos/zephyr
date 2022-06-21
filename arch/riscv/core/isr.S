@@ -112,7 +112,7 @@ GDATA(_k_syscall_table)
 #endif
 
 /* exports */
-GTEXT(__irq_wrapper)
+GTEXT(_isr_wrapper)
 
 /* use ABI name of registers for the sake of simplicity */
 
@@ -140,7 +140,7 @@ GTEXT(__irq_wrapper)
 /*
  * Handler called upon each exception/interrupt/fault
  */
-SECTION_FUNC(exception.entry, __irq_wrapper)
+SECTION_FUNC(exception.entry, _isr_wrapper)
 
 #ifdef CONFIG_USERSPACE
 	/*
