@@ -259,10 +259,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
-	isoal_source_handle_t source_handle;
-	uint8_t max_octets;
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
 	isoal_sink_handle_t sink_handle;
 	uint32_t stream_sync_delay;
 	uint32_t group_sync_delay;
@@ -275,11 +271,10 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	uint8_t role;
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
-	struct ll_iso_datapath *dp_in = NULL;
-	struct ll_iso_datapath *dp_out = NULL;
-
 	struct ll_conn_iso_stream *cis = NULL;
 	struct ll_conn_iso_group *cig = NULL;
+	isoal_source_handle_t source_handle;
+	uint8_t max_octets;
 
 	if (IS_CIS_HANDLE(handle)) {
 		struct ll_conn *conn;
@@ -310,8 +305,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		}
 
 		cig = cis->group;
-		dp_in = cis->hdr.datapath_in;
-		dp_out = cis->hdr.datapath_out;
 	}
 
 	/* If the Host attempts to set a data path with a Connection Handle
@@ -322,8 +315,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if ((path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR  && dp_in) ||
-	    (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST && dp_out)) {
+	if ((path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR && cis->hdr.datapath_in) ||
+	    (path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST && cis->hdr.datapath_out)) {
 		/* Data path has been set up, can only do setup once */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
