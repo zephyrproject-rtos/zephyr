@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth MICP client shell.
+ *  @brief Bluetooth MICP Microphone Controller shell.
  *
  * Copyright (c) 2020 Bose Corporation
  * Copyright (c) 2020-2022 Nordic Semiconductor ASA
@@ -16,28 +16,31 @@
 
 #include "bt.h"
 
-static struct bt_micp *micp;
+static struct bt_micp_mic_ctlr *mic_ctlr;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static struct bt_micp_included micp_included;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
-static void micp_mic_ctlr_discover_cb(struct bt_micp *micp, int err, uint8_t aics_count)
+static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr,
+				      int err, uint8_t aics_count)
 {
 	if (err != 0) {
-		shell_error(ctx_shell, "MICP discover failed (%d)", err);
+		shell_error(ctx_shell, "Discovery failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "MICP discover done with %u AICS",
+		shell_print(ctx_shell, "Discovery done with %u AICS",
 			    aics_count);
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
-		if (bt_micp_mic_ctlr_included_get(micp, &micp_included) != 0) {
-			shell_error(ctx_shell, "Could not get MICP context");
+		if (bt_micp_mic_ctlr_included_get(mic_ctlr,
+						  &micp_included) != 0) {
+			shell_error(ctx_shell, "Could not get included services");
 		}
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 	}
 }
 
-static void micp_mic_ctlr_mute_written_cb(struct bt_micp *micp, int err)
+static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
+					  int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Mute write failed (%d)", err);
@@ -46,7 +49,8 @@ static void micp_mic_ctlr_mute_written_cb(struct bt_micp *micp, int err)
 	}
 }
 
-static void micp_mic_ctlr_unmute_written_cb(struct bt_micp *micp, int err)
+static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
+					    int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Unmute write failed (%d)", err);
@@ -55,7 +59,8 @@ static void micp_mic_ctlr_unmute_written_cb(struct bt_micp *micp, int err)
 	}
 }
 
-static void micp_mic_ctlr_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
+static void micp_mic_ctlr_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err,
+				  uint8_t mute)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Mute get failed (%d)", err);
@@ -228,7 +233,7 @@ static int cmd_micp_mic_ctlr_discover(const struct shell *sh, size_t argc,
 		return -ENOTCONN;
 	}
 
-	result = bt_micp_mic_ctlr_discover(default_conn, &micp);
+	result = bt_micp_mic_ctlr_discover(default_conn, &mic_ctlr);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -241,11 +246,11 @@ static int cmd_micp_mic_ctlr_mute_get(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
-	result = bt_micp_mic_ctlr_mute_get(micp);
+	result = bt_micp_mic_ctlr_mute_get(mic_ctlr);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -259,11 +264,11 @@ static int cmd_micp_mic_ctlr_mute(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
-	result = bt_micp_mic_ctlr_mute(micp);
+	result = bt_micp_mic_ctlr_mute(mic_ctlr);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -277,11 +282,11 @@ static int cmd_micp_mic_ctlr_unmute(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
-	result = bt_micp_mic_ctlr_unmute(micp);
+	result = bt_micp_mic_ctlr_unmute(mic_ctlr);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -303,7 +308,7 @@ static int cmd_micp_mic_ctlr_aics_input_state_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -327,7 +332,7 @@ static int cmd_micp_mic_ctlr_aics_gain_setting_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -351,7 +356,7 @@ static int cmd_micp_mic_ctlr_aics_input_type_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -375,7 +380,7 @@ static int cmd_micp_mic_ctlr_aics_input_status_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -399,7 +404,7 @@ static int cmd_micp_mic_ctlr_aics_input_unmute(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -423,7 +428,7 @@ static int cmd_micp_mic_ctlr_aics_input_mute(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -447,7 +452,7 @@ static int cmd_micp_mic_ctlr_aics_manual_input_gain_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -472,7 +477,7 @@ static int cmd_micp_mic_ctlr_aics_automatic_input_gain_set(const struct shell *s
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -503,7 +508,7 @@ static int cmd_micp_mic_ctlr_aics_gain_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -527,7 +532,7 @@ static int cmd_micp_mic_ctlr_aics_input_description_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -552,7 +557,7 @@ static int cmd_micp_mic_ctlr_aics_input_description_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (micp == NULL) {
+	if (mic_ctlr == NULL) {
 		return -ENOENT;
 	}
 
@@ -583,13 +588,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(micp_mic_ctlr_cmds,
 		      "Discover MICS on remote device",
 		      cmd_micp_mic_ctlr_discover, 1, 0),
 	SHELL_CMD_ARG(mute_get, NULL,
-		      "Read the mute state of the MICP server.",
+		      "Read the mute state of the Microphone Device server.",
 		      cmd_micp_mic_ctlr_mute_get, 1, 0),
 	SHELL_CMD_ARG(mute, NULL,
-		      "Mute the MICP server",
+		      "Mute the Microphone Device server",
 		      cmd_micp_mic_ctlr_mute, 1, 0),
 	SHELL_CMD_ARG(unmute, NULL,
-		      "Unmute the MICP server",
+		      "Unmute the Microphone Device server",
 		      cmd_micp_mic_ctlr_unmute, 1, 0),
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	SHELL_CMD_ARG(aics_input_state_get, NULL,
@@ -634,5 +639,5 @@ SHELL_STATIC_SUBCMD_SET_CREATE(micp_mic_ctlr_cmds,
 );
 
 SHELL_CMD_ARG_REGISTER(micp_mic_ctlr, &micp_mic_ctlr_cmds,
-		       "Bluetooth MICP client shell commands",
+		       "Bluetooth Microphone Controller shell commands",
 		       cmd_micp_mic_ctlr, 1, 1);
