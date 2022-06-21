@@ -3344,8 +3344,8 @@ static void ecred_connect_rsp_cb(struct bt_conn *conn, uint16_t result,
 
 int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 {
-	struct bt_att_chan *att_chan = att_get_fixed_chan(conn);
-	struct bt_att *att = att_chan->att;
+	struct bt_att_chan *att_chan;
+	struct bt_att *att;
 	struct bt_l2cap_chan *chan[CONFIG_BT_EATT_MAX + 1] = {};
 	size_t offset = 0;
 	size_t i = 0;
@@ -3362,6 +3362,13 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 	if (num_channels > CONFIG_BT_EATT_MAX || num_channels == 0) {
 		return -EINVAL;
 	}
+
+	if (!conn) {
+		return -EINVAL;
+	}
+
+	att_chan = att_get_fixed_chan(conn);
+	att = att_chan->att;
 
 	while (num_channels--) {
 		att_chan = att_chan_new(att, BIT(ATT_ENHANCED));
