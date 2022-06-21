@@ -1,0 +1,41 @@
+# Copyright (c) 2022 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 HSI Clock node description for STM32G0 devices
+  On STM32G0, HSI is a 16MHz fixed clock.
+
+  It also produces a HSISYS secondary clk which can be used as system clock
+  source. In that case, a HSI divisor (ranges from 1 to 128) can be applied:
+  SYSCLK = HSI16 / HSI DIV
+        enum:
+        - 1 ==> HSISYS = 16MHZ
+        - 2 ==> HSISYS = 8MHZ
+        - 4 ==> HSISYS = 4MHZ
+        - 8 ==> HSISYS = 2MHZ
+        - 16 ==> HSISYS = 1MHZ
+        - 32 ==> HSISYS = 0.5MHz
+        - 64 ==> HSISYS = 0.25MHZ
+        - 128 ==> HSISYS = 0.125MHz
+
+compatible: "st,stm32g0-hsi-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+    hsi-div:
+      type: int
+      required: true
+      description: |
+        HSI clock divider. Configures the output HSI clock frequency (HSISYS),
+        It does not apply to HSI clk selected as peripheral source clock
+        (eg: RNG clk driven by HSI)
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
