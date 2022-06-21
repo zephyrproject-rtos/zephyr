@@ -12,12 +12,31 @@
 	model = "Microchip PolarFire-SoC Icicle Kit";
 	compatible = "microchip,mpfs-icicle-kit", "microchip,mpfs";
 	aliases {
+		led0 = &led0;
+		sw0 = &sw0;
 	};
 
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led0 {
+			gpios = <&gpio2 16 GPIO_ACTIVE_LOW>;
+			label = "LED_0";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		sw0: sw0 {
+			gpios = <&gpio2 30 GPIO_ACTIVE_LOW>;
+			label = "SW_0";
+		};
 	};
 };
 
@@ -37,4 +56,8 @@
 		jedec-id = [20 ba 19];
 		label = "FLASH0";
 	};
+};
+
+&gpio2 {
+	status = "okay";
 };
