@@ -18,6 +18,14 @@
 
 LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 
+#define STM32_SDMMC_USE_DMA DT_NODE_HAS_PROP(DT_DRV_INST(0), dmas)
+
+#if STM32_SDMMC_USE_DMA
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_stm32.h>
+#include <stm32_ll_dma.h>
+#endif
+
 #ifndef MMC_TypeDef
 #define MMC_TypeDef SDMMC_TypeDef
 #endif
@@ -36,6 +44,24 @@ LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
+#if STM32_SDMMC_USE_DMA
+
+uint32_t table_priority[] = {
+	DMA_PRIORITY_LOW,
+	DMA_PRIORITY_MEDIUM,
+	DMA_PRIORITY_HIGH,
+	DMA_PRIORITY_VERY_HIGH
+};
+
+struct sdmmc_dma_stream {
+	const struct device *dev;
+	uint32_t channel;
+	uint32_t channel_nb;
+	DMA_TypeDef *reg;
+	struct dma_config cfg;
+};
+#endif
+
 struct stm32_sdmmc_priv {
 	irq_config_func_t irq_config;
 	struct k_sem thread_lock;
@@ -48,6 +74,11 @@ struct stm32_sdmmc_priv {
 	struct gpio_dt_spec pe;
 	struct stm32_pclken pclken;
 	const struct pinctrl_dev_config *pcfg;
+
+#if STM32_SDMMC_USE_DMA
+	struct sdmmc_dma_stream dma_rx;
+	struct sdmmc_dma_stream dma_tx;
+#endif
 };
 
 #ifdef CONFIG_SDMMC_STM32_HWFC
@@ -136,6 +167,85 @@ static int stm32_sdmmc_clock_disable(struct stm32_sdmmc_priv *priv)
 				 (clock_control_subsys_t *)&priv->pclken);
 }
 
+#if STM32_SDMMC_USE_DMA
+
+static void stm32_sdmmc_dma_cb(const struct device *dev, void *arg,
+			 uint32_t channel, int status)
+{
+	DMA_HandleTypeDef *hdma = arg;
+
+	if (status != 0) {
+		LOG_ERR("DMA callback error with channel %d.", channel);
+
+	}
+
+	HAL_DMA_IRQHandler(hdma);
+}
+
+static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma_stream *dma)
+{
+	int ret;
+
+	if (!device_is_ready(dma->dev)) {
+		LOG_ERR("Failed to get dma dev");
+		return -ENODEV;
+	}
+
+	dma->cfg.user_data = handle;
+
+	ret = dma_config(dma->dev, dma->channel, &dma->cfg);
+	if (ret != 0) {
+		LOG_ERR("Failed to conig");
+		return ret;
+	}
+
+	handle->Instance                 = __LL_DMA_GET_STREAM_INSTANCE(dma->reg, dma->channel_nb);
+	handle->Init.Channel             = dma->cfg.dma_slot * DMA_CHANNEL_1;
+	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
+	handle->Init.MemInc              = DMA_MINC_ENABLE;
+	handle->Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+	handle->Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
+	handle->Init.Mode                = DMA_PFCTRL;
+	handle->Init.Priority            = table_priority[dma->cfg.channel_priority],
+	handle->Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
+	handle->Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
+	handle->Init.MemBurst            = DMA_MBURST_INC4;
+	handle->Init.PeriphBurst         = DMA_PBURST_INC4;
+
+	return ret;
+}
+
+static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
+{
+	static DMA_HandleTypeDef dma_tx_handle;
+	static DMA_HandleTypeDef dma_rx_handle;
+	int err;
+
+	LOG_DBG("using dma");
+
+	err = stm32_sdmmc_configure_dma(&dma_tx_handle, &priv->dma_tx);
+	if (err) {
+		LOG_ERR("failed to init tx dma");
+		return err;
+	}
+	__HAL_LINKDMA(&priv->hsd, hdmatx, dma_tx_handle);
+	HAL_DMA_DeInit(&dma_tx_handle);
+	HAL_DMA_Init(&dma_tx_handle);
+
+	stm32_sdmmc_configure_dma(&dma_rx_handle, &priv->dma_rx);
+	if (err) {
+		LOG_ERR("failed to init rx dma");
+		return err;
+	}
+	__HAL_LINKDMA(&priv->hsd, hdmarx, dma_rx_handle);
+	HAL_DMA_DeInit(&dma_rx_handle);
+	HAL_DMA_Init(&dma_rx_handle);
+
+	return err;
+}
+
+#endif
+
 static int stm32_sdmmc_access_init(struct disk_info *disk)
 {
 	const struct device *dev = disk->dev;
@@ -149,6 +259,10 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	if (priv->status == DISK_STATUS_NOMEDIA) {
 		return -ENODEV;
 	}
+
+#if STM32_SDMMC_USE_DMA
+	stm32_sdmmc_dma_init(priv);
+#endif
 
 	err = stm32_sdmmc_clock_enable(priv);
 	if (err) {
@@ -193,8 +307,13 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
+#if STM32_SDMMC_USE_DMA
+	err = HAL_SD_ReadBlocks_DMA(&priv->hsd, data_buf, start_sector,
+				num_sector);
+#else
 	err = HAL_SD_ReadBlocks_IT(&priv->hsd, data_buf, start_sector,
 				num_sector);
+#endif
 	if (err != HAL_OK) {
 		LOG_ERR("sd read block failed %d", err);
 		err = -EIO;
@@ -227,8 +346,13 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
+#if STM32_SDMMC_USE_DMA
+	err = HAL_SD_WriteBlocks_DMA(&priv->hsd, (uint8_t *)data_buf, start_sector,
+				 num_sector);
+#else
 	err = HAL_SD_WriteBlocks_IT(&priv->hsd, (uint8_t *)data_buf, start_sector,
 				 num_sector);
+#endif
 	if (err != HAL_OK) {
 		LOG_ERR("sd write block failed %d", err);
 		err = -EIO;
@@ -486,6 +610,35 @@ err_card_detect:
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
+#if STM32_SDMMC_USE_DMA
+
+#define SDMMC_DMA_CHANNEL_INIT(dir, dir_cap)				\
+	.dev = DEVICE_DT_GET(STM32_DMA_CTLR(0, dir)),			\
+	.channel = DT_INST_DMAS_CELL_BY_NAME(0, dir, channel),		\
+	.channel_nb = DT_DMAS_CELL_BY_NAME(				\
+			DT_DRV_INST(0), dir, channel),			\
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(				\
+			DT_PHANDLE_BY_NAME(DT_DRV_INST(0), dmas, dir)),	\
+	.cfg = {							\
+		.dma_slot = STM32_DMA_SLOT(0, dir, slot),		\
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
+				STM32_DMA_CHANNEL_CONFIG(0, dir)),	\
+		.dma_callback = stm32_sdmmc_dma_cb,			\
+		.linked_channel = STM32_DMA_HAL_OVERRIDE,		\
+	},								\
+
+
+#define SDMMC_DMA_CHANNEL(dir, DIR)					\
+.dma_##dir = {								\
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(0, dir),			\
+		 (SDMMC_DMA_CHANNEL_INIT(dir, DIR)),			\
+		 (NULL))						\
+	},
+
+#else
+#define SDMMC_DMA_CHANNEL(dir, DIR)
+#endif
+
 PINCTRL_DT_INST_DEFINE(0);
 
 static void stm32_sdmmc_irq_config_func(const struct device *dev)
@@ -522,6 +675,8 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
 	},
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	SDMMC_DMA_CHANNEL(rx, RX)
+	SDMMC_DMA_CHANNEL(tx, TX)
 };
 
 DEVICE_DT_INST_DEFINE(0, disk_stm32_sdmmc_init, NULL,
