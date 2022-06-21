@@ -22,6 +22,18 @@ LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 #define MMC_TypeDef SDMMC_TypeDef
 #endif
 
+#ifndef SDMMC_BUS_WIDE_1B
+#define SDMMC_BUS_WIDE_1B SDIO_BUS_WIDE_1B
+#endif
+
+#ifndef SDMMC_BUS_WIDE_4B
+#define SDMMC_BUS_WIDE_4B SDIO_BUS_WIDE_4B
+#endif
+
+#ifndef SDMMC_BUS_WIDE_8B
+#define SDMMC_BUS_WIDE_8B SDIO_BUS_WIDE_8B
+#endif
+
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct stm32_sdmmc_priv {
