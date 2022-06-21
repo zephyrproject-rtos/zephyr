@@ -75,7 +75,7 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				    &micp_inst.srv.mute, sizeof(micp_inst.srv.mute));
 
 		if (micp_inst.srv.cb != NULL && micp_inst.srv.cb->mute != NULL) {
-			micp_inst.srv.cb->mute(NULL, micp_inst.srv.mute);
+			micp_inst.srv.cb->mute(micp_inst.srv.mute);
 		}
 	}
 
@@ -142,14 +142,12 @@ static int prepare_aics_inst(struct bt_micp_mic_dev_register_param *param)
 #endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
 /****************************** PUBLIC API ******************************/
-int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param,
-		     struct bt_micp **micp)
+int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param)
 {
 	int err;
 	static bool registered;
 
 	if (registered) {
-		*micp = &micp_inst;
 		return -EALREADY;
 	}
 
@@ -174,35 +172,23 @@ int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param,
 
 	micp_inst.srv.cb = param->cb;
 
-	*micp = &micp_inst;
 	registered = true;
 
 	return err;
 }
 
-int bt_micp_mic_dev_disable(struct bt_micp *micp)
+int bt_micp_mic_dev_disable(void)
 {
 	uint8_t val = BT_MICP_MUTE_DISABLED;
 	int err;
-
-	if (micp->client_instance) {
-		BT_DBG("Can only disable mute on a server instance");
-		return -EINVAL;
-	}
 
 	err = write_mute(NULL, NULL, &val, sizeof(val), 0, 0);
 
 	return err > 0 ? 0 : err;
 }
 
-int bt_micp_mic_dev_included_get(struct bt_micp *micp,
-			 struct bt_micp_included *included)
+int bt_micp_mic_dev_included_get(struct bt_micp_included *included)
 {
-	CHECKIF(micp == NULL) {
-		BT_DBG("NULL micp pointer");
-		return -EINVAL;
-	}
-
 	CHECKIF(included == NULL) {
 		BT_DBG("NULL service pointer");
 		return -EINVAL;
@@ -216,45 +202,26 @@ int bt_micp_mic_dev_included_get(struct bt_micp *micp,
 	return 0;
 }
 
-int bt_micp_mic_dev_unmute(struct bt_micp *micp)
+int bt_micp_mic_dev_unmute(void)
 {
 	const uint8_t val = BT_MICP_MUTE_UNMUTED;
-	int err;
-
-	CHECKIF(micp == NULL) {
-		BT_DBG("NULL micp pointer");
-		return -EINVAL;
-	}
-
-	err = write_mute(NULL, NULL, &val, sizeof(val), 0, 0);
+	const int err = write_mute(NULL, NULL, &val, sizeof(val), 0, 0);
 
 	return err > 0 ? 0 : err;
 }
 
-int bt_micp_mic_dev_mute(struct bt_micp *micp)
+int bt_micp_mic_dev_mute(void)
 {
 	const uint8_t val = BT_MICP_MUTE_MUTED;
-	int err;
-
-	CHECKIF(micp == NULL) {
-		BT_DBG("NULL micp pointer");
-		return -EINVAL;
-	}
-
-	err = write_mute(NULL, NULL, &val, sizeof(val), 0, 0);
+	const int err = write_mute(NULL, NULL, &val, sizeof(val), 0, 0);
 
 	return err > 0 ? 0 : err;
 }
 
-int bt_micp_mic_dev_mute_get(struct bt_micp *micp)
+int bt_micp_mic_dev_mute_get(void)
 {
-	CHECKIF(micp == NULL) {
-		BT_DBG("NULL micp pointer");
-		return -EINVAL;
-	}
-
 	if (micp_inst.srv.cb && micp_inst.srv.cb->mute) {
-		micp_inst.srv.cb->mute(NULL, micp_inst.srv.mute);
+		micp_inst.srv.cb->mute(micp_inst.srv.mute);
 	}
 
 	return 0;

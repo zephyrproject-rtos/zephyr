@@ -16,9 +16,7 @@
 
 #include "bt.h"
 
-static struct bt_micp *micp;
-
-static void micp_mic_dev_mute_cb(struct bt_micp *micp, uint8_t mute)
+static void micp_mic_dev_mute_cb(uint8_t mute)
 {
 	shell_print(ctx_shell, "Mute value %u", mute);
 }
@@ -133,7 +131,7 @@ static int cmd_micp_mic_dev_param(const struct shell *sh, size_t argc,
 
 	micp_param.cb = &micp_mic_dev_cbs;
 
-	result = bt_micp_mic_dev_register(&micp_param, &micp);
+	result = bt_micp_mic_dev_register(&micp_param);
 	if (result != 0) {
 		shell_error(sh, "MICP register failed: %d", result);
 		return result;
@@ -142,7 +140,7 @@ static int cmd_micp_mic_dev_param(const struct shell *sh, size_t argc,
 	shell_print(sh, "MICP initialized: %d", result);
 
 #if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
-	result = bt_micp_mic_dev_included_get(NULL, &micp_included);
+	result = bt_micp_mic_dev_included_get(&micp_included);
 	if (result != 0) {
 		shell_error(sh, "MICP get failed: %d", result);
 	}
@@ -154,7 +152,7 @@ static int cmd_micp_mic_dev_param(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_mute_get(const struct shell *sh, size_t argc,
 				     char **argv)
 {
-	int result = bt_micp_mic_dev_mute_get(NULL);
+	int result = bt_micp_mic_dev_mute_get();
 
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
@@ -166,7 +164,7 @@ static int cmd_micp_mic_dev_mute_get(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_mute(const struct shell *sh, size_t argc,
 				 char **argv)
 {
-	int result = bt_micp_mic_dev_mute(NULL);
+	int result = bt_micp_mic_dev_mute();
 
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
@@ -178,7 +176,7 @@ static int cmd_micp_mic_dev_mute(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_unmute(const struct shell *sh, size_t argc,
 				   char **argv)
 {
-	int result = bt_micp_mic_dev_unmute(NULL);
+	int result = bt_micp_mic_dev_unmute();
 
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
@@ -190,7 +188,7 @@ static int cmd_micp_mic_dev_unmute(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_mute_disable(const struct shell *sh, size_t argc,
 					 char **argv)
 {
-	int result = bt_micp_mic_dev_disable(micp);
+	int result = bt_micp_mic_dev_disable();
 
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);

@@ -76,15 +76,11 @@ struct bt_micp_included  {
  * discoverable by clients.
  * This can only be done as the server.
  *
- * @param      param Pointer to an initialization structure.
- * @param[out] micp  Pointer to the registered Microphone Input Control Profile
- *                   instance. This will still be valid if the return value is
- *                   -EALREADY.
+ * @param param Pointer to an initialization structure.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param,
-			     struct bt_micp **micp);
+int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param);
 
 /**
  * @brief Get Microphone Input Control Profile included services
@@ -95,13 +91,11 @@ int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param,
  *
  * Requires that @kconfig{CONFIG_BT_MICP_MIC_DEV_AICS}
  *
- * @param      micp     Microphone Input Control Profile instance pointer.
- * @param[out] included Pointer to store the result in.
+ * @param included Pointer to store the result in.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_micp_mic_dev_included_get(struct bt_micp *micp,
-				 struct bt_micp_included *included);
+int bt_micp_mic_dev_included_get(struct bt_micp_included *included);
 
 struct bt_micp_mic_dev_cb {
 	/**
@@ -113,7 +107,7 @@ struct bt_micp_mic_dev_cb {
 	 * @param micp     Microphone Input Control Profile instance pointer.
 	 * @param mute     The mute setting of the Microphone Input Control Profile instance.
 	 */
-	void (*mute)(struct bt_micp *micp, uint8_t mute);
+	void (*mute)(uint8_t mute);
 };
 
 /**
@@ -123,7 +117,7 @@ struct bt_micp_mic_dev_cb {
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_dev_unmute(struct bt_micp *micp);
+int bt_micp_mic_dev_unmute(void);
 
 /**
  * @brief Mute the server.
@@ -132,7 +126,7 @@ int bt_micp_mic_dev_unmute(struct bt_micp *micp);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_dev_mute(struct bt_micp *micp);
+int bt_micp_mic_dev_mute(void);
 
 /**
  * @brief Disable the mute functionality.
@@ -144,7 +138,7 @@ int bt_micp_mic_dev_mute(struct bt_micp *micp);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_dev_disable(struct bt_micp *micp);
+int bt_micp_mic_dev_disable(void);
 
 /**
  * @brief Read the mute state of a Microphone Input Control Profile instance.
@@ -153,7 +147,7 @@ int bt_micp_mic_dev_disable(struct bt_micp *micp);
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_micp_mic_dev_mute_get(struct bt_micp *micp);
+int bt_micp_mic_dev_mute_get(void);
 
 struct bt_micp_mic_ctlr_cb {
 	/**
