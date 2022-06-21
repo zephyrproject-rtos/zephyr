@@ -88,6 +88,12 @@ static int pd_gpio_init(const struct device *dev)
 		LOG_ERR("GPIO port %s is not ready", cfg->enable.port->name);
 		return -ENODEV;
 	}
+	if (dev->pm->domain && !device_is_ready(dev->pm->domain)) {
+		LOG_ERR("Invalid domain sequencing! %s depends on %s",
+			dev->name, dev->pm->domain->name);
+		return -EINVAL;
+	}
+
 	/* We can't know how long the domain has been off for before boot */
 	data->next_boot = K_TIMEOUT_ABS_US(cfg->off_on_delay_us);
 
