@@ -95,7 +95,7 @@ static void ipv4_autoconf_send_announcement(
 enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 					 struct net_pkt *pkt)
 {
-	struct net_if_config *cfg = net_if_get_config(iface);
+	struct net_if_config *cfg;
 	struct net_arp_hdr *arp_hdr;
 
 	cfg = net_if_get_config(iface);
