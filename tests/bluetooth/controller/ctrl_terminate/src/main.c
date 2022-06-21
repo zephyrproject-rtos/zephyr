@@ -66,8 +66,15 @@ static void test_terminate_rem(uint8_t role)
 	/* Done */
 	event_done(&conn);
 
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
 	/* There should be no host notification */
 	ut_rx_q_is_empty();
+
 
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
