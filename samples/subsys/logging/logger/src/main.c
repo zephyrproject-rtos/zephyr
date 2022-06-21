@@ -207,7 +207,7 @@ static void performance_showcase(void)
 {
 /* Arbitrary limit when LOG_MODE_IMMEDIATE is enabled. */
 #define LOG_IMMEDIATE_TEST_MESSAGES_LIMIT 50
-#define MSG_SIZE (sizeof(struct log_msg2) + 2 * sizeof(void *) + sizeof(int))
+#define MSG_SIZE (sizeof(struct log_msg) + 2 * sizeof(void *) + sizeof(int))
 
 	volatile uint32_t current_timestamp;
 	volatile uint32_t start_timestamp;

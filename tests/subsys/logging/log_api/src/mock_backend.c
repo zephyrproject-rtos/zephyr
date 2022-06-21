@@ -119,7 +119,7 @@ static int out(int c, void *ctx)
 }
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	struct mock_log_backend *mock = backend->cb->ctx;
 	struct mock_log_backend_msg *exp = &mock->exp_msgs[mock->msg_proc_idx];
@@ -161,7 +161,7 @@ static void process(const struct log_backend *const backend,
 	size_t len;
 	uint8_t *data;
 
-	data = log_msg2_get_data(&msg->log, &len);
+	data = log_msg_get_data(&msg->log, &len);
 	zassert_equal(exp->data_len, len, NULL);
 	if (exp->data_len <= sizeof(exp->data)) {
 		zassert_equal(memcmp(data, exp->data, len), 0, NULL);
@@ -170,7 +170,7 @@ static void process(const struct log_backend *const backend,
 	char str[128];
 	struct test_str s = { .str = str };
 
-	data = log_msg2_get_package(&msg->log, &len);
+	data = log_msg_get_package(&msg->log, &len);
 	len = cbpprintf(out, &s, data);
 	if (len > 0) {
 		str[len] = '\0';

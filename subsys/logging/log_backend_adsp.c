@@ -71,7 +71,7 @@ static inline void dropped(const struct log_backend *const backend,
 }
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
 

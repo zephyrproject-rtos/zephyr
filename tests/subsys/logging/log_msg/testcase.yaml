@@ -8,25 +8,25 @@ common:
   integration_platforms:
     - native_posix
 tests:
-  logging.log_msg2:
+  logging.log_msg:
     extra_configs:
       - CONFIG_CBPRINTF_COMPLETE=y
 
-  logging.log_msg2_no_overflow:
+  logging.log_msg_no_overflow:
     extra_configs:
       - CONFIG_LOG_MODE_OVERFLOW=n
 
-  logging.log_msg2_64b_timestamp:
+  logging.log_msg_64b_timestamp:
     extra_configs:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
 
-  logging.log_msg2_fp:
+  logging.log_msg_fp:
     extra_configs:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_CBPRINTF_FP_SUPPORT=y
 
-  logging.log_msg2_fp_64b_timestamp:
+  logging.log_msg_fp_64b_timestamp:
     extra_configs:
       - CONFIG_CBPRINTF_COMPLETE=y
       - CONFIG_CBPRINTF_FP_SUPPORT=y

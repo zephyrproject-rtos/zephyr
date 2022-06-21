@@ -89,13 +89,13 @@ struct log_output {
  * @brief Typedef of the function pointer table "format_table".
  *
  * @param output Pointer to log_output struct.
- * @param msg2 Pointer to log_msg2 struct.
+ * @param msg Pointer to log_msg struct.
  * @param flags Flags used for text formatting options.
  *
  * @return Function pointer based on Kconfigs defined for backends.
  */
 typedef void (*log_format_func_t)(const struct log_output *output,
-					struct log_msg2 *msg2, uint32_t flags);
+					struct log_msg *msg, uint32_t flags);
 
 /**
  * @brief Declaration of the get routine for function pointer table format_table.
@@ -127,8 +127,8 @@ log_format_func_t log_format_func_t_get(uint32_t log_type);
  * @param msg Log message.
  * @param flags Optional flags.
  */
-void log_output_msg2_process(const struct log_output *log_output,
-			     struct log_msg2 *msg, uint32_t flags);
+void log_output_msg_process(const struct log_output *log_output,
+			     struct log_msg *msg, uint32_t flags);
 
 /** @brief Process log messages v2 to SYS-T format.
  *
@@ -139,8 +139,8 @@ void log_output_msg2_process(const struct log_output *log_output,
  * @param msg Log message.
  * @param flag Optional flags.
  */
-void log_output_msg2_syst_process(const struct log_output *log_output,
-			     struct log_msg2 *msg, uint32_t flag);
+void log_output_msg_syst_process(const struct log_output *log_output,
+			     struct log_msg *msg, uint32_t flag);
 
 /** @brief Process dropped messages indication.
  *
