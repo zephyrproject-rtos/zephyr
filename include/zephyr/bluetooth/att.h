@@ -10,6 +10,13 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_
 
+/**
+ * @brief Attribute Protocol (ATT)
+ * @defgroup bt_att Attribute Protocol (ATT)
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <zephyr/sys/slist.h>
 #include <zephyr/bluetooth/conn.h>
 
@@ -109,5 +116,9 @@ enum bt_att_chan_opt {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_ATT_H_ */
