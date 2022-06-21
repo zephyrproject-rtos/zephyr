@@ -13,3 +13,14 @@ config CAVS_TIMER
 	  It is not as fast as the internal core clock, but provides
 	  a common and synchronized counter for all CPU cores (which
 	  is useful for SMP).
+
+config MTL_TIMER
+	bool "Meteor Lale DSP Wall Clock Timer"
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  The DSP wall clock timer is a timer driven directly by
+	  external oscillator and is external to the CPU core(s).
+	  It is not as fast as the internal core clock, but provides
+	  a common and synchronized counter for all CPU cores (which
+	  is useful for SMP).
