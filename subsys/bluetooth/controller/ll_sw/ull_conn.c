@@ -2014,7 +2014,7 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 			mem_release(tx, &mem_conn_tx_ctrl.free);
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
-			struct ll_conn *conn = ll_conn_get(handle);
+			struct ll_conn *conn = ll_connected_get(handle);
 
 			ull_cp_release_tx(conn, tx);
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
@@ -2492,6 +2492,11 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	ARG_UNUSED(rx);
 	ull_cp_state_set(conn, ULL_CP_DISCONNECTED);
+
+	/* Update tx buffer queue handling */
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+	ull_cp_update_tx_buffer_queue(conn);
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
 	/* flush demux-ed Tx buffer still in ULL context */

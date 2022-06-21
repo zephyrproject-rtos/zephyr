@@ -643,4 +643,5 @@ bool lr_is_idle(struct ll_conn *conn);
 bool rr_is_disconnected(struct ll_conn *conn);
 bool rr_is_idle(struct ll_conn *conn);
 uint16_t ctx_buffers_free(void);
+uint8_t common_tx_buffer_alloc_count(void);
 #endif
