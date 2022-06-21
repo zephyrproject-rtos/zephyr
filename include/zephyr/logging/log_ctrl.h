@@ -216,7 +216,7 @@ uint32_t log_get_strdup_longest_string(void);
  */
 static inline bool log_data_pending(void)
 {
-	return IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? z_log_msg2_pending() : false;
+	return IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? z_log_msg_pending() : false;
 }
 
 /**

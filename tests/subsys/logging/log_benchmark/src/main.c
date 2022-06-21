@@ -45,7 +45,7 @@ struct backend_cb {
 };
 
 static void process(struct log_backend const *const backend,
-		    union log_msg2_generic *msg)
+		    union log_msg_generic *msg)
 {
 }
 
