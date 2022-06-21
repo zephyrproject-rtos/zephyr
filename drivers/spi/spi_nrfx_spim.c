@@ -534,6 +534,10 @@ static int spi_nrfx_init(const struct device *dev)
 	return 0;
 #endif
 }
+
+#define SPI_IRQ_HANDLER(idx)				\
+	_CONCAT(_CONCAT(nrfx_spim_, idx), _irq_handler)
+
 /*
  * We use NODELABEL here because the nrfx API requires us to call
  * functions which are named according to SoC peripheral instance
@@ -581,7 +585,9 @@ static int spi_nrfx_init(const struct device *dev)
 	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPIM(idx)), DT_IRQ(SPIM(idx), priority),   \
-			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
+			    nrfx_isr,					       \
+			    SPI_IRQ_HANDLER(DT_PROP(SPIM(idx), periph_idx)),   \
+			    0);						       \
 	}								       \
 	IF_ENABLED(SPI_BUFFER_IN_RAM,					       \
 		(static uint8_t spim_##idx##_buffer			       \

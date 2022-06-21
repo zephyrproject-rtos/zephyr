@@ -342,6 +342,9 @@ static int spi_nrfx_init(const struct device *dev)
 	return 0;
 }
 
+#define SPI_IRQ_HANDLER(idx)				\
+	_CONCAT(_CONCAT(nrfx_spi_, idx), _irq_handler)
+
 /*
  * Current factors requiring use of DT_NODELABEL:
  */
@@ -379,7 +382,9 @@ static int spi_nrfx_init(const struct device *dev)
 	static void irq_connect##idx(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
-			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \
+			    nrfx_isr,					       \
+			    SPI_IRQ_HANDLER(DT_PROP(SPI(idx), periph_idx)),    \
+			    0);						       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
