@@ -1255,7 +1255,8 @@ def main():
 
     if options.save_tests:
         tplan.json_report(options.save_tests)
-        return
+        if not options.build_only:
+            return
 
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
