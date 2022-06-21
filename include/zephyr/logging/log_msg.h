@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_MSG2_H_
-#define ZEPHYR_INCLUDE_LOGGING_LOG_MSG2_H_
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 
 #include <zephyr/logging/log_instance.h>
 #include <zephyr/sys/mpsc_packet.h>
@@ -660,10 +660,10 @@ static inline uint8_t *log_msg2_get_package(struct log_msg2 *msg, size_t *len)
  * @}
  */
 
-#include <syscalls/log_msg2.h>
+#include <syscalls/log_msg.h>
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_MSG2_H_ */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_ */
