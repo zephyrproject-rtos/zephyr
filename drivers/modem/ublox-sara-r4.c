@@ -1498,7 +1498,7 @@ static int offload_close(void *obj)
 
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
 				     NULL, 0U, buf,
-				     &mdata.sem_response, MDM_CMD_TIMEOUT);
+				     &mdata.sem_response, MDM_CMD_CONN_TIMEOUT);
 		if (ret < 0) {
 			LOG_ERR("%s ret:%d", buf, ret);
 		}
