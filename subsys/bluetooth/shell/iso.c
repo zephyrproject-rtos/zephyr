@@ -112,19 +112,20 @@ static struct bt_iso_chan_ops iso_ops = {
 static struct bt_iso_chan_io_qos iso_tx_qos = DEFAULT_IO_QOS;
 static struct bt_iso_chan_io_qos iso_rx_qos = DEFAULT_IO_QOS;
 
-static struct bt_iso_chan_qos iso_qos = {
-	.tx		= &iso_tx_qos,
-	.rx		= &iso_rx_qos,
-};
 
 #if defined(CONFIG_BT_ISO_UNICAST)
 static uint32_t cis_sdu_interval_us;
+
+static struct bt_iso_chan_qos cis_iso_qos = {
+	.tx = &iso_tx_qos,
+	.rx = &iso_rx_qos,
+};
 
 #define CIS_ISO_CHAN_COUNT 1
 
 struct bt_iso_chan iso_chan = {
 	.ops = &iso_ops,
-	.qos = &iso_qos,
+	.qos = &cis_iso_qos,
 };
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
