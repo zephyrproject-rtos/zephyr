@@ -1,6 +1,12 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config DW_ICTL_ACE_V1X
+	bool "Designware Interrupt Controller for ACE V1X"
+	depends on MULTI_LEVEL_INTERRUPTS
+	help
+	  Designware Interrupt Controller used by ACE V1X.
+
 menuconfig DW_ICTL
 	bool "Designware Interrupt Controller"
 	depends on MULTI_LEVEL_INTERRUPTS
@@ -8,6 +14,7 @@ menuconfig DW_ICTL
 	  Designware Interrupt Controller can be used as a 2nd level interrupt
 	  controller which combines several sources of interrupt into one line
 	  that is then routed to the 1st level interrupt controller.
+
 
 if DW_ICTL
 
