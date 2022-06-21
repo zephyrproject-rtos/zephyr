@@ -5,7 +5,7 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
     CONFIG_LOG
     log_core.c
     log_mgmt.c
-    log_msg2.c
+    log_msg.c
     log_output.c
   )
 

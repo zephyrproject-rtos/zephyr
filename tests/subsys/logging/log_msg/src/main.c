@@ -9,7 +9,7 @@
  * @brief Test log message
  */
 
-#include <zephyr/logging/log_msg2.h>
+#include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_internal.h>
 #include <zephyr/logging/log_ctrl.h>
 

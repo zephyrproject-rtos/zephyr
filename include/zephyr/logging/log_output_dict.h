@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_DICT_H_
 
 #include <zephyr/logging/log_output.h>
-#include <zephyr/logging/log_msg2.h>
+#include <zephyr/logging/log_msg.h>
 #include <stdarg.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
