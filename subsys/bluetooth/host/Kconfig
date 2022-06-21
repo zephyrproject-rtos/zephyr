@@ -42,6 +42,7 @@ config BT_HCI_ECC_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
 	# changed if required by architecture
 	int "HCI ECC thread stack size"
+	depends on BT_TINYCRYPT_ECC
 	default 1140
 	help
 	  NOTE: This is an advanced setting and should not be changed unless
