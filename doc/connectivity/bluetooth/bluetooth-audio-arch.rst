@@ -104,7 +104,7 @@ The API reference for volume control can be found in
 :ref:`Bluetooth Volume Control <bluetooth_volume>`.
 
 The API reference for microphone input control can be found in
-:ref:`Bluetooth Microphone Control <bluetooth_microphone>`.
+:ref:`Bluetooth Microphone Input Control <bluetooth_microphone>`.
 
 
 Content Control

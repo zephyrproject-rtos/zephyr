@@ -17,11 +17,11 @@
 #include "bt.h"
 
 static struct bt_micp *micp;
-#if defined(CONFIG_BT_MICP_CLIENT_AICS)
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static struct bt_micp_included micp_included;
-#endif /* CONFIG_BT_MICP_CLIENT_AICS */
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
-static void micp_discover_cb(struct bt_micp *micp, int err, uint8_t aics_count)
+static void micp_mic_ctlr_discover_cb(struct bt_micp *micp, int err, uint8_t aics_count)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "MICP discover failed (%d)", err);
@@ -29,15 +29,15 @@ static void micp_discover_cb(struct bt_micp *micp, int err, uint8_t aics_count)
 		shell_print(ctx_shell, "MICP discover done with %u AICS",
 			    aics_count);
 
-#if defined(CONFIG_BT_MICP_CLIENT_AICS)
-		if (bt_micp_included_get(micp, &micp_included) != 0) {
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+		if (bt_micp_mic_ctlr_included_get(micp, &micp_included) != 0) {
 			shell_error(ctx_shell, "Could not get MICP context");
 		}
-#endif /* CONFIG_BT_MICP_CLIENT_AICS */
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 	}
 }
 
-static void micp_mute_write_cb(struct bt_micp *micp, int err)
+static void micp_mic_ctlr_mute_written_cb(struct bt_micp *micp, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Mute write failed (%d)", err);
@@ -46,7 +46,7 @@ static void micp_mute_write_cb(struct bt_micp *micp, int err)
 	}
 }
 
-static void micp_unmute_write_cb(struct bt_micp *micp, int err)
+static void micp_mic_ctlr_unmute_written_cb(struct bt_micp *micp, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Unmute write failed (%d)", err);
@@ -55,7 +55,7 @@ static void micp_unmute_write_cb(struct bt_micp *micp, int err)
 	}
 }
 
-static void micp_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
+static void micp_mic_ctlr_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Mute get failed (%d)", err);
@@ -64,10 +64,10 @@ static void micp_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
 	}
 }
 
-#if defined(CONFIG_BT_MICP_CLIENT_AICS)
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static struct bt_micp_included micp_included;
 
-static void micp_aics_set_gain_cb(struct bt_aics *inst, int err)
+static void micp_mic_ctlr_aics_set_gain_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Set gain failed (%d) for inst %p",
@@ -77,7 +77,7 @@ static void micp_aics_set_gain_cb(struct bt_aics *inst, int err)
 	}
 }
 
-static void micp_aics_unmute_cb(struct bt_aics *inst, int err)
+static void micp_mic_ctlr_aics_unmute_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Unmute failed (%d) for inst %p",
@@ -87,7 +87,7 @@ static void micp_aics_unmute_cb(struct bt_aics *inst, int err)
 	}
 }
 
-static void micp_aics_mute_cb(struct bt_aics *inst, int err)
+static void micp_mic_ctlr_aics_mute_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Mute failed (%d) for inst %p",
@@ -97,7 +97,7 @@ static void micp_aics_mute_cb(struct bt_aics *inst, int err)
 	}
 }
 
-static void micp_aics_set_manual_mode_cb(struct bt_aics *inst, int err)
+static void micp_mic_ctlr_aics_set_manual_mode_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell,
@@ -108,7 +108,7 @@ static void micp_aics_set_manual_mode_cb(struct bt_aics *inst, int err)
 	}
 }
 
-static void micp_aics_automatic_mode_cb(struct bt_aics *inst, int err)
+static void micp_mic_ctlr_aics_automatic_mode_cb(struct bt_aics *inst, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell,
@@ -120,8 +120,8 @@ static void micp_aics_automatic_mode_cb(struct bt_aics *inst, int err)
 	}
 }
 
-static void micp_aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
-			       uint8_t mute, uint8_t mode)
+static void micp_mic_ctlr_aics_state_cb(struct bt_aics *inst, int err,
+					int8_t gain, uint8_t mute, uint8_t mode)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "AICS state get failed (%d) for "
@@ -133,9 +133,9 @@ static void micp_aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 
 }
 
-static void micp_aics_gain_setting_cb(struct bt_aics *inst, int err,
-				      uint8_t units, int8_t minimum,
-				      int8_t maximum)
+static void micp_mic_ctlr_aics_gain_setting_cb(struct bt_aics *inst, int err,
+					       uint8_t units, int8_t minimum,
+					       int8_t maximum)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "AICS gain settings get failed (%d) for "
@@ -148,8 +148,8 @@ static void micp_aics_gain_setting_cb(struct bt_aics *inst, int err,
 
 }
 
-static void micp_aics_input_type_cb(struct bt_aics *inst, int err,
-				    uint8_t input_type)
+static void micp_mic_ctlr_aics_input_type_cb(struct bt_aics *inst, int err,
+					     uint8_t input_type)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "AICS input type get failed (%d) for "
@@ -161,7 +161,8 @@ static void micp_aics_input_type_cb(struct bt_aics *inst, int err,
 
 }
 
-static void micp_aics_status_cb(struct bt_aics *inst, int err, bool active)
+static void micp_mic_ctlr_aics_status_cb(struct bt_aics *inst, int err,
+					 bool active)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "AICS status get failed (%d) for "
@@ -173,8 +174,8 @@ static void micp_aics_status_cb(struct bt_aics *inst, int err, bool active)
 
 }
 
-static void micp_aics_description_cb(struct bt_aics *inst, int err,
-				     char *description)
+static void micp_mic_ctlr_aics_description_cb(struct bt_aics *inst, int err,
+					      char *description)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "AICS description get failed (%d) for "
@@ -184,32 +185,32 @@ static void micp_aics_description_cb(struct bt_aics *inst, int err,
 			    inst, description);
 	}
 }
-#endif /* CONFIG_BT_MICP_CLIENT_AICS */
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
-static struct bt_micp_cb micp_cbs = {
-	.discover = micp_discover_cb,
-	.mute_write = micp_mute_write_cb,
-	.unmute_write = micp_unmute_write_cb,
-	.mute = micp_mute_cb,
+static struct bt_micp_mic_ctlr_cb micp_cbs = {
+	.discover = micp_mic_ctlr_discover_cb,
+	.mute_written = micp_mic_ctlr_mute_written_cb,
+	.unmute_written = micp_mic_ctlr_unmute_written_cb,
+	.mute = micp_mic_ctlr_mute_cb,
 
-#if defined(CONFIG_BT_MICP_CLIENT_AICS)
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	/* Audio Input Control Service */
 	.aics_cb = {
-		.state = micp_aics_state_cb,
-		.gain_setting = micp_aics_gain_setting_cb,
-		.type = micp_aics_input_type_cb,
-		.status = micp_aics_status_cb,
-		.description = micp_aics_description_cb,
-		.set_gain = micp_aics_set_gain_cb,
-		.unmute = micp_aics_unmute_cb,
-		.mute = micp_aics_mute_cb,
-		.set_manual_mode = micp_aics_set_manual_mode_cb,
-		.set_auto_mode = micp_aics_automatic_mode_cb,
+		.state = micp_mic_ctlr_aics_state_cb,
+		.gain_setting = micp_mic_ctlr_aics_gain_setting_cb,
+		.type = micp_mic_ctlr_aics_input_type_cb,
+		.status = micp_mic_ctlr_aics_status_cb,
+		.description = micp_mic_ctlr_aics_description_cb,
+		.set_gain = micp_mic_ctlr_aics_set_gain_cb,
+		.unmute = micp_mic_ctlr_aics_unmute_cb,
+		.mute = micp_mic_ctlr_aics_mute_cb,
+		.set_manual_mode = micp_mic_ctlr_aics_set_manual_mode_cb,
+		.set_auto_mode = micp_mic_ctlr_aics_automatic_mode_cb,
 	}
-#endif /* CONFIG_BT_MICP_CLIENT_AICS */
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 };
 
-static int cmd_micp_client_discover(const struct shell *sh, size_t argc,
+static int cmd_micp_mic_ctlr_discover(const struct shell *sh, size_t argc,
 				    char **argv)
 {
 	int result;
@@ -218,7 +219,7 @@ static int cmd_micp_client_discover(const struct shell *sh, size_t argc,
 		ctx_shell = sh;
 	}
 
-	result = bt_micp_client_cb_register(&micp_cbs);
+	result = bt_micp_mic_ctlr_cb_register(&micp_cbs);
 	if (result != 0) {
 		shell_print(sh, "Failed to register callbacks: %d", result);
 	}
@@ -227,7 +228,7 @@ static int cmd_micp_client_discover(const struct shell *sh, size_t argc,
 		return -ENOTCONN;
 	}
 
-	result = bt_micp_discover(default_conn, &micp);
+	result = bt_micp_mic_ctlr_discover(default_conn, &micp);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -235,7 +236,7 @@ static int cmd_micp_client_discover(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_micp_client_mute_get(const struct shell *sh, size_t argc,
+static int cmd_micp_mic_ctlr_mute_get(const struct shell *sh, size_t argc,
 				    char **argv)
 {
 	int result;
@@ -244,7 +245,7 @@ static int cmd_micp_client_mute_get(const struct shell *sh, size_t argc,
 		return -ENOENT;
 	}
 
-	result = bt_micp_mute_get(micp);
+	result = bt_micp_mic_ctlr_mute_get(micp);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -253,7 +254,7 @@ static int cmd_micp_client_mute_get(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_micp_client_mute(const struct shell *sh, size_t argc,
+static int cmd_micp_mic_ctlr_mute(const struct shell *sh, size_t argc,
 				char **argv)
 {
 	int result;
@@ -262,7 +263,7 @@ static int cmd_micp_client_mute(const struct shell *sh, size_t argc,
 		return -ENOENT;
 	}
 
-	result = bt_micp_mute(micp);
+	result = bt_micp_mic_ctlr_mute(micp);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -271,7 +272,7 @@ static int cmd_micp_client_mute(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_micp_client_unmute(const struct shell *sh, size_t argc,
+static int cmd_micp_mic_ctlr_unmute(const struct shell *sh, size_t argc,
 				  char **argv)
 {
 	int result;
@@ -280,7 +281,7 @@ static int cmd_micp_client_unmute(const struct shell *sh, size_t argc,
 		return -ENOENT;
 	}
 
-	result = bt_micp_unmute(micp);
+	result = bt_micp_mic_ctlr_unmute(micp);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -289,8 +290,8 @@ static int cmd_micp_client_unmute(const struct shell *sh, size_t argc,
 	return result;
 }
 
-#if defined(CONFIG_BT_MICP_CLIENT_AICS)
-static int cmd_micp_client_aics_input_state_get(const struct shell *sh,
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+static int cmd_micp_mic_ctlr_aics_input_state_get(const struct shell *sh,
 						size_t argc, char **argv)
 {
 	int result;
@@ -314,7 +315,7 @@ static int cmd_micp_client_aics_input_state_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_micp_client_aics_gain_setting_get(const struct shell *sh,
+static int cmd_micp_mic_ctlr_aics_gain_setting_get(const struct shell *sh,
 						 size_t argc, char **argv)
 {
 	int result;
@@ -338,7 +339,7 @@ static int cmd_micp_client_aics_gain_setting_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_micp_client_aics_input_type_get(const struct shell *sh,
+static int cmd_micp_mic_ctlr_aics_input_type_get(const struct shell *sh,
 					       size_t argc, char **argv)
 {
 	int result;
@@ -362,7 +363,7 @@ static int cmd_micp_client_aics_input_type_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_micp_client_aics_input_status_get(const struct shell *sh,
+static int cmd_micp_mic_ctlr_aics_input_status_get(const struct shell *sh,
 						 size_t argc, char **argv)
 {
 	int result;
@@ -386,7 +387,7 @@ static int cmd_micp_client_aics_input_status_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_micp_client_aics_input_unmute(const struct shell *sh,
+static int cmd_micp_mic_ctlr_aics_input_unmute(const struct shell *sh,
 					     size_t argc, char **argv)
 {
 	int result;
@@ -410,7 +411,7 @@ static int cmd_micp_client_aics_input_unmute(const struct shell *sh,
 	return result;
 }
 
-static int cmd_micp_client_aics_input_mute(const struct shell *sh,
+static int cmd_micp_mic_ctlr_aics_input_mute(const struct shell *sh,
 					   size_t argc, char **argv)
 {
 	int result;
@@ -434,7 +435,7 @@ static int cmd_micp_client_aics_input_mute(const struct shell *sh,
 	return result;
 }
 
-static int cmd_micp_client_aics_manual_input_gain_set(const struct shell *sh,
+static int cmd_micp_mic_ctlr_aics_manual_input_gain_set(const struct shell *sh,
 						      size_t argc, char **argv)
 {
 	int result;
@@ -458,7 +459,7 @@ static int cmd_micp_client_aics_manual_input_gain_set(const struct shell *sh,
 	return result;
 }
 
-static int cmd_micp_client_aics_automatic_input_gain_set(const struct shell *sh,
+static int cmd_micp_mic_ctlr_aics_automatic_input_gain_set(const struct shell *sh,
 							 size_t argc,
 							 char **argv)
 {
@@ -483,7 +484,7 @@ static int cmd_micp_client_aics_automatic_input_gain_set(const struct shell *sh,
 	return result;
 }
 
-static int cmd_micp_client_aics_gain_set(const struct shell *sh, size_t argc,
+static int cmd_micp_mic_ctlr_aics_gain_set(const struct shell *sh, size_t argc,
 					 char **argv)
 {
 	int result;
@@ -514,7 +515,7 @@ static int cmd_micp_client_aics_gain_set(const struct shell *sh, size_t argc,
 	return result;
 }
 
-static int cmd_micp_client_aics_input_description_get(const struct shell *sh,
+static int cmd_micp_mic_ctlr_aics_input_description_get(const struct shell *sh,
 						      size_t argc, char **argv)
 {
 	int result;
@@ -538,7 +539,7 @@ static int cmd_micp_client_aics_input_description_get(const struct shell *sh,
 	return result;
 }
 
-static int cmd_micp_client_aics_input_description_set(const struct shell *sh,
+static int cmd_micp_mic_ctlr_aics_input_description_set(const struct shell *sh,
 						      size_t argc, char **argv)
 {
 	int result;
@@ -563,9 +564,9 @@ static int cmd_micp_client_aics_input_description_set(const struct shell *sh,
 
 	return result;
 }
-#endif /* CONFIG_BT_MICP_CLIENT_AICS */
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
-static int cmd_micp_client(const struct shell *sh, size_t argc, char **argv)
+static int cmd_micp_mic_ctlr(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
 		shell_error(sh, "%s unknown parameter: %s",
@@ -577,61 +578,61 @@ static int cmd_micp_client(const struct shell *sh, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(micp_client_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(micp_mic_ctlr_cmds,
 	SHELL_CMD_ARG(discover, NULL,
 		      "Discover MICS on remote device",
-		      cmd_micp_client_discover, 1, 0),
+		      cmd_micp_mic_ctlr_discover, 1, 0),
 	SHELL_CMD_ARG(mute_get, NULL,
 		      "Read the mute state of the MICP server.",
-		      cmd_micp_client_mute_get, 1, 0),
+		      cmd_micp_mic_ctlr_mute_get, 1, 0),
 	SHELL_CMD_ARG(mute, NULL,
 		      "Mute the MICP server",
-		      cmd_micp_client_mute, 1, 0),
+		      cmd_micp_mic_ctlr_mute, 1, 0),
 	SHELL_CMD_ARG(unmute, NULL,
 		      "Unmute the MICP server",
-		      cmd_micp_client_unmute, 1, 0),
-#if defined(CONFIG_BT_MICP_CLIENT_AICS)
+		      cmd_micp_mic_ctlr_unmute, 1, 0),
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	SHELL_CMD_ARG(aics_input_state_get, NULL,
 		      "Read the input state of a AICS instance <inst_index>",
-		      cmd_micp_client_aics_input_state_get, 2, 0),
+		      cmd_micp_mic_ctlr_aics_input_state_get, 2, 0),
 	SHELL_CMD_ARG(aics_gain_setting_get, NULL,
 		      "Read the gain settings of a AICS instance <inst_index>",
-		      cmd_micp_client_aics_gain_setting_get, 2, 0),
+		      cmd_micp_mic_ctlr_aics_gain_setting_get, 2, 0),
 	SHELL_CMD_ARG(aics_input_type_get, NULL,
 		      "Read the input type of a AICS instance <inst_index>",
-		      cmd_micp_client_aics_input_type_get, 2, 0),
+		      cmd_micp_mic_ctlr_aics_input_type_get, 2, 0),
 	SHELL_CMD_ARG(aics_input_status_get, NULL,
 		      "Read the input status of a AICS instance <inst_index>",
-		      cmd_micp_client_aics_input_status_get, 2, 0),
+		      cmd_micp_mic_ctlr_aics_input_status_get, 2, 0),
 	SHELL_CMD_ARG(aics_input_unmute, NULL,
 		      "Unmute the input of a AICS instance <inst_index>",
-		      cmd_micp_client_aics_input_unmute, 2, 0),
+		      cmd_micp_mic_ctlr_aics_input_unmute, 2, 0),
 	SHELL_CMD_ARG(aics_input_mute, NULL,
 		      "Mute the input of a AICS instance <inst_index>",
-		      cmd_micp_client_aics_input_mute, 2, 0),
+		      cmd_micp_mic_ctlr_aics_input_mute, 2, 0),
 	SHELL_CMD_ARG(aics_manual_input_gain_set, NULL,
 		      "Set the gain mode of a AICS instance to manual "
 		      "<inst_index>",
-		      cmd_micp_client_aics_manual_input_gain_set, 2, 0),
+		      cmd_micp_mic_ctlr_aics_manual_input_gain_set, 2, 0),
 	SHELL_CMD_ARG(aics_automatic_input_gain_set, NULL,
 		      "Set the gain mode of a AICS instance to automatic "
 		      "<inst_index>",
-		      cmd_micp_client_aics_automatic_input_gain_set, 2, 0),
+		      cmd_micp_mic_ctlr_aics_automatic_input_gain_set, 2, 0),
 	SHELL_CMD_ARG(aics_gain_set, NULL,
 		      "Set the gain of a AICS instance <inst_index> <gain>",
-		      cmd_micp_client_aics_gain_set, 3, 0),
+		      cmd_micp_mic_ctlr_aics_gain_set, 3, 0),
 	SHELL_CMD_ARG(aics_input_description_get, NULL,
 		      "Read the input description of a AICS instance "
 		      "<inst_index>",
-		      cmd_micp_client_aics_input_description_get, 2, 0),
+		      cmd_micp_mic_ctlr_aics_input_description_get, 2, 0),
 	SHELL_CMD_ARG(aics_input_description_set, NULL,
 		      "Set the input description of a AICS instance "
 		      "<inst_index> <description>",
-		      cmd_micp_client_aics_input_description_set, 3, 0),
-#endif /* CONFIG_BT_MICP_CLIENT_AICS */
+		      cmd_micp_mic_ctlr_aics_input_description_set, 3, 0),
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_ARG_REGISTER(micp_client, &micp_client_cmds,
+SHELL_CMD_ARG_REGISTER(micp_mic_ctlr, &micp_mic_ctlr_cmds,
 		       "Bluetooth MICP client shell commands",
-		       cmd_micp_client, 1, 1);
+		       cmd_micp_mic_ctlr, 1, 1);

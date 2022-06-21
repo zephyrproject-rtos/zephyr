@@ -18,8 +18,8 @@ struct bt_micp_server {
 };
 #endif /* CONFIG_BT_MICP */
 
-#if defined(CONFIG_BT_MICP_CLIENT)
-struct bt_micp_client {
+#if defined(CONFIG_BT_MICP_MIC_CTLR)
+struct bt_micp_mic_ctlr {
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint16_t mute_handle;
@@ -34,9 +34,9 @@ struct bt_micp_client {
 	struct bt_conn *conn;
 
 	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_MICP_CLIENT_MAX_AICS_INST];
+	struct bt_aics *aics[CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST];
 };
-#endif /* CONFIG_BT_MICP_CLIENT */
+#endif /* CONFIG_BT_MICP_MIC_CTLR */
 
 /* Struct used as a common type for the api */
 struct bt_micp {
@@ -45,16 +45,10 @@ struct bt_micp {
 #if defined(CONFIG_BT_MICP)
 		struct bt_micp_server srv;
 #endif /* CONFIG_BT_MICP */
-#if defined(CONFIG_BT_MICP_CLIENT)
-		struct bt_micp_client cli;
-#endif /* CONFIG_BT_MICP_CLIENT */
+#if defined(CONFIG_BT_MICP_MIC_CTLR)
+		struct bt_micp_mic_ctlr cli;
+#endif /* CONFIG_BT_MICP_MIC_CTLR */
 	};
 };
-
-int bt_micp_client_included_get(struct bt_micp *micp,
-				struct bt_micp_included  *included);
-int bt_micp_client_mute_get(struct bt_micp *micp);
-int bt_micp_client_mute(struct bt_micp *micp);
-int bt_micp_client_unmute(struct bt_micp *micp);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICS_INTERNAL_ */
