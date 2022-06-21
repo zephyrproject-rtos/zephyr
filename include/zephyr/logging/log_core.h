@@ -461,7 +461,7 @@ void z_log_printf_arg_checker(const char *fmt, ...)
  */
 static inline void log2_generic(uint8_t level, const char *fmt, va_list ap)
 {
-	z_log_msg2_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL, level,
+	z_log_msg_runtime_vcreate(CONFIG_LOG_DOMAIN_ID, NULL, level,
 				   NULL, 0, 0, fmt, ap);
 }
 

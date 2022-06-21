@@ -611,8 +611,8 @@ static void hexdump2_print(const uint8_t *data, uint32_t length,
 static int mipi_vprintf_formatter(cbprintf_cb out, void *ctx,
 			  const char *fmt, va_list ap)
 {
-	struct log_msg2 *msg = ctx;
-	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+	struct log_msg *msg = ctx;
+	uint32_t severity = level_to_syst_severity(log_msg_get_level(msg));
 
 	MIPI_SYST_VPRINTF(&log_syst_handle, severity, fmt, ap);
 
@@ -647,8 +647,8 @@ static uint8_t payload_buf[CONFIG_LOG_MIPI_SYST_CATALOG_ARGS_BUFFER_SIZE];
 static int mipi_catalog_formatter(cbprintf_cb out, void *ctx,
 				  const char *fmt, va_list ap)
 {
-	struct log_msg2 *msg = ctx;
-	uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+	struct log_msg *msg = ctx;
+	uint32_t severity = level_to_syst_severity(log_msg_get_level(msg));
 	k_spinlock_key_t key;
 
 	union {
@@ -778,21 +778,21 @@ no_space:
 }
 #endif /* CONFIG_LOG_MIPI_SYST_USE_CATALOG */
 
-void log_output_msg2_syst_process(const struct log_output *output,
-				struct log_msg2 *msg, uint32_t flag)
+void log_output_msg_syst_process(const struct log_output *output,
+				 struct log_msg *msg, uint32_t flag)
 {
 	size_t len, hexdump_len;
 
 	update_systh_platform_data(&log_syst_handle, output, flag);
 
 #ifdef CONFIG_LOG_MIPI_SYST_OUTPUT_LOG_MSG_SRC_ID
-	uint8_t level = log_msg2_get_level(msg);
+	uint8_t level = log_msg_get_level(msg);
 	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
 	int16_t source_id = CONFIG_LOG_MIPI_SYST_MSG_DEFAULT_MODULE_ID;
 
 	/* Set the log source ID as Sys-T message module ID */
 	if (!raw_string) {
-		void *source = (void *)log_msg2_get_source(msg);
+		void *source = (void *)log_msg_get_source(msg);
 
 		if (source != NULL) {
 			source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
@@ -804,7 +804,7 @@ void log_output_msg2_syst_process(const struct log_output *output,
 	update_handle_origin_unit(&log_syst_handle, source_id);
 #endif
 
-	uint8_t *data = log_msg2_get_package(msg, &len);
+	uint8_t *data = log_msg_get_package(msg, &len);
 
 	if (len) {
 #ifdef CONFIG_LOG_MIPI_SYST_USE_CATALOG
@@ -866,9 +866,9 @@ void log_output_msg2_syst_process(const struct log_output *output,
 		}
 	}
 
-	data = log_msg2_get_data(msg, &hexdump_len);
+	data = log_msg_get_data(msg, &hexdump_len);
 	if (hexdump_len) {
-		uint32_t severity = level_to_syst_severity(log_msg2_get_level(msg));
+		uint32_t severity = level_to_syst_severity(log_msg_get_level(msg));
 
 		hexdump2_print(data, hexdump_len, severity);
 	}

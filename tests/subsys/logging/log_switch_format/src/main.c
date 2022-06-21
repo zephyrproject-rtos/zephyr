@@ -115,11 +115,11 @@ void test_log_switch_format_set_all_active_backends(void)
 void test_log_switch_format_func_t_get(void)
 {
 	const log_format_func_t expected_values[] = {
-	[LOG_OUTPUT_TEXT] = log_output_msg2_process,
+	[LOG_OUTPUT_TEXT] = log_output_msg_process,
 	[LOG_OUTPUT_SYST] = IS_ENABLED(CONFIG_LOG_MIPI_SYST_ENABLE) ?
-						log_output_msg2_syst_process : NULL,
+						log_output_msg_syst_process : NULL,
 	[LOG_OUTPUT_DICT] = IS_ENABLED(CONFIG_LOG_DICTIONARY_SUPPORT) ?
-						log_dict_output_msg2_process : NULL
+						log_dict_output_msg_process : NULL
 	};
 
 	zassert_equal(log_format_table_size(), ARRAY_SIZE(expected_values),

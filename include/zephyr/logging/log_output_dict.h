@@ -56,8 +56,8 @@ struct log_dict_output_dropped_msg_t {
  * @param msg Log message.
  * @param flags Optional flags.
  */
-void log_dict_output_msg2_process(const struct log_output *log_output,
-				  struct log_msg2 *msg, uint32_t flags);
+void log_dict_output_msg_process(const struct log_output *log_output,
+				 struct log_msg *msg, uint32_t flags);
 
 /** @brief Process dropped messages indication for dictionary-based logging.
  *

@@ -173,7 +173,7 @@ static int do_net_init(void)
 }
 
 static void process(const struct log_backend *const backend,
-		    union log_msg2_generic *msg)
+		    union log_msg_generic *msg)
 {
 	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG | LOG_OUTPUT_FLAG_TIMESTAMP;
 

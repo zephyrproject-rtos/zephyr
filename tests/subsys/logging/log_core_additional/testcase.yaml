@@ -13,7 +13,7 @@ tests:
       - log_early_logging
       - log_sync
       - log_thread
-      - log_msg2_create
+      - log_msg_create
   logging.add.sync:
     tags: logging
     extra_args: CONF_FILE=log_sync.conf
@@ -28,7 +28,7 @@ tests:
       - log_early_logging
       - log_sync
       - log_thread
-      - log_msg2_create
+      - log_msg_create
   logging.add.log_user:
     tags: logging
     filter: CONFIG_USERSPACE
@@ -41,4 +41,4 @@ tests:
       - log_generic_user
       - log_filter_set
       - log_panic
-      - log_msg2_create_user
+      - log_msg_create_user

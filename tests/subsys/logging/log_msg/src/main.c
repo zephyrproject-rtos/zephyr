@@ -38,11 +38,11 @@ log_timestamp_t get_timestamp(void)
 static void test_init(void)
 {
 	timestamp = TEST_TIMESTAMP_INIT_VALUE;
-	z_log_msg2_init();
+	z_log_msg_init();
 	log_set_timestamp_func(get_timestamp, 0);
 }
 
-void print_msg(struct log_msg2 *msg)
+void print_msg(struct log_msg *msg)
 {
 	printk("-----------------------printing message--------------------\n");
 	printk("message %p\n", msg);
@@ -72,7 +72,7 @@ int out(int c, void *ctx)
 	return c;
 }
 
-static void basic_validate(struct log_msg2 *msg,
+static void basic_validate(struct log_msg *msg,
 			   const struct log_source_const_data *source,
 			   uint8_t domain, uint8_t level, log_timestamp_t t,
 			   const void *data, size_t data_len, char *str)
@@ -83,19 +83,19 @@ static void basic_validate(struct log_msg2 *msg,
 	char buf[256];
 	struct test_buf tbuf = { .buf = buf, .idx = 0 };
 
-	zassert_equal(log_msg2_get_source(msg), (void *)source, NULL);
-	zassert_equal(log_msg2_get_domain(msg), domain, NULL);
-	zassert_equal(log_msg2_get_level(msg), level, NULL);
-	zassert_equal(log_msg2_get_timestamp(msg), t, NULL);
+	zassert_equal(log_msg_get_source(msg), (void *)source, NULL);
+	zassert_equal(log_msg_get_domain(msg), domain, NULL);
+	zassert_equal(log_msg_get_level(msg), level, NULL);
+	zassert_equal(log_msg_get_timestamp(msg), t, NULL);
 
-	d = log_msg2_get_data(msg, &len);
+	d = log_msg_get_data(msg, &len);
 	zassert_equal(len, data_len, NULL);
 	if (len) {
 		rv = memcmp(d, data, data_len);
 		zassert_equal(rv, 0, NULL);
 	}
 
-	d = log_msg2_get_package(msg, &len);
+	d = log_msg_get_package(msg, &len);
 	if (str) {
 		rv = cbpprintf(out, &tbuf, d);
 		zassert_true(rv > 0, NULL);
@@ -106,22 +106,22 @@ static void basic_validate(struct log_msg2 *msg,
 	}
 }
 
-union log_msg2_generic *msg_copy_and_free(union log_msg2_generic *msg,
+union log_msg_generic *msg_copy_and_free(union log_msg_generic *msg,
 					  uint8_t *buf, size_t buf_len)
 {
 	size_t len = sizeof(int) *
-		     log_msg2_generic_get_wlen((union mpsc_pbuf_generic *)msg);
+		     log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg);
 
 	zassert_true(len < buf_len, NULL);
 
 	memcpy(buf, msg, len);
 
-	z_log_msg2_free(msg);
+	z_log_msg_free(msg);
 
-	return (union log_msg2_generic *)buf;
+	return (union log_msg_generic *)buf;
 }
 
-void clear_pkg_flags(struct log_msg2 *msg)
+void clear_pkg_flags(struct log_msg *msg)
 {
 #ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
 	/*
@@ -136,7 +136,7 @@ void clear_pkg_flags(struct log_msg2 *msg)
 	uint8_t *d;
 	size_t len;
 
-	d = log_msg2_get_package(msg, &len);
+	d = log_msg_get_package(msg, &len);
 	if (len > 0) {
 		union cbprintf_package_hdr *hdr = (void *)d;
 
@@ -156,23 +156,23 @@ void validate_base_message_set(const struct log_source_const_data *source,
 	uint8_t __aligned(Z_LOG_MSG2_ALIGNMENT) buf1[256];
 	uint8_t __aligned(Z_LOG_MSG2_ALIGNMENT) buf2[256];
 	size_t len0, len1, len2;
-	union log_msg2_generic *msg0, *msg1, *msg2;
+	union log_msg_generic *msg0, *msg1, *msg2;
 
-	msg0 = z_log_msg2_claim();
+	msg0 = z_log_msg_claim();
 	zassert_true(msg0, "Unexpected null message");
-	len0 = log_msg2_generic_get_wlen((union mpsc_pbuf_generic *)msg0);
+	len0 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg0);
 	msg0 = msg_copy_and_free(msg0, buf0, sizeof(buf0));
 	clear_pkg_flags(&msg0->log);
 
-	msg1 = z_log_msg2_claim();
+	msg1 = z_log_msg_claim();
 	zassert_true(msg1, "Unexpected null message");
-	len1 = log_msg2_generic_get_wlen((union mpsc_pbuf_generic *)msg1);
+	len1 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg1);
 	msg1 = msg_copy_and_free(msg1, buf1, sizeof(buf1));
 	clear_pkg_flags(&msg1->log);
 
-	msg2 = z_log_msg2_claim();
+	msg2 = z_log_msg_claim();
 	zassert_true(msg2, "Unexpected null message");
-	len2 = log_msg2_generic_get_wlen((union mpsc_pbuf_generic *)msg2);
+	len2 = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg2);
 	msg2 = msg_copy_and_free(msg2, buf2, sizeof(buf2));
 	clear_pkg_flags(&msg2->log);
 
@@ -197,7 +197,7 @@ void validate_base_message_set(const struct log_source_const_data *source,
 			t, data, data_len, str);
 }
 
-void test_log_msg2_0_args_msg(void)
+void test_log_msg_0_args_msg(void)
 {
 #undef TEST_MSG
 #define TEST_MSG "0 args"
@@ -217,7 +217,7 @@ void test_log_msg2_0_args_msg(void)
 			  NULL, 0, TEST_MSG);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
-	z_log_msg2_runtime_create(domain, source,
+	z_log_msg_runtime_create(domain, source,
 				  level, NULL, 0, 0, TEST_MSG);
 
 	validate_base_message_set(source, domain, level,
@@ -225,7 +225,7 @@ void test_log_msg2_0_args_msg(void)
 				   NULL, 0, TEST_MSG);
 }
 
-void test_log_msg2_various_args(void)
+void test_log_msg_various_args(void)
 {
 #undef TEST_MSG
 #define TEST_MSG "%d %d %lld %p %lld %p"
@@ -250,7 +250,7 @@ void test_log_msg2_various_args(void)
 			TEST_MSG, s8, u, lld, (void *)str, lld, (void *)iarray);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
-	z_log_msg2_runtime_create(domain, (void *)source, level, NULL,
+	z_log_msg_runtime_create(domain, (void *)source, level, NULL,
 				  0, 0, TEST_MSG, s8, u, lld, str, lld, iarray);
 	snprintfcb(str, sizeof(str), TEST_MSG, s8, u, lld, str, lld, iarray);
 
@@ -259,7 +259,7 @@ void test_log_msg2_various_args(void)
 				   NULL, 0, str);
 }
 
-void test_log_msg2_only_data(void)
+void test_log_msg_only_data(void)
 {
 	static const uint8_t domain = 3;
 	static const uint8_t level = 2;
@@ -277,7 +277,7 @@ void test_log_msg2_only_data(void)
 			   sizeof(array));
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
-	z_log_msg2_runtime_create(domain, (void *)source, level, array,
+	z_log_msg_runtime_create(domain, (void *)source, level, array,
 				  sizeof(array), 0, NULL);
 
 	validate_base_message_set(source, domain, level,
@@ -285,7 +285,7 @@ void test_log_msg2_only_data(void)
 				   array, sizeof(array), NULL);
 }
 
-void test_log_msg2_string_and_data(void)
+void test_log_msg_string_and_data(void)
 {
 #undef TEST_MSG
 #define TEST_MSG "test"
@@ -306,7 +306,7 @@ void test_log_msg2_string_and_data(void)
 			   sizeof(array), TEST_MSG);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
-	z_log_msg2_runtime_create(domain, (void *)source, level, array,
+	z_log_msg_runtime_create(domain, (void *)source, level, array,
 				  sizeof(array), 0, TEST_MSG);
 
 	validate_base_message_set(source, domain, level,
@@ -314,7 +314,7 @@ void test_log_msg2_string_and_data(void)
 				   array, sizeof(array), TEST_MSG);
 }
 
-void test_log_msg2_fp(void)
+void test_log_msg_fp(void)
 {
 	if (!(IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT) && IS_ENABLED(CONFIG_FPU))) {
 		return;
@@ -343,7 +343,7 @@ void test_log_msg2_fp(void)
 			TEST_MSG, i, lli, (double)f, &i, d, source);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
-	z_log_msg2_runtime_create(domain, (void *)source, level, NULL, 0, 0,
+	z_log_msg_runtime_create(domain, (void *)source, level, NULL, 0, 0,
 				  TEST_MSG, i, lli, (double)f, &i, d, source);
 	snprintfcb(str, sizeof(str), TEST_MSG, i, lli, (double)f, &i, d, source);
 
@@ -355,15 +355,15 @@ void test_log_msg2_fp(void)
 static void get_msg_validate_length(uint32_t exp_len)
 {
 	uint32_t len;
-	union log_msg2_generic *msg;
+	union log_msg_generic *msg;
 
-	msg = z_log_msg2_claim();
-	len = log_msg2_generic_get_wlen((union mpsc_pbuf_generic *)msg);
+	msg = z_log_msg_claim();
+	len = log_msg_generic_get_wlen((union mpsc_pbuf_generic *)msg);
 
 	zassert_equal(len, exp_len, "Unexpected message length %d (exp:%d)",
 			len, exp_len);
 
-	z_log_msg2_free(msg);
+	z_log_msg_free(msg);
 }
 
 void test_mode_size_plain_string(void)
@@ -390,7 +390,7 @@ void test_mode_size_plain_string(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = offsetof(struct log_msg2, data) +
+	exp_len = offsetof(struct log_msg, data) +
 			 /* package */sizeof(struct cbprintf_package_hdr_ext);
 
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
@@ -421,7 +421,7 @@ void test_mode_size_data_only(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = offsetof(struct log_msg2, data) + sizeof(data);
+	exp_len = offsetof(struct log_msg, data) + sizeof(data);
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 	get_msg_validate_length(exp_len);
 }
@@ -449,7 +449,7 @@ void test_mode_size_plain_str_data(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = offsetof(struct log_msg2, data) + sizeof(data) +
+	exp_len = offsetof(struct log_msg, data) + sizeof(data) +
 		  /* package */sizeof(struct cbprintf_package_hdr_ext);
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
 	get_msg_validate_length(exp_len);
@@ -483,7 +483,7 @@ void test_mode_size_str_with_strings(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = offsetof(struct log_msg2, data) +
+	exp_len = offsetof(struct log_msg, data) +
 			 /* package */sizeof(struct cbprintf_package_hdr_ext) +
 				      sizeof(const char *);
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG2_ALIGNMENT) / sizeof(int);
@@ -525,7 +525,7 @@ void test_mode_size_str_with_2strings(void)
 	 *
 	 * Message size is rounded up to the required alignment.
 	 */
-	exp_len = offsetof(struct log_msg2, data) +
+	exp_len = offsetof(struct log_msg, data) +
 			 /* package */sizeof(struct cbprintf_package_hdr_ext) +
 				      2 * sizeof(const char *) + 2 + strlen(sufix);
 
@@ -547,11 +547,11 @@ void test_saturate(void)
 	}
 
 	uint32_t exp_len =
-		ROUND_UP(offsetof(struct log_msg2, data) + 2 * sizeof(void *),
+		ROUND_UP(offsetof(struct log_msg, data) + 2 * sizeof(void *),
 			 Z_LOG_MSG2_ALIGNMENT);
 	uint32_t exp_capacity = (CONFIG_LOG_BUFFER_SIZE - 1) / exp_len;
 	int mode;
-	union log_msg2_generic *msg;
+	union log_msg_generic *msg;
 
 	test_init();
 	timestamp = 0;
@@ -566,29 +566,29 @@ void test_saturate(void)
 	/* Message should not fit in and be dropped. */
 	Z_LOG_MSG2_CREATE3(1, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
 	Z_LOG_MSG2_CREATE3(0, mode, 0, 0, (void *)1, 2, NULL, 0, "test");
-	z_log_msg2_runtime_create(0, (void *)1, 2, NULL, 0, 0, "test");
+	z_log_msg_runtime_create(0, (void *)1, 2, NULL, 0, 0, "test");
 
 	zassert_equal(z_log_dropped_read_and_clear(), 3, "No dropped messages.");
 
 	for (int i = 0; i < exp_capacity; i++) {
-		msg = z_log_msg2_claim();
-		zassert_equal(log_msg2_get_timestamp(&msg->log), i,
+		msg = z_log_msg_claim();
+		zassert_equal(log_msg_get_timestamp(&msg->log), i,
 				"Unexpected timestamp used for message id");
 	}
 
-	msg = z_log_msg2_claim();
+	msg = z_log_msg_claim();
 	zassert_equal(msg, NULL, "Expected no pending messages");
 }
 
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_log_msg2,
-		ztest_unit_test(test_log_msg2_0_args_msg),
-		ztest_unit_test(test_log_msg2_various_args),
-		ztest_unit_test(test_log_msg2_only_data),
-		ztest_unit_test(test_log_msg2_string_and_data),
-		ztest_unit_test(test_log_msg2_fp),
+	ztest_test_suite(test_log_msg,
+		ztest_unit_test(test_log_msg_0_args_msg),
+		ztest_unit_test(test_log_msg_various_args),
+		ztest_unit_test(test_log_msg_only_data),
+		ztest_unit_test(test_log_msg_string_and_data),
+		ztest_unit_test(test_log_msg_fp),
 		ztest_unit_test(test_mode_size_plain_string),
 		ztest_unit_test(test_mode_size_data_only),
 		ztest_unit_test(test_mode_size_plain_str_data),
@@ -596,5 +596,5 @@ void test_main(void)
 		ztest_unit_test(test_mode_size_str_with_2strings),
 		ztest_unit_test(test_saturate)
 		);
-	ztest_run_test_suite(test_log_msg2);
+	ztest_run_test_suite(test_log_msg);
 }

@@ -30,7 +30,7 @@ static inline bool is_panic_mode(void)
 }
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	/* prevent adding CRLF, which may crash spinel decoding */
 	uint32_t flags = LOG_OUTPUT_FLAG_CRLF_NONE | log_backend_std_get_flags();

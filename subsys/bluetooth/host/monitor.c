@@ -311,7 +311,7 @@ static inline uint8_t monitor_priority_get(uint8_t log_level)
 }
 
 static void monitor_log_process(const struct log_backend *const backend,
-				union log_msg2_generic *msg)
+				union log_msg_generic *msg)
 {
 	struct bt_monitor_user_logging user_log;
 	struct monitor_log_ctx ctx;
@@ -321,7 +321,7 @@ static void monitor_log_process(const struct log_backend *const backend,
 	log_output_ctx_set(&monitor_log_output, &ctx);
 
 	ctx.total_len = 0;
-	log_output_msg2_process(&monitor_log_output, &msg->log,
+	log_output_msg_process(&monitor_log_output, &msg->log,
 			       LOG_OUTPUT_FLAG_CRLF_NONE);
 
 	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
@@ -329,11 +329,11 @@ static void monitor_log_process(const struct log_backend *const backend,
 		return;
 	}
 
-	encode_hdr(&hdr, (uint32_t)log_msg2_get_timestamp(&msg->log),
+	encode_hdr(&hdr, (uint32_t)log_msg_get_timestamp(&msg->log),
 		   BT_MONITOR_USER_LOGGING,
 		   sizeof(user_log) + sizeof(id) + ctx.total_len + 1);
 
-	user_log.priority = monitor_priority_get(log_msg2_get_level(&msg->log));
+	user_log.priority = monitor_priority_get(log_msg_get_level(&msg->log));
 	user_log.ident_len = sizeof(id);
 
 	monitor_send(&hdr, BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len);

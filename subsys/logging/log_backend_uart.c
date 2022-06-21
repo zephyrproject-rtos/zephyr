@@ -90,7 +90,7 @@ static uint8_t uart_output_buf[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE];
 LOG_OUTPUT_DEFINE(log_output_uart, char_out, uart_output_buf, sizeof(uart_output_buf));
 
 static void process(const struct log_backend *const backend,
-		union log_msg2_generic *msg)
+		union log_msg_generic *msg)
 {
 	uint32_t flags = log_backend_std_get_flags();
 
