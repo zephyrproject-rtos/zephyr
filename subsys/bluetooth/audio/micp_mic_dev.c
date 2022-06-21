@@ -21,7 +21,7 @@
 
 #include "micp_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MICP)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MICP_MIC_DEV)
 #define LOG_MODULE_NAME bt_micp
 #include "common/log.h"
 
@@ -75,7 +75,7 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				    &micp_inst.srv.mute, sizeof(micp_inst.srv.mute));
 
 		if (micp_inst.srv.cb != NULL && micp_inst.srv.cb->mute != NULL) {
-			micp_inst.srv.cb->mute(NULL, 0, micp_inst.srv.mute);
+			micp_inst.srv.cb->mute(NULL, micp_inst.srv.mute);
 		}
 	}
 
@@ -88,7 +88,7 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 #define BT_MICP_SERVICE_DEFINITION \
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_MICS), \
-	AICS_INCLUDES(CONFIG_BT_MICP_AICS_INSTANCE_COUNT) \
+	AICS_INCLUDES(CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT) \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MICS_MUTE, \
 		BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | BT_GATT_CHRC_NOTIFY, \
 		BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT, \
@@ -98,13 +98,13 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 #define MICS_ATTR_COUNT \
 	ARRAY_SIZE(((struct bt_gatt_attr []){ BT_MICP_SERVICE_DEFINITION }))
-#define MICS_INCL_COUNT (CONFIG_BT_MICP_AICS_INSTANCE_COUNT)
+#define MICS_INCL_COUNT (CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT)
 
 static struct bt_gatt_attr mics_attrs[] = { BT_MICP_SERVICE_DEFINITION };
 static struct bt_gatt_service mics_svc;
 
-#if defined(CONFIG_BT_MICP_AICS)
-static int prepare_aics_inst(struct bt_micp_register_param *param)
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
+static int prepare_aics_inst(struct bt_micp_mic_dev_register_param *param)
 {
 	int i;
 	int j;
@@ -128,21 +128,21 @@ static int prepare_aics_inst(struct bt_micp_register_param *param)
 			mics_attrs[i].user_data = bt_aics_svc_decl_get(micp_inst.srv.aics_insts[j]);
 			j++;
 
-			if (j == CONFIG_BT_MICP_AICS_INSTANCE_COUNT) {
+			if (j == CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT) {
 				break;
 			}
 		}
 	}
 
-	__ASSERT(j == CONFIG_BT_MICP_AICS_INSTANCE_COUNT,
+	__ASSERT(j == CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT,
 		 "Invalid AICS instance count");
 
 	return 0;
 }
-#endif /* CONFIG_BT_MICP_AICS */
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
 /****************************** PUBLIC API ******************************/
-int bt_micp_register(struct bt_micp_register_param *param,
+int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param,
 		     struct bt_micp **micp)
 {
 	int err;
@@ -155,14 +155,14 @@ int bt_micp_register(struct bt_micp_register_param *param,
 
 	__ASSERT(param, "MICS register parameter cannot be NULL");
 
-#if defined(CONFIG_BT_MICP_AICS)
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
 	err = prepare_aics_inst(param);
 	if (err != 0) {
 		BT_DBG("Failed to prepare AICS instances: %d", err);
 
 		return err;
 	}
-#endif /* CONFIG_BT_MICP_AICS */
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
 	mics_svc = (struct bt_gatt_service)BT_GATT_SERVICE(mics_attrs);
 	micp_inst.srv.service_p = &mics_svc;
@@ -180,7 +180,7 @@ int bt_micp_register(struct bt_micp_register_param *param,
 	return err;
 }
 
-int bt_micp_mute_disable(struct bt_micp *micp)
+int bt_micp_mic_dev_disable(struct bt_micp *micp)
 {
 	uint8_t val = BT_MICP_MUTE_DISABLED;
 	int err;
@@ -195,7 +195,7 @@ int bt_micp_mute_disable(struct bt_micp *micp)
 	return err > 0 ? 0 : err;
 }
 
-int bt_micp_included_get(struct bt_micp *micp,
+int bt_micp_mic_dev_included_get(struct bt_micp *micp,
 			 struct bt_micp_included *included)
 {
 	CHECKIF(micp == NULL) {
@@ -208,15 +208,15 @@ int bt_micp_included_get(struct bt_micp *micp,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BT_MICP_AICS)
+#if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
 	included->aics_cnt = ARRAY_SIZE(micp_inst.srv.aics_insts);
 	included->aics = micp_inst.srv.aics_insts;
-#endif /* CONFIG_BT_MICP_AICS */
+#endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
 	return 0;
 }
 
-int bt_micp_unmute(struct bt_micp *micp)
+int bt_micp_mic_dev_unmute(struct bt_micp *micp)
 {
 	const uint8_t val = BT_MICP_MUTE_UNMUTED;
 	int err;
@@ -231,7 +231,7 @@ int bt_micp_unmute(struct bt_micp *micp)
 	return err > 0 ? 0 : err;
 }
 
-int bt_micp_mute(struct bt_micp *micp)
+int bt_micp_mic_dev_mute(struct bt_micp *micp)
 {
 	const uint8_t val = BT_MICP_MUTE_MUTED;
 	int err;
@@ -246,7 +246,7 @@ int bt_micp_mute(struct bt_micp *micp)
 	return err > 0 ? 0 : err;
 }
 
-int bt_micp_mute_get(struct bt_micp *micp)
+int bt_micp_mic_dev_mute_get(struct bt_micp *micp)
 {
 	CHECKIF(micp == NULL) {
 		BT_DBG("NULL micp pointer");
@@ -254,7 +254,7 @@ int bt_micp_mute_get(struct bt_micp *micp)
 	}
 
 	if (micp_inst.srv.cb && micp_inst.srv.cb->mute) {
-		micp_inst.srv.cb->mute(NULL, 0, micp_inst.srv.mute);
+		micp_inst.srv.cb->mute(NULL, micp_inst.srv.mute);
 	}
 
 	return 0;

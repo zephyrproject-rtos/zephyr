@@ -17,7 +17,7 @@ if (CONFIG_BT_VCS OR CONFIG_BT_VCS_CLIENT)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_VCS_CLIENT vcs_client.c)
 
-if (CONFIG_BT_MICP)
+if (CONFIG_BT_MICP_MIC_DEV)
 	zephyr_library_sources(micp_mic_dev.c)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_MICP_MIC_CTLR micp_mic_ctlr.c)
