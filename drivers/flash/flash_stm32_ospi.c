@@ -1492,7 +1492,8 @@ static void spi_nor_process_bfp_addrbytes(const struct device *dev,
 {
 	struct flash_stm32_ospi_data *data = dev->data;
 
-	if (jesd216_bfp_addrbytes == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B) {
+	if ((jesd216_bfp_addrbytes == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B) ||
+	    (jesd216_bfp_addrbytes == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B4B)) {
 		data->address_width = 4U;
 	} else {
 		data->address_width = 3U;
