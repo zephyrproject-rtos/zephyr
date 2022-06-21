@@ -2567,6 +2567,8 @@ static void tx_ull_flush(struct ll_conn *conn)
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 	struct node_tx *tx;
 
+	ull_tx_q_resume_data(&conn->tx_q);
+
 	tx = tx_ull_dequeue(conn, NULL);
 	while (tx) {
 		memq_link_t *link;
