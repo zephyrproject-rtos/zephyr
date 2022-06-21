@@ -25,8 +25,6 @@
 #define LOG_MODULE_NAME bt_micp
 #include "common/log.h"
 
-#if defined(CONFIG_BT_MICP)
-
 static struct bt_micp micp_inst;
 
 static void mute_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -197,8 +195,6 @@ int bt_micp_mute_disable(struct bt_micp *micp)
 	return err > 0 ? 0 : err;
 }
 
-#endif /* CONFIG_BT_MICP */
-
 int bt_micp_included_get(struct bt_micp *micp,
 			 struct bt_micp_included *included)
 {
@@ -212,63 +208,42 @@ int bt_micp_included_get(struct bt_micp *micp,
 		return -EINVAL;
 	}
 
-
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT) &&
-	    IS_ENABLED(CONFIG_BT_MICP_CLIENT_AICS) &&
-	    micp->client_instance) {
-		return bt_micp_client_included_get(micp, included);
-	}
-
-#if defined(CONFIG_BT_MICP) && defined(CONFIG_BT_MICP_AICS)
+#if defined(CONFIG_BT_MICP_AICS)
 	included->aics_cnt = ARRAY_SIZE(micp_inst.srv.aics_insts);
 	included->aics = micp_inst.srv.aics_insts;
+#endif /* CONFIG_BT_MICP_AICS */
 
 	return 0;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_MICP && CONFIG_BT_MICP_AICS */
 }
 
 int bt_micp_unmute(struct bt_micp *micp)
 {
+	const uint8_t val = BT_MICP_MUTE_UNMUTED;
+	int err;
+
 	CHECKIF(micp == NULL) {
 		BT_DBG("NULL micp pointer");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT) && micp->client_instance) {
-		return bt_micp_client_unmute(micp);
-	}
-
-#if defined(CONFIG_BT_MICP)
-	uint8_t val = BT_MICP_MUTE_UNMUTED;
-	int err = write_mute(NULL, NULL, &val, sizeof(val), 0, 0);
+	err = write_mute(NULL, NULL, &val, sizeof(val), 0, 0);
 
 	return err > 0 ? 0 : err;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_MICP */
 }
 
 int bt_micp_mute(struct bt_micp *micp)
 {
+	const uint8_t val = BT_MICP_MUTE_MUTED;
+	int err;
+
 	CHECKIF(micp == NULL) {
 		BT_DBG("NULL micp pointer");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT) && micp->client_instance) {
-		return bt_micp_client_mute(micp);
-	}
-
-#if defined(CONFIG_BT_MICP)
-	uint8_t val = BT_MICP_MUTE_MUTED;
-	int err = write_mute(NULL, NULL, &val, sizeof(val), 0, 0);
+	err = write_mute(NULL, NULL, &val, sizeof(val), 0, 0);
 
 	return err > 0 ? 0 : err;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_MICP */
 }
 
 int bt_micp_mute_get(struct bt_micp *micp)
@@ -278,17 +253,9 @@ int bt_micp_mute_get(struct bt_micp *micp)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MICP_CLIENT) && micp->client_instance) {
-		return bt_micp_client_mute_get(micp);
-	}
-
-#if defined(CONFIG_BT_MICP)
 	if (micp_inst.srv.cb && micp_inst.srv.cb->mute) {
 		micp_inst.srv.cb->mute(NULL, 0, micp_inst.srv.mute);
 	}
 
 	return 0;
-#else
-	return -EOPNOTSUPP;
-#endif /* CONFIG_BT_MICP */
 }

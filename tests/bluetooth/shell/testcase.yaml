@@ -107,27 +107,27 @@ tests:
     extra_configs:
       - CONFIG_BT_MICP=n
     tags: bluetooth
-  bluetooth.shell.audio.no_micp_client:
+  bluetooth.shell.audio.no_micp_mic_ctlr:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
-      - CONFIG_BT_MICP_CLIENT=n
+      - CONFIG_BT_MICP_MIC_CTLR=n
     tags: bluetooth
-  bluetooth.shell.audio.no_micp_micp_client:
+  bluetooth.shell.audio.no_micp_micp_mic_ctlr:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
       - CONFIG_BT_MICP=n
-      - CONFIG_BT_MICP_CLIENT=n
+      - CONFIG_BT_MICP_MIC_CTLR=n
     tags: bluetooth
-  bluetooth.shell.audio.micp_client_no_aics_client:
+  bluetooth.shell.audio.micp_mic_ctlr_no_aics_client:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     platform_allow: native_posix
     extra_configs:
-      - CONFIG_BT_MICP_CLIENT_MAX_AICS_INST=0
+      - CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST=0
     tags: bluetooth
   bluetooth.shell.audio.no_mcs:
     extra_args: CONF_FILE="audio.conf"

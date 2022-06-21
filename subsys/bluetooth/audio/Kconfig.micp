@@ -41,19 +41,20 @@ config BT_DEBUG_MICP
 
 endif # BT_MICP
 
-##################### Microphone Control Profile Client #####################
+########### Microphone Input Control Profile Microphone Controller ###########
 
-config BT_MICP_CLIENT
-	bool "Microphone Control Profile Support [EXPERIMENTAL]"
+config BT_MICP_MIC_CTLR
+	bool "Microphone Input Control Profile Microphone Controller Support [EXPERIMENTAL]"
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select EXPERIMENTAL
 	help
-	  This option enables support for Microphone Control Profile.
+	  This option enables support for the Microphone Input Control Profile
+	  Microphone Controller role
 
-if BT_MICP_CLIENT
+if BT_MICP_MIC_CTLR
 
-config BT_MICP_CLIENT_MAX_AICS_INST
+config BT_MICP_MIC_CTLR_MAX_AICS_INST
 	int "Maximum number of Audio Input Control Service instances to setup"
 	default 0
 	range 0 BT_AICS_CLIENT_MAX_INSTANCE_COUNT
@@ -61,19 +62,19 @@ config BT_MICP_CLIENT_MAX_AICS_INST
 	  Sets the maximum number of Audio Input Control Service (AICS)
 	  instances to setup and use.
 
-config BT_MICP_CLIENT_AICS
+config BT_MICP_MIC_CTLR_AICS
 	bool # Hidden
-	default y if BT_MICP_CLIENT_MAX_AICS_INST > 0
+	default y if BT_MICP_MIC_CTLR_MAX_AICS_INST > 0
 	help
 	  This hidden option makes it possible to easily check if AICS is
 	  enabled for MICP client.
 
 ############# DEBUG #############
 
-config BT_DEBUG_MICP_CLIENT
-	bool "Microphone Control Profile debug"
+config BT_DEBUG_MICP_MIC_CTLR
+	bool "Microphone Input Control Profile Microphone Controller debug"
 	help
-	  Use this option to enable Microphone Control Profile debug logs for
-	  the Bluetooth Audio functionality.
+	  Use this option to enable Microphone Input Control Profile Microphone
+	  Controller debug logs for the Bluetooth Audio functionality.
 
-endif # BT_MICP_CLIENT
+endif # BT_MICP_MIC_CTLR
