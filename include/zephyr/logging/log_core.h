@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 
-#include <zephyr/logging/log_msg2.h>
+#include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_instance.h>
 #include <stdbool.h>
 #include <stdint.h>
