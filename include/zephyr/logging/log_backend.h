@@ -31,7 +31,7 @@ struct log_backend;
  */
 struct log_backend_api {
 	void (*process)(const struct log_backend *const backend,
-			union log_msg2_generic *msg);
+			union log_msg_generic *msg);
 
 	void (*dropped)(const struct log_backend *const backend, uint32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
@@ -137,9 +137,8 @@ static inline int log_backend_is_ready(const struct log_backend *const backend)
  * @param[in] backend  Pointer to the backend instance.
  * @param[in] msg      Pointer to message with log entry.
  */
-static inline void log_backend_msg2_process(
-					const struct log_backend *const backend,
-					union log_msg2_generic *msg)
+static inline void log_backend_msg_process(const struct log_backend *const backend,
+					   union log_msg_generic *msg)
 {
 	__ASSERT_NO_MSG(backend != NULL);
 	__ASSERT_NO_MSG(msg != NULL);
