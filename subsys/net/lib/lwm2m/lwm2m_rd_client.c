@@ -93,6 +93,7 @@ enum sm_engine_state {
 	ENGINE_REGISTRATION_SENT,
 	ENGINE_REGISTRATION_DONE,
 	ENGINE_REGISTRATION_DONE_RX_OFF,
+	ENGINE_UPDATE_REGISTRATION,
 	ENGINE_UPDATE_SENT,
 	ENGINE_SUSPENDED,
 	ENGINE_DEREGISTER,
@@ -183,7 +184,7 @@ static void set_sm_state(uint8_t sm_state)
 		    client.engine_state <= ENGINE_DEREGISTER_SENT)) {
 		event = LWM2M_RD_CLIENT_EVENT_DISCONNECT;
 	} else if (sm_state == ENGINE_NETWORK_ERROR) {
-		lwm2m_engine_stop(client.ctx);
+		lwm2m_socket_close(client.ctx);
 		client.retry_delay = 1 << client.retries;
 		client.retries++;
 		if (client.retries > CONFIG_LWM2M_RD_CLIENT_MAX_RETRIES) {
@@ -207,6 +208,16 @@ static void set_sm_state(uint8_t sm_state)
 			lwm2m_close_socket(client.ctx);
 		}
 	}
+}
+
+static bool sm_is_bootstrap(void)
+{
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	return (client.engine_state >= ENGINE_DO_BOOTSTRAP_REG &&
+		client.engine_state <= ENGINE_BOOTSTRAP_TRANS_DONE);
+#else
+	return false;
+#endif
 }
 
 static bool sm_is_registered(void)
@@ -281,15 +292,15 @@ static void socket_fault_cb(int error)
 {
 	LOG_ERR("RD Client socket error: %d", error);
 
-	lwm2m_engine_stop(client.ctx);
+	if (sm_is_bootstrap()) {
+		client.ctx->sec_obj_inst = -1;
+		/* force full registration */
+		client.last_update = 0;
+	}
 
-	client.ctx->sec_obj_inst = -1;
+	lwm2m_socket_close(client.ctx);
 
-	/* Jump directly to the registration phase. In case there is no valid
-	 * security object for the LWM2M server, it will fall back to the
-	 * bootstrap procedure.
-	 */
-	set_sm_state(ENGINE_DO_REGISTRATION);
+	set_sm_state(ENGINE_NETWORK_ERROR);
 }
 
 /* force re-update with remote peer */
@@ -977,7 +988,6 @@ static int sm_do_registration(void)
 static int sm_registration_done(void)
 {
 	int ret = 0;
-	bool update_objects;
 
 	/*
 	 * check for lifetime seconds - SECONDS_TO_UPDATE_EARLY
@@ -987,29 +997,7 @@ static int sm_registration_done(void)
 	    (client.trigger_update ||
 	     ((client.lifetime - SECONDS_TO_UPDATE_EARLY) <=
 	      (k_uptime_get() - client.last_update) / 1000))) {
-		update_objects = client.update_objects;
-		client.trigger_update = false;
-		client.update_objects = false;
-
-		ret = lwm2m_engine_connection_resume(client.ctx);
-		if (ret) {
-			lwm2m_engine_stop(client.ctx);
-			/* perform full registration */
-			set_sm_state(ENGINE_DO_REGISTRATION);
-			return ret;
-		}
-
-		ret = sm_send_registration(update_objects,
-					   do_update_reply_cb,
-					   do_update_timeout_cb);
-		if (!ret) {
-			set_sm_state(ENGINE_UPDATE_SENT);
-		} else {
-			LOG_ERR("Registration update err: %d", ret);
-			lwm2m_engine_stop(client.ctx);
-			/* perform full registration */
-			set_sm_state(ENGINE_DO_REGISTRATION);
-		}
+		set_sm_state(ENGINE_UPDATE_REGISTRATION);
 	}
 
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED) &&
@@ -1020,6 +1008,50 @@ static int sm_registration_done(void)
 	}
 
 	return ret;
+}
+
+static int update_registration(void)
+{
+	int ret;
+	bool update_objects;
+
+	update_objects = client.update_objects;
+	client.trigger_update = false;
+	client.update_objects = false;
+
+	ret = lwm2m_engine_connection_resume(client.ctx);
+	if (ret) {
+		return ret;
+	}
+
+	ret = sm_send_registration(update_objects,
+				   do_update_reply_cb,
+				   do_update_timeout_cb);
+	if (ret) {
+		LOG_ERR("Registration update err: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int sm_update_registration(void)
+{
+	int ret;
+
+	ret = update_registration();
+	if (ret) {
+		LOG_ERR("Failed to update registration. Falling back to full registration");
+
+		lwm2m_engine_stop(client.ctx);
+		/* perform full registration */
+		set_sm_state(ENGINE_DO_REGISTRATION);
+		return ret;
+	}
+
+	set_sm_state(ENGINE_UPDATE_SENT);
+
+	return 0;
 }
 
 static int sm_do_deregister(void)
@@ -1080,6 +1112,8 @@ close_ctx:
 
 static void sm_do_network_error(void)
 {
+	int err;
+
 	if (--client.retry_delay > 0) {
 		return;
 	}
@@ -1091,7 +1125,24 @@ static void sm_do_network_error(void)
 	}
 #endif
 
-	set_sm_state(ENGINE_DO_REGISTRATION);
+	if (!client.last_update || (k_uptime_get() - client.last_update) / 1000 > client.lifetime) {
+		/* do full registration as there is no active registration or lifetime exceeded */
+		set_sm_state(ENGINE_DO_REGISTRATION);
+		return;
+	}
+
+	err = lwm2m_socket_start(client.ctx);
+	if (err) {
+		LOG_ERR("Failed to start socket %d", err);
+		/*
+		 * keep this state until lifetime/retry count exceeds. Renew
+		 * sm state to set retry_delay etc ...
+		 */
+		set_sm_state(ENGINE_NETWORK_ERROR);
+		return;
+	}
+
+	set_sm_state(ENGINE_UPDATE_REGISTRATION);
 }
 
 static void lwm2m_rd_client_service(struct k_work *work)
@@ -1142,6 +1193,10 @@ static void lwm2m_rd_client_service(struct k_work *work)
 		case ENGINE_REGISTRATION_DONE:
 		case ENGINE_REGISTRATION_DONE_RX_OFF:
 			sm_registration_done();
+			break;
+
+		case ENGINE_UPDATE_REGISTRATION:
+			sm_update_registration();
 			break;
 
 		case ENGINE_UPDATE_SENT:
