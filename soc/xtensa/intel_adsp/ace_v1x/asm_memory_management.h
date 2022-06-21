@@ -6,8 +6,8 @@
  * @brief Macros for power gating memory banks specific for ACE 1.0
  */
 
-#ifndef __Z_ACE_LIB_ASM_MEMORY_MANAGEMENT_H__
-#define __Z_ACE_LIB_ASM_MEMORY_MANAGEMENT_H__
+#ifndef __ZEPHYR_ACE_LIB_ASM_MEMORY_MANAGEMENT_H__
+#define __ZEPHYR_ACE_LIB_ASM_MEMORY_MANAGEMENT_H__
 
 #ifdef _ASMLANGUAGE
 

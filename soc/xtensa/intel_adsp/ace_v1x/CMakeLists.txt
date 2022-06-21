@@ -4,10 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library_sources(
-	soc.c
-	multiprocessing.c
-	irq.c
-	boot.c
-	rimage_modules.c
-	power_down.S
-)
+  soc.c
+  multiprocessing.c
+  irq.c
+  power_down.S
+  )

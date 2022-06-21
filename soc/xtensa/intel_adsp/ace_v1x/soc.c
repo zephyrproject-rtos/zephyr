@@ -12,8 +12,8 @@
 #include <arch/xtensa/cache.h>
 #include <cavs-shim.h>
 #include <cavs-mem.h>
+
 #include <cpu_init.h>
-#include "manifest.h"
 #include <ace_v1x-regs.h>
 #include "soc.h"
 
@@ -27,16 +27,58 @@ extern void parse_manifest(void);
 #define LPGPDMA_CTLOSEL_FLAG	BIT(15)
 #define LPGPDMA_CHOSEL_FLAG		0xFF
 
+
+#define LPSRAM_MASK(x) 0x00000003
+#define SRAM_BANK_SIZE (64 * 1024)
+#define HOST_PAGE_SIZE 4096
+
+#define MANIFEST_SEGMENT_COUNT 3
+
+#define PLATFORM_INIT_HPSRAM
+#define PLATFORM_INIT_LPSRAM
+
+/* function powers up a number of memory banks provided as an argument and
+ * gates remaining memory banks
+ */
+static __imr void hp_sram_pm_banks(void)
+{
+#ifdef PLATFORM_INIT_HPSRAM
+	uint32_t hpsram_ebb_quantity = mtl_hpsram_get_bank_count();
+	volatile uint32_t *l2hsbpmptr = (volatile uint32_t *)MTL_L2MM->l2hsbpmptr;
+	volatile uint8_t *status = (volatile uint8_t *)l2hsbpmptr + 4;
+	int inx, delay_count = 256;
+
+	for (inx = 0; inx < hpsram_ebb_quantity; ++inx) {
+		*(l2hsbpmptr + inx * 2) = 0;
+	}
+	for (inx = 0; inx < hpsram_ebb_quantity; ++inx) {
+		while (*(status + inx * 8) != 0) {
+			z_idelay(delay_count);
+		}
+	}
+#endif /* PLATFORM_INIT_HPSRAM */
+}
+
+__imr void hp_sram_init(uint32_t memory_size)
+{
+	hp_sram_pm_banks();
+}
+
+__imr void lp_sram_init(void)
+{
+#ifdef PLATFORM_INIT_LPSRAM
+	uint32_t lpsram_ebb_quantity = mtl_lpsram_get_bank_count();
+	volatile uint32_t *l2usbpmptr = (volatile uint32_t *)MTL_L2MM->l2usbpmptr;
+
+	for (uint32_t inx = 0; inx < lpsram_ebb_quantity; ++inx) {
+		*(l2usbpmptr + inx * 2) = 0;
+	}
+#endif /* PLATFORM_INIT_LPSRAM */
+}
+
+
 __imr void boot_core0(void)
 {
-	/* This is a workaround for simulator, which
-	 * doesn't support direct control over the secondary core boot
-	 * vectors.  It always boots into the ROM, and ends up here.
-	 * This emulates the hardware design and jumps to the pointer
-	 * found in the BADDR register (which is wired to the Xtensa
-	 * LX core's alternate boot vector input).  Should be removed
-	 * at some point, but it's tiny and harmless otherwise.
-	 */
 	int prid;
 
 	prid = arch_proc_id();
@@ -45,11 +87,6 @@ __imr void boot_core0(void)
 	}
 
 	cpu_early_init();
-
-#ifdef PLATFORM_DISABLE_L2CACHE_AT_BOOT
-	/* FIXME: L2 cache control PCFG register */
-	*(uint32_t *)0x1508 = 0;
-#endif
 
 	hp_sram_init(L2_SRAM_SIZE);
 	win_setup();
