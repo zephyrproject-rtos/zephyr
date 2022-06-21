@@ -57,4 +57,4 @@ _start0800:
 
 .align 6
 trap_entry:
-	tail __irq_wrapper
+	tail _isr_wrapper

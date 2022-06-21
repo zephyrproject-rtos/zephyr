@@ -203,7 +203,7 @@ SECTIONS
 
     _iram_text_start = ABSOLUTE(.);
 
-    KEEP(*(.exception.entry*)); /* contains __irq_wrapper */
+    KEEP(*(.exception.entry*)); /* contains _isr_wrapper */
     *(.exception.other*)
     . = ALIGN(4);
 
