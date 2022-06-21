@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <skeleton.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -91,6 +94,45 @@
 			interrupts = <85 1>;
 			status = "disabled";
 			clock-frequency = <150000000>;
+		};
+
+		gpio0: gpio@20120000 {
+			compatible = "microchip,mpfs-gpio";
+			reg = <0x20120000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <51 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@20121000 {
+			compatible = "microchip,mpfs-gpio";
+			reg = <0x20121000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <52 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@20122000 {
+			compatible = "microchip,mpfs-gpio";
+			reg = <0x20122000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <53 1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+			status = "disabled";
 		};
 	};
 };
