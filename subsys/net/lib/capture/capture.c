@@ -282,7 +282,6 @@ int net_capture_setup(const char *remote_addr, const char *my_local_addr,
 	struct sockaddr peer = { 0 };
 	struct net_if *remote_iface;
 	struct net_capture *ctx;
-	int remote_addr_len;
 	int local_addr_len;
 	int orig_mtu;
 	int ret;
@@ -317,8 +316,6 @@ int net_capture_setup(const char *remote_addr, const char *my_local_addr,
 		orig_mtu = net_if_get_mtu(remote_iface);
 		mtu = orig_mtu - sizeof(struct net_ipv6_hdr) -
 			sizeof(struct net_udp_hdr);
-		remote_addr_len = sizeof(struct sockaddr_in6);
-
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && remote.sa_family == AF_INET) {
 		remote_iface = net_if_ipv4_select_src_iface(
 						&net_sin(&remote)->sin_addr);
@@ -328,8 +325,6 @@ int net_capture_setup(const char *remote_addr, const char *my_local_addr,
 		orig_mtu = net_if_get_mtu(remote_iface);
 		mtu = orig_mtu - sizeof(struct net_ipv4_hdr) -
 			sizeof(struct net_udp_hdr);
-		remote_addr_len = sizeof(struct sockaddr_in);
-
 	} else {
 		NET_ERR("Invalid address family %d", remote.sa_family);
 		ret = -EINVAL;
