@@ -3774,3 +3774,8 @@ bool bt_att_tx_meta_data_match(const struct net_buf *buf, bt_gatt_complete_func_
 	return ((bt_att_tx_meta_data(buf)->func == func) &&
 		(bt_att_tx_meta_data(buf)->user_data == user_data));
 }
+
+void bt_att_free_tx_meta_data(const struct net_buf *buf)
+{
+	tx_meta_data_free(bt_att_tx_meta_data(buf));
+}
