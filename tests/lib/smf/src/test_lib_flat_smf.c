@@ -204,7 +204,7 @@ static void state_d_entry(void *obj)
 
 static void state_d_run(void *obj)
 {
-	/* Do nothing */
+	smf_set_terminate(obj, 1);
 }
 
 static void state_d_exit(void *obj)
@@ -223,15 +223,19 @@ void test_smf_flat(void)
 {
 	/* A) Test transitions */
 
+	int ret;
 	test_obj.transition_bits = 0;
 	test_obj.terminate = NONE;
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
-	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
-			break;
-		}
-	}
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(0, ret, "Incorrect smf_run_state return value");
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(0, ret, "Incorrect smf_run_state return value");
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(0, ret, "Incorrect smf_run_state return value");
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(1, ret, "Incorrect smf_run_state return value");
 
 	zassert_equal(TEST_VALUE_NUM, test_obj.tv_idx,
 		      "Incorrect test value index");
@@ -244,11 +248,8 @@ void test_smf_flat(void)
 	test_obj.terminate = ENTRY;
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
-	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
-			break;
-		}
-	}
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(-1, ret, "Incorrect smf_run_state return value");
 
 	zassert_equal(TEST_ENTRY_VALUE_NUM, test_obj.tv_idx,
 		      "Incorrect test value index for entry termination");
@@ -261,11 +262,10 @@ void test_smf_flat(void)
 	test_obj.terminate = RUN;
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
-	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
-			break;
-		}
-	}
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(0, ret, "Incorrect smf_run_state return value");
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(-1, ret, "Incorrect smf_run_state return value");
 
 	zassert_equal(TEST_RUN_VALUE_NUM, test_obj.tv_idx,
 		      "Incorrect test value index for run termination");
@@ -278,11 +278,12 @@ void test_smf_flat(void)
 	test_obj.terminate = EXIT;
 	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
 
-	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
-			break;
-		}
-	}
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(0, ret, "Incorrect smf_run_state return value");
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(0, ret, "Incorrect smf_run_state return value");
+	ret = smf_run_state((struct smf_ctx *)&test_obj);
+	zassert_equal(-1, ret, "Incorrect smf_run_state return value");
 
 	zassert_equal(TEST_EXIT_VALUE_NUM, test_obj.tv_idx,
 		      "Incorrect test value index for exit termination");
