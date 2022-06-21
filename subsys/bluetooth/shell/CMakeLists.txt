@@ -38,7 +38,7 @@ zephyr_library_sources_ifdef(
   micp_mic_dev.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MICP_CLIENT
+  CONFIG_BT_MICP_MIC_CTLR
   micp_mic_ctlr.c
   )
 zephyr_library_sources_ifdef(

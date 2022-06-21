@@ -4,15 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_MICP_CLIENT
+#ifdef CONFIG_BT_MICP_MIC_CTLR
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/micp.h>
 
 #include "common.h"
 
-
-#define VOCS_DESC_SIZE 64
 #define AICS_DESC_SIZE 64
 
 extern enum bst_result_t bst_result;
@@ -121,7 +119,8 @@ static void aics_write_cb(struct bt_aics *inst, int err)
 	g_write_complete = true;
 }
 
-static void micp_discover_cb(struct bt_micp *micp, int err, uint8_t aics_count)
+static void micp_mic_ctlr_discover_cb(struct bt_micp *micp, int err,
+				      uint8_t aics_count)
 {
 	if (err != 0) {
 		FAIL("MICP could not be discovered (%d)\n", err);
@@ -132,7 +131,7 @@ static void micp_discover_cb(struct bt_micp *micp, int err, uint8_t aics_count)
 	g_discovery_complete = true;
 }
 
-static void micp_mute_write_cb(struct bt_micp *micp, int err)
+static void micp_mic_ctlr_mute_written_cb(struct bt_micp *micp, int err)
 {
 	if (err != 0) {
 		FAIL("MICP mute write failed (%d)\n", err);
@@ -142,7 +141,7 @@ static void micp_mute_write_cb(struct bt_micp *micp, int err)
 	g_write_complete = true;
 }
 
-static void micp_unmute_write_cb(struct bt_micp *micp, int err)
+static void micp_mic_ctlr_unmute_written_cb(struct bt_micp *micp, int err)
 {
 	if (err != 0) {
 		FAIL("MICP unmute write failed (%d)\n", err);
@@ -152,7 +151,7 @@ static void micp_unmute_write_cb(struct bt_micp *micp, int err)
 	g_write_complete = true;
 }
 
-static void micp_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
+static void micp_mic_ctlr_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
 {
 	if (err != 0) {
 		FAIL("MICP mute read failed (%d)\n", err);
@@ -163,11 +162,11 @@ static void micp_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
 	g_cb = true;
 }
 
-static struct bt_micp_cb micp_cbs = {
-	.discover = micp_discover_cb,
-	.mute = micp_mute_cb,
-	.mute_write = micp_mute_write_cb,
-	.unmute_write = micp_unmute_write_cb,
+static struct bt_micp_mic_ctlr_cb micp_mic_ctlr_cbs = {
+	.discover = micp_mic_ctlr_discover_cb,
+	.mute = micp_mic_ctlr_mute_cb,
+	.mute_written = micp_mic_ctlr_mute_written_cb,
+	.unmute_written = micp_mic_ctlr_unmute_written_cb,
 	.aics_cb  = {
 		.state = aics_state_cb,
 		.gain_setting = aics_gain_setting_cb,
@@ -256,7 +255,7 @@ static int test_aics(void)
 	printk("AICS gain setting get\n");
 
 	printk("Getting AICS input type\n");
-	expected_input_type = BT_AICS_INPUT_TYPE_DIGITAL;
+	expected_input_type = BT_AICS_INPUT_TYPE_UNSPECIFIED;
 	g_cb = false;
 	err = bt_aics_type_get(micp_included.aics[0]);
 	if (err != 0) {
@@ -356,7 +355,8 @@ static int test_aics(void)
 		return err;
 	}
 	WAIT_FOR_COND(g_cb &&
-		 strncmp(expected_aics_desc, g_aics_desc, sizeof(expected_aics_desc) == 0));
+		      (strncmp(expected_aics_desc, g_aics_desc,
+			       sizeof(expected_aics_desc)) == 0));
 	printk("AICS Description set\n");
 
 	printk("AICS passed\n");
@@ -376,7 +376,7 @@ static void test_main(void)
 		return;
 	}
 
-	bt_micp_client_cb_register(&micp_cbs);
+	bt_micp_mic_ctlr_cb_register(&micp_mic_ctlr_cbs);
 
 	WAIT_FOR_COND(g_bt_init);
 
@@ -388,20 +388,20 @@ static void test_main(void)
 	printk("Scanning successfully started\n");
 	WAIT_FOR_COND(g_is_connected);
 
-	err = bt_micp_discover(default_conn, &micp);
+	err = bt_micp_mic_ctlr_discover(default_conn, &micp);
 	if (err != 0) {
 		FAIL("Failed to discover MICP %d", err);
 	}
 	WAIT_FOR_COND(g_discovery_complete);
 
-	err = bt_micp_included_get(micp, &micp_included);
+	err = bt_micp_mic_ctlr_included_get(micp, &micp_included);
 	if (err != 0) {
 		FAIL("Failed to get MICP context (err %d)\n", err);
 		return;
 	}
 
 	printk("Getting MICP client conn\n");
-	err = bt_micp_client_conn_get(micp, &cached_conn);
+	err = bt_micp_mic_ctlr_conn_get(micp, &cached_conn);
 	if (err != 0) {
 		FAIL("Failed to get MICP client conn (err %d)\n", err);
 		return;
@@ -413,7 +413,7 @@ static void test_main(void)
 
 	printk("Getting MICP mute state\n");
 	g_cb = false;
-	err = bt_micp_mute_get(micp);
+	err = bt_micp_mic_ctlr_mute_get(micp);
 	if (err != 0) {
 		FAIL("Could not get MICP mute state (err %d)\n", err);
 		return;
@@ -424,7 +424,7 @@ static void test_main(void)
 	printk("Muting MICP\n");
 	expected_mute = 1;
 	g_write_complete = g_cb = false;
-	err = bt_micp_mute(micp);
+	err = bt_micp_mic_ctlr_mute(micp);
 	if (err != 0) {
 		FAIL("Could not mute MICP (err %d)\n", err);
 		return;
@@ -435,7 +435,7 @@ static void test_main(void)
 	printk("Unmuting MICP\n");
 	expected_mute = 0;
 	g_write_complete = g_cb = false;
-	err = bt_micp_unmute(micp);
+	err = bt_micp_mic_ctlr_unmute(micp);
 	if (err != 0) {
 		FAIL("Could not unmute MICP (err %d)\n", err);
 		return;
@@ -443,7 +443,7 @@ static void test_main(void)
 	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
 	printk("MICP unmuted\n");
 
-	if (CONFIG_BT_MICP_CLIENT_MAX_AICS_INST > 0 && g_aics_count > 0) {
+	if (CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST > 0 && g_aics_count > 0) {
 		if (test_aics()) {
 			return;
 		}
@@ -454,7 +454,7 @@ static void test_main(void)
 
 static const struct bst_test_instance test_micp[] = {
 	{
-		.test_id = "micp_client",
+		.test_id = "micp_mic_ctlr",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
@@ -462,16 +462,16 @@ static const struct bst_test_instance test_micp[] = {
 	BSTEST_END_MARKER
 };
 
-struct bst_test_list *test_micp_client_install(struct bst_test_list *tests)
+struct bst_test_list *test_micp_mic_ctlr_install(struct bst_test_list *tests)
 {
 	return bst_add_tests(tests, test_micp);
 }
 
 #else
 
-struct bst_test_list *test_micp_client_install(struct bst_test_list *tests)
+struct bst_test_list *test_micp_mic_ctlr_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* CONFIG_BT_MICP_CLIENT */
+#endif /* CONFIG_BT_MICP_MIC_CTLR */
