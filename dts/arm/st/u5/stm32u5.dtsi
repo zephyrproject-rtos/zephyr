@@ -438,7 +438,7 @@
 				reg-names = "m_can", "message_ram";
 				interrupts = <39 0>, <40 0>;
 				interrupt-names = "LINE_0", "LINE_1";
-				clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+				clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
 				status = "disabled";
 				label = "CAN_1";
 				sjw = <1>;
