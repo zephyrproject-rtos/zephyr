@@ -108,6 +108,11 @@ manifest:
       repo-path: hal_quicklogic
       groups:
         - hal
+    - name: hal_renesas
+      path: modules/hal/renesas
+      revision: 468d3f2146d18c7f86a4640fc641cc1d20a4a100
+      groups:
+        - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
       revision: 191f5ba46fda49523cdaaef27583d1c875ba2c36
