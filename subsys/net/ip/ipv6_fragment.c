@@ -73,7 +73,6 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, uint16_t *next_hdr_off,
 	*next_hdr_off = offsetof(struct net_ipv6_hdr, nexthdr);
 	*last_hdr_off = sizeof(struct net_ipv6_hdr);
 
-	nexthdr = hdr->nexthdr;
 	while (!net_ipv6_is_nexthdr_upper_layer(nexthdr)) {
 		if (net_pkt_read_u8(pkt, &next_nexthdr)) {
 			goto fail;
