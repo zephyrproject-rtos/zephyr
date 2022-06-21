@@ -599,7 +599,7 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
-	const struct gpio_driver_config *const cfg =
+	__unused const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config;
 	const struct gpio_driver_data *const data =
 		(const struct gpio_driver_data *)port->data;
@@ -625,7 +625,6 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be "
 		 "enabled.");
 
-	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
@@ -685,7 +684,7 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
-	const struct gpio_driver_config *const cfg =
+	__unused const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config;
 	struct gpio_driver_data *data =
 		(struct gpio_driver_data *)port->data;
@@ -720,7 +719,6 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 
 	flags &= ~GPIO_OUTPUT_INIT_LOGICAL;
 
-	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
@@ -1032,12 +1030,11 @@ static inline int gpio_port_set_clr_bits(const struct device *port,
  */
 static inline int gpio_pin_get_raw(const struct device *port, gpio_pin_t pin)
 {
-	const struct gpio_driver_config *const cfg =
+	__unused const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config;
 	gpio_port_value_t value;
 	int ret;
 
-	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
@@ -1070,12 +1067,11 @@ static inline int gpio_pin_get_raw(const struct device *port, gpio_pin_t pin)
  */
 static inline int gpio_pin_get(const struct device *port, gpio_pin_t pin)
 {
-	const struct gpio_driver_config *const cfg =
+	__unused const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config;
 	gpio_port_value_t value;
 	int ret;
 
-	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
@@ -1120,11 +1116,10 @@ static inline int gpio_pin_get_dt(const struct gpio_dt_spec *spec)
 static inline int gpio_pin_set_raw(const struct device *port, gpio_pin_t pin,
 				   int value)
 {
-	const struct gpio_driver_config *const cfg =
+	__unused const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config;
 	int ret;
 
-	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
@@ -1161,12 +1156,11 @@ static inline int gpio_pin_set_raw(const struct device *port, gpio_pin_t pin,
 static inline int gpio_pin_set(const struct device *port, gpio_pin_t pin,
 			       int value)
 {
-	const struct gpio_driver_config *const cfg =
+	__unused const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config;
 	const struct gpio_driver_data *const data =
 			(const struct gpio_driver_data *)port->data;
 
-	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
@@ -1205,10 +1199,9 @@ static inline int gpio_pin_set_dt(const struct gpio_dt_spec *spec, int value)
  */
 static inline int gpio_pin_toggle(const struct device *port, gpio_pin_t pin)
 {
-	const struct gpio_driver_config *const cfg =
+	__unused const struct gpio_driver_config *const cfg =
 		(const struct gpio_driver_config *)port->config;
 
-	(void)cfg;
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
