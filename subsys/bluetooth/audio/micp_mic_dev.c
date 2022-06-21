@@ -19,13 +19,18 @@
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/aics.h>
 
-#include "micp_internal.h"
-
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MICP_MIC_DEV)
 #define LOG_MODULE_NAME bt_micp
 #include "common/log.h"
 
-static struct bt_micp micp_inst;
+struct bt_micp_server {
+	uint8_t mute;
+	struct bt_micp_mic_dev_cb *cb;
+	struct bt_gatt_service *service_p;
+	struct bt_aics *aics_insts[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT];
+};
+
+static struct bt_micp_server micp_inst;
 
 static void mute_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
@@ -36,10 +41,10 @@ static ssize_t read_mute(struct bt_conn *conn,
 			 const struct bt_gatt_attr *attr, void *buf,
 			 uint16_t len, uint16_t offset)
 {
-	BT_DBG("Mute %u", micp_inst.srv.mute);
+	BT_DBG("Mute %u", micp_inst.mute);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &micp_inst.srv.mute, sizeof(micp_inst.srv.mute));
+				 &micp_inst.mute, sizeof(micp_inst.mute));
 }
 
 static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -52,7 +57,7 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len != sizeof(micp_inst.srv.mute)) {
+	if (len != sizeof(micp_inst.mute)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -61,21 +66,21 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_MICP_ERR_VAL_OUT_OF_RANGE);
 	}
 
-	if (conn != NULL && micp_inst.srv.mute == BT_MICP_MUTE_DISABLED) {
+	if (conn != NULL && micp_inst.mute == BT_MICP_MUTE_DISABLED) {
 		return BT_GATT_ERR(BT_MICP_ERR_MUTE_DISABLED);
 	}
 
 	BT_DBG("%u", *val);
 
-	if (*val != micp_inst.srv.mute) {
-		micp_inst.srv.mute = *val;
+	if (*val != micp_inst.mute) {
+		micp_inst.mute = *val;
 
 		bt_gatt_notify_uuid(NULL, BT_UUID_MICS_MUTE,
-				    micp_inst.srv.service_p->attrs,
-				    &micp_inst.srv.mute, sizeof(micp_inst.srv.mute));
+				    micp_inst.service_p->attrs,
+				    &micp_inst.mute, sizeof(micp_inst.mute));
 
-		if (micp_inst.srv.cb != NULL && micp_inst.srv.cb->mute != NULL) {
-			micp_inst.srv.cb->mute(micp_inst.srv.mute);
+		if (micp_inst.cb != NULL && micp_inst.cb->mute != NULL) {
+			micp_inst.cb->mute(micp_inst.mute);
 		}
 	}
 
@@ -112,20 +117,20 @@ static int prepare_aics_inst(struct bt_micp_mic_dev_register_param *param)
 
 	for (j = 0, i = 0; i < ARRAY_SIZE(mics_attrs); i++) {
 		if (bt_uuid_cmp(mics_attrs[i].uuid, BT_UUID_GATT_INCLUDE) == 0) {
-			micp_inst.srv.aics_insts[j] = bt_aics_free_instance_get();
-			if (micp_inst.srv.aics_insts[j] == NULL) {
+			micp_inst.aics_insts[j] = bt_aics_free_instance_get();
+			if (micp_inst.aics_insts[j] == NULL) {
 				BT_DBG("Could not get free AICS instances[%u]", j);
 				return -ENOMEM;
 			}
 
-			err = bt_aics_register(micp_inst.srv.aics_insts[j],
+			err = bt_aics_register(micp_inst.aics_insts[j],
 					       &param->aics_param[j]);
 			if (err != 0) {
 				BT_DBG("Could not register AICS instance[%u]: %d", j, err);
 				return err;
 			}
 
-			mics_attrs[i].user_data = bt_aics_svc_decl_get(micp_inst.srv.aics_insts[j]);
+			mics_attrs[i].user_data = bt_aics_svc_decl_get(micp_inst.aics_insts[j]);
 			j++;
 
 			if (j == CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT) {
@@ -163,14 +168,14 @@ int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param)
 #endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
 	mics_svc = (struct bt_gatt_service)BT_GATT_SERVICE(mics_attrs);
-	micp_inst.srv.service_p = &mics_svc;
+	micp_inst.service_p = &mics_svc;
 	err = bt_gatt_service_register(&mics_svc);
 
 	if (err != 0) {
 		BT_ERR("MICS service register failed: %d", err);
 	}
 
-	micp_inst.srv.cb = param->cb;
+	micp_inst.cb = param->cb;
 
 	registered = true;
 
@@ -195,8 +200,8 @@ int bt_micp_mic_dev_included_get(struct bt_micp_included *included)
 	}
 
 #if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
-	included->aics_cnt = ARRAY_SIZE(micp_inst.srv.aics_insts);
-	included->aics = micp_inst.srv.aics_insts;
+	included->aics_cnt = ARRAY_SIZE(micp_inst.aics_insts);
+	included->aics = micp_inst.aics_insts;
 #endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
 
 	return 0;
@@ -220,8 +225,8 @@ int bt_micp_mic_dev_mute(void)
 
 int bt_micp_mic_dev_mute_get(void)
 {
-	if (micp_inst.srv.cb && micp_inst.srv.cb->mute) {
-		micp_inst.srv.cb->mute(micp_inst.srv.mute);
+	if (micp_inst.cb && micp_inst.cb->mute) {
+		micp_inst.cb->mute(micp_inst.mute);
 	}
 
 	return 0;
