@@ -14,6 +14,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/check.h>
 
 #include <zephyr/settings/settings.h>
 
@@ -2140,16 +2141,43 @@ static bool gatt_cf_notify_multi(struct bt_conn *conn)
 	return CF_NOTIFY_MULTI(cfg);
 }
 
+static int gatt_notify_flush(struct bt_conn *conn)
+{
+	int err = 0;
+	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
+
+	if (*buf) {
+		err = gatt_notify_mult_send(conn, *buf);
+		*buf = NULL;
+	}
+
+	return err;
+}
+
+static void gatt_add_nfy_to_buf(struct net_buf *buf,
+				uint16_t handle,
+				struct bt_gatt_notify_params *params)
+{
+	struct bt_att_notify_mult *nfy;
+
+	nfy = net_buf_add(buf, sizeof(*nfy));
+	nfy->handle = sys_cpu_to_le16(handle);
+	nfy->len = sys_cpu_to_le16(params->len);
+
+	net_buf_add(buf, params->len);
+	(void)memcpy(nfy->value, params->data, params->len);
+}
+
+#if (CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS != 0)
 static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 			    struct bt_gatt_notify_params *params)
 {
 	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
-	struct bt_att_notify_mult *nfy;
 
 	/* Check if we can fit more data into it, in case it doesn't fit send
 	 * the existing buffer and proceed to create a new one
 	 */
-	if (*buf && ((net_buf_tailroom(*buf) < sizeof(*nfy) + params->len) ||
+	if (*buf && ((net_buf_tailroom(*buf) < sizeof(struct bt_att_notify_mult) + params->len) ||
 	    !bt_att_tx_meta_data_match(*buf, params->func, params->user_data))) {
 		int ret;
 
@@ -2162,7 +2190,7 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 
 	if (!*buf) {
 		*buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT,
-					 sizeof(*nfy) + params->len);
+					 sizeof(struct bt_att_notify_mult) + params->len);
 		if (!*buf) {
 			return -ENOMEM;
 		}
@@ -2176,13 +2204,7 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 	}
 
 	BT_DBG("handle 0x%04x len %u", handle, params->len);
-
-	nfy = net_buf_add(*buf, sizeof(*nfy));
-	nfy->handle = sys_cpu_to_le16(handle);
-	nfy->len = sys_cpu_to_le16(params->len);
-
-	net_buf_add(*buf, params->len);
-	memcpy(nfy->value, params->data, params->len);
+	gatt_add_nfy_to_buf(*buf, handle, params);
 
 	/* Use `k_work_schedule` to keep the original deadline, instead of
 	 * re-setting the timeout whenever a new notification is appended.
@@ -2192,6 +2214,7 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 
 	return 0;
 }
+#endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS != 0 */
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 
 static int gatt_notify(struct bt_conn *conn, uint16_t handle,
@@ -2201,10 +2224,12 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 	struct bt_att_notify *nfy;
 
 #if defined(CONFIG_BT_GATT_ENFORCE_CHANGE_UNAWARE)
-	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2350:
-	 * Except for the Handle Value indication, the  server shall not send
-	 * notifications and indications to such a client until it becomes
-	 * change-aware.
+	/* BLUETOOTH CORE SPECIFICATION Version 5.3
+	 * Vol 3, Part G 2.5.3 (page 1479):
+	 *
+	 * Except for a Handle Value indication for the Service Changed
+	 * characteristic, the server shall not send notifications and
+	 * indications to such a client until it becomes change-aware.
 	 */
 	if (!bt_gatt_change_aware(conn, false)) {
 		return -EAGAIN;
@@ -2227,7 +2252,7 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
+#if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE) && (CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS != 0)
 	if (gatt_cf_notify_multi(conn)) {
 		return gatt_notify_mult(conn, handle, params);
 	}
@@ -2602,23 +2627,172 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_GATT_NOTIFY_MULTIPLE)
-int bt_gatt_notify_multiple(struct bt_conn *conn, uint16_t num_params,
-			    struct bt_gatt_notify_params *params)
+static int gatt_notify_multiple_verify_args(struct bt_conn *conn,
+					    struct bt_gatt_notify_params params[],
+					    uint16_t num_params)
 {
-	int i, ret;
-
 	__ASSERT(params, "invalid parameters\n");
-	__ASSERT(num_params, "invalid parameters\n");
 	__ASSERT(params->attr, "invalid parameters\n");
 
-	for (i = 0; i < num_params; i++) {
-		ret = bt_gatt_notify_cb(conn, &params[i]);
-		if (ret < 0) {
-			return ret;
-		}
+	CHECKIF(num_params < 2) {
+		/* Use the standard notification API when sending only one
+		 * notification.
+		 */
+		return -EINVAL;
+	}
+
+	CHECKIF(conn == NULL) {
+		/* Use the standard notification API to send to all connected
+		 * peers.
+		 */
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+#if defined(CONFIG_BT_GATT_ENFORCE_CHANGE_UNAWARE)
+	/* BLUETOOTH CORE SPECIFICATION Version 5.3
+	 * Vol 3, Part G 2.5.3 (page 1479):
+	 *
+	 * Except for a Handle Value indication for the Service Changed
+	 * characteristic, the server shall not send notifications and
+	 * indications to such a client until it becomes change-aware.
+	 */
+	if (!bt_gatt_change_aware(conn, false)) {
+		return -EAGAIN;
+	}
+#endif
+
+	/* This API guarantees an ATT_MULTIPLE_HANDLE_VALUE_NTF over the air. */
+	if (!gatt_cf_notify_multi(conn)) {
+		return -EOPNOTSUPP;
 	}
 
 	return 0;
+}
+
+static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
+					     struct bt_gatt_notify_params params[],
+					     uint16_t num_params, size_t *total_len)
+{
+	for (uint16_t i = 0; i < num_params; i++) {
+		/* Compute the total data length. */
+		*total_len += params[i].len;
+
+		/* Confirm that the connection has the correct level of security. */
+		if (bt_gatt_check_perm(conn, params[i].attr,
+				       BT_GATT_PERM_READ_ENCRYPT |
+				       BT_GATT_PERM_READ_AUTHEN)) {
+			BT_WARN("Link is not encrypted");
+			return -EPERM;
+		}
+
+		/* The current implementation requires the same callbacks and
+		 * user_data.
+		 */
+		if ((params[0].func != params[i].func) ||
+		    (params[0].user_data != params[i].user_data)) {
+			return -EINVAL;
+		}
+
+		/* This API doesn't support passing UUIDs. */
+		if (params[i].uuid) {
+			return -EINVAL;
+		}
+
+		/* Check if the supplied handle is invalid. */
+		if (!bt_gatt_attr_get_handle(params[i].attr)) {
+			return -EINVAL;
+		}
+	}
+
+	/* PDU length is specified with a 16-bit value. */
+	if (*total_len > UINT16_MAX) {
+		return -ERANGE;
+	}
+
+	/* Check there is a bearer with a high enough MTU. */
+	if (bt_att_get_mtu(conn) <
+	    (sizeof(struct bt_att_notify_mult) + *total_len)) {
+		return -ERANGE;
+	}
+
+	return 0;
+}
+
+int bt_gatt_notify_multiple(struct bt_conn *conn,
+			    uint16_t num_params,
+			    struct bt_gatt_notify_params params[])
+{
+	int err;
+	size_t total_len = 0;
+	struct net_buf *buf;
+
+	/* Validate arguments, connection state and feature support. */
+	err = gatt_notify_multiple_verify_args(conn, params, num_params);
+	if (err) {
+		return err;
+	}
+
+	/* Validate all the attributes that we want to notify.
+	 * Also gets us the total length of the PDU as a side-effect.
+	 */
+	err = gatt_notify_multiple_verify_params(conn, params, num_params, &total_len);
+	if (err) {
+		return err;
+	}
+
+	/* Send any outstanding notifications.
+	 * Frees up buffer space for our PDU.
+	 */
+	gatt_notify_flush(conn);
+
+	/* Build the PDU */
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY_MULT,
+				sizeof(struct bt_att_notify_mult) + total_len);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	/* Register the callback. It will be called num_params times. */
+	bt_att_set_tx_meta_data(buf, params->func, params->user_data);
+	bt_att_increment_tx_meta_data_attr_count(buf, num_params - 1);
+
+	for (uint16_t i = 0; i < num_params; i++) {
+		struct notify_data data;
+		const struct bt_gatt_chrc *chrc;
+
+		data.attr = params[i].attr;
+		data.handle = bt_gatt_attr_get_handle(data.attr);
+		chrc = data.attr->user_data;
+
+		/* Check if attribute is a characteristic then adjust the
+		 * handle
+		 */
+		if (!bt_uuid_cmp(data.attr->uuid, BT_UUID_GATT_CHRC)) {
+			data.handle = bt_gatt_attr_value_handle(data.attr);
+		}
+
+		/* Check if notifications are supported for that chrc. */
+		if (!(chrc->properties & BT_GATT_CHRC_NOTIFY)) {
+			bt_att_free_tx_meta_data(buf);
+			net_buf_unref(buf);
+
+			return -EINVAL;
+		}
+
+		/* Add handle and data to the command buffer. */
+		gatt_add_nfy_to_buf(buf, data.handle, &params[i]);
+	}
+
+	/* Send the buffer. */
+	return gatt_notify_mult_send(conn, buf);
 }
 #endif /* CONFIG_BT_GATT_NOTIFY_MULTIPLE */
 

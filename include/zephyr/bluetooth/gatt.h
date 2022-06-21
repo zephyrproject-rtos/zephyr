@@ -1021,13 +1021,22 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
  *
  *  The peer's GATT Client must write to this device's Client Supported Features
  *  attribute and set the bit for Multiple Handle Value Notifications before
- *  this API can be used. Consider using `bt_gatt_notify_cb` as a fallback when
- *  this API returns `-EOPNOTSUPP`.
+ *  this API can be used.
+ *
+ *  Only use this API to force the use of the ATT_MULTIPLE_HANDLE_VALUE_NTF PDU.
+ *  For standard applications, `bt_gatt_notify_cb` is preferred, as it will use
+ *  this PDU if supported and automatically fallback to ATT_HANDLE_VALUE_NTF
+ *  when not supported by the peer.
+ *
+ *  This API has an additional limitation: it only accepts valid attribute
+ *  references and not UUIDs like `bt_gatt_notify` and `bt_gatt_notify_cb`.
  *
  *  @param conn
- *    Target client. `NULL` means all currently connected clients.
+ *    Target client.
+ *    Notifying all connected clients by passing `NULL` is not yet supported,
+ *    please use `bt_gatt_notify` instead.
  *  @param num_params
- *    Element count of `params` array.
+ *    Element count of `params` array. Has to be greater than 1.
  *  @param params
  *    Array of notification parameters. It is okay to free this after calling
  *    this function.
@@ -1035,15 +1044,23 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
  *  @retval 0
  *    Success. The PDU is queued for sending.
  *  @retval -EINVAL
- *    Not all `func` were equal or not all `user_data` were equal.
+ *    - One of the attribute handles is invalid.
+ *    - Only one parameter was passed. This API expects 2 or more.
+ *    - Not all `func` were equal or not all `user_data` were equal.
+ *    - One of the characteristics is not notifiable.
+ *    - An UUID was passed in one of the parameters.
  *  @retval -ERANGE
- *    The notifications cannot all fit in a single ATT_MULTIPLE_HANDLE_VALUE_NTF.
- *    Or they could, but exceed the MTU of all open ATT bearers.
+ *    - The notifications cannot all fit in a single ATT_MULTIPLE_HANDLE_VALUE_NTF.
+ *    - They exceed the MTU of all open ATT bearers.
+ *  @retval -EPERM
+ *    The connection has a lower security level than required by one of the
+ *    attributes.
  *  @retval -EOPNOTSUPP
  *    The peer hasn't yet communicated that it supports this PDU type.
  */
-int bt_gatt_notify_multiple(struct bt_conn *conn, uint16_t num_params,
-			    struct bt_gatt_notify_params *params);
+int bt_gatt_notify_multiple(struct bt_conn *conn,
+			    uint16_t num_params,
+			    struct bt_gatt_notify_params params[]);
 
 /** @brief Notify attribute value change.
  *
