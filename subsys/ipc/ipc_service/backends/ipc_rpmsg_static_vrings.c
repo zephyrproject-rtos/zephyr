@@ -239,7 +239,8 @@ static int vr_shm_configure(struct ipc_static_vrings *vr, const struct backend_c
 	vr->shm_size = shm_size(num_desc, conf->buffer_size) - VDEV_STATUS_SIZE;
 
 	vr->rx_addr = vr->shm_addr + VRING_COUNT * vq_ring_size(num_desc, conf->buffer_size);
-	vr->tx_addr = vr->rx_addr + vring_size(num_desc, VRING_ALIGNMENT);
+	vr->tx_addr = ROUND_UP(vr->rx_addr + vring_size(num_desc, VRING_ALIGNMENT),
+			       VRING_ALIGNMENT);
 
 	vr->status_reg_addr = conf->shm_addr;
 
