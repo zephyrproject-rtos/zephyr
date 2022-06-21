@@ -30,3 +30,13 @@ properties:
     required: false
     default: 0
     description: Off delay time, in microseconds
+
+  init-priority:
+    type: int
+    default: 75
+    description: |
+      Device initialisation priority within the POST_KERNEL level.
+      75 is the previous Kconfig hardcoded value to avoid changing
+      initialisation orders. The default will need to change if the
+      power domain depends on another power domain, to ensure that
+      root domains are initialised first.
