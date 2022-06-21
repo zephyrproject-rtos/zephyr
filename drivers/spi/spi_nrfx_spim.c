@@ -537,36 +537,40 @@ static int spi_nrfx_init(const struct device *dev)
 #endif
 }
 
-#define SPI_IRQ_HANDLER(idx)				\
+#define SPI_IRQ_HANDLER(idx)						       \
 	_CONCAT(_CONCAT(nrfx_spim_, idx), _irq_handler)
 
-#define SPIM_NRFX_MISO_PULL(inst)			\
-	(DT_INST_PROP(inst, miso_pull_up)		\
-		? DT_INST_PROP(inst, miso_pull_down)	\
-			? -1 /* invalid configuration */\
-			: NRF_GPIO_PIN_PULLUP		\
-		: DT_INST_PROP(inst, miso_pull_down)	\
-			? NRF_GPIO_PIN_PULLDOWN		\
+#define SPIM_NRFX_MISO_PULL(inst)					       \
+	(DT_INST_PROP(inst, miso_pull_up)				       \
+		? DT_INST_PROP(inst, miso_pull_down)			       \
+			? -1 /* invalid configuration */		       \
+			: NRF_GPIO_PIN_PULLUP				       \
+		: DT_INST_PROP(inst, miso_pull_down)			       \
+			? NRF_GPIO_PIN_PULLDOWN				       \
 			: NRF_GPIO_PIN_NOPULL)
 
-#define SPI_NRFX_SPIM_EXTENDED_CONFIG(inst)				\
-	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,				\
-		(.dcx_pin = NRFX_SPIM_PIN_NOT_USED,			\
-		 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, has_rx_delay),	\
-			     (.rx_delay = DT_INST_PROP(inst, rx_delay),),\
-			     ()) 					\
-		))
+#define SPI_NRFX_SPIM_EXTENDED_CONFIG(inst)				       \
+	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,				       \
+		   (.dcx_pin = NRFX_SPIM_PIN_NOT_USED,			       \
+		    IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, has_rx_delay),      \
+			       (.rx_delay = DT_INST_PROP(inst, rx_delay),))    \
+		   ))
 
-#define SPI_NRFX_SPIM_PIN_CFG(inst)					\
-	COND_CODE_1(CONFIG_PINCTRL,					\
-		(.skip_gpio_cfg = true,					\
-		 .skip_psel_cfg = true,),				\
-		(.sck_pin   = DT_INST_PROP(inst, sck_pin),		\
-		 .mosi_pin  = DT_INST_PROP_OR(inst, mosi_pin,		\
-					 NRFX_SPIM_PIN_NOT_USED),	\
-		 .miso_pin  = DT_INST_PROP_OR(inst, miso_pin,		\
-					 NRFX_SPIM_PIN_NOT_USED),	\
-		 .miso_pull = SPIM_NRFX_MISO_PULL(inst),))
+#define SPI_NRFX_SPIM_PIN_CFG(inst)					       \
+	COND_CODE_1(CONFIG_PINCTRL,					       \
+		    (.skip_gpio_cfg = true,				       \
+		     .skip_psel_cfg = true,),				       \
+		    (.sck_pin   = DT_INST_PROP(inst, sck_pin),		       \
+		     .mosi_pin  = DT_INST_PROP_OR(inst, mosi_pin,	       \
+						  NRFX_SPIM_PIN_NOT_USED),     \
+		     .miso_pin  = DT_INST_PROP_OR(inst, miso_pin,	       \
+						  NRFX_SPIM_PIN_NOT_USED),     \
+		     .miso_pull = SPIM_NRFX_MISO_PULL(inst),))
+
+#define SPIM_MEMORY_SECTION(inst)					       \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, memory_regions),		       \
+		   (__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(     \
+			DT_INST_PHANDLE(inst, memory_regions)))))))
 
 #define SPI_NRFX_SPIM_DEFINE(inst)					       \
 	NRF_DT_CHECK_PIN_ASSIGNMENTS(DT_DRV_INST(inst), 1,		       \
@@ -576,6 +580,7 @@ static int spi_nrfx_init(const struct device *dev)
 		       DT_INST_PROP(inst, miso_pull_down)),		       \
 		"SPIM"#inst						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
+									       \
 	static void irq_connect##inst(void)				       \
 	{								       \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),   \
@@ -583,21 +588,25 @@ static int spi_nrfx_init(const struct device *dev)
 			    SPI_IRQ_HANDLER(DT_INST_PROP(inst, periph_idx)),   \
 			    0);						       \
 	}								       \
+									       \
+	PM_DEVICE_DT_INST_DEFINE(inst, spim_nrfx_pm_action);		       \
 	IF_ENABLED(SPI_BUFFER_IN_RAM,					       \
-		(static uint8_t spim_##inst##_buffer			       \
+		   (static uint8_t spim_##inst##_buffer			       \
 			[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE]		       \
 			SPIM_MEMORY_SECTION(inst);))			       \
-	static struct spi_nrfx_data spi_##inst##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##inst##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##inst##_data, ctx),		       \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(inst)));	       \
+									       \
+	static struct spi_nrfx_data data##inst = {			       \
+		SPI_CONTEXT_INIT_LOCK(data##inst, ctx),			       \
+		SPI_CONTEXT_INIT_SYNC(data##inst, ctx),			       \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	       \
 		IF_ENABLED(SPI_BUFFER_IN_RAM,				       \
-			(.buffer = spim_##inst##_buffer,))		       \
+			   (.buffer = spim_##inst##_buffer,))		       \
 		.dev  = DEVICE_DT_INST_GET(inst),			       \
 		.busy = false,						       \
 	};								       \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(inst)));	       \
-	static const struct spi_nrfx_config spi_##inst##z_config = {	       \
+									       \
+	static const struct spi_nrfx_config config##inst = {		       \
 		.spim = {						       \
 			.p_reg = (NRF_SPIM_Type *)DT_INST_REG_ADDR(inst),      \
 			.drv_inst_idx = DT_INST_PROP(inst, periph_idx),	       \
@@ -606,30 +615,20 @@ static int spi_nrfx_init(const struct device *dev)
 		.def_config = {						       \
 			SPI_NRFX_SPIM_PIN_CFG(inst)			       \
 			.ss_pin = NRFX_SPIM_PIN_NOT_USED,		       \
-			.orc    = DT_INST_PROP(inst, overrun_character),       \
+			.orc = DT_INST_PROP(inst, overrun_character),	       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(inst)		       \
 		},							       \
 		.irq_connect = irq_connect##inst,			       \
-		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
-			(.anomaly_58_workaround =			       \
-				DT_INST_PROP(inst, anomaly_58_workaround),),   \
-			())						       \
+		IF_ENABLED(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,      \
+			   (.anomaly_58_workaround =			       \
+				DT_INST_PROP(inst, anomaly_58_workaround),))   \
 		IF_ENABLED(CONFIG_PINCTRL,				       \
-			(.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),))       \
+			   (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),))    \
 	};								       \
-	PM_DEVICE_DT_INST_DEFINE(inst, spim_nrfx_pm_action);		       \
-	DEVICE_DT_INST_DEFINE(inst,					       \
-		      spi_nrfx_init,					       \
-		      PM_DEVICE_DT_INST_GET(inst),			       \
-		      &spi_##inst##_data,				       \
-		      &spi_##inst##z_config,				       \
-		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
-		      &spi_nrfx_driver_api);
-
-#define SPIM_MEMORY_SECTION(inst)					       \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, memory_regions),	       \
-		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	       \
-			DT_INST_PHANDLE(inst, memory_regions)))))),	       \
-		())
+									       \
+	DEVICE_DT_INST_DEFINE(inst, spi_nrfx_init,			       \
+			      PM_DEVICE_DT_INST_GET(inst), &data##inst,	       \
+			      &config##inst, POST_KERNEL,		       \
+			      CONFIG_SPI_INIT_PRIORITY, &spi_nrfx_driver_api); \
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_NRFX_SPIM_DEFINE)
