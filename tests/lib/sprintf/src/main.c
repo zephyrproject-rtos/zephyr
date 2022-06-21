@@ -543,6 +543,7 @@ void test_sprintf_misc(void)
 	if (IS_MINIMAL_LIBC_NANO) {
 		TC_PRINT(" MINIMAL_LIBC+CPBPRINTF skipped tests\n");
 	} else {
+#ifndef CONFIG_PICOLIBC
 		sprintf(buffer, "test data %n test data", &count);
 		zassert_false((count != 10),
 			      "sprintf(%%n).  Expected count to be %d, not %d",
@@ -551,6 +552,13 @@ void test_sprintf_misc(void)
 		zassert_false((strcmp(buffer, "test data  test data") != 0),
 			      "sprintf(%%p).  Expected '%s', got '%s'",
 			      "test data  test data", buffer);
+#else
+		/*
+		 * Picolibc doesn't include %n support as it makes format string
+		 * bugs a more serious security issue
+		 */
+		(void) count;
+#endif
 
 
 		/*******************/
