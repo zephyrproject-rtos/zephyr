@@ -15,7 +15,7 @@
 
 extern enum bst_result_t bst_result;
 
-static struct bt_micp *micp;
+static struct bt_micp_mic_ctlr *mic_ctlr;
 static struct bt_micp_included micp_included;
 static volatile bool g_bt_init;
 static volatile bool g_is_connected;
@@ -119,11 +119,12 @@ static void aics_write_cb(struct bt_aics *inst, int err)
 	g_write_complete = true;
 }
 
-static void micp_mic_ctlr_discover_cb(struct bt_micp *micp, int err,
+static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr,
+				      int err,
 				      uint8_t aics_count)
 {
 	if (err != 0) {
-		FAIL("MICP could not be discovered (%d)\n", err);
+		FAIL("MICS could not be discovered (%d)\n", err);
 		return;
 	}
 
@@ -131,30 +132,33 @@ static void micp_mic_ctlr_discover_cb(struct bt_micp *micp, int err,
 	g_discovery_complete = true;
 }
 
-static void micp_mic_ctlr_mute_written_cb(struct bt_micp *micp, int err)
+static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
+					  int err)
 {
 	if (err != 0) {
-		FAIL("MICP mute write failed (%d)\n", err);
+		FAIL("mic_ctlr mute write failed (%d)\n", err);
 		return;
 	}
 
 	g_write_complete = true;
 }
 
-static void micp_mic_ctlr_unmute_written_cb(struct bt_micp *micp, int err)
+static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
+					    int err)
 {
 	if (err != 0) {
-		FAIL("MICP unmute write failed (%d)\n", err);
+		FAIL("mic_ctlr unmute write failed (%d)\n", err);
 		return;
 	}
 
 	g_write_complete = true;
 }
 
-static void micp_mic_ctlr_mute_cb(struct bt_micp *micp, int err, uint8_t mute)
+static void micp_mic_ctlr_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err,
+				  uint8_t mute)
 {
 	if (err != 0) {
-		FAIL("MICP mute read failed (%d)\n", err);
+		FAIL("mic_ctlr mute read failed (%d)\n", err);
 		return;
 	}
 
@@ -388,22 +392,22 @@ static void test_main(void)
 	printk("Scanning successfully started\n");
 	WAIT_FOR_COND(g_is_connected);
 
-	err = bt_micp_mic_ctlr_discover(default_conn, &micp);
+	err = bt_micp_mic_ctlr_discover(default_conn, &mic_ctlr);
 	if (err != 0) {
-		FAIL("Failed to discover MICP %d", err);
+		FAIL("Failed to discover MICS %d", err);
 	}
 	WAIT_FOR_COND(g_discovery_complete);
 
-	err = bt_micp_mic_ctlr_included_get(micp, &micp_included);
+	err = bt_micp_mic_ctlr_included_get(mic_ctlr, &micp_included);
 	if (err != 0) {
-		FAIL("Failed to get MICP context (err %d)\n", err);
+		FAIL("Failed to get mic_ctlr context (err %d)\n", err);
 		return;
 	}
 
-	printk("Getting MICP client conn\n");
-	err = bt_micp_mic_ctlr_conn_get(micp, &cached_conn);
+	printk("Getting mic_ctlr conn\n");
+	err = bt_micp_mic_ctlr_conn_get(mic_ctlr, &cached_conn);
 	if (err != 0) {
-		FAIL("Failed to get MICP client conn (err %d)\n", err);
+		FAIL("Failed to get mic_ctlr conn (err %d)\n", err);
 		return;
 	}
 	if (cached_conn != default_conn) {
@@ -411,37 +415,37 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Getting MICP mute state\n");
+	printk("Getting mic_ctlr mute state\n");
 	g_cb = false;
-	err = bt_micp_mic_ctlr_mute_get(micp);
+	err = bt_micp_mic_ctlr_mute_get(mic_ctlr);
 	if (err != 0) {
-		FAIL("Could not get MICP mute state (err %d)\n", err);
+		FAIL("Could not get mic_ctlr mute state (err %d)\n", err);
 		return;
 	}
 	WAIT_FOR_COND(g_cb);
-	printk("MICP mute state received\n");
+	printk("mic_ctlr mute state received\n");
 
-	printk("Muting MICP\n");
+	printk("Muting mic_ctlr\n");
 	expected_mute = 1;
 	g_write_complete = g_cb = false;
-	err = bt_micp_mic_ctlr_mute(micp);
+	err = bt_micp_mic_ctlr_mute(mic_ctlr);
 	if (err != 0) {
-		FAIL("Could not mute MICP (err %d)\n", err);
+		FAIL("Could not mute mic_ctlr (err %d)\n", err);
 		return;
 	}
 	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
-	printk("MICP muted\n");
+	printk("mic_ctlr muted\n");
 
-	printk("Unmuting MICP\n");
+	printk("Unmuting mic_ctlr\n");
 	expected_mute = 0;
 	g_write_complete = g_cb = false;
-	err = bt_micp_mic_ctlr_unmute(micp);
+	err = bt_micp_mic_ctlr_unmute(mic_ctlr);
 	if (err != 0) {
-		FAIL("Could not unmute MICP (err %d)\n", err);
+		FAIL("Could not unmute mic_ctlr (err %d)\n", err);
 		return;
 	}
 	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
-	printk("MICP unmuted\n");
+	printk("mic_ctlr unmuted\n");
 
 	if (CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST > 0 && g_aics_count > 0) {
 		if (test_aics()) {
@@ -449,7 +453,7 @@ static void test_main(void)
 		}
 	}
 
-	PASS("MICP client Passed\n");
+	PASS("mic_ctlr Passed\n");
 }
 
 static const struct bst_test_instance test_micp[] = {
