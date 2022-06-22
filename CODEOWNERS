@@ -725,6 +725,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/build/uf2conv.py                 @petejohanson
 /scripts/build/user_wordsize.py           @cfriedt
 /scripts/valgrind.supp                    @aescolar @daor-oti
+/share/sysbuild/                          @tejlmand
 /share/zephyr-package/                    @tejlmand
 /share/zephyrunittest-package/            @tejlmand
 /subsys/bluetooth/                        @alwa-nordic @jhedberg @Vudentz
