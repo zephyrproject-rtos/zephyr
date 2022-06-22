@@ -27,6 +27,7 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  TOTAL_BUF_NEEDED,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
+static uint32_t seq_num;
 static bool stopping;
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
@@ -63,7 +64,8 @@ static void stream_sent_cb(struct bt_audio_stream *stream)
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, mock_data, preset_16_2_1.qos.sdu);
-	ret = bt_audio_stream_send(stream, buf);
+	ret = bt_audio_stream_send(stream, buf, seq_num++,
+				   BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		/* This will end broadcasting on this stream. */
 		printk("Unable to broadcast data on %p: %d\n", stream, ret);
@@ -164,5 +166,6 @@ void main(void)
 		}
 		printk("Broadcast source deleted\n");
 		broadcast_source = NULL;
+		seq_num = 0;
 	}
 }

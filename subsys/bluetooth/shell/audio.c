@@ -49,6 +49,7 @@ static struct bt_audio_stream broadcast_sink_streams[BROADCAST_SNK_STREAM_CNT];
 static struct bt_audio_broadcast_sink *default_sink;
 #endif /* CONFIG_BT_AUDIO_BROADCAST_SINK */
 static struct bt_audio_stream *default_stream;
+static uint32_t seq_num;
 static bool connecting;
 
 struct named_lc3_preset {
@@ -337,6 +338,8 @@ static int lc3_enable(struct bt_audio_stream *stream,
 static int lc3_start(struct bt_audio_stream *stream)
 {
 	shell_print(ctx_shell, "Start: stream %p", stream);
+
+	seq_num = 0;
 
 	return 0;
 }
@@ -1352,6 +1355,28 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 #define DATA_MTU CONFIG_BT_ISO_TX_MTU
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, 8, NULL);
 
+static uint32_t get_next_seq_num(uint32_t interval_us)
+{
+	static int64_t last_ticks;
+	int64_t uptime_ticks, delta_ticks;
+	uint64_t delta_us;
+	uint64_t seq_num_incr;
+	uint64_t next_seq_num;
+
+	/* Note: This does not handle wrapping of ticks when they go above
+	 * 2^(62-1)
+	 */
+	uptime_ticks = k_uptime_ticks();
+	delta_ticks = uptime_ticks - last_ticks;
+	last_ticks = uptime_ticks;
+
+	delta_us = k_ticks_to_us_near64((uint64_t)delta_ticks);
+	seq_num_incr = delta_us / interval_us;
+	next_seq_num = (seq_num_incr + seq_num);
+
+	return (uint32_t)next_seq_num;
+}
+
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
 	static uint8_t data[DATA_MTU - BT_ISO_CHAN_SEND_RESERVE];
@@ -1374,7 +1399,11 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 	net_buf_add_mem(buf, data, len);
-	ret = bt_audio_stream_send(default_stream, buf);
+
+	seq_num = get_next_seq_num(default_preset->preset.qos.interval);
+
+	ret = bt_audio_stream_send(default_stream, buf, seq_num,
+				   BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
 		shell_print(sh, "Unable to send: %d", -ret);
 		net_buf_unref(buf);
