@@ -42,8 +42,6 @@ struct bt_audio_ep {
 	uint16_t cp_handle;
 	uint8_t  cig_id;
 	uint8_t  cis_id;
-	/* ISO sequence number */
-	uint32_t seq_num;
 	struct bt_ascs_ase_status status;
 	struct bt_audio_stream *stream;
 	struct bt_codec codec;
