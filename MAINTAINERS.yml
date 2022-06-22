@@ -2210,7 +2210,7 @@ West:
 "West project: hal_telink":
     status: maintained
     maintainers:
-        - yurvyn
+        - andy-liu-telink
     files:
         - modules/Kconfig.telink
     labels:
