@@ -7,3 +7,5 @@ project(arm_irq_vector_table)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors irq-vector-table.ld)
