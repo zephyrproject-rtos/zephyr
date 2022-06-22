@@ -1919,12 +1919,21 @@ int bt_audio_stream_release(struct bt_audio_stream *stream, bool cache);
  *  @note Data will not be sent to linked streams since linking is only
  *  consider for procedures affecting the state machine.
  *
- *  @param stream Stream object.
- *  @param buf Buffer containing data to be sent.
+ *  @param stream   Stream object.
+ *  @param buf      Buffer containing data to be sent.
+ *  @param seq_num  Packet Sequence number. This value shall be incremented for
+ *                  each call to this function and at least once per SDU
+ *                  interval for a specific channel.
+ *  @param ts       Timestamp of the SDU in microseconds (us).
+ *                  This value can be used to transmit multiple
+ *                  SDUs in the same SDU interval in a CIG or BIG. Can be
+ *                  omitted by using @ref BT_ISO_TIMESTAMP_NONE which will
+ *                  simply enqueue the ISO SDU in a FIFO manner.
  *
  *  @return Bytes sent in case of success or negative value in case of error.
  */
-int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf);
+int bt_audio_stream_send(struct bt_audio_stream *stream, struct net_buf *buf,
+			 uint32_t seq_num, uint32_t ts);
 
 /** @brief Create audio unicast group.
  *
