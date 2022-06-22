@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1339,6 +1339,45 @@ struct peci_it8xxx2_regs {
 #define CECIE			ECREG(EC_REG_BASE_ADDR + 0x2E05)
 #define CECOPSTS		ECREG(EC_REG_BASE_ADDR + 0x2E06)
 #define CECCRH			ECREG(EC_REG_BASE_ADDR + 0x2E07)
+
+/**
+ *
+ * (37xxh, 38xxh) USBPD Controller
+ *
+ */
+#ifndef __ASSEMBLER__
+struct usbpd_it8xxx2_regs {
+	/* 0x000~0x003: Reserved1 */
+	volatile uint8_t Reserved1[4];
+	/* 0x004: CC General Configuration */
+	volatile uint8_t CCGCR;
+	/* 0x005: CC Channel Setting */
+	volatile uint8_t CCCSR;
+	/* 0x006: CC Pad Setting */
+	volatile uint8_t CCPSR;
+};
+#endif /* !__ASSEMBLER__ */
+
+/* USBPD controller register fields */
+/* 0x004: CC General Configuration */
+#define IT8XXX2_USBPD_DISABLE_CC			BIT(7)
+#define IT8XXX2_USBPD_DISABLE_CC_VOL_DETECTOR		BIT(6)
+#define IT8XXX2_USBPD_CC_SELECT_RP_RESERVED		(BIT(3) | BIT(2) | BIT(1))
+#define IT8XXX2_USBPD_CC_SELECT_RP_DEF			(BIT(3) | BIT(2))
+#define IT8XXX2_USBPD_CC_SELECT_RP_1A5			BIT(3)
+#define IT8XXX2_USBPD_CC_SELECT_RP_3A0			BIT(2)
+#define IT8XXX2_USBPD_CC1_CC2_SELECTION			BIT(0)
+/* 0x005: CC Channel Setting */
+#define IT8XXX2_USBPD_CC2_DISCONNECT			BIT(7)
+#define IT8XXX2_USBPD_CC2_DISCONNECT_5_1K_TO_GND	BIT(6)
+#define IT8XXX2_USBPD_CC1_DISCONNECT			BIT(3)
+#define IT8XXX2_USBPD_CC1_DISCONNECT_5_1K_TO_GND	BIT(2)
+#define IT8XXX2_USBPD_CC1_CC2_RP_RD_SELECT		(BIT(1) | BIT(5))
+/* 0x006: CC Pad Setting */
+#define IT8XXX2_USBPD_DISCONNECT_5_1K_CC2_DB		BIT(6)
+#define IT8XXX2_USBPD_DISCONNECT_POWER_CC2		BIT(5)
+#define IT8XXX2_USBPD_DISCONNECT_5_1K_CC1_DB		BIT(2)
+#define IT8XXX2_USBPD_DISCONNECT_POWER_CC1		BIT(1)
 
 /**
  *
