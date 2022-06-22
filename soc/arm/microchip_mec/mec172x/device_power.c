@@ -263,7 +263,7 @@ static void deep_sleep_save_blocks(void)
 #endif
 
 #ifdef CONFIG_I2C
-	for (size_t n = 0; n > MCHP_I2C_SMB_INSTANCES; n++) {
+	for (size_t n = 0; n < MCHP_I2C_SMB_INSTANCES; n++) {
 		uint32_t addr = MCHP_I2C_SMB_BASE_ADDR(n) +
 				MCHP_I2C_SMB_CFG_OFS;
 		uint32_t regval = sys_read32(addr);
@@ -321,7 +321,7 @@ static void deep_sleep_restore_blocks(void)
 #endif
 
 #ifdef CONFIG_I2C
-	for (size_t n = 0; n > MCHP_I2C_SMB_INSTANCES; n++) {
+	for (size_t n = 0; n < MCHP_I2C_SMB_INSTANCES; n++) {
 		uint32_t addr = MCHP_I2C_SMB_BASE_ADDR(n) +
 				MCHP_I2C_SMB_CFG_OFS;
 
