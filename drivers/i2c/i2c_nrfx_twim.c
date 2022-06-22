@@ -22,7 +22,6 @@ struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	nrfx_twim_config_t twim_config;
-	bool twim_initialized;
 	volatile nrfx_err_t res;
 	uint8_t *msg_buf;
 };
@@ -53,13 +52,6 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 	nrfx_twim_xfer_desc_t cur_xfer = {
 		.address = addr
 	};
-
-	/* If for whatever reason the TWIM peripheral is still not initialized
-	 * at this point, try to initialize it now.
-	 */
-	if (!dev_data->twim_initialized && init_twim(dev) < 0) {
-		return -EIO;
-	}
 
 	k_sem_take(&dev_data->transfer_sync, K_FOREVER);
 
@@ -251,19 +243,14 @@ static int init_twim(const struct device *dev)
 		return -EIO;
 	}
 
-	dev_data->twim_initialized = true;
 	return 0;
 }
 
 static void deinit_twim(const struct device *dev)
 {
 	const struct i2c_nrfx_twim_config *dev_config = dev->config;
-	struct i2c_nrfx_twim_data *dev_data = dev->data;
 
-	if (dev_data->twim_initialized) {
-		nrfx_twim_uninit(&dev_config->twim);
-		dev_data->twim_initialized = false;
-	}
+	nrfx_twim_uninit(&dev_config->twim);
 }
 
 static int i2c_nrfx_twim_configure(const struct device *dev,
