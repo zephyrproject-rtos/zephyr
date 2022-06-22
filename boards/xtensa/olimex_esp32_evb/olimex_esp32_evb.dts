@@ -95,6 +95,17 @@ uext_spi: &spi2 {};
 	#size-cells = <0>;
 };
 
+&twai {
+	status = "okay";
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+
+	can-transceiver {
+		max-bitrate = <1000000>;
+	};
+};
+
 &gpio0 {
 	status = "okay";
 };
